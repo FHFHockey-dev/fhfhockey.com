@@ -4,10 +4,16 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   FANTASY_PROJECTION_CONTRACT_CHECKSUM,
   FANTASY_PROJECTION_CONTRACT_VERSION,
+  FANTASY_PROJECTION_SUPPORTED_CONTRACTS,
   GOALIE_DERIVED_TARGETS,
+  GOALIE_EXPANDED_DERIVED_TARGETS,
+  GOALIE_FANTASY_V4_PRIMITIVE_TARGETS,
   GOALIE_PRIMITIVE_TARGETS,
+  reconcileProjectionQuantiles,
   reconcileProjectionValues,
   SKATER_DERIVED_TARGETS,
+  SKATER_EXPANDED_DERIVED_TARGETS,
+  SKATER_FANTASY_V4_PRIMITIVE_TARGETS,
   SKATER_PRIMITIVE_TARGETS,
   type FantasyProjectionPopulation,
   type ProjectionValues,
@@ -24,10 +30,14 @@ type JsonRecord = Record<string, any>;
 const DERIVED_TARGETS = new Set<string>([
   ...SKATER_DERIVED_TARGETS,
   ...GOALIE_DERIVED_TARGETS,
+  ...SKATER_EXPANDED_DERIVED_TARGETS,
+  ...GOALIE_EXPANDED_DERIVED_TARGETS,
 ]);
 const PRIMITIVE_TARGETS = new Set<string>([
   ...SKATER_PRIMITIVE_TARGETS,
   ...GOALIE_PRIMITIVE_TARGETS,
+  ...SKATER_FANTASY_V4_PRIMITIVE_TARGETS,
+  ...GOALIE_FANTASY_V4_PRIMITIVE_TARGETS,
 ]);
 const POOL_STATUSES = new Set([
   "verified_active",
@@ -320,26 +330,11 @@ function effectivePlayer(row: any, overrides: any[]): any {
     p50[target] = Math.max(target === "PLUS_MINUS" ? -Infinity : 0, (p50[target] ?? 0) + delta);
     p90[target] = Math.max(p50[target], (p90[target] ?? 0) + delta);
   }
-  const primitiveAdjusted = Object.keys(primitiveDeltas).length > 0;
-  const effectiveP10 = primitiveAdjusted
-    ? reconcileProjectionValues(p10, population)
-    : p10;
-  const effectiveP50 = primitiveAdjusted
-    ? reconcileProjectionValues(p50, population)
-    : p50;
-  const effectiveP90 = primitiveAdjusted
-    ? reconcileProjectionValues(p90, population)
-    : p90;
-  if (primitiveAdjusted) {
-    for (const target of DERIVED_TARGETS) {
-      const ordered = [effectiveP10[target], effectiveP50[target], effectiveP90[target]]
-        .map(Number)
-        .sort((left, right) => left - right);
-      if (ordered.every(Number.isFinite)) {
-        [effectiveP10[target], effectiveP50[target], effectiveP90[target]] = ordered;
-      }
-    }
-  }
+  const {
+    p10: effectiveP10,
+    p50: effectiveP50,
+    p90: effectiveP90,
+  } = reconcileProjectionQuantiles({ p10, p50, p90 }, population);
   const adjustmentDelta = Object.fromEntries(
     Object.keys(publishedValues)
       .map((target) => [
@@ -356,7 +351,10 @@ function effectivePlayer(row: any, overrides: any[]): any {
     position,
     population,
     pool_status: poolStatus,
+    roster_status: String(row.roster_status ?? "unresolved"),
     roster_confidence: Number(row.roster_confidence),
+    source_fresh_at: row.source_fresh_at ?? null,
+    rookie_profile: record(row.rookie_profile),
     expected_games: expectedGames,
     expected_starts: population === "goalie" ? expectedStarts : null,
     expected_toi: expectedToi,
@@ -379,7 +377,12 @@ function effectivePlayer(row: any, overrides: any[]): any {
 
 function effectiveTeam(row: any, overrides: any[]): any {
   const baseRatings = record(row.ratings);
+  const baseValues = numericRecord(row.model_means);
   let publishedRatings = structuredClone(baseRatings);
+  let publishedValues = structuredClone(baseValues);
+  let p10 = numericRecord(row.p10);
+  let p50 = numericRecord(row.p50);
+  let p90 = numericRecord(row.p90);
   let deployment = record(row.deployment);
   for (const override of overrides) {
     const fieldPath = String(override.field_path);
@@ -395,14 +398,29 @@ function effectiveTeam(row: any, overrides: any[]): any {
         fieldPath.split(".").slice(1),
         override.override_value,
       );
+    } else if (fieldPath.startsWith("values.")) {
+      const target = fieldPath.split(".")[1];
+      const overrideValue = Number(override.override_value);
+      if (target && Number.isFinite(overrideValue)) {
+        const delta = overrideValue - Number(baseValues[target] ?? 0);
+        publishedValues[target] = Math.max(0, overrideValue);
+        p10[target] = Math.max(0, Number(p10[target] ?? 0) + delta);
+        p50[target] = Math.max(0, Number(p50[target] ?? 0) + delta);
+        p90[target] = Math.max(0, Number(p90[target] ?? 0) + delta);
+      }
     }
   }
-  const adjustmentDelta = Object.fromEntries(
+  const ratingDelta = Object.fromEntries(
     Object.keys(publishedRatings)
       .map((key) => [
         key,
         Number(publishedRatings[key] ?? 0) - Number(baseRatings[key] ?? 0),
       ])
+      .filter(([, delta]) => Number.isFinite(Number(delta)) && Math.abs(Number(delta)) > 1e-9),
+  );
+  const valueDelta = Object.fromEntries(
+    Object.keys(publishedValues)
+      .map((key) => [key, Number(publishedValues[key] ?? 0) - Number(baseValues[key] ?? 0)])
       .filter(([, delta]) => Number.isFinite(Number(delta)) && Math.abs(Number(delta)) > 1e-9),
   );
   return {
@@ -413,7 +431,12 @@ function effectiveTeam(row: any, overrides: any[]): any {
     published_ratings: publishedRatings,
     deployment,
     roster_counts: record(row.roster_counts),
-    adjustment_delta: adjustmentDelta,
+    base_values: baseValues,
+    published_values: publishedValues,
+    p10,
+    p50,
+    p90,
+    adjustment_delta: { ...ratingDelta, ...valueDelta },
     adjusted: overrides.length > 0,
     confidence: Number(row.confidence),
     provenance: record(row.provenance),
@@ -487,17 +510,19 @@ export async function loadSeasonEditorWorkspace(
     { data: queue, error: queueError },
     { data: conflicts, error: conflictsError },
     { data: playerPoolReview, error: playerPoolReviewError },
+    { data: rosterObservations, error: rosterObservationsError },
+    { data: rosterSnapshots, error: rosterSnapshotsError },
   ] =
     await Promise.all([
       client
         .from("player_forecast_season_runs")
-        .select("id,view_key,run_kind,status,cutoff_at,hold_reason_code,validation_receipt,created_at")
+        .select("id,view_key,run_kind,status,cutoff_at,hold_reason_code,validation_receipt,contract_version,contract_checksum,created_at")
         .eq("season_id", seasonId)
         .order("created_at", { ascending: false })
         .limit(30),
       client
         .from("player_forecast_season_releases")
-        .select("id,view_key,release_number,release_label,issued_at,release_hash")
+        .select("id,view_key,release_number,release_label,issued_at,release_hash,metric_set_version,roster_observed_at,transaction_cutoff_at,health_status,health_summary")
         .eq("season_id", seasonId)
         .order("issued_at", { ascending: false })
         .limit(30),
@@ -508,8 +533,9 @@ export async function loadSeasonEditorWorkspace(
         .order("not_before", { ascending: true })
         .limit(100),
       client
-        .from("player_forecast_observation_conflicts")
-        .select("id,conflict_key,conflict_type,summary,detected_at,player_forecast_conflict_resolutions(id)")
+        .from("player_forecast_season_roster_conflicts")
+        .select("id,conflict_key,conflict_type,summary,detected_at,fhfh_player_id,nhl_player_id,candidate_team_ids,player_forecast_season_roster_conflict_resolutions(id)")
+        .eq("season_id", seasonId)
         .order("detected_at", { ascending: false })
         .limit(50),
       client
@@ -518,12 +544,79 @@ export async function loadSeasonEditorWorkspace(
         .eq("season_id", seasonId)
         .order("created_at", { ascending: false })
         .limit(200),
+      client
+        .from("player_forecast_season_roster_observations")
+        .select("id,fhfh_player_id,nhl_player_id,raw_player_name,observation_kind,event_type,organization_team_id,roster_status,source_key,source_url,observed_at,available_at,effective_at,confidence,supersedes_id")
+        .eq("season_id", seasonId)
+        .order("available_at", { ascending: false })
+        .limit(200),
+      client
+        .from("player_forecast_season_roster_snapshots")
+        .select("id,observed_at,available_at,completeness,revision_hash,metadata,created_at")
+        .eq("season_id", seasonId)
+        .order("available_at", { ascending: false })
+        .limit(5),
     ]);
   if (runsError) throw runsError;
   if (releaseError) throw releaseError;
   if (queueError) throw queueError;
   if (conflictsError) throw conflictsError;
   if (playerPoolReviewError) throw playerPoolReviewError;
+  if (rosterObservationsError) throw rosterObservationsError;
+  if (rosterSnapshotsError) throw rosterSnapshotsError;
+
+  const activeConflicts = (conflicts ?? []).filter(
+    (conflict: any) =>
+      (conflict.player_forecast_season_roster_conflict_resolutions ?? []).length === 0,
+  );
+  const conflictPlayerIds = Array.from(new Set(
+    activeConflicts.map((conflict: any) => Number(conflict.fhfh_player_id)).filter(Number.isFinite),
+  ));
+  const conflictIds = activeConflicts.map((conflict: any) => String(conflict.id));
+  const [identityRows, teamRows, conflictMembers] = await Promise.all([
+    conflictPlayerIds.length
+      ? selectAll(client, "fhfh_player_identities", "id,canonical_name,current_nhl_team_id", (query) =>
+          query.in("id", conflictPlayerIds))
+      : Promise.resolve([]),
+    selectAll(client, "teams", "id,name,abbreviation", (query) => query.order("id")),
+    conflictIds.length
+      ? selectAll(
+          client,
+          "player_forecast_season_roster_conflict_members",
+          "conflict_id,observation_id",
+          (query) => query.in("conflict_id", conflictIds),
+        )
+      : Promise.resolve([]),
+  ]);
+  const conflictObservationIds = Array.from(new Set(
+    conflictMembers.map((member: any) => String(member.observation_id)),
+  ));
+  const conflictEvidence = conflictObservationIds.length
+    ? await selectAll(
+        client,
+        "player_forecast_season_roster_observations",
+        "id,observation_kind,event_type,organization_team_id,roster_status,source_url,available_at,confidence",
+        (query) => query.in("id", conflictObservationIds),
+      )
+    : [];
+  const identityById = new Map(identityRows.map((row: any) => [Number(row.id), row]));
+  const teamById = new Map(teamRows.map((row: any) => [Number(row.id), row]));
+  const evidenceById = new Map(conflictEvidence.map((row: any) => [String(row.id), row]));
+  const membersByConflict = new Map<string, any[]>();
+  for (const member of conflictMembers) {
+    const evidence = evidenceById.get(String(member.observation_id));
+    if (!evidence) continue;
+    const conflictId = String(member.conflict_id);
+    membersByConflict.set(conflictId, [
+      ...(membersByConflict.get(conflictId) ?? []),
+      {
+        ...evidence,
+        organization: evidence.organization_team_id == null
+          ? null
+          : teamById.get(Number(evidence.organization_team_id)) ?? null,
+      },
+    ]);
+  }
 
   const latestRunId = runs?.[0]?.id;
   const playerCountResult = latestRunId
@@ -542,14 +635,72 @@ export async function loadSeasonEditorWorkspace(
     contract: {
       version: FANTASY_PROJECTION_CONTRACT_VERSION,
       checksum: FANTASY_PROJECTION_CONTRACT_CHECKSUM,
+      supported: FANTASY_PROJECTION_SUPPORTED_CONTRACTS,
     },
     runs: runs ?? [],
     releases: releases ?? [],
     queue: queue ?? [],
-    conflicts: (conflicts ?? []).filter(
-      (conflict: any) =>
-        (conflict.player_forecast_conflict_resolutions ?? []).length === 0,
-    ),
+    conflicts: activeConflicts.map((conflict: any) => {
+      const identity = identityById.get(Number(conflict.fhfh_player_id));
+      return {
+        ...conflict,
+        player_name: identity?.canonical_name ?? `NHL ${conflict.nhl_player_id}`,
+        current_team: identity?.current_nhl_team_id == null
+          ? null
+          : teamById.get(Number(identity.current_nhl_team_id)) ?? null,
+        candidate_teams: (conflict.candidate_team_ids ?? []).map(
+          (candidateTeamId: number) => teamById.get(Number(candidateTeamId)) ?? {
+            id: Number(candidateTeamId),
+            name: `Team ${candidateTeamId}`,
+            abbreviation: String(candidateTeamId),
+          },
+        ),
+        evidence: membersByConflict.get(String(conflict.id)) ?? [],
+      };
+    }),
+    rosterIntegrity: {
+      latestSnapshot: rosterSnapshots?.[0] ?? null,
+      recentObservations: rosterObservations ?? [],
+      rosterFreshAt: (rosterObservations ?? []).reduce(
+        (latest: string | null, observation: any) =>
+          !latest || String(observation.available_at) > latest
+            ? String(observation.available_at)
+            : latest,
+        null,
+      ),
+      transactionCutoffAt: (rosterObservations ?? [])
+        .filter((observation: any) =>
+          ["official_transaction", "trusted_ifttt"].includes(
+            observation.observation_kind,
+          ),
+        )
+        .reduce(
+          (latest: string | null, observation: any) =>
+            !latest || String(observation.available_at) > latest
+              ? String(observation.available_at)
+              : latest,
+          null,
+        ),
+      transactionCoverage:
+        {
+          ...(rosterSnapshots?.[0]?.metadata?.transactionCoverage ?? {
+            windowStart: "2026-06-16T00:00:00Z",
+            cutoffAt: null,
+            complete: false,
+            status: "missing",
+            holdReason: "A complete official transaction audit has not been imported.",
+          }),
+          stale:
+            !rosterSnapshots?.[0]?.metadata?.transactionCoverage?.cutoffAt ||
+            Date.now() - Date.parse(
+              String(rosterSnapshots[0].metadata.transactionCoverage.cutoffAt),
+            ) > 36 * 60 * 60 * 1000,
+        },
+      openConflictCount: (conflicts ?? []).filter(
+        (conflict: any) =>
+          (conflict.player_forecast_season_roster_conflict_resolutions ?? []).length === 0,
+      ).length,
+    },
     playerPoolReview: activePendingPlayerPoolReviews(playerPoolReview ?? []),
     draft: latestRunId
       ? {
@@ -576,6 +727,15 @@ export async function cloneSeasonDraft(
     },
   );
   if (error) throw error;
+  const cloned = Array.isArray(data) ? data[0] : data;
+  if (cloned?.id) {
+    const { error: lineageError } = await (supabase as any)
+      .from("player_forecast_season_runs")
+      .update({ source_run_id: sourceRunId })
+      .eq("id", cloned.id)
+      .is("source_run_id", null);
+    if (lineageError) throw lineageError;
+  }
   return data;
 }
 
@@ -698,9 +858,95 @@ export async function enqueueSeasonRerun(args: {
   return results;
 }
 
+export async function resolveSeasonRosterConflict(args: {
+  supabase: SupabaseClient<any>;
+  editorUserId: string;
+  conflictId: string;
+  action: "select_team" | "mark_unsigned" | "retain_current" | "exclude_evidence";
+  organizationTeamId?: number | null;
+  rosterStatus?:
+    | "active_nhl"
+    | "injured_nhl"
+    | "affiliate"
+    | "prospect_reserve"
+    | "unsigned"
+    | "unresolved";
+  reason: string;
+}): Promise<any> {
+  if (!args.reason.trim()) throw new Error("A roster-conflict resolution reason is required.");
+  const client = args.supabase as any;
+  const { data: conflict, error: conflictError } = await client
+    .from("player_forecast_season_roster_conflicts")
+    .select("id,season_id,fhfh_player_id,nhl_player_id")
+    .eq("id", args.conflictId)
+    .maybeSingle();
+  if (conflictError) throw conflictError;
+  if (!conflict) throw new Error("Roster conflict was not found.");
+
+  const { data: latestSnapshot, error: snapshotError } = await client
+    .from("player_forecast_season_roster_snapshots")
+    .select("id")
+    .eq("season_id", conflict.season_id)
+    .order("available_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (snapshotError) throw snapshotError;
+  const { data: currentMember, error: memberError } = latestSnapshot
+    ? await client
+        .from("player_forecast_season_roster_members")
+        .select("team_id,roster_status")
+        .eq("snapshot_id", latestSnapshot.id)
+        .eq("fhfh_player_id", conflict.fhfh_player_id)
+        .maybeSingle()
+    : { data: null, error: null };
+  if (memberError) throw memberError;
+
+  let organizationTeamId = currentMember?.team_id ?? null;
+  let rosterStatus = currentMember?.roster_status ?? "unresolved";
+  if (args.action === "select_team") {
+    if (!Number.isInteger(Number(args.organizationTeamId)) || Number(args.organizationTeamId) <= 0) {
+      throw new Error("Selecting a team requires a valid organization team id.");
+    }
+    organizationTeamId = Number(args.organizationTeamId);
+    rosterStatus = args.rosterStatus ?? "active_nhl";
+  } else if (args.action === "mark_unsigned") {
+    organizationTeamId = null;
+    rosterStatus = "unsigned";
+  }
+
+  const { data: priorResolutions, error: priorError } = await client
+    .from("player_forecast_season_roster_conflict_resolutions")
+    .select("id,supersedes_id,created_at")
+    .eq("conflict_id", conflict.id)
+    .order("created_at", { ascending: false });
+  if (priorError) throw priorError;
+  const superseded = new Set(
+    (priorResolutions ?? []).map((resolution: any) => resolution.supersedes_id).filter(Boolean),
+  );
+  const activePrior = (priorResolutions ?? []).find(
+    (resolution: any) => !superseded.has(resolution.id),
+  );
+  const { data, error } = await client
+    .from("player_forecast_season_roster_conflict_resolutions")
+    .insert({
+      conflict_id: conflict.id,
+      resolution_action: args.action,
+      organization_team_id: organizationTeamId,
+      roster_status: rosterStatus,
+      reason: args.reason.trim(),
+      created_by: args.editorUserId,
+      supersedes_id: activePrior?.id ?? null,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function validateSeasonRun(
   supabase: SupabaseClient<any>,
   runId: string,
+  options: { ignoreQueueIds?: readonly string[] } = {},
 ): Promise<{ valid: boolean; issues: SeasonValidationIssue[]; receipt: JsonRecord }> {
   const client = supabase as any;
   const { data: run, error: runError } = await client
@@ -735,6 +981,7 @@ export async function validateSeasonRun(
       (query) =>
         query
           .eq("season_id", run.season_id)
+          .eq("view_key", run.view_key)
           .in("status", ["pending", "running", "failed"]),
     ),
     selectAll(
@@ -821,10 +1068,14 @@ export async function validateSeasonRun(
       message: `Expected 32 team aggregates; found ${teams.length}.`,
     });
   }
-  if (queueRows.length > 0) {
+  const ignoredQueueIds = new Set(options.ignoreQueueIds ?? []);
+  const blockingQueueRows = queueRows.filter(
+    (row) => !ignoredQueueIds.has(String(row.id)),
+  );
+  if (blockingQueueRows.length > 0) {
     issues.push({
       code: "dirty_queue",
-      message: `${queueRows.length} dirty or failed incremental jobs must clear before publication.`,
+      message: `${blockingQueueRows.length} dirty or failed incremental jobs must clear before publication.`,
     });
   }
   const activePoolRows = activeOverrides(poolReviewRows);
@@ -856,6 +1107,7 @@ export async function validateSeasonRun(
     playerCount: draftPlayers.length,
     teamCount: teams.length,
     scheduleGameCount: scheduleGames.length,
+    ignoredClaimedQueueJobs: queueRows.length - blockingQueueRows.length,
     issueCount: issues.length,
     issueCodes: Array.from(new Set(issues.map((issue) => issue.code))).sort(),
     effectiveOutputHash: checksumCanonicalJson({
@@ -916,6 +1168,50 @@ export async function publishSeasonRun(args: {
       p_team_rows: teams,
       p_actor_kind: "editor",
       p_actor_user_id: args.editorUserId,
+      p_reason: args.reason,
+    },
+  );
+  if (error) throw error;
+  return data;
+}
+
+export async function publishSeasonRunAsSystem(args: {
+  supabase: SupabaseClient<any>;
+  runId: string;
+  label: string;
+  reason: string;
+}): Promise<any> {
+  const client = args.supabase as any;
+  const { data: run, error: runError } = await client
+    .from("player_forecast_season_runs")
+    .select("id,status,validation_receipt")
+    .eq("id", args.runId)
+    .maybeSingle();
+  if (runError) throw runError;
+  if (!run || run.status !== "validated" || !run.validation_receipt) {
+    throw new Error("A successful validation receipt is required before publication.");
+  }
+  const { players, teams } = await effectiveRunRows(args.supabase, args.runId);
+  const publishablePlayers = players
+    .filter((row) => row.pool_status !== "excluded")
+    .map(({ component_manifest: _componentManifest, ...row }) => row);
+  const releaseHash = checksumCanonicalJson({
+    runId: args.runId,
+    validationReceipt: run.validation_receipt,
+    players: publishablePlayers,
+    teams,
+  });
+  const { data, error } = await client.rpc(
+    "publish_player_forecast_season_release_atomic",
+    {
+      p_run_id: args.runId,
+      p_release_label: args.label,
+      p_release_hash: releaseHash,
+      p_validation_receipt: run.validation_receipt,
+      p_player_rows: publishablePlayers,
+      p_team_rows: teams,
+      p_actor_kind: "system",
+      p_actor_user_id: null,
       p_reason: args.reason,
     },
   );

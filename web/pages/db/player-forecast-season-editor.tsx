@@ -17,6 +17,23 @@ type Workspace = {
   releases: any[];
   queue: any[];
   conflicts?: any[];
+  rosterIntegrity?: {
+    latestSnapshot: any | null;
+    recentObservations: any[];
+    openConflictCount: number;
+    rosterFreshAt?: string | null;
+    transactionCutoffAt?: string | null;
+    transactionCoverage?: {
+      windowStart?: string;
+      cutoffAt?: string | null;
+      normalizedObservations?: number;
+      officialObservations?: number;
+      complete?: boolean;
+      stale?: boolean;
+      status?: string;
+      holdReason?: string;
+    };
+  };
   playerPoolReview?: any[];
   draft: {
     runId: string;
@@ -208,6 +225,42 @@ export default function PlayerForecastSeasonEditorPage() {
     }
   }
 
+  async function resolveRosterConflict(
+    conflict: any,
+    action: "select_team" | "mark_unsigned" | "retain_current" | "exclude_evidence",
+  ) {
+    const reason = window.prompt("What evidence supports this roster resolution?");
+    if (!reason?.trim()) return;
+    let organizationTeamId: number | null = null;
+    let rosterStatus: string | undefined;
+    if (action === "select_team") {
+      const team = window.prompt(
+        "Resolved NHL organization team ID",
+        String(conflict.candidate_team_ids?.[0] ?? ""),
+      );
+      if (!team || !Number.isInteger(Number(team)) || Number(team) <= 0) {
+        setError("A valid organization team ID is required.");
+        return;
+      }
+      organizationTeamId = Number(team);
+      rosterStatus =
+        window.prompt(
+          "Roster status: active_nhl, injured_nhl, affiliate, or prospect_reserve",
+          "active_nhl",
+        ) ?? "active_nhl";
+    }
+    await runAction(
+      "/api/v1/player-forecasts/admin/season-roster-conflicts",
+      {
+        conflictId: conflict.id,
+        action,
+        organizationTeamId,
+        rosterStatus,
+        reason,
+      },
+    );
+  }
+
   const currentRun = workspace?.runs.find(
     (run) => run.id === workspace?.draft?.runId,
   );
@@ -254,8 +307,64 @@ export default function PlayerForecastSeasonEditorPage() {
               {rosterWarnings.map((warning) => <li key={warning}>{warning}</li>)}
             </ul>
           )}
+          <div className={styles.integritySummary}>
+            <span>
+              Roster snapshot: {workspace?.rosterIntegrity?.latestSnapshot?.available_at
+                ? new Date(workspace.rosterIntegrity.latestSnapshot.available_at).toLocaleString()
+                : "not captured"}
+            </span>
+            <span>
+              Recent official evidence: {workspace?.rosterIntegrity?.recentObservations?.length ?? 0} rows
+            </span>
+            <span>
+              Transaction cutoff: {workspace?.rosterIntegrity?.transactionCutoffAt
+                ? new Date(workspace.rosterIntegrity.transactionCutoffAt).toLocaleString()
+                : "no normalized transaction evidence"}
+            </span>
+            <span>
+              Transaction coverage: {workspace?.rosterIntegrity?.transactionCoverage?.complete &&
+                !workspace?.rosterIntegrity?.transactionCoverage?.stale
+                ? "complete"
+                : `${workspace?.rosterIntegrity?.transactionCoverage?.status ?? "missing"} — publication held`}
+            </span>
+          </div>
+          {(!workspace?.rosterIntegrity?.transactionCoverage?.complete ||
+            workspace?.rosterIntegrity?.transactionCoverage?.stale) && (
+            <p className={styles.warnings}>
+              {workspace?.rosterIntegrity?.transactionCoverage?.holdReason ??
+                "A complete official transaction audit is required before publishing a new release."}
+            </p>
+          )}
           {(workspace?.conflicts?.length ?? 0) > 0 ? (
-            <p><a href="/db/player-forecast-review">Resolve normalized source conflicts</a> before validation.</p>
+            <div className={styles.rosterConflicts}>
+              <h3>Roster and transaction conflicts</h3>
+              {workspace?.conflicts?.map((conflict) => (
+                <article key={conflict.id}>
+                  <div>
+                    <strong>{conflict.player_name} · NHL {conflict.nhl_player_id}</strong>
+                    <span>{conflict.summary}</span>
+                    <small>
+                      {conflict.conflict_type} · current {conflict.current_team?.abbreviation ?? "unsigned"}
+                      {" · candidate "}
+                      {conflict.candidate_teams?.map((team: any) => team.abbreviation).join(", ") || "none"}
+                    </small>
+                    {conflict.evidence?.map((evidence: any) => (
+                      <small key={evidence.id}>
+                        {evidence.observation_kind} → {evidence.organization?.abbreviation ?? "unsigned"}
+                        {` · ${evidence.roster_status} · ${Math.round(Number(evidence.confidence) * 100)}%`}
+                        {evidence.source_url ? (
+                          <> · <a href={evidence.source_url} target="_blank" rel="noreferrer">source</a></>
+                        ) : null}
+                      </small>
+                    ))}
+                  </div>
+                  <button type="button" disabled={busy} onClick={() => void resolveRosterConflict(conflict, "select_team")}>Select team</button>
+                  <button type="button" disabled={busy} onClick={() => void resolveRosterConflict(conflict, "retain_current")}>Retain current</button>
+                  <button type="button" disabled={busy} onClick={() => void resolveRosterConflict(conflict, "mark_unsigned")}>Mark unsigned</button>
+                  <button type="button" disabled={busy} onClick={() => void resolveRosterConflict(conflict, "exclude_evidence")}>Exclude evidence</button>
+                </article>
+              ))}
+            </div>
           ) : null}
           {(workspace?.playerPoolReview?.length ?? 0) > 0 ? (
             <div className={styles.poolReview}>
@@ -308,7 +417,14 @@ export default function PlayerForecastSeasonEditorPage() {
                     <td>{player.pool_status}</td>
                     <td>{Number(player.expected_games).toFixed(1)}</td>
                     <td>{ratingSummary(player.ratings)}</td>
-                    <td>{roleSummary(player.deployment?.mostLikelyRole)}</td>
+                    <td>
+                      {roleSummary(player.deployment?.mostLikelyRole)}
+                      {player.rookie_profile?.rookie ? (
+                        <small className={styles.rookieDetail}>
+                          Rookie · roster {Math.round(Number(player.rookie_profile.rosterProbability ?? 0) * 100)}% · {player.rookie_profile.nhleMethod ?? "prior"}
+                        </small>
+                      ) : null}
+                    </td>
                     <td>{changedStats(player) || "Model unchanged"}</td>
                   </tr>
                 ))}

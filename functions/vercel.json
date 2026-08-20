@@ -9,7 +9,7 @@
     }
   },
   "routes": [
-    { "src": "/sko/pipeline", "dest": "/api/sko/pipeline/index.py" },
+    { "src": "/sko/pipeline", "dest": "/api/index.py" },
     { "src": "/api/(.*)", "dest": "/api/$1" }
   ]
 }

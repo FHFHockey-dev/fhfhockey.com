@@ -35,7 +35,7 @@
   flex-direction: column;
   gap: v.$space-md;
 
-  @media (min-width: 768px) {
+  @media (min-width: v.$breakpoint-tablet) {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
@@ -103,7 +103,7 @@
   padding: v.$space-sm v.$space-md;
   text-align: right;
 
-  @media (min-width: 768px) {
+  @media (min-width: v.$breakpoint-tablet) {
     display: block;
   }
 }
@@ -142,7 +142,7 @@
   padding: v.$space-md;
   background-color: rgba(v.$background-medium, 0.7);
 
-  @media (min-width: 768px) {
+  @media (min-width: v.$breakpoint-tablet) {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
@@ -195,7 +195,7 @@
   display: grid;
   gap: v.$space-sm;
 
-  @media (min-width: 768px) {
+  @media (min-width: v.$breakpoint-tablet) {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
@@ -238,7 +238,7 @@
   display: grid;
   gap: v.$space-sm;
 
-  @media (min-width: 768px) {
+  @media (min-width: v.$breakpoint-tablet) {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
@@ -269,7 +269,7 @@
   display: grid;
   gap: v.$space-sm;
 
-  @media (min-width: 768px) {
+  @media (min-width: v.$breakpoint-tablet) {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
@@ -325,7 +325,7 @@
   padding: v.$space-md;
   background-color: rgba(v.$background-medium, 0.7);
 
-  @media (min-width: 768px) {
+  @media (min-width: v.$breakpoint-tablet) {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;

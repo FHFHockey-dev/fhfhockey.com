@@ -456,15 +456,17 @@ always records `tuningPermitted=false` and does not itself authorize promotion.
 The season platform is a permanent raw-hockey projection system, not a one-off
 test. Python trains and generates complete releases locally. The existing web
 application verifies the portable artifact, serves published releases, and
-provides the sole-editor workflow. All season records use the
-`player-forecasts-research-v3-season` contract and checksum
-`29c6766f63ba9a8dbf8890cb6a388418945134b70217d58e9d8645b34dc36b93`.
+provides the sole-editor workflow. Core-v3 remains readable for rollback. New
+fantasy-facing work uses the checksum-bound
+`player-forecasts-research-v4-season-fantasy` contract; advanced-v5 remains
+blocked until a passing v4 evaluation receipt exists.
 
 Configure the owner allowlist without printing the UUID:
 
 ```text
 PLAYER_FORECAST_EDITOR_USER_IDS=<one owner UUID>
 PLAYER_FORECAST_SEASON_INFERENCE_ENABLED=false
+PLAYER_FORECAST_ROSTER_REFRESH_ENABLED=false
 ```
 
 Production rejects zero or multiple editor UUIDs. Cron authorization never
@@ -542,6 +544,78 @@ an H1–H10 subtotal as ROS. Historical participation is normalized to the
 GP/start interval caps use the 84 scheduled opportunities in 2026–27 (and the
 actual smaller remaining-game count after games are completed).
 
+### Fantasy-v4, rookie, and advanced-v5 gates
+
+Capture cutoff-safe player-landing histories, train fantasy-v4, and write its
+evaluation receipt before starting the advanced source batch:
+
+```bash
+.venv/bin/python -m modeling.player_forecasts season-rookie-freeze \
+  --freeze "$pf_season_freeze" \
+  --output /private/tmp/fhfh-season-rookies-v4 \
+  --workers 12
+
+.venv/bin/python -m modeling.player_forecasts season-train \
+  --freeze "$pf_season_freeze" \
+  --rookie-freeze /private/tmp/fhfh-season-rookies-v4 \
+  --contract-version player-forecasts-research-v4-season-fantasy \
+  --output /private/tmp/fhfh-season-artifact-v4
+
+.venv/bin/python -m modeling.player_forecasts season-v4-evaluate \
+  --artifact /private/tmp/fhfh-season-artifact-v4 \
+  --output /private/tmp/fhfh-season-v4-evaluation.json
+
+PLAYER_FORECAST_DATABASE_URL="$pf_readonly_database_url" \
+  .venv/bin/python -m modeling.player_forecasts season-advanced-audit \
+  --output /private/tmp/fhfh-season-advanced-source-audit.json
+
+PLAYER_FORECAST_DATABASE_URL="$pf_readonly_database_url" \
+  .venv/bin/python -m modeling.player_forecasts season-advanced-freeze \
+  --v4-receipt /private/tmp/fhfh-season-v4-evaluation.json \
+  --output /private/tmp/fhfh-season-advanced-v5
+```
+
+The advanced freeze fails closed if the fantasy-v4 receipt did not pass or if
+its shot/xG source audit is incomplete. It does not silently manufacture
+unsupported advanced metrics.
+
+### Roster and transaction integrity
+
+Preview and then run a local official-roster/player-landing refresh:
+
+```bash
+curl -sS "http://localhost:3101/api/v1/player-forecasts/jobs/season-roster?dryRun=true"
+
+curl -sS -X POST \
+  "http://localhost:3101/api/v1/player-forecasts/jobs/season-roster?dryRun=false&landingBatchSize=250" \
+  -H "Authorization: Bearer $pf_admin_access_token"
+
+curl -sS "http://localhost:3101/api/v1/player-forecasts/season-readiness" \
+  -H "Authorization: Bearer $pf_admin_access_token" | jq '.rosterIntegrity'
+```
+
+Single-source landing changes remain in the owner editor. Do not bulk-accept
+them. A complete June 16-through-cutoff official transaction audit is imported
+from a checksum-manifested JSON file with schema
+`player-forecast-season-transaction-audit-v1`; every source URL must be on an
+official NHL domain and every timestamp is preserved exactly:
+
+```bash
+cd web
+eval "$(npm run --silent supabase:safe -- status -o env 2>/dev/null)"
+
+NEXT_PUBLIC_SUPABASE_URL="$API_URL" \
+NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY" \
+SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+PLAYER_FORECAST_TRANSACTION_AUDIT_CONFIRM=local-only \
+  npm run import:player-forecast-season-transactions -- \
+  --manifest=/private/tmp/fhfh-2026-27-official-transactions.json
+```
+
+The import appends official transaction observations, creates a new immutable
+roster snapshot, and records the source-manifest checksum. New publication is
+held when that audit is absent, partial, stale, or contradicted.
+
 Import a verified release into local Supabase only:
 
 ```bash
@@ -604,25 +678,24 @@ schedule, roster, identity, component-manifest, arithmetic, or queue issues.
 
 ### Latest local acceptance evidence
 
-The final August 14, 2026 identity-resolved replay produced artifact checksum
-`11f21dfafd3a46c55b7ac8d8dbe588b0077eb43423423980d4c90a8391bbce53`.
-It contains 1,090 players and 32 roster-adjusted team contexts. Its frozen
-141,488 skater-game rows have zero unresolved or invalid assist labels; 98,612
-use frozen WGO settled labels, 42,688 complete normalized play-by-play, 27
-official-boxscore zero evidence, and 161 final Gamecenter resolutions. The
-reconciliation detected 149 source conflicts, checked 203 rows against final
-Gamecenter payloads, corrected 161, retained 42 official-supported
-selected-label/box-score disagreements, and left zero unresolved. Opening,
-current, and ROS each verified with 91,560 player-game components, 1,090 player
-aggregates, and 32 team aggregates. All eight previously unresolved official
-roster identities are mapped, player-pool review is empty, all 16 identity
-resolution queue jobs are succeeded, and no dirty job remains. Each view passed
-publication validation with 1,344 schedule games and zero issues, then became
-local beta release number 4 while releases 1 through 3 remained immutable
-rollback targets. The public local API returned the active current v4 release; Nathan
-MacKinnon was 132.79 points in 81.94 expected games, and every player's GP/start
-p90 was at most 84. No hosted Cron job, hosted migration, Vercel deployment, or
-blind-test claim was created.
+The August 14 core-v3 replay produced artifact checksum
+`11f21dfafd3a46c55b7ac8d8dbe588b0077eb43423423980d4c90a8391bbce53`,
+1,090 player aggregates, 32 team aggregates, and 91,560 player-game components
+per view. The August 18 live integrity replay then verified 32 teams, 1,344
+games, 84 games per team, 811/811 mapped official-roster players, and zero
+resolved-assignment mismatches. Mitchell Chaffee resolved through roster plus
+landing consensus to NYI rather than through a player-specific patch.
+
+The existing current core-v3 release remains the last good active release and
+continues to render all 1,090 players. Its compact summary response is 611,620
+bytes and the browser mounts only the selected 100-row page. New publication is
+correctly held: 48 player-landing-only organization changes require owner
+review, the June 16-through-cutoff official transaction audit has not been
+imported, and the compacted queue contains one pending `current` job and one
+pending `ros` job. The local season audit reports serving integrity ready but
+training and publication not ready; advanced-v5 reports its empty xG/PBP/shift
+sources as blockers. No hosted Cron job, hosted migration, Vercel deployment,
+production pointer change, or new blind-test claim was created.
 
 Raw WGO game-log metadata is not an eligible join key. In the source audit,
 347,791 of 441,274 `wgo_skater_stats` rows lacked `game_id`, and 253,362 rows

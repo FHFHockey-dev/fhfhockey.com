@@ -1,7 +1,12 @@
+import json
+from pathlib import Path
 from unittest.mock import Mock
 
-from api.index import app
+from api import index as index_api
 from lib import sko_pipeline
+
+
+app = index_api.app
 
 
 def test_orchestrator_fails_closed_without_secret(monkeypatch):
@@ -88,6 +93,35 @@ def test_pipeline_routes_reject_missing_bearer_when_secret_is_configured(monkeyp
         "success": False,
         "message": "missing bearer token",
     }
+
+
+def test_pipeline_rewrite_targets_the_authenticated_flask_aggregate():
+    functions_root = Path(__file__).resolve().parents[1]
+    config = json.loads((functions_root / "vercel.json").read_text())
+    route = next(route for route in config["routes"] if route["src"] == "/sko/pipeline")
+
+    assert route["dest"] == "/api/index.py"
+    assert (functions_root / route["dest"].lstrip("/")).is_file()
+
+
+def test_authorized_pipeline_request_reaches_only_the_mocked_adapter(monkeypatch):
+    monkeypatch.setenv("SKO_PIPELINE_SECRET", "test-secret")
+    adapter = Mock(return_value={"success": True, "steps": [{"step": "score"}]})
+    monkeypatch.setattr(index_api, "trigger_sko_step_forward", adapter)
+    client = app.test_client()
+
+    response = client.post(
+        "/sko/pipeline",
+        json={"step": "score", "asOfDate": "2026-07-22"},
+        headers={"Authorization": "Bearer test-secret"},
+    )
+
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "success": True,
+        "steps": [{"step": "score"}],
+    }
+    adapter.assert_called_once_with({"step": "score", "asOfDate": "2026-07-22"})
 
 
 def test_pipeline_step_reports_not_implemented_after_auth(monkeypatch):

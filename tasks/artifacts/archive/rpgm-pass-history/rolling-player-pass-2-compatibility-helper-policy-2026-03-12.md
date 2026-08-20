@@ -4,7 +4,7 @@
 
 Sub-task `4.1`
 
-This change upgrades [rollingPlayerMetricCompatibility.ts](/Users/tim/Code/fhfhockey.com/web/lib/rollingPlayerMetricCompatibility.ts) from two generic canonical-first wrappers into an explicit compatibility-policy surface that matches the pass-2 authoritative-field classification.
+This change upgrades [rollingPlayerMetricCompatibility.ts](../../../../web/lib/rollingPlayerMetricCompatibility.ts) from two generic canonical-first wrappers into an explicit compatibility-policy surface that matches the pass-2 authoritative-field classification.
 
 ## Policy Implemented
 

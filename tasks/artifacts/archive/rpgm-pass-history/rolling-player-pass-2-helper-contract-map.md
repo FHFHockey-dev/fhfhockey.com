@@ -14,7 +14,7 @@ It is meant to answer five implementation questions for pass 2:
 
 Primary application surface:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
 
 ## Summary Matrix
 
@@ -35,7 +35,7 @@ Primary application surface:
 
 File:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingWindowContract.ts`
+- `web/lib/supabase/Upserts/rollingWindowContract.ts`
 
 Owns:
 
@@ -109,8 +109,8 @@ Influenced metrics and fields:
 
 Primary application points:
 
-- family tags on `METRICS` in `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
-- ratio window normalization in `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricAggregation.ts`
+- family tags on `METRICS` in `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- ratio window normalization in `web/lib/supabase/Upserts/rollingMetricAggregation.ts`
 
 Stored semantics reflected in fields:
 
@@ -132,7 +132,7 @@ Validation hooks:
 
 File:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPpShareContract.ts`
+- `web/lib/supabase/Upserts/rollingPlayerPpShareContract.ts`
 
 Owns:
 
@@ -176,7 +176,7 @@ Primary application points:
 
 - PP context row shaping via `toRollingPlayerPpContextRow(...)`
 - PP share component resolution via `resolvePpShareComponents(...)`
-- writer call site `getPpShareComponents(...)` in `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- writer call site `getPpShareComponents(...)` in `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
 
 Stored semantics reflected in fields:
 
@@ -200,7 +200,7 @@ Validation hooks:
 
 File:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPpUnitContract.ts`
+- `web/lib/supabase/Upserts/rollingPlayerPpUnitContract.ts`
 
 Owns:
 
@@ -219,7 +219,7 @@ Influenced metrics and fields:
 
 Primary application points:
 
-- `resolvePpUnitLabel(...)` at row output time in `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `resolvePpUnitLabel(...)` at row output time in `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
 
 Stored semantics reflected in fields:
 
@@ -242,7 +242,7 @@ Validation hooks:
 
 File:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerLineContextContract.ts`
+- `web/lib/supabase/Upserts/rollingPlayerLineContextContract.ts`
 
 Owns:
 
@@ -261,7 +261,7 @@ Influenced metrics and fields:
 Primary application points:
 
 - `resolveTrustedLineAssignment(...)`
-- `resolveLineCombo(...)` in `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `resolveLineCombo(...)` in `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
 
 Stored semantics reflected in fields:
 
@@ -285,7 +285,7 @@ Validation hooks:
 
 File:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerToiContract.ts`
+- `web/lib/supabase/Upserts/rollingPlayerToiContract.ts`
 
 Owns:
 
@@ -332,7 +332,7 @@ Primary application points:
 
 - `resolveFallbackToiSeed(...)`
 - `resolveRollingPlayerToiContext(...)`
-- `resolveFallbackToiContext(...)` and `getToiSeconds(...)` usage in `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `resolveFallbackToiContext(...)` and `getToiSeconds(...)` usage in `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
 
 Stored semantics reflected in fields:
 
@@ -358,7 +358,7 @@ Validation hooks:
 
 File:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerSourceSelection.ts`
+- `web/lib/supabase/Upserts/rollingPlayerSourceSelection.ts`
 
 Owns:
 
@@ -398,7 +398,7 @@ Primary application points:
 - `getBlocks(...)`
 - `getPpPoints(...)`
 - `getIxg(...)`
-- all called from metric definitions inside `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- all called from metric definitions inside `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
 
 Stored semantics reflected in fields:
 
@@ -419,7 +419,7 @@ Validation hooks:
 
 File:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerAvailabilityContract.ts`
+- `web/lib/supabase/Upserts/rollingPlayerAvailabilityContract.ts`
 
 Owns:
 
@@ -463,8 +463,8 @@ Influenced metrics and fields:
 
 Primary application points:
 
-- `getGpOutputCompatibilityMode(...)` in `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
-- GP accumulator logic in `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingHistoricalAverages.ts`
+- `getGpOutputCompatibilityMode(...)` in `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- GP accumulator logic in `web/lib/supabase/Upserts/rollingHistoricalAverages.ts`
 
 Stored semantics reflected in fields:
 
@@ -486,7 +486,7 @@ Validation hooks:
 
 File:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts`
+- `web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts`
 
 Owns:
 
@@ -519,7 +519,7 @@ Primary application points:
 - `summarizeSourceTailFreshness(...)`
 - `summarizeDerivedWindowDiagnostics(...)`
 - `summarizeSuspiciousOutputs(...)`
-- consumed in recompute validation flows from `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- consumed in recompute validation flows from `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
 
 Stored semantics reflected in fields:
 

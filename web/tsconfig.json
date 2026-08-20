@@ -28,12 +28,12 @@
     "incremental": false
   },
   "include": [
-    "next-env.d.ts",
+    "next-bootstrap.d.ts",
     "yahoo-fantasy.d.ts",
     "**/*.ts",
     "**/*.tsx",
     "vitest.config.mts",
     "components/TeamLandingPage/teamLandingPage.js"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", ".next", ".next-*", "next-env.d.ts"]
 }

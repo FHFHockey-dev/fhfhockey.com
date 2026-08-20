@@ -1,20 +1,27 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import styles from "./TransactionTrends.module.scss";
+
+import PanelStatus from "components/common/PanelStatus";
+import { buildHomepageModulePresentation } from "lib/dashboard/freshness";
+import {
+  formatTrendPlayerMetadata,
+  normalizeTrendTeamName,
+} from "lib/transactions/ownershipTrendMetadata";
+
 import OwnershipSparkline, {
   type OwnershipSparkPoint,
 } from "./OwnershipSparkline";
-import PanelStatus from "components/common/PanelStatus";
-import { buildHomepageModulePresentation } from "lib/dashboard/freshness";
+import styles from "./TransactionTrends.module.scss";
+
 type TrendPlayer = {
   playerKey: string;
   playerId?: number | null;
   name: string;
   headshot: string | null;
-  displayPosition?: string | null;
-  teamFullName?: string | null;
-  teamAbbrev?: string | null;
-  eligiblePositions?: string[] | null;
+  displayPosition?: unknown;
+  teamFullName?: unknown;
+  teamAbbrev?: unknown;
+  eligiblePositions?: unknown;
   uniformNumber?: number | null;
   latest: number;
   previous: number;
@@ -25,6 +32,7 @@ type TrendPlayer = {
 
 interface ApiResponse {
   success: boolean;
+  metric?: TrendMetric;
   windowDays: number;
   generatedAt?: string;
   page?: number;
@@ -40,119 +48,183 @@ interface ApiResponse {
 
 const WINDOWS = [1, 3, 5, 10];
 const POSITION_FILTERS = ["", "F", "C", "LW", "RW", "D", "G"] as const;
-const HOMEPAGE_MOBILE_ROW_LIMIT = 5;
+const PAGE_SIZE = 10;
 
 type TrendDirection = "risers" | "fallers";
+type TrendMetric = "ownership" | "adp";
+type TransactionTrendsProps = {
+  defaultMetric?: TrendMetric;
+};
 
-function MobileTrendPanel({
+function formatSignedDelta(value: number): string {
+  if (!Number.isFinite(value)) return "—";
+  return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
+}
+
+function TrendPanel({
   direction,
   players,
+  metric,
   windowDays,
+  offset,
+  isMobileActive,
 }: {
   direction: TrendDirection;
   players: TrendPlayer[];
+  metric: TrendMetric;
   windowDays: number;
+  offset: number;
+  isMobileActive: boolean;
 }) {
   const isRise = direction === "risers";
+  const isAdp = metric === "adp";
   const variant = isRise ? "rise" : "fall";
   const title = isRise ? "Top Risers" : "Top Fallers";
 
   return (
     <section
-      id={`mobile-${direction}-panel`}
-      className={`${styles.mobileTrendPanel} ${
-        isRise ? styles.mobileRisersPanel : styles.mobileFallersPanel
-      }`}
-      aria-labelledby={`mobile-${direction}-heading`}
+      id={`${direction}-panel`}
+      className={`${styles.panel} ${
+        isRise ? styles.risersPanel : styles.fallersPanel
+      } ${isMobileActive ? styles.isMobileActive : ""}`}
+      aria-labelledby={`${direction}-heading`}
     >
-      <h3
-        id={`mobile-${direction}-heading`}
-        className={styles.mobilePanelTitle}
-        tabIndex={-1}
-      >
-        {title} ({windowDays}D)
+      <h3 id={`${direction}-heading`} className={styles.tableTitle} tabIndex={-1}>
+        {title} (Δ {windowDays}D)
       </h3>
-      <ol className={styles.mobilePlayerList}>
-        {players.slice(0, HOMEPAGE_MOBILE_ROW_LIMIT).map((player, index) => (
-          <li
-            key={player.playerKey}
-            className={`${styles.mobilePlayerRow} ${
-              isRise ? styles.mobileRiseRow : styles.mobileFallRow
-            }`}
-          >
-            <span className={styles.mobileRank} aria-hidden="true">
-              {index + 1}
-            </span>
-            {player.headshot ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={player.headshot}
-                alt=""
-                className={styles.mobileHeadshot}
-                loading="lazy"
-              />
-            ) : (
-              <span
-                className={`${styles.mobileHeadshot} ${styles.mobileHeadshotFallback}`}
-                aria-hidden="true"
-              />
-            )}
-            <span className={styles.mobilePlayerIdentity}>
-              {player.playerId ? (
-                <Link
-                  href={`/trends/player/${player.playerId}`}
-                  className={styles.mobilePlayerName}
-                >
-                  {player.name}
-                </Link>
-              ) : (
-                <span className={styles.mobilePlayerName}>{player.name}</span>
-              )}
-              <span className={styles.mobilePlayerMeta}>
-                {Array.isArray(player.eligiblePositions) &&
-                player.eligiblePositions.length
-                  ? player.eligiblePositions.join(", ")
-                  : player.displayPosition || ""}
-                {(player.teamAbbrev || player.teamFullName) &&
-                (player.displayPosition ||
-                  (player.eligiblePositions &&
-                    player.eligiblePositions.length))
-                  ? " • "
-                  : ""}
-                {player.teamAbbrev || player.teamFullName || ""}
-              </span>
-            </span>
-            <span className={styles.mobileOwnership}>
-              <strong>{player.latest.toFixed(0)}%</strong>
-              <small>Own</small>
-            </span>
-            <span className={styles.mobileSparkline}>
-              <OwnershipSparkline
-                points={player.sparkline}
-                variant={variant}
-                width={100}
-                height={40}
-                baseline
-                svgClassName={styles.mobileSparkSvg}
-                baselineClassName={styles.sparkBaseline}
-                areaClassName={styles.sparkArea}
-                pathClassName={styles.sparkPath}
-                riseClassName={styles.rise}
-                fallClassName={styles.fall}
-              />
-            </span>
-            <span
-              className={styles.mobileDelta}
-              aria-label={`${isRise ? "Up" : "Down"} ${Math.abs(
-                player.delta,
-              ).toFixed(1)} percentage points`}
-            >
-              <span aria-hidden="true">{isRise ? "▲" : "▼"}</span>{" "}
-              {Math.abs(player.delta).toFixed(1)}%
-            </span>
-          </li>
-        ))}
-      </ol>
+      <table className={styles.dataTable} aria-label={title}>
+        <thead>
+          <tr>
+            <th scope="col" className={styles.rankCell}>
+              #
+            </th>
+            <th scope="col" className={styles.playerHeader}>
+              Player
+            </th>
+            <th scope="col" className={styles.metadataCell}>
+              Team · Elig
+            </th>
+            <th scope="col" className={styles.ownCell}>
+              {isAdp ? "Avg Pick" : "Own %"}
+            </th>
+            <th scope="col" className={styles.sparkCell}>
+              Trend ({windowDays}D)
+            </th>
+            <th scope="col" className={styles.deltaCell}>
+              Δ {windowDays}D
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {players.map((player, index) => {
+            const metadata = formatTrendPlayerMetadata(player);
+            const teamFullName = normalizeTrendTeamName(player.teamFullName);
+            const metadataTitle = teamFullName
+              ? `${metadata.label} — ${teamFullName}`
+              : metadata.label;
+            const displayedDelta = isAdp ? player.deltaPct : player.delta;
+            const signedDelta = formatSignedDelta(displayedDelta);
+            const movementLabel = Number.isFinite(displayedDelta)
+              ? isAdp
+                ? `Average pick moved ${Math.abs(displayedDelta).toFixed(1)}% ${
+                    isRise ? "earlier" : "later"
+                  }`
+                : `${isRise ? "Up" : "Down"} ${Math.abs(
+                    displayedDelta,
+                  ).toFixed(1)} percentage points`
+              : `${isAdp ? "ADP" : "Ownership"} movement unavailable`;
+
+            return (
+              <tr key={player.playerKey}>
+                <th scope="row" className={styles.rankCell}>
+                  {offset + index + 1}
+                </th>
+                <td className={styles.playerCell}>
+                  <div className={styles.playerIdentity}>
+                    {player.headshot ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={player.headshot}
+                        alt=""
+                        className={styles.headshot}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span
+                        className={`${styles.headshot} ${styles.headshotFallback}`}
+                        aria-hidden="true"
+                      />
+                    )}
+                    <span className={styles.playerCopy}>
+                      {player.playerId ? (
+                        <Link
+                          href={`/trends/player/${player.playerId}`}
+                          className={styles.playerName}
+                          title={player.name}
+                        >
+                          {player.name}
+                        </Link>
+                      ) : (
+                        <span className={styles.playerName} title={player.name}>
+                          {player.name}
+                        </span>
+                      )}
+                      <span
+                        className={styles.mobilePlayerMeta}
+                        title={metadataTitle}
+                      >
+                        {metadata.label}
+                      </span>
+                    </span>
+                  </div>
+                </td>
+                <td className={styles.metadataCell} title={metadataTitle}>
+                  {metadata.label}
+                </td>
+                <td className={styles.ownCell}>
+                  {Number.isFinite(player.latest)
+                    ? `${player.latest.toFixed(1)}${isAdp ? "" : "%"}`
+                    : "—"}
+                </td>
+                <td className={styles.sparkCell}>
+                  <span
+                    className={styles.sparkline}
+                    role="img"
+                    aria-label={`${player.name} ${
+                      isAdp ? "average draft pick" : "ownership"
+                    } trend over ${windowDays} days`}
+                  >
+                    <OwnershipSparkline
+                      points={player.sparkline}
+                      variant={variant}
+                      width={100}
+                      height={24}
+                      invert={isAdp}
+                      svgClassName={styles.sparkSvg}
+                      areaClassName={styles.sparkArea}
+                      pathClassName={styles.sparkPath}
+                      riseClassName={styles.rise}
+                      fallClassName={styles.fall}
+                      emptyClassName={styles.emptySparkline}
+                    />
+                  </span>
+                </td>
+                <td className={styles.deltaCell}>
+                  <span
+                    className={`${styles.deltaValue} ${
+                      isRise ? styles.deltaPositive : styles.deltaNegative
+                    }`}
+                    aria-label={movementLabel}
+                  >
+                    <span aria-hidden="true">{isRise ? "▲" : "▼"}</span>{" "}
+                    <span aria-hidden="true">{signedDelta}</span>
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </section>
   );
 }
@@ -185,68 +257,80 @@ function summarizeTransactionTrendError(status: number, body: string): string {
   return `Transaction trend request failed (${status}).`;
 }
 
-export default function TransactionTrends() {
-  // Default to 3-day window per request
+export default function TransactionTrends({
+  defaultMetric = "adp",
+}: TransactionTrendsProps) {
   const [windowDays, setWindowDays] = useState(3);
+  const [metric, setMetric] = useState<TrendMetric>(defaultMetric);
   const [pos, setPos] = useState<string>("");
-  const [limit, setLimit] = useState<number>(10);
-  const [offset, setOffset] = useState<number>(0);
+  const [offset, setOffset] = useState(0);
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTable, setActiveTable] = useState<"risers" | "fallers">(
-    "risers",
-  );
+  const [activeTable, setActiveTable] = useState<TrendDirection>("risers");
 
   useEffect(() => {
     let active = true;
+
     (async () => {
       setLoading(true);
       setError(null);
       try {
         const params = new URLSearchParams();
         params.set("window", String(windowDays));
-        params.set("limit", String(limit));
+        params.set("metric", metric);
+        params.set("limit", String(PAGE_SIZE));
         params.set("offset", String(offset));
         if (pos) params.set("pos", pos);
-        const res = await fetch(
+
+        const response = await fetch(
           `/api/v1/transactions/ownership-trends?${params.toString()}`,
         );
-        const body = await res.text();
-        if (!res.ok) {
-          throw new Error(summarizeTransactionTrendError(res.status, body));
+        const body = await response.text();
+        if (!response.ok) {
+          throw new Error(
+            summarizeTransactionTrendError(response.status, body),
+          );
         }
+
         const json: ApiResponse = JSON.parse(body);
         if (!active) return;
         if (!json.success) throw new Error(json.error || "Unknown error");
         setData(json);
-      } catch (e: any) {
-        if (active) setError(e.message || String(e));
+      } catch (caught) {
+        if (!active) return;
+        setError(caught instanceof Error ? caught.message : String(caught));
       } finally {
         if (active) setLoading(false);
       }
     })();
+
     return () => {
       active = false;
     };
-  }, [windowDays, pos, offset, limit]);
-
-  // Reset paging when filters change
-  useEffect(() => {
-    setOffset(0);
-  }, [windowDays, pos]);
+  }, [windowDays, metric, pos, offset]);
 
   useEffect(() => {
     setOffset(0);
-  }, [activeTable]);
+  }, [windowDays, metric, pos, activeTable]);
 
-  const focusMobilePanel = (direction: TrendDirection) => {
-    setActiveTable(direction);
-    const heading = document.getElementById(`mobile-${direction}-heading`);
-    heading?.focus({ preventScroll: true });
-    heading?.scrollIntoView?.({ block: "nearest" });
+  const selectMetric = (nextMetric: TrendMetric) => {
+    if (nextMetric === metric) return;
+    setData(null);
+    setMetric(nextMetric);
   };
 
+  const selectMobilePanel = (direction: TrendDirection) => {
+    setActiveTable(direction);
+    window.setTimeout(() => {
+      const heading = document.getElementById(`${direction}-heading`);
+      heading?.focus({ preventScroll: true });
+      heading?.scrollIntoView?.({ block: "nearest" });
+    }, 0);
+  };
+
+  const isAdp = metric === "adp";
+  const movementName = isAdp ? "ADP movement" : "ownership movement";
   const modulePresentation = buildHomepageModulePresentation({
     source: "transaction-trends",
     loading,
@@ -258,19 +342,24 @@ export default function TransactionTrends() {
       data.risers.length + data.fallers.length === 0,
     timestamp: data?.generatedAt ?? null,
     maxAgeHours: 18,
-    loadingMessage: "Loading ownership movement...",
-    emptyMessage: "No ownership movement is available right now.",
-    staleMessage: "Ownership movement may be stale.",
+    loadingMessage: `Loading ${movementName}...`,
+    emptyMessage: `No ${movementName} is available right now.`,
+    staleMessage: `${isAdp ? "ADP" : "Ownership"} movement may be stale.`,
   });
   const supportingCopy =
     windowDays === 1
-      ? "Ownership movement over the last day."
-      : `Ownership movement over the last ${windowDays} days.`;
+      ? `${isAdp ? "Average draft pick" : "Ownership"} movement over the last day.`
+      : `${isAdp ? "Average draft pick" : "Ownership"} movement over the last ${windowDays} days.`;
+  const showData = Boolean(data) && modulePresentation.state !== "empty";
+  const totalRisers = data?.totalRisers ?? data?.risers.length ?? 0;
+  const totalFallers = data?.totalFallers ?? data?.fallers.length ?? 0;
+  const hasNextPage = Math.max(totalRisers, totalFallers) > offset + PAGE_SIZE;
 
   return (
     <section
       className={styles.transactionTrends}
       aria-labelledby="trends-heading"
+      aria-busy={loading}
     >
       <div className={styles.headerRow}>
         <div className={styles.titleBlock}>
@@ -283,437 +372,171 @@ export default function TransactionTrends() {
             </Link>
           </div>
           <p className={styles.subtitle}>{supportingCopy}</p>
+          {modulePresentation.state === "stale" ? (
+            <div className={styles.staleNotice} role="status">
+              <span aria-hidden="true">●</span>{" "}
+              {modulePresentation.message}
+            </div>
+          ) : null}
         </div>
+
         <div className={styles.trendControls}>
-          <div className={styles.headerControls}>
+          <div className={styles.filterGroup}>
+            <span className={styles.filterLabel}>Metric</span>
+            <div
+              className={styles.metricButtons}
+              role="group"
+              aria-label="Trend metric"
+            >
+              {(["ownership", "adp"] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className={option === metric ? styles.isActive : ""}
+                  aria-pressed={option === metric}
+                  onClick={() => selectMetric(option)}
+                >
+                  {option === "adp" ? "ADP" : "Ownership"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.filterGroup}>
             <span className={styles.filterLabel}>Position</span>
             <div
               className={styles.posButtons}
               role="group"
               aria-label="Position filter"
             >
-              {POSITION_FILTERS.map((p) => (
+              {POSITION_FILTERS.map((position) => (
                 <button
-                  key={p || "ALL"}
-                  className={p === pos ? `${styles.isActive} active` : ""}
-                  onClick={() => setPos(p)}
-                  title={p ? `Filter: ${p}` : "All positions"}
+                  key={position || "ALL"}
+                  type="button"
+                  className={position === pos ? styles.isActive : ""}
+                  aria-pressed={position === pos}
+                  onClick={() => setPos(position)}
+                  title={position ? `Filter: ${position}` : "All positions"}
                 >
-                  {p || "All"}
+                  {position || "All"}
                 </button>
               ))}
             </div>
           </div>
-          <div
-            className={styles.timeframeButtons}
-            role="group"
-            aria-label="Time windows"
-          >
-            {WINDOWS.map((w) => (
-              <button
-                key={w}
-                className={
-                  w === windowDays ? `${styles.isActive} active` : ""
-                }
-                onClick={() => setWindowDays(w)}
-              >
-                {w}D
-              </button>
-            ))}
+
+          <div className={styles.filterGroup}>
+            <span className={styles.filterLabel}>Timeframe</span>
+            <div
+              className={styles.timeframeButtons}
+              role="group"
+              aria-label="Time windows"
+            >
+              {WINDOWS.map((window) => (
+                <button
+                  key={window}
+                  type="button"
+                  className={window === windowDays ? styles.isActive : ""}
+                  aria-pressed={window === windowDays}
+                  onClick={() => setWindowDays(window)}
+                >
+                  {window}D
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-      {modulePresentation.panelState && (
+
+      {modulePresentation.panelState &&
+      modulePresentation.state !== "stale" ? (
         <PanelStatus
           state={modulePresentation.panelState}
           message={modulePresentation.message ?? ""}
           className={styles.statusPanel}
         />
-      )}
-      {data && modulePresentation.state !== "empty" && (
+      ) : null}
+
+      {showData && data ? (
         <>
-          <div className={`${styles.tablesWrapper} ${styles.desktopTables}`}>
-            <div className={`${styles.panel} ${styles.risersPanel}`}>
-              <h3 className={styles.tableTitle}>
-                Top Risers (Δ {data.windowDays}D)
-              </h3>
-              <table
-                className={styles.dataTable}
-                aria-label="Top ownership risers"
-              >
-                <thead>
-                  <tr>
-                    <th scope="col" className={styles.rankCell}>
-                      #
-                    </th>
-                    <th scope="col">Player</th>
-                    <th scope="col" className={styles.ownCellHeader}>
-                      Own %
-                    </th>
-                    <th scope="col" className={styles.sparkCell}>
-                      Trend
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      Δ
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.risers.map((p, idx) => (
-                    <tr key={p.playerKey} className={styles.riseRow}>
-                      <th scope="row" className={styles.rankCell}>
-                        {offset + idx + 1}
-                      </th>
-                      <td className={styles.playerCell}>
-                        <div className={styles.rowBox}>
-                          {p.headshot ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={p.headshot}
-                              alt=""
-                              className={styles.headshot}
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div
-                              className={styles.headshot}
-                              style={{ background: "#333" }}
-                            />
-                          )}
-                          <div className={styles.playerTextWrap}>
-                            <span className={styles.playerText}>
-                              {p.playerId ? (
-                                <Link
-                                  href={`/trends/player/${p.playerId}`}
-                                  className={styles.playerName}
-                                >
-                                  {p.name}
-                                </Link>
-                              ) : (
-                                <span className={styles.playerName}>
-                                  {p.name}
-                                </span>
-                              )}
-                              {(p.displayPosition ||
-                                p.teamFullName ||
-                                p.teamAbbrev ||
-                                p.eligiblePositions ||
-                                p.uniformNumber !== undefined) && (
-                                <span
-                                  className={`${styles.playerMeta} ${p.teamAbbrev ? styles.hasAbbrev : ""}`}
-                                >
-                                  {Array.isArray(p.eligiblePositions) &&
-                                  p.eligiblePositions.length
-                                    ? p.eligiblePositions.join(", ")
-                                    : p.displayPosition || ""}
-                                  {(p.teamFullName || p.teamAbbrev) &&
-                                  (p.displayPosition ||
-                                    (p.eligiblePositions &&
-                                      p.eligiblePositions.length))
-                                    ? " • "
-                                    : ""}
-                                  {p.teamFullName ? (
-                                    <span className={styles.teamFullName}>
-                                      {p.teamFullName}
-                                    </span>
-                                  ) : null}
-                                  {p.teamAbbrev ? (
-                                    <span className={styles.teamAbbrev}>
-                                      {p.teamAbbrev}
-                                    </span>
-                                  ) : null}
-                                  {typeof p.uniformNumber === "number"
-                                    ? ` • #${p.uniformNumber}`
-                                    : ""}
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className={styles.ownCell}>
-                        <div className={`${styles.neonBox} ${styles.rise}`}>
-                          {p.latest.toFixed(1)}%
-                        </div>
-                      </td>
-                      <td className={styles.sparkCell}>
-                        <div className={`${styles.neonBox} ${styles.rise}`}>
-                          <OwnershipSparkline
-                            points={p.sparkline}
-                            variant="rise"
-                            width={100}
-                            height={40}
-                            baseline
-                            svgClassName={styles.sparkSvg}
-                            baselineClassName={styles.sparkBaseline}
-                            areaClassName={styles.sparkArea}
-                            pathClassName={styles.sparkPath}
-                            riseClassName={styles.rise}
-                            fallClassName={styles.fall}
-                          />
-                        </div>
-                      </td>
-                      <td className={styles.deltaCell}>
-                        <div
-                          className={`${styles.neonBox} ${styles.rise} ${styles.deltaBox}`}
-                        >
-                          <div className={styles.deltaSparkBackdrop}>
-                            <OwnershipSparkline
-                              points={p.sparkline}
-                              variant="rise"
-                              width={100}
-                              height={40}
-                              baseline
-                              svgClassName={styles.sparkSvg}
-                              baselineClassName={styles.sparkBaseline}
-                              areaClassName={styles.sparkArea}
-                              pathClassName={styles.sparkPath}
-                              riseClassName={styles.rise}
-                              fallClassName={styles.fall}
-                            />
-                          </div>
-                          <div className={styles.deltaContent}>
-                            {p.delta > 0
-                              ? `+${p.delta.toFixed(1)}%`
-                              : `${p.delta.toFixed(1)}%`}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className={`${styles.panel} ${styles.fallersPanel}`}>
-              <h3 className={styles.tableTitle}>
-                Top Fallers (Δ {data.windowDays}D)
-              </h3>
-              <table
-                className={styles.dataTable}
-                aria-label="Top ownership fallers"
-              >
-                <thead>
-                  <tr>
-                    <th scope="col" className={styles.rankCell}>
-                      #
-                    </th>
-                    <th scope="col">Player</th>
-                    <th scope="col" className={styles.ownCellHeader}>
-                      Own %
-                    </th>
-                    <th scope="col" className={styles.sparkCell}>
-                      Trend
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      Δ
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.fallers.map((p, idx) => (
-                    <tr key={p.playerKey} className={styles.fallRow}>
-                      <th scope="row" className={styles.rankCell}>
-                        {offset + idx + 1}
-                      </th>
-                      <td className={styles.playerCell}>
-                        <div className={styles.rowBox}>
-                          {p.headshot ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={p.headshot}
-                              alt=""
-                              className={styles.headshot}
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div
-                              className={styles.headshot}
-                              style={{ background: "#333" }}
-                            />
-                          )}
-                          <div className={styles.playerTextWrap}>
-                            <span className={styles.playerText}>
-                              {p.playerId ? (
-                                <Link
-                                  href={`/trends/player/${p.playerId}`}
-                                  className={styles.playerName}
-                                >
-                                  {p.name}
-                                </Link>
-                              ) : (
-                                <span className={styles.playerName}>
-                                  {p.name}
-                                </span>
-                              )}
-                              {(p.displayPosition ||
-                                p.teamFullName ||
-                                p.teamAbbrev ||
-                                p.eligiblePositions ||
-                                p.uniformNumber !== undefined) && (
-                                <span
-                                  className={`${styles.playerMeta} ${p.teamAbbrev ? styles.hasAbbrev : ""}`}
-                                >
-                                  {Array.isArray(p.eligiblePositions) &&
-                                  p.eligiblePositions.length
-                                    ? p.eligiblePositions.join(", ")
-                                    : p.displayPosition || ""}
-                                  {(p.teamFullName || p.teamAbbrev) &&
-                                  (p.displayPosition ||
-                                    (p.eligiblePositions &&
-                                      p.eligiblePositions.length))
-                                    ? " • "
-                                    : ""}
-                                  {p.teamFullName ? (
-                                    <span className={styles.teamFullName}>
-                                      {p.teamFullName}
-                                    </span>
-                                  ) : null}
-                                  {p.teamAbbrev ? (
-                                    <span className={styles.teamAbbrev}>
-                                      {p.teamAbbrev}
-                                    </span>
-                                  ) : null}
-                                  {typeof p.uniformNumber === "number"
-                                    ? ` • #${p.uniformNumber}`
-                                    : ""}
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className={styles.ownCell}>
-                        <div className={`${styles.neonBox} ${styles.fall}`}>
-                          {p.latest.toFixed(1)}%
-                        </div>
-                      </td>
-                      <td className={styles.sparkCell}>
-                        <div className={`${styles.neonBox} ${styles.fall}`}>
-                          <OwnershipSparkline
-                            points={p.sparkline}
-                            variant="fall"
-                            width={100}
-                            height={40}
-                            baseline
-                            svgClassName={styles.sparkSvg}
-                            baselineClassName={styles.sparkBaseline}
-                            areaClassName={styles.sparkArea}
-                            pathClassName={styles.sparkPath}
-                            riseClassName={styles.rise}
-                            fallClassName={styles.fall}
-                          />
-                        </div>
-                      </td>
-                      <td className={styles.deltaCell}>
-                        <div
-                          className={`${styles.neonBox} ${styles.fall} ${styles.deltaBox}`}
-                        >
-                          <div className={styles.deltaSparkBackdrop}>
-                            <OwnershipSparkline
-                              points={p.sparkline}
-                              variant="fall"
-                              width={100}
-                              height={40}
-                              baseline
-                              svgClassName={styles.sparkSvg}
-                              baselineClassName={styles.sparkBaseline}
-                              areaClassName={styles.sparkArea}
-                              pathClassName={styles.sparkPath}
-                              riseClassName={styles.rise}
-                              fallClassName={styles.fall}
-                            />
-                          </div>
-                          <div className={styles.deltaContent}>
-                            {p.delta.toFixed(1)}%
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div className={styles.mobileTrends}>
-            <div
-              className={styles.mobileDirectionNav}
-              role="group"
-              aria-label="Trend direction"
+          <div
+            className={styles.mobileDirectionNav}
+            role="group"
+            aria-label="Trend direction"
+          >
+            <button
+              type="button"
+              aria-pressed={activeTable === "risers"}
+              aria-controls="risers-panel"
+              className={activeTable === "risers" ? styles.isActive : ""}
+              onClick={() => selectMobilePanel("risers")}
             >
-              <button
-                type="button"
-                aria-pressed={activeTable === "risers"}
-                aria-controls="mobile-risers-panel"
-                className={activeTable === "risers" ? styles.isActive : ""}
-                onClick={() => focusMobilePanel("risers")}
-              >
-                Risers
-              </button>
-              <button
-                type="button"
-                aria-pressed={activeTable === "fallers"}
-                aria-controls="mobile-fallers-panel"
-                className={activeTable === "fallers" ? styles.isActive : ""}
-                onClick={() => focusMobilePanel("fallers")}
-              >
-                Fallers
-              </button>
-            </div>
-            <MobileTrendPanel
+              Risers
+            </button>
+            <button
+              type="button"
+              aria-pressed={activeTable === "fallers"}
+              aria-controls="fallers-panel"
+              className={activeTable === "fallers" ? styles.isActive : ""}
+              onClick={() => selectMobilePanel("fallers")}
+            >
+              Fallers
+            </button>
+          </div>
+
+          <div className={styles.tablesWrapper}>
+            <TrendPanel
               direction="risers"
               players={data.risers}
+              metric={metric}
               windowDays={data.windowDays}
+              offset={offset}
+              isMobileActive={activeTable === "risers"}
             />
-            <MobileTrendPanel
+            <TrendPanel
               direction="fallers"
               players={data.fallers}
+              metric={metric}
               windowDays={data.windowDays}
+              offset={offset}
+              isMobileActive={activeTable === "fallers"}
             />
           </div>
+
+          <footer className={styles.footer}>
+            <div className={styles.footerCopy}>
+              <div className={styles.pagerInfo}>
+                <span>Page {Math.floor(offset / PAGE_SIZE) + 1}</span>
+                <span className={styles.separator}>·</span>
+                <span>
+                  Risers: {totalRisers} | Fallers: {totalFallers}
+                </span>
+              </div>
+              <p className={styles.footNote}>
+                {isAdp
+                  ? "Δ = relative change in Yahoo! average draft pick over the selected window; lower average picks rank as risers. Sparkline shows recent daily average-pick trajectory."
+                  : "Δ = change in Yahoo! percent ownership (percentage points) over the selected window. Sparkline shows recent daily trajectory."}
+              </p>
+            </div>
+            <nav className={styles.pagerButtons} aria-label="Pagination">
+              <button
+                type="button"
+                onClick={() =>
+                  setOffset((current) => Math.max(0, current - PAGE_SIZE))
+                }
+                disabled={offset === 0}
+              >
+                <span aria-hidden="true">‹</span> Prev
+              </button>
+              <button
+                type="button"
+                onClick={() => setOffset((current) => current + PAGE_SIZE)}
+                disabled={!hasNextPage}
+              >
+                Next <span aria-hidden="true">›</span>
+              </button>
+            </nav>
+          </footer>
         </>
-      )}
-      {data && modulePresentation.state !== "empty" && (
-        <div className={styles.pager} role="navigation" aria-label="Pagination">
-          <div className={styles.pagerInfo}>
-            <span>
-              Page{" "}
-              {Math.floor((data.offset ?? offset) / (data.pageSize ?? limit)) +
-                1}
-            </span>
-            <span className={styles.separator}>•</span>
-            <span>
-              Risers: {data.totalRisers ?? data.risers.length} | Fallers:{" "}
-              {data.totalFallers ?? data.fallers.length}
-            </span>
-          </div>
-          <div className={styles.pagerButtons}>
-            <button
-              onClick={() => setOffset((o) => Math.max(0, o - limit))}
-              disabled={offset === 0}
-            >
-              Prev
-            </button>
-            <button
-              onClick={() => setOffset((o) => o + limit)}
-              disabled={
-                !!(
-                  (activeTable === "risers"
-                    ? (data.totalRisers ?? data.risers.length)
-                    : (data.totalFallers ?? data.fallers.length)) <=
-                  offset + limit
-                )
-              }
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
-      {data && modulePresentation.state !== "empty" ? (
-        <p className={styles.footNote}>
-          Δ = change in Yahoo! percent ownership (percentage points) over
-          selected window. Sparkline shows recent daily trajectory.
-        </p>
       ) : null}
     </section>
   );

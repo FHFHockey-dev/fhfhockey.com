@@ -1,4 +1,6 @@
 // GoalieWorkloadBars.module.scss
+@use "styles/vars" as v;
+
 .workloadContainer {
   padding: 10px;
   display: flex;
@@ -106,7 +108,7 @@
 }
 
 // Mobile responsive adjustments
-@media screen and (max-width: 768px) {
+@media screen and (max-width: v.$breakpoint-tablet) {
   .workloadContainer {
     padding: 8px;
     gap: 6px;

@@ -6,7 +6,7 @@ This artifact is the source-of-truth field inventory for `rolling_player_game_me
 
 Source of truth:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/database-generated.types.ts`
+- `web/lib/supabase/database-generated.types.ts`
 
 Inventory method:
 

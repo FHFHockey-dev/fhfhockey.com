@@ -8,7 +8,7 @@ Add explicit runtime-budget reporting to the rolling recompute and coordinator s
 
 #### 1. Rolling recompute route
 
-Updated [update-rolling-player-averages.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-rolling-player-averages.ts) so successful responses now include:
+Updated [update-rolling-player-averages.ts](../../../../web/pages/api/v1/db/update-rolling-player-averages.ts) so successful responses now include:
 
 - `executionProfile`
 - `runtimeBudget.budgetMs`
@@ -25,7 +25,7 @@ Execution-profile budgets:
 
 #### 2. Rolling + FORGE coordinator route
 
-Updated [run-rolling-forge-pipeline.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/run-rolling-forge-pipeline.ts) so top-level responses now include:
+Updated [run-rolling-forge-pipeline.ts](../../../../web/pages/api/v1/db/run-rolling-forge-pipeline.ts) so top-level responses now include:
 
 - `runtimeBudget.budgetMs`
 - `runtimeBudget.budgetLabel`
@@ -47,9 +47,9 @@ Coordinator mode budgets:
 ### Verification
 
 - route tests:
-  - [update-rolling-player-averages.test.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-rolling-player-averages.test.ts)
+  - [update-rolling-player-averages.test.ts](../../../../web/__tests__/pages/api/v1/db/update-rolling-player-averages.test.ts)
 - coordinator tests:
-  - [run-rolling-forge-pipeline.test.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/run-rolling-forge-pipeline.test.ts)
+  - [run-rolling-forge-pipeline.test.ts](../../../../web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts)
 - typecheck:
   - `npx tsc --noEmit --pretty false`
 

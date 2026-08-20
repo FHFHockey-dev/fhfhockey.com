@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const authState = vi.hoisted(() => ({
@@ -26,6 +32,22 @@ vi.mock("next/router", () => ({
     pathname: "/",
     query: {},
   })
+}));
+
+vi.mock("@react-spring/web", () => ({
+  animated: {
+    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+  },
+  useTransition:
+    (visible: boolean) =>
+    (render: (style: Record<string, never>, item: boolean) => React.ReactNode) =>
+      render({}, visible),
+}));
+
+vi.mock("lib/supabase/public-client", () => ({
+  default: {
+    from: vi.fn(),
+  },
 }));
 
 vi.mock("hooks/useHideableNavbar", () => ({
@@ -214,5 +236,176 @@ describe("Header auth entry", () => {
     expect(screen.queryByRole("button", { name: "Sign-in / Sign-up" })).toBeNull();
     expect(screen.queryByTestId("mobile-auth-cta")).toBeNull();
     expect(screen.queryByTestId("user-menu")).toBeNull();
+  });
+});
+
+describe("desktop NavbarItems disclosure", () => {
+  afterEach(cleanup);
+
+  async function renderDesktopNavigation() {
+    const [{ default: NavbarItems }, { default: items }] = await Promise.all([
+      vi.importActual<
+        typeof import("components/Layout/NavbarItems/NavbarItems")
+      >("components/Layout/NavbarItems/NavbarItems"),
+      import("components/Layout/NavbarItems/NavbarItemsData"),
+    ]);
+
+    return render(
+      <NavbarItems
+        items={items}
+        onItemClick={vi.fn()}
+        forceLarge
+      />,
+    );
+  }
+
+  function activateNativeButton(button: HTMLElement, key: "Enter" | " ") {
+    button.focus();
+    fireEvent.keyDown(button, { key });
+    fireEvent.click(button);
+    fireEvent.keyUp(button, { key });
+  }
+
+  it("keeps category triggers in tab order with stable disclosure semantics", async () => {
+    const { container } = await renderDesktopNavigation();
+    const triggers = ["Tools", "Charts", "Variance"].map((name) =>
+      screen.getByRole("button", { name }),
+    );
+    const focusableElements = Array.from(
+      container.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'),
+    );
+
+    expect(
+      focusableElements.filter((element) => element.tagName === "BUTTON"),
+    ).toEqual(triggers);
+    for (const trigger of triggers) {
+      expect(trigger.tabIndex).toBe(0);
+      trigger.focus();
+      expect(document.activeElement).toBe(trigger);
+      expect(trigger.getAttribute("aria-expanded")).toBe("false");
+      const submenu = document.getElementById(
+        trigger.getAttribute("aria-controls") ?? "",
+      );
+      expect(submenu).toBeTruthy();
+      expect(submenu?.hidden).toBe(true);
+    }
+  });
+
+  it("supports native activation, submenu focus, Escape, and outside focus", async () => {
+    await renderDesktopNavigation();
+    const tools = screen.getByRole("button", { name: "Tools" });
+
+    activateNativeButton(tools, "Enter");
+    expect(tools.getAttribute("aria-expanded")).toBe("true");
+    const toolsMenu = document.getElementById(
+      tools.getAttribute("aria-controls") ?? "",
+    )!;
+    expect(toolsMenu.hidden).toBe(false);
+    expect(
+      within(toolsMenu)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual([
+      "/stats",
+      "/trends",
+      "/nhl-predictions",
+      "/lines",
+      "/drm",
+      "/splits",
+      "/draft-dashboard",
+    ]);
+
+    const statsLink = within(toolsMenu).getByRole("link", { name: "Stats" });
+    statsLink.focus();
+    fireEvent.keyDown(statsLink, { key: "Escape" });
+    expect(tools.getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(tools);
+
+    const charts = screen.getByRole("button", { name: "Charts" });
+    activateNativeButton(charts, " ");
+    expect(charts.getAttribute("aria-expanded")).toBe("true");
+    const blogLink = screen.getByRole("link", { name: "Blog" });
+    fireEvent.blur(charts, { relatedTarget: blogLink });
+    blogLink.focus();
+    expect(charts.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("keeps pointer hover and aria-expanded in sync", async () => {
+    await renderDesktopNavigation();
+    const variance = screen.getByRole("button", { name: "Variance" });
+    const category = variance.closest("li")!;
+
+    fireEvent.mouseEnter(category);
+    expect(variance.getAttribute("aria-expanded")).toBe("true");
+    fireEvent.mouseLeave(category);
+    expect(variance.getAttribute("aria-expanded")).toBe("false");
+  });
+});
+
+describe("cross-viewport navigation membership", () => {
+  afterEach(cleanup);
+
+  it("keeps the eight approved secondary destinations in mobile More", async () => {
+    const data = await vi.importActual<
+      typeof import("components/Layout/NavbarItems/NavbarItemsData")
+    >("components/Layout/NavbarItems/NavbarItemsData");
+
+    expect(data.MOBILE_PRIMARY_NAVIGATION_ITEMS.map((item) => item.href)).toEqual([
+      "/",
+      "/stats",
+      "/game-grid",
+      "/lines",
+      "/wigoCharts",
+      "/shiftChart",
+      "/drm",
+      "/podfeed",
+      "/blog",
+    ]);
+    expect(data.MOBILE_SECONDARY_NAVIGATION_ITEMS.map((item) => item.href)).toEqual([
+      "/underlying-stats",
+      "/trends",
+      "/nhl-predictions",
+      "/splits",
+      "/draft-dashboard",
+      "/start-chart",
+      "/variance/skaters",
+      "/variance/goalies",
+    ]);
+  });
+
+  it("renders secondary links in More and preserves menu-close interaction", async () => {
+    const { default: MobileMenu } = await vi.importActual<
+      typeof import("components/Layout/MobileMenu/MobileMenu")
+    >("components/Layout/MobileMenu/MobileMenu");
+    const onItemClick = vi.fn();
+    const { container } = render(
+      <MobileMenu visible onItemClick={onItemClick} entryPoint="default" />,
+    );
+    const moreSection = container.querySelector<HTMLElement>(
+      '[data-menu-section="more"]',
+    );
+
+    expect(moreSection).toBeTruthy();
+    expect(
+      within(moreSection!)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual([
+      "/underlying-stats",
+      "/trends",
+      "/nhl-predictions",
+      "/splits",
+      "/draft-dashboard",
+      "/start-chart",
+      "/variance/skaters",
+      "/variance/goalies",
+    ]);
+
+    const secondaryLink = within(moreSection!).getAllByRole("link")[0];
+    secondaryLink.addEventListener("click", (event) => event.preventDefault(), {
+      once: true,
+    });
+    fireEvent.click(secondaryLink);
+    expect(onItemClick).toHaveBeenCalledOnce();
   });
 });

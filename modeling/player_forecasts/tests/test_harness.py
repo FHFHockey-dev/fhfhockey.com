@@ -9,9 +9,15 @@ import pytest
 
 from modeling.player_forecasts.contract import (
     CONTRACT_SHA256,
+    FANTASY_SEASON_CONTRACT_SHA256,
+    FANTASY_SEASON_CONTRACT_VERSION,
     SEASON_CONTRACT_SHA256,
     VALIDATION_CONTRACT_SHA256,
     load_and_verify_contract,
+)
+from modeling.player_forecasts.advanced import (
+    evaluate_fantasy_batch,
+    freeze_advanced_sources,
 )
 from modeling.player_forecasts.contract import load_and_verify_validation_contract
 from modeling.player_forecasts.contract import load_and_verify_season_contract
@@ -49,8 +55,15 @@ from modeling.player_forecasts.season import (
     _quantiles,
     _season_player_fallback_flags,
     _select_rate_policy,
+    _team_contexts,
     evaluate_season_game,
     freeze_season_dataset,
+)
+from modeling.player_forecasts.rookies import (
+    evaluate_rookie_transition_model,
+    learn_rookie_transition_model,
+    normalize_player_landing,
+    rookie_projection_profile,
 )
 
 
@@ -94,6 +107,222 @@ def test_season_contract_preserves_raw_assist_identity_and_zero_cost_boundary():
     assert "predictive feature" in settled[0]["scope"]
     assert "WGO" not in contract["evidencePolicy"]["excludedWithoutSeparateApproval"]
     assert contract["security"]["cronCanEditOrPublish"] is False
+
+
+def test_season_team_query_uses_current_utah_mammoth_identity():
+    assert "54, 55, 68" in season_module.TEAM_QUERY
+    assert "54, 55, 59" not in season_module.TEAM_QUERY
+
+
+def test_v4_season_contract_requires_learned_rookie_translations():
+    contract = load_and_verify_season_contract(FANTASY_SEASON_CONTRACT_VERSION)
+    assert contract["rookieModel"]["layers"] == [
+        "nhl_roster_probability",
+        "expected_nhl_games",
+        "conditional_deployment_and_toi",
+        "conditional_nhl_rate",
+    ]
+    assert "chronologically learned" in contract["rookieModel"]["translation"]
+    assert contract["modeling"]["sourceEligibility"] == (
+        season_module.FANTASY_SOURCE_ELIGIBILITY_POLICY
+    )
+    assert contract["modeling"]["sourceEligibility"]["minimumEligibleValidationFolds"] == 2
+
+
+def test_team_contexts_return_schedule_neutral_ratings():
+    teams = [
+        {"team_id": 1, "abbreviation": "NJD", "name": "New Jersey"},
+        {"team_id": 2, "abbreviation": "NYI", "name": "Islanders"},
+    ]
+    rows = [
+        {
+            "season_id": 20252026,
+            "team_id": 1,
+            "opponent_team_id": 2,
+            "goals_for": 4,
+            "goals_against": 2,
+            "shots_for": 32,
+            "shots_against": 28,
+            "pp_goals": 1,
+            "pp_opportunities": 3,
+            "pk_goals_against": 0,
+            "pk_opportunities": 2,
+        },
+        {
+            "season_id": 20252026,
+            "team_id": 2,
+            "opponent_team_id": 1,
+            "goals_for": 2,
+            "goals_against": 4,
+            "shots_for": 28,
+            "shots_against": 32,
+            "pp_goals": 0,
+            "pp_opportunities": 2,
+            "pk_goals_against": 1,
+            "pk_opportunities": 3,
+        },
+    ]
+    contexts = _team_contexts(rows, teams)
+    assert set(contexts) == {"1", "2"}
+    assert contexts["1"]["ratings"]["overall"] > contexts["2"]["ratings"]["overall"]
+    assert contexts["1"]["sampleGames"] == 1
+
+
+def test_rookie_model_learns_league_transitions_and_separates_roster_probability():
+    captures = []
+    for player_id in range(100, 140):
+        made_nhl = player_id % 2 == 0
+        totals = [{
+            "season": 20232024,
+            "league": "AHL",
+            "teamName": "Affiliate",
+            "gamesPlayed": 60,
+            "goals": 20,
+            "assists": 30,
+            "points": 50,
+            "penaltyMinutes": 40,
+            "plusMinus": 0,
+        }]
+        if made_nhl:
+            totals.append({
+                "season": 20242025,
+                "league": "NHL",
+                "teamName": "NHL Club",
+                "gamesPlayed": 40,
+                "goals": 8,
+                "assists": 12,
+                "points": 20,
+                "penaltyMinutes": 16,
+                "plusMinus": 0,
+            })
+        captures.append({
+            "nhlPlayerId": player_id,
+            "position": "C",
+            "birthDate": "2002-01-01",
+            "draftOverall": 64,
+            "seasonTotals": totals,
+        })
+    model = learn_rookie_transition_model(captures)
+    assert model["transitionCount"] == 40
+    assert 0 < model["leagues"]["AHL"]["rosterProbability"] < 1
+    assert 0 < model["leagues"]["AHL"]["equivalencyFactors"]["GOALS"] < 1
+
+    prospect = {
+        "nhlPlayerId": 999,
+        "position": "C",
+        "birthDate": "2003-01-01",
+        "draftOverall": 80,
+        "seasonTotals": [{
+            "season": 20252026,
+            "league": "AHL",
+            "teamName": "Affiliate",
+            "gamesPlayed": 65,
+            "goals": 22,
+            "assists": 28,
+            "points": 50,
+            "penaltyMinutes": 30,
+            "plusMinus": 5,
+        }],
+    }
+    profile = rookie_projection_profile(prospect, model)
+    assert profile["rookie"] is True
+    assert 0 < profile["rosterProbability"] < 1
+    assert 0 < profile["expectedNhlGames"] <= 84
+    assert profile["translatedConditionalRates"]["GOALS"] > 0
+    assert profile["nhleMethod"] == "historical_league_transition_empirical_bayes_v1"
+
+
+def test_rookie_validation_retains_generic_prior_when_holdout_support_is_missing():
+    report = evaluate_rookie_transition_model([])
+    assert report["eligibleForServing"] is False
+    assert report["sufficientSupport"] is False
+    assert report["fallbackPolicy"] == "retain_generic_prior_with_wider_uncertainty"
+
+
+def test_advanced_freeze_rejects_an_unapproved_v4_receipt(tmp_path):
+    receipt = tmp_path / "receipt.json"
+    write_json(receipt, {
+        "schemaVersion": "player-forecast-fantasy-v4-evaluation-v1",
+        "contractVersion": FANTASY_SEASON_CONTRACT_VERSION,
+        "contractChecksum": "invalid",
+        "eligibleForAdvancedBatch": True,
+        "receiptHash": "0" * 64,
+    })
+    with pytest.raises(RuntimeError, match="passing checksum-bound v4 receipt"):
+        freeze_advanced_sources("postgresql://unused", tmp_path / "advanced", [], receipt)
+
+
+def test_v4_batch_receipt_reports_target_and_rookie_gates(tmp_path):
+    artifact_dir = tmp_path / "artifact"
+    artifact_dir.mkdir()
+    policies = {}
+    for population, targets in {
+        "forward": season_module.SKATER_TARGETS + season_module.SKATER_FANTASY_V4_TARGETS,
+        "defense": season_module.SKATER_TARGETS + season_module.SKATER_FANTASY_V4_TARGETS,
+        "goalie": season_module.GOALIE_TARGETS + season_module.GOALIE_FANTASY_V4_TARGETS,
+    }.items():
+        policies[population] = {
+            target: {
+                "rows": 100,
+                "players": 20,
+                "modelFamily": "empirical_bayes_rate",
+                "baselineModel": "population_rate",
+                "validationMae": 0.9,
+                "baselineMae": 1.0,
+                "chronologicalLift": 0.1,
+                "calibration80Coverage": 0.8,
+                "calibrationMethod": "rolling_origin_randomized_conformal_p10_p90",
+                "fallback": False,
+            }
+            for target in targets
+        }
+    artifact = {
+        "contractVersion": FANTASY_SEASON_CONTRACT_VERSION,
+        "contractChecksum": FANTASY_SEASON_CONTRACT_SHA256,
+        "selectionEvidence": policies,
+        "review": {"rookieModel": {"validation": {"eligibleForServing": True}}},
+    }
+    write_json(artifact_dir / "season-artifact.json", artifact)
+    artifact_checksum = hashlib.sha256(
+        (artifact_dir / "season-artifact.json").read_bytes()
+    ).hexdigest()
+    write_json(
+        artifact_dir / "artifact-manifest.json",
+        {"artifactChecksum": artifact_checksum},
+    )
+    write_json(artifact_dir / "training-report.json", {"targetPolicies": policies})
+    receipt = evaluate_fantasy_batch(artifact_dir, tmp_path / "receipt.json")
+    assert receipt["eligibleForAdvancedBatch"] is True
+    assert receipt["blockers"] == []
+    assert len(receipt["receiptHash"]) == 64
+
+
+def test_official_player_landing_capture_keeps_actual_availability_and_non_nhl_history():
+    capture = normalize_player_landing(
+        {
+            "playerId": 8481538,
+            "firstName": {"default": "Judd"},
+            "lastName": {"default": "Caulfield"},
+            "position": "R",
+            "birthDate": "2001-03-19",
+            "currentTeamId": 24,
+            "draftDetails": {"overallPick": 145},
+            "seasonTotals": [{
+                "season": 20252026,
+                "leagueAbbrev": "AHL",
+                "gameTypeId": 2,
+                "gamesPlayed": 71,
+                "goals": 17,
+                "assists": 21,
+                "points": 38,
+            }],
+        },
+        expected_player_id=8481538,
+        fetched_at="2026-08-18T12:00:00+00:00",
+        source_hash="a" * 64,
+    )
+    assert capture["availableAt"] == "2026-08-18T12:00:00+00:00"
+    assert capture["seasonTotals"][0]["league"] == "AHL"
 
 
 def test_season_assist_label_audit_accepts_settled_disagreements_and_rejects_missing(
@@ -547,6 +776,9 @@ def test_season_target_tournament_serves_population_baseline_when_challengers_lo
     assert policy["validationMae"] == pytest.approx(policy["baselineMae"])
     assert policy["chronologicalLift"] == 0
     assert policy["fallback"] is True
+    assert 0.75 <= policy["calibration80Coverage"] <= 0.85
+    assert policy["calibrationMethod"] == "rolling_origin_randomized_conformal_p10_p90"
+    assert policy["intervalVarianceScale"] >= 0
 
 
 def test_season_deployment_evidence_uses_processed_sources_and_reconciles_roles():

@@ -30,6 +30,25 @@ rm -rf .next
 npm run dev:stable
 ```
 
+Next writes the active workflow's route declaration path to the generated,
+git-ignored `next-env.d.ts`. The tracked `next-bootstrap.d.ts` supplies stable
+core declarations; this Pages Router project does not enable Next's typed-route
+feature, so `tsconfig.json` excludes workflow-specific `.next*` declarations.
+Switching between `npm run dev` and `npm run dev:player-forecasts` therefore must
+not produce tracked-file churn or expand a standalone type check with stale
+generated trees.
+
+## SQL refresh validation configuration
+
+`scripts/sql-refresh-validation.ts` and
+`scripts/sql-refresh-team-power-validation.ts` execute operational SQL and are
+not setup or test commands. They require `NEXT_PUBLIC_SUPABASE_URL` and
+`SUPABASE_SERVICE_ROLE_KEY` in the invoking process. To load an environment file
+intentionally, set `SQL_REFRESH_ENV_FILE` to a path relative to the repository
+root, such as `web/.env.local`; neither script searches for environment files.
+Absolute paths and paths outside the repository are rejected, and configuration
+errors report variable names without values.
+
 ## Browser E2E tests
 
 Playwright is the repo-standard browser E2E runner for full-browser coverage.

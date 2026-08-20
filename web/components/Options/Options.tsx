@@ -4,6 +4,7 @@ import classNames from "classnames";
 import styles from "./Options.module.scss";
 
 export type OptionsProps<T> = {
+  ariaLabel?: string;
   className?: string;
   type?: "row" | "column";
   options: readonly { label: string; value: T }[];
@@ -12,23 +13,30 @@ export type OptionsProps<T> = {
 };
 
 function Options<T extends string>({
+  ariaLabel = "Options",
   className,
   options,
   option,
   onOptionChange,
 }: OptionsProps<T>) {
   return (
-    <div className={classNames(styles.options, className)}>
+    <div
+      aria-label={ariaLabel}
+      className={classNames(styles.options, className)}
+      role="group"
+    >
       {options.map((op) => (
-        <div
+        <button
+          type="button"
           key={op.value}
+          aria-pressed={option === op.value}
           className={classNames(styles.button, {
             [styles.checked]: option === op.value,
           })}
           onClick={() => onOptionChange(op.value)}
         >
           {op.label}
-        </div>
+        </button>
       ))}
     </div>
   );

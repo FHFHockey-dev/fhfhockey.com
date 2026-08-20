@@ -9,7 +9,7 @@ This artifact defines how the existing orchestration patterns in the repo should
 The goal is not to invent a new orchestration system. It is to reuse the two patterns that already exist:
 
 - `withCronJobAudit(...)` for step-level observability
-- pipeline-spec style files such as [goaliePipeline.ts](/Users/tim/Code/fhfhockey.com/web/lib/projections/goaliePipeline.ts) for phase ordering and dependency display
+- pipeline-spec style files such as [goaliePipeline.ts](../../../../web/lib/projections/goaliePipeline.ts) for phase ordering and dependency display
 
 ## Existing Reusable Patterns
 
@@ -17,7 +17,7 @@ The goal is not to invent a new orchestration system. It is to reuse the two pat
 
 Source:
 
-- [withCronJobAudit.ts](/Users/tim/Code/fhfhockey.com/web/lib/cron/withCronJobAudit.ts)
+- [withCronJobAudit.ts](../../../../web/lib/cron/withCronJobAudit.ts)
 
 What it already gives us:
 
@@ -36,7 +36,7 @@ Why it should be reused:
 
 Source:
 
-- [goaliePipeline.ts](/Users/tim/Code/fhfhockey.com/web/lib/projections/goaliePipeline.ts)
+- [goaliePipeline.ts](../../../../web/lib/projections/goaliePipeline.ts)
 
 What it already gives us:
 
@@ -167,7 +167,7 @@ These flows should be modes of the same coordinator surface, not three unrelated
 
 Source showing current sprawl:
 
-- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md)
+- [cron-schedule.md](../../../TASKS/cron-operations/cron-schedule.md)
 
 Why not:
 

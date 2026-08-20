@@ -1,4 +1,7 @@
+@use "styles/vars" as v;
+
 .chartWrapper {
+  box-sizing: border-box;
   display: flex;
   flex-direction: row;
   align-items: flex-start;
@@ -54,6 +57,15 @@
   outline: 2px solid #07aae2;
 }
 
+.paginationButton:focus-visible,
+.toggleButton:focus-visible,
+.selectButton:focus-visible,
+.resetButton:focus-visible,
+.scrollableMenu input:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
 .toggleButton {
   margin-left: 10px;
   background-color: #07aae2;
@@ -104,6 +116,66 @@
   height: auto;
   flex-grow: 1; /* Allow chartContainer to grow and take up the remaining space */
   display: flex; /* Flex to allow the SVG to fill the container */
+  min-width: 0;
+  margin: 0;
+}
+
+.valuesSection {
+  width: 100%;
+  margin-top: 1rem;
+
+  h3 {
+    margin: 0 0 0.5rem;
+    color: #ffffff;
+    font-size: 1rem;
+  }
+
+  p {
+    margin: 0;
+    padding: 0.75rem;
+    border: 1px solid #7f7f7f;
+    border-radius: 6px;
+    color: #ffffff;
+  }
+}
+
+.valueTableWrapper {
+  width: 100%;
+  overflow-x: auto;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #ffffff;
+    font-size: 0.85rem;
+  }
+
+  th,
+  td {
+    padding: 0.5rem 0.65rem;
+    border: 1px solid #555555;
+    text-align: left;
+  }
+
+  th {
+    background: #303030;
+  }
+
+  tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.04);
+  }
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .scrollableMenu {
@@ -245,4 +317,127 @@
   stroke: #9fb11c;
   stroke-width: 1px;
   opacity: 1; /* Ensure grid lines are visible */
+}
+
+@media (max-width: v.$breakpoint-tablet) {
+  .chartWrapper {
+    width: 100%;
+    flex-direction: column;
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .playerSelectContainer {
+    width: 100%;
+    margin: 0 0 1rem;
+  }
+
+  .toggleButton,
+  .selectButton,
+  .resetButton {
+    margin-left: 0;
+  }
+
+  .scrollableMenu {
+    box-sizing: border-box;
+    width: 100%;
+    max-height: 240px;
+    margin-left: 0;
+  }
+
+  .contentArea,
+  .chartAndYAxis,
+  .chartContainer {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .paginationContainer {
+    box-sizing: border-box;
+    gap: 0.5rem;
+    padding-right: 0;
+  }
+
+  .paginationButton {
+    width: auto;
+    padding: 8px 10px;
+  }
+
+  .legendAndLabel {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  #legendContainer {
+    flex-wrap: wrap;
+    row-gap: 0.4rem;
+  }
+
+  .chartSvg {
+    min-height: 260px;
+  }
+}
+
+@media (max-width: v.$breakpoint-mobile-max) {
+  .paginationContainer {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .paginationSpacer {
+    width: 100%;
+    flex-basis: 100%;
+    order: -1;
+  }
+
+  .paginationButton {
+    flex: 1;
+  }
+
+  .valueTableWrapper {
+    overflow: visible;
+
+    table,
+    tbody,
+    tr,
+    td {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+    }
+
+    tr {
+      margin-bottom: 0.6rem;
+      border: 1px solid #555555;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    td {
+      display: grid;
+      grid-template-columns: minmax(72px, 0.8fr) minmax(0, 1.2fr);
+      gap: 0.75rem;
+      border: 0;
+      border-bottom: 1px solid #444444;
+      overflow-wrap: anywhere;
+
+      &::before {
+        content: attr(data-label);
+        color: #b8b8b8;
+        font-weight: 700;
+      }
+
+      &:last-child {
+        border-bottom: 0;
+      }
+    }
+  }
 }

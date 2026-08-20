@@ -1,6 +1,6 @@
 # Deep Research Plan requirements traceability
 
-This matrix compares the current repository with the requirements in `/Users/tim/Downloads/projectionModel.md`. It does not select a final model architecture.
+This matrix compares the current repository with the externally supplied `projectionModel.md` requirements (not retained in this repository). It does not select a final model architecture.
 
 Status values are the audit's required vocabulary: **supported**, **partially supported**, **present but unsafe**, **absent**, **duplicated**, **unknown pending data inspection**, and **intentionally deferred**.
 

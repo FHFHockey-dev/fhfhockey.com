@@ -82,7 +82,7 @@ $arrow-size-mobile: 6px;
   }
 
   // Mobile responsive adjustments
-  @media (max-width: 480px) {
+  @media (max-width: v.$breakpoint-mobile-max) {
     width: $switch-size;
     height: $switch-size;
 

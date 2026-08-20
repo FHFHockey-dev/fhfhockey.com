@@ -1,4 +1,7 @@
-/* Style for the team landing page */
+/*
+ * Authoritative TeamLandingPage stylesheet. The sibling CSS file is an inert
+ * compatibility note; pages/_app.tsx imports this SCSS source directly.
+ */
 
 .team-landing-page {
   padding-bottom: 20px;

@@ -312,7 +312,7 @@ That is materially smaller than scheduling raw helper routes directly.
 
 Current implementation note:
 
-- the first coordinator landing now exists at [run-rolling-forge-pipeline.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/run-rolling-forge-pipeline.ts)
+- the first coordinator landing now exists at [run-rolling-forge-pipeline.ts](../../../../web/pages/api/v1/db/run-rolling-forge-pipeline.ts)
 - this graph is now the recommended operator model behind that surface
 
 ## Key Consolidation Implications

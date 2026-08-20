@@ -439,7 +439,7 @@
     transform: translateY(50%);
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: v.$breakpoint-mobile-max) {
     display: none; // Hide on small mobile
   }
 }
@@ -2033,7 +2033,7 @@
 }
 
 // Mobile row compaction
-@media (max-width: 480px) {
+@media (max-width: v.$breakpoint-mobile-max) {
   .scheduleGrid tbody tr {
     height: 37px; // target max height
   }
@@ -2138,7 +2138,7 @@
     font-weight: 600;
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: v.$breakpoint-mobile-max) {
     flex-direction: column;
     gap: 0;
   }
@@ -2427,7 +2427,7 @@
     border-top-left-radius: v.$border-radius-sm;
     border-bottom-left-radius: v.$border-radius-sm;
 
-    @media (max-width: 480px) {
+    @media (max-width: v.$breakpoint-mobile-max) {
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
     }
@@ -2454,7 +2454,7 @@
     border-top-left-radius: v.$border-radius-sm;
     border-bottom-left-radius: v.$border-radius-sm;
     @include v.schedule-outline(v.$schedule-red);
-    @media (max-width: 480px) {
+    @media (max-width: v.$breakpoint-mobile-max) {
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
     }
@@ -2599,7 +2599,7 @@
 .mobileHeaderActions {
   display: none; // Hide by default
 
-  @media (max-width: 480px) {
+  @media (max-width: v.$breakpoint-mobile-max) {
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -2782,7 +2782,7 @@
 }
 
 // --- Top-level Mobile Containers (ensure styles apply when used outside .mobileHeaderActions) ---
-@media (max-width: 480px) {
+@media (max-width: v.$breakpoint-mobile-max) {
   .mobileGameGridAll {
     display: flex;
     flex-direction: column;
@@ -2851,7 +2851,7 @@
     // Slightly tighter on narrow viewports
     border-spacing: 2px 1px;
   }
-  @media (max-width: 480px) {
+  @media (max-width: v.$breakpoint-mobile-max) {
     border-spacing: 0; // mobile compact
   }
   width: 100%;
@@ -2912,7 +2912,7 @@
     border-bottom-left-radius: v.$border-radius-sm;
     overflow: hidden;
 
-    @media (max-width: 480px) {
+    @media (max-width: v.$breakpoint-mobile-max) {
       border-bottom-left-radius: v.$border-radius-md;
     }
   }
@@ -2929,7 +2929,7 @@
   @media (max-width: 700px) {
     border-spacing: 3px 2px;
   }
-  @media (max-width: 480px) {
+  @media (max-width: v.$breakpoint-mobile-max) {
     border-spacing: 2px 1px;
   }
 
@@ -2973,7 +2973,7 @@
     border-bottom: 2px solid v.$secondary-color;
     text-shadow: 0 2px 4px rgba(v.$color-black, 0.5);
 
-    @media (max-width: 480px) {
+    @media (max-width: v.$breakpoint-mobile-max) {
       height: 30px;
       font-family: v.$font-family-primary, sans-serif;
     }
@@ -2988,7 +2988,7 @@
       padding: 0 !important;
       position: relative;
 
-      @media (max-width: 480px) {
+      @media (max-width: v.$breakpoint-mobile-max) {
         padding: 0 !important;
         background: linear-gradient(
           135deg,
@@ -3060,7 +3060,7 @@
         color: v.$text-color-secondary;
         white-space: nowrap;
 
-        @media (max-width: 480px) {
+        @media (max-width: v.$breakpoint-mobile-max) {
           font-size: 8px;
           font-weight: 700;
         }
@@ -3093,14 +3093,14 @@
       box-shadow: 2px 0 8px rgba(v.$color-black, 0.1);
       border-right: 2px solid v.$secondary-color; // Match header bottom border color for corner
 
-      @media (max-width: 480px) {
+      @media (max-width: v.$breakpoint-mobile-max) {
         width: auto;
         height: auto;
         font-family: v.$font-family-primary, sans-serif;
       }
     }
 
-    @media (max-width: 480px) {
+    @media (max-width: v.$breakpoint-mobile-max) {
       th:nth-child(8) {
         border-right: none;
       }
@@ -3116,7 +3116,7 @@
       color: v.$text-color-primary;
       font-weight: 600;
 
-      @media (max-width: 480px) {
+      @media (max-width: v.$breakpoint-mobile-max) {
         display: flex;
         gap: v.$space-xxs;
         flex-direction: column;
@@ -3139,7 +3139,7 @@
       padding: v.$space-xxs v.$space-xxs;
       border-bottom: 1px solid rgba(v.$color-white, 0.1);
 
-      @media (max-width: 480px) {
+      @media (max-width: v.$breakpoint-mobile-max) {
         flex-direction: row;
         align-items: center;
         justify-content: space-evenly;
@@ -3159,7 +3159,7 @@
     justify-content: center;
     padding: v.$space-xxs;
 
-    @media (max-width: 480px) {
+    @media (max-width: v.$breakpoint-mobile-max) {
       width: 100%;
       height: 100%;
       align-items: center;
@@ -3175,7 +3175,7 @@
     height: 100%;
     width: 100%;
 
-    @media (max-width: 480px) {
+    @media (max-width: v.$breakpoint-mobile-max) {
       display: flex;
       flex-direction: column;
       height: 100%;
@@ -3194,7 +3194,7 @@
     height: 100%;
     width: 100%;
 
-    @media (max-width: 480px) {
+    @media (max-width: v.$breakpoint-mobile-max) {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -3243,7 +3243,7 @@
     }
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: v.$breakpoint-mobile-max) {
     .headerLabel {
       .desktopText {
         font-size: 0.95em;
@@ -3385,7 +3385,7 @@
           box-shadow: 0 0 0 1px rgba(v.$color-white, 0.12) inset;
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: v.$breakpoint-mobile-max) {
           padding: 1px;
           border-radius: 0;
         }
@@ -3425,7 +3425,7 @@
       box-shadow: 2px 0 8px rgba(v.$color-black, 0.1);
     }
 
-    @media (max-width: 480px) {
+    @media (max-width: v.$breakpoint-mobile-max) {
       td:first-child {
         text-align: center;
       }
@@ -3525,7 +3525,7 @@
   }
 
   // Mobile (<= 480px) - Modernized (consolidated from a duplicate selector block)
-  @media (max-width: 480px) {
+  @media (max-width: v.$breakpoint-mobile-max) {
     table-layout: fixed;
     width: 100%;
     min-width: 100% !important;
@@ -3845,7 +3845,7 @@
       z-index: 4;
     }
   }
-  @media (max-width: 480px) {
+  @media (max-width: v.$breakpoint-mobile-max) {
     .desktopTeamAbbreviation {
       display: none;
     }
@@ -3999,7 +3999,7 @@
 }
 
 // Mobile (<= 480px) - Modernized
-@media (max-width: 480px) {
+@media (max-width: v.$breakpoint-mobile-max) {
   .gridColFirst {
     width: 10%;
   }
@@ -4165,7 +4165,7 @@
 }
 
 // Further compacting of mobile matchup logos & corner badges (H/A)
-@media (max-width: 480px) {
+@media (max-width: v.$breakpoint-mobile-max) {
   .mobileMatchupLogoWrapper {
     position: relative;
     display: inline-flex;
@@ -4223,7 +4223,7 @@
 }
 
 /* --- Legend Bottom Sheet (Mobile) --- */
-@media (max-width: 480px) {
+@media (max-width: v.$breakpoint-mobile-max) {
   .legendOverlay {
     position: fixed;
     inset: 0;

@@ -6,11 +6,11 @@ This artifact classifies the current `rolling_player_game_metrics` column surfac
 
 Primary sources:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/database-generated.types.ts`
-- `/Users/tim/Code/fhfhockey.com/migrations/20260309_add_explicit_historical_averages_to_rolling_player_game_metrics.sql`
-- `/Users/tim/Code/fhfhockey.com/migrations/20260310_remediate_rolling_player_metrics_gp_pct.sql`
-- `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/prd-rolling-player-metrics-remediation-blueprint.md`
+- `web/lib/supabase/database-generated.types.ts`
+- `migrations/20260309_add_explicit_historical_averages_to_rolling_player_game_metrics.sql`
+- `migrations/20260310_remediate_rolling_player_metrics_gp_pct.sql`
+- `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md`
+- `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-remediation-blueprint.md`
 
 ## Classification Buckets
 

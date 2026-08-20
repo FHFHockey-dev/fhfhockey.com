@@ -18,31 +18,31 @@ This audit is focused on maintainability and operator efficiency:
 
 ### Orchestration / execution surfaces
 
-- [rollingForgePipeline.ts](/Users/tim/Code/fhfhockey.com/web/lib/rollingForgePipeline.ts)
-- [run-rolling-forge-pipeline.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/run-rolling-forge-pipeline.ts)
-- [update-rolling-player-averages.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-rolling-player-averages.ts)
-- [update-nst-gamelog.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-nst-gamelog.ts)
-- [ingest-projection-inputs.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/ingest-projection-inputs.ts)
-- [update-start-chart-projections.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-start-chart-projections.ts)
-- [run-forge-projections.ts](/Users/tim/Code/fhfhockey.com/web/lib/projections/run-forge-projections.ts)
-- [goaliePipeline.ts](/Users/tim/Code/fhfhockey.com/web/lib/projections/goaliePipeline.ts)
-- [withCronJobAudit.ts](/Users/tim/Code/fhfhockey.com/web/lib/cron/withCronJobAudit.ts)
+- [rollingForgePipeline.ts](../../../../web/lib/rollingForgePipeline.ts)
+- [run-rolling-forge-pipeline.ts](../../../../web/pages/api/v1/db/run-rolling-forge-pipeline.ts)
+- [update-rolling-player-averages.ts](../../../../web/pages/api/v1/db/update-rolling-player-averages.ts)
+- [update-nst-gamelog.ts](../../../../web/pages/api/v1/db/update-nst-gamelog.ts)
+- [ingest-projection-inputs.ts](../../../../web/pages/api/v1/db/ingest-projection-inputs.ts)
+- update-start-chart-projections.ts (unresolved repository reference: `web/pages/api/v1/db/update-start-chart-projections.ts`)
+- [run-forge-projections.ts](../../../../web/lib/projections/run-forge-projections.ts)
+- [goaliePipeline.ts](../../../../web/lib/projections/goaliePipeline.ts)
+- [withCronJobAudit.ts](../../../../web/lib/cron/withCronJobAudit.ts)
 
 ### Rolling-player compute / diagnostics / validation surfaces
 
-- [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
-- [rollingPlayerPipelineDiagnostics.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts)
-- [rollingPlayerValidationPayload.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts)
-- [rolling-player-metrics.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/debug/rolling-player-metrics.ts)
-- [trendsDebug.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.tsx)
+- [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+- [rollingPlayerPipelineDiagnostics.ts](../../../../web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts)
+- [rollingPlayerValidationPayload.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts)
+- [rolling-player-metrics.ts](../../../../web/pages/api/v1/debug/rolling-player-metrics.ts)
+- [trendsDebug.tsx](../../../../web/pages/trendsDebug.tsx)
 
 ### Downstream compatibility / reader surfaces
 
-- [rollingPlayerMetricCompatibility.ts](/Users/tim/Code/fhfhockey.com/web/lib/rollingPlayerMetricCompatibility.ts)
-- [player/[playerId].tsx](/Users/tim/Code/fhfhockey.com/web/pages/trends/player/[playerId].tsx)
-- [skater-queries.ts](/Users/tim/Code/fhfhockey.com/web/lib/projections/queries/skater-queries.ts)
-- [run-forge-projections.ts](/Users/tim/Code/fhfhockey.com/web/lib/projections/run-forge-projections.ts)
-- [update-start-chart-projections.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-start-chart-projections.ts)
+- [rollingPlayerMetricCompatibility.ts](../../../../web/lib/rollingPlayerMetricCompatibility.ts)
+- [player/[playerId].tsx](../../../../web/pages/trends/player/[playerId].tsx)
+- [skater-queries.ts](../../../../web/lib/projections/queries/skater-queries.ts)
+- [run-forge-projections.ts](../../../../web/lib/projections/run-forge-projections.ts)
+- update-start-chart-projections.ts (unresolved repository reference: `web/pages/api/v1/db/update-start-chart-projections.ts`)
 
 ## Current Ownership Map
 

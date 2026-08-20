@@ -4,25 +4,25 @@ This is the consolidated main audit artifact for pass 2. It organizes the comple
 
 Primary supporting artifacts:
 
-- [rolling-player-game-metrics-pass-2-field-inventory.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-game-metrics-pass-2-field-inventory.md)
-- [rolling-player-game-metrics-pass-2-family-grouping.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-game-metrics-pass-2-family-grouping.md)
-- [rolling-player-pass-2-additive-family-audit.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-additive-family-audit.md)
-- [rolling-player-pass-2-ratio-family-audit.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-ratio-family-audit.md)
-- [rolling-player-pass-2-weighted-rate-family-audit.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-weighted-rate-family-audit.md)
-- [rolling-player-pass-2-availability-participation-audit.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-availability-participation-audit.md)
-- [rolling-player-pass-2-contextual-fields-audit.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-contextual-fields-audit.md)
-- [rolling-player-pass-2-reconstruction-evidence-2026-03-12.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-reconstruction-evidence-2026-03-12.md)
-- [rolling-player-pass-2-diagnostics-classification-2026-03-12.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-diagnostics-classification-2026-03-12.md)
-- [rolling-player-pass-2-refresh-dependency-map.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-refresh-dependency-map.md)
-- [rolling-player-pass-2-refresh-dependency-graph-2026-03-14.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-refresh-dependency-graph-2026-03-14.md)
-- [rolling-player-pass-2-operational-surface-decision-2026-03-14.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-operational-surface-decision-2026-03-14.md)
-- [rolling-player-pass-2-orchestration-pattern-reuse-2026-03-14.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-orchestration-pattern-reuse-2026-03-14.md)
-- [rolling-player-pass-2-coordinator-entrypoint-2026-03-14.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-coordinator-entrypoint-2026-03-14.md)
-- [rolling-player-pass-2-schema-change-recommendations.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-schema-change-recommendations.md)
-- [rolling-player-pass-2-suggested-metric-additions-review.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-suggested-metric-additions-review.md)
-- [rolling-player-pass-2-post-optimization-verification-2026-03-14.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-post-optimization-verification-2026-03-14.md)
-- [rpm-audit-notes-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md)
-- [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md)
+- [rolling-player-game-metrics-pass-2-field-inventory.md](rolling-player-game-metrics-pass-2-field-inventory.md)
+- [rolling-player-game-metrics-pass-2-family-grouping.md](rolling-player-game-metrics-pass-2-family-grouping.md)
+- [rolling-player-pass-2-additive-family-audit.md](rolling-player-pass-2-additive-family-audit.md)
+- [rolling-player-pass-2-ratio-family-audit.md](rolling-player-pass-2-ratio-family-audit.md)
+- [rolling-player-pass-2-weighted-rate-family-audit.md](rolling-player-pass-2-weighted-rate-family-audit.md)
+- [rolling-player-pass-2-availability-participation-audit.md](rolling-player-pass-2-availability-participation-audit.md)
+- [rolling-player-pass-2-contextual-fields-audit.md](rolling-player-pass-2-contextual-fields-audit.md)
+- [rolling-player-pass-2-reconstruction-evidence-2026-03-12.md](rolling-player-pass-2-reconstruction-evidence-2026-03-12.md)
+- [rolling-player-pass-2-diagnostics-classification-2026-03-12.md](rolling-player-pass-2-diagnostics-classification-2026-03-12.md)
+- [rolling-player-pass-2-refresh-dependency-map.md](rolling-player-pass-2-refresh-dependency-map.md)
+- [rolling-player-pass-2-refresh-dependency-graph-2026-03-14.md](rolling-player-pass-2-refresh-dependency-graph-2026-03-14.md)
+- [rolling-player-pass-2-operational-surface-decision-2026-03-14.md](rolling-player-pass-2-operational-surface-decision-2026-03-14.md)
+- [rolling-player-pass-2-orchestration-pattern-reuse-2026-03-14.md](rolling-player-pass-2-orchestration-pattern-reuse-2026-03-14.md)
+- [rolling-player-pass-2-coordinator-entrypoint-2026-03-14.md](rolling-player-pass-2-coordinator-entrypoint-2026-03-14.md)
+- [rolling-player-pass-2-schema-change-recommendations.md](rolling-player-pass-2-schema-change-recommendations.md)
+- [rolling-player-pass-2-suggested-metric-additions-review.md](rolling-player-pass-2-suggested-metric-additions-review.md)
+- [rolling-player-pass-2-post-optimization-verification-2026-03-14.md](rolling-player-pass-2-post-optimization-verification-2026-03-14.md)
+- [rpm-audit-notes-pass-2.md](../../../TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md)
+- [rpm-audit-action-items-pass-2.md](../../../TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md)
 
 ## Upstream Tables
 
@@ -68,14 +68,14 @@ The pass-2 audit groups the stored surface into these logical families:
 
 Primary family references:
 
-- [rolling-player-game-metrics-pass-2-family-grouping.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-game-metrics-pass-2-family-grouping.md)
-- [rolling-player-pass-2-helper-contract-map.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-helper-contract-map.md)
+- [rolling-player-game-metrics-pass-2-family-grouping.md](rolling-player-game-metrics-pass-2-family-grouping.md)
+- [rolling-player-pass-2-helper-contract-map.md](rolling-player-pass-2-helper-contract-map.md)
 
 ## Column-by-Column Inventory
 
 Inventory source of truth:
 
-- [rolling-player-game-metrics-pass-2-field-inventory.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-game-metrics-pass-2-field-inventory.md)
+- [rolling-player-game-metrics-pass-2-field-inventory.md](rolling-player-game-metrics-pass-2-field-inventory.md)
 
 Current row-surface totals:
 
@@ -143,7 +143,7 @@ The pass-2 posture is therefore:
 - treat freshness as a mandatory precondition, with the current retained-player blockers concentrated in PK source tails rather than target-write failure
 - route most follow-up work into observability, compatibility cleanup, runtime-budget enforcement, and orchestration consolidation rather than another formula redesign sweep
 
-The recommended operating surface is now the consolidated coordinator at [run-rolling-forge-pipeline.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/run-rolling-forge-pipeline.ts), backed by the shared stage graph in [rollingForgePipeline.ts](/Users/tim/Code/fhfhockey.com/web/lib/rollingForgePipeline.ts), rather than the old scattered route list.
+The recommended operating surface is now the consolidated coordinator at [run-rolling-forge-pipeline.ts](../../../../web/pages/api/v1/db/run-rolling-forge-pipeline.ts), backed by the shared stage graph in [rollingForgePipeline.ts](../../../../web/lib/rollingForgePipeline.ts), rather than the old scattered route list.
 
 ## Live Validation Examples
 
@@ -153,9 +153,9 @@ Representative validation snapshot basis:
 
 Supporting evidence:
 
-- [rolling-player-pass-2-reconstruction-evidence-2026-03-12.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-reconstruction-evidence-2026-03-12.md)
-- [rolling-player-pass-2-diagnostics-classification-2026-03-12.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-diagnostics-classification-2026-03-12.md)
-- [rolling-player-pass-2-refresh-execution-2026-03-12.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-refresh-execution-2026-03-12.md)
+- [rolling-player-pass-2-reconstruction-evidence-2026-03-12.md](rolling-player-pass-2-reconstruction-evidence-2026-03-12.md)
+- [rolling-player-pass-2-diagnostics-classification-2026-03-12.md](rolling-player-pass-2-diagnostics-classification-2026-03-12.md)
+- [rolling-player-pass-2-refresh-execution-2026-03-12.md](rolling-player-pass-2-refresh-execution-2026-03-12.md)
 
 ### Example 1: Brent Burns healthy full-season control
 
@@ -173,9 +173,9 @@ Supporting evidence:
   - `goals_total_last20 = sum(goals over the player’s last 20 all-strength appearances)`
   - `on_ice_sh_pct_last20 = sum(oi_gf) / sum(oi_sf) * 100`
 - actual code path:
-  - [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
-  - [rollingPlayerSourceSelection.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerSourceSelection.ts)
-  - [rollingMetricAggregation.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricAggregation.ts)
+  - [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+  - [rollingPlayerSourceSelection.ts](../../../../web/lib/supabase/Upserts/rollingPlayerSourceSelection.ts)
+  - [rollingMetricAggregation.ts](../../../../web/lib/supabase/Upserts/rollingMetricAggregation.ts)
 - stored values:
   - `goals_total_last20 = 4`
   - `on_ice_sh_pct_last20 = 9.836066`
@@ -199,8 +199,8 @@ Supporting evidence:
   - `toi_seconds_total_last20 = sum(resolved_toi_seconds)`
   - `ixg_per_60_last20 = sum(ixg) / sum(toi_seconds) * 3600`
 - actual code path:
-  - [rollingPlayerToiContract.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerToiContract.ts)
-  - [rollingPlayerMetricMath.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerMetricMath.ts)
+  - [rollingPlayerToiContract.ts](../../../../web/lib/supabase/Upserts/rollingPlayerToiContract.ts)
+  - [rollingPlayerMetricMath.ts](../../../../web/lib/supabase/Upserts/rollingPlayerMetricMath.ts)
 - stored values:
   - `toi_seconds_total_last20 = 22955`
   - `ixg_per_60_last20 = 0.197604`
@@ -224,8 +224,8 @@ Supporting evidence:
 - intended formula:
   - `availability_pct_last20_team_games = games_played_last20_team_games / team_games_available_last20`
 - actual code path:
-  - [rollingPlayerAvailabilityContract.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerAvailabilityContract.ts)
-  - [rollingWindowContract.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingWindowContract.ts)
+  - [rollingPlayerAvailabilityContract.ts](../../../../web/lib/supabase/Upserts/rollingPlayerAvailabilityContract.ts)
+  - [rollingWindowContract.ts](../../../../web/lib/supabase/Upserts/rollingWindowContract.ts)
 - stored values:
   - `games_played_last20_team_games = 3`
   - `team_games_available_last20 = 20`
@@ -250,8 +250,8 @@ Supporting evidence:
   - `season_availability_pct = season_games_played / season_team_games_available`
   - compatibility check: `gp_pct_total_all = games_played / team_games_played`
 - actual code path:
-  - [rollingHistoricalAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingHistoricalAverages.ts)
-  - [rollingPlayerAvailabilityContract.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerAvailabilityContract.ts)
+  - [rollingHistoricalAverages.ts](../../../../web/lib/supabase/Upserts/rollingHistoricalAverages.ts)
+  - [rollingPlayerAvailabilityContract.ts](../../../../web/lib/supabase/Upserts/rollingPlayerAvailabilityContract.ts)
 - stored values:
   - `season_games_played = 51`
   - `season_team_games_available = 138`
@@ -279,8 +279,8 @@ Supporting evidence:
 - intended formula:
   - `pp_share_pct_last20 = sum(player_pp_toi) / sum(team_pp_toi_inferred_from_share)`
 - actual code path:
-  - [rollingPlayerPpShareContract.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPpShareContract.ts)
-  - [rollingPlayerPpUnitContract.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPpUnitContract.ts)
+  - [rollingPlayerPpShareContract.ts](../../../../web/lib/supabase/Upserts/rollingPlayerPpShareContract.ts)
+  - [rollingPlayerPpUnitContract.ts](../../../../web/lib/supabase/Upserts/rollingPlayerPpUnitContract.ts)
 - stored values:
   - `pp_share_pct_last20 = 0.695275`
   - `pp_share_pct_player_pp_toi_last20 = 3488`
@@ -308,7 +308,7 @@ Supporting evidence:
   - `line_combo_group = "defense"`
   - `line_combo_slot = 3`
 - actual code path:
-  - [rollingPlayerLineContextContract.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerLineContextContract.ts)
+  - [rollingPlayerLineContextContract.ts](../../../../web/lib/supabase/Upserts/rollingPlayerLineContextContract.ts)
 - stored values:
   - `line_combo_slot = 3`
   - `line_combo_group = "defense"`
@@ -325,7 +325,7 @@ Supporting evidence:
 
 Running source of truth:
 
-- [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md)
+- [rpm-audit-action-items-pass-2.md](../../../TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md)
 
 This section is a summary only. The full running implementation backlog remains in the separate backlog file.
 
@@ -373,9 +373,9 @@ Highest-value grouped items pulled from that backlog:
 
 Primary operational sources:
 
-- [rolling-player-pass-2-refresh-dependency-map.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-refresh-dependency-map.md)
-- [rolling-player-pass-2-refresh-execution-2026-03-12.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-refresh-execution-2026-03-12.md)
-- [rolling-player-pass-2-diagnostics-classification-2026-03-12.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-diagnostics-classification-2026-03-12.md)
+- [rolling-player-pass-2-refresh-dependency-map.md](rolling-player-pass-2-refresh-dependency-map.md)
+- [rolling-player-pass-2-refresh-execution-2026-03-12.md](rolling-player-pass-2-refresh-execution-2026-03-12.md)
+- [rolling-player-pass-2-diagnostics-classification-2026-03-12.md](rolling-player-pass-2-diagnostics-classification-2026-03-12.md)
 
 ### Relevant refresh surfaces
 
@@ -500,11 +500,11 @@ Remaining optimization work:
 
 Implementation references:
 
-- [rolling-player-pass-2-trendsdebug-current-surface-audit.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-trendsdebug-current-surface-audit.md)
-- [rolling-player-pass-2-trendsdebug-validation-payload-design.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-trendsdebug-validation-payload-design.md)
-- [rolling-player-pass-2-trendsdebug-server-path.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-trendsdebug-server-path.md)
-- [rolling-player-pass-2-trendsdebug-validation-panels.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-trendsdebug-validation-panels.md)
-- [rolling-player-pass-2-trendsdebug-gap-backlog.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-trendsdebug-gap-backlog.md)
+- [rolling-player-pass-2-trendsdebug-current-surface-audit.md](rolling-player-pass-2-trendsdebug-current-surface-audit.md)
+- [rolling-player-pass-2-trendsdebug-validation-payload-design.md](rolling-player-pass-2-trendsdebug-validation-payload-design.md)
+- [rolling-player-pass-2-trendsdebug-server-path.md](rolling-player-pass-2-trendsdebug-server-path.md)
+- [rolling-player-pass-2-trendsdebug-validation-panels.md](rolling-player-pass-2-trendsdebug-validation-panels.md)
+- [rolling-player-pass-2-trendsdebug-gap-backlog.md](rolling-player-pass-2-trendsdebug-gap-backlog.md)
 
 ## Schema Change Recommendations
 
@@ -519,10 +519,10 @@ Current schema posture:
 
 Primary supporting artifacts:
 
-- [rolling-player-pass-2-authoritative-field-classification.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-authoritative-field-classification.md)
-- [rolling-player-pass-2-gp-compatibility-role-review.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-gp-compatibility-role-review.md)
-- [rolling-player-pass-2-trust-debug-support-decision-matrix.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-trust-debug-support-decision-matrix.md)
-- [rolling-player-pass-2-schema-change-recommendations.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-schema-change-recommendations.md)
+- [rolling-player-pass-2-authoritative-field-classification.md](rolling-player-pass-2-authoritative-field-classification.md)
+- [rolling-player-pass-2-gp-compatibility-role-review.md](rolling-player-pass-2-gp-compatibility-role-review.md)
+- [rolling-player-pass-2-trust-debug-support-decision-matrix.md](rolling-player-pass-2-trust-debug-support-decision-matrix.md)
+- [rolling-player-pass-2-schema-change-recommendations.md](rolling-player-pass-2-schema-change-recommendations.md)
 
 ## Suggested Metric Additions
 
@@ -561,7 +561,7 @@ Only additions derivable from existing sources remain in scope:
 
 Supporting artifact:
 
-- [rolling-player-pass-2-suggested-metric-additions-review.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-suggested-metric-additions-review.md)
+- [rolling-player-pass-2-suggested-metric-additions-review.md](rolling-player-pass-2-suggested-metric-additions-review.md)
 
 ## Remediation Plan
 
@@ -581,9 +581,9 @@ Implementation order after the audit:
 5. optional enhancements
    - sequence additive assist decomposition, penalties-drawn families, and `pp_toi_seconds` after the higher-priority audit backlog is burned down
 
-The implementation backlog in [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md) is the source for post-audit sequencing. Pass 2 leaves behind both:
+The implementation backlog in [rpm-audit-action-items-pass-2.md](../../../TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md) is the source for post-audit sequencing. Pass 2 leaves behind both:
 
-- a validation ledger in [rpm-audit-notes-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md)
-- an implementation backlog in [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md)
+- a validation ledger in [rpm-audit-notes-pass-2.md](../../../TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md)
+- an implementation backlog in [rpm-audit-action-items-pass-2.md](../../../TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md)
 
 This audit is not only descriptive. It continuously converted concrete findings into implementation-sequencing inputs, and the backlog file is the authoritative handoff surface for the next remediation phase.

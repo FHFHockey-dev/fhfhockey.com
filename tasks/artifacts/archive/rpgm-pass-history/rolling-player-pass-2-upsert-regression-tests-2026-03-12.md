@@ -12,8 +12,8 @@ Add regression coverage for the repaired rolling recompute write path so the wid
 
 ## Updated files
 
-- [fetchRollingPlayerAverages.test.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts)
-- [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+- [fetchRollingPlayerAverages.test.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts)
+- [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
 
 ## Added coverage
 

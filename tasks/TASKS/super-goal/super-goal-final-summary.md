@@ -951,7 +951,22 @@ All charter questions remain open until source/master synchronization, Wave A/B 
 - The disposable local stack proves exact-cardinality forward/inverse execution, 99 bounded chunks each way, zero-DML physical replay, transaction rollback with zero residue, advisory-lock serialization, ACL/RLS denial, clean full-chain reset, generated `public`/`analytics` type parity apart from the CLI's omitted trailing blank line, and zero-error database lint. Focused tests pass 13/13 and TypeScript passes.
 - NEW 15 remains open for exact Production migration/repair authorization, application, and post-write receipts. No Production migration or writer ran, and the 2024–25 playoff trend rebuild remains gated behind this repair.
 
-### Frozen database application manifest
+### Current migration source authority (2026-08-19)
+
+Current canonical migration authority: [`migration-authority.json`](../repository-audit-remediation/migration-authority.json) (46 source-authorized records; 41 applied by exact Production-ledger receipt; 5 deployment state unknown).
+
+That hash-and-order ledger is the sole current authority for active
+`supabase/migrations/*.sql` files. “Source-authorized” means reviewed repository
+source only; it does not authorize a migration push, repair, deployment, or
+production write. Applied state is recorded only for the exact 41-row
+Production-ledger receipt through `20260815023132`; every later forecast,
+feature, and security migration remains `unknown` until a separate exact
+environment receipt exists. Repair-only, tracking-only, postdeploy, security,
+feature, baseline, and ordered classes remain distinct in the ledger. The
+older manifest below is retained as historical evidence and is not a current
+deployment queue.
+
+### Frozen database application manifest (historical)
 
 Connected read-only evidence confirms Production has exactly eight applied migrations, ending at `20260725200808`. The following local candidates are frozen by class and SHA-256; these classes must not be collapsed into one bulk push.
 

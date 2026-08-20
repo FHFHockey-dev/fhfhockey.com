@@ -5,7 +5,8 @@
       "name": "Next.js: debug server-side",
       "type": "node-terminal",
       "request": "launch",
-      "command": "yarn dev"
+      "command": "npm run dev",
+      "cwd": "${workspaceFolder}"
     },
     {
       "name": "Next.js: debug client-side",
@@ -14,12 +15,13 @@
       "url": "http://localhost:3000"
     },
     {
-      "name": "Next.js: debug full stack",
+      "name": "Next.js: debug full stack (stable watcher)",
       "type": "node-terminal",
       "request": "launch",
-      "command": "yarn dev",
+      "command": "npm run dev:stable",
+      "cwd": "${workspaceFolder}",
       "serverReadyAction": {
-        "pattern": "started server on .+, url: (https?://.+)",
+        "pattern": "- Local:\\s+(https?://\\S+)",
         "uriFormat": "%s",
         "action": "debugWithChrome"
       }

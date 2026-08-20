@@ -27,7 +27,7 @@ This is a file-by-file map of the **`web/pages/FORGE.tsx` ecosystem**: page UI, 
 - `web/pages/api/v1/forge/goalies.ts` - Returns goalie projections plus model metadata, diagnostics, calibration hints, and matchup-level win-probability normalization.
 - `web/pages/api/v1/forge/accuracy.ts` - Returns recent accuracy trend points (overall/skater/goalie) for charting.
 - `web/pages/api/v1/start-chart.ts` - Builds the “today’s slate” strip (games, team ratings, projected starting-goalie bars).
-- `web/pages/api/v1/projections/_helpers.ts` - Shared query parsing/date validation and “find latest succeeded FORGE run” helper logic.
+- `web/lib/projections/apiHelpers.ts` - Shared query parsing/date validation and “find latest succeeded FORGE run” helper logic.
 - `web/lib/formatDurationMmSs.ts` - Tiny helper that formats elapsed job/API time like `MM:SS`.
 - `web/lib/supabase/server.ts` - Server-only Supabase client used by FORGE API routes and pipeline jobs.
 
@@ -83,10 +83,10 @@ This is a file-by-file map of the **`web/pages/FORGE.tsx` ecosystem**: page UI, 
 - `web/utils/setDifference.ts` - Small set subtraction helper.
 
 ### I) Tests and snapshots for FORGE behavior
-- `web/pages/FORGE.test.tsx` - UI test proving goalie mode renders disclosure, starter drivers, and slate strip correctly.
-- `web/pages/__snapshots__/FORGE.test.tsx.snap` - Snapshot of expected FORGE goalie-mode markup.
-- `web/pages/api/v1/forge/goalies.test.ts` - API test for goalie response shape, metadata, diagnostics, and probability normalization.
-- `web/pages/api/v1/forge/__snapshots__/goalies.test.ts.snap` - Snapshot of expected goalie API payload.
+- `web/__tests__/pages/FORGE.test.tsx` - UI test proving goalie mode renders disclosure, starter drivers, and slate strip correctly.
+- `web/pages/__snapshots__/FORGE.test.tsx.snap` (historical repository reference; the snapshot was retired in March 2026) - Snapshot of expected FORGE goalie-mode markup.
+- `web/__tests__/pages/api/v1/forge/goalies.test.ts` - API test for goalie response shape, metadata, diagnostics, and probability normalization.
+- `web/__tests__/pages/api/v1/forge/__snapshots__/goalies.test.ts.snap` - Snapshot of expected goalie API payload.
 
 ### J) Schema and migration files that define FORGE storage
 - `tasks/TASKS/forge-projections/context/forge-tables.md` - Source-of-truth SQL table definitions for FORGE tables.

@@ -29,20 +29,20 @@ For organization and runtime control, only a subset of those should remain first
 ### Phase 1. Core roster / schedule freshness
 
 - `/api/v1/db/update-games`
-  - file: [update-games.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-games.ts)
+  - file: [update-games.ts](../../../../web/pages/api/v1/db/update-games.ts)
   - writes: `games`
   - purpose: refreshes game ledger, dates, and team matchups
   - operational role: first-class dependency
   - notes: rolling availability semantics and projection scheduling both depend on this table
 
 - `/api/v1/db/update-teams`
-  - file: [update-teams.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-teams.ts)
+  - file: [update-teams.ts](../../../../web/pages/api/v1/db/update-teams.ts)
   - writes: `teams`
   - purpose: refreshes team metadata referenced by projections and schedule joins
   - operational role: first-class dependency, but low-frequency compared with daily stat refreshes
 
 - `/api/v1/db/update-players`
-  - file: [update-players.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-players.ts)
+  - file: [update-players.ts](../../../../web/pages/api/v1/db/update-players.ts)
   - writes: `players`, `rosters`
   - purpose: refreshes player identity, team assignment, and roster membership
   - operational role: first-class dependency
@@ -51,7 +51,7 @@ For organization and runtime control, only a subset of those should remain first
 ### Phase 2. Upstream stat ingest
 
 - `/api/v1/db/update-nst-gamelog`
-  - file: [update-nst-gamelog.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-nst-gamelog.ts)
+  - file: [update-nst-gamelog.ts](../../../../web/pages/api/v1/db/update-nst-gamelog.ts)
   - writes: multiple `nst_gamelog_*` tables across counts, rates, and on-ice splits
   - purpose: primary NST skater-game ingest surface for rolling-player source freshness
   - operational role: first-class dependency
@@ -59,10 +59,10 @@ For organization and runtime control, only a subset of those should remain first
 
 - WGO refresh surfaces
   - files:
-    - [update-wgo-skaters.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-wgo-skaters.ts)
-    - [update-wgo-totals.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-wgo-totals.ts)
-    - [update-wgo-averages.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-wgo-averages.ts)
-    - [update-wgo-ly.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-wgo-ly.ts)
+    - [update-wgo-skaters.ts](../../../../web/pages/api/v1/db/update-wgo-skaters.ts)
+    - [update-wgo-totals.ts](../../../../web/pages/api/v1/db/update-wgo-totals.ts)
+    - [update-wgo-averages.ts](../../../../web/pages/api/v1/db/update-wgo-averages.ts)
+    - update-wgo-ly.ts (unresolved repository reference: `web/pages/api/v1/db/update-wgo-ly.ts`)
   - writes: WGO skater/totals/average tables used by rolling fallbacks and historical support
   - purpose: provides the WGO-backed rolling row spine and fallback values
   - operational role: first-class upstream dependency, but currently spread across several routes
@@ -71,20 +71,20 @@ For organization and runtime control, only a subset of those should remain first
 ### Phase 3. Contextual builders
 
 - `/api/v1/db/update-line-combinations`
-  - file: [update-line-combinations/index.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-line-combinations/index.ts)
+  - file: [update-line-combinations/index.ts](../../../../web/pages/api/v1/db/update-line-combinations/index.ts)
   - writes: `lineCombinations`
   - purpose: batch refresh of line context for games missing line-combo rows
   - operational role: first-class contextual builder
   - notes: this is the correct batch surface; the single-game route is a helper, not a separate cron surface
 
 - `/api/v1/db/update-line-combinations/[id]`
-  - file: [update-line-combinations/[id].ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-line-combinations/[id].ts)
+  - file: [update-line-combinations/[id].ts](../../../../web/pages/api/v1/db/update-line-combinations/[id].ts)
   - writes: `lineCombinations`
   - purpose: targeted single-game rebuild
   - operational role: targeted repair helper only
 
 - `/api/v1/db/update-power-play-combinations/[gameId]`
-  - file: [update-power-play-combinations/[gameId].ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-power-play-combinations/[gameId].ts)
+  - file: [update-power-play-combinations/[gameId].ts](../../../../web/pages/api/v1/db/update-power-play-combinations/[gameId].ts)
   - writes: `powerPlayCombinations`
   - purpose: PP usage / unit builder for a single game
   - operational role: targeted builder helper today
@@ -93,7 +93,7 @@ For organization and runtime control, only a subset of those should remain first
 ### Phase 4. Rolling-player recompute
 
 - `/api/v1/db/update-rolling-player-averages`
-  - file: [update-rolling-player-averages.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-rolling-player-averages.ts)
+  - file: [update-rolling-player-averages.ts](../../../../web/pages/api/v1/db/update-rolling-player-averages.ts)
   - writes: `rolling_player_game_metrics`
   - purpose: rolling-player recompute and persistence
   - operational role: first-class dependency
@@ -105,7 +105,7 @@ For organization and runtime control, only a subset of those should remain first
 ### Phase 5. Projection-input ingest and derived build
 
 - `/api/v1/db/ingest-projection-inputs`
-  - file: [ingest-projection-inputs.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/ingest-projection-inputs.ts)
+  - file: [ingest-projection-inputs.ts](../../../../web/pages/api/v1/db/ingest-projection-inputs.ts)
   - writes: `pbp_games`, `pbp_plays`, `shift_charts`
   - purpose: PbP plus shift ingestion used by FORGE
   - operational role: first-class dependency
@@ -114,7 +114,7 @@ For organization and runtime control, only a subset of those should remain first
     - this is already shaped like a real incremental job surface
 
 - `/api/v1/db/build-projection-derived-v2`
-  - file: [build-projection-derived-v2.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/build-projection-derived-v2.ts)
+  - file: [build-projection-derived-v2.ts](../../../../web/pages/api/v1/db/build-projection-derived-v2.ts)
   - writes:
     - `forge_player_game_strength`
     - `forge_team_game_strength`
@@ -128,13 +128,13 @@ For organization and runtime control, only a subset of those should remain first
 ### Phase 6. FORGE run surfaces
 
 - `/api/v1/db/update-goalie-projections-v2`
-  - file: [update-goalie-projections-v2.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-goalie-projections-v2.ts)
+  - file: [update-goalie-projections-v2.ts](../../../../web/pages/api/v1/db/update-goalie-projections-v2.ts)
   - writes: `goalie_start_projections`
   - purpose: builds goalie start priors used by FORGE
   - operational role: first-class dependency
 
 - `/api/v1/db/run-projection-v2`
-  - file: [run-projection-v2.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/run-projection-v2.ts)
+  - file: [run-projection-v2.ts](../../../../web/pages/api/v1/db/run-projection-v2.ts)
   - writes:
     - `forge_runs`
     - `forge_player_projections`
@@ -144,10 +144,10 @@ For organization and runtime control, only a subset of those should remain first
   - operational role: first-class dependency
   - notes:
     - already contains explicit preflight gates for roster, line, ingest, derived, and goalie-prior freshness
-    - already references the pipeline-spec model in [goaliePipeline.ts](/Users/tim/Code/fhfhockey.com/web/lib/projections/goaliePipeline.ts)
+    - already references the pipeline-spec model in [goaliePipeline.ts](../../../../web/lib/projections/goaliePipeline.ts)
 
 - `/api/v1/db/run-projection-accuracy`
-  - file: [run-projection-accuracy.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/run-projection-accuracy.ts)
+  - file: [run-projection-accuracy.ts](../../../../web/pages/api/v1/db/run-projection-accuracy.ts)
   - writes accuracy/calibration tables
   - purpose: post-run evaluation and backtesting
   - operational role: first-class overnight or next-day follow-up, not part of the hot daily freshness path
@@ -155,7 +155,7 @@ For organization and runtime control, only a subset of those should remain first
 ### Phase 7. Downstream convenience projection refreshes
 
 - `/api/v1/db/update-start-chart-projections`
-  - file: [update-start-chart-projections.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-start-chart-projections.ts)
+  - file: update-start-chart-projections.ts (unresolved repository reference: `web/pages/api/v1/db/update-start-chart-projections.ts`)
   - writes: `start_chart_projections`
   - purpose: convenience downstream projection surface driven from rolling metrics and team context
   - operational role: downstream consumer refresh
@@ -164,12 +164,12 @@ For organization and runtime control, only a subset of those should remain first
 ## Current Surfaces That Matter But Should Not All Become Cron Jobs
 
 - `/api/v1/db/cron/update-stats-cron`
-  - file: [update-stats-cron.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/cron/update-stats-cron.ts)
+  - file: [update-stats-cron.ts](../../../../web/pages/api/v1/db/cron/update-stats-cron.ts)
   - role: legacy multi-game stats updater
   - assessment: useful as a targeted helper, but not part of the clean rolling-player + FORGE freshness chain
 
 - `/api/v1/db/cron-report`
-  - file: [cron-report.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/cron-report.ts)
+  - file: [cron-report.ts](../../../../web/pages/api/v1/db/cron-report.ts)
   - role: monitoring / reporting surface over `cron_job_audit`
   - assessment: should remain reporting-only; it is not a freshness phase
 
@@ -181,7 +181,7 @@ For organization and runtime control, only a subset of those should remain first
 
 ## Existing Pipeline-Spec Signal
 
-The strongest existing organizational model is [goaliePipeline.ts](/Users/tim/Code/fhfhockey.com/web/lib/projections/goaliePipeline.ts), which defines a compact seven-stage graph:
+The strongest existing organizational model is [goaliePipeline.ts](../../../../web/lib/projections/goaliePipeline.ts), which defines a compact seven-stage graph:
 
 1. `core_roster_schedule`
 2. `line_combinations`

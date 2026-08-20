@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This artifact documents the current implementation of [trendsDebug.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.tsx) for task `4.1`.
+This artifact documents the current implementation of [trendsDebug.tsx](../../../../web/pages/trendsDebug.tsx) for task `4.1`.
 
 It separates:
 
@@ -68,7 +68,7 @@ Current data-query limitations:
 
 ### Current compatibility behavior
 
-The page already uses [rollingPlayerMetricCompatibility.ts](/Users/tim/Code/fhfhockey.com/web/lib/rollingPlayerMetricCompatibility.ts):
+The page already uses [rollingPlayerMetricCompatibility.ts](../../../../web/lib/rollingPlayerMetricCompatibility.ts):
 
 - `canonicalOrLegacyFinite(...)`
 

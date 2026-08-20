@@ -8,9 +8,13 @@ dotenv.config({ path: ".env.local" });
 dotenv.config({ path: ".env.development.local" });
 
 import {
-  FANTASY_PROJECTION_CONTRACT_CHECKSUM,
   FANTASY_PROJECTION_SEASON_ID,
+  FANTASY_PROJECTION_SUPPORTED_CONTRACTS,
+  FANTASY_PROJECTION_V3_CONTRACT_VERSION,
+  FANTASY_PROJECTION_V4_CONTRACT_VERSION,
+  GOALIE_FANTASY_V4_PRIMITIVE_TARGETS,
   GOALIE_PRIMITIVE_TARGETS,
+  SKATER_FANTASY_V4_PRIMITIVE_TARGETS,
   SKATER_PRIMITIVE_TARGETS,
 } from "../lib/fantasy-projections/contracts";
 import { checksumCanonicalJson } from "../lib/fantasy-projections/evaluator";
@@ -25,6 +29,7 @@ type SettlementManifest = {
   schemaVersion: string;
   seasonId: number;
   cutoffAt: string;
+  contractVersion: string;
   contractChecksum: string;
   scheduleRevisionHash: string;
   outcomes: { path: string; rows: number; sha256: string };
@@ -93,6 +98,25 @@ function outcomeKey(gameId: number, playerId: number): string {
   return `${gameId}:${playerId}`;
 }
 
+function primitiveTargets(
+  population: string,
+  contractVersion: string,
+): readonly string[] {
+  const fantasyV4 = contractVersion === FANTASY_PROJECTION_V4_CONTRACT_VERSION;
+  if (!fantasyV4 && contractVersion !== FANTASY_PROJECTION_V3_CONTRACT_VERSION) {
+    throw new Error("Advanced-v5 settlement requires its dedicated outcome source batch.");
+  }
+  return population === "goalie"
+    ? [
+        ...GOALIE_PRIMITIVE_TARGETS,
+        ...(fantasyV4 ? GOALIE_FANTASY_V4_PRIMITIVE_TARGETS : []),
+      ]
+    : [
+        ...SKATER_PRIMITIVE_TARGETS,
+        ...(fantasyV4 ? SKATER_FANTASY_V4_PRIMITIVE_TARGETS : []),
+      ];
+}
+
 async function main(): Promise<void> {
   assertLocalOnly();
   const root = argument("bundle");
@@ -106,7 +130,8 @@ async function main(): Promise<void> {
   if (
     manifest.schemaVersion !== "player-forecast-season-settlement-v1" ||
     manifest.seasonId !== FANTASY_PROJECTION_SEASON_ID ||
-    manifest.contractChecksum !== FANTASY_PROJECTION_CONTRACT_CHECKSUM ||
+    FANTASY_PROJECTION_SUPPORTED_CONTRACTS[manifest.contractVersion] !==
+      manifest.contractChecksum ||
     checksumCanonicalJson(unsigned) !== manifest.bundleHash ||
     sha256(outcomesPath) !== manifest.outcomes.sha256
   ) {
@@ -187,9 +212,7 @@ async function main(): Promise<void> {
       const playerId = Number(output.fhfh_player_id);
       const key = outcomeKey(gameId, playerId);
       if (outcomeCandidates.has(key)) continue;
-      const targets = output.population === "goalie"
-        ? GOALIE_PRIMITIVE_TARGETS
-        : SKATER_PRIMITIVE_TARGETS;
+      const targets = primitiveTargets(output.population, manifest.contractVersion);
       const primitiveValues = Object.fromEntries(targets.map((target) => [target, 0]));
       const unsignedOutcome = {
         gameId,
@@ -282,9 +305,7 @@ async function main(): Promise<void> {
       const outcome = storedLatest.get(outcomeKey(gameId, playerId));
       if (!outcome) continue;
       const releasePlayer = input.players.get(playerId);
-      const targets = output.population === "goalie"
-        ? GOALIE_PRIMITIVE_TARGETS
-        : SKATER_PRIMITIVE_TARGETS;
+      const targets = primitiveTargets(output.population, manifest.contractVersion);
       const modelLosses: Record<string, unknown> = {};
       const publishedLosses: Record<string, unknown> = {};
       for (const target of targets) {

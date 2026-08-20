@@ -19,21 +19,42 @@ const archiveRoot = path.join(
 const readMigration = (name: string) =>
   readFileSync(path.join(migrationRoot, name), "utf8");
 
-const supportedPostFreezeMigrations = [
-  "20260802163747_add_player_forecast_foundation.sql",
-  "20260804160500_reduce_player_forecast_queue_polling.sql",
-  "20260805001038_add_player_forecast_rest_of_season_outputs.sql",
-  "20260805002036_add_player_forecast_runtime_feature_rpc.sql",
-  "20260805003121_add_player_forecast_runtime_context_rates.sql",
-  "20260813001304_player_forecast_season_v3.sql",
-  "20260813015112_yahoo_live_draft_companion.sql",
-  "20260813144701_player_forecast_season_identity_resolution.sql",
-  "20260813235143_player_forecast_season_wgo_label_contract.sql",
-  "20260814004505_player_forecast_season_settled_label_reconciliation.sql",
-  "20260814020808_harden_wgo_game_identity.sql",
-  "20260814192101_fantrax_settings_first.sql",
-  "20260815023132_espn_fantasy_private_beta.sql",
-] as const;
+type MigrationAuthorityRecord = {
+  order: number;
+  path: string;
+  sha256: string;
+  sourceStatus: "source-authorized";
+  deploymentState: "applied" | "pending" | "unknown";
+  migrationClass:
+    | "baseline"
+    | "ordered"
+    | "repair-only"
+    | "tracking-only"
+    | "postdeploy"
+    | "security"
+    | "feature";
+  rolloutGate: string;
+  stateEvidence: string;
+};
+
+const migrationAuthorityPath = path.join(
+  repoRoot,
+  "tasks",
+  "TASKS",
+  "repository-audit-remediation",
+  "migration-authority.json",
+);
+const migrationAuthority = JSON.parse(
+  readFileSync(migrationAuthorityPath, "utf8"),
+) as {
+  schemaVersion: number;
+  policy: Record<string, string>;
+  migrations: MigrationAuthorityRecord[];
+};
+const migrationAuthorityRows = migrationAuthority.migrations;
+const activeMigrationNames = migrationAuthorityRows.map((row) =>
+  path.basename(row.path),
+);
 
 describe("supported Supabase schema-baseline reconciliation", () => {
   it("keeps only the reviewed baseline and supported post-baseline deltas active", () => {
@@ -41,37 +62,49 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       readdirSync(migrationRoot)
         .filter((name) => name.endsWith(".sql"))
         .sort(),
-    ).toEqual([
-      "20260716112908_production_schema_baseline.sql",
-      "20260716112909_add_line_combinations_source_provenance.sql",
-      "20260716112910_harden_line_combination_trigger_auth.sql",
-      "20260720105524_add_projection_materialization_transactions.sql",
-      "20260721013821_enforce_shift_relationship_positions.sql",
-      "20260722010355_add_transactional_gamecenter_normalization.sql",
-      "20260723040553_restrict_legacy_yahoo_player_writers.sql",
-      "20260723113533_make_yahoo_player_writer_atomic.sql",
-      "20260723121407_replace_forge_projection_results_atomic.sql",
-      "20260725200808_fix_yahoo_player_writer_captured_at.sql",
-      "20260725220704_reconcile_yahoo_player_key_snapshots.sql",
-      "20260725223034_add_sustainability_version_provenance.sql",
-      "20260725235646_add_normalized_yahoo_ownership_reader.sql",
-      "20260726000603_harden_yahoo_read_surfaces.sql",
-      "20260728225806_add_sko_prediction_run_control.sql",
-      "20260728235000_make_game_prediction_promotion_atomic.sql",
-      "20260729205048_preserve_sko_model_history.sql",
-      "20260730091500_consolidate_scheduler_ownership.sql",
-      "20260730190000_tombstone_legacy_public_rpcs.sql",
-      "20260730193000_repair_compile_invalid_legacy_routines.sql",
-      "20260730195000_replace_yahoo_game_weeks_snapshot.sql",
-      "20260730200000_repair_utah_wgo_team_identity.sql",
-      "20260730233451_reconstruct_hosted_analytics_schema.sql",
-      "20260731015416_repair_wgo_player_season_identity.sql",
-      "20260731022805_revoke_legacy_yahoo_read_cache.sql",
-      "20260731035012_restrict_admin_metadata_views.sql",
-      "20260731040341_privatize_unified_materialized_views.sql",
-      "20260801195126_drop_legacy_public_rpcs_after_zero_use.sql",
-      ...supportedPostFreezeMigrations,
-    ]);
+    ).toEqual(activeMigrationNames);
+
+    expect(migrationAuthority.schemaVersion).toBe(1);
+    expect(migrationAuthorityRows).toHaveLength(46);
+    expect(new Set(activeMigrationNames)).toHaveLength(46);
+    expect(
+      migrationAuthorityRows.map((row) => row.order),
+    ).toEqual(migrationAuthorityRows.map((_row, index) => index + 1));
+    expect(activeMigrationNames).toEqual([...activeMigrationNames].sort());
+    expect(
+      migrationAuthorityRows.filter(
+        (row) => row.deploymentState === "applied",
+      ),
+    ).toHaveLength(41);
+    expect(
+      migrationAuthorityRows.filter(
+        (row) => row.deploymentState === "unknown",
+      ),
+    ).toHaveLength(5);
+    expect(
+      migrationAuthorityRows.filter(
+        (row) => row.deploymentState === "pending",
+      ),
+    ).toHaveLength(0);
+
+    for (const row of migrationAuthorityRows) {
+      expect(row.path).toBe(
+        `supabase/migrations/${path.basename(row.path)}`,
+      );
+      expect(row.sourceStatus).toBe("source-authorized");
+      expect(row.rolloutGate.length).toBeGreaterThan(0);
+      expect(row.stateEvidence.length).toBeGreaterThan(0);
+      expect(
+        createHash("sha256")
+          .update(readFileSync(path.join(repoRoot, row.path), "utf8"))
+          .digest("hex"),
+        row.path,
+      ).toBe(row.sha256);
+    }
+
+    expect(migrationAuthority.policy.sourceAuthorizedMeaning).toContain(
+      "not permission to apply or deploy",
+    );
 
     expect(
       readdirSync(path.join(archiveRoot, "authoritative-root")).filter((name) =>
@@ -88,6 +121,35 @@ describe("supported Supabase schema-baseline reconciliation", () => {
         .trim()
         .split("\n"),
     ).toHaveLength(76);
+  });
+
+  it("revokes browser execution of the two privileged maintenance RPCs", () => {
+    const arbitrarySqlRevocation = readMigration(
+      "20260820013120_revoke_execute_sql_browser_roles.sql",
+    );
+    const truncateRevocation = readMigration(
+      "20260820013124_revoke_truncate_rolling_metrics_browser_roles.sql",
+    );
+
+    expect(arbitrarySqlRevocation).toContain(
+      "revoke execute on function public.execute_sql(text)\nfrom public, anon, authenticated;",
+    );
+    expect(arbitrarySqlRevocation).toContain(
+      "grant execute on function public.execute_sql(text)\nto service_role;",
+    );
+    expect(arbitrarySqlRevocation).not.toMatch(
+      /\b(?:select|call)\s+public\.execute_sql\b/i,
+    );
+
+    expect(truncateRevocation).toContain(
+      "revoke execute on function public.truncate_rolling_player_game_metrics()\nfrom public, anon, authenticated;",
+    );
+    expect(truncateRevocation).toContain(
+      "grant execute on function public.truncate_rolling_player_game_metrics()\nto service_role;",
+    );
+    expect(truncateRevocation).not.toMatch(
+      /\b(?:select|call)\s+public\.truncate_rolling_player_game_metrics\b/i,
+    );
   });
 
   it("keeps credential-bearing routines out of the current-schema baseline", () => {
@@ -628,20 +690,6 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       fileName: match[2],
       expectedHash: match[3],
     }));
-    const appliedProductionMigrations = new Set([
-      "20260716112908_production_schema_baseline.sql",
-      "20260716112909_add_line_combinations_source_provenance.sql",
-      "20260716112910_harden_line_combination_trigger_auth.sql",
-      "20260720105524_add_projection_materialization_transactions.sql",
-      "20260721013821_enforce_shift_relationship_positions.sql",
-      "20260723040553_restrict_legacy_yahoo_player_writers.sql",
-      "20260723113533_make_yahoo_player_writer_atomic.sql",
-      "20260725200808_fix_yahoo_player_writer_captured_at.sql",
-    ]);
-    const separatelyAuthorizedMigrations = new Set([
-      "20260801195126_drop_legacy_public_rpcs_after_zero_use.sql",
-    ]);
-
     expect(manifestRows).toHaveLength(19);
     expect(
       manifestRows.filter((row) => row.className === "Ordered predeploy"),
@@ -662,25 +710,26 @@ describe("supported Supabase schema-baseline reconciliation", () => {
         (row) => row.className === "Postdeploy after reader parity",
       ),
     ).toHaveLength(1);
-    expect(manifestRows.map((row) => row.fileName)).toEqual(
-      readdirSync(migrationRoot)
-        .filter((name) => name.endsWith(".sql"))
-        .sort()
-        .filter((name) => !appliedProductionMigrations.has(name))
-        .filter((name) => !separatelyAuthorizedMigrations.has(name))
-        .filter(
-          (name) =>
-            !supportedPostFreezeMigrations.includes(
-              name as (typeof supportedPostFreezeMigrations)[number],
-            ),
-        ),
-    );
-
     for (const row of manifestRows) {
+      const authorityRow = migrationAuthorityRows.find(
+        (candidate) => path.basename(candidate.path) === row.fileName,
+      );
+      expect(authorityRow, row.fileName).toBeDefined();
+      expect(authorityRow?.sha256, row.fileName).toBe(row.expectedHash);
       expect(
         createHash("sha256").update(readMigration(row.fileName)).digest("hex"),
         row.fileName,
       ).toBe(row.expectedHash);
     }
+
+    const appliedCount = migrationAuthorityRows.filter(
+      (row) => row.deploymentState === "applied",
+    ).length;
+    const unknownCount = migrationAuthorityRows.filter(
+      (row) => row.deploymentState === "unknown",
+    ).length;
+    expect(summary).toContain(
+      `Current canonical migration authority: [\`migration-authority.json\`](../repository-audit-remediation/migration-authority.json) (${migrationAuthorityRows.length} source-authorized records; ${appliedCount} applied by exact Production-ledger receipt; ${unknownCount} deployment state unknown).`,
+    );
   });
 });

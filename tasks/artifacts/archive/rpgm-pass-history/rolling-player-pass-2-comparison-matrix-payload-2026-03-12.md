@@ -13,7 +13,7 @@ The payload now includes:
 
 ## Implemented payload changes
 
-Updated [rollingPlayerValidationPayload.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts) so `comparisons` now returns:
+Updated [rollingPlayerValidationPayload.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts) so `comparisons` now returns:
 
 - `familySummary`
   - `selectedMetricFamily`
@@ -98,13 +98,13 @@ This is intentionally heuristic and meant to improve immediate triage in the con
 
 ## Test coverage
 
-- Added pure-unit coverage in [rollingPlayerValidationPayload.test.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts) for:
+- Added pure-unit coverage in [rollingPlayerValidationPayload.test.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts) for:
   - focused-row comparison matrix generation
   - support-field comparison output
   - family-summary counts
   - selected-metric mismatch metadata
-- Updated [rolling-player-metrics.test.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/debug/rolling-player-metrics.test.ts) fixture payload shape
-- Updated [trendsDebug.test.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.test.tsx) fixture payload shape
+- Updated [rolling-player-metrics.test.ts](../../../../web/__tests__/pages/api/v1/debug/rolling-player-metrics.test.ts) fixture payload shape
+- Updated [trendsDebug.test.tsx](../../../../web/__tests__/pages/trendsDebug.test.tsx) fixture payload shape
 
 ## Verification
 

@@ -7,12 +7,12 @@ Identify the highest-cost phases inside `fetchRollingPlayerAverages.ts` and the 
 ### Inputs Used
 
 - daily-path benchmark:
-  - [rolling-player-pass-2-daily-runtime-benchmark-2026-03-14.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-daily-runtime-benchmark-2026-03-14.md)
+  - [rolling-player-pass-2-daily-runtime-benchmark-2026-03-14.md](rolling-player-pass-2-daily-runtime-benchmark-2026-03-14.md)
 - overnight-path benchmark:
-  - [rolling-player-pass-2-overnight-runtime-benchmark-2026-03-14.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-overnight-runtime-benchmark-2026-03-14.md)
+  - [rolling-player-pass-2-overnight-runtime-benchmark-2026-03-14.md](rolling-player-pass-2-overnight-runtime-benchmark-2026-03-14.md)
 - code inspection:
-  - [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
-  - [run-rolling-forge-pipeline.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/run-rolling-forge-pipeline.ts)
+  - [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+  - [run-rolling-forge-pipeline.ts](../../../../web/pages/api/v1/db/run-rolling-forge-pipeline.ts)
 
 ### Phase Breakdown
 

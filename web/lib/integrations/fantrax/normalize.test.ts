@@ -85,6 +85,34 @@ describe("Fantrax NHL settings normalization", () => {
     expect(normalized.draftOrderType).toBe("straight");
   });
 
+  it("maps newly projected fantasy-v4 categories without guessing unknown labels", () => {
+    const normalized = normalizeFantraxLeagueInfo({
+      externalLeagueKey: "v4-category-league",
+      payload: {
+        ...categoryFixture,
+        scoringSystem: {
+          ...categoryFixture.scoringSystem,
+          scoringCategorySettings: [{
+            configs: [
+              { position: "SKATER", scoringCategory: { code: "GWG", name: "Game Winning Goals" }, weight: 2 },
+              { position: "SKATER", scoringCategory: { code: "TKA", name: "Takeaways" }, weight: 1 },
+              { position: "SKATER", scoringCategory: { code: "GVA", name: "Giveaways" }, weight: -1 },
+              { position: "GOALIE", scoringCategory: { code: "QS", name: "Quality Starts" }, weight: 3 },
+            ],
+          }],
+        },
+      },
+      fetchedAt: new Date("2026-08-18T12:00:00.000Z"),
+    });
+
+    expect(normalized.categoryWeights).toMatchObject({
+      GAME_WINNING_GOALS: 2,
+      TAKEAWAYS: 1,
+      GIVEAWAYS: -1,
+      QUALITY_STARTS_GOALIE: 3,
+    });
+  });
+
   it("omits both sides of a conflicting category mapping with exact diagnostics", () => {
     const normalized = normalizeFantraxLeagueInfo({
       externalLeagueKey: "conflicting-category-league",

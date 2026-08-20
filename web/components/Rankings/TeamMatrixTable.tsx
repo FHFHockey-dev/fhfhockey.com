@@ -264,19 +264,16 @@ export default function TeamMatrixTable({
                       ? styles.selectedMatrixRow
                       : undefined
                   }
-                  onClick={() => onSelectTeam(row.team.abbreviation)}
                 >
                   <td className={styles.stickyRankCell}>
                     <button
                       type="button"
                       className={styles.rowSelectButton}
+                      aria-label={`Select ${row.team.name ?? row.team.abbreviation}`}
                       aria-pressed={
                         row.team.abbreviation.toUpperCase() === normalizedSelectedTeam
                       }
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onSelectTeam(row.team.abbreviation);
-                      }}
+                      onClick={() => onSelectTeam(row.team.abbreviation)}
                     >
                       {row.sort.rank ?? "-"}
                     </button>

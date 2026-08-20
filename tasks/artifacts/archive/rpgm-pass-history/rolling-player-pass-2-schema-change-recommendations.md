@@ -198,7 +198,7 @@ Recommendation:
 
 1. downstream compatibility migration
    - move readers to canonical-first ratio / weighted-rate reads
-   - especially [player/[playerId].tsx](/Users/tim/Code/fhfhockey.com/web/pages/trends/player/[playerId].tsx)
+   - especially [player/[playerId].tsx](../../../../web/pages/trends/player/[playerId].tsx)
 2. alias freeze
    - formally document ratio / weighted-rate / `gp_pct_*` legacy fields as compatibility-only
 3. payload expansion

@@ -58,6 +58,23 @@ export type OfficialNhlPlayerEvidence = {
   sourcePayloadHash: string;
 };
 
+export type SeasonIdentityRegistryCandidate = {
+  fhfhPlayerId: number;
+  nhlPlayerId: number | null;
+  canonicalName: string;
+  birthDate: string | null;
+  position: string | null;
+  verificationStatus: string;
+  mergedIntoId: number | null;
+};
+
+export type SeasonIdentityResolutionPlan = {
+  action: "map_existing" | "create_new" | "manual_review";
+  fhfhPlayerId: number | null;
+  lifecycleStatus: SeasonIdentityLifecycleStatus | null;
+  reason: string;
+};
+
 type SearchRow = {
   player_id: number;
   canonical_name: string;
@@ -87,6 +104,95 @@ function positiveInteger(value: unknown): number | null {
 function optionalInteger(value: unknown): number | null {
   if (value == null || value === "") return null;
   return positiveInteger(value);
+}
+
+function normalizedIdentityName(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "")
+    .trim();
+}
+
+export function planSeasonIdentityResolution(args: {
+  review: SeasonPlayerPoolReview;
+  officialPlayer: OfficialNhlPlayerEvidence;
+  identities: SeasonIdentityRegistryCandidate[];
+}): SeasonIdentityResolutionPlan {
+  const { review, officialPlayer } = args;
+  if (
+    review.nhlPlayerId !== officialPlayer.nhlPlayerId ||
+    review.teamId !== officialPlayer.currentTeamId ||
+    normalizedIdentityName(review.rawPlayerName) !==
+      normalizedIdentityName(`${officialPlayer.firstName} ${officialPlayer.lastName}`)
+  ) {
+    return {
+      action: "manual_review",
+      fhfhPlayerId: null,
+      lifecycleStatus: null,
+      reason: "Official landing evidence does not exactly match the staged NHL ID, name, and organization.",
+    };
+  }
+
+  const eligible = args.identities.filter(
+    (identity) =>
+      !identity.mergedIntoId &&
+      !["merged", "rejected"].includes(identity.verificationStatus),
+  );
+  const direct = eligible.filter(
+    (identity) => identity.nhlPlayerId === officialPlayer.nhlPlayerId,
+  );
+  if (direct.length === 1) {
+    return {
+      action: "map_existing",
+      fhfhPlayerId: direct[0].fhfhPlayerId,
+      lifecycleStatus: null,
+      reason: "Existing eligible FHFH identity already carries the exact official NHL player ID.",
+    };
+  }
+  if (direct.length > 1) {
+    return {
+      action: "manual_review",
+      fhfhPlayerId: null,
+      lifecycleStatus: null,
+      reason: "Multiple eligible FHFH identities carry the same official NHL player ID.",
+    };
+  }
+
+  const officialName = normalizedIdentityName(
+    `${officialPlayer.firstName} ${officialPlayer.lastName}`,
+  );
+  const fingerprint = eligible.filter(
+    (identity) =>
+      identity.nhlPlayerId == null &&
+      normalizedIdentityName(identity.canonicalName) === officialName &&
+      identity.birthDate === officialPlayer.birthDate &&
+      identity.position === officialPlayer.position,
+  );
+  if (fingerprint.length === 1) {
+    return {
+      action: "map_existing",
+      fhfhPlayerId: fingerprint[0].fhfhPlayerId,
+      lifecycleStatus: null,
+      reason: "A unique unmapped FHFH identity exactly matches official name, birth date, and position.",
+    };
+  }
+  if (fingerprint.length > 1) {
+    return {
+      action: "manual_review",
+      fhfhPlayerId: null,
+      lifecycleStatus: null,
+      reason: "Multiple unmapped FHFH identities share the official name, birth date, and position.",
+    };
+  }
+
+  return {
+    action: "create_new",
+    fhfhPlayerId: null,
+    lifecycleStatus: "active_prospect",
+    reason: "No existing eligible identity matches the checksum-verified official NHL identity; create a conservative prospect identity.",
+  };
 }
 
 export function parseOfficialNhlPlayerEvidence(

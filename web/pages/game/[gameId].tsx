@@ -650,7 +650,14 @@ export default function Page() {
 
             <section className={styles["gameContent"]}>
               <div className={styles["previewWorkspace"]}>
-                <GamePreview gameId={gameId as string} />
+                <GamePreview
+                  gameId={gameId as string}
+                  gameContext={{
+                    gameDate: gameDetails.gameDate,
+                    awayTeam: gameDetails.awayTeam,
+                    homeTeam: gameDetails.homeTeam
+                  }}
+                />
               </div>
             </section>
           </>

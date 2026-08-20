@@ -34,11 +34,11 @@ The goal is to replace the current narrow latest-row fetch with one payload that
 
 Primary route:
 
-- [rolling-player-metrics.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/debug/rolling-player-metrics.ts)
+- [rolling-player-metrics.ts](../../../../web/pages/api/v1/debug/rolling-player-metrics.ts)
 
 Primary consumer:
 
-- [trendsDebug.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.tsx)
+- [trendsDebug.tsx](../../../../web/pages/trendsDebug.tsx)
 
 Suggested transport:
 

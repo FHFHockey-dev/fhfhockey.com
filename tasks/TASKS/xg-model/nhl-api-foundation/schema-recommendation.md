@@ -686,7 +686,7 @@ Instead, phase 1 should continue with separate migrations for:
 
 Planned file:
 
-- `migrations/XXXXXXXXXXXX_create_nhl_shot_features_tables.sql`
+- Planned repository path placeholder: `migrations/XXXXXXXXXXXX_create_nhl_shot_features_tables.sql` (no migration file exists at the placeholder timestamp)
 
 Purpose:
 
@@ -743,7 +743,7 @@ Explicit non-goals for this migration:
 
 Planned file:
 
-- `migrations/XXXXXXXXXXXX_create_nhl_metric_parity_tables.sql`
+- Planned repository path placeholder: `migrations/XXXXXXXXXXXX_create_nhl_metric_parity_tables.sql` (no migration file exists at the placeholder timestamp)
 
 Purpose:
 

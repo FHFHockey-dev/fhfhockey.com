@@ -1,4 +1,6 @@
 // Game State Analysis Styles
+@use "styles/vars" as v;
+
 .container {
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   border-radius: 12px;
@@ -6,7 +8,7 @@
   color: #ffffff;
   min-height: 100vh;
 
-  @media (max-width: 768px) {
+  @media (max-width: v.$breakpoint-tablet) {
     padding: 16px;
   }
 }
@@ -24,7 +26,7 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
 
-    @media (max-width: 768px) {
+    @media (max-width: v.$breakpoint-tablet) {
       font-size: 2rem;
     }
   }
@@ -46,7 +48,7 @@
   border-radius: 12px;
   padding: 4px;
 
-  @media (max-width: 768px) {
+  @media (max-width: v.$breakpoint-tablet) {
     flex-direction: column;
     gap: 4px;
   }
@@ -74,7 +76,7 @@
     font-weight: 600;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: v.$breakpoint-tablet) {
     padding: 10px 16px;
   }
 }
@@ -100,7 +102,7 @@
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 20px;
 
-    @media (max-width: 768px) {
+    @media (max-width: v.$breakpoint-tablet) {
       grid-template-columns: 1fr;
     }
   }
@@ -308,7 +310,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: v.$breakpoint-tablet) {
   .situationCards {
     grid-template-columns: 1fr;
   }
@@ -322,7 +324,7 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: v.$breakpoint-mobile-max) {
   .situationStats {
     grid-template-columns: 1fr;
     gap: 8px;

@@ -7,7 +7,7 @@ This step populated the read-only validation payload with server-authoritative m
 ## Implemented changes
 
 - Added `includeWindowMembership` and `includeContractMetadata` request flags to the validation payload builder and debug route.
-- Populated `formulas.selectedMetric` in [rollingPlayerValidationPayload.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts) with:
+- Populated `formulas.selectedMetric` in [rollingPlayerValidationPayload.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts) with:
   - selected field
   - base metric key
   - inferred metric family
@@ -17,7 +17,7 @@ This step populated the read-only validation payload with server-authoritative m
   - canonical field
   - legacy fields
   - support fields
-- Populated `contracts` in [rollingPlayerValidationPayload.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts) with:
+- Populated `contracts` in [rollingPlayerValidationPayload.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts) with:
   - selected metric family
   - selected rolling-window family
   - canonical rolling-window contract
@@ -28,7 +28,7 @@ This step populated the read-only validation payload with server-authoritative m
     - line context
     - TOI source priority and trust ordering
     - additive source selection authority
-- Populated `windows` in [rollingPlayerValidationPayload.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts) with server-side membership lists for:
+- Populated `windows` in [rollingPlayerValidationPayload.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts) with server-side membership lists for:
   - `last3`
   - `last5`
   - `last10`
@@ -51,12 +51,12 @@ This step populated the read-only validation payload with server-authoritative m
 
 ## Route and test coverage
 
-- Updated [rolling-player-metrics.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/debug/rolling-player-metrics.ts) to parse and forward the new flags.
-- Added pure-unit coverage in [rollingPlayerValidationPayload.test.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts) for:
+- Updated [rolling-player-metrics.ts](../../../../web/pages/api/v1/debug/rolling-player-metrics.ts) to parse and forward the new flags.
+- Added pure-unit coverage in [rollingPlayerValidationPayload.test.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts) for:
   - exact formula metadata
   - appearance-based window membership
   - availability/team-game window membership
-- Updated [rolling-player-metrics.test.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/debug/rolling-player-metrics.test.ts) to verify request parsing for the new metadata flags.
+- Updated [rolling-player-metrics.test.ts](../../../../web/__tests__/pages/api/v1/debug/rolling-player-metrics.test.ts) to verify request parsing for the new metadata flags.
 
 ## Verification
 

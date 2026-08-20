@@ -75,9 +75,9 @@ Interpretation:
 ### Code-ownership improvements
 
 - shared execution-profile and runtime-budget policy in:
-  - [rollingPlayerOperationalPolicy.ts](/Users/tim/Code/fhfhockey.com/web/lib/rollingPlayerOperationalPolicy.ts)
+  - [rollingPlayerOperationalPolicy.ts](../../../../web/lib/rollingPlayerOperationalPolicy.ts)
 - shared route query parsing in:
-  - [queryParams.ts](/Users/tim/Code/fhfhockey.com/web/lib/api/queryParams.ts)
+  - [queryParams.ts](../../../../web/lib/api/queryParams.ts)
 - backlog grouped into a smaller set of implementation tracks instead of many mini-projects
 
 ## Intentionally Deferred Cleanup

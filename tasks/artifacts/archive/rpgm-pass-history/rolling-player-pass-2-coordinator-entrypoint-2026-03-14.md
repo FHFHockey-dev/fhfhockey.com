@@ -4,8 +4,8 @@ This artifact records the first implementation of the consolidated rolling-playe
 
 ## Implemented Surface
 
-- route: [run-rolling-forge-pipeline.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/run-rolling-forge-pipeline.ts)
-- spec: [rollingForgePipeline.ts](/Users/tim/Code/fhfhockey.com/web/lib/rollingForgePipeline.ts)
+- route: [run-rolling-forge-pipeline.ts](../../../../web/pages/api/v1/db/run-rolling-forge-pipeline.ts)
+- spec: [rollingForgePipeline.ts](../../../../web/lib/rollingForgePipeline.ts)
 
 ## What It Does
 

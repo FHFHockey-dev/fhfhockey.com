@@ -6,7 +6,7 @@ This step added explicit per-row TOI trace output to the validation payload so t
 
 ## Implemented payload output
 
-Added `sourceRows.selectedStrength.toiTraceRows` in [rollingPlayerValidationPayload.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts).
+Added `sourceRows.selectedStrength.toiTraceRows` in [rollingPlayerValidationPayload.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts).
 
 Each trace row includes:
 
@@ -34,7 +34,7 @@ Each trace row includes:
 
 ## Source of truth
 
-The trace is derived server-side from the existing TOI contract in [rollingPlayerToiContract.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerToiContract.ts), using:
+The trace is derived server-side from the existing TOI contract in [rollingPlayerToiContract.ts](../../../../web/lib/supabase/Upserts/rollingPlayerToiContract.ts), using:
 
 - `resolveFallbackToiSeed(...)`
 - `resolveRollingPlayerToiContext(...)`
@@ -51,12 +51,12 @@ This keeps the validation payload aligned with the actual writer logic instead o
 
 ## Test coverage
 
-- Added a pure-unit test in [rollingPlayerValidationPayload.test.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts) covering:
+- Added a pure-unit test in [rollingPlayerValidationPayload.test.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts) covering:
   - invalid counts TOI
   - authoritative `counts_oi` fallback selection
   - preserved rejection reasons
   - rendered suspicious notes
-- Updated [trendsDebug.test.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.test.tsx) fixture payloads so the page remains compatible with the richer validation payload shape.
+- Updated [trendsDebug.test.tsx](../../../../web/__tests__/pages/trendsDebug.test.tsx) fixture payloads so the page remains compatible with the richer validation payload shape.
 
 ## Verification
 

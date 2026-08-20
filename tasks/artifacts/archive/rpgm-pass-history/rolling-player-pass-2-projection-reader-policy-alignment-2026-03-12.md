@@ -8,7 +8,7 @@ This change aligns the projection query layer and the current projection readers
 
 ## Updated Surfaces
 
-### [skater-queries.ts](/Users/tim/Code/fhfhockey.com/web/lib/projections/queries/skater-queries.ts)
+### [skater-queries.ts](../../../../web/lib/projections/queries/skater-queries.ts)
 
 - `ROLLING_ROW_SELECT_CLAUSE` is now built with helper-driven field order for weighted-rate families.
 - The clause remains intentionally legacy-shaped for:
@@ -16,13 +16,13 @@ This change aligns the projection query layer and the current projection readers
   - `toi_seconds_avg_all`
   - additive totals such as `goals_total_last5`
 
-### [run-forge-projections.ts](/Users/tim/Code/fhfhockey.com/web/lib/projections/run-forge-projections.ts)
+### [run-forge-projections.ts](../../../../web/lib/projections/run-forge-projections.ts)
 
 - weighted-rate reads now use `resolveNullableCompatibilityValue("weighted_rate", ...)`
 - this replaces implicit canonical-first behavior with explicit family-policy resolution
 - additive totals and TOI average reads remain unchanged because they are still authoritative on their legacy surfaces
 
-### [update-start-chart-projections.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-start-chart-projections.ts)
+### update-start-chart-projections.ts (unresolved repository reference: `web/pages/api/v1/db/update-start-chart-projections.ts`)
 
 - weighted-rate query selection now uses helper-driven canonical-first ordering
 - weighted-rate value reads now use `resolveFiniteCompatibilityValue("weighted_rate", ...)`

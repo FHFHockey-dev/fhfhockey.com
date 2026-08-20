@@ -13,14 +13,14 @@ This artifact records the current canonical-versus-legacy field usage across the
 The current surface splits into three dependency classes:
 
 - writer emits both canonical and legacy fields
-  - [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+  - [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
 - downstream readers that are still legacy-first by field name
-  - [trends/player/[playerId].tsx](/Users/tim/Code/fhfhockey.com/web/pages/trends/player/[playerId].tsx)
-  - [update-start-chart-projections.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-start-chart-projections.ts) for additive averages
-  - [skater-queries.ts](/Users/tim/Code/fhfhockey.com/web/lib/projections/queries/skater-queries.ts) for additive totals and some legacy weighted-rate aliases
+  - [trends/player/[playerId].tsx](../../../../web/pages/trends/player/[playerId].tsx)
+  - update-start-chart-projections.ts (unresolved repository reference: `web/pages/api/v1/db/update-start-chart-projections.ts`) for additive averages
+  - [skater-queries.ts](../../../../web/lib/projections/queries/skater-queries.ts) for additive totals and some legacy weighted-rate aliases
 - downstream readers that already use canonical-first compatibility helpers for some families
-  - [run-forge-projections.ts](/Users/tim/Code/fhfhockey.com/web/lib/projections/run-forge-projections.ts)
-  - [update-start-chart-projections.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-start-chart-projections.ts) for `sog_per_60`
+  - [run-forge-projections.ts](../../../../web/lib/projections/run-forge-projections.ts)
+  - update-start-chart-projections.ts (unresolved repository reference: `web/pages/api/v1/db/update-start-chart-projections.ts`) for `sog_per_60`
 
 ## 1. Writer-side compatibility surface
 
@@ -59,7 +59,7 @@ Current role:
 Observed dependency:
 
 - the page reads legacy naming only
-- it does not use [rollingPlayerMetricCompatibility.ts](/Users/tim/Code/fhfhockey.com/web/lib/rollingPlayerMetricCompatibility.ts)
+- it does not use [rollingPlayerMetricCompatibility.ts](../../../../web/lib/rollingPlayerMetricCompatibility.ts)
 - it does not query canonical ratio or weighted-rate aliases such as `*_last5` or `*_season`
 - it does not expose canonical availability / participation fields
 
@@ -93,7 +93,7 @@ Implication:
 
 - the projection query layer is already partially canonicalized for weighted rates
 - additive and TOI surfaces are still tied to legacy naming
-- query-shape changes must stay aligned with [run-forge-projections.ts](/Users/tim/Code/fhfhockey.com/web/lib/projections/run-forge-projections.ts)
+- query-shape changes must stay aligned with [run-forge-projections.ts](../../../../web/lib/projections/run-forge-projections.ts)
 
 ## 4. FORGE projection pipeline dependency
 
@@ -128,7 +128,7 @@ Implication:
 
 ## 5. Start-chart projection endpoint dependency
 
-### `web/pages/api/v1/db/update-start-chart-projections.ts`
+### Retired repository reference: `web/pages/api/v1/db/update-start-chart-projections.ts`
 
 Current role:
 

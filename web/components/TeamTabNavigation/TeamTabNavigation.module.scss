@@ -136,7 +136,7 @@
   text-transform: none;
   letter-spacing: 0;
 
-  @media (max-width: 768px) {
+  @media (max-width: v.$breakpoint-tablet) {
     display: none;
   }
 }
@@ -457,7 +457,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: v.$breakpoint-tablet) {
   .tabButton {
     min-width: 80px;
     padding: 0.75rem 1rem;
@@ -502,7 +502,7 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: v.$breakpoint-mobile-max) {
   .tabButton {
     min-width: 70px;
     padding: 0 0.5rem;

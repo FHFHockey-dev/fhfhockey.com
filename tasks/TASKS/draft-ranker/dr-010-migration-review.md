@@ -6,11 +6,11 @@ Approved and completed on 2026-07-14. This document preserves the checkpoint sco
 
 Migration under review:
 
-`supabase/migrations/20260714223013_create_fhfh_player_identity_registry.sql`
+`supabase/migration-archive/pre-baseline-20260716/production-ledger/20260714223013_create_fhfh_player_identity_registry.sql`
 
 Advisor follow-up migration:
 
-`supabase/migrations/20260714223217_add_fhfh_identity_foreign_key_indexes.sql`
+`supabase/migration-archive/pre-baseline-20260716/production-ledger/20260714223217_add_fhfh_identity_foreign_key_indexes.sql`
 
 Focused contract test:
 

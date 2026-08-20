@@ -341,20 +341,16 @@ function Row({
     fallbackPeerCount: payload.meta.totalRankedRows,
     mode: rankMode,
   });
+  const playerName = row.entity.name ?? `Player ${row.entity.id}`;
   return (
-    <tr
-      className={selected ? styles.selectedMatrixRow : undefined}
-      onClick={() => onSelectPlayer(row.entity.id)}
-    >
+    <tr className={selected ? styles.selectedMatrixRow : undefined}>
       <td className={styles.stickyRankCell}>
         <button
           type="button"
           className={styles.rowSelectButton}
+          aria-label={`Select ${playerName}`}
           aria-pressed={selected}
-          onClick={(event) => {
-            event.stopPropagation();
-            onSelectPlayer(row.entity.id);
-          }}
+          onClick={() => onSelectPlayer(row.entity.id)}
         >
           {sortRank.rank ?? "-"}
         </button>
@@ -380,7 +376,7 @@ function Row({
             />
           </span>
           <span className={styles.playerIdentity}>
-            <strong>{row.entity.name ?? `Player ${row.entity.id}`}</strong>
+            <strong>{playerName}</strong>
             <span>
               {row.entity.position ?? "-"} ·{" "}
               {row.team.name ?? row.team.abbreviation ?? "Team unavailable"}

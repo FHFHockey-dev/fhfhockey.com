@@ -4,7 +4,7 @@ Date: March 11, 2026
 
 ## Purpose
 
-This artifact fulfills the PRD’s final audit re-read requirement by re-reading [rolling-player-metrics-audit-notes.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md) and classifying every actionable remediation item as one of:
+This artifact fulfills the PRD’s final audit re-read requirement by re-reading [rolling-player-metrics-audit-notes.md](../../../TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md) and classifying every actionable remediation item as one of:
 
 - implemented
 - intentionally deferred as optional
@@ -26,63 +26,63 @@ The following audit-defined remediation areas are implemented:
    - source-presence and fallback state made explicit
    - coverage and source-tracking summaries retained and expanded
    - evidence:
-     - [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
-     - [rollingPlayerSourceSelection.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerSourceSelection.ts)
+     - [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+     - [rollingPlayerSourceSelection.ts](../../../../web/lib/supabase/Upserts/rollingPlayerSourceSelection.ts)
 2. GP% / availability redesign
    - all-strength availability separated from split-strength participation
    - traded-player season semantics fixed
    - current-team rolling team-game windows preserved and regression-tested
    - raw GP numerator / denominator support fields emitted
    - evidence:
-     - [rollingPlayerAvailabilityContract.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerAvailabilityContract.ts)
-     - [rollingHistoricalAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingHistoricalAverages.ts)
-     - [rolling-player-disputed-metrics-report-2026-03-11.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-disputed-metrics-report-2026-03-11.md)
+     - [rollingPlayerAvailabilityContract.ts](../../../../web/lib/supabase/Upserts/rollingPlayerAvailabilityContract.ts)
+     - [rollingHistoricalAverages.ts](../../../../web/lib/supabase/Upserts/rollingHistoricalAverages.ts)
+     - [rolling-player-disputed-metrics-report-2026-03-11.md](rolling-player-disputed-metrics-report-2026-03-11.md)
 3. Ratio-family `lastN` redesign
    - canonical window families defined in code
    - ratio and weighted `/60` windows forced onto fixed appearance-window semantics
    - missing-component rules made explicit
    - denominator-null vs denominator-zero behavior made explicit
    - evidence:
-     - [rollingWindowContract.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingWindowContract.ts)
-     - [rollingMetricAggregation.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricAggregation.ts)
+     - [rollingWindowContract.ts](../../../../web/lib/supabase/Upserts/rollingWindowContract.ts)
+     - [rollingMetricAggregation.ts](../../../../web/lib/supabase/Upserts/rollingMetricAggregation.ts)
 4. `pp_share_pct` semantic cleanup
    - authoritative contract moved to builder `pp_share_of_team` plus `PPTOI`
    - unit-relative semantics explicitly separated from team-share semantics
    - PP context inputs sanitized before rolling use
    - evidence:
-     - [rollingPlayerPpShareContract.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPpShareContract.ts)
-     - [rollingPlayerPpUnitContract.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPpUnitContract.ts)
+     - [rollingPlayerPpShareContract.ts](../../../../web/lib/supabase/Upserts/rollingPlayerPpShareContract.ts)
+     - [rollingPlayerPpUnitContract.ts](../../../../web/lib/supabase/Upserts/rollingPlayerPpUnitContract.ts)
 5. `ixg_per_60` fallback hardening
    - raw ixG preference made explicit
    - rate reconstruction made explicit and diagnosable
    - validation confirmed current-code parity on ready cases
    - evidence:
-     - [rollingPlayerMetricMath.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerMetricMath.ts)
-     - [rolling-player-disputed-metrics-report-2026-03-11.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-disputed-metrics-report-2026-03-11.md)
+     - [rollingPlayerMetricMath.ts](../../../../web/lib/supabase/Upserts/rollingPlayerMetricMath.ts)
+     - [rolling-player-disputed-metrics-report-2026-03-11.md](rolling-player-disputed-metrics-report-2026-03-11.md)
 6. Schema and naming cleanup
    - canonical availability, participation, ratio, and weighted `/60` fields introduced
    - misleading alias families documented and compatibility-managed
    - generated Supabase types aligned locally with the migration surface
    - evidence:
-     - [20260311_add_canonical_rolling_player_metric_contract_fields.sql](/Users/tim/Code/fhfhockey.com/migrations/20260311_add_canonical_rolling_player_metric_contract_fields.sql)
-     - [rolling-player-metrics-migration-plan.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-metrics-migration-plan.md)
-     - [rolling-player-game-metrics-schema-surface-audit.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-game-metrics-schema-surface-audit.md)
+     - [20260311_add_canonical_rolling_player_metric_contract_fields.sql](../../../../migrations/20260311_add_canonical_rolling_player_metric_contract_fields.sql)
+     - [rolling-player-metrics-migration-plan.md](rolling-player-metrics-migration-plan.md)
+     - [rolling-player-game-metrics-schema-surface-audit.md](rolling-player-game-metrics-schema-surface-audit.md)
 7. Raw numerator / denominator support for opaque ratio families
    - support fields added and populated for the audited ratio and weighted `/60` families
    - evidence:
-     - [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
-     - [rolling-player-disputed-metrics-report-2026-03-11.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-disputed-metrics-report-2026-03-11.md)
+     - [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+     - [rolling-player-disputed-metrics-report-2026-03-11.md](rolling-player-disputed-metrics-report-2026-03-11.md)
 8. Context-label validation
    - `pp_unit`, `line_combo_slot`, and `line_combo_group` validated against refreshed builder outputs
    - fields preserved as contextual labels rather than arithmetic metrics
    - evidence:
-     - [rolling-player-context-label-validation-report-2026-03-11.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-context-label-validation-report-2026-03-11.md)
+     - [rolling-player-context-label-validation-report-2026-03-11.md](rolling-player-context-label-validation-report-2026-03-11.md)
 9. Observability and run-quality improvements
    - coverage, suspicious-output, unknown-game, GP-window, ratio-window, TOI, stale-tail, run-summary, and phase logs expanded
    - diagnostic noise from raw support fields removed
    - evidence:
-     - [rollingPlayerPipelineDiagnostics.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts)
-     - [rolling-player-validation-mismatch-classification-report-2026-03-11.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-validation-mismatch-classification-report-2026-03-11.md)
+     - [rollingPlayerPipelineDiagnostics.ts](../../../../web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts)
+     - [rolling-player-validation-mismatch-classification-report-2026-03-11.md](rolling-player-validation-mismatch-classification-report-2026-03-11.md)
 10. Required live validation framework
    - freshness checks added
    - refresh-action workflow executed
@@ -90,10 +90,10 @@ The following audit-defined remediation areas are implemented:
    - disputed metrics validated explicitly
    - mismatch cause buckets recorded
    - evidence:
-     - [rolling-player-validation-freshness-report-2026-03-11.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-validation-freshness-report-2026-03-11.md)
-     - [rolling-player-refresh-actions-report-2026-03-11.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-refresh-actions-report-2026-03-11.md)
-     - [rolling-player-family-reconstruction-report-2026-03-11.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-family-reconstruction-report-2026-03-11.md)
-     - [rolling-player-disputed-metrics-report-2026-03-11.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-disputed-metrics-report-2026-03-11.md)
+     - [rolling-player-validation-freshness-report-2026-03-11.md](rolling-player-validation-freshness-report-2026-03-11.md)
+     - [rolling-player-refresh-actions-report-2026-03-11.md](rolling-player-refresh-actions-report-2026-03-11.md)
+     - [rolling-player-family-reconstruction-report-2026-03-11.md](rolling-player-family-reconstruction-report-2026-03-11.md)
+     - [rolling-player-disputed-metrics-report-2026-03-11.md](rolling-player-disputed-metrics-report-2026-03-11.md)
 
 ### Intentionally Deferred as Optional
 
@@ -121,7 +121,7 @@ The following items are not unresolved audit-remediation gaps, but they remain f
    - Corey Perry PK-sensitive validation remains blocked by stale upstream PK NST source tails
    - Seth Jones remains the intentional incomplete-tail proxy with an external PK freshness blocker
    - these were explicitly classified in:
-     - [rolling-player-validation-mismatch-classification-report-2026-03-11.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-validation-mismatch-classification-report-2026-03-11.md)
+     - [rolling-player-validation-mismatch-classification-report-2026-03-11.md](rolling-player-validation-mismatch-classification-report-2026-03-11.md)
 2. Broad historical coverage completion
    - current-season coverage is complete
    - all-time historical coverage improved materially but is still an operational backfill concern, not an audit-defined correctness-contract blocker

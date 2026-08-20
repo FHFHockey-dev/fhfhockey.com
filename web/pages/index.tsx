@@ -76,6 +76,7 @@ const Home: NextPage = ({
   homepagePulsePoints,
   openingNightDate,
   openingNightStartTime,
+  isOffseason,
   draftRankerHomepageEnabled,
 }) => {
   const {
@@ -155,7 +156,9 @@ const Home: NextPage = ({
           {draftRankerHomepageEnabled ? (
             <HomepageDraftRanker />
           ) : (
-            <TransactionTrends />
+            <TransactionTrends
+              defaultMetric={isOffseason ? "adp" : "ownership"}
+            />
           )}
         </ClientOnly>
 

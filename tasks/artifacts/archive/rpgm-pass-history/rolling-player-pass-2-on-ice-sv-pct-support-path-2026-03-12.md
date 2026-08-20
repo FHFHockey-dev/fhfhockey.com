@@ -20,14 +20,14 @@ Rationale:
 
 ## Implementation
 
-- Extended [rollingPlayerValidationPayload.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts) so `inferMetricMetadata(...)` now maps `on_ice_sv_pct` to scope-appropriate additive support fields:
+- Extended [rollingPlayerValidationPayload.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts) so `inferMetricMetadata(...)` now maps `on_ice_sv_pct` to scope-appropriate additive support fields:
   - `oi_sa_total_*` / `oi_ga_total_*` for `all` and `lastN`
   - `oi_sa_avg_*` / `oi_ga_avg_*` for `season`, `3ya`, and `career`
 - Added payload-only derived support comparisons for:
   - shots against
   - goals against
   - `on_ice_sv_pct_saves_*` as `oi_sa - oi_ga`
-- Updated [trendsDebug.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.tsx) so the Numerator / Denominator Panel now renders support comparisons when they exist, including payload-derived support traces such as `on_ice_sv_pct_saves_*`.
+- Updated [trendsDebug.tsx](../../../../web/pages/trendsDebug.tsx) so the Numerator / Denominator Panel now renders support comparisons when they exist, including payload-derived support traces such as `on_ice_sv_pct_saves_*`.
 
 ## Result
 
@@ -35,10 +35,10 @@ Rationale:
 
 ## Test Coverage
 
-- Added payload-unit coverage in [rollingPlayerValidationPayload.test.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts) for:
+- Added payload-unit coverage in [rollingPlayerValidationPayload.test.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts) for:
   - support-field inference
   - payload-derived `saves` support comparison output
-- Added page coverage in [trendsDebug.test.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.test.tsx) to verify that the support panel renders:
+- Added page coverage in [trendsDebug.test.tsx](../../../../web/__tests__/pages/trendsDebug.test.tsx) to verify that the support panel renders:
   - `oi_sa_*`
   - `oi_ga_*`
   - `on_ice_sv_pct_saves_*`

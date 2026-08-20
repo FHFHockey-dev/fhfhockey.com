@@ -19,7 +19,7 @@ That created false failures such as:
 
 ## Change
 
-Updated [vitest.config.mts](/Users/tim/Code/fhfhockey.com/web/vitest.config.mts) to explicitly exclude compiled output directories, including:
+Updated [vitest.config.mts](../../../../web/vitest.config.mts) to explicitly exclude compiled output directories, including:
 
 - `.next/**`
 - `dist/**`

@@ -2,12 +2,12 @@
 
 Sub-task: `4.6`
 
-This step adds direct audit-output copy helpers to [trendsDebug.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.tsx) so the validation console can produce pass-2 artifacts without manual reformatting.
+This step adds direct audit-output copy helpers to [trendsDebug.tsx](../../../../web/pages/trendsDebug.tsx) so the validation console can produce pass-2 artifacts without manual reformatting.
 
 ### Implemented helpers
 
 - formula-only audit entry copy
-  - output shape matches [rpm-audit-notes-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md)
+  - output shape matches [rpm-audit-notes-pass-2.md](../../../TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md)
   - uses readiness plus focused-row diff to derive the status emoji
   - includes only emoji, metric name, and formula
 - stored-vs-reconstructed comparison block copy

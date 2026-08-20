@@ -53,4 +53,4 @@ export default defineConfig([
       return prev.filter((tool) => tool.name !== "vision");
     },
   },
-]);
+].filter((workspace) => workspace.name !== "stagingEnv" || import.meta.env.DEV));

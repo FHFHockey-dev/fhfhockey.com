@@ -1,8 +1,14 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
+import {
+  normalizeTrendPositions,
+  normalizeTrendTeamAbbreviation,
+  normalizeTrendTeamName,
+} from "lib/transactions/ownershipTrendMetadata";
 
-type OwnershipPoint = { date: string; value: number };
+export type TrendMetric = "ownership" | "adp";
+type TrendPoint = { date: string; value: number };
 type TrendPlayer = {
   playerKey: string;
   playerId: number | null;
@@ -17,7 +23,7 @@ type TrendPlayer = {
   previous: number;
   delta: number;
   deltaPct: number;
-  sparkline: OwnershipPoint[];
+  sparkline: TrendPoint[];
 };
 
 type YahooToNhlMap = Map<number, number>;
@@ -28,6 +34,7 @@ type SupabaseQueryClient = {
 
 type OwnershipTrendPayload = {
   success: boolean;
+  metric: TrendMetric;
   windowDays: number;
   generatedAt: string | null;
   sourceDate: string | null;
@@ -49,6 +56,7 @@ type OwnershipTrendPayload = {
 const ALLOWED_WINDOWS = [1, 3, 5, 10];
 const PAGE_SIZE = 1000;
 const MAP_CHUNK_SIZE = 500;
+const ADP_HISTORY_LOOKBACK_DAYS = 14;
 
 function chunk<T>(values: T[], size: number): T[][] {
   const chunks: T[][] = [];
@@ -81,6 +89,99 @@ export async function fetchYahooPlayerRows(args: {
   return rows;
 }
 
+async function fetchYahooDraftHistoryRows(args: {
+  supabase: SupabaseQueryClient;
+  capturedAfter: string;
+}): Promise<any[]> {
+  const rows: any[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await args.supabase
+      .from("yahoo_player_draft_analysis_history")
+      .select("player_key,captured_at,average_draft_pick")
+      .gte("captured_at", args.capturedAfter)
+      .gt("average_draft_pick", 0)
+      .order("player_key", { ascending: true })
+      .order("captured_at", { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    rows.push(...data);
+    if (data.length < PAGE_SIZE) break;
+  }
+  return rows;
+}
+
+export function buildAdpTimelines(rows: any[]): Map<string, TrendPoint[]> {
+  const timelines = new Map<
+    string,
+    Map<string, { capturedAt: string; value: number }>
+  >();
+
+  rows.forEach((row) => {
+    const playerKey =
+      typeof row?.player_key === "string" ? row.player_key.trim() : "";
+    const capturedAt =
+      typeof row?.captured_at === "string" ? row.captured_at : "";
+    const date = capturedAt.slice(0, 10);
+    const value = Number(row?.average_draft_pick);
+    if (
+      !playerKey ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+      !Number.isFinite(value) ||
+      value <= 0
+    ) {
+      return;
+    }
+
+    const pointsByDate = timelines.get(playerKey) ?? new Map();
+    const existing = pointsByDate.get(date);
+    if (!existing || capturedAt >= existing.capturedAt) {
+      pointsByDate.set(date, { capturedAt, value });
+    }
+    timelines.set(playerKey, pointsByDate);
+  });
+
+  return new Map(
+    Array.from(timelines.entries()).map(([playerKey, pointsByDate]) => [
+      playerKey,
+      Array.from(pointsByDate.entries())
+        .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+        .map(([date, point]) => ({ date, value: point.value }))
+    ])
+  );
+}
+
+export function calculateTrendMovement(
+  metric: TrendMetric,
+  latest: number,
+  previous: number
+): { delta: number; deltaPct: number } | null {
+  if (!Number.isFinite(latest) || !Number.isFinite(previous)) return null;
+  if (metric === "adp" && (latest <= 0 || previous <= 0)) return null;
+
+  const rawDelta = metric === "adp" ? previous - latest : latest - previous;
+  const rawDeltaPct =
+    metric === "adp" ? (rawDelta / previous) * 100 : rawDelta;
+  if (!Number.isFinite(rawDelta) || !Number.isFinite(rawDeltaPct)) return null;
+
+  return {
+    delta: Number(rawDelta.toFixed(2)),
+    deltaPct: Number(rawDeltaPct.toFixed(2))
+  };
+}
+
+function latestTimelineDate(
+  timelines: Array<Array<{ date: string }>>
+): string | null {
+  return timelines.reduce<string | null>((latest, timeline) => {
+    return timeline.reduce((timelineLatest: string | null, point) => {
+      return point.date && (!timelineLatest || point.date > timelineLatest)
+        ? point.date
+        : timelineLatest;
+    }, latest);
+  }, null);
+}
+
 export function matchesPositionFilter(
   filter: string | null,
   eligiblePositions: string[] | null,
@@ -95,15 +196,16 @@ export function matchesPositionFilter(
 }
 
 export function latestOwnershipTimelineDate(rows: any[]): string | null {
-  return rows.reduce<string | null>((latest, row) => {
-    const timeline: any[] = Array.isArray(row?.ownership_timeline)
-      ? row.ownership_timeline
-      : [];
-    return timeline.reduce((rowLatest: string | null, point: any) => {
-      const date = typeof point?.date === "string" ? point.date : null;
-      return date && (!rowLatest || date > rowLatest) ? date : rowLatest;
-    }, latest);
-  }, null);
+  return latestTimelineDate(
+    rows.map((row) =>
+      Array.isArray(row?.ownership_timeline)
+        ? row.ownership_timeline.filter(
+            (point: any): point is { date: string } =>
+              typeof point?.date === "string"
+          )
+        : []
+    )
+  );
 }
 
 function resolveKey(): { url: string; key: string } {
@@ -160,6 +262,10 @@ export default async function handler(
   try {
     const windowParam = parseInt(String(req.query.window ?? "5"), 10);
     const windowDays = ALLOWED_WINDOWS.includes(windowParam) ? windowParam : 5;
+    const metric: TrendMetric =
+      String(req.query.metric ?? "").toLowerCase() === "adp"
+        ? "adp"
+        : "ownership";
     const limit = Math.min(
       50,
       Math.max(1, parseInt(String(req.query.limit ?? "10"), 10))
@@ -183,10 +289,12 @@ export default async function handler(
       auth: { persistSession: false }
     });
 
-    const selectWithMeta =
-      "player_key, player_id, full_name, headshot_url, display_position, editorial_team_full_name, editorial_team_abbreviation, eligible_positions, uniform_number, ownership_timeline:normalized_ownership_timeline";
-    const selectMinimal =
-      "player_key, player_id, full_name, headshot_url, ownership_timeline:normalized_ownership_timeline";
+    const metricSelect =
+      metric === "adp"
+        ? "average_draft_pick"
+        : "ownership_timeline:normalized_ownership_timeline";
+    const selectWithMeta = `player_key, player_id, full_name, headshot_url, display_position, editorial_team_full_name, editorial_team_abbreviation, eligible_positions, uniform_number, ${metricSelect}`;
+    const selectMinimal = `player_key, player_id, full_name, headshot_url, ${metricSelect}`;
 
     let data: any[] = [];
     let seasonFallbackApplied = false;
@@ -238,6 +346,20 @@ export default async function handler(
       }
     }
     const rows: any[] = Array.isArray(data) ? data : [];
+    let adpTimelines = new Map<string, TrendPoint[]>();
+    if (metric === "adp") {
+      const capturedAfter = new Date();
+      capturedAfter.setUTCDate(
+        capturedAfter.getUTCDate() - ADP_HISTORY_LOOKBACK_DAYS
+      );
+      capturedAfter.setUTCHours(0, 0, 0, 0);
+      adpTimelines = buildAdpTimelines(
+        await fetchYahooDraftHistoryRows({
+          supabase,
+          capturedAfter: capturedAfter.toISOString()
+        })
+      );
+    }
     const yahooToNhl = await fetchYahooToNhlMap(
       supabase,
       rows
@@ -245,26 +367,38 @@ export default async function handler(
         .filter((id) => Number.isFinite(id))
     );
 
-    const today = new Date();
-    const targetDateObj = new Date(today);
-    targetDateObj.setDate(targetDateObj.getDate() - windowDays);
-    const targetDateStr = targetDateObj.toISOString().slice(0, 10);
-
     const risers: TrendPlayer[] = [];
     const fallers: TrendPlayer[] = [];
     const selectedPlayers: TrendPlayer[] = [];
 
     for (const row of rows) {
-      const tl: OwnershipPoint[] = Array.isArray(row.ownership_timeline)
-        ? (row.ownership_timeline as OwnershipPoint[])
-        : [];
+      if (metric === "adp") {
+        const currentAveragePick = Number(row.average_draft_pick);
+        if (!Number.isFinite(currentAveragePick) || currentAveragePick <= 0) {
+          continue;
+        }
+      }
+
+      const tl: TrendPoint[] =
+        metric === "adp"
+          ? [...(adpTimelines.get(String(row.player_key)) ?? [])]
+          : Array.isArray(row.ownership_timeline)
+            ? (row.ownership_timeline as TrendPoint[])
+            : [];
       if (tl.length < 2) continue;
       tl.sort((a, b) => a.date.localeCompare(b.date));
       const latestPoint = tl[tl.length - 1];
       if (typeof latestPoint?.value !== "number") continue;
 
+      const targetDateObj =
+        metric === "adp"
+          ? new Date(`${latestPoint.date}T00:00:00.000Z`)
+          : new Date();
+      targetDateObj.setUTCDate(targetDateObj.getUTCDate() - windowDays);
+      const targetDateStr = targetDateObj.toISOString().slice(0, 10);
+
       // Find previous value at or before target date
-      let previousPoint: OwnershipPoint | undefined = tl.find(
+      let previousPoint: TrendPoint | undefined = tl.find(
         (p) => p.date === targetDateStr
       );
       if (!previousPoint) {
@@ -279,33 +413,23 @@ export default async function handler(
 
       const latest = Number(latestPoint.value);
       const previous = Number(previousPoint.value);
-      const delta = Number((latest - previous).toFixed(2));
-      if (!Number.isFinite(delta)) continue;
+      const movement = calculateTrendMovement(metric, latest, previous);
+      if (!movement) continue;
+      const { delta, deltaPct } = movement;
 
       const sparkSlice = tl.slice(-Math.max(12, windowDays + 2));
 
       // Normalize positions
-      const eligibleRaw = row.eligible_positions;
-      let eligiblePositions: string[] | null = null;
-      if (Array.isArray(eligibleRaw)) {
-        eligiblePositions = eligibleRaw.map((p: any) =>
-          String(p).toUpperCase()
-        );
-      } else if (typeof eligibleRaw === "string") {
-        eligiblePositions = [eligibleRaw.toUpperCase()];
-      }
-      const displayPosTokens = (row.display_position || "")
-        .toString()
-        .toUpperCase()
-        .split(/[\s,/]+/)
-        .filter(Boolean);
+      const normalizedEligiblePositions = normalizeTrendPositions(
+        row.eligible_positions
+      );
+      const eligiblePositions = normalizedEligiblePositions.length
+        ? normalizedEligiblePositions
+        : null;
+      const displayPosTokens = normalizeTrendPositions(row.display_position);
 
       // Optional position filter
       if (posFilter) {
-        const all = new Set<string>([
-          ...(eligiblePositions ?? []),
-          ...displayPosTokens
-        ]);
         if (!matchesPositionFilter(posFilter, eligiblePositions, displayPosTokens)) continue;
       }
 
@@ -321,16 +445,20 @@ export default async function handler(
         playerId: nhlPlayerId,
         name: row.full_name || row.player_key,
         headshot: row.headshot_url || null,
-        displayPosition: row.display_position ?? null,
-        teamFullName: row.editorial_team_full_name ?? null,
-        teamAbbrev: row.editorial_team_abbreviation ?? null,
+        displayPosition: displayPosTokens.join(", ") || null,
+        teamFullName: normalizeTrendTeamName(
+          row.editorial_team_full_name
+        ),
+        teamAbbrev: normalizeTrendTeamAbbreviation(
+          row.editorial_team_abbreviation
+        ),
         eligiblePositions,
         uniformNumber:
           typeof row.uniform_number === "number" ? row.uniform_number : null,
         latest,
         previous,
         delta,
-        deltaPct: delta,
+        deltaPct,
         sparkline: sparkSlice
       };
 
@@ -343,12 +471,17 @@ export default async function handler(
       else if (!includeFlat) continue;
     }
 
-    risers.sort((a, b) => b.delta - a.delta);
-    fallers.sort((a, b) => a.delta - b.delta);
+    const sortValue = (player: TrendPlayer) =>
+      metric === "adp" ? player.deltaPct : player.delta;
+    risers.sort((a, b) => sortValue(b) - sortValue(a));
+    fallers.sort((a, b) => sortValue(a) - sortValue(b));
 
     const totalRisers = risers.length;
     const totalFallers = fallers.length;
-    const sourceDate = latestOwnershipTimelineDate(rows);
+    const sourceDate =
+      metric === "adp"
+        ? latestTimelineDate(Array.from(adpTimelines.values()))
+        : latestOwnershipTimelineDate(rows);
     const mappedPlayerCount = rows.filter((row) => {
       const yahooId = Number(row?.player_id);
       return Number.isFinite(yahooId) && yahooToNhl.has(yahooId);
@@ -359,6 +492,7 @@ export default async function handler(
 
     const payload: OwnershipTrendPayload = {
       success: true,
+      metric,
       windowDays,
       generatedAt: sourceDate ? `${sourceDate}T23:59:59.999Z` : null,
       sourceDate,

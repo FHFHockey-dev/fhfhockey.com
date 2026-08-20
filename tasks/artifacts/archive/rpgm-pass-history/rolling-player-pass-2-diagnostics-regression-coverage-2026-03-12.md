@@ -27,15 +27,15 @@ This closeout adds helper-level regression coverage for the new pass-2 diagnosti
 
 ### Weighted-rate support-surface behavior
 
-- Added a historical-scope weighted-rate regression case in [rollingPlayerValidationPayload.test.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts).
+- Added a historical-scope weighted-rate regression case in [rollingPlayerValidationPayload.test.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts).
 - This complements the `3.5` rolling-scope tests by proving the payload preserves persisted support aliases such as:
   - `goals_per_60_goals_season`
   - `goals_per_60_toi_seconds_season`
 
 ## Files Covered
 
-- [rollingPlayerPipelineDiagnostics.test.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.test.ts)
-- [rollingPlayerValidationPayload.test.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts)
+- [rollingPlayerPipelineDiagnostics.test.ts](../../../../web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.test.ts)
+- [rollingPlayerValidationPayload.test.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts)
 
 ## Verification
 

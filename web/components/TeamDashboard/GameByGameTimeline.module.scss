@@ -46,6 +46,7 @@
   color: #ccc;
   border-radius: 4px;
   font-size: 0.75rem;
+  font-family: inherit;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -63,6 +64,11 @@
     color: #07aae2;
     font-weight: 600;
   }
+
+  &:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+  }
 }
 
 .gameGrid {
@@ -72,19 +78,20 @@
   gap: 0.5rem;
   margin-bottom: 0.25rem;
 
-  @media (max-width: 768px) {
+  @media (max-width: v.$breakpoint-tablet) {
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(4, 1fr);
     gap: 0.4rem;
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: v.$breakpoint-mobile-max) {
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(5, 1fr);
   }
 }
 
 .gameCardAndBar {
+  width: 100%;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -92,6 +99,15 @@
   border: 2px solid transparent;
   border-radius: 6px;
   padding: v.$space-sm;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: inherit;
+
+  &:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+  }
 
   &.win {
     border-left: 3px solid #00ff87;
@@ -128,7 +144,7 @@
     background: rgba(7, 170, 226, 0.1);
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: v.$breakpoint-tablet) {
     gap: 0.4rem;
   }
 }
@@ -278,6 +294,11 @@
     background: rgba(255, 255, 255, 0.1);
     color: #ffffff;
   }
+
+  &:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+  }
 }
 
 .detailsGrid {
@@ -285,7 +306,7 @@
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 1rem;
 
-  @media (max-width: 768px) {
+  @media (max-width: v.$breakpoint-tablet) {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
   }

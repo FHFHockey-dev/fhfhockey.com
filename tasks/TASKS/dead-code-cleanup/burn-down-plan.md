@@ -66,7 +66,7 @@ Example columns:
 
 ---
 ## 4. Migration Plan
-1. Create migration: `migrations/20250928_create_predictions_next_game.sql`:
+1. Create migration at the planned repository path `migrations/20250928_create_predictions_next_game.sql` (no retained migration file was created):
    ```sql
    BEGIN;
    CREATE TABLE IF NOT EXISTS predictions_next_game (

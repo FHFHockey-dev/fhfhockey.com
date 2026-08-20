@@ -237,12 +237,12 @@ Why
 - Provide a consistent nightly snapshot of percent_owned for analytics and UI features (ownership timelines, pick volatility, owner-share trends).
 
 Files / Areas to change
-- New API route: `web/pages/api/cron/upsert-yahoo-ownership.ts` (or `app/api/cron/upsert-yahoo-ownership/route.ts` if using App Router)
+- New API route at the planned repository path `web/pages/api/cron/upsert-yahoo-ownership.ts` (no retained implementation exists), or `app/api/cron/upsert-yahoo-ownership/route.ts` if using App Router.
 - Existing Python historical job (`web/lib/supabase/Upserts/Yahoo/yahooHistoricalOwnership.py`) can be used as a reference for Yahoo query shapes and auth, but the Next.js route should reuse the backend credentials flow and Supabase server key (server-side). Prefer the `yahoo-fantasy` npm package or the same yfpy logic ported into TypeScript.
 - DB: create or confirm `yahoo_player_ownership_daily` exists with (player_key, ownership_date, ownership_pct, source, inserted_at, ...). If you prefer JSONB, add `ownership_history JSONB` to `yahoo_players` with the nightly entry appended (schema + migrations required).
 
 Implementation steps (minimal, no extra assumptions)
-1. Add API endpoint skeleton `web/pages/api/cron/upsert-yahoo-ownership.ts` that is server-only and reads Supabase URL/Service Role Key and Yahoo credentials from environment.
+1. Add an API endpoint skeleton at the planned repository path `web/pages/api/cron/upsert-yahoo-ownership.ts` (no retained implementation exists) that is server-only and reads Supabase URL/Service Role Key and Yahoo credentials from environment.
 2. Endpoint behavior:
   - Query `yahoo_player_keys` for the current game prefix (or use a stored `yahoo_game_keys` mapping). Collect all player_keys.
   - For batching (25 per call), call Yahoo API endpoint matching the historical script but request `percent_owned;type=date;date=TODAY` for the current date (or use the equivalent via `yahoo-fantasy` npm client).
@@ -252,7 +252,7 @@ Implementation steps (minimal, no extra assumptions)
 3. Database schema decision:
   - Preferred: keep `yahoo_player_ownership_daily` as single-row-per-player-per-day table (fast to query for time series). Add indices on `(player_key, ownership_date)` and `(ownership_date)`.
   - Alternate: `ownership_history JSONB` on `yahoo_players` where each nightly run appends a timestamped entry. This simplifies some reads but is less convenient for time-range analysis and larger volumes.
-4. Add a lightweight test harness in `web/pages/api/cron/upsert-yahoo-ownership.ts` that allows a `?dryRun=1` query param to run a single batch and print stats (rows upserted, rows missing).
+4. Add a lightweight test harness in the planned repository path `web/pages/api/cron/upsert-yahoo-ownership.ts` (no retained implementation exists) that allows a `?dryRun=1` query param to run a single batch and print stats (rows upserted, rows missing).
 5. Schedule: configure the Vercel cron entry (or other scheduler) to call the endpoint nightly UTC (or your preferred timezone). If you use Vercel, add in `vercel.json` the cron schedule entry or set it up in Vercel UI.
 6. Monitoring & retry: if Yahoo returns partial responses, schedule a retry logic (exponential backoff) within the endpoint or rely on scheduler re-run on failure. Emit logs to Supabase or Sentry for failures.
 
@@ -601,7 +601,7 @@ Key files & logs (repo-relative):
 - `web/lib/supabase/Upserts/Yahoo/yahooHistoricalOwnership.py` (ingestion script)
 - `web/lib/supabase/Upserts/Yahoo/populate_yahoo_nhl_mapping.py` (mapping)
 - `web/lib/supabase/Upserts/Yahoo/player_name_normalization_spec.json` (normalization)
-- `migrations/20250827_yahoo_upsert_and_mapping.sql` (migration sketch)
+- Historical repository reference: `migrations/20250827_yahoo_upsert_and_mapping.sql` (migration sketch removed in September 2025)
 - `tasks/TASKS/draft-dashboard-yahoo/prd-yahoo-audit.md` (this PRD)
 - Local-only telemetry/logs at repo root: `yahoo_historical_progress.log`, `yahoo_historical.log` (ignored/untracked; durable conclusions belong in task/runbook evidence)
 - Upstream TS invoker: `web/pages/api/v1/db/update-yahoo-players.ts`

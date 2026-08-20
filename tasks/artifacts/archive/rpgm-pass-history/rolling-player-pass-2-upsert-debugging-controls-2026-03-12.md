@@ -14,8 +14,8 @@ Add a targeted logging and dry-run path to the rolling recompute writer so inval
 
 Updated files:
 
-- [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
-- [update-rolling-player-averages.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-rolling-player-averages.ts)
+- [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+- [update-rolling-player-averages.ts](../../../../web/pages/api/v1/db/update-rolling-player-averages.ts)
 
 New write-path controls:
 
@@ -94,7 +94,7 @@ Deterministic verification slice:
 
 Execution method:
 
-- direct `ts-node` invocation of [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+- direct `ts-node` invocation of [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
 - no local Next.js server required
 
 Observed write-phase result:

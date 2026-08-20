@@ -9,7 +9,9 @@ import { useRouter } from "next/router";
 import useHideableNavbar from "hooks/useHideableNavbar";
 import MobileMenu from "components/Layout/MobileMenu";
 import NavbarItems from "components/Layout/NavbarItems";
-import ITEMS_DATA from "components/Layout/NavbarItems/NavbarItemsData";
+import ITEMS_DATA, {
+  MOBILE_PRIMARY_NAVIGATION_ITEMS,
+} from "components/Layout/NavbarItems/NavbarItemsData";
 import ClientOnly from "components/ClientOnly";
 import SocialMedias from "components/SocialMedias";
 import AuthModal from "components/auth/AuthModal";
@@ -23,24 +25,10 @@ import UNDERLYING_STATS_LOGO from "public/pictures/ULSlogo.png";
 
 // Bottom Navigation Items
 const BOTTOM_NAV_ITEMS = [
-  {
-    id: "home",
-    label: "Home",
-    href: "/",
-    icon: "/pictures/homeNavIcon.png",
-  },
-  {
-    id: "gameGrid",
-    label: "Game Grid",
-    href: "/game-grid",
-    icon: "/pictures/gameGrid.png",
-  },
-  {
-    id: "stats",
-    label: "Stats",
-    href: "/stats",
-    icon: "/pictures/statsIcon.png",
-  },
+  ...["/", "/game-grid", "/stats"].map(
+    (href) =>
+      MOBILE_PRIMARY_NAVIGATION_ITEMS.find((item) => item.href === href)!,
+  ),
   {
     id: "tools",
     label: "Tools",

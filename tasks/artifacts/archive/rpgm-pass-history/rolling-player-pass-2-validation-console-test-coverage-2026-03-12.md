@@ -14,7 +14,7 @@ Extend the route and page tests so the richer validation payload contract is exe
 
 ## Route Coverage
 
-Updated [rolling-player-metrics.test.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/debug/rolling-player-metrics.test.ts) to verify that the debug route returns the richer payload sections needed by the validation console, including:
+Updated [rolling-player-metrics.test.ts](../../../../web/__tests__/pages/api/v1/debug/rolling-player-metrics.test.ts) to verify that the debug route returns the richer payload sections needed by the validation console, including:
 
 - readiness with caution-state output
 - selected-metric formula metadata
@@ -26,7 +26,7 @@ Updated [rolling-player-metrics.test.ts](/Users/tim/Code/fhfhockey.com/web/pages
 
 ## Page Coverage
 
-Updated [trendsDebug.test.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.test.tsx) to verify that the page renders operator-visible signals from the richer payload, including:
+Updated [trendsDebug.test.tsx](../../../../web/__tests__/pages/trendsDebug.test.tsx) to verify that the page renders operator-visible signals from the richer payload, including:
 
 - `BLOCKED` readiness with blocker summaries
 - `READY WITH CAUTIONS` readiness with caution summaries

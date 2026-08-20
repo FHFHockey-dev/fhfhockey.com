@@ -50,6 +50,7 @@ function TimeOptions({ timeOption, setTimeOption, ...rest }: TimeOptionsProps) {
     />
   ) : (
     <Select
+      ariaLabel="Time range"
       options={shortOptions}
       option={timeOption}
       onOptionChange={setTimeOption}

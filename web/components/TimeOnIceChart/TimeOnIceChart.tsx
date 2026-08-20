@@ -336,6 +336,7 @@ export function ChartTypeOptions({
 
   return (
     <Options
+      ariaLabel="Chart type"
       options={options}
       option={chartTypeOption}
       onOptionChange={setChartTypeOption}

@@ -88,6 +88,12 @@ async function main(): Promise<void> {
 }
 
 main().catch((error) => {
-  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+  const message =
+    error instanceof Error
+      ? error.message
+      : error && typeof error === "object"
+        ? JSON.stringify(error)
+        : String(error ?? "Season publication failed.");
+  process.stderr.write(`${message}\n`);
   process.exitCode = 1;
 });

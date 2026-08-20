@@ -14,81 +14,81 @@ It distinguishes between:
 
 ## Confirmed Existing Core Rolling Surfaces
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
-- `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-rolling-player-averages.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingHistoricalAverages.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricAggregation.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerMetricMath.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingWindowContract.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPpShareContract.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPpUnitContract.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerLineContextContract.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerToiContract.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerSourceSelection.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerAvailabilityContract.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricScaleContract.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/database-generated.types.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/pages/api/v1/db/update-rolling-player-averages.ts`
+- `web/lib/supabase/Upserts/rollingHistoricalAverages.ts`
+- `web/lib/supabase/Upserts/rollingMetricAggregation.ts`
+- `web/lib/supabase/Upserts/rollingPlayerMetricMath.ts`
+- `web/lib/supabase/Upserts/rollingWindowContract.ts`
+- `web/lib/supabase/Upserts/rollingPlayerPpShareContract.ts`
+- `web/lib/supabase/Upserts/rollingPlayerPpUnitContract.ts`
+- `web/lib/supabase/Upserts/rollingPlayerLineContextContract.ts`
+- `web/lib/supabase/Upserts/rollingPlayerToiContract.ts`
+- `web/lib/supabase/Upserts/rollingPlayerSourceSelection.ts`
+- `web/lib/supabase/Upserts/rollingPlayerAvailabilityContract.ts`
+- `web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts`
+- `web/lib/supabase/Upserts/rollingMetricScaleContract.ts`
+- `web/lib/supabase/database-generated.types.ts`
 
 ## Confirmed Existing Debug and Downstream Surfaces
 
-- `/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.tsx`
-- `/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.module.scss`
-- `/Users/tim/Code/fhfhockey.com/web/pages/trends/player/[playerId].tsx`
-- `/Users/tim/Code/fhfhockey.com/web/lib/rollingPlayerMetricCompatibility.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/projections/queries/skater-queries.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/projections/run-forge-projections.ts`
-- `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-start-chart-projections.ts`
+- `web/pages/trendsDebug.tsx`
+- `web/pages/trendsDebug.module.scss`
+- `web/pages/trends/player/[playerId].tsx`
+- `web/lib/rollingPlayerMetricCompatibility.ts`
+- `web/lib/projections/queries/skater-queries.ts`
+- `web/lib/projections/run-forge-projections.ts`
+- Retired repository reference: `web/pages/api/v1/db/update-start-chart-projections.ts`
 
 ## Confirmed Existing Upstream Builder Surfaces
 
-- `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-power-play-combinations/[gameId].ts`
-- `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-line-combinations/[id].ts`
-- `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-line-combinations/index.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/powerPlayCombinationMetrics.ts`
+- `web/pages/api/v1/db/update-power-play-combinations/[gameId].ts`
+- `web/pages/api/v1/db/update-line-combinations/[id].ts`
+- `web/pages/api/v1/db/update-line-combinations/index.ts`
+- `web/lib/supabase/Upserts/powerPlayCombinationMetrics.ts`
 
 ## Confirmed Existing Tests
 
 Pipeline and contract tests:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingWindowContract.test.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerHelperContracts.test.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.test.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
+- `web/lib/supabase/Upserts/rollingWindowContract.test.ts`
+- `web/lib/supabase/Upserts/rollingPlayerHelperContracts.test.ts`
+- `web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.test.ts`
 
 Contract-specific tests that should not be missed in pass 2:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPpShareContract.test.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPpUnitContract.test.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerLineContextContract.test.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerToiContract.test.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerSourceSelection.test.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerMetricMath.test.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricScaleContract.test.ts`
+- `web/lib/supabase/Upserts/rollingPlayerPpShareContract.test.ts`
+- `web/lib/supabase/Upserts/rollingPlayerPpUnitContract.test.ts`
+- `web/lib/supabase/Upserts/rollingPlayerLineContextContract.test.ts`
+- `web/lib/supabase/Upserts/rollingPlayerToiContract.test.ts`
+- `web/lib/supabase/Upserts/rollingPlayerSourceSelection.test.ts`
+- `web/lib/supabase/Upserts/rollingPlayerMetricMath.test.ts`
+- `web/lib/supabase/Upserts/rollingMetricScaleContract.test.ts`
 
 Downstream compatibility tests:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/rollingPlayerMetricCompatibility.test.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/projections/queries/skater-queries.test.ts`
-- `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-start-chart-projections.test.ts`
+- `web/lib/rollingPlayerMetricCompatibility.test.ts`
+- `web/lib/projections/queries/skater-queries.test.ts`
+- Retired repository reference: `web/pages/api/v1/db/update-start-chart-projections.test.ts`
 
 ## Confirmed Existing Migrations Touching the Current Row Contract
 
-- `/Users/tim/Code/fhfhockey.com/migrations/20260227_add_truncate_rolling_player_game_metrics_rpc.sql`
-- `/Users/tim/Code/fhfhockey.com/migrations/20260309_add_explicit_historical_averages_to_rolling_player_game_metrics.sql`
-- `/Users/tim/Code/fhfhockey.com/migrations/20260310_remediate_rolling_player_metrics_gp_pct.sql`
-- `/Users/tim/Code/fhfhockey.com/migrations/20260311_add_canonical_rolling_player_metric_contract_fields.sql`
-- `/Users/tim/Code/fhfhockey.com/migrations/20260311_add_optional_rolling_player_pp_context_fields.sql`
-- `/Users/tim/Code/fhfhockey.com/migrations/20260311_add_optional_rolling_player_support_metrics.sql`
-- `/Users/tim/Code/fhfhockey.com/migrations/20260311_add_optional_rolling_player_weighted_rate_metrics.sql`
+- `migrations/20260227_add_truncate_rolling_player_game_metrics_rpc.sql`
+- `migrations/20260309_add_explicit_historical_averages_to_rolling_player_game_metrics.sql`
+- `migrations/20260310_remediate_rolling_player_metrics_gp_pct.sql`
+- `migrations/20260311_add_canonical_rolling_player_metric_contract_fields.sql`
+- `migrations/20260311_add_optional_rolling_player_pp_context_fields.sql`
+- `migrations/20260311_add_optional_rolling_player_support_metrics.sql`
+- `migrations/20260311_add_optional_rolling_player_weighted_rate_metrics.sql`
 
 ## Planned or Prospective Surfaces Not Yet Present
 
 These were referenced earlier as likely implementation targets, but they do not exist in the repo yet:
 
-- `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/debug/rolling-player-metrics.ts`
-- `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/debug/rolling-player-metrics.test.ts`
-- `/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.test.tsx`
+- `web/pages/api/v1/debug/rolling-player-metrics.ts`
+- `web/__tests__/pages/api/v1/debug/rolling-player-metrics.test.ts`
+- `web/__tests__/pages/trendsDebug.test.tsx`
 
 Pass-2 consequence:
 

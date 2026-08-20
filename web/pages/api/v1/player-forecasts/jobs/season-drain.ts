@@ -1,6 +1,8 @@
 import type { NextApiResponse } from "next";
 
 import { collectSeasonProjectionReadiness } from "lib/fantasy-projections/readiness";
+import { drainSeasonProjectionJobs } from "lib/fantasy-projections/seasonJobs";
+import { playerForecastErrorMessage } from "lib/player-forecasts/runtimeSafety";
 import playerForecastAdminOnly from "utils/playerForecastAdminOnlyMiddleware";
 
 function first(value: string | string[] | undefined): string | null {
@@ -26,11 +28,25 @@ export default playerForecastAdminOnly(async (req: any, res: NextApiResponse) =>
       mutationPerformed: false,
     });
   }
-  return res.status(501).json({
-    success: false,
-    dryRun: false,
-    code: "PLAYER_FORECAST_SEASON_ACTIVATION_NOT_APPROVED",
-    message: "Non-dry-run queue processing remains activation-gated.",
-    mutationPerformed: false,
-  });
+  const requestedLimit = Number(first(req.query.limit) ?? req.body?.limit ?? 8);
+  try {
+    const result = await drainSeasonProjectionJobs({
+      supabase: req.supabase,
+      limit: Number.isFinite(requestedLimit) ? requestedLimit : 8,
+    });
+    return res.json({
+      success: result.results.every((item) => !item.errorCode),
+      dryRun: false,
+      ...result,
+      mutationPerformed: result.claimed > 0,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      dryRun: false,
+      code: "PLAYER_FORECAST_SEASON_DRAIN_FAILED",
+      message: playerForecastErrorMessage(error),
+      mutationPerformed: false,
+    });
+  }
 });

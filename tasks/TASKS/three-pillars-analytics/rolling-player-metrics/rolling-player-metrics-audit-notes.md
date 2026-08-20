@@ -4,7 +4,7 @@
 
 ### Entry Path
 
-1. [update-rolling-player-averages.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-rolling-player-averages.ts) accepts `GET`, `POST`, and `HEAD`.
+1. [update-rolling-player-averages.ts](../../../../web/pages/api/v1/db/update-rolling-player-averages.ts) accepts `GET`, `POST`, and `HEAD`.
 2. It parses runtime controls from query params:
    - `playerId`
    - `season`
@@ -17,13 +17,13 @@
    - `playerConcurrency`
    - `upsertBatchSize`
    - `upsertConcurrency`
-3. It lazily imports `main(...)` from [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts).
+3. It lazily imports `main(...)` from [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts).
 4. It logs the request payload, runs `main(...)`, and returns a success or error response.
 5. The endpoint itself contains no metric logic. It is only a request parser, timer, and delegator.
 
 ### Main Pipeline Setup
 
-1. [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts) loads Supabase env vars and creates a service-role client.
+1. [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts) loads Supabase env vars and creates a service-role client.
 2. `main(...)` performs a preflight probe against `games`.
 3. It fetches the full `games` table through `fetchGames()`.
 4. It converts `games` into a per-team per-season cumulative ledger via `buildTeamGameLedger(...)`.
@@ -62,7 +62,7 @@ For each strength in `all`, `ev`, `pp`, `pk`:
    - NST rates rows from the configured `ratesTable`
    - NST on-ice counts rows from the configured `countsOiTable`
 2. Rows are grouped by `date_scraped`.
-3. Coverage diagnostics are computed with [rollingPlayerPipelineDiagnostics.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts):
+3. Coverage diagnostics are computed with [rollingPlayerPipelineDiagnostics.ts](../../../../web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts):
    - missing counts dates
    - missing rates dates
    - missing on-ice dates
@@ -75,7 +75,7 @@ For each strength in `all`, `ev`, `pp`, `pk`:
 1. Metric definitions are declared in `METRICS`.
 2. Each metric is either:
    - `simple`: additive / average accumulation
-   - `ratio`: numerator / denominator accumulation through [rollingMetricAggregation.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricAggregation.ts)
+   - `ratio`: numerator / denominator accumulation through [rollingMetricAggregation.ts](../../../../web/lib/supabase/Upserts/rollingMetricAggregation.ts)
 3. Each game updates:
    - rolling simple accumulators
    - rolling ratio accumulators
@@ -96,7 +96,7 @@ For each strength in `all`, `ev`, `pp`, `pk`:
 2. `gamesPlayed` is incremented when `playedThisGame > 0`.
 3. `appearanceDates` stores the dates of those counted appearances.
 4. `teamGamesPlayed` is derived from the ledger for the player’s team, season, and date.
-5. `historicalGpPctState` is updated through [rollingHistoricalAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingHistoricalAverages.ts).
+5. `historicalGpPctState` is updated through [rollingHistoricalAverages.ts](../../../../web/lib/supabase/Upserts/rollingHistoricalAverages.ts).
 6. Rolling GP% windows are currently based on:
    - `windowDates = appearanceDates.slice(-N)`
    - `playerGamesWindow = windowDates.length`
@@ -159,7 +159,7 @@ For each strength in `all`, `ev`, `pp`, `pk`:
 
 ## 1.2 Direct Helper Responsibilities
 
-### [rollingHistoricalAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingHistoricalAverages.ts)
+### [rollingHistoricalAverages.ts](../../../../web/lib/supabase/Upserts/rollingHistoricalAverages.ts)
 
 - Owns season, 3-year, and career historical snapshots for simple average metrics.
 - Owns historical GP% accumulation through `HistoricalGpPctAccumulator`.
@@ -170,7 +170,7 @@ For each strength in `all`, `ev`, `pp`, `pk`:
   - current GP% history is not a simple per-row average
   - team identity is part of season-level GP% state
 
-### [rollingMetricAggregation.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricAggregation.ts)
+### [rollingMetricAggregation.ts](../../../../web/lib/supabase/Upserts/rollingMetricAggregation.ts)
 
 - Owns rolling and historical accumulation for ratio metrics.
 - Accepts numerator / denominator component pairs plus optional secondary components.
@@ -184,7 +184,7 @@ For each strength in `all`, `ev`, `pp`, `pk`:
   - a ratio row is only accumulated when at least one denominator is present
   - this helper is the reason some `lastN` ratio windows behave like last N valid metric observations
 
-### [rollingPlayerMetricMath.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerMetricMath.ts)
+### [rollingPlayerMetricMath.ts](../../../../web/lib/supabase/Upserts/rollingPlayerMetricMath.ts)
 
 - Owns math normalization for:
   - `/60` metrics through `resolvePer60Components(...)`
@@ -199,7 +199,7 @@ For each strength in `all`, `ev`, `pp`, `pk`:
   - this helper defines whether share semantics are reconstructable from upstream share fields
   - bad upstream share meaning will propagate directly into rolling metrics if not corrected upstream
 
-### [rollingPlayerPipelineDiagnostics.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts)
+### [rollingPlayerPipelineDiagnostics.ts](../../../../web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts)
 
 - Owns runtime observability for:
   - source coverage gaps
@@ -213,11 +213,11 @@ For each strength in `all`, `ev`, `pp`, `pk`:
 
 ### Direct Helper Dependency Summary
 
-- [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts) owns orchestration and metric definitions.
-- [rollingHistoricalAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingHistoricalAverages.ts) owns historical simple averages and historical GP%.
-- [rollingMetricAggregation.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricAggregation.ts) owns bounded ratio math and ratio window semantics.
-- [rollingPlayerMetricMath.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerMetricMath.ts) owns `/60` and share reconstruction logic.
-- [rollingPlayerPipelineDiagnostics.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts) owns coverage and suspicious-output reporting.
+- [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts) owns orchestration and metric definitions.
+- [rollingHistoricalAverages.ts](../../../../web/lib/supabase/Upserts/rollingHistoricalAverages.ts) owns historical simple averages and historical GP%.
+- [rollingMetricAggregation.ts](../../../../web/lib/supabase/Upserts/rollingMetricAggregation.ts) owns bounded ratio math and ratio window semantics.
+- [rollingPlayerMetricMath.ts](../../../../web/lib/supabase/Upserts/rollingPlayerMetricMath.ts) owns `/60` and share reconstruction logic.
+- [rollingPlayerPipelineDiagnostics.ts](../../../../web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts) owns coverage and suspicious-output reporting.
 
 ### Initial Audit Implications from 1.2
 
@@ -259,7 +259,7 @@ For each strength in `all`, `ev`, `pp`, `pk`:
 
 | Table | Builder / Writer | Classification | Why It Matters |
 | --- | --- | --- | --- |
-| `powerPlayCombinations` | [update-power-play-combinations/[gameId].ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-power-play-combinations/[gameId].ts) | Derived contextual table | Defines PP unit assignment, legacy `percentageOfPP`, and new team-share / unit-relative PP usage semantics. |
+| `powerPlayCombinations` | [update-power-play-combinations/[gameId].ts](../../../../web/pages/api/v1/db/update-power-play-combinations/[gameId].ts) | Derived contextual table | Defines PP unit assignment, legacy `percentageOfPP`, and new team-share / unit-relative PP usage semantics. |
 | `lineCombinations` | Not yet traced in this subtask | Derived contextual table | Needed later for context-only audit, not core metric formulas. |
 
 ### Current Classification Rules
@@ -299,7 +299,7 @@ For each strength in `all`, `ev`, `pp`, `pk`:
 
 ## 1.4 Upstream Builders That Affect Rolling Semantics
 
-### [update-power-play-combinations/[gameId].ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-power-play-combinations/[gameId].ts)
+### [update-power-play-combinations/[gameId].ts](../../../../web/pages/api/v1/db/update-power-play-combinations/[gameId].ts)
 
 #### What It Builds
 
@@ -318,7 +318,7 @@ For each strength in `all`, `ev`, `pp`, `pk`:
 - `fetchTOIRawData(gameId)`
 - `getTOIData(rawData, "pp-toi")`
 - `getPowerPlayBlocks(plays)`
-- [powerPlayCombinationMetrics.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/powerPlayCombinationMetrics.ts)
+- [powerPlayCombinationMetrics.ts](../../../../web/lib/supabase/Upserts/powerPlayCombinationMetrics.ts)
 
 #### Semantic Impact on Rolling Metrics
 
@@ -339,7 +339,7 @@ For each strength in `all`, `ev`, `pp`, `pk`:
 - Medium relevance for:
   - rolling `pp_share_pct` only insofar as the rolling pipeline still reads `pp_unit` from this table
 
-### [powerPlayCombinationMetrics.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/powerPlayCombinationMetrics.ts)
+### [powerPlayCombinationMetrics.ts](../../../../web/lib/supabase/Upserts/powerPlayCombinationMetrics.ts)
 
 #### What It Owns
 
@@ -359,7 +359,7 @@ For each strength in `all`, `ev`, `pp`, `pk`:
   - `pp_unit_relative_toi` is the signed seconds vs unit average
   - `pp_share_of_team` is the only true team-share metric in this builder
 
-### [update-line-combinations/[id].ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-line-combinations/[id].ts)
+### [update-line-combinations/[id].ts](../../../../web/pages/api/v1/db/update-line-combinations/[id].ts)
 
 #### What It Builds
 
@@ -393,7 +393,7 @@ For each strength in `all`, `ev`, `pp`, `pk`:
 - Low relevance for:
   - core formula correctness of metrics like rates, percentages, and GP%
 
-### [update-line-combinations/index.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-line-combinations/index.ts)
+### [update-line-combinations/index.ts](../../../../web/pages/api/v1/db/update-line-combinations/index.ts)
 
 - Batch wrapper for line-combination refreshes.
 - Operationally relevant because it determines whether the contextual table is kept fresh enough to support role labels.
@@ -472,8 +472,8 @@ For each strength in `all`, `ev`, `pp`, `pk`:
 
 | Builder | Output Table | Why It Matters to Rolling Metrics |
 | --- | --- | --- |
-| [update-power-play-combinations/[gameId].ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-power-play-combinations/[gameId].ts) | `powerPlayCombinations` | Defines PP unit assignment and unit-relative PP semantics that affect `pp_unit` interpretation and PP-context audit work. |
-| [update-line-combinations/[id].ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-line-combinations/[id].ts) | `lineCombinations` | Defines line slot and position-group context used by the rolling table’s contextual columns. |
+| [update-power-play-combinations/[gameId].ts](../../../../web/pages/api/v1/db/update-power-play-combinations/[gameId].ts) | `powerPlayCombinations` | Defines PP unit assignment and unit-relative PP semantics that affect `pp_unit` interpretation and PP-context audit work. |
+| [update-line-combinations/[id].ts](../../../../web/pages/api/v1/db/update-line-combinations/[id].ts) | `lineCombinations` | Defines line slot and position-group context used by the rolling table’s contextual columns. |
 
 ### Final Notes for the Future Audit Writeup
 
@@ -3470,7 +3470,7 @@ Important caveat:
 
 ### Historical Baseline Logic for Simple Families
 
-Simple historical baselines use [rollingHistoricalAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingHistoricalAverages.ts):
+Simple historical baselines use [rollingHistoricalAverages.ts](../../../../web/lib/supabase/Upserts/rollingHistoricalAverages.ts):
 
 - `careerSum` / `careerCount`
 - `bySeason` sum / count buckets
@@ -3541,7 +3541,7 @@ This subsection covers:
 
 ### Ratio Engine Verdict
 
-The shared ratio engine in [rollingMetricAggregation.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricAggregation.ts) appears materially correct after the recent fixes:
+The shared ratio engine in [rollingMetricAggregation.ts](../../../../web/lib/supabase/Upserts/rollingMetricAggregation.ts) appears materially correct after the recent fixes:
 
 - it now aggregates summed numerators and denominators instead of averaging per-game percentages
 - it supports composite ratios like PDO
@@ -3762,8 +3762,8 @@ This subsection covers:
 
 All `/60` families currently use:
 
-- [resolvePer60Components.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerMetricMath.ts)
-- ratio accumulation through [rollingMetricAggregation.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricAggregation.ts)
+- [resolvePer60Components.ts](../../../../web/lib/supabase/Upserts/rollingPlayerMetricMath.ts)
+- ratio accumulation through [rollingMetricAggregation.ts](../../../../web/lib/supabase/Upserts/rollingMetricAggregation.ts)
 - scale `3600`
 
 Current shorthand:
@@ -4041,11 +4041,11 @@ The narrower question here is:
 
 Historical baseline logic is split across two paths:
 
-1. [rollingHistoricalAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingHistoricalAverages.ts)
+1. [rollingHistoricalAverages.ts](../../../../web/lib/supabase/Upserts/rollingHistoricalAverages.ts)
 - simple-family historical averages
 - GP% historical snapshots
 
-2. [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+2. [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
 - ratio-family historical snapshots
 - weighted `/60` historical snapshots
 
@@ -4144,7 +4144,7 @@ Likely `🔧` historical `/60` baselines:
 ### GP% Historical Baselines
 
 `gp_pct_avg_season`, `gp_pct_avg_3ya`, and `gp_pct_avg_career` do not use the ordinary historical average accumulator.
-They use a separate season-team bucket model in [rollingHistoricalAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingHistoricalAverages.ts):
+They use a separate season-team bucket model in [rollingHistoricalAverages.ts](../../../../web/lib/supabase/Upserts/rollingHistoricalAverages.ts):
 
 - bucket key = `season:teamId`
 - `playerGames` increments only on games the player appeared in
@@ -4221,7 +4221,7 @@ That mixed behavior is the core reason the suffix layer is confusing.
 
 ### Simple / Additive Metric Families
 
-Simple families use `updateAccumulator(...)` in [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts).
+Simple families use `updateAccumulator(...)` in [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts).
 
 Behavior:
 
@@ -4261,7 +4261,7 @@ Affected families include:
 
 ### Ratio and `/60` Families
 
-Ratio families and weighted `/60` families use `updateRatioRollingAccumulator(...)` in [rollingMetricAggregation.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricAggregation.ts).
+Ratio families and weighted `/60` families use `updateRatioRollingAccumulator(...)` in [rollingMetricAggregation.ts](../../../../web/lib/supabase/Upserts/rollingMetricAggregation.ts).
 
 Behavior:
 
@@ -4307,7 +4307,7 @@ Affected families include:
 
 ### GP% Rolling Windows
 
-GP% rolling fields are built separately in [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts):
+GP% rolling fields are built separately in [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts):
 
 - `appearanceDates` stores dates where `playedThisGame > 0`
 - for each `lastN`, the code slices the last N appearance dates
@@ -5909,17 +5909,17 @@ This step isolates the exact implementation path for:
 
 The GP% family is built across two files:
 
-1. [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+1. [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
 - computes current-row rolling and all-time GP% outputs
 
-2. [rollingHistoricalAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingHistoricalAverages.ts)
+2. [rollingHistoricalAverages.ts](../../../../web/lib/supabase/Upserts/rollingHistoricalAverages.ts)
 - computes historical GP% snapshots for season / 3YA / career
 
 This is already a warning sign because GP% is not using the same baseline path as other metric families.
 
 ### How `games_played` is currently computed
 
-In [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts), each processed game row sets:
+In [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts), each processed game row sets:
 
 - `playedThisGame = 1` for `strength_state = all`
 - `playedThisGame = 1` for split strengths only if `getToiSeconds(game) > 0`
@@ -6009,7 +6009,7 @@ It is an appearance-anchored span ratio.
 
 The historical GP% accumulator is separate from all other families.
 
-In [rollingHistoricalAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingHistoricalAverages.ts):
+In [rollingHistoricalAverages.ts](../../../../web/lib/supabase/Upserts/rollingHistoricalAverages.ts):
 
 - key = `season:teamId`
 - per processed row:

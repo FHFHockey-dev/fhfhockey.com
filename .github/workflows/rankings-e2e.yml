@@ -17,10 +17,6 @@ jobs:
         working-directory: web
     env:
       NEXT_TELEMETRY_DISABLED: "1"
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
     steps:
       - name: Checkout
@@ -41,12 +37,17 @@ jobs:
 
       - name: Verify local-server environment
         if: ${{ inputs.base_url == '' }}
+        env:
+          HAS_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL != '' }}
+          HAS_SUPABASE_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY != '' }}
+          HAS_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY != '' }}
+          HAS_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
         run: |
-          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
+          if [ "$HAS_SUPABASE_URL" != "true" ]; then
             echo "NEXT_PUBLIC_SUPABASE_URL secret is required when base_url is not provided." >&2
             exit 1
           fi
-          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] && [ -z "$NEXT_PUBLIC_SUPABASE_PUBLIC_KEY" ] && [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then
+          if [ "$HAS_SUPABASE_SERVICE_ROLE_KEY" != "true" ] && [ "$HAS_SUPABASE_PUBLIC_KEY" != "true" ] && [ "$HAS_SUPABASE_ANON_KEY" != "true" ]; then
             echo "At least one Supabase key secret is required when base_url is not provided." >&2
             exit 1
           fi
@@ -60,6 +61,11 @@ jobs:
 
       - name: Run rankings E2E with local Next.js server
         if: ${{ inputs.base_url == '' }}
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: npm run test:e2e:rankings
 
       - name: Upload Playwright report

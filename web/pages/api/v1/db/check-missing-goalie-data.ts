@@ -1,6 +1,9 @@
 // /pages/api/v1/db/check-missing-goalie-data.ts
 
-import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import {
+  operationalRouteContracts,
+  withOperationalRouteAuth,
+} from "lib/cron/withOperationalRouteAuth";
 import type { NextApiRequest, NextApiResponse } from "next";
 import * as cheerio from "cheerio";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
@@ -463,11 +466,11 @@ async function checkMissingDatesAndFetch() {
   }
 }
 
-export default withCronJobAudit(async function handler(
+const handler = async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "GET") {
+  if (req.method !== "POST") {
     res.status(405).json({ message: "Method Not Allowed" });
     return;
   }
@@ -480,5 +483,9 @@ export default withCronJobAudit(async function handler(
     console.error("Error in missing dates API handler:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
-}
+};
+
+export default withOperationalRouteAuth(
+  handler,
+  operationalRouteContracts.checkMissingGoalieData,
 );

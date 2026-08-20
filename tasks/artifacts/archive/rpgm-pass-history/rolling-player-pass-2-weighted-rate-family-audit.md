@@ -19,7 +19,7 @@ It covers every persisted weighted-rate metric family in `rolling_player_game_me
 - window semantics
 - component completeness rules
 
-This artifact does not assign final status buckets yet. Status ledger work remains separate in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`.
+This artifact does not assign final status buckets yet. Status ledger work remains separate in `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`.
 
 ## Scope
 
@@ -74,7 +74,7 @@ No dedicated `all` or `lastN` weighted-rate support columns exist. Those scopes 
 Weighted-rate metrics use the same WGO-spined row construction as the rest of the rolling suite:
 
 - row spine:
-  - `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+  - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - `fetchWgoRowsForPlayer(...)`
   - `buildGameRecords(...)`
 - player-count sources:
@@ -91,9 +91,9 @@ Weighted-rate metrics use the same WGO-spined row construction as the rest of th
 
 Weighted-rate metrics are stored as ratio-style component accumulators with the `weighted_rate_performance` contract:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricAggregation.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerMetricMath.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/lib/supabase/Upserts/rollingMetricAggregation.ts`
+- `web/lib/supabase/Upserts/rollingPlayerMetricMath.ts`
 
 Runtime flow:
 
@@ -115,7 +115,7 @@ Runtime flow:
 
 ### Canonical weighted-rate window contract
 
-Weighted-rate metrics use the `weighted_rate_performance` family from `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingWindowContract.ts`.
+Weighted-rate metrics use the `weighted_rate_performance` family from `web/lib/supabase/Upserts/rollingWindowContract.ts`.
 
 Shared rules:
 
@@ -143,7 +143,7 @@ For any weighted-rate family `x_per_60`:
 
 ### Shared TOI source precedence
 
-TOI resolution comes from `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerToiContract.ts`.
+TOI resolution comes from `web/lib/supabase/Upserts/rollingPlayerToiContract.ts`.
 
 Priority order:
 
@@ -223,15 +223,15 @@ Source fields by family:
 
 Primary code path:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - `METRICS` entries for `sog_per_60` and `ixg_per_60`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerMetricMath.ts`
+- `web/lib/supabase/Upserts/rollingPlayerMetricMath.ts`
   - `resolvePer60Components(...)`
   - `resolveIxgPer60Components(...)`
 - additive source selection:
-  - `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerSourceSelection.ts`
+  - `web/lib/supabase/Upserts/rollingPlayerSourceSelection.ts`
 - TOI resolution:
-  - `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerToiContract.ts`
+  - `web/lib/supabase/Upserts/rollingPlayerToiContract.ts`
 
 Canonical formulas:
 
@@ -289,13 +289,13 @@ Reconstruction method:
 
 Evidence from tests:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerMetricMath.test.ts`
+- `web/lib/supabase/Upserts/rollingPlayerMetricMath.test.ts`
   - confirms raw totals outrank rate reconstruction
   - confirms implied totals reconstruct from rate and TOI
   - confirms `ixg_per_60` only uses WGO ixG fallback on all-strength rows
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerHelperContracts.test.ts`
+- `web/lib/supabase/Upserts/rollingPlayerHelperContracts.test.ts`
   - confirms direct ixG beats rate reconstruction
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
   - confirms source-tracking counters for `rateReconstructions`
 
 ### 2. Direct Event Weighted Rates
@@ -354,13 +354,13 @@ Source fields by family:
 
 Primary code path:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - `METRICS` entries for the six direct-event weighted-rate families
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerMetricMath.ts`
+- `web/lib/supabase/Upserts/rollingPlayerMetricMath.ts`
   - `resolvePer60Components(...)`
 - additive source-selection helpers where the family uses `getGoals(...)`, `getHits(...)`, or `getBlocks(...)`
 - TOI resolution:
-  - `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerToiContract.ts`
+  - `web/lib/supabase/Upserts/rollingPlayerToiContract.ts`
 
 Canonical formulas:
 
@@ -419,13 +419,13 @@ Reconstruction method:
 
 Evidence from tests:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
   - confirms canonical weighted-rate snapshots and historical support columns for:
     - `goals_per_60`
     - `assists_per_60`
     - `primary_assists_per_60`
     - `secondary_assists_per_60`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricAggregation.test.ts`
+- `web/lib/supabase/Upserts/rollingMetricAggregation.test.ts`
   - confirms weighted-rate arithmetic is ratio-of-aggregated raw events and TOI, not averaging per-game rates
 
 ## Historical Support-Field Contract
@@ -505,7 +505,7 @@ Critical validation cases:
 
 Evidence from tests:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerToiContract.test.ts`
+- `web/lib/supabase/Upserts/rollingPlayerToiContract.test.ts`
   - confirms WGO minutes-to-seconds normalization
   - confirms already-seconds handling
   - confirms rejection tracking
@@ -533,8 +533,8 @@ Evidence from tests:
 
 - task `2.4` should keep availability and participation semantics separate from weighted-rate appearance windows
 - tasks `2.6` and `2.7` should translate each weighted-rate family into:
-  - a formula-only status entry in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`
-  - an action item in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md` whenever TOI trust visibility, numerator-source asymmetry, or reconstruction friction needs follow-up
+  - a formula-only status entry in `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`
+  - an action item in `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md` whenever TOI trust visibility, numerator-source asymmetry, or reconstruction friction needs follow-up
 - tasks in `3.x` should use this artifact to design live validation slices that intentionally exercise:
   - authoritative TOI
   - supplementary TOI

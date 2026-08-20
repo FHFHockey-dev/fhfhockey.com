@@ -1,16 +1,10 @@
-import dotenv from 'dotenv';
-import { createClient } from '@supabase/supabase-js';
-import { executeSqlRpcWithRetry } from 'lib/cron/sqlRpcExecution';
+import { createClient } from "@supabase/supabase-js";
+import { executeSqlRpcWithRetry } from "lib/cron/sqlRpcExecution";
 
-dotenv.config({ path: '/Users/tim/Code/fhfhockey.com/web/.env.local' });
-dotenv.config({ path: '/Users/tim/Code/fhfhockey.com/.env.local' });
-
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!url || !key) {
-  throw new Error('Missing Supabase credentials');
-}
-const client = createClient(url, key);
+import {
+  formatSqlRefreshEntrypointError,
+  loadSqlRefreshConfiguration,
+} from "./sql-refresh-config";
 
 const jobs = [
   { name: 'goalie_stats_unified', sql: 'REFRESH MATERIALIZED VIEW goalie_stats_unified;' },
@@ -19,7 +13,9 @@ const jobs = [
   { name: 'player_totals_unified', sql: 'REFRESH MATERIALIZED VIEW player_totals_unified;' }
 ];
 
-(async () => {
+export async function runSqlRefreshValidation() {
+  const { supabaseUrl, serviceRoleKey } = loadSqlRefreshConfiguration();
+  const client = createClient(supabaseUrl, serviceRoleKey);
   const results = [] as unknown[];
   for (const job of jobs) {
     const started = Date.now();
@@ -39,7 +35,11 @@ const jobs = [
     });
   }
   console.log(JSON.stringify(results, null, 2));
-})().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+}
+
+if (require.main === module) {
+  void runSqlRefreshValidation().catch((error) => {
+    console.error(formatSqlRefreshEntrypointError(error));
+    process.exitCode = 1;
+  });
+}

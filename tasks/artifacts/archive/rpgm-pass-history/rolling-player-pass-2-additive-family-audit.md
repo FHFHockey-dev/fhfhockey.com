@@ -15,7 +15,7 @@ It covers every persisted additive metric family in `rolling_player_game_metrics
 - current stored-field behavior
 - reconstruction method
 
-This artifact does not assign final status buckets yet. Status ledger work remains separate in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`.
+This artifact does not assign final status buckets yet. Status ledger work remains separate in `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`.
 
 ## Scope
 
@@ -75,7 +75,7 @@ Families in scope:
 The additive write path starts from the WGO appearance spine and then enriches each row with split-specific NST data:
 
 - WGO spine:
-  - `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+  - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - `fetchWgoRowsForPlayer(...)`
   - `buildGameRecords(...)`
 - split-specific authoritative NST sources:
@@ -94,7 +94,7 @@ The additive write path starts from the WGO appearance spine and then enriches e
 
 Additive metrics are the `aggregation: "simple"` entries in `METRICS`:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
 
 Runtime flow:
 
@@ -182,7 +182,7 @@ Source fields by family:
 Primary code path:
 
 - source-precedence helpers:
-  - `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerSourceSelection.ts`
+  - `web/lib/supabase/Upserts/rollingPlayerSourceSelection.ts`
 - per-metric writer call sites:
   - `getGoals(...)`
   - `getAssists(...)`
@@ -193,7 +193,7 @@ Primary code path:
   - `getPpPointsValue(...)`
   - `getIxgValue(...)`
 - write path:
-  - `METRICS` simple entries in `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+  - `METRICS` simple entries in `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - `deriveOutputs(...)`
 
 Canonical formula:
@@ -229,7 +229,7 @@ Reconstruction method:
 
 Evidence from tests:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerSourceSelection.test.ts`
+- `web/lib/supabase/Upserts/rollingPlayerSourceSelection.test.ts`
   - confirms NST counts outrank WGO
   - confirms WGO fallback is all-strength only for the guarded families
   - confirms `pp_points` uses PP counts on PP rows and `wgo.pp_points` on all-strength rows
@@ -259,7 +259,7 @@ Source fields:
 
 Primary code path:
 
-- simple metric definitions in `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- simple metric definitions in `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
 
 Canonical formula:
 
@@ -328,7 +328,7 @@ Source fields by family:
 
 Primary code path:
 
-- simple metric definitions in `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- simple metric definitions in `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
 
 Canonical formula:
 
@@ -383,7 +383,7 @@ Source fields:
 
 Primary code path:
 
-- simple metric definitions in `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- simple metric definitions in `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
 
 Canonical formula:
 
@@ -442,14 +442,14 @@ Source fields:
 Primary code path:
 
 - TOI contract:
-  - `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerToiContract.ts`
+  - `web/lib/supabase/Upserts/rollingPlayerToiContract.ts`
 - writer wrappers:
   - `resolveFallbackToiContext(...)`
   - `resolveToiContext(...)`
   - `getToiContext(...)`
   - `getToiSeconds(...)`
 - simple metric definition:
-  - `key: "toi_seconds"` in `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+  - `key: "toi_seconds"` in `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
 
 Canonical formula:
 
@@ -481,7 +481,7 @@ Reconstruction method:
 
 Evidence from tests:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerToiContract.test.ts`
+- `web/lib/supabase/Upserts/rollingPlayerToiContract.test.ts`
   - confirms WGO normalization
   - confirms fallback seed ordering
   - confirms TOI source precedence and trust-tier semantics

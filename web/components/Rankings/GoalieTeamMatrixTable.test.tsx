@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { GoalieMatrixResponse } from "lib/rankings/goalieMatrix";
@@ -507,12 +507,13 @@ const teamPayload: TeamMatrixResponse = {
 
 describe("GoalieMatrixTable and TeamMatrixTable", () => {
   it("renders goalie metric cells with percentile, rank, raw value, and source-pending state", () => {
+    const onSelectGoalie = vi.fn();
     render(
       <GoalieMatrixTable
         payload={goaliePayload}
         isLoading={false}
         selectedGoalieId={31}
-        onSelectGoalie={vi.fn()}
+        onSelectGoalie={onSelectGoalie}
         onSortMetric={vi.fn()}
         onPageChange={vi.fn()}
         onPageSizeChange={vi.fn()}
@@ -539,6 +540,12 @@ describe("GoalieMatrixTable and TeamMatrixTable", () => {
     expect(screen.getByLabelText("Goalie source state legend")).toBeTruthy();
     expect(screen.getAllByText("N/A").length).toBeGreaterThan(0);
     expect(screen.getByLabelText(/SV%.*Value \.925.*Rank 3.*Percentile 88\.4%/)).toBeTruthy();
+    const selectGoalie = screen.getByRole("button", {
+      name: "Select Test Goalie",
+    });
+    expect(selectGoalie.getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(selectGoalie);
+    expect(onSelectGoalie).toHaveBeenCalledWith(31);
   });
 
   it("renders goalie stale-source state from matrix freshness metadata", () => {
@@ -570,12 +577,13 @@ describe("GoalieMatrixTable and TeamMatrixTable", () => {
   });
 
   it("renders team metric cells with lower-is-better semantics and source-pending state", () => {
+    const onSelectTeam = vi.fn();
     render(
       <TeamMatrixTable
         payload={teamPayload}
         isLoading={false}
         selectedTeam="TST"
-        onSelectTeam={vi.fn()}
+        onSelectTeam={onSelectTeam}
         onSortMetric={vi.fn()}
         onPageChange={vi.fn()}
         onPageSizeChange={vi.fn()}
@@ -610,6 +618,12 @@ describe("GoalieMatrixTable and TeamMatrixTable", () => {
     expect(screen.getAllByLabelText("Raw context").length).toBeGreaterThan(0);
     expect(screen.getByLabelText("Team source state legend")).toBeTruthy();
     expect(screen.getByLabelText(/xGA\/60.*Value 2\.20.*Rank 5.*Lower raw values are better/)).toBeTruthy();
+    const selectTeam = screen.getByRole("button", {
+      name: "Select Test Team",
+    });
+    expect(selectTeam.getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(selectTeam);
+    expect(onSelectTeam).toHaveBeenCalledWith("TST");
   });
 
   it("renders team stale-source state when style source lags power snapshot", () => {

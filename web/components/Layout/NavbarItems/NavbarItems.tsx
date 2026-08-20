@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import Link from "next/link";
 import classNames from "classnames";
 import Image from "next/image";
@@ -33,39 +33,88 @@ function isLinkActive(link: NavbarItemLink): boolean {
 type NavBarCategoryProps = {
   item: NavbarItemCategoryType;
   onItemClick: (item?: NavbarItem) => void;
+  large: boolean;
 };
 
-function NavbarItemCategory({ item, onItemClick }: NavBarCategoryProps) {
-  const [collapsed, setCollapsed] = useState(() => isCategoryActive(item));
-  const size = useScreenSize();
+function NavbarItemCategory({
+  item,
+  onItemClick,
+  large,
+}: NavBarCategoryProps) {
+  const [disclosureOpen, setDisclosureOpen] = useState(
+    () => !large && isCategoryActive(item),
+  );
+  const [hoverOpen, setHoverOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const reactId = useId();
+  const submenuId = `navbar-submenu-${reactId.replace(/:/g, "")}`;
+  const expanded = disclosureOpen || hoverOpen;
+
+  const close = () => {
+    setDisclosureOpen(false);
+    setHoverOpen(false);
+  };
+
+  const handleItemClick = (selectedItem?: NavbarItem) => {
+    close();
+    onItemClick(selectedItem);
+  };
+
   return (
     <li
       className={classNames(styles.category, {
         [styles.active]: isCategoryActive(item),
-        [styles.collapsed]: collapsed,
+        [styles.expanded]: expanded,
       })}
+      onMouseEnter={() => {
+        if (large) setHoverOpen(true);
+      }}
+      onMouseLeave={() => {
+        if (large) setHoverOpen(false);
+      }}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          close();
+        }
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && expanded) {
+          event.preventDefault();
+          close();
+          triggerRef.current?.focus();
+        }
+      }}
     >
-      <div
+      <button
+        ref={triggerRef}
+        type="button"
+        className={styles.categoryTrigger}
+        aria-expanded={expanded}
+        aria-controls={submenuId}
         onClick={() => {
-          setCollapsed((prev) => !prev);
+          setDisclosureOpen((open) => !open);
+          setHoverOpen(false);
         }}
       >
-        <div className={styles.category_item}>
+        <span className={styles.category_item}>
           {item.label}{" "}
-          <div className={styles.arrow}>
+          <span className={styles.arrow} aria-hidden="true">
             <Image
               src="/pictures/menu-arrow-drop-down.svg"
-              alt="expand category"
+              alt=""
               width={32}
               height={32}
             />
-          </div>
-        </div>
-      </div>
-      {/* always show the sublist but with display: none applied */}
-      {(size.screen === BreakPoint.l || collapsed) && (
-        <NavbarItems_ onItemClick={onItemClick} items={item.items} />
-      )}
+          </span>
+        </span>
+      </button>
+      <NavbarItems_
+        id={submenuId}
+        hidden={!expanded}
+        large={large}
+        onItemClick={handleItemClick}
+        items={item.items}
+      />
     </li>
   );
 }
@@ -77,11 +126,23 @@ type NavBarItemsProps = {
   forceLarge?: boolean;
 };
 
-function NavbarItems_({ items, onItemClick }: NavBarItemsProps) {
+type NavBarItemsListProps = Pick<NavBarItemsProps, "items" | "onItemClick"> & {
+  large: boolean;
+  id?: string;
+  hidden?: boolean;
+};
+
+function NavbarItems_({
+  items,
+  onItemClick,
+  large,
+  id,
+  hidden,
+}: NavBarItemsListProps) {
   return (
     <>
       {/* navbar items */}
-      <ul className={styles.menu_list}>
+      <ul className={styles.menu_list} id={id} hidden={hidden}>
         {items.map((item, idx) => {
           if (item.type === "category") {
             return (
@@ -89,6 +150,7 @@ function NavbarItems_({ items, onItemClick }: NavBarItemsProps) {
                 key={idx}
                 item={item}
                 onItemClick={onItemClick}
+                large={large}
               />
             );
           } else if (item.type === "link") {
@@ -117,17 +179,16 @@ export default function NavbarItems({
   ...props
 }: NavBarItemsProps) {
   const size = useScreenSize();
+  const large = forceLarge || size.screen === BreakPoint.l;
   return (
     <nav
       className={classNames(
         styles.items,
         className,
-        forceLarge || size.screen === BreakPoint.l
-          ? styles.large
-          : styles.small,
+        large ? styles.large : styles.small,
       )}
     >
-      <NavbarItems_ {...props} />
+      <NavbarItems_ {...props} large={large} />
     </nav>
   );
 }

@@ -8,10 +8,10 @@ The pass-2 validation console now has a dedicated read-only server-side path ins
 
 ## Implemented Files
 
-- [rolling-player-metrics.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/debug/rolling-player-metrics.ts)
-- [rolling-player-metrics.test.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/debug/rolling-player-metrics.test.ts)
-- [rollingPlayerValidationPayload.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts)
-- [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+- [rolling-player-metrics.ts](../../../../web/pages/api/v1/debug/rolling-player-metrics.ts)
+- [rolling-player-metrics.test.ts](../../../../web/__tests__/pages/api/v1/debug/rolling-player-metrics.test.ts)
+- [rollingPlayerValidationPayload.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts)
+- [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
 
 ## Implemented Route Contract
 

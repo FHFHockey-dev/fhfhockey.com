@@ -9,7 +9,7 @@ npm run check:rolling-player-context-labels
 ```
 
 Script:
-- [check-rolling-player-context-labels.ts](/Users/tim/Code/fhfhockey.com/web/scripts/check-rolling-player-context-labels.ts)
+- [check-rolling-player-context-labels.ts](../../../../web/scripts/check-rolling-player-context-labels.ts)
 
 ## Scope
 
@@ -32,8 +32,8 @@ Validation cases:
 
 Builder freshness was established in the earlier validation workflow:
 
-- PP builder and line builder freshness for ready cases were checked in [rolling-player-validation-freshness-report-2026-03-11.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-validation-freshness-report-2026-03-11.md)
-- Brent Burns PP builder freshness was repaired in [rolling-player-refresh-actions-report-2026-03-11.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-refresh-actions-report-2026-03-11.md)
+- PP builder and line builder freshness for ready cases were checked in [rolling-player-validation-freshness-report-2026-03-11.md](rolling-player-validation-freshness-report-2026-03-11.md)
+- Brent Burns PP builder freshness was repaired in [rolling-player-refresh-actions-report-2026-03-11.md](rolling-player-refresh-actions-report-2026-03-11.md)
 
 ## Results
 

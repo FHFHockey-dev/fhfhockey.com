@@ -16,9 +16,9 @@ It translates the PRD and audit into concrete schema decisions for:
 
 Primary inputs:
 
-- `/Users/tim/Code/fhfhockey.com/tasks/prd-rolling-player-metrics-remediation-blueprint.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-game-metrics-schema-surface-audit.md`
+- `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-remediation-blueprint.md`
+- `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-game-metrics-schema-surface-audit.md`
 
 ## Decision Summary
 
@@ -44,7 +44,7 @@ Reasoning:
 
 Decision:
 
-- keep `/Users/tim/Code/fhfhockey.com/migrations/20260310_remediate_rolling_player_metrics_gp_pct.sql` as historical context
+- keep `migrations/20260310_remediate_rolling_player_metrics_gp_pct.sql` as historical context
 - do not amend that existing migration file
 - create a new superseding migration for the broader contract cleanup
 

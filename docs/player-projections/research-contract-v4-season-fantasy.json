@@ -1,0 +1,197 @@
+{
+  "contractVersion": "player-forecasts-research-v4-season-fantasy",
+  "status": "approved_for_local_implementation",
+  "seasonId": 20262027,
+  "gameType": 2,
+  "seasonGamesPerTeam": 84,
+  "baseContract": {
+    "version": "player-forecasts-research-v3-season",
+    "checksum": "29c6766f63ba9a8dbf8890cb6a388418945134b70217d58e9d8645b34dc36b93"
+  },
+  "metricSet": "fantasy-v4",
+  "releaseSemantics": {
+    "opening": "Owner-approved immutable preseason projection issued before the first regular-season game.",
+    "current": "Actual outcomes through cutoff plus forecasts for every remaining scheduled game.",
+    "ros": "Forecast distribution for every remaining scheduled game, excluding recorded outcomes."
+  },
+  "rosterIntegrity": {
+    "sources": [
+      "official_nhl_roster",
+      "official_nhl_player_landing",
+      "official_team_transaction",
+      "trusted_normalized_ifttt"
+    ],
+    "organizationStatuses": [
+      "active_nhl",
+      "injured_nhl",
+      "affiliate",
+      "prospect_reserve",
+      "unsigned",
+      "unresolved"
+    ],
+    "automaticResolution": "Official roster plus player landing, or player landing plus official transaction, must agree with no newer contradiction.",
+    "omissionPolicy": "An offseason official-roster omission never proves release, departure, or ineligibility.",
+    "conflictPolicy": "Single-source and contradictory evidence remain review-required; evidence and resolutions are append-only."
+  },
+  "rookieModel": {
+    "source": "Checksum-captured official NHL player landing seasonTotals.",
+    "eligibleLeagues": "League histories are admitted only after identifiers and year-to-year definitions pass the freeze audit.",
+    "layers": [
+      "nhl_roster_probability",
+      "expected_nhl_games",
+      "conditional_deployment_and_toi",
+      "conditional_nhl_rate"
+    ],
+    "translation": "League, age, position, draft slot, recency, development trajectory, organization depth, deployment, and team environment enter a chronologically learned and hierarchically shrunk NHL-equivalency model.",
+    "peripheralFallback": "Unavailable non-NHL peripherals use position-age-league cohort priors with stronger shrinkage and wider intervals.",
+    "disclosure": "Every no-NHL-history output reports rookie status, source coverage, roster probability, NHLe method, and fallback flags."
+  },
+  "targets": {
+    "skaterPrimitive": [
+      "GAMES_PLAYED",
+      "TOTAL_TOI",
+      "EV_TOI",
+      "PP_TOI",
+      "PK_TOI",
+      "GOALS",
+      "PRIMARY_ASSISTS",
+      "SECONDARY_ASSISTS",
+      "PLUS_MINUS",
+      "SHOTS_ON_GOAL",
+      "HITS",
+      "BLOCKED_SHOTS",
+      "PENALTY_MINUTES",
+      "PP_GOALS",
+      "PP_ASSISTS",
+      "SH_GOALS",
+      "SH_ASSISTS",
+      "FACEOFFS_WON",
+      "FACEOFFS_LOST",
+      "TAKEAWAYS",
+      "GIVEAWAYS",
+      "MISSED_SHOTS",
+      "PENALTIES_DRAWN",
+      "PENALTIES_TAKEN",
+      "GAME_WINNING_GOALS",
+      "OVERTIME_GOALS",
+      "EMPTY_NET_GOALS",
+      "EMPTY_NET_POINTS",
+      "EV_GOALS",
+      "EV_PRIMARY_ASSISTS",
+      "EV_SECONDARY_ASSISTS",
+      "PP_PRIMARY_ASSISTS",
+      "PP_SECONDARY_ASSISTS",
+      "SH_PRIMARY_ASSISTS",
+      "SH_SECONDARY_ASSISTS",
+      "EN_PRIMARY_ASSISTS",
+      "EN_SECONDARY_ASSISTS"
+    ],
+    "goaliePrimitive": [
+      "GAMES_PLAYED",
+      "GAMES_STARTED",
+      "TOTAL_TOI",
+      "WINS_GOALIE",
+      "LOSSES_GOALIE",
+      "OTL_GOALIE",
+      "SHOTS_AGAINST_GOALIE",
+      "GOALS_AGAINST_GOALIE",
+      "SHUTOUTS_GOALIE",
+      "QUALITY_STARTS_GOALIE"
+    ],
+    "derived": {
+      "ASSISTS": "PRIMARY_ASSISTS + SECONDARY_ASSISTS",
+      "POINTS": "GOALS + ASSISTS",
+      "PP_POINTS": "PP_GOALS + PP_ASSISTS",
+      "SH_POINTS": "SH_GOALS + SH_ASSISTS",
+      "EV_ASSISTS": "EV_PRIMARY_ASSISTS + EV_SECONDARY_ASSISTS",
+      "EV_POINTS": "EV_GOALS + EV_ASSISTS",
+      "SHOOTING_PERCENTAGE": "GOALS / SHOTS_ON_GOAL",
+      "FACEOFF_PERCENTAGE": "FACEOFFS_WON / (FACEOFFS_WON + FACEOFFS_LOST)",
+      "POINTS_PER_GAME": "POINTS / GAMES_PLAYED",
+      "TOI_PER_GAME": "TOTAL_TOI / GAMES_PLAYED",
+      "SAVES_GOALIE": "SHOTS_AGAINST_GOALIE - GOALS_AGAINST_GOALIE",
+      "SAVE_PERCENTAGE": "SAVES_GOALIE / SHOTS_AGAINST_GOALIE",
+      "GOALS_AGAINST_AVERAGE": "3600 * GOALS_AGAINST_GOALIE / TOTAL_TOI",
+      "RELIEF_APPEARANCES_GOALIE": "GAMES_PLAYED - GAMES_STARTED",
+      "START_PERCENTAGE_GOALIE": "GAMES_STARTED / GAMES_PLAYED",
+      "WIN_PERCENTAGE_GOALIE": "WINS_GOALIE / GAMES_STARTED"
+    },
+    "assistPolicy": "Primary and secondary assists remain separate targets and their unweighted sum is official assists. Fixed 70:30 and 80:20 weighting is prohibited.",
+    "strengthPolicy": "EV, PP, SH, and empty-net event labels are mutually exclusive under the versioned normalized-PBP classifier; shootouts are excluded."
+  },
+  "modeling": {
+    "layers": [
+      "availability_or_start_probability",
+      "deployment_and_toi",
+      "conditional_event_rate",
+      "team_opponent_schedule_venue_context",
+      "correlated_game_simulation"
+    ],
+    "families": [
+      "hierarchical_empirical_bayes",
+      "regularized_hurdle_glm",
+      "regularized_poisson_glm",
+      "regularized_negative_binomial_glm"
+    ],
+    "venueBias": "Hits, blocks, takeaways, and giveaways include chronologically estimated venue-scorer effects.",
+    "selection": "A challenger is served only when chronological loss and calibration beat the frozen baseline without critical subgroup regression.",
+    "fallback": "The strongest valid frozen baseline remains available per target.",
+    "sourceEligibility": {
+      "availabilityScope": "Coverage is target-specific. A season whose settled source does not expose a target is unavailable, not a zero-valued failure.",
+      "minimumObservedRowsByPopulation": {
+        "skater": 10000,
+        "goalie": 1000
+      },
+      "minimumSeasonCoverage": 0.75,
+      "minimumEligibleSeasons": 1,
+      "minimumFoldObservedRowsByPopulation": {
+        "skater": 1000,
+        "goalie": 100
+      },
+      "minimumFoldCoverage": 0.75,
+      "minimumEligibleValidationFolds": 2,
+      "fallback": "A target failing this gate remains on its strongest valid frozen baseline and is disclosed; it does not invalidate unrelated targets."
+    },
+    "gameAggregation": "Every remaining scheduled game is forecast independently; H1 is never multiplied by 84.",
+    "uncertainty": "Correlated simulation reconciles identities and produces p10, p50, and p90."
+  },
+  "evaluation": {
+    "consumedLockboxPolicy": "The 2025-26 lockbox is validation and training evidence, never new blind evidence.",
+    "prospectiveEvidenceSeason": 20262027,
+    "advertisedInterval": 0.8,
+    "acceptableObservedCoverage": [0.75, 0.85],
+    "intervalCalibration": "Rolling-origin standardized residuals use randomized conformal boundary handling. calibration80Coverage is expected randomized coverage; ordinary discrete overcoverage is reported separately, and untouched 2026-27 coverage remains required prospective evidence.",
+    "subgroups": [
+      "position",
+      "rookie_status",
+      "target",
+      "deployment_tier",
+      "roster_status"
+    ],
+    "settlement": "Model and editorial values are settled separately using append-only revisions."
+  },
+  "publication": {
+    "channel": "public_beta",
+    "openingManualApproval": true,
+    "healthyCurrentAndRosAutoPublish": true,
+    "unhealthyPolicy": "Retain the last good release and expose a non-sensitive hold reason.",
+    "fantasyScoring": "Downstream transform of published raw outcomes; never a model target.",
+    "forgePolicy": "FORGE remains unchanged and benchmark-only."
+  },
+  "security": {
+    "tables": "service_only_forced_rls",
+    "publicData": "active immutable releases only",
+    "editor": "Valid user token, admin role, and sole UUID allowlist membership.",
+    "cron": "Cron may enqueue and publish a healthy validated run but may not edit projections."
+  },
+  "acceptance": {
+    "teams": 32,
+    "uniqueGames": 1344,
+    "gamesPerTeam": 84,
+    "maxExpectedGames": 84,
+    "probabilityBounds": [0, 1],
+    "quantileOrder": "p10 <= p50 <= p90",
+    "roster": "Zero resolved-vs-official mismatches, zero duplicate current memberships, and zero unresolved high-confidence conflicts.",
+    "determinism": "Identical artifact, feature, roster, schedule, and override inputs produce byte-equivalent canonical outputs."
+  }
+}

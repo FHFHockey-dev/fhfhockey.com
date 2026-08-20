@@ -5,7 +5,7 @@ Sub-task: `2.6`
 
 ## Scope
 
-Refine [trendsDebug.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.tsx) so validation readiness is rendered as three explicit operator-facing states:
+Refine [trendsDebug.tsx](../../../../web/pages/trendsDebug.tsx) so validation readiness is rendered as three explicit operator-facing states:
 
 - `READY`
 - `READY WITH CAUTIONS`
@@ -13,7 +13,7 @@ Refine [trendsDebug.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.tsx
 
 ## Implementation
 
-- Added a dedicated readiness display mapper in [trendsDebug.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.tsx) that converts payload readiness status into:
+- Added a dedicated readiness display mapper in [trendsDebug.tsx](../../../../web/pages/trendsDebug.tsx) that converts payload readiness status into:
   - label text
   - summary copy
   - status-pill style
@@ -22,7 +22,7 @@ Refine [trendsDebug.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.tsx
   - signoff-ready state
   - caution-state review requirement
   - blocker-state refresh / investigation requirement
-- Added dedicated readiness pill styles in [trendsDebug.module.scss](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.module.scss):
+- Added dedicated readiness pill styles in [trendsDebug.module.scss](../../../../web/pages/trendsDebug.module.scss):
   - `.pillReady`
   - `.pillCaution`
   - `.pillBlocked`

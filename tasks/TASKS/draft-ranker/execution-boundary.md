@@ -6,7 +6,7 @@ Completed on 2026-07-14. This document records the safe implementation boundary 
 
 ## Git and worktree baseline
 
-- Repository: `/Users/tim/Code/fhfhockey.com`
+- Repository: `.`
 - Current branch: `octoberBranch`
 - Current HEAD: `3d6d5ca1` (`bigun`)
 - No repository-level `AGENTS.md` file was found.

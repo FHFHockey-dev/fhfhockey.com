@@ -1,6 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import {
+  operationalRouteContracts,
+  withOperationalRouteAuth,
+} from "lib/cron/withOperationalRouteAuth";
 import { getCurrentSeason } from "lib/NHL/server";
 import supabase from "lib/supabase/server";
 import {
@@ -90,6 +93,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default withCronJobAudit(handler, {
-  jobName: "audit-nhl-xg-backfill"
-});
+export default withOperationalRouteAuth(
+  handler,
+  operationalRouteContracts.auditNhlXgBackfill,
+);

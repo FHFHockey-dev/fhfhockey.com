@@ -900,7 +900,7 @@
         gap: v.$space-md;
         align-items: center;
 
-        @media (max-width: 768px) {
+        @media (max-width: v.$breakpoint-tablet) {
           grid-template-columns: 1fr;
           gap: v.$space-sm;
         }

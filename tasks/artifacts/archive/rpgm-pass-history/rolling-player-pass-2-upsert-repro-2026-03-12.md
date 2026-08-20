@@ -33,7 +33,7 @@ Reason for choosing this slice:
 
 Because `localhost:3000` was not running during this task, the failure was reproduced by calling the rolling pipeline directly with `ts-node`, loading `web/.env.local`, and executing the real `main(...)` path from:
 
-- [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+- [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
 
 Temporary repro scripts used:
 

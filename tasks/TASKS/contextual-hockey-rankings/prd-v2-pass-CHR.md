@@ -551,7 +551,7 @@ Likely files:
 - `web/lib/rankings/teamMatrix.ts`
 - `web/lib/rankings/teamStyleMethodology.ts`
 - new team style writer/aggregate module.
-- `web/pages/shiftcharts` ecosystem.
+- `web/pages/api/v1/db/shift-charts.ts` ecosystem.
 - `web/lib/underlying-stats/*`
 
 ## Design Considerations

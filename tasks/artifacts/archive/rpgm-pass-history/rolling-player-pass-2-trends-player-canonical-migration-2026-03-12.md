@@ -4,7 +4,7 @@
 
 Sub-task `4.2`
 
-This change migrates [player/[playerId].tsx](/Users/tim/Code/fhfhockey.com/web/pages/trends/player/[playerId].tsx) away from hardcoded legacy suffix selection and onto family-aware compatibility resolution.
+This change migrates [player/[playerId].tsx](../../../../web/pages/trends/player/[playerId].tsx) away from hardcoded legacy suffix selection and onto family-aware compatibility resolution.
 
 ## What Changed
 
