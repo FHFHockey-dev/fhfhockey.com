@@ -10,10 +10,17 @@ vi.mock("@supabase/supabase-js", () => ({
 
 import ownershipSnapshotsHandler from "../../../../../pages/api/v1/transactions/ownership-snapshots";
 import ownershipTrendsHandler, {
+  buildAdpTimelines,
+  calculateTrendMovement,
   fetchYahooPlayerRows,
   latestOwnershipTimelineDate,
   matchesPositionFilter
 } from "../../../../../pages/api/v1/transactions/ownership-trends";
+import {
+  formatTrendPlayerMetadata,
+  normalizeTrendPositions,
+  normalizeTrendTeamAbbreviation
+} from "../../../../../lib/transactions/ownershipTrendMetadata";
 
 function createMockRes() {
   return {
@@ -101,6 +108,27 @@ describe("ownership-trends data contract", () => {
     expect(matchesPositionFilter("D", ["D"], [])).toBe(true);
   });
 
+  it("normalizes Yahoo object metadata without implicit object coercion", () => {
+    const positions = normalizeTrendPositions([
+      { position: "C" },
+      { position: { code: "LW" } },
+      { position: "C" },
+      "RW"
+    ]);
+
+    expect(positions).toEqual(["C", "LW", "RW"]);
+    expect(
+      normalizeTrendTeamAbbreviation({ abbreviation: "tor" })
+    ).toBe("TOR");
+    expect(
+      formatTrendPlayerMetadata({
+        teamAbbrev: { code: "NJD" },
+        eligiblePositions: [{ position: "G" }]
+      }).label
+    ).toBe("NJD · G");
+    expect(positions.join(", ")).not.toContain("[object Object]");
+  });
+
   it("derives freshness from the latest source timeline date rather than request time", () => {
     expect(
       latestOwnershipTimelineDate([
@@ -108,6 +136,49 @@ describe("ownership-trends data contract", () => {
         { ownership_timeline: [{ date: "2026-03-14" }] }
       ])
     ).toBe("2026-03-14");
+  });
+
+  it("builds daily ADP timelines and treats earlier average picks as risers", () => {
+    const timelines = buildAdpTimelines([
+      {
+        player_key: "477.p.1",
+        captured_at: "2026-08-16T00:00:00Z",
+        average_draft_pick: "100"
+      },
+      {
+        player_key: "477.p.1",
+        captured_at: "2026-08-19T00:00:00Z",
+        average_draft_pick: "80"
+      },
+      {
+        player_key: "477.p.1",
+        captured_at: "2026-08-19T12:00:00Z",
+        average_draft_pick: "79"
+      },
+      {
+        player_key: "477.p.2",
+        captured_at: "2026-08-19T00:00:00Z",
+        average_draft_pick: 0
+      }
+    ]);
+
+    expect(timelines.get("477.p.1")).toEqual([
+      { date: "2026-08-16", value: 100 },
+      { date: "2026-08-19", value: 79 }
+    ]);
+    expect(timelines.has("477.p.2")).toBe(false);
+    expect(calculateTrendMovement("adp", 80, 100)).toEqual({
+      delta: 20,
+      deltaPct: 20
+    });
+    expect(calculateTrendMovement("adp", 120, 100)).toEqual({
+      delta: -20,
+      deltaPct: -20
+    });
+    expect(calculateTrendMovement("ownership", 52, 50)).toEqual({
+      delta: 2,
+      deltaPct: 2
+    });
   });
 
   it.each([

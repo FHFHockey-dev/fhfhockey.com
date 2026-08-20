@@ -150,7 +150,7 @@ $arrow-color: v.$text-color-secondary; // Use theme variable for arrow color
   padding: v.$space-xs 0;
 }
 
-@media (max-width: 768px) {
+@media (max-width: v.$breakpoint-tablet) {
   .timeframeContainer {
     align-items: stretch;
     flex-direction: column;

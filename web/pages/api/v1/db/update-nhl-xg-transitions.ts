@@ -1,6 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import {
+  operationalRouteContracts,
+  withOperationalRouteAuth,
+} from "lib/cron/withOperationalRouteAuth";
 import supabase from "lib/supabase/server";
 import {
   buildTransitionRows,
@@ -338,6 +341,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   });
 }
 
-export default withCronJobAudit(handler, {
-  jobName: "update-nhl-xg-transitions",
-});
+export default withOperationalRouteAuth(
+  handler,
+  operationalRouteContracts.updateNhlXgTransitions,
+);

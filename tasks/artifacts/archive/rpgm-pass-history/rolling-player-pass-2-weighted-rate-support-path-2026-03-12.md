@@ -8,7 +8,7 @@ Do not add new persisted support columns to `rolling_player_game_metrics`.
 
 ## Why
 
-- Historical weighted-rate scopes already have dedicated persisted support columns from [20260311_add_optional_rolling_player_weighted_rate_metrics.sql](/Users/tim/Code/fhfhockey.com/migrations/20260311_add_optional_rolling_player_weighted_rate_metrics.sql).
+- Historical weighted-rate scopes already have dedicated persisted support columns from [20260311_add_optional_rolling_player_weighted_rate_metrics.sql](../../../../migrations/20260311_add_optional_rolling_player_weighted_rate_metrics.sql).
 - `all` and `lastN` scopes can be reconstructed from the current stored surface without schema growth:
   - additive companions such as `goals_total_last5`, `shots_total_last5`, `ixg_total_last5`, `assists_total_last5`, `hits_total_last5`, `blocks_total_last5`
   - TOI companions such as `toi_seconds_total_last5`
@@ -16,7 +16,7 @@ Do not add new persisted support columns to `rolling_player_game_metrics`.
 
 ## Implemented Path
 
-- Added normalized weighted-rate support aliases in [rollingPlayerValidationPayload.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts) for:
+- Added normalized weighted-rate support aliases in [rollingPlayerValidationPayload.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts) for:
   - `sog_per_60`
   - `ixg_per_60`
   - `goals_per_60`

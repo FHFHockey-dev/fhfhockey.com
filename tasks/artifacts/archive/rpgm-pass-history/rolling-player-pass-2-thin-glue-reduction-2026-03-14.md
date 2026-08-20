@@ -11,7 +11,7 @@ Remove thin transport-layer glue that had accumulated across the pass-2 operator
 
 Added:
 
-- [queryParams.ts](/Users/tim/Code/fhfhockey.com/web/lib/api/queryParams.ts)
+- [queryParams.ts](../../../../web/lib/api/queryParams.ts)
 
 Moved repeated query-parsing logic into one shared helper for:
 
@@ -22,9 +22,9 @@ Moved repeated query-parsing logic into one shared helper for:
 
 ## Routes Updated
 
-- [update-rolling-player-averages.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-rolling-player-averages.ts)
-- [run-rolling-forge-pipeline.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/run-rolling-forge-pipeline.ts)
-- [rolling-player-metrics.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/debug/rolling-player-metrics.ts)
+- [update-rolling-player-averages.ts](../../../../web/pages/api/v1/db/update-rolling-player-averages.ts)
+- [run-rolling-forge-pipeline.ts](../../../../web/pages/api/v1/db/run-rolling-forge-pipeline.ts)
+- [rolling-player-metrics.ts](../../../../web/pages/api/v1/debug/rolling-player-metrics.ts)
 
 ## Why This Counts As Organization Work
 

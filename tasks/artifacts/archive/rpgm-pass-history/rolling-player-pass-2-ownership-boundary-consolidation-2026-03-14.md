@@ -13,7 +13,7 @@ Start collapsing the pass-2 operational surface around fewer ownership boundarie
 
 Added:
 
-- [rollingPlayerOperationalPolicy.ts](/Users/tim/Code/fhfhockey.com/web/lib/rollingPlayerOperationalPolicy.ts)
+- [rollingPlayerOperationalPolicy.ts](../../../../web/lib/rollingPlayerOperationalPolicy.ts)
 
 This module now owns:
 
@@ -28,10 +28,10 @@ This module now owns:
 
 Updated:
 
-- [update-rolling-player-averages.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-rolling-player-averages.ts)
-- [run-rolling-forge-pipeline.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/run-rolling-forge-pipeline.ts)
-- [check-rolling-player-runtime-budget.ts](/Users/tim/Code/fhfhockey.com/web/scripts/check-rolling-player-runtime-budget.ts)
-- [rollingForgePipeline.ts](/Users/tim/Code/fhfhockey.com/web/lib/rollingForgePipeline.ts)
+- [update-rolling-player-averages.ts](../../../../web/pages/api/v1/db/update-rolling-player-averages.ts)
+- [run-rolling-forge-pipeline.ts](../../../../web/pages/api/v1/db/run-rolling-forge-pipeline.ts)
+- [check-rolling-player-runtime-budget.ts](../../../../web/scripts/check-rolling-player-runtime-budget.ts)
+- [rollingForgePipeline.ts](../../../../web/lib/rollingForgePipeline.ts)
 
 ## Why This Boundary Matters
 

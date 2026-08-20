@@ -2,11 +2,11 @@
 
 ## Purpose
 
-This checklist converts the validation requirements in [prd-rolling-player-metrics-remediation-blueprint.md](/Users/tim/Code/fhfhockey.com/tasks/prd-rolling-player-metrics-remediation-blueprint.md) into an execution artifact for post-implementation live-data verification.
+This checklist converts the validation requirements in [prd-rolling-player-metrics-remediation-blueprint.md](../../../TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-remediation-blueprint.md) into an execution artifact for post-implementation live-data verification.
 
 Authoritative sources:
-- [prd-rolling-player-metrics-remediation-blueprint.md](/Users/tim/Code/fhfhockey.com/tasks/prd-rolling-player-metrics-remediation-blueprint.md)
-- [rolling-player-metrics-audit-notes.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md)
+- [prd-rolling-player-metrics-remediation-blueprint.md](../../../TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-remediation-blueprint.md)
+- [rolling-player-metrics-audit-notes.md](../../../TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md)
 
 Rule of use:
 - every metric must be re-verified against live upstream data one by one
@@ -403,7 +403,7 @@ Do not mark remediation validated unless all of the following are true:
 
 ## Final Audit Re-Read Completeness Check
 
-Final signoff must include a fresh re-read of [rolling-player-metrics-audit-notes.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md).
+Final signoff must include a fresh re-read of [rolling-player-metrics-audit-notes.md](../../../TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md).
 
 Record the outcome of each actionable audit item as one of:
 

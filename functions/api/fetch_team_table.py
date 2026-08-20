@@ -3,12 +3,11 @@
 
 import requests
 from bs4 import BeautifulSoup
-import json
 import argparse
-import re
 import os
+from dataclasses import dataclass
 from flask import Flask, request, jsonify
-from typing import Optional, Tuple
+from typing import Any, Dict, Tuple
 from lib.env_loader import ensure_loaded_for
 
 # Optional DB access for dynamic season discovery
@@ -16,6 +15,37 @@ try:
     from lib.postgres import get_conn  # uses SUPABASE_DB_URL
 except Exception:  # pragma: no cover
     get_conn = None  # type: ignore
+
+
+@dataclass(frozen=True)
+class TeamTableResult:
+    payload: Dict[str, Any]
+    status_code: int
+
+
+def _error_result(
+    result: Dict[str, Any],
+    *,
+    code: str,
+    message: str,
+    status_code: int,
+    detail: str | None = None,
+) -> TeamTableResult:
+    result["data"] = []
+    result["error"] = {"code": code, "message": message}
+    result["debug"]["Status"] = code
+    result["debug"]["Error"] = detail or message
+    return TeamTableResult(payload=result, status_code=status_code)
+
+
+def missing_required_parameters_result() -> TeamTableResult:
+    return _error_result(
+        {"debug": {}, "data": []},
+        code="invalid_request",
+        message="Missing required parameters: 'sit' and 'rate'.",
+        status_code=400,
+    )
+
 
 def clean_header(header: str) -> str:
     """
@@ -47,9 +77,13 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
     ensure_loaded_for(["NST_KEY"])
     nst_key = (os.environ.get("NST_KEY") or "").strip()
     if not nst_key:
-        result["debug"]["Error"] = "NST_KEY missing"
-        result["debug"]["Status"] = "missing_key"
-        return json.dumps(result)
+        return _error_result(
+            result,
+            code="missing_key",
+            message="Natural Stat Trick authentication is not configured.",
+            status_code=503,
+            detail="NST_KEY missing",
+        )
 
     # Construct the URL with query parameters
     url = (
@@ -79,12 +113,15 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
         # Locate the table by ID
         table = soup.find('table', id='teams')
         if not table:
-            result["debug"]["Error"] = (
-                f"No table found for sit={sit}, rate={rate}, fd={fd}, td={td}"
+            return _error_result(
+                result,
+                code="missing_table",
+                message="Natural Stat Trick response did not contain the team table.",
+                status_code=502,
+                detail=(
+                    f"No table found for sit={sit}, rate={rate}, fd={fd}, td={td}"
+                ),
             )
-            result["debug"]["Status"] = "missing_table"
-            result["data"] = []
-            return json.dumps(result)
 
         # Extract table headers and clean them
         headers = []
@@ -139,15 +176,41 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
         result["data"] = rows
 
 
+    except requests.exceptions.Timeout as timeout_err:
+        return _error_result(
+            result,
+            code="upstream_timeout",
+            message="Natural Stat Trick request timed out.",
+            status_code=504,
+            detail=str(timeout_err),
+        )
     except requests.exceptions.HTTPError as http_err:
-        result["debug"]["HTTP error"] = f"HTTP error occurred: {http_err} - Status Code: {response.status_code}"
+        upstream_status = getattr(http_err.response, "status_code", None)
+        return _error_result(
+            result,
+            code="upstream_http_error",
+            message="Natural Stat Trick returned an unsuccessful response.",
+            status_code=502,
+            detail=f"Upstream status: {upstream_status or 'unknown'}",
+        )
+    except requests.exceptions.RequestException as request_err:
+        return _error_result(
+            result,
+            code="upstream_request_error",
+            message="Natural Stat Trick request failed.",
+            status_code=502,
+            detail=str(request_err),
+        )
     except Exception as err:
-        result["debug"]["Exception"] = f"An error occurred: {err}"
+        return _error_result(
+            result,
+            code="parse_error",
+            message="Natural Stat Trick response could not be parsed.",
+            status_code=502,
+            detail=str(err),
+        )
 
-    # Output the data as JSON
-    # print(json.dumps(result))
-    
-    return json.dumps(result)
+    return TeamTableResult(payload=result, status_code=200)
 
 
 app = Flask(__name__)
@@ -208,9 +271,10 @@ def _handle_fetch_team_table_request():
         thru_season = thru_season or current_sid
 
     if not sit or not rate:
-        return jsonify({"error": "Missing required parameters: 'sit' and 'rate'"}), 400
+        result = missing_required_parameters_result()
+        return jsonify(result.payload), result.status_code
 
-    result_json = fetch_team_table(
+    result = fetch_team_table(
     from_season=from_season,
     thru_season=thru_season,
         stype=stype,
@@ -224,13 +288,13 @@ def _handle_fetch_team_table_request():
         td=td
     )
 
-    payload = json.loads(result_json)
+    payload = result.payload
     # Attach debug hint about resolved seasons when defaults were used
     if isinstance(payload, dict):
         dbg = payload.setdefault('debug', {})
         dbg.setdefault('Resolved from_season', from_season)
         dbg.setdefault('Resolved thru_season', thru_season)
-    return jsonify(payload)
+    return jsonify(payload), result.status_code
 
 
 # Support both styles of routing depending on how Vercel forwards PATH_INFO

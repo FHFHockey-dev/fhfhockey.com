@@ -235,7 +235,7 @@ $mobile-fixed-width: 35px;
   margin: 0 auto;
 }
 
-@media (max-width: 480px) {
+@media (max-width: v.$breakpoint-mobile-max) {
   .transposedGrid {
     display: block; // Ensures block-level container behavior
     overflow-x: auto; // Enables horizontal scrolling

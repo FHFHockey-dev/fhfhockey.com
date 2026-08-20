@@ -940,7 +940,7 @@ protected routes.
 -- - use the summary-only incremental URL only as a lower-frequency repair job,
 --   not as the primary postgame freshness trigger
 
-<!-- cd /Users/tim/Code/fhfhockey.com/web
+<!-- cd web
 set -a && source .env.local && set +a
 curl -i -sS -m 180 \
   -H "Authorization: Bearer ${CRON_SECRET}" \

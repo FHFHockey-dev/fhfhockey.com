@@ -3,7 +3,7 @@
 Date: March 11, 2026
 
 Related freshness input:
-- [rolling-player-validation-freshness-report-2026-03-11.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-validation-freshness-report-2026-03-11.md)
+- [rolling-player-validation-freshness-report-2026-03-11.md](rolling-player-validation-freshness-report-2026-03-11.md)
 
 ## Purpose
 

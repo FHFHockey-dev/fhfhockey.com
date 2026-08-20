@@ -48,7 +48,7 @@ Use this order when player underlying-stats numbers look stale, missing, or math
 Single game:
 
 ```bash
-cd /Users/tim/Code/fhfhockey.com/web
+cd web
 set -a && source .env.local && set +a
 curl -i -sS -m 180 \
   -H "Authorization: Bearer ${CRON_SECRET}" \
@@ -58,7 +58,7 @@ curl -i -sS -m 180 \
 Date range in one season:
 
 ```bash
-cd /Users/tim/Code/fhfhockey.com/web
+cd web
 set -a && source .env.local && set +a
 curl -i -sS -m 180 \
   -H "Authorization: Bearer ${CRON_SECRET}" \
@@ -80,7 +80,7 @@ Use this when you want the route to inspect Supabase first, find the latest day 
 Incremental end-to-end catch-up:
 
 ```bash
-cd /Users/tim/Code/fhfhockey.com/web
+cd web
 set -a && source .env.local && set +a
 curl -i -sS -m 180 \
   -H "Authorization: Bearer ${CRON_SECRET}" \
@@ -109,7 +109,7 @@ http://localhost:3000/api/v1/db/update-player-underlying-stats?incremental=true&
 Single game:
 
 ```bash
-cd /Users/tim/Code/fhfhockey.com/web
+cd web
 set -a && source .env.local && set +a
 curl -i -sS -m 180 \
   -H "Authorization: Bearer ${CRON_SECRET}" \
@@ -119,7 +119,7 @@ curl -i -sS -m 180 \
 Backfill missing summary payloads for a season:
 
 ```bash
-cd /Users/tim/Code/fhfhockey.com/web
+cd web
 set -a && source .env.local && set +a
 curl -i -sS -m 180 \
   -H "Authorization: Bearer ${CRON_SECRET}" \
@@ -131,7 +131,7 @@ Use this only when raw Gamecenter ingest is already complete and the problem is 
 Incremental summary-only catch-up:
 
 ```bash
-cd /Users/tim/Code/fhfhockey.com/web
+cd web
 set -a && source .env.local && set +a
 curl -i -sS -m 180 \
   -H "Authorization: Bearer ${CRON_SECRET}" \
@@ -176,12 +176,12 @@ File:
 Landing example:
 
 ```bash
-cd /Users/tim/Code/fhfhockey.com/web
+cd web
 set -a && source .env.local && set +a
-NODE_PATH=/Users/tim/Code/fhfhockey.com/web \
+NODE_PATH=web \
   ./node_modules/.bin/ts-node --transpile-only \
   --compiler-options '{"module":"NodeNext","moduleResolution":"NodeNext"}' \
-  /Users/tim/Code/fhfhockey.com/web/scripts/verify-player-underlying-query.ts \
+  web/scripts/verify-player-underlying-query.ts \
   --playerId 8485406 \
   --surface landing \
   --query 'fromSeasonId=20252026&throughSeasonId=20252026&seasonType=regularSeason&strength=fiveOnFive&scoreState=allScores&statMode=onIce&displayMode=rates&venue=all&tradeMode=combine&scope=none&sortKey=xgfPct&sortDirection=desc&page=1&pageSize=50'
@@ -190,12 +190,12 @@ NODE_PATH=/Users/tim/Code/fhfhockey.com/web \
 Detail example:
 
 ```bash
-cd /Users/tim/Code/fhfhockey.com/web
+cd web
 set -a && source .env.local && set +a
-NODE_PATH=/Users/tim/Code/fhfhockey.com/web \
+NODE_PATH=web \
   ./node_modules/.bin/ts-node --transpile-only \
   --compiler-options '{"module":"NodeNext","moduleResolution":"NodeNext"}' \
-  /Users/tim/Code/fhfhockey.com/web/scripts/verify-player-underlying-query.ts \
+  web/scripts/verify-player-underlying-query.ts \
   --playerId 8485406 \
   --surface detail \
   --query 'fromSeasonId=20252026&throughSeasonId=20252026&seasonType=regularSeason&strength=fiveOnFive&scoreState=allScores&statMode=onIce&displayMode=rates&venue=all&tradeMode=combine&scope=none&sortKey=seasonId&sortDirection=desc&page=1&pageSize=50'

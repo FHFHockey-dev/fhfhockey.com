@@ -1,6 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import {
+  operationalRouteContracts,
+  withOperationalRouteAuth,
+} from "lib/cron/withOperationalRouteAuth";
 import { getCurrentSeason } from "lib/NHL/server";
 import supabase from "lib/supabase/server";
 import type { Database } from "lib/supabase/database-generated.types";
@@ -545,9 +548,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default withCronJobAudit(withXgExecutionLeaseApi(handler, {
-  leaseKey: "xg:shot-features",
-  ttlSeconds: 1800
-}), {
-  jobName: "update-nhl-xg-shot-features"
-});
+export default withOperationalRouteAuth(
+  withXgExecutionLeaseApi(handler, {
+    leaseKey: "xg:shot-features",
+    ttlSeconds: 1800,
+  }),
+  operationalRouteContracts.updateNhlXgShotFeatures,
+);

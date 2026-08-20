@@ -6,12 +6,12 @@ Date:
 
 Related artifacts:
 
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-validation-matrix.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-refresh-execution-2026-03-12.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-additive-family-audit.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-ratio-family-audit.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-weighted-rate-family-audit.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-availability-participation-audit.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-validation-matrix.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-refresh-execution-2026-03-12.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-additive-family-audit.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-ratio-family-audit.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-weighted-rate-family-audit.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-availability-participation-audit.md`
 
 ## Purpose
 
@@ -35,12 +35,12 @@ npm run check:rolling-player-disputed-metrics
 
 Scripts:
 
-- [check-rolling-player-family-reconstruction.ts](/Users/tim/Code/fhfhockey.com/web/scripts/check-rolling-player-family-reconstruction.ts)
-- [check-rolling-player-disputed-metrics.ts](/Users/tim/Code/fhfhockey.com/web/scripts/check-rolling-player-disputed-metrics.ts)
+- [check-rolling-player-family-reconstruction.ts](../../../../web/scripts/check-rolling-player-family-reconstruction.ts)
+- [check-rolling-player-disputed-metrics.ts](../../../../web/scripts/check-rolling-player-disputed-metrics.ts)
 
 Recompute path:
 
-- [recomputePlayerRowsForValidation(...)](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+- [recomputePlayerRowsForValidation(...)](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
 
 Observed generation times:
 

@@ -17,7 +17,7 @@ It covers the persisted PP-context and line-context fields in `rolling_player_ga
 - reconstruction method
 - diagnostics and validation implications
 
-This artifact does not assign final status buckets yet. Status ledger work remains separate in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`.
+This artifact does not assign final status buckets yet. Status ledger work remains separate in `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`.
 
 ## Scope
 
@@ -40,7 +40,7 @@ Total contextual fields in scope:
 Important exclusion:
 
 - `pp_share_pct*` is not part of this artifact
-  - it is a rolling metric family audited in `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-ratio-family-audit.md`
+  - it is a rolling metric family audited in `tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-ratio-family-audit.md`
 - the contextual fields in this artifact are attached to the row as current-game labels or builder outputs
   - they are not rolling-window aggregates
 
@@ -67,7 +67,7 @@ They do not use:
 
 Contextual fields are written during the final row assembly in:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
 
 Final row write mapping:
 
@@ -104,10 +104,10 @@ Source fields:
 
 Primary code path:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPpUnitContract.ts`
+- `web/lib/supabase/Upserts/rollingPlayerPpUnitContract.ts`
   - `hasTrustedPpUnitContext(...)`
   - `resolvePpUnitLabel(...)`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - final row write
 
 Derivation rule:
@@ -139,7 +139,7 @@ Trust and freshness requirements:
 - freshness dependency:
   - `powerPlayCombinations`
 - stale refresh action:
-  - rerun `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-power-play-combinations/[gameId].ts`
+  - rerun `web/pages/api/v1/db/update-power-play-combinations/[gameId].ts`
 - validation must compare against refreshed builder rows for the same game
 
 Reconstruction method:
@@ -151,10 +151,10 @@ Reconstruction method:
 
 Evidence from tests:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPpUnitContract.test.ts`
+- `web/lib/supabase/Upserts/rollingPlayerPpUnitContract.test.ts`
   - confirms `pp_unit` is contextual and builder-owned
   - confirms null / zero / missing-game values are rejected
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
   - confirms `ppUnitSourcePresent` can be false even when PP source rows exist
 
 ### 2. Optional PP builder outputs
@@ -184,10 +184,10 @@ Source fields:
 
 Primary code path:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - `getOptionalPpContextOutputs(...)`
 - upstream builder semantics:
-  - `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/powerPlayCombinationMetrics.ts`
+  - `web/lib/supabase/Upserts/powerPlayCombinationMetrics.ts`
 
 Derivation rules:
 
@@ -236,12 +236,12 @@ Reconstruction method:
 
 Evidence from tests:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
   - confirms `getOptionalPpContextOutputs(...)` copies the builder outputs directly
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/powerPlayCombinationMetrics.test.ts`
+- `web/lib/supabase/Upserts/powerPlayCombinationMetrics.test.ts`
   - confirms unit-relative fields remain distinct from team-share semantics
   - confirms `pp_share_of_team` is true team PP share
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPpShareContract.test.ts`
+- `web/lib/supabase/Upserts/rollingPlayerPpShareContract.test.ts`
   - confirms unit-relative PP fields are excluded from rolling `pp_share_pct`
 
 ## Line Context Audit
@@ -271,9 +271,9 @@ Source fields:
 
 Primary code path:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerLineContextContract.ts`
+- `web/lib/supabase/Upserts/rollingPlayerLineContextContract.ts`
   - `resolveTrustedLineAssignment(...)`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - final row write
 
 Derivation rule:
@@ -314,8 +314,8 @@ Trust and freshness requirements:
 - freshness dependency:
   - `lineCombinations`
 - stale refresh actions:
-  - `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-line-combinations/[id].ts`
-  - `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-line-combinations/index.ts`
+  - `web/pages/api/v1/db/update-line-combinations/[id].ts`
+  - `web/pages/api/v1/db/update-line-combinations/index.ts`
 
 Reconstruction method:
 
@@ -328,10 +328,10 @@ Reconstruction method:
 
 Evidence from tests:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerLineContextContract.test.ts`
+- `web/lib/supabase/Upserts/rollingPlayerLineContextContract.test.ts`
   - confirms trusted forward / defense assignments
   - confirms missing-row and unassigned-player null behavior
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
   - confirms `lineSourcePresent` and `lineAssignmentSourcePresent` are distinct
 
 ## Diagnostics and Source-Presence Notes
@@ -364,7 +364,7 @@ Important validation implication:
 
 Evidence from tests:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.test.ts`
+- `web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.test.ts`
   - confirms coverage warnings for missing PP share and PP unit builder values
   - confirms freshness warnings for PP and line tail lag
 

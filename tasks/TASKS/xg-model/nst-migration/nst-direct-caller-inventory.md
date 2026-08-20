@@ -27,7 +27,7 @@ It excludes:
 | `web/pages/api/SustainabilityStats/[playerId].ts` | `playerteams.php` | `www.naturalstattrick.com` | Direct NST player-team fetch for sustainability metrics. |
 | `web/pages/api/Teams/[teamAbbreviation].ts` | `playerreport.php` | `naturalstattrick.com` | Direct player-report fetch; file path suggests team scope but code fetches player report data. |
 | `web/pages/api/CareerAverages/[playerId].ts` | `playerreport.php` | `naturalstattrick.com` | Direct career-averages route fetcher. |
-| `web/pages/api/Averages/helpers.ts` | `playerreport.php` | `naturalstattrick.com` | Shared helper used by player-report style routes. |
+| `web/lib/api/averages/helpers.ts` | `playerreport.php` | `naturalstattrick.com` | Shared helper used by player-report style routes. |
 | `web/pages/api/ThreeYearAverages/[playerId].ts` | `playerreport.php` | `naturalstattrick.com` | Direct three-year averages route with multiple NST fetch variants. |
 | `web/pages/api/ThreeYearAverages/nstgamelog.py` | `playerreport.php` | `naturalstattrick.com` | Standalone Python NST script. |
 | `web/pages/api/ThreeYearAverages/nsttest.py` | `playerreport.php` | `naturalstattrick.com` | Standalone Python NST test script. |
@@ -51,8 +51,8 @@ It excludes:
 | `web/pages/api/SustainabilityStats/[playerId].ts` | production route | Live API route consumed by `web/hooks/useSustainabilityStats.ts` and UI components. |
 | `web/pages/api/Teams/[teamAbbreviation].ts` | duplicate or retirement candidate | File path suggests team data but implementation fetches player-report data by `playerId`; no clear consumer was found in current app usage. |
 | `web/pages/api/CareerAverages/[playerId].ts` | production route | Live API route consumed by `web/hooks/useCareerAveragesStats.ts` and surfaced in the UI. |
-| `web/pages/api/Averages/helpers.ts` | shared helper | Shared NST player-report fetch helper used by route-level code rather than a standalone route. |
-| `web/pages/api/ThreeYearAverages/[playerId].ts` | production route | Public API route consumed by `web/components/WiGO/fetchThreeYearAverages.ts`. |
+| `web/lib/api/averages/helpers.ts` | shared helper | Shared NST player-report fetch helper used by route-level code rather than a standalone route. |
+| `web/pages/api/ThreeYearAverages/[playerId].ts` | production route | Public API route formerly consumed by retired repository reference `web/components/WiGO/fetchThreeYearAverages.ts` (removed in July 2026). |
 | `web/pages/api/ThreeYearAverages/nstgamelog.py` | debug or manual tool | Standalone script under API folder with no production routing or imports found. |
 | `web/pages/api/ThreeYearAverages/nsttest.py` | debug or manual tool | Standalone ad hoc NST test script with no production wiring found. |
 | `web/pages/api/v1/db/update-nst-player-reports.ts` | production route | Direct database-writing NST ingestion route in the main app API surface. |
@@ -89,8 +89,8 @@ It excludes:
 | `web/pages/api/SustainabilityStats/[playerId].ts` | production-reachable | Called by `web/hooks/useSustainabilityStats.ts`, which is used by the sustainability vs career chart UI. |
 | `web/pages/api/Teams/[teamAbbreviation].ts` | apparently dormant or miswired | Live Next.js API route by convention, but no current callers were found and the implementation does not match the team-oriented file path. |
 | `web/pages/api/CareerAverages/[playerId].ts` | production-reachable | Called by `web/hooks/useCareerAveragesStats.ts`, which is used by the sustainability vs career chart UI. |
-| `web/pages/api/Averages/helpers.ts` | production-reachable via helper path | Shared helper used by route code rather than a standalone route surface. |
-| `web/pages/api/ThreeYearAverages/[playerId].ts` | production-reachable | Called by `web/components/WiGO/fetchThreeYearAverages.ts`. |
+| `web/lib/api/averages/helpers.ts` | production-reachable via helper path | Shared helper used by route code rather than a standalone route surface. |
+| `web/pages/api/ThreeYearAverages/[playerId].ts` | production-reachable | Formerly called by retired repository reference `web/components/WiGO/fetchThreeYearAverages.ts` (removed in July 2026). |
 | `web/pages/api/ThreeYearAverages/nstgamelog.py` | historical or manual utility | No imports, scheduled calls, or route wiring found. |
 | `web/pages/api/ThreeYearAverages/nsttest.py` | historical or manual utility | No imports, scheduled calls, or route wiring found. |
 | `web/pages/api/v1/db/update-nst-player-reports.ts` | production-reachable but not confirmed active | Live Next.js API route surface exists, but no cron schedule or internal callers were found in the current repo scan. |
@@ -156,7 +156,7 @@ It excludes:
 
 - Canonical production path: TypeScript API routes plus shared helper
 - Canonical files:
-  - `web/pages/api/Averages/helpers.ts`
+  - `web/lib/api/averages/helpers.ts`
   - `web/pages/api/CareerAverages/[playerId].ts`
   - `web/pages/api/ThreeYearAverages/[playerId].ts`
   - `web/pages/api/SustainabilityStats/[playerId].ts`
@@ -184,7 +184,7 @@ It excludes:
 | `web/pages/api/v1/db/update-nst-player-reports.ts` | File-level TODOs admit unresolved scope questions about goalie handling and current-season-only behavior. | Indicates this route’s behavioral contract may already be incomplete or unstable even before host/key migration. |
 | `web/pages/api/fetch_team_table.ts` | Duplicates the team-table capability of the hosted Python function, but without the same season-default logic or session-bootstrap behavior. | Migration must not assume the TypeScript duplicate is contract-equivalent to the live Python path. |
 | `web/scripts/fetch_team_table.py` | Script duplicate diverges from `functions/api/fetch_team_table.py`, including error handling and session bootstrap behavior. | Confirms this file should not be treated as interchangeable with the canonical hosted function without explicit review. |
-| `web/pages/api/CareerAverages/[playerId].ts` and `web/pages/api/Averages/helpers.ts` | Both independently construct `playerreport.php` fetch URLs rather than sharing one player-report request builder. | Duplicate request construction raises drift risk when host, auth, and redaction rules are introduced. |
+| `web/pages/api/CareerAverages/[playerId].ts` and `web/lib/api/averages/helpers.ts` | Both independently construct `playerreport.php` fetch URLs rather than sharing one player-report request builder. | Duplicate request construction raises drift risk when host, auth, and redaction rules are introduced. |
 | `web/pages/api/ThreeYearAverages/[playerId].ts` | Contains multiple inline `playerreport.php` URL constructions instead of routing through one shared helper. | This route is likely to drift during migration unless explicitly normalized onto the canonical request path. |
 
 ## Recommended Handling For These Inconsistencies

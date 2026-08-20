@@ -291,12 +291,16 @@ describe("PlayerMatrixTable", () => {
     fireEvent.click(screen.getByRole("button", { name: /P\/60/i }));
     expect(onSortMetric).toHaveBeenCalledWith("points_per_60", "asc");
 
-    fireEvent.click(
-      within(screen.getByRole("row", { name: /Matt Savoie/i })).getByRole(
-        "button",
-        { name: "2" },
-      ),
-    );
+    const playerRow = screen.getByRole("row", { name: /Matt Savoie/i });
+    const selectPlayer = within(playerRow).getByRole("button", {
+      name: "Select Matt Savoie",
+    });
+
+    fireEvent.click(playerRow);
+    expect(onSelectPlayer).not.toHaveBeenCalled();
+
+    fireEvent.click(selectPlayer);
+    expect(selectPlayer.getAttribute("aria-pressed")).toBe("true");
     expect(onSelectPlayer).toHaveBeenCalledWith(1);
 
     rerender(

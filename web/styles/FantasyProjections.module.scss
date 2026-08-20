@@ -15,7 +15,9 @@
 .teamCard,
 .error,
 .empty,
-.viewTabs {
+.viewTabs,
+.columnPicker,
+.pagination {
   max-width: 1440px;
   margin-right: auto;
   margin-left: auto;
@@ -25,7 +27,7 @@
   display: flex;
   justify-content: space-between;
   gap: 32px;
-  padding: clamp(24px, 4vw, 48px);
+  padding: clamp(20px, 3vw, 32px);
   border: 1px solid rgba(112, 218, 218, .25);
   border-radius: 24px;
   background: rgba(7, 26, 34, .86);
@@ -34,8 +36,8 @@
 
 .hero h1 {
   margin: 4px 0 12px;
-  font-size: clamp(2.1rem, 5vw, 4.7rem);
-  line-height: .95;
+  font-size: clamp(2rem, 4vw, 3.35rem);
+  line-height: 1;
 }
 
 .hero p {
@@ -135,6 +137,46 @@
   border-radius: 9px;
   color: #edf6f8;
   background: #0a222c;
+}
+
+.exportButton {
+  align-self: end;
+  min-height: 42px;
+  padding: 8px 13px;
+  border: 1px solid #4eafb3;
+  border-radius: 9px;
+  color: #071a20;
+  font-weight: 800;
+  background: #62d5d6;
+  cursor: pointer;
+}
+
+.columnPicker {
+  margin-top: 10px;
+  padding: 14px 18px;
+  border: 1px solid rgba(112, 218, 218, .17);
+  border-radius: 14px;
+  background: rgba(7, 24, 32, .88);
+
+  summary {
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  > div {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #abc1c7;
+    font-size: .78rem;
+  }
 }
 
 .scoring {
@@ -266,6 +308,36 @@
   background: rgba(4, 17, 24, .94);
 }
 
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+  color: #a9bec6;
+  font-size: .78rem;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  select,
+  button {
+    min-height: 34px;
+    padding: 6px 10px;
+    border: 1px solid #315562;
+    border-radius: 8px;
+    color: #edf6f8;
+    background: #0a222c;
+  }
+
+  button:disabled {
+    opacity: .45;
+  }
+}
+
 .table {
   width: 100%;
   min-width: 1240px;
@@ -320,6 +392,38 @@
   color: #f3f8f9;
 }
 
+.playerButton {
+  display: block;
+  padding: 0;
+  margin-bottom: 5px;
+  border: 0;
+  color: #f3f8f9;
+  font: inherit;
+  font-weight: 800;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border: 1px solid rgba(105, 216, 215, .4);
+  border-radius: 999px;
+  color: #aee6e5;
+  font-size: .58rem;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  background: rgba(16, 78, 84, .35);
+}
+
 .table td small,
 .interval small {
   margin-top: 3px;
@@ -347,6 +451,66 @@
 
 .interval {
   font-variant-numeric: tabular-nums;
+}
+
+.drawerBackdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(0, 0, 0, .64);
+}
+
+.drawer {
+  overflow: auto;
+  width: min(680px, 94vw);
+  height: 100%;
+  padding: 28px;
+  border-left: 1px solid rgba(112, 218, 218, .35);
+  background: #071820;
+  box-shadow: -20px 0 60px rgba(0, 0, 0, .45);
+
+  h2 {
+    margin: 5px 0 10px;
+    font-size: 2rem;
+  }
+
+  h3 {
+    margin-top: 26px;
+  }
+}
+
+.drawerClose {
+  float: right;
+  padding: 7px 11px;
+  border: 1px solid #315562;
+  border-radius: 8px;
+  color: #edf6f8;
+  background: #0a222c;
+  cursor: pointer;
+}
+
+.detailStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+
+  div {
+    padding: 10px;
+    border-radius: 8px;
+    background: #0c2a34;
+  }
+
+  dt {
+    color: #8ea6af;
+    font-size: .65rem;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 5px 0 0;
+  }
 }
 
 .teamGrid {
@@ -491,6 +655,11 @@
 
   .controls label {
     flex: 1 1 145px;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .teamGrid {

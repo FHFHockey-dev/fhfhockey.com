@@ -1,5 +1,8 @@
 // @ts-nocheck
-import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import {
+  operationalRouteContracts,
+  withOperationalRouteAuth,
+} from "lib/cron/withOperationalRouteAuth";
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server";
 import Fetch from "lib/cors-fetch";
@@ -331,4 +334,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default withCronJobAudit(handler);
+export default withOperationalRouteAuth(
+  handler,
+  operationalRouteContracts.updateLast71430,
+);

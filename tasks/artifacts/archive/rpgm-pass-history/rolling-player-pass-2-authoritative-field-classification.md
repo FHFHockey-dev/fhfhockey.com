@@ -280,7 +280,7 @@ These surfaces are candidates for removal or write-freeze after downstream migra
 
 Prerequisites:
 
-- [trends/player/[playerId].tsx](/Users/tim/Code/fhfhockey.com/web/pages/trends/player/[playerId].tsx) must stop encoding legacy suffixes in its UI model
+- [trends/player/[playerId].tsx](../../../../web/pages/trends/player/[playerId].tsx) must stop encoding legacy suffixes in its UI model
 - projection readers must read canonical-first for all migrated families
 - compatibility-helper usage must be standardized where migration is still staged
 

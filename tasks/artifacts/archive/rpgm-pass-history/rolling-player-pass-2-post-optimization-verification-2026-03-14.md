@@ -87,8 +87,8 @@ Interpretation:
 
 - `trendsDebug.tsx` optimization work is verified at the source-test and typecheck level
 - the recommended orchestration surface is now the consolidated coordinator:
-  - [run-rolling-forge-pipeline.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/run-rolling-forge-pipeline.ts)
-  - [rollingForgePipeline.ts](/Users/tim/Code/fhfhockey.com/web/lib/rollingForgePipeline.ts)
+  - [run-rolling-forge-pipeline.ts](../../../../web/pages/api/v1/db/run-rolling-forge-pipeline.ts)
+  - [rollingForgePipeline.ts](../../../../web/lib/rollingForgePipeline.ts)
 - targeted validation scripts still expose the remaining operational follow-ups:
   - resolve remaining genuine PK source-tail blockers for affected validation scopes
   - keep audit evidence synchronized with the newer retained-player parity snapshots instead of the older early-March-14 snapshot

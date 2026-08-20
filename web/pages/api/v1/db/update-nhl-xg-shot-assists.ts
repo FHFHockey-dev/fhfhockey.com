@@ -1,6 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import {
+  operationalRouteContracts,
+  withOperationalRouteAuth,
+} from "lib/cron/withOperationalRouteAuth";
 import supabase from "lib/supabase/server";
 import {
   buildShotAssistCandidateRows,
@@ -307,6 +310,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   });
 }
 
-export default withCronJobAudit(handler, {
-  jobName: "update-nhl-xg-shot-assists",
-});
+export default withOperationalRouteAuth(
+  handler,
+  operationalRouteContracts.updateNhlXgShotAssists,
+);

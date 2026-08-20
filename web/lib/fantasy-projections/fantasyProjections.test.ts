@@ -4,12 +4,21 @@ import { describe, expect, it, vi } from "vitest";
 import {
   aggregateSeasonGames,
   evaluatePortableSeasonGame,
+  mergeAdvancedSeasonArtifact,
+  type AdvancedSeasonArtifact,
   type PortableSeasonArtifact,
 } from "./evaluator";
 import {
   FANTASY_PROJECTION_CONTRACT_CHECKSUM,
   FANTASY_PROJECTION_CONTRACT_VERSION,
+  FANTASY_PROJECTION_SUMMARY_ENCODING,
+  FANTASY_PROJECTION_V4_CONTRACT_CHECKSUM,
+  FANTASY_PROJECTION_V4_CONTRACT_VERSION,
+  FANTASY_PROJECTION_V5_CONTRACT_CHECKSUM,
+  FANTASY_PROJECTION_V5_CONTRACT_VERSION,
+  expandFantasyProjectionSummary,
   fantasyProjectionTotal,
+  reconcileProjectionQuantiles,
   reconcileProjectionValues,
   SKATER_PRIMITIVE_TARGETS,
 } from "./contracts";
@@ -20,11 +29,17 @@ import {
 } from "./settlement";
 import {
   parseOfficialNhlPlayerEvidence,
+  planSeasonIdentityResolution,
   persistSeasonIdentityResolution,
   searchSeasonIdentityCandidates,
 } from "./identityResolution";
 import { activePendingPlayerPoolReviews } from "./admin";
 import { releaseMatchesPublicContract } from "./queries";
+import { resolveSeasonRosterConsensus } from "./rosterIntegrity";
+import {
+  findOfficialRosterAuditEvidence,
+  parseOfficialNhlArticleCapture,
+} from "./transactionAudit";
 import { playerForecastEditorConfiguration } from "../../utils/playerForecastSeasonEditorOnlyMiddleware";
 
 describe("fantasy projection contracts", () => {
@@ -37,6 +52,275 @@ describe("fantasy projection contracts", () => {
       contract_version: FANTASY_PROJECTION_CONTRACT_VERSION,
       contract_checksum: "superseded-checksum",
     })).toBe(false);
+    expect(releaseMatchesPublicContract({
+      contract_version: FANTASY_PROJECTION_V4_CONTRACT_VERSION,
+      contract_checksum: FANTASY_PROJECTION_V4_CONTRACT_CHECKSUM,
+    })).toBe(true);
+  });
+
+  it("automatically resolves only approved two-source roster consensus", () => {
+    const automatic = resolveSeasonRosterConsensus({
+      currentOrganizationTeamId: 14,
+      observations: [
+        {
+          id: "landing",
+          observationKind: "player_landing",
+          organizationTeamId: 2,
+          rosterStatus: "active_nhl",
+          availableAt: "2026-08-18T10:00:00Z",
+          confidence: 1,
+        },
+        {
+          id: "transaction",
+          observationKind: "official_transaction",
+          organizationTeamId: 2,
+          rosterStatus: "active_nhl",
+          availableAt: "2026-08-18T11:00:00Z",
+          confidence: 0.99,
+        },
+      ],
+    });
+    expect(automatic).toMatchObject({
+      resolution: "automatic",
+      organizationTeamId: 2,
+      rosterStatus: "active_nhl",
+      observationIds: ["landing", "transaction"],
+    });
+
+    const singleSource = resolveSeasonRosterConsensus({
+      currentOrganizationTeamId: 14,
+      observations: [{
+        id: "landing-only",
+        observationKind: "player_landing",
+        organizationTeamId: 2,
+        rosterStatus: "active_nhl",
+        availableAt: "2026-08-18T10:00:00Z",
+        confidence: 1,
+      }],
+    });
+    expect(singleSource).toMatchObject({
+      resolution: "review_required",
+      organizationTeamId: 14,
+      conflictType: "single_source",
+    });
+  });
+
+  it("does not treat an offseason roster omission as release evidence", () => {
+    const consensus = resolveSeasonRosterConsensus({
+      currentOrganizationTeamId: 24,
+      currentRosterStatus: "prospect_reserve",
+      observations: [],
+    });
+    expect(consensus).toMatchObject({
+      resolution: "review_required",
+      organizationTeamId: 24,
+      rosterStatus: "prospect_reserve",
+    });
+  });
+
+  it("separates offseason organization consensus from active-roster status", () => {
+    const consensus = resolveSeasonRosterConsensus({
+      currentOrganizationTeamId: 24,
+      currentRosterStatus: "prospect_reserve",
+      observations: [
+        {
+          id: "organization-roster",
+          observationKind: "official_roster",
+          organizationTeamId: 24,
+          rosterStatus: "unresolved",
+          availableAt: "2026-08-19T10:00:00Z",
+          confidence: 1,
+        },
+        {
+          id: "player-landing",
+          observationKind: "player_landing",
+          organizationTeamId: 24,
+          rosterStatus: "unresolved",
+          availableAt: "2026-08-19T10:01:00Z",
+          confidence: 1,
+        },
+      ],
+    });
+    expect(consensus).toMatchObject({
+      resolution: "automatic",
+      organizationTeamId: 24,
+      rosterStatus: "prospect_reserve",
+      conflictType: null,
+    });
+  });
+
+  it("holds an organization match when official roster statuses conflict", () => {
+    const consensus = resolveSeasonRosterConsensus({
+      currentOrganizationTeamId: 24,
+      currentRosterStatus: "prospect_reserve",
+      observations: [
+        {
+          id: "landing",
+          observationKind: "player_landing",
+          organizationTeamId: 24,
+          rosterStatus: "active_nhl",
+          availableAt: "2026-08-19T10:00:00Z",
+          confidence: 1,
+        },
+        {
+          id: "transaction",
+          observationKind: "official_transaction",
+          organizationTeamId: 24,
+          rosterStatus: "affiliate",
+          availableAt: "2026-08-19T10:01:00Z",
+          confidence: 1,
+        },
+      ],
+    });
+    expect(consensus).toMatchObject({
+      resolution: "review_required",
+      organizationTeamId: 24,
+      rosterStatus: "prospect_reserve",
+      conflictType: "status_disagreement",
+    });
+  });
+
+  it("matches roster conflicts only to corroborating official NHL tracker evidence", () => {
+    const capture = parseOfficialNhlArticleCapture(
+      '<script type="application/ld&#x2B;json">' +
+        JSON.stringify({
+          articleBody:
+            "## WASHINGTON CAPITALS Group 3 Unrestricted Free Agents: Jonny Brodzinski (signed: WSH). " +
+            "**JUNE 29:** Utah Mammoth acquire forward Joshua Roy from the Montreal Canadiens.",
+          datePublished: "2026-08-19T16:20:00Z",
+        }) +
+        "</script>",
+      "https://www.nhl.com/news/topic/free-agency/free-agency-signings-nhl-2026-27",
+    );
+    expect(findOfficialRosterAuditEvidence({
+      playerName: "Jonny Brodzinski",
+      teamName: "Washington Capitals",
+      teamAbbreviation: "WSH",
+      captures: [capture],
+    })).toMatchObject({ eventType: "signing" });
+    expect(findOfficialRosterAuditEvidence({
+      playerName: "Jonny Brodzinski",
+      teamName: "New York Rangers",
+      teamAbbreviation: "NYR",
+      captures: [capture],
+    })).toBeNull();
+  });
+
+  it("decodes the compact all-player payload without losing sortable metrics", () => {
+    const result = expandFantasyProjectionSummary({
+      success: true,
+      betaLabel: "beta",
+      release: { id: "release-1" } as any,
+      encoding: FANTASY_PROJECTION_SUMMARY_ENCODING,
+      metricKeys: ["GAMES_PLAYED", "POINTS", "SHOTS"],
+      players: [[
+        10, 21, "COL", "Nathan MacKinnon", "C", "forward",
+        "verified_active", "active_nhl", 1, "2026-08-18T12:00:00Z",
+        0, 100, 0.9, [1, null, 1, null, null], 0, [], [81.9, 132.8, 409],
+      ]],
+    });
+    expect(result.players[0]).toMatchObject({
+      fhfhPlayerId: 10,
+      expectedGames: 81.9,
+      publishedValues: { GAMES_PLAYED: 81.9, POINTS: 132.8, SHOTS: 409 },
+      deployment: { mostLikelyRole: { forwardLine: 1, powerPlayUnit: 1 } },
+    });
+  });
+
+  it("merges checksum-verified v5 rates into the portable v4 runtime", () => {
+    const base = {
+      schemaVersion: "player-forecast-season-artifact-v1",
+      seasonId: 20262027,
+      contractVersion: FANTASY_PROJECTION_V4_CONTRACT_VERSION,
+      contractChecksum: FANTASY_PROJECTION_V4_CONTRACT_CHECKSUM,
+      artifactVersion: "v4-test",
+      featureSchemaVersion: "v4-test",
+      trainingCutoffAt: "2026-04-16T23:59:59Z",
+      codeVersion: "test",
+      players: {
+        "10": {
+          fhfhPlayerId: 10,
+          population: "forward",
+          position: "C",
+          teamId: 1,
+          playProbability: 0.8,
+          conditionalRates: { GAMES_PLAYED: 1, PRIMARY_ASSISTS: 0.5 },
+          baselineConditionalRates: { GAMES_PLAYED: 1, PRIMARY_ASSISTS: 0.4 },
+          conditionalVariances: { GAMES_PLAYED: 0, PRIMARY_ASSISTS: 0.2 },
+          ratings: {},
+          deployment: {},
+          primitiveTargets: ["GAMES_PLAYED", "PRIMARY_ASSISTS"],
+        },
+      },
+      teams: {
+        "1": { teamId: 1, offenseMultiplier: 1, defenseMultiplier: 1, paceMultiplier: 1, ratings: {} },
+        "2": { teamId: 2, offenseMultiplier: 1, defenseMultiplier: 1, paceMultiplier: 1, ratings: {} },
+      },
+    } satisfies PortableSeasonArtifact;
+    const advanced = {
+      schemaVersion: "player-forecast-season-advanced-artifact-v1",
+      seasonId: 20262027,
+      contractVersion: FANTASY_PROJECTION_V5_CONTRACT_VERSION,
+      contractChecksum: FANTASY_PROJECTION_V5_CONTRACT_CHECKSUM,
+      artifactVersion: "v5-test",
+      featureSchemaVersion: "v5-test",
+      trainingCutoffAt: "2026-04-16T23:59:59Z",
+      codeVersion: "test",
+      baseV4ArtifactChecksum: "a".repeat(64),
+      players: { "10": { fhfhPlayerId: 10, population: "forward", rates: { SHOT_ATTEMPTS: 4 } } },
+      teams: { "1": { teamId: 1, rates: { TEAM_PACE: 61 } }, "2": { teamId: 2, rates: {} } },
+      targetPolicies: {
+        forward: {
+          SHOT_ATTEMPTS: { baselineRate: 3, residual80PerGame: 2 },
+          EXPECTED_PRIMARY_ASSISTS: { fallback: true },
+        },
+      },
+    } satisfies AdvancedSeasonArtifact;
+    const merged = mergeAdvancedSeasonArtifact(base, advanced);
+    const result = evaluatePortableSeasonGame(merged, 10, {
+      gameId: 1,
+      scheduledStartAt: "2026-10-01T00:00:00Z",
+      teamId: 1,
+      opponentTeamId: 2,
+      isHome: true,
+    });
+    expect(result.conditionalMeans.SHOT_ATTEMPTS).toBe(4);
+    expect(result.unconditionalMeans.SHOT_ATTEMPTS).toBe(3.2);
+    expect(result.conditionalMeans.EXPECTED_PRIMARY_ASSISTS).toBe(0.5);
+    expect(merged.teams["1"].advancedRates?.TEAM_PACE).toBe(61);
+  });
+
+  it("uses cross-bound interval arithmetic for rate metrics", () => {
+    const quantiles = reconcileProjectionQuantiles({
+      p10: { GAMES_PLAYED: 60, TOTAL_TOI: 900 },
+      p50: { GAMES_PLAYED: 75, TOTAL_TOI: 1350 },
+      p90: { GAMES_PLAYED: 84, TOTAL_TOI: 1764 },
+    }, "forward");
+    expect(quantiles.p10.TOI_PER_GAME).toBeLessThanOrEqual(quantiles.p50.TOI_PER_GAME);
+    expect(quantiles.p50.TOI_PER_GAME).toBeLessThanOrEqual(quantiles.p90.TOI_PER_GAME);
+    expect(quantiles.p50.TOI_PER_GAME).toBe(18);
+  });
+
+  it("coalesces repeated roster changes by player and view", () => {
+    const migration = fs.readFileSync(
+      "../supabase/migrations/20260818150256_player_forecast_season_v4_integrity.sql",
+      "utf8",
+    );
+    expect(migration).toContain(":view:current:roster:player:");
+    expect(migration).toContain(":view:ros:roster:player:");
+    expect(migration).not.toContain(":departure:");
+  });
+
+  it("compacts covered season jobs without deleting their audit history", () => {
+    const migration = fs.readFileSync(
+      "../supabase/migrations/20260820014700_player_forecast_season_queue_compaction.sql",
+      "utf8",
+    );
+    expect(migration).toContain("compact_player_forecast_season_queue");
+    expect(migration).toContain("max(queue.source_high_watermark)");
+    expect(migration).toContain("status = 'cancelled'");
+    expect(migration).toContain("'allLeague', true");
+    expect(migration).not.toMatch(/delete\s+from\s+public\.player_forecast_season_queue/i);
   });
 
   it("keeps raw hockey identities independent of fantasy scoring", () => {
@@ -255,6 +539,66 @@ describe("fantasy projection contracts", () => {
         p_official_player: null,
       }),
     );
+  });
+
+  it("plans conservative automatic identity resolutions from exact official evidence", () => {
+    const review = {
+      id: "review-1",
+      seasonId: 20262027,
+      nhlPlayerId: 8481538,
+      rawPlayerName: "Judd Caulfield",
+      teamId: 24,
+      position: "R",
+      issueCode: "official_roster_identity_unmapped",
+    };
+    const officialPlayer = {
+      nhlPlayerId: 8481538,
+      firstName: "Judd",
+      lastName: "Caulfield",
+      position: "R" as const,
+      birthDate: "2001-03-19",
+      birthCity: null,
+      birthCountry: "USA",
+      heightInCentimeters: 191,
+      weightInKilograms: 93,
+      currentTeamId: 24,
+      teamName: "Anaheim Ducks",
+      sweaterNumber: null,
+      headshotUrl: null,
+      sourceUrl: "https://api-web.nhle.com/v1/player/8481538/landing",
+      observedAt: "2026-08-19T12:00:00Z",
+      sourcePayloadHash: "a".repeat(64),
+    };
+
+    expect(planSeasonIdentityResolution({
+      review,
+      officialPlayer,
+      identities: [],
+    })).toMatchObject({
+      action: "create_new",
+      lifecycleStatus: "active_prospect",
+    });
+    expect(planSeasonIdentityResolution({
+      review,
+      officialPlayer,
+      identities: [{
+        fhfhPlayerId: 101,
+        nhlPlayerId: null,
+        canonicalName: "Judd Caulfield",
+        birthDate: "2001-03-19",
+        position: "R",
+        verificationStatus: "provisional",
+        mergedIntoId: null,
+      }],
+    })).toMatchObject({
+      action: "map_existing",
+      fhfhPlayerId: 101,
+    });
+    expect(planSeasonIdentityResolution({
+      review: { ...review, teamId: 2 },
+      officialPlayer,
+      identities: [],
+    })).toMatchObject({ action: "manual_review" });
   });
 
   it("removes superseded identity reviews from the unresolved editor list", () => {

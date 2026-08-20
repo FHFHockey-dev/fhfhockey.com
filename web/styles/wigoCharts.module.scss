@@ -54,7 +54,7 @@
 }
 
 /* --- Mobile overrides --- */
-@media (max-width: 768px) {
+@media (max-width: v.$breakpoint-tablet) {
   .wigoDashboardContainer {
     padding: 0;
   }

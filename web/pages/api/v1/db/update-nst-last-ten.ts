@@ -1,6 +1,9 @@
 // pages/api/v1/db/update-nst-last-ten.ts
 
-import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import {
+  operationalRouteContracts,
+  withOperationalRouteAuth,
+} from "lib/cron/withOperationalRouteAuth";
 import type { NextApiRequest, NextApiResponse } from "next";
 import * as cheerio from "cheerio";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
@@ -948,7 +951,7 @@ async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "GET") {
+  if (req.method !== "POST") {
     res.status(405).json({ message: "Method Not Allowed" });
     return;
   }
@@ -962,4 +965,7 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(handler);
+export default withOperationalRouteAuth(
+  handler,
+  operationalRouteContracts.updateNstLastTen,
+);

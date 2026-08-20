@@ -80,7 +80,7 @@ The audit began from a candidate inventory and followed imports, callers, databa
 - Vercel and pg_cron ownership, runtime limits, leases, health/audit routes and stale routes;
 - tracked JSON/Parquet/CSV/PNG model/research artifacts and test fixtures;
 - targeted Git history only where the current tree showed removed/renamed projection or sKO lineage; and
-- the complete objective plus `/Users/tim/Downloads/projectionModel.md` as the authoritative research plan.
+- the complete objective plus the externally supplied `projectionModel.md` research plan (not retained in this repository).
 
 Repository evidence was kept separate from live-data claims. No production database was queried or mutated, so live row counts, season continuity, provider revision history, identity resolution rates, scheduler activity, route traffic and manually deployed historical SQL remain explicit data gaps.
 

@@ -143,6 +143,7 @@ export default function TeamLC({
             NHL LINE <PageTitle.Highlight>COMBINATIONS</PageTitle.Highlight>
           </PageTitle>
           <Select
+            ariaLabel="Team"
             className={styles.select}
             option={abbreviation as string}
             options={teams.map((team) => ({

@@ -1,6 +1,6 @@
 # FHFH Site Surface Expansion Implementation Map
 
-This note locks the route ownership, naming, and cross-link assumptions for parent task `1.0` in `tasks/tasks-prd-fhfh-site-surface-expansion-roadmap.md`.
+This note locks the route ownership, naming, and cross-link assumptions for parent task `1.0` in `tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-fhfh-site-surface-expansion-roadmap.md`.
 
 ## Canonical Surface Map
 

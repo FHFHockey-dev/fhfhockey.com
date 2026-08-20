@@ -2,7 +2,7 @@
 
 ## Completed in task `2.5`
 
-This step moved the primary validation panels in [trendsDebug.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.tsx) off browser-side heuristics and onto the server-authoritative validation payload.
+This step moved the primary validation panels in [trendsDebug.tsx](../../../../web/pages/trendsDebug.tsx) off browser-side heuristics and onto the server-authoritative validation payload.
 
 ## Panels switched to payload-backed data
 
@@ -59,7 +59,7 @@ This step moved the primary validation panels in [trendsDebug.tsx](/Users/tim/Co
 
 ## Test coverage
 
-- Updated [trendsDebug.test.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.test.tsx) fixture payloads to include:
+- Updated [trendsDebug.test.tsx](../../../../web/__tests__/pages/trendsDebug.test.tsx) fixture payloads to include:
   - contracts
   - formulas
   - windows

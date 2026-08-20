@@ -14,11 +14,11 @@ This artifact records the remaining non-pass validation outcomes, if any, using 
 
 It is based on the live validation evidence captured in:
 
-- [rolling-player-validation-freshness-report-2026-03-11.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-validation-freshness-report-2026-03-11.md)
-- [rolling-player-refresh-actions-report-2026-03-11.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-refresh-actions-report-2026-03-11.md)
-- [rolling-player-family-reconstruction-report-2026-03-11.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-family-reconstruction-report-2026-03-11.md)
-- [rolling-player-disputed-metrics-report-2026-03-11.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-disputed-metrics-report-2026-03-11.md)
-- [rolling-player-context-label-validation-report-2026-03-11.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-context-label-validation-report-2026-03-11.md)
+- [rolling-player-validation-freshness-report-2026-03-11.md](rolling-player-validation-freshness-report-2026-03-11.md)
+- [rolling-player-refresh-actions-report-2026-03-11.md](rolling-player-refresh-actions-report-2026-03-11.md)
+- [rolling-player-family-reconstruction-report-2026-03-11.md](rolling-player-family-reconstruction-report-2026-03-11.md)
+- [rolling-player-disputed-metrics-report-2026-03-11.md](rolling-player-disputed-metrics-report-2026-03-11.md)
+- [rolling-player-context-label-validation-report-2026-03-11.md](rolling-player-context-label-validation-report-2026-03-11.md)
 
 ## Classification Summary
 

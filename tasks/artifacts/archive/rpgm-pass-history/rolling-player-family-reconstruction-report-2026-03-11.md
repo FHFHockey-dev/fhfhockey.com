@@ -9,10 +9,10 @@ npm run check:rolling-player-family-reconstruction
 ```
 
 Script:
-- [check-rolling-player-family-reconstruction.ts](/Users/tim/Code/fhfhockey.com/web/scripts/check-rolling-player-family-reconstruction.ts)
+- [check-rolling-player-family-reconstruction.ts](../../../../web/scripts/check-rolling-player-family-reconstruction.ts)
 
 Recompute path used:
-- [recomputePlayerRowsForValidation(...)](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+- [recomputePlayerRowsForValidation(...)](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
 
 ## Scope
 

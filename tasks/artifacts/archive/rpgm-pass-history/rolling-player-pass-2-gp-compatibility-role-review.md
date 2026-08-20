@@ -20,7 +20,7 @@ This artifact reviews whether `games_played`, `team_games_played`, and `gp_seman
 
 Current behavior:
 
-- written in [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts) as `historicalGpPctSnapshot.seasonPlayerGames`
+- written in [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts) as `historicalGpPctSnapshot.seasonPlayerGames`
 - mirrors the season numerator support count for the current row
 - on all-strength rows, it reads as season availability numerator
 - on split-strength rows, it really means season participation numerator
@@ -50,7 +50,7 @@ Decision:
 
 Current behavior:
 
-- written in [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts) as `historicalGpPctSnapshot.seasonTeamGames`
+- written in [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts) as `historicalGpPctSnapshot.seasonTeamGames`
 - mirrors the current season denominator support count
 
 Current role:

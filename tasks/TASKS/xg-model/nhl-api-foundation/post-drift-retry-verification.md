@@ -22,7 +22,7 @@ Result:
 
 Reason:
 
-- `tasks/corrective-migration-decision.md` recorded that the target project already matches the phase-1 migration contract
+- `tasks/TASKS/xg-model/nhl-api-foundation/corrective-migration-decision.md` recorded that the target project already matches the phase-1 migration contract
 
 ### 2. Supabase Type Regeneration
 

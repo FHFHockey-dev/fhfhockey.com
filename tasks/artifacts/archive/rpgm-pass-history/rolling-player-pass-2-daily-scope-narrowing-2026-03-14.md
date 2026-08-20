@@ -6,7 +6,7 @@ Reduce avoidable recompute work for daily updates by limiting date-scoped increm
 
 ### Implementation
 
-- changed `fetchPlayerIds(options)` in [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+- changed `fetchPlayerIds(options)` in [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
 - new behavior:
   - if the run is date-scoped (`startDate` and/or `endDate`)
   - and it is not a full refresh
@@ -18,7 +18,7 @@ Reduce avoidable recompute work for daily updates by limiting date-scoped increm
 ### Verification
 
 - unit coverage:
-  - [fetchRollingPlayerAverages.test.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts)
+  - [fetchRollingPlayerAverages.test.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts)
   - added coverage for:
     - date-scoped selection rule
     - normalized sorted unique player-id handling

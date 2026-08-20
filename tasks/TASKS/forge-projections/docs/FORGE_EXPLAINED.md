@@ -62,7 +62,7 @@ The goalie-slate waiter.
 - Adds team ratings and goalie start-probability bars.
 
 ### Shared helpers used by these APIs
-- `web/pages/api/v1/projections/_helpers.ts` - date validation + "find latest succeeded FORGE run"
+- `web/lib/projections/apiHelpers.ts` - date validation + "find latest succeeded FORGE run"
 - `web/lib/formatDurationMmSs.ts` - formats time like `MM:SS`
 - `web/lib/supabase/server.ts` - server-side database client
 
@@ -158,10 +158,10 @@ These are the factory workers that prepare the data before FORGE predicts anythi
 - `web/utils/setDifference.ts` - compares sets to find what's missing
 
 ## Tests (the safety checks)
-- `web/pages/FORGE.test.tsx` - checks goalie-mode UI pieces render correctly
-- `web/pages/__snapshots__/FORGE.test.tsx.snap` - saved picture of expected FORGE UI markup
-- `web/pages/api/v1/forge/goalies.test.ts` - checks goalie API response shape and metadata
-- `web/pages/api/v1/forge/__snapshots__/goalies.test.ts.snap` - saved picture of expected goalie API payload
+- `web/__tests__/pages/FORGE.test.tsx` - checks goalie-mode UI pieces render correctly
+- `web/pages/__snapshots__/FORGE.test.tsx.snap` (historical repository reference; the snapshot was retired in March 2026) - saved picture of expected FORGE UI markup
+- `web/__tests__/pages/api/v1/forge/goalies.test.ts` - checks goalie API response shape and metadata
+- `web/__tests__/pages/api/v1/forge/__snapshots__/goalies.test.ts.snap` - saved picture of expected goalie API payload
 
 ## Database and Schema Files (where FORGE stores things)
 - `tasks/TASKS/forge-projections/context/forge-tables.md` - FORGE table definitions (source of truth doc)

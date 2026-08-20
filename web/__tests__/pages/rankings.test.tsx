@@ -1711,7 +1711,7 @@ describe("RankingsPage interactions", () => {
     fireEvent.click(
       within(screen.getByRole("row", { name: /Matt Savoie/i })).getByRole(
         "button",
-        { name: "2" },
+        { name: "Select Matt Savoie" },
       ),
     );
     expect(replaceMock).toHaveBeenCalledWith(
@@ -1863,7 +1863,9 @@ describe("RankingsPage interactions", () => {
         "Goalie is outside the inferred top-two workload group; adjusted core share is not used for role promotion.",
       ),
     ).toBeTruthy();
-    fireEvent.click(screen.getAllByText("Casey DeSmith")[0]!);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Select Casey DeSmith" }),
+    );
     expect(replaceMock).toHaveBeenCalledWith(
       expect.objectContaining({
         pathname: "/rankings",
@@ -1967,7 +1969,9 @@ describe("RankingsPage interactions", () => {
     expect(
       screen.getByText("Score/venue-adjusted style remains Source Pending when unavailable."),
     ).toBeTruthy();
-    fireEvent.click(screen.getAllByText("Dallas Stars")[0]!);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Select Dallas Stars" }),
+    );
     expect(replaceMock).toHaveBeenCalledWith(
       expect.objectContaining({
         pathname: "/rankings",

@@ -6,10 +6,10 @@ Date:
 
 Related artifacts:
 
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-refresh-dependency-map.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-validation-matrix.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-validation-freshness-report-2026-03-11.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-refresh-actions-report-2026-03-11.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-refresh-dependency-map.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-validation-matrix.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-validation-freshness-report-2026-03-11.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-refresh-actions-report-2026-03-11.md`
 
 ## Purpose
 
@@ -177,7 +177,7 @@ Observed result:
 
 Execution method:
 
-- direct invocation of `main(...)` from `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- direct invocation of `main(...)` from `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
 - options used:
   - `season = 20252026`
   - `skipDiagnostics = true`

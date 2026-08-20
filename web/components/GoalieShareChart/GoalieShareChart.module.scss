@@ -316,7 +316,7 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: v.$breakpoint-mobile-max) {
   .goalieShareChart {
     padding: v.$space-sm;
 

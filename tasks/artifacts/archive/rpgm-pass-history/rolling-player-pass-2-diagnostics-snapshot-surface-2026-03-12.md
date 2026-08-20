@@ -13,7 +13,7 @@ Promote diagnostics from ad hoc helper output into a reusable validation payload
 
 ## Implementation
 
-- Added a normalized `diagnostics.snapshot` section to [rollingPlayerValidationPayload.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts).
+- Added a normalized `diagnostics.snapshot` section to [rollingPlayerValidationPayload.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts).
 - The snapshot is built server-side from the existing diagnostics helpers:
   - coverage summary
   - source-tail freshness summary
@@ -34,7 +34,7 @@ Promote diagnostics from ad hoc helper output into a reusable validation payload
 
 ## UI Changes
 
-- Updated [trendsDebug.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.tsx) so the diagnostics panel renders snapshot-first status rows instead of relying only on raw warning arrays.
+- Updated [trendsDebug.tsx](../../../../web/pages/trendsDebug.tsx) so the diagnostics panel renders snapshot-first status rows instead of relying only on raw warning arrays.
 - The diagnostics panel now exposes explicit operator-facing statuses for:
   - diagnostics overall
   - coverage
@@ -44,8 +44,8 @@ Promote diagnostics from ad hoc helper output into a reusable validation payload
 
 ## Test Coverage
 
-- Added unit coverage for `buildDiagnosticsSnapshot(...)` in [rollingPlayerValidationPayload.test.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts).
-- Updated [trendsDebug.test.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.test.tsx) so the blocked validation case asserts the new diagnostics snapshot output and panel rendering.
+- Added unit coverage for `buildDiagnosticsSnapshot(...)` in [rollingPlayerValidationPayload.test.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts).
+- Updated [trendsDebug.test.tsx](../../../../web/__tests__/pages/trendsDebug.test.tsx) so the blocked validation case asserts the new diagnostics snapshot output and panel rendering.
 
 ## Verification
 

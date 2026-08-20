@@ -22,7 +22,7 @@ Operational rules:
 Add `NST_KEY` to local gitignored env:
 
 ```env
-# /Users/tim/Code/fhfhockey.com/.env.local
+# .env.local
 NST_KEY=replace-with-your-active-natural-stat-trick-key
 ```
 
@@ -127,7 +127,7 @@ Triage sequence:
 Canonical direct migrated callers:
 
 - `web/lib/nst/client.ts`
-- `web/pages/api/Averages/helpers.ts`
+- `web/lib/api/averages/helpers.ts`
 - `web/pages/api/CareerAverages/[playerId].ts`
 - `web/pages/api/SustainabilityStats/[playerId].ts`
 - `web/pages/api/ThreeYearAverages/[playerId].ts`

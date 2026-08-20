@@ -6,7 +6,7 @@ This step added per-game PP-share provenance output to the validation payload so
 
 ## Implemented payload output
 
-Added two new PP-share provenance surfaces to [rollingPlayerValidationPayload.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts):
+Added two new PP-share provenance surfaces to [rollingPlayerValidationPayload.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts):
 
 - `sourceRows.selectedStrength.ppShareTraceRows`
 - `sourceRows.selectedStrength.ppShareWindowSummary`
@@ -68,12 +68,12 @@ This makes it explicit when a selected PP-share window mixes builder-backed rows
 
 ## Test coverage
 
-- Added pure-unit coverage in [rollingPlayerValidationPayload.test.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts) for:
+- Added pure-unit coverage in [rollingPlayerValidationPayload.test.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts) for:
   - builder-backed PP-share rows
   - WGO fallback PP-share rows
   - inferred team PP TOI reconstruction
   - mixed-source `last3` window detection
-- Updated [trendsDebug.test.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.test.tsx) fixtures so the page remains compatible with the richer validation payload shape.
+- Updated [trendsDebug.test.tsx](../../../../web/__tests__/pages/trendsDebug.test.tsx) fixtures so the page remains compatible with the richer validation payload shape.
 
 ## Verification
 

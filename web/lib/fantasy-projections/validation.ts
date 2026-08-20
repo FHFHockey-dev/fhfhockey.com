@@ -1,8 +1,13 @@
 import {
-  FANTASY_PROJECTION_CONTRACT_CHECKSUM,
-  FANTASY_PROJECTION_CONTRACT_VERSION,
+  FANTASY_PROJECTION_SUPPORTED_CONTRACTS,
+  FANTASY_PROJECTION_V4_CONTRACT_VERSION,
+  FANTASY_PROJECTION_V5_CONTRACT_VERSION,
+  GOALIE_ADVANCED_V5_PRIMITIVE_TARGETS,
+  GOALIE_FANTASY_V4_PRIMITIVE_TARGETS,
   GOALIE_PRIMITIVE_TARGETS,
   reconcileProjectionValues,
+  SKATER_ADVANCED_V5_PRIMITIVE_TARGETS,
+  SKATER_FANTASY_V4_PRIMITIVE_TARGETS,
   SKATER_PRIMITIVE_TARGETS,
   type FantasyProjectionPopulation,
   type ProjectionValues,
@@ -44,12 +49,12 @@ export function validateSeasonDraft(args: {
 }): SeasonValidationIssue[] {
   const issues: SeasonValidationIssue[] = [];
   if (
-    args.contractVersion !== FANTASY_PROJECTION_CONTRACT_VERSION ||
-    args.contractChecksum !== FANTASY_PROJECTION_CONTRACT_CHECKSUM
+    FANTASY_PROJECTION_SUPPORTED_CONTRACTS[args.contractVersion] !==
+    args.contractChecksum
   ) {
     issues.push({
       code: "contract_mismatch",
-      message: "Runtime and approved v3 research contract do not match.",
+      message: "Runtime and an approved season research contract do not match.",
     });
   }
   if (args.scheduleGameCount !== 1344) {
@@ -110,10 +115,23 @@ export function validateSeasonDraft(args: {
         message: "Goalie starts must be within [0, expected games].",
       });
     }
-    const required =
-      player.population === "goalie"
-        ? GOALIE_PRIMITIVE_TARGETS
-        : SKATER_PRIMITIVE_TARGETS;
+    const fantasyBatch = [
+      FANTASY_PROJECTION_V4_CONTRACT_VERSION,
+      FANTASY_PROJECTION_V5_CONTRACT_VERSION,
+    ].includes(args.contractVersion);
+    const advancedBatch =
+      args.contractVersion === FANTASY_PROJECTION_V5_CONTRACT_VERSION;
+    const required = player.population === "goalie"
+      ? [
+          ...GOALIE_PRIMITIVE_TARGETS,
+          ...(fantasyBatch ? GOALIE_FANTASY_V4_PRIMITIVE_TARGETS : []),
+          ...(advancedBatch ? GOALIE_ADVANCED_V5_PRIMITIVE_TARGETS : []),
+        ]
+      : [
+          ...SKATER_PRIMITIVE_TARGETS,
+          ...(fantasyBatch ? SKATER_FANTASY_V4_PRIMITIVE_TARGETS : []),
+          ...(advancedBatch ? SKATER_ADVANCED_V5_PRIMITIVE_TARGETS : []),
+        ];
     for (const target of required) {
       if (!Number.isFinite(player.publishedValues[target])) {
         issues.push({

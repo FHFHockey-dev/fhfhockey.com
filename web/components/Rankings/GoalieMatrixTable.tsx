@@ -230,17 +230,14 @@ export default function GoalieMatrixTable({
                       ? styles.selectedMatrixRow
                       : undefined
                   }
-                  onClick={() => onSelectGoalie(row.entity.id)}
                 >
                   <td className={styles.stickyRankCell}>
                     <button
                       type="button"
                       className={styles.rowSelectButton}
+                      aria-label={`Select ${row.entity.name ?? `Goalie ${row.entity.id}`}`}
                       aria-pressed={row.entity.id === selectedGoalieId}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onSelectGoalie(row.entity.id);
-                      }}
+                      onClick={() => onSelectGoalie(row.entity.id)}
                     >
                       {row.sort.rank ?? "-"}
                     </button>

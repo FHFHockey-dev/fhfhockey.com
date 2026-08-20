@@ -8,7 +8,7 @@ Add a script-level runtime check that fails clearly when the daily rolling-playe
 
 Added:
 
-- [check-rolling-player-runtime-budget.ts](/Users/tim/Code/fhfhockey.com/web/scripts/check-rolling-player-runtime-budget.ts)
+- [check-rolling-player-runtime-budget.ts](../../../../web/scripts/check-rolling-player-runtime-budget.ts)
 - package script:
   - `npm run check:rolling-player-runtime-budget -- --profile daily_incremental --date YYYY-MM-DD`
 

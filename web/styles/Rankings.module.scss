@@ -1621,6 +1621,11 @@ td.stickyPlayerCell {
   font-weight: 900;
   cursor: pointer;
 
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
+
   &[aria-pressed="true"] {
     border-color: v.$primary-color;
     background: rgba(v.$primary-color, 0.22);
@@ -2722,7 +2727,7 @@ td.stickyPlayerCell {
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: v.$breakpoint-mobile-max) {
   .filters {
     grid-template-columns: 1fr;
   }

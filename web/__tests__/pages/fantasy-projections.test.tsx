@@ -41,6 +41,11 @@ const release: FantasyProjectionRelease = {
   sourceHighWatermark: "watermark",
   releaseHash: "release",
   active: true,
+  metricSetVersion: "core-v3",
+  rosterObservedAt: "2026-08-14T11:00:00.000Z",
+  transactionCutoffAt: null,
+  healthStatus: "healthy",
+  healthSummary: {},
 };
 
 const espnSettings: EspnLeagueSettingsV1 = {
@@ -82,7 +87,16 @@ function player(
     playerName,
     position: population === "goalie" ? "G" : "C",
     population,
+    poolStatus: "verified_active",
+    rosterStatus: "active_nhl",
     rosterConfidence: 0.9,
+    sourceFreshAt: "2026-08-14T11:00:00.000Z",
+    rookieProfile: {
+      rookie: false,
+      rosterProbability: null,
+      sourceCoverage: [],
+      nhleMethod: null,
+    },
     expectedGames: 82,
     expectedStarts: population === "goalie" ? 50 : null,
     expectedToi: {},

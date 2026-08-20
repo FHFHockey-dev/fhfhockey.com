@@ -11,9 +11,14 @@ import { useAuth } from "contexts/AuthProviderContext";
 import {
   FANTASY_PROJECTION_BETA_LABEL,
   FANTASY_PROJECTION_SEASON_ID,
+  expandFantasyProjectionSummary,
   fantasyProjectionTotal,
   GOALIE_SCORING_TARGETS,
+  GOALIE_ADVANCED_V5_PRIMITIVE_TARGETS,
   SKATER_SCORING_TARGETS,
+  SKATER_ADVANCED_V5_PRIMITIVE_TARGETS,
+  type FantasyProjectionPlayerDetailResponse,
+  type FantasyProjectionCompactPlayersResponse,
   type FantasyProjectionPlayer,
   type FantasyProjectionPlayersResponse,
   type FantasyProjectionRelease,
@@ -50,6 +55,7 @@ const STAT_LABELS: Record<string, string> = {
   GAMES_PLAYED: "GP",
   GAMES_STARTED: "GS",
   TOTAL_TOI: "TOI",
+  TOI_PER_GAME: "TOI/GP",
   EV_TOI: "EV TOI",
   PP_TOI: "PP TOI",
   PK_TOI: "PK TOI",
@@ -80,6 +86,28 @@ const STAT_LABELS: Record<string, string> = {
   SHUTOUTS_GOALIE: "SO",
   SAVE_PERCENTAGE: "SV%",
   GOALS_AGAINST_AVERAGE: "GAA",
+  TAKEAWAYS: "TK",
+  GIVEAWAYS: "GV",
+  MISSED_SHOTS: "MISS",
+  PENALTIES_DRAWN: "PEN Drawn",
+  PENALTIES_TAKEN: "PEN Taken",
+  GAME_WINNING_GOALS: "GWG",
+  OVERTIME_GOALS: "OTG",
+  EMPTY_NET_GOALS: "ENG",
+  EMPTY_NET_POINTS: "ENP",
+  QUALITY_STARTS_GOALIE: "QS",
+  RELIEF_APPEARANCES_GOALIE: "Relief",
+  START_PERCENTAGE_GOALIE: "Start%",
+  WIN_PERCENTAGE_GOALIE: "Win%",
+  SHOT_ATTEMPTS: "iCF",
+  UNBLOCKED_SHOT_ATTEMPTS: "iFF",
+  EXPECTED_GOALS: "ixG",
+  EXPECTED_ASSISTS: "ixA",
+  ON_ICE_CF_PERCENTAGE: "CF%",
+  ON_ICE_FF_PERCENTAGE: "FF%",
+  ON_ICE_XGF_PERCENTAGE: "xGF%",
+  EXPECTED_GOALS_AGAINST_GOALIE: "xGA",
+  GOALS_SAVED_ABOVE_EXPECTED: "GSAx",
 };
 const SKATER_COLUMNS = [
   "GAMES_PLAYED",
@@ -104,6 +132,7 @@ const GOALIE_COLUMNS = [
 
 type PlayerMode = "all" | "skater" | "goalie";
 type ProductView = "players" | "teams";
+type ColumnPreset = "standard" | "fantasy" | "deployment" | "advanced" | "custom";
 
 function numberValue(value: unknown): number {
   const parsed = Number(value);
@@ -126,8 +155,16 @@ function ratingValue(
 }
 
 function formatValue(target: string, value: number): string {
-  if (target === "SAVE_PERCENTAGE") return value.toFixed(3).replace(/^0/, "");
+  if (target.includes("PERCENTAGE") || target.endsWith("_PERCENTAGE") || target.endsWith("_PERCENT")) {
+    return value.toFixed(3).replace(/^0/, "");
+  }
   if (target === "GOALS_AGAINST_AVERAGE") return value.toFixed(2);
+  if (target === "TOI_PER_GAME") {
+    const roundedSeconds = Math.max(0, Math.round(value));
+    const minutes = Math.floor(roundedSeconds / 60);
+    const seconds = String(roundedSeconds % 60).padStart(2, "0");
+    return `${minutes}:${seconds}`;
+  }
   if (target.endsWith("_TOI") || target === "TOTAL_TOI") {
     const minutes = value / 60;
     return minutes >= 100 ? minutes.toFixed(0) : minutes.toFixed(1);
@@ -144,9 +181,20 @@ function confidenceLabel(confidence: number): string {
 function roleLabel(player: FantasyProjectionPlayer): string {
   const role = player.deployment.mostLikelyRole;
   if (!role) return "Role pending";
-  return Object.values(role)
-    .filter((value) => value != null && String(value).trim())
-    .map(String)
+  const labels: Record<string, string> = {
+    forwardLine: "L",
+    defensePair: "D",
+    powerPlayUnit: "PP",
+    penaltyKillUnit: "PK",
+    goalieOrder: "G",
+  };
+  return Object.entries(role)
+    .filter(([, value]) => value != null && String(value).trim())
+    .map(([key, value]) => {
+      const prefix = labels[key];
+      const text = String(value);
+      return prefix && !text.toUpperCase().startsWith(prefix) ? `${prefix}${text}` : text;
+    })
     .join(" · ") || "Role pending";
 }
 
@@ -158,8 +206,12 @@ function ProjectionInterval({
   target: string;
 }) {
   const mean = numberValue(player.publishedValues[target]);
+  const hasInterval = Number.isFinite(Number(player.p10[target])) && Number.isFinite(Number(player.p90[target]));
   const low = numberValue(player.p10[target]);
   const high = numberValue(player.p90[target]);
+  if (!hasInterval) {
+    return <span className={styles.interval}>{formatValue(target, mean)}</span>;
+  }
   const label = `${STAT_LABELS[target] ?? target}: ${formatValue(target, mean)}; 10th to 90th percentile ${formatValue(target, low)} to ${formatValue(target, high)}`;
   return (
     <span className={styles.interval} title={label} aria-label={label}>
@@ -456,29 +508,77 @@ function FantraxProjectionLeaguePicker({
   );
 }
 
+function playerBadges(player: FantasyProjectionPlayer): string[] {
+  const badges: string[] = [];
+  if (player.rookieProfile.rookie) badges.push("Rookie");
+  if (player.poolStatus === "active_prospect") badges.push("Prospect");
+  if (player.fallbackFlags.includes("prior_based_projection")) badges.push("Prior-based");
+  if (player.adjusted) badges.push("Adjusted");
+  if (player.fallbackFlags.some((flag) => flag.includes("roster_changed"))) badges.push("Roster changed");
+  if (
+    (player.rosterStatus === "unresolved" && player.poolStatus === "review_required") ||
+    player.fallbackFlags.some((flag) => flag.includes("conflict"))
+  ) {
+    badges.push("Conflict");
+  }
+  if (
+    player.sourceFreshAt &&
+    Date.now() - Date.parse(player.sourceFreshAt) > 7 * 24 * 60 * 60 * 1000
+  ) {
+    badges.push("Stale data");
+  }
+  return badges;
+}
+
+function allModeTarget(player: FantasyProjectionPlayer, target: string): string {
+  if (target === "ROLE_PRIMARY") return player.population === "goalie" ? "WINS_GOALIE" : "POINTS";
+  if (target === "ROLE_VOLUME") return player.population === "goalie" ? "SAVES_GOALIE" : "SHOTS_ON_GOAL";
+  if (target === "ROLE_PERIPHERAL") return player.population === "goalie" ? "SHUTOUTS_GOALIE" : "HITS";
+  if (target === "ROLE_ADVANCED_EXPECTED_GOALS") {
+    return player.population === "goalie" ? "EXPECTED_GOALS_AGAINST_GOALIE" : "EXPECTED_GOALS";
+  }
+  if (target === "ROLE_ADVANCED_EXPECTED_IMPACT") {
+    return player.population === "goalie" ? "GOALS_SAVED_ABOVE_EXPECTED" : "EXPECTED_ASSISTS";
+  }
+  if (target === "ROLE_ADVANCED_VOLUME") {
+    return player.population === "goalie" ? "HIGH_DANGER_SHOTS_AGAINST_GOALIE" : "SHOT_ATTEMPTS";
+  }
+  if (target === "ROLE_ADVANCED_SHARE") {
+    return player.population === "goalie" ? "HIGH_DANGER_SAVE_PERCENTAGE_GOALIE" : "ON_ICE_XGF_PERCENTAGE";
+  }
+  return target;
+}
+
+function columnLabel(target: string): string {
+  if (target === "ROLE_PRIMARY") return "Production";
+  if (target === "ROLE_VOLUME") return "Volume";
+  if (target === "ROLE_PERIPHERAL") return "Peripheral";
+  if (target === "ROLE_ADVANCED_EXPECTED_GOALS") return "ixG / xGA";
+  if (target === "ROLE_ADVANCED_EXPECTED_IMPACT") return "ixA / GSAx";
+  if (target === "ROLE_ADVANCED_VOLUME") return "iCF / HD SA";
+  if (target === "ROLE_ADVANCED_SHARE") return "xGF% / HD SV%";
+  return STAT_LABELS[target] ?? target;
+}
+
 function PlayerProjectionTable({
   players,
-  mode,
+  columns,
   scoringSettings,
   categoryScores,
   sortKey,
   sortDirection,
   onSort,
+  onSelect,
 }: {
   players: FantasyProjectionPlayer[];
-  mode: PlayerMode;
+  columns: string[];
   scoringSettings: FantasyProjectionScoringSettingsV2;
   categoryScores: Map<string, number>;
   sortKey: string;
   sortDirection: "asc" | "desc";
   onSort: (key: string) => void;
+  onSelect: (player: FantasyProjectionPlayer) => void;
 }) {
-  const columns =
-    mode === "goalie"
-      ? GOALIE_COLUMNS
-      : mode === "skater"
-        ? SKATER_COLUMNS
-        : ["GAMES_PLAYED", "POINTS", "SHOTS_ON_GOAL", "HITS", "WINS_GOALIE", "SAVES_GOALIE"];
   const shownColumns = columns.includes(sortKey) || !STAT_LABELS[sortKey]
     ? columns
     : [...columns, sortKey];
@@ -502,7 +602,7 @@ function PlayerProjectionTable({
             {shownColumns.map((target) => (
               <th key={target}>
                 <button type="button" onClick={() => onSort(target)}>
-                  {STAT_LABELS[target] ?? target}
+                  {columnLabel(target)}
                 </button>
               </th>
             ))}
@@ -523,17 +623,14 @@ function PlayerProjectionTable({
             return (
               <tr key={player.id} className={styles.dataRow}>
                 <th scope="row">
-                  <span className={styles.playerName}>{player.playerName}</span>
-                  {player.adjusted ? (
-                    <span
-                      className={styles.adjusted}
-                      title={Object.entries(player.adjustmentDelta)
-                        .map(([key, value]) => `${STAT_LABELS[key] ?? key} ${value >= 0 ? "+" : ""}${value.toFixed(2)}`)
-                        .join(", ")}
-                    >
-                      Adjusted
-                    </span>
-                  ) : null}
+                  <button type="button" className={styles.playerButton} onClick={() => onSelect(player)}>
+                    {player.playerName}
+                  </button>
+                  <span className={styles.badges}>
+                    {playerBadges(player).map((badge) => (
+                      <span key={badge} className={styles.badge}>{badge}</span>
+                    ))}
+                  </span>
                 </th>
                 <td>{player.teamAbbreviation ?? "FA"}</td>
                 <td>{player.position}</td>
@@ -557,8 +654,8 @@ function PlayerProjectionTable({
                 </td>
                 {shownColumns.map((target) => (
                   <td key={target}>
-                    {player.publishedValues[target] == null ? "—" : (
-                      <ProjectionInterval player={player} target={target} />
+                    {player.publishedValues[allModeTarget(player, target)] == null ? "—" : (
+                      <ProjectionInterval player={player} target={allModeTarget(player, target)} />
                     )}
                   </td>
                 ))}
@@ -591,6 +688,17 @@ function TeamProjectionTable({
     "penaltyKill",
     "pace",
   ];
+  const advancedMetrics = [
+    ["TEAM_EXPECTED_GOALS_FOR", "xGF"],
+    ["TEAM_EXPECTED_GOALS_AGAINST", "xGA"],
+    ["TEAM_SHOT_ATTEMPTS_FOR", "CF"],
+    ["TEAM_SHOT_ATTEMPTS_AGAINST", "CA"],
+    ["TEAM_UNBLOCKED_ATTEMPTS_FOR", "FF"],
+    ["TEAM_UNBLOCKED_ATTEMPTS_AGAINST", "FA"],
+    ["TEAM_HIGH_DANGER_SHOTS_FOR", "HD shots for"],
+    ["TEAM_HIGH_DANGER_SHOTS_AGAINST", "HD shots against"],
+    ["TEAM_PACE", "Pace / game"],
+  ] as const;
   const playerNames = new Map(
     players.map((player) => [player.fhfhPlayerId, player.playerName]),
   );
@@ -616,6 +724,28 @@ function TeamProjectionTable({
               return <div key={key}><dt>{key}</dt><dd>{value.toFixed(0)}</dd></div>;
             })}
           </dl>
+          {Object.keys(team.publishedValues).length > 0 ? (
+            <div className={styles.lines}>
+              <h3>Advanced season forecast</h3>
+              <dl>
+                {advancedMetrics.map(([target, label]) => {
+                  const value = team.publishedValues[target];
+                  if (value == null) return null;
+                  const lower = team.p10[target];
+                  const upper = team.p90[target];
+                  const digits = target === "TEAM_PACE" ? 1 : 0;
+                  return (
+                    <div key={target}>
+                      <dt>{label}</dt>
+                      <dd title={lower == null || upper == null ? undefined : `80% interval: ${lower.toFixed(digits)}–${upper.toFixed(digits)}`}>
+                        {value.toFixed(digits)}
+                      </dd>
+                    </div>
+                  );
+                })}
+              </dl>
+            </div>
+          ) : null}
           <div className={styles.lines}>
             <h3>Projected deployment</h3>
             {Object.keys(team.deployment).length === 0 ? (
@@ -654,12 +784,25 @@ export default function FantasyProjectionsPage() {
   const [teams, setTeams] = useState<FantasyProjectionTeam[]>([]);
   const [releaseLabel, setReleaseLabel] = useState(FANTASY_PROJECTION_BETA_LABEL);
   const [issuedAt, setIssuedAt] = useState<string | null>(null);
+  const [release, setRelease] = useState<FantasyProjectionRelease | null>(null);
   const [teamFilter, setTeamFilter] = useState("");
   const [positionFilter, setPositionFilter] = useState("");
+  const [rosterFilter, setRosterFilter] = useState("");
+  const [rookieFilter, setRookieFilter] = useState<"" | "rookie" | "prospect">("");
+  const [confidenceFilter, setConfidenceFilter] = useState("");
+  const [adjustedFilter, setAdjustedFilter] = useState("");
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
   const [sortKey, setSortKey] = useState("fantasyTotal");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [columnPreset, setColumnPreset] = useState<ColumnPreset>("standard");
+  const [customColumns, setCustomColumns] = useState<string[]>(SKATER_COLUMNS);
+  const [pageSize, setPageSize] = useState(100);
+  const [page, setPage] = useState(1);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
+  const [playerDetail, setPlayerDetail] = useState<FantasyProjectionPlayerDetailResponse | null>(null);
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [scoringSettings, setScoringSettings] =
     useState<FantasyProjectionScoringSettingsV2>(() =>
       defaultFantasyProjectionScoringSettings(),
@@ -755,16 +898,21 @@ export default function FantasyProjectionsPage() {
             setTeams([]);
             setReleaseLabel(FANTASY_PROJECTION_BETA_LABEL);
             setIssuedAt(null);
+            setRelease(null);
             setError("No published fantasy-projection release exists for this selection.");
           }
           return;
         }
         const playersRequest = fetch(
-          `/api/v1/fantasy-projections/players?seasonId=${FANTASY_PROJECTION_SEASON_ID}&view=${view}`,
+          `/api/v1/fantasy-projections/players?seasonId=${FANTASY_PROJECTION_SEASON_ID}&view=${view}&format=summary`,
         ).then(async (response) => {
           const payload = await response.json();
           if (!response.ok || !payload.success) throw new Error(payload.message ?? "Unable to load player projections.");
-          return payload as FantasyProjectionPlayersResponse;
+          return payload.encoding
+            ? expandFantasyProjectionSummary(
+                payload as FantasyProjectionCompactPlayersResponse,
+              )
+            : payload as FantasyProjectionPlayersResponse;
         });
         const teamsRequest =
           view === "ros"
@@ -785,11 +933,13 @@ export default function FantasyProjectionsPage() {
         setTeams(teamPayload?.teams ?? []);
         setReleaseLabel(playerPayload.release.label);
         setIssuedAt(playerPayload.release.issuedAt);
+        setRelease(playerPayload.release);
         setError(null);
       } catch (caught) {
         if (!cancelled) {
           setPlayers([]);
           setTeams([]);
+          setRelease(null);
           setError(caught instanceof Error ? caught.message : String(caught));
         }
       } finally {
@@ -800,6 +950,39 @@ export default function FantasyProjectionsPage() {
       cancelled = true;
     };
   }, [view]);
+
+  useEffect(() => {
+    if (selectedPlayerId == null) {
+      setPlayerDetail(null);
+      setDetailError(null);
+      return;
+    }
+    let cancelled = false;
+    setDetailLoading(true);
+    setDetailError(null);
+    void fetch(
+      `/api/v1/fantasy-projections/players/${selectedPlayerId}?seasonId=${FANTASY_PROJECTION_SEASON_ID}&view=${view}`,
+    )
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.message ?? "Unable to load player detail.");
+        }
+        if (!cancelled) setPlayerDetail(payload as FantasyProjectionPlayerDetailResponse);
+      })
+      .catch((caught) => {
+        if (!cancelled) {
+          setPlayerDetail(null);
+          setDetailError(caught instanceof Error ? caught.message : String(caught));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setDetailLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPlayerId, view]);
 
   const teamsForFilter = useMemo(
     () => Array.from(new Set(players.map((player) => player.teamAbbreviation).filter(Boolean) as string[])).sort(),
@@ -828,6 +1011,13 @@ export default function FantasyProjectionsPage() {
       if (mode === "skater" && player.population === "goalie") return false;
       if (teamFilter && player.teamAbbreviation !== teamFilter) return false;
       if (positionFilter && player.position !== positionFilter) return false;
+      if (rosterFilter && player.rosterStatus !== rosterFilter) return false;
+      if (rookieFilter === "rookie" && !player.rookieProfile.rookie) return false;
+      if (rookieFilter === "prospect" && player.poolStatus !== "active_prospect") return false;
+      if (adjustedFilter === "adjusted" && !player.adjusted) return false;
+      if (confidenceFilter && confidenceLabel(player.rosterConfidence).toLowerCase() !== confidenceFilter) {
+        return false;
+      }
       return !query || player.playerName.toLowerCase().includes(query);
     });
     const direction = sortDirection === "asc" ? 1 : -1;
@@ -868,8 +1058,8 @@ export default function FantasyProjectionsPage() {
         leftValue = numberValue(left.deployment.confidence);
         rightValue = numberValue(right.deployment.confidence);
       } else {
-        leftValue = numberValue(left.publishedValues[sortKey]);
-        rightValue = numberValue(right.publishedValues[sortKey]);
+        leftValue = numberValue(left.publishedValues[allModeTarget(left, sortKey)]);
+        rightValue = numberValue(right.publishedValues[allModeTarget(right, sortKey)]);
       }
       if (typeof leftValue === "string" && typeof rightValue === "string") {
         return leftValue.localeCompare(rightValue) * direction;
@@ -879,10 +1069,77 @@ export default function FantasyProjectionsPage() {
   }, [
     deferredSearch,
     mode,
+    adjustedFilter,
+    confidenceFilter,
     players,
     positionFilter,
+    rookieFilter,
+    rosterFilter,
     categoryScores,
     scoringSettings,
+    sortDirection,
+    sortKey,
+    teamFilter,
+  ]);
+
+  const availableColumns = useMemo(
+    () => Array.from(new Set([
+      ...SKATER_SCORING_TARGETS,
+      ...GOALIE_SCORING_TARGETS,
+      ...players.flatMap((player) => Object.keys(player.publishedValues)),
+    ])).sort((left, right) => columnLabel(left).localeCompare(columnLabel(right))),
+    [players],
+  );
+  const selectedColumns = useMemo(() => {
+    if (columnPreset === "custom") return customColumns;
+    if (columnPreset === "advanced") {
+      return mode === "goalie"
+        ? [...GOALIE_ADVANCED_V5_PRIMITIVE_TARGETS, "GOALS_SAVED_ABOVE_EXPECTED"]
+        : mode === "skater"
+          ? [...SKATER_ADVANCED_V5_PRIMITIVE_TARGETS, "ON_ICE_XGF_PERCENTAGE"]
+          : [
+              "ROLE_ADVANCED_EXPECTED_GOALS",
+              "ROLE_ADVANCED_EXPECTED_IMPACT",
+              "ROLE_ADVANCED_VOLUME",
+              "ROLE_ADVANCED_SHARE",
+            ];
+    }
+    if (columnPreset === "deployment") {
+      return mode === "goalie"
+        ? ["GAMES_PLAYED", "GAMES_STARTED", "START_PERCENTAGE_GOALIE", "TOTAL_TOI"]
+        : ["GAMES_PLAYED", "TOTAL_TOI", "EV_TOI", "PP_TOI", "PK_TOI"];
+    }
+    if (columnPreset === "fantasy") {
+      return mode === "goalie"
+        ? GOALIE_COLUMNS
+        : mode === "skater"
+          ? ["GAMES_PLAYED", "GOALS", "ASSISTS", "POINTS", "SHOTS_ON_GOAL", "HITS", "BLOCKED_SHOTS", "PENALTY_MINUTES"]
+          : ["GAMES_PLAYED", "ROLE_PRIMARY", "ROLE_VOLUME", "ROLE_PERIPHERAL"];
+    }
+    return mode === "goalie"
+      ? GOALIE_COLUMNS
+      : mode === "skater"
+        ? SKATER_COLUMNS
+        : ["GAMES_PLAYED", "ROLE_PRIMARY", "ROLE_VOLUME", "ROLE_PERIPHERAL"];
+  }, [columnPreset, customColumns, mode]);
+  const pageCount = Math.max(1, Math.ceil(sortedPlayers.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const pagedPlayers = sortedPlayers.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [
+    adjustedFilter,
+    confidenceFilter,
+    deferredSearch,
+    mode,
+    pageSize,
+    positionFilter,
+    rookieFilter,
+    rosterFilter,
     sortDirection,
     sortKey,
     teamFilter,
@@ -895,6 +1152,34 @@ export default function FantasyProjectionsPage() {
       setSortKey(next);
       setSortDirection(next === "player" || next === "team" || next === "position" ? "asc" : "desc");
     }
+  }
+
+  function exportFilteredCsv() {
+    const targets = Array.from(new Set(
+      sortedPlayers.flatMap((player) => Object.keys(player.publishedValues)),
+    )).sort();
+    const escape = (value: unknown) => `"${String(value ?? "").replaceAll('"', '""')}"`;
+    const lines = [
+      ["Player", "Team", "Position", "Roster status", "Role", ...targets]
+        .map(escape)
+        .join(","),
+      ...sortedPlayers.map((player) => [
+        player.playerName,
+        player.teamAbbreviation ?? "FA",
+        player.position,
+        player.rosterStatus,
+        roleLabel(player),
+        ...targets.map((target) => player.publishedValues[target] ?? ""),
+      ].map(escape).join(",")),
+    ];
+    const url = URL.createObjectURL(new Blob([`\uFEFF${lines.join("\n")}`], {
+      type: "text/csv;charset=utf-8",
+    }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `fhfh-${FANTASY_PROJECTION_SEASON_ID}-${view}-projections.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   function changeScoring(next: FantasyProjectionScoringSettingsV2) {
@@ -1059,14 +1344,19 @@ export default function FantasyProjectionsPage() {
           <div>
             <p className={styles.eyebrow}>Full-season player forecasts</p>
             <h1>2026–27 Fantasy Projections</h1>
-            <p>
-              Raw hockey outcomes, independent game components, projected deployment,
-              and customizable fantasy scoring. FORGE remains separate.
-            </p>
+            <p>Independent game projections, deployment, confidence, and customizable scoring.</p>
           </div>
           <div className={styles.release}>
             <span>{releaseLabel}</span>
             <small>{issuedAt ? `Issued ${new Date(issuedAt).toLocaleString()}` : "No published release yet"}</small>
+            {release ? (
+              <small>
+                {release.metricSetVersion} · {release.healthStatus}
+                {release.rosterObservedAt
+                  ? ` · roster ${new Date(release.rosterObservedAt).toLocaleDateString()}`
+                  : ""}
+              </small>
+            ) : null}
           </div>
         </header>
 
@@ -1122,6 +1412,42 @@ export default function FantasyProjectionsPage() {
                 </select>
               </label>
               <label>
+                Roster status
+                <select value={rosterFilter} onChange={(event) => setRosterFilter(event.target.value)}>
+                  <option value="">All statuses</option>
+                  <option value="active_nhl">Active NHL</option>
+                  <option value="injured_nhl">Injured NHL</option>
+                  <option value="affiliate">Affiliate / AHL</option>
+                  <option value="prospect_reserve">Prospect reserve</option>
+                  <option value="unsigned">Unsigned</option>
+                  <option value="unresolved">Unresolved</option>
+                </select>
+              </label>
+              <label>
+                Player type
+                <select value={rookieFilter} onChange={(event) => setRookieFilter(event.target.value as "" | "rookie" | "prospect")}>
+                  <option value="">Everyone</option>
+                  <option value="rookie">Rookies</option>
+                  <option value="prospect">Prospects</option>
+                </select>
+              </label>
+              <label>
+                Confidence
+                <select value={confidenceFilter} onChange={(event) => setConfidenceFilter(event.target.value)}>
+                  <option value="">All confidence</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </label>
+              <label>
+                Adjustments
+                <select value={adjustedFilter} onChange={(event) => setAdjustedFilter(event.target.value)}>
+                  <option value="">All rows</option>
+                  <option value="adjusted">Adjusted only</option>
+                </select>
+              </label>
+              <label>
                 Search
                 <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Player name" />
               </label>
@@ -1132,9 +1458,43 @@ export default function FantasyProjectionsPage() {
                   {sortTargets.map((target) => <option key={target} value={target}>{STAT_LABELS[target] ?? target}</option>)}
                 </select>
               </label>
+              <label>
+                Columns
+                <select value={columnPreset} onChange={(event) => setColumnPreset(event.target.value as ColumnPreset)}>
+                  <option value="standard">Standard</option>
+                  <option value="fantasy">Fantasy</option>
+                  <option value="deployment">Deployment</option>
+                  <option value="advanced">Advanced</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </label>
+              <button type="button" className={styles.exportButton} onClick={exportFilteredCsv}>
+                Export filtered CSV
+              </button>
             </>
           ) : null}
         </section>
+        {productView === "players" && columnPreset === "custom" ? (
+          <details className={styles.columnPicker}>
+            <summary>Choose visible columns</summary>
+            <div>
+              {availableColumns.map((target) => (
+                <label key={target}>
+                  <input
+                    type="checkbox"
+                    checked={customColumns.includes(target)}
+                    onChange={(event) => setCustomColumns((current) =>
+                      event.target.checked
+                        ? [...current, target]
+                        : current.filter((candidate) => candidate !== target)
+                    )}
+                  />
+                  {columnLabel(target)}
+                </label>
+              ))}
+            </div>
+          </details>
+        ) : null}
 
         {productView === "players" ? (
           <>
@@ -1177,18 +1537,94 @@ export default function FantasyProjectionsPage() {
         ) : null}
         {loading ? <p className={styles.empty}>Loading published projection release…</p> : null}
         {!loading && !error && productView === "players" ? (
-          <PlayerProjectionTable
-            players={sortedPlayers}
-            mode={mode}
-            scoringSettings={scoringSettings}
-            categoryScores={categoryScores}
-            sortKey={sortKey}
-            sortDirection={sortDirection}
-            onSort={changeSort}
-          />
+          <>
+            <div className={styles.pagination}>
+              <span>{sortedPlayers.length.toLocaleString()} players</span>
+              <label>
+                Rows
+                <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))}>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={250}>250</option>
+                </select>
+              </label>
+              <button type="button" disabled={currentPage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
+                Previous
+              </button>
+              <span>Page {currentPage} of {pageCount}</span>
+              <button type="button" disabled={currentPage >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>
+                Next
+              </button>
+            </div>
+            <PlayerProjectionTable
+              players={pagedPlayers}
+              columns={selectedColumns}
+              scoringSettings={scoringSettings}
+              categoryScores={categoryScores}
+              sortKey={sortKey}
+              sortDirection={sortDirection}
+              onSort={changeSort}
+              onSelect={(player) => setSelectedPlayerId(player.fhfhPlayerId)}
+            />
+          </>
         ) : null}
         {!loading && !error && productView === "teams" ? (
           <TeamProjectionTable teams={teams} players={players} />
+        ) : null}
+        {selectedPlayerId != null ? (
+          <div className={styles.drawerBackdrop} role="presentation" onMouseDown={(event) => {
+            if (event.currentTarget === event.target) setSelectedPlayerId(null);
+          }}>
+            <aside className={styles.drawer} role="dialog" aria-modal="true" aria-label="Player projection details">
+              <button type="button" className={styles.drawerClose} onClick={() => setSelectedPlayerId(null)}>
+                Close
+              </button>
+              {detailLoading ? <p>Loading player detail…</p> : null}
+              {detailError ? <p className={styles.warning}>{detailError}</p> : null}
+              {playerDetail ? (
+                <>
+                  <p className={styles.eyebrow}>{playerDetail.player.teamAbbreviation ?? "Unsigned"} · {playerDetail.player.position}</p>
+                  <h2>{playerDetail.player.playerName}</h2>
+                  <div className={styles.badges}>
+                    {playerBadges(playerDetail.player).map((badge) => <span key={badge} className={styles.badge}>{badge}</span>)}
+                  </div>
+                  <p>{roleLabel(playerDetail.player)} · {confidenceLabel(playerDetail.player.rosterConfidence)} roster confidence</p>
+                  {playerDetail.player.rookieProfile.rookie ? (
+                    <section>
+                      <h3>Rookie translation</h3>
+                      <p>
+                        {playerDetail.player.rookieProfile.sourceLeague ?? "Non-NHL history"} · {playerDetail.player.rookieProfile.nhleMethod ?? "prior fallback"}
+                        {playerDetail.player.rookieProfile.rosterProbability == null
+                          ? ""
+                          : ` · ${(playerDetail.player.rookieProfile.rosterProbability * 100).toFixed(0)}% roster probability`}
+                      </p>
+                    </section>
+                  ) : null}
+                  <section>
+                    <h3>Projection intervals</h3>
+                    <dl className={styles.detailStats}>
+                      {Object.keys(playerDetail.player.publishedValues).map((target) => (
+                        <div key={target}>
+                          <dt>{columnLabel(target)}</dt>
+                          <dd><ProjectionInterval player={playerDetail.player} target={target} /></dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </section>
+                  <section>
+                    <h3>Release history</h3>
+                    <ul>
+                      {playerDetail.releaseHistory.map((history) => (
+                        <li key={`${history.view}-${history.releaseNumber}`}>
+                          {history.view} #{history.releaseNumber} · {new Date(history.issuedAt).toLocaleDateString()} · {formatValue("POINTS", numberValue(history.publishedValues.POINTS))} P
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                </>
+              ) : null}
+            </aside>
+          </div>
         ) : null}
       </main>
     </>

@@ -6,7 +6,7 @@ Tune batching and concurrency defaults so daily incremental runs keep their fast
 
 ### Implementation
 
-Added explicit rolling recompute execution profiles in [update-rolling-player-averages.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-rolling-player-averages.ts):
+Added explicit rolling recompute execution profiles in [update-rolling-player-averages.ts](../../../../web/pages/api/v1/db/update-rolling-player-averages.ts):
 
 - `daily_incremental`
   - `playerConcurrency=4`
@@ -39,7 +39,7 @@ Added explicit rolling recompute execution profiles in [update-rolling-player-av
 
 ### Coordinator Alignment
 
-Updated [run-rolling-forge-pipeline.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/run-rolling-forge-pipeline.ts) so the consolidated coordinator passes:
+Updated [run-rolling-forge-pipeline.ts](../../../../web/pages/api/v1/db/run-rolling-forge-pipeline.ts) so the consolidated coordinator passes:
 
 - `executionProfile=daily_incremental` for daily runs
 - `executionProfile=overnight` for overnight runs
@@ -56,9 +56,9 @@ This keeps the operational orchestration surface explicit and avoids relying on 
 ### Verification
 
 - route tests:
-  - [update-rolling-player-averages.test.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-rolling-player-averages.test.ts)
+  - [update-rolling-player-averages.test.ts](../../../../web/__tests__/pages/api/v1/db/update-rolling-player-averages.test.ts)
 - coordinator tests:
-  - [run-rolling-forge-pipeline.test.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/run-rolling-forge-pipeline.test.ts)
+  - [run-rolling-forge-pipeline.test.ts](../../../../web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts)
 - typecheck:
   - `npx tsc --noEmit --pretty false`
 

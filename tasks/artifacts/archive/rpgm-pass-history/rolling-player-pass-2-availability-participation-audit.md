@@ -18,7 +18,7 @@ It covers every persisted availability, participation, and GP-compatibility fiel
 - traded-player and split-strength implications
 - legacy alias behavior
 
-This artifact does not assign final status buckets yet. Status ledger work remains separate in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`.
+This artifact does not assign final status buckets yet. Status ledger work remains separate in `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`.
 
 ## Scope
 
@@ -95,7 +95,7 @@ Total availability / participation / compatibility fields in scope:
 
 Availability semantics are owned by:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerAvailabilityContract.ts`
+- `web/lib/supabase/Upserts/rollingPlayerAvailabilityContract.ts`
 
 The contract distinguishes:
 
@@ -121,12 +121,12 @@ Replacement-intent meanings:
 
 Availability and participation arithmetic is produced through:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingHistoricalAverages.ts`
+- `web/lib/supabase/Upserts/rollingHistoricalAverages.ts`
   - `createHistoricalGpPctAccumulator()`
   - `updateHistoricalGpPctAccumulator(...)`
   - `getHistoricalGpPctSnapshot(...)`
   - `getRollingGpPctSnapshot(...)`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - `didPlayerCountAsAppearance(...)`
   - `getGpOutputCompatibilityMode(...)`
   - `applyGpOutputs(...)`
@@ -191,7 +191,7 @@ This is intentionally different from additive / ratio / weighted-rate appearance
 
 ### Appearance decision
 
-`didPlayerCountAsAppearance(...)` in `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` defines the numerator inclusion rule:
+`didPlayerCountAsAppearance(...)` in `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` defines the numerator inclusion rule:
 
 - `strength = "all"`
   - always `true` for every WGO row
@@ -232,8 +232,8 @@ Fields:
 
 Primary code path:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingHistoricalAverages.ts`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/lib/supabase/Upserts/rollingHistoricalAverages.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - `getGpOutputCompatibilityMode("all")`
   - `applyGpOutputs(...)`
 
@@ -263,9 +263,9 @@ Reconstruction method:
 
 Evidence from tests:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
   - confirms all-strength availability aliases populate while participation aliases remain null
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingHistoricalAverages.test.ts`
+- `web/lib/supabase/Upserts/rollingHistoricalAverages.test.ts`
   - confirms healthy one-team and missed-game availability calculations
   - confirms traded-player season scope stays player-centered across stints
 
@@ -300,7 +300,7 @@ Fields:
 
 Primary code path:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - `didPlayerCountAsAppearance(...)`
   - `getGpOutputCompatibilityMode(split strength)`
   - `applyGpOutputs(...)`
@@ -332,7 +332,7 @@ Reconstruction method:
 
 Evidence from tests:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
   - confirms split-strength rows suppress availability aliases and emit participation aliases
 
 ### 3. Shared Support Counters and Convenience Fields
@@ -380,7 +380,7 @@ Current stored-field behavior:
 
 Primary code path:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - `getGpOutputCompatibilityMode(...)`
   - row upsert payload at write time
 
@@ -412,7 +412,7 @@ Fields:
 
 Primary code path:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - `applyLegacyGpAliases(...)`
 
 Current stored-field behavior:
@@ -450,7 +450,7 @@ Key audit implication:
 
 Evidence from tests:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
   - confirms all-strength `gp_pct_*` mirrors canonical availability
   - confirms split-strength `gp_pct_*` remains populated while availability aliases are suppressed
 
@@ -472,7 +472,7 @@ Evidence from tests:
 
 Evidence from tests:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingHistoricalAverages.test.ts`
+- `web/lib/supabase/Upserts/rollingHistoricalAverages.test.ts`
   - `counts missed games in the denominator for availability scopes`
   - `keeps season availability player-centered after a trade instead of collapsing to the current team bucket`
 
@@ -491,8 +491,8 @@ Evidence from tests:
 
 - task `2.5` should keep contextual labels such as `gp_semantic_type`, `pp_unit`, and line context distinct from arithmetic metrics while still auditing their stored meaning
 - tasks `2.6` and `2.7` should translate the availability / participation surfaces into:
-  - a formula-only status entry in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`
-  - an action item in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md` whenever naming ambiguity, compatibility drag, or debug-console visibility needs follow-up
+  - a formula-only status entry in `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`
+  - an action item in `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md` whenever naming ambiguity, compatibility drag, or debug-console visibility needs follow-up
 - tasks in `3.x` should use this artifact for live validation examples involving:
   - healthy one-team availability
   - missed-game denominator growth

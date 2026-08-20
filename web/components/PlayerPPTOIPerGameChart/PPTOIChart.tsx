@@ -1,7 +1,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\PlayerPPTOIPerGameChart\PPTOIChart.tsx
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import * as d3 from "d3";
 import supabase from "lib/supabase";
 import styles from "styles/PPTOIChart.module.scss";
@@ -31,6 +38,14 @@ const sanitizeName = (name: string) =>
 
 const sanitizeForCss = (name: string) => name.replace(/[^a-zA-Z0-9\-_]/g, "-");
 
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+const formatPercentage = (value: number) => `${(value * 100).toFixed(1)}%`;
+
 const onHover = (player: string) => {
   const sanitizedPlayer = sanitizeForCss(player);
   d3.selectAll(".line-segment").style("opacity", 0.04);
@@ -48,6 +63,7 @@ const onLeave = () => {
 };
 
 const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
+  const valuesHeadingId = useId();
   const chartRef = useRef<SVGSVGElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [viewMode, setViewMode] = useState<"month" | "season">("month");
@@ -58,6 +74,9 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
   const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
   const [monthData, setMonthData] = useState<Date[]>([]); // Holds Date objects
   const [allData, setAllData] = useState<PlayerData[]>([]); // Store all data
+  const [loadStatus, setLoadStatus] = useState<
+    "loading" | "ready" | "error"
+  >("loading");
 
   const width = 1000; // Hardcoded width
   const height = 500; // Hardcoded height
@@ -67,6 +86,7 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
   const marginLeft = 40; // Adjusted margin
 
   const fetchAllPlayerData = useCallback(async (abbreviation: string) => {
+    setLoadStatus("loading");
     const fetchedRawData: RawPlayerData[] = [];
     let from = 0;
     const pageSize = 1000;
@@ -83,7 +103,9 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
 
       if (error) {
         console.error("Error fetching player data:", error);
-        break;
+        setAllData([]);
+        setLoadStatus("error");
+        return;
       }
 
       if (data) {
@@ -155,6 +177,7 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
       (month) => month.getMonth() === 9 // Set October as default if it exists
     );
     setCurrentMonthIndex(defaultMonthIndex !== -1 ? defaultMonthIndex : 0);
+    setLoadStatus("ready");
 
     // console.log("Unique Months: ", uniqueMonths);
     // console.log("Month Dates: ", monthDates); // Check if December is included here
@@ -481,9 +504,38 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
 
   useEffect(() => {
     if (teamAbbreviation) {
-      fetchAllPlayerData(teamAbbreviation);
+      void fetchAllPlayerData(teamAbbreviation).catch((error) => {
+        console.error("Error fetching player data:", error);
+        setAllData([]);
+        setLoadStatus("error");
+      });
     }
   }, [fetchAllPlayerData, teamAbbreviation]);
+
+  const visibleData = useMemo(() => {
+    const currentMonth = monthData[currentMonthIndex];
+    const dataForView =
+      viewMode === "month" && currentMonth
+        ? allData.filter(
+            (datum) =>
+              datum.date.getFullYear() === currentMonth.getFullYear() &&
+              datum.date.getMonth() === currentMonth.getMonth(),
+          )
+        : allData;
+
+    return dataForView
+      .filter(
+        (datum) =>
+          Number.isFinite(datum.pp_toi_pct_per_game) &&
+          (selectedPlayers.length === 0 ||
+            selectedPlayers.includes(datum.player_name)),
+      )
+      .sort(
+        (left, right) =>
+          left.date.getTime() - right.date.getTime() ||
+          left.player_name.localeCompare(right.player_name),
+      );
+  }, [allData, currentMonthIndex, monthData, selectedPlayers, viewMode]);
 
   useEffect(() => {
     if (monthData.length > 0) {
@@ -550,14 +602,19 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
   };
 
   return (
-    (<div className={styles.chartWrapper}>
+    <div className={styles.chartWrapper}>
       {/* Player Selection Container */}
       <div className={styles.playerSelectContainer}>
         {/* Toggle Button for View Mode */}
-        <button className={styles.toggleButton} onClick={handleViewModeToggle}>
+        <button
+          type="button"
+          className={styles.toggleButton}
+          onClick={handleViewModeToggle}
+        >
           {viewMode === "month" ? "Season View" : "Month View"}
         </button>
         <button
+          type="button"
           className={styles.selectButton}
           onClick={handleSelectAllForwards}
         >
@@ -566,6 +623,7 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
             : "Select All Forwards"}
         </button>
         <button
+          type="button"
           className={styles.selectButton}
           onClick={handleSelectAllDefensemen}
         >
@@ -595,6 +653,8 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
                   d3.selectAll(".line-segment").style("opacity", 1);
                   d3.selectAll(".player-dot").style("opacity", 1);
                 }}
+                onFocus={() => onHover(player)}
+                onBlur={onLeave}
               />
               {player}
             </label>
@@ -620,12 +680,18 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
                   d3.selectAll(".line-segment").style("opacity", 1);
                   d3.selectAll(".player-dot").style("opacity", 1);
                 }}
+                onFocus={() => onHover(player)}
+                onBlur={onLeave}
               />
               {player}
             </label>
           ))}
         </div>
-        <button className={styles.resetButton} onClick={resetSelection}>
+        <button
+          type="button"
+          className={styles.resetButton}
+          onClick={resetSelection}
+        >
           Reset
         </button>
       </div>
@@ -634,6 +700,7 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
         {/* Pagination Container */}
         <div className={styles.paginationContainer}>
           <button
+            type="button"
             className={styles.paginationButton}
             onClick={handlePreviousMonth}
             disabled={viewMode === "season" || currentMonthIndex === 0}
@@ -649,6 +716,7 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
             </div>
           </div>
           <button
+            type="button"
             className={styles.paginationButton}
             onClick={handleNextMonth}
             disabled={
@@ -661,14 +729,69 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
 
         <div className={styles.chartAndYAxis}>
           {/* Chart Container */}
-          <div className={styles.chartContainer}>
-            <svg ref={chartRef} className={styles.chartSvg} />
-          </div>
+          <figure className={styles.chartContainer}>
+            <svg
+              ref={chartRef}
+              aria-hidden="true"
+              className={styles.chartSvg}
+              focusable="false"
+            />
+            <figcaption className={styles.visuallyHidden}>
+              Power-play time-on-ice percentage trend chart. Exact values are
+              listed in the table that follows.
+            </figcaption>
+          </figure>
         </div>
+
+        <section
+          aria-labelledby={valuesHeadingId}
+          className={styles.valuesSection}
+        >
+          <h3 id={valuesHeadingId}>Exact PP TOI values</h3>
+          {loadStatus === "loading" ? (
+            <p role="status">Loading PP TOI values...</p>
+          ) : loadStatus === "error" ? (
+            <p role="alert">PP TOI values are currently unavailable.</p>
+          ) : visibleData.length === 0 ? (
+            <p role="status">
+              No PP TOI values are available for this view and player
+              selection.
+            </p>
+          ) : (
+            <div className={styles.valueTableWrapper}>
+              <table aria-label="Exact power play time-on-ice values">
+                <thead>
+                  <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Player</th>
+                    <th scope="col">Position</th>
+                    <th scope="col">PP TOI</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleData.map((datum) => (
+                    <tr key={`${datum.player_id}-${datum.date.toISOString()}`}>
+                      <td data-label="Date">
+                        <time dateTime={datum.date.toISOString().slice(0, 10)}>
+                          {dateFormatter.format(datum.date)}
+                        </time>
+                      </td>
+                      <td data-label="Player">{datum.player_name}</td>
+                      <td data-label="Position">{datum.position_code}</td>
+                      <td data-label="PP TOI">
+                        {formatPercentage(datum.pp_toi_pct_per_game)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       </div>
       {/* Tooltip */}
       <div ref={tooltipRef} className={styles.tooltip}></div>
-    </div>)
+    </div>
   );
 };
 

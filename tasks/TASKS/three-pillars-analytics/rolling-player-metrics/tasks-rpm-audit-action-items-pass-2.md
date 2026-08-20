@@ -1,6 +1,12 @@
 ## Relevant Files
 
-- `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md` - Source backlog of open pass-2 action items that now need to be sequenced into implementation work.
+Status reconciliation (2026-08-19): this implementation/organization list is
+complete. The source backlog now records 21 Done, one owner-approved Deferred
+alias-retirement item, and zero Open/Planned items; the separate PK source-tail
+follow-up is also deferred. The three documents remain Keep. See
+[`rolling-player-pass-2-status-reconciliation.md`](../../repository-audit-remediation/rolling-player-pass-2-status-reconciliation.md).
+
+- `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md` - Reconciled source backlog retaining the completed receipts and one explicitly deferred alias-retirement item.
 - `tasks/artifacts/rolling-player-pass-2-post-optimization-verification-2026-03-14.md` - Latest verification artifact showing the remaining blockers after the pass-2 optimization work.
 - `tasks/artifacts/rolling-player-pass-2-main-audit.md` - Consolidated audit artifact that should stay aligned with any freshness, orchestration, or compatibility changes.
 - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` - Core rolling-player recompute pipeline, batching logic, diagnostics hooks, and current runtime tuning surface.

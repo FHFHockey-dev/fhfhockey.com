@@ -386,6 +386,7 @@ export default function LinemateMatrix({
       <div className={styles.shell}>
         <div className={styles.selectWrapper}>
           <Select
+            ariaLabel="Linemate matrix mode"
             options={OPTIONS}
             option={activeMode}
             onOptionChange={handleModeChange}
@@ -402,6 +403,7 @@ export default function LinemateMatrix({
     <div className={styles.shell}>
       <div className={styles.selectWrapper}>
         <Select
+          ariaLabel="Linemate matrix mode"
           options={OPTIONS}
           option={activeMode}
           onOptionChange={handleModeChange}

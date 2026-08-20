@@ -13,8 +13,8 @@ Answer the three operator questions directly:
 
 This runbook is intentionally short and operator-facing. Detailed dependency reasoning remains in:
 
-- [rolling-player-pass-2-refresh-entrypoint-inventory-2026-03-14.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-refresh-entrypoint-inventory-2026-03-14.md)
-- [rolling-player-pass-2-refresh-dependency-graph-2026-03-14.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-refresh-dependency-graph-2026-03-14.md)
+- [rolling-player-pass-2-refresh-entrypoint-inventory-2026-03-14.md](rolling-player-pass-2-refresh-entrypoint-inventory-2026-03-14.md)
+- [rolling-player-pass-2-refresh-dependency-graph-2026-03-14.md](rolling-player-pass-2-refresh-dependency-graph-2026-03-14.md)
 
 ## What Runs Overnight
 

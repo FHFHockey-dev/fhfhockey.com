@@ -7,7 +7,7 @@
   margin-bottom: 32px;
   padding: 24px;
 
-  @media (max-width: 768px) {
+  @media (max-width: v.$breakpoint-tablet) {
     padding: 16px;
   }
 }
@@ -23,7 +23,7 @@
     letter-spacing: 0;
     margin: 0 0 8px;
 
-    @media (max-width: 768px) {
+    @media (max-width: v.$breakpoint-tablet) {
       font-size: 1.45rem;
     }
   }
@@ -85,7 +85,7 @@
 .timeline {
   padding: 20px;
 
-  @media (max-width: 768px) {
+  @media (max-width: v.$breakpoint-tablet) {
     padding: 14px;
   }
 }
@@ -188,7 +188,7 @@
   margin-top: 18px;
   padding: 18px;
 
-  @media (max-width: 768px) {
+  @media (max-width: v.$breakpoint-tablet) {
     padding: 14px;
   }
 }

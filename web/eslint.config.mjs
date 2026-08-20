@@ -88,11 +88,21 @@ const sharedConfig = {
 export default [
   {
     ignores: [
-      ".next/**",
+      ".ms-playwright/**",
+      ".next*/**",
+      ".pytest_cache/**",
+      ".vercel/**",
+      "build/**",
       "coverage/**",
+      "dist/**",
+      "next-env.d.ts",
       "node_modules/**",
       "out/**",
+      "playwright-report/**",
       "public/**",
+      "scripts/output/**",
+      "test-results/**",
+      "web/scripts/output/**",
     ],
   },
   sharedConfig,

@@ -14,7 +14,7 @@ regress together after the pass-2 implementation work:
 
 ### Recompute endpoint
 
-`web/pages/api/v1/db/update-rolling-player-averages.test.ts`
+`web/__tests__/pages/api/v1/db/update-rolling-player-averages.test.ts`
 
 - rejects unsupported methods
 - forwards `dryRunUpsert`, `debugUpsertPayload`, and `fastMode` defaults into
@@ -23,7 +23,7 @@ regress together after the pass-2 implementation work:
 
 ### Debug validation route
 
-`web/pages/api/v1/debug/rolling-player-metrics.test.ts`
+`web/__tests__/pages/api/v1/debug/rolling-player-metrics.test.ts`
 
 - continues passing richer payload sections through the API
 - now includes an optional-metric regression case for
@@ -38,7 +38,7 @@ regress together after the pass-2 implementation work:
 Reused existing query / projection coverage to keep the `6.1` layer focused:
 
 - `web/lib/projections/queries/skater-queries.test.ts`
-- `web/pages/api/v1/db/update-start-chart-projections.test.ts`
+- Retired repository reference: `web/pages/api/v1/db/update-start-chart-projections.test.ts`
 
 These continue protecting canonical-first weighted-rate reads while leaving
 authoritative additive / TOI legacy semantics intact.

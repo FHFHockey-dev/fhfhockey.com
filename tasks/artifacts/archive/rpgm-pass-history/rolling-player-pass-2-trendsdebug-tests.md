@@ -6,7 +6,7 @@ This step adds targeted test coverage for the pass-2 validation-console surface 
 
 ### Added coverage
 
-- [trendsDebug.test.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.test.tsx)
+- [trendsDebug.test.tsx](../../../../web/__tests__/pages/trendsDebug.test.tsx)
   - renders the validation console from a mocked pass-2 payload
   - covers blocked readiness and stale-tail messaging
   - covers focused metric comparison rendering
@@ -17,7 +17,7 @@ This step adds targeted test coverage for the pass-2 validation-console surface 
     - comparison block
     - refresh prerequisites
 
-- [rolling-player-metrics.test.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/debug/rolling-player-metrics.test.ts)
+- [rolling-player-metrics.test.ts](../../../../web/__tests__/pages/api/v1/debug/rolling-player-metrics.test.ts)
   - adds explicit server error coverage when payload generation throws
   - preserves method handling and selector parsing coverage from `4.3`
 

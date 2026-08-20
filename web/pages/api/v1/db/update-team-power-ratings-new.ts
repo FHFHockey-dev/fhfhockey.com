@@ -1,4 +1,3 @@
-import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -24,4 +23,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   });
 }
 
-export default withCronJobAudit(handler);
+export default handler;

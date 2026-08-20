@@ -5,10 +5,21 @@ import json
 from pathlib import Path
 
 from .audit import run_audit
+from .advanced import (
+    evaluate_advanced_batch,
+    evaluate_fantasy_batch,
+    freeze_advanced_sources,
+    project_advanced_release,
+    run_advanced_source_audit,
+    train_advanced_artifact,
+)
 from .challenger_freeze import freeze_challenger_dataset
 from .challenger_features import TARGETS, build_validation_features
 from .challenger_model import train_validation_challenger, verify_validation_challenger_artifact
 from .contract import (
+    ADVANCED_SEASON_CONTRACT_VERSION,
+    FANTASY_SEASON_CONTRACT_VERSION,
+    SEASON_CONTRACT_VERSION,
     DEVELOPMENT_END,
     TARGET_SEASON,
     load_and_verify_contract,
@@ -22,6 +33,7 @@ from .io import assert_output_outside_repository, read_json, require_database_ur
 from .lockbox import complete_lockbox_evidence_once, evaluate_lockbox_once, evaluate_prospective_once
 from .model import seal_for_lockbox, train_baseline, verify_model_artifact, verify_serving_bundle
 from .scoring import evaluate_range
+from .rookies import capture_player_landings
 from .season import (
     build_season_settlement_bundle,
     freeze_season_dataset,
@@ -99,6 +111,16 @@ def parser() -> argparse.ArgumentParser:
     season_train = commands.add_parser("season-train")
     season_train.add_argument("--freeze", type=Path, required=True)
     season_train.add_argument("--output", type=Path, required=True)
+    season_train.add_argument(
+        "--contract-version",
+        choices=(SEASON_CONTRACT_VERSION, FANTASY_SEASON_CONTRACT_VERSION),
+        default=SEASON_CONTRACT_VERSION,
+    )
+    season_train.add_argument("--rookie-freeze", type=Path)
+    rookie_freeze = commands.add_parser("season-rookie-freeze")
+    rookie_freeze.add_argument("--freeze", type=Path, required=True)
+    rookie_freeze.add_argument("--output", type=Path, required=True)
+    rookie_freeze.add_argument("--workers", type=int, default=12)
     season_project = commands.add_parser("season-project")
     season_project.add_argument("--freeze", type=Path, required=True)
     season_project.add_argument("--artifact", type=Path, required=True)
@@ -111,8 +133,39 @@ def parser() -> argparse.ArgumentParser:
     season_settle.add_argument("--freeze", type=Path, required=True)
     season_settle.add_argument("--output", type=Path, required=True)
     season_settle.add_argument("--cutoff", required=True)
+    season_settle.add_argument(
+        "--contract-version",
+        choices=(SEASON_CONTRACT_VERSION, FANTASY_SEASON_CONTRACT_VERSION),
+        default=SEASON_CONTRACT_VERSION,
+    )
     season_settlement_verify = commands.add_parser("season-settlement-verify")
     season_settlement_verify.add_argument("--bundle", type=Path, required=True)
+    season_v4_evaluate = commands.add_parser("season-v4-evaluate")
+    season_v4_evaluate.add_argument("--artifact", type=Path, required=True)
+    season_v4_evaluate.add_argument("--output", type=Path, required=True)
+    season_advanced_audit = commands.add_parser("season-advanced-audit")
+    season_advanced_audit.add_argument("--output", type=Path, required=True)
+    season_advanced_freeze = commands.add_parser("season-advanced-freeze")
+    season_advanced_freeze.add_argument("--output", type=Path, required=True)
+    season_advanced_freeze.add_argument("--v4-receipt", type=Path, required=True)
+    season_advanced_freeze.add_argument(
+        "--history-season",
+        type=int,
+        action="append",
+        default=[20222023, 20232024, 20242025, 20252026],
+    )
+    season_advanced_train = commands.add_parser("season-advanced-train")
+    season_advanced_train.add_argument("--freeze", type=Path, required=True)
+    season_advanced_train.add_argument("--v4-artifact", type=Path, required=True)
+    season_advanced_train.add_argument("--output", type=Path, required=True)
+    season_advanced_evaluate = commands.add_parser("season-advanced-evaluate")
+    season_advanced_evaluate.add_argument("--artifact", type=Path, required=True)
+    season_advanced_evaluate.add_argument("--output", type=Path, required=True)
+    season_advanced_project = commands.add_parser("season-advanced-project")
+    season_advanced_project.add_argument("--artifact", type=Path, required=True)
+    season_advanced_project.add_argument("--v4-bundle", type=Path, required=True)
+    season_advanced_project.add_argument("--receipt", type=Path, required=True)
+    season_advanced_project.add_argument("--output", type=Path, required=True)
     return root
 
 
@@ -120,10 +173,20 @@ def main() -> None:
     arguments = parser().parse_args()
     season_commands = {
         "season-audit", "season-freeze", "season-train", "season-project", "season-verify",
-        "season-settle", "season-settlement-verify",
+        "season-settle", "season-settlement-verify", "season-rookie-freeze",
+        "season-v4-evaluate", "season-advanced-audit", "season-advanced-freeze",
+        "season-advanced-train", "season-advanced-evaluate", "season-advanced-project",
     }
     if arguments.command in season_commands:
-        load_and_verify_season_contract()
+        contract_version = getattr(arguments, "contract_version", SEASON_CONTRACT_VERSION)
+        if arguments.command in {"season-rookie-freeze", "season-v4-evaluate"}:
+            contract_version = FANTASY_SEASON_CONTRACT_VERSION
+        elif arguments.command in {
+            "season-advanced-audit", "season-advanced-freeze", "season-advanced-train",
+            "season-advanced-evaluate", "season-advanced-project",
+        }:
+            contract_version = ADVANCED_SEASON_CONTRACT_VERSION
+        load_and_verify_season_contract(contract_version)
     elif arguments.command in {
         "freeze-validation-challenger", "build-validation-features", "train-validation-challenger",
         "verify-validation-challenger-artifact",
@@ -142,7 +205,19 @@ def main() -> None:
         )
     elif arguments.command == "season-train":
         assert_output_outside_repository(arguments.output, repository_root())
-        result = train_season_artifact(arguments.freeze, arguments.output)
+        result = train_season_artifact(
+            arguments.freeze,
+            arguments.output,
+            contract_version=arguments.contract_version,
+            rookie_freeze=arguments.rookie_freeze,
+        )
+    elif arguments.command == "season-rookie-freeze":
+        assert_output_outside_repository(arguments.output, repository_root())
+        result = capture_player_landings(
+            arguments.freeze,
+            arguments.output,
+            max_workers=arguments.workers,
+        )
     elif arguments.command == "season-project":
         assert_output_outside_repository(arguments.output, repository_root())
         result = project_season_release(
@@ -160,9 +235,43 @@ def main() -> None:
             arguments.freeze,
             arguments.output,
             arguments.cutoff,
+            arguments.contract_version,
         )
     elif arguments.command == "season-settlement-verify":
         result = verify_season_settlement_bundle(arguments.bundle)
+    elif arguments.command == "season-v4-evaluate":
+        assert_output_outside_repository(arguments.output, repository_root())
+        result = evaluate_fantasy_batch(arguments.artifact, arguments.output)
+    elif arguments.command == "season-advanced-audit":
+        assert_output_outside_repository(arguments.output, repository_root())
+        result = run_advanced_source_audit(require_database_url())
+        write_json(arguments.output, result)
+    elif arguments.command == "season-advanced-freeze":
+        assert_output_outside_repository(arguments.output, repository_root())
+        result = freeze_advanced_sources(
+            require_database_url(),
+            arguments.output,
+            arguments.history_season,
+            arguments.v4_receipt,
+        )
+    elif arguments.command == "season-advanced-train":
+        assert_output_outside_repository(arguments.output, repository_root())
+        result = train_advanced_artifact(
+            arguments.freeze,
+            arguments.v4_artifact,
+            arguments.output,
+        )
+    elif arguments.command == "season-advanced-evaluate":
+        assert_output_outside_repository(arguments.output, repository_root())
+        result = evaluate_advanced_batch(arguments.artifact, arguments.output)
+    elif arguments.command == "season-advanced-project":
+        assert_output_outside_repository(arguments.output, repository_root())
+        result = project_advanced_release(
+            arguments.artifact,
+            arguments.v4_bundle,
+            arguments.receipt,
+            arguments.output,
+        )
     elif arguments.command == "audit":
         assert_output_outside_repository(arguments.output, repository_root())
         result = run_audit(require_database_url(), TARGET_SEASON)

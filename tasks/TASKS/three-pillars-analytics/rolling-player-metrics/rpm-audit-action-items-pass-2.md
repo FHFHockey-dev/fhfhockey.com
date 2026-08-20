@@ -2,6 +2,12 @@
 
 This file is the running implementation backlog generated during the pass-2 audit.
 
+Status reconciled 2026-08-19: 21 items are `done`, one later alias-retirement
+item is intentionally `deferred`, and none remains `open` or `planned`. The
+separate PK source-tail follow-up is also owner-deferred. See
+[`rolling-player-pass-2-status-reconciliation.md`](../../repository-audit-remediation/rolling-player-pass-2-status-reconciliation.md)
+for the row-level receipts and retention decision.
+
 Each item should use this structure:
 
 ### `P1` Category: short title
@@ -17,10 +23,11 @@ Each item should use this structure:
 - source of discovery:
 - status: `open | planned | deferred | blocked | done`
 
-## Current Operational Blockers
+## Deferred Operational Follow-up
 
 - `PK source tails remain genuinely stale for selected validation scopes`
   - Corey Perry `pk`, Jesper Bratt `pk`, and Seth Jones `pk` still have lagging PK counts / rates / counts-on-ice inputs, which blocks PK-family validation even if target-row freshness is repaired.
+  - Owner disposition (2026-08-19): deferred until the PK ingest owner can provide a fresh source-tail receipt; this is not active pass-two implementation work.
 
 Resolved non-blocker:
 
@@ -47,7 +54,7 @@ Resolved non-blocker:
 - expected benefit: faster `/60` validation, fewer false-positive mismatch investigations, and clearer separation between arithmetic defects and denominator-trust issues.
 - blocker status: blocker for confident weighted-rate validation when counts TOI is missing or disputed; not a blocker for straightforward authoritative-counts cases.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-weighted-rate-family-audit.md`, `tasks/artifacts/rolling-player-pass-2-helper-contract-map.md`, pass-2 validation matrix notes for Brent Burns.
-- status: `open`
+- status: `done`
 
 ### `P1` Test coverage: stop full Vitest from discovering compiled `.next` test artifacts
 - category: `test coverage`
@@ -98,7 +105,7 @@ Resolved non-blocker:
 - expected benefit: clearer PP-share validation, easier freshness triage, and less ambiguity when partial-builder coverage produces otherwise explainable diffs.
 - blocker status: blocker for PP-share confidence on mixed-source windows; not a blocker when builder coverage is complete across the selected scope.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-ratio-family-audit.md`, `tasks/artifacts/rolling-player-pass-2-helper-contract-map.md`.
-- status: `open`
+- status: `done`
 
 ### `P1` Schema / naming: reduce ratio and weighted-rate alias ambiguity where `*_total_*` and `*_avg_*` store the same snapshot
 - category: `schema / naming`
@@ -117,7 +124,7 @@ Resolved non-blocker:
 - expected benefit: lower semantic ambiguity, simpler downstream query logic, and a cleaner path to schema cleanup after pass-2 validation.
 - blocker status: not a blocker for current arithmetic correctness; blocker for long-term schema clarity and consumer safety.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-ratio-family-audit.md`, `tasks/artifacts/rolling-player-pass-2-weighted-rate-family-audit.md`, `tasks/artifacts/rolling-player-pass-2-surface-confirmation.md`.
-- status: `open`
+- status: `done`
 
 ### `P1` Diagnostics / observability: add dedicated support traces for `on_ice_sv_pct` validation
 - category: `diagnostics / observability`
@@ -171,7 +178,7 @@ Resolved non-blocker:
 - expected benefit: fewer denominator misunderstandings, safer compatibility maintenance, and clearer traded-player / split-strength interpretation.
 - blocker status: blocker for safe interpretation of legacy GP aliases; not a blocker for canonical availability / participation fields themselves.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-availability-participation-audit.md`, `tasks/artifacts/rolling-player-pass-2-helper-contract-map.md`.
-- status: `open`
+- status: `done`
 
 ### `P1` TrendsDebug.tsx: build a dedicated validation payload instead of ad hoc client-side joins
 - category: `trendsDebug.tsx`
@@ -188,7 +195,7 @@ Resolved non-blocker:
 - expected benefit: a stable audit console, less duplicated browser-side logic, and a clearer foundation for pass-2 validation and future debugging.
 - blocker status: blocker for the full debug-console scope defined by the PRD.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-surface-confirmation.md`, `tasks/artifacts/rolling-player-pass-2-helper-contract-map.md`, current `trendsDebug.tsx` scope review in the PRD-derived checklist.
-- status: `open`
+- status: `done`
 
 ### `P2` Test coverage: add targeted tests for validation-console payloads and hidden contract state
 - category: `test coverage`
@@ -205,7 +212,7 @@ Resolved non-blocker:
 - expected benefit: lower regression risk when debug-console work lands and better confidence that audit-critical visibility stays intact.
 - blocker status: not a blocker for immediate documentation work; blocker for safely shipping the validation console and related observability changes.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-surface-confirmation.md`, `tasks/artifacts/rolling-player-pass-2-helper-contract-map.md`.
-- status: `open`
+- status: `done`
 
 ### `P0` Freshness / recompute workflow: fix `rolling_player_game_metrics` upsert failure that blocks targeted recomputes
 - category: `freshness / recompute workflow`
@@ -238,7 +245,7 @@ Resolved non-blocker:
 - expected benefit: repeatable diagnostics collection, less ad hoc tooling during audit work, and a stable path for freshness / completeness review in both CLI and UI validation flows.
 - blocker status: not a blocker for manual one-off validation, but a blocker for efficient repeatable audit execution and for the intended debug-console workflow.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-diagnostics-classification-2026-03-12.md`, March 12 live diagnostics snapshot workflow.
-- status: `open`
+- status: `done`
 
 ### `P1` PP context: surface PP builder coverage cautions even when `ppTailLag` is zero
 - category: `PP context`
@@ -255,7 +262,7 @@ Resolved non-blocker:
 - expected benefit: fewer false assumptions that PP validation is fully clean once `ppTailLag` is zero, clearer PP-share trust labeling, and faster investigation of partial-builder windows.
 - blocker status: not a blocker for every PP comparison, but a blocker for high-confidence PP-share and PP-context signoff when coverage gaps remain in the selected window.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-diagnostics-classification-2026-03-12.md`, March 12 live diagnostics snapshot for Burns, Perry, Bratt, and Jones.
-- status: `open`
+- status: `done`
 
 ### `P1` Diagnostics / observability: expose ratio-support completeness warnings in the validation console
 - category: `diagnostics / observability`
@@ -271,7 +278,7 @@ Resolved non-blocker:
 - expected benefit: prevents over-trusting support columns, makes it obvious when source reconstruction is still required, and aligns the debug-console trust model with the March 12 diagnostics findings.
 - blocker status: not a blocker for arithmetic validation when source reconstruction is available; blocker for efficient support-field-only inspection and for interpreting ratio support parity correctly.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-diagnostics-classification-2026-03-12.md`.
-- status: `open`
+- status: `done`
 
 ### `P1` TrendsDebug.tsx: move formula, window, and contract metadata out of browser derivation and into the validation payload
 - category: `trendsDebug.tsx`
@@ -288,7 +295,7 @@ Resolved non-blocker:
 - expected benefit: lower UI drift risk, cleaner contract visibility, thinner page logic, and a validation console that reflects the rolling pipeline contract rather than a duplicated display approximation.
 - blocker status: not a blocker for current targeted inspection; blocker for making the validation console the authoritative long-term audit surface.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-trendsdebug-server-path.md`, `tasks/artifacts/rolling-player-pass-2-trendsdebug-validation-payload-design.md`, `tasks/artifacts/rolling-player-pass-2-trendsdebug-validation-panels.md`, `tasks/artifacts/rolling-player-pass-2-trendsdebug-copy-helpers.md`.
-- status: `open`
+- status: `done`
 
 ### `P1` TrendsDebug.tsx: add family-wide mismatch summaries instead of only one focused-metric diff
 - category: `trendsDebug.tsx`
@@ -305,7 +312,7 @@ Resolved non-blocker:
 - expected benefit: faster pass-2 audit execution, easier row triage, and better support for the PRD goal of validating every persisted metric systematically.
 - blocker status: not a blocker for one-off metric inspection; blocker for efficient full-table audit throughput.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-trendsdebug-validation-panels.md`, `tasks/artifacts/rolling-player-pass-2-trendsdebug-tests.md`, live implementation review during `4.4` through `4.7`.
-- status: `open`
+- status: `done`
 
 ### `P1` Downstream compatibility: migrate the player trends page off legacy-only suffix selection
 - category: `downstream compatibility`
@@ -320,7 +327,7 @@ Resolved non-blocker:
 - expected benefit: removes the clearest downstream blocker to schema cleanup, reduces user-facing legacy naming, and aligns the trends page with the validated pass-2 contract.
 - blocker status: blocker for any later ratio/weighted-rate alias retirement or freeze strategy that expects downstream UI adoption of canonical fields.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-downstream-compatibility-dependencies.md`, `tasks/artifacts/rolling-player-pass-2-schema-change-recommendations.md`.
-- status: `open`
+- status: `done`
 
 ### `P2` Schema / naming: stage a formal alias-freeze and later cleanup migration set for ratio, weighted-rate, and GP compatibility fields
 - category: `schema / naming`
@@ -336,7 +343,7 @@ Resolved non-blocker:
 - expected benefit: turns schema cleanup into a staged plan instead of open-ended drift, lowers the odds of new legacy dependencies appearing, and gives later implementation phases a clear migration target.
 - blocker status: not a blocker for current correctness; blocker for finishing pass-2 schema cleanup in a controlled way.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-authoritative-field-classification.md`, `tasks/artifacts/rolling-player-pass-2-schema-change-recommendations.md`.
-- status: `planned`
+- status: `deferred`
 
 ### `P2` Performance / efficiency: reduce validation-console overfetch and render weight for repeated metric inspection
 - category: `performance / efficiency`
@@ -353,7 +360,7 @@ Resolved non-blocker:
 - expected benefit: snappier inspection loops, less redundant server work, and a clearer validation-first page architecture.
 - blocker status: not a blocker for correctness; blocker for comfortable high-volume audit usage and future console scalability.
 - source of discovery: `tasks/artifacts/rolling-player-pass-2-trendsdebug-current-surface-audit.md`, `tasks/artifacts/rolling-player-pass-2-trendsdebug-validation-payload-design.md`, `tasks/artifacts/rolling-player-pass-2-trendsdebug-tests.md`.
-- status: `open`
+- status: `done`
 
 ### `P2` Optional enhancement: add additive `primary_assists` and `secondary_assists` rolling families
 - category: `optional enhancement`

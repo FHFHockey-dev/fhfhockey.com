@@ -21,7 +21,7 @@ Players rerun through the repaired rolling writer:
 
 Execution method:
 
-- direct `ts-node` invocation of the real `main(...)` recompute path in [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+- direct `ts-node` invocation of the real `main(...)` recompute path in [fetchRollingPlayerAverages.ts](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
 - no local Next.js server dependency
 
 ## Recompute results

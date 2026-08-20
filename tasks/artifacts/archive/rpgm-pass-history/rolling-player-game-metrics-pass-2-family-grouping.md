@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This artifact regroups the field-complete inventory in `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-game-metrics-pass-2-field-inventory.md` into the metric families required by the pass-2 PRD.
+This artifact regroups the field-complete inventory in `tasks/artifacts/archive/rpgm-pass-history/rolling-player-game-metrics-pass-2-field-inventory.md` into the metric families required by the pass-2 PRD.
 
 It exists so later audit steps can answer four questions quickly for any persisted field set:
 

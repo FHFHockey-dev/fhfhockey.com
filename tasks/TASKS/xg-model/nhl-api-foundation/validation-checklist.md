@@ -243,12 +243,12 @@ A validation batch is release-ready only if all of the following are true:
 
 No model training run, training-dataset publication, or production rollout may proceed until all of the following are true:
 
-- `tasks/event-dictionary.md` is current for the active parser version
+- `tasks/TASKS/xg-model/docs/event-dictionary.md` is current for the active parser version
 - `tasks/TASKS/xg-model/nhl-api-foundation/strength-mapping.md` is current for the active strength version
 - shift integration rules and on-ice attribution expectations are documented in:
-  - `tasks/definitions-and-parity.md`
+  - `tasks/TASKS/xg-model/docs/definitions-and-parity.md`
   - `tasks/TASKS/xg-model/nhl-api-foundation/manual-audit-requirements.md`
-  - `tasks/data-contract-boundaries.md`
+  - `tasks/TASKS/xg-model/docs/data-contract-boundaries.md`
 - automated raw-vs-normalized validation is passing for the intended release sample
 - parity validation is passing for the intended release sample, with any approved approximation drift documented
 - the latest manual audit artifact records a pass for representative EV, PP/PK, OT, and empty-net samples

@@ -396,6 +396,6 @@ A probabilistic goalie decision engine that:
 > In short: the edge is not “predicting the hot hand,” it’s **pricing the chaos correctly**.
 
 
-Please update [tasks-goalie-forge.md](tasks/tasks-goalie-forge.md) with progress, context, and anything that could be useful to my next chat window with Codex including the instructions to use [process-task-list.mdc](tasks/TASKS/rules/process-task-list.mdc) 
+Please update [tasks-goalie-forge.md](tasks-goalie-forge.md) with progress, context, and anything that could be useful to my next chat window with Codex. The former `tasks/TASKS/rules/process-task-list.mdc` is a retired repository reference; it was removed in August 2026.
 
-At the end of the [tasks-goalie-forge.md](tasks/tasks-goalie-forge.md) please include a handoff prompt that I can use to give to the next chat with Codex 5.3 that would seamlessly pickup where you are leaving off - include anything that you would want inside of a prompt if you were to be the one picking up this project at this very point.
+At the end of the [tasks-goalie-forge.md](tasks-goalie-forge.md) please include a handoff prompt that I can use to give to the next chat with Codex 5.3 that would seamlessly pickup where you are leaving off - include anything that you would want inside of a prompt if you were to be the one picking up this project at this very point.

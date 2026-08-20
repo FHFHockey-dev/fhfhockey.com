@@ -26,6 +26,10 @@ interface GameByGameTimelineProps {
   maxGames?: number;
 }
 
+function detailsIdForGame(game: GameData) {
+  return `game-details-${game.game_id ?? `${game.date}-${game.opponent_team_id}`}`;
+}
+
 export function GameByGameTimeline({
   teamId,
   teamAbbrev,
@@ -275,19 +279,27 @@ export function GameByGameTimeline({
           {last10Record?.wins || 0}-{last10Record?.losses || 0}-
           {last10Record?.otLosses || 0}
         </span>
-        <div className={styles.viewTabs}>
-          <div
+        <div
+          aria-label="Timeline view"
+          className={styles.viewTabs}
+          role="group"
+        >
+          <button
+            type="button"
+            aria-pressed={selectedView === "overview"}
             className={`${styles.viewTab} ${selectedView === "overview" ? styles.active : ""}`}
             onClick={() => setSelectedView("overview")}
           >
             Overview
-          </div>
-          <div
+          </button>
+          <button
+            type="button"
+            aria-pressed={selectedView === "trends"}
             className={`${styles.viewTab} ${selectedView === "trends" ? styles.active : ""}`}
             onClick={() => setSelectedView("trends")}
           >
             Trends
-          </div>
+          </button>
         </div>
       </div>
 
@@ -295,51 +307,60 @@ export function GameByGameTimeline({
         {gameData.map((game, index) => {
           const performanceScore = getPerformanceScore(game);
           const isSelected = selectedGame?.date === game.date;
+          const detailsId = detailsIdForGame(game);
 
           return (
-            <div
+            <button
+              type="button"
               key={`${game.date}-${game.opponent_team_id}`}
+              aria-controls={isSelected ? detailsId : undefined}
+              aria-expanded={isSelected}
+              aria-label={`${isSelected ? "Hide" : "Show"} details for ${format(parseISO(game.date), "MMMM d, yyyy")}, ${game.is_home ? "versus" : "at"} ${game.opponent_abbrev}, final score ${game.goals_for} to ${game.goals_against}`}
               className={`${styles.gameCardAndBar} ${getResultClass(game.result)} ${isSelected ? styles.selected : ""}`}
               onClick={() => setSelectedGame(isSelected ? null : game)}
             >
-              {" "}
-              <div className={styles.gameCard}>
-                <div className={styles.gameHeader}>
+              <span className={styles.gameCard}>
+                <span className={styles.gameHeader}>
                   <span className={styles.gameResult}>{game.result}</span>
                   <span className={styles.gameDate}>
                     {format(parseISO(game.date), "M/d")}
                   </span>
-                </div>
-                <div className={styles.gameScore}>
+                </span>
+                <span className={styles.gameScore}>
                   {game.goals_for}-{game.goals_against}
-                </div>
+                </span>
 
-                <div className={styles.gameMatchup}>
+                <span className={styles.gameMatchup}>
                   <span className={styles.homeAway}>
                     {game.is_home ? "vs" : "@"}
                   </span>
                   <span className={styles.opponent}>
                     {game.opponent_abbrev}
                   </span>
-                </div>
-              </div>
-              <div
+                </span>
+              </span>
+              <span
                 className={`${styles.performanceBar} ${getPerformanceClass(performanceScore)}`}
               >
-                <div
+                <span
                   className={styles.performanceFill}
                   style={{
                     width: `${Math.min(Math.max(((performanceScore + 4) / 8) * 100, 10), 100)}%`
                   }}
                 />
-              </div>
-            </div>
+              </span>
+            </button>
           );
         })}
       </div>
 
       {selectedGame && (
-        <div className={styles.gameDetails}>
+        <div
+          aria-label={`Game details for ${selectedGame.opponent_abbrev}`}
+          className={styles.gameDetails}
+          id={detailsIdForGame(selectedGame)}
+          role="region"
+        >
           <div className={styles.detailsHeader}>
             <h5>
               {format(parseISO(selectedGame.date), "MMM d, yyyy")} -
@@ -347,6 +368,8 @@ export function GameByGameTimeline({
               {selectedGame.opponent_abbrev}
             </h5>
             <button
+              type="button"
+              aria-label="Close game details"
               className={styles.closeButton}
               onClick={() => setSelectedGame(null)}
             >

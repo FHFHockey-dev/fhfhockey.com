@@ -10,7 +10,7 @@ This closeout extends compatibility-focused regression coverage across the helpe
 
 ### Compatibility helper policy
 
-Added explicit tests in [rollingPlayerMetricCompatibility.test.ts](/Users/tim/Code/fhfhockey.com/web/lib/rollingPlayerMetricCompatibility.test.ts) for:
+Added explicit tests in [rollingPlayerMetricCompatibility.test.ts](../../../../web/lib/rollingPlayerMetricCompatibility.test.ts) for:
 
 - canonical-first family resolution:
   - `ratio`
@@ -28,8 +28,8 @@ Added explicit tests in [rollingPlayerMetricCompatibility.test.ts](/Users/tim/Co
 
 The existing reader tests now protect:
 
-- canonical-first weighted-rate query order in [skater-queries.test.ts](/Users/tim/Code/fhfhockey.com/web/lib/projections/queries/skater-queries.test.ts)
-- canonical-first weighted-rate select order in [update-start-chart-projections.test.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-start-chart-projections.test.ts)
+- canonical-first weighted-rate query order in [skater-queries.test.ts](../../../../web/lib/projections/queries/skater-queries.test.ts)
+- canonical-first weighted-rate select order in update-start-chart-projections.test.ts (unresolved repository reference: `web/pages/api/v1/db/update-start-chart-projections.test.ts`)
 - legacy-shaped additive and TOI selection remaining intact where those fields are still authoritative
 
 ## Result

@@ -1,0 +1,158 @@
+{
+  "contractVersion": "player-forecasts-research-v5-season-advanced",
+  "status": "approved_for_local_implementation_after_v4_validation",
+  "seasonId": 20262027,
+  "gameType": 2,
+  "seasonGamesPerTeam": 84,
+  "baseContract": {
+    "version": "player-forecasts-research-v4-season-fantasy",
+    "checksum": "e0b10f508d4f3e96b93cb3b203930e05d15c1f75dcc969030e4a04f20de18150"
+  },
+  "metricSet": "advanced-v5",
+  "sourcePolicy": {
+    "required": [
+      "normalized_official_play_by_play",
+      "official_shift_charts",
+      "versioned_in_house_xg_shot_features",
+      "versioned_in_house_xg_predictions"
+    ],
+    "eligibleInputs": [
+      "cutoff_safe_nhl_edge_skater_snapshots",
+      "cutoff_safe_nhl_edge_goalie_snapshots",
+      "cutoff_safe_nhl_edge_team_snapshots"
+    ],
+    "availability": "Every feature joins through a captured snapshot whose available_at or snapshot_date is at or before the projection cutoff.",
+    "exclusions": [
+      "current_state_historical_fallbacks",
+      "unaudited_nst_features",
+      "fabricated_available_at"
+    ]
+  },
+  "targets": {
+    "skaterIndividualPrimitive": [
+      "SHOT_ATTEMPTS",
+      "UNBLOCKED_SHOT_ATTEMPTS",
+      "EXPECTED_GOALS",
+      "EXPECTED_PRIMARY_ASSISTS",
+      "EXPECTED_SECONDARY_ASSISTS",
+      "HIGH_DANGER_SHOTS",
+      "MID_RANGE_SHOTS",
+      "LONG_RANGE_SHOTS",
+      "RUSH_SHOTS",
+      "REBOUND_SHOTS",
+      "REBOUNDS_CREATED"
+    ],
+    "skaterOnIcePrimitive": [
+      "ON_ICE_SHOT_ATTEMPTS_FOR",
+      "ON_ICE_SHOT_ATTEMPTS_AGAINST",
+      "ON_ICE_UNBLOCKED_ATTEMPTS_FOR",
+      "ON_ICE_UNBLOCKED_ATTEMPTS_AGAINST",
+      "ON_ICE_EXPECTED_GOALS_FOR",
+      "ON_ICE_EXPECTED_GOALS_AGAINST"
+    ],
+    "goaliePrimitive": [
+      "EXPECTED_GOALS_AGAINST_GOALIE",
+      "HIGH_DANGER_SHOTS_AGAINST_GOALIE",
+      "HIGH_DANGER_GOALS_AGAINST_GOALIE",
+      "MID_RANGE_SHOTS_AGAINST_GOALIE",
+      "MID_RANGE_GOALS_AGAINST_GOALIE",
+      "LONG_RANGE_SHOTS_AGAINST_GOALIE",
+      "LONG_RANGE_GOALS_AGAINST_GOALIE"
+    ],
+    "teamPrimitive": [
+      "TEAM_SHOT_ATTEMPTS_FOR",
+      "TEAM_SHOT_ATTEMPTS_AGAINST",
+      "TEAM_UNBLOCKED_ATTEMPTS_FOR",
+      "TEAM_UNBLOCKED_ATTEMPTS_AGAINST",
+      "TEAM_EXPECTED_GOALS_FOR",
+      "TEAM_EXPECTED_GOALS_AGAINST",
+      "TEAM_HIGH_DANGER_SHOTS_FOR",
+      "TEAM_HIGH_DANGER_SHOTS_AGAINST",
+      "TEAM_PACE"
+    ],
+    "derived": {
+      "EXPECTED_ASSISTS": "EXPECTED_PRIMARY_ASSISTS + EXPECTED_SECONDARY_ASSISTS",
+      "ON_ICE_CF_PERCENTAGE": "ON_ICE_SHOT_ATTEMPTS_FOR / (ON_ICE_SHOT_ATTEMPTS_FOR + ON_ICE_SHOT_ATTEMPTS_AGAINST)",
+      "ON_ICE_FF_PERCENTAGE": "ON_ICE_UNBLOCKED_ATTEMPTS_FOR / (ON_ICE_UNBLOCKED_ATTEMPTS_FOR + ON_ICE_UNBLOCKED_ATTEMPTS_AGAINST)",
+      "ON_ICE_XGF_PERCENTAGE": "ON_ICE_EXPECTED_GOALS_FOR / (ON_ICE_EXPECTED_GOALS_FOR + ON_ICE_EXPECTED_GOALS_AGAINST)",
+      "GOALS_SAVED_ABOVE_EXPECTED": "EXPECTED_GOALS_AGAINST_GOALIE - GOALS_AGAINST_GOALIE",
+      "HIGH_DANGER_SAVES_GOALIE": "HIGH_DANGER_SHOTS_AGAINST_GOALIE - HIGH_DANGER_GOALS_AGAINST_GOALIE",
+      "MID_RANGE_SAVES_GOALIE": "MID_RANGE_SHOTS_AGAINST_GOALIE - MID_RANGE_GOALS_AGAINST_GOALIE",
+      "LONG_RANGE_SAVES_GOALIE": "LONG_RANGE_SHOTS_AGAINST_GOALIE - LONG_RANGE_GOALS_AGAINST_GOALIE",
+      "HIGH_DANGER_SAVE_PERCENTAGE_GOALIE": "HIGH_DANGER_SAVES_GOALIE / HIGH_DANGER_SHOTS_AGAINST_GOALIE",
+      "MID_RANGE_SAVE_PERCENTAGE_GOALIE": "MID_RANGE_SAVES_GOALIE / MID_RANGE_SHOTS_AGAINST_GOALIE",
+      "LONG_RANGE_SAVE_PERCENTAGE_GOALIE": "LONG_RANGE_SAVES_GOALIE / LONG_RANGE_SHOTS_AGAINST_GOALIE"
+    }
+  },
+  "dangerTaxonomy": {
+    "version": "player-forecasts-v5-distance-bands-v1",
+    "sourceField": "shot_distance_feet",
+    "universe": "non_shootout_non_penalty_shot_attempts",
+    "bands": {
+      "HIGH_DANGER": "0 <= shot_distance_feet <= 20",
+      "MID_RANGE": "20 < shot_distance_feet <= 40",
+      "LONG_RANGE": "shot_distance_feet > 40"
+    },
+    "missingness": "A missing or non-finite distance is excluded from danger-band counts, reported as missing coverage, and is never coerced to zero."
+  },
+  "traitPolicy": {
+    "contextOnly": [
+      "top_shot_speed",
+      "max_skating_speed",
+      "speed_bursts",
+      "distance_skated",
+      "zone_time"
+    ],
+    "rule": "NHL EDGE traits may be cutoff-safe model inputs and current player-detail context; they are not additive season projections without separate longitudinal validation."
+  },
+  "modeling": {
+    "selection": "Each advanced target runs a chronological baseline-versus-challenger tournament and retains its valid baseline when the challenger loses.",
+    "xg": "Only an approved, versioned, calibrated in-house xG artifact may produce expected-goal targets.",
+    "assistExpectation": "Expected primary and secondary assists remain separate. A shot-assist model is eligible only when candidate coverage passes the preregistered source-coverage gate; otherwise the published advanced fields fall back to the validated fantasy-v4 primary/secondary assist expectations and disclose that fallback.",
+    "aggregation": "Per-game individual, on-ice, goalie, and team components aggregate over the actual remaining schedule.",
+    "reconciliation": "Shot, danger, save, and expected-goal identities reconcile after model and editorial transforms.",
+    "shrinkage": "Player, goalie, and team per-game rates use empirical-Bayes shrinkage toward position or league priors, with support recorded in the artifact.",
+    "context": "Per-game serving adjusts rates only with schedule, opponent, team, deployment, and availability values already frozen by the v4 release."
+  },
+  "evaluation": {
+    "requiredReports": [
+      "source_coverage",
+      "chronological_loss",
+      "probability_calibration",
+      "interval_coverage",
+      "subgroup_support",
+      "fallback_status",
+      "golden_vector_replay"
+    ],
+    "advertisedInterval": 0.8,
+    "acceptableObservedCoverage": [0.75, 0.85],
+    "chronologicalCutoff": "2026-01-02",
+    "validationWindow": ["2026-01-03", "2026-04-16"],
+    "selectionThresholds": {
+      "maximumMaeRatioToBaseline": 1,
+      "minimumEvaluationRows": 100,
+      "minimumEvaluationPlayers": 20,
+      "minimumGameCoverageForServing": 0.95,
+      "minimumShotAssistCandidateGameCoverage": 0.8
+    },
+    "fallbackRule": "A target that misses support, loss, calibration, or source-coverage gates serves its preregistered baseline with the failure reason visible; it is not left empty.",
+    "consumedLockboxPolicy": "The 2025-26 lockbox is not new blind evidence.",
+    "prospectiveEvidenceSeason": 20262027
+  },
+  "publication": {
+    "dependency": "A validated and published fantasy-v4 release must exist before an advanced-v5 release is eligible.",
+    "channel": "public_beta",
+    "fantasyScoring": "Advanced outcomes may be scored only when the provider or user explicitly assigns a weight.",
+    "forgePolicy": "FORGE remains unchanged and benchmark-only."
+  },
+  "security": {
+    "tables": "service_only_forced_rls",
+    "publicData": "active immutable releases only"
+  },
+  "acceptance": {
+    "probabilityBounds": [0, 1],
+    "quantileOrder": "p10 <= p50 <= p90",
+    "sourceCoverage": "Missing source rows remain missing and block an affected target freeze; they are never coerced to zero.",
+    "determinism": "Identical artifact, feature, roster, schedule, and override inputs produce byte-equivalent canonical outputs."
+  }
+}

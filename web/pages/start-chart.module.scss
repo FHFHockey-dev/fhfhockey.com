@@ -768,7 +768,7 @@ $neon-strip-width: 8px;
 }
 
 /* =================== Mobile Optimizations =================== */
-@media (max-width: 768px) {
+@media (max-width: v.$breakpoint-tablet) {
   .page {
     padding: v.$space-sm;
     gap: v.$space-md;

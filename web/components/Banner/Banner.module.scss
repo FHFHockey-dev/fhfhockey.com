@@ -41,7 +41,7 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: vars.$breakpoint-mobile-max) {
   .textBanner {
     font-family:
       roboto condensed,
@@ -71,7 +71,7 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: vars.$breakpoint-mobile-max) {
   .banner,
   .textBanner {
     padding-top: 6.67px; // Two-thirds of 10px

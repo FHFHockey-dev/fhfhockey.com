@@ -11,6 +11,7 @@ type OwnershipSparklineProps = {
   width?: number;
   height?: number;
   baseline?: boolean;
+  invert?: boolean;
   svgClassName?: string;
   pathClassName?: string;
   areaClassName?: string;
@@ -29,7 +30,8 @@ type SparkGeometry = {
 function buildSparkGeometry(
   points: OwnershipSparkPoint[],
   width: number,
-  height: number
+  height: number,
+  invert: boolean
 ): SparkGeometry | null {
   const series = points.filter((point) => typeof point.value === "number").slice(-20);
   if (series.length === 0) return null;
@@ -44,9 +46,15 @@ function buildSparkGeometry(
   }
 
   const range = max - min || 1;
+  const valueToY = (value: number) => {
+    const normalized = (value - min) / range;
+    return invert
+      ? 2 + normalized * (height - 4)
+      : height - normalized * (height - 4) - 2;
+  };
   const normalized = series.map((point, index) => ({
     x: series.length === 1 ? 0 : (index / (series.length - 1)) * width,
-    y: height - ((point.value - min) / range) * (height - 4) - 2
+    y: valueToY(point.value)
   }));
 
   const line = normalized
@@ -61,10 +69,7 @@ function buildSparkGeometry(
   ].join(" ");
   const baselineY = Math.min(
     height - 2,
-    Math.max(
-      2,
-      height - ((series[0].value - min) / range) * (height - 4) - 2
-    )
+    Math.max(2, valueToY(series[0].value))
   );
 
   return {
@@ -80,6 +85,7 @@ export default function OwnershipSparkline({
   width = 100,
   height = 24,
   baseline = false,
+  invert = false,
   svgClassName,
   pathClassName,
   areaClassName,
@@ -89,8 +95,8 @@ export default function OwnershipSparkline({
   emptyClassName
 }: OwnershipSparklineProps) {
   const geometry = useMemo(
-    () => buildSparkGeometry(points, width, height),
-    [height, points, width]
+    () => buildSparkGeometry(points, width, height, invert),
+    [height, invert, points, width]
   );
 
   if (!geometry) {

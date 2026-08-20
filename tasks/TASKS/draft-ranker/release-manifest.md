@@ -23,12 +23,12 @@ The isolated release assembly began from the then-matching local/remote cleanup 
 The following current-workspace changes are part of the Draft Ranker release. The rules are intentionally narrow and collectively classified 102 dirty paths on 2026-07-15, including this manifest, with zero unclassified paths.
 
 - `supabase/migrations/20260715050418_add_draft_ranker_pairwise_rate_controls.sql` is deleted and replaced by the live-ledger-aligned `20260715051533` version.
-- `supabase/migrations/20260715051533_add_draft_ranker_pairwise_rate_controls.sql`
-- `supabase/migrations/20260715055259_create_draft_ranker_discovery_materialization.sql`
-- `supabase/migrations/20260715055404_add_draft_ranker_discovery_foreign_key_indexes.sql`
-- `supabase/migrations/20260715061931_create_draft_ranker_community_snapshots.sql`
-- `supabase/migrations/20260715062048_add_draft_ranker_community_foreign_key_indexes.sql`
-- `supabase/migrations/20260715070405_add_draft_ranker_ordering_repair.sql`
+- `supabase/migration-archive/pre-baseline-20260716/production-ledger/20260715051533_add_draft_ranker_pairwise_rate_controls.sql`
+- `supabase/migration-archive/pre-baseline-20260716/production-ledger/20260715055259_create_draft_ranker_discovery_materialization.sql`
+- `supabase/migration-archive/pre-baseline-20260716/production-ledger/20260715055404_add_draft_ranker_discovery_foreign_key_indexes.sql`
+- `supabase/migration-archive/pre-baseline-20260716/production-ledger/20260715061931_create_draft_ranker_community_snapshots.sql`
+- `supabase/migration-archive/pre-baseline-20260716/production-ledger/20260715062048_add_draft_ranker_community_foreign_key_indexes.sql`
+- `supabase/migration-archive/pre-baseline-20260716/production-ledger/20260715070405_add_draft_ranker_ordering_repair.sql`
 - all changed or added files under `tasks/TASKS/draft-ranker/`
 - all changed or added files under `web/__tests__/pages/api/v1/draft-ranker/`
 - `web/__tests__/pages/api/v1/db/draft-ranker-health.test.ts`

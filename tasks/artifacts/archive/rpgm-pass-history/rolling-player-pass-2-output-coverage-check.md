@@ -27,7 +27,7 @@ Important contract clarification:
 
 File:
 
-- [rpm-audit-notes-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md)
+- [rpm-audit-notes-pass-2.md](../../../TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md)
 
 Verified entry count:
 
@@ -59,13 +59,13 @@ Why this is sufficient:
 
 Files:
 
-- [rolling-player-pass-2-main-audit.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-main-audit.md)
-- [rolling-player-pass-2-additive-family-audit.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-additive-family-audit.md)
-- [rolling-player-pass-2-ratio-family-audit.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-ratio-family-audit.md)
-- [rolling-player-pass-2-weighted-rate-family-audit.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-weighted-rate-family-audit.md)
-- [rolling-player-pass-2-availability-participation-audit.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-availability-participation-audit.md)
-- [rolling-player-pass-2-contextual-fields-audit.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-contextual-fields-audit.md)
-- [rolling-player-pass-2-reconstruction-evidence-2026-03-12.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-reconstruction-evidence-2026-03-12.md)
+- [rolling-player-pass-2-main-audit.md](rolling-player-pass-2-main-audit.md)
+- [rolling-player-pass-2-additive-family-audit.md](rolling-player-pass-2-additive-family-audit.md)
+- [rolling-player-pass-2-ratio-family-audit.md](rolling-player-pass-2-ratio-family-audit.md)
+- [rolling-player-pass-2-weighted-rate-family-audit.md](rolling-player-pass-2-weighted-rate-family-audit.md)
+- [rolling-player-pass-2-availability-participation-audit.md](rolling-player-pass-2-availability-participation-audit.md)
+- [rolling-player-pass-2-contextual-fields-audit.md](rolling-player-pass-2-contextual-fields-audit.md)
+- [rolling-player-pass-2-reconstruction-evidence-2026-03-12.md](rolling-player-pass-2-reconstruction-evidence-2026-03-12.md)
 
 Verified coverage:
 
@@ -85,7 +85,7 @@ Result:
 
 File:
 
-- [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md)
+- [rpm-audit-action-items-pass-2.md](../../../TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md)
 
 Verified action categories present:
 
@@ -120,8 +120,8 @@ Result:
 The pass-2 audit covers the full `rolling_player_game_metrics` row surface through two layers:
 
 1. field-complete structural coverage
-   - [rolling-player-game-metrics-pass-2-field-inventory.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-game-metrics-pass-2-field-inventory.md)
-   - [rolling-player-game-metrics-pass-2-family-grouping.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-game-metrics-pass-2-family-grouping.md)
+   - [rolling-player-game-metrics-pass-2-field-inventory.md](rolling-player-game-metrics-pass-2-field-inventory.md)
+   - [rolling-player-game-metrics-pass-2-family-grouping.md](rolling-player-game-metrics-pass-2-family-grouping.md)
 2. metric-level semantic coverage
    - formula ledger
    - family audits

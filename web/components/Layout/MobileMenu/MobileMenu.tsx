@@ -6,6 +6,10 @@ import Image from "next/image";
 import publicSupabase from "lib/supabase/public-client";
 
 import SocialMedias from "components/SocialMedias";
+import {
+  MOBILE_PRIMARY_NAVIGATION_ITEMS,
+  MOBILE_SECONDARY_NAVIGATION_ITEMS,
+} from "components/Layout/NavbarItems/NavbarItemsData";
 
 import styles from "./MobileMenu.module.scss";
 
@@ -31,64 +35,6 @@ interface PlayerResult {
   image_url: string | null;
   team_id: number | null;
 }
-
-// Define navigation items with icons
-const NAVIGATION_ITEMS = [
-  {
-    id: "home",
-    label: "Home",
-    href: "/",
-    icon: "/pictures/homeNavIcon.png"
-  },
-  {
-    id: "stats",
-    label: "Stats",
-    href: "/stats",
-    icon: "/pictures/statsIcon.png"
-  },
-  {
-    id: "gameGrid",
-    label: "Game Grid",
-    href: "/game-grid",
-    icon: "/pictures/gameGrid.png"
-  },
-  {
-    id: "lines",
-    label: "Line Combinations",
-    href: "/lines",
-    icon: "/pictures/lineCombosIcon.png"
-  },
-  {
-    id: "wigo",
-    label: "WiGO Charts",
-    href: "/wigoCharts",
-    icon: "/pictures/wigoIcon.png"
-  },
-  {
-    id: "shifts",
-    label: "Shift Chart",
-    href: "/shiftChart",
-    icon: "/pictures/shiftChartsIcon.png"
-  },
-  {
-    id: "matrix",
-    label: "Date Range Line Matrix",
-    href: "/drm",
-    icon: "/pictures/drmIcon.png"
-  },
-  {
-    id: "podcast",
-    label: "Podcast",
-    href: "/podfeed",
-    icon: "/pictures/podcastIcon.png"
-  },
-  {
-    id: "blog",
-    label: "Blog",
-    href: "/blog",
-    icon: "/pictures/blogIcon.png"
-  }
-];
 
 function getUserInitials(label?: string | null) {
   const trimmed = (label || "").trim();
@@ -118,7 +64,8 @@ function MobileMenu({
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-  const navigationSectionRef = useRef<HTMLDivElement | null>(null);
+  const primaryNavigationSectionRef = useRef<HTMLDivElement | null>(null);
+  const secondaryNavigationSectionRef = useRef<HTMLDivElement | null>(null);
 
   const transitions = useTransition(visible, {
     from: {
@@ -153,7 +100,7 @@ function MobileMenu({
   }, [visible]);
 
   useEffect(() => {
-    if (!visible || entryPoint === "default") return;
+    if (!visible) return;
 
     const frame = window.requestAnimationFrame(() => {
       if (entryPoint === "search") {
@@ -161,11 +108,15 @@ function MobileMenu({
         return;
       }
 
-      navigationSectionRef.current?.scrollIntoView({
+      const target =
+        entryPoint === "tools"
+          ? primaryNavigationSectionRef.current
+          : secondaryNavigationSectionRef.current;
+      target?.scrollIntoView?.({
         block: "start",
         behavior: "smooth",
       });
-      navigationSectionRef.current?.focus({ preventScroll: true });
+      target?.focus({ preventScroll: true });
     });
 
     return () => window.cancelAnimationFrame(frame);
@@ -381,14 +332,44 @@ function MobileMenu({
 
               {/* Navigation Grid */}
               <div
-                ref={navigationSectionRef}
+                ref={primaryNavigationSectionRef}
                 className={styles.navigationSection}
                 tabIndex={-1}
-                data-menu-section="tools"
+                data-menu-section="primary"
               >
                 <h3 className={styles.sectionTitle}>Navigation</h3>
                 <div className={styles.iconGrid}>
-                  {NAVIGATION_ITEMS.map((item) => (
+                  {MOBILE_PRIMARY_NAVIGATION_ITEMS.map((item) => (
+                    <Link
+                      key={item.id}
+                      href={item.href}
+                      className={styles.iconGridItem}
+                      onClick={handleNavItemClick}
+                    >
+                      <div className={styles.iconContainer}>
+                        <Image
+                          src={item.icon}
+                          alt={item.label}
+                          width={32}
+                          height={32}
+                          className={styles.navIcon}
+                        />
+                      </div>
+                      <span className={styles.iconLabel}>{item.label}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              <div
+                ref={secondaryNavigationSectionRef}
+                className={styles.navigationSection}
+                tabIndex={-1}
+                data-menu-section="more"
+              >
+                <h3 className={styles.sectionTitle}>More</h3>
+                <div className={styles.iconGrid}>
+                  {MOBILE_SECONDARY_NAVIGATION_ITEMS.map((item) => (
                     <Link
                       key={item.id}
                       href={item.href}

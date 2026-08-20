@@ -56,7 +56,7 @@ This checklist translates the pass-2 PRD into an execution artifact for the audi
 
 ## 3A. Artifact Boundary Gates
 
-- [x] The current state of the two standalone audit outputs is checked against `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-artifact-boundary-check.md`.
+- [x] The current state of the two standalone audit outputs is checked against `tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-artifact-boundary-check.md`.
 - [x] `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md` contains only formula-ledger entries and no implementation guidance.
 - [x] `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md` contains implementation-oriented findings and no formula-ledger-only filler entries.
 - [x] Any newly discovered correctness, naming, fallback, observability, recompute-friction, performance, compatibility, test, or optional-enhancement finding is written to the backlog file instead of the formula ledger.

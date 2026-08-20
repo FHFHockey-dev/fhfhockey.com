@@ -9,10 +9,10 @@ npm run check:rolling-player-disputed-metrics
 ```
 
 Script:
-- [check-rolling-player-disputed-metrics.ts](/Users/tim/Code/fhfhockey.com/web/scripts/check-rolling-player-disputed-metrics.ts)
+- [check-rolling-player-disputed-metrics.ts](../../../../web/scripts/check-rolling-player-disputed-metrics.ts)
 
 Recompute path used:
-- [recomputePlayerRowsForValidation(...)](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+- [recomputePlayerRowsForValidation(...)](../../../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
 
 ## Scope
 
@@ -27,7 +27,7 @@ Validation cases used:
 
 Freshness gating used:
 
-- Brent Burns: ready after the PP-builder refresh actions captured in [rolling-player-refresh-actions-report-2026-03-11.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-refresh-actions-report-2026-03-11.md)
+- Brent Burns: ready after the PP-builder refresh actions captured in [rolling-player-refresh-actions-report-2026-03-11.md](rolling-player-refresh-actions-report-2026-03-11.md)
 - Corey Perry: GP / availability validation allowed; PK-sensitive validation remains freshness-blocked
 - Jesper Bratt: fully ready
 - Seth Jones: PK-sensitive validation remains blocked

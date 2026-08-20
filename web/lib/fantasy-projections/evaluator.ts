@@ -1,11 +1,15 @@
 import { createHash } from "crypto";
 
 import {
-  FANTASY_PROJECTION_CONTRACT_CHECKSUM,
-  FANTASY_PROJECTION_CONTRACT_VERSION,
   FANTASY_PROJECTION_SEASON_ID,
+  FANTASY_PROJECTION_SUPPORTED_CONTRACTS,
+  FANTASY_PROJECTION_V5_CONTRACT_CHECKSUM,
+  FANTASY_PROJECTION_V5_CONTRACT_VERSION,
+  GOALIE_ADVANCED_V5_PRIMITIVE_TARGETS,
   GOALIE_PRIMITIVE_TARGETS,
+  reconcileProjectionQuantiles,
   reconcileProjectionValues,
+  SKATER_ADVANCED_V5_PRIMITIVE_TARGETS,
   SKATER_PRIMITIVE_TARGETS,
   type FantasyProjectionPopulation,
   type ProjectionValues,
@@ -15,9 +19,14 @@ const P10_Z = 1.2815515655446004;
 
 export type PortablePlayerPrior = {
   fhfhPlayerId: number;
+  nhlPlayerId?: number | null;
+  playerName?: string;
   population: FantasyProjectionPopulation;
   position: "C" | "L" | "R" | "D" | "G";
   teamId: number | null;
+  poolStatus?: string;
+  rosterStatus?: string;
+  rosterConfidence?: number;
   playProbability: number;
   startProbability?: number;
   baselinePlayProbability?: number;
@@ -26,8 +35,13 @@ export type PortablePlayerPrior = {
   baselineConditionalRates?: ProjectionValues;
   conditionalVariances: ProjectionValues;
   ratings: Record<string, number>;
+  ratingConfidence?: number;
+  ratingSignals?: Record<string, number>;
+  sampleGames?: number;
+  rookieProfile?: Record<string, unknown>;
   deployment: Record<string, unknown>;
   fallbackFlags?: string[];
+  primitiveTargets?: string[];
 };
 
 export type PortableTeamContext = {
@@ -36,6 +50,35 @@ export type PortableTeamContext = {
   defenseMultiplier: number;
   paceMultiplier: number;
   ratings: Record<string, number>;
+  scheduleNeutralGoalDifferential?: number;
+  projectedGoalsFor?: number;
+  projectedGoalsAgainst?: number;
+  sampleGames?: number;
+  venueScorerMultipliers?: ProjectionValues;
+  advancedRates?: ProjectionValues;
+};
+
+export type AdvancedSeasonArtifact = {
+  schemaVersion: "player-forecast-season-advanced-artifact-v1";
+  seasonId: number;
+  contractVersion: string;
+  contractChecksum: string;
+  artifactVersion: string;
+  featureSchemaVersion: string;
+  trainingCutoffAt: string;
+  codeVersion: string;
+  baseV4ArtifactChecksum: string;
+  players: Record<string, {
+    fhfhPlayerId: number;
+    population: FantasyProjectionPopulation;
+    rates?: ProjectionValues;
+  }>;
+  teams: Record<string, { teamId: number; rates?: ProjectionValues }>;
+  targetPolicies: Record<string, Record<string, {
+    baselineRate?: number;
+    residual80PerGame?: number;
+    fallback?: boolean;
+  }>>;
 };
 
 export type PortableSeasonArtifact = {
@@ -127,8 +170,8 @@ export function verifyPortableSeasonArtifact(
   if (
     artifact.schemaVersion !== "player-forecast-season-artifact-v1" ||
     artifact.seasonId !== FANTASY_PROJECTION_SEASON_ID ||
-    artifact.contractVersion !== FANTASY_PROJECTION_CONTRACT_VERSION ||
-    artifact.contractChecksum !== FANTASY_PROJECTION_CONTRACT_CHECKSUM
+    FANTASY_PROJECTION_SUPPORTED_CONTRACTS[artifact.contractVersion] !==
+      artifact.contractChecksum
   ) {
     throw new Error("PLAYER_FORECAST_SEASON_ARTIFACT_CONTRACT_MISMATCH");
   }
@@ -137,16 +180,117 @@ export function verifyPortableSeasonArtifact(
   }
 }
 
+function advancedTargetSource(target: string): string | null {
+  if (target === "EXPECTED_PRIMARY_ASSISTS") return "PRIMARY_ASSISTS";
+  if (target === "EXPECTED_SECONDARY_ASSISTS") return "SECONDARY_ASSISTS";
+  return null;
+}
+
+export function mergeAdvancedSeasonArtifact(
+  base: PortableSeasonArtifact,
+  advanced: AdvancedSeasonArtifact,
+): PortableSeasonArtifact {
+  verifyPortableSeasonArtifact(base);
+  if (
+    advanced.schemaVersion !== "player-forecast-season-advanced-artifact-v1" ||
+    advanced.seasonId !== FANTASY_PROJECTION_SEASON_ID ||
+    advanced.contractVersion !== FANTASY_PROJECTION_V5_CONTRACT_VERSION ||
+    advanced.contractChecksum !== FANTASY_PROJECTION_V5_CONTRACT_CHECKSUM
+  ) {
+    throw new Error("PLAYER_FORECAST_SEASON_ADVANCED_ARTIFACT_CONTRACT_MISMATCH");
+  }
+  const players = Object.fromEntries(
+    Object.entries(base.players).map(([id, basePlayer]) => {
+      const advancedPlayer = advanced.players[id];
+      if (!advancedPlayer || advancedPlayer.population !== basePlayer.population) {
+        throw new Error(`PLAYER_FORECAST_SEASON_ADVANCED_PLAYER_MISMATCH:${id}`);
+      }
+      const targets = basePlayer.population === "goalie"
+        ? GOALIE_ADVANCED_V5_PRIMITIVE_TARGETS
+        : SKATER_ADVANCED_V5_PRIMITIVE_TARGETS;
+      const conditionalRates = { ...basePlayer.conditionalRates };
+      const baselineConditionalRates = { ...basePlayer.baselineConditionalRates };
+      const conditionalVariances = { ...basePlayer.conditionalVariances };
+      const fallbackFlags = new Set(basePlayer.fallbackFlags ?? []);
+      for (const target of targets) {
+        const sourceTarget = advancedTargetSource(target);
+        const policy = advanced.targetPolicies[basePlayer.population]?.[target] ?? {};
+        const rate = sourceTarget
+          ? Number(basePlayer.conditionalRates[sourceTarget] ?? 0)
+          : Number(advancedPlayer.rates?.[target] ?? policy.baselineRate ?? 0);
+        const baselineRate = sourceTarget
+          ? Number(basePlayer.baselineConditionalRates?.[sourceTarget] ?? rate)
+          : Number(policy.baselineRate ?? rate);
+        const residual = Number(policy.residual80PerGame ?? 0);
+        let variance = Math.max(rate, residual * residual);
+        if (sourceTarget) {
+          const probability = Math.min(1, Math.max(0, basePlayer.playProbability));
+          const sourceVariance = Number(basePlayer.conditionalVariances[sourceTarget] ?? rate);
+          const mixtureVariance =
+            probability * sourceVariance +
+            probability * (1 - probability) * rate * rate;
+          variance = probability > 0
+            ? Math.max(0, (mixtureVariance - probability * (1 - probability) * rate * rate) / probability)
+            : 0;
+        }
+        conditionalRates[target] = round(rate);
+        baselineConditionalRates[target] = round(baselineRate);
+        conditionalVariances[target] = round(variance);
+        if (policy.fallback) fallbackFlags.add(`advanced_v5_${target.toLowerCase()}_fallback`);
+      }
+      return [id, {
+        ...basePlayer,
+        conditionalRates,
+        baselineConditionalRates,
+        conditionalVariances,
+        primitiveTargets: Array.from(new Set([...(basePlayer.primitiveTargets ?? []), ...targets])),
+        fallbackFlags: [...fallbackFlags].sort(),
+      }];
+    }),
+  );
+  const teams = Object.fromEntries(
+    Object.entries(base.teams).map(([id, team]) => [
+      id,
+      { ...team, advancedRates: { ...(advanced.teams[id]?.rates ?? {}) } },
+    ]),
+  );
+  return {
+    ...base,
+    schemaVersion: "player-forecast-season-artifact-v1",
+    contractVersion: advanced.contractVersion,
+    contractChecksum: advanced.contractChecksum,
+    artifactVersion: advanced.artifactVersion,
+    featureSchemaVersion: advanced.featureSchemaVersion,
+    trainingCutoffAt: advanced.trainingCutoffAt,
+    codeVersion: advanced.codeVersion,
+    players,
+    teams,
+    goldenVectors: undefined,
+  };
+}
+
 function targetMultiplier(
   target: string,
   population: FantasyProjectionPopulation,
   team: PortableTeamContext | undefined,
   opponent: PortableTeamContext | undefined,
+  venue?: PortableTeamContext,
 ): number {
+  if (
+    (population === "goalie"
+      ? GOALIE_ADVANCED_V5_PRIMITIVE_TARGETS
+      : SKATER_ADVANCED_V5_PRIMITIVE_TARGETS
+    ).includes(target as never)
+  ) {
+    return 1;
+  }
   const pace = Math.sqrt(
     Math.max(0.5, team?.paceMultiplier ?? 1) *
       Math.max(0.5, opponent?.paceMultiplier ?? 1),
   );
+  const venueMultiplier = ["HITS", "BLOCKED_SHOTS", "TAKEAWAYS", "GIVEAWAYS"].includes(target)
+    ? venue?.venueScorerMultipliers?.[target] ?? 1
+    : 1;
   if (
     population === "goalie" &&
     ["SHOTS_AGAINST_GOALIE", "GOALS_AGAINST_GOALIE"].includes(target)
@@ -164,12 +308,25 @@ function targetMultiplier(
       "PP_ASSISTS",
       "SH_GOALS",
       "SH_ASSISTS",
+      "EV_GOALS",
+      "EV_PRIMARY_ASSISTS",
+      "EV_SECONDARY_ASSISTS",
+      "PP_PRIMARY_ASSISTS",
+      "PP_SECONDARY_ASSISTS",
+      "SH_PRIMARY_ASSISTS",
+      "SH_SECONDARY_ASSISTS",
+      "EMPTY_NET_GOALS",
+      "EMPTY_NET_POINTS",
+      "EN_PRIMARY_ASSISTS",
+      "EN_SECONDARY_ASSISTS",
+      "GAME_WINNING_GOALS",
+      "OVERTIME_GOALS",
     ].includes(target)
   ) {
     const opposingDefense = Math.max(0.5, opponent?.defenseMultiplier ?? 1);
-    return pace / opposingDefense;
+    return (pace * venueMultiplier) / opposingDefense;
   }
-  return pace;
+  return pace * venueMultiplier;
 }
 
 function quantiles(
@@ -208,48 +365,7 @@ function quantiles(
       }
     }
   }
-  if (population !== "goalie") {
-    return {
-      p10: reconcileProjectionValues(p10, population),
-      p50: reconcileProjectionValues(p50, population),
-      p90: reconcileProjectionValues(p90, population),
-    };
-  }
-
-  const p10Shots = Math.max(0, p10.SHOTS_AGAINST_GOALIE ?? 0);
-  const p50Shots = Math.max(0, p50.SHOTS_AGAINST_GOALIE ?? 0);
-  const p90Shots = Math.max(0, p90.SHOTS_AGAINST_GOALIE ?? 0);
-  const p10Goals = Math.max(0, p10.GOALS_AGAINST_GOALIE ?? 0);
-  const p50Goals = Math.max(0, p50.GOALS_AGAINST_GOALIE ?? 0);
-  const p90Goals = Math.max(0, p90.GOALS_AGAINST_GOALIE ?? 0);
-  const p10Toi = Math.max(0, p10.TOTAL_TOI ?? 0);
-  const p50Toi = Math.max(0, p50.TOTAL_TOI ?? 0);
-  const p90Toi = Math.max(0, p90.TOTAL_TOI ?? 0);
-  const p10Saves = Math.max(0, p10Shots - p90Goals);
-  const p50Saves = Math.max(0, p50Shots - p50Goals);
-  const p90Saves = Math.max(p50Saves, p90Shots - p10Goals);
-  p10.SAVES_GOALIE = round(p10Saves);
-  p50.SAVES_GOALIE = round(p50Saves);
-  p90.SAVES_GOALIE = round(p90Saves);
-
-  const savePercentage = p50Shots > 0 ? p50Saves / p50Shots : 0;
-  const lowerSavePercentage = p90Shots > 0 ? p10Saves / p90Shots : 0;
-  const upperSavePercentage = p10Shots > 0 ? p90Saves / p10Shots : 1;
-  p10.SAVE_PERCENTAGE = round(
-    Math.min(savePercentage, Math.max(0, lowerSavePercentage)),
-  );
-  p50.SAVE_PERCENTAGE = round(Math.min(1, Math.max(0, savePercentage)));
-  p90.SAVE_PERCENTAGE = round(
-    Math.min(1, Math.max(savePercentage, upperSavePercentage)),
-  );
-
-  const gaa = p50Toi > 0 ? (3600 * p50Goals) / p50Toi : 0;
-  const lowerGaa = p90Toi > 0 ? (3600 * p10Goals) / p90Toi : 0;
-  const upperGaa = p10Toi > 0 ? (3600 * p90Goals) / p10Toi : Math.max(gaa, lowerGaa);
-  p10.GOALS_AGAINST_AVERAGE = round(Math.min(gaa, Math.max(0, lowerGaa)));
-  p50.GOALS_AGAINST_AVERAGE = round(Math.max(0, gaa));
-  p90.GOALS_AGAINST_AVERAGE = round(Math.max(gaa, upperGaa));
-  return { p10, p50, p90 };
+  return reconcileProjectionQuantiles({ p10, p50, p90 }, population);
 }
 
 export function evaluatePortableSeasonGame(
@@ -275,16 +391,18 @@ export function evaluatePortableSeasonGame(
       ? round(rawStartProbability)
       : null;
 
-  const targetKeys =
+  const targetKeys = prior.primitiveTargets ?? (
     prior.population === "goalie"
-      ? GOALIE_PRIMITIVE_TARGETS
-      : SKATER_PRIMITIVE_TARGETS;
+      ? [...GOALIE_PRIMITIVE_TARGETS]
+      : [...SKATER_PRIMITIVE_TARGETS]
+  );
   const conditionalMeans: ProjectionValues = {};
   const unconditionalMeans: ProjectionValues = {};
   const baselineUnconditionalMeans: ProjectionValues = {};
   const variances: ProjectionValues = {};
   const team = artifact.teams[String(game.teamId)];
   const opponent = artifact.teams[String(game.opponentTeamId)];
+  const venue = game.isHome ? team : opponent;
 
   for (const target of targetKeys) {
     const conditional =
@@ -295,7 +413,7 @@ export function evaluatePortableSeasonGame(
           : Math.max(
               target === "PLUS_MINUS" ? -Infinity : 0,
               (prior.conditionalRates[target] ?? 0) *
-                targetMultiplier(target, prior.population, team, opponent),
+                targetMultiplier(target, prior.population, team, opponent, venue),
             );
     const mixtureProbability =
       target === "GAMES_STARTED"
@@ -304,7 +422,7 @@ export function evaluatePortableSeasonGame(
     const conditionalVariance = Math.max(
       0,
       (prior.conditionalVariances[target] ?? Math.abs(conditional)) *
-        targetMultiplier(target, prior.population, team, opponent),
+        targetMultiplier(target, prior.population, team, opponent, venue),
     );
     conditionalMeans[target] = round(conditional);
     unconditionalMeans[target] = round(conditional * mixtureProbability);
@@ -314,7 +432,7 @@ export function evaluatePortableSeasonGame(
         : Math.max(
             target === "PLUS_MINUS" ? -Infinity : 0,
             (prior.baselineConditionalRates?.[target] ?? prior.conditionalRates[target] ?? 0) *
-              targetMultiplier(target, prior.population, team, opponent),
+              targetMultiplier(target, prior.population, team, opponent, venue),
           );
     const baselineProbability =
       target === "GAMES_STARTED"
@@ -416,6 +534,26 @@ export function aggregateSeasonGames(
     variances: roundedVariances,
     quantiles: aggregateQuantiles,
     componentManifest,
+  };
+  return {
+    ...aggregate,
+    aggregateHash: checksumCanonicalJson(aggregate),
+  };
+}
+
+export function emptySeasonAggregate(
+  population: FantasyProjectionPopulation,
+  primitiveTargets: readonly string[],
+): ReturnType<typeof aggregateSeasonGames> {
+  const zeroes = reconcileProjectionValues(
+    Object.fromEntries(primitiveTargets.map((target) => [target, 0])),
+    population,
+  );
+  const aggregate = {
+    means: zeroes,
+    variances: Object.fromEntries(primitiveTargets.map((target) => [target, 0])),
+    quantiles: { p10: zeroes, p50: zeroes, p90: zeroes },
+    componentManifest: [] as Array<{ gameId: number; componentHash: string }>,
   };
   return {
     ...aggregate,

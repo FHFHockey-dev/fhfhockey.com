@@ -6,9 +6,9 @@ Date:
 
 Related artifacts:
 
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-refresh-execution-2026-03-12.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-reconstruction-evidence-2026-03-12.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-helper-contract-map.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-refresh-execution-2026-03-12.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-reconstruction-evidence-2026-03-12.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-helper-contract-map.md`
 
 ## Purpose
 
@@ -16,7 +16,7 @@ This artifact records the diagnostics-driven trust classification for task `3.4`
 
 It uses the current diagnostics contract in:
 
-- [rollingPlayerPipelineDiagnostics.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts)
+- [rollingPlayerPipelineDiagnostics.ts](../../../../web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts)
 
 to classify:
 

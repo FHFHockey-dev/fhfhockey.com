@@ -6,8 +6,8 @@ Status rules:
 
 - this file is the source of truth for architecture, operations, freshness, validation posture, performance targets, and implementation priorities
 - detailed pass artifacts are historical support only
-- formula-only metric status remains in [rpm-audit-notes-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md)
-- implementation sequencing remains in [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md)
+- formula-only metric status remains in [rpm-audit-notes-pass-2.md](../TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md)
+- implementation sequencing remains in [rpm-audit-action-items-pass-2.md](../TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md)
 
 ## Mission
 
@@ -37,7 +37,7 @@ The operating constraint is now explicit:
   - Jesper Bratt: blocked only by PK source-tail lag
   - Seth Jones: blocked only by PK source-tail lag
 - target write path is repaired and stable on the current PostgREST upsert path
-- validation console is implemented in [trendsDebug.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.tsx)
+- validation console is implemented in [trendsDebug.tsx](../../web/pages/trendsDebug.tsx)
 
 ## System Boundaries
 
@@ -70,8 +70,8 @@ The operating constraint is now explicit:
 - stored rolling target:
   - `rolling_player_game_metrics`
 - debug and validation surface:
-  - [rolling-player-metrics.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/debug/rolling-player-metrics.ts)
-  - [trendsDebug.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.tsx)
+  - [rolling-player-metrics.ts](../../web/pages/api/v1/debug/rolling-player-metrics.ts)
+  - [trendsDebug.tsx](../../web/pages/trendsDebug.tsx)
 - downstream projection surface:
   - FORGE inputs
   - FORGE run
@@ -113,7 +113,7 @@ Run:
 
 ## Runtime And Performance Policy
 
-The shared owner for runtime policy is [rollingPlayerOperationalPolicy.ts](/Users/tim/Code/fhfhockey.com/web/lib/rollingPlayerOperationalPolicy.ts).
+The shared owner for runtime policy is [rollingPlayerOperationalPolicy.ts](../../web/lib/rollingPlayerOperationalPolicy.ts).
 
 ### Rolling execution profiles
 
@@ -177,14 +177,14 @@ Validation rule:
 Validation is split across three authoritative surfaces:
 
 1. formula ledger
-   - [rpm-audit-notes-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md)
+   - [rpm-audit-notes-pass-2.md](../TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md)
    - strict metric status and formula entries only
 2. implementation backlog
-   - [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md)
+   - [rpm-audit-action-items-pass-2.md](../TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md)
    - source for sequencing follow-up work
 3. live validation console
-   - [trendsDebug.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.tsx)
-   - backed by [rollingPlayerValidationPayload.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts)
+   - [trendsDebug.tsx](../../web/pages/trendsDebug.tsx)
+   - backed by [rollingPlayerValidationPayload.ts](../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts)
 
 ### Validation status model
 
@@ -212,7 +212,7 @@ The target structure is a small number of clear owners, not a long list of one-o
 
 Owner:
 
-- [rollingPlayerOperationalPolicy.ts](/Users/tim/Code/fhfhockey.com/web/lib/rollingPlayerOperationalPolicy.ts)
+- [rollingPlayerOperationalPolicy.ts](../../web/lib/rollingPlayerOperationalPolicy.ts)
 
 Owns:
 
@@ -224,8 +224,8 @@ Owns:
 
 Owners:
 
-- [rollingForgePipeline.ts](/Users/tim/Code/fhfhockey.com/web/lib/rollingForgePipeline.ts)
-- [run-rolling-forge-pipeline.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/run-rolling-forge-pipeline.ts)
+- [rollingForgePipeline.ts](../../web/lib/rollingForgePipeline.ts)
+- [run-rolling-forge-pipeline.ts](../../web/pages/api/v1/db/run-rolling-forge-pipeline.ts)
 
 Owns:
 
@@ -237,7 +237,7 @@ Owns:
 
 Primary owner:
 
-- [fetchRollingPlayerAverages.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
+- [fetchRollingPlayerAverages.ts](../../web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts)
 
 This is still the main hotspot. It remains the biggest candidate for future decomposition because it still carries compute, persistence, and instrumentation concerns together.
 
@@ -245,21 +245,21 @@ This is still the main hotspot. It remains the biggest candidate for future deco
 
 Owners:
 
-- [rollingPlayerPipelineDiagnostics.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts)
-- [rollingPlayerValidationPayload.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts)
-- [rolling-player-metrics.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/debug/rolling-player-metrics.ts)
+- [rollingPlayerPipelineDiagnostics.ts](../../web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts)
+- [rollingPlayerValidationPayload.ts](../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts)
+- [rolling-player-metrics.ts](../../web/pages/api/v1/debug/rolling-player-metrics.ts)
 
 ### 5. UI validation surface
 
 Owner:
 
-- [trendsDebug.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.tsx)
+- [trendsDebug.tsx](../../web/pages/trendsDebug.tsx)
 
 ### 6. Compatibility and downstream readers
 
 Owners:
 
-- [rollingPlayerMetricCompatibility.ts](/Users/tim/Code/fhfhockey.com/web/lib/rollingPlayerMetricCompatibility.ts)
+- [rollingPlayerMetricCompatibility.ts](../../web/lib/rollingPlayerMetricCompatibility.ts)
 - downstream reader/query files
 
 ## Metric Contract Posture
@@ -323,7 +323,7 @@ Use the full verification command for code health and the targeted rolling verif
 
 Historical pass artifacts have been archived under:
 
-- [archive/rpgm-pass-history](/Users/tim/Code/fhfhockey.com/tasks/artifacts/archive/rpgm-pass-history)
+- [archive/rpgm-pass-history](archive/rpgm-pass-history)
 
 Rule:
 

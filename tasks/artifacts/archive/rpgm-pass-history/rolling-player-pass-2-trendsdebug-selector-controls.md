@@ -51,7 +51,7 @@ The page no longer behaves like a latest-row-only sustainability workbench. It n
 
 `trendsDebug.tsx` now calls:
 
-- [rolling-player-metrics.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/debug/rolling-player-metrics.ts)
+- [rolling-player-metrics.ts](../../../../web/pages/api/v1/debug/rolling-player-metrics.ts)
 
 with the current selector state for:
 

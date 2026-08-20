@@ -9,9 +9,8 @@ dotenv.config({ path: ".env.local" });
 dotenv.config({ path: ".env.development.local" });
 
 import {
-  FANTASY_PROJECTION_CONTRACT_CHECKSUM,
-  FANTASY_PROJECTION_CONTRACT_VERSION,
   FANTASY_PROJECTION_SEASON_ID,
+  FANTASY_PROJECTION_SUPPORTED_CONTRACTS,
 } from "../lib/fantasy-projections/contracts";
 import { getServiceRoleClient } from "../lib/supabase/server";
 
@@ -35,6 +34,12 @@ type ImportManifest = {
   scheduleRevisionHash: string;
   rosterRevisionHash: string;
   runHash: string;
+  metricSetVersion?: string;
+  rosterObservedAt?: string;
+  transactionCutoffAt?: string;
+  transactionCoverage?: Record<string, unknown>;
+  healthStatus?: string;
+  healthSummary?: Record<string, unknown>;
   files: Record<string, ManifestFile>;
   schedule: ManifestFile;
   playerPool: ManifestFile;
@@ -106,8 +111,8 @@ function verifyManifest(root: string, manifest: ImportManifest): void {
   if (
     manifest.schemaVersion !== "player-forecast-season-import-v1" ||
     manifest.seasonId !== FANTASY_PROJECTION_SEASON_ID ||
-    manifest.contractVersion !== FANTASY_PROJECTION_CONTRACT_VERSION ||
-    manifest.contractChecksum !== FANTASY_PROJECTION_CONTRACT_CHECKSUM
+    FANTASY_PROJECTION_SUPPORTED_CONTRACTS[manifest.contractVersion] !==
+      manifest.contractChecksum
   ) {
     throw new Error("Season import contract mismatch.");
   }
@@ -339,7 +344,25 @@ async function main(): Promise<void> {
   }
 
   const snapshotSource = "local_checksum_verified_import";
-  const snapshotMetadata = { suppressEnqueue: true, importRunHash: manifest.runHash };
+  const snapshotMetadata = {
+    suppressEnqueue: true,
+    importRunHash: manifest.runHash,
+    transactionCoverage: manifest.transactionCoverage ?? {},
+  };
+  const mappedOfficialRosterPlayers = playerPool.filter(
+    (player) => player.source_provenance?.officialRoster,
+  ).length;
+  const unmappedOfficialRosterPlayers = Number(
+    manifest.healthSummary?.unmappedOfficialRosterPlayers ?? 0,
+  );
+  const officialRosterWarnings = Number(manifest.healthSummary?.officialRosterWarnings ?? 0);
+  const rosterCompleteness =
+    manifest.healthStatus === "healthy" &&
+    unmappedOfficialRosterPlayers === 0 &&
+    officialRosterWarnings === 0
+      ? 1
+      : mappedOfficialRosterPlayers /
+        Math.max(1, mappedOfficialRosterPlayers + unmappedOfficialRosterPlayers);
   const { data: existingRosterSnapshot, error: rosterLookupError } = await supabase
     .from("player_forecast_season_roster_snapshots")
     .select("id")
@@ -356,7 +379,7 @@ async function main(): Promise<void> {
         source: snapshotSource,
         observed_at: manifest.freezeCreatedAt,
         available_at: manifest.freezeCreatedAt,
-        completeness: playerPool.filter((player) => player.source_provenance?.officialRoster).length / 810,
+        completeness: rosterCompleteness,
         revision_hash: manifest.rosterRevisionHash,
         source_manifest: [{ ...manifest.playerPool, path: path.basename(manifest.playerPool.path) }],
         metadata: snapshotMetadata,
@@ -374,8 +397,15 @@ async function main(): Promise<void> {
         previous_team_id: null,
         position: player.position,
         pool_status: player.pool_status,
+        roster_status:
+          player.pool_status === "verified_active"
+            ? "active_nhl"
+            : player.pool_status === "active_prospect"
+              ? "prospect_reserve"
+              : "unsigned",
         roster_confidence: player.roster_confidence,
         prior_based: player.prior_based,
+        source_fresh_at: manifest.rosterObservedAt ?? manifest.freezeCreatedAt,
         source_provenance: player.source_provenance,
       })));
     if (memberError) throw memberError;

@@ -2187,7 +2187,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: v.$breakpoint-tablet) {
   .container {
     padding: v.$space-lg;
   }
@@ -2254,7 +2254,7 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: v.$breakpoint-mobile-max) {
   .daysContainer {
     gap: 1px;
   }

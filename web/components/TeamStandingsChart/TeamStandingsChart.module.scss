@@ -10,7 +10,7 @@
   margin: 0;
   color: v.$text-primary;
 
-  @media (max-width: 768px) {
+  @media (max-width: v.$breakpoint-tablet) {
     display: none;
   }
 }
@@ -714,7 +714,7 @@
 
 }
 
-@media (max-width: 768px) {
+@media (max-width: v.$breakpoint-tablet) {
   .compact {
     display: grid;
     gap: 0;

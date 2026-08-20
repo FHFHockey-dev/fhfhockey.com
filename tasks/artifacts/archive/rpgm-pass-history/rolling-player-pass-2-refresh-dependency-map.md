@@ -54,7 +54,7 @@ Route:
 
 Observed handler:
 
-- file: `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-games.ts`
+- file: `web/pages/api/v1/db/update-games.ts`
 - wrapped with `withCronJobAudit(adminOnly(...))`
 
 Supported scope:
@@ -86,7 +86,7 @@ Route:
 
 Observed handler:
 
-- file: `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-players.ts`
+- file: `web/pages/api/v1/db/update-players.ts`
 - wrapped with `withCronJobAudit(adminOnly(...))`
 
 Writes:
@@ -114,7 +114,7 @@ Route:
 
 Observed handler:
 
-- file: `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-wgo-skaters.ts`
+- file: `web/pages/api/v1/db/update-wgo-skaters.ts`
 - supports several modes through query parameters
 
 Supported scope:
@@ -160,7 +160,7 @@ Route:
 
 Observed handler:
 
-- file: `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-nst-gamelog.ts`
+- file: `web/pages/api/v1/db/update-nst-gamelog.ts`
 - supports `GET` and `POST`
 
 Supported control parameters:
@@ -221,7 +221,7 @@ Route:
 
 Observed handler:
 
-- file: `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-power-play-combinations/[gameId].ts`
+- file: `web/pages/api/v1/db/update-power-play-combinations/[gameId].ts`
 - wrapped with `withCronJobAudit(adminOnly(...))`
 
 Supported scope:
@@ -265,8 +265,8 @@ Routes:
 
 Observed handlers:
 
-- single-game file: `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-line-combinations/[id].ts`
-- batch file: `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-line-combinations/index.ts`
+- single-game file: `web/pages/api/v1/db/update-line-combinations/[id].ts`
+- batch file: `web/pages/api/v1/db/update-line-combinations/index.ts`
 - both wrapped with `withCronJobAudit(adminOnly(...))`
 
 Supported scope:
@@ -305,7 +305,7 @@ Route:
 
 Observed handler:
 
-- file: `/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-rolling-player-averages.ts`
+- file: `web/pages/api/v1/db/update-rolling-player-averages.ts`
 - supports `GET`, `POST`, and `HEAD`
 
 Supported scope controls:
@@ -438,8 +438,8 @@ Why:
 
 Documented in:
 
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-refresh-actions-report-2026-03-11.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-validation-freshness-report-2026-03-11.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-refresh-actions-report-2026-03-11.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-validation-freshness-report-2026-03-11.md`
 
 Confirmed useful targeted refreshes:
 

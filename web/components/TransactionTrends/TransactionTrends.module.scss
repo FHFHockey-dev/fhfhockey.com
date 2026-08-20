@@ -1,1067 +1,70 @@
 @use "styles/vars" as v;
 
 .transactionTrends {
-  padding: v.$space-lg;
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-lg;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0; // allow children to shrink within viewport
-  box-sizing: border-box;
-  @media (max-width: #{v.$breakpoint-mobile-lg}) {
-    padding: 0;
-    overflow-x: hidden;
-    // Avoid sticky bottom nav overlap on mobile
-    padding-bottom: 0;
-    gap: 0;
-  }
-}
-
-.headerRow {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-  gap: v.$space-md;
-}
-
-.headerControls {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(420px, 2fr);
-  gap: v.$space-lg;
-  align-items: start;
+  gap: 12px;
   width: 100%;
-}
-
-.title {
-  font-family: v.$font-family-accent;
-  font-size: v.$font-size-lg;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin: 0;
-  color: v.$color-white;
-  span {
-    color: v.$primary-color;
-  }
-}
-
-.timeframeButtons {
-  display: grid;
-  gap: v.$space-sm;
-  width: fit-content;
-  max-width: 100%;
-  grid-template-columns: repeat(4, minmax(44px, 68px));
-  button {
-    font-size: v.$font-size-xs;
-    font-family: v.$font-family-accent, sans-serif;
-    letter-spacing: 0.06em;
-    padding: 4px 10px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid v.$border-secondary;
-    border-radius: 4px;
-    cursor: pointer;
-    color: v.$border-secondary;
-    width: 100%; // fill grid cell so all are the same width
-    min-width: 0; // allow shrink inside grid cell
-    box-sizing: border-box; // include padding in width to avoid overflow
-    display: flex; // center text
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    transition: all 0.2s ease;
-    &:hover {
-      background: rgba(255, 255, 255, 0.15);
-    }
-    &.active,
-    &.isActive,
-    :global(.active) & {
-      // fallback, in case a nested span gets the class
-      border-color: v.$primary-color;
-      background-color: v.$primary-color-opaque;
-      color: v.$primary-color;
-      box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.4);
-    }
-  }
-}
-
-.posButtons {
-  display: grid;
-  gap: v.$space-sm;
-  width: 100%;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  justify-self: end;
-  button {
-    font-size: v.$font-size-xs;
-    font-family: v.$font-family-accent, sans-serif;
-    letter-spacing: 0.06em;
-    padding: 4px 10px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid v.$border-secondary;
-    border-radius: 4px;
-    cursor: pointer;
-    color: v.$border-secondary;
-    width: 100%; // fill grid cell so all are the same width
-    min-width: 0; // allow shrink inside grid cell
-    box-sizing: border-box; // include padding in width to avoid overflow
-    display: flex; // center text
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    transition: all 0.2s ease;
-    &:hover {
-      background: rgba(255, 255, 255, 0.12);
-    }
-    &.active,
-    &.isActive,
-    :global(.active) & {
-      border-color: v.$primary-color;
-      background-color: v.$primary-color-opaque;
-      color: v.$primary-color;
-      box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.4);
-    }
-  }
-}
-
-.tablesWrapper {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: v.$space-lg;
-  width: 100%;
-  max-width: 100%;
   min-width: 0;
-  box-sizing: border-box;
-  // Ensure grid children can shrink and not force overflow
-  > * {
-    min-width: 0;
-  }
-  @media (max-width: #{v.$breakpoint-tablet}) {
-    grid-template-columns: minmax(0, 1fr);
-    gap: v.$space-lg;
-  }
-}
-
-.desktopTables {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: v.$space-lg;
-  padding: v.$space-lg;
-  border: 1px solid rgba(v.$border-secondary, 0.7);
-  border-radius: v.$radius-panel;
-  background: rgba(v.$background-medium, 0.72);
-  box-shadow:
-    0 14px 32px rgba(0, 0, 0, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
-}
-
-.mobileTabs {
-  display: none;
-}
-
-.mobileTrends {
-  display: none;
-}
-
-.statusPanel {
-  margin-top: v.$space-sm;
-}
-
-.summaryIntro {
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-xs;
-  max-width: 72ch;
-  margin-top: calc(-1 * v.$space-sm);
-}
-
-.summaryEyebrow {
-  margin: 0;
-  color: v.$primary-color;
-  font-family: v.$font-family-accent;
-  font-size: v.$font-size-xs;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-.summaryBody {
-  margin: 0;
-  color: v.$text-secondary;
-  font-size: v.$font-size-sm;
-  line-height: 1.5;
-}
-
-.summaryGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: v.$space-md;
-}
-
-.summaryCard {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-xs;
-  min-width: 0;
-  padding: v.$space-md v.$space-md v.$space-md calc(v.$space-md + 12px);
-  border: 1px solid rgba(v.$border-secondary, 0.65);
-  border-radius: v.$radius-card;
-  background: rgba(v.$background-medium, 0.9);
-  box-shadow:
-    0 10px 24px rgba(0, 0, 0, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
-
-  &::before {
-    content: "";
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 6px;
-    border-radius: v.$radius-card 0 0 v.$radius-card;
-    background: v.$primary-color;
-  }
-}
-
-.riseSummaryCard {
-  border-color: rgba(v.$success-color, 0.55);
-  background: rgba(v.$success-color, 0.08);
-
-  &::before {
-    background: v.$success-color;
-  }
-}
-
-.fallSummaryCard {
-  border-color: rgba(v.$danger-color, 0.55);
-  background: rgba(v.$danger-color, 0.08);
-
-  &::before {
-    background: v.$danger-color;
-  }
-}
-
-.summaryLabel {
-  color: v.$text-secondary;
-  font-size: v.$font-size-xxs;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-.summaryValue {
-  color: v.$text-primary;
-  font-family: v.$font-family-primary;
-  font-size: v.$font-size-md;
-  line-height: 1.1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.summaryCardBody {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: v.$space-md;
-}
-
-.summaryCopyBlock {
-  display: grid;
-  gap: 0.25rem;
-  min-width: 0;
-  flex: 1 1 auto;
-}
-
-.summaryMeta {
-  color: v.$text-secondary;
-  font-size: v.$font-size-xs;
-  line-height: 1.35;
-}
-
-.summaryMetaStack {
-  display: grid;
-  gap: 0.15rem;
-}
-
-.summaryStatRow {
-  display: grid;
-  gap: v.$space-xs;
-  margin-top: 0;
-  flex: 0 0 auto;
-  justify-items: end;
-}
-
-.summaryStat {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  min-width: 88px;
-  padding: 0.25rem 0.8rem;
-  border-radius: 10px;
-  border: 1px solid rgba(v.$border-secondary, 0.8);
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: v.$text-primary;
-  background: rgba(v.$background-dark, 0.35);
-  font-family: v.$font-family-accent, sans-serif;
-  font-weight: 600;
-}
-
-.riseStat {
-  border-color: rgba(v.$success-color, 0.55);
-  color: v.$success-color;
-}
-
-.fallStat {
-  border-color: rgba(v.$danger-color, 0.55);
-  color: v.$danger-color;
-}
-
-.panel {
-  // Align with broader site panel styling (reuse elevation & glass aesthetic)
-  @include v.element-wrapper;
-  position: relative;
+  max-width: 100%;
   padding: v.$space-md v.$space-lg;
-  border: 2px solid rgba(v.$border-secondary, 0.6);
-  box-shadow: v.$desktop-panel-shadow;
-  background: linear-gradient(
-    140deg,
-    rgba(v.$background-medium, 0.88),
-    rgba(v.$background-light, 0.78)
-  );
-  border-radius: v.$border-radius-lg;
-  overflow: hidden; // default desktop behavior
-  width: 100%;
-  min-width: 0; // prevent intrinsic min-content overflow
   box-sizing: border-box;
-}
-
-.desktopTables .panel {
-  padding: v.$space-md;
-  border-width: 1px;
-  border-style: solid;
-  border-radius: v.$radius-md;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-}
-
-// Accent stripe (subtle) instead of full neon border; neon kept for per-cell boxes
-.risersPanel::before,
-.fallersPanel::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-left: 12px solid v.$success-color;
-  pointer-events: none;
-  border-radius: v.$border-radius-md;
-  mix-blend-mode: screen;
-  opacity: 0.9;
-}
-.fallersPanel::before {
-  border-left-color: v.$danger-color;
-}
-
-.risersPanel {
-  border-color: rgba(v.$success-color, 0.4);
-  background: linear-gradient(
-    180deg,
-    rgba(v.$success-color, 0.09) 0%,
-    rgba(v.$background-medium, 0.18) 100%
-  );
-}
-.fallersPanel {
-  border-color: rgba(v.$danger-color, 0.4);
-  background: linear-gradient(
-    180deg,
-    rgba(v.$danger-color, 0.1) 0%,
-    rgba(v.$background-medium, 0.18) 100%
-  );
-}
-
-.tableTitle {
-  font-family: v.$font-family-primary;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: v.$font-size-sm;
-  margin: 0 0 v.$space-sm;
-  display: flex;
-  align-items: center;
-  gap: v.$space-sm;
-  color: v.$text-primary;
-}
-
-.tableTabs {
-  display: inline-flex;
-  gap: v.$space-xs;
-  width: calc(100% + (v.$space-lg * 2));
-  margin: calc(-1 * v.$space-md) calc(-1 * v.$space-lg) v.$space-sm;
-  margin-bottom: v.$space-sm;
-  align-items: center;
-}
-
-.tabButton {
-  font-size: v.$font-size-xs;
-  letter-spacing: 0.06em;
-  padding: 6px 10px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid v.$border-secondary;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.12);
-  }
-
-  &.active,
-  &.isActive,
-  :global(.active) & {
-    border-color: v.$primary-color;
-    background-color: v.$primary-color-opaque;
-    color: v.$primary-color;
-    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.35);
-  }
-}
-
-.riseTab {
-}
-
-.fallTab {
-}
-
-.dataTable {
-  width: 100%;
-  max-width: 100%;
-  border-collapse: collapse;
-  font-size: v.$font-size-xs;
-  font-family: v.$font-family-primary;
-  font-variant-numeric: tabular-nums;
-  --row-h: 52px;
-  thead th {
-    position: sticky;
-    top: 0;
-    background: rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(6px);
-    text-align: left;
-    padding: 6px 8px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-  }
-  tbody td,
-  tbody th {
-    padding: 4px 8px;
-    border-bottom: 1px solid v.$border-secondary;
-    vertical-align: middle;
-  }
-  tbody tr:hover {
-    background: rgba(255, 255, 255, 0.05);
-  }
-}
-
-.rankCell {
-  width: 32px;
-  text-align: right;
-  font-family: v.$font-family-numbers;
-}
-.playerCell {
-  display: flex;
-  align-items: center;
-  gap: v.$space-sm;
-  line-height: 1.1;
-  min-height: var(--row-h);
-  min-width: 0; // allow inner content to shrink
-}
-.rowBox {
-  display: flex;
-  align-items: center;
-  gap: v.$space-sm;
-  min-height: var(--row-h);
-  flex: 1;
-  min-width: 0;
-}
-.headshot {
-  width: calc(var(--row-h) - 10px);
-  height: calc(var(--row-h) - 10px);
-  border-radius: 50%;
-  object-fit: cover;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
-}
-.playerName {
-  font-weight: 600;
-  color: v.$text-primary;
-}
-
-.playerText {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-.playerTextWrap {
-  display: flex;
-  align-items: center;
-  min-height: var(--row-h);
-  flex: 1;
-  min-width: 0;
-}
-.playerMeta {
-  color: v.$text-secondary;
-  font-size: 0.72rem;
-  margin-top: 2px;
-}
-.teamFullName {
-  display: inline;
-}
-.teamAbbrev {
-  display: none;
-}
-.playerName {
-  display: block;
-  max-width: 100%;
-  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.sparkCell {
-  width: 140px;
-}
-.sparkSvg {
-  width: 100%;
-  height: calc(var(--row-h) - 10px);
-  display: block;
-}
-.sparkBaseline {
-  stroke: v.$border-secondary;
-  stroke-width: 1;
-  stroke-dasharray: 2 2;
-  opacity: 0.5;
-}
-.sparkPath {
-  fill: none;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.6));
-}
-.sparkArea {
-  fill-opacity: 0.18;
-}
-.sparkPath.rise {
-  stroke: v.$success-color;
-}
-.sparkArea.rise {
-  fill: v.$success-color;
-}
-// use danger instead of warning
-.sparkPath.fall {
-  stroke: v.$danger-color;
-}
-.sparkArea.fall {
-  fill: v.$danger-color;
-}
-
-.deltaCell {
-  text-align: right;
-  font-family: v.$font-family-numbers;
-  font-weight: 600;
-}
-.deltaBox {
-  position: relative;
-}
-.deltaSparkBackdrop {
-  position: absolute;
-  inset: 2px;
-  z-index: 0;
-  opacity: 0.35;
-}
-.deltaContent {
-  position: relative;
-  z-index: 1;
-}
-.deltaPositive {
-  color: v.$success-color;
-}
-.deltaNegative {
-  color: v.$danger-color;
-}
-
-.ownCellHeader {
-  width: 72px;
-  text-align: center;
-}
-.ownCell {
-  width: 72px;
-  text-align: center;
-}
-
-// Row-level subtle neon effect wrappers for sparkline + delta
-.neonBox {
-  border: 1px solid v.$border-secondary;
-  border-radius: 6px;
-  padding: 2px 4px;
-  background: rgba(255, 255, 255, 0.03);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--row-h);
-  white-space: nowrap;
-  transition:
-    box-shadow 0.25s ease,
-    border-color 0.25s ease,
-    background-color 0.25s ease;
-}
-.neonBox.rise {
-  border-color: v.$success-color;
-  box-shadow: 0 0 6px rgba(v.$success-color, 0.35);
-  background-color: rgba(v.$success-color, 0.08);
-}
-.neonBox.fall {
-  border-color: v.$danger-color;
-  box-shadow: 0 0 6px rgba(v.$danger-color, 0.35);
-  background-color: rgba(v.$danger-color, 0.1);
-}
-
-tbody tr:hover .neonBox.rise {
-  box-shadow: 0 0 10px rgba(v.$success-color, 0.55);
-}
-tbody tr:hover .neonBox.fall {
-  box-shadow: 0 0 10px rgba(v.$danger-color, 0.55);
-}
-
-// Optional row classes (future hook for more styling)
-
-.loading,
-.errorMsg {
-  text-align: center;
-  padding: v.$space-md 0;
-  font-style: italic;
-}
-.errorMsg {
-  color: v.$danger-color;
-}
-
-.footNote {
-  font-size: v.$font-size-xxs;
-  color: v.$text-secondary;
-  margin-top: v.$space-sm;
-}
-
-.pager {
-  margin-top: v.$space-sm;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: v.$space-md;
-  flex-wrap: wrap;
-}
-.pagerInfo {
-  color: v.$text-secondary;
-  font-size: v.$font-size-xxs;
-  display: flex;
-  align-items: center;
-  gap: v.$space-sm;
-}
-.separator {
-  opacity: 0.6;
-}
-.pagerButtons {
-  display: flex;
-  gap: v.$space-sm;
-  button {
-    font-size: v.$font-size-xs;
-    letter-spacing: 0.06em;
-    padding: 6px 12px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid v.$border-secondary;
-    border-radius: 4px;
-    cursor: pointer;
-    color: v.$text-primary;
-    transition: all 0.2s ease;
-    &:hover {
-      background: rgba(255, 255, 255, 0.15);
-    }
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  }
-}
-
-@media (max-width: #{v.$breakpoint-tablet}) {
-  .sparkCell {
-    width: 100px;
-  }
-  .sparkSvg {
-    height: 32px;
-  }
-}
-
-// Mobile optimizations
-@media (max-width: #{v.$breakpoint-mobile-lg}) {
-  .desktopTables {
-    display: none;
-  }
-
-  .mobileTabs {
-    display: grid;
-  }
-
-  // Only swap to abbreviation on mobile when a row actually has an abbrev
-  .playerMeta.hasAbbrev {
-    .teamFullName {
-      display: none;
-    }
-    .teamAbbrev {
-      display: inline;
-    }
-  }
-  .panel {
-    padding: v.$mobile-space-md;
-    // Prevent horizontal scroll; we trim columns instead
-    overflow-x: hidden;
-    outline: none;
-    box-shadow: none;
-  }
-  .risersPanel::before,
-  .fallersPanel::before {
-    border-left-width: 8px;
-  }
-  .headerControls {
-    width: 100%;
-    // Stack controls vertically on small screens to prevent overflow
-    grid-template-columns: 1fr;
-    align-items: stretch;
-    justify-content: flex-start;
-    gap: v.$mobile-space-sm;
-  }
-  // Make button groups take full width and equal column widths
-  .timeframeButtons,
-  .posButtons {
-    width: 100%;
-    display: grid;
-    gap: v.$mobile-space-sm;
-    justify-self: stretch;
-  }
-  .timeframeButtons {
-    // four windows: 1D, 3D, 5D, 10D – single row
-    grid-template-columns: repeat(4, 1fr);
-  }
-  .posButtons {
-    // 7 options (All + 6 positions) – single row, equal widths
-    grid-template-columns: repeat(7, 1fr);
-  }
-  .timeframeButtons button,
-  .posButtons button {
-    padding: 6px 10px;
-    width: 100%;
-  }
-  .dataTable {
-    font-size: v.$mobile-font-size-xs;
-    --row-h: 40px;
-    table-layout: fixed; // prevent content from forcing overflow
-    border-spacing: 0;
-  }
-  .dataTable thead th {
-    padding: 6px;
-  }
-  .dataTable tbody td,
-  .dataTable tbody th {
-    padding: 4px 6px;
-    height: 50px;
-    border-bottom: none;
-  }
-  .rankCell {
-    width: 20px;
-    font-size: 0.7em;
-  }
-  .ownCell,
-  .ownCellHeader {
-    width: 48px;
-  }
-  .deltaCell {
-    width: 54px;
-  }
-  // Slightly smaller numbers to save space
-  .ownCell .neonBox,
-  .deltaCell .neonBox {
-    font-size: 0.9em;
-  }
-  // Hide sparkline on small phones to prioritize key columns
-  .sparkCell {
-    display: none;
-  }
-  .playerMeta {
-    font-size: 0.68rem;
-    display: -webkit-box;
-    line-clamp: 1;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .headshot {
-    width: calc(var(--row-h) - 10px);
-    height: calc(var(--row-h) - 10px);
-  }
-  .rowBox {
-    gap: v.$mobile-space-xs;
-  }
-  .neonBox {
-    padding: 2px 3px;
-  }
-  .summaryGrid {
-    grid-template-columns: 1fr;
-    gap: v.$mobile-space-sm;
-  }
-
-  .summaryCardBody {
-    grid-template-columns: 1fr;
-    display: grid;
-  }
-
-  .summaryStatRow {
-    justify-items: start;
-  }
-  .summaryIntro {
-    margin-top: 0;
-  }
-  .summaryBody {
-    font-size: v.$mobile-font-size-xs;
-  }
-  .summaryCard {
-    padding: v.$mobile-space-sm v.$mobile-space-md;
-  }
-  .summaryValue {
-    font-size: v.$font-size-sm;
-  }
-  .pager {
-    margin-top: v.$mobile-space-md;
-    padding-top: v.$mobile-space-sm;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: v.$space-md;
-    flex-wrap: wrap;
-  }
-  .footNote {
-    font-size: v.$mobile-font-size-xxs;
-    margin-top: v.$mobile-space-sm;
-    margin-bottom: 0;
-  }
-}
-
-// Extra-narrow phones: hide sparkline to prioritize name/own/delta
-@media (max-width: #{v.$breakpoint-mobile-sm}) {
-  .dataTable {
-    --row-h: 36px;
-  }
-  .sparkCell {
-    display: none;
-  }
-  // On the narrowest screens, hide secondary meta entirely to avoid overflow
-  .playerMeta {
-    display: none;
-  }
-  .risersPanel::before,
-  .fallersPanel::before {
-    border-left-width: 6px;
-  }
-}
-
-@media (max-width: #{v.$breakpoint-mobile-lg}) {
-  .transactionTrends {
-    gap: v.$space-sm;
-    padding: v.$space-sm;
-    border-color: rgba(v.$color-white, 0.1);
-    background: v.$surface-0;
-    box-shadow: none;
-  }
-
-  .headerRow {
-    gap: v.$space-sm;
-    border-bottom-color: rgba(v.$color-white, 0.08);
-  }
-
-  .subtitle {
-    color: v.$color-neutral-400;
-  }
-
-  .timeframeButtons {
-    border-color: rgba(v.$color-white, 0.1);
-    background: transparent;
-  }
-
-  .mobileTabs .panel {
-    padding: v.$space-sm v.$space-sm v.$space-sm
-      calc(v.$space-sm + 3px);
-    border: 0;
-    border-left: 3px solid v.$success-color;
-    border-radius: 0;
-    background: transparent;
-  }
-
-  .mobileTabs .fallersPanel {
-    border-left-color: v.$danger-color;
-  }
-
-  .mobileTabs .dataTable {
-    --row-h: 48px;
-
-    tbody td,
-    tbody th {
-      height: 48px;
-      border-bottom: 1px solid rgba(v.$color-white, 0.07);
-    }
-  }
-
-  .mobileTabs .neonBox,
-  .mobileTabs .neonBox.rise,
-  .mobileTabs .neonBox.fall {
-    border: 0;
-    background: transparent;
-  }
-
-  .mobileTabs .ownCell .rise,
-  .mobileTabs .deltaCell .rise {
-    color: v.$success-color;
-  }
-
-  .mobileTabs .ownCell .fall,
-  .mobileTabs .deltaCell .fall {
-    color: v.$danger-color;
-  }
-
-  .tableTabs {
-    margin-bottom: v.$space-sm;
-  }
-
-  .tabButton {
-    border-top: 0;
-    border-right: 0;
-    border-left: 0;
-    background: transparent;
-    box-shadow: none;
-  }
-}
-.tableTabs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  width: calc(100% + (v.$mobile-space-md * 2) - 8px);
-  margin: calc(-1 * v.$mobile-space-md) calc(-1 * v.$mobile-space-md)
-    v.$space-sm calc(-1 * v.$mobile-space-md + 8px);
-  gap: 0;
-  align-items: end;
-}
-
-.tabButton {
-  letter-spacing: 0.08em;
-  padding: 8px 12px 6px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 0;
-  border-bottom: none;
-  text-transform: uppercase;
-  font-family: v.$font-family-accent, sans-serif;
-  position: relative;
-  width: 100%;
-  min-height: 38px;
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.12);
-
-  &:first-child {
-    border-top-left-radius: 0;
-  }
-  &:last-child {
-    border-top-right-radius: 12px;
-  }
-
-  &.active,
-  &.isActive,
-  :global(.active) & {
-    background-color: rgba(255, 255, 255, 0.16);
-    box-shadow:
-      inset 0 -2px 0 rgba(0, 0, 0, 0.2),
-      0 8px 14px rgba(0, 0, 0, 0.25);
-    transform: translateY(1px);
-    z-index: 1;
-  }
-}
-
-.riseTab {
-  border-color: v.$success-color;
-  color: v.$success-color;
-  background: rgba(v.$success-color, 0.14);
-
-  &.active,
-  &.isActive,
-  :global(.active) & {
-    background: rgba(v.$success-color, 0.28);
-    color: v.$success-color;
-    box-shadow:
-      inset 0 -2px 0 rgba(v.$success-color, 0.6),
-      0 8px 14px rgba(0, 0, 0, 0.2);
-  }
-}
-
-.fallTab {
-  border-color: v.$danger-color;
-  color: v.$danger-color;
-  background: rgba(v.$danger-color, 0.14);
-
-  &.active,
-  &.isActive,
-  :global(.active) & {
-    background: rgba(v.$danger-color, 0.28);
-    color: v.$danger-color;
-    box-shadow:
-      inset 0 -2px 0 rgba(v.$danger-color, 0.6),
-      0 8px 14px rgba(0, 0, 0, 0.2);
-  }
-}
-
-// Homepage dashboard treatment: compact, border-led, and data dense.
-.transactionTrends {
-  gap: v.$space-xs;
-  padding: v.$space-sm;
-  border: v.$border-subtle;
+  border: 1px solid rgba(v.$primary-color, 0.28);
   border-radius: v.$radius-panel;
   background: v.$background-medium;
   box-shadow: v.$shadow-panel;
 }
 
 .headerRow {
-  justify-content: space-between;
-  gap: v.$space-xs;
-  padding-bottom: v.$space-xs;
-  border-bottom: 1px solid v.$border-soft;
-}
-
-.trendControls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
-  gap: v.$space-sm;
+  justify-content: space-between;
+  gap: 12px v.$space-lg;
   min-width: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid v.$border-soft;
 }
 
 .titleBlock {
   display: grid;
+  flex: 0 1 auto;
   gap: v.$space-xs;
+  min-width: 230px;
 }
 
 .titleLine {
   display: flex;
   align-items: center;
   gap: v.$space-md;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  color: v.$color-white;
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+  font-size: clamp(1.18rem, 1.65vw, 1.48rem);
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.07em;
+  line-height: 1.1;
+  text-transform: uppercase;
+
+  span {
+    color: v.$primary-color;
+  }
 }
 
 .viewAllLink {
   color: v.$primary-color;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: v.$font-weight-bold;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
+  text-decoration: none;
   text-transform: uppercase;
   white-space: nowrap;
 
-  &:hover,
-  &:focus-visible {
+  &:hover {
     color: v.$color-white;
   }
 
@@ -1071,384 +74,606 @@ tbody tr:hover .neonBox.fall {
   }
 }
 
-.title {
-  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
-  font-size: 1rem;
-  font-weight: v.$font-weight-bold;
-  line-height: 1.1;
-}
-
 .subtitle {
   margin: 0;
   color: v.$text-secondary;
-  font-size: 0.76rem;
+  font-size: 0.82rem;
+  line-height: 1.25;
 }
 
-.headerControls {
+.staleNotice {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 4px;
+  min-height: 20px;
+  padding: 2px 7px;
+  border: 1px solid rgba(v.$warning-color, 0.24);
+  border-radius: v.$radius-xs;
+  background: rgba(v.$warning-color, 0.06);
+  color: v.$text-secondary;
+  font-size: 0.68rem;
+  line-height: 1.2;
+
+  span {
+    color: v.$warning-color;
+    font-size: 0.45rem;
+  }
+}
+
+.trendControls {
   display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: v.$space-xs;
-  width: auto;
-  margin-left: 0;
+  gap: v.$space-sm v.$space-md;
+  min-width: 0;
+  margin-left: auto;
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
 }
 
 .filterLabel {
   color: v.$text-secondary;
-  font-size: 0.65rem;
+  font-size: 0.66rem;
   letter-spacing: 0.1em;
+  line-height: 1;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
+.metricButtons,
+.posButtons,
 .timeframeButtons {
   display: flex;
-  width: auto;
-  padding: 2px;
-  gap: 2px;
+  gap: 3px;
+  min-width: 0;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: v.$control-height-sm;
+    margin: 0;
+    padding: 0 7px;
+    border: 1px solid rgba(v.$border-secondary, 0.85);
+    border-radius: v.$radius-xs;
+    background: rgba(v.$color-white, 0.025);
+    color: v.$text-secondary;
+    font-family: v.$font-family-primary, sans-serif;
+    font-size: 0.72rem;
+    font-weight: v.$font-weight-medium;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+      border-color v.$transition-duration v.$transition-easing,
+      background-color v.$transition-duration v.$transition-easing,
+      color v.$transition-duration v.$transition-easing;
+
+    &:hover {
+      border-color: rgba(v.$primary-color, 0.62);
+      color: v.$color-white;
+    }
+
+    &:focus-visible {
+      outline: 2px solid v.$primary-color;
+      outline-offset: 2px;
+    }
+
+    &.isActive {
+      border-color: v.$primary-color;
+      background: rgba(v.$primary-color, 0.18);
+      color: v.$color-white;
+    }
+  }
+}
+
+.metricButtons button {
+  min-width: 70px;
+}
+
+.posButtons button:first-child {
+  min-width: 40px;
+}
+
+.timeframeButtons button {
+  min-width: 42px;
+}
+
+.statusPanel {
+  min-height: 0;
+  margin: 0;
+  padding: 9px 12px;
   border: 1px solid v.$border-soft;
   border-radius: v.$radius-control;
-  background: v.$background-dark;
-
-  button {
-    min-width: 38px;
-    min-height: 28px;
-    padding: 0 v.$space-xs;
-    border: 2px solid transparent;
-    border-radius: v.$radius-control;
-    background: transparent;
-    color: v.$text-secondary;
-
-    &.active,
-    &.isActive,
-    :global(.active) & {
-      border-color: v.$primary-color;
-      background: v.$primary-color-opaque;
-      color: v.$color-white;
-      box-shadow: none;
-    }
-  }
+  background: rgba(v.$background-dark, 0.72);
+  font-size: 0.78rem;
+  line-height: 1.2;
 }
 
-.posButtons {
-  display: flex;
-  flex: 0 1 auto;
-  width: auto;
-  gap: 2px;
-
-  button {
-    min-width: 25px;
-    min-height: 24px;
-    padding: 0 v.$space-xs;
-    border-radius: v.$radius-control;
-    color: v.$text-secondary;
-
-    &.active,
-    &.isActive,
-    :global(.active) & {
-      box-shadow: none;
-      color: v.$color-white;
-    }
-  }
-}
-
-.summaryIntro {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: baseline;
-  gap: v.$space-md;
-  max-width: none;
-  margin: 0;
-}
-
-.summaryBody {
-  font-size: v.$font-size-xs;
-}
-
-.summaryGrid {
-  gap: v.$space-sm;
-}
-
-.summaryCard {
-  padding: v.$space-sm v.$space-md v.$space-sm calc(v.$space-md + 8px);
-  border-radius: v.$radius-card;
-  background: v.$background-dark;
-  box-shadow: none;
-
-  &::before {
-    width: 3px;
-    border-radius: v.$radius-card 0 0 v.$radius-card;
-  }
-}
-
-.summaryStat {
-  min-width: 72px;
-  min-height: v.$control-height-sm;
-  border-radius: v.$radius-control;
-}
-
-.desktopTables {
-  gap: v.$space-sm;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.desktopTables .panel,
-.panel {
-  padding: v.$space-sm;
-  border-width: 1px;
-  border-radius: v.$radius-card;
-  background: v.$background-dark;
-  box-shadow: none;
-}
-
-.risersPanel::before,
-.fallersPanel::before {
+.mobileDirectionNav {
   display: none;
 }
 
+.tablesWrapper {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.panel {
+  min-width: 0;
+  padding: 10px 12px 9px;
+  overflow: hidden;
+  border: 1px solid v.$border-soft;
+  border-radius: 8px;
+  background: rgba(v.$background-dark, 0.82);
+}
+
 .risersPanel {
-  border: 1px solid rgba(v.$success-color, 0.42);
-  border-left: 4px solid v.$success-color;
-  background: v.$background-dark;
+  border-color: rgba(v.$success-color, 0.25);
 }
 
 .fallersPanel {
-  border: 1px solid rgba(v.$danger-color, 0.42);
-  border-left: 4px solid v.$danger-color;
-  background: v.$background-dark;
+  border-color: rgba(v.$danger-color, 0.25);
 }
 
 .tableTitle {
-  min-height: 20px;
-  margin: 0 0 2px;
-  padding-bottom: 2px;
+  min-height: 22px;
+  margin: 0;
+  padding: 0 3px 5px;
+  overflow: hidden;
   border-bottom: 1px solid v.$border-soft;
-  font-family: v.$font-family-accent, sans-serif;
-  font-size: 0.76rem;
-  letter-spacing: 0.08em;
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: 0.82rem;
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.07em;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: -1px;
+  }
+}
+
+.risersPanel .tableTitle {
+  color: v.$success-color;
+}
+
+.fallersPanel .tableTitle {
+  color: v.$danger-color;
 }
 
 .dataTable {
-  --row-h: 28px;
-  font-size: 0.7rem;
+  width: 100%;
+  min-width: 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: v.$text-primary;
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+
+  thead tr {
+    height: 22px;
+  }
 
   thead th {
-    background: v.$background-dark;
-    backdrop-filter: none;
+    padding: 3px 4px;
+    overflow: hidden;
     color: v.$text-secondary;
-    padding: 2px 4px;
-    font-size: 0.6rem;
+    font-size: 0.625rem;
+    font-weight: v.$font-weight-semibold;
+    letter-spacing: 0.07em;
+    line-height: 1;
+    text-align: left;
+    text-overflow: ellipsis;
     text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    height: 30px;
+    transition: background-color v.$transition-duration v.$transition-easing;
+
+    &:hover {
+      background: rgba(v.$color-white, 0.035);
+    }
   }
 
   tbody td,
   tbody th {
-    border-bottom-color: v.$border-soft;
+    min-width: 0;
     padding: 2px 4px;
+    overflow: hidden;
+    border-bottom: 1px solid rgba(v.$border-secondary, 0.42);
+    vertical-align: middle;
+  }
+
+  tbody tr:last-child td,
+  tbody tr:last-child th {
+    border-bottom: 0;
   }
 }
 
 .rankCell {
-  width: 24px;
+  width: 22px;
+  color: v.$color-neutral-200;
+  font-family: v.$font-family-numbers;
+  font-size: 0.68rem;
+  font-weight: v.$font-weight-semibold;
+  text-align: center !important;
 }
 
-.ownCell,
-.ownCellHeader {
-  width: 58px;
+.playerHeader {
+  width: auto;
 }
 
-.sparkCell {
-  width: 88px;
+.playerCell {
+  min-width: 0;
 }
 
-.playerMeta {
-  font-size: 0.62rem;
+.playerIdentity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
 
-.statusPanel {
+.headshot {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 27px;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.headshotFallback {
+  align-self: center;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(v.$color-white, 0.1);
+}
+
+.playerCopy {
   display: grid;
-  place-items: center;
-  min-height: 64px;
-  margin: 0;
-  padding: v.$space-sm;
-  border: 1px dashed v.$border-soft;
-  border-radius: v.$radius-control;
-  background: v.$background-dark;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .playerName {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: v.$primary-color;
+  font-size: 0.78rem;
+  font-weight: v.$font-weight-medium;
+  line-height: 1.15;
   text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
-  &:hover,
-  &:focus-visible {
-    color: v.$primary-color;
+  &:hover {
+    color: v.$color-white;
   }
 
   &:focus-visible {
-    outline: 2px solid v.$primary-color;
-    outline-offset: 2px;
+    outline: 1px solid v.$primary-color;
+    outline-offset: 1px;
   }
 }
 
-.neonBox,
-.neonBox.rise,
-.neonBox.fall {
-  box-shadow: none;
+.mobilePlayerMeta {
+  display: none;
 }
 
-.pager {
-  margin: 0;
-  min-height: 22px;
-  padding-top: 2px;
+.metadataCell {
+  width: 104px;
+  overflow: hidden;
+  color: v.$text-secondary;
+  font-size: 0.68rem;
+  letter-spacing: 0.025em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ownCell {
+  width: 54px;
+  color: v.$color-neutral-200;
+  font-family: v.$font-family-numbers;
+  font-size: 0.7rem;
+  font-weight: v.$font-weight-semibold;
+  text-align: right !important;
+  white-space: nowrap;
+}
+
+.sparkCell {
+  width: 90px;
+  text-align: center !important;
+}
+
+.sparkline {
+  display: block;
+  width: 100%;
+  height: 26px;
+  overflow: hidden;
+}
+
+.sparkSvg {
+  display: block;
+  width: 100%;
+  height: 26px;
+  overflow: visible;
+}
+
+.sparkPath {
+  fill: none;
+  stroke-width: 1.55;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sparkArea {
+  fill-opacity: 0.1;
+}
+
+.sparkPath.rise {
+  stroke: v.$success-color;
+}
+
+.sparkArea.rise {
+  fill: v.$success-color;
+}
+
+.sparkPath.fall {
+  stroke: v.$danger-color;
+}
+
+.sparkArea.fall {
+  fill: v.$danger-color;
+}
+
+.emptySparkline {
+  display: grid;
+  height: 100%;
+  place-items: center;
+  color: v.$text-secondary;
+}
+
+.deltaCell {
+  width: 70px;
+  font-family: v.$font-family-numbers;
+  font-size: 0.7rem;
+  font-weight: v.$font-weight-bold;
+  text-align: right !important;
+  white-space: nowrap;
+}
+
+.deltaValue {
+  white-space: nowrap;
+}
+
+.deltaPositive {
+  color: v.$success-color;
+}
+
+.deltaNegative {
+  color: v.$danger-color;
+}
+
+.footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: v.$space-sm v.$space-md;
+  min-width: 0;
+  padding-top: v.$space-sm;
   border-top: 1px solid v.$border-soft;
+}
+
+.footerCopy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pagerInfo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: v.$text-secondary;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.separator {
+  opacity: 0.65;
 }
 
 .footNote {
   margin: 0;
-  font-size: 0.625rem;
-  line-height: 1.2;
+  color: v.$text-secondary;
+  font-size: 0.66rem;
+  line-height: 1.25;
 }
 
-@media (max-width: #{v.$breakpoint-tablet}) {
+.pagerButtons {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-width: 72px;
+    height: v.$control-height-sm;
+    margin: 0;
+    padding: 0 9px;
+    border: 1px solid rgba(v.$primary-color, 0.46);
+    border-radius: v.$radius-xs;
+    background: rgba(v.$color-white, 0.025);
+    color: v.$text-primary;
+    font-family: v.$font-family-primary, sans-serif;
+    font-size: 0.72rem;
+    font-weight: v.$font-weight-semibold;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      border-color: v.$primary-color;
+      color: v.$color-white;
+    }
+
+    &:focus-visible {
+      outline: 2px solid v.$primary-color;
+      outline-offset: 2px;
+    }
+
+    &:disabled {
+      border-color: v.$border-soft;
+      color: v.$text-secondary;
+      cursor: not-allowed;
+      opacity: 0.42;
+    }
+  }
+}
+
+@media (max-width: 1120px) {
   .trendControls {
     width: 100%;
     justify-content: flex-start;
+    margin-left: 0;
   }
 
-  .headerControls {
-    align-items: flex-start;
-    flex-direction: column;
+  .metadataCell {
+    width: 90px;
   }
 
-  .posButtons {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+  .sparkCell {
+    width: 80px;
+  }
+
+  .deltaCell {
+    width: 65px;
   }
 }
 
-@media (max-width: #{v.$breakpoint-mobile-lg}) {
+@media (max-width: 900px) {
+  .tablesWrapper {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .metadataCell {
+    width: 120px;
+  }
+}
+
+@media (max-width: 640px) {
   .transactionTrends {
     gap: v.$space-sm;
     padding: v.$space-sm;
-    overflow: hidden;
-    border-color: rgba(v.$primary-color, 0.22);
-    background: v.$surface-0;
     box-shadow: none;
   }
 
   .headerRow {
-    align-items: flex-start;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: v.$space-sm;
-    padding-bottom: v.$space-sm;
-    border-bottom-color: rgba(v.$color-white, 0.1);
   }
 
   .titleBlock,
-  .titleLine {
+  .titleLine,
+  .trendControls {
     width: 100%;
+    min-width: 0;
+  }
+
+  .titleBlock {
+    min-width: 0;
   }
 
   .titleLine {
     justify-content: space-between;
-    gap: v.$space-sm;
   }
 
   .title {
     font-size: 1rem;
-    letter-spacing: 0.06em;
-  }
-
-  .viewAllLink {
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    padding: 0 v.$space-xs;
   }
 
   .subtitle {
-    color: v.$color-neutral-400;
-    font-size: 0.76rem;
-    line-height: 1.35;
+    font-size: 0.75rem;
+  }
+
+  .viewAllLink {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    font-size: 0.68rem;
+  }
+
+  .staleNotice {
+    font-size: 0.64rem;
   }
 
   .trendControls {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    width: 100%;
-    gap: v.$space-sm;
+    gap: 7px;
   }
 
-  .headerControls {
+  .filterGroup {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
     width: 100%;
-    gap: v.$space-xs;
   }
 
   .filterLabel {
-    font-size: 0.68rem;
+    font-size: 0.62rem;
+  }
+
+  .metricButtons,
+  .posButtons,
+  .timeframeButtons {
+    display: grid;
+    width: 100%;
+
+    button {
+      width: 100%;
+      min-width: 0;
+      height: 36px;
+      padding: 0 2px;
+      font-size: 0.7rem;
+    }
+  }
+
+  .metricButtons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .posButtons {
-    gap: 3px;
-
-    button {
-      min-width: 0;
-      min-height: 44px;
-      padding: 0 2px;
-      border-color: rgba(v.$color-white, 0.18);
-      background: rgba(v.$color-white, 0.035);
-      color: v.$color-neutral-400;
-
-      &.isActive,
-      :global(.active) & {
-        border-color: v.$primary-color;
-        background: rgba(v.$primary-color, 0.15);
-        color: v.$color-white;
-      }
-    }
+    grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 
   .timeframeButtons {
-    width: 100%;
-    display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0;
-    padding: 0;
-    overflow: hidden;
-    border-color: rgba(v.$color-white, 0.18);
-    background: rgba(v.$color-white, 0.025);
-
-    button {
-      min-height: 42px;
-      border-width: 1px;
-      border-color: transparent;
-      border-radius: 0;
-
-      & + button {
-        border-left-color: rgba(v.$color-white, 0.12);
-      }
-
-      &.isActive,
-      :global(.active) & {
-        border-color: v.$primary-color;
-        background: rgba(v.$primary-color, 0.18);
-      }
-    }
-  }
-
-  .desktopTables,
-  .mobileTabs {
-    display: none;
-  }
-
-  .mobileTrends {
-    display: grid;
-    gap: v.$space-sm;
-    width: 100%;
-    min-width: 0;
   }
 
   .mobileDirectionNav {
@@ -1457,268 +682,201 @@ tbody tr:hover .neonBox.fall {
     gap: 4px;
 
     button {
-      min-width: 0;
-      min-height: 42px;
-      padding: 0 v.$space-sm;
-      border: 1px solid rgba(v.$color-white, 0.16);
+      height: 36px;
+      border: 1px solid v.$border-soft;
       border-radius: v.$radius-control;
       background: rgba(v.$color-white, 0.025);
-      color: v.$color-neutral-400;
-      font-family: v.$font-family-accent, sans-serif;
+      color: v.$text-secondary;
+      font-family: v.$font-family-primary, sans-serif;
       font-size: 0.72rem;
+      font-weight: v.$font-weight-semibold;
       letter-spacing: 0.08em;
       text-transform: uppercase;
+      cursor: pointer;
+
+      &:focus-visible {
+        outline: 2px solid v.$primary-color;
+        outline-offset: 2px;
+      }
 
       &.isActive {
         border-color: v.$primary-color;
         background: rgba(v.$primary-color, 0.14);
         color: v.$primary-color;
       }
-
-      &:focus-visible {
-        outline: 2px solid v.$primary-color;
-        outline-offset: 2px;
-      }
     }
   }
 
-  .mobileTrendPanel {
-    --trend-accent: #{v.$primary-color};
+  .panel {
+    display: none;
+  }
 
-    position: relative;
-    min-width: 0;
-    overflow: hidden;
-    border: 1px solid rgba(v.$color-white, 0.1);
-    border-radius: v.$radius-card;
-    background: rgba(v.$background-dark, 0.68);
+  .panel.isMobileActive {
+    display: block;
+  }
 
-    &::before {
-      content: "";
-      position: absolute;
-      z-index: 1;
-      inset: 0 0 auto;
-      height: 4px;
-      border-radius: v.$radius-card v.$radius-card 0 0;
-      background: var(--trend-accent);
-      pointer-events: none;
+  .metadataCell {
+    display: none;
+  }
+
+  .tableTitle {
+    min-height: 20px;
+    padding-bottom: 4px;
+    font-size: 0.78rem;
+  }
+
+  .dataTable {
+    font-size: 0.7rem;
+
+    thead tr {
+      height: 20px;
+    }
+
+    thead th {
+      font-size: 0.56rem;
+    }
+
+    tbody tr {
+      height: 34px;
+    }
+
+    thead th,
+    tbody td,
+    tbody th {
+      padding-right: 2px;
+      padding-left: 2px;
     }
   }
 
-  .mobileRisersPanel {
-    --trend-accent: #{v.$success-color};
+  .rankCell {
+    width: 18px;
+    font-size: 0.62rem;
   }
 
-  .mobileFallersPanel {
-    --trend-accent: #{v.$danger-color};
+  .headshot {
+    width: 19px;
+    height: 24px;
   }
 
-  .mobilePanelTitle {
-    margin: 0;
-    padding: 8px 10px 6px;
-    color: v.$color-neutral-200;
-    font-family: v.$font-family-primary, sans-serif;
+  .headshotFallback {
+    height: 19px;
+  }
+
+  .playerName {
     font-size: 0.72rem;
-    font-weight: v.$font-weight-semibold;
-    letter-spacing: 0.08em;
-    line-height: 1.2;
-    text-transform: uppercase;
-
-    &:focus-visible {
-      outline: 2px solid v.$primary-color;
-      outline-offset: -2px;
-    }
-  }
-
-  .mobilePlayerList {
-    margin: 0;
-    padding: 0 8px;
-    list-style: none;
-  }
-
-  .mobilePlayerRow {
-    display: grid;
-    grid-template-columns:
-      16px 34px minmax(0, 1fr) 42px minmax(56px, 72px)
-      54px;
-    align-items: center;
-    gap: 5px;
-    min-width: 0;
-    min-height: 52px;
-    border-top: 1px solid rgba(v.$color-white, 0.07);
-    font-variant-numeric: tabular-nums;
-
-    > * {
-      min-width: 0;
-    }
-  }
-
-  .mobileRank {
-    color: v.$color-neutral-200;
-    font-family: v.$font-family-numbers;
-    font-size: 0.72rem;
-    text-align: center;
-  }
-
-  .mobileHeadshot {
-    width: 34px;
-    height: 38px;
-    align-self: end;
-    object-fit: contain;
-    object-position: center bottom;
-  }
-
-  .mobileHeadshotFallback {
-    align-self: center;
-    height: 34px;
-    border-radius: 50%;
-    background: rgba(v.$color-white, 0.08);
-  }
-
-  .mobilePlayerIdentity {
-    display: grid;
-    gap: 2px;
-    overflow: hidden;
-  }
-
-  .mobilePlayerName {
-    overflow: hidden;
-    color: v.$color-neutral-200;
-    font-size: 0.72rem;
-    font-weight: v.$font-weight-medium;
-    line-height: 1.15;
-    text-decoration: none;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-
-    &:focus-visible {
-      outline: 2px solid v.$primary-color;
-      outline-offset: 1px;
-    }
   }
 
   .mobilePlayerMeta {
+    display: block;
+    min-width: 0;
     overflow: hidden;
     color: v.$text-secondary;
-    font-size: 0.6rem;
-    letter-spacing: 0.04em;
+    font-size: 0.56rem;
     line-height: 1.1;
     text-overflow: ellipsis;
     text-transform: uppercase;
     white-space: nowrap;
   }
 
-  .mobileOwnership {
-    display: grid;
-    justify-items: start;
-    gap: 1px;
-
-    strong {
-      color: v.$color-neutral-200;
-      font-family: v.$font-family-numbers;
-      font-size: 0.72rem;
-      font-weight: v.$font-weight-semibold;
-    }
-
-    small {
-      color: v.$text-secondary;
-      font-size: 0.54rem;
-      letter-spacing: 0.08em;
-      line-height: 1;
-      text-transform: uppercase;
-    }
+  .ownCell {
+    width: 45px;
   }
 
-  .mobileSparkline {
-    height: 34px;
+  .sparkCell {
+    width: 72px;
   }
 
-  .mobileSparkSvg {
-    display: block;
-    width: 100%;
-    height: 34px;
+  .deltaCell {
+    width: 58px;
   }
 
-  .mobileDelta {
-    font-family: v.$font-family-numbers;
-    font-size: 0.66rem;
-    font-weight: v.$font-weight-semibold;
-    text-align: right;
-    white-space: nowrap;
+  .ownCell,
+  .deltaCell {
+    font-size: 0.62rem;
   }
 
-  .mobileRiseRow .mobileDelta {
-    color: v.$success-color;
+  .footer {
+    flex-wrap: wrap;
+    align-items: center;
   }
 
-  .mobileFallRow .mobileDelta {
-    color: v.$danger-color;
+  .footerCopy {
+    flex: 1 1 210px;
   }
 
-  .sparkPath {
-    filter: none;
-  }
-
-  .sparkArea {
-    fill-opacity: 0.12;
-  }
-
-  .statusPanel {
-    min-height: 72px;
-    padding: v.$space-md v.$space-sm;
-    border: 1px solid rgba(v.$color-white, 0.1);
-    border-radius: v.$radius-card;
-    background: rgba(v.$background-dark, 0.58);
-    color: v.$color-neutral-400;
-    font-size: 0.78rem;
-  }
-
-  .pager {
-    display: none;
+  .pagerInfo {
+    font-size: 0.65rem;
   }
 
   .footNote {
-    color: v.$text-secondary;
-    font-size: 0.62rem;
-    line-height: 1.3;
+    font-size: 0.6rem;
+  }
+
+  .pagerButtons {
+    margin-left: auto;
+
+    button {
+      min-width: 66px;
+      height: 34px;
+    }
   }
 }
 
-@media (max-width: #{v.$breakpoint-mobile-sm}) {
+@media (max-width: 390px) {
   .transactionTrends {
     padding: 7px;
   }
 
-  .mobilePlayerList {
-    padding: 0 6px;
+  .panel {
+    padding-right: 5px;
+    padding-left: 5px;
   }
 
-  .mobilePlayerRow {
-    grid-template-columns:
-      14px 30px minmax(0, 1fr) 38px minmax(48px, 56px)
-      49px;
-    gap: 4px;
-    min-height: 50px;
+  .rankCell {
+    width: 16px;
   }
 
-  .mobileHeadshot {
-    width: 30px;
-    height: 34px;
+  .playerIdentity {
+    gap: 3px;
   }
 
-  .mobilePlayerName {
+  .headshot {
+    width: 17px;
+    height: 22px;
+  }
+
+  .headshotFallback {
+    height: 17px;
+  }
+
+  .ownCell {
+    width: 42px;
+  }
+
+  .sparkCell {
+    width: 61px;
+  }
+
+  .deltaCell {
+    width: 54px;
+  }
+
+  .playerName {
     font-size: 0.68rem;
   }
 
-  .mobilePlayerMeta {
-    font-size: 0.56rem;
+  .ownCell,
+  .deltaCell,
+  .rankCell {
+    font-size: 0.58rem;
   }
+}
 
-  .mobileOwnership strong,
-  .mobileRank {
-    font-size: 0.66rem;
-  }
-
-  .mobileDelta {
-    font-size: 0.61rem;
+@media (prefers-reduced-motion: reduce) {
+  .metricButtons button,
+  .posButtons button,
+  .timeframeButtons button,
+  .dataTable tbody tr {
+    transition: none;
   }
 }

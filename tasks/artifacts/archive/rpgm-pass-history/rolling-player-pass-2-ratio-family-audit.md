@@ -18,7 +18,7 @@ It covers every persisted ratio metric family in `rolling_player_game_metrics` a
 - window semantics
 - component completeness rules
 
-This artifact does not assign final status buckets yet. Status ledger work remains separate in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`.
+This artifact does not assign final status buckets yet. Status ledger work remains separate in `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`.
 
 ## Scope
 
@@ -82,7 +82,7 @@ Dedicated support-field groupings:
 Ratio metrics use the same WGO-spined row construction as the additive suite:
 
 - row spine:
-  - `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+  - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - `fetchWgoRowsForPlayer(...)`
   - `buildGameRecords(...)`
 - player-count additive companions:
@@ -98,7 +98,7 @@ Ratio metrics use the same WGO-spined row construction as the additive suite:
 
 Ratio metrics are the `aggregation: "ratio"` entries in `METRICS`:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
 
 Runtime flow:
 
@@ -119,7 +119,7 @@ Runtime flow:
 
 ### Canonical ratio window contract
 
-Ratio metrics use the `ratio_performance` family from `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingWindowContract.ts`.
+Ratio metrics use the `ratio_performance` family from `web/lib/supabase/Upserts/rollingWindowContract.ts`.
 
 Shared rules:
 
@@ -148,7 +148,7 @@ Important ratio consequence:
 
 ### Shared scale contract
 
-Scale guardrails from `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricScaleContract.ts`:
+Scale guardrails from `web/lib/supabase/Upserts/rollingMetricScaleContract.ts`:
 
 - `shooting_pct`: percent `0-100`
 - `primary_points_pct`: fraction `0-1`
@@ -214,16 +214,16 @@ Source fields by family:
 
 Primary code path:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - `METRICS` ratio entries
   - `getGoals(...)`
   - `getShots(...)`
   - `getPoints(...)`
   - `resolveIxgValue(...)`
 - source-selection helper:
-  - `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerSourceSelection.ts`
+  - `web/lib/supabase/Upserts/rollingPlayerSourceSelection.ts`
 - ratio math:
-  - `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricAggregation.ts`
+  - `web/lib/supabase/Upserts/rollingMetricAggregation.ts`
 
 Canonical formulas:
 
@@ -271,13 +271,13 @@ Reconstruction method:
 
 Evidence from tests:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricAggregation.test.ts`
+- `web/lib/supabase/Upserts/rollingMetricAggregation.test.ts`
   - confirms ratio-of-aggregates arithmetic
   - confirms appearance-anchored windows
   - confirms null-vs-zero denominator behavior
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
   - confirms canonical ratio snapshots and support-field persistence for `primary_points_pct`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricScaleContract.test.ts`
+- `web/lib/supabase/Upserts/rollingMetricScaleContract.test.ts`
   - confirms stored scale contract
 
 ### 2. On-Ice and Possession Ratios
@@ -358,11 +358,11 @@ Source fields by family:
 
 Primary code path:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - `METRICS` ratio entries
   - `applyRatioSupportOutputs(...)`
 - ratio math:
-  - `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricAggregation.ts`
+  - `web/lib/supabase/Upserts/rollingMetricAggregation.ts`
 
 Canonical formulas:
 
@@ -424,13 +424,13 @@ Reconstruction method:
 
 Evidence from tests:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts`
   - confirms `oz_start_pct` support fields, including neutral-zone counts
   - confirms canonical `on_ice_sv_pct` snapshots
   - confirms additive companion surfaces for `oi_gf`, `oi_ga`, `oi_sf`, and `oi_sa`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricAggregation.test.ts`
+- `web/lib/supabase/Upserts/rollingMetricAggregation.test.ts`
   - confirms composite ratio arithmetic for `pdo`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricScaleContract.test.ts`
+- `web/lib/supabase/Upserts/rollingMetricScaleContract.test.ts`
   - confirms `pdo` scale contract
 
 ### 3. Power-Play Share Ratio
@@ -472,13 +472,13 @@ Source fields:
 
 Primary code path:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`
   - `getPpShareComponents(...)`
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPpShareContract.ts`
+- `web/lib/supabase/Upserts/rollingPlayerPpShareContract.ts`
   - `resolvePpShareComponents(...)`
   - `ROLLING_PLAYER_PP_SHARE_CONTRACT`
 - share math helper:
-  - `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerMetricMath.ts`
+  - `web/lib/supabase/Upserts/rollingPlayerMetricMath.ts`
   - `resolvePreferredShareComponents(...)`
 
 Canonical formula:
@@ -523,12 +523,12 @@ Reconstruction method:
 
 Evidence from tests:
 
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPpShareContract.test.ts`
+- `web/lib/supabase/Upserts/rollingPlayerPpShareContract.test.ts`
   - confirms builder preference over WGO fallback
   - confirms unit-relative fields are excluded from the semantic contract
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingMetricScaleContract.test.ts`
+- `web/lib/supabase/Upserts/rollingMetricScaleContract.test.ts`
   - confirms fraction scale
-- `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.test.ts`
+- `web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.test.ts`
   - confirms suspicious-output warnings flag out-of-range `pp_share_pct` snapshots while ignoring raw PP support columns
 
 ## Component Completeness Notes
@@ -549,6 +549,6 @@ Evidence from tests:
 
 - task `2.3` should compare weighted-rate families against the same ratio-aggregation mechanics, with TOI-specific source review added
 - tasks `2.6` and `2.7` should translate each audited ratio family into:
-  - a formula-only status entry in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`
-  - an action item in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md` whenever support visibility, naming, fallback clarity, or reconstruction friction needs follow-up
+  - a formula-only status entry in `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`
+  - an action item in `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md` whenever support visibility, naming, fallback clarity, or reconstruction friction needs follow-up
 - tasks in `3.x` should use this artifact as the reconstruction reference during live validation and freshness checks

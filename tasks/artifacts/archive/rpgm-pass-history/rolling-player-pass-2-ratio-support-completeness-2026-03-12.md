@@ -15,7 +15,7 @@ Expose explicit ratio-support completeness states for ratio families so validati
 
 ## Implementation
 
-- Extended [rollingPlayerValidationPayload.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts) so `diagnostics.snapshot.categories.completeness` now carries:
+- Extended [rollingPlayerValidationPayload.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts) so `diagnostics.snapshot.categories.completeness` now carries:
   - per-ratio-family window completeness maps
   - a selected-metric ratio completeness view keyed to the currently focused metric
   - explicit state labels derived from the raw completeness counters
@@ -24,18 +24,18 @@ Expose explicit ratio-support completeness states for ratio families so validati
 
 ## UI Changes
 
-- Updated [trendsDebug.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.tsx) so the Formula Panel now shows:
+- Updated [trendsDebug.tsx](../../../../web/pages/trendsDebug.tsx) so the Formula Panel now shows:
   - selected support completeness family
   - `last3` / `last5` / `last10` / `last20` support-completeness states for the selected ratio metric
 - Updated the Numerator / Denominator Panel to show the underlying completeness counters for each rolling window of the selected ratio metric.
 
 ## Test Coverage
 
-- Added payload-unit assertions in [rollingPlayerValidationPayload.test.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts) for:
+- Added payload-unit assertions in [rollingPlayerValidationPayload.test.ts](../../../../web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts) for:
   - selected metric ratio completeness mapping
   - `valuePresentWithoutComponents` classification
   - persisted family/window completeness output
-- Updated [trendsDebug.test.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.test.tsx) so the validation console asserts the new support-completeness family, state, and count rows.
+- Updated [trendsDebug.test.tsx](../../../../web/__tests__/pages/trendsDebug.test.tsx) so the validation console asserts the new support-completeness family, state, and count rows.
 
 ## Verification
 

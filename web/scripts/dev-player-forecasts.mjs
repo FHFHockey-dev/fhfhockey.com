@@ -61,7 +61,13 @@ if (!editorUserIds) {
   }
 }
 
-const next = spawn("next", ["dev", "-H", "0.0.0.0", "-p", "3101"], {
+const requestedPort = Number(process.env.PLAYER_FORECAST_DEV_PORT || 3101);
+if (!Number.isInteger(requestedPort) || requestedPort < 1024 || requestedPort > 65535) {
+  process.stderr.write("PLAYER_FORECAST_DEV_PORT must be an integer between 1024 and 65535.\n");
+  process.exit(1);
+}
+
+const next = spawn("next", ["dev", "-H", "0.0.0.0", "-p", String(requestedPort)], {
   cwd: process.cwd(),
   stdio: "inherit",
   env: {
@@ -77,6 +83,10 @@ const next = spawn("next", ["dev", "-H", "0.0.0.0", "-p", "3101"], {
     PLAYER_FORECAST_EDITOR_USER_IDS: editorUserIds,
     PLAYER_FORECAST_ISOLATED_NEXT: "1",
     PLAYER_FORECAST_ENABLE_INFERENCE: "false",
+    PLAYER_FORECAST_SEASON_INFERENCE_ENABLED: "true",
+    PLAYER_FORECAST_ROSTER_REFRESH_ENABLED: "true",
+    WATCHPACK_POLLING: process.env.WATCHPACK_POLLING || "true",
+    WATCHPACK_POLLING_INTERVAL: process.env.WATCHPACK_POLLING_INTERVAL || "1000",
   },
 });
 

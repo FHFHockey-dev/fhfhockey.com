@@ -17,12 +17,12 @@ The matrix intentionally reuses the validated player core from the March 11, 202
 
 Primary supporting evidence:
 
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-family-reconstruction-report-2026-03-11.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-disputed-metrics-report-2026-03-11.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-context-label-validation-report-2026-03-11.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-refresh-actions-report-2026-03-11.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-validation-freshness-report-2026-03-11.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-family-reconstruction-report-2026-03-11.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-disputed-metrics-report-2026-03-11.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-context-label-validation-report-2026-03-11.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-refresh-actions-report-2026-03-11.md`
+- `tasks/artifacts/archive/rpgm-pass-history/rolling-player-validation-freshness-report-2026-03-11.md`
+- `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md`
 
 ## Validation Matrix
 

@@ -1,5 +1,6 @@
 // Non-Mobile display:none
 @use "sass:color";
+@use "styles/vars" as v;
 
 .teamSelector {
   display: none;
@@ -247,7 +248,7 @@
   justify-content: center;
 }
 
-@media screen and (max-width: 768px) {
+@media screen and (max-width: v.$breakpoint-tablet) {
   .container {
     width: 100%;
     padding: 10px;

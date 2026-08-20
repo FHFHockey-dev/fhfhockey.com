@@ -1,23 +1,23 @@
 BEGIN REPOSITORY AUDIT
 Authority and audit basis
-Product authority: [product-strategy.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/draft-ranker/product-strategy.md)
-Execution contract: [goal-prompt.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/draft-ranker/goal-prompt.md)
+Product authority: [product-strategy.md](product-strategy.md)
+Execution contract: [goal-prompt.md](goal-prompt.md)
 Architecture authority: repository code, canonical migrations, generated types, and the linked Supabase project as inspected on July 14, 2026.
 No files, migrations, or database records were changed during planning.
 Existing architecture
 Application and state
 Next.js 15 Pages Router with React 18.
-Global authentication and TanStack Query providers are established in [\\_app.tsx](/Users/tim/Code/fhfhockey.com/web/pages/_app.tsx).
-[AuthProviderContext](/Users/tim/Code/fhfhockey.com/web/contexts/AuthProviderContext/index.tsx) provides the current Supabase user and account state.
+Global authentication and TanStack Query providers are established in [\\_app.tsx](../../../web/pages/_app.tsx).
+[AuthProviderContext](../../../web/contexts/AuthProviderContext/index.tsx) provides the current Supabase user and account state.
 Server state conventions are mixed between TanStack Query, SWR, and direct fetches. The ranker should standardize on TanStack Query, already globally installed.
 Local interaction state can remain in component hooks or reducers. No major state-management architecture is required.
 Framer Motion is available for list movement and homepage-preview animation.
 Canonical player identity
 The live players table has 3,533 rows. Its id bigint is the NHL player ID, not an internal FHFH-generated identity.
 Evidence:
-[update-players.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-players.ts) writes player.id from NHL roster responses directly into players.id.
-[NHL server access](/Users/tim/Code/fhfhockey.com/web/lib/NHL/server/index.ts) joins players, rosters, teams, and seasons using that identity.
-[player API](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/player/index.ts) exposes current-season roster players.
+[update-players.ts](../../../web/pages/api/v1/db/update-players.ts) writes player.id from NHL roster responses directly into players.id.
+[NHL server access](../../../web/lib/NHL/server/index.ts) joins players, rosters, teams, and seasons using that identity.
+[player API](../../../web/pages/api/v1/player/index.ts) exposes current-season roster players.
 upsert_current_roster_membership and numerous statistics/projection tables use NHL IDs.
 Consequences:
 players is the correct NHL-linked analytics record.
@@ -30,12 +30,12 @@ rosters: 4,075 rows, including roughly 3,900 current memberships.
 yahoo_players: 2,827 seasonal/provider records.
 yahoo_nhl_player_map: 1,857 mappings.
 Existing unmatched Yahoo population: approximately 370 records.
-[yahooMapping.ts](/Users/tim/Code/fhfhockey.com/web/lib/draftDashboard/yahooMapping.ts) resolves multiple Yahoo candidates using player type, positions, current team, and current Yahoo-game details. Ties remain unresolved.
-[projectionRowSelection.ts](/Users/tim/Code/fhfhockey.com/web/lib/draftDashboard/projectionRowSelection.ts) handles duplicate source rows using current team, games played, and stable tie-breaking.
-[projectionSourcesConfig.ts](/Users/tim/Code/fhfhockey.com/web/lib/projectionsConfig/projectionSourcesConfig.ts) describes existing projection tables and NHL-ID mappings.
-[nameStandardization.ts](/Users/tim/Code/fhfhockey.com/web/lib/standardization/nameStandardization.ts) contains extensive manual name normalization, including acknowledged same-name ambiguity. It is useful for candidate generation, not automatic identity merging.
+[yahooMapping.ts](../../../web/lib/draftDashboard/yahooMapping.ts) resolves multiple Yahoo candidates using player type, positions, current team, and current Yahoo-game details. Ties remain unresolved.
+[projectionRowSelection.ts](../../../web/lib/draftDashboard/projectionRowSelection.ts) handles duplicate source rows using current team, games played, and stable tie-breaking.
+[projectionSourcesConfig.ts](../../../web/lib/projectionsConfig/projectionSourcesConfig.ts) describes existing projection tables and NHL-ID mappings.
+[nameStandardization.ts](../../../web/lib/standardization/nameStandardization.ts) contains extensive manual name normalization, including acknowledged same-name ambiguity. It is useful for candidate generation, not automatic identity merging.
 lineup_player_name_aliases and lineup_unresolved_player_names provide an existing review-queue pattern.
-[player-name-aliases.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/player-name-aliases.ts) and [player-aliases.tsx](/Users/tim/Code/fhfhockey.com/web/pages/db/player-aliases.tsx) provide reusable administrative review conventions.
+[player-name-aliases.ts](../../../web/pages/api/v1/db/player-name-aliases.ts) and [player-aliases.tsx](../../../web/pages/db/player-aliases.tsx) provide reusable administrative review conventions.
 There is no comprehensive canonical prospect table or ingestion system.
 Yahoo ADP seed
 For Yahoo season 2025:
@@ -48,18 +48,18 @@ The 2026–27 initial seed can use the verified 2025 preseason ADP in ascending 
 Every valid mapped Yahoo ADP player may populate the continuous ordered list, not only the first 250.
 Authentication and ownership
 Reusable account infrastructure is strong:
-[requireApiUser.ts](/Users/tim/Code/fhfhockey.com/web/lib/api/requireApiUser.ts) validates bearer sessions.
-[Supabase browser utilities](/Users/tim/Code/fhfhockey.com/web/lib/supabase/index.ts) can create a user-token client.
-[server.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/server.ts) exposes a lazy service-role client.
-[ensureUserRecords.ts](/Users/tim/Code/fhfhockey.com/web/lib/user-settings/ensureUserRecords.ts) establishes account profile/settings rows.
-[auth baseline migration](/Users/tim/Code/fhfhockey.com/supabase/migrations/20260713055508_auth_user_settings_platform_baseline.sql) establishes UUID ownership, cascading deletion, provider accounts, league settings, sync runs, and entitlements.
+[requireApiUser.ts](../../../web/lib/api/requireApiUser.ts) validates bearer sessions.
+[Supabase browser utilities](../../../web/lib/supabase/index.ts) can create a user-token client.
+[server.ts](../../../web/lib/supabase/server.ts) exposes a lazy service-role client.
+[ensureUserRecords.ts](../../../web/lib/user-settings/ensureUserRecords.ts) establishes account profile/settings rows.
+[auth baseline migration](../../../supabase/migration-archive/pre-baseline-20260716/authoritative-root/20260713055508_auth_user_settings_platform_baseline.sql) establishes UUID ownership, cascading deletion, provider accounts, league settings, sync runs, and entitlements.
 Existing user-owned tables consistently reference auth.users(id) ON DELETE CASCADE.
 user_settings already stores league type, scoring categories, category weights, roster configuration, UI preferences, and active provider context.
 The ranker does not require an authentication-model change.
 Supabase conventions and risks
 supabase/migrations/ is the documented canonical migration path.
 Historical SQL also exists under root migrations/ and web/supabase/migrations/. This fragmentation must not be expanded.
-Generated types live in [database-generated.types.ts](/Users/tim/Code/fhfhockey.com/web/lib/supabase/database-generated.types.ts).
+Generated types live in [database-generated.types.ts](../../../web/lib/supabase/database-generated.types.ts).
 Existing owner policies use auth.uid() = user_id; newer optimized policies use init-plan-friendly forms.
 Public analytical data commonly uses RLS-enabled service-only storage exposed through APIs.
 New ranker tables require explicit authenticated grants and RLS. New public views should use security_invoker=true where applicable.
@@ -67,10 +67,10 @@ The current Supabase security advisor reports substantial pre-existing warnings,
 The live database is Postgres 15 and has an outstanding patch-upgrade advisory.
 Existing ranking and draft functionality
 The existing /rankings feature is an analytics workstation, not a personal draft list:
-[rankings.tsx](/Users/tim/Code/fhfhockey.com/web/pages/rankings.tsx)
-[Rankings components](/Users/tim/Code/fhfhockey.com/web/components/Rankings)
-[contextual-rankings API](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/contextual-rankings.ts)
-[rankings browser tests](/Users/tim/Code/fhfhockey.com/web/e2e/rankings.spec.ts)
+[rankings.tsx](../../../web/pages/rankings.tsx)
+[Rankings components](../../../web/components/Rankings)
+[contextual-rankings API](../../../web/pages/api/v1/contextual-rankings.ts)
+[rankings browser tests](../../../web/e2e/rankings.spec.ts)
 Reusable systems include:
 Dense, accessible table presentation.
 URL-restorable filters.
@@ -81,10 +81,10 @@ Performance-check scripts.
 The personal draft ranker should not take over /rankings. Recommended routes:
 /draft-rankings for the account-backed personal ranker.
 /community-draft-rankings for the public aggregate.
-The existing [DraftDashboard](/Users/tim/Code/fhfhockey.com/web/components/DraftDashboard) supplies useful projections, scoring utilities, table styles, comparison presentation, CSV parsing, and draft interactions. Its state is local/session-oriented and must not become authoritative ranker persistence.
+The existing [DraftDashboard](../../../web/components/DraftDashboard) supplies useful projections, scoring utilities, table styles, comparison presentation, CSV parsing, and draft interactions. Its state is local/session-oriented and must not become authoritative ranker persistence.
 Search and autocomplete
-[PlayerAutocomplete](/Users/tim/Code/fhfhockey.com/web/components/PlayerAutocomplete/PlayerAutocomplete.tsx) downloads the current NHL roster pool and searches names client-side.
-[Predictions SearchBox](/Users/tim/Code/fhfhockey.com/web/components/Predictions/SearchBox.tsx) performs a direct ilike search against players.fullName.
+[PlayerAutocomplete](../../../web/components/PlayerAutocomplete/PlayerAutocomplete.tsx) downloads the current NHL roster pool and searches names client-side.
+[Predictions SearchBox](../../../web/components/Predictions/SearchBox.tsx) performs a direct ilike search against players.fullName.
 Neither implementation supports the required universe, archived states, stable disambiguation, prospects, or identity review. A server-side FHFH identity search contract is required.
 Homepage
 The homepage is already undergoing substantial work and has its own dashboard/component architecture. The ranker must enter through a contained, feature-flagged module boundary. It must not replace the homepage wholesale.
@@ -103,8 +103,8 @@ Vitest is the main unit/integration framework.
 Playwright provides real-browser coverage.
 The repository contains roughly 661 test/spec files.
 npm run test:full, npm run build, and targeted ranking performance scripts are established gates.
-[withCronJobAudit.ts](/Users/tim/Code/fhfhockey.com/web/lib/cron/withCronJobAudit.ts) records status, duration, affected/failed rows, and bounded response/error details into cron_job_audit.
-[vercel.json](/Users/tim/Code/fhfhockey.com/vercel.json) owns HTTP cron scheduling.
+[withCronJobAudit.ts](../../../web/lib/cron/withCronJobAudit.ts) records status, duration, affected/failed rows, and bounded response/error details into cron_job_audit.
+[vercel.json](../../../vercel.json) owns HTTP cron scheduling.
 Provider sync runs demonstrate dedupe keys, cooldowns, status transitions, and structured result/error summaries.
 Planning-document conventions
 Repository planning commonly uses:
@@ -113,10 +113,10 @@ A task list with “Relevant Files,” dependencies, checkboxes, notes, and veri
 Goal/progress documents that persist decisions, blockers, current phase, and next task.
 Separate audit, runbook, and QA artifacts under tasks/artifacts/.
 References:
-[create-prd.mdc](/Users/tim/Code/fhfhockey.com/tasks/TASKS/rules/create-prd.mdc)
-[generate-tasks.mdc](/Users/tim/Code/fhfhockey.com/tasks/TASKS/rules/generate-tasks.mdc)
-[auth task plan](/Users/tim/Code/fhfhockey.com/tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md)
-[contextual rankings task plan](/Users/tim/Code/fhfhockey.com/tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md)
+[create-prd.mdc](../rules/create-prd.mdc)
+[generate-tasks.mdc](../rules/generate-tasks.mdc)
+[auth task plan](../auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md)
+[contextual rankings task plan](../contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md)
 Reusable systems
 Existing Supabase Auth and UUID ownership.
 Owner-scoped RLS patterns.

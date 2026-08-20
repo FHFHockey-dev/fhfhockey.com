@@ -9,7 +9,7 @@ npm run check:rolling-player-validation-freshness
 ```
 
 Script:
-- [check-rolling-player-validation-freshness.ts](/Users/tim/Code/fhfhockey.com/web/scripts/check-rolling-player-validation-freshness.ts)
+- [check-rolling-player-validation-freshness.ts](../../../../web/scripts/check-rolling-player-validation-freshness.ts)
 
 ## Summary
 
@@ -56,7 +56,7 @@ Immediate implication:
 
 Required next refresh action:
 
-- rerun [update-power-play-combinations/[gameId].ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-power-play-combinations/[gameId].ts) for game `2025021023`
+- rerun [update-power-play-combinations/[gameId].ts](../../../../web/pages/api/v1/db/update-power-play-combinations/[gameId].ts) for game `2025021023`
 
 ### Corey Perry (`8470621`)
 

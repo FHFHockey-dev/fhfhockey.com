@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from api.fetch_team_table import fetch_team_table
+from api.fetch_team_table import fetch_team_table, missing_required_parameters_result
 from lib.sko_pipeline import trigger_sko_step_forward
 import os
 import secrets
@@ -50,7 +50,8 @@ def fetch_team_table_api():
 
     # Check if required parameters are present
     if not sit or not rate:
-        return jsonify({"error": "Missing required parameters: 'sit' and 'rate'"}), 400
+        result = missing_required_parameters_result()
+        return jsonify(result.payload), result.status_code
 
     # Call fetch_team_table with the parameters
     result = fetch_team_table(
@@ -67,8 +68,14 @@ def fetch_team_table_api():
         td=td
     )
     
-    # Return the result as JSON response
-    return jsonify(result)
+    payload = result.payload
+    if isinstance(payload, dict):
+        debug = payload.setdefault('debug', {})
+        debug.setdefault('Resolved from_season', from_season)
+        debug.setdefault('Resolved thru_season', thru_season)
+
+    # Both Flask entrypoints serialize the same structured payload once.
+    return jsonify(payload), result.status_code
 
 
 @app.route('/sko/pipeline', methods=['POST'])

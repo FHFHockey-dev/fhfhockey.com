@@ -2,7 +2,7 @@
 
 Use high reasoning. Treat this as a product-completion task, not a small UI-only polish pass.
 
-Build the Player Rankings ecosystem described in `tasks/TASKS/player-rankings-workstation/deep-research-report.md`, using the reference screenshots in `tasks/TASKS/player-rankings-workstation/assets/`:
+Build the Player Rankings ecosystem described in `tasks/TASKS/contextual-hockey-rankings/workstation/deep-research-report.md`, using the reference screenshots in `tasks/TASKS/contextual-hockey-rankings/workstation/assets/`:
 
 - `target-mockup-fhfh-heatmap.jpeg`: desired dense dark heatmap + right player focus panel.
 - `target-mockup-true-hockey-insights.jpeg`: desired workstation layout, sidebar/tabs, snapshot cards, advanced metric bars, trend panel.

@@ -1,5 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
+import {
+  operationalRouteContracts,
+  withOperationalRouteAuth,
+} from "lib/cron/withOperationalRouteAuth";
 import supabase from "lib/supabase/server";
 import {
   buildPptReplayRows,
@@ -275,4 +279,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default handler;
+export default withOperationalRouteAuth(
+  handler,
+  operationalRouteContracts.updateNhlPptReplayTracking,
+);
