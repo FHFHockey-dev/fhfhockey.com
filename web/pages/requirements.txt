@@ -1,3 +1,5 @@
-supabase
-yfpy
-python-dotenv
+# Guarded Yahoo/Python maintenance only; the live-draft runtime is Node 22.
+# Supported and smoke-checked with CPython 3.13.
+supabase==2.10.0
+yfpy==16.0.3
+python-dotenv==1.0.1

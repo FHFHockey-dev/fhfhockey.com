@@ -169,6 +169,31 @@
   font-size: v.$font-size-xs;
 }
 
+.noPickKeeperSummary {
+  margin-bottom: v.$space-md;
+  padding: v.$space-sm;
+  border: 1px solid rgba(v.$success-color, 0.55);
+  border-radius: v.$border-radius-sm;
+  background: rgba(v.$success-color, 0.08);
+  font-size: v.$font-size-xs;
+
+  ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: v.$space-xs;
+    margin: v.$space-xs 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: v.$space-sm;
+    color: v.$text-secondary;
+  }
+}
+
 .configurationSummary {
   display: flex;
   flex-wrap: wrap;

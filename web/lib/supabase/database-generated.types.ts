@@ -40643,6 +40643,374 @@ export type Database = {
         }
         Relationships: []
       }
+      yahoo_draft_picks: {
+        Row: {
+          auction_cost: number | null
+          correction_confirmed_at: string | null
+          created_at: string
+          external_team_id: string | null
+          fhfh_player_id: number | null
+          first_observed_at: string
+          is_active: boolean
+          is_correction: boolean
+          last_observed_at: string
+          mapping_revision: number
+          mapping_status: string
+          nhl_team_abbreviation: string | null
+          pick_in_round: number
+          pick_number: number
+          player_name: string | null
+          position: string | null
+          revision: number
+          round_number: number
+          session_id: string
+          updated_at: string
+          user_id: string
+          yahoo_player_id: string
+          yahoo_player_key: string
+          yahoo_team_key: string
+        }
+        Insert: {
+          auction_cost?: number | null
+          correction_confirmed_at?: string | null
+          created_at?: string
+          external_team_id?: string | null
+          fhfh_player_id?: number | null
+          first_observed_at: string
+          is_active?: boolean
+          is_correction?: boolean
+          last_observed_at: string
+          mapping_revision?: number
+          mapping_status: string
+          nhl_team_abbreviation?: string | null
+          pick_in_round: number
+          pick_number: number
+          player_name?: string | null
+          position?: string | null
+          revision?: number
+          round_number: number
+          session_id: string
+          updated_at?: string
+          user_id: string
+          yahoo_player_id: string
+          yahoo_player_key: string
+          yahoo_team_key: string
+        }
+        Update: {
+          auction_cost?: number | null
+          correction_confirmed_at?: string | null
+          created_at?: string
+          external_team_id?: string | null
+          fhfh_player_id?: number | null
+          first_observed_at?: string
+          is_active?: boolean
+          is_correction?: boolean
+          last_observed_at?: string
+          mapping_revision?: number
+          mapping_status?: string
+          nhl_team_abbreviation?: string | null
+          pick_in_round?: number
+          pick_number?: number
+          player_name?: string | null
+          position?: string | null
+          revision?: number
+          round_number?: number
+          session_id?: string
+          updated_at?: string
+          user_id?: string
+          yahoo_player_id?: string
+          yahoo_player_key?: string
+          yahoo_team_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "yahoo_draft_picks_player_fk"
+            columns: ["fhfh_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "yahoo_draft_picks_session_owner_fk"
+            columns: ["session_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "yahoo_draft_sessions"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "yahoo_draft_picks_team_owner_fk"
+            columns: ["external_team_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "external_teams"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      yahoo_draft_poll_observations: {
+        Row: {
+          account_ref: string
+          age_seconds: number | null
+          anomaly_detected: boolean
+          cache_control: string | null
+          changed: boolean | null
+          consecutive_failures: number | null
+          correction_confirmation: string | null
+          content_type: string | null
+          created_at: string
+          due_poll_lag_ms: number | null
+          error_code: string | null
+          etag_present: boolean | null
+          http_status: number | null
+          id: number
+          last_modified_present: boolean | null
+          last_pick_number: number | null
+          lease_claimed: boolean | null
+          local_status: string | null
+          next_poll_at: string | null
+          outcome: string
+          pick_count: number | null
+          provider_status: string | null
+          refresh_rate: string | null
+          request_duration_ms: number | null
+          request_id_ref: string | null
+          response_date: string | null
+          response_format: string | null
+          retry_after_seconds: number | null
+          session_ref: string
+          snapshot_hash: string | null
+          snapshot_version: number | null
+          token_refresh_attempted: boolean
+          token_refresh_outcome: string | null
+          worker_instance_id: string
+        }
+        Insert: {
+          account_ref: string
+          age_seconds?: number | null
+          anomaly_detected?: boolean
+          cache_control?: string | null
+          changed?: boolean | null
+          consecutive_failures?: number | null
+          correction_confirmation?: string | null
+          content_type?: string | null
+          created_at?: string
+          due_poll_lag_ms?: number | null
+          error_code?: string | null
+          etag_present?: boolean | null
+          http_status?: number | null
+          id?: never
+          last_modified_present?: boolean | null
+          last_pick_number?: number | null
+          lease_claimed?: boolean | null
+          local_status?: string | null
+          next_poll_at?: string | null
+          outcome: string
+          pick_count?: number | null
+          provider_status?: string | null
+          refresh_rate?: string | null
+          request_duration_ms?: number | null
+          request_id_ref?: string | null
+          response_date?: string | null
+          response_format?: string | null
+          retry_after_seconds?: number | null
+          session_ref: string
+          snapshot_hash?: string | null
+          snapshot_version?: number | null
+          token_refresh_attempted?: boolean
+          token_refresh_outcome?: string | null
+          worker_instance_id: string
+        }
+        Update: {
+          account_ref?: string
+          age_seconds?: number | null
+          anomaly_detected?: boolean
+          cache_control?: string | null
+          changed?: boolean | null
+          consecutive_failures?: number | null
+          correction_confirmation?: string | null
+          content_type?: string | null
+          created_at?: string
+          due_poll_lag_ms?: number | null
+          error_code?: string | null
+          etag_present?: boolean | null
+          http_status?: number | null
+          id?: never
+          last_modified_present?: boolean | null
+          last_pick_number?: number | null
+          lease_claimed?: boolean | null
+          local_status?: string | null
+          next_poll_at?: string | null
+          outcome?: string
+          pick_count?: number | null
+          provider_status?: string | null
+          refresh_rate?: string | null
+          request_duration_ms?: number | null
+          request_id_ref?: string | null
+          response_date?: string | null
+          response_format?: string | null
+          retry_after_seconds?: number | null
+          session_ref?: string
+          snapshot_hash?: string | null
+          snapshot_version?: number | null
+          token_refresh_attempted?: boolean
+          token_refresh_outcome?: string | null
+          worker_instance_id?: string
+        }
+        Relationships: []
+      }
+      yahoo_draft_sessions: {
+        Row: {
+          completed_at: string | null
+          connected_account_id: string
+          consecutive_failures: number
+          created_at: string
+          diagnostics: Json
+          draft_ranking_id: string | null
+          external_league_id: string
+          external_team_id: string
+          id: string
+          last_changed_at: string | null
+          last_error_code: string | null
+          last_error_message: string | null
+          last_nudged_at: string | null
+          last_pick_number: number
+          last_polled_at: string | null
+          last_provider_sync_run_id: string | null
+          last_snapshot_at: string | null
+          last_worker_heartbeat_at: string | null
+          next_poll_at: string
+          normalized_settings: Json
+          poll_lease_expires_at: string | null
+          poll_lease_token: string | null
+          provider_status: string
+          snapshot_hash: string | null
+          snapshot_version: number
+          started_at: string
+          status: string
+          target_season_id: number
+          updated_at: string
+          user_id: string
+          yahoo_game_key: string
+          yahoo_league_key: string
+          yahoo_season: number
+          yahoo_team_key: string
+        }
+        Insert: {
+          completed_at?: string | null
+          connected_account_id: string
+          consecutive_failures?: number
+          created_at?: string
+          diagnostics?: Json
+          draft_ranking_id?: string | null
+          external_league_id: string
+          external_team_id: string
+          id?: string
+          last_changed_at?: string | null
+          last_error_code?: string | null
+          last_error_message?: string | null
+          last_nudged_at?: string | null
+          last_pick_number?: number
+          last_polled_at?: string | null
+          last_provider_sync_run_id?: string | null
+          last_snapshot_at?: string | null
+          last_worker_heartbeat_at?: string | null
+          next_poll_at?: string
+          normalized_settings?: Json
+          poll_lease_expires_at?: string | null
+          poll_lease_token?: string | null
+          provider_status?: string
+          snapshot_hash?: string | null
+          snapshot_version?: number
+          started_at?: string
+          status?: string
+          target_season_id: number
+          updated_at?: string
+          user_id: string
+          yahoo_game_key: string
+          yahoo_league_key: string
+          yahoo_season: number
+          yahoo_team_key: string
+        }
+        Update: {
+          completed_at?: string | null
+          connected_account_id?: string
+          consecutive_failures?: number
+          created_at?: string
+          diagnostics?: Json
+          draft_ranking_id?: string | null
+          external_league_id?: string
+          external_team_id?: string
+          id?: string
+          last_changed_at?: string | null
+          last_error_code?: string | null
+          last_error_message?: string | null
+          last_nudged_at?: string | null
+          last_pick_number?: number
+          last_polled_at?: string | null
+          last_provider_sync_run_id?: string | null
+          last_snapshot_at?: string | null
+          last_worker_heartbeat_at?: string | null
+          next_poll_at?: string
+          normalized_settings?: Json
+          poll_lease_expires_at?: string | null
+          poll_lease_token?: string | null
+          provider_status?: string
+          snapshot_hash?: string | null
+          snapshot_version?: number
+          started_at?: string
+          status?: string
+          target_season_id?: number
+          updated_at?: string
+          user_id?: string
+          yahoo_game_key?: string
+          yahoo_league_key?: string
+          yahoo_season?: number
+          yahoo_team_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "yahoo_draft_sessions_account_owner_fk"
+            columns: ["connected_account_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "yahoo_draft_sessions_league_owner_fk"
+            columns: ["external_league_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "external_leagues"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "yahoo_draft_sessions_ranking_owner_fk"
+            columns: ["draft_ranking_id", "user_id", "target_season_id"]
+            isOneToOne: false
+            referencedRelation: "draft_rankings"
+            referencedColumns: ["id", "user_id", "target_season_id"]
+          },
+          {
+            foreignKeyName: "yahoo_draft_sessions_sync_run_owner_fk"
+            columns: ["last_provider_sync_run_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "provider_sync_runs"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "yahoo_draft_sessions_target_season_id_fkey"
+            columns: ["target_season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "yahoo_draft_sessions_team_owner_fk"
+            columns: ["external_team_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "external_teams"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
       yahoo_game_keys: {
         Row: {
           code: string | null
@@ -40732,6 +41100,77 @@ export type Database = {
           url?: string | null
         }
         Relationships: []
+      }
+      yahoo_oauth_transactions: {
+        Row: {
+          browser_binding_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          pkce_code_verifier: string
+          redirect_uri: string
+          safe_next_path: string
+          state_hash: string
+          user_id: string
+        }
+        Insert: {
+          browser_binding_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          pkce_code_verifier: string
+          redirect_uri: string
+          safe_next_path: string
+          state_hash: string
+          user_id: string
+        }
+        Update: {
+          browser_binding_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          pkce_code_verifier?: string
+          redirect_uri?: string
+          safe_next_path?: string
+          state_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      yahoo_token_refresh_leases: {
+        Row: {
+          connected_account_id: string
+          created_at: string
+          lease_expires_at: string
+          lease_token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connected_account_id: string
+          created_at?: string
+          lease_expires_at: string
+          lease_token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connected_account_id?: string
+          created_at?: string
+          lease_expires_at?: string
+          lease_token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "yahoo_token_refresh_leases_account_owner_fk"
+            columns: ["connected_account_id", "user_id"]
+            isOneToOne: true
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
       }
       yahoo_game_week_snapshots: {
         Row: {
@@ -46894,6 +47333,7 @@ export type Database = {
           assists: number | null
           blocked_shots: number | null
           eligible_positions: Json | null
+          fhfh_player_id: number | null
           goals: number | null
           goals_against_avg: number | null
           hits: number | null
@@ -46931,6 +47371,7 @@ export type Database = {
           assists?: number | null
           blocked_shots?: number | null
           eligible_positions?: Json | null
+          fhfh_player_id?: never
           goals?: number | null
           goals_against_avg?: number | null
           hits?: number | null
@@ -46968,6 +47409,7 @@ export type Database = {
           assists?: number | null
           blocked_shots?: number | null
           eligible_positions?: Json | null
+          fhfh_player_id?: never
           goals?: number | null
           goals_against_avg?: number | null
           hits?: number | null
@@ -47260,6 +47702,23 @@ export type Database = {
         }
         Returns: Json
       }
+      apply_yahoo_draft_snapshot: {
+        Args: {
+          p_diagnostics: Json
+          p_lease_token: string
+          p_next_poll_at: string
+          p_normalized_settings: Json
+          p_observed_at?: string
+          p_picks: Json
+          p_provider_status: string
+          p_provider_sync_run_id: string | null
+          p_session_id: string
+          p_snapshot_hash: string
+          p_status: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       begin_draft_ranker_placement: {
         Args: {
           p_expected_version: number
@@ -47351,6 +47810,50 @@ export type Database = {
           p_user_id: string
         }
         Returns: Json
+      }
+      claim_yahoo_draft_poll: {
+        Args: {
+          p_claimed_at?: string
+          p_lease_seconds?: number
+          p_session_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      claim_yahoo_token_refresh_lease: {
+        Args: {
+          p_connected_account_id: string
+          p_lease_seconds?: number
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      cleanup_yahoo_draft_poll_observations: {
+        Args: { p_before?: string }
+        Returns: number
+      }
+      cleanup_yahoo_oauth_transactions: {
+        Args: { p_before?: string }
+        Returns: number
+      }
+      consume_yahoo_oauth_transaction: {
+        Args: {
+          p_browser_binding_hash: string
+          p_state_hash: string
+        }
+        Returns: Json
+      }
+      create_yahoo_oauth_transaction: {
+        Args: {
+          p_browser_binding_hash: string
+          p_expires_at: string
+          p_pkce_code_verifier: string
+          p_redirect_uri: string
+          p_safe_next_path: string
+          p_state_hash: string
+          p_user_id: string
+        }
+        Returns: undefined
       }
       commit_fantrax_connection_secure: {
         Args: {
@@ -47841,6 +48344,17 @@ export type Database = {
           reason: string
         }[]
       }
+      nudge_yahoo_draft_poll: {
+        Args: {
+          p_session_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      reconcile_yahoo_draft_pick_identities: {
+        Args: { p_session_id: string }
+        Returns: Json
+      }
       record_espn_draft_poll_failure: {
         Args: {
           p_error_code: string
@@ -47853,6 +48367,27 @@ export type Database = {
           p_user_id: string
         }
         Returns: Json
+      }
+      record_yahoo_draft_poll_failure: {
+        Args: {
+          p_error_code: string
+          p_error_message: string
+          p_failed_at?: string
+          p_lease_token: string
+          p_retry_at: string
+          p_session_id: string
+          p_status?: string | null
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      release_yahoo_token_refresh_lease: {
+        Args: {
+          p_connected_account_id: string
+          p_lease_token: string
+          p_user_id: string
+        }
+        Returns: boolean
       }
       refresh_player_lineup_deployment_tallies: {
         Args: { p_player_id?: number; p_season_id?: number }
@@ -48044,6 +48579,16 @@ export type Database = {
       truncate_rolling_player_game_metrics: { Args: never; Returns: undefined }
       unaccent: { Args: { "": string }; Returns: string }
       update_all_wgo_skaters: { Args: never; Returns: undefined }
+      verified_yahoo_player_identities_read: {
+        Args: never
+        Returns: {
+          canonical_name: string
+          external_player_id: string
+          fhfh_player_id: number
+          nhl_player_id: number
+          season_id: number
+        }[]
+      }
       upsert_connected_account_tokens_secure: {
         Args: {
           p_access_token?: string

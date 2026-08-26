@@ -1,8 +1,7 @@
 import { createHash } from "crypto";
 
-export const YAHOO_LIVE_DRAFT_GAME_KEY = "477";
-export const YAHOO_LIVE_DRAFT_SEASON = "2026";
-export const YAHOO_LIVE_DRAFT_TARGET_SEASON_ID = 20262027;
+import type { YahooGameContext } from "./gameContext";
+
 export const YAHOO_FANTASY_API_BASE_URL =
   "https://fantasysports.yahooapis.com/fantasy/v2";
 
@@ -44,8 +43,8 @@ export type YahooDraftSettings = {
   requiresScoringConfirmation: boolean;
   requiresDraftOrderConfirmation: boolean;
   normalized: {
-    gameKey: typeof YAHOO_LIVE_DRAFT_GAME_KEY;
-    season: typeof YAHOO_LIVE_DRAFT_SEASON;
+    gameKey: string;
+    season: string;
     providerStatus: YahooDraftProviderStatus;
     draftOrder: YahooDraftOrder;
     draftType: "live_standard" | "offline" | "autopick" | "unknown";
@@ -161,12 +160,23 @@ function entityScalar(
 function collectEntities(value: unknown, discriminator: string) {
   const entities: unknown[] = [];
   const visit = (candidate: unknown) => {
-    if (entityScalar(candidate, [discriminator]) !== null) {
-      entities.push(candidate);
-    }
     if (Array.isArray(candidate)) {
+      const directMatches = candidate.filter(
+        (item) => isRecord(item) && scalar(item[discriminator]) !== null,
+      );
+      if (
+        directMatches.length <= 1 &&
+        entityScalar(candidate, [discriminator]) !== null
+      ) {
+        entities.push(candidate);
+        return;
+      }
       candidate.forEach(visit);
     } else if (isRecord(candidate)) {
+      if (entityScalar(candidate, [discriminator]) !== null) {
+        entities.push(candidate);
+        return;
+      }
       Object.values(candidate).forEach(visit);
     }
   };
@@ -431,10 +441,32 @@ function adaptScoring(payload: unknown) {
   };
 }
 
-export function assertYahooLeagueKey(value: string) {
-  if (!new RegExp(`^${YAHOO_LIVE_DRAFT_GAME_KEY}\\.l\\.\\d+$`).test(value)) {
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+}
+
+function yahooLeagueKeyPattern(context: YahooGameContext) {
+  return new RegExp(`^${escapeRegExp(context.gameKey)}\\.l\\.\\d+$`, "u");
+}
+
+function yahooTeamKeyPattern(context: YahooGameContext) {
+  return new RegExp(
+    `^${escapeRegExp(context.gameKey)}\\.l\\.\\d+\\.t\\.\\d+$`,
+    "u",
+  );
+}
+
+function yahooPlayerKeyPattern(context: YahooGameContext) {
+  return new RegExp(`^${escapeRegExp(context.gameKey)}\\.p\\.(\\d+)$`, "u");
+}
+
+export function assertYahooLeagueKey(
+  value: string,
+  context: YahooGameContext,
+) {
+  if (!yahooLeagueKeyPattern(context).test(value)) {
     throw new YahooLiveDraftError(
-      "This Yahoo league is not part of the 2026-2027 NHL game.",
+      "This Yahoo league is not part of the configured NHL season.",
       409,
       "yahoo_game_mismatch",
     );
@@ -461,9 +493,12 @@ export function sessionStatusForProvider(
   return "predraft";
 }
 
-export function parseYahooDraftSettings(payload: unknown): YahooDraftSettings {
+export function parseYahooDraftSettings(
+  payload: unknown,
+  context: YahooGameContext,
+): YahooDraftSettings {
   const leagueKey = toText(findFirstScalar(payload, ["league_key"]));
-  if (leagueKey) assertYahooLeagueKey(leagueKey);
+  if (leagueKey) assertYahooLeagueKey(leagueKey, context);
 
   const draftStatusRaw = toText(findFirstScalar(payload, ["draft_status"]));
   const draftTypeRaw = toText(findFirstScalar(payload, ["draft_type"]));
@@ -569,8 +604,8 @@ export function parseYahooDraftSettings(payload: unknown): YahooDraftSettings {
     requiresScoringConfirmation,
     requiresDraftOrderConfirmation: inferredDraftOrder,
     normalized: {
-      gameKey: YAHOO_LIVE_DRAFT_GAME_KEY,
-      season: YAHOO_LIVE_DRAFT_SEASON,
+      gameKey: context.gameKey,
+      season: context.season,
       providerStatus: parseYahooProviderStatus(draftStatusRaw),
       draftOrder,
       draftType,
@@ -586,7 +621,9 @@ export function parseYahooDraftSettings(payload: unknown): YahooDraftSettings {
     },
     diagnostics: {
       source: "yahoo_fantasy_api",
-      leagueKeyMatched: leagueKey?.startsWith(`${YAHOO_LIVE_DRAFT_GAME_KEY}.l.`) ?? false,
+      leagueKeyMatched: leagueKey
+        ? yahooLeagueKeyPattern(context).test(leagueKey)
+        : false,
       draftStatusRaw,
       draftTypeRaw,
       draftOrderRaw,
@@ -647,12 +684,17 @@ export function applyYahooTeamDraftPositionDiagnostics(
   };
 }
 
-export function parseYahooDraftTeams(payload: unknown): YahooDraftTeam[] {
+export function parseYahooDraftTeams(
+  payload: unknown,
+  context: YahooGameContext,
+): YahooDraftTeam[] {
   const byKey = new Map<string, YahooDraftTeam>();
   for (const entity of collectEntities(payload, "team_key")) {
     if (entityScalar(entity, ["pick"]) !== null) continue;
     const yahooTeamKey = toText(entityScalar(entity, ["team_key"]));
-    if (!yahooTeamKey || !/^477\.l\.\d+\.t\.\d+$/.test(yahooTeamKey)) continue;
+    if (!yahooTeamKey || !yahooTeamKeyPattern(context).test(yahooTeamKey)) {
+      continue;
+    }
     const candidate: YahooDraftTeam = {
       yahooTeamKey,
       name: toText(entityScalar(entity, ["name", "team_name"])),
@@ -669,9 +711,12 @@ export function parseYahooDraftTeams(payload: unknown): YahooDraftTeam[] {
   return [...byKey.values()];
 }
 
-export function parseYahooDraftResults(payload: unknown): YahooDraftSnapshot {
+export function parseYahooDraftResults(
+  payload: unknown,
+  context: YahooGameContext,
+): YahooDraftSnapshot {
   const leagueKey = toText(findFirstScalar(payload, ["league_key"]));
-  if (leagueKey) assertYahooLeagueKey(leagueKey);
+  if (leagueKey) assertYahooLeagueKey(leagueKey, context);
   const providerStatus = parseYahooProviderStatus(
     findFirstScalar(payload, ["draft_status"]),
   );
@@ -683,8 +728,8 @@ export function parseYahooDraftResults(payload: unknown): YahooDraftSnapshot {
     const yahooTeamKey = toText(entityScalar(entity, ["team_key"]));
     if (!pickNumber || !yahooPlayerKey || !yahooTeamKey) continue;
 
-    const playerMatch = /^477\.p\.(\d+)$/.exec(yahooPlayerKey);
-    if (!playerMatch || !/^477\.l\.\d+\.t\.\d+$/.test(yahooTeamKey)) {
+    const playerMatch = yahooPlayerKeyPattern(context).exec(yahooPlayerKey);
+    if (!playerMatch || !yahooTeamKeyPattern(context).test(yahooTeamKey)) {
       throw new YahooLiveDraftError(
         "Yahoo returned a draft result from a different game.",
         502,
@@ -695,6 +740,13 @@ export function parseYahooDraftResults(payload: unknown): YahooDraftSnapshot {
     if (!roundNumber) {
       throw new YahooLiveDraftError(
         "Yahoo returned a draft pick without a round number.",
+        502,
+        "yahoo_draft_response_invalid",
+      );
+    }
+    if (picksByNumber.has(pickNumber)) {
+      throw new YahooLiveDraftError(
+        "Yahoo returned duplicate draft pick numbers.",
         502,
         "yahoo_draft_response_invalid",
       );
@@ -725,40 +777,18 @@ export function parseYahooDraftResults(payload: unknown): YahooDraftSnapshot {
 
 export function hashYahooDraftSnapshot(
   snapshot: YahooDraftSnapshot,
-  resolvedPicks?: Array<Record<string, unknown>>,
 ) {
   const canonical = {
     providerStatus: snapshot.providerStatus,
-    picks: resolvedPicks
-      ? [...resolvedPicks]
-          .sort(
-            (left, right) =>
-              Number(left.pick_number ?? 0) - Number(right.pick_number ?? 0),
-          )
-          .map((pick) => ({
-            pickNumber: pick.pick_number,
-            roundNumber: pick.round_number,
-            pickInRound: pick.pick_in_round,
-            yahooTeamKey: pick.yahoo_team_key,
-            externalTeamId: pick.external_team_id,
-            yahooPlayerKey: pick.yahoo_player_key,
-            yahooPlayerId: pick.yahoo_player_id,
-            fhfhPlayerId: pick.fhfh_player_id,
-            mappingStatus: pick.mapping_status,
-            playerName: pick.player_name,
-            nhlTeamAbbreviation: pick.nhl_team_abbreviation,
-            position: pick.position,
-            cost: pick.auction_cost,
-          }))
-      : [...snapshot.picks]
-          .sort((left, right) => left.pickNumber - right.pickNumber)
-          .map((pick) => ({
-            pickNumber: pick.pickNumber,
-            roundNumber: pick.roundNumber,
-            yahooTeamKey: pick.yahooTeamKey,
-            yahooPlayerKey: pick.yahooPlayerKey,
-            cost: pick.cost,
-          })),
+    picks: [...snapshot.picks]
+      .sort((left, right) => left.pickNumber - right.pickNumber)
+      .map((pick) => ({
+        pickNumber: pick.pickNumber,
+        roundNumber: pick.roundNumber,
+        yahooTeamKey: pick.yahooTeamKey,
+        yahooPlayerKey: pick.yahooPlayerKey,
+        cost: pick.cost,
+      })),
   };
   return createHash("sha256").update(JSON.stringify(canonical)).digest("hex");
 }
@@ -775,20 +805,11 @@ export function parseRetryAfterSeconds(
   return Math.max(0, Math.ceil((timestamp - now.getTime()) / 1000));
 }
 
-export function yahooDraftPollDelaySeconds(args: {
-  providerStatus: YahooDraftProviderStatus;
-  consecutiveFailures?: number;
-  retryAfterSeconds?: number | null;
-}) {
-  const failures = Math.max(0, Math.floor(args.consecutiveFailures ?? 0));
-  const baseline = args.providerStatus === "drafting" ? 5 : 30;
-  const exponential = failures > 0 ? Math.min(60, 5 * 2 ** (failures - 1)) : baseline;
-  const retryAfter = Math.max(0, Math.ceil(args.retryAfterSeconds ?? 0));
-  return Math.max(failures > 0 ? 0 : baseline, exponential, retryAfter);
-}
-
-export function yahooLeagueDraftUrl(yahooLeagueKey: string) {
-  assertYahooLeagueKey(yahooLeagueKey);
+export function yahooLeagueDraftUrl(
+  yahooLeagueKey: string,
+  context: YahooGameContext,
+) {
+  assertYahooLeagueKey(yahooLeagueKey, context);
   const leagueId = yahooLeagueKey.split(".").at(-1);
   return `https://hockey.fantasysports.yahoo.com/hockey/${leagueId}/draft`;
 }
@@ -796,9 +817,11 @@ export function yahooLeagueDraftUrl(yahooLeagueKey: string) {
 export function yahooFantasyResourceUrl(
   yahooLeagueKey: string,
   resource: "settings" | "teams" | "draftresults",
+  context: YahooGameContext,
+  responseFormat: "standard_json" | "json_f" = "standard_json",
 ) {
-  assertYahooLeagueKey(yahooLeagueKey);
+  assertYahooLeagueKey(yahooLeagueKey, context);
   return `${YAHOO_FANTASY_API_BASE_URL}/league/${encodeURIComponent(
     yahooLeagueKey,
-  )}/${resource}?format=json_f`;
+  )}/${resource}?format=${responseFormat === "json_f" ? "json_f" : "json"}`;
 }

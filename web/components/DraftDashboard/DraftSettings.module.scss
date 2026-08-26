@@ -183,6 +183,45 @@
   }
 }
 
+.customRoundsRow {
+  display: grid;
+  gap: v.$space-xs;
+  margin-bottom: v.$space-sm;
+}
+
+.roundChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.roundChip {
+  @include v.reset-button;
+  min-width: 30px;
+  min-height: 30px;
+  border: 1px solid v.$border-secondary;
+  border-radius: 999px;
+  background: v.$background-dark;
+  color: v.$text-secondary;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
+}
+
+.roundChipActive {
+  border-color: v.$primary-color;
+  background: v.$primary-color-opaque;
+  color: v.$secondary-color;
+}
+
+.structuralLockHint {
+  color: v.$warning-color;
+  font-size: v.$font-size-xs;
+}
+
 .label {
   font-size: v.$font-size-sm;
   font-weight: 500;
@@ -1554,6 +1593,70 @@
     border-bottom: 1px solid v.$border-secondary;
     padding-bottom: v.$space-md;
     margin-bottom: v.$space-md;
+  }
+}
+
+@media (max-width: 799px) {
+  .settingsContainer {
+    min-width: 0;
+    padding: v.$space-sm;
+    border-width: 1px;
+  }
+
+  .settingsHeader {
+    align-items: stretch;
+    gap: v.$space-sm;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .title {
+    max-width: 100%;
+    font-size: 1rem;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .headerActions,
+  .statusCluster {
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .headerActions > .draftTypeToggle {
+    order: 2;
+  }
+
+  .statusCluster {
+    gap: v.$space-xs;
+  }
+
+  .unsavedBadge {
+    padding-inline: v.$space-sm;
+  }
+
+  .settingsGrid,
+  .fieldset,
+  .settingRow,
+  .inlineFormRow {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .settingRow {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .inlineFormRow > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .ownerSelectInline {
+    width: 100%;
   }
 }
 

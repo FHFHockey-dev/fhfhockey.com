@@ -10,8 +10,8 @@ import {
 } from "lib/draftDashboard/yahooLiveDraft";
 import supabase from "lib/supabase/client";
 
-const ACTIVE_POLL_MS = 5_000;
-const BACKGROUND_POLL_MS = 30_000;
+const ACTIVE_RECONCILIATION_MS = 30_000;
+const BACKGROUND_RECONCILIATION_MS = 120_000;
 
 export function getYahooDraftPollIntervalMs(args: {
   status: string;
@@ -22,8 +22,8 @@ export function getYahooDraftPollIntervalMs(args: {
     return null;
   }
   return args.visible && args.status === "active"
-    ? ACTIVE_POLL_MS
-    : BACKGROUND_POLL_MS;
+    ? ACTIVE_RECONCILIATION_MS
+    : BACKGROUND_RECONCILIATION_MS;
 }
 
 type RequestState = "idle" | "loading" | "ready" | "error";
@@ -500,14 +500,23 @@ export function useYahooDraftSync(
       visible: isVisible,
     });
     if (interval == null) return;
-    const timer = window.setInterval(() => void refreshDraft(), interval);
+    // This is a low-rate authoritative GET fallback. The durable worker owns
+    // provider cadence; Realtime remains the primary browser invalidation path.
+    const timer = window.setInterval(
+      () => void loadSessionState(sessionId),
+      interval,
+    );
     return () => window.clearInterval(timer);
-  }, [draftState, enabled, isVisible, refreshDraft, sessionId]);
+  }, [draftState, enabled, isVisible, loadSessionState, sessionId]);
 
   useEffect(() => {
     if (!enabled || !sessionId) return;
     const reconcile = () => {
-      if (navigator.onLine) void refreshDraft();
+      if (!navigator.onLine) return;
+      void loadSessionState(sessionId);
+      // A nudge is lease- and rate-limit-aware and never performs provider I/O
+      // in this request. It helps the worker prioritize a resumed browser.
+      void refreshDraft();
     };
     const onVisibility = () => {
       const visible = document.visibilityState === "visible";
@@ -521,7 +530,7 @@ export function useYahooDraftSync(
       window.removeEventListener("online", reconcile);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [enabled, refreshDraft, sessionId]);
+  }, [enabled, loadSessionState, refreshDraft, sessionId]);
 
   return {
     enabled,

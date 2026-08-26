@@ -32,10 +32,12 @@ export interface YahooDraftRankingOption {
 
 export interface YahooDraftSession {
   id: string;
+  gameKey?: string | null;
   status: YahooDraftSessionStatus;
   providerStatus?: string | null;
   snapshotVersion?: number;
   lastSuccessfulPollAt?: string | null;
+  lastWorkerHeartbeatAt?: string | null;
   lastPickNumber?: number;
   nextPollAt?: string | null;
   yahooLeagueUrl?: string | null;
@@ -45,6 +47,7 @@ export interface YahooDraftSession {
   targetSeasonId?: number | null;
   diagnostics?: Record<string, unknown> | null;
   stale?: boolean;
+  staleSeverity?: "fresh" | "warning" | "critical";
 }
 
 export interface YahooDraftTeam {
@@ -61,13 +64,17 @@ export interface YahooDraftPick {
   yahooTeamKey: string;
   yahooPlayerKey?: string | null;
   yahooPlayerId?: string | null;
-  fhfhPlayerId?: string | null;
+  yahooGameKey?: string | null;
+  fhfhPlayerId?: string | number | null;
+  nhlPlayerId?: number | null;
   displayName?: string | null;
   mappingStatus?: string | null;
   cost?: number | null;
   active: boolean;
   isCorrection?: boolean;
   revision?: number;
+  mappingRevision?: number;
+  correctionConfirmedAt?: string | null;
 }
 
 export interface YahooDraftState {
@@ -337,7 +344,9 @@ function normalizeYahooDraftPick(value: unknown): YahooDraftPick | null {
       "yahoo_player_id",
       "playerId",
     ),
+    yahooGameKey: readString(value, "yahooGameKey", "yahoo_game_key"),
     fhfhPlayerId: readString(value, "fhfhPlayerId", "fhfh_player_id"),
+    nhlPlayerId: readNumber(value, "nhlPlayerId", "nhl_player_id"),
     displayName: readString(
       value,
       "displayName",
@@ -350,6 +359,17 @@ function normalizeYahooDraftPick(value: unknown): YahooDraftPick | null {
     isCorrection:
       readBoolean(value, "isCorrection", "is_correction") || false,
     revision: readNumber(value, "revision"),
+    mappingRevision: readNumber(
+      value,
+      "mappingRevision",
+      "mapping_revision",
+    ),
+    correctionConfirmedAt:
+      readString(
+        value,
+        "correctionConfirmedAt",
+        "correction_confirmed_at",
+      ) || null,
   };
 }
 
@@ -405,6 +425,7 @@ export function normalizeYahooDraftStateResponse(
   return {
     session: {
       id,
+      gameKey: readString(rawSession, "gameKey", "game_key") || null,
       status: normalizeSessionStatus(
         rawSession.status || rawSession.providerStatus || rawSession.provider_status,
       ),
@@ -422,6 +443,12 @@ export function normalizeYahooDraftStateResponse(
           "last_successful_poll_at",
           "lastSnapshotAt",
           "last_snapshot_at",
+        ) || null,
+      lastWorkerHeartbeatAt:
+        readString(
+          rawSession,
+          "lastWorkerHeartbeatAt",
+          "last_worker_heartbeat_at",
         ) || null,
       lastPickNumber: readNumber(
         rawSession,
@@ -445,6 +472,14 @@ export function normalizeYahooDraftStateResponse(
         ? rawSession.diagnostics
         : null,
       stale: readBoolean(rawSession, "stale") || false,
+      staleSeverity:
+        readString(rawSession, "staleSeverity", "stale_severity") ===
+        "critical"
+          ? "critical"
+          : readString(rawSession, "staleSeverity", "stale_severity") ===
+              "warning"
+            ? "warning"
+            : "fresh",
     },
     teams,
     settings: readRecord(payload, "settings"),
@@ -463,9 +498,13 @@ export function getFirstMissingYahooPick(picks: YahooDraftPick[]): number {
   return pickNumber;
 }
 
-function yahooIdFromPlayerKey(playerKey?: string | null): string | undefined {
-  if (!playerKey) return undefined;
-  return playerKey.match(/^477\.p\.(\d+)$/)?.[1];
+function yahooIdFromPlayerKey(
+  playerKey: string | null | undefined,
+  gameKey: string | null | undefined,
+): string | undefined {
+  if (!playerKey || !gameKey) return undefined;
+  const escapedGameKey = gameKey.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  return playerKey.match(new RegExp(`^${escapedGameKey}\\.p\\.(\\d+)$`, "u"))?.[1];
 }
 
 function readDraftOrderMode(settings: Record<string, unknown>): {
@@ -530,12 +569,33 @@ export function reconcileYahooDraftState(
   const roundNumber = Math.ceil(currentPick / teamCount);
   const pickInRound = ((currentPick - 1) % teamCount) + 1;
 
-  const byYahooId = new Map<string, ProcessedPlayer[]>();
+  const byNhlId = new Map<number, ProcessedPlayer[]>();
+  const byFhfhId = new Map<number, ProcessedPlayer[]>();
+  const byYahooPlayerKey = new Map<string, ProcessedPlayer[]>();
+  const configuredGameKey = state?.session.gameKey || null;
   for (const player of players) {
+    if (
+      Number.isSafeInteger(player.fhfhPlayerId) &&
+      Number(player.fhfhPlayerId) > 0
+    ) {
+      const fhfhPlayerId = Number(player.fhfhPlayerId);
+      byFhfhId.set(fhfhPlayerId, [
+        ...(byFhfhId.get(fhfhPlayerId) || []),
+        player,
+      ]);
+    }
+    byNhlId.set(player.playerId, [
+      ...(byNhlId.get(player.playerId) || []),
+      player,
+    ]);
     if (player.yahooPlayerId != null && String(player.yahooPlayerId)) {
       const yahooPlayerId = String(player.yahooPlayerId);
-      byYahooId.set(yahooPlayerId, [
-        ...(byYahooId.get(yahooPlayerId) || []),
+      const scopedPlayerKey = configuredGameKey
+        ? `${configuredGameKey}.p.${yahooPlayerId}`
+        : null;
+      if (!scopedPlayerKey) continue;
+      byYahooPlayerKey.set(scopedPlayerKey, [
+        ...(byYahooPlayerKey.get(scopedPlayerKey) || []),
         player,
       ]);
     }
@@ -551,11 +611,30 @@ export function reconcileYahooDraftState(
   for (const pick of [...activeByPickNumber.values()].sort(
     (a, b) => a.pickNumber - b.pickNumber,
   )) {
+    const pickGameKey = pick.yahooGameKey || configuredGameKey;
     const exactYahooId =
-      pick.yahooPlayerId || yahooIdFromPlayerKey(pick.yahooPlayerKey);
-    const candidates = exactYahooId
-      ? byYahooId.get(String(exactYahooId)) || []
+      yahooIdFromPlayerKey(pick.yahooPlayerKey, pickGameKey) ||
+      (pickGameKey === configuredGameKey ? pick.yahooPlayerId || undefined : undefined);
+    const fhfhCandidates =
+      pick.fhfhPlayerId == null
+        ? []
+        : byFhfhId.get(Number(pick.fhfhPlayerId)) || [];
+    const nhlCandidates =
+      pick.nhlPlayerId == null ? [] : byNhlId.get(pick.nhlPlayerId) || [];
+    const scopedPlayerKey =
+      pick.yahooPlayerKey && pickGameKey === configuredGameKey
+        ? pick.yahooPlayerKey
+        : exactYahooId && configuredGameKey
+          ? `${configuredGameKey}.p.${exactYahooId}`
+          : null;
+    const yahooCandidates = scopedPlayerKey
+      ? byYahooPlayerKey.get(scopedPlayerKey) || []
       : [];
+    const candidates = fhfhCandidates.length
+      ? fhfhCandidates
+      : nhlCandidates.length
+        ? nhlCandidates
+        : yahooCandidates;
     const matchedPlayer = candidates.length === 1 ? candidates[0] : undefined;
     const reviewRequired = pick.mappingStatus === "review_required";
     const displayName = pick.displayName || pick.yahooPlayerKey || "Unknown Yahoo player";

@@ -4,7 +4,16 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
 import { DraftSettings, DraftedPlayer, TeamDraftStats } from "./DraftDashboard";
 import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import type { PlayerVorpMetrics } from "hooks/useVORPCalculations";
-import type { KeeperEntry } from "lib/draftDashboard/keepers";
+import {
+  keeperUsesPick,
+  type KeeperEntry,
+} from "lib/draftDashboard/keepers";
+import {
+  draftOrderPatternFromSnake,
+  isRoundReversed,
+  pickInRoundForTeamIndex,
+  type DraftOrderPattern,
+} from "lib/draftDashboard/draftOrder";
 import {
   resolvePickOwner,
   type PickTradeEntry
@@ -21,7 +30,8 @@ interface DraftBoardProps {
     isMyTurn: boolean;
   };
   teamStats: TeamDraftStats[];
-  isSnakeDraft: boolean;
+  draftOrderPattern?: DraftOrderPattern;
+  isSnakeDraft?: boolean;
   allPlayers: ProcessedPlayer[]; // Add this prop for complete player data
   onUpdateTeamName: (teamId: string, newName: string) => void; // Add this prop
   canEditTeamNames?: boolean;
@@ -57,7 +67,8 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   draftedPlayers,
   currentTurn,
   teamStats,
-  isSnakeDraft,
+  draftOrderPattern,
+  isSnakeDraft = true,
   allPlayers,
   onUpdateTeamName,
   canEditTeamNames = true,
@@ -65,6 +76,8 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   keepers = [],
   vorpMetrics
 }) => {
+  const activeDraftOrderPattern =
+    draftOrderPattern ?? draftOrderPatternFromSnake(isSnakeDraft);
   const [sortField, setSortField] = useState<SortField>("projectedPoints");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [showAllCategories, setShowAllCategories] = useState(false);
@@ -229,6 +242,60 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
 
   // Use the actual roster size instead of hardcoded values
   const roundsToShow = totalRosterSize; // Show all roster spots as rounds
+  const currentOverallPick =
+    (currentTurn.round - 1) * draftSettings.teamCount +
+    currentTurn.pickInRound;
+  const teamRosterCountById = useMemo(
+    () =>
+      Object.fromEntries(
+        teamStats.map((team) => [
+          team.teamId,
+          Object.values(team.rosterSlots).reduce(
+            (sum, players) => sum + players.length,
+            team.bench.length,
+          ),
+        ]),
+      ),
+    [teamStats],
+  );
+  const skippedPickNumbers = useMemo(() => {
+    const skipped = new Set<number>();
+    const completed = new Set(
+      draftedPlayers.map((player) => player.pickNumber),
+    );
+    const totalPicks = draftSettings.teamCount * roundsToShow;
+    for (let pickNumber = 1; pickNumber <= totalPicks; pickNumber += 1) {
+      if (pickNumber >= currentOverallPick || completed.has(pickNumber)) {
+        continue;
+      }
+      const round = Math.ceil(pickNumber / draftSettings.teamCount);
+      const pickInRound = ((pickNumber - 1) % draftSettings.teamCount) + 1;
+      const owner = resolvePickOwner({
+        round,
+        pickInRound,
+        draftOrder: draftSettings.draftOrder,
+        orderPattern: activeDraftOrderPattern,
+        trades: pickTrades,
+        keepers,
+      }).currentTeamId;
+      if ((teamRosterCountById[owner] ?? 0) >= totalRosterSize) {
+        skipped.add(pickNumber);
+      }
+    }
+    return skipped;
+  }, [
+    activeDraftOrderPattern,
+    currentOverallPick,
+    draftSettings.draftOrder,
+    draftSettings.teamCount,
+    draftedPlayers,
+    keepers,
+    pickTrades,
+    roundsToShow,
+    teamRosterCountById,
+    totalRosterSize,
+  ]);
+  const noPickKeepers = keepers.filter((keeper) => !keeperUsesPick(keeper));
 
   // Get all drafted and available players for calculating heat map intensities
   const allPlayersData = useMemo(() => {
@@ -271,7 +338,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
     const teams = draftSettings.draftOrder;
     const maxRounds = roundsToShow; // Use dynamic value instead of hardcoded 17
     const keeperByKey = new Map(
-      keepers.map((keeper) => [
+      keepers.filter(keeperUsesPick).map((keeper) => [
         `${keeper.round}-${keeper.pickInRound}`,
         keeper
       ])
@@ -285,16 +352,12 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
       const teamCells = [];
 
       for (let round = 1; round <= maxRounds; round++) {
-        let pickInRound: number;
-
-        // Calculate pick position in round based on snake draft
-        if (isSnakeDraft && round % 2 === 0) {
-          // Reverse order for even rounds in snake draft
-          pickInRound = teams.length - teamIndex;
-        } else {
-          // Normal order for odd rounds or regular draft
-          pickInRound = teamIndex + 1;
-        }
+        const pickInRound = pickInRoundForTeamIndex({
+          teamIndex,
+          teamCount: teams.length,
+          round,
+          pattern: activeDraftOrderPattern,
+        });
 
         const overallPick = (round - 1) * draftSettings.teamCount + pickInRound;
         const key = `${round}-${pickInRound}`;
@@ -303,7 +366,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
           round,
           pickInRound,
           draftOrder: draftSettings.draftOrder,
-          isSnakeDraft,
+          orderPattern: activeDraftOrderPattern,
           trades: pickTrades,
           keepers
         });
@@ -311,8 +374,10 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         const draftedPlayer = draftedPlayers.find(
           (p) => p.pickNumber === overallPick
         );
+        const isRosterFullSkip = skippedPickNumbers.has(overallPick);
         const isCurrentPick =
           !keeper &&
+          !isRosterFullSkip &&
           currentTurn.round === round &&
           currentTurn.pickInRound === pickInRound;
 
@@ -346,14 +411,16 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
           ? isKeeper
             ? `${playerName}\nKeeper: ${ownerName}\nForfeited round ${round}, pick ${pickInRound}\nProjected: ${fantasyPoints} pts`
             : `${playerName}\n${rowTeamName}${ownershipLine}\nRound ${round}, Pick ${pickInRound}\nProjected: ${fantasyPoints} pts`
-          : isCurrentPick
+          : isRosterFullSkip
+            ? `Roster full: ${ownerName}\nRound ${round}, Pick ${pickInRound} skipped`
+            : isCurrentPick
             ? `Current Pick: ${ownerName}${ownershipLine}\nRound ${round}, Pick ${pickInRound}`
             : `Available Pick${ownershipLine}\nRound ${round}, Pick ${pickInRound}`;
 
         teamCells.push(
           <div
             key={`${teamId}-${round}`}
-            className={`${cellClass} ${traded ? styles.tradedCell : ""} ${isKeeper ? styles.keeperCell : ""}`}
+            className={`${cellClass} ${traded ? styles.tradedCell : ""} ${isKeeper ? styles.keeperCell : ""} ${isRosterFullSkip ? styles.rosterFullSkip : ""} ${activeDraftOrderPattern.mode === "custom" && isRoundReversed(activeDraftOrderPattern, round) ? styles.customReversedCell : ""}`}
             title={tooltip}
             data-round={round}
             data-pick={pickInRound}
@@ -373,6 +440,11 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
             {isKeeper && (
               <span className={styles.keeperBadge} aria-label="Keeper">
                 K
+              </span>
+            )}
+            {isRosterFullSkip && (
+              <span className={styles.skipBadge} aria-label="Roster full skip">
+                Full
               </span>
             )}
           </div>
@@ -487,9 +559,10 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   // Calculate team category totals for the leaderboard table
   const teamStatsWithCategories = useMemo(() => {
     return teamStats.map((team) => {
-      const teamPlayers = draftedPlayers.filter(
-        (p) => p.teamId === team.teamId
-      );
+      const teamPlayers = [
+        ...Object.values(team.rosterSlots).flat(),
+        ...team.bench,
+      ];
 
       // Initialize category totals
       const categoryTotals = {
@@ -564,7 +637,6 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
     });
   }, [
     teamStats,
-    draftedPlayers,
     augmentedAllPlayers,
     dynamicCategoryKeys,
     draftSettings.leagueType,
@@ -714,8 +786,8 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
           Team <span className={styles.panelTitleAccent}>Standings</span>
         </h3>
         <div className={styles.contributionSummary}>
-          {draftedPlayers.length} of {draftSettings.teamCount * roundsToShow}{" "}
-          picks • {roundsToShow} rounds
+          {draftedPlayers.length} selected • {skippedPickNumbers.size} roster-full
+          skips • {roundsToShow} rounds
         </div>
       </div>
 
@@ -1003,14 +1075,38 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         </div>
       </div>
 
+      {noPickKeepers.length > 0 && (
+        <section
+          className={styles.noPickKeepers}
+          aria-labelledby="board-no-pick-keepers-title"
+        >
+          <h3 id="board-no-pick-keepers-title" className={styles.sectionTitle}>
+            No-Pick Keepers
+          </h3>
+          <ul>
+            {noPickKeepers.map((keeper) => {
+              const player = augmentedAllPlayers.find(
+                (candidate) => String(candidate.playerId) === keeper.playerId,
+              );
+              return (
+                <li key={keeper.playerId}>
+                  <strong>{player?.fullName || `Player #${keeper.playerId}`}</strong>
+                  <span>{teamNameById.get(keeper.teamId) || keeper.teamId}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {/* Subheader: Draft Graph */}
       <div className={styles.githubHeader}>
         <h3 className={styles.sectionTitle}>
           Draft <span className={styles.panelTitleAccent}>Graph</span>
         </h3>
         <div className={styles.contributionSummary}>
-          {draftedPlayers.length} of {draftSettings.teamCount * roundsToShow}{" "}
-          picks • {roundsToShow} rounds
+          {draftedPlayers.length} selected • {skippedPickNumbers.size} roster-full
+          skips • {roundsToShow} rounds
         </div>
       </div>
 
@@ -1024,11 +1120,31 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
               className={styles.roundLabelsGrid}
               style={{ gridTemplateColumns: `repeat(${roundsToShow}, 1fr)` }}
             >
-              {Array.from({ length: roundsToShow }, (_, i) => (
-                <span key={i} className={styles.roundLabel}>
-                  {i + 1}
-                </span>
-              ))}
+              {Array.from({ length: roundsToShow }, (_, i) => {
+                const round = i + 1;
+                const isCustomReversed =
+                  activeDraftOrderPattern.mode === "custom" &&
+                  isRoundReversed(activeDraftOrderPattern, round);
+                return (
+                  <span
+                    key={round}
+                    className={`${styles.roundLabel} ${isCustomReversed ? styles.customReversedRound : ""}`}
+                    aria-label={`Round ${round}${isCustomReversed ? ", custom reversed order" : ""}`}
+                    title={
+                      isCustomReversed
+                        ? `Round ${round}: custom reversed order`
+                        : undefined
+                    }
+                  >
+                    {round}
+                    {isCustomReversed && (
+                      <span className={styles.reverseMarker} aria-hidden="true">
+                        ↶
+                      </span>
+                    )}
+                  </span>
+                );
+              })}
             </div>
           </div>
 

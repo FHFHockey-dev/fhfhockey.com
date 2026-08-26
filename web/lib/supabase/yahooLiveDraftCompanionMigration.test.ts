@@ -9,6 +9,13 @@ const migrationSql = readFileSync(
   ),
   "utf8",
 );
+const hardeningSql = readFileSync(
+  resolve(
+    process.cwd(),
+    "../supabase/migrations/20260824152127_yahoo_live_draft_production_hardening.sql",
+  ),
+  "utf8",
+);
 
 const draftTables = ["yahoo_draft_sessions", "yahoo_draft_picks"] as const;
 const serviceRpcs = [
@@ -195,5 +202,81 @@ describe("Yahoo live-draft companion migration", () => {
     for (const identifier of identifiers) {
       expect(identifier.length, identifier).toBeLessThanOrEqual(63);
     }
+  });
+
+  it("hardens OAuth, refresh rotation, and worker telemetry behind service role", () => {
+    for (const table of [
+      "yahoo_oauth_transactions",
+      "yahoo_token_refresh_leases",
+      "yahoo_draft_poll_observations",
+    ]) {
+      expect(hardeningSql).toContain(`create table public.${table}`);
+      expect(hardeningSql).toContain(
+        `alter table public.${table} enable row level security;`,
+      );
+      expect(hardeningSql).toContain(
+        `alter table public.${table} force row level security;`,
+      );
+      expect(hardeningSql).toMatch(
+        new RegExp(
+          `revoke all on table public\\.${table}[\\s\\S]*?from public, anon, authenticated, service_role;`,
+        ),
+      );
+    }
+    expect(hardeningSql).toContain("state_hash text primary key");
+    expect(hardeningSql).toContain("pkce_code_verifier text not null");
+    expect(hardeningSql).toContain("transaction.consumed_at is null");
+    expect(hardeningSql).toContain("transaction.expires_at > v_consumed_at");
+    expect(hardeningSql).toContain("lease_expires_at <= claimed_at");
+    expect(hardeningSql).toContain("interval '30 days'");
+    expect(hardeningSql).toContain(
+      "revoke all on function public.claim_yahoo_draft_poll(uuid, uuid, integer, timestamptz)",
+    );
+    expect(hardeningSql).toContain(
+      "grant execute on function public.claim_yahoo_draft_poll(uuid, uuid, integer, timestamptz)",
+    );
+    expect(hardeningSql).not.toMatch(/access_token|refresh_token|authorization_code/);
+  });
+
+  it("uses the database clock, rate-limits nudges, and reconciles exact identities", () => {
+    expect(hardeningSql).toContain(
+      "claimed_at timestamptz := pg_catalog.clock_timestamp()",
+    );
+    expect(hardeningSql).toContain("last_worker_heartbeat_at = claimed_at");
+    expect(hardeningSql).toContain("interval '5 seconds'");
+    expect(hardeningSql).toContain(
+      "external.external_player_id = pick.yahoo_player_key",
+    );
+    expect(hardeningSql).toContain(
+      "external.context_key = pg_catalog.format(",
+    );
+    expect(hardeningSql).toContain(
+      "external.season_id = session.target_season_id",
+    );
+    expect(hardeningSql).toContain(
+      "having pg_catalog.count(distinct external.fhfh_player_id) = 1",
+    );
+  });
+
+  it("makes verified canonical identity authoritative for the Yahoo compatibility view", () => {
+    expect(hardeningSql).toContain(
+      "create function public.verified_yahoo_player_identities_read()",
+    );
+    expect(hardeningSql).toContain(
+      "create or replace view public.yahoo_nhl_player_map_read",
+    );
+    expect(hardeningSql).toContain("with (security_invoker = true)");
+    expect(hardeningSql).toContain(
+      "player.player_key = canonical.external_player_id",
+    );
+    expect(hardeningSql).toContain(
+      "mapping.nhl_player_id = canonical.nhl_player_id::text",
+    );
+    expect(hardeningSql).toContain(
+      "canonical.fhfh_player_id as fhfh_player_id",
+    );
+    expect(hardeningSql).toContain(
+      "to anon, authenticated, service_role;",
+    );
   });
 });

@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 
-import type { KeeperEntry } from "lib/draftDashboard/keepers";
+import {
+  keeperUsesPick,
+  type KeeperEntry,
+} from "lib/draftDashboard/keepers";
 import type { PickTradeEntry } from "lib/draftDashboard/pickTrades";
 import modalStyles from "./ModalShell.module.scss";
 import styles from "./ManageTradesModal.module.scss";
@@ -232,7 +235,9 @@ export default function ManageTradesModal({
               <ul className={styles.tradeList}>
                 {trades.map((trade) => {
                   const keeper = keepers.find(
-                    (entry) => entry.pickNumber === trade.pickNumber
+                    (entry) =>
+                      keeperUsesPick(entry) &&
+                      entry.pickNumber === trade.pickNumber
                   );
                   return (
                     <li key={`${trade.round}-${trade.pickInRound}`}>

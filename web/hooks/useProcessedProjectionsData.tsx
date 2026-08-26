@@ -80,6 +80,7 @@ export interface AggregatedStatValue {
 
 export interface ProcessedPlayer {
   playerId: number;
+  fhfhPlayerId?: number;
   fullName: string;
   displayTeam: string | null;
   displayPosition: string | null;
@@ -668,7 +669,7 @@ async function fetchAllSourceData(
   }
 
   // 3. Fetch Yahoo NHL Player Map
-  const yahooMapSelectString = `${YAHOO_PLAYER_MAP_KEYS.nhlPlayerId}, ${YAHOO_PLAYER_MAP_KEYS.yahooPlayerId}, ${YAHOO_PLAYER_MAP_KEYS.teamAbbreviation}, ${YAHOO_PLAYER_MAP_KEYS.position}, ${YAHOO_PLAYER_MAP_KEYS.nhlPlayerName}, ${YAHOO_PLAYER_MAP_KEYS.yahooPlayerNameInMap}`;
+  const yahooMapSelectString = `${YAHOO_PLAYER_MAP_KEYS.fhfhPlayerId}, ${YAHOO_PLAYER_MAP_KEYS.nhlPlayerId}, ${YAHOO_PLAYER_MAP_KEYS.yahooPlayerId}, ${YAHOO_PLAYER_MAP_KEYS.teamAbbreviation}, ${YAHOO_PLAYER_MAP_KEYS.position}, ${YAHOO_PLAYER_MAP_KEYS.nhlPlayerName}, ${YAHOO_PLAYER_MAP_KEYS.yahooPlayerNameInMap}`;
   const yahooMapData = await fetchAllSupabaseFilterChunks<
     YahooNhlPlayerMapEntry,
     string
@@ -915,6 +916,9 @@ function processRawDataIntoPlayers(
     }
 
     const finalName = resolvedName || "Unknown Player";
+    const fhfhPlayerId = Number(
+      playerYahooMapEntry?.[YAHOO_PLAYER_MAP_KEYS.fhfhPlayerId],
+    );
 
     if (finalName === "Unknown Player") {
       logThisPlayer = true;
@@ -922,6 +926,9 @@ function processRawDataIntoPlayers(
 
     const processedPlayer: ProcessedPlayer = {
       playerId: nhlPlayerId,
+      fhfhPlayerId: Number.isSafeInteger(fhfhPlayerId) && fhfhPlayerId > 0
+        ? fhfhPlayerId
+        : undefined,
       fullName: finalName,
       displayTeam: null,
       displayPosition: null,

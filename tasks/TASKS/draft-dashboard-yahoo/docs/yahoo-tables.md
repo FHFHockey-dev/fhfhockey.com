@@ -167,3 +167,13 @@ yahoo_positions:
 | primary_position    | text      | YES         | null           | null                     |
 | uniform_number      | text      | YES         | null           | null                     |
 | status              | text      | YES         | null           | null                     |
+
+## 2026-08-24 live-draft overlay
+
+The canonical root migrations and current TypeScript source override older audit snapshots in this document. `20260813015112_yahoo_live_draft_companion.sql` adds owner-scoped `yahoo_draft_sessions` and authoritative current-slot `yahoo_draft_picks`; both force RLS, allow authenticated owner reads only, reserve mutation/RPC execution for service role, and are the only live-draft tables published to Supabase Realtime.
+
+The additive, not-yet-deployed `20260824152127_yahoo_live_draft_production_hardening.sql` adds worker heartbeat/nudge fields, pick mapping revision/correction confirmation, service-only one-time `yahoo_oauth_transactions`, per-account `yahoo_token_refresh_leases`, and short-retention pseudonymous `yahoo_draft_poll_observations`. It also adds OAuth transaction, refresh lease, worker nudge, identity reconciliation, and cleanup RPCs. OAuth state and browser binding are stored only as SHA-256 hashes; poll observations contain no tokens or raw provider payload.
+
+`fhfh_player_external_identities` is the Yahoo mapping authority. `yahoo_players` remains seasonal provider data. The hardening migration changes `yahoo_nhl_player_map_read` into a compatibility projection that begins with unambiguous verified canonical identities and exact full Yahoo player keys, and exposes `fhfh_player_id` so the dashboard can prefer it over NHL and Yahoo fallbacks. Legacy mapping rows may decorate statistics only after canonical NHL and Yahoo identities agree.
+
+Generated types in `web/lib/supabase/database-generated.types.ts` include both live tables and the hardening overlay. Current worker, retention, rehearsal, rollout, and rollback requirements are in `live-draft-runbook.md`. Keep `YAHOO_LIVE_DRAFT_PROVIDER_VALIDATED=false` and broad rollout off until the target migration, durable worker deployment, and controlled Yahoo rehearsal meet the documented thresholds.

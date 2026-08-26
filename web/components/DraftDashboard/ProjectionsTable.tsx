@@ -29,6 +29,7 @@ interface ProjectionsTableProps {
   // Full pool including drafted; used for diagnostics cross-check
   allPlayers?: ProcessedPlayer[];
   draftedPlayers: DraftedPlayer[];
+  unavailablePlayerIds?: ReadonlySet<string>;
   isLoading: boolean;
   error: string | null;
   onDraftPlayer: (playerId: string) => void;
@@ -100,6 +101,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   players,
   allPlayers,
   draftedPlayers,
+  unavailablePlayerIds,
   isLoading,
   error,
   onDraftPlayer,
@@ -233,12 +235,12 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       const src = enabledGoalieStatKeys
         ? enabledGoalieStatKeys // if provided (even empty) respect it
         : DEFAULT_GOALIE_STAT_KEYS;
-      return src.filter(Boolean).slice(0, 16);
+      return src.filter(Boolean);
     }
     const base = enabledSkaterStatKeys
       ? enabledSkaterStatKeys
       : DEFAULT_SKATER_STAT_KEYS;
-    return base.filter(Boolean).slice(0, 24);
+    return base.filter(Boolean);
   }, [positionFilter, enabledSkaterStatKeys, enabledGoalieStatKeys]);
 
   // If current stat sort key is no longer in visible stat columns, clear it
@@ -593,8 +595,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   const draftedIdSet = useMemo(() => {
     const s = new Set<string>();
     draftedPlayers?.forEach((dp) => s.add(String(dp.playerId)));
+    unavailablePlayerIds?.forEach((playerId) => s.add(String(playerId)));
     return s;
-  }, [draftedPlayers]);
+  }, [draftedPlayers, unavailablePlayerIds]);
 
   const diagnostics = useMemo(() => {
     return diagnoseProjectionVisibility({

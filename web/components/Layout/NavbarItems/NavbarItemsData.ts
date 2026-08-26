@@ -107,9 +107,9 @@ const ITEMS_DATA: NavbarItem[] = [
         label: "Draft Dashboard",
         href: "/draft-dashboard",
         mobile: {
-          tier: "secondary",
+          tier: "primary",
           icon: "/pictures/playersTable.png",
-          order: 5,
+          order: 7,
         },
       },
     ],

@@ -17,6 +17,73 @@ import DraftSummaryModal from "../../../components/DraftDashboard/DraftSummaryMo
 afterEach(cleanup);
 
 describe("DraftSummaryModal configuration evidence", () => {
+  it("lists no-pick keepers separately from the recap board", () => {
+    render(
+      <DraftSummaryModal
+        isOpen
+        onClose={vi.fn()}
+        draftSettings={{
+          teamCount: 1,
+          draftOrder: ["Team 1"],
+          scoringCategories: {},
+          rosterConfig: {
+            C: 1,
+            LW: 0,
+            RW: 0,
+            D: 0,
+            G: 0,
+            utility: 0,
+            bench: 0,
+          },
+        }}
+        draftedPlayers={[]}
+        teamStats={[
+          {
+            teamId: "Team 1",
+            teamName: "Keepers United",
+            owner: "Team 1",
+            projectedPoints: 10,
+            categoryTotals: {},
+            rosterSlots: {
+              C: [
+                {
+                  playerId: "1",
+                  teamId: "Team 1",
+                  isKeeper: true,
+                  keeperCost: "none",
+                },
+              ],
+            },
+            bench: [],
+          },
+        ]}
+        allPlayers={[
+          {
+            playerId: 1,
+            fullName: "No Cost Keeper",
+            fantasyPoints: { projected: 10 },
+            combinedStats: {},
+          } as any,
+        ]}
+        keepers={[
+          {
+            version: 2,
+            status: "valid",
+            cost: "none",
+            playerId: "1",
+            teamId: "Team 1",
+          },
+        ]}
+      />,
+    );
+
+    const keeperList = screen.getByRole("region", {
+      name: "No-pick keepers",
+    });
+    expect(keeperList.textContent).toContain("No Cost Keeper");
+    expect(keeperList.textContent).toContain("Keepers United");
+  });
+
   it("renders source weights and privacy-safe custom metadata", () => {
     render(
       <DraftSummaryModal

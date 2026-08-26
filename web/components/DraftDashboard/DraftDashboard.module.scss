@@ -15,6 +15,29 @@
   box-sizing: border-box;
 }
 
+.setupPanel,
+.setupCore {
+  display: contents;
+}
+
+.mobileTabs {
+  display: none;
+}
+
+.suggestedSection {
+  order: 1;
+}
+
+.accuracyPanel {
+  width: 100%;
+  min-width: 0;
+  order: 2;
+}
+
+.mainContent {
+  order: 3;
+}
+
 /* =================== Settings Section (Full Width) =================== */
 .settingsSection {
   width: 100%;
@@ -204,6 +227,123 @@
   .centerPanel,
   .rightPanel {
     min-height: 300px;
+  }
+}
+
+@media (max-width: 799px) {
+  .dashboardContainer {
+    position: fixed;
+    top: 52px;
+    right: 0;
+    bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+    left: 0;
+    z-index: 1;
+    width: 100vw;
+    max-width: 100vw;
+    min-height: 0;
+    height: auto;
+    padding: v.$space-xs;
+    gap: v.$space-xs;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  .dashboardContainer,
+  .dashboardContainer * {
+    box-sizing: border-box;
+  }
+
+  .mobileTabs {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    flex: 0 0 auto;
+    gap: 2px;
+    width: 100%;
+    min-width: 0;
+    padding: 2px;
+    border: 1px solid v.$border-secondary;
+    border-radius: v.$border-radius-md;
+    background: v.$background-medium;
+  }
+
+  .mobileTab {
+    @include v.reset-button;
+    min-width: 0;
+    min-height: 38px;
+    padding: 4px 2px;
+    border-radius: v.$border-radius-sm;
+    color: v.$text-secondary;
+    font-family: v.$font-family-accent, sans-serif;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-align: center;
+    text-transform: uppercase;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid v.$primary-color;
+      outline-offset: -2px;
+    }
+  }
+
+  .mobileTabActive {
+    background: v.$primary-color-opaque;
+    color: v.$secondary-color;
+    box-shadow: inset 0 0 0 1px v.$primary-color;
+  }
+
+  .setupPanel,
+  .setupCore {
+    display: flex;
+    flex-direction: column;
+    gap: v.$space-sm;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .setupPanel,
+  .suggestedSection,
+  .leftPanel,
+  .centerPanel,
+  .rightPanel {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .dashboardContainer [data-mobile-panel][data-mobile-active="false"] {
+    display: none !important;
+  }
+
+  .setupPanel,
+  .suggestedSection {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    @include v.custom-scrollbar(v.$primary-color, v.$background-medium);
+  }
+
+  .accuracyPanel {
+    order: initial;
+  }
+
+  .suggestedSection,
+  .mainContent {
+    order: initial;
+  }
+
+  .mainContent {
+    display: contents;
+  }
+
+  .leftPanel,
+  .centerPanel,
+  .rightPanel {
+    height: 100%;
+    overflow: hidden;
   }
 }
 

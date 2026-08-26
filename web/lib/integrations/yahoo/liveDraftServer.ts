@@ -1,31 +1,48 @@
 import serviceRoleClient from "lib/supabase/server";
 
-import { getYahooClientCredentials, YAHOO_PROVIDER } from "./config";
+import {
+  getYahooLiveDraftResponseFormat,
+  yahooLiveDraftComparisonEnabled,
+  YAHOO_PROVIDER,
+} from "./config";
+import {
+  assertYahooLeagueGameContext,
+  resolveYahooGameContext,
+  type YahooGameContext,
+} from "./gameContext";
 import {
   assertYahooLeagueKey,
   applyYahooTeamDraftPositionDiagnostics,
   hashYahooDraftSnapshot,
-  parseRetryAfterSeconds,
   parseYahooDraftResults,
   parseYahooDraftSettings,
   parseYahooDraftTeams,
   sessionStatusForProvider,
-  yahooDraftPollDelaySeconds,
-  yahooFantasyResourceUrl,
   yahooLeagueDraftUrl,
-  YAHOO_LIVE_DRAFT_GAME_KEY,
-  YAHOO_LIVE_DRAFT_SEASON,
-  YAHOO_LIVE_DRAFT_TARGET_SEASON_ID,
   YahooLiveDraftError,
   type YahooDraftPick,
   type YahooDraftProviderStatus,
   type YahooDraftSettings,
   type YahooDraftTeam,
 } from "./liveDraft";
+import type { YahooLiveDraftClient } from "./liveDraftDatabase";
+import {
+  recordYahooDraftPollObservation,
+  transportObservation,
+} from "./observability";
+import {
+  yahooDraftBurstEnabled,
+  yahooDraftPollDelaySeconds,
+} from "./pollPolicy";
+import {
+  fetchYahooDraftResource,
+  YahooProviderRequestError,
+  type YahooProviderTransportMetadata,
+} from "./providerClient";
 
-type LiveDraftDb = any;
+type LiveDraftDb = YahooLiveDraftClient;
 type FetchLike = typeof fetch;
-type UnknownRecord = Record<string, any>;
+type UnknownRecord = Record<string, unknown>;
 
 type ExternalLeagueRow = {
   id: string;
@@ -73,6 +90,8 @@ type YahooDraftSessionRow = {
   last_changed_at: string | null;
   next_poll_at: string;
   last_polled_at: string | null;
+  last_nudged_at: string | null;
+  last_worker_heartbeat_at: string | null;
   consecutive_failures: number;
   last_error_code: string | null;
   last_error_message: string | null;
@@ -100,18 +119,10 @@ type YahooDraftPickRow = {
   is_active: boolean;
   is_correction: boolean;
   revision: number;
+  mapping_revision: number;
+  correction_confirmed_at: string | null;
   first_observed_at: string;
   last_observed_at: string;
-};
-
-type YahooTokenRow = {
-  access_token: string | null;
-  refresh_token: string | null;
-  token_type: string | null;
-  scopes: unknown;
-  provider_user_id: string | null;
-  refresh_expires_at: string | null;
-  secret_metadata: unknown;
 };
 
 type OwnedYahooLeagueContext = {
@@ -121,14 +132,16 @@ type OwnedYahooLeagueContext = {
 
 type PollOptions = {
   client?: LiveDraftDb;
+  context?: YahooGameContext;
   fetchImpl?: FetchLike;
   now?: () => Date;
+  random?: () => number;
 };
 
 const SESSION_SELECT =
-  "id,user_id,connected_account_id,external_league_id,external_team_id,draft_ranking_id,yahoo_game_key,yahoo_season,target_season_id,yahoo_league_key,yahoo_team_key,normalized_settings,diagnostics,last_provider_sync_run_id,status,provider_status,snapshot_hash,snapshot_version,last_pick_number,last_snapshot_at,last_changed_at,next_poll_at,last_polled_at,consecutive_failures,last_error_code,last_error_message,started_at,completed_at,created_at,updated_at";
+  "id,user_id,connected_account_id,external_league_id,external_team_id,draft_ranking_id,yahoo_game_key,yahoo_season,target_season_id,yahoo_league_key,yahoo_team_key,normalized_settings,diagnostics,last_provider_sync_run_id,status,provider_status,snapshot_hash,snapshot_version,last_pick_number,last_snapshot_at,last_changed_at,next_poll_at,last_polled_at,last_nudged_at,last_worker_heartbeat_at,consecutive_failures,last_error_code,last_error_message,started_at,completed_at,created_at,updated_at";
 const PICK_SELECT =
-  "session_id,pick_number,round_number,pick_in_round,yahoo_team_key,external_team_id,yahoo_player_key,yahoo_player_id,fhfh_player_id,mapping_status,player_name,nhl_team_abbreviation,position,auction_cost,is_active,is_correction,revision,first_observed_at,last_observed_at";
+  "session_id,pick_number,round_number,pick_in_round,yahoo_team_key,external_team_id,yahoo_player_key,yahoo_player_id,fhfh_player_id,mapping_status,player_name,nhl_team_abbreviation,position,auction_cost,is_active,is_correction,revision,mapping_revision,correction_confirmed_at,first_observed_at,last_observed_at";
 
 function record(value: unknown): UnknownRecord {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -140,36 +153,39 @@ function firstRpcObject(value: unknown): UnknownRecord {
   return record(Array.isArray(value) ? value[0] : value);
 }
 
-function queryError(prefix: string, error: any) {
-  return new Error(`${prefix}: ${error?.message || "unknown database error"}`);
+function queryError(prefix: string, error: unknown) {
+  const message =
+    error && typeof error === "object" && "message" in error
+      ? String(error.message)
+      : "unknown database error";
+  return new Error(`${prefix}: ${message}`);
 }
 
 function isoAfter(date: Date, seconds: number) {
   return new Date(date.getTime() + seconds * 1000).toISOString();
 }
 
-function yahooRequestSignal() {
-  const timeout = (globalThis.AbortSignal as typeof AbortSignal & {
-    timeout?: (milliseconds: number) => AbortSignal;
-  }).timeout;
-  return typeof timeout === "function" ? timeout(10_000) : undefined;
-}
-
 function liveDraftMetadata(league: ExternalLeagueRow) {
   return record(record(league.league_metadata).yahoo_live_draft);
 }
 
-function storedSettings(league: ExternalLeagueRow): YahooDraftSettings {
+function storedSettings(
+  league: ExternalLeagueRow,
+  context: YahooGameContext,
+): YahooDraftSettings {
   const metadata = liveDraftMetadata(league);
   if (record(metadata.settings).normalized) {
     return metadata.settings as YahooDraftSettings;
   }
-  return parseYahooDraftSettings({
-    league_key: league.external_league_key,
-    ...record(league.league_metadata),
-    ...record(league.scoring_settings),
-    ...record(league.roster_settings),
-  });
+  return parseYahooDraftSettings(
+    {
+      league_key: league.external_league_key,
+      ...record(league.league_metadata),
+      ...record(league.scoring_settings),
+      ...record(league.roster_settings),
+    },
+    context,
+  );
 }
 
 function normalizedSettingsPayload(settings: YahooDraftSettings) {
@@ -213,6 +229,15 @@ function apiTeamFromRow(team: ExternalTeamRow) {
 
 function formatSession(row: YahooDraftSessionRow, now = new Date()) {
   const staleBasisMs = Date.parse(row.last_snapshot_at || row.started_at);
+  const staleAgeMs = Number.isFinite(staleBasisMs)
+    ? now.getTime() - staleBasisMs
+    : Number.POSITIVE_INFINITY;
+  const staleSeverity =
+    row.status === "active" && staleAgeMs > 60_000
+      ? "critical"
+      : row.status === "active" && staleAgeMs > 20_000
+        ? "warning"
+        : "fresh";
   return {
     id: row.id,
     externalLeagueId: row.external_league_id,
@@ -226,10 +251,15 @@ function formatSession(row: YahooDraftSessionRow, now = new Date()) {
     lastSuccessfulPollAt: row.last_snapshot_at,
     lastPickNumber: row.last_pick_number,
     nextPollAt: row.next_poll_at,
-    yahooLeagueUrl: yahooLeagueDraftUrl(row.yahoo_league_key),
-    stale:
-      row.status === "active" &&
-      Number.isFinite(staleBasisMs) && staleBasisMs < now.getTime() - 15_000,
+    lastWorkerHeartbeatAt: row.last_worker_heartbeat_at,
+    yahooLeagueUrl: yahooLeagueDraftUrl(row.yahoo_league_key, {
+      gameCode: "nhl",
+      gameKey: row.yahoo_game_key,
+      season: String(row.yahoo_season),
+      targetSeasonId: row.target_season_id,
+    }),
+    stale: staleSeverity !== "fresh",
+    staleSeverity,
     draftRankingId: row.draft_ranking_id,
     consecutiveFailures: row.consecutive_failures,
     lastErrorCode: row.last_error_code,
@@ -238,7 +268,11 @@ function formatSession(row: YahooDraftSessionRow, now = new Date()) {
   };
 }
 
-function formatPicks(rows: YahooDraftPickRow[]) {
+function formatPicks(
+  rows: YahooDraftPickRow[],
+  nhlPlayerIdByIdentityId: Map<number, number>,
+  gameKey: string,
+) {
   return rows.map((row) => {
     return {
       pickNumber: row.pick_number,
@@ -248,7 +282,12 @@ function formatPicks(rows: YahooDraftPickRow[]) {
       externalTeamId: row.external_team_id,
       yahooPlayerKey: row.yahoo_player_key,
       yahooPlayerId: row.yahoo_player_id,
+      yahooGameKey: gameKey,
       fhfhPlayerId: row.fhfh_player_id,
+      nhlPlayerId:
+        row.fhfh_player_id === null
+          ? null
+          : (nhlPlayerIdByIdentityId.get(row.fhfh_player_id) ?? null),
       displayName: row.player_name,
       nhlTeamAbbreviation: row.nhl_team_abbreviation,
       position: row.position,
@@ -257,240 +296,20 @@ function formatPicks(rows: YahooDraftPickRow[]) {
       active: row.is_active,
       isCorrection: row.is_correction,
       revision: Number(row.revision),
+      mappingRevision: Number(row.mapping_revision),
+      correctionConfirmedAt: row.correction_confirmed_at,
     };
   });
-}
-
-async function loadYahooTokens(
-  client: LiveDraftDb,
-  connectedAccountId: string,
-  userId: string,
-) {
-  const { data, error } = await client.rpc("get_connected_account_tokens_secure", {
-    p_connected_account_id: connectedAccountId,
-    p_user_id: userId,
-  });
-  if (error) throw queryError("Failed to load Yahoo provider tokens", error);
-  const token = (Array.isArray(data) ? data[0] : data) as YahooTokenRow | null;
-  if (!token?.access_token || !token.refresh_token) {
-    throw new YahooLiveDraftError(
-      "Yahoo authorization is unavailable. Reconnect Yahoo and try again.",
-      409,
-      "yahoo_reauth_required",
-    );
-  }
-  return token as YahooTokenRow & { access_token: string; refresh_token: string };
-}
-
-async function refreshYahooTokens(args: {
-  client: LiveDraftDb;
-  token: YahooTokenRow & { access_token: string; refresh_token: string };
-  connectedAccountId: string;
-  userId: string;
-  fetchImpl: FetchLike;
-  now: Date;
-}) {
-  const { clientId, clientSecret } = getYahooClientCredentials();
-  let response: Response;
-  try {
-    response = await args.fetchImpl("https://api.login.yahoo.com/oauth2/get_token", {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-        Accept: "application/json",
-      },
-      body: new URLSearchParams({
-        grant_type: "refresh_token",
-        refresh_token: args.token.refresh_token,
-      }),
-      cache: "no-store",
-      signal: yahooRequestSignal(),
-    });
-  } catch {
-    throw new YahooLiveDraftError(
-      "Yahoo authorization could not be refreshed.",
-      502,
-      "yahoo_oauth_unavailable",
-    );
-  }
-
-  if (!response.ok) {
-    if (response.status === 429) {
-      throw new YahooLiveDraftError(
-        "Yahoo asked the live draft companion to slow down.",
-        429,
-        "yahoo_rate_limited",
-        parseRetryAfterSeconds(response.headers.get("retry-after"), args.now),
-      );
-    }
-    if (response.status >= 500) {
-      throw new YahooLiveDraftError(
-        "Yahoo authorization could not be refreshed.",
-        502,
-        "yahoo_oauth_unavailable",
-        parseRetryAfterSeconds(response.headers.get("retry-after"), args.now),
-      );
-    }
-    throw new YahooLiveDraftError(
-      "Yahoo authorization has expired. Reconnect Yahoo and try again.",
-      409,
-      "yahoo_reauth_required",
-    );
-  }
-  let refreshed: UnknownRecord;
-  try {
-    refreshed = record(await response.json());
-  } catch {
-    throw new YahooLiveDraftError(
-      "Yahoo returned an invalid authorization response.",
-      502,
-      "yahoo_oauth_invalid_response",
-    );
-  }
-  const accessToken = String(refreshed.access_token || "");
-  if (!accessToken) {
-    throw new YahooLiveDraftError(
-      "Yahoo authorization has expired. Reconnect Yahoo and try again.",
-      409,
-      "yahoo_reauth_required",
-    );
-  }
-  const refreshToken = String(refreshed.refresh_token || args.token.refresh_token);
-  const expiresIn = Number(refreshed.expires_in);
-  const expiresAt = Number.isFinite(expiresIn)
-    ? isoAfter(args.now, Math.max(0, expiresIn))
-    : null;
-  const { error } = await args.client.rpc("upsert_connected_account_tokens_secure", {
-    p_connected_account_id: args.connectedAccountId,
-    p_user_id: args.userId,
-    p_provider: YAHOO_PROVIDER,
-    p_access_token: accessToken,
-    p_refresh_token: refreshToken,
-    p_token_type: String(refreshed.token_type || args.token.token_type || "bearer"),
-    p_scopes: args.token.scopes ?? [],
-    p_provider_user_id:
-      String(refreshed.xoauth_yahoo_guid || args.token.provider_user_id || "") || null,
-    p_expires_at: expiresAt,
-    p_refresh_expires_at: args.token.refresh_expires_at,
-    p_last_refreshed_at: args.now.toISOString(),
-    p_secret_metadata: record(args.token.secret_metadata),
-  });
-  if (error) throw queryError("Failed to store refreshed Yahoo tokens", error);
-  return accessToken;
-}
-
-async function yahooResponseError(response: Response, now: Date) {
-  if (response.status === 401) {
-    return new YahooLiveDraftError(
-      "Yahoo authorization has expired. Reconnect Yahoo and try again.",
-      409,
-      "yahoo_reauth_required",
-    );
-  }
-  if (response.status === 429) {
-    const retryAfterSeconds = parseRetryAfterSeconds(
-      response.headers.get("retry-after"),
-      now,
-    );
-    return new YahooLiveDraftError(
-      "Yahoo asked the live draft companion to slow down.",
-      429,
-      "yahoo_rate_limited",
-      retryAfterSeconds,
-    );
-  }
-  if (response.status === 403) {
-    return new YahooLiveDraftError(
-      "Yahoo denied access to this league. Reconnect Yahoo and verify league access.",
-      403,
-      "yahoo_access_denied",
-    );
-  }
-  if (response.status === 404) {
-    return new YahooLiveDraftError(
-      "Yahoo could not find this 2026-2027 league.",
-      409,
-      "yahoo_league_unavailable",
-    );
-  }
-  return new YahooLiveDraftError(
-    `Yahoo draft data is temporarily unavailable (HTTP ${response.status}).`,
-    502,
-    "yahoo_api_error",
-  );
-}
-
-export async function fetchYahooJson(args: {
-  client: LiveDraftDb;
-  connectedAccountId: string;
-  userId: string;
-  url: string;
-  fetchImpl: FetchLike;
-  now: Date;
-}) {
-  const token = await loadYahooTokens(
-    args.client,
-    args.connectedAccountId,
-    args.userId,
-  );
-  let accessToken = token.access_token;
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    let response: Response;
-    try {
-      response = await args.fetchImpl(args.url, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: "application/json",
-          "Cache-Control": "no-cache",
-        },
-        cache: "no-store",
-        signal: yahooRequestSignal(),
-      });
-    } catch {
-      throw new YahooLiveDraftError(
-        "Yahoo draft data is temporarily unavailable.",
-        502,
-        "yahoo_api_unavailable",
-      );
-    }
-    if (response.ok) {
-      try {
-        return await response.json();
-      } catch {
-        throw new YahooLiveDraftError(
-          "Yahoo returned an invalid draft response.",
-          502,
-          "yahoo_draft_response_invalid",
-        );
-      }
-    }
-    if (response.status === 401 && attempt === 0) {
-      accessToken = await refreshYahooTokens({
-        client: args.client,
-        token,
-        connectedAccountId: args.connectedAccountId,
-        userId: args.userId,
-        fetchImpl: args.fetchImpl,
-        now: args.now,
-      });
-      continue;
-    }
-    throw await yahooResponseError(response, args.now);
-  }
-  throw new YahooLiveDraftError(
-    "Yahoo authorization has expired. Reconnect Yahoo and try again.",
-    409,
-    "yahoo_reauth_required",
-  );
 }
 
 export async function requireOwnedYahooDraftLeague(
   userId: string,
   externalLeagueId: string,
-  client: LiveDraftDb = serviceRoleClient as any,
+  client: LiveDraftDb = serviceRoleClient as unknown as LiveDraftDb,
+  configuredContext?: YahooGameContext,
 ): Promise<OwnedYahooLeagueContext> {
+  const context =
+    configuredContext ?? (await resolveYahooGameContext(client));
   const { data: league, error: leagueError } = await client
     .from("external_leagues")
     .select(
@@ -508,7 +327,8 @@ export async function requireOwnedYahooDraftLeague(
       "yahoo_league_not_found",
     );
   }
-  assertYahooLeagueKey(league.external_league_key);
+  assertYahooLeagueKey(league.external_league_key, context);
+  assertYahooLeagueGameContext(league.external_league_key, context);
 
   const { data: teams, error: teamError } = await client
     .from("external_teams")
@@ -539,6 +359,7 @@ async function requireDraftRanking(
   client: LiveDraftDb,
   userId: string,
   rankingId: string,
+  context: YahooGameContext,
 ) {
   const { data, error } = await client
     .from("draft_rankings")
@@ -549,11 +370,11 @@ async function requireDraftRanking(
   if (error) throw queryError("Failed to load draft ranking", error);
   if (
     !data ||
-    data.target_season_id !== YAHOO_LIVE_DRAFT_TARGET_SEASON_ID ||
+    data.target_season_id !== context.targetSeasonId ||
     data.status !== "active"
   ) {
     throw new YahooLiveDraftError(
-      "The selected 2026-2027 draft ranking was not found.",
+      "The selected configured-season draft ranking was not found.",
       404,
       "draft_ranking_not_found",
     );
@@ -561,12 +382,16 @@ async function requireDraftRanking(
   return data;
 }
 
-async function defaultDraftRanking(client: LiveDraftDb, userId: string) {
+async function defaultDraftRanking(
+  client: LiveDraftDb,
+  userId: string,
+  context: YahooGameContext,
+) {
   const { data, error } = await client
     .from("draft_rankings")
     .select("id")
     .eq("user_id", userId)
-    .eq("target_season_id", YAHOO_LIVE_DRAFT_TARGET_SEASON_ID)
+    .eq("target_season_id", context.targetSeasonId)
     .eq("status", "active")
     .eq("is_default", true)
     .maybeSingle();
@@ -593,8 +418,9 @@ async function loadLeagueTeams(
 
 export async function listYahooDraftLeagues(
   userId: string,
-  client: LiveDraftDb = serviceRoleClient as any,
+  client: LiveDraftDb = serviceRoleClient as unknown as LiveDraftDb,
 ) {
+  const context = await resolveYahooGameContext(client);
   const { data: leagues, error: leagueError } = await client
     .from("external_leagues")
     .select(
@@ -603,9 +429,14 @@ export async function listYahooDraftLeagues(
     .eq("user_id", userId)
     .eq("provider", YAHOO_PROVIDER);
   if (leagueError) throw queryError("Failed to load Yahoo leagues", leagueError);
-  const eligible = ((leagues ?? []) as ExternalLeagueRow[]).filter((league) =>
-    /^477\.l\.\d+$/.test(league.external_league_key),
-  );
+  const eligible = ((leagues ?? []) as ExternalLeagueRow[]).filter((league) => {
+    try {
+      assertYahooLeagueKey(league.external_league_key, context);
+      return true;
+    } catch {
+      return false;
+    }
+  });
   const [teamsResult, sessionsResult, rankingId] = await Promise.all([
     client
       .from("external_teams")
@@ -618,8 +449,8 @@ export async function listYahooDraftLeagues(
       .from("yahoo_draft_sessions")
       .select(SESSION_SELECT)
       .eq("user_id", userId)
-      .eq("yahoo_game_key", YAHOO_LIVE_DRAFT_GAME_KEY),
-    defaultDraftRanking(client, userId),
+      .eq("yahoo_game_key", context.gameKey),
+    defaultDraftRanking(client, userId, context),
   ]);
   if (teamsResult.error) throw queryError("Failed to load Yahoo teams", teamsResult.error);
   if (sessionsResult.error) {
@@ -650,7 +481,7 @@ export async function listYahooDraftLeagues(
       let settings: YahooDraftSettings | null = null;
       let unsupportedReason: string | null = null;
       try {
-        settings = storedSettings(league);
+        settings = storedSettings(league, context);
         if (
           settings.normalized.draftType === "offline" ||
           settings.normalized.draftType === "autopick"
@@ -670,8 +501,8 @@ export async function listYahooDraftLeagues(
           externalTeamId: ownedTeam.id,
           leagueName: league.league_name,
           teamName: ownedTeam.team_name,
-          gameKey: YAHOO_LIVE_DRAFT_GAME_KEY,
-          season: YAHOO_LIVE_DRAFT_SEASON,
+          gameKey: context.gameKey,
+          season: context.season,
           draftPosition: metadataTeamDraftPosition(ownedTeam),
           draftType:
             settings?.normalized.draftType ??
@@ -695,7 +526,10 @@ export async function listYahooDraftLeagues(
               : null),
           supported: unsupportedReason === null,
           unsupportedReason,
-          yahooLeagueUrl: yahooLeagueDraftUrl(league.external_league_key),
+          yahooLeagueUrl: yahooLeagueDraftUrl(
+            league.external_league_key,
+            context,
+          ),
           session: session ? formatSession(session) : null,
         },
       ];
@@ -740,6 +574,9 @@ async function updateYahooDraftMetadata(args: {
       .maybeSingle();
     if (rowError) throw queryError("Failed to load Yahoo draft team", rowError);
     if (!row) continue;
+    const storedDraftPosition = Number(
+      record(row.team_metadata).draft_position,
+    );
     const { error: updateError } = await args.client
       .from("external_teams")
       .update({
@@ -747,8 +584,9 @@ async function updateYahooDraftMetadata(args: {
           ...record(row.team_metadata),
           draft_position:
             yahooTeam.draftPosition ??
-            record(row.team_metadata).draft_position ??
-            null,
+            (Number.isInteger(storedDraftPosition) && storedDraftPosition > 0
+              ? storedDraftPosition
+              : null),
         },
         updated_at: args.fetchedAt,
       })
@@ -760,6 +598,7 @@ async function updateYahooDraftMetadata(args: {
 
 async function resolveYahooDraftPicks(args: {
   client: LiveDraftDb;
+  context: YahooGameContext;
   userId: string;
   externalLeagueId: string;
   teamCount: number | null;
@@ -768,6 +607,7 @@ async function resolveYahooDraftPicks(args: {
   if (args.picks.length === 0) return [];
   const playerKeys = [...new Set(args.picks.map((pick) => pick.yahooPlayerKey))];
   const teamKeys = [...new Set(args.picks.map((pick) => pick.yahooTeamKey))];
+  const identityContextKey = `yahoo:game:${args.context.gameKey}:season:${args.context.season}`;
   const [playerResult, identityResult, teamResult] = await Promise.all([
     args.client
       .from("yahoo_players")
@@ -777,8 +617,12 @@ async function resolveYahooDraftPicks(args: {
       .in("player_key", playerKeys),
     args.client
       .from("fhfh_player_external_identities")
-      .select("external_player_id,fhfh_player_id,is_primary,verification_status")
+      .select(
+        "external_player_id,fhfh_player_id,is_primary,verification_status,context_key,season_id",
+      )
       .eq("provider", YAHOO_PROVIDER)
+      .eq("context_key", identityContextKey)
+      .eq("season_id", args.context.targetSeasonId)
       .in("external_player_id", playerKeys)
       .order("is_primary", { ascending: false }),
     args.client
@@ -788,28 +632,60 @@ async function resolveYahooDraftPicks(args: {
       .eq("user_id", args.userId)
       .in("external_team_key", teamKeys),
   ]);
-  const error = playerResult.error ?? identityResult.error ?? teamResult.error;
+  const identityIds = [
+    ...new Set(
+      (identityResult.data ?? []).map((identity) => identity.fhfh_player_id),
+    ),
+  ];
+  const canonicalResult = identityIds.length
+    ? await args.client
+        .from("fhfh_player_identities")
+        .select("id,verification_status")
+        .in("id", identityIds)
+    : { data: [], error: null };
+  const error =
+    playerResult.error ??
+    identityResult.error ??
+    teamResult.error ??
+    canonicalResult.error;
   if (error) throw queryError("Failed to resolve Yahoo draft picks", error);
-  const playerByKey = new Map(
-    (playerResult.data ?? []).map((player: UnknownRecord) => [player.player_key, player]),
+  const playerByKey = new Map<string, UnknownRecord>(
+    (playerResult.data ?? []).flatMap((player) =>
+      typeof player.player_key === "string"
+        ? [[player.player_key, player as UnknownRecord] as const]
+        : [],
+    ),
   );
-  const identityByKey = new Map<string, number>();
+  const verifiedCanonicalIds = new Set(
+    (canonicalResult.data ?? [])
+      .filter((identity) => identity.verification_status === "verified")
+      .map((identity) => identity.id),
+  );
+  const identitiesByKey = new Map<string, Set<number>>();
   const reviewRequiredKeys = new Set<string>();
   for (const identity of identityResult.data ?? []) {
     if (
       identity.verification_status === "verified" &&
-      !identityByKey.has(identity.external_player_id)
+      verifiedCanonicalIds.has(identity.fhfh_player_id)
     ) {
-      identityByKey.set(identity.external_player_id, identity.fhfh_player_id);
+      const ids = identitiesByKey.get(identity.external_player_id) ?? new Set<number>();
+      ids.add(identity.fhfh_player_id);
+      identitiesByKey.set(identity.external_player_id, ids);
     } else if (identity.verification_status === "review_required") {
       reviewRequiredKeys.add(identity.external_player_id);
     }
   }
-  const externalTeamIdByKey = new Map(
-    (teamResult.data ?? []).map((team: UnknownRecord) => [
-      team.external_team_key,
-      team.id,
-    ]),
+  const identityByKey = new Map<string, number>();
+  for (const [key, ids] of identitiesByKey) {
+    if (ids.size === 1) identityByKey.set(key, [...ids][0]);
+    else if (ids.size > 1) reviewRequiredKeys.add(key);
+  }
+  const externalTeamIdByKey = new Map<string, string>(
+    (teamResult.data ?? []).flatMap((team) =>
+      typeof team.external_team_key === "string" && typeof team.id === "string"
+        ? [[team.external_team_key, team.id] as const]
+        : [],
+    ),
   );
 
   return args.picks.map((pick) => {
@@ -838,10 +714,19 @@ async function resolveYahooDraftPicks(args: {
             ? "review_required"
             : "unmapped",
       player_name:
-        pick.playerName || player.full_name || player.player_name || null,
+        pick.playerName ||
+        (typeof player.full_name === "string" ? player.full_name : null) ||
+        (typeof player.player_name === "string" ? player.player_name : null),
       nhl_team_abbreviation:
-        pick.nhlTeamAbbreviation || player.editorial_team_abbreviation || null,
-      position: pick.position || player.display_position || null,
+        pick.nhlTeamAbbreviation ||
+        (typeof player.editorial_team_abbreviation === "string"
+          ? player.editorial_team_abbreviation
+          : null),
+      position:
+        pick.position ||
+        (typeof player.display_position === "string"
+          ? player.display_position
+          : null),
       auction_cost: pick.cost,
       is_correction: false,
     };
@@ -917,8 +802,9 @@ async function auditHeartbeat(
 export async function loadYahooDraftSession(
   userId: string,
   sessionId: string,
-  client: LiveDraftDb = serviceRoleClient as any,
+  client: LiveDraftDb = serviceRoleClient as unknown as LiveDraftDb,
   now = new Date(),
+  configuredContext?: YahooGameContext,
 ) {
   const { data: session, error: sessionError } = await client
     .from("yahoo_draft_sessions")
@@ -933,6 +819,26 @@ export async function loadYahooDraftSession(
       404,
       "yahoo_draft_session_not_found",
     );
+  }
+  const context =
+    configuredContext ?? (await resolveYahooGameContext(client));
+  if (
+    session.yahoo_game_key !== context.gameKey ||
+    Number(session.yahoo_season) !== Number(context.season) ||
+    Number(session.target_season_id) !== context.targetSeasonId
+  ) {
+    throw new YahooLiveDraftError(
+      "Yahoo draft session does not match the configured season.",
+      409,
+      "yahoo_game_context_mismatch",
+    );
+  }
+  const { error: reconcileError } = await client.rpc(
+    "reconcile_yahoo_draft_pick_identities",
+    { p_session_id: sessionId },
+  );
+  if (reconcileError) {
+    throw queryError("Failed to reconcile Yahoo draft-pick identities", reconcileError);
   }
   const [picksResult, leagueResult, teams] = await Promise.all([
     client
@@ -958,25 +864,49 @@ export async function loadYahooDraftSession(
   const stored = record(session.normalized_settings);
   const settings = Object.keys(stored).length
     ? ({ ...stored, diagnostics: record(session.diagnostics) } as YahooDraftSettings)
-    : storedSettings(leagueResult.data as ExternalLeagueRow);
+    : storedSettings(leagueResult.data as ExternalLeagueRow, context);
+  const pickRows = (picksResult.data ?? []) as YahooDraftPickRow[];
+  const identityIds = [
+    ...new Set(
+      pickRows.flatMap((pick) =>
+        pick.fhfh_player_id === null ? [] : [pick.fhfh_player_id],
+      ),
+    ),
+  ];
+  const identityResult = identityIds.length
+    ? await client
+        .from("fhfh_player_identities")
+        .select("id,nhl_player_id,verification_status")
+        .in("id", identityIds)
+    : { data: [], error: null };
+  if (identityResult.error) {
+    throw queryError("Failed to load canonical draft-pick identities", identityResult.error);
+  }
+  const nhlPlayerIdByIdentityId = new Map(
+    (identityResult.data ?? [])
+      .filter(
+        (identity) =>
+          identity.verification_status === "verified" &&
+          identity.nhl_player_id !== null,
+      )
+      .map((identity) => [identity.id, Number(identity.nhl_player_id)]),
+  );
   return {
     session: formatSession(session as YahooDraftSessionRow, now),
     teams: teams.map(apiTeamFromRow),
     settings,
-    picks: formatPicks((picksResult.data ?? []) as YahooDraftPickRow[]),
+    picks: formatPicks(pickRows, nhlPlayerIdByIdentityId, context.gameKey),
   };
 }
 
 function sessionStatusAfterSnapshot(
   providerStatus: YahooDraftProviderStatus,
   currentStatus: string,
+  postdraftConfirmed: boolean,
 ) {
-  if (providerStatus === "unknown") {
+  if (providerStatus === "postdraft" && !postdraftConfirmed) return "active";
+  if (providerStatus === "unknown")
     return currentStatus === "active" ? "active" : "predraft";
-  }
-  if (providerStatus === "predraft" && currentStatus === "active") {
-    return "active";
-  }
   return sessionStatusForProvider(providerStatus);
 }
 
@@ -984,24 +914,8 @@ function inferProviderStatus(args: {
   parsed: YahooDraftProviderStatus;
   current: YahooDraftProviderStatus;
   pickCount: number;
-  teamCount: number | null;
-  rosterConfig: Record<string, number>;
-  allowCompletionInference: boolean;
 }) {
-  const rosterSize = Object.values(args.rosterConfig).reduce(
-    (sum, count) => sum + count,
-    0,
-  );
-  const expectedPickCount =
-    args.teamCount && rosterSize > 0 ? args.teamCount * rosterSize : null;
   if (args.parsed === "postdraft") return "postdraft";
-  if (
-    args.allowCompletionInference &&
-    expectedPickCount &&
-    args.pickCount >= expectedPickCount
-  ) {
-    return "postdraft";
-  }
   if (
     args.parsed === "drafting" ||
     args.pickCount > 0 ||
@@ -1013,14 +927,151 @@ function inferProviderStatus(args: {
   return args.current === "postdraft" ? "postdraft" : "predraft";
 }
 
+type ExistingYahooPick = Pick<
+  YahooDraftPickRow,
+  | "pick_number"
+  | "round_number"
+  | "auction_cost"
+  | "yahoo_player_key"
+  | "yahoo_team_key"
+>;
+
+function providerPickChanged(
+  existing: ExistingYahooPick,
+  incoming: YahooDraftPick,
+) {
+  return (
+    incoming.roundNumber !== existing.round_number ||
+    incoming.cost !==
+      (existing.auction_cost === null ? null : Number(existing.auction_cost)) ||
+    incoming.yahooPlayerKey !== existing.yahoo_player_key ||
+    incoming.yahooTeamKey !== existing.yahoo_team_key
+  );
+}
+
+export function correctedIncomingPickNumbers(
+  existing: ExistingYahooPick[],
+  incoming: YahooDraftPick[],
+) {
+  const existingByNumber = new Map(
+    existing.map((pick) => [pick.pick_number, pick]),
+  );
+  return new Set(
+    incoming.flatMap((pick) => {
+      const previous = existingByNumber.get(pick.pickNumber);
+      return previous && providerPickChanged(previous, pick)
+        ? [pick.pickNumber]
+        : [];
+    }),
+  );
+}
+
+export function snapshotRequiresCorrectionConfirmation(
+  existing: ExistingYahooPick[],
+  incoming: YahooDraftPick[],
+) {
+  if (incoming.some((pick, index) => pick.pickNumber !== index + 1)) {
+    return true;
+  }
+  if (incoming.length < existing.length) return true;
+  const incomingByNumber = new Map(
+    incoming.map((pick) => [pick.pickNumber, pick]),
+  );
+  return (
+    correctedIncomingPickNumbers(existing, incoming).size > 0 ||
+    existing.some((pick) => !incomingByNumber.has(pick.pick_number))
+  );
+}
+
+export function postdraftConfirmation(args: {
+  diagnostics: UnknownRecord;
+  observedAt: Date;
+  providerStatus: YahooDraftProviderStatus;
+  snapshotHash: string;
+}) {
+  if (args.providerStatus !== "postdraft") {
+    return { confirmed: false, diagnostics: { ...args.diagnostics, postdraft: null } };
+  }
+  const previous = record(args.diagnostics.postdraft);
+  const previousAt = Date.parse(String(previous.firstObservedAt ?? ""));
+  const sameSnapshot = previous.snapshotHash === args.snapshotHash;
+  const confirmed =
+    Number(previous.observations ?? 0) >= 1 &&
+    sameSnapshot &&
+    Number.isFinite(previousAt) &&
+    args.observedAt.getTime() - previousAt >= 5_000;
+  return {
+    confirmed,
+    diagnostics: {
+      ...args.diagnostics,
+      postdraft: {
+        firstObservedAt:
+          sameSnapshot && Number.isFinite(previousAt)
+            ? String(previous.firstObservedAt)
+            : args.observedAt.toISOString(),
+        observations: confirmed ? Number(previous.observations ?? 1) + 1 : 1,
+        snapshotHash: args.snapshotHash,
+      },
+    },
+  };
+}
+
+function adaptiveDiagnostics(args: {
+  changed: boolean;
+  diagnostics: UnknownRecord;
+}) {
+  const previousUnchanged = Number(args.diagnostics.unchangedPolls ?? 0);
+  const previousBurst = Number(args.diagnostics.burstPollsRemaining ?? 0);
+  return {
+    ...args.diagnostics,
+    burstPollsRemaining: args.changed
+      ? 2
+      : Math.max(0, previousBurst - 1),
+    unchangedPolls: args.changed ? 0 : Math.max(0, previousUnchanged) + 1,
+  };
+}
+
+function assertSnapshotMatchesSession(
+  snapshot: ReturnType<typeof parseYahooDraftResults>,
+  session: YahooDraftSessionRow,
+) {
+  if (snapshot.picks.some((pick, index) => pick.pickNumber !== index + 1)) {
+    throw new YahooLiveDraftError(
+      "Yahoo returned draft picks with missing or invalid ordering.",
+      502,
+      "yahoo_draft_response_invalid",
+    );
+  }
+  if (snapshot.leagueKey && snapshot.leagueKey !== session.yahoo_league_key) {
+    throw new YahooLiveDraftError(
+      "Yahoo returned draft results for a different league.",
+      502,
+      "yahoo_draft_response_invalid",
+    );
+  }
+  if (
+    snapshot.picks.some(
+      (pick) => !pick.yahooTeamKey.startsWith(`${session.yahoo_league_key}.t.`),
+    )
+  ) {
+    throw new YahooLiveDraftError(
+      "Yahoo returned draft results for a different league.",
+      502,
+      "yahoo_draft_response_invalid",
+    );
+  }
+}
+
 export async function pollYahooDraftSession(
   userId: string,
   sessionId: string,
   options: PollOptions = {},
 ) {
-  const client = options.client ?? (serviceRoleClient as any);
+  const client =
+    options.client ?? (serviceRoleClient as unknown as LiveDraftDb);
   const fetchImpl = options.fetchImpl ?? fetch;
   const observedAt = (options.now ?? (() => new Date()))();
+  const context = options.context ?? (await resolveYahooGameContext(client));
   const { data: claimData, error: claimError } = await client.rpc(
     "claim_yahoo_draft_poll",
     {
@@ -1042,8 +1093,29 @@ export async function pollYahooDraftSession(
   }
   const claim = firstRpcObject(claimData);
   if (claim.claimed !== true) {
-    const state = await loadYahooDraftSession(userId, sessionId, client, observedAt);
+    const state = await loadYahooDraftSession(
+      userId,
+      sessionId,
+      client,
+      observedAt,
+      context,
+    );
     const retryAt = Date.parse(String(claim.retryAt || state.session.nextPollAt));
+    const connectedAccountId = String(claim.connectedAccountId ?? "");
+    if (connectedAccountId) {
+      await recordYahooDraftPollObservation({
+        accountId: connectedAccountId,
+        client,
+        observation: {
+          lease_claimed: false,
+          local_status: state.session.status,
+          next_poll_at: state.session.nextPollAt,
+          outcome: "skipped",
+          provider_status: state.session.providerStatus,
+        },
+        sessionId,
+      });
+    }
     return {
       ...state,
       poll: {
@@ -1073,6 +1145,17 @@ export async function pollYahooDraftSession(
           "yahoo_draft_session_not_found",
         );
   }
+  if (
+    session.yahoo_game_key !== context.gameKey ||
+    Number(session.yahoo_season) !== Number(context.season) ||
+    Number(session.target_season_id) !== context.targetSeasonId
+  ) {
+    throw new YahooLiveDraftError(
+      "Yahoo draft session does not match the configured season.",
+      409,
+      "yahoo_game_context_mismatch",
+    );
+  }
   const auditId = await auditStart(
     client,
     userId,
@@ -1080,69 +1163,191 @@ export async function pollYahooDraftSession(
     observedAt.toISOString(),
   );
 
+  let transport: YahooProviderTransportMetadata | null = null;
   try {
-    const payload = await fetchYahooJson({
+    const responseFormat = getYahooLiveDraftResponseFormat();
+    const providerResult = await fetchYahooDraftResource({
       client,
       connectedAccountId: session.connected_account_id,
-      userId,
-      url: yahooFantasyResourceUrl(session.yahoo_league_key, "draftresults"),
+      context,
       fetchImpl,
+      format: responseFormat,
+      leagueKey: session.yahoo_league_key,
       now: observedAt,
+      resource: "draftresults",
+      userId,
     });
-    const snapshot = parseYahooDraftResults(payload);
-    if (snapshot.leagueKey && snapshot.leagueKey !== session.yahoo_league_key) {
-      throw new YahooLiveDraftError(
-        "Yahoo returned draft results for a different league.",
-        502,
-        "yahoo_draft_response_invalid",
+    transport = providerResult.transport;
+    const snapshot = parseYahooDraftResults(providerResult.payload, context);
+    assertSnapshotMatchesSession(snapshot, session as YahooDraftSessionRow);
+
+    let formatComparison: UnknownRecord | null = null;
+    if (yahooLiveDraftComparisonEnabled()) {
+      const comparisonFormat =
+        responseFormat === "standard_json" ? "json_f" : "standard_json";
+      const comparisonResult = await fetchYahooDraftResource({
+        client,
+        connectedAccountId: session.connected_account_id,
+        context,
+        fetchImpl,
+        format: comparisonFormat,
+        leagueKey: session.yahoo_league_key,
+        now: observedAt,
+        resource: "draftresults",
+        userId,
+      });
+      const comparison = parseYahooDraftResults(
+        comparisonResult.payload,
+        context,
+      );
+      assertSnapshotMatchesSession(comparison, session as YahooDraftSessionRow);
+      const matches =
+        hashYahooDraftSnapshot(comparison) === hashYahooDraftSnapshot(snapshot);
+      formatComparison = {
+        comparedAt: observedAt.toISOString(),
+        formats: [responseFormat, comparisonFormat],
+        matches,
+      };
+      if (!matches) {
+        throw new YahooLiveDraftError(
+          "Yahoo response formats did not agree on the draft snapshot.",
+          502,
+          "yahoo_response_format_mismatch",
+        );
+      }
+    }
+
+    const [leagueResult, existingPickResult] = await Promise.all([
+      client
+        .from("external_leagues")
+        .select(
+          "id,connected_account_id,user_id,external_league_key,league_name,season_key,league_metadata,scoring_settings,roster_settings",
+        )
+        .eq("id", session.external_league_id)
+        .eq("user_id", userId)
+        .maybeSingle(),
+      client
+        .from("yahoo_draft_picks")
+        .select(
+          "pick_number,round_number,yahoo_team_key,yahoo_player_key,auction_cost",
+        )
+        .eq("session_id", sessionId)
+        .eq("user_id", userId)
+        .eq("is_active", true)
+        .order("pick_number", { ascending: true }),
+    ]);
+    if (leagueResult.error || !leagueResult.data) {
+      throw queryError(
+        "Failed to load Yahoo league settings",
+        leagueResult.error,
       );
     }
-    if (
-      snapshot.picks.some(
-        (pick) =>
-          !pick.yahooTeamKey.startsWith(`${session.yahoo_league_key}.t.`),
-      )
-    ) {
-      throw new YahooLiveDraftError(
-        "Yahoo returned draft results for a different league.",
-        502,
-        "yahoo_draft_response_invalid",
+    if (existingPickResult.error) {
+      throw queryError(
+        "Failed to load the current Yahoo draft snapshot",
+        existingPickResult.error,
       );
     }
-    const { data: league, error: leagueError } = await client
-      .from("external_leagues")
-      .select(
-        "id,connected_account_id,user_id,external_league_key,league_name,season_key,league_metadata,scoring_settings,roster_settings",
-      )
-      .eq("id", session.external_league_id)
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (leagueError || !league) throw queryError("Failed to load Yahoo league settings", leagueError);
+
+    const anomalyDetected = snapshotRequiresCorrectionConfirmation(
+      (existingPickResult.data ?? []) as ExistingYahooPick[],
+      snapshot.picks,
+    );
+    const correctedPickNumbers = anomalyDetected
+      ? correctedIncomingPickNumbers(
+          (existingPickResult.data ?? []) as ExistingYahooPick[],
+          snapshot.picks,
+        )
+      : new Set<number>();
+    let correctionConfirmation = "not_required";
+    if (anomalyDetected) {
+      const confirmationResult = await fetchYahooDraftResource({
+        client,
+        connectedAccountId: session.connected_account_id,
+        context,
+        fetchImpl,
+        format: responseFormat,
+        leagueKey: session.yahoo_league_key,
+        now: observedAt,
+        resource: "draftresults",
+        userId,
+      });
+      const confirmation = parseYahooDraftResults(
+        confirmationResult.payload,
+        context,
+      );
+      assertSnapshotMatchesSession(confirmation, session as YahooDraftSessionRow);
+      if (
+        hashYahooDraftSnapshot(confirmation) !== hashYahooDraftSnapshot(snapshot)
+      ) {
+        throw new YahooLiveDraftError(
+          "Yahoo returned a destructive draft correction that could not be confirmed.",
+          502,
+          "yahoo_draft_correction_unconfirmed",
+        );
+      }
+      correctionConfirmation = "confirmed_by_second_observation";
+    }
+
     const stored = record(session.normalized_settings);
     const settings = Object.keys(stored).length
-      ? ({ ...stored, diagnostics: record(session.diagnostics) } as YahooDraftSettings)
-      : storedSettings(league as ExternalLeagueRow);
+      ? ({
+          ...stored,
+          diagnostics: record(session.diagnostics),
+        } as YahooDraftSettings)
+      : storedSettings(leagueResult.data as ExternalLeagueRow, context);
     const providerStatus = inferProviderStatus({
       parsed: snapshot.providerStatus,
       current: session.provider_status as YahooDraftProviderStatus,
       pickCount: snapshot.picks.length,
-      teamCount: settings.teamCount,
-      rosterConfig: settings.rosterConfig,
-      allowCompletionInference:
-        settings.diagnostics.unsupportedRosterSlots.length === 0 &&
-        settings.diagnostics.draftPositionsComplete,
     });
     snapshot.providerStatus = providerStatus;
     const picks = await resolveYahooDraftPicks({
       client,
+      context,
       userId,
       externalLeagueId: session.external_league_id,
       teamCount: settings.normalized.teamCount,
       picks: snapshot.picks,
     });
-    const status = sessionStatusAfterSnapshot(providerStatus, session.status);
-    const delaySeconds =
-      status === "active" ? 5 : yahooDraftPollDelaySeconds({ providerStatus });
+    if (anomalyDetected) {
+      for (const pick of picks) {
+        pick.is_correction = correctedPickNumbers.has(pick.pick_number);
+      }
+    }
+    const snapshotHash = hashYahooDraftSnapshot(snapshot);
+    const completion = postdraftConfirmation({
+      diagnostics: record(session.diagnostics),
+      observedAt,
+      providerStatus,
+      snapshotHash,
+    });
+    const changed = session.snapshot_hash !== snapshotHash;
+    const diagnostics = adaptiveDiagnostics({
+      changed,
+      diagnostics: {
+        ...completion.diagnostics,
+        ...(formatComparison ? { responseFormatComparison: formatComparison } : {}),
+      },
+    });
+    const status = sessionStatusAfterSnapshot(
+      providerStatus,
+      session.status,
+      completion.confirmed,
+    );
+    const delaySeconds = yahooDraftPollDelaySeconds(
+      {
+        burstPollsRemaining: Number(diagnostics.burstPollsRemaining ?? 0),
+        draftTime: settings.normalized.draftTime,
+        providerStatus,
+        unchangedPolls: Number(diagnostics.unchangedPolls ?? 0),
+      },
+      {
+        burstEnabled: yahooDraftBurstEnabled(),
+        now: observedAt,
+        random: options.random,
+      },
+    );
     const nextPollAt = isoAfter(observedAt, delaySeconds);
     const { data: appliedData, error: applyError } = await client.rpc(
       "apply_yahoo_draft_snapshot",
@@ -1150,11 +1355,11 @@ export async function pollYahooDraftSession(
         p_session_id: sessionId,
         p_user_id: userId,
         p_lease_token: leaseToken,
-        p_snapshot_hash: hashYahooDraftSnapshot(snapshot, picks),
+        p_snapshot_hash: snapshotHash,
         p_status: status,
         p_provider_status: providerStatus,
         p_normalized_settings: normalizedSettingsPayload(settings),
-        p_diagnostics: settings.diagnostics,
+        p_diagnostics: diagnostics,
         p_provider_sync_run_id: auditId,
         p_picks: picks,
         p_next_poll_at: nextPollAt,
@@ -1163,6 +1368,18 @@ export async function pollYahooDraftSession(
     );
     if (applyError) throw queryError("Failed to apply Yahoo draft snapshot", applyError);
     const applied = firstRpcObject(appliedData);
+    if (anomalyDetected) {
+      await client
+        .from("yahoo_draft_picks")
+        .update({ correction_confirmed_at: observedAt.toISOString() })
+        .eq("session_id", sessionId)
+        .eq("user_id", userId)
+        .eq("is_correction", true)
+        .eq("last_observed_at", observedAt.toISOString());
+    }
+    await client.rpc("reconcile_yahoo_draft_pick_identities", {
+      p_session_id: sessionId,
+    });
     const auditUpdate = {
       result_summary: {
         session_id: sessionId,
@@ -1176,7 +1393,41 @@ export async function pollYahooDraftSession(
         : {}),
     };
     await auditHeartbeat(client, auditId, userId, auditUpdate);
-    const state = await loadYahooDraftSession(userId, sessionId, client, observedAt);
+    await recordYahooDraftPollObservation({
+      accountId: session.connected_account_id,
+      client,
+      observation: {
+        ...transportObservation(transport),
+        anomaly_detected: anomalyDetected,
+        changed: applied.changed === true,
+        correction_confirmation: correctionConfirmation,
+        due_poll_lag_ms: Math.max(
+          0,
+          observedAt.getTime() - Date.parse(session.next_poll_at),
+        ),
+        last_pick_number: snapshot.picks.reduce(
+          (maximum, pick) => Math.max(maximum, pick.pickNumber),
+          0,
+        ),
+        lease_claimed: true,
+        local_status: status,
+        next_poll_at: nextPollAt,
+        outcome: applied.changed === true ? "changed" : "unchanged",
+        pick_count: snapshot.picks.length,
+        provider_status: providerStatus,
+        snapshot_hash: snapshotHash,
+        snapshot_version: Number(applied.snapshotVersion ?? 0),
+      },
+      requestId: transport?.requestId,
+      sessionId,
+    });
+    const state = await loadYahooDraftSession(
+      userId,
+      sessionId,
+      client,
+      observedAt,
+      context,
+    );
     return {
       ...state,
       poll: {
@@ -1186,6 +1437,9 @@ export async function pollYahooDraftSession(
       },
     };
   } catch (error) {
+    if (error instanceof YahooProviderRequestError) {
+      transport = error.transport;
+    }
     const controlled =
       error instanceof YahooLiveDraftError
         ? error
@@ -1196,11 +1450,14 @@ export async function pollYahooDraftSession(
           );
     const status =
       controlled.code === "yahoo_reauth_required" ? "reauth_required" : null;
-    const retryAfterSeconds = yahooDraftPollDelaySeconds({
-      providerStatus: session.provider_status as YahooDraftProviderStatus,
-      consecutiveFailures: Number(session.consecutive_failures) + 1,
-      retryAfterSeconds: controlled.retryAfterSeconds,
-    });
+    const retryAfterSeconds = yahooDraftPollDelaySeconds(
+      {
+        consecutiveFailures: Number(session.consecutive_failures) + 1,
+        providerStatus: session.provider_status as YahooDraftProviderStatus,
+        retryAfterSeconds: controlled.retryAfterSeconds,
+      },
+      { now: observedAt, random: options.random },
+    );
     const retryAt = isoAfter(observedAt, retryAfterSeconds);
     const { error: failureError } = await client.rpc(
       "record_yahoo_draft_poll_failure",
@@ -1223,6 +1480,29 @@ export async function pollYahooDraftSession(
       error_details: { code: controlled.code, message: controlled.message },
       cooldown_until: retryAt,
     });
+    await recordYahooDraftPollObservation({
+      accountId: session.connected_account_id,
+      client,
+      observation: {
+        ...transportObservation(transport),
+        anomaly_detected:
+          controlled.code === "yahoo_draft_correction_unconfirmed",
+        consecutive_failures: Number(session.consecutive_failures) + 1,
+        due_poll_lag_ms: Math.max(
+          0,
+          observedAt.getTime() - Date.parse(session.next_poll_at),
+        ),
+        error_code: controlled.code,
+        lease_claimed: true,
+        local_status: status ?? session.status,
+        next_poll_at: retryAt,
+        outcome: "failed",
+        provider_status: session.provider_status,
+        retry_after_seconds: retryAfterSeconds,
+      },
+      requestId: transport?.requestId,
+      sessionId,
+    });
     if (failureError) throw queryError("Failed to record Yahoo draft poll failure", failureError);
     throw new YahooLiveDraftError(
       controlled.message,
@@ -1238,30 +1518,39 @@ export async function createYahooDraftSession(
   input: { externalLeagueId: string; draftRankingId?: string | null },
   options: PollOptions = {},
 ) {
-  const client = options.client ?? (serviceRoleClient as any);
+  const client =
+    options.client ?? (serviceRoleClient as unknown as LiveDraftDb);
   const fetchImpl = options.fetchImpl ?? fetch;
   const now = (options.now ?? (() => new Date()))();
-  const context = await requireOwnedYahooDraftLeague(
+  const gameContext =
+    options.context ?? (await resolveYahooGameContext(client));
+  const leagueContext = await requireOwnedYahooDraftLeague(
     userId,
     input.externalLeagueId,
     client,
+    gameContext,
   );
   const rankingId =
     input.draftRankingId === undefined
-      ? await defaultDraftRanking(client, userId)
+      ? await defaultDraftRanking(client, userId, gameContext)
       : input.draftRankingId;
-  if (rankingId) await requireDraftRanking(client, userId, rankingId);
+  if (rankingId) {
+    await requireDraftRanking(client, userId, rankingId, gameContext);
+  }
 
   // Yahoo HTTP is deliberately completed before the session upsert transaction.
-  const settingsPayload = await fetchYahooJson({
+  const settingsResult = await fetchYahooDraftResource({
     client,
-    connectedAccountId: context.league.connected_account_id,
-    userId,
-    url: yahooFantasyResourceUrl(context.league.external_league_key, "settings"),
+    connectedAccountId: leagueContext.league.connected_account_id,
+    context: gameContext,
     fetchImpl,
+    format: getYahooLiveDraftResponseFormat(),
+    leagueKey: leagueContext.league.external_league_key,
     now,
+    resource: "settings",
+    userId,
   });
-  let settings = parseYahooDraftSettings(settingsPayload);
+  let settings = parseYahooDraftSettings(settingsResult.payload, gameContext);
   if (
     settings.normalized.draftType === "offline" ||
     settings.normalized.draftType === "autopick"
@@ -1272,24 +1561,27 @@ export async function createYahooDraftSession(
       "yahoo_draft_type_unsupported",
     );
   }
-  const teamsPayload = await fetchYahooJson({
+  const teamsResult = await fetchYahooDraftResource({
     client,
-    connectedAccountId: context.league.connected_account_id,
-    userId,
-    url: yahooFantasyResourceUrl(context.league.external_league_key, "teams"),
+    connectedAccountId: leagueContext.league.connected_account_id,
+    context: gameContext,
     fetchImpl,
+    format: getYahooLiveDraftResponseFormat(),
+    leagueKey: leagueContext.league.external_league_key,
     now,
+    resource: "teams",
+    userId,
   });
-  const teams = parseYahooDraftTeams(teamsPayload);
+  const teams = parseYahooDraftTeams(teamsResult.payload, gameContext);
   if (
     teams.length === 0 ||
     !teams.some(
-      (team) => team.yahooTeamKey === context.ownedTeam.external_team_key,
+      (team) => team.yahooTeamKey === leagueContext.ownedTeam.external_team_key,
     ) ||
     teams.some(
       (team) =>
         !team.yahooTeamKey.startsWith(
-          `${context.league.external_league_key}.t.`,
+          `${leagueContext.league.external_league_key}.t.`,
         ),
     )
   ) {
@@ -1303,20 +1595,21 @@ export async function createYahooDraftSession(
   settings = applyYahooTeamDraftPositionDiagnostics(settings, teams);
   await updateYahooDraftMetadata({
     client,
-    league: context.league,
+    league: leagueContext.league,
     settings,
     teams,
     fetchedAt: now.toISOString(),
   });
   const providerStatus = settings.normalized.providerStatus;
-  // POST means the user clicked Start; providerStatus remains independently
-  // predraft until Yahoo begins, while the companion polls at live cadence.
-  const initialStatus = "active";
+  const initialStatus =
+    providerStatus === "predraft" || providerStatus === "unknown"
+      ? "predraft"
+      : "active";
   const { data: existingSession } = await client
     .from("yahoo_draft_sessions")
     .select("id,last_provider_sync_run_id")
     .eq("user_id", userId)
-    .eq("yahoo_league_key", context.league.external_league_key)
+    .eq("yahoo_league_key", leagueContext.league.external_league_key)
     .maybeSingle();
   if (existingSession?.last_provider_sync_run_id) {
     await auditFinish(client, existingSession.last_provider_sync_run_id, userId, {
@@ -1333,15 +1626,15 @@ export async function createYahooDraftSession(
     .upsert(
       {
         user_id: userId,
-        connected_account_id: context.league.connected_account_id,
-        external_league_id: context.league.id,
-        external_team_id: context.ownedTeam.id,
+        connected_account_id: leagueContext.league.connected_account_id,
+        external_league_id: leagueContext.league.id,
+        external_team_id: leagueContext.ownedTeam.id,
         draft_ranking_id: rankingId ?? null,
-        yahoo_game_key: YAHOO_LIVE_DRAFT_GAME_KEY,
-        yahoo_season: Number(YAHOO_LIVE_DRAFT_SEASON),
-        target_season_id: YAHOO_LIVE_DRAFT_TARGET_SEASON_ID,
-        yahoo_league_key: context.league.external_league_key,
-        yahoo_team_key: context.ownedTeam.external_team_key,
+        yahoo_game_key: gameContext.gameKey,
+        yahoo_season: Number(gameContext.season),
+        target_season_id: gameContext.targetSeasonId,
+        yahoo_league_key: leagueContext.league.external_league_key,
+        yahoo_team_key: leagueContext.ownedTeam.external_team_key,
         normalized_settings: normalizedSettingsPayload(settings),
         diagnostics: settings.diagnostics,
         last_provider_sync_run_id: null,
@@ -1361,17 +1654,61 @@ export async function createYahooDraftSession(
     .select(SESSION_SELECT)
     .single();
   if (error || !session) throw queryError("Failed to create Yahoo draft session", error);
-  return pollYahooDraftSession(userId, session.id, {
+  return loadYahooDraftSession(
+    userId,
+    session.id,
     client,
-    fetchImpl,
-    now: () => now,
+    now,
+    gameContext,
+  );
+}
+
+export async function nudgeYahooDraftSession(
+  userId: string,
+  sessionId: string,
+  client: LiveDraftDb = serviceRoleClient as unknown as LiveDraftDb,
+) {
+  const context = await resolveYahooGameContext(client);
+  const { data, error } = await client.rpc("nudge_yahoo_draft_poll", {
+    p_session_id: sessionId,
+    p_user_id: userId,
   });
+  if (error) {
+    if (String(error.message).includes("YAHOO_DRAFT_SESSION_NOT_FOUND")) {
+      throw new YahooLiveDraftError(
+        "Yahoo draft session was not found.",
+        404,
+        "yahoo_draft_session_not_found",
+      );
+    }
+    throw queryError("Failed to nudge Yahoo draft polling", error);
+  }
+  const nudge = firstRpcObject(data);
+  const state = await loadYahooDraftSession(
+    userId,
+    sessionId,
+    client,
+    new Date(),
+    context,
+  );
+  const retryAt = Date.parse(String(nudge.retryAt ?? state.session.nextPollAt));
+  return {
+    ...state,
+    poll: {
+      claimed: false,
+      nudged: nudge.nudged === true,
+      retryAfterSeconds: Number.isFinite(retryAt)
+        ? Math.max(0, Math.ceil((retryAt - Date.now()) / 1000))
+        : 5,
+      unchanged: true,
+    },
+  };
 }
 
 export async function stopYahooDraftSession(
   userId: string,
   sessionId: string,
-  client: LiveDraftDb = serviceRoleClient as any,
+  client: LiveDraftDb = serviceRoleClient as unknown as LiveDraftDb,
 ) {
   const { data: existing, error: existingError } = await client
     .from("yahoo_draft_sessions")

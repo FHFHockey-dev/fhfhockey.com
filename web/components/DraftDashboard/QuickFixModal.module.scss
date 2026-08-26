@@ -1,0 +1,79 @@
+@use "styles/vars" as v;
+
+.dialog {
+  width: min(620px, 96vw);
+}
+
+.description {
+  margin: 4px 0 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.body {
+  display: grid;
+  gap: v.$space-md;
+}
+
+.pickFields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-sm;
+}
+
+.pickFields label,
+.replacementField {
+  display: grid;
+  gap: 4px;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.pickFields input,
+.replacementField input {
+  min-width: 0;
+  border: 1px solid v.$border-soft;
+  border-radius: v.$border-radius-sm;
+  background: v.$background-medium;
+  color: v.$text-primary;
+  padding: v.$space-sm;
+}
+
+.currentPick {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: v.$space-xs v.$space-sm;
+  padding: v.$space-sm;
+  border: 1px solid v.$border-soft;
+  border-radius: v.$border-radius-sm;
+  background: v.$background-medium;
+
+  p {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: v.$warning-color;
+  }
+
+  span {
+    color: v.$text-secondary;
+  }
+}
+
+.success,
+.error {
+  font-size: v.$font-size-xs;
+}
+
+.success {
+  color: v.$success-color;
+}
+
+.error {
+  color: v.$error-color;
+}
+
+@media (max-width: v.$breakpoint-mobile-max) {
+  .pickFields {
+    grid-template-columns: 1fr;
+  }
+}

@@ -29,6 +29,7 @@ describe("keeper contract", () => {
       keeper: {
         version: KEEPER_CONTRACT_VERSION,
         status: "valid",
+        cost: "pick",
         playerId: "1",
         teamId: "Team 2",
         round: 2,
@@ -36,6 +37,35 @@ describe("keeper contract", () => {
         pickNumber: 7
       }
     });
+  });
+
+  it("supports no-pick keepers without board coordinates and enforces capacity", () => {
+    const result = validateKeeperCandidate(
+      { playerId: "1", teamId: "Team 2", cost: "none" },
+      { ...context, rosterCapacity: 2, teamRosterCounts: { "Team 2": 1 } },
+    );
+    expect(result).toEqual({
+      ok: true,
+      keeper: {
+        version: KEEPER_CONTRACT_VERSION,
+        status: "valid",
+        cost: "none",
+        playerId: "1",
+        teamId: "Team 2",
+      },
+    });
+    if (!result.ok) throw new Error("fixture failed");
+    expect(materializeKeeperPicks([], [result.keeper])).toEqual([]);
+    expect(
+      validateKeeperCandidate(
+        { playerId: "2", teamId: "Team 2", cost: "none" },
+        {
+          ...context,
+          rosterCapacity: 1,
+          teamRosterCounts: { "Team 2": 1 },
+        },
+      ),
+    ).toMatchObject({ ok: false });
   });
 
   it("rejects invalid identities, bounds, duplicates, and completed picks", () => {
@@ -126,6 +156,7 @@ describe("keeper contract", () => {
       expect.objectContaining({
         version: KEEPER_CONTRACT_VERSION,
         status: "valid",
+        cost: "pick",
         playerId: "1",
         pickNumber: 8
       })
@@ -154,6 +185,20 @@ describe("keeper contract", () => {
       ok: false,
       keepers: [],
       errors: [expect.stringContaining("Row 2")]
+    });
+  });
+
+  it("imports mixed pick and no-pick costs with optional coordinates", () => {
+    const csv = parseKeeperImport(
+      "playerId,teamId,cost,round,pickInRound\n1,Team 1,pick,1,1\n2,Team 2,none,,",
+    );
+    if (!csv.ok) throw new Error("CSV fixture failed");
+    expect(validateKeeperBatch(csv.candidates, context)).toMatchObject({
+      ok: true,
+      keepers: [
+        { playerId: "1", cost: "pick", pickNumber: 1 },
+        { playerId: "2", cost: "none", teamId: "Team 2" },
+      ],
     });
   });
 });

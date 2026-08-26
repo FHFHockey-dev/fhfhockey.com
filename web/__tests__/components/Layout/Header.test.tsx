@@ -345,7 +345,7 @@ describe("desktop NavbarItems disclosure", () => {
 describe("cross-viewport navigation membership", () => {
   afterEach(cleanup);
 
-  it("keeps the eight approved secondary destinations in mobile More", async () => {
+  it("promotes Draft Dashboard into primary mobile navigation", async () => {
     const data = await vi.importActual<
       typeof import("components/Layout/NavbarItems/NavbarItemsData")
     >("components/Layout/NavbarItems/NavbarItemsData");
@@ -358,6 +358,7 @@ describe("cross-viewport navigation membership", () => {
       "/wigoCharts",
       "/shiftChart",
       "/drm",
+      "/draft-dashboard",
       "/podfeed",
       "/blog",
     ]);
@@ -366,7 +367,6 @@ describe("cross-viewport navigation membership", () => {
       "/trends",
       "/nhl-predictions",
       "/splits",
-      "/draft-dashboard",
       "/start-chart",
       "/variance/skaters",
       "/variance/goalies",
@@ -395,7 +395,6 @@ describe("cross-viewport navigation membership", () => {
       "/trends",
       "/nhl-predictions",
       "/splits",
-      "/draft-dashboard",
       "/start-chart",
       "/variance/skaters",
       "/variance/goalies",

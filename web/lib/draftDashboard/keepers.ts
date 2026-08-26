@@ -1,20 +1,31 @@
-export const KEEPER_CONTRACT_VERSION = 1 as const;
+export const KEEPER_CONTRACT_VERSION = 2 as const;
 
-export type KeeperEntry = {
+type KeeperEntryBase = {
   version: typeof KEEPER_CONTRACT_VERSION;
   status: "valid";
   playerId: string;
   teamId: string;
+};
+
+export type PickCostKeeperEntry = KeeperEntryBase & {
+  cost: "pick";
   round: number;
   pickInRound: number;
   pickNumber: number;
 };
 
+export type NoPickKeeperEntry = KeeperEntryBase & {
+  cost: "none";
+};
+
+export type KeeperEntry = PickCostKeeperEntry | NoPickKeeperEntry;
+
 export type KeeperCandidate = {
   playerId: unknown;
   teamId: unknown;
-  round: unknown;
-  pickInRound: unknown;
+  cost?: unknown;
+  round?: unknown;
+  pickInRound?: unknown;
 };
 
 export type KeeperDraftPick = {
@@ -34,6 +45,8 @@ export type KeeperValidationContext = {
   playerIds: Iterable<string>;
   keepers?: KeeperEntry[];
   draftedPlayers?: KeeperDraftPick[];
+  rosterCapacity?: number;
+  teamRosterCounts?: Readonly<Record<string, number>>;
 };
 
 export type KeeperValidationResult =
@@ -53,8 +66,16 @@ export function keeperPickNumber(
   return (round - 1) * teamCount + pickInRound;
 }
 
-export function keeperPickKey(keeper: Pick<KeeperEntry, "round" | "pickInRound">) {
+export function keeperPickKey(
+  keeper: Pick<PickCostKeeperEntry, "round" | "pickInRound">
+) {
   return `${keeper.round}-${keeper.pickInRound}`;
+}
+
+export function keeperUsesPick(
+  keeper: KeeperEntry,
+): keeper is PickCostKeeperEntry {
+  return keeper.cost === "pick";
 }
 
 export function getNextOpenPick(
@@ -76,14 +97,48 @@ export function validateKeeperCandidate(
 ): KeeperValidationResult {
   const playerId = String(candidate.playerId ?? "").trim();
   const teamId = String(candidate.teamId ?? "").trim();
-  const round = integer(candidate.round);
-  const pickInRound = integer(candidate.pickInRound);
+  const rawCost = String(candidate.cost ?? "pick").trim().toLowerCase();
+  const cost = rawCost === "none" ? "none" : rawCost === "pick" ? "pick" : null;
   const teamIds = new Set(Array.from(context.teamIds, String));
   const playerIds = new Set(Array.from(context.playerIds, String));
   const errors: string[] = [];
 
   if (!playerId || !playerIds.has(playerId)) errors.push("Player does not exist.");
   if (!teamId || !teamIds.has(teamId)) errors.push("Keeper team is invalid.");
+  if (!cost) errors.push('Keeper cost must be "pick" or "none".');
+  if (
+    teamId &&
+    context.rosterCapacity != null &&
+    (context.teamRosterCounts?.[teamId] ?? 0) >= context.rosterCapacity
+  ) {
+    errors.push("That team's roster is already full.");
+  }
+  const keepers = context.keepers ?? [];
+  const drafted = context.draftedPlayers ?? [];
+  if (keepers.some((keeper) => keeper.playerId === playerId)) {
+    errors.push("Player is already configured as a keeper.");
+  }
+  if (drafted.some((pick) => pick.playerId === playerId && !pick.isKeeper)) {
+    errors.push("Player has already been drafted.");
+  }
+  if (!cost) return { ok: false, errors };
+
+  if (cost === "none") {
+    if (errors.length) return { ok: false, errors };
+    return {
+      ok: true,
+      keeper: {
+        version: KEEPER_CONTRACT_VERSION,
+        status: "valid",
+        cost,
+        playerId,
+        teamId,
+      },
+    };
+  }
+
+  const round = integer(candidate.round);
+  const pickInRound = integer(candidate.pickInRound);
   if (round == null || round < 1 || round > context.roundCount) {
     errors.push(`Round must be between 1 and ${context.roundCount}.`);
   }
@@ -95,16 +150,12 @@ export function validateKeeperCandidate(
   }
 
   const pickNumber = keeperPickNumber(round, pickInRound, context.teamCount);
-  const keepers = context.keepers ?? [];
-  const drafted = context.draftedPlayers ?? [];
-  if (keepers.some((keeper) => keeper.playerId === playerId)) {
-    errors.push("Player is already configured as a keeper.");
-  }
-  if (keepers.some((keeper) => keeper.pickNumber === pickNumber)) {
+  if (
+    keepers.some(
+      (keeper) => keeperUsesPick(keeper) && keeper.pickNumber === pickNumber,
+    )
+  ) {
     errors.push("That pick is already assigned to a keeper.");
-  }
-  if (drafted.some((pick) => pick.playerId === playerId && !pick.isKeeper)) {
-    errors.push("Player has already been drafted.");
   }
   if (drafted.some((pick) => pick.pickNumber === pickNumber && !pick.isKeeper)) {
     errors.push("That pick has already been completed.");
@@ -116,6 +167,7 @@ export function validateKeeperCandidate(
     keeper: {
       version: KEEPER_CONTRACT_VERSION,
       status: "valid",
+      cost,
       playerId,
       teamId,
       round,
@@ -129,7 +181,10 @@ export function materializeKeeperPicks(
   draftedPlayers: KeeperDraftPick[],
   keepers: KeeperEntry[]
 ) {
-  const keeperPickNumbers = new Set(keepers.map((keeper) => keeper.pickNumber));
+  const pickKeepers = keepers.filter(keeperUsesPick);
+  const keeperPickNumbers = new Set(
+    pickKeepers.map((keeper) => keeper.pickNumber),
+  );
   const keeperPlayerIds = new Set(keepers.map((keeper) => keeper.playerId));
   const ordinaryPicks = draftedPlayers.filter(
     (pick) =>
@@ -139,7 +194,7 @@ export function materializeKeeperPicks(
   );
   return [
     ...ordinaryPicks,
-    ...keepers.map((keeper) => ({
+    ...pickKeepers.map((keeper) => ({
       playerId: keeper.playerId,
       teamId: keeper.teamId,
       pickNumber: keeper.pickNumber,
@@ -163,11 +218,22 @@ export function migrateKeeperEntries(value: unknown, teamCount: number) {
     const candidate = raw as Record<string, unknown>;
     const playerId = String(candidate.playerId ?? "").trim();
     const teamId = String(candidate.teamId ?? "").trim();
+    const cost = candidate.cost === "none" ? "none" : "pick";
+    if (!playerId || !teamId || playerIds.has(playerId)) continue;
+    if (cost === "none") {
+      playerIds.add(playerId);
+      migrated.push({
+        version: KEEPER_CONTRACT_VERSION,
+        status: "valid",
+        cost,
+        playerId,
+        teamId,
+      });
+      continue;
+    }
     const round = integer(candidate.round);
     const pickInRound = integer(candidate.pickInRound);
     if (
-      !playerId ||
-      !teamId ||
       round == null ||
       round < 1 ||
       pickInRound == null ||
@@ -177,12 +243,13 @@ export function migrateKeeperEntries(value: unknown, teamCount: number) {
       continue;
     }
     const pickNumber = keeperPickNumber(round, pickInRound, teamCount);
-    if (playerIds.has(playerId) || pickNumbers.has(pickNumber)) continue;
+    if (pickNumbers.has(pickNumber)) continue;
     playerIds.add(playerId);
     pickNumbers.add(pickNumber);
     migrated.push({
       version: KEEPER_CONTRACT_VERSION,
       status: "valid",
+      cost,
       playerId,
       teamId,
       round,
@@ -214,11 +281,11 @@ export function parseKeeperImport(input: string):
       ? first
       : ["playerid", "teamid", "round", "pickinround"];
     const data = hasHeader ? cells.slice(1) : cells;
-    const required = ["playerid", "teamid", "round", "pickinround"];
+    const required = ["playerid", "teamid"];
     if (required.some((key) => !header.includes(key))) {
       return {
         ok: false,
-        errors: ["CSV requires playerId, teamId, round, and pickInRound columns."]
+        errors: ["CSV requires playerId and teamId columns."]
       };
     }
     return {
@@ -226,8 +293,11 @@ export function parseKeeperImport(input: string):
       candidates: data.map((row) => ({
         playerId: row[header.indexOf("playerid")],
         teamId: row[header.indexOf("teamid")],
-        round: row[header.indexOf("round")],
-        pickInRound: row[header.indexOf("pickinround")]
+        cost: header.includes("cost") ? row[header.indexOf("cost")] : "pick",
+        round: header.includes("round") ? row[header.indexOf("round")] : undefined,
+        pickInRound: header.includes("pickinround")
+          ? row[header.indexOf("pickinround")]
+          : undefined
       }))
     };
   }
@@ -239,6 +309,7 @@ export function validateKeeperBatch(
 ) {
   const accepted: KeeperEntry[] = [];
   const errors: string[] = [];
+  const teamRosterCounts = { ...(context.teamRosterCounts ?? {}) };
   for (const [index, candidate] of candidates.entries()) {
     const result = validateKeeperCandidate(candidate, {
       ...context,
@@ -246,12 +317,15 @@ export function validateKeeperBatch(
       draftedPlayers: materializeKeeperPicks(
         context.draftedPlayers ?? [],
         [...(context.keepers ?? []), ...accepted]
-      )
+      ),
+      teamRosterCounts,
     });
     if (!result.ok) {
       errors.push(`Row ${index + 1}: ${result.errors.join(" ")}`);
     } else {
       accepted.push(result.keeper);
+      teamRosterCounts[result.keeper.teamId] =
+        (teamRosterCounts[result.keeper.teamId] ?? 0) + 1;
     }
   }
   return errors.length

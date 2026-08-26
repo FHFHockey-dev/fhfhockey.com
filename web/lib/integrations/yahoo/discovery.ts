@@ -3,7 +3,13 @@ import YahooFantasy from "yahoo-fantasy";
 import serviceRoleClient from "lib/supabase/server";
 import type { Database, Json } from "lib/supabase/database-generated.types";
 
-import { YAHOO_GAME_CODE, YAHOO_PROVIDER, getYahooClientCredentials } from "./config";
+import {
+  getYahooClientCredentials,
+  getYahooLiveDraftSeasonConfig,
+  YAHOO_GAME_CODE,
+  YAHOO_PROVIDER,
+} from "./config";
+import { YahooLiveDraftError } from "./liveDraft";
 
 type ConnectedAccountRow = Database["public"]["Tables"]["connected_accounts"]["Row"];
 type ExternalLeagueRow = Database["public"]["Tables"]["external_leagues"]["Row"];
@@ -22,66 +28,37 @@ type YahooSyncOptions = {
   userId: string;
   connectedAccount: ConnectedAccountRow;
   accessToken: string;
+  expiresAt?: string | null;
   refreshToken: string;
   tokenType?: string | null;
   providerUserId?: string | null;
   redirectUri: string;
 };
 
-function getYahooSeasonValue(game: any) {
-  const explicitSeason = Number(game?.season);
-  if (Number.isFinite(explicitSeason)) {
-    return explicitSeason;
-  }
-
-  const explicitGameId = Number(game?.game_id);
-  if (Number.isFinite(explicitGameId)) {
-    return explicitGameId;
-  }
-
-  const gameKeyPrefix =
-    typeof game?.game_key === "string"
-      ? Number(String(game.game_key).split(".")[0])
-      : Number.NaN;
-  return Number.isFinite(gameKeyPrefix) ? gameKeyPrefix : Number.NEGATIVE_INFINITY;
-}
-
-export function selectLatestYahooGames(games: Array<any>) {
-  if (!Array.isArray(games) || games.length === 0) {
-    return [];
-  }
-
-  const latestSeasonValue = Math.max(...games.map((game) => getYahooSeasonValue(game)));
-
-  return games.filter((game) => getYahooSeasonValue(game) === latestSeasonValue);
-}
-
 export function selectYahooGamesForCanonicalSeason(
   games: Array<any>,
-  canonicalGame: { game_id?: number | null; game_key?: string | null; season?: number | null } | null
+  canonicalGame: {
+    code?: string | null;
+    game_id?: number | null;
+    game_key?: string | null;
+    season?: number | null;
+  } | null,
 ) {
   if (!canonicalGame || !Array.isArray(games)) {
     return [];
   }
 
+  const canonicalGameKey = String(
+    canonicalGame.game_key ?? canonicalGame.game_id ?? "",
+  );
   return games.filter((game) => {
-    if (
-      canonicalGame.game_id != null &&
-      String(game?.game_id ?? "") === String(canonicalGame.game_id)
-    ) {
-      return true;
-    }
-
-    if (
-      canonicalGame.game_key &&
-      String(game?.game_key ?? "") === String(canonicalGame.game_key)
-    ) {
-      return true;
-    }
-
     return (
-      canonicalGame.season != null &&
-      String(game?.season ?? "") === String(canonicalGame.season)
+      canonicalGameKey.length > 0 &&
+      String(game?.code ?? "") === String(canonicalGame.code ?? YAHOO_GAME_CODE) &&
+      String(game?.season ?? "") === String(canonicalGame.season ?? "") &&
+      String(game?.game_key ?? game?.game_id ?? "") === canonicalGameKey &&
+      (canonicalGame.game_id == null ||
+        String(game?.game_id ?? "") === String(canonicalGame.game_id))
     );
   });
 }
@@ -190,6 +167,7 @@ async function upsertConnectedAccountTokens(args: {
   connectedAccountId: string;
   userId: string;
   accessToken: string;
+  expiresAt?: string | null;
   refreshToken: string;
   tokenType?: string | null;
   providerUserId?: string | null;
@@ -201,6 +179,8 @@ async function upsertConnectedAccountTokens(args: {
       p_user_id: args.userId,
       p_provider: YAHOO_PROVIDER,
       p_access_token: args.accessToken,
+      p_expires_at: args.expiresAt ?? undefined,
+      p_last_refreshed_at: new Date().toISOString(),
       p_refresh_token: args.refreshToken,
       p_token_type: args.tokenType ?? null,
       p_scopes: [],
@@ -261,21 +241,25 @@ export async function syncYahooDiscovery({
   userId,
   connectedAccount,
   accessToken,
+  expiresAt,
   refreshToken,
   tokenType,
   providerUserId,
   redirectUri,
 }: YahooSyncOptions): Promise<YahooDiscoverySummary> {
   const { clientId, clientSecret } = getYahooClientCredentials();
+  const configuredSeason = getYahooLiveDraftSeasonConfig();
   const yahoo = new YahooFantasy(
     clientId,
     clientSecret,
     async ({
       access_token,
+      expires_in,
       refresh_token,
       token_type,
     }: {
       access_token: string;
+      expires_in?: number;
       refresh_token: string;
       token_type?: string;
     }) => {
@@ -283,6 +267,9 @@ export async function syncYahooDiscovery({
         connectedAccountId: connectedAccount.id,
         userId,
         accessToken: access_token,
+        expiresAt: Number.isFinite(Number(expires_in))
+          ? new Date(Date.now() + Number(expires_in) * 1000).toISOString()
+          : null,
         refreshToken: refresh_token,
         tokenType: token_type ?? null,
         providerUserId: providerUserId ?? null,
@@ -298,6 +285,7 @@ export async function syncYahooDiscovery({
     connectedAccountId: connectedAccount.id,
     userId,
     accessToken,
+    expiresAt,
     refreshToken,
     tokenType: tokenType ?? null,
     providerUserId: providerUserId ?? null,
@@ -307,23 +295,34 @@ export async function syncYahooDiscovery({
     yahoo.user.games(),
     serviceRoleClient
       .from("yahoo_game_keys")
-      .select("game_id,game_key,season,last_updated")
+      .select("game_id,game_key,code,season,last_updated")
       .eq("code", YAHOO_GAME_CODE)
-      .order("season", { ascending: false })
-      .limit(1)
+      .eq("season", Number(configuredSeason.season))
       .maybeSingle(),
   ]);
   const nhlGames = Array.isArray(userGamesResponse?.games)
     ? userGamesResponse.games.filter((game: any) => game.code === YAHOO_GAME_CODE)
     : [];
-  const canonicalNhlGames = canonicalGameResponse.error
-    ? []
-    : selectYahooGamesForCanonicalSeason(nhlGames, canonicalGameResponse.data);
-  const latestNhlGames =
-    canonicalNhlGames.length > 0 ? canonicalNhlGames : selectLatestYahooGames(nhlGames);
-  const discoveryGameSource =
-    canonicalNhlGames.length > 0 ? "yahoo_game_keys" : "user_games_fallback";
-  const nhlGameKeys = latestNhlGames.map((game: any) =>
+  if (canonicalGameResponse.error || !canonicalGameResponse.data) {
+    throw new YahooLiveDraftError(
+      "Yahoo discovery could not resolve the configured canonical NHL season.",
+      503,
+      "yahoo_game_context_mismatch",
+    );
+  }
+  const canonicalNhlGames = selectYahooGamesForCanonicalSeason(
+    nhlGames,
+    canonicalGameResponse.data,
+  );
+  if (canonicalNhlGames.length !== 1) {
+    throw new YahooLiveDraftError(
+      "Yahoo discovery and the canonical NHL season do not agree.",
+      503,
+      "yahoo_game_context_mismatch",
+    );
+  }
+  const discoveryGameSource = "configured_yahoo_game_keys";
+  const nhlGameKeys = canonicalNhlGames.map((game: any) =>
     String(game.game_key || game.game_id || YAHOO_GAME_CODE)
   );
 
@@ -598,7 +597,7 @@ export async function syncYahooDiscovery({
       metadata: {
         ...jsonObjectOrEmpty(connectedAccount.metadata),
         provider_user_id: providerUserId ?? null,
-        available_game_codes: latestNhlGames.map((game: any) => game.code),
+        available_game_codes: canonicalNhlGames.map((game: any) => game.code),
         discovery_game_source: discoveryGameSource,
         discovery: {
           league_count: leagueRows.length,

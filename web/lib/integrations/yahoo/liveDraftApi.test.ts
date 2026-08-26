@@ -47,6 +47,7 @@ describe("Yahoo live draft API safeguards", () => {
     delete process.env.YAHOO_LIVE_DRAFT_ROLLOUT_STAGE;
     delete process.env.YAHOO_LIVE_DRAFT_STAFF_USER_IDS;
     delete process.env.YAHOO_LIVE_DRAFT_BETA_USER_IDS;
+    delete process.env.YAHOO_LIVE_DRAFT_PROVIDER_VALIDATED;
   });
 
   afterEach(() => {
@@ -74,6 +75,12 @@ describe("Yahoo live draft API safeguards", () => {
       isYahooLiveDraftUserEntitled(pilot, {
         YAHOO_LIVE_DRAFT_ROLLOUT_STAGE: "authenticated",
       }),
+    ).toBe(false);
+    expect(
+      isYahooLiveDraftUserEntitled(pilot, {
+        YAHOO_LIVE_DRAFT_PROVIDER_VALIDATED: "true",
+        YAHOO_LIVE_DRAFT_ROLLOUT_STAGE: "authenticated",
+      }),
     ).toBe(true);
   });
 
@@ -91,6 +98,7 @@ describe("Yahoo live draft API safeguards", () => {
   it("requires bearer authentication before loading live draft data", async () => {
     process.env.YAHOO_LIVE_DRAFT_ENABLED = "true";
     process.env.YAHOO_LIVE_DRAFT_ROLLOUT_STAGE = "authenticated";
+    process.env.YAHOO_LIVE_DRAFT_PROVIDER_VALIDATED = "true";
     requireApiUser.mockImplementation(async (_request, response) => {
       response.status(401).json({ error: "Authentication required." });
       return null;
@@ -105,6 +113,7 @@ describe("Yahoo live draft API safeguards", () => {
   it("rejects raw Yahoo league keys instead of passing them to session creation", async () => {
     process.env.YAHOO_LIVE_DRAFT_ENABLED = "true";
     process.env.YAHOO_LIVE_DRAFT_ROLLOUT_STAGE = "authenticated";
+    process.env.YAHOO_LIVE_DRAFT_PROVIDER_VALIDATED = "true";
     requireApiUser.mockResolvedValue({
       id: "11111111-1111-4111-8111-111111111111",
     });

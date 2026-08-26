@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from "vitest";
 import {
   flattenYahooTeams,
   mergeYahooLeagueTeams,
-  selectLatestYahooGames,
   selectYahooGamesForCanonicalSeason,
   yahooDraftDiscoveryMetadata,
   yahooTeamDraftPosition,
@@ -28,18 +27,6 @@ import {
 } from "./lifecycleHealth";
 
 describe("Yahoo discovery helpers", () => {
-  it("keeps only the latest Yahoo game season for sync", () => {
-    const games = [
-      { game_key: "411", game_id: 411, season: "2023", code: "nhl" },
-      { game_key: "453", game_id: 453, season: "2024", code: "nhl" },
-      { game_key: "465", game_id: 465, season: "2025", code: "nhl" },
-    ];
-
-    expect(selectLatestYahooGames(games)).toEqual([
-      { game_key: "465", game_id: 465, season: "2025", code: "nhl" },
-    ]);
-  });
-
   it("flattens owned Yahoo teams from the game_teams wrapper shape", () => {
     const teamGames = [
       {
@@ -78,11 +65,21 @@ describe("Yahoo discovery helpers", () => {
 
     expect(
       selectYahooGamesForCanonicalSeason(games, {
+        code: "nhl",
         game_id: 500,
         game_key: "500",
         season: 2026,
       }),
     ).toEqual([{ game_key: "500", game_id: 500, season: "2026", code: "nhl" }]);
+  });
+
+  it("rejects a same-season game whose canonical key does not agree", () => {
+    expect(
+      selectYahooGamesForCanonicalSeason(
+        [{ game_key: "501", game_id: 501, season: "2026", code: "nhl" }],
+        { code: "nhl", game_id: 500, game_key: "500", season: 2026 },
+      ),
+    ).toEqual([]);
   });
 
   it("merges the full league field with standings by team key", () => {

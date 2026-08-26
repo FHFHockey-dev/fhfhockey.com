@@ -1,28 +1,31 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
-  verifyYahooOAuthStateMock,
+  consumeYahooOAuthTransactionMock,
   exchangeYahooAuthorizationCodeMock,
-  buildYahooCallbackUrlMock,
   buildYahooAccountRedirectMock,
+  readYahooOAuthBrowserBindingMock,
+  clearYahooOAuthBrowserCookieMock,
   syncYahooDiscoveryMock,
   maybeSingleMock,
   insertSingleMock,
 } = vi.hoisted(() => ({
-  verifyYahooOAuthStateMock: vi.fn(),
+  consumeYahooOAuthTransactionMock: vi.fn(),
   exchangeYahooAuthorizationCodeMock: vi.fn(),
-  buildYahooCallbackUrlMock: vi.fn(),
   buildYahooAccountRedirectMock: vi.fn(),
+  readYahooOAuthBrowserBindingMock: vi.fn(),
+  clearYahooOAuthBrowserCookieMock: vi.fn(),
   syncYahooDiscoveryMock: vi.fn(),
   maybeSingleMock: vi.fn(),
   insertSingleMock: vi.fn(),
 }));
 
 vi.mock("lib/integrations/yahoo/oauth", () => ({
-  verifyYahooOAuthState: verifyYahooOAuthStateMock,
+  consumeYahooOAuthTransaction: consumeYahooOAuthTransactionMock,
   exchangeYahooAuthorizationCode: exchangeYahooAuthorizationCodeMock,
-  buildYahooCallbackUrl: buildYahooCallbackUrlMock,
   buildYahooAccountRedirect: buildYahooAccountRedirectMock,
+  readYahooOAuthBrowserBinding: readYahooOAuthBrowserBindingMock,
+  clearYahooOAuthBrowserCookie: clearYahooOAuthBrowserCookieMock,
 }));
 
 vi.mock("lib/integrations/yahoo/discovery", () => ({
@@ -65,12 +68,15 @@ import handler from "../../../../../../pages/api/v1/account/yahoo/callback";
 
 function createMockRes() {
   const res: any = {
+    headers: {} as Record<string, unknown>,
     redirectedTo: null as string | null,
     redirect(location: string) {
       this.redirectedTo = location;
       return this;
     },
-    setHeader() {},
+    setHeader(name: string, value: unknown) {
+      this.headers[name.toLowerCase()] = value;
+    },
     status() {
       return this;
     },
@@ -85,17 +91,25 @@ function createMockRes() {
 describe("/api/v1/account/yahoo/callback", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    verifyYahooOAuthStateMock.mockReturnValue({
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-24T12:00:00.000Z"));
+    consumeYahooOAuthTransactionMock.mockResolvedValue({
       userId: "user-1",
-      next: "/account?section=connected-accounts",
+      safeNextPath: "/account?section=connected-accounts",
+      redirectUri: "https://fhfhockey.com/api/v1/account/yahoo/callback",
+      pkceCodeVerifier: "v".repeat(64),
     });
+    readYahooOAuthBrowserBindingMock.mockReturnValue("browser-binding");
+    clearYahooOAuthBrowserCookieMock.mockReturnValue(
+      "fhfh_yahoo_oauth=; Max-Age=0",
+    );
     exchangeYahooAuthorizationCodeMock.mockResolvedValue({
       access_token: "access-token",
+      expires_in: 3600,
       refresh_token: "refresh-token",
       token_type: "bearer",
       xoauth_yahoo_guid: "guid-123",
     });
-    buildYahooCallbackUrlMock.mockReturnValue("http://localhost:3000/api/v1/account/yahoo/callback");
     buildYahooAccountRedirectMock.mockImplementation(
       (_next: string, status: string, message: string) =>
         `/account?section=connected-accounts&yahoo_status=${status}&yahoo_message=${encodeURIComponent(message)}`
@@ -128,6 +142,10 @@ describe("/api/v1/account/yahoo/callback", () => {
     });
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("creates a yahoo account row and redirects with success state", async () => {
     const req: any = {
       method: "GET",
@@ -140,8 +158,35 @@ describe("/api/v1/account/yahoo/callback", () => {
 
     await handler(req, res);
 
-    expect(exchangeYahooAuthorizationCodeMock).toHaveBeenCalledWith(req, "auth-code");
-    expect(syncYahooDiscoveryMock).toHaveBeenCalled();
+    expect(consumeYahooOAuthTransactionMock).toHaveBeenCalledWith({
+      browserBinding: "browser-binding",
+      state: "signed-state",
+    });
+    expect(exchangeYahooAuthorizationCodeMock).toHaveBeenCalledWith({
+      code: "auth-code",
+      codeVerifier: "v".repeat(64),
+      redirectUri: "https://fhfhockey.com/api/v1/account/yahoo/callback",
+    });
+    expect(syncYahooDiscoveryMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        expiresAt: "2026-08-24T13:00:00.000Z",
+      }),
+    );
     expect(res.redirectedTo).toContain("yahoo_status=connected");
+    expect(res.headers["set-cookie"]).toContain("Max-Age=0");
+  });
+
+  it("clears the browser binding even when state consumption fails", async () => {
+    consumeYahooOAuthTransactionMock.mockRejectedValue(
+      new Error("Yahoo authorization state is missing, expired, or already used."),
+    );
+    const res = createMockRes();
+    await handler(
+      { method: "GET", query: { code: "auth-code", state: "replayed-state" } } as any,
+      res,
+    );
+    expect(res.headers["set-cookie"]).toContain("Max-Age=0");
+    expect(exchangeYahooAuthorizationCodeMock).not.toHaveBeenCalled();
+    expect(res.redirectedTo).toContain("yahoo_status=error");
   });
 });

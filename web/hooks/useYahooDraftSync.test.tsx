@@ -231,28 +231,28 @@ describe("useYahooDraftSync", () => {
         providerStatus: "drafting",
         visible: true,
       }),
-    ).toBe(5_000);
+    ).toBe(30_000);
     expect(
       getYahooDraftPollIntervalMs({
         status: "active",
         providerStatus: "predraft",
         visible: true,
       }),
-    ).toBe(5_000);
+    ).toBe(30_000);
     expect(
       getYahooDraftPollIntervalMs({
         status: "predraft",
         providerStatus: "predraft",
         visible: true,
       }),
-    ).toBe(30_000);
+    ).toBe(120_000);
     expect(
       getYahooDraftPollIntervalMs({
         status: "active",
         providerStatus: "drafting",
         visible: false,
       }),
-    ).toBe(30_000);
+    ).toBe(120_000);
     expect(
       getYahooDraftPollIntervalMs({
         status: "reauth_required",

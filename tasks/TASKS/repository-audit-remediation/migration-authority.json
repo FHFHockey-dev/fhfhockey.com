@@ -425,7 +425,7 @@
     {
       "order": 42,
       "path": "supabase/migrations/20260818150256_player_forecast_season_v4_integrity.sql",
-      "sha256": "3affae688b4a0474b745c979c7a90084fb4c88ac36d65cc1a141f352d347b659",
+      "sha256": "54630ea33f3ec28cd42b115bd6e6fd701788e477b27e5f65190e521d94546cea",
       "sourceStatus": "source-authorized",
       "deploymentState": "unknown",
       "migrationClass": "feature",
@@ -471,6 +471,56 @@
       "migrationClass": "feature",
       "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
       "stateEvidence": "No exact applied-state receipt recorded; filename and source authorization are not deployment evidence."
+    },
+    {
+      "order": 47,
+      "path": "supabase/migrations/20260820041500_player_forecast_v5_contract_checksum.sql",
+      "sha256": "5545f0f6ee8f700b5feb03129dce3af4adf15753d99fc3fabe3b9098c689a3b7",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
+      "stateEvidence": "No exact applied-state receipt recorded; the version was absent from the read-only Production migration ledger observed 2026-08-26."
+    },
+    {
+      "order": 48,
+      "path": "supabase/migrations/20260820050000_player_forecast_v5_team_metrics.sql",
+      "sha256": "a9ee28e70e9151c6e76c0a7b331a3fec5dd3293b104d914389cc93a16421100c",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
+      "stateEvidence": "No exact applied-state receipt recorded; the version was absent from the read-only Production migration ledger observed 2026-08-26."
+    },
+    {
+      "order": 49,
+      "path": "supabase/migrations/20260820052000_player_forecast_copy_on_write_runs.sql",
+      "sha256": "622c3bc88e1e6c0d5364d0088175b433509b9e1db43b246c164492ff7945c05a",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
+      "stateEvidence": "No exact applied-state receipt recorded; the version was absent from the read-only Production migration ledger observed 2026-08-26."
+    },
+    {
+      "order": 50,
+      "path": "supabase/migrations/20260820053000_player_forecast_v5_release_lineage.sql",
+      "sha256": "0fdbb04cd44f7fdea4f9c9a3e7bf3f5c0d780b73b49503f38a987765515d9a27",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
+      "stateEvidence": "No exact applied-state receipt recorded; the version was absent from the read-only Production migration ledger observed 2026-08-26."
+    },
+    {
+      "order": 51,
+      "path": "supabase/migrations/20260824152127_yahoo_live_draft_production_hardening.sql",
+      "sha256": "0f45bb2605745b0c130d4610e52a708c770686cbfa97a4589ee6bf749e28a7e6",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "security",
+      "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
+      "stateEvidence": "No exact applied-state receipt recorded; the version was absent from the read-only Production migration ledger observed 2026-08-26."
     }
   ]
 }

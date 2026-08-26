@@ -41,6 +41,51 @@ function player(playerId: number, fullName: string, position: string) {
 }
 
 describe("ProjectionsTable visibility diagnostics", () => {
+  it("shows every configured stat column and sorts FOW without restoring HITS", () => {
+    const low = player(1, "Low FOW", "C");
+    const high = player(2, "High FOW", "C");
+    low.combinedStats = {
+      FACEOFFS_WON: { projected: 300 },
+      HITS: { projected: 90 },
+    };
+    high.combinedStats = {
+      FACEOFFS_WON: { projected: 700 },
+      HITS: { projected: 10 },
+    };
+    const configuredKeys = [
+      ...Array.from({ length: 24 }, (_, index) => `CUSTOM_STAT_${index}`),
+      "FACEOFFS_WON",
+    ];
+
+    render(
+      <ProjectionsTable
+        players={[low, high]}
+        allPlayers={[low, high]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+        enabledSkaterStatKeys={configuredKeys}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Toggle stat columns" }),
+    );
+    const fowHeader = screen.getByRole("columnheader", { name: "FOW" });
+    expect(screen.queryByRole("columnheader", { name: "HITS" })).toBeNull();
+    expect(screen.getByText("300")).toBeTruthy();
+    expect(screen.getByText("700")).toBeTruthy();
+
+    fireEvent.click(fowHeader);
+    let rows = screen.getAllByRole("row").slice(1);
+    expect(rows[0].textContent).toContain("High FOW");
+    fireEvent.click(fowHeader);
+    rows = screen.getAllByRole("row").slice(1);
+    expect(rows[0].textContent).toContain("Low FOW");
+  });
+
   it("renders truthful loading, blocking-error, partial-source, and no-source states", () => {
     const baseProps = {
       players: [],

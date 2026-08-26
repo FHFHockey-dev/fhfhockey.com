@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { requireApiUser } from "lib/api/requireApiUser";
 import {
-  buildYahooAuthorizationUrl,
+  createYahooAuthorizationRequest,
   sanitizeYahooNextPath,
 } from "lib/integrations/yahoo/oauth";
 
@@ -19,8 +19,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const next = sanitizeYahooNextPath(req.body?.next);
-    const authorizationUrl = buildYahooAuthorizationUrl(req, user.id, next);
+    const { authorizationUrl, browserCookie } =
+      await createYahooAuthorizationRequest({ next, userId: user.id });
 
+    res.setHeader("Set-Cookie", browserCookie);
     return res.status(200).json({ authorizationUrl });
   } catch (error) {
     const message =

@@ -1,7 +1,11 @@
 // components/DraftDashboard/MyRoster.tsx
 
 import React, { useState, useMemo, useEffect } from "react";
-import { DraftSettings, TeamDraftStats, DraftedPlayer } from "./DraftDashboard";
+import {
+  DraftSettings,
+  TeamDraftStats,
+  RosterAssignment,
+} from "./DraftDashboard";
 // Import ProcessedPlayer from the correct location
 import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import PlayerAutocomplete from "components/PlayerAutocomplete";
@@ -419,7 +423,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
           {positionsToShow.map((pos) => {
             const posKey = pos === "UTILITY" ? "utility" : pos; // for max count lookup
             const maxCount = effectiveRosterConfig[posKey] || 0;
-            const currentPlayers: DraftedPlayer[] =
+            const currentPlayers: RosterAssignment[] =
               selectedTeamStats?.rosterSlots[pos] || [];
             return (
               <div key={pos} className={styles.rosterSlot}>

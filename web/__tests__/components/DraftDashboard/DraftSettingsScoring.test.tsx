@@ -17,6 +17,55 @@ const settings: DraftSettingsContract = {
 afterEach(cleanup);
 
 describe("DraftSettings goalie scoring manager", () => {
+  it("edits exact custom reversed rounds and locks them after drafting starts", () => {
+    const onDraftOrderPatternChange = vi.fn();
+    const props = {
+      settings,
+      onSettingsChange: vi.fn(),
+      draftOrderPattern: {
+        mode: "custom" as const,
+        reversedRounds: [] as number[],
+      },
+      onDraftOrderPatternChange,
+      myTeamId: "Team 1",
+      onMyTeamIdChange: vi.fn(),
+      undoLastPick: vi.fn(),
+      resetDraft: vi.fn(),
+      draftHistory: [],
+      draftedPlayers: [],
+      currentPick: 1,
+    };
+    const view = render(<DraftSettings {...props} />);
+
+    expect(
+      screen.getByRole("tab", { name: "Custom" }).getAttribute(
+        "aria-selected",
+      ),
+    ).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "Round 2, forward" }));
+    expect(onDraftOrderPatternChange).toHaveBeenCalledWith({
+      mode: "custom",
+      reversedRounds: [2],
+    });
+
+    view.rerender(
+      <DraftSettings
+        {...props}
+        structuralSettingsLocked
+        draftOrderPattern={{ mode: "custom", reversedRounds: [2] }}
+      />,
+    );
+    expect(
+      (screen.getByRole("tab", { name: "Standard" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+    expect(
+      (screen.getByRole("button", {
+        name: "Round 2, reversed",
+      }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+  });
+
   it("manages goalie stats independently with duplicate-safe add options", () => {
     const onGoalieScoringChange = vi.fn();
     render(
@@ -151,7 +200,15 @@ describe("DraftSettings Yahoo lock", () => {
         undoLastPick={undoLastPick}
         resetDraft={resetDraft}
         draftHistory={[{ players: [], pickNumber: 1 }]}
-        draftedPlayers={[{ playerId: "1" }]}
+        draftedPlayers={[
+          {
+            playerId: "1",
+            teamId: "Team 1",
+            pickNumber: 1,
+            round: 1,
+            pickInRound: 1,
+          },
+        ]}
         currentPick={2}
         draftLocked
         draftLockReason="Yahoo live sync controls this draft."
