@@ -122,6 +122,7 @@ describe("useVORPCalculations grouped forwards", () => {
       {
         version: KEEPER_CONTRACT_VERSION,
         status: "valid",
+        cost: "pick",
         playerId: "1",
         teamId: "Team 1",
         round: 1,

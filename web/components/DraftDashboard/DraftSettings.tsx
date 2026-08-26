@@ -4,7 +4,10 @@ import {
   compressToEncodedURIComponent,
   decompressFromEncodedURIComponent,
 } from "lz-string";
-import type { DraftSettings as DraftSettingsType } from "./DraftDashboard";
+import type {
+  DraftedPlayer,
+  DraftSettings as DraftSettingsType,
+} from "./DraftDashboard";
 import { PROJECTION_SOURCES_CONFIG } from "lib/projectionsConfig/projectionSourcesConfig";
 import { getDefaultFantasyPointsConfig } from "lib/projectionsConfig/fantasyPointsConfig";
 import { SKATER_LABELS } from "lib/projectionsConfig/skaterScoringLabels";
@@ -17,10 +20,19 @@ import {
   getEffectiveRosterConfig,
   setForwardRosterTotal,
 } from "lib/draftDashboard/forwardGrouping";
-import type { KeeperEntry } from "lib/draftDashboard/keepers";
+import {
+  keeperUsesPick,
+  type KeeperCandidate,
+  type KeeperEntry,
+} from "lib/draftDashboard/keepers";
 import type { PickTradeEntry } from "lib/draftDashboard/pickTrades";
+import {
+  draftOrderPatternFromSnake,
+  type DraftOrderPattern,
+} from "lib/draftDashboard/draftOrder";
 import type { DraftCustomSourceMetadata } from "lib/draftDashboard/summaryConfiguration";
 import ManageTradesModal from "./ManageTradesModal";
+import QuickFixModal from "./QuickFixModal";
 import styles from "./DraftSettings.module.scss";
 
 type LeagueType = "points" | "categories";
@@ -28,14 +40,16 @@ type LeagueType = "points" | "categories";
 interface DraftSettingsProps {
   settings: DraftSettingsType;
   onSettingsChange: (newSettings: Partial<DraftSettingsType>) => void;
-  isSnakeDraft: boolean;
-  onSnakeDraftChange: (isSnake: boolean) => void;
+  draftOrderPattern?: DraftOrderPattern;
+  onDraftOrderPatternChange?: (pattern: DraftOrderPattern) => void;
+  isSnakeDraft?: boolean;
+  onSnakeDraftChange?: (isSnake: boolean) => void;
   myTeamId: string;
   onMyTeamIdChange: (teamId: string) => void;
   undoLastPick: () => void;
   resetDraft: () => void;
   draftHistory: any[];
-  draftedPlayers: any[];
+  draftedPlayers: DraftedPlayer[];
   currentPick: number;
   customTeamNames?: Record<string, string>;
   forwardGrouping?: "split" | "fwd";
@@ -73,14 +87,17 @@ interface DraftSettingsProps {
   onRemoveTradedPick?: (round: number, pickInRound: number) => void;
   onResetTradedPicks?: () => void;
   keepers?: KeeperEntry[];
-  onAddKeeper?: (
-    round: number,
-    pickInRound: number,
-    teamId: string,
-    playerId: string,
-  ) => { ok: boolean; message: string };
+  onAddKeeper?: (candidate: KeeperCandidate) => {
+    ok: boolean;
+    message: string;
+  };
   onImportKeepers?: (input: string) => { ok: boolean; message: string };
-  onRemoveKeeper?: (round: number, pickInRound: number) => void;
+  onRemoveKeeper?: (playerId: string) => { ok: boolean; message: string };
+  availablePlayersForQuickFix?: Array<{ id: string; fullName: string }>;
+  onReplaceDraftPick?: (
+    pickNumber: number,
+    replacementPlayerId: string,
+  ) => { ok: boolean; message: string };
   onBookmarkCreate?: (key: string) => void;
   onBookmarkImport?: (data: any) => void;
   playersForKeeperAutocomplete?: Array<{
@@ -91,6 +108,7 @@ interface DraftSettingsProps {
   }>;
   draftLocked?: boolean;
   draftLockReason?: string;
+  structuralSettingsLocked?: boolean;
 }
 
 const CAT_KEYS = [
@@ -144,7 +162,9 @@ import PlayerAutocomplete from "components/PlayerAutocomplete";
 const DraftSettings: React.FC<DraftSettingsProps> = ({
   settings,
   onSettingsChange,
-  isSnakeDraft,
+  draftOrderPattern,
+  onDraftOrderPatternChange,
+  isSnakeDraft = true,
   onSnakeDraftChange,
   myTeamId,
   onMyTeamIdChange,
@@ -180,17 +200,23 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   onAddKeeper,
   onImportKeepers,
   onRemoveKeeper,
+  availablePlayersForQuickFix = [],
+  onReplaceDraftPick,
   onBookmarkCreate,
   onBookmarkImport,
   playersForKeeperAutocomplete,
   draftLocked = false,
   draftLockReason = "Yahoo live sync is authoritative.",
+  structuralSettingsLocked = false,
 }) => {
   const [collapsed, setCollapsed] = React.useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     const v = window.localStorage.getItem("draftSettings.collapsed");
-    return v === "true";
+    if (v === "true" || v === "false") return v === "true";
+    return window.matchMedia?.("(max-width: 767px)").matches ?? false;
   });
+  const activeDraftOrderPattern =
+    draftOrderPattern ?? draftOrderPatternFromSnake(isSnakeDraft);
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem("draftSettings.collapsed", String(collapsed));
@@ -272,10 +298,10 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       (sum, value) => sum + value,
       0,
     );
-    const latestReservedRound = [...keepers, ...pickTrades].reduce(
-      (latest, entry) => Math.max(latest, entry.round),
-      0,
-    );
+    const latestReservedRound = [
+      ...keepers.filter(keeperUsesPick).map((keeper) => keeper.round),
+      ...pickTrades.map((trade) => trade.round),
+    ].reduce((latest, round) => Math.max(latest, round), 0);
     if (nextRoundCount < latestReservedRound) {
       setTradeFeedback({
         ok: false,
@@ -294,16 +320,31 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     });
   };
 
-  const handleSnakeDraftChange = (next: boolean) => {
+  const handleDraftOrderChange = (next: DraftOrderPattern) => {
     if (draftLocked) return;
-    if (pickTrades.length > 0 && next !== isSnakeDraft) {
+    if (structuralSettingsLocked) {
+      setTradeFeedback({
+        ok: false,
+        message: "Draft order is locked after the first ordinary pick.",
+      });
+      return;
+    }
+    const changed =
+      next.mode !== activeDraftOrderPattern.mode ||
+      next.reversedRounds.join(",") !==
+        activeDraftOrderPattern.reversedRounds.join(",");
+    if (pickTrades.length > 0 && changed) {
       setTradeFeedback({
         ok: false,
         message: "Remove configured trades before changing draft order type.",
       });
       return;
     }
-    onSnakeDraftChange(next);
+    if (onDraftOrderPatternChange) {
+      onDraftOrderPatternChange(next);
+    } else if (next.mode !== "custom") {
+      onSnakeDraftChange?.(next.mode === "snake");
+    }
   };
 
   const leagueType: LeagueType = settings.leagueType || "points";
@@ -598,12 +639,14 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const [keeperSelectedPlayerId, setKeeperSelectedPlayerId] = React.useState<
     string | undefined
   >(undefined);
+  const [keeperCost, setKeeperCost] = React.useState<"pick" | "none">("pick");
   const [keeperBulkInput, setKeeperBulkInput] = React.useState("");
   const [keeperFeedback, setKeeperFeedback] = React.useState<{
     ok: boolean;
     message: string;
   } | null>(null);
   const [tradeManagerOpen, setTradeManagerOpen] = React.useState(false);
+  const [quickFixOpen, setQuickFixOpen] = React.useState(false);
   const [tradeFeedback, setTradeFeedback] = React.useState<{
     ok: boolean;
     message: string;
@@ -613,6 +656,12 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const tradePickStepperRef = React.useRef<HTMLDivElement | null>(null);
   const keeperRoundStepperRef = React.useRef<HTMLDivElement | null>(null);
   const keeperPickStepperRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    if (structuralSettingsLocked && keeperCost === "none") {
+      setKeeperCost("pick");
+    }
+  }, [keeperCost, structuralSettingsLocked]);
 
   const applyDebouncedGoalieSourceWeight = (id: string, value: number) => {
     if (!onGoalieSourceControlsChange || !goalieSourceControls) return;
@@ -1140,8 +1189,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       alert("Invalid bookmark key");
       return;
     }
-    if (data.v !== 2) {
-      alert("Unsupported bookmark version. Expected v2.");
+    if (data.v !== 2 && data.v !== 3) {
+      alert("Unsupported bookmark version. Expected v2 or v3.");
       return;
     }
     if (onBookmarkImport) {
@@ -1241,24 +1290,46 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
             aria-label="Draft order mode"
           >
             <button
-              className={`${styles.toggleButton} ${!isSnakeDraft ? styles.active : ""}`}
-              onClick={() => handleSnakeDraftChange(false)}
+              className={`${styles.toggleButton} ${activeDraftOrderPattern.mode === "standard" ? styles.active : ""}`}
+              onClick={() =>
+                handleDraftOrderChange({
+                  mode: "standard",
+                  reversedRounds: [],
+                })
+              }
               role="tab"
-              aria-selected={!isSnakeDraft}
-              disabled={draftLocked}
+              aria-selected={activeDraftOrderPattern.mode === "standard"}
+              disabled={draftLocked || structuralSettingsLocked}
               title={draftLocked ? draftLockReason : undefined}
             >
               Standard
             </button>
             <button
-              className={`${styles.toggleButton} ${isSnakeDraft ? styles.active : ""}`}
-              onClick={() => handleSnakeDraftChange(true)}
+              className={`${styles.toggleButton} ${activeDraftOrderPattern.mode === "snake" ? styles.active : ""}`}
+              onClick={() =>
+                handleDraftOrderChange({ mode: "snake", reversedRounds: [] })
+              }
               role="tab"
-              aria-selected={isSnakeDraft}
-              disabled={draftLocked}
+              aria-selected={activeDraftOrderPattern.mode === "snake"}
+              disabled={draftLocked || structuralSettingsLocked}
               title={draftLocked ? draftLockReason : undefined}
             >
               Snake
+            </button>
+            <button
+              className={`${styles.toggleButton} ${activeDraftOrderPattern.mode === "custom" ? styles.active : ""}`}
+              onClick={() =>
+                handleDraftOrderChange({
+                  mode: "custom",
+                  reversedRounds: activeDraftOrderPattern.reversedRounds,
+                })
+              }
+              role="tab"
+              aria-selected={activeDraftOrderPattern.mode === "custom"}
+              disabled={draftLocked || structuralSettingsLocked}
+              title={draftLocked ? draftLockReason : undefined}
+            >
+              Custom
             </button>
           </div>
           <button
@@ -1391,6 +1462,52 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                 ))}
               </select>
             </div>
+            {activeDraftOrderPattern.mode === "custom" && (
+              <div className={styles.customRoundsRow}>
+                <span className={styles.label}>Reversed rounds:</span>
+                <div
+                  className={styles.roundChips}
+                  role="group"
+                  aria-label="Custom reversed rounds"
+                >
+                  {Array.from({ length: totalRosterSpots }, (_, index) => {
+                    const round = index + 1;
+                    const selected =
+                      activeDraftOrderPattern.reversedRounds.includes(round);
+                    return (
+                      <button
+                        key={round}
+                        type="button"
+                        className={`${styles.roundChip} ${selected ? styles.roundChipActive : ""}`}
+                        aria-pressed={selected}
+                        aria-label={`Round ${round}${selected ? ", reversed" : ", forward"}`}
+                        disabled={draftLocked || structuralSettingsLocked}
+                        onClick={() =>
+                          handleDraftOrderChange({
+                            mode: "custom",
+                            reversedRounds: selected
+                              ? activeDraftOrderPattern.reversedRounds.filter(
+                                  (candidate) => candidate !== round,
+                                )
+                              : [
+                                  ...activeDraftOrderPattern.reversedRounds,
+                                  round,
+                                ].sort((left, right) => left - right),
+                          })
+                        }
+                      >
+                        {round}
+                      </button>
+                    );
+                  })}
+                </div>
+                {structuralSettingsLocked && (
+                  <span className={styles.structuralLockHint} role="status">
+                    Locked after the first ordinary pick.
+                  </span>
+                )}
+              </div>
+            )}
             <div className={styles.settingRow}>
               <label className={styles.label} htmlFor="leagueType">
                 League Type:
@@ -1448,6 +1565,19 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                 data-testid="undo-pick-btn"
               >
                 Undo Pick
+              </button>
+              <button
+                type="button"
+                className={styles.actionButton}
+                onClick={() => setQuickFixOpen(true)}
+                disabled={
+                  draftLocked ||
+                  !onReplaceDraftPick ||
+                  !draftedPlayers.some((player) => !player.isKeeper)
+                }
+                title="Replace a completed manual pick without rewinding the draft"
+              >
+                Quick Fix
               </button>
               <button
                 className={`${styles.actionButton} ${confirmReset ? styles.confirmReset : ""}`}
@@ -2427,6 +2557,25 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           </option>
                         ))}
                       </select>
+                      <label
+                        className={styles.visuallyHidden}
+                        htmlFor="keeper-cost"
+                      >
+                        Keeper cost
+                      </label>
+                      <select
+                        id="keeper-cost"
+                        className={`${styles.select} ${styles.ownerSelectInline}`}
+                        value={keeperCost}
+                        onChange={(event) =>
+                          setKeeperCost(event.target.value as "pick" | "none")
+                        }
+                      >
+                        <option value="pick">Costs a pick</option>
+                        <option value="none" disabled={structuralSettingsLocked}>
+                          No pick cost
+                        </option>
+                      </select>
                       <div
                         className={styles.rosterStepper}
                         ref={keeperRoundStepperRef}
@@ -2434,6 +2583,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                         <button
                           type="button"
                           className={styles.stepButton}
+                          disabled={keeperCost === "none"}
                           aria-label="Decrease keeper round"
                           onClick={() => {
                             const el = document.getElementById(
@@ -2457,10 +2607,12 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           placeholder="RD"
                           className={styles.numberInput}
                           id="keeper-round"
+                          disabled={keeperCost === "none"}
                         />
                         <button
                           type="button"
                           className={styles.stepButton}
+                          disabled={keeperCost === "none"}
                           aria-label="Increase keeper round"
                           onClick={() => {
                             const el = document.getElementById(
@@ -2485,6 +2637,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                         <button
                           type="button"
                           className={styles.stepButton}
+                          disabled={keeperCost === "none"}
                           aria-label="Decrease keeper pick"
                           onClick={() => {
                             const el = document.getElementById(
@@ -2509,10 +2662,12 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           placeholder="Pick"
                           className={styles.numberInput}
                           id="keeper-pick"
+                          disabled={keeperCost === "none"}
                         />
                         <button
                           type="button"
                           className={styles.stepButton}
+                          disabled={keeperCost === "none"}
                           aria-label="Increase keeper pick"
                           onClick={() => {
                             const el = document.getElementById(
@@ -2559,19 +2714,23 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                             ) as HTMLSelectElement
                           )?.value;
                           const playerId = keeperSelectedPlayerId;
+                          const pickCostIsValid =
+                            keeperCost === "none" ||
+                            (Number.isFinite(r) && Number.isFinite(p));
                           if (
                             onAddKeeper &&
-                            Number.isFinite(r) &&
-                            Number.isFinite(p) &&
+                            pickCostIsValid &&
                             teamId &&
                             playerId
                           ) {
-                            const result = onAddKeeper(
-                              r,
-                              p,
+                            const result = onAddKeeper({
+                              cost: keeperCost,
                               teamId,
-                              String(playerId),
-                            );
+                              playerId: String(playerId),
+                              ...(keeperCost === "pick"
+                                ? { round: r, pickInRound: p }
+                                : {}),
+                            });
                             setKeeperFeedback(result);
                             if (result.ok) setKeeperSelectedPlayerId(undefined);
                           } else {
@@ -2594,8 +2753,10 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                                 1000,
                               );
                             };
-                            if (!Number.isFinite(r)) pulse(roundEl);
-                            if (!Number.isFinite(p)) pulse(pickEl);
+                            if (keeperCost === "pick" && !Number.isFinite(r))
+                              pulse(roundEl);
+                            if (keeperCost === "pick" && !Number.isFinite(p))
+                              pulse(pickEl);
                             const pulseGroup = (
                               groupEl: HTMLDivElement | null,
                             ) => {
@@ -2611,9 +2772,9 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                                 );
                               }, 1000);
                             };
-                            if (!Number.isFinite(r))
+                            if (keeperCost === "pick" && !Number.isFinite(r))
                               pulseGroup(keeperRoundStepperRef.current);
-                            if (!Number.isFinite(p))
+                            if (keeperCost === "pick" && !Number.isFinite(p))
                               pulseGroup(keeperPickStepperRef.current);
                           }
                         }}
@@ -2628,8 +2789,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                         htmlFor="keeper-bulk"
                         className={styles.mutedSmallLabel}
                       >
-                        Bulk keepers (JSON or CSV: playerId, teamId, round,
-                        pickInRound)
+                        Bulk keepers (JSON or CSV: playerId, teamId, cost,
+                        round, pickInRound)
                       </label>
                       <textarea
                         id="keeper-bulk"
@@ -2640,7 +2801,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                         }
                         rows={4}
                         placeholder={
-                          "playerId,teamId,round,pickInRound\n8478402,Team 1,3,1"
+                          "playerId,teamId,cost,round,pickInRound\n8478402,Team 1,pick,3,1\n8471214,Team 2,none,,"
                         }
                       />
                       <button
@@ -2679,11 +2840,14 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                       )}
                       {keepers.map((k) => (
                         <div
-                          key={`${k.round}-${k.pickInRound}`}
+                          key={k.playerId}
                           className={styles.inlineItemRow}
                         >
                           <span>
-                            {k.round}-{k.pickInRound} →{" "}
+                            {keeperUsesPick(k)
+                              ? `${k.round}-${k.pickInRound}`
+                              : "No pick"}{" "}
+                            →{" "}
                             {customTeamNames[k.teamId] || k.teamId} (
                             {playerNamesById.get(k.playerId) ||
                               `Player #${k.playerId}`}
@@ -2693,9 +2857,18 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                             <button
                               type="button"
                               className={styles.inlineResetBtn}
-                              onClick={() =>
-                                onRemoveKeeper(k.round, k.pickInRound)
+                              disabled={
+                                !keeperUsesPick(k) && structuralSettingsLocked
                               }
+                              title={
+                                !keeperUsesPick(k) && structuralSettingsLocked
+                                  ? "No-pick keepers are locked after the first ordinary pick."
+                                  : undefined
+                              }
+                              onClick={() => {
+                                const result = onRemoveKeeper(k.playerId);
+                                setKeeperFeedback(result);
+                              }}
                             >
                               Remove
                             </button>
@@ -3029,6 +3202,19 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
             )}
           </div>
         </div>
+      )}
+      {onReplaceDraftPick && (
+        <QuickFixModal
+          open={quickFixOpen}
+          onClose={() => setQuickFixOpen(false)}
+          teamCount={settings.teamCount}
+          roundCount={totalRosterSpots}
+          draftedPlayers={draftedPlayers}
+          availablePlayers={availablePlayersForQuickFix}
+          allPlayerNames={playerNamesById}
+          customTeamNames={customTeamNames}
+          onReplace={onReplaceDraftPick}
+        />
       )}
       <ManageTradesModal
         open={tradeManagerOpen && !draftLocked}

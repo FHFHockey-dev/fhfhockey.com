@@ -48,17 +48,25 @@ export function isYahooLiveDraftUserEntitled(
     YAHOO_LIVE_DRAFT_ROLLOUT_STAGE?: string;
     YAHOO_LIVE_DRAFT_STAFF_USER_IDS?: string;
     YAHOO_LIVE_DRAFT_BETA_USER_IDS?: string;
+    YAHOO_LIVE_DRAFT_PROVIDER_VALIDATED?: string;
   } = process.env as {
     YAHOO_LIVE_DRAFT_ROLLOUT_STAGE?: string;
     YAHOO_LIVE_DRAFT_STAFF_USER_IDS?: string;
     YAHOO_LIVE_DRAFT_BETA_USER_IDS?: string;
+    YAHOO_LIVE_DRAFT_PROVIDER_VALIDATED?: string;
   },
 ) {
   const stage = yahooLiveDraftRolloutStage(
     environment.YAHOO_LIVE_DRAFT_ROLLOUT_STAGE,
   );
   if (stage === "off") return false;
-  if (stage === "authenticated") return true;
+  if (stage === "authenticated") {
+    return ["1", "true", "yes", "on"].includes(
+      String(environment.YAHOO_LIVE_DRAFT_PROVIDER_VALIDATED ?? "")
+        .trim()
+        .toLowerCase(),
+    );
+  }
   const normalizedUserId = userId.trim().toLowerCase();
   if (userIds(environment.YAHOO_LIVE_DRAFT_STAFF_USER_IDS).has(normalizedUserId)) {
     return true;

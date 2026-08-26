@@ -33,7 +33,7 @@ export default async function handler(
     const result = await loadYahooTeamRoster({
       userId: user.id,
       externalTeamId,
-      redirectUri: buildYahooCallbackUrl(req),
+      redirectUri: buildYahooCallbackUrl(),
     });
 
     return res.status(200).json({

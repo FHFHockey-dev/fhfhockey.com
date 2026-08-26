@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   PICK_TRADE_CONTRACT_VERSION,
+  findNextActionablePick,
   findPicksUntilTeamTurn,
   migratePickTrades,
   parsePickTradeImport,
@@ -9,6 +10,7 @@ import {
   upsertPickTrade,
   validatePickTradeBatch
 } from "./pickTrades";
+import { KEEPER_CONTRACT_VERSION } from "./keepers";
 
 const base = {
   draftOrder: ["Team 1", "Team 2", "Team 3", "Team 4"],
@@ -66,8 +68,9 @@ describe("pick trade contract", () => {
         ...base,
         keepers: [
           {
-            version: 1,
+            version: KEEPER_CONTRACT_VERSION,
             status: "valid",
+            cost: "pick",
             playerId: "1",
             teamId: "Team 3",
             round: 1,
@@ -88,8 +91,9 @@ describe("pick trade contract", () => {
         trades: result.trades,
         keepers: [
           {
-            version: 1,
+            version: KEEPER_CONTRACT_VERSION,
             status: "valid",
+            cost: "pick",
             playerId: "1",
             teamId: "Team 3",
             round: 1,
@@ -163,5 +167,66 @@ describe("pick trade contract", () => {
         maxPickNumber: 12
       })
     ).toBe(7);
+  });
+
+  it("uses exact custom reversed rounds for ownership, trades, and forecasts", () => {
+    const orderPattern = { mode: "custom" as const, reversedRounds: [3] };
+    expect(
+      resolvePickOwner({
+        round: 2,
+        pickInRound: 1,
+        draftOrder: base.draftOrder,
+        orderPattern,
+      }).currentTeamId,
+    ).toBe("Team 1");
+    expect(
+      resolvePickOwner({
+        round: 3,
+        pickInRound: 1,
+        draftOrder: base.draftOrder,
+        orderPattern,
+      }).currentTeamId,
+    ).toBe("Team 4");
+
+    const trade = upsertPickTrade(
+      { round: 3, pickInRound: 1, currentTeamId: "Team 2" },
+      { ...base, orderPattern, isSnakeDraft: undefined },
+    );
+    expect(trade).toMatchObject({
+      ok: true,
+      trade: { originalTeamId: "Team 4", currentTeamId: "Team 2" },
+    });
+    expect(
+      findPicksUntilTeamTurn({
+        currentPick: 4,
+        teamId: "Team 4",
+        draftOrder: base.draftOrder,
+        orderPattern,
+        maxPickNumber: 12,
+      }),
+    ).toBe(4);
+  });
+
+  it("skips future cells owned by teams whose rosters are full", () => {
+    expect(
+      findNextActionablePick({
+        startPick: 1,
+        maxPickNumber: 4,
+        draftOrder: ["Team 1", "Team 2"],
+        orderPattern: { mode: "standard", reversedRounds: [] },
+        rosterCapacity: 1,
+        teamRosterCounts: { "Team 1": 1 },
+      }),
+    ).toBe(2);
+    expect(
+      findNextActionablePick({
+        startPick: 1,
+        maxPickNumber: 4,
+        draftOrder: ["Team 1", "Team 2"],
+        orderPattern: { mode: "standard", reversedRounds: [] },
+        rosterCapacity: 1,
+        teamRosterCounts: { "Team 1": 1, "Team 2": 1 },
+      }),
+    ).toBe(5);
   });
 });

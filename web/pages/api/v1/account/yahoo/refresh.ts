@@ -24,7 +24,7 @@ export default async function handler(
   try {
     const result = await runYahooManualRefresh({
       userId: user.id,
-      redirectUri: buildYahooCallbackUrl(req),
+      redirectUri: buildYahooCallbackUrl(),
     });
 
     return res.status(200).json({

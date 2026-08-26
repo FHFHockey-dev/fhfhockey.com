@@ -5,11 +5,13 @@ import type { Database } from "lib/supabase/database-generated.types";
 import { syncYahooDiscovery } from "lib/integrations/yahoo/discovery";
 import {
   buildYahooAccountRedirect,
-  buildYahooCallbackUrl,
+  clearYahooOAuthBrowserCookie,
+  consumeYahooOAuthTransaction,
   exchangeYahooAuthorizationCode,
-  verifyYahooOAuthState,
+  readYahooOAuthBrowserBinding,
 } from "lib/integrations/yahoo/oauth";
 import { YAHOO_PROVIDER } from "lib/integrations/yahoo/config";
+import { YahooLiveDraftError } from "lib/integrations/yahoo/liveDraft";
 
 type ConnectedAccountRow = Database["public"]["Tables"]["connected_accounts"]["Row"];
 
@@ -84,9 +86,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   let next = "/account?section=connected-accounts";
 
   try {
-    const state = verifyYahooOAuthState(req.query.state);
-    next = state.next;
-
+    res.setHeader("Set-Cookie", clearYahooOAuthBrowserCookie());
+    const transaction = await consumeYahooOAuthTransaction({
+      browserBinding: readYahooOAuthBrowserBinding(req),
+      state: req.query.state,
+    });
+    next = transaction.safeNextPath;
     if (req.query.error) {
       const yahooError = Array.isArray(req.query.error)
         ? req.query.error[0]
@@ -103,20 +108,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
     }
 
-    const tokenResponse = await exchangeYahooAuthorizationCode(req, code);
+    const tokenResponse = await exchangeYahooAuthorizationCode({
+      code,
+      codeVerifier: transaction.pkceCodeVerifier,
+      redirectUri: transaction.redirectUri,
+    });
     const connectedAccount = await upsertYahooConnectedAccount({
-      userId: state.userId,
+      userId: transaction.userId,
       providerUserId: tokenResponse.xoauth_yahoo_guid ?? null,
     });
 
     const summary = await syncYahooDiscovery({
-      userId: state.userId,
+      userId: transaction.userId,
       connectedAccount,
       accessToken: tokenResponse.access_token,
+      expiresAt: Number.isFinite(Number(tokenResponse.expires_in))
+        ? new Date(
+            Date.now() + Number(tokenResponse.expires_in) * 1000,
+          ).toISOString()
+        : null,
       refreshToken: tokenResponse.refresh_token,
       tokenType: tokenResponse.token_type ?? null,
       providerUserId: tokenResponse.xoauth_yahoo_guid ?? null,
-      redirectUri: buildYahooCallbackUrl(req),
+      redirectUri: transaction.redirectUri,
     });
 
     return res.redirect(
@@ -127,8 +141,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       )
     );
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Yahoo connection could not be completed.";
-    return res.redirect(buildYahooAccountRedirect(next, "error", message));
+    console.warn("Yahoo connection callback failed", {
+      errorCode:
+        error instanceof YahooLiveDraftError
+          ? error.code
+          : "yahoo_connection_failed",
+      errorType: error instanceof Error ? error.name : "unknown",
+    });
+    return res.redirect(
+      buildYahooAccountRedirect(
+        next,
+        "error",
+        "Yahoo connection could not be completed. Please try again.",
+      ),
+    );
   }
 }

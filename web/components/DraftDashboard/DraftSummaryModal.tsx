@@ -4,6 +4,7 @@ import modalStyles from "./ModalShell.module.scss";
 import type {
   DraftSettings,
   DraftedPlayer,
+  RosterAssignment,
   TeamDraftStats,
 } from "./DraftDashboard";
 import type { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
@@ -17,6 +18,10 @@ import {
 } from "lib/draftDashboard/forwardGrouping";
 import type { PickTradeEntry } from "lib/draftDashboard/pickTrades";
 import type { DraftConfigurationSummary } from "lib/draftDashboard/summaryConfiguration";
+import {
+  keeperUsesPick,
+  type KeeperEntry,
+} from "lib/draftDashboard/keepers";
 
 interface DraftSummaryModalProps {
   isOpen: boolean;
@@ -28,6 +33,7 @@ interface DraftSummaryModalProps {
   vorpMetrics?: Map<string, PlayerVorpMetrics>;
   forwardGrouping?: ForwardGrouping;
   pickTrades?: PickTradeEntry[];
+  keepers?: KeeperEntry[];
   configurationSummary?: DraftConfigurationSummary;
 }
 
@@ -43,6 +49,7 @@ export default function DraftSummaryModal({
   vorpMetrics,
   forwardGrouping = "split",
   pickTrades = [],
+  keepers = [],
   configurationSummary,
 }: DraftSummaryModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -144,9 +151,15 @@ export default function DraftSummaryModal({
   }, [draftedPlayers]);
 
   const totalRounds = useMemo(() => {
-    const tc = draftSettings.teamCount || 12;
-    return Math.max(1, Math.ceil(draftedPlayers.length / Math.max(1, tc)));
-  }, [draftedPlayers.length, draftSettings.teamCount]);
+    return Math.max(
+      1,
+      Object.values(draftSettings.rosterConfig).reduce(
+        (sum, count) => sum + Number(count || 0),
+        0,
+      ),
+    );
+  }, [draftSettings.rosterConfig]);
+  const noPickKeepers = keepers.filter((keeper) => !keeperUsesPick(keeper));
 
   const leagueLabel =
     (draftSettings.leagueType || "points") === "categories"
@@ -287,7 +300,7 @@ export default function DraftSummaryModal({
     const rosterSlots = team.rosterSlots || {};
     const bench = team.bench || [];
 
-    const renderPlayers = (arr: DraftedPlayer[]) => (
+    const renderPlayers = (arr: RosterAssignment[]) => (
       <ul className={styles.playerListTight}>
         {arr.map((dp) => {
           const p = playerMap.get(dp.playerId);
@@ -303,8 +316,9 @@ export default function DraftSummaryModal({
                 {p?.fullName || dp.playerId}
               </span>
               <span className={styles.pickMeta}>
-                {dp.isKeeper ? "Keeper · " : ""}R{dp.round} · P{dp.pickInRound}{" "}
-                · #{dp.pickNumber}
+                {"keeperCost" in dp
+                  ? "No-pick keeper"
+                  : `${dp.isKeeper ? "Keeper · " : ""}R${dp.round} · P${dp.pickInRound} · #${dp.pickNumber}`}
               </span>
             </li>
           );
@@ -316,7 +330,7 @@ export default function DraftSummaryModal({
       draftSettings.rosterConfig || {},
       forwardGrouping,
     );
-    const order: Array<{ key: string; label: string; list: DraftedPlayer[] }> =
+    const order: Array<{ key: string; label: string; list: RosterAssignment[] }> =
       [];
 
     getRosterPositions(forwardGrouping)
@@ -503,6 +517,30 @@ export default function DraftSummaryModal({
                   {trade.currentTeamId}
                 </span>
               ))}
+            </div>
+          )}
+
+          {noPickKeepers.length > 0 && (
+            <div
+              className={styles.noPickKeeperSummary}
+              role="region"
+              aria-label="No-pick keepers"
+            >
+              <strong>No-pick keepers</strong>
+              <ul>
+                {noPickKeepers.map((keeper) => (
+                  <li key={keeper.playerId}>
+                    <span>
+                      {playerMap.get(keeper.playerId)?.fullName ||
+                        `Player #${keeper.playerId}`}
+                    </span>
+                    <span>
+                      {teamStats.find((team) => team.teamId === keeper.teamId)
+                        ?.teamName || keeper.teamId}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 

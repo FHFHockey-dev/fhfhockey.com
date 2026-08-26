@@ -15,6 +15,75 @@
   gap: v.$space-md;
 }
 
+.homepageToolSwitcher {
+  display: grid;
+  gap: v.$space-xs;
+  min-width: 0;
+}
+
+.homepageToolTabs {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 3px;
+  max-width: 100%;
+  padding: 3px;
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  background: v.$background-dark;
+}
+
+.homepageToolTab {
+  @include v.reset-button;
+  min-height: v.$control-height-sm;
+  padding: 0 v.$space-md;
+  border: 1px solid transparent;
+  border-radius: calc(v.$radius-control - 2px);
+  color: v.$text-secondary;
+  cursor: pointer;
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition:
+    border-color v.$transition-duration v.$transition-easing,
+    background-color v.$transition-duration v.$transition-easing,
+    color v.$transition-duration v.$transition-easing;
+
+  &:hover {
+    border-color: rgba(v.$primary-color, 0.45);
+    color: v.$color-white;
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
+
+  &[aria-selected="true"] {
+    border-color: rgba(v.$primary-color, 0.68);
+    background: rgba(v.$primary-color, 0.15);
+    color: v.$color-white;
+  }
+}
+
+.homepageToolPanel {
+  min-width: 0;
+}
+
+@media (max-width: #{v.$breakpoint-mobile-lg}) {
+  .homepageToolTabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-self: stretch;
+  }
+
+  .homepageToolTab {
+    padding-inline: v.$space-xs;
+  }
+}
+
 .socialMedia {
   @media only screen and (min-width: 800px) {
     display: none;

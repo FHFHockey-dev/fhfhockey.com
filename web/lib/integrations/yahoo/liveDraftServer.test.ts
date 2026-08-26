@@ -1,10 +1,20 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
-  fetchYahooJson,
+  correctedIncomingPickNumbers,
+  postdraftConfirmation,
   pollYahooDraftSession,
   requireOwnedYahooDraftLeague,
+  snapshotRequiresCorrectionConfirmation,
 } from "./liveDraftServer";
+import { fetchYahooDraftResource } from "./providerClient";
+
+const GAME_CONTEXT = {
+  gameCode: "nhl" as const,
+  gameKey: "477",
+  season: "2026",
+  targetSeasonId: 20262027,
+};
 
 function queryBuilder(
   table: string,
@@ -77,7 +87,8 @@ describe("Yahoo live draft ownership", () => {
     const result = await requireOwnedYahooDraftLeague(
       userId,
       externalLeagueId,
-      client,
+      client as any,
+      GAME_CONTEXT,
     );
     expect(result.ownedTeam.external_team_key).toBe("477.l.123.t.1");
     expect(filters).toContainEqual(["external_leagues", "id", externalLeagueId]);
@@ -100,7 +111,8 @@ describe("Yahoo live draft ownership", () => {
       requireOwnedYahooDraftLeague(
         "11111111-1111-4111-8111-111111111111",
         "22222222-2222-4222-8222-222222222222",
-        client,
+        client as any,
+        GAME_CONTEXT,
       ),
     ).rejects.toMatchObject({ statusCode: 404, code: "yahoo_league_not_found" });
   });
@@ -213,6 +225,7 @@ describe("Yahoo live draft ownership", () => {
     const fetchImpl = vi.fn();
     const result = await pollYahooDraftSession(userId, sessionId, {
       client,
+      context: GAME_CONTEXT,
       fetchImpl: fetchImpl as any,
       now: () => now,
     });
@@ -228,21 +241,43 @@ describe("Yahoo live draft ownership", () => {
   it("persists a rotated Yahoo refresh token before retrying the request", async () => {
     vi.stubEnv("YAHOO_CONSUMER_KEY", "consumer-key");
     vi.stubEnv("YAHOO_CONSUMER_SECRET", "consumer-secret");
-    const rpc = vi
-      .fn()
-      .mockResolvedValueOnce({
-        data: {
-          access_token: "expired-access",
-          refresh_token: "old-refresh",
-          token_type: "bearer",
-          scopes: [],
-          provider_user_id: "guid",
-          refresh_expires_at: null,
-          secret_metadata: {},
-        },
-        error: null,
-      })
-      .mockResolvedValueOnce({ data: "token-row", error: null });
+    vi.stubEnv(
+      "YAHOO_REDIRECT_URI",
+      "https://fhfhockey.com/api/v1/account/yahoo/callback",
+    );
+    let refreshed = false;
+    const rpc = vi.fn(async (name: string) => {
+      if (name === "get_connected_account_tokens_secure") {
+        return {
+          data: {
+            access_token: refreshed ? "fresh-access" : "expired-access",
+            expires_at: null,
+            last_refreshed_at: null,
+            refresh_token: refreshed ? "rotated-refresh" : "old-refresh",
+            token_type: "bearer",
+            scopes: [],
+            provider_user_id: "guid",
+            refresh_expires_at: null,
+            secret_metadata: {},
+          },
+          error: null,
+        };
+      }
+      if (name === "claim_yahoo_token_refresh_lease") {
+        return {
+          data: { claimed: true, leaseToken: "lease-token" },
+          error: null,
+        };
+      }
+      if (name === "upsert_connected_account_tokens_secure") {
+        refreshed = true;
+        return { data: "token-row", error: null };
+      }
+      if (name === "release_yahoo_token_refresh_lease") {
+        return { data: true, error: null };
+      }
+      throw new Error(`Unexpected RPC: ${name}`);
+    });
     const fetchImpl = vi
       .fn()
       .mockResolvedValueOnce(new Response("unauthorized", { status: 401 }))
@@ -265,17 +300,18 @@ describe("Yahoo live draft ownership", () => {
       );
 
     await expect(
-      fetchYahooJson({
-        client: { rpc },
+      fetchYahooDraftResource({
+        client: { rpc } as any,
         connectedAccountId: "33333333-3333-4333-8333-333333333333",
+        context: GAME_CONTEXT,
+        leagueKey: "477.l.1",
+        resource: "settings",
         userId: "11111111-1111-4111-8111-111111111111",
-        url: "https://fantasysports.yahooapis.com/fantasy/v2/league/477.l.1/settings?format=json_f",
         fetchImpl: fetchImpl as any,
         now: new Date("2026-08-12T12:00:00Z"),
       }),
-    ).resolves.toEqual({ ok: true });
-    expect(rpc).toHaveBeenNthCalledWith(
-      2,
+    ).resolves.toMatchObject({ payload: { ok: true } });
+    expect(rpc).toHaveBeenCalledWith(
       "upsert_connected_account_tokens_secure",
       expect.objectContaining({
         p_access_token: "fresh-access",
@@ -290,5 +326,234 @@ describe("Yahoo live draft ownership", () => {
         }),
       }),
     );
+  });
+
+  it("captures provider cache/rate metadata and distinguishes timeouts", async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: {
+        access_token: "access-token",
+        expires_at: null,
+        last_refreshed_at: null,
+        provider_user_id: null,
+        refresh_expires_at: null,
+        refresh_token: "refresh-token",
+        scopes: [],
+        secret_metadata: {},
+        token_type: "bearer",
+      },
+      error: null,
+    });
+    const result = await fetchYahooDraftResource({
+      client: { rpc } as any,
+      connectedAccountId: "33333333-3333-4333-8333-333333333333",
+      context: GAME_CONTEXT,
+      fetchImpl: vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ ok: true }), {
+          headers: {
+            age: "4",
+            "cache-control": "private, max-age=5",
+            etag: '"snapshot"',
+            "last-modified": "Mon, 24 Aug 2026 12:00:00 GMT",
+            "refresh-rate": "10",
+            "retry-after": "7",
+          },
+          status: 200,
+        }),
+      ) as any,
+      leagueKey: "477.l.1",
+      now: new Date("2026-08-24T12:00:00.000Z"),
+      resource: "draftresults",
+      userId: "11111111-1111-4111-8111-111111111111",
+    });
+    expect(result.transport).toMatchObject({
+      ageSeconds: 4,
+      cacheControl: "private, max-age=5",
+      etagPresent: true,
+      lastModifiedPresent: true,
+      refreshRate: "10",
+      retryAfterSeconds: 7,
+    });
+
+    await expect(
+      fetchYahooDraftResource({
+        client: { rpc } as any,
+        connectedAccountId: "33333333-3333-4333-8333-333333333333",
+        context: GAME_CONTEXT,
+        fetchImpl: vi.fn().mockRejectedValue(
+          Object.assign(new Error("timed out"), { name: "TimeoutError" }),
+        ) as any,
+        leagueKey: "477.l.1",
+        resource: "draftresults",
+        userId: "11111111-1111-4111-8111-111111111111",
+      }),
+    ).rejects.toMatchObject({ code: "yahoo_api_timeout" });
+
+    await expect(
+      fetchYahooDraftResource({
+        client: { rpc } as any,
+        connectedAccountId: "33333333-3333-4333-8333-333333333333",
+        context: GAME_CONTEXT,
+        fetchImpl: vi.fn().mockResolvedValue(
+          new Response("unavailable", { status: 503 }),
+        ) as any,
+        leagueKey: "477.l.1",
+        resource: "draftresults",
+        userId: "11111111-1111-4111-8111-111111111111",
+      }),
+    ).rejects.toMatchObject({ code: "yahoo_provider_outage" });
+  });
+
+  it("uses a token refreshed by the current database lease owner", async () => {
+    vi.stubEnv("YAHOO_CONSUMER_KEY", "consumer-key");
+    vi.stubEnv("YAHOO_CONSUMER_SECRET", "consumer-secret");
+    vi.stubEnv(
+      "YAHOO_REDIRECT_URI",
+      "https://fhfhockey.com/api/v1/account/yahoo/callback",
+    );
+    let tokenLoads = 0;
+    const rpc = vi.fn(async (name: string) => {
+      if (name === "get_connected_account_tokens_secure") {
+        tokenLoads += 1;
+        const refreshed = tokenLoads >= 3;
+        return {
+          data: {
+            access_token: refreshed ? "fresh-access" : "expired-access",
+            expires_at: refreshed ? "2026-08-24T13:00:00.000Z" : null,
+            last_refreshed_at: refreshed
+              ? "2026-08-24T12:00:01.000Z"
+              : null,
+            refresh_token: "refresh-token",
+            token_type: "bearer",
+            scopes: [],
+            provider_user_id: null,
+            refresh_expires_at: null,
+            secret_metadata: {},
+          },
+          error: null,
+        };
+      }
+      if (name === "claim_yahoo_token_refresh_lease") {
+        return {
+          data: {
+            claimed: false,
+            retryAt: "2026-08-24T12:00:02.000Z",
+          },
+          error: null,
+        };
+      }
+      throw new Error(`Unexpected RPC: ${name}`);
+    });
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("unauthorized", { status: 401 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ ok: true }), { status: 200 }),
+      );
+    await expect(
+      fetchYahooDraftResource({
+        client: { rpc } as any,
+        connectedAccountId: "33333333-3333-4333-8333-333333333333",
+        context: GAME_CONTEXT,
+        fetchImpl: fetchImpl as any,
+        leagueKey: "477.l.1",
+        now: new Date("2026-08-24T12:00:00.000Z"),
+        resource: "draftresults",
+        userId: "11111111-1111-4111-8111-111111111111",
+      }),
+    ).resolves.toMatchObject({ payload: { ok: true } });
+    expect(fetchImpl).toHaveBeenLastCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer fresh-access",
+        }),
+      }),
+    );
+  });
+
+  it("quarantines regressive and replacement snapshots but permits append-only growth", () => {
+    const existing = [
+      {
+        auction_cost: null,
+        pick_number: 1,
+        round_number: 1,
+        yahoo_player_key: "477.p.10",
+        yahoo_team_key: "477.l.1.t.1",
+      },
+    ];
+    const original = {
+      cost: null,
+      nhlTeamAbbreviation: null,
+      pickNumber: 1,
+      playerName: null,
+      position: null,
+      roundNumber: 1,
+      yahooPlayerId: "10",
+      yahooPlayerKey: "477.p.10",
+      yahooTeamKey: "477.l.1.t.1",
+    };
+    expect(snapshotRequiresCorrectionConfirmation(existing, [])).toBe(true);
+    expect(
+      snapshotRequiresCorrectionConfirmation(existing, [
+        { ...original, cost: 7 },
+      ]),
+    ).toBe(true);
+    expect(
+      [...correctedIncomingPickNumbers(existing, [{ ...original, cost: 7 }])],
+    ).toEqual([1]);
+    expect(
+      snapshotRequiresCorrectionConfirmation(existing, [
+        { ...original, yahooTeamKey: "477.l.1.t.2" },
+      ]),
+    ).toBe(true);
+    expect(
+      snapshotRequiresCorrectionConfirmation(existing, [
+        original,
+        {
+          ...original,
+          pickNumber: 2,
+          yahooPlayerId: "20",
+          yahooPlayerKey: "477.p.20",
+          yahooTeamKey: "477.l.1.t.2",
+        },
+      ]),
+    ).toBe(false);
+    expect(
+      correctedIncomingPickNumbers(existing, [
+        original,
+        {
+          ...original,
+          pickNumber: 2,
+          yahooPlayerId: "20",
+          yahooPlayerKey: "477.p.20",
+          yahooTeamKey: "477.l.1.t.2",
+        },
+      ]).size,
+    ).toBe(0);
+  });
+
+  it("requires a delayed matching postdraft observation before completion", () => {
+    const first = postdraftConfirmation({
+      diagnostics: {},
+      observedAt: new Date("2026-08-24T12:00:00.000Z"),
+      providerStatus: "postdraft",
+      snapshotHash: "snapshot-a",
+    });
+    expect(first.confirmed).toBe(false);
+    const confirmed = postdraftConfirmation({
+      diagnostics: first.diagnostics,
+      observedAt: new Date("2026-08-24T12:00:05.000Z"),
+      providerStatus: "postdraft",
+      snapshotHash: "snapshot-a",
+    });
+    expect(confirmed.confirmed).toBe(true);
+    expect(
+      postdraftConfirmation({
+        diagnostics: first.diagnostics,
+        observedAt: new Date("2026-08-24T12:00:05.000Z"),
+        providerStatus: "postdraft",
+        snapshotHash: "snapshot-b",
+      }).confirmed,
+    ).toBe(false);
   });
 });

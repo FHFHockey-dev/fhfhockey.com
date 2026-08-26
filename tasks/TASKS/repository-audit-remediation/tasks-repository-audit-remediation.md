@@ -12,6 +12,7 @@ Generated from audit run `REPO-AUDIT-2026-08-09-FROZEN-36536C3`. This file is a 
 - `FIND-COR-003` remains **Needs revalidation** even though its affected files are unchanged: the frozen active migration chain itself contradicts the endpoint's destructive present-tense consequence, and deployed catalog parity is unknown.
 - All pre-existing live-worktree changes are user-owned. Every implementation task must begin with a targeted status/diff check and preserve overlapping work, especially `web/package.json`, `web/lib/supabase/supportedBaselineMigration.test.ts`, and the current forecast migration.
 - Concurrent user drift continued after reconciliation (including later edits to `web/components/TransactionTrends/OwnershipSparkline.tsx` and `web/pages/index.tsx`). Those paths do not overlap this plan's finding evidence and were not incorporated; executors must recheck current state rather than treating this planning receipt as a frozen worktree.
+- Resume checkpoint 2026-08-26: `octoberBranch` and `origin/octoberBranch` both point to `9621935b9994ac06dd71efd00dc58dae0b95a112`, which incorporates the earlier remediation bundle. Current Yahoo draft work remains user-owned and uncommitted; only its migration filename/hash is represented in the fail-closed source-authority ledger.
 
 ## Dependency-ordered index
 
@@ -122,6 +123,7 @@ Highest risk is an unknown operator consumer. Keep the revocation isolated and r
 - Added `supabase/migrations/20260820013120_revoke_execute_sql_browser_roles.sql` and registered it in the migration-authority contract. Its focused regression case passes and static review confirms the migration never invokes the routine.
 - After AUDIT-TASK-006 reconciliation, the full migration-authority file passes 17/17. A fresh read-only catalog and deployed-ledger check still shows the browser-role grants and confirms migration `20260820013120` is not applied.
 - The [security RPC rollout runbook](security-rpc-rollout-runbook.md) freezes the exact source hash, catalog-only pre/post query, stop conditions, forward-only rollback rule, and operator receipt. No migration was pushed or applied; AUDIT-TASK-001.4 remains pending explicit authorization naming this migration.
+- A resumed read-only Production check on 2026-08-26 still found `public.execute_sql(sql_statement text)` SECURITY DEFINER with `PUBLIC`, `anon`, and `authenticated` execute privileges, while the Production migration ledger still ended at `20260815023132`. No function was invoked and no migration was applied.
 
 # AUDIT-TASK-002: Remove browser access to the destructive truncation RPC
 
@@ -191,6 +193,7 @@ Never use a truncate call as a health check. Roll back only ACLs, never data.
 - Added `supabase/migrations/20260820013124_revoke_truncate_rolling_metrics_browser_roles.sql` and registered it in the migration-authority contract. Its focused regression case passes and static review confirms no routine invocation or new truncation statement.
 - After AUDIT-TASK-006 reconciliation, the full migration-authority file passes 17/17. A fresh read-only catalog and deployed-ledger check still shows the browser-role grants and confirms migration `20260820013124` is not applied.
 - The [security RPC rollout runbook](security-rpc-rollout-runbook.md) freezes the exact source hash, catalog-only pre/post query, stop conditions, forward-only rollback rule, and operator receipt. No migration was pushed or applied; AUDIT-TASK-002.4 remains pending explicit authorization naming this migration.
+- A resumed read-only Production check on 2026-08-26 still found `public.truncate_rolling_player_game_metrics()` SECURITY DEFINER with `anon` and `authenticated` execute privileges, while the Production migration ledger still ended at `20260815023132`. No function or table was touched and no migration was applied.
 
 # AUDIT-TASK-003: Authenticate and method-bound operational API surfaces
 
@@ -330,7 +333,7 @@ Hosted-runner behavior must be checked through configuration and redacted logs. 
 
 - Checkout, dependency installation, browser installation, deployed-URL testing, and artifact upload are now credential-free by YAML scope. Only the local-server E2E step receives the URL/public/service-role values; the prerequisite check receives boolean presence markers only.
 - `npm run test:e2e:rankings -- --list` still discovers exactly three tests, and bounded YAML inspection finds one actual `SUPABASE_SERVICE_ROLE_KEY` assignment under the local-server step.
-- A read-only GitHub Actions lookup for current HEAD `1fb6be989d270f154b3b2af3bdae7070c9fa26ec` returned zero workflow runs. The scoped workflow change remains local and no push, PR, or workflow dispatch was authorized, so hosted inheritance cannot yet be claimed.
+- The scoped workflow change is now committed and pushed at `9621935b9994ac06dd71efd00dc58dae0b95a112`. A read-only GitHub Actions lookup on 2026-08-26 returned zero workflow runs for that exact commit; no workflow dispatch occurred, so hosted inheritance still cannot be claimed.
 - AUDIT-TASK-004.3 remains open because only a future GitHub Actions run can prove hosted-runner inheritance; no environment values were printed or inspected.
 
 # AUDIT-TASK-005: Replace fabricated GamePreview analytics with explicit unavailable states
@@ -464,7 +467,7 @@ This task overlaps active user work. Re-read status/diff immediately before edit
 ## Completion checkpoint — 2026-08-19
 
 - Owner approval established the fail-closed policy: repository presence means source-authorized only; applied state requires an exact environment receipt; otherwise state remains unknown. No source classification authorizes deployment.
-- [`migration-authority.json`](migration-authority.json) is now the sole ordered hash ledger for all 46 current active migrations, including all three concurrent forecast files and the two audit security migrations. A read-only Production-ledger receipt observed on 2026-08-19 reconciles it to 41 applied rows and 5 unknown-state rows without changing any migration byte.
+- [`migration-authority.json`](migration-authority.json) is now the sole ordered hash ledger for all 51 current active migrations, including the current forecast/Yahoo additions and the two audit security migrations. Read-only Production-ledger receipts through 2026-08-26 reconcile it to 41 applied rows and 10 unknown-state rows without changing any migration byte.
 - The supported-baseline suite consumes that ledger directly, rejects missing/extra/duplicate/misordered/hash-drifted records, and cross-checks the retained historical manifest and current summary. `npm test -- lib/supabase/supportedBaselineMigration.test.ts` passes 17/17 without contacting Supabase or running SQL.
 
 # AUDIT-TASK-007: Establish the deployed owner of `/sko/pipeline`
@@ -1839,7 +1842,7 @@ Bounded credential-free PR/push validation runs the approved existing commands, 
 - The approved initial contract is advisory PR/push validation, Node 22.11.0, one sequential job, 20-minute timeout, concurrency cancellation, `npm ci` in `web/`, then exact type, lint, and full-unit commands. Live-data E2E, credentials, builds, servers, CMS/functions, and deployments are excluded.
 - The first no-secret disposable run exposed 36 test files that implicitly relied on `.env.local` for import-time Supabase client construction. `web/__tests__/vitest.setup.js` no longer loads ignored environment files and instead supplies fixed synthetic keys plus an `.invalid` URL, so any unmocked request fails away from production. Three broad Rankings assertions were updated to use the named native selection buttons established by AUDIT-TASK-018.
 - In a sanitized `/tmp` copy containing no `.env*` file and using the existing dependency tree, `npm run test:full` passes 687 files/3,923 tests with two live-integration files/three tests explicitly skipped. `NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit` passes, and `npm run lint` exits zero with the existing 62-warning baseline. No environment value, external service, or production endpoint was used.
-- AUDIT-TASK-006 and AUDIT-TASK-011 are complete. Workflow implementation remains intentionally blocked on AUDIT-TASK-004's hosted inheritance proof; the repository currently has no hosted run for the scoped rankings credential fix, and no push/PR or branch-protection change is authorized in this goal. Required branch status remains a later promotion only after the advisory workflow is hosted-green.
+- AUDIT-TASK-006 and AUDIT-TASK-011 are complete. The scoped rankings credential fix is now committed and pushed, but the exact commit still has no hosted run; workflow implementation remains intentionally blocked on AUDIT-TASK-004's hosted inheritance proof. Required branch status remains a later promotion only after the advisory workflow is hosted-green.
 
 ## Risks and rollback
 

@@ -1,4 +1,13 @@
-import type { KeeperEntry, KeeperDraftPick } from "./keepers";
+import {
+  keeperUsesPick,
+  type KeeperDraftPick,
+  type KeeperEntry
+} from "./keepers";
+import {
+  draftOrderPatternFromSnake,
+  originalPickOwnerForPattern,
+  type DraftOrderPattern
+} from "./draftOrder";
 
 export const PICK_TRADE_CONTRACT_VERSION = 1 as const;
 
@@ -21,7 +30,8 @@ export type PickTradeCandidate = {
 export type PickTradeContext = {
   draftOrder: string[];
   roundCount: number;
-  isSnakeDraft: boolean;
+  orderPattern?: DraftOrderPattern;
+  isSnakeDraft?: boolean;
   trades?: PickTradeEntry[];
   keepers?: KeeperEntry[];
   draftedPlayers?: KeeperDraftPick[];
@@ -42,13 +52,27 @@ export function originalPickOwner(
   draftOrder: string[],
   round: number,
   pickInRound: number,
-  isSnakeDraft: boolean
+  orderPatternOrSnake: DraftOrderPattern | boolean
 ) {
-  const index =
-    isSnakeDraft && round % 2 === 0
-      ? draftOrder.length - pickInRound
-      : pickInRound - 1;
-  return draftOrder[index];
+  const pattern =
+    typeof orderPatternOrSnake === "boolean"
+      ? draftOrderPatternFromSnake(orderPatternOrSnake)
+      : orderPatternOrSnake;
+  return originalPickOwnerForPattern(
+    draftOrder,
+    round,
+    pickInRound,
+    pattern
+  );
+}
+
+function orderPatternForContext(
+  context: Pick<PickTradeContext, "orderPattern" | "isSnakeDraft">
+) {
+  return (
+    context.orderPattern ??
+    draftOrderPatternFromSnake(context.isSnakeDraft ?? true)
+  );
 }
 
 export function validatePickTradeCandidate(
@@ -79,7 +103,7 @@ export function validatePickTradeCandidate(
     context.draftOrder,
     round,
     pickInRound,
-    context.isSnakeDraft
+    orderPatternForContext(context)
   );
   if (currentTeamId === originalTeamId) {
     errors.push("New owner is already the original owner; remove the override instead.");
@@ -95,7 +119,7 @@ export function validatePickTradeCandidate(
 
   const warnings: string[] = [];
   const keeper = (context.keepers ?? []).find(
-    (entry) => entry.pickNumber === pickNumber
+    (entry) => keeperUsesPick(entry) && entry.pickNumber === pickNumber
   );
   if (keeper && keeper.teamId !== currentTeamId) {
     warnings.push(
@@ -146,7 +170,10 @@ export function tradeOwnerOverrides(trades: PickTradeEntry[]) {
 
 export function migratePickTrades(
   value: unknown,
-  context: Pick<PickTradeContext, "draftOrder" | "roundCount" | "isSnakeDraft">
+  context: Pick<
+    PickTradeContext,
+    "draftOrder" | "roundCount" | "orderPattern" | "isSnakeDraft"
+  >
 ) {
   const candidates: PickTradeCandidate[] = Array.isArray(value)
     ? value.map((trade) => {
@@ -175,6 +202,7 @@ export function resolvePickOwner({
   round,
   pickInRound,
   draftOrder,
+  orderPattern,
   isSnakeDraft,
   trades = [],
   keepers = []
@@ -182,7 +210,8 @@ export function resolvePickOwner({
   round: number;
   pickInRound: number;
   draftOrder: string[];
-  isSnakeDraft: boolean;
+  orderPattern?: DraftOrderPattern;
+  isSnakeDraft?: boolean;
   trades?: PickTradeEntry[];
   keepers?: KeeperEntry[];
 }) {
@@ -191,10 +220,12 @@ export function resolvePickOwner({
     draftOrder,
     round,
     pickInRound,
-    isSnakeDraft
+    orderPattern ?? draftOrderPatternFromSnake(isSnakeDraft ?? true)
   );
   const trade = trades.find((entry) => entry.pickNumber === pickNumber);
-  const keeper = keepers.find((entry) => entry.pickNumber === pickNumber);
+  const keeper = keepers.find(
+    (entry) => keeperUsesPick(entry) && entry.pickNumber === pickNumber
+  );
   return {
     pickNumber,
     originalTeamId,
@@ -209,19 +240,25 @@ export function findPicksUntilTeamTurn({
   currentPick,
   teamId,
   draftOrder,
+  orderPattern,
   isSnakeDraft,
   trades = [],
   keepers = [],
   completedPickNumbers = [],
+  teamRosterCounts = {},
+  rosterCapacity,
   maxPickNumber
 }: {
   currentPick: number;
   teamId: string;
   draftOrder: string[];
-  isSnakeDraft: boolean;
+  orderPattern?: DraftOrderPattern;
+  isSnakeDraft?: boolean;
   trades?: PickTradeEntry[];
   keepers?: KeeperEntry[];
   completedPickNumbers?: Iterable<number>;
+  teamRosterCounts?: Readonly<Record<string, number>>;
+  rosterCapacity?: number;
   maxPickNumber: number;
 }) {
   const completed = new Set(completedPickNumbers);
@@ -232,15 +269,70 @@ export function findPicksUntilTeamTurn({
       round,
       pickInRound,
       draftOrder,
+      orderPattern,
       isSnakeDraft,
       trades,
       keepers
     }).currentTeamId;
-    if (owner === teamId && !completed.has(pickNumber)) {
+    const ownerHasCapacity =
+      rosterCapacity == null ||
+      (teamRosterCounts[owner] ?? 0) < rosterCapacity;
+    if (owner === teamId && ownerHasCapacity && !completed.has(pickNumber)) {
       return pickNumber - currentPick;
     }
   }
   return draftOrder.length;
+}
+
+export function findNextActionablePick({
+  startPick,
+  maxPickNumber,
+  draftOrder,
+  orderPattern,
+  isSnakeDraft,
+  trades = [],
+  keepers = [],
+  completedPickNumbers = [],
+  teamRosterCounts = {},
+  rosterCapacity
+}: {
+  startPick: number;
+  maxPickNumber: number;
+  draftOrder: string[];
+  orderPattern?: DraftOrderPattern;
+  isSnakeDraft?: boolean;
+  trades?: PickTradeEntry[];
+  keepers?: KeeperEntry[];
+  completedPickNumbers?: Iterable<number>;
+  teamRosterCounts?: Readonly<Record<string, number>>;
+  rosterCapacity?: number;
+}) {
+  const completed = new Set(completedPickNumbers);
+  for (
+    let pickNumber = Math.max(1, Math.floor(startPick));
+    pickNumber <= maxPickNumber;
+    pickNumber += 1
+  ) {
+    if (completed.has(pickNumber)) continue;
+    const round = Math.ceil(pickNumber / draftOrder.length);
+    const pickInRound = ((pickNumber - 1) % draftOrder.length) + 1;
+    const owner = resolvePickOwner({
+      round,
+      pickInRound,
+      draftOrder,
+      orderPattern,
+      isSnakeDraft,
+      trades,
+      keepers
+    }).currentTeamId;
+    if (
+      rosterCapacity == null ||
+      (teamRosterCounts[owner] ?? 0) < rosterCapacity
+    ) {
+      return pickNumber;
+    }
+  }
+  return maxPickNumber + 1;
 }
 
 export function parsePickTradeImport(input: string):

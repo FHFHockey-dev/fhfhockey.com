@@ -36,6 +36,7 @@ export const YAHOO_DIRECT_STATS_CONFIG: YahooDirectStat[] = [
 ];
 
 export const YAHOO_PLAYER_MAP_KEYS = {
+  fhfhPlayerId: "fhfh_player_id",
   nhlPlayerId: "nhl_player_id",
   yahooPlayerId: "yahoo_player_id",
   teamAbbreviation: "nhl_team_abbreviation",

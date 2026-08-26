@@ -11,7 +11,7 @@ import {
   setYahooLiveDraftNoStore,
   yahooLiveDraftSessionId,
 } from "lib/integrations/yahoo/liveDraftApi";
-import { pollYahooDraftSession } from "lib/integrations/yahoo/liveDraftServer";
+import { nudgeYahooDraftSession } from "lib/integrations/yahoo/liveDraftServer";
 
 export default async function handler(
   req: NextApiRequest,
@@ -28,7 +28,7 @@ export default async function handler(
     return sendYahooLiveDraftForbidden(res);
   }
   try {
-    const result = await pollYahooDraftSession(
+    const result = await nudgeYahooDraftSession(
       user.id,
       yahooLiveDraftSessionId(req),
     );

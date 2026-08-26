@@ -16,9 +16,11 @@ function projectionPlayer(
   playerId: number,
   yahooPlayerId: string,
   fullName = "Projection Player",
+  fhfhPlayerId?: number,
 ): ProcessedPlayer {
   return {
     playerId,
+    fhfhPlayerId,
     yahooPlayerId,
     fullName,
     displayTeam: "TST",
@@ -41,7 +43,7 @@ function projectionPlayer(
 }
 
 const state: YahooDraftState = {
-  session: { id: "session-1", status: "active" },
+  session: { gameKey: "477", id: "session-1", status: "active" },
   teams: [
     {
       yahooTeamKey: "team.2",
@@ -199,9 +201,9 @@ describe("Yahoo live draft reconciliation", () => {
     expect(getFirstMissingYahooPick(state.picks)).toBe(2);
   });
 
-  it("maps exact Yahoo IDs only and preserves unresolved placeholders", () => {
+  it("uses canonical FHFH IDs and preserves unresolved placeholders", () => {
     const result = reconcileYahooDraftState(state, [
-      projectionPlayer(8470001, "101", "Mapped Player"),
+      projectionPlayer(8470001, "101", "Mapped Player", 9999),
       // This deliberately equals fhfhPlayerId for pick 3. It must not match.
       projectionPlayer(8479999, "999", "Unresolved Player"),
     ]);
@@ -232,6 +234,26 @@ describe("Yahoo live draft reconciliation", () => {
       pickInRound: 2,
       yahooTeamKey: "team.2",
       predicted: true,
+    });
+  });
+
+  it("prefers the canonical FHFH identity over NHL and Yahoo fallbacks", () => {
+    const onePickState: YahooDraftState = {
+      ...state,
+      picks: [
+        {
+          ...state.picks[0],
+          nhlPlayerId: 8470002,
+        },
+      ],
+    };
+    const result = reconcileYahooDraftState(onePickState, [
+      projectionPlayer(8470001, "999", "Canonical Player", 9999),
+      projectionPlayer(8470002, "101", "Fallback Player", 8888),
+    ]);
+    expect(result.draftedPlayers[0]).toMatchObject({
+      playerId: "8470001",
+      yahooMappingStatus: "mapped",
     });
   });
 

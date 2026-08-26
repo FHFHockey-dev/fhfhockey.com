@@ -587,6 +587,17 @@
   box-sizing: border-box;
 }
 
+.customReversedRound {
+  border-inline: 1px solid rgba(v.$secondary-color, 0.7);
+  background: rgba(v.$secondary-color, 0.12);
+  color: v.$secondary-color;
+}
+
+.reverseMarker {
+  margin-left: 2px;
+  font-weight: 800;
+}
+
 .contributionGrid {
   display: flex;
   flex-direction: column;
@@ -690,6 +701,35 @@
   box-sizing: border-box;
 }
 
+.customReversedCell {
+  border-inline-color: rgba(v.$secondary-color, 0.75);
+  box-shadow: inset 0 0 0 1px rgba(v.$secondary-color, 0.18);
+}
+
+.rosterFullSkip {
+  border-style: dashed;
+  border-color: color.adjust(v.$warning-color, $alpha: -0.35);
+  background: repeating-linear-gradient(
+    -45deg,
+    color.adjust(v.$background-medium, $lightness: -5%),
+    color.adjust(v.$background-medium, $lightness: -5%) 3px,
+    color.adjust(v.$warning-color, $alpha: -0.88) 3px,
+    color.adjust(v.$warning-color, $alpha: -0.88) 6px
+  );
+}
+
+.skipBadge {
+  width: 100%;
+  overflow: hidden;
+  color: v.$warning-color;
+  font-size: 8px;
+  font-weight: 800;
+  text-align: center;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 /* Traded pick styling */
 .tradedCell {
   border-style: dashed;
@@ -740,6 +780,35 @@
   padding: 0 2px;
   line-height: 1;
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
+}
+
+.noPickKeepers {
+  padding: v.$space-sm v.$space-lg;
+  border-top: 1px solid v.$border-secondary;
+  background: color.adjust(v.$background-medium, $lightness: -1%);
+
+  ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: v.$space-xs;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: v.$space-sm;
+    padding: v.$space-xs v.$space-sm;
+    border: 1px solid v.$border-secondary;
+    border-radius: v.$border-radius-sm;
+    font-size: v.$font-size-xs;
+  }
+
+  span {
+    color: v.$text-secondary;
+  }
 }
 
 .emptyCell {

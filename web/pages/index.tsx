@@ -54,6 +54,11 @@ const debugLog = (...args: any[]) => {
   }
 };
 
+const HOMEPAGE_TOOL_TABS = [
+  { id: "draft-ranker", label: "Draft Ranker" },
+  { id: "transaction-trends", label: "Transaction Trends" },
+] as const;
+
 // DEV NOTE:
 // Integrate Live Period/Time Clock instead of just displaying "LIVE" for live games
 
@@ -92,7 +97,33 @@ const Home: NextPage = ({
     nextGameDate,
   });
   const [expandedNewsId, setExpandedNewsId] = useState<string | null>(null);
+  const [activeHomepageTool, setActiveHomepageTool] =
+    useState<(typeof HOMEPAGE_TOOL_TABS)[number]["id"]>("draft-ranker");
   const homepageNewsItems = latestNews?.slice(0, 5) ?? [];
+
+  const handleHomepageToolKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    currentIndex: number,
+  ) => {
+    let nextIndex: number | null = null;
+    if (event.key === "ArrowRight") {
+      nextIndex = (currentIndex + 1) % HOMEPAGE_TOOL_TABS.length;
+    } else if (event.key === "ArrowLeft") {
+      nextIndex =
+        (currentIndex - 1 + HOMEPAGE_TOOL_TABS.length) %
+        HOMEPAGE_TOOL_TABS.length;
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = HOMEPAGE_TOOL_TABS.length - 1;
+    }
+    if (nextIndex == null) return;
+
+    event.preventDefault();
+    const nextTab = HOMEPAGE_TOOL_TABS[nextIndex];
+    setActiveHomepageTool(nextTab.id);
+    document.getElementById(`homepage-${nextTab.id}-tab`)?.focus();
+  };
 
   return (
     <Container className={styles.homeContainer}>
@@ -154,7 +185,57 @@ const Home: NextPage = ({
         />
         <ClientOnly>
           {draftRankerHomepageEnabled ? (
-            <HomepageDraftRanker />
+            <div className={styles.homepageToolSwitcher}>
+              <div
+                className={styles.homepageToolTabs}
+                role="tablist"
+                aria-label="Homepage fantasy tools"
+              >
+                {HOMEPAGE_TOOL_TABS.map((tab, index) => (
+                  <button
+                    key={tab.id}
+                    id={`homepage-${tab.id}-tab`}
+                    type="button"
+                    role="tab"
+                    aria-selected={activeHomepageTool === tab.id}
+                    aria-controls={`homepage-${tab.id}-panel`}
+                    tabIndex={activeHomepageTool === tab.id ? 0 : -1}
+                    className={styles.homepageToolTab}
+                    onClick={() => setActiveHomepageTool(tab.id)}
+                    onKeyDown={(event) =>
+                      handleHomepageToolKeyDown(event, index)
+                    }
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              <div
+                id="homepage-draft-ranker-panel"
+                className={styles.homepageToolPanel}
+                role="tabpanel"
+                aria-labelledby="homepage-draft-ranker-tab"
+                hidden={activeHomepageTool !== "draft-ranker"}
+              >
+                {activeHomepageTool === "draft-ranker" ? (
+                  <HomepageDraftRanker />
+                ) : null}
+              </div>
+              <div
+                id="homepage-transaction-trends-panel"
+                className={styles.homepageToolPanel}
+                role="tabpanel"
+                aria-labelledby="homepage-transaction-trends-tab"
+                hidden={activeHomepageTool !== "transaction-trends"}
+              >
+                {activeHomepageTool === "transaction-trends" ? (
+                  <TransactionTrends
+                    defaultMetric={isOffseason ? "adp" : "ownership"}
+                  />
+                ) : null}
+              </div>
+            </div>
           ) : (
             <TransactionTrends
               defaultMetric={isOffseason ? "adp" : "ownership"}

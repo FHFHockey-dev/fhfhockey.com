@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { requireApiUserMock, buildYahooAuthorizationUrlMock } = vi.hoisted(() => ({
+const { requireApiUserMock, createYahooAuthorizationRequestMock } = vi.hoisted(() => ({
   requireApiUserMock: vi.fn(),
-  buildYahooAuthorizationUrlMock: vi.fn(),
+  createYahooAuthorizationRequestMock: vi.fn(),
 }));
 
 vi.mock("lib/api/requireApiUser", () => ({
@@ -11,7 +11,7 @@ vi.mock("lib/api/requireApiUser", () => ({
 
 vi.mock("lib/integrations/yahoo/oauth", () => ({
   sanitizeYahooNextPath: (value: string | undefined) => value || "/account?section=connected-accounts",
-  buildYahooAuthorizationUrl: buildYahooAuthorizationUrlMock,
+  createYahooAuthorizationRequest: createYahooAuthorizationRequestMock,
 }));
 
 import handler from "../../../../../../pages/api/v1/account/yahoo/connect";
@@ -41,7 +41,10 @@ describe("/api/v1/account/yahoo/connect", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     requireApiUserMock.mockResolvedValue({ id: "user-1" });
-    buildYahooAuthorizationUrlMock.mockReturnValue("https://yahoo.test/auth");
+    createYahooAuthorizationRequestMock.mockResolvedValue({
+      authorizationUrl: "https://yahoo.test/auth",
+      browserCookie: "fhfh_yahoo_oauth=binding; HttpOnly",
+    });
   });
 
   it("returns an authorization url for authenticated users", async () => {
@@ -55,11 +58,11 @@ describe("/api/v1/account/yahoo/connect", () => {
 
     await handler(req, res);
 
-    expect(buildYahooAuthorizationUrlMock).toHaveBeenCalledWith(
-      req,
-      "user-1",
-      "/account?section=connected-accounts"
-    );
+    expect(createYahooAuthorizationRequestMock).toHaveBeenCalledWith({
+      next: "/account?section=connected-accounts",
+      userId: "user-1",
+    });
+    expect(res.headers["Set-Cookie"]).toContain("HttpOnly");
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({
       authorizationUrl: "https://yahoo.test/auth",

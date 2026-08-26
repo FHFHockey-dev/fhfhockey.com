@@ -32,6 +32,7 @@ import ComparePlayersModal from "./ComparePlayersModal";
 import ProjectionSourceAccuracy from "./ProjectionSourceAccuracy";
 import YahooLiveDraftPanel from "./YahooLiveDraftPanel";
 import EspnLiveDraftPanel from "./EspnLiveDraftPanel";
+import MobileDraftTabs, { useMobileDraftTab } from "./MobileDraftTabs";
 import FantraxLeagueSettingsPanel, {
   type DraftFantraxSelection,
 } from "./FantraxLeagueSettingsPanel";
@@ -68,14 +69,17 @@ import {
 } from "lib/draftDashboard/forwardGrouping";
 import {
   getNextOpenPick,
+  keeperUsesPick,
   materializeKeeperPicks,
   migrateKeeperEntries,
   parseKeeperImport,
   validateKeeperBatch,
   validateKeeperCandidate,
+  type KeeperCandidate,
   type KeeperEntry,
 } from "lib/draftDashboard/keepers";
 import {
+  findNextActionablePick,
   findPicksUntilTeamTurn,
   migratePickTrades,
   parsePickTradeImport,
@@ -86,11 +90,17 @@ import {
   type PickTradeEntry,
 } from "lib/draftDashboard/pickTrades";
 import {
+  normalizeDraftOrderPattern,
+  type DraftOrderMode,
+  type DraftOrderPattern,
+} from "lib/draftDashboard/draftOrder";
+import {
   buildDraftConfigurationSummary,
   toCustomSourceMetadata,
 } from "lib/draftDashboard/summaryConfiguration";
 import { isGlobalShortcutBlockedTarget } from "lib/draftDashboard/keyboardShortcuts";
 import { buildProjectionFreshnessNotices } from "lib/draftDashboard/projectionFreshness";
+import { replaceManualDraftPick } from "lib/draftDashboard/quickFix";
 import {
   continueManuallyFromYahoo,
   deriveYahooDraftDashboardConfiguration,
@@ -111,6 +121,9 @@ import {
 
 import styles from "./DraftDashboard.module.scss";
 
+const EMPTY_PROJECTION_STYLES: Record<string, string> = {};
+const NOOP_PROJECTION_TOGGLE = () => {};
+
 // Data Models from PRD
 export interface DraftSettings {
   teamCount: number;
@@ -128,6 +141,8 @@ export interface DraftSettings {
     utility: number;
   };
   draftOrder: string[];
+  draftOrderMode?: DraftOrderMode;
+  reversedRounds?: number[];
 }
 
 export interface DraftedPlayer {
@@ -151,6 +166,15 @@ export interface DraftedPlayer {
   auctionCost?: number | null;
 }
 
+export type RosterAssignment =
+  | DraftedPlayer
+  | {
+      playerId: string;
+      teamId: string;
+      isKeeper: true;
+      keeperCost: "none";
+    };
+
 export interface TeamDraftStats {
   teamId: string;
   teamName: string;
@@ -158,9 +182,9 @@ export interface TeamDraftStats {
   projectedPoints: number;
   categoryTotals: Record<string, number>;
   rosterSlots: {
-    [position: string]: DraftedPlayer[];
+    [position: string]: RosterAssignment[];
   };
-  bench: DraftedPlayer[];
+  bench: RosterAssignment[];
   // NEW: total team VORP (sum of player VORP)
   teamVorp?: number;
 }
@@ -204,7 +228,35 @@ const DEFAULT_DRAFT_SETTINGS: DraftSettings = {
     utility: 1,
   },
   draftOrder: Array.from({ length: 12 }, (_, i) => `Team ${i + 1}`),
+  draftOrderMode: "snake",
+  reversedRounds: [],
 };
+
+function rosterRoundCount(rosterConfig: Record<string, number>) {
+  return Object.values(rosterConfig).reduce(
+    (sum, count) => sum + Number(count || 0),
+    0,
+  );
+}
+
+function normalizeDraftSettingsOrder(
+  settings: DraftSettings,
+  legacyIsSnakeDraft = true,
+) {
+  const pattern = normalizeDraftOrderPattern(
+    {
+      mode: settings.draftOrderMode,
+      reversedRounds: settings.reversedRounds,
+    },
+    rosterRoundCount(settings.rosterConfig),
+    legacyIsSnakeDraft,
+  );
+  return {
+    ...settings,
+    draftOrderMode: pattern.mode,
+    reversedRounds: pattern.reversedRounds,
+  };
+}
 
 function resizeDraftOrder(order: string[], teamCount: number) {
   return Array.from(
@@ -296,7 +348,34 @@ const DraftDashboard: React.FC = () => {
     Record<string, string>
   >({});
   const [currentPick, setCurrentPick] = useState<number>(1);
-  const [isSnakeDraft, setIsSnakeDraft] = useState<boolean>(true);
+  const [activeMobileTab, setActiveMobileTab] = useMobileDraftTab();
+  const [mobileWorkspaceEnabled, setMobileWorkspaceEnabled] = useState(false);
+  const draftOrderPattern = useMemo<DraftOrderPattern>(
+    () =>
+      normalizeDraftOrderPattern(
+        {
+          mode: draftSettings.draftOrderMode,
+          reversedRounds: draftSettings.reversedRounds,
+        },
+        rosterRoundCount(draftSettings.rosterConfig),
+      ),
+    [
+      draftSettings.draftOrderMode,
+      draftSettings.reversedRounds,
+      draftSettings.rosterConfig,
+    ],
+  );
+  const isSnakeDraft = draftOrderPattern.mode === "snake";
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const query = window.matchMedia("(max-width: 799px)");
+    const update = () => setMobileWorkspaceEnabled(query.matches);
+    update();
+    query.addEventListener?.("change", update);
+    return () => query.removeEventListener?.("change", update);
+  }, []);
+
   const [myTeamId, setMyTeamId] = useState<string>("Team 1");
   // NEW: baseline mode for VORP replacement source (persisted)
   const [baselineMode, setBaselineMode] = useState<"remaining" | "full">(
@@ -556,7 +635,7 @@ const DraftDashboard: React.FC = () => {
       if (!raw) return false;
       const snap = JSON.parse(raw) as DraftSnapshotV2;
       if (snap.v !== 2) return false;
-      setDraftSettings({
+      const restoredSettings = normalizeDraftSettingsOrder({
         ...DEFAULT_DRAFT_SETTINGS,
         ...snap.draftSettings,
         allowCustomNameFallback:
@@ -565,7 +644,8 @@ const DraftDashboard: React.FC = () => {
           typeof snap.draftSettings?.customSourceMinimumCoverage === "number"
             ? snap.draftSettings.customSourceMinimumCoverage
             : 25,
-      });
+      }, snap.isSnakeDraft ?? true);
+      setDraftSettings(restoredSettings);
       const restoredKeepers = migrateKeeperEntries(
         snap.keepers,
         snap.draftSettings?.teamCount || DEFAULT_DRAFT_SETTINGS.teamCount,
@@ -576,19 +656,21 @@ const DraftDashboard: React.FC = () => {
       );
       setPickTrades(
         migratePickTrades(snap.pickTrades ?? snap.pickOwnerOverrides, {
-          draftOrder:
-            snap.draftSettings?.draftOrder || DEFAULT_DRAFT_SETTINGS.draftOrder,
-          roundCount: Object.values(
-            snap.draftSettings?.rosterConfig ||
-              DEFAULT_DRAFT_SETTINGS.rosterConfig,
-          ).reduce((sum, count) => sum + Number(count || 0), 0),
-          isSnakeDraft: !!snap.isSnakeDraft,
+          draftOrder: restoredSettings.draftOrder,
+          roundCount: rosterRoundCount(restoredSettings.rosterConfig),
+          orderPattern: normalizeDraftOrderPattern(
+            {
+              mode: restoredSettings.draftOrderMode,
+              reversedRounds: restoredSettings.reversedRounds,
+            },
+            rosterRoundCount(restoredSettings.rosterConfig),
+            snap.isSnakeDraft ?? true,
+          ),
         }),
       );
       setPositionOverrides(snap.positionOverrides || {});
       setCustomTeamNames(snap.customTeamNames || {});
       setCurrentPick(snap.currentPick || 1);
-      setIsSnakeDraft(!!snap.isSnakeDraft);
       setMyTeamId(snap.myTeamId || "Team 1");
       setBaselineMode(snap.baselineMode || "remaining");
       setNeedWeightEnabled(!!snap.needWeightEnabled);
@@ -669,9 +751,11 @@ const DraftDashboard: React.FC = () => {
             bench: defaults.rosterConfig.bench ?? 0,
             utility: defaults.rosterConfig.utility ?? 0,
           },
+          draftOrderMode:
+            defaults.draftOrderType === "snake" ? "snake" : "standard",
+          reversedRounds: [],
         }));
         setGoaliePointValues(defaults.goalieScoringCategories);
-        setIsSnakeDraft(defaults.draftOrderType === "snake");
         const accountForwardGrouping = forwardGroupingForRoster(
           defaults.rosterConfig,
         );
@@ -702,9 +786,9 @@ const DraftDashboard: React.FC = () => {
     fantasyPointSettings: draftSettings.scoringCategories,
     supabaseClient: supabase,
     currentSeasonId: currentSeasonId ? String(currentSeasonId) : undefined,
-    styles: {},
+    styles: EMPTY_PROJECTION_STYLES,
     showPerGameFantasyPoints: false,
-    togglePerGameFantasyPoints: () => {},
+    togglePerGameFantasyPoints: NOOP_PROJECTION_TOGGLE,
     teamCountForRoundSummaries: draftSettings.teamCount,
     // inject custom CSVs as additional sources for skaters
     customAdditionalSources: (() => {
@@ -771,9 +855,9 @@ const DraftDashboard: React.FC = () => {
     fantasyPointSettings: goaliePointValues,
     supabaseClient: supabase,
     currentSeasonId: currentSeasonId ? String(currentSeasonId) : undefined,
-    styles: {},
+    styles: EMPTY_PROJECTION_STYLES,
     showPerGameFantasyPoints: false,
-    togglePerGameFantasyPoints: () => {},
+    togglePerGameFantasyPoints: NOOP_PROJECTION_TOGGLE,
     teamCountForRoundSummaries: draftSettings.teamCount,
     customAdditionalSources: (() => {
       const list = getCsvList();
@@ -946,7 +1030,14 @@ const DraftDashboard: React.FC = () => {
         if (saved && typeof saved === "object") {
           const ok = window.confirm("Resume draft from previous session?");
           if (ok) {
-            if (saved.draftSettings) setDraftSettings(saved.draftSettings);
+            const restoredSettings = normalizeDraftSettingsOrder(
+              {
+                ...DEFAULT_DRAFT_SETTINGS,
+                ...(saved.draftSettings || {}),
+              },
+              saved.isSnakeDraft ?? true,
+            );
+            setDraftSettings(restoredSettings);
             restoredLeagueSettingsRef.current = true;
             manualLeagueSettingsDirtyRef.current = true;
             const restoredKeepers = migrateKeeperEntries(
@@ -963,8 +1054,6 @@ const DraftDashboard: React.FC = () => {
             );
             if (typeof saved.currentPick === "number")
               setCurrentPick(saved.currentPick);
-            if (typeof saved.isSnakeDraft === "boolean")
-              setIsSnakeDraft(saved.isSnakeDraft);
             if (typeof saved.myTeamId === "string") setMyTeamId(saved.myTeamId);
             if (saved.customTeamNames)
               setCustomTeamNames(saved.customTeamNames);
@@ -984,14 +1073,16 @@ const DraftDashboard: React.FC = () => {
               setForwardGrouping(saved.forwardGrouping);
             setPickTrades(
               migratePickTrades(saved.pickTrades ?? saved.pickOwnerOverrides, {
-                draftOrder:
-                  saved.draftSettings?.draftOrder ||
-                  DEFAULT_DRAFT_SETTINGS.draftOrder,
-                roundCount: Object.values(
-                  saved.draftSettings?.rosterConfig ||
-                    DEFAULT_DRAFT_SETTINGS.rosterConfig,
-                ).reduce<number>((sum, count) => sum + Number(count || 0), 0),
-                isSnakeDraft: !!saved.isSnakeDraft,
+                draftOrder: restoredSettings.draftOrder,
+                roundCount: rosterRoundCount(restoredSettings.rosterConfig),
+                orderPattern: normalizeDraftOrderPattern(
+                  {
+                    mode: restoredSettings.draftOrderMode,
+                    reversedRounds: restoredSettings.reversedRounds,
+                  },
+                  rosterRoundCount(restoredSettings.rosterConfig),
+                  saved.isSnakeDraft ?? true,
+                ),
               }),
             );
           } else {
@@ -1103,7 +1194,7 @@ const DraftDashboard: React.FC = () => {
       round,
       pickInRound,
       draftOrder: draftSettings.draftOrder,
-      isSnakeDraft,
+      orderPattern: draftOrderPattern,
       trades: pickTrades,
       keepers,
     }).currentTeamId;
@@ -1118,7 +1209,7 @@ const DraftDashboard: React.FC = () => {
     currentPick,
     draftSettings.teamCount,
     draftSettings.draftOrder,
-    isSnakeDraft,
+    draftOrderPattern,
     myTeamId,
     pickTrades,
     keepers,
@@ -1188,11 +1279,12 @@ const DraftDashboard: React.FC = () => {
         leagueType: configuration.leagueType,
         scoringCategories: configuration.scoringCategories,
         categoryWeights: configuration.categoryWeights,
+        draftOrderMode: configuration.isSnakeDraft ? "snake" : "standard",
+        reversedRounds: [],
       }));
       setGoaliePointValues(configuration.goalieScoringCategories);
       setCustomTeamNames(configuration.customTeamNames);
       setMyTeamId(configuration.myTeamId);
-      setIsSnakeDraft(configuration.isSnakeDraft);
       const importedForwardGrouping = forwardGroupingForRoster(
         configuration.rosterConfig,
       );
@@ -1249,6 +1341,38 @@ const DraftDashboard: React.FC = () => {
     draftMode,
     manualDraftedPlayers,
     yahooDraftedPlayers,
+  );
+  const noPickKeeperAssignments = useMemo<RosterAssignment[]>(
+    () =>
+      draftMode === "manual"
+        ? keepers
+            .filter((keeper) => !keeperUsesPick(keeper))
+            .map((keeper) => ({
+              playerId: keeper.playerId,
+              teamId: keeper.teamId,
+              isKeeper: true,
+              keeperCost: "none" as const,
+            }))
+        : [],
+    [draftMode, keepers],
+  );
+  const rosterAssignments = useMemo<RosterAssignment[]>(
+    () => [...draftedPlayers, ...noPickKeeperAssignments],
+    [draftedPlayers, noPickKeeperAssignments],
+  );
+  const unavailablePlayerIds = useMemo(
+    () => new Set(rosterAssignments.map((assignment) => assignment.playerId)),
+    [rosterAssignments],
+  );
+  const teamRosterCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const assignment of rosterAssignments) {
+      counts[assignment.teamId] = (counts[assignment.teamId] ?? 0) + 1;
+    }
+    return counts;
+  }, [rosterAssignments]);
+  const hasOrdinaryManualPick = manualDraftedPlayers.some(
+    (player) => !player.isKeeper,
   );
 
   const personalRankByPlayerId = useMemo(() => {
@@ -1362,9 +1486,13 @@ const DraftDashboard: React.FC = () => {
         previous.draftOrder.every(
           (teamKey, index) => teamKey === configuration.draftOrder[index],
         );
+      const nextOrderMode = configuration.isSnakeDraft
+        ? "snake"
+        : "standard";
       if (
         previous.teamCount === configuration.teamCount &&
-        sameDraftOrder
+        sameDraftOrder &&
+        previous.draftOrderMode === nextOrderMode
       ) {
         return previous;
       }
@@ -1372,6 +1500,8 @@ const DraftDashboard: React.FC = () => {
         ...previous,
         teamCount: configuration.teamCount,
         draftOrder: configuration.draftOrder,
+        draftOrderMode: nextOrderMode,
+        reversedRounds: [],
       };
     });
     setCustomTeamNames((previous) => {
@@ -1391,7 +1521,6 @@ const DraftDashboard: React.FC = () => {
     setMyTeamId(
       configuration.myTeamId || configuration.draftOrder[0] || "Team 1",
     );
-    setIsSnakeDraft(configuration.isSnakeDraft ?? true);
   }, [draftMode, yahooDraftSync.draftState]);
 
   const applyYahooSettings = useCallback(() => {
@@ -1449,9 +1578,11 @@ const DraftDashboard: React.FC = () => {
       ...(configuration.categoryWeights
         ? { categoryWeights: configuration.categoryWeights }
         : {}),
+      draftOrderMode:
+        configuration.isSnakeDraft === false ? "standard" : "snake",
+      reversedRounds: [],
     }));
     setCustomTeamNames(configuration.customTeamNames);
-    setIsSnakeDraft(configuration.isSnakeDraft ?? true);
     if (configuration.myTeamId) setMyTeamId(configuration.myTeamId);
   }, [yahooDraftSync.draftState]);
 
@@ -1487,9 +1618,10 @@ const DraftDashboard: React.FC = () => {
   }, [allPlayers]);
 
   const availablePlayers = useMemo(() => {
-    const draftedPlayerIds = new Set(draftedPlayers.map((p) => p.playerId));
-    return allPlayers.filter((p) => !draftedPlayerIds.has(String(p.playerId)));
-  }, [allPlayers, draftedPlayers]);
+    return allPlayers.filter(
+      (player) => !unavailablePlayerIds.has(String(player.playerId)),
+    );
+  }, [allPlayers, unavailablePlayerIds]);
 
   // Track prorate82 toggle (shared via localStorage)
   const [prorate82, setProrate82] = React.useState<boolean>(() => {
@@ -1550,10 +1682,12 @@ const DraftDashboard: React.FC = () => {
       currentPick,
       teamId: myTeamId,
       draftOrder: draftSettings.draftOrder,
-      isSnakeDraft,
+      orderPattern: draftOrderPattern,
       trades: draftMode === "manual" ? pickTrades : [],
       keepers: draftMode === "manual" ? keepers : [],
       completedPickNumbers: draftedPlayers.map((player) => player.pickNumber),
+      teamRosterCounts,
+      rosterCapacity: rosterRoundCount(draftSettings.rosterConfig),
       maxPickNumber: currentPick + remainingDraftSpan,
     });
   }, [
@@ -1561,23 +1695,24 @@ const DraftDashboard: React.FC = () => {
     draftSettings.draftOrder,
     draftSettings.rosterConfig,
     myTeamId,
-    isSnakeDraft,
+    draftOrderPattern,
     currentPick,
     draftedPlayers,
     draftMode,
     pickTrades,
     keepers,
+    teamRosterCounts,
   ]);
 
   const myFilledSlotsForVorp = useMemo(() => {
-    const rosterPlayers = draftedPlayers
-      .filter((draftedPlayer) => draftedPlayer.teamId === myTeamId)
-      .map((draftedPlayer) => {
+    const rosterPlayers = rosterAssignments
+      .filter((assignment) => assignment.teamId === myTeamId)
+      .map((assignment) => {
         const player = allPlayers.find(
-          (candidate) => String(candidate.playerId) === draftedPlayer.playerId,
+          (candidate) => String(candidate.playerId) === assignment.playerId,
         );
         return {
-          id: draftedPlayer.playerId,
+          id: assignment.playerId,
           eligibility: normalizePlayerEligibility(
             player?.displayPosition,
             player?.eligiblePositions,
@@ -1593,7 +1728,7 @@ const DraftDashboard: React.FC = () => {
   }, [
     allPlayers,
     draftSettings.rosterConfig,
-    draftedPlayers,
+    rosterAssignments,
     forwardGrouping,
     myTeamId,
     positionOverrides,
@@ -1627,7 +1762,7 @@ const DraftDashboard: React.FC = () => {
   // Team stats calculations
   const teamStats = useMemo((): TeamDraftStats[] => {
     return draftSettings.draftOrder.map((teamId) => {
-      const teamPlayers = draftedPlayers.filter((p) => p.teamId === teamId);
+      const teamPlayers = rosterAssignments.filter((p) => p.teamId === teamId);
 
       // Calculate projected points for this team (use merged pool)
       const projectedPoints = teamPlayers.reduce((total, draftedPlayer) => {
@@ -1638,7 +1773,7 @@ const DraftDashboard: React.FC = () => {
       }, 0);
 
       // Group players by position for roster slots with UTIL separate and BENCH rules
-      const rosterSlots: { [position: string]: DraftedPlayer[] } = {};
+      const rosterSlots: { [position: string]: RosterAssignment[] } = {};
       Object.keys(effectiveRosterConfig).forEach((pos) => {
         if (pos !== "bench") {
           rosterSlots[pos.toUpperCase()] = [];
@@ -1819,7 +1954,7 @@ const DraftDashboard: React.FC = () => {
     });
   }, [
     draftSettings,
-    draftedPlayers,
+    rosterAssignments,
     allPlayers,
     customTeamNames,
     vorpMetrics,
@@ -1914,7 +2049,35 @@ const DraftDashboard: React.FC = () => {
     () => draftSettings.teamCount * totalRosterSize,
     [draftSettings.teamCount, totalRosterSize],
   );
-  const draftComplete = draftedPlayers.length >= totalPicks;
+  const nextManualActionablePick = useMemo(
+    () =>
+      findNextActionablePick({
+        startPick: currentPick,
+        maxPickNumber: totalPicks,
+        draftOrder: draftSettings.draftOrder,
+        orderPattern: draftOrderPattern,
+        trades: pickTrades,
+        keepers,
+        completedPickNumbers: draftedPlayers.map((player) => player.pickNumber),
+        teamRosterCounts,
+        rosterCapacity: totalRosterSize,
+      }),
+    [
+      currentPick,
+      draftOrderPattern,
+      draftSettings.draftOrder,
+      draftedPlayers,
+      keepers,
+      pickTrades,
+      teamRosterCounts,
+      totalPicks,
+      totalRosterSize,
+    ],
+  );
+  const draftComplete =
+    draftMode === "manual"
+      ? nextManualActionablePick > totalPicks
+      : draftedPlayers.length >= totalPicks;
   const startYahooDraftSync = useCallback(async () => {
     if (espnLiveActive) return;
     const started = await startYahooSession();
@@ -2013,16 +2176,13 @@ const DraftDashboard: React.FC = () => {
     }));
   }, [manualDraftingEnabled]);
 
-  // Auto-skip picks that are already drafted (e.g., keepers)
+  // Skip reserved picks and picks owned by teams whose rosters are full.
   useEffect(() => {
-    if (draftComplete) return;
-    const nextOpenPick = getNextOpenPick(
-      currentPick,
-      totalPicks,
-      draftedPlayers,
-    );
-    if (nextOpenPick !== currentPick) setCurrentPick(nextOpenPick);
-  }, [currentPick, draftedPlayers, draftComplete, totalPicks]);
+    if (!manualDraftingEnabled) return;
+    if (nextManualActionablePick !== currentPick) {
+      setCurrentPick(nextManualActionablePick);
+    }
+  }, [currentPick, manualDraftingEnabled, nextManualActionablePick]);
 
   // Add undo functionality
   const undoLastPick = useCallback(() => {
@@ -2034,6 +2194,46 @@ const DraftDashboard: React.FC = () => {
       setDraftHistory((prev) => prev.slice(0, -1));
     }
   }, [draftHistory, manualDraftingEnabled]);
+
+  const replaceDraftPick = useCallback(
+    (pickNumber: number, replacementPlayerId: string) => {
+      if (!manualDraftingEnabled) {
+        return {
+          ok: false as const,
+          message: "Live sync controls completed picks.",
+        };
+      }
+      const allPlayerIds = new Set(
+        allPlayers.map((player) => String(player.playerId)),
+      );
+      const result = replaceManualDraftPick({
+        draftedPlayers: manualDraftedPlayers,
+        currentPick,
+        targetPickNumber: pickNumber,
+        replacementPlayerId,
+        selectablePlayerIds: new Set(
+          Array.from(allPlayerIds).filter(
+            (playerId) => !unavailablePlayerIds.has(playerId),
+          ),
+        ),
+      });
+      if (!result.ok) return result;
+
+      setDraftHistory((previous) => [
+        ...previous,
+        { players: [...manualDraftedPlayers], pickNumber: currentPick },
+      ]);
+      setManualDraftedPlayers(result.players);
+      return { ok: true as const, message: "Draft pick replaced." };
+    },
+    [
+      allPlayers,
+      currentPick,
+      manualDraftedPlayers,
+      manualDraftingEnabled,
+      unavailablePlayerIds,
+    ],
+  );
 
   // Add reset draft functionality
   const resetDraft = useCallback(() => {
@@ -2071,10 +2271,10 @@ const DraftDashboard: React.FC = () => {
         if (!next.draftOrder.includes(myTeamId)) {
           setMyTeamId(next.draftOrder[0] || "Team 1");
         }
-        return next;
+        return normalizeDraftSettingsOrder(next, isSnakeDraft);
       });
     },
-    [manualDraftingEnabled, myTeamId],
+    [isSnakeDraft, manualDraftingEnabled, myTeamId],
   );
 
   const applyFantraxLeagueSettings = useCallback(
@@ -2108,15 +2308,19 @@ const DraftDashboard: React.FC = () => {
           ...(imported.leagueType === "points"
             ? { scoringCategories: imported.skaterScoringCategories }
             : { categoryWeights: imported.categoryWeights }),
+          ...(imported.draftOrderType !== "unknown"
+            ? {
+                draftOrderMode:
+                  imported.draftOrderType === "snake" ? "snake" : "standard",
+                reversedRounds: [],
+              }
+            : {}),
         };
       });
       if (imported.leagueType === "points") {
         setGoaliePointValues(imported.goalieScoringCategories);
       }
       setPreserveExactCategoryWeights(imported.leagueType === "categories");
-      if (imported.draftOrderType !== "unknown") {
-        setIsSnakeDraft(imported.draftOrderType === "snake");
-      }
       const importedForwardGrouping = forwardGroupingForRoster(
         imported.rosterConfig,
       );
@@ -2184,15 +2388,19 @@ const DraftDashboard: React.FC = () => {
           ...(imported.leagueType === "points"
             ? { scoringCategories: imported.skaterScoringCategories }
             : { categoryWeights: imported.categoryWeights }),
+          ...(imported.draftOrderType !== "unknown"
+            ? {
+                draftOrderMode:
+                  imported.draftOrderType === "snake" ? "snake" : "standard",
+                reversedRounds: [],
+              }
+            : {}),
         };
       });
       if (imported.leagueType === "points") {
         setGoaliePointValues(imported.goalieScoringCategories);
       }
       setPreserveExactCategoryWeights(imported.leagueType === "categories");
-      if (imported.draftOrderType !== "unknown") {
-        setIsSnakeDraft(imported.draftOrderType === "snake");
-      }
       const importedForwardGrouping = forwardGroupingForRoster(
         imported.rosterConfig,
       );
@@ -2226,7 +2434,7 @@ const DraftDashboard: React.FC = () => {
         {
           draftOrder: draftSettings.draftOrder,
           roundCount: totalRosterSize,
-          isSnakeDraft,
+          orderPattern: draftOrderPattern,
           trades: pickTrades,
           keepers,
           draftedPlayers,
@@ -2244,7 +2452,7 @@ const DraftDashboard: React.FC = () => {
     [
       draftSettings.draftOrder,
       draftedPlayers,
-      isSnakeDraft,
+      draftOrderPattern,
       keepers,
       pickTrades,
       totalRosterSize,
@@ -2270,7 +2478,7 @@ const DraftDashboard: React.FC = () => {
       const result = validatePickTradeBatch(parsed.candidates, {
         draftOrder: draftSettings.draftOrder,
         roundCount: totalRosterSize,
-        isSnakeDraft,
+        orderPattern: draftOrderPattern,
         trades: pickTrades,
         keepers,
         draftedPlayers,
@@ -2290,7 +2498,7 @@ const DraftDashboard: React.FC = () => {
     [
       draftSettings.draftOrder,
       draftedPlayers,
-      isSnakeDraft,
+      draftOrderPattern,
       keepers,
       pickTrades,
       totalRosterSize,
@@ -2302,12 +2510,18 @@ const DraftDashboard: React.FC = () => {
   }, [manualDraftingEnabled]);
 
   const addKeeper = useCallback(
-    (round: number, pickInRound: number, teamId: string, playerId: string) => {
+    (candidate: KeeperCandidate) => {
       if (!manualDraftingEnabled) {
         return { ok: false as const, message: "Yahoo live sync controls keeper picks." };
       }
+      if (candidate.cost === "none" && hasOrdinaryManualPick) {
+        return {
+          ok: false as const,
+          message: "No-pick keepers are locked after the first ordinary pick.",
+        };
+      }
       const result = validateKeeperCandidate(
-        { round, pickInRound, teamId, playerId },
+        candidate,
         {
           teamCount: draftSettings.teamCount,
           roundCount: totalRosterSize,
@@ -2315,6 +2529,8 @@ const DraftDashboard: React.FC = () => {
           playerIds: allPlayers.map((player) => String(player.playerId)),
           keepers,
           draftedPlayers,
+          rosterCapacity: totalRosterSize,
+          teamRosterCounts,
         },
       );
       if (!result.ok) {
@@ -2329,8 +2545,10 @@ const DraftDashboard: React.FC = () => {
       allPlayers,
       draftSettings,
       draftedPlayers,
+      hasOrdinaryManualPick,
       keepers,
       manualDraftingEnabled,
+      teamRosterCounts,
       totalRosterSize,
     ],
   );
@@ -2343,6 +2561,15 @@ const DraftDashboard: React.FC = () => {
       if (!parsed.ok) {
         return { ok: false as const, message: parsed.errors.join(" ") };
       }
+      if (
+        hasOrdinaryManualPick &&
+        parsed.candidates.some((candidate) => candidate.cost === "none")
+      ) {
+        return {
+          ok: false as const,
+          message: "No-pick keepers are locked after the first ordinary pick.",
+        };
+      }
       const result = validateKeeperBatch(parsed.candidates, {
         teamCount: draftSettings.teamCount,
         roundCount: totalRosterSize,
@@ -2350,6 +2577,8 @@ const DraftDashboard: React.FC = () => {
         playerIds: allPlayers.map((player) => String(player.playerId)),
         keepers,
         draftedPlayers,
+        rosterCapacity: totalRosterSize,
+        teamRosterCounts,
       });
       if (!result.ok) {
         return { ok: false as const, message: result.errors.join("\n") };
@@ -2366,22 +2595,41 @@ const DraftDashboard: React.FC = () => {
       allPlayers,
       draftSettings,
       draftedPlayers,
+      hasOrdinaryManualPick,
       keepers,
       manualDraftingEnabled,
+      teamRosterCounts,
       totalRosterSize,
     ],
   );
   const removeKeeper = useCallback(
-    (round: number, pickInRound: number) => {
-      if (!manualDraftingEnabled) return;
+    (playerId: string) => {
+      if (!manualDraftingEnabled) {
+        return { ok: false as const, message: "Live sync controls keepers." };
+      }
+      const target = keepers.find((keeper) => keeper.playerId === playerId);
+      if (!target) {
+        return { ok: false as const, message: "Keeper was not found." };
+      }
+      if (!keeperUsesPick(target) && hasOrdinaryManualPick) {
+        return {
+          ok: false as const,
+          message: "No-pick keepers are locked after the first ordinary pick.",
+        };
+      }
       const nextKeepers = keepers.filter(
-        (keeper) =>
-          keeper.round !== round || keeper.pickInRound !== pickInRound,
+        (keeper) => keeper.playerId !== playerId,
       );
       setKeepers(nextKeepers);
       setManualDraftedPlayers(materializeKeeperPicks(draftedPlayers, nextKeepers));
+      return { ok: true as const, message: "Keeper removed." };
     },
-    [draftedPlayers, keepers, manualDraftingEnabled],
+    [
+      draftedPlayers,
+      hasOrdinaryManualPick,
+      keepers,
+      manualDraftingEnabled,
+    ],
   );
 
   // Add handy keyboard shortcuts for power users
@@ -2620,14 +2868,35 @@ const DraftDashboard: React.FC = () => {
 
   return (
     <div className={styles.dashboardContainer}>
-      <DraftSettings
+      <MobileDraftTabs
+        activeTab={activeMobileTab}
+        onChange={setActiveMobileTab}
+      />
+
+      <div
+        id="mobile-draft-panel-setup"
+        className={styles.setupPanel}
+        data-mobile-panel
+        data-mobile-active={activeMobileTab === "setup"}
+        role={mobileWorkspaceEnabled ? "tabpanel" : undefined}
+        aria-labelledby={
+          mobileWorkspaceEnabled ? "mobile-draft-tab-setup" : undefined
+        }
+        hidden={mobileWorkspaceEnabled && activeMobileTab !== "setup"}
+      >
+        <div className={styles.setupCore}>
+          <DraftSettings
         settings={draftSettings}
         onSettingsChange={updateDraftSettings}
-        isSnakeDraft={isSnakeDraft}
-        onSnakeDraftChange={(value) => {
+        draftOrderPattern={draftOrderPattern}
+        onDraftOrderPatternChange={(pattern) => {
           if (manualDraftingEnabled) {
             manualLeagueSettingsDirtyRef.current = true;
-            setIsSnakeDraft(value);
+            setDraftSettings((previous) => ({
+              ...previous,
+              draftOrderMode: pattern.mode,
+              reversedRounds: pattern.reversedRounds,
+            }));
           }
         }}
         myTeamId={myTeamId}
@@ -2691,17 +2960,32 @@ const DraftDashboard: React.FC = () => {
         onAddKeeper={addKeeper}
         onImportKeepers={importKeepers}
         onRemoveKeeper={removeKeeper}
+        availablePlayersForQuickFix={availablePlayers.map((player) => ({
+          id: String(player.playerId),
+          fullName: player.fullName,
+        }))}
+        onReplaceDraftPick={replaceDraftPick}
         playersForKeeperAutocomplete={allPlayers.map((p) => ({
           id: Number(p.playerId),
           fullName: p.fullName,
         }))}
         draftLocked={!manualDraftingEnabled}
+        structuralSettingsLocked={hasOrdinaryManualPick}
         draftLockReason={`${espnLiveActive ? "ESPN" : "Yahoo"} live sync controls picks and league structure. Stop sync to edit manual draft settings.`}
         onBookmarkCreate={() => {}}
         onBookmarkImport={(data) => {
           if (!manualDraftingEnabled) return;
           try {
-            if (data.settings) setDraftSettings(data.settings);
+            const importedSettings = normalizeDraftSettingsOrder(
+              {
+                ...draftSettings,
+                ...(data.settings || {}),
+              },
+              typeof data.isSnakeDraft === "boolean"
+                ? data.isSnakeDraft
+                : isSnakeDraft,
+            );
+            setDraftSettings(importedSettings);
             restoredLeagueSettingsRef.current = true;
             manualLeagueSettingsDirtyRef.current = true;
             const restoredKeepers = migrateKeeperEntries(
@@ -2717,15 +3001,18 @@ const DraftDashboard: React.FC = () => {
             );
             setPickTrades(
               migratePickTrades(data.pickTrades ?? data.pickOwnerOverrides, {
-                draftOrder:
-                  data.settings?.draftOrder || draftSettings.draftOrder,
-                roundCount: Object.values(
-                  data.settings?.rosterConfig || draftSettings.rosterConfig,
-                ).reduce<number>((sum, count) => sum + Number(count || 0), 0),
-                isSnakeDraft:
+                draftOrder: importedSettings.draftOrder,
+                roundCount: rosterRoundCount(importedSettings.rosterConfig),
+                orderPattern: normalizeDraftOrderPattern(
+                  {
+                    mode: importedSettings.draftOrderMode,
+                    reversedRounds: importedSettings.reversedRounds,
+                  },
+                  rosterRoundCount(importedSettings.rosterConfig),
                   typeof data.isSnakeDraft === "boolean"
                     ? data.isSnakeDraft
                     : isSnakeDraft,
+                ),
               }),
             );
             if (typeof data.currentPick === "number")
@@ -2774,7 +3061,7 @@ const DraftDashboard: React.FC = () => {
             console.error("Failed to apply imported bookmark", e);
           }
         }}
-      />
+          />
 
       <FantraxLeagueSettingsPanel
         enabled={Boolean(user?.id)}
@@ -2842,9 +3129,24 @@ const DraftDashboard: React.FC = () => {
         onStop={() => void stopEspnAndContinueManually()}
         onClear={espnDraftSync.clear}
       />
+        </div>
+        <div className={styles.accuracyPanel}>
+          <ProjectionSourceAccuracy players={allPlayers} />
+        </div>
+      </div>
 
       {/* Full-width Suggested Picks above the three panels */}
-      <section className={styles.suggestedSection}>
+      <section
+        id="mobile-draft-panel-suggested"
+        className={styles.suggestedSection}
+        data-mobile-panel
+        data-mobile-active={activeMobileTab === "suggested"}
+        role={mobileWorkspaceEnabled ? "tabpanel" : undefined}
+        aria-labelledby={
+          mobileWorkspaceEnabled ? "mobile-draft-tab-suggested" : undefined
+        }
+        hidden={mobileWorkspaceEnabled && activeMobileTab !== "suggested"}
+      >
         <SuggestedPicks
           players={availablePlayers}
           vorpMetrics={vorpMetrics}
@@ -2869,16 +3171,24 @@ const DraftDashboard: React.FC = () => {
         />
       </section>
 
-      <ProjectionSourceAccuracy players={allPlayers} />
-
       <div className={styles.mainContent}>
-        <section className={styles.leftPanel}>
+        <section
+          id="mobile-draft-panel-board"
+          className={styles.leftPanel}
+          data-mobile-panel
+          data-mobile-active={activeMobileTab === "board"}
+          role={mobileWorkspaceEnabled ? "tabpanel" : undefined}
+          aria-labelledby={
+            mobileWorkspaceEnabled ? "mobile-draft-tab-board" : undefined
+          }
+          hidden={mobileWorkspaceEnabled && activeMobileTab !== "board"}
+        >
           <DraftBoard
             draftSettings={draftSettings}
             draftedPlayers={draftedPlayers}
             currentTurn={currentTurn}
             teamStats={teamStats}
-            isSnakeDraft={isSnakeDraft}
+            draftOrderPattern={draftOrderPattern}
             allPlayers={allPlayers}
             onUpdateTeamName={updateTeamName}
             canEditTeamNames={manualDraftingEnabled}
@@ -2888,7 +3198,17 @@ const DraftDashboard: React.FC = () => {
           />
         </section>
 
-        <section className={styles.centerPanel}>
+        <section
+          id="mobile-draft-panel-roster"
+          className={styles.centerPanel}
+          data-mobile-panel
+          data-mobile-active={activeMobileTab === "roster"}
+          role={mobileWorkspaceEnabled ? "tabpanel" : undefined}
+          aria-labelledby={
+            mobileWorkspaceEnabled ? "mobile-draft-tab-roster" : undefined
+          }
+          hidden={mobileWorkspaceEnabled && activeMobileTab !== "roster"}
+        >
           <MyRoster
             myTeamId={myTeamId}
             teamStatsList={teamStats}
@@ -2909,7 +3229,17 @@ const DraftDashboard: React.FC = () => {
           />
         </section>
 
-        <section className={styles.rightPanel}>
+        <section
+          id="mobile-draft-panel-players"
+          className={styles.rightPanel}
+          data-mobile-panel
+          data-mobile-active={activeMobileTab === "players"}
+          role={mobileWorkspaceEnabled ? "tabpanel" : undefined}
+          aria-labelledby={
+            mobileWorkspaceEnabled ? "mobile-draft-tab-players" : undefined
+          }
+          hidden={mobileWorkspaceEnabled && activeMobileTab !== "players"}
+        >
           <div
             style={{
               display: "flex",
@@ -2928,6 +3258,7 @@ const DraftDashboard: React.FC = () => {
             players={allPlayers}
             allPlayers={allPlayers}
             draftedPlayers={draftedPlayers}
+            unavailablePlayerIds={unavailablePlayerIds}
             isLoading={isLoading}
             error={errorMessage}
             onDraftPlayer={(id) => draftPlayer(id)}
@@ -2996,6 +3327,7 @@ const DraftDashboard: React.FC = () => {
         vorpMetrics={vorpMetrics}
         forwardGrouping={forwardGrouping}
         pickTrades={manualDraftingEnabled ? pickTrades : []}
+        keepers={manualDraftingEnabled ? keepers : []}
         configurationSummary={draftConfigurationSummary}
       />
 

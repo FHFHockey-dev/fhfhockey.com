@@ -137,7 +137,7 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
             aria-hidden="true"
           />
           <span>{statusLabel(draftState)}</span>
-          {isPolling && <span className={styles.syncing}>Syncing…</span>}
+          {isPolling && <span className={styles.syncing}>Requesting update…</span>}
         </div>
       </div>
 
@@ -193,7 +193,7 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
                 onClick={onRefreshDraft}
                 disabled={isPolling || isLoading}
               >
-                Sync now
+                Check for updates
               </button>
               <button
                 type="button"
@@ -298,8 +298,16 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
 
       {draftState?.session.stale && (
         <div className={styles.staleWarning} role="alert">
-          Live updates are stale. Use Sync now and verify Yahoo before relying on
-          the expected-next-pick prediction.
+          {draftState.session.staleSeverity === "critical"
+            ? "Live updates are critically delayed. Verify every pick in Yahoo and continue manually if the delay persists."
+            : "Live updates are delayed. Check for updates and verify Yahoo before relying on the expected-next-pick prediction."}
+        </div>
+      )}
+
+      {draftState?.session.status === "reauth_required" && (
+        <div className={styles.error} role="alert">
+          Yahoo authorization expired. Reconnect Yahoo, or stop live sync and
+          continue manually.
         </div>
       )}
 

@@ -6,8 +6,14 @@ import {
   parseRetryAfterSeconds,
   parseYahooDraftResults,
   parseYahooDraftSettings,
-  yahooDraftPollDelaySeconds,
 } from "./liveDraft";
+
+const GAME_CONTEXT = {
+  gameCode: "nhl" as const,
+  gameKey: "477",
+  season: "2026",
+  targetSeasonId: 20262027,
+};
 
 describe("Yahoo live draft parser", () => {
   it("normalizes json_f settings, roster slots, and category scoring", () => {
@@ -41,7 +47,7 @@ describe("Yahoo live draft parser", () => {
           },
         },
       },
-    });
+    }, GAME_CONTEXT);
 
     expect(settings).toMatchObject({
       teamCount: 12,
@@ -96,7 +102,7 @@ describe("Yahoo live draft parser", () => {
           ],
         },
       },
-    });
+    }, GAME_CONTEXT);
 
     expect(settings.scoringCategories).toEqual({
       PP_POINTS: 1.5,
@@ -123,7 +129,7 @@ describe("Yahoo live draft parser", () => {
           stats: [{ stat: { stat_id: "1", abbr: "G" } }],
         },
       },
-    });
+    }, GAME_CONTEXT);
     const diagnosed = applyYahooTeamDraftPositionDiagnostics(settings, [
       { yahooTeamKey: "477.l.123.t.1", name: "One", draftPosition: 1, isOwned: true },
       { yahooTeamKey: "477.l.123.t.2", name: "Two", draftPosition: 1, isOwned: false },
@@ -133,7 +139,7 @@ describe("Yahoo live draft parser", () => {
     expect(diagnosed.diagnostics.draftPositionIssues).toContain("duplicate");
   });
 
-  it("parses exact 477 draft picks and hashes canonical order", () => {
+  it("parses configured-season draft picks and hashes canonical order", () => {
     const first = parseYahooDraftResults({
       fantasy_content: {
         league: {
@@ -161,12 +167,65 @@ describe("Yahoo live draft parser", () => {
           },
         },
       },
-    });
+    }, GAME_CONTEXT);
     const second = { ...first, picks: [...first.picks].reverse() };
+    const metadataOnlyChange = {
+      ...first,
+      picks: first.picks.map((pick) => ({
+        ...pick,
+        nhlTeamAbbreviation: "NYR",
+        playerName: "Canonical display name",
+        position: "C",
+      })),
+    };
     expect(first.picks.map((pick) => pick.pickNumber)).toEqual([1, 2]);
     expect(first.picks[0].yahooPlayerId).toBe("10");
     expect(hashYahooDraftSnapshot(first)).toBe(hashYahooDraftSnapshot(second));
+    expect(hashYahooDraftSnapshot(first)).toBe(
+      hashYahooDraftSnapshot(metadataOnlyChange),
+    );
     expect(hashYahooDraftSnapshot(first)).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it("supports ordinary JSON with a dynamic game key and rejects duplicate picks", () => {
+    const context = {
+      gameCode: "nhl" as const,
+      gameKey: "500",
+      season: "2027",
+      targetSeasonId: 20272028,
+    };
+    expect(
+      parseYahooDraftResults(
+        {
+          fantasy_content: {
+            league: {
+              league_key: "500.l.88",
+              draft_status: "drafting",
+              draft_results: [
+                {
+                  pick: 1,
+                  round: 1,
+                  team_key: "500.l.88.t.2",
+                  player_key: "500.p.9001",
+                },
+              ],
+            },
+          },
+        },
+        context,
+      ).picks[0],
+    ).toMatchObject({ yahooPlayerId: "9001", yahooPlayerKey: "500.p.9001" });
+    expect(() =>
+      parseYahooDraftResults(
+        {
+          results: [
+            { pick: 1, round: 1, team_key: "500.l.88.t.1", player_key: "500.p.1" },
+            { pick: 1, round: 1, team_key: "500.l.88.t.2", player_key: "500.p.2" },
+          ],
+        },
+        context,
+      ),
+    ).toThrow("duplicate draft pick numbers");
   });
 
   it("rejects missing rounds, game-key mismatches, and salary-cap drafts", () => {
@@ -177,7 +236,7 @@ describe("Yahoo live draft parser", () => {
           team_key: "477.l.1.t.1",
           player_key: "477.p.1",
         },
-      }),
+      }, GAME_CONTEXT),
     ).toThrow("round number");
     expect(() =>
       parseYahooDraftResults({
@@ -187,41 +246,17 @@ describe("Yahoo live draft parser", () => {
           team_key: "465.l.1.t.1",
           player_key: "465.p.1",
         },
-      }),
+      }, GAME_CONTEXT),
     ).toThrow("different game");
     expect(() =>
       parseYahooDraftSettings({
         league_key: "477.l.1",
         is_auction_draft: "1",
-      }),
+      }, GAME_CONTEXT),
     ).toThrow("Salary-cap");
   });
 
-  it("uses the approved success cadence, failure sequence, and Retry-After", () => {
-    expect(yahooDraftPollDelaySeconds({ providerStatus: "drafting" })).toBe(5);
-    expect(yahooDraftPollDelaySeconds({ providerStatus: "predraft" })).toBe(30);
-    expect(
-      [1, 2, 3, 4, 5, 6].map((consecutiveFailures) =>
-        yahooDraftPollDelaySeconds({
-          providerStatus: "predraft",
-          consecutiveFailures,
-        }),
-      ),
-    ).toEqual([5, 10, 20, 40, 60, 60]);
-    expect(
-      yahooDraftPollDelaySeconds({
-        providerStatus: "drafting",
-        consecutiveFailures: 1,
-        retryAfterSeconds: 75,
-      }),
-    ).toBe(75);
-    expect(
-      yahooDraftPollDelaySeconds({
-        providerStatus: "drafting",
-        consecutiveFailures: 1,
-        retryAfterSeconds: 600,
-      }),
-    ).toBe(600);
+  it("parses Retry-After seconds and date forms", () => {
     expect(parseRetryAfterSeconds("12")).toBe(12);
     expect(
       parseRetryAfterSeconds(

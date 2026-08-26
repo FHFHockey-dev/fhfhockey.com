@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import Home from "../pages/index";
@@ -63,11 +63,13 @@ vi.mock("components/TeamStandingsChart/TeamStandingsChart", () => ({
 }));
 
 vi.mock("components/TransactionTrends/TransactionTrends", () => ({
-  default: () => <div />,
+  default: ({ defaultMetric }: { defaultMetric?: string }) => (
+    <div data-testid="transaction-trends">{defaultMetric}</div>
+  ),
 }));
 
 vi.mock("components/HomePage/HomepageDraftRanker", () => ({
-  default: () => <div />,
+  default: () => <div data-testid="homepage-draft-ranker" />,
 }));
 
 vi.mock("lib/supabase/server", () => ({
@@ -110,6 +112,50 @@ const makeHomepageNewsItem = (index: number) => ({
   card_status: "published",
   metadata: null,
   players: [],
+});
+
+describe("homepage fantasy tool switcher", () => {
+  afterEach(cleanup);
+
+  it("switches between the draft ranker and transaction trends", () => {
+    render(
+      <Home
+        {...(baseProps as any)}
+        draftRankerHomepageEnabled
+        isOffseason
+        latestNews={[]}
+      />,
+    );
+
+    const draftRankerTab = screen.getByRole("tab", {
+      name: "Draft Ranker",
+    });
+    const transactionTrendsTab = screen.getByRole("tab", {
+      name: "Transaction Trends",
+    });
+
+    expect(draftRankerTab.getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByTestId("homepage-draft-ranker")).toBeTruthy();
+    expect(screen.queryByTestId("transaction-trends")).toBeNull();
+
+    fireEvent.click(transactionTrendsTab);
+
+    expect(transactionTrendsTab.getAttribute("aria-selected")).toBe("true");
+    expect(screen.queryByTestId("homepage-draft-ranker")).toBeNull();
+    expect(screen.getByTestId("transaction-trends").textContent).toBe("adp");
+
+    fireEvent.keyDown(transactionTrendsTab, { key: "ArrowLeft" });
+
+    expect(draftRankerTab.getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByTestId("homepage-draft-ranker")).toBeTruthy();
+  });
+
+  it("keeps transaction trends as the only module when the ranker is disabled", () => {
+    render(<Home {...(baseProps as any)} latestNews={[]} />);
+
+    expect(screen.queryByRole("tablist")).toBeNull();
+    expect(screen.getByTestId("transaction-trends")).toBeTruthy();
+  });
 });
 
 describe("homepage Latest News", () => {

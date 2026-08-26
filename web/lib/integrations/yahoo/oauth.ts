@@ -1,50 +1,51 @@
 import crypto from "crypto";
 import type { NextApiRequest } from "next";
 
+import serviceRoleClient from "lib/supabase/server";
+
 import {
+  getYahooClientCredentials,
+  getYahooRedirectUri,
   YAHOO_CALLBACK_PATH,
   YAHOO_CONNECT_DEFAULT_NEXT,
-  getYahooClientCredentials,
+  YAHOO_OAUTH_BROWSER_COOKIE,
 } from "./config";
+import type { YahooLiveDraftClient } from "./liveDraftDatabase";
 
-type YahooOAuthStatePayload = {
-  userId: string;
-  next: string;
-  issuedAt: number;
-  nonce: string;
-};
+const OAUTH_TRANSACTION_TTL_SECONDS = 15 * 60;
 
 export type YahooTokenResponse = {
   access_token: string;
+  expires_in?: number;
   refresh_token: string;
   token_type?: string;
-  expires_in?: number;
   xoauth_yahoo_guid?: string | null;
 };
 
-function getStateSigningSecret() {
-  const secret =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.YAHOO_CONSUMER_SECRET ||
-    "";
+export type YahooOAuthTransaction = {
+  pkceCodeVerifier: string;
+  redirectUri: string;
+  safeNextPath: string;
+  userId: string;
+};
 
-  if (!secret) {
-    throw new Error("Unable to sign Yahoo OAuth state.");
-  }
-
-  return secret;
+function oauthClient(client?: YahooLiveDraftClient) {
+  return client ?? (serviceRoleClient as unknown as YahooLiveDraftClient);
 }
 
-export function getRequestOrigin(req: NextApiRequest) {
-  const forwardedProto = req.headers["x-forwarded-proto"];
-  const proto = Array.isArray(forwardedProto)
-    ? forwardedProto[0]
-    : forwardedProto || "http";
-  const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost:3000";
-  const normalizedHost = Array.isArray(host) ? host[0] : host;
+function sha256(value: string) {
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
 
-  return `${proto}://${normalizedHost}`;
+function pkceChallenge(verifier: string) {
+  return crypto.createHash("sha256").update(verifier).digest("base64url");
+}
+
+function firstRecord(value: unknown) {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  return candidate && typeof candidate === "object"
+    ? (candidate as Record<string, unknown>)
+    : {};
 }
 
 export function sanitizeYahooNextPath(next: string | string[] | undefined) {
@@ -52,136 +53,152 @@ export function sanitizeYahooNextPath(next: string | string[] | undefined) {
   if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//")) {
     return YAHOO_CONNECT_DEFAULT_NEXT;
   }
-
-  return candidate;
+  return candidate.slice(0, 1024);
 }
 
-function base64UrlEncode(value: string) {
-  return Buffer.from(value, "utf8").toString("base64url");
+export function buildYahooCallbackUrl(_req?: NextApiRequest) {
+  return getYahooRedirectUri();
 }
 
-function base64UrlDecode(value: string) {
-  return Buffer.from(value, "base64url").toString("utf8");
+function browserCookie(value: string, maxAgeSeconds: number) {
+  const secure = buildYahooCallbackUrl().startsWith("https://") ? "; Secure" : "";
+  return `${YAHOO_OAUTH_BROWSER_COOKIE}=${encodeURIComponent(value)}; HttpOnly; SameSite=Lax; Path=${YAHOO_CALLBACK_PATH}; Max-Age=${maxAgeSeconds}${secure}`;
 }
 
-function signStateValue(encodedPayload: string) {
-  return crypto
-    .createHmac("sha256", getStateSigningSecret())
-    .update(encodedPayload)
-    .digest("base64url");
+export function clearYahooOAuthBrowserCookie() {
+  return browserCookie("", 0);
 }
 
-export function createYahooOAuthState(userId: string, next: string) {
-  const payload: YahooOAuthStatePayload = {
-    userId,
-    next: sanitizeYahooNextPath(next),
-    issuedAt: Date.now(),
-    nonce: crypto.randomBytes(12).toString("base64url"),
-  };
-  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
-  const signature = signStateValue(encodedPayload);
-
-  return `${encodedPayload}.${signature}`;
+export function readYahooOAuthBrowserBinding(req: NextApiRequest) {
+  return req.cookies[YAHOO_OAUTH_BROWSER_COOKIE] || null;
 }
 
-export function verifyYahooOAuthState(state: string | string[] | undefined) {
-  const rawState = Array.isArray(state) ? state[0] : state;
-  if (!rawState) {
-    throw new Error("Missing Yahoo OAuth state.");
-  }
+export async function createYahooAuthorizationRequest(args: {
+  client?: YahooLiveDraftClient;
+  next: string;
+  now?: Date;
+  userId: string;
+}) {
+  const client = oauthClient(args.client);
+  const now = args.now ?? new Date();
+  const state = crypto.randomBytes(32).toString("base64url");
+  const browserBinding = crypto.randomBytes(32).toString("base64url");
+  const codeVerifier = crypto.randomBytes(64).toString("base64url");
+  const redirectUri = buildYahooCallbackUrl();
+  const safeNextPath = sanitizeYahooNextPath(args.next);
+  const expiresAt = new Date(
+    now.getTime() + OAUTH_TRANSACTION_TTL_SECONDS * 1000,
+  ).toISOString();
+  const { error } = await client.rpc("create_yahoo_oauth_transaction", {
+    p_browser_binding_hash: sha256(browserBinding),
+    p_expires_at: expiresAt,
+    p_pkce_code_verifier: codeVerifier,
+    p_redirect_uri: redirectUri,
+    p_safe_next_path: safeNextPath,
+    p_state_hash: sha256(state),
+    p_user_id: args.userId,
+  });
+  if (error) throw new Error("Yahoo authorization could not be started.");
 
-  const [encodedPayload, signature] = rawState.split(".");
-  if (!encodedPayload || !signature) {
-    throw new Error("Yahoo OAuth state is malformed.");
-  }
-
-  const expectedSignature = signStateValue(encodedPayload);
-  const signatureBuffer = Uint8Array.from(Buffer.from(signature, "utf8"));
-  const expectedBuffer = Uint8Array.from(Buffer.from(expectedSignature, "utf8"));
-
-  if (
-    signatureBuffer.length !== expectedBuffer.length ||
-    !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)
-  ) {
-    throw new Error("Yahoo OAuth state signature is invalid.");
-  }
-
-  const payload = JSON.parse(base64UrlDecode(encodedPayload)) as YahooOAuthStatePayload;
-  if (!payload.userId || !payload.next) {
-    throw new Error("Yahoo OAuth state payload is incomplete.");
-  }
-
-  const maxAgeMs = 15 * 60 * 1000;
-  if (Date.now() - payload.issuedAt > maxAgeMs) {
-    throw new Error("Yahoo OAuth state has expired.");
-  }
-
-  return {
-    ...payload,
-    next: sanitizeYahooNextPath(payload.next),
-  };
-}
-
-export function buildYahooCallbackUrl(req: NextApiRequest) {
-  return `${getRequestOrigin(req)}${YAHOO_CALLBACK_PATH}`;
-}
-
-export function buildYahooAuthorizationUrl(req: NextApiRequest, userId: string, next: string) {
   const { clientId } = getYahooClientCredentials();
   const params = new URLSearchParams({
     client_id: clientId,
-    redirect_uri: buildYahooCallbackUrl(req),
+    code_challenge: pkceChallenge(codeVerifier),
+    code_challenge_method: "S256",
+    redirect_uri: redirectUri,
     response_type: "code",
-    state: createYahooOAuthState(userId, next),
+    state,
   });
-
-  return `https://api.login.yahoo.com/oauth2/request_auth?${params.toString()}`;
+  return {
+    authorizationUrl: `https://api.login.yahoo.com/oauth2/request_auth?${params.toString()}`,
+    browserCookie: browserCookie(browserBinding, OAUTH_TRANSACTION_TTL_SECONDS),
+  };
 }
 
-export async function exchangeYahooAuthorizationCode(
-  req: NextApiRequest,
-  code: string
-): Promise<YahooTokenResponse> {
-  const { clientId, clientSecret } = getYahooClientCredentials();
-  const body = new URLSearchParams({
-    client_id: clientId,
-    client_secret: clientSecret,
-    redirect_uri: buildYahooCallbackUrl(req),
-    grant_type: "authorization_code",
-    code,
-  });
-
-  const response = await fetch("https://api.login.yahoo.com/oauth2/get_token", {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body,
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `Yahoo token exchange failed: ${response.status} ${response.statusText} ${errorText}`
-    );
+export async function consumeYahooOAuthTransaction(args: {
+  browserBinding: string | null;
+  client?: YahooLiveDraftClient;
+  state: string | string[] | undefined;
+}): Promise<YahooOAuthTransaction> {
+  const state = Array.isArray(args.state) ? args.state[0] : args.state;
+  if (!state || !args.browserBinding) {
+    throw new Error("Yahoo authorization state is missing or expired.");
   }
+  const { data, error } = await oauthClient(args.client).rpc(
+    "consume_yahoo_oauth_transaction",
+    {
+      p_browser_binding_hash: sha256(args.browserBinding),
+      p_state_hash: sha256(state),
+    },
+  );
+  if (error) {
+    throw new Error("Yahoo authorization state is missing, expired, or already used.");
+  }
+  const transaction = firstRecord(data);
+  const userId = String(transaction.userId ?? "");
+  const redirectUri = String(transaction.redirectUri ?? "");
+  const pkceCodeVerifier = String(transaction.pkceCodeVerifier ?? "");
+  if (
+    !userId ||
+    redirectUri !== buildYahooCallbackUrl() ||
+    pkceCodeVerifier.length < 43
+  ) {
+    throw new Error("Yahoo authorization state is invalid.");
+  }
+  return {
+    pkceCodeVerifier,
+    redirectUri,
+    safeNextPath: sanitizeYahooNextPath(String(transaction.safeNextPath ?? "")),
+    userId,
+  };
+}
 
-  return (await response.json()) as YahooTokenResponse;
+export async function exchangeYahooAuthorizationCode(args: {
+  code: string;
+  codeVerifier: string;
+  fetchImpl?: typeof fetch;
+  redirectUri: string;
+}): Promise<YahooTokenResponse> {
+  const { clientId, clientSecret } = getYahooClientCredentials();
+  const response = await (args.fetchImpl ?? fetch)(
+    "https://api.login.yahoo.com/oauth2/get_token",
+    {
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code: args.code,
+        code_verifier: args.codeVerifier,
+        grant_type: "authorization_code",
+        redirect_uri: args.redirectUri,
+      }),
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      method: "POST",
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`Yahoo token exchange failed (HTTP ${response.status}).`);
+  }
+  const payload = (await response.json()) as Partial<YahooTokenResponse>;
+  if (!payload.access_token || !payload.refresh_token) {
+    throw new Error("Yahoo returned an invalid token response.");
+  }
+  return payload as YahooTokenResponse;
 }
 
 export function buildYahooAccountRedirect(
   next: string,
   status: "connected" | "disconnected" | "error",
-  message?: string
+  message?: string,
 ) {
   const params = new URLSearchParams();
   params.set("yahoo_status", status);
-
-  if (message) {
-    params.set("yahoo_message", message);
-  }
-
-  const separator = next.includes("?") ? "&" : "?";
-  return `${sanitizeYahooNextPath(next)}${separator}${params.toString()}`;
+  if (message) params.set("yahoo_message", message);
+  const safeNext = sanitizeYahooNextPath(next);
+  const separator = safeNext.includes("?") ? "&" : "?";
+  return `${safeNext}${separator}${params.toString()}`;
 }

@@ -25,6 +25,8 @@ The 2026-08-19 catalog check found:
 - `public.truncate_rolling_player_game_metrics()` is SECURITY DEFINER, owned by `postgres`, has pinned search path `public`, and grants EXECUTE to `anon`, `authenticated`, `postgres`, and `service_role`.
 - The deployed migration ledger ends at `20260815023132_espn_fantasy_private_beta`; neither migration listed above is applied.
 
+A resumed read-only check on 2026-08-26 produced the same ACL and migration-ledger state. PostgreSQL rendered the arbitrary-SQL routine identity as `public.execute_sql(sql_statement text)`; its callable type signature remains `public.execute_sql(text)`. Neither routine was invoked.
+
 Immediately before an authorized rollout, repeat the following catalog-only query and stop if the signatures, owner, SECURITY DEFINER state, search path, or grantee set differs:
 
 ```sql

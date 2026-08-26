@@ -1,4 +1,5 @@
 export type YahooMappingRow = Record<string, unknown> & {
+  fhfh_player_id?: unknown;
   nhl_player_id?: unknown;
   yahoo_player_id?: unknown;
 };

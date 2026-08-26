@@ -22,6 +22,7 @@ const settings: DraftSettingsContract = {
 const keeper = {
   version: KEEPER_CONTRACT_VERSION,
   status: "valid" as const,
+  cost: "pick" as const,
   playerId: "1",
   teamId: "Team 2",
   round: 1,
@@ -101,6 +102,100 @@ describe("keeper workflow surfaces", () => {
         .querySelector('[data-round="1"][data-pick="2"]')
         ?.getAttribute("data-owner")
     ).toBe("Team 1");
+  });
+
+  it("shows no-pick keepers separately and marks roster-full board skips", () => {
+    const noPickKeeper = {
+      version: KEEPER_CONTRACT_VERSION,
+      status: "valid" as const,
+      cost: "none" as const,
+      playerId: "1",
+      teamId: "Team 1",
+    };
+    const view = render(
+      <DraftBoard
+        draftSettings={settings}
+        draftedPlayers={[]}
+        currentTurn={{
+          round: 1,
+          pickInRound: 2,
+          teamId: "Team 2",
+          isMyTurn: false,
+        }}
+        teamStats={[
+          {
+            teamId: "Team 1",
+            teamName: "Team 1",
+            owner: "",
+            projectedPoints: 100,
+            categoryTotals: {},
+            rosterSlots: {
+              C: [
+                {
+                  playerId: "1",
+                  teamId: "Team 1",
+                  isKeeper: true,
+                  keeperCost: "none",
+                },
+              ],
+            },
+            bench: [],
+            teamVorp: 0,
+          },
+          {
+            teamId: "Team 2",
+            teamName: "Team 2",
+            owner: "",
+            projectedPoints: 0,
+            categoryTotals: {},
+            rosterSlots: { C: [] },
+            bench: [],
+            teamVorp: 0,
+          },
+        ]}
+        draftOrderPattern={{ mode: "standard", reversedRounds: [] }}
+        allPlayers={[player]}
+        onUpdateTeamName={vi.fn()}
+        keepers={[noPickKeeper]}
+      />,
+    );
+
+    expect(screen.getByText("No-Pick Keepers")).toBeTruthy();
+    expect(screen.getByText("Keeper Player")).toBeTruthy();
+    const skipped = view.container.querySelector(
+      '[data-round="1"][data-pick="1"]',
+    );
+    expect(skipped?.getAttribute("title")).toContain("Roster full");
+    expect(screen.getByLabelText("Roster full skip")).toBeTruthy();
+  });
+
+  it("marks exact custom reversed rounds and reverses their board placement", () => {
+    const view = render(
+      <DraftBoard
+        draftSettings={settings}
+        draftedPlayers={[]}
+        currentTurn={{
+          round: 1,
+          pickInRound: 1,
+          teamId: "Team 2",
+          isMyTurn: false,
+        }}
+        teamStats={[
+          { teamId: "Team 1", teamName: "Team 1", owner: "", projectedPoints: 0, categoryTotals: {}, rosterSlots: { C: [] }, bench: [] },
+          { teamId: "Team 2", teamName: "Team 2", owner: "", projectedPoints: 0, categoryTotals: {}, rosterSlots: { C: [] }, bench: [] },
+        ]}
+        draftOrderPattern={{ mode: "custom", reversedRounds: [1] }}
+        allPlayers={[]}
+        onUpdateTeamName={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText("Round 1, custom reversed order")).toBeTruthy();
+    expect(
+      view.container.querySelector(
+        '[data-team="Team 1"][data-round="1"][data-pick="2"]',
+      ),
+    ).toBeTruthy();
   });
 
   it("offers bulk keeper input and reports transactional validation errors", () => {
