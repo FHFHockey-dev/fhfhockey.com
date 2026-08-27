@@ -8,6 +8,15 @@ export type OfficialNhlArticleCapture = {
   sourceHash: string;
 };
 
+export const OFFICIAL_TRANSACTION_AUDIT_WINDOW_START =
+  "2026-06-16T00:00:00Z";
+
+export const OFFICIAL_TRANSACTION_AUDIT_URLS = [
+  "https://www.nhl.com/news/2025-26-nhl-trades",
+  "https://www.nhl.com/news/topic/trade-coverage/2026-27-nhl-trades",
+  "https://www.nhl.com/news/topic/free-agency/free-agency-signings-nhl-2026-27",
+] as const;
+
 export type OfficialRosterAuditEvidence = {
   eventType: "trade" | "signing" | "membership";
   sourceUrl: string;
@@ -61,6 +70,32 @@ export function parseOfficialNhlArticleCapture(
     }
   }
   throw new Error(`Official NHL article metadata is unavailable for ${url}.`);
+}
+
+export async function captureOfficialNhlTransactionAudit(args: {
+  fetchImpl?: typeof fetch;
+  capturedAt?: string;
+} = {}): Promise<{
+  capturedAt: string;
+  captures: OfficialNhlArticleCapture[];
+}> {
+  const fetchImpl = args.fetchImpl ?? fetch;
+  const capturedAt = args.capturedAt ?? new Date().toISOString();
+  if (!Number.isFinite(Date.parse(capturedAt))) {
+    throw new Error("Official NHL transaction capture time is invalid.");
+  }
+  const captures = await Promise.all(
+    OFFICIAL_TRANSACTION_AUDIT_URLS.map(async (url) => {
+      const response = await fetchImpl(url, {
+        headers: { "User-Agent": "FHFH-player-forecasts/4.0" },
+      });
+      if (!response.ok) {
+        throw new Error(`Official NHL source returned ${response.status} for ${url}.`);
+      }
+      return parseOfficialNhlArticleCapture(await response.text(), url);
+    }),
+  );
+  return { capturedAt, captures };
 }
 
 function playerContext(articleBody: string, playerName: string): string | null {

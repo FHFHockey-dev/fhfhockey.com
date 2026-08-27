@@ -521,6 +521,36 @@
       "migrationClass": "security",
       "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
       "stateEvidence": "No exact applied-state receipt recorded; the version was absent from the read-only Production migration ledger observed 2026-08-26."
+    },
+    {
+      "order": 52,
+      "path": "supabase/migrations/20260826123000_schedule_player_forecast_season_roster_refresh.sql",
+      "sha256": "38f1f001691006509bc55fd33cc99cbdfbfda89fd3cea62761e2319f913dbd14",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
+      "stateEvidence": "No exact applied-state receipt recorded; this opt-in Cron registration update has not been replayed against local or hosted Supabase."
+    },
+    {
+      "order": 53,
+      "path": "supabase/migrations/20260826131500_require_editor_for_player_forecast_opening_release.sql",
+      "sha256": "cfa0309ffe272ea3581d8ce5f615fa5da61e71f33f83a7a22bd4b4a5b524cc5f",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "security",
+      "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
+      "stateEvidence": "No exact applied-state receipt recorded; this defense-in-depth opening-release guard has not been replayed against local or hosted Supabase."
+    },
+    {
+      "order": 54,
+      "path": "supabase/migrations/20260826133000_inherit_player_forecast_season_assumptions.sql",
+      "sha256": "fb0f490ecfc2895b36fce25ae51e3f33b5218769668abd1f34129f494a1c9baf",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
+      "stateEvidence": "No exact applied-state receipt recorded; long-lived non-stat assumption inheritance has not been replayed against local or hosted Supabase."
     }
   ]
 }

@@ -5,6 +5,12 @@ import SeasonIdentityResolver from "components/PlayerForecastSeasonEditor/Season
 import {
   FANTASY_PROJECTION_BETA_LABEL,
   FANTASY_PROJECTION_SEASON_ID,
+  GOALIE_ADVANCED_V5_PRIMITIVE_TARGETS,
+  GOALIE_FANTASY_V4_PRIMITIVE_TARGETS,
+  GOALIE_PRIMITIVE_TARGETS,
+  SKATER_ADVANCED_V5_PRIMITIVE_TARGETS,
+  SKATER_FANTASY_V4_PRIMITIVE_TARGETS,
+  SKATER_PRIMITIVE_TARGETS,
 } from "lib/fantasy-projections/contracts";
 import supabase from "lib/supabase";
 import styles from "styles/PlayerForecastSeasonEditor.module.scss";
@@ -44,6 +50,37 @@ type Workspace = {
     overrides: any[];
   } | null;
 };
+
+const NON_STAT_OVERRIDE_TARGETS = new Set([
+  "GAMES_PLAYED",
+  "GAMES_STARTED",
+  "TOTAL_TOI",
+  "EV_TOI",
+  "PP_TOI",
+  "PK_TOI",
+]);
+const SKATER_STAT_OVERRIDE_TARGETS: string[] = Array.from(
+  new Set([
+    ...SKATER_PRIMITIVE_TARGETS,
+    ...SKATER_FANTASY_V4_PRIMITIVE_TARGETS,
+    ...SKATER_ADVANCED_V5_PRIMITIVE_TARGETS,
+  ]),
+).filter((target) => !NON_STAT_OVERRIDE_TARGETS.has(target));
+const GOALIE_STAT_OVERRIDE_TARGETS: string[] = Array.from(
+  new Set([
+    ...GOALIE_PRIMITIVE_TARGETS,
+    ...GOALIE_FANTASY_V4_PRIMITIVE_TARGETS,
+    ...GOALIE_ADVANCED_V5_PRIMITIVE_TARGETS,
+  ]),
+).filter((target) => !NON_STAT_OVERRIDE_TARGETS.has(target));
+
+function projectionTargetLabel(target: string): string {
+  return target
+    .toLowerCase()
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
 
 async function editorRequest(url: string, options: RequestInit = {}) {
   const { data } = await supabase.auth.getSession();
@@ -92,6 +129,55 @@ function roleSummary(role: Record<string, unknown> | null | undefined): string {
     .join(" · ") || "Pending";
 }
 
+function PlayerModelContext({ player }: { player: any }) {
+  const rookie = player.rookie_profile ?? {};
+  const edge = player.provenance?.advancedV5?.edgeContext ?? {};
+  const edgeMetrics = Object.entries(edge.metrics ?? {});
+  return (
+    <>
+      {rookie.rookie ? (
+        <details className={styles.rookieDetail}>
+          <summary>Rookie source &amp; NHLe inputs</summary>
+          <p>
+            {rookie.sourceLeague ?? "Unknown league"} {rookie.sourceSeason ?? ""}
+            {rookie.sourceGames == null ? "" : ` · ${rookie.sourceGames} source GP`}
+            {rookie.transitionSupport == null ? "" : ` · ${rookie.transitionSupport} transitions`}
+          </p>
+          <p>
+            Roster {(Number(rookie.rosterProbability ?? 0) * 100).toFixed(0)}%
+            {rookie.conditionalNhlGames == null ? "" : ` · ${Number(rookie.conditionalNhlGames).toFixed(1)} GP if rostered`}
+            {rookie.expectedNhlGames == null ? "" : ` · ${Number(rookie.expectedNhlGames).toFixed(1)} expected NHL GP`}
+            {rookie.uncertaintyMultiplier == null ? "" : ` · ${Number(rookie.uncertaintyMultiplier).toFixed(2)}× uncertainty`}
+          </p>
+          <p>{rookie.nhleMethod ?? "Prior fallback"}</p>
+          {Object.keys(rookie.translatedConditionalRates ?? {}).length ? (
+            <p>
+              Translated rates: {Object.entries(rookie.translatedConditionalRates)
+                .map(([target, value]) => `${projectionTargetLabel(target)} ${Number(value).toFixed(3)}`)
+                .join(" · ")}
+            </p>
+          ) : null}
+          {Array.isArray(rookie.sourceCoverage) ? (
+            <p>Coverage: {rookie.sourceCoverage.join(" · ")}</p>
+          ) : null}
+        </details>
+      ) : null}
+      {edgeMetrics.length ? (
+        <details className={styles.rookieDetail}>
+          <summary>NHL EDGE context</summary>
+          <p>Observed through {edge.snapshotDate}. Context only; not projected totals.</p>
+          <p>
+            {edgeMetrics
+              .map(([target, value]) => `${projectionTargetLabel(target)} ${Number(value).toLocaleString(undefined, { maximumFractionDigits: 3 })}`)
+              .join(" · ")}
+          </p>
+          {edge.sourceUrl ? <a href={edge.sourceUrl} target="_blank" rel="noreferrer">Official source</a> : null}
+        </details>
+      ) : null}
+    </>
+  );
+}
+
 export default function PlayerForecastSeasonEditorPage() {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -104,8 +190,11 @@ export default function PlayerForecastSeasonEditorPage() {
   const [fieldPath, setFieldPath] = useState("stats.GOALS");
   const [overrideValue, setOverrideValue] = useState("");
   const [reason, setReason] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
   const [releaseLabel, setReleaseLabel] = useState(FANTASY_PROJECTION_BETA_LABEL);
   const [publishReason, setPublishReason] = useState("");
+  const [draftSourceRunId, setDraftSourceRunId] = useState("");
+  const [cloneStatOverrides, setCloneStatOverrides] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -122,6 +211,18 @@ export default function PlayerForecastSeasonEditorPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const releases = workspace?.releases ?? [];
+    if (
+      !draftSourceRunId ||
+      !releases.some((release) => String(release.run_id) === draftSourceRunId)
+    ) {
+      const preferred =
+        releases.find((release) => release.view_key === "current") ?? releases[0];
+      setDraftSourceRunId(preferred?.run_id ? String(preferred.run_id) : "");
+    }
+  }, [draftSourceRunId, workspace?.releases]);
 
   const teams = useMemo(
     () => workspace?.draft?.teams ?? [],
@@ -143,6 +244,52 @@ export default function PlayerForecastSeasonEditorPage() {
       ),
     [players, teamFilter],
   );
+  const selectedPlayer = useMemo(
+    () => players.find((player) => String(player.fhfh_player_id) === playerId),
+    [playerId, players],
+  );
+  const selectedIsGoalie =
+    selectedPlayer?.population === "goalie" || selectedPlayer?.position === "G";
+  const playerStatOverrideTargets =
+    selectedIsGoalie
+      ? GOALIE_STAT_OVERRIDE_TARGETS
+      : SKATER_STAT_OVERRIDE_TARGETS;
+  useEffect(() => {
+    if (
+      scope === "player" &&
+      fieldPath.startsWith("stats.") &&
+      !playerStatOverrideTargets.includes(fieldPath.slice("stats.".length))
+    ) {
+      setFieldPath(`stats.${playerStatOverrideTargets[0]}`);
+    } else if (scope === "team" && fieldPath.startsWith("stats.")) {
+      setFieldPath("ratings.offense");
+    } else if (
+      scope === "player" &&
+      ((selectedIsGoalie && [
+        "ratings.offense",
+        "ratings.defense",
+        "toi.evenStrength",
+        "toi.powerPlay",
+        "toi.penaltyKill",
+        "deployment.mostLikelyRole.forwardLine",
+        "deployment.mostLikelyRole.defensePair",
+        "deployment.mostLikelyRole.powerPlayUnit",
+        "deployment.mostLikelyRole.penaltyKillUnit",
+        "deployment.roleProbabilities.forwardLine",
+        "deployment.roleProbabilities.defensePair",
+        "deployment.roleProbabilities.powerPlayUnit",
+        "deployment.roleProbabilities.penaltyKillUnit",
+      ].includes(fieldPath)) ||
+        (!selectedIsGoalie && [
+          "expected.starts",
+          "ratings.goaltending",
+          "deployment.mostLikelyRole.goalieOrder",
+          "deployment.roleProbabilities.goalieOrder",
+        ].includes(fieldPath)))
+    ) {
+      setFieldPath("expected.games");
+    }
+  }, [fieldPath, playerStatOverrideTargets, scope, selectedIsGoalie]);
   const rosterWarnings = useMemo(() => {
     return teams.flatMap((team) => {
       const count = team.roster_counts ?? { forwards: 0, defensemen: 0, goalies: 0 };
@@ -174,9 +321,6 @@ export default function PlayerForecastSeasonEditorPage() {
 
   async function createOverride(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const selectedPlayer = players.find(
-      (player) => String(player.fhfh_player_id) === playerId,
-    );
     const structuredDeployment =
       fieldPath.startsWith("deployment.roleProbabilities.") ||
       [
@@ -202,26 +346,38 @@ export default function PlayerForecastSeasonEditorPage() {
     } else {
       value = Number(overrideValue);
     }
+    const selectedTeamId =
+      scope === "team"
+        ? Number(teamId)
+        : selectedPlayer?.team_id == null
+          ? null
+          : Number(selectedPlayer.team_id);
+    const supersededOverride = workspace?.draft?.overrides.find(
+      (override) =>
+        override.scope_type === scope &&
+        override.field_path === fieldPath &&
+        (scope === "player"
+          ? Number(override.fhfh_player_id) === Number(playerId)
+          : Number(override.team_id) === selectedTeamId),
+    );
     const result = await runAction(
       "/api/v1/player-forecasts/admin/season-overrides",
       {
         runId: workspace?.draft?.runId,
         scopeType: scope,
         fhfhPlayerId: scope === "player" ? Number(playerId) : null,
-        teamId:
-          scope === "team"
-            ? Number(teamId)
-            : selectedPlayer?.team_id == null
-              ? null
-              : Number(selectedPlayer.team_id),
+        teamId: selectedTeamId,
         fieldPath,
         overrideValue: value,
         reason,
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+        supersedesId: supersededOverride?.id ?? null,
       },
     );
     if (result) {
       setOverrideValue("");
       setReason("");
+      setExpiresAt("");
     }
   }
 
@@ -424,6 +580,7 @@ export default function PlayerForecastSeasonEditorPage() {
                           Rookie · roster {Math.round(Number(player.rookie_profile.rosterProbability ?? 0) * 100)}% · {player.rookie_profile.nhleMethod ?? "prior"}
                         </small>
                       ) : null}
+                      <PlayerModelContext player={player} />
                     </td>
                     <td>{changedStats(player) || "Model unchanged"}</td>
                   </tr>
@@ -461,34 +618,47 @@ export default function PlayerForecastSeasonEditorPage() {
               <select value={fieldPath} onChange={(event) => setFieldPath(event.target.value)}>
                 {scope === "player" ? (
                   <>
-                    <option value="stats.GOALS">Goals</option>
-                    <option value="stats.PRIMARY_ASSISTS">Primary assists</option>
-                    <option value="stats.SECONDARY_ASSISTS">Secondary assists</option>
-                    <option value="stats.SHOTS_ON_GOAL">Shots</option>
-                    <option value="stats.HITS">Hits</option>
-                    <option value="stats.BLOCKED_SHOTS">Blocks</option>
+                    <optgroup label={selectedIsGoalie ? "Goalie primitive totals" : "Skater primitive totals"}>
+                      {playerStatOverrideTargets.map((target) => (
+                        <option key={target} value={`stats.${target}`}>
+                          {projectionTargetLabel(target)}
+                        </option>
+                      ))}
+                    </optgroup>
                     <option value="expected.games">Expected GP</option>
-                    <option value="expected.starts">Expected starts</option>
+                    {selectedIsGoalie ? <option value="expected.starts">Expected starts</option> : null}
                     <option value="player.teamId">Projected team</option>
                     <option value="player.position">Position</option>
                     <option value="player.poolStatus">Pool status</option>
-                    <option value="ratings.offense">Offense rating</option>
-                    <option value="ratings.defense">Defense rating</option>
-                    <option value="ratings.goaltending">Goalie rating</option>
-                    <option value="toi.evenStrength">Expected EV TOI</option>
-                    <option value="toi.powerPlay">Expected PP TOI</option>
-                    <option value="toi.penaltyKill">Expected PK TOI</option>
+                    {selectedIsGoalie ? (
+                      <option value="ratings.goaltending">Goalie rating</option>
+                    ) : (
+                      <>
+                        <option value="ratings.offense">Offense rating</option>
+                        <option value="ratings.defense">Defense rating</option>
+                        <option value="toi.evenStrength">Expected EV TOI</option>
+                        <option value="toi.powerPlay">Expected PP TOI</option>
+                        <option value="toi.penaltyKill">Expected PK TOI</option>
+                      </>
+                    )}
                     <option value="toi.total">Expected total TOI</option>
-                    <option value="deployment.mostLikelyRole.forwardLine">Most likely forward line</option>
-                    <option value="deployment.mostLikelyRole.defensePair">Most likely defense pair</option>
-                    <option value="deployment.mostLikelyRole.powerPlayUnit">Most likely PP unit</option>
-                    <option value="deployment.mostLikelyRole.penaltyKillUnit">Most likely PK unit</option>
-                    <option value="deployment.mostLikelyRole.goalieOrder">Most likely goalie order</option>
-                    <option value="deployment.roleProbabilities.forwardLine">Forward-line probabilities (JSON)</option>
-                    <option value="deployment.roleProbabilities.defensePair">Defense-pair probabilities (JSON)</option>
-                    <option value="deployment.roleProbabilities.powerPlayUnit">Power-play probabilities (JSON)</option>
-                    <option value="deployment.roleProbabilities.penaltyKillUnit">Penalty-kill probabilities (JSON)</option>
-                    <option value="deployment.roleProbabilities.goalieOrder">Goalie-order probabilities (JSON)</option>
+                    {selectedIsGoalie ? (
+                      <>
+                        <option value="deployment.mostLikelyRole.goalieOrder">Most likely goalie order</option>
+                        <option value="deployment.roleProbabilities.goalieOrder">Goalie-order probabilities (JSON)</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="deployment.mostLikelyRole.forwardLine">Most likely forward line</option>
+                        <option value="deployment.mostLikelyRole.defensePair">Most likely defense pair</option>
+                        <option value="deployment.mostLikelyRole.powerPlayUnit">Most likely PP unit</option>
+                        <option value="deployment.mostLikelyRole.penaltyKillUnit">Most likely PK unit</option>
+                        <option value="deployment.roleProbabilities.forwardLine">Forward-line probabilities (JSON)</option>
+                        <option value="deployment.roleProbabilities.defensePair">Defense-pair probabilities (JSON)</option>
+                        <option value="deployment.roleProbabilities.powerPlayUnit">Power-play probabilities (JSON)</option>
+                        <option value="deployment.roleProbabilities.penaltyKillUnit">Penalty-kill probabilities (JSON)</option>
+                      </>
+                    )}
                   </>
                 ) : (
                   <>
@@ -513,6 +683,13 @@ export default function PlayerForecastSeasonEditorPage() {
             <label className={styles.reason}>Reason
               <input required value={reason} onChange={(event) => setReason(event.target.value)} />
             </label>
+            <label>Expires (optional)
+              <input
+                type="datetime-local"
+                value={expiresAt}
+                onChange={(event) => setExpiresAt(event.target.value)}
+              />
+            </label>
             <button type="submit" disabled={busy || !workspace?.draft}>Save immutable adjustment</button>
           </form>
         </section>
@@ -520,6 +697,40 @@ export default function PlayerForecastSeasonEditorPage() {
         <section className={styles.panel}>
           <div className={styles.panelHeader}><div><p>Release control</p><h2>Validate, publish, compare, or roll back</h2></div></div>
           <div className={styles.releaseActions}>
+            <label>Draft source
+              <select
+                value={draftSourceRunId}
+                onChange={(event) => setDraftSourceRunId(event.target.value)}
+              >
+                <option value="">Choose published release</option>
+                {(workspace?.releases ?? []).map((release) => (
+                  <option key={release.id} value={release.run_id}>
+                    {release.view_key} #{release.release_number} · {release.release_label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={cloneStatOverrides}
+                onChange={(event) => setCloneStatOverrides(event.target.checked)}
+              />
+              Deliberately carry direct stat overrides
+            </label>
+            <button
+              type="button"
+              disabled={busy || !draftSourceRunId}
+              onClick={() => void runAction(
+                "/api/v1/player-forecasts/admin/season-draft",
+                {
+                  sourceRunId: draftSourceRunId,
+                  includeStatOverrides: cloneStatOverrides,
+                },
+              )}
+            >
+              Create editable draft
+            </button>
             <button
               type="button"
               disabled={busy || !workspace?.draft}
@@ -539,6 +750,14 @@ export default function PlayerForecastSeasonEditorPage() {
               Queue {teamFilter ? "team" : "league"} rerun
             </button>
           </div>
+          {currentRun?.validation_receipt ? (
+            <div className={styles.integritySummary}>
+              <span>Validated: {new Date(currentRun.validation_receipt.checkedAt).toLocaleString()}</span>
+              <span>{currentRun.validation_receipt.playerCount} players · {currentRun.validation_receipt.teamCount} teams · {currentRun.validation_receipt.scheduleGameCount} games</span>
+              <span>Issues: {currentRun.validation_receipt.issueCount}</span>
+              <span>Output: {String(currentRun.validation_receipt.effectiveOutputHash ?? "").slice(0, 12)}…</span>
+            </div>
+          ) : null}
           <form className={styles.publishForm} onSubmit={(event) => {
             event.preventDefault();
             void runAction("/api/v1/player-forecasts/admin/season-publish", {
@@ -554,7 +773,16 @@ export default function PlayerForecastSeasonEditorPage() {
           <div className={styles.releaseList}>
             {(workspace?.releases ?? []).map((release) => (
               <article key={release.id}>
-                <div><strong>{release.view_key} #{release.release_number}</strong><span>{release.release_label}</span><time>{new Date(release.issued_at).toLocaleString()}</time></div>
+                <div>
+                  <strong>{release.view_key} #{release.release_number}</strong>
+                  <span>{release.release_label}</span>
+                  <time>{new Date(release.issued_at).toLocaleString()}</time>
+                  <small>
+                    {release.metric_set_version} · {release.health_status} · release {String(release.release_hash).slice(0, 12)}…
+                    {release.roster_observed_at ? ` · roster ${new Date(release.roster_observed_at).toLocaleString()}` : ""}
+                    {release.transaction_cutoff_at ? ` · transactions ${new Date(release.transaction_cutoff_at).toLocaleString()}` : ""}
+                  </small>
+                </div>
                 <button
                   type="button"
                   disabled={busy}

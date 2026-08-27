@@ -5,7 +5,6 @@ from datetime import date, datetime, timezone
 import hashlib
 import math
 from pathlib import Path
-import random
 from typing import Any
 
 from .contract import (
@@ -21,6 +20,9 @@ from .season import (
     GOALIE_TARGETS,
     SKATER_FANTASY_V4_TARGETS,
     SKATER_TARGETS,
+    _portable_canonical_json,
+    _reconcile,
+    verify_season_settlement_bundle,
 )
 
 
@@ -85,7 +87,11 @@ with champion as (
          feature.event_id, feature.period_number,
          feature.period_seconds_elapsed, feature.event_owner_team_id,
          feature.is_unblocked_shot_attempt,
-         coalesce(prediction.xg, 0)::double precision as xg
+         coalesce(prediction.xg, 0)::double precision as xg,
+         greatest(
+           feature.updated_at,
+           coalesce(prediction.updated_at, feature.updated_at)
+         ) as source_available_at
   from public.nhl_xg_shot_features feature
   left join champion on true
   left join public.nhl_xg_shot_predictions prediction
@@ -102,7 +108,8 @@ with champion as (
   select distinct shift.game_id, shift.season_id, shift.game_date,
          shift.player_id, shift.team_id, event.event_id,
          event.event_owner_team_id, event.is_unblocked_shot_attempt,
-         event.xg
+         event.xg,
+         greatest(event.source_available_at, shift.updated_at) as source_available_at
   from public.nhl_api_shift_rows shift
   join events event
     on event.game_id = shift.game_id
@@ -126,7 +133,8 @@ select season_id, game_id, game_date, player_id, team_id,
        coalesce(sum(xg) filter (where event_owner_team_id = team_id), 0)::double precision
          as on_ice_expected_goals_for,
        coalesce(sum(xg) filter (where event_owner_team_id <> team_id), 0)::double precision
-         as on_ice_expected_goals_against
+         as on_ice_expected_goals_against,
+       max(source_available_at)::text as source_available_at
 from player_events
 group by season_id, game_id, game_date, player_id, team_id
 order by season_id, game_id, player_id, team_id
@@ -200,6 +208,30 @@ SOURCE_TABLES: dict[str, dict[str, Any]] = {
         "order": "season_id, game_id, team_id, model_version",
         "approved": "source_model_approved",
     },
+    "edge_skater_context": {
+        "table": "nhl_edge_skater_metrics_daily",
+        "select": "snapshot_date, season_id, game_type, player_id, player_name, team_id, team_abbreviation, position, games_played, top_shot_speed_mph, max_skating_speed_mph, bursts_over_20, total_distance_miles, high_danger_shots, mid_range_shots, long_range_shots, offensive_zone_pct, neutral_zone_pct, defensive_zone_pct, source_url",
+        "order": "season_id, snapshot_date, player_id",
+        "approved": None,
+        "optional": True,
+        "where": " and game_type = 2",
+    },
+    "edge_goalie_context": {
+        "table": "nhl_edge_goalie_metrics_daily",
+        "select": "snapshot_date, season_id, game_type, goalie_id, goalie_name, team_id, team_abbreviation, games_played, edge_goals_against_avg, games_above_900, goal_differential_per_60, all_save_pct, high_danger_save_pct, mid_range_save_pct, long_range_save_pct, source_url",
+        "order": "season_id, snapshot_date, goalie_id",
+        "approved": None,
+        "optional": True,
+        "where": " and game_type = 2",
+    },
+    "edge_team_context": {
+        "table": "nhl_edge_team_metrics_daily",
+        "select": "snapshot_date, season_id, game_type, team_id, team_abbreviation, team_name, games_played, shot_attempts_over_90, top_shot_speed_mph, bursts_over_20, max_skating_speed_mph, total_distance_miles, high_danger_shots, mid_range_shots, long_range_shots, offensive_zone_pct, neutral_zone_pct, defensive_zone_pct, source_url",
+        "order": "season_id, snapshot_date, team_id",
+        "approved": None,
+        "optional": True,
+        "where": " and game_type = 2",
+    },
 }
 
 
@@ -252,11 +284,14 @@ def _source_status(connection: Any, name: str, spec: dict[str, Any]) -> dict[str
     freshness_expression = (
         f"max({freshness_column})::text" if freshness_column else "null::text"
     )
+    distinct_source = "game_id" if "game_id" in columns else (
+        "snapshot_date" if "snapshot_date" in columns else "season_id"
+    )
     row = connection.execute(
         f"""
         select count(*)::bigint as rows,
                {approved_expression}::bigint as approved_rows,
-               count(distinct game_id)::bigint as games,
+               count(distinct {distinct_source})::bigint as games,
                coalesce(array_agg(distinct season_id order by season_id)
                  filter (where season_id is not null), '{{}}') as seasons,
                {freshness_expression} as source_fresh_at
@@ -336,6 +371,15 @@ def run_advanced_source_audit(database_url: str) -> dict[str, Any]:
             "expected_secondary_assists": ["normalized_play_by_play", "shot_assist_candidates", "player_created_xg"],
             "on_ice_shares": ["official_shifts", "normalized_play_by_play", "shot_predictions"],
             "rebounds": ["player_rebounds", "goalie_rebounds"],
+            "nhl_edge_context": [
+                "edge_skater_context",
+                "edge_goalie_context",
+                "edge_team_context",
+            ],
+        },
+        "edgePolicy": {
+            "status": "optional_cutoff_safe_context",
+            "servingRule": "Recorded snapshots may be exposed as descriptive player-detail context; they are not projected totals and cannot alter rates without chronological lift.",
         },
         "dangerTaxonomy": {
             "status": "must_be_versioned_in_feature_payload",
@@ -465,11 +509,48 @@ def freeze_advanced_sources(
     files: dict[str, dict[str, Any]] = {}
     with readonly_connection(database_url) as connection:
         for name, spec in SOURCE_TABLES.items():
+            source_status = (audit.get("sources") or {}).get(name) or {}
+            if source_status.get("present") is not True:
+                if spec.get("optional") is not True:
+                    raise RuntimeError(f"required advanced source is missing: {name}")
+                row_count, checksum = write_jsonl(output / f"{name}.jsonl", [])
+                files[name] = {
+                    "path": f"{name}.jsonl",
+                    "rows": row_count,
+                    "sha256": checksum,
+                    "optional": True,
+                }
+                continue
             approved = str(spec["approved"]) if spec.get("approved") else None
             approved_clause = f" and {approved} is true" if approved else ""
+            source_clause = str(spec.get("where") or "")
+            columns = {
+                str(row["column_name"])
+                for row in connection.execute(
+                    """
+                    select column_name from information_schema.columns
+                    where table_schema = 'public' and table_name = %s
+                    """,
+                    (spec["table"],),
+                ).fetchall()
+            }
+            availability_column = next(
+                (
+                    candidate
+                    for candidate in ("available_at", "updated_at", "created_at", "fetched_at", "ingested_at")
+                    if candidate in columns
+                ),
+                None,
+            )
+            availability_select = (
+                f", {availability_column}::text as source_available_at"
+                if availability_column
+                else ""
+            )
             query = (
-                f"select {spec.get('select', '*')} from public.{spec['table']} "
-                f"where season_id = any(%s){approved_clause} order by {spec['order']}"
+                f"select {spec.get('select', '*')}{availability_select} "
+                f"from public.{spec['table']} "
+                f"where season_id = any(%s){approved_clause}{source_clause} order by {spec['order']}"
             )
             row_count, checksum = write_jsonl(
                 output / f"{name}.jsonl",
@@ -479,6 +560,7 @@ def freeze_advanced_sources(
                 "path": f"{name}.jsonl",
                 "rows": row_count,
                 "sha256": checksum,
+                "optional": bool(spec.get("optional")),
             }
         row_count, checksum = write_jsonl(
             output / "player_on_ice.jsonl",
@@ -567,6 +649,20 @@ def _assert_advanced_freeze(path: Path) -> dict[str, Any]:
         or manifest.get("contractChecksum") != ADVANCED_SEASON_CONTRACT_SHA256
     ):
         raise RuntimeError("advanced source freeze contract mismatch")
+    unsigned_manifest = {
+        key: value for key, value in manifest.items() if key != "manifestHash"
+    }
+    if manifest.get("manifestHash") != hashlib.sha256(
+        canonical_json(unsigned_manifest).encode()
+    ).hexdigest():
+        raise RuntimeError("advanced source freeze manifest hash mismatch")
+    source_audit = manifest.get("sourceAudit") or {}
+    source_audit_path = path / str(source_audit.get("path") or "")
+    if (
+        not source_audit_path.is_file()
+        or _file_sha256(source_audit_path) != source_audit.get("sha256")
+    ):
+        raise RuntimeError("advanced source audit checksum mismatch")
     for metadata in (manifest.get("files") or {}).values():
         source_path = path / str(metadata["path"])
         if _file_sha256(source_path) != metadata.get("sha256"):
@@ -581,6 +677,198 @@ def _empty_observation(entity_id: int, game_id: int, game_date: Any, team_id: An
         "gameDate": str(game_date)[:10],
         "teamId": int(team_id) if team_id is not None else None,
         "values": {target: 0.0 for target in targets},
+        "sourceAvailableAt": None,
+        "sourceNames": [],
+    }
+
+
+def _touch_observation(
+    observation: dict[str, Any] | None,
+    row: dict[str, Any],
+    source_name: str,
+) -> dict[str, Any] | None:
+    if observation is None:
+        return None
+    available_at = row.get("source_available_at")
+    if available_at is not None:
+        observation["sourceAvailableAt"] = _latest_recorded_timestamp(
+            observation.get("sourceAvailableAt"),
+            available_at,
+        )
+    names = set(str(value) for value in observation.get("sourceNames") or [])
+    names.add(source_name)
+    observation["sourceNames"] = sorted(names)
+    return observation
+
+
+def _latest_recorded_timestamp(*values: Any) -> str:
+    parsed = []
+    for value in values:
+        if value in (None, ""):
+            continue
+        timestamp = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if timestamp.tzinfo is None:
+            raise RuntimeError("advanced source availability must include a timezone")
+        parsed.append(timestamp)
+    if not parsed:
+        raise RuntimeError("advanced source availability is missing")
+    return max(parsed).isoformat()
+
+
+EDGE_CONTEXT_METRICS: dict[str, tuple[str, ...]] = {
+    "edge_skater_context": (
+        "games_played",
+        "top_shot_speed_mph",
+        "max_skating_speed_mph",
+        "bursts_over_20",
+        "total_distance_miles",
+        "high_danger_shots",
+        "mid_range_shots",
+        "long_range_shots",
+        "offensive_zone_pct",
+        "neutral_zone_pct",
+        "defensive_zone_pct",
+    ),
+    "edge_goalie_context": (
+        "games_played",
+        "edge_goals_against_avg",
+        "games_above_900",
+        "goal_differential_per_60",
+        "all_save_pct",
+        "high_danger_save_pct",
+        "mid_range_save_pct",
+        "long_range_save_pct",
+    ),
+    "edge_team_context": (
+        "games_played",
+        "shot_attempts_over_90",
+        "top_shot_speed_mph",
+        "bursts_over_20",
+        "max_skating_speed_mph",
+        "total_distance_miles",
+        "high_danger_shots",
+        "mid_range_shots",
+        "long_range_shots",
+        "offensive_zone_pct",
+        "neutral_zone_pct",
+        "defensive_zone_pct",
+    ),
+}
+
+
+def _build_edge_contexts(
+    freeze: Path,
+    players: dict[int, dict[str, Any]],
+    context_cutoff_at: str,
+) -> dict[str, Any]:
+    cutoff = datetime.fromisoformat(str(context_cutoff_at).replace("Z", "+00:00"))
+    if cutoff.tzinfo is None:
+        raise RuntimeError("NHL EDGE context cutoff must include a timezone")
+    fhfh_by_nhl = {
+        int(value["nhlPlayerId"]): fhfh_id
+        for fhfh_id, value in players.items()
+        if value.get("nhlPlayerId") is not None
+    }
+    player_contexts: dict[str, dict[str, Any]] = {}
+    team_contexts: dict[str, dict[str, Any]] = {}
+    excluded_post_cutoff = 0
+
+    def eligible(row: dict[str, Any]) -> tuple[datetime, date] | None:
+        raw_available = row.get("source_available_at")
+        if not raw_available:
+            return None
+        available = datetime.fromisoformat(str(raw_available).replace("Z", "+00:00"))
+        if available.tzinfo is None:
+            raise RuntimeError("NHL EDGE source availability must include a timezone")
+        snapshot = _day(row.get("snapshot_date"))
+        if available > cutoff or snapshot > cutoff.date():
+            return None
+        return available, snapshot
+
+    for source_name in ("edge_skater_context", "edge_goalie_context"):
+        source_path = freeze / f"{source_name}.jsonl"
+        if not source_path.exists():
+            continue
+        entity_key = "goalie_id" if source_name == "edge_goalie_context" else "player_id"
+        for row in read_jsonl(source_path):
+            timing = eligible(row)
+            if timing is None:
+                if row.get("source_available_at"):
+                    excluded_post_cutoff += 1
+                continue
+            nhl_player_id = int(row[entity_key])
+            fhfh_player_id = fhfh_by_nhl.get(nhl_player_id)
+            if fhfh_player_id is None:
+                continue
+            available, snapshot = timing
+            context = {
+                "source": "official_nhl_edge",
+                "sourceFamily": "goalie" if source_name == "edge_goalie_context" else "skater",
+                "snapshotDate": snapshot.isoformat(),
+                "sourceAvailableAt": available.isoformat(),
+                "sourceUrl": row.get("source_url"),
+                "metrics": {
+                    key: _rounded(_number(row[key]))
+                    for key in EDGE_CONTEXT_METRICS[source_name]
+                    if row.get(key) is not None
+                },
+                "usage": "cutoff_safe_feature_context_not_projected_total",
+            }
+            existing = player_contexts.get(str(fhfh_player_id))
+            ordering = (snapshot, available)
+            existing_ordering = (
+                _day(existing["snapshotDate"]),
+                datetime.fromisoformat(str(existing["sourceAvailableAt"]).replace("Z", "+00:00")),
+            ) if existing else None
+            if existing_ordering is None or ordering > existing_ordering:
+                player_contexts[str(fhfh_player_id)] = context
+
+    source_path = freeze / "edge_team_context.jsonl"
+    if source_path.exists():
+        for row in read_jsonl(source_path):
+            timing = eligible(row)
+            if timing is None:
+                if row.get("source_available_at"):
+                    excluded_post_cutoff += 1
+                continue
+            team_id = str(int(row["team_id"]))
+            available, snapshot = timing
+            context = {
+                "source": "official_nhl_edge",
+                "sourceFamily": "team",
+                "snapshotDate": snapshot.isoformat(),
+                "sourceAvailableAt": available.isoformat(),
+                "sourceUrl": row.get("source_url"),
+                "metrics": {
+                    key: _rounded(_number(row[key]))
+                    for key in EDGE_CONTEXT_METRICS["edge_team_context"]
+                    if row.get(key) is not None
+                },
+                "usage": "cutoff_safe_feature_context_not_projected_total",
+            }
+            existing = team_contexts.get(team_id)
+            ordering = (snapshot, available)
+            existing_ordering = (
+                _day(existing["snapshotDate"]),
+                datetime.fromisoformat(str(existing["sourceAvailableAt"]).replace("Z", "+00:00")),
+            ) if existing else None
+            if existing_ordering is None or ordering > existing_ordering:
+                team_contexts[team_id] = context
+
+    return {
+        "players": player_contexts,
+        "teams": team_contexts,
+        "coverage": {
+            "playerContexts": len(player_contexts),
+            "teamContexts": len(team_contexts),
+            "eligiblePlayers": len(players),
+            "excludedPostCutoffRows": excluded_post_cutoff,
+            "contextCutoffAt": cutoff.isoformat(),
+        },
+        "selectionPolicy": (
+            "Frozen as a cutoff-safe feature candidate and player-detail context; "
+            "coefficient remains zero until chronological validation demonstrates lift."
+        ),
     }
 
 
@@ -725,21 +1013,11 @@ def _v4_assist_policy(
     }
 
 
-def train_advanced_artifact(
+def _build_advanced_observations(
     freeze: Path,
-    v4_artifact_path: Path,
-    output: Path,
+    players: dict[int, dict[str, Any]],
+    source_audit: dict[str, Any],
 ) -> dict[str, Any]:
-    manifest = _assert_advanced_freeze(freeze)
-    v4_artifact, v4_checksum = _verified_v4_artifact(v4_artifact_path)
-    output.mkdir(parents=True, exist_ok=False)
-    source_audit = read_json(freeze / "source-audit.json")
-    if source_audit.get("eligibleForFreeze") is not True:
-        raise RuntimeError("advanced source audit is not eligible for training")
-    players = {
-        int(value["fhfhPlayerId"]): value
-        for value in (v4_artifact.get("players") or {}).values()
-    }
     fhfh_by_nhl = {
         int(value["nhlPlayerId"]): fhfh_id
         for fhfh_id, value in players.items()
@@ -749,7 +1027,12 @@ def train_advanced_artifact(
     goalie_games: dict[tuple[int, int], dict[str, Any]] = {}
     team_games: dict[tuple[int, int], dict[str, Any]] = {}
 
-    def skater_observation(nhl_id: Any, game_id: Any, game_date: Any, team_id: Any) -> dict[str, Any] | None:
+    def skater_observation(
+        nhl_id: Any,
+        game_id: Any,
+        game_date: Any,
+        team_id: Any,
+    ) -> dict[str, Any] | None:
         if nhl_id is None:
             return None
         fhfh_id = fhfh_by_nhl.get(int(nhl_id))
@@ -758,10 +1041,21 @@ def train_advanced_artifact(
         key = (fhfh_id, int(game_id))
         return skater_games.setdefault(
             key,
-            _empty_observation(fhfh_id, int(game_id), game_date, team_id, SKATER_ADVANCED_TARGETS),
+            _empty_observation(
+                fhfh_id,
+                int(game_id),
+                game_date,
+                team_id,
+                SKATER_ADVANCED_TARGETS,
+            ),
         )
 
-    def goalie_observation(nhl_id: Any, game_id: Any, game_date: Any, team_id: Any) -> dict[str, Any] | None:
+    def goalie_observation(
+        nhl_id: Any,
+        game_id: Any,
+        game_date: Any,
+        team_id: Any,
+    ) -> dict[str, Any] | None:
         if nhl_id is None:
             return None
         fhfh_id = fhfh_by_nhl.get(int(nhl_id))
@@ -770,21 +1064,44 @@ def train_advanced_artifact(
         key = (fhfh_id, int(game_id))
         return goalie_games.setdefault(
             key,
-            _empty_observation(fhfh_id, int(game_id), game_date, team_id, GOALIE_ADVANCED_TARGETS),
+            _empty_observation(
+                fhfh_id,
+                int(game_id),
+                game_date,
+                team_id,
+                GOALIE_ADVANCED_TARGETS,
+            ),
         )
 
-    def team_observation(team_id: Any, game_id: Any, game_date: Any) -> dict[str, Any] | None:
+    def team_observation(
+        team_id: Any,
+        game_id: Any,
+        game_date: Any,
+    ) -> dict[str, Any] | None:
         if team_id is None:
             return None
         key = (int(team_id), int(game_id))
         return team_games.setdefault(
             key,
-            _empty_observation(int(team_id), int(game_id), game_date, team_id, TEAM_ADVANCED_TARGETS),
+            _empty_observation(
+                int(team_id),
+                int(game_id),
+                game_date,
+                team_id,
+                TEAM_ADVANCED_TARGETS,
+            ),
         )
 
     for row in read_jsonl(freeze / "player_on_ice.jsonl"):
-        observation = skater_observation(
-            row.get("player_id"), row.get("game_id"), row.get("game_date"), row.get("team_id")
+        observation = _touch_observation(
+            skater_observation(
+                row.get("player_id"),
+                row.get("game_id"),
+                row.get("game_date"),
+                row.get("team_id"),
+            ),
+            row,
+            "player_on_ice",
         )
         if observation is None:
             continue
@@ -802,7 +1119,11 @@ def train_advanced_artifact(
         opponent_id = int(row["opponent_team_id"])
         game_id = int(row["game_id"])
         game_teams[game_id] = (team_id, opponent_id)
-        observation = team_observation(team_id, game_id, row.get("game_date"))
+        observation = _touch_observation(
+            team_observation(team_id, game_id, row.get("game_date")),
+            row,
+            "team_xg",
+        )
         if observation is None:
             continue
         values = observation["values"]
@@ -817,8 +1138,12 @@ def train_advanced_artifact(
         game_id = int(row["game_id"])
         game_date = row.get("game_date")
         team_id = row.get("event_owner_team_id")
-        skater = skater_observation(
-            row.get("shooter_player_id"), game_id, game_date, team_id
+        skater = _touch_observation(
+            skater_observation(
+                row.get("shooter_player_id"), game_id, game_date, team_id
+            ),
+            row,
+            "shot_features",
         )
         is_unblocked = row.get("is_unblocked_shot_attempt") is True
         distance_raw = row.get("shot_distance_feet")
@@ -849,12 +1174,20 @@ def train_advanced_artifact(
             if row.get("is_rebound_shot") is True:
                 values["REBOUND_SHOTS"] += 1
 
-        owner = team_observation(team_id, game_id, game_date)
+        owner = _touch_observation(
+            team_observation(team_id, game_id, game_date),
+            row,
+            "shot_features",
+        )
         pair = game_teams.get(game_id)
         opponent_id = None
         if pair and team_id is not None:
             opponent_id = pair[1] if pair[0] == int(team_id) else pair[0]
-        opponent = team_observation(opponent_id, game_id, game_date)
+        opponent = _touch_observation(
+            team_observation(opponent_id, game_id, game_date),
+            row,
+            "shot_features",
+        )
         if owner:
             owner["values"]["TEAM_SHOT_ATTEMPTS_FOR"] += 1
         if opponent:
@@ -875,11 +1208,17 @@ def train_advanced_artifact(
             and row.get("is_empty_net_event") is not True
             and row.get("is_shot_on_goal") is True
         ):
-            goalie = goalie_observation(
-                row.get("goalie_in_net_id"), game_id, game_date, opponent_id
+            goalie = _touch_observation(
+                goalie_observation(
+                    row.get("goalie_in_net_id"), game_id, game_date, opponent_id
+                ),
+                row,
+                "shot_features",
             )
             if goalie is not None and danger_target:
-                goalie_target = danger_target.replace("SHOTS", "SHOTS_AGAINST_GOALIE")
+                goalie_target = danger_target.replace(
+                    "SHOTS", "SHOTS_AGAINST_GOALIE"
+                )
                 goalie["values"][goalie_target] += 1
                 if row.get("is_goal") is True:
                     goalie["values"][goalie_target.replace("SHOTS", "GOALS")] += 1
@@ -888,7 +1227,8 @@ def train_advanced_artifact(
         (
             str(row["model_version"])
             for row in source_audit.get("approvedModels") or []
-            if row.get("prediction_type") == "shot_goal" and row.get("is_champion") is True
+            if row.get("prediction_type") == "shot_goal"
+            and row.get("is_champion") is True
         ),
         None,
     )
@@ -897,32 +1237,93 @@ def train_advanced_artifact(
             shot_goal_model and row.get("model_version") != shot_goal_model
         ):
             continue
-        xg = _number(row.get("xg"))
-        skater = skater_observation(
-            row.get("shooter_player_id"), row.get("game_id"), row.get("game_date"), row.get("event_owner_team_id")
+        skater = _touch_observation(
+            skater_observation(
+                row.get("shooter_player_id"),
+                row.get("game_id"),
+                row.get("game_date"),
+                row.get("event_owner_team_id"),
+            ),
+            row,
+            "shot_predictions",
         )
         if skater is not None:
-            skater["values"]["EXPECTED_GOALS"] += xg
+            skater["values"]["EXPECTED_GOALS"] += _number(row.get("xg"))
 
     for row in read_jsonl(freeze / "player_rebounds.jsonl"):
-        observation = skater_observation(
-            row.get("player_id"), row.get("game_id"), row.get("game_date"), row.get("team_id")
+        observation = _touch_observation(
+            skater_observation(
+                row.get("player_id"),
+                row.get("game_id"),
+                row.get("game_date"),
+                row.get("team_id"),
+            ),
+            row,
+            "player_rebounds",
         )
         if observation is not None:
-            observation["values"]["REBOUNDS_CREATED"] = _number(row.get("expected_rebounds_created"))
+            observation["values"]["REBOUNDS_CREATED"] = _number(
+                row.get("expected_rebounds_created")
+            )
 
     for row in read_jsonl(freeze / "goalie_xg.jsonl"):
-        observation = goalie_observation(
-            row.get("goalie_player_id"), row.get("game_id"), row.get("game_date"), row.get("team_id")
+        observation = _touch_observation(
+            goalie_observation(
+                row.get("goalie_player_id"),
+                row.get("game_id"),
+                row.get("game_date"),
+                row.get("team_id"),
+            ),
+            row,
+            "goalie_xg",
         )
         if observation is not None:
-            observation["values"]["EXPECTED_GOALS_AGAINST_GOALIE"] = _number(row.get("xg_against"))
+            observation["values"]["EXPECTED_GOALS_AGAINST_GOALIE"] = _number(
+                row.get("xg_against")
+            )
 
     for observation in team_games.values():
         values = observation["values"]
         values["TEAM_PACE"] = (
-            values["TEAM_SHOT_ATTEMPTS_FOR"] + values["TEAM_SHOT_ATTEMPTS_AGAINST"]
+            values["TEAM_SHOT_ATTEMPTS_FOR"]
+            + values["TEAM_SHOT_ATTEMPTS_AGAINST"]
         ) / 2
+
+    return {
+        "skaterGames": skater_games,
+        "goalieGames": goalie_games,
+        "teamGames": team_games,
+        "distancePresent": distance_present,
+        "distanceMissing": distance_missing,
+    }
+
+
+def train_advanced_artifact(
+    freeze: Path,
+    v4_artifact_path: Path,
+    output: Path,
+) -> dict[str, Any]:
+    manifest = _assert_advanced_freeze(freeze)
+    v4_artifact, v4_checksum = _verified_v4_artifact(v4_artifact_path)
+    output.mkdir(parents=True, exist_ok=False)
+    source_audit = read_json(freeze / "source-audit.json")
+    if source_audit.get("eligibleForFreeze") is not True:
+        raise RuntimeError("advanced source audit is not eligible for training")
+    players = {
+        int(value["fhfhPlayerId"]): value
+        for value in (v4_artifact.get("players") or {}).values()
+    }
+    edge_contexts = _build_edge_contexts(
+        freeze,
+        players,
+        str(manifest["createdAt"]),
+    )
+    observations = _build_advanced_observations(freeze, players, source_audit)
+    skater_games = observations["skaterGames"]
+    goalie_games = observations["goalieGames"]
+    team_games = observations["teamGames"]
+    distance_present = int(observations["distancePresent"])
+    distance_missing = int(observations["distanceMissing"])
 
     source_games = max(
         1,
@@ -983,7 +1384,7 @@ def train_advanced_artifact(
         "seasonId": 20262027,
         "trainingCutoffAt": "2026-04-16T23:59:59Z",
         "generatedAt": datetime.now(timezone.utc).isoformat(),
-        "codeVersion": "season-advanced-v1",
+        "codeVersion": "season-advanced-v2",
         "featureSchemaVersion": "player-forecast-season-advanced-v5",
         "baseV4ArtifactChecksum": v4_checksum,
         "sourceFreezeManifestHash": manifest["manifestHash"],
@@ -1003,11 +1404,16 @@ def train_advanced_artifact(
                 "population": player.get("population"),
                 "teamId": player.get("teamId"),
                 "rates": player_rates.get(str(fhfh_id), {}),
+                "edgeContext": edge_contexts["players"].get(str(fhfh_id)),
             }
             for fhfh_id, player in sorted(players.items())
         },
         "teams": {
-            str(team_id): {"teamId": int(team_id), "rates": rates}
+            str(team_id): {
+                "teamId": int(team_id),
+                "rates": rates,
+                "edgeContext": edge_contexts["teams"].get(str(team_id)),
+            }
             for team_id, rates in sorted(team_rates.items(), key=lambda item: int(item[0]))
         },
         "targetPolicies": policies,
@@ -1017,6 +1423,11 @@ def train_advanced_artifact(
             "assistFallback": assist_coverage < 0.8,
             "evidencePolicy": "2025-26 is validation/training evidence, not a new blind test.",
             "prospectiveEvidence": "Await untouched 2026-27 outcomes before champion promotion.",
+            "edgeFeatures": {
+                "coverage": edge_contexts["coverage"],
+                "selectionPolicy": edge_contexts["selectionPolicy"],
+                "projectedTotals": False,
+            },
         },
     }
     vectors = {
@@ -1043,6 +1454,7 @@ def train_advanced_artifact(
         "targetPolicies": policies,
         "sourceAudit": source_audit,
         "dangerTaxonomy": artifact["dangerTaxonomy"],
+        "edgeFeatures": artifact["review"]["edgeFeatures"],
         "evidencePolicy": artifact["review"]["evidencePolicy"],
     }
     write_json(output / "training-report.json", report)
@@ -1172,8 +1584,217 @@ def _assert_advanced_receipt(path: Path, artifact_checksum: str) -> dict[str, An
     return receipt
 
 
+def build_advanced_settlement_bundle(
+    base_settlement_path: Path,
+    advanced_freeze: Path,
+    output: Path,
+) -> dict[str, Any]:
+    base_root = (
+        base_settlement_path
+        if base_settlement_path.is_dir()
+        else base_settlement_path.parent
+    )
+    base_manifest_path = (
+        base_root / "settlement-manifest.json"
+        if base_settlement_path.is_dir()
+        else base_settlement_path
+    )
+    base_manifest = read_json(base_manifest_path)
+    verification = verify_season_settlement_bundle(base_manifest_path)
+    if verification.get("valid") is not True:
+        raise RuntimeError(
+            "advanced settlement requires a valid base settlement bundle: "
+            + ", ".join(verification.get("issues") or [])
+        )
+    if (
+        base_manifest.get("contractVersion") != FANTASY_SEASON_CONTRACT_VERSION
+        or base_manifest.get("contractChecksum")
+        != FANTASY_SEASON_CONTRACT_SHA256
+    ):
+        raise RuntimeError("advanced settlement requires a fantasy-v4 base bundle")
+    advanced_manifest = _assert_advanced_freeze(advanced_freeze)
+    if 20262027 not in {
+        int(value) for value in advanced_manifest.get("historySeasons") or []
+    }:
+        raise RuntimeError("advanced settlement freeze does not contain 2026-27")
+    source_audit = read_json(advanced_freeze / "source-audit.json")
+    if source_audit.get("eligibleForFreeze") is not True:
+        raise RuntimeError("advanced settlement source audit is not eligible")
+
+    base_outcomes = list(
+        read_jsonl(base_root / str(base_manifest["outcomes"]["path"]))
+    )
+    players: dict[int, dict[str, Any]] = {}
+    for row in base_outcomes:
+        nhl_player_id = row.get("nhlPlayerId")
+        if nhl_player_id is None:
+            continue
+        fhfh_player_id = int(row["fhfhPlayerId"])
+        players[fhfh_player_id] = {
+            "fhfhPlayerId": fhfh_player_id,
+            "nhlPlayerId": int(nhl_player_id),
+            "population": str(row["population"]),
+        }
+    observations = _build_advanced_observations(
+        advanced_freeze,
+        players,
+        source_audit,
+    )
+    skater_games = observations["skaterGames"]
+    goalie_games = observations["goalieGames"]
+    cutoff_at = str(base_manifest["cutoffAt"])
+    cutoff = datetime.fromisoformat(cutoff_at.replace("Z", "+00:00"))
+    base_completed = {
+        int(row["gameId"]): row
+        for row in base_manifest.get("completedGames") or []
+    }
+    base_by_game: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for row in base_outcomes:
+        base_by_game[int(row["gameId"])].append(row)
+
+    pending_games: set[int] = set()
+    eligible_games: set[int] = set()
+    observation_by_key: dict[tuple[int, int], dict[str, Any]] = {}
+    for game_id, rows in base_by_game.items():
+        complete = True
+        for row in rows:
+            key = (int(row["fhfhPlayerId"]), game_id)
+            observations_for_population = (
+                goalie_games if row.get("population") == "goalie" else skater_games
+            )
+            observation = observations_for_population.get(key)
+            required_source = (
+                "goalie_xg" if row.get("population") == "goalie" else "player_on_ice"
+            )
+            available_at = observation.get("sourceAvailableAt") if observation else None
+            if (
+                observation is None
+                or required_source not in set(observation.get("sourceNames") or [])
+                or not available_at
+                or datetime.fromisoformat(str(available_at).replace("Z", "+00:00"))
+                > cutoff
+            ):
+                complete = False
+                break
+            observation_by_key[key] = observation
+        if complete and game_id in base_completed:
+            eligible_games.add(game_id)
+        else:
+            pending_games.add(game_id)
+
+    outcomes: list[dict[str, Any]] = []
+    game_available_at: dict[int, str] = {}
+    for row in base_outcomes:
+        game_id = int(row["gameId"])
+        if game_id not in eligible_games:
+            continue
+        fhfh_player_id = int(row["fhfhPlayerId"])
+        observation = observation_by_key[(fhfh_player_id, game_id)]
+        advanced_values = {
+            target: _rounded(_number(observation["values"].get(target)))
+            for target in (
+                GOALIE_ADVANCED_TARGETS
+                if row.get("population") == "goalie"
+                else SKATER_ADVANCED_TARGETS
+            )
+        }
+        if row.get("population") != "goalie":
+            base_values = row.get("primitiveValues") or {}
+            advanced_values["EXPECTED_PRIMARY_ASSISTS"] = _rounded(
+                _number(base_values.get("PRIMARY_ASSISTS"))
+            )
+            advanced_values["EXPECTED_SECONDARY_ASSISTS"] = _rounded(
+                _number(base_values.get("SECONDARY_ASSISTS"))
+            )
+        primitive_values = {
+            **dict(row.get("primitiveValues") or {}),
+            **advanced_values,
+        }
+        available_at = _latest_recorded_timestamp(
+            row["availableAt"],
+            observation["sourceAvailableAt"],
+        )
+        game_available_at[game_id] = _latest_recorded_timestamp(
+            game_available_at.get(game_id),
+            available_at,
+        )
+        unsigned = {
+            "gameId": game_id,
+            "fhfhPlayerId": fhfh_player_id,
+            "nhlPlayerId": row.get("nhlPlayerId"),
+            "population": row.get("population"),
+            "primitiveValues": primitive_values,
+            "observedAt": available_at,
+            "availableAt": available_at,
+            "eligibleFinality": row.get("eligibleFinality"),
+            "source": "nhl_gamecenter_plus_checksum_bound_advanced_v5",
+            "sourceRevisionKey": hashlib.sha256(
+                _portable_canonical_json({
+                    "baseSourceRevisionKey": row.get("sourceRevisionKey"),
+                    "advancedFreezeManifestHash": advanced_manifest["manifestHash"],
+                    "primitiveValues": primitive_values,
+                    "sourceAvailableAt": available_at,
+                }).encode()
+            ).hexdigest(),
+        }
+        outcomes.append({
+            **unsigned,
+            "revisionHash": hashlib.sha256(
+                _portable_canonical_json(unsigned).encode()
+            ).hexdigest(),
+            "provenance": {
+                "baseSettlementBundleHash": base_manifest["bundleHash"],
+                "advancedFreezeManifestHash": advanced_manifest["manifestHash"],
+                "advancedSources": observation.get("sourceNames") or [],
+                "availabilityPolicy": (
+                    "maximum recorded base and advanced source availability; "
+                    "a missing or post-cutoff required source holds the whole game"
+                ),
+            },
+        })
+    outcomes.sort(key=lambda row: (row["gameId"], row["fhfhPlayerId"]))
+    output.mkdir(parents=True, exist_ok=False)
+    count, checksum = write_jsonl(output / "outcomes.jsonl", outcomes)
+    completed_games = [
+        {
+            **base_completed[game_id],
+            "availableAt": game_available_at[game_id],
+        }
+        for game_id in sorted(eligible_games)
+    ]
+    bundle = {
+        "schemaVersion": "player-forecast-season-settlement-v1",
+        "createdAt": datetime.now(timezone.utc).isoformat(),
+        "seasonId": 20262027,
+        "cutoffAt": cutoff_at,
+        "contractVersion": ADVANCED_SEASON_CONTRACT_VERSION,
+        "contractChecksum": ADVANCED_SEASON_CONTRACT_SHA256,
+        "scheduleRevisionHash": base_manifest["scheduleRevisionHash"],
+        "outcomes": {
+            "path": "outcomes.jsonl",
+            "rows": count,
+            "sha256": checksum,
+        },
+        "completedGames": completed_games,
+        "advancedPendingGameIds": sorted(pending_games),
+        "skippedUnmappedNhlPlayerIds": base_manifest.get(
+            "skippedUnmappedNhlPlayerIds"
+        ) or [],
+        "baseSettlementBundleHash": base_manifest["bundleHash"],
+        "advancedFreezeManifestHash": advanced_manifest["manifestHash"],
+    }
+    bundle["bundleHash"] = hashlib.sha256(
+        _portable_canonical_json(bundle).encode()
+    ).hexdigest()
+    write_json(output / "settlement-manifest.json", bundle)
+    return bundle
+
+
 def _advanced_reconcile(values: dict[str, float], population: str) -> dict[str, float]:
-    reconciled = {key: _rounded(_number(value)) for key, value in values.items()}
+    reconciled = {
+        key: _rounded(_number(value))
+        for key, value in _reconcile(values, population).items()
+    }
     if population == "goalie":
         reconciled["GOALS_SAVED_ABOVE_EXPECTED"] = _rounded(
             reconciled.get("EXPECTED_GOALS_AGAINST_GOALIE", 0)
@@ -1212,10 +1833,16 @@ def _reconciled_quantiles(
     p50: dict[str, float],
     p90: dict[str, float],
     population: str,
+    reconcile_each_quantile: bool = True,
 ) -> tuple[dict[str, float], dict[str, float], dict[str, float]]:
-    low = _advanced_reconcile(p10, population)
-    median = _advanced_reconcile(p50, population)
-    high = _advanced_reconcile(p90, population)
+    if reconcile_each_quantile:
+        low = _advanced_reconcile(p10, population)
+        median = _advanced_reconcile(p50, population)
+        high = _advanced_reconcile(p90, population)
+    else:
+        low = {key: _rounded(_number(value)) for key, value in p10.items()}
+        median = {key: _rounded(_number(value)) for key, value in p50.items()}
+        high = {key: _rounded(_number(value)) for key, value in p90.items()}
     targets = set(low) | set(median) | set(high)
     for target in targets:
         center = _number(median.get(target))
@@ -1241,18 +1868,46 @@ def _simulation_quantiles(
     means: dict[str, float],
     variances: dict[str, float],
     seed: str,
-    draws: int = 1000,
+    population: str,
+    maximum_games: int | None = None,
+    draws: int = 256,
 ) -> tuple[dict[str, float], dict[str, float], dict[str, float]]:
-    rng = random.Random(int(hashlib.sha256(seed.encode()).hexdigest()[:16], 16))
-    samples: dict[str, list[float]] = {target: [] for target in means}
+    state = int(hashlib.sha256(seed.encode()).hexdigest()[:8], 16)
+
+    def normal() -> float:
+        nonlocal state
+        state = (1664525 * state + 1013904223) & 0xFFFFFFFF
+        first = (state + 0.5) / 4294967296.0
+        state = (1664525 * state + 1013904223) & 0xFFFFFFFF
+        second = (state + 0.5) / 4294967296.0
+        return math.sqrt(-2.0 * math.log(first)) * math.cos(2.0 * math.pi * second)
+
+    samples: dict[str, list[float]] = defaultdict(list)
     correlation = 0.65
     independent_weight = math.sqrt(1 - correlation * correlation)
     for _ in range(draws):
-        common = rng.gauss(0, 1)
+        common = normal()
+        draw: dict[str, float] = {}
         for target, mean in means.items():
-            deviation = correlation * common + independent_weight * rng.gauss(0, 1)
+            deviation = correlation * common + independent_weight * normal()
             value = mean + math.sqrt(max(0.0, variances.get(target, 0))) * deviation
-            samples[target].append(max(0.0, value))
+            draw[target] = value if target == "PLUS_MINUS" else max(0.0, value)
+        if maximum_games is not None:
+            if "GAMES_PLAYED" in draw:
+                draw["GAMES_PLAYED"] = min(maximum_games, draw["GAMES_PLAYED"])
+            if "GAMES_STARTED" in draw:
+                draw["GAMES_STARTED"] = min(
+                    maximum_games,
+                    draw.get("GAMES_PLAYED", maximum_games),
+                    draw["GAMES_STARTED"],
+                )
+        if population == "goalie" and "SHOTS_AGAINST_GOALIE" in draw:
+            draw["GOALS_AGAINST_GOALIE"] = min(
+                draw["SHOTS_AGAINST_GOALIE"],
+                draw.get("GOALS_AGAINST_GOALIE", 0.0),
+            )
+        for target, value in _advanced_reconcile(draw, population).items():
+            samples[target].append(float(value))
     return (
         {target: _rounded(_quantile(values, 0.10)) for target, values in samples.items()},
         {target: _rounded(_quantile(values, 0.50)) for target, values in samples.items()},
@@ -1385,23 +2040,73 @@ def project_advanced_release(
     def player_rows():
         for player_id, source in sorted(v4_players.items()):
             population = str(source["population"])
+            artifact_player = (artifact.get("players") or {}).get(str(player_id)) or {}
             means = dict(source.get("model_means") or {})
             p10 = dict(source.get("p10") or {})
             p50 = dict(source.get("p50") or {})
             p90 = dict(source.get("p90") or {})
             advanced_means = dict(aggregate_means.get(player_id) or {})
             advanced_variances = dict(aggregate_variances.get(player_id) or {})
+            primitive_targets = (
+                GOALIE_TARGETS + GOALIE_FANTASY_V4_TARGETS + GOALIE_ADVANCED_TARGETS
+                if population == "goalie"
+                else SKATER_TARGETS + SKATER_FANTASY_V4_TARGETS + SKATER_ADVANCED_TARGETS
+            )
+            simulation_means = {
+                target: _number(means.get(target))
+                for target in primitive_targets
+                if target in means or target in advanced_means
+            }
+            simulation_means.update({
+                target: _number(value)
+                for target, value in advanced_means.items()
+            })
+            simulation_variances = {
+                target: (
+                    _number(advanced_variances[target])
+                    if target in advanced_variances
+                    else max(
+                        0.0,
+                        (
+                            (
+                                _number(p90.get(target), simulation_means[target])
+                                - _number(p10.get(target), simulation_means[target])
+                            )
+                            / (2 * 1.2815515655)
+                        ) ** 2,
+                    )
+                )
+                for target in simulation_means
+            }
             low, median, high = _simulation_quantiles(
-                advanced_means,
-                advanced_variances,
-                f"{artifact_checksum}:{v4_manifest['runHash']}:{player_id}",
-            ) if advanced_means else ({}, {}, {})
+                simulation_means,
+                simulation_variances,
+                "advanced-v5:"
+                + str(player_id)
+                + ":"
+                + ",".join(
+                    str(item["gameId"])
+                    for item in source.get("component_manifest") or []
+                ),
+                population,
+                (
+                    component_counts.get(player_id, 0)
+                    if v4_manifest["view"] == "ros"
+                    else 84
+                ),
+            ) if simulation_means else ({}, {}, {})
             means.update({key: _rounded(value) for key, value in advanced_means.items()})
             p10.update(low)
             p50.update(median)
             p90.update(high)
             means = _advanced_reconcile(means, population)
-            p10, p50, p90 = _reconciled_quantiles(p10, p50, p90, population)
+            p10, p50, p90 = _reconciled_quantiles(
+                p10,
+                p50,
+                p90,
+                population,
+                reconcile_each_quantile=False,
+            )
             source["model_means"] = means
             source["p10"] = p10
             source["p50"] = p50
@@ -1420,10 +2125,15 @@ def project_advanced_release(
                     "contractChecksum": ADVANCED_SEASON_CONTRACT_SHA256,
                     "dangerTaxonomyVersion": DANGER_TAXONOMY_VERSION,
                     "evidence": "2025-26 validation/training; prospective 2026-27 pending",
-                    "simulation": "deterministic_gaussian_copula_v1",
-                    "simulationDraws": 1000,
+                    "simulation": "deterministic_reconciled_gaussian_copula_v2",
+                    "simulationDraws": 256,
+                    "simulationScope": "all_v4_and_v5_primitive_targets; identities_reconciled_per_draw",
                     "sourceFreezeManifestHash": artifact["sourceFreezeManifestHash"],
                     "withinPlayerTargetCorrelation": 0.65,
+                    "edgeContext": artifact_player.get("edgeContext"),
+                    "edgeContextPolicy": (
+                        "descriptive_cutoff_safe_feature_context_not_projected_total"
+                    ),
                 },
             }
             unsigned = {key: value for key, value in source.items() if key != "aggregate_hash"}
@@ -1449,7 +2159,8 @@ def project_advanced_release(
     def team_rows():
         for team_id, source in sorted(v4_teams.items()):
             games = games_by_team.get(team_id, 0)
-            rates = ((artifact.get("teams") or {}).get(str(team_id)) or {}).get("rates") or {}
+            artifact_team = (artifact.get("teams") or {}).get(str(team_id)) or {}
+            rates = artifact_team.get("rates") or {}
             model_means: dict[str, float] = {}
             p10: dict[str, float] = {}
             p50: dict[str, float] = {}
@@ -1474,6 +2185,10 @@ def project_advanced_release(
                     "artifactChecksum": artifact_checksum,
                     "componentGames": games,
                     "dangerTaxonomyVersion": DANGER_TAXONOMY_VERSION,
+                    "edgeContext": artifact_team.get("edgeContext"),
+                    "edgeContextPolicy": (
+                        "descriptive_cutoff_safe_feature_context_not_projected_total"
+                    ),
                 },
             }
             unsigned = {key: value for key, value in source.items() if key != "aggregate_hash"}

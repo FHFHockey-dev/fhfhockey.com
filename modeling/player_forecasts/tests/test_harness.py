@@ -8,6 +8,8 @@ from pathlib import Path
 import pytest
 
 from modeling.player_forecasts.contract import (
+    ADVANCED_SEASON_CONTRACT_SHA256,
+    ADVANCED_SEASON_CONTRACT_VERSION,
     CONTRACT_SHA256,
     FANTASY_SEASON_CONTRACT_SHA256,
     FANTASY_SEASON_CONTRACT_VERSION,
@@ -16,6 +18,15 @@ from modeling.player_forecasts.contract import (
     load_and_verify_contract,
 )
 from modeling.player_forecasts.advanced import (
+    GOALIE_ADVANCED_TARGETS,
+    SKATER_ADVANCED_TARGETS,
+    TEAM_ADVANCED_TARGETS,
+    _advanced_reconcile,
+    _build_edge_contexts,
+    _reconciled_quantiles,
+    _simulation_quantiles,
+    build_advanced_settlement_bundle,
+    evaluate_advanced_batch,
     evaluate_fantasy_batch,
     freeze_advanced_sources,
 )
@@ -37,15 +48,19 @@ from modeling.player_forecasts.horizons import reconstructed_vintages, team_sche
 from modeling.player_forecasts import freeze as freeze_module
 from modeling.player_forecasts import season as season_module
 from modeling.player_forecasts.freeze import freeze_prospective_dataset
-from modeling.player_forecasts.io import canonical_json, read_json, write_json
+from modeling.player_forecasts.io import canonical_json, read_json, read_jsonl, write_json
 from modeling.player_forecasts.lockbox import evaluate_lockbox_once, evaluate_prospective_once
 from modeling.player_forecasts.model import train_baseline
 from modeling.player_forecasts.season import (
     _adjusted_defense_ratings,
     _assist_label_audit,
     _actuals_by_player,
+    _fit_context_profile,
+    _fit_penalized_negative_binomial_glm,
     _fit_penalized_rate_glm,
+    _fit_regularized_hurdle_glm,
     _glm_prediction,
+    _hurdle_prediction,
     _deployment_evidence,
     _normalized_role_probabilities,
     _official_landing_assist_labels,
@@ -53,6 +68,7 @@ from modeling.player_forecasts.season import (
     _official_game_status,
     _portable_canonical_json,
     _quantiles,
+    _schedule_contexts_by_team,
     _season_player_fallback_flags,
     _select_rate_policy,
     _team_contexts,
@@ -250,6 +266,418 @@ def test_advanced_freeze_rejects_an_unapproved_v4_receipt(tmp_path):
     })
     with pytest.raises(RuntimeError, match="passing checksum-bound v4 receipt"):
         freeze_advanced_sources("postgresql://unused", tmp_path / "advanced", [], receipt)
+
+
+def test_nhl_edge_context_is_cutoff_safe_and_never_a_projected_total(tmp_path):
+    freeze = tmp_path / "edge"
+    freeze.mkdir()
+    _jsonl(freeze / "edge_skater_context.jsonl", [
+        {
+            "snapshot_date": "2026-04-16",
+            "player_id": 1001,
+            "games_played": 82,
+            "top_shot_speed_mph": 99.5,
+            "source_url": "https://www.nhl.com/edge",
+            "source_available_at": "2026-05-01T12:00:00+00:00",
+        },
+        {
+            "snapshot_date": "2026-04-16",
+            "player_id": 1001,
+            "games_played": 82,
+            "top_shot_speed_mph": 101.0,
+            "source_url": "https://www.nhl.com/edge",
+            "source_available_at": "2026-09-01T12:00:00+00:00",
+        },
+    ])
+    _jsonl(freeze / "edge_goalie_context.jsonl", [{
+        "snapshot_date": "2026-04-16",
+        "goalie_id": 2001,
+        "games_played": 52,
+        "all_save_pct": 0.918,
+        "source_url": "https://www.nhl.com/edge",
+        "source_available_at": "2026-05-01T12:00:00+00:00",
+    }])
+    _jsonl(freeze / "edge_team_context.jsonl", [{
+        "snapshot_date": "2026-04-16",
+        "team_id": 1,
+        "games_played": 82,
+        "max_skating_speed_mph": 24.1,
+        "source_url": "https://www.nhl.com/edge",
+        "source_available_at": "2026-05-01T12:00:00+00:00",
+    }])
+    contexts = _build_edge_contexts(
+        freeze,
+        {
+            10: {"nhlPlayerId": 1001},
+            20: {"nhlPlayerId": 2001},
+        },
+        "2026-08-20T12:00:00+00:00",
+    )
+    assert contexts["players"]["10"]["metrics"]["top_shot_speed_mph"] == 99.5
+    assert contexts["players"]["20"]["metrics"]["all_save_pct"] == 0.918
+    assert contexts["teams"]["1"]["metrics"]["max_skating_speed_mph"] == 24.1
+    assert contexts["coverage"]["excludedPostCutoffRows"] == 1
+    assert contexts["players"]["10"]["usage"] == (
+        "cutoff_safe_feature_context_not_projected_total"
+    )
+
+
+def test_v5_contract_and_derived_advanced_metrics_reconcile():
+    contract = load_and_verify_season_contract(ADVANCED_SEASON_CONTRACT_VERSION)
+    assert contract["contractVersion"] == ADVANCED_SEASON_CONTRACT_VERSION
+    assert contract["metricSet"] == "advanced-v5"
+    assert contract["targets"]["skaterIndividualPrimitive"] == list(
+        SKATER_ADVANCED_TARGETS[:11]
+    )
+    assert contract["targets"]["teamPrimitive"] == list(TEAM_ADVANCED_TARGETS)
+
+    skater = _advanced_reconcile({
+        "EXPECTED_PRIMARY_ASSISTS": 24,
+        "EXPECTED_SECONDARY_ASSISTS": 16,
+        "ON_ICE_SHOT_ATTEMPTS_FOR": 600,
+        "ON_ICE_SHOT_ATTEMPTS_AGAINST": 400,
+        "ON_ICE_UNBLOCKED_ATTEMPTS_FOR": 450,
+        "ON_ICE_UNBLOCKED_ATTEMPTS_AGAINST": 350,
+        "ON_ICE_EXPECTED_GOALS_FOR": 60,
+        "ON_ICE_EXPECTED_GOALS_AGAINST": 40,
+    }, "forward")
+    assert skater["EXPECTED_ASSISTS"] == 40
+    assert skater["ON_ICE_CF_PERCENTAGE"] == pytest.approx(0.6)
+    assert skater["ON_ICE_FF_PERCENTAGE"] == pytest.approx(0.5625)
+    assert skater["ON_ICE_XGF_PERCENTAGE"] == pytest.approx(0.6)
+
+    goalie = _advanced_reconcile({
+        "EXPECTED_GOALS_AGAINST_GOALIE": 150,
+        "GOALS_AGAINST_GOALIE": 140,
+        "HIGH_DANGER_SHOTS_AGAINST_GOALIE": 100,
+        "HIGH_DANGER_GOALS_AGAINST_GOALIE": 20,
+    }, "goalie")
+    assert goalie["GOALS_SAVED_ABOVE_EXPECTED"] == 10
+    assert goalie["HIGH_DANGER_SAVES_GOALIE"] == 80
+    assert goalie["HIGH_DANGER_SAVE_PERCENTAGE_GOALIE"] == pytest.approx(0.8)
+
+    low, median, high = _reconciled_quantiles(
+        {"EXPECTED_PRIMARY_ASSISTS": 20, "EXPECTED_SECONDARY_ASSISTS": 10},
+        {"EXPECTED_PRIMARY_ASSISTS": 25, "EXPECTED_SECONDARY_ASSISTS": 15},
+        {"EXPECTED_PRIMARY_ASSISTS": 30, "EXPECTED_SECONDARY_ASSISTS": 20},
+        "forward",
+    )
+    assert low["EXPECTED_ASSISTS"] <= median["EXPECTED_ASSISTS"] <= high["EXPECTED_ASSISTS"]
+
+
+def test_v5_correlated_simulation_reconciles_each_draw_and_is_deterministic():
+    means = {
+        "GAMES_PLAYED": 80,
+        "EV_GOALS": 20,
+        "PP_GOALS": 8,
+        "SH_GOALS": 1,
+        "EMPTY_NET_GOALS": 1,
+        "EV_PRIMARY_ASSISTS": 24,
+        "PP_PRIMARY_ASSISTS": 8,
+        "SH_PRIMARY_ASSISTS": 1,
+        "EN_PRIMARY_ASSISTS": 1,
+        "EV_SECONDARY_ASSISTS": 18,
+        "PP_SECONDARY_ASSISTS": 6,
+        "SH_SECONDARY_ASSISTS": 1,
+        "EN_SECONDARY_ASSISTS": 1,
+        "SHOTS_ON_GOAL": 250,
+        "EXPECTED_PRIMARY_ASSISTS": 35,
+        "EXPECTED_SECONDARY_ASSISTS": 25,
+    }
+    variances = {target: max(1.0, value) for target, value in means.items()}
+    first = _simulation_quantiles(
+        means,
+        variances,
+        "reconciled-seed",
+        "forward",
+        maximum_games=84,
+        draws=300,
+    )
+    second = _simulation_quantiles(
+        means,
+        variances,
+        "reconciled-seed",
+        "forward",
+        maximum_games=84,
+        draws=300,
+    )
+    assert first == second
+    low, median, high = first
+    assert high["GAMES_PLAYED"] <= 84
+    assert low["POINTS"] <= median["POINTS"] <= high["POINTS"]
+    assert high["POINTS"] < high["GOALS"] + high["ASSISTS"]
+
+
+def test_v5_evaluation_receipt_requires_every_advanced_target(tmp_path):
+    artifact_dir = tmp_path / "advanced-artifact"
+    artifact_dir.mkdir()
+    required = {
+        "forward": SKATER_ADVANCED_TARGETS,
+        "defense": SKATER_ADVANCED_TARGETS,
+        "goalie": GOALIE_ADVANCED_TARGETS,
+        "team": TEAM_ADVANCED_TARGETS,
+    }
+    policies = {
+        population: {
+            target: {
+                "validationMae": 0.9,
+                "baselineMae": 1.0,
+                "calibration80Coverage": 0.8,
+                "calibrationObservedCoverage": 0.8,
+                "sourceGameCoverage": 1.0,
+                "eligibleForServing": True,
+            }
+            for target in targets
+        }
+        for population, targets in required.items()
+    }
+    vector_input = {"players": [1, 2, 3], "teams": [1, 2]}
+    artifact = {
+        "contractVersion": ADVANCED_SEASON_CONTRACT_VERSION,
+        "contractChecksum": ADVANCED_SEASON_CONTRACT_SHA256,
+        "targetPolicies": policies,
+        "goldenVectors": [{
+            "input": vector_input,
+            "expectedHash": hashlib.sha256(
+                canonical_json(vector_input).encode()
+            ).hexdigest(),
+        }],
+        "review": {"sourceAudit": {"eligibleForFreeze": True}},
+    }
+    write_json(artifact_dir / "season-artifact.json", artifact)
+    checksum = hashlib.sha256(
+        (artifact_dir / "season-artifact.json").read_bytes()
+    ).hexdigest()
+    write_json(artifact_dir / "artifact-manifest.json", {
+        "artifactChecksum": checksum,
+    })
+
+    receipt = evaluate_advanced_batch(
+        artifact_dir,
+        tmp_path / "advanced-receipt.json",
+    )
+    assert receipt["eligibleForRelease"] is True
+    assert receipt["blockers"] == []
+    assert len(receipt["targetResults"]) == sum(map(len, required.values()))
+    assert receipt["evidencePolicy"].startswith("2025-26 is validation/training")
+
+
+def test_v5_settlement_merges_cutoff_safe_advanced_actuals(tmp_path):
+    game_id = 2026020001
+    base = tmp_path / "base-settlement"
+    base.mkdir()
+    base_rows = []
+    for fhfh_id, nhl_id, population, values in (
+        (
+            1,
+            1001,
+            "forward",
+            {"GAMES_PLAYED": 1, "GOALS": 1, "PRIMARY_ASSISTS": 1, "SECONDARY_ASSISTS": 0},
+        ),
+        (
+            2,
+            2001,
+            "goalie",
+            {"GAMES_PLAYED": 1, "GOALS_AGAINST_GOALIE": 1},
+        ),
+    ):
+        unsigned = {
+            "gameId": game_id,
+            "fhfhPlayerId": fhfh_id,
+            "nhlPlayerId": nhl_id,
+            "population": population,
+            "primitiveValues": values,
+            "observedAt": "2026-10-02T07:00:00+00:00",
+            "availableAt": "2026-10-02T07:00:00+00:00",
+            "eligibleFinality": "provisional",
+            "source": "nhl_gamecenter_normalized_from_immutable_capture",
+            "sourceRevisionKey": f"base-{fhfh_id}",
+        }
+        base_rows.append({
+            **unsigned,
+            "revisionHash": hashlib.sha256(
+                _portable_canonical_json(unsigned).encode()
+            ).hexdigest(),
+            "provenance": {},
+        })
+    _jsonl(base / "outcomes.jsonl", base_rows)
+    base_manifest = {
+        "schemaVersion": "player-forecast-season-settlement-v1",
+        "createdAt": "2026-10-02T10:00:00+00:00",
+        "seasonId": 20262027,
+        "cutoffAt": "2026-10-02T10:00:00+00:00",
+        "contractVersion": FANTASY_SEASON_CONTRACT_VERSION,
+        "contractChecksum": FANTASY_SEASON_CONTRACT_SHA256,
+        "scheduleRevisionHash": "schedule",
+        "outcomes": {
+            "path": "outcomes.jsonl",
+            "rows": len(base_rows),
+            "sha256": hashlib.sha256((base / "outcomes.jsonl").read_bytes()).hexdigest(),
+        },
+        "completedGames": [{
+            "gameId": game_id,
+            "availableAt": "2026-10-02T07:00:00+00:00",
+            "finality": "provisional",
+        }],
+        "skippedUnmappedNhlPlayerIds": [],
+    }
+    base_manifest["bundleHash"] = hashlib.sha256(
+        _portable_canonical_json(base_manifest).encode()
+    ).hexdigest()
+    write_json(base / "settlement-manifest.json", base_manifest)
+
+    advanced = tmp_path / "advanced-freeze"
+    advanced.mkdir()
+    source_time = "2026-10-02T08:00:00+00:00"
+    sources = {
+        "player_on_ice": [{
+            "season_id": 20262027,
+            "game_id": game_id,
+            "game_date": "2026-10-01",
+            "player_id": 1001,
+            "team_id": 1,
+            "on_ice_shot_attempts_for": 10,
+            "on_ice_shot_attempts_against": 8,
+            "on_ice_unblocked_attempts_for": 7,
+            "on_ice_unblocked_attempts_against": 6,
+            "on_ice_expected_goals_for": 1.2,
+            "on_ice_expected_goals_against": 0.8,
+            "source_available_at": source_time,
+        }],
+        "team_xg": [{
+            "season_id": 20262027,
+            "game_id": game_id,
+            "game_date": "2026-10-01",
+            "team_id": 1,
+            "opponent_team_id": 2,
+            "xg_for": 2.5,
+            "xg_against": 2.0,
+            "source_available_at": source_time,
+        }],
+        "shot_features": [{
+            "season_id": 20262027,
+            "game_id": game_id,
+            "game_date": "2026-10-01",
+            "event_owner_team_id": 1,
+            "shooter_player_id": 1001,
+            "goalie_in_net_id": 2001,
+            "is_goal": True,
+            "is_shot_on_goal": True,
+            "is_unblocked_shot_attempt": True,
+            "is_rebound_shot": False,
+            "is_rush_shot": True,
+            "shot_distance_feet": 15,
+            "is_penalty_shot_event": False,
+            "is_shootout_event": False,
+            "is_empty_net_event": False,
+            "source_available_at": source_time,
+        }],
+        "shot_predictions": [{
+            "season_id": 20262027,
+            "game_id": game_id,
+            "game_date": "2026-10-01",
+            "event_owner_team_id": 1,
+            "shooter_player_id": 1001,
+            "model_version": "xg-v1",
+            "prediction_type": "shot_goal",
+            "xg": 0.25,
+            "source_available_at": source_time,
+        }],
+        "player_rebounds": [{
+            "season_id": 20262027,
+            "game_id": game_id,
+            "game_date": "2026-10-01",
+            "player_id": 1001,
+            "team_id": 1,
+            "expected_rebounds_created": 0.2,
+            "source_available_at": source_time,
+        }],
+        "goalie_xg": [{
+            "season_id": 20262027,
+            "game_id": game_id,
+            "game_date": "2026-10-01",
+            "goalie_player_id": 2001,
+            "team_id": 2,
+            "xg_against": 0.25,
+            "source_available_at": source_time,
+        }],
+    }
+    files = {}
+    for name, rows in sources.items():
+        path = advanced / f"{name}.jsonl"
+        _jsonl(path, rows)
+        files[name] = {
+            "path": path.name,
+            "rows": len(rows),
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        }
+    source_audit = {
+        "eligibleForFreeze": True,
+        "approvedModels": [{
+            "prediction_type": "shot_goal",
+            "model_version": "xg-v1",
+            "is_champion": True,
+        }],
+    }
+    write_json(advanced / "source-audit.json", source_audit)
+    advanced_manifest = {
+        "schemaVersion": "player-forecast-advanced-source-freeze-v1",
+        "createdAt": source_time,
+        "contractVersion": ADVANCED_SEASON_CONTRACT_VERSION,
+        "contractChecksum": ADVANCED_SEASON_CONTRACT_SHA256,
+        "historySeasons": [20262027],
+        "sourceAudit": {
+            "path": "source-audit.json",
+            "sha256": hashlib.sha256((advanced / "source-audit.json").read_bytes()).hexdigest(),
+        },
+        "files": files,
+    }
+    advanced_manifest["manifestHash"] = hashlib.sha256(
+        canonical_json(advanced_manifest).encode()
+    ).hexdigest()
+    write_json(advanced / "manifest.json", advanced_manifest)
+
+    result = build_advanced_settlement_bundle(
+        base,
+        advanced,
+        tmp_path / "v5-settlement",
+    )
+    assert result["contractVersion"] == ADVANCED_SEASON_CONTRACT_VERSION
+    assert result["advancedPendingGameIds"] == []
+    settled = list(read_jsonl(tmp_path / "v5-settlement" / "outcomes.jsonl"))
+    skater = next(row for row in settled if row["population"] == "forward")
+    goalie = next(row for row in settled if row["population"] == "goalie")
+    assert skater["primitiveValues"]["SHOT_ATTEMPTS"] == 1
+    assert skater["primitiveValues"]["UNBLOCKED_SHOT_ATTEMPTS"] == 1
+    assert skater["primitiveValues"]["EXPECTED_GOALS"] == pytest.approx(0.25)
+    assert skater["primitiveValues"]["EXPECTED_PRIMARY_ASSISTS"] == 1
+    assert goalie["primitiveValues"]["EXPECTED_GOALS_AGAINST_GOALIE"] == pytest.approx(0.25)
+    assert goalie["primitiveValues"]["HIGH_DANGER_SHOTS_AGAINST_GOALIE"] == 1
+    assert season_module.verify_season_settlement_bundle(
+        tmp_path / "v5-settlement"
+    )["valid"] is True
+
+    sources["player_on_ice"][0]["source_available_at"] = (
+        "2026-10-02T11:00:00+00:00"
+    )
+    player_on_ice_path = advanced / "player_on_ice.jsonl"
+    _jsonl(player_on_ice_path, sources["player_on_ice"])
+    files["player_on_ice"]["sha256"] = hashlib.sha256(
+        player_on_ice_path.read_bytes()
+    ).hexdigest()
+    advanced_manifest["files"] = files
+    advanced_manifest.pop("manifestHash", None)
+    advanced_manifest["manifestHash"] = hashlib.sha256(
+        canonical_json(advanced_manifest).encode()
+    ).hexdigest()
+    write_json(advanced / "manifest.json", advanced_manifest)
+    held = build_advanced_settlement_bundle(
+        base,
+        advanced,
+        tmp_path / "v5-settlement-held",
+    )
+    assert held["advancedPendingGameIds"] == [game_id]
+    assert held["outcomes"]["rows"] == 0
 
 
 def test_v4_batch_receipt_reports_target_and_rookie_gates(tmp_path):
@@ -646,6 +1074,79 @@ def test_season_game_does_not_apply_own_team_offense_to_player_rates_twice():
     assert strong_team["conditionalMeans"]["GOALS"] == neutral["conditionalMeans"]["GOALS"]
 
 
+def test_season_rest_context_is_schedule_derived_and_candidate_only():
+    schedule = [
+        {
+            "game_id": 1,
+            "scheduled_start_at": "2026-10-01T23:00:00Z",
+            "home_team_id": 1,
+            "away_team_id": 2,
+            "game_status": "scheduled",
+        },
+        {
+            "game_id": 2,
+            "scheduled_start_at": "2026-10-03T23:00:00Z",
+            "home_team_id": 3,
+            "away_team_id": 1,
+            "game_status": "scheduled",
+        },
+        {
+            "game_id": 3,
+            "scheduled_start_at": "2026-10-04T23:00:00Z",
+            "home_team_id": 1,
+            "away_team_id": 4,
+            "game_status": "scheduled",
+        },
+    ]
+    games = _schedule_contexts_by_team(schedule)[1]
+    assert [game["rest_days"] for game in games] == [None, 2, 1]
+    assert [game["is_back_to_back"] for game in games] == [False, False, True]
+
+    player = {
+        "fhfhPlayerId": 10,
+        "population": "forward",
+        "playProbability": 1,
+        "baselinePlayProbability": 1,
+        "conditionalRates": {"GAMES_PLAYED": 1, "GOALS": 0.8},
+        "baselineConditionalRates": {"GAMES_PLAYED": 1, "GOALS": 0.5},
+        "conditionalVariances": {},
+        "contextEffects": {
+            "GOALS": {"selected": True, "backToBackMultiplier": 0.9},
+        },
+        "deployment": {},
+        "fallbackFlags": [],
+    }
+    artifact = {"teams": {
+        "1": {"offenseMultiplier": 1, "defenseMultiplier": 1, "paceMultiplier": 1},
+        "4": {"offenseMultiplier": 1, "defenseMultiplier": 1, "paceMultiplier": 1},
+    }}
+    result = evaluate_season_game(artifact, player, games[-1])
+    assert result["conditionalMeans"]["GOALS"] == pytest.approx(0.72)
+    assert result["baselineUnconditionalMeans"]["GOALS"] == pytest.approx(0.5)
+
+
+def test_season_context_profile_obeys_chronological_cutoff():
+    rows = [
+        {
+            "nhl_player_id": 10,
+            "game_date": "2025-12-30",
+            "position": "C",
+            "GOALS": 1,
+            "is_back_to_back": False,
+        },
+        {
+            "nhl_player_id": 10,
+            "game_date": "2026-01-03",
+            "position": "C",
+            "GOALS": 4,
+            "is_back_to_back": True,
+        },
+    ]
+    profile = _fit_context_profile(rows, "GOALS", {10: "1995-09-01"}, "2026-01-03")
+    assert profile["rows"] == 1
+    assert profile["backToBackMultiplier"] == 1
+
+
 def test_season_derived_quantiles_are_ordered_and_propagate_primitive_uncertainty():
     goalie = _quantiles(
         {
@@ -748,6 +1249,45 @@ def test_season_penalized_glm_fits_a_finite_nonnegative_rate():
     coefficients = _fit_penalized_rate_glm(rows, "GOALS", 0.85, 10.0, None)
     assert coefficients is not None
     prediction = _glm_prediction(coefficients, 0.5, 1000, "GOALS")
+    assert 0 <= prediction < 100
+
+    negative_binomial = _fit_penalized_negative_binomial_glm(
+        rows,
+        "GOALS",
+        0.85,
+        10.0,
+        None,
+    )
+    assert negative_binomial is not None
+    assert 0 <= _glm_prediction(negative_binomial, 0.5, 1000, "GOALS") < 100
+
+
+def test_season_hurdle_glm_fits_zero_heavy_penalty_counts():
+    rows = [
+        {
+            "game_date": f"2025-10-{game + 1:02d}",
+            "season_id": 20252026,
+            "nhl_player_id": player,
+            "PENALTY_MINUTES": 2 if (player + game) % 4 == 0 else 0,
+            "TOTAL_TOI": 800 + player * 20,
+        }
+        for player in range(1, 17)
+        for game in range(4)
+    ]
+    coefficients = _fit_regularized_hurdle_glm(
+        rows,
+        "PENALTY_MINUTES",
+        0.85,
+        10.0,
+        None,
+    )
+    assert coefficients is not None
+    prediction = _hurdle_prediction(
+        coefficients,
+        0.5,
+        1000,
+        "PENALTY_MINUTES",
+    )
     assert 0 <= prediction < 100
 
 

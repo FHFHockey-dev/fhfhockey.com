@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { fromMock } = vi.hoisted(() => ({
-  fromMock: vi.fn()
+const { fromMock, lteMock } = vi.hoisted(() => ({
+  fromMock: vi.fn(),
+  lteMock: vi.fn()
 }));
 
 type QueryResult = {
@@ -15,6 +16,13 @@ function createQueryBuilder(resolver: () => QueryResult) {
       return builder;
     },
     eq() {
+      return builder;
+    },
+    lte(...args: unknown[]) {
+      lteMock(...args);
+      return builder;
+    },
+    limit() {
       return builder;
     },
     order() {
@@ -34,7 +42,11 @@ vi.mock("lib/supabase/server", () => ({
   }
 }));
 
-import { clearTeamRatingsCache, fetchTeamRatings } from "./teamRatingsService";
+import {
+  clearTeamRatingsCache,
+  fetchTeamRatings,
+  fetchTeamRatingsAsOf
+} from "./teamRatingsService";
 
 describe("teamRatingsService", () => {
   beforeEach(() => {
@@ -143,5 +155,59 @@ describe("teamRatingsService", () => {
         goalieRating: null
       })
     ]);
+  });
+
+  it("resolves the nearest rating snapshot on or before a historical slate", async () => {
+    fromMock.mockImplementation(() =>
+      createQueryBuilder(() => ({
+        data: [
+          {
+            team_abbreviation: "TOR",
+            date: "2026-02-06",
+            off_rating: 101,
+            def_rating: 102,
+            pace_rating: 99,
+            pp_tier: 1,
+            pk_tier: 2,
+            trend10: 1,
+            xgf60: 3,
+            gf60: 3,
+            sf60: 30,
+            xga60: 2.8,
+            ga60: 2.7,
+            sa60: 29,
+            pace60: 60
+          },
+          {
+            team_abbreviation: "TOR",
+            date: "2026-02-05",
+            off_rating: 99,
+            def_rating: 99,
+            pace_rating: 99,
+            pp_tier: 2,
+            pk_tier: 2,
+            trend10: 0,
+            xgf60: 2.9,
+            gf60: 2.9,
+            sf60: 29,
+            xga60: 2.9,
+            ga60: 2.9,
+            sa60: 29,
+            pace60: 58
+          }
+        ],
+        error: null
+      }))
+    );
+
+    const result = await fetchTeamRatingsAsOf("2026-02-07", "tor");
+
+    expect(lteMock).toHaveBeenCalledWith("date", "2026-02-07");
+    expect(result).toMatchObject({
+      requestedDate: "2026-02-07",
+      resolvedDate: "2026-02-06",
+      ratings: [{ teamAbbr: "TOR", date: "2026-02-06" }]
+    });
+    expect(fromMock).toHaveBeenCalledTimes(1);
   });
 });

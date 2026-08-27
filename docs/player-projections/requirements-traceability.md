@@ -1,6 +1,41 @@
 # Deep Research Plan requirements traceability
 
-This matrix compares the current repository with the externally supplied `projectionModel.md` requirements (not retained in this repository). It does not select a final model architecture.
+The 40-row matrix below preserves the original repository-audit baseline against
+the externally supplied `projectionModel.md` requirements. It is historical
+evidence, not the current Player Forecasts readiness state.
+
+## Implemented successor status (August 2026)
+
+The neutral Player Forecasts implementation now supplies the missing system
+without changing FORGE. Its current local release is checksum-bound
+`advanced-v5`; production activation and champion promotion remain separate
+owner decisions.
+
+| Capability | Current status | Authoritative implementation/evidence |
+| --- | --- | --- |
+| H1–H10 game forecasts and revision accountability | supported | Immutable forecast runs/outputs, queue watermarks, puck-drop cutoff enforcement, player candles, and settlement contracts under `web/lib/player-forecasts/` and `/api/v1/player-forecasts` |
+| Opening, current full-season, and ROS forecasts | supported | Every remaining game is evaluated independently and aggregated under `modeling/player_forecasts/season.py`; public immutable releases are served by `/api/v1/fantasy-projections` |
+| Availability, role, and goalie mixtures | supported | Separate play/start probabilities, conditional event rates, unconditional aggregation, role probabilities, and EV/PP/PK/goalie deployment |
+| 2026–27 roster and schedule integrity | supported locally | 32 teams, 1,344 games, 84 games per team, append-only roster/transaction observations, conflict review, zero unresolved identities, scoped dirty jobs, and an opt-in daily roster/landing/official-transaction reconciliation Cron |
+| Rookie and prospect projections | supported | Learned league-to-NHL transition model, separate roster/GP/deployment/rate layers, source coverage, wider intervals, and prior fallback in `modeling/player_forecasts/rookies.py` |
+| Established-player context | supported with validation gates | Position/age, home/away, and back-to-back contextual challengers are trained inside rolling-origin folds and served only on chronological lift; line continuity, peer quality, and cutoff-safe NHL EDGE snapshots remain prospective/descriptive context until independently validated |
+| Target-specific model tournament | supported | Population and empirical-Bayes baselines compete with regularized Poisson, negative-binomial, zero-heavy hurdle, and contextual challengers; sub-threshold lift falls back to the strongest baseline |
+| Reconciled predictive distributions | supported | Portable seeded v5 copula simulation covers all v4/v5 primitives, reconciles arithmetic identities per draw, and produces deterministic aggregate tails in both Python batch and TypeScript incremental serving |
+| Fantasy-facing v4 metrics | supported | Raw primitive targets, strength-state A1/A2, derived identities, provider scoring normalization, and client-side customizable scoring |
+| Advanced v5 metrics | supported locally | Player/team shot attempts, unblocked attempts, xG/xA, danger/rush/rebound, on-ice shares, goalie xGA/GSAx/danger results, passing 50-target evaluation receipt, and cutoff-safe v5 settlement |
+| Reproducibility and model governance | supported | Checksum-bound contracts/artifacts/receipts, chronological target policies, golden-vector replay, immutable release history, atomic active pointers, rollback, editor-only opening publication, and lineage-preserving long-lived assumption inheritance |
+| Public and owner UX | supported locally | Compact summary API, 100-row pagination, global filters/sorting/scoring, role-specific columns, CSV, detail drawer, team ratings/lines, and sole-owner editor |
+| Free operation | supported | Offline Python training, deterministic TypeScript incremental evaluation, Supabase trigger/queue/Cron design, and no new paid runtime or provider |
+
+The consumed 2025–26 lockbox is validation/training evidence, not new blind
+evidence. Untouched 2026–27 prospective scoring is necessarily accumulated as
+games occur and is the remaining promotion evidence, not an implementation
+blocker for the private beta.
+
+## Historical audit baseline
+
+This matrix did not select a final model architecture; that selection is now
+governed by the checksum-bound v3/v4/v5 research contracts.
 
 Status values are the audit's required vocabulary: **supported**, **partially supported**, **present but unsafe**, **absent**, **duplicated**, **unknown pending data inspection**, and **intentionally deferred**.
 
@@ -47,7 +82,7 @@ Status values are the audit's required vocabulary: **supported**, **partially su
 | 39 | Vectorized batch inference | partially supported | Batched/paged cron routes and atomic bulk writers; FORGE per-slate runner | Several paths loop per player/request and long repairs exceed the 240-second serverless limit; no dedicated training/batch worker. |
 | 40 | Stable Next.js serving contracts | supported | Canonical `/api/v1/forge/*`; compatibility `/api/v1/projections/*`; Start Chart adapter; metadata/fallback contracts | Future intervals/distributions need additive contracts and adapter migration; legacy aliases should remain only through an explicit compatibility window. |
 
-## Readiness by layer
+## Historical readiness by layer
 
 | Layer | Current readiness | Interpretation |
 | --- | --- | --- |
@@ -60,6 +95,17 @@ Status values are the audit's required vocabulary: **supported**, **partially su
 | Evaluation and model governance | strong adjacent examples, weak player implementation | Extract xG/game-prediction patterns; do not treat current FORGE accuracy as adequate. |
 | Operations | partial to strong | Daily orchestration, leases and health exist; training/large repair needs a bounded worker strategy and scheduler reconciliation. |
 
-## Gate conclusion
+## Current gate conclusion
 
-The repository is ready for architecture mapping, source-quality experiments, characterization, and migration design. It is not ready to select or implement the final statistical core because target definitions, empirical baselines, historical source availability, and model-family evidence belong to the final Deep Research Report and live data audit.
+The original architecture/research gate has been satisfied for local private
+beta serving by the checksum-bound season contracts and their evaluation
+receipts. The current system may generate, edit, validate, publish, and roll
+back local opening/current/ROS releases while FORGE remains unchanged. The
+opening release requires an editor-authored event at both the application and
+database boundaries; system publication is limited to `current` and `ros`.
+
+Hosted migrations, Cron registration, production release pointers, and public
+activation are intentionally not implied by this document and still require
+explicit owner authorization. Champion promotion also requires untouched
+prospective 2026–27 evidence; no historical replay can substitute for that
+calendar-dependent gate.

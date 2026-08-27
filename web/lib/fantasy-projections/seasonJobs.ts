@@ -25,6 +25,7 @@ import {
   type AdvancedSeasonArtifact,
   type PortablePlayerPrior,
   type PortableSeasonArtifact,
+  type SeasonGameContext,
 } from "./evaluator";
 
 type QueueJob = {
@@ -92,6 +93,108 @@ async function insertChunks(client: any, table: string, rows: any[]): Promise<vo
 
 function round(value: number): number {
   return Number(value.toFixed(10));
+}
+
+function nestedRecordValue(
+  source: Record<string, unknown>,
+  path: string[],
+  value: unknown,
+): Record<string, unknown> {
+  const result = structuredClone(source);
+  let cursor = result;
+  for (const segment of path.slice(0, -1)) {
+    const child = cursor[segment];
+    cursor[segment] =
+      child && typeof child === "object" && !Array.isArray(child)
+        ? structuredClone(child as Record<string, unknown>)
+        : {};
+    cursor = cursor[segment] as Record<string, unknown>;
+  }
+  cursor[path[path.length - 1]] = value;
+  return result;
+}
+
+export function applyPersistentPlayerAssumptions(
+  prior: PortablePlayerPrior,
+  overrides: Array<{ field_path: string; override_value: unknown }>,
+): PortablePlayerPrior {
+  let result: PortablePlayerPrior = {
+    ...prior,
+    ratings: { ...prior.ratings },
+    deployment: structuredClone(prior.deployment),
+  };
+  for (const assumption of overrides) {
+    const fieldPath = String(assumption.field_path);
+    const value = assumption.override_value;
+    if (fieldPath === "player.teamId") {
+      result = { ...result, teamId: Number(value) };
+    } else if (fieldPath === "player.position") {
+      const position = String(value) as PortablePlayerPrior["position"];
+      if ((position === "G") !== (result.population === "goalie")) {
+        throw new Error("PLAYER_FORECAST_SEASON_POSITION_POPULATION_MISMATCH");
+      }
+      result = { ...result, position };
+    } else if (fieldPath === "player.poolStatus") {
+      result = { ...result, poolStatus: String(value) };
+    } else if (fieldPath.startsWith("ratings.")) {
+      result = {
+        ...result,
+        ratings: nestedRecordValue(
+          result.ratings,
+          fieldPath.split(".").slice(1),
+          Number(value),
+        ) as Record<string, number>,
+      };
+    } else if (fieldPath.startsWith("deployment.")) {
+      result = {
+        ...result,
+        deployment: nestedRecordValue(
+          result.deployment,
+          fieldPath.split(".").slice(1),
+          value,
+        ),
+      };
+    }
+  }
+  return result;
+}
+
+function scheduleContextsByTeam(scheduleGames: any[]): Map<number, SeasonGameContext[]> {
+  const byTeam = new Map<number, SeasonGameContext[]>();
+  const ordered = [...scheduleGames]
+    .filter((game) => String(game.game_status ?? "") !== "cancelled")
+    .sort((left, right) => {
+      const timeDifference =
+        new Date(left.scheduled_start_at).getTime() -
+        new Date(right.scheduled_start_at).getTime();
+      return timeDifference || Number(left.game_id) - Number(right.game_id);
+    });
+  for (const game of ordered) {
+    for (const [teamId, opponentTeamId, isHome] of [
+      [Number(game.home_team_id), Number(game.away_team_id), true],
+      [Number(game.away_team_id), Number(game.home_team_id), false],
+    ] as const) {
+      const games = byTeam.get(teamId) ?? [];
+      const currentDay = Math.floor(
+        new Date(game.scheduled_start_at).getTime() / 86_400_000,
+      );
+      const previousDay = games.length
+        ? Math.floor(new Date(games[games.length - 1].scheduledStartAt).getTime() / 86_400_000)
+        : null;
+      const restDays = previousDay == null ? null : Math.max(0, currentDay - previousDay);
+      games.push({
+        gameId: Number(game.game_id),
+        scheduledStartAt: String(game.scheduled_start_at),
+        teamId,
+        opponentTeamId,
+        isHome,
+        restDays,
+        isBackToBack: restDays === 1,
+      });
+      byTeam.set(teamId, games);
+    }
+  }
+  return byTeam;
 }
 
 function addActuals(
@@ -446,8 +549,24 @@ async function processView(
     })}`;
     const affectedPlayers = [...affectedPlayerIds].sort((left, right) => left - right);
     const affectedTeams = [...aggregateTeamIds].sort((left, right) => left - right);
+    const overrideIds = Array.from(new Set(
+      jobs
+        .map((job) => job.metadata?.overrideId)
+        .filter((value): value is string => typeof value === "string" && value.length > 0),
+    ));
+    let overrideSourceRunIds: string[] = [];
+    if (overrideIds.length > 0) {
+      const { data: overrideRows, error: overrideRowsError } = await client
+        .from("player_forecast_season_overrides")
+        .select("id,run_id")
+        .in("id", overrideIds);
+      if (overrideRowsError) throw overrideRowsError;
+      overrideSourceRunIds = Array.from(new Set(
+        (overrideRows ?? []).map((row: any) => String(row.run_id)),
+      ));
+    }
     const { data: eventRunRaw, error: eventRunError } = await client.rpc(
-      "create_player_forecast_season_event_run",
+      "create_player_forecast_season_event_run_with_assumptions",
       {
         p_source_run_id: sourceRun.id,
         p_roster_snapshot_id: rosterSnapshot.id,
@@ -457,6 +576,7 @@ async function processView(
         p_idempotency_key: idempotencyKey,
         p_affected_player_ids: affectedPlayers,
         p_affected_team_ids: affectedTeams,
+        p_override_source_run_ids: overrideSourceRunIds,
       },
     );
     if (eventRunError) throw eventRunError;
@@ -470,10 +590,26 @@ async function processView(
       .is("source_run_id", null);
     if (lineageError) throw lineageError;
 
+    const eventOverrides = await selectAll(
+      client,
+      "player_forecast_season_overrides",
+      "field_path,override_value,scope_type,fhfh_player_id",
+      (query) => query.eq("run_id", eventRunId).order("created_at"),
+    );
+    const playerAssumptions = new Map<number, any[]>();
+    for (const assumption of eventOverrides) {
+      if (assumption.scope_type !== "player") continue;
+      const playerId = Number(assumption.fhfh_player_id);
+      playerAssumptions.set(playerId, [
+        ...(playerAssumptions.get(playerId) ?? []),
+        assumption,
+      ]);
+    }
+
     const currentPlayers: Record<string, PortablePlayerPrior> = {};
     for (const [playerKey, sourcePrior] of Object.entries(artifact.players)) {
       const member = rosterByPlayer.get(Number(playerKey));
-      currentPlayers[playerKey] = {
+      const rosterAdjustedPrior: PortablePlayerPrior = {
         ...sourcePrior,
         teamId: member ? (member.team_id == null ? null : Number(member.team_id)) : sourcePrior.teamId,
         position: member?.position ?? sourcePrior.position,
@@ -484,6 +620,10 @@ async function processView(
             ? sourcePrior.rosterConfidence
             : Number(member.roster_confidence),
       };
+      currentPlayers[playerKey] = applyPersistentPlayerAssumptions(
+        rosterAdjustedPrior,
+        playerAssumptions.get(Number(playerKey)) ?? [],
+      );
     }
     const runtimeArtifact: PortableSeasonArtifact = { ...artifact, players: currentPlayers };
     const actuals =
@@ -493,6 +633,10 @@ async function processView(
     const scheduleIdByGame = new Map(
       scheduleGames.map((game) => [Number(game.game_id), String(game.id)]),
     );
+    const scheduleStatusByGame = new Map(
+      scheduleGames.map((game) => [Number(game.game_id), String(game.game_status)]),
+    );
+    const scheduleContexts = scheduleContextsByTeam(scheduleGames);
     const gameOutputRows: any[] = [];
     const aggregateRows: any[] = [];
     for (const playerId of affectedPlayers) {
@@ -507,23 +651,13 @@ async function processView(
       const remainingGames =
         teamId == null || poolStatus === "excluded"
           ? []
-          : scheduleGames
-              .filter(
-                (game) =>
-                  new Date(game.scheduled_start_at).getTime() > cutoff &&
-                  !["cancelled", "started", "final"].includes(String(game.game_status)) &&
-                  (Number(game.home_team_id) === teamId || Number(game.away_team_id) === teamId),
-              )
-              .map((game) => ({
-                gameId: Number(game.game_id),
-                scheduledStartAt: String(game.scheduled_start_at),
-                teamId,
-                opponentTeamId:
-                  Number(game.home_team_id) === teamId
-                    ? Number(game.away_team_id)
-                    : Number(game.home_team_id),
-                isHome: Number(game.home_team_id) === teamId,
-              }));
+          : (scheduleContexts.get(teamId) ?? []).filter(
+              (game) =>
+                new Date(game.scheduledStartAt).getTime() > cutoff &&
+                !["cancelled", "started", "final"].includes(
+                  scheduleStatusByGame.get(game.gameId) ?? "",
+                ),
+            );
       const evaluations = remainingGames.map((game) =>
         evaluatePortableSeasonGame(runtimeArtifact, playerId, game),
       );

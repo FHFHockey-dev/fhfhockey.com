@@ -3,8 +3,14 @@
 ## Relevant Files
 
 - `tasks/TASKS/forge-projections/v1/prd/prd-start-chart.md` - Authoritative Daily MVP contract.
-- `tasks/TASKS/forge-projections/v1/prd/prd-start-chart-model.md` - Earlier architecture retained where compatible; roster bench/off-night ideas are deferred.
+- `tasks/TASKS/forge-projections/v1/prd/prd-start-chart-model.md` - Subordinate historical architecture; duplicate model/schema and roster/streamer ideas are superseded.
+- `web/pages/api/v1/start-chart.ts` - Canonical dated slate reader, serving policy, source status, coverage, and response cache.
 - `web/pages/start-chart.tsx` - Current Daily Start Chart surface.
+- `web/pages/start-chart.module.scss` - Five-column desktop board and responsive accessible layout.
+- `web/lib/projections/startChartContract.ts` - Shared public response contract and runtime normalizer.
+- `web/lib/projections/forgeSkaterContext.ts` - Shared FORGE uncertainty and explainability readers.
+- `web/lib/projections/startChartFantasyScoring.ts` - Versioned scoring and deterministic row-identity ranking.
+- `web/lib/teamRatingsService.ts` - Exact/as-of-safe team-rating readers.
 - `web/lib/dashboard/dataFetchers.ts` - Shared Start Chart/dashboard response loading and normalization.
 - `web/lib/dashboard/invariants.ts` - Runtime Start Chart response invariants.
 - `web/lib/dashboard/freshness.ts` - Freshness and stale-state evaluation.
@@ -12,6 +18,8 @@
 - `web/lib/projections/` - Current FORGE player/goalie projection, roster, matchup, and metadata foundations.
 - `web/pages/api/v1/db/run-rolling-forge-pipeline.ts` - Pipeline evidence for projection ownership.
 - `web/lib/supabase/database-generated.types.ts` - Type evidence for starts, profiles, parameters, goalie starts, and projections.
+- `web/__tests__/pages/api/v1/start-chart.test.ts` and `web/__tests__/pages/start-chart.test.tsx` - Focused API/page completion regressions.
+- `web/e2e/start-chart.spec.ts` - Deterministic four-viewport browser workflow.
 
 ### Notes
 
@@ -20,6 +28,7 @@
 - Reuse current FORGE projection, goalie-start, team-power, sustainability, and scoring-profile contracts before adding duplicate tables/views.
 - All generated tasks remain unchecked until current code and data/runtime evidence verify them.
 - Complete-table Supabase reads must paginate or use verified bounded/server-side aggregates.
+- The historical 55/55 rows below remain architecture evidence, not a current completion claim. The authoritative status is the reopened 2026-08-26 tranche at the end of this file.
 
 ## Tasks
 
@@ -106,3 +115,53 @@
 - [x] NEW 9.2 **P1 duplicate populated-slate React keys broke matchup filtering:** a real 351-player slate contains same-player projections for multiple team/game contexts. Player-only keys emitted duplicate-key errors and left stale off-game cards after selecting a matchup. Keys now include player, team, and opponent identity; the focused duplicate fixture and populated mobile/desktop filter prove off-game rows disappear with empty final runtime logs (closed 2026-07-25).
 - [x] NEW 9.3 **P2 Recharts dot props spread the reserved React key:** the populated CTPI chart emitted a development runtime error because the renderer spread a props object containing `key`. The renderer now passes `key` directly and spreads only remaining props; the final populated browser log set is empty (closed 2026-07-25).
 - [x] NEW 9.4 **P1 Production Start Chart deployment drift:** guarded recovery commit `96ccea804b90b5a6f482de45f6b7931253725311` is READY/Production as `dpl_HCFwiK4yAPeXUG3QzC3R28NtYvsc`. The value-free `2026-03-14` API returned 200 with 351 players, 32 CTPI points, and 14 games; populated 1440×900 and 390×844 browser repeats rendered all 14 matchups with no application error or body overflow. The bounded deployment-scoped runtime-error/5xx queries are empty (closed 2026-07-30).
+
+## 2026-08-26 Completion Tranche — Reopened
+
+The historical 55/55 checklist did not cover the defects and gates below. `/start-chart` is not 100% complete until every unchecked release gate is closed with linked evidence. No remote migration, backfill, result write, model promotion, preview/Production deployment, or other external mutation is authorized by this tranche.
+
+- [x] 10.0 Reconcile and centralize the supported product contract.
+  - [x] 10.1 Make the Daily MVP PRD authoritative and mark the older model PRD's duplicate schema/model, custom scoring/tau/category/risk, roster sit/start, and streamer proposals superseded.
+  - [x] 10.2 Add one backward-compatible runtime response normalizer used by the API-facing page and Dashboard consumer.
+  - [x] 10.3 Keep rank owned by canonical one-game FORGE stats under `fhfh-default-skater-v1`; weekly games and Yahoo ownership remain informational only.
+  - [x] 10.4 Share FORGE uncertainty/explainability readers between `/api/v1/start-chart` and `/api/v1/forge/players`.
+  - Evidence: `web/lib/projections/startChartContract.ts`, `web/lib/projections/forgeSkaterContext.ts`, `web/lib/dashboard/normalizers.ts`, and the two API routes own the shared contract without a Start Chart table or second projection engine.
+
+- [x] 11.0 Correct dated API selection, identity, calculation, and degradation behavior.
+  - [x] 11.1 Resolve season from the requested date; bind schedule/goalies to the resolved slate; constrain ratings, CTPI, and Yahoo ownership to on-or-before source dates.
+  - [x] 11.2 Select projection rows by the exact succeeded run ID and implement deterministic `exact | fallback | partial | no_games` serving without substituting a different date when scheduled games lack projections.
+  - [x] 11.3 Rank `(run_id, game_id, player_id, horizon_games)` rows deterministically, including duplicate-player games and score/player/game/team tie ordering.
+  - [x] 11.4 Correct **DEF ease** direction and tie handling, expose the canonical FORGE defense edge separately, and retain canonical player identity when the optional Yahoo overlay is absent.
+  - [x] 11.5 Preserve unavailable projections, volume, ratings, ownership, and goalies as null; normalize goalie mixtures/confirmed starters; classify weekly-volume failures explicitly.
+  - [x] 11.6 Paginate/deduplicate CTPI, bound the response cache to 64 entries, clear in-flight entries in `finally`, batch fallback schedule discovery, and parallelize independent cold-read dependencies.
+  - Evidence: the focused route suite covers exact/fallback/partial/no-games, invalid controls, exact run/season lookup, historical ownership, duplicate identities, deterministic ties, defense-ease direction/ties, canonical identity fallback, nulls, goalie normalization, source failures, pagination, and cache eviction.
+
+- [x] 12.0 Complete the Starter Board experience.
+  - [x] 12.1 Initialize the date in America/New_York after router readiness and synchronize date/position/team with browser history while preserving mode and resolved-date workflow context.
+  - [x] 12.2 Show run/model/input/scoring/source/coverage provenance and distinct fallback, degraded, loading, retry, no-games, partial, filtered-empty, missing-goalie, stale, and optional-ownership states.
+  - [x] 12.3 Default ownership to all players; exclude and count unknown ownership only for numeric filters.
+  - [x] 12.4 Render C/LW/RW/D/G simultaneously at 1200px and above, use keyboard ARIA tabs below 1200px, and disclose 25 rows at a time with filter/date resets.
+  - [x] 12.5 Render rank, identity, opponent/start time, fantasy/stat means, line/PP role/share, opponent goalie/status, DEF ease, FORGE defense/goalie/rest/trend context, uncertainty, and stable flags with honest zero/null formatting.
+  - [x] 12.6 Use neutral-100 rating semantics, normalized goalie labels, an accessible CTPI legend/empty state/last-point markers, explicit-dimension optimized logos, semantic cards/lists, visible focus, non-color labels, and a 320px-safe layout.
+  - Evidence: `web/pages/start-chart.tsx`, `web/pages/start-chart.module.scss`, and 10 focused page tests cover URL/history synchronization, workflow/player/team links, keyboard tabs, ownership-null behavior, goalie labeling/null probability, source banners, null formatting, state variants, contextual cards, and load-more reset.
+
+- [x] 13.0 Preserve and verify forward-only upstream safeguards without mutating historical data.
+  - [x] 13.1 Re-run the local Sustainability/Trends forward-repair cohort for NEW 2, 6–10, and 13 behavior; 10 files/58 tests pass.
+  - [x] 13.2 Preserve owner-approved no-backfill quarantine for contaminated legacy runs; Start Chart reports missing/quarantined provenance as degraded and those runs remain ineligible for trusted evaluation.
+  - [x] 13.3 Re-run the local Yahoo mapping, writer-permission, and normalized-reader cohort; 3 files/23 tests pass. Historical ownership remains a nullable, ranking-independent overlay.
+  - Evidence: the owning audits correctly remain open for bounded historical application/provider proof even though their forward code regressions pass.
+
+- [x] 14.0 Complete local contract, compatibility, size, and performance verification.
+  - [x] 14.1 Start Chart/API/FORGE-reader/Dashboard-normalizer/team-rating cohort: 5 files/50 tests pass. The existing Dashboard endpoint/invariant/4xx and `useDashboardData` compatibility cohort also passes 4 files/16 tests against the enriched contract.
+  - [x] 14.2 TypeScript passes with `node --max-old-space-size=8192 node_modules/typescript/bin/tsc --noEmit`; scoped ESLint passes with zero output; Sass compiles with `npx sass --no-source-map --load-path=. pages/start-chart.module.scss /tmp/start-chart.css`.
+  - [x] 14.3 The deterministic Playwright file is discovered at 1440×900, 1024×768, 390×844, and 320×568 with `PLAYWRIGHT_BROWSERS_PATH=.ms-playwright npx playwright test e2e/start-chart.spec.ts --list` (4 tests).
+  - [x] 14.4 Local exact read `2026-02-05` resolves run `44501906-53bd-48fc-9900-cf50c9845840`, 7 games/14 teams/138 rows, 154,197 bytes. All 138 scored skaters match the returned scoring contract within `0.001` (maximum rounded delta `0.0005`) and have zero position-rank mismatches. Request `2026-02-07` falls back to `2026-02-05` with 154,338 bytes.
+  - [x] 14.5 A 20-read local cold-plus-warm sample records 9.2 ms P95 against the 900 ms budget; the first uncached request is separately disclosed at 1,257.3 ms. A synthetic 200-row response is also enforced against the 300,000-byte contract in the API suite.
+
+- [ ] 15.0 Close the release and Production-data gates before claiming 100% completion.
+  - [ ] 15.1 With explicit authorization, perform bounded dry-run/review/application and post-write proof for Sustainability NEW 2, 6–10, and eligible NEW 13 scopes. Do not rewrite quarantined legacy runs.
+  - [ ] 15.2 Complete the Yahoo audit's controlled provider/league equivalence, legacy-owner retirement, resumable historical-backfill, and provider/runtime evidence where applicable. Missing dated historical ownership may remain unavailable because it does not affect ranking.
+  - [ ] 15.3 Reconcile one representative current slate and one eligible historical slate from raw inputs through rolling rows, FORGE rows, API rank/source output, goalie coverage, and visible values after the authorized data work.
+  - [ ] 15.4 Run the model rollout gate over at least 14 distinct eligible matched holdout dates and record the selected/baseline versions, MAE, RMSE, naive-prior comparison, interval coverage, freshness, reader, and zero-row outcomes. Retain the last trusted model if the candidate fails.
+  - [ ] 15.5 Execute `web/e2e/start-chart.spec.ts` successfully in a browser-capable environment. The local Chromium run is currently blocked before test execution by the macOS sandbox (`MachPortRendezvousServer ... Permission denied (1100)`); discovery alone is not runtime proof.
+  - [ ] 15.6 After every prior gate passes and publication is explicitly authorized, deploy without an unnecessary rebuild, repeat exact desktop/tablet/mobile browser proof and bounded runtime/error checks, then link the deployment and evidence here.

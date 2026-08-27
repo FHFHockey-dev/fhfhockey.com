@@ -85,7 +85,7 @@ describe("Fantrax NHL settings normalization", () => {
     expect(normalized.draftOrderType).toBe("straight");
   });
 
-  it("maps newly projected fantasy-v4 categories without guessing unknown labels", () => {
+  it("maps projected v4/v5 categories without guessing unknown labels", () => {
     const normalized = normalizeFantraxLeagueInfo({
       externalLeagueKey: "v4-category-league",
       payload: {
@@ -97,7 +97,11 @@ describe("Fantrax NHL settings normalization", () => {
               { position: "SKATER", scoringCategory: { code: "GWG", name: "Game Winning Goals" }, weight: 2 },
               { position: "SKATER", scoringCategory: { code: "TKA", name: "Takeaways" }, weight: 1 },
               { position: "SKATER", scoringCategory: { code: "GVA", name: "Giveaways" }, weight: -1 },
+              { position: "SKATER", scoringCategory: { code: "iCF", name: "Individual Shot Attempts" }, weight: 0.2 },
+              { position: "SKATER", scoringCategory: { code: "ixG", name: "Individual Expected Goals" }, weight: 2.5 },
               { position: "GOALIE", scoringCategory: { code: "QS", name: "Quality Starts" }, weight: 3 },
+              { position: "GOALIE", scoringCategory: { code: "GSAx", name: "Goals Saved Above Expected" }, weight: 4 },
+              { position: "SKATER", scoringCategory: { code: "EDGE42", name: "Unknown EDGE score" }, weight: 1 },
             ],
           }],
         },
@@ -109,8 +113,14 @@ describe("Fantrax NHL settings normalization", () => {
       GAME_WINNING_GOALS: 2,
       TAKEAWAYS: 1,
       GIVEAWAYS: -1,
+      SHOT_ATTEMPTS: 0.2,
+      EXPECTED_GOALS: 2.5,
       QUALITY_STARTS_GOALIE: 3,
+      GOALS_SAVED_ABOVE_EXPECTED: 4,
     });
+    expect(normalized.diagnostics.unsupported).toContainEqual(
+      expect.objectContaining({ code: "EDGE42", kind: "scoring" }),
+    );
   });
 
   it("omits both sides of a conflicting category mapping with exact diagnostics", () => {

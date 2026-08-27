@@ -65,8 +65,8 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     ).toEqual(activeMigrationNames);
 
     expect(migrationAuthority.schemaVersion).toBe(1);
-    expect(migrationAuthorityRows).toHaveLength(51);
-    expect(new Set(activeMigrationNames)).toHaveLength(51);
+    expect(migrationAuthorityRows).toHaveLength(54);
+    expect(new Set(activeMigrationNames)).toHaveLength(54);
     expect(
       migrationAuthorityRows.map((row) => row.order),
     ).toEqual(migrationAuthorityRows.map((_row, index) => index + 1));
@@ -80,7 +80,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       migrationAuthorityRows.filter(
         (row) => row.deploymentState === "unknown",
       ),
-    ).toHaveLength(10);
+    ).toHaveLength(13);
     expect(
       migrationAuthorityRows.filter(
         (row) => row.deploymentState === "pending",
@@ -121,6 +121,47 @@ describe("supported Supabase schema-baseline reconciliation", () => {
         .trim()
         .split("\n"),
     ).toHaveLength(76);
+  });
+
+  it("requires an editor event for every opening projection release", () => {
+    const openingReleaseGuard = readMigration(
+      "20260826131500_require_editor_for_player_forecast_opening_release.sql",
+    );
+
+    expect(openingReleaseGuard).toContain(
+      "new.view_key = 'opening'",
+    );
+    expect(openingReleaseGuard).toContain(
+      "new.actor_kind <> 'editor' or new.action = 'auto_publish'",
+    );
+    expect(openingReleaseGuard).toContain(
+      "PLAYER_FORECAST_SEASON_OPENING_REQUIRES_EDITOR",
+    );
+    expect(openingReleaseGuard).toContain(
+      "before insert or update on public.player_forecast_season_release_events",
+    );
+  });
+
+  it("inherits long-lived season assumptions without auto-publishing direct stat edits", () => {
+    const assumptionInheritance = readMigration(
+      "20260826133000_inherit_player_forecast_season_assumptions.sql",
+    );
+
+    expect(assumptionInheritance).toContain(
+      "when (new.inherited_from_id is null)",
+    );
+    expect(assumptionInheritance).toContain(
+      "p_include_stat_overrides or source_override.field_path not like 'stats.%'",
+    );
+    expect(assumptionInheritance).toContain(
+      "clone_player_forecast_season_run_with_assumptions",
+    );
+    expect(assumptionInheritance).toContain(
+      "create_player_forecast_season_event_run_with_assumptions",
+    );
+    expect(assumptionInheritance).toContain(
+      "to service_role;",
+    );
   });
 
   it("revokes browser execution of the two privileged maintenance RPCs", () => {

@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { evaluatePayloadBudget } from "lib/dashboard/perfBudget";
 import { addStartChartPositionRanks } from "lib/projections/startChartFantasyScoring";
+import { normalizeStartChartResponse } from "lib/projections/startChartContract";
 
-const { fromMock, fetchCurrentSeasonMock, fetchTeamRatingsMock } = vi.hoisted(
+const { fromMock, getSeasonForDateMock, fetchTeamRatingsAsOfMock, eqMock } = vi.hoisted(
   () => ({
     fromMock: vi.fn(),
-    fetchCurrentSeasonMock: vi.fn(),
-    fetchTeamRatingsMock: vi.fn(),
+    getSeasonForDateMock: vi.fn(),
+    fetchTeamRatingsAsOfMock: vi.fn(),
+    eqMock: vi.fn(),
   }),
 );
 
@@ -15,12 +18,12 @@ vi.mock("lib/supabase/server", () => ({
   },
 }));
 
-vi.mock("utils/fetchCurrentSeason", () => ({
-  fetchCurrentSeason: fetchCurrentSeasonMock,
+vi.mock("lib/NHL/server", () => ({
+  getLatestStartedSeasonForDate: getSeasonForDateMock,
 }));
 
 vi.mock("lib/teamRatingsService", () => ({
-  fetchTeamRatings: fetchTeamRatingsMock,
+  fetchTeamRatingsAsOf: fetchTeamRatingsAsOfMock,
 }));
 
 vi.mock("lib/projections/apiHelpers", async () => {
@@ -33,7 +36,7 @@ vi.mock("lib/projections/apiHelpers", async () => {
 
 type QueryResult = {
   data?: any;
-  error: null;
+  error: { message?: string } | null;
 };
 
 function createQueryBuilder(resolver: () => QueryResult) {
@@ -41,7 +44,8 @@ function createQueryBuilder(resolver: () => QueryResult) {
     select() {
       return builder;
     },
-    eq() {
+    eq(...args: unknown[]) {
+      eqMock(...args);
       return builder;
     },
     in() {
@@ -57,6 +61,9 @@ function createQueryBuilder(resolver: () => QueryResult) {
       return builder;
     },
     limit() {
+      return builder;
+    },
+    range() {
       return builder;
     },
     maybeSingle() {
@@ -138,10 +145,149 @@ describe("/api/v1/start-chart", () => {
     );
   });
 
+  it("keeps duplicate-player game rows distinct while ranking deterministic ties", () => {
+    const ranked = addStartChartPositionRanks([
+      {
+        row_key: "run-1:game-2:7:1",
+        game_id: 2,
+        team_id: 20,
+        player_id: 7,
+        positions: ["C"],
+        proj_fantasy_points: 5,
+      },
+      {
+        row_key: "run-1:game-1:7:1",
+        game_id: 1,
+        team_id: 20,
+        player_id: 7,
+        positions: ["C"],
+        proj_fantasy_points: 4,
+      },
+      {
+        row_key: "run-1:game-3:8:1",
+        game_id: 3,
+        team_id: 10,
+        player_id: 8,
+        positions: ["C"],
+        proj_fantasy_points: 4,
+      },
+    ]);
+
+    expect(
+      ranked.map((row) => ({
+        row_key: row.row_key,
+        rank: row.position_ranks.C,
+      })),
+    ).toEqual([
+      { row_key: "run-1:game-2:7:1", rank: 1 },
+      { row_key: "run-1:game-1:7:1", rank: 2 },
+      { row_key: "run-1:game-3:8:1", rank: 2 },
+    ]);
+  });
+
+  it("grades higher opponent xGA as easier with average ranks for ties", async () => {
+    vi.resetModules();
+    const { computeDefenseEaseGrades, sumProjectionParts } = await import(
+      "../../../../pages/api/v1/start-chart"
+    );
+    const rating = (teamAbbr: string, xga60: number | null) =>
+      ({ teamAbbr, components: { xga60 } }) as any;
+
+    const grades = computeDefenseEaseGrades([
+      rating("BOS", 2),
+      rating("MTL", 3),
+      rating("TOR", 3),
+      rating("SJS", 4),
+      rating("NODATA", null),
+    ]);
+
+    expect(grades.get("BOS")).toBe(0);
+    expect(grades.get("MTL")).toBe(50);
+    expect(grades.get("TOR")).toBe(50);
+    expect(grades.get("SJS")).toBe(100);
+    expect(grades.has("NODATA")).toBe(false);
+    expect(computeDefenseEaseGrades([rating("ONLY", 3.2)]).get("ONLY")).toBe(
+      50,
+    );
+    expect(sumProjectionParts(0.4, 0.2, 0)).toBeCloseTo(0.6, 6);
+    expect(sumProjectionParts(0.4, null, 0)).toBeCloseTo(0.4, 6);
+    expect(sumProjectionParts(null, null, null)).toBeNull();
+  });
+
+  it("uses only ownership observations available on or before the slate", async () => {
+    vi.resetModules();
+    const { parseOwnershipAsOf } = await import(
+      "../../../../pages/api/v1/start-chart"
+    );
+
+    expect(
+      parseOwnershipAsOf(
+        {
+          ownership_timeline: [
+            { date: "2026-02-08", percent: 99 },
+            { date: "2026-02-07", percent: 47 },
+            { date: "2026-02-06", percent: 42 },
+          ],
+          percent_ownership: 88,
+          last_updated: "2026-02-08T12:00:00Z",
+        } as any,
+        "2026-02-07",
+      ),
+    ).toEqual({ value: 47, asOfDate: "2026-02-07" });
+
+    expect(
+      parseOwnershipAsOf(
+        {
+          ownership_timeline: [{ date: "2026-02-08", percent: 99 }],
+          percent_ownership: 88,
+          last_updated: "2026-02-08T12:00:00Z",
+        } as any,
+        "2026-02-07",
+      ),
+    ).toEqual({ value: null, asOfDate: null });
+  });
+
+  it("normalizes legacy and enriched fields without coercing missing values", () => {
+    const normalized = normalizeStartChartResponse({
+      dateUsed: "2026-02-07",
+      requestedDate: "2026-02-08",
+      fallbackApplied: true,
+      serving: { mode: "fallback", gapDays: 1 },
+      players: [
+        {
+          player_id: 7,
+          name: "Historical Skater",
+          positions: ["C"],
+          proj_fantasy_points: null,
+          games_remaining_week: null,
+          percent_ownership: null,
+        },
+      ],
+      games: [],
+    });
+
+    expect(normalized).toMatchObject({
+      date: "2026-02-07",
+      resolvedDate: "2026-02-07",
+      requestedDate: "2026-02-08",
+      fallbackApplied: true,
+      serving: { mode: "fallback", ageDays: 1 },
+    });
+    expect(normalized.players[0]).toMatchObject({
+      player_id: 7,
+      proj_fantasy_points: null,
+      games_remaining_week: null,
+      percent_ownership: null,
+    });
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
-    fetchCurrentSeasonMock.mockResolvedValue({ id: 20252026 });
-    fetchTeamRatingsMock.mockResolvedValue([
+    getSeasonForDateMock.mockResolvedValue({
+      id: 20252026,
+      startDate: "2025-10-07T00:00:00Z",
+    });
+    const ratings = [
       {
         teamAbbr: "TOR",
         date: "2026-02-07",
@@ -192,7 +338,12 @@ describe("/api/v1/start-chart", () => {
         disciplineRating: null,
         varianceFlag: null,
       },
-    ]);
+    ];
+    fetchTeamRatingsAsOfMock.mockResolvedValue({
+      requestedDate: "2026-02-07",
+      resolvedDate: "2026-02-07",
+      ratings,
+    });
 
     fromMock.mockImplementation((table: string) => {
       if (table === "player_projections") {
@@ -248,6 +399,7 @@ describe("/api/v1/start-chart", () => {
               start_probability: 0.72,
               projected_gsaa_per_60: 0.18,
               confirmed_status: true,
+              updated_at: "2026-02-07T12:00:00Z",
             },
           ],
           error: null,
@@ -271,6 +423,7 @@ describe("/api/v1/start-chart", () => {
               full_name: "Nick Suzuki",
               eligible_positions: ["C"],
               percent_ownership: 78,
+              last_updated: "2026-02-07T12:00:00Z",
               ownership_timeline: [],
             },
             {
@@ -279,6 +432,7 @@ describe("/api/v1/start-chart", () => {
               full_name: "Goalie A",
               eligible_positions: ["G"],
               percent_ownership: 41,
+              last_updated: "2026-02-07T12:00:00Z",
               ownership_timeline: [],
             },
           ],
@@ -345,7 +499,7 @@ describe("/api/v1/start-chart", () => {
         },
       },
       rankingContract: {
-        version: "start-chart-ranking-v1",
+        version: "start-chart-ranking-v2",
         scope: "eligible_position",
         tieMethod: "competition",
         scoreFields: {
@@ -398,14 +552,90 @@ describe("/api/v1/start-chart", () => {
     expect(skater.proj_shots).toBeCloseTo(3.5, 6);
     expect(skater.proj_fantasy_points).toBeCloseTo(4.22, 6);
     expect(skater.position_ranks).toEqual({ C: 1 });
+    const goalie = res.body.players.find(
+      (player: any) => player.player_id === 9001,
+    );
+    expect(goalie).toMatchObject({
+      positions: ["G"],
+      confirmed_status: true,
+      start_probability: 1,
+    });
+    expect(getSeasonForDateMock).toHaveBeenCalledWith(
+      "2026-02-07",
+      expect.anything(),
+    );
+    expect(eqMock).toHaveBeenCalledWith("run_id", "run-123");
+    expect(eqMock).toHaveBeenCalledWith("game_date", "2026-02-07");
     expect(fromMock.mock.calls.map((call) => call[0])).not.toContain(
       "player_projections",
     );
+
+    const representativePage = {
+      ...res.body,
+      players: Array.from({ length: 200 }, (_, index) => ({
+        ...skater,
+        row_key: `run-123:${1000 + index}:${8478402 + index}:1`,
+        game_id: 1000 + index,
+        player_id: 8478402 + index,
+      })),
+    };
+    expect(
+      evaluatePayloadBudget("/api/v1/start-chart", representativePage)
+        .withinBudget,
+    ).toBe(true);
+  });
+
+  it("keeps canonical players when the optional Yahoo overlay is unmapped", async () => {
+    const defaultImplementation = fromMock.getMockImplementation();
+    fromMock.mockImplementation((table: string) => {
+      if (table === "players") {
+        return createQueryBuilder(() => ({
+          data: [
+            { id: 8478402, fullName: "Canonical Skater", position: "C" },
+          ],
+          error: null,
+        }));
+      }
+      if (table === "yahoo_nhl_player_map_read") {
+        return createQueryBuilder(() => ({ data: [], error: null }));
+      }
+      return defaultImplementation!(table);
+    });
+
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart"))
+      .default;
+    const res = createMockRes();
+
+    await handler(
+      { method: "GET", query: { date: "2026-02-07" } } as any,
+      res,
+    );
+
+    const skater = res.body.players.find(
+      (row: any) => row.player_id === 8478402,
+    );
+    expect(skater).toMatchObject({
+      name: "Canonical Skater",
+      positions: ["C"],
+      ownership: null,
+      percent_ownership: null,
+      ownership_as_of_date: null,
+      context: { flags: expect.arrayContaining(["ownership_unavailable"]) },
+    });
+    expect(res.body.coverage).toMatchObject({
+      yahooMappedPlayers: 0,
+      yahooUnmappedPlayers: 2,
+    });
   });
 
   it("reports previous-date fallback serving state when the requested slate has no games", async () => {
     let gamesQueryCount = 0;
-    fetchTeamRatingsMock.mockResolvedValue([]);
+    fetchTeamRatingsAsOfMock.mockResolvedValue({
+      requestedDate: "2026-02-07",
+      resolvedDate: null,
+      ratings: [],
+    });
     fromMock.mockImplementation((table: string) => {
       if (table === "player_projections") {
         throw new Error("legacy player_projections should not be queried");
@@ -544,6 +774,171 @@ describe("/api/v1/start-chart", () => {
     });
   });
 
+  it("retains an exact scheduled slate as partial when projections are missing", async () => {
+    const defaultImplementation = fromMock.getMockImplementation();
+    fromMock.mockImplementation((table: string) => {
+      if (table === "forge_player_projections") {
+        return createQueryBuilder(() => ({ data: [], error: null }));
+      }
+      return defaultImplementation!(table);
+    });
+
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart"))
+      .default;
+    const res = createMockRes();
+
+    await handler(
+      { method: "GET", query: { date: "2026-02-07" } } as any,
+      res,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      requestedDate: "2026-02-07",
+      resolvedDate: "2026-02-07",
+      fallbackApplied: false,
+      serving: {
+        mode: "partial",
+        reason: "scheduled_games_missing_projections",
+      },
+      coverage: {
+        slateGames: 1,
+        projectionRows: 1,
+      },
+    });
+    expect(res.body.games).toHaveLength(1);
+    expect(
+      res.body.players.filter((row: any) => row.positions.includes("C")),
+    ).toHaveLength(0);
+  });
+
+  it("returns no_games when neither the date nor same-season history has an eligible slate", async () => {
+    fetchTeamRatingsAsOfMock.mockResolvedValue({
+      requestedDate: "2026-02-07",
+      resolvedDate: null,
+      ratings: [],
+    });
+    fromMock.mockImplementation((table: string) => {
+      if (table === "games" || table === "forge_runs") {
+        return createQueryBuilder(() => ({ data: [], error: null }));
+      }
+      return createQueryBuilder(() => ({ data: [], error: null }));
+    });
+
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart"))
+      .default;
+    const res = createMockRes();
+
+    await handler(
+      { method: "GET", query: { date: "2026-02-07" } } as any,
+      res,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      requestedDate: "2026-02-07",
+      resolvedDate: "2026-02-07",
+      fallbackApplied: false,
+      serving: {
+        mode: "no_games",
+        reason: "no_scheduled_games_or_eligible_fallback",
+      },
+      coverage: { slateGames: 0, slateTeams: 0 },
+    });
+    expect(res.body.players).toEqual([]);
+    expect(res.body.games).toEqual([]);
+  });
+
+  it("bounds the route cache at 64 responses and clears completed in-flight work", async () => {
+    fetchTeamRatingsAsOfMock.mockResolvedValue({
+      requestedDate: "2026-01-01",
+      resolvedDate: null,
+      ratings: [],
+    });
+    fromMock.mockImplementation(() =>
+      createQueryBuilder(() => ({ data: [], error: null })),
+    );
+    vi.resetModules();
+    const route = await import("../../../../pages/api/v1/start-chart");
+    route.clearStartChartCache();
+
+    const dates = Array.from({ length: 65 }, (_, offset) => {
+      const date = new Date("2026-01-01T00:00:00Z");
+      date.setUTCDate(date.getUTCDate() + offset);
+      return date.toISOString().slice(0, 10);
+    });
+    for (const date of dates) {
+      await route.default(
+        { method: "GET", query: { date } } as any,
+        createMockRes(),
+      );
+    }
+
+    expect(route.getStartChartCacheDiagnostics()).toEqual({
+      responseEntries: 64,
+      inFlightEntries: 0,
+      maxResponseEntries: 64,
+    });
+    const queryCountBeforeOldestDateRetry = fromMock.mock.calls.length;
+    await route.default(
+      { method: "GET", query: { date: dates[0] } } as any,
+      createMockRes(),
+    );
+    expect(fromMock.mock.calls.length).toBeGreaterThan(
+      queryCountBeforeOldestDateRetry,
+    );
+    expect(route.getStartChartCacheDiagnostics().responseEntries).toBe(64);
+  });
+
+  it("reports games-remaining failures without coercing weekly volume to zero", async () => {
+    const defaultImplementation = fromMock.getMockImplementation();
+    let gamesQueryCount = 0;
+    fromMock.mockImplementation((table: string) => {
+      if (table === "games") {
+        gamesQueryCount += 1;
+        return createQueryBuilder(() =>
+          gamesQueryCount === 1
+            ? {
+                data: [
+                  {
+                    id: 1001,
+                    date: "2026-02-07",
+                    homeTeamId: 10,
+                    awayTeamId: 8,
+                  },
+                ],
+                error: null,
+              }
+            : { data: [], error: { message: "fixture week query failed" } },
+        );
+      }
+      return defaultImplementation!(table);
+    });
+
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart"))
+      .default;
+    const res = createMockRes();
+    await handler(
+      { method: "GET", query: { date: "2026-02-07" } } as any,
+      res,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.sourceStatus.gamesRemaining).toMatchObject({
+      state: "error",
+      affectsRanking: false,
+      date: null,
+    });
+    expect(
+      res.body.players.every(
+        (row: any) => row.games_remaining_week === null,
+      ),
+    ).toBe(true);
+  });
+
   it.each([
     [{ date: "2026-02-30" }, 400, "invalid_parameter", "date"],
     [
@@ -635,7 +1030,7 @@ describe("/api/v1/start-chart", () => {
   it("returns a stable public error when a dependency fails", async () => {
     const internalDetail =
       "private_relation failed with Bearer internal-service-token";
-    fetchCurrentSeasonMock.mockRejectedValue(new Error(internalDetail));
+    getSeasonForDateMock.mockRejectedValue(new Error(internalDetail));
     const consoleError = vi
       .spyOn(console, "error")
       .mockImplementation(() => undefined);

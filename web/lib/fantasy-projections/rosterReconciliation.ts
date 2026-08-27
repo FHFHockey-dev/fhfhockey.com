@@ -9,6 +9,12 @@ import {
   type SeasonRosterObservationKind,
   type SeasonRosterStatus,
 } from "./rosterIntegrity";
+import {
+  captureOfficialNhlTransactionAudit,
+  findOfficialRosterAuditEvidence,
+  OFFICIAL_TRANSACTION_AUDIT_WINDOW_START,
+  type OfficialNhlArticleCapture,
+} from "./transactionAudit";
 
 const CURRENT_NHL_TEAM_IDS = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19,
@@ -318,6 +324,9 @@ export async function refreshSeasonRosterIntegrity(args: {
       .filter((identity) => identity.nhl_player_id != null)
       .map((identity) => [Number(identity.nhl_player_id), identity]),
   );
+  const teamById = new Map<number, any>(
+    teams.map((team: any) => [Number(team.id), team]),
+  );
 
   const rosterCaptures = await mapWithConcurrency(teams, 8, async (team) => {
     const abbreviation = String(team.abbreviation).trim();
@@ -329,6 +338,18 @@ export async function refreshSeasonRosterIntegrity(args: {
   const officialByNhl = new Map(
     officialPlayers.map((player) => [player.nhlPlayerId, player]),
   );
+  let officialTransactionCaptures: OfficialNhlArticleCapture[] = [];
+  let officialTransactionAuditError: string | null = null;
+  if (!args.verifiedTransactionCoverage) {
+    try {
+      officialTransactionCaptures = (
+        await captureOfficialNhlTransactionAudit({ fetchImpl, capturedAt: availableAt })
+      ).captures;
+    } catch (error) {
+      officialTransactionAuditError =
+        error instanceof Error ? error.message : String(error);
+    }
+  }
 
   const latestObservations = latestObservationResult as any[];
   const latestByPlayerKind = new Map<string, any>();
@@ -542,6 +563,50 @@ export async function refreshSeasonRosterIntegrity(args: {
       evidence: { officialPayload: payload },
       supersedes_id: latestByPlayerKind.get(key)?.id ?? null,
     });
+  }
+
+  if (officialTransactionCaptures.length) {
+    for (const capture of landingCaptures.filter((row) => row.payload)) {
+      const identity = identitiesByNhl.get(capture.nhlPlayerId);
+      if (!identity) continue;
+      const landingTeamId = Number((capture.payload as JsonRecord).currentTeamId);
+      const team = teamById.get(landingTeamId);
+      if (!Number.isInteger(landingTeamId) || !team) continue;
+      const evidence = findOfficialRosterAuditEvidence({
+        playerName: String(identity.canonical_name),
+        teamName: String(team.name),
+        teamAbbreviation: String(team.abbreviation),
+        captures: officialTransactionCaptures,
+      });
+      if (!evidence) continue;
+      const current = currentByPlayer.get(identity.id) ?? currentFromIdentity(identity);
+      const key = `${identity.id}:official_transaction`;
+      observationRows.push({
+        season_id: seasonId,
+        fhfh_player_id: identity.id,
+        nhl_player_id: capture.nhlPlayerId,
+        raw_player_name: identity.canonical_name,
+        observation_kind: "official_transaction",
+        event_type: evidence.eventType,
+        organization_team_id: landingTeamId,
+        // Tracker articles establish organization movement, not active-roster
+        // placement. Preserve the independently resolved lifecycle status.
+        roster_status:
+          current.roster_status ?? rosterStatusFromPoolStatus(current.pool_status),
+        source_key: `official-transaction-tracker:${capture.nhlPlayerId}:${evidence.sourceHash}`,
+        source_url: evidence.sourceUrl,
+        source_hash: evidence.sourceHash,
+        observed_at: availableAt,
+        available_at: availableAt,
+        effective_at: null,
+        confidence: 1,
+        evidence: {
+          trackerExcerpt: evidence.excerpt,
+          trackerCapturedAt: availableAt,
+        },
+        supersedes_id: latestByPlayerKind.get(key)?.id ?? null,
+      });
+    }
   }
 
   for (let start = 0; start < observationRows.length; start += 500) {
@@ -798,8 +863,24 @@ export async function refreshSeasonRosterIntegrity(args: {
     latestSnapshot?.metadata?.transactionCoverage?.complete === true
       ? latestSnapshot.metadata.transactionCoverage
       : null;
+  const liveTrackerCoverage = officialTransactionCaptures.length
+    ? {
+        windowStart: OFFICIAL_TRANSACTION_AUDIT_WINDOW_START,
+        cutoffAt: availableAt,
+        sourceManifestChecksum: checksum(
+          officialTransactionCaptures.map((capture) => ({
+            url: capture.url,
+            sourceHash: capture.sourceHash,
+            datePublished: capture.datePublished,
+            dateModified: capture.dateModified,
+          })),
+        ),
+        sourceCount: officialTransactionCaptures.length,
+      }
+    : undefined;
   const verifiedCoverage =
     args.verifiedTransactionCoverage ??
+    liveTrackerCoverage ??
     (priorCoverage
       ? {
           windowStart: String(priorCoverage.windowStart ?? ""),
@@ -812,7 +893,7 @@ export async function refreshSeasonRosterIntegrity(args: {
       : undefined);
   if (
     verifiedCoverage &&
-    (verifiedCoverage.windowStart !== "2026-06-16T00:00:00Z" ||
+    (verifiedCoverage.windowStart !== OFFICIAL_TRANSACTION_AUDIT_WINDOW_START ||
       !Number.isFinite(Date.parse(verifiedCoverage.cutoffAt)) ||
       Date.parse(verifiedCoverage.cutoffAt) < Date.parse(verifiedCoverage.windowStart) ||
       Date.parse(verifiedCoverage.cutoffAt) > Date.parse(availableAt) ||
@@ -823,7 +904,7 @@ export async function refreshSeasonRosterIntegrity(args: {
     throw new Error("Verified transaction coverage manifest is invalid.");
   }
   const transactionCoverage = {
-    windowStart: "2026-06-16T00:00:00Z",
+    windowStart: OFFICIAL_TRANSACTION_AUDIT_WINDOW_START,
     cutoffAt: verifiedCoverage?.cutoffAt ?? transactionCutoffAt,
     processedIftttEvents: processedIftttRows.length,
     normalizedObservations: normalizedTransactionRows.length,
@@ -844,6 +925,7 @@ export async function refreshSeasonRosterIntegrity(args: {
     holdReason: verifiedCoverage
       ? null
       : "A complete checksum-manifested official transaction audit has not been imported.",
+    auditError: officialTransactionAuditError,
   };
   const revisionHash = checksum({
     members: members
@@ -868,11 +950,18 @@ export async function refreshSeasonRosterIntegrity(args: {
       p_available_at: availableAt,
       p_completeness: completeness,
       p_revision_hash: revisionHash,
-      p_source_manifest: observationRows.map((row) => ({
-        sourceKey: row.source_key,
-        sourceHash: row.source_hash,
-        sourceUrl: row.source_url,
-      })),
+      p_source_manifest: [
+        ...observationRows.map((row) => ({
+          sourceKey: row.source_key,
+          sourceHash: row.source_hash,
+          sourceUrl: row.source_url,
+        })),
+        ...officialTransactionCaptures.map((capture) => ({
+          sourceKey: `official-transaction-tracker:${capture.url}`,
+          sourceHash: capture.sourceHash,
+          sourceUrl: capture.url,
+        })),
+      ],
       p_metadata: {
         officialRosterScope: "organization",
         officialRosterStatusSemantics:
@@ -884,6 +973,8 @@ export async function refreshSeasonRosterIntegrity(args: {
           nhlPlayerId: failure.nhlPlayerId,
           error: failure.error,
         })),
+        officialTransactionTrackers: officialTransactionCaptures.length,
+        officialTransactionAuditError,
         transactionCoverage,
       },
       p_members: members,
@@ -900,6 +991,8 @@ export async function refreshSeasonRosterIntegrity(args: {
     unmappedOfficialPlayers: unmappedOfficial.length,
     landingChecks: landingIds.length,
     landingFailures: landingFailures.length,
+    officialTransactionTrackers: officialTransactionCaptures.length,
+    officialTransactionAuditError,
     automaticChanges,
     stagedConflicts,
     revisionHash,

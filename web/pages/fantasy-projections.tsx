@@ -95,6 +95,20 @@ const STAT_LABELS: Record<string, string> = {
   OVERTIME_GOALS: "OTG",
   EMPTY_NET_GOALS: "ENG",
   EMPTY_NET_POINTS: "ENP",
+  EV_GOALS: "EV G",
+  EV_PRIMARY_ASSISTS: "EV A1",
+  EV_SECONDARY_ASSISTS: "EV A2",
+  EV_ASSISTS: "EV A",
+  EV_POINTS: "EV P",
+  PP_PRIMARY_ASSISTS: "PP A1",
+  PP_SECONDARY_ASSISTS: "PP A2",
+  SH_PRIMARY_ASSISTS: "SH A1",
+  SH_SECONDARY_ASSISTS: "SH A2",
+  EN_PRIMARY_ASSISTS: "EN A1",
+  EN_SECONDARY_ASSISTS: "EN A2",
+  SHOOTING_PERCENTAGE: "Shooting%",
+  FACEOFF_PERCENTAGE: "FO%",
+  POINTS_PER_GAME: "P/GP",
   QUALITY_STARTS_GOALIE: "QS",
   RELIEF_APPEARANCES_GOALIE: "Relief",
   START_PERCENTAGE_GOALIE: "Start%",
@@ -102,12 +116,38 @@ const STAT_LABELS: Record<string, string> = {
   SHOT_ATTEMPTS: "iCF",
   UNBLOCKED_SHOT_ATTEMPTS: "iFF",
   EXPECTED_GOALS: "ixG",
+  EXPECTED_PRIMARY_ASSISTS: "ixA1",
+  EXPECTED_SECONDARY_ASSISTS: "ixA2",
   EXPECTED_ASSISTS: "ixA",
+  HIGH_DANGER_SHOTS: "HD shots",
+  MID_RANGE_SHOTS: "Mid shots",
+  LONG_RANGE_SHOTS: "Long shots",
+  RUSH_SHOTS: "Rush shots",
+  REBOUND_SHOTS: "Rebound shots",
+  REBOUNDS_CREATED: "Rebounds created",
+  ON_ICE_SHOT_ATTEMPTS_FOR: "On-ice CF",
+  ON_ICE_SHOT_ATTEMPTS_AGAINST: "On-ice CA",
+  ON_ICE_UNBLOCKED_ATTEMPTS_FOR: "On-ice FF",
+  ON_ICE_UNBLOCKED_ATTEMPTS_AGAINST: "On-ice FA",
+  ON_ICE_EXPECTED_GOALS_FOR: "On-ice xGF",
+  ON_ICE_EXPECTED_GOALS_AGAINST: "On-ice xGA",
   ON_ICE_CF_PERCENTAGE: "CF%",
   ON_ICE_FF_PERCENTAGE: "FF%",
   ON_ICE_XGF_PERCENTAGE: "xGF%",
   EXPECTED_GOALS_AGAINST_GOALIE: "xGA",
   GOALS_SAVED_ABOVE_EXPECTED: "GSAx",
+  HIGH_DANGER_SHOTS_AGAINST_GOALIE: "HD SA",
+  HIGH_DANGER_GOALS_AGAINST_GOALIE: "HD GA",
+  HIGH_DANGER_SAVES_GOALIE: "HD SV",
+  HIGH_DANGER_SAVE_PERCENTAGE_GOALIE: "HD SV%",
+  MID_RANGE_SHOTS_AGAINST_GOALIE: "Mid SA",
+  MID_RANGE_GOALS_AGAINST_GOALIE: "Mid GA",
+  MID_RANGE_SAVES_GOALIE: "Mid SV",
+  MID_RANGE_SAVE_PERCENTAGE_GOALIE: "Mid SV%",
+  LONG_RANGE_SHOTS_AGAINST_GOALIE: "Long SA",
+  LONG_RANGE_GOALS_AGAINST_GOALIE: "Long GA",
+  LONG_RANGE_SAVES_GOALIE: "Long SV",
+  LONG_RANGE_SAVE_PERCENTAGE_GOALIE: "Long SV%",
 };
 const SKATER_COLUMNS = [
   "GAMES_PLAYED",
@@ -137,6 +177,20 @@ type ColumnPreset = "standard" | "fantasy" | "deployment" | "advanced" | "custom
 function numberValue(value: unknown): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function recordValue(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function readableKey(value: string): string {
+  const spaced = value
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replaceAll("_", " ")
+    .toLowerCase();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
 function ratingValue(
@@ -1581,8 +1635,27 @@ export default function FantasyProjectionsPage() {
               </button>
               {detailLoading ? <p>Loading player detail…</p> : null}
               {detailError ? <p className={styles.warning}>{detailError}</p> : null}
-              {playerDetail ? (
-                <>
+              {playerDetail ? (() => {
+                const adjustmentEntries = Object.entries(
+                  playerDetail.player.adjustmentDelta,
+                ).filter(([, delta]) => Math.abs(numberValue(delta)) > 1e-9);
+                const deploymentFamilies = Object.entries(
+                  playerDetail.player.deployment.roleProbabilities ?? {},
+                );
+                const provenanceEntries = Object.entries(
+                  playerDetail.player.provenance,
+                ).filter(([, value]) =>
+                  typeof value === "string" ||
+                  typeof value === "number" ||
+                  typeof value === "boolean"
+                );
+                const advancedProvenance = recordValue(
+                  playerDetail.player.provenance.advancedV5,
+                );
+                const edgeContext = recordValue(advancedProvenance.edgeContext);
+                const edgeMetrics = Object.entries(recordValue(edgeContext.metrics));
+                return (
+                  <>
                   <p className={styles.eyebrow}>{playerDetail.player.teamAbbreviation ?? "Unsigned"} · {playerDetail.player.position}</p>
                   <h2>{playerDetail.player.playerName}</h2>
                   <div className={styles.badges}>
@@ -1598,8 +1671,52 @@ export default function FantasyProjectionsPage() {
                           ? ""
                           : ` · ${(playerDetail.player.rookieProfile.rosterProbability * 100).toFixed(0)}% roster probability`}
                       </p>
+                      {playerDetail.player.rookieProfile.sourceCoverage.length ? (
+                        <p>Sources: {playerDetail.player.rookieProfile.sourceCoverage.join(" · ")}</p>
+                      ) : null}
                     </section>
                   ) : null}
+                  {edgeMetrics.length ? (
+                    <section>
+                      <h3>NHL EDGE context</h3>
+                      <p>
+                        Observed through {String(edgeContext.snapshotDate ?? "the recorded snapshot")}.
+                        These cutoff-safe traits are model context, not projected season totals.
+                        {typeof edgeContext.sourceUrl === "string" ? (
+                          <> <a href={edgeContext.sourceUrl} target="_blank" rel="noreferrer">Official source</a>.</>
+                        ) : null}
+                      </p>
+                      <dl className={styles.detailStats}>
+                        {edgeMetrics.map(([key, value]) => (
+                          <div key={key}>
+                            <dt>{readableKey(key)}</dt>
+                            <dd>{numberValue(value).toLocaleString(undefined, { maximumFractionDigits: 3 })}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </section>
+                  ) : null}
+                  <section>
+                    <h3>Deployment and opportunity</h3>
+                    <dl className={styles.detailStats}>
+                      <div><dt>Expected games</dt><dd>{playerDetail.player.expectedGames.toFixed(1)}</dd></div>
+                      {playerDetail.player.expectedStarts == null ? null : (
+                        <div><dt>Expected starts</dt><dd>{playerDetail.player.expectedStarts.toFixed(1)}</dd></div>
+                      )}
+                      {Object.entries(playerDetail.player.expectedToi).map(([target, value]) => (
+                        <div key={target}><dt>{columnLabel(target)}</dt><dd>{formatValue(target, numberValue(value))}</dd></div>
+                      ))}
+                    </dl>
+                    {deploymentFamilies.map(([family, probabilities]) => (
+                      <p key={family}>
+                        <strong>{family.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ")}:</strong>{" "}
+                        {Object.entries(probabilities)
+                          .sort((left, right) => right[1] - left[1])
+                          .map(([role, probability]) => `${role} ${(probability * 100).toFixed(0)}%`)
+                          .join(" · ")}
+                      </p>
+                    ))}
+                  </section>
                   <section>
                     <h3>Projection intervals</h3>
                     <dl className={styles.detailStats}>
@@ -1612,17 +1729,62 @@ export default function FantasyProjectionsPage() {
                     </dl>
                   </section>
                   <section>
+                    <h3>Model and editorial comparison</h3>
+                    {adjustmentEntries.length ? (
+                      <dl className={styles.detailStats}>
+                        {adjustmentEntries.map(([target, delta]) => (
+                          <div key={target}>
+                            <dt>{columnLabel(target)}</dt>
+                            <dd>
+                              Model {formatValue(target, numberValue(playerDetail.player.modelValues[target]))}
+                              {" → "}
+                              published {formatValue(target, numberValue(playerDetail.player.publishedValues[target]))}
+                              {` (${numberValue(delta) >= 0 ? "+" : ""}${formatValue(target, numberValue(delta))})`}
+                            </dd>
+                          </div>
+                        ))}
+                      </dl>
+                    ) : <p>No editorial changes in this release.</p>}
+                  </section>
+                  <section>
                     <h3>Release history</h3>
                     <ul>
                       {playerDetail.releaseHistory.map((history) => (
                         <li key={`${history.view}-${history.releaseNumber}`}>
-                          {history.view} #{history.releaseNumber} · {new Date(history.issuedAt).toLocaleDateString()} · {formatValue("POINTS", numberValue(history.publishedValues.POINTS))} P
+                          {history.view} #{history.releaseNumber} · {new Date(history.issuedAt).toLocaleDateString()}
+                          {history.teamAbbreviation ? ` · ${history.teamAbbreviation}` : ""}
+                          {history.publishedValues.POINTS == null
+                            ? ""
+                            : ` · ${formatValue("POINTS", numberValue(history.publishedValues.POINTS))} P`}
                         </li>
                       ))}
                     </ul>
                   </section>
-                </>
-              ) : null}
+                  <section>
+                    <h3>Sources and model provenance</h3>
+                    <dl className={styles.detailStats}>
+                      <div><dt>Metric set</dt><dd>{playerDetail.release.metricSetVersion}</dd></div>
+                      <div><dt>Contract</dt><dd>{playerDetail.release.contractVersion}</dd></div>
+                      <div><dt>Artifact</dt><dd>{playerDetail.release.artifactChecksum.slice(0, 12)}…</dd></div>
+                      <div><dt>Forecast cutoff</dt><dd>{new Date(playerDetail.release.cutoffAt).toLocaleString()}</dd></div>
+                      <div><dt>Source watermark</dt><dd>{playerDetail.release.sourceHighWatermark}</dd></div>
+                      <div><dt>Roster snapshot</dt><dd>{playerDetail.release.rosterRevisionHash.slice(0, 12)}…</dd></div>
+                      <div><dt>Schedule snapshot</dt><dd>{playerDetail.release.scheduleRevisionHash.slice(0, 12)}…</dd></div>
+                      <div><dt>Player source freshness</dt><dd>{playerDetail.player.sourceFreshAt ? new Date(playerDetail.player.sourceFreshAt).toLocaleString() : "Unavailable"}</dd></div>
+                      {provenanceEntries.map(([key, value]) => (
+                        <div key={key}><dt>{readableKey(key)}</dt><dd>{String(value)}</dd></div>
+                      ))}
+                    </dl>
+                    {playerDetail.player.fallbackFlags.length ? (
+                      <>
+                        <h4>Fallback disclosures</h4>
+                        <ul>{playerDetail.player.fallbackFlags.map((flag) => <li key={flag}>{flag}</li>)}</ul>
+                      </>
+                    ) : <p>No model fallback flags.</p>}
+                  </section>
+                  </>
+                );
+              })() : null}
             </aside>
           </div>
         ) : null}

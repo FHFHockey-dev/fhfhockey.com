@@ -1,4 +1,8 @@
 import type { TeamPowerSnapshot, TeamPowerSnapshotLike } from "./teamContext";
+import {
+  normalizeStartChartResponse as normalizeStartChartContractResponse,
+  type StartChartResponse as ContractStartChartResponse,
+} from "lib/projections/startChartContract";
 
 export const toFiniteNumber = (value: unknown): number | null => {
   if (value === null || value === undefined || value === "") return null;
@@ -458,6 +462,12 @@ export const normalizeStartChartResponse = (
   payload: unknown
 ): NormalizedStartChartResponse => {
   const root = (payload ?? {}) as Record<string, unknown>;
+  let contract: ContractStartChartResponse | null = null;
+  try {
+    contract = normalizeStartChartContractResponse(payload);
+  } catch {
+    // Dashboard modules accept an empty result when the endpoint is unavailable.
+  }
   const games = toArray<Record<string, unknown>>(root.games)
     .map((row) => {
       const id = toFiniteNumber(row.id);
@@ -520,10 +530,11 @@ export const normalizeStartChartResponse = (
     .filter((row): row is NormalizedStartChartGameRow => Boolean(row));
 
   return {
-    dateUsed: toStringOrNull(root.dateUsed),
-    requestedDate: toStringOrNull(root.requestedDate),
-    fallbackApplied: Boolean(root.fallbackApplied),
-    serving: normalizeServingContract(root.serving),
+    dateUsed: contract?.dateUsed ?? toStringOrNull(root.dateUsed),
+    requestedDate:
+      contract?.requestedDate ?? toStringOrNull(root.requestedDate),
+    fallbackApplied: contract?.fallbackApplied ?? Boolean(root.fallbackApplied),
+    serving: normalizeServingContract(contract?.serving ?? root.serving),
     games
   };
 };

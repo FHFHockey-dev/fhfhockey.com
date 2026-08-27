@@ -209,6 +209,54 @@ export const fetchTeamRatings = async (
   return payload;
 };
 
+export type TeamRatingsAsOfResult = {
+  requestedDate: string;
+  resolvedDate: string | null;
+  ratings: TeamRating[];
+};
+
+/**
+ * Resolve the latest team-rating snapshot that was available on or before the
+ * requested date. This deliberately does not reuse fetchTeamRatings' legacy
+ * absolute-latest fallback, which can look ahead for historical consumers.
+ */
+export const fetchTeamRatingsAsOf = async (
+  date: string,
+  teamAbbr?: string,
+): Promise<TeamRatingsAsOfResult> => {
+  const normalizedTeamAbbr = teamAbbr?.toUpperCase();
+  let query = supabaseServer
+    .from("team_power_ratings_daily")
+    .select("*")
+    .lte("date", date)
+    .order("date", { ascending: false })
+    .order("team_abbreviation", { ascending: true })
+    .limit(normalizedTeamAbbr ? 1 : 64);
+  if (normalizedTeamAbbr) {
+    query = query.eq("team_abbreviation", normalizedTeamAbbr);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  const resolvedDate =
+    Array.isArray(data) && typeof data[0]?.date === "string"
+      ? data[0].date
+      : null;
+  if (!resolvedDate) {
+    return { requestedDate: date, resolvedDate: null, ratings: [] };
+  }
+
+  const ratings = (Array.isArray(data) ? data : [])
+    .filter((row) => row.date === resolvedDate)
+    .map((row) => mapRowToTeamRating(row as Record<string, unknown>));
+
+  return {
+    requestedDate: date,
+    resolvedDate,
+    ratings,
+  };
+};
+
 export const clearTeamRatingsCache = (): void => {
   cache.clear();
 };

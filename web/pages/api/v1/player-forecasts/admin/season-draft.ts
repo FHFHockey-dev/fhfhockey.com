@@ -16,8 +16,16 @@ export default playerForecastSeasonEditorOnly(
     if (!sourceRunId) {
       return res.status(400).json({ success: false, message: "sourceRunId is required." });
     }
+    const includeStatOverrides = req.body?.includeStatOverrides === true;
     try {
-      return res.json({ success: true, run: await cloneSeasonDraft(req.supabase, sourceRunId) });
+      return res.json({
+        success: true,
+        run: await cloneSeasonDraft(
+          req.supabase,
+          sourceRunId,
+          includeStatOverrides,
+        ),
+      });
     } catch (error) {
       return res.status(400).json({ success: false, message: playerForecastErrorMessage(error) });
     }

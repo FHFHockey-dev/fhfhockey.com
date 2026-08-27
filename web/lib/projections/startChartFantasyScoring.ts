@@ -49,7 +49,7 @@ export const START_CHART_FANTASY_SCORING_CONTRACT: StartChartFantasyScoringContr
   };
 
 export const START_CHART_RANKING_CONTRACT: StartChartRankingContract = {
-  version: "start-chart-ranking-v1",
+  version: "start-chart-ranking-v2",
   scope: "eligible_position",
   tieMethod: "competition",
   scoreFields: {
@@ -65,12 +65,15 @@ export const START_CHART_RANKING_CONTRACT: StartChartRankingContract = {
 export function addStartChartPositionRanks<
   T extends {
     player_id: number;
+    row_key?: string;
+    game_id?: number;
+    team_id?: number | null;
     positions: string[];
     proj_fantasy_points: number | null;
     start_probability?: number | null;
   },
 >(players: T[]): Array<T & { position_ranks: StartChartPositionRanks }> {
-  const ranksByPlayer = new Map<number, StartChartPositionRanks>();
+  const ranksByRow = new Map<T, StartChartPositionRanks>();
 
   START_CHART_POSITIONS.forEach((position) => {
     const ranked = players
@@ -93,7 +96,10 @@ export function addStartChartPositionRanks<
       .sort(
         (left, right) =>
           right.score - left.score ||
-          left.player.player_id - right.player.player_id,
+          left.player.player_id - right.player.player_id ||
+          (left.player.game_id ?? 0) - (right.player.game_id ?? 0) ||
+          (left.player.team_id ?? 0) - (right.player.team_id ?? 0) ||
+          (left.player.row_key ?? "").localeCompare(right.player.row_key ?? ""),
       );
 
     let previousScore: number | null = null;
@@ -103,15 +109,15 @@ export function addStartChartPositionRanks<
         competitionRank = index + 1;
         previousScore = score;
       }
-      const playerRanks = ranksByPlayer.get(player.player_id) ?? {};
-      playerRanks[position] = competitionRank;
-      ranksByPlayer.set(player.player_id, playerRanks);
+      const rowRanks = ranksByRow.get(player) ?? {};
+      rowRanks[position] = competitionRank;
+      ranksByRow.set(player, rowRanks);
     });
   });
 
   return players.map((player) => ({
     ...player,
-    position_ranks: ranksByPlayer.get(player.player_id) ?? {},
+    position_ranks: ranksByRow.get(player) ?? {},
   }));
 }
 

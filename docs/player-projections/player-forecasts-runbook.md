@@ -269,7 +269,7 @@ pf_local_api="$(jq -r '.API_URL' <<<"$pf_status_json")"
 pf_local_service="$(jq -r '.SERVICE_ROLE_KEY' <<<"$pf_status_json")"
 
 PLAYER_FORECAST_ARTIFACT_CONFIRM=local-only \
-PLAYER_FORECAST_PYTHON=.venv/bin/python \
+PLAYER_FORECAST_PYTHON=../.venv/bin/python \
 NEXT_PUBLIC_SUPABASE_URL="$pf_local_api" \
 SUPABASE_SERVICE_ROLE_KEY="$pf_local_service" \
   npm run register:player-forecast-artifact -- \
@@ -458,8 +458,9 @@ test. Python trains and generates complete releases locally. The existing web
 application verifies the portable artifact, serves published releases, and
 provides the sole-editor workflow. Core-v3 remains readable for rollback. New
 fantasy-facing work uses the checksum-bound
-`player-forecasts-research-v4-season-fantasy` contract; advanced-v5 remains
-blocked until a passing v4 evaluation receipt exists.
+`player-forecasts-research-v4-season-fantasy` contract. Advanced releases use
+`player-forecasts-research-v5-season-advanced` and are accepted only when both
+the exact v4 dependency and the checksum-bound v5 evaluation receipt pass.
 
 Configure the owner allowlist without printing the UUID:
 
@@ -470,7 +471,11 @@ PLAYER_FORECAST_ROSTER_REFRESH_ENABLED=false
 ```
 
 Production rejects zero or multiple editor UUIDs. Cron authorization never
-satisfies the season-editor middleware.
+satisfies the season-editor middleware. For local development, use
+`npm run dev:player-forecasts` from `web/`; it discovers the sole local admin,
+uses local Supabase, enables bounded season inference and roster refresh, and
+defaults to port 3101. Set `PLAYER_FORECAST_DEV_PORT=3000` before the command
+when port 3000 is preferred.
 
 Run the reproducible local pipeline from the repository root. Output paths must
 remain outside the repository:
@@ -544,7 +549,20 @@ an H1–H10 subtotal as ROS. Historical participation is normalized to the
 GP/start interval caps use the 84 scheduled opportunities in 2026–27 (and the
 actual smaller remaining-game count after games are completed).
 
-### Fantasy-v4, rookie, and advanced-v5 gates
+Established-player age, home/away, and back-to-back effects are learned inside each
+rolling-origin training fold. The contextual empirical-Bayes challenger is
+evaluated beside regularized Poisson, negative-binomial, and zero-heavy hurdle
+challengers. A challenger is served only when its chronological MAE clears the
+minimum lift over the strongest population/empirical-Bayes baseline; otherwise
+that baseline remains active. Offline projection and incremental
+TypeScript evaluation both derive rest from the complete team schedule, and
+baseline accountability values never receive the candidate-only rest effect.
+Line-continuity and projected-peer signals remain recorded prospective context
+until they have enough chronological support to win the same gate. Optional NHL
+EDGE daily snapshots follow the same cutoff rule and appear as descriptive
+detail context only—not as projected totals or unvalidated rate adjustments.
+
+### Fantasy-v4, rookie, and advanced-v5 pipeline
 
 Capture cutoff-safe player-landing histories, train fantasy-v4, and write its
 evaluation receipt before starting the advanced source batch:
@@ -565,6 +583,24 @@ evaluation receipt before starting the advanced source batch:
   --artifact /private/tmp/fhfh-season-artifact-v4 \
   --output /private/tmp/fhfh-season-v4-evaluation.json
 
+.venv/bin/python -m modeling.player_forecasts season-project \
+  --freeze "$pf_season_freeze" \
+  --artifact /private/tmp/fhfh-season-artifact-v4/season-artifact.json \
+  --output /private/tmp/fhfh-season-opening-v4 \
+  --view opening --cutoff 2026-09-29T20:59:59Z
+
+.venv/bin/python -m modeling.player_forecasts season-project \
+  --freeze "$pf_season_freeze" \
+  --artifact /private/tmp/fhfh-season-artifact-v4/season-artifact.json \
+  --output /private/tmp/fhfh-season-current-v4 \
+  --view current --cutoff 2026-08-13T10:00:00Z
+
+.venv/bin/python -m modeling.player_forecasts season-project \
+  --freeze "$pf_season_freeze" \
+  --artifact /private/tmp/fhfh-season-artifact-v4/season-artifact.json \
+  --output /private/tmp/fhfh-season-ros-v4 \
+  --view ros --cutoff 2026-08-13T10:00:00Z
+
 PLAYER_FORECAST_DATABASE_URL="$pf_readonly_database_url" \
   .venv/bin/python -m modeling.player_forecasts season-advanced-audit \
   --output /private/tmp/fhfh-season-advanced-source-audit.json
@@ -572,12 +608,59 @@ PLAYER_FORECAST_DATABASE_URL="$pf_readonly_database_url" \
 PLAYER_FORECAST_DATABASE_URL="$pf_readonly_database_url" \
   .venv/bin/python -m modeling.player_forecasts season-advanced-freeze \
   --v4-receipt /private/tmp/fhfh-season-v4-evaluation.json \
-  --output /private/tmp/fhfh-season-advanced-v5
+  --output /private/tmp/fhfh-season-advanced-freeze-v5
+
+.venv/bin/python -m modeling.player_forecasts season-advanced-train \
+  --freeze /private/tmp/fhfh-season-advanced-freeze-v5 \
+  --v4-artifact /private/tmp/fhfh-season-artifact-v4/season-artifact.json \
+  --output /private/tmp/fhfh-season-artifact-v5
+
+.venv/bin/python -m modeling.player_forecasts season-advanced-evaluate \
+  --artifact /private/tmp/fhfh-season-artifact-v5 \
+  --output /private/tmp/fhfh-season-v5-evaluation.json
+
+.venv/bin/python -m modeling.player_forecasts season-advanced-project \
+  --artifact /private/tmp/fhfh-season-artifact-v5 \
+  --v4-bundle /private/tmp/fhfh-season-opening-v4 \
+  --receipt /private/tmp/fhfh-season-v5-evaluation.json \
+  --output /private/tmp/fhfh-season-opening-v5
+
+.venv/bin/python -m modeling.player_forecasts season-advanced-project \
+  --artifact /private/tmp/fhfh-season-artifact-v5 \
+  --v4-bundle /private/tmp/fhfh-season-current-v4 \
+  --receipt /private/tmp/fhfh-season-v5-evaluation.json \
+  --output /private/tmp/fhfh-season-current-v5
+
+.venv/bin/python -m modeling.player_forecasts season-advanced-project \
+  --artifact /private/tmp/fhfh-season-artifact-v5 \
+  --v4-bundle /private/tmp/fhfh-season-ros-v4 \
+  --receipt /private/tmp/fhfh-season-v5-evaluation.json \
+  --output /private/tmp/fhfh-season-ros-v5
+
+.venv/bin/python -m modeling.player_forecasts season-verify \
+  --bundle /private/tmp/fhfh-season-opening-v5
+
+.venv/bin/python -m modeling.player_forecasts season-verify \
+  --bundle /private/tmp/fhfh-season-current-v5
+
+.venv/bin/python -m modeling.player_forecasts season-verify \
+  --bundle /private/tmp/fhfh-season-ros-v5
 ```
 
 The advanced freeze fails closed if the fantasy-v4 receipt did not pass or if
 its shot/xG source audit is incomplete. It does not silently manufacture
-unsupported advanced metrics.
+unsupported advanced metrics. The v5 projector preserves the complete
+per-game component manifest from the v4 bundle and records its advanced
+metadata under provenance. Team Corsi uses all shot attempts; Fenwick is the
+strict unblocked subset. When historical shot-assist labels lack sufficient
+coverage, expected A1/A2 uses the validated v4 model rather than a synthetic
+70:30 or 80:20 weighting. Advanced-v5 player intervals use the same portable,
+seeded Gaussian-copula sampler in offline Python and incremental TypeScript
+evaluation. It simulates every v4/v5 primitive, reconciles identities on every
+draw, and only then calculates p10/p50/p90, so derived tails are not assembled
+from incompatible marginal endpoints. Fantrax normalization recognizes the
+published v4/v5 aliases; ESPN and Yahoo continue to map only documented IDs,
+and every unknown or conflicting provider category remains visibly unsupported.
 
 ### Roster and transaction integrity
 
@@ -594,11 +677,15 @@ curl -sS "http://localhost:3101/api/v1/player-forecasts/season-readiness" \
   -H "Authorization: Bearer $pf_admin_access_token" | jq '.rosterIntegrity'
 ```
 
-Single-source landing changes remain in the owner editor. Do not bulk-accept
-them. A complete June 16-through-cutoff official transaction audit is imported
-from a checksum-manifested JSON file with schema
-`player-forecast-season-transaction-audit-v1`; every source URL must be on an
-official NHL domain and every timestamp is preserved exactly:
+The refresh also captures the three official NHL trade/free-agency trackers,
+stores their hashes in the immutable source manifest, and advances the verified
+June 16-through-cutoff transaction audit only when every tracker parses
+successfully. Matching official tracker evidence can corroborate a landing-only
+organization change; unrelated single-source changes remain in the owner editor
+and must not be bulk-accepted. The checksum-manifested JSON workflow with schema
+`player-forecast-season-transaction-audit-v1` remains the local recovery path;
+every source URL must be on an official NHL domain and every timestamp is
+preserved exactly:
 
 ```bash
 cd web
@@ -629,7 +716,7 @@ PLAYER_FORECAST_DATABASE_URL="$(jq -r '.DB_URL' <<<"$pf_status_json")" \
 PLAYER_FORECAST_SEASON_IMPORT_CONFIRM=local-only \
 PLAYER_FORECAST_PYTHON="$PWD/../.venv/bin/python" \
   npm run import:player-forecast-season -- \
-  --bundle=/private/tmp/fhfh-season-opening-v3
+  --bundle=/private/tmp/fhfh-season-opening-v5
 ```
 
 The importer independently verifies every checksum and row count, invokes the
@@ -678,24 +765,38 @@ schedule, roster, identity, component-manifest, arithmetic, or queue issues.
 
 ### Latest local acceptance evidence
 
-The August 14 core-v3 replay produced artifact checksum
-`11f21dfafd3a46c55b7ac8d8dbe588b0077eb43423423980d4c90a8391bbce53`,
-1,090 player aggregates, 32 team aggregates, and 91,560 player-game components
-per view. The August 18 live integrity replay then verified 32 teams, 1,344
-games, 84 games per team, 811/811 mapped official-roster players, and zero
-resolved-assignment mismatches. Mitchell Chaffee resolved through roster plus
-landing consensus to NYI rather than through a player-specific patch.
+The August 20 advanced-v5 replay produced artifact checksum
+`8f5fb879d7a67790a8764bd9e53f6d7c354268cfc464b2d4dce126a3b620dc57`.
+Its checksum-bound evaluation receipt (hash prefix `3500086e`) recorded all 50
+required population/target gates as passed with no blockers. The verified
+opening, current, and ROS bundles each contain 1,465 player aggregates, 32 team
+aggregates, and complete schedule-component manifests.
 
-The existing current core-v3 release remains the last good active release and
-continues to render all 1,090 players. Its compact summary response is 611,620
-bytes and the browser mounts only the selected 100-row page. New publication is
-correctly held: 48 player-landing-only organization changes require owner
-review, the June 16-through-cutoff official transaction audit has not been
-imported, and the compacted queue contains one pending `current` job and one
-pending `ros` job. The local season audit reports serving integrity ready but
-training and publication not ready; advanced-v5 reports its empty xG/PBP/shift
-sources as blockers. No hosted Cron job, hosted migration, Vercel deployment,
-production pointer change, or new blind-test claim was created.
+The live local acceptance cycle then enqueued a real event update, used the
+active advanced-v5 release as its source, recomputed 3,864 game components for
+46 affected players, validated all 1,465 player aggregates and 32 teams, and
+auto-published current release 9 with metric set `advanced-v5`. Copy-on-write
+runs retain their immutable source run instead of cloning roughly 123,000
+unchanged components. Watermark, lease, validation, and publication state all
+closed cleanly with no pending, running, or failed jobs.
+
+The local readiness response reports 26/26 required tables, 32 teams, 1,344
+unique games, 84 games per team, zero unresolved player identities, zero
+assignment mismatches, no high-confidence roster conflicts, a private v5
+artifact, healthy settlement state, `readyForLocalDraft=true`, and
+`readyForPublication=true`. The public current-skater compact response is about
+1.03 MB, below the 1.5 MB acceptance ceiling; the browser mounts only the
+selected 100-row page and exposes role-appropriate advanced columns for mixed
+skater/goalie results.
+
+Historical shot-assist candidate coverage was only 62 of 1,312 audited games,
+so advanced-v5 deliberately inherits the validated v4 A1/A2 expectations. This
+is a disclosed serving fallback, not fabricated data. The 2025–26 lockbox is
+recorded as validation/training evidence and is not represented as a second
+blind test. Prospective 2026–27 results remain the time-dependent evidence for
+future champion promotion. No hosted Cron job, hosted migration, Vercel
+deployment, production pointer change, paid service, or FORGE migration was
+created.
 
 Raw WGO game-log metadata is not an eligible join key. In the source audit,
 347,791 of 441,274 `wgo_skater_stats` rows lacked `game_id`, and 253,362 rows
@@ -712,12 +813,30 @@ from complete-boxscore absence only for a player who had an issued forecast:
 
 ```bash
 .venv/bin/python -m modeling.player_forecasts season-settle \
-  --freeze /private/tmp/fhfh-season-freeze-v3 \
-  --output /private/tmp/fhfh-season-settlement-v3 \
+  --freeze "$pf_season_freeze" \
+  --contract-version player-forecasts-research-v4-season-fantasy \
+  --output /private/tmp/fhfh-season-settlement-v4 \
   --cutoff 2026-10-09T10:00:00Z
 
 .venv/bin/python -m modeling.player_forecasts season-settlement-verify \
-  --bundle /private/tmp/fhfh-season-settlement-v3
+  --bundle /private/tmp/fhfh-season-settlement-v4
+
+# Refresh the advanced source freeze with 2026-27 rows. Every frozen source
+# row records its real available/updated timestamp; missing timestamps are not
+# synthesized.
+PLAYER_FORECAST_DATABASE_URL="$pf_readonly_database_url" \
+  .venv/bin/python -m modeling.player_forecasts season-advanced-freeze \
+  --v4-receipt /private/tmp/fhfh-season-v4-evaluation.json \
+  --history-season 20262027 \
+  --output /private/tmp/fhfh-season-advanced-settlement-freeze-v5
+
+.venv/bin/python -m modeling.player_forecasts season-advanced-settle \
+  --base-settlement /private/tmp/fhfh-season-settlement-v4 \
+  --advanced-freeze /private/tmp/fhfh-season-advanced-settlement-freeze-v5 \
+  --output /private/tmp/fhfh-season-settlement-v5
+
+.venv/bin/python -m modeling.player_forecasts season-settlement-verify \
+  --bundle /private/tmp/fhfh-season-settlement-v5
 
 cd web
 pf_status_json="$(npm run --silent supabase:safe -- status -o json)"
@@ -726,15 +845,19 @@ NEXT_PUBLIC_SUPABASE_URL="$(jq -r '.API_URL' <<<"$pf_status_json")" \
 NEXT_PUBLIC_SUPABASE_PUBLIC_KEY="$(jq -r '.ANON_KEY' <<<"$pf_status_json")" \
 SUPABASE_SERVICE_ROLE_KEY="$(jq -r '.SERVICE_ROLE_KEY' <<<"$pf_status_json")" \
 PLAYER_FORECAST_SEASON_SETTLEMENT_IMPORT_CONFIRM=local-only \
-PLAYER_FORECAST_PYTHON=.venv/bin/python \
+PLAYER_FORECAST_PYTHON="$PWD/../.venv/bin/python" \
   npm run import:player-forecast-season-settlement -- \
-  --bundle=/private/tmp/fhfh-season-settlement-v3
+  --bundle=/private/tmp/fhfh-season-settlement-v5
 ```
 
 The importer appends outcome revisions, compares every published release's
 model and editorial values independently, and records raw point, probability,
 and interval losses beside the versioned baseline-relative skill index.
 Corrections within 48 hours append revisions; earlier records are immutable.
+Advanced settlement holds an entire game until its player-on-ice/goalie-xG
+source rows have recorded availability at or before the cutoff. It merges the
+v4 Gamecenter actuals with v5 shot/xG/danger/rebound outcomes and never converts
+a missing advanced source into a zero.
 
 Inspect operations at:
 
@@ -747,7 +870,9 @@ Inspect operations at:
 
 The editor maps or explicitly excludes every unresolved official-roster
 identity, then creates overrides, validates the draft, and manually publishes
-the opening release. Public APIs and `/fantasy-projections` remain empty until
+the opening release. Application and database guards reject a system actor for
+the opening view; automated publication is limited to healthy `current` and
+`ros` runs. Public APIs and `/fantasy-projections` remain empty until
 an immutable release becomes the active pointer. Eight unresolved identities
 were present in the August 12 freeze and were resolved in the August 13 replay;
 future unresolved identities remain hard publication blockers.
@@ -767,12 +892,26 @@ Role-probability overrides replace one complete family and use JSON such as
 must sum to one. Team line, pair, special-team, and goalie-order overrides use
 bounded JSON arrays of FHFH player IDs. Derived statistics remain read-only,
 and direct primitive-stat edits remain separate from the untouched model mean.
+Non-stat team, role, TOI, rating, GP/start, position, and pool assumptions are
+copied with explicit lineage into later editorial/event drafts until expiry or
+supersession; inherited rows suppress trigger re-enqueue so they cannot create
+an infinite dirty-job loop. `stats.*` overrides are deliberately excluded from
+inheritance and remain staged until the owner manually publishes that draft.
+Use **Create editable draft** from a published release to start the next review.
+Its direct-stat checkbox is the explicit, audited opt-in for deliberately
+carrying `stats.*` overrides; it is off by default and automatic event runs
+always keep it off. Saving another value for the same draft scope and field
+links it to the prior active row as a new immutable supersession rather than
+leaving two competing assumptions active.
 
 Supabase Cron is intentionally absent after migration replay. After a capacity
 audit and explicit hosted-activation approval, register it with
 `select fhfh_internal.register_player_forecast_season_cron(true);`. This uses
-`cron.schedule`; do not write `cron.job` directly. Keep `true` until a separate
-non-dry-run activation is approved.
+`cron.schedule`; do not write `cron.job` directly. Registration installs the
+daily official-roster/player-landing/official-tracker/processed-transaction
+check at 09:30 UTC,
+the due-work-only five-minute queue drain, and the 10:00 UTC daily release
+coordinator. Keep `true` until a separate non-dry-run activation is approved.
 
 Rollback is an atomic pointer change in the editor. It never deletes releases,
 artifacts, model values, overrides, or release events.
