@@ -19,6 +19,7 @@ describe("buildPlayerTrendRecords incremental emission", () => {
     expect(
       records.find((record) => record.metric_key === "expected_shooting_pct"),
     ).toMatchObject({
+      calculation_version: "player-trend-v2-full-history-source-units",
       raw_value: 25,
       average_value: 25,
       sample_size: 1,

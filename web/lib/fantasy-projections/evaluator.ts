@@ -309,6 +309,11 @@ function targetMultiplier(
     ? contextEffect?.homeMultiplier ?? 1
     : contextEffect?.awayMultiplier ?? 1;
   const contextualMultiplier = restMultiplier * homeAwayMultiplier;
+  if (["TOTAL_TOI", "EV_TOI", "PP_TOI", "PK_TOI"].includes(target)) {
+    // Pace affects event opportunity, not the fixed pool of regulation
+    // minutes. Deployment already supplies the TOI rate.
+    return contextualMultiplier;
+  }
   if (
     population === "goalie" &&
     ["SHOTS_AGAINST_GOALIE", "GOALS_AGAINST_GOALIE"].includes(target)

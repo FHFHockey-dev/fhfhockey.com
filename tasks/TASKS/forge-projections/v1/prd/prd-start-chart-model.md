@@ -2,7 +2,7 @@
 
 > **SUPERSEDED SCOPE NOTICE (2026-08-26):** This document is subordinate historical input to `prd-start-chart.md` and `tasks-prd-start-chart.md`; it is not an independent implementation contract. Its proposed `team_discipline_stats`, `player_sustainability_metrics`, and `player_projections` ownership, alternate update route, custom baseline/trend/matchup algorithm, roster-size sit/start recommendation, streamer mode, custom scoring, tau/category/risk controls, and second projection engine are superseded for `/start-chart`. The supported product is a read-only Daily Starter Board over canonical run-keyed FORGE projections. Canonical FORGE owns model inputs, formula, persistence, uncertainty, and promotion; Start Chart owns only dated selection, presentation scoring, context, filtering, and disclosure.
 >
-> **Current checkpoint:** The 2026-08-26 completion tranche is reopened. Local reader, contract, and board work is implemented; Production data repairs, controlled provider proof, the 14-date rollout gate, sandbox-blocked browser execution, and publication remain open. The 2026-07-30 55/55/Production receipt is retained as historical evidence only.
+> **Current checkpoint:** The 2026-08-26 completion tranche is reopened. Local reader, contract, board, performance, and requested Chrome work is implemented; Production data repairs, controlled provider proof, the 14-date rollout gate, approved Recent Team Form publication, and deployment remain open. The 2026-07-30 55/55/Production receipt is retained as historical evidence only.
 
 # Context - Table Schema Ledger File:
 ** Markdown File with the Schemas for all Team tables in the Supabase **

@@ -122,6 +122,11 @@ def parser() -> argparse.ArgumentParser:
     rookie_freeze.add_argument("--freeze", type=Path, required=True)
     rookie_freeze.add_argument("--output", type=Path, required=True)
     rookie_freeze.add_argument("--workers", type=int, default=12)
+    rookie_freeze.add_argument(
+        "--base-rookie-freeze",
+        type=Path,
+        help="Reuse checksum-verified captures and fetch only missing NHL identities.",
+    )
     season_project = commands.add_parser("season-project")
     season_project.add_argument("--freeze", type=Path, required=True)
     season_project.add_argument("--artifact", type=Path, required=True)
@@ -224,6 +229,7 @@ def main() -> None:
             arguments.freeze,
             arguments.output,
             max_workers=arguments.workers,
+            base_freeze=arguments.base_rookie_freeze,
         )
     elif arguments.command == "season-project":
         assert_output_outside_repository(arguments.output, repository_root())

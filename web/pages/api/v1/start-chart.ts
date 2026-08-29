@@ -17,13 +17,13 @@ import {
   type StartChartPlayerContext,
   type StartChartSourceStatus,
 } from "lib/projections/startChartContract";
+import { isTrustedRecentTeamFormPayload } from "lib/trends/ctpi";
 import {
   addStartChartPositionRanks,
   computeStartChartFantasyPoints,
   START_CHART_FANTASY_SCORING_CONTRACT,
   START_CHART_RANKING_CONTRACT,
 } from "lib/projections/startChartFantasyScoring";
-import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
 import supabase from "lib/supabase/server";
 import {
   fetchTeamRatingsAsOf,
@@ -89,6 +89,38 @@ type YahooPlayerRow = {
   last_updated: string | null;
 };
 
+type YahooBasePlayerRow = Omit<YahooPlayerRow, "ownership_timeline"> & {
+  player_key: string;
+};
+
+type YahooOwnershipHistoryRow = {
+  player_key: string;
+  ownership_date: string;
+  ownership_pct: number | null;
+};
+
+type YahooMappingRow = {
+  nhl_player_id: string | number | null;
+  yahoo_player_id: string | number | null;
+  nhl_team_abbreviation?: string | null;
+  yahoo_team?: string | null;
+};
+
+type YahooOverlayRpcRow = YahooMappingRow & {
+  player_name: string | null;
+  full_name: string | null;
+  eligible_positions: string[] | null;
+  percent_ownership: number | null;
+  ownership_as_of_date: string | null;
+  last_updated: string | null;
+};
+
+type YahooOverlayRpcResult = {
+  ready: boolean;
+  missing: boolean;
+  rows: YahooOverlayRpcRow[];
+};
+
 type CanonicalPlayerRow = {
   id: number;
   fullName: string;
@@ -108,6 +140,20 @@ type CtpiRow = {
   date: string;
   team: string;
   ctpi_0_to_100: number | null;
+  formula_version: string | null;
+  input_version: string | null;
+  source_game_count: string | number | null;
+  publication_status: string | null;
+};
+
+type FallbackRunRow = {
+  run_id: string;
+  as_of_date: string;
+  forge_player_projections?: Array<{
+    as_of_date: string;
+    game_id: number;
+    games?: { date?: string | null } | null;
+  }> | null;
 };
 
 type StartChartRequest = {
@@ -133,15 +179,27 @@ type SlateResult = {
   projections: ProjectionRow[];
   goalies: GoalieRow[];
   runId: string | null;
+  forgeRun: ForgeRunRow | null;
   projectionError: boolean;
   goalieError: boolean;
 };
 
+type ForgeRunWithProjectionsRow = ForgeRunRow & {
+  forge_player_projections?: ProjectionRow[] | null;
+};
+
 const RESPONSE_TTL_MS = 60_000;
 const MAX_RESPONSE_CACHE_ENTRIES = 64;
+const YAHOO_RPC_MISSING_RETRY_MS = 5 * 60_000;
+const YAHOO_HISTORY_PAGE_SIZE = 1000;
 const SUPPORTED_POSITIONS = new Set(["C", "LW", "RW", "D", "G"]);
-const responseCache = new Map<string, { expiresAt: number; payload: unknown }>();
+const responseCache = new Map<
+  string,
+  { expiresAt: number; payload: unknown }
+>();
 const inFlight = new Map<string, Promise<unknown>>();
+let yahooOverlayRpcKnownReady = false;
+let yahooOverlayRpcMissingUntil = 0;
 
 const isCalendarDate = (value: string): boolean => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -315,6 +373,9 @@ const shiftDate = (dateStr: string, days: number): string => {
   return date.toISOString().slice(0, 10);
 };
 
+export const getPregameTeamFormThroughDate = (slateDate: string): string =>
+  shiftDate(slateDate, -1);
+
 const asRecord = (value: unknown): Record<string, any> =>
   value && typeof value === "object" ? (value as Record<string, any>) : {};
 
@@ -335,8 +396,8 @@ export const parseOwnershipAsOf = (
             typeof point?.date === "string" ? point.date.slice(0, 10) : null;
           if (!date || !isCalendarDate(date) || date > targetDate) return [];
           for (const key of ["percent", "ownership", "value", "pct"]) {
-            const numeric = Number(point?.[key]);
-            if (point?.[key] !== null && Number.isFinite(numeric)) {
+            const numeric = finiteOrNull(point?.[key]);
+            if (numeric != null) {
               return [{ date, value: numeric }];
             }
           }
@@ -351,13 +412,14 @@ export const parseOwnershipAsOf = (
   }
 
   const lastUpdatedDate = row.last_updated?.slice(0, 10) ?? null;
+  const latestOwnership = finiteOrNull(row.percent_ownership);
   if (
     lastUpdatedDate &&
     isCalendarDate(lastUpdatedDate) &&
     lastUpdatedDate <= targetDate &&
-    Number.isFinite(Number(row.percent_ownership))
+    latestOwnership != null
   ) {
-    return { value: Number(row.percent_ownership), asOfDate: lastUpdatedDate };
+    return { value: latestOwnership, asOfDate: lastUpdatedDate };
   }
   return { value: null, asOfDate: null };
 };
@@ -385,9 +447,248 @@ const canonicalPositions = (position: string | null | undefined): string[] => {
 };
 
 const findAbbrev = (teamId: number): string | null => {
-  const team = Object.values(teamsInfo).find((candidate) => candidate.id === teamId);
+  const team = Object.values(teamsInfo).find(
+    (candidate) => candidate.id === teamId,
+  );
   return team?.abbrev ?? null;
 };
+
+export function resolveYahooPlayerMappings(
+  rows: YahooMappingRow[],
+  targetTeamByNhlPlayer: Map<number, string | null>,
+): { mapped: Map<number, number>; ambiguousPlayerIds: Set<number> } {
+  const candidatesByPlayer = new Map<
+    number,
+    Array<{ yahooId: number; teamMatch: boolean }>
+  >();
+  for (const row of rows) {
+    const nhlId = finiteOrNull(row.nhl_player_id);
+    const yahooId = finiteOrNull(row.yahoo_player_id);
+    if (nhlId == null || nhlId <= 0 || yahooId == null || yahooId <= 0) {
+      continue;
+    }
+    const targetTeam = targetTeamByNhlPlayer.get(nhlId)?.toUpperCase() ?? null;
+    const candidateTeams = [row.nhl_team_abbreviation, row.yahoo_team].flatMap(
+      (value) =>
+        typeof value === "string" && value.trim()
+          ? [value.trim().toUpperCase()]
+          : [],
+    );
+    const candidates = candidatesByPlayer.get(nhlId) ?? [];
+    candidates.push({
+      yahooId,
+      teamMatch: targetTeam != null && candidateTeams.includes(targetTeam),
+    });
+    candidatesByPlayer.set(nhlId, candidates);
+  }
+
+  const mapped = new Map<number, number>();
+  const ambiguousPlayerIds = new Set<number>();
+  for (const [nhlId, candidates] of candidatesByPlayer) {
+    const matchByYahooId = new Map<number, boolean>();
+    for (const candidate of candidates) {
+      matchByYahooId.set(
+        candidate.yahooId,
+        (matchByYahooId.get(candidate.yahooId) ?? false) || candidate.teamMatch,
+      );
+    }
+    const unique = Array.from(matchByYahooId, ([yahooId, teamMatch]) => ({
+      yahooId,
+      teamMatch,
+    })).sort(
+      (left, right) =>
+        Number(right.teamMatch) - Number(left.teamMatch) ||
+        left.yahooId - right.yahooId,
+    );
+    const matched = unique.filter((candidate) => candidate.teamMatch);
+    if (matched.length === 1) {
+      mapped.set(nhlId, matched[0].yahooId);
+    } else if (matched.length > 1 || unique.length > 1) {
+      ambiguousPlayerIds.add(nhlId);
+    } else if (unique[0]) {
+      mapped.set(nhlId, unique[0].yahooId);
+    }
+  }
+  return { mapped, ambiguousPlayerIds };
+}
+
+async function fetchYahooOverlayRpc(
+  playerIds: number[],
+  season: number,
+  asOfDate: string,
+): Promise<YahooOverlayRpcResult> {
+  if (playerIds.length === 0 || typeof (supabase as any).rpc !== "function") {
+    return {
+      ready: playerIds.length === 0,
+      missing: playerIds.length > 0,
+      rows: [],
+    };
+  }
+  try {
+    const { data, error } = await (supabase as any).rpc(
+      "read_yahoo_player_overlay_as_of",
+      {
+        p_nhl_player_ids: playerIds,
+        p_season: season,
+        p_as_of_date: asOfDate,
+      },
+    );
+    if (error) {
+      return {
+        ready: false,
+        missing: error.code === "PGRST202",
+        rows: [],
+      };
+    }
+    return {
+      ready: true,
+      missing: false,
+      rows: Array.isArray(data) ? (data as YahooOverlayRpcRow[]) : [],
+    };
+  } catch {
+    return { ready: false, missing: false, rows: [] };
+  }
+}
+
+async function fetchYahooMappingRows(
+  playerIds: number[],
+): Promise<{ rows: YahooMappingRow[]; error: boolean }> {
+  if (playerIds.length === 0) return { rows: [], error: false };
+  const response = await supabase
+    .from("yahoo_nhl_player_map_read")
+    .select("nhl_player_id,yahoo_player_id,nhl_team_abbreviation,yahoo_team")
+    .in("nhl_player_id", playerIds.map(String));
+  return {
+    rows: response.error ? [] : ((response.data ?? []) as YahooMappingRow[]),
+    error: Boolean(response.error),
+  };
+}
+
+async function fetchYahooOwnershipHistory(
+  playerKeys: string[],
+  asOfDate: string,
+): Promise<{ rows: YahooOwnershipHistoryRow[]; error: boolean }> {
+  if (playerKeys.length === 0) return { rows: [], error: false };
+  const exactResponse = await supabase
+    .from("yahoo_player_ownership_history")
+    .select("player_key,ownership_date,ownership_pct")
+    .in("player_key", playerKeys)
+    .eq("ownership_date", asOfDate)
+    .order("player_key", { ascending: true });
+  if (exactResponse.error) return { rows: [], error: true };
+
+  const latestByKey = new Map<string, YahooOwnershipHistoryRow>();
+  for (const row of (exactResponse.data ?? []) as YahooOwnershipHistoryRow[]) {
+    if (finiteOrNull(row.ownership_pct) != null) {
+      latestByKey.set(row.player_key, row);
+    }
+  }
+  const missingKeys = playerKeys.filter((key) => !latestByKey.has(key));
+  if (missingKeys.length === 0) {
+    return { rows: Array.from(latestByKey.values()), error: false };
+  }
+
+  for (let from = 0; ; from += YAHOO_HISTORY_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("yahoo_player_ownership_history")
+      .select("player_key,ownership_date,ownership_pct")
+      .in("player_key", missingKeys)
+      .lte("ownership_date", asOfDate)
+      .order("ownership_date", { ascending: false })
+      .order("player_key", { ascending: true })
+      .range(from, from + YAHOO_HISTORY_PAGE_SIZE - 1);
+    if (error) return { rows: [], error: true };
+    const page = (data ?? []) as YahooOwnershipHistoryRow[];
+    for (const row of page.sort(
+      (left, right) =>
+        right.ownership_date.localeCompare(left.ownership_date) ||
+        left.player_key.localeCompare(right.player_key),
+    )) {
+      if (
+        finiteOrNull(row.ownership_pct) != null &&
+        !latestByKey.has(row.player_key)
+      ) {
+        latestByKey.set(row.player_key, row);
+      }
+    }
+    if (
+      missingKeys.every((key) => latestByKey.has(key)) ||
+      page.length < YAHOO_HISTORY_PAGE_SIZE
+    ) {
+      break;
+    }
+  }
+  return { rows: Array.from(latestByKey.values()), error: false };
+}
+
+async function fetchYahooPlayersFallback(
+  yahooPlayerIds: number[],
+  season: number,
+  asOfDate: string,
+): Promise<{ rows: YahooPlayerRow[]; error: boolean }> {
+  if (yahooPlayerIds.length === 0) return { rows: [], error: false };
+  const response = await supabase
+    .from("yahoo_players")
+    .select(
+      "player_id,player_key,player_name,full_name,eligible_positions,percent_ownership,last_updated",
+    )
+    .eq("season", season)
+    .in("player_id", yahooPlayerIds.map(String));
+  if (response.error) return { rows: [], error: true };
+
+  const baseRows = ((response.data ?? []) as YahooBasePlayerRow[]).sort(
+    (left, right) => {
+      const leftUpdated = Date.parse(left.last_updated ?? "");
+      const rightUpdated = Date.parse(right.last_updated ?? "");
+      return (
+        (Number.isFinite(rightUpdated) ? rightUpdated : -Infinity) -
+          (Number.isFinite(leftUpdated) ? leftUpdated : -Infinity) ||
+        left.player_key.localeCompare(right.player_key)
+      );
+    },
+  );
+  const selectedById = new Map<number, YahooBasePlayerRow>();
+  for (const row of baseRows) {
+    const playerId = finiteOrNull(row.player_id);
+    if (playerId != null && playerId > 0 && !selectedById.has(playerId)) {
+      selectedById.set(playerId, row);
+    }
+  }
+  const selectedRows = Array.from(selectedById.values());
+  const history = await fetchYahooOwnershipHistory(
+    selectedRows.map((row) => row.player_key),
+    asOfDate,
+  );
+  const latestHistoryByKey = new Map<string, { date: string; value: number }>();
+  for (const row of history.rows.sort(
+    (left, right) =>
+      right.ownership_date.localeCompare(left.ownership_date) ||
+      left.player_key.localeCompare(right.player_key),
+  )) {
+    const ownership = finiteOrNull(row.ownership_pct);
+    if (ownership == null || latestHistoryByKey.has(row.player_key)) continue;
+    latestHistoryByKey.set(row.player_key, {
+      date: row.ownership_date,
+      value: ownership,
+    });
+  }
+
+  return {
+    rows: selectedRows.map((row) => {
+      const ownership = latestHistoryByKey.get(row.player_key);
+      return {
+        player_id: row.player_id,
+        player_name: row.player_name,
+        full_name: row.full_name,
+        eligible_positions: row.eligible_positions,
+        percent_ownership: row.percent_ownership,
+        ownership_timeline: ownership ? [ownership] : [],
+        last_updated: row.last_updated,
+      };
+    }),
+    error: history.error,
+  };
+}
 
 export const computeDefenseEaseGrades = (
   ratings: TeamPowerRating[],
@@ -395,9 +696,7 @@ export const computeDefenseEaseGrades = (
   const rows = ratings
     .flatMap((rating) => {
       const xga60 = finiteOrNull(rating.components?.xga60);
-      return xga60 != null
-        ? [{ teamAbbr: rating.teamAbbr, xga60 }]
-        : [];
+      return xga60 != null ? [{ teamAbbr: rating.teamAbbr, xga60 }] : [];
     })
     .sort(
       (left, right) =>
@@ -431,15 +730,39 @@ export const sumProjectionParts = (
     ? null
     : values.reduce<number>((sum, value) => sum + (value ?? 0), 0);
 
+const MAX_ONE_GAME_SKATER_TOI_SECONDS = 65 * 60;
+
+export const normalizeProjectedToiMinutes = (
+  ...values: Array<number | null>
+): number | null => {
+  if (values.every((value) => value == null)) return null;
+  if (
+    values.some(
+      (value) => value != null && (!Number.isFinite(value) || value < 0),
+    )
+  ) {
+    return null;
+  }
+  const totalSeconds = values.reduce<number>(
+    (sum, value) => sum + (value ?? 0),
+    0,
+  );
+  if (totalSeconds > MAX_ONE_GAME_SKATER_TOI_SECONDS) return null;
+  return Number((totalSeconds / 60).toFixed(2));
+};
+
 const buildRowKey = (row: {
   run_id?: string | null;
   game_id: number;
   player_id: number;
   horizon_games?: number;
 }): string =>
-  [row.run_id ?? "goalie", row.game_id, row.player_id, row.horizon_games ?? 1].join(
-    ":",
-  );
+  [
+    row.run_id ?? "goalie",
+    row.game_id,
+    row.player_id,
+    row.horizon_games ?? 1,
+  ].join(":");
 
 const emptyPlayerContext = (): StartChartPlayerContext => ({
   es_role: null,
@@ -497,45 +820,26 @@ async function fetchSlate(
     .select("id,date,startTime,homeTeamId,awayTeamId")
     .eq("date", targetDate)
     .order("id", { ascending: true });
-  const runIdPromise = exactRunId
-    ? Promise.resolve(exactRunId)
-    : requireLatestSucceededRunId(targetDate).catch((error) => {
-        if ((error as any)?.statusCode === 404) return null;
-        throw error;
-      });
-  const [{ data: gamesData, error: gamesError }, runId] = await Promise.all([
-    gamesPromise,
-    runIdPromise,
-  ]);
-  if (gamesError) throw gamesError;
-  const games = (gamesData ?? []) as GameRow[];
-  if (games.length === 0) {
-    return {
-      games,
-      projections: [],
-      goalies: [],
-      runId: null,
-      projectionError: false,
-      goalieError: false,
-    };
-  }
-
-  const gameIds = games.map((game) => game.id);
   const endOfTargetDate = `${targetDate}T23:59:59.999Z`;
   const goaliePromise = supabase
     .from("goalie_start_projections")
     .select(
       "game_id,team_id,player_id,game_date,start_probability,projected_gsaa_per_60,confirmed_status,l10_start_pct,season_start_pct,games_played,updated_at",
     )
-    .in("game_id", gameIds)
     .eq("game_date", targetDate)
     .lte("updated_at", endOfTargetDate);
 
-  const projectionPromise = runId
-    ? supabase
-        .from("forge_player_projections")
-        .select(
-          `
+  let runQuery = supabase
+    .from("forge_runs")
+    .select(
+      `
+          run_id,
+          as_of_date,
+          created_at,
+          updated_at,
+          git_sha,
+          metrics,
+          forge_player_projections (
           run_id,
           as_of_date,
           horizon_games,
@@ -560,29 +864,53 @@ async function fetchSlate(
           proj_toi_pk_seconds,
           uncertainty,
           players!player_id (fullName, position)
+          )
           `,
-        )
-        .eq("run_id", runId)
-        .eq("horizon_games", 1)
-        .in("game_id", gameIds)
-    : Promise.resolve({ data: [], error: null });
-  const [projectionResponse, goalieResponse] = await Promise.all([
-    projectionPromise,
+    )
+    .eq("status", "succeeded")
+    .eq("as_of_date", targetDate)
+    .eq("forge_player_projections.as_of_date", targetDate)
+    .eq("forge_player_projections.horizon_games", 1);
+  if (exactRunId) {
+    runQuery = runQuery.eq("run_id", exactRunId);
+  }
+  const runPromise = runQuery
+    .order("created_at", { ascending: false })
+    .order("run_id", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  const [gamesResponse, runResponse, goalieResponse] = await Promise.all([
+    gamesPromise,
+    runPromise,
     goaliePromise,
   ]);
-  const projectionError = Boolean(projectionResponse.error);
-  const projections = projectionResponse.error
+  if (gamesResponse.error) throw gamesResponse.error;
+  const games = (gamesResponse.data ?? []) as GameRow[];
+  const gameIds = new Set(games.map((game) => game.id));
+  const forgeRun = runResponse.error
+    ? null
+    : ((runResponse.data as unknown as ForgeRunWithProjectionsRow | null) ??
+      null);
+  const projections = (forgeRun?.forge_player_projections ?? []).filter(
+    (row) =>
+      row.as_of_date === targetDate &&
+      row.horizon_games === 1 &&
+      gameIds.has(row.game_id),
+  );
+  const goalies = goalieResponse.error
     ? []
-    : ((projectionResponse.data ?? []) as unknown as ProjectionRow[]);
+    : ((goalieResponse.data ?? []) as GoalieRow[]).filter((row) =>
+        gameIds.has(row.game_id),
+      );
 
   return {
     games,
     projections,
-    goalies: goalieResponse.error
-      ? []
-      : ((goalieResponse.data ?? []) as GoalieRow[]),
-    runId,
-    projectionError,
+    goalies,
+    runId: forgeRun?.run_id ?? null,
+    forgeRun,
+    projectionError: Boolean(runResponse.error),
     goalieError: Boolean(goalieResponse.error),
   };
 }
@@ -591,74 +919,36 @@ async function fetchFallbackRunWithPlayerData(
   targetDate: string,
   seasonStartDate: string,
 ): Promise<{ runId: string; asOfDate: string } | null> {
-  const pageSize = 100;
-  for (let from = 0; ; from += pageSize) {
+  // The inner projection/game relationship excludes succeeded runs that cannot
+  // actually serve a one-game slate. This avoids one existence query per run,
+  // which is especially expensive across long no-game/offseason stretches.
+  for (let offset = 0; ; offset += 1) {
     const { data: candidates, error: candidatesError } = await supabase
       .from("forge_runs")
-      .select("run_id,as_of_date")
+      .select(
+        "run_id,as_of_date,forge_player_projections!inner(as_of_date,game_id,horizon_games,games!inner(date))",
+      )
       .eq("status", "succeeded")
       .lte("as_of_date", targetDate)
       .gte("as_of_date", seasonStartDate)
+      .eq("forge_player_projections.horizon_games", 1)
       .order("as_of_date", { ascending: false })
       .order("created_at", { ascending: false })
       .order("run_id", { ascending: true })
-      .range(from, from + pageSize - 1);
+      .range(offset, offset);
     if (candidatesError) throw candidatesError;
-    const candidateRows = (candidates ?? []) as Array<{
-      run_id: string;
-      as_of_date: string;
-    }>;
-
-    const candidateDates = Array.from(
-      new Set(candidateRows.map((row) => row.as_of_date)),
+    const row = ((candidates ?? []) as unknown as FallbackRunRow[])[0];
+    if (!row) break;
+    const hasMatchingSchedule = (row.forge_player_projections ?? []).some(
+      (projection) =>
+        projection.as_of_date === row.as_of_date &&
+        projection.games?.date === row.as_of_date,
     );
-    const gamesByDate = new Map<string, number[]>();
-    if (candidateDates.length > 0) {
-      const { data: games, error: gamesError } = await supabase
-        .from("games")
-        .select("id,date")
-        .in("date", candidateDates)
-        .order("date", { ascending: false })
-        .order("id", { ascending: true });
-      if (gamesError) throw gamesError;
-      for (const game of games ?? []) {
-        const date = String(game.date);
-        const ids = gamesByDate.get(date) ?? [];
-        ids.push(Number(game.id));
-        gamesByDate.set(date, ids);
-      }
+    if (hasMatchingSchedule) {
+      return { runId: row.run_id, asOfDate: row.as_of_date };
     }
-
-    for (const row of candidateRows) {
-      const gameIds = gamesByDate.get(row.as_of_date) ?? [];
-      if (gameIds.length === 0) continue;
-
-      const { data: projections, error } = await supabase
-        .from("forge_player_projections")
-        .select("player_id,game_id")
-        .eq("run_id", row.run_id)
-        .eq("horizon_games", 1)
-        .in("game_id", gameIds)
-        .limit(1);
-      if (error) throw error;
-      if ((projections ?? []).length > 0) {
-        return { runId: row.run_id, asOfDate: row.as_of_date };
-      }
-    }
-    if (candidateRows.length < pageSize) break;
   }
   return null;
-}
-
-async function fetchForgeRun(runId: string | null): Promise<ForgeRunRow | null> {
-  if (!runId) return null;
-  const { data, error } = await supabase
-    .from("forge_runs")
-    .select("run_id,as_of_date,created_at,updated_at,git_sha,metrics")
-    .eq("run_id", runId)
-    .maybeSingle();
-  if (error) throw error;
-  return (data as ForgeRunRow | null) ?? null;
 }
 
 async function fetchCtpiRows(
@@ -672,7 +962,9 @@ async function fetchCtpiRows(
   for (let from = 0; ; from += pageSize) {
     const { data, error } = await supabase
       .from("team_ctpi_daily")
-      .select("date,team,ctpi_0_to_100")
+      .select(
+        "date,team,ctpi_0_to_100,formula_version:payload->>formulaVersion,input_version:payload->>inputVersion,source_game_count:payload->>sourceGameCount,publication_status:payload->>publicationStatus",
+      )
       .gte("date", startDate)
       .lte("date", endDate)
       .in("team", teams)
@@ -762,10 +1054,15 @@ export default async function handler(
       ]);
       const seasonId = Number(season?.id);
       if (!Number.isSafeInteger(seasonId) || seasonId <= 0) {
-        throw new Error(`Unable to resolve season for Start Chart date=${requestedDate}`);
+        throw new Error(
+          `Unable to resolve season for Start Chart date=${requestedDate}`,
+        );
       }
       const yahooSeason = Number(String(seasonId).slice(0, 4));
-      const seasonStartDate = String(season?.startDate ?? requestedDate).slice(0, 10);
+      const seasonStartDate = String(season?.startDate ?? requestedDate).slice(
+        0,
+        10,
+      );
 
       let slate = requestedSlate;
       let resolvedDate = requestedDate;
@@ -776,42 +1073,29 @@ export default async function handler(
         | "latest_available_with_data" = "requested_date";
 
       if (requestedSlate.games.length === 0) {
-        const previousDate = shiftDate(requestedDate, -1);
-        const previousSlate =
-          previousDate >= seasonStartDate
-            ? await fetchSlate(previousDate)
-            : null;
-        if (
-          previousSlate &&
-          previousSlate.games.length > 0 &&
-          previousSlate.projections.length > 0
-        ) {
-          slate = previousSlate;
-          resolvedDate = previousDate;
-          fallbackApplied = true;
-          fallbackStrategy = "previous_date_with_games";
-        } else {
-          const fallback = await fetchFallbackRunWithPlayerData(
-            requestedDate,
-            seasonStartDate,
+        // One joined lookup already resolves the latest earlier run that owns
+        // usable one-game rows and a matching schedule. A separate probe of
+        // yesterday duplicated the same work and added two cold network rounds.
+        const fallback = await fetchFallbackRunWithPlayerData(
+          requestedDate,
+          seasonStartDate,
+        );
+        if (fallback) {
+          const fallbackSlate = await fetchSlate(
+            fallback.asOfDate,
+            fallback.runId,
           );
-          if (fallback) {
-            const fallbackSlate = await fetchSlate(
-              fallback.asOfDate,
-              fallback.runId,
-            );
-            if (
-              fallbackSlate.games.length > 0 &&
-              fallbackSlate.projections.length > 0
-            ) {
-              slate = fallbackSlate;
-              resolvedDate = fallback.asOfDate;
-              fallbackApplied = resolvedDate !== requestedDate;
-              fallbackStrategy =
-                shiftDate(requestedDate, -1) === resolvedDate
-                  ? "previous_date_with_games"
-                  : "latest_available_with_data";
-            }
+          if (
+            fallbackSlate.games.length > 0 &&
+            fallbackSlate.projections.length > 0
+          ) {
+            slate = fallbackSlate;
+            resolvedDate = fallback.asOfDate;
+            fallbackApplied = resolvedDate !== requestedDate;
+            fallbackStrategy =
+              shiftDate(requestedDate, -1) === resolvedDate
+                ? "previous_date_with_games"
+                : "latest_available_with_data";
           }
         }
       }
@@ -855,7 +1139,9 @@ export default async function handler(
               : null),
       };
 
-      const gameMap = new Map(slate.games.map((game) => [game.id, game] as const));
+      const gameMap = new Map(
+        slate.games.map((game) => [game.id, game] as const),
+      );
       const slateTeamIds = Array.from(
         new Set(
           slate.games.flatMap((game) => [game.homeTeamId, game.awayTeamId]),
@@ -878,9 +1164,12 @@ export default async function handler(
           ratings: [] as TeamPowerRating[],
           error: true as const,
         }));
+      // Daily team-form rows can include games completed on their own date.
+      // A pregame Starter Board must therefore stop strictly before the slate.
+      const teamFormThroughDate = getPregameTeamFormThroughDate(resolvedDate);
       const ctpiPromise = fetchCtpiRows(
-        shiftDate(resolvedDate, -30),
-        resolvedDate,
+        shiftDate(teamFormThroughDate, -29),
+        teamFormThroughDate,
         slateTeamAbbrevs,
       )
         .then((rows) => ({ rows, error: false as const }))
@@ -890,7 +1179,7 @@ export default async function handler(
         .select("id,date,homeTeamId,awayTeamId")
         .gte("date", resolvedDate)
         .lte("date", weekEndDate);
-      const forgeRunPromise = fetchForgeRun(slate.runId);
+      const forgeRun = slate.forgeRun;
 
       const playerIds = Array.from(
         new Set([
@@ -898,71 +1187,150 @@ export default async function handler(
           ...slate.goalies.map((row) => row.player_id),
         ]),
       );
+      const embeddedCanonicalPlayerMap = new Map<number, CanonicalPlayerRow>();
+      for (const projection of slate.projections) {
+        const fullName = projection.players?.fullName;
+        const position = projection.players?.position;
+        if (
+          !embeddedCanonicalPlayerMap.has(projection.player_id) &&
+          typeof fullName === "string" &&
+          fullName.trim() &&
+          typeof position === "string" &&
+          position.trim()
+        ) {
+          embeddedCanonicalPlayerMap.set(projection.player_id, {
+            id: projection.player_id,
+            fullName,
+            position,
+          });
+        }
+      }
+      const missingCanonicalPlayerIds = playerIds.filter(
+        (playerId) => !embeddedCanonicalPlayerMap.has(playerId),
+      );
       const canonicalPlayersPromise =
-        playerIds.length > 0
+        missingCanonicalPlayerIds.length > 0
           ? supabase
               .from("players")
               .select("id,fullName,position")
-              .in("id", playerIds)
+              .in("id", missingCanonicalPlayerIds)
           : Promise.resolve({ data: [], error: null });
-      const mappingPromise =
-        playerIds.length > 0
-          ? supabase
-              .from("yahoo_nhl_player_map_read")
-              .select("nhl_player_id,yahoo_player_id")
-              .in("nhl_player_id", playerIds.map(String))
-          : Promise.resolve({ data: [], error: null });
-      const [canonicalResponse, mappingResponse] = await Promise.all([
+      const rpcProbeAllowed = Date.now() >= yahooOverlayRpcMissingUntil;
+      const yahooOverlayRpcPromise: Promise<YahooOverlayRpcResult> =
+        rpcProbeAllowed
+          ? fetchYahooOverlayRpc(playerIds, yahooSeason, resolvedDate)
+          : Promise.resolve({ ready: false, missing: true, rows: [] });
+      // Until the RPC is confirmed, overlap its capability probe with the
+      // compatibility mapping read. A missing function must not add a full
+      // network round before the fallback can begin.
+      const yahooMappingPromise = !yahooOverlayRpcKnownReady
+        ? fetchYahooMappingRows(playerIds)
+        : null;
+      const [canonicalResponse, yahooOverlayRpc] = await Promise.all([
         canonicalPlayersPromise,
-        mappingPromise,
+        yahooOverlayRpcPromise,
       ]);
+      if (yahooOverlayRpc.ready) {
+        yahooOverlayRpcKnownReady = true;
+        yahooOverlayRpcMissingUntil = 0;
+      } else if (rpcProbeAllowed && yahooOverlayRpc.missing) {
+        yahooOverlayRpcKnownReady = false;
+        yahooOverlayRpcMissingUntil = Date.now() + YAHOO_RPC_MISSING_RETRY_MS;
+      } else if (rpcProbeAllowed) {
+        yahooOverlayRpcKnownReady = false;
+      }
       if (canonicalResponse.error) throw canonicalResponse.error;
-      const canonicalPlayers = (canonicalResponse.data ?? []) as CanonicalPlayerRow[];
-      const canonicalPlayerMap = new Map(
-        canonicalPlayers.map((player) => [player.id, player] as const),
-      );
+      const canonicalPlayers = (canonicalResponse.data ??
+        []) as CanonicalPlayerRow[];
+      const canonicalPlayerMap = new Map([
+        ...embeddedCanonicalPlayerMap.entries(),
+        ...canonicalPlayers.map((player) => [player.id, player] as const),
+      ]);
 
-      const mappingFailed = Boolean(mappingResponse.error);
+      let mappingFailed = false;
       let yahooFailed = false;
-      const mappingRows = mappingResponse.error ? [] : (mappingResponse.data ?? []);
-      const nhlToYahoo = new Map<number, number>();
-      for (const row of mappingRows) {
-        const nhl = Number(row.nhl_player_id);
-        const yahoo = Number(row.yahoo_player_id);
-        if (Number.isFinite(nhl) && Number.isFinite(yahoo)) {
-          nhlToYahoo.set(nhl, yahoo);
+      let mappingRows: YahooMappingRow[] = yahooOverlayRpc.rows;
+      if (!yahooOverlayRpc.ready) {
+        const mappingResponse =
+          (await yahooMappingPromise) ??
+          (await fetchYahooMappingRows(playerIds));
+        mappingFailed = mappingResponse.error;
+        mappingRows = mappingResponse.rows;
+      }
+      const targetTeamByNhlPlayer = new Map<number, string | null>();
+      for (const row of [...slate.projections, ...slate.goalies]) {
+        const team = findAbbrev(row.team_id);
+        if (!targetTeamByNhlPlayer.has(row.player_id)) {
+          targetTeamByNhlPlayer.set(row.player_id, team);
+        } else if (targetTeamByNhlPlayer.get(row.player_id) !== team) {
+          targetTeamByNhlPlayer.set(row.player_id, null);
         }
       }
+      const { mapped: nhlToYahoo, ambiguousPlayerIds: ambiguousYahooMappings } =
+        resolveYahooPlayerMappings(mappingRows, targetTeamByNhlPlayer);
 
       const yahooPlayerIds = Array.from(new Set(nhlToYahoo.values()));
-      let yahooPlayers: YahooPlayerRow[] = [];
-      if (yahooPlayerIds.length > 0) {
-        const response = await supabase
-          .from("yahoo_players_with_normalized_history")
-          .select(
-            "player_id,player_name,full_name,eligible_positions,percent_ownership,last_updated,ownership_timeline:normalized_ownership_timeline",
-          )
-          .eq("season", yahooSeason)
-          .in("player_id", yahooPlayerIds.map(String));
-        yahooFailed = Boolean(response.error);
-        yahooPlayers = response.error
-          ? []
-          : ((response.data ?? []) as YahooPlayerRow[]);
+      let yahooPlayers: YahooPlayerRow[] = yahooOverlayRpc.ready
+        ? yahooOverlayRpc.rows.flatMap((row) => {
+            const yahooId = finiteOrNull(row.yahoo_player_id);
+            if (yahooId == null || yahooId <= 0) return [];
+            const ownership = finiteOrNull(row.percent_ownership);
+            return [
+              {
+                player_id: String(yahooId),
+                player_name: row.player_name,
+                full_name: row.full_name,
+                eligible_positions: row.eligible_positions,
+                percent_ownership: ownership,
+                ownership_timeline:
+                  row.ownership_as_of_date && ownership != null
+                    ? [
+                        {
+                          date: row.ownership_as_of_date,
+                          value: ownership,
+                        },
+                      ]
+                    : [],
+                last_updated: row.last_updated,
+              },
+            ];
+          })
+        : [];
+      if (!yahooOverlayRpc.ready && yahooPlayerIds.length > 0) {
+        const response = await fetchYahooPlayersFallback(
+          yahooPlayerIds,
+          yahooSeason,
+          resolvedDate,
+        );
+        yahooFailed = response.error;
+        yahooPlayers = response.rows;
       }
       const yahooMap = new Map(
         yahooPlayers.flatMap((row) => {
-          const id = Number(row.player_id);
-          return Number.isFinite(id) ? ([[id, row]] as const) : [];
+          const id = finiteOrNull(row.player_id);
+          return id != null && id > 0 ? ([[id, row]] as const) : [];
         }),
       );
 
-      const [ratingsResult, ctpiResult, weekGamesResponse, forgeRun] =
-        await Promise.all([
-          ratingsPromise,
-          ctpiPromise,
-          weekGamesPromise,
-          forgeRunPromise,
-        ]);
+      const [ratingsResult, ctpiResult, weekGamesResponse] = await Promise.all([
+        ratingsPromise,
+        ctpiPromise,
+        weekGamesPromise,
+      ]);
+      const runMetrics = asRecord(forgeRun?.metrics);
+      const rollout = asRecord(runMetrics.skater_rollout);
+      const firstModelVersion = slate.projections
+        .map((row) => extractSkaterModelMetadata(row.uncertainty).modelVersion)
+        .find((value): value is string => Boolean(value));
+      const provenanceEligibility = evaluateForgeCalibrationEligibility(
+        forgeRun?.metrics,
+      );
+      const modelVersion =
+        (typeof rollout.modelVersion === "string"
+          ? rollout.modelVersion
+          : null) ??
+        firstModelVersion ??
+        null;
       const ratings = ratingsResult.ratings;
       const ratingsResolvedDate = ratingsResult.resolvedDate;
       const ratingsError = ratingsResult.error;
@@ -975,7 +1343,10 @@ export default async function handler(
 
       const targetEndMs = Date.parse(`${resolvedDate}T23:59:59.999Z`);
       const goalieAsOfTimestamp = new Date(
-        Math.min(Date.now(), Number.isFinite(targetEndMs) ? targetEndMs : Date.now()),
+        Math.min(
+          Date.now(),
+          Number.isFinite(targetEndMs) ? targetEndMs : Date.now(),
+        ),
       ).toISOString();
       const goalieMixtures = buildGoalieStarterMixtureRows({
         projections: slate.goalies,
@@ -1023,7 +1394,9 @@ export default async function handler(
       for (const projection of slate.projections) {
         if (!gameMap.has(projection.game_id)) continue;
         const canonical =
-          canonicalPlayerMap.get(projection.player_id) ?? projection.players ?? null;
+          canonicalPlayerMap.get(projection.player_id) ??
+          projection.players ??
+          null;
         const { yahooPlayer, ownership } = ownershipFor(projection.player_id);
         const yahooPositions = parsePositions(yahooPlayer?.eligible_positions);
         const positions =
@@ -1049,7 +1422,7 @@ export default async function handler(
           projection.proj_goals_pp,
           projection.proj_assists_pp,
         );
-        const toiSeconds = sumProjectionParts(
+        const projectedToiMinutes = normalizeProjectedToiMinutes(
           projection.proj_toi_es_seconds,
           projection.proj_toi_pp_seconds,
           projection.proj_toi_pk_seconds,
@@ -1066,7 +1439,23 @@ export default async function handler(
         const opponentAbbrev = findAbbrev(projection.opponent_team_id);
         const context = buildPlayerContext(projection.uncertainty);
         if (!yahooPlayer) context.flags.push("ownership_unavailable");
+        if (ambiguousYahooMappings.has(projection.player_id)) {
+          context.flags.push("ambiguous_yahoo_mapping");
+        }
         if (positions.length === 0) context.flags.push("position_unavailable");
+        if (!provenanceEligibility.eligible) {
+          context.flags.push("unverified_projection_provenance");
+        }
+        if (
+          projectedToiMinutes == null &&
+          [
+            projection.proj_toi_es_seconds,
+            projection.proj_toi_pp_seconds,
+            projection.proj_toi_pk_seconds,
+          ].some((value) => value != null)
+        ) {
+          context.flags.push("invalid_projected_toi");
+        }
 
         players.push({
           row_key: buildRowKey(projection),
@@ -1102,8 +1491,7 @@ export default async function handler(
           proj_hits: projection.proj_hits,
           proj_blocks: projection.proj_blocks,
           proj_pim: projection.proj_pim,
-          proj_toi_minutes:
-            toiSeconds == null ? null : Number((toiSeconds / 60).toFixed(2)),
+          proj_toi_minutes: projectedToiMinutes,
           matchup_grade: opponentAbbrev
             ? (defenseEaseGrades.get(opponentAbbrev) ?? null)
             : null,
@@ -1120,11 +1508,17 @@ export default async function handler(
         const canonical = canonicalPlayerMap.get(goalie.player_id);
         const { yahooPlayer, ownership } = ownershipFor(goalie.player_id);
         const opponentId =
-          goalie.team_id === game.homeTeamId ? game.awayTeamId : game.homeTeamId;
+          goalie.team_id === game.homeTeamId
+            ? game.awayTeamId
+            : game.homeTeamId;
         const context = emptyPlayerContext();
         if (goalie.is_stale) context.flags.push("stale_goalie_source");
-        if (goalie.is_hard_stale) context.flags.push("hard_stale_goalie_source");
+        if (goalie.is_hard_stale)
+          context.flags.push("hard_stale_goalie_source");
         if (!yahooPlayer) context.flags.push("ownership_unavailable");
+        if (ambiguousYahooMappings.has(goalie.player_id)) {
+          context.flags.push("ambiguous_yahoo_mapping");
+        }
         players.push({
           row_key: buildRowKey(goalie),
           game_id: goalie.game_id,
@@ -1179,7 +1573,7 @@ export default async function handler(
           ...player,
           games_remaining_week: gamesRemainingError
             ? null
-            : (gamesRemaining.get(player.team_id) ?? 0),
+            : (gamesRemaining.get(player.team_id) ?? null),
         })),
       );
       const eligiblePlayers = rankedPlayers
@@ -1190,8 +1584,10 @@ export default async function handler(
         .sort((left, right) => {
           if (request.position) {
             const rankDelta =
-              (left.position_ranks[request.position] ?? Number.MAX_SAFE_INTEGER) -
-              (right.position_ranks[request.position] ?? Number.MAX_SAFE_INTEGER);
+              (left.position_ranks[request.position] ??
+                Number.MAX_SAFE_INTEGER) -
+              (right.position_ranks[request.position] ??
+                Number.MAX_SAFE_INTEGER);
             if (rankDelta !== 0) return rankDelta;
           }
           return (
@@ -1214,11 +1610,21 @@ export default async function handler(
           )
         : eligiblePlayers;
 
-      const ctpiRows = ctpiResult.rows;
+      const allCtpiRows = ctpiResult.rows;
+      const ctpiRows = allCtpiRows.filter((row) =>
+        isTrustedRecentTeamFormPayload({
+          publicationStatus: row.publication_status,
+          formulaVersion: row.formula_version,
+          inputVersion: row.input_version,
+          sourceGameCount: row.source_game_count,
+        }),
+      );
+      const untrustedCtpiRows = allCtpiRows.length - ctpiRows.length;
       const ctpiError = ctpiResult.error;
       const ctpiMap = new Map<string, Record<string, number>>();
       for (const row of ctpiRows) {
-        if (!row.date || !row.team || !Number.isFinite(row.ctpi_0_to_100)) continue;
+        if (!row.date || !row.team || !Number.isFinite(row.ctpi_0_to_100))
+          continue;
         const dateRow = ctpiMap.get(row.date) ?? {};
         dateRow[row.team] = Number(row.ctpi_0_to_100);
         ctpiMap.set(row.date, dateRow);
@@ -1272,30 +1678,19 @@ export default async function handler(
             .map(processGoalie)
             .sort(
               (left, right) =>
-                (right.start_probability ?? -1) - (left.start_probability ?? -1),
+                (right.start_probability ?? -1) -
+                (left.start_probability ?? -1),
             ),
           awayGoalies: gameGoalies
             .filter((goalie) => goalie.team_id === game.awayTeamId)
             .map(processGoalie)
             .sort(
               (left, right) =>
-                (right.start_probability ?? -1) - (left.start_probability ?? -1),
+                (right.start_probability ?? -1) -
+                (left.start_probability ?? -1),
             ),
         };
       });
-
-      const runMetrics = asRecord(forgeRun?.metrics);
-      const rollout = asRecord(runMetrics.skater_rollout);
-      const firstModelVersion = slate.projections
-        .map((row) => extractSkaterModelMetadata(row.uncertainty).modelVersion)
-        .find((value): value is string => Boolean(value));
-      const provenanceEligibility = evaluateForgeCalibrationEligibility(
-        forgeRun?.metrics,
-      );
-      const modelVersion =
-        (typeof rollout.modelVersion === "string" ? rollout.modelVersion : null) ??
-        firstModelVersion ??
-        null;
 
       const goalieTeamIds = new Set(
         normalizedGoalies.map((goalie) => goalie.team_id),
@@ -1309,16 +1704,20 @@ export default async function handler(
       const goalieStaleTeams = Array.from(goalieTeamIds).filter(
         (teamId) => !goalieFreshTeamIds.has(teamId),
       ).length;
-      const latestGoalieUpdate = normalizedGoalies
-        .map((goalie) => goalie.source_updated_at)
-        .filter((value): value is string => Boolean(value))
-        .sort()
-        .at(-1) ?? null;
+      const latestGoalieUpdate =
+        normalizedGoalies
+          .map((goalie) => goalie.source_updated_at)
+          .filter((value): value is string => Boolean(value))
+          .sort()
+          .at(-1) ?? null;
       const sortedOwnershipDates = ownershipDates.sort();
       const ownershipOldestAsOfDate = sortedOwnershipDates[0] ?? null;
       const ownershipAsOfDate = sortedOwnershipDates.at(-1) ?? null;
       const yahooMappedPlayers = mappedNhlPlayerIds.size;
-      const yahooUnmappedPlayers = Math.max(0, playerIds.length - yahooMappedPlayers);
+      const yahooUnmappedPlayers = Math.max(
+        0,
+        playerIds.length - yahooMappedPlayers,
+      );
       const ratingTeamsCovered = new Set(
         ratings
           .filter((rating) => slateTeamAbbrevs.includes(rating.teamAbbr))
@@ -1353,12 +1752,17 @@ export default async function handler(
               : "missing";
       if (slate.games.length > 0 && goalieState !== "ready") {
         degradedReasons.push(
-          goalieState === "error" ? "goalie_query_error" : "missing_goalie_coverage",
+          goalieState === "error"
+            ? "goalie_query_error"
+            : goalieTeamsCovered === slateTeamIds.length && goalieStaleTeams > 0
+              ? "stale_goalie_coverage"
+              : "missing_goalie_coverage",
         );
       }
       const teamRatingState = ratingsError
         ? "error"
-        : ratingTeamsCovered === slateTeamAbbrevs.length && slateTeamAbbrevs.length > 0
+        : ratingTeamsCovered === slateTeamAbbrevs.length &&
+            slateTeamAbbrevs.length > 0
           ? "ready"
           : ratingTeamsCovered > 0
             ? "partial"
@@ -1366,30 +1770,62 @@ export default async function handler(
       if (slate.games.length > 0 && teamRatingState !== "ready") {
         degradedReasons.push("missing_team_rating_coverage");
       }
-      const ownershipState = mappingFailed || yahooFailed
-        ? "error"
-        : playerIds.length === 0
-          ? "missing"
-          : ownershipPlayerIdsWithAsOf.size === playerIds.length
-            ? "ready"
-            : ownershipPlayerIdsWithAsOf.size > 0
-              ? "partial"
-              : "missing";
+      const ownershipState =
+        mappingFailed || yahooFailed
+          ? "error"
+          : playerIds.length === 0
+            ? "missing"
+            : ownershipPlayerIdsWithAsOf.size === playerIds.length
+              ? "ready"
+              : ownershipPlayerIdsWithAsOf.size > 0
+                ? "partial"
+                : "missing";
       if (playerIds.length > 0 && ownershipState !== "ready") {
         degradedReasons.push("ownership_overlay_incomplete");
       }
-      const ctpiThroughDate = ctpiRows
-        .map((row) => row.date)
-        .filter(Boolean)
-        .sort()
-        .at(-1) ?? null;
+      const ctpiThroughDate =
+        ctpiRows
+          .map((row) => row.date)
+          .filter(Boolean)
+          .sort()
+          .at(-1) ?? null;
+      const ctpiTeamsCovered = new Set(
+        ctpiRows
+          .map((row) => row.team)
+          .filter((team) => slateTeamAbbrevs.includes(team)),
+      ).size;
       const ctpiState = ctpiError
         ? "error"
-        : ctpiRows.length > 0
-          ? "ready"
-          : "missing";
-      const gamesRemainingState = gamesRemainingError ? "error" : "ready";
-      if (gamesRemainingError) degradedReasons.push("games_remaining_unavailable");
+        : slateTeamAbbrevs.length === 0
+          ? "missing"
+          : ctpiTeamsCovered === slateTeamAbbrevs.length &&
+              untrustedCtpiRows === 0
+            ? "ready"
+            : ctpiTeamsCovered > 0
+              ? "partial"
+              : "missing";
+      if (slate.games.length > 0 && ctpiState !== "ready") {
+        degradedReasons.push(
+          untrustedCtpiRows > 0
+            ? "untrusted_team_form_history"
+            : "missing_ctpi_coverage",
+        );
+      }
+      const gamesRemainingTeamsCovered = slateTeamIds.filter((teamId) =>
+        gamesRemaining.has(teamId),
+      ).length;
+      const gamesRemainingState = gamesRemainingError
+        ? "error"
+        : slateTeamIds.length === 0
+          ? "missing"
+          : gamesRemainingTeamsCovered === slateTeamIds.length
+            ? "ready"
+            : gamesRemainingTeamsCovered > 0
+              ? "partial"
+              : "missing";
+      if (gamesRemainingState !== "ready") {
+        degradedReasons.push("games_remaining_unavailable");
+      }
 
       const sourceStatus: StartChartSourceStatus = {
         overall:
@@ -1407,7 +1843,7 @@ export default async function handler(
           inputVersion: provenanceEligibility.observedContract,
           message:
             projectionState === "partial"
-              ? "Projection rows are visible, but their repaired rolling-history provenance is missing or quarantined."
+              ? "Player projections are shown, but their historical input checks are incomplete. Treat these rankings as provisional."
               : projectionState === "missing"
                 ? "No canonical one-game skater rows are available for this slate."
                 : projectionState === "error"
@@ -1430,10 +1866,20 @@ export default async function handler(
           affectsRanking: false,
           date: ctpiThroughDate,
           throughDate: ctpiThroughDate,
+          formulaVersion: ctpiRows[0]?.formula_version ?? null,
+          inputVersion: ctpiRows[0]?.input_version ?? null,
+          trustedRows: ctpiRows.length,
+          untrustedRows: untrustedCtpiRows,
           message:
             ctpiState === "ready"
               ? null
-              : "CTPI trend context is unavailable; canonical fantasy ranks are unchanged.",
+              : untrustedCtpiRows > 0 && ctpiRows.length === 0
+                ? "Recent team form is temporarily unavailable while its historical game data is being verified. It is hidden rather than show a misleading score."
+                : untrustedCtpiRows > 0
+                  ? `Recent team form leaves out ${untrustedCtpiRows} unapproved or unverifiable data points. Fantasy ranks are unaffected.`
+                  : ctpiState === "partial"
+                    ? `Recent team form is available for ${ctpiTeamsCovered} of ${slateTeamAbbrevs.length} teams using only games completed before this slate. Fantasy ranks are unaffected.`
+                    : "There is not enough verified team-form history before this slate. Fantasy ranks are unaffected.",
         },
         goalies: {
           state: goalieState,
@@ -1447,7 +1893,9 @@ export default async function handler(
           message:
             goalieState === "ready"
               ? null
-              : `${goalieTeamsCovered} of ${slateTeamIds.length} slate teams have goalie coverage; ${goalieStaleTeams} covered teams are stale.`,
+              : goalieTeamsCovered === 0
+                ? "Starting-goalie information is unavailable for this slate, so goalie rankings are not shown."
+                : `Starting-goalie information is available for ${goalieTeamsCovered} of ${slateTeamIds.length} teams; ${goalieStaleTeams} team records are out of date.`,
         },
         ownership: {
           state: ownershipState,
@@ -1470,10 +1918,13 @@ export default async function handler(
         gamesRemaining: {
           state: gamesRemainingState,
           affectsRanking: false,
-          date: gamesRemainingError ? null : resolvedDate,
-          message: gamesRemainingError
-            ? "Weekly game volume is unavailable and does not affect ranking."
-            : null,
+          date: gamesRemainingState === "ready" ? resolvedDate : null,
+          message:
+            gamesRemainingState === "ready"
+              ? null
+              : gamesRemainingState === "partial"
+                ? `Weekly game volume covers ${gamesRemainingTeamsCovered} of ${slateTeamIds.length} slate teams and does not affect ranking.`
+                : "Weekly game volume is unavailable and does not affect ranking.",
         },
         degradedReasons: Array.from(new Set(degradedReasons)),
       };
@@ -1513,7 +1964,9 @@ export default async function handler(
         },
         pagination: {
           page: request.page,
-          pageSize: request.paginationRequested ? request.pageSize : totalPlayers,
+          pageSize: request.paginationRequested
+            ? request.pageSize
+            : totalPlayers,
           totalPlayers,
           totalPages,
         },

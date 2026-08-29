@@ -7,6 +7,7 @@ type UnderlyingStatsDashboardCardProps = {
   children: ReactNode;
   className?: string;
   description?: ReactNode;
+  info?: string;
   kicker?: string;
   title: string;
 };
@@ -16,6 +17,7 @@ export default function UnderlyingStatsDashboardCard({
   children,
   className,
   description,
+  info,
   kicker,
   title
 }: UnderlyingStatsDashboardCardProps) {
@@ -27,7 +29,19 @@ export default function UnderlyingStatsDashboardCard({
       <header className={styles.header}>
         <div className={styles.headerCopy}>
           {kicker ? <span className={styles.kicker}>{kicker}</span> : null}
-          <h2 className={styles.title}>{title}</h2>
+          <div className={styles.titleRow}>
+            <h2 className={styles.title}>{title}</h2>
+            {info ? (
+              <span
+                className={styles.info}
+                aria-label={info}
+                tabIndex={0}
+                title={info}
+              >
+                i
+              </span>
+            ) : null}
+          </div>
           {description ? <p className={styles.description}>{description}</p> : null}
         </div>
         {actions ? <div className={styles.actions}>{actions}</div> : null}

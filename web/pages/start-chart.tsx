@@ -2,6 +2,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import Head from "next/head";
@@ -11,11 +12,12 @@ import { useRouter } from "next/router";
 import {
   Line,
   LineChart,
-  ResponsiveContainer,
+  ReferenceLine,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+import ResizeObserverPolyfill from "resize-observer-polyfill";
 import useSWR from "swr";
 
 import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
@@ -38,6 +40,52 @@ import styles from "./start-chart.module.scss";
 
 const POSITION_ORDER = ["C", "LW", "RW", "D", "G"] as const;
 const INITIAL_POSITION_LIMIT = 25;
+
+const describeTeamForm = (value: number | null | undefined): string => {
+  if (value == null || !Number.isFinite(value)) return "Unavailable";
+  if (value > 50) return "Above league average";
+  if (value < 50) return "Below league average";
+  return "League average";
+};
+
+const useMeasuredChart = (enabled: boolean) => {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    if (!enabled) return;
+    const element = ref.current;
+    if (!element) return;
+    let frame = 0;
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const { width, height } = element.getBoundingClientRect();
+        const next = {
+          width: Math.max(0, Math.floor(width)),
+          height: Math.max(0, Math.floor(height)),
+        };
+        setSize((current) =>
+          current.width === next.width && current.height === next.height
+            ? current
+            : next,
+        );
+      });
+    };
+    const Observer = window.ResizeObserver ?? ResizeObserverPolyfill;
+    const observer = new Observer(measure);
+    observer.observe(element);
+    window.addEventListener("resize", measure);
+    measure();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [enabled]);
+
+  return { ref, size };
+};
 
 const isCalendarDate = (value: unknown): value is string => {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
@@ -366,17 +414,18 @@ export default function StartChartPage() {
   const queryMode = Array.isArray(router.query.mode)
     ? router.query.mode[0]
     : router.query.mode;
+  const normalizedQueryPosition = queryPosition?.toUpperCase();
+  const validQueryPosition = POSITION_ORDER.includes(
+    normalizedQueryPosition as StartChartPosition,
+  )
+    ? (normalizedQueryPosition as StartChartPosition)
+    : null;
 
   useEffect(() => {
     if (!router.isReady) return;
     const resolvedDate = isCalendarDate(queryDate) ? queryDate : easternDate();
     setDate(resolvedDate);
-    const resolvedPosition = POSITION_ORDER.includes(
-      queryPosition?.toUpperCase() as StartChartPosition,
-    )
-      ? (queryPosition?.toUpperCase() as StartChartPosition)
-      : null;
-    if (resolvedPosition) setActivePosition(resolvedPosition);
+    if (validQueryPosition) setActivePosition(validQueryPosition);
     setSelectedTeam(queryTeam?.toUpperCase() ?? null);
 
     if (!isCalendarDate(queryDate)) {
@@ -391,16 +440,19 @@ export default function StartChartPage() {
     }
   }, [
     queryDate,
-    queryPosition,
     queryTeam,
     router,
     router.isReady,
     router.pathname,
+    validQueryPosition,
   ]);
 
   const { data, error, isLoading, mutate } = useSWR<StartChartResponse>(
     date ? `/api/v1/start-chart?date=${encodeURIComponent(date)}` : null,
     fetcher,
+  );
+  const { ref: chartGraphicRef, size: chartSize } = useMeasuredChart(
+    (data?.ctpi?.length ?? 0) > 0,
   );
 
   const updateQuery = (values: Record<string, string | null>) => {
@@ -466,25 +518,9 @@ export default function StartChartPage() {
     [data?.games],
   );
 
-  const unknownOwnershipExcluded = useMemo(
-    () =>
-      ownershipMax < 100
-        ? (data?.players ?? []).filter(
-            (player) =>
-              (player.ownership ?? player.percent_ownership) == null,
-          ).length
-        : 0,
-    [data?.players, ownershipMax],
-  );
-
-  const filteredPlayers = useMemo(() => {
+  const scopedPlayers = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
     return (data?.players ?? []).filter((player) => {
-      const ownership = player.ownership ?? player.percent_ownership;
-      const passesOwnership =
-        ownershipMax === 100
-          ? true
-          : ownership != null && ownership <= ownershipMax;
       const passesSearch =
         !normalizedSearch || player.name.toLowerCase().includes(normalizedSearch);
       const passesGame = allowedGameTeamIds
@@ -493,15 +529,32 @@ export default function StartChartPage() {
       const passesTeam = selectedTeam
         ? player.team_abbrev === selectedTeam || String(player.team_id) === selectedTeam
         : true;
-      return passesOwnership && passesSearch && passesGame && passesTeam;
+      return passesSearch && passesGame && passesTeam;
     });
-  }, [
-    allowedGameTeamIds,
-    data?.players,
-    ownershipMax,
-    search,
-    selectedTeam,
-  ]);
+  }, [allowedGameTeamIds, data?.players, search, selectedTeam]);
+
+  const unknownOwnershipExcluded = useMemo(
+    () =>
+      ownershipMax < 100
+        ? scopedPlayers.filter(
+            (player) =>
+              (player.ownership ?? player.percent_ownership) == null,
+          ).length
+        : 0,
+    [ownershipMax, scopedPlayers],
+  );
+
+  const filteredPlayers = useMemo(
+    () =>
+      scopedPlayers.filter((player) => {
+        const ownership = player.ownership ?? player.percent_ownership;
+        return (
+          ownershipMax === 100 ||
+          (ownership != null && ownership <= ownershipMax)
+        );
+      }),
+    [ownershipMax, scopedPlayers],
+  );
 
   const playersByPosition = useMemo(() => {
     const result = new Map<StartChartPosition, StartChartPlayer[]>(
@@ -527,14 +580,14 @@ export default function StartChartPage() {
   }, [filteredPlayers]);
 
   useEffect(() => {
-    if (queryPosition || !data?.players.length) return;
+    if (validQueryPosition || !data?.players.length) return;
     const firstAvailable = POSITION_ORDER.find(
       (position) => (playersByPosition.get(position)?.length ?? 0) > 0,
     );
     if (firstAvailable && firstAvailable !== activePosition) {
       setActivePosition(firstAvailable);
     }
-  }, [activePosition, data?.players.length, playersByPosition, queryPosition]);
+  }, [activePosition, data?.players.length, playersByPosition, validQueryPosition]);
 
   const teamsPlaying = useMemo(() => {
     const teams = new Set<string>();
@@ -571,14 +624,22 @@ export default function StartChartPage() {
     return colors;
   }, [teamsPlaying]);
 
-  const lastCtpiDateByTeam = useMemo(() => {
-    const dates = new Map<string, string>();
+  const latestTeamFormByTeam = useMemo(() => {
+    const latest = new Map<string, { date: string; value: number }>();
     for (const row of data?.ctpi ?? []) {
       for (const team of teamsPlaying) {
-        if (typeof row[team] === "number") dates.set(team, row.date);
+        const value = row[team];
+        const previous = latest.get(team);
+        if (
+          typeof value === "number" &&
+          Number.isFinite(value) &&
+          (!previous || row.date > previous.date)
+        ) {
+          latest.set(team, { date: row.date, value });
+        }
       }
     }
-    return dates;
+    return latest;
   }, [data?.ctpi, teamsPlaying]);
 
   const yAxisDomain = useMemo<[number, number]>(() => {
@@ -589,8 +650,8 @@ export default function StartChartPage() {
     );
     if (values.length === 0) return [0, 100];
     return [
-      Math.max(0, Math.floor(Math.min(...values) - 5)),
-      Math.min(100, Math.ceil(Math.max(...values) + 5)),
+      Math.max(0, Math.floor(Math.min(50, ...values) - 5)),
+      Math.min(100, Math.ceil(Math.max(50, ...values) + 5)),
     ];
   }, [data?.ctpi, teamsPlaying]);
 
@@ -611,6 +672,26 @@ export default function StartChartPage() {
   const isFallback = data?.serving?.mode === "fallback" || data?.fallbackApplied;
   const isPartial = data?.serving?.mode === "partial";
   const isDegraded = data?.sourceStatus?.overall === "degraded";
+  const servingMessage = isFallback
+    ? `This is the nearest earlier slate with projections${
+        typeof data?.serving?.ageDays === "number"
+          ? ` (${data.serving.ageDays} day${data.serving.ageDays === 1 ? "" : "s"} old)`
+          : ""
+      }. Use it as historical reference, not today's recommendation.`
+    : data?.serving?.message;
+  const statusMessages = Array.from(
+    new Set(
+      [
+        servingMessage,
+        data?.sourceStatus?.projection?.state !== "ready"
+          ? data?.sourceStatus?.projection?.message
+          : null,
+        data?.sourceStatus?.goalies?.state !== "ready"
+          ? data?.sourceStatus?.goalies?.message
+          : null,
+      ].filter((message): message is string => Boolean(message)),
+    ),
+  );
 
   return (
     <div className={styles.page}>
@@ -674,34 +755,68 @@ export default function StartChartPage() {
               : "This slate has incomplete source coverage."}
           </strong>
           <span>
-            {data?.serving?.message ??
-              data?.sourceStatus?.degradedReasons?.join(", ") ??
+            {statusMessages.join(" ") ||
+              data?.sourceStatus?.degradedReasons?.join(", ") ||
               "Review source details before acting on the board."}
           </span>
         </section>
       ) : null}
 
-      <section className={styles.chartPanel} aria-labelledby="ctpi-heading">
+      <section
+        className={styles.chartPanel}
+        aria-labelledby="team-form-heading"
+        aria-describedby="team-form-description"
+      >
         <div className={styles.chartHeader}>
           <div>
-            <h2 id="ctpi-heading" className={styles.chartTitle}>
-              CTPI Pulse
+            <p className={styles.chartEyebrow}>Team context</p>
+            <h2 id="team-form-heading" className={styles.chartTitle}>
+              Recent Team Form
             </h2>
-            <p>Thirty-day team power trend through the resolved slate date.</p>
+            <p>
+              How each team has been playing lately, compared with the league.
+              It combines recent offense, defense, goaltending, and special
+              teams in one score.
+            </p>
           </div>
           <span className={styles.meta}>
-            Through {data?.sourceStatus?.ctpi?.throughDate ?? "Unavailable"}
+            Data through {data?.sourceStatus?.ctpi?.throughDate ?? "Unavailable"}
           </span>
         </div>
+        <div id="team-form-description" className={styles.chartGuide}>
+          <span>
+            <strong>50</strong> is league average
+          </span>
+          <span>
+            <strong>Higher</strong> means stronger recent all-around form
+          </span>
+          <span>
+            <strong>Lower</strong> means weaker recent all-around form
+          </span>
+          <span>Context only — not a game prediction or ranking input</span>
+        </div>
+        {(data?.ctpi?.length ?? 0) > 0 &&
+        data?.sourceStatus?.ctpi?.state !== "ready" &&
+        data?.sourceStatus?.ctpi?.message ? (
+          <p className={styles.chartNotice} role="status">
+            {data.sourceStatus.ctpi.message}
+          </p>
+        ) : null}
         {(data?.ctpi?.length ?? 0) > 0 ? (
           <>
             <div
+              ref={chartGraphicRef}
               className={styles.chartGraphic}
               role="img"
-              aria-label={`Thirty-day team power trend for ${teamsPlaying.join(", ")}`}
+              aria-label={`Recent team form for ${teamsPlaying.join(", ")}. Daily snapshots from the last 30 days compare recent offense, defense, goaltending, and special teams with the league. 50 is league average and higher is stronger.`}
             >
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data?.ctpi ?? []} margin={{ right: 20 }}>
+              {chartSize.width > 0 && chartSize.height > 0 ? (
+                <LineChart
+                  width={chartSize.width}
+                  height={chartSize.height}
+                  data={data?.ctpi ?? []}
+                  margin={{ right: 20 }}
+                >
                   <XAxis
                     dataKey="date"
                     tick={{ fill: "#9ea7b3" }}
@@ -711,6 +826,17 @@ export default function StartChartPage() {
                     domain={yAxisDomain}
                     width={30}
                     tick={{ fill: "#9ea7b3" }}
+                  />
+                  <ReferenceLine
+                    y={50}
+                    stroke="#9ea7b3"
+                    strokeDasharray="4 4"
+                    label={{
+                      value: "League avg",
+                      position: "insideTopRight",
+                      fill: "#cbd2dc",
+                      fontSize: 10,
+                    }}
                   />
                   <Tooltip
                     contentStyle={{
@@ -728,33 +854,50 @@ export default function StartChartPage() {
                       stroke={teamColors[abbreviation] ?? "#fff"}
                       strokeWidth={2}
                       connectNulls
-                      dot={(props: any) => (
-                        <TeamEndpointDot
-                          {...props}
-                          dataKey={abbreviation}
-                          lastDate={lastCtpiDateByTeam.get(abbreviation)}
-                        />
-                      )}
+                      dot={(props: any) => {
+                        const { key, ...dotProps } = props;
+                        return (
+                          <TeamEndpointDot
+                            key={key}
+                            {...dotProps}
+                            dataKey={abbreviation}
+                            lastDate={latestTeamFormByTeam.get(abbreviation)?.date}
+                          />
+                        );
+                      }}
                       activeDot={{ r: 4 }}
                       name={abbreviation}
                     />
                   ))}
                 </LineChart>
-              </ResponsiveContainer>
+              ) : null}
             </div>
-            <ul className={styles.chartLegend} aria-label="CTPI team legend">
+            <ul
+              className={styles.chartLegend}
+              aria-label="Latest team form by team"
+            >
               {teamsPlaying.map((team) => (
                 <li key={team}>
-                  <span style={{ backgroundColor: teamColors[team] }} />
-                  {team}
+                  <span
+                    className={styles.chartLegendSwatch}
+                    style={{ backgroundColor: teamColors[team] }}
+                    aria-hidden="true"
+                  />
+                  <strong>{team}</strong>
+                  <span className={styles.chartLegendValue}>
+                    {formatNumber(latestTeamFormByTeam.get(team)?.value, 0)}
+                  </span>
+                  <span className={styles.chartLegendReading}>
+                    {describeTeamForm(latestTeamFormByTeam.get(team)?.value)}
+                  </span>
                 </li>
               ))}
             </ul>
           </>
         ) : (
           <div className={styles.chartEmpty} role="status">
-            CTPI history is unavailable for this slate. Rankings remain based on
-            canonical FORGE projections.
+            {data?.sourceStatus?.ctpi?.message ??
+              "Recent team form is unavailable for this slate. Fantasy ranks are unchanged."}
           </div>
         )}
       </section>
@@ -927,8 +1070,9 @@ export default function StartChartPage() {
               easier; missing as-of ratings display as unavailable.
             </div>
             <div className={styles.legendItem}>
-              <strong>Uncertainty</strong>
-              Low/high values are model outcome bounds, not guarantees.
+              <strong>NHL PTS uncertainty</strong>
+              Low/high values bound projected goals plus assists, not fantasy
+              points or guarantees.
             </div>
           </div>
         </details>
@@ -1136,8 +1280,8 @@ export default function StartChartPage() {
                         {player.context?.projection_low != null ||
                         player.context?.projection_high != null ? (
                           <div className={styles.uncertainty}>
-                            Range {formatNumber(player.context.projection_low, 2)}–
-                            {formatNumber(player.context.projection_high, 2)} FP
+                            NHL PTS range {formatNumber(player.context.projection_low, 2)}–
+                            {formatNumber(player.context.projection_high, 2)}
                           </div>
                         ) : null}
                         <ContextChips
@@ -1220,7 +1364,7 @@ export default function StartChartPage() {
               }`}
             />
             <SourceRow
-              label="CTPI"
+              label="Team form history"
               state={data.sourceStatus.ctpi.state}
               value={data.sourceStatus.ctpi.throughDate ?? "Unavailable"}
             />

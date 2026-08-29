@@ -23,7 +23,8 @@ export type GamePredictionFeatureSource = {
   goNoGo: "go" | "go_with_caveat" | "limited" | "no_go";
 };
 
-export const GAME_PREDICTION_FEATURE_SET_VERSION = "game_features_v5_accuracy_candidates";
+export const GAME_PREDICTION_FEATURE_SET_VERSION =
+  "game_features_v5_accuracy_candidates";
 
 export const GAME_PREDICTION_FEATURE_SOURCES: GamePredictionFeatureSource[] = [
   {
@@ -50,7 +51,8 @@ export const GAME_PREDICTION_FEATURE_SOURCES: GamePredictionFeatureSource[] = [
     featureGroup: "schedule_strength",
     use: "optional",
     asOfRule: "strict_before_game_date",
-    fallback: "Omit schedule-strength context when prior opponents or as-of team ratings are unavailable.",
+    fallback:
+      "Omit schedule-strength context when prior opponents or as-of team ratings are unavailable.",
     goNoGo: "go_with_caveat",
   },
   {
@@ -59,7 +61,8 @@ export const GAME_PREDICTION_FEATURE_SOURCES: GamePredictionFeatureSource[] = [
     featureGroup: "team_context",
     use: "optional",
     asOfRule: "strict_before_game_date",
-    fallback: "Omit CTPI context and rely on team power/NST/WGO features.",
+    fallback:
+      "Omit CTPI context when no approved prior row exists and rely on team power/NST/WGO features.",
     goNoGo: "go_with_caveat",
   },
   {
@@ -84,7 +87,8 @@ export const GAME_PREDICTION_FEATURE_SOURCES: GamePredictionFeatureSource[] = [
     featureGroup: "team_form",
     use: "optional",
     asOfRule: "strict_before_game_date",
-    fallback: "Use team power and standings when WGO rows are missing or unmapped.",
+    fallback:
+      "Use team power and standings when WGO rows are missing or unmapped.",
     goNoGo: "go_with_caveat",
   },
   {
@@ -102,7 +106,8 @@ export const GAME_PREDICTION_FEATURE_SOURCES: GamePredictionFeatureSource[] = [
     featureGroup: "goalie",
     use: "required",
     asOfRule: "current_prediction_only",
-    fallback: "Blend likely starters or fall back to team-level goalie strength.",
+    fallback:
+      "Blend likely starters or fall back to team-level goalie strength.",
     goNoGo: "go_with_caveat",
   },
   {
@@ -139,7 +144,13 @@ export const GAME_PREDICTION_FEATURE_SOURCES: GamePredictionFeatureSource[] = [
   },
   {
     id: "lineups",
-    tables: ["lineCombinations", "lines_nhl", "lines_dfo", "lines_gdl", "lines_ccc"],
+    tables: [
+      "lineCombinations",
+      "lines_nhl",
+      "lines_dfo",
+      "lines_gdl",
+      "lines_ccc",
+    ],
     featureGroup: "lineup_context",
     use: "current_only",
     asOfRule: "strict_before_start_time",
@@ -148,7 +159,11 @@ export const GAME_PREDICTION_FEATURE_SOURCES: GamePredictionFeatureSource[] = [
   },
   {
     id: "forge_projections",
-    tables: ["forge_player_projections", "forge_goalie_projections", "forge_team_projections"],
+    tables: [
+      "forge_player_projections",
+      "forge_goalie_projections",
+      "forge_team_projections",
+    ],
     featureGroup: "optional_projection_context",
     use: "current_only",
     asOfRule: "current_prediction_only",
@@ -179,8 +194,12 @@ export function getGamePredictionFeatureSources(): GamePredictionFeatureSource[]
   return GAME_PREDICTION_FEATURE_SOURCES.map((source) => ({ ...source }));
 }
 
-export function getFeatureSourceByTable(tableName: string): GamePredictionFeatureSource | null {
+export function getFeatureSourceByTable(
+  tableName: string,
+): GamePredictionFeatureSource | null {
   return (
-    GAME_PREDICTION_FEATURE_SOURCES.find((source) => source.tables.includes(tableName)) ?? null
+    GAME_PREDICTION_FEATURE_SOURCES.find((source) =>
+      source.tables.includes(tableName),
+    ) ?? null
   );
 }

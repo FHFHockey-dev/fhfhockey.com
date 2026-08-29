@@ -68,14 +68,18 @@ from modeling.player_forecasts.season import (
     _official_game_status,
     _portable_canonical_json,
     _quantiles,
+    _reconcile,
     _schedule_contexts_by_team,
     _season_player_fallback_flags,
     _select_rate_policy,
     _team_contexts,
+    _target_multiplier,
+    _weighted_exposure_summary,
     evaluate_season_game,
     freeze_season_dataset,
 )
 from modeling.player_forecasts.rookies import (
+    capture_player_landings,
     evaluate_rookie_transition_model,
     learn_rookie_transition_model,
     normalize_player_landing,
@@ -253,6 +257,65 @@ def test_rookie_validation_retains_generic_prior_when_holdout_support_is_missing
     assert report["eligibleForServing"] is False
     assert report["sufficientSupport"] is False
     assert report["fallbackPolicy"] == "retain_generic_prior_with_wider_uncertainty"
+
+
+def test_rookie_capture_resume_reuses_verified_rows_and_retries_only_failures(
+    tmp_path,
+    monkeypatch,
+):
+    season_freeze = tmp_path / "season"
+    season_freeze.mkdir()
+    player_pool = [
+        {"nhl_player_id": 1},
+        {"nhl_player_id": 2},
+    ]
+    write_json(season_freeze / "player-pool.json", player_pool)
+    player_pool_checksum = hashlib.sha256(
+        (season_freeze / "player-pool.json").read_bytes()
+    ).hexdigest()
+    write_json(season_freeze / "manifest.json", {
+        "contractChecksum": SEASON_CONTRACT_SHA256,
+        "files": {
+            "player_pool": {
+                "path": "player-pool.json",
+                "sha256": player_pool_checksum,
+            },
+        },
+    })
+
+    attempts: list[int] = []
+
+    def capture(player_id, fetched_at):
+        attempts.append(player_id)
+        if player_id == 2 and attempts.count(2) == 1:
+            raise OSError("transient")
+        return {
+            "nhlPlayerId": player_id,
+            "position": "C",
+            "birthDate": "2003-01-01",
+            "draftOverall": 50,
+            "fetchedAt": fetched_at,
+            "availableAt": fetched_at,
+            "seasonTotals": [],
+        }
+
+    monkeypatch.setattr("modeling.player_forecasts.rookies._capture_one", capture)
+    first = tmp_path / "first"
+    first_result = capture_player_landings(season_freeze, first, max_workers=1)
+    assert first_result["complete"] is False
+    assert first_result["capturedPlayers"] == 1
+
+    second = tmp_path / "second"
+    second_result = capture_player_landings(
+        season_freeze,
+        second,
+        max_workers=1,
+        base_freeze=first,
+    )
+    assert second_result["complete"] is True
+    assert second_result["requestedFromNetwork"] == 1
+    assert second_result["reusedPlayers"] == 1
+    assert attempts == [1, 2, 2]
 
 
 def test_advanced_freeze_rejects_an_unapproved_v4_receipt(tmp_path):
@@ -971,16 +1034,28 @@ def test_season_freeze_can_refresh_current_state_from_verified_historical_core(
 
     class Result:
         def fetchall(self):
-            return [{
-                "fhfh_player_id": 9,
-                "nhl_player_id": 8480001,
-                "canonical_name": "Resolved Player",
-                "position": "C",
-                "team_id": 1,
-                "lifecycle_status": "active_nhl",
-                "verification_status": "verified",
-                "source_provenance": {},
-            }]
+            return [
+                {
+                    "fhfh_player_id": 9,
+                    "nhl_player_id": 8480001,
+                    "canonical_name": "Resolved Player",
+                    "position": "C",
+                    "team_id": 1,
+                    "lifecycle_status": "active_nhl",
+                    "verification_status": "verified",
+                    "source_provenance": {},
+                },
+                {
+                    "fhfh_player_id": 10,
+                    "nhl_player_id": 8480002,
+                    "canonical_name": "Roster Omission Player",
+                    "position": "D",
+                    "team_id": 1,
+                    "lifecycle_status": "active_nhl",
+                    "verification_status": "verified",
+                    "source_provenance": {},
+                },
+            ]
 
     class Connection:
         def execute(self, _query, _parameters=()):
@@ -1018,7 +1093,9 @@ def test_season_freeze_can_refresh_current_state_from_verified_historical_core(
     assert manifest["assistLabelPolicy"]["detectedSourceConflictRows"] == 2
     assert manifest["assistLabelPolicy"]["officialGamecenterCheckedRows"] == 3
     assert manifest["assistLabelPolicy"]["officialGamecenterCorrectedRows"] == 2
-    assert read_json(output / "player-pool.json")[0]["fhfh_player_id"] == 9
+    assert [
+        player["fhfh_player_id"] for player in read_json(output / "player-pool.json")
+    ] == [9, 10]
     assert (output / "skaters.jsonl").read_bytes() == (base / "skaters.jsonl").read_bytes()
 
 
@@ -1145,6 +1222,82 @@ def test_season_context_profile_obeys_chronological_cutoff():
     profile = _fit_context_profile(rows, "GOALS", {10: "1995-09-01"}, "2026-01-03")
     assert profile["rows"] == 1
     assert profile["backToBackMultiplier"] == 1
+
+
+def test_sparse_count_context_preserves_the_mean_one_identity():
+    rows = []
+    for player_id in range(40):
+        scoring_game = player_id % 20
+        for game in range(20):
+            rows.append({
+                "nhl_player_id": player_id,
+                "game_date": f"2025-10-{game + 1:02d}",
+                "position": "C",
+                "GOALS": 1 if game == scoring_game else 0,
+                "is_home": game % 2 == 0,
+                "is_back_to_back": False,
+            })
+    profile = _fit_context_profile(rows, "GOALS", {}, None)
+    assert profile["homeMultiplier"] == pytest.approx(1)
+    assert profile["awayMultiplier"] == pytest.approx(1)
+
+
+def test_season_scoring_uses_exposure_rates_and_reconciles_strength_residuals():
+    summaries, (prior, observed) = _weighted_exposure_summary([
+        {
+            "nhl_player_id": 10,
+            "season_id": 20242025,
+            "GAMES_PLAYED": 80,
+            "TOTAL_TOI": 80 * 1200,
+            "GOALS": 40,
+        },
+        {
+            "nhl_player_id": 10,
+            "season_id": 20252026,
+            "GAMES_PLAYED": 80,
+            "TOTAL_TOI": 80 * 1200,
+            "GOALS": 48,
+        },
+    ], "GOALS", "TOTAL_TOI", 0.5)
+    assert observed == 2
+    assert prior == pytest.approx(summaries[10][0])
+    assert summaries[10][0] * 1200 == pytest.approx(68 / 120)
+
+    reconciled = _reconcile({
+        "GOALS": 0.6,
+        "PRIMARY_ASSISTS": 0.7,
+        "SECONDARY_ASSISTS": 0.3,
+        "EV_GOALS": 0.1,
+        "PP_GOALS": 0.15,
+        "SH_GOALS": 0.01,
+        "EMPTY_NET_GOALS": 0.04,
+        "EV_PRIMARY_ASSISTS": 0.1,
+        "PP_PRIMARY_ASSISTS": 0.2,
+        "SH_PRIMARY_ASSISTS": 0.01,
+        "EN_PRIMARY_ASSISTS": 0.04,
+        "EV_SECONDARY_ASSISTS": 0.1,
+        "PP_SECONDARY_ASSISTS": 0.08,
+        "SH_SECONDARY_ASSISTS": 0.01,
+        "EN_SECONDARY_ASSISTS": 0.01,
+    }, "forward")
+    assert reconciled["GOALS"] == pytest.approx(0.6)
+    assert reconciled["PRIMARY_ASSISTS"] == pytest.approx(0.7)
+    assert reconciled["SECONDARY_ASSISTS"] == pytest.approx(0.3)
+    assert reconciled["EV_GOALS"] == pytest.approx(0.4)
+    assert reconciled["EV_PRIMARY_ASSISTS"] == pytest.approx(0.45)
+    assert reconciled["EV_SECONDARY_ASSISTS"] == pytest.approx(0.2)
+    assert reconciled["POINTS"] == pytest.approx(1.6)
+
+
+def test_season_toi_does_not_scale_with_event_pace():
+    team = {"paceMultiplier": 1.21}
+    opponent = {"paceMultiplier": 0.81}
+
+    assert _target_multiplier("TOTAL_TOI", "forward", team, opponent) == 1.0
+    assert _target_multiplier("PP_TOI", "forward", team, opponent) == 1.0
+    assert _target_multiplier(
+        "SHOTS_ON_GOAL", "forward", team, opponent
+    ) == pytest.approx((1.21 * 0.81) ** 0.5)
 
 
 def test_season_derived_quantiles_are_ordered_and_propagate_primitive_uncertainty():

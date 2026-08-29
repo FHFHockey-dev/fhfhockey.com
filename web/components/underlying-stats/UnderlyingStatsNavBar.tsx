@@ -3,12 +3,23 @@ import { useRouter } from "next/router";
 import { UNDERLYING_STATS_NAV_LINKS } from "lib/navigation/analyticsSurfaceOwnership";
 import styles from "./UnderlyingStatsNavBar.module.scss";
 
-export default function UnderlyingStatsNavBar() {
+type UnderlyingStatsNavBarProps = {
+  variant?: "cards" | "connected";
+};
+
+export default function UnderlyingStatsNavBar({
+  variant = "cards"
+}: UnderlyingStatsNavBarProps) {
   const router = useRouter();
   const pathname = router.pathname;
 
   return (
-    <nav className={styles.navBar} aria-label="Underlying Stats Hub Navigation">
+    <nav
+      className={`${styles.navBar} ${
+        variant === "connected" ? styles.connected : ""
+      }`}
+      aria-label="Underlying Stats Hub Navigation"
+    >
       {UNDERLYING_STATS_NAV_LINKS.map((link) => {
         const isActive = pathname === link.href;
         return (

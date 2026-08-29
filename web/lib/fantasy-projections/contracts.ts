@@ -492,17 +492,23 @@ export function reconcileProjectionValues(
       (values.GAMES_STARTED ?? 0) > 0
         ? projectionNumber((values.WINS_GOALIE ?? 0) / values.GAMES_STARTED)
         : 0;
-    values.GOALS_SAVED_ABOVE_EXPECTED = projectionNumber(
-      (values.EXPECTED_GOALS_AGAINST_GOALIE ?? 0) -
-        (values.GOALS_AGAINST_GOALIE ?? 0),
-    );
-    for (const danger of ["HIGH_DANGER", "MID_RANGE", "LONG_RANGE"] as const) {
-      const shots = values[`${danger}_SHOTS_AGAINST_GOALIE`] ?? 0;
-      const goals = values[`${danger}_GOALS_AGAINST_GOALIE`] ?? 0;
-      const saves = Math.max(0, shots - goals);
-      values[`${danger}_SAVES_GOALIE`] = projectionNumber(saves);
-      values[`${danger}_SAVE_PERCENTAGE_GOALIE`] =
-        shots > 0 ? projectionNumber(saves / shots) : 0;
+    if ("EXPECTED_GOALS_AGAINST_GOALIE" in values) {
+      values.GOALS_SAVED_ABOVE_EXPECTED = projectionNumber(
+        (values.EXPECTED_GOALS_AGAINST_GOALIE ?? 0) -
+          (values.GOALS_AGAINST_GOALIE ?? 0),
+      );
+      for (const danger of ["HIGH_DANGER", "MID_RANGE", "LONG_RANGE"] as const) {
+        const shotsTarget = `${danger}_SHOTS_AGAINST_GOALIE`;
+        if (!(shotsTarget in values)) continue;
+        const goalsTarget = `${danger}_GOALS_AGAINST_GOALIE`;
+        const shots = values[shotsTarget] ?? 0;
+        const goals = Math.min(shots, values[goalsTarget] ?? 0);
+        const saves = Math.max(0, shots - goals);
+        values[goalsTarget] = projectionNumber(goals);
+        values[`${danger}_SAVES_GOALIE`] = projectionNumber(saves);
+        values[`${danger}_SAVE_PERCENTAGE_GOALIE`] =
+          shots > 0 ? projectionNumber(saves / shots) : 0;
+      }
     }
     return values;
   }
@@ -514,16 +520,48 @@ export function reconcileProjectionValues(
     "SH_SECONDARY_ASSISTS", "EN_SECONDARY_ASSISTS",
   ];
   if (strengthComponents.every((target) => target in values)) {
-    values.GOALS = projectionNumber(
-      values.EV_GOALS + values.PP_GOALS + values.SH_GOALS + values.EMPTY_NET_GOALS,
+    const reconcileStrengthFamily = (
+      totalTarget: string,
+      evTarget: string,
+      nonEvTargets: [string, string, string],
+    ): void => {
+      const componentTotal = [evTarget, ...nonEvTargets].reduce(
+        (total, target) => total + Math.max(0, values[target] ?? 0),
+        0,
+      );
+      const authoritativeTotal = Math.max(
+        0,
+        values[totalTarget] ?? componentTotal,
+      );
+      const nonEvTotal = nonEvTargets.reduce(
+        (total, target) => total + Math.max(0, values[target] ?? 0),
+        0,
+      );
+      if (nonEvTotal > authoritativeTotal && nonEvTotal > 0) {
+        const scale = authoritativeTotal / nonEvTotal;
+        for (const target of nonEvTargets) {
+          values[target] = projectionNumber(Math.max(0, values[target] ?? 0) * scale);
+        }
+        values[evTarget] = 0;
+      } else {
+        values[evTarget] = projectionNumber(authoritativeTotal - nonEvTotal);
+      }
+      values[totalTarget] = projectionNumber(authoritativeTotal);
+    };
+    reconcileStrengthFamily(
+      "GOALS",
+      "EV_GOALS",
+      ["PP_GOALS", "SH_GOALS", "EMPTY_NET_GOALS"],
     );
-    values.PRIMARY_ASSISTS = projectionNumber(
-      values.EV_PRIMARY_ASSISTS + values.PP_PRIMARY_ASSISTS +
-        values.SH_PRIMARY_ASSISTS + values.EN_PRIMARY_ASSISTS,
+    reconcileStrengthFamily(
+      "PRIMARY_ASSISTS",
+      "EV_PRIMARY_ASSISTS",
+      ["PP_PRIMARY_ASSISTS", "SH_PRIMARY_ASSISTS", "EN_PRIMARY_ASSISTS"],
     );
-    values.SECONDARY_ASSISTS = projectionNumber(
-      values.EV_SECONDARY_ASSISTS + values.PP_SECONDARY_ASSISTS +
-        values.SH_SECONDARY_ASSISTS + values.EN_SECONDARY_ASSISTS,
+    reconcileStrengthFamily(
+      "SECONDARY_ASSISTS",
+      "EV_SECONDARY_ASSISTS",
+      ["PP_SECONDARY_ASSISTS", "SH_SECONDARY_ASSISTS", "EN_SECONDARY_ASSISTS"],
     );
     values.PP_ASSISTS = projectionNumber(
       values.PP_PRIMARY_ASSISTS + values.PP_SECONDARY_ASSISTS,
@@ -564,10 +602,12 @@ export function reconcileProjectionValues(
     (values.GAMES_PLAYED ?? 0) > 0
       ? projectionNumber((values.TOTAL_TOI ?? 0) / values.GAMES_PLAYED)
       : 0;
-  values.EXPECTED_ASSISTS = projectionNumber(
-    (values.EXPECTED_PRIMARY_ASSISTS ?? 0) +
-      (values.EXPECTED_SECONDARY_ASSISTS ?? 0),
-  );
+  if ("EXPECTED_PRIMARY_ASSISTS" in values) {
+    values.EXPECTED_ASSISTS = projectionNumber(
+      (values.EXPECTED_PRIMARY_ASSISTS ?? 0) +
+        (values.EXPECTED_SECONDARY_ASSISTS ?? 0),
+    );
+  }
   const share = (forKey: string, againstKey: string): number => {
     const forValue = values[forKey] ?? 0;
     const againstValue = values[againstKey] ?? 0;
@@ -575,18 +615,13 @@ export function reconcileProjectionValues(
       ? projectionNumber(forValue / (forValue + againstValue))
       : 0;
   };
-  values.ON_ICE_CF_PERCENTAGE = share(
-    "ON_ICE_SHOT_ATTEMPTS_FOR",
-    "ON_ICE_SHOT_ATTEMPTS_AGAINST",
-  );
-  values.ON_ICE_FF_PERCENTAGE = share(
-    "ON_ICE_UNBLOCKED_ATTEMPTS_FOR",
-    "ON_ICE_UNBLOCKED_ATTEMPTS_AGAINST",
-  );
-  values.ON_ICE_XGF_PERCENTAGE = share(
-    "ON_ICE_EXPECTED_GOALS_FOR",
-    "ON_ICE_EXPECTED_GOALS_AGAINST",
-  );
+  for (const [label, forKey, againstKey] of [
+    ["ON_ICE_CF_PERCENTAGE", "ON_ICE_SHOT_ATTEMPTS_FOR", "ON_ICE_SHOT_ATTEMPTS_AGAINST"],
+    ["ON_ICE_FF_PERCENTAGE", "ON_ICE_UNBLOCKED_ATTEMPTS_FOR", "ON_ICE_UNBLOCKED_ATTEMPTS_AGAINST"],
+    ["ON_ICE_XGF_PERCENTAGE", "ON_ICE_EXPECTED_GOALS_FOR", "ON_ICE_EXPECTED_GOALS_AGAINST"],
+  ] as const) {
+    if (forKey in values) values[label] = share(forKey, againstKey);
+  }
   return values;
 }
 
@@ -692,28 +727,31 @@ export function reconcileProjectionQuantiles(
     );
     ratioInterval("START_PERCENTAGE_GOALIE", "GAMES_STARTED", "GAMES_PLAYED", 1);
     ratioInterval("WIN_PERCENTAGE_GOALIE", "WINS_GOALIE", "GAMES_STARTED", 1);
-    setInterval(
-      "GOALS_SAVED_ABOVE_EXPECTED",
-      (p10.EXPECTED_GOALS_AGAINST_GOALIE ?? 0) - (p90.GOALS_AGAINST_GOALIE ?? 0),
-      (p50.EXPECTED_GOALS_AGAINST_GOALIE ?? 0) - (p50.GOALS_AGAINST_GOALIE ?? 0),
-      (p90.EXPECTED_GOALS_AGAINST_GOALIE ?? 0) - (p10.GOALS_AGAINST_GOALIE ?? 0),
-    );
-    for (const danger of ["HIGH_DANGER", "MID_RANGE", "LONG_RANGE"] as const) {
-      const shotsTarget = `${danger}_SHOTS_AGAINST_GOALIE`;
-      const goalsTarget = `${danger}_GOALS_AGAINST_GOALIE`;
-      const savesTarget = `${danger}_SAVES_GOALIE`;
-      const lower = Math.max(0, (p10[shotsTarget] ?? 0) - (p90[goalsTarget] ?? 0));
-      const median = Math.max(0, (p50[shotsTarget] ?? 0) - (p50[goalsTarget] ?? 0));
-      const upper = Math.max(median, (p90[shotsTarget] ?? 0) - (p10[goalsTarget] ?? 0));
-      setInterval(savesTarget, lower, median, upper, 0);
+    if ("EXPECTED_GOALS_AGAINST_GOALIE" in rawQuantiles.p50) {
       setInterval(
-        `${danger}_SAVE_PERCENTAGE_GOALIE`,
-        ratio(lower, p90[shotsTarget] ?? 0, 0),
-        ratio(median, p50[shotsTarget] ?? 0, 0),
-        ratio(upper, p10[shotsTarget] ?? 0, 1),
-        0,
-        1,
+        "GOALS_SAVED_ABOVE_EXPECTED",
+        (p10.EXPECTED_GOALS_AGAINST_GOALIE ?? 0) - (p90.GOALS_AGAINST_GOALIE ?? 0),
+        (p50.EXPECTED_GOALS_AGAINST_GOALIE ?? 0) - (p50.GOALS_AGAINST_GOALIE ?? 0),
+        (p90.EXPECTED_GOALS_AGAINST_GOALIE ?? 0) - (p10.GOALS_AGAINST_GOALIE ?? 0),
       );
+      for (const danger of ["HIGH_DANGER", "MID_RANGE", "LONG_RANGE"] as const) {
+        const shotsTarget = `${danger}_SHOTS_AGAINST_GOALIE`;
+        if (!(shotsTarget in rawQuantiles.p50)) continue;
+        const goalsTarget = `${danger}_GOALS_AGAINST_GOALIE`;
+        const savesTarget = `${danger}_SAVES_GOALIE`;
+        const lower = Math.max(0, (p10[shotsTarget] ?? 0) - (p90[goalsTarget] ?? 0));
+        const median = Math.max(0, (p50[shotsTarget] ?? 0) - (p50[goalsTarget] ?? 0));
+        const upper = Math.max(median, (p90[shotsTarget] ?? 0) - (p10[goalsTarget] ?? 0));
+        setInterval(savesTarget, lower, median, upper, 0);
+        setInterval(
+          `${danger}_SAVE_PERCENTAGE_GOALIE`,
+          ratio(lower, p90[shotsTarget] ?? 0, 0),
+          ratio(median, p50[shotsTarget] ?? 0, 0),
+          ratio(upper, p10[shotsTarget] ?? 0, 1),
+          0,
+          1,
+        );
+      }
     }
   } else {
     setInterval(
@@ -736,22 +774,17 @@ export function reconcileProjectionQuantiles(
       1,
     );
     ratioInterval("POINTS_PER_GAME", "POINTS", "GAMES_PLAYED");
-    ratioInterval("TOI_PER_GAME", "TOTAL_TOI", "GAMES_PLAYED");
-    shareInterval(
-      "ON_ICE_CF_PERCENTAGE",
-      "ON_ICE_SHOT_ATTEMPTS_FOR",
-      "ON_ICE_SHOT_ATTEMPTS_AGAINST",
-    );
-    shareInterval(
-      "ON_ICE_FF_PERCENTAGE",
-      "ON_ICE_UNBLOCKED_ATTEMPTS_FOR",
-      "ON_ICE_UNBLOCKED_ATTEMPTS_AGAINST",
-    );
-    shareInterval(
-      "ON_ICE_XGF_PERCENTAGE",
-      "ON_ICE_EXPECTED_GOALS_FOR",
-      "ON_ICE_EXPECTED_GOALS_AGAINST",
-    );
+    // NHL regular-season games cannot exceed 65 minutes, including overtime.
+    // Cross-bound ratio intervals can otherwise become physically impossible
+    // for low-GP prospects when the lower GP bound approaches one game.
+    ratioInterval("TOI_PER_GAME", "TOTAL_TOI", "GAMES_PLAYED", 65 * 60);
+    for (const [label, forKey, againstKey] of [
+      ["ON_ICE_CF_PERCENTAGE", "ON_ICE_SHOT_ATTEMPTS_FOR", "ON_ICE_SHOT_ATTEMPTS_AGAINST"],
+      ["ON_ICE_FF_PERCENTAGE", "ON_ICE_UNBLOCKED_ATTEMPTS_FOR", "ON_ICE_UNBLOCKED_ATTEMPTS_AGAINST"],
+      ["ON_ICE_XGF_PERCENTAGE", "ON_ICE_EXPECTED_GOALS_FOR", "ON_ICE_EXPECTED_GOALS_AGAINST"],
+    ] as const) {
+      if (forKey in rawQuantiles.p50) shareInterval(label, forKey, againstKey);
+    }
   }
 
   const targets = new Set([...Object.keys(p10), ...Object.keys(p50), ...Object.keys(p90)]);

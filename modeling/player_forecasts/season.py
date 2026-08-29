@@ -59,6 +59,18 @@ HURDLE_TARGETS = {
     "GAME_WINNING_GOALS", "OVERTIME_GOALS", "EMPTY_NET_GOALS",
     "SH_GOALS", "SH_ASSISTS", "SHUTOUTS_GOALIE", "QUALITY_STARTS_GOALIE",
 }
+SKATER_SCORING_EXPOSURES = {
+    "GOALS": "TOTAL_TOI",
+    "PRIMARY_ASSISTS": "TOTAL_TOI",
+    "SECONDARY_ASSISTS": "TOTAL_TOI",
+    "PP_GOALS": "PP_TOI",
+    "PP_PRIMARY_ASSISTS": "PP_TOI",
+    "PP_SECONDARY_ASSISTS": "PP_TOI",
+    "SH_GOALS": "PK_TOI",
+    "SH_PRIMARY_ASSISTS": "PK_TOI",
+    "SH_SECONDARY_ASSISTS": "PK_TOI",
+    "EMPTY_NET_GOALS": "GAMES_PLAYED",
+}
 DECAY_CANDIDATES = (0.5, 0.7, 0.85, 1.0)
 SHRINK_CANDIDATES = (5.0, 10.0, 20.0, 40.0)
 MINIMUM_CHALLENGER_LIFT = 0.001
@@ -454,6 +466,36 @@ select game_date, season_id, game_id, nhl_player_id, position, team_id,
        case when pbp_complete then pbp_en_secondary_assists else null end::double precision as "EN_SECONDARY_ASSISTS"
 from resolved
 order by game_date, game_id, nhl_player_id
+"""
+
+SKATER_SEASON_TOTALS_QUERY = """
+select player_id::bigint as nhl_player_id,
+       season::integer as season_id,
+       position_code::text as position,
+       games_played::double precision as "GAMES_PLAYED",
+       (toi_per_game * games_played)::double precision as "TOTAL_TOI",
+       ev_time_on_ice::double precision as "EV_TOI",
+       pp_toi::double precision as "PP_TOI",
+       sh_time_on_ice::double precision as "PK_TOI",
+       goals::double precision as "GOALS",
+       total_primary_assists::double precision as "PRIMARY_ASSISTS",
+       total_secondary_assists::double precision as "SECONDARY_ASSISTS",
+       assists::double precision as "ASSISTS",
+       points::double precision as "POINTS",
+       pp_goals::double precision as "PP_GOALS",
+       pp_primary_assists::double precision as "PP_PRIMARY_ASSISTS",
+       pp_secondary_assists::double precision as "PP_SECONDARY_ASSISTS",
+       sh_goals::double precision as "SH_GOALS",
+       sh_primary_assists::double precision as "SH_PRIMARY_ASSISTS",
+       sh_secondary_assists::double precision as "SH_SECONDARY_ASSISTS",
+       empty_net_goals::double precision as "EMPTY_NET_GOALS",
+       empty_net_points::double precision as "EMPTY_NET_POINTS",
+       updated_at::text as source_observed_at
+from public.wgo_skater_stats_totals
+where season::integer = any(%s)
+  and games_played > 0
+  and position_code in ('C', 'L', 'R', 'D')
+order by season, player_id
 """
 
 GOALIE_QUERY = """
@@ -968,6 +1010,60 @@ def _fantasy_metric_source_audit(
     }
 
 
+def _season_total_outcome_audit(path: Path, frozen_at: str) -> dict[str, Any]:
+    rows = list(read_jsonl(path))
+    invalid_assists: list[dict[str, Any]] = []
+    invalid_points: list[dict[str, Any]] = []
+    invalid_toi: list[dict[str, Any]] = []
+    by_season: dict[str, int] = defaultdict(int)
+    for row in rows:
+        identity = {
+            "seasonId": int(row["season_id"]),
+            "nhlPlayerId": int(row["nhl_player_id"]),
+        }
+        by_season[str(row["season_id"])] += 1
+        goals = float(row.get("GOALS") or 0)
+        primary = float(row.get("PRIMARY_ASSISTS") or 0)
+        secondary = float(row.get("SECONDARY_ASSISTS") or 0)
+        assists = float(row.get("ASSISTS") or 0)
+        points = float(row.get("POINTS") or 0)
+        if not math.isclose(primary + secondary, assists, rel_tol=0, abs_tol=1e-6):
+            invalid_assists.append(identity)
+        if not math.isclose(goals + assists, points, rel_tol=0, abs_tol=1e-6):
+            invalid_points.append(identity)
+        total_toi = float(row.get("TOTAL_TOI") or 0)
+        strength_toi = sum(
+            float(row.get(target) or 0)
+            for target in ("EV_TOI", "PP_TOI", "PK_TOI")
+        )
+        if (
+            total_toi <= 0
+            or strength_toi <= 0
+            or not math.isclose(total_toi, strength_toi, rel_tol=0, abs_tol=2.0)
+        ):
+            invalid_toi.append({
+                **identity,
+                "totalToi": total_toi,
+                "strengthToi": strength_toi,
+            })
+    eligible = bool(rows) and not invalid_assists and not invalid_points and not invalid_toi
+    return {
+        "schemaVersion": "player-forecast-season-total-outcome-audit-v1",
+        "frozenAt": frozen_at,
+        "rows": len(rows),
+        "bySeason": dict(sorted(by_season.items())),
+        "invalidAssistIdentities": len(invalid_assists),
+        "invalidPointIdentities": len(invalid_points),
+        "invalidToiIdentities": len(invalid_toi),
+        "invalidAssistSamples": invalid_assists[:25],
+        "invalidPointSamples": invalid_points[:25],
+        "invalidToiSamples": invalid_toi[:25],
+        "eligibleForExposureModel": eligible,
+        "sourceUse": "checksum-frozen settled historical outcome labels only",
+        "predictiveFeatureUse": False,
+    }
+
+
 def _official_landing_assist_labels(payload: dict[str, Any]) -> dict[int, dict[str, int]]:
     labels: dict[int, dict[str, int]] = defaultdict(
         lambda: {
@@ -1191,6 +1287,9 @@ def freeze_season_dataset(
                 (SEASON_ID,),
             ).fetchone())
         schedule, official_roster, warnings = _official_state(teams)
+        season_total_seasons = sorted(
+            set(seasons + history_seasons + [TRAINING_CUTOFF_SEASON])
+        )
         files: dict[str, dict[str, Any]] = {}
         if base_manifest is not None and base_freeze is not None:
             for name in ("games", "skaters", "goalies", "team_history", "defense_history"):
@@ -1206,6 +1305,11 @@ def freeze_season_dataset(
                     inherited_files.append(name)
                 files[name] = {"path": destination.name, "rows": count, "sha256": checksum}
             query_specs = (
+                (
+                    "skater_season_totals",
+                    SKATER_SEASON_TOTALS_QUERY,
+                    (season_total_seasons,),
+                ),
                 ("deployment_tallies", DEPLOYMENT_TALLY_QUERY, (seasons,)),
                 ("line_snapshots", LINE_SNAPSHOT_QUERY, ()),
             )
@@ -1213,6 +1317,11 @@ def freeze_season_dataset(
             query_specs = (
                 ("games", GAME_QUERY, (seasons,)),
                 ("skaters", SKATER_QUERY, (seasons,)),
+                (
+                    "skater_season_totals",
+                    SKATER_SEASON_TOTALS_QUERY,
+                    (season_total_seasons,),
+                ),
                 ("goalies", GOALIE_QUERY, (seasons, seasons, seasons, seasons)),
                 ("team_history", TEAM_HISTORY_QUERY, (seasons,)),
                 ("defense_history", DEFENSE_HISTORY_QUERY, (seasons, seasons, seasons, seasons)),
@@ -1223,7 +1332,11 @@ def freeze_season_dataset(
             current_rows = stream_query(
                 connection, f"player_forecast_season_{name}", query, parameters
             )
-            if base_manifest is not None and base_freeze is not None:
+            if (
+                base_manifest is not None
+                and base_freeze is not None
+                and name != "skater_season_totals"
+            ):
                 base_metadata = base_manifest.get("files", {}).get(name)
 
                 def merged_rows() -> Iterable[dict[str, Any]]:
@@ -1314,6 +1427,20 @@ def freeze_season_dataset(
         "sha256": _file_sha256(output / "fantasy-metric-source-audit.json"),
     }
 
+    season_total_outcome_audit = _season_total_outcome_audit(
+        output / "skater_season_totals.jsonl",
+        frozen_at,
+    )
+    write_json(
+        output / "season-total-outcome-audit.json",
+        season_total_outcome_audit,
+    )
+    files["season_total_outcome_audit"] = {
+        "path": "season-total-outcome-audit.json",
+        "rows": 1,
+        "sha256": _file_sha256(output / "season-total-outcome-audit.json"),
+    }
+
     by_nhl = {
         int(identity["nhl_player_id"]): identity
         for identity in identities
@@ -1340,8 +1467,6 @@ def freeze_season_dataset(
         nhl_id = identity.get("nhl_player_id")
         official = official_by_nhl.get(int(nhl_id)) if nhl_id is not None else None
         lifecycle = str(identity["lifecycle_status"])
-        if not official and lifecycle == "active_nhl" and (nhl_id is None or int(nhl_id) not in recent_ids):
-            continue
         if not official and lifecycle not in ("active_prospect", "unsigned_relevant", "active_nhl"):
             continue
         position = str((official or {}).get("position") or identity.get("position") or "")
@@ -1433,6 +1558,16 @@ def freeze_season_dataset(
             "ineligibleTargets": fantasy_metric_audit["ineligibleTargets"],
             "wgoPredictiveFeatureUse": False,
         },
+        "seasonTotalOutcomePolicy": {
+            "auditPath": "season-total-outcome-audit.json",
+            "auditSha256": files["season_total_outcome_audit"]["sha256"],
+            "eligibleForExposureModel": season_total_outcome_audit[
+                "eligibleForExposureModel"
+            ],
+            "sourceUse": season_total_outcome_audit["sourceUse"],
+            "historySeasons": season_total_seasons,
+            "wgoPredictiveFeatureUse": False,
+        },
         "warnings": warnings,
         "baseFreeze": (
             {
@@ -1485,6 +1620,46 @@ def _weighted_summary(
         player_id: (values[0] / values[1], values[1], max(0.0, values[2] / values[1] - (values[0] / values[1]) ** 2))
         for player_id, values in players.items() if values[1] > 0
     }, (prior, total)
+
+
+def _weighted_exposure_summary(
+    rows: Iterable[dict[str, Any]],
+    target: str,
+    exposure_target: str,
+    decay: float,
+) -> tuple[dict[int, tuple[float, float, float]], tuple[float, int]]:
+    players: dict[int, list[float]] = defaultdict(lambda: [0.0, 0.0, 0.0])
+    total_numerator = 0.0
+    total_exposure = 0.0
+    observed_rows = 0
+    for row in rows:
+        if row.get(target) is None or row.get(exposure_target) is None:
+            continue
+        exposure = float(row[exposure_target])
+        if exposure <= 0:
+            continue
+        weight = decay ** _season_age(
+            TRAINING_CUTOFF_SEASON,
+            int(row["season_id"]),
+        )
+        numerator = float(row[target])
+        player = players[int(row["nhl_player_id"])]
+        player[0] += numerator * weight
+        player[1] += exposure * weight
+        player[2] += float(row.get("GAMES_PLAYED") or 0) * weight
+        total_numerator += numerator * weight
+        total_exposure += exposure * weight
+        observed_rows += 1
+    prior = total_numerator / total_exposure if total_exposure else 0.0
+    return {
+        player_id: (
+            values[0] / values[1],
+            values[2],
+            max(values[0] / max(values[2], 1e-9), 0.01),
+        )
+        for player_id, values in players.items()
+        if values[1] > 0 and values[2] > 0
+    }, (prior, observed_rows)
 
 
 def _annotate_rest_context(rows: list[dict[str, Any]]) -> None:
@@ -1572,7 +1747,10 @@ def _fit_context_profile(
         player_mean = player_means.get(player_id, 0.0)
         if player_mean <= 1e-9:
             continue
-        ratio = max(0.0, min(4.0, float(row[target]) / player_mean))
+        # Do not clip sparse count ratios. Clipping one-goal games for low-rate
+        # players destroys the player-level mean-one identity and creates a
+        # false universal downward context effect.
+        ratio = float(row[target]) / player_mean
         age = _age_on_date(birth_dates.get(player_id), str(row["game_date"]))
         if age is not None:
             age_ratios[(str(row.get("position") or "unknown"), age)].append(ratio)
@@ -2836,6 +3014,8 @@ def train_season_artifact(
     ):
         raise RuntimeError("assist label audit is not eligible for season training")
     fantasy_metric_audit: dict[str, Any] = {}
+    season_total_outcome_audit: dict[str, Any] = {}
+    season_total_rows: list[dict[str, Any]] = []
     if contract_version == FANTASY_SEASON_CONTRACT_VERSION:
         metric_policy = manifest.get("fantasyMetricPolicy") or {}
         metric_audit_path = (
@@ -2863,6 +3043,32 @@ def train_season_artifact(
             raise RuntimeError(
                 f"fantasy metric source audit is not eligible for v4 training: {ineligible}"
             )
+        season_total_policy = manifest.get("seasonTotalOutcomePolicy") or {}
+        season_total_audit_path = (
+            freeze / str(season_total_policy.get("auditPath") or "")
+        ).resolve()
+        try:
+            season_total_audit_path.relative_to(freeze.resolve())
+        except ValueError as error:
+            raise RuntimeError(
+                "season-total outcome audit path is outside the season freeze"
+            ) from error
+        season_total_path = freeze / "skater_season_totals.jsonl"
+        if (
+            not season_total_path.is_file()
+            or not season_total_audit_path.is_file()
+            or _file_sha256(season_total_audit_path)
+            != season_total_policy.get("auditSha256")
+        ):
+            raise RuntimeError("season-total outcome source or audit is missing")
+        season_total_outcome_audit = read_json(season_total_audit_path)
+        if (
+            season_total_outcome_audit.get("eligibleForExposureModel") is not True
+            or season_total_outcome_audit.get("predictiveFeatureUse") is not False
+            or season_total_policy.get("wgoPredictiveFeatureUse") is not False
+        ):
+            raise RuntimeError("season-total outcomes are not eligible for exposure modeling")
+        season_total_rows = list(read_jsonl(season_total_path))
     output.mkdir(parents=True, exist_ok=False)
     skaters = [row for row in read_jsonl(freeze / "skaters.jsonl") if int(row["season_id"]) <= TRAINING_CUTOFF_SEASON]
     goalies = [row for row in read_jsonl(freeze / "goalies.jsonl") if int(row["season_id"]) <= TRAINING_CUTOFF_SEASON]
@@ -2922,6 +3128,50 @@ def train_season_artifact(
                 policy,
             )
             policies[population][target] = {**policy, "populationPrior": prior}
+
+    exposure_fitted: dict[
+        tuple[str, str],
+        tuple[dict[int, tuple[float, float, float]], float, float, str],
+    ] = {}
+    if contract_version == FANTASY_SEASON_CONTRACT_VERSION:
+        season_totals_by_population = {
+            "forward": [row for row in season_total_rows if row["position"] != "D"],
+            "defense": [row for row in season_total_rows if row["position"] == "D"],
+        }
+        exposure_targets = {
+            "TOTAL_TOI": "GAMES_PLAYED",
+            "EV_TOI": "GAMES_PLAYED",
+            "PP_TOI": "GAMES_PLAYED",
+            "PK_TOI": "GAMES_PLAYED",
+            **SKATER_SCORING_EXPOSURES,
+        }
+        for population, rows in season_totals_by_population.items():
+            for target, exposure_target in exposure_targets.items():
+                if target not in policies[population]:
+                    continue
+                policy = policies[population][target]
+                summaries, (prior, observed_rows) = _weighted_exposure_summary(
+                    rows,
+                    target,
+                    exposure_target,
+                    float(policy["decay"]),
+                )
+                if observed_rows <= 0:
+                    raise RuntimeError(
+                        f"season-total exposure source has no rows for {population}/{target}"
+                    )
+                exposure_fitted[(population, target)] = (
+                    summaries,
+                    prior,
+                    float(policy["shrinkage"]),
+                    exposure_target,
+                )
+                policies[population][target] = {
+                    **policy,
+                    "servingRateBasis": "recency_weighted_exposure_empirical_bayes",
+                    "servingExposure": exposure_target,
+                    "seasonTotalOutcomeRows": observed_rows,
+                }
 
     participation: dict[tuple[str, int], dict[int, dict[str, float]]] = defaultdict(
         lambda: defaultdict(lambda: {"appearances": 0.0, "starts": 0.0})
@@ -2986,6 +3236,7 @@ def train_season_artifact(
         baseline_rates: dict[str, float] = {}
         variances: dict[str, float] = {}
         context_effects: dict[str, dict[str, Any]] = {}
+        rate_basis: dict[str, dict[str, Any]] = {}
         supports: list[float] = []
         targets = (
             GOALIE_TARGETS
@@ -3083,6 +3334,84 @@ def train_season_artifact(
                 * max(0.0, float(policy.get("intervalVarianceScale") or 0.0))
             )
             supports.append(support)
+        if (
+            contract_version == FANTASY_SEASON_CONTRACT_VERSION
+            and population != "goalie"
+        ):
+            exposure_player_id = int(nhl_id) if nhl_id is not None else -1
+
+            def apply_exposure_rate(target: str, multiplier: float = 1.0) -> None:
+                summaries, prior, shrinkage, exposure_target = exposure_fitted[
+                    (population, target)
+                ]
+                exposure_rate, support, _ = _eb_rate(
+                    summaries,
+                    exposure_player_id,
+                    prior,
+                    shrinkage,
+                )
+                projected_rate = max(0.0, exposure_rate * multiplier)
+                previous_rate = float(rates.get(target) or 0.0)
+                if previous_rate > 1e-9:
+                    variance_scale = max(
+                        0.25,
+                        min(4.0, (projected_rate / previous_rate) ** 2),
+                    )
+                    variances[target] = max(
+                        0.01,
+                        float(variances.get(target) or 0.01) * variance_scale,
+                    )
+                rates[target] = projected_rate
+                baseline_rates[target] = projected_rate
+                rate_basis[target] = {
+                    "method": "recency_weighted_exposure_empirical_bayes",
+                    "exposure": exposure_target,
+                    "source": "checksum_frozen_official_nhl_season_totals",
+                    "supportGames": _round_number(support),
+                    "ratePerExposureUnit": _round_number(exposure_rate),
+                }
+                # Context profiles are fitted from game-level fields. Once a
+                # target is replaced by the audited season-total exposure
+                # model, applying that profile would mix incompatible source
+                # semantics (notably zero-heavy PP/PK TOI game fields) and can
+                # reintroduce a systematic haircut. Keep the exposure rate
+                # authoritative until context is validated on the same source.
+                context_effects[target] = {
+                    "selected": False,
+                    "ageMultiplier": 1.0,
+                    "backToBackMultiplier": 1.0,
+                    "homeMultiplier": 1.0,
+                    "awayMultiplier": 1.0,
+                }
+
+            for target in ("TOTAL_TOI", "EV_TOI", "PP_TOI", "PK_TOI"):
+                apply_exposure_rate(target)
+            strength_toi = sum(
+                rates[target] for target in ("EV_TOI", "PP_TOI", "PK_TOI")
+            )
+            if strength_toi > 0:
+                toi_scale = rates["TOTAL_TOI"] / strength_toi
+                for target in ("EV_TOI", "PP_TOI", "PK_TOI"):
+                    rates[target] *= toi_scale
+                    baseline_rates[target] = rates[target]
+            else:
+                rates["EV_TOI"] = rates["TOTAL_TOI"]
+                baseline_rates["EV_TOI"] = rates["TOTAL_TOI"]
+            for target, exposure_target in SKATER_SCORING_EXPOSURES.items():
+                projected_exposure = (
+                    1.0
+                    if exposure_target == "GAMES_PLAYED"
+                    else float(rates.get(exposure_target) or 0.0)
+                )
+                apply_exposure_rate(target, projected_exposure)
+            rates["PP_ASSISTS"] = (
+                rates["PP_PRIMARY_ASSISTS"] + rates["PP_SECONDARY_ASSISTS"]
+            )
+            rates["SH_ASSISTS"] = (
+                rates["SH_PRIMARY_ASSISTS"] + rates["SH_SECONDARY_ASSISTS"]
+            )
+            baseline_rates["PP_ASSISTS"] = rates["PP_ASSISTS"]
+            baseline_rates["SH_ASSISTS"] = rates["SH_ASSISTS"]
         translated = rookie_profile.get("translatedConditionalRates") or {}
         if (
             rookie_translation_eligible
@@ -3122,6 +3451,11 @@ def train_season_artifact(
                 variances[target] = max(
                     variances[target], abs(rates[target]), 0.01
                 ) * uncertainty
+                rate_basis[target] = {
+                    "method": "historical_league_transition_empirical_bayes_v1",
+                    "source": "checksum_frozen_official_player_landing",
+                    "uncertaintyMultiplier": _round_number(uncertainty),
+                }
         sample_games = max(supports or [0.0])
         appearance_prior, start_prior = population_participation_priors[population]
         seasons = participation.get((population, int(nhl_id)), {}) if nhl_id is not None else {}
@@ -3187,7 +3521,7 @@ def train_season_artifact(
             "startProbability": start_probability, "appearancePrior": appearance_prior,
             "startPrior": start_prior, "deploymentEvidence": player_deployment_evidence,
             "ratingSignals": rating_signals, "rookieProfile": rookie_profile,
-            "contextEffects": context_effects,
+            "contextEffects": context_effects, "rateBasis": rate_basis,
         }))
 
     offense_lookup = {
@@ -3354,6 +3688,7 @@ def train_season_artifact(
             "baselineConditionalRates": model["baselineRates"],
             "conditionalVariances": model["variances"],
             "contextEffects": model["contextEffects"],
+            "rateBasis": model["rateBasis"],
             "ratings": ratings,
             "ratingSignals": model["ratingSignals"],
             "ratingConfidence": confidence,
@@ -3404,18 +3739,18 @@ def train_season_artifact(
         "contractVersion": contract_version,
         "contractChecksum": artifact_contract_checksum,
         "artifactVersion": (
-            "historical-core-rookie-nhle-context-v4"
+            "historical-core-rookie-nhle-exposure-context-v5"
             if contract_version == FANTASY_SEASON_CONTRACT_VERSION
             else "historical-core-tournament-v2"
         ),
         "featureSchemaVersion": (
-            "player-forecast-season-historical-core-rookie-context-v5"
+            "player-forecast-season-historical-core-rookie-exposure-context-v6"
             if contract_version == FANTASY_SEASON_CONTRACT_VERSION
             else "player-forecast-season-historical-core-v3"
         ),
         "trainingCutoffAt": "2026-04-16T23:59:59Z",
         "codeVersion": (
-            "season-model-v9-context"
+            "season-model-v10-exposure-reconciliation"
             if contract_version == FANTASY_SEASON_CONTRACT_VERSION
             else "season-model-v7"
         ),
@@ -3423,7 +3758,10 @@ def train_season_artifact(
         "teams": contexts,
         "selectionEvidence": policies,
         "review": {
-            "modelFamily": "target_specific_chronological_rate_tournament",
+            "modelFamily": (
+                "target_specific_chronological_rate_tournament_with_"
+                "exposure_empirical_bayes_scoring_core"
+            ),
             "challengerFallbackPolicy": "baseline_is_served_when_no_valid_challenger_exists",
             "wgoSettledOutcomeLabelsUsed": bool(
                 assist_label_audit.get("sourceCounts", {}).get(
@@ -3477,6 +3815,30 @@ def train_season_artifact(
                     "eligibleForV4Training": True,
                     "sha256": manifest["fantasyMetricPolicy"]["auditSha256"],
                     "wgoPredictiveFeatureUse": False,
+                }
+                if contract_version == FANTASY_SEASON_CONTRACT_VERSION
+                else {"enabled": False}
+            ),
+            "seasonTotalExposureModel": (
+                {
+                    "enabled": True,
+                    "method": "recency_weighted_exposure_empirical_bayes",
+                    "targets": sorted(
+                        {
+                            "TOTAL_TOI", "EV_TOI", "PP_TOI", "PK_TOI",
+                            *SKATER_SCORING_EXPOSURES,
+                        }
+                    ),
+                    "auditSha256": manifest["seasonTotalOutcomePolicy"][
+                        "auditSha256"
+                    ],
+                    "rows": season_total_outcome_audit["rows"],
+                    "bySeason": season_total_outcome_audit["bySeason"],
+                    "strengthReconciliation": (
+                        "all-situations G/A1/A2 remain authoritative; PP/SH/EN are "
+                        "bounded and EV is the exact nonnegative residual"
+                    ),
+                    "predictiveFeatureUse": False,
                 }
                 if contract_version == FANTASY_SEASON_CONTRACT_VERSION
                 else {"enabled": False}
@@ -3621,23 +3983,53 @@ def _reconcile(values: dict[str, float], population: str) -> dict[str, float]:
             "SH_SECONDARY_ASSISTS", "EN_SECONDARY_ASSISTS",
         }
         if strength_components.issubset(reconciled):
-            reconciled["GOALS"] = sum(
-                reconciled.get(target, 0.0)
-                for target in ("EV_GOALS", "PP_GOALS", "SH_GOALS", "EMPTY_NET_GOALS")
-            )
-            reconciled["PRIMARY_ASSISTS"] = sum(
-                reconciled.get(target, 0.0)
-                for target in (
-                    "EV_PRIMARY_ASSISTS", "PP_PRIMARY_ASSISTS",
-                    "SH_PRIMARY_ASSISTS", "EN_PRIMARY_ASSISTS",
+            def reconcile_strength_family(
+                total_target: str,
+                ev_target: str,
+                non_ev_targets: tuple[str, str, str],
+            ) -> None:
+                component_total = sum(
+                    max(0.0, reconciled.get(target, 0.0))
+                    for target in (ev_target, *non_ev_targets)
                 )
-            )
-            reconciled["SECONDARY_ASSISTS"] = sum(
-                reconciled.get(target, 0.0)
-                for target in (
-                    "EV_SECONDARY_ASSISTS", "PP_SECONDARY_ASSISTS",
-                    "SH_SECONDARY_ASSISTS", "EN_SECONDARY_ASSISTS",
+                authoritative_total = max(
+                    0.0,
+                    reconciled.get(total_target, component_total),
                 )
+                non_ev_total = sum(
+                    max(0.0, reconciled.get(target, 0.0))
+                    for target in non_ev_targets
+                )
+                if non_ev_total > authoritative_total and non_ev_total > 0:
+                    scale = authoritative_total / non_ev_total
+                    for target in non_ev_targets:
+                        reconciled[target] = max(
+                            0.0,
+                            reconciled.get(target, 0.0),
+                        ) * scale
+                    reconciled[ev_target] = 0.0
+                else:
+                    reconciled[ev_target] = authoritative_total - non_ev_total
+                reconciled[total_target] = authoritative_total
+
+            reconcile_strength_family(
+                "GOALS",
+                "EV_GOALS",
+                ("PP_GOALS", "SH_GOALS", "EMPTY_NET_GOALS"),
+            )
+            reconcile_strength_family(
+                "PRIMARY_ASSISTS",
+                "EV_PRIMARY_ASSISTS",
+                ("PP_PRIMARY_ASSISTS", "SH_PRIMARY_ASSISTS", "EN_PRIMARY_ASSISTS"),
+            )
+            reconcile_strength_family(
+                "SECONDARY_ASSISTS",
+                "EV_SECONDARY_ASSISTS",
+                (
+                    "PP_SECONDARY_ASSISTS",
+                    "SH_SECONDARY_ASSISTS",
+                    "EN_SECONDARY_ASSISTS",
+                ),
             )
             reconciled["PP_ASSISTS"] = (
                 reconciled["PP_PRIMARY_ASSISTS"] + reconciled["PP_SECONDARY_ASSISTS"]
@@ -3725,6 +4117,11 @@ def _target_multiplier(
         else 1.0
     )
     contextual_multiplier = rest_multiplier * home_away_multiplier
+    if target in {"TOTAL_TOI", "EV_TOI", "PP_TOI", "PK_TOI"}:
+        # Game pace changes event opportunity, not the number of regulation
+        # minutes available to a player. TOI already comes from the dedicated
+        # deployment/exposure model and must stay on that scale.
+        return contextual_multiplier
     if population == "goalie" and target in ("SHOTS_AGAINST_GOALIE", "GOALS_AGAINST_GOALIE"):
         return contextual_multiplier * pace * max(0.5, float((opponent or {}).get("offenseMultiplier", 1)))
     if population != "goalie" and target in {

@@ -346,7 +346,15 @@ const supabase: SupabaseClient = createClient(
 const rollingPlayerMetricsRestUrl = `${supabaseServiceUrl.replace(/\/$/, "")}/rest/v1/rolling_player_game_metrics?on_conflict=player_id,game_date,strength_state`;
 const rollingPlayerMetricSupportRestUrl = `${supabaseServiceUrl.replace(/\/$/, "")}/rest/v1/${ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE}?on_conflict=player_id,game_date,strength_state`;
 
-interface FetchOptions {
+export type RollingPlayerDryRunBatch = {
+  playerId: number;
+  batchNumber: number;
+  totalBatches: number;
+  rankingRows: ReadonlyArray<Record<string, unknown>>;
+  supportRows: ReadonlyArray<RollingPlayerMetricSupportPayloadRow>;
+};
+
+export interface FetchOptions {
   playerId?: number;
   season?: number;
   startDate?: string;
@@ -363,6 +371,7 @@ interface FetchOptions {
   skipDiagnostics?: boolean;
   dryRunUpsert?: boolean;
   debugUpsertPayload?: boolean;
+  dryRunBatchObserver?: (batch: RollingPlayerDryRunBatch) => void;
 }
 
 type RollingUpsertRow = Record<string, unknown>;
@@ -4413,6 +4422,19 @@ export async function main(
               );
             }
             if (options.dryRunUpsert) {
+              if (options.dryRunBatchObserver) {
+                const { rankingRows, supportRows } =
+                  splitRollingUpsertBatchForDurableStorage(
+                    batch as RollingUpsertRow[]
+                  );
+                options.dryRunBatchObserver({
+                  playerId,
+                  batchNumber,
+                  totalBatches,
+                  rankingRows,
+                  supportRows
+                });
+              }
               playerProgress.update(
                 processedPlayers,
                 `player:${playerId} validatedBatch:${batchNumber}/${totalBatches} rowsPrepared:${rows.length} coverageWarn:${coverageWarnings} suspicious:${suspiciousOutputWarnings} freshness:${freshnessBlockers}`
@@ -4566,4 +4588,6 @@ export const __testables = {
   upsertRollingPlayerMetricsBatch
 };
 
-export default { main };
+const fetchRollingPlayerAveragesModule = { main };
+
+export default fetchRollingPlayerAveragesModule;

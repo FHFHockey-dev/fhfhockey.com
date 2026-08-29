@@ -96,16 +96,16 @@
 /* =================== Chart Panel =================== */
 .chartPanel {
   @include v.glass-panel($padding: v.$space-md, $radius: v.$radius-lg);
-  height: 25vh;
-  min-height: 220px;
+  min-height: 340px;
   display: flex;
   flex-direction: column;
 }
 
 .chartHeader {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: v.$space-md;
   margin-bottom: v.$space-sm;
 
   p {
@@ -113,6 +113,15 @@
     color: v.$text-secondary;
     font-size: v.$font-size-xs;
   }
+}
+
+.chartHeader .chartEyebrow {
+  margin: 0 0 2px;
+  color: v.$primary-color;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .chartTitle {
@@ -127,7 +136,35 @@
 
 .chartGraphic {
   flex: 1;
-  min-height: 0;
+  min-height: 180px;
+}
+
+.chartGuide {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px v.$space-md;
+  margin-bottom: v.$space-xs;
+  padding: v.$space-xs v.$space-sm;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: v.$radius-sm;
+  background: rgba(255, 255, 255, 0.035);
+  color: v.$text-secondary;
+  font-size: 10px;
+
+  strong {
+    color: v.$text-primary;
+  }
+}
+
+.chartNotice {
+  margin: 0 0 v.$space-xs;
+  padding: v.$space-xs v.$space-sm;
+  border: 1px solid rgba(v.$warning-color, 0.55);
+  border-radius: v.$radius-sm;
+  background: rgba(v.$warning-color, 0.1);
+  color: v.$text-primary;
+  font-size: 11px;
+  line-height: 1.4;
 }
 
 .chartEmpty {
@@ -154,13 +191,28 @@
     display: flex;
     align-items: center;
     gap: 4px;
+    min-width: 150px;
+    padding: 4px 6px;
+    border-radius: v.$radius-sm;
+    background: rgba(255, 255, 255, 0.035);
   }
+}
 
-  span {
-    width: 14px;
-    height: 3px;
-    border-radius: 999px;
-  }
+.chartLegendSwatch {
+  width: 14px;
+  height: 3px;
+  border-radius: 999px;
+}
+
+.chartLegendValue {
+  margin-left: auto;
+  color: v.$text-primary;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.chartLegendReading {
+  color: v.$text-secondary;
 }
 
 /* =================== Game Strip =================== */
@@ -1177,17 +1229,39 @@ $neon-strip-width: 8px;
 
   .chartPanel {
     padding: v.$space-sm;
-    min-height: 200px;
-    height: 30vh;
+    min-height: 390px;
 
     .chartHeader {
+      flex-direction: column;
+      gap: 2px;
       margin-bottom: 0;
+
       .chartTitle {
         font-size: v.$font-size-sm;
       }
+
       .meta {
         font-size: v.$font-size-xs;
       }
+    }
+  }
+
+  .chartGuide {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: v.$space-xs 0;
+  }
+
+  .chartGraphic {
+    min-height: 170px;
+  }
+
+  .chartLegend {
+    gap: 4px;
+
+    li {
+      flex: 1 1 145px;
+      min-width: 0;
     }
   }
 

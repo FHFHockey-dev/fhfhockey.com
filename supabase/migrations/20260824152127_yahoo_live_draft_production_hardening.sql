@@ -632,7 +632,7 @@ as
 select
   canonical.nhl_player_id::text as nhl_player_id,
   canonical.canonical_name as nhl_player_name,
-  coalesce(player.editorial_team_abbreviation, legacy.nhl_team_abbreviation)
+  coalesce(player.editorial_team_abbreviation, legacy.nhl_team_abbreviation)::text
     as nhl_team_abbreviation,
   player.player_key as yahoo_player_id,
   coalesce(player.full_name, player.player_name, legacy.yahoo_player_name)
@@ -663,7 +663,7 @@ select
   legacy.quality_start,
   legacy.goals_against_avg,
   legacy.save_pct,
-  coalesce(player.position_type, legacy.player_type) as player_type,
+  coalesce(player.position_type, legacy.player_type)::text as player_type,
   case
     when lower(coalesce(player.position_type, legacy.player_type, ''))
       in ('g', 'goalie') then 'G'

@@ -8,8 +8,11 @@ import {
   GOALIE_TREND_REQUIRED_COLUMNS,
   SKATER_TREND_REQUIRED_COLUMNS,
   buildPlayerTrendRecords,
+  normalizePlayoffSkaterTrendRow,
 } from "lib/trends/playerTrendCalculator";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
+
+export { normalizePlayoffSkaterTrendRow } from "lib/trends/playerTrendCalculator";
 
 type PlayerStatsRow =
   Database["public"]["Views"]["player_stats_unified"]["Row"];
@@ -92,22 +95,6 @@ function isDateOnly(value: unknown): value is string {
   }
 
   return !Number.isNaN(Date.parse(`${value}T00:00:00.000Z`));
-}
-
-export function normalizePlayoffSkaterTrendRow(
-  row: PlayoffSkaterStatsRow,
-): PlayerStatsRow {
-  const rawToiSeconds =
-    row.toi_per_game == null ? null : Number(row.toi_per_game);
-  const toiMinutes =
-    rawToiSeconds != null && Number.isFinite(rawToiSeconds)
-      ? rawToiSeconds / 60
-      : null;
-
-  return {
-    ...row,
-    toi_per_game: toiMinutes,
-  } as unknown as PlayerStatsRow;
 }
 
 async function fetchSkaterStats(options: {

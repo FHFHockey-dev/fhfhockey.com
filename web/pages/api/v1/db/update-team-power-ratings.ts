@@ -25,6 +25,10 @@ import {
   deriveTrendOverridesFromLogs,
 } from "../../../../lib/teamRatingsTrend";
 
+export const TEAM_POWER_RATING_CALCULATION_VERSION =
+  "team-power-v2-final-source-observed-pdo";
+const LEGACY_TEAM_POWER_RATING_VERSION = "legacy_unversioned";
+
 function parseBooleanFlag(value: unknown): boolean {
   if (typeof value !== "string") return false;
   const normalized = value.trim().toLowerCase();
@@ -311,6 +315,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         if (calculated) {
           upserts.push({
             ...calculated,
+            calculation_version: TEAM_POWER_RATING_CALCULATION_VERSION,
+            source_through_date: targetDate,
             trend10,
             pp_tier: ppTier,
             pk_tier: pkTier,
@@ -321,6 +327,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             upserts.push({
               team_abbreviation: team,
               date: targetDate,
+              calculation_version:
+                latest.calculation_version ?? LEGACY_TEAM_POWER_RATING_VERSION,
+              source_through_date:
+                latest.source_through_date ?? latest.date ?? null,
               off_rating: latest.off_rating,
               def_rating: latest.def_rating,
               pace_rating: latest.pace_rating,
@@ -363,6 +373,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       endDate: targetDateParam,
       processedDays: processedCount,
       totalUpserts,
+      calculationVersion: TEAM_POWER_RATING_CALCULATION_VERSION,
       executionScope: {
         requestedDate: targetDateParam,
         requestedStartDate: explicitStartDate,

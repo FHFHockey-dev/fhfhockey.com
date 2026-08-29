@@ -573,6 +573,13 @@ evaluation receipt before starting the advanced source batch:
   --output /private/tmp/fhfh-season-rookies-v4 \
   --workers 12
 
+# If an official endpoint fails, reuse verified captures and retry only missing IDs:
+.venv/bin/python -m modeling.player_forecasts season-rookie-freeze \
+  --freeze "$pf_season_freeze" \
+  --base-rookie-freeze /private/tmp/fhfh-season-rookies-v4 \
+  --output /private/tmp/fhfh-season-rookies-v4-retry \
+  --workers 12
+
 .venv/bin/python -m modeling.player_forecasts season-train \
   --freeze "$pf_season_freeze" \
   --rookie-freeze /private/tmp/fhfh-season-rookies-v4 \
@@ -769,8 +776,8 @@ The August 20 advanced-v5 replay produced artifact checksum
 `8f5fb879d7a67790a8764bd9e53f6d7c354268cfc464b2d4dce126a3b620dc57`.
 Its checksum-bound evaluation receipt (hash prefix `3500086e`) recorded all 50
 required population/target gates as passed with no blockers. The verified
-opening, current, and ROS bundles each contain 1,465 player aggregates, 32 team
-aggregates, and complete schedule-component manifests.
+opening bundle contains 1,465 player aggregates, 32 team aggregates, and a
+complete schedule-component manifest. The opening release remains immutable.
 
 The live local acceptance cycle then enqueued a real event update, used the
 active advanced-v5 release as its source, recomputed 3,864 game components for
@@ -785,9 +792,72 @@ unique games, 84 games per team, zero unresolved player identities, zero
 assignment mismatches, no high-confidence roster conflicts, a private v5
 artifact, healthy settlement state, `readyForLocalDraft=true`, and
 `readyForPublication=true`. The public current-skater compact response is about
-1.03 MB, below the 1.5 MB acceptance ceiling; the browser mounts only the
+1.21 MB, below the 1.5 MB acceptance ceiling; the browser mounts only the
 selected 100-row page and exposes role-appropriate advanced columns for mixed
 skater/goalie results.
+
+On August 27, the local roster integrity refresh mapped all 1,268 players in
+the official roster feed and completed its player-landing and transaction
+checks with no failures or conflicts. Three newly observed prospects—Carter
+George, Harrison Meneghin, and Cruz Lucius—were added through the verified
+identity resolver. The first capture pass retained 1,423 successful official
+player-landings and recorded one transient failure. The resumable retry reused
+those checksum-verified captures, fetched only the missing identity, and the
+final pool refresh reused all 1,424 prior captures while fetching only 43
+restored positive-evidence memberships. All 1,467 NHL-mapped identities then
+passed the official capture gate; the sole identity without an NHL ID remains
+an explicitly prior-based prospect.
+
+The refreshed fantasy-v4 artifact contains 1,468 players. Its 84 target gates
+passed with no blockers, and its learned rookie model beat the generic prior
+for both roster probability (Brier 0.2143 versus 0.3495) and point rate (MAE
+0.2266 versus 0.2915). The successor advanced-v5 artifact checksum is
+`1d2fb9fe4c4e9933158871231e471564a7424fe162e7f5e6b401ac81377df523`;
+all 50 advanced gates passed, its receipt hash begins `880a77de`, and its
+golden-vector replay was byte-identical. Carter George, Harrison Meneghin, and
+Cruz Lucius now use the learned league-transition NHLe model with recorded OHL,
+ECHL, and NCAA sources rather than the runtime newcomer fallback.
+
+Publication initially failed closed on 41 previously mapped official-roster
+identities. The freeze had incorrectly treated their absence from a current
+offseason roster response as evidence that their verified `active_nhl`
+membership ended. The freeze now retains verified active memberships until
+positive evidence changes their lifecycle, with regression coverage for roster
+omissions. No waiver, exclusion, or destructive correction was used.
+
+The resulting healthy advanced-v5 current release 12 and ROS release 9 each
+contain 1,468 players and 32 teams, use roster and transaction evidence current
+through August 27, and leave no pending, running, failed, or expired jobs. The
+opening release 6 remains immutable on its original frozen artifact. A
+database-wide acceptance query found zero GP/start-cap violations, zero ordered
+interval violations across 93,592 interval cells per view, and zero error in
+the required assists, points, PP points, SH points, and goalie-save identities.
+The all-league current refresh also verifies that outcome lookups are chunked
+below Supabase REST URL limits. TOI/game intervals are bounded at the NHL's
+65-minute regular-season maximum, and release-specific client requests prevent
+an atomic pointer update from displaying a cached prior release.
+
+On August 28, a scoring-model audit found that clipped sparse context ratios,
+strength-state reconciliation, zero-heavy special-teams exposure, and pace
+scaling of TOI had compressed elite scoring. The corrected checksum-verified
+advanced-v5 artifact is
+`cdfb5f45ec0ca8f48a9077bc34809f126f67db3962833411c6f60b46abc673c4`.
+Its immutable current release 13 and ROS release 10 each validate 1,468
+players, 32 teams, and all 1,344 games with zero issues. The opening pointer
+remains on release 6. The local API and rendered page show Nathan MacKinnon at
+123.3 points in 81.9 expected games and Connor McDavid at 120.3 in 76.6, with
+no browser errors. The full cause, formulas, and limitations are recorded in
+`season-scoring-model-audit-2026-08-28.md`.
+
+Importing both complete immutable views requires enough Docker VM storage for
+their game-component rows. This acceptance run filled the original 49 GiB
+Colima disk. Resizing it to 100 GiB recovered the existing local database; the
+interrupted ROS import then resumed by its existing run and import checkpoints.
+No reset, prune, deletion, or migration-history repair was used. Immediately
+after a Colima restart or resize, `supabase start` or `supabase status` may
+temporarily report the database container as `starting`; wait for PostgreSQL to
+become healthy and rerun `npm run supabase:safe -- status -o json`. Never use a
+database reset as startup recovery.
 
 Historical shot-assist candidate coverage was only 62 of 1,312 audited games,
 so advanced-v5 deliberately inherits the validated v4 A1/A2 expectations. This

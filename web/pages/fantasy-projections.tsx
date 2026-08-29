@@ -149,6 +149,13 @@ const STAT_LABELS: Record<string, string> = {
   LONG_RANGE_SAVES_GOALIE: "Long SV",
   LONG_RANGE_SAVE_PERCENTAGE_GOALIE: "Long SV%",
 };
+
+const EXPECTED_TOI_TARGETS: Record<string, string> = {
+  total: "TOTAL_TOI",
+  evenStrength: "EV_TOI",
+  powerPlay: "PP_TOI",
+  penaltyKill: "PK_TOI",
+};
 const SKATER_COLUMNS = [
   "GAMES_PLAYED",
   "GOALS",
@@ -939,6 +946,7 @@ export default function FantasyProjectionsPage() {
       try {
         const releasesResponse = await fetch(
           `/api/v1/fantasy-projections/releases?seasonId=${FANTASY_PROJECTION_SEASON_ID}`,
+          { cache: "no-store" },
         );
         const releasesPayload = await releasesResponse.json();
         if (!releasesResponse.ok || !releasesPayload.success) {
@@ -958,7 +966,7 @@ export default function FantasyProjectionsPage() {
           return;
         }
         const playersRequest = fetch(
-          `/api/v1/fantasy-projections/players?seasonId=${FANTASY_PROJECTION_SEASON_ID}&view=${view}&format=summary`,
+          `/api/v1/fantasy-projections/players?seasonId=${FANTASY_PROJECTION_SEASON_ID}&view=${view}&format=summary&releaseId=${activeRelease.id}`,
         ).then(async (response) => {
           const payload = await response.json();
           if (!response.ok || !payload.success) throw new Error(payload.message ?? "Unable to load player projections.");
@@ -972,7 +980,7 @@ export default function FantasyProjectionsPage() {
           view === "ros"
             ? Promise.resolve(null)
             : fetch(
-                `/api/v1/fantasy-projections/teams?seasonId=${FANTASY_PROJECTION_SEASON_ID}&view=${view}`,
+                `/api/v1/fantasy-projections/teams?seasonId=${FANTASY_PROJECTION_SEASON_ID}&view=${view}&releaseId=${activeRelease.id}`,
               ).then(async (response) => {
                 const payload = await response.json();
                 if (!response.ok || !payload.success) throw new Error(payload.message ?? "Unable to load team projections.");
@@ -1015,7 +1023,7 @@ export default function FantasyProjectionsPage() {
     setDetailLoading(true);
     setDetailError(null);
     void fetch(
-      `/api/v1/fantasy-projections/players/${selectedPlayerId}?seasonId=${FANTASY_PROJECTION_SEASON_ID}&view=${view}`,
+      `/api/v1/fantasy-projections/players/${selectedPlayerId}?seasonId=${FANTASY_PROJECTION_SEASON_ID}&view=${view}&releaseId=${release?.id ?? ""}`,
     )
       .then(async (response) => {
         const payload = await response.json();
@@ -1036,7 +1044,7 @@ export default function FantasyProjectionsPage() {
     return () => {
       cancelled = true;
     };
-  }, [selectedPlayerId, view]);
+  }, [selectedPlayerId, view, release?.id]);
 
   const teamsForFilter = useMemo(
     () => Array.from(new Set(players.map((player) => player.teamAbbreviation).filter(Boolean) as string[])).sort(),
@@ -1703,9 +1711,12 @@ export default function FantasyProjectionsPage() {
                       {playerDetail.player.expectedStarts == null ? null : (
                         <div><dt>Expected starts</dt><dd>{playerDetail.player.expectedStarts.toFixed(1)}</dd></div>
                       )}
-                      {Object.entries(playerDetail.player.expectedToi).map(([target, value]) => (
-                        <div key={target}><dt>{columnLabel(target)}</dt><dd>{formatValue(target, numberValue(value))}</dd></div>
-                      ))}
+                      {Object.entries(playerDetail.player.expectedToi).map(([key, value]) => {
+                        const target = EXPECTED_TOI_TARGETS[key] ?? key;
+                        return (
+                          <div key={key}><dt>{columnLabel(target)}</dt><dd>{formatValue(target, numberValue(value))}</dd></div>
+                        );
+                      })}
                     </dl>
                     {deploymentFamilies.map(([family, probabilities]) => (
                       <p key={family}>

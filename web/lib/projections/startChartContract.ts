@@ -29,7 +29,13 @@ export type StartChartSourceStatus = {
     requestedDate: string;
     resolvedDate: string | null;
   };
-  ctpi: StartChartSourceStatusEntry & { throughDate: string | null };
+  ctpi: StartChartSourceStatusEntry & {
+    throughDate: string | null;
+    formulaVersion: string | null;
+    inputVersion: string | null;
+    trustedRows: number;
+    untrustedRows: number;
+  };
   goalies: StartChartSourceStatusEntry & {
     expectedTeams: number;
     coveredTeams: number;
@@ -395,6 +401,10 @@ export function normalizeStartChartResponse(payload: unknown): StartChartRespons
           ? normalizeSourceEntry(ctpiSource)
           : defaultSource(false)),
         throughDate: stringOrNull(ctpiSource.throughDate),
+        formulaVersion: stringOrNull(ctpiSource.formulaVersion),
+        inputVersion: stringOrNull(ctpiSource.inputVersion),
+        trustedRows: finiteOrNull(ctpiSource.trustedRows) ?? 0,
+        untrustedRows: finiteOrNull(ctpiSource.untrustedRows) ?? 0,
       },
       goalies: {
         ...(Object.keys(goalieSource).length

@@ -567,6 +567,10 @@ function mapRowToInsert(
   dataset: DatasetConfig,
   date: string
 ): TeamGamelogInsert | null {
+  // NST can return a season-to-date aggregate on a calendar date with no
+  // games. This table is a one-team-game source, so never persist GP > 1 (or
+  // a row whose grain cannot be proved) under the requested date.
+  if (parseNumeric(raw["gp"]) !== 1) return null;
   const teamLabel = raw["team"];
   if (!teamLabel) return null;
   const team = resolveTeam(teamLabel);

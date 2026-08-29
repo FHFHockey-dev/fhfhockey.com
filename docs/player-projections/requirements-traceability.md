@@ -27,6 +27,15 @@ owner decisions.
 | Public and owner UX | supported locally | Compact summary API, 100-row pagination, global filters/sorting/scoring, role-specific columns, CSV, detail drawer, team ratings/lines, and sole-owner editor |
 | Free operation | supported | Offline Python training, deterministic TypeScript incremental evaluation, Supabase trigger/queue/Cron design, and no new paid runtime or provider |
 
+Final local acceptance uses healthy advanced-v5 current release 12 and ROS
+release 9, each with 1,468 players and zero publication issues. Opening release
+6 remains immutable. The active v5 checksum is
+`1d2fb9fe4c4e9933158871231e471564a7424fe162e7f5e6b401ac81377df523`;
+the v5 receipt passed all 50 targets and byte-identical golden-vector replay.
+The learned rookie model now covers every NHL-mapped player in the active pool;
+verified offseason-roster omissions remain in scope until positive evidence
+changes their lifecycle.
+
 The consumed 2025–26 lockbox is validation/training evidence, not new blind
 evidence. Untouched 2026–27 prospective scoring is necessarily accumulated as
 games occur and is the remaining promotion evidence, not an implementation

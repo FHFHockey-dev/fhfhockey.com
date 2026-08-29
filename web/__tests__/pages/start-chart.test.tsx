@@ -39,8 +39,12 @@ const readySourceStatus = {
   ctpi: {
     state: "ready",
     affectsRanking: false,
-    date: "2026-02-07",
-    throughDate: "2026-02-07",
+    date: "2026-02-06",
+    throughDate: "2026-02-06",
+    formulaVersion: "ctpi-formula-v1",
+    inputVersion: "ctpi-one-game-input-v2",
+    trustedRows: 64,
+    untrustedRows: 0,
   },
   goalies: {
     state: "ready",
@@ -186,6 +190,7 @@ vi.mock("swr", () => ({
 vi.mock("recharts", () => ({
   LineChart: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   Line: () => null,
+  ReferenceLine: () => null,
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
   ),
@@ -234,8 +239,78 @@ describe("StartChartPage", () => {
     ).toBeTruthy();
   });
 
+  it("rebrands CTPI as plain-language recent team form", () => {
+    swrState.data = {
+      ...buildApiData(),
+      ctpi: [
+        { date: "2026-02-05", MTL: 48, TOR: 52 },
+        { date: "2026-02-06", MTL: 55, TOR: 45 },
+      ],
+      games: [
+        {
+          id: 1001,
+          date: "2026-02-07",
+          startTime: null,
+          homeTeamId: 10,
+          awayTeamId: 8,
+          homeAbbrev: "TOR",
+          awayAbbrev: "MTL",
+          homeGoalies: [],
+          awayGoalies: [],
+        },
+      ],
+    };
+
+    render(<StartChartPage />);
+
+    expect(
+      screen.getByRole("heading", { name: "Recent Team Form" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        /How each team has been playing lately, compared with the league\. It combines recent offense, defense, goaltending, and special teams in one score\./,
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText("Context only — not a game prediction or ranking input"))
+      .toBeTruthy();
+    expect(
+      screen.getByRole("img", { name: /Recent team form for TOR, MTL/ }),
+    ).toBeTruthy();
+    const legend = screen.getByRole("list", {
+      name: "Latest team form by team",
+    });
+    expect(legend.textContent).toContain("TOR45Below league average");
+    expect(legend.textContent).toContain("MTL55Above league average");
+    expect(screen.queryByText("CTPI Pulse")).toBeNull();
+  });
+
+  it("explains why untrusted legacy team-form history is unavailable", () => {
+    const message =
+      "Recent team form is temporarily unavailable while its historical game data is being verified. It is hidden rather than show a misleading score.";
+    swrState.data = {
+      ...buildApiData(),
+      sourceStatus: {
+        ...readySourceStatus,
+        ctpi: {
+          ...readySourceStatus.ctpi,
+          state: "missing",
+          date: null,
+          throughDate: null,
+          trustedRows: 0,
+          untrustedRows: 64,
+          message,
+        },
+      },
+    };
+
+    render(<StartChartPage />);
+
+    expect(screen.getByText(message)).toBeTruthy();
+    expect(screen.getByText("Data through Unavailable")).toBeTruthy();
+  });
+
   it("syncs date and position through the router while preserving workflow context", async () => {
-    routerState.router.query = { date: "2026-02-07", mode: "tonight" };
+    routerState.router.query = { date: "2026-02-07", mode: "week" };
     swrState.data = {
       ...buildApiData(),
       projections: 2,
@@ -305,8 +380,9 @@ describe("StartChartPage", () => {
     expect(teamHref).toContain("date=2026-02-07");
     expect(teamHref).toContain("resolvedDate=2026-02-07");
     expect(teamHref).toContain("position=C");
-    expect(teamHref).toContain("mode=tonight");
+    expect(teamHref).toContain("mode=week");
     expect(screen.getByText("Opp G Home Goalie · projected 72%")).toBeTruthy();
+    expect(screen.getAllByText("NHL PTS range 2.10–6.40")).toHaveLength(1);
     expect(screen.getAllByText(/7:00 PM EST/)).toHaveLength(2);
 
     fireEvent.keyDown(screen.getByRole("tab", { name: /^C 1$/ }), {
@@ -339,9 +415,9 @@ describe("StartChartPage", () => {
     expect(href).toContain("date=2026-02-08");
     expect(href).toContain("resolvedDate=2026-02-07");
     expect(href).toContain("position=LW");
-    expect(href).toContain("mode=tonight");
+    expect(href).toContain("mode=week");
     expect(
-      screen.getByRole("img", { name: /Thirty-day team power trend/ }),
+      screen.getByRole("img", { name: /Recent team form/ }),
     ).toBeTruthy();
   });
 
@@ -425,6 +501,31 @@ describe("StartChartPage", () => {
     });
   });
 
+  it("selects the first populated position when the query position is invalid", async () => {
+    routerState.router.query = {
+      date: "2026-02-07",
+      position: "F",
+    };
+    swrState.data = {
+      ...buildApiData(),
+      projections: 1,
+      players: [
+        player({
+          positions: ["RW"],
+          position_ranks: { RW: 1 },
+        }),
+      ],
+    };
+
+    render(<StartChartPage />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("tab", { name: /^RW 1$/ }).getAttribute("aria-selected"),
+      ).toBe("true"),
+    );
+  });
+
   it("labels the first visible goalie candidate and treats null probability as unavailable", () => {
     swrState.data = {
       ...buildApiData(),
@@ -496,6 +597,73 @@ describe("StartChartPage", () => {
     expect(screen.getByText(/1 player was excluded/)).toBeTruthy();
   });
 
+  it("counts unknown ownership only inside the active non-ownership filters", () => {
+    swrState.data = {
+      ...buildApiData(),
+      projections: 3,
+      players: [
+        player({
+          ownership: null,
+          percent_ownership: null,
+          ownership_as_of_date: null,
+        }),
+        player({
+          row_key: "run-123:1002:99:1",
+          game_id: 1002,
+          player_id: 99,
+          name: "Other Unknown",
+          team_id: 52,
+          team_abbrev: "WPG",
+          ownership: null,
+          percent_ownership: null,
+          ownership_as_of_date: null,
+          position_ranks: { C: 2 },
+        }),
+        player({
+          row_key: "run-123:1001:100:1",
+          player_id: 100,
+          name: "Known Player",
+          position_ranks: { C: 3 },
+        }),
+      ],
+      games: [
+        {
+          id: 1001,
+          date: "2026-02-07",
+          startTime: null,
+          homeTeamId: 10,
+          awayTeamId: 8,
+          homeAbbrev: "TOR",
+          awayAbbrev: "MTL",
+          homeGoalies: [],
+          awayGoalies: [],
+        },
+        {
+          id: 1002,
+          date: "2026-02-07",
+          startTime: null,
+          homeTeamId: 21,
+          awayTeamId: 52,
+          homeAbbrev: "COL",
+          awayAbbrev: "WPG",
+          homeGoalies: [],
+          awayGoalies: [],
+        },
+      ],
+    };
+    render(<StartChartPage />);
+
+    fireEvent.change(screen.getByLabelText("Team"), {
+      target: { value: "MTL" },
+    });
+    fireEvent.change(screen.getByLabelText("All ownership"), {
+      target: { value: "50" },
+    });
+
+    expect(screen.getByText(/1 player was excluded/)).toBeTruthy();
+    expect(screen.queryByText(/2 players were excluded/)).toBeNull();
+  });
+
   it("renders explicit fallback and degraded source messaging", () => {
     swrState.data = {
       ...buildApiData(),
@@ -505,17 +673,27 @@ describe("StartChartPage", () => {
       serving: {
         mode: "fallback",
         message: "Serving the nearest available date.",
+        ageDays: 1,
       },
       sourceStatus: {
         ...readySourceStatus,
         overall: "degraded",
+        projection: {
+          ...readySourceStatus.projection,
+          state: "partial",
+          message: "Projection provenance is unverified.",
+        },
         degradedReasons: ["missing_goalie_coverage"],
       },
     };
     render(<StartChartPage />);
 
     expect(screen.getByText("Showing 2026-02-07, not 2026-02-08.")).toBeTruthy();
-    expect(screen.getByText("Serving the nearest available date.")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "This is the nearest earlier slate with projections (1 day old). Use it as historical reference, not today's recommendation. Projection provenance is unverified.",
+      ),
+    ).toBeTruthy();
   });
 
   it("shows null projection values as unavailable rather than zero", () => {

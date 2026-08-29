@@ -1,8 +1,27 @@
 type Numeric = number | null | undefined;
 
+export const RECENT_TEAM_FORM_FORMULA_VERSION = "ctpi-formula-v1";
+export const RECENT_TEAM_FORM_INPUT_VERSION = "ctpi-one-game-input-v2";
+export const RECENT_TEAM_FORM_APPROVED_PUBLICATION_STATUS = "approved";
+export const RECENT_TEAM_FORM_LEGACY_PUBLICATION_STATUS = "legacy_unapproved";
+
+export const isTrustedRecentTeamFormPayload = (value: unknown): boolean => {
+  if (!value || typeof value !== "object") return false;
+  const payload = value as Record<string, unknown>;
+  return (
+    payload.publicationStatus ===
+      RECENT_TEAM_FORM_APPROVED_PUBLICATION_STATUS &&
+    payload.formulaVersion === RECENT_TEAM_FORM_FORMULA_VERSION &&
+    payload.inputVersion === RECENT_TEAM_FORM_INPUT_VERSION &&
+    Number.isSafeInteger(Number(payload.sourceGameCount)) &&
+    Number(payload.sourceGameCount) > 0
+  );
+};
+
 export type TeamGameRow = {
   team: string;
   date: string;
+  gp?: Numeric;
   xgf_per_60?: Numeric;
   hdcf_per_60?: Numeric;
   gf_per_60?: Numeric;
@@ -23,8 +42,13 @@ export type TeamGameRow = {
   toi_all_seconds?: Numeric; // Added
 };
 
+export const isOneGameTeamRow = (row: Pick<TeamGameRow, "gp">): boolean =>
+  Number(row.gp) === 1;
+
 export type TrendMetrics = {
   team: string;
+  source_game_count: number;
+  recent_game_count: number;
   // Offense
   xgf_per_60: number;
   hdcf_per_60: number;
@@ -51,6 +75,13 @@ export type TrendMetrics = {
 
 export type CtpiScore = {
   team: string;
+  publicationStatus?:
+    | typeof RECENT_TEAM_FORM_APPROVED_PUBLICATION_STATUS
+    | typeof RECENT_TEAM_FORM_LEGACY_PUBLICATION_STATUS;
+  formulaVersion?: typeof RECENT_TEAM_FORM_FORMULA_VERSION;
+  inputVersion?: typeof RECENT_TEAM_FORM_INPUT_VERSION;
+  sourceGameCount?: number;
+  recentGameCount?: number;
   offense: number;
   defense: number;
   goaltending: number;
@@ -97,13 +128,15 @@ export const buildLinearWeights = (len: number) => {
   return weights;
 };
 
-export function computeTrendMetrics(
+function computeTrendMetricsWithSourceGrain(
   games: TeamGameRow[],
-  _weightDecay = 0.9,
-  maxGames = 10
+  maxGames: number,
+  sourceGrain: "verified_game" | "legacy_any",
 ): TrendMetrics {
   const allSorted = [...games]
-    .filter((g) => g.date)
+    .filter(
+      (g) => g.date && (sourceGrain === "legacy_any" || isOneGameTeamRow(g)),
+    )
     .sort((a, b) => b.date.localeCompare(a.date));
 
   const trendSlice = allSorted.slice(0, maxGames);
@@ -112,13 +145,13 @@ export function computeTrendMetrics(
   const getTrendValue = (key: keyof TeamGameRow) =>
     wma(
       trendSlice.map((g) => g[key] as Numeric),
-      trendWeights
+      trendWeights,
     );
 
   const getDerivedTrendValue = (
     numeratorKey: keyof TeamGameRow,
     denominatorKey: keyof TeamGameRow,
-    scale = 1
+    scale = 1,
   ) => {
     const values = trendSlice.map((g) => {
       const n = g[numeratorKey] as number;
@@ -129,7 +162,7 @@ export function computeTrendMetrics(
   };
 
   const validSeasonGames = allSorted.filter(
-    (g) => g.xga != null && g.goals_against != null
+    (g) => g.xga != null && g.goals_against != null,
   );
 
   let seasonGsax = 0;
@@ -159,7 +192,9 @@ export function computeTrendMetrics(
   const pkXgaPer60 = getDerivedTrendValue("pk_xga", "toi_shorthanded", 3600);
 
   return {
-    team: games[0]?.team ?? "",
+    team: allSorted[0]?.team ?? "",
+    source_game_count: allSorted.length,
+    recent_game_count: trendSlice.length,
     xgf_per_60: getTrendValue("xgf_per_60"),
     hdcf_per_60: getTrendValue("hdcf_per_60"),
     gf_per_60: getTrendValue("gf_per_60"),
@@ -181,15 +216,31 @@ export function computeTrendMetrics(
           // Normalize PDO to 0-100 scale if it's 0-1
           return val < 2 ? val * 100 : val;
         }),
-        trendWeights
+        trendWeights,
       ) ?? 100,
 
     sat_pct: getTrendValue("sat_pct"),
     gsaX: gsaxLast10,
     pp_eff: 0,
     pk_supp: 0,
-    net_penalties_per_60: getTrendValue("net_penalties_per_60")
+    net_penalties_per_60: getTrendValue("net_penalties_per_60"),
   };
+}
+
+export function computeTrendMetrics(
+  games: TeamGameRow[],
+  _weightDecay = 0.9,
+  maxGames = 10,
+): TrendMetrics {
+  return computeTrendMetricsWithSourceGrain(games, maxGames, "verified_game");
+}
+
+/** Reproduces the retired mixed-grain behavior for the read-only audit only. */
+export function computeLegacyTrendMetricsForAuditOnly(
+  games: TeamGameRow[],
+  maxGames = 10,
+): TrendMetrics {
+  return computeTrendMetricsWithSourceGrain(games, maxGames, "legacy_any");
 }
 
 export function computeCtpi(teams: TrendMetrics[]): CtpiScore[] {
@@ -210,13 +261,13 @@ export function computeCtpi(teams: TrendMetrics[]): CtpiScore[] {
 
     gsax_season: [
       mean(collect("gsax_per_60_season")),
-      stdDev(collect("gsax_per_60_season"))
+      stdDev(collect("gsax_per_60_season")),
     ],
     gsax_last10: [
       mean(collect("gsax_per_60_last10")),
-      stdDev(collect("gsax_per_60_last10"))
+      stdDev(collect("gsax_per_60_last10")),
     ],
-    pdo: [mean(collect("pdo")), stdDev(collect("pdo"))]
+    pdo: [mean(collect("pdo")), stdDev(collect("pdo"))],
   };
 
   return teams.map((t) => {
@@ -234,7 +285,7 @@ export function computeCtpi(teams: TrendMetrics[]): CtpiScore[] {
 
       gsax_season: zScore(t.gsax_per_60_season, ...mu_sd.gsax_season),
       gsax_last10: zScore(t.gsax_per_60_last10, ...mu_sd.gsax_last10),
-      pdo: zScore(t.pdo ?? 100, ...mu_sd.pdo)
+      pdo: zScore(t.pdo ?? 100, ...mu_sd.pdo),
     };
 
     const offense = 0.5 * z.xgf + 0.3 * z.hdcf + 0.2 * z.gf;
@@ -256,6 +307,11 @@ export function computeCtpi(teams: TrendMetrics[]): CtpiScore[] {
 
     return {
       team: t.team,
+      publicationStatus: RECENT_TEAM_FORM_LEGACY_PUBLICATION_STATUS,
+      formulaVersion: RECENT_TEAM_FORM_FORMULA_VERSION,
+      inputVersion: RECENT_TEAM_FORM_INPUT_VERSION,
+      sourceGameCount: t.source_game_count,
+      recentGameCount: t.recent_game_count,
       offense,
       defense,
       goaltending,
@@ -263,7 +319,7 @@ export function computeCtpi(teams: TrendMetrics[]): CtpiScore[] {
       luck,
       ctpi_raw: raw,
       ctpi_0_to_100: 50 + 15 * raw,
-      z
+      z,
     };
   });
 }

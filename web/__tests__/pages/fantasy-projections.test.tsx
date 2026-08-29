@@ -275,7 +275,12 @@ describe("Fantasy Projections scoring modes", () => {
     });
     const detailPlayer: FantasyProjectionPlayer = {
       ...summaryPlayer,
-      expectedToi: { TOTAL_TOI: 1200 },
+      expectedToi: {
+        total: 1200,
+        evenStrength: 900,
+        powerPlay: 240,
+        penaltyKill: 60,
+      },
       deployment: {
         confidence: 0.8,
         mostLikelyRole: { role: "L1 · PP1" },
@@ -344,7 +349,10 @@ describe("Fantasy Projections scoring modes", () => {
     render(<FantasyProjectionsPage />);
     fireEvent.click(await screen.findByRole("button", { name: "Detail Skater" }));
 
-    expect(await screen.findByRole("dialog", { name: "Player projection details" })).toBeTruthy();
+    const detailDialog = await screen.findByRole("dialog", { name: "Player projection details" });
+    expect(detailDialog).toBeTruthy();
+    expect(detailDialog.textContent).toContain("20.0");
+    expect(detailDialog.textContent).not.toContain("1200");
     expect(screen.getByText("Deployment and opportunity")).toBeTruthy();
     expect(screen.getByText(/F1 70% · F2 30%/)).toBeTruthy();
     expect(screen.getByText("Model and editorial comparison")).toBeTruthy();

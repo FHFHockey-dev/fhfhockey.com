@@ -5,22 +5,16 @@ import {
   type ChangeEvent,
   type ReactNode
 } from "react";
-import dynamic from "next/dynamic";
 import Head from "next/head";
-import Link from "next/link";
 import type { GetServerSideProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import { format, parseISO } from "date-fns";
 
-import DashboardPillarHero from "../../components/dashboard/DashboardPillarHero";
-import ClientOnly from "../../components/ClientOnly";
-import UnderlyingStatsDashboardCard from "../../components/underlying-stats/UnderlyingStatsDashboardCard";
-import UnderlyingStatsNavBar from "../../components/underlying-stats/UnderlyingStatsNavBar";
-import UlsStatusPanel from "../../components/underlying-stats/UlsStatusPanel";
+import OptimizedImage from "../../components/common/OptimizedImage";
+import UnderlyingStatsDashboard from "../../components/underlying-stats/UnderlyingStatsDashboard";
 import OwnershipSparkline from "../../components/TransactionTrends/OwnershipSparkline";
 import { computeTeamPowerScore } from "../../lib/dashboard/teamContext";
-import { getAnalyticsSurfaceContract } from "../../lib/navigation/analyticsSurfaceOwnership";
-import { UNDERLYING_STATS_SURFACE_LINKS } from "../../lib/navigation/siteSurfaceLinks";
+import { getLocalTeamLogoPath } from "../../lib/images";
 import supabaseServer from "../../lib/supabase/server";
 import { type SpecialTeamTier } from "../../lib/teamRatingsService";
 import { teamsInfo } from "../../lib/teamsInfo";
@@ -32,11 +26,6 @@ import {
 } from "../../lib/underlying-stats/teamLandingRatings";
 import { fetchUlsRouteStatus, type UlsRouteStatus } from "../../lib/underlying-stats/ulsRouteStatus";
 import styles from "./indexUS.module.scss";
-
-const UnderlyingStatsQuadrantMap = dynamic(
-  () => import("../../components/underlying-stats/UnderlyingStatsQuadrantMap"),
-  { ssr: false }
-);
 
 type PageProps = {
   availableDates: string[];
@@ -170,6 +159,40 @@ const formatSignedNumber = (value: number): string =>
 
 const getTeamName = (abbr: string): string =>
   teamsInfo[abbr as keyof typeof teamsInfo]?.name ?? abbr;
+
+const resolveInitialTeamAbbr = (
+  ratings: UnderlyingStatsLandingRating[],
+  teamQuery: string | string[] | undefined,
+  teamIdQuery: string | string[] | undefined
+): string | null => {
+  const requestedAbbr = (Array.isArray(teamQuery) ? teamQuery[0] : teamQuery)
+    ?.trim()
+    .toUpperCase();
+  const requestedTeamId = Number(
+    Array.isArray(teamIdQuery) ? teamIdQuery[0] : teamIdQuery
+  );
+  const requestedTeam = ratings.find((rating) => {
+    if (requestedAbbr && rating.teamAbbr === requestedAbbr) {
+      return true;
+    }
+
+    return (
+      Number.isFinite(requestedTeamId) &&
+      teamsInfo[rating.teamAbbr as keyof typeof teamsInfo]?.id === requestedTeamId
+    );
+  });
+
+  if (requestedTeam) {
+    return requestedTeam.teamAbbr;
+  }
+
+  return (
+    [...ratings].sort(
+      (left, right) =>
+        computeTeamPowerScore(right) - computeTeamPowerScore(left)
+    )[0]?.teamAbbr ?? null
+  );
+};
 
 const getLuckStatusLabel = (
   value: UnderlyingStatsLandingRating["luckStatus"]
@@ -310,15 +333,25 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
     useState<UnderlyingStatsLandingSnapshot>(initialSnapshot);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTeamAbbr, setActiveTeamAbbr] = useState<string | null>(null);
+  const [pinnedTeamAbbr, setPinnedTeamAbbr] = useState<string | null>(() =>
+    resolveInitialTeamAbbr(
+      initialSnapshot.ratings,
+      router.query.team,
+      router.query.teamId
+    )
+  );
+  const [hoveredTeamAbbr, setHoveredTeamAbbr] = useState<string | null>(null);
+  const [showAllTeams, setShowAllTeams] = useState(false);
   const [viewMode, setViewMode] = useState<TableViewMode>("simple");
   const [sortState, setSortState] = useState<SortState>(DEFAULT_SORTS.simple);
   const ratings = snapshot.ratings;
   const dashboard = snapshot.dashboard;
+  const activeTeamAbbr = hoveredTeamAbbr ?? pinnedTeamAbbr;
 
   useEffect(() => {
     setSnapshot(initialSnapshot);
     setSelectedDate(initialSnapshot.resolvedDate ?? "");
+    setShowAllTeams(false);
   }, [initialSnapshot]);
 
   useEffect(() => {
@@ -431,28 +464,17 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
     () => powerRankedRatings.slice(0, 3),
     [powerRankedRatings]
   );
-  const activeTeam = useMemo(
-    () =>
-      activeTeamAbbr
-        ? ratings.find((team) => team.teamAbbr === activeTeamAbbr) ?? null
-        : null,
-    [activeTeamAbbr, ratings]
-  );
-  const explorerContracts = useMemo(
-    () => [
-      getAnalyticsSurfaceContract("uls-skater-explorer"),
-      getAnalyticsSurfaceContract("uls-goalie-explorer"),
-      getAnalyticsSurfaceContract("uls-team-explorer")
-    ],
-    []
-  );
-  const explorerTeamId = useMemo(() => {
-    if (!activeTeam?.teamAbbr) {
-      return null;
-    }
 
-    return teamsInfo[activeTeam.teamAbbr as keyof typeof teamsInfo]?.id ?? null;
-  }, [activeTeam?.teamAbbr]);
+  useEffect(() => {
+    setPinnedTeamAbbr((current) => {
+      if (current && ratings.some((team) => team.teamAbbr === current)) {
+        return current;
+      }
+
+      return powerRankedRatings[0]?.teamAbbr ?? null;
+    });
+    setHoveredTeamAbbr(null);
+  }, [powerRankedRatings, ratings]);
 
   const componentStats = useMemo(() => {
     const xgf60 = summarizeValues(ratings.map((team) => team.components.xgf60));
@@ -593,6 +615,11 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
     return sorted;
   }, [powerRankByTeam, ratings, sortState]);
 
+  const visibleRatings = useMemo(
+    () => (showAllTeams ? displayedRatings : displayedRatings.slice(0, 12)),
+    [displayedRatings, showAllTeams]
+  );
+
   const getComponentBadgeClass = (value: number | null): string => {
     if (typeof value !== "number" || Number.isNaN(value)) {
       return styles.componentNeutral;
@@ -652,6 +679,8 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
   const handleDateChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value;
     setSelectedDate(value);
+    setHoveredTeamAbbr(null);
+    setShowAllTeams(false);
     router.replace(
       {
         pathname: router.pathname,
@@ -660,6 +689,11 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
       undefined,
       { shallow: true }
     );
+  };
+
+  const handleTeamPin = (teamAbbr: string) => {
+    setPinnedTeamAbbr(teamAbbr);
+    setHoveredTeamAbbr(null);
   };
 
   const handleModeChange = (nextMode: TableViewMode) => {
@@ -706,7 +740,17 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
       : "none";
 
     return (
-      <th scope="col" aria-sort={ariaSort}>
+      <th
+        scope="col"
+        aria-sort={ariaSort}
+        className={
+          key === "rank"
+            ? styles.stickyRankHeader
+            : key === "team"
+              ? styles.stickyTeamHeader
+              : undefined
+        }
+      >
         <button
           type="button"
           className={styles.sortButton}
@@ -992,560 +1036,27 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
         />
       </Head>
       <main className={styles.page}>
-        <section className={styles.headerPanel}>
-          <div className={styles.topNavRow}>
-            <div className={styles.sectionEyebrow}>Team hub</div>
-            <UnderlyingStatsNavBar />
-          </div>
-          <div className={styles.header}>
-            <DashboardPillarHero
-              className={styles.headerIntro}
-              eyebrow="Team intelligence pillar"
-              title="Underlying Stats Dashboard"
-              description={
-                <p>
-                  This surface owns the team read: who profiles as strong, what
-                  looks sustainable, which movement is backed by process, and
-                  where surface results disagree with the underlying picture.
-                </p>
-              }
-              emphasis="Team diagnosis"
-              owns={[
-                "Process-first team reads with quadrant and mover context",
-                "Sustainability, inefficiency, and schedule-texture modules",
-                "A supporting table for validation after the dashboard read"
-              ]}
-              defers={[
-                "Fast player triage, recent-form scanning, and start/sit workflow",
-                "Prototype-only player trend experiments that still belong in the lab"
-              ]}
-              surfaceLinks={UNDERLYING_STATS_SURFACE_LINKS}
-            />
-            <div
-              className={styles.controls}
-              role="group"
-              aria-label="Snapshot controls"
-            >
-              <label className={styles.controlLabel} htmlFor="date-select">
-                Snapshot date
-              </label>
-              <select
-                id="date-select"
-                className={styles.dateSelect}
-                value={selectedDate}
-                onChange={handleDateChange}
-                disabled={!dateOptions.length}
-              >
-                {dateOptions.map((date) => (
-                  <option key={date} value={date}>
-                    {formatDateLabel(date)}
-                  </option>
-                ))}
-              </select>
-              <span className={styles.controlHint}>
-                {ratings.length} teams · Nightly snapshot after games
-              </span>
-            </div>
-          </div>
-        </section>
-
-        <section className={styles.dashboardHero}>
-          <UnderlyingStatsDashboardCard
-            className={styles.quadrantCard}
-            kicker="League map"
-            title="Process quadrant"
-            description={
-              <>
-                Offensive process on the x-axis, defensive process on the y-axis.
-                Hover a team to read its profile in context.
-              </>
-            }
-            actions={
-              <div className={styles.cardMeta}>
-                <span>{selectedDate ? formatDateLabel(selectedDate) : "Latest snapshot"}</span>
-                {activeTeam ? (
-                  <span>
-                    Focus {activeTeam.teamAbbr} · {formatPower(computeTeamPowerScore(activeTeam))}
-                  </span>
-                ) : (
-                  <span>{dashboard.quadrant.axisSubtitle}</span>
-                )}
-              </div>
-            }
+        <div className={styles.dashboardShell}>
+          <UnderlyingStatsDashboard
+            activeTeamAbbr={activeTeamAbbr}
+            dashboard={dashboard}
+            dateOptions={dateOptions}
+            error={error}
+            isLoading={isLoading}
+            onDateChange={handleDateChange}
+            onTeamPin={handleTeamPin}
+            onTeamPreview={setHoveredTeamAbbr}
+            pinnedTeamAbbr={pinnedTeamAbbr}
+            ratings={ratings}
+            routeStatus={routeStatus}
+            selectedDate={selectedDate}
+            topTeams={topTeams}
+          />
+          <section
+            className={styles.tableSection}
+            aria-labelledby="power-rankings-table-heading"
+            aria-live="polite"
           >
-            {dashboard.quadrant.points.length ? (
-              <ClientOnly>
-                <UnderlyingStatsQuadrantMap
-                  activeTeamAbbr={activeTeamAbbr}
-                  averageDefenseProcess={dashboard.quadrant.averageDefenseProcess}
-                  averageOffenseProcess={dashboard.quadrant.averageOffenseProcess}
-                  onTeamHover={setActiveTeamAbbr}
-                  points={dashboard.quadrant.points}
-                />
-              </ClientOnly>
-            ) : (
-              <div className={styles.moduleEmpty}>No quadrant data for this snapshot.</div>
-            )}
-          </UnderlyingStatsDashboardCard>
-
-          <UnderlyingStatsDashboardCard
-            className={styles.risersCard}
-            kicker="Movement"
-            title="Risers and fallers"
-            description="Recent movers driven by actual rating changes, with context notes kept secondary."
-          >
-            <div className={styles.moduleSplit}>
-              <div className={styles.moduleColumn}>
-                <div className={styles.moduleColumnHeader}>
-                  <span>Rising now</span>
-                </div>
-                {dashboard.risers.length ? (
-                  <div className={styles.dashboardList}>
-                    {dashboard.risers.map((item) => (
-                      <article
-                        key={`riser-${item.teamAbbr}`}
-                        className={`${styles.dashboardListItem} ${
-                          activeTeamAbbr === item.teamAbbr ? styles.dashboardListItemActive : ""
-                        }`}
-                        onMouseEnter={() => setActiveTeamAbbr(item.teamAbbr)}
-                        onMouseLeave={() => setActiveTeamAbbr(null)}
-                      >
-                        <div className={styles.dashboardItemTopline}>
-                          <div>
-                            <span className={styles.dashboardTeam}>{item.teamAbbr}</span>
-                            <span className={styles.dashboardTeamName}>{item.teamName}</span>
-                          </div>
-                          <div className={styles.dashboardItemStats}>
-                            <span className={styles.powerPill}>{item.power.toFixed(1)}</span>
-                            <span className={`${styles.trendPill} ${styles.trendPositive}`}>
-                              +{item.trend.toFixed(1)}
-                            </span>
-                          </div>
-                        </div>
-                        <ul className={styles.dashboardBullets}>
-                          {item.bullets.slice(0, 2).map((bullet) => (
-                            <li key={`${item.teamAbbr}-${bullet}`}>{bullet}</li>
-                          ))}
-                        </ul>
-                        {item.archetypes.length ? (
-                          <div className={styles.dashboardTags}>
-                            {item.archetypes.map((tag) => (
-                              <span key={`${item.teamAbbr}-${tag}`} className={styles.dashboardTag}>
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        ) : null}
-                      </article>
-                    ))}
-                  </div>
-                ) : (
-                  <div className={styles.moduleEmpty}>No risers for this snapshot.</div>
-                )}
-              </div>
-
-              <div className={styles.moduleColumn}>
-                <div className={styles.moduleColumnHeader}>
-                  <span>Sliding now</span>
-                </div>
-                {dashboard.fallers.length ? (
-                  <div className={styles.dashboardList}>
-                    {dashboard.fallers.map((item) => (
-                      <article
-                        key={`faller-${item.teamAbbr}`}
-                        className={`${styles.dashboardListItem} ${
-                          activeTeamAbbr === item.teamAbbr ? styles.dashboardListItemActive : ""
-                        }`}
-                        onMouseEnter={() => setActiveTeamAbbr(item.teamAbbr)}
-                        onMouseLeave={() => setActiveTeamAbbr(null)}
-                      >
-                        <div className={styles.dashboardItemTopline}>
-                          <div>
-                            <span className={styles.dashboardTeam}>{item.teamAbbr}</span>
-                            <span className={styles.dashboardTeamName}>{item.teamName}</span>
-                          </div>
-                          <div className={styles.dashboardItemStats}>
-                            <span className={styles.powerPill}>{item.power.toFixed(1)}</span>
-                            <span className={`${styles.trendPill} ${styles.trendNegative}`}>
-                              {item.trend.toFixed(1)}
-                            </span>
-                          </div>
-                        </div>
-                        <ul className={styles.dashboardBullets}>
-                          {item.bullets.slice(0, 2).map((bullet) => (
-                            <li key={`${item.teamAbbr}-${bullet}`}>{bullet}</li>
-                          ))}
-                        </ul>
-                        {item.archetypes.length ? (
-                          <div className={styles.dashboardTags}>
-                            {item.archetypes.map((tag) => (
-                              <span key={`${item.teamAbbr}-${tag}`} className={styles.dashboardTag}>
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        ) : null}
-                      </article>
-                    ))}
-                  </div>
-                ) : (
-                  <div className={styles.moduleEmpty}>No fallers for this snapshot.</div>
-                )}
-              </div>
-            </div>
-          </UnderlyingStatsDashboardCard>
-        </section>
-
-        <section className={styles.dashboardGrid}>
-          <UnderlyingStatsDashboardCard
-            kicker="Explorer paths"
-            title="Continue into the right explorer"
-            description="The landing owns the team snapshot. Hover a team anywhere on the page, then open one of these routes to carry that team context into the explorer."
-          >
-            <div className={styles.dashboardList}>
-              {explorerContracts.map((surface) => (
-                <article key={surface.id} className={styles.dashboardListItem}>
-                  <div className={styles.dashboardItemTopline}>
-                    <div>
-                      <span className={styles.dashboardTeam}>{surface.shortLabel}</span>
-                      <span className={styles.dashboardTeamName}>{surface.label}</span>
-                    </div>
-                    <Link
-                      href={
-                        explorerTeamId == null
-                          ? surface.href
-                          : {
-                              pathname: surface.href,
-                              query: { teamId: explorerTeamId }
-                            }
-                      }
-                      className={styles.breadcrumbLink}
-                    >
-                      Open
-                    </Link>
-                  </div>
-                  <ul className={styles.dashboardBullets}>
-                    {surface.owns.slice(0, 2).map((bullet) => (
-                      <li key={`${surface.id}-${bullet}`}>{bullet}</li>
-                    ))}
-                  </ul>
-                </article>
-              ))}
-            </div>
-          </UnderlyingStatsDashboardCard>
-
-          <UnderlyingStatsDashboardCard
-            kicker="Launch status"
-            title="Ratings and model-read status"
-            description="The ULS route family now reads the launch contracts directly. Empty cards mean the daily products still need their first populated snapshot."
-          >
-            <UlsStatusPanel status={routeStatus} variant="landing" />
-          </UnderlyingStatsDashboardCard>
-
-          <UnderlyingStatsDashboardCard
-            kicker="Trust signal"
-            title="What looks real?"
-            description="Separate strong process from profiles being pushed around by finishing, goaltending, or luck."
-          >
-            <div className={styles.trustColumns}>
-              <div className={styles.trustColumn}>
-                <span className={styles.trustLabel}>Process-backed</span>
-                {dashboard.sustainability.processBacked.length ? (
-                  dashboard.sustainability.processBacked.map((item) => (
-                    <article
-                      key={`trust-${item.teamAbbr}`}
-                      className={`${styles.trustItem} ${
-                        activeTeamAbbr === item.teamAbbr ? styles.dashboardListItemActive : ""
-                      }`}
-                      onMouseEnter={() => setActiveTeamAbbr(item.teamAbbr)}
-                      onMouseLeave={() => setActiveTeamAbbr(null)}
-                    >
-                      <div className={styles.dashboardItemTopline}>
-                        <div>
-                          <span className={styles.dashboardTeam}>{item.teamAbbr}</span>
-                          <span className={styles.dashboardTeamName}>{item.teamName}</span>
-                        </div>
-                        <span className={styles.powerPill}>{item.power.toFixed(1)}</span>
-                      </div>
-                      <p className={styles.dashboardNote}>{item.note}</p>
-                    </article>
-                  ))
-                ) : (
-                  <div className={styles.moduleEmpty}>No process-backed leaders surfaced.</div>
-                )}
-              </div>
-
-              <div className={styles.trustColumn}>
-                <span className={styles.trustLabel}>Heat check</span>
-                {dashboard.sustainability.heatCheck.length ? (
-                  dashboard.sustainability.heatCheck.map((item) => (
-                    <article
-                      key={`heat-${item.teamAbbr}`}
-                      className={`${styles.trustItem} ${
-                        activeTeamAbbr === item.teamAbbr ? styles.dashboardListItemActive : ""
-                      }`}
-                      onMouseEnter={() => setActiveTeamAbbr(item.teamAbbr)}
-                      onMouseLeave={() => setActiveTeamAbbr(null)}
-                    >
-                      <div className={styles.dashboardItemTopline}>
-                        <div>
-                          <span className={styles.dashboardTeam}>{item.teamAbbr}</span>
-                          <span className={styles.dashboardTeamName}>{item.teamName}</span>
-                        </div>
-                        <span className={styles.powerPill}>{item.power.toFixed(1)}</span>
-                      </div>
-                      <p className={styles.dashboardNote}>{item.note}</p>
-                    </article>
-                  ))
-                ) : (
-                  <div className={styles.moduleEmpty}>No obvious heat-check teams here.</div>
-                )}
-              </div>
-
-              <div className={styles.trustColumn}>
-                <span className={styles.trustLabel}>Buy low</span>
-                {dashboard.sustainability.buyLow.length ? (
-                  dashboard.sustainability.buyLow.map((item) => (
-                    <article
-                      key={`buy-low-${item.teamAbbr}`}
-                      className={`${styles.trustItem} ${
-                        activeTeamAbbr === item.teamAbbr ? styles.dashboardListItemActive : ""
-                      }`}
-                      onMouseEnter={() => setActiveTeamAbbr(item.teamAbbr)}
-                      onMouseLeave={() => setActiveTeamAbbr(null)}
-                    >
-                      <div className={styles.dashboardItemTopline}>
-                        <div>
-                          <span className={styles.dashboardTeam}>{item.teamAbbr}</span>
-                          <span className={styles.dashboardTeamName}>{item.teamName}</span>
-                        </div>
-                        <span className={styles.powerPill}>{item.power.toFixed(1)}</span>
-                      </div>
-                      <p className={styles.dashboardNote}>{item.note}</p>
-                    </article>
-                  ))
-                ) : (
-                  <div className={styles.moduleEmpty}>No clear rebound candidates surfaced.</div>
-                )}
-              </div>
-            </div>
-          </UnderlyingStatsDashboardCard>
-
-          <UnderlyingStatsDashboardCard
-            kicker="What matters next"
-            title="Schedule texture"
-            description="Future context that changes the read faster than a raw SoS number by itself."
-          >
-            {dashboard.context.length ? (
-              <div className={styles.dashboardList}>
-                {dashboard.context.map((item) => (
-                  <article
-                    key={`context-${item.teamAbbr}`}
-                    className={`${styles.dashboardListItem} ${
-                      activeTeamAbbr === item.teamAbbr ? styles.dashboardListItemActive : ""
-                    }`}
-                    onMouseEnter={() => setActiveTeamAbbr(item.teamAbbr)}
-                    onMouseLeave={() => setActiveTeamAbbr(null)}
-                  >
-                    <div className={styles.dashboardItemTopline}>
-                      <div>
-                        <span className={styles.dashboardTeam}>{item.teamAbbr}</span>
-                        <span className={styles.dashboardTeamName}>{item.teamName}</span>
-                      </div>
-                      <span className={styles.powerPill}>{item.power.toFixed(1)}</span>
-                    </div>
-                    <p className={styles.dashboardNote}>{item.note}</p>
-                    {item.chips.length ? (
-                      <div className={styles.dashboardTags}>
-                        {item.chips.map((chip) => (
-                          <span key={`${item.teamAbbr}-${chip}`} className={styles.dashboardTag}>
-                            {chip}
-                          </span>
-                        ))}
-                      </div>
-                    ) : null}
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <div className={styles.moduleEmpty}>No standout schedule context yet.</div>
-            )}
-          </UnderlyingStatsDashboardCard>
-
-          <UnderlyingStatsDashboardCard
-            kicker="Inefficiency"
-            title="Under the radar"
-            description="Where actual goal results and underlying play disagree the most."
-          >
-            <div className={styles.moduleSplit}>
-              <div className={styles.moduleColumn}>
-                <div className={styles.moduleColumnHeader}>
-                  <span>Undervalued</span>
-                </div>
-                {dashboard.inefficiency.undervalued.length ? (
-                  <div className={styles.dashboardList}>
-                    {dashboard.inefficiency.undervalued.map((item) => (
-                      <article
-                        key={`undervalued-${item.teamAbbr}`}
-                        className={`${styles.dashboardListItem} ${
-                          activeTeamAbbr === item.teamAbbr ? styles.dashboardListItemActive : ""
-                        }`}
-                        onMouseEnter={() => setActiveTeamAbbr(item.teamAbbr)}
-                        onMouseLeave={() => setActiveTeamAbbr(null)}
-                      >
-                        <div className={styles.dashboardItemTopline}>
-                          <div>
-                            <span className={styles.dashboardTeam}>{item.teamAbbr}</span>
-                            <span className={styles.dashboardTeamName}>{item.teamName}</span>
-                          </div>
-                          <span className={styles.powerPill}>{item.power.toFixed(1)}</span>
-                        </div>
-                        <p className={styles.dashboardNote}>{item.note}</p>
-                        {item.archetypes.length ? (
-                          <div className={styles.dashboardTags}>
-                            {item.archetypes.map((tag) => (
-                              <span key={`${item.teamAbbr}-${tag}`} className={styles.dashboardTag}>
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        ) : null}
-                      </article>
-                    ))}
-                  </div>
-                ) : (
-                  <div className={styles.moduleEmpty}>No undervalued teams surfaced.</div>
-                )}
-              </div>
-
-              <div className={styles.moduleColumn}>
-                <div className={styles.moduleColumnHeader}>
-                  <span>Overvalued</span>
-                </div>
-                {dashboard.inefficiency.overvalued.length ? (
-                  <div className={styles.dashboardList}>
-                    {dashboard.inefficiency.overvalued.map((item) => (
-                      <article
-                        key={`overvalued-${item.teamAbbr}`}
-                        className={`${styles.dashboardListItem} ${
-                          activeTeamAbbr === item.teamAbbr ? styles.dashboardListItemActive : ""
-                        }`}
-                        onMouseEnter={() => setActiveTeamAbbr(item.teamAbbr)}
-                        onMouseLeave={() => setActiveTeamAbbr(null)}
-                      >
-                        <div className={styles.dashboardItemTopline}>
-                          <div>
-                            <span className={styles.dashboardTeam}>{item.teamAbbr}</span>
-                            <span className={styles.dashboardTeamName}>{item.teamName}</span>
-                          </div>
-                          <span className={styles.powerPill}>{item.power.toFixed(1)}</span>
-                        </div>
-                        <p className={styles.dashboardNote}>{item.note}</p>
-                        {item.archetypes.length ? (
-                          <div className={styles.dashboardTags}>
-                            {item.archetypes.map((tag) => (
-                              <span key={`${item.teamAbbr}-${tag}`} className={styles.dashboardTag}>
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        ) : null}
-                      </article>
-                    ))}
-                  </div>
-                ) : (
-                  <div className={styles.moduleEmpty}>No overvalued teams surfaced.</div>
-                )}
-              </div>
-            </div>
-          </UnderlyingStatsDashboardCard>
-        </section>
-
-        <section className={styles.summarySection} aria-labelledby="top-teams-heading">
-          <div className={styles.sectionHeader}>
-            <div>
-              <p className={styles.sectionKicker}>Strength board</p>
-              <h2 className={styles.sectionTitle} id="top-teams-heading">
-                Power leaders
-              </h2>
-              <p className={styles.sectionDescription}>
-                The top three profiles still live here, but the dashboard above is the main first read.
-              </p>
-            </div>
-          </div>
-
-          <div className={styles.summaryGrid}>
-            {topTeams.length ? (
-              topTeams.map((team, index) => (
-                <article key={team.teamAbbr} className={styles.summaryCard}>
-                  <span className={styles.summaryRank}>#{index + 1}</span>
-                  <div className={styles.summaryHeader}>
-                    <span className={styles.summaryTeam}>{team.teamAbbr}</span>
-                    <span className={styles.summaryTeamName}>
-                      {getTeamName(team.teamAbbr)}
-                    </span>
-                  </div>
-                  <div className={styles.summaryMetricGroup}>
-                    <div className={styles.summaryPower}>
-                      {formatPower(computeTeamPowerScore(team))}
-                      <span className={styles.summaryMetricLabel}>
-                        Power Score
-                      </span>
-                    </div>
-                    <div className={styles.summaryMetricRow}>
-                      <div>
-                        {formatRating(team.offRating)}
-                        <span className={styles.summarySubLabel}>Offense</span>
-                      </div>
-                      <div>
-                        {formatRating(team.defRating)}
-                        <span className={styles.summarySubLabel}>Defense</span>
-                      </div>
-                      <div>
-                        {formatTrend(team.trend10)}
-                        <span className={styles.summarySubLabel}>Trend</span>
-                      </div>
-                    </div>
-                  </div>
-                  <ul className={styles.summaryDetails}>
-                    <li>
-                      SoS Future <strong>{formatSos(team.sosFuture)}</strong>
-                    </li>
-                    <li>
-                      PP{" "}
-                      <strong className={styles.tierInline}>
-                        {formatRank(team.ppRank)} · {formatPct(team.ppPct)}
-                      </strong>
-                    </li>
-                    <li>
-                      PK{" "}
-                      <strong className={styles.tierInline}>
-                        {formatRank(team.pkRank)} · {formatPct(team.pkPct)}
-                      </strong>
-                    </li>
-                  </ul>
-                  {team.narrative.length > 0 && (
-                    <ul className={styles.summaryNarrative}>
-                      {team.narrative.slice(0, 2).map((bullet) => (
-                        <li key={`${team.teamAbbr}-${bullet}`}>{bullet}</li>
-                      ))}
-                    </ul>
-                  )}
-                </article>
-              ))
-            ) : (
-              <article className={styles.summaryEmpty}>
-                No rankings available for this date yet.
-              </article>
-            )}
-          </div>
-        </section>
-
-        <section
-          className={styles.tableSection}
-          aria-labelledby="power-rankings-table-heading"
-          aria-live="polite"
-        >
           <div className={styles.sectionHeader}>
             <div>
               <p className={styles.sectionKicker}>Supporting table</p>
@@ -1554,9 +1065,18 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                 id="power-rankings-table-heading"
               >
                 Detailed team table
+                <span
+                  className={styles.sectionInfo}
+                  tabIndex={0}
+                  aria-label="Sortable team metrics for the selected snapshot, with simple and advanced views."
+                  title="Sortable team metrics for the selected snapshot, with simple and advanced views."
+                >
+                  i
+                </span>
               </h2>
               <p className={styles.sectionDescription}>
-                The dashboard above is the fast league read. Simple mode keeps the lower table compact; advanced mode opens the full component and context layer.
+                Compare every team, sort the available metrics, and open the
+                advanced component view when you need more detail.
               </p>
               <details className={styles.tableHelp}>
                 <summary className={styles.tableHelpSummary}>
@@ -1587,6 +1107,8 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
               >
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={viewMode === "simple"}
                   className={`${styles.modeButton} ${
                     viewMode === "simple" ? styles.modeButtonActive : ""
                   }`}
@@ -1596,6 +1118,8 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                 </button>
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={viewMode === "advanced"}
                   className={`${styles.modeButton} ${
                     viewMode === "advanced" ? styles.modeButtonActive : ""
                   }`}
@@ -1629,8 +1153,10 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
               Select another snapshot or refresh later.
             </div>
           ) : (
-            <div className={styles.tableWrapper}>
+            <>
+              <div className={styles.tableWrapper}>
               <table
+                aria-label="Detailed team table"
                 className={`${styles.table} ${
                   viewMode === "advanced"
                     ? styles.tableAdvanced
@@ -1643,7 +1169,7 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                       {renderSortButton({ key: "rank", label: "#" })}
                       {renderSortButton({ key: "team", label: "Team" })}
                       {renderSortButton({
-                        key: "offense",
+                        key: "power",
                         label: (
                           <abbr
                             className={styles.metricHeader}
@@ -1715,7 +1241,7 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                         )
                       })}
                       {renderSortButton({
-                        key: "power",
+                        key: "offense",
                         label: (
                           <abbr
                             className={styles.metricHeader}
@@ -1839,35 +1365,52 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                   )}
                 </thead>
                 <tbody>
-                  {displayedRatings.map((team) => (
+                  {visibleRatings.map((team) => (
                     <tr
                       key={`${team.teamAbbr}-${team.date}`}
                       className={
                         activeTeamAbbr === team.teamAbbr ? styles.tableRowActive : ""
                       }
-                      onMouseEnter={() => setActiveTeamAbbr(team.teamAbbr)}
-                      onMouseLeave={() => setActiveTeamAbbr(null)}
+                      onMouseEnter={() => setHoveredTeamAbbr(team.teamAbbr)}
+                      onMouseLeave={() => setHoveredTeamAbbr(null)}
                     >
                       <td className={styles.rankCell}>
                         {powerRankByTeam.get(team.teamAbbr) ?? "—"}
                       </td>
                       <td className={styles.teamCell}>
-                        <div className={styles.teamCellInner}>
-                          <span className={styles.teamName}>
-                            {team.teamAbbr}
+                        <button
+                          type="button"
+                          className={styles.teamCellButton}
+                          aria-label={`Pin ${getTeamName(team.teamAbbr)}`}
+                          aria-pressed={pinnedTeamAbbr === team.teamAbbr}
+                          onClick={() => handleTeamPin(team.teamAbbr)}
+                          onFocus={() => setHoveredTeamAbbr(team.teamAbbr)}
+                          onBlur={() => setHoveredTeamAbbr(null)}
+                        >
+                          <OptimizedImage
+                            src={getLocalTeamLogoPath(team.teamAbbr)}
+                            alt=""
+                            width={26}
+                            height={26}
+                            className={styles.tableTeamLogo}
+                          />
+                          <span className={styles.teamCellInner}>
+                            <span className={styles.teamName}>
+                              {team.teamAbbr}
+                            </span>
+                            <span className={styles.teamMeta}>
+                              {getTeamName(team.teamAbbr)}
+                              {team.varianceFlag === 1 && (
+                                <span
+                                  className={styles.varianceFlagInline}
+                                  title="PDO is running well above or below league average."
+                                >
+                                  ⚠︎
+                                </span>
+                              )}
+                            </span>
                           </span>
-                          <span className={styles.teamMeta}>
-                            {getTeamName(team.teamAbbr)}
-                            {team.varianceFlag === 1 && (
-                              <span
-                                className={styles.varianceFlagInline}
-                                title="PDO is running well above or below league average."
-                              >
-                                ⚠︎
-                              </span>
-                            )}
-                          </span>
-                        </div>
+                        </button>
                       </td>
                       <td className={styles.powerCell}>
                         {renderPowerPopover(team)}
@@ -1909,13 +1452,12 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                           </td>
                           <td className={styles.narrativeCell}>
                             {team.narrative.length ? (
-                              <ul className={styles.narrativeList}>
-                                {team.narrative.map((bullet) => (
-                                  <li key={`${team.teamAbbr}-${bullet}`}>
-                                    {bullet}
-                                  </li>
-                                ))}
-                              </ul>
+                              <span
+                                className={styles.narrativeLine}
+                                title={team.narrative.join(" • ")}
+                              >
+                                {team.narrative[0]}
+                              </span>
                             ) : (
                               <span className={styles.narrativeEmpty}>
                                 No movement note yet.
@@ -2086,10 +1628,35 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+                </table>
+              </div>
+              {displayedRatings.length > 12 ? (
+                <div className={styles.tablePreviewFooter}>
+                  <span>
+                    Showing {visibleRatings.length} of {displayedRatings.length} teams
+                  </span>
+                  <button
+                    type="button"
+                    className={styles.viewAllButton}
+                    aria-expanded={showAllTeams}
+                    onClick={() => setShowAllTeams((current) => !current)}
+                  >
+                    {showAllTeams
+                      ? "Show top 12 teams"
+                      : `View all ${displayedRatings.length} teams`}
+                  </button>
+                </div>
+              ) : null}
+            </>
           )}
-        </section>
+          </section>
+          <footer className={styles.pageFooterMeta}>
+            <span>
+              Updated for {selectedDate ? formatDateLabel(selectedDate) : "the latest snapshot"}
+            </span>
+            <span>Data refreshed daily · All dates ET</span>
+          </footer>
+        </div>
       </main>
     </>
   );

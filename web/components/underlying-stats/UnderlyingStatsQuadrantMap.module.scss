@@ -2,7 +2,7 @@
 
 .shell {
   position: relative;
-  min-height: 24rem;
+  min-height: 23rem;
 }
 
 .quadrantLabels {
@@ -14,7 +14,7 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(v.$color-white, 0.38);
+  color: rgba(v.$color-white, 0.46);
 }
 
 .quadrantTopLeft,
@@ -45,31 +45,48 @@
 }
 
 .chartArea {
-  height: 24rem;
+  height: 23rem;
   width: 100%;
 }
 
 .pointGroup {
   cursor: pointer;
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus .point,
+  &:focus .pointActive,
+  &:hover .point,
+  &:hover .pointActive {
+    fill: rgba(v.$primary-color, 0.35);
+    stroke: v.$color-blue-300;
+    stroke-width: 3;
+  }
 }
 
 .point {
-  fill: rgba(v.$color-brand-yellow, 0.18);
-  stroke: rgba(v.$color-brand-yellow, 0.82);
+  fill: rgba(v.$background-header, 0.92);
+  stroke: rgba(v.$primary-color, 0.72);
   stroke-width: 1.4;
   transition: r 0.16s ease, fill 0.16s ease, stroke 0.16s ease;
 }
 
 .pointActive {
-  fill: rgba(v.$color-brand-yellow, 0.3);
-  stroke: rgba(v.$color-white, 0.92);
-  stroke-width: 1.8;
+  fill: rgba(v.$primary-color, 0.24);
+  stroke: v.$color-blue-300;
+  stroke-width: 2.2;
+}
+
+.pointLogo {
+  pointer-events: none;
 }
 
 .pointLabel,
 .pointLabelActive {
-  font-family: v.$font-family-accent, sans-serif;
-  font-size: 0.62rem;
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: 0.58rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -78,13 +95,14 @@
 }
 
 .pointLabelActive {
-  font-size: 0.68rem;
+  fill: v.$color-blue-300;
+  font-size: 0.64rem;
 }
 
 .tooltip {
   min-width: 14rem;
   max-width: 18rem;
-  border: 1px solid rgba(v.$color-brand-yellow, 0.34);
+  border: 1px solid rgba(v.$primary-color, 0.5);
   border-radius: v.$radius-sm;
   background: rgba(11, 12, 16, 0.96);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.34);
@@ -116,7 +134,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.55rem;
-  color: v.$color-brand-yellow;
+  color: v.$primary-color;
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -144,11 +162,200 @@
 
 .tooltipTag {
   border-radius: 999px;
-  border: 1px solid rgba(v.$color-brand-yellow, 0.26);
-  background: rgba(v.$color-brand-yellow, 0.1);
-  color: v.$color-brand-yellow;
+  border: 1px solid rgba(v.$primary-color, 0.3);
+  background: rgba(v.$primary-color, 0.08);
+  color: v.$primary-color;
   padding: 0.2rem 0.45rem;
   font-size: 0.66rem;
   font-weight: 700;
   line-height: 1;
+}
+
+.xDirection {
+  position: absolute;
+  right: 1.6rem;
+  bottom: 0;
+  left: 3.25rem;
+  display: flex;
+  justify-content: space-between;
+  color: rgba(v.$text-secondary, 0.78);
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.yDirection {
+  position: absolute;
+  top: 3rem;
+  bottom: 3.2rem;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: rgba(v.$text-secondary, 0.78);
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+  pointer-events: none;
+}
+
+.selectionCard {
+  position: absolute;
+  right: 1rem;
+  bottom: 2rem;
+  width: min(15.5rem, 42%);
+  padding: v.$space-sm;
+  border: 1px solid rgba(v.$primary-color, 0.52);
+  border-radius: v.$radius-panel;
+  background: rgba(v.$background-header, 0.96);
+  box-shadow: v.$shadow-panel-hover;
+  pointer-events: none;
+
+  &[data-pinned="true"] {
+    box-shadow:
+      inset 3px 0 0 v.$primary-color,
+      v.$shadow-panel-hover;
+  }
+
+  > p {
+    margin: v.$space-sm 0 0;
+    color: v.$text-secondary;
+    font-size: 0.68rem;
+    line-height: 1.4;
+  }
+}
+
+.selectionHeader {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: v.$space-sm;
+
+  strong,
+  span {
+    display: block;
+  }
+
+  strong {
+    color: v.$color-white;
+    font-family: v.$font-family-accent, sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+  }
+
+  span {
+    margin-top: 2px;
+    overflow: hidden;
+    color: v.$text-secondary;
+    font-size: 0.64rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.selectionLogo {
+  object-fit: contain;
+}
+
+.selectionScore {
+  color: v.$color-white;
+  font-family: v.$font-family-numbers, monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: right;
+
+  span {
+    font-family: v.$font-family-primary, sans-serif;
+    font-size: 0.55rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+}
+
+.selectionMetrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: v.$space-xs;
+  margin-top: v.$space-sm;
+  padding-block: v.$space-xs;
+  border-block: 1px solid v.$border-soft;
+
+  span {
+    display: grid;
+    gap: 2px;
+  }
+
+  small {
+    color: v.$text-secondary;
+    font-size: 0.54rem;
+    text-transform: uppercase;
+  }
+
+  strong {
+    color: v.$text-primary;
+    font-family: v.$font-family-numbers, monospace;
+    font-size: 0.64rem;
+  }
+}
+
+.selectionTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: v.$space-xs;
+
+  span {
+    padding: 2px 5px;
+    border: 1px solid rgba(v.$primary-color, 0.28);
+    border-radius: v.$radius-control;
+    color: v.$primary-color;
+    font-size: 0.56rem;
+    font-weight: 700;
+  }
+}
+
+@media (max-width: v.$breakpoint-tablet) {
+  .shell,
+  .chartArea {
+    min-height: 20rem;
+    height: 20rem;
+  }
+
+  .selectionCard {
+    right: v.$space-xs;
+    bottom: 1.5rem;
+    width: min(14rem, 58%);
+  }
+}
+
+@media (max-width: v.$breakpoint-mobile-lg) {
+  .shell {
+    display: grid;
+    min-height: 0;
+  }
+
+  .chartArea {
+    height: 19rem;
+    min-height: 19rem;
+  }
+
+  .selectionCard {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    margin-top: v.$space-sm;
+  }
+
+  .xDirection {
+    bottom: auto;
+    top: 18.2rem;
+  }
 }

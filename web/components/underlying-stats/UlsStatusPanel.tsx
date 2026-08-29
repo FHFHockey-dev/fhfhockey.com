@@ -9,6 +9,13 @@ type UlsStatusPanelProps = {
   variant: "landing" | "team" | "skater" | "goalie";
 };
 
+type StatusCard = {
+  description: string;
+  key: string;
+  label: string;
+  snapshot: UlsStatusSnapshot | null;
+};
+
 function formatSnapshotDate(value: string | null): string {
   if (!value) return "Awaiting first snapshot";
   try {
@@ -21,17 +28,23 @@ function formatSnapshotDate(value: string | null): string {
 function buildCards(
   status: UlsRouteStatus | null,
   variant: UlsStatusPanelProps["variant"]
-): Array<{ key: string; label: string; snapshot: UlsStatusSnapshot | null }> {
+): StatusCard[] {
   if (!status) {
     return [];
   }
 
   if (variant === "landing") {
     return [
-      { key: "team", label: "Team snapshot", snapshot: status.teamRatings },
+      {
+        key: "team",
+        label: "Team snapshot",
+        description: "Power scores and team metrics",
+        snapshot: status.teamRatings
+      },
       {
         key: "skater",
         label: "Skater ratings",
+        description: "Individual player ratings and roles",
         snapshot:
           status.skaterOffenseRatings.rowCount + status.skaterDefenseRatings.rowCount > 0
             ? {
@@ -53,10 +66,16 @@ function buildCards(
                 status: "pending",
               },
       },
-      { key: "goalie", label: "Goalie ratings", snapshot: status.goalieRatings },
+      {
+        key: "goalie",
+        label: "Goalie ratings",
+        description: "Goalie ratings and workload",
+        snapshot: status.goalieRatings
+      },
       {
         key: "models",
         label: "Model signals",
+        description: "Model and market context",
         snapshot: {
           latestSnapshotDate:
             status.modelMarketFlags.latestSnapshotDate ??
@@ -79,10 +98,16 @@ function buildCards(
 
   if (variant === "team") {
     return [
-      { key: "team", label: "Team snapshot", snapshot: status.teamRatings },
+      {
+        key: "team",
+        label: "Team snapshot",
+        description: "Power scores and team metrics",
+        snapshot: status.teamRatings
+      },
       {
         key: "models",
         label: "Game/model reads",
+        description: "Game and market model context",
         snapshot: {
           latestSnapshotDate:
             status.gamePredictions.latestSnapshotDate ??
@@ -100,10 +125,16 @@ function buildCards(
 
   if (variant === "goalie") {
     return [
-      { key: "goalie", label: "Goalie ratings", snapshot: status.goalieRatings },
+      {
+        key: "goalie",
+        label: "Goalie ratings",
+        description: "Goalie ratings and workload",
+        snapshot: status.goalieRatings
+      },
       {
         key: "props",
         label: "Goalie model reads",
+        description: "Goalie model and market context",
         snapshot: {
           latestSnapshotDate:
             status.playerPredictions.latestSnapshotDate ??
@@ -120,11 +151,22 @@ function buildCards(
   }
 
   return [
-    { key: "offense", label: "Offensive ratings", snapshot: status.skaterOffenseRatings },
-    { key: "defense", label: "Defensive ratings", snapshot: status.skaterDefenseRatings },
+    {
+      key: "offense",
+      label: "Offensive ratings",
+      description: "Skater offensive impact",
+      snapshot: status.skaterOffenseRatings
+    },
+    {
+      key: "defense",
+      label: "Defensive ratings",
+      description: "Skater defensive impact",
+      snapshot: status.skaterDefenseRatings
+    },
     {
       key: "props",
       label: "Player model reads",
+      description: "Player model and market context",
       snapshot: {
         latestSnapshotDate:
           status.playerPredictions.latestSnapshotDate ??
@@ -143,7 +185,40 @@ function buildCards(
 export default function UlsStatusPanel({ status, variant }: UlsStatusPanelProps) {
   const cards = buildCards(status, variant);
   if (!status || cards.length === 0) {
-    return null;
+    return variant === "landing" ? (
+      <p className={styles.unavailable}>Readiness data is unavailable.</p>
+    ) : null;
+  }
+
+  if (variant === "landing") {
+    return (
+      <div className={styles.landingPanel}>
+        {cards.map(({ description, key, label, snapshot }) => (
+          <article
+            key={key}
+            className={styles.statusRow}
+            data-status={snapshot?.status ?? "pending"}
+          >
+            <div className={styles.statusIdentity}>
+              <p className={styles.statusLabel}>{label}</p>
+              <p className={styles.statusDescription}>{description}</p>
+            </div>
+            <p className={styles.statusCount}>
+              {snapshot?.rowCount
+                ? `${snapshot.rowCount.toLocaleString()} rows`
+                : "No rows"}
+            </p>
+            <p className={styles.statusDate}>
+              {formatSnapshotDate(snapshot?.latestSnapshotDate ?? null)}
+            </p>
+            <p className={styles.statusValue}>
+              <span className={styles.statusDot} aria-hidden="true" />
+              {snapshot?.status === "ready" ? "Ready" : "Pending"}
+            </p>
+          </article>
+        ))}
+      </div>
+    );
   }
 
   return (
