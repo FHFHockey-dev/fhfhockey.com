@@ -23396,6 +23396,7 @@ export type Database = {
       player_trend_metrics: {
         Row: {
           average_value: number | null
+          calculation_version: string | null
           game_date: string
           metric_key: string
           metric_label: string
@@ -23414,6 +23415,7 @@ export type Database = {
         }
         Insert: {
           average_value?: number | null
+          calculation_version?: string | null
           game_date: string
           metric_key: string
           metric_label: string
@@ -23432,6 +23434,7 @@ export type Database = {
         }
         Update: {
           average_value?: number | null
+          calculation_version?: string | null
           game_date?: string
           metric_key?: string
           metric_label?: string
@@ -30959,6 +30962,7 @@ export type Database = {
       }
       team_power_ratings_daily: {
         Row: {
+          calculation_version: string | null
           created_at: string | null
           danger_rating: number | null
           date: string
@@ -30976,6 +30980,7 @@ export type Database = {
           sa60: number | null
           sf60: number | null
           special_rating: number | null
+          source_through_date: string | null
           team_abbreviation: string
           trend10: number | null
           variance_flag: number | null
@@ -30983,6 +30988,7 @@ export type Database = {
           xgf60: number | null
         }
         Insert: {
+          calculation_version?: string | null
           created_at?: string | null
           danger_rating?: number | null
           date: string
@@ -31000,6 +31006,7 @@ export type Database = {
           sa60?: number | null
           sf60?: number | null
           special_rating?: number | null
+          source_through_date?: string | null
           team_abbreviation: string
           trend10?: number | null
           variance_flag?: number | null
@@ -31007,6 +31014,7 @@ export type Database = {
           xgf60?: number | null
         }
         Update: {
+          calculation_version?: string | null
           created_at?: string | null
           danger_rating?: number | null
           date?: string
@@ -31024,6 +31032,7 @@ export type Database = {
           sa60?: number | null
           sf60?: number | null
           special_rating?: number | null
+          source_through_date?: string | null
           team_abbreviation?: string
           trend10?: number | null
           variance_flag?: number | null

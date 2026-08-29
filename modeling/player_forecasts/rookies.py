@@ -106,6 +106,7 @@ def capture_player_landings(
     output: Path,
     *,
     max_workers: int = 12,
+    base_freeze: Path | None = None,
 ) -> dict[str, Any]:
     manifest = read_json(freeze / "manifest.json")
     if manifest.get("contractChecksum") not in {
@@ -127,15 +128,55 @@ def capture_player_landings(
     })
     if not player_ids:
         raise RuntimeError("season player pool contains no NHL identities")
+    reused_captures: dict[int, dict[str, Any]] = {}
+    base_manifest_hash: str | None = None
+    if base_freeze is not None:
+        base_freeze = base_freeze.expanduser().resolve()
+        base_manifest_path = base_freeze / "manifest.json"
+        base_manifest = read_json(base_manifest_path)
+        if (
+            base_manifest.get("schemaVersion")
+            != "player-forecast-rookie-source-freeze-v1"
+            or base_manifest.get("contractVersion")
+            != FANTASY_SEASON_CONTRACT_VERSION
+            or base_manifest.get("contractChecksum")
+            != FANTASY_SEASON_CONTRACT_SHA256
+            or int(base_manifest.get("seasonId") or 0) != TARGET_SEASON
+        ):
+            raise RuntimeError("base rookie source freeze contract mismatch")
+        landing = (base_manifest.get("files") or {}).get("playerLandings") or {}
+        landing_path = (base_freeze / str(landing.get("path") or "")).resolve()
+        try:
+            landing_path.relative_to(base_freeze)
+        except ValueError as error:
+            raise RuntimeError("base rookie source freeze path is outside its root") from error
+        if (
+            not landing_path.is_file()
+            or _file_sha256(landing_path) != landing.get("sha256")
+        ):
+            raise RuntimeError("base rookie source freeze checksum mismatch")
+        base_rows = list(read_jsonl(landing_path))
+        if len(base_rows) != int(landing.get("rows", -1)):
+            raise RuntimeError("base rookie source freeze row count mismatch")
+        eligible_ids = set(player_ids)
+        reused_captures = {
+            int(row["nhlPlayerId"]): row
+            for row in base_rows
+            if int(row.get("nhlPlayerId") or 0) in eligible_ids
+        }
+        base_manifest_hash = _file_sha256(base_manifest_path)
     output.mkdir(parents=True, exist_ok=False)
     fetched_at = datetime.now(timezone.utc).isoformat()
-    captures: list[dict[str, Any]] = []
+    captures: list[dict[str, Any]] = list(reused_captures.values())
     failures: list[dict[str, Any]] = []
     workers = max(1, min(int(max_workers), 24))
+    missing_player_ids = [
+        player_id for player_id in player_ids if player_id not in reused_captures
+    ]
     with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {
             executor.submit(_capture_one, player_id, fetched_at): player_id
-            for player_id in player_ids
+            for player_id in missing_player_ids
         }
         for future in as_completed(futures):
             player_id = futures[future]
@@ -162,9 +203,19 @@ def capture_player_landings(
         "sourcePolicy": "official player-landing captures only; availableAt equals actual capture time",
         "sourcePlayerPoolSha256": pool_metadata["sha256"],
         "requestedPlayers": len(player_ids),
+        "requestedFromNetwork": len(missing_player_ids),
+        "reusedPlayers": len(reused_captures),
         "capturedPlayers": count,
         "failures": failures,
-        "complete": not failures,
+        "complete": not failures and count == len(player_ids),
+        "baseFreeze": (
+            {
+                "manifestSha256": base_manifest_hash,
+                "reusedPlayers": len(reused_captures),
+            }
+            if base_manifest_hash is not None
+            else None
+        ),
         "files": {
             "playerLandings": {
                 "path": "player-landings.jsonl",

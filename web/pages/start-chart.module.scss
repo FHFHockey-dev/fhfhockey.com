@@ -10,22 +10,118 @@
   gap: v.$space-lg;
   background: v.$background-dark;
   min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.pageHeader {
+  @include v.glass-panel($padding: v.$space-lg, $radius: v.$radius-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: v.$space-lg;
+
+  h1 {
+    margin: 0;
+    color: v.$color-white;
+    font-family: v.$font-family-accent, sans-serif;
+    font-size: clamp(1.6rem, 3vw, 2.5rem);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+}
+
+.eyebrow {
+  margin: 0 0 v.$space-xs;
+  color: v.$primary-color;
+  font-size: v.$font-size-xs;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  max-width: 680px;
+  margin: v.$space-xs 0 0;
+  color: v.$text-secondary;
+}
+
+.provenanceSummary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(110px, 1fr));
+  gap: v.$space-xs v.$space-md;
+  margin: 0;
+
+  div {
+    min-width: 0;
+  }
+
+  dt {
+    color: v.$text-secondary;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 2px 0 0;
+    overflow: hidden;
+    color: v.$text-primary;
+    font-size: v.$font-size-xs;
+    font-variant-numeric: tabular-nums;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.statusBanner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs v.$space-md;
+  padding: v.$space-sm v.$space-md;
+  border: 1px solid rgba(v.$info-color, 0.55);
+  border-radius: v.$radius-md;
+  background: rgba(v.$info-color, 0.12);
+  color: v.$text-primary;
+
+  span {
+    color: v.$text-secondary;
+  }
+}
+
+.statusWarning {
+  border-color: rgba(v.$warning-color, 0.65);
+  background: rgba(v.$warning-color, 0.12);
 }
 
 /* =================== Chart Panel =================== */
 .chartPanel {
   @include v.glass-panel($padding: v.$space-md, $radius: v.$radius-lg);
-  height: 25vh;
-  min-height: 220px;
+  min-height: 340px;
   display: flex;
   flex-direction: column;
 }
 
 .chartHeader {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: v.$space-md;
   margin-bottom: v.$space-sm;
+
+  p {
+    margin: 3px 0 0;
+    color: v.$text-secondary;
+    font-size: v.$font-size-xs;
+  }
+}
+
+.chartHeader .chartEyebrow {
+  margin: 0 0 2px;
+  color: v.$primary-color;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .chartTitle {
@@ -40,7 +136,83 @@
 
 .chartGraphic {
   flex: 1;
-  min-height: 0;
+  min-height: 180px;
+}
+
+.chartGuide {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px v.$space-md;
+  margin-bottom: v.$space-xs;
+  padding: v.$space-xs v.$space-sm;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: v.$radius-sm;
+  background: rgba(255, 255, 255, 0.035);
+  color: v.$text-secondary;
+  font-size: 10px;
+
+  strong {
+    color: v.$text-primary;
+  }
+}
+
+.chartNotice {
+  margin: 0 0 v.$space-xs;
+  padding: v.$space-xs v.$space-sm;
+  border: 1px solid rgba(v.$warning-color, 0.55);
+  border-radius: v.$radius-sm;
+  background: rgba(v.$warning-color, 0.1);
+  color: v.$text-primary;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.chartEmpty {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  min-height: 120px;
+  padding: v.$space-md;
+  color: v.$text-secondary;
+  text-align: center;
+}
+
+.chartLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs v.$space-sm;
+  margin: v.$space-xs 0 0;
+  padding: 0;
+  color: v.$text-secondary;
+  font-size: 10px;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 150px;
+    padding: 4px 6px;
+    border-radius: v.$radius-sm;
+    background: rgba(255, 255, 255, 0.035);
+  }
+}
+
+.chartLegendSwatch {
+  width: 14px;
+  height: 3px;
+  border-radius: 999px;
+}
+
+.chartLegendValue {
+  margin-left: auto;
+  color: v.$text-primary;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.chartLegendReading {
+  color: v.$text-secondary;
 }
 
 /* =================== Game Strip =================== */
@@ -120,6 +292,15 @@
     position: relative;
     z-index: 1;
   }
+}
+
+.gameTime {
+  color: v.$text-secondary;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .teamRow {
@@ -275,6 +456,21 @@
   padding: 0 4px;
   text-transform: uppercase;
   letter-spacing: 0.02em;
+}
+
+.goalieUnavailable,
+.ratingUnavailable {
+  color: v.$text-secondary;
+  font-size: 10px;
+  font-style: italic;
+}
+
+.goalieUnavailable {
+  height: 24px;
+  padding: 5px 8px;
+  border: 1px dashed v.$border-secondary;
+  border-radius: 4px;
+  text-align: center;
 }
 
 /* =================== Legend =================== */
@@ -448,10 +644,14 @@
   font-size: v.$font-size-xs;
 }
 
+.positionTabs {
+  display: none;
+}
+
 /* =================== Columns Grid =================== */
 .columns {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: v.$space-md;
 }
 
@@ -493,9 +693,11 @@
   display: flex;
   flex-direction: column;
   gap: v.$space-sm;
-  overflow-y: auto;
-  max-height: 960px; /* Approx 6 cards */
-  padding-right: v.$space-xs;
+  overflow: visible;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 
   /* Custom scrollbar */
   &::-webkit-scrollbar {
@@ -512,6 +714,11 @@
       background: rgba(255, 255, 255, 0.3);
     }
   }
+}
+
+.header {
+  position: relative;
+  z-index: 1;
 }
 
 .columnHeader {
@@ -634,6 +841,13 @@ $neon-strip-width: 8px;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
   font-size: v.$font-size-sm;
   @include v.truncate(1);
+  text-decoration: none;
+
+  &:focus-visible {
+    border-radius: 2px;
+    outline: 2px solid v.$color-white;
+    outline-offset: 2px;
+  }
 }
 
 .meta {
@@ -641,6 +855,25 @@ $neon-strip-width: 8px;
   font-size: v.$font-size-xs;
   display: flex;
   justify-content: space-between;
+
+  a {
+    color: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 2px;
+
+    &:hover {
+      color: v.$color-white;
+      text-decoration-color: currentColor;
+    }
+
+    &:focus-visible {
+      border-radius: 2px;
+      outline: 2px solid v.$color-white;
+      outline-offset: 2px;
+    }
+  }
 }
 
 /* =================== Stats =================== */
@@ -733,6 +966,213 @@ $neon-strip-width: 8px;
   border-radius: v.$radius-md;
   color: v.$text-primary;
   background: rgba(v.$danger-color, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: v.$space-xs;
+
+  span {
+    color: v.$text-secondary;
+  }
+
+  button {
+    padding: 6px 12px;
+    border: 1px solid currentColor;
+    border-radius: v.$radius-sm;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+}
+
+.secondaryStats {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 3px;
+  margin: 0;
+
+  div {
+    min-width: 0;
+    padding: 3px 2px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.22);
+    text-align: center;
+  }
+
+  dt {
+    color: v.$text-secondary;
+    font-size: 8px;
+  }
+
+  dd {
+    margin: 1px 0 0;
+    color: v.$text-primary;
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.uncertainty {
+  position: relative;
+  z-index: 1;
+  color: v.$text-secondary;
+  font-size: 10px;
+}
+
+.contextChips {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    padding: 2px 5px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: v.$text-secondary;
+    font-size: 9px;
+    text-transform: capitalize;
+  }
+}
+
+.cardFooter {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: auto;
+  padding-top: v.$space-xs;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: v.$text-secondary;
+  font-size: 9px;
+}
+
+.loadMore {
+  width: 100%;
+  padding: v.$space-xs v.$space-sm;
+  border: 1px solid var(--accent);
+  border-radius: v.$radius-sm;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid v.$color-white;
+    outline-offset: 2px;
+  }
+}
+
+.sourceDetails {
+  @include v.glass-panel($padding: v.$space-md, $radius: v.$radius-md);
+  color: v.$text-secondary;
+
+  summary {
+    color: v.$text-primary;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  dl {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: v.$space-sm;
+    margin: v.$space-md 0 0;
+  }
+
+  dl > div {
+    min-width: 0;
+  }
+
+  dt {
+    color: v.$text-primary;
+    font-size: v.$font-size-xs;
+    font-weight: 700;
+  }
+
+  dd {
+    margin: 2px 0 0;
+    overflow-wrap: anywhere;
+    font-size: v.$font-size-xs;
+  }
+
+  dd span {
+    display: inline-block;
+    margin-right: 4px;
+    padding: 1px 5px;
+    border-radius: 999px;
+    background: rgba(v.$success-color, 0.15);
+    color: v.$success-color;
+    text-transform: uppercase;
+  }
+
+  dd span[data-state="partial"],
+  dd span[data-state="missing"] {
+    background: rgba(v.$warning-color, 0.15);
+    color: v.$warning-color;
+  }
+
+  dd span[data-state="error"] {
+    background: rgba(v.$danger-color, 0.15);
+    color: v.$danger-color;
+  }
+}
+
+@media (max-width: 1199px) {
+  .positionTabs {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid v.$border-secondary;
+    border-radius: v.$radius-md;
+    background: rgba(0, 0, 0, 0.25);
+
+    button {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      min-width: 0;
+      padding: 8px 4px;
+      border: 0;
+      border-radius: v.$radius-sm;
+      background: transparent;
+      color: v.$text-secondary;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button[aria-selected="true"] {
+      background: v.$primary-color;
+      color: v.$background-dark;
+    }
+
+    button:focus-visible {
+      outline: 2px solid v.$color-white;
+      outline-offset: 1px;
+    }
+
+    span {
+      opacity: 0.75;
+    }
+  }
+
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .columnInactive {
+    display: none;
+  }
 }
 
 .gamesRemaining {
@@ -774,19 +1214,54 @@ $neon-strip-width: 8px;
     gap: v.$space-md;
   }
 
+  .pageHeader {
+    flex-direction: column;
+    padding: v.$space-md;
+  }
+
+  .provenanceSummary {
+    width: 100%;
+  }
+
+  .statusBanner {
+    flex-direction: column;
+  }
+
   .chartPanel {
     padding: v.$space-sm;
-    min-height: 200px;
-    height: 30vh;
+    min-height: 390px;
 
     .chartHeader {
+      flex-direction: column;
+      gap: 2px;
       margin-bottom: 0;
+
       .chartTitle {
         font-size: v.$font-size-sm;
       }
+
       .meta {
         font-size: v.$font-size-xs;
       }
+    }
+  }
+
+  .chartGuide {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: v.$space-xs 0;
+  }
+
+  .chartGraphic {
+    min-height: 170px;
+  }
+
+  .chartLegend {
+    gap: 4px;
+
+    li {
+      flex: 1 1 145px;
+      min-width: 0;
     }
   }
 
@@ -859,7 +1334,12 @@ $neon-strip-width: 8px;
   }
 
   .cardList {
-    max-height: 400px;
+    max-height: none;
+  }
+
+  .secondaryStats {
+    grid-template-columns: repeat(5, minmax(42px, 1fr));
+    overflow-x: auto;
   }
 }
 

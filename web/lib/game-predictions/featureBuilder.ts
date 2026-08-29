@@ -5,6 +5,7 @@ import {
   buildPredictionMetadataContract,
   buildSourceFreshnessContract,
 } from "lib/predictions/contracts";
+import { isTrustedRecentTeamFormPayload } from "lib/trends/ctpi";
 import {
   GAME_PREDICTION_FEATURE_SET_VERSION,
   getGamePredictionFeatureSources,
@@ -118,7 +119,12 @@ export type TeamCtpiRow = Pick<
   | "goaltending"
   | "special_teams"
   | "luck"
->;
+> & {
+  publication_status: string | null;
+  formula_version: string | null;
+  input_version: string | null;
+  source_game_count: string | number | null;
+};
 
 export type GoalieStartProjectionRow = Pick<
   Tables<"goalie_start_projections">,
@@ -410,6 +416,10 @@ export type TeamRecentFormFeatures = {
 export type TeamCtpiFeatures = {
   sourceDate: string;
   computedAt: string | null;
+  publicationStatus?: string | null;
+  formulaVersion?: string | null;
+  inputVersion?: string | null;
+  sourceGameCount?: number | null;
   ctpi0To100: number | null;
   ctpiRaw: number | null;
   offense: number | null;
@@ -486,8 +496,14 @@ export type GoalieContextFeatures = {
   seasonShotsAgainstPer60: number | null;
   qualityStarts: number | null;
   qualityStartsPct: number | null;
-  restSplitGamesPlayed: Record<"rest0" | "rest1" | "rest2" | "rest3" | "rest4Plus", number | null>;
-  restSplitSavePct: Record<"rest0" | "rest1" | "rest2" | "rest3" | "rest4Plus", number | null>;
+  restSplitGamesPlayed: Record<
+    "rest0" | "rest1" | "rest2" | "rest3" | "rest4Plus",
+    number | null
+  >;
+  restSplitSavePct: Record<
+    "rest0" | "rest1" | "rest2" | "rest3" | "rest4Plus",
+    number | null
+  >;
 };
 
 export type LineupFeatures = {
@@ -675,7 +691,9 @@ function clampNumber(
   return Math.max(min, Math.min(max, parsed));
 }
 
-function percentishToRate(value: number | string | null | undefined): number | null {
+function percentishToRate(
+  value: number | string | null | undefined,
+): number | null {
   const parsed = toNumber(value);
   if (parsed == null) return null;
   return Math.max(0, Math.min(1, parsed > 1 ? parsed / 100 : parsed));
@@ -749,7 +767,9 @@ function pushSparseWarning(
   });
 }
 
-function latestDateOnly(values: Array<string | null | undefined>): string | null {
+function latestDateOnly(
+  values: Array<string | null | undefined>,
+): string | null {
   return (
     values
       .map((value) => (typeof value === "string" ? value.slice(0, 10) : null))
@@ -869,7 +889,9 @@ function shareFromCounts(
   return percentishToRate(fallbackPct);
 }
 
-function summarizeRecentTeamRows(rows: NstTeamGamelogRow[]): TeamRecentWindowFeatures {
+function summarizeRecentTeamRows(
+  rows: NstTeamGamelogRow[],
+): TeamRecentWindowFeatures {
   const games = sumNumbers(rows, (row) => row.gp) || rows.length;
   const goalsFor = sumNumbers(rows, (row) => row.gf);
   const goalsAgainst = sumNumbers(rows, (row) => row.ga);
@@ -921,20 +943,22 @@ function buildTeamRecentFormFeatures(
   const teamRows = rows
     .filter(
       (row) =>
-        row.team_abbreviation === teamAbbreviation &&
-        row.date < sourceAsOfDate,
+        row.team_abbreviation === teamAbbreviation && row.date < sourceAsOfDate,
     )
     .sort((a, b) => b.date.localeCompare(a.date));
   if (teamRows.length === 0) return null;
 
-  const currentSeasonRows = teamRows.filter((row) => row.season_id === seasonId);
+  const currentSeasonRows = teamRows.filter(
+    (row) => row.season_id === seasonId,
+  );
   const strictRows = currentSeasonRows;
   const priorSeasonRows = teamRows.filter((row) => row.season_id < seasonId);
   const currentSeasonSummary = summarizeRecentTeamRows(currentSeasonRows);
   const currentSeasonGames = currentSeasonSummary.games;
-  const useCrossSeasonPrior = currentSeasonGames < 20 && priorSeasonRows.length > 0;
-  const crossSeasonRows = [...currentSeasonRows, ...priorSeasonRows].sort((a, b) =>
-    b.date.localeCompare(a.date),
+  const useCrossSeasonPrior =
+    currentSeasonGames < 20 && priorSeasonRows.length > 0;
+  const crossSeasonRows = [...currentSeasonRows, ...priorSeasonRows].sort(
+    (a, b) => b.date.localeCompare(a.date),
   );
 
   const last5 = summarizeRecentTeamRows(strictRows.slice(0, 5));
@@ -1009,11 +1033,21 @@ function buildTeamRecentFormFeatures(
   };
 }
 
-function buildTeamCtpiFeatures(row: TeamCtpiRow | null): TeamCtpiFeatures | null {
+function buildTeamCtpiFeatures(
+  row: TeamCtpiRow | null,
+): TeamCtpiFeatures | null {
   if (!row) return null;
+  const sourceGameCount = toNumber(row.source_game_count);
   return {
     sourceDate: row.date,
     computedAt: row.computed_at ?? null,
+    publicationStatus: row.publication_status,
+    formulaVersion: row.formula_version,
+    inputVersion: row.input_version,
+    sourceGameCount:
+      Number.isSafeInteger(sourceGameCount) && Number(sourceGameCount) > 0
+        ? sourceGameCount
+        : null,
     ctpi0To100: toNumber(row.ctpi_0_to_100),
     ctpiRaw: toNumber(row.ctpi_raw),
     offense: toNumber(row.offense),
@@ -1027,7 +1061,9 @@ function buildTeamCtpiFeatures(row: TeamCtpiRow | null): TeamCtpiFeatures | null
 function averageNullable(values: Array<number | null>): number | null {
   const finiteValues = values.filter((value): value is number => value != null);
   if (finiteValues.length === 0) return null;
-  return finiteValues.reduce((sum, value) => sum + value, 0) / finiteValues.length;
+  return (
+    finiteValues.reduce((sum, value) => sum + value, 0) / finiteValues.length
+  );
 }
 
 function teamPowerComposite(row: TeamPowerRow): number | null {
@@ -1182,9 +1218,13 @@ function buildForgeTeamProjectionFeatures(
     runId: row.run_id,
     updatedAt: row.updated_at ?? null,
     projectedGoals:
-      goalsEs == null && goalsPp == null ? null : (goalsEs ?? 0) + (goalsPp ?? 0),
+      goalsEs == null && goalsPp == null
+        ? null
+        : (goalsEs ?? 0) + (goalsPp ?? 0),
     projectedShots:
-      shotsEs == null && shotsPp == null ? null : (shotsEs ?? 0) + (shotsPp ?? 0),
+      shotsEs == null && shotsPp == null
+        ? null
+        : (shotsEs ?? 0) + (shotsPp ?? 0),
   };
 }
 
@@ -1457,14 +1497,15 @@ function buildGoalieContextFeatures(args: {
   const latestStart = forgeRows.find(
     (row) => (toNumber(row.toi_seconds) ?? 0) >= 1_200,
   );
-  const wgoRow = args.wgoGoalieRows
-    .filter(
-      (row) =>
-        row.goalie_id === args.goalieId &&
-        row.date < args.sourceAsOfDate &&
-        row.date < args.gameDate,
-    )
-    .sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
+  const wgoRow =
+    args.wgoGoalieRows
+      .filter(
+        (row) =>
+          row.goalie_id === args.goalieId &&
+          row.date < args.sourceAsOfDate &&
+          row.date < args.gameDate,
+      )
+      .sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
   const shotsAgainst = sumNumbers(recentRows, (row) => row.shots_against);
   const saves = sumNumbers(recentRows, (row) => row.saves);
 
@@ -1994,8 +2035,16 @@ function buildTeamSideFeatures(args: {
     inputs.game.seasonId,
     inputs.sourceAsOfDate,
   );
+  const trustedCtpiRows = inputs.teamCtpiRows.filter((row) =>
+    isTrustedRecentTeamFormPayload({
+      publicationStatus: row.publication_status,
+      formulaVersion: row.formula_version,
+      inputVersion: row.input_version,
+      sourceGameCount: row.source_game_count,
+    }),
+  );
   const ctpiRow = latestBefore(
-    inputs.teamCtpiRows,
+    trustedCtpiRows,
     inputs.sourceAsOfDate,
     (row) => row.team === team.abbreviation,
   );
@@ -2189,13 +2238,17 @@ function buildTeamSideFeatures(args: {
     });
   }
 
-  const goalieSelection = buildGoalieBlendFeatures(inputs.goalieStartRows, team.id, {
-    linesCccRows: inputs.linesCccRows,
-    lineCombinationRows: inputs.lineCombinationRows,
-    goaliePerformanceRows: inputs.goaliePerformanceRows,
-    priorGames: inputs.priorGames,
-    gameId: inputs.game.id,
-  });
+  const goalieSelection = buildGoalieBlendFeatures(
+    inputs.goalieStartRows,
+    team.id,
+    {
+      linesCccRows: inputs.linesCccRows,
+      lineCombinationRows: inputs.lineCombinationRows,
+      goaliePerformanceRows: inputs.goaliePerformanceRows,
+      priorGames: inputs.priorGames,
+      gameId: inputs.game.id,
+    },
+  );
   const goalieContext = buildGoalieContextFeatures({
     goalieId: goalieSelection.topGoalieId,
     teamId: team.id,
@@ -2226,7 +2279,9 @@ function buildTeamSideFeatures(args: {
   }
   const goalieProjectionDate = latestDateOnly(
     inputs.goalieStartRows
-      .filter((row) => row.team_id === team.id && row.game_id === inputs.game.id)
+      .filter(
+        (row) => row.team_id === team.id && row.game_id === inputs.game.id,
+      )
       .map((row) => row.updated_at ?? row.created_at ?? row.game_date),
   );
   const acceptedTweetGoalieDate = latestDateOnly(
@@ -2266,12 +2321,14 @@ function buildTeamSideFeatures(args: {
       sourceCutoffs,
       goalie.source === "lines_ccc"
         ? "lines_ccc"
-        : goalie.source === "lineCombinations" || goalie.source === "recent_usage"
+        : goalie.source === "lineCombinations" ||
+            goalie.source === "recent_usage"
           ? "lineCombinations"
           : "goalie_start_projections",
       goalieSourceDate,
       inputs.sourceAsOfDate,
-      goalie.source === "goalie_start_projections" || goalie.source === "lines_ccc"
+      goalie.source === "goalie_start_projections" ||
+        goalie.source === "lines_ccc"
         ? "current_prediction_only"
         : "strict_before_source_as_of_date",
     ),
@@ -2534,7 +2591,9 @@ async function fetchLatestPlayerImpactRows(
 
   const { data, error } = await client
     .from(table)
-    .select("player_id,team_id,snapshot_date,rating_raw,sample_toi_seconds,components")
+    .select(
+      "player_id,team_id,snapshot_date,rating_raw,sample_toi_seconds,components",
+    )
     .in("team_id", teamIds)
     .eq("snapshot_date", latest.snapshot_date)
     .order("player_id", { ascending: true })
@@ -2616,10 +2675,7 @@ export async function fetchGamePredictionFeatureInputs(
           .in("id", opponentTeamIds)
       : { data: [], error: null };
   if (opponentTeamsError) throw opponentTeamsError;
-  const teamRows = [
-    ...teams,
-    ...((opponentTeamsData ?? []) as TeamRow[]),
-  ];
+  const teamRows = [...teams, ...((opponentTeamsData ?? []) as TeamRow[])];
   const sourceEligiblePriorGames = priorGames.filter(
     (priorGame) => priorGame.date < sourceAsOfDate,
   );
@@ -2695,7 +2751,7 @@ export async function fetchGamePredictionFeatureInputs(
     client
       .from("team_ctpi_daily")
       .select(
-        "team,date,computed_at,ctpi_0_to_100,ctpi_raw,offense,defense,goaltending,special_teams,luck",
+        "team,date,computed_at,ctpi_0_to_100,ctpi_raw,offense,defense,goaltending,special_teams,luck,publication_status:payload->>publicationStatus,formula_version:payload->>formulaVersion,input_version:payload->>inputVersion,source_game_count:payload->>sourceGameCount",
       )
       .in("team", teamAbbreviations)
       .lt("date", sourceAsOfDate)

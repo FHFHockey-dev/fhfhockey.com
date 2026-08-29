@@ -467,7 +467,7 @@ This task overlaps active user work. Re-read status/diff immediately before edit
 ## Completion checkpoint — 2026-08-19
 
 - Owner approval established the fail-closed policy: repository presence means source-authorized only; applied state requires an exact environment receipt; otherwise state remains unknown. No source classification authorizes deployment.
-- [`migration-authority.json`](migration-authority.json) is now the sole ordered hash ledger for all 51 current active migrations, including the current forecast/Yahoo additions and the two audit security migrations. Read-only Production-ledger receipts through 2026-08-26 reconcile it to 41 applied rows and 10 unknown-state rows without changing any migration byte.
+- [`migration-authority.json`](migration-authority.json) is now the sole ordered hash ledger for all 54 current active migrations, including the current forecast/Yahoo additions, the opt-in Player Forecasts scheduler update, opening-release editor guard, long-lived season-assumption inheritance, and the two audit security migrations. Read-only Production-ledger receipts through 2026-08-26 reconcile it to 41 applied rows and 13 unknown-state rows without changing any migration byte.
 - The supported-baseline suite consumes that ledger directly, rejects missing/extra/duplicate/misordered/hash-drifted records, and cross-checks the retained historical manifest and current summary. `npm test -- lib/supabase/supportedBaselineMigration.test.ts` passes 17/17 without contacting Supabase or running SQL.
 
 # AUDIT-TASK-007: Establish the deployed owner of `/sko/pipeline`

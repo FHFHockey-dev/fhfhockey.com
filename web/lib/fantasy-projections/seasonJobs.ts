@@ -25,6 +25,7 @@ import {
   type AdvancedSeasonArtifact,
   type PortablePlayerPrior,
   type PortableSeasonArtifact,
+  type SeasonGameContext,
 } from "./evaluator";
 
 type QueueJob = {
@@ -92,6 +93,300 @@ async function insertChunks(client: any, table: string, rows: any[]): Promise<vo
 
 function round(value: number): number {
   return Number(value.toFixed(10));
+}
+
+function quantile(values: number[], probability: number): number {
+  const ordered = values.filter(Number.isFinite).sort((left, right) => left - right);
+  if (!ordered.length) return 0;
+  const position = (ordered.length - 1) * probability;
+  const lower = Math.floor(position);
+  const upper = Math.ceil(position);
+  if (lower === upper) return ordered[lower];
+  const weight = position - lower;
+  return ordered[lower] * (1 - weight) + ordered[upper] * weight;
+}
+
+function runtimeNewcomerDeployment(
+  population: FantasyProjectionPopulation,
+  rates: ProjectionValues,
+): Record<string, unknown> {
+  const base = {
+    confidence: 0,
+    expectedEvToi: rates.EV_TOI ?? 0,
+    expectedPpToi: rates.PP_TOI ?? 0,
+    expectedPkToi: rates.PK_TOI ?? 0,
+    expectedTotalToi: rates.TOTAL_TOI ?? 0,
+    sourceManifest: ["runtime_population_prior_pending_artifact_freeze"],
+  };
+  if (population === "goalie") {
+    return {
+      ...base,
+      mostLikelyRole: { goalieOrder: 3 },
+      roleProbabilities: { goalieOrder: { G3: 0.65, other: 0.35 } },
+    };
+  }
+  if (population === "defense") {
+    return {
+      ...base,
+      mostLikelyRole: {
+        defensePair: 3,
+        powerPlayUnit: null,
+        penaltyKillUnit: null,
+      },
+      roleProbabilities: {
+        defensePair: { D3: 0.65, other: 0.35 },
+        powerPlayUnit: { none: 1 },
+        penaltyKillUnit: { none: 1 },
+      },
+    };
+  }
+  return {
+    ...base,
+    mostLikelyRole: {
+      forwardLine: 4,
+      powerPlayUnit: null,
+      penaltyKillUnit: null,
+    },
+    roleProbabilities: {
+      forwardLine: { F4: 0.65, other: 0.35 },
+      powerPlayUnit: { none: 1 },
+      penaltyKillUnit: { none: 1 },
+    },
+  };
+}
+
+export function buildRuntimeNewcomerPrior(args: {
+  artifact: PortableSeasonArtifact;
+  fhfhPlayerId: number;
+  nhlPlayerId?: number | null;
+  playerName: string;
+  position: "C" | "L" | "R" | "D" | "G";
+  teamId: number | null;
+  poolStatus: string;
+  rosterStatus: string;
+  rosterConfidence: number;
+}): PortablePlayerPrior {
+  const population: FantasyProjectionPopulation =
+    args.position === "G"
+      ? "goalie"
+      : args.position === "D"
+        ? "defense"
+        : "forward";
+  const populationPlayers = Object.values(args.artifact.players).filter(
+    (player) => player.population === population,
+  );
+  const priorCohort = populationPlayers.filter(
+    (player) =>
+      player.poolStatus === "active_prospect" ||
+      player.rookieProfile?.rookie === true ||
+      player.fallbackFlags?.includes("prior_based_projection"),
+  );
+  const cohort = priorCohort.length ? priorCohort : populationPlayers;
+  if (!cohort.length) {
+    throw new Error(`PLAYER_FORECAST_SEASON_NEWCOMER_COHORT_NOT_FOUND:${population}`);
+  }
+  const primitiveTargets = Array.from(
+    new Set(
+      cohort.flatMap((player) =>
+        player.primitiveTargets ?? Object.keys(player.conditionalRates),
+      ),
+    ),
+  ).sort();
+  const conditionalRates: ProjectionValues = {};
+  const baselineConditionalRates: ProjectionValues = {};
+  const conditionalVariances: ProjectionValues = {};
+  for (const target of primitiveTargets) {
+    conditionalRates[target] = round(
+      quantile(
+        cohort.map((player) => Number(player.conditionalRates[target])),
+        0.5,
+      ),
+    );
+    baselineConditionalRates[target] = round(
+      quantile(
+        cohort.map((player) =>
+          Number(
+            player.baselineConditionalRates?.[target] ??
+              player.conditionalRates[target],
+          ),
+        ),
+        0.5,
+      ),
+    );
+    conditionalVariances[target] = round(
+      Math.max(
+        Math.abs(conditionalRates[target]),
+        quantile(
+          cohort.map((player) => Number(player.conditionalVariances[target])),
+          0.5,
+        ),
+      ) * 2.25,
+    );
+  }
+  const ratingKeys = Array.from(
+    new Set(cohort.flatMap((player) => Object.keys(player.ratings ?? {}))),
+  ).sort();
+  const ratings = Object.fromEntries(
+    ratingKeys.map((key) => [
+      key,
+      round(quantile(cohort.map((player) => Number(player.ratings?.[key])), 0.5)),
+    ]),
+  );
+  const playProbability = round(
+    quantile(cohort.map((player) => Number(player.playProbability)), 0.25),
+  );
+  const startProbability =
+    population === "goalie"
+      ? round(
+          Math.min(
+            playProbability,
+            quantile(cohort.map((player) => Number(player.startProbability)), 0.25),
+          ),
+        )
+      : undefined;
+  const fallbackFlags = [
+    "prior_based_projection",
+    "runtime_new_identity_population_prior",
+    "rookie_nhle_pending_next_artifact_freeze",
+  ];
+  if (args.artifact.contractVersion === FANTASY_PROJECTION_V5_CONTRACT_VERSION) {
+    fallbackFlags.push("advanced_v5_runtime_population_prior");
+  }
+  return {
+    fhfhPlayerId: args.fhfhPlayerId,
+    nhlPlayerId: args.nhlPlayerId ?? null,
+    playerName: args.playerName,
+    population,
+    position: args.position,
+    teamId: args.teamId,
+    poolStatus: args.poolStatus,
+    rosterStatus: args.rosterStatus,
+    rosterConfidence: args.rosterConfidence,
+    playProbability,
+    startProbability,
+    baselinePlayProbability: playProbability,
+    baselineStartProbability: startProbability,
+    conditionalRates,
+    baselineConditionalRates,
+    conditionalVariances,
+    ratings,
+    ratingConfidence: 0,
+    ratingSignals: {},
+    sampleGames: 0,
+    rookieProfile: {
+      rookie: true,
+      sourceCoverage: ["official_player_landing_identity"],
+      rosterProbability: playProbability,
+      nhleMethod: "generic_population_prior_pending_next_artifact_freeze",
+      uncertaintyMultiplier: 2.25,
+      fallback: "post_artifact_identity",
+    },
+    deployment: runtimeNewcomerDeployment(population, conditionalRates),
+    fallbackFlags,
+    primitiveTargets,
+  };
+}
+
+function nestedRecordValue(
+  source: Record<string, unknown>,
+  path: string[],
+  value: unknown,
+): Record<string, unknown> {
+  const result = structuredClone(source);
+  let cursor = result;
+  for (const segment of path.slice(0, -1)) {
+    const child = cursor[segment];
+    cursor[segment] =
+      child && typeof child === "object" && !Array.isArray(child)
+        ? structuredClone(child as Record<string, unknown>)
+        : {};
+    cursor = cursor[segment] as Record<string, unknown>;
+  }
+  cursor[path[path.length - 1]] = value;
+  return result;
+}
+
+export function applyPersistentPlayerAssumptions(
+  prior: PortablePlayerPrior,
+  overrides: Array<{ field_path: string; override_value: unknown }>,
+): PortablePlayerPrior {
+  let result: PortablePlayerPrior = {
+    ...prior,
+    ratings: { ...prior.ratings },
+    deployment: structuredClone(prior.deployment),
+  };
+  for (const assumption of overrides) {
+    const fieldPath = String(assumption.field_path);
+    const value = assumption.override_value;
+    if (fieldPath === "player.teamId") {
+      result = { ...result, teamId: Number(value) };
+    } else if (fieldPath === "player.position") {
+      const position = String(value) as PortablePlayerPrior["position"];
+      if ((position === "G") !== (result.population === "goalie")) {
+        throw new Error("PLAYER_FORECAST_SEASON_POSITION_POPULATION_MISMATCH");
+      }
+      result = { ...result, position };
+    } else if (fieldPath === "player.poolStatus") {
+      result = { ...result, poolStatus: String(value) };
+    } else if (fieldPath.startsWith("ratings.")) {
+      result = {
+        ...result,
+        ratings: nestedRecordValue(
+          result.ratings,
+          fieldPath.split(".").slice(1),
+          Number(value),
+        ) as Record<string, number>,
+      };
+    } else if (fieldPath.startsWith("deployment.")) {
+      result = {
+        ...result,
+        deployment: nestedRecordValue(
+          result.deployment,
+          fieldPath.split(".").slice(1),
+          value,
+        ),
+      };
+    }
+  }
+  return result;
+}
+
+function scheduleContextsByTeam(scheduleGames: any[]): Map<number, SeasonGameContext[]> {
+  const byTeam = new Map<number, SeasonGameContext[]>();
+  const ordered = [...scheduleGames]
+    .filter((game) => String(game.game_status ?? "") !== "cancelled")
+    .sort((left, right) => {
+      const timeDifference =
+        new Date(left.scheduled_start_at).getTime() -
+        new Date(right.scheduled_start_at).getTime();
+      return timeDifference || Number(left.game_id) - Number(right.game_id);
+    });
+  for (const game of ordered) {
+    for (const [teamId, opponentTeamId, isHome] of [
+      [Number(game.home_team_id), Number(game.away_team_id), true],
+      [Number(game.away_team_id), Number(game.home_team_id), false],
+    ] as const) {
+      const games = byTeam.get(teamId) ?? [];
+      const currentDay = Math.floor(
+        new Date(game.scheduled_start_at).getTime() / 86_400_000,
+      );
+      const previousDay = games.length
+        ? Math.floor(new Date(games[games.length - 1].scheduledStartAt).getTime() / 86_400_000)
+        : null;
+      const restDays = previousDay == null ? null : Math.max(0, currentDay - previousDay);
+      games.push({
+        gameId: Number(game.game_id),
+        scheduledStartAt: String(game.scheduled_start_at),
+        teamId,
+        opponentTeamId,
+        isHome,
+        restDays,
+        isBackToBack: restDays === 1,
+      });
+      byTeam.set(teamId, games);
+    }
+  }
+  return byTeam;
 }
 
 function addActuals(
@@ -245,17 +540,22 @@ async function activeActuals(
   cutoffAt: string,
 ): Promise<Map<number, ProjectionValues>> {
   if (playerIds.length === 0) return new Map();
-  const rows = await selectAll(
-    client,
-    "player_forecast_season_outcome_revisions",
-    "id,fhfh_player_id,primitive_values,supersedes_id,available_at",
-    (query) =>
-      query
-        .eq("season_id", FANTASY_PROJECTION_SEASON_ID)
-        .in("fhfh_player_id", playerIds)
-        .lte("available_at", cutoffAt)
-        .order("available_at", { ascending: true }),
-  );
+  const rows: any[] = [];
+  for (let start = 0; start < playerIds.length; start += 200) {
+    rows.push(
+      ...(await selectAll(
+        client,
+        "player_forecast_season_outcome_revisions",
+        "id,fhfh_player_id,primitive_values,supersedes_id,available_at",
+        (query) =>
+          query
+            .eq("season_id", FANTASY_PROJECTION_SEASON_ID)
+            .in("fhfh_player_id", playerIds.slice(start, start + 200))
+            .lte("available_at", cutoffAt)
+            .order("available_at", { ascending: true }),
+      )),
+    );
+  }
   const superseded = new Set(rows.map((row) => row.supersedes_id).filter(Boolean));
   const result = new Map<number, ProjectionValues>();
   for (const row of rows.filter((candidate) => !superseded.has(candidate.id))) {
@@ -446,8 +746,120 @@ async function processView(
     })}`;
     const affectedPlayers = [...affectedPlayerIds].sort((left, right) => left - right);
     const affectedTeams = [...aggregateTeamIds].sort((left, right) => left - right);
+    const newcomerIds = affectedPlayers.filter(
+      (playerId) =>
+        !artifact.players[String(playerId)] || !sourceByPlayer.has(playerId),
+    );
+    if (newcomerIds.length) {
+      const { data: identityRows, error: identityError } = await client
+        .from("fhfh_player_identities")
+        .select(
+          "id,nhl_player_id,canonical_name,canonical_position,source_provenance",
+        )
+        .in("id", newcomerIds)
+        .is("merged_into_id", null);
+      if (identityError) throw identityError;
+      const identityById = new Map<number, {
+        nhl_player_id: number | null;
+        canonical_name: string;
+        canonical_position: string | null;
+        source_provenance: Record<string, unknown> | null;
+      }>(
+        (identityRows ?? []).map((row: any) => [Number(row.id), row]),
+      );
+      for (const playerId of newcomerIds) {
+        const identity = identityById.get(playerId);
+        const member = rosterByPlayer.get(playerId);
+        if (!identity || !member) {
+          throw new Error(
+            `PLAYER_FORECAST_SEASON_NEWCOMER_IDENTITY_NOT_FOUND:${playerId}`,
+          );
+        }
+        const rawPosition = String(
+          member.position ?? identity.canonical_position ?? "C",
+        ).toUpperCase();
+        const position = (
+          rawPosition === "LW"
+            ? "L"
+            : rawPosition === "RW"
+              ? "R"
+              : ["C", "L", "R", "D", "G"].includes(rawPosition)
+                ? rawPosition
+                : "C"
+        ) as PortablePlayerPrior["position"];
+        const prior =
+          artifact.players[String(playerId)] ??
+          buildRuntimeNewcomerPrior({
+            artifact,
+            fhfhPlayerId: playerId,
+            nhlPlayerId:
+              identity.nhl_player_id == null
+                ? null
+                : Number(identity.nhl_player_id),
+            playerName: String(identity.canonical_name),
+            position,
+            teamId:
+              member.team_id == null ? null : Number(member.team_id),
+            poolStatus: String(member.pool_status ?? "active_prospect"),
+            rosterStatus: String(member.roster_status ?? "prospect_reserve"),
+            rosterConfidence: Number(member.roster_confidence ?? 0.4),
+          });
+        artifact.players[String(playerId)] = prior;
+        if (!sourceByPlayer.has(playerId)) {
+          const ratingModelVersion = `${artifact.artifactVersion}:runtime-newcomer-prior`;
+          sourceByPlayer.set(playerId, {
+            fhfh_player_id: playerId,
+            team_id: prior.teamId,
+            player_name: prior.playerName ?? String(identity.canonical_name),
+            position: prior.position,
+            population: prior.population,
+            pool_status: prior.poolStatus ?? "active_prospect",
+            roster_status: prior.rosterStatus ?? "prospect_reserve",
+            roster_confidence: Number(prior.rosterConfidence ?? 0.4),
+            source_fresh_at: member.source_fresh_at ?? cutoffAt,
+            rookie_profile: prior.rookieProfile ?? {},
+            ratings: Object.fromEntries(
+              Object.entries(prior.ratings).map(([key, value]) => [
+                key,
+                {
+                  value,
+                  confidence: 0,
+                  sampleGames: 0,
+                  modelVersion: ratingModelVersion,
+                },
+              ]),
+            ),
+            deployment: prior.deployment,
+            fallback_flags: prior.fallbackFlags ?? [],
+            provenance: {
+              source: "runtime_population_prior_for_post_artifact_identity",
+              sourceArtifactVersion: artifact.artifactVersion,
+              sourceArtifactId: sourceRun.artifact_id,
+              identitySourceProvenance: identity.source_provenance ?? {},
+              rosterSnapshotId: rosterSnapshot.id,
+            },
+          });
+        }
+      }
+    }
+    const overrideIds = Array.from(new Set(
+      jobs
+        .map((job) => job.metadata?.overrideId)
+        .filter((value): value is string => typeof value === "string" && value.length > 0),
+    ));
+    let overrideSourceRunIds: string[] = [];
+    if (overrideIds.length > 0) {
+      const { data: overrideRows, error: overrideRowsError } = await client
+        .from("player_forecast_season_overrides")
+        .select("id,run_id")
+        .in("id", overrideIds);
+      if (overrideRowsError) throw overrideRowsError;
+      overrideSourceRunIds = Array.from(new Set(
+        (overrideRows ?? []).map((row: any) => String(row.run_id)),
+      ));
+    }
     const { data: eventRunRaw, error: eventRunError } = await client.rpc(
-      "create_player_forecast_season_event_run",
+      "create_player_forecast_season_event_run_with_assumptions",
       {
         p_source_run_id: sourceRun.id,
         p_roster_snapshot_id: rosterSnapshot.id,
@@ -457,6 +869,7 @@ async function processView(
         p_idempotency_key: idempotencyKey,
         p_affected_player_ids: affectedPlayers,
         p_affected_team_ids: affectedTeams,
+        p_override_source_run_ids: overrideSourceRunIds,
       },
     );
     if (eventRunError) throw eventRunError;
@@ -470,10 +883,26 @@ async function processView(
       .is("source_run_id", null);
     if (lineageError) throw lineageError;
 
+    const eventOverrides = await selectAll(
+      client,
+      "player_forecast_season_overrides",
+      "field_path,override_value,scope_type,fhfh_player_id",
+      (query) => query.eq("run_id", eventRunId).order("created_at"),
+    );
+    const playerAssumptions = new Map<number, any[]>();
+    for (const assumption of eventOverrides) {
+      if (assumption.scope_type !== "player") continue;
+      const playerId = Number(assumption.fhfh_player_id);
+      playerAssumptions.set(playerId, [
+        ...(playerAssumptions.get(playerId) ?? []),
+        assumption,
+      ]);
+    }
+
     const currentPlayers: Record<string, PortablePlayerPrior> = {};
     for (const [playerKey, sourcePrior] of Object.entries(artifact.players)) {
       const member = rosterByPlayer.get(Number(playerKey));
-      currentPlayers[playerKey] = {
+      const rosterAdjustedPrior: PortablePlayerPrior = {
         ...sourcePrior,
         teamId: member ? (member.team_id == null ? null : Number(member.team_id)) : sourcePrior.teamId,
         position: member?.position ?? sourcePrior.position,
@@ -484,6 +913,10 @@ async function processView(
             ? sourcePrior.rosterConfidence
             : Number(member.roster_confidence),
       };
+      currentPlayers[playerKey] = applyPersistentPlayerAssumptions(
+        rosterAdjustedPrior,
+        playerAssumptions.get(Number(playerKey)) ?? [],
+      );
     }
     const runtimeArtifact: PortableSeasonArtifact = { ...artifact, players: currentPlayers };
     const actuals =
@@ -493,6 +926,10 @@ async function processView(
     const scheduleIdByGame = new Map(
       scheduleGames.map((game) => [Number(game.game_id), String(game.id)]),
     );
+    const scheduleStatusByGame = new Map(
+      scheduleGames.map((game) => [Number(game.game_id), String(game.game_status)]),
+    );
+    const scheduleContexts = scheduleContextsByTeam(scheduleGames);
     const gameOutputRows: any[] = [];
     const aggregateRows: any[] = [];
     for (const playerId of affectedPlayers) {
@@ -507,23 +944,13 @@ async function processView(
       const remainingGames =
         teamId == null || poolStatus === "excluded"
           ? []
-          : scheduleGames
-              .filter(
-                (game) =>
-                  new Date(game.scheduled_start_at).getTime() > cutoff &&
-                  !["cancelled", "started", "final"].includes(String(game.game_status)) &&
-                  (Number(game.home_team_id) === teamId || Number(game.away_team_id) === teamId),
-              )
-              .map((game) => ({
-                gameId: Number(game.game_id),
-                scheduledStartAt: String(game.scheduled_start_at),
-                teamId,
-                opponentTeamId:
-                  Number(game.home_team_id) === teamId
-                    ? Number(game.away_team_id)
-                    : Number(game.home_team_id),
-                isHome: Number(game.home_team_id) === teamId,
-              }));
+          : (scheduleContexts.get(teamId) ?? []).filter(
+              (game) =>
+                new Date(game.scheduledStartAt).getTime() > cutoff &&
+                !["cancelled", "started", "final"].includes(
+                  scheduleStatusByGame.get(game.gameId) ?? "",
+                ),
+            );
       const evaluations = remainingGames.map((game) =>
         evaluatePortableSeasonGame(runtimeArtifact, playerId, game),
       );

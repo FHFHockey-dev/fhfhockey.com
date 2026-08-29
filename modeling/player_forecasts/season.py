@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 import hashlib
 import json
 import math
@@ -51,8 +51,29 @@ NONNEGATIVE_TARGETS = set(
     + GOALIE_TARGETS
     + GOALIE_FANTASY_V4_TARGETS
 ) - {"PLUS_MINUS"}
+NEGATIVE_BINOMIAL_TARGETS = NONNEGATIVE_TARGETS - {
+    "GAMES_PLAYED", "GAMES_STARTED", "TOTAL_TOI", "EV_TOI", "PP_TOI", "PK_TOI",
+}
+HURDLE_TARGETS = {
+    "PENALTY_MINUTES", "PENALTIES_DRAWN", "PENALTIES_TAKEN",
+    "GAME_WINNING_GOALS", "OVERTIME_GOALS", "EMPTY_NET_GOALS",
+    "SH_GOALS", "SH_ASSISTS", "SHUTOUTS_GOALIE", "QUALITY_STARTS_GOALIE",
+}
+SKATER_SCORING_EXPOSURES = {
+    "GOALS": "TOTAL_TOI",
+    "PRIMARY_ASSISTS": "TOTAL_TOI",
+    "SECONDARY_ASSISTS": "TOTAL_TOI",
+    "PP_GOALS": "PP_TOI",
+    "PP_PRIMARY_ASSISTS": "PP_TOI",
+    "PP_SECONDARY_ASSISTS": "PP_TOI",
+    "SH_GOALS": "PK_TOI",
+    "SH_PRIMARY_ASSISTS": "PK_TOI",
+    "SH_SECONDARY_ASSISTS": "PK_TOI",
+    "EMPTY_NET_GOALS": "GAMES_PLAYED",
+}
 DECAY_CANDIDATES = (0.5, 0.7, 0.85, 1.0)
 SHRINK_CANDIDATES = (5.0, 10.0, 20.0, 40.0)
+MINIMUM_CHALLENGER_LIFT = 0.001
 VALIDATION_FOLDS = (
     ("2025-11-01", "2025-12-15"),
     ("2025-12-16", "2026-02-15"),
@@ -89,7 +110,8 @@ order by team.id
 IDENTITY_QUERY = """
 select id as fhfh_player_id, nhl_player_id, canonical_name,
        canonical_position::text as position, current_nhl_team_id::integer as team_id,
-       lifecycle_status, verification_status, source_provenance
+       birth_date::text as birth_date, lifecycle_status, verification_status,
+       source_provenance
 from public.fhfh_player_identities
 where lifecycle_status in ('active_nhl', 'active_prospect', 'unsigned_relevant')
   and verification_status in ('verified', 'provisional')
@@ -444,6 +466,36 @@ select game_date, season_id, game_id, nhl_player_id, position, team_id,
        case when pbp_complete then pbp_en_secondary_assists else null end::double precision as "EN_SECONDARY_ASSISTS"
 from resolved
 order by game_date, game_id, nhl_player_id
+"""
+
+SKATER_SEASON_TOTALS_QUERY = """
+select player_id::bigint as nhl_player_id,
+       season::integer as season_id,
+       position_code::text as position,
+       games_played::double precision as "GAMES_PLAYED",
+       (toi_per_game * games_played)::double precision as "TOTAL_TOI",
+       ev_time_on_ice::double precision as "EV_TOI",
+       pp_toi::double precision as "PP_TOI",
+       sh_time_on_ice::double precision as "PK_TOI",
+       goals::double precision as "GOALS",
+       total_primary_assists::double precision as "PRIMARY_ASSISTS",
+       total_secondary_assists::double precision as "SECONDARY_ASSISTS",
+       assists::double precision as "ASSISTS",
+       points::double precision as "POINTS",
+       pp_goals::double precision as "PP_GOALS",
+       pp_primary_assists::double precision as "PP_PRIMARY_ASSISTS",
+       pp_secondary_assists::double precision as "PP_SECONDARY_ASSISTS",
+       sh_goals::double precision as "SH_GOALS",
+       sh_primary_assists::double precision as "SH_PRIMARY_ASSISTS",
+       sh_secondary_assists::double precision as "SH_SECONDARY_ASSISTS",
+       empty_net_goals::double precision as "EMPTY_NET_GOALS",
+       empty_net_points::double precision as "EMPTY_NET_POINTS",
+       updated_at::text as source_observed_at
+from public.wgo_skater_stats_totals
+where season::integer = any(%s)
+  and games_played > 0
+  and position_code in ('C', 'L', 'R', 'D')
+order by season, player_id
 """
 
 GOALIE_QUERY = """
@@ -958,6 +1010,60 @@ def _fantasy_metric_source_audit(
     }
 
 
+def _season_total_outcome_audit(path: Path, frozen_at: str) -> dict[str, Any]:
+    rows = list(read_jsonl(path))
+    invalid_assists: list[dict[str, Any]] = []
+    invalid_points: list[dict[str, Any]] = []
+    invalid_toi: list[dict[str, Any]] = []
+    by_season: dict[str, int] = defaultdict(int)
+    for row in rows:
+        identity = {
+            "seasonId": int(row["season_id"]),
+            "nhlPlayerId": int(row["nhl_player_id"]),
+        }
+        by_season[str(row["season_id"])] += 1
+        goals = float(row.get("GOALS") or 0)
+        primary = float(row.get("PRIMARY_ASSISTS") or 0)
+        secondary = float(row.get("SECONDARY_ASSISTS") or 0)
+        assists = float(row.get("ASSISTS") or 0)
+        points = float(row.get("POINTS") or 0)
+        if not math.isclose(primary + secondary, assists, rel_tol=0, abs_tol=1e-6):
+            invalid_assists.append(identity)
+        if not math.isclose(goals + assists, points, rel_tol=0, abs_tol=1e-6):
+            invalid_points.append(identity)
+        total_toi = float(row.get("TOTAL_TOI") or 0)
+        strength_toi = sum(
+            float(row.get(target) or 0)
+            for target in ("EV_TOI", "PP_TOI", "PK_TOI")
+        )
+        if (
+            total_toi <= 0
+            or strength_toi <= 0
+            or not math.isclose(total_toi, strength_toi, rel_tol=0, abs_tol=2.0)
+        ):
+            invalid_toi.append({
+                **identity,
+                "totalToi": total_toi,
+                "strengthToi": strength_toi,
+            })
+    eligible = bool(rows) and not invalid_assists and not invalid_points and not invalid_toi
+    return {
+        "schemaVersion": "player-forecast-season-total-outcome-audit-v1",
+        "frozenAt": frozen_at,
+        "rows": len(rows),
+        "bySeason": dict(sorted(by_season.items())),
+        "invalidAssistIdentities": len(invalid_assists),
+        "invalidPointIdentities": len(invalid_points),
+        "invalidToiIdentities": len(invalid_toi),
+        "invalidAssistSamples": invalid_assists[:25],
+        "invalidPointSamples": invalid_points[:25],
+        "invalidToiSamples": invalid_toi[:25],
+        "eligibleForExposureModel": eligible,
+        "sourceUse": "checksum-frozen settled historical outcome labels only",
+        "predictiveFeatureUse": False,
+    }
+
+
 def _official_landing_assist_labels(payload: dict[str, Any]) -> dict[int, dict[str, int]]:
     labels: dict[int, dict[str, int]] = defaultdict(
         lambda: {
@@ -1181,6 +1287,9 @@ def freeze_season_dataset(
                 (SEASON_ID,),
             ).fetchone())
         schedule, official_roster, warnings = _official_state(teams)
+        season_total_seasons = sorted(
+            set(seasons + history_seasons + [TRAINING_CUTOFF_SEASON])
+        )
         files: dict[str, dict[str, Any]] = {}
         if base_manifest is not None and base_freeze is not None:
             for name in ("games", "skaters", "goalies", "team_history", "defense_history"):
@@ -1196,6 +1305,11 @@ def freeze_season_dataset(
                     inherited_files.append(name)
                 files[name] = {"path": destination.name, "rows": count, "sha256": checksum}
             query_specs = (
+                (
+                    "skater_season_totals",
+                    SKATER_SEASON_TOTALS_QUERY,
+                    (season_total_seasons,),
+                ),
                 ("deployment_tallies", DEPLOYMENT_TALLY_QUERY, (seasons,)),
                 ("line_snapshots", LINE_SNAPSHOT_QUERY, ()),
             )
@@ -1203,6 +1317,11 @@ def freeze_season_dataset(
             query_specs = (
                 ("games", GAME_QUERY, (seasons,)),
                 ("skaters", SKATER_QUERY, (seasons,)),
+                (
+                    "skater_season_totals",
+                    SKATER_SEASON_TOTALS_QUERY,
+                    (season_total_seasons,),
+                ),
                 ("goalies", GOALIE_QUERY, (seasons, seasons, seasons, seasons)),
                 ("team_history", TEAM_HISTORY_QUERY, (seasons,)),
                 ("defense_history", DEFENSE_HISTORY_QUERY, (seasons, seasons, seasons, seasons)),
@@ -1213,7 +1332,11 @@ def freeze_season_dataset(
             current_rows = stream_query(
                 connection, f"player_forecast_season_{name}", query, parameters
             )
-            if base_manifest is not None and base_freeze is not None:
+            if (
+                base_manifest is not None
+                and base_freeze is not None
+                and name != "skater_season_totals"
+            ):
                 base_metadata = base_manifest.get("files", {}).get(name)
 
                 def merged_rows() -> Iterable[dict[str, Any]]:
@@ -1304,6 +1427,20 @@ def freeze_season_dataset(
         "sha256": _file_sha256(output / "fantasy-metric-source-audit.json"),
     }
 
+    season_total_outcome_audit = _season_total_outcome_audit(
+        output / "skater_season_totals.jsonl",
+        frozen_at,
+    )
+    write_json(
+        output / "season-total-outcome-audit.json",
+        season_total_outcome_audit,
+    )
+    files["season_total_outcome_audit"] = {
+        "path": "season-total-outcome-audit.json",
+        "rows": 1,
+        "sha256": _file_sha256(output / "season-total-outcome-audit.json"),
+    }
+
     by_nhl = {
         int(identity["nhl_player_id"]): identity
         for identity in identities
@@ -1330,8 +1467,6 @@ def freeze_season_dataset(
         nhl_id = identity.get("nhl_player_id")
         official = official_by_nhl.get(int(nhl_id)) if nhl_id is not None else None
         lifecycle = str(identity["lifecycle_status"])
-        if not official and lifecycle == "active_nhl" and (nhl_id is None or int(nhl_id) not in recent_ids):
-            continue
         if not official and lifecycle not in ("active_prospect", "unsigned_relevant", "active_nhl"):
             continue
         position = str((official or {}).get("position") or identity.get("position") or "")
@@ -1350,6 +1485,7 @@ def freeze_season_dataset(
                 "team_id": int((official or {}).get("team_id") or identity.get("team_id"))
                 if ((official or {}).get("team_id") or identity.get("team_id")) is not None else None,
                 "position": position,
+                "birth_date": identity.get("birth_date"),
                 "pool_status": pool_status,
                 "roster_confidence": 0.85 if official else 0.55 if lifecycle == "active_nhl" else 0.4,
                 "prior_based": nhl_id is None or int(nhl_id) not in recent_ids,
@@ -1422,6 +1558,16 @@ def freeze_season_dataset(
             "ineligibleTargets": fantasy_metric_audit["ineligibleTargets"],
             "wgoPredictiveFeatureUse": False,
         },
+        "seasonTotalOutcomePolicy": {
+            "auditPath": "season-total-outcome-audit.json",
+            "auditSha256": files["season_total_outcome_audit"]["sha256"],
+            "eligibleForExposureModel": season_total_outcome_audit[
+                "eligibleForExposureModel"
+            ],
+            "sourceUse": season_total_outcome_audit["sourceUse"],
+            "historySeasons": season_total_seasons,
+            "wgoPredictiveFeatureUse": False,
+        },
         "warnings": warnings,
         "baseFreeze": (
             {
@@ -1474,6 +1620,248 @@ def _weighted_summary(
         player_id: (values[0] / values[1], values[1], max(0.0, values[2] / values[1] - (values[0] / values[1]) ** 2))
         for player_id, values in players.items() if values[1] > 0
     }, (prior, total)
+
+
+def _weighted_exposure_summary(
+    rows: Iterable[dict[str, Any]],
+    target: str,
+    exposure_target: str,
+    decay: float,
+) -> tuple[dict[int, tuple[float, float, float]], tuple[float, int]]:
+    players: dict[int, list[float]] = defaultdict(lambda: [0.0, 0.0, 0.0])
+    total_numerator = 0.0
+    total_exposure = 0.0
+    observed_rows = 0
+    for row in rows:
+        if row.get(target) is None or row.get(exposure_target) is None:
+            continue
+        exposure = float(row[exposure_target])
+        if exposure <= 0:
+            continue
+        weight = decay ** _season_age(
+            TRAINING_CUTOFF_SEASON,
+            int(row["season_id"]),
+        )
+        numerator = float(row[target])
+        player = players[int(row["nhl_player_id"])]
+        player[0] += numerator * weight
+        player[1] += exposure * weight
+        player[2] += float(row.get("GAMES_PLAYED") or 0) * weight
+        total_numerator += numerator * weight
+        total_exposure += exposure * weight
+        observed_rows += 1
+    prior = total_numerator / total_exposure if total_exposure else 0.0
+    return {
+        player_id: (
+            values[0] / values[1],
+            values[2],
+            max(values[0] / max(values[2], 1e-9), 0.01),
+        )
+        for player_id, values in players.items()
+        if values[1] > 0 and values[2] > 0
+    }, (prior, observed_rows)
+
+
+def _annotate_rest_context(rows: list[dict[str, Any]]) -> None:
+    games_by_team: dict[int, dict[int, date]] = defaultdict(dict)
+    for row in rows:
+        if row.get("team_id") is None or row.get("game_id") is None:
+            continue
+        games_by_team[int(row["team_id"])][int(row["game_id"])] = date.fromisoformat(
+            str(row["game_date"])[:10]
+        )
+    rest_by_game: dict[tuple[int, int], int | None] = {}
+    for team_id, games in games_by_team.items():
+        previous: date | None = None
+        for game_id, game_date in sorted(games.items(), key=lambda item: (item[1], item[0])):
+            rest_by_game[(team_id, game_id)] = (
+                None if previous is None else max(0, (game_date - previous).days)
+            )
+            previous = game_date
+    for row in rows:
+        key = (
+            int(row["team_id"]) if row.get("team_id") is not None else -1,
+            int(row["game_id"]) if row.get("game_id") is not None else -1,
+        )
+        rest_days = rest_by_game.get(key)
+        row["rest_days"] = rest_days
+        row["is_back_to_back"] = rest_days == 1
+
+
+def _age_on_date(birth_date: str | None, observed_date: str | date) -> int | None:
+    if not birth_date:
+        return None
+    born = date.fromisoformat(str(birth_date)[:10])
+    observed = (
+        observed_date
+        if isinstance(observed_date, date)
+        else date.fromisoformat(str(observed_date)[:10])
+    )
+    return max(
+        16,
+        min(
+            45,
+            observed.year
+            - born.year
+            - ((observed.month, observed.day) < (born.month, born.day)),
+        ),
+    )
+
+
+def _fit_context_profile(
+    rows: list[dict[str, Any]],
+    target: str,
+    birth_dates: dict[int, str | None],
+    cutoff_date: str | None,
+) -> dict[str, Any]:
+    eligible = [
+        row
+        for row in rows
+        if (not cutoff_date or str(row["game_date"]) < cutoff_date)
+        and row.get(target) is not None
+    ]
+    if target == "PLUS_MINUS" or not eligible:
+        return {
+            "ageCurves": {},
+            "playerAgeBaselines": {},
+            "backToBackMultiplier": 1.0,
+            "homeMultiplier": 1.0,
+            "awayMultiplier": 1.0,
+            "rows": len(eligible),
+            "players": 0,
+        }
+    by_player: dict[int, list[float]] = defaultdict(list)
+    for row in eligible:
+        by_player[int(row["nhl_player_id"])].append(float(row[target]))
+    player_means = {
+        player_id: sum(values) / len(values)
+        for player_id, values in by_player.items()
+        if values
+    }
+    age_ratios: dict[tuple[str, int], list[float]] = defaultdict(list)
+    rest_ratios: list[float] = []
+    home_ratios: list[float] = []
+    away_ratios: list[float] = []
+    for row in eligible:
+        player_id = int(row["nhl_player_id"])
+        player_mean = player_means.get(player_id, 0.0)
+        if player_mean <= 1e-9:
+            continue
+        # Do not clip sparse count ratios. Clipping one-goal games for low-rate
+        # players destroys the player-level mean-one identity and creates a
+        # false universal downward context effect.
+        ratio = float(row[target]) / player_mean
+        age = _age_on_date(birth_dates.get(player_id), str(row["game_date"]))
+        if age is not None:
+            age_ratios[(str(row.get("position") or "unknown"), age)].append(ratio)
+        if row.get("is_back_to_back") is True:
+            rest_ratios.append(ratio)
+        if row.get("is_home") is True:
+            home_ratios.append(ratio)
+        elif row.get("is_home") is False:
+            away_ratios.append(ratio)
+    age_curves: dict[str, dict[str, float]] = defaultdict(dict)
+    age_shrinkage = 100.0
+    for (position, age), values in age_ratios.items():
+        factor = (sum(values) + age_shrinkage) / (len(values) + age_shrinkage)
+        age_curves[position][str(age)] = _round_number(max(0.8, min(1.2, factor)))
+    age_factors_by_player: dict[int, list[float]] = defaultdict(list)
+    for row in eligible:
+        player_id = int(row["nhl_player_id"])
+        age = _age_on_date(birth_dates.get(player_id), str(row["game_date"]))
+        if age is None:
+            continue
+        age_factors_by_player[player_id].append(
+            float(
+                age_curves.get(str(row.get("position") or "unknown"), {}).get(
+                    str(age),
+                    1.0,
+                )
+            )
+        )
+    player_age_baselines = {
+        str(player_id): _round_number(
+            sum(age_factors_by_player[player_id])
+            / len(age_factors_by_player[player_id])
+            if age_factors_by_player[player_id] else 1.0
+        )
+        for player_id in player_means
+    }
+    rest_shrinkage = 200.0
+    back_to_back = (
+        (sum(rest_ratios) + rest_shrinkage) / (len(rest_ratios) + rest_shrinkage)
+        if rest_ratios else 1.0
+    )
+    venue_shrinkage = 200.0
+    home_multiplier = (
+        (sum(home_ratios) + venue_shrinkage)
+        / (len(home_ratios) + venue_shrinkage)
+        if home_ratios else 1.0
+    )
+    away_multiplier = (
+        (sum(away_ratios) + venue_shrinkage)
+        / (len(away_ratios) + venue_shrinkage)
+        if away_ratios else 1.0
+    )
+    return {
+        "ageCurves": {key: dict(value) for key, value in age_curves.items()},
+        "playerAgeBaselines": player_age_baselines,
+        "backToBackMultiplier": _round_number(max(0.85, min(1.15, back_to_back))),
+        "homeMultiplier": _round_number(max(0.85, min(1.15, home_multiplier))),
+        "awayMultiplier": _round_number(max(0.85, min(1.15, away_multiplier))),
+        "rows": len(eligible),
+        "players": len(player_means),
+    }
+
+
+def _row_context_multiplier(
+    row: dict[str, Any],
+    profile: dict[str, Any],
+    birth_dates: dict[int, str | None],
+) -> float:
+    player_id = int(row["nhl_player_id"])
+    age = _age_on_date(birth_dates.get(player_id), str(row["game_date"]))
+    age_factor = 1.0
+    if age is not None:
+        age_factor = float(
+            (profile.get("ageCurves") or {})
+            .get(str(row.get("position") or "unknown"), {})
+            .get(str(age), 1.0)
+        ) / max(
+            0.01,
+            float((profile.get("playerAgeBaselines") or {}).get(str(player_id), 1.0)),
+        )
+    rest_factor = (
+        float(profile.get("backToBackMultiplier") or 1.0)
+        if row.get("is_back_to_back") is True else 1.0
+    )
+    venue_factor = (
+        float(profile.get("homeMultiplier") or 1.0)
+        if row.get("is_home") is True
+        else float(profile.get("awayMultiplier") or 1.0)
+        if row.get("is_home") is False
+        else 1.0
+    )
+    return max(0.7, min(1.3, age_factor * rest_factor * venue_factor))
+
+
+def _future_age_multiplier(
+    profile: dict[str, Any],
+    player_id: int,
+    position: str,
+    birth_date: str | None,
+) -> float:
+    age = _age_on_date(birth_date, "2026-10-01")
+    if age is None:
+        return 1.0
+    future = float(
+        (profile.get("ageCurves") or {}).get(position, {}).get(str(age), 1.0)
+    )
+    baseline = max(
+        0.01,
+        float((profile.get("playerAgeBaselines") or {}).get(str(player_id), 1.0)),
+    )
+    return max(0.8, min(1.2, future / baseline))
 
 
 def _solve_ridge_system(
@@ -1551,6 +1939,58 @@ def _glm_prediction(
     return math.exp(max(-20.0, min(20.0, linear)))
 
 
+def _fit_log_link_ridge(
+    points: list[tuple[list[float], float, float]],
+    prior: float,
+    variance_family: str = "poisson",
+) -> list[float] | None:
+    if len(points) < 10:
+        return None
+    dimensions = len(points[0][0])
+    coefficients = [math.log(max(1e-6, prior)), 0.0, 0.0]
+    for _ in range(12):
+        predicted = []
+        for features, observed_rate, exposure in points:
+            predicted_rate = math.exp(max(-20.0, min(20.0, sum(
+                coefficient * feature
+                for coefficient, feature in zip(coefficients, features)
+            ))))
+            predicted.append((features, observed_rate, exposure, predicted_rate))
+        dispersion = 0.0
+        if variance_family == "negative_binomial":
+            numerator = 0.0
+            denominator = 0.0
+            for _, observed_rate, exposure, predicted_rate in predicted:
+                mean = max(1e-6, exposure * predicted_rate)
+                observed = max(0.0, exposure * observed_rate)
+                numerator += max(0.0, (observed - mean) ** 2 - mean)
+                denominator += mean * mean
+            dispersion = max(1e-6, min(10.0, numerator / denominator)) if denominator else 1e-6
+        matrix = [[0.0] * dimensions for _ in range(dimensions)]
+        vector = [0.0] * dimensions
+        for features, observed_rate, exposure, predicted_rate in predicted:
+            mean = max(1e-6, exposure * predicted_rate)
+            observed = max(0.0, exposure * observed_rate)
+            working = math.log(mean) + (observed - mean) / mean - math.log(exposure)
+            weight = (
+                mean / (1.0 + dispersion * mean)
+                if variance_family == "negative_binomial"
+                else mean
+            )
+            for left in range(dimensions):
+                vector[left] += weight * features[left] * working
+                for right in range(dimensions):
+                    matrix[left][right] += weight * features[left] * features[right]
+        solved = _solve_ridge_system(matrix, vector, 10.0)
+        if solved is None:
+            return None
+        if max(abs(solved[index] - coefficients[index]) for index in range(dimensions)) < 1e-8:
+            coefficients = solved
+            break
+        coefficients = solved
+    return coefficients
+
+
 def _fit_penalized_rate_glm(
     rows: list[dict[str, Any]],
     target: str,
@@ -1585,36 +2025,169 @@ def _fit_penalized_rate_glm(
                 for right in range(dimensions):
                     matrix[left][right] += weight * features[left] * features[right]
         return _solve_ridge_system(matrix, vector, 10.0)
-    coefficients = [math.log(max(1e-6, prior)), 0.0, 0.0]
+    return _fit_log_link_ridge(points, prior)
+
+
+def _fit_penalized_negative_binomial_glm(
+    rows: list[dict[str, Any]],
+    target: str,
+    decay: float,
+    shrinkage: float,
+    cutoff_date: str | None,
+) -> list[float] | None:
+    if target not in NEGATIVE_BINOMIAL_TARGETS:
+        return None
+    summaries, (prior, _) = _weighted_summary(rows, target, decay, cutoff_date)
+    toi_summaries, (toi_prior, _) = _weighted_summary(
+        rows,
+        "TOTAL_TOI",
+        decay,
+        cutoff_date,
+    )
+    points: list[tuple[list[float], float, float]] = []
+    for player_id, (_, support, _) in summaries.items():
+        if support <= 0:
+            continue
+        rate, _, _ = _eb_rate(summaries, player_id, prior, shrinkage)
+        toi_rate, _, _ = _eb_rate(toi_summaries, player_id, toi_prior, shrinkage)
+        points.append((
+            _glm_features(rate, toi_rate, target),
+            summaries[player_id][0],
+            support,
+        ))
+    return _fit_log_link_ridge(points, prior, "negative_binomial")
+
+
+def _sigmoid(value: float) -> float:
+    bounded = max(-20.0, min(20.0, value))
+    return 1.0 / (1.0 + math.exp(-bounded))
+
+
+def _hurdle_prediction(
+    coefficients: dict[str, list[float]],
+    eb_rate: float,
+    toi_rate: float,
+    target: str,
+) -> float:
+    features = _glm_features(eb_rate, toi_rate, target)
+    positive_probability = _sigmoid(sum(
+        coefficient * feature
+        for coefficient, feature in zip(coefficients["probability"], features)
+    ))
+    positive_mean = math.exp(max(-20.0, min(20.0, sum(
+        coefficient * feature
+        for coefficient, feature in zip(coefficients["positiveMean"], features)
+    ))))
+    return positive_probability * positive_mean
+
+
+def _fit_regularized_hurdle_glm(
+    rows: list[dict[str, Any]],
+    target: str,
+    decay: float,
+    shrinkage: float,
+    cutoff_date: str | None,
+) -> dict[str, list[float]] | None:
+    if target not in HURDLE_TARGETS:
+        return None
+    summaries, (prior, _) = _weighted_summary(rows, target, decay, cutoff_date)
+    toi_summaries, (toi_prior, _) = _weighted_summary(
+        rows,
+        "TOTAL_TOI",
+        decay,
+        cutoff_date,
+    )
+    outcomes: dict[int, list[float]] = defaultdict(lambda: [0.0, 0.0, 0.0])
+    for row in rows:
+        if cutoff_date and str(row["game_date"]) >= cutoff_date:
+            continue
+        if row.get(target) is None:
+            continue
+        player_id = int(row["nhl_player_id"])
+        weight = decay ** _season_age(TRAINING_CUTOFF_SEASON, int(row["season_id"]))
+        value = max(0.0, float(row[target]))
+        outcomes[player_id][0] += weight
+        if value > 0:
+            outcomes[player_id][1] += weight
+            outcomes[player_id][2] += weight * value
+    points: list[tuple[list[float], float, float, float, float]] = []
+    total_weight = sum(values[0] for values in outcomes.values())
+    positive_weight = sum(values[1] for values in outcomes.values())
+    population_probability = positive_weight / total_weight if total_weight else 0.01
+    population_positive_mean = (
+        sum(values[2] for values in outcomes.values()) / positive_weight
+        if positive_weight else max(prior, 1e-6)
+    )
+    for player_id, values in outcomes.items():
+        exposure, positives, positive_total = values
+        if exposure <= 0 or player_id not in summaries:
+            continue
+        rate, _, _ = _eb_rate(summaries, player_id, prior, shrinkage)
+        toi_rate, _, _ = _eb_rate(toi_summaries, player_id, toi_prior, shrinkage)
+        points.append((
+            _glm_features(rate, toi_rate, target),
+            positives / exposure,
+            positive_total / positives if positives else population_positive_mean,
+            exposure,
+            positives,
+        ))
+    if len(points) < 10 or positive_weight <= 0:
+        return None
+    dimensions = len(points[0][0])
+    initial_probability = min(1 - 1e-6, max(1e-6, population_probability))
+    probability_coefficients = [
+        math.log(initial_probability / (1 - initial_probability)),
+        0.0,
+        0.0,
+    ]
     for _ in range(12):
         matrix = [[0.0] * dimensions for _ in range(dimensions)]
         vector = [0.0] * dimensions
-        for features, observed_rate, exposure in points:
-            predicted_rate = math.exp(max(-20.0, min(20.0, sum(
+        for features, observed_probability, _, exposure, _ in points:
+            linear = sum(
                 coefficient * feature
-                for coefficient, feature in zip(coefficients, features)
-            ))))
-            mean = max(1e-6, exposure * predicted_rate)
-            observed = max(0.0, exposure * observed_rate)
-            working = math.log(mean) + (observed - mean) / mean - math.log(exposure)
+                for coefficient, feature in zip(probability_coefficients, features)
+            )
+            probability = min(1 - 1e-6, max(1e-6, _sigmoid(linear)))
+            variance = probability * (1 - probability)
+            weight = max(1e-6, exposure * variance)
+            working = linear + (observed_probability - probability) / variance
             for left in range(dimensions):
-                vector[left] += mean * features[left] * working
+                vector[left] += weight * features[left] * working
                 for right in range(dimensions):
-                    matrix[left][right] += mean * features[left] * features[right]
+                    matrix[left][right] += weight * features[left] * features[right]
         solved = _solve_ridge_system(matrix, vector, 10.0)
         if solved is None:
             return None
-        if max(abs(solved[index] - coefficients[index]) for index in range(dimensions)) < 1e-8:
-            coefficients = solved
+        if max(
+            abs(solved[index] - probability_coefficients[index])
+            for index in range(dimensions)
+        ) < 1e-8:
+            probability_coefficients = solved
             break
-        coefficients = solved
-    return coefficients
+        probability_coefficients = solved
+    positive_coefficients = _fit_log_link_ridge(
+        [
+            (features, positive_mean, positives)
+            for features, _, positive_mean, _, positives in points
+            if positives > 0
+        ],
+        population_positive_mean,
+    )
+    if positive_coefficients is None:
+        return None
+    return {
+        "probability": probability_coefficients,
+        "positiveMean": positive_coefficients,
+    }
 
 
 def _select_rate_policy(
     rows: list[dict[str, Any]],
     target: str,
+    birth_dates: dict[int, str | None] | None = None,
 ) -> dict[str, Any]:
+    birth_dates = birth_dates or {}
     best: tuple[float, float, float, int] | None = None
     for decay in DECAY_CANDIDATES:
         for shrink in SHRINK_CANDIDATES:
@@ -1650,7 +2223,11 @@ def _select_rate_policy(
             "fallback": True,
         }
     glm_errors: list[float] = []
+    negative_binomial_errors: list[float] = []
+    hurdle_errors: list[float] = []
     fold_glm: dict[str, list[float] | None] = {}
+    fold_negative_binomial: dict[str, list[float] | None] = {}
+    fold_hurdle: dict[str, dict[str, list[float]] | None] = {}
     for start, end in VALIDATION_FOLDS:
         coefficients = _fit_penalized_rate_glm(
             rows,
@@ -1660,7 +2237,27 @@ def _select_rate_policy(
             start,
         )
         fold_glm[start] = coefficients
-        if coefficients is None:
+        negative_binomial_coefficients = _fit_penalized_negative_binomial_glm(
+            rows,
+            target,
+            best[1],
+            best[2],
+            start,
+        )
+        hurdle_coefficients = _fit_regularized_hurdle_glm(
+            rows,
+            target,
+            best[1],
+            best[2],
+            start,
+        )
+        fold_negative_binomial[start] = negative_binomial_coefficients
+        fold_hurdle[start] = hurdle_coefficients
+        if (
+            coefficients is None
+            and negative_binomial_coefficients is None
+            and hurdle_coefficients is None
+        ):
             continue
         summaries, (prior, _) = _weighted_summary(rows, target, best[1], start)
         toi_summaries, (toi_prior, _) = _weighted_summary(
@@ -1678,9 +2275,55 @@ def _select_rate_policy(
             player_id = int(row["nhl_player_id"])
             eb_rate, _, _ = _eb_rate(summaries, player_id, prior, best[2])
             toi_rate, _, _ = _eb_rate(toi_summaries, player_id, toi_prior, best[2])
-            estimate = _glm_prediction(coefficients, eb_rate, toi_rate, target)
-            glm_errors.append(abs(float(row.get(target) or 0) - estimate))
+            actual = float(row.get(target) or 0)
+            if coefficients is not None:
+                estimate = _glm_prediction(coefficients, eb_rate, toi_rate, target)
+                glm_errors.append(abs(actual - estimate))
+            if negative_binomial_coefficients is not None:
+                estimate = _glm_prediction(
+                    negative_binomial_coefficients,
+                    eb_rate,
+                    toi_rate,
+                    target,
+                )
+                negative_binomial_errors.append(abs(actual - estimate))
+            if hurdle_coefficients is not None:
+                estimate = _hurdle_prediction(
+                    hurdle_coefficients,
+                    eb_rate,
+                    toi_rate,
+                    target,
+                )
+                hurdle_errors.append(abs(actual - estimate))
     glm_mae = sum(glm_errors) / len(glm_errors) if glm_errors else None
+    negative_binomial_mae = (
+        sum(negative_binomial_errors) / len(negative_binomial_errors)
+        if negative_binomial_errors else None
+    )
+    hurdle_mae = sum(hurdle_errors) / len(hurdle_errors) if hurdle_errors else None
+    contextual_errors: list[float] = []
+    fold_context_profiles: dict[str, dict[str, Any]] = {}
+    for start, end in VALIDATION_FOLDS:
+        profile = _fit_context_profile(rows, target, birth_dates, start)
+        fold_context_profiles[start] = profile
+        summaries, (prior, _) = _weighted_summary(rows, target, best[1], start)
+        for row in rows:
+            game_date = str(row["game_date"])
+            if not start <= game_date <= end or int(row["season_id"]) != TRAINING_CUTOFF_SEASON:
+                continue
+            if target not in row or row.get(target) is None:
+                continue
+            player_mean, support, _ = summaries.get(
+                int(row["nhl_player_id"]),
+                (prior, 0.0, prior),
+            )
+            estimate = (support * player_mean + best[2] * prior) / (support + best[2])
+            estimate *= _row_context_multiplier(row, profile, birth_dates)
+            contextual_errors.append(abs(float(row.get(target) or 0) - estimate))
+    contextual_mae = (
+        sum(contextual_errors) / len(contextual_errors)
+        if contextual_errors else None
+    )
     baseline_errors: list[float] = []
     for start, end in VALIDATION_FOLDS:
         _, (baseline_prior, _) = _weighted_summary(rows, target, 1.0, start)
@@ -1700,8 +2343,45 @@ def _select_rate_policy(
         candidates.insert(0, ("population_rate", population_baseline_mae))
     if glm_mae is not None and len(glm_errors) == best[3]:
         candidates.append(("penalized_glm", glm_mae))
+    if (
+        negative_binomial_mae is not None
+        and len(negative_binomial_errors) == best[3]
+    ):
+        candidates.append(("regularized_negative_binomial_glm", negative_binomial_mae))
+    if hurdle_mae is not None and len(hurdle_errors) == best[3]:
+        candidates.append(("regularized_hurdle_glm", hurdle_mae))
+    if contextual_mae is not None and len(contextual_errors) == best[3]:
+        candidates.append(("contextual_empirical_bayes", contextual_mae))
     selected_family, selected_mae = min(candidates, key=lambda candidate: candidate[1])
+    baseline_family, baseline_candidate_mae = min(
+        (
+            candidate
+            for candidate in candidates
+            if candidate[0] in {"population_rate", "empirical_bayes_rate"}
+        ),
+        key=lambda candidate: candidate[1],
+    )
+    if (
+        selected_family not in {"population_rate", "empirical_bayes_rate"}
+        and baseline_candidate_mae > 0
+        and 1 - selected_mae / baseline_candidate_mae < MINIMUM_CHALLENGER_LIFT
+    ):
+        selected_family, selected_mae = baseline_family, baseline_candidate_mae
     final_glm_coefficients = _fit_penalized_rate_glm(
+        rows,
+        target,
+        best[1],
+        best[2],
+        None,
+    )
+    final_negative_binomial_coefficients = _fit_penalized_negative_binomial_glm(
+        rows,
+        target,
+        best[1],
+        best[2],
+        None,
+    )
+    final_hurdle_coefficients = _fit_regularized_hurdle_glm(
         rows,
         target,
         best[1],
@@ -1733,6 +2413,8 @@ def _select_rate_policy(
             )
             estimate = (support * player_mean + best[2] * prior) / (support + best[2])
             coefficients = fold_glm.get(start)
+            negative_binomial_coefficients = fold_negative_binomial.get(start)
+            hurdle_coefficients = fold_hurdle.get(start)
             if selected_family == "population_rate":
                 estimate = baseline_prior
             elif selected_family == "penalized_glm" and coefficients is not None:
@@ -1743,6 +2425,44 @@ def _select_rate_policy(
                     best[2],
                 )
                 estimate = _glm_prediction(coefficients, estimate, toi_rate, target)
+            elif (
+                selected_family == "regularized_negative_binomial_glm"
+                and negative_binomial_coefficients is not None
+            ):
+                toi_rate, _, _ = _eb_rate(
+                    toi_summaries,
+                    player_id,
+                    toi_prior,
+                    best[2],
+                )
+                estimate = _glm_prediction(
+                    negative_binomial_coefficients,
+                    estimate,
+                    toi_rate,
+                    target,
+                )
+            elif (
+                selected_family == "regularized_hurdle_glm"
+                and hurdle_coefficients is not None
+            ):
+                toi_rate, _, _ = _eb_rate(
+                    toi_summaries,
+                    player_id,
+                    toi_prior,
+                    best[2],
+                )
+                estimate = _hurdle_prediction(
+                    hurdle_coefficients,
+                    estimate,
+                    toi_rate,
+                    target,
+                )
+            elif selected_family == "contextual_empirical_bayes":
+                estimate *= _row_context_multiplier(
+                    row,
+                    fold_context_profiles.get(start) or {},
+                    birth_dates,
+                )
             predictive_variance = (
                 support * player_variance + best[2] * max(abs(prior), 0.01)
             ) / (support + best[2])
@@ -1776,7 +2496,12 @@ def _select_rate_policy(
         interval_variance_scale = (
             interval_multiplier / 1.281551565545
         ) ** 2
-    if selected_family == "penalized_glm" and (
+    if selected_family in {
+        "penalized_glm",
+        "regularized_negative_binomial_glm",
+        "regularized_hurdle_glm",
+        "contextual_empirical_bayes",
+    } and (
         population_baseline_mae is None or best[0] <= population_baseline_mae
     ):
         baseline_model = "empirical_bayes_rate"
@@ -1792,7 +2517,13 @@ def _select_rate_policy(
         "validationMae": selected_mae,
         "empiricalBayesMae": best[0],
         "penalizedGlmMae": glm_mae,
+        "negativeBinomialGlmMae": negative_binomial_mae,
+        "hurdleGlmMae": hurdle_mae,
+        "contextualEmpiricalBayesMae": contextual_mae,
         "penalizedGlmCoefficients": final_glm_coefficients,
+        "negativeBinomialGlmCoefficients": final_negative_binomial_coefficients,
+        "hurdleGlmCoefficients": final_hurdle_coefficients,
+        "contextProfile": _fit_context_profile(rows, target, birth_dates, None),
         "baselineMae": baseline_mae,
         "populationBaselineMae": population_baseline_mae,
         "chronologicalLift": (
@@ -2283,6 +3014,8 @@ def train_season_artifact(
     ):
         raise RuntimeError("assist label audit is not eligible for season training")
     fantasy_metric_audit: dict[str, Any] = {}
+    season_total_outcome_audit: dict[str, Any] = {}
+    season_total_rows: list[dict[str, Any]] = []
     if contract_version == FANTASY_SEASON_CONTRACT_VERSION:
         metric_policy = manifest.get("fantasyMetricPolicy") or {}
         metric_audit_path = (
@@ -2310,10 +3043,43 @@ def train_season_artifact(
             raise RuntimeError(
                 f"fantasy metric source audit is not eligible for v4 training: {ineligible}"
             )
+        season_total_policy = manifest.get("seasonTotalOutcomePolicy") or {}
+        season_total_audit_path = (
+            freeze / str(season_total_policy.get("auditPath") or "")
+        ).resolve()
+        try:
+            season_total_audit_path.relative_to(freeze.resolve())
+        except ValueError as error:
+            raise RuntimeError(
+                "season-total outcome audit path is outside the season freeze"
+            ) from error
+        season_total_path = freeze / "skater_season_totals.jsonl"
+        if (
+            not season_total_path.is_file()
+            or not season_total_audit_path.is_file()
+            or _file_sha256(season_total_audit_path)
+            != season_total_policy.get("auditSha256")
+        ):
+            raise RuntimeError("season-total outcome source or audit is missing")
+        season_total_outcome_audit = read_json(season_total_audit_path)
+        if (
+            season_total_outcome_audit.get("eligibleForExposureModel") is not True
+            or season_total_outcome_audit.get("predictiveFeatureUse") is not False
+            or season_total_policy.get("wgoPredictiveFeatureUse") is not False
+        ):
+            raise RuntimeError("season-total outcomes are not eligible for exposure modeling")
+        season_total_rows = list(read_jsonl(season_total_path))
     output.mkdir(parents=True, exist_ok=False)
     skaters = [row for row in read_jsonl(freeze / "skaters.jsonl") if int(row["season_id"]) <= TRAINING_CUTOFF_SEASON]
     goalies = [row for row in read_jsonl(freeze / "goalies.jsonl") if int(row["season_id"]) <= TRAINING_CUTOFF_SEASON]
     pool = read_json(freeze / "player-pool.json")
+    birth_dates = {
+        int(player["nhl_player_id"]): player.get("birth_date")
+        for player in pool
+        if player.get("nhl_player_id") is not None
+    }
+    _annotate_rest_context(skaters)
+    _annotate_rest_context(goalies)
     teams = read_json(freeze / "teams.json")
     team_rows = [row for row in read_jsonl(freeze / "team_history.jsonl") if int(row["season_id"]) <= TRAINING_CUTOFF_SEASON]
     defense_rows = [
@@ -2353,7 +3119,7 @@ def train_season_artifact(
             + (SKATER_FANTASY_V4_TARGETS if contract_version == FANTASY_SEASON_CONTRACT_VERSION else ())
         )
         for target in targets:
-            policy = _select_rate_policy(rows, target)
+            policy = _select_rate_policy(rows, target, birth_dates)
             summaries, (prior, _) = _weighted_summary(rows, target, policy["decay"])
             fitted[(population, target)] = (
                 summaries,
@@ -2362,6 +3128,50 @@ def train_season_artifact(
                 policy,
             )
             policies[population][target] = {**policy, "populationPrior": prior}
+
+    exposure_fitted: dict[
+        tuple[str, str],
+        tuple[dict[int, tuple[float, float, float]], float, float, str],
+    ] = {}
+    if contract_version == FANTASY_SEASON_CONTRACT_VERSION:
+        season_totals_by_population = {
+            "forward": [row for row in season_total_rows if row["position"] != "D"],
+            "defense": [row for row in season_total_rows if row["position"] == "D"],
+        }
+        exposure_targets = {
+            "TOTAL_TOI": "GAMES_PLAYED",
+            "EV_TOI": "GAMES_PLAYED",
+            "PP_TOI": "GAMES_PLAYED",
+            "PK_TOI": "GAMES_PLAYED",
+            **SKATER_SCORING_EXPOSURES,
+        }
+        for population, rows in season_totals_by_population.items():
+            for target, exposure_target in exposure_targets.items():
+                if target not in policies[population]:
+                    continue
+                policy = policies[population][target]
+                summaries, (prior, observed_rows) = _weighted_exposure_summary(
+                    rows,
+                    target,
+                    exposure_target,
+                    float(policy["decay"]),
+                )
+                if observed_rows <= 0:
+                    raise RuntimeError(
+                        f"season-total exposure source has no rows for {population}/{target}"
+                    )
+                exposure_fitted[(population, target)] = (
+                    summaries,
+                    prior,
+                    float(policy["shrinkage"]),
+                    exposure_target,
+                )
+                policies[population][target] = {
+                    **policy,
+                    "servingRateBasis": "recency_weighted_exposure_empirical_bayes",
+                    "servingExposure": exposure_target,
+                    "seasonTotalOutcomeRows": observed_rows,
+                }
 
     participation: dict[tuple[str, int], dict[int, dict[str, float]]] = defaultdict(
         lambda: defaultdict(lambda: {"appearances": 0.0, "starts": 0.0})
@@ -2425,6 +3235,8 @@ def train_season_artifact(
         rates: dict[str, float] = {}
         baseline_rates: dict[str, float] = {}
         variances: dict[str, float] = {}
+        context_effects: dict[str, dict[str, Any]] = {}
+        rate_basis: dict[str, dict[str, Any]] = {}
         supports: list[float] = []
         targets = (
             GOALIE_TARGETS
@@ -2441,9 +3253,14 @@ def train_season_artifact(
                 rate if policy.get("baselineModel") == "empirical_bayes_rate" else prior
             )
             coefficients = policy.get("penalizedGlmCoefficients")
+            model_family = policy.get("modelFamily")
             if policy.get("modelFamily") == "population_rate":
                 rate = prior
-            elif policy.get("modelFamily") == "penalized_glm" and coefficients:
+            elif model_family in {
+                "penalized_glm",
+                "regularized_negative_binomial_glm",
+                "regularized_hurdle_glm",
+            }:
                 toi_summaries, toi_prior, toi_shrinkage, _ = fitted[
                     (population, "TOTAL_TOI")
                 ]
@@ -2453,7 +3270,63 @@ def train_season_artifact(
                     toi_prior,
                     toi_shrinkage,
                 )
-                rate = _glm_prediction(coefficients, rate, toi_rate, target)
+                if model_family == "penalized_glm" and coefficients:
+                    rate = _glm_prediction(coefficients, rate, toi_rate, target)
+                elif model_family == "regularized_negative_binomial_glm":
+                    negative_binomial_coefficients = policy.get(
+                        "negativeBinomialGlmCoefficients"
+                    )
+                    if negative_binomial_coefficients:
+                        rate = _glm_prediction(
+                            negative_binomial_coefficients,
+                            rate,
+                            toi_rate,
+                            target,
+                        )
+                elif model_family == "regularized_hurdle_glm":
+                    hurdle_coefficients = policy.get("hurdleGlmCoefficients")
+                    if hurdle_coefficients:
+                        rate = _hurdle_prediction(
+                            hurdle_coefficients,
+                            rate,
+                            toi_rate,
+                            target,
+                        )
+            age_multiplier = 1.0
+            if (
+                policy.get("modelFamily") == "contextual_empirical_bayes"
+                and not rookie_profile.get("rookie")
+                and nhl_id is not None
+            ):
+                age_multiplier = _future_age_multiplier(
+                    policy.get("contextProfile") or {},
+                    int(nhl_id),
+                    position,
+                    player.get("birth_date"),
+                )
+                rate *= age_multiplier
+            context_effects[target] = {
+                "selected": policy.get("modelFamily") == "contextual_empirical_bayes",
+                "ageMultiplier": _round_number(age_multiplier),
+                "backToBackMultiplier": (
+                    (policy.get("contextProfile") or {}).get(
+                        "backToBackMultiplier",
+                        1.0,
+                    )
+                    if policy.get("modelFamily") == "contextual_empirical_bayes"
+                    else 1.0
+                ),
+                "homeMultiplier": (
+                    (policy.get("contextProfile") or {}).get("homeMultiplier", 1.0)
+                    if policy.get("modelFamily") == "contextual_empirical_bayes"
+                    else 1.0
+                ),
+                "awayMultiplier": (
+                    (policy.get("contextProfile") or {}).get("awayMultiplier", 1.0)
+                    if policy.get("modelFamily") == "contextual_empirical_bayes"
+                    else 1.0
+                ),
+            }
             rates[target] = max(0.0, rate) if target in NONNEGATIVE_TARGETS else rate
             variances[target] = (
                 max(variance, abs(rate), 0.01)
@@ -2461,6 +3334,84 @@ def train_season_artifact(
                 * max(0.0, float(policy.get("intervalVarianceScale") or 0.0))
             )
             supports.append(support)
+        if (
+            contract_version == FANTASY_SEASON_CONTRACT_VERSION
+            and population != "goalie"
+        ):
+            exposure_player_id = int(nhl_id) if nhl_id is not None else -1
+
+            def apply_exposure_rate(target: str, multiplier: float = 1.0) -> None:
+                summaries, prior, shrinkage, exposure_target = exposure_fitted[
+                    (population, target)
+                ]
+                exposure_rate, support, _ = _eb_rate(
+                    summaries,
+                    exposure_player_id,
+                    prior,
+                    shrinkage,
+                )
+                projected_rate = max(0.0, exposure_rate * multiplier)
+                previous_rate = float(rates.get(target) or 0.0)
+                if previous_rate > 1e-9:
+                    variance_scale = max(
+                        0.25,
+                        min(4.0, (projected_rate / previous_rate) ** 2),
+                    )
+                    variances[target] = max(
+                        0.01,
+                        float(variances.get(target) or 0.01) * variance_scale,
+                    )
+                rates[target] = projected_rate
+                baseline_rates[target] = projected_rate
+                rate_basis[target] = {
+                    "method": "recency_weighted_exposure_empirical_bayes",
+                    "exposure": exposure_target,
+                    "source": "checksum_frozen_official_nhl_season_totals",
+                    "supportGames": _round_number(support),
+                    "ratePerExposureUnit": _round_number(exposure_rate),
+                }
+                # Context profiles are fitted from game-level fields. Once a
+                # target is replaced by the audited season-total exposure
+                # model, applying that profile would mix incompatible source
+                # semantics (notably zero-heavy PP/PK TOI game fields) and can
+                # reintroduce a systematic haircut. Keep the exposure rate
+                # authoritative until context is validated on the same source.
+                context_effects[target] = {
+                    "selected": False,
+                    "ageMultiplier": 1.0,
+                    "backToBackMultiplier": 1.0,
+                    "homeMultiplier": 1.0,
+                    "awayMultiplier": 1.0,
+                }
+
+            for target in ("TOTAL_TOI", "EV_TOI", "PP_TOI", "PK_TOI"):
+                apply_exposure_rate(target)
+            strength_toi = sum(
+                rates[target] for target in ("EV_TOI", "PP_TOI", "PK_TOI")
+            )
+            if strength_toi > 0:
+                toi_scale = rates["TOTAL_TOI"] / strength_toi
+                for target in ("EV_TOI", "PP_TOI", "PK_TOI"):
+                    rates[target] *= toi_scale
+                    baseline_rates[target] = rates[target]
+            else:
+                rates["EV_TOI"] = rates["TOTAL_TOI"]
+                baseline_rates["EV_TOI"] = rates["TOTAL_TOI"]
+            for target, exposure_target in SKATER_SCORING_EXPOSURES.items():
+                projected_exposure = (
+                    1.0
+                    if exposure_target == "GAMES_PLAYED"
+                    else float(rates.get(exposure_target) or 0.0)
+                )
+                apply_exposure_rate(target, projected_exposure)
+            rates["PP_ASSISTS"] = (
+                rates["PP_PRIMARY_ASSISTS"] + rates["PP_SECONDARY_ASSISTS"]
+            )
+            rates["SH_ASSISTS"] = (
+                rates["SH_PRIMARY_ASSISTS"] + rates["SH_SECONDARY_ASSISTS"]
+            )
+            baseline_rates["PP_ASSISTS"] = rates["PP_ASSISTS"]
+            baseline_rates["SH_ASSISTS"] = rates["SH_ASSISTS"]
         translated = rookie_profile.get("translatedConditionalRates") or {}
         if (
             rookie_translation_eligible
@@ -2500,6 +3451,11 @@ def train_season_artifact(
                 variances[target] = max(
                     variances[target], abs(rates[target]), 0.01
                 ) * uncertainty
+                rate_basis[target] = {
+                    "method": "historical_league_transition_empirical_bayes_v1",
+                    "source": "checksum_frozen_official_player_landing",
+                    "uncertaintyMultiplier": _round_number(uncertainty),
+                }
         sample_games = max(supports or [0.0])
         appearance_prior, start_prior = population_participation_priors[population]
         seasons = participation.get((population, int(nhl_id)), {}) if nhl_id is not None else {}
@@ -2565,6 +3521,7 @@ def train_season_artifact(
             "startProbability": start_probability, "appearancePrior": appearance_prior,
             "startPrior": start_prior, "deploymentEvidence": player_deployment_evidence,
             "ratingSignals": rating_signals, "rookieProfile": rookie_profile,
+            "contextEffects": context_effects, "rateBasis": rate_basis,
         }))
 
     offense_lookup = {
@@ -2674,6 +3631,33 @@ def train_season_artifact(
                 "defense": defense_lookup.get(fhfh_id, 50.0),
             }
         )
+        primary_role_family = (
+            "goalieOrder" if population == "goalie"
+            else "defensePair" if population == "defense"
+            else "forwardLine"
+        )
+        role_continuity = max(
+            role_probabilities.get(primary_role_family, {"unresolved": 0.0}).values(),
+            default=0.0,
+        )
+        projected_peers = (
+            [
+                peer_model["rates"].get("GOALS", 0.0)
+                + peer_model["rates"].get("PRIMARY_ASSISTS", 0.0)
+                + peer_model["rates"].get("SECONDARY_ASSISTS", 0.0)
+                for peer, peer_model in skaters_by_team.get(
+                    int(player["team_id"]),
+                    [],
+                )
+                if int(peer["fhfh_player_id"]) != fhfh_id
+            ]
+            if player.get("team_id") is not None else []
+        )
+        teammate_quality = (
+            sum(sorted(projected_peers, reverse=True)[:5])
+            / min(5, len(projected_peers))
+            if projected_peers else 0.0
+        )
         player_artifacts[str(fhfh_id)] = {
             "fhfhPlayerId": fhfh_id,
             "nhlPlayerId": player["nhl_player_id"],
@@ -2703,6 +3687,8 @@ def train_season_artifact(
             ),
             "baselineConditionalRates": model["baselineRates"],
             "conditionalVariances": model["variances"],
+            "contextEffects": model["contextEffects"],
+            "rateBasis": model["rateBasis"],
             "ratings": ratings,
             "ratingSignals": model["ratingSignals"],
             "ratingConfidence": confidence,
@@ -2716,6 +3702,18 @@ def train_season_artifact(
                 "expectedPkToi": model["rates"].get("PK_TOI", 0),
                 "expectedTotalToi": model["rates"].get("TOTAL_TOI", 0),
                 "sourceManifest": sorted(evidence.get("sources") or ["historical_role_tallies"]),
+                "contextFeatures": {
+                    "roleContinuity": _round_number(role_continuity),
+                    "projectedTopUnitPeerOffenseRate": _round_number(teammate_quality),
+                    "teamOffenseMultiplier": (contexts.get(str(player["team_id"])) or {}).get(
+                        "offenseMultiplier",
+                        1.0,
+                    ) if player.get("team_id") is not None else 1.0,
+                    "selectionStatus": (
+                        "team_environment_selected; line_continuity_and_peer_quality_"
+                        "retained_as_prospective_context_until_chronological_support"
+                    ),
+                },
             },
             "fallbackFlags": [
                 *_season_player_fallback_flags(
@@ -2741,18 +3739,18 @@ def train_season_artifact(
         "contractVersion": contract_version,
         "contractChecksum": artifact_contract_checksum,
         "artifactVersion": (
-            "historical-core-rookie-nhle-v4"
+            "historical-core-rookie-nhle-exposure-context-v5"
             if contract_version == FANTASY_SEASON_CONTRACT_VERSION
             else "historical-core-tournament-v2"
         ),
         "featureSchemaVersion": (
-            "player-forecast-season-historical-core-rookie-v4"
+            "player-forecast-season-historical-core-rookie-exposure-context-v6"
             if contract_version == FANTASY_SEASON_CONTRACT_VERSION
             else "player-forecast-season-historical-core-v3"
         ),
         "trainingCutoffAt": "2026-04-16T23:59:59Z",
         "codeVersion": (
-            "season-model-v8-rookie"
+            "season-model-v10-exposure-reconciliation"
             if contract_version == FANTASY_SEASON_CONTRACT_VERSION
             else "season-model-v7"
         ),
@@ -2760,7 +3758,10 @@ def train_season_artifact(
         "teams": contexts,
         "selectionEvidence": policies,
         "review": {
-            "modelFamily": "target_specific_chronological_rate_tournament",
+            "modelFamily": (
+                "target_specific_chronological_rate_tournament_with_"
+                "exposure_empirical_bayes_scoring_core"
+            ),
             "challengerFallbackPolicy": "baseline_is_served_when_no_valid_challenger_exists",
             "wgoSettledOutcomeLabelsUsed": bool(
                 assist_label_audit.get("sourceCounts", {}).get(
@@ -2818,41 +3819,53 @@ def train_season_artifact(
                 if contract_version == FANTASY_SEASON_CONTRACT_VERSION
                 else {"enabled": False}
             ),
+            "seasonTotalExposureModel": (
+                {
+                    "enabled": True,
+                    "method": "recency_weighted_exposure_empirical_bayes",
+                    "targets": sorted(
+                        {
+                            "TOTAL_TOI", "EV_TOI", "PP_TOI", "PK_TOI",
+                            *SKATER_SCORING_EXPOSURES,
+                        }
+                    ),
+                    "auditSha256": manifest["seasonTotalOutcomePolicy"][
+                        "auditSha256"
+                    ],
+                    "rows": season_total_outcome_audit["rows"],
+                    "bySeason": season_total_outcome_audit["bySeason"],
+                    "strengthReconciliation": (
+                        "all-situations G/A1/A2 remain authoritative; PP/SH/EN are "
+                        "bounded and EV is the exact nonnegative residual"
+                    ),
+                    "predictiveFeatureUse": False,
+                }
+                if contract_version == FANTASY_SEASON_CONTRACT_VERSION
+                else {"enabled": False}
+            ),
         },
     }
     schedule = read_json(freeze / "schedule.json")
+    schedule_contexts = _schedule_contexts_by_team(schedule)
     golden_vectors: list[dict[str, Any]] = []
     for player_key in sorted(player_artifacts, key=int):
         player = player_artifacts[player_key]
         team_id = player.get("teamId")
         if team_id is None:
             continue
-        scheduled_game = next(
-            (
-                game for game in schedule
-                if int(team_id) in (int(game["home_team_id"]), int(game["away_team_id"]))
-            ),
-            None,
-        )
-        if scheduled_game is None:
+        game = next(iter(schedule_contexts.get(int(team_id), [])), None)
+        if game is None:
             continue
-        is_home = int(scheduled_game["home_team_id"]) == int(team_id)
-        game = {
-            "game_id": int(scheduled_game["game_id"]),
-            "team_id": int(team_id),
-            "opponent_team_id": int(
-                scheduled_game["away_team_id"] if is_home else scheduled_game["home_team_id"]
-            ),
-            "is_home": is_home,
-        }
         golden_vectors.append({
             "fhfhPlayerId": int(player_key),
             "game": {
                 "gameId": game["game_id"],
-                "scheduledStartAt": scheduled_game["scheduled_start_at"],
+                "scheduledStartAt": game["scheduled_start_at"],
                 "teamId": game["team_id"],
                 "opponentTeamId": game["opponent_team_id"],
-                "isHome": is_home,
+                "isHome": game["is_home"],
+                "restDays": game["rest_days"],
+                "isBackToBack": game["is_back_to_back"],
             },
             "expected": evaluate_season_game(artifact, player, game),
         })
@@ -2970,23 +3983,53 @@ def _reconcile(values: dict[str, float], population: str) -> dict[str, float]:
             "SH_SECONDARY_ASSISTS", "EN_SECONDARY_ASSISTS",
         }
         if strength_components.issubset(reconciled):
-            reconciled["GOALS"] = sum(
-                reconciled.get(target, 0.0)
-                for target in ("EV_GOALS", "PP_GOALS", "SH_GOALS", "EMPTY_NET_GOALS")
-            )
-            reconciled["PRIMARY_ASSISTS"] = sum(
-                reconciled.get(target, 0.0)
-                for target in (
-                    "EV_PRIMARY_ASSISTS", "PP_PRIMARY_ASSISTS",
-                    "SH_PRIMARY_ASSISTS", "EN_PRIMARY_ASSISTS",
+            def reconcile_strength_family(
+                total_target: str,
+                ev_target: str,
+                non_ev_targets: tuple[str, str, str],
+            ) -> None:
+                component_total = sum(
+                    max(0.0, reconciled.get(target, 0.0))
+                    for target in (ev_target, *non_ev_targets)
                 )
-            )
-            reconciled["SECONDARY_ASSISTS"] = sum(
-                reconciled.get(target, 0.0)
-                for target in (
-                    "EV_SECONDARY_ASSISTS", "PP_SECONDARY_ASSISTS",
-                    "SH_SECONDARY_ASSISTS", "EN_SECONDARY_ASSISTS",
+                authoritative_total = max(
+                    0.0,
+                    reconciled.get(total_target, component_total),
                 )
+                non_ev_total = sum(
+                    max(0.0, reconciled.get(target, 0.0))
+                    for target in non_ev_targets
+                )
+                if non_ev_total > authoritative_total and non_ev_total > 0:
+                    scale = authoritative_total / non_ev_total
+                    for target in non_ev_targets:
+                        reconciled[target] = max(
+                            0.0,
+                            reconciled.get(target, 0.0),
+                        ) * scale
+                    reconciled[ev_target] = 0.0
+                else:
+                    reconciled[ev_target] = authoritative_total - non_ev_total
+                reconciled[total_target] = authoritative_total
+
+            reconcile_strength_family(
+                "GOALS",
+                "EV_GOALS",
+                ("PP_GOALS", "SH_GOALS", "EMPTY_NET_GOALS"),
+            )
+            reconcile_strength_family(
+                "PRIMARY_ASSISTS",
+                "EV_PRIMARY_ASSISTS",
+                ("PP_PRIMARY_ASSISTS", "SH_PRIMARY_ASSISTS", "EN_PRIMARY_ASSISTS"),
+            )
+            reconcile_strength_family(
+                "SECONDARY_ASSISTS",
+                "EV_SECONDARY_ASSISTS",
+                (
+                    "PP_SECONDARY_ASSISTS",
+                    "SH_SECONDARY_ASSISTS",
+                    "EN_SECONDARY_ASSISTS",
+                ),
             )
             reconciled["PP_ASSISTS"] = (
                 reconciled["PP_PRIMARY_ASSISTS"] + reconciled["PP_SECONDARY_ASSISTS"]
@@ -3050,6 +4093,8 @@ def _target_multiplier(
     team: dict[str, Any] | None,
     opponent: dict[str, Any] | None,
     venue: dict[str, Any] | None = None,
+    game: dict[str, Any] | None = None,
+    context_effect: dict[str, Any] | None = None,
 ) -> float:
     pace = math.sqrt(
         max(0.5, float((team or {}).get("paceMultiplier", 1)))
@@ -3060,8 +4105,25 @@ def _target_multiplier(
         if target in {"HITS", "BLOCKED_SHOTS", "TAKEAWAYS", "GIVEAWAYS"}
         else 1.0
     )
+    rest_multiplier = (
+        float((context_effect or {}).get("backToBackMultiplier", 1.0))
+        if (game or {}).get("is_back_to_back") is True else 1.0
+    )
+    home_away_multiplier = (
+        float((context_effect or {}).get("homeMultiplier", 1.0))
+        if (game or {}).get("is_home") is True
+        else float((context_effect or {}).get("awayMultiplier", 1.0))
+        if (game or {}).get("is_home") is False
+        else 1.0
+    )
+    contextual_multiplier = rest_multiplier * home_away_multiplier
+    if target in {"TOTAL_TOI", "EV_TOI", "PP_TOI", "PK_TOI"}:
+        # Game pace changes event opportunity, not the number of regulation
+        # minutes available to a player. TOI already comes from the dedicated
+        # deployment/exposure model and must stay on that scale.
+        return contextual_multiplier
     if population == "goalie" and target in ("SHOTS_AGAINST_GOALIE", "GOALS_AGAINST_GOALIE"):
-        return pace * max(0.5, float((opponent or {}).get("offenseMultiplier", 1)))
+        return contextual_multiplier * pace * max(0.5, float((opponent or {}).get("offenseMultiplier", 1)))
     if population != "goalie" and target in {
         "GOALS", "PRIMARY_ASSISTS", "SECONDARY_ASSISTS", "SHOTS_ON_GOAL",
         "PP_GOALS", "PP_ASSISTS", "SH_GOALS", "SH_ASSISTS",
@@ -3071,8 +4133,50 @@ def _target_multiplier(
         "EMPTY_NET_GOALS", "EMPTY_NET_POINTS", "EN_PRIMARY_ASSISTS",
         "EN_SECONDARY_ASSISTS", "GAME_WINNING_GOALS", "OVERTIME_GOALS",
     }:
-        return pace * venue_multiplier / max(0.5, float((opponent or {}).get("defenseMultiplier", 1)))
-    return pace * venue_multiplier
+        return contextual_multiplier * pace * venue_multiplier / max(0.5, float((opponent or {}).get("defenseMultiplier", 1)))
+    return contextual_multiplier * pace * venue_multiplier
+
+
+def _schedule_contexts_by_team(
+    schedule: list[dict[str, Any]],
+) -> dict[int, list[dict[str, Any]]]:
+    by_team: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for scheduled_game in sorted(
+        (
+            game
+            for game in schedule
+            if str(game.get("game_status") or "") != "cancelled"
+        ),
+        key=lambda game: (
+            str(game["scheduled_start_at"]),
+            int(game["game_id"]),
+        ),
+    ):
+        for team_key, opponent_key, is_home in (
+            ("home_team_id", "away_team_id", True),
+            ("away_team_id", "home_team_id", False),
+        ):
+            by_team[int(scheduled_game[team_key])].append({
+                **scheduled_game,
+                "team_id": int(scheduled_game[team_key]),
+                "opponent_team_id": int(scheduled_game[opponent_key]),
+                "is_home": is_home,
+            })
+    for games in by_team.values():
+        previous_game_date: date | None = None
+        for game in games:
+            game_date = datetime.fromisoformat(
+                str(game["scheduled_start_at"]).replace("Z", "+00:00")
+            ).date()
+            rest_days = (
+                None
+                if previous_game_date is None
+                else max(0, (game_date - previous_game_date).days)
+            )
+            game["rest_days"] = rest_days
+            game["is_back_to_back"] = rest_days == 1
+            previous_game_date = game_date
+    return dict(by_team)
 
 
 def _reconcile_quantiles(
@@ -3262,12 +4366,19 @@ def evaluate_season_game(
     baseline_unconditional: dict[str, float] = {}
     variances: dict[str, float] = {}
     for target in targets:
+        candidate_multiplier = _target_multiplier(
+            target,
+            population,
+            team,
+            opponent,
+            venue,
+            game,
+            (player.get("contextEffects") or {}).get(target),
+        )
         if target in ("GAMES_PLAYED", "GAMES_STARTED"):
             mean = 1.0
         else:
-            mean = float(player["conditionalRates"].get(target, 0.0)) * _target_multiplier(
-                target, population, team, opponent, venue
-            )
+            mean = float(player["conditionalRates"].get(target, 0.0)) * candidate_multiplier
             if target != "PLUS_MINUS":
                 mean = max(0.0, mean)
         probability = start_probability if target == "GAMES_STARTED" else playing_probability
@@ -3275,7 +4386,7 @@ def evaluate_season_game(
         conditional_variance = max(
             0.0,
             float(player["conditionalVariances"].get(target, abs(mean)))
-            * _target_multiplier(target, population, team, opponent, venue),
+            * candidate_multiplier,
         )
         conditional[target] = _round_number(mean)
         unconditional[target] = _round_number(mean * probability)
@@ -3671,25 +4782,16 @@ def project_season_release(
     output.mkdir(parents=True, exist_ok=False)
     schedule = read_json(freeze / "schedule.json")
     cutoff = datetime.fromisoformat(cutoff_at.replace("Z", "+00:00"))
-    remaining_schedule = [
-        game for game in schedule
-        if datetime.fromisoformat(str(game["scheduled_start_at"]).replace("Z", "+00:00")) > cutoff
-        and game["game_status"] != "cancelled"
-    ]
-    by_team: dict[int, list[dict[str, Any]]] = defaultdict(list)
-    for game in remaining_schedule:
-        by_team[int(game["home_team_id"])].append({
-            **game,
-            "team_id": int(game["home_team_id"]),
-            "opponent_team_id": int(game["away_team_id"]),
-            "is_home": True,
-        })
-        by_team[int(game["away_team_id"])].append({
-            **game,
-            "team_id": int(game["away_team_id"]),
-            "opponent_team_id": int(game["home_team_id"]),
-            "is_home": False,
-        })
+    by_team = {
+        team_id: [
+            game
+            for game in games
+            if datetime.fromisoformat(
+                str(game["scheduled_start_at"]).replace("Z", "+00:00")
+            ) > cutoff
+        ]
+        for team_id, games in _schedule_contexts_by_team(schedule).items()
+    }
     actuals = (
         _actuals_by_player(freeze, cutoff_at, artifact_contract_version)
         if view == "current"

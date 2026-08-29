@@ -1,141 +1,212 @@
-import { useEffect, useMemo, useState } from "react";
-import Head from "next/head";
-import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
-import { START_CHART_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
-import useSWR from "swr";
 import {
-  LineChart,
+  type KeyboardEvent as ReactKeyboardEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import Head from "next/head";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import {
   Line,
-  ResponsiveContainer,
+  LineChart,
+  ReferenceLine,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
-import styles from "./start-chart.module.scss";
+import ResizeObserverPolyfill from "resize-observer-polyfill";
+import useSWR from "swr";
 
-import { teamsInfo } from "lib/teamsInfo";
-import type { TeamPowerSnapshotLike } from "lib/dashboard/teamContext";
+import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
+import { START_CHART_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
+import {
+  normalizeStartChartResponse,
+  type StartChartGame,
+  type StartChartGoalie,
+  type StartChartPlayer,
+  type StartChartResponse,
+} from "lib/projections/startChartContract";
 import {
   formatStartChartFantasyScoringContract,
   START_CHART_FANTASY_SCORING_CONTRACT,
-  type StartChartFantasyScoringContract,
-  type StartChartPositionRanks,
-  type StartChartRankingContract,
+  type StartChartPosition,
 } from "lib/projections/startChartFantasyScoring";
+import { teamsInfo } from "lib/teamsInfo";
 
-type StartChartPlayer = {
-  player_id: number;
-  name: string;
-  positions: string[];
-  ownership: number | null;
-  percent_ownership: number | null;
-  opponent_abbrev: string | null;
-  team_id?: number | null;
-  team_abbrev: string | null;
-  proj_fantasy_points: number | null;
-  proj_goals: number | null;
-  proj_assists: number | null;
-  proj_shots: number | null;
-  matchup_grade: number | null;
-  start_probability?: number | null;
-  projected_gsaa?: number | null;
-  games_remaining_week?: number;
-  position_ranks: StartChartPositionRanks;
-};
-
-type TeamRating = TeamPowerSnapshotLike;
-
-type GoalieInfo = {
-  player_id: number;
-  name: string;
-  start_probability: number | null;
-  projected_gsaa_per_60: number | null;
-  confirmed_status: boolean | null;
-};
-
-type GameRow = {
-  id: number;
-  date: string;
-  homeTeamId: number;
-  awayTeamId: number;
-  homeRating?: TeamRating;
-  awayRating?: TeamRating;
-  homeGoalies?: GoalieInfo[];
-  awayGoalies?: GoalieInfo[];
-};
-
-type ApiResponse = {
-  dateUsed: string;
-  projections: number;
-  players: StartChartPlayer[];
-  ctpi: ({ date: string } & Record<string, number | null>)[];
-  games: GameRow[];
-  fantasyScoringContract?: StartChartFantasyScoringContract;
-  rankingContract?: StartChartRankingContract;
-};
-
-const fetcher = async (url: string) => {
-  const response = await fetch(url);
-  const payload = await response.json();
-  if (!response.ok) {
-    throw new Error(payload?.error?.message ?? "Start Chart request failed");
-  }
-  return payload;
-};
+import styles from "./start-chart.module.scss";
 
 const POSITION_ORDER = ["C", "LW", "RW", "D", "G"] as const;
+const INITIAL_POSITION_LIMIT = 25;
 
-// Helper to calculate color distance
-const getColorDistance = (hex1: string, hex2: string) => {
-  const r1 = parseInt(hex1.slice(1, 3), 16);
-  const g1 = parseInt(hex1.slice(3, 5), 16);
-  const b1 = parseInt(hex1.slice(5, 7), 16);
-  const r2 = parseInt(hex2.slice(1, 3), 16);
-  const g2 = parseInt(hex2.slice(3, 5), 16);
-  const b2 = parseInt(hex2.slice(5, 7), 16);
-  return Math.sqrt(
-    Math.pow(r1 - r2, 2) + Math.pow(g1 - g2, 2) + Math.pow(b1 - b2, 2),
-  );
+const describeTeamForm = (value: number | null | undefined): string => {
+  if (value == null || !Number.isFinite(value)) return "Unavailable";
+  if (value > 50) return "Above league average";
+  if (value < 50) return "Below league average";
+  return "League average";
 };
 
-// Helper to adjust color brightness
-const adjustBrightness = (hex: string, percent: number) => {
-  const num = parseInt(hex.replace("#", ""), 16);
-  const amt = Math.round(2.55 * percent);
-  const R = (num >> 16) + amt;
-  const G = ((num >> 8) & 0x00ff) + amt;
-  const B = (num & 0x0000ff) + amt;
+const useMeasuredChart = (enabled: boolean) => {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    if (!enabled) return;
+    const element = ref.current;
+    if (!element) return;
+    let frame = 0;
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const { width, height } = element.getBoundingClientRect();
+        const next = {
+          width: Math.max(0, Math.floor(width)),
+          height: Math.max(0, Math.floor(height)),
+        };
+        setSize((current) =>
+          current.width === next.width && current.height === next.height
+            ? current
+            : next,
+        );
+      });
+    };
+    const Observer = window.ResizeObserver ?? ResizeObserverPolyfill;
+    const observer = new Observer(measure);
+    observer.observe(element);
+    window.addEventListener("resize", measure);
+    measure();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [enabled]);
+
+  return { ref, size };
+};
+
+const isCalendarDate = (value: unknown): value is string => {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+  const parsed = new Date(`${value}T00:00:00Z`);
   return (
-    "#" +
-    (
-      0x1000000 +
-      (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
-      (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
-      (B < 255 ? (B < 1 ? 0 : B) : 255)
-    )
-      .toString(16)
-      .slice(1)
+    !Number.isNaN(parsed.getTime()) &&
+    parsed.toISOString().slice(0, 10) === value
   );
 };
 
-const formatRating = (value: number | null | undefined): string => {
-  if (value == null || Number.isNaN(value)) return "--";
-  return value.toFixed(0);
+const easternDate = (now = new Date()): string => {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  return ["year", "month", "day"]
+    .map((type) => parts.find((part) => part.type === type)?.value)
+    .join("-");
 };
 
-const CustomDot = (props: any) => {
-  const { cx, cy, index, dataKey, payload } = props;
-  // Only render for the last data point
-  // We need to know the total length of the data array.
-  // Recharts passes `points` array in some contexts, but here we might need to check payload or index.
-  // However, `payload` is the data object for this point.
-  // A simpler way is to check if this is the last point in the dataset.
-  // But `props` doesn't directly give us `data.length`.
-  // We can pass `dataLength` as a custom prop if we wrap this.
-  // Alternatively, we can check if the date matches the last date in the dataset.
+const fetcher = async (url: string): Promise<StartChartResponse> => {
+  const response = await fetch(url);
+  const text = await response.text();
+  let payload: unknown = null;
+  try {
+    payload = text ? JSON.parse(text) : null;
+  } catch {
+    throw new Error("Start Chart returned an unreadable response");
+  }
+  if (!response.ok) {
+    const error = payload as any;
+    throw new Error(
+      error?.error?.message ??
+        (typeof error?.error === "string" ? error.error : null) ??
+        "Start Chart request failed",
+    );
+  }
+  return normalizeStartChartResponse(payload);
+};
 
-  if (!props.isLast) return null;
+const formatNumber = (
+  value: number | null | undefined,
+  digits = 1,
+): string =>
+  value == null || !Number.isFinite(value) ? "—" : value.toFixed(digits);
 
+const formatPercent = (
+  value: number | null | undefined,
+  fractional = true,
+): string => {
+  if (value == null || !Number.isFinite(value)) return "—";
+  return `${(fractional ? value * 100 : value).toFixed(0)}%`;
+};
+
+const formatGameTime = (value: string | null | undefined): string => {
+  if (!value) return "Time TBD";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "Time TBD";
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  }).format(parsed);
+};
+
+const getColorDistance = (hex1: string, hex2: string): number => {
+  const channels = (hex: string) => [
+    parseInt(hex.slice(1, 3), 16),
+    parseInt(hex.slice(3, 5), 16),
+    parseInt(hex.slice(5, 7), 16),
+  ];
+  const [r1, g1, b1] = channels(hex1);
+  const [r2, g2, b2] = channels(hex2);
+  return Math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2);
+};
+
+const adjustBrightness = (hex: string, percent: number): string => {
+  const numeric = parseInt(hex.replace("#", ""), 16);
+  const amount = Math.round(2.55 * percent);
+  const channel = (value: number) => Math.max(0, Math.min(255, value + amount));
+  return `#${(
+    0x1000000 +
+    channel(numeric >> 16) * 0x10000 +
+    channel((numeric >> 8) & 0xff) * 0x100 +
+    channel(numeric & 0xff)
+  )
+    .toString(16)
+    .slice(1)}`;
+};
+
+const buildContextHref = (
+  href: string,
+  context: {
+    date: string;
+    resolvedDate: string | null;
+    position: StartChartPosition;
+    team: string | null;
+    mode: string;
+  },
+): string => {
+  const url = new URL(href, "https://fhfh.local");
+  url.searchParams.set("date", context.date);
+  if (context.resolvedDate) {
+    url.searchParams.set("resolvedDate", context.resolvedDate);
+  }
+  url.searchParams.set("position", context.position);
+  if (context.team) url.searchParams.set("team", context.team);
+  url.searchParams.set("mode", context.mode);
+  return `${url.pathname}${url.search}`;
+};
+
+const TeamEndpointDot = (props: any) => {
+  const { cx, cy, dataKey, payload, lastDate } = props;
+  if (!lastDate || payload?.date !== lastDate || cx == null || cy == null) {
+    return null;
+  }
   return (
     <image
       x={cx - 10}
@@ -147,53 +218,78 @@ const CustomDot = (props: any) => {
   );
 };
 
-const RenderGoalie = ({ goalies }: { goalies?: GoalieInfo[] }) => {
-  if (!goalies || goalies.length === 0) return null;
+const RenderGoalie = ({ goalies }: { goalies?: StartChartGoalie[] }) => {
+  const normalized = useMemo(() => {
+    const candidates = (goalies ?? [])
+      .flatMap((goalie) =>
+        typeof goalie.start_probability === "number" &&
+        Number.isFinite(goalie.start_probability)
+          ? [
+              {
+                goalie,
+                probability: Math.max(0, Math.min(1, goalie.start_probability)),
+              },
+            ]
+          : [],
+      )
+      .sort(
+        (left, right) =>
+          right.probability - left.probability ||
+          left.goalie.player_id - right.goalie.player_id,
+      );
+    const total = candidates.reduce((sum, row) => sum + row.probability, 0);
+    const withNormalizedProbability = candidates.map((row) => ({
+      ...row,
+      probability: total > 0 ? row.probability / total : 0,
+    }));
+    const visible = withNormalizedProbability.filter(
+      (row) => row.probability >= 0.05,
+    );
+    return visible.length > 0
+      ? visible
+      : withNormalizedProbability.slice(0, 1);
+  }, [goalies]);
+
+  if (normalized.length === 0) {
+    return <div className={styles.goalieUnavailable}>Goalie TBD</div>;
+  }
 
   return (
     <div className={styles.goalieBarContainer}>
-      {goalies.map((g, i) => {
-        const prob = (g.start_probability ?? 0) * 100;
-        if (prob < 5) return null; // Hide < 5% to avoid clutter
-
-        // Color logic
-        let barColor = "#ef476f"; // redish
-        if (prob >= 80)
-          barColor = "#3bd4ae"; // green
-        else if (prob >= 50)
-          barColor = "#ffd166"; // yellow
-        else if (prob >= 30)
-          barColor = "#118ab2"; // blueish
-        else barColor = "#6c757d"; // gray
-
-        const hexToRgba = (hex: string, alpha: number) => {
-          const r = parseInt(hex.slice(1, 3), 16);
-          const g = parseInt(hex.slice(3, 5), 16);
-          const b = parseInt(hex.slice(5, 7), 16);
-          return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-        };
-
-        const name = g.name.split(" ").pop();
-        const showText = i === 0; // Only show text for the top goalie
-
+      {normalized.map(({ goalie, probability }, visibleIndex) => {
+        const percent = probability * 100;
+        const barColor =
+          percent >= 80
+            ? "#3bd4ae"
+            : percent >= 50
+              ? "#ffd166"
+              : percent >= 30
+                ? "#118ab2"
+                : "#6c757d";
+        const name = goalie.name.split(" ").at(-1) ?? goalie.name;
         return (
           <div
-            key={g.player_id}
+            key={goalie.player_id}
             className={styles.goalieSegment}
             style={{
-              width: `${prob}%`,
-              backgroundColor: hexToRgba(barColor, 0.4),
+              width: `${percent}%`,
+              backgroundColor: `${barColor}66`,
               borderColor: barColor,
             }}
-            title={`${g.name} (${prob.toFixed(0)}%)`}
+            title={`${goalie.name}: ${percent.toFixed(0)}%${
+              goalie.confirmed_status ? ", confirmed" : ""
+            }`}
             role="img"
-            aria-label={`${g.name}, ${prob.toFixed(0)} percent start probability`}
+            aria-label={`${goalie.name}, ${percent.toFixed(0)} percent start probability${
+              goalie.confirmed_status ? ", confirmed starter" : ""
+            }`}
           >
-            {showText && prob > 20 && (
+            {visibleIndex === 0 ? (
               <span className={styles.goalieSegmentText}>
-                {name} {prob.toFixed(0)}%
+                {name} {percent.toFixed(0)}%
+                {goalie.confirmed_status ? " ✓" : ""}
               </span>
-            )}
+            ) : null}
           </div>
         );
       })}
@@ -201,336 +297,625 @@ const RenderGoalie = ({ goalies }: { goalies?: GoalieInfo[] }) => {
   );
 };
 
-const RenderRating = ({
-  rating,
-  opponentRating,
-}: {
-  rating?: TeamRating;
-  opponentRating?: TeamRating;
-}) => {
-  if (!rating) return null;
+const ratingClass = (value: number | null | undefined): string => {
+  if (value == null || !Number.isFinite(value)) return "";
+  if (value > 102) return styles.glowGreen;
+  if (value < 98) return styles.glowRed;
+  return "";
+};
 
-  let offClass = "";
-  let defClass = "";
-
-  if (opponentRating) {
-    if (
-      rating.offRating != null &&
-      opponentRating.offRating != null &&
-      rating.offRating > opponentRating.offRating
-    )
-      offClass = styles.glowGreen;
-    else if (
-      rating.offRating != null &&
-      opponentRating.offRating != null &&
-      rating.offRating < opponentRating.offRating
-    )
-      offClass = styles.glowRed;
-
-    if (
-      rating.defRating != null &&
-      opponentRating.defRating != null &&
-      rating.defRating > opponentRating.defRating
-    )
-      defClass = styles.glowGreen;
-    else if (
-      rating.defRating != null &&
-      opponentRating.defRating != null &&
-      rating.defRating < opponentRating.defRating
-    )
-      defClass = styles.glowRed;
-  }
-
+const RenderRating = ({ rating }: { rating?: StartChartGame["homeRating"] }) => {
+  if (!rating) return <div className={styles.ratingUnavailable}>Ratings —</div>;
   return (
-    <div className={styles.teamRating}>
+    <div className={styles.teamRating} title="Team ratings use 100 as neutral.">
       <div className={styles.ratingRow}>
         <span className={styles.ratingLabel}>OFF</span>
-        <span className={`${styles.ratingValue} ${offClass}`}>
-          {formatRating(rating.offRating)}
+        <span className={`${styles.ratingValue} ${ratingClass(rating.offRating)}`}>
+          {formatNumber(rating.offRating, 0)}
         </span>
       </div>
       <div className={styles.ratingRow}>
         <span className={styles.ratingLabel}>DEF</span>
-        <span className={`${styles.ratingValue} ${defClass}`}>
-          {formatRating(rating.defRating)}
+        <span className={`${styles.ratingValue} ${ratingClass(rating.defRating)}`}>
+          {formatNumber(rating.defRating, 0)}
         </span>
       </div>
     </div>
   );
 };
 
-export default function StartChartPage() {
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
-  const [date, setDate] = useState(today);
-  const [search, setSearch] = useState("");
-  const [ownershipMax, setOwnershipMax] = useState(50);
-  const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
-  const [posFilter, setPosFilter] = useState<Record<string, boolean>>({
-    C: true,
-    LW: true,
-    RW: true,
-    D: true,
-    G: true,
-  });
-
-  const { data, error, isLoading } = useSWR<ApiResponse>(
-    `/api/v1/start-chart?date=${date}`,
-    fetcher,
+const ContextChips = ({
+  player,
+  position,
+  opponentGoalie,
+}: {
+  player: StartChartPlayer;
+  position: StartChartPosition;
+  opponentGoalie: StartChartGoalie | null;
+}) => {
+  const opponentGoalieStatus = opponentGoalie
+    ? opponentGoalie.confirmed_status
+      ? "confirmed"
+      : opponentGoalie.start_probability != null
+        ? `projected ${formatPercent(opponentGoalie.start_probability)}`
+        : "status unavailable"
+    : null;
+  const chips = [
+    position === "G"
+      ? null
+      : `Role ${player.context?.es_role ?? "unavailable"}`,
+    position === "G"
+      ? null
+      : player.context?.unit_tier
+        ? `${player.context.unit_tier}${
+            player.context.pp_share != null
+              ? ` · ${formatPercent(player.context.pp_share)}`
+              : ""
+          }`
+        : "PP role unavailable",
+    player.context?.role_probability != null
+      ? `Role confidence ${formatPercent(player.context.role_probability)}`
+      : null,
+    player.context?.role_continuity != null
+      ? `Continuity ${formatPercent(player.context.role_continuity)}`
+      : null,
+    player.context?.opponent_defense_edge != null
+      ? `DEF edge ${player.context.opponent_defense_edge >= 0 ? "+" : ""}${player.context.opponent_defense_edge.toFixed(2)}`
+      : null,
+    player.context?.goalie_goal_rate_multiplier != null
+      ? `Goal rate ×${player.context.goalie_goal_rate_multiplier.toFixed(2)}`
+      : null,
+    player.context?.goalie_starter_certainty != null
+      ? `Goalie ${formatPercent(player.context.goalie_starter_certainty)}`
+      : null,
+    opponentGoalie
+      ? `Opp G ${opponentGoalie.name} · ${opponentGoalieStatus}`
+      : "Opp G unavailable",
+    player.context?.rest_delta != null
+      ? `Rest ${player.context.rest_delta >= 0 ? "+" : ""}${player.context.rest_delta}`
+      : null,
+    player.context?.trend_effect && player.context.trend_effect !== "none"
+      ? `Trend ${player.context.trend_effect.replaceAll("_", " ")}`
+      : null,
+    ...(player.context?.flags ?? []).map((flag) => flag.replaceAll("_", " ")),
+  ].filter((value): value is string => Boolean(value));
+  if (chips.length === 0) return null;
+  return (
+    <ul className={styles.contextChips} aria-label="Projection context">
+      {chips.map((chip) => (
+        <li key={chip}>{chip}</li>
+      ))}
+    </ul>
   );
+};
+
+export default function StartChartPage() {
+  const router = useRouter();
+  const [date, setDate] = useState("");
+  const [search, setSearch] = useState("");
+  const [ownershipMax, setOwnershipMax] = useState(100);
+  const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const [activePosition, setActivePosition] =
+    useState<StartChartPosition>("C");
+  const [positionLimits, setPositionLimits] = useState<
+    Record<StartChartPosition, number>
+  >({ C: 25, LW: 25, RW: 25, D: 25, G: 25 });
+
+  const queryDate = Array.isArray(router.query.date)
+    ? router.query.date[0]
+    : router.query.date;
+  const queryPosition = Array.isArray(router.query.position)
+    ? router.query.position[0]
+    : router.query.position;
+  const queryTeam = Array.isArray(router.query.team)
+    ? router.query.team[0]
+    : router.query.team;
+  const queryMode = Array.isArray(router.query.mode)
+    ? router.query.mode[0]
+    : router.query.mode;
+  const normalizedQueryPosition = queryPosition?.toUpperCase();
+  const validQueryPosition = POSITION_ORDER.includes(
+    normalizedQueryPosition as StartChartPosition,
+  )
+    ? (normalizedQueryPosition as StartChartPosition)
+    : null;
 
   useEffect(() => {
-    const queryDate = new URLSearchParams(window.location.search).get("date");
-    if (queryDate && /^\d{4}-\d{2}-\d{2}$/.test(queryDate)) {
-      setDate((currentDate) =>
-        queryDate === currentDate ? currentDate : queryDate,
+    if (!router.isReady) return;
+    const resolvedDate = isCalendarDate(queryDate) ? queryDate : easternDate();
+    setDate(resolvedDate);
+    if (validQueryPosition) setActivePosition(validQueryPosition);
+    setSelectedTeam(queryTeam?.toUpperCase() ?? null);
+
+    if (!isCalendarDate(queryDate)) {
+      void router.replace(
+        {
+          pathname: router.pathname,
+          query: { ...router.query, date: resolvedDate },
+        },
+        undefined,
+        { shallow: true },
       );
     }
-  }, []);
+  }, [
+    queryDate,
+    queryTeam,
+    router,
+    router.isReady,
+    router.pathname,
+    validQueryPosition,
+  ]);
+
+  const { data, error, isLoading, mutate } = useSWR<StartChartResponse>(
+    date ? `/api/v1/start-chart?date=${encodeURIComponent(date)}` : null,
+    fetcher,
+  );
+  const { ref: chartGraphicRef, size: chartSize } = useMeasuredChart(
+    (data?.ctpi?.length ?? 0) > 0,
+  );
+
+  const updateQuery = (values: Record<string, string | null>) => {
+    const query = Object.fromEntries(
+      Object.entries(router.query).filter(
+        (entry): entry is [string, string | string[]] => entry[1] !== undefined,
+      ),
+    );
+    for (const [key, value] of Object.entries(values)) {
+      if (value) query[key] = value;
+      else delete query[key];
+    }
+    void router.replace({ pathname: router.pathname, query }, undefined, {
+      shallow: true,
+    });
+  };
 
   const selectDate = (nextDate: string) => {
     setDate(nextDate);
-    const url = new URL(window.location.href);
-    url.searchParams.set("date", nextDate);
-    window.history.replaceState(window.history.state, "", url);
+    setSelectedGameId(null);
+    updateQuery({ date: nextDate, resolvedDate: null });
   };
 
-  const filteredByUi = useMemo(() => {
-    if (!data?.players) return [];
+  const selectPosition = (position: StartChartPosition, focus = false) => {
+    setActivePosition(position);
+    updateQuery({ position });
+    if (focus) {
+      requestAnimationFrame(() =>
+        document.getElementById(`start-chart-tab-${position}`)?.focus(),
+      );
+    }
+  };
 
-    // If a game is selected, find the two team IDs involved
-    let allowedTeamIds: Set<number> | null = null;
-    if (selectedGameId && data.games) {
-      const game = data.games.find((g) => g.id === selectedGameId);
-      if (game) {
-        allowedTeamIds = new Set([game.homeTeamId, game.awayTeamId]);
+  const handleTabKeyDown = (
+    event: ReactKeyboardEvent<HTMLButtonElement>,
+    position: StartChartPosition,
+  ) => {
+    const index = POSITION_ORDER.indexOf(position);
+    const direction =
+      event.key === "ArrowRight" || event.key === "ArrowDown"
+        ? 1
+        : event.key === "ArrowLeft" || event.key === "ArrowUp"
+          ? -1
+          : 0;
+    if (direction === 0) return;
+    event.preventDefault();
+    const next = POSITION_ORDER[(index + direction + POSITION_ORDER.length) % POSITION_ORDER.length];
+    selectPosition(next, true);
+  };
+
+  useEffect(() => {
+    setPositionLimits({ C: 25, LW: 25, RW: 25, D: 25, G: 25 });
+  }, [date, search, ownershipMax, selectedGameId, selectedTeam]);
+
+  const allowedGameTeamIds = useMemo(() => {
+    if (!selectedGameId) return null;
+    const game = data?.games.find((candidate) => candidate.id === selectedGameId);
+    return game ? new Set([game.homeTeamId, game.awayTeamId]) : null;
+  }, [data?.games, selectedGameId]);
+
+  const gamesById = useMemo(
+    () => new Map((data?.games ?? []).map((game) => [game.id, game] as const)),
+    [data?.games],
+  );
+
+  const scopedPlayers = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    return (data?.players ?? []).filter((player) => {
+      const passesSearch =
+        !normalizedSearch || player.name.toLowerCase().includes(normalizedSearch);
+      const passesGame = allowedGameTeamIds
+        ? player.team_id != null && allowedGameTeamIds.has(player.team_id)
+        : true;
+      const passesTeam = selectedTeam
+        ? player.team_abbrev === selectedTeam || String(player.team_id) === selectedTeam
+        : true;
+      return passesSearch && passesGame && passesTeam;
+    });
+  }, [allowedGameTeamIds, data?.players, search, selectedTeam]);
+
+  const unknownOwnershipExcluded = useMemo(
+    () =>
+      ownershipMax < 100
+        ? scopedPlayers.filter(
+            (player) =>
+              (player.ownership ?? player.percent_ownership) == null,
+          ).length
+        : 0,
+    [ownershipMax, scopedPlayers],
+  );
+
+  const filteredPlayers = useMemo(
+    () =>
+      scopedPlayers.filter((player) => {
+        const ownership = player.ownership ?? player.percent_ownership;
+        return (
+          ownershipMax === 100 ||
+          (ownership != null && ownership <= ownershipMax)
+        );
+      }),
+    [ownershipMax, scopedPlayers],
+  );
+
+  const playersByPosition = useMemo(() => {
+    const result = new Map<StartChartPosition, StartChartPlayer[]>(
+      POSITION_ORDER.map((position) => [position, []]),
+    );
+    for (const player of filteredPlayers) {
+      for (const position of player.positions) {
+        if (!POSITION_ORDER.includes(position as StartChartPosition)) continue;
+        result.get(position as StartChartPosition)?.push(player);
       }
     }
-
-    return data.players.filter((p) => {
-      const owned = p.ownership ?? p.percent_ownership;
-      const ownedVal = owned == null ? 0 : owned; // if unknown, treat as 0% owned
-      const passesOwnership = ownedVal <= ownershipMax;
-      const passesSearch = !search
-        ? true
-        : p.name.toLowerCase().includes(search.toLowerCase());
-      const hasAllowedPos =
-        p.positions.length === 0
-          ? true
-          : p.positions.some((pos) => posFilter[pos]);
-
-      const passesGameFilter = allowedTeamIds
-        ? p.team_id != null && allowedTeamIds.has(p.team_id)
-        : true;
-
-      return (
-        passesOwnership && passesSearch && hasAllowedPos && passesGameFilter
+    for (const position of POSITION_ORDER) {
+      result.get(position)?.sort(
+        (left, right) =>
+          (left.position_ranks[position] ?? Number.MAX_SAFE_INTEGER) -
+            (right.position_ranks[position] ?? Number.MAX_SAFE_INTEGER) ||
+          left.player_id - right.player_id ||
+          left.game_id - right.game_id ||
+          left.row_key.localeCompare(right.row_key),
       );
-    });
-  }, [
-    data?.players,
-    ownershipMax,
-    search,
-    posFilter,
-    selectedGameId,
-    data?.games,
-  ]);
+    }
+    return result;
+  }, [filteredPlayers]);
 
-  const playersByPos = useMemo(() => {
-    const map = new Map<string, StartChartPlayer[]>();
-    POSITION_ORDER.forEach((p) => map.set(p, []));
-    filteredByUi.forEach((p) => {
-      p.positions.forEach((pos) => {
-        if (map.has(pos)) {
-          map.get(pos)!.push(p);
-        }
-      });
-    });
-    POSITION_ORDER.forEach((pos) => {
-      map.set(
-        pos,
-        (map.get(pos) ?? []).sort(
-          (a, b) =>
-            (a.position_ranks[pos] ?? Number.MAX_SAFE_INTEGER) -
-              (b.position_ranks[pos] ?? Number.MAX_SAFE_INTEGER) ||
-            a.player_id - b.player_id,
-        ),
-      );
-    });
-    return map;
-  }, [filteredByUi]);
-
-  const ctpiData = useMemo(() => {
-    if (!data?.ctpi) return [];
-    return data.ctpi;
-  }, [data?.ctpi]);
+  useEffect(() => {
+    if (validQueryPosition || !data?.players.length) return;
+    const firstAvailable = POSITION_ORDER.find(
+      (position) => (playersByPosition.get(position)?.length ?? 0) > 0,
+    );
+    if (firstAvailable && firstAvailable !== activePosition) {
+      setActivePosition(firstAvailable);
+    }
+  }, [activePosition, data?.players.length, playersByPosition, validQueryPosition]);
 
   const teamsPlaying = useMemo(() => {
-    if (!data?.games) return [];
     const teams = new Set<string>();
-    data.games.forEach((g) => {
-      const home = Object.values(teamsInfo).find((t) => t.id === g.homeTeamId);
-      const away = Object.values(teamsInfo).find((t) => t.id === g.awayTeamId);
-      if (home?.abbrev) teams.add(home.abbrev);
-      if (away?.abbrev) teams.add(away.abbrev);
-    });
+    for (const game of data?.games ?? []) {
+      const home = game.homeAbbrev ?? findTeamAbbrev(game.homeTeamId);
+      const away = game.awayAbbrev ?? findTeamAbbrev(game.awayTeamId);
+      if (home) teams.add(home);
+      if (away) teams.add(away);
+    }
     return Array.from(teams);
   }, [data?.games]);
 
   const teamColors = useMemo(() => {
     const colors: Record<string, string> = {};
-    const usedColors: string[] = [];
-
-    teamsPlaying.forEach((abbrev) => {
-      const team = Object.values(teamsInfo).find((t) => t.abbrev === abbrev);
-      if (!team) return;
-
+    const used: string[] = [];
+    for (const abbreviation of teamsPlaying) {
+      const team = Object.values(teamsInfo).find(
+        (candidate) => candidate.abbrev === abbreviation,
+      );
+      if (!team) continue;
       let color = team.primaryColor;
-      let isTooClose = usedColors.some((c) => getColorDistance(c, color) < 50);
-
-      if (isTooClose) {
-        // Try secondary
+      if (used.some((candidate) => getColorDistance(candidate, color) < 50)) {
         color = team.secondaryColor;
-        isTooClose = usedColors.some((c) => getColorDistance(c, color) < 50);
       }
-
-      if (isTooClose) {
-        // Try lightening primary
+      if (used.some((candidate) => getColorDistance(candidate, color) < 50)) {
         color = adjustBrightness(team.primaryColor, 40);
-        isTooClose = usedColors.some((c) => getColorDistance(c, color) < 50);
       }
-
-      if (isTooClose) {
-        // Try darkening primary
+      if (used.some((candidate) => getColorDistance(candidate, color) < 50)) {
         color = adjustBrightness(team.primaryColor, -40);
       }
-
-      colors[abbrev] = color;
-      usedColors.push(color);
-    });
-
+      colors[abbreviation] = color;
+      used.push(color);
+    }
     return colors;
   }, [teamsPlaying]);
 
-  const yAxisDomain = useMemo(() => {
-    if (!ctpiData || ctpiData.length === 0) return [0, 100];
-    let min = 100;
-    let max = 0;
-
-    ctpiData.forEach((row) => {
-      teamsPlaying.forEach((team) => {
-        const val = row[team];
-        if (typeof val === "number") {
-          if (val < min) min = val;
-          if (val > max) max = val;
+  const latestTeamFormByTeam = useMemo(() => {
+    const latest = new Map<string, { date: string; value: number }>();
+    for (const row of data?.ctpi ?? []) {
+      for (const team of teamsPlaying) {
+        const value = row[team];
+        const previous = latest.get(team);
+        if (
+          typeof value === "number" &&
+          Number.isFinite(value) &&
+          (!previous || row.date > previous.date)
+        ) {
+          latest.set(team, { date: row.date, value });
         }
-      });
-    });
+      }
+    }
+    return latest;
+  }, [data?.ctpi, teamsPlaying]);
 
-    if (min > max) return [0, 100]; // No data
-
+  const yAxisDomain = useMemo<[number, number]>(() => {
+    const values = (data?.ctpi ?? []).flatMap((row) =>
+      teamsPlaying.flatMap((team) =>
+        typeof row[team] === "number" ? [row[team] as number] : [],
+      ),
+    );
+    if (values.length === 0) return [0, 100];
     return [
-      Math.max(0, Math.floor(min - 5)),
-      Math.min(100, Math.ceil(max + 5)),
+      Math.max(0, Math.floor(Math.min(50, ...values) - 5)),
+      Math.min(100, Math.ceil(Math.max(50, ...values) + 5)),
     ];
-  }, [ctpiData, teamsPlaying]);
+  }, [data?.ctpi, teamsPlaying]);
 
-  const togglePos = (pos: string) =>
-    setPosFilter((prev) => ({ ...prev, [pos]: !prev[pos] }));
-
+  const workflowContext = {
+    date: date || easternDate(),
+    resolvedDate: data?.resolvedDate ?? data?.dateUsed ?? null,
+    position: activePosition,
+    team: selectedTeam,
+    mode: queryMode ?? "tonight",
+  };
+  const workflowLinks = START_CHART_SURFACE_LINKS.map((link) => ({
+    ...link,
+    href: buildContextHref(link.href, workflowContext),
+  }));
   const fantasyScoringDescription = formatStartChartFantasyScoringContract(
     data?.fantasyScoringContract ?? START_CHART_FANTASY_SCORING_CONTRACT,
+  );
+  const isFallback = data?.serving?.mode === "fallback" || data?.fallbackApplied;
+  const isPartial = data?.serving?.mode === "partial";
+  const isDegraded = data?.sourceStatus?.overall === "degraded";
+  const servingMessage = isFallback
+    ? `This is the nearest earlier slate with projections${
+        typeof data?.serving?.ageDays === "number"
+          ? ` (${data.serving.ageDays} day${data.serving.ageDays === 1 ? "" : "s"} old)`
+          : ""
+      }. Use it as historical reference, not today's recommendation.`
+    : data?.serving?.message;
+  const statusMessages = Array.from(
+    new Set(
+      [
+        servingMessage,
+        data?.sourceStatus?.projection?.state !== "ready"
+          ? data?.sourceStatus?.projection?.message
+          : null,
+        data?.sourceStatus?.goalies?.state !== "ready"
+          ? data?.sourceStatus?.goalies?.message
+          : null,
+      ].filter((message): message is string => Boolean(message)),
+    ),
   );
 
   return (
     <div className={styles.page}>
       <Head>
-        <title>Start Chart</title>
+        <title>Starter Board | FHFH</title>
       </Head>
 
-      <section className={styles.chartPanel}>
-        <div className={styles.chartHeader}>
-          <h1 className={styles.chartTitle}>Start Chart · CTPI Pulse</h1>
-          <div className={styles.meta}>Date: {data?.dateUsed ?? date}</div>
+      <header className={styles.pageHeader}>
+        <div>
+          <p className={styles.eyebrow}>FORGE Daily</p>
+          <h1>Starter Board</h1>
+          <p className={styles.subtitle}>
+            One-game projections, matchup context, and starter probabilities for
+            the selected slate.
+          </p>
         </div>
-        <div
-          className={styles.chartGraphic}
-          role="img"
-          aria-label={`Thirty-day team power trend for ${
-            teamsPlaying.length
-              ? teamsPlaying.join(", ")
-              : "the selected slate; no trend data available"
+        <dl className={styles.provenanceSummary}>
+          <div>
+            <dt>Requested</dt>
+            <dd>{data?.requestedDate ?? (date || "—")}</dd>
+          </div>
+          <div>
+            <dt>Resolved</dt>
+            <dd>{data?.resolvedDate ?? data?.dateUsed ?? "—"}</dd>
+          </div>
+          <div>
+            <dt>Model</dt>
+            <dd>{data?.sourceStatus?.projection?.modelVersion ?? "Unavailable"}</dd>
+          </div>
+          <div>
+            <dt>Run</dt>
+            <dd title={data?.projectionRunId ?? undefined}>
+              {data?.projectionRunId?.slice(0, 12) ?? "Unavailable"}
+            </dd>
+          </div>
+          <div>
+            <dt>Scoring</dt>
+            <dd title={data?.fantasyScoringContract?.version}>
+              {data?.fantasyScoringContract?.label ?? "Unavailable"}
+            </dd>
+          </div>
+          <div>
+            <dt>Input</dt>
+            <dd title={data?.sourceStatus?.projection?.inputVersion ?? undefined}>
+              {data?.sourceStatus?.projection?.inputVersion ?? "Unverified"}
+            </dd>
+          </div>
+        </dl>
+      </header>
+
+      {isFallback || isPartial || isDegraded ? (
+        <section
+          className={`${styles.statusBanner} ${
+            isPartial || isDegraded ? styles.statusWarning : ""
           }`}
+          role="status"
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={ctpiData} margin={{ right: 20 }}>
-              <XAxis
-                dataKey="date"
-                tick={{ fill: "#9ea7b3" }}
-                padding={{ right: 20 }}
-              />
-              <YAxis
-                domain={yAxisDomain}
-                width={30}
-                tick={{ fill: "#9ea7b3" }}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: "rgba(0,0,0,0.8)",
-                  border: "1px solid #333",
-                  color: "#fff",
-                }}
-                labelStyle={{ color: "#fff" }}
-              />
-              {teamsPlaying.map((abbrev) => {
-                return (
-                  <Line
-                    key={abbrev}
-                    type="monotone"
-                    dataKey={abbrev}
-                    stroke={teamColors[abbrev] ?? "#fff"}
-                    strokeWidth={2}
-                    dot={(props: any) => {
-                      const { key, ...dotProps } = props;
-                      const isLast = props.index === ctpiData.length - 1;
-                      return (
-                        <CustomDot
-                          key={key}
-                          {...dotProps}
-                          dataKey={abbrev}
-                          isLast={isLast}
-                        />
-                      );
-                    }}
-                    activeDot={{ r: 4 }}
-                    name={abbrev}
-                  />
-                );
-              })}
-            </LineChart>
-          </ResponsiveContainer>
+          <strong>
+            {isFallback
+              ? `Showing ${data?.resolvedDate ?? data?.dateUsed}, not ${data?.requestedDate}.`
+              : "This slate has incomplete source coverage."}
+          </strong>
+          <span>
+            {statusMessages.join(" ") ||
+              data?.sourceStatus?.degradedReasons?.join(", ") ||
+              "Review source details before acting on the board."}
+          </span>
+        </section>
+      ) : null}
+
+      <section
+        className={styles.chartPanel}
+        aria-labelledby="team-form-heading"
+        aria-describedby="team-form-description"
+      >
+        <div className={styles.chartHeader}>
+          <div>
+            <p className={styles.chartEyebrow}>Team context</p>
+            <h2 id="team-form-heading" className={styles.chartTitle}>
+              Recent Team Form
+            </h2>
+            <p>
+              How each team has been playing lately, compared with the league.
+              It combines recent offense, defense, goaltending, and special
+              teams in one score.
+            </p>
+          </div>
+          <span className={styles.meta}>
+            Data through {data?.sourceStatus?.ctpi?.throughDate ?? "Unavailable"}
+          </span>
         </div>
+        <div id="team-form-description" className={styles.chartGuide}>
+          <span>
+            <strong>50</strong> is league average
+          </span>
+          <span>
+            <strong>Higher</strong> means stronger recent all-around form
+          </span>
+          <span>
+            <strong>Lower</strong> means weaker recent all-around form
+          </span>
+          <span>Context only — not a game prediction or ranking input</span>
+        </div>
+        {(data?.ctpi?.length ?? 0) > 0 &&
+        data?.sourceStatus?.ctpi?.state !== "ready" &&
+        data?.sourceStatus?.ctpi?.message ? (
+          <p className={styles.chartNotice} role="status">
+            {data.sourceStatus.ctpi.message}
+          </p>
+        ) : null}
+        {(data?.ctpi?.length ?? 0) > 0 ? (
+          <>
+            <div
+              ref={chartGraphicRef}
+              className={styles.chartGraphic}
+              role="img"
+              aria-label={`Recent team form for ${teamsPlaying.join(", ")}. Daily snapshots from the last 30 days compare recent offense, defense, goaltending, and special teams with the league. 50 is league average and higher is stronger.`}
+            >
+              {chartSize.width > 0 && chartSize.height > 0 ? (
+                <LineChart
+                  width={chartSize.width}
+                  height={chartSize.height}
+                  data={data?.ctpi ?? []}
+                  margin={{ right: 20 }}
+                >
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: "#9ea7b3" }}
+                    padding={{ right: 20 }}
+                  />
+                  <YAxis
+                    domain={yAxisDomain}
+                    width={30}
+                    tick={{ fill: "#9ea7b3" }}
+                  />
+                  <ReferenceLine
+                    y={50}
+                    stroke="#9ea7b3"
+                    strokeDasharray="4 4"
+                    label={{
+                      value: "League avg",
+                      position: "insideTopRight",
+                      fill: "#cbd2dc",
+                      fontSize: 10,
+                    }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: "rgba(0,0,0,0.9)",
+                      border: "1px solid #596272",
+                      color: "#fff",
+                    }}
+                    labelStyle={{ color: "#fff" }}
+                  />
+                  {teamsPlaying.map((abbreviation) => (
+                    <Line
+                      key={abbreviation}
+                      type="monotone"
+                      dataKey={abbreviation}
+                      stroke={teamColors[abbreviation] ?? "#fff"}
+                      strokeWidth={2}
+                      connectNulls
+                      dot={(props: any) => {
+                        const { key, ...dotProps } = props;
+                        return (
+                          <TeamEndpointDot
+                            key={key}
+                            {...dotProps}
+                            dataKey={abbreviation}
+                            lastDate={latestTeamFormByTeam.get(abbreviation)?.date}
+                          />
+                        );
+                      }}
+                      activeDot={{ r: 4 }}
+                      name={abbreviation}
+                    />
+                  ))}
+                </LineChart>
+              ) : null}
+            </div>
+            <ul
+              className={styles.chartLegend}
+              aria-label="Latest team form by team"
+            >
+              {teamsPlaying.map((team) => (
+                <li key={team}>
+                  <span
+                    className={styles.chartLegendSwatch}
+                    style={{ backgroundColor: teamColors[team] }}
+                    aria-hidden="true"
+                  />
+                  <strong>{team}</strong>
+                  <span className={styles.chartLegendValue}>
+                    {formatNumber(latestTeamFormByTeam.get(team)?.value, 0)}
+                  </span>
+                  <span className={styles.chartLegendReading}>
+                    {describeTeamForm(latestTeamFormByTeam.get(team)?.value)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <div className={styles.chartEmpty} role="status">
+            {data?.sourceStatus?.ctpi?.message ??
+              "Recent team form is unavailable for this slate. Fantasy ranks are unchanged."}
+          </div>
+        )}
       </section>
 
-      {/* Game Strip */}
-      {data?.games && data.games.length > 0 && (
+      {(data?.games?.length ?? 0) > 0 ? (
         <section className={styles.gameStrip} aria-label="Games on this slate">
-          {data.games.map((g) => {
-            const home = Object.values(teamsInfo).find(
-              (t) => t.id === g.homeTeamId,
-            );
-            const away = Object.values(teamsInfo).find(
-              (t) => t.id === g.awayTeamId,
-            );
-            const isSelected = selectedGameId === g.id;
-
+          {data?.games.map((game) => {
+            const home = teamFor(game.homeTeamId);
+            const away = teamFor(game.awayTeamId);
+            const isSelected = selectedGameId === game.id;
             return (
               <button
                 type="button"
-                key={g.id}
+                key={game.id}
                 className={`${styles.gameCard} ${
                   isSelected ? styles.selected : ""
                 }`}
-                onClick={() => setSelectedGameId(isSelected ? null : g.id)}
+                onClick={() => setSelectedGameId(isSelected ? null : game.id)}
                 aria-pressed={isSelected}
                 aria-label={`${away?.abbrev ?? "Away"} at ${
                   home?.abbrev ?? "Home"
@@ -542,72 +927,65 @@ export default function StartChartPage() {
                   } as React.CSSProperties
                 }
               >
-                {/* Away Team */}
+                <div className={styles.gameTime}>{formatGameTime(game.startTime)}</div>
                 <div className={styles.teamRow}>
                   <div className={styles.teamRowHeader}>
                     <div className={styles.teamIdentity}>
-                      {away?.abbrev && (
-                        <img
+                      {away?.abbrev ? (
+                        <Image
                           src={`/teamLogos/${away.abbrev}.png`}
-                          alt={away.abbrev}
+                          alt=""
+                          width={28}
+                          height={28}
                           className={styles.teamLogo}
                         />
-                      )}
-                      <span className={styles.teamAbbrev}>{away?.abbrev}</span>
+                      ) : null}
+                      <span className={styles.teamAbbrev}>{away?.abbrev ?? "TBD"}</span>
                     </div>
-                    <RenderRating
-                      rating={g.awayRating}
-                      opponentRating={g.homeRating}
-                    />
+                    <RenderRating rating={game.awayRating} />
                   </div>
-                  <RenderGoalie goalies={g.awayGoalies} />
+                  <RenderGoalie goalies={game.awayGoalies} />
                 </div>
-
-                {/* Divider */}
                 <div className={styles.gameDivider}>
                   <div className={styles.dividerLine} />
                   <div className={styles.vsCircle}>vs</div>
                   <div className={styles.dividerLine} />
                 </div>
-
-                {/* Home Team */}
                 <div className={styles.teamRow}>
                   <div className={`${styles.teamRowHeader} ${styles.reverse}`}>
                     <div className={`${styles.teamIdentity} ${styles.reverse}`}>
-                      {home?.abbrev && (
-                        <img
+                      {home?.abbrev ? (
+                        <Image
                           src={`/teamLogos/${home.abbrev}.png`}
-                          alt={home.abbrev}
+                          alt=""
+                          width={28}
+                          height={28}
                           className={styles.teamLogo}
                         />
-                      )}
-                      <span className={styles.teamAbbrev}>{home?.abbrev}</span>
+                      ) : null}
+                      <span className={styles.teamAbbrev}>{home?.abbrev ?? "TBD"}</span>
                     </div>
-                    <RenderRating
-                      rating={g.homeRating}
-                      opponentRating={g.awayRating}
-                    />
+                    <RenderRating rating={game.homeRating} />
                   </div>
-                  <RenderGoalie goalies={g.homeGoalies} />
+                  <RenderGoalie goalies={game.homeGoalies} />
                 </div>
               </button>
             );
           })}
         </section>
-      )}
+      ) : null}
 
-      <section className={styles.filters} aria-label="Start Chart controls">
+      <section className={styles.filters} aria-label="Starter Board controls">
         <div className={styles.filterGroup}>
           <label htmlFor="start-chart-search">Player</label>
           <input
             id="start-chart-search"
             className={styles.search}
-            placeholder="Player name..."
+            placeholder="Player name…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(event) => setSearch(event.target.value)}
           />
         </div>
-
         <div className={styles.filterGroup}>
           <label htmlFor="start-chart-date">Date</label>
           <input
@@ -615,29 +993,32 @@ export default function StartChartPage() {
             type="date"
             className={styles.dateInput}
             value={date}
-            onChange={(e) => selectDate(e.target.value)}
+            onChange={(event) => selectDate(event.target.value)}
           />
         </div>
-
         <div className={styles.filterGroup}>
-          <label>Positions</label>
-          <div className={styles.checkboxRow}>
-            {POSITION_ORDER.map((pos) => (
-              <label key={pos}>
-                <input
-                  type="checkbox"
-                  checked={posFilter[pos]}
-                  onChange={() => togglePos(pos)}
-                />{" "}
-                {pos}
-              </label>
+          <label htmlFor="start-chart-team">Team</label>
+          <select
+            id="start-chart-team"
+            className={styles.selectInput}
+            value={selectedTeam ?? ""}
+            onChange={(event) => {
+              const team = event.target.value || null;
+              setSelectedTeam(team);
+              updateQuery({ team });
+            }}
+          >
+            <option value="">All slate teams</option>
+            {teamsPlaying.map((team) => (
+              <option key={team} value={team}>
+                {team}
+              </option>
             ))}
-          </div>
+          </select>
         </div>
-
         <div className={styles.filterGroup}>
           <label htmlFor="start-chart-ownership">
-            Ownership ≤ {ownershipMax}%
+            {ownershipMax === 100 ? "All ownership" : `Ownership ≤ ${ownershipMax}%`}
           </label>
           <input
             id="start-chart-ownership"
@@ -646,17 +1027,9 @@ export default function StartChartPage() {
             min={0}
             max={100}
             value={ownershipMax}
-            onChange={(e) => setOwnershipMax(Number(e.target.value))}
+            onChange={(event) => setOwnershipMax(Number(event.target.value))}
           />
         </div>
-
-        <div className={styles.filterGroup}>
-          <label htmlFor="start-chart-mode">Mode</label>
-          <select id="start-chart-mode" className={styles.selectInput} disabled>
-            <option>Points</option>
-          </select>
-        </div>
-
         <div className={styles.filterGroup}>
           <label htmlFor="start-chart-profile">Profile</label>
           <select
@@ -670,223 +1043,394 @@ export default function StartChartPage() {
             </option>
           </select>
         </div>
-
+        {unknownOwnershipExcluded > 0 ? (
+          <p className={styles.controlNote} role="status">
+            {unknownOwnershipExcluded} player
+            {unknownOwnershipExcluded === 1 ? " was" : "s were"} excluded because
+            ownership is unavailable; unknown values are never treated as 0%.
+          </p>
+        ) : null}
         <p className={styles.controlNote}>
-          Tau, category mode, and P75 risk controls are unavailable here; the
-          canonical FORGE run owns model parameters and uncertainty.
+          Weekly game volume and Yahoo ownership are informational only. FORGE
+          one-game fantasy points determine skater rank; starter probability
+          determines goalie rank.
         </p>
-
         <details className={styles.legendContainer}>
           <summary className={styles.legendIcon} aria-label="Explain metrics">
             i
           </summary>
           <div className={styles.legendTooltip}>
             <div className={styles.legendItem}>
-              <strong>CTPI (Cumulative Team Power Index):</strong> Measures
-              overall team strength based on recent performance metrics like xG,
-              Corsi, and PDO.
+              <strong>Fantasy points</strong>
+              {fantasyScoringDescription}.
             </div>
             <div className={styles.legendItem}>
-              <strong>PTS (Fantasy Points):</strong> Projected fantasy points
-              using {fantasyScoringDescription}.
+              <strong>DEF ease</strong>
+              Slate-relative opponent defense grade. Higher opponent xGA/60 is
+              easier; missing as-of ratings display as unavailable.
             </div>
             <div className={styles.legendItem}>
-              <strong>MATCHUP:</strong> A 0-100 grade indicating the
-              favorability of the opponent (100 = easiest matchup).
-            </div>
-            <div className={styles.legendItem}>
-              <strong>G / A / SOG:</strong> Projected Goals, Assists, and Shots
-              on Goal for this specific game.
+              <strong>NHL PTS uncertainty</strong>
+              Low/high values bound projected goals plus assists, not fantasy
+              points or guarantees.
             </div>
           </div>
         </details>
       </section>
 
+      <div
+        className={styles.positionTabs}
+        role="tablist"
+        aria-label="Starter Board positions"
+      >
+        {POSITION_ORDER.map((position) => (
+          <button
+            id={`start-chart-tab-${position}`}
+            key={position}
+            type="button"
+            role="tab"
+            aria-selected={activePosition === position}
+            aria-controls={`start-chart-panel-${position}`}
+            tabIndex={activePosition === position ? 0 : -1}
+            onClick={() => selectPosition(position)}
+            onKeyDown={(event) => handleTabKeyDown(event, position)}
+          >
+            {position}
+            <span>{playersByPosition.get(position)?.length ?? 0}</span>
+          </button>
+        ))}
+      </div>
+
       <section
         className={styles.columns}
-        aria-label="Start Chart rankings by position"
-        aria-busy={isLoading}
+        aria-label="Starter Board rankings by position"
+        aria-busy={isLoading || !date}
       >
         {error ? (
           <div className={styles.requestState} role="alert">
-            Start Chart is unavailable: {error.message}
+            <strong>Starter Board is unavailable.</strong>
+            <span>{error.message}</span>
+            <button type="button" onClick={() => void mutate()}>
+              Retry
+            </button>
           </div>
         ) : null}
-        {data?.games && data.games.length > 0 && data.players.length === 0 && (
-          <div
-            role="status"
-            style={{
-              gridColumn: "1 / -1",
-              padding: "2rem",
-              textAlign: "center",
-              color: "#ff6b6b",
-              background: "rgba(255, 107, 107, 0.1)",
-              border: "1px solid rgba(255, 107, 107, 0.3)",
-              borderRadius: "8px",
-              marginBottom: "1rem",
-            }}
-          >
-            <strong>No Player Projections Found</strong>
-            <p style={{ fontSize: "0.9em", marginTop: "0.5rem", opacity: 0.8 }}>
-              We found {data.games.length} games for this date, but the player
-              projections have not been populated yet. Please check back later.
-            </p>
+        {!error && data?.serving?.mode === "no_games" ? (
+          <div className={styles.requestState} role="status">
+            <strong>No games found.</strong>
+            <span>{data.serving.message}</span>
           </div>
-        )}
-        {POSITION_ORDER.map((pos) => {
-          const list = playersByPos.get(pos) ?? [];
-          const className = `${styles.column} ${
-            styles[`pos${pos as typeof pos}`]
-          }`;
-          const headingId = `start-chart-position-${pos}`;
+        ) : null}
+        {!error && data?.games?.length && data.players.length === 0 ? (
+          <div className={styles.requestState} role="status">
+            <strong>No player projections found.</strong>
+            <span>
+              {data.games.length} game{data.games.length === 1 ? " is" : "s are"}
+              scheduled, but canonical projection rows are not ready.
+            </span>
+          </div>
+        ) : null}
+
+        {POSITION_ORDER.map((position) => {
+          const fullList = playersByPosition.get(position) ?? [];
+          const visibleList = fullList.slice(0, positionLimits[position]);
+          const headingId = `start-chart-position-${position}`;
+          const isActive = activePosition === position;
           return (
             <section
-              className={className}
-              key={pos}
-              aria-labelledby={headingId}
+              id={`start-chart-panel-${position}`}
+              role="tabpanel"
+              aria-labelledby={`start-chart-tab-${position}`}
+              className={`${styles.column} ${styles[`pos${position}`]} ${
+                isActive ? "" : styles.columnInactive
+              }`}
+              key={position}
             >
               <div className={styles.columnHeader}>
-                <h2 id={headingId}>{pos}</h2>
-                <span className={styles.pill}>{list.length}</span>
+                <h2 id={headingId}>{position}</h2>
+                <span className={styles.pill}>{fullList.length}</span>
               </div>
-              <div className={styles.cardList}>
-                {isLoading ? (
-                  <div className={styles.meta} role="status">
-                    Loading...
-                  </div>
-                ) : list.length === 0 ? (
-                  <div className={styles.emptyState}>No players.</div>
-                ) : (
-                  list.map((p) => (
-                    <div
-                      className={styles.card}
-                      key={`${pos}-${p.player_id}-${p.team_id ?? "unknown"}-${
-                        p.opponent_abbrev ?? "unknown"
-                      }`}
-                    >
-                      <div className={styles.header}>
-                        <div className={styles.name} title={p.name}>
-                          {p.position_ranks[pos] != null
-                            ? `#${p.position_ranks[pos]} ${p.name}`
-                            : p.name}
-                        </div>
-                        <div className={styles.meta}>
-                          <span>
-                            {p.team_abbrev ?? "??"} vs{" "}
-                            {p.opponent_abbrev ?? "??"}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className={styles.statsContainer}>
-                        {pos === "G" ? (
-                          <>
-                            <div className={styles.statBox}>
-                              <div className={styles.statLabel}>Start %</div>
-                              <div className={styles.statValue}>
-                                {p.start_probability != null
-                                  ? `${(p.start_probability * 100).toFixed(0)}%`
-                                  : "--"}
-                              </div>
-                            </div>
-                            <div className={styles.statBox}>
-                              <div className={styles.statLabel}>GSAA</div>
-                              <div className={styles.statValue}>
-                                {(p.projected_gsaa ?? 0).toFixed(2)}
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className={styles.statBox}>
-                              <div className={styles.statLabel}>PTS</div>
-                              <div className={styles.statValue}>
-                                {(p.proj_fantasy_points ?? 0).toFixed(2)}
-                              </div>
-                            </div>
-
-                            {/* Combined G/A/SOG Box */}
-                            <div className={styles.statBox}>
-                              <div className={styles.splitStatRow}>
-                                <div className={styles.splitStatItem}>
-                                  <div className={styles.statLabel}>G</div>
-                                  <div className={styles.statValue}>
-                                    {(p.proj_goals ?? 0).toFixed(1)}
-                                  </div>
-                                </div>
-                                <div className={styles.splitStatDivider} />
-                                <div className={styles.splitStatItem}>
-                                  <div className={styles.statLabel}>A</div>
-                                  <div className={styles.statValue}>
-                                    {(p.proj_assists ?? 0).toFixed(1)}
-                                  </div>
-                                </div>
-                                <div className={styles.splitStatDivider} />
-                                <div className={styles.splitStatItem}>
-                                  <div className={styles.statLabel}>S</div>
-                                  <div className={styles.statValue}>
-                                    {(p.proj_shots ?? 0).toFixed(1)}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        )}
-
-                        <div className={styles.statBox}>
-                          <div className={styles.statLabel}>Matchup</div>
-                          <div className={styles.statValue}>
-                            {p.matchup_grade != null
-                              ? p.matchup_grade.toFixed(0)
-                              : "--"}
+              {isLoading || !date ? (
+                <div className={styles.emptyState} role="status">
+                  Loading projections…
+                </div>
+              ) : fullList.length === 0 ? (
+                <div className={styles.emptyState}>
+                  No players match this position and filter set.
+                </div>
+              ) : (
+                <ol className={styles.cardList}>
+                  {visibleList.map((player) => {
+                    const game = gamesById.get(player.game_id);
+                    const opponentGoalie = game
+                      ? player.team_id === game.homeTeamId
+                        ? (game.awayGoalies[0] ?? null)
+                        : (game.homeGoalies[0] ?? null)
+                      : null;
+                    const playerHref = buildContextHref(
+                      `/forge/player/${player.player_id}`,
+                      {
+                        ...workflowContext,
+                        team: player.team_abbrev,
+                        position,
+                      },
+                    );
+                    const teamHref = player.team_abbrev
+                      ? buildContextHref(`/forge/team/${player.team_abbrev}`, {
+                          ...workflowContext,
+                          team: player.team_abbrev,
+                          position,
+                        })
+                      : null;
+                    const opponentHref = player.opponent_abbrev
+                      ? buildContextHref(
+                          `/forge/team/${player.opponent_abbrev}`,
+                          {
+                            ...workflowContext,
+                            team: player.opponent_abbrev,
+                            position,
+                          },
+                        )
+                      : null;
+                    return (
+                      <li className={styles.card} key={`${position}-${player.row_key}`}>
+                        <div className={styles.header}>
+                          <Link
+                            href={playerHref}
+                            className={styles.name}
+                            title={player.name}
+                          >
+                            {player.position_ranks[position] != null
+                              ? `#${player.position_ranks[position]} ${player.name}`
+                              : player.name}
+                          </Link>
+                          <div className={styles.meta}>
+                            <span>
+                              {teamHref ? (
+                                <Link href={teamHref}>{player.team_abbrev}</Link>
+                              ) : (
+                                "Team TBD"
+                              )}{" "}
+                              vs{" "}
+                              {opponentHref ? (
+                                <Link href={opponentHref}>
+                                  {player.opponent_abbrev}
+                                </Link>
+                              ) : (
+                                "Opponent TBD"
+                              )}
+                              {game ? ` · ${formatGameTime(game.startTime)}` : ""}
+                            </span>
                           </div>
                         </div>
-                      </div>
 
-                      <div
-                        className={styles.meta}
-                        style={{ marginTop: "auto" }}
-                      >
-                        <span>
-                          Own:{" "}
-                          {p.percent_ownership != null
-                            ? `${p.percent_ownership.toFixed(0)}%`
-                            : "n/a"}
-                        </span>
-                      </div>
+                        <div className={styles.statsContainer}>
+                          {position === "G" ? (
+                            <>
+                              <Metric label="Start" value={formatPercent(player.start_probability)} />
+                              <Metric label="GSAA/60" value={formatNumber(player.projected_gsaa, 2)} />
+                              <Metric
+                                label="Status"
+                                value={
+                                  player.confirmed_status
+                                    ? "Confirmed"
+                                    : player.start_probability == null
+                                      ? "Unavailable"
+                                      : "Projected"
+                                }
+                              />
+                            </>
+                          ) : (
+                            <>
+                              <Metric
+                                label="FP"
+                                value={formatNumber(player.proj_fantasy_points, 2)}
+                              />
+                              <Metric
+                                label="G / A / S"
+                                value={`${formatNumber(player.proj_goals)} / ${formatNumber(
+                                  player.proj_assists,
+                                )} / ${formatNumber(player.proj_shots)}`}
+                              />
+                              <Metric
+                                label="DEF ease"
+                                value={formatNumber(player.matchup_grade, 0)}
+                              />
+                            </>
+                          )}
+                        </div>
 
-                      <div className={styles.gamesRemaining}>
-                        <span
-                          className={
-                            p.games_remaining_week === 4
-                              ? styles.gamesRemaining4
-                              : p.games_remaining_week === 3
-                                ? styles.gamesRemaining3
-                                : p.games_remaining_week === 2
-                                  ? styles.gamesRemaining2
-                                  : p.games_remaining_week === 1
-                                    ? styles.gamesRemaining1
-                                    : ""
-                          }
-                        >
-                          {p.games_remaining_week} Games Remaining
-                        </span>{" "}
-                        <span style={{ color: "#fff" }}>This Week</span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+                        {position !== "G" ? (
+                          <dl className={styles.secondaryStats}>
+                            <StatTerm label="PPP" value={formatNumber(player.proj_pp_points)} />
+                            <StatTerm label="HIT" value={formatNumber(player.proj_hits)} />
+                            <StatTerm label="BLK" value={formatNumber(player.proj_blocks)} />
+                            <StatTerm label="PIM" value={formatNumber(player.proj_pim)} />
+                            <StatTerm
+                              label="TOI"
+                              value={
+                                player.proj_toi_minutes == null
+                                  ? "—"
+                                  : `${player.proj_toi_minutes.toFixed(1)}m`
+                              }
+                            />
+                          </dl>
+                        ) : null}
+
+                        {player.context?.projection_low != null ||
+                        player.context?.projection_high != null ? (
+                          <div className={styles.uncertainty}>
+                            NHL PTS range {formatNumber(player.context.projection_low, 2)}–
+                            {formatNumber(player.context.projection_high, 2)}
+                          </div>
+                        ) : null}
+                        <ContextChips
+                          player={player}
+                          position={position}
+                          opponentGoalie={opponentGoalie}
+                        />
+                        <div className={styles.cardFooter}>
+                          <span>
+                            Own {formatPercent(player.percent_ownership, false)}
+                            {player.ownership_as_of_date
+                              ? ` · ${player.ownership_as_of_date}`
+                              : ""}
+                          </span>
+                          <span>
+                            {player.games_remaining_week == null
+                              ? "Weekly volume unavailable"
+                              : `${player.games_remaining_week} ${
+                                  player.games_remaining_week === 1 ? "game" : "games"
+                                } left this week`}
+                          </span>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+              {visibleList.length < fullList.length ? (
+                <button
+                  type="button"
+                  className={styles.loadMore}
+                  onClick={() =>
+                    setPositionLimits((current) => ({
+                      ...current,
+                      [position]: current[position] + INITIAL_POSITION_LIMIT,
+                    }))
+                  }
+                >
+                  Load 25 more {position}
+                </button>
+              ) : null}
             </section>
           );
         })}
       </section>
 
+      {data?.sourceStatus ? (
+        <details className={styles.sourceDetails}>
+          <summary>Source coverage and provenance</summary>
+          <dl>
+            <SourceRow
+              label="FORGE projections"
+              state={data.sourceStatus.projection.state}
+              value={`${data.sourceStatus.projection.date ?? "No date"} · ${
+                data.sourceStatus.projection.inputVersion ?? "unverified provenance"
+              }`}
+            />
+            <SourceRow
+              label="Team ratings"
+              state={data.sourceStatus.teamRatings.state}
+              value={data.sourceStatus.teamRatings.resolvedDate ?? "Unavailable"}
+            />
+            <SourceRow
+              label="Goalies"
+              state={data.sourceStatus.goalies.state}
+              value={`${data.sourceStatus.goalies.coveredTeams}/${data.sourceStatus.goalies.expectedTeams} teams · ${data.sourceStatus.goalies.freshTeams} fresh · ${data.sourceStatus.goalies.staleTeams} stale`}
+            />
+            <SourceRow
+              label="Yahoo ownership"
+              state={data.sourceStatus.ownership.state}
+              value={`${data.sourceStatus.ownership.mappedPlayers} mapped · ${
+                data.sourceStatus.ownership.unmappedPlayers
+              } unmapped · ${data.sourceStatus.ownership.playersWithAsOf} with as-of · ${
+                data.sourceStatus.ownership.playersMissingAsOf
+              } without · ${
+                data.sourceStatus.ownership.oldestAsOfDate &&
+                data.sourceStatus.ownership.latestAsOfDate
+                  ? `${data.sourceStatus.ownership.oldestAsOfDate}–${data.sourceStatus.ownership.latestAsOfDate}`
+                  : "no as-of date"
+              }`}
+            />
+            <SourceRow
+              label="Team form history"
+              state={data.sourceStatus.ctpi.state}
+              value={data.sourceStatus.ctpi.throughDate ?? "Unavailable"}
+            />
+            <SourceRow
+              label="Weekly volume"
+              state={data.sourceStatus.gamesRemaining.state}
+              value={
+                data.sourceStatus.gamesRemaining.date ??
+                data.sourceStatus.gamesRemaining.message ??
+                "Unavailable"
+              }
+            />
+          </dl>
+        </details>
+      ) : null}
+
       <SurfaceWorkflowLinks
         title="Continue in FORGE"
-        description="Start Chart is the one-date presentation layer over canonical FORGE projections."
-        links={START_CHART_SURFACE_LINKS}
+        description="Carry this date, position, team, and mode into the next decision surface."
+        links={workflowLinks}
       />
+    </div>
+  );
+}
+
+function findTeamAbbrev(teamId: number): string | null {
+  return teamFor(teamId)?.abbrev ?? null;
+}
+
+function teamFor(teamId: number) {
+  return Object.values(teamsInfo).find((team) => team.id === teamId);
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className={styles.statBox}>
+      <div className={styles.statLabel}>{label}</div>
+      <div className={styles.statValue}>{value}</div>
+    </div>
+  );
+}
+
+function StatTerm({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>{value}</dd>
+    </div>
+  );
+}
+
+function SourceRow({
+  label,
+  state,
+  value,
+}: {
+  label: string;
+  state: string;
+  value: string;
+}) {
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>
+        <span data-state={state}>{state}</span> {value}
+      </dd>
     </div>
   );
 }

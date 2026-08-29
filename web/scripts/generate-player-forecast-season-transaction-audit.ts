@@ -7,17 +7,13 @@ dotenv.config({ path: ".env.development.local" });
 
 import { FANTASY_PROJECTION_SEASON_ID } from "../lib/fantasy-projections/contracts";
 import {
+  captureOfficialNhlTransactionAudit,
   findOfficialRosterAuditEvidence,
-  parseOfficialNhlArticleCapture,
+  OFFICIAL_TRANSACTION_AUDIT_WINDOW_START,
 } from "../lib/fantasy-projections/transactionAudit";
 import { getServiceRoleClient } from "../lib/supabase/server";
 
-const WINDOW_START = "2026-06-16T00:00:00Z";
-const OFFICIAL_AUDIT_URLS = [
-  "https://www.nhl.com/news/2025-26-nhl-trades",
-  "https://www.nhl.com/news/topic/trade-coverage/2026-27-nhl-trades",
-  "https://www.nhl.com/news/topic/free-agency/free-agency-signings-nhl-2026-27",
-] as const;
+const WINDOW_START = OFFICIAL_TRANSACTION_AUDIT_WINDOW_START;
 
 function option(name: string): string | null {
   const prefix = `--${name}=`;
@@ -40,16 +36,6 @@ function outputPath(): string {
     throw new Error("Transaction-audit manifests must be written outside the repository.");
   }
   return output;
-}
-
-async function fetchOfficialArticle(url: string) {
-  const response = await fetch(url, {
-    headers: { "User-Agent": "FHFH-player-forecasts/4.0" },
-  });
-  if (!response.ok) {
-    throw new Error(`Official NHL source returned ${response.status} for ${url}.`);
-  }
-  return parseOfficialNhlArticleCapture(await response.text(), url);
 }
 
 async function selectAll(
@@ -88,6 +74,7 @@ async function rpcAll(
 async function main(): Promise<void> {
   assertLocalOnly();
   const client = getServiceRoleClient() as any;
+  const officialAudit = await captureOfficialNhlTransactionAudit();
   const [conflictResult, identities, teams, observations, captures] =
     await Promise.all([
       client
@@ -113,7 +100,7 @@ async function main(): Promise<void> {
       rpcAll(client, "latest_player_forecast_season_roster_observations", {
         p_season_id: FANTASY_PROJECTION_SEASON_ID,
       }),
-      Promise.all(OFFICIAL_AUDIT_URLS.map(fetchOfficialArticle)),
+      Promise.resolve(officialAudit.captures),
     ]);
   if (conflictResult.error) throw conflictResult.error;
 
@@ -144,7 +131,7 @@ async function main(): Promise<void> {
     }
   }
 
-  const capturedAt = new Date().toISOString();
+  const capturedAt = officialAudit.capturedAt;
   const unmatched: string[] = [];
   const transactions = open.flatMap((conflict: any) => {
     const playerId = Number(conflict.fhfh_player_id);

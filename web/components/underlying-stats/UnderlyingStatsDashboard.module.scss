@@ -1,0 +1,1285 @@
+@use "sass:color";
+@use "styles/vars" as v;
+
+.commandPlane {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: v.$space-md;
+  min-width: 0;
+  padding: v.$space-sm 0 0;
+  border-bottom: 1px solid v.$border-soft;
+
+  > * {
+    min-width: 0;
+  }
+}
+
+.commandTopline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: v.$space-xl;
+  align-items: start;
+}
+
+.commandCopy {
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0 0 v.$space-xs;
+  color: v.$primary-color;
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: v.$font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.pageTitle {
+  margin: 0;
+  color: v.$color-white;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: clamp(1.75rem, 2.4vw, 2.15rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.pageDescription {
+  margin: v.$space-xs 0 0;
+  max-width: 72ch;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  line-height: 1.45;
+}
+
+.lensBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-xs;
+  margin-top: v.$space-sm;
+  min-height: 28px;
+  padding: 0 v.$space-sm;
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  background: v.$background-header;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+
+  strong {
+    color: v.$primary-color;
+    font-weight: 700;
+  }
+}
+
+.commandMeta {
+  display: flex;
+  align-items: stretch;
+  min-height: 58px;
+  border-block: 1px solid v.$border-soft;
+}
+
+.snapshotControl,
+.metaItem {
+  position: relative;
+  display: grid;
+  align-content: center;
+  gap: v.$space-xs;
+  min-width: 112px;
+  padding: 0 v.$space-md;
+
+  &:not(:first-child)::before {
+    content: "";
+    position: absolute;
+    inset: v.$space-sm auto v.$space-sm 0;
+    width: 1px;
+    background: v.$border-soft;
+  }
+
+  > span {
+    color: v.$text-secondary;
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+
+  strong {
+    color: v.$text-primary;
+    font-family: v.$font-family-numbers, monospace;
+    font-size: v.$font-size-xs;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+}
+
+.snapshotControl {
+  min-width: 154px;
+  padding-left: 0;
+
+  select {
+    min-height: 30px;
+    width: 100%;
+    appearance: none;
+    border: v.$border-subtle;
+    border-radius: v.$radius-control;
+    background:
+      linear-gradient(45deg, transparent 50%, v.$text-secondary 50%)
+        calc(100% - 13px) 50% / 5px 5px no-repeat,
+      linear-gradient(135deg, v.$text-secondary 50%, transparent 50%)
+        calc(100% - 9px) 50% / 5px 5px no-repeat,
+      v.$background-header;
+    color: v.$text-primary;
+    padding: 0 30px 0 v.$space-sm;
+    font-family: v.$font-family-numbers, monospace;
+    font-size: v.$font-size-xs;
+    cursor: pointer;
+
+    &:hover {
+      border-color: rgba(v.$primary-color, 0.7);
+    }
+
+    &:focus-visible {
+      outline: none;
+      border-color: v.$primary-color;
+      box-shadow: v.$focus-ring;
+    }
+
+    &:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.metaItem[data-freshness] strong {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-xs;
+
+  i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 0 3px currentColor;
+    opacity: 0.8;
+  }
+}
+
+.metaItem[data-freshness="fresh"] strong {
+  color: v.$success-color;
+}
+
+.metaItem[data-freshness="pending"] strong {
+  color: v.$warning-color;
+}
+
+.metaItem[data-freshness="failed"] strong {
+  color: v.$danger-color;
+}
+
+.commandNavRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: v.$space-md;
+  padding-bottom: v.$space-md;
+}
+
+.teamHub {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+  min-width: 0;
+}
+
+.teamHubLabel {
+  flex: 0 0 auto;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+}
+
+.teamHubScroller {
+  min-width: 0;
+}
+
+.aboutDisclosure {
+  position: relative;
+  z-index: 4;
+
+  summary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: v.$space-md;
+    min-height: v.$control-height-md;
+    padding: 0 v.$space-md;
+    border: v.$border-subtle;
+    border-radius: v.$radius-control;
+    background: v.$background-header;
+    color: v.$text-secondary;
+    cursor: pointer;
+    font-size: v.$font-size-sm;
+    list-style: none;
+
+    &::after {
+      content: "⌄";
+      color: v.$primary-color;
+    }
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &:hover {
+      border-color: rgba(v.$primary-color, 0.6);
+      color: v.$text-primary;
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: v.$focus-ring;
+    }
+  }
+
+  &[open] summary::after {
+    transform: rotate(180deg);
+  }
+}
+
+.aboutContent {
+  position: absolute;
+  top: calc(100% + v.$space-sm);
+  right: 0;
+  width: min(420px, calc(100vw - 48px));
+  padding: v.$space-md;
+  border: v.$border-subtle;
+  border-radius: v.$radius-panel;
+  background: v.$background-header;
+  box-shadow: v.$shadow-panel-hover;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  line-height: 1.5;
+
+  p {
+    margin: 0;
+
+    + p {
+      margin-top: v.$space-sm;
+    }
+  }
+}
+
+.aboutLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs v.$space-md;
+  margin-top: v.$space-md;
+  padding-top: v.$space-sm;
+  border-top: 1px solid v.$border-soft;
+
+  a {
+    color: v.$primary-color;
+    font-weight: 700;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      color: v.$color-blue-400;
+      outline: none;
+      text-decoration: underline;
+    }
+  }
+}
+
+.pageStatus {
+  margin: calc(v.$space-md * -1) 0 v.$space-sm;
+  padding: v.$space-sm v.$space-md;
+  border-left: 3px solid v.$warning-color;
+  background: rgba(v.$warning-color, 0.08);
+  color: v.$warning-color;
+  font-size: v.$font-size-sm;
+
+  &[data-status="failed"] {
+    border-color: v.$danger-color;
+    background: rgba(v.$danger-color, 0.08);
+    color: v.$danger-color;
+  }
+}
+
+.primaryWorkspace {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(360px, 5fr);
+  gap: v.$space-md;
+  align-items: stretch;
+}
+
+.quadrantCard,
+.moversCard,
+.powerLeadersPanel,
+.whatLooksReal,
+.underRadar,
+.schedulePanel,
+.explorerPanel,
+.readinessPanel,
+.continuePanel {
+  min-width: 0;
+}
+
+.quadrantCard {
+  border-color: rgba(v.$primary-color, 0.38);
+  box-shadow: v.$shadow-panel;
+}
+
+.cardMeta {
+  display: grid;
+  gap: 2px;
+  color: v.$text-secondary;
+  font-family: v.$font-family-numbers, monospace;
+  font-size: 0.68rem;
+  text-align: right;
+
+  strong {
+    color: v.$primary-color;
+    font-weight: 600;
+  }
+}
+
+.chartFooter {
+  display: flex;
+  justify-content: space-between;
+  gap: v.$space-md;
+  margin-top: v.$space-sm;
+  padding-top: v.$space-sm;
+  border-top: 1px solid v.$border-soft;
+  color: v.$text-secondary;
+  font-family: v.$font-family-numbers, monospace;
+  font-size: 0.68rem;
+}
+
+.windowBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 v.$space-sm;
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  background: v.$background-dark;
+  color: v.$text-secondary;
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.mobileMoverToggle {
+  display: none;
+}
+
+.moverLanes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: v.$space-sm;
+  height: 100%;
+}
+
+.moverLane {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  overflow: hidden;
+}
+
+.moverLaneTitle {
+  display: flex;
+  align-items: center;
+  gap: v.$space-xs;
+  margin: 0;
+  padding: v.$space-sm;
+  border-bottom: 1px solid v.$border-soft;
+  background: v.$background-header;
+  color: v.$success-color;
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.moverLane[data-direction="sliding"] .moverLaneTitle,
+.moverLane[data-direction="sliding"] .moverMetrics span {
+  color: v.$danger-color;
+}
+
+.moverList {
+  display: grid;
+}
+
+.moverListEmpty {
+  place-content: center;
+  padding: v.$space-sm;
+
+  .moverEmpty {
+    width: 100%;
+    margin: 0;
+    text-align: center;
+  }
+}
+
+.moverItem,
+.signalItem,
+.radarItem,
+.powerLeader {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.moverItem {
+  display: grid;
+  gap: v.$space-xs;
+  min-height: 88px;
+  padding: v.$space-sm;
+  border-bottom: 1px solid v.$border-soft;
+  transition:
+    background-color 0.16s ease,
+    box-shadow 0.16s ease;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  &:hover {
+    background: rgba(v.$primary-color, 0.05);
+  }
+
+  &:focus-visible {
+    position: relative;
+    z-index: 1;
+    outline: none;
+    box-shadow: inset v.$focus-ring;
+  }
+}
+
+.moverTopline,
+.moverIdentity,
+.moverMetrics,
+.leaderTopline,
+.leaderIdentity,
+.signalIdentity,
+.radarTopline,
+.scheduleTeamButton {
+  display: flex;
+  align-items: center;
+}
+
+.moverTopline,
+.leaderTopline,
+.radarTopline {
+  justify-content: space-between;
+  gap: v.$space-sm;
+}
+
+.moverIdentity,
+.leaderIdentity,
+.signalIdentity {
+  min-width: 0;
+  gap: v.$space-sm;
+
+  > span {
+    min-width: 0;
+  }
+
+  strong,
+  small {
+    display: block;
+  }
+
+  strong {
+    color: v.$color-white;
+    font-family: v.$font-family-accent, sans-serif;
+    font-size: v.$font-size-sm;
+    letter-spacing: 0.06em;
+  }
+
+  small {
+    margin-top: 2px;
+    overflow: hidden;
+    color: v.$text-secondary;
+    font-size: 0.68rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.teamLogo {
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.moverMetrics {
+  flex: 0 0 auto;
+  gap: v.$space-sm;
+  font-family: v.$font-family-numbers, monospace;
+  font-size: 0.72rem;
+
+  strong {
+    color: v.$text-primary;
+  }
+
+  span {
+    color: v.$success-color;
+  }
+}
+
+.moverReason {
+  overflow: hidden;
+  color: v.$text-secondary;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 0 5px;
+  border: 1px solid rgba(v.$primary-color, 0.28);
+  border-radius: v.$radius-control;
+  background: rgba(v.$primary-color, 0.07);
+  color: v.$primary-color;
+  font-size: 0.58rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.moverEmpty,
+.inlineEmpty,
+.moduleEmpty {
+  margin: 0;
+  padding: v.$space-sm;
+  border: 1px dashed v.$border-soft;
+  border-radius: v.$radius-control;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  line-height: 1.4;
+}
+
+.moverEmpty {
+  margin: v.$space-sm;
+}
+
+.powerLeadersRail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: v.$space-md;
+}
+
+.powerLeader {
+  position: relative;
+  display: grid;
+  gap: v.$space-sm;
+  min-width: 0;
+  padding: v.$space-md;
+  padding-left: calc(v.$space-md + 4px);
+  overflow: hidden;
+  border: v.$border-subtle;
+  border-radius: v.$radius-panel;
+  background: v.$background-dark;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    border-radius: v.$radius-panel 0 0 v.$radius-panel;
+    background: v.$primary-color;
+  }
+
+  &:hover {
+    border-color: rgba(v.$primary-color, 0.5);
+    background: color.adjust(v.$background-dark, $lightness: 1.5%);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
+}
+
+.powerLeaderFirst::before {
+  background: v.$success-color;
+}
+
+.rankWatermark {
+  position: absolute;
+  top: 0;
+  right: v.$space-sm;
+  color: rgba(v.$color-white, 0.08);
+  font-family: v.$font-family-numbers, monospace;
+  font-size: 3.1rem;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.leaderIdentity {
+  gap: v.$space-md;
+
+  strong {
+    font-size: 1.2rem;
+  }
+}
+
+.leaderPower {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: end;
+  color: v.$color-white;
+  font-family: v.$font-family-numbers, monospace;
+  font-size: clamp(1.65rem, 2.2vw, 2.15rem);
+  font-weight: 700;
+  line-height: 1;
+
+  small {
+    margin-top: 3px;
+    color: v.$text-secondary;
+    font-family: v.$font-family-primary, sans-serif;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+}
+
+.leaderCoreMetrics,
+.leaderContextMetrics {
+  display: grid;
+  gap: 0;
+  border-block: 1px solid v.$border-soft;
+}
+
+.leaderCoreMetrics {
+  grid-template-columns: 68px 68px minmax(110px, 1fr);
+}
+
+.leaderContextMetrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 0;
+}
+
+.leaderCoreMetrics > span,
+.leaderContextMetrics > span {
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  min-height: 48px;
+  padding: v.$space-xs v.$space-sm;
+  border-right: 1px solid v.$border-soft;
+
+  &:last-child {
+    border-right: 0;
+  }
+
+  small {
+    color: v.$text-secondary;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  strong {
+    color: v.$text-primary;
+    font-family: v.$font-family-numbers, monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+}
+
+.leaderTrend {
+  align-items: stretch;
+}
+
+.sparkline {
+  width: 104px;
+  height: 24px;
+  color: v.$success-color;
+}
+
+.sparklinePath {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sparklineBaseline {
+  fill: none;
+  stroke: rgba(v.$color-white, 0.16);
+  stroke-dasharray: 2 2;
+}
+
+.sparklineEmpty {
+  color: v.$text-secondary;
+  font-size: 0.65rem;
+}
+
+.leaderNarrative {
+  display: grid;
+  gap: 4px;
+  color: v.$text-secondary;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.signalGrid,
+.utilityGrid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: v.$space-md;
+  align-items: stretch;
+}
+
+.whatLooksReal {
+  grid-column: span 5;
+}
+
+.underRadar {
+  grid-column: span 3;
+}
+
+.schedulePanel {
+  grid-column: span 4;
+}
+
+.trustGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: v.$space-sm;
+}
+
+.signalGroup,
+.radarGroup {
+  min-width: 0;
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  overflow: hidden;
+}
+
+.signalGroupTitle {
+  margin: 0;
+  padding: v.$space-sm;
+  border-bottom: 1px solid v.$border-soft;
+  background: v.$background-header;
+  color: v.$primary-color;
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.signalGroup[data-tone="processBacked"] .signalGroupTitle,
+.radarGroup[data-tone="undervalued"] .signalGroupTitle {
+  color: v.$success-color;
+}
+
+.signalGroup[data-tone="heatCheck"] .signalGroupTitle {
+  color: v.$warning-color;
+}
+
+.radarGroup[data-tone="overvalued"] .signalGroupTitle {
+  color: v.$danger-color;
+}
+
+.signalList,
+.radarList {
+  display: grid;
+}
+
+.signalItem,
+.radarItem {
+  display: grid;
+  gap: v.$space-xs;
+  min-width: 0;
+  padding: v.$space-sm;
+  border-bottom: 1px solid v.$border-soft;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  &:hover {
+    background: rgba(v.$primary-color, 0.05);
+  }
+
+  &:focus-visible {
+    position: relative;
+    z-index: 1;
+    outline: none;
+    box-shadow: inset v.$focus-ring;
+  }
+}
+
+.signalItem {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.signalIdentity {
+  gap: v.$space-xs;
+
+  strong {
+    font-size: 0.75rem;
+  }
+}
+
+.signalPower {
+  align-self: center;
+  color: v.$text-primary;
+  font-family: v.$font-family-numbers, monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.signalNote {
+  grid-column: 1 / -1;
+  display: -webkit-box;
+  overflow: hidden;
+  color: v.$text-secondary;
+  font-size: 0.66rem;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.radarGrid {
+  display: grid;
+  gap: v.$space-sm;
+}
+
+.radarTopline .signalIdentity {
+  strong {
+    display: block;
+  }
+}
+
+.scheduleTableWrap {
+  overflow: auto;
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+}
+
+.scheduleTable {
+  width: 100%;
+  min-width: 440px;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: v.$space-sm;
+    border-bottom: 1px solid v.$border-soft;
+    color: v.$text-secondary;
+    font-family: v.$font-family-numbers, monospace;
+    font-size: 0.67rem;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  th {
+    background: v.$background-header;
+    font-family: v.$font-family-primary, sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  th:first-child,
+  td:first-child {
+    text-align: left;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+}
+
+.scheduleRowActive {
+  background: rgba(v.$primary-color, 0.08);
+}
+
+.scheduleTeamButton {
+  gap: v.$space-xs;
+  min-height: 30px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+
+  strong,
+  small {
+    display: block;
+  }
+
+  strong {
+    color: v.$text-primary;
+    font-family: v.$font-family-accent, sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+  }
+
+  small {
+    margin-top: 2px;
+    color: v.$text-secondary;
+    font-family: v.$font-family-numbers, monospace;
+    font-size: 0.6rem;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
+}
+
+.explorerPanel {
+  grid-column: span 3;
+}
+
+.readinessPanel {
+  grid-column: span 6;
+}
+
+.continuePanel {
+  grid-column: span 3;
+}
+
+.utilityList {
+  display: grid;
+  gap: v.$space-xs;
+}
+
+.utilityLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-sm;
+  min-height: 48px;
+  padding: v.$space-sm;
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  background: v.$background-dark;
+  color: v.$text-secondary;
+  text-decoration: none;
+  transition:
+    border-color 0.16s ease,
+    color 0.16s ease;
+
+  strong,
+  small {
+    display: block;
+  }
+
+  strong {
+    color: v.$text-primary;
+    font-size: v.$font-size-sm;
+  }
+
+  small {
+    margin-top: 2px;
+    overflow: hidden;
+    font-size: 0.68rem;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+  }
+
+  > span:last-child {
+    flex: 0 0 auto;
+    color: v.$primary-color;
+    font-size: 0.68rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  &:hover {
+    border-color: rgba(v.$primary-color, 0.6);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
+}
+
+.itemActive {
+  border-color: rgba(v.$primary-color, 0.78) !important;
+  background: rgba(v.$primary-color, 0.09) !important;
+  box-shadow: inset 3px 0 0 v.$primary-color;
+}
+
+@media (max-width: 1279px) {
+  .commandTopline {
+    grid-template-columns: 1fr;
+    gap: v.$space-md;
+  }
+
+  .commandMeta {
+    width: 100%;
+  }
+
+  .snapshotControl,
+  .metaItem {
+    flex: 1 1 0;
+  }
+
+  .whatLooksReal {
+    grid-column: 1 / -1;
+  }
+
+  .underRadar {
+    grid-column: span 5;
+  }
+
+  .schedulePanel {
+    grid-column: span 7;
+  }
+
+  .explorerPanel {
+    grid-column: span 5;
+  }
+
+  .readinessPanel {
+    grid-column: span 7;
+  }
+
+  .continuePanel {
+    grid-column: 1 / -1;
+  }
+
+  .continuePanel .utilityList {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1050px) {
+  .primaryWorkspace {
+    grid-template-columns: minmax(0, 7fr) minmax(330px, 5fr);
+  }
+
+  .moverLanes {
+    grid-template-columns: 1fr;
+  }
+
+  .powerLeader {
+    padding: v.$space-sm;
+    padding-left: calc(v.$space-sm + 4px);
+  }
+
+  .leaderCoreMetrics {
+    grid-template-columns: 58px 58px minmax(90px, 1fr);
+  }
+}
+
+@media (max-width: 899px) {
+  .commandPlane {
+    padding-top: 0;
+  }
+
+  .commandMeta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border: v.$border-subtle;
+    border-radius: v.$radius-panel;
+  }
+
+  .snapshotControl,
+  .metaItem {
+    min-width: 0;
+    min-height: 64px;
+    padding: v.$space-sm;
+
+    &:not(:first-child)::before {
+      display: none;
+    }
+  }
+
+  .snapshotControl,
+  .metaItem:nth-child(2) {
+    border-bottom: 1px solid v.$border-soft;
+  }
+
+  .snapshotControl,
+  .metaItem:nth-child(3) {
+    border-right: 1px solid v.$border-soft;
+  }
+
+  .commandNavRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .teamHub {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .teamHubScroller {
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .aboutDisclosure,
+  .aboutDisclosure summary {
+    width: 100%;
+  }
+
+  .aboutContent {
+    position: static;
+    width: 100%;
+    margin-top: v.$space-sm;
+  }
+
+  .primaryWorkspace,
+  .signalGrid,
+  .utilityGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .whatLooksReal,
+  .underRadar,
+  .schedulePanel,
+  .explorerPanel,
+  .readinessPanel,
+  .continuePanel {
+    grid-column: auto;
+  }
+
+  .mobileMoverToggle {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3px;
+    margin-bottom: v.$space-sm;
+    padding: 3px;
+    border: v.$border-subtle;
+    border-radius: v.$radius-control;
+    background: v.$background-header;
+
+    button {
+      min-height: v.$touch-target-min;
+      border: 0;
+      border-radius: calc(v.$radius-control - 2px);
+      background: transparent;
+      color: v.$text-secondary;
+      cursor: pointer;
+      font: inherit;
+      font-size: v.$font-size-sm;
+
+      &[aria-selected="true"] {
+        background: v.$primary-color;
+        color: v.$color-white;
+      }
+
+      &:focus-visible {
+        outline: none;
+        box-shadow: v.$focus-ring;
+      }
+    }
+  }
+
+  .moverLaneMobileHidden {
+    display: none;
+  }
+
+  .moverItem {
+    min-height: v.$touch-target-min;
+  }
+
+  .powerLeadersRail {
+    display: flex;
+    gap: v.$space-sm;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    overscroll-behavior-inline: contain;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .powerLeader {
+    flex: 0 0 min(82vw, 380px);
+    scroll-snap-align: start;
+  }
+
+  .continuePanel .utilityList {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: v.$breakpoint-tablet) {
+  .pageTitle {
+    font-size: clamp(1.5rem, 7vw, 1.85rem);
+  }
+
+  .chartFooter {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: v.$space-xs;
+  }
+
+  .trustGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .signalItem,
+  .radarItem,
+  .moverItem,
+  .utilityLink {
+    min-height: v.$touch-target-min;
+  }
+}
+
+@media (max-width: v.$breakpoint-mobile-lg) {
+  .commandMeta {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .metaItem strong {
+    white-space: normal;
+  }
+
+  .powerLeader {
+    flex-basis: 88vw;
+  }
+
+  .leaderCoreMetrics {
+    grid-template-columns: 62px 62px minmax(100px, 1fr);
+  }
+}

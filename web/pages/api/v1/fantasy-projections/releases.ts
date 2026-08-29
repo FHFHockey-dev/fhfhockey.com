@@ -19,7 +19,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
   try {
     const payload = await loadFantasyProjectionReleases(getServiceRoleClient(), seasonId);
-    res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=900");
+    // Active pointers change atomically. Keep this small metadata response fresh;
+    // player/team payloads are separately cached under a release-specific URL.
+    res.setHeader("Cache-Control", "no-store");
     return res.json({ success: true, ...payload });
   } catch (error) {
     return res.status(500).json({ success: false, message: playerForecastErrorMessage(error) });

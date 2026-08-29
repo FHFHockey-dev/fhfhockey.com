@@ -5,17 +5,20 @@ import {
   FANTASY_PROJECTION_CONTRACT_CHECKSUM,
   FANTASY_PROJECTION_CONTRACT_VERSION,
   FANTASY_PROJECTION_SUPPORTED_CONTRACTS,
+  GOALIE_ADVANCED_V5_PRIMITIVE_TARGETS,
   GOALIE_DERIVED_TARGETS,
   GOALIE_EXPANDED_DERIVED_TARGETS,
   GOALIE_FANTASY_V4_PRIMITIVE_TARGETS,
   GOALIE_PRIMITIVE_TARGETS,
   reconcileProjectionQuantiles,
   reconcileProjectionValues,
+  SKATER_ADVANCED_V5_PRIMITIVE_TARGETS,
   SKATER_DERIVED_TARGETS,
   SKATER_EXPANDED_DERIVED_TARGETS,
   SKATER_FANTASY_V4_PRIMITIVE_TARGETS,
   SKATER_PRIMITIVE_TARGETS,
   type FantasyProjectionPopulation,
+  type FantasyProjectionView,
   type ProjectionValues,
 } from "./contracts";
 import { checksumCanonicalJson } from "./evaluator";
@@ -38,6 +41,18 @@ const PRIMITIVE_TARGETS = new Set<string>([
   ...GOALIE_PRIMITIVE_TARGETS,
   ...SKATER_FANTASY_V4_PRIMITIVE_TARGETS,
   ...GOALIE_FANTASY_V4_PRIMITIVE_TARGETS,
+  ...SKATER_ADVANCED_V5_PRIMITIVE_TARGETS,
+  ...GOALIE_ADVANCED_V5_PRIMITIVE_TARGETS,
+]);
+const SKATER_OVERRIDE_TARGETS = new Set<string>([
+  ...SKATER_PRIMITIVE_TARGETS,
+  ...SKATER_FANTASY_V4_PRIMITIVE_TARGETS,
+  ...SKATER_ADVANCED_V5_PRIMITIVE_TARGETS,
+]);
+const GOALIE_OVERRIDE_TARGETS = new Set<string>([
+  ...GOALIE_PRIMITIVE_TARGETS,
+  ...GOALIE_FANTASY_V4_PRIMITIVE_TARGETS,
+  ...GOALIE_ADVANCED_V5_PRIMITIVE_TARGETS,
 ]);
 const POOL_STATUSES = new Set([
   "verified_active",
@@ -103,6 +118,14 @@ export function activePendingPlayerPoolReviews(rows: any[]): any[] {
   );
 }
 
+export function assertSystemPublishableSeasonView(
+  view: string,
+): asserts view is Exclude<FantasyProjectionView, "opening"> {
+  if (view !== "current" && view !== "ros") {
+    throw new Error("PLAYER_FORECAST_SEASON_OPENING_REQUIRES_EDITOR");
+  }
+}
+
 async function selectAll(
   client: any,
   table: string,
@@ -120,11 +143,26 @@ async function selectAll(
   }
 }
 
-function validateOverrideValue(fieldPath: string, value: unknown): void {
+export function isPrimitiveOverrideTargetForPopulation(
+  target: string,
+  population: FantasyProjectionPopulation,
+): boolean {
+  return population === "goalie"
+    ? GOALIE_OVERRIDE_TARGETS.has(target)
+    : SKATER_OVERRIDE_TARGETS.has(target);
+}
+
+function validateOverrideValue(
+  fieldPath: string,
+  value: unknown,
+  population?: FantasyProjectionPopulation,
+): void {
   if (fieldPath.startsWith("stats.")) {
     const target = fieldPath.slice("stats.".length);
     if (
       !PRIMITIVE_TARGETS.has(target) ||
+      (population != null &&
+        !isPrimitiveOverrideTargetForPopulation(target, population)) ||
       DERIVED_TARGETS.has(target) ||
       target === "GAMES_PLAYED" ||
       target === "GAMES_STARTED"
@@ -144,7 +182,14 @@ function validateOverrideValue(fieldPath: string, value: unknown): void {
     return;
   }
   if (fieldPath === "player.position") {
-    if (!POSITIONS.has(String(value))) throw new Error("Invalid projected position.");
+    const position = String(value);
+    if (!POSITIONS.has(position)) throw new Error("Invalid projected position.");
+    if (
+      population != null &&
+      ((position === "G") !== (population === "goalie"))
+    ) {
+      throw new Error("Projected position cannot change the player population.");
+    }
     return;
   }
   if (fieldPath === "player.poolStatus") {
@@ -522,7 +567,7 @@ export async function loadSeasonEditorWorkspace(
         .limit(30),
       client
         .from("player_forecast_season_releases")
-        .select("id,view_key,release_number,release_label,issued_at,release_hash,metric_set_version,roster_observed_at,transaction_cutoff_at,health_status,health_summary")
+        .select("id,run_id,view_key,release_number,release_label,issued_at,release_hash,metric_set_version,roster_observed_at,transaction_cutoff_at,health_status,health_summary")
         .eq("season_id", seasonId)
         .order("issued_at", { ascending: false })
         .limit(30),
@@ -718,12 +763,14 @@ export async function loadSeasonEditorWorkspace(
 export async function cloneSeasonDraft(
   supabase: SupabaseClient<any>,
   sourceRunId: string,
+  includeStatOverrides = false,
 ): Promise<any> {
   const { data, error } = await (supabase as any).rpc(
-    "clone_player_forecast_season_run",
+    "clone_player_forecast_season_run_with_assumptions",
     {
       p_source_run_id: sourceRunId,
       p_idempotency_key: `season-editorial:${sourceRunId}:${randomUUID()}`,
+      p_include_stat_overrides: includeStatOverrides,
     },
   );
   if (error) throw error;
@@ -777,6 +824,13 @@ export async function createSeasonOverride(args: {
   const { data: target, error: targetError } = await targetQuery.maybeSingle();
   if (targetError) throw targetError;
   if (!target) throw new Error("Projection override target was not found.");
+  if (args.scopeType === "player") {
+    validateOverrideValue(
+      args.fieldPath,
+      args.overrideValue,
+      String(target.population) as FantasyProjectionPopulation,
+    );
+  }
 
   if (args.supersedesId) {
     const { data: previous, error: previousError } = await client
@@ -1184,13 +1238,14 @@ export async function publishSeasonRunAsSystem(args: {
   const client = args.supabase as any;
   const { data: run, error: runError } = await client
     .from("player_forecast_season_runs")
-    .select("id,status,validation_receipt")
+    .select("id,status,view_key,validation_receipt")
     .eq("id", args.runId)
     .maybeSingle();
   if (runError) throw runError;
   if (!run || run.status !== "validated" || !run.validation_receipt) {
     throw new Error("A successful validation receipt is required before publication.");
   }
+  assertSystemPublishableSeasonView(String(run.view_key));
   const { players, teams } = await effectiveRunRows(args.supabase, args.runId);
   const publishablePlayers = players
     .filter((row) => row.pool_status !== "excluded")

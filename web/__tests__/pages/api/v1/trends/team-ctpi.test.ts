@@ -5,8 +5,8 @@ vi.hoisted(() => {
   process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-test-key";
 });
 
-const { fetchCurrentSeasonMock, supabaseState } = vi.hoisted(() => ({
-  fetchCurrentSeasonMock: vi.fn(),
+const { getSeasonForDateMock, supabaseState } = vi.hoisted(() => ({
+  getSeasonForDateMock: vi.fn(),
   supabaseState: {
     current: {
       from() {
@@ -20,8 +20,8 @@ vi.mock("dotenv", () => ({
   default: { config: vi.fn() },
 }));
 
-vi.mock("../../../../../utils/fetchCurrentSeason", () => ({
-  fetchCurrentSeason: fetchCurrentSeasonMock,
+vi.mock("lib/NHL/server", () => ({
+  getLatestStartedSeasonForDate: getSeasonForDateMock,
 }));
 
 vi.mock("@supabase/supabase-js", () => ({
@@ -56,7 +56,7 @@ function createMockRes() {
 describe("/api/v1/trends/team-ctpi", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    fetchCurrentSeasonMock.mockResolvedValue({
+    getSeasonForDateMock.mockResolvedValue({
       id: 20252026,
       startDate: "2025-10-07",
     });
@@ -74,6 +74,10 @@ describe("/api/v1/trends/team-ctpi", () => {
       special_teams: 0.05,
       luck: 0.1,
       computed_at: "2026-02-02T12:00:00.000Z",
+      publication_status: "approved",
+      formula_version: "ctpi-formula-v1",
+      input_version: "ctpi-one-game-input-v2",
+      source_game_count: "10",
     }));
     const rangeCalls: Array<[number, number]> = [];
 
@@ -115,6 +119,10 @@ describe("/api/v1/trends/team-ctpi", () => {
     await handler(req, res as any);
 
     expect(res.statusCode).toBe(200);
+    expect(getSeasonForDateMock).toHaveBeenCalledWith(
+      "2026-02-02",
+      expect.any(Object),
+    );
     expect(rangeCalls).toEqual([
       [0, 999],
       [1000, 1999],
@@ -129,18 +137,101 @@ describe("/api/v1/trends/team-ctpi", () => {
         sourceDate: "2026-02-01",
         computedAt: "2026-02-02T12:00:00.000Z",
         rowCount: 1001,
+        trustedRowCount: 1001,
+        untrustedRowCount: 0,
       },
       coverage: {
         expectedTeams: 32,
         teamCount: 32,
         sourceRowCount: 1001,
+        trustedRowCount: 1001,
+        untrustedRowCount: 0,
         partial: true,
       },
     });
     expect(res.body.warnings).toEqual([
-      "CTPI is using the latest available fallback date.",
+      "Recent Team Form is using the latest approved fallback date.",
     ]);
     expect(res.body.teams).toHaveLength(32);
+  });
+
+  it("hides unapproved history without recomputing the rejected legacy formula", async () => {
+    const tables: string[] = [];
+    supabaseState.current = {
+      from(table: string) {
+        tables.push(table);
+        if (table !== "team_ctpi_daily") {
+          throw new Error(`Unexpected table: ${table}`);
+        }
+        return {
+          select() {
+            return this;
+          },
+          eq() {
+            return this;
+          },
+          lte() {
+            return this;
+          },
+          order() {
+            return this;
+          },
+          range() {
+            return Promise.resolve({
+              data: [
+                {
+                  team: "MTL",
+                  date: "2026-02-01",
+                  ctpi_raw: 2,
+                  ctpi_0_to_100: 80,
+                  offense: 2,
+                  defense: 2,
+                  goaltending: 0,
+                  special_teams: 2,
+                  luck: 2,
+                  computed_at: "2026-02-02T12:00:00.000Z",
+                  publication_status: "legacy_unapproved",
+                  formula_version: "ctpi-formula-v1",
+                  input_version: "ctpi-one-game-input-v2",
+                  source_game_count: "10",
+                },
+              ],
+              error: null,
+            });
+          },
+        };
+      },
+    };
+    const res = createMockRes();
+
+    await handler(
+      { method: "GET", query: { date: "2026-02-02" } } as any,
+      res as any,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(tables).toEqual(["team_ctpi_daily"]);
+    expect(res.body.teams).toEqual([]);
+    expect(res.body.source).toMatchObject({
+      kind: "team_ctpi_daily",
+      sourceDate: null,
+      rowCount: 1,
+      trustedRowCount: 0,
+      untrustedRowCount: 1,
+      formulaVersion: null,
+      inputVersion: null,
+    });
+    expect(res.body.coverage).toMatchObject({
+      teamCount: 0,
+      sourceRowCount: 1,
+      trustedRowCount: 0,
+      untrustedRowCount: 1,
+      partial: true,
+    });
+    expect(res.body.warnings).toEqual([
+      "Recent Team Form history is hidden unless its formula and source provenance are explicitly approved.",
+      "Recent Team Form team coverage is incomplete.",
+    ]);
   });
 
   it("redacts dependency details from internal-error responses", async () => {
@@ -161,7 +252,7 @@ describe("/api/v1/trends/team-ctpi", () => {
 
     expect(res.statusCode).toBe(500);
     expect(res.body).toEqual({
-      message: "Failed to compute CTPI.",
+      message: "Failed to load Recent Team Form.",
       error: "TEAM_CTPI_UNAVAILABLE",
     });
     expect(JSON.stringify(res.body)).not.toContain("secret");

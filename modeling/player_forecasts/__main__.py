@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .audit import run_audit
 from .advanced import (
+    build_advanced_settlement_bundle,
     evaluate_advanced_batch,
     evaluate_fantasy_batch,
     freeze_advanced_sources,
@@ -121,6 +122,11 @@ def parser() -> argparse.ArgumentParser:
     rookie_freeze.add_argument("--freeze", type=Path, required=True)
     rookie_freeze.add_argument("--output", type=Path, required=True)
     rookie_freeze.add_argument("--workers", type=int, default=12)
+    rookie_freeze.add_argument(
+        "--base-rookie-freeze",
+        type=Path,
+        help="Reuse checksum-verified captures and fetch only missing NHL identities.",
+    )
     season_project = commands.add_parser("season-project")
     season_project.add_argument("--freeze", type=Path, required=True)
     season_project.add_argument("--artifact", type=Path, required=True)
@@ -166,6 +172,10 @@ def parser() -> argparse.ArgumentParser:
     season_advanced_project.add_argument("--v4-bundle", type=Path, required=True)
     season_advanced_project.add_argument("--receipt", type=Path, required=True)
     season_advanced_project.add_argument("--output", type=Path, required=True)
+    season_advanced_settle = commands.add_parser("season-advanced-settle")
+    season_advanced_settle.add_argument("--base-settlement", type=Path, required=True)
+    season_advanced_settle.add_argument("--advanced-freeze", type=Path, required=True)
+    season_advanced_settle.add_argument("--output", type=Path, required=True)
     return root
 
 
@@ -176,6 +186,7 @@ def main() -> None:
         "season-settle", "season-settlement-verify", "season-rookie-freeze",
         "season-v4-evaluate", "season-advanced-audit", "season-advanced-freeze",
         "season-advanced-train", "season-advanced-evaluate", "season-advanced-project",
+        "season-advanced-settle",
     }
     if arguments.command in season_commands:
         contract_version = getattr(arguments, "contract_version", SEASON_CONTRACT_VERSION)
@@ -184,6 +195,7 @@ def main() -> None:
         elif arguments.command in {
             "season-advanced-audit", "season-advanced-freeze", "season-advanced-train",
             "season-advanced-evaluate", "season-advanced-project",
+            "season-advanced-settle",
         }:
             contract_version = ADVANCED_SEASON_CONTRACT_VERSION
         load_and_verify_season_contract(contract_version)
@@ -217,6 +229,7 @@ def main() -> None:
             arguments.freeze,
             arguments.output,
             max_workers=arguments.workers,
+            base_freeze=arguments.base_rookie_freeze,
         )
     elif arguments.command == "season-project":
         assert_output_outside_repository(arguments.output, repository_root())
@@ -270,6 +283,13 @@ def main() -> None:
             arguments.artifact,
             arguments.v4_bundle,
             arguments.receipt,
+            arguments.output,
+        )
+    elif arguments.command == "season-advanced-settle":
+        assert_output_outside_repository(arguments.output, repository_root())
+        result = build_advanced_settlement_bundle(
+            arguments.base_settlement,
+            arguments.advanced_freeze,
             arguments.output,
         )
     elif arguments.command == "audit":

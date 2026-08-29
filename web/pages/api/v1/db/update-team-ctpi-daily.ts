@@ -57,6 +57,7 @@ async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
   const baseSelect = [
     "team_abbreviation",
     "date",
+    "gp",
     "xgf_per_60",
     "hdcf_per_60",
     "gf_per_60",
@@ -75,7 +76,8 @@ async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
         supabase
           .from(AS_RATES_TABLE)
           .select(baseSelect)
-          .eq("season_id", seasonId),
+          .eq("season_id", seasonId)
+          .eq("gp", 1),
       ["date", "team_abbreviation"],
     ),
     fetchPaginatedRows<any>(
@@ -83,9 +85,10 @@ async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
         supabase
           .from(PP_COUNTS_TABLE)
           .select(
-            ["team_abbreviation", "date", "gf", "xgf", "toi_seconds"].join(","),
+            ["team_abbreviation", "date", "gp", "gf", "xgf", "toi_seconds"].join(","),
           )
-          .eq("season_id", seasonId),
+          .eq("season_id", seasonId)
+          .eq("gp", 1),
       ["date", "team_abbreviation"],
     ),
     fetchPaginatedRows<any>(
@@ -93,9 +96,10 @@ async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
         supabase
           .from(PK_COUNTS_TABLE)
           .select(
-            ["team_abbreviation", "date", "ga", "xga", "toi_seconds"].join(","),
+            ["team_abbreviation", "date", "gp", "ga", "xga", "toi_seconds"].join(","),
           )
-          .eq("season_id", seasonId),
+          .eq("season_id", seasonId)
+          .eq("gp", 1),
       ["date", "team_abbreviation"],
     ),
     fetchPaginatedRows<any>(
@@ -103,9 +107,10 @@ async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
         supabase
           .from(AS_COUNTS_TABLE)
           .select(
-            ["team_abbreviation", "date", "toi_seconds", "ga", "xga"].join(","),
+            ["team_abbreviation", "date", "gp", "toi_seconds", "ga", "xga"].join(","),
           )
-          .eq("season_id", seasonId),
+          .eq("season_id", seasonId)
+          .eq("gp", 1),
       ["date", "team_abbreviation"],
     ),
   ]);
@@ -154,6 +159,7 @@ async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
     return {
       team: row.team_abbreviation,
       date: row.date,
+      gp: row.gp,
       xgf_per_60: row.xgf_per_60,
       hdcf_per_60: row.hdcf_per_60,
       gf_per_60: row.gf_per_60,
@@ -161,8 +167,8 @@ async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
       hdca_per_60: row.hdca_per_60,
       ca_per_60: row.ca_per_60,
       sat_pct: row.cf_pct,
-      goals_against: row.ga,
-      xga: row.xga,
+      goals_against: asCount?.ga ?? null,
+      xga: asCount?.xga ?? null,
       power_play_goals_for: pp?.gf ?? null,
       powerPlayToi: pp?.toi ?? null,
       pp_xgf: pp?.xgf ?? null,

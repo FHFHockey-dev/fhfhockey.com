@@ -12,8 +12,11 @@ import {
   FANTASY_PROJECTION_SUPPORTED_CONTRACTS,
   FANTASY_PROJECTION_V3_CONTRACT_VERSION,
   FANTASY_PROJECTION_V4_CONTRACT_VERSION,
+  FANTASY_PROJECTION_V5_CONTRACT_VERSION,
+  GOALIE_ADVANCED_V5_PRIMITIVE_TARGETS,
   GOALIE_FANTASY_V4_PRIMITIVE_TARGETS,
   GOALIE_PRIMITIVE_TARGETS,
+  SKATER_ADVANCED_V5_PRIMITIVE_TARGETS,
   SKATER_FANTASY_V4_PRIMITIVE_TARGETS,
   SKATER_PRIMITIVE_TARGETS,
 } from "../lib/fantasy-projections/contracts";
@@ -102,18 +105,21 @@ function primitiveTargets(
   population: string,
   contractVersion: string,
 ): readonly string[] {
-  const fantasyV4 = contractVersion === FANTASY_PROJECTION_V4_CONTRACT_VERSION;
+  const fantasyV5 = contractVersion === FANTASY_PROJECTION_V5_CONTRACT_VERSION;
+  const fantasyV4 = fantasyV5 || contractVersion === FANTASY_PROJECTION_V4_CONTRACT_VERSION;
   if (!fantasyV4 && contractVersion !== FANTASY_PROJECTION_V3_CONTRACT_VERSION) {
-    throw new Error("Advanced-v5 settlement requires its dedicated outcome source batch.");
+    throw new Error("Unsupported season settlement contract.");
   }
   return population === "goalie"
     ? [
         ...GOALIE_PRIMITIVE_TARGETS,
         ...(fantasyV4 ? GOALIE_FANTASY_V4_PRIMITIVE_TARGETS : []),
+        ...(fantasyV5 ? GOALIE_ADVANCED_V5_PRIMITIVE_TARGETS : []),
       ]
     : [
         ...SKATER_PRIMITIVE_TARGETS,
         ...(fantasyV4 ? SKATER_FANTASY_V4_PRIMITIVE_TARGETS : []),
+        ...(fantasyV5 ? SKATER_ADVANCED_V5_PRIMITIVE_TARGETS : []),
       ];
 }
 

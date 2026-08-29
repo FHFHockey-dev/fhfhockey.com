@@ -2,13 +2,18 @@
 @use "styles/panel" as p;
 
 .card {
-  @include p.panel-shell($padding: v.$space-md, $variant: soft, $overflow: hidden);
+  @include p.panel-shell($variant: soft, $overflow: hidden);
   display: grid;
-  gap: v.$space-md;
+  grid-template-rows: auto minmax(0, 1fr);
   min-width: 0;
 }
 
 .header {
+  @include p.panel-header(
+    $padding-y: v.$space-sm,
+    $padding-x: v.$space-md,
+    $align: flex-start
+  );
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -22,12 +27,18 @@
 }
 
 .kicker {
-  color: v.$color-brand-yellow;
+  color: v.$primary-color;
   font-family: v.$font-family-accent, sans-serif;
   font-size: v.$font-size-xs;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: v.$space-xs;
 }
 
 .title {
@@ -48,10 +59,31 @@
   max-width: 62ch;
 }
 
+.info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(v.$primary-color, 0.55);
+  border-radius: 50%;
+  color: v.$primary-color;
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
+}
+
 .actions {
   flex-shrink: 0;
 }
 
 .body {
   min-width: 0;
+  padding: v.$space-md;
 }

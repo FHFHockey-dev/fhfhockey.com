@@ -33,16 +33,157 @@ import {
   persistSeasonIdentityResolution,
   searchSeasonIdentityCandidates,
 } from "./identityResolution";
-import { activePendingPlayerPoolReviews } from "./admin";
+import {
+  activePendingPlayerPoolReviews,
+  assertSystemPublishableSeasonView,
+  isPrimitiveOverrideTargetForPopulation,
+} from "./admin";
 import { releaseMatchesPublicContract } from "./queries";
 import { resolveSeasonRosterConsensus } from "./rosterIntegrity";
 import {
+  applyPersistentPlayerAssumptions,
+  buildRuntimeNewcomerPrior,
+} from "./seasonJobs";
+import {
+  captureOfficialNhlTransactionAudit,
   findOfficialRosterAuditEvidence,
+  OFFICIAL_TRANSACTION_AUDIT_URLS,
   parseOfficialNhlArticleCapture,
 } from "./transactionAudit";
 import { playerForecastEditorConfiguration } from "../../utils/playerForecastSeasonEditorOnlyMiddleware";
 
 describe("fantasy projection contracts", () => {
+  it("reserves the opening release for an editor", () => {
+    expect(() => assertSystemPublishableSeasonView("current")).not.toThrow();
+    expect(() => assertSystemPublishableSeasonView("ros")).not.toThrow();
+    expect(() => assertSystemPublishableSeasonView("opening")).toThrow(
+      "PLAYER_FORECAST_SEASON_OPENING_REQUIRES_EDITOR",
+    );
+  });
+
+  it("applies persistent roster and deployment assumptions without carrying stat edits", () => {
+    const prior: PortableSeasonArtifact["players"][string] = {
+      fhfhPlayerId: 10,
+      population: "forward",
+      position: "C",
+      teamId: 1,
+      poolStatus: "verified_active",
+      playProbability: 0.9,
+      conditionalRates: { GAMES_PLAYED: 1, GOALS: 0.4 },
+      conditionalVariances: { GAMES_PLAYED: 0.1, GOALS: 0.3 },
+      ratings: { offense: 70 },
+      deployment: { mostLikelyRole: { forwardLine: 2 } },
+    };
+    const adjusted = applyPersistentPlayerAssumptions(prior, [
+      { field_path: "player.teamId", override_value: 24 },
+      { field_path: "player.position", override_value: "R" },
+      { field_path: "ratings.offense", override_value: 82 },
+      { field_path: "deployment.mostLikelyRole.forwardLine", override_value: 1 },
+      { field_path: "stats.GOALS", override_value: 99 },
+    ]);
+
+    expect(adjusted).toMatchObject({
+      teamId: 24,
+      position: "R",
+      ratings: { offense: 82 },
+      deployment: { mostLikelyRole: { forwardLine: 1 } },
+      conditionalRates: { GOALS: 0.4 },
+    });
+    expect(() => applyPersistentPlayerAssumptions(prior, [
+      { field_path: "player.position", override_value: "G" },
+    ])).toThrow("PLAYER_FORECAST_SEASON_POSITION_POPULATION_MISMATCH");
+  });
+
+  it("gives post-artifact rookie identities a deterministic conservative cohort prior", () => {
+    const artifact = {
+      schemaVersion: "player-forecast-season-artifact-v1",
+      seasonId: 20262027,
+      contractVersion: FANTASY_PROJECTION_V5_CONTRACT_VERSION,
+      contractChecksum: FANTASY_PROJECTION_V5_CONTRACT_CHECKSUM,
+      artifactVersion: "v5-test",
+      featureSchemaVersion: "v5-test",
+      trainingCutoffAt: "2026-04-16T23:59:59Z",
+      codeVersion: "test",
+      players: Object.fromEntries(
+        [0.1, 0.2, 0.3, 0.4].map((playProbability, index) => [
+          String(index + 1),
+          {
+            fhfhPlayerId: index + 1,
+            population: "forward" as const,
+            position: "C" as const,
+            teamId: 1,
+            poolStatus: "active_prospect",
+            playProbability,
+            conditionalRates: { GAMES_PLAYED: 1, GOALS: playProbability },
+            baselineConditionalRates: { GAMES_PLAYED: 1, GOALS: playProbability },
+            conditionalVariances: { GAMES_PLAYED: 0, GOALS: playProbability },
+            ratings: { offense: 40 + index, defense: 50 + index },
+            rookieProfile: { rookie: true },
+            deployment: {},
+            fallbackFlags: ["prior_based_projection"],
+            primitiveTargets: ["GAMES_PLAYED", "GOALS"],
+          },
+        ]),
+      ),
+      teams: {},
+    } satisfies PortableSeasonArtifact;
+    const input = {
+      artifact,
+      fhfhPlayerId: 99,
+      nhlPlayerId: 8489999,
+      playerName: "New Prospect",
+      position: "R" as const,
+      teamId: 24,
+      poolStatus: "active_prospect",
+      rosterStatus: "prospect_reserve",
+      rosterConfidence: 0.4,
+    };
+
+    const first = buildRuntimeNewcomerPrior(input);
+    const second = buildRuntimeNewcomerPrior(input);
+
+    expect(first).toEqual(second);
+    expect(first).toMatchObject({
+      fhfhPlayerId: 99,
+      population: "forward",
+      position: "R",
+      teamId: 24,
+      playProbability: 0.175,
+      conditionalRates: { GOALS: 0.25 },
+      conditionalVariances: { GOALS: 0.5625 },
+      deployment: { mostLikelyRole: { forwardLine: 4 } },
+      rookieProfile: {
+        rookie: true,
+        nhleMethod: "generic_population_prior_pending_next_artifact_freeze",
+        fallback: "post_artifact_identity",
+      },
+    });
+    expect(first.fallbackFlags).toEqual(expect.arrayContaining([
+      "prior_based_projection",
+      "runtime_new_identity_population_prior",
+      "advanced_v5_runtime_population_prior",
+    ]));
+  });
+
+  it("limits editorial primitive overrides to the selected player population", () => {
+    expect(isPrimitiveOverrideTargetForPopulation("EXPECTED_GOALS", "forward")).toBe(true);
+    expect(isPrimitiveOverrideTargetForPopulation("EXPECTED_GOALS", "defense")).toBe(true);
+    expect(isPrimitiveOverrideTargetForPopulation("EXPECTED_GOALS", "goalie")).toBe(false);
+    expect(
+      isPrimitiveOverrideTargetForPopulation(
+        "EXPECTED_GOALS_AGAINST_GOALIE",
+        "goalie",
+      ),
+    ).toBe(true);
+    expect(
+      isPrimitiveOverrideTargetForPopulation(
+        "EXPECTED_GOALS_AGAINST_GOALIE",
+        "forward",
+      ),
+    ).toBe(false);
+    expect(isPrimitiveOverrideTargetForPopulation("POINTS", "forward")).toBe(false);
+  });
+
   it("keeps superseded contract releases out of the current public release list", () => {
     expect(releaseMatchesPublicContract({
       contract_version: FANTASY_PROJECTION_CONTRACT_VERSION,
@@ -206,6 +347,50 @@ describe("fantasy projection contracts", () => {
     })).toBeNull();
   });
 
+  it("refreshes every official transaction tracker as one cutoff-bound audit", async () => {
+    const fetchImpl = vi.fn(async (input: string | URL | Request) => ({
+      ok: true,
+      status: 200,
+      text: async () =>
+        '<script type="application/ld+json">' +
+        JSON.stringify({
+          articleBody: "Official NHL transaction tracker.",
+          datePublished: "2026-06-16T12:00:00Z",
+          dateModified: "2026-08-26T09:25:00Z",
+        }) +
+        "</script>",
+      url: String(input),
+    })) as unknown as typeof fetch;
+
+    const result = await captureOfficialNhlTransactionAudit({
+      fetchImpl,
+      capturedAt: "2026-08-26T09:30:00Z",
+    });
+
+    expect(result.capturedAt).toBe("2026-08-26T09:30:00Z");
+    expect(result.captures.map((capture) => capture.url)).toEqual(
+      OFFICIAL_TRANSACTION_AUDIT_URLS,
+    );
+    expect(result.captures.every((capture) => /^[0-9a-f]{64}$/.test(capture.sourceHash)))
+      .toBe(true);
+    expect(fetchImpl).toHaveBeenCalledTimes(OFFICIAL_TRANSACTION_AUDIT_URLS.length);
+  });
+
+  it("does not advance official transaction coverage from a partial tracker capture", async () => {
+    const fetchImpl = vi.fn(async (input: string | URL | Request) => ({
+      ok: !String(input).includes("free-agency"),
+      status: String(input).includes("free-agency") ? 503 : 200,
+      text: async () =>
+        '<script type="application/ld+json">' +
+        JSON.stringify({ articleBody: "Official NHL transaction tracker." }) +
+        "</script>",
+    })) as unknown as typeof fetch;
+
+    await expect(captureOfficialNhlTransactionAudit({ fetchImpl })).rejects.toThrow(
+      "Official NHL source returned 503",
+    );
+  });
+
   it("decodes the compact all-player payload without losing sortable metrics", () => {
     const result = expandFantasyProjectionSummary({
       success: true,
@@ -288,17 +473,44 @@ describe("fantasy projection contracts", () => {
     expect(result.unconditionalMeans.SHOT_ATTEMPTS).toBe(3.2);
     expect(result.conditionalMeans.EXPECTED_PRIMARY_ASSISTS).toBe(0.5);
     expect(merged.teams["1"].advancedRates?.TEAM_PACE).toBe(61);
+    const second = evaluatePortableSeasonGame(merged, 10, {
+      gameId: 2,
+      scheduledStartAt: "2026-10-03T00:00:00Z",
+      teamId: 1,
+      opponentTeamId: 2,
+      isHome: false,
+    });
+    const firstAggregate = aggregateSeasonGames([result, second]);
+    const secondAggregate = aggregateSeasonGames([result, second]);
+    expect(firstAggregate).toEqual(secondAggregate);
+    expect(firstAggregate.quantiles.p90.GAMES_PLAYED).toBeLessThanOrEqual(2);
+    expect(firstAggregate.quantiles.p10.SHOT_ATTEMPTS).toBeLessThanOrEqual(
+      firstAggregate.quantiles.p50.SHOT_ATTEMPTS,
+    );
+    expect(firstAggregate.quantiles.p50.SHOT_ATTEMPTS).toBeLessThanOrEqual(
+      firstAggregate.quantiles.p90.SHOT_ATTEMPTS,
+    );
+    expect(firstAggregate.quantiles.p50.GAMES_PLAYED).toBe(1.595495311);
+    expect(firstAggregate.quantiles.p50.SHOT_ATTEMPTS).toBe(6.3010162613);
+    expect(firstAggregate.quantiles.p50.EXPECTED_PRIMARY_ASSISTS).toBe(0.8010794892);
   });
 
   it("uses cross-bound interval arithmetic for rate metrics", () => {
     const quantiles = reconcileProjectionQuantiles({
-      p10: { GAMES_PLAYED: 60, TOTAL_TOI: 900 },
-      p50: { GAMES_PLAYED: 75, TOTAL_TOI: 1350 },
-      p90: { GAMES_PLAYED: 84, TOTAL_TOI: 1764 },
+      p10: { GAMES_PLAYED: 60, TOTAL_TOI: 900 * 60 },
+      p50: { GAMES_PLAYED: 75, TOTAL_TOI: 1350 * 60 },
+      p90: { GAMES_PLAYED: 84, TOTAL_TOI: 1764 * 60 },
     }, "forward");
     expect(quantiles.p10.TOI_PER_GAME).toBeLessThanOrEqual(quantiles.p50.TOI_PER_GAME);
     expect(quantiles.p50.TOI_PER_GAME).toBeLessThanOrEqual(quantiles.p90.TOI_PER_GAME);
-    expect(quantiles.p50.TOI_PER_GAME).toBe(18);
+    expect(quantiles.p50.TOI_PER_GAME).toBe(18 * 60);
+
+    const sparseProspect = reconcileProjectionQuantiles({
+      p10: { GAMES_PLAYED: 1, TOTAL_TOI: 60 * 60 },
+      p50: { GAMES_PLAYED: 4, TOTAL_TOI: 4 * 60 * 60 },
+      p90: { GAMES_PLAYED: 12, TOTAL_TOI: 12 * 65 * 60 },
+    }, "forward");
+    expect(sparseProspect.p90.TOI_PER_GAME).toBe(65 * 60);
   });
 
   it("coalesces repeated roster changes by player and view", () => {
@@ -334,6 +546,33 @@ describe("fantasy projection contracts", () => {
     expect(fantasyProjectionTotal(values, { GOALS: 3, ASSISTS: 2 })).toBe(140);
   });
 
+  it("keeps all-situations scoring authoritative and makes EV the strength residual", () => {
+    const values = reconcileProjectionValues({
+      GOALS: 0.6,
+      PRIMARY_ASSISTS: 0.7,
+      SECONDARY_ASSISTS: 0.3,
+      EV_GOALS: 0.1,
+      PP_GOALS: 0.15,
+      SH_GOALS: 0.01,
+      EMPTY_NET_GOALS: 0.04,
+      EV_PRIMARY_ASSISTS: 0.1,
+      PP_PRIMARY_ASSISTS: 0.2,
+      SH_PRIMARY_ASSISTS: 0.01,
+      EN_PRIMARY_ASSISTS: 0.04,
+      EV_SECONDARY_ASSISTS: 0.1,
+      PP_SECONDARY_ASSISTS: 0.08,
+      SH_SECONDARY_ASSISTS: 0.01,
+      EN_SECONDARY_ASSISTS: 0.01,
+    }, "forward");
+    expect(values.GOALS).toBe(0.6);
+    expect(values.PRIMARY_ASSISTS).toBe(0.7);
+    expect(values.SECONDARY_ASSISTS).toBe(0.3);
+    expect(values.EV_GOALS).toBe(0.4);
+    expect(values.EV_PRIMARY_ASSISTS).toBe(0.45);
+    expect(values.EV_SECONDARY_ASSISTS).toBe(0.2);
+    expect(values.POINTS).toBe(1.6);
+  });
+
   it("requires exactly one editor UUID in production", () => {
     const first = "11111111-1111-4111-8111-111111111111";
     const second = "22222222-2222-4222-8222-222222222222";
@@ -367,6 +606,19 @@ describe("fantasy projection contracts", () => {
       }),
     );
     expect(adjusted.reduce((total, value) => total + value, 0)).toBe(9);
+  });
+
+  it("imports checksum-bound advanced-v5 outcomes for prospective accountability", () => {
+    const importer = fs.readFileSync(
+      "scripts/import-player-forecast-season-settlement.ts",
+      "utf8",
+    );
+    expect(importer).toContain("FANTASY_PROJECTION_V5_CONTRACT_VERSION");
+    expect(importer).toContain("SKATER_ADVANCED_V5_PRIMITIVE_TARGETS");
+    expect(importer).toContain("GOALIE_ADVANCED_V5_PRIMITIVE_TARGETS");
+    expect(importer).not.toContain(
+      "Advanced-v5 settlement requires its dedicated outcome source batch.",
+    );
   });
 
   it("validates nested deployment probability families and their sums", () => {
@@ -670,6 +922,103 @@ describe("portable season evaluator", () => {
     });
     expect(result.conditionalMeans.GOALS).toBe(0.5);
     expect(result.quantiles.p90.GAMES_PLAYED).toBeLessThanOrEqual(1);
+  });
+
+  it("applies selected home and back-to-back effects only to the candidate model", () => {
+    const artifact = {
+      schemaVersion: "player-forecast-season-artifact-v1",
+      seasonId: 20262027,
+      contractVersion: FANTASY_PROJECTION_CONTRACT_VERSION,
+      contractChecksum: FANTASY_PROJECTION_CONTRACT_CHECKSUM,
+      artifactVersion: "test",
+      featureSchemaVersion: "test",
+      trainingCutoffAt: "2026-04-16T23:59:59Z",
+      codeVersion: "test",
+      players: {
+        "10": {
+          fhfhPlayerId: 10,
+          population: "forward",
+          position: "C",
+          teamId: 1,
+          playProbability: 1,
+          baselinePlayProbability: 1,
+          conditionalRates: { GAMES_PLAYED: 1, GOALS: 0.5 },
+          baselineConditionalRates: { GAMES_PLAYED: 1, GOALS: 0.4 },
+          conditionalVariances: { GAMES_PLAYED: 0, GOALS: 0.2 },
+          contextEffects: {
+            GOALS: {
+              selected: true,
+              ageMultiplier: 1.02,
+              backToBackMultiplier: 0.9,
+              homeMultiplier: 1.1,
+              awayMultiplier: 0.95,
+            },
+          },
+          ratings: {},
+          deployment: {},
+          primitiveTargets: ["GAMES_PLAYED", "GOALS"],
+        },
+      },
+      teams: {
+        "1": { teamId: 1, offenseMultiplier: 1, defenseMultiplier: 1, paceMultiplier: 1, ratings: {} },
+        "2": { teamId: 2, offenseMultiplier: 1, defenseMultiplier: 1, paceMultiplier: 1, ratings: {} },
+      },
+    } satisfies PortableSeasonArtifact;
+    const result = evaluatePortableSeasonGame(artifact, 10, {
+      gameId: 2026020002,
+      scheduledStartAt: "2026-10-03T23:00:00Z",
+      teamId: 1,
+      opponentTeamId: 2,
+      isHome: true,
+      restDays: 1,
+      isBackToBack: true,
+    });
+    expect(result.conditionalMeans.GOALS).toBe(0.495);
+    expect(result.baselineUnconditionalMeans.GOALS).toBe(0.4);
+  });
+
+  it("does not scale deployment time by event pace", () => {
+    const artifact = {
+      schemaVersion: "player-forecast-season-artifact-v1",
+      seasonId: 20262027,
+      contractVersion: FANTASY_PROJECTION_CONTRACT_VERSION,
+      contractChecksum: FANTASY_PROJECTION_CONTRACT_CHECKSUM,
+      artifactVersion: "test",
+      featureSchemaVersion: "test",
+      trainingCutoffAt: "2026-04-16T23:59:59Z",
+      codeVersion: "test",
+      players: {
+        "10": {
+          fhfhPlayerId: 10,
+          population: "forward",
+          position: "C",
+          teamId: 1,
+          playProbability: 1,
+          baselinePlayProbability: 1,
+          conditionalRates: { GAMES_PLAYED: 1, TOTAL_TOI: 1200, SHOTS_ON_GOAL: 3 },
+          baselineConditionalRates: { GAMES_PLAYED: 1, TOTAL_TOI: 1200, SHOTS_ON_GOAL: 3 },
+          conditionalVariances: { GAMES_PLAYED: 0, TOTAL_TOI: 1, SHOTS_ON_GOAL: 1 },
+          ratings: {},
+          deployment: {},
+          primitiveTargets: ["GAMES_PLAYED", "TOTAL_TOI", "SHOTS_ON_GOAL"],
+        },
+      },
+      teams: {
+        "1": { teamId: 1, offenseMultiplier: 1, defenseMultiplier: 1, paceMultiplier: 1.21, ratings: {} },
+        "2": { teamId: 2, offenseMultiplier: 1, defenseMultiplier: 1, paceMultiplier: 0.81, ratings: {} },
+      },
+    } satisfies PortableSeasonArtifact;
+    const result = evaluatePortableSeasonGame(artifact, 10, {
+      gameId: 2026020003,
+      scheduledStartAt: "2026-10-05T23:00:00Z",
+      teamId: 1,
+      opponentTeamId: 2,
+      isHome: true,
+    });
+    expect(result.conditionalMeans.TOTAL_TOI).toBe(1200);
+    expect(result.conditionalMeans.SHOTS_ON_GOAL).toBeCloseTo(
+      3 * Math.sqrt(1.21 * 0.81),
+    );
   });
 
   const artifactPath = process.env.PLAYER_FORECAST_SEASON_GOLDEN_ARTIFACT;

@@ -1,3 +1,83 @@
+@use "styles/vars" as v;
+
+.landingPanel {
+  display: grid;
+  gap: v.$space-xs;
+}
+
+.statusRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) auto auto auto;
+  align-items: center;
+  gap: v.$space-md;
+  min-height: 48px;
+  padding: v.$space-sm v.$space-md;
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  background: v.$background-dark;
+}
+
+.statusIdentity {
+  min-width: 0;
+}
+
+.statusLabel,
+.statusDescription,
+.statusCount,
+.statusDate,
+.statusValue {
+  margin: 0;
+}
+
+.statusLabel {
+  color: v.$text-primary;
+  font-size: v.$font-size-sm;
+  font-weight: 700;
+}
+
+.statusDescription {
+  margin-top: 2px;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  line-height: 1.3;
+}
+
+.statusCount,
+.statusDate,
+.statusValue {
+  color: v.$text-secondary;
+  font-family: v.$font-family-numbers, monospace;
+  font-size: v.$font-size-xs;
+  white-space: nowrap;
+}
+
+.statusValue {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-xs;
+  color: v.$warning-color;
+}
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.statusRow[data-status="ready"] .statusValue {
+  color: v.$success-color;
+}
+
+.unavailable {
+  margin: 0;
+  padding: v.$space-sm;
+  border: 1px dashed v.$border-soft;
+  border-radius: v.$radius-control;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+}
+
 .panel {
   display: grid;
   gap: 12px;
@@ -49,4 +129,20 @@
   font-size: 12px;
   line-height: 1.5;
   color: #475569;
+}
+
+@media (max-width: v.$breakpoint-tablet) {
+  .statusRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: v.$space-xs v.$space-sm;
+  }
+
+  .statusDate {
+    grid-column: 1;
+  }
+
+  .statusValue {
+    grid-column: 2;
+    grid-row: 2;
+  }
 }

@@ -10,6 +10,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type {
   FantasyProjectionPlayer,
   FantasyProjectionRelease,
+  FantasyProjectionTeam,
 } from "lib/fantasy-projections/contracts";
 import { FANTASY_PROJECTION_SCORING_V2_KEY } from "lib/fantasy-projections/scoringSettings";
 import type { EspnLeagueSettingsV1 } from "lib/integrations/espn/contracts";
@@ -219,5 +220,202 @@ describe("Fantasy Projections scoring modes", () => {
     expect(
       screen.getAllByTitle("FHFH projected category-value composite").length,
     ).toBe(2);
+  });
+
+  it("shows role-appropriate advanced columns in the combined player view", async () => {
+    const advancedRelease = { ...release, metricSetVersion: "advanced-v5" };
+    const players = [
+      player("player-1", "Advanced Skater", "forward", {
+        EXPECTED_GOALS: 37.9,
+        EXPECTED_ASSISTS: 82,
+        SHOT_ATTEMPTS: 560,
+        ON_ICE_XGF_PERCENTAGE: 0.618,
+      }),
+      player("player-2", "Advanced Goalie", "goalie", {
+        EXPECTED_GOALS_AGAINST_GOALIE: 163,
+        GOALS_SAVED_ABOVE_EXPECTED: 24.5,
+        HIGH_DANGER_SHOTS_AGAINST_GOALIE: 453,
+        HIGH_DANGER_SAVE_PERCENTAGE_GOALIE: 0.843,
+      }),
+    ];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/releases")) {
+          return response({ success: true, releases: [advancedRelease] });
+        }
+        if (url.includes("/players")) {
+          return response({ success: true, release: advancedRelease, players });
+        }
+        if (url.includes("/teams")) {
+          return response({ success: true, release: advancedRelease, teams: [] });
+        }
+        throw new Error(`Unexpected request: ${url}`);
+      }),
+    );
+
+    render(<FantasyProjectionsPage />);
+    await screen.findByText("Advanced Skater");
+    fireEvent.change(screen.getByLabelText("Columns"), {
+      target: { value: "advanced" },
+    });
+
+    expect(screen.getByRole("button", { name: "ixG / xGA" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "ixA / GSAx" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "iCF / HD SA" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "xGF% / HD SV%" })).toBeTruthy();
+    expect(screen.getByRole("row", { name: /Advanced Skater/ }).textContent).toContain("560");
+    expect(screen.getByRole("row", { name: /Advanced Goalie/ }).textContent).toContain("453");
+  });
+
+  it("shows deployment, adjustment, history, fallback, and provenance details on demand", async () => {
+    const summaryPlayer = player("player-1", "Detail Skater", "forward", {
+      POINTS: 12,
+    });
+    const detailPlayer: FantasyProjectionPlayer = {
+      ...summaryPlayer,
+      expectedToi: {
+        total: 1200,
+        evenStrength: 900,
+        powerPlay: 240,
+        penaltyKill: 60,
+      },
+      deployment: {
+        confidence: 0.8,
+        mostLikelyRole: { role: "L1 · PP1" },
+        roleProbabilities: { forwardLine: { F1: 0.7, F2: 0.3 } },
+      },
+      modelValues: { POINTS: 10 },
+      publishedValues: { POINTS: 12 },
+      p10: { POINTS: 8 },
+      p50: { POINTS: 12 },
+      p90: { POINTS: 16 },
+      adjustmentDelta: { POINTS: 2 },
+      adjusted: true,
+      fallbackFlags: ["advanced_v5_expected_primary_assists_fallback"],
+      provenance: {
+        artifactVersion: "advanced-v5-empirical-bayes-v1",
+        advancedV5: {
+          edgeContext: {
+            snapshotDate: "2026-04-16",
+            sourceUrl: "https://www.nhl.com/edge",
+            metrics: { top_shot_speed_mph: 99.5 },
+          },
+        },
+      },
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/players/1?")) {
+          return response({
+            success: true,
+            betaLabel: "beta",
+            release: { ...release, metricSetVersion: "advanced-v5" },
+            player: detailPlayer,
+            releaseHistory: [
+              {
+                view: "opening",
+                releaseNumber: 1,
+                issuedAt: release.issuedAt,
+                publishedValues: { POINTS: 11 },
+                teamAbbreviation: "OLD",
+              },
+              {
+                view: "current",
+                releaseNumber: 2,
+                issuedAt: "2026-08-15T12:00:00.000Z",
+                publishedValues: { POINTS: 12 },
+                teamAbbreviation: "TST",
+              },
+            ],
+          });
+        }
+        if (url.includes("/releases")) {
+          return response({ success: true, releases: [release] });
+        }
+        if (url.includes("/players")) {
+          return response({ success: true, release, players: [summaryPlayer] });
+        }
+        if (url.includes("/teams")) {
+          return response({ success: true, release, teams: [] });
+        }
+        throw new Error(`Unexpected request: ${url}`);
+      }),
+    );
+
+    render(<FantasyProjectionsPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Detail Skater" }));
+
+    const detailDialog = await screen.findByRole("dialog", { name: "Player projection details" });
+    expect(detailDialog).toBeTruthy();
+    expect(detailDialog.textContent).toContain("20.0");
+    expect(detailDialog.textContent).not.toContain("1200");
+    expect(screen.getByText("Deployment and opportunity")).toBeTruthy();
+    expect(screen.getByText(/F1 70% · F2 30%/)).toBeTruthy();
+    expect(screen.getByText("Model and editorial comparison")).toBeTruthy();
+    expect(screen.getByText(/Model 10\.0 → published 12\.0 \(\+2\.0\)/)).toBeTruthy();
+    expect(screen.getByText(/opening #1/).textContent).toContain("OLD");
+    expect(screen.getByText("Sources and model provenance")).toBeTruthy();
+    expect(screen.getByText("NHL EDGE context")).toBeTruthy();
+    expect(screen.getByText("Top shot speed mph")).toBeTruthy();
+    expect(screen.getByText("99.5")).toBeTruthy();
+    expect(screen.getByText(/not projected season totals/)).toBeTruthy();
+    expect(screen.getByText("advanced_v5_expected_primary_assists_fallback")).toBeTruthy();
+  });
+
+  it("renders team advanced totals separately from unblocked totals", async () => {
+    const team: FantasyProjectionTeam = {
+      id: "team-release-1",
+      releaseId: release.id,
+      teamId: 1,
+      teamName: "Test Club",
+      abbreviation: "TST",
+      modelRatings: {},
+      publishedRatings: {
+        overall: 60,
+        offense: 61,
+        defense: 59,
+        goaltending: 58,
+        powerPlay: 62,
+        penaltyKill: 57,
+        pace: 63,
+      },
+      deployment: {},
+      rosterCounts: { forwards: 12, defense: 6, goalies: 2 },
+      modelValues: {},
+      publishedValues: {
+        TEAM_SHOT_ATTEMPTS_FOR: 5701,
+        TEAM_UNBLOCKED_ATTEMPTS_FOR: 4141,
+        TEAM_EXPECTED_GOALS_FOR: 264,
+      },
+      p10: { TEAM_SHOT_ATTEMPTS_FOR: 5500 },
+      p50: { TEAM_SHOT_ATTEMPTS_FOR: 5701 },
+      p90: { TEAM_SHOT_ATTEMPTS_FOR: 5900 },
+      adjustmentDelta: {},
+      adjusted: false,
+      confidence: 0.8,
+      provenance: {},
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/releases")) return response({ success: true, releases: [release] });
+        if (url.includes("/players")) return response({ success: true, release, players: [] });
+        if (url.includes("/teams")) return response({ success: true, release, teams: [team] });
+        throw new Error(`Unexpected request: ${url}`);
+      }),
+    );
+
+    render(<FantasyProjectionsPage />);
+    await screen.findByText("0 players");
+    fireEvent.click(screen.getByRole("button", { name: "Team Ratings & Lines" }));
+
+    expect(await screen.findByText("Advanced season forecast")).toBeTruthy();
+    expect(screen.getByText("CF").nextElementSibling?.textContent).toBe("5701");
+    expect(screen.getByText("FF").nextElementSibling?.textContent).toBe("4141");
   });
 });

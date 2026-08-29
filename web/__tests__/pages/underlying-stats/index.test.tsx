@@ -17,7 +17,20 @@ const routerState = vi.hoisted(() => ({
 }));
 
 class ResizeObserverMock {
-  observe() {}
+  constructor(private readonly callback: ResizeObserverCallback) {}
+
+  observe(target: Element) {
+    this.callback(
+      [
+        {
+          target,
+          contentRect: { width: 800, height: 420 } as DOMRectReadOnly
+        } as ResizeObserverEntry
+      ],
+      this as unknown as ResizeObserver
+    );
+  }
+
   unobserve() {}
   disconnect() {}
 }
@@ -171,15 +184,15 @@ describe("/underlying-stats landing page", () => {
     const select = screen.getByLabelText("Snapshot date");
     expect(within(select).getAllByRole("option")).toHaveLength(3);
     expect(screen.getByText("Process quadrant")).toBeTruthy();
-    expect(screen.getByText("Risers and fallers")).toBeTruthy();
+    expect(screen.getByText("Team movers")).toBeTruthy();
     expect(screen.getByText("What looks real?")).toBeTruthy();
     expect(screen.getByText("Schedule texture")).toBeTruthy();
     expect(screen.getByText("Under the radar")).toBeTruthy();
-    expect(screen.getByText("Team snapshot").parentElement?.textContent).toContain(
-      "Apr 5, 2026"
-    );
+    expect(
+      screen.getByText("Team snapshot").closest("article")?.textContent
+    ).toContain("Apr 5, 2026");
 
-    const table = screen.getByRole("table");
+    const table = screen.getByRole("table", { name: "Detailed team table" });
     expect(
       within(table).getByRole("columnheader", { name: /SoS Future/ })
     ).toBeTruthy();
@@ -262,7 +275,7 @@ describe("/underlying-stats landing page", () => {
     });
 
     await waitFor(() => {
-      const table = screen.getByRole("table");
+      const table = screen.getByRole("table", { name: "Detailed team table" });
       const bodyRows = within(table).getAllByRole("row").slice(1);
       expect(within(bodyRows[0]!).getByText("VAN")).toBeTruthy();
       expect(within(bodyRows[0]!).getByText("58.9%")).toBeTruthy();
@@ -280,6 +293,38 @@ describe("/underlying-stats landing page", () => {
     );
   });
 
+  it("surfaces failed freshness when a snapshot request fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => jsonResponse({}, false, 503))
+    );
+
+    render(
+      <TeamPowerRankingsPage
+        availableDates={["2026-04-05", "2026-04-04"]}
+        routeStatus={routeStatus}
+        initialSnapshot={buildSnapshot([buildRating("TOR")])}
+      />
+    );
+
+    fireEvent.change(screen.getByLabelText("Snapshot date"), {
+      target: { value: "2026-04-04" }
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText("Unable to load ratings (503)").length).toBeGreaterThan(
+        0
+      );
+    });
+
+    expect(screen.getByText("Failed")).toBeTruthy();
+    const leaders = screen.getByRole("region", { name: "Power leaders" });
+    expect(within(leaders).getByText("No power leaders are available.")).toBeTruthy();
+    expect(
+      screen.queryByRole("table", { name: "Detailed team table" })
+    ).toBeNull();
+  });
+
   it("switches to advanced mode and reveals the component columns", () => {
     render(
       <TeamPowerRankingsPage
@@ -289,9 +334,9 @@ describe("/underlying-stats landing page", () => {
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Advanced" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Advanced" }));
 
-    const table = screen.getByRole("table");
+    const table = screen.getByRole("table", { name: "Detailed team table" });
     expect(within(table).getByRole("columnheader", { name: /SoS Past/ })).toBeTruthy();
     expect(within(table).getByRole("columnheader", { name: /Pace/ })).toBeTruthy();
     expect(within(table).queryByRole("columnheader", { name: /Why moving/ })).toBeNull();
@@ -311,8 +356,115 @@ describe("/underlying-stats landing page", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Trend/ }));
 
-    const table = screen.getByRole("table");
+    const table = screen.getByRole("table", { name: "Detailed team table" });
     const bodyRows = within(table).getAllByRole("row").slice(1);
     expect(within(bodyRows[0]!).getByText("VAN")).toBeTruthy();
+  });
+
+  it("pins a chart team by keyboard across dashboard modules and explorer links", async () => {
+    render(
+      <TeamPowerRankingsPage
+        availableDates={["2026-04-05"]}
+        routeStatus={routeStatus}
+        initialSnapshot={buildSnapshot([
+          buildRating("TOR", {
+            offRating: 110,
+            defRating: 108,
+            paceRating: 107,
+            trend10: 2.3
+          }),
+          buildRating("VAN", { trend10: -2.1 })
+        ])}
+      />
+    );
+
+    const quadrant = screen.getByRole("region", { name: "Process quadrant" });
+    fireEvent.keyDown(
+      await within(quadrant).findByRole("button", {
+        name: "Pin Vancouver Canucks"
+      }),
+      { key: "Enter", code: "Enter" }
+    );
+
+    const table = screen.getByRole("table", { name: "Detailed team table" });
+    expect(
+      within(table)
+        .getByRole("button", { name: "Pin Vancouver Canucks" })
+        .getAttribute("aria-pressed")
+    ).toBe("true");
+
+    const explorers = screen.getByRole("region", { name: "Explorer paths" });
+    expect(
+      within(explorers)
+        .getByRole("link", { name: /Team Explorer/ })
+        .getAttribute("href")
+    ).toContain("teamId=23");
+
+    const torontoMarker = within(quadrant).getByRole("button", {
+      name: "Pin Toronto Maple Leafs"
+    });
+    fireEvent.focus(torontoMarker);
+    expect(
+      within(quadrant).getByLabelText(
+        "Toronto Maple Leafs selected-team context"
+      )
+    ).toBeTruthy();
+    expect(
+      within(explorers)
+        .getByRole("link", { name: /Team Explorer/ })
+        .getAttribute("href")
+    ).toContain("teamId=23");
+
+    const chart = quadrant.querySelector(".recharts-wrapper");
+    expect(chart).toBeTruthy();
+    fireEvent.mouseLeave(chart as Element);
+    expect(
+      within(quadrant).getByLabelText(
+        "Vancouver Canucks selected-team context"
+      )
+    ).toBeTruthy();
+  });
+
+  it("previews 12 table rows and expands to every available team", () => {
+    const teamAbbreviations = [
+      "ANA",
+      "BOS",
+      "BUF",
+      "CAR",
+      "CBJ",
+      "CGY",
+      "CHI",
+      "COL",
+      "DAL",
+      "DET",
+      "EDM",
+      "FLA",
+      "LAK",
+      "MIN"
+    ];
+
+    render(
+      <TeamPowerRankingsPage
+        availableDates={["2026-04-05"]}
+        routeStatus={routeStatus}
+        initialSnapshot={buildSnapshot(
+          teamAbbreviations.map((teamAbbr, index) =>
+            buildRating(teamAbbr, { offRating: 114 - index })
+          )
+        )}
+      />
+    );
+
+    const table = screen.getByRole("table", { name: "Detailed team table" });
+    expect(within(table).getAllByRole("row").slice(1)).toHaveLength(12);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "View all 14 teams" })
+    );
+
+    expect(within(table).getAllByRole("row").slice(1)).toHaveLength(14);
+    expect(
+      screen.getByRole("button", { name: "Show top 12 teams" })
+    ).toBeTruthy();
   });
 });

@@ -31,6 +31,7 @@ export default playerForecastAdminOnly(async (req: any, res: NextApiResponse) =>
       plannedSources: [
         "official_roster",
         "player_landing",
+        "official_transaction_trackers",
         "processed_forecast_relevant_ifttt",
       ],
       landingBatchSize,

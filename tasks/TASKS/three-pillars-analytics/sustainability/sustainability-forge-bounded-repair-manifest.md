@@ -72,10 +72,49 @@ advisor baseline is unrelated to this manifest and remains observation-only.
 | 2024–25 playoff, `2025-04-19`–`2025-06-17` | 3,096 | 332 | 46 | 0 | 0 | source `6121771258224515143` |
 | 2025–26 playoff, `2026-04-18`–`2026-06-14` | 2,952 | 347 | 44 | 55,404 | 2,052 | source `1546723902812409431`; target `-8919969266834811546` |
 
+The read-only expected-shooting repair preview
+`web/scripts/audit-player-trend-expected-shooting.ts` uses the canonical
+calculator over full season-to-date history while emitting only the approved
+target date. For `season=20252026`, `date=2026-02-05`, it reads 408 source rows
+from `2025-10-07` for eight players and produces eight exact
+`expected_shooting_pct` identities. All eight are updates, with zero inserts,
+deletes, or unchanged rows. Field deltas are raw `7`, average `8`, rolling
+3/5/10 `8/8/8`, variance/std-dev `8/8`, and sample size `3`. Persisted and
+candidate value-free payload SHA-256 receipts are
+`9fe014e993f08656aa8af793120f7eeb4092ee3be53109ae16dd7de1bb676c46` and
+`6bad00e6072bce1a87d79ca92ed339c34241be183addb784050b50fc892b1104`.
+The proposed write boundary replaces only that metric/date after reading full
+season history; it does not authorize a write or provide the still-required
+replay or reader proof. Local migration `20260828162000` (SHA-256
+`1a6f9cec3ff1f3b25d01465bbc72df85efa03eba3e1be9ae79957a2d639fc877`) stages nullable
+`player_trend_metrics.calculation_version`, and every forward calculator row
+now stamps `player-trend-v2-full-history-source-units`; existing rows remain
+null until an explicitly authorized repair.
+
 The current output has 27 metric keys per persisted player-date. A correct
 playoff repair must read each season from its canonical start so cumulative and
 last-N samples include regular-season history, but it may replace only the
 approved output dates and metric identities.
+
+The non-writing `web/scripts/audit-player-trend-playoff-repair.ts` now executes
+that exact reconstruction with the shared playoff adapter and forward
+calculation label `player-trend-v2-full-history-source-units`. For
+2025–26 it reads 22,560 regular rows plus 2,952 playoff rows, emits 79,704
+candidate identities over 2,952 player-dates, and compares them with 55,404
+persisted identities over 2,052 player-dates. The result is 55,233 updates, 171
+unchanged rows, zero deletes, and 24,300 source-backed missing identities over
+900 player-dates; 1,472 comparable `shots_per_60` raw values are exactly 60×
+too low. Persisted/candidate full-payload SHA-256 receipts are
+`e5d7b9f472929ca4d58a4d892a5bebbfe44d3877544a1e40ebf8ab4c2acbdd56` and
+`d1078bc5811b5f78a5c1ac5cad8359dad8354079142bee5439037adc664daf30`.
+For 2024–25 it reads 22,495 regular rows plus 3,096 playoff rows and emits
+83,592 source-backed candidates over 3,096 player-dates against zero persisted
+targets; the candidate SHA-256 receipt is
+`a38bf75c052ce7843a3f6832446f86f6647e8ff3b28cea4bdb731ebe21987eea`.
+These are separate decisions: repairing existing corrupt rows does not silently
+authorize filling missing history. Neither the calculation label nor these
+receipts are a write authorization; the staged nullable column becomes durable
+only after migration application.
 
 The preflight also found a separate upstream identity defect. Exactly 1,905
 `wgo_skater_stats` rows dated `2023-04-01`–`2023-04-06` are labeled season
@@ -138,6 +177,20 @@ Repair policy:
 4. Recompute new v2 rows only through the canonical bounded queue after the
    provenance migration is applied.
 
+The non-writing `web/scripts/audit-sustainability-score-provenance.ts` makes
+that policy executable without pretending current source state proves a past
+cutoff. On `2026-07-22`, all 2,496 rows across 624 players claim the requested
+date, none match the latest currently observed player source, and all are
+classified `legacy_provenance_unknown`; persisted/candidate SHA-256 receipts
+are `72b24494b4f5f424bf5f3dafe42ef0f12db18ad56e223281855f7da3978c30b7`
+and `4a0eea4474e70c31f23eae29c69634adec044cac50016156efbd6835d7767825`.
+The mixed `2026-07-23` cohort proves safe preservation: 1,496 v2 rows retain
+the identical hash
+`ff50a4d963b5842acd58edf38c721cea8798c7e639e6b761002d518766f68bcc`,
+while the other 1,000 false legacy claims are classified unknown. Both cohorts
+have zero embedded-model or embedded-config mismatch. No score, model, config,
+or proven v2 payload is changed by the candidate policy, and no write ran.
+
 ### Team ratings
 
 The 2025–26 season spans `2025-10-07`–`2026-06-15`. The canonical table has
@@ -158,6 +211,26 @@ record populated versus justified carry-forward identities, and refuse
 publication if it does not produce exactly one row per approved team/date.
 Historical publication needs a versioned receipt because
 `team_power_ratings_daily` has no first-class model/version column.
+
+Local migration `20260828162000` stages nullable `calculation_version` and
+`source_through_date` columns. New exact-source rows stamp
+`team-power-v2-final-source-observed-pdo`; carry-forward rows preserve the
+source row's version/date and use `legacy_unversioned` when no version exists.
+The migration intentionally does not relabel hosted legacy rows.
+
+The non-writing `web/scripts/audit-team-power-repair.ts` preview now fixes the
+representative scope at `2026-02-05`. It reads 1,848 canonical source rows from
+`2025-09-08`, recalculates the 14 teams with an exact final source row, and
+preserves the other 18 same-date carry-forward teams. All 14 comparable rows
+change across every core rating field; five `variance_flag` values change.
+PDO is observed for 14/14, with zero missing/zero-observation teams, so the
+missing-source branch is not synthesized from this real cohort and remains
+covered by the focused fixture. Comparable persisted/candidate value-free
+SHA-256 receipts are
+`7c763a86526ed43eebcbab391d17d2c5c01c57384f0ef9c8c0e3334d54f7f52f` and
+`177665bd81a432f67acd960ce85da26370200acf0c96d50dce1ec3248358998b`.
+This is final-input/PDO/carry-forward dry-run evidence only; it does not supply
+migration/write authorization, replay, or post-write reader proof.
 
 ### Rolling primary and support history
 
@@ -184,6 +257,24 @@ history reads. The repair dry run must:
 
 Legacy `wigo_recent` and `wigo_career` are adjacent/quarantined baselines, not
 canonical rolling support tables, and are outside this repair.
+
+The dry-run path now accepts a local observer that receives the exact durable
+primary/support payload split without changing route behavior or writing. The
+non-writing `web/scripts/audit-rolling-player-repair.ts` applies it to Nick
+Suzuki, Josh Norris, Rasmus Dahlin, and Tyson Hinds over the complete
+`2025-10-07`–`2026-04-16` selected-season scope and all five strengths. It
+produces 1,045 primary and 1,045 support candidates with zero duplicate rows
+and exact cross-table identity parity. Hosted comparison finds 1,030 primary
+rows (15 missing, zero stale, 382 changed across the critical shot-rate/sample
+fields) and 222 support rows (823 missing, zero stale, 87 changed). Candidate
+primary/support SHA-256 receipts are
+`f8aed39ffb2003ce555a141053d6378981eeb12a16dad5f7f0815f0023069aff` and
+`d5db6c95fc12672f8efa26828016672fa007bedae57989fd94425aeda8c7e70d`.
+The cohort fails its source gate with seven freshness blockers, 13 coverage
+warnings, and nine suspicious-output warnings. Therefore it is diagnostic
+evidence only: refresh upstream tails, rerun this cohort to zero blockers, then
+complete the deterministic all-player cursor sweep before requesting grouped
+publication.
 
 ## FORGE accuracy scope
 
@@ -220,7 +311,7 @@ It yields 7,523 eligible skater player-games across 137 dates. Results match
 | 2026-03-13 | `5fa6a252-b855-448a-9ff1-8c3400375530` | 11 | 0 | 11 | zero |
 | 2026-03-14 | `a40bd44b-98d4-4506-a3c4-90b2efa3985f` | 74 | 0 | 74 | zero |
 | 2026-03-21 | `756b206f-891d-4cca-a0b0-667a748d750d` | 279 | 0 | 279 | zero |
-| 2026-04-15 | `9f490284-84d8-4510-b60e-e57fa4badf2b` | 22 | 21 | 1 | partial |
+| 2026-04-15 | `9f490284-84d8-4510-b60c-c97c9e2dd66f` | 22 | 21 | 1 | partial |
 
 The 18 zero dates account for 912 missing rows; the three partial dates account
 for 432. The full target date scopes currently contain 309 result rows

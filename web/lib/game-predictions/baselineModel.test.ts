@@ -5,10 +5,12 @@ import {
   BASELINE_FEATURE_KEYS,
   BASELINE_MODEL_VERSION,
   analyzeBaselineFeatureSignals,
+  buildBaselineFeatureLeakageChecks,
   buildBaselineFeatureVector,
   buildBaselineTrainingDataset,
   buildGamePredictionHistoryInsert,
   buildGamePredictionOutputUpsert,
+  getRecentTeamFormFeatureEligibility,
   predictGameWithExtraTreesModel,
   predictGameWithBaselineModel,
   trainGamePredictionExtraTreesModel,
@@ -18,6 +20,11 @@ import {
   buildGamePredictionFeatureSnapshotPayload,
   type GamePredictionFeatureInputs,
 } from "./featureBuilder";
+import {
+  RECENT_TEAM_FORM_APPROVED_PUBLICATION_STATUS,
+  RECENT_TEAM_FORM_FORMULA_VERSION,
+  RECENT_TEAM_FORM_INPUT_VERSION,
+} from "lib/trends/ctpi";
 
 function createPayload(homeOffRating = 60) {
   const inputs: GamePredictionFeatureInputs = {
@@ -129,6 +136,61 @@ function createPayload(homeOffRating = 60) {
 }
 
 describe("game prediction baseline model", () => {
+  it("records the approved-only CTPI reader boundary", () => {
+    expect(
+      buildBaselineFeatureLeakageChecks().find(
+        (row) => row.featureKey === "homeMinusAwayCtpi",
+      ),
+    ).toMatchObject({
+      status: "pass",
+      sourceAsOfRule: "strict_before_game_date",
+      reasons: [expect.stringContaining("explicitly approved")],
+    });
+  });
+
+  it("excludes legacy snapshot CTPI until both teams carry approved provenance", () => {
+    const payload = createPayload();
+    payload.matchup.homeMinusAwayCtpi = 16;
+    payload.home.ctpi = {
+      sourceDate: "2026-01-09",
+      computedAt: "2026-01-09T10:00:00.000Z",
+      ctpi0To100: 64,
+      ctpiRaw: 0.64,
+      offense: 1,
+      defense: 1,
+      goaltending: 1,
+      specialTeams: 1,
+      luck: null,
+    };
+    payload.away.ctpi = {
+      ...payload.home.ctpi,
+      ctpi0To100: 48,
+      ctpiRaw: 0.48,
+    };
+
+    const featureIndex = BASELINE_FEATURE_KEYS.indexOf("homeMinusAwayCtpi");
+    expect(buildBaselineFeatureVector(payload)[featureIndex]).toBe(0);
+    expect(getRecentTeamFormFeatureEligibility(payload)).toMatchObject({
+      eligible: false,
+      reason: "unapproved_or_unversioned_pair",
+    });
+
+    for (const teamForm of [payload.home.ctpi, payload.away.ctpi]) {
+      Object.assign(teamForm!, {
+        publicationStatus: RECENT_TEAM_FORM_APPROVED_PUBLICATION_STATUS,
+        formulaVersion: RECENT_TEAM_FORM_FORMULA_VERSION,
+        inputVersion: RECENT_TEAM_FORM_INPUT_VERSION,
+        sourceGameCount: 10,
+      });
+    }
+
+    expect(buildBaselineFeatureVector(payload)[featureIndex]).toBe(0.16);
+    expect(getRecentTeamFormFeatureEligibility(payload)).toMatchObject({
+      eligible: true,
+      reason: "approved_pair",
+    });
+  });
+
   it("builds finite baseline feature vectors", () => {
     const vector = buildBaselineFeatureVector(createPayload());
     const valueFor = (featureKey: (typeof BASELINE_FEATURE_KEYS)[number]) =>
@@ -154,8 +216,10 @@ describe("game prediction baseline model", () => {
     const candidateVector = buildBaselineFeatureVector(payload, {
       includeDefaultExcludedFeatureKeys: true,
     });
-    const valueFor = (vector: number[], featureKey: (typeof BASELINE_FEATURE_KEYS)[number]) =>
-      vector[BASELINE_FEATURE_KEYS.indexOf(featureKey)];
+    const valueFor = (
+      vector: number[],
+      featureKey: (typeof BASELINE_FEATURE_KEYS)[number],
+    ) => vector[BASELINE_FEATURE_KEYS.indexOf(featureKey)];
 
     expect(valueFor(defaultVector, "homeMinusAwayRosterOffImpact")).toBe(0);
     expect(
@@ -378,23 +442,8 @@ describe("game prediction baseline model", () => {
     const model: BinaryLogisticModel = {
       featureCount: 17,
       weights: [
-        0.12,
-        0.08,
-        0.04,
-        0.04,
-        0.4,
-        0.2,
-        0.02,
-        0.02,
-        0.02,
-        0.02,
-        0.02,
-        0.02,
-        0.02,
-        0.02,
-        0.02,
-        0.1,
-        0.05,
+        0.12, 0.08, 0.04, 0.04, 0.4, 0.2, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02,
+        0.02, 0.02, 0.02, 0.1, 0.05,
       ],
       bias: 0,
     };
@@ -459,23 +508,8 @@ describe("game prediction baseline model", () => {
     const model: BinaryLogisticModel = {
       featureCount: 17,
       weights: [
-        0.02,
-        0.01,
-        0.03,
-        0.01,
-        0.4,
-        0.2,
-        0.02,
-        0.02,
-        0.02,
-        0.02,
-        0.02,
-        0.02,
-        0.02,
-        0.02,
-        0.02,
-        0.3,
-        0.05,
+        0.02, 0.01, 0.03, 0.01, 0.4, 0.2, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02,
+        0.02, 0.02, 0.02, 0.3, 0.05,
       ],
       bias: 0,
     };

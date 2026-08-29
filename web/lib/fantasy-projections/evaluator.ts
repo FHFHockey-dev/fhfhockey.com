@@ -42,6 +42,13 @@ export type PortablePlayerPrior = {
   deployment: Record<string, unknown>;
   fallbackFlags?: string[];
   primitiveTargets?: string[];
+  contextEffects?: Record<string, {
+    selected?: boolean;
+    ageMultiplier?: number;
+    backToBackMultiplier?: number;
+    homeMultiplier?: number;
+    awayMultiplier?: number;
+  }>;
 };
 
 export type PortableTeamContext = {
@@ -105,6 +112,8 @@ export type SeasonGameContext = {
   teamId: number;
   opponentTeamId: number;
   isHome: boolean;
+  restDays?: number | null;
+  isBackToBack?: boolean;
 };
 
 export type SeasonGameEvaluation = {
@@ -275,6 +284,8 @@ function targetMultiplier(
   team: PortableTeamContext | undefined,
   opponent: PortableTeamContext | undefined,
   venue?: PortableTeamContext,
+  game?: SeasonGameContext,
+  contextEffect?: NonNullable<PortablePlayerPrior["contextEffects"]>[string],
 ): number {
   if (
     (population === "goalie"
@@ -291,11 +302,23 @@ function targetMultiplier(
   const venueMultiplier = ["HITS", "BLOCKED_SHOTS", "TAKEAWAYS", "GIVEAWAYS"].includes(target)
     ? venue?.venueScorerMultipliers?.[target] ?? 1
     : 1;
+  const restMultiplier = game?.isBackToBack
+    ? contextEffect?.backToBackMultiplier ?? 1
+    : 1;
+  const homeAwayMultiplier = game?.isHome
+    ? contextEffect?.homeMultiplier ?? 1
+    : contextEffect?.awayMultiplier ?? 1;
+  const contextualMultiplier = restMultiplier * homeAwayMultiplier;
+  if (["TOTAL_TOI", "EV_TOI", "PP_TOI", "PK_TOI"].includes(target)) {
+    // Pace affects event opportunity, not the fixed pool of regulation
+    // minutes. Deployment already supplies the TOI rate.
+    return contextualMultiplier;
+  }
   if (
     population === "goalie" &&
     ["SHOTS_AGAINST_GOALIE", "GOALS_AGAINST_GOALIE"].includes(target)
   ) {
-    return pace * Math.max(0.5, opponent?.offenseMultiplier ?? 1);
+    return contextualMultiplier * pace * Math.max(0.5, opponent?.offenseMultiplier ?? 1);
   }
   if (
     population !== "goalie" &&
@@ -324,9 +347,9 @@ function targetMultiplier(
     ].includes(target)
   ) {
     const opposingDefense = Math.max(0.5, opponent?.defenseMultiplier ?? 1);
-    return (pace * venueMultiplier) / opposingDefense;
+    return (contextualMultiplier * pace * venueMultiplier) / opposingDefense;
   }
-  return pace * venueMultiplier;
+  return contextualMultiplier * pace * venueMultiplier;
 }
 
 function quantiles(
@@ -405,6 +428,15 @@ export function evaluatePortableSeasonGame(
   const venue = game.isHome ? team : opponent;
 
   for (const target of targetKeys) {
+    const candidateMultiplier = targetMultiplier(
+      target,
+      prior.population,
+      team,
+      opponent,
+      venue,
+      game,
+      prior.contextEffects?.[target],
+    );
     const conditional =
       target === "GAMES_PLAYED"
         ? 1
@@ -413,7 +445,7 @@ export function evaluatePortableSeasonGame(
           : Math.max(
               target === "PLUS_MINUS" ? -Infinity : 0,
               (prior.conditionalRates[target] ?? 0) *
-                targetMultiplier(target, prior.population, team, opponent, venue),
+                candidateMultiplier,
             );
     const mixtureProbability =
       target === "GAMES_STARTED"
@@ -422,7 +454,7 @@ export function evaluatePortableSeasonGame(
     const conditionalVariance = Math.max(
       0,
       (prior.conditionalVariances[target] ?? Math.abs(conditional)) *
-        targetMultiplier(target, prior.population, team, opponent, venue),
+        candidateMultiplier,
     );
     conditionalMeans[target] = round(conditional);
     unconditionalMeans[target] = round(conditional * mixtureProbability);
@@ -487,6 +519,89 @@ export function evaluatePortableSeasonGame(
   };
 }
 
+function sampledQuantile(values: number[], probability: number): number {
+  if (values.length === 0) return 0;
+  const ordered = [...values].sort((left, right) => left - right);
+  const index = Math.max(
+    0,
+    Math.min(ordered.length - 1, Math.ceil(probability * (ordered.length + 1)) - 1),
+  );
+  return round(ordered[index]);
+}
+
+function correlatedAggregateQuantiles(
+  means: ProjectionValues,
+  variances: ProjectionValues,
+  population: FantasyProjectionPopulation,
+  maximumGames: number,
+  seed: string,
+  draws = 256,
+): SeasonGameEvaluation["quantiles"] {
+  let state = Number.parseInt(createHash("sha256").update(seed).digest("hex").slice(0, 8), 16);
+  const normal = () => {
+    state = (Math.imul(1_664_525, state) + 1_013_904_223) >>> 0;
+    const first = (state + 0.5) / 4_294_967_296;
+    state = (Math.imul(1_664_525, state) + 1_013_904_223) >>> 0;
+    const second = (state + 0.5) / 4_294_967_296;
+    return Math.sqrt(-2 * Math.log(first)) * Math.cos(2 * Math.PI * second);
+  };
+  const targets = Object.keys(variances);
+  const samples = new Map<string, number[]>();
+  const correlation = 0.65;
+  const independentWeight = Math.sqrt(1 - correlation * correlation);
+  for (let drawIndex = 0; drawIndex < draws; drawIndex += 1) {
+    const common = normal();
+    const draw: ProjectionValues = {};
+    for (const target of targets) {
+      const deviation = correlation * common + independentWeight * normal();
+      const value = (means[target] ?? 0) + Math.sqrt(Math.max(0, variances[target] ?? 0)) * deviation;
+      draw[target] = target === "PLUS_MINUS" ? value : Math.max(0, value);
+    }
+    if (draw.GAMES_PLAYED != null) {
+      draw.GAMES_PLAYED = Math.min(maximumGames, draw.GAMES_PLAYED);
+    }
+    if (draw.GAMES_STARTED != null) {
+      draw.GAMES_STARTED = Math.min(
+        maximumGames,
+        draw.GAMES_PLAYED ?? maximumGames,
+        draw.GAMES_STARTED,
+      );
+    }
+    if (population === "goalie" && draw.SHOTS_AGAINST_GOALIE != null) {
+      draw.GOALS_AGAINST_GOALIE = Math.min(
+        draw.SHOTS_AGAINST_GOALIE,
+        draw.GOALS_AGAINST_GOALIE ?? 0,
+      );
+      for (const danger of ["HIGH_DANGER", "MID_RANGE", "LONG_RANGE"] as const) {
+        const shots = `${danger}_SHOTS_AGAINST_GOALIE`;
+        const goals = `${danger}_GOALS_AGAINST_GOALIE`;
+        if (draw[shots] != null) {
+          draw[goals] = Math.min(draw[shots], draw[goals] ?? 0);
+        }
+      }
+    }
+    for (const [target, value] of Object.entries(
+      reconcileProjectionValues(draw, population),
+    )) {
+      const targetSamples = samples.get(target) ?? [];
+      targetSamples.push(value);
+      samples.set(target, targetSamples);
+    }
+  }
+  const projection = (probability: number) =>
+    Object.fromEntries(
+      [...samples.entries()].map(([target, values]) => [
+        target,
+        sampledQuantile(values, probability),
+      ]),
+    );
+  return {
+    p10: projection(0.1),
+    p50: projection(0.5),
+    p90: projection(0.9),
+  };
+}
+
 export function aggregateSeasonGames(
   evaluations: SeasonGameEvaluation[],
 ): {
@@ -520,15 +635,31 @@ export function aggregateSeasonGames(
   const roundedVariances = Object.fromEntries(
     Object.entries(variances).map(([key, value]) => [key, round(value)]),
   );
-  const aggregateQuantiles = quantiles(
-    reconciledMeans,
-    roundedVariances,
-    population,
-    evaluations.length,
-  );
   const componentManifest = evaluations
     .map(({ gameId, componentHash }) => ({ gameId, componentHash }))
     .sort((left, right) => left.gameId - right.gameId);
+  const advancedTargets = population === "goalie"
+    ? GOALIE_ADVANCED_V5_PRIMITIVE_TARGETS
+    : SKATER_ADVANCED_V5_PRIMITIVE_TARGETS;
+  const usesAdvancedContract = advancedTargets.some(
+    (target) => roundedVariances[target] != null,
+  );
+  const aggregateQuantiles = usesAdvancedContract
+    ? correlatedAggregateQuantiles(
+        reconciledMeans,
+        roundedVariances,
+        population,
+        evaluations.length,
+        `advanced-v5:${evaluations[0].fhfhPlayerId}:${componentManifest
+          .map(({ gameId }) => gameId)
+          .join(",")}`,
+      )
+    : quantiles(
+        reconciledMeans,
+        roundedVariances,
+        population,
+        evaluations.length,
+      );
   const aggregate = {
     means: reconciledMeans,
     variances: roundedVariances,

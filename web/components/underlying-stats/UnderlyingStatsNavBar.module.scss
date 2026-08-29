@@ -54,8 +54,60 @@
   }
 }
 
+.connected {
+  display: inline-flex;
+  width: auto;
+  gap: 0;
+  padding: 3px;
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  background: v.$background-header;
+
+  .navButton {
+    min-height: v.$control-height-md;
+    padding: 0 v.$space-md;
+    border: 0;
+    border-radius: calc(v.$radius-control - 2px);
+    background: transparent;
+    color: v.$text-secondary;
+    font-family: v.$font-family-primary, sans-serif;
+    font-size: v.$font-size-sm;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+
+    &:hover:not(.active) {
+      background: rgba(v.$color-white, 0.04);
+      color: v.$text-primary;
+      box-shadow: none;
+    }
+
+    &:focus-visible {
+      box-shadow: v.$focus-ring;
+    }
+
+    &.active {
+      border-color: transparent;
+      background: v.$primary-color;
+      color: v.$color-white;
+      box-shadow: none;
+    }
+  }
+}
+
 @media (max-width: v.$breakpoint-tablet) {
   .navBar {
     grid-template-columns: 1fr;
+  }
+
+  .connected {
+    display: flex;
+    width: max-content;
+    min-width: 100%;
+
+    .navButton {
+      flex: 1 0 auto;
+      min-height: v.$touch-target-min;
+    }
   }
 }

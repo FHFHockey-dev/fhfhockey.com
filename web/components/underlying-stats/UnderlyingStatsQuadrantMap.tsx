@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type KeyboardEvent } from "react";
 import {
   CartesianGrid,
   ReferenceLine,
@@ -11,19 +11,24 @@ import {
 } from "recharts";
 
 import type { UnderlyingStatsLandingQuadrantPoint } from "../../lib/underlying-stats/teamLandingDashboard";
+import { getLocalTeamLogoPath } from "../../lib/images";
+import OptimizedImage from "../common/OptimizedImage";
 import styles from "./UnderlyingStatsQuadrantMap.module.scss";
 
 type UnderlyingStatsQuadrantMapProps = {
   activeTeamAbbr?: string | null;
   averageDefenseProcess: number;
   averageOffenseProcess: number;
-  onTeamHover?: (teamAbbr: string | null) => void;
+  onTeamPin?: (teamAbbr: string) => void;
+  onTeamPreview?: (teamAbbr: string | null) => void;
+  pinnedTeamAbbr?: string | null;
   points: UnderlyingStatsLandingQuadrantPoint[];
 };
 
 type QuadrantDotProps = {
-  activeTeamAbbr: string | null;
-  onTeamHover?: (teamAbbr: string | null) => void;
+  onTeamPin?: (teamAbbr: string) => void;
+  onTeamPreview?: (teamAbbr: string | null) => void;
+  pinnedTeamAbbr: string | null;
   payload?: UnderlyingStatsLandingQuadrantPoint;
   x?: number;
   y?: number;
@@ -33,9 +38,10 @@ const formatSigned = (value: number): string =>
   `${value > 0 ? "+" : ""}${value.toFixed(2)}`;
 
 const QuadrantDot = ({
-  activeTeamAbbr,
-  onTeamHover,
+  onTeamPin,
+  onTeamPreview,
   payload,
+  pinnedTeamAbbr,
   x,
   y
 }: QuadrantDotProps) => {
@@ -43,25 +49,50 @@ const QuadrantDot = ({
     return null;
   }
 
-  const isActive = activeTeamAbbr === payload.teamAbbr;
+  const isPinned = pinnedTeamAbbr === payload.teamAbbr;
+  const handleKeyDown = (event: KeyboardEvent<SVGGElement>) => {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+
+    event.preventDefault();
+    onTeamPin?.(payload.teamAbbr);
+  };
 
   return (
     <g
       className={styles.pointGroup}
-      onMouseEnter={() => onTeamHover?.(payload.teamAbbr)}
-      onMouseLeave={() => onTeamHover?.(null)}
+      role="button"
+      tabIndex={0}
+      aria-label={`Pin ${payload.teamName}`}
+      aria-pressed={isPinned}
+      onBlur={() => onTeamPreview?.(null)}
+      onClick={() => onTeamPin?.(payload.teamAbbr)}
+      onFocus={() => onTeamPreview?.(payload.teamAbbr)}
+      onKeyDown={handleKeyDown}
+      onMouseEnter={() => onTeamPreview?.(payload.teamAbbr)}
+      onMouseLeave={() => onTeamPreview?.(null)}
     >
       <circle
         cx={x}
         cy={y}
-        r={isActive ? 19 : 15}
-        className={isActive ? styles.pointActive : styles.point}
+        r={isPinned ? 16 : 13}
+        className={isPinned ? styles.pointActive : styles.point}
+      />
+      <image
+        href={getLocalTeamLogoPath(payload.teamAbbr)}
+        x={x - 9}
+        y={y - 9}
+        width={18}
+        height={18}
+        preserveAspectRatio="xMidYMid meet"
+        className={styles.pointLogo}
       />
       <text
-        x={x}
+        x={x + 15}
         y={y + 0.5}
-        className={isActive ? styles.pointLabelActive : styles.pointLabel}
-        textAnchor="middle"
+        className={isPinned ? styles.pointLabelActive : styles.pointLabel}
+        textAnchor="start"
         dominantBaseline="central"
       >
         {payload.teamAbbr}
@@ -114,7 +145,9 @@ export default function UnderlyingStatsQuadrantMap({
   activeTeamAbbr = null,
   averageDefenseProcess,
   averageOffenseProcess,
-  onTeamHover,
+  onTeamPin,
+  onTeamPreview,
+  pinnedTeamAbbr = null,
   points
 }: UnderlyingStatsQuadrantMapProps) {
   const domain = useMemo(() => {
@@ -132,6 +165,23 @@ export default function UnderlyingStatsQuadrantMap({
       y: [-(yMax + 0.35), yMax + 0.35] as [number, number]
     };
   }, [points]);
+  const activePoint = useMemo(
+    () =>
+      activeTeamAbbr
+        ? points.find((point) => point.teamAbbr === activeTeamAbbr) ?? null
+        : null,
+    [activeTeamAbbr, points]
+  );
+  const quadrantDot = useMemo(
+    () => (
+      <QuadrantDot
+        onTeamPin={onTeamPin}
+        onTeamPreview={onTeamPreview}
+        pinnedTeamAbbr={pinnedTeamAbbr}
+      />
+    ),
+    [onTeamPin, onTeamPreview, pinnedTeamAbbr]
+  );
 
   return (
     <div className={styles.shell}>
@@ -145,7 +195,7 @@ export default function UnderlyingStatsQuadrantMap({
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart
             margin={{ top: 24, right: 12, bottom: 28, left: 0 }}
-            onMouseLeave={() => onTeamHover?.(null)}
+            onMouseLeave={() => onTeamPreview?.(null)}
           >
             <CartesianGrid stroke="rgba(255,255,255,0.08)" />
             <XAxis
@@ -181,12 +231,12 @@ export default function UnderlyingStatsQuadrantMap({
             />
             <ReferenceLine
               x={averageOffenseProcess}
-              stroke="rgba(219,165,7,0.35)"
+              stroke="rgba(20,162,210,0.46)"
               strokeDasharray="5 5"
             />
             <ReferenceLine
               y={averageDefenseProcess}
-              stroke="rgba(219,165,7,0.35)"
+              stroke="rgba(20,162,210,0.46)"
               strokeDasharray="5 5"
             />
             {activeTeamAbbr ? (
@@ -214,16 +264,66 @@ export default function UnderlyingStatsQuadrantMap({
             />
             <Scatter
               data={points}
-              shape={
-                <QuadrantDot
-                  activeTeamAbbr={activeTeamAbbr}
-                  onTeamHover={onTeamHover}
-                />
-              }
+              shape={quadrantDot}
             />
           </ScatterChart>
         </ResponsiveContainer>
       </div>
+      <div className={styles.xDirection} aria-hidden="true">
+        <span>← Worse</span>
+        <span>Better →</span>
+      </div>
+      <div className={styles.yDirection} aria-hidden="true">
+        <span>Better ↑</span>
+        <span>Worse ↓</span>
+      </div>
+      {activePoint ? (
+        <aside
+          className={styles.selectionCard}
+          data-pinned={pinnedTeamAbbr === activePoint.teamAbbr}
+          aria-label={`${activePoint.teamName} selected-team context`}
+        >
+          <div className={styles.selectionHeader}>
+            <OptimizedImage
+              src={getLocalTeamLogoPath(activePoint.teamAbbr)}
+              alt=""
+              width={34}
+              height={34}
+              className={styles.selectionLogo}
+            />
+            <div>
+              <strong>{activePoint.teamAbbr}</strong>
+              <span>{activePoint.teamName}</span>
+            </div>
+            <div className={styles.selectionScore}>
+              {activePoint.power.toFixed(1)}
+              <span>Power</span>
+            </div>
+          </div>
+          <div className={styles.selectionMetrics}>
+            <span>
+              <small>Trend</small>
+              <strong>{formatSigned(activePoint.trend)}</strong>
+            </span>
+            <span>
+              <small>Off process</small>
+              <strong>{formatSigned(activePoint.offenseProcess)}</strong>
+            </span>
+            <span>
+              <small>Def process</small>
+              <strong>{formatSigned(activePoint.defenseProcess)}</strong>
+            </span>
+          </div>
+          <p>{activePoint.summary}</p>
+          {activePoint.archetypes.length ? (
+            <div className={styles.selectionTags}>
+              {activePoint.archetypes.slice(0, 2).map((tag) => (
+                <span key={`${activePoint.teamAbbr}-${tag}`}>{tag}</span>
+              ))}
+            </div>
+          ) : null}
+        </aside>
+      ) : null}
     </div>
   );
 }

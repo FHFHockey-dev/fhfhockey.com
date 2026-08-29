@@ -2,6 +2,8 @@ import type { Database } from "lib/supabase/database-generated.types";
 
 type SkaterStatsRow =
   Database["public"]["Views"]["player_stats_unified"]["Row"];
+type PlayoffSkaterStatsRow =
+  Database["public"]["Tables"]["wgo_skater_stats_playoffs"]["Row"];
 type GoalieStatsRow =
   Database["public"]["Views"]["goalie_stats_unified"]["Row"];
 type TrendSourceRow = SkaterStatsRow | GoalieStatsRow;
@@ -9,6 +11,25 @@ type TrendSourceRow = SkaterStatsRow | GoalieStatsRow;
 type MetricType = "skater" | "goalie";
 
 type NumberOrNull = number | null;
+
+export const PLAYER_TREND_CALCULATION_VERSION =
+  "player-trend-v2-full-history-source-units";
+
+export function normalizePlayoffSkaterTrendRow(
+  row: PlayoffSkaterStatsRow,
+): SkaterStatsRow {
+  const rawToiSeconds =
+    row.toi_per_game == null ? null : Number(row.toi_per_game);
+  const toiMinutes =
+    rawToiSeconds != null && Number.isFinite(rawToiSeconds)
+      ? rawToiSeconds / 60
+      : null;
+
+  return {
+    ...row,
+    toi_per_game: toiMinutes,
+  } as unknown as SkaterStatsRow;
+}
 
 type BaseTrendMetricDefinition<
   TRow extends TrendSourceRow,
@@ -45,6 +66,7 @@ interface MetricAccumulator {
 }
 
 export interface TrendRecord {
+  calculation_version: typeof PLAYER_TREND_CALCULATION_VERSION;
   player_id: number;
   season_id: number | null;
   game_date: string;
@@ -194,6 +216,7 @@ function processMetric<
   }
 
   results.push({
+    calculation_version: PLAYER_TREND_CALCULATION_VERSION,
     player_id: playerId,
     season_id: row.season_id ?? null,
     game_date: gameDate,

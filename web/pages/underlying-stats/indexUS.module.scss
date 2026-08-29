@@ -1423,3 +1423,378 @@
     min-width: 0;
   }
 }
+
+// Underlying Stats dashboard redesign shell and table refinements.
+.page {
+  display: block;
+  min-height: 100vh;
+  padding: 0;
+  background: v.$background-dark;
+}
+
+.dashboardShell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: v.$space-md;
+  width: min(100%, 1560px);
+  margin-inline: auto;
+  padding: v.$space-md v.$space-lg v.$space-xl;
+}
+
+.tableSection {
+  @include p.panel-shell(
+    $padding: v.$space-md,
+    $variant: soft,
+    $overflow: visible
+  );
+  width: 100%;
+  margin: 0;
+  gap: v.$space-md;
+  order: initial;
+}
+
+.sectionHeader {
+  align-items: flex-start;
+}
+
+.sectionKicker {
+  color: v.$primary-color;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: v.$space-xs;
+}
+
+.sectionInfo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(v.$primary-color, 0.55);
+  border-radius: 50%;
+  color: v.$primary-color;
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
+}
+
+.tableHelpSummary {
+  border-color: rgba(v.$primary-color, 0.36);
+  background: rgba(v.$primary-color, 0.08);
+  color: v.$primary-color;
+  font-family: v.$font-family-primary, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
+}
+
+.sectionMeta {
+  font-family: v.$font-family-numbers, monospace;
+
+  span {
+    min-height: 28px;
+    border-radius: v.$radius-control;
+  }
+}
+
+.modeToggle {
+  gap: 0;
+  padding: 3px;
+  border-radius: v.$radius-control;
+  background: v.$background-header;
+}
+
+.modeButton {
+  min-width: 92px;
+  min-height: v.$control-height-md;
+  border-radius: calc(v.$radius-control - 2px);
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: v.$font-size-sm;
+  letter-spacing: 0;
+  text-transform: none;
+
+  &:hover,
+  &:focus-visible {
+    color: v.$primary-color;
+  }
+
+  &:focus-visible {
+    box-shadow: v.$focus-ring;
+  }
+}
+
+.modeButtonActive {
+  border-color: transparent;
+  background: v.$primary-color;
+  color: v.$color-white;
+}
+
+.loadingBanner,
+.errorBanner,
+.emptyState {
+  width: 100%;
+  margin: 0;
+  padding: v.$space-sm v.$space-md;
+  border-radius: v.$radius-control;
+  text-align: left;
+}
+
+.loadingBanner {
+  color: v.$warning-color;
+}
+
+.tableWrapper {
+  border-radius: v.$radius-control;
+  background: v.$background-dark;
+  box-shadow: none;
+}
+
+.table {
+  thead th {
+    background: v.$background-header;
+  }
+
+  tbody tr:hover {
+    background: rgba(v.$primary-color, 0.055);
+  }
+}
+
+.sortButton {
+  &:hover,
+  &:focus-visible {
+    color: v.$primary-color;
+  }
+
+  &:focus-visible {
+    box-shadow: v.$focus-ring;
+  }
+}
+
+.sortIndicator {
+  color: rgba(v.$primary-color, 0.8);
+}
+
+.metricHeader {
+  border-bottom-color: rgba(v.$primary-color, 0.55);
+}
+
+.powerCell {
+  color: v.$color-white;
+}
+
+.metricPopoverIcon {
+  border-color: rgba(v.$primary-color, 0.42);
+  color: v.$primary-color;
+}
+
+.metricPopoverSummary:focus-visible {
+  outline: none;
+  box-shadow: v.$focus-ring;
+}
+
+.metricPopoverContent {
+  border-color: rgba(v.$primary-color, 0.32);
+}
+
+.stickyRankHeader,
+.stickyTeamHeader,
+.rankCell,
+.teamCell {
+  position: sticky !important;
+}
+
+.stickyRankHeader,
+.rankCell {
+  left: 0;
+}
+
+.stickyTeamHeader,
+.teamCell {
+  left: 52px;
+}
+
+.stickyRankHeader,
+.stickyTeamHeader {
+  z-index: 5 !important;
+}
+
+.rankCell,
+.teamCell {
+  z-index: 1;
+  background: color.adjust(v.$background-dark, $lightness: -1%);
+}
+
+.table tbody tr:nth-child(even) {
+  .rankCell,
+  .teamCell {
+    background: color.adjust(v.$background-dark, $lightness: 0.5%);
+  }
+}
+
+.table tbody tr:hover,
+.tableRowActive {
+  .rankCell,
+  .teamCell {
+    background: color.adjust(v.$background-dark, $lightness: 2.2%);
+  }
+}
+
+.tableRowActive > td {
+  background-color: rgba(v.$primary-color, 0.09);
+  box-shadow: inset 0 1px 0 rgba(v.$primary-color, 0.18);
+}
+
+.teamCellButton {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-sm;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
+}
+
+.tableTeamLogo {
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.narrativeCell {
+  min-width: 280px;
+  max-width: 440px;
+}
+
+.narrativeLine {
+  display: block;
+  overflow: hidden;
+  color: v.$text-secondary;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tablePreviewFooter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: v.$space-md;
+  padding-top: v.$space-sm;
+  color: v.$text-secondary;
+  font-family: v.$font-family-numbers, monospace;
+  font-size: 0.68rem;
+}
+
+.viewAllButton {
+  min-height: v.$control-height-md;
+  padding: 0 v.$space-md;
+  border: 1px solid rgba(v.$primary-color, 0.55);
+  border-radius: v.$radius-control;
+  background: rgba(v.$primary-color, 0.08);
+  color: v.$primary-color;
+  cursor: pointer;
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: v.$font-size-sm;
+  font-weight: 700;
+
+  &:hover {
+    background: rgba(v.$primary-color, 0.14);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
+}
+
+.pageFooterMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: v.$space-md;
+  padding: 0 v.$space-xs;
+  color: v.$text-secondary;
+  font-family: v.$font-family-numbers, monospace;
+  font-size: 0.65rem;
+}
+
+@media (max-width: 899px) {
+  .dashboardShell {
+    padding: v.$space-md;
+  }
+
+  .sectionHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sectionTools,
+  .sectionMeta {
+    justify-items: stretch;
+  }
+
+  .modeToggle {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .modeButton {
+    min-height: v.$touch-target-min;
+  }
+
+  .sectionMeta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    span {
+      justify-content: center;
+    }
+  }
+}
+
+@media (max-width: v.$breakpoint-mobile-lg) {
+  .dashboardShell {
+    padding: v.$space-sm;
+  }
+
+  .tableSection {
+    padding: v.$space-sm;
+  }
+
+  .sectionDescription {
+    font-size: v.$mobile-font-size-sm;
+  }
+
+  .tablePreviewFooter,
+  .pageFooterMeta {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: v.$space-xs;
+  }
+
+  .viewAllButton {
+    min-height: v.$touch-target-min;
+    width: 100%;
+  }
+}
