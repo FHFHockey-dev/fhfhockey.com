@@ -112,6 +112,16 @@ const ITEMS_DATA: NavbarItem[] = [
           order: 7,
         },
       },
+      {
+        type: "link",
+        label: "Roster Schedule Optimizer",
+        href: "/roster-schedule-optimizer",
+        mobile: {
+          tier: "secondary",
+          icon: "/pictures/gameGrid.png",
+          order: 8,
+        },
+      },
     ],
   },
   {

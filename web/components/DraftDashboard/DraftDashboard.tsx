@@ -25,11 +25,11 @@ import DraftBoard from "./DraftBoard";
 import MyRoster from "./MyRoster";
 import ProjectionsTable from "./ProjectionsTable";
 import { useVORPCalculations } from "hooks/useVORPCalculations";
+import { useRosterScheduleOptimizer } from "hooks/useRosterScheduleOptimizer";
 import SuggestedPicks from "./SuggestedPicks";
 import DraftSummaryModal from "./DraftSummaryModal";
 import ImportCsvModal from "./ImportCsvModal";
 import ComparePlayersModal from "./ComparePlayersModal";
-import ProjectionSourceAccuracy from "./ProjectionSourceAccuracy";
 import YahooLiveDraftPanel from "./YahooLiveDraftPanel";
 import EspnLiveDraftPanel from "./EspnLiveDraftPanel";
 import MobileDraftTabs, { useMobileDraftTab } from "./MobileDraftTabs";
@@ -1754,6 +1754,14 @@ const DraftDashboard: React.FC = () => {
     prorate82,
   });
 
+  const rosterScheduleOptimizer = useRosterScheduleOptimizer({
+    players: allPlayers,
+    rosterAssignments,
+    myTeamId,
+    rosterConfig: draftSettings.rosterConfig,
+    vorpMetrics,
+  });
+
   const effectiveRosterConfig = useMemo(
     () => getEffectiveRosterConfig(draftSettings.rosterConfig, forwardGrouping),
     [draftSettings.rosterConfig, forwardGrouping],
@@ -2734,6 +2742,33 @@ const DraftDashboard: React.FC = () => {
     skaterData.sourceWarnings,
     skaterSourcesEnabled,
   ]);
+  const tableDataNotices = useMemo(() => {
+    const notices = [...projectionDataNotices];
+    if (rosterScheduleOptimizer.status === "error") {
+      notices.push(
+        `DUST schedule insights are unavailable. ${rosterScheduleOptimizer.error ?? "Schedule data could not be loaded."}`,
+      );
+    } else if (rosterScheduleOptimizer.status === "empty") {
+      notices.push(
+        "DUST schedule insights are unavailable because the current Yahoo team-game cache is empty.",
+      );
+    } else if (rosterScheduleOptimizer.stale) {
+      notices.push(
+        "DUST schedule insights are using stale schedule data; refresh the optimizer schedule cache before relying on rescheduled games.",
+      );
+    }
+    if (rosterScheduleOptimizer.status === "ready") {
+      notices.push(
+        "DUST uses exact daily lineup assignment; weekly-lock leagues are not yet supported.",
+      );
+      if (rosterScheduleOptimizer.skippedCandidates > 0) {
+        notices.push(
+          `${rosterScheduleOptimizer.skippedCandidates} DUST candidate calculations were skipped because team or eligibility data could not be resolved.`,
+        );
+      }
+    }
+    return notices;
+  }, [projectionDataNotices, rosterScheduleOptimizer]);
   const projectionEmptyStateMessage =
     !skaterSourcesEnabled && !goalieSourcesEnabled
       ? "No projection sources are enabled. Enable at least one skater or goalie source in Draft Settings."
@@ -3130,9 +3165,6 @@ const DraftDashboard: React.FC = () => {
         onClear={espnDraftSync.clear}
       />
         </div>
-        <div className={styles.accuracyPanel}>
-          <ProjectionSourceAccuracy players={allPlayers} />
-        </div>
       </div>
 
       {/* Full-width Suggested Picks above the three panels */}
@@ -3304,7 +3336,8 @@ const DraftDashboard: React.FC = () => {
               skater: skaterData.inclusionDiagnostics,
               goalie: goalieData.inclusionDiagnostics,
             }}
-            dataNotices={projectionDataNotices}
+            dataNotices={tableDataNotices}
+            dustInsights={rosterScheduleOptimizer.insights}
             emptyStateMessage={projectionEmptyStateMessage}
           />
           <button

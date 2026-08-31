@@ -28768,6 +28768,112 @@ export type Database = {
         }
         Relationships: []
       }
+      roster_optimizer_team_games: {
+        Row: {
+          fetched_at: string
+          game_date: string
+          game_key: string
+          game_status: string
+          game_type: number
+          home_away: string
+          id: number
+          inserted_at: string
+          is_countable: boolean
+          mapping_status: string
+          opponent_abbreviation: string
+          opponent_team_id: number
+          schedule_status: string
+          season: string
+          source_game_id: number
+          source_metadata: Json
+          source_season_id: number
+          source_updated_at: string | null
+          source_url: string
+          start_time: string | null
+          team_abbreviation: string
+          team_id: number
+          updated_at: string
+          week: number | null
+          yahoo_matchup_week_id: number | null
+        }
+        Insert: {
+          fetched_at: string
+          game_date: string
+          game_key: string
+          game_status: string
+          game_type: number
+          home_away: string
+          id?: number
+          inserted_at?: string
+          is_countable?: boolean
+          mapping_status: string
+          opponent_abbreviation: string
+          opponent_team_id: number
+          schedule_status: string
+          season: string
+          source_game_id: number
+          source_metadata?: Json
+          source_season_id: number
+          source_updated_at?: string | null
+          source_url: string
+          start_time?: string | null
+          team_abbreviation: string
+          team_id: number
+          updated_at?: string
+          week?: number | null
+          yahoo_matchup_week_id?: number | null
+        }
+        Update: {
+          fetched_at?: string
+          game_date?: string
+          game_key?: string
+          game_status?: string
+          game_type?: number
+          home_away?: string
+          id?: number
+          inserted_at?: string
+          is_countable?: boolean
+          mapping_status?: string
+          opponent_abbreviation?: string
+          opponent_team_id?: number
+          schedule_status?: string
+          season?: string
+          source_game_id?: number
+          source_metadata?: Json
+          source_season_id?: number
+          source_updated_at?: string | null
+          source_url?: string
+          start_time?: string | null
+          team_abbreviation?: string
+          team_id?: number
+          updated_at?: string
+          week?: number | null
+          yahoo_matchup_week_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roster_optimizer_team_games_matchup_week_fkey"
+            columns: ["yahoo_matchup_week_id"]
+            isOneToOne: false
+            referencedRelation: "yahoo_matchup_weeks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roster_optimizer_team_games_opponent_team_fkey"
+            columns: ["opponent_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roster_optimizer_team_games_team_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rosters: {
         Row: {
           created_at: string

@@ -28,12 +28,6 @@
   order: 1;
 }
 
-.accuracyPanel {
-  width: 100%;
-  min-width: 0;
-  order: 2;
-}
-
 .mainContent {
   order: 3;
 }
@@ -324,10 +318,6 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     @include v.custom-scrollbar(v.$primary-color, v.$background-medium);
-  }
-
-  .accuracyPanel {
-    order: initial;
   }
 
   .suggestedSection,

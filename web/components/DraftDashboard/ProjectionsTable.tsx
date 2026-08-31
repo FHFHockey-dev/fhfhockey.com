@@ -23,6 +23,7 @@ import {
 import { getRosterPositions } from "lib/draftDashboard/forwardGrouping";
 import { fetchAllSupabaseFilterChunks } from "lib/supabase/pagination";
 import { selectLatestSeasonRows } from "lib/draftDashboard/previousSeasonTotals";
+import type { DraftDashboardDustInsight } from "hooks/useRosterScheduleOptimizer";
 
 interface ProjectionsTableProps {
   players: ProcessedPlayer[];
@@ -69,6 +70,7 @@ interface ProjectionsTableProps {
   dataNotices?: string[];
   emptyStateMessage?: string;
   personalRankByPlayerId?: Readonly<Record<string, number>>;
+  dustInsights?: ReadonlyMap<string, DraftDashboardDustInsight>;
 }
 
 type SortableField =
@@ -128,6 +130,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   dataNotices = [],
   emptyStateMessage = "No players found matching your filters.",
   personalRankByPlayerId = {},
+  dustInsights,
 }) => {
   const hasPersonalRanks = Object.keys(personalRankByPlayerId).length > 0;
   const [sortField, setSortField] = useState<SortableField>("yahooAvgPick");
@@ -1110,9 +1113,11 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
               <div className={styles.infoTooltip}>
                 <button
                   type="button"
-                  className={styles.infoButton}
+                  className={`${styles.infoButton} ${dataNotices.length > 0 ? styles.infoButtonNotice : ""}`}
                   aria-describedby="projections-help"
-                  aria-label="Legend"
+                  aria-label={
+                    dataNotices.length > 0 ? "Data notices and legend" : "Legend"
+                  }
                 >
                   i
                 </button>
@@ -1121,6 +1126,14 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   role="tooltip"
                   className={styles.tooltipContent}
                 >
+                  {dataNotices.length > 0 && (
+                    <div className={styles.dataNotice}>
+                      <div className={styles.tooltipTitle}>Data notices</div>
+                      {dataNotices.map((notice) => (
+                        <p key={notice}>{notice}</p>
+                      ))}
+                    </div>
+                  )}
                   <div className={styles.tooltipTitle}>Legend</div>
                   <div className={styles.tooltipBody}>
                     <ul>
@@ -1262,14 +1275,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
           </div>
         </div>
       </div>
-
-      {dataNotices.length > 0 && (
-        <div className={styles.dataNotice} role="status" aria-live="polite">
-          {dataNotices.map((notice) => (
-            <p key={notice}>{notice}</p>
-          ))}
-        </div>
-      )}
 
       {/* Mini Run Forecast Row */}
       {expectedRuns && (
@@ -1730,6 +1735,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       : riskPct >= 30
                         ? styles.riskMed
                         : styles.riskLow;
+                const dust = dustInsights?.get(key);
                 const metricColumnsCount = 4; // FP/Score, VORP, VONA, VBD
                 const detailColSpan =
                   1 + // favorite star
@@ -1819,6 +1825,29 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                           </span>
                         )}
                       </div>
+                      {dust && (
+                        <div className={styles.dustInsight}>
+                          <span
+                            className={`${styles.dustBadge} ${styles[`dustRisk${dust.risk[0].toUpperCase()}${dust.risk.slice(1)}`]}`}
+                            aria-label={`${player.fullName}: DUST plus ${dust.marginalDustGames}, ${dust.risk} schedule-conflict risk. ${dust.activeGamesAdded} Active Games Added across ${dust.candidateScheduledGames} scheduled games.`}
+                            title={`${dust.marginalDustGames} additional Bench Games and ${dust.activeGamesAdded} Active Games Added across ${dust.candidateScheduledGames} scheduled games (${Math.round(dust.dustRate * 100)}% DUST rate)`}
+                          >
+                            DUST +{dust.marginalDustGames}
+                          </span>
+                          {dust.alternative && (
+                            <span
+                              className={styles.dustAlternative}
+                              title={`${dust.alternative.playerName} reduces DUST by ${dust.alternative.dustReduction} with a ${dust.alternative.valueDifference.toFixed(1)} ${leagueType === "categories" ? "score" : "projected-points"} difference.`}
+                            >
+                              Alt: {dust.alternative.playerName} ·{" "}
+                              {dust.alternative.valueDifference >= 0 ? "+" : "−"}
+                              {Math.abs(dust.alternative.valueDifference).toFixed(1)}{" "}
+                              {leagueType === "categories" ? "score" : "FP"} · −
+                              {dust.alternative.dustReduction} DUST
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </td>
                     <td
                       className={styles.position}

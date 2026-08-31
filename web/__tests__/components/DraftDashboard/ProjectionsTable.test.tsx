@@ -124,9 +124,18 @@ describe("ProjectionsTable visibility diagnostics", () => {
       />,
     );
     expect(screen.getByText("Healthy Player")).toBeTruthy();
-    expect(screen.getByRole("status").textContent).toContain(
+    const noticeButton = screen.getByRole("button", {
+      name: "Data notices and legend",
+    });
+    const tooltip = document.getElementById(
+      noticeButton.getAttribute("aria-describedby")!,
+    );
+    expect(tooltip?.getAttribute("role")).toBe("tooltip");
+    expect(tooltip?.textContent).toContain(
       "remaining enabled sources are still included",
     );
+    expect(tooltip?.textContent).toContain("Legend");
+    expect(screen.queryByRole("status")).toBeNull();
 
     rerender(
       <ProjectionsTable
@@ -142,6 +151,8 @@ describe("ProjectionsTable visibility diagnostics", () => {
       ),
     ).toBeTruthy();
     expect(screen.queryByText("Healthy Player")).toBeNull();
+    expect(screen.queryByText("Data notices")).toBeNull();
+    expect(screen.getByRole("button", { name: "Legend" })).toBeTruthy();
   });
 
   it("keeps drafted players visible until requested and reports source inclusion", () => {
@@ -314,5 +325,83 @@ describe("ProjectionsTable visibility diagnostics", () => {
     expect((draftButton as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(draftButton);
     expect(onDraftPlayer).not.toHaveBeenCalled();
+  });
+
+  it("renders passive DUST and a lower-conflict alternative without gating draft", () => {
+    const onDraftPlayer = vi.fn();
+    const dustInsights = new Map([
+      [
+        "1",
+        {
+          marginalDustGames: 6,
+          candidateScheduledGames: 68,
+          activeGamesAdded: 62,
+          dustRate: 6 / 68,
+          risk: "elevated" as const,
+          alternative: {
+            playerId: "2",
+            playerName: "Lower Conflict Player",
+            dustReduction: 4,
+            valueDifference: -2.4,
+          },
+        },
+      ],
+    ]);
+
+    render(
+      <ProjectionsTable
+        players={[player(1, "High Conflict Player", "RW")]}
+        allPlayers={[player(1, "High Conflict Player", "RW")]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={onDraftPlayer}
+        canDraft
+        dustInsights={dustInsights}
+      />,
+    );
+
+    expect(screen.getByText("DUST +6")).toBeTruthy();
+    expect(screen.getByText("DUST +6").getAttribute("title")).toContain(
+      "62 Active Games Added",
+    );
+    expect(screen.getByText(/Alt: Lower Conflict Player/).textContent).toContain(
+      "−4 DUST",
+    );
+    const draftButton = screen.getByRole("button", { name: "Draft" });
+    expect((draftButton as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(draftButton);
+    expect(onDraftPlayer).toHaveBeenCalledWith("1");
+  });
+
+  it("shows exact low DUST without a misleading alternative", () => {
+    render(
+      <ProjectionsTable
+        players={[player(1, "Low Conflict Player", "C")]}
+        allPlayers={[player(1, "Low Conflict Player", "C")]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+        dustInsights={
+          new Map([
+            [
+              "1",
+              {
+                marginalDustGames: 0,
+                candidateScheduledGames: 70,
+                activeGamesAdded: 70,
+                dustRate: 0,
+                risk: "low" as const,
+              },
+            ],
+          ])
+        }
+      />,
+    );
+
+    expect(screen.getByText("DUST +0")).toBeTruthy();
+    expect(screen.queryByText(/Alt:/)).toBeNull();
   });
 });
