@@ -40,6 +40,7 @@
   display: flex;
 }
 .modeSwitch button[aria-pressed="true"],
+.settingsTabs button[aria-selected="true"],
 .settingsTabs button[aria-pressed="true"] {
   background: v.$draft-action;
   color: v.$color-white;
@@ -53,6 +54,10 @@
 .settingsShell {
   flex: 0 0 auto;
   min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border: 1px solid rgba(v.$primary-color, 0.7);
   border-radius: 5px;
   margin: 0 8px;
@@ -88,19 +93,46 @@
   fill: currentColor;
   color: v.$primary-color;
 }
+.settingsShell[data-open="true"] { height: clamp(310px, 38dvh, 430px); }
+.settingsShell[data-full="true"] { height: auto; flex: 1; margin-bottom: 8px; }
+.settingsShell[data-full="true"] .settingsSummary { min-height: 62px; }
+.settingsShell[data-full="true"] .weightSummary { display: none; }
+.settingsSummary { flex: 0 0 auto; }
+.settingsActions { display: flex; gap: 6px; margin-left: auto; button { padding: 5px 12px; white-space: nowrap; } }
+.settingsActions + button { margin-left: 0; color: v.$color-white; background: v.$draft-action; }
 .settingsBody {
-  max-height: min(14dvh, 144px);
-  overflow: auto;
-  padding: 8px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: settings-reveal 180ms ease-out;
 }
 .settingsTabs {
   display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 8px;
-  button {
-    padding: 5px 10px;
-  }
+  padding: 0 10px;
+  border-block: 1px solid v.$draft-border;
+  > div { display: flex; }
+  button { padding: 8px 12px; border: 0; border-radius: 0; background: transparent; white-space: nowrap; }
+  button[aria-selected="true"], button[aria-pressed="true"] { color: v.$primary-color; border-bottom: 2px solid v.$primary-color; background: transparent; }
+  .fullSetupButton { margin-left: auto; color: v.$primary-color; }
 }
+.settingsContent { flex: 1; min-height: 0; min-width: 0; overflow: hidden; padding: 10px; }
+.validationStrip {
+  display: flex; flex: 0 0 auto; align-items: center; gap: 14px; min-height: 38px; padding: 6px 12px;
+  border-top: 1px solid v.$draft-border; font-size: 12px; overflow-x: auto;
+  > * { flex: 0 0 auto; }
+  button { background: transparent; border: 0; padding: 4px 10px; border-left: 1px solid v.$draft-border; white-space: nowrap; }
+  > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; color: v.$text-secondary; }
+}
+.settingsErrors { flex: 0 0 auto; max-height: 92px; overflow: auto; margin: 6px 10px 0; padding: 8px; border: 1px solid v.$color-coral-500; color: v.$color-coral-500; button { display: block; background: transparent; border: 0; text-align: left; color: inherit; padding: 4px 0; } }
+.setupNotice { margin: 8px 12px 0; color: v.$color-gold-400; }
+@keyframes settings-reveal { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .settingsBody { animation: none; } }
 .status {
   flex: 0 0 auto;
   min-width: 0;
@@ -182,9 +214,8 @@
   }
 }
 @media (max-width: 1100px) {
-  .settingsBody {
-    max-height: none;
-  }
+  .settingsShell[data-open="true"] { height: min(620px, 75dvh); }
+  .settingsShell[data-full="true"] { flex: 0 0 auto; }
   .weightSummary {
     display: none;
   }
@@ -200,4 +231,15 @@
   .settingsSummary {
     flex-wrap: wrap;
   }
+}
+
+@media (min-width: 1101px) and (max-width: 1550px) {
+  .settingsShell[data-open="true"] .weightSummary { display: none; }
+  .settingsShell[data-open="true"] .settingsSummary { gap: 10px; }
+}
+@media (max-width: 650px) {
+  .settingsSummary { gap: 8px; }
+  .settingsSummary > span { font-size: 11px; }
+  .settingsTabs { padding: 0 4px; gap: 0; button { padding: 8px; } }
+  .settingsActions { margin-left: 0; }
 }

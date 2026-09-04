@@ -1671,11 +1671,64 @@
 }
 
 .inlineSettings {
-  &.settingsContainer { padding: 8px; border: 0; border-radius: 0; background: v.$draft-surface; box-shadow: none; }
-  .title, .collapseButton, .summaryButton { display: none; }
-  .settingsHeader { margin: 0 0 8px; padding: 0 0 6px; }
-  .settingsGrid { gap: 10px; }
-  .fieldset { background: v.$draft-input; padding: 8px 10px; }
-  &[data-section="sources"] .settingsGrid { grid-template-columns: 1fr; }
-  &[data-section="sources"] .settingsGrid > :not([data-projection-sources]) { display: none; }
+  &.settingsContainer { height: 100%; min-height: 0; padding: 0; border: 0; border-radius: 0; background: v.$draft-surface; box-shadow: none; gap: 8px; }
+  .settingsGrid { flex: 1; min-height: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
+  .settingsGrid > * { min-height: 0; min-width: 0; overflow: auto; scrollbar-gutter: stable; }
+  .fieldset { min-width: 0; margin: 0; padding: 14px; border: 1px solid v.$draft-border; border-radius: 4px; background: v.$draft-input; }
+  .leagueDomain > .fieldset + .fieldset { margin-top: 12px; }
+  .legend { font: 12px v.$font-family-accent; color: v.$primary-color; text-transform: uppercase; padding: 0 5px; margin-bottom: 10px; }
+  .settingRow { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+  .label { font-size: 13px; flex: 0 1 auto; }
+  .select { width: auto; max-width: 60%; min-width: 0; padding: 6px 8px; font-size: 13px; }
+  .draftTypeToggle { padding: 2px; width: auto; border: 1px solid v.$draft-border; border-radius: 4px; }
+  .toggleButton { padding: 5px 10px; min-height: 30px; font: 12px v.$font-family-primary; letter-spacing: 0; transition: background-color 180ms; }
+  .toggleButton.active { border: 0; background: v.$draft-action; color: v.$color-white; }
+  .orderControls { margin-block: 12px; > .draftTypeToggle { margin-top: 6px; } }
+  .structuralLockHint { display: block; font-size: 12px; line-height: 1.4; color: v.$text-secondary; margin-block: 8px; }
+  .managementTitle { margin: 16px 0 10px; padding-top: 12px; border-top: 1px solid v.$draft-border; font: 11px v.$font-family-accent; color: v.$primary-color; text-transform: uppercase; }
+  .actionButtons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .actionButton { font: 12px v.$font-family-primary; text-transform: none; letter-spacing: 0; padding: 8px; min-height: 34px; border: 1px solid v.$draft-border; background: v.$draft-surface; }
+  .actionButtonDanger { color: v.$color-coral-500; border-color: rgba(v.$color-coral-500, .45); }
+  .actionButtons > [data-testid="reset-draft-btn"] { grid-column: 1 / -1; order: 5; }
+  .rosterGroup { margin-bottom: 18px; h4 { font: 11px v.$font-family-accent; color: v.$primary-color; margin: 12px 0 10px; text-transform: uppercase; } }
+  .rosterGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .rosterGroup[data-roster-group="Forwards"] .rosterGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .rosterSetting { display: flex; flex-direction: column; align-items: center; gap: 8px; border: 1px solid var(--position-color, v.$draft-border); background: v.$draft-surface; border-radius: 5px; padding: 10px 4px; }
+  .positionLabel { color: var(--position-color, v.$text-secondary); margin: 0; font-size: 13px; }
+  .rosterStepper { display: flex; align-items: center; width: auto; border: 1px solid v.$draft-border; border-radius: 4px; background: v.$draft-input; }
+  .numberInput { width: 32px; padding: 4px 0; font-size: 14px; min-width: 0; border: 0; text-align: center; -moz-appearance: textfield; &::-webkit-inner-spin-button, &::-webkit-outer-spin-button { appearance: none; margin: 0; } }
+  .stepButton { min-width: 24px; width: 24px; height: 30px; padding: 0; border: 0; font: 16px v.$font-family-primary; }
+  .rosterSetting small { color: v.$text-secondary; font-size: 11px; }
+  .rosterSummary { padding: 12px; border: 1px solid v.$draft-border; border-radius: 4px; h4 { margin: 0 0 10px; color: v.$primary-color; font: 11px v.$font-family-accent; span { float: right; font-family: v.$font-family-primary; } } p { margin: 0; line-height: 1.6; } }
+  .rosterTotal { font: 12px v.$font-family-primary; margin-left: 4px; background: none; border: 0; }
+  .settingsGroupScoring { min-height: 0; }
+  .roundChips { flex-wrap: wrap; gap: 4px; }
+  .roundChip { min-width: 28px; height: 28px; padding: 0; border-radius: 50%; }
+  .lockNotice { flex: 0 0 auto; max-height: 80px; overflow: auto; padding: 6px 10px; font-size: 12px; button { float: right; margin-left: 8px; } }
+  .importPanel { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; textarea { width: 100%; min-width: 0; background: v.$draft-surface; color: v.$text-primary; border: 1px solid v.$draft-border; } input { width: 100%; min-width: 0; } }
+  &[data-variant="inline"] {
+    .settingsGrid { display: block; }
+    .settingsGrid > * { height: 100%; }
+    .leagueDomain > .fieldset { display: grid; grid-template-columns: minmax(230px, 1fr) minmax(260px, 1fr) minmax(300px, 1.2fr); column-gap: 28px; align-content: start; }
+    .leagueDomain .settingRow { grid-column: 1; }
+    .orderControls { grid-column: 2; grid-row: 1 / span 3; margin: 0; }
+    .customRoundsRow { grid-column: 2; grid-row: 3 / span 3; }
+    .managementTitle { grid-column: 3; grid-row: 1; border: 0; padding: 0; margin: 0 0 10px; }
+    .actionButtons { grid-column: 3; grid-row: 2 / span 5; align-content: start; }
+    .importPanel, .leagueDomain .lockNotice { grid-column: 1 / -1; }
+    .rosterGroup { display: inline-block; vertical-align: top; width: 32%; padding-right: 20px; margin: 0; }
+    .rosterSummary { margin-top: 12px; }
+  }
 }
+@media (max-width: 1350px) {
+  .inlineSettings[data-variant="full"] .settingsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 1100px) {
+  .inlineSettings[data-variant="inline"] .leagueDomain > .fieldset { display: block; }
+  .inlineSettings[data-variant="inline"] .rosterGroup { display: block; width: 100%; }
+}
+@media (max-width: 650px) {
+  .inlineSettings[data-variant="full"] .settingsGrid { display: block; overflow: auto; > * { height: auto; overflow: visible; margin-bottom: 12px; } }
+}
+
+.domainIssues { color: v.$color-gold-400; font-size: 12px; line-height: 1.4; grid-column: 1 / -1; p { margin: 0 0 8px; } &:empty { display: none; } }

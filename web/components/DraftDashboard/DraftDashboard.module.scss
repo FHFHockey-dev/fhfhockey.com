@@ -53,7 +53,12 @@
 .setupPanel,
 .setupCore {
   min-width: 0;
+  min-height: 0;
+  height: 100%;
 }
+.setupCore > div { height: 100%; min-height: 0; overflow: auto; }
+.dashboardContainer[data-full-settings="true"] { min-height: 0; }
+
 .mobileTabs {
   display: none;
 }

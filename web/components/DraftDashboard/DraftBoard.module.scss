@@ -235,3 +235,7 @@
     z-index: 4;
   }
 }
+
+// Preserve readable team rows when inline settings reduce the available height.
+:global([data-settings-open="true"]) .contributionGraphContainer { overflow: auto; }
+:global([data-settings-open="true"]) .contributionGraph { min-height: 190px; }

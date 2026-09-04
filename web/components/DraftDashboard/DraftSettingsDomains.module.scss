@@ -1,0 +1,235 @@
+@use "styles/vars" as v;
+
+.scoring,
+.sources {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 16px;
+}
+.scoringGroup,
+.sourceGroup {
+  min-width: 0;
+  h4 {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    margin: 0 0 10px;
+    color: v.$primary-color;
+    font: 11px v.$font-family-accent;
+    text-transform: uppercase;
+  }
+  h4 span {
+    font: 11px v.$font-family-primary;
+    color: v.$text-secondary;
+    text-transform: none;
+  }
+  h4 strong {
+    margin-left: 6px;
+    color: v.$primary-color;
+  }
+}
+.categoryHeading {
+  display: flex;
+  justify-content: space-between;
+  color: v.$text-secondary;
+  font-size: 10px;
+  text-transform: uppercase;
+  padding: 5px 8px;
+}
+.categoryList {
+  display: grid;
+  gap: 4px;
+}
+.categoryRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  min-width: 0;
+  border: 1px solid v.$draft-border;
+  background: v.$draft-input;
+  border-radius: 3px;
+  label {
+    flex: 1;
+    overflow-wrap: anywhere;
+  }
+  input {
+    width: 64px;
+    text-align: right;
+    padding: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  [data-negative="true"] {
+    color: v.$color-coral-500 !important;
+  }
+  button {
+    min-width: 28px;
+    min-height: 28px;
+    color: v.$color-coral-500;
+  }
+}
+.wideButton {
+  width: 100%;
+  min-height: 32px;
+  margin-top: 6px;
+}
+.addCategory {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 55px auto;
+  gap: 4px;
+  margin-top: 8px;
+  input,
+  select {
+    width: 100%;
+    min-width: 0;
+    padding: 6px;
+  }
+  button {
+    padding: 4px 6px;
+  }
+}
+.profile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+  border-top: 1px solid v.$draft-border;
+  padding-top: 14px;
+  strong {
+    color: v.$primary-color;
+  }
+}
+.note {
+  margin: auto 0 0;
+  padding-top: 12px;
+  border-top: 1px solid v.$draft-border;
+  color: v.$text-secondary;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  button {
+    flex: 1;
+    padding: 6px 8px;
+    min-height: 34px;
+  }
+}
+.modeSwitch {
+  display: flex;
+  align-self: flex-end;
+  button {
+    padding: 6px 12px;
+  }
+  button[aria-pressed="true"] {
+    background: v.$draft-action !important;
+    color: v.$color-white;
+  }
+}
+.sourceGroup {
+  padding: 10px;
+  border: 1px solid v.$draft-border;
+  border-radius: 4px;
+  background: v.$draft-input;
+}
+.sourceRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  min-width: 0;
+  > label:first-child {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex: 1 1 120px;
+    min-width: 0;
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+  input[type="checkbox"] {
+    flex: 0 0 auto;
+  }
+  meter {
+    flex: 1;
+    min-width: 25px;
+    height: 7px;
+    appearance: none;
+    border: none;
+    background: v.$draft-border;
+    border-radius: 0;
+  }
+  meter::-webkit-meter-bar {
+    background: v.$draft-border;
+    border: none;
+    border-radius: 0;
+  }
+  meter::-webkit-meter-optimum-value {
+    background: v.$primary-color;
+  }
+  > strong {
+    min-width: 38px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  &[data-disabled="true"] {
+    color: v.$text-secondary;
+  }
+}
+.weightInput {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  input {
+    width: 58px;
+    padding: 5px;
+    text-align: right;
+  }
+}
+
+:global([data-variant="inline"]) .scoring {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 24px;
+  .profile,
+  .note,
+  > .actions {
+    grid-column: 1 / -1;
+  }
+  .categoryList {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+:global([data-variant="inline"]) .sources {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  .modeSwitch,
+  > .wideButton,
+  > .actions,
+  > .note {
+    grid-column: 1 / -1;
+  }
+  .modeSwitch {
+    justify-self: end;
+  }
+}
+@media (max-width: 800px) {
+  :global([data-variant="inline"]) .scoring,
+  :global([data-variant="inline"]) .sources {
+    display: flex;
+  }
+  :global([data-variant="inline"]) .scoring .categoryList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+:global([data-variant="full"]) .categoryList {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}

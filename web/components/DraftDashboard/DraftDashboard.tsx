@@ -20,7 +20,8 @@ import { useEspnDraftSync } from "hooks/useEspnDraftSync";
 import supabase from "lib/supabase";
 import { useAuth } from "contexts/AuthProviderContext";
 
-import DraftSettings from "./DraftSettings";
+import DraftSettings, { type DraftSettingsHandle } from "./DraftSettings";
+import { validateDraftSettings, bookmarkImportError } from "lib/draftDashboard/settingsValidation";
 import DraftBoard from "./DraftBoard";
 import DraftWorkspaceHeader from "./DraftWorkspaceHeader";
 import DraftSettingsShell, { type SettingsSection } from "./DraftSettingsShell";
@@ -281,7 +282,7 @@ function forwardGroupingForRoster(rosterConfig: Record<string, number>) {
 }
 
 const DraftDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const draftRanking = useDraftRanking(user?.id || null);
   const yahooDraftSync = useYahooDraftSync(Boolean(user?.id));
   const espnDraftSync = useEspnDraftSync(Boolean(user?.id));
@@ -462,12 +463,19 @@ const DraftDashboard: React.FC = () => {
   // Add summary modal state
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [settingsSection, setSettingsSection] = useState<SettingsSection>("setup");
-  const openSettings = (section: SettingsSection) => {
+  const [settingsSection, setSettingsSection] = useState<SettingsSection>("league");
+  const [fullSettings, setFullSettings] = useState(false);
+  const [settingsConfigured, setSettingsConfigured] = useState(false);
+  const [settingsSaveError, setSettingsSaveError] = useState<string | null>(null);
+  const [accountSettingsKnown, setAccountSettingsKnown] = useState(false);
+  const settingsEditorRef = useRef<DraftSettingsHandle>(null);
+  const initialSetupChecked = useRef(false);
+  const openSettings = useCallback((section: SettingsSection) => {
     setSettingsSection(section);
+    setFullSettings(current => current || section === "league");
     setSettingsOpen(true);
     setActiveMobileTab("setup");
-  };
+  }, [setActiveMobileTab]);
   useEffect(() => {
     if (mobileWorkspaceEnabled) {
       setSettingsOpen(activeMobileTab === "setup");
@@ -586,6 +594,7 @@ const DraftDashboard: React.FC = () => {
     fantraxLeagueOverride?: DraftFantraxSelection | null;
     espnLeagueOverride?: EspnLeagueSelection | null;
     preserveExactCategoryWeights?: boolean;
+    configured?: boolean;
   };
 
   const saveSnapshot = useCallback(() => {
@@ -615,10 +624,15 @@ const DraftDashboard: React.FC = () => {
       fantraxLeagueOverride,
       espnLeagueOverride,
       preserveExactCategoryWeights,
+      configured: settingsConfigured,
     };
     try {
       sessionStorage.setItem("draft.snapshot.v2", JSON.stringify(payload));
-    } catch {}
+      return true;
+    } catch {
+      setSettingsSaveError("Could not save this draft on this device. Export a bookmark, free browser storage, then try Done again.");
+      return false;
+    }
   }, [
     draftSettings,
     manualDraftedPlayers,
@@ -639,6 +653,7 @@ const DraftDashboard: React.FC = () => {
     sourceControls,
     goalieSourceControls,
     getCsvList,
+    settingsConfigured,
     manualDraftingEnabled,
     fantraxLeagueOverride,
     espnLeagueOverride,
@@ -663,6 +678,7 @@ const DraftDashboard: React.FC = () => {
             : 25,
       }, snap.isSnakeDraft ?? true);
       setDraftSettings(restoredSettings);
+      setSettingsConfigured(snap.configured !== false);
       const restoredKeepers = migrateKeeperEntries(
         snap.keepers,
         snap.draftSettings?.teamCount || DEFAULT_DRAFT_SETTINGS.teamCount,
@@ -731,6 +747,7 @@ const DraftDashboard: React.FC = () => {
     snapshotResumeAttemptedRef.current = true;
     if (draftMode === "yahoo") {
       restoredLeagueSettingsRef.current = true;
+      setSettingsConfigured(true);
       return;
     }
     const raw = sessionStorage.getItem("draft.snapshot.v2");
@@ -761,7 +778,11 @@ const DraftDashboard: React.FC = () => {
       .eq("user_id", userId)
       .maybeSingle()
       .then(({ data, error }) => {
-        if (!active || error || !data) return;
+        if (!active || error) return;
+        setAccountSettingsKnown(true);
+        if (!data || manualLeagueSettingsDirtyRef.current) return;
+        restoredLeagueSettingsRef.current = true;
+        setSettingsConfigured(true);
         const defaults = mapUserSettingsRowToLeagueSettings(data);
         setDraftSettings((previous) => ({
           ...previous,
@@ -794,6 +815,18 @@ const DraftDashboard: React.FC = () => {
       active = false;
     };
   }, [draftMode, sessionReady, user?.id]);
+
+  useEffect(() => {
+    if (authLoading || !sessionReady || initialSetupChecked.current || (user && !accountSettingsKnown && !restoredLeagueSettingsRef.current)) return;
+    initialSetupChecked.current = true;
+    if (!restoredLeagueSettingsRef.current || !settingsConfigured) {
+      setSettingsConfigured(false);
+      setFullSettings(true);
+      setSettingsOpen(true);
+      setSettingsSection("league");
+      setActiveMobileTab("setup");
+    }
+  }, [authLoading, sessionReady, user, accountSettingsKnown, settingsConfigured, setActiveMobileTab]);
 
   // Persist snapshot as state changes
   useEffect(() => {
@@ -1062,6 +1095,7 @@ const DraftDashboard: React.FC = () => {
               saved.isSnakeDraft ?? true,
             );
             setDraftSettings(restoredSettings);
+            setSettingsConfigured(saved.configured !== false);
             restoredLeagueSettingsRef.current = true;
             manualLeagueSettingsDirtyRef.current = true;
             const restoredKeepers = migrateKeeperEntries(
@@ -1171,6 +1205,7 @@ const DraftDashboard: React.FC = () => {
     if (typeof window === "undefined") return;
     const payload = {
       version: 1,
+      configured: settingsConfigured,
       draftSettings,
       draftedPlayers: manualDraftedPlayers,
       currentPick,
@@ -1193,6 +1228,7 @@ const DraftDashboard: React.FC = () => {
     } catch {}
   }, [
     sessionReady,
+    settingsConfigured,
     draftSettings,
     manualDraftedPlayers,
     currentPick,
@@ -2163,10 +2199,25 @@ const DraftDashboard: React.FC = () => {
     if (draftComplete) setIsSummaryOpen(true);
   }, [draftComplete]);
 
+  const playerEligibility = useMemo(() => new Map(allPlayers.map(player => [String(player.playerId), normalizePlayerEligibility(player.displayPosition, player.eligiblePositions)])), [allPlayers]);
+  const settingsValidationInput = useMemo(() => ({ settings: draftSettings, myTeamId, goalieScoring: goaliePointValues, skaterSources: sourceControls, goalieSources: goalieSourceControls, draftedPlayers, keepers, trades: pickTrades, playerEligibility, forwardGrouping }), [draftSettings, myTeamId, goaliePointValues, sourceControls, goalieSourceControls, draftedPlayers, keepers, pickTrades, playerEligibility, forwardGrouping]);
+  const settingsValidation = useMemo(() => validateDraftSettings(settingsValidationInput), [settingsValidationInput]);
+  const closeSettings = () => {
+    if (!settingsValidation.valid) return false;
+    if (manualDraftingEnabled && !saveSnapshot()) return false;
+    setSettingsConfigured(true);
+    setSettingsSaveError(null);
+    setSettingsOpen(false);
+    setFullSettings(false);
+    if (mobileWorkspaceEnabled) setActiveMobileTab("players");
+    return true;
+  };
+
   // Draft a player - Updated to track history for undo and prevent drafting beyond completion
   const draftPlayer = useCallback(
     (playerId: string) => {
       if (!manualDraftingEnabled) return;
+      if (!settingsConfigured || !settingsValidation.valid) { openSettings("league"); return; }
       // Prevent drafting beyond completion; open summary instead
       if (draftComplete) {
         setIsSummaryOpen(true);
@@ -2198,6 +2249,9 @@ const DraftDashboard: React.FC = () => {
       currentPick,
       draftedPlayers,
       draftComplete,
+      settingsConfigured,
+      settingsValidation.valid,
+      openSettings,
       manualDraftingEnabled,
     ],
   );
@@ -2273,7 +2327,10 @@ const DraftDashboard: React.FC = () => {
   // Add reset draft functionality
   const resetDraft = useCallback(() => {
     if (!manualDraftingEnabled) return;
-    setManualDraftedPlayers(materializeKeeperPicks([], keepers));
+    setManualDraftedPlayers([]);
+    setKeepers([]);
+    setPickTrades([]);
+    setPositionOverrides({});
     setCurrentPick(1);
     setDraftHistory([]);
     if (typeof window !== "undefined") {
@@ -2281,36 +2338,40 @@ const DraftDashboard: React.FC = () => {
         window.localStorage.removeItem("draftDashboard.session.v1");
       } catch {}
     }
-  }, [keepers, manualDraftingEnabled]);
+  }, [manualDraftingEnabled]);
 
   const updateDraftSettings = useCallback(
     (newSettings: Partial<DraftSettings>) => {
       if (!manualDraftingEnabled) return;
-      manualLeagueSettingsDirtyRef.current = true;
-      if (newSettings.categoryWeights) {
-        setPreserveExactCategoryWeights(false);
+      const next = { ...draftSettings, ...newSettings };
+      const structureChanged = next.teamCount !== draftSettings.teamCount || JSON.stringify(next.draftOrder) !== JSON.stringify(draftSettings.draftOrder) || next.draftOrderMode !== draftSettings.draftOrderMode || JSON.stringify(next.reversedRounds) !== JSON.stringify(draftSettings.reversedRounds);
+      if (structureChanged && (draftedPlayers.length || keepers.length || pickTrades.length)) {
+        setSettingsSaveError("Team count and draft order are locked while picks, keepers, or trades exist. Current picks are unchanged.");
+        return;
       }
-      setDraftSettings((prev) => {
-        const next = { ...prev, ...newSettings };
-        // Ensure draftOrder length matches teamCount if teamCount changed
-        if (typeof newSettings.teamCount === "number") {
-          const count = newSettings.teamCount;
-          if (!next.draftOrder || next.draftOrder.length !== count) {
-            next.draftOrder = Array.from(
-              { length: count },
-              (_, i) => `Team ${i + 1}`,
-            );
-          }
-        }
-        // Ensure myTeamId is valid
-        if (!next.draftOrder.includes(myTeamId)) {
-          setMyTeamId(next.draftOrder[0] || "Team 1");
-        }
-        return normalizeDraftSettingsOrder(next, isSnakeDraft);
-      });
+      if (newSettings.rosterConfig) {
+        const conflict = validateDraftSettings({ ...settingsValidationInput, settings: next }).errors.find(issue => issue.domain === "roster");
+        if (conflict) { setSettingsSaveError(conflict.message); return; }
+      }
+      manualLeagueSettingsDirtyRef.current = true;
+      if (newSettings.categoryWeights) setPreserveExactCategoryWeights(true);
+      setSettingsSaveError(null);
+      setDraftSettings(normalizeDraftSettingsOrder(next, isSnakeDraft));
+      if (!next.draftOrder.includes(myTeamId)) setMyTeamId(next.draftOrder[0] || "Team 1");
     },
-    [isSnakeDraft, manualDraftingEnabled, myTeamId],
+    [draftSettings, draftedPlayers.length, keepers.length, pickTrades.length, isSnakeDraft, manualDraftingEnabled, myTeamId, settingsValidationInput],
   );
+  const resetSettings = () => {
+    if (!manualDraftingEnabled) return;
+    if (!window.confirm("Reset league, roster, scoring, and projection settings to defaults? Completed picks will be preserved. Incompatible changes will be blocked.")) return;
+    const candidate = { ...DEFAULT_DRAFT_SETTINGS, ...(draftedPlayers.length || keepers.length || pickTrades.length ? { teamCount: draftSettings.teamCount, draftOrder: draftSettings.draftOrder, draftOrderMode: draftSettings.draftOrderMode, reversedRounds: draftSettings.reversedRounds, isKeeper: draftSettings.isKeeper } : {}) };
+    const validation = validateDraftSettings({ ...settingsValidationInput, settings: candidate, myTeamId: candidate.draftOrder.includes(myTeamId) ? myTeamId : candidate.draftOrder[0], goalieScoring: getDefaultFantasyPointsConfig("goalie"), skaterSources: sourceControlDefaults.skater, goalieSources: sourceControlDefaults.goalie });
+    if (!validation.valid) { setSettingsSaveError(validation.errors[0].message); return; }
+    updateDraftSettings(candidate);
+    setGoaliePointValues(getDefaultFantasyPointsConfig("goalie"));
+    setSourceControls(sourceControlDefaults.skater);
+    setGoalieSourceControls(sourceControlDefaults.goalie);
+  };
 
   const applyFantraxLeagueSettings = useCallback(
     (
@@ -2891,6 +2952,9 @@ const DraftDashboard: React.FC = () => {
   }, [allPlayers]);
 
   const handleForwardGroupingChange = (mode: "split" | "fwd") => {
+    const conflict = validateDraftSettings({ ...settingsValidationInput, forwardGrouping: mode }).errors.find(issue => issue.domain === "roster");
+    if (conflict) { setSettingsSaveError(conflict.message); return; }
+    setSettingsSaveError(null);
     setForwardGrouping(mode);
   };
   const toggleSuggestedComparison = useCallback((playerId: string) => {
@@ -2935,10 +2999,82 @@ const DraftDashboard: React.FC = () => {
     ],
   );
 
+  // Keep table rendering independent of settings navigation and visibility.
+  const projectionsTable = useMemo(() => (
+    <ProjectionsTable
+            currentSeasonId={currentSeasonId}
+            players={availablePlayers}
+            allPlayers={allPlayers}
+            draftedPlayers={draftedPlayers}
+            unavailablePlayerIds={unavailablePlayerIds}
+            isLoading={isLoading}
+            error={errorMessage}
+            onDraftPlayer={draftPlayer}
+            canDraft={manualDraftingEnabled && settingsConfigured && settingsValidation.valid}
+            personalRankByPlayerId={personalRankByPlayerId}
+            vorpMetrics={vorpMetrics}
+            replacementByPos={replacementByPos}
+            baselineMode={baselineMode}
+            onBaselineModeChange={setBaselineMode}
+            expectedRuns={
+              expectedTakenByPos && typeof expectedN === "number"
+                ? { byPos: expectedTakenByPos, N: expectedN }
+                : undefined
+            }
+            needWeightEnabled={needWeightEnabled}
+            onNeedWeightChange={setNeedWeightEnabled}
+            posNeeds={posNeeds}
+            needAlpha={needAlpha}
+            onNeedAlphaChange={setNeedAlpha}
+            nextPickNumber={nextPickNumber}
+            leagueType={draftSettings.leagueType || "points"}
+            forwardGrouping={forwardGrouping}
+            enabledSkaterStatKeys={
+              draftSettings.leagueType === "categories"
+                ? Object.keys(draftSettings.categoryWeights || {}).filter(
+                    (k) => !availableGoalieStatKeys.includes(k),
+                  )
+                : Object.keys(draftSettings.scoringCategories || {})
+            }
+            enabledGoalieStatKeys={
+              draftSettings.leagueType === "categories"
+                ? Object.keys(draftSettings.categoryWeights || {}).filter((k) =>
+                    availableGoalieStatKeys.includes(k),
+                  )
+                : Object.keys(goaliePointValues || {})
+            }
+            yahooMappingDiagnostics={{
+              skater: skaterData.yahooMappingDiagnostics,
+              goalie: goalieData.yahooMappingDiagnostics,
+            }}
+            sourceRankImpacts={sourceRankImpacts}
+            inclusionDiagnostics={{
+              skater: skaterData.inclusionDiagnostics,
+              goalie: goalieData.inclusionDiagnostics,
+            }}
+            dataNotices={tableDataNotices}
+            dustInsights={rosterScheduleOptimizer.insights}
+            emptyStateMessage={projectionEmptyStateMessage}
+          />
+  ), [
+    currentSeasonId, availablePlayers, allPlayers, draftedPlayers,
+    unavailablePlayerIds, isLoading, errorMessage, draftPlayer,
+    manualDraftingEnabled, settingsConfigured, settingsValidation.valid,
+    personalRankByPlayerId, vorpMetrics, replacementByPos, baselineMode,
+    expectedTakenByPos, expectedN, needWeightEnabled, posNeeds, needAlpha,
+    nextPickNumber, draftSettings.leagueType, draftSettings.categoryWeights,
+    draftSettings.scoringCategories, forwardGrouping, availableGoalieStatKeys,
+    goaliePointValues, skaterData.yahooMappingDiagnostics,
+    goalieData.yahooMappingDiagnostics, sourceRankImpacts,
+    skaterData.inclusionDiagnostics, goalieData.inclusionDiagnostics,
+    tableDataNotices, rosterScheduleOptimizer.insights, projectionEmptyStateMessage,
+  ]);
+
   return (
     <div
       className={styles.dashboardContainer}
       data-settings-open={settingsOpen}
+      data-full-settings={fullSettings}
       data-mobile-tab={activeMobileTab}
     >
       <DraftWorkspaceHeader
@@ -2970,6 +3106,7 @@ const DraftDashboard: React.FC = () => {
       <MobileDraftTabs
         activeTab={activeMobileTab}
         onChange={(tab) => {
+          if (tab !== "setup" && settingsOpen && !closeSettings()) return;
           setActiveMobileTab(tab);
           setSettingsOpen(tab === "setup");
         }}
@@ -2980,10 +3117,16 @@ const DraftDashboard: React.FC = () => {
         sourceControls={sourceControls}
         goalieSourceControls={goalieSourceControls}
         open={settingsOpen}
-        onToggle={() => {
-          setSettingsOpen(!settingsOpen);
-          setActiveMobileTab(settingsOpen && mobileWorkspaceEnabled ? "players" : "setup");
-        }}
+        full={fullSettings}
+        configured={settingsConfigured}
+        validation={settingsValidation}
+        saveError={settingsSaveError}
+        onToggle={() => { setSettingsOpen(true); setActiveMobileTab("setup"); }}
+        onFullSetup={() => setFullSettings(true)}
+        onDone={closeSettings}
+        onResetSettings={resetSettings}
+        onImport={() => { setSettingsSection("league"); settingsEditorRef.current?.importBookmark(); }}
+        onExport={() => settingsEditorRef.current?.exportBookmark()}
         section={settingsSection}
         onSectionChange={setSettingsSection}
       >
@@ -3001,21 +3144,14 @@ const DraftDashboard: React.FC = () => {
         <div className={styles.setupCore}>
           <div hidden={settingsSection === "integrations"}>
           <DraftSettings
-        variant="inline"
-        activeSection={settingsSection === "sources" ? "sources" : "setup"}
+        ref={settingsEditorRef}
+        validation={settingsValidation}
+        variant={fullSettings ? "full" : "inline"}
+        activeSection={settingsSection === "integrations" ? "league" : settingsSection}
         settings={draftSettings}
         onSettingsChange={updateDraftSettings}
         draftOrderPattern={draftOrderPattern}
-        onDraftOrderPatternChange={(pattern) => {
-          if (manualDraftingEnabled) {
-            manualLeagueSettingsDirtyRef.current = true;
-            setDraftSettings((previous) => ({
-              ...previous,
-              draftOrderMode: pattern.mode,
-              reversedRounds: pattern.reversedRounds,
-            }));
-          }
-        }}
+        onDraftOrderPatternChange={(pattern) => updateDraftSettings({ draftOrderMode: pattern.mode, reversedRounds: pattern.reversedRounds })}
         myTeamId={myTeamId}
         onMyTeamIdChange={(value) => {
           if (manualDraftingEnabled) setMyTeamId(value);
@@ -3092,6 +3228,8 @@ const DraftDashboard: React.FC = () => {
         onBookmarkCreate={() => {}}
         onBookmarkImport={(data) => {
           if (!manualDraftingEnabled) return;
+          const importError = bookmarkImportError(data, getCsvList().map(source => source.id));
+          if (importError) { setSettingsSaveError(importError); return; }
           try {
             const importedSettings = normalizeDraftSettingsOrder(
               {
@@ -3103,6 +3241,8 @@ const DraftDashboard: React.FC = () => {
                 : isSnakeDraft,
             );
             setDraftSettings(importedSettings);
+            setSettingsConfigured(true);
+            setSettingsSaveError(null);
             restoredLeagueSettingsRef.current = true;
             manualLeagueSettingsDirtyRef.current = true;
             const restoredKeepers = migrateKeeperEntries(
@@ -3189,15 +3329,16 @@ const DraftDashboard: React.FC = () => {
 
       <div hidden={settingsSection !== "integrations"}>
       {!user && <p className={styles.warningBanner}>Sign in to connect a Yahoo, ESPN, or Fantrax league and start Live Sync. Manual drafting is available now.</p>}
+      {(hasOrdinaryManualPick || keepers.length > 0 || pickTrades.length > 0) && <p className={styles.warningBanner}>League imports are locked while manual picks, keepers, or trades exist. Export your draft and reset it before replacing the league configuration.</p>}
       <FantraxLeagueSettingsPanel
         enabled={Boolean(user?.id)}
-        disabled={!manualDraftingEnabled}
+        disabled={!manualDraftingEnabled || hasOrdinaryManualPick || keepers.length > 0 || pickTrades.length > 0}
         onApply={applyFantraxLeagueSettings}
       />
 
       <EspnLeagueSettingsPanel
         enabled={Boolean(user?.id)}
-        disabled={!manualDraftingEnabled}
+        disabled={!manualDraftingEnabled || hasOrdinaryManualPick || keepers.length > 0 || pickTrades.length > 0}
         contextLabel="draft session"
         onApply={applyEspnLeagueSettings}
         onConfirmApply={confirmEspnLeagueSettings}
@@ -3230,7 +3371,13 @@ const DraftDashboard: React.FC = () => {
           onRefreshAccount={() => void yahooDraftSync.refreshAccount()}
           onRefreshDraft={() => void yahooDraftSync.refreshDraft()}
           onStart={() => void startYahooDraftSync()}
-          onApplySettings={applyYahooSettings}
+          onApplySettings={() => {
+            if (manualDraftingEnabled && (hasOrdinaryManualPick || keepers.length || pickTrades.length)) {
+              setSettingsSaveError("League imports are locked while manual picks, keepers, or trades exist.");
+              return;
+            }
+            applyYahooSettings();
+          }}
           onStopAndContinueManually={() =>
             void stopYahooAndContinueManually()
           }
@@ -3260,7 +3407,7 @@ const DraftDashboard: React.FC = () => {
       </div>
       </DraftSettingsShell>
 
-      <div className={styles.mainContent}>
+      <div className={styles.mainContent} hidden={fullSettings}>
       {/* Recommendations and roster progress share the left workspace track. */}
       <section
         id="mobile-draft-panel-suggested"
@@ -3275,7 +3422,7 @@ const DraftDashboard: React.FC = () => {
       >
         <SuggestedPicks
           compact={settingsOpen}
-          onReturnToDraft={() => setSettingsOpen(false)}
+          onReturnToDraft={closeSettings}
           players={availablePlayers}
           isLoading={isLoading}
           error={errorMessage}
@@ -3289,7 +3436,7 @@ const DraftDashboard: React.FC = () => {
           baselineMode={baselineMode}
           nextPickNumber={nextPickNumber}
           onDraftPlayer={(id) => draftPlayer(id)}
-          canDraft={manualDraftingEnabled}
+          canDraft={manualDraftingEnabled && settingsConfigured && settingsValidation.valid}
           personalRankByPlayerId={personalRankByPlayerId}
           leagueType={draftSettings.leagueType || "points"}
           catNeeds={catNeeds}
@@ -3365,7 +3512,7 @@ const DraftDashboard: React.FC = () => {
             allPlayers={allPlayers}
             onDraftPlayer={(id) => draftPlayer(id)}
             onMovePlayer={assignPlayerToSlot}
-            canDraft={manualDraftingEnabled}
+            canDraft={manualDraftingEnabled && settingsConfigured && settingsValidation.valid}
             currentPick={currentPick}
             currentTurn={currentTurn}
             teamOptions={teamOptions}
@@ -3402,61 +3549,7 @@ const DraftDashboard: React.FC = () => {
                 : ""}
             </div>
           </div>
-          <ProjectionsTable
-            currentSeasonId={currentSeasonId}
-            players={availablePlayers}
-            allPlayers={allPlayers}
-            draftedPlayers={draftedPlayers}
-            unavailablePlayerIds={unavailablePlayerIds}
-            isLoading={isLoading}
-            error={errorMessage}
-            onDraftPlayer={(id) => draftPlayer(id)}
-            canDraft={manualDraftingEnabled}
-            personalRankByPlayerId={personalRankByPlayerId}
-            vorpMetrics={vorpMetrics}
-            replacementByPos={replacementByPos}
-            baselineMode={baselineMode}
-            onBaselineModeChange={setBaselineMode}
-            expectedRuns={
-              expectedTakenByPos && typeof expectedN === "number"
-                ? { byPos: expectedTakenByPos, N: expectedN }
-                : undefined
-            }
-            needWeightEnabled={needWeightEnabled}
-            onNeedWeightChange={setNeedWeightEnabled}
-            posNeeds={posNeeds}
-            needAlpha={needAlpha}
-            onNeedAlphaChange={setNeedAlpha}
-            nextPickNumber={nextPickNumber}
-            leagueType={draftSettings.leagueType || "points"}
-            forwardGrouping={forwardGrouping}
-            enabledSkaterStatKeys={
-              draftSettings.leagueType === "categories"
-                ? Object.keys(draftSettings.categoryWeights || {}).filter(
-                    (k) => !availableGoalieStatKeys.includes(k),
-                  )
-                : Object.keys(draftSettings.scoringCategories || {})
-            }
-            enabledGoalieStatKeys={
-              draftSettings.leagueType === "categories"
-                ? Object.keys(draftSettings.categoryWeights || {}).filter((k) =>
-                    availableGoalieStatKeys.includes(k),
-                  )
-                : Object.keys(goaliePointValues || {})
-            }
-            yahooMappingDiagnostics={{
-              skater: skaterData.yahooMappingDiagnostics,
-              goalie: goalieData.yahooMappingDiagnostics,
-            }}
-            sourceRankImpacts={sourceRankImpacts}
-            inclusionDiagnostics={{
-              skater: skaterData.inclusionDiagnostics,
-              goalie: goalieData.inclusionDiagnostics,
-            }}
-            dataNotices={tableDataNotices}
-            dustInsights={rosterScheduleOptimizer.insights}
-            emptyStateMessage={projectionEmptyStateMessage}
-          />
+          {projectionsTable}
           <button
             onClick={() => setDataRefreshKey((k) => k + 1)}
             className={styles.refreshButton}

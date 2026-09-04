@@ -1,21 +1,12 @@
 // components/DraftDashboard/DraftSettings.tsx
 import React from "react";
 import {
-  compressToEncodedURIComponent,
   decompressFromEncodedURIComponent,
 } from "lz-string";
 import type {
   DraftedPlayer,
   DraftSettings as DraftSettingsType,
 } from "./DraftDashboard";
-import { PROJECTION_SOURCES_CONFIG } from "lib/projectionsConfig/projectionSourcesConfig";
-import { getDefaultFantasyPointsConfig } from "lib/projectionsConfig/fantasyPointsConfig";
-import { SKATER_LABELS } from "lib/projectionsConfig/skaterScoringLabels";
-import { CUSTOM_CSV_SESSION_KEY } from "lib/draftDashboard/csvImportSession";
-import {
-  getEffectiveSourceShares,
-  normalizeSourceWeights,
-} from "lib/draftDashboard/sourceWeights";
 import {
   getEffectiveRosterConfig,
   setForwardRosterTotal,
@@ -34,12 +25,21 @@ import type { DraftCustomSourceMetadata } from "lib/draftDashboard/summaryConfig
 import ManageTradesModal from "./ManageTradesModal";
 import QuickFixModal from "./QuickFixModal";
 import styles from "./DraftSettings.module.scss";
+import DraftScoringSettings from "./DraftScoringSettings";
+import ProjectionSourceSettings from "./ProjectionSourceSettings";
+import { bookmarkImportError, type DraftSettingsValidation, type SettingsDomain } from "lib/draftDashboard/settingsValidation";
+
+export interface DraftSettingsHandle {
+  importBookmark: () => void;
+  exportBookmark: () => void;
+}
 
 type LeagueType = "points" | "categories";
 
 interface DraftSettingsProps {
-  variant?: "standalone" | "inline";
-  activeSection?: "setup" | "sources";
+  validation?: DraftSettingsValidation;
+  variant?: "standalone" | "inline" | "full";
+  activeSection?: SettingsDomain;
   settings: DraftSettingsType;
   onSettingsChange: (newSettings: Partial<DraftSettingsType>) => void;
   draftOrderPattern?: DraftOrderPattern;
@@ -113,57 +113,12 @@ interface DraftSettingsProps {
   structuralSettingsLocked?: boolean;
 }
 
-const CAT_KEYS = [
-  "GOALS",
-  "ASSISTS",
-  "PP_POINTS",
-  "SHOTS_ON_GOAL",
-  "HITS",
-  "BLOCKED_SHOTS",
-] as const;
-
-type CatKey = (typeof CAT_KEYS)[number];
-
-const GOALIE_LABELS: Record<string, string> = {
-  WINS_GOALIE: "W",
-  SAVES_GOALIE: "SV",
-  SHUTOUTS_GOALIE: "SHO",
-  GOALS_AGAINST_GOALIE: "GA",
-  SAVE_PERCENTAGE: "SV%",
-  GOALS_AGAINST_AVERAGE: "GAA",
-  // Requested goalie abbreviations
-  GAMES_PLAYED: "GP",
-  LOSSES_GOALIE: "L",
-  OTL_GOALIE: "OTL",
-  SHOTS_AGAINST_GOALIE: "SA",
-};
-
-function getShortLabel(statKey: string): string {
-  if (SKATER_LABELS[statKey]) return SKATER_LABELS[statKey];
-  if (GOALIE_LABELS[statKey]) return GOALIE_LABELS[statKey];
-  switch (statKey) {
-    case "GOALS":
-      return "G";
-    case "ASSISTS":
-      return "A";
-    case "PP_POINTS":
-      return "PPP";
-    case "SHOTS_ON_GOAL":
-      return "SOG";
-    case "HITS":
-      return "HIT";
-    case "BLOCKED_SHOTS":
-      return "BLK";
-    default:
-      return statKey;
-  }
-}
-
 import PlayerAutocomplete from "components/PlayerAutocomplete";
 
-const DraftSettings: React.FC<DraftSettingsProps> = ({
+const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(({
+  validation,
   variant = "standalone",
-  activeSection = "setup",
+  activeSection = "league",
   settings,
   onSettingsChange,
   draftOrderPattern,
@@ -212,69 +167,18 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   draftLocked = false,
   draftLockReason = "Yahoo live sync is authoritative.",
   structuralSettingsLocked = false,
-}) => {
-  const [collapsed, setCollapsed] = React.useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    const v = window.localStorage.getItem("draftSettings.collapsed");
-    if (v === "true" || v === "false") return v === "true";
-    return window.matchMedia?.("(max-width: 767px)").matches ?? false;
-  });
-  const activeDraftOrderPattern =
-    draftOrderPattern ?? draftOrderPatternFromSnake(isSnakeDraft);
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem("draftSettings.collapsed", String(collapsed));
-  }, [collapsed]);
-
-  const [dirtyHash, setDirtyHash] = React.useState<string>("");
-  const [isDirty, setIsDirty] = React.useState(false);
-  const stableHashRef = React.useRef<string>("");
-  const dirtyTimerRef = React.useRef<number | null>(null);
-
-  const computeHash = React.useCallback(
-    () =>
-      JSON.stringify({
-        s: settings,
-        sc: sourceControls,
-        gsc: goalieSourceControls,
-        gs: goalieScoringCategories,
-      }),
-    [settings, sourceControls, goalieSourceControls, goalieScoringCategories],
-  );
-
-  React.useEffect(() => {
-    const h = computeHash();
-    setDirtyHash(h);
-    if (h !== stableHashRef.current) {
-      setIsDirty(true);
-      if (dirtyTimerRef.current) window.clearTimeout(dirtyTimerRef.current);
-      dirtyTimerRef.current = window.setTimeout(() => {
-        // auto-set saved after debounce
-        stableHashRef.current = h;
-        setIsDirty(false);
-      }, 800);
-    }
-    return () => {
-      if (dirtyTimerRef.current) window.clearTimeout(dirtyTimerRef.current);
-    };
-  }, [
-    settings,
-    sourceControls,
-    goalieSourceControls,
-    goalieScoringCategories,
-    computeHash,
-  ]);
-
+}, ref) => {
+  const activeDraftOrderPattern = draftOrderPattern ?? draftOrderPatternFromSnake(isSnakeDraft);
   const handleTeamCountChange = (count: number) => {
     if (draftLocked) return;
     if (
-      (keepers.length > 0 || pickTrades.length > 0) &&
+      (draftedPlayers.length > 0 || keepers.length > 0 || pickTrades.length > 0) &&
       count !== settings.teamCount
     ) {
       setTradeFeedback({
         ok: false,
         message:
-          "Remove configured keepers and trades before changing team count.",
+          "Team count is locked while picks, keepers, or trades exist. Reset the draft first to change its structure.",
       });
       return;
     }
@@ -294,6 +198,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
 
   const handleRosterConfigChange = (position: string, count: number) => {
     if (draftLocked) return;
+    if (!Number.isInteger(count) || count < 0 || count > (positionMax[position] ?? 40)) return;
     const nextRosterConfig =
       position === "FWD" && forwardGrouping === "fwd"
         ? setForwardRosterTotal(settings.rosterConfig, count)
@@ -305,6 +210,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     const latestReservedRound = [
       ...keepers.filter(keeperUsesPick).map((keeper) => keeper.round),
       ...pickTrades.map((trade) => trade.round),
+      ...draftedPlayers.map((player) => player.round),
     ].reduce((latest, round) => Math.max(latest, round), 0);
     if (nextRoundCount < latestReservedRound) {
       setTradeFeedback({
@@ -352,257 +258,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   };
 
   const leagueType: LeagueType = settings.leagueType || "points";
-  const weights = settings.categoryWeights || ({} as Record<string, number>);
-  const getWeight = (k: CatKey) =>
-    typeof weights[k] === "number" ? weights[k] : 1;
-
-  // 1) Scalar normalization: sum to ~1.00 and keep [0..2] domain
-  const normalizeWeights = (
-    controls?: Record<string, { isSelected: boolean; weight: number }>,
-  ) => (controls ? normalizeSourceWeights(controls) : controls);
-
-  // 2) Normalized check vs 1.00 (keep 0 as “ok” for empty case)
-  const isNormalized = React.useMemo(() => {
-    const approxOne = (n: number) => Math.abs(n - 1) < 0.01 || n === 0;
-    return (
-      approxOne(
-        sourceControls
-          ? Object.values(sourceControls).reduce(
-              (acc, v) => (v.isSelected ? acc + v.weight : acc),
-              0,
-            )
-          : 0,
-      ) &&
-      approxOne(
-        goalieSourceControls
-          ? Object.values(goalieSourceControls).reduce(
-              (acc, v) => (v.isSelected ? acc + v.weight : acc),
-              0,
-            )
-          : 0,
-      )
-    );
-  }, [sourceControls, goalieSourceControls]);
-
-  const DEBOUNCE_MS = 200;
-  const toPercent = (scalar: number) => Math.round(scalar * 100);
-  const sharePercent = (
-    id: string,
-    controls?: Record<string, { isSelected: boolean; weight: number }>,
-    pending: Record<string, number> = {},
-  ) => {
-    if (!controls) return "-";
-    const effectiveControls = Object.fromEntries(
-      Object.entries(controls).map(([sourceId, control]) => [
-        sourceId,
-        typeof pending[sourceId] === "number"
-          ? { ...control, weight: pending[sourceId] }
-          : control,
-      ]),
-    );
-    const share = getEffectiveSourceShares(effectiveControls)[id] || 0;
-    return share > 0 ? `${Math.round(share * 100)}%` : "-";
-  };
-  const shareValue = (scalar: number, total: number, selected: boolean) => {
-    if (!selected) return 0;
-    if (total > 0) {
-      const pct = Math.round((scalar / total) * 100);
-      return Math.max(0, Math.min(100, pct));
-    }
-    return Math.max(0, Math.min(100, toPercent(scalar)));
-  };
-  const getPendingScalar = (
-    pendingMap: Record<string, number>,
-    id: string,
-    fallback: number,
-  ) => (typeof pendingMap[id] === "number" ? pendingMap[id] : fallback);
-  const rebalanceWithAnchor = (
-    controls: Record<string, { isSelected: boolean; weight: number }>,
-    anchorId: string,
-    rawTarget: number,
-  ) => {
-    const existing = controls[anchorId];
-    if (!existing) return controls;
-
-    const next: typeof controls = { ...controls };
-    const sanitized = Math.max(0, Math.min(2, rawTarget));
-
-    if (!existing.isSelected) {
-      next[anchorId] = {
-        ...existing,
-        weight: parseFloat(sanitized.toFixed(3)),
-      };
-      return next;
-    }
-
-    const active = Object.entries(controls).filter(
-      ([id, ctrl]) => id !== anchorId && ctrl.isSelected,
-    );
-
-    // Only one active -> force 100% share
-    if (active.length === 0) {
-      next[anchorId] = {
-        ...existing,
-        weight: 1,
-      };
-      return next;
-    }
-
-    const anchorWeight = Math.max(0, Math.min(1, sanitized));
-    const anchorRounded = parseFloat(anchorWeight.toFixed(3));
-    next[anchorId] = {
-      ...existing,
-      weight: anchorRounded,
-    };
-
-    const remainder = Math.max(0, parseFloat((1 - anchorRounded).toFixed(3)));
-    if (remainder === 0) {
-      active.forEach(([id, ctrl]) => {
-        next[id] = {
-          ...ctrl,
-          weight: 0,
-        };
-      });
-      return next;
-    }
-
-    const weighted = active.map(([id, ctrl]) => ({
-      id,
-      ctrl,
-      weight: ctrl.weight > 0 ? ctrl.weight : 1,
-    }));
-    let weightSum = weighted.reduce((acc, item) => acc + item.weight, 0);
-    if (weightSum <= 0) weightSum = weighted.length;
-    let allocated = 0;
-    weighted.forEach((item, index) => {
-      let value: number;
-      if (index === weighted.length - 1) {
-        value = parseFloat((remainder - allocated).toFixed(3));
-      } else {
-        value = parseFloat(
-          ((item.weight / weightSum) * remainder || 0).toFixed(3),
-        );
-        allocated += value;
-      }
-      if (!Number.isFinite(value) || value < 0) value = 0;
-      next[item.id] = {
-        ...item.ctrl,
-        weight: value,
-      };
-    });
-
-    return next;
-  };
-
-  // 3) Debounced write (working behavior)
-  const applyDebouncedSourceWeight = (id: string, value: number) => {
-    if (!onSourceControlsChange || !sourceControls) return;
-    const timers = sourceDebounceTimers.current;
-    if (timers.has(id)) {
-      window.clearTimeout(timers.get(id)!);
-      timers.delete(id);
-    }
-    const numeric = Number.isFinite(value) ? value : 0;
-    const clamped = Math.max(0, Math.min(2, numeric));
-    const existing = sourceControls[id];
-    if (!existing) return;
-
-    const nextControls = autoNormalize
-      ? rebalanceWithAnchor(sourceControls, id, clamped)
-      : {
-          ...sourceControls,
-          [id]: {
-            ...existing,
-            weight: parseFloat(clamped.toFixed(3)),
-          },
-        };
-
-    const pendingUpdates: Record<string, number> = {};
-    if (autoNormalize) {
-      Object.entries(nextControls).forEach(([key, ctrl]) => {
-        if (!ctrl.isSelected) return;
-        const prevWeight = sourceControls[key]?.weight ?? 0;
-        if (Math.abs(ctrl.weight - prevWeight) > 0.0005) {
-          pendingUpdates[key] = ctrl.weight;
-        }
-      });
-    } else {
-      const nextWeight = nextControls[id]?.weight ?? clamped;
-      if (Math.abs(nextWeight - existing.weight) > 0.0005) {
-        pendingUpdates[id] = nextWeight;
-      }
-    }
-
-    const pendingKeys = Object.keys(pendingUpdates);
-    if (pendingKeys.length === 0) {
-      timers.delete(id);
-      return;
-    }
-
-    setPendingSourceWeights((prev) => ({ ...prev, ...pendingUpdates }));
-    const t = window.setTimeout(() => {
-      onSourceControlsChange(nextControls);
-      setPendingSourceWeights((prev) => {
-        const copy = { ...prev };
-        pendingKeys.forEach((key) => {
-          delete copy[key];
-        });
-        return copy;
-      });
-      timers.delete(id);
-    }, DEBOUNCE_MS);
-    timers.set(id, t);
-  };
-
-  const handleDirectWeightInput = (
-    id: string,
-    value: number,
-    isGoalie: boolean,
-  ) => {
-    const numeric = Number.isFinite(value) ? value : 0;
-    const clamped = Math.max(0, Math.min(2, numeric)); // scalar domain
-    isGoalie
-      ? applyDebouncedGoalieSourceWeight(id, clamped)
-      : applyDebouncedSourceWeight(id, clamped);
-  };
-
-  const handleNormalizeAll = () => {
-    if (onSourceControlsChange && sourceControls) {
-      onSourceControlsChange(normalizeWeights(sourceControls)!);
-    }
-    if (onGoalieSourceControlsChange && goalieSourceControls) {
-      onGoalieSourceControlsChange(normalizeWeights(goalieSourceControls)!);
-    }
-  };
-
-  const totalActiveSourceWeight = React.useMemo(() => {
-    if (!sourceControls) return 0;
-    return Object.values(sourceControls).reduce(
-      (acc, v) => (v.isSelected ? acc + v.weight : acc),
-      0,
-    );
-  }, [sourceControls]);
-  const totalActiveGoalieSourceWeight = React.useMemo(() => {
-    if (!goalieSourceControls) return 0;
-    return Object.values(goalieSourceControls).reduce(
-      (acc, v) => (v.isSelected ? acc + v.weight : acc),
-      0,
-    );
-  }, [goalieSourceControls]);
-
-  const handleResetSkaterScoring = () => {
-    onSettingsChange({
-      scoringCategories: getDefaultFantasyPointsConfig("skater"),
-    });
-  };
-  const handleResetGoalieScoring = () => {
-    if (onGoalieScoringChange) {
-      onGoalieScoringChange(getDefaultFantasyPointsConfig("goalie"));
-    }
-  };
-  const handleResetSourceWeights = () => {
-    handleNormalizeAll();
-  };
 
   const stepRoster = (position: string, delta: number) => {
     const current =
@@ -617,17 +272,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const customSource = sourceControls?.custom_csv;
 
   const firstInteractiveRef = React.useRef<HTMLInputElement | null>(null);
-
-  // Pending (debounced) source weight edits
-  const [pendingSourceWeights, setPendingSourceWeights] = React.useState<
-    Record<string, number>
-  >({});
-  const [pendingGoalieSourceWeights, setPendingGoalieSourceWeights] =
-    React.useState<Record<string, number>>({});
-  const sourceDebounceTimers = React.useRef<Map<string, number>>(new Map());
-  const goalieSourceDebounceTimers = React.useRef<Map<string, number>>(
-    new Map(),
-  );
 
   // Keepers & Traded Picks visibility now controlled by settings.isKeeper
   const playerNamesById = React.useMemo(() => {
@@ -667,72 +311,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     }
   }, [keeperCost, structuralSettingsLocked]);
 
-  const applyDebouncedGoalieSourceWeight = (id: string, value: number) => {
-    if (!onGoalieSourceControlsChange || !goalieSourceControls) return;
-    const timers = goalieSourceDebounceTimers.current;
-    if (timers.has(id)) {
-      window.clearTimeout(timers.get(id)!);
-      timers.delete(id);
-    }
-    const numeric = Number.isFinite(value) ? value : 0;
-    const clamped = Math.max(0, Math.min(2, numeric));
-    const existing = goalieSourceControls[id];
-    if (!existing) return;
-
-    const nextControls = autoNormalize
-      ? rebalanceWithAnchor(goalieSourceControls, id, clamped)
-      : {
-          ...goalieSourceControls,
-          [id]: {
-            ...existing,
-            weight: parseFloat(clamped.toFixed(3)),
-          },
-        };
-
-    const pendingUpdates: Record<string, number> = {};
-    if (autoNormalize) {
-      Object.entries(nextControls).forEach(([key, ctrl]) => {
-        if (!ctrl.isSelected) return;
-        const prevWeight = goalieSourceControls[key]?.weight ?? 0;
-        if (Math.abs(ctrl.weight - prevWeight) > 0.0005) {
-          pendingUpdates[key] = ctrl.weight;
-        }
-      });
-    } else {
-      const nextWeight = nextControls[id]?.weight ?? clamped;
-      if (Math.abs(nextWeight - existing.weight) > 0.0005) {
-        pendingUpdates[id] = nextWeight;
-      }
-    }
-
-    const pendingKeys = Object.keys(pendingUpdates);
-    if (pendingKeys.length === 0) {
-      timers.delete(id);
-      return;
-    }
-
-    setPendingGoalieSourceWeights((prev) => ({ ...prev, ...pendingUpdates }));
-    const t = window.setTimeout(() => {
-      onGoalieSourceControlsChange(nextControls);
-      setPendingGoalieSourceWeights((prev) => {
-        const copy = { ...prev };
-        pendingKeys.forEach((key) => {
-          delete copy[key];
-        });
-        return copy;
-      });
-      timers.delete(id);
-    }, DEBOUNCE_MS);
-    timers.set(id, t);
-  };
-
-  // Focus first interactive element when expanding
-  React.useEffect(() => {
-    if (!collapsed && firstInteractiveRef.current) {
-      firstInteractiveRef.current.focus();
-    }
-  }, [collapsed]);
-
   // Position-specific maximums (utility limited to 2)
   const positionMax: Record<string, number> = {
     C: 6,
@@ -756,328 +334,14 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const rosterTotalClass =
     totalRosterSpots > 22 ? styles.rosterTotalWarning : "";
 
-  // Two-step confirmation for dangerous Reset Draft
   const [confirmReset, setConfirmReset] = React.useState(false);
-  const confirmResetTimeout = React.useRef<number | null>(null);
+  const [importOpen, setImportOpen] = React.useState(false);
+  const [importText, setImportText] = React.useState("");
   const handleResetDraftClick = () => {
     if (draftLocked) return;
-    if (!confirmReset) {
-      setConfirmReset(true);
-      if (confirmResetTimeout.current)
-        window.clearTimeout(confirmResetTimeout.current);
-      confirmResetTimeout.current = window.setTimeout(
-        () => setConfirmReset(false),
-        4000,
-      );
-      return;
-    }
+    if (!confirmReset) { setConfirmReset(true); return; }
     resetDraft();
     setConfirmReset(false);
-    if (confirmResetTimeout.current)
-      window.clearTimeout(confirmResetTimeout.current);
-  };
-  React.useEffect(
-    () => () => {
-      if (confirmResetTimeout.current)
-        window.clearTimeout(confirmResetTimeout.current);
-    },
-    [],
-  );
-
-  // Popover for editing projection weights
-  const [showWeightsPopover, setShowWeightsPopover] = React.useState(false);
-  const [showDisabledSources, setShowDisabledSources] = React.useState(false);
-  const popoverRef = React.useRef<HTMLDivElement | null>(null);
-
-  React.useEffect(() => {
-    if (!showWeightsPopover) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowWeightsPopover(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [showWeightsPopover]);
-
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) setShowWeightsPopover(false);
-  };
-
-  // Auto-normalize toggle
-  const [autoNormalize, setAutoNormalize] = React.useState(true);
-  React.useEffect(() => {
-    if (autoNormalize && !isNormalized) {
-      handleNormalizeAll();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoNormalize, sourceControls, goalieSourceControls, isNormalized]);
-
-  // Defensive: auto-coerce incoming percent-style weights (e.g., 0–100) back to scalars and normalize
-  React.useEffect(() => {
-    if (!sourceControls || !onSourceControlsChange) return;
-    // Detect obvious percent values
-    const needsCoerce = Object.values(sourceControls).some(
-      (v) => typeof v.weight === "number" && v.weight > 2.0001,
-    );
-    if (!needsCoerce) return;
-
-    const converted = Object.fromEntries(
-      Object.entries(sourceControls).map(([id, ctrl]) => [
-        id,
-        {
-          ...ctrl,
-          weight: parseFloat(
-            (ctrl.weight > 2 ? ctrl.weight / 100 : ctrl.weight).toFixed(3),
-          ),
-        },
-      ]),
-    );
-    onSourceControlsChange(normalizeWeights(converted)!);
-    console.warn(
-      "[DraftSettings] Coerced incoming skater source weights from percents to scalars.",
-    );
-  }, [sourceControls, onSourceControlsChange]);
-
-  React.useEffect(() => {
-    if (!goalieSourceControls || !onGoalieSourceControlsChange) return;
-    const needsCoerce = Object.values(goalieSourceControls).some(
-      (v) => typeof v.weight === "number" && v.weight > 2.0001,
-    );
-    if (!needsCoerce) return;
-
-    const converted = Object.fromEntries(
-      Object.entries(goalieSourceControls).map(([id, ctrl]) => [
-        id,
-        {
-          ...ctrl,
-          weight: parseFloat(
-            (ctrl.weight > 2 ? ctrl.weight / 100 : ctrl.weight).toFixed(3),
-          ),
-        },
-      ]),
-    );
-    onGoalieSourceControlsChange(normalizeWeights(converted)!);
-    console.warn(
-      "[DraftSettings] Coerced incoming goalie source weights from percents to scalars.",
-    );
-  }, [goalieSourceControls, onGoalieSourceControlsChange]);
-
-  // Order sources: active first, then disabled
-  const orderSources = <T extends { isSelected: boolean }>(
-    obj: Record<string, T>,
-  ) => {
-    return Object.entries(obj).sort((a, b) => {
-      if (a[1].isSelected === b[1].isSelected) return a[0].localeCompare(b[0]);
-      return a[1].isSelected ? -1 : 1;
-    });
-  };
-
-  const renderSourceChips = () => {
-    if (!sourceControls) return null;
-    const entries = orderSources(sourceControls);
-    const active = entries.filter(([_, v]) => v.isSelected);
-    const disabled = entries.filter(([_, v]) => !v.isSelected);
-
-    const chipFor = (
-      id: string,
-      ctrl: { isSelected: boolean; weight: number },
-    ) => {
-      const src = PROJECTION_SOURCES_CONFIG.find((s) => s.id === id);
-      const isCustom = id.startsWith("custom_csv");
-      const displayName = (() => {
-        if (!isCustom) return src?.displayName || id;
-        try {
-          const raw = sessionStorage.getItem(CUSTOM_CSV_SESSION_KEY);
-          if (raw) {
-            const list = JSON.parse(raw) as Array<{
-              id: string;
-              label: string;
-            }>;
-            const found = list.find((e) => e.id === id);
-            if (found) return found.label || id;
-          }
-        } catch {}
-        return customSourceLabel || "Custom CSV";
-      })();
-      const weightScalar = getPendingScalar(
-        pendingSourceWeights,
-        id,
-        ctrl.weight,
-      );
-      const share = sharePercent(id, sourceControls, pendingSourceWeights);
-      return (
-        <div
-          key={id}
-          className={`${styles.sourceChip} ${ctrl.isSelected ? styles.sourceChipEnabled : styles.sourceChipDisabled}`}
-          data-testid={`source-chip-${id}`}
-          title={`${displayName} ${weightScalar.toFixed(1)}x ${share}`}
-          onClick={() => setShowWeightsPopover(true)}
-        >
-          <span className={styles.sourceChipName}>{displayName}</span>
-          <span className={styles.sourceChipWeight}>
-            {weightScalar.toFixed(1)}x
-          </span>
-          <span className={styles.sourceChipShare}>{share}</span>
-        </div>
-      );
-    };
-
-    return (
-      <div className={styles.sourceChipsRow}>
-        {active.map(([id, ctrl]) => chipFor(id, ctrl))}
-        {showDisabledSources && disabled.map(([id, ctrl]) => chipFor(id, ctrl))}
-        {disabled.length > 0 && (
-          <button
-            type="button"
-            className={styles.editWeightsBtn}
-            onClick={() => setShowDisabledSources((s) => !s)}
-            data-testid="toggle-disabled-sources"
-            aria-pressed={showDisabledSources}
-          >
-            {showDisabledSources
-              ? "Hide Disabled"
-              : `+${disabled.length} Disabled`}
-          </button>
-        )}
-        <button
-          type="button"
-          className={styles.editWeightsBtn}
-          onClick={() => setShowWeightsPopover(true)}
-          data-testid="open-weights-popover"
-        >
-          Edit Weights
-        </button>
-      </div>
-    );
-  };
-
-  const renderGoalieSourceChips = () => {
-    if (!goalieSourceControls) return null;
-    const entries = orderSources(goalieSourceControls);
-    const active = entries.filter(([_, v]) => v.isSelected);
-    const disabled = entries.filter(([_, v]) => !v.isSelected);
-
-    const chipFor = (
-      id: string,
-      ctrl: { isSelected: boolean; weight: number },
-    ) => {
-      const src = PROJECTION_SOURCES_CONFIG.find((s) => s.id === id);
-      const displayName = src?.displayName || id;
-      const weightScalar = getPendingScalar(
-        pendingGoalieSourceWeights,
-        id,
-        ctrl.weight,
-      );
-      const share = sharePercent(
-        id,
-        goalieSourceControls,
-        pendingGoalieSourceWeights,
-      );
-      return (
-        <div
-          key={id}
-          className={`${styles.sourceChip} ${ctrl.isSelected ? styles.sourceChipEnabled : styles.sourceChipDisabled}`}
-          data-testid={`goalie-source-chip-${id}`}
-          title={`${displayName} ${weightScalar.toFixed(1)}x ${share}`}
-          onClick={() => setShowWeightsPopover(true)}
-        >
-          <span className={styles.sourceChipName}>{displayName}</span>
-          <span className={styles.sourceChipWeight}>
-            {weightScalar.toFixed(1)}x
-          </span>
-          <span className={styles.sourceChipShare}>{share}</span>
-        </div>
-      );
-    };
-
-    return (
-      <div className={styles.sourceChipsRow}>
-        {active.map(([id, ctrl]) => chipFor(id, ctrl))}
-        {showDisabledSources && disabled.map(([id, ctrl]) => chipFor(id, ctrl))}
-        {disabled.length > 0 && (
-          <button
-            type="button"
-            className={styles.editWeightsBtn}
-            onClick={() => setShowDisabledSources((s) => !s)}
-            aria-pressed={showDisabledSources}
-          >
-            {showDisabledSources
-              ? "Hide Disabled"
-              : `+${disabled.length} Disabled`}
-          </button>
-        )}
-        <button
-          type="button"
-          className={styles.editWeightsBtn}
-          onClick={() => setShowWeightsPopover(true)}
-        >
-          Edit Weights
-        </button>
-      </div>
-    );
-  };
-
-  // Handle direct numeric change inside popover
-
-  // NEW: state for managing scoring metric expansion & add/remove UI
-  const [showManageSkaterStats, setShowManageSkaterStats] =
-    React.useState(false);
-
-  // Note: goalie addable keys computed directly below; no separate memo needed.
-
-  const [newSkaterStatKey, setNewSkaterStatKey] = React.useState("");
-  const [newSkaterStatValue, setNewSkaterStatValue] = React.useState("1");
-
-  // Goalie manage/add state mirrors skaters
-  const [showAllGoalieStats, setShowAllGoalieStats] = React.useState(false);
-  const addableGoalieStats = React.useMemo(() => {
-    const existing = new Set(Object.keys(goalieScoringCategories || {}));
-    return (availableGoalieStatKeys || [])
-      .filter((k) => !existing.has(k))
-      .filter((k) => /[A-Z0-9_]/.test(k));
-  }, [availableGoalieStatKeys, goalieScoringCategories]);
-  const [newGoalieStatKey, setNewGoalieStatKey] = React.useState("");
-  const [newGoalieStatValue, setNewGoalieStatValue] = React.useState("1");
-  const handleAddGoalieStat = () => {
-    if (!onGoalieScoringChange || !goalieScoringCategories) return;
-    if (!newGoalieStatKey) return;
-    const val = parseFloat(newGoalieStatValue) || 0;
-    onGoalieScoringChange({
-      ...goalieScoringCategories,
-      [newGoalieStatKey]: val,
-    });
-    setNewGoalieStatKey("");
-    setNewGoalieStatValue("1");
-  };
-  const handleRemoveGoalieStat = (key: string) => {
-    if (!onGoalieScoringChange || !goalieScoringCategories) return;
-    const { [key]: _, ...rest } = goalieScoringCategories;
-    onGoalieScoringChange(rest);
-  };
-
-  // Derive addable skater stat keys (exclude already added + some core exclusions)
-  const addableSkaterStats = React.useMemo(() => {
-    const existing = new Set(Object.keys(settings.scoringCategories));
-    return availableSkaterStatKeys
-      .filter((k) => !existing.has(k))
-      .filter((k) => /[A-Z0-9_]/.test(k));
-  }, [availableSkaterStatKeys, settings.scoringCategories]);
-
-  const handleAddSkaterStat = () => {
-    if (!newSkaterStatKey) return;
-    const val = parseFloat(newSkaterStatValue) || 0;
-    onSettingsChange({
-      scoringCategories: {
-        ...settings.scoringCategories,
-        [newSkaterStatKey]: val,
-      },
-    });
-    setNewSkaterStatKey("");
-    setNewSkaterStatValue("1");
-  };
-
-  const handleRemoveSkaterStat = (key: string) => {
-    const { [key]: _, ...rest } = settings.scoringCategories;
-    onSettingsChange({ scoringCategories: rest });
   };
 
   // --- Bookmark (Portable Draft Session) ---
@@ -1138,20 +402,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     customSourceMetadata,
   ]);
 
-  const serializeBookmark = (payload: any): string => {
-    try {
-      return compressToEncodedURIComponent(JSON.stringify(payload));
-    } catch (e) {
-      try {
-        return typeof btoa === "function"
-          ? btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
-          : JSON.stringify(payload);
-      } catch {
-        return JSON.stringify(payload);
-      }
-    }
-  };
-
   const deserializeBookmark = (key: string): any | null => {
     if (!key) return null;
     try {
@@ -1173,121 +423,139 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   };
 
   const handleCreateBookmark = () => {
-    const payload = buildBookmarkPayload();
-    const key = serializeBookmark(payload);
-    if (onBookmarkCreate) onBookmarkCreate(key);
-    try {
-      if (navigator?.clipboard?.writeText) {
-        navigator.clipboard.writeText(key);
-      }
-    } catch {}
-    // Lightweight user feedback (avoid adding more UI state for now)
-    alert(`Bookmark key created (len ${key.length}). Copied to clipboard.`);
+    const blob = new Blob([JSON.stringify(buildBookmarkPayload(), null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "fhfh-draft-bookmark.json";
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
+  const handleImportBookmark = () => setImportOpen(true);
+  React.useImperativeHandle(ref, () => ({ importBookmark: handleImportBookmark, exportBookmark: handleCreateBookmark }));
+  const applyBookmark = () => {
+    const data = deserializeBookmark(importText.trim());
+    const message = bookmarkImportError(data, customSourceMetadata.map(source => source.id));
+    if (message) { setTradeFeedback({ ok: false, message }); return; }
+    if ((draftedPlayers.length || keepers.length || pickTrades.length) && !window.confirm("Replace the current draft with this bookmark? Current picks, keepers, trades, and settings will be replaced. Export a bookmark first to keep a copy.")) return;
+    if (!onBookmarkImport) { setTradeFeedback({ ok: false, message: "Draft import is unavailable." }); return; }
+    onBookmarkImport(data);
+    setImportOpen(false);
+    setImportText("");
+    setTradeFeedback({ ok: true, message: "Draft bookmark imported." });
   };
 
-  const handleImportBookmark = () => {
-    const raw = window.prompt("Paste Bookmark Key (or JSON):");
-    if (!raw) return;
-    const data = deserializeBookmark(raw.trim());
-    if (!data || typeof data !== "object") {
-      alert("Invalid bookmark key");
-      return;
-    }
-    if (data.v !== 2 && data.v !== 3) {
-      alert("Unsupported bookmark version. Expected v2 or v3.");
-      return;
-    }
-    if (onBookmarkImport) {
-      onBookmarkImport(data);
-      alert("Bookmark imported. Parent will reconcile state.");
-    } else {
-      alert("Bookmark parsed, but no onBookmarkImport handler provided.");
-      // As a safety, we can apply settings directly if present
-      if (data.settings) onSettingsChange(data.settings);
-    }
-  };
-
-  // Categories-league: allow add/remove category metrics
-  const [showManageCategories, setShowManageCategories] = React.useState(false);
-  const addableCategoryStats = React.useMemo(() => {
-    const existing = new Set(Object.keys(settings.categoryWeights || {}));
-    const skaterKeys = availableSkaterStatKeys || [];
-    const goalieKeys = availableGoalieStatKeys || [];
-    const merged = [...skaterKeys, ...goalieKeys];
-    return merged
-      .filter((k) => !existing.has(k))
-      .filter((k) => /[A-Z0-9_]/.test(k));
-  }, [
-    availableSkaterStatKeys,
-    availableGoalieStatKeys,
-    settings.categoryWeights,
-  ]);
-
-  // Removed enforcement of required goalie categories: users may now remove all categories (spec change).
-  // Consumers must handle empty category list gracefully.
-  const [newCategoryKey, setNewCategoryKey] = React.useState("");
-  const [newCategoryWeight, setNewCategoryWeight] = React.useState("1");
-  const handleAddCategory = () => {
-    if (!newCategoryKey) return;
-    const val = parseFloat(newCategoryWeight);
-    onSettingsChange({
-      categoryWeights: {
-        ...(settings.categoryWeights || {}),
-        [newCategoryKey]: Number.isFinite(val) ? val : 1,
-      },
-    });
-    setNewCategoryKey("");
-    setNewCategoryWeight("1");
-  };
-  const handleRemoveCategory = (key: string) => {
-    const current = settings.categoryWeights || {};
-    const { [key]: _, ...rest } = current;
-    onSettingsChange({ categoryWeights: rest });
-  };
+  const domainIssues = (domain: SettingsDomain) => <div id={`draft-issues-${domain}`} className={styles.domainIssues}>{validation?.issues.filter(issue => issue.domain === domain).map(issue => <p key={issue.message}>{issue.message}</p>)}</div>;
 
   return (
-    <div className={`${styles.settingsContainer} ${variant === "inline" ? styles.inlineSettings : ""}`} data-section={activeSection}>
-      <div className={styles.settingsHeader}>
-        <h1 className={styles.title}>
-          Fantasy Hockey{" "}
-          <span className={styles.titleAccent}>Draft Companion Dashboard</span>
-        </h1>
-        <div className={styles.headerActions}>
-          <div className={styles.statusCluster}>
-            <span
-              className={`${styles.unsavedBadge} ${!isDirty ? "saved" : ""}`}
-              aria-live="polite"
-            >
-              {isDirty ? "Unsaved" : "Saved"}
-            </span>
-            {isNormalized && (
-              <span
-                className={styles.normalizedBadge}
-                title="Projection source weights normalized to 1.00"
+    <div className={`${styles.settingsContainer} ${variant !== "standalone" ? styles.inlineSettings : ""}`} data-section={activeSection} data-variant={variant}>
+      {variant === "standalone" && <div className={styles.settingsHeader}>
+        <h2 className={styles.legend}>Draft Settings</h2>
+        <button type="button" onClick={handleImportBookmark} disabled={draftLocked}>Import</button>
+        <button type="button" onClick={handleCreateBookmark}>Export</button>
+      </div>}
+      {tradeFeedback && <div className={styles.lockNotice} role={tradeFeedback.ok ? "status" : "alert"}>{tradeFeedback.message}<button type="button" aria-label="Dismiss settings message" onClick={() => setTradeFeedback(null)}>×</button></div>}
+      {draftLocked && (
+        <div className={styles.lockNotice} role="status">
+          {draftLockReason}
+        </div>
+      )}
+      {(
+        <div className={styles.settingsGrid}>
+          <div className={styles.leagueDomain} data-settings-domain="league" hidden={variant === "inline" && activeSection !== "league"} role={variant === "inline" ? "tabpanel" : undefined} aria-labelledby={variant === "inline" ? "draft-tab-league" : undefined} id="draft-domain-league" tabIndex={-1}>
+          <fieldset className={styles.fieldset}>
+            <legend className={styles.legend}>League Format</legend>
+            {domainIssues("league")}
+            {importOpen && <div className={styles.importPanel}>
+              <label htmlFor="draft-bookmark">Import draft bookmark</label>
+              <textarea id="draft-bookmark" value={importText} onChange={event => setImportText(event.target.value)} placeholder="Paste a bookmark key or exported JSON" rows={3} />
+              <input type="file" accept=".json,.txt" aria-label="Read draft bookmark file" onChange={async event => { const file = event.target.files?.[0]; if (file) setImportText(await file.text()); }} />
+              <button type="button" disabled={!importText.trim() || draftLocked} onClick={applyBookmark}>Import Bookmark</button>
+              <button type="button" onClick={() => setImportOpen(false)}>Cancel Import</button>
+            </div>}
+
+            <div className={styles.settingRow}>
+              <label className={styles.label} htmlFor="teamCount">
+                Teams:
+              </label>
+              {/* Replaced fixed select with flexible numeric stepper input */}
+              <div
+                className={styles.rosterStepper}
+                data-testid="team-count-stepper"
               >
-                Weights 1.00
-              </span>
-            )}
-            <button
-              type="button"
-              className={styles.inlineResetBtn}
-              style={{ marginLeft: 6 }}
-              onClick={handleCreateBookmark}
-              disabled={draftLocked}
-              title="Create portable draft bookmark key"
-            >
-              Bookmark
-            </button>
-            <button
-              type="button"
-              className={styles.inlineResetBtn}
-              onClick={handleImportBookmark}
-              disabled={draftLocked}
-              title="Import draft bookmark key"
-            >
-              Import
-            </button>
-          </div>
+                <button
+                  type="button"
+                  className={styles.stepButton}
+                  onClick={() =>
+                    handleTeamCountChange(
+                      Math.max(2, (settings.teamCount || 0) - 1),
+                    )
+                  }
+                  disabled={draftLocked || settings.teamCount <= 2}
+                  aria-label="Decrease team count"
+                >
+                  −
+                </button>
+                <input
+                  id="teamCount"
+                  ref={firstInteractiveRef}
+                  type="number"
+                  min={2}
+                  max={40}
+                  value={settings.teamCount}
+                  onChange={(e) => {
+                    const raw = parseInt(e.target.value, 10);
+                    if (!Number.isNaN(raw)) {
+                      const clamped = Math.min(40, Math.max(2, raw));
+                      if (clamped !== settings.teamCount) {
+                        handleTeamCountChange(clamped);
+                      }
+                    }
+                  }}
+                  onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
+                  className={styles.numberInput}
+                  data-testid="team-count-select" /* keep legacy test id */
+                  aria-label="Number of teams"
+                  aria-describedby="draft-issues-league"
+                  aria-invalid={validation ? !validation.domains.league : undefined}
+                  disabled={draftLocked}
+                />
+                <button
+                  type="button"
+                  className={styles.stepButton}
+                  onClick={() =>
+                    handleTeamCountChange(
+                      Math.min(40, (settings.teamCount || 0) + 1),
+                    )
+                  }
+                  disabled={draftLocked || settings.teamCount >= 40}
+                  aria-label="Increase team count"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+            <div className={styles.settingRow}>
+              <label className={styles.label} htmlFor="myTeam">
+                My Team:
+              </label>
+              <select
+                id="myTeam"
+                aria-describedby="draft-issues-league"
+                value={myTeamId}
+                onChange={(e) => onMyTeamIdChange(e.target.value)}
+                className={styles.select}
+                disabled={draftLocked}
+              >
+                {settings.draftOrder.map((teamId) => (
+                  <option key={teamId} value={teamId}>
+                    {customTeamNames[teamId] || teamId}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div id="draft-order-mode" tabIndex={-1} className={styles.orderControls}>
+              <span className={styles.label}>Draft Order</span>
           <div
             className={styles.draftTypeToggle}
             role="tablist"
@@ -1336,135 +604,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
               Custom
             </button>
           </div>
-          <button
-            type="button"
-            className={styles.summaryButton}
-            onClick={() => onOpenSummary && onOpenSummary()}
-            disabled={!draftedPlayers.length}
-            aria-label="Open Draft Summary"
-            title="Open Draft Summary"
-          >
-            Summary
-          </button>
-          <button
-            type="button"
-            className={styles.collapseButton}
-            onClick={() => setCollapsed((c) => !c)}
-            aria-expanded={!collapsed}
-            aria-pressed={!collapsed}
-            aria-label={collapsed ? "Expand settings" : "Collapse settings"}
-            title={collapsed ? "Expand settings" : "Collapse settings"}
-          >
-            {collapsed ? (
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path fill="currentColor" d="M8 5l8 7-8 7V5z" />
-              </svg>
-            ) : (
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path fill="currentColor" d="M16 19l-8-7 8-7v14z" />
-              </svg>
-            )}
-            <span className={styles.visuallyHidden}>
-              {collapsed ? "Expand" : "Collapse"}
-            </span>
-          </button>
-        </div>
-      </div>
-      {draftLocked && (
-        <div className={styles.lockNotice} role="status">
-          {draftLockReason}
-        </div>
-      )}
-      {(variant === "inline" || !collapsed) && (
-        <div className={styles.settingsGrid}>
-          <fieldset className={styles.fieldset}>
-            <legend className={styles.legend}>League Setup</legend>
-            <div className={styles.settingRow}>
-              <label className={styles.label} htmlFor="teamCount">
-                Teams:
-              </label>
-              {/* Replaced fixed select with flexible numeric stepper input */}
-              <div
-                className={styles.rosterStepper}
-                data-testid="team-count-stepper"
-              >
-                <button
-                  type="button"
-                  className={styles.stepButton}
-                  onClick={() =>
-                    handleTeamCountChange(
-                      Math.max(2, (settings.teamCount || 0) - 1),
-                    )
-                  }
-                  disabled={draftLocked || settings.teamCount <= 2}
-                  aria-label="Decrease team count"
-                >
-                  −
-                </button>
-                <input
-                  id="teamCount"
-                  ref={firstInteractiveRef}
-                  type="number"
-                  min={2}
-                  max={40}
-                  value={settings.teamCount}
-                  onChange={(e) => {
-                    const raw = parseInt(e.target.value, 10);
-                    if (!Number.isNaN(raw)) {
-                      const clamped = Math.min(40, Math.max(2, raw));
-                      if (clamped !== settings.teamCount) {
-                        handleTeamCountChange(clamped);
-                      }
-                    }
-                  }}
-                  onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
-                  className={styles.numberInput}
-                  data-testid="team-count-select" /* keep legacy test id */
-                  aria-label="Number of teams"
-                  disabled={draftLocked}
-                />
-                <button
-                  type="button"
-                  className={styles.stepButton}
-                  onClick={() =>
-                    handleTeamCountChange(
-                      Math.min(40, (settings.teamCount || 0) + 1),
-                    )
-                  }
-                  disabled={draftLocked || settings.teamCount >= 40}
-                  aria-label="Increase team count"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-            <div className={styles.settingRow}>
-              <label className={styles.label} htmlFor="myTeam">
-                My Team:
-              </label>
-              <select
-                id="myTeam"
-                value={myTeamId}
-                onChange={(e) => onMyTeamIdChange(e.target.value)}
-                className={styles.select}
-                disabled={draftLocked}
-              >
-                {settings.draftOrder.map((teamId) => (
-                  <option key={teamId} value={teamId}>
-                    {customTeamNames[teamId] || teamId}
-                  </option>
-                ))}
-              </select>
+              <p className={styles.structuralLockHint}>{structuralSettingsLocked ? "Order is locked after the first ordinary pick." : activeDraftOrderPattern.mode === "snake" ? "Odd rounds: normal order · Even rounds: reversed order" : "Choose Custom to edit individual reversed rounds."}</p>
             </div>
             {activeDraftOrderPattern.mode === "custom" && (
               <div className={styles.customRoundsRow}>
@@ -1518,6 +658,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
               </label>
               <select
                 id="leagueType"
+                aria-describedby="draft-issues-league"
                 value={leagueType}
                 onChange={(e) =>
                   onSettingsChange({ leagueType: e.target.value as LeagueType })
@@ -1531,10 +672,10 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
             </div>
             <div className={styles.settingRow}>
               <label className={styles.label}>Keeper League:</label>
-              <div className={styles.draftTypeToggle} role="tablist">
+              <div id="keeper-league" className={styles.draftTypeToggle} role="tablist">
                 <button
                   className={`${styles.toggleButton} ${!settings.isKeeper ? styles.active : ""}`}
-                  onClick={() => onSettingsChange({ isKeeper: false })}
+                  onClick={() => { if (keepers.length) setTradeFeedback({ ok: false, message: "Remove assigned keepers before disabling Keeper League." }); else onSettingsChange({ isKeeper: false }); }}
                   role="tab"
                   aria-selected={!settings.isKeeper}
                   disabled={draftLocked}
@@ -1552,10 +693,11 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                 </button>
               </div>
             </div>
-            {/* Quick Actions moved into League Setup to reduce containers */}
+            <h3 className={styles.managementTitle}>Draft Management</h3>
             <div id="resetDraftWarning" className={styles.visuallyHidden}>
               This will clear all picks. Action cannot be undone.
             </div>
+            {confirmReset && <div className={styles.lockNotice} role="alert">Clear all picks, keepers, trades, and pick history? Your settings stay in place.<button type="button" onClick={() => setConfirmReset(false)}>Cancel Reset</button></div>}
             <div className={styles.actionButtons}>
               <button
                 className={`${styles.actionButton} ${styles.actionButtonDanger}`}
@@ -1568,7 +710,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                 }
                 data-testid="undo-pick-btn"
               >
-                Undo Pick
+                Undo Last Pick
               </button>
               <button
                 type="button"
@@ -1581,19 +723,19 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                 }
                 title="Replace a completed manual pick without rewinding the draft"
               >
-                Quick Fix
+                Pick Correction
               </button>
               <button
-                className={`${styles.actionButton} ${confirmReset ? styles.confirmReset : ""}`}
+                className={`${styles.actionButton} ${styles.actionButtonDanger} ${confirmReset ? styles.confirmReset : ""}`}
                 onClick={handleResetDraftClick}
                 disabled={
-                  draftLocked || (draftedPlayers.length === 0 && !confirmReset)
+                  draftLocked || (draftedPlayers.length === 0 && keepers.length === 0 && pickTrades.length === 0 && !confirmReset)
                 }
                 aria-describedby="resetDraftWarning"
                 data-testid="reset-draft-btn"
                 title="Reset entire draft"
               >
-                {confirmReset ? "Confirm Reset" : "Reset Draft"}
+                {confirmReset ? "Confirm Reset Entire Draft" : "Reset Entire Draft"}
               </button>
               <button
                 className={styles.actionButton}
@@ -1657,617 +799,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
               </button>
             </div>
           </fieldset>
-          <fieldset className={styles.fieldset} disabled={draftLocked}>
-            <legend className={styles.legend}>
-              Roster Spots{" "}
-              <span className={`${styles.rosterTotal} ${rosterTotalClass}`}>
-                {totalRosterSpots}
-              </span>
-            </legend>
-            <div className={styles.settingRow}>
-              <label className={styles.label}>Forward Positions:</label>
-              <div className={styles.draftTypeToggle} role="tablist">
-                <button
-                  className={`${styles.toggleButton} ${forwardGrouping === "split" ? styles.active : ""}`}
-                  onClick={() =>
-                    onForwardGroupingChange && onForwardGroupingChange("split")
-                  }
-                  role="tab"
-                  aria-selected={forwardGrouping === "split"}
-                >
-                  C/LW/RW
-                </button>
-                <button
-                  className={`${styles.toggleButton} ${forwardGrouping === "fwd" ? styles.active : ""}`}
-                  onClick={() =>
-                    onForwardGroupingChange && onForwardGroupingChange("fwd")
-                  }
-                  role="tab"
-                  aria-selected={forwardGrouping === "fwd"}
-                >
-                  FWD
-                </button>
-              </div>
-            </div>
-            <div className={styles.rosterGrid}>
-              {Object.entries(displayedRosterConfig).map(
-                ([position, count]) => {
-                  const max = positionMax[position] ?? 10;
-                  return (
-                    <div
-                      key={position}
-                      className={styles.rosterSetting}
-                      data-testid={`roster-${position}`}
-                    >
-                      <label
-                        className={styles.positionLabel}
-                        htmlFor={`pos-${position}`}
-                      >
-                        {position.toUpperCase()}
-                      </label>
-                      <div
-                        className={styles.rosterStepper}
-                        data-testid={`roster-step-${position}`}
-                      >
-                        <button
-                          type="button"
-                          className={styles.stepButton}
-                          onClick={() => stepRoster(position, -1)}
-                          disabled={count <= 0}
-                          aria-label={`Decrease ${position} spots`}
-                        >
-                          −
-                        </button>
-                        <input
-                          id={`pos-${position}`}
-                          type="number"
-                          min={0}
-                          max={max}
-                          value={count}
-                          onWheel={(e) =>
-                            (e.currentTarget as HTMLInputElement).blur()
-                          }
-                          onChange={(e) =>
-                            handleRosterConfigChange(
-                              position,
-                              Number(e.target.value),
-                            )
-                          }
-                          className={styles.numberInput}
-                          data-testid={`roster-input-${position}`}
-                        />
-                        <button
-                          type="button"
-                          className={styles.stepButton}
-                          onClick={() => stepRoster(position, 1)}
-                          disabled={count >= max}
-                          aria-label={`Increase ${position} spots`}
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  );
-                },
-              )}
-            </div>
-            {/* Reset buttons moved under Scoring Categories */}
-          </fieldset>
-          <fieldset
-            className={`${styles.fieldset} ${styles.settingsGroupScoring}`}
-            disabled={draftLocked}
-          >
-            <legend className={styles.legend}>
-              {leagueType === "categories"
-                ? "Category Weights"
-                : "Scoring Categories"}
-            </legend>
-            {leagueType === "categories" ? (
-              <>
-                {/* Split skater and goalie category weights into two rows */}
-                {(() => {
-                  const all = Object.entries(settings.categoryWeights || {});
-                  const goalieSet = new Set(availableGoalieStatKeys || []);
-                  const skaterEntries = all.filter(([k]) => !goalieSet.has(k));
-                  const goalieEntries = all.filter(([k]) => goalieSet.has(k));
-                  const totalCount =
-                    skaterEntries.length + goalieEntries.length;
-                  let visibleSkater: [string, number][] = skaterEntries;
-                  let visibleGoalie: [string, number][] = goalieEntries;
-                  if (!showManageCategories) {
-                    const GOALIE_PRIORITY = [
-                      "WINS_GOALIE",
-                      "SAVES_GOALIE",
-                      "SAVE_PERCENTAGE",
-                    ];
-                    const goalieMap = new Map(goalieEntries);
-                    const prioritizedGoalie = GOALIE_PRIORITY.filter((k) =>
-                      goalieMap.has(k),
-                    ).map((k) => [k, goalieMap.get(k)!] as [string, number]);
-                    const remainingSkaters = [...skaterEntries];
-                    const remainingGoalies = goalieEntries.filter(
-                      ([k]) => !GOALIE_PRIORITY.includes(k),
-                    );
-                    // Build list ensuring prioritized goalie stats show first, then skaters, then remaining goalie
-                    const ordered = [
-                      ...prioritizedGoalie,
-                      ...remainingSkaters,
-                      ...remainingGoalies,
-                    ];
-                    // Base collapsed limit
-                    const baseLimit = 8;
-                    let limited = ordered.slice(0, baseLimit);
-                    // Ensure BLK (BLOCKED_SHOTS) is visible in collapsed view if present in defaults
-                    if (
-                      ordered.length > baseLimit &&
-                      ordered.some(([k]) => k === "BLOCKED_SHOTS") &&
-                      !limited.some(([k]) => k === "BLOCKED_SHOTS")
-                    ) {
-                      // Extend limit by one (to 9) to keep BLK without displacing prioritized goalie stats
-                      limited = ordered.slice(0, baseLimit + 1);
-                    }
-                    const limitedKeys = new Set(limited.map(([k]) => k));
-                    visibleSkater = skaterEntries.filter(([k]) =>
-                      limitedKeys.has(k),
-                    );
-                    visibleGoalie = goalieEntries.filter(([k]) =>
-                      limitedKeys.has(k),
-                    );
-                  }
-                  const renderEntry = (k: string, w: number) => (
-                    <div key={k} className={styles.scoringSetting}>
-                      <label className={styles.statLabel} htmlFor={`cat-${k}`}>
-                        {getShortLabel(k)}
-                      </label>
-                      <input
-                        id={`cat-${k}`}
-                        type="range"
-                        min={0}
-                        max={2}
-                        step={0.1}
-                        value={typeof w === "number" ? w : 1}
-                        aria-label={`${k} weight`}
-                        aria-valuemin={0}
-                        aria-valuemax={2}
-                        aria-valuenow={typeof w === "number" ? w : 1}
-                        aria-valuetext={`${(typeof w === "number" ? w : 1).toFixed(1)}x`}
-                        onChange={(e) =>
-                          onSettingsChange({
-                            categoryWeights: {
-                              ...(settings.categoryWeights || {}),
-                              [k]: parseFloat(e.target.value),
-                            },
-                          })
-                        }
-                        className={styles.rangeInput}
-                      />
-                      <div className={styles.weightLabel}>
-                        {(typeof w === "number" ? w : 1).toFixed(1)}x
-                      </div>
-                      {showManageCategories && (
-                        <button
-                          type="button"
-                          className={styles.removeStatBtn}
-                          aria-label={`Remove ${k}`}
-                          title="Remove category"
-                          onClick={() => handleRemoveCategory(k)}
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                  );
-                  return (
-                    <>
-                      {totalCount === 0 && (
-                        <div className={styles.emptyCategoriesMsg}>
-                          No categories selected. Add categories to enable
-                          category scoring.
-                        </div>
-                      )}
-                      <div
-                        className={styles.subsectionTitle}
-                        style={{ marginTop: 4 }}
-                      >
-                        Skater Categories
-                      </div>
-                      <div className={styles.scoringGrid}>
-                        {(() => {
-                          const chunks: Array<[string, number][]> = [];
-                          for (let i = 0; i < visibleSkater.length; i += 5) {
-                            chunks.push(visibleSkater.slice(i, i + 5));
-                          }
-                          return chunks.map((chunk, ci) => (
-                            <div
-                              key={"sk-row-" + ci}
-                              className={styles.scoringRow}
-                            >
-                              {chunk.map(([k, w]) =>
-                                renderEntry(k, w as number),
-                              )}
-                            </div>
-                          ));
-                        })()}
-                      </div>
-                      {visibleGoalie.length > 0 && (
-                        <>
-                          <div
-                            className={styles.subsectionTitle}
-                            style={{ marginTop: 12 }}
-                          >
-                            Goalie Categories
-                          </div>
-                          <div className={styles.scoringGrid}>
-                            {(() => {
-                              const gChunks: Array<[string, number][]> = [];
-                              for (
-                                let i = 0;
-                                i < visibleGoalie.length;
-                                i += 5
-                              ) {
-                                gChunks.push(visibleGoalie.slice(i, i + 5));
-                              }
-                              return gChunks.map((chunk, ci) => (
-                                <div
-                                  key={"g-row-" + ci}
-                                  className={styles.scoringRow}
-                                >
-                                  {chunk.map(([k, w]) =>
-                                    renderEntry(k, w as number),
-                                  )}
-                                </div>
-                              ));
-                            })()}
-                          </div>
-                        </>
-                      )}
-                      {!showManageCategories &&
-                        (skaterEntries.length + goalieEntries.length > 8 ||
-                          addableCategoryStats.length > 0) && (
-                          <button
-                            className={styles.expandButton}
-                            type="button"
-                            aria-expanded={showManageCategories}
-                            onClick={() => {
-                              setNewCategoryKey("");
-                              setNewCategoryWeight("1");
-                              setShowManageCategories(true);
-                            }}
-                            title="Manage / Add categories"
-                          >
-                            {skaterEntries.length + goalieEntries.length > 8
-                              ? `+${Math.max(0, skaterEntries.length + goalieEntries.length - 8)} more`
-                              : "Add Category"}
-                          </button>
-                        )}
-                      {showManageCategories && (
-                        <div className={styles.inlineManage}>
-                          <select
-                            value={newCategoryKey}
-                            onChange={(e) => setNewCategoryKey(e.target.value)}
-                            className={styles.select}
-                            aria-label="Select category to add"
-                          >
-                            <option value="">Select Category...</option>
-                            {addableCategoryStats.map((k) => (
-                              <option key={k} value={k}>
-                                {getShortLabel(k)}
-                              </option>
-                            ))}
-                          </select>
-                          <input
-                            type="number"
-                            step={0.1}
-                            min={0}
-                            max={2}
-                            className={`${styles.pointsInput} ${styles.pointsInputNarrow}`}
-                            value={newCategoryWeight}
-                            aria-label="New category weight"
-                            onChange={(e) =>
-                              setNewCategoryWeight(e.target.value)
-                            }
-                          />
-                          <button
-                            type="button"
-                            className={styles.actionButton}
-                            onClick={handleAddCategory}
-                            disabled={!newCategoryKey}
-                          >
-                            Add Category
-                          </button>
-                          <button
-                            type="button"
-                            className={styles.inlineResetBtn}
-                            onClick={() => setShowManageCategories(false)}
-                          >
-                            Hide
-                          </button>
-                        </div>
-                      )}
-                      {showManageCategories &&
-                        addableCategoryStats.length === 0 && (
-                          <div className={styles.noAddableStatsMsg}>
-                            All available skater & goalie category metrics are
-                            already added.
-                          </div>
-                        )}
-                    </>
-                  );
-                })()}
-              </>
-            ) : (
-              <>
-                {/* Scoring subgroups side-by-side wrapper */}
-                <div className={styles.scoringSubgroupsRow}>
-                  <div
-                    className={`${styles.scoringSubgroup} ${styles.scoringSubgroupSplit}`}
-                  >
-                    {" "}
-                    {/* Skaters */}
-                    <h4 className={styles.subgroupTitle}>Skaters</h4>
-                    <div className={styles.scoringGrid}>
-                      {Object.entries(settings.scoringCategories)
-                        .slice(0, showManageSkaterStats ? undefined : 6)
-                        .map(([stat, points]) => (
-                          <div key={stat} className={styles.scoringSetting}>
-                            <label className={styles.statLabel}>
-                              {getShortLabel(stat)}:
-                            </label>
-                            <input
-                              type="number"
-                              step="0.1"
-                              value={points}
-                              onChange={(e) =>
-                                onSettingsChange({
-                                  scoringCategories: {
-                                    ...settings.scoringCategories,
-                                    [stat]: Number(e.target.value),
-                                  },
-                                })
-                              }
-                              className={styles.pointsInput}
-                            />
-                            {showManageSkaterStats && (
-                              <button
-                                type="button"
-                                className={styles.removeStatBtn}
-                                aria-label={`Remove ${stat}`}
-                                title="Remove stat"
-                                onClick={() => handleRemoveSkaterStat(stat)}
-                              >
-                                ✕
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      {showManageSkaterStats ? (
-                        <div className={styles.inlineManage}>
-                          <select
-                            value={newSkaterStatKey}
-                            onChange={(e) =>
-                              setNewSkaterStatKey(e.target.value)
-                            }
-                            className={styles.select}
-                            aria-label="Select stat to add"
-                          >
-                            <option value="">Select Stat...</option>
-                            {addableSkaterStats.map((k) => (
-                              <option key={k} value={k}>
-                                {getShortLabel(k)}
-                              </option>
-                            ))}
-                          </select>
-                          <input
-                            type="number"
-                            step={0.1}
-                            className={`${styles.pointsInput} ${styles.pointsInputNarrow}`}
-                            value={newSkaterStatValue}
-                            aria-label="New stat point value"
-                            onChange={(e) =>
-                              setNewSkaterStatValue(e.target.value)
-                            }
-                          />
-                          <button
-                            type="button"
-                            className={styles.actionButton}
-                            onClick={handleAddSkaterStat}
-                            disabled={!newSkaterStatKey}
-                          >
-                            Add Stat
-                          </button>
-                          <button
-                            type="button"
-                            className={styles.inlineResetBtn}
-                            onClick={() => setShowManageSkaterStats(false)}
-                          >
-                            Hide
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          className={styles.expandButton}
-                          type="button"
-                          aria-expanded={showManageSkaterStats}
-                          onClick={() => {
-                            setNewSkaterStatKey("");
-                            setNewSkaterStatValue("1");
-                            setShowManageSkaterStats(true);
-                          }}
-                          title="Manage / Add scoring stats"
-                        >
-                          {`+${Math.max(0, Object.keys(settings.scoringCategories).length - 6)} more`}
-                        </button>
-                      )}
-                    </div>
-                    {showManageSkaterStats &&
-                      addableSkaterStats.length === 0 && (
-                        <div className={styles.noAddableStatsMsg}>
-                          All available skater projection metrics are already
-                          added.
-                        </div>
-                      )}
-                  </div>
-                  {goalieScoringCategories && onGoalieScoringChange && (
-                    <div
-                      className={`${styles.scoringSubgroup} ${styles.scoringSubgroupSplit}`}
-                    >
-                      {" "}
-                      {/* Goalies */}
-                      <h4 className={styles.subgroupTitle}>Goalies</h4>
-                      <div
-                        className={`${styles.scoringGrid} ${styles.goalieGrid}`}
-                      >
-                        {Object.entries(goalieScoringCategories)
-                          .slice(0, showAllGoalieStats ? undefined : 6)
-                          .map(([stat, points]) => (
-                            <div key={stat} className={styles.scoringSetting}>
-                              <label className={styles.statLabel}>
-                                {getShortLabel(stat)}:
-                              </label>
-                              <input
-                                type="number"
-                                step="0.1"
-                                value={points}
-                                onChange={(e) =>
-                                  onGoalieScoringChange({
-                                    ...goalieScoringCategories,
-                                    [stat]: Number(e.target.value),
-                                  })
-                                }
-                                className={styles.pointsInput}
-                              />
-                              {showAllGoalieStats && (
-                                <button
-                                  type="button"
-                                  className={styles.removeStatBtn}
-                                  aria-label={`Remove ${stat}`}
-                                  title="Remove stat"
-                                  onClick={() => handleRemoveGoalieStat(stat)}
-                                >
-                                  ✕
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                        {showAllGoalieStats ? (
-                          <div className={styles.inlineManage}>
-                            <select
-                              value={newGoalieStatKey}
-                              onChange={(e) =>
-                                setNewGoalieStatKey(e.target.value)
-                              }
-                              className={styles.select}
-                              aria-label="Select goalie stat to add"
-                            >
-                              <option value="">Select Stat...</option>
-                              {addableGoalieStats.map((k) => (
-                                <option key={k} value={k}>
-                                  {getShortLabel(k)}
-                                </option>
-                              ))}
-                            </select>
-                            <input
-                              type="number"
-                              step={0.1}
-                              className={`${styles.pointsInput} ${styles.pointsInputNarrow}`}
-                              value={newGoalieStatValue}
-                              aria-label="New goalie stat point value"
-                              onChange={(e) =>
-                                setNewGoalieStatValue(e.target.value)
-                              }
-                            />
-                            <button
-                              type="button"
-                              className={styles.actionButton}
-                              onClick={handleAddGoalieStat}
-                              disabled={!newGoalieStatKey}
-                            >
-                              Add Stat
-                            </button>
-                            <button
-                              type="button"
-                              className={styles.inlineResetBtn}
-                              onClick={() => setShowAllGoalieStats(false)}
-                            >
-                              Hide
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            className={styles.expandButton}
-                            type="button"
-                            aria-expanded={showAllGoalieStats}
-                            onClick={() => {
-                              setNewGoalieStatKey("");
-                              setNewGoalieStatValue("1");
-                              setShowAllGoalieStats(true);
-                            }}
-                            title="Manage / Add goalie stats"
-                          >
-                            {`+${Math.max(0, Object.keys(goalieScoringCategories).length - 6)} more`}
-                          </button>
-                        )}
-                      </div>
-                      {showAllGoalieStats &&
-                        addableGoalieStats.length === 0 && (
-                          <div className={styles.noAddableStatsMsg}>
-                            All available goalie projection metrics are already
-                            added.
-                          </div>
-                        )}
-                    </div>
-                  )}
-                </div>
-                <div className={styles.inlineActions}>
-                  <button
-                    type="button"
-                    className={styles.inlineResetBtn}
-                    onClick={handleResetSkaterScoring}
-                    title="Reset skater scoring to defaults"
-                  >
-                    Reset Skater Scoring
-                  </button>
-                  {goalieScoringCategories && (
-                    <button
-                      type="button"
-                      className={styles.inlineResetBtn}
-                      onClick={handleResetGoalieScoring}
-                      title="Reset goalie scoring to defaults"
-                    >
-                      Reset Goalie Scoring
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
-          </fieldset>
-          {(sourceControls || goalieSourceControls) && (
-            <fieldset data-projection-sources className={`${styles.fieldset} ${styles.slimFieldset}`}>
-              <legend className={styles.legend}>Projection Sources</legend>
-              {sourceControls && (
-                <>
-                  <div className={styles.subsectionTitle}>Skaters</div>
-                  {renderSourceChips()}
-                </>
-              )}
-              {goalieSourceControls && (
-                <>
-                  <div className={styles.subsectionTitle}>Goalies</div>
-                  {renderGoalieSourceChips()}
-                </>
-              )}
-              {autoNormalize && (
-                <>
-                  <span
-                    className={`${styles.normalizedBadge} ${styles.normalizedBadgeSpaced}`}
-                  >
-                    {isNormalized ? "Normalized" : "Normalizing..."}
-                  </span>
-                </>
-              )}
-            </fieldset>
-          )}
-          {/* Quick Actions fieldset removed; actions moved under League Setup */}
           {settings.isKeeper && (
             <fieldset className={styles.fieldset} disabled={draftLocked}>
               <legend className={styles.legend}>Keepers & Traded Picks</legend>
@@ -2447,18 +978,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                       </button>
                     </div>
                   </div>
-                  {tradeFeedback && (
-                    <div
-                      className={
-                        tradeFeedback.ok
-                          ? styles.keeperFeedbackSuccess
-                          : styles.keeperFeedbackError
-                      }
-                      role={tradeFeedback.ok ? "status" : "alert"}
-                    >
-                      {tradeFeedback.message}
-                    </div>
-                  )}
+
                   {/* Traded picks list */}
                   <div className={styles.settingRow}>
                     <div className={styles.mutedSmallLabel}>Traded Picks:</div>
@@ -2875,338 +1395,128 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
               </>
             </fieldset>
           )}
-        </div>
-      )}
-      {showWeightsPopover && (
-        <div
-          className={styles.weightsPopoverOverlay}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Edit Projection Source Weights"
-          onClick={handleOverlayClick}
-        >
-          <div className={styles.weightsPopover} ref={popoverRef}>
-            <div className={styles.weightsPopoverHeader}>
-              <div className={styles.weightsPopoverTitle}>
-                Projection Weights
-              </div>
-              <div className={styles.weightsHeaderControls}>
-                <label className={styles.popoverInlineLabel}>
-                  <input
-                    type="checkbox"
-                    checked={autoNormalize}
-                    onChange={(e) => setAutoNormalize(e.target.checked)}
-                    aria-label="Auto normalize weights"
-                  />{" "}
-                  Auto
-                </label>
-                <button
-                  type="button"
-                  className={styles.inlineResetBtn}
-                  onClick={handleNormalizeAll}
-                  disabled={isNormalized}
-                >
-                  Normalize
-                </button>
-                <button
-                  type="button"
-                  className={styles.closePopoverBtn}
-                  aria-label="Close"
-                  onClick={() => setShowWeightsPopover(false)}
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-            <div>
-              <div className={styles.popoverSectionTitle}>Skater Sources</div>
-              <div
-                className={styles.popoverGrid}
-                data-testid="weights-popover-skaters"
-              >
-                {sourceControls &&
-                  orderSources(sourceControls)
-                    .filter(
-                      ([id]) =>
-                        PROJECTION_SOURCES_CONFIG.some(
-                          (s) => s.id === id && s.playerType === "skater",
-                        ) || id.startsWith("custom_csv"),
-                    )
-                    .map(([id, ctrl]) => {
-                      const src = PROJECTION_SOURCES_CONFIG.find(
-                        (s) => s.id === id,
-                      );
-                      const isCustom = id.startsWith("custom_csv");
-                      const displayName = (() => {
-                        if (!isCustom) return src?.displayName || id;
-                        try {
-                          const raw = sessionStorage.getItem(
-                            CUSTOM_CSV_SESSION_KEY,
-                          );
-                          if (raw) {
-                            const list = JSON.parse(raw) as Array<{
-                              id: string;
-                              label: string;
-                            }>;
-                            const found = list.find((e) => e.id === id);
-                            if (found) return found.label || id;
-                          }
-                        } catch {}
-                        return customSourceLabel || "Custom CSV";
-                      })();
-                      const weightScalar = getPendingScalar(
-                        pendingSourceWeights,
-                        id,
-                        ctrl.weight,
-                      );
-                      const share = sharePercent(
-                        id,
-                        sourceControls,
-                        pendingSourceWeights,
-                      );
-                      const sliderValue = shareValue(
-                        weightScalar,
-                        totalActiveSourceWeight,
-                        ctrl.isSelected,
-                      );
-                      return (
-                        <div
-                          key={id}
-                          className={`${styles.popoverSourceCard} ${!ctrl.isSelected ? styles.popoverSourceCardDisabled : ""}`}
-                        >
-                          <div className={styles.popoverSourceHeader}>
-                            <label
-                              className={styles.popoverInlineLabel}
-                              htmlFor={`popover-skater-${id}`}
-                            >
-                              <input
-                                id={`popover-skater-${id}`}
-                                type="checkbox"
-                                checked={ctrl.isSelected}
-                                onChange={(e) => {
-                                  if (!onSourceControlsChange) return;
-                                  const isSelected = e.target.checked;
-                                  if (
-                                    isSelected &&
-                                    !ctrl.isSelected &&
-                                    (id === "blake_ag_skaters" ||
-                                      id === "nate_ag_skaters") &&
-                                    !window.confirm(
-                                      'Enabling "AG Blake" or "AG Nate" alongside "Apples & Ginos" double-weights those projections. Proceed?',
-                                    )
-                                  ) {
-                                    return;
-                                  }
-                                  onSourceControlsChange({
-                                    ...sourceControls,
-                                    [id]: {
-                                      isSelected,
-                                      weight: ctrl.weight,
-                                    },
-                                  });
-                                }}
-                                aria-label={`Toggle source ${displayName}`}
-                              />
-                              <span className={styles.popoverSourceName}>
-                                {displayName}
-                              </span>
-                            </label>
-                            <span className={styles.shareBadge}>{share}</span>
-                          </div>
-                          <div className={styles.popoverSliderRow}>
-                            <input
-                              type="range"
-                              min={0}
-                              max={100}
-                              step={1}
-                              value={ctrl.isSelected ? sliderValue : 0}
-                              onChange={(e) =>
-                                applyDebouncedSourceWeight(
-                                  id,
-                                  parseInt(e.target.value, 10) / 100,
-                                )
-                              }
-                              disabled={!ctrl.isSelected}
-                              aria-label={`${displayName} weight share (%)`}
-                              aria-valuetext={`${sliderValue}% (${weightScalar.toFixed(2)}x)`}
-                              className={`${styles.rangeInput} ${styles.popoverSlider}`}
-                            />
-                            <input
-                              type="number"
-                              step={0.1}
-                              min={0}
-                              max={2}
-                              value={
-                                Number.isFinite(weightScalar) ? weightScalar : 0
-                              }
-                              onChange={(e) =>
-                                handleDirectWeightInput(
-                                  id,
-                                  parseFloat(e.target.value || "0"),
-                                  false,
-                                )
-                              }
-                              disabled={!ctrl.isSelected}
-                              className={styles.weightNumberInput}
-                              aria-label={`${displayName} numeric weight multiplier`}
-                            />
-                            {isCustom && onRemoveCustomSource && (
-                              <button
-                                type="button"
-                                className={styles.inlineResetBtn}
-                                onClick={() => onRemoveCustomSource(id)}
-                                title="Remove this custom source"
-                              >
-                                Remove
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-              </div>
-            </div>
-            {goalieSourceControls && (
-              <div className={styles.sectionSpacer}>
-                <div className={styles.popoverSectionTitle}>Goalie Sources</div>
-                <div
-                  className={styles.popoverGrid}
-                  data-testid="weights-popover-goalies"
-                >
-                  {goalieSourceControls &&
-                    orderSources(goalieSourceControls)
-                      .filter(
-                        ([id]) =>
-                          PROJECTION_SOURCES_CONFIG.some(
-                            (s) => s.id === id && s.playerType === "goalie",
-                          ) || id.startsWith("custom_csv"),
-                      )
-                      .map(([id, ctrl]) => {
-                        const src = PROJECTION_SOURCES_CONFIG.find(
-                          (s) => s.id === id,
-                        );
-                        const isCustom = id.startsWith("custom_csv");
-                        const displayName = (() => {
-                          if (!isCustom) return src?.displayName || id;
-                          try {
-                            const raw = sessionStorage.getItem(
-                              CUSTOM_CSV_SESSION_KEY,
-                            );
-                            if (raw) {
-                              const list = JSON.parse(raw) as Array<{
-                                id: string;
-                                label: string;
-                              }>;
-                              const found = list.find((e) => e.id === id);
-                              if (found) return found.label || id;
-                            }
-                          } catch {}
-                          return "Custom CSV";
-                        })();
-                        const weightScalar = getPendingScalar(
-                          pendingGoalieSourceWeights,
-                          id,
-                          ctrl.weight,
-                        );
-                        const share = sharePercent(
-                          id,
-                          goalieSourceControls,
-                          pendingGoalieSourceWeights,
-                        );
-                        const sliderValue = shareValue(
-                          weightScalar,
-                          totalActiveGoalieSourceWeight,
-                          ctrl.isSelected,
-                        );
-                        return (
-                          <div
-                            key={id}
-                            className={`${styles.popoverSourceCard} ${!ctrl.isSelected ? styles.popoverSourceCardDisabled : ""}`}
-                          >
-                            <div className={styles.popoverSourceHeader}>
-                              <label
-                                className={styles.popoverInlineLabel}
-                                htmlFor={`popover-goalie-${id}`}
-                              >
-                                <input
-                                  id={`popover-goalie-${id}`}
-                                  type="checkbox"
-                                  checked={ctrl.isSelected}
-                                  onChange={(e) =>
-                                    onGoalieSourceControlsChange &&
-                                    onGoalieSourceControlsChange({
-                                      ...goalieSourceControls,
-                                      [id]: {
-                                        isSelected: e.target.checked,
-                                        weight: ctrl.weight,
-                                      },
-                                    })
-                                  }
-                                  aria-label={`Toggle source ${displayName}`}
-                                />
-                                <span className={styles.popoverSourceName}>
-                                  {displayName}
-                                </span>
-                              </label>
-                              <span className={styles.shareBadge}>{share}</span>
-                            </div>
-                            <div className={styles.popoverSliderRow}>
-                              <input
-                                type="range"
-                                min={0}
-                                max={100}
-                                step={1}
-                                value={ctrl.isSelected ? sliderValue : 0}
-                                onChange={(e) =>
-                                  applyDebouncedGoalieSourceWeight(
-                                    id,
-                                    parseInt(e.target.value, 10) / 100,
-                                  )
-                                }
-                                disabled={!ctrl.isSelected}
-                                aria-label={`${displayName} weight share (%)`}
-                                aria-valuetext={`${sliderValue}% (${weightScalar.toFixed(2)}x)`}
-                                className={`${styles.rangeInput} ${styles.popoverSlider}`}
-                              />
-                              <input
-                                type="number"
-                                step={0.1}
-                                min={0}
-                                max={2}
-                                value={
-                                  Number.isFinite(weightScalar)
-                                    ? weightScalar
-                                    : 0
-                                }
-                                onChange={(e) =>
-                                  handleDirectWeightInput(
-                                    id,
-                                    parseFloat(e.target.value || "0"),
-                                    true,
-                                  )
-                                }
-                                disabled={!ctrl.isSelected}
-                                className={styles.weightNumberInput}
-                                aria-label={`${displayName} numeric weight multiplier`}
-                              />
-                              {isCustom && onRemoveCustomSource && (
-                                <button
-                                  type="button"
-                                  className={styles.inlineResetBtn}
-                                  onClick={() => onRemoveCustomSource(id)}
-                                  title="Remove this custom source"
-                                >
-                                  Remove
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                </div>
-              </div>
-            )}
           </div>
+          <fieldset data-settings-domain="roster" hidden={variant === "inline" && activeSection !== "roster"} role={variant === "inline" ? "tabpanel" : undefined} aria-labelledby={variant === "inline" ? "draft-tab-roster" : undefined} id="draft-domain-roster" tabIndex={-1} className={styles.fieldset} disabled={draftLocked}>
+            <legend className={styles.legend}>
+              Roster Configuration{" "}
+              <span className={`${styles.rosterTotal} ${rosterTotalClass}`}>
+                {totalRosterSpots}
+              </span>
+            </legend>
+            {domainIssues("roster")}
+            <div className={styles.settingRow}>
+              <label className={styles.label}>Forward Positions:</label>
+              <div className={styles.draftTypeToggle} role="tablist">
+                <button
+                  className={`${styles.toggleButton} ${forwardGrouping === "split" ? styles.active : ""}`}
+                  onClick={() =>
+                    onForwardGroupingChange && onForwardGroupingChange("split")
+                  }
+                  role="tab"
+                  aria-selected={forwardGrouping === "split"}
+                >
+                  C/LW/RW
+                </button>
+                <button
+                  className={`${styles.toggleButton} ${forwardGrouping === "fwd" ? styles.active : ""}`}
+                  onClick={() =>
+                    onForwardGroupingChange && onForwardGroupingChange("fwd")
+                  }
+                  role="tab"
+                  aria-selected={forwardGrouping === "fwd"}
+                >
+                  FWD
+                </button>
+              </div>
+            </div>
+            {[
+              { title: "Forwards", positions: ["C", "LW", "RW", "FWD"] },
+              { title: "Defense & Goaltending", positions: ["D", "G"] },
+              { title: "Flexible", positions: ["utility", "bench"] },
+            ].map(group => <div className={styles.rosterGroup} data-roster-group={group.title} key={group.title}>
+            <h4>{group.title}</h4>
+            <div className={styles.rosterGrid}>
+              {group.positions.filter(position => position in displayedRosterConfig).map(position => [position, displayedRosterConfig[position]] as [string, number]).map(
+                ([position, count]) => {
+                  const max = positionMax[position] ?? 10;
+                  return (
+                    <div
+                      key={position}
+                      className={styles.rosterSetting}
+                      data-testid={`roster-${position}`}
+                      data-position={position.toUpperCase()}
+                    >
+                      <label
+                        className={styles.positionLabel}
+                        htmlFor={`pos-${position}`}
+                      >
+                        {position === "utility" ? "UTIL" : position.toUpperCase()}
+                      </label>
+                      <div
+                        className={styles.rosterStepper}
+                        data-testid={`roster-step-${position}`}
+                      >
+                        <button
+                          type="button"
+                          className={styles.stepButton}
+                          onClick={() => stepRoster(position, -1)}
+                          disabled={count <= 0}
+                          aria-label={`Decrease ${position} spots`}
+                        >
+                          −
+                        </button>
+                        <input
+                          id={`pos-${position}`}
+                          aria-describedby="draft-issues-roster"
+                          aria-invalid={validation ? !validation.domains.roster : undefined}
+                          type="number"
+                          min={0}
+                          max={max}
+                          value={count}
+                          onWheel={(e) =>
+                            (e.currentTarget as HTMLInputElement).blur()
+                          }
+                          onChange={(e) =>
+                            handleRosterConfigChange(
+                              position,
+                              Number(e.target.value),
+                            )
+                          }
+                          className={styles.numberInput}
+                          data-testid={`roster-input-${position}`}
+                        />
+                        <button
+                          type="button"
+                          className={styles.stepButton}
+                          onClick={() => stepRoster(position, 1)}
+                          disabled={count >= max}
+                          aria-label={`Increase ${position} spots`}
+                        >
+                          +
+                        </button>
+                      </div>
+                      <small>{count} {position === "bench" ? "bench" : "required"}</small>
+                    </div>
+                  );
+                },
+              )}
+            </div>
+            </div>)}
+            <div className={styles.rosterSummary}><h4>Roster Summary <span>{totalRosterSpots} total spots</span></h4><p>{["C", "LW", "RW", "FWD"].reduce((sum, pos) => sum + (displayedRosterConfig[pos] || 0), 0)} forwards · {displayedRosterConfig.D || 0} defense · {displayedRosterConfig.G || 0} goalies · {displayedRosterConfig.utility || 0} utility · {displayedRosterConfig.bench || 0} bench</p></div>
+            <p className={styles.structuralLockHint}>Changes apply to this draft only. Completed picks are preserved.</p>
+          </fieldset>
+          <fieldset data-settings-domain="scoring" hidden={variant === "inline" && activeSection !== "scoring"} role={variant === "inline" ? "tabpanel" : undefined} aria-labelledby={variant === "inline" ? "draft-tab-scoring" : undefined} id="draft-domain-scoring" tabIndex={-1} className={`${styles.fieldset} ${styles.settingsGroupScoring}`} disabled={draftLocked}>
+            <legend className={styles.legend}>Scoring Configuration</legend>
+            {domainIssues("scoring")}
+            <DraftScoringSettings settings={settings} onSettingsChange={onSettingsChange} goalieScoring={goalieScoringCategories} onGoalieScoringChange={onGoalieScoringChange} availableSkaterStats={availableSkaterStatKeys} availableGoalieStats={availableGoalieStatKeys} hasPicks={draftedPlayers.length > 0} />
+          </fieldset>
+          <fieldset data-settings-domain="projections" hidden={variant === "inline" && activeSection !== "projections"} role={variant === "inline" ? "tabpanel" : undefined} aria-labelledby={variant === "inline" ? "draft-tab-projections" : undefined} id="draft-domain-projections" tabIndex={-1} className={styles.fieldset}>
+            <legend className={styles.legend}>Projection Sources</legend>
+            {domainIssues("projections")}
+            <ProjectionSourceSettings skaters={sourceControls} goalies={goalieSourceControls} onSkatersChange={onSourceControlsChange} onGoaliesChange={onGoalieSourceControlsChange} customSources={customSourceMetadata} onRemoveCustomSource={onRemoveCustomSource} hasPicks={draftedPlayers.length > 0} />
+          </fieldset>
+          {/* Quick Actions fieldset removed; actions moved under League Setup */}
+
         </div>
       )}
       {onReplaceDraftPick && (
@@ -3249,6 +1559,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       />
     </div>
   );
-};
+});
+DraftSettings.displayName = "DraftSettings";
 
 export default DraftSettings;

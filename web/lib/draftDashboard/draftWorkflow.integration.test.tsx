@@ -10,6 +10,7 @@ import { materializeKeeperPicks, validateKeeperCandidate } from "./keepers";
 import { resolvePickOwner, upsertPickTrade } from "./pickTrades";
 import { buildDraftConfigurationSummary } from "./summaryConfiguration";
 import { categoryRankBand, rankTeamCategories } from "./categoryStandings";
+import { bookmarkImportError, validateDraftSettings } from "./settingsValidation";
 
 const csvPlayer = (id: number, name: string, position: string) => ({
   player_id: id,
@@ -27,6 +28,42 @@ const csvPlayer = (id: number, name: string, position: string) => ({
 });
 
 describe("representative draft workflow", () => {
+  const settings = {
+    teamCount: 2, draftOrder: ["Team 1", "Team 2"],
+    scoringCategories: { GOALS: 3 },
+    rosterConfig: { C: 1, G: 1, bench: 1, utility: 0 },
+    draftOrderMode: "snake" as const,
+  };
+  const input = {
+    settings, myTeamId: "Team 1", goalieScoring: { WINS_GOALIE: 4 },
+    skaterSources: { dtz_skaters: { isSelected: true, weight: 1 } },
+    goalieSources: { dtz_goalies: { isSelected: true, weight: 1 } },
+  };
+  const picks = [1, 2, 3].map((pickNumber) => ({ playerId: String(pickNumber), teamId: "Team 1", pickNumber, round: Math.ceil(pickNumber / 2), pickInRound: (pickNumber - 1) % 2 + 1 }));
+
+  it("validates both source groups, scoring, teams, and active roster conflicts without changing picks", () => {
+    expect(validateDraftSettings(input).valid).toBe(true);
+    expect(validateDraftSettings({ ...input, goalieSources: { dtz_goalies: { isSelected: true, weight: 0 } } }).domains.projections).toBe(false);
+    expect(validateDraftSettings({ ...input, skaterSources: { dtz_skaters: { isSelected: true, weight: NaN } } }).domains.projections).toBe(false);
+    expect(validateDraftSettings({ ...input, settings: { ...settings, scoringCategories: {} }, goalieScoring: {} }).domains.scoring).toBe(false);
+    expect(validateDraftSettings({ ...input, settings: { ...settings, draftOrder: ["Team 1", "Team 1"] } }).domains.league).toBe(false);
+    const before = JSON.stringify(picks);
+    const conflict = validateDraftSettings({ ...input, settings: { ...settings, rosterConfig: { C: 1, G: 1, bench: 0, utility: 0 } }, draftedPlayers: picks });
+    expect(conflict.errors.some(issue => issue.message.includes("3 players but only 2"))).toBe(true);
+    expect(JSON.stringify(picks)).toBe(before);
+    const positionalConflict = validateDraftSettings({ ...input, settings: { ...settings, rosterConfig: { C: 3, G: 0, bench: 0, utility: 0 } }, draftedPlayers: [picks[0]], playerEligibility: new Map([["1", ["G"]]]) });
+    expect(positionalConflict.domains.roster).toBe(false);
+    expect(positionalConflict.errors[0].message).toContain("drafted positions exceed");
+  });
+
+  it("accepts valid portable sessions and rejects malformed or destructive imports before application", () => {
+    const bookmark = { v: 3, settings, myTeamId: "Team 1", draftedPlayers: picks, currentPick: 4, sourceControls: input.skaterSources, goalieSourceControls: input.goalieSources, goalieScoringCategories: input.goalieScoring };
+    expect(bookmarkImportError(bookmark)).toBeNull();
+    for (const invalid of [null, { v: 3, settings: {} }, { ...bookmark, settings: { ...settings, rosterConfig: [] } }, { ...bookmark, draftedPlayers: [picks[0], picks[0]] }, { ...bookmark, currentPick: -1 }, { ...bookmark, keepers: [{ playerId: "4", teamId: "missing", round: 1, pickInRound: 1 }] }, { ...bookmark, pickTrades: [{ round: 999, pickInRound: 1, currentTeamId: "Team 2" }] }]) expect(bookmarkImportError(invalid)).not.toBeNull();
+    expect(bookmarkImportError({ ...bookmark, sourceControls: { custom_csv_missing: { isSelected: true, weight: 1 } } }, [])).toContain("missing from this tab");
+    expect(bookmarkImportError({ ...bookmark, goalieScoringCategories: { GOALS_AGAINST_GOALIE: -1 } })).toBeNull();
+  });
+
   it("colors category ranks in quartiles, respects stat direction, and preserves ties", () => {
     const teams = Array.from({ length: 12 }, (_, index) => ({
       teamId: String(index),

@@ -58,10 +58,10 @@ export default function DraftWorkspaceHeader({
         </button>
       </div>
       <nav aria-label="Workspace actions">
-        <button type="button" onClick={() => onSettings("setup")}>
+        <button type="button" onClick={() => onSettings("league")}>
           Setup
         </button>
-        <button type="button" onClick={() => onSettings("sources")}>
+        <button type="button" onClick={() => onSettings("projections")}>
           Sources
         </button>
         <button type="button" onClick={() => onSettings("integrations")}>
