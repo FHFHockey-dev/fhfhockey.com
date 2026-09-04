@@ -127,8 +127,8 @@ describe("DraftSettings goalie scoring manager", () => {
     const view = render(<DraftSettings {...props} />);
 
     expect(
-      screen.getByRole("tab", { name: "Custom" }).getAttribute(
-        "aria-selected",
+      screen.getByRole("button", { name: "Custom" }).getAttribute(
+        "aria-pressed",
       ),
     ).toBe("true");
     fireEvent.click(screen.getByRole("button", { name: "Round 2, forward" }));
@@ -145,7 +145,7 @@ describe("DraftSettings goalie scoring manager", () => {
       />,
     );
     expect(
-      (screen.getByRole("tab", { name: "Standard" }) as HTMLButtonElement)
+      (screen.getByRole("button", { name: "Standard" }) as HTMLButtonElement)
         .disabled,
     ).toBe(true);
     expect(
@@ -315,7 +315,7 @@ describe("DraftSettings Yahoo lock", () => {
     ).toBe(true);
     expect(
       (
-        screen.getByRole("tab", {
+        screen.getByRole("button", {
           name: "Snake",
           hidden: true,
         }) as HTMLButtonElement

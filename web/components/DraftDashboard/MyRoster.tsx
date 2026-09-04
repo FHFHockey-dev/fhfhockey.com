@@ -574,9 +574,9 @@ const MyRoster: React.FC<MyRosterProps> = ({
               Benched
               <strong>{scheduleState.baseline.totalBenchGames}</strong>
             </span>
-            <span
+            <button
+              type="button"
               className={styles.dustMetric}
-              tabIndex={0}
               aria-describedby="my-roster-dust-explainer"
               aria-label={`DUST ${rosterDustPercent} percent`}
             >
@@ -592,7 +592,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
                 Lower is better. Player DUST +N badges show the additional
                 Bench Games that drafting that player would create.
               </span>
-            </span>
+            </button>
           </div>
         ) : (
           <p>

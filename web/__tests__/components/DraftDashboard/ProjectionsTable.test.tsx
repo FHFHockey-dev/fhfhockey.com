@@ -239,7 +239,9 @@ describe("ProjectionsTable visibility diagnostics", () => {
     const { rerender } = render(
       <ProjectionsTable {...baseProps} isLoading error={null} />,
     );
-    expect(screen.getByText("Loading player projections...")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toContain(
+      "Loading player projections…",
+    );
 
     rerender(
       <ProjectionsTable
@@ -248,10 +250,15 @@ describe("ProjectionsTable visibility diagnostics", () => {
         error="All enabled projection sources failed"
       />,
     );
-    expect(screen.getByText("Error loading projections:")).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Unable to load projections.",
+    );
     expect(
       screen.getByText("All enabled projection sources failed"),
     ).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Refresh data to try again.",
+    );
 
     rerender(
       <ProjectionsTable

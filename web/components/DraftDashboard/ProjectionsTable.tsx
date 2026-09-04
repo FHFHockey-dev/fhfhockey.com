@@ -1039,9 +1039,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
             Available <span className={styles.panelTitleAccent}>Players</span>
           </h2>
         </div>
-        <div className={styles.loadingState}>
-          <div className={styles.loadingSpinner}></div>
-          <p>Loading player projections...</p>
+        <div className={styles.loadingState} role="status">
+          <div className={styles.loadingSpinner} aria-hidden="true"></div>
+          <p>Loading player projections…</p>
         </div>
       </div>
     );
@@ -1055,9 +1055,10 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
             Available <span className={styles.panelTitleAccent}>Players</span>
           </h2>
         </div>
-        <div className={styles.errorState}>
-          <p>Error loading projections:</p>
+        <div className={styles.errorState} role="alert">
+          <p>Unable to load projections.</p>
           <p>{error}</p>
+          <p>Refresh data to try again.</p>
         </div>
       </div>
     );

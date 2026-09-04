@@ -27,7 +27,7 @@ export default function DraftWorkspaceHeader({
     : "Loading…";
   return (
     <header className={styles.workspaceHeader}>
-      <span className={styles.workspaceLabel}>Draft Workspace</span>
+      <h1 className={styles.workspaceLabel}>Draft Workspace</h1>
       <label>
         League
         <select
@@ -41,9 +41,9 @@ export default function DraftWorkspaceHeader({
       </label>
       <label>
         Season
-        <select aria-label="Draft season" value={season} onChange={() => {}}>
-          <option>{season}</option>
-        </select>
+        <output className={styles.seasonValue} aria-label="Draft season">
+          {season}
+        </output>
       </label>
       <div className={styles.modeSwitch} aria-label="Draft mode">
         <button type="button" aria-pressed={manual} onClick={onManual}>

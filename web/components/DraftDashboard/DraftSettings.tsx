@@ -555,11 +555,13 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
               </select>
             </div>
             <div id="draft-order-mode" tabIndex={-1} className={styles.orderControls}>
-              <span className={styles.label}>Draft Order</span>
+              <span id="draft-order-mode-label" className={styles.label}>
+                Draft Order
+              </span>
           <div
             className={styles.draftTypeToggle}
-            role="tablist"
-            aria-label="Draft order mode"
+            role="group"
+            aria-labelledby="draft-order-mode-label"
           >
             <button
               className={`${styles.toggleButton} ${activeDraftOrderPattern.mode === "standard" ? styles.active : ""}`}
@@ -569,8 +571,8 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
                   reversedRounds: [],
                 })
               }
-              role="tab"
-              aria-selected={activeDraftOrderPattern.mode === "standard"}
+              type="button"
+              aria-pressed={activeDraftOrderPattern.mode === "standard"}
               disabled={draftLocked || structuralSettingsLocked}
               title={draftLocked ? draftLockReason : undefined}
             >
@@ -581,8 +583,8 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
               onClick={() =>
                 handleDraftOrderChange({ mode: "snake", reversedRounds: [] })
               }
-              role="tab"
-              aria-selected={activeDraftOrderPattern.mode === "snake"}
+              type="button"
+              aria-pressed={activeDraftOrderPattern.mode === "snake"}
               disabled={draftLocked || structuralSettingsLocked}
               title={draftLocked ? draftLockReason : undefined}
             >
@@ -596,8 +598,8 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
                   reversedRounds: activeDraftOrderPattern.reversedRounds,
                 })
               }
-              role="tab"
-              aria-selected={activeDraftOrderPattern.mode === "custom"}
+              type="button"
+              aria-pressed={activeDraftOrderPattern.mode === "custom"}
               disabled={draftLocked || structuralSettingsLocked}
               title={draftLocked ? draftLockReason : undefined}
             >
@@ -671,13 +673,20 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
               </select>
             </div>
             <div className={styles.settingRow}>
-              <label className={styles.label}>Keeper League:</label>
-              <div id="keeper-league" className={styles.draftTypeToggle} role="tablist">
+              <span id="keeper-league-label" className={styles.label}>
+                Keeper League:
+              </span>
+              <div
+                id="keeper-league"
+                className={styles.draftTypeToggle}
+                role="group"
+                aria-labelledby="keeper-league-label"
+              >
                 <button
                   className={`${styles.toggleButton} ${!settings.isKeeper ? styles.active : ""}`}
                   onClick={() => { if (keepers.length) setTradeFeedback({ ok: false, message: "Remove assigned keepers before disabling Keeper League." }); else onSettingsChange({ isKeeper: false }); }}
-                  role="tab"
-                  aria-selected={!settings.isKeeper}
+                  type="button"
+                  aria-pressed={!settings.isKeeper}
                   disabled={draftLocked}
                 >
                   No
@@ -685,8 +694,8 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
                 <button
                   className={`${styles.toggleButton} ${settings.isKeeper ? styles.active : ""}`}
                   onClick={() => onSettingsChange({ isKeeper: true })}
-                  role="tab"
-                  aria-selected={!!settings.isKeeper}
+                  type="button"
+                  aria-pressed={!!settings.isKeeper}
                   disabled={draftLocked}
                 >
                   Yes
@@ -1405,15 +1414,21 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
             </legend>
             {domainIssues("roster")}
             <div className={styles.settingRow}>
-              <label className={styles.label}>Forward Positions:</label>
-              <div className={styles.draftTypeToggle} role="tablist">
+              <span id="forward-position-grouping-label" className={styles.label}>
+                Forward Positions:
+              </span>
+              <div
+                className={styles.draftTypeToggle}
+                role="group"
+                aria-labelledby="forward-position-grouping-label"
+              >
                 <button
                   className={`${styles.toggleButton} ${forwardGrouping === "split" ? styles.active : ""}`}
                   onClick={() =>
                     onForwardGroupingChange && onForwardGroupingChange("split")
                   }
-                  role="tab"
-                  aria-selected={forwardGrouping === "split"}
+                  type="button"
+                  aria-pressed={forwardGrouping === "split"}
                 >
                   C/LW/RW
                 </button>
@@ -1422,8 +1437,8 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
                   onClick={() =>
                     onForwardGroupingChange && onForwardGroupingChange("fwd")
                   }
-                  role="tab"
-                  aria-selected={forwardGrouping === "fwd"}
+                  type="button"
+                  aria-pressed={forwardGrouping === "fwd"}
                 >
                   FWD
                 </button>

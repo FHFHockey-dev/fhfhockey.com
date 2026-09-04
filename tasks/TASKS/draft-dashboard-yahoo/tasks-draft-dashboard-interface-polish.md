@@ -65,3 +65,24 @@ Updated: 2026-09-04. Status: implementation and local verification complete.
 
 - [ ] Exercise a real authenticated Yahoo or ESPN provider session in the browser. Provider hooks, workflow logic, and live-panel components pass their local tests; no external account was used for this refactor.
 - [ ] Design the detailed two-view settings experience shown beyond the requested foundation.
+
+## Better-interface follow-up
+
+- [x] Re-run the populated Draft Dashboard through the accessibility, layout, writing, typography, color, and UI-polish workflows.
+- [x] Add one visible page heading, one primary landmark, and a route-specific document title.
+- [x] Present the fixed season as read-only information instead of a one-option select.
+- [x] Use named button groups with pressed state for draft order, keeper mode, and forward grouping.
+- [x] Make the roster DUST explainer a native keyboard-focusable button and connect Suggested Picks disclosures to their content.
+- [x] Announce projection loading and error states, and state the existing refresh recovery action beside the error.
+- [x] Make nonessential settings, drawer, and modal motion opt in through `prefers-reduced-motion`; replace every Draft Dashboard `transition: all` with exact properties.
+- [x] Give Draft Graph pick cells valid named graphical semantics and restore WCAG AA contrast for compact Draft buttons.
+- [x] Confirm no document overflow at 1440×900, 1728×900, or 1920×1080; confirm no horizontal overflow at 320×800 or the 720×450 zoom proxy.
+- [x] Run an axe WCAG 2/2.1 A/AA scan at 1440×900 with zero violations after fixes.
+
+### Follow-up verification
+
+- [x] Focused Vitest run: 6 files and 39 tests passed.
+- [x] Targeted ESLint passed with no output.
+- [x] TypeScript: `NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit` passed.
+- [x] Playwright discovery found all 4 Draft Settings scenarios; direct Chrome checks covered the rendered desktop, narrow-width, keyboard-tooltip, reduced-motion, and accessibility states.
+- [x] Final browser console error check returned no errors.

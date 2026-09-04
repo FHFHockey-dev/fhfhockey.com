@@ -3071,7 +3071,7 @@ const DraftDashboard: React.FC = () => {
   ]);
 
   return (
-    <div
+    <main
       className={styles.dashboardContainer}
       data-settings-open={settingsOpen}
       data-full-settings={fullSettings}
@@ -3551,6 +3551,7 @@ const DraftDashboard: React.FC = () => {
           </div>
           {projectionsTable}
           <button
+            type="button"
             onClick={() => setDataRefreshKey((k) => k + 1)}
             className={styles.refreshButton}
             title="Force refresh projections from database"
@@ -3629,7 +3630,7 @@ const DraftDashboard: React.FC = () => {
         allPlayers={allPlayers}
         leagueType={draftSettings.leagueType || "points"}
       />
-    </div>
+    </main>
   );
 };
 

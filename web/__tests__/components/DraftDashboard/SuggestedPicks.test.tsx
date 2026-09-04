@@ -117,6 +117,22 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     expect(screen.getByText("No matching available players")).toBeTruthy();
   });
 
+  it("connects disclosure buttons to the content they control", () => {
+    render(<SuggestedPicks players={[]} currentPick={1} teamCount={1} />);
+    const advanced = screen.getByRole("button", { name: "Advanced" });
+    expect(advanced.getAttribute("aria-controls")).toBe(
+      "suggested-picks-advanced-controls",
+    );
+    fireEvent.click(advanced);
+    expect(
+      screen.getByRole("button", { name: "Hide cards" }).getAttribute(
+        "aria-controls",
+      ),
+    ).toBe("suggested-picks-cards");
+    fireEvent.click(screen.getByRole("button", { name: "Hide cards" }));
+    expect(document.getElementById("suggested-picks-cards")?.hidden).toBe(true);
+  });
+
   it("shows personal rank without changing it and locks Yahoo-mode drafting", () => {
     const onDraftPlayer = vi.fn();
     render(

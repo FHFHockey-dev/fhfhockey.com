@@ -127,7 +127,7 @@ test("settings edits, validation, imports and reset preserve a live draft", asyn
   );
   await settings(page).getByLabel("Dismiss settings message").click();
   await expect(
-    page.getByRole("tab", { name: "Standard", exact: true }),
+    page.getByRole("button", { name: "Standard", exact: true }),
   ).toBeDisabled();
   await settings(page)
     .getByRole("tab", { name: "Roster", exact: true })

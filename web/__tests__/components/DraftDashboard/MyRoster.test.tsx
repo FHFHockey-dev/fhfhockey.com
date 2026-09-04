@@ -107,7 +107,7 @@ it("shows and explains the roster DUST rate", () => {
 
   const dustMetric = screen.getByLabelText("DUST 13 percent");
   const tooltipId = dustMetric.getAttribute("aria-describedby");
-  expect(dustMetric.getAttribute("tabindex")).toBe("0");
+  expect(dustMetric.tagName).toBe("BUTTON");
   expect(document.getElementById(tooltipId!)?.textContent).toContain(
     "Daily Unstartable Schedule Tax",
   );

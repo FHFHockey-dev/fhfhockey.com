@@ -102,6 +102,8 @@ describe("keeper workflow surfaces", () => {
     );
     expect(cell?.getAttribute("data-owner")).toBe("Team 2");
     expect(cell?.getAttribute("title")).toContain("Keeper: Team 2");
+    expect(cell?.getAttribute("role")).toBe("img");
+    expect(cell?.getAttribute("aria-label")).toContain("Keeper: Team 2");
     expect(screen.getByLabelText("Keeper")).toBeTruthy();
     expect(
       view.container

@@ -80,7 +80,10 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-radius: v.$border-radius-sm;
-  transition: all 0.2s ease;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
 
   &:hover {
     color: v.$primary-color;
@@ -329,7 +332,6 @@
 .inputErrorPulse {
   border-top-color: v.$danger-color !important;
   border-bottom-color: v.$danger-color !important;
-  animation: errorPulse 0.9s ease;
 }
 
 .rosterTotal {
@@ -369,14 +371,12 @@
 }
 
 .rosterStepperError {
-  animation: groupErrorPulse 0.9s ease;
   border-radius: v.$border-radius-md;
   box-shadow: 0 0 0 2px rgba(v.$danger-color, 0.4);
 }
 
 .rosterStepperError .stepButton {
   border-color: v.$danger-color !important;
-  animation: groupErrorPulse 0.9s ease;
   box-shadow: 0 0 8px -1px v.$danger-color;
   background: color.adjust(v.$danger-color, $alpha: -0.85) !important;
   color: v.$danger-color !important;
@@ -429,7 +429,11 @@
   border: 2px solid v.$primary-color;
   color: v.$text-primary;
   cursor: pointer;
-  transition: all 0.15s;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    transform 150ms ease;
 
   &:first-child {
     border-radius: 50% 0 0 50%;
@@ -538,7 +542,10 @@
   padding: v.$space-sm;
   font-size: v.$font-size-xs;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
   margin: v.$space-sm auto 0;
   width: 95%;
 
@@ -892,7 +899,10 @@
   font-size: v.$font-size-xs; // Smaller font
   text-align: center;
   border-radius: v.$border-radius-sm;
-  transition: all 0.2s ease;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
 
   &:hover:not(:disabled) {
     background-color: color.adjust(v.$secondary-color, $alpha: -0.8);
@@ -1010,7 +1020,9 @@
   font-weight: 800;
   line-height: 1;
   cursor: pointer;
-  transition: 0.15s;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
 
   &:hover {
     background: color.adjust(v.$success-color, $alpha: -0.9);
@@ -1110,7 +1122,9 @@
   border: 1px solid v.$border-secondary;
   border-radius: 4px;
   cursor: pointer;
-  transition: 0.15s;
+  transition:
+    border-color 150ms ease,
+    color 150ms ease;
 
   &:hover {
     color: v.$primary-color;
@@ -1246,7 +1260,6 @@
     0 8px 32px -4px rgba(0, 0, 0, 0.65),
     0 0 0 1px rgba(255, 255, 255, 0.04);
   position: relative;
-  animation: popIn 0.28s cubic-bezier(0.4, 0.8, 0.2, 1);
 }
 
 @keyframes popIn {
@@ -1293,7 +1306,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: 0.15s;
+  transition:
+    border-color 150ms ease,
+    color 150ms ease;
 
   &:hover {
     color: v.$primary-color;
@@ -1732,3 +1747,16 @@
 }
 
 .domainIssues { color: v.$color-gold-400; font-size: 12px; line-height: 1.4; grid-column: 1 / -1; p { margin: 0 0 8px; } &:empty { display: none; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .inputErrorPulse {
+    animation: errorPulse 0.9s ease;
+  }
+  .rosterStepperError,
+  .rosterStepperError .stepButton {
+    animation: groupErrorPulse 0.9s ease;
+  }
+  .weightsPopover {
+    animation: popIn 0.28s cubic-bezier(0.4, 0.8, 0.2, 1);
+  }
+}
