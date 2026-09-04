@@ -23,8 +23,15 @@ import {
 import { getRosterPositions } from "lib/draftDashboard/forwardGrouping";
 import { fetchAllSupabaseFilterChunks } from "lib/supabase/pagination";
 import { selectLatestSeasonRows } from "lib/draftDashboard/previousSeasonTotals";
+import type { DraftDashboardDustInsight } from "hooks/useRosterScheduleOptimizer";
+import {
+  canProrateStat,
+  getProratedStat,
+  NHL_REGULAR_SEASON_GAMES,
+} from "lib/projectionsConfig/proration";
 
 interface ProjectionsTableProps {
+  currentSeasonId?: string | number;
   players: ProcessedPlayer[];
   // Full pool including drafted; used for diagnostics cross-check
   allPlayers?: ProcessedPlayer[];
@@ -69,6 +76,7 @@ interface ProjectionsTableProps {
   dataNotices?: string[];
   emptyStateMessage?: string;
   personalRankByPlayerId?: Readonly<Record<string, number>>;
+  dustInsights?: ReadonlyMap<string, DraftDashboardDustInsight>;
 }
 
 type SortableField =
@@ -98,6 +106,7 @@ const DEFAULT_GOALIE_STAT_KEYS = [
 ];
 
 const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
+  currentSeasonId,
   players,
   allPlayers,
   draftedPlayers,
@@ -128,12 +137,15 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   dataNotices = [],
   emptyStateMessage = "No players found matching your filters.",
   personalRankByPlayerId = {},
+  dustInsights,
 }) => {
   const hasPersonalRanks = Object.keys(personalRankByPlayerId).length > 0;
   const [sortField, setSortField] = useState<SortableField>("yahooAvgPick");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [positionFilter, setPositionFilter] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   // Value band scope: overall or per-position (default per-position)
   const [bandScope, setBandScope] = useState<"overall" | "position">(
@@ -203,45 +215,50 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     } catch {}
   }, [statColumnsMode]);
 
-  // 82G Proration toggle (skater counting stats pacing)
-  const [prorate82, setProrate82] = useState<boolean>(() => {
+  // Full-season proration toggle (skater counting stats pacing)
+  const [prorate84, setProrate84] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("projections.prorate82") === "true";
+    const current = window.localStorage.getItem("projections.prorate84");
+    return current == null
+      ? window.localStorage.getItem("projections.prorate82") === "true"
+      : current === "true";
   });
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      window.localStorage.setItem("projections.prorate82", String(prorate82));
+      window.localStorage.setItem("projections.prorate84", String(prorate84));
     } catch {}
-  }, [prorate82]);
+  }, [prorate84]);
   useEffect(() => {
     if (typeof window === "undefined") return;
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail && typeof detail.value === "boolean") {
-        setProrate82(detail.value);
+        setProrate84(detail.value);
       }
     };
-    window.addEventListener("projections:prorate82", handler as EventListener);
+    window.addEventListener("projections:prorate84", handler as EventListener);
     return () =>
       window.removeEventListener(
-        "projections:prorate82",
+        "projections:prorate84",
         handler as EventListener,
       );
   }, []);
 
+  const goalieStatColumns = useMemo(() => {
+    const src = enabledGoalieStatKeys
+      ? enabledGoalieStatKeys // if provided (even empty) respect it
+      : DEFAULT_GOALIE_STAT_KEYS;
+    return src.filter(Boolean);
+  }, [enabledGoalieStatKeys]);
+
   const statColumns = useMemo(() => {
-    if (positionFilter === "G") {
-      const src = enabledGoalieStatKeys
-        ? enabledGoalieStatKeys // if provided (even empty) respect it
-        : DEFAULT_GOALIE_STAT_KEYS;
-      return src.filter(Boolean);
-    }
+    if (positionFilter === "G") return goalieStatColumns;
     const base = enabledSkaterStatKeys
       ? enabledSkaterStatKeys
       : DEFAULT_SKATER_STAT_KEYS;
     return base.filter(Boolean);
-  }, [positionFilter, enabledSkaterStatKeys, enabledGoalieStatKeys]);
+  }, [positionFilter, enabledSkaterStatKeys, goalieStatColumns]);
 
   // If current stat sort key is no longer in visible stat columns, clear it
   useEffect(() => {
@@ -264,11 +281,13 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     if (value == null || Number.isNaN(value)) return "-";
     const def = statDefByKey.get(key);
     if (!def) return String(value);
-    const dp = def.decimalPlaces ?? (def.dataType === "percentage" ? 1 : 0);
+    if (def.formatter) return def.formatter(value);
+    if (key === "SAVE_PERCENTAGE") return value.toFixed(3);
+    const dp = def.decimalPlaces ?? (def.dataType === "percentage" ? 1 : 2);
     if (def.dataType === "percentage") {
       return `${(value * 100).toFixed(dp)}%`;
     }
-    return Number(value).toFixed(dp);
+    return String(Number(value.toFixed(dp)));
   };
   // hide drafted toggle (persisted)
   const [hideDrafted, setHideDrafted] = useState<boolean>(() => {
@@ -412,11 +431,13 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
           skaterRows,
           "player_id",
           "season",
+          currentSeasonId,
         );
         const latestGoalies = selectLatestSeasonRows(
           goalieRows,
           "goalie_id",
           "season_id",
+          currentSeasonId,
         );
         setSeasonTotals((current) => {
           const next = { ...current };
@@ -731,13 +752,13 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       let bValue: any;
 
       if (statSortKey) {
-        const av = (a.combinedStats as any)?.[statSortKey]?.projected;
-        const bv = (b.combinedStats as any)?.[statSortKey]?.projected;
+        const av = getProratedStat(a, statSortKey, prorate84);
+        const bv = getProratedStat(b, statSortKey, prorate84);
         aValue = typeof av === "number" ? av : -Infinity;
         bValue = typeof bv === "number" ? bv : -Infinity;
       } else if (sortField === "fantasyPoints") {
-        aValue = a.fantasyPoints.projected;
-        bValue = b.fantasyPoints.projected; // fix: use 'b'
+        aValue = vorpMap.get(String(a.playerId))?.value ?? a.fantasyPoints.projected;
+        bValue = vorpMap.get(String(b.playerId))?.value ?? b.fantasyPoints.projected;
       } else if (sortField === "yahooAvgPick") {
         const aAdp = normAdp(a.yahooAvgPick);
         const bAdp = normAdp(b.yahooAvgPick);
@@ -772,8 +793,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         aValue = personalRankByPlayerId[String(a.playerId)];
         bValue = personalRankByPlayerId[String(b.playerId)];
       } else if (sortField === "risk") {
-        aValue = riskMap.get(String(a.playerId));
-        bValue = riskMap.get(String(b.playerId));
+        aValue = riskMap.has(String(a.playerId)) ? 1 - riskMap.get(String(a.playerId))! : undefined;
+        bValue = riskMap.has(String(b.playerId)) ? 1 - riskMap.get(String(b.playerId))! : undefined;
       } else {
         if (sortField === "displayPosition") {
           aValue = getDisplayPos(a);
@@ -813,6 +834,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     needWeightEnabled,
     riskMap,
     statSortKey,
+    prorate84,
     favoritesOnly,
     favoriteIds,
     getDisplayPos,
@@ -852,10 +874,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       const m = vorpMap.get(key);
       // Use adjusted VBD when enabled for banding
       const vbd = needWeightEnabled ? m?.vbdAdj : m?.vbd;
-      const fpOrScore =
-        leagueType === "categories"
-          ? (m?.value ?? null)
-          : p.fantasyPoints.projected;
+      const fpOrScore = m?.value ?? p.fantasyPoints.projected;
       const scopeKey = getPrimaryPos(p, m?.bestPos);
       pushVal(scopeKey, vbd, fpOrScore);
     });
@@ -896,10 +915,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       const m = vorpMap.get(id);
       const scopeKey = getPrimaryPos(p, m?.bestPos);
       const vbd = needWeightEnabled ? m?.vbdAdj : m?.vbd;
-      const fpOrScore =
-        leagueType === "categories"
-          ? (m?.value ?? null)
-          : p.fantasyPoints.projected;
+      const fpOrScore = m?.value ?? p.fantasyPoints.projected;
       const g = groups[scopeKey];
       if (g) {
         const vbdPct = typeof vbd === "number" ? rank(vbd, g.vbdVals) : null;
@@ -920,7 +936,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     getPrimaryPos,
     vorpMap,
     needWeightEnabled,
-    leagueType,
   ]);
 
   const handleSort = (field: SortableField) => {
@@ -1006,6 +1021,16 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     return sortDirection === "asc" ? "ascending" : "descending";
   };
 
+  useEffect(() => {
+    setPageIndex(0);
+  }, [debouncedSearchTerm, positionFilter, favoritesOnly, hideDrafted, pageSize]);
+  const orderedPlayers = hideDrafted
+    ? filteredAndSortedPlayers.filter((player) => !draftedIdSet.has(String(player.playerId)))
+    : [...filteredAndSortedPlayers.filter((player) => !draftedIdSet.has(String(player.playerId))), ...filteredAndSortedPlayers.filter((player) => draftedIdSet.has(String(player.playerId)))];
+  const pageCount = Math.max(1, Math.ceil(orderedPlayers.length / pageSize));
+  const currentPage = Math.min(pageIndex, pageCount - 1);
+  const displayPlayers = orderedPlayers.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+
   if (isLoading) {
     return (
       <div className={styles.projectionsContainer}>
@@ -1046,28 +1071,32 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
           <h2 className={styles.panelTitle} title="Available Players">
             Available <span className={styles.panelTitleAccent}>Players</span>
           </h2>
-          <div className={styles.settingsAndTooltips}>
-            {/* 82G Prorate Toggle */}
+          <details className={styles.tableTools}>
+            <summary aria-label="Player table options" title="Player table options">⋯</summary>
+            <div className={styles.settingsAndTooltips}>
+            {/* Full-season Prorate Toggle */}
             <div
               className={styles.stackedControl}
               style={{ alignItems: "flex-end" }}
             >
-              <span className={styles.controlLabelMini}>82G Prorate</span>
+              <span className={styles.controlLabelMini}>
+                {NHL_REGULAR_SEASON_GAMES}G Prorate
+              </span>
               <div className={styles.toggleButtonsGroup}>
                 <button
                   type="button"
-                  className={`${styles.controlToggleBtn} ${prorate82 ? styles.controlToggleBtnActive : ""}`}
+                  className={`${styles.controlToggleBtn} ${prorate84 ? styles.controlToggleBtnActive : ""}`}
                   onClick={() => {
-                    setProrate82((v) => {
+                    setProrate84((v) => {
                       const next = !v;
                       try {
                         if (typeof window !== "undefined") {
                           window.localStorage.setItem(
-                            "projections.prorate82",
+                            "projections.prorate84",
                             String(next),
                           );
                           window.dispatchEvent(
-                            new CustomEvent("projections:prorate82", {
+                            new CustomEvent("projections:prorate84", {
                               detail: { value: next },
                             }),
                           );
@@ -1076,11 +1105,11 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       return next;
                     });
                   }}
-                  aria-pressed={prorate82}
-                  aria-label="Toggle 82-game prorated skater stats"
-                  title="Display skater counting stats on 82-game pace (asterisk indicates prorated)"
+                  aria-pressed={prorate84}
+                  aria-label={`Toggle ${NHL_REGULAR_SEASON_GAMES}-game prorated skater stats`}
+                  title={`Display skater counting stats and projected fantasy points on an ${NHL_REGULAR_SEASON_GAMES}-game pace (asterisk indicates a prorated stat)`}
                 >
-                  {prorate82 ? "On" : "Off"}
+                  {prorate84 ? "On" : "Off"}
                 </button>
               </div>
             </div>
@@ -1110,9 +1139,11 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
               <div className={styles.infoTooltip}>
                 <button
                   type="button"
-                  className={styles.infoButton}
+                  className={`${styles.infoButton} ${dataNotices.length > 0 ? styles.infoButtonNotice : ""}`}
                   aria-describedby="projections-help"
-                  aria-label="Legend"
+                  aria-label={
+                    dataNotices.length > 0 ? "Data notices and legend" : "Legend"
+                  }
                 >
                   i
                 </button>
@@ -1121,6 +1152,14 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   role="tooltip"
                   className={styles.tooltipContent}
                 >
+                  {dataNotices.length > 0 && (
+                    <div className={styles.dataNotice}>
+                      <div className={styles.tooltipTitle}>Data notices</div>
+                      {dataNotices.map((notice) => (
+                        <p key={notice}>{notice}</p>
+                      ))}
+                    </div>
+                  )}
                   <div className={styles.tooltipTitle}>Legend</div>
                   <div className={styles.tooltipBody}>
                     <ul>
@@ -1135,14 +1174,14 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       <li>VONA: Over next available.</li>
                       <li>VBD: Blended draft value.</li>
                       <li>Bands: Percentile tiers.</li>
-                      <li>Next-Pick %: Risk before your pick.</li>
+                      <li>AVL%: Likely available at your next pick.</li>
                     </ul>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+          </details>
         <div className={styles.primaryControls}>
           <div className={`${styles.stackedControl} ${styles.searchStack}`}>
             <span className={styles.controlLabelMini}>Search</span>
@@ -1192,7 +1231,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
               </div>
             </div>
             <div className={styles.stackedControl}>
-              <span className={styles.controlLabelMini}>Stat Columns</span>
+              <span className={styles.controlLabelMini}>View</span>
               <div className={styles.toggleButtonsGroup}>
                 <button
                   type="button"
@@ -1202,13 +1241,18 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   onClick={() => setStatColumnsMode((v) => !v)}
                   aria-pressed={statColumnsMode}
                   aria-label="Toggle stat columns"
+                  title={
+                    statColumnsMode
+                      ? "Showing stats with VORP, VONA, and VBD. Switch to the compact metrics view."
+                      : "Showing projected fantasy points, VORP, VONA, and VBD. Switch to stats while keeping VORP, VONA, and VBD."
+                  }
                 >
-                  Show
+                  {statColumnsMode ? "Stats" : "Metrics"}
                 </button>
               </div>
             </div>
             <div className={styles.stackedControl}>
-              <span className={styles.controlLabelMini}>Hide Drafted</span>
+              <span className={styles.controlLabelMini}>Drafted</span>
               <div className={styles.toggleButtonsGroup}>
                 <button
                   type="button"
@@ -1263,13 +1307,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         </div>
       </div>
 
-      {dataNotices.length > 0 && (
-        <div className={styles.dataNotice} role="status" aria-live="polite">
-          {dataNotices.map((notice) => (
-            <p key={notice}>{notice}</p>
-          ))}
-        </div>
-      )}
+      </div>
 
       {/* Mini Run Forecast Row */}
       {expectedRuns && (
@@ -1492,19 +1530,22 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
 
       {/* Players Table */}
       <div className={styles.tableContainer}>
-        <table className={styles.playersTable}>
+        <table
+          className={`${styles.playersTable} ${statColumnsMode ? styles.statColumnsTable : ""}`}
+          style={{
+            "--distributed-column-count": Math.max(
+              statColumns.length + (hasPersonalRanks ? 6 : 5),
+              1,
+            ),
+          } as React.CSSProperties}
+        >
           <colgroup>
             <col className={styles.colFav} />
             <col className={styles.colName} />
             <col className={styles.colPos} />
             <col className={styles.colTeam} />
             {!statColumnsMode && (
-              <>
-                <col className={styles.colFP} />
-                <col className={styles.colVorp} />
-                <col className={styles.colVorp} />
-                <col className={styles.colVorp} />
-              </>
+              <col className={styles.colFP} />
             )}
             {statColumnsMode && (
               <>
@@ -1513,6 +1554,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 ))}
               </>
             )}
+            <col className={styles.colVorp} />
+            <col className={styles.colVorp} />
+            <col className={styles.colVorp} />
             <col className={styles.colAdp} />
             {hasPersonalRanks && <col className={styles.colAdp} />}
             <col className={styles.colNextPick} />
@@ -1525,45 +1569,53 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 Fav
               </th>
               <th
-                onClick={() => handleSort("fullName")}
                 className={`${styles.sortableHeader} ${styles.colName}`}
                 aria-sort={getAriaSort("fullName")}
                 scope="col"
               >
-                Player{" "}
-                {sortField === "fullName" &&
-                  (sortDirection === "asc" ? "↑" : "↓")}
+                <button
+                  type="button"
+                  className={styles.sortButton}
+                  onClick={() => handleSort("fullName")}
+                >
+                  Player{" "}
+                  {sortField === "fullName" &&
+                    (sortDirection === "asc" ? "↑" : "↓")}
+                </button>
               </th>
               <th
-                onClick={() => handleSort("displayPosition")}
                 className={`${styles.sortableHeader} ${styles.colPos}`}
                 aria-sort={getAriaSort("displayPosition")}
                 scope="col"
               >
-                Pos{" "}
-                {sortField === "displayPosition" &&
-                  (sortDirection === "asc" ? "↑" : "↓")}
+                <button
+                  type="button"
+                  className={styles.sortButton}
+                  onClick={() => handleSort("displayPosition")}
+                >
+                  Pos{" "}
+                  {sortField === "displayPosition" &&
+                    (sortDirection === "asc" ? "↑" : "↓")}
+                </button>
               </th>
               <th
-                onClick={() => handleSort("displayTeam")}
                 className={`${styles.sortableHeader} ${styles.colTeam}`}
                 aria-sort={getAriaSort("displayTeam")}
                 scope="col"
               >
-                Team{" "}
-                {sortField === "displayTeam" &&
-                  (sortDirection === "asc" ? "↑" : "↓")}
+                <button
+                  type="button"
+                  className={styles.sortButton}
+                  onClick={() => handleSort("displayTeam")}
+                >
+                  Team{" "}
+                  {sortField === "displayTeam" &&
+                    (sortDirection === "asc" ? "↑" : "↓")}
+                </button>
               </th>
               {!statColumnsMode ? (
                 <>
                   <th
-                    onClick={() =>
-                      handleSort(
-                        leagueType === "categories"
-                          ? ("score" as any)
-                          : "fantasyPoints",
-                      )
-                    }
                     className={`${styles.sortableHeader} ${styles.colFP}`}
                     aria-sort={getAriaSort(
                       leagueType === "categories"
@@ -1571,51 +1623,78 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         : "fantasyPoints",
                     )}
                     scope="col"
-                    title={
-                      leagueType === "categories"
-                        ? "Score: percentile-weighted composite (0–100) across selected categories, weighted by category weights and metric scarcity."
-                        : "Projected Fantasy Points"
-                    }
                   >
-                    {leagueType === "categories" ? "Score" : "Proj FP"}{" "}
-                    {sortField ===
-                      (leagueType === "categories"
-                        ? "score"
-                        : "fantasyPoints") &&
-                      (sortDirection === "asc" ? "↑" : "↓")}
+                    <button
+                      type="button"
+                      className={styles.sortButton}
+                      onClick={() =>
+                        handleSort(
+                          leagueType === "categories"
+                            ? ("score" as any)
+                            : "fantasyPoints",
+                        )
+                      }
+                      title={
+                        leagueType === "categories"
+                          ? "Score: percentile-weighted composite (0–100) across selected categories, weighted by category weights and metric scarcity."
+                          : "Projected Fantasy Points"
+                      }
+                    >
+                      {leagueType === "categories" ? "Score" : "Proj FP"}{" "}
+                      {sortField ===
+                        (leagueType === "categories"
+                          ? "score"
+                          : "fantasyPoints") &&
+                        (sortDirection === "asc" ? "↑" : "↓")}
+                    </button>
                   </th>
                   <th
-                    onClick={() => handleSort("vorp")}
                     className={`${styles.sortableHeader} ${styles.colVorp}`}
-                    title="Value Over Replacement Player"
                     aria-sort={getAriaSort("vorp")}
                     scope="col"
                   >
-                    VORP{" "}
-                    {sortField === "vorp" &&
-                      (sortDirection === "asc" ? "↑" : "↓")}
+                    <button
+                      type="button"
+                      className={styles.sortButton}
+                      onClick={() => handleSort("vorp")}
+                      title="Value Over Replacement Player"
+                    >
+                      VORP{" "}
+                      {sortField === "vorp" &&
+                        (sortDirection === "asc" ? "↑" : "↓")}
+                    </button>
                   </th>
                   <th
-                    onClick={() => handleSort("vona")}
                     className={`${styles.sortableHeader} ${styles.colVorp}`}
-                    title="Value Over Next Available"
                     aria-sort={getAriaSort("vona")}
                     scope="col"
                   >
-                    VONA{" "}
-                    {sortField === "vona" &&
-                      (sortDirection === "asc" ? "↑" : "↓")}
+                    <button
+                      type="button"
+                      className={styles.sortButton}
+                      onClick={() => handleSort("vona")}
+                      title="Value Over Next Available"
+                    >
+                      VONA{" "}
+                      {sortField === "vona" &&
+                        (sortDirection === "asc" ? "↑" : "↓")}
+                    </button>
                   </th>
                   <th
-                    onClick={() => handleSort("vbd")}
                     className={`${styles.sortableHeader} ${styles.colVorp}`}
-                    title="Value Based Drafting (blend)"
                     aria-sort={getAriaSort("vbd")}
                     scope="col"
                   >
-                    VBD{" "}
-                    {sortField === "vbd" &&
-                      (sortDirection === "asc" ? "↑" : "↓")}
+                    <button
+                      type="button"
+                      className={styles.sortButton}
+                      onClick={() => handleSort("vbd")}
+                      title="Value Based Drafting (blend)"
+                    >
+                      VBD{" "}
+                      {sortField === "vbd" &&
+                        (sortDirection === "asc" ? "↑" : "↓")}
+                    </button>
                   </th>
                 </>
               ) : (
@@ -1623,49 +1702,124 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   {statColumns.map((key) => (
                     <th
                       key={`h-${key}`}
-                      onClick={() => handleStatHeaderSort(key)}
                       className={`${styles.sortableHeader} ${styles.statHeader}`}
+                      aria-sort={
+                        statSortKey === key
+                          ? sortDirection === "asc"
+                            ? "ascending"
+                            : "descending"
+                          : "none"
+                      }
                       scope="col"
-                      title={`Projected ${statDefByKey.get(key)?.displayName || key}`}
                     >
-                      {statDefByKey.get(key)?.displayName || key}{" "}
-                      {statSortKey === key &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      <button
+                        type="button"
+                        className={styles.sortButton}
+                        onClick={() => handleStatHeaderSort(key)}
+                        title={`Projected ${statDefByKey.get(key)?.displayName || key}`}
+                      >
+                        {statDefByKey.get(key)?.displayName || key}{" "}
+                        {statSortKey === key &&
+                          (sortDirection === "asc" ? "↑" : "↓")}
+                      </button>
                     </th>
                   ))}
+                  <th
+                    className={`${styles.sortableHeader} ${styles.colVorp}`}
+                    aria-sort={getAriaSort("vorp")}
+                    scope="col"
+                  >
+                    <button
+                      type="button"
+                      className={styles.sortButton}
+                      onClick={() => handleSort("vorp")}
+                      title="Value Over Replacement Player"
+                    >
+                      VORP{" "}
+                      {sortField === "vorp" &&
+                        (sortDirection === "asc" ? "↑" : "↓")}
+                    </button>
+                  </th>
+                  <th
+                    className={`${styles.sortableHeader} ${styles.colVorp}`}
+                    aria-sort={getAriaSort("vona")}
+                    scope="col"
+                  >
+                    <button
+                      type="button"
+                      className={styles.sortButton}
+                      onClick={() => handleSort("vona")}
+                      title="Value Over Next Available"
+                    >
+                      VONA{" "}
+                      {sortField === "vona" &&
+                        (sortDirection === "asc" ? "↑" : "↓")}
+                    </button>
+                  </th>
+                  <th
+                    className={`${styles.sortableHeader} ${styles.colVorp}`}
+                    aria-sort={getAriaSort("vbd")}
+                    scope="col"
+                  >
+                    <button
+                      type="button"
+                      className={styles.sortButton}
+                      onClick={() => handleSort("vbd")}
+                      title="Value Based Drafting (blend)"
+                    >
+                      VBD{" "}
+                      {sortField === "vbd" &&
+                        (sortDirection === "asc" ? "↑" : "↓")}
+                    </button>
+                  </th>
                 </>
               )}
               <th
-                onClick={() => handleSort("yahooAvgPick")}
                 className={`${styles.sortableHeader} ${styles.colAdp}`}
                 aria-sort={getAriaSort("yahooAvgPick")}
                 scope="col"
               >
-                ADP{" "}
-                {sortField === "yahooAvgPick" &&
-                  (sortDirection === "asc" ? "↑" : "↓")}
+                <button
+                  type="button"
+                  className={styles.sortButton}
+                  onClick={() => handleSort("yahooAvgPick")}
+                >
+                  ADP{" "}
+                  {sortField === "yahooAvgPick" &&
+                    (sortDirection === "asc" ? "↑" : "↓")}
+                </button>
               </th>
               {hasPersonalRanks && (
                 <th
-                  onClick={() => handleSort("myRank")}
                   className={`${styles.sortableHeader} ${styles.colAdp}`}
                   aria-sort={getAriaSort("myRank")}
                   scope="col"
-                  title="Your immutable personal draft-board rank"
                 >
-                  My Rank{" "}
-                  {sortField === "myRank" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
+                  <button
+                    type="button"
+                    className={styles.sortButton}
+                    onClick={() => handleSort("myRank")}
+                    title="Your immutable personal draft-board rank"
+                  >
+                    My Rank{" "}
+                    {sortField === "myRank" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
+                  </button>
                 </th>
               )}
               <th
-                onClick={() => handleSort("risk")}
                 className={`${styles.sortableHeader} ${styles.colNextPick}`}
                 aria-sort={getAriaSort("risk")}
                 scope="col"
-                title="Probability of being drafted before your next pick (ADP-based)"
               >
-                AVL%{" "}
+                <button
+                  type="button"
+                  className={styles.sortButton}
+                  onClick={() => handleSort("risk")}
+                  title="Probability of remaining available at your next pick (ADP-based)"
+                >
+                  AVL%
+                </button>
               </th>
               <th className={styles.colAction} scope="col">
                 Action
@@ -1677,7 +1831,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
               >
                 <span
                   aria-label="Compare column header"
-                  title="Select players (checkboxes) then click Open to compare. Risk (AVL%) color: green low, yellow med, red high chance player is gone before next pick."
+                  title="Select players (checkboxes) then click Open to compare. AVL%: green high, yellow medium, red low probability of remaining available at your next pick."
                 >
                   COMP.
                 </span>
@@ -1686,25 +1840,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
           </thead>
           <tbody>
             {(() => {
-              const displayPlayers = (() => {
-                let arr = [...filteredAndSortedPlayers];
-                if (hideDrafted) {
-                  arr = arr.filter(
-                    (p) => !draftedIdSet.has(String(p.playerId)),
-                  );
-                } else {
-                  const undrafted = arr.filter(
-                    (p) => !draftedIdSet.has(String(p.playerId)),
-                  );
-                  const drafted = arr.filter((p) =>
-                    draftedIdSet.has(String(p.playerId)),
-                  );
-                  arr = [...undrafted, ...drafted];
-                }
-                return arr;
-              })();
-
-              return displayPlayers.flatMap((player) => {
+              return displayPlayers.flatMap((player, rowIndex) => {
                 const key = String(player.playerId);
                 const m = vorpMap.get(key);
                 const vorp = m?.vorp ?? 0;
@@ -1721,22 +1857,25 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 if (fpBand) fpClasses.push(styles.valueBand, styles[fpBand]);
                 const risk = riskMap.get(key);
                 const riskPct =
-                  typeof risk === "number" ? Math.round(risk * 100) : null;
+                  typeof risk === "number" ? Math.round((1 - risk) * 100) : null;
                 const riskClass =
                   riskPct == null
                     ? undefined
                     : riskPct >= 70
-                      ? styles.riskHigh
+                      ? styles.riskLow
                       : riskPct >= 30
                         ? styles.riskMed
-                        : styles.riskLow;
+                        : styles.riskHigh;
+                const dust = dustInsights?.get(key);
                 const metricColumnsCount = 4; // FP/Score, VORP, VONA, VBD
                 const detailColSpan =
                   1 + // favorite star
                   1 + // name
                   1 + // pos
                   1 + // team
-                  (statColumnsMode ? statColumns.length : metricColumnsCount) +
+                  (statColumnsMode
+                    ? statColumns.length + 3
+                    : metricColumnsCount) +
                   1 + // ADP
                   (hasPersonalRanks ? 1 : 0) + // personal board rank
                   1 + // Next Pick
@@ -1746,6 +1885,10 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 const mainRow = (
                   <tr
                     key={player.playerId}
+                    data-player-id={key}
+                    data-stripe={rowIndex % 2}
+                    data-expanded={!!expanded[key]}
+                    data-selected={selectedIds.has(key)}
                     className={`${styles.playerRow} ${draftedIdSet.has(key) ? styles.draftedRow : ""} ${
                       favoriteIds.has(key) ? styles.favoritedRow : ""
                     }`}
@@ -1818,10 +1961,34 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                             {Math.abs(sourceRankImpacts[player.playerId].delta)}
                           </span>
                         )}
+                      {dust && (
+                        <div className={styles.dustInsight}>
+                          <span
+                            className={`${styles.dustBadge} ${styles[`dustRisk${dust.risk[0].toUpperCase()}${dust.risk.slice(1)}`]}`}
+                            aria-label={`${player.fullName}: DUST plus ${dust.marginalDustGames}, ${dust.risk} schedule-conflict risk. ${dust.activeGamesAdded} Active Games Added across ${dust.candidateScheduledGames} scheduled games.`}
+                            title={`DUST (Daily Unstartable Schedule Tax): ${dust.marginalDustGames} additional Bench Games and ${dust.activeGamesAdded} Active Games Added across ${dust.candidateScheduledGames} scheduled games (${Math.round(dust.dustRate * 100)}% DUST rate)`}
+                          >
+                            DUST +{dust.marginalDustGames}
+                          </span>
+                          {dust.alternative && (
+                            <span
+                              className={styles.dustAlternative}
+                              title={`${dust.alternative.playerName} reduces DUST by ${dust.alternative.dustReduction} with a ${dust.alternative.valueDifference.toFixed(1)} ${leagueType === "categories" ? "score" : "projected-points"} difference.`}
+                            >
+                              Alt: {dust.alternative.playerName} ·{" "}
+                              {dust.alternative.valueDifference >= 0 ? "+" : "−"}
+                              {Math.abs(dust.alternative.valueDifference).toFixed(1)}{" "}
+                              {leagueType === "categories" ? "score" : "FP"} · −
+                              {dust.alternative.dustReduction} DUST
+                            </span>
+                          )}
+                        </div>
+                      )}
                       </div>
                     </td>
                     <td
                       className={styles.position}
+                      data-label="Pos"
                       title={(() => {
                         const disp = getDisplayPos(player) || "-";
                         const elig = Array.isArray(
@@ -1838,33 +2005,39 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     </td>
                     <td
                       className={styles.team}
+                      data-label="Team"
                       title={player.displayTeam || undefined}
                     >
                       {player.displayTeam || "-"}
                     </td>
                     {!statColumnsMode ? (
                       <>
-                        <td className={fpClasses.join(" ")}>
+                        <td className={fpClasses.join(" ")} data-label={leagueType === "categories" ? "Score" : "Proj FP"}>
                           {leagueType === "categories"
                             ? typeof m?.value === "number"
                               ? m.value.toFixed(1)
                               : "-"
-                            : player.fantasyPoints.projected?.toFixed(1) || "-"}
+                            : typeof m?.value === "number"
+                              ? m.value.toFixed(1)
+                              : player.fantasyPoints.projected?.toFixed(1) || "-"}
                         </td>
                         <td
                           className={styles.vorp}
+                          data-label="VORP"
                           title={bestPos ? `Best Pos: ${bestPos}` : undefined}
                         >
                           {typeof vorp === "number" ? vorp.toFixed(1) : "-"}
                         </td>
                         <td
                           className={styles.vorp}
+                          data-label="VONA"
                           title="Value Over Next Available"
                         >
                           {typeof vona === "number" ? vona.toFixed(1) : "-"}
                         </td>
                         <td
                           className={vbdClasses.join(" ")}
+                          data-label="VBD"
                           title={
                             needWeightEnabled
                               ? "Value Based Drafting (need-adjusted)"
@@ -1878,21 +2051,114 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       </>
                     ) : (
                       <>
-                        {statColumns.map((k) => {
-                          const val = (player.combinedStats as any)?.[k]
-                            ?.projected as number | null | undefined;
-                          return (
-                            <td
-                              key={`c-${k}-${key}`}
-                              className={styles.statCol}
-                            >
-                              {formatStatValue(k, val)}
-                            </td>
-                          );
-                        })}
+                        {isGoaliePlayer(player) &&
+                        positionFilter !== "G" &&
+                        statColumns.length > 0 &&
+                        goalieStatColumns.length > 0 ? (
+                          <td
+                            className={`${styles.statCol} ${styles.inlineGoalieStatsCell}`}
+                            colSpan={statColumns.length}
+                            data-label="Goalie stats"
+                            aria-label="Goalie projected statistics"
+                          >
+                            <span className={styles.inlineGoalieStats}>
+                              {goalieStatColumns.map((goalieKey) => {
+                                const value = getProratedStat(
+                                  player,
+                                  goalieKey,
+                                  prorate84,
+                                );
+                                const label =
+                                  statDefByKey.get(goalieKey)?.displayName ||
+                                  goalieKey;
+                                const formatted = formatStatValue(
+                                  goalieKey,
+                                  value,
+                                );
+                                return (
+                                  <span
+                                    key={`goalie-${goalieKey}-${key}`}
+                                    className={styles.inlineGoalieStat}
+                                    title={`Projected ${label}: ${
+                                      formatted === "-"
+                                        ? "Not supplied"
+                                        : formatted
+                                    }`}
+                                  >
+                                    <span
+                                      className={styles.inlineGoalieStatLabel}
+                                    >
+                                      {label}
+                                    </span>
+                                    <span>{formatted}</span>
+                                  </span>
+                                );
+                              })}
+                            </span>
+                          </td>
+                        ) : (
+                          statColumns.map((k) => {
+                            const val = getProratedStat(player, k, prorate84);
+                            const isProrated =
+                              prorate84 && canProrateStat(player, k);
+                            return (
+                              <td
+                                key={`c-${k}-${key}`}
+                                className={styles.statCol}
+                                data-label={
+                                  statDefByKey.get(k)?.displayName || k
+                                }
+                                title={
+                                  val == null
+                                    ? "Not supplied"
+                                    : isProrated
+                                      ? `${val} (${NHL_REGULAR_SEASON_GAMES}-game pace)`
+                                      : String(val)
+                                }
+                              >
+                                {formatStatValue(k, val)}
+                                {isProrated && (
+                                  <sup
+                                    className={styles.proratedMarker}
+                                    aria-label={`${NHL_REGULAR_SEASON_GAMES}-game prorated`}
+                                  >
+                                    *
+                                  </sup>
+                                )}
+                              </td>
+                            );
+                          })
+                        )}
+                        <td
+                          className={styles.vorp}
+                          data-label="VORP"
+                          title={bestPos ? `Best Pos: ${bestPos}` : undefined}
+                        >
+                          {typeof vorp === "number" ? vorp.toFixed(1) : "-"}
+                        </td>
+                        <td
+                          className={styles.vorp}
+                          data-label="VONA"
+                          title="Value Over Next Available"
+                        >
+                          {typeof vona === "number" ? vona.toFixed(1) : "-"}
+                        </td>
+                        <td
+                          className={vbdClasses.join(" ")}
+                          data-label="VBD"
+                          title={
+                            needWeightEnabled
+                              ? "Value Based Drafting (need-adjusted)"
+                              : "Value Based Drafting"
+                          }
+                        >
+                          {typeof vbdDisplay === "number"
+                            ? vbdDisplay.toFixed(1)
+                            : "-"}
+                        </td>
                       </>
                     )}
-                    <td className={styles.adp}>
+                    <td className={styles.adp} data-label="ADP">
                       {typeof player.yahooAvgPick === "number" &&
                       player.yahooAvgPick > 0
                         ? player.yahooAvgPick.toFixed(1)
@@ -1901,6 +2167,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     {hasPersonalRanks && (
                       <td
                         className={styles.adp}
+                        data-label="My Rank"
                         title="Your immutable personal draft-board rank"
                       >
                         {personalRankByPlayerId[key] ?? "-"}
@@ -1908,10 +2175,11 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     )}
                     <td
                       className={`${styles.nextPick} ${riskClass ? riskClass : ""}`}
+                      data-label="AVL%"
                       title={
                         riskPct == null
                           ? undefined
-                          : `${riskPct}% chance gone before your next pick`
+                          : `${riskPct}% likely available at your next pick`
                       }
                     >
                       {riskPct == null ? "-" : `${riskPct}%`}
@@ -1947,6 +2215,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 const detailRow = expanded[key] ? (
                   <tr
                     key={`${player.playerId}-details`}
+                    data-stripe={rowIndex % 2}
                     className={styles.expandRow}
                   >
                     <td colSpan={detailColSpan}>
@@ -2108,6 +2377,14 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         })()}
       </div>
 
+      <nav className={styles.pagination} aria-label="Available players pagination">
+        <button type="button" disabled={currentPage === 0} onClick={() => setPageIndex(0)}>First</button>
+        <button type="button" disabled={currentPage === 0} onClick={() => setPageIndex(currentPage - 1)}>Prev</button>
+        <span>{currentPage + 1} / {pageCount}</span>
+        <button type="button" disabled={currentPage === pageCount - 1} onClick={() => setPageIndex(currentPage + 1)}>Next</button>
+        <label>Rows <select aria-label="Available players per page" value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))}>{[15, 25, 50, 100].map((size) => <option key={size}>{size}</option>)}</select></label>
+        <span className={styles.pageCount}>{orderedPlayers.length ? currentPage * pageSize + 1 : 0}–{Math.min((currentPage + 1) * pageSize, orderedPlayers.length)} of {orderedPlayers.length}</span>
+      </nav>
       {showDiagnostics && (
         <div
           className={styles.diagnostics}

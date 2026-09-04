@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import publicSupabase from "lib/supabase/public-client";
+import { DEFAULT_YAHOO_GAME_KEY } from "lib/rosterScheduleData/constants";
 
 type YahooMatchupWeek = {
   week: number;
@@ -40,7 +41,8 @@ const toLocalYmd = (value: string | Date): string => {
  */
 export default function useYahooCurrentMatchupWeek(
   season: string | null,
-  referenceDate?: string | Date | null
+  referenceDate?: string | Date | null,
+  gameKey: string = DEFAULT_YAHOO_GAME_KEY,
 ): CurrentMatchupWeekState {
   const [weekNumber, setWeekNumber] = useState<number | null>(null);
   const [dateRange, setDateRange] = useState<DateRange | null>(null);
@@ -68,6 +70,7 @@ export default function useYahooCurrentMatchupWeek(
         const { data, error: queryError } = await publicSupabase
           .from("yahoo_matchup_weeks")
           .select("week,start_date,end_date")
+          .eq("game_key", gameKey)
           .eq("season", season)
           .lte("start_date", referenceLocal)
           .gte("end_date", referenceLocal)
@@ -106,7 +109,7 @@ export default function useYahooCurrentMatchupWeek(
     return () => {
       isCancelled = true;
     };
-  }, [season, referenceDate]);
+  }, [gameKey, season, referenceDate]);
 
   return {
     weekNumber,

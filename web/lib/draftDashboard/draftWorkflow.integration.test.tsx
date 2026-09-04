@@ -9,6 +9,7 @@ import { groupPlayerEligibility } from "./forwardGrouping";
 import { materializeKeeperPicks, validateKeeperCandidate } from "./keepers";
 import { resolvePickOwner, upsertPickTrade } from "./pickTrades";
 import { buildDraftConfigurationSummary } from "./summaryConfiguration";
+import { categoryRankBand, rankTeamCategories } from "./categoryStandings";
 
 const csvPlayer = (id: number, name: string, position: string) => ({
   player_id: id,
@@ -26,6 +27,28 @@ const csvPlayer = (id: number, name: string, position: string) => ({
 });
 
 describe("representative draft workflow", () => {
+  it("colors category ranks in quartiles, respects stat direction, and preserves ties", () => {
+    const teams = Array.from({ length: 12 }, (_, index) => ({
+      teamId: String(index),
+      categoryTotals: { GOALS: 12 - index, GOALS_AGAINST_AVERAGE: index + 1 },
+    }));
+    const ranks = rankTeamCategories(teams, { GOALS: 1, GOALS_AGAINST_AVERAGE: 1 }, "categories");
+    expect(ranks["0"]).toEqual({ GOALS: 1, GOALS_AGAINST_AVERAGE: 1 });
+    expect(ranks["11"]).toEqual({ GOALS: 12, GOALS_AGAINST_AVERAGE: 12 });
+    expect(teams.map((team) => categoryRankBand(ranks[team.teamId].GOALS, 12))).toEqual([
+      "green", "green", "green", "yellow", "yellow", "yellow", "orange", "orange", "orange", "red", "red", "red",
+    ]);
+    teams[1].categoryTotals.GOALS = teams[0].categoryTotals.GOALS;
+    const tied = rankTeamCategories(teams, { GOALS: 1 }, "categories");
+    expect(tied["0"].GOALS).toBe(tied["1"].GOALS);
+    const missing = rankTeamCategories([
+      { teamId: "empty", categoryTotals: {} },
+      { teamId: "zero", categoryTotals: { GOALS: 0 } },
+    ], { GOALS: 1 }, "categories");
+    expect(missing.empty.GOALS).toBe(missing.zero.GOALS);
+    expect(categoryRankBand(1, 1)).toBe("green");
+    expect(categoryRankBand(2, 5)).toBe("green");
+  });
   it("keeps one coherent contract across import, settings, pick ownership, undo, recommendations, and summary", () => {
     const imported = validateCsvProjectionRows(
       [csvPlayer(1, "Forward One", "C,LW"), csvPlayer(2, "Defender Two", "D")],

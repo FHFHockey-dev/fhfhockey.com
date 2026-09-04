@@ -38,6 +38,8 @@ import styles from "./DraftSettings.module.scss";
 type LeagueType = "points" | "categories";
 
 interface DraftSettingsProps {
+  variant?: "standalone" | "inline";
+  activeSection?: "setup" | "sources";
   settings: DraftSettingsType;
   onSettingsChange: (newSettings: Partial<DraftSettingsType>) => void;
   draftOrderPattern?: DraftOrderPattern;
@@ -160,6 +162,8 @@ function getShortLabel(statKey: string): string {
 import PlayerAutocomplete from "components/PlayerAutocomplete";
 
 const DraftSettings: React.FC<DraftSettingsProps> = ({
+  variant = "standalone",
+  activeSection = "setup",
   settings,
   onSettingsChange,
   draftOrderPattern,
@@ -1242,7 +1246,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   };
 
   return (
-    <div className={styles.settingsContainer}>
+    <div className={`${styles.settingsContainer} ${variant === "inline" ? styles.inlineSettings : ""}`} data-section={activeSection}>
       <div className={styles.settingsHeader}>
         <h1 className={styles.title}>
           Fantasy Hockey{" "}
@@ -1381,7 +1385,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
           {draftLockReason}
         </div>
       )}
-      {!collapsed && (
+      {(variant === "inline" || !collapsed) && (
         <div className={styles.settingsGrid}>
           <fieldset className={styles.fieldset}>
             <legend className={styles.legend}>League Setup</legend>
@@ -2238,7 +2242,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
             )}
           </fieldset>
           {(sourceControls || goalieSourceControls) && (
-            <fieldset className={`${styles.fieldset} ${styles.slimFieldset}`}>
+            <fieldset data-projection-sources className={`${styles.fieldset} ${styles.slimFieldset}`}>
               <legend className={styles.legend}>Projection Sources</legend>
               {sourceControls && (
                 <>
@@ -2259,16 +2263,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                   >
                     {isNormalized ? "Normalized" : "Normalizing..."}
                   </span>
-                  <div className={styles.sourcePlug}>
-                    <a
-                      href="https://www.reddit.com/r/fantasyhockey/comments/1n1wsqc/dtz_20252026_nhl_projections/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      DtZ Projections
-                    </a>
-                    <span aria-hidden>— community contributed</span>
-                  </div>
                 </>
               )}
             </fieldset>
@@ -2989,16 +2983,28 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                                 id={`popover-skater-${id}`}
                                 type="checkbox"
                                 checked={ctrl.isSelected}
-                                onChange={(e) =>
-                                  onSourceControlsChange &&
+                                onChange={(e) => {
+                                  if (!onSourceControlsChange) return;
+                                  const isSelected = e.target.checked;
+                                  if (
+                                    isSelected &&
+                                    !ctrl.isSelected &&
+                                    (id === "blake_ag_skaters" ||
+                                      id === "nate_ag_skaters") &&
+                                    !window.confirm(
+                                      'Enabling "AG Blake" or "AG Nate" alongside "Apples & Ginos" double-weights those projections. Proceed?',
+                                    )
+                                  ) {
+                                    return;
+                                  }
                                   onSourceControlsChange({
                                     ...sourceControls,
                                     [id]: {
-                                      isSelected: e.target.checked,
+                                      isSelected,
                                       weight: ctrl.weight,
                                     },
-                                  })
-                                }
+                                  });
+                                }}
                                 aria-label={`Toggle source ${displayName}`}
                               />
                               <span className={styles.popoverSourceName}>

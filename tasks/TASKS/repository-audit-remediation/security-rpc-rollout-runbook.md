@@ -17,7 +17,7 @@ Applying either migration is a production mutation and requires explicit authori
 
 The routines must never be called during preflight or verification. Do not print environment values, use a browser-role request as a probe, run unrelated migrations, or inspect application data.
 
-## Current read-only preflight receipt
+## Read-only preflight receipts
 
 The 2026-08-19 catalog check found:
 
@@ -26,6 +26,8 @@ The 2026-08-19 catalog check found:
 - The deployed migration ledger ends at `20260815023132_espn_fantasy_private_beta`; neither migration listed above is applied.
 
 A resumed read-only check on 2026-08-26 produced the same ACL and migration-ledger state. PostgreSQL rendered the arbitrary-SQL routine identity as `public.execute_sql(sql_statement text)`; its callable type signature remains `public.execute_sql(text)`. Neither routine was invoked.
+
+The latest read-only check on 2026-08-29 confirms both routines still grant effective EXECUTE to `anon` and `authenticated`, with `service_role` also retained. The Production ledger now contains 45 versions through `20260829161013`, but neither ACL migration in this runbook is present. The two Production-only ESPN versions `20260829133258` and `20260829133637` lack active source files and are tracked as a separate source-retention discrepancy. No routine was invoked or database state changed during this check.
 
 Immediately before an authorized rollout, repeat the following catalog-only query and stop if the signatures, owner, SECURITY DEFINER state, search path, or grantee set differs:
 

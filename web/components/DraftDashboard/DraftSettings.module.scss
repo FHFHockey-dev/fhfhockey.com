@@ -197,8 +197,13 @@
 
 .roundChip {
   @include v.reset-button;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 30px;
   min-height: 30px;
+  line-height: 1;
+  text-align: center;
   border: 1px solid v.$border-secondary;
   border-radius: 999px;
   background: v.$background-dark;
@@ -1663,4 +1668,14 @@
 /* Spacing utility for sections within popover */
 .sectionSpacer {
   margin-top: 12px;
+}
+
+.inlineSettings {
+  &.settingsContainer { padding: 8px; border: 0; border-radius: 0; background: v.$draft-surface; box-shadow: none; }
+  .title, .collapseButton, .summaryButton { display: none; }
+  .settingsHeader { margin: 0 0 8px; padding: 0 0 6px; }
+  .settingsGrid { gap: 10px; }
+  .fieldset { background: v.$draft-input; padding: 8px 10px; }
+  &[data-section="sources"] .settingsGrid { grid-template-columns: 1fr; }
+  &[data-section="sources"] .settingsGrid > :not([data-projection-sources]) { display: none; }
 }

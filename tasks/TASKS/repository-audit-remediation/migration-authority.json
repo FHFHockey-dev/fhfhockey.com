@@ -515,12 +515,12 @@
     {
       "order": 51,
       "path": "supabase/migrations/20260824152127_yahoo_live_draft_production_hardening.sql",
-      "sha256": "0f45bb2605745b0c130d4610e52a708c770686cbfa97a4589ee6bf749e28a7e6",
+      "sha256": "851ba958aafded30e933e6ff2e3063b8b34e14261f351559b5c38cf89bbae621",
       "sourceStatus": "source-authorized",
-      "deploymentState": "unknown",
+      "deploymentState": "applied",
       "migrationClass": "security",
-      "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
-      "stateEvidence": "No exact applied-state receipt recorded; the version was absent from the read-only Production migration ledger observed 2026-08-26."
+      "rolloutGate": "Exact Production ledger receipt observed 2026-08-29; do not replay.",
+      "stateEvidence": "Read-only Production migration-ledger receipt observed 2026-08-29; version 20260824152127 was present exactly once. The hash records current committed source, not a deployed SQL byte comparison."
     },
     {
       "order": 52,
@@ -551,6 +551,46 @@
       "migrationClass": "feature",
       "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
       "stateEvidence": "No exact applied-state receipt recorded; long-lived non-stat assumption inheritance has not been replayed against local or hosted Supabase."
+    },
+    {
+      "order": 55,
+      "path": "supabase/migrations/20260828130824_start_chart_yahoo_overlay_reader.sql",
+      "sha256": "1bade7c44ca992b199b1bc32002a361606c97c9427405891db622b2284b7776e",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
+      "stateEvidence": "No exact applied-state receipt recorded; the version was absent from the read-only Production migration ledger observed 2026-08-29."
+    },
+    {
+      "order": 56,
+      "path": "supabase/migrations/20260828142331_recent_team_form_nullable_components.sql",
+      "sha256": "f8354ceafd0d230cba8ed2259aeffdfa24e6aa4bdab4526a5a7ef6584e3a5332",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
+      "stateEvidence": "No exact applied-state receipt recorded; the version was absent from the read-only Production migration ledger observed 2026-08-29."
+    },
+    {
+      "order": 57,
+      "path": "supabase/migrations/20260828162000_add_sustainability_repair_versions.sql",
+      "sha256": "1a6f9cec3ff1f3b25d01465bbc72df85efa03eba3e1be9ae79957a2d639fc877",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
+      "stateEvidence": "No exact applied-state receipt recorded; the version was absent from the read-only Production migration ledger observed 2026-08-29."
+    },
+    {
+      "order": 58,
+      "path": "supabase/migrations/20260829161013_add_roster_optimizer_team_game_schedule.sql",
+      "sha256": "cd051aae9f20f7479cc2f228f5225daabe93c2237b3d6899b184cf1d8ae06e97",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Exact Production ledger receipt observed 2026-08-29; do not replay.",
+      "stateEvidence": "Read-only Production migration-ledger receipt observed 2026-08-29; version 20260829161013 was present exactly once. The hash records the current non-ignored untracked source, not a deployed SQL byte comparison."
     }
   ]
 }

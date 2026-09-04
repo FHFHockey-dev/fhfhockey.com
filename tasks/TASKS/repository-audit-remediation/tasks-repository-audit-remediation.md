@@ -13,6 +13,7 @@ Generated from audit run `REPO-AUDIT-2026-08-09-FROZEN-36536C3`. This file is a 
 - All pre-existing live-worktree changes are user-owned. Every implementation task must begin with a targeted status/diff check and preserve overlapping work, especially `web/package.json`, `web/lib/supabase/supportedBaselineMigration.test.ts`, and the current forecast migration.
 - Concurrent user drift continued after reconciliation (including later edits to `web/components/TransactionTrends/OwnershipSparkline.tsx` and `web/pages/index.tsx`). Those paths do not overlap this plan's finding evidence and were not incorporated; executors must recheck current state rather than treating this planning receipt as a frozen worktree.
 - Resume checkpoint 2026-08-26: `octoberBranch` and `origin/octoberBranch` both point to `9621935b9994ac06dd71efd00dc58dae0b95a112`, which incorporates the earlier remediation bundle. Current Yahoo draft work remains user-owned and uncommitted; only its migration filename/hash is represented in the fail-closed source-authority ledger.
+- Resume checkpoint 2026-08-29: HEAD is `f7b93bc0bc23d0e527556f75ce07f81bcfeabe33`. The source-authority update includes the current non-ignored untracked roster-schedule migration without modifying it. Production-only ESPN migration versions are recorded separately below rather than silently added to source authority.
 
 ## Dependency-ordered index
 
@@ -333,7 +334,7 @@ Hosted-runner behavior must be checked through configuration and redacted logs. 
 
 - Checkout, dependency installation, browser installation, deployed-URL testing, and artifact upload are now credential-free by YAML scope. Only the local-server E2E step receives the URL/public/service-role values; the prerequisite check receives boolean presence markers only.
 - `npm run test:e2e:rankings -- --list` still discovers exactly three tests, and bounded YAML inspection finds one actual `SUPABASE_SERVICE_ROLE_KEY` assignment under the local-server step.
-- The scoped workflow change is now committed and pushed at `9621935b9994ac06dd71efd00dc58dae0b95a112`. A read-only GitHub Actions lookup on 2026-08-26 returned zero workflow runs for that exact commit; no workflow dispatch occurred, so hosted inheritance still cannot be claimed.
+- The scoped workflow change remains committed and pushed. A read-only GitHub Actions lookup on 2026-08-29 returned zero workflow runs for current HEAD `f7b93bc0bc23d0e527556f75ce07f81bcfeabe33`; no workflow dispatch occurred, so hosted inheritance still cannot be claimed.
 - AUDIT-TASK-004.3 remains open because only a future GitHub Actions run can prove hosted-runner inheritance; no environment values were printed or inspected.
 
 # AUDIT-TASK-005: Replace fabricated GamePreview analytics with explicit unavailable states
@@ -467,8 +468,12 @@ This task overlaps active user work. Re-read status/diff immediately before edit
 ## Completion checkpoint — 2026-08-19
 
 - Owner approval established the fail-closed policy: repository presence means source-authorized only; applied state requires an exact environment receipt; otherwise state remains unknown. No source classification authorizes deployment.
-- [`migration-authority.json`](migration-authority.json) is now the sole ordered hash ledger for all 54 current active migrations, including the current forecast/Yahoo additions, the opt-in Player Forecasts scheduler update, opening-release editor guard, long-lived season-assumption inheritance, and the two audit security migrations. Read-only Production-ledger receipts through 2026-08-26 reconcile it to 41 applied rows and 13 unknown-state rows without changing any migration byte.
-- The supported-baseline suite consumes that ledger directly, rejects missing/extra/duplicate/misordered/hash-drifted records, and cross-checks the retained historical manifest and current summary. `npm test -- lib/supabase/supportedBaselineMigration.test.ts` passes 17/17 without contacting Supabase or running SQL.
+- [`migration-authority.json`](migration-authority.json) is now the sole ordered hash ledger for all 58 current active migrations, including current forecast/Yahoo, Start Chart, Recent Team Form, sustainability-provenance, and roster-schedule additions plus the two audit security migrations. Read-only Production-ledger receipts through 2026-08-29 reconcile it to 43 applied-version rows and 15 unknown-state rows without changing any migration byte. The Yahoo hardening hash update follows the two committed text-cast corrections; deployed SQL byte parity was not inferred.
+- The supported-baseline suite consumes that ledger directly, rejects missing/extra/duplicate/misordered/hash-drifted records, and cross-checks the retained historical manifest and current summary. The 2026-08-29 run of `npm test -- lib/supabase/supportedBaselineMigration.test.ts` passes 19/19 without contacting Supabase or running SQL.
+
+### Production-only source-retention discrepancy — 2026-08-29
+
+The read-only Production ledger contains 45 versions. Two have no files in the active `supabase/migrations/` tree: `20260829133258_create_espn_20262027_projection_tables` and `20260829133637_secure_espn_20262027_projection_table_grants`. They are not included in the 58 source-authorized rows or the 43 source-matched applied count. Their retained migration source/location requires owner reconciliation; no SQL was reconstructed, replayed, moved, or fabricated. The source-authority contract is complete for current files, but this does not claim full Production/source migration parity.
 
 # AUDIT-TASK-007: Establish the deployed owner of `/sko/pipeline`
 

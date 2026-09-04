@@ -99,9 +99,8 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     expect(screen.getAllByRole("listitem")[0].textContent).toContain(
       "Urgent Player"
     );
-    expect(screen.getAllByText(/Gone by next pick/)[0].textContent).toContain(
-      "%"
-    );
+    expect(screen.getAllByTitle("Probability of remaining available at your next pick")[0].textContent).toContain("%");
+    expect(screen.queryByText(/Gone by next pick/)).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Draft Urgent Player" }));
     fireEvent.click(
@@ -115,7 +114,7 @@ describe("SuggestedPicks grouped-forward presentation", () => {
 
   it("renders an honest empty state when no available players remain", () => {
     render(<SuggestedPicks players={[]} currentPick={1} teamCount={1} />);
-    expect(screen.getByText("No matching players")).toBeTruthy();
+    expect(screen.getByText("No matching available players")).toBeTruthy();
   });
 
   it("shows personal rank without changing it and locks Yahoo-mode drafting", () => {

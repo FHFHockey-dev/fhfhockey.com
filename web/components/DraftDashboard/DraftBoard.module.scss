@@ -1,986 +1,237 @@
-// components/DraftDashboard/DraftBoard.module.scss
-@use "sass:color";
 @use "styles/vars" as v;
-
-/* =================== Draft Board Container =================== */
 .draftBoardContainer {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  min-height: 0;
   height: 100%;
-  overflow: hidden;
-  background-color: v.$background-dark;
+  padding: 8px 10px;
+  background: v.$draft-surface;
 }
-
-.panelHeader {
-  background-color: color.adjust(v.$background-dark, $lightness: -3%);
-  border-bottom: 2px solid v.$border-secondary;
-  padding: v.$space-md v.$space-lg;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.panelTitle {
-  font-family: v.$font-family-accent, sans-serif;
-  font-size: v.$font-size-lg;
-  font-weight: 700;
-  color: v.$color-white;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin: 0;
-}
-
-.panelTitleAccent {
-  color: v.$primary-color;
-}
-
-.currentPickInfo {
-  display: flex;
-  gap: v.$space-md;
-  align-items: center;
-}
-
-.pickIndicator,
-.roundIndicator {
-  background-color: v.$background-medium;
-  color: v.$text-primary;
-  padding: v.$space-xs v.$space-sm;
-  border-radius: v.$border-radius-sm;
-  font-size: v.$font-size-sm;
-  font-weight: 600;
-  border: 1px solid v.$border-secondary;
-}
-
-/* =================== Current Turn Status =================== */
-.currentTurnStatus {
-  padding: v.$space-md;
-  background-color: color.adjust(v.$background-medium, $lightness: -1%);
-  border-bottom: 1px solid v.$border-secondary;
-  flex-shrink: 0;
-}
-
-.myTurnIndicator {
-  background: linear-gradient(
-    135deg,
-    color.adjust(v.$success-color, $lightness: -15%) 0%,
-    color.adjust(v.$success-color, $lightness: -25%) 100%
-  );
-  color: v.$color-white;
-  padding: v.$space-sm v.$space-md;
-  border-radius: v.$border-radius-md;
-  text-align: center;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); // Add text shadow for better contrast
-  animation: pulse-glow 2s infinite;
-  border: 2px solid color.adjust(v.$success-color, $lightness: -10%);
-}
-
-.otherTurnIndicator {
-  background: linear-gradient(
-    135deg,
-    color.adjust(v.$color-grey-medium, $lightness: -10%) 0%,
-    color.adjust(v.$color-grey-medium, $lightness: -5%) 100%
-  );
-  color: v.$color-white;
-  padding: v.$space-sm v.$space-md;
-  border-radius: v.$border-radius-md;
-  text-align: center;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); // Add text shadow for better contrast
-  border: 2px solid color.adjust(v.$color-grey-medium, $lightness: -5%);
-}
-
-@keyframes pulse-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 10px rgba(v.$success-color, 0.5);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(v.$success-color, 0.8);
-  }
-}
-
-/* =================== Draft Grid =================== */
-.draftGridContainer {
-  flex-shrink: 0; // Don't shrink, use only needed space
-  overflow: auto;
-  padding: v.$space-sm; // Reduced padding
-  @include v.custom-scrollbar(v.$primary-color, v.$background-medium);
-  background-color: v.$background-dark;
-}
-
-.draftGrid {
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-xs; // Reduced gap
-  min-width: 600px; // Ensure horizontal scroll on small screens
-}
-
-.gridHeader {
-  display: grid;
-  gap: v.$space-xs;
-  margin-bottom: v.$space-xs; // Reduced margin
-}
-
-.headerCell {
-  background-color: color.adjust(v.$background-dark, $lightness: -5%);
-  color: v.$text-primary;
-  padding: v.$space-xs v.$space-sm; // Reduced padding
-  text-align: center;
-  font-size: v.$font-size-xs; // Reduced font size
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-radius: v.$border-radius-sm;
-  border: 1px solid v.$border-secondary;
-}
-
-.gridRow {
-  display: grid;
-  gap: v.$space-xs;
-}
-
-.roundCell {
-  background-color: color.adjust(v.$primary-color, $alpha: -0.8);
-  color: v.$primary-color;
-  padding: v.$space-xs v.$space-sm; // Reduced padding
-  text-align: center;
-  font-weight: 700;
-  border-radius: v.$border-radius-sm;
-  border: 1px solid color.adjust(v.$primary-color, $alpha: -0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: v.$font-size-xs; // Reduced font size
-}
-
-.pickCell {
-  background-color: v.$background-medium;
-  border: 1px solid v.$border-secondary;
-  border-radius: v.$border-radius-sm;
-  padding: v.$space-xs; // Reduced padding
-  min-height: 35px; // Reduced height
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  transition: all 0.2s ease;
-
-  &:hover {
-    border-color: color.adjust(v.$primary-color, $alpha: -0.5);
-  }
-}
-
-.currentPick {
-  background: linear-gradient(
-    135deg,
-    color.adjust(v.$warning-color, $lightness: -20%) 0%,
-    color.adjust(v.$warning-color, $lightness: -10%) 100%
-  );
-  border-color: color.adjust(v.$warning-color, $lightness: -15%);
-  animation: current-pick-pulse 1.5s infinite;
-}
-
-.pastPick {
-  opacity: 0.7;
-  background-color: color.adjust(v.$background-medium, $lightness: -5%);
-}
-
-.draftedPick {
-  background: linear-gradient(
-    135deg,
-    v.$success-color 0%,
-    color.adjust(v.$success-color, $lightness: -5%) 100%
-  );
-  border-color: v.$success-color;
-}
-
-@keyframes current-pick-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 5px rgba(v.$warning-color, 0.5);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 0 15px rgba(v.$warning-color, 0.8);
-  }
-}
-
-/* =================== Pick Content =================== */
-.draftedPlayerInfo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: v.$space-xxs;
-}
-
-.playerName {
-  font-size: v.$font-size-xs;
-  font-weight: 600;
-  color: v.$color-white;
-  text-align: center;
-  line-height: 1;
-}
-
-.currentPickIndicator {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: v.$space-xxs;
-}
-
-.pickNumber {
-  font-size: v.$font-size-xs;
-  font-weight: 600;
-  color: v.$color-white; // Better contrast on dark warning background
-  line-height: 1;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
-}
-
-.pickStatus {
-  font-size: v.$font-size-xxs;
-  font-weight: 700;
-  color: v.$color-white;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5); // Better contrast
-}
-
-/* =================== Leaderboard Section - Moved directly under grid =================== */
-.leaderboardSection {
-  border-top: 2px solid v.$border-secondary;
-  padding: v.$space-sm;
-  background-color: color.adjust(v.$background-medium, $lightness: -1%);
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.sectionTitle {
-  font-family: v.$font-family-accent, sans-serif;
-  font-size: v.$font-size-sm;
-  font-weight: 700;
-  color: v.$color-white;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin: 0 0 v.$space-sm 0;
-  flex-shrink: 0;
-}
-
-.leaderboardTableContainer {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: auto;
-  @include v.custom-scrollbar(v.$primary-color, v.$background-dark, 4px);
-}
-
-.leaderboardTable {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: v.$font-size-xs;
-  min-width: 600px; // Ensure horizontal scroll on small screens
-}
-
-.leaderboardTable thead {
-  position: sticky;
-  top: 0;
-  background-color: color.adjust(v.$background-dark, $lightness: -5%);
-  z-index: 10;
-}
-
-.leaderboardTable th {
-  background-color: color.adjust(v.$background-dark, $lightness: -5%);
-  color: v.$text-primary;
-  padding: v.$space-xs v.$space-sm;
-  text-align: left;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 2px solid v.$border-secondary;
-  font-size: v.$font-size-xxs;
-  white-space: nowrap;
-}
-
-.rankHeader {
-  width: 40px;
-  text-align: center;
-}
-
-.teamHeader {
-  min-width: 80px;
-}
-
-.sortableHeader {
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.2s ease;
-  position: relative;
-
-  &:hover {
-    background-color: color.adjust(v.$background-dark, $lightness: -2%);
-    color: v.$primary-color;
-  }
-}
-
-.activeSortHeader {
-  color: v.$primary-color;
-  background-color: color.adjust(v.$primary-color, $alpha: -0.9);
-}
-
-.leaderboardRow {
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: color.adjust(v.$background-dark, $lightness: 2%);
-  }
-
-  &:nth-child(even) {
-    background-color: color.adjust(v.$background-dark, $lightness: -1%);
-  }
-
-  &:nth-child(even):hover {
-    background-color: color.adjust(v.$background-dark, $lightness: 3%);
-  }
-}
-
-.currentTeamRow {
-  border-left: 3px solid v.$primary-color;
-  background: linear-gradient(
-    135deg,
-    color.adjust(v.$primary-color, $alpha: -0.9) 0%,
-    color.adjust(v.$background-dark, $lightness: 2%) 100%
-  );
-
-  &:hover {
-    background: linear-gradient(
-      135deg,
-      color.adjust(v.$primary-color, $alpha: -0.85) 0%,
-      color.adjust(v.$background-dark, $lightness: 4%) 100%
-    );
-  }
-}
-
-.leaderboardTable td {
-  padding: v.$space-xs v.$space-sm;
-  border-bottom: 1px solid v.$border-secondary;
-  vertical-align: middle;
-  font-size: v.$font-size-xs;
-}
-
-.rankCell {
-  text-align: center;
-  width: 40px;
-}
-
-.teamRank {
-  background: linear-gradient(
-    135deg,
-    v.$primary-color 0%,
-    color.adjust(v.$primary-color, $lightness: -10%) 100%
-  );
-  color: v.$color-white;
-  padding: v.$space-xxs v.$space-xs;
-  border-radius: v.$border-radius-sm;
-  font-size: v.$font-size-xs;
-  font-weight: 700;
-  min-width: 24px;
-  text-align: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  display: inline-block;
-}
-
-.teamCell {
-  min-width: 80px;
-}
-
-.teamInfo {
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-xxs;
-}
-
-.teamNameRow {
-  display: flex;
-  align-items: center;
-  gap: v.$space-xs;
-  justify-content: space-between;
-  width: 100%;
-}
-
-.teamName {
-  font-size: v.$font-size-xs;
-  font-weight: 600;
-  color: v.$text-primary;
-  line-height: 1.2;
-  flex-shrink: 0;
-  cursor: pointer;
-  padding: v.$space-xxs v.$space-xs;
-  border-radius: v.$border-radius-sm;
-  transition: all 0.2s ease;
-
-  // Ensure clickability
-  pointer-events: auto;
-  position: relative;
-  z-index: 1;
-  user-select: none;
-
-  &:hover {
-    background-color: rgba(v.$primary-color, 0.15);
-    color: v.$primary-color;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(v.$primary-color, 0.2);
-  }
-
-  &:active {
-    transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(v.$primary-color, 0.3);
-  }
-}
-
-.teamNameInput {
-  background-color: v.$background-dark;
-  color: v.$text-primary;
-  border: 1px solid v.$primary-color;
-  border-radius: v.$border-radius-sm;
-  padding: v.$space-xxs v.$space-xs;
-  font-size: v.$font-size-xs;
-  font-weight: 600;
-  line-height: 1.2;
-  width: 100%;
-  max-width: 80px;
-
-  &:focus {
-    outline: none;
-    border-color: v.$secondary-color;
-    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.2);
-  }
-}
-
-.teamPlayerBubbles {
-  display: flex;
-  gap: 2px;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.playerBubble {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.filledBubble {
-  background-color: v.$success-color;
-  border: 1px solid color.adjust(v.$success-color, $lightness: 10%);
-  box-shadow: 0 0 2px rgba(v.$success-color, 0.4);
-}
-
-.emptyBubble {
-  background-color: transparent;
-  border: 1px solid v.$border-secondary;
-  opacity: 0.6;
-}
-
-.teamStats {
-  font-size: v.$font-size-xxs;
-  color: v.$text-secondary;
-  line-height: 1;
-}
-
-.statCell {
-  text-align: left;
-  color: v.$text-secondary;
-  font-weight: 600;
-  min-width: 30px; // Reduced width to make room for bubbles
-  font-size: v.$font-size-xs;
-}
-
-/* =================== GitHub-style Header =================== */
-.githubHeader {
-  padding: v.$space-md v.$space-lg;
-  border-bottom: 1px solid v.$border-secondary;
-  background-color: color.adjust(v.$background-dark, $lightness: -2%);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.sectionTitle {
-  font-family: v.$font-family-accent, sans-serif;
-  font-size: v.$font-size-lg;
-  font-weight: 600;
-  color: v.$color-white;
-  letter-spacing: 0.02em;
-  margin: 0;
-}
-
-.panelTitleAccent {
-  color: v.$primary-color;
-}
-
 .contributionSummary {
-  font-size: v.$font-size-sm;
   color: v.$text-secondary;
-  font-weight: 500;
+  font-size: 11px;
 }
-
-/* =================== GitHub Contribution Graph =================== */
 .contributionGraphContainer {
-  padding: v.$space-lg;
-  background-color: v.$background-dark;
-  border-bottom: 1px solid v.$border-secondary;
-  overflow-x: auto; // Allow horizontal scrolling for many rounds
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: clip;
 }
-
 .contributionGraph {
   display: flex;
   flex-direction: column;
-  gap: v.$space-sm;
-  min-width: fit-content; // Ensure full width is shown
-}
-
-.roundLabels {
-  // wrapper for team label spacer + labels grid
-  display: flex;
-  align-items: center;
-}
-
-/* Ensure spacer matches team label width for perfect column alignment */
-.teamLabelSpacer {
-  width: v.$team-label-width;
-  min-width: v.$team-label-width;
-  max-width: v.$team-label-width;
-  height: 20px;
-  flex-shrink: 0;
-}
-
-.roundLabelsGrid {
-  display: grid; // equal-width columns
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 0;
-  flex: 1 1 auto;
   min-width: 0;
-  // grid-template-columns set inline from TSX: repeat(N, 1fr)
-}
-
-.roundLabel {
-  font-size: v.$font-size-xs;
-  color: v.$text-secondary;
-  font-weight: 600;
-  text-align: center;
-  line-height: 1;
-  min-width: 0;
-  padding: v.$space-xxs; // keep small padding
-  /* Make label size exactly one grid track and include padding/border */
   width: 100%;
-  box-sizing: border-box;
+  height: 100%;
 }
-
-.customReversedRound {
-  border-inline: 1px solid rgba(v.$secondary-color, 0.7);
-  background: rgba(v.$secondary-color, 0.12);
-  color: v.$secondary-color;
-}
-
-.reverseMarker {
-  margin-left: 2px;
-  font-weight: 800;
-}
-
-.contributionGrid {
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  min-width: fit-content;
-}
-
+.roundLabels,
 .teamRow {
   display: flex;
-  gap: 5px;
   align-items: center;
-  min-width: fit-content;
+  gap: 8px;
+  min-height: 0;
 }
-
+.roundLabels {
+  flex: 0 0 16px;
+  &[aria-hidden="true"] { display: none; }
+}
+.roundLabelsRow {
+  display: grid;
+  flex: 0 0 16px;
+}
+.teamLabelSpacer,
+.teamLabel,
+.teamLabelInput {
+  width: clamp(70px, 12cqw, 112px);
+  flex: 0 0 clamp(70px, 12cqw, 112px);
+  min-width: 0;
+}
 .teamLabel {
-  height: 20px; // Slightly taller for better visibility
-  line-height: 20px;
-  text-align: center;
-  font-weight: 600;
-  font-size: v.$font-size-xs;
-  color: v.$text-secondary;
-  background-color: color.adjust(v.$background-medium, $lightness: -2%);
-  //   border-radius: 3px;
-  border: 1px solid v.$border-primary;
-  padding: 0;
-  width: v.$team-label-width; // Fixed width to prevent alignment issues
-  min-width: v.$team-label-width;
-  max-width: v.$team-label-width;
-  flex-shrink: 0;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  font-size: 11px !important;
+  line-height: 1;
+  text-align: left;
+  color: v.$text-primary;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-
-  // Ensure clickability
-  pointer-events: auto;
-  position: relative;
-  z-index: 1;
-  user-select: none;
-
-  &:hover {
-    background-color: rgba(v.$primary-color, 0.15);
-    color: v.$primary-color;
-    border-color: v.$primary-color;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(v.$primary-color, 0.2);
-  }
-
-  &:active {
-    transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(v.$primary-color, 0.3);
-  }
 }
-
 .teamLabelInput {
-  height: 20px;
-  background-color: v.$background-dark;
-  color: v.$text-primary;
-  border: 1px solid v.$primary-color;
-  border-radius: 3px;
-  padding: 0 v.$space-xs;
-  font-size: v.$font-size-xs;
-  font-weight: 600;
-  text-align: center;
-  line-height: 20px;
-  width: v.$team-label-width; // Fixed width to match teamLabel
-  min-width: v.$team-label-width;
-  max-width: v.$team-label-width;
-  flex-shrink: 0;
-
-  &:focus {
-    outline: none;
-    border-color: v.$secondary-color;
-    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.2);
-  }
+  padding: 0 2px !important;
+  font-size: 11px;
+  height: 16px;
 }
-
+.roundLabelsGrid,
 .teamRoundCells {
   display: grid;
-  gap: 0;
   align-items: center;
-  flex: 1 1 auto;
+  flex: 1;
+  gap: 3px;
   min-width: 0;
-  // grid-template-columns set inline from TSX: repeat(N, 1fr)
+  height: 100%;
 }
-
-.contributionCell {
-  height: 20px; // retain height
-  // remove fixed widths to allow dynamic grid sizing
-  // width: auto by default in grid
-  border-radius: 3px;
-  border: 1px solid color.adjust(v.$background-medium, $lightness: 5%);
-  cursor: pointer;
-  transition: all 0.1s ease;
-  position: relative;
-  display: flex;
-  align-items: center;
-  /* Fill the grid track width and include border in sizing to match labels */
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.customReversedCell {
-  border-inline-color: rgba(v.$secondary-color, 0.75);
-  box-shadow: inset 0 0 0 1px rgba(v.$secondary-color, 0.18);
-}
-
-.rosterFullSkip {
-  border-style: dashed;
-  border-color: color.adjust(v.$warning-color, $alpha: -0.35);
-  background: repeating-linear-gradient(
-    -45deg,
-    color.adjust(v.$background-medium, $lightness: -5%),
-    color.adjust(v.$background-medium, $lightness: -5%) 3px,
-    color.adjust(v.$warning-color, $alpha: -0.88) 3px,
-    color.adjust(v.$warning-color, $alpha: -0.88) 6px
-  );
-}
-
-.skipBadge {
-  width: 100%;
-  overflow: hidden;
-  color: v.$warning-color;
-  font-size: 8px;
-  font-weight: 800;
+.roundLabel {
   text-align: center;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
+  font-size: 10px;
+  color: v.$text-secondary;
+  position: relative;
 }
-
-/* Traded pick styling */
-.tradedCell {
-  border-style: dashed;
-  border-color: color.adjust(v.$secondary-color, $lightness: -10%);
-  background: linear-gradient(
-    135deg,
-    color.adjust(v.$secondary-color, $alpha: -0.9) 0%,
-    color.adjust(v.$primary-color, $alpha: -0.9) 100%
-  );
-}
-
-.tradeIcon {
-  position: absolute;
-  inset: 0;
+.contributionGrid {
+  flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  opacity: 0.8;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 0;
 }
-
-.tradeIcon svg {
-  width: 12px;
-  height: 12px;
-  fill: v.$primary-color;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+@media (min-width: 1101px) and (max-height: 840px) {
+  .roundLabelsRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 16px;
+  }
+  .roundLabels[aria-hidden="true"] { display: flex; }
+  .contributionGrid {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(var(--team-rows), minmax(0, 1fr));
+    column-gap: 16px;
+  }
+  .teamLabelSpacer, .teamLabel, .teamLabelInput {
+    width: 80px;
+    flex-basis: 80px;
+  }
 }
-
-/* Keeper styling */
-.keeperCell {
-  border-color: color.adjust(v.$success-color, $lightness: -5%);
-  background: linear-gradient(
-    135deg,
-    color.adjust(v.$success-color, $alpha: -0.85) 0%,
-    color.adjust(v.$success-color, $alpha: -0.75) 100%
-  );
+.teamRow {
+  flex: 1;
+  border-radius: 3px;
 }
-
+.teamRow[data-my-team="true"] {
+  outline: 1px solid v.$primary-color;
+  outline-offset: 1px;
+  .teamLabel {
+    color: v.$primary-color;
+  }
+}
+.contributionCell {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  border: 1px solid rgba(v.$color-neutral-400, 0.1);
+  border-radius: 3px;
+  min-height: 0;
+}
+.intensity0 {
+  background: v.$draft-surface-raised;
+}
+// Preserve the existing projected-points thresholds and alpha levels (30/50/70/100%).
+.intensity1 {
+  background: rgba(v.$primary-color, 0.3);
+}
+.intensity2 {
+  background: rgba(v.$primary-color, 0.5);
+}
+.intensity3 {
+  background: rgba(v.$primary-color, 0.7);
+}
+.intensity4 {
+  background: v.$primary-color;
+}
+.currentPick {
+  background: v.$draft-input;
+  outline: 1px solid v.$color-gold-400;
+  outline-offset: -1px;
+}
+.currentPickIndicator {
+  font-size: 8px;
+  line-height: 1;
+  text-align: center;
+  color: v.$color-gold-400;
+}
+.tradeIcon,
 .keeperBadge {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  font-size: 10px;
-  font-weight: 800;
-  color: v.$background-dark;
-  background: v.$color-white;
-  border-radius: 2px;
-  padding: 0 2px;
-  line-height: 1;
-  box-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
-}
-
-.noPickKeepers {
-  padding: v.$space-sm v.$space-lg;
-  border-top: 1px solid v.$border-secondary;
-  background: color.adjust(v.$background-medium, $lightness: -1%);
-
-  ul {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: v.$space-xs;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  li {
-    display: flex;
-    justify-content: space-between;
-    gap: v.$space-sm;
-    padding: v.$space-xs v.$space-sm;
-    border: 1px solid v.$border-secondary;
-    border-radius: v.$border-radius-sm;
-    font-size: v.$font-size-xs;
-  }
-
-  span {
-    color: v.$text-secondary;
+  right: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-top: 7px solid v.$color-violet-400;
+  font-size: 0;
+  svg {
+    display: none;
   }
 }
-
-.emptyCell {
-  width: 30px;
-  height: 20px;
-  min-width: 30px;
+.keeperBadge {
+  border-top-color: v.$color-teal-500;
 }
-
-/* GitHub-style intensity levels - updated for draft board */
-.intensity0 {
-  background-color: color.adjust(v.$background-medium, $lightness: -5%);
+.tradedCell.keeperCell .tradeIcon {
+  top: auto;
+  bottom: 0;
+  transform: rotate(90deg);
+}
+.skipBadge {
+  font-size: 7px;
   color: v.$text-secondary;
+  position: absolute;
+  inset: 0;
+  text-align: center;
 }
-
-.intensity1 {
-  background-color: color.adjust(v.$success-color, $alpha: -0.7);
-  color: v.$color-white;
+.rosterFullSkip {
+  opacity: 0.55;
 }
-
-.intensity2 {
-  background-color: color.adjust(v.$success-color, $alpha: -0.5);
-  color: v.$color-white;
+.customReversedRound {
+  color: v.$color-gold-400;
 }
-
-.intensity3 {
-  background-color: color.adjust(v.$success-color, $alpha: -0.3);
-  color: v.$color-white;
+.reverseMarker {
+  font-size: 8px;
+  position: absolute;
 }
-
-.intensity4 {
-  background-color: v.$success-color;
-  color: v.$color-white;
+.customReversedCell {
+  border-bottom-color: rgba(v.$color-gold-400, 0.35);
 }
-
-.currentPick {
-  background-color: v.$warning-color !important;
-  border-color: color.adjust(v.$warning-color, $lightness: 10%) !important;
-  color: v.$color-white !important;
-  animation: current-pick-pulse 1.5s infinite;
-}
-
-// Remove the old teamLabels absolute positioning since we're using grid now
-.teamLabels {
-  display: none; // Not needed with grid layout
-}
-
-/* =================== Legend =================== */
 .legend {
   display: flex;
-  align-items: center;
-  gap: v.$space-xs;
-  justify-content: flex-end;
-  margin-top: v.$space-md;
-  font-size: v.$font-size-xs;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  font-size: 10px;
   color: v.$text-secondary;
-}
-
-.legendLabel {
-  font-weight: 500;
-}
-
-.legendSquares {
-  display: flex;
-  gap: 2px;
-}
-
-.legendSquare {
-  width: 15px; // Match cell size
-  height: 15px; // Match cell size
-  border-radius: 2px;
-  border: 1px solid color.adjust(v.$background-medium, $lightness: 5%);
-}
-
-/* =================== Responsive Design =================== */
-@media (max-width: v.$breakpoint-tablet) {
-  .panelHeader {
-    flex-direction: column;
-    gap: v.$space-sm;
-    text-align: center;
+  margin-top: 6px;
+  span {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
   }
-
-  .currentPickInfo {
-    justify-content: center;
-  }
-
-  .draftGrid {
-    min-width: 500px;
-  }
-
-  .headerCell,
-  .pickCell {
-    min-height: 35px;
-  }
-
-  .leaderboardTableContainer {
-    max-height: 150px;
-  }
-
-  .githubHeader {
-    flex-direction: column;
-    gap: v.$space-sm;
-    text-align: center;
-  }
-
-  .contributionGraphContainer {
-    padding: v.$space-md;
-  }
-
-  .monthLabels {
-    display: none; // Hide month labels on mobile
-  }
-
-  .contributionGrid {
-    padding-left: 20px;
-  }
-
-  .dayLabels {
-    font-size: 10px;
-  }
-
-  .leaderboardSection {
-    padding: v.$space-md;
-  }
-}
-
-@media (max-width: v.$breakpoint-mobile-max) {
-  .panelHeader {
-    flex-direction: column;
-    gap: v.$space-sm;
-    text-align: center;
-  }
-
-  .currentPickInfo {
-    justify-content: center;
-  }
-
-  .draftGrid {
-    min-width: 500px;
-  }
-
-  .headerCell,
-  .pickCell {
-    min-height: 35px;
-  }
-
-  .leaderboardTableContainer {
-    max-height: 150px;
-  }
-}
-
-@media (max-width: v.$breakpoint-mobile-max) {
-  .contributionCell {
-    // keep dynamic width; only reduce height for dense view
+  i {
+    display: inline-block;
+    width: 10px;
     height: 9px;
+    border-radius: 2px;
   }
-
-  // Legend squares can remain small independently of grid
-  .legendSquare {
-    width: 9px;
-    height: 9px;
-  }
-
-  .emptyCell {
-    height: 9px;
-  }
-
-  .dayLabel {
-    height: 9px;
-    line-height: 9px;
-  }
-
-  .roundPicks {
-    gap: 1px;
+}
+.myTeamLegend {
+  outline: 1px solid v.$primary-color;
+}
+.keeperLegend {
+  background: v.$color-teal-500;
+}
+.tradeLegend {
+  background: v.$color-violet-400;
+}
+.noPickKeepers {
+  position: relative;
+  ul {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    width: 220px;
+    padding: 10px 24px;
+    background: v.$draft-surface-raised;
+    border: 1px solid v.$draft-border;
+    z-index: 4;
   }
 }

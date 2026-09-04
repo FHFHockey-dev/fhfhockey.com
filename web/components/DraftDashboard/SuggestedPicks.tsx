@@ -5,6 +5,7 @@ import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import { PlayerVorpMetrics } from "hooks/useVORPCalculations";
 import { usePlayerRecommendations } from "hooks/usePlayerRecommendations";
 import styles from "./SuggestedPicks.module.scss";
+import type { DraftDashboardDustInsight } from "hooks/useRosterScheduleOptimizer";
 import {
   getProjectionDisplayPosition,
   matchesProjectionPosition
@@ -17,6 +18,11 @@ import {
 import { isGlobalShortcutBlockedTarget } from "lib/draftDashboard/keyboardShortcuts";
 
 export interface SuggestedPicksProps {
+  compact?: boolean;
+  onReturnToDraft?: () => void;
+  isLoading?: boolean;
+  error?: string | null;
+  dustInsights?: ReadonlyMap<string, DraftDashboardDustInsight>;
   players: ProcessedPlayer[]; // available players only
   vorpMetrics?: Map<string, PlayerVorpMetrics>;
   needWeightEnabled?: boolean;
@@ -46,7 +52,12 @@ export interface SuggestedPicksProps {
 }
 
 const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
+  compact = false,
+  onReturnToDraft,
   players,
+  isLoading = false,
+  error,
+  dustInsights,
   vorpMetrics,
   needWeightEnabled = false,
   needAlpha = 0.5,
@@ -72,6 +83,8 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
 }) => {
   // UI state
   type SortField = "rank" | "myRank" | "projFp" | "vorp" | "vbd" | "adp" | "avail" | "fit";
+  const cardsRef = React.useRef<HTMLDivElement>(null);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const hasPersonalRanks = Object.keys(personalRankByPlayerId).length > 0;
   const [sortField, setSortField] = useState<SortField>(() => {
     if (typeof window !== "undefined") {
@@ -303,7 +316,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
           typeof goneRisk === "number"
             ? [
                 ...(r.reasonTags ?? []),
-                `Gone by next pick ${Math.round(goneRisk * 100)}%`
+                `Available next pick ${Math.round((1 - goneRisk) * 100)}%`
               ]
             : r.reasonTags
       };
@@ -464,7 +477,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   );
 
   const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
-    if (top.length === 0) return;
+    if (top.length === 0 || (e.target instanceof Element && e.target.closest("button, input, select"))) return;
     const ids = top.map((r) => String(r.player.playerId));
     const idx = selectedId ? ids.indexOf(selectedId) : -1;
     if (e.key === "ArrowRight") {
@@ -514,7 +527,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
               htmlFor="rosterVorpToggle"
               title="Adjust VORP values by remaining roster needs"
             >
-              NeedV
+              Need weight
             </label>
             <input
               id="rosterVorpToggle"
@@ -530,7 +543,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
               htmlFor="personalReplaceToggle"
               title="Personalize replacement baselines using your filled slots"
             >
-              PR
+              Personalized
             </label>
             <input
               id="personalReplaceToggle"
@@ -584,6 +597,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
               ))}
             </select>
           </div>
+          <div className={styles.advancedControls} hidden={!advancedOpen}>
           <div className={styles.controlGroup}>
             <label className={styles.label} htmlFor="rosterBarToggle">
               Roster
@@ -602,13 +616,18 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
             aria-expanded={!collapsed}
             onClick={() => setCollapsed((c) => !c)}
           >
-            {collapsed ? "Show" : "Hide"}
+            {collapsed ? "Show cards" : "Hide cards"}
           </button>
+          </div>
+          <button type="button" className={styles.collapseBtn} aria-expanded={advancedOpen} onClick={() => setAdvancedOpen((open) => !open)}>Advanced</button>
         </div>
       </div>
 
+      {compact && <button type="button" className={styles.returnToDraft} onClick={onReturnToDraft}>Return to suggested players</button>}
       {!collapsed && (
+        <div className={styles.carousel} hidden={compact}>
         <div
+          ref={cardsRef}
           className={styles.cardsRow}
           role="list"
           tabIndex={0}
@@ -616,7 +635,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         >
           {top.length === 0 ? (
             filtered.length === 0 ? (
-              <div className={styles.loading}>No matching players</div>
+              <div className={styles.loading} role="status">{isLoading ? "Loading recommendations…" : error ? "Recommendations unavailable while projection sources recover." : "No matching available players"}</div>
             ) : (
               <div className={styles.loading}>Computing suggestions…</div>
             )
@@ -625,25 +644,11 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
               const id = String(r.player.playerId);
               const name = r.player.fullName || id;
               const team =
-                (r.player as any).teamAbbrev || (r.player as any).team || "";
+                r.player.displayTeam || "";
               const pos = getProjectionDisplayPosition(
                 r.player,
                 forwardGrouping
               );
-              const posClass =
-                pos === "C"
-                  ? styles.posC
-                  : pos === "LW"
-                    ? styles.posLW
-                    : pos === "RW"
-                      ? styles.posRW
-                      : pos === "D"
-                        ? styles.posD
-                        : pos === "G"
-                          ? styles.posG
-                          : pos === "UTIL"
-                            ? styles.posUTIL
-                            : "";
               const adp = (r.player as any).yahooAvgPick as number | undefined;
               const projFp = r.player.fantasyPoints?.projected as
                 | number
@@ -657,7 +662,9 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                 <article
                   key={id}
                   role="listitem"
-                  className={`${styles.card} ${posClass} ${selected ? styles.cardSelected : ""}`}
+                  className={`${styles.card} ${selected ? styles.cardSelected : ""}`}
+                  data-position={pos.split(",")[0]?.trim() || "UTIL"}
+                  data-player-id={id}
                   onClick={() => onCardClick(id)}
                   tabIndex={-1}
                   title={`${name}${team ? ` · ${team}` : ""}${typeof adp === "number" ? ` · ADP ${adp.toFixed(1)}` : ""}`}
@@ -714,8 +721,8 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                       </div>
                     </div>
                     <div className={styles.stat}>
-                      <div className={styles.statLabel}>Avail</div>
-                      <div className={styles.statValue}>
+                      <div className={styles.statLabel}>AVL%</div>
+                      <div className={styles.statValue} data-availability={avail == null ? undefined : avail >= .7 ? "high" : avail >= .3 ? "medium" : "low"} title="Probability of remaining available at your next pick">
                         {typeof avail === "number"
                           ? `${Math.round(avail * 100)}%`
                           : "—"}
@@ -723,17 +730,11 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                     </div>
                   </div>
                   <div className={styles.bottomRow}>
-                    {Array.isArray(r.reasonTags) && r.reasonTags.length > 0 ? (
-                      <div className={styles.tagsRow}>
-                        {r.reasonTags.map((t, i) => (
-                          <span key={i} className={styles.tag} title={t}>
-                            {t}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span />
-                    )}
+                    <div className={styles.tagsRow}>
+                      <span className={styles.tag}>VONA {typeof r.vona === "number" ? r.vona.toFixed(1) : "—"}</span>
+                      {dustInsights?.has(id) && <span className={styles.tag} title="Additional scheduled games benched by lineup conflicts">DUST +{dustInsights.get(id)!.marginalDustGames}</span>}
+                    </div>
+                    <div className={styles.reason} title={r.reasonTags?.join(" · ")}>{r.reasonTags?.filter((tag) => !/^(VBD|VONA|Available next pick)/.test(tag)).join(" · ") || "Best remaining value for your draft"}</div>
                     <div className={styles.cardFooter}>
                       {
                         <button
@@ -775,6 +776,8 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
             })
           )}
         </div>
+        {top.length > 3 && <button type="button" className={styles.carouselNext} aria-label="Next suggested players" onClick={() => cardsRef.current?.scrollBy({ left: cardsRef.current.clientWidth * .8, behavior: "smooth" })}>›</button>}
+        </div>
       )}
 
       {/* Roster progress bar across positions */}
@@ -793,20 +796,6 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                   ? Math.round((item.filled / item.total) * 100)
                   : 0;
               const isActive = selectedPositions.has(pos);
-              const posClass =
-                pos === "C"
-                  ? styles.posC
-                  : pos === "LW"
-                    ? styles.posLW
-                    : pos === "RW"
-                      ? styles.posRW
-                      : pos === "D"
-                        ? styles.posD
-                        : pos === "G"
-                          ? styles.posG
-                          : pos === "UTIL"
-                            ? styles.posUTIL
-                            : "";
               const togglePos = () => {
                 if (pos === "UTIL") {
                   // UTIL acts as a quick reset to show all
@@ -827,14 +816,14 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                 setPosFilter("ALL");
               };
               return (
-                <div
+                <button
+                  type="button"
                   key={pos}
-                  className={`${styles.progressSegment} ${posClass} ${isActive ? styles.progressSegmentActive : ""}`}
+                  className={`${styles.progressSegment} ${isActive ? styles.progressSegmentActive : ""}`}
+                  data-position={pos}
                   aria-label={`${pos} ${item.filled} of ${item.total}`}
                   aria-pressed={isActive}
                   title={`${pos}: ${item.filled}/${item.total} (${pct}%)`}
-                  role="button"
-                  tabIndex={0}
                   onClick={togglePos}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -855,7 +844,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                       style={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
                     />
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>

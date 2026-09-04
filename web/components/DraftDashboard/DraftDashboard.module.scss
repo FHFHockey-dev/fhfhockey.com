@@ -1,531 +1,202 @@
-// components/DraftDashboard/DraftDashboard.module.scss
-@use "sass:color";
 @use "styles/vars" as v;
 
-/* =================== Main Dashboard Container =================== */
 .dashboardContainer {
-  @include v.component-wrapper;
+  @include v.draft-position-colors;
+  flex: 1;
+  min-height: 0;
   width: 100%;
-  min-height: 100vh;
-  background-color: v.$background-dark;
+  max-width: 100%;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding: v.$space-md;
-  gap: v.$space-lg;
-  box-sizing: border-box;
+  gap: 6px;
+  background: v.$draft-canvas;
+  color: v.$color-neutral-200;
+  font: 13px v.$font-family-primary;
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  button,
+  input,
+  select {
+    font-family: v.$font-family-primary;
+    font-size: inherit;
+  }
+  button,
+  select,
+  input:not([type="checkbox"]):not([type="range"]) {
+    color: v.$color-neutral-200;
+    background-color: v.$draft-input;
+    border: 1px solid v.$draft-border;
+    border-radius: 4px;
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: default;
+    opacity: 0.55;
+  }
+  :focus-visible {
+    outline: 2px solid v.$color-gold-400;
+    outline-offset: 2px;
+  }
+  input[type="checkbox"] {
+    accent-color: v.$primary-color;
+  }
+  [hidden] {
+    display: none !important;
+  }
 }
-
 .setupPanel,
 .setupCore {
-  display: contents;
+  min-width: 0;
 }
-
 .mobileTabs {
   display: none;
 }
-
-.suggestedSection {
-  order: 1;
-}
-
-.accuracyPanel {
-  width: 100%;
-  min-width: 0;
-  order: 2;
-}
-
-.mainContent {
-  order: 3;
-}
-
-/* =================== Settings Section (Full Width) =================== */
-.settingsSection {
-  width: 100%;
-  background-color: v.$background-medium;
-  border-radius: v.$border-radius-md;
-  padding: v.$space-md v.$space-lg;
-  border: 1px solid v.$border-secondary;
-  box-shadow: v.$box-shadow-default;
-}
-
-.warningBanner {
-  width: 100%;
-  background: rgba(v.$warning-color, 0.15);
-  border: 1px solid color.adjust(v.$warning-color, $lightness: -10%);
-  color: v.$text-primary;
-  border-radius: v.$border-radius-md;
-  padding: v.$space-sm v.$space-md;
-  font-size: v.$font-size-sm;
-  box-shadow: v.$box-shadow-default;
-}
-
-/* =================== Settings Actions =================== */
-.settingsActions {
-  display: flex;
-  align-items: center;
-  gap: v.$space-sm;
-  margin-top: v.$space-sm;
-  justify-content: flex-end;
-}
-
-.refreshButton {
-  // @include v.button-style;
-  background-color: transparent;
-  color: v.$text-primary;
-  border: 2px solid v.$border-secondary;
-  border-radius: 0 0 v.$border-radius-md v.$border-radius-md;
-  padding: v.$space-xs v.$space-md;
-  font-size: v.$font-size-xs;
-  font-family: v.$font-family-accent, sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.25em;
-  transition:
-    background-color 0.3s,
-    border-color 0.3s,
-    color 0.3s;
-
-  &:hover:not(:disabled) {
-    background-color: v.$primary-color-opaque;
-    border-color: v.$primary-color;
-    border-radius: 0 0 v.$border-radius-lg v.$border-radius-md;
-    color: v.$primary-color;
-  }
-}
-
-.summaryButton {
-  @extend .draftButton;
-  padding: v.$space-xs v.$space-lg;
-  position: relative;
-  overflow: hidden;
-  box-shadow:
-    v.$box-shadow-default,
-    0 0 20px rgba(v.$primary-color, 0.25);
-
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      120deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.12) 20%,
-      transparent 40%
-    );
-    transform: translateX(-120%);
-    animation: summary-shimmer 3s infinite ease-in-out;
-    pointer-events: none;
-  }
-
-  &:hover:not(:disabled) {
-    box-shadow:
-      0 8px 16px rgba(v.$primary-color, 0.35),
-      0 0 28px rgba(v.$secondary-color, 0.25);
-  }
-}
-
-@keyframes summary-shimmer {
-  0% {
-    transform: translateX(-120%);
-  }
-  60% {
-    transform: translateX(120%);
-  }
-  100% {
-    transform: translateX(120%);
-  }
-}
-
-/* =================== Suggested Picks Row =================== */
-.suggestedSection {
-  width: 100%;
-}
-
-/* =================== Three Panel Layout =================== */
 .mainContent {
   display: grid;
-  grid-template-columns: 2fr 1fr 2fr; /* 40% 20% 40% */
-  gap: v.$space-lg;
   flex: 1;
-  min-height: 0; /* Allow grid items to shrink */
-  height: calc(100vh - 200px); /* Account for settings section and padding */
+  min-height: 0;
+  min-width: 0;
+  margin: 0 8px 8px;
+  gap: 6px;
+  grid-template-columns:
+    minmax(450px, 39fr)
+    minmax(0, 61fr)
+    minmax(285px, 315px);
+  grid-template-rows:
+    clamp(185px, 25dvh, 220px)
+    minmax(0, 58fr)
+    minmax(0, 42fr);
+  grid-template-areas:
+    "suggested suggested roster"
+    "standings players roster"
+    "graph players roster";
 }
-
-/* =================== Panel Styling =================== */
 .leftPanel,
 .centerPanel,
 .rightPanel {
-  background-color: v.$background-medium;
-  border-radius: v.$border-radius-md;
-  border: 1px solid v.$border-secondary;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
-  box-shadow: v.$box-shadow-default;
+  background: v.$draft-surface;
+  border: 2px solid v.$draft-border;
+  border-radius: 5px;
 }
-
 .leftPanel {
-  /* Draft Board + Leaderboard */
-  min-width: 0; /* Prevent overflow */
+  grid-area: graph;
+  container-type: size;
+  container-name: graph;
 }
-
 .centerPanel {
-  /* My Roster */
-  min-width: 250px; /* Ensure minimum usable width */
-  background: linear-gradient(
-    135deg,
-    color.adjust(v.$background-medium, $lightness: 2%) 0%,
-    v.$background-medium 50%,
-    color.adjust(v.$background-medium, $lightness: -2%) 100%
-  );
-  border: 2px solid v.$primary-color;
-  box-shadow:
-    v.$box-shadow-default,
-    0 0 20px rgba(v.$primary-color, 0.15);
+  grid-area: roster;
+  container-type: size;
+  container-name: roster;
+  border-color: v.$primary-color;
 }
-
 .rightPanel {
-  /* Projections Table */
-  min-width: 0; /* Prevent overflow */
+  grid-area: players;
+  border-color: v.$primary-color;
 }
-
-/* =================== Responsive Design =================== */
-@media (max-width: v.$breakpoint-desktop) {
+.suggestedSection {
+  grid-area: suggested;
+  min-width: 0;
+  min-height: 0;
+}
+.refreshButton {
+  flex: 0 0 22px;
+  width: 100%;
+  font-size: 11px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.warningBanner {
+  color: v.$color-gold-400;
+  padding: 8px;
+  border: 1px solid v.$draft-border;
+}
+.dashboardContainer[data-settings-open="true"] .mainContent {
+  grid-template-rows:
+    clamp(106px, 14dvh, 122px)
+    minmax(0, 58fr)
+    minmax(0, 42fr);
+}
+@media (min-width: 1101px) and (max-height: 840px) {
   .mainContent {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
-    height: auto;
-    gap: v.$space-md;
+    grid-template-rows:
+      clamp(150px, 22dvh, 182px)
+      minmax(0, 58fr)
+      minmax(0, 42fr);
   }
-
-  .leftPanel,
-  .centerPanel,
-  .rightPanel {
-    min-height: 400px;
-  }
-
-  .centerPanel {
-    min-width: auto;
-    order: -1; /* Move My Roster to top on mobile */
-  }
-
+}
+@media (max-width: 1100px) {
   .dashboardContainer {
-    padding: v.$space-sm;
-    gap: v.$space-md;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
   }
-}
-
-@media (max-width: v.$breakpoint-tablet) {
-  .settingsSection {
-    padding: v.$space-sm;
-  }
-
   .mainContent {
-    gap: v.$space-sm;
+    flex: none;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: 240px 500px 340px 600px;
+    grid-template-areas:
+      "suggested suggested"
+      "standings players"
+      "graph players"
+      "roster roster";
   }
-
-  .leftPanel,
-  .centerPanel,
-  .rightPanel {
-    min-height: 300px;
+  .dashboardContainer[data-settings-open="true"] .mainContent {
+    grid-template-rows: 240px 500px 340px 600px;
   }
 }
-
 @media (max-width: 799px) {
-  .dashboardContainer {
-    position: fixed;
-    top: 52px;
-    right: 0;
-    bottom: calc(60px + env(safe-area-inset-bottom, 0px));
-    left: 0;
-    z-index: 1;
-    width: 100vw;
-    max-width: 100vw;
-    min-height: 0;
-    height: auto;
-    padding: v.$space-xs;
-    gap: v.$space-xs;
-    overflow: hidden;
-    overscroll-behavior: none;
-  }
-
-  .dashboardContainer,
-  .dashboardContainer * {
-    box-sizing: border-box;
-  }
-
   .mobileTabs {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    flex: 0 0 auto;
-    gap: 2px;
-    width: 100%;
-    min-width: 0;
-    padding: 2px;
-    border: 1px solid v.$border-secondary;
-    border-radius: v.$border-radius-md;
-    background: v.$background-medium;
+    display: flex;
+    gap: 5px;
+    padding: 4px 8px;
   }
-
   .mobileTab {
-    @include v.reset-button;
-    min-width: 0;
-    min-height: 38px;
-    padding: 4px 2px;
-    border-radius: v.$border-radius-sm;
-    color: v.$text-secondary;
-    font-family: v.$font-family-accent, sans-serif;
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    text-align: center;
-    text-transform: uppercase;
-    cursor: pointer;
-
-    &:focus-visible {
-      outline: 2px solid v.$primary-color;
-      outline-offset: -2px;
-    }
+    flex: 1;
+    padding: 7px;
   }
-
   .mobileTabActive {
-    background: v.$primary-color-opaque;
-    color: v.$secondary-color;
-    box-shadow: inset 0 0 0 1px v.$primary-color;
+    border-color: v.$primary-color !important;
   }
-
-  .setupPanel,
-  .setupCore {
+  .mainContent {
     display: flex;
     flex-direction: column;
-    gap: v.$space-sm;
-    width: 100%;
-    min-width: 0;
   }
-
-  .setupPanel,
-  .suggestedSection,
-  .leftPanel,
-  .centerPanel,
-  .rightPanel {
-    flex: 1 1 auto;
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
+  .mainContent > * {
+    flex: none;
+  }
+  .mainContent > [aria-label="League Standings"] {
+    display: none;
+  }
+  .dashboardContainer[data-mobile-tab="board"] .mainContent {
+    > [aria-label="League Standings"] {
+      display: flex;
+      height: 470px;
+      order: 2;
+    }
+  }
+  .leftPanel {
+    height: 340px;
+    order: 1;
+  }
+  .suggestedSection {
+    min-height: 260px;
+  }
+  .centerPanel {
+    container-type: normal;
     min-height: 0;
   }
-
-  .dashboardContainer [data-mobile-panel][data-mobile-active="false"] {
-    display: none !important;
-  }
-
-  .setupPanel,
-  .suggestedSection {
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    @include v.custom-scrollbar(v.$primary-color, v.$background-medium);
-  }
-
-  .accuracyPanel {
-    order: initial;
-  }
-
-  .suggestedSection,
-  .mainContent {
-    order: initial;
-  }
-
-  .mainContent {
-    display: contents;
-  }
-
-  .leftPanel,
-  .centerPanel,
   .rightPanel {
-    height: 100%;
-    overflow: hidden;
+    height: 650px;
   }
-}
-
-/* =================== Panel Content Styling =================== */
-.panelHeader {
-  background-color: color.adjust(v.$background-dark, $lightness: -3%);
-  border-bottom: 2px solid v.$border-secondary;
-  padding: v.$space-md v.$space-lg;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.panelTitle {
-  font-family: v.$font-family-accent, sans-serif;
-  font-size: v.$font-size-lg;
-  font-weight: 700;
-  color: v.$color-white;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin: 0;
-}
-
-.panelTitleAccent {
-  color: v.$primary-color;
-}
-
-.panelContent {
-  flex: 1;
-  overflow: auto;
-  padding: v.$space-md;
-  @include v.custom-scrollbar(v.$primary-color, v.$background-medium);
-}
-
-/* =================== Common Button Styles =================== */
-.draftButton {
-  @include v.button-style;
-  background: linear-gradient(
-    135deg,
-    v.$primary-color 0%,
-    v.$secondary-color 100%
-  );
-  color: v.$color-white;
-  border: none;
-  padding: v.$space-sm v.$space-lg;
-  font-family: v.$font-family-accent, sans-serif;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-radius: v.$border-radius-md;
-  transition: all 0.3s ease;
-
-  &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(v.$primary-color, 0.3);
-  }
-
-  &:disabled {
-    background: v.$color-grey-medium;
-    cursor: not-allowed;
-    opacity: 0.6;
-    transform: none;
-    box-shadow: none;
-  }
-}
-
-.secondaryButton {
-  @include v.button-style;
-  background-color: transparent;
-  color: v.$text-primary;
-  border: 1px solid v.$border-secondary;
-  padding: v.$space-xs v.$space-md;
-  font-size: v.$font-size-sm;
-
-  &:hover:not(:disabled) {
-    background-color: color.adjust(v.$primary-color, $alpha: -0.8);
-    border-color: v.$primary-color;
-    color: v.$primary-color;
-  }
-}
-
-/* =================== Status Indicators =================== */
-.currentTurnIndicator {
-  display: inline-flex;
-  align-items: center;
-  gap: v.$space-xs;
-  padding: v.$space-xs v.$space-sm;
-  background: linear-gradient(
-    135deg,
-    v.$success-color 0%,
-    color.adjust(v.$success-color, $lightness: 10%) 100%
-  );
-  color: v.$color-white;
-  border-radius: v.$border-radius-sm;
-  font-size: v.$font-size-sm;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-
-  &::before {
-    content: "●";
-    animation: pulse 2s infinite;
-  }
-}
-
-.waitingIndicator {
-  @extend .currentTurnIndicator;
-  background: linear-gradient(
-    135deg,
-    v.$color-grey-medium 0%,
-    color.adjust(v.$color-grey-medium, $lightness: 10%) 100%
-  );
-
-  &::before {
-    animation: none;
-  }
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-/* =================== Loading and Error States =================== */
-.loadingState {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: v.$space-xl;
-  color: v.$text-secondary;
-  font-style: italic;
-}
-
-.errorState {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: v.$space-xl;
-  background-color: rgba(v.$danger-color, 0.1);
-  border: 1px solid rgba(v.$danger-color, 0.3);
-  border-radius: v.$border-radius-md;
-  color: v.$danger-color;
-  text-align: center;
-}
-
-/* =================== Draft Progress =================== */
-.draftProgress {
-  display: flex;
-  align-items: center;
-  gap: v.$space-sm;
-  margin-bottom: v.$space-md;
-}
-
-.progressBar {
-  flex: 1;
-  height: 8px;
-  background-color: v.$background-dark;
-  border-radius: 4px;
-  overflow: hidden;
-  border: 1px solid v.$border-secondary;
-}
-
-.progressFill {
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    v.$primary-color 0%,
-    v.$secondary-color 100%
-  );
-  transition: width 0.5s ease;
-}
-
-.progressText {
-  font-size: v.$font-size-sm;
-  color: v.$text-secondary;
-  white-space: nowrap;
 }

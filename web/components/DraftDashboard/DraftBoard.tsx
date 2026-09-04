@@ -1,6 +1,11 @@
 // components/DraftDashboard/DraftBoard.tsx
 
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { DraftSettings, DraftedPlayer, TeamDraftStats } from "./DraftDashboard";
 import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import type { PlayerVorpMetrics } from "hooks/useVORPCalculations";
@@ -21,6 +26,7 @@ import {
 import styles from "./DraftBoard.module.scss";
 
 interface DraftBoardProps {
+  myTeamId?: string;
   draftSettings: DraftSettings;
   draftedPlayers: DraftedPlayer[];
   currentTurn: {
@@ -42,27 +48,8 @@ interface DraftBoardProps {
   vorpMetrics?: Map<string, PlayerVorpMetrics>;
 }
 
-type SortField =
-  | "projectedPoints"
-  | "goals"
-  | "assists"
-  | "pp_points"
-  | "shots_on_goal"
-  | "hits"
-  | "blocked_shots"
-  | "teamVorp"
-  | `dynamic:${string}`;
-
-const CORE_CAT_UPPER = [
-  "GOALS",
-  "ASSISTS",
-  "PP_POINTS",
-  "SHOTS_ON_GOAL",
-  "HITS",
-  "BLOCKED_SHOTS"
-];
-
 const DraftBoard: React.FC<DraftBoardProps> = ({
+  myTeamId,
   draftSettings,
   draftedPlayers,
   currentTurn,
@@ -78,13 +65,9 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
 }) => {
   const activeDraftOrderPattern =
     draftOrderPattern ?? draftOrderPatternFromSnake(isSnakeDraft);
-  const [sortField, setSortField] = useState<SortField>("projectedPoints");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-  const [showAllCategories, setShowAllCategories] = useState(false);
   const [editingTeam, setEditingTeam] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
   const contributionInputRef = useRef<HTMLInputElement>(null);
-  const leaderboardInputRef = useRef<HTMLInputElement>(null);
   // NEW: manage blur timeout safely via ref instead of window-scoped var
   const blurTimeoutRef = useRef<number | null>(null);
 
@@ -156,9 +139,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         if (contributionInputRef.current) {
           contributionInputRef.current.focus();
           contributionInputRef.current.select();
-        } else if (leaderboardInputRef.current) {
-          leaderboardInputRef.current.focus();
-          leaderboardInputRef.current.select();
+
         }
       }, 10);
     }
@@ -307,6 +288,14 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
     return playerDataMap;
   }, [augmentedAllPlayers]);
 
+  const draftedPlayerByPick = useMemo(
+    () =>
+      new Map(
+        draftedPlayers.map((player) => [player.pickNumber, player] as const),
+      ),
+    [draftedPlayers],
+  );
+
   // Calculate max fantasy points for heat map scaling
   const maxFantasyPoints = useMemo(() => {
     // Scale from the full pool to keep intensity stable across the board
@@ -371,9 +360,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
           keepers
         });
         const ownerTeamId = ownership.currentTeamId;
-        const draftedPlayer = draftedPlayers.find(
-          (p) => p.pickNumber === overallPick
-        );
+        const draftedPlayer = draftedPlayerByPick.get(overallPick);
         const isRosterFullSkip = skippedPickNumbers.has(overallPick);
         const isCurrentPick =
           !keeper &&
@@ -426,6 +413,9 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
             data-pick={pickInRound}
             data-team={teamId}
             data-owner={ownerTeamId}
+            data-overall-pick={overallPick}
+            data-intensity={draftedPlayer ? intensity : undefined}
+            aria-label={tooltip}
           >
             {isCurrentPick && (
               <div className={styles.currentPickIndicator}>●</div>
@@ -452,7 +442,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
       }
 
       grid.push(
-        <div key={teamId} className={styles.teamRow}>
+        <div key={teamId} className={styles.teamRow} data-my-team={teamId === myTeamId}>
           {editingTeam === teamId ? (
             <input
               type="text"
@@ -464,7 +454,8 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
               ref={contributionInputRef}
             />
           ) : (
-            <div
+            <button
+              type="button"
               className={styles.teamLabel}
               onClick={
                 canEditTeamNames
@@ -483,12 +474,12 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                   : "Yahoo live sync controls team names"
               }
             >
-              {teamNameById.get(teamId) || `T${teamIndex + 1}`}
-            </div>
+              {teamNameById.get(teamId) || `T${teamIndex + 1}`}{teamId === myTeamId ? " (You)" : ""}
+            </button>
           )}
           <div
             className={styles.teamRoundCells}
-            style={{ gridTemplateColumns: `repeat(${roundsToShow}, 1fr)` }}
+            style={{ gridTemplateColumns: `repeat(${roundsToShow}, minmax(0, 1fr))` }}
           >
             {teamCells}
           </div>
@@ -499,626 +490,17 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
     return grid;
   };
 
-  // Short label helper for dynamic categories
-  const getShortLabel = (statKey: string): string => {
-    const SKATER_LABELS: Record<string, string> = {
-      GOALS: "G",
-      ASSISTS: "A",
-      PP_POINTS: "PPP",
-      SHOTS_ON_GOAL: "SOG",
-      HITS: "HIT",
-      BLOCKED_SHOTS: "BLK",
-      FACEOFFS_LOST: "FOL",
-      FACEOFFS_WON: "FOW",
-      GAMES_PLAYED: "GP",
-      PENALTY_MINUTES: "PIM",
-      POINTS: "PTS",
-      PP_ASSISTS: "PPA",
-      PP_GOALS: "PPG",
-      SH_POINTS: "SHP",
-      SH_GOALS: "SHG",
-      SH_ASSISTS: "SHA",
-      PLUS_MINUS: "+/- ",
-      TIME_ON_ICE_PER_GAME: "ATOI"
-    };
-    const GOALIE_LABELS: Record<string, string> = {
-      WINS_GOALIE: "W",
-      SAVES_GOALIE: "SV",
-      SHUTOUTS_GOALIE: "SHO",
-      GOALS_AGAINST_GOALIE: "GA",
-      SAVE_PERCENTAGE: "SV%",
-      GOALS_AGAINST_AVERAGE: "GAA",
-      GAA: "GAA",
-      GAMES_PLAYED: "GP",
-      LOSSES_GOALIE: "L",
-      OTL_GOALIE: "OTL",
-      SHOTS_AGAINST_GOALIE: "SA"
-    };
-    if (SKATER_LABELS[statKey]) return SKATER_LABELS[statKey];
-    if (GOALIE_LABELS[statKey]) return GOALIE_LABELS[statKey];
-    return statKey;
-  };
-
-  // Determine dynamic category keys from settings (exclude the six core)
-  const dynamicCategoryKeys = useMemo(() => {
-    const keys = Object.keys(draftSettings.categoryWeights || {});
-    return keys.filter((k) => !CORE_CAT_UPPER.includes(k));
-  }, [draftSettings.categoryWeights]);
-
-  // Auto-show dynamic categories when present in Categories leagues
-  useEffect(() => {
-    if (
-      (draftSettings.leagueType || "points") === "categories" &&
-      dynamicCategoryKeys.length > 0 &&
-      !showAllCategories
-    ) {
-      setShowAllCategories(true);
-    }
-  }, [dynamicCategoryKeys, draftSettings.leagueType, showAllCategories]);
-
-  // Calculate team category totals for the leaderboard table
-  const teamStatsWithCategories = useMemo(() => {
-    return teamStats.map((team) => {
-      const teamPlayers = [
-        ...Object.values(team.rosterSlots).flat(),
-        ...team.bench,
-      ];
-
-      // Initialize category totals
-      const categoryTotals = {
-        goals: 0,
-        assists: 0,
-        pp_points: 0,
-        shots_on_goal: 0,
-        hits: 0,
-        blocked_shots: 0
-      };
-      // Dynamic totals keyed by uppercase stat keys present in settings
-      const dynamicTotals: Record<string, number> = {};
-      dynamicCategoryKeys.forEach((k) => (dynamicTotals[k] = 0));
-
-      // Sum up category totals from all team players
-      teamPlayers.forEach((draftedPlayer) => {
-        // FIXED: Use allPlayers prop which contains ALL players (including drafted ones)
-        const player = augmentedAllPlayers.find(
-          (p) => String(p.playerId) === draftedPlayer.playerId
-        );
-
-        if (player) {
-          // Access the projected values from the combinedStats structure
-          const goals = player.combinedStats.GOALS?.projected || 0;
-          const assists = player.combinedStats.ASSISTS?.projected || 0;
-          const ppPoints = player.combinedStats.PP_POINTS?.projected || 0;
-          const sog = player.combinedStats.SHOTS_ON_GOAL?.projected || 0;
-          const hits = player.combinedStats.HITS?.projected || 0;
-          const blocks = player.combinedStats.BLOCKED_SHOTS?.projected || 0;
-
-          categoryTotals.goals += goals;
-          categoryTotals.assists += assists;
-          categoryTotals.pp_points += ppPoints;
-          categoryTotals.shots_on_goal += sog;
-          categoryTotals.hits += hits;
-          categoryTotals.blocked_shots += blocks;
-
-          // Sum dynamic keys
-          dynamicCategoryKeys.forEach((k) => {
-            const v = (player.combinedStats as any)?.[k]?.projected;
-            if (typeof v === "number" && Number.isFinite(v)) {
-              dynamicTotals[k] += v;
-            }
-          });
-        }
-      });
-
-      // Compute team score average for categories mode
-      let teamScoreAvg = 0;
-      if (
-        (draftSettings.leagueType || "points") === "categories" &&
-        vorpMetrics
-      ) {
-        const scores: number[] = [];
-        teamPlayers.forEach((dp) => {
-          const m = vorpMetrics.get(dp.playerId);
-          if (m && typeof m.value === "number" && Number.isFinite(m.value)) {
-            scores.push(m.value);
-          }
-        });
-        if (scores.length) {
-          teamScoreAvg = scores.reduce((a, b) => a + b, 0) / scores.length;
-        }
-      }
-
-      return {
-        ...team,
-        categoryTotals,
-        dynamicCategoryTotals: dynamicTotals,
-        teamScoreAvg
-      };
-    });
-  }, [
-    teamStats,
-    augmentedAllPlayers,
-    dynamicCategoryKeys,
-    draftSettings.leagueType,
-    vorpMetrics
-  ]);
-
-  // Compute per-category min/max across teams for intra-team heat coloring
-  const categoryExtents = useMemo(() => {
-    const extents: Record<string, { min: number; max: number }> = {};
-    const coreKeys = [
-      "goals",
-      "assists",
-      "pp_points",
-      "shots_on_goal",
-      "hits",
-      "blocked_shots"
-    ];
-    coreKeys.forEach((k) => {
-      const values = teamStatsWithCategories
-        .slice(0, draftSettings.teamCount)
-        .map((t: any) => (t.categoryTotals?.[k] || 0) as number);
-      const min = values.length ? Math.min(...values) : 0;
-      const max = values.length ? Math.max(...values) : 0;
-      extents[k] = { min, max };
-    });
-    dynamicCategoryKeys.forEach((k) => {
-      const values = teamStatsWithCategories
-        .slice(0, draftSettings.teamCount)
-        .map((t: any) => (t.dynamicCategoryTotals?.[k] || 0) as number);
-      const min = values.length ? Math.min(...values) : 0;
-      const max = values.length ? Math.max(...values) : 0;
-      extents[k] = { min, max };
-    });
-    return extents;
-  }, [teamStatsWithCategories, draftSettings.teamCount, dynamicCategoryKeys]);
-
-  // Map a value within [min,max] to a green→yellow→red color (hsla) with 40% fill and solid border
-  const getCategoryCellStyle = (
-    key: string,
-    value: number | undefined
-  ): React.CSSProperties => {
-    const { min, max } = categoryExtents[key] || { min: 0, max: 0 };
-    const v = typeof value === "number" ? value : 0;
-    let t = 0.5; // neutral
-    if (max > min) {
-      t = (v - min) / (max - min);
-      t = Math.max(0, Math.min(1, t));
-    }
-    const hue = Math.round(t * 120); // 0 = red, 120 = green
-    const fill = `hsla(${hue}, 85%, 50%, 0.4)`;
-    const stroke = `hsl(${hue}, 80%, 45%)`;
-    return {
-      backgroundColor: fill,
-      border: `1px solid ${stroke}`
-    };
-  };
-
-  // Extents for VORP and Projected points and a distinct blue scale
-  const metricExtents = useMemo(() => {
-    const rows = teamStatsWithCategories.slice(0, draftSettings.teamCount);
-    const pointsVals = rows.map((t) => t.projectedPoints || 0);
-    const vorpVals = rows.map((t: any) => (t.teamVorp || 0) as number);
-    return {
-      projectedPoints: {
-        min: pointsVals.length ? Math.min(...pointsVals) : 0,
-        max: pointsVals.length ? Math.max(...pointsVals) : 0
-      },
-      teamVorp: {
-        min: vorpVals.length ? Math.min(...vorpVals) : 0,
-        max: vorpVals.length ? Math.max(...vorpVals) : 0
-      }
-    } as const;
-  }, [teamStatsWithCategories, draftSettings.teamCount]);
-
-  const getMetricCellStyle = (
-    key: "projectedPoints" | "teamVorp",
-    value: number | undefined
-  ): React.CSSProperties => {
-    const e = metricExtents[key];
-    const v = typeof value === "number" ? value : 0;
-    let t = 0.5;
-    if (e.max > e.min) {
-      t = (v - e.min) / (e.max - e.min);
-      t = Math.max(0, Math.min(1, t));
-    }
-    // Blue scale: low = light, high = deep blue
-    const hue = 210; // blue
-    const light = 80 - t * 35; // 80% → 45%
-    const fill = `hsla(${hue}, 85%, ${light}%, 0.4)`;
-    const stroke = `hsl(${hue}, 80%, ${Math.max(30, light - 10)}%)`;
-    return { backgroundColor: fill, border: `1px solid ${stroke}` };
-  };
-
-  // Sort teams based on selected field and direction
-  const sortedTeams = useMemo(() => {
-    return [...teamStatsWithCategories]
-      .slice(0, draftSettings.teamCount)
-      .sort((a, b) => {
-        let aValue: number;
-        let bValue: number;
-
-        if (sortField === "projectedPoints") {
-          // In Categories leagues, sort by teamScoreAvg; otherwise projected points
-          const useScore =
-            (draftSettings.leagueType || "points") === "categories";
-          aValue = useScore ? (a as any).teamScoreAvg || 0 : a.projectedPoints;
-          bValue = useScore ? (b as any).teamScoreAvg || 0 : b.projectedPoints;
-        } else if (sortField === "teamVorp") {
-          aValue = a.teamVorp || 0;
-          bValue = b.teamVorp || 0;
-        } else if (
-          typeof sortField === "string" &&
-          sortField.startsWith("dynamic:")
-        ) {
-          const key = sortField.slice("dynamic:".length);
-          aValue = (a as any).dynamicCategoryTotals?.[key] || 0;
-          bValue = (b as any).dynamicCategoryTotals?.[key] || 0;
-        } else {
-          aValue = (a as any).categoryTotals[sortField as any] || 0;
-          bValue = (b as any).categoryTotals[sortField as any] || 0;
-        }
-
-        return sortDirection === "desc" ? bValue - aValue : aValue - bValue;
-      });
-  }, [
-    teamStatsWithCategories,
-    draftSettings.teamCount,
-    draftSettings.leagueType,
-    sortField,
-    sortDirection
-  ]);
-
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("desc"); // Default to descending for new fields
-    }
-  };
-
   return (
-    <div className={styles.draftBoardContainer}>
-      {/* Subheader: Team Standings */}
-      <div className={styles.githubHeader}>
-        <h3 className={styles.sectionTitle}>
-          Team <span className={styles.panelTitleAccent}>Standings</span>
-        </h3>
-        <div className={styles.contributionSummary}>
-          {draftedPlayers.length} selected • {skippedPickNumbers.size} roster-full
-          skips • {roundsToShow} rounds
-        </div>
-      </div>
-
-      {/* Team Leaderboard Table */}
-      <div className={styles.leaderboardSection}>
-        <div className={styles.leaderboardTableContainer}>
-          <table className={styles.leaderboardTable}>
-            <thead>
-              <tr>
-                <th className={styles.rankHeader}>#</th>
-                <th className={styles.teamHeader}>Team</th>
-                <th
-                  className={`${styles.sortableHeader} ${sortField === "goals" ? styles.activeSortHeader : ""}`}
-                  onClick={() => handleSort("goals")}
-                >
-                  G{" "}
-                  {sortField === "goals" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
-                </th>
-                <th
-                  className={`${styles.sortableHeader} ${sortField === "assists" ? styles.activeSortHeader : ""}`}
-                  onClick={() => handleSort("assists")}
-                >
-                  A{" "}
-                  {sortField === "assists" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
-                </th>
-                <th
-                  className={`${styles.sortableHeader} ${sortField === "pp_points" ? styles.activeSortHeader : ""}`}
-                  onClick={() => handleSort("pp_points")}
-                >
-                  PPP{" "}
-                  {sortField === "pp_points" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
-                </th>
-                <th
-                  className={`${styles.sortableHeader} ${sortField === "shots_on_goal" ? styles.activeSortHeader : ""}`}
-                  onClick={() => handleSort("shots_on_goal")}
-                >
-                  SOG{" "}
-                  {sortField === "shots_on_goal" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
-                </th>
-                <th
-                  className={`${styles.sortableHeader} ${sortField === "hits" ? styles.activeSortHeader : ""}`}
-                  onClick={() => handleSort("hits")}
-                >
-                  HIT{" "}
-                  {sortField === "hits" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
-                </th>
-                <th
-                  className={`${styles.sortableHeader} ${sortField === "blocked_shots" ? styles.activeSortHeader : ""}`}
-                  onClick={() => handleSort("blocked_shots")}
-                >
-                  BLK{" "}
-                  {sortField === "blocked_shots" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
-                </th>
-                {showAllCategories &&
-                  dynamicCategoryKeys.map((k) => (
-                    <th
-                      key={`hd-${k}`}
-                      className={`${styles.sortableHeader} ${sortField === `dynamic:${k}` ? styles.activeSortHeader : ""}`}
-                      onClick={() => handleSort(`dynamic:${k}`)}
-                      title={k}
-                    >
-                      {getShortLabel(k)}{" "}
-                      {sortField === `dynamic:${k}` &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
-                    </th>
-                  ))}
-                <th
-                  className={`${styles.sortableHeader} ${sortField === "teamVorp" ? styles.activeSortHeader : ""}`}
-                  onClick={() => handleSort("teamVorp")}
-                  title="Sum of team VORP"
-                >
-                  Team VORP{" "}
-                  {sortField === "teamVorp" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
-                </th>
-                <th
-                  className={`${styles.sortableHeader} ${sortField === "projectedPoints" ? styles.activeSortHeader : ""}`}
-                  onClick={() => handleSort("projectedPoints")}
-                  title={
-                    (draftSettings.leagueType || "points") === "categories"
-                      ? "Score: team average of players' percentile-weighted category composite (0–100)."
-                      : "Projected fantasy points (team total)."
-                  }
-                >
-                  {(draftSettings.leagueType || "points") === "categories"
-                    ? "Score"
-                    : "Proj Pts"}{" "}
-                  {sortField === "projectedPoints" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedTeams.map((team, index) => {
-                const totalPicks =
-                  Object.keys(team.rosterSlots).reduce(
-                    (total, pos) => total + team.rosterSlots[pos].length,
-                    0
-                  ) + (team.bench?.length || 0); // include bench in bubble count
-
-                const totalRosterSpots = totalRosterSize;
-
-                return (
-                  <tr
-                    key={team.teamId}
-                    className={`${styles.leaderboardRow} ${
-                      team.teamId === currentTurn.teamId
-                        ? styles.currentTeamRow
-                        : ""
-                    }`}
-                  >
-                    <td className={styles.rankCell}>
-                      <div className={styles.teamRank}>#{index + 1}</div>
-                    </td>
-                    <td className={styles.teamCell}>
-                      <div className={styles.teamInfo}>
-                        <div className={styles.teamNameRow}>
-                          {editingTeam === team.teamId ? (
-                            <input
-                              type="text"
-                              value={editingValue}
-                              onChange={handleTeamNameChange}
-                              onKeyDown={(e) =>
-                                handleTeamNameKeyDown(e, team.teamId)
-                              }
-                              onBlur={() => handleTeamNameBlur(team.teamId)}
-                              className={styles.teamNameInput}
-                              ref={leaderboardInputRef}
-                            />
-                          ) : (
-                            <div
-                              className={styles.teamName}
-                              onClick={
-                                canEditTeamNames
-                                  ? (e) =>
-                                      handleTeamNameClick(
-                                        e,
-                                        team.teamId,
-                                        team.teamName,
-                                      )
-                                  : undefined
-                              }
-                              aria-disabled={!canEditTeamNames || undefined}
-                              title={
-                                canEditTeamNames
-                                  ? "Click to edit team name"
-                                  : "Yahoo live sync controls team names"
-                              }
-                            >
-                              {team.teamName}
-                            </div>
-                          )}
-                          <div className={styles.teamPlayerBubbles}>
-                            {Array.from(
-                              { length: totalRosterSpots },
-                              (_, index) => (
-                                <div
-                                  key={index}
-                                  className={`${styles.playerBubble} ${
-                                    index < totalPicks
-                                      ? styles.filledBubble
-                                      : styles.emptyBubble
-                                  }`}
-                                />
-                              )
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td
-                      className={styles.statCell}
-                      style={getCategoryCellStyle(
-                        "goals",
-                        team.categoryTotals.goals
-                      )}
-                    >
-                      {(team.categoryTotals.goals || 0).toFixed(0)}
-                    </td>
-                    <td
-                      className={styles.statCell}
-                      style={getCategoryCellStyle(
-                        "assists",
-                        team.categoryTotals.assists
-                      )}
-                    >
-                      {(team.categoryTotals.assists || 0).toFixed(0)}
-                    </td>
-                    <td
-                      className={styles.statCell}
-                      style={getCategoryCellStyle(
-                        "pp_points",
-                        team.categoryTotals.pp_points
-                      )}
-                    >
-                      {(team.categoryTotals.pp_points || 0).toFixed(0)}
-                    </td>
-                    <td
-                      className={styles.statCell}
-                      style={getCategoryCellStyle(
-                        "shots_on_goal",
-                        team.categoryTotals.shots_on_goal
-                      )}
-                    >
-                      {(team.categoryTotals.shots_on_goal || 0).toFixed(0)}
-                    </td>
-                    <td
-                      className={styles.statCell}
-                      style={getCategoryCellStyle(
-                        "hits",
-                        team.categoryTotals.hits
-                      )}
-                    >
-                      {(team.categoryTotals.hits || 0).toFixed(0)}
-                    </td>
-                    <td
-                      className={styles.statCell}
-                      style={getCategoryCellStyle(
-                        "blocked_shots",
-                        team.categoryTotals.blocked_shots
-                      )}
-                    >
-                      {(team.categoryTotals.blocked_shots || 0).toFixed(0)}
-                    </td>
-                    {showAllCategories &&
-                      dynamicCategoryKeys.map((k) => (
-                        <td
-                          key={`ct-${team.teamId}-${k}`}
-                          className={styles.statCell}
-                          style={getCategoryCellStyle(
-                            k,
-                            (team as any).dynamicCategoryTotals?.[k] || 0
-                          )}
-                        >
-                          {(
-                            ((team as any).dynamicCategoryTotals?.[k] ||
-                              0) as number
-                          ).toFixed(0)}
-                        </td>
-                      ))}
-                    <td
-                      className={styles.statCell}
-                      style={getMetricCellStyle("teamVorp", team.teamVorp || 0)}
-                    >
-                      {(team.teamVorp || 0).toFixed(1)}
-                    </td>
-                    <td
-                      className={styles.projectedPointsCell}
-                      style={getMetricCellStyle(
-                        "projectedPoints",
-                        (draftSettings.leagueType || "points") === "categories"
-                          ? (team as any).teamScoreAvg || 0
-                          : team.projectedPoints || 0
-                      )}
-                    >
-                      {((draftSettings.leagueType || "points") === "categories"
-                        ? (team as any).teamScoreAvg || 0
-                        : team.projectedPoints
-                      ).toFixed(1)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {dynamicCategoryKeys.length > 0 && (
-            <div style={{ marginTop: 8 }}>
-              <label style={{ fontSize: 12, color: "#9aa4af" }}>
-                <input
-                  type="checkbox"
-                  checked={showAllCategories}
-                  onChange={(e) => setShowAllCategories(e.target.checked)}
-                  style={{ marginRight: 6 }}
-                />
-                Show all categories
-              </label>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {noPickKeepers.length > 0 && (
-        <section
-          className={styles.noPickKeepers}
-          aria-labelledby="board-no-pick-keepers-title"
-        >
-          <h3 id="board-no-pick-keepers-title" className={styles.sectionTitle}>
-            No-Pick Keepers
-          </h3>
-          <ul>
-            {noPickKeepers.map((keeper) => {
-              const player = augmentedAllPlayers.find(
-                (candidate) => String(candidate.playerId) === keeper.playerId,
-              );
-              return (
-                <li key={keeper.playerId}>
-                  <strong>{player?.fullName || `Player #${keeper.playerId}`}</strong>
-                  <span>{teamNameById.get(keeper.teamId) || keeper.teamId}</span>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
-
-      {/* Subheader: Draft Graph */}
-      <div className={styles.githubHeader}>
-        <h3 className={styles.sectionTitle}>
-          Draft <span className={styles.panelTitleAccent}>Graph</span>
-        </h3>
-        <div className={styles.contributionSummary}>
-          {draftedPlayers.length} selected • {skippedPickNumbers.size} roster-full
-          skips • {roundsToShow} rounds
-        </div>
-      </div>
-
-      {/* Contribution graph */}
+    <div className={styles.draftBoardContainer} aria-label="Draft Graph" style={{ "--team-count": draftSettings.teamCount, "--team-rows": Math.ceil(draftSettings.teamCount / 2), "--round-count": roundsToShow } as React.CSSProperties}>
       <div className={styles.contributionGraphContainer}>
         <div className={styles.contributionGraph}>
           {/* Round labels (columns) */}
-          <div className={styles.roundLabels}>
+          <div className={styles.roundLabelsRow}>
+          {[0, 1].map((copy) => <div key={copy} className={styles.roundLabels} aria-hidden={copy === 1 ? true : undefined}>
             <div className={styles.teamLabelSpacer}></div>
             <div
               className={styles.roundLabelsGrid}
-              style={{ gridTemplateColumns: `repeat(${roundsToShow}, 1fr)` }}
+              style={{ gridTemplateColumns: `repeat(${roundsToShow}, minmax(0, 1fr))` }}
             >
               {Array.from({ length: roundsToShow }, (_, i) => {
                 const round = i + 1;
@@ -1129,7 +511,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                   <span
                     key={round}
                     className={`${styles.roundLabel} ${isCustomReversed ? styles.customReversedRound : ""}`}
-                    aria-label={`Round ${round}${isCustomReversed ? ", custom reversed order" : ""}`}
+                    aria-label={copy === 0 ? `Round ${round}${isCustomReversed ? ", custom reversed order" : ""}` : undefined}
                     title={
                       isCustomReversed
                         ? `Round ${round}: custom reversed order`
@@ -1146,6 +528,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                 );
               })}
             </div>
+          </div>)}
           </div>
 
           {/* Contribution grid with teams as rows */}
@@ -1153,6 +536,15 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
             {renderContributionGrid()}
           </div>
         </div>
+      </div>
+      <div className={styles.legend} aria-label="Draft Graph legend">
+        <span className={styles.contributionSummary}>{draftedPlayers.length} selected · {skippedPickNumbers.size} skipped</span>
+        <span><i className={styles.intensity3} /> Completed</span>
+        <span><i className={styles.currentPick} /> Current pick</span>
+        <span><i className={styles.myTeamLegend} /> Your team</span>
+        <span><i className={styles.keeperLegend} /> Keeper</span>
+        <span><i className={styles.tradeLegend} /> Traded</span>
+        {noPickKeepers.length > 0 && <details className={styles.noPickKeepers}><summary><span>No-Pick Keepers</span> ({noPickKeepers.length})</summary><ul>{noPickKeepers.map((keeper) => <li key={keeper.playerId}><strong>{allPlayersData.get(keeper.playerId)?.fullName || `Player #${keeper.playerId}`}</strong> · {teamNameById.get(keeper.teamId) || keeper.teamId}</li>)}</ul></details>}
       </div>
     </div>
   );

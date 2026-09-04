@@ -55,6 +55,9 @@ const SCHEDULE_ALIAS_MAP: Record<string, string[]> = {
     "/api/v1/db/update-shifts",
   ],
   "update-yahoo-matchup-dates": ["/api/v1/db/update-yahoo-weeks"],
+  "update-roster-optimizer-schedule": [
+    "/api/v1/db/update-roster-optimizer-schedule",
+  ],
   "update-line-combinations-all": ["/api/v1/db/update-line-combinations"],
   "update-lineup-deployment-tallies": [
     "/api/v1/db/update-lineup-deployment-tallies",
@@ -78,6 +81,8 @@ const ROUTE_TARGET_TABLE_MAP: Record<string, string> = {
   "/api/v1/db/update-seasons": "seasons",
   "/api/v1/db/update-players": "players, rosters",
   "/api/v1/db/update-games": "games",
+  "/api/v1/db/update-roster-optimizer-schedule":
+    "roster_optimizer_team_games",
   "/api/v1/db/update-yahoo-weeks": "yahoo_weeks",
   "/api/v1/db/update-nst-gamelog": "nst_* game logs",
   "/api/v1/db/update-wgo-skaters": "wgo_skater_stats",

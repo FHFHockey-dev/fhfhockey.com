@@ -41,6 +41,147 @@ function player(playerId: number, fullName: string, position: string) {
 }
 
 describe("ProjectionsTable visibility diagnostics", () => {
+  it("displays next-pick availability, with high availability marked green", () => {
+    const early = { ...player(1, "Early", "C"), yahooAvgPick: 1 };
+    const later = { ...player(2, "Later", "C"), yahooAvgPick: 100 };
+    render(<ProjectionsTable players={[early, later]} draftedPlayers={[]} nextPickNumber={50} isLoading={false} error={null} onDraftPlayer={vi.fn()} canDraft />);
+    expect(screen.getByTitle("100% likely available at your next pick").className).toContain("riskLow");
+    expect(screen.getByTitle("0% likely available at your next pick").className).toContain("riskHigh");
+  });
+  it("preserves projected decimals and exposes the unrounded source value", () => {
+    const projected = player(8477492, "Nathan MacKinnon", "C");
+    projected.combinedStats = {
+      GOALS: { projected: 47.85 },
+      POINTS: { projected: 126.95 },
+    };
+    render(
+      <ProjectionsTable
+        players={[projected]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+        enabledSkaterStatKeys={["GOALS", "POINTS"]}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Toggle stat columns" }));
+    expect(screen.getByText("47.85").getAttribute("title")).toBe("47.85");
+    expect(screen.getByText("126.95")).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "VORP" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "VONA" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "VBD" })).toBeTruthy();
+  });
+
+  it("prorates eligible skater stats to the 84-game season", () => {
+    const projected = player(1, "Half Season Skater", "C");
+    projected.combinedStats = {
+      GAMES_PLAYED: { projected: 42 },
+      GOALS: { projected: 21 },
+    };
+
+    render(
+      <ProjectionsTable
+        players={[projected]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+        enabledSkaterStatKeys={["GOALS"]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Toggle stat columns" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Toggle 84-game prorated skater stats",
+      }),
+    );
+
+    const prorated = screen.getByTitle("42 (84-game pace)");
+    expect(prorated.textContent).toBe("42*");
+    expect(window.localStorage.getItem("projections.prorate84")).toBe("true");
+  });
+
+  it("shows configured goalie metrics in mixed-player stat rows", () => {
+    const goalie = player(1, "Goalie", "G");
+    goalie.combinedStats = {
+      WINS_GOALIE: { projected: 35 },
+      SAVES_GOALIE: { projected: 1460 },
+      SAVE_PERCENTAGE: { projected: 0.918 },
+      GOALS_AGAINST_AVERAGE: { projected: 2.42 },
+    };
+
+    render(
+      <ProjectionsTable
+        players={[goalie]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+        enabledSkaterStatKeys={[
+          "GOALS",
+          "ASSISTS",
+          "PP_POINTS",
+          "SHOTS_ON_GOAL",
+        ]}
+        enabledGoalieStatKeys={[
+          "WINS_GOALIE",
+          "SAVES_GOALIE",
+          "SAVE_PERCENTAGE",
+          "GOALS_AGAINST_AVERAGE",
+        ]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Toggle stat columns" }));
+
+    expect(
+      screen.getByRole("cell", { name: "Goalie projected statistics" }),
+    ).toBeTruthy();
+    expect(screen.getByTitle("Projected W: 35").textContent).toContain("35");
+    expect(screen.getByTitle("Projected SV: 1460").textContent).toContain(
+      "1460",
+    );
+    expect(screen.getByTitle("Projected SV%: 0.918").textContent).toContain(
+      "0.918",
+    );
+    expect(screen.getByTitle("Projected GAA: 2.42").textContent).toContain(
+      "2.42",
+    );
+  });
+
+  it("keeps goalie starts separate from missing appearances and formats save percentage as a fraction", () => {
+    const goalie = player(1, "Goalie", "G");
+    goalie.combinedStats = {
+      GAMES_PLAYED: { projected: null },
+      GAMES_STARTED_GOALIE: { projected: 58.5 },
+      SAVE_PERCENTAGE: { projected: 0.91 },
+    };
+    render(
+      <ProjectionsTable
+        players={[goalie]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+        enabledGoalieStatKeys={["GAMES_PLAYED", "GAMES_STARTED_GOALIE", "SAVE_PERCENTAGE"]}
+      />,
+    );
+    fireEvent.change(screen.getByRole("combobox", { name: "Position filter" }), {
+      target: { value: "G" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Toggle stat columns" }));
+    expect(screen.getByRole("columnheader", { name: "GP" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "GS" })).toBeTruthy();
+    expect(screen.getByTitle("Not supplied").textContent).toBe("-");
+    expect(screen.getByText("58.5")).toBeTruthy();
+    expect(screen.getByText("0.910").getAttribute("title")).toBe("0.91");
+  });
+
   it("shows every configured stat column and sorts FOW without restoring HITS", () => {
     const low = player(1, "Low FOW", "C");
     const high = player(2, "High FOW", "C");
@@ -78,10 +219,11 @@ describe("ProjectionsTable visibility diagnostics", () => {
     expect(screen.getByText("300")).toBeTruthy();
     expect(screen.getByText("700")).toBeTruthy();
 
-    fireEvent.click(fowHeader);
+    const fowSortButton = screen.getByRole("button", { name: "FOW" });
+    fireEvent.click(fowSortButton);
     let rows = screen.getAllByRole("row").slice(1);
     expect(rows[0].textContent).toContain("High FOW");
-    fireEvent.click(fowHeader);
+    fireEvent.click(fowSortButton);
     rows = screen.getAllByRole("row").slice(1);
     expect(rows[0].textContent).toContain("Low FOW");
   });
@@ -124,9 +266,18 @@ describe("ProjectionsTable visibility diagnostics", () => {
       />,
     );
     expect(screen.getByText("Healthy Player")).toBeTruthy();
-    expect(screen.getByRole("status").textContent).toContain(
+    const noticeButton = screen.getByRole("button", {
+      name: "Data notices and legend",
+    });
+    const tooltip = document.getElementById(
+      noticeButton.getAttribute("aria-describedby")!,
+    );
+    expect(tooltip?.getAttribute("role")).toBe("tooltip");
+    expect(tooltip?.textContent).toContain(
       "remaining enabled sources are still included",
     );
+    expect(tooltip?.textContent).toContain("Legend");
+    expect(screen.queryByRole("status")).toBeNull();
 
     rerender(
       <ProjectionsTable
@@ -142,6 +293,8 @@ describe("ProjectionsTable visibility diagnostics", () => {
       ),
     ).toBeTruthy();
     expect(screen.queryByText("Healthy Player")).toBeNull();
+    expect(screen.queryByText("Data notices")).toBeNull();
+    expect(screen.getByRole("button", { name: "Legend" })).toBeTruthy();
   });
 
   it("keeps drafted players visible until requested and reports source inclusion", () => {
@@ -236,6 +389,9 @@ describe("ProjectionsTable visibility diagnostics", () => {
       screen.getByRole("button", { name: "Expand details for First Player" }),
     );
     await screen.findByText("Last Season: 2024-25");
+    const firstRow = screen.getByText("First Player").closest("tr")!;
+    expect(firstRow.getAttribute("data-stripe")).toBe(firstRow.nextElementSibling?.getAttribute("data-stripe"));
+    expect(screen.getByText("Second Player").closest("tr")?.getAttribute("data-stripe")).not.toBe(firstRow.getAttribute("data-stripe"));
     expect(fromMock).toHaveBeenCalledTimes(1);
     expect(chain.in).toHaveBeenCalledWith("player_id", [1, 2, 3]);
 
@@ -314,5 +470,83 @@ describe("ProjectionsTable visibility diagnostics", () => {
     expect((draftButton as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(draftButton);
     expect(onDraftPlayer).not.toHaveBeenCalled();
+  });
+
+  it("renders passive DUST and a lower-conflict alternative without gating draft", () => {
+    const onDraftPlayer = vi.fn();
+    const dustInsights = new Map([
+      [
+        "1",
+        {
+          marginalDustGames: 6,
+          candidateScheduledGames: 68,
+          activeGamesAdded: 62,
+          dustRate: 6 / 68,
+          risk: "elevated" as const,
+          alternative: {
+            playerId: "2",
+            playerName: "Lower Conflict Player",
+            dustReduction: 4,
+            valueDifference: -2.4,
+          },
+        },
+      ],
+    ]);
+
+    render(
+      <ProjectionsTable
+        players={[player(1, "High Conflict Player", "RW")]}
+        allPlayers={[player(1, "High Conflict Player", "RW")]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={onDraftPlayer}
+        canDraft
+        dustInsights={dustInsights}
+      />,
+    );
+
+    expect(screen.getByText("DUST +6")).toBeTruthy();
+    expect(screen.getByText("DUST +6").getAttribute("title")).toContain(
+      "62 Active Games Added",
+    );
+    expect(screen.getByText(/Alt: Lower Conflict Player/).textContent).toContain(
+      "−4 DUST",
+    );
+    const draftButton = screen.getByRole("button", { name: "Draft" });
+    expect((draftButton as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(draftButton);
+    expect(onDraftPlayer).toHaveBeenCalledWith("1");
+  });
+
+  it("shows exact low DUST without a misleading alternative", () => {
+    render(
+      <ProjectionsTable
+        players={[player(1, "Low Conflict Player", "C")]}
+        allPlayers={[player(1, "Low Conflict Player", "C")]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+        dustInsights={
+          new Map([
+            [
+              "1",
+              {
+                marginalDustGames: 0,
+                candidateScheduledGames: 70,
+                activeGamesAdded: 70,
+                dustRate: 0,
+                risk: "low" as const,
+              },
+            ],
+          ])
+        }
+      />,
+    );
+
+    expect(screen.getByText("DUST +0")).toBeTruthy();
+    expect(screen.queryByText(/Alt:/)).toBeNull();
   });
 });

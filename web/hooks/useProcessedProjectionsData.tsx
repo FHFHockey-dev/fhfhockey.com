@@ -1343,7 +1343,15 @@ function processRawDataIntoPlayers(
       const shgAct =
         (processedPlayer.combinedStats as any).SH_GOALS?.actual ?? null;
 
-      const shaProjected = deriveShortHandedAssists(shpProj, shgProj);
+      // Keep explicitly supplied provider SHA, including zero. Only custom
+      // sources without a direct SHA mapping retain the legacy derivation.
+      const suppliedSha = processedPlayer.combinedStats.SH_ASSISTS;
+      const hasDirectShaMapping = activeSourceConfigs.some((source) =>
+        source.statMappings.some((mapping) => mapping.key === "SH_ASSISTS"),
+      );
+      const shaProjected = hasDirectShaMapping
+        ? (suppliedSha?.projected ?? null)
+        : deriveShortHandedAssists(shpProj, shgProj);
       const shaActual = deriveShortHandedAssists(shpAct, shgAct);
 
       if (shaProjected != null || shaActual != null) {
@@ -1353,7 +1361,7 @@ function processRawDataIntoPlayers(
             projected: shaProjected,
             actual: shaActual,
             diffPercentage: calculateDiffPercentage(shaActual, shaProjected),
-            projectedDetail: {
+            projectedDetail: suppliedSha?.projectedDetail ?? {
               value: shaProjected,
               contributingSources: [],
               missingFromSelectedSources: [],
@@ -1916,7 +1924,7 @@ export const useProcessedProjectionsData = ({
       }
       mark("fetch:projectionSources:done");
 
-      // Name disambiguation and merge for any newly added source: map by standardized name to existing ids
+      // Legacy custom rows may need name alignment; database IDs are authoritative.
       try {
         const { standardizePlayerName } =
           await import("lib/standardization/nameStandardization");
@@ -1929,6 +1937,7 @@ export const useProcessedProjectionsData = ({
 
         // For each target source, build an index from all other sources, then attempt to align ids
         for (const targetCfg of augmentedActiveSourceConfigs) {
+          if (!customById.has(targetCfg.id)) continue;
           const nameToIds = new Map<string, Set<number>>();
           const idToTeam = new Map<number, string>();
 
@@ -1961,6 +1970,8 @@ export const useProcessedProjectionsData = ({
           const teamKey = targetCfg.teamKey;
           const idKey = targetCfg.primaryPlayerIdKey;
           for (const row of rows) {
+            const existingId = Number(row[idKey]);
+            if (Number.isSafeInteger(existingId) && existingId > 0) continue;
             const rawName = (row as any)[nameKey];
             if (!rawName) continue;
             const canon = standardizePlayerName(String(rawName));

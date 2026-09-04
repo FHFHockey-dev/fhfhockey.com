@@ -313,6 +313,7 @@ describe("desktop NavbarItems disclosure", () => {
       "/drm",
       "/splits",
       "/draft-dashboard",
+      "/roster-schedule-optimizer",
     ]);
 
     const statsLink = within(toolsMenu).getByRole("link", { name: "Stats" });
@@ -369,6 +370,7 @@ describe("cross-viewport navigation membership", () => {
       "/splits",
       "/start-chart",
       "/variance/skaters",
+      "/roster-schedule-optimizer",
       "/variance/goalies",
     ]);
   });
@@ -397,6 +399,7 @@ describe("cross-viewport navigation membership", () => {
       "/splits",
       "/start-chart",
       "/variance/skaters",
+      "/roster-schedule-optimizer",
       "/variance/goalies",
     ]);
 
