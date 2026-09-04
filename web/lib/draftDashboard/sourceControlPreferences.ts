@@ -24,7 +24,10 @@ export function createDefaultSourceControls(
   return Object.fromEntries(
     sources
       .filter((source) => source.playerType === playerType)
-      .map((source) => [source.id, { isSelected: true, weight: 1 }])
+      .map((source) => [
+        source.id,
+        { isSelected: source.defaultSelected !== false, weight: 1 }
+      ])
   );
 }
 
@@ -34,16 +37,21 @@ function clampWeight(value: unknown) {
   return Number(Math.max(0, Math.min(2, numeric)).toFixed(3));
 }
 
-function sanitizeControls(
+export function sanitizeControls(
   defaults: ProjectionSourceControls,
-  candidate: unknown
+  candidate: unknown,
+  customSourceIds: string[] = []
 ): ProjectionSourceControls {
   const source =
     candidate && typeof candidate === "object"
       ? (candidate as Record<string, any>)
       : {};
   const next: ProjectionSourceControls = {};
-  for (const [id, fallback] of Object.entries(defaults)) {
+  const allowed = { ...defaults };
+  for (const id of customSourceIds) {
+    if (!allowed[id]) allowed[id] = { isSelected: true, weight: 1 };
+  }
+  for (const [id, fallback] of Object.entries(allowed)) {
     const saved = source[id];
     next[id] = saved
       ? {

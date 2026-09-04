@@ -197,8 +197,13 @@
 
 .roundChip {
   @include v.reset-button;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 30px;
   min-height: 30px;
+  line-height: 1;
+  text-align: center;
   border: 1px solid v.$border-secondary;
   border-radius: 999px;
   background: v.$background-dark;

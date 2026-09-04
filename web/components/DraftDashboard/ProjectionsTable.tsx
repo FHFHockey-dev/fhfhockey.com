@@ -267,11 +267,13 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     if (value == null || Number.isNaN(value)) return "-";
     const def = statDefByKey.get(key);
     if (!def) return String(value);
-    const dp = def.decimalPlaces ?? (def.dataType === "percentage" ? 1 : 0);
+    if (def.formatter) return def.formatter(value);
+    if (key === "SAVE_PERCENTAGE") return value.toFixed(3);
+    const dp = def.decimalPlaces ?? (def.dataType === "percentage" ? 1 : 2);
     if (def.dataType === "percentage") {
       return `${(value * 100).toFixed(dp)}%`;
     }
-    return Number(value).toFixed(dp);
+    return String(Number(value.toFixed(dp)));
   };
   // hide drafted toggle (persisted)
   const [hideDrafted, setHideDrafted] = useState<boolean>(() => {
@@ -1497,7 +1499,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
 
       {/* Players Table */}
       <div className={styles.tableContainer}>
-        <table className={styles.playersTable}>
+        <table className={`${styles.playersTable} ${statColumnsMode ? styles.statColumnsTable : ""}`}>
           <colgroup>
             <col className={styles.colFav} />
             <col className={styles.colName} />
@@ -1914,6 +1916,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                             <td
                               key={`c-${k}-${key}`}
                               className={styles.statCol}
+                              title={val == null ? "Not supplied" : String(val)}
                             >
                               {formatStatValue(k, val)}
                             </td>

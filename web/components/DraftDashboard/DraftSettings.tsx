@@ -2259,16 +2259,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                   >
                     {isNormalized ? "Normalized" : "Normalizing..."}
                   </span>
-                  <div className={styles.sourcePlug}>
-                    <a
-                      href="https://www.reddit.com/r/fantasyhockey/comments/1n1wsqc/dtz_20252026_nhl_projections/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      DtZ Projections
-                    </a>
-                    <span aria-hidden>— community contributed</span>
-                  </div>
                 </>
               )}
             </fieldset>
@@ -2989,16 +2979,28 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                                 id={`popover-skater-${id}`}
                                 type="checkbox"
                                 checked={ctrl.isSelected}
-                                onChange={(e) =>
-                                  onSourceControlsChange &&
+                                onChange={(e) => {
+                                  if (!onSourceControlsChange) return;
+                                  const isSelected = e.target.checked;
+                                  if (
+                                    isSelected &&
+                                    !ctrl.isSelected &&
+                                    (id === "blake_ag_skaters" ||
+                                      id === "nate_ag_skaters") &&
+                                    !window.confirm(
+                                      'Enabling "AG Blake" or "AG Nate" alongside "Apples & Ginos" double-weights those projections. Proceed?',
+                                    )
+                                  ) {
+                                    return;
+                                  }
                                   onSourceControlsChange({
                                     ...sourceControls,
                                     [id]: {
-                                      isSelected: e.target.checked,
+                                      isSelected,
                                       weight: ctrl.weight,
                                     },
-                                  })
-                                }
+                                  });
+                                }}
                                 aria-label={`Toggle source ${displayName}`}
                               />
                               <span className={styles.popoverSourceName}>

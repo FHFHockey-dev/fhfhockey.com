@@ -41,6 +41,57 @@ function player(playerId: number, fullName: string, position: string) {
 }
 
 describe("ProjectionsTable visibility diagnostics", () => {
+  it("preserves projected decimals and exposes the unrounded source value", () => {
+    const projected = player(8477492, "Nathan MacKinnon", "C");
+    projected.combinedStats = {
+      GOALS: { projected: 47.85 },
+      POINTS: { projected: 126.95 },
+    };
+    render(
+      <ProjectionsTable
+        players={[projected]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+        enabledSkaterStatKeys={["GOALS", "POINTS"]}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Toggle stat columns" }));
+    expect(screen.getByText("47.85").getAttribute("title")).toBe("47.85");
+    expect(screen.getByText("126.95")).toBeTruthy();
+  });
+
+  it("keeps goalie starts separate from missing appearances and formats save percentage as a fraction", () => {
+    const goalie = player(1, "Goalie", "G");
+    goalie.combinedStats = {
+      GAMES_PLAYED: { projected: null },
+      GAMES_STARTED_GOALIE: { projected: 58.5 },
+      SAVE_PERCENTAGE: { projected: 0.91 },
+    };
+    render(
+      <ProjectionsTable
+        players={[goalie]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+        enabledGoalieStatKeys={["GAMES_PLAYED", "GAMES_STARTED_GOALIE", "SAVE_PERCENTAGE"]}
+      />,
+    );
+    fireEvent.change(screen.getByRole("combobox", { name: "Position filter" }), {
+      target: { value: "G" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Toggle stat columns" }));
+    expect(screen.getByRole("columnheader", { name: "GP" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "GS" })).toBeTruthy();
+    expect(screen.getByTitle("Not supplied").textContent).toBe("-");
+    expect(screen.getByText("58.5")).toBeTruthy();
+    expect(screen.getByText("0.910").getAttribute("title")).toBe("0.91");
+  });
+
   it("shows every configured stat column and sorts FOW without restoring HITS", () => {
     const low = player(1, "Low FOW", "C");
     const high = player(2, "High FOW", "C");

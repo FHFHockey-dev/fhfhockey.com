@@ -15,10 +15,13 @@ function Layout({ children }: LayoutProps) {
   const isUnderlyingStatsRoute =
     router.pathname.startsWith("/underlying-stats");
   const isHomepage = router.pathname === "/";
+  const hideFooter = router.pathname === "/draft-dashboard";
   const [isFooterVisible, setIsFooterVisible] = useState(false);
   const touchStartYRef = useRef<number | null>(null);
 
   useEffect(() => {
+    if (hideFooter) return;
+
     const updateFooterVisibility = (
       isScrollingDown: boolean,
       allowAtPageTop = false,
@@ -67,17 +70,19 @@ function Layout({ children }: LayoutProps) {
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchmove", handleTouchMove);
     };
-  }, []);
+  }, [hideFooter]);
 
   return (
     <div className={styles.container}>
       <Header />
       {children}
-      <Footer
-        isUnderlyingStatsRoute={isUnderlyingStatsRoute}
-        isVisible={isFooterVisible}
-        isHomepage={isHomepage}
-      />
+      {!hideFooter && (
+        <Footer
+          isUnderlyingStatsRoute={isUnderlyingStatsRoute}
+          isVisible={isFooterVisible}
+          isHomepage={isHomepage}
+        />
+      )}
     </div>
   );
 }

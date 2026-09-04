@@ -532,7 +532,7 @@
   flex: 1;
   min-height: 0; /* Allow flex item to shrink below content size */
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
   background-color: v.$background-dark;
   @include v.custom-scrollbar(v.$primary-color, v.$background-medium);
   border: 1px solid v.$border-secondary; /* Add border to contain */
@@ -543,6 +543,20 @@
   border-collapse: collapse;
   font-size: v.$font-size-sm;
   table-layout: fixed; // Enforce column widths and consistent layout
+}
+
+.statColumnsTable {
+  table-layout: auto;
+
+  col {
+    width: auto;
+  }
+
+  .statHeader,
+  .statCol {
+    min-width: 4.5rem;
+    white-space: nowrap;
+  }
 }
 
 .playersTable thead {

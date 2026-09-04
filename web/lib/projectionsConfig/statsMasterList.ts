@@ -36,6 +36,35 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
 
   // --- Skater Stats ---
   {
+    key: "SHOOTING_PERCENTAGE",
+    displayName: "SH%",
+    dataType: "percentage",
+    higherIsBetter: true,
+    isSkaterStat: true,
+    isGoalieStat: false,
+    decimalPlaces: 3,
+    category: "Standard",
+  },
+  {
+    key: "FACEOFF_PERCENTAGE",
+    displayName: "FO%",
+    dataType: "percentage",
+    higherIsBetter: true,
+    isSkaterStat: true,
+    isGoalieStat: false,
+    decimalPlaces: 3,
+    category: "Faceoffs",
+  },
+  {
+    key: "GAME_WINNING_GOALS",
+    displayName: "GWG",
+    dataType: "numeric",
+    higherIsBetter: true,
+    isSkaterStat: true,
+    isGoalieStat: false,
+    category: "Standard",
+  },
+  {
     key: "GOALS",
     displayName: "G",
     dataType: "numeric",
@@ -218,6 +247,16 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
   },
 
   // --- Goalie Stats ---
+  {
+    key: "GAMES_STARTED_GOALIE",
+    displayName: "GS",
+    dataType: "numeric",
+    higherIsBetter: true,
+    isGoalieStat: true,
+    isSkaterStat: false,
+    defaultVisible: true,
+    category: "Standard Goalie",
+  },
   {
     key: "WINS_GOALIE",
     displayName: "W",

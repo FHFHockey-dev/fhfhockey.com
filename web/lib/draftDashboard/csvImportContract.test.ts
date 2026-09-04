@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { PROJECTION_SOURCES_CONFIG } from "lib/projectionsConfig/projectionSourcesConfig";
 import { standardizeColumnName } from "lib/standardization/columnStandardization";
+import { STATS_MASTER_LIST } from "lib/projectionsConfig/statsMasterList";
 import {
   CSV_IDENTITY_COLUMNS,
   getRequiredCsvColumns,
@@ -10,6 +11,21 @@ import {
 } from "./csvImportContract";
 
 describe("CSV import minimum projection contract", () => {
+  it("maps every staging column to a registered stat and keeps goalie GP and GS distinct", () => {
+    const skaterHeaders = ["GP", "G", "A", "PTS", "+/-", "PIM", "PPG", "PPA", "PPP", "SHG", "SHA", "SHP", "SOG", "SH%", "GWG", "Hits", "Blocks", "FOW", "FOL", "FO%", "TOI/G"];
+    const goalieHeaders = ["GP", "GS", "W", "L", "OTL", "SO", "SV", "GA", "SA", "SV%", "GAA"];
+    for (const source of PROJECTION_SOURCES_CONFIG) {
+      const headers = source.playerType === "skater" ? skaterHeaders : goalieHeaders;
+      expect(source.statMappings.map((s) => s.dbColumnName)).toEqual(headers.map((h) => standardizeColumnName(h)));
+      for (const mapping of source.statMappings) {
+        expect(STATS_MASTER_LIST.some((stat) => stat.key === mapping.key)).toBe(true);
+      }
+      if (source.playerType === "goalie") {
+        expect(source.statMappings.find((s) => s.key === "GAMES_PLAYED")?.dbColumnName).toBe("Games_Played");
+        expect(source.statMappings.find((s) => s.key === "GAMES_STARTED_GOALIE")?.dbColumnName).toBe("Games_Started_Goalie");
+      }
+    }
+  });
   it.each([
     ["skater", MINIMUM_SKATER_CSV_STATS],
     ["goalie", MINIMUM_GOALIE_CSV_STATS]

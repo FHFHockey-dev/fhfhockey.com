@@ -16,6 +16,95 @@ const settings: DraftSettingsContract = {
 
 afterEach(cleanup);
 
+describe("DraftSettings A&G component confirmation", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const renderSources = (
+    sourceControls: Record<string, { isSelected: boolean; weight: number }>,
+  ) => {
+    const onSourceControlsChange = vi.fn();
+    render(
+      <DraftSettings
+        settings={settings}
+        onSettingsChange={vi.fn()}
+        myTeamId="Team 1"
+        onMyTeamIdChange={vi.fn()}
+        undoLastPick={vi.fn()}
+        resetDraft={vi.fn()}
+        draftHistory={[]}
+        draftedPlayers={[]}
+        currentPick={1}
+        sourceControls={sourceControls}
+        onSourceControlsChange={onSourceControlsChange}
+      />,
+    );
+    expect(screen.queryByText(/2026–27 public sources only/)).toBeNull();
+    fireEvent.click(screen.getByTestId("open-weights-popover"));
+    expect(screen.queryByText(/Use the A&G aggregate or its/)).toBeNull();
+    return onSourceControlsChange;
+  };
+
+  it.each([
+    ["blake_ag_skaters", "Blake A&G (component)", true],
+    ["nate_ag_skaters", "Nate A&G (component)", true],
+    ["blake_ag_skaters", "Blake A&G (component)", false],
+    ["nate_ag_skaters", "Nate A&G (component)", false],
+  ] as const)(
+    "confirms enabling %s (%s), aggregate selected=%s, and preserves cancellation",
+    (id, displayName, aggregateSelected) => {
+      const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+      const controls = {
+        ag_skaters: { isSelected: aggregateSelected, weight: 1 },
+        [id]: { isSelected: false, weight: 0.75 },
+      };
+      const onChange = renderSources(controls);
+      const toggle = screen.getByRole("checkbox", {
+        name: `Toggle source ${displayName}`,
+      }) as HTMLInputElement;
+
+      fireEvent.click(toggle);
+      expect(confirm).toHaveBeenCalledWith(
+        'Enabling "AG Blake" or "AG Nate" alongside "Apples & Ginos" double-weights those projections. Proceed?',
+      );
+      expect(onChange).not.toHaveBeenCalled();
+      expect(toggle.checked).toBe(false);
+
+      confirm.mockReturnValue(true);
+      fireEvent.click(toggle);
+      expect(confirm).toHaveBeenCalledTimes(2);
+      expect(onChange).toHaveBeenCalledExactlyOnceWith({
+        ...controls,
+        [id]: { isSelected: true, weight: 0.75 },
+      });
+    },
+  );
+
+  it.each([
+    ["blake_ag_skaters", "Blake A&G (component)"],
+    ["nate_ag_skaters", "Nate A&G (component)"],
+  ])("does not confirm disabling %s", (id, displayName) => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const onChange = renderSources({ [id]: { isSelected: true, weight: 1 } });
+    fireEvent.click(screen.getByRole("checkbox", {
+      name: `Toggle source ${displayName}`,
+    }));
+    expect(confirm).not.toHaveBeenCalled();
+    expect(onChange).toHaveBeenCalledExactlyOnceWith({
+      [id]: { isSelected: false, weight: 1 },
+    });
+  });
+
+  it("does not confirm enabling other projection sources", () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const onChange = renderSources({ dtz_skaters: { isSelected: false, weight: 1 } });
+    fireEvent.click(screen.getByRole("checkbox", { name: "Toggle source DTZ" }));
+    expect(confirm).not.toHaveBeenCalled();
+    expect(onChange).toHaveBeenCalledExactlyOnceWith({
+      dtz_skaters: { isSelected: true, weight: 1 },
+    });
+  });
+});
+
 describe("DraftSettings goalie scoring manager", () => {
   it("edits exact custom reversed rounds and locks them after drafting starts", () => {
     const onDraftOrderPatternChange = vi.fn();

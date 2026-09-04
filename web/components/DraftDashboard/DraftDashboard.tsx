@@ -52,6 +52,7 @@ import {
   createDefaultSourceControls,
   loadSourceControlPreferences,
   saveSourceControlPreferences,
+  sanitizeControls,
 } from "lib/draftDashboard/sourceControlPreferences";
 import {
   calculateSourceRankImpacts,
@@ -680,8 +681,15 @@ const DraftDashboard: React.FC = () => {
       setGoaliePointValues(
         snap.goaliePointValues || getDefaultFantasyPointsConfig("goalie"),
       );
-      setSourceControls(snap.sourceControls || {});
-      setGoalieSourceControls(snap.goalieSourceControls || {});
+      const customSourceIds = Array.isArray(snap.customCsvList)
+        ? snap.customCsvList.map((entry: SessionCsvEntry) => entry.id)
+        : [];
+      setSourceControls(
+        sanitizeControls(sourceControlDefaults.skater, snap.sourceControls, customSourceIds),
+      );
+      setGoalieSourceControls(
+        sanitizeControls(sourceControlDefaults.goalie, snap.goalieSourceControls, customSourceIds),
+      );
       setFantraxLeagueOverride(snap.fantraxLeagueOverride ?? null);
       setEspnLeagueOverride(snap.espnLeagueOverride ?? null);
       setPreserveExactCategoryWeights(
@@ -698,7 +706,7 @@ const DraftDashboard: React.FC = () => {
     } catch {
       return false;
     }
-  }, [setCsvList]);
+  }, [setCsvList, sourceControlDefaults]);
 
   // On mount: offer to resume snapshot
   useEffect(() => {
@@ -3058,9 +3066,15 @@ const DraftDashboard: React.FC = () => {
               data.forwardGrouping === "split"
             )
               setForwardGrouping(data.forwardGrouping);
-            if (data.sourceControls) setSourceControls(data.sourceControls);
+            const customSourceIds = getCsvList().map((entry) => entry.id);
+            if (data.sourceControls)
+              setSourceControls(
+                sanitizeControls(sourceControlDefaults.skater, data.sourceControls, customSourceIds),
+              );
             if (data.goalieSourceControls)
-              setGoalieSourceControls(data.goalieSourceControls);
+              setGoalieSourceControls(
+                sanitizeControls(sourceControlDefaults.goalie, data.goalieSourceControls, customSourceIds),
+              );
             if (data.goalieScoringCategories)
               setGoaliePointValues(data.goalieScoringCategories);
             if (data.fantraxLeagueOverride)

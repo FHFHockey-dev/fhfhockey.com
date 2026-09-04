@@ -64,4 +64,13 @@ describe("duplicate projection row selection", () => {
       selectProjectionRowForPlayer({ rows: [], source, playerId: 1 })
     ).toBeNull();
   });
+
+  it("keeps same-name teammates separate by their authoritative player IDs", () => {
+    const rows = [
+      { player_id: 8480012, Player_Name: "Elias Pettersson", Team: "VAN", Pos: "C", GP: 82, Goals: 27 },
+      { player_id: 8483678, Player_Name: "Elias Pettersson (D)", Team: "VAN", Pos: "D", GP: 60, Goals: 3 },
+    ];
+    expect(selectProjectionRowForPlayer({ rows, source, playerId: 8480012 })).toBe(rows[0]);
+    expect(selectProjectionRowForPlayer({ rows, source, playerId: 8483678 })).toBe(rows[1]);
+  });
 });

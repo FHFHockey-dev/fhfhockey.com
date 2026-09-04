@@ -5,6 +5,7 @@ import {
   SOURCE_CONTROL_PREFERENCES_KEY,
   createDefaultSourceControls,
   loadSourceControlPreferences,
+  sanitizeControls,
   saveSourceControlPreferences
 } from "./sourceControlPreferences";
 
@@ -23,12 +24,22 @@ const defaults = {
 };
 
 describe("source-control preferences", () => {
-  it("defaults every official source to selected with scalar weight 1", () => {
+  it("defaults to public independent sources without double-weighting A&G", () => {
     const loaded = loadSourceControlPreferences(defaults, memoryStorage());
     expect(Object.keys(loaded.skater).length).toBeGreaterThan(0);
     expect(Object.values(loaded.skater)).toEqual(
       expect.arrayContaining([{ isSelected: true, weight: 1 }])
     );
+    expect(loaded.skater.ag_skaters.isSelected).toBe(true);
+    expect(loaded.skater.blake_ag_skaters.isSelected).toBe(false);
+    expect(loaded.skater.nate_ag_skaters.isSelected).toBe(false);
+    expect(Object.values(loaded.skater).filter((s) => s.isSelected)).toHaveLength(4);
+    expect(Object.values(loaded.goalie).filter((s) => s.isSelected)).toHaveLength(3);
+    expect(PROJECTION_SOURCES_CONFIG).toHaveLength(9);
+    for (const source of PROJECTION_SOURCES_CONFIG) {
+      expect(source.tableName).toMatch(/^PROJECTIONS_20262027_/);
+      expect(source.id).not.toMatch(/dom_|dobber_|master|cullen|dfo|fhfh|kubota|laidlaw/);
+    }
   });
 
   it("persists only known official IDs and clamps the scalar domain", () => {
@@ -77,5 +88,19 @@ describe("source-control preferences", () => {
     );
     expect(loaded.skater).toEqual(defaults.skater);
     expect(loaded.goalie).toEqual(defaults.goalie);
+  });
+
+  it("drops retired and paid sources from restored snapshots while keeping known custom uploads", () => {
+    const restored = sanitizeControls(defaults.skater, {
+      cullen_skaters: { isSelected: true, weight: 1 },
+      dom_skaters: { isSelected: true, weight: 1 },
+      dobber_skaters: { isSelected: true, weight: 1 },
+      custom_csv_1: { isSelected: true, weight: 0.5 },
+      unknown_custom: { isSelected: true, weight: 1 },
+    }, ["custom_csv_1"]);
+    expect(restored).toEqual({
+      ...defaults.skater,
+      custom_csv_1: { isSelected: true, weight: 0.5 },
+    });
   });
 });
