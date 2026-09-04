@@ -278,7 +278,8 @@
   flex-wrap: wrap;
   gap: 5px;
   margin-bottom: 8px;
-  > span {
+  > span,
+  > button {
     display: flex;
     flex-direction: column;
     flex: 1;
@@ -308,6 +309,7 @@
   }
 }
 .dustMetric {
+  @include v.reset-button;
   position: relative;
   cursor: help;
 }
@@ -329,7 +331,7 @@
   text-align: left;
 }
 .dustMetric:hover .dustTooltip,
-.dustMetric:focus .dustTooltip {
+.dustMetric:focus-visible .dustTooltip {
   display: block;
 }
 @media (max-width: 1500px) {

@@ -597,7 +597,11 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
               ))}
             </select>
           </div>
-          <div className={styles.advancedControls} hidden={!advancedOpen}>
+          <div
+            id="suggested-picks-advanced-controls"
+            className={styles.advancedControls}
+            hidden={!advancedOpen}
+          >
           <div className={styles.controlGroup}>
             <label className={styles.label} htmlFor="rosterBarToggle">
               Roster
@@ -614,18 +618,30 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
             type="button"
             className={styles.collapseBtn}
             aria-expanded={!collapsed}
+            aria-controls="suggested-picks-cards"
             onClick={() => setCollapsed((c) => !c)}
           >
             {collapsed ? "Show cards" : "Hide cards"}
           </button>
           </div>
-          <button type="button" className={styles.collapseBtn} aria-expanded={advancedOpen} onClick={() => setAdvancedOpen((open) => !open)}>Advanced</button>
+          <button
+            type="button"
+            className={styles.collapseBtn}
+            aria-expanded={advancedOpen}
+            aria-controls="suggested-picks-advanced-controls"
+            onClick={() => setAdvancedOpen((open) => !open)}
+          >
+            Advanced
+          </button>
         </div>
       </div>
 
       {compact && <button type="button" className={styles.returnToDraft} onClick={onReturnToDraft}>Return to suggested players</button>}
-      {!collapsed && (
-        <div className={styles.carousel} hidden={compact}>
+        <div
+          id="suggested-picks-cards"
+          className={styles.carousel}
+          hidden={collapsed || compact}
+        >
         <div
           ref={cardsRef}
           className={styles.cardsRow}
@@ -778,7 +794,6 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         </div>
         {top.length > 3 && <button type="button" className={styles.carouselNext} aria-label="Next suggested players" onClick={() => cardsRef.current?.scrollBy({ left: cardsRef.current.clientWidth * .8, behavior: "smooth" })}>›</button>}
         </div>
-      )}
 
       {/* Roster progress bar across positions */}
       {showRosterBar &&

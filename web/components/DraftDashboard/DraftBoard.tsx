@@ -415,6 +415,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
             data-owner={ownerTeamId}
             data-overall-pick={overallPick}
             data-intensity={draftedPlayer ? intensity : undefined}
+            role="img"
             aria-label={tooltip}
           >
             {isCurrentPick && (

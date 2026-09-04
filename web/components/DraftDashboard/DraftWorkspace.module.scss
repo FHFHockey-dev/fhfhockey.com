@@ -32,8 +32,18 @@
   }
 }
 .workspaceLabel {
+  margin: 0;
   font-size: 16px;
   font-weight: 700;
+  white-space: nowrap;
+}
+.seasonValue {
+  padding: 2px 8px;
+  color: v.$color-neutral-200;
+  background: v.$draft-input;
+  border: 1px solid v.$draft-border;
+  border-radius: 4px;
+  font-size: 13px;
   white-space: nowrap;
 }
 .modeSwitch {
@@ -106,7 +116,6 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: settings-reveal 180ms ease-out;
 }
 .settingsTabs {
   display: flex;
@@ -132,7 +141,7 @@
 .settingsErrors { flex: 0 0 auto; max-height: 92px; overflow: auto; margin: 6px 10px 0; padding: 8px; border: 1px solid v.$color-coral-500; color: v.$color-coral-500; button { display: block; background: transparent; border: 0; text-align: left; color: inherit; padding: 4px 0; } }
 .setupNotice { margin: 8px 12px 0; color: v.$color-gold-400; }
 @keyframes settings-reveal { from { opacity: 0; } to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .settingsBody { animation: none; } }
+@media (prefers-reduced-motion: no-preference) { .settingsBody { animation: settings-reveal 180ms ease-out; } }
 .status {
   flex: 0 0 auto;
   min-width: 0;

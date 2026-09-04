@@ -47,7 +47,6 @@
     0 0 0 1px rgba(v.$primary-color, 0.35),
     0 0 55px -10px rgba(v.$primary-color, 0.5);
   overflow: hidden;
-  animation: modalIn 0.5s cubic-bezier(0.22, 1, 0.36, 1);
   overflow-y: auto;
 }
 
@@ -62,6 +61,12 @@
   }
   100% {
     transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .modal {
+    animation: modalIn 0.5s cubic-bezier(0.22, 1, 0.36, 1);
   }
 }
 
@@ -118,7 +123,10 @@
     color.adjust(v.$background-dark, $lightness: -5%)
   );
   border: 1px solid v.$border-secondary;
-  transition: all 0.35s v.$transition-easing;
+  transition:
+    border-color 150ms v.$transition-easing,
+    box-shadow 150ms v.$transition-easing,
+    color 150ms v.$transition-easing;
   &:hover,
   &:focus-visible {
     color: v.$primary-color;

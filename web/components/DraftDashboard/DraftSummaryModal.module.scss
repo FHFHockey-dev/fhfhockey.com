@@ -83,7 +83,9 @@
   padding: v.$space-xs v.$space-md;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    box-shadow 150ms ease,
+    transform 150ms ease;
   box-shadow: 0 6px 18px rgba(v.$primary-color, 0.28);
 
   &:hover {
@@ -522,7 +524,10 @@
   font-weight: 700;
   letter-spacing: 0.02em;
   cursor: pointer;
-  transition: all 0.15s ease-in-out;
+  transition:
+    background-color 150ms ease-in-out,
+    border-color 150ms ease-in-out,
+    color 150ms ease-in-out;
 
   &:hover {
     color: v.$color-white;
