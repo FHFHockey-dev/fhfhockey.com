@@ -73,7 +73,7 @@ function Layout({ children }: LayoutProps) {
   }, [hideFooter]);
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${hideFooter ? styles.draftLayout : ""}`}>
       <Header />
       {children}
       {!hideFooter && (

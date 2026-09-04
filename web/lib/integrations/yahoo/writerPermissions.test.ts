@@ -118,7 +118,6 @@ describe("Yahoo player writer permissions", () => {
       "web/components/PlayerPickupTable/PlayerPickupTable.tsx",
       "web/lib/draft-ranker/discoveryServer.ts",
       "web/lib/sync/syncYahooPlayersToSheet.ts",
-      "web/pages/api/v1/start-chart.ts",
       "web/pages/api/v1/transactions/ownership-snapshots.ts",
       "web/pages/api/v1/transactions/ownership-trends.ts",
       "web/pages/variance/skaters.tsx",
@@ -129,6 +128,16 @@ describe("Yahoo player writer permissions", () => {
       );
       expect(source).toContain("normalized_ownership_timeline");
     }
+
+    const startChartSource = readFileSync(
+      path.join(repoRoot, "web/pages/api/v1/start-chart.ts"),
+      "utf8",
+    );
+    expect(startChartSource).toContain('"read_yahoo_player_overlay_as_of"');
+    expect(startChartSource).toContain('.from("yahoo_nhl_player_map_read")');
+    expect(startChartSource).toContain(
+      '.from("yahoo_player_ownership_history")',
+    );
 
     const sheetSyncSource = readFileSync(
       path.join(repoRoot, "web/lib/sync/syncYahooPlayersToSheet.ts"),

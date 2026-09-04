@@ -18,6 +18,7 @@ type QueryBuilder = PromiseLike<QueryResult> & {
   gte(column: string, value: unknown): QueryBuilder;
   lte(column: string, value: unknown): QueryBuilder;
   order(column: string, options: { ascending: boolean }): QueryBuilder;
+  range(from: number, to: number): QueryBuilder;
 };
 export type ScheduleReadClient = {
   from(table: string): {
@@ -99,24 +100,35 @@ const READ_COLUMNS = [
   "updated_at",
 ].join(",");
 
-/** One bounded Data API query supplies the complete team-game matrix. */
+const READ_PAGE_SIZE = 1_000;
+
+/** Paged Data API reads supply the complete team-game matrix. */
 export async function readRosterSchedule(
   client: ScheduleReadClient,
   filter: RosterScheduleReadFilter,
 ): Promise<RosterOptimizerTeamGameRecord[]> {
-  const { data, error } = await client
-    .from("roster_optimizer_team_games")
-    .select(READ_COLUMNS)
-    .eq("game_key", filter.gameKey)
-    .gte("week", filter.startWeek)
-    .lte("week", filter.endWeek)
-    .eq("mapping_status", "mapped")
-    .eq("is_countable", true)
-    .order("game_date", { ascending: true })
-    .order("source_game_id", { ascending: true })
-    .order("team_id", { ascending: true });
+  const games: RosterOptimizerTeamGameRecord[] = [];
 
-  if (error) throw error;
-  return (data ?? []) as RosterOptimizerTeamGameRecord[];
+  for (let from = 0; ; from += READ_PAGE_SIZE) {
+    const { data, error } = await client
+      .from("roster_optimizer_team_games")
+      .select(READ_COLUMNS)
+      .eq("game_key", filter.gameKey)
+      .gte("week", filter.startWeek)
+      .lte("week", filter.endWeek)
+      .eq("mapping_status", "mapped")
+      .eq("is_countable", true)
+      .order("game_date", { ascending: true })
+      .order("source_game_id", { ascending: true })
+      .order("team_id", { ascending: true })
+      .range(from, from + READ_PAGE_SIZE - 1);
+
+    if (error) throw error;
+
+    const page = (data ?? []) as RosterOptimizerTeamGameRecord[];
+    games.push(...page);
+    if (page.length < READ_PAGE_SIZE) break;
+  }
+
+  return games;
 }
-

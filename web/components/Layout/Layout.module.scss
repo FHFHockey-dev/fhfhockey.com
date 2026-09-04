@@ -1,5 +1,21 @@
 @use "styles/vars";
 
+.container.draftLayout > header {
+  z-index: vars.$z-desktop-sticky;
+}
+
+@media (min-width: 1101px) {
+  .container.draftLayout {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+
+    > header {
+      flex-shrink: 0;
+    }
+  }
+}
+
 .container {
   display: flex;
   flex-direction: column;

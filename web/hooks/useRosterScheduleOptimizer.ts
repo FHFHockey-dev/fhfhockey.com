@@ -8,6 +8,7 @@ import {
   classifyDustRisk,
   createOptimizerCacheSignature,
   evaluateRosterSchedule,
+  normalizeEligibility,
   prepareTeamSchedule,
   rankAlternativeRecommendations,
   type AlternativeRecommendation,
@@ -21,6 +22,7 @@ import {
 const DEFAULT_START_WEEK = 1;
 const DEFAULT_END_WEEK = 30;
 const STALE_AFTER_MS = 36 * 60 * 60 * 1000;
+const DUST_RECALCULATION_DELAY_MS = 150;
 
 type RosterAssignmentLike = {
   playerId: string;
@@ -59,6 +61,18 @@ type ScheduleFailure = {
     details?: unknown;
   };
 };
+
+type DashboardCandidateDust = Pick<
+  CandidateDustEvaluation,
+  | "player"
+  | "marginalDustGames"
+  | "candidateScheduledGames"
+  | "activeGamesAdded"
+  | "dustRate"
+  | "diagnostics"
+>;
+
+type CachedScheduleFitDust = Omit<DashboardCandidateDust, "player">;
 
 export type DraftDashboardDustInsight = {
   marginalDustGames: number;
@@ -140,11 +154,37 @@ function isStale(freshness: string | null): boolean {
   return !Number.isFinite(timestamp) || Date.now() - timestamp > STALE_AFTER_MS;
 }
 
+function insightsAreEqual(
+  left: ReadonlyMap<string, DraftDashboardDustInsight>,
+  right: ReadonlyMap<string, DraftDashboardDustInsight>,
+): boolean {
+  if (left.size !== right.size) return false;
+  for (const [playerId, insight] of left) {
+    const other = right.get(playerId);
+    if (
+      !other ||
+      insight.marginalDustGames !== other.marginalDustGames ||
+      insight.candidateScheduledGames !== other.candidateScheduledGames ||
+      insight.activeGamesAdded !== other.activeGamesAdded ||
+      insight.dustRate !== other.dustRate ||
+      insight.risk !== other.risk ||
+      insight.alternative?.playerId !== other.alternative?.playerId ||
+      insight.alternative?.playerName !== other.alternative?.playerName ||
+      insight.alternative?.dustReduction !==
+        other.alternative?.dustReduction ||
+      insight.alternative?.valueDifference !== other.alternative?.valueDifference
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function bestAlternative(
-  candidate: CandidateDustEvaluation,
-  alternatives: readonly CandidateDustEvaluation[],
+  candidate: DashboardCandidateDust,
+  alternatives: readonly DashboardCandidateDust[],
   rosterConfig: Readonly<Record<string, number>>,
-): AlternativeRecommendation | undefined {
+): AlternativeRecommendation<DashboardCandidateDust> | undefined {
   return rankAlternativeRecommendations(
     candidate,
     alternatives,
@@ -167,6 +207,10 @@ export function useRosterScheduleOptimizer({
     "loading",
   );
   const [error, setError] = useState<string | null>(null);
+  const [insights, setInsights] = useState<
+    ReadonlyMap<string, DraftDashboardDustInsight>
+  >(() => new Map());
+  const [skippedCandidates, setSkippedCandidates] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -273,57 +317,108 @@ export function useRosterScheduleOptimizer({
         : null,
     [gameKey, roster, rosterConfig, schedule, selectedWeeks],
   );
-  const candidateDust = useMemo(() => {
-    if (!baseline || status !== "ready") return [];
-    const unavailableIds = new Set(
-      rosterAssignments.map((assignment) => assignment.playerId),
-    );
-    return optimizerPlayers
-      .filter((player) => !unavailableIds.has(player.id))
-      .map((player) => calculateCandidateDust(evaluationInput, player, baseline));
-  }, [baseline, evaluationInput, optimizerPlayers, rosterAssignments, status]);
-  const validCandidateDust = useMemo(
-    () =>
-      candidateDust.filter(
+  useEffect(() => {
+    if (!baseline || status !== "ready") {
+      setInsights((current) => (current.size ? new Map() : current));
+      setSkippedCandidates(0);
+      return;
+    }
+
+    let cancelled = false;
+    const timeoutId = window.setTimeout(() => {
+      const unavailableIds = new Set(
+        rosterAssignments.map((assignment) => assignment.playerId),
+      );
+      const dustByScheduleFit = new Map<string, CachedScheduleFitDust>();
+      const candidateDust = optimizerPlayers
+        .filter((player) => !unavailableIds.has(player.id))
+        .map((player) => {
+          const eligibility = normalizeEligibility(player.eligiblePositions);
+          const team = player.teamAbbreviation?.trim().toUpperCase();
+          const scheduleFitKey =
+            team &&
+            eligibility.valid &&
+            preparedSchedule.knownTeams.has(team)
+              ? `${team}|${eligibility.positions.join(",")}`
+              : null;
+          const cached = scheduleFitKey
+            ? dustByScheduleFit.get(scheduleFitKey)
+            : undefined;
+          if (cached) return { player, ...cached };
+          const calculated = calculateCandidateDust(
+            evaluationInput,
+            player,
+            baseline,
+          );
+          const scheduleFitDust: CachedScheduleFitDust = {
+            marginalDustGames: calculated.marginalDustGames,
+            candidateScheduledGames: calculated.candidateScheduledGames,
+            activeGamesAdded: calculated.activeGamesAdded,
+            dustRate: calculated.dustRate,
+            diagnostics: calculated.diagnostics,
+          };
+          if (scheduleFitKey) {
+            dustByScheduleFit.set(scheduleFitKey, scheduleFitDust);
+          }
+          return { player, ...scheduleFitDust };
+        });
+      const validCandidateDust = candidateDust.filter(
         (candidate) =>
           !candidate.diagnostics.some(
             (diagnostic) => diagnostic.severity === "error",
           ),
-      ),
-    [candidateDust],
-  );
-  const insights = useMemo(() => {
-    const next = new Map<string, DraftDashboardDustInsight>();
-    for (const dust of validCandidateDust) {
-      const risk = classifyDustRisk(
-        dust.marginalDustGames,
-        dust.candidateScheduledGames,
       );
-      const alternative =
-        risk.label === "elevated" || risk.label === "high"
-          ? bestAlternative(dust, validCandidateDust, rosterConfig)
-          : undefined;
-      next.set(dust.player.id, {
-        marginalDustGames: dust.marginalDustGames,
-        candidateScheduledGames: dust.candidateScheduledGames,
-        activeGamesAdded: dust.activeGamesAdded,
-        dustRate: dust.dustRate,
-        risk: risk.label,
-        alternative: alternative
-          ? {
-              playerId: alternative.player.id,
-              playerName:
-                playerById.get(alternative.player.id)?.fullName ??
-                alternative.player.name ??
-                alternative.player.id,
-              dustReduction: alternative.dustImprovement,
-              valueDifference: alternative.valueDifference,
-            }
-          : undefined,
-      });
-    }
-    return next;
-  }, [playerById, rosterConfig, validCandidateDust]);
+      const next = new Map<string, DraftDashboardDustInsight>();
+      for (const dust of validCandidateDust) {
+        const risk = classifyDustRisk(
+          dust.marginalDustGames,
+          dust.candidateScheduledGames,
+        );
+        const alternative =
+          risk.label === "elevated" || risk.label === "high"
+            ? bestAlternative(dust, validCandidateDust, rosterConfig)
+            : undefined;
+        next.set(dust.player.id, {
+          marginalDustGames: dust.marginalDustGames,
+          candidateScheduledGames: dust.candidateScheduledGames,
+          activeGamesAdded: dust.activeGamesAdded,
+          dustRate: dust.dustRate,
+          risk: risk.label,
+          alternative: alternative
+            ? {
+                playerId: alternative.player.id,
+                playerName:
+                  playerById.get(alternative.player.id)?.fullName ??
+                  alternative.player.name ??
+                  alternative.player.id,
+                dustReduction: alternative.dustImprovement,
+                valueDifference: alternative.valueDifference,
+              }
+            : undefined,
+        });
+      }
+
+      if (cancelled) return;
+      setInsights((current) =>
+        insightsAreEqual(current, next) ? current : next,
+      );
+      setSkippedCandidates(candidateDust.length - validCandidateDust.length);
+    }, DUST_RECALCULATION_DELAY_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    baseline,
+    evaluationInput,
+    optimizerPlayers,
+    playerById,
+    preparedSchedule.knownTeams,
+    rosterAssignments,
+    rosterConfig,
+    status,
+  ]);
 
   return {
     status,
@@ -332,7 +427,7 @@ export function useRosterScheduleOptimizer({
     freshness: schedule?.freshness.latestFetchedAt ?? null,
     baseline,
     insights,
-    skippedCandidates: candidateDust.length - validCandidateDust.length,
+    skippedCandidates,
     signature,
   };
 }

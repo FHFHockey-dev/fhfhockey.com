@@ -1669,3 +1669,13 @@
 .sectionSpacer {
   margin-top: 12px;
 }
+
+.inlineSettings {
+  &.settingsContainer { padding: 8px; border: 0; border-radius: 0; background: v.$draft-surface; box-shadow: none; }
+  .title, .collapseButton, .summaryButton { display: none; }
+  .settingsHeader { margin: 0 0 8px; padding: 0 0 6px; }
+  .settingsGrid { gap: 10px; }
+  .fieldset { background: v.$draft-input; padding: 8px 10px; }
+  &[data-section="sources"] .settingsGrid { grid-template-columns: 1fr; }
+  &[data-section="sources"] .settingsGrid > :not([data-projection-sources]) { display: none; }
+}

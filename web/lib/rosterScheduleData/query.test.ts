@@ -8,29 +8,44 @@ import {
 
 function createQuery(data: unknown[]) {
   const calls: Array<[string, unknown, unknown?]> = [];
-  const builder = {
-    eq: vi.fn((column: string, value: unknown) => {
-      calls.push(["eq", column, value]);
-      return builder;
-    }),
-    gte: vi.fn((column: string, value: unknown) => {
-      calls.push(["gte", column, value]);
-      return builder;
-    }),
-    lte: vi.fn((column: string, value: unknown) => {
-      calls.push(["lte", column, value]);
-      return builder;
-    }),
-    order: vi.fn((column: string, value: unknown) => {
-      calls.push(["order", column, value]);
-      return builder;
-    }),
-    then(resolve: (value: unknown) => unknown) {
-      return Promise.resolve({ data, error: null }).then(resolve);
-    },
-  };
   const client = {
-    from: vi.fn(() => ({ select: vi.fn(() => builder) })),
+    from: vi.fn(() => ({
+      select: vi.fn(() => {
+        let rangeStart = 0;
+        let rangeEnd = data.length - 1;
+        const builder = {
+          eq: vi.fn((column: string, value: unknown) => {
+            calls.push(["eq", column, value]);
+            return builder;
+          }),
+          gte: vi.fn((column: string, value: unknown) => {
+            calls.push(["gte", column, value]);
+            return builder;
+          }),
+          lte: vi.fn((column: string, value: unknown) => {
+            calls.push(["lte", column, value]);
+            return builder;
+          }),
+          order: vi.fn((column: string, value: unknown) => {
+            calls.push(["order", column, value]);
+            return builder;
+          }),
+          range: vi.fn((from: number, to: number) => {
+            calls.push(["range", from, to]);
+            rangeStart = from;
+            rangeEnd = to;
+            return builder;
+          }),
+          then(resolve: (value: unknown) => unknown) {
+            return Promise.resolve({
+              data: data.slice(rangeStart, rangeEnd + 1),
+              error: null,
+            }).then(resolve);
+          },
+        };
+        return builder;
+      }),
+    })),
   } as unknown as ScheduleReadClient;
   return { calls, client };
 }
@@ -47,7 +62,7 @@ describe("roster schedule query", () => {
     ).toThrow("endWeek");
   });
 
-  it("loads the matrix in one bounded query and excludes non-countable rows", async () => {
+  it("loads the matrix and excludes non-countable rows", async () => {
     const { calls, client } = createQuery([{ id: 1 }]);
     await expect(
       readRosterSchedule(client, {
@@ -65,8 +80,27 @@ describe("roster schedule query", () => {
         ["lte", "week", 6],
         ["eq", "mapping_status", "mapped"],
         ["eq", "is_countable", true],
+        ["range", 0, 999],
       ]),
     );
   });
-});
 
+  it("loads every page when the matrix exceeds the Data API row limit", async () => {
+    const rows = Array.from({ length: 1_001 }, (_, id) => ({ id }));
+    const { calls, client } = createQuery(rows);
+
+    await expect(
+      readRosterSchedule(client, {
+        gameKey: "477",
+        startWeek: 1,
+        endWeek: 30,
+      }),
+    ).resolves.toEqual(rows);
+
+    expect(client.from).toHaveBeenCalledTimes(2);
+    expect(calls.filter(([method]) => method === "range")).toEqual([
+      ["range", 0, 999],
+      ["range", 1_000, 1_999],
+    ]);
+  });
+});

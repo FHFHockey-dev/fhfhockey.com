@@ -48,6 +48,12 @@ const player = {
 afterEach(cleanup);
 
 describe("keeper workflow surfaces", () => {
+  it("retains value intensities and the user's row across completed picks", () => {
+    const players = [10, 35, 60, 100].map((value, index) => ({ ...player, playerId: index + 1, fantasyPoints: { ...player.fantasyPoints, projected: value } }));
+    const view = render(<DraftBoard myTeamId="Team 2" draftSettings={{ ...settings, rosterConfig: { C: 2, bench: 0, utility: 0 } }} draftedPlayers={players.map((item, index) => ({ playerId: String(item.playerId), teamId: index % 2 ? "Team 2" : "Team 1", round: Math.floor(index / 2) + 1, pickInRound: index % 2 + 1, pickNumber: index + 1 }))} currentTurn={{ round: 3, pickInRound: 1, teamId: "Team 1", isMyTurn: false }} teamStats={[]} allPlayers={players} onUpdateTeamName={vi.fn()} />);
+    expect(Array.from(view.container.querySelectorAll("[data-intensity]")).map((cell) => cell.getAttribute("data-intensity")).sort()).toEqual(["1", "2", "3", "4"]);
+    expect(view.container.querySelector('[data-my-team="true"]')?.textContent).toContain("Team 2 (You)");
+  });
   it("attributes a forfeited Draft Board pick to the keeper team", () => {
     const view = render(
       <DraftBoard

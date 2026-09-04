@@ -228,6 +228,11 @@ export type CandidateDustEvaluation = {
   diagnostics: readonly OptimizerDiagnostic[];
 };
 
+export type CandidateDustComparable = Pick<
+  CandidateDustEvaluation,
+  "player" | "marginalDustGames"
+>;
+
 export type CandidateWeeklyDust = {
   week: number | null;
   candidateScheduledGames: number;
@@ -276,9 +281,11 @@ export type DustRisk = {
   dustRate: number;
 };
 
-export type AlternativeRecommendation = {
+export type AlternativeRecommendation<
+  TDust extends CandidateDustComparable = CandidateDustEvaluation,
+> = {
   player: OptimizerPlayer;
-  dust: CandidateDustEvaluation;
+  dust: TDust;
   dustImprovement: number;
   valueDifference: number;
   relativeValueLoss: number;

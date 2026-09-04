@@ -91,6 +91,7 @@ describe("useRosterScheduleOptimizer", () => {
     );
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
+    await waitFor(() => expect(result.current.insights.has("2")).toBe(true));
     expect(result.current.baseline?.totalBenchGames).toBe(0);
     expect(result.current.insights.get("2")?.marginalDustGames).toBe(1);
     expect(result.current.insights.get("2")?.activeGamesAdded).toBe(0);
@@ -102,18 +103,22 @@ describe("useRosterScheduleOptimizer", () => {
       ],
     });
     expect(result.current.baseline?.totalBenchGames).toBe(1);
-    expect(result.current.insights.has("2")).toBe(false);
+    await waitFor(() => expect(result.current.insights.has("2")).toBe(false));
 
     rerender({
       rosterAssignments: [{ playerId: "1", teamId: "Team 1" }],
     });
     expect(result.current.baseline?.totalBenchGames).toBe(0);
-    expect(result.current.insights.get("2")?.marginalDustGames).toBe(1);
+    await waitFor(() =>
+      expect(result.current.insights.get("2")?.marginalDustGames).toBe(1),
+    );
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     rerender({ rosterAssignments: [] });
     expect(result.current.baseline?.totalScheduledGames).toBe(0);
-    expect(result.current.insights.get("1")?.marginalDustGames).toBe(0);
+    await waitFor(() =>
+      expect(result.current.insights.get("1")?.marginalDustGames).toBe(0),
+    );
     expect(result.current.insights.get("1")?.activeGamesAdded).toBe(1);
   });
 
@@ -201,7 +206,7 @@ describe("useRosterScheduleOptimizer", () => {
     );
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
+    await waitFor(() => expect(result.current.skippedCandidates).toBe(1));
     expect(result.current.insights.size).toBe(0);
-    expect(result.current.skippedCandidates).toBe(1);
   });
 });

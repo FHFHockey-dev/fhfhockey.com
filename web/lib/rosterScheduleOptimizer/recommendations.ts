@@ -6,16 +6,18 @@ import { expandActiveSlots } from "./slots";
 import {
   DEFAULT_RECOMMENDATION_THRESHOLDS,
   type AlternativeRecommendation,
-  type CandidateDustEvaluation,
+  type CandidateDustComparable,
   type RecommendationThresholds,
 } from "./types";
 
-export function rankAlternativeRecommendations(
-  candidate: CandidateDustEvaluation,
-  alternatives: readonly CandidateDustEvaluation[],
+export function rankAlternativeRecommendations<
+  TDust extends CandidateDustComparable,
+>(
+  candidate: TDust,
+  alternatives: readonly TDust[],
   rosterSlots: Readonly<Record<string, number>>,
   thresholds: RecommendationThresholds = DEFAULT_RECOMMENDATION_THRESHOLDS,
-): readonly AlternativeRecommendation[] {
+): readonly AlternativeRecommendation<TDust>[] {
   const activeSlotTypes = expandActiveSlots(rosterSlots).activeSlots.map(
     (slot) => slot.type,
   );
@@ -28,7 +30,7 @@ export function rankAlternativeRecommendations(
     activeSlotTypes,
   );
 
-  const recommendations: AlternativeRecommendation[] = [];
+  const recommendations: AlternativeRecommendation<TDust>[] = [];
   for (const alternative of alternatives) {
     if (
       alternative.player.id === candidate.player.id ||

@@ -1,0 +1,161 @@
+@use "styles/vars" as v;
+.standings {
+  grid-area: standings;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: v.$draft-surface;
+  border: 1px solid v.$draft-border;
+  border-radius: 5px;
+  container-type: inline-size;
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    flex-wrap: wrap;
+  }
+  h2 {
+    font: 13px v.$font-family-accent;
+    color: v.$primary-color;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  label {
+    font-size: 11px;
+    select {
+      max-width: 110px;
+    }
+  }
+  table {
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+    height: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  th,
+  td {
+    white-space: nowrap;
+    text-align: center;
+    padding: 2px 3px;
+    border-bottom: 1px solid v.$draft-border;
+    line-height: 1.2;
+  }
+  tr > :nth-child(n + 3) {
+    border-left: 1px solid v.$color-neutral-800;
+  }
+  thead th {
+    background: v.$draft-surface-raised;
+    font-size: 11px;
+    height: 25px;
+  }
+  th button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: inherit;
+  }
+  tr > :first-child {
+    position: sticky;
+    left: 0;
+    width: 22px;
+    min-width: 22px;
+    background: v.$draft-surface;
+    z-index: 2;
+  }
+  tr > :nth-child(2) {
+    position: sticky;
+    left: 22px;
+    text-align: left;
+    width: 80px;
+    background: v.$draft-surface;
+    z-index: 2;
+    button {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    input {
+      width: 100%;
+      min-width: 0;
+    }
+  }
+  tr > :nth-last-child(-n + 2) {
+    width: 43px;
+  }
+  tr[data-my-team="true"] > * {
+    box-shadow:
+      inset 0 1px v.$primary-color,
+      inset 0 -1px v.$primary-color;
+  }
+  tr[data-my-team="true"] > :nth-child(2) {
+    color: v.$primary-color;
+  }
+  footer {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px;
+    font-size: 11px;
+    padding: 4px 8px;
+    color: v.$text-secondary;
+  }
+  i {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+  }
+  @each $band,
+    $color
+      in (
+        "red": v.$color-coral-500,
+        "orange": v.$color-orange-400,
+        "yellow": v.$color-gold-400,
+        "green": v.$color-mint-300
+      )
+  {
+    [data-band="#{$band}"] {
+      background: rgba($color, 0.13);
+      color: $color;
+    }
+    i[data-band="#{$band}"] {
+      background: $color;
+    }
+  }
+}
+.tableViewport {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+@container (max-width: 450px) {
+  .tableViewport {
+    table { font-size: 11px; }
+    th, td { padding-inline: 2px; }
+    thead th { font-size: 10px; }
+    tr > :first-child { width: 20px; min-width: 0; }
+    tr > :nth-child(2) { left: 20px; width: 72px; }
+    tr > :nth-last-child(-n + 2) { width: 40px; }
+  }
+}
+@container (max-width: 410px) {
+  .tableViewport {
+    table { font-size: 10px; }
+    th, td { padding-inline: 2px; }
+    thead th { font-size: 9px; }
+    tr > :first-child { width: 18px; min-width: 0; }
+    tr > :nth-child(2) { left: 18px; width: 64px; }
+    tr > :nth-last-child(-n + 2) { width: 36px; }
+  }
+}

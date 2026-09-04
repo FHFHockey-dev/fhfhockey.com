@@ -183,6 +183,32 @@ $surface-0: #111417; // page canvas
 $surface-1: #1a1c21; // base card / row surfaces
 $surface-2: $background-light; // interactive hover / active surface
 
+// Draft workspace surfaces share a darker, neutral elevation ramp.
+$draft-canvas: color.mix($background-dark, $color-black, 50%);
+$draft-surface: color.mix($surface-1, $color-neutral-950, 50%);
+$draft-surface-raised: color.mix($color-neutral-800, $color-neutral-950, 50%);
+$draft-input: color.mix($background-medium, $color-neutral-950, 50%);
+$draft-border: rgba($color-neutral-400, 0.25);
+$draft-zebra: color.mix($draft-surface, $color-neutral-800, 80%);
+$draft-action: color.mix($color-blue-600, $color-black, 90%);
+$draft-position-colors: (
+  "C": $info-color,
+  "LW": $color-orange-400,
+  "RW": $color-violet-400,
+  "D": $color-brand-primary,
+  "G": $color-teal-500,
+  "UTIL": $color-gold-400,
+  "UTILITY": $color-gold-400,
+  "FWD": $info-color,
+  "BENCH": $color-neutral-400
+);
+
+@mixin draft-position-colors {
+  @each $position, $color in $draft-position-colors {
+    [data-position="#{$position}"] { --position-color: #{$color}; }
+  }
+}
+
 // Elevation shadow tokens (soft, ambient)
 $shadow-hover:
   0 4px 16px -4px rgba(0, 0, 0, 0.55),

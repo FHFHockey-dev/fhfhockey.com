@@ -38,6 +38,8 @@ import styles from "./DraftSettings.module.scss";
 type LeagueType = "points" | "categories";
 
 interface DraftSettingsProps {
+  variant?: "standalone" | "inline";
+  activeSection?: "setup" | "sources";
   settings: DraftSettingsType;
   onSettingsChange: (newSettings: Partial<DraftSettingsType>) => void;
   draftOrderPattern?: DraftOrderPattern;
@@ -160,6 +162,8 @@ function getShortLabel(statKey: string): string {
 import PlayerAutocomplete from "components/PlayerAutocomplete";
 
 const DraftSettings: React.FC<DraftSettingsProps> = ({
+  variant = "standalone",
+  activeSection = "setup",
   settings,
   onSettingsChange,
   draftOrderPattern,
@@ -1242,7 +1246,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   };
 
   return (
-    <div className={styles.settingsContainer}>
+    <div className={`${styles.settingsContainer} ${variant === "inline" ? styles.inlineSettings : ""}`} data-section={activeSection}>
       <div className={styles.settingsHeader}>
         <h1 className={styles.title}>
           Fantasy Hockey{" "}
@@ -1381,7 +1385,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
           {draftLockReason}
         </div>
       )}
-      {!collapsed && (
+      {(variant === "inline" || !collapsed) && (
         <div className={styles.settingsGrid}>
           <fieldset className={styles.fieldset}>
             <legend className={styles.legend}>League Setup</legend>
@@ -2238,7 +2242,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
             )}
           </fieldset>
           {(sourceControls || goalieSourceControls) && (
-            <fieldset className={`${styles.fieldset} ${styles.slimFieldset}`}>
+            <fieldset data-projection-sources className={`${styles.fieldset} ${styles.slimFieldset}`}>
               <legend className={styles.legend}>Projection Sources</legend>
               {sourceControls && (
                 <>

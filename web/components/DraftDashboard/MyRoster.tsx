@@ -11,6 +11,7 @@ import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import PlayerAutocomplete from "components/PlayerAutocomplete";
 import TeamRosterSelect, { TeamOption } from "./TeamRosterSelect";
 import styles from "./MyRoster.module.scss";
+import type { RosterScheduleOptimizerState } from "hooks/useRosterScheduleOptimizer";
 // NEW: imports for recommendations
 import { PlayerVorpMetrics } from "hooks/useVORPCalculations";
 import { usePlayerRecommendations } from "hooks/usePlayerRecommendations";
@@ -21,6 +22,8 @@ import {
 } from "lib/draftDashboard/forwardGrouping";
 
 interface MyRosterProps {
+  nextPickByTeam: Record<string, number>;
+  scheduleState: RosterScheduleOptimizerState;
   myTeamId: string;
   teamStatsList: TeamDraftStats[]; // receive all teams
   draftSettings: DraftSettings;
@@ -48,6 +51,8 @@ interface MyRosterProps {
 
 const MyRoster: React.FC<MyRosterProps> = ({
   myTeamId,
+  nextPickByTeam,
+  scheduleState,
   teamStatsList,
   draftSettings,
   availablePlayers,
@@ -274,6 +279,15 @@ const MyRoster: React.FC<MyRosterProps> = ({
     return slotsCount + benchCount;
   }, [selectedTeamStats]);
 
+  const selectedNextPick = currentPlayerCount >= totalRosterSpots
+    ? Infinity
+    : currentTurn.teamId === selectedViewTeamId
+      ? currentPick
+      : nextPickByTeam[selectedViewTeamId];
+  const rosterDustPercent = Math.round(
+    (scheduleState.baseline?.dustRate ?? 0) * 100,
+  );
+
   const effectiveRosterConfig = useMemo(
     () => getEffectiveRosterConfig(draftSettings.rosterConfig, forwardGrouping),
     [draftSettings.rosterConfig, forwardGrouping]
@@ -289,7 +303,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
     const orderSplit = ["C", "LW", "RW", "D", "G", "UTILITY"] as const;
     const orderFwd = ["FWD", "D", "G", "UTILITY"] as const;
     const order = forwardGrouping === "fwd" ? orderFwd : orderSplit;
-    return order.filter((pos) => basePositions.includes(pos));
+    return [...order.filter((pos) => basePositions.includes(pos)), ...basePositions.filter((pos) => !order.includes(pos as never))].filter((pos) => (effectiveRosterConfig[pos === "UTILITY" ? "utility" : pos] || 0) > 0);
   }, [effectiveRosterConfig, forwardGrouping]);
 
   // Selection for roster player to show eligible targets
@@ -323,7 +337,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
       {/* Header */}
       <div className={styles.panelHeader}>
         <h2 className={styles.panelTitle}>
-          {selectedViewTeamId === myTeamId ? <>Roster</> : <>Roster</>}
+          My Roster
         </h2>
         <div className={styles.headerControls}>
           {selectedViewTeamId !== myTeamId && (
@@ -347,7 +361,8 @@ const MyRoster: React.FC<MyRosterProps> = ({
       </div>
 
       {/* Draft Player Section */}
-      <div className={styles.draftSection}>
+      <details className={styles.draftSection}>
+        <summary>Add a player to the team on the clock</summary>
         <div className={styles.playerSearch}>
           <PlayerAutocomplete
             playerId={selectedPlayerId}
@@ -359,7 +374,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
             adpByPlayerId={adpByPlayerId}
             sortByAdp
             // Ensure same pool as projections by passing processed players
-            playersOverride={allPlayers.map((p) => ({
+            playersOverride={availablePlayers.map((p) => ({
               id: Number(p.playerId),
               fullName: p.fullName,
               sweaterNumber: undefined,
@@ -380,7 +395,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
         >
           Add Player to {currentTurn.teamId}
         </button>
-      </div>
+      </details>
 
       {/* Team Stats Summary */}
       {selectedTeamStats && (
@@ -392,8 +407,14 @@ const MyRoster: React.FC<MyRosterProps> = ({
             </div>
           </div>
           <div className={styles.summaryCard}>
-            <div className={styles.summaryLabel}>Players Drafted</div>
-            <div className={styles.summaryValue}>{currentPlayerCount}</div>
+            <div className={styles.summaryLabel}>Rostered</div>
+            <div className={styles.summaryValue}>{currentPlayerCount} / {totalRosterSpots}</div>
+          </div>
+          <div className={styles.summaryCard}>
+            <div className={styles.summaryLabel}>Next pick</div>
+            <div className={styles.summaryValue}>
+              {Number.isFinite(selectedNextPick) && selectedNextPick <= totalRosterSpots * draftSettings.teamCount ? selectedNextPick : "—"}
+            </div>
           </div>
         </div>
       )}
@@ -418,7 +439,6 @@ const MyRoster: React.FC<MyRosterProps> = ({
 
       {/* Roster Slots */}
       <div className={styles.rosterSlots}>
-        <h3 className={styles.sectionTitle}>Roster Composition</h3>
         <div className={styles.slotsList}>
           {positionsToShow.map((pos) => {
             const posKey = pos === "UTILITY" ? "utility" : pos; // for max count lookup
@@ -426,7 +446,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
             const currentPlayers: RosterAssignment[] =
               selectedTeamStats?.rosterSlots[pos] || [];
             return (
-              <div key={pos} className={styles.rosterSlot}>
+              <div key={pos} className={styles.rosterSlot} data-position={pos} style={{ flexGrow: maxCount, "--slot-count": maxCount } as React.CSSProperties}>
                 <div className={styles.slotHeader}>
                   <span className={styles.slotPosition}>{pos}</span>
                   <span className={styles.slotCount}>
@@ -440,13 +460,17 @@ const MyRoster: React.FC<MyRosterProps> = ({
                 >
                   {Array.from({ length: maxCount }, (_, index) => {
                     const drafted = currentPlayers[index];
+                    const player = drafted ? playerMap.get(drafted.playerId) : undefined;
+                    const eligibility = normalizePlayerEligibility(player?.displayPosition, player?.eligiblePositions).join("/");
                     const fullName = drafted
-                      ? playerMap.get(drafted.playerId)?.fullName ||
-                        drafted.playerId
+                      ? player?.fullName || drafted.playerId
                       : null;
                     return (
-                      <div
+                      <button
+                        type="button"
                         key={index}
+                        aria-pressed={drafted ? selectedRoster?.playerId === drafted.playerId : undefined}
+                        aria-label={`${pos} ${index + 1}: ${fullName || "Open"}`}
                         className={`${styles.slotPlayer} ${
                           drafted ? styles.filledSlot : styles.emptySlot
                         } ${
@@ -473,14 +497,17 @@ const MyRoster: React.FC<MyRosterProps> = ({
                             : "Roster moves are locked while Yahoo sync is authoritative"
                         }
                       >
-                        {drafted ? (
+                        <span className={styles.rowPosition}>{pos === "UTILITY" ? "UTIL" : pos}</span>
+                  {drafted ? (
                           <div className={styles.playerInfo}>
-                            <div className={styles.playerName}>{fullName}</div>
+                            <div className={styles.playerName} title={fullName || undefined}>{fullName}</div>
+                            {eligibility && <span className={styles.playerEligibility} title={`Eligible positions: ${eligibility}`}>{eligibility}</span>}
+                            <span className={styles.nhlTeam}>{player?.displayTeam}</span>
                           </div>
                         ) : (
-                          <div className={styles.emptySlotText}>Empty</div>
+                          <div className={styles.emptySlotText}>Open</div>
                         )}
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -491,7 +518,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
       </div>
 
       {/* Bench Section */}
-      <div className={styles.benchSection}>
+      <div className={styles.benchSection} data-position="BENCH">
         <h3 className={styles.sectionTitle}>
           Bench ({selectedTeamStats?.bench.length || 0} /{" "}
           {draftSettings.rosterConfig.bench})
@@ -501,26 +528,81 @@ const MyRoster: React.FC<MyRosterProps> = ({
             { length: draftSettings.rosterConfig.bench },
             (_, index) => {
               const drafted = selectedTeamStats?.bench[index];
+              const player = drafted ? playerMap.get(drafted.playerId) : undefined;
+              const eligibility = normalizePlayerEligibility(player?.displayPosition, player?.eligiblePositions).join("/");
               const fullName = drafted
-                ? playerMap.get(drafted.playerId)?.fullName || drafted.playerId
+                ? player?.fullName || drafted.playerId
                 : null;
               return (
                 <div
                   key={index}
                   className={`${styles.benchSlot} ${drafted ? styles.filledSlot : styles.emptySlot}`}
                 >
+                  <span className={styles.rowPosition}>BN</span>
                   {drafted ? (
                     <div className={styles.playerInfo}>
-                      <div className={styles.playerName}>{fullName}</div>
+                      <div className={styles.playerName} title={fullName || undefined}>{fullName}</div>
+                      {eligibility && <span className={styles.playerEligibility} title={`Eligible positions: ${eligibility}`}>{eligibility}</span>}
+                      <span className={styles.nhlTeam}>{player?.displayTeam}</span>
                     </div>
                   ) : (
-                    <div className={styles.emptySlotText}>Empty</div>
+                    <div className={styles.emptySlotText}>Open</div>
                   )}
                 </div>
               );
             }
           )}
         </div>
+      </div>
+      <div className={styles.rosterAnalysis}>
+        <h3>Roster needs</h3>
+        <div className={styles.needs}>{positionsToShow.map((pos) => { const required = effectiveRosterConfig[pos === "UTILITY" ? "utility" : pos] || 0; const open = Math.max(0, required - (selectedTeamStats?.rosterSlots[pos]?.length || 0)); return <span key={pos} data-position={pos}>{pos === "UTILITY" ? "UTIL" : pos} <strong>{open} open</strong></span>; })}</div>
+        <h3>Schedule fit</h3>
+        {selectedViewTeamId !== myTeamId ? (
+          <p>Select My Team for schedule analysis.</p>
+        ) : scheduleState.status === "ready" && scheduleState.baseline ? (
+          <div className={styles.scheduleMetrics}>
+            <span>
+              Scheduled
+              <strong>{scheduleState.baseline.totalScheduledGames}</strong>
+            </span>
+            <span>
+              Active
+              <strong>{scheduleState.baseline.totalStartableGames}</strong>
+            </span>
+            <span>
+              Benched
+              <strong>{scheduleState.baseline.totalBenchGames}</strong>
+            </span>
+            <span
+              className={styles.dustMetric}
+              tabIndex={0}
+              aria-describedby="my-roster-dust-explainer"
+              aria-label={`DUST ${rosterDustPercent} percent`}
+            >
+              DUST <span aria-hidden="true">ⓘ</span>
+              <strong>{rosterDustPercent}%</strong>
+              <span
+                id="my-roster-dust-explainer"
+                className={styles.dustTooltip}
+                role="tooltip"
+              >
+                DUST means Daily Unstartable Schedule Tax: the share of
+                scheduled player games that do not fit into an active lineup.
+                Lower is better. Player DUST +N badges show the additional
+                Bench Games that drafting that player would create.
+              </span>
+            </span>
+          </div>
+        ) : (
+          <p>
+            {scheduleState.status === "loading"
+              ? "Loading schedule…"
+              : scheduleState.error
+                ? "Schedule unavailable"
+                : "No schedule data available"}
+          </p>
+        )}
       </div>
     </div>
   );

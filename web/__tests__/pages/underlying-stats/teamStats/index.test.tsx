@@ -159,8 +159,8 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
         {
           pathname: "/underlying-stats/teamStats",
           query: expect.objectContaining({
-            fromSeasonId: "20252026",
-            throughSeasonId: "20252026",
+            fromSeasonId: "20262027",
+            throughSeasonId: "20262027",
             seasonType: "regularSeason",
             strength: "fiveOnFive",
             scoreState: "allScores",

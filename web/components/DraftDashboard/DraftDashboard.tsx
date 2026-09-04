@@ -13,7 +13,7 @@ import {
 } from "hooks/useProcessedProjectionsData";
 import { getDefaultFantasyPointsConfig } from "lib/projectionsConfig/fantasyPointsConfig";
 import { PROJECTION_SOURCES_CONFIG } from "lib/projectionsConfig/projectionSourcesConfig";
-import useCurrentSeason from "hooks/useCurrentSeason";
+import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
 import { useDraftRanking } from "hooks/useDraftRanking";
 import { useYahooDraftSync } from "hooks/useYahooDraftSync";
 import { useEspnDraftSync } from "hooks/useEspnDraftSync";
@@ -22,6 +22,10 @@ import { useAuth } from "contexts/AuthProviderContext";
 
 import DraftSettings from "./DraftSettings";
 import DraftBoard from "./DraftBoard";
+import DraftWorkspaceHeader from "./DraftWorkspaceHeader";
+import DraftSettingsShell, { type SettingsSection } from "./DraftSettingsShell";
+import DraftStatus from "./DraftStatus";
+import LeagueStandings from "./LeagueStandings";
 import MyRoster from "./MyRoster";
 import ProjectionsTable from "./ProjectionsTable";
 import { useVORPCalculations } from "hooks/useVORPCalculations";
@@ -292,7 +296,7 @@ const DraftDashboard: React.FC = () => {
     start: startYahooSession,
     stop: stopYahooSession,
   } = yahooDraftSync;
-  const currentSeason = useCurrentSeason();
+  const { data: currentSeason, isLoading: seasonLoading } = useCurrentSeasonQuery();
   const currentSeasonId = currentSeason?.seasonId;
 
   // Draft State
@@ -457,6 +461,18 @@ const DraftDashboard: React.FC = () => {
 
   // Add summary modal state
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsSection, setSettingsSection] = useState<SettingsSection>("setup");
+  const openSettings = (section: SettingsSection) => {
+    setSettingsSection(section);
+    setSettingsOpen(true);
+    setActiveMobileTab("setup");
+  };
+  useEffect(() => {
+    if (mobileWorkspaceEnabled) {
+      setSettingsOpen(activeMobileTab === "setup");
+    }
+  }, [mobileWorkspaceEnabled, activeMobileTab]);
   const [suggestedCompareIds, setSuggestedCompareIds] = useState<string[]>([]);
   const [suggestedCompareOpen, setSuggestedCompareOpen] = useState(false);
 
@@ -1631,31 +1647,34 @@ const DraftDashboard: React.FC = () => {
     );
   }, [allPlayers, unavailablePlayerIds]);
 
-  // Track prorate82 toggle (shared via localStorage)
-  const [prorate82, setProrate82] = React.useState<boolean>(() => {
+  // Track the 84-game proration toggle (shared via localStorage).
+  const [prorate84, setProrate84] = React.useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("projections.prorate82") === "true";
+    const current = window.localStorage.getItem("projections.prorate84");
+    return current == null
+      ? window.localStorage.getItem("projections.prorate82") === "true"
+      : current === "true";
   });
   React.useEffect(() => {
     const handler = (e: any) => {
       if (e?.detail && typeof e.detail.value === "boolean") {
-        setProrate82(e.detail.value);
+        setProrate84(e.detail.value);
       } else {
         // fallback read
-        setProrate82(
-          window.localStorage.getItem("projections.prorate82") === "true",
+        setProrate84(
+          window.localStorage.getItem("projections.prorate84") === "true",
         );
       }
     };
-    window.addEventListener("projections:prorate82", handler as any);
+    window.addEventListener("projections:prorate84", handler as any);
     const onStorage = (ev: StorageEvent) => {
-      if (ev.key === "projections.prorate82") {
-        setProrate82(ev.newValue === "true");
+      if (ev.key === "projections.prorate84") {
+        setProrate84(ev.newValue === "true");
       }
     };
     window.addEventListener("storage", onStorage);
     return () => {
-      window.removeEventListener("projections:prorate82", handler as any);
+      window.removeEventListener("projections:prorate84", handler as any);
       window.removeEventListener("storage", onStorage);
     };
   }, []);
@@ -1759,7 +1778,7 @@ const DraftDashboard: React.FC = () => {
     forwardGrouping,
     myFilledSlots: myFilledSlotsForVorp,
     personalizeReplacement,
-    prorate82,
+    prorate84,
   });
 
   const rosterScheduleOptimizer = useRosterScheduleOptimizer({
@@ -1773,6 +1792,13 @@ const DraftDashboard: React.FC = () => {
   const effectiveRosterConfig = useMemo(
     () => getEffectiveRosterConfig(draftSettings.rosterConfig, forwardGrouping),
     [draftSettings.rosterConfig, forwardGrouping],
+  );
+
+  const activeScoringCategories = useMemo(() =>
+    draftSettings.leagueType === "categories"
+      ? draftSettings.categoryWeights || {}
+      : { ...draftSettings.scoringCategories, ...goaliePointValues },
+    [draftSettings.leagueType, draftSettings.categoryWeights, draftSettings.scoringCategories, goaliePointValues],
   );
 
   // Team stats calculations
@@ -1931,15 +1957,7 @@ const DraftDashboard: React.FC = () => {
         return sum + (m?.vorp || 0);
       }, 0);
 
-      // NEW: category totals for team (skater categories only for v1)
-      const CAT_KEYS = [
-        "GOALS",
-        "ASSISTS",
-        "PP_POINTS",
-        "SHOTS_ON_GOAL",
-        "HITS",
-        "BLOCKED_SHOTS",
-      ] as const;
+      const CAT_KEYS = Object.keys(activeScoringCategories);
       const categoryTotals: Record<string, number> = {};
       CAT_KEYS.forEach((k) => (categoryTotals[k] = 0));
       teamPlayers.forEach((dp) => {
@@ -1976,6 +1994,7 @@ const DraftDashboard: React.FC = () => {
     vorpMetrics,
     effectiveRosterConfig,
     positionOverrides,
+    activeScoringCategories,
   ]);
 
   // NEW: compute my team's positional needs normalized 0..1 (remaining slots / total slots)
@@ -2683,12 +2702,19 @@ const DraftDashboard: React.FC = () => {
 
   const hasLoadedPlayers = allPlayers.length > 0;
   const isLoading =
-    !hasLoadedPlayers && (skaterData.isLoading || goalieData.isLoading);
+    !hasLoadedPlayers && (seasonLoading || skaterData.isLoading || goalieData.isLoading);
   const combinedSourceErrors = [skaterData.error, goalieData.error].filter(
     (message): message is string => Boolean(message),
   );
+  const sourcesRefreshing = seasonLoading || skaterData.isLoading || goalieData.isLoading;
+  const sourcesUnavailable = Boolean(
+    combinedSourceErrors.length ||
+    skaterData.sourceWarnings?.length ||
+    goalieData.sourceWarnings?.length,
+  );
+  const syncError = yahooDraftSync.error || espnDraftSync.error;
   const errorMessage =
-    !hasLoadedPlayers && combinedSourceErrors.length > 0
+    !seasonLoading && !hasLoadedPlayers && combinedSourceErrors.length > 0
       ? combinedSourceErrors.join(" ")
       : null;
   const skaterSourcesEnabled = Object.values(sourceControls).some(
@@ -2910,12 +2936,57 @@ const DraftDashboard: React.FC = () => {
   );
 
   return (
-    <div className={styles.dashboardContainer}>
+    <div
+      className={styles.dashboardContainer}
+      data-settings-open={settingsOpen}
+      data-mobile-tab={activeMobileTab}
+    >
+      <DraftWorkspaceHeader
+        leagueName={
+          espnLeagueOverride ? `ESPN ${espnLeagueOverride.externalLeagueId}`
+            : fantraxLeagueOverride ? `Fantrax ${fantraxLeagueOverride.externalLeagueId}`
+            : draftMode === "yahoo" && yahooDraftSync.selectedLeagueId ? `Yahoo ${yahooDraftSync.selectedLeagueId}`
+            : "Local draft"
+        }
+        seasonId={currentSeasonId}
+        manual={manualDraftingEnabled}
+        health={sourcesRefreshing ? "loading" : sourcesUnavailable || syncError || !hasLoadedPlayers ? "warning" : "healthy"}
+        healthLabel={
+          sourcesRefreshing ? "Loading draft sources"
+            : errorMessage ? "Draft source error"
+            : sourcesUnavailable ? "Some sources unavailable"
+            : syncError ? "Sync needs attention"
+            : !hasLoadedPlayers ? "No projection data"
+            : !manualDraftingEnabled ? `${espnLiveActive ? "ESPN" : "Yahoo"} live sync`
+            : "Draft sources ready"
+        }
+        onSettings={openSettings}
+        onManual={() => {
+          if (espnLiveActive) void stopEspnAndContinueManually();
+          else if (draftMode === "yahoo") void stopYahooAndContinueManually();
+        }}
+        onSummary={() => setIsSummaryOpen(true)}
+      />
       <MobileDraftTabs
         activeTab={activeMobileTab}
-        onChange={setActiveMobileTab}
+        onChange={(tab) => {
+          setActiveMobileTab(tab);
+          setSettingsOpen(tab === "setup");
+        }}
       />
 
+      <DraftSettingsShell
+        settings={draftSettings}
+        sourceControls={sourceControls}
+        goalieSourceControls={goalieSourceControls}
+        open={settingsOpen}
+        onToggle={() => {
+          setSettingsOpen(!settingsOpen);
+          setActiveMobileTab(settingsOpen && mobileWorkspaceEnabled ? "players" : "setup");
+        }}
+        section={settingsSection}
+        onSectionChange={setSettingsSection}
+      >
       <div
         id="mobile-draft-panel-setup"
         className={styles.setupPanel}
@@ -2928,7 +2999,10 @@ const DraftDashboard: React.FC = () => {
         hidden={mobileWorkspaceEnabled && activeMobileTab !== "setup"}
       >
         <div className={styles.setupCore}>
+          <div hidden={settingsSection === "integrations"}>
           <DraftSettings
+        variant="inline"
+        activeSection={settingsSection === "sources" ? "sources" : "setup"}
         settings={draftSettings}
         onSettingsChange={updateDraftSettings}
         draftOrderPattern={draftOrderPattern}
@@ -3111,7 +3185,10 @@ const DraftDashboard: React.FC = () => {
           }
         }}
           />
+          </div>
 
+      <div hidden={settingsSection !== "integrations"}>
+      {!user && <p className={styles.warningBanner}>Sign in to connect a Yahoo, ESPN, or Fantrax league and start Live Sync. Manual drafting is available now.</p>}
       <FantraxLeagueSettingsPanel
         enabled={Boolean(user?.id)}
         disabled={!manualDraftingEnabled}
@@ -3178,10 +3255,13 @@ const DraftDashboard: React.FC = () => {
         onStop={() => void stopEspnAndContinueManually()}
         onClear={espnDraftSync.clear}
       />
+      </div>
         </div>
       </div>
+      </DraftSettingsShell>
 
-      {/* Full-width Suggested Picks above the three panels */}
+      <div className={styles.mainContent}>
+      {/* Recommendations and roster progress share the left workspace track. */}
       <section
         id="mobile-draft-panel-suggested"
         className={styles.suggestedSection}
@@ -3194,7 +3274,12 @@ const DraftDashboard: React.FC = () => {
         hidden={mobileWorkspaceEnabled && activeMobileTab !== "suggested"}
       >
         <SuggestedPicks
+          compact={settingsOpen}
+          onReturnToDraft={() => setSettingsOpen(false)}
           players={availablePlayers}
+          isLoading={isLoading}
+          error={errorMessage}
+          dustInsights={rosterScheduleOptimizer.insights}
           vorpMetrics={vorpMetrics}
           needWeightEnabled={needWeightEnabled}
           needAlpha={needAlpha}
@@ -3217,7 +3302,7 @@ const DraftDashboard: React.FC = () => {
         />
       </section>
 
-      <div className={styles.mainContent}>
+        <LeagueStandings teams={teamStats} categories={activeScoringCategories} leagueType={draftSettings.leagueType || "points"} myTeamId={myTeamId} vorpMetrics={vorpMetrics} onUpdateTeamName={updateTeamName} canEdit={manualDraftingEnabled} isLoading={isLoading} error={errorMessage} />
         <section
           id="mobile-draft-panel-board"
           className={styles.leftPanel}
@@ -3229,7 +3314,22 @@ const DraftDashboard: React.FC = () => {
           }
           hidden={mobileWorkspaceEnabled && activeMobileTab !== "board"}
         >
+          <DraftStatus
+            round={currentTurn.round}
+            rounds={rosterRoundCount(draftSettings.rosterConfig)}
+            currentPick={currentPick}
+            totalPicks={
+              draftSettings.teamCount *
+              rosterRoundCount(draftSettings.rosterConfig)
+            }
+            teamName={
+              customTeamNames[currentTurn.teamId] || currentTurn.teamId
+            }
+            nextPick={currentTurn.isMyTurn ? currentPick : nextPickNumber}
+            picksUntilNext={currentTurn.isMyTurn ? 0 : picksUntilNext}
+          />
           <DraftBoard
+            myTeamId={myTeamId}
             draftSettings={draftSettings}
             draftedPlayers={draftedPlayers}
             currentTurn={currentTurn}
@@ -3256,6 +3356,8 @@ const DraftDashboard: React.FC = () => {
           hidden={mobileWorkspaceEnabled && activeMobileTab !== "roster"}
         >
           <MyRoster
+            nextPickByTeam={Object.fromEntries(draftSettings.draftOrder.map((teamId) => [teamId, currentPick + findPicksUntilTeamTurn({ currentPick, teamId, draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern, trades: manualDraftingEnabled ? pickTrades : [], keepers: manualDraftingEnabled ? keepers : [], completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), teamRosterCounts, rosterCapacity: rosterRoundCount(draftSettings.rosterConfig), maxPickNumber: draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig) })]))}
+            scheduleState={rosterScheduleOptimizer}
             myTeamId={myTeamId}
             teamStatsList={teamStats}
             draftSettings={draftSettings}
@@ -3301,7 +3403,8 @@ const DraftDashboard: React.FC = () => {
             </div>
           </div>
           <ProjectionsTable
-            players={allPlayers}
+            currentSeasonId={currentSeasonId}
+            players={availablePlayers}
             allPlayers={allPlayers}
             draftedPlayers={draftedPlayers}
             unavailablePlayerIds={unavailablePlayerIds}

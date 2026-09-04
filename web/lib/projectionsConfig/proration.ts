@@ -1,7 +1,7 @@
 // web/lib/projectionsConfig/proration.ts
-// Helpers for 82-game pacing (proration) of skater counting stats.
+// Helpers for full-season pacing (proration) of skater counting stats.
 // Centralizes logic so fantasy points (and derived value metrics) can optionally
-// be recomputed on an 82 GP pace without mutating original projection data.
+// be recomputed on the current NHL schedule pace without mutating projection data.
 
 import {
   DEFAULT_SKATER_FANTASY_POINTS,
@@ -9,9 +9,11 @@ import {
 } from "./fantasyPointsConfig";
 import type { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 
-// Stats that should be prorated for skaters when 82G pacing is enabled.
+export const NHL_REGULAR_SEASON_GAMES = 84;
+
+// Stats that should be prorated for skaters when full-season pacing is enabled.
 // Excludes plus/minus, TOI, rate or percentage stats, goalie stats.
-export const PRORATE_82_STAT_KEYS = new Set<string>([
+export const PRORATABLE_SKATER_STAT_KEYS = new Set<string>([
   "GOALS",
   "ASSISTS",
   "POINTS",
@@ -37,7 +39,25 @@ export const isGoaliePlayer = (player: ProcessedPlayer): boolean => {
     .includes("G");
 };
 
-/** Return (raw / GP) * 82 for eligible skater counting stats when enabled. */
+export function canProrateStat(
+  player: ProcessedPlayer,
+  statKey: string,
+): boolean {
+  if (!PRORATABLE_SKATER_STAT_KEYS.has(statKey) || isGoaliePlayer(player)) {
+    return false;
+  }
+  const raw = (player.combinedStats as any)?.[statKey]?.projected;
+  const gp = (player.combinedStats as any)?.["GAMES_PLAYED"]?.projected;
+  return (
+    typeof raw === "number" &&
+    Number.isFinite(raw) &&
+    typeof gp === "number" &&
+    Number.isFinite(gp) &&
+    gp > 0
+  );
+}
+
+/** Return (raw / GP) * season games for eligible skater counting stats. */
 export function getProratedStat(
   player: ProcessedPlayer,
   statKey: string,
@@ -49,14 +69,13 @@ export function getProratedStat(
     | undefined;
   if (!enable) return raw;
   if (raw == null || !Number.isFinite(raw)) return raw;
-  if (!PRORATE_82_STAT_KEYS.has(statKey)) return raw;
-  if (isGoaliePlayer(player)) return raw; // never prorate goalies
+  if (!canProrateStat(player, statKey)) return raw;
   const gp = (player.combinedStats as any)?.["GAMES_PLAYED"]?.projected as
     | number
     | null
     | undefined;
   if (!gp || !Number.isFinite(gp) || gp <= 0) return raw;
-  return (raw / gp) * 82;
+  return (raw / gp) * NHL_REGULAR_SEASON_GAMES;
 }
 
 /** Compute fantasy points total using (optionally) prorated counting stats. */

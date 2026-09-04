@@ -285,7 +285,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 200;
+  z-index: v.$mobile-z-index-modal;
 }
 .settingsDrawer {
   position: fixed;
@@ -296,7 +296,7 @@
   background: color.adjust(v.$background-dark, $lightness: -2%);
   border-left: 1px solid v.$border-secondary;
   box-shadow: -4px 0 18px rgba(0, 0, 0, 0.5);
-  z-index: 210;
+  z-index: v.$mobile-z-index-modal + 1;
   display: flex;
   flex-direction: column;
   animation: drawerSlide 300ms ease;
@@ -580,11 +580,29 @@
 
 /* Make sortable headers look clickable and provide hover affordance */
 .sortableHeader {
-  cursor: pointer;
   user-select: none;
 }
-.sortableHeader:hover {
+.sortButton {
+  display: block;
+  width: calc(100% + #{v.$space-sm * 2});
+  min-height: 30px;
+  margin: calc(v.$space-sm * -1);
+  padding: v.$space-sm;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: inherit !important;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.sortableHeader:hover .sortButton {
   color: v.$primary-color;
+}
+.sortButton:focus-visible {
+  outline-offset: -2px;
 }
 
 .playersTable th.colFP,
@@ -1473,4 +1491,170 @@
   .infoTooltip:focus-within .tooltipContent {
     transform: translate(50%, 0);
   }
+}
+
+// Compact workspace presentation; existing table, filter and drawer state is retained.
+.projectionsContainer { flex: 1; height: auto; min-height: 0; max-height: none; background: v.$draft-surface; font-variant-numeric: tabular-nums; container-type: inline-size; container-name: player-table; }
+.controlsBar { min-height: 0; flex-shrink: 0; border-bottom: 1px solid v.$draft-border; background: v.$draft-surface; }
+.controlsBarTitle { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; border: 0; padding: 4px 8px; height: auto; width: 100%; font-size: 12px; font-weight: normal; }
+.panelTitle { flex: 0 1 110px; margin: 0; width: auto; font-size: 12px; line-height: 1.2; color: v.$primary-color; }
+.settingsAndTooltips { margin: 0; gap: 8px; flex-wrap: nowrap; .stackedControl { width: auto; flex: 0 0 auto; } }
+.tableTools {
+  position: relative;
+  flex: none;
+  order: 2;
+  summary {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    list-style: none;
+    cursor: pointer;
+    border: 1px solid v.$draft-border;
+    border-radius: 4px;
+    background: v.$draft-input;
+    font-size: 20px;
+    &::-webkit-details-marker { display: none; }
+  }
+  .settingsAndTooltips {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 20;
+    padding: 8px;
+    border: 1px solid v.$draft-border;
+    border-radius: 4px;
+    background: v.$draft-surface-raised;
+  }
+}
+.controlLabelMini { font-size: 10px; letter-spacing: 0; }
+.primaryControls { order: 1; padding: 0; gap: 6px; height: auto; width: auto; overflow: visible; align-items: flex-end; flex: 1 1 440px; }
+.stackedControlsRow { gap: 6px; flex: 1; min-width: 0; }
+.primaryControls .stackedControlsRow > .stackedControl:last-child { flex: 0 0 auto; min-width: 63px; }
+.stackedControl { width: auto; min-width: 0; flex: 1; gap: 2px; }
+.searchStack { flex: 1.2; width: auto; min-width: 85px; max-width: 160px; }
+.searchInput, .inlineSelect { height: 26px; min-height: 26px; padding: 3px 6px; font-size: 12px; }
+.controlToggleBtn { min-height: 26px; padding: 3px 6px; font-size: 11px; text-transform: none; letter-spacing: 0; white-space: nowrap; }
+.toggleButtonsGroup { gap: 3px; }
+.controlToggleBtnActive { background: rgba(v.$primary-color, .25) !important; border-color: v.$primary-color !important; }
+.miniRunForecast { padding: 4px 8px; background: v.$draft-input; border-bottom: 1px solid v.$draft-border; flex-shrink: 0; }
+.miniRunDescriptor { font-size: 10px; }
+.miniRunItems { gap: 8px; }
+.miniRunLabel, .miniRunVal { font-size: 10px; }
+.tableContainer { flex: 1; height: auto; min-height: 0; max-height: none; overflow-x: hidden; overflow-y: auto; color-scheme: dark; scrollbar-width: thin; scrollbar-color: v.$primary-color v.$draft-input; @include v.custom-scrollbar(v.$primary-color, v.$draft-input); }
+.playersTable { table-layout: fixed; width: 100%; min-width: 0; border-collapse: separate; border-spacing: 0; font-size: 12px; }
+.playersTable th { position: sticky; top: 0; z-index: 2; padding: 5px 4px; height: 26px; font-size: 10px; letter-spacing: .02em; background: v.$draft-surface-raised; border-bottom: 1px solid v.$draft-border; }
+.playersTable td { padding: 3px 4px; height: 27px; font-size: 12px; border-bottom: 1px solid v.$draft-border; }
+.playersTable .colFav { width: 24px; min-width: 24px; }
+.playersTable .colName { width: auto; min-width: 0; }
+.playersTable .colPos { width: 52px; min-width: 0; }
+.playersTable .colTeam { width: 32px; min-width: 0; }
+.playersTable .colStat { width: 46px; min-width: 0; }
+.playersTable .colFP, .playersTable .colVorp, .playersTable .colAdp, .playersTable .colNextPick { width: 46px; min-width: 0; }
+.playersTable .colAction { width: 56px; min-width: 56px; }
+.playersTable .colCompare { width: 36px; min-width: 36px; }
+.playersTable.statColumnsTable .colFav { width: 4%; min-width: 0; }
+.playersTable.statColumnsTable .colName { width: 22%; min-width: 0; }
+.playersTable.statColumnsTable .colPos { width: 7%; min-width: 0; }
+.playersTable.statColumnsTable .colTeam { width: 5%; min-width: 0; }
+.playersTable.statColumnsTable .colStat,
+.playersTable.statColumnsTable .colVorp,
+.playersTable.statColumnsTable .colAdp,
+.playersTable.statColumnsTable .colNextPick {
+  width: calc(48% / var(--distributed-column-count));
+  min-width: 0;
+}
+.playersTable.statColumnsTable .colAction { width: 9%; min-width: 0; }
+.playersTable.statColumnsTable .colCompare { width: 5%; min-width: 0; }
+.playersTable td.playerName { min-width: 0; }
+.playersTable td.position { white-space: normal; }
+.playersTable.statColumnsTable .statHeader,
+.playersTable.statColumnsTable .statCol { min-width: 0; }
+.inlineGoalieStatsCell { padding-inline: 3px !important; }
+.inlineGoalieStats { display: grid; grid-template-columns: repeat(auto-fit, minmax(44px, 1fr)); align-items: center; gap: 1px 4px; width: 100%; text-align: center; }
+.inlineGoalieStat { display: inline-flex; align-items: baseline; justify-content: center; gap: 3px; min-width: 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.inlineGoalieStatLabel { color: v.$primary-color; font-size: .8em; font-weight: 700; }
+.playerRow[data-stripe="0"], .expandRow[data-stripe="0"] { background: v.$draft-input; }
+.playerRow[data-stripe="1"], .expandRow[data-stripe="1"] { background: v.$draft-zebra; }
+.playerRow:hover { background: v.$draft-surface-raised; }
+.playerRow[data-selected="true"] { box-shadow: inset 3px 0 v.$primary-color; background: rgba(v.$primary-color, .1); }
+.playerRow[data-expanded="true"] { box-shadow: inset 3px 0 v.$color-neutral-400; }
+.playerRow.favoritedRow .favoriteButton { color: v.$color-gold-400; }
+.fullName { font-family: v.$font-family-primary; font-size: 12px; line-height: 1.2; color: v.$primary-color; }
+.nameContainer { gap: 4px; }
+.expandToggle { width: 17px; height: 17px; min-width: 17px; padding: 0; font-size: 12px; }
+.dustInsight { margin: 1px 0 0 21px; line-height: 1; }
+.dustBadge { font-size: 9px; padding: 1px 3px; }
+.dustAlternative { display: none; }
+.favoriteButton { padding: 0; font-size: 18px !important; height: 20px; min-height: 0; width: 20px; }
+.draftButton { min-width: 0; width: 50px; min-height: 0; height: 21px; padding: 1px 6px; font-size: 12px !important; border-radius: 3px; background: v.$draft-action !important; color: v.$color-white; }
+.compareCheckbox { width: 13px; height: 13px; }
+.riskLow { color: v.$color-mint-300; background: transparent; }
+.riskMed { color: v.$color-gold-400; background: transparent; }
+.riskHigh { color: v.$color-coral-500; background: transparent; }
+.valueNumeric { font-size: 12px; }
+.proratedMarker { margin-left: 1px; color: v.$primary-color; font-size: .75em; }
+.loadingState, .errorState, .emptyState { min-height: 0; flex: 1; padding: 12px; }
+.settingsDrawer, .tooltipContent { background: v.$draft-surface-raised; color: v.$color-neutral-200; }
+@media (max-width: 799px) {
+  .controlsBarTitle { width: 100%; }
+  .controlsBarTitle .panelTitle { flex: 0 1 auto; min-width: 0; font-size: 12px; }
+  .tableTools { order: 0; }
+  .primaryControls { flex: 1 0 100%; flex-direction: column; align-items: stretch; }
+  .searchStack { width: 100%; max-width: none; flex: none; }
+  .stackedControlsRow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; flex: none; }
+}
+
+.playersTable td.riskLow { color: v.$color-mint-300; }
+.playersTable td.riskMed { color: v.$color-gold-400; }
+.playersTable td.riskHigh { color: v.$color-coral-500; }
+.playersTable td.valueBand { background: transparent; border: 0; border-bottom: 1px solid v.$draft-border; }
+.expandRow td { background: transparent; }
+.controlsBar .settingsAndTooltips .controlToggleBtn { font-size: 12px; }
+.playersTable td.valueBand.valueSuccess { color: v.$color-mint-300; }
+.playersTable td.valueBand.valueWarning { color: v.$color-gold-400; }
+.playersTable td.valueBand.valueDanger { color: v.$color-coral-500; }
+.nameContainer { display: inline-flex; vertical-align: middle; max-width: 100%; }
+.dustInsight { display: inline-flex; flex: 0 0 auto; vertical-align: middle; margin: 0 0 0 5px; }
+.dustInsight:hover .dustAlternative { display: block; position: fixed; right: 25%; bottom: 30px; width: 250px; background: v.$draft-surface-raised; padding: 8px; border: 1px solid v.$draft-border; z-index: 20; }
+.miniRunForecast { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 8px; padding: 4px 8px; }
+.miniRunDescriptor { flex: 0 0 auto; width: auto; margin: 0; }
+.miniRunItems { flex: 1; min-width: 0; }
+@media (max-width: 1500px) { .miniRunDescriptor { max-width: 96px; font-size: 9px; } }
+@media (max-width: 799px) {
+  .miniRunForecast { flex-direction: column; align-items: stretch; }
+  .miniRunDescriptor { max-width: none; }
+  .miniRunItems { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+  .miniRunItem { min-width: 0; }
+}
+.pagination { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-top: 1px solid v.$draft-border; flex-shrink: 0; font-size: 11px; button { padding: 2px 6px; } select { padding: 1px 3px; } }
+.pageCount { margin-left: auto; white-space: nowrap; }
+
+@container player-table (max-width: 620px) {
+  .playersTable .colFav { width: 5%; min-width: 0; }
+  .playersTable .colName { width: 20%; }
+  .playersTable .colPos { width: 6%; }
+  .playersTable .colTeam { width: 6%; }
+  .playersTable .colFP,
+  .playersTable .colVorp,
+  .playersTable .colAdp,
+  .playersTable .colNextPick { width: 8%; }
+  .playersTable .colAction { width: 10%; min-width: 0; }
+  .playersTable .colCompare { width: 5%; min-width: 0; }
+  .playersTable th, .playersTable td { padding-inline: 2px; font-size: 10px; white-space: nowrap; overflow: hidden; }
+  .playersTable th { height: 26px; padding-block: 0; font-size: 8px; letter-spacing: 0; }
+  .playersTable td { height: 28px; padding-block: 0; }
+  .playersTable .nameContainer { height: 22px; min-height: 0; }
+  .playersTable .draftButton { width: 100%; padding-inline: 1px; font-size: 9px !important; }
+  .playersTable .favoriteButton { width: 16px; font-size: 15px !important; }
+  .playersTable.statColumnsTable .colFav { width: 5%; }
+  .playersTable.statColumnsTable .colName { width: 16%; }
+  .playersTable.statColumnsTable .colPos { width: 5%; }
+  .playersTable.statColumnsTable .colTeam { width: 5%; }
+  .playersTable.statColumnsTable .colStat,
+  .playersTable.statColumnsTable .colVorp,
+  .playersTable.statColumnsTable .colAdp,
+  .playersTable.statColumnsTable .colNextPick { width: calc(57% / var(--distributed-column-count)); }
+  .playersTable.statColumnsTable .colAction { width: 8%; }
+  .playersTable.statColumnsTable .colCompare { width: 4%; }
 }

@@ -20,7 +20,7 @@ const { queryBuilder, serviceClient } = vi.hoisted(() => {
     },
   ];
   const builder: Record<string, unknown> = {};
-  for (const method of ["eq", "gte", "lte", "order"]) {
+  for (const method of ["eq", "gte", "lte", "order", "range"]) {
     builder[method] = vi.fn(() => builder);
   }
   builder.then = (resolve: (value: unknown) => unknown) =>
@@ -87,6 +87,7 @@ describe("GET roster optimizer schedule", () => {
     expect(queryBuilder.eq).toHaveBeenCalledWith("is_countable", true);
     expect(queryBuilder.gte).toHaveBeenCalledWith("week", 2);
     expect(queryBuilder.lte).toHaveBeenCalledWith("week", 4);
+    expect(queryBuilder.range).toHaveBeenCalledWith(0, 999);
   });
 
   it("returns structured method and validation errors", async () => {

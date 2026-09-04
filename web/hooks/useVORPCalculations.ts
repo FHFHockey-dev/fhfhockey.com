@@ -43,8 +43,8 @@ export interface UseVORPParams {
   // personalized replacement context
   myFilledSlots?: Record<string, number>;
   personalizeReplacement?: boolean;
-  // 82-game proration toggle for skater counting stats (affects points-league value only)
-  prorate82?: boolean;
+  // Full-season proration toggle for skater counting stats (points leagues only)
+  prorate84?: boolean;
   // Optional fantasy scoring overrides (will merge with defaults inside helper)
   fantasyPointSettings?: Record<string, number>;
 }
@@ -57,6 +57,7 @@ export interface UseVORPResult {
 }
 
 const UTIL_TO_DEF_ENABLED = false; // if true, allocate UTIL to D as well
+const EMPTY_NUMERIC_RECORD: Record<string, number> = {};
 
 const clamp = (v: number, lo: number, hi: number) =>
   Math.max(lo, Math.min(hi, v));
@@ -68,12 +69,12 @@ export function useVORPCalculations({
   picksUntilNext,
   leagueType = "points",
   baselineMode = "remaining",
-  categoryWeights = {},
+  categoryWeights = EMPTY_NUMERIC_RECORD,
   forwardGrouping = "split",
-  myFilledSlots = {},
+  myFilledSlots = EMPTY_NUMERIC_RECORD,
   personalizeReplacement = false,
-  prorate82 = false,
-  fantasyPointSettings = {},
+  prorate84 = false,
+  fantasyPointSettings = EMPTY_NUMERIC_RECORD,
 }: UseVORPParams): UseVORPResult {
   return useMemo(() => {
     // Value per player (points or categories composite)
@@ -99,7 +100,7 @@ export function useVORPCalculations({
 
     // Compute player comparable values
     if (leagueType === "points") {
-      // Points leagues: optionally recompute fantasy points using prorated 82G pace for skaters.
+      // Points leagues: optionally recompute fantasy points using an 84G pace for skaters.
       let computeProrated:
         | ((
             p: ProcessedPlayer,
@@ -107,7 +108,7 @@ export function useVORPCalculations({
             scoring?: Record<string, number>,
           ) => number | null)
         | null = null;
-      if (prorate82) {
+      if (prorate84) {
         try {
           const mod = require("lib/projectionsConfig/proration");
           computeProrated = mod.computeProratedFantasyPoints;
@@ -118,7 +119,7 @@ export function useVORPCalculations({
       players.forEach((p) => {
         const id = String(p.playerId);
         let val = p.fantasyPoints?.projected ?? 0;
-        if (prorate82 && computeProrated) {
+        if (prorate84 && computeProrated) {
           const fp = computeProrated(p, true, fantasyPointSettings);
           if (fp != null && Number.isFinite(fp)) val = fp;
         }
@@ -345,7 +346,7 @@ export function useVORPCalculations({
     forwardGrouping,
     personalizeReplacement,
     myFilledSlots,
-    prorate82,
+    prorate84,
     fantasyPointSettings,
   ]);
 }

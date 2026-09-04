@@ -26,29 +26,21 @@ afterEach(() => {
 });
 
 describe("Draft Dashboard route", () => {
-  it("server-renders a non-dismissible season update notice", () => {
+  it("server-renders the dashboard without a maintenance notice", () => {
     vi.stubEnv("NODE_ENV", "production");
     const html = renderToString(<DraftDashboardPage />);
 
-    expect(html).toContain('role="dialog"');
-    expect(html).toContain('aria-modal="true"');
-    expect(html).toContain("Draft Dashboard");
-    expect(html).toContain(
-      "Actively being updated for the 2026-2027 season. Check back soon"
-    );
-    expect(html).not.toContain("Continue to Draft Dashboard");
+    expect(html).toContain("Draft dashboard tools");
+    expect(html).not.toContain('role="dialog"');
+    expect(html).not.toContain("Actively being updated");
   });
 
-  it("allows developers to use the dashboard without the site footer", () => {
+  it("renders the dashboard without the site footer", () => {
     vi.stubEnv("NODE_ENV", "development");
     render(
       <Layout>
         <DraftDashboardPage />
       </Layout>
-    );
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Continue to Draft Dashboard" })
     );
 
     expect(screen.queryByRole("dialog")).toBeNull();

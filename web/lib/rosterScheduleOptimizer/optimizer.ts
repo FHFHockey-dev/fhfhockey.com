@@ -393,6 +393,7 @@ export function calculateCandidateDust(
   }
 
   const baselineByDate = new Map(baseline.daily.map((date) => [date.date, date]));
+  const rosterById = new Map(roster.map((player) => [player.id, player]));
   const affectedDates = team ? input.schedule.gamesByTeam.get(team) ?? [] : [];
   const weekMap = new Map<number | null, CandidateWeeklyDust>();
   const changedDates: DailyAssignment[] = [];
@@ -403,7 +404,12 @@ export function calculateCandidateDust(
 
   for (const game of affectedDates) {
     const baselineDate = baselineByDate.get(game.date);
-    const baselinePlayers = rosterPlayersOnDate(roster, input.schedule, game.date);
+    const baselinePlayers = (baselineDate?.scheduledPlayerIds ?? []).flatMap(
+      (playerId) => {
+        const player = rosterById.get(playerId);
+        return player ? [player] : [];
+      },
+    );
     const before =
       baselineDate ??
       assignPlayersToActiveSlots(
