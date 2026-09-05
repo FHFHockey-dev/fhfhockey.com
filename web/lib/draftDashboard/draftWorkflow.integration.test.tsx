@@ -58,6 +58,16 @@ describe("representative draft workflow", () => {
     const positionalConflict = validateDraftSettings({ ...input, settings: { ...settings, rosterConfig: { C: 3, G: 0, bench: 0, utility: 0 } }, draftedPlayers: [picks[0]], playerEligibility: new Map([["1", ["G"]]]) });
     expect(positionalConflict.domains.roster).toBe(false);
     expect(positionalConflict.errors[0].message).toContain("drafted positions exceed");
+
+    const overrideConflict = validateDraftSettings({
+      ...input,
+      settings: { ...settings, rosterConfig: { C: 1, LW: 1, G: 0, bench: 0, utility: 0 } },
+      draftedPlayers: [picks[0], picks[1]],
+      playerEligibility: new Map([["1", ["C"]], ["2", ["C", "LW"]]]),
+      positionOverrides: { "2": "C" },
+    });
+    expect(overrideConflict.domains.roster).toBe(false);
+    expect(overrideConflict.errors[0].message).toContain("drafted positions exceed");
   });
 
   it("accepts valid portable sessions and rejects malformed or destructive imports before application", () => {

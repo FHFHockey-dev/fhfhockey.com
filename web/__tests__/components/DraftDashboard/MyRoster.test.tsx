@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import type { ComponentProps } from "react";
 import MyRoster from "../../../components/DraftDashboard/MyRoster";
@@ -111,4 +111,51 @@ it("shows and explains the roster DUST rate", () => {
   expect(document.getElementById(tooltipId!)?.textContent).toContain(
     "Daily Unstartable Schedule Tax",
   );
+});
+
+it("follows a changed my team while preserving an opponent selection", () => {
+  const props = {
+    myTeamId: "1",
+    nextPickByTeam: { "1": 1, "2": 1, "3": 1 },
+    scheduleState: { status: "idle" },
+    teamStatsList: ["1", "2", "3"].map((teamId) => ({
+      teamId,
+      teamName: `Team ${teamId}`,
+      projectedPoints: 0,
+      rosterSlots: {},
+      bench: [],
+    })),
+    draftSettings: { teamCount: 3, rosterConfig: { bench: 0 } },
+    availablePlayers: [],
+    allPlayers: [],
+    onDraftPlayer: vi.fn(),
+    canDraft: true,
+    currentPick: 1,
+    currentTurn: { round: 1, pickInRound: 1, teamId: "1", isMyTurn: true },
+    teamOptions: ["1", "2", "3"].map((id) => ({ id, label: `Team ${id}` })),
+  } as unknown as ComponentProps<typeof MyRoster>;
+
+  const { rerender } = render(<MyRoster {...props} />);
+  const rosterSelect = screen.getByRole("combobox");
+  expect((rosterSelect as HTMLSelectElement).value).toBe("1");
+
+  rerender(<MyRoster {...props} myTeamId="2" />);
+  expect((rosterSelect as HTMLSelectElement).value).toBe("2");
+
+  rerender(<MyRoster {...props} myTeamId="3" />);
+  expect((rosterSelect as HTMLSelectElement).value).toBe("3");
+
+  fireEvent.change(rosterSelect, { target: { value: "1" } });
+  rerender(<MyRoster {...props} myTeamId="2" />);
+  expect((rosterSelect as HTMLSelectElement).value).toBe("1");
+
+  rerender(
+    <MyRoster
+      {...props}
+      myTeamId="2"
+      teamStatsList={props.teamStatsList.filter((team) => team.teamId !== "1")}
+      teamOptions={props.teamOptions.filter((team) => team.id !== "1")}
+    />,
+  );
+  expect((rosterSelect as HTMLSelectElement).value).toBe("2");
 });

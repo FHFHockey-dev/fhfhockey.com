@@ -178,23 +178,48 @@ export function allocateGroupedRosterSlots({
     ["BENCH", 0]
   ]);
   const assignments: Record<string, string> = {};
+  const canUse = (eligible: string[], position: string) =>
+    eligible.includes(position) &&
+    counts[position] < Math.max(0, Number(effective[position]) || 0);
+  const canUseUtility = (eligible: string[]) =>
+    eligible.some((position) => position !== "G") &&
+    !eligible.includes("G") &&
+    counts.UTILITY < Math.max(0, Number(effective.utility) || 0);
 
+  // Reserve valid manual choices first. This makes a requested slot win over
+  // automatic placement while retaining draft order as the conflict tiebreaker.
   for (const player of players) {
     const eligible = groupPlayerEligibility(
       player.eligibility,
       grouping,
       includeGenericForward
     );
-    const override = overrides[player.id]?.toUpperCase();
-    const canUse = (position: string) =>
-      eligible.includes(position) &&
-      counts[position] < Math.max(0, Number(effective[position]) || 0);
-    let assignment = override && canUse(override) ? override : undefined;
-    if (!assignment) assignment = eligible.find(canUse);
+    const override = overrides[player.id]?.trim().toUpperCase();
+    const assignment =
+      override === "UTILITY"
+        ? canUseUtility(eligible)
+          ? "UTILITY"
+          : undefined
+        : override && canUse(eligible, override)
+          ? override
+          : undefined;
+    if (assignment) {
+      counts[assignment] += 1;
+      assignments[player.id] = assignment;
+    }
+  }
+
+  for (const player of players) {
+    if (assignments[player.id]) continue;
+    const eligible = groupPlayerEligibility(
+      player.eligibility,
+      grouping,
+      includeGenericForward
+    );
+    let assignment = eligible.find((position) => canUse(eligible, position));
     if (
       !assignment &&
-      !eligible.includes("G") &&
-      counts.UTILITY < Math.max(0, Number(effective.utility) || 0)
+      canUseUtility(eligible)
     ) {
       assignment = "UTILITY";
     }
