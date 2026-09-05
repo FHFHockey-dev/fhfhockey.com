@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ProjectionSourceConfig } from "lib/projectionsConfig/projectionSourcesConfig";
 import {
   buildActiveProjectionSources,
+  buildCustomProjectionSourcesFingerprint,
   buildProjectionInputCacheKey,
   type CustomAdditionalProjectionSource
 } from "./customProjectionSources";
@@ -73,6 +74,31 @@ describe("custom projection-source registration", () => {
     expect(result.customById.has("arbitrary_memory")).toBe(false);
   });
 
+  it("keeps mixed skater and goalie imports isolated by player type", () => {
+    const sources = [custom("custom_csv_1"), custom("custom_csv_2", "goalie")];
+    const controls = {
+      custom_csv_1: { isSelected: true, weight: 1 },
+      custom_csv_2: { isSelected: true, weight: 1 },
+    };
+
+    expect(
+      buildActiveProjectionSources({
+        baseSources: [],
+        playerType: "skater",
+        sourceControls: controls,
+        customSources: sources,
+      }).activeSources.map((source) => source.id),
+    ).toEqual(["custom_csv_1"]);
+    expect(
+      buildActiveProjectionSources({
+        baseSources: [],
+        playerType: "goalie",
+        sourceControls: controls,
+        customSources: sources,
+      }).activeSources.map((source) => source.id),
+    ).toEqual(["custom_csv_2"]);
+  });
+
   it("keys raw inputs by membership/data identity rather than scalar weights", () => {
     const base = {
       playerType: "skater" as const,
@@ -116,5 +142,15 @@ describe("custom projection-source registration", () => {
     expect(afterRemoval.activeSources.map((source) => source.id)).not.toContain(
       "custom_csv_1"
     );
+  });
+
+  it("changes the custom input fingerprint when a same-length row is edited", () => {
+    const source = custom("custom_csv_1");
+    const before = buildCustomProjectionSourcesFingerprint([source]);
+    const after = buildCustomProjectionSourcesFingerprint([
+      { ...source, rows: [{ player_id: 8478427, Goals: 31 }] }
+    ]);
+
+    expect(after).not.toBe(before);
   });
 });

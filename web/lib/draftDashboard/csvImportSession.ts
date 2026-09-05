@@ -23,6 +23,11 @@ export type SessionCsvEntry = {
   };
 };
 
+export type CustomCsvSessionLoadResult = {
+  entries: SessionCsvEntry[];
+  error?: string;
+};
+
 function isSessionCsvEntry(value: unknown): value is SessionCsvEntry {
   if (!value || typeof value !== "object") return false;
   const entry = value as Partial<SessionCsvEntry>;
@@ -44,6 +49,31 @@ function parseList(raw: string | null): SessionCsvEntry[] {
   }
 }
 
+export function validateCustomCsvEntries(
+  entries: SessionCsvEntry[]
+): string | undefined {
+  const ids = new Set<string>();
+  for (const entry of entries) {
+    if (ids.has(entry.id)) {
+      return `Custom CSV session contains duplicate source ID "${entry.id}". Remove or re-import the duplicate source.`;
+    }
+    ids.add(entry.id);
+  }
+  return undefined;
+}
+
+export function createCustomCsvId(
+  entries: Pick<SessionCsvEntry, "id">[],
+  randomId: () => string = () =>
+    globalThis.crypto?.randomUUID?.() ??
+    `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`
+): string {
+  const existingIds = new Set(entries.map((entry) => entry.id));
+  let id = `custom_csv_${randomId()}`;
+  while (existingIds.has(id)) id = `custom_csv_${randomId()}`;
+  return id;
+}
+
 export function saveCustomCsvSession(
   entries: SessionCsvEntry[],
   storage: Pick<Storage, "setItem"> = window.sessionStorage
@@ -55,8 +85,17 @@ export function loadCustomCsvSession(
   storage: Pick<Storage, "getItem" | "setItem" | "removeItem"> =
     window.sessionStorage
 ): SessionCsvEntry[] {
+  return loadCustomCsvSessionResult(storage).entries;
+}
+
+export function loadCustomCsvSessionResult(
+  storage: Pick<Storage, "getItem" | "setItem" | "removeItem"> =
+    window.sessionStorage
+): CustomCsvSessionLoadResult {
   const current = parseList(storage.getItem(CUSTOM_CSV_SESSION_KEY));
-  if (current.length) return current;
+  const currentError = validateCustomCsvEntries(current);
+  if (currentError) return { entries: [], error: currentError };
+  if (current.length) return { entries: current };
 
   const legacyList = parseList(storage.getItem("draft.customCsvList.v2"));
   let migrated = legacyList;
@@ -78,9 +117,11 @@ export function loadCustomCsvSession(
     }
   }
 
+  const migratedError = validateCustomCsvEntries(migrated);
+  if (migratedError) return { entries: [], error: migratedError };
   if (migrated.length) saveCustomCsvSession(migrated, storage);
   for (const key of LEGACY_CUSTOM_CSV_SESSION_KEYS) storage.removeItem(key);
-  return migrated;
+  return { entries: migrated };
 }
 
 export function clearCustomCsvSession(

@@ -42,6 +42,7 @@ import {
 } from "lib/draftDashboard/yahooMapping";
 import {
   buildActiveProjectionSources,
+  buildCustomProjectionSourcesFingerprint,
   buildProjectionInputCacheKey,
   type CustomAdditionalProjectionSource,
 } from "lib/draftDashboard/customProjectionSources";
@@ -212,6 +213,12 @@ export interface UseProcessedProjectionsDataReturn {
   sourceWarnings?: ProjectionSourceWarning[];
 }
 
+function useValueStableByKey<T>(value: T, key: string): T {
+  const ref = useRef({ key, value });
+  if (ref.current.key !== key) ref.current = { key, value };
+  return ref.current.value;
+}
+
 // --- Cache Type Definitions ---
 interface BaseCacheSnapshotInfo {
   sourceControlsSnapshot: string;
@@ -232,6 +239,8 @@ interface CachedFullPlayerData extends BaseCacheSnapshotInfo {
   showPerGameFantasyPointsSnapshot: boolean; // Added to ensure cache considers this display mode
   refreshKeySnapshot?: number | string;
   teamCountSnapshot?: number;
+  customSourcesFingerprint: string;
+  allowCustomNameFallbackSnapshot: boolean;
   sourceWarnings: ProjectionSourceWarning[];
 }
 
@@ -1574,16 +1583,24 @@ export const useProcessedProjectionsData = ({
     };
   }>({});
 
+  const customSourcesInput = [
+    ...(customAdditionalSources || []),
+    ...(customAdditionalSource ? [customAdditionalSource] : []),
+  ];
+  const stableCustomAdditionalSourcesString =
+    buildCustomProjectionSourcesFingerprint(customSourcesInput);
+  const stableCustomAdditionalSources = useValueStableByKey(
+    customSourcesInput,
+    stableCustomAdditionalSourcesString,
+  );
+
   const customSourceResolutions = useMemo(() => {
     const map: Record<string, CustomSourceResolutionMeta | undefined> = {};
-    (customAdditionalSources || []).forEach((src) => {
+    stableCustomAdditionalSources.forEach((src) => {
       map[src.id] = src.resolution;
     });
-    if (customAdditionalSource) {
-      map[customAdditionalSource.id] = customAdditionalSource.resolution;
-    }
     return map;
-  }, [customAdditionalSources, customAdditionalSource]);
+  }, [stableCustomAdditionalSources]);
 
   const sourceControlsKey = JSON.stringify(
     Object.fromEntries(
@@ -1622,31 +1639,10 @@ export const useProcessedProjectionsData = ({
     [stableFantasyPointSettings],
   );
 
-  const stableCustomAdditionalSourcesString = useMemo(() => {
-    if (customAdditionalSources && customAdditionalSources.length) {
-      const payload = customAdditionalSources.map((s) => ({
-        id: s.id,
-        playerType: s.playerType,
-        rowsLen: s.rows?.length || 0,
-        lastUpdated: s.resolution?.lastUpdated || 0,
-      }));
-      return JSON.stringify(payload);
-    }
-    if (customAdditionalSource) {
-      return JSON.stringify({
-        id: customAdditionalSource.id,
-        playerType: customAdditionalSource.playerType,
-        rowsLen: customAdditionalSource.rows?.length || 0,
-        lastUpdated: customAdditionalSource.resolution?.lastUpdated || 0,
-      });
-    }
-    return "none";
-  }, [customAdditionalSources, customAdditionalSource]);
-
   // Composite keys (lightweight) for detecting FP-only updates (must come after stableCustomAdditionalSourcesString)
   const baseKey = useMemo(
     () =>
-      `${activePlayerType}|${stableSourceControlsString}|${yahooDraftMode}|${currentSeasonId || ""}|${stableCustomAdditionalSourcesString}|${refreshKey ?? ""}|teams:${teamCountForRoundSummaries ?? 12}`,
+      `${activePlayerType}|${stableSourceControlsString}|${yahooDraftMode}|${currentSeasonId || ""}|${stableCustomAdditionalSourcesString}|${refreshKey ?? ""}|teams:${teamCountForRoundSummaries ?? 12}|nameFallback:${allowCustomNameFallback}`,
     [
       activePlayerType,
       stableSourceControlsString,
@@ -1655,6 +1651,7 @@ export const useProcessedProjectionsData = ({
       stableCustomAdditionalSourcesString,
       refreshKey,
       teamCountForRoundSummaries,
+      allowCustomNameFallback,
     ],
   );
   const fpKey = useMemo(
@@ -1711,20 +1708,8 @@ export const useProcessedProjectionsData = ({
     }
     const currentTypeCache = cache.current[cacheTypeKey]!;
 
-    // If customAdditionalSource changes, bust caches related to that playerType (simple approach for now)
-    const anyCustomForType =
-      (customAdditionalSources || []).some(
-        (s) => s.playerType === activePlayerType,
-      ) ||
-      (customAdditionalSource &&
-        customAdditionalSource.playerType === activePlayerType);
-    if (anyCustomForType) {
-      // Invalidate caches so new data flows through
-      currentTypeCache.base = undefined;
-      currentTypeCache.full = undefined;
-    }
-
-    // Check full cache first using stable string representations (skip if custom source present since invalidated above)
+    // Check full cache first. The custom-source fingerprint covers rows and
+    // resolution metadata, so presentation-only updates can retain results.
     if (
       currentTypeCache.full &&
       currentTypeCache.full.sourceControlsSnapshot ===
@@ -1737,8 +1722,10 @@ export const useProcessedProjectionsData = ({
         showPerGameFantasyPoints &&
       currentTypeCache.full.refreshKeySnapshot === refreshKey &&
       currentTypeCache.full.teamCountSnapshot === teamCountForRoundSummaries &&
-      !(customAdditionalSources && customAdditionalSources.length) &&
-      !customAdditionalSource // only reuse cache if no custom sources
+      currentTypeCache.full.customSourcesFingerprint ===
+        stableCustomAdditionalSourcesString &&
+      currentTypeCache.full.allowCustomNameFallbackSnapshot ===
+        allowCustomNameFallback
     ) {
       setProcessedPlayers(currentTypeCache.full.data);
       const freshColumns = generateTableCols();
@@ -1801,6 +1788,8 @@ export const useProcessedProjectionsData = ({
         showPerGameFantasyPointsSnapshot: showPerGameFantasyPoints,
         refreshKeySnapshot: refreshKey,
         teamCountSnapshot: teamCountForRoundSummaries,
+        customSourcesFingerprint: stableCustomAdditionalSourcesString,
+        allowCustomNameFallbackSnapshot: allowCustomNameFallback,
         sourceWarnings: currentTypeCache.full?.sourceWarnings ?? [],
       };
       return;
@@ -1831,10 +1820,7 @@ export const useProcessedProjectionsData = ({
         baseSources: PROJECTION_SOURCES_CONFIG,
         playerType: activePlayerType,
         sourceControls: stableSourceControls,
-        customSources: [
-          ...(customAdditionalSources || []),
-          ...(customAdditionalSource ? [customAdditionalSource] : []),
-        ],
+        customSources: stableCustomAdditionalSources,
       });
     const sourceInputCacheKey = buildProjectionInputCacheKey({
       playerType: activePlayerType,
@@ -2156,18 +2142,12 @@ export const useProcessedProjectionsData = ({
         );
       }
 
-      // Cache base only if custom source absent (custom source data is session-volatile)
-      if (
-        !(customAdditionalSources && customAdditionalSources.length) &&
-        !customAdditionalSource
-      ) {
-        currentTypeCache.base = {
-          data: tempProcessedPlayers,
-          sourceControlsSnapshot: stableSourceControlsString,
-          yahooModeSnapshot: yahooDraftMode,
-          currentSeasonIdSnapshot: currentSeasonId,
-        };
-      }
+      currentTypeCache.base = {
+        data: tempProcessedPlayers,
+        sourceControlsSnapshot: stableSourceControlsString,
+        yahooModeSnapshot: yahooDraftMode,
+        currentSeasonIdSnapshot: currentSeasonId,
+      };
 
       const sortedPlayersForSummary = [...tempProcessedPlayers].sort((a, b) => {
         const pickA = a.yahooAvgPick ?? Infinity;
@@ -2231,22 +2211,19 @@ export const useProcessedProjectionsData = ({
         }
       }
 
-      if (
-        !(customAdditionalSources && customAdditionalSources.length) &&
-        !customAdditionalSource
-      ) {
-        currentTypeCache.full = {
-          data: tableDataWithSummaries,
-          sourceControlsSnapshot: stableSourceControlsString,
-          yahooModeSnapshot: yahooDraftMode,
-          currentSeasonIdSnapshot: currentSeasonId,
-          fantasyPointSettingsSnapshot: stableFantasyPointSettingsString,
-          showPerGameFantasyPointsSnapshot: showPerGameFantasyPoints,
-          refreshKeySnapshot: refreshKey,
-          teamCountSnapshot: teamCountForRoundSummaries,
-          sourceWarnings: sourceWarningsForRun,
-        };
-      }
+      currentTypeCache.full = {
+        data: tableDataWithSummaries,
+        sourceControlsSnapshot: stableSourceControlsString,
+        yahooModeSnapshot: yahooDraftMode,
+        currentSeasonIdSnapshot: currentSeasonId,
+        fantasyPointSettingsSnapshot: stableFantasyPointSettingsString,
+        showPerGameFantasyPointsSnapshot: showPerGameFantasyPoints,
+        refreshKeySnapshot: refreshKey,
+        teamCountSnapshot: teamCountForRoundSummaries,
+        customSourcesFingerprint: stableCustomAdditionalSourcesString,
+        allowCustomNameFallbackSnapshot: allowCustomNameFallback,
+        sourceWarnings: sourceWarningsForRun,
+      };
       if (runId === fetchRunIdRef.current) setIsLoading(false);
     } catch (err: any) {
       console.error(
@@ -2270,8 +2247,7 @@ export const useProcessedProjectionsData = ({
     baseKey,
     fpKey,
     allowCustomNameFallback,
-    customAdditionalSource,
-    customAdditionalSources,
+    stableCustomAdditionalSources,
     stableFantasyPointSettings,
     stableSourceControls,
     statGroupCollapseState,

@@ -49,8 +49,10 @@ import type { EspnConnectionLeague } from "lib/integrations/espn/contracts";
 import { mapUserSettingsRowToLeagueSettings } from "lib/user-settings/mappers";
 import {
   clearCustomCsvSession,
-  loadCustomCsvSession,
+  createCustomCsvId,
+  loadCustomCsvSessionResult,
   saveCustomCsvSession,
+  validateCustomCsvEntries,
   type SessionCsvEntry,
 } from "lib/draftDashboard/csvImportSession";
 import {
@@ -129,6 +131,57 @@ import styles from "./DraftDashboard.module.scss";
 
 const EMPTY_PROJECTION_STYLES: Record<string, string> = {};
 const NOOP_PROJECTION_TOGGLE = () => {};
+const CUSTOM_SKATER_STAT_MAPPINGS = [
+  ["Games_Played", "GAMES_PLAYED"], ["Goals", "GOALS"],
+  ["Assists", "ASSISTS"], ["Points", "POINTS"],
+  ["Plus_Minus", "PLUS_MINUS"], ["Shots_on_Goal", "SHOTS_ON_GOAL"],
+  ["Hits", "HITS"], ["Blocked_Shots", "BLOCKED_SHOTS"],
+  ["Penalty_Minutes", "PENALTY_MINUTES"], ["PP_Points", "PP_POINTS"],
+  ["PP_Goals", "PP_GOALS"], ["PP_Assists", "PP_ASSISTS"],
+  ["SH_Points", "SH_POINTS"], ["SH_Goals", "SH_GOALS"],
+  ["Time_on_Ice_Per_Game", "TIME_ON_ICE_PER_GAME"],
+  ["Faceoffs_Won", "FACEOFFS_WON"], ["Faceoffs_Lost", "FACEOFFS_LOST"],
+] as const;
+const CUSTOM_GOALIE_STAT_MAPPINGS = [
+  ["Games_Played", "GAMES_PLAYED"], ["Wins_Goalie", "WINS_GOALIE"],
+  ["Losses_Goalie", "LOSSES_GOALIE"], ["Otl", "OTL_GOALIE"],
+  ["Saves_Goalie", "SAVES_GOALIE"], ["Sa", "SHOTS_AGAINST_GOALIE"],
+  ["Ga", "GOALS_AGAINST_GOALIE"], ["Save_Percentage", "SAVE_PERCENTAGE"],
+  ["Goals_Against_Average", "GOALS_AGAINST_AVERAGE"],
+  ["Shutouts_Goalie", "SHUTOUTS_GOALIE"],
+] as const;
+
+function buildCustomAdditionalSources(
+  entries: SessionCsvEntry[],
+  playerType: "skater" | "goalie",
+  statMappingEntries: ReadonlyArray<readonly [string, string]>,
+): CustomAdditionalProjectionSource[] {
+  return entries.flatMap((entry) => {
+    const rows = (entry.rows || []).filter((row) => {
+      const positions = String(row.Position || "")
+        .toUpperCase()
+        .split(",")
+        .map((position) => position.trim());
+      return playerType === "goalie" ? positions.includes("G") : !positions.includes("G");
+    });
+    if (!rows.length) return [];
+    return [{
+      id: entry.id,
+      displayName: entry.label || entry.id,
+      playerType,
+      rows,
+      primaryPlayerIdKey: "player_id",
+      originalPlayerNameKey: "Player_Name",
+      teamKey: "Team_Abbreviation",
+      positionKey: "Position",
+      statMappings: statMappingEntries.map(([dbColumnName, key]) => ({
+        key: key as any,
+        dbColumnName,
+      })),
+      resolution: entry.resolution,
+    }];
+  });
+}
 
 // Data Models from PRD
 export interface DraftSettings {
@@ -491,16 +544,28 @@ const DraftDashboard: React.FC = () => {
     undefined,
   );
   // Multi-CSV rows live in memory with a versioned, tab-scoped fallback only.
-  const [customCsvList, setCustomCsvList] = useState<SessionCsvEntry[]>(() => {
-    if (typeof window === "undefined") return [];
-    return loadCustomCsvSession();
+  const [initialCustomCsvSession] = useState(() => {
+    if (typeof window === "undefined") return { entries: [] };
+    return loadCustomCsvSessionResult();
   });
+  const [customCsvList, setCustomCsvList] = useState<SessionCsvEntry[]>(
+    initialCustomCsvSession.entries,
+  );
+  const [customCsvSessionError, setCustomCsvSessionError] = useState<string | null>(
+    initialCustomCsvSession.error ?? null,
+  );
   const getCsvList = useCallback(() => customCsvList, [customCsvList]);
   const setCsvList = useCallback((next: SessionCsvEntry[]) => {
     if (typeof window === "undefined") return;
+    const validationError = validateCustomCsvEntries(next);
+    if (validationError) {
+      setCustomCsvSessionError(validationError);
+      return;
+    }
     try {
       setCustomCsvList(next);
       saveCustomCsvSession(next);
+      setCustomCsvSessionError(null);
     } catch {}
   }, []);
 
@@ -844,6 +909,22 @@ const DraftDashboard: React.FC = () => {
 
   // Get player projections data (skaters)
   const [dataRefreshKey, setDataRefreshKey] = useState<number>(0);
+  const skaterCustomAdditionalSources = useMemo(
+    () => buildCustomAdditionalSources(
+      customCsvList,
+      "skater",
+      CUSTOM_SKATER_STAT_MAPPINGS,
+    ),
+    [customCsvList],
+  );
+  const goalieCustomAdditionalSources = useMemo(
+    () => buildCustomAdditionalSources(
+      customCsvList,
+      "goalie",
+      CUSTOM_GOALIE_STAT_MAPPINGS,
+    ),
+    [customCsvList],
+  );
   const skaterData = useProcessedProjectionsData({
     activePlayerType: "skater",
     sourceControls,
@@ -855,59 +936,7 @@ const DraftDashboard: React.FC = () => {
     showPerGameFantasyPoints: false,
     togglePerGameFantasyPoints: NOOP_PROJECTION_TOGGLE,
     teamCountForRoundSummaries: draftSettings.teamCount,
-    // inject custom CSVs as additional sources for skaters
-    customAdditionalSources: (() => {
-      const list = getCsvList();
-      if (!list.length) return undefined;
-      const COL_TO_STAT: Record<string, string> = {
-        Games_Played: "GAMES_PLAYED",
-        Goals: "GOALS",
-        Assists: "ASSISTS",
-        Points: "POINTS",
-        Plus_Minus: "PLUS_MINUS",
-        Shots_on_Goal: "SHOTS_ON_GOAL",
-        Hits: "HITS",
-        Blocked_Shots: "BLOCKED_SHOTS",
-        Penalty_Minutes: "PENALTY_MINUTES",
-        PP_Points: "PP_POINTS",
-        PP_Goals: "PP_GOALS",
-        PP_Assists: "PP_ASSISTS",
-        SH_Points: "SH_POINTS",
-        SH_Goals: "SH_GOALS",
-        Time_on_Ice_Per_Game: "TIME_ON_ICE_PER_GAME",
-        Faceoffs_Won: "FACEOFFS_WON",
-        Faceoffs_Lost: "FACEOFFS_LOST",
-      };
-      const statMappings = Object.entries(COL_TO_STAT).map(([col, key]) => ({
-        key: key as any,
-        dbColumnName: col,
-      }));
-      return list
-        .map((entry) => {
-          const rows = (entry.rows || []).filter((r) => {
-            const pos = String(r["Position"] || "").toUpperCase();
-            return !pos
-              .split(",")
-              .map((s: string) => s.trim())
-              .includes("G");
-          });
-          if (!rows.length) return undefined as any;
-          const src: CustomAdditionalProjectionSource = {
-            id: entry.id,
-            displayName: entry.label || entry.id,
-            playerType: "skater",
-            rows,
-            primaryPlayerIdKey: "player_id",
-            originalPlayerNameKey: "Player_Name",
-            teamKey: "Team_Abbreviation",
-            positionKey: "Position",
-            statMappings,
-            resolution: entry.resolution,
-          };
-          return src;
-        })
-        .filter(Boolean) as CustomAdditionalProjectionSource[];
-    })(),
+    customAdditionalSources: skaterCustomAdditionalSources,
     refreshKey: dataRefreshKey,
     allowCustomNameFallback: draftSettings.allowCustomNameFallback ?? true,
   });
@@ -924,51 +953,7 @@ const DraftDashboard: React.FC = () => {
     showPerGameFantasyPoints: false,
     togglePerGameFantasyPoints: NOOP_PROJECTION_TOGGLE,
     teamCountForRoundSummaries: draftSettings.teamCount,
-    customAdditionalSources: (() => {
-      const list = getCsvList();
-      if (!list.length) return undefined;
-      const COL_TO_STAT: Record<string, string> = {
-        Games_Played: "GAMES_PLAYED",
-        Wins_Goalie: "WINS_GOALIE",
-        Losses_Goalie: "LOSSES_GOALIE",
-        Otl: "OTL_GOALIE",
-        Saves_Goalie: "SAVES_GOALIE",
-        Sa: "SHOTS_AGAINST_GOALIE",
-        Ga: "GOALS_AGAINST_GOALIE",
-        Save_Percentage: "SAVE_PERCENTAGE",
-        Goals_Against_Average: "GOALS_AGAINST_AVERAGE",
-        Shutouts_Goalie: "SHUTOUTS_GOALIE",
-      };
-      const statMappings = Object.entries(COL_TO_STAT).map(([col, key]) => ({
-        key: key as any,
-        dbColumnName: col,
-      }));
-      return list
-        .map((entry) => {
-          const rows = (entry.rows || []).filter((r) => {
-            const pos = String(r["Position"] || "").toUpperCase();
-            return pos
-              .split(",")
-              .map((s: string) => s.trim())
-              .includes("G");
-          });
-          if (!rows.length) return undefined as any;
-          const src: CustomAdditionalProjectionSource = {
-            id: entry.id,
-            displayName: entry.label || entry.id,
-            playerType: "goalie",
-            rows,
-            primaryPlayerIdKey: "player_id",
-            originalPlayerNameKey: "Player_Name",
-            teamKey: "Team_Abbreviation",
-            positionKey: "Position",
-            statMappings,
-            resolution: entry.resolution,
-          };
-          return src;
-        })
-        .filter(Boolean) as CustomAdditionalProjectionSource[];
-    })(),
+    customAdditionalSources: goalieCustomAdditionalSources,
     refreshKey: dataRefreshKey,
     allowCustomNameFallback: draftSettings.allowCustomNameFallback ?? true,
   });
@@ -2794,6 +2779,7 @@ const DraftDashboard: React.FC = () => {
   );
   const projectionDataNotices = useMemo(() => {
     const notices: string[] = [];
+    if (customCsvSessionError) notices.push(customCsvSessionError);
     if (hasLoadedPlayers && skaterData.isLoading) {
       notices.push(
         "Skater projections are refreshing; loaded players remain available.",
@@ -2835,6 +2821,7 @@ const DraftDashboard: React.FC = () => {
     return Array.from(new Set(notices));
   }, [
     customCsvList,
+    customCsvSessionError,
     goalieData.error,
     goalieData.isLoading,
     goalieData.sourceWarnings,
@@ -3599,10 +3586,9 @@ const DraftDashboard: React.FC = () => {
           }));
         }}
         onImported={({ headers, rows, sourceId, label, resolution }) => {
-          // Append to list with incremental id custom_csv_1..n
+          // Generate a new session ID instead of deriving one from list length.
           const list = getCsvList();
-          const nextIndex = list.length + 1;
-          const id = `custom_csv_${nextIndex}`;
+          const id = createCustomCsvId(list);
           const next = [
             ...list,
             {
