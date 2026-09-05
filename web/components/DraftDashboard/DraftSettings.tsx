@@ -1444,6 +1444,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
                 </button>
               </div>
             </div>
+            <p className={styles.structuralLockHint}>Changes apply to this draft only. Completed picks are preserved.</p>
             {[
               { title: "Forwards", positions: ["C", "LW", "RW", "FWD"] },
               { title: "Defense & Goaltending", positions: ["D", "G"] },
@@ -1518,7 +1519,6 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
             </div>
             </div>)}
             <div className={styles.rosterSummary}><h4>Roster Summary <span>{totalRosterSpots} total spots</span></h4><p>{["C", "LW", "RW", "FWD"].reduce((sum, pos) => sum + (displayedRosterConfig[pos] || 0), 0)} forwards · {displayedRosterConfig.D || 0} defense · {displayedRosterConfig.G || 0} goalies · {displayedRosterConfig.utility || 0} utility · {displayedRosterConfig.bench || 0} bench</p></div>
-            <p className={styles.structuralLockHint}>Changes apply to this draft only. Completed picks are preserved.</p>
           </fieldset>
           <fieldset data-settings-domain="scoring" hidden={variant === "inline" && activeSection !== "scoring"} role={variant === "inline" ? "tabpanel" : undefined} aria-labelledby={variant === "inline" ? "draft-tab-scoring" : undefined} id="draft-domain-scoring" tabIndex={-1} className={`${styles.fieldset} ${styles.settingsGroupScoring}`} disabled={draftLocked}>
             <legend className={styles.legend}>Scoring Configuration</legend>

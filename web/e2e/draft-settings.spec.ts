@@ -17,6 +17,26 @@ async function fitsViewport(page: Page) {
     })),
   ).toEqual({ vertical: true, horizontal: true });
 }
+async function fitsSettingsPanel(page: Page, domain: string) {
+  expect(
+    await page.locator(`#draft-domain-${domain}`).evaluate((panel) => {
+      const bounds = panel.getBoundingClientRect();
+      const visibleChildren = Array.from(panel.querySelectorAll("*"))
+        .map((element) => element.getBoundingClientRect())
+        .filter((rect) => rect.width > 0 && rect.height > 0);
+      return {
+        vertical: panel.scrollHeight <= panel.clientHeight,
+        horizontal: panel.scrollWidth <= panel.clientWidth,
+        childrenVisible: visibleChildren.every(
+          (rect) =>
+            rect.bottom <= bounds.bottom + 0.5 &&
+            rect.right <= bounds.right + 0.5 &&
+            rect.left >= bounds.left - 0.5,
+        ),
+      };
+    }),
+  ).toEqual({ vertical: true, horizontal: true, childrenVisible: true });
+}
 
 for (const viewport of [
   { width: 1440, height: 900 },
@@ -57,6 +77,8 @@ for (const viewport of [
         .getByRole("tab", { name: domain, exact: true })
         .click();
       await fitsViewport(page);
+      if (domain !== "League & Draft")
+        await fitsSettingsPanel(page, domain.toLowerCase());
     }
     await page.waitForTimeout(250);
     await page.screenshot({ path: testInfo.outputPath("quick-settings.png") });
