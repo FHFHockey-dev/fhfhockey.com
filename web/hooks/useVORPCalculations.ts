@@ -9,6 +9,7 @@ import {
   normalizePlayerEligibility,
 } from "lib/draftDashboard/forwardGrouping";
 import { calculateCategoryScores } from "lib/scoring/categoryScores";
+import { computeProratedFantasyPoints } from "lib/projectionsConfig/proration";
 
 export type LeagueType = "points" | "categories";
 
@@ -45,8 +46,10 @@ export interface UseVORPParams {
   personalizeReplacement?: boolean;
   // Full-season proration toggle for skater counting stats (points leagues only)
   prorate84?: boolean;
-  // Optional fantasy scoring overrides (will merge with defaults inside helper)
+  // Optional fantasy scoring map used for paced points values.
   fantasyPointSettings?: Record<string, number>;
+  // Keep legacy helper behavior available for callers without an explicit map.
+  mergeFantasyPointDefaults?: boolean;
 }
 
 export interface UseVORPResult {
@@ -75,6 +78,7 @@ export function useVORPCalculations({
   personalizeReplacement = false,
   prorate84 = false,
   fantasyPointSettings = EMPTY_NUMERIC_RECORD,
+  mergeFantasyPointDefaults = true,
 }: UseVORPParams): UseVORPResult {
   return useMemo(() => {
     // Value per player (points or categories composite)
@@ -101,27 +105,18 @@ export function useVORPCalculations({
     // Compute player comparable values
     if (leagueType === "points") {
       // Points leagues: optionally recompute fantasy points using an 84G pace for skaters.
-      let computeProrated:
-        | ((
-            p: ProcessedPlayer,
-            enable: boolean,
-            scoring?: Record<string, number>,
-          ) => number | null)
-        | null = null;
-      if (prorate84) {
-        try {
-          const mod = require("lib/projectionsConfig/proration");
-          computeProrated = mod.computeProratedFantasyPoints;
-        } catch {
-          computeProrated = null;
-        }
-      }
       players.forEach((p) => {
         const id = String(p.playerId);
         let val = p.fantasyPoints?.projected ?? 0;
-        if (prorate84 && computeProrated) {
-          const fp = computeProrated(p, true, fantasyPointSettings);
+        if (prorate84) {
+          const fp = computeProratedFantasyPoints(
+            p,
+            true,
+            fantasyPointSettings,
+            { mergeWithDefaults: mergeFantasyPointDefaults },
+          );
           if (fp != null && Number.isFinite(fp)) val = fp;
+          else if (!mergeFantasyPointDefaults) val = 0;
         }
         values.set(id, Number.isFinite(val) ? val : 0);
       });
@@ -348,5 +343,6 @@ export function useVORPCalculations({
     myFilledSlots,
     prorate84,
     fantasyPointSettings,
+    mergeFantasyPointDefaults,
   ]);
 }

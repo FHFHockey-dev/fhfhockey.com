@@ -9,7 +9,11 @@ import { groupPlayerEligibility } from "./forwardGrouping";
 import { materializeKeeperPicks, validateKeeperCandidate } from "./keepers";
 import { resolvePickOwner, upsertPickTrade } from "./pickTrades";
 import { buildDraftConfigurationSummary } from "./summaryConfiguration";
-import { categoryRankBand, rankTeamCategories } from "./categoryStandings";
+import {
+  aggregateTeamCategoryTotals,
+  categoryRankBand,
+  rankTeamCategories,
+} from "./categoryStandings";
 import { bookmarkImportError, validateDraftSettings } from "./settingsValidation";
 
 const csvPlayer = (id: number, name: string, position: string) => ({
@@ -82,9 +86,64 @@ describe("representative draft workflow", () => {
       { teamId: "empty", categoryTotals: {} },
       { teamId: "zero", categoryTotals: { GOALS: 0 } },
     ], { GOALS: 1 }, "categories");
-    expect(missing.empty.GOALS).toBe(missing.zero.GOALS);
+    expect(missing.empty.GOALS).toBeUndefined();
+    expect(missing.zero.GOALS).toBe(1);
     expect(categoryRankBand(1, 1)).toBe("green");
     expect(categoryRankBand(2, 5)).toBe("green");
+  });
+
+  it("aggregates projected rate categories by their workloads and marks incomplete rates unavailable", () => {
+    const goalies = [
+      {
+        displayPosition: "G",
+        combinedStats: {
+          SAVES_GOALIE: { projected: 90 },
+          GOALS_AGAINST_GOALIE: { projected: 10 },
+          SAVE_PERCENTAGE: { projected: 0.9 },
+          GOALS_AGAINST_AVERAGE: { projected: 2 },
+          GAMES_STARTED_GOALIE: { projected: 10 },
+        },
+      },
+      {
+        displayPosition: "G",
+        combinedStats: {
+          SAVES_GOALIE: { projected: 190 },
+          GOALS_AGAINST_GOALIE: { projected: 10 },
+          SAVE_PERCENTAGE: { projected: 0.95 },
+          GOALS_AGAINST_AVERAGE: { projected: 3 },
+          GAMES_STARTED_GOALIE: { projected: 30 },
+        },
+      },
+    ];
+    const totals = aggregateTeamCategoryTotals(goalies, [
+      "SAVE_PERCENTAGE",
+      "GOALS_AGAINST_AVERAGE",
+    ]);
+    expect(totals.SAVE_PERCENTAGE).toEqual({
+      value: 280 / 300,
+      quality: "exact-from-projected-inputs",
+    });
+    expect(totals.GOALS_AGAINST_AVERAGE).toEqual({
+      value: 2.75,
+      quality: "estimated",
+    });
+
+    const incomplete = aggregateTeamCategoryTotals(
+      [...goalies, { displayPosition: "G", combinedStats: {} }],
+      ["SAVE_PERCENTAGE", "GOALS_AGAINST_AVERAGE"],
+    );
+    expect(incomplete.SAVE_PERCENTAGE).toEqual({
+      value: null,
+      quality: "unavailable",
+    });
+    expect(incomplete.GOALS_AGAINST_AVERAGE).toEqual({
+      value: null,
+      quality: "unavailable",
+    });
+    expect(rankTeamCategories([
+      { teamId: "complete", categoryTotals: { SAVE_PERCENTAGE: totals.SAVE_PERCENTAGE.value } },
+      { teamId: "incomplete", categoryTotals: { SAVE_PERCENTAGE: null } },
+    ], { SAVE_PERCENTAGE: 1 }, "categories").incomplete.SAVE_PERCENTAGE).toBeUndefined();
   });
   it("keeps one coherent contract across import, settings, pick ownership, undo, recommendations, and summary", () => {
     const imported = validateCsvProjectionRows(

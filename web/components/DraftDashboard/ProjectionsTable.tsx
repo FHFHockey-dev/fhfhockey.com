@@ -1756,10 +1756,16 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       title={
                         leagueType === "categories"
                           ? "Score: percentile-weighted composite (0–100) across selected categories, weighted by category weights and metric scarcity."
-                          : "Projected Fantasy Points"
+                          : prorate84
+                            ? `Paced player-analysis fantasy points on an ${NHL_REGULAR_SEASON_GAMES}-game schedule. Team projections remain unchanged.`
+                            : "Projected Fantasy Points"
                       }
                     >
-                      {leagueType === "categories" ? "Score" : "Proj FP"}{" "}
+                      {leagueType === "categories"
+                        ? "Score"
+                        : prorate84
+                          ? "Paced FP"
+                          : "Proj FP"}{" "}
                       {sortField ===
                         (leagueType === "categories"
                           ? "score"
@@ -2131,7 +2137,16 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     </td>
                     {!statColumnsMode ? (
                       <>
-                        <td className={fpClasses.join(" ")} data-label={leagueType === "categories" ? "Score" : "Proj FP"}>
+                        <td
+                          className={fpClasses.join(" ")}
+                          data-label={
+                            leagueType === "categories"
+                              ? "Score"
+                              : prorate84
+                                ? "Paced FP"
+                                : "Proj FP"
+                          }
+                        >
                           {leagueType === "categories"
                             ? typeof m?.value === "number"
                               ? m.value.toFixed(1)

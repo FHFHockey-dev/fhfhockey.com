@@ -66,13 +66,17 @@ export default function LeagueStandings({
     (a, b) => values[b.teamId] - values[a.teamId],
   );
   const sorted = [...teams].sort((a, b) => {
-    const value = (team: TeamDraftStats) =>
+    const value = (team: TeamDraftStats): number | null =>
       sort.key === "value"
         ? values[team.teamId]
         : sort.key === "vorp"
           ? (team.teamVorp ?? 0)
-          : (team.categoryTotals[sort.key] ?? 0);
-    return (sort.ascending ? 1 : -1) * (value(a) - value(b));
+          : (team.categoryTotals[sort.key] ?? null);
+    const left = value(a);
+    const right = value(b);
+    if (left == null) return right == null ? 0 : 1;
+    if (right == null) return -1;
+    return (sort.ascending ? 1 : -1) * (left - right);
   });
   const changeSort = (key: string) =>
     setSort((current) => ({
@@ -91,7 +95,9 @@ export default function LeagueStandings({
             onChange={(event) => changeSort(event.target.value)}
           >
             <option value="value">
-              {leagueType === "categories" ? "Score" : "Projected points"}
+              {leagueType === "categories"
+                ? "Score"
+                : "Original projected points"}
             </option>
             <option value="vorp">Team VORP</option>
           </select>
@@ -150,7 +156,7 @@ export default function LeagueStandings({
                 }
               >
                 <button type="button" onClick={() => changeSort("value")}>
-                  {leagueType === "categories" ? "Score" : "Proj FP"}
+                  {leagueType === "categories" ? "Score" : "Original Proj FP"}
                 </button>
               </th>
             </tr>
@@ -196,16 +202,46 @@ export default function LeagueStandings({
                   const definition = STATS_MASTER_LIST.find(
                     (stat) => stat.key === key,
                   );
+                  const value = team.categoryTotals[key];
+                  const quality =
+                    team.categoryAggregateQuality?.[key] ??
+                    (value == null
+                      ? "unavailable"
+                      : "exact-from-projected-inputs");
+                  const qualityLabel =
+                    quality === "exact-from-projected-inputs"
+                      ? "Exact from projected inputs"
+                      : quality === "estimated"
+                        ? "Estimated"
+                        : "Unavailable";
                   return (
                     <td
                       key={key}
                       data-category={key}
                       data-rank={rank}
-                      data-band={categoryRankBand(rank, teams.length)}
-                      title={`${definition?.displayName || key}: rank ${rank} of ${teams.length}`}
+                      data-band={
+                        rank == null
+                          ? undefined
+                          : categoryRankBand(rank, teams.length)
+                      }
+                      title={`${definition?.displayName || key}: ${
+                        rank == null ? "unranked" : `rank ${rank} of ${teams.length}`
+                      } · ${qualityLabel}`}
                     >
-                      {(team.categoryTotals[key] ?? 0).toFixed(
-                        definition?.decimalPlaces ?? 0,
+                      {value == null ? (
+                        <span aria-label="Unavailable team rate">N/A</span>
+                      ) : (
+                        <>
+                          {value.toFixed(definition?.decimalPlaces ?? 0)}
+                          {quality === "estimated" && (
+                            <sup
+                              aria-label="Estimated team rate based on projected workload"
+                              title="Estimated from projected workload because exact event totals are unavailable"
+                            >
+                              ≈
+                            </sup>
+                          )}
+                        </>
                       )}
                     </td>
                   );

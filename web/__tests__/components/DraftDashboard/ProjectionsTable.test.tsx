@@ -183,6 +183,28 @@ describe("ProjectionsTable visibility diagnostics", () => {
     expect(window.localStorage.getItem("projections.prorate84")).toBe("true");
   });
 
+  it("labels paced fantasy points as player analysis", () => {
+    render(
+      <ProjectionsTable
+        players={[player(1, "Paced Skater", "C")]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Toggle 84-game prorated skater stats",
+      }),
+    );
+    expect(screen.getByRole("button", { name: /Paced FP/ }).getAttribute("title")).toContain(
+      "Team projections remain unchanged",
+    );
+  });
+
   it("shows configured goalie metrics in mixed-player stat rows", () => {
     const goalie = player(1, "Goalie", "G");
     goalie.combinedStats = {

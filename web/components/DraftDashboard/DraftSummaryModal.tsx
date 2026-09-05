@@ -732,7 +732,9 @@ export default function DraftSummaryModal({
                     <th>HIT</th>
                     <th>BLK</th>
                     <th>Team VORP</th>
-                    <th>Proj Pts</th>
+                    <th title="Original projections; player pacing does not change team totals">
+                      Original Proj Pts
+                    </th>
                   </tr>
                 </thead>
                 <tbody>

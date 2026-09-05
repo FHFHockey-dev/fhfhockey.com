@@ -109,6 +109,7 @@ import {
 import { isGlobalShortcutBlockedTarget } from "lib/draftDashboard/keyboardShortcuts";
 import { buildProjectionFreshnessNotices } from "lib/draftDashboard/projectionFreshness";
 import { replaceManualDraftPick } from "lib/draftDashboard/quickFix";
+import { aggregateTeamCategoryTotals } from "lib/draftDashboard/categoryStandings";
 import {
   continueManuallyFromYahoo,
   deriveYahooDraftDashboardConfiguration,
@@ -239,7 +240,11 @@ export interface TeamDraftStats {
   teamName: string;
   owner: string;
   projectedPoints: number;
-  categoryTotals: Record<string, number>;
+  categoryTotals: Record<string, number | null>;
+  categoryAggregateQuality?: Record<
+    string,
+    "exact-from-projected-inputs" | "estimated" | "unavailable"
+  >;
   rosterSlots: {
     [position: string]: RosterAssignment[];
   };
@@ -1790,6 +1795,18 @@ const DraftDashboard: React.FC = () => {
     positionOverrides,
   ]);
 
+  const activeScoringCategories = useMemo(() =>
+    draftSettings.leagueType === "categories"
+      ? draftSettings.categoryWeights || {}
+      : { ...draftSettings.scoringCategories, ...goaliePointValues },
+    [
+      draftSettings.leagueType,
+      draftSettings.categoryWeights,
+      draftSettings.scoringCategories,
+      goaliePointValues,
+    ],
+  );
+
   // NEW: VORP metrics computed on full player pool (not just available)
   const {
     playerMetrics: vorpMetrics,
@@ -1808,6 +1825,26 @@ const DraftDashboard: React.FC = () => {
     myFilledSlots: myFilledSlotsForVorp,
     personalizeReplacement,
     prorate84,
+    fantasyPointSettings: activeScoringCategories,
+    mergeFantasyPointDefaults: false,
+  });
+
+  // Team standings and the draft recap remain on original projections even
+  // while the player-analysis surface is showing an 84-game pace.
+  const { playerMetrics: teamProjectionVorpMetrics } = useVORPCalculations({
+    players: allPlayers,
+    availablePlayers,
+    draftSettings,
+    picksUntilNext,
+    leagueType: draftSettings.leagueType || "points",
+    baselineMode,
+    categoryWeights: draftSettings.categoryWeights,
+    forwardGrouping,
+    myFilledSlots: myFilledSlotsForVorp,
+    personalizeReplacement,
+    prorate84: false,
+    fantasyPointSettings: activeScoringCategories,
+    mergeFantasyPointDefaults: false,
   });
 
   const rosterScheduleOptimizer = useRosterScheduleOptimizer({
@@ -1821,13 +1858,6 @@ const DraftDashboard: React.FC = () => {
   const effectiveRosterConfig = useMemo(
     () => getEffectiveRosterConfig(draftSettings.rosterConfig, forwardGrouping),
     [draftSettings.rosterConfig, forwardGrouping],
-  );
-
-  const activeScoringCategories = useMemo(() =>
-    draftSettings.leagueType === "categories"
-      ? draftSettings.categoryWeights || {}
-      : { ...draftSettings.scoringCategories, ...goaliePointValues },
-    [draftSettings.leagueType, draftSettings.categoryWeights, draftSettings.scoringCategories, goaliePointValues],
   );
 
   // Team stats calculations
@@ -1982,27 +2012,32 @@ const DraftDashboard: React.FC = () => {
 
       // NEW: Sum of player VORP for team
       const teamVorp = teamPlayers.reduce((sum, p) => {
-        const m = vorpMetrics.get(p.playerId);
+        const m = teamProjectionVorpMetrics.get(p.playerId);
         return sum + (m?.vorp || 0);
       }, 0);
 
-      const CAT_KEYS = Object.keys(activeScoringCategories);
-      const categoryTotals: Record<string, number> = {};
-      CAT_KEYS.forEach((k) => (categoryTotals[k] = 0));
-      teamPlayers.forEach((dp) => {
-        const player = allPlayers.find(
-          (p) => String(p.playerId) === dp.playerId,
-        );
-        if (!player) return;
-        CAT_KEYS.forEach((k) => {
-          const v = (player.combinedStats as any)?.[k]?.projected as
-            | number
-            | null;
-          if (typeof v === "number" && Number.isFinite(v)) {
-            categoryTotals[k] += v;
-          }
-        });
-      });
+      const categoryAggregates = aggregateTeamCategoryTotals(
+        teamPlayers.flatMap((draftedPlayer) => {
+          const player = allPlayers.find(
+            (candidate) =>
+              String(candidate.playerId) === draftedPlayer.playerId,
+          );
+          return player ? [player] : [];
+        }),
+        Object.keys(activeScoringCategories),
+      );
+      const categoryTotals = Object.fromEntries(
+        Object.entries(categoryAggregates).map(([key, aggregate]) => [
+          key,
+          aggregate.value,
+        ]),
+      );
+      const categoryAggregateQuality = Object.fromEntries(
+        Object.entries(categoryAggregates).map(([key, aggregate]) => [
+          key,
+          aggregate.quality,
+        ]),
+      );
 
       return {
         teamId,
@@ -2010,6 +2045,7 @@ const DraftDashboard: React.FC = () => {
         owner: teamId,
         projectedPoints,
         categoryTotals,
+        categoryAggregateQuality,
         rosterSlots,
         bench,
         teamVorp,
@@ -2020,7 +2056,7 @@ const DraftDashboard: React.FC = () => {
     rosterAssignments,
     allPlayers,
     customTeamNames,
-    vorpMetrics,
+    teamProjectionVorpMetrics,
     effectiveRosterConfig,
     positionOverrides,
     activeScoringCategories,
@@ -3444,7 +3480,17 @@ const DraftDashboard: React.FC = () => {
         />
       </section>
 
-        <LeagueStandings teams={teamStats} categories={activeScoringCategories} leagueType={draftSettings.leagueType || "points"} myTeamId={myTeamId} vorpMetrics={vorpMetrics} onUpdateTeamName={updateTeamName} canEdit={manualDraftingEnabled} isLoading={isLoading} error={errorMessage} />
+        <LeagueStandings
+          teams={teamStats}
+          categories={activeScoringCategories}
+          leagueType={draftSettings.leagueType || "points"}
+          myTeamId={myTeamId}
+          vorpMetrics={teamProjectionVorpMetrics}
+          onUpdateTeamName={updateTeamName}
+          canEdit={manualDraftingEnabled}
+          isLoading={isLoading}
+          error={errorMessage}
+        />
         <section
           id="mobile-draft-panel-board"
           className={styles.leftPanel}
@@ -3563,7 +3609,7 @@ const DraftDashboard: React.FC = () => {
         draftedPlayers={draftedPlayers}
         teamStats={teamStats}
         allPlayers={allPlayers}
-        vorpMetrics={vorpMetrics}
+        vorpMetrics={teamProjectionVorpMetrics}
         forwardGrouping={forwardGrouping}
         pickTrades={manualDraftingEnabled ? pickTrades : []}
         keepers={manualDraftingEnabled ? keepers : []}
