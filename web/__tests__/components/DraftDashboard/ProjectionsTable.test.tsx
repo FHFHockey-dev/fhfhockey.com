@@ -457,25 +457,33 @@ describe("ProjectionsTable visibility diagnostics", () => {
     ).toContain("duplicate rows 1");
   });
 
-  it("batches prior-season totals once for multiple expanded players", async () => {
+  it("loads only the expanded player, deduplicates reopen, and preserves prior-season selection", async () => {
     const players = [
       player(1, "First Player", "C"),
       player(2, "Second Player", "D"),
       player(3, "Third Player", "LW"),
     ];
+    let requestedIds: number[] = [];
+    let requestedRowCount = 0;
     const chain: any = {
       select: vi.fn(() => chain),
-      in: vi.fn(() => chain),
+      in: vi.fn((_column: string, ids: number[]) => {
+        requestedIds = ids;
+        return chain;
+      }),
       order: vi.fn(() => chain),
       range: vi.fn(() =>
         Promise.resolve({
-          data: players.map((entry) => ({
+          data: players.filter((entry) => requestedIds.includes(entry.playerId)).map((entry) => ({
             player_id: entry.playerId,
             season: 20242025,
             games_played: 82,
             goals: 10,
           })),
           error: null,
+        }).then((result) => {
+          requestedRowCount += result.data.length;
+          return result;
         }),
       ),
     };
@@ -501,7 +509,8 @@ describe("ProjectionsTable visibility diagnostics", () => {
     expect(firstRow.getAttribute("data-stripe")).toBe(firstRow.nextElementSibling?.getAttribute("data-stripe"));
     expect(screen.getByText("Second Player").closest("tr")?.getAttribute("data-stripe")).not.toBe(firstRow.getAttribute("data-stripe"));
     expect(fromMock).toHaveBeenCalledTimes(1);
-    expect(chain.in).toHaveBeenCalledWith("player_id", [1, 2, 3]);
+    expect(chain.in).toHaveBeenCalledWith("player_id", [1]);
+    expect(requestedRowCount).toBe(1);
 
     fireEvent.click(
       screen.getByRole("button", { name: "Expand details for Second Player" }),
@@ -509,7 +518,168 @@ describe("ProjectionsTable visibility diagnostics", () => {
     await waitFor(() =>
       expect(screen.getAllByText("Last Season: 2024-25")).toHaveLength(2),
     );
+    expect(fromMock).toHaveBeenCalledTimes(2);
+    expect(chain.in).toHaveBeenLastCalledWith("player_id", [2]);
+    expect(requestedRowCount).toBe(2);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Collapse details for First Player" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Expand details for First Player" }),
+    );
+    await waitFor(() =>
+      expect(screen.getAllByText("Last Season: 2024-25")).toHaveLength(2),
+    );
+    expect(fromMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not reuse a prior-season detail across season contexts", async () => {
+    const chain: any = {
+      select: vi.fn(() => chain),
+      in: vi.fn(() => chain),
+      order: vi.fn(() => chain),
+      range: vi.fn(() =>
+        Promise.resolve({
+          data: [{ player_id: 1, season: 20242025, games_played: 82 }],
+          error: null,
+        }),
+      ),
+    };
+    fromMock.mockReturnValue(chain);
+    const { rerender } = render(
+      <ProjectionsTable
+        players={[player(1, "Season Player", "C")]}
+        draftedPlayers={[]}
+        currentSeasonId="20252026"
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Season Player" }));
+    await screen.findByText("Last Season: 2024-25");
+    fireEvent.click(screen.getByRole("button", { name: "Collapse details for Season Player" }));
+    rerender(
+      <ProjectionsTable
+        players={[player(1, "Season Player", "C")]}
+        draftedPlayers={[]}
+        currentSeasonId="20262027"
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Season Player" }));
+    await screen.findByText("Last Season: 2024-25");
+    expect(fromMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows missing history and retries a failed player request", async () => {
+    let attempts = 0;
+    const chain: any = {
+      select: vi.fn(() => chain),
+      in: vi.fn(() => chain),
+      order: vi.fn(() => chain),
+      range: vi.fn(() => {
+        attempts += 1;
+        return attempts === 1
+          ? Promise.resolve({ data: null, error: new Error("history unavailable") })
+          : Promise.resolve({ data: [], error: null });
+      }),
+    };
+    fromMock.mockReturnValue(chain);
+    render(
+      <ProjectionsTable
+        players={[player(1, "Retry Player", "G")]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Retry Player" }));
+    await screen.findByText("history unavailable");
+    fireEvent.click(screen.getByRole("button", { name: "Collapse details for Retry Player" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Retry Player" }));
+    await screen.findByText("No last season totals available.");
+    expect(fromMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("shares a deferred successful request across close and reopen", async () => {
+    let resolveRequest!: (value: { data: any[]; error: null }) => void;
+    const pending = new Promise<{ data: any[]; error: null }>((resolve) => {
+      resolveRequest = resolve;
+    });
+    const chain: any = {
+      select: vi.fn(() => chain),
+      in: vi.fn(() => chain),
+      order: vi.fn(() => chain),
+      range: vi.fn(() => pending),
+    };
+    fromMock.mockReturnValue(chain);
+    render(
+      <ProjectionsTable
+        players={[player(1, "Deferred Player", "C")]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Deferred Player" }));
+    fireEvent.click(screen.getByRole("button", { name: "Collapse details for Deferred Player" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Deferred Player" }));
     expect(fromMock).toHaveBeenCalledTimes(1);
+    resolveRequest({ data: [{ player_id: 1, season: 20242025 }], error: null });
+    await screen.findByText("Last Season: 2024-25");
+  });
+
+  it("shares a deferred failure and permits a later retry", async () => {
+    let rejectRequest!: (error: Error) => void;
+    const pending = new Promise<{ data: any[]; error: null }>((_, reject) => {
+      rejectRequest = reject;
+    });
+    const chain: any = {
+      select: vi.fn(() => chain),
+      in: vi.fn(() => chain),
+      order: vi.fn(() => chain),
+      range: vi.fn(() => pending),
+    };
+    const retryChain: any = {
+      select: vi.fn(),
+      in: vi.fn(),
+      order: vi.fn(),
+      range: vi.fn(() => Promise.resolve({ data: [], error: null })),
+    };
+    retryChain.select.mockReturnValue(retryChain);
+    retryChain.in.mockReturnValue(retryChain);
+    retryChain.order.mockReturnValue(retryChain);
+    fromMock.mockReturnValueOnce(chain).mockReturnValueOnce(retryChain);
+    render(
+      <ProjectionsTable
+        players={[player(1, "Deferred Retry Player", "C")]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Deferred Retry Player" }));
+    fireEvent.click(screen.getByRole("button", { name: "Collapse details for Deferred Retry Player" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Deferred Retry Player" }));
+    expect(fromMock).toHaveBeenCalledTimes(1);
+    rejectRequest(new Error("deferred history unavailable"));
+    await screen.findByText("deferred history unavailable");
+    fireEvent.click(screen.getByRole("button", { name: "Collapse details for Deferred Retry Player" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Deferred Retry Player" }));
+    await screen.findByText("No last season totals available.");
+    expect(fromMock).toHaveBeenCalledTimes(2);
   });
 
   it("enforces the two-player comparison limit with visible feedback", () => {
