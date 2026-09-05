@@ -86,7 +86,12 @@ describe("representative draft workflow", () => {
     const ranks = rankTeamCategories(teams, { GOALS: 1, GOALS_AGAINST_AVERAGE: 1 }, "categories");
     expect(ranks["0"]).toEqual({ GOALS: 1, GOALS_AGAINST_AVERAGE: 1 });
     expect(ranks["11"]).toEqual({ GOALS: 12, GOALS_AGAINST_AVERAGE: 12 });
-    expect(teams.map((team) => categoryRankBand(ranks[team.teamId].GOALS, 12))).toEqual([
+    const goalRank = (teamId: string) => {
+      const rank = ranks[teamId].GOALS;
+      if (rank == null) throw new Error(`Missing GOALS rank for ${teamId}`);
+      return rank;
+    };
+    expect(teams.map((team) => categoryRankBand(goalRank(team.teamId), 12))).toEqual([
       "green", "green", "green", "yellow", "yellow", "yellow", "orange", "orange", "orange", "red", "red", "red",
     ]);
     teams[1].categoryTotals.GOALS = teams[0].categoryTotals.GOALS;
@@ -150,10 +155,42 @@ describe("representative draft workflow", () => {
       value: null,
       quality: "unavailable",
     });
+    const zeroWorkload = aggregateTeamCategoryTotals(
+      [
+        {
+          displayPosition: "C",
+          combinedStats: {
+            GOALS: { projected: 0 },
+            SHOTS_ON_GOAL: { projected: 0 },
+          },
+        },
+        {
+          displayPosition: "C",
+          combinedStats: {
+            GOALS: { projected: 10 },
+            SHOTS_ON_GOAL: { projected: 100 },
+          },
+        },
+      ],
+      ["SHOOTING_PERCENTAGE"],
+    );
+    expect(zeroWorkload.SHOOTING_PERCENTAGE).toEqual({
+      value: null,
+      quality: "unavailable",
+    });
     expect(rankTeamCategories([
       { teamId: "complete", categoryTotals: { SAVE_PERCENTAGE: totals.SAVE_PERCENTAGE.value } },
       { teamId: "incomplete", categoryTotals: { SAVE_PERCENTAGE: null } },
     ], { SAVE_PERCENTAGE: 1 }, "categories").incomplete.SAVE_PERCENTAGE).toBeUndefined();
+    expect(rankTeamCategories([
+      {
+        teamId: "zero-workload",
+        categoryTotals: {
+          SHOOTING_PERCENTAGE: zeroWorkload.SHOOTING_PERCENTAGE.value,
+        },
+      },
+      { teamId: "complete", categoryTotals: { SHOOTING_PERCENTAGE: 0.1 } },
+    ], { SHOOTING_PERCENTAGE: 1 }, "categories")["zero-workload"].SHOOTING_PERCENTAGE).toBeUndefined();
   });
   it("keeps one coherent contract across import, settings, pick ownership, undo, recommendations, and summary", () => {
     const imported = validateCsvProjectionRows(

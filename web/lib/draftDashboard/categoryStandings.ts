@@ -58,7 +58,7 @@ const ratioAggregate = (
   for (const player of players) {
     const top = numerator(player);
     const bottom = denominator(player);
-    if (top == null || bottom == null || bottom < 0) return null;
+    if (top == null || bottom == null || bottom <= 0) return null;
     totalNumerator += top;
     totalDenominator += bottom;
   }

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import type { ProcessedPlayer } from "./useProcessedProjectionsData";
 import { useVORPCalculations } from "./useVORPCalculations";
+import { STATS_MASTER_LIST } from "lib/projectionsConfig/statsMasterList";
 import {
   KEEPER_CONTRACT_VERSION,
   materializeKeeperPicks
@@ -30,6 +31,20 @@ function player(
     },
     yahooAvgPick
   } as ProcessedPlayer;
+}
+
+function projectedStat(projected: number): ProcessedPlayer["combinedStats"][string] {
+  return {
+    projected,
+    actual: null,
+    diffPercentage: null,
+    projectedDetail: {
+      value: projected,
+      contributingSources: [],
+      missingFromSelectedSources: [],
+      statDefinition: STATS_MASTER_LIST[0],
+    },
+  };
 }
 
 const players = [
@@ -160,14 +175,14 @@ describe("useVORPCalculations grouped forwards", () => {
   it("uses the authoritative scoring map for paced player values without pacing goalies", () => {
     const skater = player(10, "C", 999, 1);
     skater.combinedStats = {
-      GAMES_PLAYED: { projected: 84 },
-      GOALS: { projected: 40 },
-      ASSISTS: { projected: 80 },
+      GAMES_PLAYED: projectedStat(84),
+      GOALS: projectedStat(40),
+      ASSISTS: projectedStat(80),
     };
     const goalie = player(11, "G", 999, 2);
     goalie.combinedStats = {
-      GAMES_PLAYED: { projected: 42 },
-      WINS_GOALIE: { projected: 10 },
+      GAMES_PLAYED: projectedStat(42),
+      WINS_GOALIE: projectedStat(10),
     };
     const input = {
       players: [skater, goalie],
