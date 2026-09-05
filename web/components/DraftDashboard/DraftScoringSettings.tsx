@@ -43,7 +43,7 @@ function ScoringGroup({
     (stat) => !(stat in values),
   );
   return (
-    <section className={styles.scoringGroup} aria-label={`${title} scoring`}>
+    <section className={styles.scoringGroup} aria-label={`${title} scoring`} data-managing={manage}>
       <h4>
         {title} <span>{Object.keys(values).length} categories</span>
       </h4>

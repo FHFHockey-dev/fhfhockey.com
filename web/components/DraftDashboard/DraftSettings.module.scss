@@ -1698,7 +1698,28 @@
   .draftTypeToggle { padding: 2px; width: auto; border: 1px solid v.$draft-border; border-radius: 4px; }
   .toggleButton { padding: 5px 10px; min-height: 30px; font: 12px v.$font-family-primary; letter-spacing: 0; transition: background-color 180ms; }
   .toggleButton.active { border: 0; background: v.$draft-action; color: v.$color-white; }
-  .orderControls { margin-block: 12px; > .draftTypeToggle { margin-top: 6px; } }
+  .orderControls {
+    margin-block: 12px;
+
+    > .draftTypeToggle {
+      gap: v.$space-sm;
+      margin-top: 6px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+
+      .toggleButton {
+        flex: 1;
+        border: 1px solid v.$draft-border;
+        background: v.$draft-surface;
+      }
+
+      .toggleButton.active {
+        border-color: v.$draft-action;
+        background: v.$draft-action;
+      }
+    }
+  }
   .structuralLockHint { display: block; font-size: 12px; line-height: 1.4; color: v.$text-secondary; margin-block: 8px; }
   .managementTitle { margin: 16px 0 10px; padding-top: 12px; border-top: 1px solid v.$draft-border; font: 11px v.$font-family-accent; color: v.$primary-color; text-transform: uppercase; }
   .actionButtons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -1724,6 +1745,19 @@
   &[data-variant="inline"] {
     .settingsGrid { display: block; }
     .settingsGrid > * { height: 100%; }
+    .settingsGrid > [data-settings-domain="roster"],
+    .settingsGrid > [data-settings-domain="scoring"],
+    .settingsGrid > [data-settings-domain="projections"] {
+      overflow: clip;
+      scrollbar-gutter: auto;
+    }
+    .settingsGrid > [data-settings-domain="roster"] {
+      display: grid;
+      grid-template-columns: minmax(310px, 0.95fr) repeat(3, minmax(0, 1fr));
+      grid-template-rows: auto auto 1fr;
+      column-gap: v.$space-md;
+      align-content: stretch;
+    }
     .leagueDomain > .fieldset { display: grid; grid-template-columns: minmax(230px, 1fr) minmax(260px, 1fr) minmax(300px, 1.2fr); column-gap: 28px; align-content: start; }
     .leagueDomain .settingRow { grid-column: 1; }
     .orderControls { grid-column: 2; grid-row: 1 / span 3; margin: 0; }
@@ -1731,8 +1765,49 @@
     .managementTitle { grid-column: 3; grid-row: 1; border: 0; padding: 0; margin: 0 0 10px; }
     .actionButtons { grid-column: 3; grid-row: 2 / span 5; align-content: start; }
     .importPanel, .leagueDomain .lockNotice { grid-column: 1 / -1; }
-    .rosterGroup { display: inline-block; vertical-align: top; width: 32%; padding-right: 20px; margin: 0; }
-    .rosterSummary { margin-top: 12px; }
+    .settingsGrid > [data-settings-domain="roster"] > .settingRow {
+      grid-column: 1;
+      grid-row: 1;
+      align-items: flex-start;
+      flex-direction: column;
+      gap: v.$space-xs;
+      margin-bottom: 0;
+    }
+    .settingsGrid > [data-settings-domain="roster"] > .settingRow .draftTypeToggle {
+      width: 100%;
+    }
+    .settingsGrid > [data-settings-domain="roster"] > .settingRow .toggleButton {
+      flex: 1;
+    }
+    .settingsGrid > [data-settings-domain="roster"] > .rosterGroup {
+      grid-row: 1 / span 3;
+      align-self: start;
+      display: block;
+      width: auto;
+      padding-right: 0;
+      margin: 0;
+
+      h4 { margin: 0 0 v.$space-sm; }
+    }
+    .settingsGrid > [data-settings-domain="roster"] > .rosterGroup[data-roster-group="Forwards"] { grid-column: 2; }
+    .settingsGrid > [data-settings-domain="roster"] > .rosterGroup[data-roster-group="Defense & Goaltending"] { grid-column: 3; }
+    .settingsGrid > [data-settings-domain="roster"] > .rosterGroup[data-roster-group="Flexible"] { grid-column: 4; }
+    .settingsGrid > [data-settings-domain="roster"] > .rosterSummary {
+      grid-column: 1;
+      grid-row: 3;
+      align-self: start;
+      margin: 0;
+      padding: 6px v.$space-sm;
+
+      h4 { margin-bottom: v.$space-xs; }
+      p { font-size: 11px; line-height: 1.3; }
+    }
+    .settingsGrid > [data-settings-domain="roster"] > .structuralLockHint {
+      grid-column: 1;
+      grid-row: 2;
+      margin: 6px 0;
+      line-height: 1.3;
+    }
   }
 }
 @media (max-width: 1350px) {
@@ -1740,7 +1815,13 @@
 }
 @media (max-width: 1100px) {
   .inlineSettings[data-variant="inline"] .leagueDomain > .fieldset { display: block; }
+  .inlineSettings[data-variant="inline"] .settingsGrid > [data-settings-domain="roster"] { display: block; overflow: auto; }
   .inlineSettings[data-variant="inline"] .rosterGroup { display: block; width: 100%; }
+  .inlineSettings[data-variant="inline"] .rosterSummary { margin-top: 12px; }
+}
+@media (max-width: 800px) {
+  .inlineSettings[data-variant="inline"] .settingsGrid > [data-settings-domain="scoring"],
+  .inlineSettings[data-variant="inline"] .settingsGrid > [data-settings-domain="projections"] { overflow: auto; }
 }
 @media (max-width: 650px) {
   .inlineSettings[data-variant="full"] .settingsGrid { display: block; overflow: auto; > * { height: auto; overflow: visible; margin-bottom: 12px; } }

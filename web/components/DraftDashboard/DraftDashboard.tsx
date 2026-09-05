@@ -514,20 +514,15 @@ const DraftDashboard: React.FC = () => {
     }),
     [],
   );
-  const initialSourcePreferences = useMemo(() => {
-    if (typeof window === "undefined") {
-      return { version: 4 as const, ...sourceControlDefaults };
-    }
-    return loadSourceControlPreferences(sourceControlDefaults);
-  }, [sourceControlDefaults]);
   const [sourceControls, setSourceControls] = useState(
-    initialSourcePreferences.skater,
+    sourceControlDefaults.skater,
   );
 
   // NEW: Goalie projection source controls
   const [goalieSourceControls, setGoalieSourceControls] = useState(
-    initialSourcePreferences.goalie,
+    sourceControlDefaults.goalie,
   );
+  const [sourcePreferencesReady, setSourcePreferencesReady] = useState(false);
   const sourceControlSignature = useMemo(
     () =>
       JSON.stringify({ skater: sourceControls, goalie: goalieSourceControls }),
@@ -545,6 +540,14 @@ const DraftDashboard: React.FC = () => {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const saved = loadSourceControlPreferences(sourceControlDefaults);
+    setSourceControls(saved.skater);
+    setGoalieSourceControls(saved.goalie);
+    setSourcePreferencesReady(true);
+  }, [sourceControlDefaults]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !sourcePreferencesReady) return;
     const timer = window.setTimeout(() => {
       try {
         saveSourceControlPreferences(
@@ -554,7 +557,12 @@ const DraftDashboard: React.FC = () => {
       } catch {}
     }, 180);
     return () => window.clearTimeout(timer);
-  }, [goalieSourceControls, sourceControlDefaults, sourceControls]);
+  }, [
+    goalieSourceControls,
+    sourceControlDefaults,
+    sourceControls,
+    sourcePreferencesReady,
+  ]);
 
   // NEW: Goalie scoring values (editable via settings)
   const [goaliePointValues, setGoaliePointValues] = useState<

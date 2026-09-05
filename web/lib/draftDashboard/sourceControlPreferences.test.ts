@@ -33,12 +33,30 @@ describe("source-control preferences", () => {
     expect(loaded.skater.ag_skaters.isSelected).toBe(true);
     expect(loaded.skater.blake_ag_skaters.isSelected).toBe(false);
     expect(loaded.skater.nate_ag_skaters.isSelected).toBe(false);
-    expect(Object.values(loaded.skater).filter((s) => s.isSelected)).toHaveLength(4);
-    expect(Object.values(loaded.goalie).filter((s) => s.isSelected)).toHaveLength(3);
-    expect(PROJECTION_SOURCES_CONFIG).toHaveLength(9);
+    expect(loaded.skater.cullen_skaters.isSelected).toBe(true);
+    expect(loaded.goalie.cullen_goalies.isSelected).toBe(true);
+    expect(
+      Object.values(loaded.skater).filter((s) => s.isSelected)
+    ).toHaveLength(5);
+    expect(
+      Object.values(loaded.goalie).filter((s) => s.isSelected)
+    ).toHaveLength(4);
+    expect(PROJECTION_SOURCES_CONFIG).toHaveLength(11);
+    expect(
+      PROJECTION_SOURCES_CONFIG.find((source) => source.id === "cullen_skaters")
+    ).toMatchObject({
+      tableName: "PROJECTIONS_20262027_CULLEN_SKATERS",
+      playerType: "skater"
+    });
+    expect(
+      PROJECTION_SOURCES_CONFIG.find((source) => source.id === "cullen_goalies")
+    ).toMatchObject({
+      tableName: "PROJECTIONS_20262027_CULLEN_GOALIES",
+      playerType: "goalie"
+    });
     for (const source of PROJECTION_SOURCES_CONFIG) {
       expect(source.tableName).toMatch(/^PROJECTIONS_20262027_/);
-      expect(source.id).not.toMatch(/dom_|dobber_|master|cullen|dfo|fhfh|kubota|laidlaw/);
+      expect(source.id).not.toMatch(/dom_|dobber_|master|dfo|fhfh|kubota|laidlaw/);
     }
   });
 
@@ -90,16 +108,21 @@ describe("source-control preferences", () => {
     expect(loaded.goalie).toEqual(defaults.goalie);
   });
 
-  it("drops retired and paid sources from restored snapshots while keeping known custom uploads", () => {
-    const restored = sanitizeControls(defaults.skater, {
-      cullen_skaters: { isSelected: true, weight: 1 },
-      dom_skaters: { isSelected: true, weight: 1 },
-      dobber_skaters: { isSelected: true, weight: 1 },
-      custom_csv_1: { isSelected: true, weight: 0.5 },
-      unknown_custom: { isSelected: true, weight: 1 },
-    }, ["custom_csv_1"]);
+  it("drops retired and paid sources while retaining Cullen and known custom uploads", () => {
+    const restored = sanitizeControls(
+      defaults.skater,
+      {
+        cullen_skaters: { isSelected: false, weight: 0.6 },
+        dom_skaters: { isSelected: true, weight: 1 },
+        dobber_skaters: { isSelected: true, weight: 1 },
+        custom_csv_1: { isSelected: true, weight: 0.5 },
+        unknown_custom: { isSelected: true, weight: 1 }
+      },
+      ["custom_csv_1"]
+    );
     expect(restored).toEqual({
       ...defaults.skater,
+      cullen_skaters: { isSelected: false, weight: 0.6 },
       custom_csv_1: { isSelected: true, weight: 0.5 },
     });
   });
