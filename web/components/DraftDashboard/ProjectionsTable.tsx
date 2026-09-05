@@ -305,6 +305,119 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   >([]);
   // settings drawer visibility
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const projectionsRootRef = React.useRef<HTMLDivElement>(null);
+  const settingsTriggerRef = React.useRef<HTMLButtonElement>(null);
+  const settingsDrawerRef = React.useRef<HTMLElement>(null);
+  const settingsPreviousFocusRef = React.useRef<HTMLElement | null>(null);
+
+  const closeSettings = useCallback(() => setSettingsOpen(false), []);
+
+  useEffect(() => {
+    if (!settingsOpen) return;
+
+    const drawer = settingsDrawerRef.current;
+    const root = projectionsRootRef.current;
+    const trigger = settingsTriggerRef.current;
+    const previousFocus = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : trigger;
+    settingsPreviousFocusRef.current = previousFocus;
+
+    const backgroundElements = new Set<HTMLElement>();
+    if (root && drawer) {
+      let branch: HTMLElement = drawer;
+      while (branch.parentElement) {
+        const parent = branch.parentElement;
+        Array.from(parent.children).forEach((element) => {
+          if (
+            element !== branch &&
+            !(parent === root &&
+              element.classList.contains(styles.drawerOverlay))
+          ) {
+            backgroundElements.add(element as HTMLElement);
+          }
+        });
+        if (parent === document.body) break;
+        branch = parent;
+      }
+    }
+    const backgroundElementsList = Array.from(backgroundElements);
+    const previousBackgroundState = backgroundElementsList.map((element) => ({
+      element,
+      inert: (element as HTMLElement & { inert?: boolean }).inert ?? false,
+      ariaHidden: element.getAttribute("aria-hidden"),
+    }));
+    backgroundElementsList.forEach((element) => {
+      (element as HTMLElement & { inert: boolean }).inert = true;
+      element.setAttribute("aria-hidden", "true");
+    });
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousBodyOverscrollBehavior = document.body.style.overscrollBehavior;
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "contain";
+
+    const getFocusableElements = () =>
+      drawer
+        ? Array.from(
+            drawer.querySelectorAll<HTMLElement>(
+              'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+            ),
+          )
+        : [];
+    const focusFirst = () => {
+      const first = getFocusableElements()[0];
+      (first ?? drawer)?.focus();
+    };
+
+    const focusTimer = window.setTimeout(focusFirst, 0);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeSettings();
+        return;
+      }
+      if (event.key !== "Tab" || !drawer) return;
+      const focusable = getFocusableElements();
+      if (!focusable.length) {
+        event.preventDefault();
+        drawer.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      } else if (!drawer.contains(document.activeElement)) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    const handleFocusIn = (event: FocusEvent) => {
+      if (drawer && !drawer.contains(event.target as Node)) focusFirst();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("focusin", handleFocusIn);
+
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("focusin", handleFocusIn);
+      previousBackgroundState.forEach(({ element, inert, ariaHidden }) => {
+        (element as HTMLElement & { inert: boolean }).inert = inert;
+        if (ariaHidden == null) element.removeAttribute("aria-hidden");
+        else element.setAttribute("aria-hidden", ariaHidden);
+      });
+      document.body.style.overflow = previousBodyOverflow;
+      document.body.style.overscrollBehavior = previousBodyOverscrollBehavior;
+      settingsPreviousFocusRef.current?.focus();
+      settingsPreviousFocusRef.current = null;
+    };
+  }, [closeSettings, settingsOpen]);
   // compare players modal state
   const [compareOpen, setCompareOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -1065,7 +1178,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   }
 
   return (
-    <div className={styles.projectionsContainer}>
+    <div ref={projectionsRootRef} className={styles.projectionsContainer}>
       {/* Primary Controls Bar */}
       <div className={styles.controlsBar}>
         <div className={styles.controlsBarTitle}>
@@ -1122,6 +1235,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
               <div className={styles.toggleButtonsGroup}>
                 <button
                   type="button"
+                  ref={settingsTriggerRef}
                   className={`${styles.controlToggleBtn} ${settingsOpen ? styles.controlToggleBtnActive : ""}`}
                   onClick={() => setSettingsOpen(true)}
                   aria-haspopup="dialog"
@@ -1357,16 +1471,20 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       )}
       {settingsOpen && (
         <aside
+          ref={settingsDrawerRef}
           id="draft-settings-drawer"
           className={styles.settingsDrawer}
           role="dialog"
+          aria-modal="true"
+          aria-labelledby="draft-settings-title"
           aria-label="Draft advanced settings"
+          tabIndex={-1}
         >
           <div className={styles.drawerHeader}>
-            <h3>Advanced Settings</h3>
+            <h3 id="draft-settings-title">Advanced Settings</h3>
             <button
               type="button"
-              onClick={() => setSettingsOpen(false)}
+              onClick={closeSettings}
               className={styles.drawerClose}
               aria-label="Close settings"
             >

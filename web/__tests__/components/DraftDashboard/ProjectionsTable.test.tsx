@@ -41,6 +41,85 @@ function player(playerId: number, fullName: string, position: string) {
 }
 
 describe("ProjectionsTable visibility diagnostics", () => {
+  it("traps drawer focus, isolates the table, and restores the trigger", async () => {
+    const outsideControl = document.createElement("button");
+    outsideControl.textContent = "Outside dashboard control";
+    outsideControl.setAttribute("aria-hidden", "false");
+    (outsideControl as HTMLElement & { inert?: boolean }).inert = true;
+    document.body.appendChild(outsideControl);
+    const previousOverflow = document.body.style.overflow;
+    const previousOverscrollBehavior = document.body.style.overscrollBehavior;
+    document.body.style.overflow = "scroll";
+    document.body.style.overscrollBehavior = "auto";
+    const { unmount } = render(
+      <ProjectionsTable
+        players={[player(1, "Focus Player", "C")]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+      />,
+    );
+
+    const trigger = screen.getByRole("button", {
+      name: "Open settings drawer",
+    });
+    trigger.focus();
+    fireEvent.click(trigger);
+
+    const drawer = await screen.findByRole("dialog", {
+      name: "Advanced Settings",
+    });
+    const closeButton = screen.getByRole("button", { name: "Close settings" });
+    await waitFor(() => expect(document.activeElement).toBe(closeButton));
+
+    const background = drawer.parentElement?.firstElementChild;
+    expect(background?.getAttribute("aria-hidden")).toBe("true");
+    expect((background as HTMLElement & { inert?: boolean })?.inert).toBe(true);
+    expect(outsideControl.getAttribute("aria-hidden")).toBe("true");
+    expect(outsideControl.inert).toBe(true);
+
+    const scope = screen.getByRole("combobox", { name: "Value band scope" });
+    fireEvent.change(scope, { target: { value: "overall" } });
+    const drawerFocusables = Array.from(
+      drawer.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    );
+    const lastFocusable = drawerFocusables.at(-1)!;
+    lastFocusable.focus();
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(document.activeElement).toBe(closeButton);
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(lastFocusable);
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+    expect(outsideControl.getAttribute("aria-hidden")).toBe("false");
+    expect(outsideControl.inert).toBe(true);
+    expect(document.body.style.overflow).toBe("scroll");
+    expect(document.body.style.overscrollBehavior).toBe("auto");
+
+    fireEvent.click(trigger);
+    expect(
+      (screen.getByRole("combobox", { name: "Value band scope" }) as HTMLSelectElement)
+        .value,
+    ).toBe("overall");
+    fireEvent.click(screen.getByRole("button", { name: "Close settings" }));
+    expect(document.activeElement).toBe(trigger);
+    fireEvent.click(trigger);
+    unmount();
+    expect(outsideControl.getAttribute("aria-hidden")).toBe("false");
+    expect(outsideControl.inert).toBe(true);
+    expect(document.body.style.overflow).toBe("scroll");
+    expect(document.body.style.overscrollBehavior).toBe("auto");
+    outsideControl.remove();
+    document.body.style.overflow = previousOverflow;
+    document.body.style.overscrollBehavior = previousOverscrollBehavior;
+  });
+
   it("displays next-pick availability, with high availability marked green", () => {
     const early = { ...player(1, "Early", "C"), yahooAvgPick: 1 };
     const later = { ...player(2, "Later", "C"), yahooAvgPick: 100 };
