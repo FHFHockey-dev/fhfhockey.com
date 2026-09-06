@@ -149,6 +149,27 @@ describe("ProjectionsTable visibility diagnostics", () => {
     });
     expect(onRiskSdChange).toHaveBeenCalledWith(20);
   });
+
+  it("keeps keeper rows visible but never enables their draft action", () => {
+    const keeper = player(3, "Keeper Player", "C");
+    render(
+      <ProjectionsTable
+        players={[keeper]}
+        allPlayers={[keeper]}
+        draftedPlayers={[]}
+        keeperPlayerIds={new Set(["3"])}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+      />,
+    );
+
+    const keeperButton = screen.getByRole("button", { name: "Keeper" });
+    expect(keeperButton.hasAttribute("disabled")).toBe(true);
+    expect(keeperButton.getAttribute("title")).toBe("Keeper player");
+  });
+
   it("preserves projected decimals and exposes the unrounded source value", () => {
     const projected = player(8477492, "Nathan MacKinnon", "C");
     projected.combinedStats = {

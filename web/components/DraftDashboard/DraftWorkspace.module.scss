@@ -160,6 +160,7 @@
     white-space: nowrap;
   }
 }
+.statusCompact { display: none; }
 .statusMetrics {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -251,4 +252,13 @@
   .settingsSummary > span { font-size: 11px; }
   .settingsTabs { padding: 0 4px; gap: 0; button { padding: 8px; } }
   .settingsActions { margin-left: 0; }
+}
+@media (max-width: 799px) {
+  .statusCompact {
+    display: grid;
+    margin: 0 8px;
+    border: 1px solid v.$draft-border;
+    border-radius: 5px;
+  }
+  .statusDesktopOnly { display: none; }
 }

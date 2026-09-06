@@ -1864,6 +1864,10 @@ const DraftDashboard: React.FC = () => {
       (player) => !unavailablePlayerIds.has(String(player.playerId)),
     );
   }, [allPlayers, unavailablePlayerIds]);
+  const keeperPlayerIds = useMemo(
+    () => new Set(keepers.map((keeper) => String(keeper.playerId))),
+    [keepers],
+  );
 
   // Build TeamRosterSelect options from current draft order and custom names
   const teamOptions = useMemo(
@@ -3090,9 +3094,10 @@ const DraftDashboard: React.FC = () => {
   const projectionsTable = useMemo(() => (
     <ProjectionsTable
             currentSeasonId={currentSeasonId}
-            players={availablePlayers}
+            players={allPlayers}
             allPlayers={allPlayers}
             draftedPlayers={draftedPlayers}
+            keeperPlayerIds={keeperPlayerIds}
             unavailablePlayerIds={unavailablePlayerIds}
             isLoading={isLoading}
             error={errorMessage}
@@ -3146,7 +3151,7 @@ const DraftDashboard: React.FC = () => {
             emptyStateMessage={projectionEmptyStateMessage}
           />
   ), [
-    currentSeasonId, availablePlayers, allPlayers, draftedPlayers,
+    currentSeasonId, allPlayers, draftedPlayers, keeperPlayerIds,
     unavailablePlayerIds, isLoading, errorMessage, draftPlayer,
     manualDraftingEnabled, settingsConfigured, settingsValidation.valid,
     hasMissingRequiredSources,
@@ -3201,6 +3206,22 @@ const DraftDashboard: React.FC = () => {
           setSettingsOpen(tab === "setup");
         }}
       />
+
+      {mobileWorkspaceEnabled && activeMobileTab !== "setup" && (
+        <DraftStatus
+          compact
+          round={currentTurn.round}
+          rounds={rosterRoundCount(draftSettings.rosterConfig)}
+          currentPick={currentPick}
+          totalPicks={
+            draftSettings.teamCount *
+            rosterRoundCount(draftSettings.rosterConfig)
+          }
+          teamName={customTeamNames[currentTurn.teamId] || currentTurn.teamId}
+          nextPick={nextPickNumber}
+          picksUntilNext={picksUntilNext}
+        />
+      )}
 
       <DraftSettingsShell
         settings={draftSettings}
@@ -3582,6 +3603,7 @@ const DraftDashboard: React.FC = () => {
           hidden={mobileWorkspaceEnabled && activeMobileTab !== "board"}
         >
           <DraftStatus
+            desktopOnly
             round={currentTurn.round}
             rounds={rosterRoundCount(draftSettings.rosterConfig)}
             currentPick={currentPick}

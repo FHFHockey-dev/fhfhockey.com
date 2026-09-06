@@ -5,7 +5,7 @@ const settings = (page: Page) =>
   page.getByRole("region", { name: "Draft Settings", exact: true });
 const session = (page: Page) =>
   page.evaluate(() =>
-    JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}"),
+    JSON.parse(sessionStorage.getItem("draft.snapshot.v4") || "{}"),
   );
 const done = (page: Page) =>
   settings(page).getByRole("button", { name: "Done", exact: false }).click();
@@ -21,7 +21,9 @@ async function fitsSettingsPanel(page: Page, domain: string) {
   expect(
     await page.locator(`#draft-domain-${domain}`).evaluate((panel) => {
       const bounds = panel.getBoundingClientRect();
-      const visibleChildren = Array.from(panel.querySelectorAll("*"))
+      const visibleChildren = Array.from(
+        panel.querySelectorAll("button, input, select, textarea, [role='button']"),
+      )
         .map((element) => element.getBoundingClientRect())
         .filter((rect) => rect.width > 0 && rect.height > 0);
       return {
@@ -38,6 +40,96 @@ async function fitsSettingsPanel(page: Page, domain: string) {
   ).toEqual({ vertical: true, horizontal: true, childrenVisible: true });
 }
 
+async function installDraftFixture(page: Page) {
+  await page.route("**://*.supabase.co/rest/v1/**", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
+  );
+  const rows = [
+    [101, "Fixture Center", "C", 30, 45],
+    [102, "Fixture Wing", "LW", 28, 42],
+    [103, "Fixture Right Wing", "RW", 26, 40],
+    [104, "Fixture Defense", "D", 18, 37],
+    [201, "Fixture Goalie One", "G", 0, 0],
+    [202, "Fixture Goalie Two", "G", 0, 0],
+    [203, "Fixture Goalie Three", "G", 0, 0],
+    [204, "Fixture Goalie Four", "G", 0, 0],
+  ].map(([player_id, Player_Name, Position, Goals, Assists]) => ({
+    player_id,
+    Player_Name,
+    Position,
+    Team_Abbreviation: "TST",
+    Games_Played: 82,
+    Goals,
+    Assists,
+    Hits: 75,
+    Wins_Goalie: Position === "G" ? 30 : 0,
+    Saves_Goalie: Position === "G" ? 1400 : 0,
+  }));
+  await page.addInitScript(({ fixtureRows }) => {
+    const source = {
+      id: "custom_csv_browser_fixture",
+      label: "Browser fixture",
+      rows: fixtureRows,
+      resolution: {
+        totalRows: fixtureRows.length,
+        idMatched: fixtureRows.length,
+        nameMatched: 0,
+        unresolved: 0,
+        coverage: 100,
+        lastUpdated: 1,
+        unresolvedNames: [],
+      },
+    };
+    const disabled = (ids: string[]) =>
+      Object.fromEntries(ids.map((id) => [id, { isSelected: false, weight: 0 }]));
+    const settings = {
+      teamCount: 12,
+      draftOrder: Array.from({ length: 12 }, (_, index) => `Team ${index + 1}`),
+      draftOrderMode: "snake",
+      reversedRounds: [],
+      rosterConfig: { C: 2, LW: 2, RW: 2, D: 4, G: 2, bench: 4, utility: 1 },
+      scoringCategories: { GOALS: 3, ASSISTS: 2, HITS: 0.2 },
+      leagueType: "points",
+      isKeeper: false,
+      allowCustomNameFallback: true,
+      customSourceMinimumCoverage: 25,
+    };
+    (window as any).__draftFixtureBookmark = {
+      v: 4,
+      settings,
+      configured: true,
+      draftedPlayers: [],
+      draftHistory: [],
+      currentPick: 1,
+      myTeamId: "Team 1",
+      sourceControls: {
+        ...disabled(["ag_skaters", "blake_ag_skaters", "nate_ag_skaters", "cullen_skaters", "dtz_skaters", "lineupexperts_skaters", "5v5_skaters"]),
+        custom_csv_browser_fixture: { isSelected: true, weight: 1 },
+      },
+      goalieSourceControls: {
+        ...disabled(["cullen_goalies", "dtz_goalies", "lineupexperts_goalies", "5v5_goalies"]),
+        custom_csv_browser_fixture: { isSelected: true, weight: 1 },
+      },
+      goalieScoringCategories: { WINS_GOALIE: 4, SAVES_GOALIE: 0.2 },
+      positionOverrides: {},
+      prorate84: true,
+      riskSd: 12,
+      csvMetadata: [{ id: source.id, label: source.label }],
+      customCsvEntries: [source],
+    };
+  }, { fixtureRows: rows });
+}
+
+async function activateDraftFixture(page: Page) {
+  const bookmark = await page.evaluate(() =>
+    JSON.stringify((window as any).__draftFixtureBookmark),
+  );
+  await settings(page).getByRole("button", { name: "Import", exact: true }).click();
+  await page.getByLabel("Import draft bookmark", { exact: true }).fill(bookmark);
+  await page.getByRole("button", { name: "Import Bookmark", exact: true }).click();
+  await expect(settings(page)).toHaveAttribute("data-full", "true");
+}
+
 for (const viewport of [
   { width: 1440, height: 900 },
   { width: 1728, height: 900 },
@@ -47,9 +139,11 @@ for (const viewport of [
     page,
   }, testInfo) => {
     await page.setViewportSize(viewport);
+    await installDraftFixture(page);
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto("/draft-dashboard");
+    await activateDraftFixture(page);
     await expect(settings(page)).toHaveAttribute("data-full", "true");
     for (const domain of ["league", "roster", "scoring", "projections"])
       await expect(page.locator(`#draft-domain-${domain}`)).toBeVisible();
@@ -99,7 +193,9 @@ test("settings edits, validation, imports and reset preserve a live draft", asyn
 }) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1728, height: 900 });
+  await installDraftFixture(page);
   await page.goto("/draft-dashboard");
+  await activateDraftFixture(page);
   await expect(settings(page)).toHaveAttribute("data-full", "true");
   await done(page);
   const players = page.locator("#mobile-draft-panel-players");
@@ -129,6 +225,9 @@ test("settings edits, validation, imports and reset preserve a live draft", asyn
   await row.getByRole("checkbox").last().check();
   await row.getByRole("button", { name: /^Favorite / }).click();
   await row.getByRole("button", { name: /^Expand details/ }).click();
+  await players.getByRole("button", { name: /^Player/ }).click();
+  const playerSortHeader = players.getByRole("columnheader", { name: /^Player/ });
+  const sortBefore = await playerSortHeader.getAttribute("aria-sort");
   await page.getByRole("textbox", { name: "Search players" }).fill("a");
   await page.getByLabel("Position filter").selectOption("G");
   await page.getByLabel("Available players per page").selectOption("15");
@@ -166,6 +265,8 @@ test("settings edits, validation, imports and reset preserve a live draft", asyn
   ).toHaveValue("a");
   await expect(page.getByLabel("Position filter")).toHaveValue("G");
   await expect(page.getByLabel("Available players per page")).toHaveValue("15");
+  await expect(playerSortHeader).toHaveAttribute("aria-sort", sortBefore!);
+  await expect(players.getByText("Compare (1)", { exact: true })).toBeVisible();
   expect(
     await page.evaluate(
       () =>
@@ -210,7 +311,7 @@ test("settings edits, validation, imports and reset preserve a live draft", asyn
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Remove HITS", exact: true }).click();
   expect(
-    (await session(page)).draftSettings.scoringCategories.HITS,
+    (await session(page)).settings.scoringCategories.HITS,
   ).toBeUndefined();
   await settings(page)
     .getByRole("button", { name: "Projections", exact: true })
@@ -311,3 +412,43 @@ test("settings edits, validation, imports and reset preserve a live draft", asyn
     ),
   ).toBe(true);
 });
+
+for (const width of [320, 390]) {
+  test(`mobile working tabs retain compact draft status at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 760 });
+    await installDraftFixture(page);
+    await page.goto("/draft-dashboard");
+    await activateDraftFixture(page);
+    await done(page);
+    const summary = page.getByRole("region", { name: "Draft Status summary" });
+    await expect(summary).toBeVisible();
+    await expect(summary).toContainText("Pick");
+    await expect(summary).toContainText("On clock");
+    await expect(summary).toContainText("Next pick");
+    await expect(page.getByRole("region", { name: "Draft Status", exact: true })).toBeHidden();
+
+    for (const tab of ["Suggested", "Roster", "Players"]) {
+      await page.getByRole("tab", { name: tab, exact: true }).click();
+      await expect(summary).toBeVisible();
+      await expect(summary).toHaveCount(1);
+    }
+    await expect(page.getByRole("textbox", { name: "Search players" })).toBeVisible();
+    expect(
+      await page.evaluate(() => ({
+        viewport: innerWidth,
+        documentWidth: document.documentElement.scrollWidth,
+        statusAnnouncements: document.querySelectorAll('[aria-label="Draft Status summary"] [aria-live]').length,
+      })),
+    ).toEqual({ viewport: width, documentWidth: width, statusAnnouncements: 0 });
+    if (width === 390) {
+      const reloadErrors: string[] = [];
+      page.on("pageerror", (error) => reloadErrors.push(error.message));
+      page.once("dialog", (dialog) => dialog.accept());
+      await page.reload();
+      await expect(summary).toBeVisible();
+      await expect(page.getByRole("textbox", { name: "Search players" })).toBeVisible();
+      expect(reloadErrors).toEqual([]);
+      await expect(page.getByText("Runtime Error", { exact: true })).toHaveCount(0);
+    }
+  });
+}

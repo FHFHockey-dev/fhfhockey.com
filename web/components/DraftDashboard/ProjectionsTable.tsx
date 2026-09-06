@@ -37,6 +37,7 @@ interface ProjectionsTableProps {
   // Full pool including drafted; used for diagnostics cross-check
   allPlayers?: ProcessedPlayer[];
   draftedPlayers: DraftedPlayer[];
+  keeperPlayerIds?: ReadonlySet<string>;
   unavailablePlayerIds?: ReadonlySet<string>;
   isLoading: boolean;
   error: string | null;
@@ -113,6 +114,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   players,
   allPlayers,
   draftedPlayers,
+  keeperPlayerIds,
   unavailablePlayerIds,
   isLoading,
   error,
@@ -727,6 +729,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     unavailablePlayerIds?.forEach((playerId) => s.add(String(playerId)));
     return s;
   }, [draftedPlayers, unavailablePlayerIds]);
+  const keeperIdSet = keeperPlayerIds || new Set<string>();
 
   const diagnostics = useMemo(() => {
     return diagnoseProjectionVisibility({
@@ -2301,16 +2304,26 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       <button
                         className={styles.draftButton}
                         onClick={() => handleDraftClick(player.playerId)}
-                        disabled={!canDraft || draftedIdSet.has(key)}
+                        disabled={
+                          !canDraft ||
+                          draftedIdSet.has(key) ||
+                          keeperIdSet.has(key)
+                        }
                         title={
                           !canDraft
                             ? "Manual drafting is locked while Yahoo sync is authoritative"
+                            : keeperIdSet.has(key)
+                            ? "Keeper player"
                             : draftedIdSet.has(key)
                             ? "Player already drafted"
                             : "Draft this player"
                         }
                       >
-                        {draftedIdSet.has(key) ? "Drafted" : "Draft"}
+                        {draftedIdSet.has(key)
+                          ? "Drafted"
+                          : keeperIdSet.has(key)
+                            ? "Keeper"
+                            : "Draft"}
                       </button>
                     </td>
                     <td className={`${styles.compareCell}`}>

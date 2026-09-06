@@ -12,6 +12,16 @@ const player = {
   displayPosition: "C",
   eligiblePositions: ["C"],
   fantasyPoints: { projected: 10 },
+  yahooAvgPick: 8,
+  combinedStats: {},
+};
+const keeperPlayer = {
+  playerId: 9,
+  fullName: "Root Keeper",
+  displayPosition: "C",
+  eligiblePositions: ["C"],
+  fantasyPoints: { projected: 11 },
+  yahooAvgPick: 12,
   combinedStats: {},
 };
 
@@ -21,16 +31,13 @@ vi.mock("hooks/useCurrentSeason", () => ({ useCurrentSeasonQuery: () => ({ data:
 vi.mock("hooks/useDraftRanking", () => ({ useDraftRanking: () => ({ entries: { data: { entries: [] } }, bootstrap: { data: null } }) }));
 vi.mock("hooks/useYahooDraftSync", () => ({ useYahooDraftSync: () => ({ enabled: false, selectedLeagueId: null, sessionId: null, requestState: null, terminalSessionMissing: false, resumeSession: noop, clearSession: noop, start: noop, stop: noop, connect: noop, draftState: null, error: null, isPolling: false, leagues: [], ranking: null, refreshAccount: noop, refreshDraft: noop, setSelectedLeagueId: noop }) }));
 vi.mock("hooks/useEspnDraftSync", () => ({ useEspnDraftSync: () => ({ enabled: false, draftState: null, error: null, isLoading: false, isPolling: false, leagues: [], selectedLeagueId: null, setSelectedLeagueId: noop, start: noop, stop: noop, clear: noop, refresh: noop, reload: noop }) }));
-vi.mock("hooks/useProcessedProjectionsData", () => ({ useProcessedProjectionsData: () => ({ processedPlayers: [player], isLoading: false, error: null, customSourceResolutions: {}, customFallbackUsage: { total: 0 }, sourceWarnings: [], yahooMappingDiagnostics: null, inclusionDiagnostics: null }) }));
+vi.mock("hooks/useProcessedProjectionsData", () => ({ useProcessedProjectionsData: ({ activePlayerType }: { activePlayerType: string }) => ({ processedPlayers: activePlayerType === "goalie" ? [] : [player, keeperPlayer], isLoading: false, error: null, customSourceResolutions: {}, customFallbackUsage: { total: 0 }, sourceWarnings: [], yahooMappingDiagnostics: null, inclusionDiagnostics: null }) }));
 vi.mock("hooks/useVORPCalculations", () => ({ useVORPCalculations: () => ({ playerMetrics: new Map(), replacementByPos: {}, expectedTakenByPos: {}, expectedN: 0 }) }));
 vi.mock("hooks/useRosterScheduleOptimizer", () => ({ useRosterScheduleOptimizer: () => ({ status: "idle" }) }));
 vi.mock("components/PlayerAutocomplete", () => ({ default: () => null }));
 vi.mock("components/DraftDashboard/MyRoster", () => ({ default: ({ onDraftPlayer, canDraft }: any) => <button disabled={!canDraft} onClick={() => onDraftPlayer("2")}>Draft recovery player</button> }));
 vi.mock("components/DraftDashboard/DraftBoard", () => ({ default: () => null }));
-vi.mock("components/DraftDashboard/DraftStatus", () => ({ default: () => null }));
 vi.mock("components/DraftDashboard/LeagueStandings", () => ({ default: () => null }));
-vi.mock("components/DraftDashboard/ProjectionsTable", () => ({ default: () => null }));
-vi.mock("components/DraftDashboard/SuggestedPicks", () => ({ default: () => null }));
 vi.mock("components/DraftDashboard/DraftSummaryModal", () => ({ default: () => null }));
 vi.mock("components/DraftDashboard/ImportCsvModal", () => ({
   default: ({ open, onImported }: any) => open ? (
@@ -48,7 +55,6 @@ vi.mock("components/DraftDashboard/ImportCsvModal", () => ({
 vi.mock("components/DraftDashboard/ComparePlayersModal", () => ({ default: () => null }));
 vi.mock("components/DraftDashboard/YahooLiveDraftPanel", () => ({ default: () => null }));
 vi.mock("components/DraftDashboard/EspnLiveDraftPanel", () => ({ default: () => null }));
-vi.mock("components/DraftDashboard/MobileDraftTabs", () => ({ default: () => null, useMobileDraftTab: () => ["players", noop] }));
 vi.mock("components/DraftDashboard/FantraxLeagueSettingsPanel", () => ({ default: () => null }));
 vi.mock("components/integrations/EspnLeagueSettingsPanel", () => ({ default: () => null }));
 
@@ -93,6 +99,10 @@ beforeEach(() => {
   Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: vi.fn() });
   Object.defineProperty(URL, "createObjectURL", { configurable: true, value: vi.fn(() => "blob:recovery-test") });
   Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: vi.fn() });
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })),
+  });
 });
 
 afterEach(() => {
@@ -163,6 +173,7 @@ it("persists compact state, restores undo overrides, and leaves tab CSV rows out
 it("restores no-pick keeper overrides in current and undo state", async () => {
   sessionStorage.setItem("draft.snapshot.v4", JSON.stringify({
     ...record(),
+    settings: { ...settings, isKeeper: true },
     draftedPlayers: [],
     keepers: [{ playerId: "keeper", teamId: "Team 1", cost: "none" }],
     positionOverrides: { keeper: "C" },
@@ -179,6 +190,114 @@ it("restores no-pick keeper overrides in current and undo state", async () => {
     expect(snapshot.positionOverrides).toEqual({ keeper: "C" });
     expect(snapshot.draftHistory[0].positionOverrides).toEqual({ keeper: "C" });
   });
+});
+
+it("shows drafted and keeper rows through the real projections table without enabling draft actions", async () => {
+  sessionStorage.setItem("draft.snapshot.v4", JSON.stringify({
+    ...record(),
+    settings: { ...settings, isKeeper: true },
+    draftedPlayers: [{ playerId: "2", teamId: "Team 1", pickNumber: 1, round: 1, pickInRound: 1 }],
+    keepers: [{ playerId: "9", teamId: "Team 2", cost: "none" }],
+    positionOverrides: {},
+    draftHistory: [{ players: [], pickNumber: 1, positionOverrides: {} }],
+    currentPick: 2,
+    csvMetadata: [],
+  }));
+  localStorage.setItem("projections.hideDrafted", "true");
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+  render(<DraftDashboard />);
+
+  await waitFor(() =>
+    expect(JSON.parse(localStorage.getItem("draftDashboard.session.v1")!).settings.teamCount).toBe(2),
+  );
+  await waitFor(() =>
+    expect(screen.getByRole("region", { name: "Draft Settings" }).getAttribute("data-full")).toBe("false"),
+  );
+  expect(screen.queryByText("Recovery Player")).toBeNull();
+  expect(screen.queryByText("Root Keeper")).toBeNull();
+
+  fireEvent.click(screen.getByRole("button", { name: "Toggle hide drafted" }));
+  const draftedRow = (await screen.findByText("Recovery Player")).closest("tr");
+  expect(draftedRow).toBeTruthy();
+  const draftedButton = screen.getByTitle("Player already drafted");
+  expect(draftedButton.closest("tr")).toBe(draftedRow);
+  expect(draftedButton.hasAttribute("disabled")).toBe(true);
+  const keeperRow = screen.getByText("Root Keeper").closest("tr");
+  expect(keeperRow).toBeTruthy();
+  const keeperButton = screen.getByTitle("Keeper player");
+  expect(keeperButton.closest("tr")).toBe(keeperRow);
+  expect(keeperButton.hasAttribute("disabled")).toBe(true);
+});
+
+it("updates table and suggested-pick availability from the same recovered risk setting", async () => {
+  sessionStorage.setItem("draft.snapshot.v4", JSON.stringify({
+    ...record(),
+    draftedPlayers: [],
+    draftHistory: [],
+    currentPick: 1,
+    positionOverrides: {},
+    csvMetadata: [],
+  }));
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+  render(<DraftDashboard />);
+
+  await waitFor(() =>
+    expect(JSON.parse(localStorage.getItem("draftDashboard.session.v1")!).riskSd).toBe(28),
+  );
+  const suggestedAvailability = () =>
+    document.querySelector<HTMLElement>('article[data-player-id="2"] [title="Probability of remaining available at your next pick"]');
+  const tableAvailability = () =>
+    document.querySelector<HTMLElement>('tr[data-player-id="2"] [title*="estimated available at your next pick"]');
+  await waitFor(() => {
+    expect(suggestedAvailability()).toBeTruthy();
+    expect(tableAvailability()).toBeTruthy();
+  });
+  const initialSuggested = suggestedAvailability()!.textContent;
+  const initialTable = tableAvailability()!.textContent;
+  expect(initialSuggested).toBe(initialTable);
+
+  fireEvent.click(screen.getByRole("button", { name: "Open settings drawer" }));
+  fireEvent.change(screen.getByLabelText("SD (picks): 28"), {
+    target: { value: "4" },
+  });
+  await waitFor(() => {
+    expect(suggestedAvailability()!.textContent).not.toBe(initialSuggested);
+    expect(tableAvailability()!.textContent).toBe(suggestedAvailability()!.textContent);
+    expect(localStorage.getItem("projections.riskSd")).toBe("4");
+    expect(JSON.parse(sessionStorage.getItem("draft.snapshot.v4")!).riskSd).toBe(4);
+  });
+});
+
+it("keeps one compact status summary available across the mobile working tabs", async () => {
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: vi.fn(() => ({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })),
+  });
+  sessionStorage.setItem("draftDashboard.mobileTab.v1", "players");
+  sessionStorage.setItem("draft.snapshot.v4", JSON.stringify({
+    ...record(),
+    draftedPlayers: [],
+    draftHistory: [],
+    currentPick: 1,
+    positionOverrides: {},
+    csvMetadata: [],
+  }));
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+  render(<DraftDashboard />);
+
+  await waitFor(() =>
+    expect(JSON.parse(localStorage.getItem("draftDashboard.session.v1")!).configured).toBe(true),
+  );
+  for (const tab of ["Players", "Suggested", "Roster"] as const) {
+    fireEvent.click(screen.getByRole("tab", { name: tab }));
+    expect(screen.getAllByRole("region", { name: "Draft Status summary" })).toHaveLength(1);
+  }
+  fireEvent.click(screen.getByRole("tab", { name: "Setup" }));
+  expect(screen.queryByRole("region", { name: "Draft Status summary" })).toBeNull();
 });
 
 it("resumes a complete older device record and rewrites canonical analysis fields", async () => {

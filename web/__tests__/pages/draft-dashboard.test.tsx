@@ -26,11 +26,12 @@ afterEach(() => {
 });
 
 describe("Draft Dashboard route", () => {
-  it("server-renders the dashboard without a maintenance notice", () => {
+  it("server-renders a hydration-safe loading state without a maintenance notice", () => {
     vi.stubEnv("NODE_ENV", "production");
     const html = renderToString(<DraftDashboardPage />);
 
-    expect(html).toContain("Draft dashboard tools");
+    expect(html).toContain("Loading draft dashboard");
+    expect(html).not.toContain("Draft dashboard tools");
     expect(html).not.toContain('role="dialog"');
     expect(html).not.toContain("Actively being updated");
   });
