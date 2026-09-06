@@ -713,8 +713,8 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                       </div>
                     </div>
                     <div className={styles.stat}>
-                      <div className={styles.statLabel}>AVL%</div>
-                      <div className={styles.statValue} data-availability={avail == null ? undefined : avail >= .7 ? "high" : avail >= .3 ? "medium" : "low"} title="Probability of remaining available at your next pick">
+                      <div className={styles.statLabel}>Est. AVL%</div>
+                      <div className={styles.statValue} data-availability={avail == null ? undefined : avail >= .7 ? "high" : avail >= .3 ? "medium" : "low"} title="Estimated probability of remaining available at your next pick">
                         {typeof avail === "number"
                           ? `${Math.round(avail * 100)}%`
                           : "—"}
