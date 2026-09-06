@@ -495,13 +495,24 @@ it("blocks Done and drafting for a missing selected CSV, then reimports it under
   expect((screen.getByRole("button", { name: "Draft recovery player" }) as HTMLButtonElement).disabled).toBe(false);
 });
 
-it("removes a missing selected CSV explicitly and then allows Done", async () => {
+it("keeps a disabled missing CSV blocked until explicit Remove, then allows Done", async () => {
   vi.spyOn(window, "confirm").mockReturnValue(true);
   render(<DraftDashboard />);
   importBookmark(missingSourceRecord());
   await waitFor(() => expect((screen.getByRole("button", { name: "Draft recovery player", hidden: true }) as HTMLButtonElement).disabled).toBe(true));
 
   fireEvent.click(screen.getByRole("button", { name: "Projections" }));
+  fireEvent.click(screen.getAllByRole("checkbox", { name: "Toggle source Missing source" })[0]);
+  fireEvent.click(screen.getByRole("checkbox", { name: "Toggle source Missing source" }));
+  await waitFor(() => {
+    const snapshot = JSON.parse(sessionStorage.getItem("draft.snapshot.v4")!);
+    expect(snapshot.sourceControls.custom_csv_missing.isSelected).toBe(false);
+    expect(snapshot.goalieSourceControls.custom_csv_missing.isSelected).toBe(false);
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Done" }));
+  expect(await screen.findByText("Reimport or remove each missing projection CSV before drafting.")).toBeTruthy();
+  expect((screen.getByRole("button", { name: "Draft recovery player", hidden: true }) as HTMLButtonElement).disabled).toBe(true);
+
   fireEvent.click(screen.getByRole("button", { name: "Edit Weights" }));
   expect(screen.getAllByRole("button", { name: "Remove Missing source" })).toHaveLength(2);
   fireEvent.click(screen.getAllByRole("button", { name: "Remove Missing source" })[0]);

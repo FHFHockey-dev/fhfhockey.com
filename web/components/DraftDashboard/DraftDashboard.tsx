@@ -2260,9 +2260,7 @@ const DraftDashboard: React.FC = () => {
   const playerEligibility = useMemo(() => new Map(allPlayers.map(player => [String(player.playerId), normalizePlayerEligibility(player.displayPosition, player.eligiblePositions)])), [allPlayers]);
   const settingsValidationInput = useMemo(() => ({ settings: draftSettings, myTeamId, goalieScoring: goaliePointValues, skaterSources: sourceControls, goalieSources: goalieSourceControls, draftedPlayers, keepers, trades: pickTrades, playerEligibility, forwardGrouping, positionOverrides }), [draftSettings, myTeamId, goaliePointValues, sourceControls, goalieSourceControls, draftedPlayers, keepers, pickTrades, playerEligibility, forwardGrouping, positionOverrides]);
   const settingsValidation = useMemo(() => validateDraftSettings(settingsValidationInput), [settingsValidationInput]);
-  const hasMissingRequiredSources = missingCsvMetadata.some((source) =>
-    sourceControls[source.id]?.isSelected || goalieSourceControls[source.id]?.isSelected,
-  );
+  const hasMissingRequiredSources = missingCsvMetadata.length > 0;
   const closeSettings = () => {
     if (hasMissingRequiredSources) {
       setSettingsSaveError("Reimport or remove each missing projection CSV before drafting.");
@@ -3144,6 +3142,7 @@ const DraftDashboard: React.FC = () => {
     currentSeasonId, availablePlayers, allPlayers, draftedPlayers,
     unavailablePlayerIds, isLoading, errorMessage, draftPlayer,
     manualDraftingEnabled, settingsConfigured, settingsValidation.valid,
+    hasMissingRequiredSources,
     personalRankByPlayerId, vorpMetrics, replacementByPos, baselineMode,
     expectedTakenByPos, expectedN, needWeightEnabled, posNeeds, needAlpha,
     nextPickNumber, draftSettings.leagueType, draftSettings.categoryWeights,
