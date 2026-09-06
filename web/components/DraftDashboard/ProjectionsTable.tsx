@@ -5,6 +5,7 @@ import { DraftedPlayer } from "./DraftDashboard";
 // Import ProcessedPlayer from the correct location
 import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import { PlayerVorpMetrics } from "hooks/useVORPCalculations";
+import { estimateAvailability } from "hooks/usePlayerRecommendations";
 import styles from "./ProjectionsTable.module.scss";
 import supabase from "lib/supabase";
 import { STATS_MASTER_LIST } from "lib/projectionsConfig/statsMasterList";
@@ -58,6 +59,8 @@ interface ProjectionsTableProps {
   onNeedAlphaChange?: (alpha: number) => void;
   // pick risk context: absolute next pick number (currentPick + picksUntilNext)
   nextPickNumber?: number;
+  riskSd?: number;
+  onRiskSdChange?: (value: number) => void;
   // league type for value semantics
   leagueType?: "points" | "categories";
   // forward grouping display mode (C/LW/RW vs FWD)
@@ -126,6 +129,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   needAlpha = 0.5,
   onNeedAlphaChange,
   nextPickNumber,
+  riskSd = 12,
+  onRiskSdChange,
   forwardGrouping = "split",
   leagueType = "points",
   activeCategoryKeys = [],
@@ -151,8 +156,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   const [bandScope, setBandScope] = useState<"overall" | "position">(
     "position",
   );
-  // configurable risk standard deviation (in picks)
-  const [riskSd, setRiskSd] = useState<number>(12);
   // Favorites
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
@@ -615,10 +618,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       if (saved === "overall" || saved === "position") {
         setBandScope(saved);
       }
-      // Load risk SD
-      const savedSd = window.localStorage.getItem("projections.riskSd");
-      const v = savedSd != null ? parseFloat(savedSd) : NaN;
-      if (!Number.isNaN(v) && v > 0) setRiskSd(Math.max(2, Math.min(40, v)));
       // Load position filter
       const savedPos = window.localStorage.getItem(
         "projections.positionFilter",
@@ -660,14 +659,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       window.localStorage.setItem("projections.bandScope", bandScope);
     } catch {}
   }, [bandScope]);
-
-  // Persist risk SD on change
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem("projections.riskSd", String(riskSd));
-    } catch {}
-  }, [riskSd]);
 
   // Persist hide drafted on change
   useEffect(() => {
@@ -806,33 +797,16 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     return m;
   }, [vorpMetrics, needWeightEnabled, needAlpha, posNeeds, primaryPosById]);
 
-  // Precompute pick-risk based on ADP vs next pick number using a Normal CDF model
-  const normalCdf = (z: number) => {
-    // Abramowitz and Stegun approximation for Phi(z)
-    const t = 1 / (1 + 0.2316419 * Math.abs(z));
-    const d = Math.exp((-z * z) / 2) / Math.sqrt(2 * Math.PI);
-    const p =
-      d *
-      (0.31938153 * t -
-        0.356563782 * Math.pow(t, 2) +
-        1.781477937 * Math.pow(t, 3) -
-        1.821255978 * Math.pow(t, 4) +
-        1.330274429 * Math.pow(t, 5));
-    return z >= 0 ? 1 - p : p;
-  };
-
   const riskMap = useMemo(() => {
     const m = new Map<string, number>();
     if (!players?.length || !nextPickNumber) return m;
-    const sd = Math.max(2, Math.min(40, riskSd)); // clamp reasonable range
     players.forEach((p) => {
-      const adp = p.yahooAvgPick;
-      // Treat 0 or negative ADP as missing
-      if (typeof adp === "number" && Number.isFinite(adp) && adp > 0) {
-        const z = (nextPickNumber - adp) / sd;
-        const risk = Math.max(0, Math.min(1, normalCdf(z)));
-        m.set(String(p.playerId), risk);
-      }
+      const availability = estimateAvailability(
+        p.yahooAvgPick,
+        nextPickNumber,
+        riskSd,
+      );
+      if (availability != null) m.set(String(p.playerId), 1 - availability);
     });
     return m;
   }, [players, nextPickNumber, riskSd]);
@@ -1574,7 +1548,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   max={40}
                   step={1}
                   value={riskSd}
-                  onChange={(e) => setRiskSd(parseInt(e.target.value, 10))}
+                  onChange={(e) => onRiskSdChange?.(parseInt(e.target.value, 10))}
                   className={styles.rangeInput}
                 />
               </div>
@@ -2318,7 +2292,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       title={
                         riskPct == null
                           ? undefined
-                          : `${riskPct}% likely available at your next pick`
+                          : `${riskPct}% estimated available at your next pick`
                       }
                     >
                       {riskPct == null ? "-" : `${riskPct}%`}

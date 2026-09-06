@@ -32,11 +32,15 @@ export interface SuggestedPicksProps {
   teamCount: number;
   baselineMode?: "remaining" | "full";
   nextPickNumber?: number; // to compute availability heuristic
+  riskSd?: number;
   defaultLimit?: number; // default 10
   onSelectPlayer?: (playerId: string | null) => void;
   // NEW: categories-mode context (optional)
   leagueType?: "points" | "categories";
-  catNeeds?: Record<string, number>;
+  categoryWeights?: Record<string, number>;
+  categoryTeamTotals?: readonly Record<string, number | null | undefined>[];
+  myCategoryTotals?: Record<string, number | null | undefined>;
+  categoryPlayerPool?: ProcessedPlayer[];
   // NEW: roster progress bar data
   rosterProgress?: { pos: string; filled: number; total: number }[];
   // NEW: allow drafting directly from suggestions
@@ -66,11 +70,15 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   teamCount,
   baselineMode,
   nextPickNumber,
+  riskSd = 12,
   defaultLimit = 10,
   onSelectPlayer,
   // accept but not used yet
   leagueType,
-  catNeeds,
+  categoryWeights,
+  categoryTeamTotals,
+  myCategoryTotals,
+  categoryPlayerPool,
   rosterProgress,
   onDraftPlayer,
   canDraft = true,
@@ -257,51 +265,19 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     baselineMode,
     currentPick,
     teamCount,
+    nextPickNumber,
+    riskSd,
     leagueType,
-    catNeeds,
+    categoryWeights,
+    categoryTeamTotals,
+    myCategoryTotals,
+    categoryPlayerPool,
     forwardGrouping
   });
 
-  // Availability heuristic: Normal CDF around ADP
-  const [riskSd, setRiskSd] = useState<number>(() => {
-    if (typeof window === "undefined") return 12;
-    const v = parseFloat(localStorage.getItem("projections.riskSd") || "12");
-    return Number.isFinite(v) ? Math.max(2, Math.min(40, v)) : 12;
-  });
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === "projections.riskSd" && e.newValue) {
-        const v = parseFloat(e.newValue);
-        if (Number.isFinite(v)) setRiskSd(Math.max(2, Math.min(40, v)));
-      }
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
-  const normalCdf = (z: number) => {
-    const t = 1 / (1 + 0.2316419 * Math.abs(z));
-    const d = Math.exp((-z * z) / 2) / Math.sqrt(2 * Math.PI);
-    const p =
-      d *
-      (0.31938153 * t -
-        0.356563782 * Math.pow(t, 2) +
-        1.781477937 * Math.pow(t, 3) -
-        1.821255978 * Math.pow(t, 4) +
-        1.330274429 * Math.pow(t, 5));
-    return z >= 0 ? 1 - p : p;
-  };
-
   const withAvail = useMemo(() => {
-    if (!nextPickNumber) return recommendations;
     return recommendations.map((r) => {
-      const adp = (r.player as any).yahooAvgPick;
-      let availability: number | undefined = r.availability;
-      if (typeof adp === "number" && Number.isFinite(adp)) {
-        const z = (adp - nextPickNumber) / riskSd;
-        availability = Math.max(0.01, Math.min(0.99, normalCdf(z)));
-      }
+      const availability = r.availability;
       const goneRisk =
         typeof availability === "number" ? 1 - availability : undefined;
       const riskBoost =
@@ -316,12 +292,12 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
           typeof goneRisk === "number"
             ? [
                 ...(r.reasonTags ?? []),
-                `Available next pick ${Math.round((1 - goneRisk) * 100)}%`
+                `Estimated available next pick ${Math.round((1 - goneRisk) * 100)}%`
               ]
             : r.reasonTags
       };
     });
-  }, [recommendations, nextPickNumber, riskSd]);
+  }, [recommendations]);
 
   // NEW: apply roster-need multiplier directly to VORP (does not change underlying vorpMetrics)
   const withRosterAdjustedVorp = useMemo(() => {

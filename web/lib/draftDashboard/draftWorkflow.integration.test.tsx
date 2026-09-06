@@ -7,7 +7,11 @@ import { validateCsvProjectionRows } from "./csvImportValidation";
 import { getEffectiveSourceShares } from "./sourceWeights";
 import { groupPlayerEligibility } from "./forwardGrouping";
 import { materializeKeeperPicks, validateKeeperCandidate } from "./keepers";
-import { resolvePickOwner, upsertPickTrade } from "./pickTrades";
+import {
+  findPicksUntilTeamTurn,
+  resolvePickOwner,
+  upsertPickTrade,
+} from "./pickTrades";
 import { buildDraftConfigurationSummary } from "./summaryConfiguration";
 import {
   aggregateTeamCategoryTotals,
@@ -230,6 +234,16 @@ describe("representative draft workflow", () => {
         keepers: [keeperResult.keeper],
       }).currentTeamId,
     ).toBe("Team 4");
+    const picksUntilTeam4 = findPicksUntilTeamTurn({
+      currentPick: 0,
+      teamId: "Team 4",
+      draftOrder,
+      isSnakeDraft: true,
+      trades: tradeResult.trades,
+      keepers: [keeperResult.keeper],
+      maxPickNumber: 12,
+    });
+    expect(picksUntilTeam4).toBe(2);
 
     const keeperPicks = materializeKeeperPicks([], [keeperResult.keeper]);
     const drafted = [
@@ -247,6 +261,7 @@ describe("representative draft workflow", () => {
       eligiblePositions: ["D"],
       combinedStats: {},
       fantasyPoints: { projected: 100 },
+      yahooAvgPick: 12,
     } as any;
     const { result } = renderHook(() =>
       usePlayerRecommendations({
@@ -254,9 +269,12 @@ describe("representative draft workflow", () => {
         vorpMetrics: new Map([["2", { vbd: 10, vorp: 8, vona: 6 } as any]]),
         forwardGrouping: "fwd",
         baselineMode: "remaining",
+        nextPickNumber: picksUntilTeam4,
+        riskSd: 2,
       }),
     );
     expect(result.current.recommendations[0].player.playerId).toBe(2);
+    expect(result.current.recommendations[0].availability).toBeGreaterThan(0.99);
 
     const summary = buildDraftConfigurationSummary({
       projectionSources: [

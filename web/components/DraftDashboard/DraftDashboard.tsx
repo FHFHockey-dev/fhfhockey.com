@@ -676,6 +676,15 @@ const DraftDashboard: React.FC = () => {
     if (typeof window === "undefined") return false;
     return readManualDraftAnalysisPreferences(window.localStorage).prorate84;
   });
+  const [riskSd, setRiskSd] = React.useState<number>(() => {
+    if (typeof window === "undefined") return 12;
+    return readManualDraftAnalysisPreferences(window.localStorage).riskSd;
+  });
+  const updateRiskSd = useCallback((value: number) => {
+    setRiskSd(
+      Number.isFinite(value) ? Math.max(2, Math.min(40, value)) : 12,
+    );
+  }, []);
   const recoveredAnalysisPreferencesRef = useRef<
     Pick<ManualDraftRecoveryRecord, "prorate84" | "riskSd"> | undefined
   >(undefined);
@@ -715,6 +724,7 @@ const DraftDashboard: React.FC = () => {
       }
       if (typeof recovered.riskSd === "number") {
         window.localStorage.setItem("projections.riskSd", String(recovered.riskSd));
+        setRiskSd(recovered.riskSd);
       }
       analysisPreferenceWriteFailedRef.current = false;
     } catch {
@@ -724,6 +734,18 @@ const DraftDashboard: React.FC = () => {
       );
     }
   }, [recoveredAnalysisRevision]);
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem("projections.riskSd", String(riskSd));
+      analysisPreferenceWriteFailedRef.current = false;
+    } catch {
+      analysisPreferenceWriteFailedRef.current = true;
+      setSettingsSaveError(
+        "Draft analysis preferences could not be saved on this device. Export a bookmark before leaving.",
+      );
+    }
+  }, [riskSd]);
 
   const applyRecoveredAnalysisPreferences = useCallback(
     (record: ManualDraftRecoveryRecord) => {
@@ -757,6 +779,9 @@ const DraftDashboard: React.FC = () => {
           }),
         );
       }
+      if (typeof record.riskSd === "number") {
+        setRiskSd(record.riskSd);
+      }
       setRecoveredAnalysisRevision((revision) => revision + 1);
     },
     [],
@@ -764,9 +789,6 @@ const DraftDashboard: React.FC = () => {
 
   const buildRecoveryRecord = useCallback(
     (customCsvEntries?: SessionCsvEntry[]) => {
-      const analysisPreferences = readManualDraftAnalysisPreferences(
-        window.localStorage,
-      );
       return createManualDraftRecoveryRecord({
         configured: settingsConfigured,
         settings: draftSettings as unknown as Record<string, unknown>,
@@ -782,11 +804,7 @@ const DraftDashboard: React.FC = () => {
         needWeightEnabled,
         needAlpha,
         prorate84,
-        riskSd:
-          analysisPreferenceWriteFailedRef.current &&
-          typeof recoveredAnalysisPreferencesRef.current?.riskSd === "number"
-            ? recoveredAnalysisPreferencesRef.current.riskSd
-            : analysisPreferences.riskSd,
+        riskSd,
         goalieScoringCategories: goaliePointValues,
         sourceControls,
         goalieSourceControls,
@@ -813,6 +831,7 @@ const DraftDashboard: React.FC = () => {
       needWeightEnabled,
       needAlpha,
       prorate84,
+      riskSd,
       goaliePointValues,
       sourceControls,
       goalieSourceControls,
@@ -1857,10 +1876,10 @@ const DraftDashboard: React.FC = () => {
   );
 
   // Helper: compute picks until my next pick considering snake draft
-  const picksUntilNext = useMemo(() => {
+  const nextPickDistance = useMemo(() => {
     const teamCount = draftSettings.teamCount;
     if (!draftSettings.draftOrder.includes(myTeamId) || teamCount <= 0) {
-      return teamCount;
+      return undefined;
     }
     const remainingDraftSpan =
       teamCount *
@@ -1897,6 +1916,7 @@ const DraftDashboard: React.FC = () => {
     keepers,
     teamRosterCounts,
   ]);
+  const picksUntilNext = nextPickDistance ?? draftSettings.teamCount;
 
   const myFilledSlotsForVorp = useMemo(() => {
     const rosterPlayers = rosterAssignments
@@ -2109,39 +2129,6 @@ const DraftDashboard: React.FC = () => {
     });
     return res;
   }, [effectiveRosterConfig, forwardGrouping, myTeamStats]);
-
-  // NEW: category deficits vector for my team (categories mode): league mean - my totals
-  const catNeeds = React.useMemo(() => {
-    if ((draftSettings.leagueType || "points") !== "categories")
-      return undefined;
-    const teams = teamStats;
-    const CAT_KEYS = [
-      "GOALS",
-      "ASSISTS",
-      "PP_POINTS",
-      "SHOTS_ON_GOAL",
-      "HITS",
-      "BLOCKED_SHOTS",
-    ] as const;
-    const means: Record<string, number> = {};
-    CAT_KEYS.forEach((k) => (means[k] = 0));
-    if (teams.length > 0) {
-      CAT_KEYS.forEach((k) => {
-        const sum = teams.reduce(
-          (acc, t) => acc + (t.categoryTotals[k] || 0),
-          0,
-        );
-        means[k] = sum / teams.length;
-      });
-    }
-    const mine = teams.find((t) => t.teamId === myTeamId);
-    const deficits: Record<string, number> = {};
-    CAT_KEYS.forEach((k) => {
-      const myVal = mine?.categoryTotals[k] || 0;
-      deficits[k] = Math.max(0, means[k] - myVal); // focus on below-average needs
-    });
-    return deficits;
-  }, [teamStats, myTeamId, draftSettings.leagueType]);
 
   // NEW: roster progress for progress bar (C/LW/RW/D/UTIL/G)
   const rosterProgress = React.useMemo(() => {
@@ -2950,10 +2937,28 @@ const DraftDashboard: React.FC = () => {
           ? "No goalie sources are enabled, and no skater players are available. Enable a goalie source or review the skater source status."
           : "No players found matching your filters.";
 
-  const nextPickNumber = useMemo(
-    () => currentPick + picksUntilNext,
-    [currentPick, picksUntilNext],
-  );
+  const nextPickNumber = useMemo(() => {
+    const rosterCapacity = rosterRoundCount(draftSettings.rosterConfig);
+    const draftEndsAt = draftSettings.teamCount * rosterCapacity;
+    if (
+      !draftSettings.draftOrder.includes(myTeamId) ||
+      currentPick >= draftEndsAt ||
+      (teamRosterCounts[myTeamId] ?? 0) >= rosterCapacity
+    ) {
+      return undefined;
+    }
+    if (nextPickDistance == null) return undefined;
+    const nextPick = currentPick + nextPickDistance;
+    return nextPick <= draftEndsAt ? nextPick : undefined;
+  }, [
+    currentPick,
+    draftSettings.draftOrder,
+    draftSettings.rosterConfig,
+    draftSettings.teamCount,
+    myTeamId,
+    nextPickDistance,
+    teamRosterCounts,
+  ]);
 
   // --- CSV Export: Blended Projections ---
   const exportBlendedProjectionsCsv = useCallback(() => {
@@ -3109,6 +3114,8 @@ const DraftDashboard: React.FC = () => {
             needAlpha={needAlpha}
             onNeedAlphaChange={setNeedAlpha}
             nextPickNumber={nextPickNumber}
+            riskSd={riskSd}
+            onRiskSdChange={updateRiskSd}
             leagueType={draftSettings.leagueType || "points"}
             forwardGrouping={forwardGrouping}
             enabledSkaterStatKeys={
@@ -3145,7 +3152,7 @@ const DraftDashboard: React.FC = () => {
     hasMissingRequiredSources,
     personalRankByPlayerId, vorpMetrics, replacementByPos, baselineMode,
     expectedTakenByPos, expectedN, needWeightEnabled, posNeeds, needAlpha,
-    nextPickNumber, draftSettings.leagueType, draftSettings.categoryWeights,
+    nextPickNumber, riskSd, updateRiskSd, draftSettings.leagueType, draftSettings.categoryWeights,
     draftSettings.scoringCategories, forwardGrouping, availableGoalieStatKeys,
     goaliePointValues, skaterData.yahooMappingDiagnostics,
     goalieData.yahooMappingDiagnostics, sourceRankImpacts,
@@ -3256,14 +3263,7 @@ const DraftDashboard: React.FC = () => {
         preserveExactCategoryWeights={preserveExactCategoryWeights}
         recoveryBlocked={recoveryWriteBlockedRef.current}
         prorate84={prorate84}
-        riskSd={
-          typeof window === "undefined"
-            ? 12
-            : analysisPreferenceWriteFailedRef.current &&
-          typeof recoveredAnalysisPreferencesRef.current?.riskSd === "number"
-            ? recoveredAnalysisPreferencesRef.current.riskSd
-            : readManualDraftAnalysisPreferences(window.localStorage).riskSd
-        }
+        riskSd={riskSd}
         onForwardGroupingChange={(value) => {
           if (manualDraftingEnabled) {
             manualLeagueSettingsDirtyRef.current = true;
@@ -3541,11 +3541,15 @@ const DraftDashboard: React.FC = () => {
           teamCount={draftSettings.teamCount}
           baselineMode={baselineMode}
           nextPickNumber={nextPickNumber}
+          riskSd={riskSd}
           onDraftPlayer={(id) => draftPlayer(id)}
           canDraft={manualDraftingEnabled && settingsConfigured && settingsValidation.valid && !hasMissingRequiredSources}
           personalRankByPlayerId={personalRankByPlayerId}
           leagueType={draftSettings.leagueType || "points"}
-          catNeeds={catNeeds}
+          categoryWeights={draftSettings.categoryWeights}
+          categoryTeamTotals={teamStats.map((team) => team.categoryTotals)}
+          myCategoryTotals={myTeamStats?.categoryTotals}
+          categoryPlayerPool={allPlayers}
           rosterProgress={rosterProgress}
           personalizeReplacement={personalizeReplacement}
           onPersonalizeReplacementChange={setPersonalizeReplacement}
@@ -3619,7 +3623,10 @@ const DraftDashboard: React.FC = () => {
           hidden={mobileWorkspaceEnabled && activeMobileTab !== "roster"}
         >
           <MyRoster
-            nextPickByTeam={Object.fromEntries(draftSettings.draftOrder.map((teamId) => [teamId, currentPick + findPicksUntilTeamTurn({ currentPick, teamId, draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern, trades: manualDraftingEnabled ? pickTrades : [], keepers: manualDraftingEnabled ? keepers : [], completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), teamRosterCounts, rosterCapacity: rosterRoundCount(draftSettings.rosterConfig), maxPickNumber: draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig) })]))}
+            nextPickByTeam={Object.fromEntries(draftSettings.draftOrder.map((teamId) => {
+              const distance = findPicksUntilTeamTurn({ currentPick, teamId, draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern, trades: manualDraftingEnabled ? pickTrades : [], keepers: manualDraftingEnabled ? keepers : [], completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), teamRosterCounts, rosterCapacity: rosterRoundCount(draftSettings.rosterConfig), maxPickNumber: draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig) });
+              return [teamId, distance == null ? undefined : currentPick + distance];
+            }))}
             scheduleState={rosterScheduleOptimizer}
             myTeamId={myTeamId}
             teamStatsList={teamStats}

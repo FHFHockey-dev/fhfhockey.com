@@ -6,7 +6,7 @@ interface DraftStatusProps {
   currentPick: number;
   totalPicks: number;
   teamName: string;
-  nextPick: number;
+  nextPick?: number;
   picksUntilNext: number;
 }
 
@@ -21,7 +21,10 @@ export default function DraftStatus({
 }: DraftStatusProps) {
   const complete = currentPick > totalPicks;
   const hasNextPick =
-    !complete && Number.isFinite(nextPick) && nextPick <= totalPicks;
+    !complete &&
+    typeof nextPick === "number" &&
+    Number.isFinite(nextPick) &&
+    nextPick <= totalPicks;
   return (
     <section className={styles.status} aria-label="Draft Status">
       <h2>Draft Graph</h2>

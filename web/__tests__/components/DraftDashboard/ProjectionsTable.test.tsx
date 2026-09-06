@@ -124,8 +124,30 @@ describe("ProjectionsTable visibility diagnostics", () => {
     const early = { ...player(1, "Early", "C"), yahooAvgPick: 1 };
     const later = { ...player(2, "Later", "C"), yahooAvgPick: 100 };
     render(<ProjectionsTable players={[early, later]} draftedPlayers={[]} nextPickNumber={50} isLoading={false} error={null} onDraftPlayer={vi.fn()} canDraft />);
-    expect(screen.getByTitle("100% likely available at your next pick").className).toContain("riskLow");
-    expect(screen.getByTitle("0% likely available at your next pick").className).toContain("riskHigh");
+    expect(screen.getByTitle("100% estimated available at your next pick").className).toContain("riskLow");
+    expect(screen.getByTitle("0% estimated available at your next pick").className).toContain("riskHigh");
+  });
+
+  it("delegates risk SD changes to the dashboard owner", () => {
+    const onRiskSdChange = vi.fn();
+    render(
+      <ProjectionsTable
+        players={[player(1, "Risk Player", "C")]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+        riskSd={12}
+        onRiskSdChange={onRiskSdChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Open settings drawer" }));
+    fireEvent.change(screen.getByLabelText("SD (picks): 12"), {
+      target: { value: "20" },
+    });
+    expect(onRiskSdChange).toHaveBeenCalledWith(20);
   });
   it("preserves projected decimals and exposes the unrounded source value", () => {
     const projected = player(8477492, "Nathan MacKinnon", "C");

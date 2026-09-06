@@ -22,7 +22,7 @@ import {
 } from "lib/draftDashboard/forwardGrouping";
 
 interface MyRosterProps {
-  nextPickByTeam: Record<string, number>;
+  nextPickByTeam: Record<string, number | undefined>;
   scheduleState: RosterScheduleOptimizerState;
   myTeamId: string;
   teamStatsList: TeamDraftStats[]; // receive all teams
@@ -421,7 +421,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
           <div className={styles.summaryCard}>
             <div className={styles.summaryLabel}>Next pick</div>
             <div className={styles.summaryValue}>
-              {Number.isFinite(selectedNextPick) && selectedNextPick <= totalRosterSpots * draftSettings.teamCount ? selectedNextPick : "—"}
+              {typeof selectedNextPick === "number" && Number.isFinite(selectedNextPick) && selectedNextPick <= totalRosterSpots * draftSettings.teamCount ? selectedNextPick : "—"}
             </div>
           </div>
         </div>

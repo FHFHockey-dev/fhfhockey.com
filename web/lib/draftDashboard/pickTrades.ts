@@ -281,7 +281,7 @@ export function findPicksUntilTeamTurn({
       return pickNumber - currentPick;
     }
   }
-  return draftOrder.length;
+  return undefined;
 }
 
 export function findNextActionablePick({
