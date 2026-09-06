@@ -544,23 +544,45 @@ describe("recommendations, risk, and caching", () => {
     ).toEqual(["less-dust", "a", "b"]);
   });
 
-  it("returns the same best recommendation from a prepared pool", () => {
+  it("returns the full-ranking best recommendation when stable ID breaks a tie", () => {
     const candidate = dust(player("candidate", "RW", 100), 8);
     const alternatives = [
       candidate,
       dust(player("b", "RW", 98), 3),
       dust(player("a", "RW", 98), 3),
-      dust(player("less-dust", "RW", 97), 2),
       dust(player("missing", "UNKNOWN", 99), 0),
     ];
+    const ranked = rankAlternativeRecommendations(candidate, alternatives, {
+      RW: 1,
+    });
     const best = createBestAlternativeRecommendationFinder(
       alternatives,
       { RW: 1 },
     )(candidate);
 
-    expect(best).toEqual(
-      rankAlternativeRecommendations(candidate, alternatives, { RW: 1 })[0],
-    );
+    expect(ranked[0]?.player.id).toBe("a");
+    expect(best).toEqual(ranked[0]);
+  });
+
+  it("returns no prepared best recommendation when full ranking rejects every option", () => {
+    const candidate = dust(player("candidate", "C", 100), 12);
+    const alternatives = [
+      candidate,
+      dust(player("small", "C", 99), 10),
+      dust(player("defense", "D", 99), 0),
+    ];
+    const ranked = rankAlternativeRecommendations(candidate, alternatives, {
+      C: 1,
+      D: 1,
+      UTIL: 1,
+    });
+    const best = createBestAlternativeRecommendationFinder(
+      alternatives,
+      { C: 1, D: 1, UTIL: 1 },
+    )(candidate);
+
+    expect(ranked).toEqual([]);
+    expect(best).toBeUndefined();
   });
 
   it("classifies typed DUST risk using both exact games and rate", () => {
