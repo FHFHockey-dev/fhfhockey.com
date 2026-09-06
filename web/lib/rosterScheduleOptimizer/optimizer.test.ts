@@ -5,6 +5,7 @@ import {
   calculateCandidateDust,
   canEligibilityOccupySlot,
   classifyDustRisk,
+  createBestAlternativeRecommendationFinder,
   createOptimizerCacheSignature,
   evaluateRosterSchedule,
   expandActiveSlots,
@@ -541,6 +542,25 @@ describe("recommendations, risk, and caching", () => {
         (item) => item.player.id,
       ),
     ).toEqual(["less-dust", "a", "b"]);
+  });
+
+  it("returns the same best recommendation from a prepared pool", () => {
+    const candidate = dust(player("candidate", "RW", 100), 8);
+    const alternatives = [
+      candidate,
+      dust(player("b", "RW", 98), 3),
+      dust(player("a", "RW", 98), 3),
+      dust(player("less-dust", "RW", 97), 2),
+      dust(player("missing", "UNKNOWN", 99), 0),
+    ];
+    const best = createBestAlternativeRecommendationFinder(
+      alternatives,
+      { RW: 1 },
+    )(candidate);
+
+    expect(best).toEqual(
+      rankAlternativeRecommendations(candidate, alternatives, { RW: 1 })[0],
+    );
   });
 
   it("classifies typed DUST risk using both exact games and rate", () => {

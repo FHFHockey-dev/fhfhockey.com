@@ -6,12 +6,11 @@ import { DEFAULT_YAHOO_GAME_KEY } from "lib/rosterScheduleData/constants";
 import {
   calculateCandidateDust,
   classifyDustRisk,
+  createBestAlternativeRecommendationFinder,
   createOptimizerCacheSignature,
   evaluateRosterSchedule,
   normalizeEligibility,
   prepareTeamSchedule,
-  rankAlternativeRecommendations,
-  type AlternativeRecommendation,
   type CandidateDustEvaluation,
   type DustRiskLabel,
   type OptimizerPlayer,
@@ -178,18 +177,6 @@ function insightsAreEqual(
     }
   }
   return true;
-}
-
-function bestAlternative(
-  candidate: DashboardCandidateDust,
-  alternatives: readonly DashboardCandidateDust[],
-  rosterConfig: Readonly<Record<string, number>>,
-): AlternativeRecommendation<DashboardCandidateDust> | undefined {
-  return rankAlternativeRecommendations(
-    candidate,
-    alternatives,
-    rosterConfig,
-  )[0];
 }
 
 export function useRosterScheduleOptimizer({
@@ -368,6 +355,10 @@ export function useRosterScheduleOptimizer({
             (diagnostic) => diagnostic.severity === "error",
           ),
       );
+      const findBestAlternative = createBestAlternativeRecommendationFinder(
+        validCandidateDust,
+        rosterConfig,
+      );
       const next = new Map<string, DraftDashboardDustInsight>();
       for (const dust of validCandidateDust) {
         const risk = classifyDustRisk(
@@ -376,7 +367,7 @@ export function useRosterScheduleOptimizer({
         );
         const alternative =
           risk.label === "elevated" || risk.label === "high"
-            ? bestAlternative(dust, validCandidateDust, rosterConfig)
+            ? findBestAlternative(dust)
             : undefined;
         next.set(dust.player.id, {
           marginalDustGames: dust.marginalDustGames,
@@ -397,7 +388,6 @@ export function useRosterScheduleOptimizer({
             : undefined,
         });
       }
-
       if (cancelled) return;
       setInsights((current) =>
         insightsAreEqual(current, next) ? current : next,
