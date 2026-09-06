@@ -74,7 +74,7 @@ describe("representative draft workflow", () => {
     const bookmark = { v: 3, settings, myTeamId: "Team 1", draftedPlayers: picks, currentPick: 4, sourceControls: input.skaterSources, goalieSourceControls: input.goalieSources, goalieScoringCategories: input.goalieScoring };
     expect(bookmarkImportError(bookmark)).toBeNull();
     for (const invalid of [null, { v: 3, settings: {} }, { ...bookmark, settings: { ...settings, rosterConfig: [] } }, { ...bookmark, draftedPlayers: [picks[0], picks[0]] }, { ...bookmark, currentPick: -1 }, { ...bookmark, keepers: [{ playerId: "4", teamId: "missing", round: 1, pickInRound: 1 }] }, { ...bookmark, pickTrades: [{ round: 999, pickInRound: 1, currentTeamId: "Team 2" }] }]) expect(bookmarkImportError(invalid)).not.toBeNull();
-    expect(bookmarkImportError({ ...bookmark, sourceControls: { custom_csv_missing: { isSelected: true, weight: 1 } } }, [])).toContain("missing from this tab");
+    expect(bookmarkImportError({ ...bookmark, sourceControls: { custom_csv_missing: { isSelected: true, weight: 1 } } }, [])).toBeNull();
     expect(bookmarkImportError({ ...bookmark, goalieScoringCategories: { GOALS_AGAINST_GOALIE: -1 } })).toBeNull();
   });
 

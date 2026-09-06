@@ -15,6 +15,7 @@ interface Props {
   onGoaliesChange?: (controls: ProjectionSourceControls) => void;
   customSources: DraftCustomSourceMetadata[];
   onRemoveCustomSource?: (id: string) => void;
+  onReimportCustomSource?: (id: string) => void;
   hasPicks: boolean;
 }
 
@@ -25,6 +26,7 @@ export default function ProjectionSourceSettings({
   onGoaliesChange,
   customSources,
   onRemoveCustomSource,
+  onReimportCustomSource,
   hasPicks,
 }: Props) {
   const [mode, setMode] = useState<"weights" | "multipliers">("weights");
@@ -210,6 +212,11 @@ export default function ProjectionSourceSettings({
                           : `${control.weight.toFixed(2)}×`}
                       </strong>
                     )}
+                    {editing &&
+                      id.startsWith("custom_csv") &&
+                      onReimportCustomSource && (
+                        <button type="button" aria-label={`Reimport ${label}`} onClick={() => onReimportCustomSource(id)}>↻</button>
+                      )}
                     {editing &&
                       id.startsWith("custom_csv") &&
                       onRemoveCustomSource && (

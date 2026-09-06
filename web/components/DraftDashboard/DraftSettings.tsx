@@ -28,6 +28,11 @@ import styles from "./DraftSettings.module.scss";
 import DraftScoringSettings from "./DraftScoringSettings";
 import ProjectionSourceSettings from "./ProjectionSourceSettings";
 import { bookmarkImportError, type DraftSettingsValidation, type SettingsDomain } from "lib/draftDashboard/settingsValidation";
+import type { SessionCsvEntry } from "lib/draftDashboard/csvImportSession";
+import {
+  createManualDraftRecoveryRecord,
+  readManualDraftAnalysisPreferences,
+} from "lib/draftDashboard/manualDraftRecovery";
 
 export interface DraftSettingsHandle {
   importBookmark: () => void;
@@ -51,10 +56,20 @@ interface DraftSettingsProps {
   undoLastPick: () => void;
   resetDraft: () => void;
   draftHistory: any[];
+  positionOverrides?: Record<string, string>;
   draftedPlayers: DraftedPlayer[];
   currentPick: number;
   customTeamNames?: Record<string, string>;
   forwardGrouping?: "split" | "fwd";
+  baselineMode?: "remaining" | "full";
+  personalizeReplacement?: boolean;
+  needWeightEnabled?: boolean;
+  needAlpha?: number;
+  configured?: boolean;
+  preserveExactCategoryWeights?: boolean;
+  recoveryBlocked?: boolean;
+  prorate84?: boolean;
+  riskSd?: number;
   onForwardGroupingChange?: (mode: "split" | "fwd") => void;
   sourceControls?: Record<string, { isSelected: boolean; weight: number }>;
   onSourceControlsChange?: (
@@ -74,10 +89,12 @@ interface DraftSettingsProps {
   onOpenImportCsv?: () => void;
   customSourceLabel?: string;
   customSourceMetadata?: DraftCustomSourceMetadata[];
+  customCsvEntries?: SessionCsvEntry[];
   availableSkaterStatKeys?: string[];
   availableGoalieStatKeys?: string[];
   onExportCsv?: () => void;
   onRemoveCustomSource?: (id: string) => void;
+  onReimportCustomSource?: (id: string) => void;
   pickOwnerOverrides?: Record<string, string>;
   pickTrades?: PickTradeEntry[];
   onAddTradedPick?: (
@@ -130,10 +147,20 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
   undoLastPick,
   resetDraft,
   draftHistory,
+  positionOverrides = {},
   draftedPlayers,
   currentPick,
   customTeamNames = {},
   forwardGrouping = "split",
+  baselineMode = "remaining",
+  personalizeReplacement = false,
+  needWeightEnabled = false,
+  needAlpha = 0.5,
+  configured = false,
+  preserveExactCategoryWeights = false,
+  recoveryBlocked = false,
+  prorate84,
+  riskSd,
   onForwardGroupingChange,
   sourceControls,
   onSourceControlsChange,
@@ -145,10 +172,12 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
   onOpenImportCsv,
   customSourceLabel,
   customSourceMetadata = [],
+  customCsvEntries = [],
   availableSkaterStatKeys = [],
   availableGoalieStatKeys = [],
   onExportCsv,
   onRemoveCustomSource,
+  onReimportCustomSource,
   pickOwnerOverrides = {},
   pickTrades = [],
   onAddTradedPick,
@@ -346,46 +375,39 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
 
   // --- Bookmark (Portable Draft Session) ---
   // Build a serializable payload capturing draft state & settings for cross-device restoration.
-  const buildBookmarkPayload = React.useCallback(() => {
-    const ls = (k: string, def: any = undefined) => {
-      if (typeof window === "undefined") return def;
-      return window.localStorage.getItem(k) ?? def;
-    };
-    let personalizeReplacement: boolean | undefined;
-    let needWeightEnabled: boolean | undefined;
-    let needAlpha: number | undefined;
-    let baselineMode: string | undefined;
-    try {
-      personalizeReplacement =
-        ls("draftDashboard.personalizeReplacement.v1") === "true";
-      needWeightEnabled = ls("draftDashboard.needWeight.v1") === "true";
-      const naRaw = ls("draftDashboard.needAlpha.v1");
-      needAlpha = naRaw ? parseFloat(naRaw) : undefined;
-      baselineMode = ls("draftDashboard.baselineMode") || undefined;
-    } catch {}
-    return {
-      v: 3,
-      ts: Date.now(),
-      settings,
+  const [includeImportedProjections, setIncludeImportedProjections] = React.useState(false);
+  const buildBookmarkPayload = React.useCallback((includeCsvRows = false) => {
+    const analysisPreferences = readManualDraftAnalysisPreferences(window.localStorage);
+    return createManualDraftRecoveryRecord({
+      settings: settings as unknown as Record<string, unknown>,
       draftedPlayers,
       draftHistory,
       currentPick,
+      isSnakeDraft: activeDraftOrderPattern.mode === "snake",
       myTeamId,
       forwardGrouping,
       customTeamNames,
-      sourceControls,
-      goalieSourceControls,
+      positionOverrides,
+      sourceControls: sourceControls || {},
+      goalieSourceControls: goalieSourceControls || {},
       goalieScoringCategories,
       personalizeReplacement,
       needWeightEnabled,
       needAlpha,
       baselineMode,
       keepers,
-      pickOwnerOverrides,
       pickTrades,
-      customSourceMetadata,
-    };
+      preserveExactCategoryWeights,
+      csvMetadata: customSourceMetadata,
+      configured,
+      prorate84: prorate84 ?? analysisPreferences.prorate84,
+      riskSd: riskSd ?? analysisPreferences.riskSd,
+      ...(includeCsvRows && customCsvEntries.length
+        ? { customCsvEntries }
+        : {}),
+    });
   }, [
+    activeDraftOrderPattern.mode,
     settings,
     draftedPlayers,
     draftHistory,
@@ -393,13 +415,22 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
     myTeamId,
     forwardGrouping,
     customTeamNames,
+    positionOverrides,
     sourceControls,
     goalieSourceControls,
     goalieScoringCategories,
     keepers,
-    pickOwnerOverrides,
     pickTrades,
     customSourceMetadata,
+    customCsvEntries,
+    baselineMode,
+    personalizeReplacement,
+    needWeightEnabled,
+    needAlpha,
+    configured,
+    preserveExactCategoryWeights,
+    prorate84,
+    riskSd,
   ]);
 
   const deserializeBookmark = (key: string): any | null => {
@@ -423,7 +454,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
   };
 
   const handleCreateBookmark = () => {
-    const blob = new Blob([JSON.stringify(buildBookmarkPayload(), null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(buildBookmarkPayload(includeImportedProjections), null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -453,6 +484,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
         <h2 className={styles.legend}>Draft Settings</h2>
         <button type="button" onClick={handleImportBookmark} disabled={draftLocked}>Import</button>
         <button type="button" onClick={handleCreateBookmark}>Export</button>
+        {customCsvEntries.length > 0 && <label><input type="checkbox" checked={includeImportedProjections} onChange={(event) => setIncludeImportedProjections(event.target.checked)} /> Include imported projections</label>}
       </div>}
       {tradeFeedback && <div className={styles.lockNotice} role={tradeFeedback.ok ? "status" : "alert"}>{tradeFeedback.message}<button type="button" aria-label="Dismiss settings message" onClick={() => setTradeFeedback(null)}>×</button></div>}
       {draftLocked && (
@@ -473,6 +505,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
               <button type="button" disabled={!importText.trim() || draftLocked} onClick={applyBookmark}>Import Bookmark</button>
               <button type="button" onClick={() => setImportOpen(false)}>Cancel Import</button>
             </div>}
+            {variant !== "standalone" && customCsvEntries.length > 0 && <label><input type="checkbox" checked={includeImportedProjections} onChange={(event) => setIncludeImportedProjections(event.target.checked)} /> Include imported projections in export</label>}
 
             <div className={styles.settingRow}>
               <label className={styles.label} htmlFor="teamCount">
@@ -738,7 +771,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
                 className={`${styles.actionButton} ${styles.actionButtonDanger} ${confirmReset ? styles.confirmReset : ""}`}
                 onClick={handleResetDraftClick}
                 disabled={
-                  draftLocked || (draftedPlayers.length === 0 && keepers.length === 0 && pickTrades.length === 0 && !confirmReset)
+                  draftLocked || (!recoveryBlocked && draftedPlayers.length === 0 && keepers.length === 0 && pickTrades.length === 0 && !confirmReset)
                 }
                 aria-describedby="resetDraftWarning"
                 data-testid="reset-draft-btn"
@@ -1528,7 +1561,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
           <fieldset data-settings-domain="projections" hidden={variant === "inline" && activeSection !== "projections"} role={variant === "inline" ? "tabpanel" : undefined} aria-labelledby={variant === "inline" ? "draft-tab-projections" : undefined} id="draft-domain-projections" tabIndex={-1} className={styles.fieldset}>
             <legend className={styles.legend}>Projection Sources</legend>
             {domainIssues("projections")}
-            <ProjectionSourceSettings skaters={sourceControls} goalies={goalieSourceControls} onSkatersChange={onSourceControlsChange} onGoaliesChange={onGoalieSourceControlsChange} customSources={customSourceMetadata} onRemoveCustomSource={onRemoveCustomSource} hasPicks={draftedPlayers.length > 0} />
+            <ProjectionSourceSettings skaters={sourceControls} goalies={goalieSourceControls} onSkatersChange={onSourceControlsChange} onGoaliesChange={onGoalieSourceControlsChange} customSources={customSourceMetadata} onRemoveCustomSource={onRemoveCustomSource} onReimportCustomSource={onReimportCustomSource} hasPicks={draftedPlayers.length > 0} />
           </fieldset>
           {/* Quick Actions fieldset removed; actions moved under League Setup */}
 

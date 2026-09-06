@@ -28,7 +28,7 @@ export type CustomCsvSessionLoadResult = {
   error?: string;
 };
 
-function isSessionCsvEntry(value: unknown): value is SessionCsvEntry {
+export function isSessionCsvEntry(value: unknown): value is SessionCsvEntry {
   if (!value || typeof value !== "object") return false;
   const entry = value as Partial<SessionCsvEntry>;
   return (
