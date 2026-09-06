@@ -9,10 +9,10 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
   background: v.$draft-canvas;
   color: v.$color-neutral-200;
-  font: 13px v.$font-family-primary;
+  font: 13px/1.4 v.$font-family-primary;
   *,
   *::before,
   *::after {
@@ -67,14 +67,14 @@
   flex: 1;
   min-height: 0;
   min-width: 0;
-  margin: 0 8px 8px;
-  gap: 6px;
+  margin: 0 12px 12px;
+  gap: 10px;
   grid-template-columns:
     minmax(450px, 39fr)
     minmax(0, 61fr)
     minmax(285px, 315px);
   grid-template-rows:
-    clamp(185px, 25dvh, 220px)
+    clamp(215px, 27dvh, 250px)
     minmax(0, 58fr)
     minmax(0, 42fr);
   grid-template-areas:
@@ -115,7 +115,7 @@
   min-height: 0;
 }
 .refreshButton {
-  flex: 0 0 22px;
+  flex: 0 0 28px;
   width: 100%;
   font-size: 11px !important;
   text-transform: uppercase;
@@ -135,7 +135,7 @@
 @media (min-width: 1101px) and (max-height: 840px) {
   .mainContent {
     grid-template-rows:
-      clamp(150px, 22dvh, 182px)
+      clamp(215px, 28dvh, 235px)
       minmax(0, 58fr)
       minmax(0, 42fr);
   }
@@ -149,7 +149,7 @@
   .mainContent {
     flex: none;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: 240px 500px 340px 600px;
+    grid-template-rows: 280px 500px 340px 600px;
     grid-template-areas:
       "suggested suggested"
       "standings players"
@@ -157,7 +157,7 @@
       "roster roster";
   }
   .dashboardContainer[data-settings-open="true"] .mainContent {
-    grid-template-rows: 240px 500px 340px 600px;
+    grid-template-rows: 280px 500px 340px 600px;
   }
 }
 @media (max-width: 799px) {
