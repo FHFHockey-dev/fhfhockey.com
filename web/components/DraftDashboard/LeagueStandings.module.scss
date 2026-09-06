@@ -15,11 +15,11 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: 6px 10px;
+    padding: 10px 12px;
     flex-wrap: wrap;
   }
   h2 {
-    font: 13px v.$font-family-accent;
+    font: 14px v.$font-family-accent;
     color: v.$primary-color;
     text-transform: uppercase;
     margin: 0;
@@ -44,7 +44,7 @@
   td {
     white-space: nowrap;
     text-align: center;
-    padding: 2px 3px;
+    padding: 4px 3px;
     border-bottom: 1px solid v.$draft-border;
     line-height: 1.2;
   }
@@ -105,7 +105,7 @@
     flex-wrap: wrap;
     gap: 4px;
     font-size: 11px;
-    padding: 4px 8px;
+    padding: 7px 12px;
     color: v.$text-secondary;
   }
   i {
