@@ -1,6 +1,6 @@
 @use "styles/vars" as v;
 .suggestedContainer {
-  --track-gap: 8px;
+  --track-gap: 10px;
   --track-lanes: 6;
   --card-span: 1;
   --lane-width: calc(
@@ -8,7 +8,7 @@
   );
   height: 100%;
   min-height: 0;
-  padding: 8px;
+  padding: 10px;
   background: v.$draft-surface;
   border: 1px solid v.$draft-border;
   border-radius: 5px;
@@ -26,7 +26,7 @@
 .title {
   flex: 0 0 auto;
   margin: 0;
-  font: 13px v.$font-family-accent;
+  font: 14px v.$font-family-accent;
   text-transform: uppercase;
   color: v.$primary-color;
 }
@@ -150,7 +150,7 @@
   display: flex;
   gap: 5px;
   color: v.$text-secondary;
-  font-size: 11px;
+  font-size: 12px;
 }
 .pos {
   color: var(--position-color);
@@ -180,7 +180,7 @@
   white-space: nowrap;
 }
 .statValue {
-  font-size: 13px;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
 .statValue[data-availability="high"] {
@@ -309,7 +309,7 @@
   .suggestedContainer {
     --track-lanes: 3;
     --card-span: 3;
-    min-height: 300px;
+    min-height: 360px;
   }
   .progressBar {
     grid-auto-flow: row;
@@ -324,12 +324,12 @@
   font-size: 12px !important;
 }
 .card {
-  gap: 3px;
-  padding-top: 6px;
-  padding-bottom: 6px;
+  gap: 6px;
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
 .header {
-  line-height: 1.1;
+  line-height: 1.25;
 }
 .rankBadge {
   line-height: 1;
@@ -338,11 +338,11 @@
   line-height: 12px;
 }
 .statValue {
-  line-height: 14px;
+  line-height: 18px;
 }
 .bottomRow {
-  gap: 3px;
-  min-height: 49px;
+  gap: 5px;
+  min-height: 55px;
 }
 .tag {
   line-height: 11px;
@@ -353,12 +353,12 @@
   line-height: 12px;
 }
 .linkBtn {
-  line-height: 14px;
-  padding: 2px 6px;
+  line-height: 16px;
+  padding: 4px 6px;
 }
 @media (min-width: 1101px) and (max-height: 840px) {
-  .suggestedContainer { padding: 5px 8px; gap: 5px; }
-  .card { padding-block: 4px; gap: 3px; }
+  .suggestedContainer { padding: 8px 10px; gap: 6px; }
+  .card { padding-block: 6px; gap: 4px; }
   .bottomRow {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
