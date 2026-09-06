@@ -245,7 +245,7 @@ it("updates table and suggested-pick availability from the same recovered risk s
     expect(JSON.parse(localStorage.getItem("draftDashboard.session.v1")!).riskSd).toBe(28),
   );
   const suggestedAvailability = () =>
-    document.querySelector<HTMLElement>('article[data-player-id="2"] [title="Probability of remaining available at your next pick"]');
+    document.querySelector<HTMLElement>('article[data-player-id="2"] [title$="remaining available at your next pick"]');
   const tableAvailability = () =>
     document.querySelector<HTMLElement>('tr[data-player-id="2"] [title*="estimated available at your next pick"]');
   await waitFor(() => {

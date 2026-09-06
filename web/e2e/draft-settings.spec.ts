@@ -413,6 +413,159 @@ test("settings edits, validation, imports and reset preserve a live draft", asyn
   ).toBe(true);
 });
 
+test("advanced table settings preserve focus, background state, and table state", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installDraftFixture(page);
+  await page.goto("/draft-dashboard");
+  await activateDraftFixture(page);
+  await done(page);
+
+  const players = page.locator("#mobile-draft-panel-players");
+  await expect(players.locator("tbody tr").first()).toBeVisible({
+    timeout: 60_000,
+  });
+  await page.getByRole("textbox", { name: "Search players" }).fill("Fixture");
+  await page.getByLabel("Position filter").selectOption("C");
+  await page.getByLabel("Available players per page").selectOption("15");
+  const selectedRow = players.locator('tr[data-player-id="101"]');
+  await selectedRow.getByRole("checkbox").last().check();
+  await players.getByLabel("Player table options").click();
+
+  const backgroundState = () =>
+    page.evaluate(() => ({
+      inertCount: document.querySelectorAll("[inert]").length,
+      hiddenCount: document.querySelectorAll('[aria-hidden="true"]').length,
+      overflow: document.body.style.overflow,
+      overscroll: document.body.style.overscrollBehavior,
+    }));
+  const baseline = await backgroundState();
+  const trigger = players.getByRole("button", { name: "Open settings drawer" });
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+
+  const dialog = page.getByRole("dialog", { name: "Advanced Settings" });
+  await expect(dialog).toBeVisible();
+  const close = dialog.getByRole("button", { name: "Close settings" });
+  await expect(close).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  expect(
+    await dialog.evaluate((element) => element.contains(document.activeElement)),
+  ).toBe(true);
+  await page.keyboard.press("Tab");
+  await expect(close).toBeFocused();
+  await dialog.getByLabel("Value band scope").selectOption("overall");
+  expect((await backgroundState()).inertCount).toBeGreaterThan(
+    baseline.inertCount,
+  );
+  expect(await backgroundState()).toMatchObject({
+    overflow: "hidden",
+    overscroll: "contain",
+  });
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  await expect(page.getByRole("textbox", { name: "Search players" })).toHaveValue(
+    "Fixture",
+  );
+  await expect(page.getByLabel("Position filter")).toHaveValue("C");
+  await expect(page.getByLabel("Available players per page")).toHaveValue("15");
+  await expect(selectedRow.getByRole("checkbox").last()).toBeChecked();
+
+  await trigger.click();
+  await expect(dialog.getByLabel("Value band scope")).toHaveValue("overall");
+  await dialog.getByRole("button", { name: "Close settings" }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(await backgroundState()).toEqual(baseline);
+  await expect(trigger).toBeFocused();
+});
+
+test("CSV-backed pick, undo, and utility move survive reload", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installDraftFixture(page);
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("/draft-dashboard");
+  await activateDraftFixture(page);
+  await done(page);
+
+  const players = page.locator("#mobile-draft-panel-players");
+  const centerRow = players.locator('tr[data-player-id="101"]');
+  await expect(centerRow).toBeVisible({ timeout: 60_000 });
+  await centerRow.getByRole("button", { name: "Draft", exact: true }).click();
+  await expect
+    .poll(async () => (await session(page)).draftedPlayers?.[0]?.playerId)
+    .toBe("101");
+
+  await page.getByRole("button", { name: "Setup", exact: true }).click();
+  const undo = page.getByTestId("undo-pick-btn");
+  await expect(undo).toBeEnabled();
+  await undo.click();
+  await expect
+    .poll(async () => ({
+      currentPick: (await session(page)).currentPick,
+      draftedCount: (await session(page)).draftedPlayers?.length,
+    }))
+    .toEqual({ currentPick: 1, draftedCount: 0 });
+
+  await done(page);
+  await centerRow.getByRole("button", { name: "Draft", exact: true }).click();
+  await expect
+    .poll(async () => (await session(page)).draftedPlayers?.[0]?.playerId)
+    .toBe("101");
+
+  const roster = page.locator("#mobile-draft-panel-roster");
+  await roster.getByRole("button", { name: "C 1: Fixture Center" }).click();
+  await roster.getByRole("button", { name: "UTILITY 1: Open" }).click();
+  await expect(
+    roster.getByRole("button", { name: "UTILITY 1: Fixture Center" }),
+  ).toBeVisible();
+  await expect
+    .poll(async () => (await session(page)).positionOverrides?.["101"])
+    .toBe("UTILITY");
+
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.reload();
+  await expect(
+    roster.getByRole("button", { name: "UTILITY 1: Fixture Center" }),
+  ).toBeVisible();
+  expect((await session(page)).positionOverrides?.["101"]).toBe("UTILITY");
+  expect((await session(page)).draftHistory).toHaveLength(1);
+
+  await page.getByRole("button", { name: "Setup", exact: true }).click();
+  await expect(undo).toBeEnabled();
+  await undo.click();
+  await expect
+    .poll(async () => ({
+      currentPick: (await session(page)).currentPick,
+      draftedCount: (await session(page)).draftedPlayers?.length,
+      override: (await session(page)).positionOverrides?.["101"],
+    }))
+    .toEqual({ currentPick: 1, draftedCount: 0, override: undefined });
+
+  await done(page);
+  await page.getByLabel("Position filter").selectOption("G");
+  const goalieRow = players.locator('tr[data-player-id="201"]');
+  await goalieRow.getByRole("button", { name: "Draft", exact: true }).click();
+  await expect
+    .poll(async () => (await session(page)).draftedPlayers?.[0]?.playerId)
+    .toBe("201");
+  await roster
+    .getByRole("button", { name: "G 1: Fixture Goalie One" })
+    .click();
+  await roster.getByRole("button", { name: "UTILITY 1: Open" }).click();
+  await expect(
+    roster.getByRole("button", { name: "G 1: Fixture Goalie One" }),
+  ).toBeVisible();
+  await expect(
+    roster.getByRole("button", { name: "UTILITY 1: Open" }),
+  ).toBeVisible();
+  expect((await session(page)).positionOverrides?.["201"]).toBeUndefined();
+  expect(errors).toEqual([]);
+});
+
 for (const width of [320, 390]) {
   test(`mobile working tabs retain compact draft status at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 760 });
