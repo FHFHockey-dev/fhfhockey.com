@@ -85,3 +85,14 @@ export async function stagePrivateImport(args: { userId: string; uploadId: strin
 }
 
 export function newSavedDraftAttemptKey() { return randomUUID(); }
+
+export async function readPrivateImportRows(args: { userId: string; draftId: string; importId: string }) {
+  const metadata = await row("read_draft_pro_private_import_blob", { p_user_id: args.userId, p_draft_id: args.draftId, p_import_id: args.importId });
+  const downloaded = await client.storage.from(BUCKET).download(String(metadata.storage_path));
+  if (downloaded.error) throw downloaded.error;
+  const bytes = Buffer.from(await downloaded.data.arrayBuffer());
+  if (bytes.byteLength !== Number(metadata.byte_size) || createHash("sha256").update(bytes).digest("hex") !== metadata.content_sha256) throw new Error("Private import file validation failed.");
+  const rows: unknown = JSON.parse(bytes.toString("utf8"));
+  if (!Array.isArray(rows) || rows.length !== Number(metadata.row_count)) throw new Error("Private import file is incomplete.");
+  return rows;
+}
