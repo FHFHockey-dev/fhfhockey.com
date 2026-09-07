@@ -50,6 +50,7 @@ describe("Draft Pro DUST API", () => {
     const query = {
       select: vi.fn(),
       eq: vi.fn(),
+      order: vi.fn(),
       range: vi.fn(async (from: number) => ({
         data: mocks.metadataPages[from / 1_000] ?? mocks.metadataRows,
         error: null,
@@ -57,6 +58,7 @@ describe("Draft Pro DUST API", () => {
     };
     query.select.mockReturnValue(query);
     query.eq.mockReturnValue(query);
+    query.order.mockReturnValue(query);
     mocks.from.mockReturnValue(query);
   });
 
@@ -110,6 +112,9 @@ describe("Draft Pro DUST API", () => {
     const res = response();
     await handler({ method: "POST", body: requestBody } as any, res.api as any);
     expect(mocks.readRosterSchedule).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ gameKey: "500" }));
+    expect(mocks.from().select).toHaveBeenCalledWith("id,game_key,season,source_season_id");
+    expect(mocks.from().order).toHaveBeenCalledWith("id", { ascending: true });
+    expect(mocks.from().range).toHaveBeenCalledWith(0, 999);
     expect(res.state).toMatchObject({ status: 200, body: { success: true, data: { state: "ready" } } });
   });
 
@@ -157,5 +162,14 @@ describe("Draft Pro DUST API", () => {
     const res = response();
     await handler({ method: "POST", body: requestBody } as any, res.api as any);
     expect(res.state).toMatchObject({ status: 200, body: { success: true, data: { state: "ready" } } });
+    expect(mocks.from().range).toHaveBeenCalledWith(1_000, 1_999);
+  });
+
+  it("fails closed when the bounded metadata page limit is reached", async () => {
+    const matching = { game_key: "500", season: "2026", source_season_id: 20262027 };
+    mocks.metadataPages = Array.from({ length: 10 }, () => Array.from({ length: 1_000 }, () => matching));
+    const res = response();
+    await handler({ method: "POST", body: requestBody } as any, res.api as any);
+    expect(res.state).toMatchObject({ status: 503, body: { success: false, error: { code: "schedule_season_unavailable" } } });
   });
 });

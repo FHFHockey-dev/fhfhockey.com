@@ -1,4 +1,5 @@
 export type DustScheduleSeasonMetadata = {
+  id?: number;
   game_key: string;
   season: string;
   source_season_id: number;
