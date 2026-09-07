@@ -7,7 +7,7 @@ vi.mock("lib/integrations/patreon/config", () => ({ getPatreonWebhookSecret: () 
 
 import handler from "./patreon";
 
-const body = Buffer.from('{"data":{"id":"member-1","type":"member"}}');
+const body = new TextEncoder().encode('{"data":{"id":"member-1","type":"member"}}');
 const signature = crypto.createHmac("md5", "test-webhook-secret").update(body).digest("hex");
 
 function request(raw = body, signed = true) {
