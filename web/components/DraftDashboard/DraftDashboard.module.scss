@@ -147,7 +147,8 @@
     overflow: visible;
   }
   .dashboardContainer:has([data-dust-matrix="true"][data-open="true"]) .mainContent {
-    flex: 0 0 auto;
+    flex: 0 0 720px;
+    height: 720px;
     min-height: 720px;
   }
 }
