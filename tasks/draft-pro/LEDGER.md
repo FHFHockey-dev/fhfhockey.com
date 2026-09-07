@@ -14,14 +14,14 @@ Account-wide weekly usage: **47% consumed / 53% remaining**. Goal counter: **991
 | W02 Stripe | Approved, 30 focused tests; combined account/Stripe strict types pass | Real Stripe test-mode Checkout, Link and webhook delivery blocked on credentials |
 | W03 Patreon | Approved local lifecycle/mapping/recovery | Real campaign/OAuth/webhook validation blocked on credentials |
 | W04 refunds/account | Approved, 17 focused tests; CLI follow-on integrated | Mounted UI/browser and real email configuration checks |
-| W05 recommendations | Approved pure/hook/API checkpoint, 19 tests | W07 remote UI wiring and premium boundary |
-| W06 DUST | Approved pure/API/adapter checkpoint, 11 tests | W07 UI, season/window display and capability wiring |
-| W07 integration/CSV/graph | Active; access hook and checkout checkpoint integrated | Remote recommendations, DUST wiring, CSV, expanded graph and full UI tests |
+| W05 recommendations | Approved shared calculations, API and W07 adapter | Integrated browser/RC checks |
+| W06 DUST | Approved shared optimizer/API, season resolution and W07 UI | Schedule-handoff compatibility and integrated browser/RC checks |
+| W07 integration/CSV/graph | Initial feature bundle locally approved through296309ce8 | External schedule compatibility; browser/RC gate |
 | W08 Saved Drafts | Queued | Initial-release checkpoint, quotas/concurrency/private restore implementation |
 | W09 scenarios | Queued | W08 and shared calculation integration |
 | W10 reports | Queued | W09 and deterministic report implementation |
 | W11 copy/operator | Configuration preparation approved | Final availability review after implemented milestones |
-| W12 verification | SQL/RLS/concurrency and minimal free Chromium draft approved | Paid UI, full free regressions, saved work, mobile/keyboard/zoom, RC suite and release packet |
+| W12 verification | SQL/RLS/concurrency, free draft/compare/weights/CSV recovery approved | Paid UI, graph/mobile/keyboard/zoom active; later saved work, RC suite and release packet |
 | W13 Yahoo | Readiness work order approved and parked | September 11 one-time check; real provider evidence, separate activation approval |
 
 No remote build, deployment, production migration, live payment, or live email has been performed. Checkpoint approval is scoped engineering evidence, not release authorization. Full repository TypeScript remains unverified after its documented default-heap OOM; scoped checks are not a whole-repository pass.
@@ -243,3 +243,16 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 
 - Major checkpoint: W07 export/expanded-graph/account finishing bundle APPROVED locally through source7ce2de76f, integrated296309ce8. Chef ran five targeted test files:28/28 passed, including account identity/query/pending actions, bounded CSV provenance/formula safety/private request guard, and graph keyboard controls. Browser/initial RC checks remain pending; provider checks are not claimed. W07 idle Luna/low after escalation exit.
 - Progress: overall58%, initial paid release85%; latest account-wide weekly56% used44% remaining. Estimates include remaining verification and are not launch approval. One implementation task plus bounded verification remains the cost policy. Next: preserve external schedule handoff in isolated W07 compatibility integration, then initial RC checks before W08.
+
+- Released W07 Terra/medium for isolated external schedule compatibility and W12 Terra/medium for bounded paid/export/account/graph browser verification. No full suite repeated before compatibility checkpoint. One implementation plus verification.
+
+- External schedule compatibility APPROVED through W07 c7209e8f2, integrated6e236b3e4. Reviewed selectedWeeks plus calculateCandidates:false, preserved free local matrix/OFF/B2B and persisted scope; paid DUST remains fullweek1..30 with explicit separate playoff notice. Owner44 focusedtests/scopedtypes passed. Original user checkout untouched. Overall58% unchanged for compatibility work.
+- Initial RC at6e236b3e4: Chef running fullunit suite once and fullrepo TypeScript with8GiB; W12 browser verification active. W11 released Luna/low final availability/operator/release packet docs only. No provider/production checks claimed.
+
+- Initial RC full suite:737files/4281tests passed,2files/2tests failed,2files/3tests skipped. Failures canonical migration inventory and cron inventory. Fullrepo8GiB TypeScript completed exit2: new auth test mock types and webhook Buffer/typedarray errors. Logs /tmp/draft-pro-rc-unit.log and /tmp/draft-pro-rc-types.log; not passed.
+- W01 migration authority correction f8f21ff15 APPROVED/integrated81ffbfe13, Chef19/19 targeted tests pass. W03 Luna/medium released only Patreon raw-byte types and canonical cron fixture. W02 Stripe concat and W07 auth test types remain queued corrections; preserve owner boundaries. W12 browser found comparison sticky-header interception, awaiting exact evidence before W07 product correction.
+
+- W03 runtime/cron correction780b5e7ab integrated1a25cf02b, Chef47/47 tests pass. Both webhook test files omitted from owner correction/type scope still fail explicit scoped tsc; returned fixture-only correction Luna/low. W02 single raw-body chunk typing071360681 approved/integrated, owner3/3webhooktests and scopedtypes pass.
+- W12 product baseline invalidated by reversed cherry-pick conflict resolution: duplicate scheduleMetrics/dustInsights props absent from Chef. Directed exact approved product restoration before reproducing browser defect; no product workaround approved from invalid baseline.
+
+- W03 fixture follow-on37279c0cb approved/integrateda3f2ab413: explicit UTF8 Uint8Array fixtures; owner checks include both implicated tests and pass. W07 Luna/low released only auth mock type correction; W12 product paths now exactlymatch6e236b3e4 (Chef diff empty). Free export denial browser passed with zero export requests; combined browser run pending.
