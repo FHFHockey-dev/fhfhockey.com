@@ -34,6 +34,8 @@ import { useDraftProAccess } from "hooks/useDraftProAccess";
 import { useDraftProDust } from "hooks/useDraftProDust";
 import { buildDraftProDustNotices } from "lib/draftDashboard/draftProDustPresentation";
 import { buildDraftProDustRequest } from "lib/draftDashboard/draftProDustRequest";
+import { useDraftSchedule } from "hooks/useDraftSchedule";
+import { normalizeScheduleSettings } from "lib/draftDashboard/scheduleMetrics";
 import { useRosterScheduleOptimizer } from "hooks/useRosterScheduleOptimizer";
 import SuggestedPicks from "./SuggestedPicks";
 import DraftSummaryModal from "./DraftSummaryModal";
@@ -138,6 +140,8 @@ const NOOP_PROJECTION_TOGGLE = () => {};
 
 // Data Models from PRD
 export interface DraftSettings {
+  playoffWeeks?: number[];
+  scheduleScope?: "season" | "playoffs";
   teamCount: number;
   scoringCategories: Record<string, number>;
   leagueType?: "points" | "categories";
@@ -213,6 +217,8 @@ export interface VORPCalculation {
 }
 
 const DEFAULT_DRAFT_SETTINGS: DraftSettings = {
+  playoffWeeks: [],
+  scheduleScope: "season",
   teamCount: 12,
   scoringCategories: getDefaultFantasyPointsConfig("skater"),
   leagueType: "points",
@@ -265,6 +271,7 @@ function normalizeDraftSettingsOrder(
   );
   return {
     ...settings,
+    ...normalizeScheduleSettings(settings),
     draftOrderMode: pattern.mode,
     reversedRounds: pattern.reversedRounds,
   };
@@ -1783,7 +1790,13 @@ const DraftDashboard: React.FC = () => {
     prorate84,
   });
 
+  const scheduleSettings = useMemo(() => normalizeScheduleSettings(draftSettings), [draftSettings]);
+  const draftSchedule = useDraftSchedule(allPlayers, scheduleSettings.playoffWeeks, scheduleSettings.scheduleScope);
+  const scheduleWeekNumbers = useMemo(() => draftSchedule.selectedWeeks.map((week) => week.week), [draftSchedule.selectedWeeks]);
+
   const rosterScheduleOptimizer = useRosterScheduleOptimizer({
+    gameKey: "477",
+    selectedWeeks: scheduleWeekNumbers,
     players: allPlayers,
     rosterAssignments,
     myTeamId,
@@ -3024,6 +3037,8 @@ const DraftDashboard: React.FC = () => {
             }}
             dataNotices={tableDataNotices}
             dustInsights={canUseProDust ? draftProDustInsights : undefined}
+             scheduleMetrics={draftSchedule.playerMetrics}
+            dustInsights={canUseProDust ? draftProDustInsights : undefined}
             emptyStateMessage={projectionEmptyStateMessage}
           />
   ), [
@@ -3037,7 +3052,7 @@ const DraftDashboard: React.FC = () => {
     goaliePointValues, skaterData.yahooMappingDiagnostics,
     goalieData.yahooMappingDiagnostics, sourceRankImpacts,
     skaterData.inclusionDiagnostics, goalieData.inclusionDiagnostics,
-    tableDataNotices, canUseProDust, draftProDustInsights, projectionEmptyStateMessage,
+    draftSchedule.playerMetrics, tableDataNotices, canUseProDust, draftProDustInsights, projectionEmptyStateMessage,
   ]);
 
   return (
@@ -3114,6 +3129,8 @@ const DraftDashboard: React.FC = () => {
         <div className={styles.setupCore}>
           <div hidden={settingsSection === "integrations"}>
           <DraftSettings
+        matchupWeeks={draftSchedule.weeks}
+        matchupWeeksError={draftSchedule.weeksError}
         ref={settingsEditorRef}
         validation={settingsValidation}
         variant={fullSettings ? "full" : "inline"}
@@ -3432,7 +3449,7 @@ const DraftDashboard: React.FC = () => {
         />
       </section>
 
-        <LeagueStandings teams={teamStats} categories={activeScoringCategories} leagueType={draftSettings.leagueType || "points"} myTeamId={myTeamId} vorpMetrics={vorpMetrics} onUpdateTeamName={updateTeamName} canEdit={manualDraftingEnabled} isLoading={isLoading} error={errorMessage} />
+        <LeagueStandings scheduleMetrics={draftSchedule.playerMetrics} schedulePeriod={draftSchedule.periodLabel} teams={teamStats} categories={activeScoringCategories} leagueType={draftSettings.leagueType || "points"} myTeamId={myTeamId} vorpMetrics={vorpMetrics} onUpdateTeamName={updateTeamName} canEdit={manualDraftingEnabled} isLoading={isLoading} error={errorMessage} />
         <section
           id="mobile-draft-panel-board"
           className={styles.leftPanel}
@@ -3486,6 +3503,9 @@ const DraftDashboard: React.FC = () => {
           hidden={mobileWorkspaceEnabled && activeMobileTab !== "roster"}
         >
           <MyRoster
+            matchupWeeks={draftSchedule.selectedWeeks}
+            matchupWeeksError={draftSchedule.weeksError}
+            schedulePeriod={draftSchedule.periodLabel}
             nextPickByTeam={Object.fromEntries(draftSettings.draftOrder.map((teamId) => [teamId, currentPick + findPicksUntilTeamTurn({ currentPick, teamId, draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern, trades: manualDraftingEnabled ? pickTrades : [], keepers: manualDraftingEnabled ? keepers : [], completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), teamRosterCounts, rosterCapacity: rosterRoundCount(draftSettings.rosterConfig), maxPickNumber: draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig) })]))}
             scheduleState={rosterScheduleOptimizer}
             myTeamId={myTeamId}
@@ -3531,6 +3551,14 @@ const DraftDashboard: React.FC = () => {
                 ? "Refreshing…"
                 : ""}
             </div>
+          </div>
+          <div className={styles.scheduleScope}>
+            <label>Schedule period <select aria-label="Schedule period" value={draftSchedule.scope} onChange={(event) => updateDraftSettings({ scheduleScope: event.target.value as "season" | "playoffs" })}>
+              <option value="season">Season</option>
+              <option value="playoffs" disabled={!draftSchedule.weeks.some((week) => scheduleSettings.playoffWeeks.includes(week.week))}>Playoffs</option>
+            </select></label>
+            <span title="NHL schedule opportunities, including goalies; not projected appearances.">{draftSchedule.periodLabel}</span>
+            {(draftSchedule.error || draftSchedule.loading) && <small role="status">{draftSchedule.error ?? "Loading schedule…"}</small>}
           </div>
           {projectionsTable}
           <button

@@ -1686,3 +1686,20 @@
   .playersTable.statColumnsTable .colAction { width: 8%; }
   .playersTable.statColumnsTable .colCompare { width: 4%; }
 }
+// Reserve narrow schedule columns inside the existing table footprint.
+.playersTable,
+.playersTable.statColumnsTable {
+  table-layout: fixed;
+  .colName { width: 26%; }
+  .colFav { width: 4%; min-width: 0; }
+  .colPos, .colTeam { width: 5%; }
+  .colAction { width: 7%; min-width: 0; }
+  .colCompare { width: 4%; min-width: 0; }
+  .colStat, .colFP, .colVorp, .colAdp, .colNextPick { width: auto; min-width: 0; }
+  .colSchedule { width: 4%; padding-inline: 1px; text-align: center; font-variant-numeric: tabular-nums; }
+  .statHeader, .statCol { min-width: 0; padding-inline: 1px; }
+  th { overflow: hidden; }
+  th button { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .nameContainer { display: flex; width: 100%; }
+  .dustInsight { display: flex; margin: 1px 0 0 21px; }
+}

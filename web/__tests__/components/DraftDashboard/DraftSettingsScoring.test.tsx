@@ -336,3 +336,16 @@ describe("DraftSettings Yahoo lock", () => {
     expect(onSnakeDraftChange).not.toHaveBeenCalled();
   });
 });
+
+
+it("selects nonconsecutive playoff weeks and clears playoff scope", () => {
+  const onSettingsChange = vi.fn();
+  render(<DraftSettings settings={{ ...settings, playoffWeeks: [24, 27], scheduleScope: "playoffs" }} onSettingsChange={onSettingsChange} myTeamId="Team 1" onMyTeamIdChange={vi.fn()} undoLastPick={vi.fn()} resetDraft={vi.fn()} draftHistory={[]} draftedPlayers={[]} currentPick={1} matchupWeeks={[24, 25, 27].map((week) => ({ week, start_date: "2027-03-15", end_date: "2027-03-21" }))} />);
+  const select = screen.getByRole("listbox", { name: "Playoff Weeks" }) as HTMLSelectElement;
+  expect([...select.selectedOptions].map((option) => option.value)).toEqual(["24", "27"]);
+  select.options[0].selected = false;
+  fireEvent.change(select);
+  expect(onSettingsChange).toHaveBeenLastCalledWith({ playoffWeeks: [27] });
+  fireEvent.click(screen.getByRole("button", { name: "Clear playoff weeks" }));
+  expect(onSettingsChange).toHaveBeenLastCalledWith({ playoffWeeks: [], scheduleScope: "season" });
+});

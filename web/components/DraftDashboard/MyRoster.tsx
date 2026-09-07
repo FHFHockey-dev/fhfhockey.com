@@ -1,5 +1,7 @@
 // components/DraftDashboard/MyRoster.tsx
 
+import DustMatrix from "./DustMatrix";
+import type { DashboardMatchupWeek } from "lib/draftDashboard/scheduleMetrics";
 import React, { useState, useMemo, useEffect } from "react";
 import {
   DraftSettings,
@@ -22,6 +24,9 @@ import {
 } from "lib/draftDashboard/forwardGrouping";
 
 interface MyRosterProps {
+  matchupWeeks?: readonly DashboardMatchupWeek[];
+  schedulePeriod?: string;
+  matchupWeeksError?: string | null;
   nextPickByTeam: Record<string, number>;
   scheduleState: RosterScheduleOptimizerState;
   myTeamId: string;
@@ -50,6 +55,9 @@ interface MyRosterProps {
 }
 
 const MyRoster: React.FC<MyRosterProps> = ({
+  matchupWeeks = [],
+  schedulePeriod = "Season · Yahoo 477",
+  matchupWeeksError,
   myTeamId,
   nextPickByTeam,
   scheduleState,
@@ -558,6 +566,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
         <h3>Roster needs</h3>
         <div className={styles.needs}>{positionsToShow.map((pos) => { const required = effectiveRosterConfig[pos === "UTILITY" ? "utility" : pos] || 0; const open = Math.max(0, required - (selectedTeamStats?.rosterSlots[pos]?.length || 0)); return <span key={pos} data-position={pos}>{pos === "UTILITY" ? "UTIL" : pos} <strong>{open} open</strong></span>; })}</div>
         <h3>Schedule fit</h3>
+        <p>{schedulePeriod}</p>
         {selectedViewTeamId !== myTeamId ? (
           <p>Select My Team for schedule analysis.</p>
         ) : scheduleState.status === "ready" && scheduleState.baseline ? (
@@ -604,6 +613,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
           </p>
         )}
       </div>
+      {selectedViewTeamId === myTeamId && <DustMatrix state={scheduleState} weeks={matchupWeeks} period={schedulePeriod} error={matchupWeeksError} />}
     </div>
   );
 };

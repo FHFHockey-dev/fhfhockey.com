@@ -564,3 +564,14 @@ describe("ProjectionsTable visibility diagnostics", () => {
     expect(screen.queryByText(/Alt:/)).toBeNull();
   });
 });
+
+
+it("sorts compact OFF/B2B counts while keeping unavailable values last", () => {
+  const { container } = render(<ProjectionsTable players={[player(1, "First", "C"), player(2, "Second", "C"), player(3, "Unknown", "C")]} draftedPlayers={[]} isLoading={false} error={null} onDraftPlayer={vi.fn()} canDraft scheduleMetrics={new Map([["1", { games: 4, off: 1, b2b: 0 }], ["2", { games: 4, off: 3, b2b: 1 }]])} />);
+  fireEvent.click(screen.getByRole("button", { name: "OFF" }));
+  const ids = () => [...container.querySelectorAll("tr[data-player-id]")].map((row) => row.getAttribute("data-player-id"));
+  expect(ids()).toEqual(["1", "2", "3"]);
+  fireEvent.click(screen.getByRole("button", { name: "OFF" }));
+  expect(ids()).toEqual(["2", "1", "3"]);
+  expect(container.querySelector('tr[data-player-id="3"] [data-label="OFF"]')?.textContent).toBe("—");
+});
