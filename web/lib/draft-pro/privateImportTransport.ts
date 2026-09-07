@@ -1,35 +1,42 @@
 import { createHash, randomUUID } from "crypto";
 
 import serviceRoleClient from "lib/supabase/server";
+import type { Database, Json } from "lib/supabase/database-generated.types";
 
 const BUCKET = "draft-pro-private-imports";
 export const PRIVATE_IMPORT_CHUNK_BYTES = 750 * 1024;
-type Rpc = { rpc(name: string, args: Record<string, unknown>): PromiseLike<{ data: unknown; error: { message: string } | null }> };
-const client = serviceRoleClient as unknown as Rpc & typeof serviceRoleClient;
-type UploadRow = { upload_id: string; save_session_id: string; draft_id: string | null; storage_prefix: string; declared_max_bytes: number; status: string; expires_at: string };
+const client = serviceRoleClient;
+type UploadRow = Database["public"]["Functions"]["read_draft_pro_private_import_upload"]["Returns"][number];
 
-async function row(name: string, args: Record<string, unknown>) {
-  const { data, error } = await client.rpc(name, args);
-  if (error) throw error;
-  if (!Array.isArray(data) || !data[0] || typeof data[0] !== "object") throw new Error("Private import transaction returned no result.");
-  return data[0] as Record<string, unknown>;
+function requireRow<T>(rows: T[] | null, message = "Private import transaction returned no result."): T {
+  const value = rows?.[0];
+  if (!value) throw new Error(message);
+  return value;
 }
 
 async function ownedUpload(userId: string, uploadId: string) {
-  const upload = await row("read_draft_pro_private_import_upload", { p_user_id: userId, p_upload_id: uploadId }) as UploadRow;
-  if (upload.status !== "uploading" || Date.parse(upload.expires_at) <= Date.now()) throw new Error("Private import upload is unavailable.");
+  const { data, error } = await client.rpc("read_draft_pro_private_import_upload", { p_user_id: userId, p_upload_id: uploadId });
+  if (error) throw error;
+  const upload: UploadRow = requireRow(data);
+  if (upload.save_session_status !== "pending" || Date.parse(upload.save_session_expires_at) <= Date.now() || Date.parse(upload.expires_at) <= Date.now()) throw new Error("Private import upload is unavailable.");
   return upload;
 }
 
 export async function beginPrivateImport(args: { userId: string; draftId: string | null; expectedVersion: number | null; attemptKey: string; name: string; mapping: unknown; declaredMaxBytes: number; replacementImportId?: string | null }) {
-  const session = await row("begin_draft_pro_save_session", { p_user_id: args.userId, p_draft_id: args.draftId, p_expected_version: args.expectedVersion, p_attempt_key: args.attemptKey });
+  const { data: sessionRows, error: sessionError } = await client.rpc("begin_draft_pro_save_session", { p_user_id: args.userId, p_draft_id: args.draftId, p_expected_version: args.expectedVersion, p_attempt_key: args.attemptKey });
+  if (sessionError) throw sessionError;
+  const session = requireRow(sessionRows);
   if (session.status !== "ready") return { status: session.status, session };
-  const upload = await row("begin_draft_pro_private_import_upload", { p_user_id: args.userId, p_save_session_id: session.save_session_id, p_replacement_import_id: args.replacementImportId ?? null, p_declared_max_bytes: args.declaredMaxBytes, p_name: args.name, p_content_type: "application/json", p_mapping: args.mapping ?? null });
+  if (!session.save_session_id) throw new Error("Private import transaction returned no save session.");
+  const { data: uploadRows, error: uploadError } = await client.rpc("begin_draft_pro_private_import_upload", { p_user_id: args.userId, p_save_session_id: session.save_session_id, p_replacement_import_id: args.replacementImportId ?? null, p_declared_max_bytes: args.declaredMaxBytes, p_name: args.name, p_content_type: "application/json", p_mapping: args.mapping === undefined ? null : args.mapping as Json });
+  if (uploadError) throw uploadError;
+  const upload = requireRow(uploadRows);
   return { status: "ready", session, upload };
 }
 
 export async function putPrivateImportChunk(args: { userId: string; uploadId: string; prefix: string; ordinal: number; bytes: Buffer }) {
   const uploadRecord = await ownedUpload(args.userId, args.uploadId);
+  if (uploadRecord.status !== "uploading") throw new Error("Private import upload is unavailable.");
   if (args.bytes.byteLength === 0 || args.bytes.byteLength > PRIVATE_IMPORT_CHUNK_BYTES) throw new Error("Private import chunks must be between 1 byte and 750 KiB.");
   const maxChunks = Math.ceil(uploadRecord.declared_max_bytes / PRIVATE_IMPORT_CHUNK_BYTES);
   if (!Number.isInteger(args.ordinal) || args.ordinal < 0 || args.ordinal >= maxChunks || args.prefix !== uploadRecord.storage_prefix) throw new Error("Invalid private import chunk ordinal.");
@@ -50,6 +57,7 @@ export async function putPrivateImportChunk(args: { userId: string; uploadId: st
 
 export async function stagePrivateImport(args: { userId: string; uploadId: string; chunkPaths: string[] }) {
   const uploadRecord = await ownedUpload(args.userId, args.uploadId);
+  if (uploadRecord.status !== "uploading" && uploadRecord.status !== "staged") throw new Error("Private import upload is unavailable.");
   const maxChunks = Math.ceil(uploadRecord.declared_max_bytes / PRIVATE_IMPORT_CHUNK_BYTES);
   if (!args.chunkPaths.length || args.chunkPaths.length > Math.min(32, maxChunks)) throw new Error("Private import requires a bounded set of chunks.");
   const derivedPaths = args.chunkPaths.map((_path, ordinal) => `${uploadRecord.storage_prefix}/${ordinal}`);
@@ -70,7 +78,19 @@ export async function stagePrivateImport(args: { userId: string; uploadId: strin
   try { rows = JSON.parse(body.toString("utf8")); } catch { throw new Error("Normalized private import must be valid JSON."); }
   if (!Array.isArray(rows) || rows.some((entry) => !entry || typeof entry !== "object" || Array.isArray(entry))) throw new Error("Normalized private import rows are invalid.");
   const hash = createHash("sha256").update(body).digest("hex");
-  const finalPath = `draft-pro-imports/${args.uploadId}/normalized.json`;
+  const finalPath = uploadRecord.final_storage_path;
+  if (uploadRecord.status === "staged") {
+    if (uploadRecord.actual_bytes !== body.byteLength || uploadRecord.row_count !== rows.length || uploadRecord.content_sha256 !== hash) throw new Error("Private import retry content differs from the staged upload.");
+    const existing = await client.storage.from(BUCKET).download(finalPath);
+    if (existing.error) throw existing.error;
+    const existingHash = createHash("sha256").update(Buffer.from(await existing.data.arrayBuffer())).digest("hex");
+    if (existingHash !== hash) throw new Error("Private import retry content differs from the existing staged object.");
+    const { data: stagedRows, error: stagedError } = await client.rpc("stage_draft_pro_private_import_upload", { p_user_id: args.userId, p_upload_id: args.uploadId, p_chunk_paths: derivedPaths, p_actual_bytes: body.byteLength, p_row_count: rows.length, p_content_sha256: hash });
+    if (stagedError) throw stagedError;
+    const staged = requireRow(stagedRows);
+    if (staged.status !== "staged") throw new Error("Private import could not be staged.");
+    return { importId: staged.upload_id, rowCount: rows.length, bytes: body.byteLength, hash };
+  }
   const finalUpload = await client.storage.from(BUCKET).upload(finalPath, body, { contentType: "application/json", upsert: false });
   if (finalUpload.error) {
     if (!/already exists/i.test(finalUpload.error.message)) throw finalUpload.error;
@@ -79,7 +99,9 @@ export async function stagePrivateImport(args: { userId: string; uploadId: strin
     const existingHash = createHash("sha256").update(Buffer.from(await existing.data.arrayBuffer())).digest("hex");
     if (existingHash !== hash) throw new Error("Private import retry content differs from the existing staged object.");
   }
-  const staged = await row("stage_draft_pro_private_import_upload", { p_user_id: args.userId, p_upload_id: args.uploadId, p_chunk_paths: derivedPaths, p_actual_bytes: body.byteLength, p_row_count: rows.length, p_content_sha256: hash });
+  const { data: stagedRows, error: stagedError } = await client.rpc("stage_draft_pro_private_import_upload", { p_user_id: args.userId, p_upload_id: args.uploadId, p_chunk_paths: derivedPaths, p_actual_bytes: body.byteLength, p_row_count: rows.length, p_content_sha256: hash });
+  if (stagedError) throw stagedError;
+  const staged = requireRow(stagedRows);
   if (staged.status !== "staged") throw new Error("Private import could not be staged.");
   return { importId: String(staged.upload_id), rowCount: rows.length, bytes: body.byteLength, hash };
 }
@@ -87,7 +109,9 @@ export async function stagePrivateImport(args: { userId: string; uploadId: strin
 export function newSavedDraftAttemptKey() { return randomUUID(); }
 
 export async function readPrivateImportRows(args: { userId: string; draftId: string; importId: string }) {
-  const metadata = await row("read_draft_pro_private_import_blob", { p_user_id: args.userId, p_draft_id: args.draftId, p_import_id: args.importId });
+  const { data, error } = await client.rpc("read_draft_pro_private_import_blob", { p_user_id: args.userId, p_draft_id: args.draftId, p_import_id: args.importId });
+  if (error) throw error;
+  const metadata = requireRow(data);
   const downloaded = await client.storage.from(BUCKET).download(String(metadata.storage_path));
   if (downloaded.error) throw downloaded.error;
   const bytes = Buffer.from(await downloaded.data.arrayBuffer());
@@ -98,7 +122,9 @@ export async function readPrivateImportRows(args: { userId: string; draftId: str
 }
 
 export async function readPrivateImportChunk(args: { userId: string; draftId: string; importId: string; ordinal: number }) {
-  const metadata = await row("read_draft_pro_private_import_blob", { p_user_id: args.userId, p_draft_id: args.draftId, p_import_id: args.importId });
+  const { data, error } = await client.rpc("read_draft_pro_private_import_blob", { p_user_id: args.userId, p_draft_id: args.draftId, p_import_id: args.importId });
+  if (error) throw error;
+  const metadata = requireRow(data);
   const totalBytes = Number(metadata.byte_size);
   const totalChunks = Math.ceil(totalBytes / PRIVATE_IMPORT_CHUNK_BYTES);
   if (!Number.isInteger(args.ordinal) || args.ordinal < 0 || args.ordinal >= totalChunks) throw new Error("Private import chunk is unavailable.");
