@@ -539,6 +539,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      draft_pro_drafts: {
+        Row: { id: string; user_id: string; season: string; name: string; status: string; schema_version: number; lock_version: number; snapshot: Json; snapshot_bytes: number; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; season?: string; name: string; status?: string; schema_version?: number; lock_version?: number; snapshot?: Json; snapshot_bytes?: number; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; season?: string; name?: string; status?: string; schema_version?: number; lock_version?: number; snapshot?: Json; snapshot_bytes?: number; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      draft_pro_private_imports: {
+        Row: { id: string; user_id: string; draft_id: string | null; name: string; content_type: string; storage_path: string; normalized_rows: Json; mapping: Json; byte_size: number; row_count: number; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; draft_id?: string | null; name: string; content_type: string; storage_path: string; normalized_rows?: Json; mapping?: Json; byte_size: number; row_count?: number; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; draft_id?: string | null; name?: string; content_type?: string; storage_path?: string; normalized_rows?: Json; mapping?: Json; byte_size?: number; row_count?: number; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      draft_pro_provider_events: {
+        Row: { id: string; provider: string; provider_event_id: string; event_type: string; user_id: string | null; purchase_id: string | null; payload: Json; received_at: string; processed_at: string | null; processing_error: string | null }
+        Insert: { id?: string; provider: string; provider_event_id: string; event_type: string; user_id?: string | null; purchase_id?: string | null; payload?: Json; received_at?: string; processed_at?: string | null; processing_error?: string | null }
+        Update: { id?: string; provider?: string; provider_event_id?: string; event_type?: string; user_id?: string | null; purchase_id?: string | null; payload?: Json; received_at?: string; processed_at?: string | null; processing_error?: string | null }
+        Relationships: []
+      }
+      draft_pro_purchases: {
+        Row: { id: string; user_id: string; season: string; provider: string; provider_checkout_session_id: string | null; provider_payment_intent_id: string | null; amount_cents: number; currency: string; status: string; activated_at: string | null; refunded_at: string | null; expires_at: string; metadata: Json; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; season?: string; provider?: string; provider_checkout_session_id?: string | null; provider_payment_intent_id?: string | null; amount_cents?: number; currency?: string; status?: string; activated_at?: string | null; refunded_at?: string | null; expires_at?: string; metadata?: Json; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; season?: string; provider?: string; provider_checkout_session_id?: string | null; provider_payment_intent_id?: string | null; amount_cents?: number; currency?: string; status?: string; activated_at?: string | null; refunded_at?: string | null; expires_at?: string; metadata?: Json; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      draft_pro_refund_requests: {
+        Row: { id: string; user_id: string; purchase_id: string; reason: string; explanation: string; improvement_notes: string | null; used_during_live_draft: boolean | null; status: string; submitted_at: string; resolved_at: string | null; resolution_note: string | null; email_status: string; email_attempts: number; email_last_error: string | null; email_sent_at: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; purchase_id: string; reason: string; explanation: string; improvement_notes?: string | null; used_during_live_draft?: boolean | null; status?: string; submitted_at?: string; resolved_at?: string | null; resolution_note?: string | null; email_status?: string; email_attempts?: number; email_last_error?: string | null; email_sent_at?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; purchase_id?: string; reason?: string; explanation?: string; improvement_notes?: string | null; used_during_live_draft?: boolean | null; status?: string; submitted_at?: string; resolved_at?: string | null; resolution_note?: string | null; email_status?: string; email_attempts?: number; email_last_error?: string | null; email_sent_at?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      draft_pro_reports: {
+        Row: { id: string; user_id: string; draft_id: string | null; scenario_id: string | null; report_type: string; schema_version: number; source_fingerprint: string; payload: Json; created_at: string }
+        Insert: { id?: string; user_id: string; draft_id?: string | null; scenario_id?: string | null; report_type: string; schema_version?: number; source_fingerprint: string; payload?: Json; created_at?: string }
+        Update: { id?: string; user_id?: string; draft_id?: string | null; scenario_id?: string | null; report_type?: string; schema_version?: number; source_fingerprint?: string; payload?: Json; created_at?: string }
+        Relationships: []
+      }
+      draft_pro_scenarios: {
+        Row: { id: string; user_id: string; draft_id: string | null; name: string; schema_version: number; source_fingerprint: string; input: Json; result: Json; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; draft_id?: string | null; name: string; schema_version?: number; source_fingerprint: string; input?: Json; result?: Json; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; draft_id?: string | null; name?: string; schema_version?: number; source_fingerprint?: string; input?: Json; result?: Json; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
       _nhl_totals_current: {
         Row: {
           assists: number | null
