@@ -4,9 +4,9 @@ Status: preparation packet only. Draft Pro is not advertised as live from this p
 
 ## Proposed initial-release scope
 
-The locally approved initial-release candidates are the one-time 2026-27 pass, Stripe purchase and entitlement lifecycle, Patreon eligibility grant, refund request/access handling, roster-aware recommendations, personalized replacement suggestions, DUST, and aggregate CSV export. Account and expanded graph views are integration surfaces; the graph remains free. DUST supports full-season daily-lineup analysis with its actual schedule window and freshness displayed. The free schedule matrix shows all 27 Yahoo weeks, with selected playoffs highlighted; OFF and B2B views may follow the selected playoffs.
+The locally approved initial-release candidates are the one-time 2026-27 pass, Stripe purchase and entitlement lifecycle, Patreon eligibility grant, refund request/access handling, roster-aware recommendations, personalized replacement suggestions, DUST, and aggregate CSV export. Account and expanded graph views are integration surfaces; the expanded graph remains free. DUST supports full-season daily-lineup analysis with its actual schedule window and freshness displayed. The free schedule matrix shows all 27 Yahoo weeks, with selected playoffs highlighted; OFF and B2B views may follow the selected playoffs.
 
-Saved Drafts/private imports, scenarios, reports, and Yahoo are not initial-release capabilities. Saved Drafts is now a separately Chef-approved local milestone, including private persistence, real browser save/restore and responsive panel review; production availability remains gated. Scenarios and reports are queued; Yahoo is parked. These milestones must not appear as currently available in launch copy.
+Saved Drafts and private imports are a separately approved later milestone set in the same pass when enabled; production availability remains gated. Scenarios are queued and reports are queued; Yahoo is parked. These milestones must not appear as currently available in launch copy.
 
 ## Contract
 
@@ -22,7 +22,7 @@ Committed migration names:
 
 - `supabase/migrations/20260907143356_draft_pro_foundation.sql`
 - `supabase/migrations/20260907145602_draft_pro_stripe_fulfillment.sql`
-- `supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql` (follow-on Saved Drafts schema now present in the integration branch; feature flags remain off)
+- `supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql`
 
 Configuration names to verify without recording values:
 
@@ -42,22 +42,17 @@ Canonical Draft Pro flags are all off by default: `DRAFT_PRO_CHECKOUT_ENABLED`, 
 
 ## Evidence and blockers
 
-RC evidence currently recorded: the full suite reports 4,281 passed, 2 failed, and 3 skipped; both inventory failures were subsequently fixed, with targeted checks reporting 19 and 47 passed; full-repository TypeScript exits 0, recorded in `/tmp/draft-pro-rc-types-final.log` at commit `3dcf15b05`. Attach the isolated migration/RLS/storage harness output from `tasks/draft-pro/verification/README.md` and the relevant W02-W04 implementation evidence before release. The sticky-table geometry correction is integrated. The combined free/account Chromium suite passed all 8 cases on the corrected integration baseline with the focus-revalidation fixture (source `94ed8e6da`, integrated `1c6739e13`). This covers manual drafting, comparison, source weights, local CSV restoration, graph keyboard close, free export denial, mocked paid export, and mocked account retry/access denial. Real Stripe, Patreon, and Resend validation remains blocked. The full-season diagonal matrix follow-on is now locally approved: product `5b250f93b`, browser fixtures `2f089d1fc`. W12 verified 20 selected players × 27 weeks, unknown-team unavailable cells, desktop/mobile views, and the combined free/matrix and account flows; screenshots are retained in `/tmp/draft-pro-matrix-reviewed/`.
+Current approved local integration is `ab217e935`, which includes the later verification documentation on top of the approved Saved Drafts milestone set (`35edc72a2` and `c4e1bbb10`).
 
-
-Saved Drafts modules are integrated at `1597de292`, including private file recovery, version conflicts, and account-change cancellation. The combined runtime check passed 49 tests before the final typing/privacy corrections; affected transport and hook checks subsequently passed 10 and 17 tests. Full integrated TypeScript passed (`/tmp/draft-pro-chef-w08-types-approved.log`) before the final one-line account-list clearing correction. This is module evidence, not proof of complete dashboard save/restore behavior.
-
-Private Storage HTTP verification is integrated at `b9d9c09e1`. W12 used an isolated local Storage service to verify service-role roundtrip, denied direct anon/two-user payload access, empty private listings, and repeated batch deletion with missing paths. The harness asserts the migrated bucket configuration. Shared-blob retention and orphan cleanup have sequential SQL probe evidence. W12 also verified overlapping Saved Drafts transactions: PostgreSQL observed the second caller waiting on the first transaction lock; after release, only the winner saved and the stale caller received a conflict. Source `03071158c` includes the deterministic concurrency harness. The later browser checkpoint below completes cross-device acceptance.
-
-Real Stripe test-mode Checkout/webhook validation, Patreon provider validation, and Resend delivery validation are blocked until the owner supplies authorized provider configuration and test access. No real provider check, live charge, Patreon verification, or email send is claimed by this packet.
-
-Saved Drafts real-service API verification is approved at `5d88d8a03` (W12 source `56fac9a11`). The local GoTrue/PostgREST/Storage/Next fixture saves a populated snapshot and restores it with downloaded private rows through a second same-account token. It checks file integrity, cross-user denial, inactive names-only access and payload/write/file locks, restoration after entitlement reactivation, and version conflicts. Its final `cleanup=verified` marker follows process, port, container, and network cleanup checks. The binary-response defect found by this fixture is fixed at `059553e6f`; the affected API suite passed 28 tests with follow-on `73bc3b922`. The later browser checkpoint below completes dashboard save/restore acceptance.
-
-The dashboard implementation candidate is approved through `acc95703d`, with guarded preview adoption, actual dashboard normalization, malformed-data rejection before migration, private-import consent, and superseded/reverted autosave cancellation. Root focused restore/workspace checks passed 34 tests, and the full integrated TypeScript check exited0 with empty output (`/tmp/draft-pro-chef-workspace-types-approved.log`). The final real-service API runner also passed independently on the Chef branch after byte-type corrections (`/tmp/draft-pro-chef-routes-final.log`).
-
-The full Saved Drafts release-candidate unit suite subsequently passed at `acc95703d`: 750 files and 4,349 tests passed, with 3 tests skipped and no failures (`/tmp/draft-pro-saved-drafts-rc-full.log`, exit0). This supersedes the historical initial-RC unit failure counts above. The skips are unchanged ESPN/Fantrax live checks and the optional Python golden-vector fixture; they are not verified. Full browser acceptance was subsequently completed as recorded below. Its preliminary imported-source loss report was withdrawn after waiting for completed restoration; settled source selection and weight matched across the two contexts. No product fix was integrated for that test-timing issue.
-
-Saved Drafts browser and visual acceptance is now Chef-approved through `c4e1bbb10`. Full real-service browser session56624 exited0 and verified private-CSV cross-device restore, hidden autosave, failed-save local retention/retry, both conflict recovery paths, retained original/copy contents, inactive cloud locks and free manual picks. Final focused hook/workspace corrections passed29tests; integrated TypeScript session61020 exited0 (`/tmp/draft-pro-chef-browser-fixture-types.log`). After panel contrast/control-size corrections, targeted visual session37500 exited0. Chef reviewed the final desktop,390px mobile and640px reflow screenshots under `/Users/tim/.codex/visualizations/2026/09/07/01a07c49-af48-7d63-8efd-734ea1d6c002/`. The runner asserts200% pinch magnification;640px is CSS reflow-equivalent, not actual desktop browser-chrome zoom. Provider and production gates are unchanged.
+- Earlier release-candidate evidence at `acc95703d` recorded root unit RC4349 with 3 skipped, plus targeted 29 tests after the final corrections, and full root TypeScript exiting 0.
+- Current standalone TypeScript evidence is session `61020`, exit 0, recorded in `/tmp/draft-pro-chef-browser-fixture-types.log`.
+- Full real-service browser session `56624` and final styling-only session `37500` both exited 0, with cleanup verified. These are execution session IDs, not commit IDs.
+- Screenshots are retained under `/Users/tim/.codex/visualizations/2026/09/07/01a07c49-ae59-7581-9f02-5efd5cfa644d/`.
+- The browser acceptance used 200% pinch plus a 640 CSS width reflow-equivalent check; actual desktop browser-chrome zoom is not claimed.
+- Isolated verification covered the local Storage service, denied anon/two-user payload access, empty private listings, repeated batch deletion with missing paths, and overlapping Saved Drafts transactions where the second caller waited on the first lock and the stale caller received a conflict.
+- The free/account Chromium suite passed all 8 cases on the corrected integration baseline and covered manual drafting, comparison, source weights, local CSV restoration, graph keyboard close, free export denial, mocked paid export, and mocked account retry/access denial.
+- The full-season diagonal matrix follow-on is locally approved and covers 20 selected players by 27 weeks, unknown-team unavailable cells, desktop/mobile views, and the combined free/matrix and account flows.
+- Real Stripe test-mode Checkout/webhook validation, Patreon provider validation, and Resend delivery validation remain blocked until the owner supplies authorized provider configuration and test access.
 
 ## Rollout and rollback
 

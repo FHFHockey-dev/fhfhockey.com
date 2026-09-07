@@ -1,6 +1,6 @@
 # Draft Pro Launch Copy
 
-Status: copy contract for review. Free Draft is currently available. W07 browser/account/free flows are approved, while Saved Drafts/private imports remain browser-gated. The Draft Pro pass and premium capabilities below are not currently advertised as live; provider and owner launch gates still apply. Do not present a capability as available while its feature flag or launch gate is off.
+Status: copy contract for review. Free Draft is currently available. Saved Drafts/private imports are approved locally, while production availability remains gated. The Draft Pro pass and premium capabilities below are not currently advertised as live; provider and owner launch gates still apply. Do not present a capability as available while its feature flag or launch gate is off.
 
 ## Free Draft: currently available
 
@@ -25,7 +25,7 @@ Get a Draft Pro pass for **US$5.99 one time**. The pass is for the `2026-27` sea
 
 Pay through Stripe Checkout with card + Link when enabled. Receipt delivery is available when enabled for the checkout. PayPal is not offered for this pass.
 
-Later Draft Pro milestones released before this pass expires are included in the same purchased pass when enabled. Yahoo support is parked separately, with no guaranteed release date.
+Later Draft Pro milestones released before this pass expires are included in the same purchased pass when enabled. Saved Drafts and private imports are a later locally approved milestone set in the same pass when enabled, but they are not advertised as live in production. Scenarios are implementing, reports are queued, and Yahoo support is parked separately, with no guaranteed release date.
 
 ### Eligibility and access
 
@@ -60,14 +60,14 @@ The following copy describes locally implemented initial-release candidates and 
 
 **Make a sharper plan for your league.** Draft Pro provides roster-aware recommendations, personalized replacement suggestions, DUST insights, alternatives, schedule-fit sorting, and aggregate CSV export when enabled. The expanded draft graph stays free.
 
-Saved Drafts/private imports are integrated candidates pending browser approval. Scenarios and reports remain queued, and Yahoo remains parked; none is promised by this copy.
+Saved Drafts and private imports are locally approved candidates in the same pass when enabled. Scenarios and reports remain queued, and Yahoo remains parked; none is promised by this copy.
 
 ### Proposed feature descriptions
 
 - **Roster-aware recommendations:** Initial-release candidate recommendations that account for your roster, needs, and configured league settings; they remain suggestions, not guarantees.
 - **Personalized replacements:** Initial-release candidate replacement suggestions for your roster context; they remain suggestions, not guarantees.
 - **DUST insights:** Insights, alternatives, and schedule-fit sorting with the actual analysis window and freshness displayed. The current DUST contract provides full-season daily-lineup analysis; the free schedule matrix covers all 27 Yahoo weeks with playoffs highlighted, while OFF and B2B views may follow the selected playoffs.
-- **Saved Drafts:** Integrated candidate cloud-saved draft states and private imports, pending browser approval and explicit Save/account eligibility checks.
+- **Saved Drafts:** Integrated candidate cloud-saved draft states and private imports, gated by explicit Save/account eligibility checks.
 - **Scenarios and reports:** Queued future milestone for read-only scenario comparisons and deterministic reports based on saved draft inputs.
 
 Until each feature is explicitly enabled, show the free Draft experience and do not imply that a paid pass unlocks an unshipped feature.
