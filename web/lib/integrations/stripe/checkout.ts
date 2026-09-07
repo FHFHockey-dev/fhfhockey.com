@@ -5,7 +5,7 @@ import { DRAFT_PRO_SEASON } from "lib/draft-pro/contracts";
 
 import { DRAFT_PRO_STRIPE_PRICE, getDraftProStripeCatalog } from "./config";
 
-type CheckoutClient = Pick<typeof serviceRoleClient, "rpc">;
+type CheckoutClient = Pick<typeof serviceRoleClient, "rpc" | "from">;
 
 export async function createDraftProCheckout({
   stripe,
@@ -18,15 +18,27 @@ export async function createDraftProCheckout({
   origin: string;
   client?: CheckoutClient;
 }) {
-  const { data: attempts, error: attemptError } = await client.rpc("begin_draft_pro_stripe_checkout_attempt", { p_user_id: userId });
-  const attempt = attempts?.[0];
+  let { data: attempts, error: attemptError } = await client.rpc("begin_draft_pro_stripe_checkout_attempt", { p_user_id: userId });
+  let attempt = attempts?.[0];
   if (attemptError || !attempt) throw attemptError ?? new Error("Could not record checkout attempt.");
   if (attempt.purchase_status === "active") return { alreadyPurchased: true as const, url: null, purchaseId: attempt.purchase_id };
   if (attempt.checkout_session_id) {
     const session = await stripe.checkout.sessions.retrieve(attempt.checkout_session_id);
     if (session.status === "open" && session.url) return { alreadyPurchased: false as const, url: session.url, purchaseId: attempt.purchase_id };
     if (session.status === "complete") return { alreadyPurchased: false as const, url: null, purchaseId: attempt.purchase_id, state: session.payment_status === "paid" ? "confirming" as const : "waiting" as const };
-    if (session.status === "expired") return { alreadyPurchased: false as const, url: null, purchaseId: attempt.purchase_id, state: "expired" as const };
+    if (session.status === "expired") {
+      const { error } = await client.from("draft_pro_purchases")
+        .update({ checkout_session_status: "expired", status: "expired" })
+        .eq("id", attempt.purchase_id)
+        .eq("user_id", userId)
+        .eq("status", "pending")
+        .eq("provider_checkout_session_id", session.id);
+      if (error) throw error;
+      ({ data: attempts, error: attemptError } = await client.rpc("begin_draft_pro_stripe_checkout_attempt", { p_user_id: userId }));
+      attempt = attempts?.[0];
+      if (attemptError || !attempt) throw attemptError ?? new Error("Could not renew checkout attempt.");
+      if (attempt.checkout_session_id) return { alreadyPurchased: false as const, url: null, purchaseId: attempt.purchase_id, state: "waiting" as const };
+    }
   }
 
   const catalog = getDraftProStripeCatalog();
