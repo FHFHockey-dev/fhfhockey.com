@@ -40,7 +40,7 @@ export function isInvertedCategory(key: string) {
   );
 }
 
-function categoryAppliesToRole(key: string, role: "skater" | "goalie") {
+export function categoryAppliesToRole(key: string, role: "skater" | "goalie") {
   if (SHARED_ROLE_CATEGORIES.has(key)) return true;
   return isGoalieCategory(key) === (role === "goalie");
 }
