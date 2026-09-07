@@ -1,6 +1,9 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const getSession = vi.hoisted(() => vi.fn());
+vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession } } }));
+
 import SuggestedPicks from "../../../components/DraftDashboard/SuggestedPicks";
 
 function player(playerId: number, name: string, position: string, points: number) {
@@ -25,6 +28,8 @@ function player(playerId: number, name: string, position: string, points: number
 afterEach(() => {
   cleanup();
   window.localStorage.clear();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe("SuggestedPicks grouped-forward presentation", () => {
@@ -161,5 +166,26 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     expect((draftButton as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(draftButton);
     expect(onDraftPlayer).not.toHaveBeenCalled();
+  });
+
+  it("uses the authenticated Draft Pro rank order only when the capability is active", async () => {
+    getSession.mockResolvedValue({ data: { session: { access_token: "token" } } });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: [
+      { candidate: { id: "2" }, recommendationScore: 20, globalVorp: 9, availabilityEstimate: .8, reasons: ["Roster need"] },
+      { candidate: { id: "1" }, recommendationScore: 10, globalVorp: 10, availabilityEstimate: .7, reasons: ["Standard"] },
+    ] }) }));
+    const players = [player(1, "First Player", "C", 100), player(2, "Roster Fit", "D", 90)];
+    const metrics = new Map([["1", { vbd: 10, vorp: 10, vona: 0 } as any], ["2", { vbd: 9, vorp: 9, vona: 0 } as any]]);
+    render(<SuggestedPicks players={players} vorpMetrics={metrics} currentPick={1} teamCount={1} draftProEligible needWeightEnabled categoryWeights={{ GOALS: 1 }} onNeedWeightEnabledChange={vi.fn()} />);
+    await waitFor(() => expect(screen.getAllByRole("listitem")[0].textContent).toContain("Roster Fit"));
+  });
+
+  it("does not send local CSV rows to Draft Pro recommendations and explains the lock", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    render(<SuggestedPicks players={[player(1, "Local Player", "C", 100)]} currentPick={1} teamCount={1} draftProEligible recommendationDataOrigin="local_csv" />);
+    expect(screen.getByText(/Save the import to your account first/)).toBeTruthy();
+    expect((screen.getByRole("checkbox", { name: "Prioritize my roster needs" }) as HTMLInputElement).disabled).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

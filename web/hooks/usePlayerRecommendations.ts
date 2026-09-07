@@ -11,6 +11,7 @@ import {
   type ForwardGrouping
 } from "lib/draftDashboard/forwardGrouping";
 import { buildPersonalizedRecommendations } from "lib/draft-pro/recommendations";
+import type { RecommendationCandidate } from "lib/draft-pro/recommendations";
 
 export interface Recommendation {
   player: ProcessedPlayer;
@@ -42,6 +43,39 @@ interface Args {
   forwardGrouping?: ForwardGrouping;
 }
 
+export function buildRecommendationCandidates({
+  players,
+  vorpMetrics,
+  personalizedVorpMetrics,
+  usePersonalizedReplacement,
+  forwardGrouping,
+}: Pick<Args, "players" | "vorpMetrics" | "personalizedVorpMetrics" | "usePersonalizedReplacement" | "forwardGrouping">): RecommendationCandidate[] {
+  return players.map((player) => {
+    const id = String(player.playerId);
+    const globalVm = vorpMetrics?.get(id);
+    const suggestionVm = (usePersonalizedReplacement ? personalizedVorpMetrics : undefined)?.get(id) ?? globalVm;
+    const vbd = suggestionVm?.vbd ?? suggestionVm?.vorp ?? 0;
+    const eligiblePositions = groupPlayerEligibility(
+      normalizePlayerEligibility(player.displayPosition, player.eligiblePositions),
+      forwardGrouping ?? "split",
+    );
+    return {
+      id,
+      name: player.fullName || id,
+      role: eligiblePositions.includes("G") ? "goalie" : "skater",
+      eligiblePositions,
+      globalVorp: globalVm?.vorp ?? 0,
+      rankValue: vbd,
+      baselineScore: 0.7 * vbd + 0.3 * (suggestionVm?.vona ?? 0),
+      tieBreaker: player.fantasyPoints?.projected ?? 0,
+      categoryValues: Object.fromEntries(Object.entries(player.combinedStats ?? {}).flatMap(([key, value]) =>
+        typeof value?.projected === "number" && Number.isFinite(value.projected) ? [[key, value.projected]] : [],
+      )),
+      adp: player.yahooAvgPick,
+    };
+  });
+}
+
 export function usePlayerRecommendations({
   players,
   vorpMetrics,
@@ -61,32 +95,7 @@ export function usePlayerRecommendations({
 }: Args) {
   const recommendations = useMemo<Recommendation[]>(() => {
     if (!players || players.length === 0) return [];
-    const candidates = players.map((p) => {
-      const id = String(p.playerId);
-      const globalVm = vorpMetrics?.get(id);
-      const suggestionVm = (usePersonalizedReplacement ? personalizedVorpMetrics : undefined)?.get(id) ?? globalVm;
-      const vbd = suggestionVm?.vbd ?? suggestionVm?.vorp ?? 0;
-      return {
-        id,
-        name: p.fullName || id,
-        role: groupPlayerEligibility(
-          normalizePlayerEligibility(p.displayPosition, p.eligiblePositions),
-          forwardGrouping,
-        ).includes("G") ? "goalie" as const : "skater" as const,
-        eligiblePositions: groupPlayerEligibility(
-          normalizePlayerEligibility(p.displayPosition, p.eligiblePositions),
-          forwardGrouping,
-        ),
-        globalVorp: globalVm?.vorp ?? 0,
-        rankValue: vbd,
-        baselineScore: 0.7 * vbd + 0.3 * (suggestionVm?.vona ?? 0),
-        tieBreaker: p.fantasyPoints?.projected ?? 0,
-        categoryValues: Object.fromEntries(Object.entries(p.combinedStats ?? {}).flatMap(([key, value]) =>
-          typeof value?.projected === "number" && Number.isFinite(value.projected) ? [[key, value.projected]] : [],
-        )),
-        adp: p.yahooAvgPick,
-      };
-    });
+    const candidates = buildRecommendationCandidates({ players, vorpMetrics, personalizedVorpMetrics, usePersonalizedReplacement, forwardGrouping });
     const personalized = buildPersonalizedRecommendations(candidates, {
       leagueType,
       positionNeeds: posNeeds,

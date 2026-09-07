@@ -3458,6 +3458,9 @@ const DraftDashboard: React.FC = () => {
           vorpMetrics={vorpMetrics}
           personalizedVorpMetrics={personalizedVorpMetrics}
           draftProEligible={canUseProRecommendations}
+          categoryWeights={draftSettings.categoryWeights}
+          recommendationDataOrigin={customCsvList.length ? "local_csv" : "server"}
+          onNeedWeightEnabledChange={setNeedWeightEnabled}
           needWeightEnabled={needWeightEnabled}
           needAlpha={needAlpha}
           posNeeds={posNeeds}
