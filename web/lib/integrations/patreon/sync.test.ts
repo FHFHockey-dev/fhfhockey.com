@@ -156,6 +156,39 @@ describe("Patreon entitlement anti-sharing", () => {
     expect(row.metadata.last_verified_paid_benefit.amount_cents).toBe(600);
   });
 
+  it("invalidates a missing campaign membership without erasing paid history", async () => {
+    const retained = {
+      id: "entitlement-1",
+      metadata: {
+        draft_pro_eligible: true,
+        last_verified_paid_benefit: { amount_cents: 500, tiers: [{ id: "tier-1" }] },
+      },
+    };
+    let call = 0;
+    const updates: any[] = [];
+    const client = {
+      from: vi.fn(() => {
+        call += 1;
+        const query: any = {
+          select: vi.fn(() => query),
+          eq: vi.fn(() => query),
+          update: vi.fn((value) => { updates.push(value); return query; }),
+          then: (resolve: (value: any) => unknown) => resolve(
+            call === 1 ? { data: [retained], error: null } : { error: null },
+          ),
+        };
+        return query;
+      }),
+    } as any;
+    await materializePatreonEntitlement({
+      userId: "user-1", account, client,
+      snapshot: { ...snapshot, memberId: null, isEligibleSupporter: false, metadata: { patron_status: null } },
+      now: new Date("2026-07-17T15:00:00Z"),
+    });
+    expect(updates).toHaveLength(1);
+    expect(updates[0]).toMatchObject({ entitlement_status: "inactive", metadata: { draft_pro_eligible: false, last_verified_paid_benefit: { amount_cents: 500 } } });
+  });
+
   it("rejects a member identity already owned by another site user", async () => {
     const query = {
       select: vi.fn(),
