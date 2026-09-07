@@ -1,4 +1,5 @@
 import serviceRoleClient from "lib/supabase/server";
+import { randomUUID } from "crypto";
 
 import type { DraftProSnapshot } from "./contracts";
 
@@ -28,10 +29,10 @@ export async function listSavedDrafts(userId: string): Promise<SavedDraftSummary
   return data.map(summary);
 }
 
-export async function commitSavedDraft(args: { userId: string; draftId: string | null; name: string; expectedVersion?: number; snapshot: DraftProSnapshot; uploadIds?: string[]; importIds?: string[] }) {
+export async function commitSavedDraft(args: { userId: string; draftId: string | null; name: string; expectedVersion?: number; snapshot: DraftProSnapshot; attemptKey?: string; uploadIds?: string[]; importIds?: string[] }) {
   const bytes = new TextEncoder().encode(JSON.stringify(args.snapshot)).byteLength;
   const session = await call("begin_draft_pro_save_session", {
-    p_user_id: args.userId, p_draft_id: args.draftId, p_expected_version: args.expectedVersion ?? null,
+    p_user_id: args.userId, p_draft_id: args.draftId, p_expected_version: args.expectedVersion ?? null, p_attempt_key: args.attemptKey ?? randomUUID(),
   });
   if (session.status === "conflict") return { conflict: true as const, current: summary(session) };
   const data = await call("commit_draft_pro_save_session", {
@@ -44,12 +45,13 @@ export async function commitSavedDraft(args: { userId: string; draftId: string |
 
 export async function readSavedDraft(userId: string, draftId: string) {
   const data = await call("read_draft_pro_snapshot", { p_user_id: userId, p_draft_id: draftId });
-  return { ...summary(data), snapshot: data.snapshot, privateImports: data.private_imports ?? [] };
+  return { ...summary(data), snapshot: data.snapshot, privateImports: data.imports ?? [] };
 }
 
 export async function mutateSavedDraft(args: { userId: string; draftId: string; action: "rename" | "duplicate" | "delete"; name?: string; expectedVersion?: number }) {
   const functionName = args.action === "rename" ? "rename_draft_pro_saved_draft" : args.action === "duplicate" ? "duplicate_draft_pro_saved_draft" : "delete_draft_pro_saved_draft";
-  const data = await call(functionName, { p_user_id: args.userId, p_draft_id: args.draftId, p_name: args.name ?? null, p_expected_version: args.expectedVersion ?? null });
+  const mutationArgs = { p_user_id: args.userId, p_draft_id: args.draftId, p_expected_version: args.expectedVersion ?? null };
+  const data = await call(functionName, args.action === "delete" ? mutationArgs : { ...mutationArgs, p_name: args.name ?? null });
   if (data.status === "conflict") return { conflict: true as const, current: summary(data) };
   return { conflict: false as const, draft: args.action === "delete" ? null : summary(data) };
 }
