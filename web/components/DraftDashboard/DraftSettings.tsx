@@ -118,7 +118,11 @@ interface DraftSettingsProps {
     replacementPlayerId: string,
   ) => { ok: boolean; message: string };
   onBookmarkCreate?: (key: string) => void;
-  onBookmarkImport?: (data: any) => void;
+  onBookmarkImport?: (data: any) => {
+    outcome: "accepted" | "needs-resources" | "failed";
+    message?: string;
+  };
+  onStartNewDraft?: () => void;
   playersForKeeperAutocomplete?: Array<{
     id: number;
     fullName: string;
@@ -192,6 +196,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
   onReplaceDraftPick,
   onBookmarkCreate,
   onBookmarkImport,
+  onStartNewDraft,
   playersForKeeperAutocomplete,
   draftLocked = false,
   draftLockReason = "Yahoo live sync is authoritative.",
@@ -364,6 +369,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
     totalRosterSpots > 22 ? styles.rosterTotalWarning : "";
 
   const [confirmReset, setConfirmReset] = React.useState(false);
+  const [confirmStartNew, setConfirmStartNew] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
   const [importText, setImportText] = React.useState("");
   const handleResetDraftClick = () => {
@@ -470,10 +476,23 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
     if (message) { setTradeFeedback({ ok: false, message }); return; }
     if ((draftedPlayers.length || keepers.length || pickTrades.length) && !window.confirm("Replace the current draft with this bookmark? Current picks, keepers, trades, and settings will be replaced. Export a bookmark first to keep a copy.")) return;
     if (!onBookmarkImport) { setTradeFeedback({ ok: false, message: "Draft import is unavailable." }); return; }
-    onBookmarkImport(data);
-    setImportOpen(false);
-    setImportText("");
-    setTradeFeedback({ ok: true, message: "Draft bookmark imported." });
+    try {
+      const result = onBookmarkImport(data);
+      if (result.outcome === "failed") {
+        setTradeFeedback({ ok: false, message: result.message || "Draft bookmark could not be applied. The current draft has not changed." });
+        return;
+      }
+      setImportOpen(false);
+      setImportText("");
+      setTradeFeedback({
+        ok: result.outcome === "accepted",
+        message: result.message || (result.outcome === "needs-resources"
+          ? "Bookmark imported, but its projection CSVs must be reimported or removed before drafting."
+          : "Draft bookmark imported."),
+      });
+    } catch {
+      setTradeFeedback({ ok: false, message: "Draft bookmark could not be applied. The current draft has not changed." });
+    }
   };
 
   const domainIssues = (domain: SettingsDomain) => <div id={`draft-issues-${domain}`} className={styles.domainIssues}>{validation?.issues.filter(issue => issue.domain === domain).map(issue => <p key={issue.message}>{issue.message}</p>)}</div>;
@@ -740,6 +759,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
               This will clear all picks. Action cannot be undone.
             </div>
             {confirmReset && <div className={styles.lockNotice} role="alert">Clear all picks, keepers, trades, and pick history? Your settings stay in place.<button type="button" onClick={() => setConfirmReset(false)}>Cancel Reset</button></div>}
+            {confirmStartNew && <div className={styles.lockNotice} role="alert">Start a new draft? This removes this device's saved draft, imported projections, and draft settings.<button type="button" onClick={() => setConfirmStartNew(false)}>Cancel Start New</button></div>}
             <div className={styles.actionButtons}>
               <button
                 className={`${styles.actionButton} ${styles.actionButtonDanger}`}
@@ -779,6 +799,18 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
               >
                 {confirmReset ? "Confirm Reset Entire Draft" : "Reset Entire Draft"}
               </button>
+              {onStartNewDraft && <button
+                type="button"
+                className={`${styles.actionButton} ${styles.actionButtonDanger} ${confirmStartNew ? styles.confirmReset : ""}`}
+                onClick={() => {
+                  if (!confirmStartNew) { setConfirmStartNew(true); return; }
+                  onStartNewDraft();
+                  setConfirmStartNew(false);
+                }}
+                disabled={draftLocked}
+              >
+                {confirmStartNew ? "Confirm Start New Draft" : "Start New Draft"}
+              </button>}
               <button
                 className={styles.actionButton}
                 onClick={() => onOpenImportCsv && onOpenImportCsv()}

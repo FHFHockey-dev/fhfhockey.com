@@ -339,6 +339,63 @@ it("resumes a complete older device record and rewrites canonical analysis field
   expect(screen.getByRole("button", { name: "Done" })).toBeTruthy();
 });
 
+it("declining a tab snapshot starts clean without touching auth or unrelated storage", async () => {
+  sessionStorage.setItem("draft.snapshot.v4", JSON.stringify(missingSourceRecord()));
+  sessionStorage.setItem("draft.customCsvList.v3", JSON.stringify([{ id: "custom_csv_missing", label: "Missing source", rows: [{ Name: "Old row" }] }]));
+  localStorage.setItem("draftDashboard.session.v1", JSON.stringify(completeRecord()));
+  localStorage.setItem("auth-token", "keep-me");
+  localStorage.setItem("unrelated.preference", "keep-me-too");
+  vi.spyOn(window, "confirm").mockReturnValue(false);
+  render(<DraftDashboard />);
+
+  await waitFor(() => {
+    const snapshot = JSON.parse(sessionStorage.getItem("draft.snapshot.v4")!);
+    expect(snapshot.draftedPlayers).toEqual([]);
+    expect(snapshot.csvMetadata).toEqual([]);
+    expect(localStorage.getItem("draftDashboard.session.v1")).toBeNull();
+  });
+  expect(sessionStorage.getItem("draft.customCsvList.v3")).toBeNull();
+  expect(localStorage.getItem("auth-token")).toBe("keep-me");
+  expect(localStorage.getItem("unrelated.preference")).toBe("keep-me-too");
+  cleanup();
+  render(<DraftDashboard />);
+  expect(window.confirm).toHaveBeenCalledTimes(1);
+});
+
+it("declining a legacy device record clears every custom-source control and does not resurrect it", async () => {
+  localStorage.setItem("draftDashboard.session.v1", JSON.stringify(missingSourceRecord()));
+  localStorage.setItem("draft.sourceControls.v4", JSON.stringify({
+    version: 4,
+    skater: { custom_csv_missing: { isSelected: true, weight: 0.7 } },
+    goalie: { custom_csv_missing: { isSelected: true, weight: 0.7 } },
+  }));
+  sessionStorage.setItem("draft.customCsvList.v3", JSON.stringify([{ id: "custom_csv_missing", label: "Missing source", rows: [{ Name: "Old row" }] }]));
+  vi.spyOn(window, "confirm").mockReturnValue(false);
+  render(<DraftDashboard />);
+
+  await waitFor(() => {
+    expect(localStorage.getItem("draftDashboard.session.v1")).toBeNull();
+    expect(localStorage.getItem("draft.sourceControls.v4")).toBeNull();
+  });
+  expect(sessionStorage.getItem("draft.customCsvList.v3")).toBeNull();
+  cleanup();
+  render(<DraftDashboard />);
+  expect(window.confirm).toHaveBeenCalledTimes(1);
+});
+
+it("keeps a newly imported draft after declining an older snapshot and reloading", async () => {
+  sessionStorage.setItem("draft.snapshot.v4", JSON.stringify(record()));
+  vi.spyOn(window, "confirm").mockReturnValue(false);
+  render(<DraftDashboard />);
+  importBookmark({ ...record(), customTeamNames: { "Team 1": "New session", "Team 2": "New session 2" }, csvMetadata: [] });
+  await waitFor(() => expect(JSON.parse(sessionStorage.getItem("draft.snapshot.v4")!).customTeamNames["Team 1"]).toBe("New session"));
+
+  cleanup();
+  (window.confirm as ReturnType<typeof vi.fn>).mockReturnValue(true);
+  render(<DraftDashboard />);
+  await waitFor(() => expect(JSON.parse(sessionStorage.getItem("draft.snapshot.v4")!).customTeamNames["Team 1"]).toBe("New session"));
+});
+
 it("preserves a corrupt v4 until explicit reset and keeps export available", async () => {
   const corrupt = "{corrupt-v4";
   sessionStorage.setItem("draft.snapshot.v4", corrupt);
@@ -501,6 +558,48 @@ it("replaces stale missing-source metadata when a complete bookmark restores CSV
   await waitFor(() => expect(screen.getByRole("button", { name: /Edit Settings/ })).toBeTruthy());
 });
 
+it("replaces stale CSV sources and weights with an embedded bookmark across reload", async () => {
+  sessionStorage.setItem("draft.customCsvList.v3", JSON.stringify([{ id: "custom_csv_stale", label: "Stale", rows: [{ Name: "Stale row" }] }]));
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+  render(<DraftDashboard />);
+  importBookmark({
+    ...record(),
+    settings: { ...settings, teamCount: 2, draftOrder: ["Team 1", "Team 2"] },
+    csvMetadata: [{ id: "custom_csv_portable", label: "Portable" }],
+    sourceControls: { custom_csv_portable: { isSelected: true, weight: 0.42 } },
+    goalieSourceControls: { custom_csv_portable: { isSelected: true, weight: 0.58 } },
+    customCsvEntries: [{ id: "custom_csv_portable", label: "Portable", rows: [{ Name: "Portable row" }] }],
+  });
+  await waitFor(() => {
+    const snapshot = JSON.parse(sessionStorage.getItem("draft.snapshot.v4")!);
+    expect(snapshot.csvMetadata).toEqual([expect.objectContaining({ id: "custom_csv_portable" })]);
+    expect(snapshot.sourceControls.custom_csv_portable.weight).toBe(0.42);
+    expect(snapshot.sourceControls.custom_csv_stale).toBeUndefined();
+  });
+  expect(screen.getByText("Draft bookmark imported.")).toBeTruthy();
+  cleanup();
+  render(<DraftDashboard />);
+  await waitFor(() => {
+    const snapshot = JSON.parse(sessionStorage.getItem("draft.snapshot.v4")!);
+    expect(snapshot.sourceControls.custom_csv_portable.weight).toBe(0.42);
+    expect(snapshot.sourceControls.custom_csv_stale).toBeUndefined();
+    expect(sessionStorage.getItem("draft.customCsvList.v3")).toContain("Portable row");
+  });
+});
+
+it("reports missing legacy v3 CSV metadata as recovery instead of import success", async () => {
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+  render(<DraftDashboard />);
+  const { csvMetadata: _csvMetadata, ...legacy } = missingSourceRecord();
+  importBookmark({
+    ...legacy,
+    v: 3,
+    customSourceMetadata: [{ id: "custom_csv_missing", label: "Missing source" }],
+  });
+  expect(await screen.findByText(/projection CSVs must be reimported or removed/)).toBeTruthy();
+  expect(screen.queryByText("Draft bookmark imported.")).toBeNull();
+});
+
 it("resets picks and Undo while retaining tab CSV rows and analysis preferences", async () => {
   sessionStorage.setItem("draft.customCsvList.v3", JSON.stringify([{ id: "custom_csv_one", label: "Tab source", rows: [{ Name: "Retained row" }] }]));
   sessionStorage.setItem("draft.snapshot.v4", JSON.stringify(record()));
@@ -519,6 +618,23 @@ it("resets picks and Undo while retaining tab CSV rows and analysis preferences"
   expect(sessionStorage.getItem("draft.customCsvList.v3")).toContain("Retained row");
   expect(localStorage.getItem("projections.prorate84")).toBe("true");
   expect(localStorage.getItem("projections.riskSd")).toBe("28");
+});
+
+it("keeps Reset Entire Draft separate from confirmed Start New Draft", async () => {
+  sessionStorage.setItem("draft.customCsvList.v3", JSON.stringify([{ id: "custom_csv_one", label: "Tab source", rows: [{ Name: "Retained row" }] }]));
+  sessionStorage.setItem("draft.snapshot.v4", JSON.stringify(record()));
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+  render(<DraftDashboard />);
+  await waitFor(() => expect(JSON.parse(sessionStorage.getItem("draft.snapshot.v4")!).draftedPlayers).toHaveLength(1));
+  openSettings();
+  fireEvent.click(screen.getByRole("button", { name: "Reset Entire Draft" }));
+  fireEvent.click(screen.getByRole("button", { name: "Confirm Reset Entire Draft" }));
+  expect(sessionStorage.getItem("draft.customCsvList.v3")).toContain("Retained row");
+
+  fireEvent.click(screen.getByRole("button", { name: "Start New Draft" }));
+  expect(screen.getByText(/Start a new draft/)).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Confirm Start New Draft" }));
+  await waitFor(() => expect(sessionStorage.getItem("draft.customCsvList.v3")).toBeNull());
 });
 
 it("imports attached CSV rows only into tab storage and rejects a storage save failure visibly", async () => {
@@ -574,6 +690,7 @@ it("rejects invalid keeper recovery data without changing the active snapshot", 
   const before = sessionStorage.getItem("draft.snapshot.v4");
   importBookmark(invalid);
   expect(sessionStorage.getItem("draft.snapshot.v4")).toBe(before);
+  expect(screen.queryByText("Draft bookmark imported.")).toBeNull();
 });
 
 it("blocks Done and drafting for a missing selected CSV, then reimports it under the same ID and weight", async () => {
