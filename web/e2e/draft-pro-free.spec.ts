@@ -130,3 +130,36 @@ test("free CSV source blends and restores after autosave", async ({ page }) => {
   await expect(skaterSources.getByLabel("Fixture CSV weight percent", { exact: true })).toHaveValue("100");
   await expect(players.locator('tr[data-player-id="1002"]')).toContainText("418.0");
 });
+
+test("draft graph expands on desktop and closes with Escape at mobile zoom", async ({ page }) => {
+  await installDraftProFreeFixtures(page);
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/draft-dashboard");
+  await expect(page.getByText("Draft Graph", { exact: true }).first()).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("button", { name: "Expand draft graph", exact: true }).click();
+  const graph = page.getByRole("dialog", { name: "Draft Graph" });
+  await expect(graph).toBeVisible();
+  await expect(graph.getByRole("button", { name: "Close expanded graph", exact: true })).toBeFocused();
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.evaluate(() => document.body.style.zoom = "2");
+  await page.keyboard.press("Escape");
+  await expect(graph).toHaveCount(0);
+});
+
+test("free export denial stays local and does not request the premium export API", async ({ page }) => {
+  let exportRequests = 0;
+  await installDraftProFreeFixtures(page);
+  await page.route("**/api/v1/draft-pro/export", (route) => {
+    exportRequests += 1;
+    return route.fulfill({ status: 500, contentType: "application/json", body: "{}" });
+  });
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.goto("/draft-dashboard");
+  await expect(page.locator("#mobile-draft-panel-players tbody tr").first()).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("button", { name: "Setup", exact: true }).click();
+  await page.getByRole("button", { name: "Projections", exact: true }).click();
+  await page.getByTestId("export-settings-btn").click();
+  await expect(page.getByRole("alert").filter({ hasText: "Sign in to export blended projections." })).toBeVisible();
+  expect(exportRequests).toBe(0);
+});
