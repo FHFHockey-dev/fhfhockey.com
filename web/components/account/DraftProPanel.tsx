@@ -78,6 +78,7 @@ export default function DraftProPanel() {
   const checkoutTimerRef = useRef<number | null>(null);
   const checkoutEpochRef = useRef(0);
   const accountEpochRef = useRef(0);
+  const accountIdentityRef = useRef<string | null | undefined>(undefined);
   const checkoutMountedRef = useRef(false);
 
   const selectedPurchase = useMemo(
@@ -87,10 +88,12 @@ export default function DraftProPanel() {
   const loadAccount = useCallback(async (epoch = accountEpochRef.current) => {
     const session = (await supabase.auth.getSession()).data.session;
     if (!session) throw new Error("Authentication required.");
+    const identity = session.user?.id ?? null;
+    if (accountIdentityRef.current === undefined) accountIdentityRef.current = identity;
     const response = await fetch("/api/v1/account/draft-pro", { headers: { Authorization: `Bearer ${session.access_token}` } });
     const body = await response.json();
     if (!response.ok) throw new Error(body.error?.message ?? "Draft Pro account details are unavailable.");
-    if (epoch !== accountEpochRef.current) return;
+    if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
     setAccount(body.data);
     setPurchaseId((current) => current || body.data.purchases[0]?.id || "");
     setError(null);
@@ -110,70 +113,93 @@ export default function DraftProPanel() {
   }, [cancelCheckoutVerification]);
   useEffect(() => {
     const listener = supabase.auth.onAuthStateChange?.((_event, session) => {
+      const identity = session?.user?.id ?? null;
+      if (accountIdentityRef.current === undefined) {
+        accountIdentityRef.current = identity;
+        return;
+      }
+      if (identity === accountIdentityRef.current) return;
+      accountIdentityRef.current = identity;
       accountEpochRef.current += 1;
       cancelCheckoutVerification();
       setCheckoutState("idle");
       setCheckoutRetryAvailable(false);
       setAccount(null);
+      setPurchaseId("");
+      setReason("other");
+      setExplanation("");
+      setImprovementNotes("");
+      setUsedDuringLiveDraft("");
+      setFeedback(null);
       if (!session) {
         setError("Authentication required.");
         setLoading(false);
         return;
       }
       setLoading(true);
-      void loadAccount(accountEpochRef.current).catch((loadError) => {
-        setError(loadError instanceof Error ? loadError.message : "Draft Pro account details are unavailable.");
-      }).finally(() => setLoading(false));
+      const epoch = accountEpochRef.current;
+      void loadAccount(epoch).catch((loadError) => {
+        if (checkoutMountedRef.current && epoch === accountEpochRef.current && identity === accountIdentityRef.current) setError(loadError instanceof Error ? loadError.message : "Draft Pro account details are unavailable.");
+      }).finally(() => {
+        if (checkoutMountedRef.current && epoch === accountEpochRef.current && identity === accountIdentityRef.current) setLoading(false);
+      });
     });
     return () => listener?.data.subscription.unsubscribe();
   }, [cancelCheckoutVerification, loadAccount]);
   useEffect(() => {
     let cancelled = false;
-    void loadAccount().catch((loadError) => {
-      if (!cancelled) setError(loadError instanceof Error ? loadError.message : "Draft Pro account details are unavailable.");
+    const epoch = accountEpochRef.current;
+    void loadAccount(epoch).catch((loadError) => {
+      if (!cancelled && checkoutMountedRef.current && epoch === accountEpochRef.current) setError(loadError instanceof Error ? loadError.message : "Draft Pro account details are unavailable.");
     }).finally(() => {
-      if (!cancelled) setLoading(false);
+      if (!cancelled && checkoutMountedRef.current && epoch === accountEpochRef.current) setLoading(false);
     });
     return () => { cancelled = true; };
   }, [loadAccount]);
 
   async function submitRefund(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const epoch = accountEpochRef.current;
     setSubmitting(true);
     setFeedback(null);
     try {
       const session = (await supabase.auth.getSession()).data.session;
       if (!session) throw new Error("Authentication required.");
+      const identity = session.user?.id ?? null;
       const response = await fetch("/api/v1/account/draft-pro/refund-requests", {
         method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ purchaseId: selectedPurchase?.id, reason, explanation, improvementNotes: improvementNotes || undefined, usedDuringLiveDraft: usedDuringLiveDraft === "" ? undefined : usedDuringLiveDraft === "yes" }),
       });
       const body = await response.json();
+      if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
       if (!response.ok) throw new Error(body.error?.message ?? "Refund request could not be submitted.");
       setFeedback("Your request was submitted for case-by-case review. It does not automatically refund or revoke access.");
       setExplanation("");
       setImprovementNotes("");
       setAccount((current) => current ? { ...current, refundRequests: [...current.refundRequests, { ...body.data, purchaseId: selectedPurchase?.id ?? "" }] } : current);
     } catch (submitError) {
-      setFeedback(submitError instanceof Error ? submitError.message : "Refund request could not be submitted.");
+      if (checkoutMountedRef.current && epoch === accountEpochRef.current) setFeedback(submitError instanceof Error ? submitError.message : "Refund request could not be submitted.");
     } finally {
-      setSubmitting(false);
+      if (checkoutMountedRef.current && epoch === accountEpochRef.current) setSubmitting(false);
     }
   }
 
   async function patreonActionRequest(action: "refresh" | "connect") {
+    const epoch = accountEpochRef.current;
     setPatreonAction(action);
     setFeedback(null);
     try {
       const session = (await supabase.auth.getSession()).data.session;
       if (!session) throw new Error("Authentication required.");
+      const identity = session.user?.id ?? null;
       const response = await fetch(action === "refresh" ? "/api/v1/account/patreon/refresh" : "/api/v1/account/patreon/connect", {
         method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
         body: action === "connect" ? JSON.stringify({ next: "/account?section=patreon" }) : undefined,
       });
       const body = await response.json();
+      if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
       if (!response.ok) throw new Error(body.error ?? "Patreon action failed.");
       if (action === "connect" && typeof body.authorizationUrl === "string") window.location.assign(body.authorizationUrl);
       else {
@@ -181,24 +207,27 @@ export default function DraftProPanel() {
         setFeedback("Patreon membership refreshed.");
       }
     } catch (actionError) {
-      setFeedback(action === "refresh" ? "Patreon verification is unavailable. Try again later." : actionError instanceof Error ? actionError.message : "Patreon action failed.");
+      if (checkoutMountedRef.current && epoch === accountEpochRef.current) setFeedback(action === "refresh" ? "Patreon verification is unavailable. Try again later." : actionError instanceof Error ? actionError.message : "Patreon action failed.");
     } finally {
-      setPatreonAction(null);
+      if (checkoutMountedRef.current && epoch === accountEpochRef.current) setPatreonAction(null);
     }
   }
 
   async function startCheckout() {
+    const accountEpoch = accountEpochRef.current;
     cancelCheckoutVerification();
     setCheckoutLoading(true);
     setFeedback(null);
     try {
       const session = (await supabase.auth.getSession()).data.session;
       if (!session?.access_token) throw new Error("Sign in before purchasing Draft Pro.");
+      const identity = session.user?.id ?? null;
       const response = await fetch("/api/v1/account/draft-pro/checkout", {
         method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       const body = await response.json().catch(() => ({}));
+      if (!checkoutMountedRef.current || accountEpoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
       if (!response.ok) {
         throw new Error(body.error?.message ?? body.error ?? "Checkout could not be started.");
       }
@@ -220,8 +249,10 @@ export default function DraftProPanel() {
       }
       throw new Error("Checkout could not be started.");
     } catch (checkoutError) {
-      setFeedback(checkoutError instanceof Error ? checkoutError.message : "Checkout could not be started.");
-      setCheckoutLoading(false);
+      if (checkoutMountedRef.current && accountEpoch === accountEpochRef.current) {
+        setFeedback(checkoutError instanceof Error ? checkoutError.message : "Checkout could not be started.");
+        setCheckoutLoading(false);
+      }
     }
   }
 
@@ -262,28 +293,24 @@ export default function DraftProPanel() {
     }
   }, [loadAccount]);
 
-  const clearCheckoutReturn = useCallback(() => {
-    cancelCheckoutVerification();
-    const { draft_pro_checkout: _checkout, ...query } = router.query;
-    void router.replace?.({ pathname: router.pathname, query }, undefined, { shallow: true });
-  }, [cancelCheckoutVerification, router]);
-
   useEffect(() => {
     const value = Array.isArray(router.query.draft_pro_checkout)
       ? router.query.draft_pro_checkout[0]
       : router.query.draft_pro_checkout;
     if (value === "cancelled") {
-      clearCheckoutReturn();
+      cancelCheckoutVerification();
       setCheckoutState("cancelled");
       return;
     }
-    if (!value || !/^cs_(test|live)_[A-Za-z0-9]+$/.test(value) || checkoutVerificationRef.current === value) return;
+    if (!value || !/^cs_(test|live)_[A-Za-z0-9]+$/.test(value)) {
+      if (checkoutVerificationRef.current) cancelCheckoutVerification();
+      return;
+    }
+    if (checkoutVerificationRef.current === value) return;
     cancelCheckoutVerification();
     checkoutVerificationRef.current = value;
-    const { draft_pro_checkout: _checkout, ...query } = router.query;
-    void router.replace?.({ pathname: router.pathname, query }, undefined, { shallow: true });
     void verifyCheckout(value, 0, checkoutEpochRef.current);
-  }, [cancelCheckoutVerification, clearCheckoutReturn, router, verifyCheckout]);
+  }, [cancelCheckoutVerification, router.query.draft_pro_checkout, verifyCheckout]);
 
   if (loading) return <section className={styles.panel} aria-busy="true"><h2>Draft Pro</h2><p>Loading account access…</p></section>;
   if (error) return <section className={styles.panel} role="alert"><h2>Draft Pro</h2><p>{error}</p></section>;

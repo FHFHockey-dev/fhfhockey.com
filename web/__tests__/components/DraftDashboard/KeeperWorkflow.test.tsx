@@ -49,16 +49,26 @@ afterEach(cleanup);
 
 describe("keeper workflow surfaces", () => {
   it("opens the draft graph as a keyboard modal and restores focus on Escape", () => {
+    const priorFocus = document.createElement("button");
+    document.body.appendChild(priorFocus);
+    priorFocus.focus();
     render(<DraftBoard draftSettings={settings} draftedPlayers={[]} currentTurn={{ round: 1, pickInRound: 1, teamId: "Team 1", isMyTurn: true }} teamStats={[]} allPlayers={[player]} onUpdateTeamName={vi.fn()} />);
+    expect(document.activeElement).toBe(priorFocus);
     const open = screen.getByRole("button", { name: "Expand draft graph" });
     open.focus();
     fireEvent.keyDown(open, { key: "Enter" });
     fireEvent.click(open);
     expect(screen.getByRole("dialog", { name: "Draft Graph" })).toBeTruthy();
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Close expanded graph" }));
+    const close = screen.getByRole("button", { name: "Close expanded graph" });
+    expect(document.activeElement).toBe(close);
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Team 2" }));
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(document.activeElement).toBe(close);
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog", { name: "Draft Graph" })).toBeNull();
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Expand draft graph" }));
+    priorFocus.remove();
   });
 
   it("retains value intensities and the user's row across completed picks", () => {
