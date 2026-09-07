@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   requireDraftProServerCapability: vi.fn(),
   enforceDraftProDustRateLimit: vi.fn(),
   readRosterSchedule: vi.fn(),
+  from: vi.fn(),
+  metadataRows: [] as Array<{ game_key: string; season: string; source_season_id: number }>,
 }));
 
 vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: mocks.requireApiUser }));
@@ -19,7 +21,7 @@ vi.mock("lib/rosterScheduleData", async () => {
   const actual = await vi.importActual<typeof import("lib/rosterScheduleData")>("lib/rosterScheduleData");
   return { ...actual, readRosterSchedule: mocks.readRosterSchedule };
 });
-vi.mock("lib/supabase/server", () => ({ default: {} }));
+vi.mock("lib/supabase/server", () => ({ default: { from: mocks.from } }));
 
 import handler from "./dust";
 
@@ -42,7 +44,30 @@ describe("Draft Pro DUST API", () => {
     mocks.requireApiUser.mockResolvedValue({ id: "user-1" });
     mocks.loadDraftProAccess.mockResolvedValue({});
     mocks.enforceDraftProDustRateLimit.mockResolvedValue({ remainingPoints: 19 });
+    mocks.metadataRows = [];
+    const query = {
+      select: vi.fn(),
+      eq: vi.fn(async () => ({ data: mocks.metadataRows, error: null })),
+    };
+    query.select.mockReturnValue(query);
+    mocks.from.mockReturnValue(query);
   });
+
+  const requestBody = {
+    season: "20262027",
+    lineupMode: "daily",
+    inputOrigin: "draft",
+    startWeek: 1,
+    endWeek: 1,
+    rosterSlots: { RW: 1 },
+    roster: [{ id: "r", teamAbbreviation: "AAA", eligiblePositions: "RW", value: 1, projectionSeason: "20262027" }],
+    candidates: [{ id: "c", teamAbbreviation: "BBB", eligiblePositions: "RW", value: 1, projectionSeason: "20262027" }],
+  };
+
+  const mappedScheduleRows = [
+    { game_key: "500", season: "2026", source_season_id: 20262027, source_game_id: 1, game_date: "2026-10-06", team_abbreviation: "AAA", week: 1, fetched_at: "2026-09-07T11:00:00.000Z" },
+    { game_key: "500", season: "2026", source_season_id: 20262027, source_game_id: 2, game_date: "2026-10-06", team_abbreviation: "BBB", week: 1, fetched_at: "2026-09-07T11:00:00.000Z" },
+  ];
 
   it("returns the shared 401 fixture before premium work", async () => {
     mocks.requireApiUser.mockImplementation(async (_req, res, options) => {
@@ -70,5 +95,39 @@ describe("Draft Pro DUST API", () => {
     await handler({ method: "POST", body: {} } as any, res.api as any);
     expect(res.state).toMatchObject({ status: 400, body: { success: false, error: { code: "invalid_input" } } });
     expect(mocks.readRosterSchedule).not.toHaveBeenCalled();
+  });
+
+  it("resolves NHL 20262027 to the persisted Yahoo 2026 game key before reading schedule", async () => {
+    mocks.metadataRows = [{ game_key: "500", season: "2026", source_season_id: 20262027 }];
+    mocks.readRosterSchedule.mockResolvedValue(mappedScheduleRows);
+    const res = response();
+    await handler({ method: "POST", body: requestBody } as any, res.api as any);
+    expect(mocks.readRosterSchedule).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ gameKey: "500" }));
+    expect(res.state).toMatchObject({ status: 200, body: { success: true, data: { state: "ready" } } });
+  });
+
+  it("returns unavailable when persisted mapping is missing or ambiguous", async () => {
+    for (const metadataRows of [
+      [],
+      [
+        { game_key: "500", season: "2026", source_season_id: 20262027 },
+        { game_key: "501", season: "2026", source_season_id: 20262027 },
+      ],
+    ]) {
+      mocks.metadataRows = metadataRows;
+      const res = response();
+      await handler({ method: "POST", body: requestBody } as any, res.api as any);
+      expect(res.state).toMatchObject({ status: 503, body: { success: false, error: { code: "schedule_season_unavailable" } } });
+      expect(mocks.readRosterSchedule).not.toHaveBeenCalled();
+      mocks.readRosterSchedule.mockClear();
+    }
+  });
+
+  it("returns unavailable when read schedule rows do not match the resolved NHL source season", async () => {
+    mocks.metadataRows = [{ game_key: "500", season: "2026", source_season_id: 20262027 }];
+    mocks.readRosterSchedule.mockResolvedValue([{ ...mappedScheduleRows[0], source_season_id: 20252026 }]);
+    const res = response();
+    await handler({ method: "POST", body: requestBody } as any, res.api as any);
+    expect(res.state).toMatchObject({ status: 503, body: { success: false, error: { code: "schedule_season_unavailable" } } });
   });
 });
