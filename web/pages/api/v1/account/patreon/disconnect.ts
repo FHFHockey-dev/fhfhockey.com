@@ -20,7 +20,7 @@ export default async function handler(
       success: true,
       disconnected: result.disconnected,
       message:
-        "Patreon disconnected and local entitlement/token records removed.",
+        "Patreon disconnected. Credentials were removed and access history was retained.",
     });
   } catch (error) {
     return res.status(500).json({
