@@ -112,6 +112,15 @@ describe("useSavedDrafts", () => {
     const { result } = renderHook(() => useSavedDrafts()); await act(async () => { await result.current.open("draft"); result.current.autosave("draft", { name: "Draft", snapshot, accountSaveConsent: true }); await result.current.remove("draft", 1); vi.advanceTimersByTime(2_000); });
     expect(calls.some((call) => call.url.endsWith("/draft") && call.init?.method === "PUT")).toBe(false); vi.useRealTimers();
   });
+  it("does not send a save with a new account token after session resolution", async () => {
+    const fetchMock = vi.fn(() => Promise.resolve(json({ data: [] }))); vi.stubGlobal("fetch", fetchMock);
+    const { result } = renderHook(() => useSavedDrafts()); await act(async () => { await Promise.resolve(); });
+    let resolveSession!: (value: unknown) => void; getSession.mockImplementationOnce(() => new Promise((resolve) => { resolveSession = resolve; }));
+    const cancelled = expect(result.current.saveNow(null, { name: "Draft", snapshot, accountSaveConsent: true })).rejects.toThrow("cancelled");
+    await act(async () => { await Promise.resolve(); (onAuthStateChange.mock.calls[0][0] as (event: string, session: unknown) => void)("SIGNED_OUT", null); resolveSession({ data: { session: { access_token: "new-token", user: { id: "user-2" } } } }); });
+    await cancelled;
+    expect(fetchMock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === "POST" || (init as RequestInit | undefined)?.method === "PUT")).toBe(false);
+  });
   it("cancels a pending open when the auth identity changes", async () => {
     let resolve!: (value: unknown) => void; const pending = new Promise((done) => { resolve = done; }); vi.stubGlobal("fetch", vi.fn((url: string) => url.endsWith("/draft") ? pending : Promise.resolve(json({ data: [] }))));
     const { result } = renderHook(() => useSavedDrafts()); const opening = result.current.open("draft"); (onAuthStateChange.mock.calls[0][0] as (event: string, session: null) => void)("SIGNED_OUT", null); resolve(json({ data: { ...detail, privateImports: [] } })); await expect(opening).rejects.toThrow("cancelled");
