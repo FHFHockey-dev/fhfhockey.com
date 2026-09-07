@@ -25,6 +25,8 @@ export async function createDraftProCheckout({
   if (attempt.checkout_session_id) {
     const session = await stripe.checkout.sessions.retrieve(attempt.checkout_session_id);
     if (session.status === "open" && session.url) return { alreadyPurchased: false as const, url: session.url, purchaseId: attempt.purchase_id };
+    if (session.status === "complete") return { alreadyPurchased: false as const, url: null, purchaseId: attempt.purchase_id, state: session.payment_status === "paid" ? "confirming" as const : "waiting" as const };
+    if (session.status === "expired") return { alreadyPurchased: false as const, url: null, purchaseId: attempt.purchase_id, state: "expired" as const };
   }
 
   const catalog = getDraftProStripeCatalog();
