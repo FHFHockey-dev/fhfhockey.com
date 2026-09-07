@@ -11,7 +11,7 @@ vi.mock("hooks/useDraftProAccess", () => ({ useDraftProAccess: () => access }));
 vi.mock("hooks/useSavedDrafts", () => ({ useSavedDrafts: () => saved }));
 
 import SavedDraftsWorkspace from "./SavedDraftsWorkspace";
-import { serializeSavedDraft, toNormalizedPrivateImports } from "lib/draft-pro/savedDrafts";
+import { serializeSavedDraft, toNormalizedPrivateImports, type BrowserDraftSnapshot } from "lib/draft-pro/savedDrafts";
 
 const browser = (goaliePoints = 1) => ({
   v: 2 as const, draftSettings: { teamCount: 2, rosterConfig: { C: 1, bench: 0, utility: 0 }, scoringCategories: { G: 1 }, draftOrder: ["Team 1", "Team 2"] }, draftedPlayers: [{ playerId: "1", teamId: "Team 1", pickNumber: 1, round: 1, pickInRound: 1 }], keepers: [], pickOwnerOverrides: {}, pickTrades: [], positionOverrides: { "1": "C" }, customTeamNames: { "Team 1": "Home" }, currentPick: 2, isSnakeDraft: true, myTeamId: "Team 1", baselineMode: "remaining" as const, needWeightEnabled: true, needAlpha: .5, forwardGrouping: "split" as const, personalizeReplacement: true, goaliePointValues: { SAVES_GOALIE: goaliePoints }, sourceControls: { custom_csv_1: { isSelected: true, weight: 1 } }, goalieSourceControls: { custom_csv_1: { isSelected: true, weight: 1 } }, customCsvList: [{ id: "custom_csv_1", label: "My CSV", headers: [{ original: "Player", standardized: "name", selected: true }], rows: [{ Player: "A" }] }], favorites: ["1"], notes: [{ id: "1", text: "watch" }], tiers: { "1": "one" }, configured: true,
@@ -25,6 +25,7 @@ function detail(snapshot = browser()) {
 describe("SavedDraftsWorkspace", () => {
   beforeEach(() => {
     vi.useFakeTimers(); vi.stubGlobal("confirm", vi.fn(() => true)); window.confirm = vi.fn(() => true);
+    access.access = { capabilities: ["saved_drafts"] };
     Object.assign(saved, { status: "idle", error: null, conflict: null, opened: null });
     for (const value of [saved.refresh, saved.saveNow, saved.autosave, saved.openPreview, saved.adopt, saved.rename, saved.duplicate, saved.remove, saved.reloadConflict, saved.saveAsAnother]) value.mockReset();
     saved.openPreview.mockResolvedValue({ detail: detail(), generation: 1 }); saved.adopt.mockImplementation((preview: any, apply?: () => boolean) => (!apply || apply()) && (saved.opened = preview.detail, true)); saved.autosave.mockResolvedValue({ id: "draft-1" }); saved.saveNow.mockResolvedValue({ id: "draft-1" });
@@ -100,5 +101,19 @@ describe("SavedDraftsWorkspace", () => {
     view.rerender(<SavedDraftsWorkspace getBrowserSnapshot={() => favoriteChanged} applyBrowserSnapshot={(next) => next} players={[]} annotations={{ selectedPlayerId: null, notes: [], tiers: {} }} onAnnotationsChange={vi.fn()} />);
     await act(async () => { await Promise.resolve(); });
     expect(saved.autosave).toHaveBeenCalledTimes(1);
+  });
+
+  it("exposes and clears the opened saved-import context", async () => {
+    const snapshot: BrowserDraftSnapshot = browser();
+    const onSavedImportContextChange = vi.fn();
+    const props = { getBrowserSnapshot: () => snapshot, applyBrowserSnapshot: (next: BrowserDraftSnapshot) => next, players: [], annotations: { selectedPlayerId: null, notes: [], tiers: {} }, onAnnotationsChange: vi.fn(), onSavedImportContextChange };
+    const view = render(<SavedDraftsWorkspace {...props} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Saved draft" })); await Promise.resolve(); });
+    view.rerender(<SavedDraftsWorkspace {...props} />);
+    expect(onSavedImportContextChange).toHaveBeenLastCalledWith(expect.objectContaining({ draftId: "draft-1", privateImports: expect.any(Array) }));
+
+    saved.opened = null;
+    view.rerender(<SavedDraftsWorkspace {...props} />);
+    expect(onSavedImportContextChange).toHaveBeenLastCalledWith(null);
   });
 });

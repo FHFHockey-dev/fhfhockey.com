@@ -31,6 +31,7 @@ import MyRoster from "./MyRoster";
 import DustMatrix from "./DustMatrix";
 import SavedDraftsWorkspace from "./SavedDraftsWorkspace";
 import type { SavedDraftAnnotations } from "./SavedDraftsPanel";
+import type { ScenarioSavedImportContext } from "lib/draft-pro/scenarioDashboardAdapter";
 import ProjectionsTable from "./ProjectionsTable";
 import { useVORPCalculations } from "hooks/useVORPCalculations";
 import { useDraftProAccess } from "hooks/useDraftProAccess";
@@ -579,6 +580,7 @@ const DraftDashboard: React.FC = () => {
   const [savedDraftsOpen, setSavedDraftsOpen] = useState(false);
   const [savedDraftsMounted, setSavedDraftsMounted] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<string[]>(readStoredFavoriteIds);
+  const [scenarioSavedImportContext, setScenarioSavedImportContext] = useState<ScenarioSavedImportContext | null>(null);
   const [workspaceAnnotations, setWorkspaceAnnotations] = useState<SavedDraftAnnotations>({
     selectedPlayerId: null,
     notes: [],
@@ -3307,6 +3309,7 @@ const DraftDashboard: React.FC = () => {
           players={allPlayers.map((player) => ({ id: String(player.playerId), name: player.fullName }))}
           annotations={workspaceAnnotations}
           onAnnotationsChange={setWorkspaceAnnotations}
+          onSavedImportContextChange={setScenarioSavedImportContext}
         /></div> : null}
       </section>
 
