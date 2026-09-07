@@ -19,4 +19,12 @@ describe("private import transport ownership boundary", () => {
     await expect(putPrivateImportChunk({ userId: "user", uploadId: "upload-1", prefix: "draft-pro-import-staging/user/upload-1", ordinal: 0, bytes: Buffer.from("[]") })).rejects.toThrow("unavailable");
     expect(storageUpload).not.toHaveBeenCalled(); expect(storageDownload).not.toHaveBeenCalled();
   });
+
+  it("accepts an identical duplicate chunk but rejects changed retry bytes", async () => {
+    const upload = { upload_id: "upload-1", save_session_id: "save-1", draft_id: null, status: "uploading", storage_prefix: "draft-pro-import-staging/user/upload-1", declared_max_bytes: PRIVATE_IMPORT_CHUNK_BYTES, expires_at: "2099-01-01T00:00:00.000Z" };
+    rpc.mockResolvedValueOnce({ data: [upload], error: null }); storageUpload.mockResolvedValueOnce({ error: { message: "already exists" } }); storageDownload.mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => Buffer.from("[]") } });
+    await expect(putPrivateImportChunk({ userId: "user", uploadId: "upload-1", prefix: upload.storage_prefix, ordinal: 0, bytes: Buffer.from("[]") })).resolves.toContain("/0");
+    rpc.mockResolvedValueOnce({ data: [upload], error: null }); storageUpload.mockResolvedValueOnce({ error: { message: "already exists" } }); storageDownload.mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => Buffer.from("different") } });
+    await expect(putPrivateImportChunk({ userId: "user", uploadId: "upload-1", prefix: upload.storage_prefix, ordinal: 0, bytes: Buffer.from("[]") })).rejects.toThrow("differs");
+  });
 });

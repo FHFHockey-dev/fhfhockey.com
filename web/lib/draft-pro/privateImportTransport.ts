@@ -39,7 +39,12 @@ export async function putPrivateImportChunk(args: { userId: string; uploadId: st
   // Chunks encode the normalized JSON document; keep the bucket MIME policy
   // aligned with its explicit private-import allowlist.
   const upload = await client.storage.from(BUCKET).upload(path, args.bytes, { contentType: "application/json", upsert: false });
-  if (upload.error) throw upload.error;
+  if (upload.error) {
+    if (!/already exists/i.test(upload.error.message)) throw upload.error;
+    const existing = await client.storage.from(BUCKET).download(path);
+    if (existing.error) throw existing.error;
+    if (!Buffer.from(await existing.data.arrayBuffer()).equals(args.bytes)) throw new Error("Private import retry chunk differs from the existing chunk.");
+  }
   return path;
 }
 
