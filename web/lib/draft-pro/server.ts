@@ -34,7 +34,7 @@ export async function loadDraftProAccess(
   const client = options.client ?? serviceRoleClient;
   const { data, error } = await client
     .from("user_entitlements")
-    .select("source_provider,entitlement_status,effective_from,effective_to,metadata")
+    .select("source_provider,entitlement_key,entitlement_status,effective_from,effective_to,metadata")
     .eq("user_id", userId)
     .in("entitlement_key", [DRAFT_PRO_ENTITLEMENT_KEY, PATREON_SUPPORTER_ENTITLEMENT_KEY]);
   if (error) throw error;
@@ -43,27 +43,19 @@ export async function loadDraftProAccess(
   // handing premium work to a caller; a provider failure is deliberately
   // fail-closed for that source while leaving a separate purchase untouched.
   const now = options.now;
-  const hasCurrentPurchase = rows.some((row) =>
-    row.source_provider === "stripe" && row.entitlement_key === DRAFT_PRO_ENTITLEMENT_KEY &&
-    row.entitlement_status === "active" &&
-    row.effective_from &&
-    row.effective_to &&
-    new Date(row.effective_from).getTime() <= now.getTime() &&
-    new Date(row.effective_to).getTime() > now.getTime(),
-  );
   const stalePatreon = rows.some((row) => {
-    if (!isDraftProPatreonGrant(row) || row.entitlement_status !== "active") return false;
+    if (!isDraftProPatreonGrant(row)) return false;
     const verifiedAt = metadataString(row.metadata, "verified_at");
     const verifiedTime = verifiedAt ? new Date(verifiedAt).getTime() : NaN;
-    return !Number.isFinite(verifiedTime) || verifiedTime < now.getTime() - 60 * 60 * 1000;
+    return !Number.isFinite(verifiedTime) || verifiedTime > now.getTime() || verifiedTime < now.getTime() - 60 * 60 * 1000;
   });
   let patreonVerificationAvailable = options.patreonVerificationAvailable;
-  if (stalePatreon && !hasCurrentPurchase) {
+  if (stalePatreon) {
     try {
       await refreshPatreonAccount({ userId, client: client as typeof serviceRoleClient, triggerSource: "access_reverify" });
       const { data: refreshedRows, error: refreshedError } = await client
         .from("user_entitlements")
-        .select("source_provider,entitlement_status,effective_from,effective_to,metadata")
+        .select("source_provider,entitlement_key,entitlement_status,effective_from,effective_to,metadata")
         .eq("user_id", userId)
         .in("entitlement_key", [DRAFT_PRO_ENTITLEMENT_KEY, PATREON_SUPPORTER_ENTITLEMENT_KEY]);
       if (refreshedError) throw refreshedError;

@@ -271,20 +271,14 @@ export async function materializePatreonEntitlement({
   client: SupabaseClient<Database>;
   now: Date;
 }) {
-  const paidThrough = snapshot.paidThrough && new Date(snapshot.paidThrough).getTime() > now.getTime()
-    ? snapshot.paidThrough
-    : null;
-  const retainsPaidAccess = snapshot.isEligibleSupporter ||
-    (snapshot.hasPaidMembership && Boolean(paidThrough));
-  const entitlementStatus = retainsPaidAccess
+  const entitlementStatus = snapshot.isEligibleSupporter
     ? "active"
     : "inactive";
   const entitlementMetadata = {
     ...((snapshot.metadata || {}) as Record<string, unknown>),
     provider_user_id: snapshot.providerUserId,
     verified_at: now.toISOString(),
-    paid_through: paidThrough,
-    draft_pro_eligible: retainsPaidAccess,
+    draft_pro_eligible: snapshot.isEligibleSupporter,
   } as Json;
 
   if (snapshot.memberId) {
@@ -310,9 +304,9 @@ export async function materializePatreonEntitlement({
       entitlement_status: entitlementStatus,
       source_reference: snapshot.memberId,
       effective_from: snapshot.pledgeRelationshipStart || now.toISOString(),
-      // A cancellation remains usable through the paid-through time. A later
-      // verification is required before that time can be extended.
-      effective_to: retainsPaidAccess ? paidThrough : now.toISOString(),
+      // Patreon reports current entitlement, not a trustworthy paid-through
+      // expiry. Continued access is therefore bounded by hourly verification.
+      effective_to: snapshot.isEligibleSupporter ? null : now.toISOString(),
       metadata: entitlementMetadata,
       updated_at: now.toISOString(),
     };
@@ -462,6 +456,18 @@ async function persistSnapshot({
   client: SupabaseClient<Database>;
   now: Date;
 }) {
+  const { data: currentAccount, error: currentAccountError } = await client
+    .from("connected_accounts")
+    .select("id")
+    .eq("id", account.id)
+    .eq("user_id", userId)
+    .eq("provider", PATREON_PROVIDER)
+    .in("status", ["connected", "syncing"])
+    .maybeSingle();
+  if (currentAccountError) throw currentAccountError;
+  if (!currentAccount) {
+    throw new PatreonApiError("Patreon was disconnected while verification was running.", 409);
+  }
   await storePatreonTokens({
     userId,
     account,
@@ -768,16 +774,30 @@ export async function disconnectPatreonAccount(
     .maybeSingle();
   if (accountError) throw accountError;
 
-  const { error: entitlementError } = await client
+  const { data: entitlement, error: entitlementReadError } = await client
     .from("user_entitlements")
-    .update({
-      entitlement_status: "inactive",
-      effective_to: new Date().toISOString(),
-      metadata: { disconnected_at: new Date().toISOString() },
-    })
+    .select("id,metadata")
     .eq("user_id", userId)
     .eq("source_provider", PATREON_PROVIDER)
-    .eq("entitlement_key", PATREON_ENTITLEMENT_KEY);
+    .eq("entitlement_key", PATREON_ENTITLEMENT_KEY)
+    .maybeSingle();
+  if (entitlementReadError) throw entitlementReadError;
+  const disconnectedAt = new Date().toISOString();
+  const { error: entitlementError } = entitlement
+    ? await client
+        .from("user_entitlements")
+        .update({
+          entitlement_status: "inactive",
+          effective_to: disconnectedAt,
+          metadata: {
+            ...((entitlement.metadata || {}) as Record<string, unknown>),
+            disconnected_at: disconnectedAt,
+            draft_pro_eligible: false,
+          },
+        })
+        .eq("id", entitlement.id)
+        .eq("user_id", userId)
+    : { error: null };
   if (entitlementError) throw entitlementError;
 
   if (account?.id) {
@@ -821,12 +841,21 @@ export async function reconcilePatreonAccounts({
     .limit(boundedLimit);
   if (error) throw error;
 
-  const results = await Promise.all((data ?? []).map(async ({ user_id }) => {
+  const timeoutFetch: typeof fetch = async (input, init) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+    try {
+      return await fetchImpl(input, { ...init, signal: controller.signal });
+    } finally {
+      clearTimeout(timeout);
+    }
+  };
+  const syncOne = async ({ user_id }: { user_id: string }) => {
     try {
       await refreshPatreonAccount({
         userId: user_id,
         client,
-        fetchImpl,
+        fetchImpl: timeoutFetch,
         triggerSource: "hourly_reconciliation",
       });
       return { userId: user_id, status: "synced" as const };
@@ -835,7 +864,16 @@ export async function reconcilePatreonAccounts({
       // once verification ages out, while a transient provider error can heal.
       return { userId: user_id, status: "failed" as const, error: error instanceof Error ? error.message : "Patreon sync failed." };
     }
-  }));
+  };
+  const pending = [...(data ?? [])];
+  const results: Awaited<ReturnType<typeof syncOne>>[] = [];
+  const worker = async () => {
+    while (pending.length) {
+      const account = pending.shift();
+      if (account) results.push(await syncOne(account));
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(5, pending.length) }, worker));
   return { attempted: results.length, synced: results.filter((item) => item.status === "synced").length, failed: results.filter((item) => item.status === "failed").length, results };
 }
 
@@ -865,18 +903,32 @@ export async function processPatreonWebhook({
     if (error) throw error;
     userId = data?.user_id ?? null;
   }
-  const { data: event, error: eventError } = await client
+  let event: { id: string; user_id: string | null; processed_at: string | null } | null = null;
+  const { data: insertedEvent, error: eventError } = await client
     .from("draft_pro_provider_events")
     .insert({ provider: PATREON_PROVIDER, provider_event_id: eventId, event_type: eventType, user_id: userId, payload: payload as Json })
-    .select("id")
+    .select("id,user_id,processed_at")
     .single();
-  if (eventError?.code === "23505") return { duplicate: true, userId };
-  if (eventError || !event) throw eventError || new Error("Patreon webhook event was not recorded.");
+  if (eventError?.code === "23505") {
+    const { data: existing, error: existingError } = await client
+      .from("draft_pro_provider_events")
+      .select("id,user_id,processed_at")
+      .eq("provider", PATREON_PROVIDER)
+      .eq("provider_event_id", eventId)
+      .maybeSingle();
+    if (existingError || !existing) throw existingError || new Error("Patreon webhook event could not be reloaded.");
+    if (existing.processed_at) return { duplicate: true, userId: existing.user_id };
+    event = existing;
+    userId = existing.user_id;
+  } else {
+    if (eventError || !insertedEvent) throw eventError || new Error("Patreon webhook event was not recorded.");
+    event = insertedEvent;
+  }
+  if (!event) throw new Error("Patreon webhook event was not recorded.");
 
   try {
-    if (userId) {
-      await refreshPatreonAccount({ userId, client, fetchImpl, triggerSource: "webhook" });
-    }
+    if (!userId) return { duplicate: false, userId: null, pending: true };
+    await refreshPatreonAccount({ userId, client, fetchImpl, triggerSource: "webhook" });
     const { error } = await client
       .from("draft_pro_provider_events")
       .update({ processed_at: new Date().toISOString() })

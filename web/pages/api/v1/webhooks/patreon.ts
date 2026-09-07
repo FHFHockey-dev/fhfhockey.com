@@ -36,6 +36,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       eventType: eventType.slice(0, 160),
       payload,
     });
+    if ("pending" in result && result.pending) {
+      return res.status(503).json({ error: "Patreon event is awaiting its account connection." });
+    }
     return res.status(200).json({ received: true, duplicate: result.duplicate });
   } catch (error) {
     return res.status(500).json({ error: "Patreon webhook could not be processed." });

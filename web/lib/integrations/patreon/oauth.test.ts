@@ -148,6 +148,22 @@ describe("Patreon OAuth v2", () => {
     expect(snapshot.tiers).toEqual([]);
   });
 
+  it("uses current paid entitlement, not a next billing date, for Draft Pro eligibility", () => {
+    const canceledButEntitled = structuredClone(identityResponse);
+    canceledButEntitled.included[1].attributes.patron_status = "active_patron";
+    expect(normalizePatreonIdentity(canceledButEntitled, "fhfh-campaign").isEligibleSupporter).toBe(true);
+
+    const declinedWithFutureBilling = structuredClone(identityResponse);
+    declinedWithFutureBilling.included[1].attributes.patron_status = "declined_patron";
+    declinedWithFutureBilling.included[1].attributes.next_charge_date = "2030-01-01T00:00:00Z";
+    expect(normalizePatreonIdentity(declinedWithFutureBilling, "fhfh-campaign").isEligibleSupporter).toBe(false);
+
+    const freeTier = structuredClone(identityResponse);
+    freeTier.included[1].attributes.currently_entitled_amount_cents = 0;
+    freeTier.included[2].attributes.amount_cents = 0;
+    expect(normalizePatreonIdentity(freeTier, "fhfh-campaign").isEligibleSupporter).toBe(false);
+  });
+
   it("requests explicit v2 fields and accepts rotated refresh tokens", async () => {
     const fetchMock = vi
       .fn()
