@@ -71,7 +71,7 @@ test("free source weights change a blend without changing drafted picks", async 
   await expect(remainingPlayer).not.toHaveText(beforeProjection);
 });
 
-test("free CSV import restores normalized rows and picks from local autosave", async ({ page }) => {
+test("regression: free CSV source stays out of the visible blend after autosave", async ({ page }) => {
   await installDraftProFreeFixtures(page);
   page.once("dialog", (dialog) => dialog.accept());
   await page.goto("/draft-dashboard");
@@ -92,10 +92,26 @@ test("free CSV import restores normalized rows and picks from local autosave", a
   });
   await csv.getByLabel("Projection Source Name:").fill("Fixture CSV");
   await csv.getByRole("button", { name: "Confirm Import", exact: true }).click();
+  const skaterSources = page.getByRole("region", { name: "Skaters projection sources" });
+  await page.getByRole("button", { name: "Edit Weights", exact: true }).click();
+  const weights = skaterSources.getByRole("spinbutton");
+  for (const input of await weights.all()) if (await input.isEnabled()) await input.fill("0");
+  await skaterSources.getByLabel("Fixture CSV weight percent", { exact: true }).fill("100");
   await page.getByRole("button", { name: "Done", exact: false }).click();
   await expect.poll(() => page.evaluate(() =>
     JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").customCsvList?.[0]?.rows?.[0],
   )).toMatchObject({ player_id: 1002, Goals: 65, Assists: 60, Shots_on_Goal: 300 });
+  await expect.poll(() => page.evaluate(() =>
+    JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").sourceControls,
+  )).toMatchObject({
+    ag_skaters: { isSelected: true, weight: 0 },
+    cullen_skaters: { isSelected: true, weight: 0 },
+    dtz_skaters: { isSelected: true, weight: 0 },
+    lineupexperts_skaters: { isSelected: true, weight: 0 },
+    "5v5_skaters": { isSelected: true, weight: 0 },
+    custom_csv_1: { isSelected: true, weight: 1 },
+  });
+  await expect.soft(players.locator('tr[data-player-id="1002"]')).toContainText("405.0", { timeout: 2_000 });
 
   page.once("dialog", (dialog) => dialog.accept());
   await page.reload();
@@ -105,4 +121,12 @@ test("free CSV import restores normalized rows and picks from local autosave", a
   await expect.poll(() => page.evaluate(() =>
     JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").draftedPlayers,
   )).toEqual(draftedBefore);
+  await expect(players.locator('tr[data-player-id="1001"]')).toHaveCount(0);
+  await page.getByRole("button", { name: "Setup", exact: true }).click();
+  await page.getByRole("button", { name: "Projections", exact: true }).click();
+  await expect(skaterSources.getByText("Fixture CSV", { exact: true })).toBeVisible();
+  await expect(skaterSources.getByLabel("Toggle source Fixture CSV")).toBeChecked();
+  await page.getByRole("button", { name: "Edit Weights", exact: true }).click();
+  await expect(skaterSources.getByLabel("Fixture CSV weight percent", { exact: true })).toHaveValue("100");
+  await expect.soft(players.locator('tr[data-player-id="1002"]')).toContainText("405.0", { timeout: 2_000 });
 });
