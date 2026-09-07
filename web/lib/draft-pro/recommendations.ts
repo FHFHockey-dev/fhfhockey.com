@@ -16,6 +16,7 @@ export type RecommendationCandidate = {
   /** The existing draft rank value (normally VBD). */
   rankValue: number;
   baselineScore?: number;
+  tieBreaker?: number;
   categoryValues?: Record<string, number | null | undefined>;
   adp?: number | null;
 };
@@ -93,7 +94,7 @@ function categoryValuesFor(candidate: RecommendationCandidate) {
     if (finite(saves) && finite(goalsAgainst)) values.SHOTS_AGAINST_GOALIE = saves + goalsAgainst;
   }
   const shotsAgainst = values.SHOTS_AGAINST_GOALIE;
-  if (!finite(shotsAgainst) || shotsAgainst <= 0) delete values.SAVE_PERCENTAGE;
+  if (!finite(values.SAVES_GOALIE) || !finite(shotsAgainst) || shotsAgainst <= 0) delete values.SAVE_PERCENTAGE;
   if (!finite(values.SAVE_PERCENTAGE)) {
     const saves = values.SAVES_GOALIE;
     const shotsAgainst = values.SHOTS_AGAINST_GOALIE;
@@ -101,7 +102,13 @@ function categoryValuesFor(candidate: RecommendationCandidate) {
       values.SAVE_PERCENTAGE = saves / shotsAgainst;
     }
   }
-  if (!finite(values.GAMES_STARTED) || values.GAMES_STARTED <= 0) delete values.GOALS_AGAINST_AVERAGE;
+  const goalieStarts = values.GAMES_STARTED;
+  const toiPerGame = values.TIME_ON_ICE_PER_GAME;
+  if (!finite(values.GOALS_AGAINST_GOALIE) || !finite(goalieStarts) || goalieStarts <= 0 || !finite(toiPerGame) || toiPerGame <= 0) {
+    delete values.GOALS_AGAINST_AVERAGE;
+  } else {
+    values.GOALS_AGAINST_AVERAGE = values.GOALS_AGAINST_GOALIE * 3600 / (goalieStarts * toiPerGame);
+  }
   return values;
 }
 
@@ -110,7 +117,7 @@ function fitForPosition(candidate: RecommendationCandidate, needs: Record<string
     .map((position) => needs[position])
     .filter(finite)
     .map(clamp01);
-  return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+  return values.length ? Math.max(...values) : 0;
 }
 
 function categoryFit(
@@ -137,7 +144,7 @@ function categoryFit(
   const directionalNeed = enabled.reduce((sum, key) => {
     const need = categoryNeeds[key];
     if (!finite(need) || missing.includes(key)) return sum;
-    return sum + (categoryScoresByKey[key]?.get(candidate.id) ?? 0) * need * Math.abs(weights[key]);
+    return sum + (categoryScoresByKey[key]?.get(candidate.id) ?? 0) * need;
   }, 0) / totalNeed;
   return { fit: directionalNeed, missing };
 }
@@ -174,12 +181,12 @@ export function buildPersonalizedRecommendations(
     const normalizedFit = clamp01(fit / maxFit);
     const rankScore = finite(candidate.baselineScore) ? candidate.baselineScore : (finite(candidate.rankValue) ? candidate.rankValue : 0);
     const recommendationScore = rankScore + alpha * normalizedFit * adjustmentScale;
-    const reasons = ["Personalized recommendation", `Rank ${rankScore.toFixed(1)}`];
+    const reasons = [alpha > 0 ? "Personalized recommendation" : "Standard recommendation", `Rank ${rankScore.toFixed(1)}`];
     if (normalizedFit > 0) reasons.push(`${options.leagueType === "categories" ? "Category" : "Roster"} need ${Math.round(normalizedFit * 100)}%`);
     if (missing.length) reasons.push(`Missing analysis: ${missing.join(", ")}`);
     const availabilityEstimate = estimateAvailability(candidate.adp, options.currentPick, options.teamCount);
     if (availabilityEstimate !== null) reasons.push("Availability is an ADP estimate");
     return { candidate, rankScore, recommendationScore, globalVorp: candidate.globalVorp, availabilityEstimate, reasons, missingCategories: missing };
-  }).sort((left, right) => right.recommendationScore - left.recommendationScore || right.rankScore - left.rankScore || left.candidate.name.localeCompare(right.candidate.name))
+  }).sort((left, right) => right.recommendationScore - left.recommendationScore || right.rankScore - left.rankScore || (right.candidate.tieBreaker ?? 0) - (left.candidate.tieBreaker ?? 0) || left.candidate.name.localeCompare(right.candidate.name))
     .slice(0, Math.max(1, Math.min(200, Math.floor(options.limit ?? 10))));
 }

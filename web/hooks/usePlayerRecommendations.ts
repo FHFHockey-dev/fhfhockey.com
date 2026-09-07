@@ -31,6 +31,7 @@ interface Args {
   usePersonalizedReplacement?: boolean;
   posNeeds?: Record<string, number>; // by position (C,LW,RW,D,G)
   catNeeds?: Record<string, number>; // by category when in categories mode
+  categoryWeights?: Record<string, number>;
   needWeightEnabled?: boolean;
   needAlpha?: number; // 0..1 weight toward needs
   limit?: number;
@@ -48,6 +49,7 @@ export function usePlayerRecommendations({
   usePersonalizedReplacement = false,
   posNeeds = {},
   catNeeds = {},
+  categoryWeights = {},
   needWeightEnabled = false,
   needAlpha = 0.5,
   limit = 10,
@@ -61,8 +63,9 @@ export function usePlayerRecommendations({
     if (!players || players.length === 0) return [];
     const candidates = players.map((p) => {
       const id = String(p.playerId);
-      const vm = (usePersonalizedReplacement ? personalizedVorpMetrics : undefined)?.get(id) ?? vorpMetrics?.get(id);
-      const vbd = vm?.vbd ?? vm?.vorp ?? 0;
+      const globalVm = vorpMetrics?.get(id);
+      const suggestionVm = (usePersonalizedReplacement ? personalizedVorpMetrics : undefined)?.get(id) ?? globalVm;
+      const vbd = suggestionVm?.vbd ?? suggestionVm?.vorp ?? 0;
       return {
         id,
         name: p.fullName || id,
@@ -74,9 +77,10 @@ export function usePlayerRecommendations({
           normalizePlayerEligibility(p.displayPosition, p.eligiblePositions),
           forwardGrouping,
         ),
-        globalVorp: vm?.vorp ?? 0,
+        globalVorp: globalVm?.vorp ?? 0,
         rankValue: vbd,
-        baselineScore: 0.7 * vbd + 0.3 * (vm?.vona ?? 0),
+        baselineScore: 0.7 * vbd + 0.3 * (suggestionVm?.vona ?? 0),
+        tieBreaker: p.fantasyPoints?.projected ?? 0,
         categoryValues: Object.fromEntries(Object.entries(p.combinedStats ?? {}).flatMap(([key, value]) =>
           typeof value?.projected === "number" && Number.isFinite(value.projected) ? [[key, value.projected]] : [],
         )),
@@ -87,9 +91,7 @@ export function usePlayerRecommendations({
       leagueType,
       positionNeeds: posNeeds,
       categoryNeeds: catNeeds,
-      // The current dashboard sends category need pressure; category scoring
-      // weights arrive with the VORP metrics and will be passed by W07.
-      categoryWeights: leagueType === "categories" ? Object.fromEntries(Object.keys(catNeeds).map((key) => [key, 1])) : undefined,
+      categoryWeights,
       needAlpha: needWeightEnabled ? needAlpha : 0,
       currentPick,
       teamCount,
@@ -99,10 +101,11 @@ export function usePlayerRecommendations({
     return personalized.flatMap((result) => {
       const player = playerById.get(result.candidate.id);
       if (!player) return [];
-      const vm = (usePersonalizedReplacement ? personalizedVorpMetrics : undefined)?.get(result.candidate.id) ?? vorpMetrics?.get(result.candidate.id);
-      const tags = [`VBD ${(vm?.vbd ?? 0).toFixed(1)}`, `VONA ${(vm?.vona ?? 0).toFixed(1)}`];
+      const globalVm = vorpMetrics?.get(result.candidate.id);
+      const suggestionVm = (usePersonalizedReplacement ? personalizedVorpMetrics : undefined)?.get(result.candidate.id) ?? globalVm;
+      const tags = [`VBD ${(suggestionVm?.vbd ?? 0).toFixed(1)}`, `VONA ${(suggestionVm?.vona ?? 0).toFixed(1)}`];
       if (baselineMode) tags.push(baselineMode === "remaining" ? "Remaining pool" : "Full pool");
-      return [{ player, score: result.recommendationScore, vorp: result.globalVorp, vona: vm?.vona ?? 0, vbd: vm?.vbd ?? 0, availability: result.availabilityEstimate ?? undefined, reasonTags: [...tags, ...result.reasons] }];
+      return [{ player, score: result.recommendationScore, vorp: result.globalVorp, vona: suggestionVm?.vona ?? 0, vbd: suggestionVm?.vbd ?? 0, availability: result.availabilityEstimate ?? undefined, reasonTags: [...tags, ...result.reasons] }];
     });
   }, [
     players,
@@ -111,6 +114,7 @@ export function usePlayerRecommendations({
     usePersonalizedReplacement,
     posNeeds,
     catNeeds,
+    categoryWeights,
     needWeightEnabled,
     needAlpha,
     limit,
