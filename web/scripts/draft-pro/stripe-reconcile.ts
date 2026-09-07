@@ -9,6 +9,7 @@ export function parseReconcileOptions(args: string[], env: Readonly<Record<strin
   const limit = Number(args.find((a) => a.startsWith("--limit="))?.slice(8) ?? 25);
   if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new Error("--limit must be an integer between 1 and 100");
   const apply = args.includes("--apply"), key = env.STRIPE_SECRET_KEY ?? "";
+  if (apply && !/^(sk|rk)_(test|live)_/.test(key)) throw new Error("A valid Stripe secret key is required.");
   if (apply && !/^([sr]k_test_)/.test(key) && env.DRAFT_PRO_STRIPE_LIVE_APPLY_ENABLED !== "true") throw new Error("Apply requires a test key or explicit operator enablement.");
   return { apply, limit };
 }
