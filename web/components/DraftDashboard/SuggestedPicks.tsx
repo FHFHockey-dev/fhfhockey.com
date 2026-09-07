@@ -437,7 +437,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     const arr = [...filtered];
     const mul = sortDir === "asc" ? 1 : -1;
     arr.sort((a, b) => {
-      if (dustSort === "schedule_fit" && dustInsights) {
+      if (dustSort === "schedule_fit" && dustInsights?.size) {
         const aDust = dustInsights.get(String(a.player.playerId));
         const bDust = dustInsights.get(String(b.player.playerId));
         const byActiveGames = (bDust?.activeGamesAdded ?? Number.NEGATIVE_INFINITY) - (aDust?.activeGamesAdded ?? Number.NEGATIVE_INFINITY);
