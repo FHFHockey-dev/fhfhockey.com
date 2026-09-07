@@ -17,6 +17,7 @@ create table public.draft_pro_private_import_blobs (
   status text not null default 'active' check (status in ('active', 'cleanup_pending', 'deleted')),
   created_at timestamptz not null default now(),
   cleanup_requested_at timestamptz,
+  cleanup_lease_id uuid,
   deleted_at timestamptz
 );
 alter table public.draft_pro_private_imports add constraint draft_pro_private_imports_blob_id_fkey foreign key (blob_id) references public.draft_pro_private_import_blobs(id) on delete restrict;
@@ -273,19 +274,32 @@ begin
 end;
 $$;
 
-create or replace function public.claim_draft_pro_private_import_cleanup(p_user_id uuid,p_limit integer default 20)
-returns table(blob_id uuid,storage_path text)
+drop function public.claim_draft_pro_private_import_cleanup(uuid,integer);
+drop function public.confirm_draft_pro_private_import_cleanup(uuid,uuid[]);
+create function public.claim_draft_pro_private_import_cleanup(p_user_id uuid,p_limit integer default 20)
+returns table(blob_id uuid,storage_path text,cleanup_lease_id uuid)
 language plpgsql security definer set search_path = public, pg_temp as $$
+declare lease_id uuid := gen_random_uuid();
 begin
   if p_limit not between 1 and 100 then raise exception 'Invalid cleanup limit'; end if;
-  return query select b.id,b.storage_path from public.draft_pro_private_import_blobs as b where b.user_id=p_user_id and b.status='cleanup_pending' order by b.cleanup_requested_at limit p_limit for update skip locked;
+  return query
+  with claimed as (
+    update public.draft_pro_private_import_blobs as b set cleanup_requested_at=now(),cleanup_lease_id=lease_id
+    where b.id in (
+      select c.id from public.draft_pro_private_import_blobs as c
+      where c.user_id=p_user_id and c.status='cleanup_pending'
+        and (c.cleanup_lease_id is null or c.cleanup_requested_at < now() - interval '15 minutes')
+      order by c.cleanup_requested_at nulls first limit p_limit for update skip locked
+    ) returning b.*
+  ) select c.id,c.storage_path,c.cleanup_lease_id from claimed as c;
 end;
 $$;
-create or replace function public.confirm_draft_pro_private_import_cleanup(p_user_id uuid,p_blob_ids uuid[])
+create function public.confirm_draft_pro_private_import_cleanup(p_user_id uuid,p_blob_ids uuid[],p_cleanup_lease_id uuid)
 returns integer language plpgsql security definer set search_path = public, pg_temp as $$
 declare changed integer;
 begin
-  update public.draft_pro_private_import_blobs as b set status='deleted',deleted_at=now() where b.user_id=p_user_id and b.id=any(p_blob_ids) and b.status='cleanup_pending'; get diagnostics changed = row_count; return changed;
+  if p_cleanup_lease_id is null then raise exception 'Cleanup lease is required'; end if;
+  update public.draft_pro_private_import_blobs as b set status='deleted',deleted_at=now() where b.user_id=p_user_id and b.id=any(p_blob_ids) and b.status='cleanup_pending' and b.cleanup_lease_id=p_cleanup_lease_id; get diagnostics changed = row_count; return changed;
 end;
 $$;
 
@@ -324,5 +338,5 @@ begin
 end;
 $$;
 
-revoke all on function public.begin_draft_pro_save_session(uuid,uuid,integer,text), public.begin_draft_pro_private_import_upload(uuid,uuid,uuid,integer,text,text,jsonb), public.stage_draft_pro_private_import_upload(uuid,uuid,text[],integer,integer,text), public.read_draft_pro_private_import_upload(uuid,uuid), public.commit_draft_pro_save_session(uuid,uuid,text,jsonb,integer,uuid[]), public.list_draft_pro_saved_drafts(uuid), public.read_draft_pro_snapshot(uuid,uuid), public.rename_draft_pro_saved_draft(uuid,uuid,integer,text), public.delete_draft_pro_saved_draft(uuid,uuid,integer), public.duplicate_draft_pro_saved_draft(uuid,uuid,integer,text), public.claim_draft_pro_private_import_cleanup(uuid,integer), public.confirm_draft_pro_private_import_cleanup(uuid,uuid[]), public.claim_draft_pro_private_import_upload_cleanup(uuid,integer), public.confirm_draft_pro_private_import_upload_cleanup(uuid,uuid[]) from public, anon, authenticated;
-grant execute on function public.begin_draft_pro_save_session(uuid,uuid,integer,text), public.begin_draft_pro_private_import_upload(uuid,uuid,uuid,integer,text,text,jsonb), public.stage_draft_pro_private_import_upload(uuid,uuid,text[],integer,integer,text), public.read_draft_pro_private_import_upload(uuid,uuid), public.commit_draft_pro_save_session(uuid,uuid,text,jsonb,integer,uuid[]), public.list_draft_pro_saved_drafts(uuid), public.read_draft_pro_snapshot(uuid,uuid), public.rename_draft_pro_saved_draft(uuid,uuid,integer,text), public.delete_draft_pro_saved_draft(uuid,uuid,integer), public.duplicate_draft_pro_saved_draft(uuid,uuid,integer,text), public.claim_draft_pro_private_import_cleanup(uuid,integer), public.confirm_draft_pro_private_import_cleanup(uuid,uuid[]), public.claim_draft_pro_private_import_upload_cleanup(uuid,integer), public.confirm_draft_pro_private_import_upload_cleanup(uuid,uuid[]) to service_role;
+revoke all on function public.begin_draft_pro_save_session(uuid,uuid,integer,text), public.begin_draft_pro_private_import_upload(uuid,uuid,uuid,integer,text,text,jsonb), public.stage_draft_pro_private_import_upload(uuid,uuid,text[],integer,integer,text), public.read_draft_pro_private_import_upload(uuid,uuid), public.commit_draft_pro_save_session(uuid,uuid,text,jsonb,integer,uuid[]), public.list_draft_pro_saved_drafts(uuid), public.read_draft_pro_snapshot(uuid,uuid), public.rename_draft_pro_saved_draft(uuid,uuid,integer,text), public.delete_draft_pro_saved_draft(uuid,uuid,integer), public.duplicate_draft_pro_saved_draft(uuid,uuid,integer,text), public.claim_draft_pro_private_import_cleanup(uuid,integer), public.confirm_draft_pro_private_import_cleanup(uuid,uuid[],uuid), public.claim_draft_pro_private_import_upload_cleanup(uuid,integer), public.confirm_draft_pro_private_import_upload_cleanup(uuid,uuid[]) from public, anon, authenticated;
+grant execute on function public.begin_draft_pro_save_session(uuid,uuid,integer,text), public.begin_draft_pro_private_import_upload(uuid,uuid,uuid,integer,text,text,jsonb), public.stage_draft_pro_private_import_upload(uuid,uuid,text[],integer,integer,text), public.read_draft_pro_private_import_upload(uuid,uuid), public.commit_draft_pro_save_session(uuid,uuid,text,jsonb,integer,uuid[]), public.list_draft_pro_saved_drafts(uuid), public.read_draft_pro_snapshot(uuid,uuid), public.rename_draft_pro_saved_draft(uuid,uuid,integer,text), public.delete_draft_pro_saved_draft(uuid,uuid,integer), public.duplicate_draft_pro_saved_draft(uuid,uuid,integer,text), public.claim_draft_pro_private_import_cleanup(uuid,integer), public.confirm_draft_pro_private_import_cleanup(uuid,uuid[],uuid), public.claim_draft_pro_private_import_upload_cleanup(uuid,integer), public.confirm_draft_pro_private_import_upload_cleanup(uuid,uuid[]) to service_role;

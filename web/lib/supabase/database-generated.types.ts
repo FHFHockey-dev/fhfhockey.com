@@ -552,9 +552,9 @@ export type Database = {
         Relationships: []
       }
       draft_pro_private_import_blobs: {
-        Row: { id: string; user_id: string; storage_path: string; byte_size: number; row_count: number; content_sha256: string; status: string; created_at: string; cleanup_requested_at: string | null; deleted_at: string | null }
-        Insert: { id?: string; user_id: string; storage_path: string; byte_size: number; row_count: number; content_sha256: string; status?: string; created_at?: string; cleanup_requested_at?: string | null; deleted_at?: string | null }
-        Update: { id?: string; user_id?: string; storage_path?: string; byte_size?: number; row_count?: number; content_sha256?: string; status?: string; created_at?: string; cleanup_requested_at?: string | null; deleted_at?: string | null }
+        Row: { id: string; user_id: string; storage_path: string; byte_size: number; row_count: number; content_sha256: string; status: string; created_at: string; cleanup_requested_at: string | null; cleanup_lease_id: string | null; deleted_at: string | null }
+        Insert: { id?: string; user_id: string; storage_path: string; byte_size: number; row_count: number; content_sha256: string; status?: string; created_at?: string; cleanup_requested_at?: string | null; cleanup_lease_id?: string | null; deleted_at?: string | null }
+        Update: { id?: string; user_id?: string; storage_path?: string; byte_size?: number; row_count?: number; content_sha256?: string; status?: string; created_at?: string; cleanup_requested_at?: string | null; cleanup_lease_id?: string | null; deleted_at?: string | null }
         Relationships: []
       }
       draft_pro_private_import_uploads: {
@@ -47787,8 +47787,8 @@ export type Database = {
       rename_draft_pro_saved_draft: { Args: { p_draft_id: string; p_expected_version: number; p_name: string; p_user_id: string }; Returns: { conflict_lock_version: number | null; draft_id: string; lock_version: number; name: string; status: string; updated_at: string }[] }
       delete_draft_pro_saved_draft: { Args: { p_draft_id: string; p_expected_version: number; p_user_id: string }; Returns: { cleanup_count: number; conflict_lock_version: number | null; draft_id: string; lock_version: number; status: string }[] }
       duplicate_draft_pro_saved_draft: { Args: { p_draft_id: string; p_expected_version: number; p_name: string; p_user_id: string }; Returns: { conflict_lock_version: number | null; draft_id: string; import_count: number; lock_version: number; name: string; status: string; updated_at: string }[] }
-      claim_draft_pro_private_import_cleanup: { Args: { p_limit?: number; p_user_id: string }; Returns: { blob_id: string; storage_path: string }[] }
-      confirm_draft_pro_private_import_cleanup: { Args: { p_blob_ids: string[]; p_user_id: string }; Returns: number }
+      claim_draft_pro_private_import_cleanup: { Args: { p_limit?: number; p_user_id: string }; Returns: { blob_id: string; cleanup_lease_id: string; storage_path: string }[] }
+      confirm_draft_pro_private_import_cleanup: { Args: { p_blob_ids: string[]; p_cleanup_lease_id: string; p_user_id: string }; Returns: number }
       claim_draft_pro_private_import_upload_cleanup: { Args: { p_limit?: number; p_user_id: string }; Returns: { chunk_paths: Json; delete_final: boolean; final_storage_path: string | null; upload_id: string }[] }
       confirm_draft_pro_private_import_upload_cleanup: { Args: { p_upload_ids: string[]; p_user_id: string }; Returns: number }
       record_draft_pro_stripe_event: {
