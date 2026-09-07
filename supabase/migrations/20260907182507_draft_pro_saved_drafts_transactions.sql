@@ -153,9 +153,10 @@ $$;
 -- The server calls this immediately before Storage I/O.  It is deliberately
 -- ownership-scoped and returns only the server-derived staging namespace.
 create or replace function public.read_draft_pro_private_import_upload(p_user_id uuid,p_upload_id uuid)
-returns table(upload_id uuid,save_session_id uuid,draft_id uuid,status text,storage_prefix text,declared_max_bytes integer,expires_at timestamptz)
+returns table(upload_id uuid,save_session_id uuid,draft_id uuid,status text,storage_prefix text,final_storage_path text,chunk_paths jsonb,declared_max_bytes integer,expires_at timestamptz)
 language sql security definer set search_path = public, pg_temp as $$
-  select u.id,u.save_session_id,s.draft_id,u.status,u.storage_prefix,u.declared_max_bytes,u.expires_at
+  select u.id,u.save_session_id,s.draft_id,u.status,u.storage_prefix,
+    coalesce(u.final_storage_path,'draft-pro-imports/' || u.id::text || '/normalized.json'),u.chunk_paths,u.declared_max_bytes,u.expires_at
   from public.draft_pro_private_import_uploads as u
   join public.draft_pro_save_sessions as s on s.id=u.save_session_id
   where u.id=p_upload_id and u.user_id=p_user_id and s.user_id=p_user_id;
@@ -291,6 +292,8 @@ language plpgsql security definer set search_path = public, pg_temp as $$
 declare lease_id uuid := gen_random_uuid();
 begin
   if p_limit not between 1 and 100 then raise exception 'Invalid cleanup limit'; end if;
+  update public.draft_pro_private_import_uploads as u set status='expired'
+  where u.user_id=p_user_id and u.status in ('uploading','staged') and u.expires_at<=now();
   return query
   with claimed as (
     update public.draft_pro_private_import_blobs as b set cleanup_requested_at=now(),cleanup_lease_id=lease_id
@@ -326,12 +329,17 @@ begin
     set cleanup_requested_at=now()
     where u.id in (
       select c.id from public.draft_pro_private_import_uploads as c
-      where c.user_id=p_user_id and c.status in ('expired','committed')
+      where c.user_id=p_user_id and c.status in ('expired','committed') and c.cleaned_at is null
         and (c.cleanup_requested_at is null or c.cleanup_requested_at < now() - interval '15 minutes')
       order by c.created_at limit p_limit for update skip locked
     )
     returning u.*
-  ) select c.id,c.chunk_paths,c.final_storage_path,(c.status='expired') from claimed as c;
+  ) select c.id,
+      case when jsonb_array_length(c.chunk_paths)>0 then c.chunk_paths
+        else (select coalesce(jsonb_agg(c.storage_prefix || '/' || ordinal::text),'[]'::jsonb) from generate_series(0,31) as paths(ordinal)) end,
+      case when c.status='expired' then 'draft-pro-imports/' || c.id::text || '/normalized.json' else c.final_storage_path end,
+      (c.status='expired')
+    from claimed as c;
 end;
 $$;
 create or replace function public.confirm_draft_pro_private_import_upload_cleanup(p_user_id uuid,p_upload_ids uuid[])

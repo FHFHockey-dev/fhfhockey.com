@@ -19,6 +19,9 @@ declare
   replacement_prefix text;
   filler_draft_id uuid;
   filler_blob_id uuid;
+  expired_save_id uuid;
+  expired_upload_id uuid;
+  expired_prefix text;
   ordinal integer;
 begin
   select save_session_id into save_id from public.begin_draft_pro_save_session('00000000-0000-4000-8000-000000000021'::uuid, null, null, 'probe-attempt-1');
@@ -59,6 +62,10 @@ begin
   select u.upload_id,u.storage_prefix into replacement_upload_id,replacement_prefix from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', replacement_save_id, (select i.id from public.draft_pro_private_imports as i where i.draft_id=saved_draft_id and i.deleted_at is null limit 1), 512, 'Replacement', 'application/json', '{}'::jsonb) as u;
   perform public.stage_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', replacement_upload_id, array[replacement_prefix || '/0'], 512, 2, repeat('c',64));
   if not exists (select 1 from public.commit_draft_pro_save_session('00000000-0000-4000-8000-000000000021', replacement_save_id, 'Replacement at cap', '{}'::jsonb, 2, '{}'::uuid[]) where status='saved') then raise exception 'same-size replacement at account cap did not commit'; end if;
+  select save_session_id into expired_save_id from public.begin_draft_pro_save_session('00000000-0000-4000-8000-000000000021', saved_draft_id, version + 1, 'probe-attempt-expired-upload');
+  select u.upload_id,u.storage_prefix into expired_upload_id,expired_prefix from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', expired_save_id, (select i.id from public.draft_pro_private_imports as i where i.draft_id=saved_draft_id and i.deleted_at is null limit 1), 512, 'Expired pre-stage', 'application/json', '{}'::jsonb) as u;
+  update public.draft_pro_private_import_uploads as u set expires_at=now()-interval '1 second' where u.id=expired_upload_id;
+  if not exists (select 1 from public.claim_draft_pro_private_import_upload_cleanup('00000000-0000-4000-8000-000000000021',100) as c where c.upload_id=expired_upload_id and c.delete_final and jsonb_array_length(c.chunk_paths)=32 and c.final_storage_path='draft-pro-imports/' || expired_upload_id::text || '/normalized.json') then raise exception 'expired pre-stage upload cleanup did not return derived paths'; end if;
   if not exists (select 1 from public.begin_draft_pro_save_session('00000000-0000-4000-8000-000000000021', saved_draft_id, version + 2, 'probe-attempt-2') where status = 'conflict') then
     raise exception 'expected-version conflict was not returned';
   end if;
