@@ -51,6 +51,8 @@ Private Storage HTTP verification is integrated at `b9d9c09e1`. W12 used an isol
 
 Real Stripe test-mode Checkout/webhook validation, Patreon provider validation, and Resend delivery validation are blocked until the owner supplies authorized provider configuration and test access. No real provider check, live charge, Patreon verification, or email send is claimed by this packet.
 
+Saved Drafts real-service API verification is approved at `5d88d8a03` (W12 source `56fac9a11`). The local GoTrue/PostgREST/Storage/Next fixture saves a populated snapshot and restores it with downloaded private rows through a second same-account token. It checks file integrity, cross-user denial, inactive names-only access and payload/write/file locks, restoration after entitlement reactivation, and version conflicts. Its final `cleanup=verified` marker follows process, port, container, and network cleanup checks. The binary-response defect found by this fixture is fixed at `059553e6f`; the affected API suite passed 28 tests with follow-on `73bc3b922`. Dashboard browser save/restore remains pending.
+
 ## Rollout and rollback
 
 Roll out with all flags off, then enable only the candidate capability whose implementation evidence, provider readiness, copy review, and owner approval are complete. Keep provider secrets server-side and use test-mode evidence first.

@@ -2,7 +2,7 @@
 
 ## Progress and usage reporting
 
-Latest accepted estimate: **68% overall / 95% initial paid release**. W07 Saved Drafts integration and W12 real-route/browser acceptance remain open; W09 scenarios and W10 reports are queued. The account-side usage refresh occurred without Chef redeeming a credit; latest sampled weekly usage was **2%**. The figures below at ~13:00 are historical, not the current estimate.
+Latest accepted estimate: **69% overall / 95% initial paid release**. Saved Drafts real-service API acceptance is approved; W07 dashboard integration and W12 browser acceptance remain open. W09 scenarios and W10 reports are queued. The account-side usage refresh occurred without Chef redeeming a credit; latest sampled weekly usage was **5%**. The figures below at ~13:00 are historical, not the current estimate.
 
 User requested an overall percentage now and at every major checkpoint, without changing the goal. At the September 7 ~13:00 checkpoint: overall engineering completion approximately **50%**, initial paid release approximately **75%**. Estimates include remaining implementation and verification; they are not task-count percentages or launch approval. Area estimates: foundation/billing/lifecycle/refunds90%, recommendations/DUST90%, central integration55%, Saved Drafts/scenarios/reports0%, launch documentation70%, integrated verification35%. Yahoo preparation complete, live milestone separate.
 
@@ -23,7 +23,7 @@ Account-wide weekly usage: **47% consumed / 53% remaining**. Goal counter: **991
 | W09 scenarios | Queued | W08 and shared calculation integration |
 | W10 reports | Queued | W09 and deterministic report implementation |
 | W11 copy/operator | Initial release copy/packet approved through4790fce53 | Refresh evidence after browser checkpoint and later milestones |
-| W12 verification | SQL/RLS, real overlapping saves, Storage HTTP, free/account and populated matrix browser checks approved | Saved Drafts real-route fixture completion and browser flow; later scenarios/reports and RC packet |
+| W12 verification | SQL/RLS, real overlapping saves, Storage HTTP, Saved Drafts real routes, free/account and populated matrix browser checks approved | Saved Drafts dashboard browser flow; later scenarios/reports and RC packet |
 | W13 Yahoo | Readiness work order approved and parked | September 11 one-time check; real provider evidence, separate activation approval |
 
 No remote build, deployment, production migration, live payment, or live email has been performed. Checkpoint approval is scoped engineering evidence, not release authorization. Full repository TypeScript passed with an 8 GiB heap at 3dcf15b05; /tmp/draft-pro-rc-types-final.log is empty and command exited 0. Earlier OOM and correction failures remain historical evidence below.
@@ -370,3 +370,6 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 
 - Internal W12 helper returned `fb362fba2` with second-token/private-byte and access assertions but again omitted populated draft fixtures and launcher lifecycle/compilation corrections. Helper is idle. Visible W12 resumed **Terra/high**, bounded to these unresolved verification-runner requirements after repeated medium attempts; exit complete fixture review, then medium for browser validation. No competing worker edits its files.
 - W07 `6b247c76d` adds real-hook debounce evidence and operation guards. Returned final identified correctness gaps: actual dashboard normalization must prepare state before mutation and define the hydration target; reverting an edit before debounce must cancel the abandoned pending save. These remain within its existing bounded Terra/high lifecycle escalation.
+
+- **Real-service route checkpoint approved:** exact W12 `56fac9a11` two-file fixture integrated `5d88d8a03`. Actual final run passed populated snapshot and downloaded-row restoration with an independent same-user JWT, SHA integrity, cross-user denial, inactive names-only/payload-write-file denial, retained bytes after reactivation, and optimistic conflict. Final marker `cleanup=verified` follows process/port/container/network checks. Chef shell syntax/diff checks passed; owner actual service run evidence accepted. This is API/session verification, not dashboard browser acceptance. W12 downgraded to Terra/medium and awaits W07; no unrelated reruns.
+- Major checkpoint estimate: **69% overall / 95% initial release**. Fresh account meter **5% weekly used / 95% remaining** after refresh. No reset redeemed by Chef; scope and external provider gates unchanged.
