@@ -50,10 +50,14 @@ export async function stagePrivateImport(args: { userId: string; uploadId: strin
   const derivedPaths = args.chunkPaths.map((_path, ordinal) => `${uploadRecord.storage_prefix}/${ordinal}`);
   if (args.chunkPaths.some((path, ordinal) => path !== derivedPaths[ordinal])) throw new Error("Private import paths are not server-owned.");
   const chunks: Buffer[] = [];
+  let totalBytes = 0;
   for (const path of derivedPaths) {
     const downloaded = await client.storage.from(BUCKET).download(path);
     if (downloaded.error) throw downloaded.error;
-    chunks.push(Buffer.from(await downloaded.data.arrayBuffer()));
+    const chunk = Buffer.from(await downloaded.data.arrayBuffer());
+    if (!chunk.byteLength || chunk.byteLength > PRIVATE_IMPORT_CHUNK_BYTES || totalBytes + chunk.byteLength > uploadRecord.declared_max_bytes) throw new Error("Private import chunks exceed their reservation.");
+    totalBytes += chunk.byteLength;
+    chunks.push(chunk);
   }
   const body = Buffer.concat(chunks);
   if (body.byteLength > uploadRecord.declared_max_bytes) throw new Error("Normalized private import exceeds its reservation.");
@@ -63,7 +67,13 @@ export async function stagePrivateImport(args: { userId: string; uploadId: strin
   const hash = createHash("sha256").update(body).digest("hex");
   const finalPath = `draft-pro-imports/${args.uploadId}/normalized.json`;
   const finalUpload = await client.storage.from(BUCKET).upload(finalPath, body, { contentType: "application/json", upsert: false });
-  if (finalUpload.error && !/already exists/i.test(finalUpload.error.message)) throw finalUpload.error;
+  if (finalUpload.error) {
+    if (!/already exists/i.test(finalUpload.error.message)) throw finalUpload.error;
+    const existing = await client.storage.from(BUCKET).download(finalPath);
+    if (existing.error) throw existing.error;
+    const existingHash = createHash("sha256").update(Buffer.from(await existing.data.arrayBuffer())).digest("hex");
+    if (existingHash !== hash) throw new Error("Private import retry content differs from the existing staged object.");
+  }
   const staged = await row("stage_draft_pro_private_import_upload", { p_user_id: args.userId, p_upload_id: args.uploadId, p_chunk_paths: derivedPaths, p_actual_bytes: body.byteLength, p_row_count: rows.length, p_content_sha256: hash });
   if (staged.status !== "staged") throw new Error("Private import could not be staged.");
   return { importId: String(staged.upload_id), rowCount: rows.length, bytes: body.byteLength, hash };
