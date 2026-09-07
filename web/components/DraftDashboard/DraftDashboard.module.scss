@@ -205,3 +205,14 @@
     height: 650px;
   }
 }
+.scheduleScope {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 4px 8px;
+  font-size: 11px;
+  flex-shrink: 0;
+  select { min-height: 32px; font: inherit; }
+  small { flex-basis: 100%; }
+}

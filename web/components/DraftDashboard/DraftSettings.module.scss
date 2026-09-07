@@ -1841,3 +1841,11 @@
     animation: popIn 0.28s cubic-bezier(0.4, 0.8, 0.2, 1);
   }
 }
+.playoffWeeks {
+  display: grid;
+  gap: 8px;
+  margin-block: 16px;
+  min-width: 0;
+  select { width: 100%; max-width: 100%; padding: 8px; font: inherit; }
+  button { justify-self: start; min-height: 40px; }
+}
