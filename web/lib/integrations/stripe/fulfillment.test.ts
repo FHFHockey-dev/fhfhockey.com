@@ -1,13 +1,24 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { fulfillStripeEvent, verifyStripeCheckoutSession } from "./fulfillment";
+import { fulfillStripeEvent, verifyDraftProCheckoutSession, verifyStripeCheckoutSession } from "./fulfillment";
 
 function rpcClient(result = { purchase_id: "purchase-1", processed: true }) {
   const rpc = vi.fn().mockResolvedValue({ data: result, error: null });
   return { rpc } as any;
 }
+const stripe = { checkout: { sessions: { listLineItems: vi.fn().mockResolvedValue({ data: [{ quantity: 1, price: { id: "price_test", product: "prod_test", unit_amount: 599, currency: "usd" } }] }) } } } as any;
 
 describe("Stripe fulfillment", () => {
+  it("accepts exactly one configured price line item", async () => {
+    process.env.STRIPE_DRAFT_PRO_PRICE_ID = "price_test";
+    process.env.STRIPE_DRAFT_PRO_PRODUCT_ID = "prod_test";
+    const stripe = { checkout: { sessions: { listLineItems: vi.fn().mockResolvedValue({ data: [{ quantity: 1, price: { id: "price_test", product: "prod_test", unit_amount: 599, currency: "usd" } }] }) } } } as any;
+    const session = { id: "cs_test", mode: "payment", payment_status: "paid", amount_total: 599, currency: "usd", client_reference_id: "purchase-1", metadata: { draft_pro_user_id: "user-1", draft_pro_purchase_id: "purchase-1", draft_pro_season: "draft_pro_2026_27" } } as any;
+    await expect(verifyDraftProCheckoutSession(stripe, session)).resolves.toBe(true);
+    stripe.checkout.sessions.listLineItems.mockResolvedValue({ data: [{ quantity: 2, price: { id: "price_test", product: "prod_test", unit_amount: 599, currency: "usd" } }] });
+    await expect(verifyDraftProCheckoutSession(stripe, session)).resolves.toBe(false);
+  });
+
   it("sends a completed signed event to the single atomic fulfillment RPC", async () => {
     const client = rpcClient();
     const result = await fulfillStripeEvent({
@@ -31,7 +42,7 @@ describe("Stripe fulfillment", () => {
 
   it("uses a deterministic return event and only fulfills paid sessions", async () => {
     const client = rpcClient();
-    await verifyStripeCheckoutSession({ object: "checkout.session", id: "cs_test_123", created: 1_725_000_000, mode: "payment", payment_status: "paid", amount_total: 599, currency: "usd", client_reference_id: "purchase-1", payment_intent: "pi_123", metadata: { draft_pro_user_id: "user-1", draft_pro_purchase_id: "purchase-1", draft_pro_season: "draft_pro_2026_27" } } as any, client);
+    await verifyStripeCheckoutSession(stripe, { object: "checkout.session", id: "cs_test_123", created: 1_725_000_000, mode: "payment", payment_status: "paid", amount_total: 599, currency: "usd", client_reference_id: "purchase-1", payment_intent: "pi_123", metadata: { draft_pro_user_id: "user-1", draft_pro_purchase_id: "purchase-1", draft_pro_season: "draft_pro_2026_27" } } as any, client);
     expect(client.rpc).toHaveBeenCalledWith("record_draft_pro_stripe_event", expect.objectContaining({ p_event_id: "return:cs_test_123" }));
     await expect(verifyStripeCheckoutSession({ payment_status: "unpaid" } as any, client)).resolves.toEqual({ purchaseId: null, processed: false });
   });
