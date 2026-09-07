@@ -6,7 +6,7 @@ import { fulfillStripeProviderEvent } from "lib/integrations/stripe/fulfillment"
 export const config = { api: { bodyParser: false } };
 
 async function readRawBody(req: NextApiRequest) {
-  const chunks: Buffer[] = [];
+  const chunks: Uint8Array<ArrayBufferLike>[] = [];
   let size = 0;
   for await (const chunk of req) {
     const value = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
