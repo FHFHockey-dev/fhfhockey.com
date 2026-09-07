@@ -587,6 +587,34 @@ it("replaces stale CSV sources and weights with an embedded bookmark across relo
   });
 });
 
+it("rejects an embedded CSV bookmark when its tab storage cannot be replaced", async () => {
+  sessionStorage.setItem("draft.customCsvList.v3", JSON.stringify([{ id: "custom_csv_old", label: "Old", rows: [{ Name: "Old row" }] }]));
+  sessionStorage.setItem("draft.snapshot.v4", JSON.stringify({
+    ...record(),
+    csvMetadata: [{ id: "custom_csv_old", label: "Old" }],
+    sourceControls: { custom_csv_old: { isSelected: true, weight: 0.8 } },
+  }));
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+  render(<DraftDashboard />);
+  await waitFor(() => expect(JSON.parse(sessionStorage.getItem("draft.snapshot.v4")!).sourceControls.custom_csv_old.weight).toBe(0.8));
+  const before = sessionStorage.getItem("draft.snapshot.v4");
+  const setItem = Storage.prototype.setItem;
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+    if (key === "draft.customCsvList.v3") throw new DOMException("quota", "QuotaExceededError");
+    return setItem.call(this, key, value);
+  });
+  importBookmark({
+    ...record(),
+    csvMetadata: [{ id: "custom_csv_new", label: "New" }],
+    sourceControls: { custom_csv_new: { isSelected: true, weight: 0.4 } },
+    customCsvEntries: [{ id: "custom_csv_new", label: "New", rows: [{ Name: "New row" }] }],
+  });
+  expect(await screen.findByText(/could not be applied/i)).toBeTruthy();
+  expect(screen.queryByText("Draft bookmark imported.")).toBeNull();
+  expect(sessionStorage.getItem("draft.snapshot.v4")).toBe(before);
+  expect(sessionStorage.getItem("draft.customCsvList.v3")).toContain("Old row");
+});
+
 it("reports missing legacy v3 CSV metadata as recovery instead of import success", async () => {
   vi.spyOn(window, "confirm").mockReturnValue(true);
   render(<DraftDashboard />);

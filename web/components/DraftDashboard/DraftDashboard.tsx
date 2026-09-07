@@ -590,17 +590,21 @@ const DraftDashboard: React.FC = () => {
     [customCsvList, missingCsvMetadata],
   );
   const setCsvList = useCallback((next: SessionCsvEntry[]) => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined") return false;
     const validationError = validateCustomCsvEntries(next);
     if (validationError) {
       setCustomCsvSessionError(validationError);
-      return;
+      return false;
     }
     try {
-      setCustomCsvList(next);
       saveCustomCsvSession(next);
+      setCustomCsvList(next);
       setCustomCsvSessionError(null);
-    } catch {}
+      return true;
+    } catch {
+      setCustomCsvSessionError("Could not save imported projections in this tab. The current draft has not changed.");
+      return false;
+    }
   }, []);
 
   // Snapshot V2 will be defined after dependent state declarations
@@ -892,7 +896,8 @@ const DraftDashboard: React.FC = () => {
     setGoalieSourceControls(sourceControlDefaults.goalie);
     setMissingCsvMetadata([]);
     setCustomCsvLabel(undefined);
-    setCsvList([]);
+    setCustomCsvList([]);
+    setCustomCsvSessionError(null);
     setSettingsSaveError(null);
     setDataRefreshKey((key) => key + 1);
     try {
@@ -912,7 +917,7 @@ const DraftDashboard: React.FC = () => {
       window.sessionStorage.setItem("draft.resume.declined", "true");
       clearCustomCsvSession();
     } catch {}
-  }, [manualDraftingEnabled, setCsvList, sourceControlDefaults]);
+  }, [manualDraftingEnabled, sourceControlDefaults]);
 
   const loadSnapshot = useCallback((rawOverride?: string) => {
     if (typeof window === "undefined") return false;
@@ -929,6 +934,13 @@ const DraftDashboard: React.FC = () => {
         return false;
       }
       const snap = parsed.record;
+      const restoredCsvEntries = snap.customCsvEntries || getCsvList().filter(
+        (entry) => snap.csvMetadata.some((metadata) => metadata.id === entry.id),
+      );
+      if (!setCsvList(restoredCsvEntries)) {
+        setSettingsSaveError("Could not save imported projections in this tab. The current draft has not changed.");
+        return false;
+      }
       freshSessionRef.current = false;
       sessionStorage.removeItem("draft.resume.declined");
       recoveryWriteBlockedRef.current = false;
@@ -978,10 +990,6 @@ const DraftDashboard: React.FC = () => {
       setForwardGrouping(snap.forwardGrouping || "split");
       setPersonalizeReplacement(!!snap.personalizeReplacement);
       setGoaliePointValues(snap.goalieScoringCategories || getDefaultFantasyPointsConfig("goalie"));
-      const restoredCsvEntries = snap.customCsvEntries || getCsvList().filter(
-        (entry) => snap.csvMetadata.some((metadata) => metadata.id === entry.id),
-      );
-      setCsvList(restoredCsvEntries);
       const customSourceIds = Array.from(new Set([
         ...snap.csvMetadata.map((entry) => entry.id),
         ...restoredCsvEntries.map((entry) => entry.id),
@@ -3371,7 +3379,7 @@ const DraftDashboard: React.FC = () => {
           // Remove from session list and controls
           const list = getCsvList();
           const next = list.filter((e) => e.id !== id);
-          setCsvList(next);
+          if (!setCsvList(next)) return;
           setMissingCsvMetadata((previous) => previous.filter((source) => source.id !== id));
           setSourceControls((prev) => {
             const { [id]: _, ...rest } = prev;
@@ -3730,7 +3738,7 @@ const DraftDashboard: React.FC = () => {
               },
             },
           ];
-          setCsvList(next);
+          if (!setCsvList(next)) return;
           setMissingCsvMetadata((previous) => previous.filter((source) => source.id !== id));
           setPendingCsvReplacementId(null);
           // Add/enable the custom source control so it appears in settings (skater controls by default)
