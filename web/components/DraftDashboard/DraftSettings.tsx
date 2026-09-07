@@ -77,6 +77,8 @@ interface DraftSettingsProps {
   availableSkaterStatKeys?: string[];
   availableGoalieStatKeys?: string[];
   onExportCsv?: () => void;
+  exportCsvDisabled?: boolean;
+  exportCsvMessage?: string | null;
   onRemoveCustomSource?: (id: string) => void;
   pickOwnerOverrides?: Record<string, string>;
   pickTrades?: PickTradeEntry[];
@@ -148,6 +150,8 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
   availableSkaterStatKeys = [],
   availableGoalieStatKeys = [],
   onExportCsv,
+  exportCsvDisabled = false,
+  exportCsvMessage = null,
   onRemoveCustomSource,
   pickOwnerOverrides = {},
   pickTrades = [],
@@ -455,6 +459,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
         <button type="button" onClick={handleCreateBookmark}>Export</button>
       </div>}
       {tradeFeedback && <div className={styles.lockNotice} role={tradeFeedback.ok ? "status" : "alert"}>{tradeFeedback.message}<button type="button" aria-label="Dismiss settings message" onClick={() => setTradeFeedback(null)}>×</button></div>}
+      {exportCsvMessage && <div className={styles.lockNotice} role="alert">{exportCsvMessage}</div>}
       {draftLocked && (
         <div className={styles.lockNotice} role="status">
           {draftLockReason}
@@ -797,6 +802,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
                     console.error("Failed to export settings", e);
                   }
                 }}
+                disabled={onExportCsv && exportCsvDisabled}
                 data-testid="export-settings-btn"
                 title={
                   onExportCsv

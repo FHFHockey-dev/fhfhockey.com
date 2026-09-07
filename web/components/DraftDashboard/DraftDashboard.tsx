@@ -426,6 +426,7 @@ const DraftDashboard: React.FC = () => {
   );
   const { access: draftProAccess } = useDraftProAccess();
   const draftProEligible = Boolean(draftProAccess?.eligible);
+  const canUseProExport = Boolean(draftProAccess?.capabilities.includes("blended_csv"));
   const canUseProRecommendations = Boolean(
     draftProAccess?.capabilities.includes("recommendations"),
   );
@@ -502,6 +503,8 @@ const DraftDashboard: React.FC = () => {
   );
   // Multi-CSV rows live in memory with a versioned, tab-scoped fallback only.
   const [customCsvList, setCustomCsvList] = useState<SessionCsvEntry[]>([]);
+  const [exportCsvState, setExportCsvState] = useState<"idle" | "loading">("idle");
+  const [exportCsvMessage, setExportCsvMessage] = useState<string | null>(null);
   const getCsvList = useCallback(() => customCsvList, [customCsvList]);
   const setCsvList = useCallback((next: SessionCsvEntry[]) => {
     if (typeof window === "undefined") return;
@@ -2856,78 +2859,65 @@ const DraftDashboard: React.FC = () => {
     [currentPick, picksUntilNext],
   );
 
-  // --- CSV Export: Blended Projections ---
-  const exportBlendedProjectionsCsv = useCallback(() => {
-    try {
-      const players = allPlayers; // blended list already includes custom CSV players
-      if (!players.length) return;
-      // Collect all stat keys present
-      const statKeySet = new Set<string>();
-      players.forEach((p) => {
-        Object.keys(p.combinedStats || {}).forEach((k) => statKeySet.add(k));
-      });
-      const statKeys = Array.from(statKeySet).sort();
-
-      const headers = [
-        "playerId",
-        "fullName",
-        "team",
-        "positions",
-        "fantasyPointsProjected",
-        "fantasyPointsPerGame",
-        "yahooAvgPick",
-        "yahooAvgRound",
-        "yahooPctDrafted",
-        "projectedRank",
-        ...statKeys.map((k) => `${k}_proj`),
-      ];
-
-      const esc = (v: any) => {
-        if (v == null) return "";
-        const s = String(v);
-        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-      };
-
-      const lines: string[] = [headers.join(",")];
-      players.forEach((p) => {
-        const rowBase = [
-          p.playerId,
-          p.fullName,
-          p.displayTeam || "",
-          p.displayPosition || "",
-          p.fantasyPoints.projected ?? "",
-          p.fantasyPoints.projectedPerGame ?? "",
-          p.yahooAvgPick ?? "",
-          p.yahooAvgRound ?? "",
-          p.yahooPctDrafted ?? "",
-          p.projectedRank ?? "",
-        ];
-        const statVals = statKeys.map((k) => {
-          const v = (p.combinedStats as any)?.[k]?.projected;
-          return typeof v === "number" && Number.isFinite(v) ? v : "";
-        });
-        const row = [...rowBase, ...statVals].map(esc).join(",");
-        lines.push(row);
-      });
-
-      const blob = new Blob([lines.join("\n")], {
-        type: "text/csv;charset=utf-8",
-      });
-      const filename = `blended-projections-${players.length}players-${Date.now()}.csv`;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 0);
-    } catch (e) {
-      console.error("Failed to export projections CSV", e);
+  // --- CSV Export: server-formatted blended projections ---
+  const exportBlendedProjectionsCsv = useCallback(async () => {
+    setExportCsvMessage(null);
+    if (customCsvList.length) {
+      setExportCsvMessage("Save your private CSV to your account before exporting blended projections.");
+      return;
     }
-  }, [allPlayers]);
+    if (!canUseProExport) {
+      setExportCsvMessage("Blended projections export is available with Draft Pro.");
+      return;
+    }
+    if (!allPlayers.length) {
+      setExportCsvMessage("There are no projections available to export yet.");
+      return;
+    }
+    setExportCsvState("loading");
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) throw new Error("Sign in to export blended projections.");
+      const statKeys = Array.from(new Set(allPlayers.flatMap((player) => Object.keys(player.combinedStats || {})))).sort();
+      const rows = allPlayers.map((player) => ({
+        playerId: player.playerId,
+        fullName: player.fullName,
+        team: player.displayTeam || "",
+        positions: player.displayPosition || "",
+        fantasyPointsProjected: player.fantasyPoints.projected,
+        fantasyPointsPerGame: player.fantasyPoints.projectedPerGame,
+        yahooAvgPick: player.yahooAvgPick,
+        yahooAvgRound: player.yahooAvgRound,
+        yahooPctDrafted: player.yahooPctDrafted,
+        projectedRank: player.projectedRank,
+        ...Object.fromEntries(statKeys.map((key) => [`${key}_proj`, player.combinedStats[key]?.projected ?? null])),
+      }));
+      const sourceWeights = Object.fromEntries([
+        ...Object.entries(sourceControls || {}).filter(([, control]) => control.isSelected).map(([key, control]) => [key, control.weight]),
+        ...Object.entries(goalieSourceControls || {}).filter(([, control]) => control.isSelected).map(([key, control]) => [key, control.weight]),
+      ]);
+      const response = await fetch("/api/v1/draft-pro/export", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ season: currentSeasonId == null ? "unknown" : String(currentSeasonId), sourceWeights, scoring: { ...draftSettings.scoringCategories, ...goaliePointValues }, rows }),
+      });
+      if (!response.ok) throw new Error((await response.json().catch(() => null))?.error?.message || "Unable to create the CSV export.");
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "fhfhockey-blended-projections.csv";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setExportCsvMessage("Blended projections CSV downloaded.");
+    } catch (error) {
+      setExportCsvMessage(error instanceof Error ? error.message : "Unable to create the CSV export.");
+    } finally {
+      setExportCsvState("idle");
+    }
+  }, [allPlayers, canUseProExport, currentSeasonId, customCsvList.length, draftSettings.scoringCategories, goaliePointValues, goalieSourceControls, sourceControls]);
 
   const handleForwardGroupingChange = (mode: "split" | "fwd") => {
     const conflict = validateDraftSettings({ ...settingsValidationInput, forwardGrouping: mode }).errors.find(issue => issue.domain === "roster");
@@ -3160,6 +3150,8 @@ const DraftDashboard: React.FC = () => {
         availableSkaterStatKeys={availableSkaterStatKeys}
         availableGoalieStatKeys={availableGoalieStatKeys}
         onExportCsv={exportBlendedProjectionsCsv}
+        exportCsvDisabled={exportCsvState === "loading"}
+        exportCsvMessage={exportCsvMessage}
         onRemoveCustomSource={(id) => {
           // Remove from session list and controls
           const list = getCsvList();

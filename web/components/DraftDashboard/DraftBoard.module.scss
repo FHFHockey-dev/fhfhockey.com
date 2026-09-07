@@ -8,6 +8,37 @@
   padding: 8px 10px;
   background: v.$draft-surface;
 }
+.graphToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex: 0 0 auto;
+  min-height: 28px;
+}
+.graphTitle {
+  color: v.$text-primary;
+  font-size: 12px;
+  font-weight: 700;
+}
+.expandGraphButton {
+  min-height: 30px;
+  padding: 4px 9px;
+  border: 1px solid v.$draft-border;
+  border-radius: 4px;
+  background: v.$draft-surface-raised;
+  color: v.$text-primary;
+  cursor: pointer;
+}
+.expandedDraftBoard {
+  position: fixed;
+  inset: 12px;
+  z-index: 20;
+  min-height: 0;
+  padding: 14px;
+  border: 1px solid v.$draft-border;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+}
 .contributionSummary {
   color: v.$text-secondary;
   font-size: 11px;
