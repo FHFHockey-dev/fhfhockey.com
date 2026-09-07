@@ -111,15 +111,15 @@ create or replace function public.begin_draft_pro_private_import_upload(
   p_user_id uuid, p_save_session_id uuid, p_replacement_import_id uuid, p_declared_max_bytes integer, p_name text, p_content_type text, p_mapping jsonb
 ) returns table(status text, upload_id uuid, storage_prefix text, reserved_bytes integer, expires_at timestamptz)
 language plpgsql security definer set search_path = public, pg_temp as $$
-declare session_row public.draft_pro_save_sessions%rowtype; replacement public.draft_pro_private_imports%rowtype; reclaimable integer := 0; reservation integer; account_bytes bigint; pending_bytes bigint; cleanup_bytes bigint; source_id text; upload public.draft_pro_private_import_uploads%rowtype;
+declare session_row public.draft_pro_save_sessions%rowtype; replacement public.draft_pro_private_imports%rowtype; reclaimable integer := 0; reservation integer; account_bytes bigint; pending_bytes bigint; cleanup_bytes bigint; request_source_id text; upload public.draft_pro_private_import_uploads%rowtype;
 begin
   if p_user_id is null or p_declared_max_bytes not between 1 and 10485760 or p_name is null or char_length(btrim(p_name)) not between 1 and 160 or p_content_type not in ('text/csv','application/json') or p_mapping is null or jsonb_typeof(p_mapping)<>'object' or char_length(btrim(p_mapping->>'sourceId')) not between 1 and 200 then raise exception 'Invalid private import upload request'; end if;
-  source_id := btrim(p_mapping->>'sourceId');
+  request_source_id := btrim(p_mapping->>'sourceId');
   perform pg_advisory_xact_lock(hashtext('draft-pro-quota:' || p_user_id::text));
   update public.draft_pro_private_import_uploads as u set status = 'expired' where u.user_id = p_user_id and u.status in ('uploading', 'staged') and u.expires_at <= now();
   select s.* into session_row from public.draft_pro_save_sessions as s where s.id = p_save_session_id and s.user_id = p_user_id and s.status = 'pending' and s.expires_at > now() for update;
   if not found then raise exception 'Draft Pro save session is unavailable'; end if;
-  select u.* into upload from public.draft_pro_private_import_uploads as u where u.save_session_id=session_row.id and u.source_id=source_id and u.status in ('uploading','staged') for update;
+  select u.* into upload from public.draft_pro_private_import_uploads as u where u.save_session_id=session_row.id and u.source_id=request_source_id and u.status in ('uploading','staged') for update;
   if found then
     if upload.name=btrim(p_name) and upload.content_type=p_content_type and upload.mapping=p_mapping and upload.declared_max_bytes=p_declared_max_bytes and upload.replacement_import_id is not distinct from p_replacement_import_id then
       return query select upload.status,upload.id,upload.storage_prefix,upload.reserved_bytes,upload.expires_at; return;
@@ -139,7 +139,7 @@ begin
   select coalesce(sum(u.declared_max_bytes),0) into pending_bytes from public.draft_pro_private_import_uploads as u where u.user_id = p_user_id and (u.status in ('uploading','staged','expired') or (u.status='committed' and u.cleaned_at is null));
   if cleanup_bytes + pending_bytes + p_declared_max_bytes > 20971520 then raise exception 'Draft Pro temporary import cleanup quota exceeded'; end if;
   insert into public.draft_pro_private_import_uploads(user_id, save_session_id, replacement_import_id, name, content_type, mapping, source_id, declared_max_bytes, reserved_bytes, storage_prefix)
-  values (p_user_id, session_row.id, p_replacement_import_id, btrim(p_name), p_content_type, p_mapping, source_id, p_declared_max_bytes, reservation, '') returning * into upload;
+  values (p_user_id, session_row.id, p_replacement_import_id, btrim(p_name), p_content_type, p_mapping, request_source_id, p_declared_max_bytes, reservation, '') returning * into upload;
   update public.draft_pro_private_import_uploads set storage_prefix = 'draft-pro-import-staging/' || p_user_id::text || '/' || upload.id::text where id = upload.id returning * into upload;
   return query select 'ready', upload.id, upload.storage_prefix, upload.reserved_bytes, upload.expires_at;
 end;
