@@ -101,3 +101,67 @@ export async function installDraftProAuthenticatedFixtures(
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: accountResponse() }) }),
   );
 }
+
+export async function installDustMatrixFixtures(page: Page) {
+  await installDraftProFreeFixtures(page);
+  const skaters = Array.from({ length: 20 }, (_, index) => ({
+    player_id: 1001 + index,
+    Player_Name: `Matrix Player ${String(index + 1).padStart(2, "0")}`,
+    Team_Abbreviation: "AAA",
+    Position: index === 0 ? "C,RW" : "C",
+    Games_Played: 82,
+    Goals: 20 + index,
+    Assists: 35,
+    Points: 55 + index,
+    Shots_on_Goal: 180,
+  }));
+  const weeks = Array.from({ length: 27 }, (_, index) => {
+    const start = new Date(Date.UTC(2026, 9, 5 + index * 7));
+    const end = new Date(start);
+    end.setUTCDate(start.getUTCDate() + 6);
+    return { week: index + 1, start_date: start.toISOString().slice(0, 10), end_date: end.toISOString().slice(0, 10) };
+  });
+  await page.route("**/rest/v1/**", (route) => {
+    const table = decodeURIComponent(new URL(route.request().url()).pathname.split("/").pop() || "");
+    const data = table === "yahoo_matchup_weeks"
+      ? weeks
+      : table === "players"
+        ? skaters.map((player) => ({ id: player.player_id, fullName: player.Player_Name, position: player.Position, lastName: player.Player_Name.split(" ").at(-1) }))
+        : table.startsWith("PROJECTIONS_")
+          ? skaters
+          : [];
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(data) });
+  });
+  await page.route("**/api/v1/roster-schedule-optimizer/schedule**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ success: true, data: {
+        gameKey: "477", startWeek: 1, endWeek: 27, version: "fixture-v1",
+        freshness: { latestFetchedAt: new Date().toISOString(), oldestFetchedAt: new Date().toISOString(), rowCount: 27 },
+        games: weeks.map((week) => ({ source_game_id: `fixture-${week.week}`, game_date: week.start_date, game_status: "FUT", team_abbreviation: "AAA", week: week.week })),
+      } }),
+    }),
+  );
+  await page.route("**/api/v1/team/current", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([{ id: 1, name: "Fixture Team", abbreviation: "AAA", logo: "" }]) }));
+  await page.route("**/api/v1/schedule/**", (route) => {
+    const date = route.request().url().match(/schedule\/(\d{4}-\d{2}-\d{2})/)?.[1] || weeks[0].start_date;
+    const start = new Date(`${date}T00:00:00Z`);
+    const coveredDates = Array.from({ length: 7 }, (_, index) => {
+      const current = new Date(start);
+      current.setUTCDate(start.getUTCDate() + index);
+      return current.toISOString().slice(0, 10);
+    });
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ coveredDates, numGamesPerDay: [1, 0, 0, 0, 0, 0, 0], data: { 1: { MON: { id: Number(date.replaceAll("-", "")), season: 20262027, gameDate: date, gameType: 2, homeTeam: { id: 1 }, awayTeam: { id: 2 } } } } }) });
+  });
+  await page.addInitScript((draftedPlayers) => {
+    sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({
+      v: 2, configured: true, currentPick: draftedPlayers.length + 1, draftedPlayers,
+      draftSettings: {
+        teamCount: 2, draftOrder: ["Team 1", "Team 2"], draftOrderMode: "standard",
+        rosterConfig: { C: 1, LW: 0, RW: 0, D: 0, G: 0, utility: 0, bench: 20 },
+        playoffWeeks: [25, 26, 27], scheduleScope: "season",
+      },
+    }));
+  }, skaters.map((player, index) => ({ playerId: String(player.player_id), teamId: "Team 1", pickNumber: index + 1, round: 1, pickInRound: index + 1 })));
+}
