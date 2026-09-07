@@ -22,7 +22,7 @@ All tasks moved into the Draft Pro section. W01 active foundation; W12 released 
 - Base: 4476fb90f (octoberBranch); user checkout left unchanged.
 - Integration: codex/draft-pro at /Users/tim/.codex/worktrees/draft-pro-chef/fhfhockey.com
 - Yahoo one-time heartbeat: yahoo-draft-pro-readiness, September 11 09:00 Eastern.
-- Current status: W01 foundation/payment SQL and W03 Patreon locally approved; W05 recommendations approved. W02/W04/W12 active; W06 approved; W07–W10 queued; W11/W13 preparation approved; W12 SQL checkpoint approved. Historical entries below retain prior states.
+- Current status: W01 foundation/payment SQL and W03 Patreon locally approved; W05 recommendations approved. W02/W04 active; W06 approved; W12 mapping checkpoint approved; W07–W10 queued; W11/W13 preparation approved; W12 SQL checkpoint approved. Historical entries below retain prior states.
 - External checks pending: real Stripe/Patreon credentials and provider validation; isolated SQL/RLS verification passed. Never print secrets.
 
 Task registrations and Chef decisions follow below.
@@ -129,3 +129,9 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 
 - W06 APPROVED through30c679266; integratedba4608927/7b0c9695b/9b35ecfcd. Chef11tests and exact-file scopedTypeScript pass exit0. W06 idle Luna/medium.
 - RELEASED W12 bounded calculation/access integration fixtures at9b35ecfcd Terra/medium; tests/docs only, defects returned toowners, no redundant suite/fullbuild. Active W02(Sol/medium boundedproviderfixture),W04(Luna/medium),W12(Terra/medium).
+
+- W12 mappingcheckpoint657b0f524+6a85494e0 APPROVED/integrated:6tests pass usingactual inactiveStripe/refundedmetadata withpaidPatreon andpurchasepreservedthroughPatreonoutage. Readonlydependency symlink resolved absentVitest. W12 idle.
+- W02 provider5096e3819 matrix9tests approved scoped; exitSol, downgradedTerra/medium. Expiredrecovery d80b1ebef/0faa32145 partial, lifecyclematrix again omitted despite two focusedturns; boundedSol/medium for actual lifecyclehandlers/tests only, exit passreview thenTerra/medium.
+- W04 369f49fee returned missingemail requestID/accountemail/activation, retryoptionalfieldmapping, lazyResendinit, checkedemailstatewrites/idempotency, accountsummary/refundeligibility andPatreonactions. Terra/medium for coupledcorrection afterinitialLuna; nohighreasoning.
+
+- Chef verified official Link Checkout documentation https://docs.stripe.com/payments/link/checkout-link : enable Link inmerchantpaymentsettings; dynamicmethods omit payment_method_types, or explicitly include link. W02 current cardonly configuration needs explicit card+link or dynamicsetup plusoperatorcheck, no claimactualLinkUIverified.
