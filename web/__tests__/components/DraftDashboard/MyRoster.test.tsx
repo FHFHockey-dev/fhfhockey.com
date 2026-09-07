@@ -1,6 +1,7 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import type { ComponentProps } from "react";
+import DustMatrix from "../../../components/DraftDashboard/DustMatrix";
 import MyRoster from "../../../components/DraftDashboard/MyRoster";
 
 vi.mock("components/PlayerAutocomplete", () => ({ default: () => null }));
@@ -111,4 +112,23 @@ it("shows and explains the roster DUST rate", () => {
   expect(document.getElementById(tooltipId!)?.textContent).toContain(
     "Daily Unstartable Schedule Tax",
   );
+});
+
+
+it("pages a collapsed weekly DUST matrix and exposes exact game counts", () => {
+  const { container } = render(<DustMatrix state={{ status: "ready", stale: false, baseline: {
+    complete: true,
+    players: [{ playerId: "1", playerName: "Winger", benchGames: 1 }],
+    daily: [{ yahooWeek: 19, scheduledPlayerIds: ["1"], assignments: [], benchedPlayerIds: ["1"], unresolvedPlayers: [] }],
+  } } as any} weeks={Array.from({ length: 5 }, (_, i) => ({ week: 19 + i, start_date: "2027-02-01", end_date: "2027-02-14" }))} period="Playoffs" />);
+  const toggle = screen.getByRole("button", { name: /DUST dashboard/ });
+  expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  fireEvent.click(toggle);
+  expect(toggle.getAttribute("aria-expanded")).toBe("true");
+  const cell = screen.getByRole("button", { name: /Winger · Week 19.*1 scheduled, 0 startable, 1 benched/ });
+  fireEvent.focus(cell);
+  expect(screen.getByRole("status").textContent).toContain("1 benched");
+  fireEvent.click(screen.getByRole("button", { name: "Next weeks" }));
+  expect(screen.getByRole("columnheader", { name: "W23" })).toBeTruthy();
+  expect(screen.queryByRole("columnheader", { name: "W19" })).toBeNull();
 });

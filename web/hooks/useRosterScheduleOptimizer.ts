@@ -108,6 +108,7 @@ type UseRosterScheduleOptimizerInput = {
   gameKey?: string;
   startWeek?: number;
   endWeek?: number;
+  selectedWeeks?: readonly number[];
 };
 
 function playerValue(
@@ -201,6 +202,7 @@ export function useRosterScheduleOptimizer({
   gameKey = DEFAULT_YAHOO_GAME_KEY,
   startWeek = DEFAULT_START_WEEK,
   endWeek = DEFAULT_END_WEEK,
+  selectedWeeks: explicitSelectedWeeks,
 }: UseRosterScheduleOptimizerInput): RosterScheduleOptimizerState {
   const [schedule, setSchedule] = useState<ScheduleSuccess["data"] | null>(null);
   const [status, setStatus] = useState<RosterScheduleOptimizerState["status"]>(
@@ -273,11 +275,11 @@ export function useRosterScheduleOptimizer({
   );
   const selectedWeeks = useMemo(
     () =>
-      Array.from(
+      explicitSelectedWeeks ? [...explicitSelectedWeeks] : Array.from(
         { length: Math.max(0, endWeek - startWeek + 1) },
         (_, index) => startWeek + index,
       ),
-    [endWeek, startWeek],
+    [endWeek, startWeek, explicitSelectedWeeks],
   );
   const preparedSchedule = useMemo(
     () =>
