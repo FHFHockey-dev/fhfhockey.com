@@ -79,4 +79,15 @@ describe("DraftProPanel", () => {
     expect(await screen.findByText("Draft Pro access is confirmed.")).toBeTruthy();
     expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/v1/account/draft-pro/checkout/verify");
   });
+
+  it("keeps a no-URL checkout in its confirming state", async () => {
+    const inactiveAccount = { ...account, access: { ...account.access, eligible: false } };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: inactiveAccount }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ url: null, state: "confirming" }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<DraftProPanel />);
+    fireEvent.click(await screen.findByRole("button", { name: /Get Draft Pro/ }));
+    expect(await screen.findByText(/Refresh this page shortly to check access/i)).toBeTruthy();
+  });
 });

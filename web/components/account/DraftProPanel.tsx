@@ -153,10 +153,25 @@ export default function DraftProPanel() {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       const body = await response.json().catch(() => ({}));
-      if (!response.ok || typeof body.url !== "string") {
+      if (!response.ok) {
         throw new Error(body.error?.message ?? body.error ?? "Checkout could not be started.");
       }
-      window.location.assign(body.url);
+      if (typeof body.url === "string") {
+        window.location.assign(body.url);
+        return;
+      }
+      if (body.state === "waiting" || body.state === "confirming") {
+        setCheckoutState("confirming");
+        setFeedback("Your payment is still confirming. Refresh this page shortly to check access.");
+        setCheckoutLoading(false);
+        return;
+      }
+      if (body.alreadyPurchased) {
+        await loadAccount();
+        setCheckoutLoading(false);
+        return;
+      }
+      throw new Error("Checkout could not be started.");
     } catch (checkoutError) {
       setFeedback(checkoutError instanceof Error ? checkoutError.message : "Checkout could not be started.");
       setCheckoutLoading(false);
