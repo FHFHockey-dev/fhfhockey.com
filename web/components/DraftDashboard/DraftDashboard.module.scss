@@ -50,6 +50,12 @@
     display: none !important;
   }
 }
+
+.savedDraftsArea {
+  display: grid;
+  gap: 8px;
+  flex: 0 0 auto;
+}
 .setupPanel,
 .setupCore {
   min-width: 0;

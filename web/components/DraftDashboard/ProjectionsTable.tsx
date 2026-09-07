@@ -73,6 +73,7 @@ interface ProjectionsTableProps {
   emptyStateMessage?: string;
   personalRankByPlayerId?: Readonly<Record<string, number>>;
   dustInsights?: ReadonlyMap<string, DraftDashboardDustInsight>;
+  onFavoriteIdsChange?: (ids: string[]) => void;
 }
 
 type SortableField =
@@ -132,6 +133,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   personalRankByPlayerId = {},
   dustInsights,
   scheduleMetrics,
+  onFavoriteIdsChange,
 }) => {
   const hasPersonalRanks = Object.keys(personalRankByPlayerId).length > 0;
   const [sortField, setSortField] = useState<SortableField>("yahooAvgPick");
@@ -176,13 +178,25 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       );
     } catch {}
   }, [favoriteIds, favoritesOnly]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const refreshFavorites = () => {
+      try {
+        const parsed = JSON.parse(window.localStorage.getItem("projections.favorites") ?? "[]");
+        setFavoriteIds(new Set((Array.isArray(parsed) ? parsed : []).map(String)));
+      } catch {
+        setFavoriteIds(new Set());
+      }
+    };
+    window.addEventListener("draft-saved-favorites-changed", refreshFavorites);
+    return () => window.removeEventListener("draft-saved-favorites-changed", refreshFavorites);
+  }, []);
   const toggleFavorite = (id: string) => {
-    setFavoriteIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    const next = new Set(favoriteIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setFavoriteIds(next);
+    onFavoriteIdsChange?.(Array.from(next));
   };
   // Optional stat sort
   const [statSortKey, setStatSortKey] = useState<string>("");

@@ -21,6 +21,13 @@ describe("useSavedDrafts", () => {
     const { result } = renderHook(() => useSavedDrafts()); await act(async () => { await result.current.open("draft"); });
     expect(result.current.opened?.privateImports[0]).toMatchObject({ id: "import", sourceId: "custom_csv_1", name: "My CSV", mapping: imported.mapping, rows });
   });
+  it("can preview a draft without replacing the currently opened draft", async () => {
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(url.includes("/api/v1/account/draft-pro/drafts/") ? json({ data: { ...detail, id: url.includes("other") ? "other" : "draft", privateImports: [] } }) : json({ data: [] }))));
+    const { result } = renderHook(() => useSavedDrafts());
+    await act(async () => { await result.current.open("draft"); });
+    await act(async () => { await result.current.open("other", false); });
+    expect(result.current.opened?.id).toBe("draft");
+  });
   it("uploads normalized rows in bounded chunks, stages them, then commits the same attempt key", async () => {
     const calls: Array<{ url: string; init?: RequestInit }> = [];
     vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => {
@@ -116,8 +123,18 @@ describe("useSavedDrafts", () => {
   it("cancels a pending autosave when deleting the opened draft", async () => {
     vi.useFakeTimers(); const calls: Array<{ url: string; init?: RequestInit }> = [];
     vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => { calls.push({ url, init }); if (url.endsWith("/draft") && init?.method === "DELETE") return Promise.resolve(json({ data: undefined })); return Promise.resolve(json({ data: url.endsWith("/draft") ? { ...detail, privateImports: [] } : [] })); }));
-    const { result } = renderHook(() => useSavedDrafts()); await act(async () => { await result.current.open("draft"); result.current.autosave("draft", { name: "Draft", snapshot, accountSaveConsent: true }); await result.current.remove("draft", 1); vi.advanceTimersByTime(2_000); });
+    const { result } = renderHook(() => useSavedDrafts()); const pending = result.current.autosave("draft", { name: "Draft", snapshot, accountSaveConsent: true }).catch((cause) => cause); await act(async () => { await result.current.open("draft"); await result.current.remove("draft", 1); vi.advanceTimersByTime(2_000); }); await expect(pending).resolves.toMatchObject({ message: expect.stringMatching(/cancelled/) });
     expect(calls.some((call) => call.url.endsWith("/draft") && call.init?.method === "PUT")).toBe(false); vi.useRealTimers();
+  });
+  it("cancels an older debounce before an explicit save can commit newer local work", async () => {
+    vi.useFakeTimers(); const puts: RequestInit[] = [];
+    vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => { if (url.endsWith("/draft") && init?.method === "PUT") { puts.push(init); return Promise.resolve(json({ data: { ...detail, lockVersion: 2, privateImports: [] } })); } return Promise.resolve(json({ data: url.endsWith("/draft") ? { ...detail, privateImports: [] } : [] })); }));
+    const { result } = renderHook(() => useSavedDrafts()); await act(async () => { await result.current.open("draft"); });
+    const oldSnapshot = { ...snapshot, settings: { goalie: 1 } }; const newSnapshot = { ...snapshot, settings: { goalie: 3 } };
+    const cancelled = result.current.autosave("draft", { name: "Draft", snapshot: oldSnapshot, accountSaveConsent: false }).catch((cause) => cause);
+    await act(async () => { await result.current.saveNow("draft", { name: "Draft", snapshot: newSnapshot, accountSaveConsent: false }); vi.advanceTimersByTime(2_000); });
+    await expect(cancelled).resolves.toMatchObject({ message: expect.stringMatching(/cancelled/) });
+    expect(puts).toHaveLength(1); expect(JSON.parse(String(puts[0].body)).snapshot).toEqual(newSnapshot); vi.useRealTimers();
   });
   it("does not send a save with a new account token after session resolution", async () => {
     const fetchMock = vi.fn((..._args: Parameters<typeof fetch>) => Promise.resolve(json({ data: [] }))); vi.stubGlobal("fetch", fetchMock);
@@ -131,5 +148,15 @@ describe("useSavedDrafts", () => {
   it("cancels a pending open when the auth identity changes", async () => {
     let resolve!: (value: unknown) => void; const pending = new Promise((done) => { resolve = done; }); vi.stubGlobal("fetch", vi.fn((url: string) => url.endsWith("/draft") ? pending : Promise.resolve(json({ data: [] }))));
     const { result } = renderHook(() => useSavedDrafts()); const opening = result.current.open("draft"); (onAuthStateChange.mock.calls[0][0] as (event: string, session: null) => void)("SIGNED_OUT", null); resolve(json({ data: { ...detail, privateImports: [] } })); await expect(opening).rejects.toThrow("cancelled");
+  });
+  it("does not adopt a preview after the account identity changes", async () => {
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(json({ data: url.endsWith("/draft") ? { ...detail, privateImports: [] } : [] }))));
+    const { result } = renderHook(() => useSavedDrafts()); let preview: Awaited<ReturnType<typeof result.current.openPreview>>;
+    await act(async () => { preview = await result.current.openPreview("draft"); });
+    await act(async () => { (onAuthStateChange.mock.calls[0][0] as (event: string, session: null) => void)("SIGNED_OUT", null); });
+    const apply = vi.fn(() => true);
+    expect(result.current.adopt(preview!, apply)).toBe(false);
+    expect(apply).not.toHaveBeenCalled();
+    expect(result.current.opened).toBeNull();
   });
 });

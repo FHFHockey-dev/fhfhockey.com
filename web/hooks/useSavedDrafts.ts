@@ -8,6 +8,7 @@ export type SavedDraftSummary = { id: string; name: string; status: "active" | "
 type StoredImport = { id: string; name: string; mapping: unknown };
 type StoredDraftDetail = SavedDraftSummary & { snapshot: DraftProSnapshot; privateImports: StoredImport[] };
 export type SavedDraftDetail = SavedDraftSummary & { snapshot: DraftProSnapshot; privateImports: NormalizedPrivateImport[] };
+export type SavedDraftPreview = { detail: SavedDraftDetail; generation: number };
 export type SavedDraftConflict = { current?: SavedDraftSummary };
 export type SaveOptions = { name: string; snapshot: DraftProSnapshot; expectedVersion?: number; accountSaveConsent: boolean; privateImports?: readonly NormalizedPrivateImport[] };
 type Attempt = { signature: string; key: string; staged: Map<string, string> };
@@ -78,11 +79,13 @@ async function restoreImportChunks(draftId: string, metadata: StoredImport, curr
 
 export function useSavedDrafts() {
   const [drafts, setDrafts] = useState<SavedDraftSummary[]>([]); const [status, setStatus] = useState<"idle" | "loading" | "saving" | "saved" | "error">("idle"); const [error, setError] = useState<string | null>(null); const [conflictState, setConflict] = useState<SavedDraftConflict | null>(null); const [opened, setOpened] = useState<SavedDraftDetail | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null); const epoch = useRef(0); const generation = useRef(0); const openedRef = useRef<SavedDraftDetail | null>(null); const accountId = useRef<string | null>(null); const queue = useRef<Promise<unknown>>(Promise.resolve()); const active = useRef<Attempt | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null); const timerReject = useRef<((cause: Error) => void) | null>(null); const epoch = useRef(0); const generation = useRef(0); const openedRef = useRef<SavedDraftDetail | null>(null); const accountId = useRef<string | null>(null); const queue = useRef<Promise<unknown>>(Promise.resolve()); const active = useRef<Attempt | null>(null);
   const replaceOpened = (next: SavedDraftDetail | null) => { openedRef.current = next; setOpened(next); };
+  const cancelAutosave = useCallback(() => { if (timer.current) clearTimeout(timer.current); timer.current = null; timerReject.current?.(new Error("Saved draft save was cancelled.")); timerReject.current = null; }, []);
   const refresh = useCallback(async () => { const at = epoch.current; setStatus("loading"); setError(null); try { const next = await request<SavedDraftSummary[]>("/api/v1/account/draft-pro/drafts", undefined, () => at === epoch.current); if (at === epoch.current) { setDrafts(next); setStatus("idle"); } } catch (cause) { if (at === epoch.current) { setStatus("error"); setError(cause instanceof Error ? cause.message : "Saved Drafts are unavailable."); } } }, []);
-  useEffect(() => { void refresh(); void supabase.auth.getSession().then(({ data }) => { accountId.current = data.session?.user?.id ?? null; }); const subscription = supabase.auth.onAuthStateChange?.((event, session) => { const nextAccountId = session?.user?.id ?? null; if (nextAccountId === accountId.current && event !== "SIGNED_OUT") return; accountId.current = nextAccountId; epoch.current += 1; generation.current += 1; active.current = null; if (timer.current) clearTimeout(timer.current); timer.current = null; setDrafts([]); replaceOpened(null); setConflict(null); void refresh(); }).data.subscription; return () => { epoch.current += 1; generation.current += 1; active.current = null; if (timer.current) clearTimeout(timer.current); subscription?.unsubscribe(); }; }, [refresh]);
+  useEffect(() => { void refresh(); void supabase.auth.getSession().then(({ data }) => { accountId.current = data.session?.user?.id ?? null; }); const subscription = supabase.auth.onAuthStateChange?.((event, session) => { const nextAccountId = session?.user?.id ?? null; if (nextAccountId === accountId.current && event !== "SIGNED_OUT") return; accountId.current = nextAccountId; epoch.current += 1; generation.current += 1; active.current = null; cancelAutosave(); setDrafts([]); replaceOpened(null); setConflict(null); void refresh(); }).data.subscription; return () => { epoch.current += 1; generation.current += 1; active.current = null; cancelAutosave(); subscription?.unsubscribe(); }; }, [cancelAutosave, refresh]);
   const saveNow = useCallback((id: string | null, options: SaveOptions) => {
+    cancelAutosave();
     const requestedGeneration = generation.current;
     const run = async () => {
       if (requestedGeneration !== generation.current) throw new Error("Saved draft save was cancelled.");
@@ -103,31 +106,47 @@ export function useSavedDrafts() {
       } catch (cause) { if (current()) { setStatus("error"); setError(cause instanceof Error ? cause.message : "Could not save this draft."); setConflict((cause as Error & { conflict?: SavedDraftSummary }).conflict ? { current: (cause as Error & { conflict?: SavedDraftSummary }).conflict } : null); } throw cause; }
     };
     const next = queue.current.catch(() => undefined).then(run); queue.current = next; return next;
-  }, []);
-  const autosave = useCallback((id: string, options: SaveOptions) => { if (timer.current) clearTimeout(timer.current); timer.current = setTimeout(() => { void saveNow(id, options).catch(() => undefined); }, 2000); }, [saveNow]);
-  const open = useCallback(async (id: string) => {
-    if (timer.current) clearTimeout(timer.current);
+  }, [cancelAutosave]);
+  const autosave = useCallback((id: string, options: SaveOptions) => {
+    const requestedGeneration = generation.current;
+    cancelAutosave();
+    return new Promise<SavedDraftSummary>((resolve, reject) => {
+      timerReject.current = reject;
+      timer.current = setTimeout(() => { timer.current = null; timerReject.current = null; saveNow(id, options).then((saved) => requestedGeneration === generation.current ? resolve(saved) : reject(new Error("Saved draft save was cancelled.")), reject); }, 2000);
+    });
+  }, [cancelAutosave, saveNow]);
+  const openPreview = useCallback(async (id: string): Promise<SavedDraftPreview> => {
+    cancelAutosave();
     const at = ++generation.current; setStatus("loading"); setError(null); setConflict(null);
     try {
       const value = await request<StoredDraftDetail>(`/api/v1/account/draft-pro/drafts/${id}`, undefined, () => at === generation.current);
       const imports = await Promise.all(value.privateImports.map((entry) => restoreImportChunks(id, entry, () => at === generation.current)));
       if (at !== generation.current) throw new Error("Saved draft restore was cancelled.");
-      const restored: SavedDraftDetail = { ...value, privateImports: imports }; replaceOpened(restored); setStatus("idle"); return restored;
+      const restored: SavedDraftDetail = { ...value, privateImports: imports }; setStatus("idle"); return { detail: restored, generation: at };
     } catch (cause) { if (at === generation.current) { setStatus("error"); setError(cause instanceof Error ? cause.message : "Could not open this saved draft."); } throw cause; }
+  }, [cancelAutosave]);
+  const adopt = useCallback((preview: SavedDraftPreview, apply?: () => boolean) => {
+    if (preview.generation !== generation.current) return false;
+    if (apply && !apply()) return false;
+    if (preview.generation !== generation.current) return false;
+    replaceOpened(preview.detail);
+    setStatus("idle");
+    return true;
   }, []);
+  const open = useCallback(async (id: string, commit = true) => { const preview = await openPreview(id); if (commit && !adopt(preview)) throw new Error("Saved draft restore was cancelled."); return preview.detail; }, [adopt, openPreview]);
   const mutate = useCallback(async (id: string, init: RequestInit, deleted = false) => {
     const at = generation.current; setStatus("saving"); setError(null); setConflict(null);
     try {
       const saved = await request<SavedDraftSummary>(`/api/v1/account/draft-pro/drafts/${id}`, init, () => at === generation.current);
       if (at !== generation.current) return saved;
-      if (deleted) { setDrafts((all) => all.filter((draft) => draft.id !== id)); if (openedRef.current?.id === id) { generation.current += 1; active.current = null; if (timer.current) clearTimeout(timer.current); timer.current = null; replaceOpened(null); } }
+      if (deleted) { setDrafts((all) => all.filter((draft) => draft.id !== id)); if (openedRef.current?.id === id) { generation.current += 1; active.current = null; cancelAutosave(); replaceOpened(null); } }
       else { setDrafts((all) => [saved, ...all.filter((draft) => draft.id !== saved.id)]); if (openedRef.current?.id === saved.id) replaceOpened({ ...openedRef.current, ...saved }); }
       setStatus("saved"); return saved;
     } catch (cause) { if (at === generation.current) { setStatus("error"); setError(cause instanceof Error ? cause.message : "Could not update this saved draft."); setConflict((cause as Error & { conflict?: SavedDraftSummary }).conflict ? { current: (cause as Error & { conflict?: SavedDraftSummary }).conflict } : null); } throw cause; }
-  }, []);
+  }, [cancelAutosave]);
   const rename = useCallback((id: string, name: string, expectedVersion: number) => mutate(id, { method: "PATCH", body: JSON.stringify({ action: "rename", name, expectedVersion }) }), [mutate]);
   const duplicate = useCallback((id: string, name: string, expectedVersion: number) => mutate(id, { method: "POST", body: JSON.stringify({ action: "duplicate", name, expectedVersion }) }), [mutate]);
   const remove = useCallback((id: string, expectedVersion: number) => mutate(id, { method: "DELETE", body: JSON.stringify({ expectedVersion }) }, true), [mutate]);
-  const reloadConflict = useCallback(async () => conflictState?.current ? open(conflictState.current.id) : null, [conflictState, open]); const saveAsAnother = useCallback((options: SaveOptions, name: string) => saveNow(null, { ...options, name, expectedVersion: undefined }), [saveNow]);
-  return { drafts, status, error, conflict: conflictState, opened, refresh, saveNow, autosave, open, rename, duplicate, remove, reloadConflict, saveAsAnother };
+  const reloadConflict = useCallback(async () => conflictState?.current ? openPreview(conflictState.current.id) : null, [conflictState, openPreview]); const saveAsAnother = useCallback((options: SaveOptions, name: string) => saveNow(null, { ...options, name, expectedVersion: undefined }), [saveNow]);
+  return { drafts, status, error, conflict: conflictState, opened, refresh, saveNow, autosave, cancelAutosave, open, openPreview, adopt, rename, duplicate, remove, reloadConflict, saveAsAnother };
 }

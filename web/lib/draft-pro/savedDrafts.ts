@@ -60,6 +60,10 @@ export type NormalizedPrivateImport = {
   sourceId: string;
 };
 
+export function parseBrowserSnapshot(browserSnapshot: BrowserDraftSnapshot) {
+  return browserSnapshotSchema.parse(browserSnapshot);
+}
+
 export function privateImportBytes(imports: readonly NormalizedPrivateImport[]) {
   return new TextEncoder().encode(JSON.stringify(imports.map((entry) => ({
     name: entry.name,
@@ -179,6 +183,5 @@ export function restoreBrowserSnapshot(snapshot: DraftProSnapshot, imports: read
     espnLeagueOverride: preferences.espnLeagueOverride,
     preserveExactCategoryWeights: preferences.preserveExactCategoryWeights,
     configured: settings.configured,
-    schemaVersion: DRAFT_PRO_SCHEMA_VERSION,
   };
 }

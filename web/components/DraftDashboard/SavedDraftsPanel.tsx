@@ -15,6 +15,10 @@ type Props = {
   onDelete(id: string, expectedVersion: number): void;
   onReloadConflict?(): void;
   onSaveAsAnother?(): void;
+  onRefresh?(): void;
+  privateImportsDirty?: boolean;
+  privateImportError?: string | null;
+  onSaveChanges?(): void;
   /** Optional controlled workspace annotations surface for W07 integration. */
   players?: readonly SavedDraftAnnotationPlayer[];
   openedWorkspaceAnnotations?: SavedDraftAnnotations;
@@ -32,7 +36,7 @@ export type SavedDraftAnnotations = Readonly<{
 const MAX_NAME_LENGTH = 120;
 
 /** Focused, lazy-mountable composition surface; dashboard ownership stays W07. */
-export function SavedDraftsPanel({ eligible, drafts, status, error, onOpen, onSave, onRename, onDuplicate, onDelete, onReloadConflict, onSaveAsAnother, players, openedWorkspaceAnnotations, onAnnotationsChange }: Props) {
+export function SavedDraftsPanel({ eligible, drafts, status, error, onOpen, onSave, onRename, onDuplicate, onDelete, onReloadConflict, onSaveAsAnother, onRefresh, privateImportsDirty, privateImportError, onSaveChanges, players, openedWorkspaceAnnotations, onAnnotationsChange }: Props) {
   const [name, setName] = useState("");
   const [renameNames, setRenameNames] = useState<Record<string, string>>({});
   const saveName = name.trim();
@@ -45,7 +49,9 @@ export function SavedDraftsPanel({ eligible, drafts, status, error, onOpen, onSa
   return <section className={styles.panel} aria-label="Saved Drafts">
     <div className={styles.heading}><h2>Saved Drafts</h2>{eligible ? <div className={styles.saveControls}><label htmlFor="new-saved-draft-name">Name</label><input id="new-saved-draft-name" value={name} maxLength={MAX_NAME_LENGTH} onChange={(event) => setName(event.target.value)} placeholder="Draft name" /><button type="button" onClick={() => onSave(saveName)} disabled={status === "saving" || !saveName}>Save to account</button><span className={styles.privateImportHint}>Private imports upload only when you explicitly save to your account.</span></div> : null}</div>
     <p className={styles.status} role="status">{!eligible ? "Draft Pro is inactive. Saved draft names remain available below, but account actions are locked; local saving continues in this browser." : status === "saving" ? "Saving to account…" : status === "saved" ? "Saved to account." : "Cloud autosave waits two seconds after changes. Local saving remains immediate."}</p>
-    {error ? <p className={styles.error} role="alert">{error}</p> : null}
+    {eligible && privateImportsDirty ? <p className={styles.privateImportHint}>Save changes to upload new or changed private imports.<button type="button" onClick={onSaveChanges} disabled={status === "saving"}>Save changes to account</button></p> : null}
+    {privateImportError ? <p className={styles.error} role="alert">{privateImportError} Re-import the CSV before saving it to an account draft.</p> : null}
+    {error ? <p className={styles.error} role="alert">{error}{onRefresh ? <button type="button" onClick={onRefresh} disabled={status === "loading" || status === "saving"}>Retry</button> : null}</p> : null}
     {error && onReloadConflict && onSaveAsAnother ? <p><button type="button" onClick={onReloadConflict} disabled={!eligible || status === "saving"}>Reload saved version</button><button type="button" onClick={onSaveAsAnother} disabled={!eligible || status === "saving"}>Save as another draft</button></p> : null}
     <ul className={styles.list}>{drafts.map((draft) => <li key={draft.id}>
       <button type="button" onClick={() => onOpen(draft.id)} disabled={!eligible}>{draft.name}</button><span>{new Date(draft.updatedAt).toLocaleString()}</span>

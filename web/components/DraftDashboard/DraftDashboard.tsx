@@ -29,6 +29,8 @@ import DraftStatus from "./DraftStatus";
 import LeagueStandings from "./LeagueStandings";
 import MyRoster from "./MyRoster";
 import DustMatrix from "./DustMatrix";
+import SavedDraftsWorkspace from "./SavedDraftsWorkspace";
+import type { SavedDraftAnnotations } from "./SavedDraftsPanel";
 import ProjectionsTable from "./ProjectionsTable";
 import { useVORPCalculations } from "hooks/useVORPCalculations";
 import { useDraftProAccess } from "hooks/useDraftProAccess";
@@ -66,6 +68,13 @@ import {
   saveSourceControlPreferences,
   sanitizeControls,
 } from "lib/draftDashboard/sourceControlPreferences";
+import {
+  parseBrowserSnapshot,
+  restoreBrowserSnapshot,
+  serializeSavedDraft,
+  toNormalizedPrivateImports,
+  type BrowserDraftSnapshot,
+} from "lib/draft-pro/savedDrafts";
 import {
   calculateSourceRankImpacts,
   rankProjectionPlayers,
@@ -138,6 +147,15 @@ import styles from "./DraftDashboard.module.scss";
 
 const EMPTY_PROJECTION_STYLES: Record<string, string> = {};
 const NOOP_PROJECTION_TOGGLE = () => {};
+const readStoredFavoriteIds = (): string[] => {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem("projections.favorites") ?? "[]");
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+};
 
 // Data Models from PRD
 export interface DraftSettings {
@@ -503,6 +521,14 @@ const DraftDashboard: React.FC = () => {
   }, [mobileWorkspaceEnabled, activeMobileTab]);
   const [suggestedCompareIds, setSuggestedCompareIds] = useState<string[]>([]);
   const [suggestedCompareOpen, setSuggestedCompareOpen] = useState(false);
+  const [savedDraftsOpen, setSavedDraftsOpen] = useState(false);
+  const [savedDraftsMounted, setSavedDraftsMounted] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(readStoredFavoriteIds);
+  const [workspaceAnnotations, setWorkspaceAnnotations] = useState<SavedDraftAnnotations>({
+    selectedPlayerId: null,
+    notes: [],
+    tiers: {},
+  });
 
   // Import CSV modal state
   const [isImportCsvOpen, setIsImportCsvOpen] = useState(false);
@@ -621,6 +647,9 @@ const DraftDashboard: React.FC = () => {
       { isSelected: boolean; weight: number }
     >;
     customCsvList: SessionCsvEntry[];
+    favorites?: (string | number)[];
+    notes?: readonly { readonly id: string; readonly text: string }[];
+    tiers?: Record<string, string>;
     fantraxLeagueOverride?: DraftFantraxSelection | null;
     espnLeagueOverride?: EspnLeagueSelection | null;
     preserveExactCategoryWeights?: boolean;
@@ -651,6 +680,9 @@ const DraftDashboard: React.FC = () => {
       sourceControls,
       goalieSourceControls,
       customCsvList: getCsvList(),
+      favorites: favoriteIds,
+      notes: workspaceAnnotations.notes,
+      tiers: workspaceAnnotations.tiers,
       fantraxLeagueOverride,
       espnLeagueOverride,
       preserveExactCategoryWeights,
@@ -688,15 +720,12 @@ const DraftDashboard: React.FC = () => {
     fantraxLeagueOverride,
     espnLeagueOverride,
     preserveExactCategoryWeights,
+    workspaceAnnotations,
+    favoriteIds,
   ]);
 
-  const loadSnapshot = useCallback(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      const raw = sessionStorage.getItem("draft.snapshot.v2");
-      if (!raw) return false;
-      const snap = JSON.parse(raw) as DraftSnapshotV2;
-      if (snap.v !== 2) return false;
+  const prepareSnapshot = useCallback((snap: DraftSnapshotV2) => {
+    if (snap.v !== 2) throw new Error("Unsupported draft snapshot.");
       const restoredSettings = normalizeDraftSettingsOrder({
         ...DEFAULT_DRAFT_SETTINGS,
         ...snap.draftSettings,
@@ -707,18 +736,15 @@ const DraftDashboard: React.FC = () => {
             ? snap.draftSettings.customSourceMinimumCoverage
             : 25,
       }, snap.isSnakeDraft ?? true);
-      setDraftSettings(restoredSettings);
-      setSettingsConfigured(snap.configured !== false);
       const restoredKeepers = migrateKeeperEntries(
         snap.keepers,
         snap.draftSettings?.teamCount || DEFAULT_DRAFT_SETTINGS.teamCount,
       );
-      setKeepers(restoredKeepers);
-      setManualDraftedPlayers(
-        materializeKeeperPicks(snap.draftedPlayers || [], restoredKeepers),
+      const restoredDraftedPlayers = materializeKeeperPicks(
+        snap.draftedPlayers || [], restoredKeepers,
       );
-      setPickTrades(
-        migratePickTrades(snap.pickTrades ?? snap.pickOwnerOverrides, {
+      const restoredPickTrades = migratePickTrades(
+        snap.pickTrades ?? snap.pickOwnerOverrides, {
           draftOrder: restoredSettings.draftOrder,
           roundCount: rosterRoundCount(restoredSettings.rosterConfig),
           orderPattern: normalizeDraftOrderPattern(
@@ -729,46 +755,114 @@ const DraftDashboard: React.FC = () => {
             rosterRoundCount(restoredSettings.rosterConfig),
             snap.isSnakeDraft ?? true,
           ),
-        }),
+        },
       );
-      setPositionOverrides(snap.positionOverrides || {});
-      setCustomTeamNames(snap.customTeamNames || {});
-      setCurrentPick(snap.currentPick || 1);
-      setMyTeamId(snap.myTeamId || "Team 1");
-      setBaselineMode(snap.baselineMode || "remaining");
-      setNeedWeightEnabled(!!snap.needWeightEnabled);
-      setNeedAlpha(typeof snap.needAlpha === "number" ? snap.needAlpha : 0.5);
-      setForwardGrouping(snap.forwardGrouping || "split");
-      setPersonalizeReplacement(!!snap.personalizeReplacement);
-      setGoaliePointValues(
-        snap.goaliePointValues || getDefaultFantasyPointsConfig("goalie"),
-      );
+      const customCsvList = Array.isArray(snap.customCsvList) ? snap.customCsvList : [];
       const customSourceIds = Array.isArray(snap.customCsvList)
         ? snap.customCsvList.map((entry: SessionCsvEntry) => entry.id)
         : [];
-      setSourceControls(
-        sanitizeControls(sourceControlDefaults.skater, snap.sourceControls, customSourceIds),
-      );
-      setGoalieSourceControls(
-        sanitizeControls(sourceControlDefaults.goalie, snap.goalieSourceControls, customSourceIds),
-      );
-      setFantraxLeagueOverride(snap.fantraxLeagueOverride ?? null);
-      setEspnLeagueOverride(snap.espnLeagueOverride ?? null);
-      setPreserveExactCategoryWeights(
-        snap.preserveExactCategoryWeights === true ||
+      const restoredSourceControls = sanitizeControls(sourceControlDefaults.skater, snap.sourceControls, customSourceIds);
+      const restoredGoalieSourceControls = sanitizeControls(sourceControlDefaults.goalie, snap.goalieSourceControls, customSourceIds);
+      const preserveExactCategoryWeights = snap.preserveExactCategoryWeights === true ||
           Boolean(
             (snap.fantraxLeagueOverride || snap.espnLeagueOverride) &&
               snap.draftSettings?.leagueType === "categories",
-          ),
-      );
-      if (Array.isArray(snap.customCsvList)) setCsvList(snap.customCsvList);
-      restoredLeagueSettingsRef.current = true;
-      manualLeagueSettingsDirtyRef.current = true;
+          );
+      const nextFavorites = Array.isArray(snap.favorites) ? snap.favorites.map(String) : favoriteIds;
+      const browser: BrowserDraftSnapshot = {
+        v: 2,
+        draftSettings: restoredSettings as unknown as Record<string, unknown>,
+        draftedPlayers: restoredDraftedPlayers as BrowserDraftSnapshot["draftedPlayers"],
+        keepers: restoredKeepers as BrowserDraftSnapshot["keepers"],
+        pickOwnerOverrides: snap.pickOwnerOverrides || {},
+        pickTrades: restoredPickTrades as BrowserDraftSnapshot["pickTrades"],
+        positionOverrides: snap.positionOverrides || {}, customTeamNames: snap.customTeamNames || {},
+        currentPick: snap.currentPick || 1, isSnakeDraft: snap.isSnakeDraft ?? true, myTeamId: snap.myTeamId || "Team 1",
+        baselineMode: snap.baselineMode || "remaining", needWeightEnabled: !!snap.needWeightEnabled,
+        needAlpha: typeof snap.needAlpha === "number" ? snap.needAlpha : 0.5,
+        forwardGrouping: snap.forwardGrouping || "split", personalizeReplacement: !!snap.personalizeReplacement,
+        goaliePointValues: snap.goaliePointValues || getDefaultFantasyPointsConfig("goalie"),
+        sourceControls: restoredSourceControls, goalieSourceControls: restoredGoalieSourceControls,
+        customCsvList: customCsvList as BrowserDraftSnapshot["customCsvList"], favorites: nextFavorites,
+        notes: [...(snap.notes ?? [])], tiers: snap.tiers ?? {}, fantraxLeagueOverride: snap.fantraxLeagueOverride ?? null,
+        espnLeagueOverride: snap.espnLeagueOverride ?? null, preserveExactCategoryWeights, configured: snap.configured !== false,
+      };
+      return { browser, apply: () => {
+        setDraftSettings(restoredSettings); setSettingsConfigured(snap.configured !== false); setKeepers(restoredKeepers);
+        setManualDraftedPlayers(restoredDraftedPlayers); setPickTrades(restoredPickTrades); setPositionOverrides(snap.positionOverrides || {});
+        setCustomTeamNames(snap.customTeamNames || {}); setCurrentPick(snap.currentPick || 1); setMyTeamId(snap.myTeamId || "Team 1");
+        setBaselineMode(snap.baselineMode || "remaining"); setNeedWeightEnabled(!!snap.needWeightEnabled);
+        setNeedAlpha(typeof snap.needAlpha === "number" ? snap.needAlpha : 0.5); setForwardGrouping(snap.forwardGrouping || "split");
+        setPersonalizeReplacement(!!snap.personalizeReplacement); setGoaliePointValues(snap.goaliePointValues || getDefaultFantasyPointsConfig("goalie"));
+        setSourceControls(restoredSourceControls); setGoalieSourceControls(restoredGoalieSourceControls);
+        setFantraxLeagueOverride(snap.fantraxLeagueOverride ?? null); setEspnLeagueOverride(snap.espnLeagueOverride ?? null);
+        setPreserveExactCategoryWeights(preserveExactCategoryWeights); setCsvList(customCsvList);
+        setWorkspaceAnnotations({ selectedPlayerId: null, notes: [...(snap.notes ?? [])], tiers: snap.tiers ?? {} });
+        setFavoriteIds(nextFavorites);
+        try { window.localStorage.setItem("projections.favorites", JSON.stringify(nextFavorites)); } catch {}
+        window.dispatchEvent(new CustomEvent("draft-saved-favorites-changed"));
+        restoredLeagueSettingsRef.current = true; manualLeagueSettingsDirtyRef.current = true;
+      } };
+  }, [favoriteIds, setCsvList, sourceControlDefaults]);
+
+  const loadSnapshot = useCallback(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const raw = sessionStorage.getItem("draft.snapshot.v2");
+      if (!raw) return false;
+      const prepared = prepareSnapshot(JSON.parse(raw) as DraftSnapshotV2);
+      prepared.apply();
       return true;
     } catch {
       return false;
     }
-  }, [setCsvList, sourceControlDefaults]);
+  }, [prepareSnapshot]);
+
+  const getSavedBrowserSnapshot = useCallback((): BrowserDraftSnapshot => ({
+    v: 2,
+    draftSettings: draftSettings as unknown as Record<string, unknown>,
+    draftedPlayers: manualDraftedPlayers as unknown as BrowserDraftSnapshot["draftedPlayers"],
+    keepers: keepers as unknown as BrowserDraftSnapshot["keepers"],
+    pickOwnerOverrides,
+    pickTrades: pickTrades as unknown as BrowserDraftSnapshot["pickTrades"],
+    positionOverrides,
+    customTeamNames,
+    currentPick,
+    isSnakeDraft,
+    myTeamId,
+    baselineMode,
+    needWeightEnabled,
+    needAlpha,
+    forwardGrouping,
+    personalizeReplacement,
+    goaliePointValues,
+    sourceControls,
+    goalieSourceControls,
+    customCsvList: customCsvList as BrowserDraftSnapshot["customCsvList"],
+    favorites: favoriteIds,
+    notes: [...workspaceAnnotations.notes],
+    tiers: workspaceAnnotations.tiers,
+    fantraxLeagueOverride,
+    espnLeagueOverride,
+    preserveExactCategoryWeights,
+    configured: settingsConfigured,
+  }), [customCsvList, currentPick, draftSettings, espnLeagueOverride, fantraxLeagueOverride, favoriteIds, forwardGrouping, goaliePointValues, goalieSourceControls, isSnakeDraft, keepers, manualDraftedPlayers, myTeamId, needAlpha, needWeightEnabled, pickOwnerOverrides, pickTrades, positionOverrides, preserveExactCategoryWeights, sourceControls, customTeamNames, settingsConfigured, baselineMode, personalizeReplacement, workspaceAnnotations]);
+
+  const applySavedBrowserSnapshot = useCallback((snapshot: BrowserDraftSnapshot) => {
+    try {
+      const validated = parseBrowserSnapshot(snapshot);
+      // Validate the same canonical round trip used by cloud restores before
+      // writing the session or touching live dashboard state.
+      const imports = toNormalizedPrivateImports(validated.customCsvList as SessionCsvEntry[]);
+      const restored = restoreBrowserSnapshot(serializeSavedDraft(validated), imports) as BrowserDraftSnapshot;
+      const prepared = prepareSnapshot({ ...restored, ts: Date.now() } as DraftSnapshotV2);
+      sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({ ...prepared.browser, ts: Date.now() }));
+      prepared.apply();
+      return prepared.browser;
+    } catch {
+      return false;
+    }
+  }, [prepareSnapshot]);
 
   // On mount: offer to resume snapshot
   useEffect(() => {
@@ -3053,6 +3147,7 @@ const DraftDashboard: React.FC = () => {
             scheduleMetrics={draftSchedule.playerMetrics}
             dustInsights={canUseProDust ? draftProDustInsights : undefined}
             emptyStateMessage={projectionEmptyStateMessage}
+            onFavoriteIdsChange={setFavoriteIds}
           />
   ), [
     currentSeasonId, availablePlayers, allPlayers, draftedPlayers,
@@ -3065,7 +3160,7 @@ const DraftDashboard: React.FC = () => {
     goaliePointValues, skaterData.yahooMappingDiagnostics,
     goalieData.yahooMappingDiagnostics, sourceRankImpacts,
     skaterData.inclusionDiagnostics, goalieData.inclusionDiagnostics,
-    draftSchedule.playerMetrics, tableDataNotices, canUseProDust, draftProDustInsights, projectionEmptyStateMessage,
+    draftSchedule.playerMetrics, tableDataNotices, canUseProDust, draftProDustInsights, projectionEmptyStateMessage, setFavoriteIds,
   ]);
 
   return (
@@ -3109,6 +3204,19 @@ const DraftDashboard: React.FC = () => {
           setSettingsOpen(tab === "setup");
         }}
       />
+
+      <section className={styles.savedDraftsArea} aria-label="Saved Drafts controls">
+        <button type="button" onClick={() => { setSavedDraftsMounted(true); setSavedDraftsOpen((open) => !open); }} aria-expanded={savedDraftsOpen}>
+          {savedDraftsOpen ? "Hide Saved Drafts" : "Saved Drafts"}
+        </button>
+        {savedDraftsMounted ? <div hidden={!savedDraftsOpen}><SavedDraftsWorkspace
+          getBrowserSnapshot={getSavedBrowserSnapshot}
+          applyBrowserSnapshot={applySavedBrowserSnapshot}
+          players={allPlayers.map((player) => ({ id: String(player.playerId), name: player.fullName }))}
+          annotations={workspaceAnnotations}
+          onAnnotationsChange={setWorkspaceAnnotations}
+        /></div> : null}
+      </section>
 
       <DraftSettingsShell
         settings={draftSettings}
