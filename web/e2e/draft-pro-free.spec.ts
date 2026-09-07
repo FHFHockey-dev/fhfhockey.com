@@ -16,10 +16,15 @@ test("free manual draft preserves a favorite and local snapshot", async ({ page 
   await expect(players.locator("tbody tr").first()).toBeVisible({ timeout: 60_000 });
   await page.getByLabel("Position filter").selectOption("G");
   const row = players.locator("tbody tr").first();
+  const playerId = await row.getAttribute("data-player-id");
+  expect(playerId).not.toBeNull();
   await row.getByRole("button", { name: /^Favorite / }).click();
+  await expect(row.getByRole("button", { name: /^Unfavorite / })).toBeVisible();
   await row.getByRole("button", { name: "Draft", exact: true }).click();
   await expect.poll(() => page.evaluate(() =>
     JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").draftedPlayers?.length,
   )).toBe(1);
-  await expect(row.getByRole("button", { name: /^Unfavorite / })).toBeVisible();
+  await expect.poll(() => page.evaluate(() =>
+    JSON.parse(localStorage.getItem("projections.favorites") || "[]"),
+  )).toContain(String(playerId));
 });
