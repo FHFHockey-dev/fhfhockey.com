@@ -9,6 +9,9 @@ export type UseDraftProDustState = {
   error: string | null;
 };
 
+export const DRAFT_PRO_DUST_PRIVATE_IMPORT_SAVE_REQUIRED =
+  "Save this private import to your account before using it for DUST.";
+
 export type DraftProDustRequestInput = Omit<DraftProDustInput, "schedule"> & {
   gameKey: string;
   startWeek: number;
@@ -18,7 +21,8 @@ export type DraftProDustRequestInput = Omit<DraftProDustInput, "schedule"> & {
 /** Adapter only: debounce and abort stale premium calculations; it owns no formulas. */
 export function useDraftProDust(input: DraftProDustRequestInput | null, enabled: boolean): UseDraftProDustState {
   const [state, setState] = useState<UseDraftProDustState>({ status: "idle", result: null, error: null });
-  const body = useMemo(() => input ? JSON.stringify({
+  const privateImportSaveRequired = input?.inputOrigin === "private_import" && !input.privateImportAccountSaved;
+  const body = useMemo(() => input && !privateImportSaveRequired ? JSON.stringify({
     season: input.season,
     lineupMode: input.lineupMode,
     sort: input.sort,
@@ -30,9 +34,17 @@ export function useDraftProDust(input: DraftProDustRequestInput | null, enabled:
     roster: input.roster,
     candidates: input.candidates,
     rosterSlots: input.rosterSlots,
-  }) : null, [input]);
+  }) : null, [input, privateImportSaveRequired]);
 
   useEffect(() => {
+    if (privateImportSaveRequired) {
+      setState({
+        status: "error",
+        result: null,
+        error: DRAFT_PRO_DUST_PRIVATE_IMPORT_SAVE_REQUIRED,
+      });
+      return;
+    }
     if (!enabled || !body) {
       setState({ status: "idle", result: null, error: null });
       return;
@@ -57,6 +69,6 @@ export function useDraftProDust(input: DraftProDustRequestInput | null, enabled:
       });
     }, 200);
     return () => { controller.abort(); window.clearTimeout(timer); };
-  }, [body, enabled]);
+  }, [body, enabled, privateImportSaveRequired]);
   return state;
 }
