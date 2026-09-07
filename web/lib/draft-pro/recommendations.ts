@@ -1,6 +1,6 @@
 import {
   calculateCategoryScores,
-  isGoalieCategory,
+  categoryAppliesToRole,
   type CategoryScorePlayer,
 } from "lib/scoring/categoryScores";
 
@@ -94,20 +94,17 @@ function categoryValuesFor(candidate: RecommendationCandidate) {
     if (finite(saves) && finite(goalsAgainst)) values.SHOTS_AGAINST_GOALIE = saves + goalsAgainst;
   }
   const shotsAgainst = values.SHOTS_AGAINST_GOALIE;
-  if (!finite(values.SAVES_GOALIE) || !finite(shotsAgainst) || shotsAgainst <= 0) delete values.SAVE_PERCENTAGE;
-  if (!finite(values.SAVE_PERCENTAGE)) {
-    const saves = values.SAVES_GOALIE;
-    const shotsAgainst = values.SHOTS_AGAINST_GOALIE;
-    if (finite(saves) && finite(shotsAgainst) && shotsAgainst > 0) {
-      values.SAVE_PERCENTAGE = saves / shotsAgainst;
-    }
+  const saves = values.SAVES_GOALIE;
+  if (!finite(saves) || !finite(shotsAgainst) || saves < 0 || shotsAgainst <= 0 || saves > shotsAgainst) {
+    delete values.SAVE_PERCENTAGE;
+  } else {
+    values.SAVE_PERCENTAGE = saves / shotsAgainst;
   }
-  const goalieStarts = values.GAMES_STARTED;
-  const toiPerGame = values.TIME_ON_ICE_PER_GAME;
-  if (!finite(values.GOALS_AGAINST_GOALIE) || !finite(goalieStarts) || goalieStarts <= 0 || !finite(toiPerGame) || toiPerGame <= 0) {
+  const totalToi = values.TOTAL_TOI;
+  if (!finite(values.GOALS_AGAINST_GOALIE) || values.GOALS_AGAINST_GOALIE < 0 || !finite(totalToi) || totalToi <= 0) {
     delete values.GOALS_AGAINST_AVERAGE;
   } else {
-    values.GOALS_AGAINST_AVERAGE = values.GOALS_AGAINST_GOALIE * 3600 / (goalieStarts * toiPerGame);
+    values.GOALS_AGAINST_AVERAGE = values.GOALS_AGAINST_GOALIE * 3600 / totalToi;
   }
   return values;
 }
@@ -126,10 +123,10 @@ function categoryFit(
   categoryNeeds: Record<string, number>,
   weights: Record<string, number>,
 ) {
-  const enabled = Object.keys(weights);
+  const enabled = Object.keys(weights).filter((key) => categoryAppliesToRole(key, candidate.role));
   const values = categoryValuesFor(candidate);
   const missing = enabled.filter((key) =>
-    (candidate.role === "goalie" ? isGoalieCategory(key) : !isGoalieCategory(key)) && !finite(values[key]),
+    !finite(values[key]),
   );
   if (!enabled.length) return { fit: 0, missing };
   const totalNeed = enabled.reduce((sum, key) => {

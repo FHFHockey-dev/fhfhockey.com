@@ -63,8 +63,17 @@ describe("personalized draft recommendations", () => {
   it("marks goalie rate categories unavailable without their real workloads", () => {
     const result = buildPersonalizedRecommendations([
       { id: "g1", name: "g1", role: "goalie", eligiblePositions: ["G"], globalVorp: 1, rankValue: 1, categoryValues: { SAVE_PERCENTAGE: .920, GOALS_AGAINST_AVERAGE: 2 } },
-      { id: "g2", name: "g2", role: "goalie", eligiblePositions: ["G"], globalVorp: 0, rankValue: 0, categoryValues: { SAVES_GOALIE: 90, GOALS_AGAINST_GOALIE: 10, GAMES_STARTED: 10, TIME_ON_ICE_PER_GAME: 3600 } },
+      { id: "g2", name: "g2", role: "goalie", eligiblePositions: ["G"], globalVorp: 0, rankValue: 0, categoryValues: { SAVES_GOALIE: 90, GOALS_AGAINST_GOALIE: 10, TOTAL_TOI: 36_000 } },
     ], { leagueType: "categories", categoryWeights: { SAVE_PERCENTAGE: 1, GOALS_AGAINST_AVERAGE: 1 }, categoryNeeds: { SAVE_PERCENTAGE: 1, GOALS_AGAINST_AVERAGE: 1 } });
     expect(result.find((entry) => entry.candidate.id === "g1")?.missingCategories).toEqual(["SAVE_PERCENTAGE", "GOALS_AGAINST_AVERAGE"]);
+  });
+
+  it("derives rate values only from consistent numerator and total-time denominators", () => {
+    const result = buildPersonalizedRecommendations([
+      { id: "bad", name: "bad", role: "goalie", eligiblePositions: ["G"], globalVorp: 1, rankValue: 1, categoryValues: { SAVES_GOALIE: 101, SHOTS_AGAINST_GOALIE: 100, SAVE_PERCENTAGE: .990, GOALS_AGAINST_GOALIE: 10, GAMES_STARTED: 10, TIME_ON_ICE_PER_GAME: 3600 } },
+      { id: "good", name: "good", role: "goalie", eligiblePositions: ["G"], globalVorp: 0, rankValue: 0, categoryValues: { SAVES_GOALIE: 90, SHOTS_AGAINST_GOALIE: 100, GOALS_AGAINST_GOALIE: 10, TOTAL_TOI: 36_000 } },
+    ], { leagueType: "categories", categoryWeights: { SAVE_PERCENTAGE: 1, GOALS_AGAINST_AVERAGE: 1, GAMES_PLAYED: 1 }, categoryNeeds: { SAVE_PERCENTAGE: 1, GOALS_AGAINST_AVERAGE: 1, GAMES_PLAYED: 1 } });
+    expect(result.find((entry) => entry.candidate.id === "bad")?.missingCategories).toEqual(expect.arrayContaining(["SAVE_PERCENTAGE", "GOALS_AGAINST_AVERAGE", "GAMES_PLAYED"]));
+    expect(result.find((entry) => entry.candidate.id === "good")?.missingCategories).toEqual(expect.arrayContaining(["GAMES_PLAYED"]));
   });
 });
