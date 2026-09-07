@@ -631,6 +631,13 @@
   text-align: center;
 }
 
+// These sticky header cells are labels only. They must not become a hit-test
+// layer over row controls when the scroll container aligns a row at the edge.
+.playersTable th.colAction,
+.playersTable th.colCompare {
+  pointer-events: none;
+}
+
 /* Strengthen value band backgrounds so zebra striping never masks them */
 .valueBand.valueSuccess,
 .valueBand.valueWarning,
@@ -825,6 +832,9 @@
 .draftButton,
 .compareCheckbox {
   margin: 0 auto;
+  // Keep browser auto-scroll targets below the sticky header so Playwright and
+  // keyboard users do not land underneath an intercepting header cell.
+  scroll-margin-block: 40px;
 }
 
 /* Zebra striping for better row separation - Fixed to target actual row classes */
@@ -1656,6 +1666,7 @@
   .miniRunItem { min-width: 0; }
 }
 .pagination { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-top: 1px solid v.$draft-border; flex-shrink: 0; font-size: 11px; button { padding: 2px 6px; } select { padding: 1px 3px; } }
+.pagination .pageCount { pointer-events: none; }
 .pageCount { margin-left: auto; white-space: nowrap; }
 
 @container player-table (max-width: 620px) {
