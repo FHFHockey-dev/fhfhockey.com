@@ -1,7 +1,5 @@
 // components/DraftDashboard/MyRoster.tsx
 
-import DustMatrix from "./DustMatrix";
-import type { DashboardMatchupWeek } from "lib/draftDashboard/scheduleMetrics";
 import React, { useState, useMemo, useEffect } from "react";
 import {
   DraftSettings,
@@ -24,9 +22,7 @@ import {
 } from "lib/draftDashboard/forwardGrouping";
 
 interface MyRosterProps {
-  matchupWeeks?: readonly DashboardMatchupWeek[];
   schedulePeriod?: string;
-  matchupWeeksError?: string | null;
   nextPickByTeam: Record<string, number>;
   scheduleState: RosterScheduleOptimizerState;
   myTeamId: string;
@@ -55,9 +51,7 @@ interface MyRosterProps {
 }
 
 const MyRoster: React.FC<MyRosterProps> = ({
-  matchupWeeks = [],
-  schedulePeriod = "Season · Yahoo 477",
-  matchupWeeksError,
+  schedulePeriod = "Full season baseline · Yahoo 477",
   myTeamId,
   nextPickByTeam,
   scheduleState,
@@ -613,7 +607,6 @@ const MyRoster: React.FC<MyRosterProps> = ({
           </p>
         )}
       </div>
-      {selectedViewTeamId === myTeamId && <DustMatrix state={scheduleState} weeks={matchupWeeks} period={schedulePeriod} error={matchupWeeksError} />}
     </div>
   );
 };
