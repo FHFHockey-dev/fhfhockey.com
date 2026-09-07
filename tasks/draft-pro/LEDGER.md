@@ -2,6 +2,8 @@
 
 ## Progress and usage reporting
 
+Latest accepted estimate: **68% overall / 95% initial paid release**. W07 Saved Drafts integration and W12 real-route/browser acceptance remain open; W09 scenarios and W10 reports are queued. The account-side usage refresh occurred without Chef redeeming a credit; latest sampled weekly usage was **2%**. The figures below at ~13:00 are historical, not the current estimate.
+
 User requested an overall percentage now and at every major checkpoint, without changing the goal. At the September 7 ~13:00 checkpoint: overall engineering completion approximately **50%**, initial paid release approximately **75%**. Estimates include remaining implementation and verification; they are not task-count percentages or launch approval. Area estimates: foundation/billing/lifecycle/refunds90%, recommendations/DUST90%, central integration55%, Saved Drafts/scenarios/reports0%, launch documentation70%, integrated verification35%. Yahoo preparation complete, live milestone separate.
 
 Account-wide weekly usage: **47% consumed / 53% remaining**. Goal counter: **991,571 tokens / 8,976 seconds**. Account usage includes other tasks and is not per-project billing; no dollar-cost claim. Chef acknowledged excessive correction cycles and orchestration overhead. Execution tightened to one implementation task, with targeted verification only when a concrete checkpoint is ready. Bundle acceptance corrections, avoid repeated history reads/passed checks, downgrade after bounded hard issues. Report completion estimate and fresh account usage at major checkpoints. No reset credits authorized or consumed. Full scope remains active; no assurance the remaining weekly allowance suffices at the previous burn rate.
@@ -16,12 +18,12 @@ Account-wide weekly usage: **47% consumed / 53% remaining**. Goal counter: **991
 | W04 refunds/account | Approved, 17 focused tests; CLI follow-on integrated | Mounted UI/browser and real email configuration checks |
 | W05 recommendations | Approved shared calculations, API and W07 adapter | Integrated browser/RC checks |
 | W06 DUST | Approved shared optimizer/API, season resolution and W07 UI | Schedule-handoff compatibility and integrated browser/RC checks |
-| W07 integration/CSV/graph | Initial paid feature integration and eight-case browser checkpoint approved | User-requested full-season matrix; W08–W10 integration |
-| W08 Saved Drafts | Active from local implementation checkpoint | Quotas/concurrency/private restore, focused UI/API and integration |
+| W07 integration/CSV/graph | Initial integration, expanded graph and full-season matrix approved | Saved Drafts normalization/autosave acceptance; W09–W10 panels |
+| W08 Saved Drafts | Runtime modules, storage cleanup and binary restore correction approved | Actual dashboard save/restore and cross-device acceptance with W07/W12 |
 | W09 scenarios | Queued | W08 and shared calculation integration |
 | W10 reports | Queued | W09 and deterministic report implementation |
 | W11 copy/operator | Initial release copy/packet approved through4790fce53 | Refresh evidence after browser checkpoint and later milestones |
-| W12 verification | SQL/RLS/concurrency, free draft/compare/weights/CSV recovery approved | Paid UI, graph/mobile/keyboard/zoom active; later saved work, RC suite and release packet |
+| W12 verification | SQL/RLS, real overlapping saves, Storage HTTP, free/account and populated matrix browser checks approved | Saved Drafts real-route fixture completion and browser flow; later scenarios/reports and RC packet |
 | W13 Yahoo | Readiness work order approved and parked | September 11 one-time check; real provider evidence, separate activation approval |
 
 No remote build, deployment, production migration, live payment, or live email has been performed. Checkpoint approval is scoped engineering evidence, not release authorization. Full repository TypeScript passed with an 8 GiB heap at 3dcf15b05; /tmp/draft-pro-rc-types-final.log is empty and command exited 0. Earlier OOM and correction failures remain historical evidence below.
@@ -41,14 +43,14 @@ No remote build, deployment, production migration, live payment, or live email h
 - W12 — Integrated verification: 01a07c49-af48-7d63-8efd-734ea1d6c002
 - W13 — Yahoo bookmarked work order: 01a07c49-b23c-7522-a74f-ce9fc438904d
 
-All tasks moved into the Draft Pro section. W01 active foundation; W12 released for isolated DB harness only; W13 released for parked readiness document only. Other tasks remain queued. App listing missed newly created tasks; resolved their IDs from the local session index and verified W01 active through wait_threads. No duplicate tasks created.
+All tasks are in the Draft Pro section. At initial registration, the app listing missed newly created tasks; their IDs were resolved from the local session index and checked through wait_threads. No duplicate tasks were created.
 
 - Chef task: 01a07c1d-047d-7660-954c-b3ce7d8ef7d2
 - Section: CHEF — Draft Pro (3b3f2bf5-2939-484d-a6a6-655ae70f4039)
 - Base: 4476fb90f (octoberBranch); user checkout left unchanged.
 - Integration: codex/draft-pro at /Users/tim/.codex/worktrees/draft-pro-chef/fhfhockey.com
 - Yahoo one-time heartbeat: yahoo-draft-pro-readiness, September 11 09:00 Eastern.
-- Current status: W01 foundation/payment SQL and W03 Patreon locally approved; W05 recommendations approved. W07 dashboard integration active; W02/W04 locally approved; W06 approved; W12 mapping checkpoint approved; W07–W10 queued; W11/W13 preparation approved; W12 SQL checkpoint approved. Historical entries below retain prior states.
+- Current workers: visible W07 and W12; internal helpers idle. W01–W06 local implementations approved; W08 runtime approved but its full milestone awaits W07/W12 acceptance. W09/W10 queued, W11 preparation approved, W13 parked. Historical entries below retain prior states.
 - External checks pending: real Stripe/Patreon credentials and provider validation; isolated SQL/RLS verification passed. Never print secrets.
 
 Task registrations and Chef decisions follow below.
