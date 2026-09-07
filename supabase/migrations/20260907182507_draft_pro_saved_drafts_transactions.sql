@@ -292,8 +292,6 @@ language plpgsql security definer set search_path = public, pg_temp as $$
 declare lease_id uuid := gen_random_uuid();
 begin
   if p_limit not between 1 and 100 then raise exception 'Invalid cleanup limit'; end if;
-  update public.draft_pro_private_import_uploads as u set status='expired'
-  where u.user_id=p_user_id and u.status in ('uploading','staged') and u.expires_at<=now();
   return query
   with claimed as (
     update public.draft_pro_private_import_blobs as b set cleanup_requested_at=now(),cleanup_lease_id=lease_id
@@ -323,6 +321,8 @@ returns table(upload_id uuid,chunk_paths jsonb,final_storage_path text,delete_fi
 language plpgsql security definer set search_path = public, pg_temp as $$
 begin
   if p_limit not between 1 and 100 then raise exception 'Invalid cleanup limit'; end if;
+  update public.draft_pro_private_import_uploads as u set status='expired'
+  where u.user_id=p_user_id and u.status in ('uploading','staged') and u.expires_at<=now();
   return query
   with claimed as (
     update public.draft_pro_private_import_uploads as u
