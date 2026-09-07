@@ -274,8 +274,6 @@ begin
 end;
 $$;
 
-drop function public.claim_draft_pro_private_import_cleanup(uuid,integer);
-drop function public.confirm_draft_pro_private_import_cleanup(uuid,uuid[]);
 create function public.claim_draft_pro_private_import_cleanup(p_user_id uuid,p_limit integer default 20)
 returns table(blob_id uuid,storage_path text,cleanup_lease_id uuid)
 language plpgsql security definer set search_path = public, pg_temp as $$
