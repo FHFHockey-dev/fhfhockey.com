@@ -28,6 +28,7 @@ import DraftSettingsShell, { type SettingsSection } from "./DraftSettingsShell";
 import DraftStatus from "./DraftStatus";
 import LeagueStandings from "./LeagueStandings";
 import MyRoster from "./MyRoster";
+import DustMatrix from "./DustMatrix";
 import ProjectionsTable from "./ProjectionsTable";
 import { useVORPCalculations } from "hooks/useVORPCalculations";
 import { useDraftProAccess } from "hooks/useDraftProAccess";
@@ -1792,11 +1793,9 @@ const DraftDashboard: React.FC = () => {
 
   const scheduleSettings = useMemo(() => normalizeScheduleSettings(draftSettings), [draftSettings]);
   const draftSchedule = useDraftSchedule(allPlayers, scheduleSettings.playoffWeeks, scheduleSettings.scheduleScope);
-  const scheduleWeekNumbers = useMemo(() => draftSchedule.selectedWeeks.map((week) => week.week), [draftSchedule.selectedWeeks]);
-
   const rosterScheduleOptimizer = useRosterScheduleOptimizer({
     gameKey: "477",
-    selectedWeeks: scheduleWeekNumbers,
+    endWeek: 27,
     players: allPlayers,
     rosterAssignments,
     myTeamId,
@@ -3508,9 +3507,6 @@ const DraftDashboard: React.FC = () => {
           hidden={mobileWorkspaceEnabled && activeMobileTab !== "roster"}
         >
           <MyRoster
-            matchupWeeks={draftSchedule.selectedWeeks}
-            matchupWeeksError={draftSchedule.weeksError}
-            schedulePeriod={draftSchedule.periodLabel}
             nextPickByTeam={Object.fromEntries(draftSettings.draftOrder.map((teamId) => [teamId, currentPick + findPicksUntilTeamTurn({ currentPick, teamId, draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern, trades: manualDraftingEnabled ? pickTrades : [], keepers: manualDraftingEnabled ? keepers : [], completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), teamRosterCounts, rosterCapacity: rosterRoundCount(draftSettings.rosterConfig), maxPickNumber: draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig) })]))}
             scheduleState={rosterScheduleOptimizer}
             myTeamId={myTeamId}
@@ -3576,6 +3572,14 @@ const DraftDashboard: React.FC = () => {
           </button>
         </section>
       </div>
+
+      <DustMatrix
+        state={rosterScheduleOptimizer}
+        weeks={draftSchedule.weeks}
+        selectedWeeks={draftSchedule.selectedWeeks}
+        period={draftSchedule.periodLabel}
+        error={draftSchedule.weeksError}
+      />
 
       <DraftSummaryModal
         isOpen={isSummaryOpen}
