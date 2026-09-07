@@ -20,7 +20,7 @@ Account-wide weekly usage: **47% consumed / 53% remaining**. Goal counter: **991
 | W06 DUST | Approved shared optimizer/API, season resolution and W07 UI | Schedule-handoff compatibility and integrated browser/RC checks |
 | W07 integration/CSV/graph | Initial integration, expanded graph and full-season matrix approved | Saved Drafts normalization/autosave acceptance; W09–W10 panels |
 | W08 Saved Drafts | Chef-approved: runtime, private storage, real cross-device browser flow and final responsive panel | Production/provider activation remains separate |
-| W09 scenarios | Released Terra/medium | Shared calculation, focused panel/API implementation, then Chef review |
+| W09 scenarios | In progress, Sol/high after focused review escalations | Complete calculation, private access and workspace contract, then Chef review |
 | W10 reports | Queued | W09 and deterministic report implementation |
 | W11 copy/operator | Initial release copy/packet approved through4790fce53 | Refresh evidence after browser checkpoint and later milestones |
 | W12 verification | SQL/RLS, real overlapping saves, Storage HTTP, Saved Drafts routes and browser, free/account and matrix checks approved | Scenarios/reports and final RC packet; actual desktop browser-chrome zoom not claimed |
@@ -50,7 +50,7 @@ All tasks are in the Draft Pro section. At initial registration, the app listing
 - Base: 4476fb90f (octoberBranch); user checkout left unchanged.
 - Integration: codex/draft-pro at /Users/tim/.codex/worktrees/draft-pro-chef/fhfhockey.com
 - Yahoo one-time heartbeat: yahoo-draft-pro-readiness, September 11 09:00 Eastern.
-- Current workers: W09 implementation and W12 verification handoff; W07 and internal helpers idle. W01–W08 local checkpoints approved, W10 queued, W11 preparation approved, W13 parked. Historical entries below retain prior states.
+- Current worker: visible W09, Sol/high for the bounded unresolved scenario architecture. W07, W11, W12 and internal helpers are idle. W01–W08 local checkpoints approved, W10 queued, W11 current documentation approved, W13 parked. Historical entries below retain prior states.
 - External checks pending: real Stripe/Patreon credentials and provider validation; isolated SQL/RLS verification passed. Never print secrets.
 
 Task registrations and Chef decisions follow below.
@@ -404,3 +404,5 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 - W09 medium candidate `f35f567da` is NOT approved: it persists arbitrary client analysis/fingerprints, lacks reference ownership and inactive names-only behavior, mixes roles in totals, omits points totals and actual shared DUST, fingerprints IDs without projection values, and lacks the required client workflow/API/behavior fixtures. Chef returned the full original-scope correction bundle and escalated within model to **Terra/high**, bounded to the coupled calculation/access/persistence contract; exit coherent reviewed W09 implementation then medium. No new worker, schema edits, or central dashboard edits authorized. W11 mini/medium refreshes only release/copy/operator documents in parallel; W12 idle after final visual-only fixture handoff.
 
 - W09 Terra/high amended candidate `8dad9d471` remains NOT approved after full correction bundle: local unguarded generation and unauthenticated client transport, missing saved workspace/open/identity lifecycle, absent server DUST input, mixed-role GAA denominator, empty-roster/formatting gaps, and missing meaningful API/client/calculation evidence. Escalated existing W09 to **Sol/high**, bounded to the unresolved calculation/access/client architecture after medium/high attempts and concrete Chef review; exit coherent W09 acceptance then lower-cost follow-ups. No competing agent or shared-file expansion. App task reads return empty turn items, so required W09 handoff/evidence must also be retained as a focused worktree artifact. W11 first refresh `c591a9854` was not accepted because it used its old base and misattributed evidence; preserved at codex/draft-pro-w11-incomplete-refresh and clean owned W11 branch brought to ab217e935, with exact factual corrections returned to mini/medium.
+
+- W12 final visual-only fixture source `ca4677309` approved and integrated `36afa5f6a`; documentation at `ab217e935` makes browser-only versus styling-only modes and zoom limitations explicit. No additional full functional run was needed for the helper extraction. W11 corrected-base refresh `29d48cd9f` integrated `85cf8d78f`, with Chef exact status/evidence-path corrections in `085018143`; mini/low returned idle. W09 Sol/high is making concrete progress in focused contract/server/workspace modules; no new task or duplicate implementation was started.
