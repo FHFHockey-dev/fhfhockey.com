@@ -16,9 +16,10 @@ W02 owns the Stripe implementation. Confirm the actual names and values with W02
 - [ ] Product is named for `Draft Pro 2026-27` and configured as a one-time payment, quantity one, USD 5.99.
 - [ ] Test and live are treated as Stripe modes; record the mode used for each check and do not assume they are separate accounts.
 - [ ] Server-owned product/price identity is confirmed for `draft_pro_2026_27`; client input cannot choose price, amount, currency, or expiration.
-- [ ] Test configuration names to confirm with W02: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_DRAFT_PRO_2026_27`, and the configured Stripe account identifier.
-- [ ] Live configuration names to confirm with W02: production equivalents for the secret key, webhook secret, price identifier, and Stripe account identifier. Do not copy secret values into this document or logs.
+- [ ] Test and live configuration names to confirm with W02: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_DRAFT_PRO_PRICE_ID`, `STRIPE_DRAFT_PRO_PRODUCT_ID`, and `NEXT_PUBLIC_SITE_URL`. Do not copy secret values into this document or logs.
+- [ ] Confirm `DRAFT_PRO_STRIPE_LIVE_APPLY_ENABLED` remains unset or false unless the owner explicitly authorizes a live-key reconciliation apply.
 - [ ] Stripe Checkout uses the approved payment mode and quantity-one constraint.
+- [ ] Run reconciliation dry-run from `web/` with `NODE_PATH=. npx ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/stripe-reconcile.ts --limit=25`; use `--apply` only with explicit owner authorization, and live keys additionally require `DRAFT_PRO_STRIPE_LIVE_APPLY_ENABLED=true`.
 - [ ] Link behavior is tested in Stripe test mode and merchant Link enablement is documented for live mode.
 - [ ] Receipt delivery is tested with a non-production address and the live receipt sender/support address is owner-approved.
 - [ ] OWNER ONLY: Confirm Stripe identity and business verification status, linked bank details, and payout schedule with the owner. Do not set up or change payout details from this checklist.
@@ -42,7 +43,7 @@ W02 owns the Stripe implementation. Confirm the actual names and values with W02
 - [ ] Confirm the public support address and owner for payment and access issues.
 - [ ] Confirm Stripe receipt settings and the support address shown in receipts.
 - [ ] Confirm refund request handling stores the request before any email attempt and supports retry on email failure.
-- [ ] Confirm the refund-email retry path is dry-run by default; any live resend requires an explicit `--send` and respects Resend's 24-hour idempotency window.
+- [ ] Confirm the refund-email retry path is dry-run by default with `NODE_PATH=. npx ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/retry-draft-pro-refund-emails.ts 25`; any live resend requires the same command with explicit `--send` and respects Resend's 24-hour idempotency window.
 - [ ] Confirm refund requests allow exactly one open request per purchase, require exactly these six reasons: technical problem, confusing experience, missing expected feature, not useful for my draft, accidental purchase, or other; require a 10-2,000 character explanation; and enforce the 168-hour window from first server-recorded purchase activation.
 - [ ] Confirm optional improvement and live-draft-use questions are stored separately from the required reason and explanation.
 - [ ] Confirm requests are case-by-case, do not auto-refund, and do not auto-revoke access.
@@ -66,10 +67,10 @@ W02 owns the Stripe implementation. Confirm the actual names and values with W02
 
 ## 6. Rollout and rollback
 
-- [ ] Record the canonical all-off feature-flag state for checkout, premium enforcement, Saved Drafts, scenarios/reports, and Yahoo readiness.
+- [ ] Record the canonical all-off feature-flag state for `DRAFT_PRO_CHECKOUT_ENABLED`, `DRAFT_PRO_RECOMMENDATIONS_ENABLED`, `DRAFT_PRO_DUST_ENABLED`, `DRAFT_PRO_BLENDED_CSV_ENABLED`, `DRAFT_PRO_SAVED_DRAFTS_ENABLED`, `DRAFT_PRO_PRIVATE_IMPORTS_ENABLED`, `DRAFT_PRO_SCENARIOS_ENABLED`, and `DRAFT_PRO_REPORTS_ENABLED`.
 - [ ] Launch first with test-mode evidence and local/test users; do not use live money or real customer email during testing.
 - [ ] Enable only the capabilities whose implementation, provider readiness, copy, and owner approvals are complete.
-- [ ] Confirm the free Draft path remains usable when checkout or premium enforcement is disabled.
+- [ ] Confirm the free Draft path remains usable when checkout and all Draft Pro feature flags are disabled.
 - [ ] Roll back by disabling the affected flag or provider integration, preserving purchases, entitlement history, retained premium data, and local drafts.
 - [ ] Do not delete entitlements, private imports, or saved drafts as part of rollback.
 - [ ] Record the rollback owner, decision signal, timestamp, affected flag/provider, customer communication, and restore criteria.
