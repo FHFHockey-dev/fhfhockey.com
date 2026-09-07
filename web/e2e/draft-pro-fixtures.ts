@@ -107,10 +107,10 @@ export async function installDraftProAuthenticatedFixtures(
 
 export async function installDustMatrixFixtures(page: Page, { incomplete = false }: { incomplete?: boolean } = {}) {
   await installDraftProFreeFixtures(page);
-  const skaters = Array.from({ length: 21 }, (_, index) => ({
+  const skaters = Array.from({ length: 41 }, (_, index) => ({
     player_id: 1001 + index,
     Player_Name: `Matrix Player ${String(index + 1).padStart(2, "0")}`,
-    Team_Abbreviation: "AAA",
+    Team_Abbreviation: incomplete && index === 40 ? "ZZZ" : "AAA",
     Position: index === 0 ? "C,RW" : "C",
     Games_Played: 82,
     Goals: 20 + index,
@@ -163,7 +163,7 @@ export async function installDustMatrixFixtures(page: Page, { incomplete = false
       v: 2, configured: true, currentPick: 1, draftedPlayers: [], myTeamId: "Team 1",
       draftSettings: {
         teamCount: 2, draftOrder: ["Team 1", "Team 2"], draftOrderMode: "standard",
-        rosterConfig: { C: 1, LW: 0, RW: 0, D: 0, G: 0, utility: 0, bench: incomplete ? 0 : 20 },
+        rosterConfig: { C: 1, LW: 0, RW: 0, D: 0, G: 0, utility: 0, bench: 20 },
         playoffWeeks: [25, 26, 27], scheduleScope: "season",
       },
     }));

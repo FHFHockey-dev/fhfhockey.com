@@ -5,7 +5,7 @@ import { installDustMatrixFixtures } from "./draft-pro-fixtures";
 async function draftMatrixRoster(page: import("@playwright/test").Page) {
   const players = page.locator("#mobile-draft-panel-players");
   await expect(players.locator("tbody tr").first()).toBeVisible({ timeout: 60_000 });
-  for (let pick = 1; pick <= 20; pick += 1) {
+  for (let pick = 1; pick <= 40; pick += 1) {
     await players.locator("tbody tr").first().getByRole("button", { name: "Draft", exact: true }).click();
     await expect.poll(() => page.evaluate(() => JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").draftedPlayers?.length)).toBe(pick);
   }
@@ -39,35 +39,37 @@ test("full-season DUST lattice keeps all player-week intersections available", a
   console.log(diagnostic);
   await testInfo.attach("dust-matrix-diagnostic.json", { body: JSON.stringify(diagnostic, null, 2), contentType: "application/json" });
   await page.screenshot({ path: testInfo.outputPath("dust-matrix-desktop-1280.png"), fullPage: true });
+  await matrix.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath("dust-matrix-desktop-1280-matrix.png"), fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: testInfo.outputPath("dust-matrix-mobile-390.png"), fullPage: true });
   await page.setViewportSize({ width: 320, height: 844 });
   await page.screenshot({ path: testInfo.outputPath("dust-matrix-mobile-320.png"), fullPage: true });
   await page.setViewportSize({ width: 1280, height: 900 });
-  await expect(cells).toHaveCount(10 * 27);
+  await expect(cells).toHaveCount(20 * 27);
   await expect(matrix.locator("[data-dust-state='zero']")).toHaveCount(27);
-  await expect(matrix.locator("[data-dust-state='bench']")).toHaveCount(9 * 27);
+  await expect(matrix.locator("[data-dust-state='bench']")).toHaveCount(19 * 27);
   await expect(matrix.locator("[data-dust-state='unresolved']")).toHaveCount(0);
   await expect(matrix.getByLabel("Benched games by Yahoo week").locator("span")).toHaveCount(27);
   await expect(page.locator("#mobile-draft-panel-players")).toBeVisible();
 
   await page.getByLabel("Schedule period").selectOption("playoffs");
-  await expect(matrix.locator("[data-selected-week]")).toHaveCount(10 * 3);
-  await expect(cells).toHaveCount(10 * 27);
+  await expect(matrix.locator("[data-selected-week]")).toHaveCount(20 * 3);
+  await expect(cells).toHaveCount(20 * 27);
   const midweek = matrix.getByLabel(/Matrix Player 19 · Week 14/).first();
   await midweek.focus();
   await expect(matrix.getByRole("status")).toHaveText(/Matrix Player 19 · Week 14 .*: 1 scheduled, 0 startable, 1 benched\./);
-  await matrix.getByLabel(/Matrix Player 21 · Week 14/).first().click();
-  await expect(matrix.getByRole("status")).toHaveText(/Matrix Player 21 · Week 14 .*: 1 scheduled, 1 startable, 0 benched\./);
+  await matrix.getByLabel(/Matrix Player 41 · Week 14/).first().click();
+  await expect(matrix.getByRole("status")).toHaveText(/Matrix Player 41 · Week 14 .*: 1 scheduled, 1 startable, 0 benched\./);
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(cells).toHaveCount(10 * 27);
+  await expect(cells).toHaveCount(20 * 27);
   await matrix.getByText("Inspect exact player-week counts", { exact: true }).click();
   await expect(matrix.locator("details button").first()).toBeVisible();
-  await expect(matrix.locator("details li")).toHaveCount(10 * 27);
+  await expect(matrix.locator("details li")).toHaveCount(20 * 27);
   await page.screenshot({ path: testInfo.outputPath("dust-matrix-mobile-390.png"), fullPage: true });
   await page.setViewportSize({ width: 320, height: 844 });
-  await expect(cells).toHaveCount(10 * 27);
+  await expect(cells).toHaveCount(20 * 27);
   await page.screenshot({ path: testInfo.outputPath("dust-matrix-mobile-320.png"), fullPage: true });
 });
 
@@ -78,7 +80,7 @@ test("DUST matrix distinguishes unavailable coverage from zero conflicts", async
   await draftMatrixRoster(page);
   const matrix = page.getByRole("region", { name: "DUST schedule overview" });
   await matrix.getByRole("button", { name: /DUST schedule overview/ }).click();
-  await expect(matrix.locator("[data-dust-state='unresolved']")).toHaveCount(10 * 27, { timeout: 60_000 });
+  await expect(matrix.locator("[data-dust-state='unresolved']")).toHaveCount(20 * 27, { timeout: 60_000 });
   await expect(matrix.locator("[data-dust-state='zero']")).toHaveCount(0);
   await expect(matrix.getByLabel("Benched games by Yahoo week").getByText("Unavailable", { exact: false })).toHaveCount(27);
 });
