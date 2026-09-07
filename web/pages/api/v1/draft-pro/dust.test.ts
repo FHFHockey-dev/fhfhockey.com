@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   readRosterSchedule: vi.fn(),
   from: vi.fn(),
   metadataRows: [] as Array<{ game_key: string; season: string; source_season_id: number }>,
+  metadataPages: [] as Array<Array<{ game_key: string; season: string; source_season_id: number }>>,
 }));
 
 vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: mocks.requireApiUser }));
@@ -45,11 +46,17 @@ describe("Draft Pro DUST API", () => {
     mocks.loadDraftProAccess.mockResolvedValue({});
     mocks.enforceDraftProDustRateLimit.mockResolvedValue({ remainingPoints: 19 });
     mocks.metadataRows = [];
+    mocks.metadataPages = [];
     const query = {
       select: vi.fn(),
-      eq: vi.fn(async () => ({ data: mocks.metadataRows, error: null })),
+      eq: vi.fn(),
+      range: vi.fn(async (from: number) => ({
+        data: mocks.metadataPages[from / 1_000] ?? mocks.metadataRows,
+        error: null,
+      })),
     };
     query.select.mockReturnValue(query);
+    query.eq.mockReturnValue(query);
     mocks.from.mockReturnValue(query);
   });
 
@@ -129,5 +136,26 @@ describe("Draft Pro DUST API", () => {
     const res = response();
     await handler({ method: "POST", body: requestBody } as any, res.api as any);
     expect(res.state).toMatchObject({ status: 503, body: { success: false, error: { code: "schedule_season_unavailable" } } });
+  });
+
+  it("reads later metadata pages before deciding whether a mapping is ambiguous", async () => {
+    const matching = { game_key: "500", season: "2026", source_season_id: 20262027 };
+    mocks.metadataPages = [
+      Array.from({ length: 1_000 }, () => matching),
+      [{ game_key: "501", season: "2026", source_season_id: 20262027 }],
+    ];
+    const res = response();
+    await handler({ method: "POST", body: requestBody } as any, res.api as any);
+    expect(res.state).toMatchObject({ status: 503, body: { success: false, error: { code: "schedule_season_unavailable" } } });
+    expect(mocks.readRosterSchedule).not.toHaveBeenCalled();
+  });
+
+  it("accepts a complete multi-page metadata read when every page has the same mapping", async () => {
+    const matching = { game_key: "500", season: "2026", source_season_id: 20262027 };
+    mocks.metadataPages = [Array.from({ length: 1_000 }, () => matching), [matching]];
+    mocks.readRosterSchedule.mockResolvedValue(mappedScheduleRows);
+    const res = response();
+    await handler({ method: "POST", body: requestBody } as any, res.api as any);
+    expect(res.state).toMatchObject({ status: 200, body: { success: true, data: { state: "ready" } } });
   });
 });
