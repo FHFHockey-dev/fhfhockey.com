@@ -56,8 +56,8 @@ export async function createDraftProCheckout({
     client_reference_id: attempt.purchase_id,
     metadata: { draft_pro_user_id: userId, draft_pro_purchase_id: attempt.purchase_id, draft_pro_season: DRAFT_PRO_SEASON },
     payment_intent_data: { metadata: { draft_pro_user_id: userId, draft_pro_purchase_id: attempt.purchase_id, draft_pro_season: DRAFT_PRO_SEASON } },
-    success_url: `${origin}/account?draft_pro_checkout={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}/account?draft_pro_checkout=cancelled`,
+    success_url: `${origin}/account?section=draft-pro&draft_pro_checkout={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${origin}/account?section=draft-pro&draft_pro_checkout=cancelled`,
   }, { idempotencyKey: attempt.stripe_idempotency_key });
   if (!session.url || !session.expires_at) throw new Error("Stripe did not return an expiring Checkout URL.");
   const { error: updateError } = await client.rpc("attach_draft_pro_stripe_checkout_session", { p_purchase_id: attempt.purchase_id, p_checkout_session_id: session.id, p_checkout_expires_at: new Date(session.expires_at * 1000).toISOString() });

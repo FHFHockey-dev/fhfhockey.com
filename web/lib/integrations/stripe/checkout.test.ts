@@ -36,6 +36,7 @@ describe("createDraftProCheckout lifecycle", () => {
     s.checkout.sessions.create.mockResolvedValue({ id: "cs2", url: "https://new.test", expires_at: 2 });
     await expect(createDraftProCheckout({ stripe: s, userId: "u1", origin: "https://app.test", client: c })).resolves.toMatchObject({ purchaseId: "p2" });
     expect(c.chain.update).toHaveBeenCalledWith({ checkout_session_status: "expired", status: "expired" });
+    expect(s.checkout.sessions.create).toHaveBeenCalledWith(expect.objectContaining({ success_url: "https://app.test/account?section=draft-pro&draft_pro_checkout={CHECKOUT_SESSION_ID}", cancel_url: "https://app.test/account?section=draft-pro&draft_pro_checkout=cancelled" }), expect.anything());
   });
   it("does not overwrite a concurrently activated purchase", async () => {
     const c = client([attempt(), attempt({ purchase_status: "active" })]);
