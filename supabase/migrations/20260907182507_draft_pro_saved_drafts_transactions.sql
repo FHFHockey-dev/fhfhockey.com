@@ -256,7 +256,7 @@ begin
   select count(*) into draft_count from public.draft_pro_drafts as d where d.user_id=p_user_id and d.status<>'deleted'; if draft_count>=10 then raise exception 'Draft Pro saved draft quota exceeded'; end if;
   insert into public.draft_pro_drafts(user_id,name,snapshot,snapshot_bytes) values(p_user_id,btrim(p_name),source_draft.snapshot,source_draft.snapshot_bytes) returning * into copy_draft;
   insert into public.draft_pro_private_imports(user_id,draft_id,name,content_type,storage_path,normalized_rows,mapping,byte_size,row_count,blob_id)
-  select user_id,copy_draft.id,name,content_type,storage_path,normalized_rows,mapping,byte_size,row_count,blob_id from public.draft_pro_private_imports where draft_id=source_draft.id and deleted_at is null;
+  select i.user_id,copy_draft.id,i.name,i.content_type,i.storage_path,i.normalized_rows,i.mapping,i.byte_size,i.row_count,i.blob_id from public.draft_pro_private_imports as i where i.draft_id=source_draft.id and i.deleted_at is null;
   select count(*) into import_count from public.draft_pro_private_imports as i where i.draft_id=copy_draft.id and i.deleted_at is null;
   return query select 'saved',copy_draft.id,copy_draft.lock_version,copy_draft.name,copy_draft.updated_at,import_count,null::integer;
 end;
