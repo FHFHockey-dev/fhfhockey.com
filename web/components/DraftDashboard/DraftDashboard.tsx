@@ -501,10 +501,7 @@ const DraftDashboard: React.FC = () => {
     undefined,
   );
   // Multi-CSV rows live in memory with a versioned, tab-scoped fallback only.
-  const [customCsvList, setCustomCsvList] = useState<SessionCsvEntry[]>(() => {
-    if (typeof window === "undefined") return [];
-    return loadCustomCsvSession();
-  });
+  const [customCsvList, setCustomCsvList] = useState<SessionCsvEntry[]>([]);
   const getCsvList = useCallback(() => customCsvList, [customCsvList]);
   const setCsvList = useCallback((next: SessionCsvEntry[]) => {
     if (typeof window === "undefined") return;
@@ -512,6 +509,9 @@ const DraftDashboard: React.FC = () => {
       setCustomCsvList(next);
       saveCustomCsvSession(next);
     } catch {}
+  }, []);
+  useEffect(() => {
+    setCustomCsvList(loadCustomCsvSession());
   }, []);
 
   // Snapshot V2 will be defined after dependent state declarations
