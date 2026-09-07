@@ -20,8 +20,9 @@ const headers = (entry: StoredImport) => { const value = entry.mapping as { head
 const signature = (id: string | null, version: number | undefined, options: SaveOptions) => JSON.stringify({ id, version: version ?? null, name: options.name, snapshot: options.snapshot, imports: options.privateImports?.map(({ id: importId, name, sourceId: source, mapping: map, rows }) => ({ importId, name, source, map, rows })) ?? [] });
 function conflict(current?: SavedDraftSummary) { const error = new Error("This saved draft changed elsewhere. Reload it or save a copy."); Object.assign(error, { conflict: current }); return error; }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(path: string, init?: RequestInit, current?: () => boolean): Promise<T> {
   const session = (await supabase.auth.getSession()).data.session;
+  if (current && !current()) throw new Error("Saved draft operation was cancelled.");
   if (!session?.access_token) throw new Error("Sign in to use Saved Drafts.");
   const response = await fetch(path, { ...init, headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json", ...init?.headers } });
   const payload = await response.json().catch(() => ({}));
@@ -34,7 +35,7 @@ async function upload(args: { draftId: string | null; expectedVersion: number | 
   if (!args.current()) throw new Error("Saved draft save was cancelled.");
   const bytes = new TextEncoder().encode(JSON.stringify(args.entry.rows));
   if (!bytes.byteLength || bytes.byteLength > 10 * 1024 * 1024) throw new Error("Normalized private import exceeds the 10 MiB limit.");
-  const begun = await request<Begin>("/api/v1/account/draft-pro/private-imports", { method: "POST", body: JSON.stringify({ draftId: args.draftId, expectedVersion: args.expectedVersion ?? null, attemptKey: args.attemptKey, name: args.entry.name, mapping: mapping(args.entry), declaredMaxBytes: bytes.byteLength, replacementImportId: args.replacementImportId ?? null }) });
+  const begun = await request<Begin>("/api/v1/account/draft-pro/private-imports", { method: "POST", body: JSON.stringify({ draftId: args.draftId, expectedVersion: args.expectedVersion ?? null, attemptKey: args.attemptKey, name: args.entry.name, mapping: mapping(args.entry), declaredMaxBytes: bytes.byteLength, replacementImportId: args.replacementImportId ?? null }) }, args.current);
   if (begun.status !== "ready" || !begun.upload?.upload_id || !begun.upload.storage_prefix) {
     if (begun.session?.status === "conflict" || begun.session?.status === "busy") throw conflict(begun.session.draft_id ? { id: begun.session.draft_id, name: "", status: "active", lockVersion: begun.session.current_version ?? 0, updatedAt: "" } : undefined);
     throw new Error("Private import upload could not be started. Your local draft is unchanged.");
@@ -43,13 +44,13 @@ async function upload(args: { draftId: string | null; expectedVersion: number | 
   if (begun.upload.status !== "staged") for (let ordinal = 0; ordinal < paths.length; ordinal += 1) {
     if (!args.current()) throw new Error("Saved draft save was cancelled.");
     const token = (await supabase.auth.getSession()).data.session?.access_token;
-    if (!token) throw new Error("Saved draft save was cancelled.");
+    if (!token || !args.current()) throw new Error("Saved draft save was cancelled.");
     const response = await fetch(`/api/v1/account/draft-pro/private-imports/${begun.upload.upload_id}/chunks/${ordinal}`, { method: "PUT", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "X-Draft-Pro-Upload-Prefix": begun.upload.storage_prefix }, body: bytes.slice(ordinal * CHUNK, Math.min(bytes.byteLength, (ordinal + 1) * CHUNK)) });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok || payload.data?.path !== paths[ordinal]) throw new Error(payload.error?.message ?? "Private import upload failed. Your local draft is unchanged.");
   }
   if (!args.current()) throw new Error("Saved draft save was cancelled.");
-  const staged = await request<{ importId?: string }>(`/api/v1/account/draft-pro/private-imports/${begun.upload.upload_id}/stage`, { method: "POST", body: JSON.stringify({ chunkPaths: paths }) });
+  const staged = await request<{ importId?: string }>(`/api/v1/account/draft-pro/private-imports/${begun.upload.upload_id}/stage`, { method: "POST", body: JSON.stringify({ chunkPaths: paths }) }, args.current);
   if (!staged.importId) throw new Error("Private import could not be staged. Your local draft is unchanged.");
   return staged.importId;
 }
@@ -79,7 +80,7 @@ export function useSavedDrafts() {
   const [drafts, setDrafts] = useState<SavedDraftSummary[]>([]); const [status, setStatus] = useState<"idle" | "loading" | "saving" | "saved" | "error">("idle"); const [error, setError] = useState<string | null>(null); const [conflictState, setConflict] = useState<SavedDraftConflict | null>(null); const [opened, setOpened] = useState<SavedDraftDetail | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null); const epoch = useRef(0); const generation = useRef(0); const openedRef = useRef<SavedDraftDetail | null>(null); const accountId = useRef<string | null>(null); const queue = useRef<Promise<unknown>>(Promise.resolve()); const active = useRef<Attempt | null>(null);
   const replaceOpened = (next: SavedDraftDetail | null) => { openedRef.current = next; setOpened(next); };
-  const refresh = useCallback(async () => { const at = epoch.current; setStatus("loading"); setError(null); try { const next = await request<SavedDraftSummary[]>("/api/v1/account/draft-pro/drafts"); if (at === epoch.current) { setDrafts(next); setStatus("idle"); } } catch (cause) { if (at === epoch.current) { setStatus("error"); setError(cause instanceof Error ? cause.message : "Saved Drafts are unavailable."); } } }, []);
+  const refresh = useCallback(async () => { const at = epoch.current; setStatus("loading"); setError(null); try { const next = await request<SavedDraftSummary[]>("/api/v1/account/draft-pro/drafts", undefined, () => at === epoch.current); if (at === epoch.current) { setDrafts(next); setStatus("idle"); } } catch (cause) { if (at === epoch.current) { setStatus("error"); setError(cause instanceof Error ? cause.message : "Saved Drafts are unavailable."); } } }, []);
   useEffect(() => { void refresh(); void supabase.auth.getSession().then(({ data }) => { accountId.current = data.session?.user?.id ?? null; }); const subscription = supabase.auth.onAuthStateChange?.((event, session) => { const nextAccountId = session?.user?.id ?? null; if (nextAccountId === accountId.current && event !== "SIGNED_OUT") return; accountId.current = nextAccountId; epoch.current += 1; generation.current += 1; active.current = null; if (timer.current) clearTimeout(timer.current); timer.current = null; replaceOpened(null); setConflict(null); void refresh(); }).data.subscription; return () => { epoch.current += 1; generation.current += 1; active.current = null; if (timer.current) clearTimeout(timer.current); subscription?.unsubscribe(); }; }, [refresh]);
   const saveNow = useCallback((id: string | null, options: SaveOptions) => {
     const requestedGeneration = generation.current;
@@ -94,9 +95,9 @@ export function useSavedDrafts() {
         if (changed.length && !options.accountSaveConsent) throw new Error("Confirm saving private imports to your account before uploading them.");
         for (const entry of options.privateImports ?? []) { const old = entry.id ? previous.get(entry.id) : undefined; if (!changed.includes(entry)) retained.push(old!.id); else if (!attempt.staged.has(entry.sourceId)) attempt.staged.set(entry.sourceId, await upload({ draftId: id, expectedVersion, attemptKey: attempt.key, entry, replacementImportId: old?.id, current })); }
         if (!current()) throw new Error("Saved draft save was cancelled.");
-        const saved = await request<SavedDraftSummary>(id ? `/api/v1/account/draft-pro/drafts/${id}` : "/api/v1/account/draft-pro/drafts", { method: id ? "PUT" : "POST", body: JSON.stringify({ name: options.name, snapshot: options.snapshot, ...(expectedVersion === undefined ? {} : { expectedVersion }), attemptKey: attempt.key, importIds: retained }) });
+        const saved = await request<SavedDraftSummary>(id ? `/api/v1/account/draft-pro/drafts/${id}` : "/api/v1/account/draft-pro/drafts", { method: id ? "PUT" : "POST", body: JSON.stringify({ name: options.name, snapshot: options.snapshot, ...(expectedVersion === undefined ? {} : { expectedVersion }), attemptKey: attempt.key, importIds: retained }) }, current);
         if (!current()) return saved;
-        const detail = await request<StoredDraftDetail>(`/api/v1/account/draft-pro/drafts/${saved.id}`); if (!current()) return saved;
+        const detail = await request<StoredDraftDetail>(`/api/v1/account/draft-pro/drafts/${saved.id}`, undefined, current); if (!current()) return saved;
         const local = new Map((options.privateImports ?? []).map((entry) => [entry.sourceId, entry])); const hydrated = detail.privateImports.map((entry) => { const source = sourceId(entry); const value = source ? local.get(source) : undefined; if (!value) throw new Error("Saved private import metadata is incomplete."); return { ...value, id: entry.id, name: entry.name, mapping: headers(entry) as NormalizedPrivateImport["mapping"] }; });
         setDrafts((all) => [saved, ...all.filter((draft) => draft.id !== saved.id)]); replaceOpened({ ...detail, ...saved, privateImports: hydrated }); active.current = null; setStatus("saved"); return saved;
       } catch (cause) { if (current()) { setStatus("error"); setError(cause instanceof Error ? cause.message : "Could not save this draft."); setConflict((cause as Error & { conflict?: SavedDraftSummary }).conflict ? { current: (cause as Error & { conflict?: SavedDraftSummary }).conflict } : null); } throw cause; }
@@ -108,7 +109,7 @@ export function useSavedDrafts() {
     if (timer.current) clearTimeout(timer.current);
     const at = ++generation.current; setStatus("loading"); setError(null); setConflict(null);
     try {
-      const value = await request<StoredDraftDetail>(`/api/v1/account/draft-pro/drafts/${id}`);
+      const value = await request<StoredDraftDetail>(`/api/v1/account/draft-pro/drafts/${id}`, undefined, () => at === generation.current);
       const imports = await Promise.all(value.privateImports.map((entry) => restoreImportChunks(id, entry, () => at === generation.current)));
       if (at !== generation.current) throw new Error("Saved draft restore was cancelled.");
       const restored: SavedDraftDetail = { ...value, privateImports: imports }; replaceOpened(restored); setStatus("idle"); return restored;
@@ -117,7 +118,7 @@ export function useSavedDrafts() {
   const mutate = useCallback(async (id: string, init: RequestInit, deleted = false) => {
     const at = generation.current; setStatus("saving"); setError(null); setConflict(null);
     try {
-      const saved = await request<SavedDraftSummary>(`/api/v1/account/draft-pro/drafts/${id}`, init);
+      const saved = await request<SavedDraftSummary>(`/api/v1/account/draft-pro/drafts/${id}`, init, () => at === generation.current);
       if (at !== generation.current) return saved;
       if (deleted) { setDrafts((all) => all.filter((draft) => draft.id !== id)); if (openedRef.current?.id === id) { generation.current += 1; active.current = null; if (timer.current) clearTimeout(timer.current); timer.current = null; replaceOpened(null); } }
       else { setDrafts((all) => [saved, ...all.filter((draft) => draft.id !== saved.id)]); if (openedRef.current?.id === saved.id) replaceOpened({ ...openedRef.current, ...saved }); }
