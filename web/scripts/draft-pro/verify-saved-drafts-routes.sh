@@ -20,6 +20,30 @@ cleanup() {
   rm -rf "$WORK"
 }
 trap cleanup EXIT
+close_owned_port() {
+  node - "$1" <<'NODE'
+const net=require('net'); const socket=net.connect(Number(process.argv[2]), '127.0.0.1');
+socket.once('connect',()=>process.exit(1)); socket.once('error',()=>process.exit(0));
+NODE
+}
+finish() {
+  kill "$next_pid" "$gateway_pid" >/dev/null 2>&1 || true
+  wait "$next_pid" "$gateway_pid" 2>/dev/null || true
+  next_pid=""; gateway_pid=""
+  docker rm -f "$STORAGE" "$AUTH" "$REST" "$DB" >/dev/null
+  docker network rm "$NET" >/dev/null
+  for _ in $(seq 1 10); do
+    ! docker container inspect "$STORAGE" "$AUTH" "$REST" "$DB" >/dev/null 2>&1 && ! docker network inspect "$NET" >/dev/null 2>&1 && close_owned_port "$next_port" && close_owned_port "$gateway_port" && break
+    sleep 0.1
+  done
+  ! docker container inspect "$STORAGE" "$AUTH" "$REST" "$DB" >/dev/null 2>&1
+  ! docker network inspect "$NET" >/dev/null 2>&1
+  close_owned_port "$next_port"
+  close_owned_port "$gateway_port"
+  rm -rf "$WORK"
+  trap - EXIT
+  echo "saved_drafts_routes=passed; auth=gotrue; rest=postgrest; storage=storage-api; cleanup=verified"
+}
 
 [[ -d web/node_modules ]] || { echo "web/node_modules is required (reuse an existing workspace install)." >&2; exit 66; }
 docker network create "$NET" >/dev/null
@@ -96,4 +120,4 @@ kill -0 "$next_pid" >/dev/null 2>&1
 export NEXT_URL="http://127.0.0.1:$next_port" SUPABASE_GATEWAY="$gateway" USER_A="$user_a" USER_A_SECOND="$user_a_second" USER_B="$user_b" SERVICE_KEY="$service_key"
 (cd web && NODE_PATH=.:node_modules ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/verify-saved-drafts-routes-runner.ts)
 
-echo "saved_drafts_routes=passed; auth=gotrue; rest=postgrest; storage=storage-api; cleanup=automatic"
+finish

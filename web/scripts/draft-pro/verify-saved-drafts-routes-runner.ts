@@ -38,7 +38,7 @@ async function main() {
   const put = await chunkResponse.json(); assert.equal(chunkResponse.status, 201, JSON.stringify(put));
   const staged = await call(`/api/v1/account/draft-pro/private-imports/${upload.upload_id}/stage`, owner, "POST", { chunkPaths: [put.data.path] }); assert.equal(staged.status, 201);
   const saved = await call("/api/v1/account/draft-pro/drafts", owner, "POST", { name: "Route fixture", snapshot, attemptKey: attempt }); assert.equal(saved.status, 201);
-  const id = saved.json.data.id; const detail = await call(`/api/v1/account/draft-pro/drafts/${id}`, owner); assert.equal(detail.status, 200); assert.deepEqual(detail.json.data.snapshot, snapshot);
+  const id = saved.json.data.id; const detail = await call(`/api/v1/account/draft-pro/drafts/${id}`, ownerSecond); assert.equal(detail.status, 200); assert.deepEqual(detail.json.data.snapshot, snapshot);
   const importId = detail.json.data.privateImports[0].id;
   const read = await fetch(`${base}/api/v1/account/draft-pro/drafts/${id}/imports/${importId}?ordinal=0`, { headers: { Authorization: `Bearer ${ownerSecond}` } });
   if (read.status !== 200) throw new Error(`private chunk ${read.status}: ${await read.text()}`); const bytes = Buffer.from(await read.arrayBuffer()); assert.equal(createHash("sha256").update(bytes).digest("hex"), read.headers.get("x-draft-pro-sha256")); const downloadedRows = JSON.parse(bytes.toString()); assert.deepEqual(downloadedRows, normalized[0].rows);
