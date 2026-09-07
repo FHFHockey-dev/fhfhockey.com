@@ -40,7 +40,7 @@ export async function commitSavedDraft(args: { userId: string; draftId: string |
   const { data: sessionRows, error: sessionError } = await serviceRoleClient.rpc("begin_draft_pro_save_session", { p_user_id: args.userId, p_draft_id: args.draftId, p_expected_version: args.expectedVersion ?? null, p_attempt_key: args.attemptKey });
   if (sessionError) throw sessionError;
   const session = requireRow(sessionRows, "Saved Drafts transaction returned no save session.");
-  if (session.status === "conflict") {
+  if (session.status === "conflict" || session.status === "busy") {
     if (!session.draft_id) throw new Error("Saved Drafts conflict returned no draft.");
     return { conflict: true as const, current: conflict({ draft_id: session.draft_id, lock_version: session.current_version }) };
   }

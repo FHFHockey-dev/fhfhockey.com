@@ -38,6 +38,12 @@ describe("saved drafts route", () => {
     expect(res.statusCode).toBe(409); expect(commit).toHaveBeenCalledWith(expect.objectContaining({ userId: "user-1", draftId: null }));
   });
 
+  it("maps a busy save session to a 409 with the SQL draft version", async () => {
+    commit.mockResolvedValue({ conflict: true, current: { id: "draft-1", lockVersion: 3 } });
+    const res = response(); await handler({ method: "POST", headers: {}, body: valid } as any, res);
+    expect(res.statusCode).toBe(409); expect(res.body).toEqual({ data: { current: { id: "draft-1", lockVersion: 3 } } });
+  });
+
   it("rejects consent-only client fields so callers must use the upload boundary", async () => {
     const res = response(); await handler({ method: "POST", headers: {}, body: { ...valid, accountSaveConsent: true } } as any, res);
     expect(res.statusCode).toBe(400); expect(commit).not.toHaveBeenCalled();

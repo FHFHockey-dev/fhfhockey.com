@@ -25,8 +25,8 @@ describe("saved draft SQL adapter", () => {
     await expect(readSavedDraft("owner-1", "active")).resolves.toMatchObject({ id: "active", privateImports: [{ id: "import-1", row_count: 1 }] });
   });
 
-  it("fails closed for an unknown transaction status", async () => {
+  it("maps a busy SQL save-session row to the owning draft's version conflict", async () => {
     rpc.mockResolvedValueOnce({ data: [{ status: "busy", save_session_id: null, draft_id: "draft-1", current_version: 1, expires_at: null }], error: null });
-    await expect(commitSavedDraft({ userId: "owner-1", draftId: "draft-1", name: "My draft", expectedVersion: 1, snapshot, attemptKey: "attempt-1" })).rejects.toThrow("unsupported save session status");
+    await expect(commitSavedDraft({ userId: "owner-1", draftId: "draft-1", name: "My draft", expectedVersion: 1, snapshot, attemptKey: "attempt-1" })).resolves.toEqual({ conflict: true, current: { id: "draft-1", lockVersion: 1 } });
   });
 });
