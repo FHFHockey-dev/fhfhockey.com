@@ -1,10 +1,47 @@
 import serviceRoleClient from "lib/supabase/server";
+import { DRAFT_PRO_EXPIRATION, DRAFT_PRO_PRICE_CENTS, DRAFT_PRO_SEASON } from "../contracts";
+import { isPatreonConfigured } from "lib/integrations/patreon/config";
+import { isStripeConfigured } from "lib/integrations/stripe/config";
 
 import { loadDraftProAccess } from "../server";
 import { getDraftProFeatureFlags } from "../features";
 import { REFUND_WINDOW_MS } from "./refunds";
 
 type AccountClient = Pick<typeof serviceRoleClient, "from">;
+
+export type DraftProCheckoutAvailabilityReason =
+  | "available"
+  | "checkout_disabled"
+  | "stripe_not_configured"
+  | "site_url_not_configured"
+  | "already_eligible"
+  | "pass_expired";
+
+export type DraftProCheckoutAvailability = {
+  available: boolean;
+  reason: DraftProCheckoutAvailabilityReason;
+};
+
+export function getDraftProCheckoutAvailability({
+  now,
+  eligible,
+  checkoutEnabled,
+  stripeConfigured,
+  siteUrlConfigured,
+}: {
+  now: Date;
+  eligible: boolean;
+  checkoutEnabled: boolean;
+  stripeConfigured: boolean;
+  siteUrlConfigured: boolean;
+}): DraftProCheckoutAvailability {
+  if (eligible) return { available: false, reason: "already_eligible" };
+  if (now.getTime() >= Date.parse(DRAFT_PRO_EXPIRATION)) return { available: false, reason: "pass_expired" };
+  if (!checkoutEnabled) return { available: false, reason: "checkout_disabled" };
+  if (!stripeConfigured) return { available: false, reason: "stripe_not_configured" };
+  if (!siteUrlConfigured) return { available: false, reason: "site_url_not_configured" };
+  return { available: true, reason: "available" };
+}
 
 function receiptUrl(metadata: unknown) {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return null;
@@ -34,6 +71,14 @@ export async function loadDraftProAccount({
     now,
     flags: getDraftProFeatureFlags(),
     patreonVerificationAvailable,
+  });
+  const checkoutEnabled = getDraftProFeatureFlags().checkout;
+  const checkoutAvailability = getDraftProCheckoutAvailability({
+    now,
+    eligible: access.eligible,
+    checkoutEnabled,
+    stripeConfigured: isStripeConfigured(),
+    siteUrlConfigured: Boolean(process.env.NEXT_PUBLIC_SITE_URL?.trim()),
   });
   const purchases = await client.from("draft_pro_purchases")
     .select("id,season,status,activated_at,expires_at,amount_cents,currency,metadata")
@@ -65,6 +110,19 @@ export async function loadDraftProAccount({
 
   return {
     access,
+    passInfo: {
+      season: DRAFT_PRO_SEASON,
+      priceCents: DRAFT_PRO_PRICE_CENTS,
+      currency: "usd",
+      expiresAt: DRAFT_PRO_EXPIRATION,
+      renewal: "none" as const,
+    },
+    checkoutAvailability,
+    configurationReadiness: {
+      stripe: isStripeConfigured(),
+      patreon: isPatreonConfigured(),
+      yahoo: false,
+    },
     purchases: ((purchases.data ?? []) as Array<Record<string, unknown>>).map((purchase) => {
       const activatedAt = typeof purchase.activated_at === "string" ? purchase.activated_at : null;
       const deadlineMs = activatedAt ? new Date(activatedAt).getTime() + REFUND_WINDOW_MS : NaN;
