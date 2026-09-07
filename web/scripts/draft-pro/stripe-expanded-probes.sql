@@ -22,11 +22,11 @@ begin
   perform public.record_draft_pro_stripe_event('evt_a_won','dispute',now(),'cs_a','pi_a','00000000-0000-4000-8000-000000000021',a,'dispute_won',false,'dp_a','won','{}');
   perform public.record_draft_pro_stripe_event('evt_a_lateopen','dispute',now(),'cs_a','pi_a','00000000-0000-4000-8000-000000000021',a,'disputed',false,'dp_a','open','{}');
   if not exists(select 1 from public.draft_pro_purchases where id=a and status='active' and dispute_status='won') then raise exception 'won dispute reopened'; end if;
-  perform public.record_draft_pro_stripe_event('evt_a_won_first','dispute',event_time,'cs_a','pi_a','00000000-0000-4000-8000-000000000021',a,'dispute_won',false,'dp_early','won','{}');
-  perform public.record_draft_pro_stripe_event('evt_a_open_late','dispute',event_time,'cs_a','pi_a','00000000-0000-4000-8000-000000000021',a,'disputed',false,'dp_early','open','{}');
-  if not exists(select 1 from public.draft_pro_purchases where id=a and dispute_id='dp_early' and dispute_status='won') then raise exception 'won-before-created reopened'; end if;
   select purchase_id into b from public.begin_draft_pro_stripe_checkout_attempt('00000000-0000-4000-8000-000000000022');
   if b=a then raise exception 'independent users shared purchase'; end if;
+  perform public.record_draft_pro_stripe_event('evt_b_won_first','dispute',event_time,null,null,'00000000-0000-4000-8000-000000000022',b,'dispute_won',false,'dp_early','won','{}');
+  perform public.record_draft_pro_stripe_event('evt_b_open_late','dispute',event_time,null,null,'00000000-0000-4000-8000-000000000022',b,'disputed',false,'dp_early','open','{}');
+  if not exists(select 1 from public.draft_pro_purchases where id=b and dispute_id='dp_early' and dispute_status='won') then raise exception 'won-before-created reopened'; end if;
   insert into public.user_entitlements (user_id,source_provider,entitlement_key,entitlement_status,source_reference) values ('00000000-0000-4000-8000-000000000021','patreon','draft_pro','active','patreon-probe');
   perform public.record_draft_pro_stripe_event('evt_a_refund','refund',now(),'cs_a','pi_a','00000000-0000-4000-8000-000000000021',a,'refunded',true,null,null,'{}');
   if not exists(select 1 from public.user_entitlements where user_id='00000000-0000-4000-8000-000000000021' and source_provider='patreon' and entitlement_status='active') then raise exception 'Stripe refund revoked Patreon grant'; end if;
