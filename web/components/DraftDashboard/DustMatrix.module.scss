@@ -32,7 +32,7 @@
 
 .legend { margin: 8px 0; color: v.$text-secondary; line-height: 1.5; }
 .viewport { overflow: auto; padding: 8px 0 14px; @include v.custom-scrollbar(v.$primary-color, v.$draft-surface); }
-.plot { position: relative; min-width: 100%; }
+.plot { position: relative; min-width: 100%; zoom: var(--fit-scale, 1); }
 .axisTitle,
 .weekLabel,
 .playerName,
@@ -59,7 +59,7 @@
 @media (max-width: v.$breakpoint-tablet) {
   .matrix { padding: 10px; }
   .viewport { overflow: visible; }
-  .plot { min-width: 0; zoom: .38; }
+  .plot { min-width: 0; }
   .matrixFooter { gap: 2px 4px; font-size: 8px; }
   .matrixFooter span { min-width: 22px; }
   .cellButton { display: none; }
