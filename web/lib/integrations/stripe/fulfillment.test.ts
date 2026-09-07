@@ -1,0 +1,37 @@
+import { describe, expect, it, vi } from "vitest";
+
+import { fulfillStripeEvent, verifyStripeCheckoutSession } from "./fulfillment";
+
+function rpcClient(result = { purchase_id: "purchase-1", processed: true }) {
+  const rpc = vi.fn().mockResolvedValue({ data: result, error: null });
+  return { rpc } as any;
+}
+
+describe("Stripe fulfillment", () => {
+  it("sends a completed signed event to the single atomic fulfillment RPC", async () => {
+    const client = rpcClient();
+    const result = await fulfillStripeEvent({
+      id: "evt_completed",
+      type: "checkout.session.completed",
+      data: { object: { object: "checkout.session", id: "cs_test_123", payment_intent: "pi_123", metadata: { draft_pro_user_id: "user-1" } } },
+    } as any, client);
+
+    expect(result).toEqual({ purchaseId: "purchase-1", processed: true });
+    expect(client.rpc).toHaveBeenCalledWith("fulfill_draft_pro_stripe_purchase", expect.objectContaining({
+      p_event_id: "evt_completed", p_session_id: "cs_test_123", p_payment_intent_id: "pi_123", p_user_id: "user-1", p_status: "active",
+    }));
+  });
+
+  it("does not process unrelated events", async () => {
+    const client = rpcClient();
+    await expect(fulfillStripeEvent({ id: "evt_ignored", type: "customer.created", data: { object: {} } } as any, client)).resolves.toEqual({ purchaseId: null, processed: false });
+    expect(client.rpc).not.toHaveBeenCalled();
+  });
+
+  it("uses a deterministic return event and only fulfills paid sessions", async () => {
+    const client = rpcClient();
+    await verifyStripeCheckoutSession({ object: "checkout.session", id: "cs_test_123", payment_status: "paid", payment_intent: "pi_123", metadata: { draft_pro_user_id: "user-1" } } as any, client);
+    expect(client.rpc).toHaveBeenCalledWith("fulfill_draft_pro_stripe_purchase", expect.objectContaining({ p_event_id: "return:cs_test_123" }));
+    await expect(verifyStripeCheckoutSession({ payment_status: "unpaid" } as any, client)).resolves.toEqual({ purchaseId: null, processed: false });
+  });
+});

@@ -149,6 +149,7 @@
     "resend": "^4.5.0",
     "resize-observer-polyfill": "^1.5.1",
     "retry": "^0.13.1",
+    "stripe": "^18.5.0",
     "swr": "^2.3.6",
     "use-immer": "^0.7.0",
     "winston": "^3.14.2",
