@@ -1,0 +1,77 @@
+# Draft Pro Launch Copy
+
+Status: copy contract for review. Free Draft is currently available. Checkout, the Draft Pro pass, and all premium features below are future-ready copy pending launch and readiness approval.
+
+## Free Draft: currently available
+
+Free Draft includes:
+
+- Full manual drafting
+- Keepers and trades
+- Scoring and roster settings
+- Source selection, weights, and local CSV imports
+- Local autosave and bookmarks
+- Standard suggestions and favorites
+- Basic two-player compare
+- Undo, corrections, and a basic summary
+
+Your local draft remains yours to keep. Local autosave does not require Draft Pro.
+
+## Future-ready checkout and pass copy: pending launch
+
+**Draft Pro: one season, one payment.**
+
+Get a Draft Pro pass for **US$5.99 one time**. The pass is for the `2026-27` season and expires at **12:00 AM Eastern on July 1, 2027**. It does **not renew** and there is no subscription.
+
+Pay through Stripe Checkout. Link and receipt delivery are available when enabled for the checkout. PayPal is not offered for this pass.
+
+Later Draft Pro milestones released before this pass expires are included in the same purchased pass when enabled. Yahoo support is planned separately, with no guaranteed release date.
+
+### Eligibility and access
+
+An active paid Patreon membership in the configured FHFH campaign can grant Draft Pro access after independent verification. Patreon eligibility follows the paid membership through its paid-access expiry; cancellation is not treated as an immediate expiry. A valid purchased Draft Pro pass remains available if Patreon eligibility later ends or disconnects.
+
+If eligibility ends, retained premium data is locked rather than deleted. **Your saved drafts are still here. Renew eligibility to restore access to your retained work.** Disconnected provider credentials are removed. A valid purchased pass is not locked merely because Patreon disconnects.
+
+Account status should say whether access is active, locked pending renewed eligibility, or unavailable because verification is pending. A successful refund request should say that the request was received and will be reviewed case by case. If notification email fails, say that the request was saved and provide `tim@fhfhockey.com` for support.
+
+### Refund requests
+
+Refunds are reviewed **case by case**. Submit a request within **168 hours of the first server-recorded purchase activation**. Each purchase can have only one open request.
+
+Select one reason and include an explanation of 10 to 2,000 characters:
+
+1. Technical problem
+2. Confusing experience
+3. Missing expected feature
+4. Not useful for my draft
+5. Accidental purchase
+6. Other
+
+We do not issue automatic refunds. Submitting a request does not automatically revoke access. Manual decisions are reconciled with Stripe. Patreon refunds must be requested through Patreon.
+
+You may optionally tell us what would improve Draft Pro and whether you used it during a live draft. These answers are optional.
+
+## Proposed premium copy: also pending launch
+
+The following copy is proposed for future enabled premium features. It is intentionally not launch copy and must not be displayed as an available capability before the relevant implementation and readiness checks pass.
+
+### Proposed Draft Pro value message
+
+**Make a sharper plan for your league.** Draft Pro is proposed to add roster-aware recommendations, personalized replacement suggestions, DUST insights, alternatives, and schedule-fit sorting. It is also proposed to support blended CSV analysis, Saved Drafts and private imports, scenarios, and reports.
+
+These are proposed capabilities only. Yahoo support remains separately gated and is not promised by this copy.
+
+### Proposed feature descriptions
+
+- **Roster-aware recommendations:** Proposed recommendations that account for your roster, needs, and configured league settings.
+- **Personalized replacements:** Proposed replacement suggestions for your roster context. They are suggestions, not guarantees.
+- **DUST insights:** Proposed insights, alternatives, and schedule-fit sorting with freshness and estimate labels where applicable.
+- **Saved Drafts:** Proposed cloud-saved draft states and private imports, available only after explicit save and account eligibility.
+- **Scenarios and reports:** Proposed read-only scenario comparisons and deterministic reports based on saved draft inputs.
+
+Until each feature is explicitly enabled, show the free Draft experience and do not imply that a paid pass unlocks an unshipped feature.
+
+## Short disclosure
+
+Draft Pro is a one-time US$5.99 pass for the 2026-27 season, expiring July 1, 2027 at 12:00 AM Eastern. It does not renew. Recommendation and schedule-fit availability may depend on provider readiness and estimate freshness; proposed recommendations remain suggestions.
