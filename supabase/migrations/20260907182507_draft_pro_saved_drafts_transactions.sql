@@ -142,10 +142,12 @@ language plpgsql security definer set search_path = public, pg_temp as $$
 declare upload public.draft_pro_private_import_uploads%rowtype; parent_status text; parent_expires_at timestamptz; ordinal integer;
 begin
   if p_user_id is null or p_chunk_paths is null or cardinality(p_chunk_paths) not between 1 and 32 or p_actual_bytes not between 1 and 10485760 or p_row_count not between 0 and 100000 or p_content_sha256 !~ '^[a-f0-9]{64}$' then raise exception 'Invalid private import staging request'; end if;
-  select u.*,s.status,s.expires_at into upload,parent_status,parent_expires_at
+  select u.* into upload
   from public.draft_pro_private_import_uploads as u join public.draft_pro_save_sessions as s on s.id=u.save_session_id
   where u.id = p_upload_id and u.user_id = p_user_id and s.user_id=p_user_id for update of u,s;
-  if not found or parent_status<>'pending' or parent_expires_at<=now() then raise exception 'Private import parent session is unavailable'; end if;
+  if not found then raise exception 'Private import parent session is unavailable'; end if;
+  select s.status,s.expires_at into parent_status,parent_expires_at from public.draft_pro_save_sessions as s where s.id=upload.save_session_id for update;
+  if parent_status<>'pending' or parent_expires_at<=now() then raise exception 'Private import parent session is unavailable'; end if;
   if p_actual_bytes > upload.declared_max_bytes then raise exception 'Private import upload is unavailable'; end if;
   for ordinal in 1..cardinality(p_chunk_paths) loop if p_chunk_paths[ordinal] <> upload.storage_prefix || '/' || (ordinal - 1)::text then raise exception 'Private import chunk path is not server-owned'; end if; end loop;
   if upload.status='staged' then
