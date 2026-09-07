@@ -104,7 +104,16 @@ export function useSavedDrafts() {
     const next = queue.current.catch(() => undefined).then(run); queue.current = next; return next;
   }, []);
   const autosave = useCallback((id: string, options: SaveOptions) => { if (timer.current) clearTimeout(timer.current); timer.current = setTimeout(() => { void saveNow(id, options).catch(() => undefined); }, 2000); }, [saveNow]);
-  const open = useCallback(async (id: string) => { if (timer.current) clearTimeout(timer.current); const at = ++generation.current; const value = await request<StoredDraftDetail>(`/api/v1/account/draft-pro/drafts/${id}`); const imports = await Promise.all(value.privateImports.map((entry) => restoreImportChunks(id, entry, () => at === generation.current))); if (at !== generation.current) throw new Error("Saved draft restore was cancelled."); const restored: SavedDraftDetail = { ...value, privateImports: imports }; replaceOpened(restored); return restored; }, []);
+  const open = useCallback(async (id: string) => {
+    if (timer.current) clearTimeout(timer.current);
+    const at = ++generation.current; setStatus("loading"); setError(null); setConflict(null);
+    try {
+      const value = await request<StoredDraftDetail>(`/api/v1/account/draft-pro/drafts/${id}`);
+      const imports = await Promise.all(value.privateImports.map((entry) => restoreImportChunks(id, entry, () => at === generation.current)));
+      if (at !== generation.current) throw new Error("Saved draft restore was cancelled.");
+      const restored: SavedDraftDetail = { ...value, privateImports: imports }; replaceOpened(restored); setStatus("idle"); return restored;
+    } catch (cause) { if (at === generation.current) { setStatus("error"); setError(cause instanceof Error ? cause.message : "Could not open this saved draft."); } throw cause; }
+  }, []);
   const mutate = useCallback(async (id: string, init: RequestInit, deleted = false) => {
     const at = generation.current; setStatus("saving"); setError(null); setConflict(null);
     try {

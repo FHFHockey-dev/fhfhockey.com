@@ -99,6 +99,13 @@ describe("useSavedDrafts", () => {
     await act(async () => { (onAuthStateChange.mock.calls[0][0] as (event: string, session: unknown) => void)("TOKEN_REFRESHED", { user: { id: "user-1" } }); });
     expect(result.current.opened?.id).toBe("draft");
   });
+  it("keeps the current draft and exposes an error when opening another draft fails", async () => {
+    let unavailable = false;
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(url.endsWith("/other") && unavailable ? json({ error: { message: "unavailable" } }, false, 404) : json({ data: url.endsWith("/draft") ? { ...detail, privateImports: [] } : [] }))));
+    const { result } = renderHook(() => useSavedDrafts()); await act(async () => { await result.current.open("draft"); }); unavailable = true;
+    await act(async () => { await expect(result.current.open("other")).rejects.toThrow("unavailable"); });
+    expect(result.current.opened?.id).toBe("draft"); expect(result.current.status).toBe("error"); expect(result.current.error).toBe("unavailable");
+  });
   it("cancels a pending open when the auth identity changes", async () => {
     let resolve!: (value: unknown) => void; const pending = new Promise((done) => { resolve = done; }); vi.stubGlobal("fetch", vi.fn((url: string) => url.endsWith("/draft") ? pending : Promise.resolve(json({ data: [] }))));
     const { result } = renderHook(() => useSavedDrafts()); const opening = result.current.open("draft"); (onAuthStateChange.mock.calls[0][0] as (event: string, session: null) => void)("SIGNED_OUT", null); resolve(json({ data: { ...detail, privateImports: [] } })); await expect(opening).rejects.toThrow("cancelled");
