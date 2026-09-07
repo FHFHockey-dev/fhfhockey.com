@@ -24,7 +24,7 @@ vi.mock("lib/rosterScheduleData", async () => {
 });
 vi.mock("lib/supabase/server", () => ({ default: { from: mocks.from } }));
 
-import handler from "./dust";
+import handler from "../../../pages/api/v1/draft-pro/dust";
 
 function response() {
   const state = { status: 0, body: null as unknown, headers: new Map<string, string>() };

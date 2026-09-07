@@ -16,7 +16,7 @@ vi.mock("lib/integrations/stripe/fulfillment", () => ({
   verifyDraftProCheckoutSession: verify,
 }));
 
-import handler from "./stripe";
+import handler from "../../../pages/api/v1/webhooks/stripe";
 
 function response() {
   const state: any = { statusCode: 0, body: null };

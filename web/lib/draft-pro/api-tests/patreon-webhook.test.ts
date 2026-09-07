@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({ process: vi.fn() }));
 vi.mock("lib/integrations/patreon/sync", () => ({ processPatreonWebhook: mocks.process }));
 vi.mock("lib/integrations/patreon/config", () => ({ getPatreonWebhookSecret: () => "test-webhook-secret" }));
 
-import handler from "./patreon";
+import handler from "../../../pages/api/v1/webhooks/patreon";
 
 const body = new TextEncoder().encode('{"data":{"id":"member-1","type":"member"}}');
 const signature = crypto.createHmac("md5", "test-webhook-secret").update(body).digest("hex");

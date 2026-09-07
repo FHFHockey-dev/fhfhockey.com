@@ -10,7 +10,7 @@ vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: mocks.requireApiUser 
 vi.mock("lib/draft-pro/server", () => ({ loadDraftProAccess: mocks.loadDraftProAccess, requireDraftProServerCapability: mocks.requireDraftProServerCapability }));
 vi.mock("lib/draft-pro/features", () => ({ getDraftProFeatureFlags: vi.fn(() => ({})) }));
 
-import handler from "./export";
+import handler from "../../../pages/api/v1/draft-pro/export";
 
 function response() {
   const state = { status: 0, body: null as unknown, headers: new Map<string, string>() };
