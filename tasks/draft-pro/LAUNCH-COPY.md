@@ -60,7 +60,7 @@ The following copy describes locally implemented initial-release candidates and 
 
 **Make a sharper plan for your league.** Draft Pro provides roster-aware recommendations, personalized replacement suggestions, DUST insights, alternatives, schedule-fit sorting, and aggregate CSV export when enabled. The expanded draft graph stays free.
 
-Saved Drafts and private imports are locally approved candidates in the same pass when enabled. Scenarios and reports remain queued, and Yahoo remains parked; none is promised by this copy.
+Saved Drafts and private imports are locally approved candidates in the same pass when enabled. Scenarios are in development, reports are queued, and Yahoo remains parked; none is promised by this copy.
 
 ### Proposed feature descriptions
 

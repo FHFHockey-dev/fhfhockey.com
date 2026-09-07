@@ -6,7 +6,7 @@ Status: preparation packet only. Draft Pro is not advertised as live from this p
 
 The locally approved initial-release candidates are the one-time 2026-27 pass, Stripe purchase and entitlement lifecycle, Patreon eligibility grant, refund request/access handling, roster-aware recommendations, personalized replacement suggestions, DUST, and aggregate CSV export. Account and expanded graph views are integration surfaces; the expanded graph remains free. DUST supports full-season daily-lineup analysis with its actual schedule window and freshness displayed. The free schedule matrix shows all 27 Yahoo weeks, with selected playoffs highlighted; OFF and B2B views may follow the selected playoffs.
 
-Saved Drafts and private imports are a separately approved later milestone set in the same pass when enabled; production availability remains gated. Scenarios are queued and reports are queued; Yahoo is parked. These milestones must not appear as currently available in launch copy.
+Saved Drafts and private imports are a separately approved later milestone included in the same pass when enabled; production availability remains gated. Scenarios are being implemented, reports are queued, and Yahoo is parked. These milestones must not appear as currently available in launch copy.
 
 ## Contract
 
@@ -44,10 +44,10 @@ Canonical Draft Pro flags are all off by default: `DRAFT_PRO_CHECKOUT_ENABLED`, 
 
 Current approved local integration is `ab217e935`, which includes the later verification documentation on top of the approved Saved Drafts milestone set (`35edc72a2` and `c4e1bbb10`).
 
-- Earlier release-candidate evidence at `acc95703d` recorded root unit RC4349 with 3 skipped, plus targeted 29 tests after the final corrections, and full root TypeScript exiting 0.
+- The full unit release candidate at `acc95703d` passed 4,349 tests with 3 skipped. After the subsequent autosave/import corrections, 29 targeted hook/workspace tests passed.
 - Current standalone TypeScript evidence is session `61020`, exit 0, recorded in `/tmp/draft-pro-chef-browser-fixture-types.log`.
 - Full real-service browser session `56624` and final styling-only session `37500` both exited 0, with cleanup verified. These are execution session IDs, not commit IDs.
-- Screenshots are retained under `/Users/tim/.codex/visualizations/2026/09/07/01a07c49-ae59-7581-9f02-5efd5cfa644d/`.
+- Screenshots are retained under `/Users/tim/.codex/visualizations/2026/09/07/01a07c49-af48-7d63-8efd-734ea1d6c002/`.
 - The browser acceptance used 200% pinch plus a 640 CSS width reflow-equivalent check; actual desktop browser-chrome zoom is not claimed.
 - Isolated verification covered the local Storage service, denied anon/two-user payload access, empty private listings, repeated batch deletion with missing paths, and overlapping Saved Drafts transactions where the second caller waited on the first lock and the stale caller received a conflict.
 - The free/account Chromium suite passed all 8 cases on the corrected integration baseline and covered manual drafting, comparison, source weights, local CSV restoration, graph keyboard close, free export denial, mocked paid export, and mocked account retry/access denial.
