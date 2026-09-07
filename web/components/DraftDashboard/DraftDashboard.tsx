@@ -30,6 +30,7 @@ import LeagueStandings from "./LeagueStandings";
 import MyRoster from "./MyRoster";
 import ProjectionsTable from "./ProjectionsTable";
 import { useVORPCalculations } from "hooks/useVORPCalculations";
+import { useDraftProAccess } from "hooks/useDraftProAccess";
 import { useRosterScheduleOptimizer } from "hooks/useRosterScheduleOptimizer";
 import SuggestedPicks from "./SuggestedPicks";
 import DraftSummaryModal from "./DraftSummaryModal";
@@ -419,24 +420,11 @@ const DraftDashboard: React.FC = () => {
       );
     },
   );
-  const [draftProEligible, setDraftProEligible] = useState(false);
-  useEffect(() => {
-    let cancelled = false;
-    void supabase.auth.getSession().then(({ data }) => {
-      if (!data.session?.access_token) return;
-      void fetch("/api/v1/account/draft-pro", {
-        headers: { Authorization: `Bearer ${data.session.access_token}` },
-      })
-        .then((response) => response.json())
-        .then((body) => {
-          if (!cancelled) setDraftProEligible(Boolean(body?.data?.access?.eligible));
-        })
-        .catch(() => {
-          if (!cancelled) setDraftProEligible(false);
-        });
-    });
-    return () => { cancelled = true; };
-  }, [user?.id]);
+  const { access: draftProAccess } = useDraftProAccess();
+  const draftProEligible = Boolean(draftProAccess?.eligible);
+  const canUseProRecommendations = Boolean(
+    draftProAccess?.capabilities.includes("recommendations"),
+  );
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(
@@ -3469,7 +3457,7 @@ const DraftDashboard: React.FC = () => {
           dustInsights={rosterScheduleOptimizer.insights}
           vorpMetrics={vorpMetrics}
           personalizedVorpMetrics={personalizedVorpMetrics}
-          draftProEligible={draftProEligible}
+          draftProEligible={canUseProRecommendations}
           needWeightEnabled={needWeightEnabled}
           needAlpha={needAlpha}
           posNeeds={posNeeds}
