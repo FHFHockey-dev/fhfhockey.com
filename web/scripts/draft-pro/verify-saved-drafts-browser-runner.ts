@@ -75,6 +75,41 @@ const isDraftMutation = (response: import("playwright").Response, id: string, st
   && new URL(response.url()).pathname === `/api/v1/account/draft-pro/drafts/${id}`
   && response.status() === status;
 
+async function captureResponsiveArtifacts(browser: import("playwright").Browser) {
+  const mobile = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const mobilePage = await mobile.newPage(); mobilePage.setDefaultTimeout(10_000);
+  await installPublicDashboardFixtures(mobilePage);
+  mobilePage.on("dialog", (dialog) => dialog.accept());
+  await prepare(mobilePage, owner, savedBrowser);
+  await mobilePage.goto(`${base}/draft-dashboard`); await closeDashboardOverlay(mobilePage);
+  const savedDraftsButton = mobilePage.getByRole("button", { name: "Saved Drafts", exact: true });
+  await savedDraftsButton.focus(); await mobilePage.keyboard.press("Enter");
+  assert.equal(await mobilePage.getByRole("button", { name: "Hide Saved Drafts", exact: true }).getAttribute("aria-expanded"), "true");
+  const mobilePanel = mobilePage.getByRole("region", { name: "Saved Drafts", exact: true });
+  await mobilePanel.locator("#new-saved-draft-name").waitFor();
+  await mobilePanel.getByRole("button", { name: "Browser route draft", exact: true }).waitFor();
+  await mobilePage.screenshot({ path: `${artifacts}/mobile.png`, fullPage: true });
+  const cdp = await mobile.newCDPSession(mobilePage);
+  await cdp.send("Emulation.setPageScaleFactor", { pageScaleFactor: 2 });
+  assert.equal(await mobilePage.evaluate(() => window.visualViewport?.scale), 2);
+  await mobilePage.screenshot({ path: `${artifacts}/mobile-pinch-200pct.png`, fullPage: true });
+  await mobile.close();
+
+  const reflow = await browser.newContext({ viewport: { width: 640, height: 720 } });
+  const reflowPage = await reflow.newPage(); reflowPage.setDefaultTimeout(10_000);
+  await installPublicDashboardFixtures(reflowPage);
+  reflowPage.on("dialog", (dialog) => dialog.accept());
+  await prepare(reflowPage, owner, savedBrowser);
+  await reflowPage.goto(`${base}/draft-dashboard`); await closeDashboardOverlay(reflowPage);
+  await reflowPage.getByRole("button", { name: "Saved Drafts", exact: true }).click();
+  const reflowPanel = reflowPage.getByRole("region", { name: "Saved Drafts", exact: true });
+  await reflowPanel.locator("#new-saved-draft-name").waitFor();
+  await reflowPanel.getByRole("button", { name: "Browser route draft", exact: true }).waitFor();
+  assert.equal(await reflowPage.evaluate(() => window.innerWidth), 640);
+  await reflowPage.screenshot({ path: `${artifacts}/desktop-200pct-reflow-equivalent.png`, fullPage: true });
+  await reflow.close();
+}
+
 async function main() {
   const browser = await chromium.launch({ headless: true });
   try {
@@ -138,6 +173,12 @@ async function main() {
     const storedImportComparable = { name: restoredMetadata.name, sourceId: restoredMetadata.mapping.sourceId, mapping: restoredMetadata.mapping.headers, rows: restoredRows };
     assert.deepEqual(currentImportComparable, storedImportComparable);
     await secondPage.screenshot({ path: `${artifacts}/desktop-restored.png`, fullPage: true });
+    if (process.env.DRAFT_PRO_VISUAL_ONLY === "true") {
+      await captureResponsiveArtifacts(browser);
+      await first.close(); await second.close();
+      console.log("saved_drafts_visual=passed; desktop=1280px; mobile=390px-keyboard; magnification=pinch-200pct; reflow=640px-css-equivalent");
+      return;
+    }
 
     await secondPage.getByRole("button", { name: "Hide Saved Drafts", exact: true }).click();
     const autosaved = secondPage.waitForResponse((response) => isDraftMutation(response, draftId, 200), { timeout: 30_000 });
@@ -226,38 +267,7 @@ async function main() {
     await inactive.close();
 
     await setActive(true);
-    const mobile = await browser.newContext({ viewport: { width: 390, height: 844 } });
-    const mobilePage = await mobile.newPage(); mobilePage.setDefaultTimeout(10_000);
-    await installPublicDashboardFixtures(mobilePage);
-    mobilePage.on("dialog", (dialog) => dialog.accept());
-    await prepare(mobilePage, owner, savedBrowser);
-    await mobilePage.goto(`${base}/draft-dashboard`); await closeDashboardOverlay(mobilePage);
-    const savedDraftsButton = mobilePage.getByRole("button", { name: "Saved Drafts", exact: true });
-    await savedDraftsButton.focus(); await mobilePage.keyboard.press("Enter");
-    assert.equal(await mobilePage.getByRole("button", { name: "Hide Saved Drafts", exact: true }).getAttribute("aria-expanded"), "true");
-    const mobilePanel = mobilePage.getByRole("region", { name: "Saved Drafts", exact: true });
-    await mobilePanel.locator("#new-saved-draft-name").waitFor();
-    await mobilePanel.getByRole("button", { name: "Browser route draft", exact: true }).waitFor();
-    await mobilePage.screenshot({ path: `${artifacts}/mobile.png`, fullPage: true });
-    const cdp = await mobile.newCDPSession(mobilePage);
-    await cdp.send("Emulation.setPageScaleFactor", { pageScaleFactor: 2 });
-    assert.equal(await mobilePage.evaluate(() => window.visualViewport?.scale), 2);
-    await mobilePage.screenshot({ path: `${artifacts}/mobile-pinch-200pct.png`, fullPage: true });
-    await mobile.close();
-
-    const reflow = await browser.newContext({ viewport: { width: 640, height: 720 } });
-    const reflowPage = await reflow.newPage(); reflowPage.setDefaultTimeout(10_000);
-    await installPublicDashboardFixtures(reflowPage);
-    reflowPage.on("dialog", (dialog) => dialog.accept());
-    await prepare(reflowPage, owner, savedBrowser);
-    await reflowPage.goto(`${base}/draft-dashboard`); await closeDashboardOverlay(reflowPage);
-    await reflowPage.getByRole("button", { name: "Saved Drafts", exact: true }).click();
-    const reflowPanel = reflowPage.getByRole("region", { name: "Saved Drafts", exact: true });
-    await reflowPanel.locator("#new-saved-draft-name").waitFor();
-    await reflowPanel.getByRole("button", { name: "Browser route draft", exact: true }).waitFor();
-    assert.equal(await reflowPage.evaluate(() => window.innerWidth), 640);
-    await reflowPage.screenshot({ path: `${artifacts}/desktop-200pct-reflow-equivalent.png`, fullPage: true });
-    await reflow.close();
+    await captureResponsiveArtifacts(browser);
 
     await first.close(); await second.close();
     console.log("saved_drafts_browser=passed; contexts=two-real-user-sessions-plus-inactive-and-mobile; restore=populated-private-csv; autosave=hidden-panel; recovery=retry-local-intact; conflicts=reload-and-copy; inactive=names-locked-free-pick; accessibility=keyboard-mobile; magnification=pinch-200pct; reflow=640px-css-equivalent");
