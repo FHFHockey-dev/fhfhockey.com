@@ -23,6 +23,9 @@ const playerSchema = z.object({
 const requestSchema = z.object({
   season: z.string().trim().min(1).max(40),
   lineupMode: z.enum(["daily", "weekly"]),
+  sort: z.enum(["ordinary", "schedule_fit"]).optional(),
+  inputOrigin: z.enum(["draft", "private_import"]),
+  privateImportAccountSaved: z.boolean().optional(),
   gameKey: z.string().trim().min(1).max(40),
   startWeek: z.number().int().min(1).max(40),
   endWeek: z.number().int().min(1).max(40),
@@ -63,12 +66,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     const games = await readRosterSchedule(serviceRoleClient as unknown as ScheduleReadClient, filter);
     const seasons = new Set(games.map((game) => game.season));
-    const fetchedAt = games.map((game) => game.fetched_at).filter((value): value is string => Boolean(value)).sort().at(-1) ?? null;
+    const fetchedAt = games.map((game) => game.fetched_at).filter((value): value is string => Boolean(value)).sort();
     const result = evaluateDraftProDust({
       ...parsed,
       schedule: {
         season: seasons.size === 1 ? [...seasons][0] : "",
-        fetchedAt,
+        freshness: {
+          // DUST is unavailable if any selected schedule row is stale or unverified.
+          oldestFetchedAt: games.length && fetchedAt.length === games.length ? fetchedAt[0] ?? null : null,
+          latestFetchedAt: fetchedAt.at(-1) ?? null,
+        },
         games: games.map((game) => ({
           gameId: String(game.source_game_id),
           date: game.game_date,

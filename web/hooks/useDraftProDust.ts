@@ -21,6 +21,9 @@ export function useDraftProDust(input: DraftProDustRequestInput | null, enabled:
   const body = useMemo(() => input ? JSON.stringify({
     season: input.season,
     lineupMode: input.lineupMode,
+    sort: input.sort,
+    inputOrigin: input.inputOrigin,
+    privateImportAccountSaved: input.privateImportAccountSaved,
     gameKey: input.gameKey,
     startWeek: input.startWeek,
     endWeek: input.endWeek,
