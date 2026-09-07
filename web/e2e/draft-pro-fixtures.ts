@@ -1,4 +1,7 @@
 import type { Page } from "@playwright/test";
+import type { DraftProAccess } from "lib/draft-pro/contracts";
+
+type DraftProAccountResponse = { access: DraftProAccess };
 
 /** Keeps browser smoke coverage local, free, and independent of real accounts. */
 export async function installDraftProFreeFixtures(page: Page) {
@@ -53,4 +56,48 @@ export async function installDraftProFreeFixtures(page: Page) {
       },
     }));
   });
+}
+
+/**
+ * Adds a fictional persisted Supabase session to the free fixture. Auth and
+ * account responses remain local route intercepts; this never contacts
+ * Supabase or a payment provider.
+ */
+export async function installDraftProAuthenticatedFixtures(
+  page: Page,
+  accountResponse: () => DraftProAccountResponse,
+) {
+  await installDraftProFreeFixtures(page);
+  const expiresAt = Math.floor(Date.now() / 1000) + 60 * 60;
+  const user = {
+    id: "00000000-0000-4000-8000-000000000001",
+    aud: "authenticated",
+    role: "authenticated",
+    email: "draft-pro-fixture@example.test",
+    app_metadata: { provider: "email", providers: ["email"] },
+    user_metadata: { fixture: true },
+    created_at: "2026-01-01T00:00:00.000Z",
+    updated_at: "2026-01-01T00:00:00.000Z",
+  };
+  const jwt = (subject: string) => `eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.${Buffer.from(JSON.stringify({ sub: subject, aud: "authenticated", role: "authenticated", exp: expiresAt })).toString("base64url")}.fixture`;
+  const session = {
+    access_token: jwt(user.id),
+    refresh_token: jwt(`${user.id}:refresh`),
+    token_type: "bearer",
+    expires_in: 60 * 60,
+    expires_at: expiresAt,
+    user,
+  };
+  await page.addInitScript((persistedSession) => {
+    localStorage.setItem("sb-127-auth-token", JSON.stringify(persistedSession));
+  }, session);
+  await page.route("**/auth/v1/user", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(user) }),
+  );
+  await page.route("**/auth/v1/token**", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(session) }),
+  );
+  await page.route("**/api/v1/account/draft-pro", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: accountResponse() }) }),
+  );
 }
