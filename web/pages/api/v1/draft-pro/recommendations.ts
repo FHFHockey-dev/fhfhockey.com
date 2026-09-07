@@ -8,10 +8,11 @@ import { getDraftProFeatureFlags } from "lib/draft-pro/features";
 import { loadDraftProAccess, requireDraftProServerCapability } from "lib/draft-pro/server";
 
 const finiteNumber = z.number().finite();
-const categoryValues = z.record(finiteNumber.nullable()).refine(
-  (values) => Object.keys(values).length <= 80,
-  "A player may include at most 80 category values.",
+const boundedRecord = (value: z.ZodTypeAny) => z.record(z.string().max(100), value).refine(
+  (record) => Object.keys(record).length <= 80,
+  "At most 80 values are allowed.",
 );
+const categoryValues = boundedRecord(finiteNumber.nullable());
 const inputSchema = z.object({
   // Local CSV/private rows must never be sent here by background recalculation.
   // W08 supplies the saved-account source once an owner explicitly saves it.
@@ -25,12 +26,13 @@ const inputSchema = z.object({
     globalVorp: finiteNumber,
     rankValue: finiteNumber,
     baselineScore: finiteNumber.optional(),
+    tieBreaker: finiteNumber.optional(),
     categoryValues: categoryValues.optional(),
     adp: finiteNumber.nullable().optional(),
   }).strict()).min(1).max(200),
-  positionNeeds: z.record(finiteNumber).optional(),
-  categoryNeeds: z.record(finiteNumber).optional(),
-  categoryWeights: z.record(finiteNumber).optional(),
+  positionNeeds: boundedRecord(finiteNumber).optional(),
+  categoryNeeds: boundedRecord(finiteNumber).optional(),
+  categoryWeights: boundedRecord(finiteNumber).optional(),
   needAlpha: finiteNumber.min(0).max(1).optional(),
   currentPick: finiteNumber.int().min(1).max(2_000).optional(),
   teamCount: finiteNumber.int().min(1).max(32).optional(),
@@ -38,6 +40,7 @@ const inputSchema = z.object({
 }).strict();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  res.setHeader("Cache-Control", "private, no-store");
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: { code: "method_not_allowed" } });
@@ -66,7 +69,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: { code: "validation_error", message: error.issues[0]?.message ?? "Invalid recommendation request." } });
     }
     const status = typeof error === "object" && error && "statusCode" in error && typeof error.statusCode === "number" ? error.statusCode : 500;
-    const code = typeof error === "object" && error && "code" in error && typeof error.code === "string" ? error.code : "recommendations_unavailable";
-    return res.status(status).json({ error: { code, message: error instanceof Error ? error.message : "Unable to calculate recommendations." } });
+    if (status === 403) {
+      const code = typeof error === "object" && error && "code" in error && typeof error.code === "string" ? error.code : "draft_pro_required";
+      return res.status(403).json({ error: { code, message: "Draft Pro access is required for this action." } });
+    }
+    return res.status(status >= 400 && status < 500 ? status : 500).json({ error: { code: status >= 400 && status < 500 ? "request_failed" : "recommendations_unavailable", message: status >= 400 && status < 500 ? "Unable to process this recommendation request." : "Unable to calculate recommendations." } });
   }
 }

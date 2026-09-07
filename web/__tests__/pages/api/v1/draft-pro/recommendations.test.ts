@@ -44,4 +44,21 @@ describe("POST /api/v1/draft-pro/recommendations", () => {
     expect(res.statusCode).toBe(422);
     expect(res.body).toEqual({ error: expect.objectContaining({ code: "private_source_requires_saved_draft" }) });
   });
+
+  it("sanitizes unexpected provider failures and marks responses private", async () => {
+    loadAccessMock.mockRejectedValue(new Error("secret database detail"));
+    const res = response();
+    await handler({ method: "POST", body, headers: {} } as any, res as any);
+    expect(res.statusCode).toBe(500);
+    expect(res.headers["Cache-Control"]).toBe("private, no-store");
+    expect(res.body).toEqual({ error: { code: "recommendations_unavailable", message: "Unable to calculate recommendations." } });
+  });
+
+  it("rejects oversized need records", async () => {
+    const res = response();
+    const positionNeeds = Object.fromEntries(Array.from({ length: 81 }, (_, index) => [`P${index}`, 1]));
+    await handler({ method: "POST", body: { ...body, positionNeeds }, headers: {} } as any, res as any);
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toEqual({ error: expect.objectContaining({ code: "validation_error" }) });
+  });
 });
