@@ -19,7 +19,14 @@ begin
   if not exists(select 1 from public.draft_pro_purchases where id=a and status='active' and dispute_status='won') then raise exception 'won dispute reopened'; end if;
   select purchase_id into b from public.begin_draft_pro_stripe_checkout_attempt('00000000-0000-4000-8000-000000000022');
   if b=a then raise exception 'independent users shared purchase'; end if;
+  perform public.record_draft_pro_stripe_event('evt_a_refund','refund',now(),'cs_a','pi_a','00000000-0000-4000-8000-000000000021',a,'refunded',true,null,null,'{}');
+  select purchase_id into b from public.begin_draft_pro_stripe_checkout_attempt('00000000-0000-4000-8000-000000000021');
+  if b=a then raise exception 'refunded user did not receive independent repurchase attempt'; end if;
   begin perform public.record_draft_pro_stripe_event('evt_wrong','paid',now(),'bad',null,'00000000-0000-4000-8000-000000000022',a,'paid',false,null,null,'{}'); raise exception 'wrong user accepted'; exception when raise_exception then if sqlerrm like 'wrong user accepted%' then raise; end if; end;
+end $$;
+do $$ begin
+  if has_function_privilege('anon','public.begin_draft_pro_stripe_checkout_attempt(uuid)','execute') or has_function_privilege('authenticated','public.begin_draft_pro_stripe_checkout_attempt(uuid)','execute')
+    or has_function_privilege('anon','public.attach_draft_pro_stripe_checkout_session(uuid,text,timestamptz)','execute') or has_function_privilege('authenticated','public.record_draft_pro_stripe_event(text,text,timestamptz,text,text,uuid,uuid,text,boolean,text,text,jsonb)','execute') then raise exception 'browser Stripe RPC grant exists'; end if;
 end $$;
 select 'stripe_expanded=passed';
 rollback;
