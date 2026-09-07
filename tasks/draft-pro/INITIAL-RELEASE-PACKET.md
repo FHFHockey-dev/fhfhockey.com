@@ -6,7 +6,7 @@ Status: preparation packet only. Draft Pro is not advertised as live from this p
 
 The locally approved initial-release candidates are the one-time 2026-27 pass, Stripe purchase and entitlement lifecycle, Patreon eligibility grant, refund request/access handling, roster-aware recommendations, personalized replacement suggestions, DUST, and aggregate CSV export. Account and expanded graph views are integration surfaces; the graph remains free. DUST supports full-season daily-lineup analysis with its actual schedule window and freshness displayed. The free schedule matrix shows all 27 Yahoo weeks, with selected playoffs highlighted; OFF and B2B views may follow the selected playoffs.
 
-Saved Drafts/private imports, scenarios, reports, and Yahoo are not initial-release capabilities. Saved Drafts runtime modules are integrated, but dashboard integration and full user-flow verification remain pending. Scenarios and reports are queued; Yahoo is parked. These milestones must not appear as currently available in launch copy.
+Saved Drafts/private imports, scenarios, reports, and Yahoo are not initial-release capabilities. Saved Drafts runtime and dashboard implementation are integrated, but full user-flow browser verification remains pending. Scenarios and reports are queued; Yahoo is parked. These milestones must not appear as currently available in launch copy.
 
 ## Contract
 
@@ -52,6 +52,8 @@ Private Storage HTTP verification is integrated at `b9d9c09e1`. W12 used an isol
 Real Stripe test-mode Checkout/webhook validation, Patreon provider validation, and Resend delivery validation are blocked until the owner supplies authorized provider configuration and test access. No real provider check, live charge, Patreon verification, or email send is claimed by this packet.
 
 Saved Drafts real-service API verification is approved at `5d88d8a03` (W12 source `56fac9a11`). The local GoTrue/PostgREST/Storage/Next fixture saves a populated snapshot and restores it with downloaded private rows through a second same-account token. It checks file integrity, cross-user denial, inactive names-only access and payload/write/file locks, restoration after entitlement reactivation, and version conflicts. Its final `cleanup=verified` marker follows process, port, container, and network cleanup checks. The binary-response defect found by this fixture is fixed at `059553e6f`; the affected API suite passed 28 tests with follow-on `73bc3b922`. Dashboard browser save/restore remains pending.
+
+The dashboard implementation candidate is approved through `acc95703d`, with guarded preview adoption, actual dashboard normalization, malformed-data rejection before migration, private-import consent, and superseded/reverted autosave cancellation. Root focused restore/workspace checks passed 34 tests, and the full integrated TypeScript check exited0 with empty output (`/tmp/draft-pro-chef-workspace-types-approved.log`). The final real-service API runner also passed independently on the Chef branch after byte-type corrections (`/tmp/draft-pro-chef-routes-final.log`). The Saved Drafts release-candidate unit suite and full browser acceptance are still pending; neither is implied by these narrower checks.
 
 ## Rollout and rollback
 
