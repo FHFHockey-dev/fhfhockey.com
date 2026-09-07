@@ -83,18 +83,17 @@ gateway_port="$(cat "$WORK/gateway-port")"; gateway="http://127.0.0.1:$gateway_p
 for _ in $(seq 1 45); do curl -sf -H "Authorization: Bearer $user_a" "$gateway/auth/v1/user" >/dev/null && curl -sf "$gateway/rest/v1/" >/dev/null && curl -sf "$gateway/storage/v1/status" >/dev/null && break; sleep 1; done
 curl -sf -H "Authorization: Bearer $user_a" "$gateway/auth/v1/user" >/dev/null
 
-next_port="$((41000 + RANDOM % 1000))"
-(cd web && PLAYER_FORECAST_ISOLATED_NEXT=1 NEXT_PUBLIC_SUPABASE_URL="$gateway" NEXT_PUBLIC_SUPABASE_PUBLIC_KEY="$anon_key" SUPABASE_SERVICE_ROLE_KEY="$service_key" DRAFT_PRO_SAVED_DRAFTS_ENABLED=true DRAFT_PRO_PRIVATE_IMPORTS_ENABLED=true NEXT_TELEMETRY_DISABLED=1 ./node_modules/.bin/next dev -H 127.0.0.1 -p "$next_port") >"$WORK/next.log" 2>&1 &
+next_port="$(node -e 'const net=require("net");const s=net.createServer().listen(0,"127.0.0.1",()=>{console.log(s.address().port);s.close()})')"
+(cd web && exec env PLAYER_FORECAST_ISOLATED_NEXT=1 NEXT_PUBLIC_SUPABASE_URL="$gateway" NEXT_PUBLIC_SUPABASE_PUBLIC_KEY="$anon_key" SUPABASE_SERVICE_ROLE_KEY="$service_key" DRAFT_PRO_SAVED_DRAFTS_ENABLED=true DRAFT_PRO_PRIVATE_IMPORTS_ENABLED=true NEXT_TELEMETRY_DISABLED=1 ./node_modules/.bin/next dev -H 127.0.0.1 -p "$next_port") >"$WORK/next.log" 2>&1 &
 next_pid=$!
-for _ in $(seq 1 60); do [[ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$next_port/api/v1/account/draft-pro/drafts")" == 401 ]] && break; sleep 1; done
-
-NEXT_URL="http://127.0.0.1:$next_port" USER_A="$user_a" USER_B="$user_b" node - <<'NODE'
-const assert=require('assert/strict'); const base=process.env.NEXT_URL, a=process.env.USER_A,b=process.env.USER_B;
-const call=async(path,token,method='GET',body,headers={})=>{const r=await fetch(base+path,{method,headers:{Authorization:`Bearer ${token}`,...headers,...(body?{'content-type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});return {status:r.status,json:await r.json()}};
-const snapshot={settings:{league:'fixture'},picks:[{playerId:11,round:1}],keepers:[],trades:[],team:{id:3},sourceWeights:{a:1},importMappings:{fixture:true},favorites:[11,'12'],notes:[{id:'n1',text:'route fixture'}],tiers:{one:[11]},recommendationPreferences:{mode:'fixture'}};
-(async()=>{const attempt='22222222-2222-4222-8222-222222222222'; const begin=await call('/api/v1/account/draft-pro/private-imports',a,'POST',{draftId:null,expectedVersion:null,attemptKey:attempt,name:'normalized',mapping:{sourceId:'fixture',headers:[{original:'Player',standardized:'player',selected:true}]},declaredMaxBytes:1024});assert.equal(begin.status,201);const u=begin.json.data.upload;const rows=Buffer.from(JSON.stringify([{player:'fixture',rank:1}]));const response=await fetch(base+`/api/v1/account/draft-pro/private-imports/${u.upload_id}/chunks/0`,{method:'PUT',headers:{Authorization:`Bearer ${a}`,'x-draft-pro-upload-prefix':u.storage_prefix,'content-type':'application/octet-stream'},body:rows});const put={status:response.status,json:await response.json()};assert.equal(put.status,201,JSON.stringify(put.json));const staged=await call(`/api/v1/account/draft-pro/private-imports/${u.upload_id}/stage`,a,'POST',{chunkPaths:[put.json.data.path]});assert.equal(staged.status,201);const saved=await call('/api/v1/account/draft-pro/drafts',a,'POST',{name:'Route fixture',snapshot,attemptKey:attempt});assert.equal(saved.status,201);const id=saved.json.data.id;const restored=await call(`/api/v1/account/draft-pro/drafts/${id}`,a);assert.equal(restored.status,200);assert.deepEqual(restored.json.data.snapshot,snapshot);assert.equal(restored.json.data.privateImports.length,1);const forbidden=await call(`/api/v1/account/draft-pro/drafts/${id}`,b);assert.notEqual(forbidden.status,200);const stale=await call(`/api/v1/account/draft-pro/drafts/${id}`,a,'PUT',{name:'new',snapshot,expectedVersion:99,attemptKey:'33333333-3333-4333-8333-333333333333'});assert.equal(stale.status,409);console.log(`routes=passed; draft=${id}; imports=${restored.json.data.privateImports.length}; conflict=${stale.status}`);})().catch(e=>{console.error(e);process.exit(1)});
-NODE
-
-(cd web && { ./node_modules/.bin/tsc --module commonjs --target es2022 --baseUrl . --esModuleInterop --skipLibCheck --noEmitOnError false --outDir "$WORK/runner" scripts/draft-pro/verify-saved-drafts-routes-runner.ts >/dev/null 2>&1 || true; } && NODE_PATH="$WORK/runner:.:node_modules" NEXT_URL="http://127.0.0.1:$next_port" SUPABASE_GATEWAY="$gateway" USER_A="$user_a" USER_A_SECOND="$user_a_second" USER_B="$user_b" SERVICE_KEY="$service_key" node "$WORK/runner/scripts/draft-pro/verify-saved-drafts-routes-runner.js")
+for _ in $(seq 1 60); do
+  kill -0 "$next_pid" >/dev/null 2>&1 || { cat "$WORK/next.log" >&2; exit 1; }
+  [[ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$next_port/api/v1/account/draft-pro/drafts")" == 401 ]] && break
+  sleep 1
+done
+kill -0 "$next_pid" >/dev/null 2>&1
+[[ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$next_port/api/v1/account/draft-pro/drafts")" == 401 ]]
+export NEXT_URL="http://127.0.0.1:$next_port" SUPABASE_GATEWAY="$gateway" USER_A="$user_a" USER_A_SECOND="$user_a_second" USER_B="$user_b" SERVICE_KEY="$service_key"
+(cd web && NODE_PATH=.:node_modules ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/verify-saved-drafts-routes-runner.ts)
 
 echo "saved_drafts_routes=passed; auth=gotrue; rest=postgrest; storage=storage-api; cleanup=automatic"

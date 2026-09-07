@@ -14,8 +14,8 @@ const call = async (path: string, token: string, method = "GET", body?: unknown)
   return { status: response.status, json: await response.json() };
 };
 const browser = {
-  v: 2 as const, draftSettings: { teamCount: 2, rosterConfig: { C: 1, bench: 0, utility: 0 }, scoringCategories: { G: 1 }, draftOrder: ["A", "B"] },
-  draftedPlayers: [], keepers: [], pickOwnerOverrides: {}, positionOverrides: {}, customTeamNames: {}, currentPick: 1, isSnakeDraft: true, myTeamId: "A",
+  v: 2 as const, draftSettings: { teamCount: 2, rosterConfig: { C: 1, bench: 0, utility: 0 }, scoringCategories: { G: 1 }, draftOrder: ["A", "B"], isKeeper: true },
+  draftedPlayers: [{ playerId: "11", teamId: "A", round: 1, pickInRound: 1, pickNumber: 1 }], keepers: [{ version: 1, status: "valid", cost: "pick", playerId: "22", teamId: "B", round: 1, pickInRound: 2, pickNumber: 2 }], pickOwnerOverrides: {}, pickTrades: [{ round: 1, pickInRound: 2, currentTeamId: "A" }], positionOverrides: {}, customTeamNames: {}, currentPick: 2, isSnakeDraft: true, myTeamId: "A",
   baselineMode: "remaining" as const, needWeightEnabled: false, needAlpha: 0.5, forwardGrouping: "split" as const, personalizeReplacement: false,
   goaliePointValues: {}, sourceControls: { custom_csv_1: { isSelected: true, weight: 1 } }, goalieSourceControls: { custom_csv_1: { isSelected: true, weight: 1 } },
   customCsvList: [{ id: "custom_csv_1", label: "My CSV", headers: [{ original: "Player", standardized: "name", selected: true }], rows: [{ Player: "A", Rank: 1 }] }],
@@ -42,7 +42,16 @@ async function main() {
   const importId = detail.json.data.privateImports[0].id;
   const read = await fetch(`${base}/api/v1/account/draft-pro/drafts/${id}/imports/${importId}?ordinal=0`, { headers: { Authorization: `Bearer ${ownerSecond}` } });
   if (read.status !== 200) throw new Error(`private chunk ${read.status}: ${await read.text()}`); const bytes = Buffer.from(await read.arrayBuffer()); assert.equal(createHash("sha256").update(bytes).digest("hex"), read.headers.get("x-draft-pro-sha256")); const downloadedRows = JSON.parse(bytes.toString()); assert.deepEqual(downloadedRows, normalized[0].rows);
-  const restored = restoreBrowserSnapshot(detail.json.data.snapshot, [{ id: importId, name: detail.json.data.privateImports[0].name, sourceId: "custom_csv_1", mapping: detail.json.data.privateImports[0].mapping.headers, rows: downloadedRows }]); assert.deepEqual(restored.customCsvList[0].rows, downloadedRows); assert.deepEqual(restored.favorites, browser.favorites); assert.deepEqual(restored.notes, browser.notes); assert.deepEqual(restored.tiers, browser.tiers); assert.deepEqual(restored.draftedPlayers, browser.draftedPlayers); assert.deepEqual(restored.keepers, browser.keepers); assert.deepEqual(restored.pickTrades, []);
+  const restored = restoreBrowserSnapshot(detail.json.data.snapshot, [{ id: importId, name: detail.json.data.privateImports[0].name, sourceId: "custom_csv_1", mapping: detail.json.data.privateImports[0].mapping.headers, rows: downloadedRows }]);
+  assert.deepEqual(restored.customCsvList[0].rows, downloadedRows);
+  assert.deepEqual(restored.draftSettings, browser.draftSettings);
+  assert.deepEqual(restored.draftedPlayers, browser.draftedPlayers);
+  assert.deepEqual(restored.keepers, browser.keepers);
+  assert.deepEqual(restored.pickTrades, browser.pickTrades);
+  assert.deepEqual(restored.sourceControls, browser.sourceControls);
+  assert.deepEqual(restored.favorites, browser.favorites);
+  assert.deepEqual(restored.notes, browser.notes);
+  assert.deepEqual(restored.tiers, browser.tiers);
   assert.notEqual((await call(`/api/v1/account/draft-pro/drafts/${id}`, other)).status, 200); assert.notEqual((await fetch(`${base}/api/v1/account/draft-pro/drafts/${id}/imports/${importId}?ordinal=0`, { headers: { Authorization: `Bearer ${other}` } })).status, 200);
   await setActive(false); const names = await call("/api/v1/account/draft-pro/drafts", ownerSecond); assert.equal(names.status, 200); assert.equal(names.json.data[0].name, "Route fixture"); assert.equal("snapshot" in names.json.data[0], false); assert.equal("privateImports" in names.json.data[0], false); assert.equal((await call(`/api/v1/account/draft-pro/drafts/${id}`, ownerSecond)).status, 403); assert.equal((await call(`/api/v1/account/draft-pro/drafts/${id}`, ownerSecond, "PUT", { name: "blocked", snapshot, expectedVersion: 0, attemptKey: "33333333-3333-4333-8333-333333333333" })).status, 403); assert.equal((await fetch(`${base}/api/v1/account/draft-pro/drafts/${id}/imports/${importId}?ordinal=0`, { headers: { Authorization: `Bearer ${ownerSecond}` } })).status, 403);
   await setActive(true); assert.equal((await call(`/api/v1/account/draft-pro/drafts/${id}`, ownerSecond)).status, 200); const reread = await fetch(`${base}/api/v1/account/draft-pro/drafts/${id}/imports/${importId}?ordinal=0`, { headers: { Authorization: `Bearer ${ownerSecond}` } }); assert.equal(reread.status, 200); assert.deepEqual(Buffer.from(await reread.arrayBuffer()), bytes); const conflict = await call(`/api/v1/account/draft-pro/drafts/${id}`, ownerSecond, "PUT", { name: "conflict", snapshot, expectedVersion: 99, attemptKey: "44444444-4444-4444-8444-444444444444" }); assert.equal(conflict.status, 409);
