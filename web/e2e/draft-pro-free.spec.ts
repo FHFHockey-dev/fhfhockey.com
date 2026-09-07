@@ -70,3 +70,39 @@ test("free source weights change a blend without changing drafted picks", async 
   await expect(remainingPlayer).toContainText("255.0");
   await expect(remainingPlayer).not.toHaveText(beforeProjection);
 });
+
+test("free CSV import restores normalized rows and picks from local autosave", async ({ page }) => {
+  await installDraftProFreeFixtures(page);
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.goto("/draft-dashboard");
+  const players = page.locator("#mobile-draft-panel-players");
+  await expect(players.locator("tbody tr").first()).toBeVisible({ timeout: 60_000 });
+  await page.getByLabel("Position filter").selectOption("C");
+  await players.locator("tbody tr").first().getByRole("button", { name: "Draft", exact: true }).click();
+  const draftedBefore = await page.evaluate(() => JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").draftedPlayers);
+
+  await page.getByRole("button", { name: "Setup", exact: true }).click();
+  await page.getByRole("button", { name: "Projections", exact: true }).click();
+  await page.getByRole("button", { name: "Import CSV", exact: true }).click();
+  const csv = page.getByRole("dialog", { name: "Import Projections (CSV)" });
+  await csv.getByLabel("CSV File Input").setInputFiles({
+    name: "fixture-projections.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from("Player Name,team,pos,gp,g,a,pts,ppp,sog,hits,blocks,player_id\nFixture Center Two,CCC,C,82,65,60,125,30,300,40,20,1002\n"),
+  });
+  await csv.getByLabel("Projection Source Name:").fill("Fixture CSV");
+  await csv.getByRole("button", { name: "Confirm Import", exact: true }).click();
+  await page.getByRole("button", { name: "Done", exact: false }).click();
+  await expect.poll(() => page.evaluate(() =>
+    JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").customCsvList?.[0]?.rows?.[0],
+  )).toMatchObject({ player_id: 1002, Goals: 65, Assists: 60, Shots_on_Goal: 300 });
+
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.reload();
+  await expect.poll(() => page.evaluate(() =>
+    JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").customCsvList?.[0]?.rows?.[0],
+  )).toMatchObject({ player_id: 1002, Goals: 65, Assists: 60, Shots_on_Goal: 300 });
+  await expect.poll(() => page.evaluate(() =>
+    JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").draftedPlayers,
+  )).toEqual(draftedBefore);
+});
