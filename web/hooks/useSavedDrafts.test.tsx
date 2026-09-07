@@ -74,10 +74,22 @@ describe("useSavedDrafts", () => {
     const { result } = renderHook(() => useSavedDrafts()); await act(async () => { await result.current.saveNow(null, { name: "Draft", snapshot, accountSaveConsent: true, privateImports: [imported] }); });
     expect(calls.some((url) => url.includes("/chunks/"))).toBe(false); expect(calls.some((url) => url.endsWith("/stage"))).toBe(true);
   });
+  it("recovers a lost begin response with the same attempt key and no duplicate chunks", async () => {
+    const bodies: any[] = []; let begins = 0;
+    vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => { if (url === "/api/v1/account/draft-pro/private-imports") { bodies.push(JSON.parse(String(init?.body))); begins += 1; return begins === 1 ? Promise.reject(new Error("lost")) : Promise.resolve(json({ data: { status: "ready", upload: { upload_id: "u", storage_prefix: "p", status: "staged" } } }, true, 201)); } if (url.endsWith("/stage")) return Promise.resolve(json({ data: { importId: "u" } }, true, 201)); if (url === "/api/v1/account/draft-pro/drafts" && init?.method === "POST") return Promise.resolve(json({ data: { id: "draft", name: "Draft", status: "active", lockVersion: 1, updatedAt: "now" } }, true, 201)); if (url.endsWith("/draft")) return Promise.resolve(json({ data: detail })); return Promise.resolve(json({ data: [] })); }));
+    const { result } = renderHook(() => useSavedDrafts()); const options = { name: "Draft", snapshot, accountSaveConsent: true, privateImports: [imported] }; await expect(result.current.saveNow(null, options)).rejects.toThrow("lost"); await act(async () => { await result.current.saveNow(null, options); });
+    expect(bodies).toHaveLength(2); expect(bodies[1].attemptKey).toBe(bodies[0].attemptKey);
+  });
+  it("recovers a lost stage response without uploading chunks twice", async () => {
+    const bodies: any[] = []; let stages = 0; let begins = 0; let chunks = 0;
+    vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => { if (url === "/api/v1/account/draft-pro/private-imports") { bodies.push(JSON.parse(String(init?.body))); begins += 1; return Promise.resolve(json({ data: { status: "ready", upload: { upload_id: "u", storage_prefix: "p", status: begins === 1 ? "uploading" : "staged" } } }, true, 201)); } if (url.includes("/chunks/")) { chunks += 1; return Promise.resolve(json({ data: { path: "p/0" } }, true, 201)); } if (url.endsWith("/stage")) { stages += 1; return stages === 1 ? Promise.reject(new Error("lost stage")) : Promise.resolve(json({ data: { importId: "u" } }, true, 201)); } if (url === "/api/v1/account/draft-pro/drafts" && init?.method === "POST") return Promise.resolve(json({ data: { id: "draft", name: "Draft", status: "active", lockVersion: 1, updatedAt: "now" } }, true, 201)); if (url.endsWith("/draft")) return Promise.resolve(json({ data: detail })); return Promise.resolve(json({ data: [] })); }));
+    const { result } = renderHook(() => useSavedDrafts()); const options = { name: "Draft", snapshot, accountSaveConsent: true, privateImports: [imported] }; await expect(result.current.saveNow(null, options)).rejects.toThrow("lost stage"); await act(async () => { await result.current.saveNow(null, options); });
+    expect(bodies[1].attemptKey).toBe(bodies[0].attemptKey); expect(chunks).toBe(1);
+  });
   it("does not let a stale save replace a newly opened draft", async () => {
     let resolveSave!: (value: unknown) => void; const pendingSave = new Promise((resolve) => { resolveSave = resolve; });
     vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => { if (url === "/api/v1/account/draft-pro/drafts" && init?.method === "POST") return pendingSave; if (url.endsWith("/other")) return Promise.resolve(json({ data: { ...detail, id: "other", privateImports: [] } })); return Promise.resolve(json({ data: [] })); }));
-    const { result } = renderHook(() => useSavedDrafts()); const saving = result.current.saveNow(null, { name: "Draft", snapshot, accountSaveConsent: true });
+    const { result } = renderHook(() => useSavedDrafts()); const saving = expect(result.current.saveNow(null, { name: "Draft", snapshot, accountSaveConsent: true })).rejects.toThrow("cancelled");
     await act(async () => { await result.current.open("other"); }); resolveSave(json({ data: { id: "draft", name: "Draft", status: "active", lockVersion: 1, updatedAt: "now" } }, true, 201)); await saving;
     expect(result.current.opened?.id).toBe("other");
   });
