@@ -21,9 +21,14 @@ export async function installDraftProFreeFixtures(page: Page) {
       Goals: table.includes("CULLEN") ? player.Goals + 20 : player.Goals,
       Points: table.includes("CULLEN") ? player.Points + 30 : player.Points,
     }));
-    const data = table.startsWith("PROJECTIONS_")
-      ? (table.includes("GOALIES") ? [goalie] : sourceAdjustedSkaters)
-      : [];
+    const data = table === "players"
+      ? [
+          { id: 1001, fullName: "Fixture Center", position: "C", lastName: "Center" },
+          { id: 1002, fullName: "Fixture Center Two", position: "C", lastName: "Two" },
+        ]
+      : table.startsWith("PROJECTIONS_")
+        ? (table.includes("GOALIES") ? [goalie] : sourceAdjustedSkaters)
+        : [];
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(data) });
   });
   await page.route("**/api/v1/account/draft-pro", (route) =>
@@ -39,6 +44,7 @@ export async function installDraftProFreeFixtures(page: Page) {
   await page.route("**://*.stripe.com/**", (route) => route.abort());
   await page.route("**://*.patreon.com/**", (route) => route.abort());
   await page.addInitScript(() => {
+    if (sessionStorage.getItem("draft.snapshot.v2")) return;
     sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({
       v: 2, configured: true, currentPick: 1, draftedPlayers: [],
       draftSettings: {
