@@ -56,3 +56,11 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 - No model escalation. W01 and W12 implementation/preparation active; W13 bounded document correction active. Other orders await dependency release.
 
 - W13 preparation APPROVED: 8aa0965da reviewed; expanded checklist and existing link verification accepted, documentation-only diff. Integrated locally. Yahoo remains PARKED; no provider evidence or activation claimed.
+
+- W01 b3c35025e NOT approved: null/invalid expiry bypass remained, next verification timestamp slid on reads, partial capability denial returned eligible, refund choices incomplete. Escalated W01 only to Terra/high for bounded security/date/guard correction after initial review did not resolve defects. Exit: exact regression tests and Chef approval; return to medium afterward. W12 authorized provisional migration testing on that hash while corrections continue.
+
+- W01 product-policy contract slice APPROVED for W11 copy preparation only; runtime/schema remain unapproved. Released W11 at 93b623493 with documentation-only ownership and explicit unshipped feature labeling. W01/W12/W11 are the three active tasks.
+- W12 bare-image migration hit missing storage.buckets.public; baseline has no Storage definitions. Treat as harness/provider initialization uncertainty, not proof production migration is invalid. W12 investigating actual Storage migrations; no storage pass claimed.
+
+- W01 67e812dde code/contracts APPROVED and integrated locally; SQL/RLS acceptance pending W12. Reviewed corrected null/future/expiry boundaries, fixed verification deadline, shared capability denial, six refund reasons, restrictive policy syntax. Evidence: 9 focused Vitest tests, scoped ESLint, scoped TypeScript passed by owner. Downgraded to Terra/medium after correction; future schema changes new commits only.
+- W11 361944e1f returned corrections: wrong refund choices, misleading launch-available label, invented customer rules, missing locked/account states, test/live modes wording. No model escalation.
