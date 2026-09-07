@@ -67,6 +67,7 @@ export type PatreonIdentitySnapshot = {
   lastChargeStatus: string | null;
   pledgeRelationshipStart: string | null;
   hasPaidMembership: boolean;
+  isFreeTrial: boolean;
   tiers: PatreonTierSnapshot[];
   isEligibleSupporter: boolean;
   metadata: Json;
@@ -318,7 +319,10 @@ export function normalizePatreonIdentity(
   const hasPaidMembership =
     (currentlyEntitledAmountCents ?? 0) > 0 ||
     tiers.some((tier) => (tier.amountCents ?? 0) > 0);
-  const isEligibleSupporter = patronStatus === "active_patron" && hasPaidMembership;
+  const lastChargeStatus = stringValue(membership?.attributes?.last_charge_status);
+  const isFreeTrial = membership?.attributes?.is_free_trial === true ||
+    /free\s*trial|failed|fraud/i.test(lastChargeStatus || "");
+  const isEligibleSupporter = patronStatus === "active_patron" && hasPaidMembership && !isFreeTrial;
   const accountLabel =
     stringValue(user.attributes?.full_name) || "Patreon account";
 
@@ -331,11 +335,12 @@ export function normalizePatreonIdentity(
     patronStatus,
     currentlyEntitledAmountCents,
     lastChargeDate: stringValue(membership?.attributes?.last_charge_date),
-    lastChargeStatus: stringValue(membership?.attributes?.last_charge_status),
+    lastChargeStatus,
     pledgeRelationshipStart: stringValue(
       membership?.attributes?.pledge_relationship_start,
     ),
     hasPaidMembership,
+    isFreeTrial,
     tiers,
     isEligibleSupporter,
     metadata: {
@@ -352,6 +357,7 @@ export function normalizePatreonIdentity(
         membership?.attributes?.pledge_relationship_start,
       ),
       paid_membership: hasPaidMembership,
+      is_free_trial: isFreeTrial,
       image_url: stringValue(user.attributes?.image_url),
       tiers,
       generic_supporter_eligible: isEligibleSupporter,
@@ -369,7 +375,7 @@ export async function fetchPatreonIdentity(
     include: "memberships.campaign,memberships.currently_entitled_tiers",
     "fields[user]": "full_name,image_url",
     "fields[member]":
-      "patron_status,currently_entitled_amount_cents,last_charge_date,last_charge_status,pledge_relationship_start",
+      "patron_status,currently_entitled_amount_cents,last_charge_date,last_charge_status,pledge_relationship_start,is_free_trial",
     "fields[tier]": "title,amount_cents",
   });
   const response = await fetchImpl(`${PATREON_IDENTITY_URL}?${params}`, {

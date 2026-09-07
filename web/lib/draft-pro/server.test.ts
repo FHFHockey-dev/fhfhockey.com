@@ -25,7 +25,7 @@ describe("Draft Pro Patreon source mapping", () => {
       now: new Date("2026-09-07T01:00:00Z"),
       patreonVerificationAvailable: true,
       flags,
-      client: clientWith([{ source_provider: "patreon", entitlement_key: "patreon_supporter", entitlement_status: "active", effective_from: "2026-09-01T00:00:00Z", effective_to: null, metadata: { verified_at: "2026-09-07T00:30:00Z" } }]),
+      client: clientWith([{ source_provider: "patreon", entitlement_key: "patreon_supporter", source_account_id: "account-1", entitlement_status: "active", effective_from: "2026-09-01T00:00:00Z", effective_to: null, metadata: { verified_at: "2026-09-07T00:30:00Z" } }]),
     });
     expect(access).toMatchObject({ eligible: false, reason: "no_active_grant" });
     expect(mocks.refreshPatreonAccount).not.toHaveBeenCalled();
@@ -36,7 +36,7 @@ describe("Draft Pro Patreon source mapping", () => {
       now: new Date("2026-09-07T01:00:00Z"),
       patreonVerificationAvailable: true,
       flags,
-      client: clientWith([{ source_provider: "patreon", entitlement_key: "patreon_supporter", entitlement_status: "active", effective_from: "2026-09-01T00:00:00Z", effective_to: null, metadata: { draft_pro_eligible: true, verified_at: "2026-09-07T00:30:00Z" } }]),
+      client: clientWith([{ source_provider: "patreon", entitlement_key: "patreon_supporter", source_account_id: "account-1", entitlement_status: "active", effective_from: "2026-09-01T00:00:00Z", effective_to: null, metadata: { draft_pro_eligible: true, connected_account_id: "account-1", verified_at: "2026-09-07T00:30:00Z" } }]),
     });
     expect(access).toMatchObject({ eligible: true, grantingSources: ["patreon"] });
   });
