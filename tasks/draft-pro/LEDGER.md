@@ -22,8 +22,8 @@ All tasks moved into the Draft Pro section. W01 active foundation; W12 released 
 - Base: 4476fb90f (octoberBranch); user checkout left unchanged.
 - Integration: codex/draft-pro at /Users/tim/.codex/worktrees/draft-pro-chef/fhfhockey.com
 - Yahoo one-time heartbeat: yahoo-draft-pro-readiness, September 11 09:00 Eastern.
-- Status: foundation under Chef review; no application implementation accepted yet.
-- External checks pending: isolated DB availability, Stripe test credentials and merchant setup; never print secrets.
+- Current status: W01 foundation/payment SQL and W03 Patreon locally approved; W05 recommendations approved. W02/W04/W06 active; W07–W10 queued; W11/W13 preparation approved; W12 SQL checkpoint approved. Historical entries below retain prior states.
+- External checks pending: real Stripe/Patreon credentials and provider validation; isolated SQL/RLS verification passed. Never print secrets.
 
 Task registrations and Chef decisions follow below.
 
@@ -119,3 +119,7 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 - Chef strict scoped TypeScript for foundation flags/server + Patreon modules/routes PASSED exit0 (session14439); whole repository remains OOM, not clean.
 - W05 f6f5d1d7 partial corrections reviewed; still invalid GAA starts-times-average denominator, contradictory supplied SV%, shared goalie category omission. Returned focused denominator/role tests; Terra/high exit not yet met.
 - W02 Luna stopped without route tests or blocker. Returned one bounded signed-webhook regression to Terra/medium (task default complexity; no high-cost escalation). Next review must correct webhook raw exception leakage, centralized line-item verification, checkout terminal-session recovery, canonical flags, and unpaid confirmation state before approval.
+
+- W05 APPROVED through8071f141; integrated fourcommits as5f7fbe6e0/0e712d3a3/105a97aec/4afcf2486. Chef reran19tests/4files and exact-file strictTypeScript, all exit0. Ratio TOTAL_TOI seconds confirmed existing projection fixtures. Downgraded Luna/medium for final API hardening, now idle.
+- W06 c14961b3f returned conservative freshness (oldest not newest), explicit ranking default/window/origin, API+abort fixtures and scopedtypecheck; no approval yet.
+- RELEASED W04 at4afcf2486 Luna/medium, focused refund/account API+panel only, W07 navigation exclusive. Payment DB contract approved sufficient for dependency; receipt omitted if unavailable. Active W02/W04/W06 three.
