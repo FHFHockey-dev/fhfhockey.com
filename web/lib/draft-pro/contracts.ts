@@ -4,6 +4,9 @@ export const DRAFT_PRO_SEASON = "draft_pro_2026_27" as const;
 export const DRAFT_PRO_EXPIRATION = "2027-07-01T04:00:00.000Z" as const;
 export const DRAFT_PRO_SCHEMA_VERSION = 1 as const;
 export const DRAFT_PRO_ENTITLEMENT_KEY = "draft_pro" as const;
+// Patreon keeps its existing, anti-transfer supporter row. It grants Draft Pro
+// only when its server-written metadata records configured-campaign eligibility.
+export const DRAFT_PRO_PATREON_ENTITLEMENT_KEY = "patreon_supporter" as const;
 export const DRAFT_PRO_PRICE_CENTS = 599 as const;
 export const DRAFT_PRO_MAX_SAVED_DRAFTS = 10 as const;
 export const DRAFT_PRO_MAX_PRIVATE_IMPORT_BYTES = 10 * 1024 * 1024;

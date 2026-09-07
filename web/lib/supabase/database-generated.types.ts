@@ -552,15 +552,15 @@ export type Database = {
         Relationships: []
       }
       draft_pro_provider_events: {
-        Row: { id: string; provider: string; provider_event_id: string; event_type: string; user_id: string | null; purchase_id: string | null; payload: Json; received_at: string; processed_at: string | null; processing_error: string | null }
-        Insert: { id?: string; provider: string; provider_event_id: string; event_type: string; user_id?: string | null; purchase_id?: string | null; payload?: Json; received_at?: string; processed_at?: string | null; processing_error?: string | null }
-        Update: { id?: string; provider?: string; provider_event_id?: string; event_type?: string; user_id?: string | null; purchase_id?: string | null; payload?: Json; received_at?: string; processed_at?: string | null; processing_error?: string | null }
+        Row: { id: string; provider: string; provider_event_id: string; event_type: string; user_id: string | null; purchase_id: string | null; payload: Json; provider_occurred_at: string | null; received_at: string; processed_at: string | null; processing_error: string | null }
+        Insert: { id?: string; provider: string; provider_event_id: string; event_type: string; user_id?: string | null; purchase_id?: string | null; payload?: Json; provider_occurred_at?: string | null; received_at?: string; processed_at?: string | null; processing_error?: string | null }
+        Update: { id?: string; provider?: string; provider_event_id?: string; event_type?: string; user_id?: string | null; purchase_id?: string | null; payload?: Json; provider_occurred_at?: string | null; received_at?: string; processed_at?: string | null; processing_error?: string | null }
         Relationships: []
       }
       draft_pro_purchases: {
-        Row: { id: string; user_id: string; season: string; provider: string; provider_checkout_session_id: string | null; provider_payment_intent_id: string | null; amount_cents: number; currency: string; status: string; activated_at: string | null; refunded_at: string | null; expires_at: string; metadata: Json; created_at: string; updated_at: string }
-        Insert: { id?: string; user_id: string; season?: string; provider?: string; provider_checkout_session_id?: string | null; provider_payment_intent_id?: string | null; amount_cents?: number; currency?: string; status?: string; activated_at?: string | null; refunded_at?: string | null; expires_at?: string; metadata?: Json; created_at?: string; updated_at?: string }
-        Update: { id?: string; user_id?: string; season?: string; provider?: string; provider_checkout_session_id?: string | null; provider_payment_intent_id?: string | null; amount_cents?: number; currency?: string; status?: string; activated_at?: string | null; refunded_at?: string | null; expires_at?: string; metadata?: Json; created_at?: string; updated_at?: string }
+        Row: { id: string; user_id: string; season: string; provider: string; provider_checkout_session_id: string | null; provider_payment_intent_id: string | null; stripe_idempotency_key: string; checkout_session_status: string; checkout_expires_at: string; payment_state: string; payment_state_occurred_at: string | null; payment_confirmed_at: string | null; full_refunded_at: string | null; refund_occurred_at: string | null; dispute_id: string | null; dispute_status: string | null; dispute_occurred_at: string | null; amount_cents: number; currency: string; status: string; activated_at: string | null; refunded_at: string | null; expires_at: string; metadata: Json; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; season?: string; provider?: string; provider_checkout_session_id?: string | null; provider_payment_intent_id?: string | null; stripe_idempotency_key?: string; checkout_session_status?: string; checkout_expires_at?: string; payment_state?: string; payment_state_occurred_at?: string | null; payment_confirmed_at?: string | null; full_refunded_at?: string | null; refund_occurred_at?: string | null; dispute_id?: string | null; dispute_status?: string | null; dispute_occurred_at?: string | null; amount_cents?: number; currency?: string; status?: string; activated_at?: string | null; refunded_at?: string | null; expires_at?: string; metadata?: Json; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; season?: string; provider?: string; provider_checkout_session_id?: string | null; provider_payment_intent_id?: string | null; stripe_idempotency_key?: string; checkout_session_status?: string; checkout_expires_at?: string; payment_state?: string; payment_state_occurred_at?: string | null; payment_confirmed_at?: string | null; full_refunded_at?: string | null; refund_occurred_at?: string | null; dispute_id?: string | null; dispute_status?: string | null; dispute_occurred_at?: string | null; amount_cents?: number; currency?: string; status?: string; activated_at?: string | null; refunded_at?: string | null; expires_at?: string; metadata?: Json; created_at?: string; updated_at?: string }
         Relationships: []
       }
       draft_pro_refund_requests: {
@@ -47691,6 +47691,10 @@ export type Database = {
       }
     }
     Functions: {
+      attach_draft_pro_stripe_checkout_session: {
+        Args: { p_checkout_expires_at: string; p_checkout_session_id: string; p_purchase_id: string }
+        Returns: undefined
+      }
       acquire_lock: {
         Args: { job_name_param: string; timeout_interval: string }
         Returns: boolean
@@ -47750,6 +47754,14 @@ export type Database = {
           p_user_id: string
         }
         Returns: Json
+      }
+      begin_draft_pro_stripe_checkout_attempt: {
+        Args: { p_user_id: string }
+        Returns: { checkout_session_id: string; purchase_id: string; purchase_status: string; stripe_idempotency_key: string }[]
+      }
+      record_draft_pro_stripe_event: {
+        Args: { p_checkout_session_id: string; p_dispute_id: string; p_dispute_status: string; p_event_id: string; p_event_type: string; p_full_refund: boolean; p_occurred_at: string; p_payload: Json; p_payment_intent_id: string; p_payment_state: string; p_purchase_id: string; p_user_id: string }
+        Returns: { processed: boolean; purchase_id: string }[]
       }
       advance_projection_pipeline_state_v1: {
         Args: {
