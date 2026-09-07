@@ -1,11 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
+import { createHash } from "crypto";
 
 const rpc = vi.hoisted(() => vi.fn());
 const storageUpload = vi.hoisted(() => vi.fn());
 const storageDownload = vi.hoisted(() => vi.fn());
 vi.mock("lib/supabase/server", () => ({ default: { rpc, storage: { from: () => ({ upload: storageUpload, download: storageDownload }) } } }));
 
-import { putPrivateImportChunk, PRIVATE_IMPORT_CHUNK_BYTES } from "./privateImportTransport";
+import { putPrivateImportChunk, readPrivateImportChunk, PRIVATE_IMPORT_CHUNK_BYTES } from "./privateImportTransport";
 
 describe("private import transport ownership boundary", () => {
   it("does not touch Storage when the upload lookup is unavailable to this user", async () => {
@@ -26,5 +27,14 @@ describe("private import transport ownership boundary", () => {
     await expect(putPrivateImportChunk({ userId: "user", uploadId: "upload-1", prefix: upload.storage_prefix, ordinal: 0, bytes: Buffer.from("[]") })).resolves.toContain("/0");
     rpc.mockResolvedValueOnce({ data: [upload], error: null }); storageUpload.mockResolvedValueOnce({ error: { message: "already exists" } }); storageDownload.mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => Buffer.from("different") } });
     await expect(putPrivateImportChunk({ userId: "user", uploadId: "upload-1", prefix: upload.storage_prefix, ordinal: 0, bytes: Buffer.from("[]") })).rejects.toThrow("differs");
+  });
+
+  it("returns bounded first/last chunks that reassemble with metadata", async () => {
+    const body = Buffer.from(JSON.stringify([{ player: "A" }, { player: "B" }]));
+    const metadata = { storage_path: "private/final.json", byte_size: body.byteLength, row_count: 2, content_sha256: createHash("sha256").update(body).digest("hex") };
+    rpc.mockResolvedValue({ data: [metadata], error: null });
+    storageDownload.mockResolvedValue({ error: null, data: { arrayBuffer: async () => body } });
+    const first = await readPrivateImportChunk({ userId: "user", draftId: "draft", importId: "import", ordinal: 0 });
+    expect(Buffer.concat([first.bytes])).toEqual(body); expect(first.totalChunks).toBe(1); expect(first.rowCount).toBe(2);
   });
 });

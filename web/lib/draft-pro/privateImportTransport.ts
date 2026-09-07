@@ -96,3 +96,16 @@ export async function readPrivateImportRows(args: { userId: string; draftId: str
   if (!Array.isArray(rows) || rows.length !== Number(metadata.row_count)) throw new Error("Private import file is incomplete.");
   return rows;
 }
+
+export async function readPrivateImportChunk(args: { userId: string; draftId: string; importId: string; ordinal: number }) {
+  const metadata = await row("read_draft_pro_private_import_blob", { p_user_id: args.userId, p_draft_id: args.draftId, p_import_id: args.importId });
+  const totalBytes = Number(metadata.byte_size);
+  const totalChunks = Math.ceil(totalBytes / PRIVATE_IMPORT_CHUNK_BYTES);
+  if (!Number.isInteger(args.ordinal) || args.ordinal < 0 || args.ordinal >= totalChunks) throw new Error("Private import chunk is unavailable.");
+  const downloaded = await client.storage.from(BUCKET).download(String(metadata.storage_path));
+  if (downloaded.error) throw downloaded.error;
+  const bytes = Buffer.from(await downloaded.data.arrayBuffer());
+  if (bytes.byteLength !== totalBytes || createHash("sha256").update(bytes).digest("hex") !== metadata.content_sha256) throw new Error("Private import file validation failed.");
+  const start = args.ordinal * PRIVATE_IMPORT_CHUNK_BYTES;
+  return { bytes: bytes.subarray(start, Math.min(start + PRIVATE_IMPORT_CHUNK_BYTES, bytes.length)), totalBytes, totalChunks, sha256: String(metadata.content_sha256), rowCount: Number(metadata.row_count) };
+}
