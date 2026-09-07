@@ -2,7 +2,7 @@
 
 ## Progress and usage reporting
 
-Latest accepted estimate: **71% overall / 95% initial paid release**. Saved Drafts implementation, real-service API and full release-candidate unit checkpoints are approved; W12 browser acceptance remains open. Reviewed first-edit hydration and JSONB import-equivalence corrections are integrated; the full browser bundle is being rerun. W09 scenarios and W10 reports are queued. The user redeemed the banked reset; latest sampled weekly usage was **15%**. The figures below at ~13:00 are historical, not the current estimate.
+Latest accepted estimate: **75% overall / 95% initial paid release**. Saved Drafts is Chef-approved through the real-service browser and final visual gates. W09 scenarios is released from the committed integration checkpoint; W10 reports remains queued. The user redeemed the banked reset; latest sampled weekly usage was **19% used / 81% remaining**. The figures below at ~13:00 are historical, not the current estimate.
 
 User requested an overall percentage now and at every major checkpoint, without changing the goal. At the September 7 ~13:00 checkpoint: overall engineering completion approximately **50%**, initial paid release approximately **75%**. Estimates include remaining implementation and verification; they are not task-count percentages or launch approval. Area estimates: foundation/billing/lifecycle/refunds90%, recommendations/DUST90%, central integration55%, Saved Drafts/scenarios/reports0%, launch documentation70%, integrated verification35%. Yahoo preparation complete, live milestone separate.
 
@@ -19,11 +19,11 @@ Account-wide weekly usage: **47% consumed / 53% remaining**. Goal counter: **991
 | W05 recommendations | Approved shared calculations, API and W07 adapter | Integrated browser/RC checks |
 | W06 DUST | Approved shared optimizer/API, season resolution and W07 UI | Schedule-handoff compatibility and integrated browser/RC checks |
 | W07 integration/CSV/graph | Initial integration, expanded graph and full-season matrix approved | Saved Drafts normalization/autosave acceptance; W09–W10 panels |
-| W08 Saved Drafts | Runtime modules, storage cleanup and binary restore correction approved | Actual dashboard save/restore and cross-device acceptance with W07/W12 |
-| W09 scenarios | Queued | W08 and shared calculation integration |
+| W08 Saved Drafts | Chef-approved: runtime, private storage, real cross-device browser flow and final responsive panel | Production/provider activation remains separate |
+| W09 scenarios | Released Terra/medium | Shared calculation, focused panel/API implementation, then Chef review |
 | W10 reports | Queued | W09 and deterministic report implementation |
 | W11 copy/operator | Initial release copy/packet approved through4790fce53 | Refresh evidence after browser checkpoint and later milestones |
-| W12 verification | SQL/RLS, real overlapping saves, Storage HTTP, Saved Drafts real routes, free/account and populated matrix browser checks approved | Saved Drafts dashboard browser flow; later scenarios/reports and RC packet |
+| W12 verification | SQL/RLS, real overlapping saves, Storage HTTP, Saved Drafts routes and browser, free/account and matrix checks approved | Scenarios/reports and final RC packet; actual desktop browser-chrome zoom not claimed |
 | W13 Yahoo | Readiness work order approved and parked | September 11 one-time check; real provider evidence, separate activation approval |
 
 No remote build, deployment, production migration, live payment, or live email has been performed. Checkpoint approval is scoped engineering evidence, not release authorization. Full repository TypeScript passed with an 8 GiB heap at 3dcf15b05; /tmp/draft-pro-rc-types-final.log is empty and command exited 0. Earlier OOM and correction failures remain historical evidence below.
@@ -50,7 +50,7 @@ All tasks are in the Draft Pro section. At initial registration, the app listing
 - Base: 4476fb90f (octoberBranch); user checkout left unchanged.
 - Integration: codex/draft-pro at /Users/tim/.codex/worktrees/draft-pro-chef/fhfhockey.com
 - Yahoo one-time heartbeat: yahoo-draft-pro-readiness, September 11 09:00 Eastern.
-- Current workers: visible W07 and W12; internal helpers idle. W01–W06 local implementations approved; W08 runtime approved but its full milestone awaits W07/W12 acceptance. W09/W10 queued, W11 preparation approved, W13 parked. Historical entries below retain prior states.
+- Current workers: W09 implementation and W12 verification handoff; W07 and internal helpers idle. W01–W08 local checkpoints approved, W10 queued, W11 preparation approved, W13 parked. Historical entries below retain prior states.
 - External checks pending: real Stripe/Patreon credentials and provider validation; isolated SQL/RLS verification passed. Never print secrets.
 
 Task registrations and Chef decisions follow below.
@@ -398,3 +398,5 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 - W07 initial autosave candidate582304b41 was not accepted alone: Chef identified that arbitrary first-render acknowledgement could swallow the first real edit, and W12 browser confirmed it still failed. Final correction1c982f753 uses the validated applied snapshot as cloud baseline and routes a differing first observed edit through normal autosave. Chef reviewed and integrated both as `a6a121c52` + `43efd7860`; owner9focusedtests and explicit full TypeScript exit0 accepted. W07 returned Terra/medium idle. W12 runs full immediate-edit/save/restore/retry/conflict browser acceptance with screenshot and responsive fidelity checks; whole milestone remains open.
 
 - Browser instrumentation showed a second no-PUT cause after the hydration correction: autosave ran but rejected unchanged private imports because JSONB reordered mapping object keys. W07 re-dispatched Sol/high for this bounded cross-layer equality defect, then downgraded after review. Source `7ab520936`, integrated `c67e142d0`, uses canonical content equality while preserving consent for genuine changes. Exact key-order regression and 29 focused hook/workspace tests passed; owner standalone TypeScript exit0 accepted. W12 has the final candidate for actual hidden autosave, retry and both conflict recovery paths. Whole milestone remains pending.
+
+- **Saved Drafts milestone Chef-approved: 75% overall / 95% initial paid release; weekly meter19% used/81% remaining.** Full actual browser bundle exited0 in W12 session56624: populated cross-device restore, hidden autosave, failed-save local retention/retry, conflict reload and independent copy, inactive names-only locks and free manual pick, cleanup verified. Exact two-file fixture integrated `0894e5005`; root standalone TypeScript session61020 exited0 (`/tmp/draft-pro-chef-browser-fixture-types.log`). Chef visual review found pale labels on white surface; W07 Luna/medium panel-only correction9475631d7 and breakpoint follow-up940181e62 integrated `82baabed3`/`c4e1bbb10`. Targeted visual session37500 exited0 with cleanup; Chef independently viewed final desktop/390px/640px images in `/Users/tim/.codex/visualizations/2026/09/07/01a07c49-af48-7d63-8efd-734ea1d6c002/`. Dark contrast, usable controls and reflow approved. 200% pinch was asserted; 640px is CSS reflow-equivalent, not actual desktop browser-chrome zoom. No full functional/unit rerun for CSS. W07 idle Luna/low; W12 exits Sol/high after final verification-only handoff. W09 released Terra/medium from this approved checkpoint, retaining schema/types and central UI ownership restrictions.
