@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import { DraftSettings, DraftedPlayer, TeamDraftStats } from "./DraftDashboard";
 import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import type { PlayerVorpMetrics } from "hooks/useVORPCalculations";
@@ -70,25 +71,48 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const expandButtonRef = useRef<HTMLButtonElement>(null);
   const closeExpandedButtonRef = useRef<HTMLButtonElement>(null);
+  const boardRef = useRef<HTMLDivElement>(null);
+  const wasExpandedRef = useRef(false);
   const contributionInputRef = useRef<HTMLInputElement>(null);
   // NEW: manage blur timeout safely via ref instead of window-scoped var
   const blurTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!isExpanded) return;
+    if (!isExpanded) {
+      if (wasExpandedRef.current) expandButtonRef.current?.focus();
+      return;
+    }
+    wasExpandedRef.current = true;
+    const appRoot = document.getElementById("__next");
+    appRoot?.setAttribute("aria-hidden", "true");
+    appRoot?.setAttribute("inert", "");
     closeExpandedButtonRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
         setIsExpanded(false);
+        return;
+      }
+      if (event.key === "Tab") {
+        const focusable = boardRef.current?.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (!focusable?.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
       }
     };
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [isExpanded]);
-
-  useEffect(() => {
-    if (!isExpanded) expandButtonRef.current?.focus();
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      appRoot?.removeAttribute("aria-hidden");
+      appRoot?.removeAttribute("inert");
+    };
   }, [isExpanded]);
 
   const augmentedAllPlayers = useMemo(() => {
@@ -511,8 +535,8 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
     return grid;
   };
 
-  return (
-    <div id="draft-graph" className={`${styles.draftBoardContainer} ${isExpanded ? styles.expandedDraftBoard : ""}`} aria-label="Draft Graph" aria-modal={isExpanded || undefined} role={isExpanded ? "dialog" : undefined} style={{ "--team-count": draftSettings.teamCount, "--team-rows": Math.ceil(draftSettings.teamCount / 2), "--round-count": roundsToShow } as React.CSSProperties}>
+  const board = (
+    <div ref={boardRef} id="draft-graph" className={`${styles.draftBoardContainer} ${isExpanded ? styles.expandedDraftBoard : ""}`} aria-label="Draft Graph" aria-modal={isExpanded || undefined} role={isExpanded ? "dialog" : undefined} style={{ "--team-count": draftSettings.teamCount, "--team-rows": Math.ceil(draftSettings.teamCount / 2), "--round-count": roundsToShow } as React.CSSProperties}>
       <div className={styles.graphToolbar}>
         <span className={styles.graphTitle}>Draft Graph</span>
         <button
@@ -582,6 +606,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
       </div>
     </div>
   );
+  return isExpanded && typeof document !== "undefined" ? createPortal(board, document.body) : board;
 };
 
 export default DraftBoard;

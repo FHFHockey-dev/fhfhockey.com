@@ -77,24 +77,27 @@ export default function DraftProPanel() {
   const checkoutVerificationRef = useRef<string | null>(null);
   const checkoutTimerRef = useRef<number | null>(null);
   const checkoutEpochRef = useRef(0);
+  const accountEpochRef = useRef(0);
   const checkoutMountedRef = useRef(false);
 
   const selectedPurchase = useMemo(
     () => account?.purchases.find((purchase) => purchase.id === purchaseId) ?? account?.purchases[0] ?? null,
     [account?.purchases, purchaseId],
   );
-  const loadAccount = useCallback(async () => {
+  const loadAccount = useCallback(async (epoch = accountEpochRef.current) => {
     const session = (await supabase.auth.getSession()).data.session;
     if (!session) throw new Error("Authentication required.");
     const response = await fetch("/api/v1/account/draft-pro", { headers: { Authorization: `Bearer ${session.access_token}` } });
     const body = await response.json();
     if (!response.ok) throw new Error(body.error?.message ?? "Draft Pro account details are unavailable.");
+    if (epoch !== accountEpochRef.current) return;
     setAccount(body.data);
     setPurchaseId((current) => current || body.data.purchases[0]?.id || "");
     setError(null);
   }, []);
   const cancelCheckoutVerification = useCallback(() => {
     checkoutEpochRef.current += 1;
+    checkoutVerificationRef.current = null;
     if (checkoutTimerRef.current !== null) window.clearTimeout(checkoutTimerRef.current);
     checkoutTimerRef.current = null;
   }, []);
@@ -105,6 +108,25 @@ export default function DraftProPanel() {
       cancelCheckoutVerification();
     };
   }, [cancelCheckoutVerification]);
+  useEffect(() => {
+    const listener = supabase.auth.onAuthStateChange?.((_event, session) => {
+      accountEpochRef.current += 1;
+      cancelCheckoutVerification();
+      setCheckoutState("idle");
+      setCheckoutRetryAvailable(false);
+      setAccount(null);
+      if (!session) {
+        setError("Authentication required.");
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      void loadAccount(accountEpochRef.current).catch((loadError) => {
+        setError(loadError instanceof Error ? loadError.message : "Draft Pro account details are unavailable.");
+      }).finally(() => setLoading(false));
+    });
+    return () => listener?.data.subscription.unsubscribe();
+  }, [cancelCheckoutVerification, loadAccount]);
   useEffect(() => {
     let cancelled = false;
     void loadAccount().catch((loadError) => {
@@ -234,25 +256,34 @@ export default function DraftProPanel() {
       setCheckoutRetryAvailable(body.state !== "ineligible");
     } catch (error) {
       if (!isCurrent()) return;
-      setCheckoutState("ineligible");
-      setFeedback(error instanceof Error ? error.message : "Checkout verification failed. Try again from Draft Pro settings.");
+      setCheckoutState("confirming");
+      setCheckoutRetryAvailable(true);
+      setFeedback(error instanceof Error ? error.message : "Checkout verification failed. Check purchase status again.");
     }
   }, [loadAccount]);
+
+  const clearCheckoutReturn = useCallback(() => {
+    cancelCheckoutVerification();
+    const { draft_pro_checkout: _checkout, ...query } = router.query;
+    void router.replace?.({ pathname: router.pathname, query }, undefined, { shallow: true });
+  }, [cancelCheckoutVerification, router]);
 
   useEffect(() => {
     const value = Array.isArray(router.query.draft_pro_checkout)
       ? router.query.draft_pro_checkout[0]
       : router.query.draft_pro_checkout;
     if (value === "cancelled") {
-      cancelCheckoutVerification();
+      clearCheckoutReturn();
       setCheckoutState("cancelled");
       return;
     }
     if (!value || !/^cs_(test|live)_[A-Za-z0-9]+$/.test(value) || checkoutVerificationRef.current === value) return;
     cancelCheckoutVerification();
     checkoutVerificationRef.current = value;
+    const { draft_pro_checkout: _checkout, ...query } = router.query;
+    void router.replace?.({ pathname: router.pathname, query }, undefined, { shallow: true });
     void verifyCheckout(value, 0, checkoutEpochRef.current);
-  }, [cancelCheckoutVerification, router.query.draft_pro_checkout, verifyCheckout]);
+  }, [cancelCheckoutVerification, clearCheckoutReturn, router, verifyCheckout]);
 
   if (loading) return <section className={styles.panel} aria-busy="true"><h2>Draft Pro</h2><p>Loading account access…</p></section>;
   if (error) return <section className={styles.panel} role="alert"><h2>Draft Pro</h2><p>{error}</p></section>;
@@ -260,7 +291,7 @@ export default function DraftProPanel() {
 
   const openRefundPurchaseIds = new Set(account.refundRequests.filter((request) => ["open", "reviewing"].includes(request.status)).map((request) => request.purchaseId));
   const canRequest = Boolean(selectedPurchase?.refundEligibility.eligible && !openRefundPurchaseIds.has(selectedPurchase.id));
-  const checkoutAvailability = account.checkoutAvailability ?? { available: true, reason: "available" };
+  const checkoutAvailability = account.checkoutAvailability ?? { available: false, reason: "checkout_disabled" };
   const passInfo = account.passInfo ?? { priceCents: 599, expiresAt: "2027-07-01T04:00:00.000Z", renewal: "none" as const };
   return <section className={styles.panel} aria-labelledby="draft-pro-panel-title">
     <div className={styles.heading}><div><p className={styles.eyebrow}>Account access</p><h2 id="draft-pro-panel-title">Draft Pro</h2></div><span className={account.access.eligible ? styles.active : styles.inactive}>{account.access.eligible ? "Active" : "Inactive"}</span></div>

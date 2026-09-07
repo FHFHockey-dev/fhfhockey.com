@@ -23,7 +23,7 @@ function response() {
   return { state, api };
 }
 
-const body = { season: "20262027", sourceWeights: { projections: 1 }, scoring: { G: 3 }, rows: [{ playerId: 1, fullName: "Alex" }] };
+const body = { season: "20262027", leagueType: "categories", sourceWeights: { projections: 1 }, scoring: { G: 3 }, goalieScoring: { W: 4 }, adjustments: { prorate84: true }, rows: [{ playerId: 1, fullName: "  =Alex" }] };
 
 describe("Draft Pro export API", () => {
   beforeEach(() => {
@@ -50,7 +50,7 @@ describe("Draft Pro export API", () => {
 
   it("rejects bounded invalid input", async () => {
     const res = response();
-    await handler({ method: "POST", body: { ...body, rows: [] } } as any, res.api as any);
+    await handler({ method: "POST", body: { ...body, sourceWeights: { ["x".repeat(65)]: 1 } } } as any, res.api as any);
     expect(res.state.status).toBe(400);
   });
 
@@ -60,6 +60,8 @@ describe("Draft Pro export API", () => {
     expect(res.state.status).toBe(200);
     expect(res.state.headers.get("Content-Disposition")).toContain("fhfhockey-blended-projections.csv");
     expect(String(res.state.body)).toContain("projectionSeason");
+    expect(String(res.state.body)).toContain("categories");
+    expect(String(res.state.body)).toContain("'  =Alex");
     expect(String(res.state.body)).toContain("20262027");
   });
 });

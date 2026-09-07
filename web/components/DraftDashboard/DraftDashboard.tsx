@@ -2879,7 +2879,7 @@ const DraftDashboard: React.FC = () => {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
       if (!token) throw new Error("Sign in to export blended projections.");
-      const statKeys = Array.from(new Set(allPlayers.flatMap((player) => Object.keys(player.combinedStats || {})))).sort();
+      const statKeys = Array.from(new Set(allPlayers.flatMap((player) => Object.keys(player.combinedStats || {})))).sort().slice(0, 64);
       const rows = allPlayers.map((player) => ({
         playerId: player.playerId,
         fullName: player.fullName,
@@ -2900,7 +2900,15 @@ const DraftDashboard: React.FC = () => {
       const response = await fetch("/api/v1/draft-pro/export", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ season: currentSeasonId == null ? "unknown" : String(currentSeasonId), sourceWeights, scoring: { ...draftSettings.scoringCategories, ...goaliePointValues }, rows }),
+        body: JSON.stringify({
+          season: currentSeasonId == null ? "unknown" : String(currentSeasonId),
+          leagueType: draftSettings.leagueType || "points",
+          sourceWeights,
+          scoring: draftSettings.leagueType === "categories" ? draftSettings.categoryWeights || {} : draftSettings.scoringCategories,
+          goalieScoring: goaliePointValues,
+          adjustments: { prorate84: window.localStorage.getItem("projections.prorate84") === "true" },
+          rows,
+        }),
       });
       if (!response.ok) throw new Error((await response.json().catch(() => null))?.error?.message || "Unable to create the CSV export.");
       const url = URL.createObjectURL(await response.blob());
@@ -2917,7 +2925,7 @@ const DraftDashboard: React.FC = () => {
     } finally {
       setExportCsvState("idle");
     }
-  }, [allPlayers, canUseProExport, currentSeasonId, customCsvList.length, draftSettings.scoringCategories, goaliePointValues, goalieSourceControls, sourceControls]);
+  }, [allPlayers, canUseProExport, currentSeasonId, customCsvList.length, draftSettings.categoryWeights, draftSettings.leagueType, draftSettings.scoringCategories, goaliePointValues, goalieSourceControls, sourceControls]);
 
   const handleForwardGroupingChange = (mode: "split" | "fwd") => {
     const conflict = validateDraftSettings({ ...settingsValidationInput, forwardGrouping: mode }).errors.find(issue => issue.domain === "roster");
@@ -3152,6 +3160,7 @@ const DraftDashboard: React.FC = () => {
         onExportCsv={exportBlendedProjectionsCsv}
         exportCsvDisabled={exportCsvState === "loading"}
         exportCsvMessage={exportCsvMessage}
+        exportCsvUpgradeHref="/account?section=draft-pro"
         onRemoveCustomSource={(id) => {
           // Remove from session list and controls
           const list = getCsvList();

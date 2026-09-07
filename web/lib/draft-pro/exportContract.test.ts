@@ -3,8 +3,11 @@ import { draftProExportInputSchema, formatDraftProExportCsv } from "./exportCont
 
 const input = {
   season: "20262027",
+  leagueType: "categories" as const,
   sourceWeights: { projections: 0.7 },
   scoring: { G: 3 },
+  goalieScoring: { W: 4 },
+  adjustments: { prorate84: true },
   rows: [{ playerId: 1, fullName: "  =SUM(A1:A2)", team: "A, B\nC", projected: 12.5 }],
 };
 
@@ -19,13 +22,16 @@ describe("Draft Pro export contract", () => {
 
   it("includes season, source weights, and scoring provenance", () => {
     const csv = formatDraftProExportCsv(draftProExportInputSchema.parse(input));
-    expect(csv).toContain("projectionSeason,sourceWeights,scoring");
-    expect(csv).toContain("\r\n20262027,");
+    expect(csv).toContain("projectionSeason,leagueType,sourceWeights,scoring,goalieScoring,adjustments");
+    expect(csv).toContain("\r\n20262027,categories,");
     expect(csv).toContain(',"{""projections"":0.7}"');
+    expect(csv.split("\r\n").filter(Boolean)).toHaveLength(2);
   });
 
   it("rejects oversized row and column bounds", () => {
     expect(() => draftProExportInputSchema.parse({ ...input, rows: Array.from({ length: 5001 }, () => ({})) })).toThrow();
-    expect(() => draftProExportInputSchema.parse({ ...input, rows: [{ ...Object.fromEntries(Array.from({ length: 78 }, (_, index) => [`stat${index}`, index])) }] })).toThrow();
+    expect(() => draftProExportInputSchema.parse({ ...input, rows: [{ ...Object.fromEntries(Array.from({ length: 75 }, (_, index) => [`stat${index}`, index])) }] })).toThrow();
+    expect(() => draftProExportInputSchema.parse({ ...input, sourceWeights: { ["x".repeat(65)]: 1 } })).toThrow();
+    expect(() => draftProExportInputSchema.parse({ ...input, rows: [{ projectionSeason: "spoofed" }] })).toThrow();
   });
 });
