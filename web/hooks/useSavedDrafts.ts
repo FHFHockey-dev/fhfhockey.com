@@ -11,7 +11,7 @@ export type SavedDraftDetail = SavedDraftSummary & { snapshot: DraftProSnapshot;
 export type SavedDraftConflict = { current?: SavedDraftSummary };
 export type SaveOptions = { name: string; snapshot: DraftProSnapshot; expectedVersion?: number; accountSaveConsent: boolean; privateImports?: readonly NormalizedPrivateImport[] };
 type Attempt = { signature: string; key: string; staged: Map<string, string> };
-type Begin = { status?: string; session?: { status?: string; draft_id?: string | null; current_version?: number }; upload?: { upload_id?: string; storage_prefix?: string } };
+type Begin = { status?: string; session?: { status?: string; draft_id?: string | null; current_version?: number }; upload?: { upload_id?: string; storage_prefix?: string; status?: string } };
 
 const key = () => typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
 const mapping = (entry: NormalizedPrivateImport) => ({ sourceId: entry.sourceId, headers: entry.mapping });
@@ -38,15 +38,14 @@ async function upload(args: { draftId: string | null; expectedVersion: number | 
     if (begun.session?.status === "conflict" || begun.session?.status === "busy") throw conflict(begun.session.draft_id ? { id: begun.session.draft_id, name: "", status: "active", lockVersion: begun.session.current_version ?? 0, updatedAt: "" } : undefined);
     throw new Error("Private import upload could not be started. Your local draft is unchanged.");
   }
-  const paths: string[] = [];
-  for (let ordinal = 0; ordinal * CHUNK < bytes.byteLength; ordinal += 1) {
+  const paths = Array.from({ length: Math.ceil(bytes.byteLength / CHUNK) }, (_value, ordinal) => `${begun.upload!.storage_prefix}/${ordinal}`);
+  if (begun.upload.status !== "staged") for (let ordinal = 0; ordinal < paths.length; ordinal += 1) {
     if (!args.current()) throw new Error("Saved draft save was cancelled.");
     const token = (await supabase.auth.getSession()).data.session?.access_token;
     if (!token) throw new Error("Saved draft save was cancelled.");
     const response = await fetch(`/api/v1/account/draft-pro/private-imports/${begun.upload.upload_id}/chunks/${ordinal}`, { method: "PUT", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "X-Draft-Pro-Upload-Prefix": begun.upload.storage_prefix }, body: bytes.slice(ordinal * CHUNK, Math.min(bytes.byteLength, (ordinal + 1) * CHUNK)) });
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok || typeof payload.data?.path !== "string") throw new Error(payload.error?.message ?? "Private import upload failed. Your local draft is unchanged.");
-    paths.push(payload.data.path);
+    if (!response.ok || payload.data?.path !== paths[ordinal]) throw new Error(payload.error?.message ?? "Private import upload failed. Your local draft is unchanged.");
   }
   const staged = await request<{ importId?: string }>(`/api/v1/account/draft-pro/private-imports/${begun.upload.upload_id}/stage`, { method: "POST", body: JSON.stringify({ chunkPaths: paths }) });
   if (!staged.importId) throw new Error("Private import could not be staged. Your local draft is unchanged.");

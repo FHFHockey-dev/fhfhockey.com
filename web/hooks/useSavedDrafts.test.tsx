@@ -68,6 +68,12 @@ describe("useSavedDrafts", () => {
     const { result } = renderHook(() => useSavedDrafts()); await act(async () => { const loaded = await result.current.open("draft"); await Promise.all([result.current.saveNow("draft", { name: "Draft", snapshot, accountSaveConsent: false, privateImports: loaded.privateImports }), result.current.saveNow("draft", { name: "Draft", snapshot, accountSaveConsent: false, privateImports: loaded.privateImports })]); });
     expect(versions).toEqual([1, 2]);
   });
+  it("verifies a recovered staged upload without sending its chunks again", async () => {
+    const calls: string[] = [];
+    vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => { calls.push(url); if (url === "/api/v1/account/draft-pro/private-imports") return Promise.resolve(json({ data: { status: "ready", upload: { upload_id: "upload-1", storage_prefix: "prefix", status: "staged" } } }, true, 201)); if (url.endsWith("/stage")) return Promise.resolve(json({ data: { importId: "upload-1" } }, true, 201)); if (url === "/api/v1/account/draft-pro/drafts" && init?.method === "POST") return Promise.resolve(json({ data: { id: "draft", name: "Draft", status: "active", lockVersion: 1, updatedAt: "now" } }, true, 201)); if (url.endsWith("/draft")) return Promise.resolve(json({ data: detail })); return Promise.resolve(json({ data: [] })); }));
+    const { result } = renderHook(() => useSavedDrafts()); await act(async () => { await result.current.saveNow(null, { name: "Draft", snapshot, accountSaveConsent: true, privateImports: [imported] }); });
+    expect(calls.some((url) => url.includes("/chunks/"))).toBe(false); expect(calls.some((url) => url.endsWith("/stage"))).toBe(true);
+  });
   it("does not let a stale save replace a newly opened draft", async () => {
     let resolveSave!: (value: unknown) => void; const pendingSave = new Promise((resolve) => { resolveSave = resolve; });
     vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => { if (url === "/api/v1/account/draft-pro/drafts" && init?.method === "POST") return pendingSave; if (url.endsWith("/other")) return Promise.resolve(json({ data: { ...detail, id: "other", privateImports: [] } })); return Promise.resolve(json({ data: [] })); }));
