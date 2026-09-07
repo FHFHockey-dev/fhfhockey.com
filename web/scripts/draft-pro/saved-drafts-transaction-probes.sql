@@ -22,6 +22,9 @@ declare
   expired_save_id uuid;
   expired_upload_id uuid;
   expired_prefix text;
+  expired_cleanup_paths jsonb;
+  expired_cleanup_final text;
+  expired_cleanup_delete boolean;
   ordinal integer;
 begin
   select save_session_id into save_id from public.begin_draft_pro_save_session('00000000-0000-4000-8000-000000000021'::uuid, null, null, 'probe-attempt-1');
@@ -65,7 +68,8 @@ begin
   select save_session_id into expired_save_id from public.begin_draft_pro_save_session('00000000-0000-4000-8000-000000000021', saved_draft_id, version + 1, 'probe-attempt-expired-upload');
   select u.upload_id,u.storage_prefix into expired_upload_id,expired_prefix from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', expired_save_id, (select i.id from public.draft_pro_private_imports as i where i.draft_id=saved_draft_id and i.deleted_at is null limit 1), 512, 'Expired pre-stage', 'application/json', '{}'::jsonb) as u;
   update public.draft_pro_private_import_uploads as u set expires_at=now()-interval '1 second' where u.id=expired_upload_id;
-  if not exists (select 1 from public.claim_draft_pro_private_import_upload_cleanup('00000000-0000-4000-8000-000000000021',100) as c where c.upload_id=expired_upload_id and c.delete_final and jsonb_array_length(c.chunk_paths)=32 and c.final_storage_path='draft-pro-imports/' || expired_upload_id::text || '/normalized.json') then raise exception 'expired pre-stage upload cleanup did not return derived paths'; end if;
+  select c.chunk_paths,c.final_storage_path,c.delete_final into expired_cleanup_paths,expired_cleanup_final,expired_cleanup_delete from public.claim_draft_pro_private_import_upload_cleanup('00000000-0000-4000-8000-000000000021',100) as c where c.upload_id=expired_upload_id;
+  if expired_cleanup_delete is not true or jsonb_array_length(expired_cleanup_paths)<>32 or expired_cleanup_final<>'draft-pro-imports/' || expired_upload_id::text || '/normalized.json' then raise exception 'expired pre-stage upload cleanup did not return derived paths (% % %)',expired_cleanup_delete,expired_cleanup_paths,expired_cleanup_final; end if;
   if not exists (select 1 from public.begin_draft_pro_save_session('00000000-0000-4000-8000-000000000021', saved_draft_id, version + 2, 'probe-attempt-2') where status = 'conflict') then
     raise exception 'expected-version conflict was not returned';
   end if;
