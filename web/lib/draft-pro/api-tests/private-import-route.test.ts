@@ -9,7 +9,7 @@ vi.mock("lib/draft-pro/features", () => ({ getDraftProFeatureFlags: () => ({ pri
 vi.mock("lib/draft-pro/server", () => ({ loadDraftProAccess: access, requireDraftProServerCapability: requireCapability }));
 vi.mock("lib/draft-pro/privateImportTransport", () => ({ readPrivateImportChunk: readChunk }));
 
-import handler from "./[importId]";
+import handler from "../../../pages/api/v1/account/draft-pro/drafts/[id]/imports/[importId]";
 
 const response = () => {
   const value: any = { statusCode: 0 };
