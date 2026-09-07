@@ -23,8 +23,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const session = await stripe.checkout.sessions.retrieve(parsed.data.sessionId);
     if (checkoutUserId(session) !== user.id) return res.status(403).json({ error: "This Checkout session belongs to another account." });
     const result = await verifyStripeCheckoutSession(stripe, session);
-    return res.status(200).json({ paid: result.processed, purchaseId: result.purchaseId });
+    return res.status(200).json({ state: result.purchaseId ? "confirmed" : session.payment_status === "paid" ? "confirming" : "ineligible", purchaseId: result.purchaseId });
   } catch (error) {
-    return res.status(500).json({ error: error instanceof Error ? error.message : "Checkout verification failed." });
+    return res.status(500).json({ error: "Checkout verification failed." });
   }
 }

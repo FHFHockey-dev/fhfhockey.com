@@ -11,6 +11,10 @@ export function isStripeConfigured() {
   return Boolean(process.env.STRIPE_SECRET_KEY?.trim() && process.env.STRIPE_WEBHOOK_SECRET?.trim() && process.env.STRIPE_DRAFT_PRO_PRICE_ID?.trim() && process.env.STRIPE_DRAFT_PRO_PRODUCT_ID?.trim());
 }
 
+export function isDraftProCheckoutEnabled() {
+  return process.env.DRAFT_PRO_CHECKOUT_ENABLED === "true";
+}
+
 export function getDraftProStripeCatalog() {
   const priceId = process.env.STRIPE_DRAFT_PRO_PRICE_ID?.trim();
   const productId = process.env.STRIPE_DRAFT_PRO_PRODUCT_ID?.trim();
