@@ -10,7 +10,7 @@ import { loadDraftProAccess, requireDraftProServerCapability } from "lib/draft-p
 const idSchema = z.string().uuid();
 const mutateSchema = z.object({ action: z.enum(["rename", "duplicate"]), name: z.string().trim().min(1).max(120), expectedVersion: z.number().int().nonnegative() }).strict();
 const deleteSchema = z.object({ expectedVersion: z.number().int().nonnegative() }).strict();
-const saveSchema = saveDraftProDraftSchema.extend({ uploadIds: z.array(z.string().uuid()).max(100).optional(), importIds: z.array(z.string().uuid()).max(100).optional() });
+const saveSchema = saveDraftProDraftSchema.extend({ attemptKey: z.string().min(1).max(120), uploadIds: z.array(z.string().uuid()).max(100).optional(), importIds: z.array(z.string().uuid()).max(100).optional() });
 const fail = (res: NextApiResponse, status: number, code: string, message: string) => res.status(status).json({ error: { code, message } });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === "GET") return res.status(200).json({ data: await readSavedDraft(user.id, id) });
     if (req.method === "PUT") {
       const input = saveSchema.parse(req.body ?? {});
-      const result = await commitSavedDraft({ userId: user.id, draftId: id, name: input.name, expectedVersion: input.expectedVersion, snapshot: input.snapshot, uploadIds: input.uploadIds, importIds: input.importIds });
+      const result = await commitSavedDraft({ userId: user.id, draftId: id, name: input.name, expectedVersion: input.expectedVersion, snapshot: input.snapshot, attemptKey: input.attemptKey, uploadIds: input.uploadIds, importIds: input.importIds });
       return result.conflict ? res.status(409).json({ data: { current: result.current } }) : res.status(200).json({ data: result.draft });
     }
     const input = req.method === "DELETE" ? deleteSchema.parse(req.body ?? {}) : mutateSchema.parse(req.body ?? {});

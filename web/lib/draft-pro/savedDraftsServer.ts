@@ -1,5 +1,4 @@
 import serviceRoleClient from "lib/supabase/server";
-import { randomUUID } from "crypto";
 
 import type { DraftProSnapshot } from "./contracts";
 
@@ -29,10 +28,10 @@ export async function listSavedDrafts(userId: string): Promise<SavedDraftSummary
   return data.map(summary);
 }
 
-export async function commitSavedDraft(args: { userId: string; draftId: string | null; name: string; expectedVersion?: number; snapshot: DraftProSnapshot; attemptKey?: string; uploadIds?: string[]; importIds?: string[] }) {
+export async function commitSavedDraft(args: { userId: string; draftId: string | null; name: string; expectedVersion?: number; snapshot: DraftProSnapshot; attemptKey: string; uploadIds?: string[]; importIds?: string[] }) {
   const bytes = new TextEncoder().encode(JSON.stringify(args.snapshot)).byteLength;
   const session = await call("begin_draft_pro_save_session", {
-    p_user_id: args.userId, p_draft_id: args.draftId, p_expected_version: args.expectedVersion ?? null, p_attempt_key: args.attemptKey ?? randomUUID(),
+    p_user_id: args.userId, p_draft_id: args.draftId, p_expected_version: args.expectedVersion ?? null, p_attempt_key: args.attemptKey,
   });
   if (session.status === "conflict") return { conflict: true as const, current: summary(session) };
   const data = await call("commit_draft_pro_save_session", {

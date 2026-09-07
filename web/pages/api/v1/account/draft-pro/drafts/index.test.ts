@@ -16,7 +16,7 @@ const response = () => {
   const value: any = { statusCode: 0 };
   return Object.assign(value, { status(code: number) { value.statusCode = code; return value; }, json(body: unknown) { value.body = body; return value; }, setHeader: vi.fn() });
 };
-const valid = { name: "Mock draft", snapshot: { settings: {}, picks: [], keepers: [], trades: [], team: {}, sourceWeights: {}, importMappings: {}, favorites: [], notes: [], tiers: {}, recommendationPreferences: {} } };
+const valid = { attemptKey: "attempt-1", name: "Mock draft", snapshot: { settings: {}, picks: [], keepers: [], trades: [], team: {}, sourceWeights: {}, importMappings: {}, favorites: [], notes: [], tiers: {}, recommendationPreferences: {} } };
 
 describe("saved drafts route", () => {
   beforeEach(() => { vi.clearAllMocks(); requireCapability.mockReset(); auth.mockResolvedValue({ id: "user-1" }); access.mockResolvedValue({}); list.mockResolvedValue([]); commit.mockResolvedValue({ conflict: false, draft: { id: "draft-1" } }); });
