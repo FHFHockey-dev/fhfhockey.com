@@ -22,7 +22,7 @@ All tasks moved into the Draft Pro section. W01 active foundation; W12 released 
 - Base: 4476fb90f (octoberBranch); user checkout left unchanged.
 - Integration: codex/draft-pro at /Users/tim/.codex/worktrees/draft-pro-chef/fhfhockey.com
 - Yahoo one-time heartbeat: yahoo-draft-pro-readiness, September 11 09:00 Eastern.
-- Current status: W01 foundation/payment SQL and W03 Patreon locally approved; W05 recommendations approved. W02/W04 active; W06 approved; W12 mapping checkpoint approved; W07–W10 queued; W11/W13 preparation approved; W12 SQL checkpoint approved. Historical entries below retain prior states.
+- Current status: W01 foundation/payment SQL and W03 Patreon locally approved; W05 recommendations approved. W07 dashboard integration active; W02/W04 approved; W06 approved; W12 mapping checkpoint approved; W07–W10 queued; W11/W13 preparation approved; W12 SQL checkpoint approved. Historical entries below retain prior states.
 - External checks pending: real Stripe/Patreon credentials and provider validation; isolated SQL/RLS verification passed. Never print secrets.
 
 Task registrations and Chef decisions follow below.
@@ -135,3 +135,14 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 - W04 369f49fee returned missingemail requestID/accountemail/activation, retryoptionalfieldmapping, lazyResendinit, checkedemailstatewrites/idempotency, accountsummary/refundeligibility andPatreonactions. Terra/medium for coupledcorrection afterinitialLuna; nohighreasoning.
 
 - Chef verified official Link Checkout documentation https://docs.stripe.com/payments/link/checkout-link : enable Link inmerchantpaymentsettings; dynamicmethods omit payment_method_types, or explicitly include link. W02 current cardonly configuration needs explicit card+link or dynamicsetup plusoperatorcheck, no claimactualLinkUIverified.
+
+- W02 lifecycle236899fbc/97345a27615tests pass; Solexitmet downgradedLuna/medium. acad266ed addsactualcard+link/sharedflags/waitingstate. CLI83ef6aa682tests added, finaldocs/unknownkey/wrongownerfixturesreturnedtoboundedLuna. Chef all6Stripefiles29tests PASSED.
+- Chef strict scopedStripeTypeScript FAILED: SQLnullableRPCargs generatedasstring andnormalizedStripeEventunionconstruction. W01 released Luna/medium generatedtypesonly, W02ownsunionfix; priorPatreonundefinedsymbol fixedinChef, W02stalecheckpointneedsfixcommit. ActiveW01/W02/W04 three. No full-repositorypassclaimed.
+- W04 amended687a60a83 sevenrefundtests/scopedtsc pass, stillreturnedactualAPI/UIgate: sanitizedunexpectederrors, onlyopenrefundhistoryblocks, futureactivationboundary, selectableoldereligiblepurchase, refreshaccountafterPatreon. ResendofficialSDKidempotencysecondargument corrected+tested;24hourproviderwindowdocumented.
+
+- W01 a51006f4f+33b39e0b8 APPROVED/integrateda51e8663d+91dd238ed: actualnullableRPCfacts/checkoutsessionreturn, noSQLchange. W01idleLuna/low.
+- W04 finalamended353fa6a59 APPROVED/integrated993a238ba:17focusedtests +strictownedtypes/lint pass, actualaccount/refund/panel coverage. W04downgradedLuna/mediumidle. Finalbrowser/e-mailproviderchecksremainpending.
+- W02 finalCLI3tests pass atrebased11fedce1c; ownStripeunionTypeScriptfixstillactiveTerra/medium. W07queueduntiltypegate.
+
+- W02 APPROVED localthrough8634a5eec;24W02commits integratedendingef628ead9, excludedduplicatePatreoncommitda6669bcb. Chef combinedStripe/account11files47tests PASS and strictscopedTypeScript PASSexit0. CLIauditfacts/card+Link reviewed, actualproviderchecksblockedcredentials. W02idleLuna/low.
+- RELEASED W07 Luna/medium at ef628ead9: exclusivecentraldashboard/accountnavigation, fullinitialreleasewiring+CSV+graph. W08–W10laterpasses. ExistingreadonlydependencytreewithStripe /Users/tim/.codex/worktrees/8274/fhfhockey.com/web/node_modules; Chefintegrationlinknowpointsthere, nodependenciesmutated. OnlyW07implementationactive.
