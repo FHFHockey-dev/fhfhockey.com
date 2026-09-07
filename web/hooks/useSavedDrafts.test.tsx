@@ -18,4 +18,9 @@ describe("useSavedDrafts restore", () => {
     const { result } = renderHook(() => useSavedDrafts()); await act(async () => { await result.current.open("draft"); });
     expect((result.current.opened?.privateImports[0] as any).rows).toEqual([{ player: "A" }, { player: "B" }]);
   });
+  it("fails closed when an import chunk is missing", async () => {
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(url.includes("?ordinal=") ? { ok: false, json: async () => ({}) } : { ok: true, json: async () => ({ data: url.endsWith("/draft") ? detail : [] }) })));
+    const { result } = renderHook(() => useSavedDrafts()); await expect(result.current.open("draft")).rejects.toThrow("unavailable");
+    expect(result.current.opened).toBeNull();
+  });
 });
