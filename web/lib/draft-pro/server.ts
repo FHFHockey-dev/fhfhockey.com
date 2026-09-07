@@ -1,8 +1,11 @@
 import serviceRoleClient from "lib/supabase/server";
 import type { Json } from "lib/supabase/database-generated.types";
+import { refreshPatreonAccount } from "lib/integrations/patreon/sync";
 
 import { requireDraftProCapability, resolveDraftProAccess, type DraftProAccessInput, type DraftProEntitlement } from "./access";
 import { DRAFT_PRO_ENTITLEMENT_KEY, type DraftProCapability } from "./contracts";
+
+const PATREON_SUPPORTER_ENTITLEMENT_KEY = "patreon_supporter";
 
 export type DraftProFeatureFlags = Record<"checkout" | DraftProCapability, boolean>;
 
@@ -11,6 +14,18 @@ const metadataString = (metadata: Json, key: string) =>
   metadata && typeof metadata === "object" && !Array.isArray(metadata) && typeof metadata[key] === "string"
     ? metadata[key] as string
     : null;
+const metadataBoolean = (metadata: Json, key: string) =>
+  metadata && typeof metadata === "object" && !Array.isArray(metadata) && metadata[key] === true;
+
+function isDraftProPatreonGrant(row: {
+  source_provider: string;
+  entitlement_key: string;
+  metadata: Json;
+}) {
+  return row.source_provider === "patreon" &&
+    row.entitlement_key === PATREON_SUPPORTER_ENTITLEMENT_KEY &&
+    metadataBoolean(row.metadata, "draft_pro_eligible");
+}
 
 export async function loadDraftProAccess(
   userId: string,
@@ -21,14 +36,53 @@ export async function loadDraftProAccess(
     .from("user_entitlements")
     .select("source_provider,entitlement_status,effective_from,effective_to,metadata")
     .eq("user_id", userId)
-    .eq("entitlement_key", DRAFT_PRO_ENTITLEMENT_KEY);
+    .in("entitlement_key", [DRAFT_PRO_ENTITLEMENT_KEY, PATREON_SUPPORTER_ENTITLEMENT_KEY]);
   if (error) throw error;
-  const entitlements: DraftProEntitlement[] = (data ?? []).flatMap((row) => {
-    const source = row.source_provider === "stripe" ? "purchase" : row.source_provider === "patreon" ? "patreon" : null;
+  let rows = data ?? [];
+  // Patreon claims are short-lived. Reverify a stale Patreon-only claim before
+  // handing premium work to a caller; a provider failure is deliberately
+  // fail-closed for that source while leaving a separate purchase untouched.
+  const now = options.now;
+  const hasCurrentPurchase = rows.some((row) =>
+    row.source_provider === "stripe" && row.entitlement_key === DRAFT_PRO_ENTITLEMENT_KEY &&
+    row.entitlement_status === "active" &&
+    row.effective_from &&
+    row.effective_to &&
+    new Date(row.effective_from).getTime() <= now.getTime() &&
+    new Date(row.effective_to).getTime() > now.getTime(),
+  );
+  const stalePatreon = rows.some((row) => {
+    if (!isDraftProPatreonGrant(row) || row.entitlement_status !== "active") return false;
+    const verifiedAt = metadataString(row.metadata, "verified_at");
+    const verifiedTime = verifiedAt ? new Date(verifiedAt).getTime() : NaN;
+    return !Number.isFinite(verifiedTime) || verifiedTime < now.getTime() - 60 * 60 * 1000;
+  });
+  let patreonVerificationAvailable = options.patreonVerificationAvailable;
+  if (stalePatreon && !hasCurrentPurchase) {
+    try {
+      await refreshPatreonAccount({ userId, client: client as typeof serviceRoleClient, triggerSource: "access_reverify" });
+      const { data: refreshedRows, error: refreshedError } = await client
+        .from("user_entitlements")
+        .select("source_provider,entitlement_status,effective_from,effective_to,metadata")
+        .eq("user_id", userId)
+        .in("entitlement_key", [DRAFT_PRO_ENTITLEMENT_KEY, PATREON_SUPPORTER_ENTITLEMENT_KEY]);
+      if (refreshedError) throw refreshedError;
+      rows = refreshedRows ?? [];
+      patreonVerificationAvailable = true;
+    } catch {
+      patreonVerificationAvailable = false;
+    }
+  }
+  const entitlements: DraftProEntitlement[] = rows.flatMap((row) => {
+    const source = row.source_provider === "stripe" && row.entitlement_key === DRAFT_PRO_ENTITLEMENT_KEY
+      ? "purchase"
+      : isDraftProPatreonGrant(row)
+        ? "patreon"
+        : null;
     if (!source) return [];
     return [{ source, status: row.entitlement_status === "active" ? "active" : "inactive", effectiveFrom: row.effective_from, effectiveTo: row.effective_to, verifiedAt: metadataString(row.metadata, "verified_at") }];
   });
-  return resolveDraftProAccess({ ...options, userId, entitlements });
+  return resolveDraftProAccess({ ...options, patreonVerificationAvailable, userId, entitlements });
 }
 
 export function requireDraftProServerCapability(access: Awaited<ReturnType<typeof loadDraftProAccess>>, capability: DraftProCapability) {

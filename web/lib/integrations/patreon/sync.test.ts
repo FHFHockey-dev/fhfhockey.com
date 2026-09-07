@@ -57,7 +57,7 @@ describe("Patreon entitlement anti-sharing", () => {
     metadata: {},
   } as any;
 
-  it("materializes an active generic supporter entitlement without a feature grant", async () => {
+  it("marks a paid generic Patreon supporter entitlement as a verified Draft Pro source", async () => {
     const query = {
       select: vi.fn(),
       eq: vi.fn(),
@@ -89,8 +89,9 @@ describe("Patreon entitlement anti-sharing", () => {
         entitlement_status: "active",
         effective_to: null,
         metadata: expect.objectContaining({
-          generic_entitlement_only: true,
           provider_user_id: "patreon-user-1",
+          verified_at: "2026-07-14T15:00:00.000Z",
+          draft_pro_eligible: true,
         }),
       }),
     );

@@ -66,6 +66,8 @@ export type PatreonIdentitySnapshot = {
   lastChargeDate: string | null;
   lastChargeStatus: string | null;
   pledgeRelationshipStart: string | null;
+  paidThrough: string | null;
+  hasPaidMembership: boolean;
   tiers: PatreonTierSnapshot[];
   isEligibleSupporter: boolean;
   metadata: Json;
@@ -314,9 +316,11 @@ export function normalizePatreonIdentity(
   const currentlyEntitledAmountCents = numberValue(
     membership?.attributes?.currently_entitled_amount_cents,
   );
-  const isEligibleSupporter =
-    patronStatus === "active_patron" &&
-    ((currentlyEntitledAmountCents ?? 0) > 0 || tiers.length > 0);
+  const hasPaidMembership =
+    (currentlyEntitledAmountCents ?? 0) > 0 ||
+    tiers.some((tier) => (tier.amountCents ?? 0) > 0);
+  const isEligibleSupporter = patronStatus === "active_patron" && hasPaidMembership;
+  const paidThrough = stringValue(membership?.attributes?.next_charge_date);
   const accountLabel =
     stringValue(user.attributes?.full_name) || "Patreon account";
 
@@ -333,6 +337,8 @@ export function normalizePatreonIdentity(
     pledgeRelationshipStart: stringValue(
       membership?.attributes?.pledge_relationship_start,
     ),
+    paidThrough,
+    hasPaidMembership,
     tiers,
     isEligibleSupporter,
     metadata: {
@@ -348,6 +354,8 @@ export function normalizePatreonIdentity(
       pledge_relationship_start: stringValue(
         membership?.attributes?.pledge_relationship_start,
       ),
+      paid_through: paidThrough,
+      paid_membership: hasPaidMembership,
       image_url: stringValue(user.attributes?.image_url),
       tiers,
       generic_supporter_eligible: isEligibleSupporter,
@@ -365,7 +373,7 @@ export async function fetchPatreonIdentity(
     include: "memberships.campaign,memberships.currently_entitled_tiers",
     "fields[user]": "full_name,image_url",
     "fields[member]":
-      "patron_status,currently_entitled_amount_cents,last_charge_date,last_charge_status,pledge_relationship_start",
+      "patron_status,currently_entitled_amount_cents,last_charge_date,last_charge_status,pledge_relationship_start,next_charge_date",
     "fields[tier]": "title,amount_cents",
   });
   const response = await fetchImpl(`${PATREON_IDENTITY_URL}?${params}`, {
