@@ -119,7 +119,7 @@ export function useSavedDrafts() {
     try {
       const saved = await request<SavedDraftSummary>(`/api/v1/account/draft-pro/drafts/${id}`, init);
       if (at !== generation.current) return saved;
-      if (deleted) { setDrafts((all) => all.filter((draft) => draft.id !== id)); if (openedRef.current?.id === id) { generation.current += 1; replaceOpened(null); } }
+      if (deleted) { setDrafts((all) => all.filter((draft) => draft.id !== id)); if (openedRef.current?.id === id) { generation.current += 1; active.current = null; if (timer.current) clearTimeout(timer.current); timer.current = null; replaceOpened(null); } }
       else { setDrafts((all) => [saved, ...all.filter((draft) => draft.id !== saved.id)]); if (openedRef.current?.id === saved.id) replaceOpened({ ...openedRef.current, ...saved }); }
       setStatus("saved"); return saved;
     } catch (cause) { if (at === generation.current) { setStatus("error"); setError(cause instanceof Error ? cause.message : "Could not update this saved draft."); setConflict((cause as Error & { conflict?: SavedDraftSummary }).conflict ? { current: (cause as Error & { conflict?: SavedDraftSummary }).conflict } : null); } throw cause; }

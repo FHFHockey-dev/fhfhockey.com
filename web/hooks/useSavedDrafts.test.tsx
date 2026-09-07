@@ -106,6 +106,12 @@ describe("useSavedDrafts", () => {
     await act(async () => { await expect(result.current.open("other")).rejects.toThrow("unavailable"); });
     expect(result.current.opened?.id).toBe("draft"); expect(result.current.status).toBe("error"); expect(result.current.error).toBe("unavailable");
   });
+  it("cancels a pending autosave when deleting the opened draft", async () => {
+    vi.useFakeTimers(); const calls: Array<{ url: string; init?: RequestInit }> = [];
+    vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => { calls.push({ url, init }); if (url.endsWith("/draft") && init?.method === "DELETE") return Promise.resolve(json({ data: undefined })); return Promise.resolve(json({ data: url.endsWith("/draft") ? { ...detail, privateImports: [] } : [] })); }));
+    const { result } = renderHook(() => useSavedDrafts()); await act(async () => { await result.current.open("draft"); result.current.autosave("draft", { name: "Draft", snapshot, accountSaveConsent: true }); await result.current.remove("draft", 1); vi.advanceTimersByTime(2_000); });
+    expect(calls.some((call) => call.url.endsWith("/draft") && call.init?.method === "PUT")).toBe(false); vi.useRealTimers();
+  });
   it("cancels a pending open when the auth identity changes", async () => {
     let resolve!: (value: unknown) => void; const pending = new Promise((done) => { resolve = done; }); vi.stubGlobal("fetch", vi.fn((url: string) => url.endsWith("/draft") ? pending : Promise.resolve(json({ data: [] }))));
     const { result } = renderHook(() => useSavedDrafts()); const opening = result.current.open("draft"); (onAuthStateChange.mock.calls[0][0] as (event: string, session: null) => void)("SIGNED_OUT", null); resolve(json({ data: { ...detail, privateImports: [] } })); await expect(opening).rejects.toThrow("cancelled");
