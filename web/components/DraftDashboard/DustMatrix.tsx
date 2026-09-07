@@ -36,7 +36,7 @@ export default function DustMatrix({ state, weeks, selectedWeeks = weeks, period
   const ready = !error && state.status === "ready" && Boolean(state.baseline) && weeks.length > 0;
   const weekTotals = useMemo(() => new Map(weeks.map((week) => [week.week, rows.reduce((total, row) => total + (row.cells.get(week.week)?.bench ?? 0), 0)])), [rows, weeks]);
   const weekAxis = { x: 32, y: 8 };
-  const playerAxis = { x: 20, y: 30 };
+  const playerAxis = { x: 20, y: 32 };
   const plotWidth = 170 + Math.max(0, weeks.length - 1) * weekAxis.x + Math.max(0, rows.length - 1) * playerAxis.x;
   const plotHeight = 52 + Math.max(0, weeks.length - 1) * weekAxis.y + Math.max(0, rows.length - 1) * playerAxis.y;
 
