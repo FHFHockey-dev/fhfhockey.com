@@ -140,6 +140,17 @@
       minmax(0, 42fr);
   }
 }
+@media (min-width: 1101px) {
+  .dashboardContainer:has(.matrix[data-open="true"]) {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+  .dashboardContainer:has(.matrix[data-open="true"]) .mainContent {
+    flex: 0 0 auto;
+    min-height: 720px;
+  }
+}
 @media (max-width: 1100px) {
   .dashboardContainer {
     height: auto;

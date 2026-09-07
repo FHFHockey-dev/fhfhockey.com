@@ -49,7 +49,7 @@ export default function DustMatrix({ state, weeks, selectedWeeks = weeks, period
     return () => observer.disconnect();
   }, [open, plotWidth]);
 
-  return <section className={styles.matrix} aria-label="DUST schedule overview">
+  return <section className={styles.matrix} data-open={open ? "true" : "false"} aria-label="DUST schedule overview">
     <button type="button" className={styles.toggle} aria-expanded={open} aria-controls={contentId} onClick={() => setOpen((value) => !value)}>
       {open ? "▾" : "▸"} DUST schedule overview <span>Full-season DUST baseline · {period}</span>
     </button>
