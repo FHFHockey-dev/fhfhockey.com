@@ -25,6 +25,8 @@ export interface SuggestedPicksProps {
   dustInsights?: ReadonlyMap<string, DraftDashboardDustInsight>;
   players: ProcessedPlayer[]; // available players only
   vorpMetrics?: Map<string, PlayerVorpMetrics>;
+  personalizedVorpMetrics?: Map<string, PlayerVorpMetrics>;
+  draftProEligible?: boolean;
   needWeightEnabled?: boolean;
   needAlpha?: number; // 0..1
   posNeeds?: Record<string, number>;
@@ -59,6 +61,8 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   error,
   dustInsights,
   vorpMetrics,
+  personalizedVorpMetrics,
+  draftProEligible = false,
   needWeightEnabled = false,
   needAlpha = 0.5,
   posNeeds = {},
@@ -250,6 +254,8 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   const { recommendations } = usePlayerRecommendations({
     players,
     vorpMetrics,
+    personalizedVorpMetrics,
+    usePersonalizedReplacement: draftProEligible && Boolean(personalizeReplacement),
     posNeeds,
     needWeightEnabled,
     needAlpha,
@@ -259,7 +265,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     teamCount,
     leagueType,
     catNeeds,
-    forwardGrouping
+    forwardGrouping,
   });
 
   // Availability heuristic: Normal CDF around ADP

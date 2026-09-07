@@ -419,6 +419,24 @@ const DraftDashboard: React.FC = () => {
       );
     },
   );
+  const [draftProEligible, setDraftProEligible] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (!data.session?.access_token) return;
+      void fetch("/api/v1/account/draft-pro", {
+        headers: { Authorization: `Bearer ${data.session.access_token}` },
+      })
+        .then((response) => response.json())
+        .then((body) => {
+          if (!cancelled) setDraftProEligible(Boolean(body?.data?.access?.eligible));
+        })
+        .catch(() => {
+          if (!cancelled) setDraftProEligible(false);
+        });
+    });
+    return () => { cancelled = true; };
+  }, [user?.id]);
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(
@@ -1821,7 +1839,21 @@ const DraftDashboard: React.FC = () => {
     categoryWeights: draftSettings.categoryWeights,
     forwardGrouping,
     myFilledSlots: myFilledSlotsForVorp,
-    personalizeReplacement,
+    personalizeReplacement: false,
+    prorate84,
+  });
+
+  const { playerMetrics: personalizedVorpMetrics } = useVORPCalculations({
+    players: allPlayers,
+    availablePlayers,
+    draftSettings,
+    picksUntilNext,
+    leagueType: draftSettings.leagueType || "points",
+    baselineMode,
+    categoryWeights: draftSettings.categoryWeights,
+    forwardGrouping,
+    myFilledSlots: myFilledSlotsForVorp,
+    personalizeReplacement: draftProEligible && personalizeReplacement,
     prorate84,
   });
 
@@ -3436,6 +3468,8 @@ const DraftDashboard: React.FC = () => {
           error={errorMessage}
           dustInsights={rosterScheduleOptimizer.insights}
           vorpMetrics={vorpMetrics}
+          personalizedVorpMetrics={personalizedVorpMetrics}
+          draftProEligible={draftProEligible}
           needWeightEnabled={needWeightEnabled}
           needAlpha={needAlpha}
           posNeeds={posNeeds}
