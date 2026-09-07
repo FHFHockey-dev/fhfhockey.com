@@ -564,9 +564,9 @@ export type Database = {
         Relationships: []
       }
       draft_pro_save_sessions: {
-        Row: { id: string; user_id: string; draft_id: string | null; expected_version: number | null; status: string; expires_at: string; created_at: string; updated_at: string }
-        Insert: { id?: string; user_id: string; draft_id?: string | null; expected_version?: number | null; status?: string; expires_at?: string; created_at?: string; updated_at?: string }
-        Update: { id?: string; user_id?: string; draft_id?: string | null; expected_version?: number | null; status?: string; expires_at?: string; created_at?: string; updated_at?: string }
+        Row: { id: string; user_id: string; draft_id: string | null; attempt_key: string; expected_version: number | null; status: string; expires_at: string; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; draft_id?: string | null; attempt_key: string; expected_version?: number | null; status?: string; expires_at?: string; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; draft_id?: string | null; attempt_key?: string; expected_version?: number | null; status?: string; expires_at?: string; created_at?: string; updated_at?: string }
         Relationships: []
       }
       draft_pro_provider_events: {
@@ -47777,7 +47777,7 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: { checkout_session_id: string | null; purchase_id: string; purchase_status: string; stripe_idempotency_key: string }[]
       }
-      begin_draft_pro_save_session: { Args: { p_draft_id: string | null; p_expected_version: number | null; p_user_id: string }; Returns: { current_version: number; draft_id: string | null; expires_at: string | null; save_session_id: string | null; status: string }[] }
+      begin_draft_pro_save_session: { Args: { p_attempt_key: string; p_draft_id: string | null; p_expected_version: number | null; p_user_id: string }; Returns: { current_version: number; draft_id: string | null; expires_at: string | null; save_session_id: string | null; status: string }[] }
       begin_draft_pro_private_import_upload: { Args: { p_content_type: string; p_declared_max_bytes: number; p_mapping: Json | null; p_name: string; p_replacement_import_id: string | null; p_save_session_id: string; p_user_id: string }; Returns: { expires_at: string; reserved_bytes: number; status: string; storage_prefix: string; upload_id: string }[] }
       stage_draft_pro_private_import_upload: { Args: { p_actual_bytes: number; p_chunk_paths: string[]; p_content_sha256: string; p_row_count: number; p_upload_id: string; p_user_id: string }; Returns: { expires_at: string; status: string; storage_path: string; upload_id: string }[] }
       commit_draft_pro_save_session: { Args: { p_import_ids: string[] | null; p_name: string; p_save_session_id: string; p_snapshot: Json; p_snapshot_bytes: number; p_user_id: string }; Returns: { conflict_lock_version: number | null; draft_id: string; import_count: number; lock_version: number; name: string; status: string; updated_at: string }[] }

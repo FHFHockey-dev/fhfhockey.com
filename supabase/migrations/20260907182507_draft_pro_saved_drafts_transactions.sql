@@ -26,6 +26,7 @@ create table public.draft_pro_save_sessions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   draft_id uuid references public.draft_pro_drafts(id) on delete cascade,
+  attempt_key text not null check (char_length(attempt_key) between 1 and 120),
   expected_version integer,
   status text not null default 'pending' check (status in ('pending', 'committed', 'expired')),
   expires_at timestamptz not null default (now() + interval '2 hours'),
@@ -33,6 +34,7 @@ create table public.draft_pro_save_sessions (
   updated_at timestamptz not null default now()
 );
 create unique index draft_pro_one_pending_save_per_draft on public.draft_pro_save_sessions(user_id, draft_id) where draft_id is not null and status = 'pending';
+create unique index draft_pro_save_sessions_attempt_key_unique on public.draft_pro_save_sessions(user_id, attempt_key) where status <> 'expired';
 
 create table public.draft_pro_private_import_uploads (
   id uuid primary key default gen_random_uuid(),
@@ -65,26 +67,31 @@ grant select, insert, update, delete on table public.draft_pro_private_import_bl
 create trigger draft_pro_save_sessions_touch_updated_at before update on public.draft_pro_save_sessions for each row execute function public.update_updated_at_column();
 create trigger draft_pro_private_import_uploads_touch_updated_at before update on public.draft_pro_private_import_uploads for each row execute function public.update_updated_at_column();
 
-create or replace function public.begin_draft_pro_save_session(p_user_id uuid, p_draft_id uuid, p_expected_version integer)
+create or replace function public.begin_draft_pro_save_session(p_user_id uuid, p_draft_id uuid, p_expected_version integer, p_attempt_key text)
 returns table(status text, save_session_id uuid, draft_id uuid, current_version integer, expires_at timestamptz)
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare draft public.draft_pro_drafts%rowtype; session_row public.draft_pro_save_sessions%rowtype; draft_count integer;
 begin
-  if p_user_id is null then raise exception 'Draft Pro user is required'; end if;
+  if p_user_id is null or p_attempt_key is null or char_length(p_attempt_key) not between 1 and 120 then raise exception 'Draft Pro save attempt is required'; end if;
   perform pg_advisory_xact_lock(hashtext('draft-pro-save:' || p_user_id::text || ':' || coalesce(p_draft_id::text, 'new')));
-  update public.draft_pro_save_sessions set status = 'expired' where user_id = p_user_id and status = 'pending' and expires_at <= now();
+  update public.draft_pro_save_sessions as s set status = 'expired' where s.user_id = p_user_id and s.status = 'pending' and s.expires_at <= now();
+  select s.* into session_row from public.draft_pro_save_sessions as s where s.user_id=p_user_id and s.attempt_key=p_attempt_key for update;
+  if found then
+    if session_row.status='committed' then return query select 'saved',session_row.id,session_row.draft_id,coalesce(session_row.expected_version,0),session_row.expires_at; return; end if;
+    if session_row.status='pending' and session_row.expires_at>now() then return query select 'ready',session_row.id,session_row.draft_id,coalesce(session_row.expected_version,0),session_row.expires_at; return; end if;
+  end if;
   if p_draft_id is not null then
-    select * into draft from public.draft_pro_drafts where id = p_draft_id and user_id = p_user_id and status <> 'deleted' for update;
+    select d.* into draft from public.draft_pro_drafts as d where d.id = p_draft_id and d.user_id = p_user_id and d.status <> 'deleted' for update;
     if not found then raise exception 'Draft was not found'; end if;
     if p_expected_version is null or p_expected_version <> draft.lock_version then return query select 'conflict', null::uuid, draft.id, draft.lock_version, null::timestamptz; return; end if;
-    select * into session_row from public.draft_pro_save_sessions where user_id = p_user_id and draft_id = p_draft_id and status = 'pending' for update;
-    if found then return query select 'ready', session_row.id, draft.id, draft.lock_version, session_row.expires_at; return; end if;
+    select s.* into session_row from public.draft_pro_save_sessions as s where s.user_id = p_user_id and s.draft_id = p_draft_id and s.status = 'pending' for update;
+    if found then return query select 'busy', null::uuid, draft.id, draft.lock_version, session_row.expires_at; return; end if;
   else
     if p_expected_version is not null then raise exception 'New draft cannot have an expected version'; end if;
-    select count(*) into draft_count from public.draft_pro_drafts where user_id = p_user_id and status <> 'deleted';
+    select count(*) into draft_count from public.draft_pro_drafts as d where d.user_id = p_user_id and d.status <> 'deleted';
     if draft_count >= 10 then raise exception 'Draft Pro saved draft quota exceeded'; end if;
   end if;
-  insert into public.draft_pro_save_sessions(user_id, draft_id, expected_version) values (p_user_id, p_draft_id, p_expected_version) returning * into session_row;
+  insert into public.draft_pro_save_sessions(user_id, draft_id, attempt_key, expected_version) values (p_user_id, p_draft_id, p_attempt_key, p_expected_version) returning * into session_row;
   return query select 'ready', session_row.id, session_row.draft_id, coalesce(draft.lock_version, 0), session_row.expires_at;
 end;
 $$;
@@ -97,18 +104,18 @@ declare session_row public.draft_pro_save_sessions%rowtype; replacement public.d
 begin
   if p_user_id is null or p_declared_max_bytes not between 1 and 10485760 or p_name is null or char_length(btrim(p_name)) not between 1 and 160 or p_content_type not in ('text/csv','application/json') then raise exception 'Invalid private import upload request'; end if;
   perform pg_advisory_xact_lock(hashtext('draft-pro-import:' || p_user_id::text));
-  select * into session_row from public.draft_pro_save_sessions where id = p_save_session_id and user_id = p_user_id and status = 'pending' and expires_at > now() for update;
+  select s.* into session_row from public.draft_pro_save_sessions as s where s.id = p_save_session_id and s.user_id = p_user_id and s.status = 'pending' and s.expires_at > now() for update;
   if not found then raise exception 'Draft Pro save session is unavailable'; end if;
   if p_replacement_import_id is not null then
-    select * into replacement from public.draft_pro_private_imports where id = p_replacement_import_id and user_id = p_user_id and draft_id = session_row.draft_id and deleted_at is null for update;
+    select i.* into replacement from public.draft_pro_private_imports as i where i.id = p_replacement_import_id and i.user_id = p_user_id and i.draft_id = session_row.draft_id and i.deleted_at is null for update;
     if not found then raise exception 'Replacement import was not found'; end if;
     if not exists (select 1 from public.draft_pro_private_imports where blob_id = replacement.blob_id and deleted_at is null and id <> replacement.id) then reclaimable := replacement.byte_size; end if;
   end if;
   reservation := greatest(p_declared_max_bytes - reclaimable, 0);
-  select coalesce(sum(byte_size),0) into account_bytes from public.draft_pro_private_import_blobs where user_id = p_user_id and status = 'active';
-  select coalesce(sum(reserved_bytes),0) into pending_bytes from public.draft_pro_private_import_uploads where user_id = p_user_id and status in ('uploading','staged') and expires_at > now();
+  select coalesce(sum(b.byte_size),0) into account_bytes from public.draft_pro_private_import_blobs as b where b.user_id = p_user_id and b.status = 'active';
+  select coalesce(sum(u.reserved_bytes),0) into pending_bytes from public.draft_pro_private_import_uploads as u where u.user_id = p_user_id and u.status in ('uploading','staged') and u.expires_at > now();
   if account_bytes + pending_bytes + reservation > 104857600 then raise exception 'Draft Pro account import quota exceeded'; end if;
-  select coalesce(sum(byte_size),0) into cleanup_bytes from public.draft_pro_private_import_blobs where user_id=p_user_id and status='cleanup_pending';
+  select coalesce(sum(b.byte_size),0) into cleanup_bytes from public.draft_pro_private_import_blobs as b where b.user_id=p_user_id and b.status='cleanup_pending';
   if cleanup_bytes + pending_bytes + p_declared_max_bytes > 20971520 then raise exception 'Draft Pro temporary import cleanup quota exceeded'; end if;
   insert into public.draft_pro_private_import_uploads(user_id, save_session_id, replacement_import_id, name, content_type, mapping, declared_max_bytes, reserved_bytes, storage_prefix)
   values (p_user_id, session_row.id, p_replacement_import_id, btrim(p_name), p_content_type, coalesce(p_mapping,'{}'::jsonb), p_declared_max_bytes, reservation, '') returning * into upload;
@@ -124,7 +131,7 @@ language plpgsql security definer set search_path = public, pg_temp as $$
 declare upload public.draft_pro_private_import_uploads%rowtype; ordinal integer;
 begin
   if p_user_id is null or p_chunk_paths is null or cardinality(p_chunk_paths) not between 1 and 32 or p_actual_bytes not between 1 and 10485760 or p_row_count not between 0 and 100000 or p_content_sha256 !~ '^[a-f0-9]{64}$' then raise exception 'Invalid private import staging request'; end if;
-  select * into upload from public.draft_pro_private_import_uploads where id = p_upload_id and user_id = p_user_id and status = 'uploading' and expires_at > now() for update;
+  select u.* into upload from public.draft_pro_private_import_uploads as u where u.id = p_upload_id and u.user_id = p_user_id and u.status = 'uploading' and u.expires_at > now() for update;
   if not found or p_actual_bytes > upload.declared_max_bytes then raise exception 'Private import upload is unavailable'; end if;
   for ordinal in 1..cardinality(p_chunk_paths) loop if p_chunk_paths[ordinal] <> upload.storage_prefix || '/' || (ordinal - 1)::text then raise exception 'Private import chunk path is not server-owned'; end if; end loop;
   update public.draft_pro_private_import_uploads set chunk_paths = to_jsonb(p_chunk_paths), actual_bytes = p_actual_bytes, row_count = p_row_count, content_sha256 = p_content_sha256, final_storage_path = 'draft-pro-imports/' || upload.id::text || '/normalized.json', status = 'staged', expires_at = now() + interval '2 hours' where id = upload.id returning * into upload;
@@ -256,5 +263,5 @@ begin
 end;
 $$;
 
-revoke all on function public.begin_draft_pro_save_session(uuid,uuid,integer), public.begin_draft_pro_private_import_upload(uuid,uuid,uuid,integer,text,text,jsonb), public.stage_draft_pro_private_import_upload(uuid,uuid,text[],integer,integer,text), public.commit_draft_pro_save_session(uuid,uuid,text,jsonb,integer,uuid[]), public.list_draft_pro_saved_drafts(uuid), public.read_draft_pro_snapshot(uuid,uuid), public.rename_draft_pro_saved_draft(uuid,uuid,integer,text), public.delete_draft_pro_saved_draft(uuid,uuid,integer), public.duplicate_draft_pro_saved_draft(uuid,uuid,integer,text), public.claim_draft_pro_private_import_cleanup(uuid,integer), public.confirm_draft_pro_private_import_cleanup(uuid,uuid[]) from public, anon, authenticated;
-grant execute on function public.begin_draft_pro_save_session(uuid,uuid,integer), public.begin_draft_pro_private_import_upload(uuid,uuid,uuid,integer,text,text,jsonb), public.stage_draft_pro_private_import_upload(uuid,uuid,text[],integer,integer,text), public.commit_draft_pro_save_session(uuid,uuid,text,jsonb,integer,uuid[]), public.list_draft_pro_saved_drafts(uuid), public.read_draft_pro_snapshot(uuid,uuid), public.rename_draft_pro_saved_draft(uuid,uuid,integer,text), public.delete_draft_pro_saved_draft(uuid,uuid,integer), public.duplicate_draft_pro_saved_draft(uuid,uuid,integer,text), public.claim_draft_pro_private_import_cleanup(uuid,integer), public.confirm_draft_pro_private_import_cleanup(uuid,uuid[]) to service_role;
+revoke all on function public.begin_draft_pro_save_session(uuid,uuid,integer,text), public.begin_draft_pro_private_import_upload(uuid,uuid,uuid,integer,text,text,jsonb), public.stage_draft_pro_private_import_upload(uuid,uuid,text[],integer,integer,text), public.commit_draft_pro_save_session(uuid,uuid,text,jsonb,integer,uuid[]), public.list_draft_pro_saved_drafts(uuid), public.read_draft_pro_snapshot(uuid,uuid), public.rename_draft_pro_saved_draft(uuid,uuid,integer,text), public.delete_draft_pro_saved_draft(uuid,uuid,integer), public.duplicate_draft_pro_saved_draft(uuid,uuid,integer,text), public.claim_draft_pro_private_import_cleanup(uuid,integer), public.confirm_draft_pro_private_import_cleanup(uuid,uuid[]) from public, anon, authenticated;
+grant execute on function public.begin_draft_pro_save_session(uuid,uuid,integer,text), public.begin_draft_pro_private_import_upload(uuid,uuid,uuid,integer,text,text,jsonb), public.stage_draft_pro_private_import_upload(uuid,uuid,text[],integer,integer,text), public.commit_draft_pro_save_session(uuid,uuid,text,jsonb,integer,uuid[]), public.list_draft_pro_saved_drafts(uuid), public.read_draft_pro_snapshot(uuid,uuid), public.rename_draft_pro_saved_draft(uuid,uuid,integer,text), public.delete_draft_pro_saved_draft(uuid,uuid,integer), public.duplicate_draft_pro_saved_draft(uuid,uuid,integer,text), public.claim_draft_pro_private_import_cleanup(uuid,integer), public.confirm_draft_pro_private_import_cleanup(uuid,uuid[]) to service_role;
