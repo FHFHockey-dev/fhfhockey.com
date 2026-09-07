@@ -4,7 +4,7 @@ import { z } from "zod";
 import { requireApiUser } from "lib/api/requireApiUser";
 import { evaluateDraftProDust, type DraftProDustInput } from "lib/draft-pro/dust";
 import { enforceDraftProDustRateLimit } from "lib/draft-pro/dustRateLimit";
-import { assertDustScheduleRowsMatchResolution, normalizeDustProjectionSeason, resolveDustScheduleSeason, type DustScheduleSeasonMetadata } from "lib/draft-pro/dustSeason";
+import { assertDustScheduleRowsMatchResolution, DustScheduleSeasonUnavailableError, normalizeDustProjectionSeason, resolveDustScheduleSeason, type DustScheduleSeasonMetadata } from "lib/draft-pro/dustSeason";
 import { getDraftProFeatureFlags } from "lib/draft-pro/features";
 import { loadDraftProAccess, requireDraftProServerCapability } from "lib/draft-pro/server";
 import { parseRosterScheduleReadFilter, readRosterSchedule, type ScheduleReadClient } from "lib/rosterScheduleData";
@@ -45,13 +45,18 @@ function failure(res: NextApiResponse, status: number, code: string, message: st
 type SeasonMetadataClient = {
   from(table: "roster_optimizer_team_games"): {
     select(columns: string): {
-      eq(column: "source_season_id", value: number): PromiseLike<{
-        data: DustScheduleSeasonMetadata[] | null;
-        error: { message: string } | null;
-      }>;
+      eq(column: "source_season_id", value: number): {
+        range(from: number, to: number): PromiseLike<{
+          data: DustScheduleSeasonMetadata[] | null;
+          error: { message: string } | null;
+        }>;
+      };
     };
   };
 };
+
+const SEASON_MAPPING_PAGE_SIZE = 1_000;
+const MAX_SEASON_MAPPING_PAGES = 10;
 
 async function loadPersistedSeasonMapping(
   client: SeasonMetadataClient,
@@ -62,12 +67,21 @@ async function loadPersistedSeasonMapping(
   if (!/^\d{8}$/.test(projectionSeason) || !Number.isSafeInteger(sourceSeasonId)) {
     return resolveDustScheduleSeason(projectionSeason, [], requestedGameKey);
   }
-  const { data, error } = await client
-    .from("roster_optimizer_team_games")
-    .select("game_key,season,source_season_id")
-    .eq("source_season_id", sourceSeasonId);
-  if (error) throw error;
-  return resolveDustScheduleSeason(projectionSeason, data ?? [], requestedGameKey);
+  const rows: DustScheduleSeasonMetadata[] = [];
+  for (let page = 0; page < MAX_SEASON_MAPPING_PAGES; page += 1) {
+    const { data, error } = await client
+      .from("roster_optimizer_team_games")
+      .select("game_key,season,source_season_id")
+      .eq("source_season_id", sourceSeasonId)
+      .range(page * SEASON_MAPPING_PAGE_SIZE, (page + 1) * SEASON_MAPPING_PAGE_SIZE - 1);
+    if (error) throw error;
+    const pageRows = data ?? [];
+    rows.push(...pageRows);
+    if (pageRows.length < SEASON_MAPPING_PAGE_SIZE) {
+      return resolveDustScheduleSeason(projectionSeason, rows, requestedGameKey);
+    }
+  }
+  throw new DustScheduleSeasonUnavailableError("The persisted schedule mapping exceeded the bounded metadata read limit.");
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
