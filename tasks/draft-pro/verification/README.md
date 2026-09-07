@@ -27,3 +27,15 @@ When a migration is supplied, the harness runs `web/scripts/draft-pro/foundation
 With two migrations, `stripe-concurrency-probes.sh` uses separate named PostgreSQL sessions to hold the checkout advisory lock and purchase row lock. Two background workers are observed waiting behind each lock before release; assertions require one shared pending purchase ID, one processed duplicate event, one provider-event row, and one active entitlement.
 
 With three ordered migrations, pass the saved-drafts transaction migration as the third argument and set `DRAFT_PRO_EXTRA_PROBE` to its committed transaction probe. The harness preserves the foundation and Stripe probes, then runs the saved-draft session, quota, replacement, duplicate, delete-cleanup, version, and ownership assertions in the same disposable database.
+
+## Saved Drafts real-service routes
+
+From the repository root, with Docker running and the existing `web/node_modules` installation available:
+
+```sh
+web/scripts/draft-pro/verify-saved-drafts-routes.sh
+```
+
+This separate harness starts disposable local Postgres, GoTrue, PostgREST, Storage, a loopback gateway, and Next. It applies the baseline and three Draft Pro migrations, seeds synthetic users and entitlements, and uses locally signed test tokens. It does not use production data, provider credentials, live payments, or email delivery.
+
+The runner saves a populated draft with a private normalized import and restores its snapshot and downloaded file through a second token for the same account. Assertions cover file integrity, picks, keepers, trades, settings, source controls, favorites, notes, tiers, another user's denied access, inactive names-only access, blocked payload/write/file operations, retained data after reactivation, and a stale-version conflict. The final success marker includes `cleanup=verified` only after its services and listening ports are removed. This proves the real API/session flow; it does not substitute for dashboard browser testing.
