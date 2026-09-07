@@ -54,4 +54,15 @@ describe("usePlayerRecommendations", () => {
     );
     expect(result.current.recommendations).toEqual([]);
   });
+
+  it("uses a separate personalized replacement map without changing the global map", () => {
+    const global = new Map([["1", { vbd: 1, vorp: 10, vona: 0 } as any], ["2", { vbd: 2, vorp: 20, vona: 0 } as any]]);
+    const personalized = new Map([["1", { vbd: 4, vorp: 10, vona: 0 } as any], ["2", { vbd: 2, vorp: 20, vona: 0 } as any]]);
+    const { result } = renderHook(() => usePlayerRecommendations({
+      players: [player(1, "C"), player(2, "D")], vorpMetrics: global,
+      personalizedVorpMetrics: personalized, usePersonalizedReplacement: true,
+    }));
+    expect(result.current.recommendations[0].player.playerId).toBe(1);
+    expect(global.get("1")?.vorp).toBe(10);
+  });
 });
