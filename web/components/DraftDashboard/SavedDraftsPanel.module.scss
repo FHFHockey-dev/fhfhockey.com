@@ -12,6 +12,7 @@
 .locked { flex-basis: 100%; color: #64748b; font-size: .875rem; }
 .annotations { display: grid; gap: .5rem; margin-top: 1rem; padding: .75rem; border: 1px solid #c8d2de; border-radius: .5rem; }
 .annotationRows { display: grid; gap: .5rem; }
+.annotations textarea { min-height: 4rem; min-width: min(100%, 20rem); }
 .annotationRow { display: flex; flex-wrap: wrap; gap: .5rem; align-items: flex-start; }
 .annotationRow textarea { min-height: 4rem; min-width: min(100%, 20rem); flex: 1; }
 .annotationRow input { min-width: 8rem; flex: 1; }
