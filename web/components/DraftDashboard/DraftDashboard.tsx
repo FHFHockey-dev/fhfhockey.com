@@ -69,6 +69,7 @@ import {
   type SourceRankImpact,
 } from "lib/draftDashboard/sourceRankImpact";
 import { buildCustomProjectionSources } from "lib/draftDashboard/customProjectionSources";
+import { requestDraftProExport } from "lib/draftDashboard/draftProExportRequest";
 import {
   allocateGroupedRosterSlots,
   groupPlayerEligibility,
@@ -2862,14 +2863,6 @@ const DraftDashboard: React.FC = () => {
   // --- CSV Export: server-formatted blended projections ---
   const exportBlendedProjectionsCsv = useCallback(async () => {
     setExportCsvMessage(null);
-    if (customCsvList.length) {
-      setExportCsvMessage("Save your private CSV to your account before exporting blended projections.");
-      return;
-    }
-    if (!canUseProExport) {
-      setExportCsvMessage("Blended projections export is available with Draft Pro.");
-      return;
-    }
     if (!allPlayers.length) {
       setExportCsvMessage("There are no projections available to export yet.");
       return;
@@ -2887,29 +2880,35 @@ const DraftDashboard: React.FC = () => {
         positions: player.displayPosition || "",
         fantasyPointsProjected: player.fantasyPoints.projected,
         fantasyPointsPerGame: player.fantasyPoints.projectedPerGame,
-        yahooAvgPick: player.yahooAvgPick,
-        yahooAvgRound: player.yahooAvgRound,
-        yahooPctDrafted: player.yahooPctDrafted,
-        projectedRank: player.projectedRank,
+        yahooAvgPick: player.yahooAvgPick ?? null,
+        yahooAvgRound: player.yahooAvgRound ?? null,
+        yahooPctDrafted: player.yahooPctDrafted ?? null,
+        projectedRank: player.projectedRank ?? null,
         ...Object.fromEntries(statKeys.map((key) => [`${key}_proj`, player.combinedStats[key]?.projected ?? null])),
       }));
       const sourceWeights = Object.fromEntries([
         ...Object.entries(sourceControls || {}).filter(([, control]) => control.isSelected).map(([key, control]) => [key, control.weight]),
         ...Object.entries(goalieSourceControls || {}).filter(([, control]) => control.isSelected).map(([key, control]) => [key, control.weight]),
       ]);
-      const response = await fetch("/api/v1/draft-pro/export", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const exportRequest = await requestDraftProExport({
+        hasPrivateImport: Boolean(customCsvList.length),
+        canUseProExport,
+        token,
+        payload: {
           season: currentSeasonId == null ? "unknown" : String(currentSeasonId),
-          leagueType: draftSettings.leagueType || "points",
+          leagueType: (draftSettings.leagueType || "points") as "points" | "categories",
           sourceWeights,
           scoring: draftSettings.leagueType === "categories" ? draftSettings.categoryWeights || {} : draftSettings.scoringCategories,
           goalieScoring: goaliePointValues,
           adjustments: { prorate84: window.localStorage.getItem("projections.prorate84") === "true" },
           rows,
-        }),
+        },
       });
+      if (exportRequest.message) {
+        setExportCsvMessage(exportRequest.message);
+        return;
+      }
+      const response = exportRequest.response!;
       if (!response.ok) throw new Error((await response.json().catch(() => null))?.error?.message || "Unable to create the CSV export.");
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement("a");
