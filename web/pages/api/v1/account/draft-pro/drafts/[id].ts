@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === "GET") return res.status(200).json({ data: await readSavedDraft(user.id, id) });
     if (req.method === "PUT") {
       const input = saveSchema.parse(req.body ?? {});
-      const result = await commitSavedDraft({ userId: user.id, draftId: id, name: input.name, expectedVersion: input.expectedVersion, snapshot: input.snapshot, attemptKey: input.attemptKey, uploadIds: input.uploadIds, importIds: input.importIds });
+      const result = await commitSavedDraft({ userId: user.id, draftId: id, name: input.name, expectedVersion: input.expectedVersion, snapshot: input.snapshot, attemptKey: input.attemptKey, importIds: input.importIds });
       return result.conflict ? res.status(409).json({ data: { current: result.current } }) : res.status(200).json({ data: result.draft });
     }
     const input = req.method === "DELETE" ? deleteSchema.parse(req.body ?? {}) : mutateSchema.parse(req.body ?? {});

@@ -42,4 +42,10 @@ describe("saved drafts route", () => {
     const res = response(); await handler({ method: "POST", headers: {}, body: { ...valid, accountSaveConsent: true } } as any, res);
     expect(res.statusCode).toBe(400); expect(commit).not.toHaveBeenCalled();
   });
+
+  it("requires the stable attempt key that binds a save to its upload session", async () => {
+    const { attemptKey: _attemptKey, ...withoutAttemptKey } = valid;
+    const res = response(); await handler({ method: "POST", headers: {}, body: withoutAttemptKey } as any, res);
+    expect(res.statusCode).toBe(400); expect(commit).not.toHaveBeenCalled();
+  });
 });

@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const access = await loadDraftProAccess(user.id, { now: new Date(), flags: getDraftProFeatureFlags(), patreonVerificationAvailable: true });
     requireDraftProServerCapability(access, "saved_drafts");
     const input = createSchema.parse(req.body ?? {});
-    const result = await commitSavedDraft({ userId: user.id, draftId: null, name: input.name, expectedVersion: input.expectedVersion, snapshot: input.snapshot, attemptKey: input.attemptKey, uploadIds: input.uploadIds, importIds: input.importIds });
+    const result = await commitSavedDraft({ userId: user.id, draftId: null, name: input.name, expectedVersion: input.expectedVersion, snapshot: input.snapshot, attemptKey: input.attemptKey, importIds: input.importIds });
     return result.conflict ? res.status(409).json({ data: { current: result.current } }) : res.status(201).json({ data: result.draft });
   } catch (cause) {
     const error = cause as { statusCode?: number; code?: string; message?: string };
