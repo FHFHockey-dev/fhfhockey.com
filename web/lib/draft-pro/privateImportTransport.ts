@@ -3,6 +3,8 @@ import { createHash, randomUUID } from "crypto";
 import serviceRoleClient from "lib/supabase/server";
 import type { Database, Json } from "lib/supabase/database-generated.types";
 
+import { cleanupPrivateImports } from "./privateImportCleanup";
+
 const BUCKET = "draft-pro-private-imports";
 export const PRIVATE_IMPORT_CHUNK_BYTES = 750 * 1024;
 const client = serviceRoleClient;
@@ -23,6 +25,7 @@ async function ownedUpload(userId: string, uploadId: string) {
 }
 
 export async function beginPrivateImport(args: { userId: string; draftId: string | null; expectedVersion: number | null; attemptKey: string; name: string; mapping: unknown; declaredMaxBytes: number; replacementImportId?: string | null }) {
+  await cleanupPrivateImports(args.userId);
   const { data: sessionRows, error: sessionError } = await client.rpc("begin_draft_pro_save_session", { p_user_id: args.userId, p_draft_id: args.draftId, p_expected_version: args.expectedVersion, p_attempt_key: args.attemptKey });
   if (sessionError) throw sessionError;
   const session = requireRow(sessionRows);
