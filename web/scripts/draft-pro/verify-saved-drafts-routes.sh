@@ -10,8 +10,6 @@ readonly ROOT="draft-pro-routes-${RANDOM}${RANDOM}"
 readonly DB="$ROOT-db" REST="$ROOT-rest" AUTH="$ROOT-auth" STORAGE="$ROOT-storage" NET="$ROOT-net"
 readonly PASSWORD="draft_pro_routes_local_only" JWT_SECRET="draft-pro-routes-local-only-jwt-secret"
 readonly WORK="$(mktemp -d)"
-readonly CHUNK_ROUTE_TEST="web/pages/api/v1/account/draft-pro/drafts/[id]/imports/[importId].test.ts"
-hidden_chunk_route_test=""
 next_pid="" gateway_pid="" schema_container=""
 cleanup() {
   [[ -z "$next_pid" ]] || kill "$next_pid" >/dev/null 2>&1 || true
@@ -19,7 +17,6 @@ cleanup() {
   [[ -z "$schema_container" ]] || docker rm -f "$schema_container" >/dev/null 2>&1 || true
   docker rm -f "$STORAGE" "$AUTH" "$REST" "$DB" >/dev/null 2>&1 || true
   docker network rm "$NET" >/dev/null 2>&1 || true
-  [[ -z "$hidden_chunk_route_test" ]] || mv "$hidden_chunk_route_test" "$CHUNK_ROUTE_TEST" >/dev/null 2>&1 || true
   rm -rf "$WORK"
 }
 trap cleanup EXIT
@@ -87,7 +84,6 @@ for _ in $(seq 1 45); do curl -sf -H "Authorization: Bearer $user_a" "$gateway/a
 curl -sf -H "Authorization: Bearer $user_a" "$gateway/auth/v1/user" >/dev/null
 
 next_port="$((41000 + RANDOM % 1000))"
-( [[ -f "$CHUNK_ROUTE_TEST" ]] && mv "$CHUNK_ROUTE_TEST" "$WORK/import-route.test.ts" && hidden_chunk_route_test="$WORK/import-route.test.ts" )
 (cd web && PLAYER_FORECAST_ISOLATED_NEXT=1 NEXT_PUBLIC_SUPABASE_URL="$gateway" NEXT_PUBLIC_SUPABASE_PUBLIC_KEY="$anon_key" SUPABASE_SERVICE_ROLE_KEY="$service_key" DRAFT_PRO_SAVED_DRAFTS_ENABLED=true DRAFT_PRO_PRIVATE_IMPORTS_ENABLED=true NEXT_TELEMETRY_DISABLED=1 ./node_modules/.bin/next dev -H 127.0.0.1 -p "$next_port") >"$WORK/next.log" 2>&1 &
 next_pid=$!
 for _ in $(seq 1 60); do [[ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$next_port/api/v1/account/draft-pro/drafts")" == 401 ]] && break; sleep 1; done
