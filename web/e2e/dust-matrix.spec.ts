@@ -75,8 +75,13 @@ test("full-season DUST lattice keeps all player-week intersections available", a
 
 test("DUST matrix distinguishes unavailable coverage from zero conflicts", async ({ page }) => {
   await installDustMatrixFixtures(page, { incomplete: true });
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.once("dialog", (dialog) => dialog.accept());
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/draft-dashboard");
+  await page.screenshot({ path: "test-results/dust-matrix-unavailable-setup.png", fullPage: true });
+  console.log({ pageErrors, dialogs: await page.getByRole("dialog").count(), playerPanel: await page.locator("#mobile-draft-panel-players").isVisible() });
   await draftMatrixRoster(page);
   const matrix = page.getByRole("region", { name: "DUST schedule overview" });
   await matrix.getByRole("button", { name: /DUST schedule overview/ }).click();
