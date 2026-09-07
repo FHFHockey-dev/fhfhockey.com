@@ -41,6 +41,13 @@ function player(playerId: number, fullName: string, position: string) {
 }
 
 describe("ProjectionsTable visibility diagnostics", () => {
+  it("keeps league-wide table values raw and exposes no roster-needs control", () => {
+    render(<ProjectionsTable players={[player(1, "Raw Value", "C")]} draftedPlayers={[]} isLoading={false} error={null} onDraftPlayer={vi.fn()} canDraft vorpMetrics={new Map([["1", { vorp: 12, vona: 8, vbd: 10 } as any]])} />);
+    fireEvent.click(screen.getByRole("button", { name: "Open settings drawer" }));
+    expect(screen.queryByRole("checkbox", { name: "Enable need weighting" })).toBeNull();
+    expect(screen.getByText("10.0")).toBeTruthy();
+  });
+
   it("displays next-pick availability, with high availability marked green", () => {
     const early = { ...player(1, "Early", "C"), yahooAvgPick: 1 };
     const later = { ...player(2, "Later", "C"), yahooAvgPick: 100 };

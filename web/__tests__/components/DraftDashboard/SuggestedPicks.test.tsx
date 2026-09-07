@@ -188,4 +188,22 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     expect((screen.getByRole("checkbox", { name: "Prioritize my roster needs" }) as HTMLInputElement).disabled).toBe(true);
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it("serializes filtered skater and goalie candidates within the endpoint's output bound", async () => {
+    getSession.mockResolvedValue({ data: { session: { access_token: "token" } } });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: [] }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<SuggestedPicks players={[player(1, "Skater", "C", 100), player(2, "Goalie", "G", 90)]} currentPick={1} teamCount={1} draftProEligible />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const request = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body);
+    expect(request.limit).toBe(100);
+    expect(request.candidates.map((candidate: { role: string }) => candidate.role).sort()).toEqual(["goalie", "skater"]);
+  });
+
+  it("does not request paid analysis for an empty filtered player pool", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    render(<SuggestedPicks players={[]} currentPick={1} teamCount={1} draftProEligible />);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });
