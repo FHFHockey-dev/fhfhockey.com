@@ -108,14 +108,13 @@ export default function SavedDraftsWorkspace({ getBrowserSnapshot, applyBrowserS
     if (!saved.opened || !eligible || !currentFingerprint) return;
     if (currentError) { setPrivateImportsDirty(Boolean(importState.error)); return; }
     if (hydrating.current) {
-      // Dashboard effects can normalize the restored snapshot before this
-      // workspace observes its first render. That rendered fingerprint is the
-      // baseline; otherwise a target mismatch would leave hydration active and
-      // suppress every later local edit.
-      lastCloudFingerprint.current = currentFingerprint;
+      // The applied snapshot is the known cloud baseline. The first rendered
+      // snapshot may already include a user edit, so a mismatch must continue
+      // through the normal autosave path instead of becoming the baseline.
+      lastCloudFingerprint.current = hydrationTarget.current ?? currentFingerprint;
       hydrating.current = false;
       hydrationTarget.current = null;
-      return;
+      if (currentFingerprint === lastCloudFingerprint.current) return;
     }
     if (currentFingerprint === lastCloudFingerprint.current) {
       if (pendingCloudFingerprint.current) { operation.current += 1; saved.cancelAutosave(); pendingCloudFingerprint.current = null; }

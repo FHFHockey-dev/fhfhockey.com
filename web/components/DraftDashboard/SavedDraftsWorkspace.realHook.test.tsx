@@ -69,7 +69,7 @@ describe("SavedDraftsWorkspace with the real Saved Drafts hook", () => {
     expect(saves).toHaveLength(1);
   });
 
-  it("autosaves the first edit after a restored snapshot is normalized", async () => {
+  it("autosaves an edit already present in the first render after restore", async () => {
     const base: BrowserDraftSnapshot = { ...browser(), favorites: ["1"] };
     const detail = { ...summary, snapshot: serializeSavedDraft(base), privateImports: [] };
     const saves: RequestInit[] = [];
@@ -80,20 +80,15 @@ describe("SavedDraftsWorkspace with the real Saved Drafts hook", () => {
       throw new Error(`Unexpected ${url}`);
     }));
     let current: BrowserDraftSnapshot = base;
-    const view = render(<SavedDraftsWorkspace getBrowserSnapshot={() => current} applyBrowserSnapshot={(next) => {
+    render(<SavedDraftsWorkspace getBrowserSnapshot={() => current} applyBrowserSnapshot={(next) => {
       current = { ...next, favorites: [] };
       return next;
     }} players={[]} annotations={{ selectedPlayerId: null, notes: [], tiers: {} }} onAnnotationsChange={vi.fn()} />);
     await act(async () => { await Promise.resolve(); });
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Saved draft" })); await Promise.resolve(); });
-    view.rerender(<SavedDraftsWorkspace getBrowserSnapshot={() => current} applyBrowserSnapshot={(next) => next} players={[]} annotations={{ selectedPlayerId: null, notes: [], tiers: {} }} onAnnotationsChange={vi.fn()} />);
-    await act(async () => { await Promise.resolve(); });
-
-    current = { ...current, favorites: ["2"] };
-    view.rerender(<SavedDraftsWorkspace getBrowserSnapshot={() => current} applyBrowserSnapshot={(next) => next} players={[]} annotations={{ selectedPlayerId: null, notes: [], tiers: {} }} onAnnotationsChange={vi.fn()} />);
     await act(async () => { await vi.advanceTimersByTimeAsync(2_000); });
 
     expect(saves).toHaveLength(1);
-    expect(JSON.parse(String(saves[0].body)).snapshot.favorites).toEqual(["2"]);
+    expect(JSON.parse(String(saves[0].body)).snapshot.favorites).toEqual([]);
   });
 });
