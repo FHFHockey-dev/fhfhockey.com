@@ -28,6 +28,9 @@ declare
   expired_cleanup_delete boolean;
   expired_status text;
   active_import_id uuid;
+  shared_blob_id uuid;
+  shared_cleanup_lease uuid;
+  shared_cleanup_confirmed integer;
   parent_expired_save_id uuid;
   parent_expired_upload_id uuid;
   parent_expired_prefix text;
@@ -60,9 +63,17 @@ begin
   if copy_draft_id is null then
     raise exception 'duplicate did not preserve a linked draft';
   end if;
+  select i.blob_id into shared_blob_id from public.draft_pro_private_imports as i where i.draft_id=saved_draft_id and i.deleted_at is null limit 1;
+  if (select count(*) from public.draft_pro_private_imports as i where i.blob_id=shared_blob_id and i.deleted_at is null) <> 2 then
+    raise exception 'duplicate did not retain a shared private-import blob';
+  end if;
   select lock_version into version from public.rename_draft_pro_saved_draft('00000000-0000-4000-8000-000000000021', saved_draft_id, version, 'Renamed atomic draft') where status='saved';
   if version <> 1 then raise exception 'rename update path did not increment lock version'; end if;
   if not exists (select 1 from public.delete_draft_pro_saved_draft('00000000-0000-4000-8000-000000000021', copy_draft_id, copy_version) where status='deleted') then raise exception 'delete update path did not execute'; end if;
+  if not exists (select 1 from public.draft_pro_private_import_blobs as b where b.id=shared_blob_id and b.status='active')
+    or (select count(*) from public.draft_pro_private_imports as i where i.blob_id=shared_blob_id and i.deleted_at is null) <> 1 then
+    raise exception 'deleting one shared-blob draft scheduled the retained blob for cleanup';
+  end if;
   if not exists (select 1 from public.begin_draft_pro_save_session('00000000-0000-4000-8000-000000000021', null, null, 'probe-attempt-1') where status='saved' and current_version=version) then raise exception 'committed attempt retry did not return its actual version'; end if;
   begin
     perform public.begin_draft_pro_save_session('00000000-0000-4000-8000-000000000021', saved_draft_id, version, 'probe-attempt-1');
@@ -87,6 +98,14 @@ begin
   select u.upload_id,u.storage_prefix into replacement_upload_id,replacement_prefix from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', replacement_save_id, (select i.id from public.draft_pro_private_imports as i where i.draft_id=saved_draft_id and i.deleted_at is null limit 1), 512, 'Replacement', 'application/json', '{"sourceId":"probe-source-replacement"}'::jsonb) as u;
   perform public.stage_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', replacement_upload_id, array[replacement_prefix || '/0'], 512, 2, repeat('c',64));
   if not exists (select 1 from public.commit_draft_pro_save_session('00000000-0000-4000-8000-000000000021', replacement_save_id, 'Replacement at cap', '{}'::jsonb, 2, '{}'::uuid[]) where status='saved') then raise exception 'same-size replacement at account cap did not commit'; end if;
+  select c.cleanup_lease_id into shared_cleanup_lease from public.claim_draft_pro_private_import_cleanup('00000000-0000-4000-8000-000000000021', 20) as c where c.blob_id=shared_blob_id;
+  if shared_cleanup_lease is not null then
+    select public.confirm_draft_pro_private_import_cleanup('00000000-0000-4000-8000-000000000021', array[shared_blob_id], shared_cleanup_lease) into shared_cleanup_confirmed;
+  end if;
+  if shared_cleanup_lease is null or shared_cleanup_confirmed <> 1
+    or not exists (select 1 from public.draft_pro_private_import_blobs as b where b.id=shared_blob_id and b.status='deleted') then
+    raise exception 'replacement did not safely lease and confirm orphaned shared-blob cleanup (% %, %)', shared_cleanup_lease, shared_cleanup_confirmed, (select status from public.draft_pro_private_import_blobs where id=shared_blob_id);
+  end if;
   select save_session_id into parent_expired_save_id from public.begin_draft_pro_save_session('00000000-0000-4000-8000-000000000021', saved_draft_id, version + 1, 'probe-attempt-expired-parent');
   select u.upload_id,u.storage_prefix into parent_expired_upload_id,parent_expired_prefix from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', parent_expired_save_id, (select i.id from public.draft_pro_private_imports as i where i.draft_id=saved_draft_id and i.deleted_at is null limit 1), 512, 'Expired parent', 'application/json', '{"sourceId":"probe-source-parent-expired"}'::jsonb) as u;
   update public.draft_pro_save_sessions as s set expires_at=now()-interval '1 second' where s.id=parent_expired_save_id;

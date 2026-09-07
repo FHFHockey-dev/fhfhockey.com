@@ -136,6 +136,9 @@ if [[ ${#migrations[@]} -gt 0 ]]; then
   if [[ ${#migrations[@]} -ge 2 ]]; then
     web/scripts/draft-pro/stripe-concurrency-probes.sh "$CONTAINER"
   fi
+  if [[ ${#migrations[@]} -ge 3 ]]; then
+    web/scripts/draft-pro/saved-drafts-concurrency-probes.sh "$CONTAINER"
+  fi
   if [[ -n "$extra_probe" ]]; then
     git show "$extra_probe" | psql_in_container
     echo "probe=$extra_probe"

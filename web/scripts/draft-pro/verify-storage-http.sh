@@ -12,8 +12,10 @@ readonly NETWORK="${ROOT}-net"
 readonly PASSWORD="draft_pro_storage_local_only"
 readonly STORAGE_JWT_SECRET="draft-pro-storage-http-local-secret"
 readonly WORK="$(mktemp -d)"
+schema_container=""
 
 cleanup() {
+  [[ -z "$schema_container" ]] || docker rm -f "$schema_container" >/dev/null 2>&1 || true
   docker rm -f "$API_CONTAINER" "$DB_CONTAINER" >/dev/null 2>&1 || true
   docker network rm "$NETWORK" >/dev/null 2>&1 || true
   rm -rf "$WORK"
@@ -54,6 +56,7 @@ for migration in 0008-add-public-to-buckets.sql 0013-add-bucket-custom-limits.sq
   psql_storage < "$WORK/$migration" >/dev/null
 done
 docker rm "$schema_container" >/dev/null
+schema_container=""
 psql_pg < "$BASELINE" >/dev/null
 psql_pg < supabase/migrations/20260907143356_draft_pro_foundation.sql >/dev/null
 psql_pg < supabase/migrations/20260907145602_draft_pro_stripe_fulfillment.sql >/dev/null
@@ -64,10 +67,10 @@ values
   ('00000000-0000-4000-8000-000000000031', 'authenticated', 'authenticated', 'storage-a@example.invalid', '{}'::jsonb, '{}'::jsonb),
   ('00000000-0000-4000-8000-000000000032', 'authenticated', 'authenticated', 'storage-b@example.invalid', '{}'::jsonb, '{}'::jsonb)
 on conflict (id) do nothing;
-insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('draft-pro-private-imports', 'draft-pro-private-imports', false, 10485760, array['application/json']::text[])
-on conflict (id) do update set public = false;
 SQL
+
+bucket_config="$(psql_pg --tuples-only --no-align --command "select public::text || '|' || file_size_limit::text || '|' || array_to_string(allowed_mime_types, ',') from storage.buckets where id='draft-pro-private-imports'")"
+[[ "$bucket_config" == 'false|10485760|text/csv,application/json' ]] || { echo "Migrated private bucket config was unexpected: $bucket_config" >&2; exit 1; }
 
 anon_key="$(jwt anon)"
 service_key="$(jwt service_role)"
