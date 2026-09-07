@@ -70,7 +70,7 @@ export async function installDraftProAuthenticatedFixtures(
   page: Page,
   accountResponse: () => DraftProAccountResponse,
 ) {
-  await installDraftProFreeFixtures(page, { seedSnapshot: false });
+  await installDraftProFreeFixtures(page);
   const expiresAt = Math.floor(Date.now() / 1000) + 60 * 60;
   const user = {
     id: "00000000-0000-4000-8000-000000000001",
@@ -106,7 +106,7 @@ export async function installDraftProAuthenticatedFixtures(
 }
 
 export async function installDustMatrixFixtures(page: Page, { incomplete = false }: { incomplete?: boolean } = {}) {
-  await installDraftProFreeFixtures(page);
+  await installDraftProFreeFixtures(page, { seedSnapshot: false });
   const skaters = Array.from({ length: 41 }, (_, index) => ({
     player_id: 1001 + index,
     Player_Name: `Matrix Player ${String(index + 1).padStart(2, "0")}`,
