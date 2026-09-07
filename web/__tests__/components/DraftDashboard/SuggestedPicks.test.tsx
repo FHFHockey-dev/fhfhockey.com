@@ -234,6 +234,14 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     expect(screen.getByRole("option", { name: "Weekly lock (unavailable)" })).toBeTruthy();
   });
 
+  it("surfaces a schedule-fit player outside the ordinary recommendation output", () => {
+    const players = Array.from({ length: 201 }, (_, index) => player(index + 1, `Player ${index + 1}`, index === 200 ? "G" : "C", 300 - index));
+    const metrics = new Map(players.map((candidate, index) => [String(candidate.playerId), { vbd: 300 - index, vorp: 300 - index, vona: 0 } as any]));
+    const dustInsights = new Map([["201", { activeGamesAdded: 9, marginalDustGames: 0, candidateScheduledGames: 8, dustRate: 0, risk: "low" } as any]]);
+    render(<SuggestedPicks players={players} vorpMetrics={metrics} currentPick={1} teamCount={1} dustInsights={dustInsights} dustSort="schedule_fit" canUseProDust />);
+    expect(screen.getAllByRole("listitem")[0].textContent).toContain("Player 201");
+  });
+
   it("sends a goalie-only filtered request through the shared contract", async () => {
     getSession.mockResolvedValue({ data: { session: { access_token: "token" } } });
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: [] }) });

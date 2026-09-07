@@ -10,10 +10,10 @@ import {
 } from "./useDraftProDust";
 
 const input = {
-  season: "2026", lineupMode: "daily" as const, inputOrigin: "draft" as const,
-  gameKey: "477", startWeek: 1, endWeek: 1, rosterSlots: { RW: 1 },
-  roster: [{ id: "r", teamAbbreviation: "AAA", eligiblePositions: "RW", value: 1, projectionSeason: "2026" }],
-  candidates: [{ id: "c", teamAbbreviation: "BBB", eligiblePositions: "RW", value: 1, projectionSeason: "2026" }],
+  season: "20262027", lineupMode: "daily" as const, inputOrigin: "draft" as const,
+  startWeek: 1, endWeek: 1, rosterSlots: { RW: 1 },
+  roster: [{ id: "r", teamAbbreviation: "AAA", eligiblePositions: "RW", value: 1, projectionSeason: "20262027" }],
+  candidates: [{ id: "c", teamAbbreviation: "BBB", eligiblePositions: "RW", value: 1, projectionSeason: "20262027" }],
 };
 
 describe("useDraftProDust", () => {
@@ -53,5 +53,25 @@ describe("useDraftProDust", () => {
     expect(result.current.result?.insights[0]?.playerId).toBe("current");
     rerender({ enabled: false });
     expect(result.current).toMatchObject({ status: "idle", result: null });
+  });
+
+  it("returns the server's weekly-lock unsupported state without inventing weekly analysis", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true, data: { state: "weekly_lock_unsupported", insights: [], diagnostics: ["DUST uses exact daily lineup assignment; weekly-lock leagues are not supported."] } }) }));
+    const { result } = renderHook(() => useDraftProDust({ ...input, lineupMode: "weekly" }, true));
+    await act(async () => { await vi.advanceTimersByTimeAsync(200); });
+    expect(result.current.result?.state).toBe("weekly_lock_unsupported");
+    expect(result.current.result?.insights).toEqual([]);
+  });
+
+  it("serializes canonical NHL seasons without the legacy game key", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true, data: { state: "ready", insights: [] } }) });
+    vi.stubGlobal("fetch", fetchMock);
+    renderHook(() => useDraftProDust(input, true));
+    await act(async () => { await vi.advanceTimersByTimeAsync(200); });
+    const request = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body);
+    expect(request).toMatchObject({ season: "20262027", roster: [{ projectionSeason: "20262027" }], candidates: [{ projectionSeason: "20262027" }] });
+    expect(request.gameKey).toBeUndefined();
   });
 });

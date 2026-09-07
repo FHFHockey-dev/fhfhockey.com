@@ -13,7 +13,7 @@ export const DRAFT_PRO_DUST_PRIVATE_IMPORT_SAVE_REQUIRED =
   "Save this private import to your account before using it for DUST.";
 
 export type DraftProDustRequestInput = Omit<DraftProDustInput, "schedule"> & {
-  gameKey: string;
+  gameKey?: string;
   startWeek: number;
   endWeek: number;
 };
@@ -28,7 +28,7 @@ export function useDraftProDust(input: DraftProDustRequestInput | null, enabled:
     sort: input.sort,
     inputOrigin: input.inputOrigin,
     privateImportAccountSaved: input.privateImportAccountSaved,
-    gameKey: input.gameKey,
+    ...(input.gameKey ? { gameKey: input.gameKey } : {}),
     startWeek: input.startWeek,
     endWeek: input.endWeek,
     roster: input.roster,
