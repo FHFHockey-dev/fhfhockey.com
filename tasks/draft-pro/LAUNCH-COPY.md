@@ -1,6 +1,6 @@
 # Draft Pro Launch Copy
 
-Status: copy contract for review. Free Draft is currently available. Checkout, the Draft Pro pass, and all premium features below are future-ready copy pending launch and readiness approval.
+Status: copy contract for review. Free Draft is currently available. Checkout, the Draft Pro pass, and all premium features below are future-ready copy pending launch and readiness approval. W07 is still in progress; do not present premium features as available until the post-W07 availability copy review.
 
 ## Free Draft: currently available
 
@@ -23,7 +23,7 @@ Your local draft remains yours to keep. Local autosave does not require Draft Pr
 
 Get a Draft Pro pass for **US$5.99 one time**. The pass is for the `2026-27` season and expires at **12:00 AM Eastern on July 1, 2027**. It does **not renew** and there is no subscription.
 
-Pay through Stripe Checkout. Link and receipt delivery are available when enabled for the checkout. PayPal is not offered for this pass.
+Pay through Stripe Checkout with card + Link when enabled. Receipt delivery is available when enabled for the checkout. PayPal is not offered for this pass.
 
 Later Draft Pro milestones released before this pass expires are included in the same purchased pass when enabled. Yahoo support is planned separately, with no guaranteed release date.
 
