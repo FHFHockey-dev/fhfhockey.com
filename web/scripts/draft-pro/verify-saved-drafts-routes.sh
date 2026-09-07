@@ -108,7 +108,7 @@ for _ in $(seq 1 45); do curl -sf -H "Authorization: Bearer $user_a" "$gateway/a
 curl -sf -H "Authorization: Bearer $user_a" "$gateway/auth/v1/user" >/dev/null
 
 next_port="$(node -e 'const net=require("net");const s=net.createServer().listen(0,"127.0.0.1",()=>{console.log(s.address().port);s.close()})')"
-(cd web && exec env PLAYER_FORECAST_ISOLATED_NEXT=1 NEXT_PUBLIC_SUPABASE_URL="$gateway" NEXT_PUBLIC_SUPABASE_PUBLIC_KEY="$anon_key" SUPABASE_SERVICE_ROLE_KEY="$service_key" DRAFT_PRO_SAVED_DRAFTS_ENABLED=true DRAFT_PRO_PRIVATE_IMPORTS_ENABLED=true NEXT_TELEMETRY_DISABLED=1 ./node_modules/.bin/next dev -H 127.0.0.1 -p "$next_port") >"$WORK/next.log" 2>&1 &
+(cd web && exec env PLAYER_FORECAST_ISOLATED_NEXT=1 NEXT_PUBLIC_SUPABASE_URL="$gateway" NEXT_PUBLIC_SUPABASE_PUBLIC_KEY="$anon_key" SUPABASE_SERVICE_ROLE_KEY="$service_key" DRAFT_PRO_SAVED_DRAFTS_ENABLED=true DRAFT_PRO_PRIVATE_IMPORTS_ENABLED=true DRAFT_PRO_SCENARIOS_ENABLED=true NEXT_TELEMETRY_DISABLED=1 ./node_modules/.bin/next dev -H 127.0.0.1 -p "$next_port") >"$WORK/next.log" 2>&1 &
 next_pid=$!
 for _ in $(seq 1 60); do
   kill -0 "$next_pid" >/dev/null 2>&1 || { cat "$WORK/next.log" >&2; exit 1; }
@@ -118,6 +118,11 @@ done
 kill -0 "$next_pid" >/dev/null 2>&1
 [[ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$next_port/api/v1/account/draft-pro/drafts")" == 401 ]]
 export NEXT_URL="http://127.0.0.1:$next_port" SUPABASE_GATEWAY="$gateway" USER_A="$user_a" USER_A_SECOND="$user_a_second" USER_B="$user_b" SERVICE_KEY="$service_key"
+if [[ "${DRAFT_PRO_SCENARIOS_ONLY:-false}" == true ]]; then
+  (cd web && NODE_PATH=.:node_modules ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/verify-scenarios-routes-runner.ts)
+  finish
+  exit 0
+fi
 if [[ "${DRAFT_PRO_BROWSER_ONLY:-false}" != true ]]; then
   (cd web && NODE_PATH=.:node_modules ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/verify-saved-drafts-routes-runner.ts)
 fi
