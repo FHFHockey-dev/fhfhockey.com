@@ -46,10 +46,12 @@ type SeasonMetadataClient = {
   from(table: "roster_optimizer_team_games"): {
     select(columns: string): {
       eq(column: "source_season_id", value: number): {
+        order(column: "id", options: { ascending: boolean }): {
         range(from: number, to: number): PromiseLike<{
           data: DustScheduleSeasonMetadata[] | null;
           error: { message: string } | null;
         }>;
+        };
       };
     };
   };
@@ -71,8 +73,9 @@ async function loadPersistedSeasonMapping(
   for (let page = 0; page < MAX_SEASON_MAPPING_PAGES; page += 1) {
     const { data, error } = await client
       .from("roster_optimizer_team_games")
-      .select("game_key,season,source_season_id")
+      .select("id,game_key,season,source_season_id")
       .eq("source_season_id", sourceSeasonId)
+      .order("id", { ascending: true })
       .range(page * SEASON_MAPPING_PAGE_SIZE, (page + 1) * SEASON_MAPPING_PAGE_SIZE - 1);
     if (error) throw error;
     const pageRows = data ?? [];
