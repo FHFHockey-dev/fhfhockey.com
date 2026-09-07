@@ -20,11 +20,11 @@ Account-wide weekly usage: **47% consumed / 53% remaining**. Goal counter: **991
 | W08 Saved Drafts | Queued | Initial-release checkpoint, quotas/concurrency/private restore implementation |
 | W09 scenarios | Queued | W08 and shared calculation integration |
 | W10 reports | Queued | W09 and deterministic report implementation |
-| W11 copy/operator | Configuration preparation approved | Final availability review after implemented milestones |
+| W11 copy/operator | Initial release copy/packet approved through4790fce53 | Refresh evidence after browser checkpoint and later milestones |
 | W12 verification | SQL/RLS/concurrency, free draft/compare/weights/CSV recovery approved | Paid UI, graph/mobile/keyboard/zoom active; later saved work, RC suite and release packet |
 | W13 Yahoo | Readiness work order approved and parked | September 11 one-time check; real provider evidence, separate activation approval |
 
-No remote build, deployment, production migration, live payment, or live email has been performed. Checkpoint approval is scoped engineering evidence, not release authorization. Full repository TypeScript remains unverified after its documented default-heap OOM; scoped checks are not a whole-repository pass.
+No remote build, deployment, production migration, live payment, or live email has been performed. Checkpoint approval is scoped engineering evidence, not release authorization. Full repository TypeScript passed with an 8 GiB heap at 3dcf15b05; /tmp/draft-pro-rc-types-final.log is empty and command exited 0. Earlier OOM and correction failures remain historical evidence below.
 
 ## Resolved tasks
 - W01 — Contracts and database foundation: 01a07c49-ae60-7ad1-ab7e-7f80faf44c10
@@ -256,3 +256,18 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 - W12 product baseline invalidated by reversed cherry-pick conflict resolution: duplicate scheduleMetrics/dustInsights props absent from Chef. Directed exact approved product restoration before reproducing browser defect; no product workaround approved from invalid baseline.
 
 - W03 fixture follow-on37279c0cb approved/integrateda3f2ab413: explicit UTF8 Uint8Array fixtures; owner checks include both implicated tests and pass. W07 Luna/low released only auth mock type correction; W12 product paths now exactlymatch6e236b3e4 (Chef diff empty). Free export denial browser passed with zero export requests; combined browser run pending.
+
+- W12 1a1bb6d35 integrated6eb6969b5 for two exact test cases only: graphdesktopfocus/Escapemobilezoom and freeexportdenial/zeroendpointrequests. Commit contains no evidence document despite handoff wording. On correct productbaseline comparison andDraftbuttons intercepted bystickyheaders; W07 owns correction afterauthmocktypes. W12 released Terra/medium for fictional Supabase session/mockAPI paidbrowserharness; missing fixture is local work, not external provider blocker. Actual Stripe validation remains separate.
+- W11 6a0d5fd97 docs retained pending small copy correction: do not present free graph as paidpass value, and packet should reference actual current RC failures until cleared. No launchapproval.
+
+- W07 auth fixture type fix bde8c29eb reviewed/integrateda21934a68; Chef16/16 tests pass. Corrected fullrepo tsc now only Stripe chunks.push Buffer→Uint8Array incompatibility atline15. W02 Luna/low brief onefile follow-on authorized alongside W07 CSS (two disjoint bounded corrections plus W12verification; within mastermax3). Scopedtypes must include repo ambient next-bootstrap.d.ts; earlier narrower check did not prove fullrepo.
+
+- Full repository TypeScript PASSED exit0 with8GiB after Stripe0603b67a3 integrated3dcf15b05; output /tmp/draft-pro-rc-types-final.log empty. No fullunit rerun needed: prior2failedgroupsnowtargetedpass. Initial browser acceptance stillpending. W07 browser command omitted established fictionalenv; supplied exact isolated3182command, W12owns3181. No service_role prerequisite inferred fromhomepagewarnings.
+
+- W07 c11f1a94f NOT approved despite2browserpasses: pointer-events:none allows clickthrough visuallycoveringstickyheaders/pageCount. Returned visiblegeometry/scrollpadding/minheight correction with normalhit-testing and explicit boundingrectevidence, Luna/medium after lowworkaround. W11 released tiny docscorrection (freegraphnotpaidvalue, actualRCevidence) alongside W07implementation/W12verification.
+
+- W11 docs4790fce53 APPROVED after diff review: correct freegraph/paidCSVboundary and actualRCevidence. Found owner committed directly in Chef (parent3dcf15b05), violating isolatedworktree ownership; aborted redundantcherrypick and verified docsbyteequalowner. Directed W11idle/futuree6fconly, Chefdependencyreference read-only. No runtimechanges fromdocstask.
+
+- W12 paidfixture review rejected provisionalpass: accessresponse omittedcapabilities and CSVnumericassertionanyNumber+unrelatedhardcodedoutput; reported nofailureartifacts withoutverifiedexit. Three runnerprocesses lingered. BoundedTerra/high escalation for realcontractfixture+singlerunner lifecycle+actualexit/evidence, then downgrade; no broader scope/providercalls.
+
+- W08 handoff preflight: existing draft/version/import tables and snapshotcontract present. Atomic10draft/100MiBaccountquota enforcement,10MiBperdraftimportaggregate, storage lifecycle and optimistic409 remain implementationwork, not foundation completion. W01 remains sole schema/RPC owner.
