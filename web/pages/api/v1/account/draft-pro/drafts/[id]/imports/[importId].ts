@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader("X-Draft-Pro-Total-Chunks", String(chunk.totalChunks));
     res.setHeader("X-Draft-Pro-SHA256", chunk.sha256);
     res.setHeader("X-Draft-Pro-Row-Count", String(chunk.rowCount));
-    return res.status(200).send(chunk.bytes);
+    return res.status(200).send(Buffer.from(chunk.bytes));
   } catch (cause) {
     const error = cause as { statusCode?: number; code?: string; message?: string };
     if (error.statusCode) return res.status(error.statusCode).json({ error: { code: error.code ?? "draft_pro_required", message: error.message ?? "Draft Pro access is required." } });

@@ -10,7 +10,7 @@ vi.mock("lib/draft-pro/features", () => ({ getDraftProFeatureFlags: () => ({ sav
 vi.mock("lib/draft-pro/server", () => ({ loadDraftProAccess: access, requireDraftProServerCapability: requireCapability }));
 vi.mock("lib/draft-pro/savedDraftsServer", () => ({ listSavedDrafts: list, commitSavedDraft: commit }));
 
-import handler from "./index";
+import handler from "../../../pages/api/v1/account/draft-pro/drafts";
 
 const response = () => {
   const value: any = { statusCode: 0 };
