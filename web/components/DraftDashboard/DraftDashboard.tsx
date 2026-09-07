@@ -934,10 +934,14 @@ const DraftDashboard: React.FC = () => {
         return false;
       }
       const snap = parsed.record;
-      const restoredCsvEntries = snap.customCsvEntries || getCsvList().filter(
+      const currentCsvEntries = getCsvList();
+      const restoredCsvEntries = snap.customCsvEntries || currentCsvEntries.filter(
         (entry) => snap.csvMetadata.some((metadata) => metadata.id === entry.id),
       );
-      if (!setCsvList(restoredCsvEntries)) {
+      if (
+        JSON.stringify(restoredCsvEntries) !== JSON.stringify(currentCsvEntries) &&
+        !setCsvList(restoredCsvEntries)
+      ) {
         setSettingsSaveError("Could not save imported projections in this tab. The current draft has not changed.");
         return false;
       }

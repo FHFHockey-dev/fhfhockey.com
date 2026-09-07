@@ -615,6 +615,34 @@ it("rejects an embedded CSV bookmark when its tab storage cannot be replaced", a
   expect(sessionStorage.getItem("draft.customCsvList.v3")).toContain("Old row");
 });
 
+it("restores named missing CSV recovery without rewriting an already empty tab list", async () => {
+  sessionStorage.setItem("draft.snapshot.v4", JSON.stringify(missingSourceRecord()));
+  const setItem = Storage.prototype.setItem;
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+    if (key === "draft.customCsvList.v3") throw new DOMException("quota", "QuotaExceededError");
+    return setItem.call(this, key, value);
+  });
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+  render(<DraftDashboard />);
+  expect(await screen.findByText(/Imported projection CSV rows are unavailable in this tab/)).toBeTruthy();
+  expect((screen.getByRole("button", { name: "Draft recovery player", hidden: true }) as HTMLButtonElement).disabled).toBe(true);
+});
+
+it("resumes matching tab CSV rows without rewriting them when storage is unavailable", async () => {
+  const matchingRows = [{ id: "custom_csv_one", label: "Tab source", rows: [{ Name: "Kept row" }] }];
+  sessionStorage.setItem("draft.customCsvList.v3", JSON.stringify(matchingRows));
+  sessionStorage.setItem("draft.snapshot.v4", JSON.stringify(record()));
+  const setItem = Storage.prototype.setItem;
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+    if (key === "draft.customCsvList.v3") throw new DOMException("quota", "QuotaExceededError");
+    return setItem.call(this, key, value);
+  });
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+  render(<DraftDashboard />);
+  await waitFor(() => expect(JSON.parse(sessionStorage.getItem("draft.snapshot.v4")!).draftedPlayers).toHaveLength(1));
+  expect(sessionStorage.getItem("draft.customCsvList.v3")).toContain("Kept row");
+});
+
 it("reports missing legacy v3 CSV metadata as recovery instead of import success", async () => {
   vi.spyOn(window, "confirm").mockReturnValue(true);
   render(<DraftDashboard />);
