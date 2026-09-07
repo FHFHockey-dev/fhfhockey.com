@@ -80,6 +80,7 @@ export async function stagePrivateImport(args: { userId: string; uploadId: strin
   let rows: unknown;
   try { rows = JSON.parse(body.toString("utf8")); } catch { throw new Error("Normalized private import must be valid JSON."); }
   if (!Array.isArray(rows) || rows.some((entry) => !entry || typeof entry !== "object" || Array.isArray(entry))) throw new Error("Normalized private import rows are invalid.");
+  if (rows.length > 100_000) throw new Error("Normalized private import exceeds the 100,000-row limit.");
   const hash = createHash("sha256").update(body).digest("hex");
   const finalPath = uploadRecord.final_storage_path;
   if (uploadRecord.status === "staged") {

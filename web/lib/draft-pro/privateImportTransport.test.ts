@@ -73,6 +73,15 @@ describe("private import transport ownership boundary", () => {
     expect(storageUpload).not.toHaveBeenCalled(); expect(storageDownload).not.toHaveBeenCalled();
   });
 
+  it("rejects more rows than the restore contract supports before final Storage upload", async () => {
+    const body = Buffer.from(JSON.stringify(Array.from({ length: 100_001 }, () => ({ player: "A" }))));
+    const splitAt = Math.ceil(body.byteLength / 2); const first = body.subarray(0, splitAt); const second = body.subarray(splitAt);
+    rpc.mockResolvedValueOnce({ data: [uploadRow({ declared_max_bytes: body.byteLength })], error: null });
+    storageDownload.mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => first } }).mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => second } });
+    await expect(stagePrivateImport({ userId: "user", uploadId: "upload-1", chunkPaths: ["draft-pro-import-staging/user/upload-1/0", "draft-pro-import-staging/user/upload-1/1"] })).rejects.toThrow("100,000-row limit");
+    expect(storageUpload).not.toHaveBeenCalled(); expect(rpc).toHaveBeenCalledTimes(1);
+  });
+
   it("returns bounded first/last chunks that reassemble with metadata", async () => {
     const body = Buffer.from(JSON.stringify([{ player: "A" }, { player: "B" }]));
     const metadata = { storage_path: "private/final.json", byte_size: body.byteLength, row_count: 2, content_sha256: createHash("sha256").update(body).digest("hex") };
