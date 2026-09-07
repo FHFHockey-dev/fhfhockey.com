@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 
 const settings = (page: Page) =>
   page.getByRole("region", { name: "Draft Settings", exact: true });
@@ -41,6 +41,9 @@ async function fitsSettingsPanel(page: Page, domain: string) {
 }
 
 async function installDraftFixture(page: Page) {
+  await page.route("**/api/v1/roster-schedule-optimizer/schedule**", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ schedule: [] }) }),
+  );
   await page.route("**://*.supabase.co/rest/v1/**", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
   );
@@ -121,9 +124,12 @@ async function installDraftFixture(page: Page) {
 }
 
 async function activateDraftFixture(page: Page) {
-  const bookmark = await page.evaluate(() =>
+  await importDraftBookmark(page, await page.evaluate(() =>
     JSON.stringify((window as any).__draftFixtureBookmark),
-  );
+  ));
+}
+
+async function importDraftBookmark(page: Page, bookmark: string) {
   await settings(page).getByRole("button", { name: "Import", exact: true }).click();
   await page.getByLabel("Import draft bookmark", { exact: true }).fill(bookmark);
   await page.getByRole("button", { name: "Import Bookmark", exact: true }).click();
@@ -605,3 +611,162 @@ for (const width of [320, 390]) {
     }
   });
 }
+
+for (const viewport of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 760 },
+]) {
+  test(`missing CSV recovery settles and can remove the source at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await installDraftFixture(page);
+    await page.goto("/draft-dashboard");
+    await activateDraftFixture(page);
+    await done(page);
+    await expect(page.locator("#mobile-draft-panel-players tbody tr").first()).toBeVisible({ timeout: 60_000 });
+    await expect.poll(async () => (await session(page)).csvMetadata?.length).toBe(1);
+    await page.evaluate(() => {
+      const raw = sessionStorage.getItem("draft.snapshot.v4");
+      if (!raw) throw new Error("fixture snapshot was not saved");
+      const snapshot = JSON.parse(raw);
+      const bookmark = (window as any).__draftFixtureBookmark;
+      snapshot.csvMetadata = bookmark.csvMetadata;
+      snapshot.sourceControls = bookmark.sourceControls;
+      snapshot.goalieSourceControls = bookmark.goalieSourceControls;
+      delete snapshot.customCsvEntries;
+      sessionStorage.setItem("draft.snapshot.v4", JSON.stringify(snapshot));
+      sessionStorage.removeItem("draft.customCsvList.v3");
+    });
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.reload();
+    await expect(settings(page)).toHaveAttribute("data-open", "true");
+    await expect(settings(page)).toContainText("Imported projection CSV rows are unavailable");
+    await settings(page).getByTestId("open-weights-popover").click();
+    const skaterSources = settings(page).getByRole("region", { name: "Skaters projection sources" });
+    await expect(skaterSources.getByText("Browser fixture", { exact: true })).toBeVisible();
+    await expect(skaterSources.getByRole("button", { name: "Reimport Browser fixture" })).toBeVisible();
+    await expect(skaterSources.getByRole("button", { name: "Remove Browser fixture" })).toBeVisible();
+    await done(page);
+    await expect(settings(page)).toHaveAttribute("data-open", "true");
+    page.once("dialog", (dialog) => dialog.accept());
+    await skaterSources.getByRole("button", { name: "Remove Browser fixture" }).click();
+    await expect(skaterSources.getByText("Browser fixture", { exact: true })).toHaveCount(0);
+    await expect(page.evaluate(() => sessionStorage.getItem("draft.customCsvList.v3"))).resolves.toBe("[]");
+  });
+}
+
+test("declining a stale resume clears state before a different draft is imported", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installDraftFixture(page);
+  await page.goto("/draft-dashboard");
+  await activateDraftFixture(page);
+  await done(page);
+  const differentBookmark = await page.evaluate(() => {
+    const bookmark = structuredClone((window as any).__draftFixtureBookmark);
+    bookmark.settings.teamCount = 10;
+    bookmark.settings.draftOrder = Array.from({ length: 10 }, (_, index) => `New Team ${index + 1}`);
+    bookmark.myTeamId = bookmark.settings.draftOrder[0];
+    bookmark.settings.rosterConfig.bench = 5;
+    bookmark.csvMetadata[0].label = "Second Browser fixture";
+    bookmark.customCsvEntries[0].label = "Second Browser fixture";
+    return JSON.stringify(bookmark);
+  });
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await page.reload();
+  await expect.poll(async () => {
+    const snapshot = await session(page);
+    return { teamCount: snapshot.settings?.teamCount, csvMetadata: snapshot.csvMetadata?.length, picks: snapshot.draftedPlayers?.length };
+  }).toEqual({ teamCount: 12, csvMetadata: 0, picks: 0 });
+  await expect(page.evaluate(() => sessionStorage.getItem("draft.customCsvList.v3"))).resolves.toBeNull();
+  await expect(settings(page).getByText("Browser fixture", { exact: true })).toHaveCount(0);
+  await importDraftBookmark(page, differentBookmark);
+  await expect(page.getByLabel("Import draft bookmark", { exact: true })).toHaveCount(0);
+  await expect(settings(page).getByRole("region", { name: "Skaters projection sources" }).getByText("Second Browser fixture", { exact: true })).toBeVisible();
+  await done(page);
+  await expect(page.locator("#mobile-draft-panel-players tbody tr").first()).toBeVisible({ timeout: 60_000 });
+  await expect.poll(async () => (await session(page)).settings.teamCount).toBe(10);
+  await expect.poll(async () => (await session(page)).csvMetadata[0].label).toBe("Second Browser fixture");
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.reload();
+  await expect(page.locator("#mobile-draft-panel-players tbody tr").first()).toBeVisible({ timeout: 60_000 });
+  await expect.poll(async () => (await session(page)).settings.teamCount).toBe(10);
+  await page.getByRole("button", { name: "Setup", exact: true }).click();
+  await settings(page).getByRole("button", { name: "Start New Draft", exact: true }).click();
+  await expect(settings(page).getByRole("button", { name: "Confirm Start New Draft", exact: true })).toBeVisible();
+  await settings(page).getByRole("button", { name: "Confirm Start New Draft", exact: true }).click();
+  await expect.poll(async () => {
+    const snapshot = await session(page);
+    return { teamCount: snapshot.settings?.teamCount, csvMetadata: snapshot.csvMetadata?.length, picks: snapshot.draftedPlayers?.length };
+  }).toEqual({ teamCount: 12, csvMetadata: 0, picks: 0 });
+});
+
+test("JSON file bookmark replaces stale state and invalid file preserves the new draft", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installDraftFixture(page);
+  await page.goto("/draft-dashboard");
+  await activateDraftFixture(page);
+  await done(page);
+  await expect(page.locator("#mobile-draft-panel-players tbody tr").first()).toBeVisible({ timeout: 60_000 });
+  await expect.poll(async () => (await session(page)).csvMetadata?.length).toBe(1);
+  await page.evaluate(() => {
+    const raw = sessionStorage.getItem("draft.snapshot.v4");
+    if (!raw) throw new Error("fixture snapshot was not saved");
+    const snapshot = JSON.parse(raw);
+    const bookmark = (window as any).__draftFixtureBookmark;
+    snapshot.csvMetadata = bookmark.csvMetadata;
+    snapshot.sourceControls = bookmark.sourceControls;
+    snapshot.goalieSourceControls = bookmark.goalieSourceControls;
+    delete snapshot.customCsvEntries;
+    sessionStorage.setItem("draft.snapshot.v4", JSON.stringify(snapshot));
+    sessionStorage.removeItem("draft.customCsvList.v3");
+  });
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.reload();
+  await expect(settings(page)).toContainText("Imported projection CSV rows are unavailable");
+  const fileBookmark = await page.evaluate(() => {
+    const bookmark = structuredClone((window as any).__draftFixtureBookmark);
+    bookmark.settings.teamCount = 8;
+    bookmark.settings.draftOrder = Array.from({ length: 8 }, (_, index) => `File Team ${index + 1}`);
+    bookmark.myTeamId = bookmark.settings.draftOrder[0];
+    bookmark.csvMetadata[0].label = "File Browser fixture";
+    bookmark.customCsvEntries[0].label = "File Browser fixture";
+    return JSON.stringify(bookmark);
+  });
+  await page.getByRole("button", { name: "Setup", exact: true }).click();
+  await settings(page).getByRole("button", { name: "Import", exact: true }).click();
+  const filePath = testInfo.outputPath("file-bookmark.json");
+  await writeFile(filePath, fileBookmark, "utf8");
+  await page.getByLabel("Read draft bookmark").setInputFiles(filePath);
+  await page.getByRole("button", { name: "Import Bookmark", exact: true }).click();
+  await expect(page.getByLabel("Import draft bookmark", { exact: true })).toHaveCount(0);
+  const skaterSources = settings(page).getByRole("region", { name: "Skaters projection sources" });
+  await expect(skaterSources.getByText("File Browser fixture", { exact: true })).toBeVisible();
+  await expect.poll(async () => (await session(page)).settings.teamCount).toBe(8);
+  await expect.poll(async () => {
+    const entries = JSON.parse((await page.evaluate(() => sessionStorage.getItem("draft.customCsvList.v3"))) || "[]");
+    return entries[0]?.rows?.length;
+  }).toBeGreaterThan(0);
+  await expect(skaterSources.getByText("Browser fixture", { exact: true })).toHaveCount(0);
+  await done(page);
+  await expect(page.locator("#mobile-draft-panel-players tbody tr").first()).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("button", { name: "Setup", exact: true }).click();
+  await settings(page).getByRole("button", { name: "Import", exact: true }).click();
+  const needsResources = await session(page);
+  needsResources.csvMetadata = [{ id: "custom_csv_absent", label: "Absent Browser fixture" }];
+  needsResources.customCsvEntries = undefined;
+  needsResources.sourceControls.custom_csv_absent = { isSelected: true, weight: 1 };
+  needsResources.goalieSourceControls.custom_csv_absent = { isSelected: true, weight: 1 };
+  await page.getByLabel("Import draft bookmark", { exact: true }).fill(JSON.stringify(needsResources));
+  await page.getByRole("button", { name: "Import Bookmark", exact: true }).click();
+  await expect(settings(page).getByRole("alert").last()).toContainText("must be reimported or removed");
+  await expect(page.getByLabel("Import draft bookmark", { exact: true })).toHaveCount(0);
+  await settings(page).getByRole("button", { name: "Import", exact: true }).click();
+  await page.getByLabel("Read draft bookmark").setInputFiles({
+    name: "invalid.json",
+    mimeType: "application/json",
+    buffer: Buffer.from("{not valid json}"),
+  });
+  await page.getByRole("button", { name: "Import Bookmark", exact: true }).click();
+  await expect(settings(page).getByRole("alert").last()).toContainText("Unsupported bookmark");
+  await expect.poll(async () => (await session(page)).settings.teamCount).toBe(8);
+  await expect(page.getByLabel("Read draft bookmark")).toBeVisible();
+});
