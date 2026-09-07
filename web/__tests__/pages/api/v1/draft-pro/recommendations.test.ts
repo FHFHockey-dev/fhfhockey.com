@@ -7,7 +7,8 @@ vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: requireApiUserMock })
 vi.mock("lib/draft-pro/server", () => ({ loadDraftProAccess: loadAccessMock, requireDraftProServerCapability: requireCapabilityMock }));
 vi.mock("lib/draft-pro/recommendationsRateLimit", () => ({ consumeRecommendationRequest: consumeMock }));
 
-import handler from "../../../../../pages/api/v1/draft-pro/recommendations";
+import handler, { config } from "../../../../../pages/api/v1/draft-pro/recommendations";
+import { draftProRecommendationsInputSchema } from "../../../../../lib/draft-pro/recommendationsContract";
 
 const response = () => ({ statusCode: 200, body: null as unknown, headers: {} as Record<string, string>, status(code: number) { this.statusCode = code; return this; }, setHeader(name: string, value: string) { this.headers[name] = value; }, json(body: unknown) { this.body = body; return this; } });
 const body = { dataOrigin: "server", leagueType: "points", candidates: [{ id: "1", name: "Player", role: "skater", eligiblePositions: ["C"], globalVorp: 12, rankValue: 8 }] };
@@ -60,5 +61,12 @@ describe("POST /api/v1/draft-pro/recommendations", () => {
     await handler({ method: "POST", body: { ...body, positionNeeds }, headers: {} } as any, res as any);
     expect(res.statusCode).toBe(400);
     expect(res.body).toEqual({ error: expect.objectContaining({ code: "validation_error" }) });
+  });
+
+  it("accepts the full 2,000-player contract with a 4 MiB body limit", () => {
+    const candidates = Array.from({ length: 2_000 }, (_, index) => ({ ...body.candidates[0], id: String(index) }));
+    expect(draftProRecommendationsInputSchema.parse({ ...body, candidates })).toHaveProperty("candidates");
+    expect(() => draftProRecommendationsInputSchema.parse({ ...body, candidates: [...candidates, { ...body.candidates[0], id: "2000" }] })).toThrow();
+    expect(config.api.bodyParser.sizeLimit).toBe("4mb");
   });
 });
