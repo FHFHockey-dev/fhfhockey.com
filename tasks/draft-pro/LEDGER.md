@@ -196,3 +196,16 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 - W12 source-weight browser test remains unapproved: repeated navigation locator timeouts; Chef requested actual visible role/name evidence and exact blocker instead of guessed retries. No product defect or test pass claimed.
 
 - W04 account response follow-on 1d1b10d5c approved and integrated as e029c5902: fixed pass info, stable checkout availability, separate configuration readiness, Yahoo false. Owner reported 10 tests/types/lint passing; Chef reran eight helper tests successfully (the additional supplied route path matched no file). W04 is idle; W07 has the response contract for later UI finishing.
+
+- W12 source-weight checkpoint 26af9128f approved and integrated as 9465103e6: actual Chromium case passed, fictional 207.0→255.0 projection, persisted Cullen weight 1, unchanged picks. Released next local CSV/bookmark recovery case from current integration.
+- W07 DUST e9508e17a rejected: hardcoded game key and incompatible NHL/Yahoo season formats, sort control not applied to displayed candidates, no usable narrowing above 500 candidates, hardcoded daily mode, ungrouped eligibility, outdated memo dependency, latest-only freshness. Returned bounded UI corrections. W06 released Terra/medium server-only season mapping/API tests; W07 owns hook/UI; active W06/W07/W12 three.
+
+- W07 DUST 05ec1f885 remains unapproved: scope notice masks all errors for >500 pools, latest-only freshness persists, sorting is restricted to the prior 100/200 recommendation subset, and legacy candidate computations continue. Escalated this coupled DUST UI slice to Terra/high after two focused correction passes; exit is actual request/display/error fixtures plus review, then medium. W06 owns season API and W12 browser tests independently.
+
+- W06 season mapping 446a2258f provisionally reviewed; one correction pending for metadata pagination so a conflicting mapping beyond the Supabase row cap cannot be missed. W07 may use the optional-gameKey/NHL-season contract provisionally.
+- W12 CSV 70b0cb542 not approved as restore evidence: post-reload assertions only reread existing sessionStorage and visible blend stayed unchanged. Returned actual mounted UI/import selection/100% weight/visible numeric restoration checks to distinguish an unselected source from a product defect. No product change authorized to W12.
+
+- W12 confirmed a free CSV product defect with explicit 100% imported source / all others zero: retained normalized G65/A60/PPP30/SOG300 row for id1002 should score405.0 but visible table remains207.0 after15s. W12 preserving a failing regression commit and then idle; W07 queued product fix after current DUST correction. No restoration approval.
+- W06 pagination follow-on22eb058a2 requires deterministic id order; released only that final query/mock delta to Luna/low, no broader escalation.
+
+- W06 season-resolution follow-on approved through3676ba87b and integrated as e817bffee: canonical NHL input, persisted game-key/Yahoo-season mapping, actual source-season validation, bounded ordered pagination with complete-read requirement. Chef reran17 pure/API/adapter tests successfully. W06 is idle Luna/low; W07 has the final contract.
