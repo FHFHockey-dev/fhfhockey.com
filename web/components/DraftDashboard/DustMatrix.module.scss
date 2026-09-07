@@ -42,7 +42,7 @@
 .playerName { width: 142px; overflow: hidden; padding-inline-start: 4px; color: v.$color-neutral-200; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; transform: translateY(2px); }
 .cell { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 2px; transform: translate(-2px, -2px); }
 .cellVisual { display: grid; place-items: center; width: 100%; height: 100%; }
-.cellButton { position: absolute; inset: 0; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 2px; background: transparent; color: v.$text-secondary; cursor: pointer; }
+.cellButton { position: absolute; inset: 0; width: 24px; height: 24px; appearance: none; padding: 0; border: 0; border-radius: 2px; background: transparent; box-shadow: none; color: v.$text-secondary; cursor: pointer; }
 .cellButton:hover { background: color.adjust(v.$draft-input, $lightness: 4%); }
 .diamond { display: block; width: calc(7px + var(--strength) * 13px); height: calc(7px + var(--strength) * 13px); transform: rotate(45deg); border: 1px solid #719783; border-radius: 3px; background: hsl(150 55% calc(28% + var(--strength) * 49%)); box-shadow: 0 0 calc(var(--strength) * 5px) hsl(150 65% 60% / .45); }
 .zero { color: v.$text-secondary; font-size: 13px; line-height: 1; }
