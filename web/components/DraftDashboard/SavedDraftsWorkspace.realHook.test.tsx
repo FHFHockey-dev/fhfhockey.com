@@ -68,4 +68,32 @@ describe("SavedDraftsWorkspace with the real Saved Drafts hook", () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(2_000); });
     expect(saves).toHaveLength(1);
   });
+
+  it("autosaves the first edit after a restored snapshot is normalized", async () => {
+    const base: BrowserDraftSnapshot = { ...browser(), favorites: ["1"] };
+    const detail = { ...summary, snapshot: serializeSavedDraft(base), privateImports: [] };
+    const saves: RequestInit[] = [];
+    vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => {
+      if (url === "/api/v1/account/draft-pro/drafts" && !init?.method) return Promise.resolve(json([summary]));
+      if (url === "/api/v1/account/draft-pro/drafts/draft-1" && init?.method === "PUT") { saves.push(init); return Promise.resolve(json(summary)); }
+      if (url === "/api/v1/account/draft-pro/drafts/draft-1") return Promise.resolve(json(detail));
+      throw new Error(`Unexpected ${url}`);
+    }));
+    let current: BrowserDraftSnapshot = base;
+    const view = render(<SavedDraftsWorkspace getBrowserSnapshot={() => current} applyBrowserSnapshot={(next) => {
+      current = { ...next, favorites: [] };
+      return next;
+    }} players={[]} annotations={{ selectedPlayerId: null, notes: [], tiers: {} }} onAnnotationsChange={vi.fn()} />);
+    await act(async () => { await Promise.resolve(); });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Saved draft" })); await Promise.resolve(); });
+    view.rerender(<SavedDraftsWorkspace getBrowserSnapshot={() => current} applyBrowserSnapshot={(next) => next} players={[]} annotations={{ selectedPlayerId: null, notes: [], tiers: {} }} onAnnotationsChange={vi.fn()} />);
+    await act(async () => { await Promise.resolve(); });
+
+    current = { ...current, favorites: ["2"] };
+    view.rerender(<SavedDraftsWorkspace getBrowserSnapshot={() => current} applyBrowserSnapshot={(next) => next} players={[]} annotations={{ selectedPlayerId: null, notes: [], tiers: {} }} onAnnotationsChange={vi.fn()} />);
+    await act(async () => { await vi.advanceTimersByTimeAsync(2_000); });
+
+    expect(saves).toHaveLength(1);
+    expect(JSON.parse(String(saves[0].body)).snapshot.favorites).toEqual(["2"]);
+  });
 });
