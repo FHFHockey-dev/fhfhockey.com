@@ -15,6 +15,14 @@ type Attempt = { signature: string; key: string; staged: Map<string, string> };
 type Begin = { status?: string; session?: { status?: string; draft_id?: string | null; current_version?: number }; upload?: { upload_id?: string; storage_prefix?: string; status?: string } };
 
 const key = () => typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+const canonicalize = (entry: unknown): unknown => Array.isArray(entry)
+  ? entry.map(canonicalize)
+  : entry && typeof entry === "object"
+    ? Object.fromEntries(Object.entries(entry as Record<string, unknown>).sort(([left], [right]) => left.localeCompare(right)).map(([name, value]) => [name, canonicalize(value)]))
+    : entry;
+const privateImportMatches = (left: NormalizedPrivateImport, right: NormalizedPrivateImport) =>
+  JSON.stringify(canonicalize({ name: left.name, sourceId: left.sourceId, mapping: left.mapping, rows: left.rows })) ===
+  JSON.stringify(canonicalize({ name: right.name, sourceId: right.sourceId, mapping: right.mapping, rows: right.rows }));
 const mapping = (entry: NormalizedPrivateImport) => ({ sourceId: entry.sourceId, headers: entry.mapping });
 const sourceId = (entry: StoredImport) => { const value = entry.mapping as { sourceId?: unknown } | undefined; return typeof value?.sourceId === "string" ? value.sourceId : undefined; };
 const headers = (entry: StoredImport) => { const value = entry.mapping as { headers?: unknown } | undefined; return Array.isArray(value?.headers) ? value.headers : Array.isArray(entry.mapping) ? entry.mapping : []; };
@@ -94,7 +102,7 @@ export function useSavedDrafts() {
       const current = () => requestedGeneration === generation.current; setStatus("saving"); setError(null); setConflict(null);
       try {
         const previous = new Map((currentOpened?.id === id ? currentOpened.privateImports : []).map((entry) => [entry.id, entry])); const retained: string[] = [];
-        const changed = (options.privateImports ?? []).filter((entry) => { const old = entry.id ? previous.get(entry.id) : undefined; return !old || old.name !== entry.name || old.sourceId !== entry.sourceId || JSON.stringify(old.mapping) !== JSON.stringify(entry.mapping) || JSON.stringify(old.rows) !== JSON.stringify(entry.rows); });
+        const changed = (options.privateImports ?? []).filter((entry) => { const old = entry.id ? previous.get(entry.id) : undefined; return !old || !privateImportMatches(old, entry); });
         if (changed.length && !options.accountSaveConsent) throw new Error("Confirm saving private imports to your account before uploading them.");
         for (const entry of options.privateImports ?? []) { const old = entry.id ? previous.get(entry.id) : undefined; if (!changed.includes(entry)) { if (!old?.id) throw new Error("Saved private import metadata is incomplete."); retained.push(old.id); } else if (!attempt.staged.has(entry.sourceId)) attempt.staged.set(entry.sourceId, await upload({ draftId: id, expectedVersion, attemptKey: attempt.key, entry, replacementImportId: old?.id, current })); }
         if (!current()) throw new Error("Saved draft save was cancelled.");

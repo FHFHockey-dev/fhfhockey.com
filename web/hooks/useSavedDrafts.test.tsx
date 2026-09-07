@@ -62,10 +62,10 @@ describe("useSavedDrafts", () => {
     const { result } = renderHook(() => useSavedDrafts()); await expect(result.current.saveNow(null, { name: "Draft", snapshot, accountSaveConsent: false, privateImports: [imported] })).rejects.toThrow("Confirm saving");
     expect(fetchMock.mock.calls.map(([url]) => url)).not.toContain("/api/v1/account/draft-pro/private-imports");
   });
-  it("retains an unchanged opened import without requiring consent or uploading it again", async () => {
+  it("retains an unchanged opened import despite JSONB key ordering without requiring consent", async () => {
     const calls: Array<{ url: string; init?: RequestInit }> = [];
     vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => { calls.push({ url, init }); if (url.includes("?ordinal=")) return Promise.resolve(binary(bytes, Number(url.at(-1)))); if (url.endsWith("/draft")) return Promise.resolve(json({ data: detail })); if (url === "/api/v1/account/draft-pro/drafts/draft") return Promise.resolve(json({ data: { ...detail, lockVersion: 2 } })); return Promise.resolve(json({ data: [] })); }));
-    const { result } = renderHook(() => useSavedDrafts()); await act(async () => { const loaded = await result.current.open("draft"); await result.current.saveNow("draft", { name: "Draft", snapshot, accountSaveConsent: false, privateImports: loaded.privateImports }); });
+    const { result } = renderHook(() => useSavedDrafts()); await act(async () => { const loaded = await result.current.open("draft"); const reordered = { ...loaded.privateImports[0], mapping: [{ original: "Player", selected: true, standardized: "name" }] }; await result.current.saveNow("draft", { name: "Draft", snapshot, accountSaveConsent: false, privateImports: [reordered] }); });
     expect(calls.some((call) => call.url === "/api/v1/account/draft-pro/private-imports")).toBe(false);
     const commit = calls.find((call) => call.url === "/api/v1/account/draft-pro/drafts/draft" && call.init?.method === "PUT"); expect(JSON.parse(String(commit?.init?.body)).importIds).toEqual(["import"]);
   });
