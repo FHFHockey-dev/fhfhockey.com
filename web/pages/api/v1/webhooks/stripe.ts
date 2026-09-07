@@ -9,7 +9,8 @@ async function readRawBody(req: NextApiRequest) {
   const chunks: Uint8Array<ArrayBufferLike>[] = [];
   let size = 0;
   for await (const chunk of req) {
-    const value = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    const source = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    const value = Uint8Array.from(source);
     size += value.length;
     if (size > 1024 * 1024) throw new Error("Webhook body too large");
     chunks.push(value);
