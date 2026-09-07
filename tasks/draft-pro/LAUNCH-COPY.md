@@ -58,7 +58,7 @@ The following copy describes locally implemented initial-release candidates. It 
 
 ### Proposed Draft Pro value message
 
-**Make a sharper plan for your league.** Draft Pro is intended to provide roster-aware recommendations, personalized replacement suggestions, DUST insights, alternatives, and schedule-fit sorting, plus blended CSV analysis and the account/graph views. These initial-release candidates remain gated pending release evidence and owner/provider approval.
+**Make a sharper plan for your league.** Draft Pro is intended to provide roster-aware recommendations, personalized replacement suggestions, DUST insights, alternatives, schedule-fit sorting, and aggregate CSV export. These initial-release candidates remain gated pending release evidence and owner/provider approval. Account and expanded graph views are integration surfaces; the graph remains free.
 
 Saved Drafts/private imports, scenarios, reports, and Yahoo remain future milestones or separately gated work and are not promised by this copy.
 

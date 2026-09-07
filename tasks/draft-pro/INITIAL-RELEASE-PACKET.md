@@ -4,7 +4,7 @@ Status: preparation packet only. Draft Pro is not advertised as live from this p
 
 ## Proposed initial-release scope
 
-The locally approved initial-release candidates are the one-time 2026-27 pass, Stripe purchase and entitlement lifecycle, Patreon eligibility grant, refund request/access handling, roster-aware recommendations, personalized replacement suggestions, DUST, blended CSV analysis, and the account/graph views. The current DUST contract is full weeks 1 through 30 and daily views only. Free schedule matrix, OFF, and B2B views may follow the selected playoffs.
+The locally approved initial-release candidates are the one-time 2026-27 pass, Stripe purchase and entitlement lifecycle, Patreon eligibility grant, refund request/access handling, roster-aware recommendations, personalized replacement suggestions, DUST, and aggregate CSV export. Account and expanded graph views are integration surfaces; the graph remains free. The current DUST contract is full weeks 1 through 30 and daily views only. Free schedule matrix, OFF, and B2B views may follow the selected playoffs.
 
 Saved Drafts/private imports, scenarios, reports, and Yahoo are not initial-release capabilities. They remain unimplemented, parked, or separately gated milestones and must not appear in availability copy.
 
@@ -41,7 +41,7 @@ Canonical Draft Pro flags are all off by default: `DRAFT_PRO_CHECKOUT_ENABLED`, 
 
 ## Evidence and blockers
 
-Attach the isolated migration/RLS/storage harness output from `tasks/draft-pro/verification/README.md` and the relevant W02-W04 implementation evidence before release. The browser release-candidate review is still in progress and is not claimed complete here.
+RC evidence currently recorded: the full suite reports 4,281 passed, 2 failed, and 3 skipped; both inventory failures were subsequently fixed, with targeted checks reporting 19 and 47 passed; full-repository TypeScript exits 0, recorded in `/tmp/draft-pro-rc-types-final.log` at commit `3dcf15b05`. Attach the isolated migration/RLS/storage harness output from `tasks/draft-pro/verification/README.md` and the relevant W02-W04 implementation evidence before release. Browser free-compare and Draft sticky-geometry corrections remain pending, paid mock-auth UI testing is underway, and real Stripe, Patreon, and Resend validation is blocked.
 
 Real Stripe test-mode Checkout/webhook validation, Patreon provider validation, and Resend delivery validation are blocked until the owner supplies authorized provider configuration and test access. No real provider check, live charge, Patreon verification, or email send is claimed by this packet.
 
