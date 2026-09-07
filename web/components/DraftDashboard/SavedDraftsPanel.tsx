@@ -32,7 +32,7 @@ export type SavedDraftAnnotations = Readonly<{
 const MAX_NAME_LENGTH = 120;
 
 /** Focused, lazy-mountable composition surface; dashboard ownership stays W07. */
-export function SavedDraftsPanel({ eligible, drafts, status, error, onOpen, onSave, onRename, onDuplicate, onDelete, onReloadConflict, onSaveAsAnother, players, annotationPlayers, annotations, openedWorkspaceAnnotations, onAnnotationsChange }: Props) {
+export function SavedDraftsPanel({ eligible, drafts, status, error, onOpen, onSave, onRename, onDuplicate, onDelete, onReloadConflict, onSaveAsAnother, players, openedWorkspaceAnnotations, onAnnotationsChange }: Props) {
   const [name, setName] = useState("");
   const [renameNames, setRenameNames] = useState<Record<string, string>>({});
   const saveName = name.trim();
