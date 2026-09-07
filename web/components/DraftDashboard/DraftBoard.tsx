@@ -67,9 +67,29 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
     draftOrderPattern ?? draftOrderPatternFromSnake(isSnakeDraft);
   const [editingTeam, setEditingTeam] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
+  const [isExpanded, setIsExpanded] = useState(false);
+  const expandButtonRef = useRef<HTMLButtonElement>(null);
+  const closeExpandedButtonRef = useRef<HTMLButtonElement>(null);
   const contributionInputRef = useRef<HTMLInputElement>(null);
   // NEW: manage blur timeout safely via ref instead of window-scoped var
   const blurTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!isExpanded) return;
+    closeExpandedButtonRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setIsExpanded(false);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isExpanded]);
+
+  useEffect(() => {
+    if (!isExpanded) expandButtonRef.current?.focus();
+  }, [isExpanded]);
 
   const augmentedAllPlayers = useMemo(() => {
     const allPlayersMap = new Map<string, ProcessedPlayer>();
@@ -492,7 +512,20 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   };
 
   return (
-    <div className={styles.draftBoardContainer} aria-label="Draft Graph" style={{ "--team-count": draftSettings.teamCount, "--team-rows": Math.ceil(draftSettings.teamCount / 2), "--round-count": roundsToShow } as React.CSSProperties}>
+    <div id="draft-graph" className={`${styles.draftBoardContainer} ${isExpanded ? styles.expandedDraftBoard : ""}`} aria-label="Draft Graph" aria-modal={isExpanded || undefined} role={isExpanded ? "dialog" : undefined} style={{ "--team-count": draftSettings.teamCount, "--team-rows": Math.ceil(draftSettings.teamCount / 2), "--round-count": roundsToShow } as React.CSSProperties}>
+      <div className={styles.graphToolbar}>
+        <span className={styles.graphTitle}>Draft Graph</span>
+        <button
+          ref={isExpanded ? closeExpandedButtonRef : expandButtonRef}
+          type="button"
+          className={styles.expandGraphButton}
+          aria-expanded={isExpanded}
+          aria-controls="draft-graph"
+          onClick={() => setIsExpanded((value) => !value)}
+        >
+          {isExpanded ? "Close expanded graph" : "Expand draft graph"}
+        </button>
+      </div>
       <div className={styles.contributionGraphContainer}>
         <div className={styles.contributionGraph}>
           {/* Round labels (columns) */}
