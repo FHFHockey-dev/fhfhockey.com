@@ -181,6 +181,8 @@ describe("DraftProPanel", () => {
     getSession.mockResolvedValue({ data: { session: { access_token: "token-b", user: { id: "B" } } } });
     act(() => onAuthStateChange.mock.calls[0][0]("SIGNED_IN", { access_token: "token-b", user: { id: "B" } }));
     expect(await screen.findByText("B draft")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Refresh Patreon" }).hasAttribute("disabled")).toBe(false);
+    expect(screen.queryByText(/Temporary|Account unavailable|could not be submitted/i)).toBeNull();
     await act(async () => { resolveOld?.({ ok: true, json: async () => ({ data: account }) }); });
     expect(screen.getByText("B draft")).toBeTruthy();
     expect(screen.queryByText("Opening night")).toBeNull();
