@@ -22,7 +22,7 @@ All tasks moved into the Draft Pro section. W01 active foundation; W12 released 
 - Base: 4476fb90f (octoberBranch); user checkout left unchanged.
 - Integration: codex/draft-pro at /Users/tim/.codex/worktrees/draft-pro-chef/fhfhockey.com
 - Yahoo one-time heartbeat: yahoo-draft-pro-readiness, September 11 09:00 Eastern.
-- Current status: W01 foundation/payment SQL and W03 Patreon locally approved; W05 recommendations approved. W02/W04/W06 active; W07–W10 queued; W11/W13 preparation approved; W12 SQL checkpoint approved. Historical entries below retain prior states.
+- Current status: W01 foundation/payment SQL and W03 Patreon locally approved; W05 recommendations approved. W02/W04/W12 active; W06 approved; W07–W10 queued; W11/W13 preparation approved; W12 SQL checkpoint approved. Historical entries below retain prior states.
 - External checks pending: real Stripe/Patreon credentials and provider validation; isolated SQL/RLS verification passed. Never print secrets.
 
 Task registrations and Chef decisions follow below.
@@ -123,3 +123,9 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 - W05 APPROVED through8071f141; integrated fourcommits as5f7fbe6e0/0e712d3a3/105a97aec/4afcf2486. Chef reran19tests/4files and exact-file strictTypeScript, all exit0. Ratio TOTAL_TOI seconds confirmed existing projection fixtures. Downgraded Luna/medium for final API hardening, now idle.
 - W06 c14961b3f returned conservative freshness (oldest not newest), explicit ranking default/window/origin, API+abort fixtures and scopedtypecheck; no approval yet.
 - RELEASED W04 at4afcf2486 Luna/medium, focused refund/account API+panel only, W07 navigation exclusive. Payment DB contract approved sufficient for dependency; receipt omitted if unavailable. Active W02/W04/W06 three.
+
+- W02 1d50e0a6e generic HTTP errors/size bound and95b2ba059 centralized catalog validation reviewed as partial, not approved. Terra repeatedly completed code subsets while omitting expressly requested refund/dispute adapter regressions. Bounded escalation Sol/medium ONLY actual provider matrix and proven defects; exit reviewedpassingmatrix then Terra/medium.
+- W06 a59f13425 freshness/sort/window correction reviewed; final hook still uploaded unsavedprivate data before serverdenial. Returned no-serialization/no-fetch guard+fixture, downgraded Luna/medium for bounded adapterfix.
+
+- W06 APPROVED through30c679266; integratedba4608927/7b0c9695b/9b35ecfcd. Chef11tests and exact-file scopedTypeScript pass exit0. W06 idle Luna/medium.
+- RELEASED W12 bounded calculation/access integration fixtures at9b35ecfcd Terra/medium; tests/docs only, defects returned toowners, no redundant suite/fullbuild. Active W02(Sol/medium boundedproviderfixture),W04(Luna/medium),W12(Terra/medium).
