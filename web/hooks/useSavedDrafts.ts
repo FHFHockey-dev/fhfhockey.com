@@ -81,10 +81,11 @@ export function useSavedDrafts() {
   const refresh = useCallback(async () => { const at = epoch.current; setStatus("loading"); setError(null); try { const next = await request<SavedDraftSummary[]>("/api/v1/account/draft-pro/drafts"); if (at === epoch.current) { setDrafts(next); setStatus("idle"); } } catch (cause) { if (at === epoch.current) { setStatus("error"); setError(cause instanceof Error ? cause.message : "Saved Drafts are unavailable."); } } }, []);
   useEffect(() => { void refresh(); void supabase.auth.getSession().then(({ data }) => { accountId.current = data.session?.user?.id ?? null; }); const subscription = supabase.auth.onAuthStateChange?.((event, session) => { const nextAccountId = session?.user?.id ?? null; if (nextAccountId === accountId.current && event !== "SIGNED_OUT") return; accountId.current = nextAccountId; epoch.current += 1; generation.current += 1; active.current = null; if (timer.current) clearTimeout(timer.current); timer.current = null; replaceOpened(null); setConflict(null); void refresh(); }).data.subscription; return () => { epoch.current += 1; generation.current += 1; active.current = null; if (timer.current) clearTimeout(timer.current); subscription?.unsubscribe(); }; }, [refresh]);
   const saveNow = useCallback((id: string | null, options: SaveOptions) => {
+    const requestedGeneration = generation.current;
     const run = async () => {
       const currentOpened = openedRef.current;
       const expectedVersion = id && currentOpened?.id === id ? currentOpened.lockVersion : options.expectedVersion; const sig = signature(id, expectedVersion, options); const attempt = active.current?.signature === sig ? active.current : { signature: sig, key: key(), staged: new Map<string, string>() }; active.current = attempt;
-      const at = generation.current; const current = () => at === generation.current; setStatus("saving"); setError(null); setConflict(null);
+      const current = () => requestedGeneration === generation.current; setStatus("saving"); setError(null); setConflict(null);
       try {
         const previous = new Map((currentOpened?.id === id ? currentOpened.privateImports : []).map((entry) => [entry.id, entry])); const retained: string[] = [];
         const changed = (options.privateImports ?? []).filter((entry) => { const old = entry.id ? previous.get(entry.id) : undefined; return !old || old.name !== entry.name || old.sourceId !== entry.sourceId || JSON.stringify(old.mapping) !== JSON.stringify(entry.mapping) || JSON.stringify(old.rows) !== JSON.stringify(entry.rows); });

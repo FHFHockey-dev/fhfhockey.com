@@ -68,6 +68,13 @@ describe("useSavedDrafts", () => {
     const { result } = renderHook(() => useSavedDrafts()); await act(async () => { const loaded = await result.current.open("draft"); await Promise.all([result.current.saveNow("draft", { name: "Draft", snapshot, accountSaveConsent: false, privateImports: loaded.privateImports }), result.current.saveNow("draft", { name: "Draft", snapshot, accountSaveConsent: false, privateImports: loaded.privateImports })]); });
     expect(versions).toEqual([1, 2]);
   });
+  it("does not let a stale save replace a newly opened draft", async () => {
+    let resolveSave!: (value: unknown) => void; const pendingSave = new Promise((resolve) => { resolveSave = resolve; });
+    vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => { if (url === "/api/v1/account/draft-pro/drafts" && init?.method === "POST") return pendingSave; if (url.endsWith("/other")) return Promise.resolve(json({ data: { ...detail, id: "other", privateImports: [] } })); return Promise.resolve(json({ data: [] })); }));
+    const { result } = renderHook(() => useSavedDrafts()); const saving = result.current.saveNow(null, { name: "Draft", snapshot, accountSaveConsent: true });
+    await act(async () => { await result.current.open("other"); }); resolveSave(json({ data: { id: "draft", name: "Draft", status: "active", lockVersion: 1, updatedAt: "now" } }, true, 201)); await saving;
+    expect(result.current.opened?.id).toBe("other");
+  });
   it("keeps the opened draft through a same-account token refresh", async () => {
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(json({ data: url.endsWith("/draft") ? { ...detail, privateImports: [] } : [] }))));
     const { result } = renderHook(() => useSavedDrafts()); await act(async () => { await result.current.open("draft"); });
