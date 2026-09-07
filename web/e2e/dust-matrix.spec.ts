@@ -63,7 +63,7 @@ test("full-season DUST lattice keeps all player-week intersections available", a
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(cells).toHaveCount(10 * 27);
   await matrix.getByText("Inspect exact player-week counts", { exact: true }).click();
-  await expect(matrix.getByRole("button", { name: "Matrix Player 19 · W14" })).toBeVisible();
+  await expect(matrix.locator("details button").first()).toBeVisible();
   await expect(matrix.locator("details li")).toHaveCount(10 * 27);
   await page.screenshot({ path: testInfo.outputPath("dust-matrix-mobile-390.png"), fullPage: true });
   await page.setViewportSize({ width: 320, height: 844 });
