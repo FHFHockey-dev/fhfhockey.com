@@ -14,6 +14,9 @@ type AccountData = {
     reason: string;
     providerReadiness: Record<string, boolean>;
   };
+  passInfo: { priceCents: number; expiresAt: string; renewal: "none" };
+  checkoutAvailability: { available: boolean; reason: string };
+  configurationReadiness: { stripe: boolean; patreon: boolean; yahoo: boolean };
   purchases: Array<{
     id: string;
     season: string;
@@ -49,6 +52,10 @@ function formatEasternDate(value: string | null) {
   if (!value) return "Unavailable";
   const date = new Date(new Date(value).getTime() - 1);
   return Number.isNaN(date.getTime()) ? "Unavailable" : date.toLocaleDateString("en-US", { timeZone: "America/New_York", month: "long", day: "numeric", year: "numeric" });
+}
+
+function checkoutUnavailableReason(reason: string) {
+  return ({ checkout_disabled: "Checkout is not available right now.", stripe_not_configured: "Checkout is not configured yet.", site_url_not_configured: "Checkout is not configured yet.", pass_expired: "This Draft Pro pass is no longer available.", already_eligible: "Draft Pro is already active for this account." } as Record<string, string>)[reason] ?? "Checkout is unavailable right now.";
 }
 
 export default function DraftProPanel() {
@@ -253,11 +260,13 @@ export default function DraftProPanel() {
 
   const openRefundPurchaseIds = new Set(account.refundRequests.filter((request) => ["open", "reviewing"].includes(request.status)).map((request) => request.purchaseId));
   const canRequest = Boolean(selectedPurchase?.refundEligibility.eligible && !openRefundPurchaseIds.has(selectedPurchase.id));
+  const checkoutAvailability = account.checkoutAvailability ?? { available: true, reason: "available" };
+  const passInfo = account.passInfo ?? { priceCents: 599, expiresAt: "2027-07-01T04:00:00.000Z", renewal: "none" as const };
   return <section className={styles.panel} aria-labelledby="draft-pro-panel-title">
     <div className={styles.heading}><div><p className={styles.eyebrow}>Account access</p><h2 id="draft-pro-panel-title">Draft Pro</h2></div><span className={account.access.eligible ? styles.active : styles.inactive}>{account.access.eligible ? "Active" : "Inactive"}</span></div>
     <p className={styles.summary}>{account.access.eligible ? `Access from ${account.access.grantingSources.join(" and ")}.` : "Your retained Draft Pro work is locked while access is inactive."} No automatic renewal.</p>
     {checkoutState !== "idle" ? <div className={styles.notice} role="status"><p>{checkoutState === "waiting" ? "Checking payment status…" : checkoutState === "confirming" ? "Payment is confirming with Stripe." : checkoutState === "confirmed" ? "Draft Pro access is confirmed." : checkoutState === "cancelled" ? "Checkout was cancelled. Your free draft remains available." : "Your purchase could not be confirmed yet. Try refreshing this page or contact support if payment was completed."}</p>{checkoutRetryAvailable ? <div className={styles.actions}><button type="button" onClick={() => { const sessionId = checkoutVerificationRef.current; if (sessionId) { cancelCheckoutVerification(); void verifyCheckout(sessionId, 0, checkoutEpochRef.current); } else void loadAccount(); }}>Check purchase status again</button></div> : null}</div> : null}
-    {!account.access.eligible ? <div className={styles.actions}><button type="button" onClick={() => void startCheckout()} disabled={checkoutLoading}>{checkoutLoading ? "Opening checkout…" : "Get Draft Pro — $5.99 one-time"}</button><span className={styles.notice}>One-time access through June 30, 2027 (Eastern). No automatic renewal.</span></div> : null}
+    {!account.access.eligible ? <div className={styles.actions}>{checkoutAvailability.available ? <button type="button" onClick={() => void startCheckout()} disabled={checkoutLoading}>{checkoutLoading ? "Opening checkout…" : `Get Draft Pro — $${(passInfo.priceCents / 100).toFixed(2)} one-time`}</button> : <span className={styles.notice}>{checkoutUnavailableReason(checkoutAvailability.reason)}</span>}<span className={styles.notice}>One-time access through {formatEasternDate(passInfo.expiresAt)} (Eastern). No automatic renewal.</span></div> : null}
     <dl className={styles.details}><div><dt>Access expires</dt><dd>{formatEasternDate(account.access.expiresAt)} (Eastern)</dd></div><div><dt>Verified</dt><dd>{formatDate(account.access.verifiedAt)}</dd></div><div><dt>Patreon status</dt><dd>{account.access.grantingSources.includes("patreon") ? "Granting access" : "Not granting access"}</dd></div></dl>
     <div className={styles.actions}><button type="button" onClick={() => void patreonActionRequest("refresh")} disabled={Boolean(patreonAction)}>{patreonAction === "refresh" ? "Refreshing…" : "Refresh Patreon"}</button><button type="button" onClick={() => void patreonActionRequest("connect")} disabled={Boolean(patreonAction)}>{patreonAction === "connect" ? "Opening…" : "Connect Patreon"}</button></div>
     {account.purchases.length > 0 ? <div className={styles.purchaseList}><h3>Purchases</h3>{account.purchases.map((purchase) => { const request = account.refundRequests.find((item) => item.purchaseId === purchase.id); return <div className={styles.purchase} key={purchase.id}><div><strong>${(purchase.amountCents / 100).toFixed(2)} one-time pass</strong><span>{purchase.status} · activated {formatDate(purchase.activatedAt)}{request ? ` · refund request ${request.status}` : ""}</span></div>{purchase.receiptUrl ? <a href={purchase.receiptUrl} target="_blank" rel="noreferrer">Receipt</a> : <span className={styles.muted}>Receipt unavailable</span>}</div>; })}</div> : null}
