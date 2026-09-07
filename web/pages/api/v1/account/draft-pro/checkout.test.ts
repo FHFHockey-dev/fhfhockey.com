@@ -1,0 +1,13 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+const auth=vi.hoisted(()=>vi.fn()); const flags=vi.hoisted(()=>vi.fn()); const access=vi.hoisted(()=>vi.fn()); const create=vi.hoisted(()=>vi.fn());
+vi.mock("lib/api/requireApiUser",()=>({requireApiUser:auth}));
+vi.mock("lib/draft-pro/features",()=>({getDraftProFeatureFlags:flags}));
+vi.mock("lib/draft-pro/server",()=>({loadDraftProAccess:access}));
+vi.mock("lib/integrations/stripe/checkout",()=>({createDraftProCheckout:create}));
+vi.mock("lib/integrations/stripe/config",()=>({isStripeConfigured:()=>true,getStripeClient:()=>({})}));
+import handler from "./checkout";
+const res=()=>{const s:any={statusCode:0};return Object.assign(s,{status(n:number){s.statusCode=n;return s},json(body:any){s.body=body;return s},setHeader:vi.fn()})};
+describe("checkout route guards",()=>{beforeEach(()=>{vi.clearAllMocks();auth.mockResolvedValue({id:"u1"});flags.mockReturnValue({checkout:true});access.mockResolvedValue({eligible:false});});
+it("does not create without authentication",async()=>{auth.mockResolvedValue(null);await handler({method:"POST",headers:{}} as any,res());expect(create).not.toHaveBeenCalled()});
+it("does not create while checkout is disabled",async()=>{flags.mockReturnValue({checkout:false});const r=res();await handler({method:"POST",headers:{}} as any,r);expect(r.statusCode).toBe(403);expect(create).not.toHaveBeenCalled()});
+it("does not create for an already eligible account",async()=>{access.mockResolvedValue({eligible:true});const r=res();await handler({method:"POST",headers:{}} as any,r);expect(r.statusCode).toBe(409);expect(create).not.toHaveBeenCalled()});});

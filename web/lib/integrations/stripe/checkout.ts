@@ -4,6 +4,7 @@ import serviceRoleClient from "lib/supabase/server";
 import { DRAFT_PRO_SEASON } from "lib/draft-pro/contracts";
 
 import { DRAFT_PRO_STRIPE_PRICE, getDraftProStripeCatalog } from "./config";
+import { verifyStripeCheckoutSession } from "./fulfillment";
 
 type CheckoutClient = Pick<typeof serviceRoleClient, "rpc" | "from">;
 
@@ -25,7 +26,10 @@ export async function createDraftProCheckout({
   if (attempt.checkout_session_id) {
     const session = await stripe.checkout.sessions.retrieve(attempt.checkout_session_id);
     if (session.status === "open" && session.url) return { alreadyPurchased: false as const, url: session.url, purchaseId: attempt.purchase_id };
-    if (session.status === "complete") return { alreadyPurchased: false as const, url: null, purchaseId: attempt.purchase_id, state: session.payment_status === "paid" ? "confirming" as const : "waiting" as const };
+    if (session.status === "complete") {
+      if (session.payment_status === "paid") await verifyStripeCheckoutSession(stripe, session, client);
+      return { alreadyPurchased: false as const, url: null, purchaseId: attempt.purchase_id, state: session.payment_status === "paid" ? "confirming" as const : "waiting" as const };
+    }
     if (session.status === "expired") {
       const { error } = await client.from("draft_pro_purchases")
         .update({ checkout_session_status: "expired", status: "expired" })
@@ -37,6 +41,7 @@ export async function createDraftProCheckout({
       ({ data: attempts, error: attemptError } = await client.rpc("begin_draft_pro_stripe_checkout_attempt", { p_user_id: userId }));
       attempt = attempts?.[0];
       if (attemptError || !attempt) throw attemptError ?? new Error("Could not renew checkout attempt.");
+      if (attempt.purchase_status === "active") return { alreadyPurchased: true as const, url: null, purchaseId: attempt.purchase_id };
       if (attempt.checkout_session_id) return { alreadyPurchased: false as const, url: null, purchaseId: attempt.purchase_id, state: "waiting" as const };
     }
   }
