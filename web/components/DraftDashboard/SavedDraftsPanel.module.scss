@@ -1,0 +1,19 @@
+.panel { margin: 1rem 0; padding: 1rem; border: 1px solid #c8d2de; border-radius: 0.75rem; background: #fff; }
+.heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.heading h2 { margin: 0; }
+.saveControls { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.saveControls label { font-weight: 600; }
+.privateImportHint { flex-basis: 100%; color: #475569; font-size: .8125rem; }
+.status { color: #475569; }
+.error { color: #b91c1c; font-weight: 600; }
+.list { display: grid; gap: .5rem; padding: 0; list-style: none; }
+.list li { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding-top: .5rem; border-top: 1px solid #e2e8f0; }
+.list span { color: #64748b; font-size: .875rem; }
+.locked { flex-basis: 100%; color: #64748b; font-size: .875rem; }
+.annotations { display: grid; gap: .5rem; margin-top: 1rem; padding: .75rem; border: 1px solid #c8d2de; border-radius: .5rem; }
+.annotationRows { display: grid; gap: .5rem; }
+.annotations textarea { min-height: 4rem; min-width: min(100%, 20rem); }
+.annotationRow { display: flex; flex-wrap: wrap; gap: .5rem; align-items: flex-start; }
+.annotationRow textarea { min-height: 4rem; min-width: min(100%, 20rem); flex: 1; }
+.annotationRow input { min-width: 8rem; flex: 1; }
+@media (max-width: 320px) { .heading { align-items: flex-start; flex-direction: column; } .list li { align-items: stretch; flex-direction: column; } }
