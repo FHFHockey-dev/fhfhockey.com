@@ -47,6 +47,7 @@ test("full-season DUST lattice keeps all player-week intersections available", a
   await page.screenshot({ path: testInfo.outputPath("dust-matrix-mobile-320.png"), fullPage: true });
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(cells).toHaveCount(20 * 27);
+  await expect(cells.first()).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect(matrix.locator("[data-dust-state='zero']")).toHaveCount(27);
   await expect(matrix.locator("[data-dust-state='bench']")).toHaveCount(19 * 27);
   await expect(matrix.locator("[data-dust-state='unresolved']")).toHaveCount(0);
