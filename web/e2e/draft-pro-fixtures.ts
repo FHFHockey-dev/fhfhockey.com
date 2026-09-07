@@ -4,7 +4,7 @@ import type { DraftProAccess } from "lib/draft-pro/contracts";
 type DraftProAccountResponse = { access: DraftProAccess };
 
 /** Keeps browser smoke coverage local, free, and independent of real accounts. */
-export async function installDraftProFreeFixtures(page: Page) {
+export async function installDraftProFreeFixtures(page: Page, { seedSnapshot = true }: { seedSnapshot?: boolean } = {}) {
   const skaters = [{
     player_id: 1001, Player_Name: "Fixture Center", Team_Abbreviation: "AAA", Position: "C",
     Games_Played: 82, Goals: 30, Assists: 45, Points: 75, Shots_on_Goal: 220,
@@ -41,12 +41,15 @@ export async function installDraftProFreeFixtures(page: Page) {
       body: JSON.stringify({ error: "Authentication is required." }),
     }),
   );
+  await page.route("**/api/v1/account/yahoo/draft-sessions**", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
+  );
   await page.route("**/api/v1/player**", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
   );
   await page.route("**://*.stripe.com/**", (route) => route.abort());
   await page.route("**://*.patreon.com/**", (route) => route.abort());
-  await page.addInitScript(() => {
+  if (seedSnapshot) await page.addInitScript(() => {
     if (sessionStorage.getItem("draft.snapshot.v2")) return;
     sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({
       v: 2, configured: true, currentPick: 1, draftedPlayers: [],
@@ -67,7 +70,7 @@ export async function installDraftProAuthenticatedFixtures(
   page: Page,
   accountResponse: () => DraftProAccountResponse,
 ) {
-  await installDraftProFreeFixtures(page);
+  await installDraftProFreeFixtures(page, { seedSnapshot: false });
   const expiresAt = Math.floor(Date.now() / 1000) + 60 * 60;
   const user = {
     id: "00000000-0000-4000-8000-000000000001",
@@ -102,9 +105,9 @@ export async function installDraftProAuthenticatedFixtures(
   );
 }
 
-export async function installDustMatrixFixtures(page: Page) {
+export async function installDustMatrixFixtures(page: Page, { incomplete = false }: { incomplete?: boolean } = {}) {
   await installDraftProFreeFixtures(page);
-  const skaters = Array.from({ length: 20 }, (_, index) => ({
+  const skaters = Array.from({ length: 21 }, (_, index) => ({
     player_id: 1001 + index,
     Player_Name: `Matrix Player ${String(index + 1).padStart(2, "0")}`,
     Team_Abbreviation: "AAA",
@@ -154,14 +157,15 @@ export async function installDustMatrixFixtures(page: Page) {
     });
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ coveredDates, numGamesPerDay: [1, 0, 0, 0, 0, 0, 0], data: { 1: { MON: { id: Number(date.replaceAll("-", "")), season: 20262027, gameDate: date, gameType: 2, homeTeam: { id: 1 }, awayTeam: { id: 2 } } } } }) });
   });
-  await page.addInitScript((draftedPlayers) => {
+  await page.addInitScript(({ incomplete }) => {
+    sessionStorage.setItem("draftDashboard.yahooLiveDraft.v3", JSON.stringify({ v: 3, mode: "manual", sessionId: null, externalLeagueId: null }));
     sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({
-      v: 2, configured: true, currentPick: draftedPlayers.length + 1, draftedPlayers,
+      v: 2, configured: true, currentPick: 1, draftedPlayers: [], myTeamId: "Team 1",
       draftSettings: {
         teamCount: 2, draftOrder: ["Team 1", "Team 2"], draftOrderMode: "standard",
-        rosterConfig: { C: 1, LW: 0, RW: 0, D: 0, G: 0, utility: 0, bench: 20 },
+        rosterConfig: { C: 1, LW: 0, RW: 0, D: 0, G: 0, utility: 0, bench: incomplete ? 0 : 20 },
         playoffWeeks: [25, 26, 27], scheduleScope: "season",
       },
     }));
-  }, skaters.map((player, index) => ({ playerId: String(player.player_id), teamId: "Team 1", pickNumber: index + 1, round: 1, pickInRound: index + 1 })));
+  }, { incomplete });
 }
