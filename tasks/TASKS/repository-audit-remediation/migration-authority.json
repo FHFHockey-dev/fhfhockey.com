@@ -591,6 +591,26 @@
       "migrationClass": "feature",
       "rolloutGate": "Exact Production ledger receipt observed 2026-08-29; do not replay.",
       "stateEvidence": "Read-only Production migration-ledger receipt observed 2026-08-29; version 20260829161013 was present exactly once. The hash records the current non-ignored untracked source, not a deployed SQL byte comparison."
+    },
+    {
+      "order": 59,
+      "path": "supabase/migrations/20260907143356_draft_pro_foundation.sql",
+      "sha256": "9145cb342b54f5cbcbf221cf5aa69905635ea6e28ff7a537c3f59442242a16e0",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
+      "stateEvidence": "No exact applied-state receipt recorded; Draft Pro foundation schema remains local-only pending release validation."
+    },
+    {
+      "order": 60,
+      "path": "supabase/migrations/20260907145602_draft_pro_stripe_fulfillment.sql",
+      "sha256": "00a26afddb431efec9b07238389b51f5fc6e18830f5686586418137c42573d2f",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
+      "stateEvidence": "No exact applied-state receipt recorded; Draft Pro Stripe fulfillment remains local-only pending release validation."
     }
   ]
 }
