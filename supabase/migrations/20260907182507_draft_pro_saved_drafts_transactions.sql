@@ -172,7 +172,7 @@ begin
   select coalesce(sum(u.actual_bytes),0) into added_bytes from public.draft_pro_private_import_uploads as u where u.save_session_id = session_row.id and u.status = 'staged';
   if draft_bytes + added_bytes > 10485760 then raise exception 'Draft Pro draft import quota exceeded'; end if;
   update public.draft_pro_private_imports as i set deleted_at=now() where i.draft_id=draft.id and i.deleted_at is null and not (i.id=any(coalesce(p_import_ids,'{}'::uuid[])));
-  for upload in select * from public.draft_pro_private_import_uploads where save_session_id = session_row.id and status = 'staged' for update loop
+  for upload in select u.* from public.draft_pro_private_import_uploads as u where u.save_session_id = session_row.id and u.status = 'staged' for update loop
     if upload.replacement_import_id is not null then
       select * into replacement from public.draft_pro_private_imports where id=upload.replacement_import_id and user_id=p_user_id and draft_id=draft.id and deleted_at is null for update;
       if not found then raise exception 'Replacement import was not found'; end if;
