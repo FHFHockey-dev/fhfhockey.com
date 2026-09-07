@@ -18,3 +18,18 @@ activation, the owner must complete a test-mode Checkout and signed webhook
 replay using Stripe CLI or Dashboard, then separately authorize live-mode
 keys, a bank payout account, receipt settings, Link availability, and the
 required product/tax/terms review. No live charge is created by this code.
+
+For bounded local reconciliation, run from `web/`:
+
+```sh
+npx ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/stripe-reconcile.ts --limit=25
+npx ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/stripe-reconcile.ts --limit=25 --apply
+```
+
+The default is dry-run; the limit must be 1–100. Apply mode re-reads and
+validates the configured Price/Product and exact session line item, then uses
+the same idempotent server fulfillment path. It does not accept provider facts
+from CLI arguments. Refunds and disputes must be replayed through signed Stripe
+webhook events; this command only checks pending checkout attempts. Never run
+apply with live keys without explicit owner authorization and a production
+rollout record.
