@@ -51,7 +51,7 @@ describe("useSavedDrafts", () => {
     expect(result.current.conflict?.current?.lockVersion).toBe(2); expect(result.current.status).toBe("error");
   });
   it("does not start an upload without explicit consent", async () => {
-    const fetchMock = vi.fn(() => Promise.resolve(json({ data: [] }))); vi.stubGlobal("fetch", fetchMock);
+    const fetchMock = vi.fn((..._args: Parameters<typeof fetch>) => Promise.resolve(json({ data: [] }))); vi.stubGlobal("fetch", fetchMock);
     const { result } = renderHook(() => useSavedDrafts()); await expect(result.current.saveNow(null, { name: "Draft", snapshot, accountSaveConsent: false, privateImports: [imported] })).rejects.toThrow("Confirm saving");
     expect(fetchMock.mock.calls.map(([url]) => url)).not.toContain("/api/v1/account/draft-pro/private-imports");
   });
@@ -113,7 +113,7 @@ describe("useSavedDrafts", () => {
     expect(calls.some((call) => call.url.endsWith("/draft") && call.init?.method === "PUT")).toBe(false); vi.useRealTimers();
   });
   it("does not send a save with a new account token after session resolution", async () => {
-    const fetchMock = vi.fn(() => Promise.resolve(json({ data: [] }))); vi.stubGlobal("fetch", fetchMock);
+    const fetchMock = vi.fn((..._args: Parameters<typeof fetch>) => Promise.resolve(json({ data: [] }))); vi.stubGlobal("fetch", fetchMock);
     const { result } = renderHook(() => useSavedDrafts()); await act(async () => { await Promise.resolve(); });
     let resolveSession!: (value: unknown) => void; getSession.mockImplementationOnce(() => new Promise((resolve) => { resolveSession = resolve; }));
     const cancelled = expect(result.current.saveNow(null, { name: "Draft", snapshot, accountSaveConsent: true })).rejects.toThrow("cancelled");
