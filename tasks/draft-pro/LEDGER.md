@@ -1,5 +1,11 @@
 # Draft Pro work ledger
 
+## Progress and usage reporting
+
+User requested an overall percentage now and at every major checkpoint, without changing the goal. At the September 7 ~13:00 checkpoint: overall engineering completion approximately **50%**, initial paid release approximately **75%**. Estimates include remaining implementation and verification; they are not task-count percentages or launch approval. Area estimates: foundation/billing/lifecycle/refunds90%, recommendations/DUST90%, central integration55%, Saved Drafts/scenarios/reports0%, launch documentation70%, integrated verification35%. Yahoo preparation complete, live milestone separate.
+
+Account-wide weekly usage: **47% consumed / 53% remaining**. Goal counter: **991,571 tokens / 8,976 seconds**. Account usage includes other tasks and is not per-project billing; no dollar-cost claim. Chef acknowledged excessive correction cycles and orchestration overhead. Execution tightened to one implementation task, with targeted verification only when a concrete checkpoint is ready. Bundle acceptance corrections, avoid repeated history reads/passed checks, downgrade after bounded hard issues. Report completion estimate and fresh account usage at major checkpoints. No reset credits authorized or consumed. Full scope remains active; no assurance the remaining weekly allowance suffices at the previous burn rate.
+
 ## Current acceptance state
 
 | Work order | Local checkpoint | Remaining gate |
@@ -209,3 +215,8 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 - W06 pagination follow-on22eb058a2 requires deterministic id order; released only that final query/mock delta to Luna/low, no broader escalation.
 
 - W06 season-resolution follow-on approved through3676ba87b and integrated as e817bffee: canonical NHL input, persisted game-key/Yahoo-season mapping, actual source-season validation, bounded ordered pagination with complete-read requirement. Chef reran17 pure/API/adapter tests successfully. W06 is idle Luna/low; W07 has the final contract.
+
+- External dashboard coordination: user-owned task “Add roster schedule insights” 01a07cbf-5aef-7743-aaf7-bdd51618625b edits original octoberBranch checkout for local MyRoster DUST matrix, OFF/B2B, selected Yahoo477 playoff weeks/scope. Chef/W07 remain isolated and must preserve its focused committed handoff; no wholesale file copies. W07 computeCandidates option stays additive to its selectedWeeks extension. Local basic schedule/matrix features are separate from paid candidate analysis. W08 must retain added settings. Await external task commit before deliberate compatibility integration; do not modify its uncommitted changes.
+
+- W07 DUST UI checkpoint approved through6344cdca4 and integrated as4c5ee9319: full analyzed schedule-fit pool, proper fallback, consistent values, oldest freshness, independent error notices, canonical season request, private exclusion, grouped eligibility, no duplicate legacy candidate calculation. High-reasoning exit met; W07 returned Terra/medium for CSV regression.
+- W12 failing CSV reproduction is ee2afa497 atop70b0cb542; preserve as failing until product fix. Verified source-control map excludes selection ambiguity. Reload nextjs-portal interception is observed, but underlying overlay error is not yet captured; do not label environmental without evidence.
