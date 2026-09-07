@@ -10,12 +10,15 @@ export type DraftProAccessState = {
 };
 
 const EMPTY_STATE: DraftProAccessState = { status: "idle", access: null, error: null };
+const MAX_REFRESH_DELAY_MS = 24 * 60 * 60 * 1000;
 
 /** Server access is authoritative. This adapter fails closed between refreshes. */
 export function useDraftProAccess() {
   const [state, setState] = useState<DraftProAccessState>(EMPTY_STATE);
   const controllerRef = useRef<AbortController | null>(null);
   const timerRef = useRef<number | null>(null);
+  const epochRef = useRef(0);
+  const mountedRef = useRef(false);
 
   const clearPending = useCallback(() => {
     controllerRef.current?.abort();
@@ -26,16 +29,29 @@ export function useDraftProAccess() {
 
   const refresh = useCallback(async (token?: string | null) => {
     clearPending();
-    const accessToken = token === undefined
-      ? (await supabase.auth.getSession()).data.session?.access_token
-      : token;
+    const epoch = ++epochRef.current;
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    const isCurrent = () => mountedRef.current && epoch === epochRef.current && !controller.signal.aborted;
+    if (token === null) {
+      setState(EMPTY_STATE);
+      return null;
+    }
+    setState({ status: "loading", access: null, error: null });
+    let accessToken = token;
+    try {
+      if (accessToken === undefined) {
+        accessToken = (await supabase.auth.getSession()).data.session?.access_token;
+      }
+    } catch (error) {
+      if (isCurrent()) setState({ status: "error", access: null, error: error instanceof Error ? error.message : "Draft Pro access is unavailable." });
+      return null;
+    }
+    if (!isCurrent()) return null;
     if (!accessToken) {
       setState(EMPTY_STATE);
       return null;
     }
-    const controller = new AbortController();
-    controllerRef.current = controller;
-    setState({ status: "loading", access: null, error: null });
     try {
       const response = await fetch("/api/v1/account/draft-pro", {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -45,24 +61,26 @@ export function useDraftProAccess() {
       if (!response.ok || !body?.data?.access) {
         throw new Error(body?.error?.message ?? "Draft Pro access is unavailable.");
       }
-      if (controller.signal.aborted) return null;
+      if (!isCurrent()) return null;
       const access = body.data.access as DraftProAccess;
       setState({ status: "ready", access, error: null });
       const deadlines = [access.expiresAt, access.nextVerificationAt]
         .flatMap((value) => value ? [new Date(value).getTime()] : [])
         .filter((value) => Number.isFinite(value) && value > Date.now());
       if (deadlines.length) {
-        timerRef.current = window.setTimeout(() => void refresh(accessToken), Math.max(1_000, Math.min(...deadlines) - Date.now() + 50));
+        const delay = Math.max(1_000, Math.min(MAX_REFRESH_DELAY_MS, Math.min(...deadlines) - Date.now() + 50));
+        timerRef.current = window.setTimeout(() => void refresh(), delay);
       }
       return access;
     } catch (error) {
-      if (controller.signal.aborted) return null;
+      if (!isCurrent()) return null;
       setState({ status: "error", access: null, error: error instanceof Error ? error.message : "Draft Pro access is unavailable." });
       return null;
     }
   }, [clearPending]);
 
   useEffect(() => {
+    mountedRef.current = true;
     void refresh();
     const listener = () => void refresh();
     window.addEventListener("focus", listener);
@@ -70,6 +88,8 @@ export function useDraftProAccess() {
       void refresh(session?.access_token ?? null);
     }).data.subscription;
     return () => {
+      mountedRef.current = false;
+      epochRef.current += 1;
       window.removeEventListener("focus", listener);
       subscription?.unsubscribe();
       clearPending();

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import DraftProPanel from "./DraftProPanel";
@@ -18,7 +18,7 @@ const account = {
 
 describe("DraftProPanel", () => {
   beforeEach(() => getSession.mockResolvedValue({ data: { session: { access_token: "token" } } }));
-  afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); delete routerQuery.draft_pro_checkout; });
+  afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); vi.restoreAllMocks(); delete routerQuery.draft_pro_checkout; });
 
   it("shows loading and then the server-computed refund form", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: account }) }));
@@ -88,6 +88,22 @@ describe("DraftProPanel", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<DraftProPanel />);
     fireEvent.click(await screen.findByRole("button", { name: /Get Draft Pro/ }));
-    expect(await screen.findByText(/Refresh this page shortly to check access/i)).toBeTruthy();
+    expect(await screen.findByText(/Checkout is still open or confirming/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Check purchase status again" })).toBeTruthy();
+  });
+
+  it("cancels a pending checkout retry when the panel unmounts", async () => {
+    vi.useFakeTimers();
+    routerQuery.draft_pro_checkout = "cs_test_456";
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: account }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ state: "waiting" }) });
+    vi.stubGlobal("fetch", fetchMock);
+    const { unmount } = render(<DraftProPanel />);
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    expect(screen.getByText("Checking payment status…")).toBeTruthy();
+    unmount();
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

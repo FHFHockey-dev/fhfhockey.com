@@ -38,7 +38,7 @@ describe("useDraftProAccess", () => {
     authState.listener = null;
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { access } }) }));
   });
-  afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+  afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); vi.restoreAllMocks(); });
 
   it("fails closed immediately when auth signs out", async () => {
     const { result } = renderHook(() => useDraftProAccess());
@@ -56,5 +56,30 @@ describe("useDraftProAccess", () => {
     resolveResponse?.({ ok: true, json: async () => ({ data: { access } }) } as Response);
     await act(async () => {});
     expect(result.current.access).toBeNull();
+  });
+
+  it("does not resurrect access when session lookup resolves after logout", async () => {
+    let resolveSession: ((value: unknown) => void) | null = null;
+    authState.getSession.mockImplementationOnce(() => new Promise((resolve) => { resolveSession = resolve; }));
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const { result } = renderHook(() => useDraftProAccess());
+    await act(async () => authState.listener?.("SIGNED_OUT", null));
+    await act(async () => resolveSession?.({ data: { session: { access_token: "old-token" } } }));
+    expect(result.current).toMatchObject({ status: "idle", access: null });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("clamps a far-future expiry instead of scheduling an overflow refresh", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { access: { ...access, expiresAt: new Date(Date.now() + 250 * 24 * 60 * 60 * 1000).toISOString() } } }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    renderHook(() => useDraftProAccess());
+    await act(async () => {});
+    await act(async () => { await vi.advanceTimersByTimeAsync(1_000); });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

@@ -66,7 +66,11 @@ export default function DraftProPanel() {
   const [patreonAction, setPatreonAction] = useState<"refresh" | "connect" | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutState, setCheckoutState] = useState<"idle" | "waiting" | "confirming" | "confirmed" | "ineligible" | "cancelled">("idle");
+  const [checkoutRetryAvailable, setCheckoutRetryAvailable] = useState(false);
   const checkoutVerificationRef = useRef<string | null>(null);
+  const checkoutTimerRef = useRef<number | null>(null);
+  const checkoutEpochRef = useRef(0);
+  const checkoutMountedRef = useRef(false);
 
   const selectedPurchase = useMemo(
     () => account?.purchases.find((purchase) => purchase.id === purchaseId) ?? account?.purchases[0] ?? null,
@@ -82,6 +86,18 @@ export default function DraftProPanel() {
     setPurchaseId((current) => current || body.data.purchases[0]?.id || "");
     setError(null);
   }, []);
+  const cancelCheckoutVerification = useCallback(() => {
+    checkoutEpochRef.current += 1;
+    if (checkoutTimerRef.current !== null) window.clearTimeout(checkoutTimerRef.current);
+    checkoutTimerRef.current = null;
+  }, []);
+  useEffect(() => {
+    checkoutMountedRef.current = true;
+    return () => {
+      checkoutMountedRef.current = false;
+      cancelCheckoutVerification();
+    };
+  }, [cancelCheckoutVerification]);
   useEffect(() => {
     let cancelled = false;
     void loadAccount().catch((loadError) => {
@@ -143,6 +159,7 @@ export default function DraftProPanel() {
   }
 
   async function startCheckout() {
+    cancelCheckoutVerification();
     setCheckoutLoading(true);
     setFeedback(null);
     try {
@@ -161,8 +178,9 @@ export default function DraftProPanel() {
         return;
       }
       if (body.state === "waiting" || body.state === "confirming") {
-        setCheckoutState("confirming");
-        setFeedback("Your payment is still confirming. Refresh this page shortly to check access.");
+        setCheckoutState(body.state);
+        setCheckoutRetryAvailable(true);
+        setFeedback("Checkout is still open or confirming. Refresh your account access after completing payment.");
         setCheckoutLoading(false);
         return;
       }
@@ -178,10 +196,14 @@ export default function DraftProPanel() {
     }
   }
 
-  const verifyCheckout = useCallback(async (sessionId: string, attempt = 0) => {
+  const verifyCheckout = useCallback(async (sessionId: string, attempt = 0, epoch = checkoutEpochRef.current) => {
+    const isCurrent = () => checkoutMountedRef.current && epoch === checkoutEpochRef.current;
+    if (!isCurrent()) return;
     setCheckoutState(attempt ? "confirming" : "waiting");
+    setCheckoutRetryAvailable(false);
     try {
       const session = (await supabase.auth.getSession()).data.session;
+      if (!isCurrent()) return;
       if (!session?.access_token) throw new Error("Sign in to confirm your Draft Pro purchase.");
       const response = await fetch("/api/v1/account/draft-pro/checkout/verify", {
         method: "POST",
@@ -189,6 +211,7 @@ export default function DraftProPanel() {
         body: JSON.stringify({ sessionId }),
       });
       const body = await response.json().catch(() => ({}));
+      if (!isCurrent()) return;
       if (!response.ok) throw new Error(body.error ?? "Checkout verification failed.");
       if (body.state === "confirmed") {
         setCheckoutState("confirmed");
@@ -196,12 +219,14 @@ export default function DraftProPanel() {
         return;
       }
       if ((body.state === "waiting" || body.state === "confirming") && attempt < 2) {
-        setCheckoutState("confirming");
-        window.setTimeout(() => void verifyCheckout(sessionId, attempt + 1), 750);
+        setCheckoutState(body.state);
+        checkoutTimerRef.current = window.setTimeout(() => void verifyCheckout(sessionId, attempt + 1, epoch), 750);
         return;
       }
-      setCheckoutState(body.state === "ineligible" ? "ineligible" : "confirming");
+      setCheckoutState(body.state === "ineligible" ? "ineligible" : body.state === "waiting" ? "waiting" : "confirming");
+      setCheckoutRetryAvailable(body.state !== "ineligible");
     } catch (error) {
+      if (!isCurrent()) return;
       setCheckoutState("ineligible");
       setFeedback(error instanceof Error ? error.message : "Checkout verification failed. Try again from Draft Pro settings.");
     }
@@ -212,13 +237,15 @@ export default function DraftProPanel() {
       ? router.query.draft_pro_checkout[0]
       : router.query.draft_pro_checkout;
     if (value === "cancelled") {
+      cancelCheckoutVerification();
       setCheckoutState("cancelled");
       return;
     }
     if (!value || !/^cs_(test|live)_[A-Za-z0-9]+$/.test(value) || checkoutVerificationRef.current === value) return;
+    cancelCheckoutVerification();
     checkoutVerificationRef.current = value;
-    void verifyCheckout(value);
-  }, [router.query.draft_pro_checkout, verifyCheckout]);
+    void verifyCheckout(value, 0, checkoutEpochRef.current);
+  }, [cancelCheckoutVerification, router.query.draft_pro_checkout, verifyCheckout]);
 
   if (loading) return <section className={styles.panel} aria-busy="true"><h2>Draft Pro</h2><p>Loading account access…</p></section>;
   if (error) return <section className={styles.panel} role="alert"><h2>Draft Pro</h2><p>{error}</p></section>;
@@ -229,7 +256,7 @@ export default function DraftProPanel() {
   return <section className={styles.panel} aria-labelledby="draft-pro-panel-title">
     <div className={styles.heading}><div><p className={styles.eyebrow}>Account access</p><h2 id="draft-pro-panel-title">Draft Pro</h2></div><span className={account.access.eligible ? styles.active : styles.inactive}>{account.access.eligible ? "Active" : "Inactive"}</span></div>
     <p className={styles.summary}>{account.access.eligible ? `Access from ${account.access.grantingSources.join(" and ")}.` : "Your retained Draft Pro work is locked while access is inactive."} No automatic renewal.</p>
-    {checkoutState !== "idle" ? <p className={styles.notice} role="status">{checkoutState === "waiting" ? "Payment received. Confirming your Draft Pro access…" : checkoutState === "confirming" ? "Your payment is still confirming. We will retry shortly; you can refresh this page if it remains pending." : checkoutState === "confirmed" ? "Draft Pro access is confirmed." : checkoutState === "cancelled" ? "Checkout was cancelled. Your free draft remains available." : "Your purchase could not be confirmed yet. Try refreshing this page or contact support if payment was completed."}</p> : null}
+    {checkoutState !== "idle" ? <div className={styles.notice} role="status"><p>{checkoutState === "waiting" ? "Checking payment status…" : checkoutState === "confirming" ? "Payment is confirming with Stripe." : checkoutState === "confirmed" ? "Draft Pro access is confirmed." : checkoutState === "cancelled" ? "Checkout was cancelled. Your free draft remains available." : "Your purchase could not be confirmed yet. Try refreshing this page or contact support if payment was completed."}</p>{checkoutRetryAvailable ? <div className={styles.actions}><button type="button" onClick={() => { const sessionId = checkoutVerificationRef.current; if (sessionId) { cancelCheckoutVerification(); void verifyCheckout(sessionId, 0, checkoutEpochRef.current); } else void loadAccount(); }}>Check purchase status again</button></div> : null}</div> : null}
     {!account.access.eligible ? <div className={styles.actions}><button type="button" onClick={() => void startCheckout()} disabled={checkoutLoading}>{checkoutLoading ? "Opening checkout…" : "Get Draft Pro — $5.99 one-time"}</button><span className={styles.notice}>One-time access through June 30, 2027 (Eastern). No automatic renewal.</span></div> : null}
     <dl className={styles.details}><div><dt>Access expires</dt><dd>{formatEasternDate(account.access.expiresAt)} (Eastern)</dd></div><div><dt>Verified</dt><dd>{formatDate(account.access.verifiedAt)}</dd></div><div><dt>Patreon status</dt><dd>{account.access.grantingSources.includes("patreon") ? "Granting access" : "Not granting access"}</dd></div></dl>
     <div className={styles.actions}><button type="button" onClick={() => void patreonActionRequest("refresh")} disabled={Boolean(patreonAction)}>{patreonAction === "refresh" ? "Refreshing…" : "Refresh Patreon"}</button><button type="button" onClick={() => void patreonActionRequest("connect")} disabled={Boolean(patreonAction)}>{patreonAction === "connect" ? "Opening…" : "Connect Patreon"}</button></div>
