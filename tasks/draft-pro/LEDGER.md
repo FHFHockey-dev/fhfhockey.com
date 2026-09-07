@@ -64,3 +64,7 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 
 - W01 67e812dde code/contracts APPROVED and integrated locally; SQL/RLS acceptance pending W12. Reviewed corrected null/future/expiry boundaries, fixed verification deadline, shared capability denial, six refund reasons, restrictive policy syntax. Evidence: 9 focused Vitest tests, scoped ESLint, scoped TypeScript passed by owner. Downgraded to Terra/medium after correction; future schema changes new commits only.
 - W11 361944e1f returned corrections: wrong refund choices, misleading launch-available label, invented customer rules, missing locked/account states, test/live modes wording. No model escalation.
+
+- W11 preparation APPROVED: e948822a7 reviewed and integrated; correct six reasons, locked retention, optional answers, owner bank/identity checklist, no promised Yahoo date. Final feature availability and config review remains after W07/W02. W12 modern Storage bootstrap now succeeds; direct user access probes in progress.
+
+- W01 foundation APPROVED for dependent implementation at a39dbc1ee (source 67e812dde): W12 isolated real public baseline + cached Storage bucket migrations applied successfully; seven tables/RLS, no browser grants, two subjects cannot read payload, service role CRUD succeeds. W12 harness f9fd027f2/f9487382d/6bbc87560 integrated. Added targeted test critique for generic permissive storage-policy regression, proper entitlement key, catalog assertions; this strengthens evidence but no known application blocker. Storage HTTP lifecycle not tested.
