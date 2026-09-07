@@ -27,11 +27,22 @@ declare
   expired_cleanup_delete boolean;
   expired_status text;
   active_import_id uuid;
+  parent_expired_save_id uuid;
+  parent_expired_upload_id uuid;
+  parent_expired_prefix text;
   ordinal integer;
 begin
   select save_session_id into save_id from public.begin_draft_pro_save_session('00000000-0000-4000-8000-000000000021'::uuid, null, null, 'probe-attempt-1');
   select u.upload_id, u.storage_prefix into saved_upload_id, prefix from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', save_id, null, 1024, 'Normalized import', 'application/json', '{}'::jsonb) as u;
   perform public.stage_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', saved_upload_id, array[prefix || '/0'], 512, 2, repeat('a', 64));
+  if not exists (select 1 from public.stage_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', saved_upload_id, array[prefix || '/0'], 512, 2, repeat('a', 64)) where status='staged') then raise exception 'identical staged retry did not return its prior result'; end if;
+  if not exists (select 1 from public.read_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021',saved_upload_id) where save_session_status='pending' and actual_bytes=512 and row_count=2 and content_sha256=repeat('a',64) and jsonb_array_length(chunk_paths)=1) then raise exception 'upload retry read metadata was incomplete'; end if;
+  begin
+    perform public.stage_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', saved_upload_id, array[prefix || '/0'], 511, 2, repeat('a', 64));
+    raise exception 'changed staged retry was accepted';
+  exception when others then
+    if sqlerrm <> 'Private import staged retry does not match' then raise; end if;
+  end;
   select draft_id, lock_version into saved_draft_id, version from public.commit_draft_pro_save_session('00000000-0000-4000-8000-000000000021', save_id, 'Atomic draft', '{}'::jsonb, 2, '{}'::uuid[]);
   if version <> 0 or not exists (select 1 from public.draft_pro_private_imports i where i.draft_id = saved_draft_id and deleted_at is null) then
     raise exception 'saved draft commit did not atomically create the import link';
@@ -67,6 +78,15 @@ begin
   select u.upload_id,u.storage_prefix into replacement_upload_id,replacement_prefix from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', replacement_save_id, (select i.id from public.draft_pro_private_imports as i where i.draft_id=saved_draft_id and i.deleted_at is null limit 1), 512, 'Replacement', 'application/json', '{}'::jsonb) as u;
   perform public.stage_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', replacement_upload_id, array[replacement_prefix || '/0'], 512, 2, repeat('c',64));
   if not exists (select 1 from public.commit_draft_pro_save_session('00000000-0000-4000-8000-000000000021', replacement_save_id, 'Replacement at cap', '{}'::jsonb, 2, '{}'::uuid[]) where status='saved') then raise exception 'same-size replacement at account cap did not commit'; end if;
+  select save_session_id into parent_expired_save_id from public.begin_draft_pro_save_session('00000000-0000-4000-8000-000000000021', saved_draft_id, version + 1, 'probe-attempt-expired-parent');
+  select u.upload_id,u.storage_prefix into parent_expired_upload_id,parent_expired_prefix from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', parent_expired_save_id, (select i.id from public.draft_pro_private_imports as i where i.draft_id=saved_draft_id and i.deleted_at is null limit 1), 512, 'Expired parent', 'application/json', '{}'::jsonb) as u;
+  update public.draft_pro_save_sessions as s set expires_at=now()-interval '1 second' where s.id=parent_expired_save_id;
+  begin
+    perform public.stage_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021',parent_expired_upload_id,array[parent_expired_prefix || '/0'],512,2,repeat('d',64));
+    raise exception 'expired parent session accepted staging';
+  exception when others then
+    if sqlerrm <> 'Private import parent session is unavailable' then raise; end if;
+  end;
   select save_session_id into expired_save_id from public.begin_draft_pro_save_session('00000000-0000-4000-8000-000000000021', saved_draft_id, version + 1, 'probe-attempt-expired-upload');
   select u.upload_id,u.storage_prefix into expired_upload_id,expired_prefix from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', expired_save_id, (select i.id from public.draft_pro_private_imports as i where i.draft_id=saved_draft_id and i.deleted_at is null limit 1), 512, 'Expired pre-stage', 'application/json', '{}'::jsonb) as u;
   update public.draft_pro_private_import_uploads as u set expires_at=now()-interval '1 second' where u.id=expired_upload_id;

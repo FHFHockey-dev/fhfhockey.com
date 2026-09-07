@@ -139,12 +139,23 @@ create or replace function public.stage_draft_pro_private_import_upload(
   p_user_id uuid, p_upload_id uuid, p_chunk_paths text[], p_actual_bytes integer, p_row_count integer, p_content_sha256 text
 ) returns table(status text, upload_id uuid, storage_path text, expires_at timestamptz)
 language plpgsql security definer set search_path = public, pg_temp as $$
-declare upload public.draft_pro_private_import_uploads%rowtype; ordinal integer;
+declare upload public.draft_pro_private_import_uploads%rowtype; parent_status text; parent_expires_at timestamptz; ordinal integer;
 begin
   if p_user_id is null or p_chunk_paths is null or cardinality(p_chunk_paths) not between 1 and 32 or p_actual_bytes not between 1 and 10485760 or p_row_count not between 0 and 100000 or p_content_sha256 !~ '^[a-f0-9]{64}$' then raise exception 'Invalid private import staging request'; end if;
-  select u.* into upload from public.draft_pro_private_import_uploads as u where u.id = p_upload_id and u.user_id = p_user_id and u.status = 'uploading' and u.expires_at > now() for update;
-  if not found or p_actual_bytes > upload.declared_max_bytes then raise exception 'Private import upload is unavailable'; end if;
+  perform pg_advisory_xact_lock(hashtext('draft-pro-quota:' || p_user_id::text));
+  select u.* into upload
+  from public.draft_pro_private_import_uploads as u join public.draft_pro_save_sessions as s on s.id=u.save_session_id
+  where u.id = p_upload_id and u.user_id = p_user_id and s.user_id=p_user_id for update of u,s;
+  if not found then raise exception 'Private import parent session is unavailable'; end if;
+  select s.status,s.expires_at into parent_status,parent_expires_at from public.draft_pro_save_sessions as s where s.id=upload.save_session_id for update;
+  if parent_status<>'pending' or parent_expires_at<=now() then raise exception 'Private import parent session is unavailable'; end if;
+  if p_actual_bytes > upload.declared_max_bytes then raise exception 'Private import upload is unavailable'; end if;
   for ordinal in 1..cardinality(p_chunk_paths) loop if p_chunk_paths[ordinal] <> upload.storage_prefix || '/' || (ordinal - 1)::text then raise exception 'Private import chunk path is not server-owned'; end if; end loop;
+  if upload.status='staged' then
+    if upload.chunk_paths=to_jsonb(p_chunk_paths) and upload.actual_bytes=p_actual_bytes and upload.row_count=p_row_count and upload.content_sha256=p_content_sha256 then return query select 'staged',upload.id,upload.final_storage_path,upload.expires_at; return; end if;
+    raise exception 'Private import staged retry does not match';
+  end if;
+  if upload.status<>'uploading' or upload.expires_at<=now() then raise exception 'Private import upload is unavailable'; end if;
   update public.draft_pro_private_import_uploads set chunk_paths = to_jsonb(p_chunk_paths), actual_bytes = p_actual_bytes, row_count = p_row_count, content_sha256 = p_content_sha256, final_storage_path = 'draft-pro-imports/' || upload.id::text || '/normalized.json', status = 'staged', expires_at = now() + interval '2 hours' where id = upload.id returning * into upload;
   return query select 'staged', upload.id, upload.final_storage_path, upload.expires_at;
 end;
@@ -153,10 +164,10 @@ $$;
 -- The server calls this immediately before Storage I/O.  It is deliberately
 -- ownership-scoped and returns only the server-derived staging namespace.
 create or replace function public.read_draft_pro_private_import_upload(p_user_id uuid,p_upload_id uuid)
-returns table(upload_id uuid,save_session_id uuid,draft_id uuid,status text,storage_prefix text,final_storage_path text,chunk_paths jsonb,declared_max_bytes integer,expires_at timestamptz)
+returns table(upload_id uuid,save_session_id uuid,draft_id uuid,status text,save_session_status text,save_session_expires_at timestamptz,storage_prefix text,final_storage_path text,chunk_paths jsonb,declared_max_bytes integer,actual_bytes integer,row_count integer,content_sha256 text,expires_at timestamptz)
 language sql security definer set search_path = public, pg_temp as $$
-  select u.id,u.save_session_id,s.draft_id,u.status,u.storage_prefix,
-    coalesce(u.final_storage_path,'draft-pro-imports/' || u.id::text || '/normalized.json'),u.chunk_paths,u.declared_max_bytes,u.expires_at
+  select u.id,u.save_session_id,s.draft_id,u.status,s.status,s.expires_at,u.storage_prefix,
+    coalesce(u.final_storage_path,'draft-pro-imports/' || u.id::text || '/normalized.json'),u.chunk_paths,u.declared_max_bytes,u.actual_bytes,u.row_count,u.content_sha256,u.expires_at
   from public.draft_pro_private_import_uploads as u
   join public.draft_pro_save_sessions as s on s.id=u.save_session_id
   where u.id=p_upload_id and u.user_id=p_user_id and s.user_id=p_user_id;
