@@ -71,7 +71,12 @@ test("inactive access blocks export and shows retained summaries while checkout 
   let eligible = true;
   let verificationCalls = 0;
   let exportRequests = 0;
+  let accessRequests = 0;
   await installDraftProAuthenticatedFixtures(page, () => accountResponse(eligible));
+  await page.route("**/api/v1/account/draft-pro", (route) => {
+    accessRequests += 1;
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: accountResponse(eligible) }) });
+  });
   await page.route("**/api/v1/draft-pro/export", (route) => {
     exportRequests += 1;
     return route.fulfill({ status: 500, contentType: "application/json", body: "{}" });
@@ -87,7 +92,8 @@ test("inactive access blocks export and shows retained summaries while checkout 
   const players = page.locator("#mobile-draft-panel-players");
   await expect(players.locator("tbody tr").first()).toBeVisible({ timeout: 60_000 });
   eligible = false;
-  await page.reload();
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect.poll(() => accessRequests, { timeout: 15_000 }).toBeGreaterThan(1);
   await page.getByRole("button", { name: "Setup", exact: true }).click({ timeout: 60_000 });
   await page.getByRole("button", { name: "Projections", exact: true }).click();
   await page.getByTestId("export-settings-btn").click();
