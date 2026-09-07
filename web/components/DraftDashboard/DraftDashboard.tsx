@@ -2839,13 +2839,19 @@ const DraftDashboard: React.FC = () => {
     skaterData.sourceWarnings,
     skaterSourcesEnabled,
   ]);
-  const tableDataNotices = useMemo(() => buildDraftProDustNotices({
-    projectionDataNotices,
-    canUseProDust,
-    hasPrivateImport: Boolean(customCsvList.length),
-    candidateScopeLimited: dustCandidateScopeLimited,
-    dust: draftProDust,
-  }), [canUseProDust, customCsvList.length, draftProDust, dustCandidateScopeLimited, projectionDataNotices]);
+  const tableDataNotices = useMemo(() => {
+    const notices = buildDraftProDustNotices({
+      projectionDataNotices,
+      canUseProDust,
+      hasPrivateImport: Boolean(customCsvList.length),
+      candidateScopeLimited: dustCandidateScopeLimited,
+      dust: draftProDust,
+    });
+    if (canUseProDust && draftSchedule.scope === "playoffs") {
+      notices.push("Draft Pro DUST badges use the full regular-season Week 1–30 schedule. The playoff selection applies to free schedule metrics and the weekly matrix.");
+    }
+    return notices;
+  }, [canUseProDust, customCsvList.length, draftProDust, dustCandidateScopeLimited, draftSchedule.scope, projectionDataNotices]);
   const projectionEmptyStateMessage =
     !skaterSourcesEnabled && !goalieSourcesEnabled
       ? "No projection sources are enabled. Enable at least one skater or goalie source in Draft Settings."
@@ -3023,6 +3029,7 @@ const DraftDashboard: React.FC = () => {
               goalie: goalieData.inclusionDiagnostics,
             }}
             dataNotices={tableDataNotices}
+             scheduleMetrics={draftSchedule.playerMetrics}
             dustInsights={canUseProDust ? draftProDustInsights : undefined}
             emptyStateMessage={projectionEmptyStateMessage}
           />
