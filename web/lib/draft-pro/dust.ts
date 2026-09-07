@@ -16,12 +16,18 @@ export type DraftProDustPlayer = OptimizerPlayer & { projectionSeason: string };
 export type DraftProDustInput = {
   season: string;
   lineupMode: "daily" | "weekly";
+  sort?: "ordinary" | "schedule_fit";
+  inputOrigin: "draft" | "private_import";
+  privateImportAccountSaved?: boolean;
   roster: readonly DraftProDustPlayer[];
   candidates: readonly DraftProDustPlayer[];
   rosterSlots: Readonly<Record<string, number>>;
   schedule: {
     season: string;
-    fetchedAt: string | null;
+    freshness: {
+      oldestFetchedAt: string | null;
+      latestFetchedAt: string | null;
+    };
     games: readonly (TeamScheduleGame & { season: string })[];
   };
 };
@@ -32,7 +38,8 @@ export type DraftProDustState =
   | "weekly_lock_unsupported"
   | "stale_schedule"
   | "season_mismatch"
-  | "unknown_team";
+  | "unknown_team"
+  | "private_import_not_saved";
 
 export type DraftProDustInsight = {
   playerId: string;
@@ -54,7 +61,16 @@ export type DraftProDustInsight = {
 
 export type DraftProDustResult = {
   state: DraftProDustState;
-  freshness: string | null;
+  freshness: {
+    oldestFetchedAt: string | null;
+    latestFetchedAt: string | null;
+  };
+  window: {
+    startWeek: number | null;
+    endWeek: number | null;
+    startDate: string | null;
+    endDate: string | null;
+  };
   baseline: ReturnType<typeof evaluateRosterSchedule> | null;
   insights: readonly DraftProDustInsight[];
   diagnostics: readonly string[];
@@ -83,27 +99,30 @@ function seasonMatches(input: DraftProDustInput) {
 
 function emptyResult(
   state: Exclude<DraftProDustState, "ready">,
-  freshness: string | null,
+  input: DraftProDustInput,
   diagnostics: readonly string[],
 ): DraftProDustResult {
-  return { state, freshness, baseline: null, insights: [], diagnostics };
+  return { state, freshness: input.schedule.freshness, window: scheduleWindow(input.schedule.games), baseline: null, insights: [], diagnostics };
 }
 
 export function evaluateDraftProDust(
   input: DraftProDustInput,
   now = new Date(),
 ): DraftProDustResult {
+  if (input.inputOrigin === "private_import" && !input.privateImportAccountSaved) {
+    return emptyResult("private_import_not_saved", input, ["Save this private import to your account before using it for DUST."]);
+  }
   if (input.lineupMode !== "daily") {
-    return emptyResult("weekly_lock_unsupported", input.schedule.fetchedAt, ["DUST uses exact daily lineup assignment; weekly-lock leagues are not supported."]);
+    return emptyResult("weekly_lock_unsupported", input, ["DUST uses exact daily lineup assignment; weekly-lock leagues are not supported."]);
   }
   if (input.roster.length === 0) {
-    return emptyResult("empty_roster", input.schedule.fetchedAt, ["Add roster players to calculate DUST."]);
+    return emptyResult("empty_roster", input, ["Add roster players to calculate DUST."]);
   }
   if (!seasonMatches(input)) {
-    return emptyResult("season_mismatch", input.schedule.fetchedAt, ["Projection and schedule seasons must match exactly."]);
+    return emptyResult("season_mismatch", input, ["Projection and schedule seasons must match exactly."]);
   }
-  if (!scheduleIsFresh(input.schedule.fetchedAt, now)) {
-    return emptyResult("stale_schedule", input.schedule.fetchedAt, ["Schedule data is stale; refresh it before relying on DUST."]);
+  if (!scheduleIsFresh(input.schedule.freshness.oldestFetchedAt, now)) {
+    return emptyResult("stale_schedule", input, ["Schedule data is stale or incomplete; refresh it before relying on DUST."]);
   }
 
   const schedule = prepareTeamSchedule(input.schedule.games);
@@ -114,7 +133,7 @@ export function evaluateDraftProDust(
     lineupMode: "daily",
   });
   if (baseline.diagnostics.some((diagnostic) => diagnostic.code === "UNKNOWN_TEAM" || diagnostic.code === "MISSING_TEAM")) {
-    return { state: "unknown_team", freshness: input.schedule.fetchedAt, baseline, insights: [], diagnostics: baseline.diagnostics.map((diagnostic) => diagnostic.message) };
+    return { state: "unknown_team", freshness: input.schedule.freshness, window: scheduleWindow(input.schedule.games), baseline, insights: [], diagnostics: baseline.diagnostics.map((diagnostic) => diagnostic.message) };
   }
 
   const rosterIds = new Set(input.roster.map((player) => player.id));
@@ -122,23 +141,28 @@ export function evaluateDraftProDust(
     .filter((player) => !rosterIds.has(player.id))
     .map((player) => calculateCandidateDust({ roster: input.roster, rosterSlots: input.rosterSlots, schedule, lineupMode: "daily" }, player, baseline));
   if (calculated.some((candidate) => candidate.diagnostics.some((diagnostic) => diagnostic.code === "UNKNOWN_TEAM" || diagnostic.code === "MISSING_TEAM"))) {
-    return { state: "unknown_team", freshness: input.schedule.fetchedAt, baseline, insights: [], diagnostics: calculated.flatMap((candidate) => candidate.diagnostics.map((diagnostic) => diagnostic.message)) };
+    return { state: "unknown_team", freshness: input.schedule.freshness, window: scheduleWindow(input.schedule.games), baseline, insights: [], diagnostics: calculated.flatMap((candidate) => candidate.diagnostics.map((diagnostic) => diagnostic.message)) };
   }
   const evaluated = calculated
     .filter((candidate) => !candidate.diagnostics.some((diagnostic) => diagnostic.severity === "error"));
   const insights = evaluated.map((candidate) => toInsight(candidate, evaluated, input.rosterSlots));
-  insights.sort((left, right) =>
-    right.activeGamesAdded - left.activeGamesAdded ||
-    candidateValue(input.candidates, right.playerId) - candidateValue(input.candidates, left.playerId) ||
-    left.playerId.localeCompare(right.playerId),
-  );
+  insights.sort(input.sort === "schedule_fit"
+    ? (left, right) => right.activeGamesAdded - left.activeGamesAdded || candidateValue(input.candidates, right.playerId) - candidateValue(input.candidates, left.playerId) || left.playerId.localeCompare(right.playerId)
+    : (left, right) => candidateValue(input.candidates, right.playerId) - candidateValue(input.candidates, left.playerId) || left.playerId.localeCompare(right.playerId));
   return {
     state: "ready",
-    freshness: input.schedule.fetchedAt,
+    freshness: input.schedule.freshness,
+    window: scheduleWindow(input.schedule.games),
     baseline,
     insights,
     diagnostics: baseline.diagnostics.map((diagnostic) => diagnostic.message),
   };
+}
+
+function scheduleWindow(games: DraftProDustInput["schedule"]["games"]) {
+  const weeks = games.map((game) => game.yahooWeek).filter((week): week is number => typeof week === "number");
+  const dates = games.map((game) => game.date).filter(Boolean).sort();
+  return { startWeek: weeks.length ? Math.min(...weeks) : null, endWeek: weeks.length ? Math.max(...weeks) : null, startDate: dates[0] ?? null, endDate: dates.at(-1) ?? null };
 }
 
 function candidateValue(candidates: readonly DraftProDustPlayer[], id: string) {
