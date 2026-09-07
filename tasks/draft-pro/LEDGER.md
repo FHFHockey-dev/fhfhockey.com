@@ -326,3 +326,12 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 - MATRIX CHEF APPROVED: product5b250f93b, browserfixtures2f089d1fc. Actual20selectedplayers×27weeks, unknownteamretains540unavailablecells; greenvisuals inspected afterspecificityfix. W12fullmatrix2PASS, finalfree+matrix8PASS, account2PASS. Chefunit4PASS andfull8GiBtscPASS (/tmp/draft-pro-chef-matrix-unit.log, /tmp/draft-pro-chef-matrix-types.log). Stableimages /tmp/draft-pro-matrix-reviewed/. W07/W12idleLuna/low.
 - Progress65%overall/95%initialrelease; freshweeklymeter86%used/14%remaining. Repeatedmatrixfixture/CSSloops werecostly; no additionalmatrixwork queued.
 - W08 freshbackendagent deliveredbc395d5c0/46ef24571/cb53073cf (approvedschema locally9fd1f5662) with20targetedtestsPASS. Runtimebackendstillnotintegrated pendingcoherentclientflow. FreshinternalTerra/medium w08_client_save_flow now exclusivelyowns hook/clienthelper/tests in SAMEff38worktree; originalW08idle. Explicitupload/save/restore/serializedautosave flow andmissingAPIcontracts next.
+
+
+### Saved Drafts review and budget checkpoint
+- Overall accepted progress remains **65%**; initial release **95%**. Fresh account-wide weekly meter: **89% used / 11% remaining**. These are acceptance estimates, not a token forecast. No reset credit consumed; remaining scope is not guaranteed to fit remaining allowance.
+- W01 begin-upload recovery approved and integrated `bbdfebe76`; independent disposable SQL probe passed (`/tmp/draft-pro-chef-upload-begin-db.log`). W08 equivalent `6d1753ffa`.
+- W08 runtime through `f7a9f9b01` remains unapproved. Fresh agents delivered typed API alignment, upload/save/restore hook, and named workspace UI; owner tests do not replace integrated verification.
+- Chef found missing runtime cleanup executor: staged chunks would keep consuming temporary quota. Returned bounded cleanup/retry work to existing Terra/medium backend agent, with Storage failures retaining recoverable metadata.
+- Returned client generation cancellation and mutation-state gaps plus lost-response two-call tests to existing Terra/medium hook agent. Returned disconnected player annotations and unsafe tier-label editing to Luna/medium panel agent.
+- Three disjoint implementation agents active in the existing W08 worktree; visible W08 remains paused. No new worktrees, schema edits, model escalations, production actions, or duplicate verification. W07 integration and W12 cross-device/Storage HTTP checks follow a coherent W08 checkpoint; W09/W10 remain queued.
