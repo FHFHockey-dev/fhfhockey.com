@@ -55,6 +55,19 @@ describe("useSavedDrafts", () => {
     const { result } = renderHook(() => useSavedDrafts()); await expect(result.current.saveNow(null, { name: "Draft", snapshot, accountSaveConsent: false, privateImports: [imported] })).rejects.toThrow("Confirm saving");
     expect(fetchMock.mock.calls.map(([url]) => url)).not.toContain("/api/v1/account/draft-pro/private-imports");
   });
+  it("retains an unchanged opened import without requiring consent or uploading it again", async () => {
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => { calls.push({ url, init }); if (url.includes("?ordinal=")) return Promise.resolve(binary(bytes, Number(url.at(-1)))); if (url.endsWith("/draft")) return Promise.resolve(json({ data: detail })); if (url === "/api/v1/account/draft-pro/drafts/draft") return Promise.resolve(json({ data: { ...detail, lockVersion: 2 } })); return Promise.resolve(json({ data: [] })); }));
+    const { result } = renderHook(() => useSavedDrafts()); await act(async () => { const loaded = await result.current.open("draft"); await result.current.saveNow("draft", { name: "Draft", snapshot, accountSaveConsent: false, privateImports: loaded.privateImports }); });
+    expect(calls.some((call) => call.url === "/api/v1/account/draft-pro/private-imports")).toBe(false);
+    const commit = calls.find((call) => call.url === "/api/v1/account/draft-pro/drafts/draft" && call.init?.method === "PUT"); expect(JSON.parse(String(commit?.init?.body)).importIds).toEqual(["import"]);
+  });
+  it("uses the latest lock version for queued saves", async () => {
+    const versions: number[] = []; let detailVersion = 1;
+    vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => { if (url.includes("?ordinal=")) return Promise.resolve(binary(bytes, Number(url.at(-1)))); if (url.endsWith("/draft") && init?.method !== "PUT") return Promise.resolve(json({ data: { ...detail, lockVersion: detailVersion } })); if (url === "/api/v1/account/draft-pro/drafts/draft") { versions.push(JSON.parse(String(init?.body)).expectedVersion); detailVersion += 1; return Promise.resolve(json({ data: { id: "draft", name: "Draft", status: "active", lockVersion: detailVersion, updatedAt: "now" } })); } return Promise.resolve(json({ data: [] })); }));
+    const { result } = renderHook(() => useSavedDrafts()); await act(async () => { const loaded = await result.current.open("draft"); await Promise.all([result.current.saveNow("draft", { name: "Draft", snapshot, accountSaveConsent: false, privateImports: loaded.privateImports }), result.current.saveNow("draft", { name: "Draft", snapshot, accountSaveConsent: false, privateImports: loaded.privateImports })]); });
+    expect(versions).toEqual([1, 2]);
+  });
   it("keeps the opened draft through a same-account token refresh", async () => {
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(json({ data: url.endsWith("/draft") ? { ...detail, privateImports: [] } : [] }))));
     const { result } = renderHook(() => useSavedDrafts()); await act(async () => { await result.current.open("draft"); });
