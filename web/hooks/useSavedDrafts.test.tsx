@@ -23,4 +23,16 @@ describe("useSavedDrafts restore", () => {
     const { result } = renderHook(() => useSavedDrafts()); await expect(result.current.open("draft")).rejects.toThrow("unavailable");
     expect(result.current.opened).toBeNull();
   });
+  it("cancels a pending open when the auth identity changes", async () => {
+    let resolveDetail!: (response: unknown) => void;
+    const pendingDetail = new Promise((resolve) => { resolveDetail = resolve; });
+    vi.stubGlobal("fetch", vi.fn((url: string) => url.endsWith("/draft") ? pendingDetail : Promise.resolve({ ok: true, json: async () => ({ data: [] }) })));
+    const { result } = renderHook(() => useSavedDrafts());
+    const openPromise = result.current.open("draft");
+    const onIdentityChange = onAuthStateChange.mock.calls[0][0] as () => void;
+    onIdentityChange();
+    resolveDetail({ ok: true, json: async () => ({ data: { ...detail, privateImports: [] } }) });
+    await expect(openPromise).rejects.toThrow("cancelled");
+    expect(result.current.opened).toBeNull();
+  });
 });
