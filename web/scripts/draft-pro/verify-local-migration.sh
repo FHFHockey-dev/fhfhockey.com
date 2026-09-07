@@ -14,8 +14,8 @@ readonly PASSWORD="draft_pro_w12_local_only"
 readonly STORAGE_MIGRATIONS_DIRECTORY="$(mktemp -d)"
 readonly STORAGE_MIGRATIONS_CONTAINER="${CONTAINER}-storage-schema"
 
-if [[ $# -gt 1 ]]; then
-  echo "Usage: $0 [supabase/migrations/draft_pro_migration.sql | <commit>:supabase/migrations/draft_pro_migration.sql]" >&2
+if [[ $# -gt 2 ]]; then
+  echo "Usage: $0 [foundation migration] [follow-on migration]" >&2
   exit 64
 fi
 
@@ -24,7 +24,8 @@ if [[ ! -f "$BASELINE" ]]; then
   exit 66
 fi
 
-migration="${1:-}"
+migrations=("$@")
+for migration in "${migrations[@]}"; do
 if [[ -n "$migration" ]]; then
   if [[ "$migration" == *:* ]]; then
     case "$migration" in
@@ -45,6 +46,16 @@ if [[ -n "$migration" ]]; then
     esac
     git ls-files --error-unmatch -- "$migration" >/dev/null
   fi
+fi
+done
+
+extra_probe="${DRAFT_PRO_EXTRA_PROBE:-}"
+if [[ -n "$extra_probe" ]]; then
+  case "$extra_probe" in
+    [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*:web/scripts/draft-pro/*.sql) ;;
+    *) echo "DRAFT_PRO_EXTRA_PROBE must use <commit>:web/scripts/draft-pro/<file>.sql." >&2; exit 64 ;;
+  esac
+  git cat-file -e "$extra_probe"
 fi
 
 cleanup() {
@@ -107,19 +118,25 @@ psql_in_container --tuples-only --no-align --command "
          '; entitlements=' || (to_regclass('public.user_entitlements') is not null)::text;
 "
 
-if [[ -n "$migration" ]]; then
+if [[ ${#migrations[@]} -gt 0 ]]; then
+  for migration in "${migrations[@]}"; do
   if [[ "$migration" == *:* ]]; then
     git show "$migration" | psql_in_container >/dev/null
   else
     psql_in_container < "$migration" >/dev/null
   fi
   echo "migration=$migration"
+  done
   psql_in_container --tuples-only --no-align --command "
     select 'public_tables=' || count(*)
     from pg_catalog.pg_class
     where relnamespace = 'public'::regnamespace and relkind = 'r';
   "
   psql_in_container < "$RLS_PROBES"
+  if [[ -n "$extra_probe" ]]; then
+    git show "$extra_probe" | psql_in_container
+    echo "probe=$extra_probe"
+  fi
 fi
 
 echo "isolation=container:${CONTAINER}; binding:${port_binding}; cleanup=automatic"
