@@ -8,14 +8,14 @@ values
 do $$
 declare
   save_id uuid;
-  upload_id uuid;
+  saved_upload_id uuid;
   prefix text;
   saved_draft_id uuid;
   version integer;
 begin
   select save_session_id into save_id from public.begin_draft_pro_save_session('00000000-0000-4000-8000-000000000021'::uuid, null, null, 'probe-attempt-1');
-  select upload_id, storage_prefix into upload_id, prefix from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', save_id, null, 1024, 'Normalized import', 'application/json', '{}'::jsonb);
-  perform public.stage_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', upload_id, array[prefix || '/0'], 512, 2, repeat('a', 64));
+  select u.upload_id, u.storage_prefix into saved_upload_id, prefix from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', save_id, null, 1024, 'Normalized import', 'application/json', '{}'::jsonb) as u;
+  perform public.stage_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', saved_upload_id, array[prefix || '/0'], 512, 2, repeat('a', 64));
   select draft_id, lock_version into saved_draft_id, version from public.commit_draft_pro_save_session('00000000-0000-4000-8000-000000000021', save_id, 'Atomic draft', '{}'::jsonb, 2, '{}'::uuid[]);
   if version <> 0 or not exists (select 1 from public.draft_pro_private_imports i where i.draft_id = saved_draft_id and deleted_at is null) then
     raise exception 'saved draft commit did not atomically create the import link';
