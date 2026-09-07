@@ -68,7 +68,7 @@ import {
   rankProjectionPlayers,
   type SourceRankImpact,
 } from "lib/draftDashboard/sourceRankImpact";
-import type { CustomAdditionalProjectionSource } from "hooks/useProcessedProjectionsData";
+import { buildCustomProjectionSources } from "lib/draftDashboard/customProjectionSources";
 import {
   allocateGroupedRosterSlots,
   groupPlayerEligibility,
@@ -854,6 +854,27 @@ const DraftDashboard: React.FC = () => {
 
   // Get player projections data (skaters)
   const [dataRefreshKey, setDataRefreshKey] = useState<number>(0);
+  const customSkaterSources = useMemo(() => buildCustomProjectionSources(
+    customCsvList,
+    "skater",
+    [
+      ["Games_Played", "GAMES_PLAYED"], ["Goals", "GOALS"], ["Assists", "ASSISTS"], ["Points", "POINTS"],
+      ["Plus_Minus", "PLUS_MINUS"], ["Shots_on_Goal", "SHOTS_ON_GOAL"], ["Hits", "HITS"], ["Blocked_Shots", "BLOCKED_SHOTS"],
+      ["Penalty_Minutes", "PENALTY_MINUTES"], ["PP_Points", "PP_POINTS"], ["PP_Goals", "PP_GOALS"], ["PP_Assists", "PP_ASSISTS"],
+      ["SH_Points", "SH_POINTS"], ["SH_Goals", "SH_GOALS"], ["Time_on_Ice_Per_Game", "TIME_ON_ICE_PER_GAME"],
+      ["Faceoffs_Won", "FACEOFFS_WON"], ["Faceoffs_Lost", "FACEOFFS_LOST"],
+    ].map(([dbColumnName, key]) => ({ key: key as any, dbColumnName })),
+  ), [customCsvList]);
+  const customGoalieSources = useMemo(() => buildCustomProjectionSources(
+    customCsvList,
+    "goalie",
+    [
+      ["Games_Played", "GAMES_PLAYED"], ["Wins_Goalie", "WINS_GOALIE"], ["Losses_Goalie", "LOSSES_GOALIE"],
+      ["Otl", "OTL_GOALIE"], ["Saves_Goalie", "SAVES_GOALIE"], ["Sa", "SHOTS_AGAINST_GOALIE"],
+      ["Ga", "GOALS_AGAINST_GOALIE"], ["Save_Percentage", "SAVE_PERCENTAGE"], ["Goals_Against_Average", "GOALS_AGAINST_AVERAGE"],
+      ["Shutouts_Goalie", "SHUTOUTS_GOALIE"],
+    ].map(([dbColumnName, key]) => ({ key: key as any, dbColumnName })),
+  ), [customCsvList]);
   const skaterData = useProcessedProjectionsData({
     activePlayerType: "skater",
     sourceControls,
@@ -865,59 +886,7 @@ const DraftDashboard: React.FC = () => {
     showPerGameFantasyPoints: false,
     togglePerGameFantasyPoints: NOOP_PROJECTION_TOGGLE,
     teamCountForRoundSummaries: draftSettings.teamCount,
-    // inject custom CSVs as additional sources for skaters
-    customAdditionalSources: (() => {
-      const list = getCsvList();
-      if (!list.length) return undefined;
-      const COL_TO_STAT: Record<string, string> = {
-        Games_Played: "GAMES_PLAYED",
-        Goals: "GOALS",
-        Assists: "ASSISTS",
-        Points: "POINTS",
-        Plus_Minus: "PLUS_MINUS",
-        Shots_on_Goal: "SHOTS_ON_GOAL",
-        Hits: "HITS",
-        Blocked_Shots: "BLOCKED_SHOTS",
-        Penalty_Minutes: "PENALTY_MINUTES",
-        PP_Points: "PP_POINTS",
-        PP_Goals: "PP_GOALS",
-        PP_Assists: "PP_ASSISTS",
-        SH_Points: "SH_POINTS",
-        SH_Goals: "SH_GOALS",
-        Time_on_Ice_Per_Game: "TIME_ON_ICE_PER_GAME",
-        Faceoffs_Won: "FACEOFFS_WON",
-        Faceoffs_Lost: "FACEOFFS_LOST",
-      };
-      const statMappings = Object.entries(COL_TO_STAT).map(([col, key]) => ({
-        key: key as any,
-        dbColumnName: col,
-      }));
-      return list
-        .map((entry) => {
-          const rows = (entry.rows || []).filter((r) => {
-            const pos = String(r["Position"] || "").toUpperCase();
-            return !pos
-              .split(",")
-              .map((s: string) => s.trim())
-              .includes("G");
-          });
-          if (!rows.length) return undefined as any;
-          const src: CustomAdditionalProjectionSource = {
-            id: entry.id,
-            displayName: entry.label || entry.id,
-            playerType: "skater",
-            rows,
-            primaryPlayerIdKey: "player_id",
-            originalPlayerNameKey: "Player_Name",
-            teamKey: "Team_Abbreviation",
-            positionKey: "Position",
-            statMappings,
-            resolution: entry.resolution,
-          };
-          return src;
-        })
-        .filter(Boolean) as CustomAdditionalProjectionSource[];
-    })(),
+    customAdditionalSources: customSkaterSources,
     refreshKey: dataRefreshKey,
     allowCustomNameFallback: draftSettings.allowCustomNameFallback ?? true,
   });
@@ -934,51 +903,7 @@ const DraftDashboard: React.FC = () => {
     showPerGameFantasyPoints: false,
     togglePerGameFantasyPoints: NOOP_PROJECTION_TOGGLE,
     teamCountForRoundSummaries: draftSettings.teamCount,
-    customAdditionalSources: (() => {
-      const list = getCsvList();
-      if (!list.length) return undefined;
-      const COL_TO_STAT: Record<string, string> = {
-        Games_Played: "GAMES_PLAYED",
-        Wins_Goalie: "WINS_GOALIE",
-        Losses_Goalie: "LOSSES_GOALIE",
-        Otl: "OTL_GOALIE",
-        Saves_Goalie: "SAVES_GOALIE",
-        Sa: "SHOTS_AGAINST_GOALIE",
-        Ga: "GOALS_AGAINST_GOALIE",
-        Save_Percentage: "SAVE_PERCENTAGE",
-        Goals_Against_Average: "GOALS_AGAINST_AVERAGE",
-        Shutouts_Goalie: "SHUTOUTS_GOALIE",
-      };
-      const statMappings = Object.entries(COL_TO_STAT).map(([col, key]) => ({
-        key: key as any,
-        dbColumnName: col,
-      }));
-      return list
-        .map((entry) => {
-          const rows = (entry.rows || []).filter((r) => {
-            const pos = String(r["Position"] || "").toUpperCase();
-            return pos
-              .split(",")
-              .map((s: string) => s.trim())
-              .includes("G");
-          });
-          if (!rows.length) return undefined as any;
-          const src: CustomAdditionalProjectionSource = {
-            id: entry.id,
-            displayName: entry.label || entry.id,
-            playerType: "goalie",
-            rows,
-            primaryPlayerIdKey: "player_id",
-            originalPlayerNameKey: "Player_Name",
-            teamKey: "Team_Abbreviation",
-            positionKey: "Position",
-            statMappings,
-            resolution: entry.resolution,
-          };
-          return src;
-        })
-        .filter(Boolean) as CustomAdditionalProjectionSource[];
-    })(),
+    customAdditionalSources: customGoalieSources,
     refreshKey: dataRefreshKey,
     allowCustomNameFallback: draftSettings.allowCustomNameFallback ?? true,
   });
