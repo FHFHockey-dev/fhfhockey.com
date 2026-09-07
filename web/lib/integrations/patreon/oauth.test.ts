@@ -162,6 +162,10 @@ describe("Patreon OAuth v2", () => {
     freeTier.included[1].attributes.currently_entitled_amount_cents = 0;
     freeTier.included[2].attributes.amount_cents = 0;
     expect(normalizePatreonIdentity(freeTier, "fhfh-campaign").isEligibleSupporter).toBe(false);
+
+    const freeTrial = structuredClone(identityResponse);
+    freeTrial.included[1].attributes.is_free_trial = true;
+    expect(normalizePatreonIdentity(freeTrial, "fhfh-campaign").isEligibleSupporter).toBe(false);
   });
 
   it("requests explicit v2 fields and accepts rotated refresh tokens", async () => {

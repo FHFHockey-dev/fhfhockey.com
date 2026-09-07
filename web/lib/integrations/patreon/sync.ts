@@ -31,6 +31,17 @@ type PatreonTokenRow = {
   expires_at: string | null;
 };
 
+const PATREON_REQUEST_TIMEOUT_MS = 15_000;
+const fetchPatreonWithDeadline: typeof fetch = async (input, init) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), PATREON_REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
 function secondsUntil(timestamp: string, now: Date) {
   return Math.max(
     1,
@@ -279,6 +290,7 @@ export async function materializePatreonEntitlement({
     provider_user_id: snapshot.providerUserId,
     verified_at: now.toISOString(),
     draft_pro_eligible: snapshot.isEligibleSupporter,
+    connected_account_id: account.id,
   } as Json;
 
   if (snapshot.memberId) {
@@ -504,7 +516,7 @@ export async function connectPatreonAccount({
   userId,
   token,
   client = serviceRoleClient,
-  fetchImpl = fetch,
+  fetchImpl = fetchPatreonWithDeadline,
   now = () => new Date(),
 }: {
   userId: string;
@@ -611,7 +623,7 @@ async function loadPatreonTokens(
 export async function refreshPatreonAccount({
   userId,
   client = serviceRoleClient,
-  fetchImpl = fetch,
+  fetchImpl = fetchPatreonWithDeadline,
   now = () => new Date(),
   triggerSource = "manual",
 }: {
@@ -824,7 +836,7 @@ function webhookMembershipId(payload: PatreonWebhookPayload) {
 
 export async function reconcilePatreonAccounts({
   client = serviceRoleClient,
-  fetchImpl = fetch,
+  fetchImpl = fetchPatreonWithDeadline,
   limit = 100,
 }: {
   client?: SupabaseClient<Database>;
@@ -882,7 +894,7 @@ export async function processPatreonWebhook({
   eventType,
   payload,
   client = serviceRoleClient,
-  fetchImpl = fetch,
+  fetchImpl = fetchPatreonWithDeadline,
 }: {
   eventId: string;
   eventType: string;

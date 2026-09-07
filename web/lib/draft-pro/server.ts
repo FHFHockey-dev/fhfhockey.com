@@ -20,11 +20,24 @@ const metadataBoolean = (metadata: Json, key: string) =>
 function isDraftProPatreonGrant(row: {
   source_provider: string;
   entitlement_key: string;
+  source_account_id: string | null;
   metadata: Json;
 }) {
   return row.source_provider === "patreon" &&
     row.entitlement_key === PATREON_SUPPORTER_ENTITLEMENT_KEY &&
+    typeof row.source_account_id === "string" &&
+    metadataString(row.metadata, "connected_account_id") === row.source_account_id &&
     metadataBoolean(row.metadata, "draft_pro_eligible");
+}
+
+function isPatreonMembershipToReverify(row: {
+  source_provider: string;
+  entitlement_key: string;
+  source_account_id: string | null;
+}) {
+  return row.source_provider === "patreon" &&
+    row.entitlement_key === PATREON_SUPPORTER_ENTITLEMENT_KEY &&
+    typeof row.source_account_id === "string";
 }
 
 export async function loadDraftProAccess(
@@ -34,7 +47,7 @@ export async function loadDraftProAccess(
   const client = options.client ?? serviceRoleClient;
   const { data, error } = await client
     .from("user_entitlements")
-    .select("source_provider,entitlement_key,entitlement_status,effective_from,effective_to,metadata")
+    .select("source_provider,entitlement_key,source_account_id,entitlement_status,effective_from,effective_to,metadata")
     .eq("user_id", userId)
     .in("entitlement_key", [DRAFT_PRO_ENTITLEMENT_KEY, PATREON_SUPPORTER_ENTITLEMENT_KEY]);
   if (error) throw error;
@@ -44,7 +57,7 @@ export async function loadDraftProAccess(
   // fail-closed for that source while leaving a separate purchase untouched.
   const now = options.now;
   const stalePatreon = rows.some((row) => {
-    if (!isDraftProPatreonGrant(row)) return false;
+    if (!isPatreonMembershipToReverify(row)) return false;
     const verifiedAt = metadataString(row.metadata, "verified_at");
     const verifiedTime = verifiedAt ? new Date(verifiedAt).getTime() : NaN;
     return !Number.isFinite(verifiedTime) || verifiedTime > now.getTime() || verifiedTime < now.getTime() - 60 * 60 * 1000;
@@ -55,7 +68,7 @@ export async function loadDraftProAccess(
       await refreshPatreonAccount({ userId, client: client as typeof serviceRoleClient, triggerSource: "access_reverify" });
       const { data: refreshedRows, error: refreshedError } = await client
         .from("user_entitlements")
-        .select("source_provider,entitlement_key,entitlement_status,effective_from,effective_to,metadata")
+        .select("source_provider,entitlement_key,source_account_id,entitlement_status,effective_from,effective_to,metadata")
         .eq("user_id", userId)
         .in("entitlement_key", [DRAFT_PRO_ENTITLEMENT_KEY, PATREON_SUPPORTER_ENTITLEMENT_KEY]);
       if (refreshedError) throw refreshedError;
