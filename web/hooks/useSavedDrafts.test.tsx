@@ -14,7 +14,7 @@ function json(data: unknown, ok = true, status = 200) { return { ok, status, hea
 function binary(part: Uint8Array, ordinal: number) { const split = Math.ceil(bytes.length / 2); return { ok: true, headers: new Headers({ "X-Draft-Pro-Total-Chunks": "2", "X-Draft-Pro-Total-Bytes": String(bytes.byteLength), "X-Draft-Pro-SHA256": hash, "X-Draft-Pro-Row-Count": "2" }), arrayBuffer: async () => part.slice(ordinal ? split : 0, ordinal ? part.length : split).buffer }; }
 
 describe("useSavedDrafts", () => {
-  beforeEach(() => { getSession.mockResolvedValue({ data: { session: { access_token: "token" } } }); onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }); });
+  beforeEach(() => { getSession.mockResolvedValue({ data: { session: { access_token: "token", user: { id: "user-1" } } } }); onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }); });
   afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.clearAllMocks(); });
   it("reassembles a two-chunk private import into bookmark-compatible source data", async () => {
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(url.includes("?ordinal=") ? binary(bytes, Number(url.at(-1))) : json({ data: url.endsWith("/draft") ? detail : [] }))));
@@ -55,8 +55,14 @@ describe("useSavedDrafts", () => {
     const { result } = renderHook(() => useSavedDrafts()); await expect(result.current.saveNow(null, { name: "Draft", snapshot, accountSaveConsent: false, privateImports: [imported] })).rejects.toThrow("Confirm saving");
     expect(fetchMock.mock.calls.map(([url]) => url)).not.toContain("/api/v1/account/draft-pro/private-imports");
   });
+  it("keeps the opened draft through a same-account token refresh", async () => {
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(json({ data: url.endsWith("/draft") ? { ...detail, privateImports: [] } : [] }))));
+    const { result } = renderHook(() => useSavedDrafts()); await act(async () => { await result.current.open("draft"); });
+    await act(async () => { (onAuthStateChange.mock.calls[0][0] as (event: string, session: unknown) => void)("TOKEN_REFRESHED", { user: { id: "user-1" } }); });
+    expect(result.current.opened?.id).toBe("draft");
+  });
   it("cancels a pending open when the auth identity changes", async () => {
     let resolve!: (value: unknown) => void; const pending = new Promise((done) => { resolve = done; }); vi.stubGlobal("fetch", vi.fn((url: string) => url.endsWith("/draft") ? pending : Promise.resolve(json({ data: [] }))));
-    const { result } = renderHook(() => useSavedDrafts()); const opening = result.current.open("draft"); (onAuthStateChange.mock.calls[0][0] as () => void)(); resolve(json({ data: { ...detail, privateImports: [] } })); await expect(opening).rejects.toThrow("cancelled");
+    const { result } = renderHook(() => useSavedDrafts()); const opening = result.current.open("draft"); (onAuthStateChange.mock.calls[0][0] as (event: string, session: null) => void)("SIGNED_OUT", null); resolve(json({ data: { ...detail, privateImports: [] } })); await expect(opening).rejects.toThrow("cancelled");
   });
 });
