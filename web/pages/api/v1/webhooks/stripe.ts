@@ -20,8 +20,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const signature = req.headers["stripe-signature"];
   if (typeof signature !== "string") return res.status(400).json({ error: "Stripe signature is required." });
   try {
-    const event = getStripeClient().webhooks.constructEvent(await readRawBody(req), signature, getStripeWebhookSecret());
-    const result = await fulfillStripeEvent(event);
+    const stripe = getStripeClient();
+    const event = stripe.webhooks.constructEvent(await readRawBody(req), signature, getStripeWebhookSecret());
+    // Checkout sessions are re-read from Stripe before mutation. The follow-on
+    // provider adapter resolves Charge/Dispute ownership through their PaymentIntent.
+    if (!event.type.startsWith("checkout.session.")) return res.status(200).json({ received: true, processed: false });
+    const eventSession = event.data.object as import("stripe").default.Checkout.Session;
+    const session = await stripe.checkout.sessions.retrieve(eventSession.id);
+    const result = await fulfillStripeEvent({ ...event, data: { ...event.data, object: session } });
     return res.status(200).json({ received: true, processed: result.processed });
   } catch (error) {
     return res.status(400).json({ error: error instanceof Error ? error.message : "Webhook could not be verified." });

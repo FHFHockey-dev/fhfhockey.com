@@ -5,6 +5,8 @@ import type { Json } from "lib/supabase/database-generated.types";
 
 import { DRAFT_PRO_EXPIRATION, DRAFT_PRO_SEASON } from "lib/draft-pro/contracts";
 
+import { DRAFT_PRO_STRIPE_PRICE } from "./config";
+
 export type StripeFulfillmentResult = {
   purchaseId: string | null;
   processed: boolean;
@@ -34,6 +36,17 @@ function checkoutDetails(event: Stripe.Event) {
   const sessionId = object.object === "checkout.session" ? object.id : null;
   const userId = object.metadata?.draft_pro_user_id ?? null;
   return { paymentIntent, sessionId, userId };
+}
+
+export function isVerifiedDraftProCheckout(session: Stripe.Checkout.Session) {
+  return session.mode === "payment"
+    && session.payment_status === "paid"
+    && session.amount_total === DRAFT_PRO_STRIPE_PRICE.unitAmount
+    && session.currency === DRAFT_PRO_STRIPE_PRICE.currency
+    && Boolean(session.metadata?.draft_pro_user_id)
+    && Boolean(session.metadata?.draft_pro_purchase_id)
+    && session.metadata?.draft_pro_season === DRAFT_PRO_SEASON
+    && session.client_reference_id === session.metadata?.draft_pro_purchase_id;
 }
 
 /**
@@ -71,7 +84,7 @@ export async function verifyStripeCheckoutSession(
   session: Stripe.Checkout.Session,
   client: Pick<typeof serviceRoleClient, "rpc"> = serviceRoleClient,
 ) {
-  if (session.payment_status !== "paid") return { purchaseId: null, processed: false };
+  if (!isVerifiedDraftProCheckout(session)) return { purchaseId: null, processed: false };
   const event = {
     id: `return:${session.id}`,
     type: "checkout.session.completed",

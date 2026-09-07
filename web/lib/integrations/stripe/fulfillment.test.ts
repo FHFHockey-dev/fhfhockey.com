@@ -13,7 +13,7 @@ describe("Stripe fulfillment", () => {
     const result = await fulfillStripeEvent({
       id: "evt_completed",
       type: "checkout.session.completed",
-      data: { object: { object: "checkout.session", id: "cs_test_123", payment_intent: "pi_123", metadata: { draft_pro_user_id: "user-1" } } },
+      data: { object: { object: "checkout.session", id: "cs_test_123", mode: "payment", payment_status: "paid", amount_total: 599, currency: "usd", client_reference_id: "purchase-1", payment_intent: "pi_123", metadata: { draft_pro_user_id: "user-1", draft_pro_purchase_id: "purchase-1", draft_pro_season: "draft_pro_2026_27" } } },
     } as any, client);
 
     expect(result).toEqual({ purchaseId: "purchase-1", processed: true });
@@ -30,8 +30,14 @@ describe("Stripe fulfillment", () => {
 
   it("uses a deterministic return event and only fulfills paid sessions", async () => {
     const client = rpcClient();
-    await verifyStripeCheckoutSession({ object: "checkout.session", id: "cs_test_123", payment_status: "paid", payment_intent: "pi_123", metadata: { draft_pro_user_id: "user-1" } } as any, client);
+    await verifyStripeCheckoutSession({ object: "checkout.session", id: "cs_test_123", mode: "payment", payment_status: "paid", amount_total: 599, currency: "usd", client_reference_id: "purchase-1", payment_intent: "pi_123", metadata: { draft_pro_user_id: "user-1", draft_pro_purchase_id: "purchase-1", draft_pro_season: "draft_pro_2026_27" } } as any, client);
     expect(client.rpc).toHaveBeenCalledWith("fulfill_draft_pro_stripe_purchase", expect.objectContaining({ p_event_id: "return:cs_test_123" }));
     await expect(verifyStripeCheckoutSession({ payment_status: "unpaid" } as any, client)).resolves.toEqual({ purchaseId: null, processed: false });
+  });
+
+  it("rejects a paid session whose server-owned facts do not match", async () => {
+    const client = rpcClient();
+    await expect(verifyStripeCheckoutSession({ mode: "payment", payment_status: "paid", amount_total: 600, currency: "usd", metadata: { draft_pro_user_id: "user-1", draft_pro_purchase_id: "purchase-1", draft_pro_season: "draft_pro_2026_27" }, client_reference_id: "purchase-1" } as any, client)).resolves.toEqual({ purchaseId: null, processed: false });
+    expect(client.rpc).not.toHaveBeenCalled();
   });
 });
