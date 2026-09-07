@@ -158,6 +158,10 @@ describe("Patreon OAuth v2", () => {
     declinedWithFutureBilling.included[1].attributes.next_charge_date = "2030-01-01T00:00:00Z";
     expect(normalizePatreonIdentity(declinedWithFutureBilling, "fhfh-campaign").isEligibleSupporter).toBe(false);
 
+    const declinedCharge = structuredClone(identityResponse);
+    declinedCharge.included[1].attributes.last_charge_status = "Declined";
+    expect(normalizePatreonIdentity(declinedCharge, "fhfh-campaign").isEligibleSupporter).toBe(false);
+
     const freeTier = structuredClone(identityResponse);
     freeTier.included[1].attributes.currently_entitled_amount_cents = 0;
     freeTier.included[2].attributes.amount_cents = 0;

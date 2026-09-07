@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ from: vi.fn(), refreshPatreonAccount: vi.fn() }));
 vi.mock("lib/supabase/server", () => ({ default: { from: mocks.from } }));
@@ -20,6 +20,7 @@ function clientWith(rows: unknown[]) {
 }
 
 describe("Draft Pro Patreon source mapping", () => {
+  beforeEach(() => vi.clearAllMocks());
   it("does not treat an old or free generic supporter row as a Draft Pro grant", async () => {
     const access = await loadDraftProAccess("user-1", {
       now: new Date("2026-09-07T01:00:00Z"),
@@ -39,5 +40,19 @@ describe("Draft Pro Patreon source mapping", () => {
       client: clientWith([{ source_provider: "patreon", entitlement_key: "patreon_supporter", source_account_id: "account-1", entitlement_status: "active", effective_from: "2026-09-01T00:00:00Z", effective_to: null, metadata: { draft_pro_eligible: true, connected_account_id: "account-1", verified_at: "2026-09-07T00:30:00Z" } }]),
     });
     expect(access).toMatchObject({ eligible: true, grantingSources: ["patreon"] });
+  });
+
+  it("does not authorize a grant from a deleted or replaced account generation", async () => {
+    const access = await loadDraftProAccess("user-1", {
+      now: new Date("2026-09-07T01:00:00Z"), patreonVerificationAvailable: true, flags,
+      client: clientWith([{ source_provider: "patreon", entitlement_key: "patreon_supporter", source_account_id: "account-new", entitlement_status: "active", effective_from: "2026-09-01T00:00:00Z", effective_to: null, metadata: { draft_pro_eligible: true, connected_account_id: "account-old", verified_at: "2026-09-07T00:30:00Z" } }]),
+    });
+    expect(access.eligible).toBe(false);
+  });
+
+  it("reverifies a current retained membership even when its prior marker is false", async () => {
+    const row = { source_provider: "patreon", entitlement_key: "patreon_supporter", source_account_id: "account-1", entitlement_status: "inactive", effective_from: "2026-09-01T00:00:00Z", effective_to: "2026-09-06T00:00:00Z", metadata: { draft_pro_eligible: false, connected_account_id: "account-1", verified_at: "2026-09-06T00:00:00Z" } };
+    await loadDraftProAccess("user-1", { now: new Date("2026-09-07T01:00:00Z"), patreonVerificationAvailable: true, flags, client: clientWith([row]) });
+    expect(mocks.refreshPatreonAccount).toHaveBeenCalledWith(expect.objectContaining({ userId: "user-1" }));
   });
 });

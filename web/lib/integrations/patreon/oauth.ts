@@ -321,8 +321,9 @@ export function normalizePatreonIdentity(
     tiers.some((tier) => (tier.amountCents ?? 0) > 0);
   const lastChargeStatus = stringValue(membership?.attributes?.last_charge_status);
   const isFreeTrial = membership?.attributes?.is_free_trial === true ||
-    /free\s*trial|failed|fraud/i.test(lastChargeStatus || "");
-  const isEligibleSupporter = patronStatus === "active_patron" && hasPaidMembership && !isFreeTrial;
+    /free\s*trial/i.test(lastChargeStatus || "");
+  const hasIneligibleChargeStatus = /declined|failed|fraud|refunded/i.test(lastChargeStatus || "");
+  const isEligibleSupporter = patronStatus === "active_patron" && hasPaidMembership && !isFreeTrial && !hasIneligibleChargeStatus;
   const accountLabel =
     stringValue(user.attributes?.full_name) || "Patreon account";
 
