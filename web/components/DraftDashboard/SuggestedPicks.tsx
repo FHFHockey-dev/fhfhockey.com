@@ -247,7 +247,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     players,
     vorpMetrics,
     personalizedVorpMetrics,
-    usePersonalizedReplacement: draftProEligible && Boolean(personalizeReplacement),
+    usePersonalizedReplacement: false,
     posNeeds,
     // Free recommendations stay on the established local baseline. The
     // capability-gated endpoint owns personalized rank changes.
@@ -262,15 +262,28 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     forwardGrouping,
   });
 
+  const requestPlayers = useMemo(() => {
+    if (selectedPositions.size > 0) {
+      return players.filter((player) => Array.from(selectedPositions).some((position) =>
+        matchesProjectionPosition(player, position === "Goalie" ? "G" : position === "Skater" ? "SKATER" : position, forwardGrouping),
+      ));
+    }
+    if (posFilter === "ALL") return players;
+    if (posFilter === "Skater") return players.filter((player) => matchesProjectionPosition(player, "SKATER", forwardGrouping));
+    if (posFilter === "Goalie") return players.filter((player) => matchesProjectionPosition(player, "G", forwardGrouping));
+    return players.filter((player) => matchesProjectionPosition(player, posFilter, forwardGrouping));
+  }, [forwardGrouping, players, posFilter, selectedPositions]);
+  const remoteInputOversized = requestPlayers.length > 2_000;
+
   const recommendationCandidates = useMemo(() => buildRecommendationCandidates({
-    players: players.slice(0, 200),
+    players: requestPlayers,
     vorpMetrics,
     personalizedVorpMetrics,
     usePersonalizedReplacement: draftProEligible && Boolean(personalizeReplacement),
     forwardGrouping,
-  }), [draftProEligible, forwardGrouping, personalizedVorpMetrics, personalizeReplacement, players, vorpMetrics]);
+  }), [draftProEligible, forwardGrouping, personalizedVorpMetrics, personalizeReplacement, requestPlayers, vorpMetrics]);
   const remoteRecommendations = useDraftProRecommendations(
-    draftProEligible && recommendationDataOrigin === "server"
+    draftProEligible && recommendationDataOrigin === "server" && !remoteInputOversized && recommendationCandidates.length
       ? {
           candidates: recommendationCandidates,
           dataOrigin: "server",
@@ -281,10 +294,10 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
           needAlpha: needWeightEnabled ? needAlpha : 0,
           currentPick,
           teamCount,
-          limit: 200,
+          limit: 100,
         }
       : null,
-    draftProEligible && recommendationDataOrigin === "server",
+    draftProEligible && recommendationDataOrigin === "server" && !remoteInputOversized && recommendationCandidates.length > 0,
   );
   const activeRecommendations = useMemo(() => {
     if (!remoteRecommendations.results) return recommendations;
@@ -611,7 +624,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         </div>
       </div>
 
-      {recommendationDataOrigin !== "server" ? <p className={styles.loading} role="status">Roster-aware Draft Pro recommendations are unavailable for local CSV data. Save the import to your account first; your local draft and rows stay unchanged.</p> : !draftProEligible ? <p className={styles.loading} role="status">Draft Pro unlocks roster-aware ranking and personalized replacement. Free suggestions use the standard league-wide baseline.</p> : remoteRecommendations.status === "error" ? <p className={styles.loading} role="status">{remoteRecommendations.error} Standard suggestions remain available.</p> : null}
+      {recommendationDataOrigin !== "server" ? <p className={styles.loading} role="status">Roster-aware Draft Pro recommendations are unavailable for local CSV data. Save the import to your account first; your local draft and rows stay unchanged.</p> : remoteInputOversized ? <p className={styles.loading} role="status">This filtered player pool is too large for roster-aware recommendations. Narrow the position filter; no projection rows were uploaded.</p> : !draftProEligible ? <p className={styles.loading} role="status">Draft Pro unlocks roster-aware ranking and personalized replacement. Free suggestions use the standard league-wide baseline.</p> : remoteRecommendations.status === "error" ? <p className={styles.loading} role="status">{remoteRecommendations.error} Standard suggestions remain available.</p> : null}
 
       {compact && <button type="button" className={styles.returnToDraft} onClick={onReturnToDraft}>Return to suggested players</button>}
         <div

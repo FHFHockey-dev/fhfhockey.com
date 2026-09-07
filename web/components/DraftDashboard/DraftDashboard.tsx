@@ -1060,6 +1060,11 @@ const DraftDashboard: React.FC = () => {
     const saved = window.localStorage.getItem("draftDashboard.needWeight.v1");
     if (saved === "true" || saved === "false")
       setNeedWeightEnabled(saved === "true");
+    else {
+      const legacy = window.localStorage.getItem("suggested.rosterVorpEnabled");
+      if (legacy === "true" || legacy === "false")
+        setNeedWeightEnabled(legacy === "true");
+    }
   }, []);
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -3049,11 +3054,6 @@ const DraftDashboard: React.FC = () => {
                 ? { byPos: expectedTakenByPos, N: expectedN }
                 : undefined
             }
-            needWeightEnabled={needWeightEnabled}
-            onNeedWeightChange={setNeedWeightEnabled}
-            posNeeds={posNeeds}
-            needAlpha={needAlpha}
-            onNeedAlphaChange={setNeedAlpha}
             nextPickNumber={nextPickNumber}
             leagueType={draftSettings.leagueType || "points"}
             forwardGrouping={forwardGrouping}

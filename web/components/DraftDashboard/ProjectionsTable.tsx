@@ -50,12 +50,6 @@ interface ProjectionsTableProps {
   onBaselineModeChange?: (mode: "remaining" | "full") => void;
   //  expected position runs before next pick
   expectedRuns?: { byPos: Record<string, number>; N: number };
-  //  need-weight controls and data
-  needWeightEnabled?: boolean;
-  onNeedWeightChange?: (enabled: boolean) => void;
-  posNeeds?: Record<string, number>; // e.g., { C: 0.5, LW: 1 }
-  needAlpha?: number; // 0..1 strength of weighting, default 0.5
-  onNeedAlphaChange?: (alpha: number) => void;
   // pick risk context: absolute next pick number (currentPick + picksUntilNext)
   nextPickNumber?: number;
   // league type for value semantics
@@ -120,11 +114,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   baselineMode = "remaining",
   onBaselineModeChange,
   expectedRuns,
-  needWeightEnabled = false,
-  onNeedWeightChange,
-  posNeeds = {},
-  needAlpha = 0.5,
-  onNeedAlphaChange,
   nextPickNumber,
   forwardGrouping = "split",
   leagueType = "points",
@@ -642,17 +631,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     favoritesOnly,
   ]);
 
-  // Build a quick lookup for each player's primary position (first listed)
-  const primaryPosById = useMemo(() => {
-    const m = new Map<string, string>();
-    players.forEach((p) => {
-      const first = getDisplayPos(p)?.split(",")[0]?.trim()?.toUpperCase();
-      if (first) m.set(String(p.playerId), first);
-    });
-    return m;
-  }, [getDisplayPos, players]);
-
-  // Precompute VORP/VONA/VBD for quick lookup (with need-adjusted VBD when enabled)
+  // League-wide values remain raw; roster-aware ranking belongs to Draft Pro suggestions.
   const vorpMap = useMemo(() => {
     const m = new Map<
       string,
@@ -668,14 +647,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     if (vorpMetrics) {
       vorpMetrics.forEach((metrics, id) => {
         const baseVbd = metrics.vbd;
-        const posKey = (
-          metrics.bestPos ||
-          primaryPosById.get(String(id)) ||
-          "UTIL"
-        ).toUpperCase();
-        const need = posNeeds[posKey] ?? 0;
-        const weight = needWeightEnabled ? 1 + (need - 0.5) * 2 * needAlpha : 1;
-        const vbdAdj = baseVbd * weight;
+        const vbdAdj = baseVbd;
         m.set(id, {
           vorp: metrics.vorp,
           vona: metrics.vona,
@@ -687,7 +659,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       });
     }
     return m;
-  }, [vorpMetrics, needWeightEnabled, needAlpha, posNeeds, primaryPosById]);
+  }, [vorpMetrics]);
 
   // Precompute pick-risk based on ADP vs next pick number using a Normal CDF model
   const normalCdf = (z: number) => {
@@ -787,8 +759,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       } else if (sortField === "vbd") {
         const aM = vorpMap.get(String(a.playerId));
         const bM = vorpMap.get(String(b.playerId));
-        aValue = needWeightEnabled ? (aM?.vbdAdj ?? 0) : (aM?.vbd ?? 0);
-        bValue = needWeightEnabled ? (bM?.vbdAdj ?? 0) : (bM?.vbd ?? 0);
+        aValue = aM?.vbd ?? 0;
+        bValue = bM?.vbd ?? 0;
       } else if (sortField === "myRank") {
         aValue = personalRankByPlayerId[String(a.playerId)];
         bValue = personalRankByPlayerId[String(b.playerId)];
@@ -831,7 +803,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     sortField,
     sortDirection,
     vorpMap,
-    needWeightEnabled,
     riskMap,
     statSortKey,
     prorate84,
@@ -872,8 +843,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     eligible.forEach((p) => {
       const key = String(p.playerId);
       const m = vorpMap.get(key);
-      // Use adjusted VBD when enabled for banding
-      const vbd = needWeightEnabled ? m?.vbdAdj : m?.vbd;
+      const vbd = m?.vbd;
       const fpOrScore = m?.value ?? p.fantasyPoints.projected;
       const scopeKey = getPrimaryPos(p, m?.bestPos);
       pushVal(scopeKey, vbd, fpOrScore);
@@ -914,7 +884,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       const id = String(p.playerId);
       const m = vorpMap.get(id);
       const scopeKey = getPrimaryPos(p, m?.bestPos);
-      const vbd = needWeightEnabled ? m?.vbdAdj : m?.vbd;
+      const vbd = m?.vbd;
       const fpOrScore = m?.value ?? p.fantasyPoints.projected;
       const g = groups[scopeKey];
       if (g) {
@@ -935,7 +905,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     draftedIdSet,
     getPrimaryPos,
     vorpMap,
-    needWeightEnabled,
   ]);
 
   const handleSort = (field: SortableField) => {
@@ -1402,44 +1371,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
               </select>
             </section>
             <section className={styles.drawerSection}>
-              <h4>Need Weighting</h4>
-              <label className={styles.toggle}>
-                <input
-                  type="checkbox"
-                  className={styles.toggleInput}
-                  checked={!!needWeightEnabled}
-                  onChange={(e) =>
-                    onNeedWeightChange && onNeedWeightChange(e.target.checked)
-                  }
-                  aria-label="Enable need weighting"
-                />
-                <span className={styles.toggleTrack}>
-                  <span className={styles.toggleThumb} />
-                </span>
-                <span className={styles.toggleText}>Enabled</span>
-              </label>
-              {needWeightEnabled && (
-                <div className={styles.sliderRow}>
-                  <label htmlFor="need-alpha" className={styles.sliderLabel}>
-                    Strength (α {needAlpha.toFixed(2)})
-                  </label>
-                  <input
-                    id="need-alpha"
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.05}
-                    value={needAlpha}
-                    onChange={(e) =>
-                      onNeedAlphaChange &&
-                      onNeedAlphaChange(parseFloat(e.target.value))
-                    }
-                    className={styles.rangeInput}
-                  />
-                </div>
-              )}
-            </section>
-            <section className={styles.drawerSection}>
               <h4>Risk Model</h4>
               <div className={styles.sliderRow}>
                 <label htmlFor="risk-sd" className={styles.sliderLabel}>
@@ -1847,9 +1778,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 const vorp = m?.vorp ?? 0;
                 const vona = m?.vona ?? 0;
                 const vbdBase = m?.vbd ?? 0;
-                const vbdAdj = m?.vbdAdj ?? vbdBase;
                 const bestPos = m?.bestPos;
-                const vbdDisplay = needWeightEnabled ? vbdAdj : vbdBase;
+                const vbdDisplay = vbdBase;
                 const vbdBand = percentileBands.vbdBandById.get(key);
                 const fpBand = percentileBands.valBandById.get(key);
                 const vbdClasses = [styles.vorp, styles.valueNumeric];
@@ -2039,11 +1969,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         <td
                           className={vbdClasses.join(" ")}
                           data-label="VBD"
-                          title={
-                            needWeightEnabled
-                              ? "Value Based Drafting (need-adjusted)"
-                              : "Value Based Drafting"
-                          }
+                          title="Value Based Drafting"
                         >
                           {typeof vbdDisplay === "number"
                             ? vbdDisplay.toFixed(1)
@@ -2147,11 +2073,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         <td
                           className={vbdClasses.join(" ")}
                           data-label="VBD"
-                          title={
-                            needWeightEnabled
-                              ? "Value Based Drafting (need-adjusted)"
-                              : "Value Based Drafting"
-                          }
+                          title="Value Based Drafting"
                         >
                           {typeof vbdDisplay === "number"
                             ? vbdDisplay.toFixed(1)
