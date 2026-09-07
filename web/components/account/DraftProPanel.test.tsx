@@ -4,7 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import DraftProPanel from "./DraftProPanel";
 
 const getSession = vi.hoisted(() => vi.fn());
+const routerQuery = vi.hoisted(() => ({} as Record<string, string>));
 vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession } } }));
+vi.mock("next/router", () => ({ useRouter: () => ({ query: routerQuery }) }));
 
 const account = {
   access: { eligible: true, grantingSources: ["purchase"], expiresAt: "2027-07-01T04:00:00.000Z", verifiedAt: null, reason: "eligible", providerReadiness: { patreon: false } },
@@ -16,7 +18,7 @@ const account = {
 
 describe("DraftProPanel", () => {
   beforeEach(() => getSession.mockResolvedValue({ data: { session: { access_token: "token" } } }));
-  afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+  afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); delete routerQuery.draft_pro_checkout; });
 
   it("shows loading and then the server-computed refund form", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: account }) }));
@@ -64,5 +66,17 @@ describe("DraftProPanel", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Refresh Patreon" }));
     expect(await screen.findByText("Granting access")).toBeTruthy();
     expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("confirms a returned checkout with bounded verification", async () => {
+    routerQuery.draft_pro_checkout = "cs_test_123";
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: { ...account, access: { ...account.access, eligible: false } } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ state: "confirmed" }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: account }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<DraftProPanel />);
+    expect(await screen.findByText("Draft Pro access is confirmed.")).toBeTruthy();
+    expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/v1/account/draft-pro/checkout/verify");
   });
 });
