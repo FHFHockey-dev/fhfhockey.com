@@ -99,6 +99,13 @@ describe("useSavedDrafts", () => {
     await act(async () => { (onAuthStateChange.mock.calls[0][0] as (event: string, session: unknown) => void)("TOKEN_REFRESHED", { user: { id: "user-1" } }); });
     expect(result.current.opened?.id).toBe("draft");
   });
+  it("clears prior account cloud names when an account switch refresh fails", async () => {
+    let failRefresh = false;
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(url.endsWith("/draft") ? json({ data: { ...detail, privateImports: [] } }) : failRefresh ? json({ error: { message: "unavailable" } }, false, 503) : json({ data: [{ id: "draft", name: "Account A", status: "active", lockVersion: 1, updatedAt: "now" }] }))));
+    const { result } = renderHook(() => useSavedDrafts()); await act(async () => { await Promise.resolve(); await result.current.open("draft"); }); failRefresh = true;
+    await act(async () => { (onAuthStateChange.mock.calls[0][0] as (event: string, session: unknown) => void)("SIGNED_OUT", null); await Promise.resolve(); });
+    expect(result.current.drafts).toEqual([]); expect(result.current.opened).toBeNull(); expect(result.current.status).toBe("error");
+  });
   it("keeps the current draft and exposes an error when opening another draft fails", async () => {
     let unavailable = false;
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(url.endsWith("/other") && unavailable ? json({ error: { message: "unavailable" } }, false, 404) : json({ data: url.endsWith("/draft") ? { ...detail, privateImports: [] } : [] }))));
