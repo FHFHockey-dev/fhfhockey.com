@@ -611,6 +611,16 @@
       "migrationClass": "feature",
       "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
       "stateEvidence": "No exact applied-state receipt recorded; Draft Pro Stripe fulfillment remains local-only pending release validation."
+    },
+    {
+      "order": 61,
+      "path": "supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql",
+      "sha256": "39614f5679ff64888de94ef27fc02093f988ee7c404a9c92c421ea411c31882f",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
+      "stateEvidence": "No exact applied-state receipt recorded; Draft Pro Saved Drafts transaction foundation remains local-only pending release validation."
     }
   ]
 }

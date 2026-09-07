@@ -546,9 +546,27 @@ export type Database = {
         Relationships: []
       }
       draft_pro_private_imports: {
-        Row: { id: string; user_id: string; draft_id: string | null; name: string; content_type: string; storage_path: string; normalized_rows: Json; mapping: Json; byte_size: number; row_count: number; created_at: string; updated_at: string }
-        Insert: { id?: string; user_id: string; draft_id?: string | null; name: string; content_type: string; storage_path: string; normalized_rows?: Json; mapping?: Json; byte_size: number; row_count?: number; created_at?: string; updated_at?: string }
-        Update: { id?: string; user_id?: string; draft_id?: string | null; name?: string; content_type?: string; storage_path?: string; normalized_rows?: Json; mapping?: Json; byte_size?: number; row_count?: number; created_at?: string; updated_at?: string }
+        Row: { id: string; user_id: string; draft_id: string | null; name: string; content_type: string; storage_path: string; normalized_rows: Json; mapping: Json; byte_size: number; row_count: number; blob_id: string | null; deleted_at: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; draft_id?: string | null; name: string; content_type: string; storage_path: string; normalized_rows?: Json; mapping?: Json; byte_size: number; row_count?: number; blob_id?: string | null; deleted_at?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; draft_id?: string | null; name?: string; content_type?: string; storage_path?: string; normalized_rows?: Json; mapping?: Json; byte_size?: number; row_count?: number; blob_id?: string | null; deleted_at?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      draft_pro_private_import_blobs: {
+        Row: { id: string; user_id: string; storage_path: string; byte_size: number; row_count: number; content_sha256: string; status: string; created_at: string; cleanup_requested_at: string | null; cleanup_lease_id: string | null; deleted_at: string | null }
+        Insert: { id?: string; user_id: string; storage_path: string; byte_size: number; row_count: number; content_sha256: string; status?: string; created_at?: string; cleanup_requested_at?: string | null; cleanup_lease_id?: string | null; deleted_at?: string | null }
+        Update: { id?: string; user_id?: string; storage_path?: string; byte_size?: number; row_count?: number; content_sha256?: string; status?: string; created_at?: string; cleanup_requested_at?: string | null; cleanup_lease_id?: string | null; deleted_at?: string | null }
+        Relationships: []
+      }
+      draft_pro_private_import_uploads: {
+        Row: { id: string; user_id: string; save_session_id: string; replacement_import_id: string | null; name: string; content_type: string; mapping: Json; declared_max_bytes: number; reserved_bytes: number; actual_bytes: number | null; row_count: number | null; content_sha256: string | null; storage_prefix: string; final_storage_path: string | null; chunk_paths: Json; cleanup_requested_at: string | null; cleaned_at: string | null; status: string; expires_at: string; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; save_session_id: string; replacement_import_id?: string | null; name: string; content_type: string; mapping?: Json; declared_max_bytes: number; reserved_bytes: number; actual_bytes?: number | null; row_count?: number | null; content_sha256?: string | null; storage_prefix: string; final_storage_path?: string | null; chunk_paths?: Json; cleanup_requested_at?: string | null; cleaned_at?: string | null; status?: string; expires_at?: string; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; save_session_id?: string; replacement_import_id?: string | null; name?: string; content_type?: string; mapping?: Json; declared_max_bytes?: number; reserved_bytes?: number; actual_bytes?: number | null; row_count?: number | null; content_sha256?: string | null; storage_prefix?: string; final_storage_path?: string | null; chunk_paths?: Json; cleanup_requested_at?: string | null; cleaned_at?: string | null; status?: string; expires_at?: string; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      draft_pro_save_sessions: {
+        Row: { id: string; user_id: string; draft_id: string | null; requested_draft_id: string | null; attempt_key: string; expected_version: number | null; status: string; expires_at: string; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; draft_id?: string | null; requested_draft_id?: string | null; attempt_key: string; expected_version?: number | null; status?: string; expires_at?: string; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; draft_id?: string | null; requested_draft_id?: string | null; attempt_key?: string; expected_version?: number | null; status?: string; expires_at?: string; created_at?: string; updated_at?: string }
         Relationships: []
       }
       draft_pro_provider_events: {
@@ -47759,6 +47777,21 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: { checkout_session_id: string | null; purchase_id: string; purchase_status: string; stripe_idempotency_key: string }[]
       }
+      begin_draft_pro_save_session: { Args: { p_attempt_key: string; p_draft_id: string | null; p_expected_version: number | null; p_user_id: string }; Returns: { current_version: number; draft_id: string | null; expires_at: string | null; save_session_id: string | null; status: string }[] }
+      begin_draft_pro_private_import_upload: { Args: { p_content_type: string; p_declared_max_bytes: number; p_mapping: Json | null; p_name: string; p_replacement_import_id: string | null; p_save_session_id: string; p_user_id: string }; Returns: { expires_at: string; reserved_bytes: number; status: string; storage_prefix: string; upload_id: string }[] }
+      stage_draft_pro_private_import_upload: { Args: { p_actual_bytes: number; p_chunk_paths: string[]; p_content_sha256: string; p_row_count: number; p_upload_id: string; p_user_id: string }; Returns: { expires_at: string; status: string; storage_path: string; upload_id: string }[] }
+      read_draft_pro_private_import_upload: { Args: { p_upload_id: string; p_user_id: string }; Returns: { chunk_paths: Json; declared_max_bytes: number; draft_id: string | null; expires_at: string; final_storage_path: string; save_session_id: string; status: string; storage_prefix: string; upload_id: string }[] }
+      commit_draft_pro_save_session: { Args: { p_import_ids: string[] | null; p_name: string; p_save_session_id: string; p_snapshot: Json; p_snapshot_bytes: number; p_user_id: string }; Returns: { conflict_lock_version: number | null; draft_id: string; import_count: number; lock_version: number; name: string; status: string; updated_at: string }[] }
+      list_draft_pro_saved_drafts: { Args: { p_user_id: string }; Returns: { id: string; import_count: number; lock_version: number; name: string; status: string; updated_at: string }[] }
+      read_draft_pro_snapshot: { Args: { p_draft_id: string; p_user_id: string }; Returns: { id: string; imports: Json; lock_version: number; name: string; snapshot: Json; updated_at: string }[] }
+      read_draft_pro_private_import_blob: { Args: { p_draft_id: string; p_import_id: string; p_user_id: string }; Returns: { byte_size: number; content_sha256: string; import_id: string; row_count: number; storage_path: string }[] }
+      rename_draft_pro_saved_draft: { Args: { p_draft_id: string; p_expected_version: number; p_name: string; p_user_id: string }; Returns: { conflict_lock_version: number | null; draft_id: string; lock_version: number; name: string; status: string; updated_at: string }[] }
+      delete_draft_pro_saved_draft: { Args: { p_draft_id: string; p_expected_version: number; p_user_id: string }; Returns: { cleanup_count: number; conflict_lock_version: number | null; draft_id: string; lock_version: number; status: string }[] }
+      duplicate_draft_pro_saved_draft: { Args: { p_draft_id: string; p_expected_version: number; p_name: string; p_user_id: string }; Returns: { conflict_lock_version: number | null; draft_id: string; import_count: number; lock_version: number; name: string; status: string; updated_at: string }[] }
+      claim_draft_pro_private_import_cleanup: { Args: { p_limit?: number; p_user_id: string }; Returns: { blob_id: string; cleanup_lease_id: string; storage_path: string }[] }
+      confirm_draft_pro_private_import_cleanup: { Args: { p_blob_ids: string[]; p_cleanup_lease_id: string; p_user_id: string }; Returns: number }
+      claim_draft_pro_private_import_upload_cleanup: { Args: { p_limit?: number; p_user_id: string }; Returns: { chunk_paths: Json; delete_final: boolean; final_storage_path: string | null; upload_id: string }[] }
+      confirm_draft_pro_private_import_upload_cleanup: { Args: { p_upload_ids: string[]; p_user_id: string }; Returns: number }
       record_draft_pro_stripe_event: {
         Args: { p_checkout_session_id: string | null; p_dispute_id: string | null; p_dispute_status: string | null; p_event_id: string; p_event_type: string; p_full_refund: boolean; p_occurred_at: string; p_payload: Json | null; p_payment_intent_id: string | null; p_payment_state: string; p_purchase_id: string; p_user_id: string }
         Returns: { processed: boolean; purchase_id: string }[]

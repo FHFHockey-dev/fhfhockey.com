@@ -953,7 +953,7 @@ All charter questions remain open until source/master synchronization, Wave A/B 
 
 ### Current migration source authority (2026-08-29)
 
-Current canonical migration authority: [`migration-authority.json`](../repository-audit-remediation/migration-authority.json) (60 source-authorized records; 43 applied by exact Production-ledger receipt; 17 deployment state unknown).
+Current canonical migration authority: [`migration-authority.json`](../repository-audit-remediation/migration-authority.json) (61 source-authorized records; 43 applied by exact Production-ledger receipt; 18 deployment state unknown).
 
 That hash-and-order ledger is the sole current authority for active
 `supabase/migrations/*.sql` files. “Source-authorized” means reviewed repository
