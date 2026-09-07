@@ -36,7 +36,9 @@ export async function putPrivateImportChunk(args: { userId: string; uploadId: st
   const remaining = uploadRecord.declared_max_bytes - args.ordinal * PRIVATE_IMPORT_CHUNK_BYTES;
   if (args.bytes.byteLength > Math.min(PRIVATE_IMPORT_CHUNK_BYTES, remaining)) throw new Error("Chunk exceeds its upload reservation.");
   const path = `${uploadRecord.storage_prefix}/${args.ordinal}`;
-  const upload = await client.storage.from(BUCKET).upload(path, args.bytes, { contentType: "application/octet-stream", upsert: false });
+  // Chunks encode the normalized JSON document; keep the bucket MIME policy
+  // aligned with its explicit private-import allowlist.
+  const upload = await client.storage.from(BUCKET).upload(path, args.bytes, { contentType: "application/json", upsert: false });
   if (upload.error) throw upload.error;
   return path;
 }
