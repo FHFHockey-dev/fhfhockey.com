@@ -16,6 +16,7 @@ import type { RecommendationCandidate } from "lib/draft-pro/recommendations";
 export interface Recommendation {
   player: ProcessedPlayer;
   score: number; // ranking score (default based on VBD with optional need weighting)
+  value?: number; // canonical player value used by schedule-fit DUST requests
   vorp?: number;
   vona?: number;
   vbd?: number;
@@ -114,7 +115,7 @@ export function usePlayerRecommendations({
       const suggestionVm = (usePersonalizedReplacement ? personalizedVorpMetrics : undefined)?.get(result.candidate.id) ?? globalVm;
       const tags = [`VBD ${(suggestionVm?.vbd ?? 0).toFixed(1)}`, `VONA ${(suggestionVm?.vona ?? 0).toFixed(1)}`];
       if (baselineMode) tags.push(baselineMode === "remaining" ? "Remaining pool" : "Full pool");
-      return [{ player, score: result.recommendationScore, vorp: result.globalVorp, vona: suggestionVm?.vona ?? 0, vbd: suggestionVm?.vbd ?? 0, availability: result.availabilityEstimate ?? undefined, reasonTags: [...tags, ...result.reasons] }];
+      return [{ player, score: result.recommendationScore, value: suggestionVm?.value ?? player.fantasyPoints?.projected ?? 0, vorp: result.globalVorp, vona: suggestionVm?.vona ?? 0, vbd: suggestionVm?.vbd ?? 0, availability: result.availabilityEstimate ?? undefined, reasonTags: [...tags, ...result.reasons] }];
     });
   }, [
     players,
