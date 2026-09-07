@@ -144,6 +144,17 @@ begin
 end;
 $$;
 
+-- The server calls this immediately before Storage I/O.  It is deliberately
+-- ownership-scoped and returns only the server-derived staging namespace.
+create or replace function public.read_draft_pro_private_import_upload(p_user_id uuid,p_upload_id uuid)
+returns table(upload_id uuid,save_session_id uuid,draft_id uuid,status text,storage_prefix text,declared_max_bytes integer,expires_at timestamptz)
+language sql security definer set search_path = public, pg_temp as $$
+  select u.id,u.save_session_id,s.draft_id,u.status,u.storage_prefix,u.declared_max_bytes,u.expires_at
+  from public.draft_pro_private_import_uploads as u
+  join public.draft_pro_save_sessions as s on s.id=u.save_session_id
+  where u.id=p_upload_id and u.user_id=p_user_id and s.user_id=p_user_id;
+$$;
+
 create or replace function public.commit_draft_pro_save_session(
   p_user_id uuid, p_save_session_id uuid, p_name text, p_snapshot jsonb, p_snapshot_bytes integer, p_import_ids uuid[]
 ) returns table(status text, draft_id uuid, lock_version integer, name text, updated_at timestamptz, import_count integer, conflict_lock_version integer)
@@ -313,5 +324,5 @@ begin
 end;
 $$;
 
-revoke all on function public.begin_draft_pro_save_session(uuid,uuid,integer,text), public.begin_draft_pro_private_import_upload(uuid,uuid,uuid,integer,text,text,jsonb), public.stage_draft_pro_private_import_upload(uuid,uuid,text[],integer,integer,text), public.commit_draft_pro_save_session(uuid,uuid,text,jsonb,integer,uuid[]), public.list_draft_pro_saved_drafts(uuid), public.read_draft_pro_snapshot(uuid,uuid), public.rename_draft_pro_saved_draft(uuid,uuid,integer,text), public.delete_draft_pro_saved_draft(uuid,uuid,integer), public.duplicate_draft_pro_saved_draft(uuid,uuid,integer,text), public.claim_draft_pro_private_import_cleanup(uuid,integer), public.confirm_draft_pro_private_import_cleanup(uuid,uuid[]), public.claim_draft_pro_private_import_upload_cleanup(uuid,integer), public.confirm_draft_pro_private_import_upload_cleanup(uuid,uuid[]) from public, anon, authenticated;
-grant execute on function public.begin_draft_pro_save_session(uuid,uuid,integer,text), public.begin_draft_pro_private_import_upload(uuid,uuid,uuid,integer,text,text,jsonb), public.stage_draft_pro_private_import_upload(uuid,uuid,text[],integer,integer,text), public.commit_draft_pro_save_session(uuid,uuid,text,jsonb,integer,uuid[]), public.list_draft_pro_saved_drafts(uuid), public.read_draft_pro_snapshot(uuid,uuid), public.rename_draft_pro_saved_draft(uuid,uuid,integer,text), public.delete_draft_pro_saved_draft(uuid,uuid,integer), public.duplicate_draft_pro_saved_draft(uuid,uuid,integer,text), public.claim_draft_pro_private_import_cleanup(uuid,integer), public.confirm_draft_pro_private_import_cleanup(uuid,uuid[]), public.claim_draft_pro_private_import_upload_cleanup(uuid,integer), public.confirm_draft_pro_private_import_upload_cleanup(uuid,uuid[]) to service_role;
+revoke all on function public.begin_draft_pro_save_session(uuid,uuid,integer,text), public.begin_draft_pro_private_import_upload(uuid,uuid,uuid,integer,text,text,jsonb), public.stage_draft_pro_private_import_upload(uuid,uuid,text[],integer,integer,text), public.read_draft_pro_private_import_upload(uuid,uuid), public.commit_draft_pro_save_session(uuid,uuid,text,jsonb,integer,uuid[]), public.list_draft_pro_saved_drafts(uuid), public.read_draft_pro_snapshot(uuid,uuid), public.rename_draft_pro_saved_draft(uuid,uuid,integer,text), public.delete_draft_pro_saved_draft(uuid,uuid,integer), public.duplicate_draft_pro_saved_draft(uuid,uuid,integer,text), public.claim_draft_pro_private_import_cleanup(uuid,integer), public.confirm_draft_pro_private_import_cleanup(uuid,uuid[]), public.claim_draft_pro_private_import_upload_cleanup(uuid,integer), public.confirm_draft_pro_private_import_upload_cleanup(uuid,uuid[]) from public, anon, authenticated;
+grant execute on function public.begin_draft_pro_save_session(uuid,uuid,integer,text), public.begin_draft_pro_private_import_upload(uuid,uuid,uuid,integer,text,text,jsonb), public.stage_draft_pro_private_import_upload(uuid,uuid,text[],integer,integer,text), public.read_draft_pro_private_import_upload(uuid,uuid), public.commit_draft_pro_save_session(uuid,uuid,text,jsonb,integer,uuid[]), public.list_draft_pro_saved_drafts(uuid), public.read_draft_pro_snapshot(uuid,uuid), public.rename_draft_pro_saved_draft(uuid,uuid,integer,text), public.delete_draft_pro_saved_draft(uuid,uuid,integer), public.duplicate_draft_pro_saved_draft(uuid,uuid,integer,text), public.claim_draft_pro_private_import_cleanup(uuid,integer), public.confirm_draft_pro_private_import_cleanup(uuid,uuid[]), public.claim_draft_pro_private_import_upload_cleanup(uuid,integer), public.confirm_draft_pro_private_import_upload_cleanup(uuid,uuid[]) to service_role;
