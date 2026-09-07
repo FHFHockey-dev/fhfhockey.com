@@ -17,6 +17,9 @@ describe("Stripe fulfillment", () => {
     await expect(verifyDraftProCheckoutSession(stripe, session)).resolves.toBe(true);
     stripe.checkout.sessions.listLineItems.mockResolvedValue({ data: [{ quantity: 2, price: { id: "price_test", product: "prod_test", unit_amount: 599, currency: "usd" } }] });
     await expect(verifyDraftProCheckoutSession(stripe, session)).resolves.toBe(false);
+    stripe.checkout.sessions.listLineItems.mockResolvedValue({ data: [{ quantity: 1, price: { id: "price_other", product: "prod_test", unit_amount: 599, currency: "usd" } }] });
+    await expect(verifyDraftProCheckoutSession(stripe, session)).resolves.toBe(false);
+    await expect(verifyDraftProCheckoutSession(stripe, { ...session, payment_status: "unpaid" })).resolves.toBe(false);
   });
 
   it("sends a completed signed event to the single atomic fulfillment RPC", async () => {

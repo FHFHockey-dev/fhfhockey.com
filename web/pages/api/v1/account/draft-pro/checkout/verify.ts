@@ -3,6 +3,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 
 import { requireApiUser } from "lib/api/requireApiUser";
+import serviceRoleClient from "lib/supabase/server";
+import { loadDraftProAccess } from "lib/draft-pro/server";
 import { getStripeClient, isStripeConfigured } from "lib/integrations/stripe/config";
 import { checkoutUserId, verifyStripeCheckoutSession } from "lib/integrations/stripe/fulfillment";
 
@@ -23,7 +25,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const session = await stripe.checkout.sessions.retrieve(parsed.data.sessionId);
     if (checkoutUserId(session) !== user.id) return res.status(403).json({ error: "This Checkout session belongs to another account." });
     const result = await verifyStripeCheckoutSession(stripe, session);
-    return res.status(200).json({ state: result.purchaseId ? "confirmed" : session.payment_status === "paid" ? "confirming" : "ineligible", purchaseId: result.purchaseId });
+    const purchaseId = result.purchaseId ?? session.metadata?.draft_pro_purchase_id ?? null;
+    const { data: purchase } = purchaseId
+      ? await serviceRoleClient.from("draft_pro_purchases").select("id,status").eq("id", purchaseId).eq("user_id", user.id).maybeSingle()
+      : { data: null };
+    const access = await loadDraftProAccess(user.id, { now: new Date(), flags: { checkout: true, recommendations: true, dust: true, blended_csv: true, saved_drafts: true, private_imports: true, scenarios: true, reports: true }, patreonVerificationAvailable: true });
+    const state = access.eligible && purchase?.status === "active"
+      ? "confirmed"
+      : purchase?.status === "pending" && session.payment_status === "paid"
+        ? "confirming"
+        : "ineligible";
+    return res.status(200).json({ state, purchaseId });
   } catch (error) {
     return res.status(500).json({ error: "Checkout verification failed." });
   }
