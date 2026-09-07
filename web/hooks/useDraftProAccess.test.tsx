@@ -48,12 +48,14 @@ describe("useDraftProAccess", () => {
   });
 
   it("does not let an old request restore access after logout", async () => {
-    let resolveResponse: ((response: Response) => void) | null = null;
-    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>((resolve) => { resolveResponse = resolve; })));
+    const pending = { resolve: null as ((response: Response) => void) | null };
+    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>((resolve) => { pending.resolve = resolve; })));
     const { result } = renderHook(() => useDraftProAccess());
-    await waitFor(() => expect(resolveResponse).not.toBeNull());
+    await waitFor(() => expect(pending.resolve).not.toBeNull());
     await act(async () => authState.listener?.("SIGNED_OUT", null));
-    resolveResponse?.({ ok: true, json: async () => ({ data: { access } }) } as Response);
+    const resolve = pending.resolve;
+    expect(resolve).not.toBeNull();
+    resolve?.({ ok: true, json: async () => ({ data: { access } }) } as Response);
     await act(async () => {});
     expect(result.current.access).toBeNull();
   });

@@ -3,9 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import DraftProPanel from "./DraftProPanel";
 
+type AuthSession = { access_token?: string; user?: { id: string } };
+type AuthListener = (event: string, session: AuthSession | null) => void;
+type AuthSubscription = { data: { subscription: { unsubscribe: () => void } } };
 const getSession = vi.hoisted(() => vi.fn());
 const routerQuery = vi.hoisted(() => ({} as Record<string, string>));
-const onAuthStateChange = vi.hoisted(() => vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })));
+const onAuthStateChange = vi.hoisted(() => vi.fn<(listener: AuthListener) => AuthSubscription>(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })));
 const replace = vi.hoisted(() => vi.fn());
 vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession, onAuthStateChange } } }));
 vi.mock("next/router", () => ({ useRouter: () => ({ query: routerQuery, pathname: "/account", replace }) }));
@@ -136,9 +139,10 @@ describe("DraftProPanel", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<DraftProPanel />);
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
-    const listener = onAuthStateChange.mock.calls[0][0];
-    act(() => listener("INITIAL_SESSION", { access_token: "token", user: { id: "A" } }));
-    act(() => listener("TOKEN_REFRESHED", { access_token: "token-2", user: { id: "A" } }));
+    const listener = onAuthStateChange.mock.calls[0]?.[0];
+    expect(listener).toBeDefined();
+    act(() => listener?.("INITIAL_SESSION", { access_token: "token", user: { id: "A" } }));
+    act(() => listener?.("TOKEN_REFRESHED", { access_token: "token-2", user: { id: "A" } }));
     await act(async () => { resolveVerification?.({ ok: true, json: async () => ({ state: "confirmed" }) }); });
     expect(await screen.findByText("Draft Pro access is confirmed.")).toBeTruthy();
   });
@@ -162,8 +166,9 @@ describe("DraftProPanel", () => {
     vi.stubGlobal("fetch", vi.fn(() => new Promise((resolve) => { resolveAccount = resolve; })));
     render(<DraftProPanel />);
     await waitFor(() => expect(onAuthStateChange).toHaveBeenCalled());
-    const listener = onAuthStateChange.mock.calls[0][0];
-    act(() => listener("SIGNED_OUT", null));
+    const listener = onAuthStateChange.mock.calls[0]?.[0];
+    expect(listener).toBeDefined();
+    act(() => listener?.("SIGNED_OUT", null));
     await act(async () => { resolveAccount?.({ ok: true, json: async () => ({ data: account }) }); });
     expect(screen.getByRole("alert").textContent).toContain("Authentication required");
     expect(screen.queryByText("Opening night")).toBeNull();
@@ -179,7 +184,9 @@ describe("DraftProPanel", () => {
     render(<DraftProPanel />);
     await waitFor(() => expect(onAuthStateChange).toHaveBeenCalled());
     getSession.mockResolvedValue({ data: { session: { access_token: "token-b", user: { id: "B" } } } });
-    act(() => onAuthStateChange.mock.calls[0][0]("SIGNED_IN", { access_token: "token-b", user: { id: "B" } }));
+    const listener = onAuthStateChange.mock.calls[0]?.[0];
+    expect(listener).toBeDefined();
+    act(() => listener?.("SIGNED_IN", { access_token: "token-b", user: { id: "B" } }));
     expect(await screen.findByText("B draft")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Refresh Patreon" }).hasAttribute("disabled")).toBe(false);
     expect(screen.queryByText(/Temporary|Account unavailable|could not be submitted/i)).toBeNull();
