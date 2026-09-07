@@ -44,4 +44,14 @@ describe("useDraftProDust", () => {
     expect(getSession).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it("clears ready DUST results synchronously when capability access is revoked", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true, data: { state: "ready", insights: [{ playerId: "current" }] } }) }));
+    const { result, rerender } = renderHook(({ enabled }) => useDraftProDust(input, enabled), { initialProps: { enabled: true } });
+    await act(async () => { await vi.advanceTimersByTimeAsync(200); });
+    expect(result.current.result?.insights[0]?.playerId).toBe("current");
+    rerender({ enabled: false });
+    expect(result.current).toMatchObject({ status: "idle", result: null });
+  });
 });

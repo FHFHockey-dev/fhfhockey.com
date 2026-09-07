@@ -27,6 +27,9 @@ export interface SuggestedPicksProps {
   categoryWeights?: Record<string, number>;
   recommendationDataOrigin?: "server" | "local_csv" | "private_import";
   onNeedWeightEnabledChange?: (enabled: boolean) => void;
+  dustSort?: "ordinary" | "schedule_fit";
+  onDustSortChange?: (sort: "ordinary" | "schedule_fit") => void;
+  canUseProDust?: boolean;
   needWeightEnabled?: boolean;
   needAlpha?: number; // 0..1
   posNeeds?: Record<string, number>;
@@ -66,6 +69,9 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   categoryWeights = {},
   recommendationDataOrigin = "server",
   onNeedWeightEnabledChange,
+  dustSort = "ordinary",
+  onDustSortChange,
+  canUseProDust = false,
   needWeightEnabled = false,
   needAlpha = 0.5,
   posNeeds = {},
@@ -505,6 +511,13 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                   {p}
                 </option>
               ))}
+            </select>
+          </div>
+          <div className={styles.controlGroup}>
+            <label className={styles.label} htmlFor="dust-sort">DUST sort</label>
+            <select id="dust-sort" className={styles.select} value={dustSort} onChange={(event) => onDustSortChange?.(event.target.value as "ordinary" | "schedule_fit")} disabled={!canUseProDust} aria-label="DUST sort">
+              <option value="ordinary">Ordinary value</option>
+              <option value="schedule_fit">Schedule fit</option>
             </select>
           </div>
           <div className={styles.controlGroup}>

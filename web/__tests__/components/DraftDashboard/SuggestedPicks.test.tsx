@@ -209,6 +209,15 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("exposes ordinary and schedule-fit DUST sorting only when DUST is available", () => {
+    const onDustSortChange = vi.fn();
+    const { rerender } = render(<SuggestedPicks players={[player(1, "Player", "C", 100)]} currentPick={1} teamCount={1} dustSort="ordinary" onDustSortChange={onDustSortChange} />);
+    expect((screen.getByRole("combobox", { name: "DUST sort" }) as HTMLSelectElement).disabled).toBe(true);
+    rerender(<SuggestedPicks players={[player(1, "Player", "C", 100)]} currentPick={1} teamCount={1} canUseProDust dustSort="ordinary" onDustSortChange={onDustSortChange} />);
+    fireEvent.change(screen.getByRole("combobox", { name: "DUST sort" }), { target: { value: "schedule_fit" } });
+    expect(onDustSortChange).toHaveBeenCalledWith("schedule_fit");
+  });
+
   it("sends a goalie-only filtered request through the shared contract", async () => {
     getSession.mockResolvedValue({ data: { session: { access_token: "token" } } });
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: [] }) });

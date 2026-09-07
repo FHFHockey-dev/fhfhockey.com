@@ -31,6 +31,8 @@ import MyRoster from "./MyRoster";
 import ProjectionsTable from "./ProjectionsTable";
 import { useVORPCalculations } from "hooks/useVORPCalculations";
 import { useDraftProAccess } from "hooks/useDraftProAccess";
+import { useDraftProDust } from "hooks/useDraftProDust";
+import { DRAFT_PRO_DUST_FREE_EXAMPLE } from "lib/draft-pro/dust";
 import { useRosterScheduleOptimizer } from "hooks/useRosterScheduleOptimizer";
 import SuggestedPicks from "./SuggestedPicks";
 import DraftSummaryModal from "./DraftSummaryModal";
@@ -1863,6 +1865,58 @@ const DraftDashboard: React.FC = () => {
     [draftSettings.rosterConfig, forwardGrouping],
   );
 
+  const canUseProDust = Boolean(draftProAccess?.capabilities.includes("dust"));
+  const [dustSort, setDustSort] = useState<"ordinary" | "schedule_fit">("ordinary");
+  const dustInput = useMemo(() => {
+    const season = currentSeasonId == null ? null : String(currentSeasonId);
+    if (!season) return null;
+    const toDustPlayer = (player: ProcessedPlayer) => ({
+      id: String(player.playerId),
+      name: player.fullName || undefined,
+      teamAbbreviation: player.displayTeam || null,
+      eligiblePositions: normalizePlayerEligibility(player.displayPosition, player.eligiblePositions),
+      value: vorpMetrics.get(String(player.playerId))?.value ?? player.fantasyPoints.projected ?? 0,
+      available: true,
+      projectionSeason: season,
+    });
+    const playerById = new Map(allPlayers.map((player) => [String(player.playerId), player]));
+    const roster = rosterAssignments.flatMap((assignment) => {
+      if (assignment.teamId !== myTeamId) return [];
+      const player = playerById.get(assignment.playerId);
+      return player ? [{ ...toDustPlayer(player), available: false }] : [];
+    });
+    return {
+      season,
+      lineupMode: "daily" as const,
+      sort: dustSort,
+      inputOrigin: customCsvList.length ? "private_import" as const : "draft" as const,
+      privateImportAccountSaved: false,
+      gameKey: "477",
+      startWeek: 1,
+      endWeek: 30,
+      roster,
+      candidates: availablePlayers.map(toDustPlayer),
+      rosterSlots: effectiveRosterConfig,
+    };
+  }, [allPlayers, availablePlayers, currentSeasonId, customCsvList.length, dustSort, effectiveRosterConfig, myTeamId, rosterAssignments, vorpMetrics]);
+  const dustRequestAllowed = Boolean(dustInput && dustInput.candidates.length <= 500 && !customCsvList.length);
+  const draftProDust = useDraftProDust(dustInput, canUseProDust && dustRequestAllowed);
+  const draftProDustInsights = useMemo(() => new Map(
+    draftProDust.result?.insights.map((insight) => [insight.playerId, {
+      marginalDustGames: insight.marginalBenchGames,
+      candidateScheduledGames: insight.candidateScheduledGames,
+      activeGamesAdded: insight.activeGamesAdded,
+      dustRate: insight.dustRate,
+      risk: insight.risk,
+      alternative: insight.alternatives[0] ? {
+        playerId: insight.alternatives[0].playerId,
+        playerName: insight.alternatives[0].playerName ?? insight.alternatives[0].playerId,
+        dustReduction: insight.alternatives[0].dustReduction,
+        valueDifference: insight.alternatives[0].valueDifference,
+      } : undefined,
+    }]) ?? [],
+  ), [draftProDust.result]);
+
   const activeScoringCategories = useMemo(() =>
     draftSettings.leagueType === "categories"
       ? draftSettings.categoryWeights || {}
@@ -2872,31 +2926,14 @@ const DraftDashboard: React.FC = () => {
   ]);
   const tableDataNotices = useMemo(() => {
     const notices = [...projectionDataNotices];
-    if (rosterScheduleOptimizer.status === "error") {
-      notices.push(
-        `DUST schedule insights are unavailable. ${rosterScheduleOptimizer.error ?? "Schedule data could not be loaded."}`,
-      );
-    } else if (rosterScheduleOptimizer.status === "empty") {
-      notices.push(
-        "DUST schedule insights are unavailable because the current Yahoo team-game cache is empty.",
-      );
-    } else if (rosterScheduleOptimizer.stale) {
-      notices.push(
-        "DUST schedule insights are using stale schedule data; refresh the optimizer schedule cache before relying on rescheduled games.",
-      );
-    }
-    if (rosterScheduleOptimizer.status === "ready") {
-      notices.push(
-        "DUST uses exact daily lineup assignment; weekly-lock leagues are not yet supported.",
-      );
-      if (rosterScheduleOptimizer.skippedCandidates > 0) {
-        notices.push(
-          `${rosterScheduleOptimizer.skippedCandidates} DUST candidate calculations were skipped because team or eligibility data could not be resolved.`,
-        );
-      }
-    }
+    if (!canUseProDust) notices.push(`DUST illustration only: ${DRAFT_PRO_DUST_FREE_EXAMPLE.playerName} has ${DRAFT_PRO_DUST_FREE_EXAMPLE.marginalBenchGames} projected bench games across ${DRAFT_PRO_DUST_FREE_EXAMPLE.candidateScheduledGames} games. Draft Pro unlocks roster-specific analysis.`);
+    else if (customCsvList.length) notices.push("Save this private import to your account before using it for DUST. Local rows were not uploaded.");
+    else if (!dustRequestAllowed) notices.push("DUST supports up to 500 available candidates. Narrow the player pool; no calculation was sent.");
+    else if (draftProDust.status === "error") notices.push(`DUST is unavailable. ${draftProDust.error ?? "Try again after the schedule refreshes."}`);
+    else if (draftProDust.result && draftProDust.result.state !== "ready") notices.push(`DUST is unavailable: ${draftProDust.result.diagnostics.join(" ")}`);
+    else if (draftProDust.result?.state === "ready") notices.push(`DUST daily lineup window: weeks ${draftProDust.result.window.startWeek ?? "unknown"}–${draftProDust.result.window.endWeek ?? "unknown"}; schedule freshness ${draftProDust.result.freshness.latestFetchedAt ?? "unknown"}.`);
     return notices;
-  }, [projectionDataNotices, rosterScheduleOptimizer]);
+  }, [canUseProDust, customCsvList.length, draftProDust.error, draftProDust.result, draftProDust.status, dustRequestAllowed, projectionDataNotices]);
   const projectionEmptyStateMessage =
     !skaterSourcesEnabled && !goalieSourcesEnabled
       ? "No projection sources are enabled. Enable at least one skater or goalie source in Draft Settings."
@@ -3081,7 +3118,7 @@ const DraftDashboard: React.FC = () => {
               goalie: goalieData.inclusionDiagnostics,
             }}
             dataNotices={tableDataNotices}
-            dustInsights={rosterScheduleOptimizer.insights}
+            dustInsights={canUseProDust ? draftProDustInsights : undefined}
             emptyStateMessage={projectionEmptyStateMessage}
           />
   ), [
@@ -3454,13 +3491,16 @@ const DraftDashboard: React.FC = () => {
           players={availablePlayers}
           isLoading={isLoading}
           error={errorMessage}
-          dustInsights={rosterScheduleOptimizer.insights}
+          dustInsights={canUseProDust ? draftProDustInsights : undefined}
           vorpMetrics={vorpMetrics}
           personalizedVorpMetrics={personalizedVorpMetrics}
           draftProEligible={canUseProRecommendations}
           categoryWeights={draftSettings.categoryWeights}
           recommendationDataOrigin={customCsvList.length ? "local_csv" : "server"}
           onNeedWeightEnabledChange={setNeedWeightEnabled}
+          dustSort={dustSort}
+          onDustSortChange={setDustSort}
+          canUseProDust={canUseProDust && dustRequestAllowed}
           needWeightEnabled={needWeightEnabled}
           needAlpha={needAlpha}
           posNeeds={posNeeds}
