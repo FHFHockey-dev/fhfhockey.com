@@ -1,5 +1,25 @@
 # Draft Pro work ledger
 
+## Current acceptance state
+
+| Work order | Local checkpoint | Remaining gate |
+|---|---|---|
+| W01 foundation | Approved, including payment RPCs and nullable types | Later schema changes only through W01 |
+| W02 Stripe | Approved, 30 focused tests; combined account/Stripe strict types pass | Real Stripe test-mode Checkout, Link and webhook delivery blocked on credentials |
+| W03 Patreon | Approved local lifecycle/mapping/recovery | Real campaign/OAuth/webhook validation blocked on credentials |
+| W04 refunds/account | Approved, 17 focused tests; CLI follow-on integrated | Mounted UI/browser and real email configuration checks |
+| W05 recommendations | Approved pure/hook/API checkpoint, 19 tests | W07 remote UI wiring and premium boundary |
+| W06 DUST | Approved pure/API/adapter checkpoint, 11 tests | W07 UI, season/window display and capability wiring |
+| W07 integration/CSV/graph | Active; initial UI slices rejected pending access race/timer fixes | Remote recommendations, DUST wiring, CSV, expanded graph and full UI tests |
+| W08 Saved Drafts | Queued | Initial-release checkpoint, quotas/concurrency/private restore implementation |
+| W09 scenarios | Queued | W08 and shared calculation integration |
+| W10 reports | Queued | W09 and deterministic report implementation |
+| W11 copy/operator | Configuration preparation approved | Final availability review after implemented milestones |
+| W12 verification | SQL/RLS/concurrency and minimal free Chromium draft approved | Paid UI, full free regressions, saved work, mobile/keyboard/zoom, RC suite and release packet |
+| W13 Yahoo | Readiness work order approved and parked | September 11 one-time check; real provider evidence, separate activation approval |
+
+No remote build, deployment, production migration, live payment, or live email has been performed. Checkpoint approval is scoped engineering evidence, not release authorization. Full repository TypeScript remains unverified after its documented default-heap OOM; scoped checks are not a whole-repository pass.
+
 ## Resolved tasks
 - W01 — Contracts and database foundation: 01a07c49-ae60-7ad1-ab7e-7f80faf44c10
 - W02 — Stripe checkout and fulfillment: 01a07c49-b233-7733-88e7-e927f6917462
@@ -22,7 +42,7 @@ All tasks moved into the Draft Pro section. W01 active foundation; W12 released 
 - Base: 4476fb90f (octoberBranch); user checkout left unchanged.
 - Integration: codex/draft-pro at /Users/tim/.codex/worktrees/draft-pro-chef/fhfhockey.com
 - Yahoo one-time heartbeat: yahoo-draft-pro-readiness, September 11 09:00 Eastern.
-- Current status: W01 foundation/payment SQL and W03 Patreon locally approved; W05 recommendations approved. W07 dashboard integration active; W02/W04 approved; W06 approved; W12 mapping checkpoint approved; W07–W10 queued; W11/W13 preparation approved; W12 SQL checkpoint approved. Historical entries below retain prior states.
+- Current status: W01 foundation/payment SQL and W03 Patreon locally approved; W05 recommendations approved. W07 dashboard integration active; W02/W04 locally approved; W06 approved; W12 mapping checkpoint approved; W07–W10 queued; W11/W13 preparation approved; W12 SQL checkpoint approved. Historical entries below retain prior states.
 - External checks pending: real Stripe/Patreon credentials and provider validation; isolated SQL/RLS verification passed. Never print secrets.
 
 Task registrations and Chef decisions follow below.
@@ -146,3 +166,15 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 
 - W02 APPROVED localthrough8634a5eec;24W02commits integratedendingef628ead9, excludedduplicatePatreoncommitda6669bcb. Chef combinedStripe/account11files47tests PASS and strictscopedTypeScript PASSexit0. CLIauditfacts/card+Link reviewed, actualproviderchecksblockedcredentials. W02idleLuna/low.
 - RELEASED W07 Luna/medium at ef628ead9: exclusivecentraldashboard/accountnavigation, fullinitialreleasewiring+CSV+graph. W08–W10laterpasses. ExistingreadonlydependencytreewithStripe /Users/tim/.codex/worktrees/8274/fhfhockey.com/web/node_modules; Chefintegrationlinknowpointsthere, nodependenciesmutated. OnlyW07implementationactive.
+
+- W11 mini/medium released boundedoperatorconfigurationalignment afterW02/W04, noavailable-featureclaims untilW07.
+- W12 Terra/medium released deterministicbrowserfixtures/free-draftsmoke onunique localport, onlye2e/draft-pro* andverificationdocs; noapplication/configchanges, mockexternaldata, no productionwrites. W07ownsUI/unitAPItests. ActiveW07/W11/W12three.
+
+- W07 85731b961 partial notapproved: localbooleaneligibility staleonlogout/noexpiryrefresh/capabilityflags, remoteactions/CSV/DUSTgraphincomplete. Dependencytreeexists, ownsymlinknevercreated—returnedactualpathsetup. EscalatedTerra/medium for boundedsharedaccess+checkoutreturnstate afterLunaslice; nohighreasoning.
+- W12 a13f7dfec initiallyonlydiscovery/no fictionalprojections; corrected6bab7a95f actualChromiumsmoke1/1pass withRESTfictionaldata/dummySupabaseenv. Integratedfixturecheckpointonly; fullsmallmanualdraft stillassigned. Chromiuminstalledauthorizedtestprerequisite, noapplicationdeps/productioncalls.
+- W11 b0d30c5f0+334747eb6 approved/integratedc166da547+5e0d38eaf: actualconfignames/commands, alloffflags, Linkmerchantsetup, Resend24hlimitation. Mini missedexactcontract; routedLuna/lowcorrection thenidle.
+- W04 tinyCLIgenericerror/repeatedsend followonreleasedLuna/low; remainingactive W07/W12/W04three.
+
+- W12 081d2e05d APPROVED/integrated5595ab7d8: actualChromium minimal2team/2pick fullcompletion withlocalfavoritepersist,1/1pass. W12idleuntilW07; broaderfree/paid/mobileregressionspending.
+- W04 CLIamendeddelta353fa6a59..136122c86 reviewed/appliedexactlyandintegratedd9cd4e018 (avoidduplicatingapprovedbase). Genericfailure/repeatedsendchecks, noemail/DBexecuted.
+- W07 access/checkout588ff2dbd+e728b5b3f rejectedforseasonexpirysetTimeoutoverflow andasyncgetSessionlogoutresurrection; checkouttimersuntracked/noexplicitretry/misleadingpaymentreceivedbeforeverification. EscalatedTerra/high onlyrace/timerfix+tests aftermediumslice; exitpassreview thenTerra/medium. OnlyW07active.
