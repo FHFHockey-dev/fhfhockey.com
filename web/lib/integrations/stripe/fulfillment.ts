@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import serviceRoleClient from "lib/supabase/server";
 import type { Json } from "lib/supabase/database-generated.types";
 
-import { DRAFT_PRO_EXPIRATION, DRAFT_PRO_SEASON } from "lib/draft-pro/contracts";
+import { DRAFT_PRO_SEASON } from "lib/draft-pro/contracts";
 
 import { DRAFT_PRO_STRIPE_PRICE } from "./config";
 
@@ -16,13 +16,7 @@ function stripeStatus(event: Stripe.Event) {
   switch (event.type) {
     case "checkout.session.completed":
     case "checkout.session.async_payment_succeeded":
-      return "active";
-    case "charge.refunded":
-      return "refunded";
-    case "charge.dispute.created":
-      return "disputed";
-    case "charge.dispute.closed":
-      return event.data.object.status === "won" ? "active" : "disputed";
+      return "paid";
     default:
       return null;
   }
@@ -59,17 +53,77 @@ export async function fulfillStripeEvent(
 ): Promise<StripeFulfillmentResult> {
   const status = stripeStatus(event);
   if (!status) return { purchaseId: null, processed: false };
+  if (!isVerifiedDraftProCheckout(event.data.object as Stripe.Checkout.Session)) {
+    return { purchaseId: null, processed: false };
+  }
   const { paymentIntent, sessionId, userId } = checkoutDetails(event);
-  const { data, error } = await (client.rpc as any)("fulfill_draft_pro_stripe_purchase", {
+  const purchaseId = (event.data.object as Stripe.Checkout.Session).metadata?.draft_pro_purchase_id ?? null;
+  if (!sessionId || !userId || !purchaseId || !Number.isFinite(event.created)) {
+    return { purchaseId: null, processed: false };
+  }
+  const { data, error } = await client.rpc("record_draft_pro_stripe_event", {
     p_event_id: event.id,
     p_event_type: event.type,
-    p_session_id: sessionId,
+    p_checkout_session_id: sessionId,
     p_payment_intent_id: paymentIntent,
     p_user_id: userId,
-    p_status: status,
+    p_payment_state: status,
     p_payload: event as unknown as Json,
-    p_season: DRAFT_PRO_SEASON,
-    p_expires_at: DRAFT_PRO_EXPIRATION,
+    p_occurred_at: new Date(event.created * 1000).toISOString(),
+    p_purchase_id: purchaseId,
+    p_full_refund: false,
+    p_dispute_id: null,
+    p_dispute_status: null,
+  });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  return { purchaseId: row?.purchase_id ?? null, processed: Boolean(row?.processed) };
+}
+
+export async function fulfillStripeProviderEvent({
+  event,
+  stripe,
+  client = serviceRoleClient,
+}: {
+  event: Stripe.Event;
+  stripe: Stripe;
+  client?: Pick<typeof serviceRoleClient, "rpc">;
+}): Promise<StripeFulfillmentResult> {
+  if (event.type.startsWith("checkout.session.")) return fulfillStripeEvent(event, client);
+  if (![
+    "charge.refunded",
+    "charge.dispute.created",
+    "charge.dispute.closed",
+  ].includes(event.type)) return { purchaseId: null, processed: false };
+
+  const disputed = event.data.object as Stripe.Dispute;
+  const chargeId = event.type.startsWith("charge.dispute.")
+    ? typeof disputed.charge === "string" ? disputed.charge : disputed.charge.id
+    : (event.data.object as Stripe.Charge).id;
+  const charge = await stripe.charges.retrieve(chargeId);
+  const paymentIntentId = typeof charge.payment_intent === "string"
+    ? charge.payment_intent : charge.payment_intent?.id;
+  if (!paymentIntentId) return { purchaseId: null, processed: false };
+  const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+  const userId = paymentIntent.metadata.draft_pro_user_id;
+  const purchaseId = paymentIntent.metadata.draft_pro_purchase_id;
+  if (!userId || !purchaseId) return { purchaseId: null, processed: false };
+  const isRefund = event.type === "charge.refunded";
+  const disputeStatus = event.type === "charge.dispute.created" ? "open"
+    : event.type === "charge.dispute.closed" ? disputed.status === "won" ? "won" : "lost" : null;
+  const { data, error } = await client.rpc("record_draft_pro_stripe_event", {
+    p_event_id: event.id,
+    p_event_type: event.type,
+    p_occurred_at: new Date(event.created * 1000).toISOString(),
+    p_checkout_session_id: null,
+    p_payment_intent_id: paymentIntentId,
+    p_user_id: userId,
+    p_purchase_id: purchaseId,
+    p_payment_state: disputeStatus === "won" ? "dispute_won" : isRefund ? "refunded" : "disputed",
+    p_full_refund: isRefund && charge.amount_refunded >= charge.amount,
+    p_dispute_id: isRefund ? null : disputed.id,
+    p_dispute_status: disputeStatus,
+    p_payload: event as unknown as Json,
   });
   if (error) throw error;
   const row = Array.isArray(data) ? data[0] : data;
@@ -87,6 +141,7 @@ export async function verifyStripeCheckoutSession(
   if (!isVerifiedDraftProCheckout(session)) return { purchaseId: null, processed: false };
   const event = {
     id: `return:${session.id}`,
+    created: session.created,
     type: "checkout.session.completed",
     data: { object: session },
   } as unknown as Stripe.Event;

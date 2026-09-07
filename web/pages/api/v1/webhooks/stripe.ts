@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { getStripeClient, getStripeWebhookSecret, isStripeConfigured } from "lib/integrations/stripe/config";
-import { fulfillStripeEvent } from "lib/integrations/stripe/fulfillment";
+import { fulfillStripeProviderEvent } from "lib/integrations/stripe/fulfillment";
 
 export const config = { api: { bodyParser: false } };
 
@@ -22,12 +22,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const stripe = getStripeClient();
     const event = stripe.webhooks.constructEvent(await readRawBody(req), signature, getStripeWebhookSecret());
-    // Checkout sessions are re-read from Stripe before mutation. The follow-on
-    // provider adapter resolves Charge/Dispute ownership through their PaymentIntent.
-    if (!event.type.startsWith("checkout.session.")) return res.status(200).json({ received: true, processed: false });
     const eventSession = event.data.object as import("stripe").default.Checkout.Session;
-    const session = await stripe.checkout.sessions.retrieve(eventSession.id);
-    const result = await fulfillStripeEvent({ ...event, data: { ...event.data, object: session } });
+    const normalizedEvent = event.type.startsWith("checkout.session.")
+      ? { ...event, data: { ...event.data, object: await stripe.checkout.sessions.retrieve(eventSession.id) } }
+      : event;
+    const result = await fulfillStripeProviderEvent({ event: normalizedEvent, stripe });
     return res.status(200).json({ received: true, processed: result.processed });
   } catch (error) {
     return res.status(400).json({ error: error instanceof Error ? error.message : "Webhook could not be verified." });

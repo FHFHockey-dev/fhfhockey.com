@@ -12,13 +12,14 @@ describe("Stripe fulfillment", () => {
     const client = rpcClient();
     const result = await fulfillStripeEvent({
       id: "evt_completed",
+      created: 1_725_000_000,
       type: "checkout.session.completed",
       data: { object: { object: "checkout.session", id: "cs_test_123", mode: "payment", payment_status: "paid", amount_total: 599, currency: "usd", client_reference_id: "purchase-1", payment_intent: "pi_123", metadata: { draft_pro_user_id: "user-1", draft_pro_purchase_id: "purchase-1", draft_pro_season: "draft_pro_2026_27" } } },
     } as any, client);
 
     expect(result).toEqual({ purchaseId: "purchase-1", processed: true });
-    expect(client.rpc).toHaveBeenCalledWith("fulfill_draft_pro_stripe_purchase", expect.objectContaining({
-      p_event_id: "evt_completed", p_session_id: "cs_test_123", p_payment_intent_id: "pi_123", p_user_id: "user-1", p_status: "active",
+    expect(client.rpc).toHaveBeenCalledWith("record_draft_pro_stripe_event", expect.objectContaining({
+      p_event_id: "evt_completed", p_checkout_session_id: "cs_test_123", p_payment_intent_id: "pi_123", p_user_id: "user-1", p_payment_state: "paid",
     }));
   });
 
@@ -30,8 +31,8 @@ describe("Stripe fulfillment", () => {
 
   it("uses a deterministic return event and only fulfills paid sessions", async () => {
     const client = rpcClient();
-    await verifyStripeCheckoutSession({ object: "checkout.session", id: "cs_test_123", mode: "payment", payment_status: "paid", amount_total: 599, currency: "usd", client_reference_id: "purchase-1", payment_intent: "pi_123", metadata: { draft_pro_user_id: "user-1", draft_pro_purchase_id: "purchase-1", draft_pro_season: "draft_pro_2026_27" } } as any, client);
-    expect(client.rpc).toHaveBeenCalledWith("fulfill_draft_pro_stripe_purchase", expect.objectContaining({ p_event_id: "return:cs_test_123" }));
+    await verifyStripeCheckoutSession({ object: "checkout.session", id: "cs_test_123", created: 1_725_000_000, mode: "payment", payment_status: "paid", amount_total: 599, currency: "usd", client_reference_id: "purchase-1", payment_intent: "pi_123", metadata: { draft_pro_user_id: "user-1", draft_pro_purchase_id: "purchase-1", draft_pro_season: "draft_pro_2026_27" } } as any, client);
+    expect(client.rpc).toHaveBeenCalledWith("record_draft_pro_stripe_event", expect.objectContaining({ p_event_id: "return:cs_test_123" }));
     await expect(verifyStripeCheckoutSession({ payment_status: "unpaid" } as any, client)).resolves.toEqual({ purchaseId: null, processed: false });
   });
 
