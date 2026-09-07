@@ -6,10 +6,11 @@ const args = process.argv.slice(2);
 const apply = args.includes("--apply");
 const allowed = new Set(["--apply"]);
 const limitArg = Number(args.find((arg) => arg.startsWith("--limit="))?.split("=")[1] ?? 25);
+if (args.filter((arg) => arg.startsWith("--limit=")).length > 1 || args.filter((arg) => arg === "--apply").length > 1) throw new Error("Repeated argument");
 const limit = Number.isInteger(limitArg) && limitArg > 0 && limitArg <= 100 ? limitArg : null;
 if (!limit) throw new Error("--limit must be an integer between 1 and 100");
 if (args.some((arg) => !arg.startsWith("--limit=") && !allowed.has(arg))) throw new Error("Unknown argument");
-if (apply && process.env.STRIPE_SECRET_KEY?.startsWith("sk_live_") && process.env.DRAFT_PRO_STRIPE_LIVE_APPLY_ENABLED !== "true") throw new Error("Live apply requires explicit operator enablement.");
+if (apply && /^(sk_live_|rk_live_)/.test(process.env.STRIPE_SECRET_KEY ?? "") && process.env.DRAFT_PRO_STRIPE_LIVE_APPLY_ENABLED !== "true") throw new Error("Live apply requires explicit operator enablement.");
 
 async function main() {
   const stripe = getStripeClient();
