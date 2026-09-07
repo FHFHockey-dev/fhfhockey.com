@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { getStripeClient, getStripeWebhookSecret, isStripeConfigured } from "lib/integrations/stripe/config";
-import { fulfillStripeProviderEvent } from "lib/integrations/stripe/fulfillment";
+import { fulfillStripeProviderEvent, verifyDraftProCheckoutSession } from "lib/integrations/stripe/fulfillment";
 
 export const config = { api: { bodyParser: false } };
 
@@ -26,6 +26,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const normalizedEvent = event.type.startsWith("checkout.session.")
       ? { ...event, data: { ...event.data, object: await stripe.checkout.sessions.retrieve(eventSession.id) } }
       : event;
+    if (event.type.startsWith("checkout.session.") && !(await verifyDraftProCheckoutSession(stripe, normalizedEvent.data.object as import("stripe").default.Checkout.Session))) {
+      return res.status(200).json({ received: true, processed: false });
+    }
     const result = await fulfillStripeProviderEvent({ event: normalizedEvent, stripe });
     return res.status(200).json({ received: true, processed: result.processed });
   } catch (error) {

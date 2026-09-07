@@ -5,7 +5,7 @@ import type { Json } from "lib/supabase/database-generated.types";
 
 import { DRAFT_PRO_SEASON } from "lib/draft-pro/contracts";
 
-import { DRAFT_PRO_STRIPE_PRICE } from "./config";
+import { DRAFT_PRO_STRIPE_PRICE, getDraftProStripeCatalog } from "./config";
 
 export type StripeFulfillmentResult = {
   purchaseId: string | null;
@@ -41,6 +41,15 @@ export function isVerifiedDraftProCheckout(session: Stripe.Checkout.Session) {
     && Boolean(session.metadata?.draft_pro_purchase_id)
     && session.metadata?.draft_pro_season === DRAFT_PRO_SEASON
     && session.client_reference_id === session.metadata?.draft_pro_purchase_id;
+}
+
+export async function verifyDraftProCheckoutSession(stripe: Stripe, session: Stripe.Checkout.Session) {
+  if (!isVerifiedDraftProCheckout(session)) return false;
+  const catalog = getDraftProStripeCatalog();
+  const items = await stripe.checkout.sessions.listLineItems(session.id, { limit: 2, expand: ["data.price.product"] });
+  const item = items.data[0];
+  const product = typeof item?.price?.product === "string" ? item.price.product : item?.price?.product?.id;
+  return items.data.length === 1 && item.quantity === 1 && item.price?.id === catalog.priceId && product === catalog.productId && item.price.unit_amount === DRAFT_PRO_STRIPE_PRICE.unitAmount && item.price.currency === DRAFT_PRO_STRIPE_PRICE.currency;
 }
 
 /**
@@ -135,10 +144,11 @@ export function checkoutUserId(session: Stripe.Checkout.Session) {
 }
 
 export async function verifyStripeCheckoutSession(
+  stripe: Stripe,
   session: Stripe.Checkout.Session,
   client: Pick<typeof serviceRoleClient, "rpc"> = serviceRoleClient,
 ) {
-  if (!isVerifiedDraftProCheckout(session)) return { purchaseId: null, processed: false };
+  if (!(await verifyDraftProCheckoutSession(stripe, session))) return { purchaseId: null, processed: false };
   const event = {
     id: `return:${session.id}`,
     created: session.created,
