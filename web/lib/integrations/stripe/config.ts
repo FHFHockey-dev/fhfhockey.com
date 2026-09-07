@@ -8,7 +8,14 @@ export const DRAFT_PRO_STRIPE_PRICE = {
 } as const;
 
 export function isStripeConfigured() {
-  return Boolean(process.env.STRIPE_SECRET_KEY?.trim() && process.env.STRIPE_WEBHOOK_SECRET?.trim());
+  return Boolean(process.env.STRIPE_SECRET_KEY?.trim() && process.env.STRIPE_WEBHOOK_SECRET?.trim() && process.env.STRIPE_DRAFT_PRO_PRICE_ID?.trim() && process.env.STRIPE_DRAFT_PRO_PRODUCT_ID?.trim());
+}
+
+export function getDraftProStripeCatalog() {
+  const priceId = process.env.STRIPE_DRAFT_PRO_PRICE_ID?.trim();
+  const productId = process.env.STRIPE_DRAFT_PRO_PRODUCT_ID?.trim();
+  if (!priceId || !productId) throw new Error("Draft Pro Stripe Price and Product IDs are not configured.");
+  return { priceId, productId };
 }
 
 export function getStripeClient() {

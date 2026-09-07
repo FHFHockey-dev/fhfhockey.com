@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import serviceRoleClient from "lib/supabase/server";
 import { DRAFT_PRO_SEASON } from "lib/draft-pro/contracts";
 
-import { DRAFT_PRO_STRIPE_PRICE } from "./config";
+import { DRAFT_PRO_STRIPE_PRICE, getDraftProStripeCatalog } from "./config";
 
 type CheckoutClient = Pick<typeof serviceRoleClient, "rpc">;
 
@@ -27,10 +27,13 @@ export async function createDraftProCheckout({
     if (session.status === "open" && session.url) return { alreadyPurchased: false as const, url: session.url, purchaseId: attempt.purchase_id };
   }
 
+  const catalog = getDraftProStripeCatalog();
+  const price = await stripe.prices.retrieve(catalog.priceId);
+  if (!price.active || price.type !== "one_time" || price.unit_amount !== DRAFT_PRO_STRIPE_PRICE.unitAmount || price.currency !== DRAFT_PRO_STRIPE_PRICE.currency || (typeof price.product === "string" ? price.product : price.product.id) !== catalog.productId) throw new Error("Draft Pro Stripe Price configuration is invalid.");
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     payment_method_types: ["card"],
-    line_items: [{ price_data: { currency: DRAFT_PRO_STRIPE_PRICE.currency, product_data: { name: DRAFT_PRO_STRIPE_PRICE.productName }, unit_amount: DRAFT_PRO_STRIPE_PRICE.unitAmount }, quantity: 1 }],
+    line_items: [{ price: catalog.priceId, quantity: 1 }],
     client_reference_id: attempt.purchase_id,
     metadata: { draft_pro_user_id: userId, draft_pro_purchase_id: attempt.purchase_id, draft_pro_season: DRAFT_PRO_SEASON },
     payment_intent_data: { metadata: { draft_pro_user_id: userId, draft_pro_purchase_id: attempt.purchase_id, draft_pro_season: DRAFT_PRO_SEASON } },
