@@ -664,6 +664,80 @@ const DraftDashboard: React.FC = () => {
     preserveExactCategoryWeights?: boolean;
     configured?: boolean;
   };
+  type AdaptableBrowserSnapshot = ReturnType<typeof parseBrowserSnapshot> | ReturnType<typeof restoreBrowserSnapshot>;
+
+  const adaptBrowserSnapshot = useCallback((snapshot: AdaptableBrowserSnapshot): DraftSnapshotV2 => {
+    if (!isDraftSettings(snapshot.draftSettings)) throw new Error("Saved draft settings are invalid.");
+    const isRecord = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && !Array.isArray(value);
+    const draftedPlayers = snapshot.draftedPlayers.map((value) => {
+      if (!isRecord(value) || typeof value.playerId !== "string" || typeof value.teamId !== "string" || !Number.isInteger(value.pickNumber) || !Number.isInteger(value.round) || !Number.isInteger(value.pickInRound)) throw new Error("Saved draft picks are invalid.");
+      const optionalStrings = ["yahooSessionId", "yahooPlayerKey", "yahooPlayerId", "yahooDisplayName", "espnSessionId", "espnPlayerId", "espnDisplayName"] as const;
+      if (optionalStrings.some((field) => value[field] !== undefined && typeof value[field] !== "string")) throw new Error("Saved draft pick metadata is invalid.");
+      if (value.source !== undefined && !["manual", "yahoo", "espn"].includes(String(value.source))) throw new Error("Saved draft pick source is invalid.");
+      if (value.yahooMappingStatus !== undefined && !["mapped", "unresolved", "review_required"].includes(String(value.yahooMappingStatus))) throw new Error("Saved Yahoo mapping status is invalid.");
+      if (value.espnMappingStatus !== undefined && !["mapped", "unresolved", "review_required"].includes(String(value.espnMappingStatus))) throw new Error("Saved ESPN mapping status is invalid.");
+      if (value.isKeeper !== undefined && typeof value.isKeeper !== "boolean" || value.keeperVersion !== undefined && !Number.isInteger(value.keeperVersion) || value.auctionCost !== undefined && value.auctionCost !== null && typeof value.auctionCost !== "number") throw new Error("Saved draft pick metadata is invalid.");
+      const player: DraftedPlayer = { playerId: value.playerId, teamId: value.teamId, pickNumber: value.pickNumber as number, round: value.round as number, pickInRound: value.pickInRound as number };
+      for (const field of optionalStrings) if (typeof value[field] === "string") Object.assign(player, { [field]: value[field] });
+      if (value.source) player.source = value.source as DraftedPlayer["source"];
+      if (value.yahooMappingStatus) player.yahooMappingStatus = value.yahooMappingStatus as DraftedPlayer["yahooMappingStatus"];
+      if (value.espnMappingStatus) player.espnMappingStatus = value.espnMappingStatus as DraftedPlayer["espnMappingStatus"];
+      if (typeof value.isKeeper === "boolean") player.isKeeper = value.isKeeper;
+      if (typeof value.keeperVersion === "number") player.keeperVersion = value.keeperVersion;
+      if (typeof value.auctionCost === "number" || value.auctionCost === null) player.auctionCost = value.auctionCost;
+      return player;
+    });
+    const customCsvList: SessionCsvEntry[] = (snapshot.customCsvList ?? []).map((value) => {
+      if (!isRecord(value) || typeof value.id !== "string" || typeof value.label !== "string" || !Array.isArray(value.rows) || value.rows.some((row) => !isRecord(row))) throw new Error("Saved private import data is invalid.");
+      const headers = value.headers;
+      if (headers !== undefined && (!Array.isArray(headers) || headers.some((header) => !isRecord(header) || typeof header.original !== "string" || typeof header.standardized !== "string" || typeof header.selected !== "boolean"))) throw new Error("Saved private import mapping is invalid.");
+      const entry: SessionCsvEntry = { id: value.id, label: value.label, rows: value.rows as Record<string, unknown>[] };
+      if (headers) entry.headers = headers.map((header) => ({ original: header.original as string, standardized: header.standardized as string, selected: header.selected as boolean }));
+      const resolution = value.resolution;
+      if (isRecord(resolution) && Object.keys(resolution).length) {
+        const requiredNumbers = ["totalRows", "idMatched", "nameMatched", "unresolved", "coverage", "lastUpdated"] as const;
+        const optionalNumbers = ["fuzzyMatched", "manualOverrides", "invalidIds"] as const;
+        if (requiredNumbers.some((field) => typeof resolution[field] !== "number" || !Number.isFinite(resolution[field])) || optionalNumbers.some((field) => resolution[field] !== undefined && (typeof resolution[field] !== "number" || !Number.isFinite(resolution[field]))) || !Array.isArray(resolution.unresolvedNames) || resolution.unresolvedNames.some((name) => typeof name !== "string")) throw new Error("Saved private import resolution is invalid.");
+        entry.resolution = {
+          totalRows: resolution.totalRows as number, idMatched: resolution.idMatched as number, nameMatched: resolution.nameMatched as number,
+          unresolved: resolution.unresolved as number, coverage: resolution.coverage as number, lastUpdated: resolution.lastUpdated as number,
+          unresolvedNames: resolution.unresolvedNames as string[],
+          ...(typeof resolution.fuzzyMatched === "number" ? { fuzzyMatched: resolution.fuzzyMatched } : {}),
+          ...(typeof resolution.manualOverrides === "number" ? { manualOverrides: resolution.manualOverrides } : {}),
+          ...(typeof resolution.invalidIds === "number" ? { invalidIds: resolution.invalidIds } : {}),
+        };
+      } else if (resolution !== undefined && !isRecord(resolution)) throw new Error("Saved private import resolution is invalid.");
+      return entry;
+    });
+    const stringRecord = (value: Record<string, unknown>, label: string) => {
+      if (Object.values(value).some((entry) => typeof entry !== "string")) throw new Error(`Saved ${label} are invalid.`);
+      return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, entry as string]));
+    };
+    const sourceControlRecord = (value: Record<string, unknown>, label: string) => Object.fromEntries(Object.entries(value).map(([id, control]) => {
+      if (!isRecord(control) || typeof control.isSelected !== "boolean" || typeof control.weight !== "number" || !Number.isFinite(control.weight)) throw new Error(`Saved ${label} source controls are invalid.`);
+      return [id, { isSelected: control.isSelected, weight: control.weight }];
+    }));
+    const fantrax = snapshot.fantraxLeagueOverride;
+    if (fantrax !== undefined && fantrax !== null && (!isRecord(fantrax) || typeof fantrax.connectedAccountId !== "string" || typeof fantrax.externalLeagueId !== "string" || !(typeof fantrax.externalTeamId === "string" || fantrax.externalTeamId === null) || typeof fantrax.settingsHash !== "string")) throw new Error("Saved Fantrax league selection is invalid.");
+    const espn = snapshot.espnLeagueOverride;
+    if (espn !== undefined && espn !== null && (!isRecord(espn) || espn.provider !== "espn" || typeof espn.namespace !== "string" || typeof espn.connectedAccountId !== "string" || typeof espn.externalLeagueId !== "string" || !(typeof espn.externalTeamId === "string" || espn.externalTeamId === null) || typeof espn.settingsHash !== "string")) throw new Error("Saved ESPN league selection is invalid.");
+    const roundCount = rosterRoundCount(snapshot.draftSettings.rosterConfig);
+    return {
+      v: 2, ts: Date.now(), draftSettings: snapshot.draftSettings, draftedPlayers,
+      keepers: migrateKeeperEntries(snapshot.keepers, snapshot.draftSettings.teamCount),
+      pickOwnerOverrides: snapshot.pickOwnerOverrides,
+      pickTrades: migratePickTrades(snapshot.pickTrades ?? snapshot.pickOwnerOverrides, { draftOrder: snapshot.draftSettings.draftOrder, roundCount, orderPattern: normalizeDraftOrderPattern({ mode: snapshot.draftSettings.draftOrderMode, reversedRounds: snapshot.draftSettings.reversedRounds }, roundCount, snapshot.isSnakeDraft) }),
+      positionOverrides: snapshot.positionOverrides, customTeamNames: snapshot.customTeamNames, currentPick: snapshot.currentPick,
+      isSnakeDraft: snapshot.isSnakeDraft, myTeamId: snapshot.myTeamId, baselineMode: snapshot.baselineMode,
+      needWeightEnabled: snapshot.needWeightEnabled, needAlpha: snapshot.needAlpha, forwardGrouping: snapshot.forwardGrouping,
+      personalizeReplacement: snapshot.personalizeReplacement, goaliePointValues: snapshot.goaliePointValues,
+      sourceControls: sourceControlRecord(snapshot.sourceControls, "skater"), goalieSourceControls: sourceControlRecord(snapshot.goalieSourceControls, "goalie"), customCsvList,
+      favorites: snapshot.favorites, notes: snapshot.notes, tiers: isRecord(snapshot.tiers) ? stringRecord(snapshot.tiers, "tiers") : (() => { throw new Error("Saved tiers are invalid."); })(),
+      fantraxLeagueOverride: fantrax as DraftFantraxSelection | null | undefined,
+      espnLeagueOverride: espn as EspnLeagueSelection | null | undefined,
+      preserveExactCategoryWeights: snapshot.preserveExactCategoryWeights, configured: snapshot.configured,
+    };
+  }, []);
 
   const saveSnapshot = useCallback(() => {
     if (typeof window === "undefined" || !manualDraftingEnabled) return;
@@ -862,17 +936,17 @@ const DraftDashboard: React.FC = () => {
       const validated = parseBrowserSnapshot(snapshot);
       // Validate the same canonical round trip used by cloud restores before
       // writing the session or touching live dashboard state.
-      const imports = toNormalizedPrivateImports(validated.customCsvList as SessionCsvEntry[]);
-      const restored = restoreBrowserSnapshot(serializeSavedDraft(validated), imports) as BrowserDraftSnapshot;
-      if (!isDraftSettings(restored.draftSettings)) throw new Error("Saved draft settings are invalid.");
-      const prepared = prepareSnapshot({ ...restored, draftSettings: restored.draftSettings, ts: Date.now() });
+      const incoming = adaptBrowserSnapshot(validated);
+      const imports = toNormalizedPrivateImports(incoming.customCsvList);
+      const restored = restoreBrowserSnapshot(serializeSavedDraft(validated), imports);
+      const prepared = prepareSnapshot(adaptBrowserSnapshot(restored));
       sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({ ...prepared.browser, ts: Date.now() }));
       prepared.apply();
       return prepared.browser;
     } catch {
       return false;
     }
-  }, [prepareSnapshot]);
+  }, [adaptBrowserSnapshot, prepareSnapshot]);
 
   // On mount: offer to resume snapshot
   useEffect(() => {
