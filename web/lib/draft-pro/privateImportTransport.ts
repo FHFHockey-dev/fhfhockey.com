@@ -11,7 +11,8 @@ const client = serviceRoleClient;
 type UploadRow = Database["public"]["Functions"]["read_draft_pro_private_import_upload"]["Returns"][number];
 type OwnedBytes = Uint8Array<ArrayBuffer>;
 
-function bytesFrom(value: ArrayBuffer | Uint8Array): OwnedBytes { return new Uint8Array(value); }
+function bytesFrom(value: ArrayBuffer | ArrayLike<number>): OwnedBytes { return value instanceof ArrayBuffer ? new Uint8Array(value) : Uint8Array.from(value); }
+function bytesEqual(left: OwnedBytes, right: OwnedBytes) { return left.byteLength === right.byteLength && left.every((value, index) => value === right[index]); }
 
 function requireRow<T>(rows: T[] | null, message = "Private import transaction returned no result."): T {
   const value = rows?.[0];
@@ -40,16 +41,16 @@ export async function beginPrivateImport(args: { userId: string; draftId: string
   return { status: "ready", session, upload };
 }
 
-export async function putPrivateImportChunk(args: { userId: string; uploadId: string; prefix: string; ordinal: number; bytes: Uint8Array }) {
+export async function putPrivateImportChunk(args: { userId: string; uploadId: string; prefix: string; ordinal: number; bytes: ArrayLike<number> }) {
   const uploadRecord = await ownedUpload(args.userId, args.uploadId);
+  const chunkBytes = bytesFrom(args.bytes);
   if (uploadRecord.status !== "uploading") throw new Error("Private import upload is unavailable.");
-  if (args.bytes.byteLength === 0 || args.bytes.byteLength > PRIVATE_IMPORT_CHUNK_BYTES) throw new Error("Private import chunks must be between 1 byte and 750 KiB.");
+  if (chunkBytes.byteLength === 0 || chunkBytes.byteLength > PRIVATE_IMPORT_CHUNK_BYTES) throw new Error("Private import chunks must be between 1 byte and 750 KiB.");
   const maxChunks = Math.ceil(uploadRecord.declared_max_bytes / PRIVATE_IMPORT_CHUNK_BYTES);
   if (!Number.isInteger(args.ordinal) || args.ordinal < 0 || args.ordinal >= maxChunks || args.prefix !== uploadRecord.storage_prefix) throw new Error("Invalid private import chunk ordinal.");
   const remaining = uploadRecord.declared_max_bytes - args.ordinal * PRIVATE_IMPORT_CHUNK_BYTES;
-  if (args.bytes.byteLength > Math.min(PRIVATE_IMPORT_CHUNK_BYTES, remaining)) throw new Error("Chunk exceeds its upload reservation.");
+  if (chunkBytes.byteLength > Math.min(PRIVATE_IMPORT_CHUNK_BYTES, remaining)) throw new Error("Chunk exceeds its upload reservation.");
   const path = `${uploadRecord.storage_prefix}/${args.ordinal}`;
-  const chunkBytes = bytesFrom(args.bytes);
   // Chunks encode the normalized JSON document; keep the bucket MIME policy
   // aligned with its explicit private-import allowlist.
   const upload = await client.storage.from(BUCKET).upload(path, chunkBytes, { contentType: "application/json", upsert: false });
@@ -57,7 +58,7 @@ export async function putPrivateImportChunk(args: { userId: string; uploadId: st
     if (!/already exists/i.test(upload.error.message)) throw upload.error;
     const existing = await client.storage.from(BUCKET).download(path);
     if (existing.error) throw existing.error;
-    if (!Buffer.from(bytesFrom(await existing.data.arrayBuffer())).equals(Buffer.from(chunkBytes))) throw new Error("Private import retry chunk differs from the existing chunk.");
+    if (!bytesEqual(bytesFrom(await existing.data.arrayBuffer()), chunkBytes)) throw new Error("Private import retry chunk differs from the existing chunk.");
   }
   return path;
 }

@@ -5,8 +5,8 @@ const rpc = vi.hoisted(() => vi.fn());
 const storageUpload = vi.hoisted(() => vi.fn());
 const storageDownload = vi.hoisted(() => vi.fn());
 vi.mock("lib/supabase/server", () => ({ default: { rpc, storage: { from: () => ({ upload: storageUpload, download: storageDownload }) } } }));
-const arrayBuffer = (value: Uint8Array) => new Uint8Array(value).buffer;
-const binary = (value: Uint8Array) => new Uint8Array(value);
+const binary = (value: ArrayLike<number>) => Uint8Array.from(value);
+const arrayBuffer = (value: ArrayLike<number>) => binary(value).buffer;
 
 import { putPrivateImportChunk, readPrivateImportChunk, stagePrivateImport, PRIVATE_IMPORT_CHUNK_BYTES } from "./privateImportTransport";
 
