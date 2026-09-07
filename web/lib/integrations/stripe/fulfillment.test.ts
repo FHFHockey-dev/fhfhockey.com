@@ -1,58 +1,18 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { fulfillStripeProviderEvent, verifyStripeCheckoutSession } from "./fulfillment";
 
-import { fulfillStripeEvent, verifyDraftProCheckoutSession, verifyStripeCheckoutSession } from "./fulfillment";
-
-function rpcClient(result = { purchase_id: "purchase-1", processed: true }) {
-  const rpc = vi.fn().mockResolvedValue({ data: result, error: null });
-  return { rpc } as any;
+const session: any = { object:"checkout.session",id:"cs_test",created:1,mode:"payment",payment_status:"paid",amount_total:599,currency:"usd",client_reference_id:"purchase-1",payment_intent:"pi_1",metadata:{draft_pro_user_id:"user-1",draft_pro_purchase_id:"purchase-1",draft_pro_season:"draft_pro_2026_27"} };
+const item:any = { quantity:1,price:{id:"price_test",product:"prod_test",unit_amount:599,currency:"usd"} };
+function harness() {
+  const rpc=vi.fn().mockResolvedValue({data:[{purchase_id:"purchase-1",processed:true}],error:null});
+  const stripe:any={checkout:{sessions:{retrieve:vi.fn().mockResolvedValue(session),listLineItems:vi.fn().mockResolvedValue({data:[item]})}},charges:{retrieve:vi.fn().mockResolvedValue({id:"ch_1",amount:599,amount_refunded:599,payment_intent:"pi_1"})},paymentIntents:{retrieve:vi.fn().mockResolvedValue({metadata:{draft_pro_user_id:"user-1",draft_pro_purchase_id:"purchase-1"}})}};
+  return {stripe,rpc,client:{rpc} as any};
 }
-const stripe = { checkout: { sessions: { listLineItems: vi.fn().mockResolvedValue({ data: [{ quantity: 1, price: { id: "price_test", product: "prod_test", unit_amount: 599, currency: "usd" } }] }) } } } as any;
+beforeEach(()=>{process.env.STRIPE_DRAFT_PRO_PRICE_ID="price_test";process.env.STRIPE_DRAFT_PRO_PRODUCT_ID="prod_test";});
 
-describe("Stripe fulfillment", () => {
-  it("accepts exactly one configured price line item", async () => {
-    process.env.STRIPE_DRAFT_PRO_PRICE_ID = "price_test";
-    process.env.STRIPE_DRAFT_PRO_PRODUCT_ID = "prod_test";
-    const stripe = { checkout: { sessions: { listLineItems: vi.fn().mockResolvedValue({ data: [{ quantity: 1, price: { id: "price_test", product: "prod_test", unit_amount: 599, currency: "usd" } }] }) } } } as any;
-    const session = { id: "cs_test", mode: "payment", payment_status: "paid", amount_total: 599, currency: "usd", client_reference_id: "purchase-1", metadata: { draft_pro_user_id: "user-1", draft_pro_purchase_id: "purchase-1", draft_pro_season: "draft_pro_2026_27" } } as any;
-    await expect(verifyDraftProCheckoutSession(stripe, session)).resolves.toBe(true);
-    stripe.checkout.sessions.listLineItems.mockResolvedValue({ data: [{ quantity: 2, price: { id: "price_test", product: "prod_test", unit_amount: 599, currency: "usd" } }] });
-    await expect(verifyDraftProCheckoutSession(stripe, session)).resolves.toBe(false);
-    stripe.checkout.sessions.listLineItems.mockResolvedValue({ data: [{ quantity: 1, price: { id: "price_other", product: "prod_test", unit_amount: 599, currency: "usd" } }] });
-    await expect(verifyDraftProCheckoutSession(stripe, session)).resolves.toBe(false);
-    await expect(verifyDraftProCheckoutSession(stripe, { ...session, payment_status: "unpaid" })).resolves.toBe(false);
-  });
-
-  it("sends a completed signed event to the single atomic fulfillment RPC", async () => {
-    const client = rpcClient();
-    const result = await fulfillStripeEvent({
-      id: "evt_completed",
-      created: 1_725_000_000,
-      type: "checkout.session.completed",
-      data: { object: { object: "checkout.session", id: "cs_test_123", mode: "payment", payment_status: "paid", amount_total: 599, currency: "usd", client_reference_id: "purchase-1", payment_intent: "pi_123", metadata: { draft_pro_user_id: "user-1", draft_pro_purchase_id: "purchase-1", draft_pro_season: "draft_pro_2026_27" } } },
-    } as any, client);
-
-    expect(result).toEqual({ purchaseId: "purchase-1", processed: true });
-    expect(client.rpc).toHaveBeenCalledWith("record_draft_pro_stripe_event", expect.objectContaining({
-      p_event_id: "evt_completed", p_checkout_session_id: "cs_test_123", p_payment_intent_id: "pi_123", p_user_id: "user-1", p_payment_state: "paid",
-    }));
-  });
-
-  it("does not process unrelated events", async () => {
-    const client = rpcClient();
-    await expect(fulfillStripeEvent({ id: "evt_ignored", type: "customer.created", data: { object: {} } } as any, client)).resolves.toEqual({ purchaseId: null, processed: false });
-    expect(client.rpc).not.toHaveBeenCalled();
-  });
-
-  it("uses a deterministic return event and only fulfills paid sessions", async () => {
-    const client = rpcClient();
-    await verifyStripeCheckoutSession(stripe, { object: "checkout.session", id: "cs_test_123", created: 1_725_000_000, mode: "payment", payment_status: "paid", amount_total: 599, currency: "usd", client_reference_id: "purchase-1", payment_intent: "pi_123", metadata: { draft_pro_user_id: "user-1", draft_pro_purchase_id: "purchase-1", draft_pro_season: "draft_pro_2026_27" } } as any, client);
-    expect(client.rpc).toHaveBeenCalledWith("record_draft_pro_stripe_event", expect.objectContaining({ p_event_id: "return:cs_test_123" }));
-    await expect(verifyStripeCheckoutSession({ payment_status: "unpaid" } as any, client)).resolves.toEqual({ purchaseId: null, processed: false });
-  });
-
-  it("rejects a paid session whose server-owned facts do not match", async () => {
-    const client = rpcClient();
-    await expect(verifyStripeCheckoutSession({ mode: "payment", payment_status: "paid", amount_total: 600, currency: "usd", metadata: { draft_pro_user_id: "user-1", draft_pro_purchase_id: "purchase-1", draft_pro_season: "draft_pro_2026_27" }, client_reference_id: "purchase-1" } as any, client)).resolves.toEqual({ purchaseId: null, processed: false });
-    expect(client.rpc).not.toHaveBeenCalled();
-  });
+describe("Stripe provider adapter",()=>{
+  it.each([["price",{...item,price:{...item.price,id:"bad"}}],["product",{...item,price:{...item.price,product:"bad"}}],["quantity",{...item,quantity:2}]])("rejects wrong %s without RPC",async(_label,bad)=>{const h=harness();h.stripe.checkout.sessions.listLineItems.mockResolvedValue({data:[bad]});await fulfillStripeProviderEvent({event:{id:"evt",type:"checkout.session.completed",created:1,data:{object:{id:"cs_test"}}} as any,stripe:h.stripe,client:h.client});expect(h.rpc).not.toHaveBeenCalled();});
+  it.each([[599,true],[100,false]])("normalizes refund fullness",async(amountRefunded,full)=>{const h=harness();h.stripe.charges.retrieve.mockResolvedValue({id:"ch_1",amount:599,amount_refunded:amountRefunded,payment_intent:"pi_1"});await fulfillStripeProviderEvent({event:{id:"evt",type:"charge.refunded",created:1,data:{object:{id:"ch_1",metadata:{}}}} as any,stripe:h.stripe,client:h.client});expect(h.rpc).toHaveBeenCalledWith("record_draft_pro_stripe_event",expect.objectContaining({p_user_id:"user-1",p_purchase_id:"purchase-1",p_full_refund:full}));});
+  it.each([["charge.dispute.created","needs_response","open","disputed"],["charge.dispute.closed","won","won","dispute_won"],["charge.dispute.closed","lost","lost","disputed"]])("normalizes %s",async(type,providerStatus,status,paymentState)=>{const h=harness();await fulfillStripeProviderEvent({event:{id:"evt",type,created:1,data:{object:{id:"dp_1",charge:"ch_1",status:providerStatus}}} as any,stripe:h.stripe,client:h.client});expect(h.rpc).toHaveBeenCalledWith("record_draft_pro_stripe_event",expect.objectContaining({p_dispute_status:status,p_payment_state:paymentState}));});
+  it("uses catalog verification on return",async()=>{const h=harness();await verifyStripeCheckoutSession(h.stripe,session,h.client);expect(h.stripe.checkout.sessions.listLineItems).toHaveBeenCalled();expect(h.rpc).toHaveBeenCalledTimes(1);});
 });

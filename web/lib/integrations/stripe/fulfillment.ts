@@ -56,7 +56,7 @@ export async function verifyDraftProCheckoutSession(stripe: Stripe, session: Str
  * The database function is deliberately the only fulfillment writer. It owns
  * event de-duplication and entitlement mutation in one transaction.
  */
-export async function fulfillStripeEvent(
+async function fulfillStripeEvent(
   event: Stripe.Event,
   client: Pick<typeof serviceRoleClient, "rpc"> = serviceRoleClient,
 ): Promise<StripeFulfillmentResult> {
