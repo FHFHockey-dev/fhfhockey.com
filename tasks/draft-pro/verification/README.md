@@ -28,9 +28,9 @@ With two migrations, `stripe-concurrency-probes.sh` uses separate named PostgreS
 
 With three ordered migrations, pass the saved-drafts transaction migration as the third argument and set `DRAFT_PRO_EXTRA_PROBE` to its committed transaction probe. The harness preserves the foundation and Stripe probes, then runs the saved-draft session, quota, replacement, duplicate, delete-cleanup, version, and ownership assertions in the same disposable database.
 
-## Saved Drafts real-service routes
+## Saved Drafts real-service routes and browser
 
-From the repository root, with Docker running and the existing `web/node_modules` installation available:
+From the repository root, with Docker running, the existing `web/node_modules` installation, and Playwright Chromium available:
 
 ```sh
 web/scripts/draft-pro/verify-saved-drafts-routes.sh
@@ -38,4 +38,16 @@ web/scripts/draft-pro/verify-saved-drafts-routes.sh
 
 This separate harness starts disposable local Postgres, GoTrue, PostgREST, Storage, a loopback gateway, and Next. It applies the baseline and three Draft Pro migrations, seeds synthetic users and entitlements, and uses locally signed test tokens. It does not use production data, provider credentials, live payments, or email delivery.
 
-The runner saves a populated draft with a private normalized import and restores its snapshot and downloaded file through a second token for the same account. Assertions cover file integrity, picks, keepers, trades, settings, source controls, favorites, notes, tiers, another user's denied access, inactive names-only access, blocked payload/write/file operations, retained data after reactivation, and a stale-version conflict. The final success marker includes `cleanup=verified` only after its services and listening ports are removed. This proves the real API/session flow; it does not substitute for dashboard browser testing.
+The route runner saves a populated draft with a private normalized import and restores its snapshot and downloaded file through a second token for the same account. Assertions cover file integrity, picks, keepers, trades, settings, source controls, favorites, notes, tiers, another user's denied access, inactive names-only access, blocked payload/write/file operations, retained data after reactivation, and a stale-version conflict.
+
+The browser runner then exercises the actual dashboard in separate account sessions: populated private-CSV restoration, hidden-panel autosave, failed-save local preservation and retry, conflict reload, and saving a conflict as another draft while preserving the original. Inactive users retain manual picks but see locked cloud items. Public projection fixtures are synthetic; account authentication, Saved Drafts routes, database, and private Storage remain real local services. One deliberately aborted request tests network recovery.
+
+For browser-only iteration after the route assertions have already passed:
+
+```sh
+DRAFT_PRO_BROWSER_ONLY=true web/scripts/draft-pro/verify-saved-drafts-routes.sh
+```
+
+Set `DRAFT_PRO_BROWSER_ARTIFACTS` to retain screenshots in a chosen directory; the default is `/tmp/draft-pro-saved-drafts-artifacts`. Evidence includes keyboard activation, a 390px mobile viewport, asserted 200% pinch magnification, and a 640px CSS viewport for enlarged-layout reflow. The latter is equivalent in CSS width to a 1280px desktop at 200%; it is not an actual browser-chrome zoom test. Inspect the loaded controls in the screenshots as a separate visual acceptance gate.
+
+The final success marker includes `cleanup=verified` only after the harness removes its services and listening ports. A browser-only run does not rerun the separate route assertion suite.
