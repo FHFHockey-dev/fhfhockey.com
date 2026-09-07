@@ -640,6 +640,8 @@ for (const viewport of [
     await page.reload();
     await expect(settings(page)).toHaveAttribute("data-open", "true");
     await expect(settings(page)).toContainText("Imported projection CSV rows are unavailable");
+    await expect(page.getByText("Loading draft sources", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("Loading player projections…", { exact: true })).toHaveCount(0);
     await settings(page).getByTestId("open-weights-popover").click();
     const skaterSources = settings(page).getByRole("region", { name: "Skaters projection sources" });
     await expect(skaterSources.getByText("Browser fixture", { exact: true })).toBeVisible();
@@ -748,6 +750,14 @@ test("JSON file bookmark replaces stale state and invalid file preserves the new
   await expect(skaterSources.getByText("Browser fixture", { exact: true })).toHaveCount(0);
   await done(page);
   await expect(page.locator("#mobile-draft-panel-players tbody tr").first()).toBeVisible({ timeout: 60_000 });
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.reload();
+  await expect(page.locator("#mobile-draft-panel-players tbody tr").first()).toBeVisible({ timeout: 60_000 });
+  await expect.poll(async () => (await session(page)).csvMetadata?.[0]?.label).toBe("File Browser fixture");
+  await expect.poll(async () => {
+    const entries = JSON.parse((await page.evaluate(() => sessionStorage.getItem("draft.customCsvList.v3"))) || "[]");
+    return entries[0]?.rows?.length;
+  }).toBeGreaterThan(0);
   await page.getByRole("button", { name: "Setup", exact: true }).click();
   await settings(page).getByRole("button", { name: "Import", exact: true }).click();
   const needsResources = await session(page);
