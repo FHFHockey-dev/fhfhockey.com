@@ -7,9 +7,17 @@ import { validateCsvProjectionRows } from "./csvImportValidation";
 import { getEffectiveSourceShares } from "./sourceWeights";
 import { groupPlayerEligibility } from "./forwardGrouping";
 import { materializeKeeperPicks, validateKeeperCandidate } from "./keepers";
-import { resolvePickOwner, upsertPickTrade } from "./pickTrades";
+import {
+  findPicksUntilTeamTurn,
+  resolvePickOwner,
+  upsertPickTrade,
+} from "./pickTrades";
 import { buildDraftConfigurationSummary } from "./summaryConfiguration";
-import { categoryRankBand, rankTeamCategories } from "./categoryStandings";
+import {
+  aggregateTeamCategoryTotals,
+  categoryRankBand,
+  rankTeamCategories,
+} from "./categoryStandings";
 import { bookmarkImportError, validateDraftSettings } from "./settingsValidation";
 
 const csvPlayer = (id: number, name: string, position: string) => ({
@@ -54,13 +62,23 @@ describe("representative draft workflow", () => {
     const positionalConflict = validateDraftSettings({ ...input, settings: { ...settings, rosterConfig: { C: 3, G: 0, bench: 0, utility: 0 } }, draftedPlayers: [picks[0]], playerEligibility: new Map([["1", ["G"]]]) });
     expect(positionalConflict.domains.roster).toBe(false);
     expect(positionalConflict.errors[0].message).toContain("drafted positions exceed");
+
+    const overrideConflict = validateDraftSettings({
+      ...input,
+      settings: { ...settings, rosterConfig: { C: 1, LW: 1, G: 0, bench: 0, utility: 0 } },
+      draftedPlayers: [picks[0], picks[1]],
+      playerEligibility: new Map([["1", ["C"]], ["2", ["C", "LW"]]]),
+      positionOverrides: { "2": "C" },
+    });
+    expect(overrideConflict.domains.roster).toBe(false);
+    expect(overrideConflict.errors[0].message).toContain("drafted positions exceed");
   });
 
   it("accepts valid portable sessions and rejects malformed or destructive imports before application", () => {
     const bookmark = { v: 3, settings, myTeamId: "Team 1", draftedPlayers: picks, currentPick: 4, sourceControls: input.skaterSources, goalieSourceControls: input.goalieSources, goalieScoringCategories: input.goalieScoring };
     expect(bookmarkImportError(bookmark)).toBeNull();
     for (const invalid of [null, { v: 3, settings: {} }, { ...bookmark, settings: { ...settings, rosterConfig: [] } }, { ...bookmark, draftedPlayers: [picks[0], picks[0]] }, { ...bookmark, currentPick: -1 }, { ...bookmark, keepers: [{ playerId: "4", teamId: "missing", round: 1, pickInRound: 1 }] }, { ...bookmark, pickTrades: [{ round: 999, pickInRound: 1, currentTeamId: "Team 2" }] }]) expect(bookmarkImportError(invalid)).not.toBeNull();
-    expect(bookmarkImportError({ ...bookmark, sourceControls: { custom_csv_missing: { isSelected: true, weight: 1 } } }, [])).toContain("missing from this tab");
+    expect(bookmarkImportError({ ...bookmark, sourceControls: { custom_csv_missing: { isSelected: true, weight: 1 } } }, [])).toBeNull();
     expect(bookmarkImportError({ ...bookmark, goalieScoringCategories: { GOALS_AGAINST_GOALIE: -1 } })).toBeNull();
   });
 
@@ -72,7 +90,12 @@ describe("representative draft workflow", () => {
     const ranks = rankTeamCategories(teams, { GOALS: 1, GOALS_AGAINST_AVERAGE: 1 }, "categories");
     expect(ranks["0"]).toEqual({ GOALS: 1, GOALS_AGAINST_AVERAGE: 1 });
     expect(ranks["11"]).toEqual({ GOALS: 12, GOALS_AGAINST_AVERAGE: 12 });
-    expect(teams.map((team) => categoryRankBand(ranks[team.teamId].GOALS, 12))).toEqual([
+    const goalRank = (teamId: string) => {
+      const rank = ranks[teamId].GOALS;
+      if (rank == null) throw new Error(`Missing GOALS rank for ${teamId}`);
+      return rank;
+    };
+    expect(teams.map((team) => categoryRankBand(goalRank(team.teamId), 12))).toEqual([
       "green", "green", "green", "yellow", "yellow", "yellow", "orange", "orange", "orange", "red", "red", "red",
     ]);
     teams[1].categoryTotals.GOALS = teams[0].categoryTotals.GOALS;
@@ -82,9 +105,96 @@ describe("representative draft workflow", () => {
       { teamId: "empty", categoryTotals: {} },
       { teamId: "zero", categoryTotals: { GOALS: 0 } },
     ], { GOALS: 1 }, "categories");
-    expect(missing.empty.GOALS).toBe(missing.zero.GOALS);
+    expect(missing.empty.GOALS).toBeUndefined();
+    expect(missing.zero.GOALS).toBe(1);
     expect(categoryRankBand(1, 1)).toBe("green");
     expect(categoryRankBand(2, 5)).toBe("green");
+  });
+
+  it("aggregates projected rate categories by their workloads and marks incomplete rates unavailable", () => {
+    const goalies = [
+      {
+        displayPosition: "G",
+        combinedStats: {
+          SAVES_GOALIE: { projected: 90 },
+          GOALS_AGAINST_GOALIE: { projected: 10 },
+          SAVE_PERCENTAGE: { projected: 0.9 },
+          GOALS_AGAINST_AVERAGE: { projected: 2 },
+          GAMES_STARTED_GOALIE: { projected: 10 },
+        },
+      },
+      {
+        displayPosition: "G",
+        combinedStats: {
+          SAVES_GOALIE: { projected: 190 },
+          GOALS_AGAINST_GOALIE: { projected: 10 },
+          SAVE_PERCENTAGE: { projected: 0.95 },
+          GOALS_AGAINST_AVERAGE: { projected: 3 },
+          GAMES_STARTED_GOALIE: { projected: 30 },
+        },
+      },
+    ];
+    const totals = aggregateTeamCategoryTotals(goalies, [
+      "SAVE_PERCENTAGE",
+      "GOALS_AGAINST_AVERAGE",
+    ]);
+    expect(totals.SAVE_PERCENTAGE).toEqual({
+      value: 280 / 300,
+      quality: "exact-from-projected-inputs",
+    });
+    expect(totals.GOALS_AGAINST_AVERAGE).toEqual({
+      value: 2.75,
+      quality: "estimated",
+    });
+
+    const incomplete = aggregateTeamCategoryTotals(
+      [...goalies, { displayPosition: "G", combinedStats: {} }],
+      ["SAVE_PERCENTAGE", "GOALS_AGAINST_AVERAGE"],
+    );
+    expect(incomplete.SAVE_PERCENTAGE).toEqual({
+      value: null,
+      quality: "unavailable",
+    });
+    expect(incomplete.GOALS_AGAINST_AVERAGE).toEqual({
+      value: null,
+      quality: "unavailable",
+    });
+    const zeroWorkload = aggregateTeamCategoryTotals(
+      [
+        {
+          displayPosition: "C",
+          combinedStats: {
+            GOALS: { projected: 0 },
+            SHOTS_ON_GOAL: { projected: 0 },
+          },
+        },
+        {
+          displayPosition: "C",
+          combinedStats: {
+            GOALS: { projected: 10 },
+            SHOTS_ON_GOAL: { projected: 100 },
+          },
+        },
+      ],
+      ["SHOOTING_PERCENTAGE"],
+    );
+    expect(zeroWorkload.SHOOTING_PERCENTAGE).toEqual({
+      value: null,
+      quality: "unavailable",
+    });
+    expect(rankTeamCategories([
+      { teamId: "complete", categoryTotals: { SAVE_PERCENTAGE: totals.SAVE_PERCENTAGE.value } },
+      { teamId: "incomplete", categoryTotals: { SAVE_PERCENTAGE: null } },
+    ], { SAVE_PERCENTAGE: 1 }, "categories").incomplete.SAVE_PERCENTAGE).toBeUndefined();
+    expect(rankTeamCategories([
+      {
+        teamId: "zero-workload",
+        categoryTotals: {
+          SHOOTING_PERCENTAGE: zeroWorkload.SHOOTING_PERCENTAGE.value,
+        },
+      },
+      { teamId: "complete", categoryTotals: { SHOOTING_PERCENTAGE: 0.1 } },
+    ], { SHOOTING_PERCENTAGE: 1 }, "categories")["zero-workload"].SHOOTING_PERCENTAGE).toBeUndefined();
   });
   it("keeps one coherent contract across import, settings, pick ownership, undo, recommendations, and summary", () => {
     const imported = validateCsvProjectionRows(
@@ -124,6 +234,16 @@ describe("representative draft workflow", () => {
         keepers: [keeperResult.keeper],
       }).currentTeamId,
     ).toBe("Team 4");
+    const picksUntilTeam4 = findPicksUntilTeamTurn({
+      currentPick: 0,
+      teamId: "Team 4",
+      draftOrder,
+      isSnakeDraft: true,
+      trades: tradeResult.trades,
+      keepers: [keeperResult.keeper],
+      maxPickNumber: 12,
+    });
+    expect(picksUntilTeam4).toBe(2);
 
     const keeperPicks = materializeKeeperPicks([], [keeperResult.keeper]);
     const drafted = [
@@ -141,6 +261,7 @@ describe("representative draft workflow", () => {
       eligiblePositions: ["D"],
       combinedStats: {},
       fantasyPoints: { projected: 100 },
+      yahooAvgPick: 12,
     } as any;
     const { result } = renderHook(() =>
       usePlayerRecommendations({
@@ -148,9 +269,12 @@ describe("representative draft workflow", () => {
         vorpMetrics: new Map([["2", { vbd: 10, vorp: 8, vona: 6 } as any]]),
         forwardGrouping: "fwd",
         baselineMode: "remaining",
+        nextPickNumber: picksUntilTeam4,
+        riskSd: 2,
       }),
     );
     expect(result.current.recommendations[0].player.playerId).toBe(2);
+    expect(result.current.recommendations[0].availability).toBeGreaterThan(0.99);
 
     const summary = buildDraftConfigurationSummary({
       projectionSources: [

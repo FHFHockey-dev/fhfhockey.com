@@ -70,6 +70,40 @@ describe("grouped forward contract", () => {
     expect(result.counts).toMatchObject({ FWD: 1, D: 1, G: 1, UTILITY: 1 });
   });
 
+  it("reserves valid manual overrides before automatic placement", () => {
+    const result = allocateGroupedRosterSlots({
+      players: [
+        { id: "first", eligibility: ["C"] },
+        { id: "second", eligibility: ["C"] }
+      ],
+      rosterConfig: { C: 1, utility: 1, bench: 0 },
+      grouping: "split",
+      overrides: { first: "UTILITY" }
+    });
+
+    expect(result.assignments).toEqual({ first: "UTILITY", second: "C" });
+  });
+
+  it("uses draft order for conflicting overrides and never puts goalies in utility", () => {
+    const result = allocateGroupedRosterSlots({
+      players: [
+        { id: "first", eligibility: ["C"] },
+        { id: "second", eligibility: ["LW"] },
+        { id: "goalie", eligibility: ["G"] }
+      ],
+      rosterConfig: { C: 0, LW: 0, G: 0, utility: 1, bench: 0 },
+      grouping: "split",
+      overrides: { first: "UTILITY", second: "UTILITY", goalie: "UTILITY" }
+    });
+
+    expect(result.assignments).toEqual({
+      first: "UTILITY",
+      second: "BENCH",
+      goalie: "BENCH"
+    });
+    expect(result.counts.UTILITY).toBe(1);
+  });
+
   it("supports an exact generic-forward flex alongside split forward slots", () => {
     const rosterConfig = {
       C: 1,

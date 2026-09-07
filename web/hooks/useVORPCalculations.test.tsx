@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import type { ProcessedPlayer } from "./useProcessedProjectionsData";
 import { useVORPCalculations } from "./useVORPCalculations";
+import { STATS_MASTER_LIST } from "lib/projectionsConfig/statsMasterList";
 import {
   KEEPER_CONTRACT_VERSION,
   materializeKeeperPicks
@@ -30,6 +31,20 @@ function player(
     },
     yahooAvgPick
   } as ProcessedPlayer;
+}
+
+function projectedStat(projected: number): ProcessedPlayer["combinedStats"][string] {
+  return {
+    projected,
+    actual: null,
+    diffPercentage: null,
+    projectedDetail: {
+      value: projected,
+      contributingSources: [],
+      missingFromSelectedSources: [],
+      statDefinition: STATS_MASTER_LIST[0],
+    },
+  };
 }
 
 const players = [
@@ -155,5 +170,58 @@ describe("useVORPCalculations grouped forwards", () => {
     expect(result.current.replacementByPos.FWD.vorp).toBe(60);
     rerender({ baselineMode: "full" });
     expect(result.current.replacementByPos.FWD.vorp).toBe(70);
+  });
+
+  it("uses the authoritative scoring map for paced player values without pacing goalies", () => {
+    const skater = player(10, "C", 999, 1);
+    skater.combinedStats = {
+      GAMES_PLAYED: projectedStat(84),
+      GOALS: projectedStat(40),
+      ASSISTS: projectedStat(80),
+    };
+    const goalie = player(11, "G", 999, 2);
+    goalie.combinedStats = {
+      GAMES_PLAYED: projectedStat(42),
+      WINS_GOALIE: projectedStat(10),
+    };
+    const input = {
+      players: [skater, goalie],
+      availablePlayers: [skater, goalie],
+      draftSettings: {
+        teamCount: 1,
+        rosterConfig: { C: 1, G: 1, utility: 0 },
+      },
+      picksUntilNext: 0,
+      prorate84: true,
+      fantasyPointSettings: { GOALS: 10, WINS_GOALIE: 10 },
+      mergeFantasyPointDefaults: false,
+    };
+    const { result, rerender } = renderHook(
+      ({ prorate84 }) => ({
+        playerAnalysis: useVORPCalculations({ ...input, prorate84 }),
+        originalProjection: useVORPCalculations({
+          ...input,
+          prorate84: false,
+        }),
+      }),
+      { initialProps: { prorate84: true } },
+    );
+
+    expect(result.current.playerAnalysis.playerMetrics.get("10")?.value).toBe(
+      400,
+    );
+    expect(result.current.playerAnalysis.playerMetrics.get("11")?.value).toBe(
+      100,
+    );
+    expect(result.current.originalProjection.playerMetrics.get("10")?.value).toBe(
+      999,
+    );
+    rerender({ prorate84: false });
+    expect(result.current.playerAnalysis.playerMetrics.get("10")?.value).toBe(
+      999,
+    );
+    expect(result.current.originalProjection.playerMetrics.get("10")?.value).toBe(
+      999,
+    );
   });
 });

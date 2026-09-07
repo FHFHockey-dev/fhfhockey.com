@@ -5,6 +5,7 @@ import { DraftedPlayer } from "./DraftDashboard";
 // Import ProcessedPlayer from the correct location
 import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import { PlayerVorpMetrics } from "hooks/useVORPCalculations";
+import { estimateAvailability } from "hooks/usePlayerRecommendations";
 import styles from "./ProjectionsTable.module.scss";
 import supabase from "lib/supabase";
 import { STATS_MASTER_LIST } from "lib/projectionsConfig/statsMasterList";
@@ -36,6 +37,7 @@ interface ProjectionsTableProps {
   // Full pool including drafted; used for diagnostics cross-check
   allPlayers?: ProcessedPlayer[];
   draftedPlayers: DraftedPlayer[];
+  keeperPlayerIds?: ReadonlySet<string>;
   unavailablePlayerIds?: ReadonlySet<string>;
   isLoading: boolean;
   error: string | null;
@@ -58,6 +60,8 @@ interface ProjectionsTableProps {
   onNeedAlphaChange?: (alpha: number) => void;
   // pick risk context: absolute next pick number (currentPick + picksUntilNext)
   nextPickNumber?: number;
+  riskSd?: number;
+  onRiskSdChange?: (value: number) => void;
   // league type for value semantics
   leagueType?: "points" | "categories";
   // forward grouping display mode (C/LW/RW vs FWD)
@@ -110,6 +114,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   players,
   allPlayers,
   draftedPlayers,
+  keeperPlayerIds,
   unavailablePlayerIds,
   isLoading,
   error,
@@ -126,6 +131,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   needAlpha = 0.5,
   onNeedAlphaChange,
   nextPickNumber,
+  riskSd = 12,
+  onRiskSdChange,
   forwardGrouping = "split",
   leagueType = "points",
   activeCategoryKeys = [],
@@ -151,8 +158,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   const [bandScope, setBandScope] = useState<"overall" | "position">(
     "position",
   );
-  // configurable risk standard deviation (in picks)
-  const [riskSd, setRiskSd] = useState<number>(12);
   // Favorites
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
@@ -305,6 +310,119 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   >([]);
   // settings drawer visibility
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const projectionsRootRef = React.useRef<HTMLDivElement>(null);
+  const settingsTriggerRef = React.useRef<HTMLButtonElement>(null);
+  const settingsDrawerRef = React.useRef<HTMLElement>(null);
+  const settingsPreviousFocusRef = React.useRef<HTMLElement | null>(null);
+
+  const closeSettings = useCallback(() => setSettingsOpen(false), []);
+
+  useEffect(() => {
+    if (!settingsOpen) return;
+
+    const drawer = settingsDrawerRef.current;
+    const root = projectionsRootRef.current;
+    const trigger = settingsTriggerRef.current;
+    const previousFocus = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : trigger;
+    settingsPreviousFocusRef.current = previousFocus;
+
+    const backgroundElements = new Set<HTMLElement>();
+    if (root && drawer) {
+      let branch: HTMLElement = drawer;
+      while (branch.parentElement) {
+        const parent = branch.parentElement;
+        Array.from(parent.children).forEach((element) => {
+          if (
+            element !== branch &&
+            !(parent === root &&
+              element.classList.contains(styles.drawerOverlay))
+          ) {
+            backgroundElements.add(element as HTMLElement);
+          }
+        });
+        if (parent === document.body) break;
+        branch = parent;
+      }
+    }
+    const backgroundElementsList = Array.from(backgroundElements);
+    const previousBackgroundState = backgroundElementsList.map((element) => ({
+      element,
+      inert: (element as HTMLElement & { inert?: boolean }).inert ?? false,
+      ariaHidden: element.getAttribute("aria-hidden"),
+    }));
+    backgroundElementsList.forEach((element) => {
+      (element as HTMLElement & { inert: boolean }).inert = true;
+      element.setAttribute("aria-hidden", "true");
+    });
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousBodyOverscrollBehavior = document.body.style.overscrollBehavior;
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "contain";
+
+    const getFocusableElements = () =>
+      drawer
+        ? Array.from(
+            drawer.querySelectorAll<HTMLElement>(
+              'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+            ),
+          )
+        : [];
+    const focusFirst = () => {
+      const first = getFocusableElements()[0];
+      (first ?? drawer)?.focus();
+    };
+
+    const focusTimer = window.setTimeout(focusFirst, 0);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeSettings();
+        return;
+      }
+      if (event.key !== "Tab" || !drawer) return;
+      const focusable = getFocusableElements();
+      if (!focusable.length) {
+        event.preventDefault();
+        drawer.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      } else if (!drawer.contains(document.activeElement)) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    const handleFocusIn = (event: FocusEvent) => {
+      if (drawer && !drawer.contains(event.target as Node)) focusFirst();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("focusin", handleFocusIn);
+
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("focusin", handleFocusIn);
+      previousBackgroundState.forEach(({ element, inert, ariaHidden }) => {
+        (element as HTMLElement & { inert: boolean }).inert = inert;
+        if (ariaHidden == null) element.removeAttribute("aria-hidden");
+        else element.setAttribute("aria-hidden", ariaHidden);
+      });
+      document.body.style.overflow = previousBodyOverflow;
+      document.body.style.overscrollBehavior = previousBodyOverscrollBehavior;
+      settingsPreviousFocusRef.current?.focus();
+      settingsPreviousFocusRef.current = null;
+    };
+  }, [closeSettings, settingsOpen]);
   // compare players modal state
   const [compareOpen, setCompareOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -349,8 +467,18 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   const [seasonError, setSeasonError] = useState<Record<string, string | null>>(
     {},
   );
-  const loadedSeasonIdsRef = React.useRef(new Set<string>());
-  const seasonBatchPromiseRef = React.useRef<Promise<void> | null>(null);
+  type SeasonDetail = {
+    type: "skater" | "goalie";
+    seasonLabel: string;
+    data: any;
+  } | null;
+  type SeasonCacheEntry =
+    | {
+        status: "pending";
+        promise: Promise<{ value: SeasonDetail; failed: boolean }>;
+      }
+    | { status: "fulfilled"; value: SeasonDetail };
+  const seasonCacheRef = React.useRef(new Map<string, SeasonCacheEntry>());
 
   const isGoaliePlayer = (player: ProcessedPlayer) => {
     const pos = player.displayPosition?.toUpperCase() || "";
@@ -379,114 +507,108 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     return s;
   };
 
-  const fetchLastSeasonTotalsBatch = async () => {
-    if (seasonBatchPromiseRef.current) return seasonBatchPromiseRef.current;
-    const pendingPlayers = players.filter(
-      (player) => !loadedSeasonIdsRef.current.has(String(player.playerId)),
-    );
-    if (!pendingPlayers.length) return;
-    const pendingIds = pendingPlayers.map((player) => String(player.playerId));
-    setSeasonLoading((current) => ({
-      ...current,
-      ...Object.fromEntries(pendingIds.map((id) => [id, true])),
-    }));
-    setSeasonError((current) => ({
-      ...current,
-      ...Object.fromEntries(pendingIds.map((id) => [id, null])),
-    }));
+  const getSeasonCacheKey = (player: ProcessedPlayer) =>
+    `${isGoaliePlayer(player) ? "goalie" : "skater"}:${player.playerId}:${String(currentSeasonId ?? "")}`;
 
-    const request = (async () => {
+  const fetchLastSeasonTotals = async (player: ProcessedPlayer) => {
+    const id = String(player.playerId);
+    const type = isGoaliePlayer(player) ? "goalie" : "skater";
+    const cacheKey = getSeasonCacheKey(player);
+    const cached = seasonCacheRef.current.get(cacheKey);
+    if (cached?.status === "fulfilled") {
+      setSeasonTotals((current) => ({ ...current, [cacheKey]: cached.value }));
+      return cached.value;
+    }
+    if (cached?.status === "pending") {
+      const result = await cached.promise;
+      return result.value;
+    }
+
+    setSeasonLoading((current) => ({ ...current, [cacheKey]: true }));
+    setSeasonError((current) => ({ ...current, [cacheKey]: null }));
+    const request = (async (): Promise<{
+      value: SeasonDetail;
+      failed: boolean;
+    }> => {
       try {
-        const skaterIds = pendingPlayers
-          .filter((player) => !isGoaliePlayer(player))
-          .map((player) => Number(player.playerId));
-        const goalieIds = pendingPlayers
-          .filter(isGoaliePlayer)
-          .map((player) => Number(player.playerId));
-        const [skaterRows, goalieRows] = await Promise.all([
-          fetchAllSupabaseFilterChunks<any, number>(skaterIds, (chunk, range) =>
-            supabase
-              .from("wgo_skater_stats_totals")
-              .select(
-                "player_id, season, games_played, goals, assists, points, shots, hits, blocked_shots, pp_points, toi_per_game, plus_minus, shooting_percentage, gw_goals",
-              )
-              .in("player_id", chunk)
-              .order("player_id", { ascending: true })
-              .order("season", { ascending: false })
-              .range(range.from, range.to),
-          ),
-          fetchAllSupabaseFilterChunks<any, number>(goalieIds, (chunk, range) =>
-            supabase
-              .from("wgo_goalie_stats_totals")
-              .select(
-                "goalie_id, season_id, games_played, wins, losses, ot_losses, goals_against_avg, save_pct, shutouts, saves",
-              )
-              .in("goalie_id", chunk)
-              .order("goalie_id", { ascending: true })
-              .order("season_id", { ascending: false })
-              .range(range.from, range.to),
-          ),
-        ]);
-        const latestSkaters = selectLatestSeasonRows(
-          skaterRows,
-          "player_id",
-          "season",
-          currentSeasonId,
-        );
-        const latestGoalies = selectLatestSeasonRows(
-          goalieRows,
-          "goalie_id",
-          "season_id",
-          currentSeasonId,
-        );
-        setSeasonTotals((current) => {
-          const next = { ...current };
-          for (const player of pendingPlayers) {
-            const id = String(player.playerId);
-            const row = isGoaliePlayer(player)
-              ? latestGoalies.get(id)
-              : latestSkaters.get(id);
-            next[id] = row
-              ? {
-                  type: isGoaliePlayer(player) ? "goalie" : "skater",
-                  seasonLabel: formatSeasonLabel(
-                    isGoaliePlayer(player) ? row.season_id : row.season,
-                  ),
-                  data: row,
-                }
-              : null;
-            loadedSeasonIdsRef.current.add(id);
-          }
-          return next;
-        });
+        const numericId = Number(player.playerId);
+        const rows = type === "goalie"
+          ? await fetchAllSupabaseFilterChunks<any, number>([numericId], (chunk, range) =>
+              supabase
+                .from("wgo_goalie_stats_totals")
+                .select(
+                  "goalie_id, season_id, games_played, wins, losses, ot_losses, goals_against_avg, save_pct, shutouts, saves",
+                )
+                .in("goalie_id", chunk)
+                .order("goalie_id", { ascending: true })
+                .order("season_id", { ascending: false })
+                .range(range.from, range.to),
+            )
+          : await fetchAllSupabaseFilterChunks<any, number>([numericId], (chunk, range) =>
+              supabase
+                .from("wgo_skater_stats_totals")
+                .select(
+                  "player_id, season, games_played, goals, assists, points, shots, hits, blocked_shots, pp_points, toi_per_game, plus_minus, shooting_percentage, gw_goals",
+                )
+                .in("player_id", chunk)
+                .order("player_id", { ascending: true })
+                .order("season", { ascending: false })
+                .range(range.from, range.to),
+            );
+        const seasonKey = type === "goalie" ? "season_id" : "season";
+        const idKey = type === "goalie" ? "goalie_id" : "player_id";
+        const row = selectLatestSeasonRows(rows, idKey, seasonKey, currentSeasonId).get(id);
+        return {
+          failed: false,
+          value: row
+            ? {
+                type,
+                seasonLabel: formatSeasonLabel(row[seasonKey]),
+                data: row,
+              }
+            : null,
+        };
       } catch (error: any) {
         setSeasonError((current) => ({
           ...current,
-          ...Object.fromEntries(
-            pendingIds.map((id) => [
-              id,
-              error?.message || "Failed to load prior-season totals",
-            ]),
-          ),
+          [cacheKey]: error?.message || "Failed to load prior-season totals",
         }));
+        return { failed: true, value: null };
       } finally {
-        setSeasonLoading((current) => ({
-          ...current,
-          ...Object.fromEntries(pendingIds.map((id) => [id, false])),
-        }));
-        seasonBatchPromiseRef.current = null;
+        setSeasonLoading((current) => ({ ...current, [cacheKey]: false }));
       }
     })();
-    seasonBatchPromiseRef.current = request;
-    return request;
+    seasonCacheRef.current.set(cacheKey, { status: "pending", promise: request });
+    const result = await request;
+    const value = result.value;
+    if (result.failed) {
+      seasonCacheRef.current.delete(cacheKey);
+      return value;
+    }
+    seasonCacheRef.current.set(cacheKey, { status: "fulfilled", value });
+    setSeasonTotals((current) => ({ ...current, [cacheKey]: value }));
+    return value;
   };
+
+  const previousSeasonContextRef = React.useRef(currentSeasonId);
+  useEffect(() => {
+    if (previousSeasonContextRef.current === currentSeasonId) return;
+    previousSeasonContextRef.current = currentSeasonId;
+    players
+      .filter((player) => expanded[String(player.playerId)])
+      .forEach((player) => {
+        const cacheKey = getSeasonCacheKey(player);
+        if (seasonTotals[cacheKey] === undefined) void fetchLastSeasonTotals(player);
+      });
+  }, [currentSeasonId, expanded, players, seasonTotals]);
 
   const toggleExpand = async (player: ProcessedPlayer) => {
     const id = String(player.playerId);
+    const cacheKey = getSeasonCacheKey(player);
     setExpanded((m) => ({ ...m, [id]: !m[id] }));
     const next = !expanded[id];
-    if (next && seasonTotals[id] === undefined) {
-      await fetchLastSeasonTotalsBatch();
+    if (next && seasonTotals[cacheKey] === undefined) {
+      await fetchLastSeasonTotals(player);
     }
   };
 
@@ -498,10 +620,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       if (saved === "overall" || saved === "position") {
         setBandScope(saved);
       }
-      // Load risk SD
-      const savedSd = window.localStorage.getItem("projections.riskSd");
-      const v = savedSd != null ? parseFloat(savedSd) : NaN;
-      if (!Number.isNaN(v) && v > 0) setRiskSd(Math.max(2, Math.min(40, v)));
       // Load position filter
       const savedPos = window.localStorage.getItem(
         "projections.positionFilter",
@@ -543,14 +661,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       window.localStorage.setItem("projections.bandScope", bandScope);
     } catch {}
   }, [bandScope]);
-
-  // Persist risk SD on change
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem("projections.riskSd", String(riskSd));
-    } catch {}
-  }, [riskSd]);
 
   // Persist hide drafted on change
   useEffect(() => {
@@ -619,6 +729,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     unavailablePlayerIds?.forEach((playerId) => s.add(String(playerId)));
     return s;
   }, [draftedPlayers, unavailablePlayerIds]);
+  const keeperIdSet = keeperPlayerIds || new Set<string>();
 
   const diagnostics = useMemo(() => {
     return diagnoseProjectionVisibility({
@@ -689,33 +800,16 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     return m;
   }, [vorpMetrics, needWeightEnabled, needAlpha, posNeeds, primaryPosById]);
 
-  // Precompute pick-risk based on ADP vs next pick number using a Normal CDF model
-  const normalCdf = (z: number) => {
-    // Abramowitz and Stegun approximation for Phi(z)
-    const t = 1 / (1 + 0.2316419 * Math.abs(z));
-    const d = Math.exp((-z * z) / 2) / Math.sqrt(2 * Math.PI);
-    const p =
-      d *
-      (0.31938153 * t -
-        0.356563782 * Math.pow(t, 2) +
-        1.781477937 * Math.pow(t, 3) -
-        1.821255978 * Math.pow(t, 4) +
-        1.330274429 * Math.pow(t, 5));
-    return z >= 0 ? 1 - p : p;
-  };
-
   const riskMap = useMemo(() => {
     const m = new Map<string, number>();
     if (!players?.length || !nextPickNumber) return m;
-    const sd = Math.max(2, Math.min(40, riskSd)); // clamp reasonable range
     players.forEach((p) => {
-      const adp = p.yahooAvgPick;
-      // Treat 0 or negative ADP as missing
-      if (typeof adp === "number" && Number.isFinite(adp) && adp > 0) {
-        const z = (nextPickNumber - adp) / sd;
-        const risk = Math.max(0, Math.min(1, normalCdf(z)));
-        m.set(String(p.playerId), risk);
-      }
+      const availability = estimateAvailability(
+        p.yahooAvgPick,
+        nextPickNumber,
+        riskSd,
+      );
+      if (availability != null) m.set(String(p.playerId), 1 - availability);
     });
     return m;
   }, [players, nextPickNumber, riskSd]);
@@ -1065,7 +1159,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   }
 
   return (
-    <div className={styles.projectionsContainer}>
+    <div ref={projectionsRootRef} className={styles.projectionsContainer}>
       {/* Primary Controls Bar */}
       <div className={styles.controlsBar}>
         <div className={styles.controlsBarTitle}>
@@ -1122,6 +1216,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
               <div className={styles.toggleButtonsGroup}>
                 <button
                   type="button"
+                  ref={settingsTriggerRef}
                   className={`${styles.controlToggleBtn} ${settingsOpen ? styles.controlToggleBtnActive : ""}`}
                   onClick={() => setSettingsOpen(true)}
                   aria-haspopup="dialog"
@@ -1357,16 +1452,20 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       )}
       {settingsOpen && (
         <aside
+          ref={settingsDrawerRef}
           id="draft-settings-drawer"
           className={styles.settingsDrawer}
           role="dialog"
+          aria-modal="true"
+          aria-labelledby="draft-settings-title"
           aria-label="Draft advanced settings"
+          tabIndex={-1}
         >
           <div className={styles.drawerHeader}>
-            <h3>Advanced Settings</h3>
+            <h3 id="draft-settings-title">Advanced Settings</h3>
             <button
               type="button"
-              onClick={() => setSettingsOpen(false)}
+              onClick={closeSettings}
               className={styles.drawerClose}
               aria-label="Close settings"
             >
@@ -1452,7 +1551,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   max={40}
                   step={1}
                   value={riskSd}
-                  onChange={(e) => setRiskSd(parseInt(e.target.value, 10))}
+                  onChange={(e) => onRiskSdChange?.(parseInt(e.target.value, 10))}
                   className={styles.rangeInput}
                 />
               </div>
@@ -1638,10 +1737,16 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       title={
                         leagueType === "categories"
                           ? "Score: percentile-weighted composite (0–100) across selected categories, weighted by category weights and metric scarcity."
-                          : "Projected Fantasy Points"
+                          : prorate84
+                            ? `Paced player-analysis fantasy points on an ${NHL_REGULAR_SEASON_GAMES}-game schedule. Team projections remain unchanged.`
+                            : "Projected Fantasy Points"
                       }
                     >
-                      {leagueType === "categories" ? "Score" : "Proj FP"}{" "}
+                      {leagueType === "categories"
+                        ? "Score"
+                        : prorate84
+                          ? "Paced FP"
+                          : "Proj FP"}{" "}
                       {sortField ===
                         (leagueType === "categories"
                           ? "score"
@@ -1843,6 +1948,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
             {(() => {
               return displayPlayers.flatMap((player, rowIndex) => {
                 const key = String(player.playerId);
+                const seasonCacheKey = getSeasonCacheKey(player);
                 const m = vorpMap.get(key);
                 const vorp = m?.vorp ?? 0;
                 const vona = m?.vona ?? 0;
@@ -2013,7 +2119,16 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     </td>
                     {!statColumnsMode ? (
                       <>
-                        <td className={fpClasses.join(" ")} data-label={leagueType === "categories" ? "Score" : "Proj FP"}>
+                        <td
+                          className={fpClasses.join(" ")}
+                          data-label={
+                            leagueType === "categories"
+                              ? "Score"
+                              : prorate84
+                                ? "Paced FP"
+                                : "Proj FP"
+                          }
+                        >
                           {leagueType === "categories"
                             ? typeof m?.value === "number"
                               ? m.value.toFixed(1)
@@ -2180,7 +2295,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       title={
                         riskPct == null
                           ? undefined
-                          : `${riskPct}% likely available at your next pick`
+                          : `${riskPct}% estimated available at your next pick`
                       }
                     >
                       {riskPct == null ? "-" : `${riskPct}%`}
@@ -2189,16 +2304,26 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       <button
                         className={styles.draftButton}
                         onClick={() => handleDraftClick(player.playerId)}
-                        disabled={!canDraft || draftedIdSet.has(key)}
+                        disabled={
+                          !canDraft ||
+                          draftedIdSet.has(key) ||
+                          keeperIdSet.has(key)
+                        }
                         title={
                           !canDraft
                             ? "Manual drafting is locked while Yahoo sync is authoritative"
+                            : keeperIdSet.has(key)
+                            ? "Keeper player"
                             : draftedIdSet.has(key)
                             ? "Player already drafted"
                             : "Draft this player"
                         }
                       >
-                        {draftedIdSet.has(key) ? "Drafted" : "Draft"}
+                        {draftedIdSet.has(key)
+                          ? "Drafted"
+                          : keeperIdSet.has(key)
+                            ? "Keeper"
+                            : "Draft"}
                       </button>
                     </td>
                     <td className={`${styles.compareCell}`}>
@@ -2220,26 +2345,26 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     className={styles.expandRow}
                   >
                     <td colSpan={detailColSpan}>
-                      {seasonLoading[key] && (
+                      {seasonLoading[seasonCacheKey] && (
                         <div style={{ padding: "8px 12px", opacity: 0.8 }}>
                           Loading last season totals...
                         </div>
                       )}
-                      {!seasonLoading[key] && seasonError[key] && (
+                      {!seasonLoading[seasonCacheKey] && seasonError[seasonCacheKey] && (
                         <div style={{ padding: "8px 12px", color: "#c66" }}>
-                          {seasonError[key]}
+                          {seasonError[seasonCacheKey]}
                         </div>
                       )}
-                      {!seasonLoading[key] &&
-                        !seasonError[key] &&
-                        seasonTotals[key] == null && (
+                      {!seasonLoading[seasonCacheKey] &&
+                        !seasonError[seasonCacheKey] &&
+                        seasonTotals[seasonCacheKey] == null && (
                           <div style={{ padding: "8px 12px", opacity: 0.8 }}>
                             No last season totals available.
                           </div>
                         )}
-                      {!seasonLoading[key] &&
-                        !seasonError[key] &&
-                        seasonTotals[key] && (
+                      {!seasonLoading[seasonCacheKey] &&
+                        !seasonError[seasonCacheKey] &&
+                        seasonTotals[seasonCacheKey] && (
                           <div style={{ padding: "10px 12px" }}>
                             <div
                               style={{
@@ -2248,9 +2373,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                                 marginBottom: 6,
                               }}
                             >
-                              Last Season: {seasonTotals[key]?.seasonLabel}
+                              Last Season: {seasonTotals[seasonCacheKey]?.seasonLabel}
                             </div>
-                            {seasonTotals[key]?.type === "skater" ? (
+                            {seasonTotals[seasonCacheKey]?.type === "skater" ? (
                               <div
                                 style={{
                                   display: "grid",
@@ -2261,58 +2386,58 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                               >
                                 <StatPill
                                   label="GP"
-                                  value={seasonTotals[key]!.data.games_played}
+                                  value={seasonTotals[seasonCacheKey]!.data.games_played}
                                 />
                                 <StatPill
                                   label="G"
-                                  value={seasonTotals[key]!.data.goals}
+                                  value={seasonTotals[seasonCacheKey]!.data.goals}
                                 />
                                 <StatPill
                                   label="A"
-                                  value={seasonTotals[key]!.data.assists}
+                                  value={seasonTotals[seasonCacheKey]!.data.assists}
                                 />
                                 <StatPill
                                   label="P"
-                                  value={seasonTotals[key]!.data.points}
+                                  value={seasonTotals[seasonCacheKey]!.data.points}
                                 />
                                 <StatPill
                                   label="SOG"
-                                  value={seasonTotals[key]!.data.shots}
+                                  value={seasonTotals[seasonCacheKey]!.data.shots}
                                 />
                                 <StatPill
                                   label="HIT"
-                                  value={seasonTotals[key]!.data.hits}
+                                  value={seasonTotals[seasonCacheKey]!.data.hits}
                                 />
                                 <StatPill
                                   label="BLK"
-                                  value={seasonTotals[key]!.data.blocked_shots}
+                                  value={seasonTotals[seasonCacheKey]!.data.blocked_shots}
                                 />
                                 <StatPill
                                   label="PPP"
-                                  value={seasonTotals[key]!.data.pp_points}
+                                  value={seasonTotals[seasonCacheKey]!.data.pp_points}
                                 />
                                 <StatPill
                                   label="TOI/G"
                                   value={
                                     seasonTotals[
-                                      key
+                                      seasonCacheKey
                                     ]!.data.toi_per_game?.toFixed?.(2) ??
-                                    seasonTotals[key]!.data.toi_per_game
+                                    seasonTotals[seasonCacheKey]!.data.toi_per_game
                                   }
                                 />
                                 <StatPill
                                   label="+/-"
-                                  value={seasonTotals[key]!.data.plus_minus}
+                                  value={seasonTotals[seasonCacheKey]!.data.plus_minus}
                                 />
                                 <StatPill
                                   label="S%"
                                   value={
-                                    seasonTotals[key]!.data.shooting_percentage
+                                    seasonTotals[seasonCacheKey]!.data.shooting_percentage
                                   }
                                 />
                                 <StatPill
                                   label="GWG"
-                                  value={seasonTotals[key]!.data.gw_goals}
+                                  value={seasonTotals[seasonCacheKey]!.data.gw_goals}
                                 />
                               </div>
                             ) : (
@@ -2326,29 +2451,29 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                               >
                                 <StatPill
                                   label="GP"
-                                  value={seasonTotals[key]!.data.games_played}
+                                  value={seasonTotals[seasonCacheKey]!.data.games_played}
                                 />
                                 <StatPill
                                   label="W-L-OT"
-                                  value={`${seasonTotals[key]!.data.wins ?? 0}-${seasonTotals[key]!.data.losses ?? 0}-${seasonTotals[key]!.data.ot_losses ?? 0}`}
+                                  value={`${seasonTotals[seasonCacheKey]!.data.wins ?? 0}-${seasonTotals[seasonCacheKey]!.data.losses ?? 0}-${seasonTotals[seasonCacheKey]!.data.ot_losses ?? 0}`}
                                 />
                                 <StatPill
                                   label="SV%"
-                                  value={seasonTotals[key]!.data.save_pct}
+                                  value={seasonTotals[seasonCacheKey]!.data.save_pct}
                                 />
                                 <StatPill
                                   label="GAA"
                                   value={
-                                    seasonTotals[key]!.data.goals_against_avg
+                                    seasonTotals[seasonCacheKey]!.data.goals_against_avg
                                   }
                                 />
                                 <StatPill
                                   label="SO"
-                                  value={seasonTotals[key]!.data.shutouts}
+                                  value={seasonTotals[seasonCacheKey]!.data.shutouts}
                                 />
                                 <StatPill
                                   label="SVS"
-                                  value={seasonTotals[key]!.data.saves}
+                                  value={seasonTotals[seasonCacheKey]!.data.saves}
                                 />
                               </div>
                             )}

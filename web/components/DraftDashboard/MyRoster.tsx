@@ -1,6 +1,6 @@
 // components/DraftDashboard/MyRoster.tsx
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   DraftSettings,
   TeamDraftStats,
@@ -22,7 +22,7 @@ import {
 } from "lib/draftDashboard/forwardGrouping";
 
 interface MyRosterProps {
-  nextPickByTeam: Record<string, number>;
+  nextPickByTeam: Record<string, number | undefined>;
   scheduleState: RosterScheduleOptimizerState;
   myTeamId: string;
   teamStatsList: TeamDraftStats[]; // receive all teams
@@ -76,11 +76,19 @@ const MyRoster: React.FC<MyRosterProps> = ({
   const [searchValue, setSearchValue] = useState("");
   const [selectedViewTeamId, setSelectedViewTeamId] =
     useState<string>(myTeamId);
+  const previousMyTeamId = useRef(myTeamId);
 
-  // Keep selection synced when myTeamId changes IF user is viewing their team
+  // Follow a changed "my team" only when this view was following it already.
   useEffect(() => {
-    setSelectedViewTeamId((prev) => (prev === myTeamId ? myTeamId : prev));
-  }, [myTeamId]);
+    const priorMyTeamId = previousMyTeamId.current;
+    setSelectedViewTeamId((previous) =>
+      previous === priorMyTeamId ||
+      !teamOptions.some((team) => team.id === previous)
+        ? myTeamId
+        : previous,
+    );
+    previousMyTeamId.current = myTeamId;
+  }, [myTeamId, teamOptions]);
 
   const playerMap = useMemo(() => {
     const m = new Map<string, ProcessedPlayer>();
@@ -413,7 +421,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
           <div className={styles.summaryCard}>
             <div className={styles.summaryLabel}>Next pick</div>
             <div className={styles.summaryValue}>
-              {Number.isFinite(selectedNextPick) && selectedNextPick <= totalRosterSpots * draftSettings.teamCount ? selectedNextPick : "—"}
+              {typeof selectedNextPick === "number" && Number.isFinite(selectedNextPick) && selectedNextPick <= totalRosterSpots * draftSettings.teamCount ? selectedNextPick : "—"}
             </div>
           </div>
         </div>

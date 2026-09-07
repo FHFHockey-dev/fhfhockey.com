@@ -82,16 +82,21 @@ export function getProratedStat(
 export function computeProratedFantasyPoints(
   player: ProcessedPlayer,
   enable: boolean,
-  customScoring?: Record<string, number>
+  customScoring?: Record<string, number>,
+  options: { mergeWithDefaults?: boolean } = {},
 ): number | null {
   // If not enabled just return existing projected FP to avoid tiny rounding drift.
   if (!enable) return player.fantasyPoints.projected ?? null;
   const isGoalie = isGoaliePlayer(player);
-  // Merge default configs (custom overrides > defaults)
+  // Existing direct callers retain default merging. Dashboard paced analysis
+  // passes an authoritative league map, where omitted categories are zero.
+  const mergeWithDefaults = options.mergeWithDefaults ?? true;
   const scoring: Record<string, number> = {
-    ...(isGoalie
-      ? DEFAULT_GOALIE_FANTASY_POINTS
-      : DEFAULT_SKATER_FANTASY_POINTS),
+    ...(mergeWithDefaults
+      ? isGoalie
+        ? DEFAULT_GOALIE_FANTASY_POINTS
+        : DEFAULT_SKATER_FANTASY_POINTS
+      : {}),
     ...(customScoring || {})
   };
   let total = 0;

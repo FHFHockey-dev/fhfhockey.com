@@ -99,7 +99,7 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     expect(screen.getAllByRole("listitem")[0].textContent).toContain(
       "Urgent Player"
     );
-    expect(screen.getAllByTitle("Probability of remaining available at your next pick")[0].textContent).toContain("%");
+    expect(screen.getAllByTitle("Estimated probability of remaining available at your next pick")[0].textContent).toContain("%");
     expect(screen.queryByText(/Gone by next pick/)).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Draft Urgent Player" }));

@@ -6,8 +6,10 @@ interface DraftStatusProps {
   currentPick: number;
   totalPicks: number;
   teamName: string;
-  nextPick: number;
+  nextPick?: number;
   picksUntilNext: number;
+  compact?: boolean;
+  desktopOnly?: boolean;
 }
 
 export default function DraftStatus({
@@ -18,20 +20,28 @@ export default function DraftStatus({
   teamName,
   nextPick,
   picksUntilNext,
+  compact = false,
+  desktopOnly = false,
 }: DraftStatusProps) {
   const complete = currentPick > totalPicks;
   const hasNextPick =
-    !complete && Number.isFinite(nextPick) && nextPick <= totalPicks;
+    !complete &&
+    typeof nextPick === "number" &&
+    Number.isFinite(nextPick) &&
+    nextPick <= totalPicks;
   return (
-    <section className={styles.status} aria-label="Draft Status">
-      <h2>Draft Graph</h2>
+    <section
+      className={`${styles.status} ${compact ? styles.statusCompact : ""} ${desktopOnly ? styles.statusDesktopOnly : ""}`}
+      aria-label={compact ? "Draft Status summary" : "Draft Status"}
+    >
+      {!compact && <h2>Draft Graph</h2>}
       <div className={styles.statusMetrics}>
-        <div>
+        {!compact && <div>
           <span>Round</span>
           <strong>
             {Math.min(round, rounds)} <small>of {rounds}</small>
           </strong>
-        </div>
+        </div>}
         <div>
           <span>Pick</span>
           <strong>
@@ -48,13 +58,13 @@ export default function DraftStatus({
           <span aria-label="Your next pick">Next pick</span>
           <strong>{hasNextPick ? nextPick : "—"}</strong>
         </div>
-        <div aria-live="polite">
+        {!compact && <div aria-live="polite">
           <span aria-label="Picks until your turn">Until turn</span>
           <strong>{hasNextPick ? picksUntilNext : "—"}</strong>
           {hasNextPick && picksUntilNext === 0 ? (
             <small className={styles.srOnly}>You’re on the clock</small>
           ) : null}
-        </div>
+        </div>}
       </div>
     </section>
   );

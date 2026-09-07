@@ -9,6 +9,10 @@ import { validateKeeperBatch, type KeeperEntry } from "./keepers";
 import { validatePickTradeBatch, type PickTradeEntry } from "./pickTrades";
 import { normalizeDraftOrderPattern } from "./draftOrder";
 import { PROJECTION_SOURCES_CONFIG } from "lib/projectionsConfig/projectionSourcesConfig";
+import {
+  isSessionCsvEntry,
+  validateCustomCsvEntries,
+} from "./csvImportSession";
 
 export type SettingsDomain = "league" | "roster" | "scoring" | "projections";
 export interface SettingsIssue {
@@ -28,6 +32,7 @@ export interface SettingsValidationInput {
   trades?: PickTradeEntry[];
   playerEligibility?: ReadonlyMap<string, string[]>;
   forwardGrouping?: "split" | "fwd";
+  positionOverrides?: Record<string, string>;
 }
 
 export function validateDraftSettings({
@@ -41,6 +46,7 @@ export function validateDraftSettings({
   trades = [],
   playerEligibility,
   forwardGrouping = "split",
+  positionOverrides,
 }: SettingsValidationInput) {
   const issues: SettingsIssue[] = [];
   const add = (
@@ -145,6 +151,7 @@ export function validateDraftSettings({
         })),
         rosterConfig: settings.rosterConfig,
         grouping: forwardGrouping,
+        overrides: positionOverrides,
       });
       if (allocation.counts.BENCH > settings.rosterConfig.bench)
         add(
@@ -262,8 +269,8 @@ export function bookmarkImportError(
     Object.values(value).every(
       (v) => typeof v === "number" && Number.isFinite(v),
     );
-  if (!record(data) || ![2, 3].includes(data.v))
-    return "Unsupported bookmark. Use a v2 or v3 draft bookmark.";
+  if (!record(data) || ![2, 3, 4].includes(data.v))
+    return "Unsupported bookmark. Use a v2, v3, or v4 draft bookmark.";
   const s = data.settings;
   if (
     !record(s) ||
@@ -305,6 +312,18 @@ export function bookmarkImportError(
       data.draftedPlayers.length
   )
     return "Invalid or duplicate draft picks in bookmark.";
+  const exportedCsvEntries = data.customCsvEntries;
+  if (
+    exportedCsvEntries !== undefined &&
+    (!Array.isArray(exportedCsvEntries) ||
+      exportedCsvEntries.some((entry) => !isSessionCsvEntry(entry)) ||
+      Boolean(validateCustomCsvEntries(exportedCsvEntries)))
+  )
+    return "Invalid imported projection CSV data in bookmark.";
+  const importableCustomSourceIds = [
+    ...(availableCustomSourceIds || []),
+    ...(exportedCsvEntries || []).map((entry: { id: string }) => entry.id),
+  ];
   for (const [index, controls] of [
     data.sourceControls,
     data.goalieSourceControls,
@@ -335,20 +354,36 @@ export function bookmarkImportError(
       )
     )
       return "Bookmark contains an unsupported projection source.";
-    if (
-      controls &&
-      availableCustomSourceIds &&
-      Object.entries(controls).some(
-        ([id, control]: [string, any]) =>
-          id.startsWith("custom_csv") &&
-          control.isSelected &&
-          !availableCustomSourceIds.includes(id),
-      )
-    )
-      return "This bookmark uses a custom projection CSV that is missing from this tab. Import that CSV before importing the bookmark.";
+    // Missing CSV payloads are a recoverable source-review state, not a
+    // structural import error. The dashboard keeps their metadata and gates
+    // drafting until the user reimports or removes each source.
   }
   if (data.goalieScoringCategories && !numbers(data.goalieScoringCategories))
     return "Invalid goalie scoring in bookmark.";
+  if (
+    data.positionOverrides &&
+    (!record(data.positionOverrides) ||
+      Object.values(data.positionOverrides).some(
+        (position) => typeof position !== "string",
+      ))
+  )
+    return "Invalid roster slot overrides in bookmark.";
+  if (
+    data.draftHistory &&
+    (!Array.isArray(data.draftHistory) ||
+      data.draftHistory.some(
+        (entry: any) =>
+          !record(entry) ||
+          !Array.isArray(entry.players) ||
+          !Number.isInteger(entry.pickNumber) ||
+          (entry.positionOverrides !== undefined &&
+            (!record(entry.positionOverrides) ||
+              Object.values(entry.positionOverrides).some(
+                (position) => typeof position !== "string",
+              ))),
+      ))
+  )
+    return "Invalid draft undo history in bookmark.";
   if (
     data.customTeamNames &&
     (!record(data.customTeamNames) ||

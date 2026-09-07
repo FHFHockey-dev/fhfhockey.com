@@ -10,6 +10,7 @@ import {
   normalizePlayerEligibility,
   type ForwardGrouping
 } from "lib/draftDashboard/forwardGrouping";
+import { STATS_MASTER_LIST } from "lib/projectionsConfig/statsMasterList";
 
 export interface Recommendation {
   player: ProcessedPlayer;
@@ -31,27 +32,52 @@ interface Args {
   needAlpha?: number; // 0..1 weight toward needs
   limit?: number;
   baselineMode?: "remaining" | "full"; // for future context/labeling
-  currentPick?: number; // absolute pick number
-  teamCount?: number; // league size for availability heuristic
+  currentPick?: number;
+  teamCount?: number;
+  nextPickNumber?: number;
+  riskSd?: number;
   leagueType?: "points" | "categories";
+  categoryWeights?: Record<string, number>;
+  categoryTeamTotals?: readonly Record<string, number | null | undefined>[];
+  myCategoryTotals?: Record<string, number | null | undefined>;
+  categoryPlayerPool?: ProcessedPlayer[];
   forwardGrouping?: ForwardGrouping;
 }
-
-const CAT_KEYS = [
-  "GOALS",
-  "ASSISTS",
-  "PP_POINTS",
-  "SHOTS_ON_GOAL",
-  "HITS",
-  "BLOCKED_SHOTS"
-] as const;
 
 function clamp01(x: number) {
   return Math.max(0, Math.min(1, x));
 }
 
-function logistic(x: number) {
-  return 1 / (1 + Math.exp(-x));
+export function normalCdf(z: number) {
+  const t = 1 / (1 + 0.2316419 * Math.abs(z));
+  const d = Math.exp((-z * z) / 2) / Math.sqrt(2 * Math.PI);
+  const p =
+    d *
+    (0.31938153 * t -
+      0.356563782 * Math.pow(t, 2) +
+      1.781477937 * Math.pow(t, 3) -
+      1.821255978 * Math.pow(t, 4) +
+      1.330274429 * Math.pow(t, 5));
+  return z >= 0 ? 1 - p : p;
+}
+
+export function estimateAvailability(
+  adp: unknown,
+  actualNextPick: unknown,
+  riskSd = 12,
+): number | undefined {
+  if (
+    typeof adp !== "number" ||
+    !Number.isFinite(adp) ||
+    adp <= 0 ||
+    typeof actualNextPick !== "number" ||
+    !Number.isFinite(actualNextPick) ||
+    actualNextPick <= 0
+  ) {
+    return undefined;
+  }
+  const sd = Number.isFinite(riskSd) ? Math.max(2, Math.min(40, riskSd)) : 12;
+  return clamp01(normalCdf((adp - actualNextPick) / sd));
 }
 
 function safeNum(v: unknown): number {
@@ -69,11 +95,96 @@ export function usePlayerRecommendations({
   baselineMode,
   currentPick,
   teamCount,
+  nextPickNumber,
+  riskSd = 12,
   leagueType = "points",
+  categoryWeights = {},
+  categoryTeamTotals = [],
+  myCategoryTotals = {},
+  categoryPlayerPool = players,
   forwardGrouping = "split"
 }: Args) {
   const recommendations = useMemo<Recommendation[]>(() => {
     if (!players || players.length === 0) return [];
+
+    const categoryFitByPlayerId = new Map<string, number>();
+    if (leagueType === "categories") {
+      for (const [key, weight] of Object.entries(categoryWeights)) {
+        if (!Number.isFinite(weight) || weight === 0) continue;
+        const definition = STATS_MASTER_LIST.find((stat) => stat.key === key);
+        if (!definition) continue;
+        const eligiblePool = categoryPlayerPool.filter((player) => {
+          const isGoalie = normalizePlayerEligibility(
+            player.displayPosition,
+            player.eligiblePositions,
+          ).includes("G");
+          return definition.isGoalieStat && !definition.isSkaterStat
+            ? isGoalie
+            : definition.isSkaterStat && !definition.isGoalieStat
+              ? !isGoalie
+              : true;
+        });
+        const teamValues = categoryTeamTotals
+          .map((totals) => totals[key])
+          .filter((value): value is number =>
+            typeof value === "number" && Number.isFinite(value),
+          );
+        const myValue = myCategoryTotals[key];
+        if (
+          teamValues.length < 2 ||
+          typeof myValue !== "number" ||
+          !Number.isFinite(myValue)
+        ) continue;
+        const teamMean = teamValues.reduce((sum, value) => sum + value, 0) /
+          teamValues.length;
+        const teamVariance = teamValues.reduce(
+          (sum, value) => sum + (value - teamMean) ** 2,
+          0,
+        ) / (teamValues.length - 1);
+        const teamDeviation = Math.sqrt(teamVariance);
+        if (!Number.isFinite(teamDeviation) || teamDeviation <= 0) continue;
+        const direction =
+          (definition.higherIsBetter ? 1 : -1) * Math.sign(weight);
+        const deficit = Math.max(
+          0,
+          (direction * (teamMean - myValue)) / teamDeviation,
+        );
+        if (deficit <= 0) continue;
+        const playerValues = eligiblePool
+          .map((player) => (player.combinedStats as any)?.[key]?.projected)
+          .filter((value): value is number =>
+            typeof value === "number" && Number.isFinite(value),
+          );
+        if (playerValues.length < 2) continue;
+        const playerMean = playerValues.reduce((sum, value) => sum + value, 0) /
+          playerValues.length;
+        const playerVariance = playerValues.reduce(
+          (sum, value) => sum + (value - playerMean) ** 2,
+          0,
+        ) / (playerValues.length - 1);
+        const playerDeviation = Math.sqrt(playerVariance);
+        if (!Number.isFinite(playerDeviation) || playerDeviation <= 0) continue;
+        const eligiblePlayerIds = new Set(
+          eligiblePool.map((player) => String(player.playerId)),
+        );
+        for (const player of players) {
+          if (!eligiblePlayerIds.has(String(player.playerId))) continue;
+          const value = (player.combinedStats as any)?.[key]?.projected;
+          if (typeof value !== "number" || !Number.isFinite(value)) continue;
+          const contribution = Math.max(
+            0,
+            (direction * (value - playerMean)) / playerDeviation,
+          );
+          if (contribution <= 0) continue;
+          const id = String(player.playerId);
+          categoryFitByPlayerId.set(
+            id,
+            (categoryFitByPlayerId.get(id) ?? 0) +
+              deficit * contribution * Math.abs(weight),
+          );
+        }
+      }
+    }
 
     const items: Recommendation[] = players.map((p) => {
       const id = String(p.playerId);
@@ -85,11 +196,7 @@ export function usePlayerRecommendations({
       // Team needs fit: categories or positional
       let fit = 0;
       if (leagueType === "categories") {
-        for (const k of CAT_KEYS) {
-          const playerVal = safeNum((p.combinedStats as any)?.[k]?.projected);
-          const w = safeNum(catNeeds[k]);
-          fit += playerVal * w;
-        }
+        fit = categoryFitByPlayerId.get(id) ?? 0;
       } else {
         // positional need: average need across eligible positions
         const elig = groupPlayerEligibility(
@@ -109,15 +216,8 @@ export function usePlayerRecommendations({
 
       // Availability heuristic: probability player survives until next pick
       let availability: number | undefined = undefined;
-      const adp = safeNum((p as any).yahooAvgPick ?? (p as any).adp);
-      if (currentPick && teamCount && teamCount > 0 && adp > 0) {
-        const picksUntilNext = teamCount;
-        const targetPick = currentPick + picksUntilNext;
-        const delta = adp - targetPick; // positive = likely to be available
-        const sd = 12;
-        availability = clamp01(logistic(delta / sd));
-        availability = Math.min(0.99, Math.max(0.01, availability));
-      }
+      const adp = (p as any).yahooAvgPick ?? (p as any).adp;
+      availability = estimateAvailability(adp, nextPickNumber, riskSd);
 
       return {
         player: p,
@@ -157,9 +257,7 @@ export function usePlayerRecommendations({
       }
       if (typeof (r.player as any).yahooAvgPick === "number") {
         const adp = (r.player as any).yahooAvgPick as number;
-        const expPick = currentPick
-          ? currentPick + (teamCount || 0)
-          : undefined;
+        const expPick = nextPickNumber;
         if (expPick && adp > expPick + 5) tags.push("ADP Value");
       }
       r.reasonTags = tags;
@@ -188,7 +286,13 @@ export function usePlayerRecommendations({
     baselineMode,
     currentPick,
     teamCount,
+    nextPickNumber,
+    riskSd,
     leagueType,
+    categoryWeights,
+    categoryTeamTotals,
+    myCategoryTotals,
+    categoryPlayerPool,
     forwardGrouping
   ]);
 

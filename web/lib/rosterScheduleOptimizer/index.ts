@@ -13,6 +13,9 @@ export {
   evaluateRosterSchedule,
   prepareTeamSchedule,
 } from "./optimizer";
-export { rankAlternativeRecommendations } from "./recommendations";
+export {
+  createBestAlternativeRecommendationFinder,
+  rankAlternativeRecommendations,
+} from "./recommendations";
 export { createOptimizerCacheSignature } from "./signature";
 export { classifyDustRisk } from "./risk";

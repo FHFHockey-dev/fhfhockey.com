@@ -41,13 +41,135 @@ function player(playerId: number, fullName: string, position: string) {
 }
 
 describe("ProjectionsTable visibility diagnostics", () => {
+  it("traps drawer focus, isolates the table, and restores the trigger", async () => {
+    const outsideControl = document.createElement("button");
+    outsideControl.textContent = "Outside dashboard control";
+    outsideControl.setAttribute("aria-hidden", "false");
+    (outsideControl as HTMLElement & { inert?: boolean }).inert = true;
+    document.body.appendChild(outsideControl);
+    const previousOverflow = document.body.style.overflow;
+    const previousOverscrollBehavior = document.body.style.overscrollBehavior;
+    document.body.style.overflow = "scroll";
+    document.body.style.overscrollBehavior = "auto";
+    const { unmount } = render(
+      <ProjectionsTable
+        players={[player(1, "Focus Player", "C")]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+      />,
+    );
+
+    const trigger = screen.getByRole("button", {
+      name: "Open settings drawer",
+    });
+    trigger.focus();
+    fireEvent.click(trigger);
+
+    const drawer = await screen.findByRole("dialog", {
+      name: "Advanced Settings",
+    });
+    const closeButton = screen.getByRole("button", { name: "Close settings" });
+    await waitFor(() => expect(document.activeElement).toBe(closeButton));
+
+    const background = drawer.parentElement?.firstElementChild;
+    expect(background?.getAttribute("aria-hidden")).toBe("true");
+    expect((background as HTMLElement & { inert?: boolean })?.inert).toBe(true);
+    expect(outsideControl.getAttribute("aria-hidden")).toBe("true");
+    expect(outsideControl.inert).toBe(true);
+
+    const scope = screen.getByRole("combobox", { name: "Value band scope" });
+    fireEvent.change(scope, { target: { value: "overall" } });
+    const drawerFocusables = Array.from(
+      drawer.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    );
+    const lastFocusable = drawerFocusables.at(-1)!;
+    lastFocusable.focus();
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(document.activeElement).toBe(closeButton);
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(lastFocusable);
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+    expect(outsideControl.getAttribute("aria-hidden")).toBe("false");
+    expect(outsideControl.inert).toBe(true);
+    expect(document.body.style.overflow).toBe("scroll");
+    expect(document.body.style.overscrollBehavior).toBe("auto");
+
+    fireEvent.click(trigger);
+    expect(
+      (screen.getByRole("combobox", { name: "Value band scope" }) as HTMLSelectElement)
+        .value,
+    ).toBe("overall");
+    fireEvent.click(screen.getByRole("button", { name: "Close settings" }));
+    expect(document.activeElement).toBe(trigger);
+    fireEvent.click(trigger);
+    unmount();
+    expect(outsideControl.getAttribute("aria-hidden")).toBe("false");
+    expect(outsideControl.inert).toBe(true);
+    expect(document.body.style.overflow).toBe("scroll");
+    expect(document.body.style.overscrollBehavior).toBe("auto");
+    outsideControl.remove();
+    document.body.style.overflow = previousOverflow;
+    document.body.style.overscrollBehavior = previousOverscrollBehavior;
+  });
+
   it("displays next-pick availability, with high availability marked green", () => {
     const early = { ...player(1, "Early", "C"), yahooAvgPick: 1 };
     const later = { ...player(2, "Later", "C"), yahooAvgPick: 100 };
     render(<ProjectionsTable players={[early, later]} draftedPlayers={[]} nextPickNumber={50} isLoading={false} error={null} onDraftPlayer={vi.fn()} canDraft />);
-    expect(screen.getByTitle("100% likely available at your next pick").className).toContain("riskLow");
-    expect(screen.getByTitle("0% likely available at your next pick").className).toContain("riskHigh");
+    expect(screen.getByTitle("100% estimated available at your next pick").className).toContain("riskLow");
+    expect(screen.getByTitle("0% estimated available at your next pick").className).toContain("riskHigh");
   });
+
+  it("delegates risk SD changes to the dashboard owner", () => {
+    const onRiskSdChange = vi.fn();
+    render(
+      <ProjectionsTable
+        players={[player(1, "Risk Player", "C")]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+        riskSd={12}
+        onRiskSdChange={onRiskSdChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Open settings drawer" }));
+    fireEvent.change(screen.getByLabelText("SD (picks): 12"), {
+      target: { value: "20" },
+    });
+    expect(onRiskSdChange).toHaveBeenCalledWith(20);
+  });
+
+  it("keeps keeper rows visible but never enables their draft action", () => {
+    const keeper = player(3, "Keeper Player", "C");
+    render(
+      <ProjectionsTable
+        players={[keeper]}
+        allPlayers={[keeper]}
+        draftedPlayers={[]}
+        keeperPlayerIds={new Set(["3"])}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+      />,
+    );
+
+    const keeperButton = screen.getByRole("button", { name: "Keeper" });
+    expect(keeperButton.hasAttribute("disabled")).toBe(true);
+    expect(keeperButton.getAttribute("title")).toBe("Keeper player");
+  });
+
   it("preserves projected decimals and exposes the unrounded source value", () => {
     const projected = player(8477492, "Nathan MacKinnon", "C");
     projected.combinedStats = {
@@ -102,6 +224,28 @@ describe("ProjectionsTable visibility diagnostics", () => {
     const prorated = screen.getByTitle("42 (84-game pace)");
     expect(prorated.textContent).toBe("42*");
     expect(window.localStorage.getItem("projections.prorate84")).toBe("true");
+  });
+
+  it("labels paced fantasy points as player analysis", () => {
+    render(
+      <ProjectionsTable
+        players={[player(1, "Paced Skater", "C")]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Toggle 84-game prorated skater stats",
+      }),
+    );
+    expect(screen.getByRole("button", { name: /Paced FP/ }).getAttribute("title")).toContain(
+      "Team projections remain unchanged",
+    );
   });
 
   it("shows configured goalie metrics in mixed-player stat rows", () => {
@@ -356,25 +500,33 @@ describe("ProjectionsTable visibility diagnostics", () => {
     ).toContain("duplicate rows 1");
   });
 
-  it("batches prior-season totals once for multiple expanded players", async () => {
+  it("loads only the expanded player, deduplicates reopen, and preserves prior-season selection", async () => {
     const players = [
       player(1, "First Player", "C"),
       player(2, "Second Player", "D"),
       player(3, "Third Player", "LW"),
     ];
+    let requestedIds: number[] = [];
+    let requestedRowCount = 0;
     const chain: any = {
       select: vi.fn(() => chain),
-      in: vi.fn(() => chain),
+      in: vi.fn((_column: string, ids: number[]) => {
+        requestedIds = ids;
+        return chain;
+      }),
       order: vi.fn(() => chain),
       range: vi.fn(() =>
         Promise.resolve({
-          data: players.map((entry) => ({
+          data: players.filter((entry) => requestedIds.includes(entry.playerId)).map((entry) => ({
             player_id: entry.playerId,
             season: 20242025,
             games_played: 82,
             goals: 10,
           })),
           error: null,
+        }).then((result) => {
+          requestedRowCount += result.data.length;
+          return result;
         }),
       ),
     };
@@ -400,7 +552,8 @@ describe("ProjectionsTable visibility diagnostics", () => {
     expect(firstRow.getAttribute("data-stripe")).toBe(firstRow.nextElementSibling?.getAttribute("data-stripe"));
     expect(screen.getByText("Second Player").closest("tr")?.getAttribute("data-stripe")).not.toBe(firstRow.getAttribute("data-stripe"));
     expect(fromMock).toHaveBeenCalledTimes(1);
-    expect(chain.in).toHaveBeenCalledWith("player_id", [1, 2, 3]);
+    expect(chain.in).toHaveBeenCalledWith("player_id", [1]);
+    expect(requestedRowCount).toBe(1);
 
     fireEvent.click(
       screen.getByRole("button", { name: "Expand details for Second Player" }),
@@ -408,7 +561,168 @@ describe("ProjectionsTable visibility diagnostics", () => {
     await waitFor(() =>
       expect(screen.getAllByText("Last Season: 2024-25")).toHaveLength(2),
     );
+    expect(fromMock).toHaveBeenCalledTimes(2);
+    expect(chain.in).toHaveBeenLastCalledWith("player_id", [2]);
+    expect(requestedRowCount).toBe(2);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Collapse details for First Player" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Expand details for First Player" }),
+    );
+    await waitFor(() =>
+      expect(screen.getAllByText("Last Season: 2024-25")).toHaveLength(2),
+    );
+    expect(fromMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not reuse a prior-season detail across season contexts", async () => {
+    const chain: any = {
+      select: vi.fn(() => chain),
+      in: vi.fn(() => chain),
+      order: vi.fn(() => chain),
+      range: vi.fn(() =>
+        Promise.resolve({
+          data: [{ player_id: 1, season: 20242025, games_played: 82 }],
+          error: null,
+        }),
+      ),
+    };
+    fromMock.mockReturnValue(chain);
+    const { rerender } = render(
+      <ProjectionsTable
+        players={[player(1, "Season Player", "C")]}
+        draftedPlayers={[]}
+        currentSeasonId="20252026"
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Season Player" }));
+    await screen.findByText("Last Season: 2024-25");
+    fireEvent.click(screen.getByRole("button", { name: "Collapse details for Season Player" }));
+    rerender(
+      <ProjectionsTable
+        players={[player(1, "Season Player", "C")]}
+        draftedPlayers={[]}
+        currentSeasonId="20262027"
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Season Player" }));
+    await screen.findByText("Last Season: 2024-25");
+    expect(fromMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows missing history and retries a failed player request", async () => {
+    let attempts = 0;
+    const chain: any = {
+      select: vi.fn(() => chain),
+      in: vi.fn(() => chain),
+      order: vi.fn(() => chain),
+      range: vi.fn(() => {
+        attempts += 1;
+        return attempts === 1
+          ? Promise.resolve({ data: null, error: new Error("history unavailable") })
+          : Promise.resolve({ data: [], error: null });
+      }),
+    };
+    fromMock.mockReturnValue(chain);
+    render(
+      <ProjectionsTable
+        players={[player(1, "Retry Player", "G")]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Retry Player" }));
+    await screen.findByText("history unavailable");
+    fireEvent.click(screen.getByRole("button", { name: "Collapse details for Retry Player" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Retry Player" }));
+    await screen.findByText("No last season totals available.");
+    expect(fromMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("shares a deferred successful request across close and reopen", async () => {
+    let resolveRequest!: (value: { data: any[]; error: null }) => void;
+    const pending = new Promise<{ data: any[]; error: null }>((resolve) => {
+      resolveRequest = resolve;
+    });
+    const chain: any = {
+      select: vi.fn(() => chain),
+      in: vi.fn(() => chain),
+      order: vi.fn(() => chain),
+      range: vi.fn(() => pending),
+    };
+    fromMock.mockReturnValue(chain);
+    render(
+      <ProjectionsTable
+        players={[player(1, "Deferred Player", "C")]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Deferred Player" }));
+    fireEvent.click(screen.getByRole("button", { name: "Collapse details for Deferred Player" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Deferred Player" }));
     expect(fromMock).toHaveBeenCalledTimes(1);
+    resolveRequest({ data: [{ player_id: 1, season: 20242025 }], error: null });
+    await screen.findByText("Last Season: 2024-25");
+  });
+
+  it("shares a deferred failure and permits a later retry", async () => {
+    let rejectRequest!: (error: Error) => void;
+    const pending = new Promise<{ data: any[]; error: null }>((_, reject) => {
+      rejectRequest = reject;
+    });
+    const chain: any = {
+      select: vi.fn(() => chain),
+      in: vi.fn(() => chain),
+      order: vi.fn(() => chain),
+      range: vi.fn(() => pending),
+    };
+    const retryChain: any = {
+      select: vi.fn(),
+      in: vi.fn(),
+      order: vi.fn(),
+      range: vi.fn(() => Promise.resolve({ data: [], error: null })),
+    };
+    retryChain.select.mockReturnValue(retryChain);
+    retryChain.in.mockReturnValue(retryChain);
+    retryChain.order.mockReturnValue(retryChain);
+    fromMock.mockReturnValueOnce(chain).mockReturnValueOnce(retryChain);
+    render(
+      <ProjectionsTable
+        players={[player(1, "Deferred Retry Player", "C")]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Deferred Retry Player" }));
+    fireEvent.click(screen.getByRole("button", { name: "Collapse details for Deferred Retry Player" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Deferred Retry Player" }));
+    expect(fromMock).toHaveBeenCalledTimes(1);
+    rejectRequest(new Error("deferred history unavailable"));
+    await screen.findByText("deferred history unavailable");
+    fireEvent.click(screen.getByRole("button", { name: "Collapse details for Deferred Retry Player" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Deferred Retry Player" }));
+    await screen.findByText("No last season totals available.");
+    expect(fromMock).toHaveBeenCalledTimes(2);
   });
 
   it("enforces the two-player comparison limit with visible feedback", () => {

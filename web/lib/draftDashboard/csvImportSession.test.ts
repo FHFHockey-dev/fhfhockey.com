@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CUSTOM_CSV_SESSION_KEY,
   clearCustomCsvSession,
+  createCustomCsvId,
   loadCustomCsvSession,
+  loadCustomCsvSessionResult,
   saveCustomCsvSession
 } from "./csvImportSession";
 
@@ -63,5 +65,28 @@ describe("custom CSV session storage", () => {
     clearCustomCsvSession();
 
     expect(loadCustomCsvSession()).toEqual([]);
+  });
+
+  it("rejects duplicate saved IDs with recoverable feedback", () => {
+    const storage = memoryStorage({
+      [CUSTOM_CSV_SESSION_KEY]: JSON.stringify([entry, { ...entry, label: "Copy" }])
+    });
+
+    expect(loadCustomCsvSessionResult(storage)).toEqual({
+      entries: [],
+      error: expect.stringContaining('duplicate source ID "custom_csv_1"')
+    });
+  });
+
+  it("creates a non-reused custom CSV ID after a source is removed", () => {
+    expect(
+      createCustomCsvId(
+        [{ id: "custom_csv_1" }, { id: "custom_csv_2" }],
+        (() => {
+          const values = ["2", "new"];
+          return () => values.shift()!;
+        })()
+      )
+    ).toBe("custom_csv_new");
   });
 });

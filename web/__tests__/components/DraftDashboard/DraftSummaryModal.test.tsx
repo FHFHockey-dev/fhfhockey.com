@@ -82,6 +82,9 @@ describe("DraftSummaryModal configuration evidence", () => {
     });
     expect(keeperList.textContent).toContain("No Cost Keeper");
     expect(keeperList.textContent).toContain("Keepers United");
+    expect(screen.getByText("Original Proj Pts").getAttribute("title")).toContain(
+      "player pacing does not change team totals",
+    );
   });
 
   it("renders source weights and privacy-safe custom metadata", () => {
@@ -145,6 +148,58 @@ describe("DraftSummaryModal configuration evidence", () => {
     expect(summary.textContent).toContain(
       "CSV row contents are intentionally excluded",
     );
+  });
+
+  it("keeps summary team values on team projections when player analysis changes", () => {
+    const props = {
+      isOpen: true,
+      onClose: vi.fn(),
+      draftSettings: {
+        teamCount: 1,
+        draftOrder: ["Team 1"],
+        scoringCategories: {},
+        rosterConfig: {
+          C: 1,
+          LW: 0,
+          RW: 0,
+          D: 0,
+          G: 0,
+          utility: 0,
+          bench: 0,
+        },
+      },
+      draftedPlayers: [],
+      teamStats: [
+        {
+          teamId: "Team 1",
+          teamName: "Original",
+          owner: "Team 1",
+          projectedPoints: 100,
+          categoryTotals: {},
+          rosterSlots: {},
+          bench: [],
+          teamVorp: 12,
+        },
+      ],
+      allPlayers: [],
+    } as any;
+    const { rerender } = render(
+      <DraftSummaryModal
+        {...props}
+        vorpMetrics={new Map([["1", { vorp: 400 } as any]])}
+      />,
+    );
+
+    expect(screen.getByText("12.0")).toBeTruthy();
+    expect(screen.getByText("100.0")).toBeTruthy();
+    rerender(
+      <DraftSummaryModal
+        {...props}
+        vorpMetrics={new Map([["1", { vorp: 999 } as any]])}
+      />,
+    );
+    expect(screen.getByText("12.0")).toBeTruthy();
+    expect(screen.getByText("100.0")).toBeTruthy();
   });
 
   it("traps keyboard focus, closes on Escape, and restores opener focus", async () => {

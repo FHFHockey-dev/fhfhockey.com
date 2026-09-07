@@ -229,4 +229,18 @@ describe("pick trade contract", () => {
       }),
     ).toBe(5);
   });
+
+  it("reports no next turn when a team has no actionable remaining pick", () => {
+    expect(
+      findPicksUntilTeamTurn({
+        currentPick: 1,
+        teamId: "Team 1",
+        draftOrder: ["Team 1", "Team 2"],
+        orderPattern: { mode: "standard", reversedRounds: [] },
+        rosterCapacity: 1,
+        teamRosterCounts: { "Team 1": 1 },
+        maxPickNumber: 4,
+      }),
+    ).toBeUndefined();
+  });
 });
