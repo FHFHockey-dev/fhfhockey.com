@@ -53,3 +53,7 @@ For styling-only corrections, set both `DRAFT_PRO_BROWSER_ONLY=true` and `DRAFT_
 Set `DRAFT_PRO_BROWSER_ARTIFACTS` to retain screenshots in a chosen directory; the default is `/tmp/draft-pro-saved-drafts-artifacts`. Evidence includes keyboard activation, a 390px mobile viewport, asserted 200% pinch magnification, and a 640px CSS viewport for enlarged-layout reflow. The latter is equivalent in CSS width to a 1280px desktop at 200%; it is not an actual browser-chrome zoom test. Inspect the loaded controls in the screenshots as a separate visual acceptance gate.
 
 The final success marker includes `cleanup=verified` only after the harness removes its services and listening ports. A browser-only run does not rerun the separate route assertion suite.
+
+## Scenario real-service routes
+
+Run `DRAFT_PRO_SCENARIOS_ONLY=true web/scripts/draft-pro/verify-saved-drafts-routes.sh` from the repository root for the focused scenario API gate. This uses the same disposable services and cleanup assertions, skipping Saved Drafts route/browser assertions. It verifies public and saved-private analysis, persistence, ownership, inactive names-only access and reactivation, duplicate input rejection, and unchanged draft contents. The fixture has no persisted schedule, so it verifies visible schedule unavailability while preserving valid projection totals; schedule-present optimizer behavior is covered separately by calculation fixtures. This mode does not verify the scenario browser UI.
