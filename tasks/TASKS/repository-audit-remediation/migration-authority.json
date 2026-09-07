@@ -615,7 +615,7 @@
     {
       "order": 61,
       "path": "supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql",
-      "sha256": "24d41d46f17d06b0d8d79488cc263d3fd612cacff67b22784b5403a9b131cebd",
+      "sha256": "cfd342829f2e54e3b8003200c031ab753f6650611def25d25584723c2c9570a8",
       "sourceStatus": "source-authorized",
       "deploymentState": "unknown",
       "migrationClass": "feature",

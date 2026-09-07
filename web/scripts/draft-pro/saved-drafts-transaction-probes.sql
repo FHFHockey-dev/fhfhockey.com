@@ -9,6 +9,7 @@ do $$
 declare
   save_id uuid;
   saved_upload_id uuid;
+  replay_upload_id uuid;
   prefix text;
   saved_draft_id uuid;
   copy_draft_id uuid;
@@ -33,7 +34,15 @@ declare
   ordinal integer;
 begin
   select save_session_id into save_id from public.begin_draft_pro_save_session('00000000-0000-4000-8000-000000000021'::uuid, null, null, 'probe-attempt-1');
-  select u.upload_id, u.storage_prefix into saved_upload_id, prefix from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', save_id, null, 1024, 'Normalized import', 'application/json', '{}'::jsonb) as u;
+  select u.upload_id, u.storage_prefix into saved_upload_id, prefix from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', save_id, null, 1024, 'Normalized import', 'application/json', '{"sourceId":"probe-source-initial","headers":["player"]}'::jsonb) as u;
+  select u.upload_id into replay_upload_id from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', save_id, null, 1024, 'Normalized import', 'application/json', '{"sourceId":"probe-source-initial","headers":["player"]}'::jsonb) as u;
+  if replay_upload_id<>saved_upload_id or (select count(*) from public.draft_pro_private_import_uploads as u where u.save_session_id=save_id)<>1 then raise exception 'identical upload begin replay created a duplicate'; end if;
+  begin
+    perform public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', save_id, null, 1024, 'Changed import', 'application/json', '{"sourceId":"probe-source-initial","headers":["player"]}'::jsonb);
+    raise exception 'changed upload begin replay was accepted';
+  exception when others then
+    if sqlerrm <> 'Private import upload replay does not match' then raise; end if;
+  end;
   perform public.stage_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', saved_upload_id, array[prefix || '/0'], 512, 2, repeat('a', 64));
   if not exists (select 1 from public.stage_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', saved_upload_id, array[prefix || '/0'], 512, 2, repeat('a', 64)) where status='staged') then raise exception 'identical staged retry did not return its prior result'; end if;
   if not exists (select 1 from public.read_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021',saved_upload_id) where save_session_status='pending' and actual_bytes=512 and row_count=2 and content_sha256=repeat('a',64) and jsonb_array_length(chunk_paths)=1) then raise exception 'upload retry read metadata was incomplete'; end if;
@@ -75,11 +84,11 @@ begin
     insert into public.draft_pro_private_imports(user_id,draft_id,name,content_type,storage_path,normalized_rows,mapping,byte_size,row_count,blob_id)
     select '00000000-0000-4000-8000-000000000021',filler_draft_id,'filler','application/json','probe-filler/' || ordinal::text,'[]'::jsonb,'{}'::jsonb,b.byte_size,0,b.id from public.draft_pro_private_import_blobs as b where b.id=filler_blob_id;
   end loop;
-  select u.upload_id,u.storage_prefix into replacement_upload_id,replacement_prefix from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', replacement_save_id, (select i.id from public.draft_pro_private_imports as i where i.draft_id=saved_draft_id and i.deleted_at is null limit 1), 512, 'Replacement', 'application/json', '{}'::jsonb) as u;
+  select u.upload_id,u.storage_prefix into replacement_upload_id,replacement_prefix from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', replacement_save_id, (select i.id from public.draft_pro_private_imports as i where i.draft_id=saved_draft_id and i.deleted_at is null limit 1), 512, 'Replacement', 'application/json', '{"sourceId":"probe-source-replacement"}'::jsonb) as u;
   perform public.stage_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', replacement_upload_id, array[replacement_prefix || '/0'], 512, 2, repeat('c',64));
   if not exists (select 1 from public.commit_draft_pro_save_session('00000000-0000-4000-8000-000000000021', replacement_save_id, 'Replacement at cap', '{}'::jsonb, 2, '{}'::uuid[]) where status='saved') then raise exception 'same-size replacement at account cap did not commit'; end if;
   select save_session_id into parent_expired_save_id from public.begin_draft_pro_save_session('00000000-0000-4000-8000-000000000021', saved_draft_id, version + 1, 'probe-attempt-expired-parent');
-  select u.upload_id,u.storage_prefix into parent_expired_upload_id,parent_expired_prefix from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', parent_expired_save_id, (select i.id from public.draft_pro_private_imports as i where i.draft_id=saved_draft_id and i.deleted_at is null limit 1), 512, 'Expired parent', 'application/json', '{}'::jsonb) as u;
+  select u.upload_id,u.storage_prefix into parent_expired_upload_id,parent_expired_prefix from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', parent_expired_save_id, (select i.id from public.draft_pro_private_imports as i where i.draft_id=saved_draft_id and i.deleted_at is null limit 1), 512, 'Expired parent', 'application/json', '{"sourceId":"probe-source-parent-expired"}'::jsonb) as u;
   update public.draft_pro_save_sessions as s set expires_at=now()-interval '1 second' where s.id=parent_expired_save_id;
   begin
     perform public.stage_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021',parent_expired_upload_id,array[parent_expired_prefix || '/0'],512,2,repeat('d',64));
@@ -88,7 +97,7 @@ begin
     if sqlerrm <> 'Private import parent session is unavailable' then raise; end if;
   end;
   select save_session_id into expired_save_id from public.begin_draft_pro_save_session('00000000-0000-4000-8000-000000000021', saved_draft_id, version + 1, 'probe-attempt-expired-upload');
-  select u.upload_id,u.storage_prefix into expired_upload_id,expired_prefix from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', expired_save_id, (select i.id from public.draft_pro_private_imports as i where i.draft_id=saved_draft_id and i.deleted_at is null limit 1), 512, 'Expired pre-stage', 'application/json', '{}'::jsonb) as u;
+  select u.upload_id,u.storage_prefix into expired_upload_id,expired_prefix from public.begin_draft_pro_private_import_upload('00000000-0000-4000-8000-000000000021', expired_save_id, (select i.id from public.draft_pro_private_imports as i where i.draft_id=saved_draft_id and i.deleted_at is null limit 1), 512, 'Expired pre-stage', 'application/json', '{"sourceId":"probe-source-upload-expired"}'::jsonb) as u;
   update public.draft_pro_private_import_uploads as u set expires_at=now()-interval '1 second' where u.id=expired_upload_id;
   select u.status into expired_status from public.draft_pro_private_import_uploads as u where u.id=expired_upload_id;
   select c.chunk_paths,c.final_storage_path,c.delete_final into expired_cleanup_paths,expired_cleanup_final,expired_cleanup_delete from public.claim_draft_pro_private_import_upload_cleanup('00000000-0000-4000-8000-000000000021',100) as c where c.upload_id=expired_upload_id;
