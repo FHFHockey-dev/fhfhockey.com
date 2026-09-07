@@ -48,6 +48,8 @@ For browser-only iteration after the route assertions have already passed:
 DRAFT_PRO_BROWSER_ONLY=true web/scripts/draft-pro/verify-saved-drafts-routes.sh
 ```
 
+For styling-only corrections, set both `DRAFT_PRO_BROWSER_ONLY=true` and `DRAFT_PRO_VISUAL_ONLY=true`. This retains real save/restore setup and loaded screenshots but skips the already-approved retry, conflict, and revocation cases.
+
 Set `DRAFT_PRO_BROWSER_ARTIFACTS` to retain screenshots in a chosen directory; the default is `/tmp/draft-pro-saved-drafts-artifacts`. Evidence includes keyboard activation, a 390px mobile viewport, asserted 200% pinch magnification, and a 640px CSS viewport for enlarged-layout reflow. The latter is equivalent in CSS width to a 1280px desktop at 200%; it is not an actual browser-chrome zoom test. Inspect the loaded controls in the screenshots as a separate visual acceptance gate.
 
 The final success marker includes `cleanup=verified` only after the harness removes its services and listening ports. A browser-only run does not rerun the separate route assertion suite.
