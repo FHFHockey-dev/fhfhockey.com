@@ -38,6 +38,7 @@ describe("usePlayerRecommendations", () => {
     expect(result.current.recommendations[0].player.playerId).toBe(2);
     rerender({ needWeightEnabled: true });
     expect(result.current.recommendations[0].player.playerId).toBe(1);
+    expect(result.current.recommendations[0].vorp).toBe(10);
     expect(result.current.recommendations[0].reasonTags).toEqual(
       expect.arrayContaining([
         "VBD 10.0",

@@ -59,4 +59,12 @@ describe("personalized draft recommendations", () => {
     expect(estimateAvailability(120, 80, 12)).toBeGreaterThan(0.9);
     expect(estimateAvailability(null, 80, 12)).toBeNull();
   });
+
+  it("marks goalie rate categories unavailable without their real workloads", () => {
+    const result = buildPersonalizedRecommendations([
+      { id: "g1", name: "g1", role: "goalie", eligiblePositions: ["G"], globalVorp: 1, rankValue: 1, categoryValues: { SAVE_PERCENTAGE: .920, GOALS_AGAINST_AVERAGE: 2 } },
+      { id: "g2", name: "g2", role: "goalie", eligiblePositions: ["G"], globalVorp: 0, rankValue: 0, categoryValues: { SAVES_GOALIE: 90, GOALS_AGAINST_GOALIE: 10, GAMES_STARTED: 10, TIME_ON_ICE_PER_GAME: 3600 } },
+    ], { leagueType: "categories", categoryWeights: { SAVE_PERCENTAGE: 1, GOALS_AGAINST_AVERAGE: 1 }, categoryNeeds: { SAVE_PERCENTAGE: 1, GOALS_AGAINST_AVERAGE: 1 } });
+    expect(result.find((entry) => entry.candidate.id === "g1")?.missingCategories).toEqual(["SAVE_PERCENTAGE", "GOALS_AGAINST_AVERAGE"]);
+  });
 });
