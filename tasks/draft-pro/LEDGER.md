@@ -303,3 +303,12 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 - Chef review of exact W01 6ecb8ec94: cleanup lease correction has independent evidence, but transaction checkpoint remains unapproved. Returned one regression bundle for ambiguous update columns, missing retained IDs, replacement quota at capacity, mismatched attempt replay, and committed staging garbage accounting. W01 remains Terra/high only for this bounded correctness work.
 - W08 2ef9313e1 adds pre-Storage ownership checks and canonical paths; still provisional pending retry, restore orchestration, and handler tests. Continue existing owner; no competing implementation.
 - W12 to finish corrected populated W07 browser fixture after lease check; failed fixture runs are not matrix verification. Overall accepted progress remains 63%, initial release 95%.
+
+- W01 14b213609 addresses quota/update/replay/retained-ID corrections; 2d50df3b adds pre-stage cleanup recovery. Chef diff reviewed; independent extended SQL probe queued after matrix. W01/W08 downgraded to Terra/medium for bounded transport follow-ups.
+- W08 643d6e0bd targeted transport tests passed 3/3 (ownership, expiration, identical/changed duplicate chunks). Final-stage hash/bounds/retry and restore coverage remain incomplete.
+- W12 Terra/high escalation limited to matrix fixture: repeated medium attempts failed on browser init closure/config/Yahoo state without populated evidence. Exit: real populated test/screenshots or minimal product defect repro; then medium for queued SQL check. No Sol escalation.
+- Latest account meter: 74% weekly used, 26% remaining. Completion remains63% overall/95% initial release; this is an engineering estimate, not a linear token forecast.
+
+- W01 Saved Drafts foundation approved and integrated b4bb69099 from exact fd7363684 owner files, retaining already-integrated harness. Chef independent disposable three-migration replay + extended SQL probe PASS (exit0), /tmp/draft-pro-chef-saved-db.log; integrated migration authority19/19PASS, /tmp/draft-pro-chef-saved-authority.log. Cross-device/StorageHTTP/concurrent feature acceptance still pending W08/W12. W01 idle Luna/low.
+- Accepted-progress estimate now64% overall, initialrelease95%; increment is transaction foundation only, not wholeSavedDrafts.
+- Chef isolated matrix fixture actual validation defect: settingsValidation rejects teamCount<2; one-team fixture invalid, and table's generic disabled tooltip incorrectly implied Yahoo. Returned concrete valid2teamfixture correction to W12.
