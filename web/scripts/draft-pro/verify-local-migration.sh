@@ -14,8 +14,8 @@ readonly PASSWORD="draft_pro_w12_local_only"
 readonly STORAGE_MIGRATIONS_DIRECTORY="$(mktemp -d)"
 readonly STORAGE_MIGRATIONS_CONTAINER="${CONTAINER}-storage-schema"
 
-if [[ $# -gt 2 ]]; then
-  echo "Usage: $0 [foundation migration] [follow-on migration]" >&2
+if [[ $# -gt 3 ]]; then
+  echo "Usage: $0 [foundation migration] [follow-on migration] [transaction migration]" >&2
   exit 64
 fi
 
@@ -133,7 +133,7 @@ if [[ ${#migrations[@]} -gt 0 ]]; then
     where relnamespace = 'public'::regnamespace and relkind = 'r';
   "
   psql_in_container < "$RLS_PROBES"
-  if [[ ${#migrations[@]} -eq 2 ]]; then
+  if [[ ${#migrations[@]} -ge 2 ]]; then
     web/scripts/draft-pro/stripe-concurrency-probes.sh "$CONTAINER"
   fi
   if [[ -n "$extra_probe" ]]; then
