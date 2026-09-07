@@ -6,15 +6,21 @@ import { patreonWebhookEventId, verifyPatreonWebhookSignature } from "lib/integr
 export const config = { api: { bodyParser: false } };
 
 async function readRawBody(req: NextApiRequest) {
-  const chunks: Buffer[] = [];
+  const chunks: Uint8Array[] = [];
   let size = 0;
   for await (const chunk of req) {
-    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    const buffer = Buffer.isBuffer(chunk) ? new Uint8Array(chunk) : new Uint8Array(Buffer.from(chunk));
     size += buffer.length;
     if (size > 256 * 1024) throw new Error("Patreon webhook payload is too large.");
     chunks.push(buffer);
   }
-  return Buffer.concat(chunks);
+  const body = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return body;
 }
 
 const header = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value;
@@ -29,7 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!verifyPatreonWebhookSignature(rawBody, header(req.headers["x-patreon-signature"]))) {
       return res.status(401).json({ error: "Invalid Patreon webhook signature." });
     }
-    const payload = JSON.parse(rawBody.toString("utf8")) as { data?: { id?: unknown; type?: unknown } };
+    const payload = JSON.parse(new TextDecoder().decode(rawBody)) as { data?: { id?: unknown; type?: unknown } };
     const eventType = header(req.headers["x-patreon-event"]) || "unknown";
     const result = await processPatreonWebhook({
       eventId: patreonWebhookEventId(rawBody, eventType, header(req.headers["x-patreon-event-id"])),

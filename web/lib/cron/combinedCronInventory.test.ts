@@ -268,8 +268,15 @@ SELECT cron.schedule(
     ).toHaveLength(59);
     expect(
       inventory.jobs.filter((job) => job.provider === "vercel"),
-    ).toHaveLength(22);
-    expect(inventory.jobs).toHaveLength(81);
+    ).toHaveLength(23);
+    expect(inventory.jobs).toHaveLength(82);
+    expect(inventory.jobs).toContainEqual(
+      expect.objectContaining({
+        provider: "vercel",
+        routePath: "/api/internal/patreon-reconcile",
+        normalizedCronExpression: "11 * * * *",
+      }),
+    );
     expect(inventory.jobs).toContainEqual(
       expect.objectContaining({
         provider: "vercel",
