@@ -1,10 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 
 const loadAccess = vi.hoisted(() => vi.fn());
+const stripeConfigured = vi.hoisted(() => vi.fn(() => false));
+const patreonConfigured = vi.hoisted(() => vi.fn(() => false));
 vi.mock("../server", () => ({ loadDraftProAccess: loadAccess }));
 vi.mock("../features", () => ({ getDraftProFeatureFlags: () => ({ checkout: false, recommendations: false, dust: false, blended_csv: false, saved_drafts: false, private_imports: false, scenarios: false, reports: false }) }));
+vi.mock("lib/integrations/stripe/config", () => ({ isStripeConfigured: stripeConfigured }));
+vi.mock("lib/integrations/patreon/config", () => ({ isPatreonConfigured: patreonConfigured }));
 
-import { loadDraftProAccount } from "./index";
+import { getDraftProCheckoutAvailability, loadDraftProAccount } from "./index";
 
 function result(data: unknown) {
   const query: any = { select: vi.fn(() => query), eq: vi.fn(() => query), order: vi.fn(async () => ({ data, error: null })) };
@@ -40,5 +44,25 @@ describe("loadDraftProAccount", () => {
     } as any;
     const account = await loadDraftProAccount({ client, userId: "user-1", now: new Date("2026-09-02T00:00:00.000Z") });
     expect(account.purchases.map((purchase) => purchase.refundEligibility.reason)).toEqual(["purchase_ineligible", "request_open"]);
+  });
+});
+
+describe("Draft Pro checkout availability", () => {
+  const beforeExpiry = new Date("2027-06-30T23:59:59.000Z");
+  const afterExpiry = new Date("2027-07-01T04:00:00.000Z");
+  const configured = { checkoutEnabled: true, stripeConfigured: true, siteUrlConfigured: true };
+
+  it("is available only when flag, configuration, site URL, and time allow it", () => {
+    expect(getDraftProCheckoutAvailability({ ...configured, now: beforeExpiry, eligible: false })).toEqual({ available: true, reason: "available" });
+  });
+
+  it.each([
+    ["flag off", { checkoutEnabled: false }, "checkout_disabled"],
+    ["Stripe unconfigured", { stripeConfigured: false }, "stripe_not_configured"],
+    ["site URL missing", { siteUrlConfigured: false }, "site_url_not_configured"],
+    ["already entitled", { eligible: true }, "already_eligible"],
+    ["pass expired", {}, "pass_expired"],
+  ])("returns a stable reason for %s", (_label, overrides, reason) => {
+    expect(getDraftProCheckoutAvailability({ ...configured, now: reason === "pass_expired" ? afterExpiry : beforeExpiry, eligible: false, ...overrides })).toEqual({ available: false, reason });
   });
 });
