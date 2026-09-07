@@ -16,8 +16,8 @@ Account-wide weekly usage: **47% consumed / 53% remaining**. Goal counter: **991
 | W04 refunds/account | Approved, 17 focused tests; CLI follow-on integrated | Mounted UI/browser and real email configuration checks |
 | W05 recommendations | Approved shared calculations, API and W07 adapter | Integrated browser/RC checks |
 | W06 DUST | Approved shared optimizer/API, season resolution and W07 UI | Schedule-handoff compatibility and integrated browser/RC checks |
-| W07 integration/CSV/graph | Initial feature bundle locally approved through296309ce8 | External schedule compatibility; browser/RC gate |
-| W08 Saved Drafts | Queued | Initial-release checkpoint, quotas/concurrency/private restore implementation |
+| W07 integration/CSV/graph | Initial paid feature integration and eight-case browser checkpoint approved | User-requested full-season matrix; W08–W10 integration |
+| W08 Saved Drafts | Active from local implementation checkpoint | Quotas/concurrency/private restore, focused UI/API and integration |
 | W09 scenarios | Queued | W08 and shared calculation integration |
 | W10 reports | Queued | W09 and deterministic report implementation |
 | W11 copy/operator | Initial release copy/packet approved through4790fce53 | Refresh evidence after browser checkpoint and later milestones |
@@ -271,3 +271,14 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 - W12 paidfixture review rejected provisionalpass: accessresponse omittedcapabilities and CSVnumericassertionanyNumber+unrelatedhardcodedoutput; reported nofailureartifacts withoutverifiedexit. Three runnerprocesses lingered. BoundedTerra/high escalation for realcontractfixture+singlerunner lifecycle+actualexit/evidence, then downgrade; no broader scope/providercalls.
 
 - W08 handoff preflight: existing draft/version/import tables and snapshotcontract present. Atomic10draft/100MiBaccountquota enforcement,10MiBperdraftimportaggregate, storage lifecycle and optimistic409 remain implementationwork, not foundation completion. W01 remains sole schema/RPC owner.
+
+- Major browser checkpoint W12 APPROVED aae58b202 (amended1ea5883a7 beforeintegration): real-shapefictionalauth, actual paidexportUI transport/download exit0 1pass7.9s, inactiveexportdenial/lockedsummary/checkoutwaitretryconfirmation exit0 1pass12.6s. CSVmock does notprove servercalculation/provenance; APIunit evidence separate. Manualdraft retentionnotclaimedfrommocksummarycase. Highreasoningexitmet, downgradedLuna/low for wording thenidle.
+- Progress60%overall/90%initialrelease, weekly62%used38%remaining accountwide; +6points fromlastmeter. Remaining initialgate freeinteractivegeometry and finalaffectedchecks; W08–10 unimplemented. No resets/providerliveactions.
+
+- User steering via Add roster schedule insights: replace paginatedrectanglewithcomplete27weekdiagonal/triangulardiamondmatrix in expandedfooter, preserveallplayer×weekintersections, playoffhighlightwithoutremovingweeks. Chefviewedreferencerender and releasedW07Terra/medium focusedUI, noAPI/schema/newformula; originalmastergoalunchanged.
+- Chef initialcombinedRC at2eb73feb2:7/8passed(all6free+paidexport), inactiveaccountfixtureclickedbeforeprojectionsloaded, actualalert no projectionsavailable. FullrepoTypeScriptagainpassedexit0. W12 returnedwrongoldbaseline/amendedhistory; rejectits3stickyfailures asbaselineerror, notregression. Directedexact2eb73feb2newbranch+explicitpostnavigationrowswait+newcommit; no repeatedamend.
+
+- ReleasedW08Terra/medium fromacceptedinitialLOCALIMPLEMENTATIONcheckpoint2eb73feb2. W01–W07localfeaturesapproved,fulltscpass,all6freebrowser+paidexportpass; W12finalaccountfixture remainsopenreleasegate, noactivationapproval. IndependentSavedDraftsmodules/API workmayproceedwhileW07user-requestedmatrix/W12verificationcontinue. Two disjointimplementationtasks, withinmastermax3; W01exclusiveatomicquota/schema requests throughChef. UserfullW08requirements/transportlimits/non-destructiveaccess handedoff explicitly.
+
+- Initial browser release checkpoint APPROVED through94ed8e6da integrated1c6739e13: realfocusrevalidation preservesloadedworkspace, ownerisolatedaccount1pass10.3s, exactChefbaselinecombined8/8pass16.0s; no applicationdiff. No furtherbroadsuiterepeats. Initialfeaturelocalgatecomplete; realStripe/Patreon/Resendchecksnotpassed.
+- Progress63%overall/95%initialrelease, weekly65%used35%remaining accountwide. W08active, W07newuserfullmatrixactive, W01releasedTerra/medium foratomicquota/version/privateimportcontract. Three disjointimplementationowners; W12idle.
