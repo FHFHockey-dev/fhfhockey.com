@@ -47,4 +47,13 @@ describe("Stripe webhook route", () => {
     expect(res.statusCode).toBe(200);
     expect(fulfill).toHaveBeenCalledTimes(1);
   });
+
+  it("keeps processing failures generic after a valid signature", async () => {
+    const payload = JSON.stringify({ id: "evt_error", object: "event", type: "charge.refunded", created: 1, data: { object: { id: "ch_1" } } });
+    fulfill.mockRejectedValueOnce(new Error("provider credential detail"));
+    const res = response();
+    await handler(request(payload, Stripe.webhooks.generateTestHeaderString({ payload, secret: "whsec_test" })), res);
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({ error: "Webhook processing failed." });
+  });
 });

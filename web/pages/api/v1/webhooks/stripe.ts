@@ -7,7 +7,13 @@ export const config = { api: { bodyParser: false } };
 
 async function readRawBody(req: NextApiRequest) {
   const chunks: Buffer[] = [];
-  for await (const chunk of req) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  let size = 0;
+  for await (const chunk of req) {
+    const value = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    size += value.length;
+    if (size > 1024 * 1024) throw new Error("Webhook body too large");
+    chunks.push(value);
+  }
   return Buffer.concat(chunks);
 }
 
@@ -19,9 +25,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!isStripeConfigured()) return res.status(503).json({ error: "Stripe webhooks are not configured." });
   const signature = req.headers["stripe-signature"];
   if (typeof signature !== "string") return res.status(400).json({ error: "Stripe signature is required." });
+  const stripe = getStripeClient();
+  let event;
   try {
-    const stripe = getStripeClient();
-    const event = stripe.webhooks.constructEvent(await readRawBody(req), signature, getStripeWebhookSecret());
+    event = stripe.webhooks.constructEvent(await readRawBody(req), signature, getStripeWebhookSecret());
+  } catch {
+    return res.status(400).json({ error: "Webhook signature could not be verified." });
+  }
+  try {
     const eventSession = event.data.object as import("stripe").default.Checkout.Session;
     const normalizedEvent = event.type.startsWith("checkout.session.")
       ? { ...event, data: { ...event.data, object: await stripe.checkout.sessions.retrieve(eventSession.id) } }
@@ -32,6 +43,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const result = await fulfillStripeProviderEvent({ event: normalizedEvent, stripe });
     return res.status(200).json({ received: true, processed: result.processed });
   } catch (error) {
-    return res.status(400).json({ error: error instanceof Error ? error.message : "Webhook could not be verified." });
+    return res.status(500).json({ error: "Webhook processing failed." });
   }
 }
