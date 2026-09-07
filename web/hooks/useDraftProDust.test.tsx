@@ -1,10 +1,13 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const getSession = vi.hoisted(() => vi.fn(async () => ({ data: { session: { access_token: "test-token" } } })));
 vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession } } }));
 
-import { useDraftProDust } from "./useDraftProDust";
+import {
+  DRAFT_PRO_DUST_PRIVATE_IMPORT_SAVE_REQUIRED,
+  useDraftProDust,
+} from "./useDraftProDust";
 
 const input = {
   season: "2026", lineupMode: "daily" as const, inputOrigin: "draft" as const,
@@ -14,6 +17,7 @@ const input = {
 };
 
 describe("useDraftProDust", () => {
+  beforeEach(() => getSession.mockClear());
   afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); });
 
   it("aborts an obsolete request and never lets its later response replace fresh input", async () => {
@@ -29,5 +33,15 @@ describe("useDraftProDust", () => {
     pending[1]?.resolve({ ok: true, json: async () => ({ success: true, data: { state: "ready", insights: [{ playerId: "new" }] } }) } as Response);
     await act(async () => {});
     expect(result.current.result?.insights[0]?.playerId).toBe("new");
+  });
+
+  it("does not serialize or upload an unsaved private import", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const { result } = renderHook(() => useDraftProDust({ ...input, inputOrigin: "private_import" }, true));
+    await act(async () => {});
+    expect(result.current).toMatchObject({ status: "error", error: DRAFT_PRO_DUST_PRIVATE_IMPORT_SAVE_REQUIRED });
+    expect(getSession).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
