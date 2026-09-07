@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { supabase } from "lib/supabase";
+import supabase from "lib/supabase/client";
 import type { DraftProSnapshot } from "lib/draft-pro/contracts";
 
 export type SavedDraftSummary = { id: string; name: string; status: "active" | "archived"; lockVersion: number; updatedAt: string };
@@ -31,33 +31,48 @@ export function useSavedDrafts() {
   const [drafts, setDrafts] = useState<SavedDraftSummary[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [conflict, setConflict] = useState<SavedDraftConflict | null>(null);
+  const [opened, setOpened] = useState<SavedDraftDetail | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const epoch = useRef(0);
 
   const refresh = useCallback(async () => {
+    const refreshEpoch = epoch.current;
     setStatus("loading"); setError(null);
-    try { setDrafts(await request<SavedDraftSummary[]>("/api/v1/account/draft-pro/drafts")); setStatus("idle"); }
-    catch (cause) { setStatus("error"); setError(cause instanceof Error ? cause.message : "Saved Drafts are unavailable."); }
+    try { const next = await request<SavedDraftSummary[]>("/api/v1/account/draft-pro/drafts"); if (refreshEpoch === epoch.current) { setDrafts(next); setStatus("idle"); } }
+    catch (cause) { if (refreshEpoch === epoch.current) { setStatus("error"); setError(cause instanceof Error ? cause.message : "Saved Drafts are unavailable."); } }
   }, []);
-  useEffect(() => { void refresh(); return () => { if (timer.current) clearTimeout(timer.current); }; }, [refresh]);
+  useEffect(() => {
+    void refresh();
+    const subscription = supabase.auth.onAuthStateChange?.(() => { epoch.current += 1; if (timer.current) clearTimeout(timer.current); timer.current = null; setOpened(null); setConflict(null); void refresh(); }).data.subscription;
+    return () => { epoch.current += 1; if (timer.current) clearTimeout(timer.current); subscription?.unsubscribe(); };
+  }, [refresh]);
 
   const saveNow = useCallback(async (id: string | null, options: SaveOptions) => {
     if (options.privateImports?.length && !options.accountSaveConsent) {
       throw new Error("Confirm saving private imports to your account before uploading them.");
     }
-    setStatus("saving"); setError(null);
+    const saveEpoch = epoch.current;
+    setStatus("saving"); setError(null); setConflict(null);
     try {
       // Rows travel only through the private-import chunk uploader. Never put
       // them in this snapshot request or any background calculation request.
-      const { privateImports: _privateImports, ...requestOptions } = options;
+      const { privateImports: _privateImports, accountSaveConsent: _accountSaveConsent, ...requestOptions } = options;
       const saved = await request<SavedDraftSummary>(id ? `/api/v1/account/draft-pro/drafts/${id}` : "/api/v1/account/draft-pro/drafts", {
         method: id ? "PUT" : "POST",
         body: JSON.stringify(requestOptions),
       });
+      if (saveEpoch !== epoch.current) return saved;
       setDrafts((current) => [saved, ...current.filter((draft) => draft.id !== saved.id)]);
+      setOpened((current) => current?.id === saved.id ? { ...current, ...saved } : current);
       setStatus("saved");
       return saved;
     } catch (cause) {
-      setStatus("error"); const message = cause instanceof Error ? cause.message : "Could not save this draft."; setError(message); throw cause;
+      if (saveEpoch === epoch.current) {
+        setStatus("error"); const message = cause instanceof Error ? cause.message : "Could not save this draft."; setError(message);
+        setConflict((cause as Error & { conflict?: SavedDraftSummary }).conflict ? { current: (cause as Error & { conflict?: SavedDraftSummary }).conflict } : null);
+      }
+      throw cause;
     }
   }, []);
 
@@ -65,9 +80,11 @@ export function useSavedDrafts() {
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => { void saveNow(id, options).catch(() => undefined); }, 2_000);
   }, [saveNow]);
-  const open = useCallback((id: string) => request<SavedDraftDetail>(`/api/v1/account/draft-pro/drafts/${id}`), []);
+  const open = useCallback(async (id: string) => { if (timer.current) clearTimeout(timer.current); const value = await request<SavedDraftDetail>(`/api/v1/account/draft-pro/drafts/${id}`); setOpened(value); return value; }, []);
   const rename = useCallback((id: string, name: string, expectedVersion: number) => request<SavedDraftSummary>(`/api/v1/account/draft-pro/drafts/${id}`, { method: "PATCH", body: JSON.stringify({ action: "rename", name, expectedVersion }) }), []);
-  const duplicate = useCallback((id: string, name: string) => request<SavedDraftSummary>(`/api/v1/account/draft-pro/drafts/${id}`, { method: "POST", body: JSON.stringify({ action: "duplicate", name }) }), []);
+  const duplicate = useCallback((id: string, name: string, expectedVersion: number) => request<SavedDraftSummary>(`/api/v1/account/draft-pro/drafts/${id}`, { method: "POST", body: JSON.stringify({ action: "duplicate", name, expectedVersion }) }), []);
   const remove = useCallback((id: string, expectedVersion: number) => request<void>(`/api/v1/account/draft-pro/drafts/${id}`, { method: "DELETE", body: JSON.stringify({ expectedVersion }) }), []);
-  return { drafts, status, error, refresh, saveNow, autosave, open, rename, duplicate, remove };
+  const reloadConflict = useCallback(async () => conflict?.current ? open(conflict.current.id) : null, [conflict, open]);
+  const saveAsAnother = useCallback((options: SaveOptions, name: string) => saveNow(null, { ...options, name, expectedVersion: undefined }), [saveNow]);
+  return { drafts, status, error, conflict, opened, refresh, saveNow, autosave, open, rename, duplicate, remove, reloadConflict, saveAsAnother };
 }

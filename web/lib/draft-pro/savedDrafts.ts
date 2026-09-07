@@ -41,6 +41,9 @@ const browserSnapshotSchema = z.object({
     headers: z.array(z.object({ original: z.string(), standardized: z.string(), selected: z.boolean() })).optional(),
     resolution: z.record(z.unknown()).optional(),
   }).passthrough()).default([]),
+  favorites: z.array(z.union([z.string().max(100), z.number().int()])).max(1000).default([]),
+  notes: z.array(z.object({ id: z.string().max(100), text: z.string().max(5000) })).max(500).default([]),
+  tiers: z.record(z.unknown()).default({}),
   fantraxLeagueOverride: z.unknown().nullable().optional(),
   espnLeagueOverride: z.unknown().nullable().optional(),
   preserveExactCategoryWeights: z.boolean().optional(),
@@ -67,12 +70,12 @@ export function privateImportBytes(imports: readonly NormalizedPrivateImport[]) 
 }
 
 export function toNormalizedPrivateImports(entries: readonly SessionCsvEntry[]): NormalizedPrivateImport[] {
-  return entries.map((entry) => ({
-    name: entry.label,
-    rows: entry.rows ?? [],
-    mapping: entry.headers ?? [],
-    sourceId: entry.id,
-  }));
+  return entries.map((entry) => {
+    if (!Array.isArray(entry.rows)) throw new Error(`Private import rows are missing for ${entry.label}. Save was not started.`);
+    const candidate = { name: entry.label, rows: entry.rows, mapping: entry.headers ?? [], sourceId: entry.id };
+    try { JSON.stringify(candidate); } catch { throw new Error(`Private import rows for ${entry.label} are invalid.`); }
+    return candidate;
+  });
 }
 
 export function serializeSavedDraft(browserSnapshot: BrowserDraftSnapshot): DraftProSnapshot {
@@ -111,9 +114,9 @@ export function serializeSavedDraft(browserSnapshot: BrowserDraftSnapshot): Draf
     sourceWeights: { skater: parsed.sourceControls, goalie: parsed.goalieSourceControls, goaliePointValues: parsed.goaliePointValues },
     // Metadata only. The rows are independently saved as normalized private imports.
     importMappings: parsed.customCsvList.map(({ id, label, headers, resolution }) => ({ id, label, headers: headers ?? [], resolution: resolution ?? {} })),
-    favorites: [],
-    notes: [],
-    tiers: {},
+    favorites: parsed.favorites,
+    notes: parsed.notes,
+    tiers: parsed.tiers,
     recommendationPreferences: {
       baselineMode: parsed.baselineMode,
       needWeightEnabled: parsed.needWeightEnabled,
@@ -169,6 +172,9 @@ export function restoreBrowserSnapshot(snapshot: DraftProSnapshot, imports: read
       const source = importsBySource.get(entry.id)!;
       return { id: source.sourceId, label: source.name, headers: source.mapping, rows: source.rows, resolution: entry.resolution };
     }),
+    favorites: parsed.favorites,
+    notes: parsed.notes,
+    tiers: parsed.tiers,
     fantraxLeagueOverride: preferences.fantraxLeagueOverride,
     espnLeagueOverride: preferences.espnLeagueOverride,
     preserveExactCategoryWeights: preferences.preserveExactCategoryWeights,

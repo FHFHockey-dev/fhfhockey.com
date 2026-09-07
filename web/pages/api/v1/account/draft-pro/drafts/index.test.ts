@@ -37,4 +37,9 @@ describe("saved drafts route", () => {
     const res = response(); await handler({ method: "POST", headers: {}, body: valid } as any, res);
     expect(res.statusCode).toBe(409); expect(commit).toHaveBeenCalledWith(expect.objectContaining({ userId: "user-1", draftId: null }));
   });
+
+  it("rejects consent-only client fields so callers must use the upload boundary", async () => {
+    const res = response(); await handler({ method: "POST", headers: {}, body: { ...valid, accountSaveConsent: true } } as any, res);
+    expect(res.statusCode).toBe(400); expect(commit).not.toHaveBeenCalled();
+  });
 });

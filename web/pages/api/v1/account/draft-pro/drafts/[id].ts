@@ -8,7 +8,7 @@ import { saveDraftProDraftSchema } from "lib/draft-pro/contracts";
 import { loadDraftProAccess, requireDraftProServerCapability } from "lib/draft-pro/server";
 
 const idSchema = z.string().uuid();
-const mutateSchema = z.object({ action: z.enum(["rename", "duplicate"]), name: z.string().trim().min(1).max(120), expectedVersion: z.number().int().nonnegative().optional() }).strict();
+const mutateSchema = z.object({ action: z.enum(["rename", "duplicate"]), name: z.string().trim().min(1).max(120), expectedVersion: z.number().int().nonnegative() }).strict();
 const deleteSchema = z.object({ expectedVersion: z.number().int().nonnegative() }).strict();
 const saveSchema = saveDraftProDraftSchema.extend({ uploadIds: z.array(z.string().uuid()).max(100).optional(), importIds: z.array(z.string().uuid()).max(100).optional() });
 const fail = (res: NextApiResponse, status: number, code: string, message: string) => res.status(status).json({ error: { code, message } });
