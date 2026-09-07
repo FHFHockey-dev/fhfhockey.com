@@ -47757,7 +47757,7 @@ export type Database = {
       }
       begin_draft_pro_stripe_checkout_attempt: {
         Args: { p_user_id: string }
-        Returns: { checkout_session_id: string; purchase_id: string; purchase_status: string; stripe_idempotency_key: string }[]
+        Returns: { checkout_session_id: string | null; purchase_id: string; purchase_status: string; stripe_idempotency_key: string }[]
       }
       record_draft_pro_stripe_event: {
         Args: { p_checkout_session_id: string | null; p_dispute_id: string | null; p_dispute_status: string | null; p_event_id: string; p_event_type: string; p_full_refund: boolean; p_occurred_at: string; p_payload: Json | null; p_payment_intent_id: string | null; p_payment_state: string; p_purchase_id: string; p_user_id: string }
