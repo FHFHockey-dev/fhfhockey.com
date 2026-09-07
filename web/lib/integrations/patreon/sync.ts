@@ -489,7 +489,7 @@ async function persistSnapshot({
     .eq("id", account.id)
     .eq("user_id", userId)
     .eq("provider", PATREON_PROVIDER)
-    .in("status", ["connected", "syncing"])
+    .in("status", ["connected", "syncing", "error"])
     .maybeSingle();
   if (currentAccountError) throw currentAccountError;
   if (!currentAccount) {
@@ -863,7 +863,7 @@ export async function reconcilePatreonAccounts({
     .from("connected_accounts")
     .select("user_id")
     .eq("provider", PATREON_PROVIDER)
-    .eq("status", "connected")
+    .in("status", ["connected", "error"])
     .order("last_synced_at", { ascending: true, nullsFirst: true })
     .limit(boundedLimit);
   if (error) throw error;
