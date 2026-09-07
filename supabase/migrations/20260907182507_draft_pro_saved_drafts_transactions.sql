@@ -27,6 +27,7 @@ create table public.draft_pro_save_sessions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   draft_id uuid references public.draft_pro_drafts(id) on delete cascade,
+  requested_draft_id uuid references public.draft_pro_drafts(id) on delete set null,
   attempt_key text not null check (char_length(attempt_key) between 1 and 120),
   expected_version integer,
   status text not null default 'pending' check (status in ('pending', 'committed', 'expired')),
@@ -81,7 +82,11 @@ begin
   update public.draft_pro_save_sessions as s set status = 'expired' where s.user_id = p_user_id and s.status = 'pending' and s.expires_at <= now();
   select s.* into session_row from public.draft_pro_save_sessions as s where s.user_id=p_user_id and s.attempt_key=p_attempt_key for update;
   if found then
-    if session_row.status='committed' then return query select 'saved',session_row.id,session_row.draft_id,coalesce(session_row.expected_version,0),session_row.expires_at; return; end if;
+    if session_row.requested_draft_id is distinct from p_draft_id or session_row.expected_version is distinct from p_expected_version then raise exception 'Draft Pro save attempt does not match its original request'; end if;
+    if session_row.status='committed' then
+      select d.* into draft from public.draft_pro_drafts as d where d.id=session_row.draft_id and d.user_id=p_user_id;
+      return query select 'saved',session_row.id,session_row.draft_id,coalesce(draft.lock_version,0),session_row.expires_at; return;
+    end if;
     if session_row.status='pending' and session_row.expires_at>now() then return query select 'ready',session_row.id,session_row.draft_id,coalesce(session_row.expected_version,0),session_row.expires_at; return; end if;
   end if;
   if p_draft_id is not null then
@@ -95,7 +100,7 @@ begin
     select count(*) into draft_count from public.draft_pro_drafts as d where d.user_id = p_user_id and d.status <> 'deleted';
     if draft_count >= 10 then raise exception 'Draft Pro saved draft quota exceeded'; end if;
   end if;
-  insert into public.draft_pro_save_sessions(user_id, draft_id, attempt_key, expected_version) values (p_user_id, p_draft_id, p_attempt_key, p_expected_version) returning * into session_row;
+  insert into public.draft_pro_save_sessions(user_id, draft_id, requested_draft_id, attempt_key, expected_version) values (p_user_id, p_draft_id, p_draft_id, p_attempt_key, p_expected_version) returning * into session_row;
   return query select 'ready', session_row.id, session_row.draft_id, coalesce(draft.lock_version, 0), session_row.expires_at;
 end;
 $$;
@@ -121,7 +126,7 @@ begin
   select coalesce(sum(u.reserved_bytes),0) into pending_bytes from public.draft_pro_private_import_uploads as u where u.user_id = p_user_id and u.status in ('uploading','staged') and u.expires_at > now();
   if account_bytes + pending_bytes + reservation > 104857600 then raise exception 'Draft Pro account import quota exceeded'; end if;
   select coalesce(sum(b.byte_size),0) into cleanup_bytes from public.draft_pro_private_import_blobs as b where b.user_id=p_user_id and b.status='cleanup_pending';
-  select coalesce(sum(u.declared_max_bytes),0) into pending_bytes from public.draft_pro_private_import_uploads as u where u.user_id = p_user_id and u.status in ('uploading','staged','expired');
+  select coalesce(sum(u.declared_max_bytes),0) into pending_bytes from public.draft_pro_private_import_uploads as u where u.user_id = p_user_id and (u.status in ('uploading','staged','expired') or (u.status='committed' and u.cleaned_at is null));
   if cleanup_bytes + pending_bytes + p_declared_max_bytes > 20971520 then raise exception 'Draft Pro temporary import cleanup quota exceeded'; end if;
   insert into public.draft_pro_private_import_uploads(user_id, save_session_id, replacement_import_id, name, content_type, mapping, declared_max_bytes, reserved_bytes, storage_prefix)
   values (p_user_id, session_row.id, p_replacement_import_id, btrim(p_name), p_content_type, coalesce(p_mapping,'{}'::jsonb), p_declared_max_bytes, reservation, '') returning * into upload;
@@ -181,10 +186,11 @@ begin
     select d.* into draft from public.draft_pro_drafts as d where d.id = session_row.draft_id and d.user_id = p_user_id and d.status <> 'deleted' for update;
     if not found then raise exception 'Draft was not found'; end if;
     if draft.lock_version <> session_row.expected_version then return query select 'conflict', draft.id, draft.lock_version, draft.name, draft.updated_at, 0, draft.lock_version; return; end if;
-    update public.draft_pro_drafts set name=btrim(p_name),snapshot=p_snapshot,snapshot_bytes=p_snapshot_bytes,lock_version=lock_version+1 where id=draft.id returning * into draft;
+    update public.draft_pro_drafts as d set name=btrim(p_name),snapshot=p_snapshot,snapshot_bytes=p_snapshot_bytes,lock_version=d.lock_version+1 where d.id=draft.id returning * into draft;
   end if;
-  if cardinality(coalesce(p_import_ids,'{}'::uuid[])) <> (select count(distinct requested_id) from unnest(coalesce(p_import_ids,'{}'::uuid[])) as requested(requested_id)) then raise exception 'Duplicate retained import IDs are not allowed'; end if;
-  if exists (select 1 from public.draft_pro_private_imports as i where i.id=any(coalesce(p_import_ids,'{}'::uuid[])) and (i.user_id<>p_user_id or i.draft_id<>draft.id or i.deleted_at is not null)) then raise exception 'Retained private import was not found'; end if;
+  if exists (select 1 from unnest(coalesce(p_import_ids,'{}'::uuid[])) as requested(requested_id) where requested.requested_id is null)
+    or cardinality(coalesce(p_import_ids,'{}'::uuid[])) <> (select count(distinct requested.requested_id) from unnest(coalesce(p_import_ids,'{}'::uuid[])) as requested(requested_id)) then raise exception 'Duplicate retained import IDs are not allowed'; end if;
+  if cardinality(coalesce(p_import_ids,'{}'::uuid[])) <> (select count(*) from public.draft_pro_private_imports as i where i.id=any(coalesce(p_import_ids,'{}'::uuid[])) and i.user_id=p_user_id and i.draft_id=draft.id and i.deleted_at is null) then raise exception 'Retained private import was not found'; end if;
   if exists (select 1 from public.draft_pro_private_import_uploads as u where u.save_session_id=session_row.id and u.status='staged' and u.replacement_import_id=any(coalesce(p_import_ids,'{}'::uuid[]))) then raise exception 'Replacement imports cannot also be retained'; end if;
   select coalesce(sum(i.byte_size),0) into draft_bytes from public.draft_pro_private_imports as i where i.id=any(coalesce(p_import_ids,'{}'::uuid[])) and i.deleted_at is null;
   select coalesce(sum(u.actual_bytes),0) into added_bytes from public.draft_pro_private_import_uploads as u where u.save_session_id = session_row.id and u.status = 'staged';
@@ -195,16 +201,21 @@ begin
       if not found then raise exception 'Replacement import was not found'; end if;
       update public.draft_pro_private_imports as i set deleted_at=now() where i.id=replacement.id;
     end if;
-    select coalesce(sum(b.byte_size),0) into account_bytes from public.draft_pro_private_import_blobs as b where b.user_id=p_user_id and b.status='active';
-    select coalesce(sum(u.reserved_bytes),0) into pending_bytes from public.draft_pro_private_import_uploads as u where u.user_id=p_user_id and u.status in ('uploading','staged') and u.id<>upload.id and u.expires_at>now();
-    if account_bytes + pending_bytes + upload.actual_bytes > 104857600 then raise exception 'Draft Pro account import quota exceeded'; end if;
-    insert into public.draft_pro_private_import_blobs(user_id,storage_path,byte_size,row_count,content_sha256) values(upload.user_id,upload.final_storage_path,upload.actual_bytes,upload.row_count,upload.content_sha256) returning * into blob;
-    insert into public.draft_pro_private_imports(user_id,draft_id,name,content_type,storage_path,normalized_rows,mapping,byte_size,row_count,blob_id) values(upload.user_id,draft.id,upload.name,upload.content_type,upload.final_storage_path,'[]'::jsonb,upload.mapping,upload.actual_bytes,upload.row_count,blob.id);
   end loop;
   update public.draft_pro_private_imports as i set deleted_at=now()
   where i.draft_id=draft.id and i.deleted_at is null
     and not (i.id=any(coalesce(p_import_ids,'{}'::uuid[])))
     and not exists (select 1 from public.draft_pro_private_import_uploads as u where u.save_session_id=session_row.id and u.final_storage_path=i.storage_path);
+  update public.draft_pro_private_import_blobs as b set status='cleanup_pending',cleanup_requested_at=now()
+  where b.user_id=p_user_id and b.status='active'
+    and not exists(select 1 from public.draft_pro_private_imports as i where i.blob_id=b.id and i.deleted_at is null);
+  select coalesce(sum(b.byte_size),0) into account_bytes from public.draft_pro_private_import_blobs as b where b.user_id=p_user_id and b.status='active';
+  select coalesce(sum(u.reserved_bytes),0) into pending_bytes from public.draft_pro_private_import_uploads as u where u.user_id=p_user_id and u.status in ('uploading','staged') and u.save_session_id<>session_row.id and u.expires_at>now();
+  if account_bytes + pending_bytes + added_bytes > 104857600 then raise exception 'Draft Pro account import quota exceeded'; end if;
+  for upload in select u.* from public.draft_pro_private_import_uploads as u where u.save_session_id=session_row.id and u.status='staged' for update loop
+    insert into public.draft_pro_private_import_blobs(user_id,storage_path,byte_size,row_count,content_sha256) values(upload.user_id,upload.final_storage_path,upload.actual_bytes,upload.row_count,upload.content_sha256) returning * into blob;
+    insert into public.draft_pro_private_imports(user_id,draft_id,name,content_type,storage_path,normalized_rows,mapping,byte_size,row_count,blob_id) values(upload.user_id,draft.id,upload.name,upload.content_type,upload.final_storage_path,'[]'::jsonb,upload.mapping,upload.actual_bytes,upload.row_count,blob.id);
+  end loop;
   update public.draft_pro_private_import_uploads as u set status='committed' where u.save_session_id=session_row.id and u.status='staged';
   update public.draft_pro_save_sessions as s set status='committed' where s.id=session_row.id;
   update public.draft_pro_private_import_blobs as b set status='cleanup_pending',cleanup_requested_at=now() where b.user_id=p_user_id and b.status='active' and not exists(select 1 from public.draft_pro_private_imports as i where i.blob_id=b.id and i.deleted_at is null);
@@ -234,7 +245,7 @@ begin
   select d.* into draft from public.draft_pro_drafts as d where d.id=p_draft_id and d.user_id=p_user_id and d.status<>'deleted' for update;
   if not found then raise exception 'Draft was not found'; end if;
   if p_expected_version is null or draft.lock_version<>p_expected_version then return query select 'conflict',draft.id,draft.lock_version,draft.name,draft.updated_at,draft.lock_version; return; end if;
-  update public.draft_pro_drafts set name=btrim(p_name),lock_version=lock_version+1 where id=draft.id returning * into draft;
+  update public.draft_pro_drafts as d set name=btrim(p_name),lock_version=d.lock_version+1 where d.id=draft.id returning * into draft;
   return query select 'saved',draft.id,draft.lock_version,draft.name,draft.updated_at,null::integer;
 end;
 $$;
@@ -248,7 +259,7 @@ begin
   select d.* into draft from public.draft_pro_drafts as d where d.id=p_draft_id and d.user_id=p_user_id and d.status<>'deleted' for update;
   if not found then raise exception 'Draft was not found'; end if;
   if p_expected_version is null or draft.lock_version<>p_expected_version then return query select 'conflict',draft.id,draft.lock_version,0,draft.lock_version; return; end if;
-  update public.draft_pro_drafts set status='deleted',lock_version=lock_version+1 where id=draft.id returning * into draft;
+  update public.draft_pro_drafts as d set status='deleted',lock_version=d.lock_version+1 where d.id=draft.id returning * into draft;
   update public.draft_pro_private_imports as i set deleted_at=now() where i.draft_id=draft.id and i.deleted_at is null;
   update public.draft_pro_private_import_blobs b set status='cleanup_pending',cleanup_requested_at=now() where b.user_id=p_user_id and b.status='active' and not exists(select 1 from public.draft_pro_private_imports i where i.blob_id=b.id and i.deleted_at is null);
   select count(*) into cleanup_count from public.draft_pro_private_import_blobs as b where b.user_id=p_user_id and b.status='cleanup_pending';

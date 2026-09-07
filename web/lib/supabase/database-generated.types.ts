@@ -564,9 +564,9 @@ export type Database = {
         Relationships: []
       }
       draft_pro_save_sessions: {
-        Row: { id: string; user_id: string; draft_id: string | null; attempt_key: string; expected_version: number | null; status: string; expires_at: string; created_at: string; updated_at: string }
-        Insert: { id?: string; user_id: string; draft_id?: string | null; attempt_key: string; expected_version?: number | null; status?: string; expires_at?: string; created_at?: string; updated_at?: string }
-        Update: { id?: string; user_id?: string; draft_id?: string | null; attempt_key?: string; expected_version?: number | null; status?: string; expires_at?: string; created_at?: string; updated_at?: string }
+        Row: { id: string; user_id: string; draft_id: string | null; requested_draft_id: string | null; attempt_key: string; expected_version: number | null; status: string; expires_at: string; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; draft_id?: string | null; requested_draft_id?: string | null; attempt_key: string; expected_version?: number | null; status?: string; expires_at?: string; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; draft_id?: string | null; requested_draft_id?: string | null; attempt_key?: string; expected_version?: number | null; status?: string; expires_at?: string; created_at?: string; updated_at?: string }
         Relationships: []
       }
       draft_pro_provider_events: {
