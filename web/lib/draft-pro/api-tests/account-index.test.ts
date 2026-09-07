@@ -5,7 +5,7 @@ const loadAccount = vi.hoisted(() => vi.fn());
 vi.mock("lib/api/requireApiUser", () => ({ requireApiUser }));
 vi.mock("lib/draft-pro/account", () => ({ loadDraftProAccount: loadAccount }));
 
-import handler from "./index";
+import handler from "../../../pages/api/v1/account/draft-pro";
 
 function response() {
   const res: any = { statusCode: 200, setHeader: vi.fn(), status: vi.fn(function (this: any, code: number) { this.statusCode = code; return this; }), json: vi.fn(function (this: any, body: unknown) { this.body = body; return this; }) };

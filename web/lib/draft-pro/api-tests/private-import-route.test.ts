@@ -31,4 +31,11 @@ describe("private import read route", () => {
     const res = response(); await handler({ method: "GET", headers: {}, query: { ...query, importId: "foreign-import" } } as any, res);
     expect(res.statusCode).toBe(400); expect(readChunk).not.toHaveBeenCalled(); expect(res.setHeader).toHaveBeenCalledWith("Cache-Control", "private, no-store");
   });
+
+  it("sends Uint8Array transport bytes as a real Buffer", async () => {
+    const bytes = new Uint8Array([91, 93]);
+    readChunk.mockResolvedValue({ bytes, totalBytes: 2, totalChunks: 1, sha256: "a".repeat(64), rowCount: 0 });
+    const res = response(); await handler({ method: "GET", headers: {}, query } as any, res);
+    expect(res.statusCode).toBe(200); expect(Buffer.isBuffer(res.body)).toBe(true); expect([...res.body]).toEqual([91, 93]); expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "application/octet-stream");
+  });
 });
