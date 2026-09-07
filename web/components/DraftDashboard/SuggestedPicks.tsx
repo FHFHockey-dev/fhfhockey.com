@@ -30,6 +30,8 @@ export interface SuggestedPicksProps {
   dustSort?: "ordinary" | "schedule_fit";
   onDustSortChange?: (sort: "ordinary" | "schedule_fit") => void;
   canUseProDust?: boolean;
+  dustLineupMode?: "daily" | "weekly";
+  onDustLineupModeChange?: (mode: "daily" | "weekly") => void;
   needWeightEnabled?: boolean;
   needAlpha?: number; // 0..1
   posNeeds?: Record<string, number>;
@@ -72,6 +74,8 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   dustSort = "ordinary",
   onDustSortChange,
   canUseProDust = false,
+  dustLineupMode = "daily",
+  onDustLineupModeChange,
   needWeightEnabled = false,
   needAlpha = 0.5,
   posNeeds = {},
@@ -412,6 +416,15 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     const arr = [...filtered];
     const mul = sortDir === "asc" ? 1 : -1;
     arr.sort((a, b) => {
+      if (dustSort === "schedule_fit" && dustInsights) {
+        const aDust = dustInsights.get(String(a.player.playerId));
+        const bDust = dustInsights.get(String(b.player.playerId));
+        const byActiveGames = (bDust?.activeGamesAdded ?? Number.NEGATIVE_INFINITY) - (aDust?.activeGamesAdded ?? Number.NEGATIVE_INFINITY);
+        if (byActiveGames) return byActiveGames;
+        const byValue = (b.vbd ?? b.vorp ?? 0) - (a.vbd ?? a.vorp ?? 0);
+        if (byValue) return byValue;
+        return String(a.player.playerId).localeCompare(String(b.player.playerId));
+      }
       const aFp = a.player.fantasyPoints?.projected ?? 0;
       const bFp = b.player.fantasyPoints?.projected ?? 0;
       const aVorp = a.vorp ?? 0;
@@ -450,7 +463,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
       }
     });
     return arr;
-  }, [filtered, personalRankByPlayerId, sortField, sortDir]);
+  }, [dustInsights, dustSort, filtered, personalRankByPlayerId, sortField, sortDir]);
 
   const top = useMemo(
     () => sorted.slice(0, Math.max(1, limit)),
@@ -511,6 +524,13 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                   {p}
                 </option>
               ))}
+            </select>
+          </div>
+          <div className={styles.controlGroup}>
+            <label className={styles.label} htmlFor="dust-lineup-mode">DUST lineup</label>
+            <select id="dust-lineup-mode" className={styles.select} value={dustLineupMode} onChange={(event) => onDustLineupModeChange?.(event.target.value as "daily" | "weekly")} disabled={!canUseProDust} aria-label="DUST lineup mode">
+              <option value="daily">Daily lineup</option>
+              <option value="weekly">Weekly lock (unavailable)</option>
             </select>
           </div>
           <div className={styles.controlGroup}>

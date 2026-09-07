@@ -218,6 +218,22 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     expect(onDustSortChange).toHaveBeenCalledWith("schedule_fit");
   });
 
+  it("orders visible candidates by active games, then value, for schedule-fit DUST", () => {
+    const players = [player(1, "Higher Value", "C", 100), player(2, "More Active Games", "G", 90)];
+    const metrics = new Map([["1", { vbd: 10, vorp: 10, vona: 0 } as any], ["2", { vbd: 9, vorp: 9, vona: 0 } as any]]);
+    const dustInsights = new Map([["1", { activeGamesAdded: 2, marginalDustGames: 1, candidateScheduledGames: 8, dustRate: .1, risk: "moderate" } as any], ["2", { activeGamesAdded: 5, marginalDustGames: 1, candidateScheduledGames: 8, dustRate: .1, risk: "moderate" } as any]]);
+    render(<SuggestedPicks players={players} vorpMetrics={metrics} currentPick={1} teamCount={1} dustInsights={dustInsights} dustSort="schedule_fit" canUseProDust />);
+    expect(screen.getAllByRole("listitem")[0].textContent).toContain("More Active Games");
+  });
+
+  it("labels weekly DUST lineup analysis as unavailable", () => {
+    const onDustLineupModeChange = vi.fn();
+    render(<SuggestedPicks players={[player(1, "Player", "C", 100)]} currentPick={1} teamCount={1} canUseProDust dustLineupMode="daily" onDustLineupModeChange={onDustLineupModeChange} />);
+    fireEvent.change(screen.getByRole("combobox", { name: "DUST lineup mode" }), { target: { value: "weekly" } });
+    expect(onDustLineupModeChange).toHaveBeenCalledWith("weekly");
+    expect(screen.getByRole("option", { name: "Weekly lock (unavailable)" })).toBeTruthy();
+  });
+
   it("sends a goalie-only filtered request through the shared contract", async () => {
     getSession.mockResolvedValue({ data: { session: { access_token: "token" } } });
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: [] }) });
