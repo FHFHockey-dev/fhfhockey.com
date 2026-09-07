@@ -26,6 +26,7 @@ declare
   expired_cleanup_final text;
   expired_cleanup_delete boolean;
   expired_status text;
+  active_import_id uuid;
   ordinal integer;
 begin
   select save_session_id into save_id from public.begin_draft_pro_save_session('00000000-0000-4000-8000-000000000021'::uuid, null, null, 'probe-attempt-1');
@@ -78,6 +79,9 @@ begin
   if exists (select 1 from public.list_draft_pro_saved_drafts('00000000-0000-4000-8000-000000000022')) then
     raise exception 'owner isolation failed';
   end if;
+  select i.id into active_import_id from public.draft_pro_private_imports as i where i.draft_id=saved_draft_id and i.deleted_at is null limit 1;
+  if not exists (select 1 from public.read_draft_pro_private_import_blob('00000000-0000-4000-8000-000000000021',saved_draft_id,active_import_id))
+    or exists (select 1 from public.read_draft_pro_private_import_blob('00000000-0000-4000-8000-000000000022',saved_draft_id,active_import_id)) then raise exception 'private import blob ownership failed'; end if;
 end $$;
 
 rollback;
