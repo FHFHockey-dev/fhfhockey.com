@@ -141,12 +141,12 @@
   }
 }
 @media (min-width: 1101px) {
-  .dashboardContainer:has(.matrix[data-open="true"]) {
+  .dashboardContainer:has([data-dust-matrix="true"][data-open="true"]) {
     height: auto;
     min-height: 100dvh;
     overflow: visible;
   }
-  .dashboardContainer:has(.matrix[data-open="true"]) .mainContent {
+  .dashboardContainer:has([data-dust-matrix="true"][data-open="true"]) .mainContent {
     flex: 0 0 auto;
     min-height: 720px;
   }
