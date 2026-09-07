@@ -103,3 +103,13 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 - Integration privacy constraint sent W05: no background API upload of local private imports before explicit account save; private-source premium calculations may be unavailable until W08 save/restoration rather than silently uploading/substituting rows. W07/W08 must preserve local free workflow and explain this boundary.
 
 - W03 LOCAL IMPLEMENTATION APPROVED through eb71ffad7; all11 commits eeff92517..eb71ffad7 integrated.22 focused tests +2 real refresh recovery/deleted account tests passed; full tsc/targeted lint passed owner. Recovery mock corrected to enforce actual .in status filter. Sol exit met, W03 downgraded Terra/medium and idle. Provider live OAuth/webhook validation blocked by absent config; not launch-approved. W07 must align any remaining account UI disconnect copy/navigation.
+
+- Released tiny W01 feature-flag contract follow-on at a2177bce1, Luna/medium (bounded configuration). Own features.ts only, all canonical capability env flags default false, private imports depend saved drafts, no entitlement bypass. W02/W05 informed. Active W01/W02/W05 three; W06 remains queued until flag checkpoint.
+
+- W01 helper20a5fb37b approved/integratedff260fa93. W01 scoped tsc exposed W03 introduced undefined entitlementMetadata in no-member branch; earlier claimed full-tsc clean evidence unreliable. W03 reopened Luna/medium for exact no-member invalidation/history regression; code approval suspended for that defect. Chef running actual full tsc session45387 from integration with read-only dependency symlink. Active W02/W03/W05 three; W06 still queued.
+
+- Chef actual full TypeScript run session45387 FAILED exit134: default4GiB heap OOM (~38sec). Empty30s output was not pass/time-window limit. W03 notified; require scopedchecks with repo-compatible esModuleInterop/bundler options. Full typecheck remains blocked/resource failure until controlled larger-heap RC attempt; not claim clean.
+
+- W03 cfe1f3427 no-member fix/regression approved and integrated;7sync tests+scoped tsc/eslint pass. Full tsc actual exit134 OOM confirmed, not pass. W03 local approval restored and idle Terra/medium.
+- W05 81c7aeab unapproved; escalated Terra/high after medium correction still leaked personalized globalVORP, squared categoryweights, averaged multi-position fit, used starts as GAA denominator, lacked hook categoryWeights. Exact regression requirements returned; W07 must not receive broken contract.
+- W02 1c86707b4 lifecycle/line-item progress5tests,5600c67c0 CLI lacks live guard/sanitized errors/tests; returned bounded Luna correction. Not approved.
