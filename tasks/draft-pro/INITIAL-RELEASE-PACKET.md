@@ -4,7 +4,7 @@ Status: preparation packet only. Draft Pro is not advertised as live from this p
 
 ## Proposed initial-release scope
 
-The locally approved initial-release candidates are the one-time 2026-27 pass, Stripe purchase and entitlement lifecycle, Patreon eligibility grant, refund request/access handling, roster-aware recommendations, personalized replacement suggestions, DUST, and aggregate CSV export. Account and expanded graph views are integration surfaces; the graph remains free. The current DUST contract is full weeks 1 through 30 and daily views only. The free schedule matrix shows all 27 Yahoo weeks, with selected playoffs highlighted; OFF and B2B views may follow the selected playoffs.
+The locally approved initial-release candidates are the one-time 2026-27 pass, Stripe purchase and entitlement lifecycle, Patreon eligibility grant, refund request/access handling, roster-aware recommendations, personalized replacement suggestions, DUST, and aggregate CSV export. Account and expanded graph views are integration surfaces; the graph remains free. DUST supports full-season daily-lineup analysis with its actual schedule window and freshness displayed. The free schedule matrix shows all 27 Yahoo weeks, with selected playoffs highlighted; OFF and B2B views may follow the selected playoffs.
 
 Saved Drafts/private imports, scenarios, reports, and Yahoo are not initial-release capabilities. Saved Drafts runtime modules are integrated, but dashboard integration and full user-flow verification remain pending. Scenarios and reports are queued; Yahoo is parked. These milestones must not appear as currently available in launch copy.
 
