@@ -3046,6 +3046,8 @@ const DraftDashboard: React.FC = () => {
             dustInsights={canUseProDust ? draftProDustInsights : undefined}
              scheduleMetrics={draftSchedule.playerMetrics}
             dustInsights={canUseProDust ? draftProDustInsights : undefined}
+             scheduleMetrics={draftSchedule.playerMetrics}
+            dustInsights={canUseProDust ? draftProDustInsights : undefined}
             emptyStateMessage={projectionEmptyStateMessage}
           />
   ), [
