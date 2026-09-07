@@ -6,38 +6,9 @@ import { buildPersonalizedRecommendations } from "lib/draft-pro/recommendations"
 import { consumeRecommendationRequest } from "lib/draft-pro/recommendationsRateLimit";
 import { getDraftProFeatureFlags } from "lib/draft-pro/features";
 import { loadDraftProAccess, requireDraftProServerCapability } from "lib/draft-pro/server";
+import { draftProRecommendationsInputSchema } from "lib/draft-pro/recommendationsContract";
 
-const finiteNumber = z.number().finite();
-const boundedRecord = (value: z.ZodTypeAny) => z.record(z.string().max(100), value).refine(
-  (record) => Object.keys(record).length <= 80,
-  "At most 80 values are allowed.",
-);
-const categoryValues = boundedRecord(finiteNumber.nullable());
-const inputSchema = z.object({
-  // Local CSV/private rows must never be sent here by background recalculation.
-  // W08 supplies the saved-account source once an owner explicitly saves it.
-  dataOrigin: z.enum(["server", "local_csv", "private_import"]),
-  leagueType: z.enum(["points", "categories"]),
-  candidates: z.array(z.object({
-    id: z.string().min(1).max(100),
-    name: z.string().min(1).max(200),
-    role: z.enum(["skater", "goalie"]),
-    eligiblePositions: z.array(z.string().min(1).max(12)).max(12),
-    globalVorp: finiteNumber,
-    rankValue: finiteNumber,
-    baselineScore: finiteNumber.optional(),
-    tieBreaker: finiteNumber.optional(),
-    categoryValues: categoryValues.optional(),
-    adp: finiteNumber.nullable().optional(),
-  }).strict()).min(1).max(200),
-  positionNeeds: boundedRecord(finiteNumber).optional(),
-  categoryNeeds: boundedRecord(finiteNumber).optional(),
-  categoryWeights: boundedRecord(finiteNumber).optional(),
-  needAlpha: finiteNumber.min(0).max(1).optional(),
-  currentPick: finiteNumber.int().min(1).max(2_000).optional(),
-  teamCount: finiteNumber.int().min(1).max(32).optional(),
-  limit: finiteNumber.int().min(1).max(100).optional(),
-}).strict();
+export const config = { api: { bodyParser: { sizeLimit: "4mb" } } };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader("Cache-Control", "private, no-store");
@@ -59,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       patreonVerificationAvailable: true,
     });
     requireDraftProServerCapability(access, "recommendations");
-    const input = inputSchema.parse(req.body ?? {});
+    const input = draftProRecommendationsInputSchema.parse(req.body ?? {});
     if (input.dataOrigin !== "server") {
       return res.status(422).json({ error: { code: "private_source_requires_saved_draft", message: "Save this private import to your account before requesting remote recommendations." } });
     }
