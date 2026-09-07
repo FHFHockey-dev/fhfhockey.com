@@ -626,6 +626,7 @@ const DraftDashboard: React.FC = () => {
     sourceControlDefaults.goalie,
   );
   const [sourcePreferencesReady, setSourcePreferencesReady] = useState(false);
+  const sourcePreferencesLoadedRef = useRef(false);
   const sourceControlSignature = useMemo(
     () =>
       JSON.stringify({ skater: sourceControls, goalie: goalieSourceControls }),
@@ -642,7 +643,8 @@ const DraftDashboard: React.FC = () => {
   >({});
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || sourcePreferencesLoadedRef.current) return;
+    sourcePreferencesLoadedRef.current = true;
     const saved = loadSourceControlPreferences(sourceControlDefaults);
     setSourceControls(saved.skater);
     setGoalieSourceControls(saved.goalie);

@@ -1,3 +1,4 @@
+import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
@@ -626,6 +627,22 @@ it("restores named missing CSV recovery without rewriting an already empty tab l
   render(<DraftDashboard />);
   expect(await screen.findByText(/Imported projection CSV rows are unavailable in this tab/)).toBeTruthy();
   expect((screen.getByRole("button", { name: "Draft recovery player", hidden: true }) as HTMLButtonElement).disabled).toBe(true);
+});
+
+it("keeps missing CSV controls available after StrictMode recovery replay", async () => {
+  sessionStorage.setItem("draft.snapshot.v4", JSON.stringify(missingSourceRecord()));
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+  render(<React.StrictMode><DraftDashboard /></React.StrictMode>);
+  await waitFor(() => {
+    const snapshot = JSON.parse(sessionStorage.getItem("draft.snapshot.v4")!);
+    expect(snapshot.sourceControls.custom_csv_missing).toEqual({ isSelected: true, weight: 0.7 });
+    expect(snapshot.goalieSourceControls.custom_csv_missing).toEqual({ isSelected: true, weight: 1 });
+  });
+  expect((screen.getByRole("button", { name: "Draft recovery player", hidden: true }) as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.click(screen.getByRole("button", { name: "Projections" }));
+  fireEvent.click(screen.getByRole("button", { name: "Edit Weights" }));
+  expect(screen.getAllByRole("button", { name: "Reimport Missing source" })).toHaveLength(2);
+  expect(screen.getAllByRole("button", { name: "Remove Missing source" })).toHaveLength(2);
 });
 
 it("resumes matching tab CSV rows without rewriting them when storage is unavailable", async () => {
