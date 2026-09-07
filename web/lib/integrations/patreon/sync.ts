@@ -285,14 +285,6 @@ export async function materializePatreonEntitlement({
   const entitlementStatus = snapshot.isEligibleSupporter
     ? "active"
     : "inactive";
-  const entitlementMetadata = {
-    ...((snapshot.metadata || {}) as Record<string, unknown>),
-    provider_user_id: snapshot.providerUserId,
-    verified_at: now.toISOString(),
-    draft_pro_eligible: snapshot.isEligibleSupporter,
-    connected_account_id: account.id,
-  } as Json;
-
   if (snapshot.memberId) {
     const { data: existing, error: existingError } = await client
       .from("user_entitlements")
@@ -307,6 +299,29 @@ export async function materializePatreonEntitlement({
         409,
       );
     }
+    const previousMetadata = (existing?.metadata && typeof existing.metadata === "object" && !Array.isArray(existing.metadata)
+      ? existing.metadata
+      : {}) as Record<string, unknown>;
+    const paidBenefit = {
+      amount_cents: snapshot.currentlyEntitledAmountCents,
+      tiers: snapshot.tiers,
+      verified_at: now.toISOString(),
+      campaign_id: snapshot.campaignId,
+    };
+    const entitlementMetadata = {
+      ...previousMetadata,
+      ...((snapshot.metadata || {}) as Record<string, unknown>),
+      provider_user_id: snapshot.providerUserId,
+      verified_at: now.toISOString(),
+      draft_pro_eligible: snapshot.isEligibleSupporter,
+      connected_account_id: account.id,
+      paid_activated_at: snapshot.isEligibleSupporter
+        ? previousMetadata.paid_activated_at || now.toISOString()
+        : previousMetadata.paid_activated_at || null,
+      last_verified_paid_benefit: snapshot.isEligibleSupporter
+        ? paidBenefit
+        : previousMetadata.last_verified_paid_benefit || null,
+    } as Json;
 
     const entitlementRow = {
       user_id: userId,
