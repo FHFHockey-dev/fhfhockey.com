@@ -226,6 +226,16 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     expect(screen.getAllByRole("listitem")[0].textContent).toContain("More Active Games");
   });
 
+  it("keeps ordinary ranking while schedule-fit DUST insights are unavailable", () => {
+    const players = [
+      { ...player(1, "Urgent Player", "C", 90), yahooAvgPick: 2 },
+      { ...player(2, "Higher Value", "C", 100), yahooAvgPick: 100 },
+    ];
+    const metrics = new Map([["1", { value: 90, vbd: 9, vorp: 9, vona: 0 } as any], ["2", { value: 100, vbd: 10, vorp: 10, vona: 0 } as any]]);
+    render(<SuggestedPicks players={players} vorpMetrics={metrics} currentPick={1} nextPickNumber={10} teamCount={1} dustInsights={new Map()} dustSort="schedule_fit" canUseProDust />);
+    expect(screen.getAllByRole("listitem")[0].textContent).toContain("Urgent Player");
+  });
+
   it("labels weekly DUST lineup analysis as unavailable", () => {
     const onDustLineupModeChange = vi.fn();
     render(<SuggestedPicks players={[player(1, "Player", "C", 100)]} currentPick={1} teamCount={1} canUseProDust dustLineupMode="daily" onDustLineupModeChange={onDustLineupModeChange} />);
