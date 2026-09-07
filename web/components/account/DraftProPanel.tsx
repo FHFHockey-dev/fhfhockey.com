@@ -90,6 +90,7 @@ export default function DraftProPanel() {
     if (!session) throw new Error("Authentication required.");
     const identity = session.user?.id ?? null;
     if (accountIdentityRef.current === undefined) accountIdentityRef.current = identity;
+    if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
     const response = await fetch("/api/v1/account/draft-pro", { headers: { Authorization: `Bearer ${session.access_token}` } });
     const body = await response.json();
     if (!response.ok) throw new Error(body.error?.message ?? "Draft Pro account details are unavailable.");
@@ -124,6 +125,9 @@ export default function DraftProPanel() {
       cancelCheckoutVerification();
       setCheckoutState("idle");
       setCheckoutRetryAvailable(false);
+      setSubmitting(false);
+      setPatreonAction(null);
+      setCheckoutLoading(false);
       setAccount(null);
       setPurchaseId("");
       setReason("other");
@@ -166,6 +170,7 @@ export default function DraftProPanel() {
       const session = (await supabase.auth.getSession()).data.session;
       if (!session) throw new Error("Authentication required.");
       const identity = session.user?.id ?? null;
+      if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
       const response = await fetch("/api/v1/account/draft-pro/refund-requests", {
         method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
@@ -193,6 +198,7 @@ export default function DraftProPanel() {
       const session = (await supabase.auth.getSession()).data.session;
       if (!session) throw new Error("Authentication required.");
       const identity = session.user?.id ?? null;
+      if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
       const response = await fetch(action === "refresh" ? "/api/v1/account/patreon/refresh" : "/api/v1/account/patreon/connect", {
         method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
@@ -204,6 +210,7 @@ export default function DraftProPanel() {
       if (action === "connect" && typeof body.authorizationUrl === "string") window.location.assign(body.authorizationUrl);
       else {
         await loadAccount();
+        if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
         setFeedback("Patreon membership refreshed.");
       }
     } catch (actionError) {
@@ -222,6 +229,7 @@ export default function DraftProPanel() {
       const session = (await supabase.auth.getSession()).data.session;
       if (!session?.access_token) throw new Error("Sign in before purchasing Draft Pro.");
       const identity = session.user?.id ?? null;
+      if (!checkoutMountedRef.current || accountEpoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
       const response = await fetch("/api/v1/account/draft-pro/checkout", {
         method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}` },
@@ -244,6 +252,7 @@ export default function DraftProPanel() {
       }
       if (body.alreadyPurchased) {
         await loadAccount();
+        if (!checkoutMountedRef.current || accountEpoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
         setCheckoutLoading(false);
         return;
       }
