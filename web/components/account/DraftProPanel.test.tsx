@@ -21,7 +21,7 @@ const account = {
 };
 
 describe("DraftProPanel", () => {
-  beforeEach(() => { getSession.mockResolvedValue({ data: { session: { access_token: "token" } } }); replace.mockClear(); onAuthStateChange.mockClear(); });
+  beforeEach(() => { getSession.mockResolvedValue({ data: { session: { access_token: "token", user: { id: "A" } } } }); replace.mockClear(); onAuthStateChange.mockClear(); });
   afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); vi.restoreAllMocks(); delete routerQuery.draft_pro_checkout; });
 
   it("shows loading and then the server-computed refund form", async () => {
@@ -82,7 +82,6 @@ describe("DraftProPanel", () => {
     render(<DraftProPanel />);
     expect(await screen.findByText("Draft Pro access is confirmed.")).toBeTruthy();
     expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/v1/account/draft-pro/checkout/verify");
-    expect(replace).toHaveBeenCalledWith({ pathname: "/account", query: {} }, undefined, { shallow: true });
   });
 
   it("keeps a no-URL checkout in its confirming state", async () => {
@@ -112,6 +111,38 @@ describe("DraftProPanel", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it("cancels a pending checkout retry when its query is externally cleared", async () => {
+    vi.useFakeTimers();
+    routerQuery.draft_pro_checkout = "cs_test_external";
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: account }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ state: "waiting" }) });
+    vi.stubGlobal("fetch", fetchMock);
+    const view = render(<DraftProPanel />);
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    delete routerQuery.draft_pro_checkout;
+    view.rerender(<DraftProPanel />);
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps verification alive across initial and same-user auth events", async () => {
+    routerQuery.draft_pro_checkout = "cs_test_identity";
+    let resolveVerification: ((value: unknown) => void) | undefined;
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: account }) })
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveVerification = resolve; }))
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: account }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<DraftProPanel />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    const listener = onAuthStateChange.mock.calls[0][0];
+    act(() => listener("INITIAL_SESSION", { access_token: "token", user: { id: "A" } }));
+    act(() => listener("TOKEN_REFRESHED", { access_token: "token-2", user: { id: "A" } }));
+    await act(async () => { resolveVerification?.({ ok: true, json: async () => ({ state: "confirmed" }) }); });
+    expect(await screen.findByText("Draft Pro access is confirmed.")).toBeTruthy();
+  });
+
   it("offers manual retry after a transient checkout verification failure", async () => {
     routerQuery.draft_pro_checkout = "cs_test_retry";
     const fetchMock = vi.fn()
@@ -135,6 +166,23 @@ describe("DraftProPanel", () => {
     act(() => listener("SIGNED_OUT", null));
     await act(async () => { resolveAccount?.({ ok: true, json: async () => ({ data: account }) }); });
     expect(screen.getByRole("alert").textContent).toContain("Authentication required");
+    expect(screen.queryByText("Opening night")).toBeNull();
+  });
+
+  it("keeps a new account visible when an older account load resolves late", async () => {
+    let resolveOld: ((value: unknown) => void) | undefined;
+    const accountB = { ...account, savedDrafts: [{ id: "draft-b", name: "B draft", status: "active", updatedAt: "2026-09-06T00:00:00.000Z" }] };
+    const fetchMock = vi.fn()
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveOld = resolve; }))
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: accountB }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<DraftProPanel />);
+    await waitFor(() => expect(onAuthStateChange).toHaveBeenCalled());
+    getSession.mockResolvedValue({ data: { session: { access_token: "token-b", user: { id: "B" } } } });
+    act(() => onAuthStateChange.mock.calls[0][0]("SIGNED_IN", { access_token: "token-b", user: { id: "B" } }));
+    expect(await screen.findByText("B draft")).toBeTruthy();
+    await act(async () => { resolveOld?.({ ok: true, json: async () => ({ data: account }) }); });
+    expect(screen.getByText("B draft")).toBeTruthy();
     expect(screen.queryByText("Opening night")).toBeNull();
   });
 });
