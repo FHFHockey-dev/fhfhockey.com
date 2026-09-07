@@ -98,7 +98,12 @@ export async function fulfillStripeProviderEvent({
   stripe: Stripe;
   client?: Pick<typeof serviceRoleClient, "rpc">;
 }): Promise<StripeFulfillmentResult> {
-  if (event.type.startsWith("checkout.session.")) return fulfillStripeEvent(event, client);
+  if (event.type.startsWith("checkout.session.")) {
+    const eventSession = event.data.object as Stripe.Checkout.Session;
+    const session = await stripe.checkout.sessions.retrieve(eventSession.id);
+    if (!(await verifyDraftProCheckoutSession(stripe, session))) return { purchaseId: null, processed: false };
+    return fulfillStripeEvent({ ...event, data: { ...event.data, object: session } }, client);
+  }
   if (![
     "charge.refunded",
     "charge.dispute.created",
