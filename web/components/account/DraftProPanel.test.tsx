@@ -5,11 +5,15 @@ import DraftProPanel from "./DraftProPanel";
 
 const getSession = vi.hoisted(() => vi.fn());
 const routerQuery = vi.hoisted(() => ({} as Record<string, string>));
-vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession } } }));
-vi.mock("next/router", () => ({ useRouter: () => ({ query: routerQuery }) }));
+const onAuthStateChange = vi.hoisted(() => vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })));
+const replace = vi.hoisted(() => vi.fn());
+vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession, onAuthStateChange } } }));
+vi.mock("next/router", () => ({ useRouter: () => ({ query: routerQuery, pathname: "/account", replace }) }));
 
 const account = {
   access: { eligible: true, grantingSources: ["purchase"], expiresAt: "2027-07-01T04:00:00.000Z", verifiedAt: null, reason: "eligible", providerReadiness: { patreon: false } },
+  passInfo: { priceCents: 599, expiresAt: "2027-07-01T04:00:00.000Z", renewal: "none" as const },
+  checkoutAvailability: { available: true, reason: "available" },
   purchases: [{ id: "purchase-1", season: "draft_pro_2026_27", status: "active", activatedAt: "2026-09-05T00:00:00.000Z", expiresAt: "2027-07-01T04:00:00.000Z", amountCents: 599, currency: "usd", receiptUrl: null, refundEligibility: { eligible: true, deadline: "2026-09-12T00:00:00.000Z", reason: "eligible" } }],
   refundRequests: [],
   savedDrafts: [{ id: "draft-1", name: "Opening night", status: "active", updatedAt: "2026-09-06T00:00:00.000Z" }],
@@ -17,7 +21,7 @@ const account = {
 };
 
 describe("DraftProPanel", () => {
-  beforeEach(() => getSession.mockResolvedValue({ data: { session: { access_token: "token" } } }));
+  beforeEach(() => { getSession.mockResolvedValue({ data: { session: { access_token: "token" } } }); replace.mockClear(); onAuthStateChange.mockClear(); });
   afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); vi.restoreAllMocks(); delete routerQuery.draft_pro_checkout; });
 
   it("shows loading and then the server-computed refund form", async () => {
@@ -78,6 +82,7 @@ describe("DraftProPanel", () => {
     render(<DraftProPanel />);
     expect(await screen.findByText("Draft Pro access is confirmed.")).toBeTruthy();
     expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/v1/account/draft-pro/checkout/verify");
+    expect(replace).toHaveBeenCalledWith({ pathname: "/account", query: {} }, undefined, { shallow: true });
   });
 
   it("keeps a no-URL checkout in its confirming state", async () => {
@@ -105,5 +110,31 @@ describe("DraftProPanel", () => {
     unmount();
     await vi.advanceTimersByTimeAsync(1_000);
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("offers manual retry after a transient checkout verification failure", async () => {
+    routerQuery.draft_pro_checkout = "cs_test_retry";
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: { ...account, access: { ...account.access, eligible: false } } }) })
+      .mockResolvedValueOnce({ ok: false, json: async () => ({ error: "Temporary Stripe delay" }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ state: "confirmed" }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: account }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<DraftProPanel />);
+    expect(await screen.findByRole("button", { name: "Check purchase status again" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Check purchase status again" }));
+    expect(await screen.findByText("Draft Pro access is confirmed.")).toBeTruthy();
+  });
+
+  it("invalidates stale account responses after an auth change", async () => {
+    let resolveAccount: ((value: unknown) => void) | undefined;
+    vi.stubGlobal("fetch", vi.fn(() => new Promise((resolve) => { resolveAccount = resolve; })));
+    render(<DraftProPanel />);
+    await waitFor(() => expect(onAuthStateChange).toHaveBeenCalled());
+    const listener = onAuthStateChange.mock.calls[0][0];
+    act(() => listener("SIGNED_OUT", null));
+    await act(async () => { resolveAccount?.({ ok: true, json: async () => ({ data: account }) }); });
+    expect(screen.getByRole("alert").textContent).toContain("Authentication required");
+    expect(screen.queryByText("Opening night")).toBeNull();
   });
 });

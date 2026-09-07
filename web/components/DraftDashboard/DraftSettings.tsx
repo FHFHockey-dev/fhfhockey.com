@@ -79,6 +79,7 @@ interface DraftSettingsProps {
   onExportCsv?: () => void;
   exportCsvDisabled?: boolean;
   exportCsvMessage?: string | null;
+  exportCsvUpgradeHref?: string;
   onRemoveCustomSource?: (id: string) => void;
   pickOwnerOverrides?: Record<string, string>;
   pickTrades?: PickTradeEntry[];
@@ -152,6 +153,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
   onExportCsv,
   exportCsvDisabled = false,
   exportCsvMessage = null,
+  exportCsvUpgradeHref,
   onRemoveCustomSource,
   pickOwnerOverrides = {},
   pickTrades = [],
@@ -459,7 +461,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
         <button type="button" onClick={handleCreateBookmark}>Export</button>
       </div>}
       {tradeFeedback && <div className={styles.lockNotice} role={tradeFeedback.ok ? "status" : "alert"}>{tradeFeedback.message}<button type="button" aria-label="Dismiss settings message" onClick={() => setTradeFeedback(null)}>×</button></div>}
-      {exportCsvMessage && <div className={styles.lockNotice} role="alert">{exportCsvMessage}</div>}
+      {exportCsvMessage && <div className={styles.lockNotice} role="alert">{exportCsvMessage}{exportCsvUpgradeHref ? <> <a href={exportCsvUpgradeHref}>Manage Draft Pro access</a></> : null}</div>}
       {draftLocked && (
         <div className={styles.lockNotice} role="status">
           {draftLockReason}
