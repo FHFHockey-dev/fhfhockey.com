@@ -19,6 +19,7 @@ export function useDraftProRecommendations(input: Input | null, enabled: boolean
       void (async () => {
         setState({ key: body, status: "loading", results: null, error: null });
         const session = (await supabase.auth.getSession()).data.session;
+        if (controller.signal.aborted) return;
         if (!session?.access_token) throw new Error("Sign in to use Draft Pro recommendations.");
         const response = await fetch("/api/v1/draft-pro/recommendations", {
           method: "POST",
@@ -36,5 +37,7 @@ export function useDraftProRecommendations(input: Input | null, enabled: boolean
     return () => { controller.abort(); window.clearTimeout(timer); };
   }, [body, enabled]);
 
-  return state.key === body ? state : { key: body, status: enabled && body ? "loading" as const : "idle" as const, results: null, error: null };
+  return enabled && state.key === body
+    ? state
+    : { key: body, status: enabled && body ? "loading" as const : "idle" as const, results: null, error: null };
 }

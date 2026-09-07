@@ -5,6 +5,7 @@ const getSession = vi.hoisted(() => vi.fn());
 vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession } } }));
 
 import SuggestedPicks from "../../../components/DraftDashboard/SuggestedPicks";
+import { draftProRecommendationsInputSchema } from "../../../lib/draft-pro/recommendationsContract";
 
 function player(playerId: number, name: string, position: string, points: number) {
   return {
@@ -196,6 +197,7 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     render(<SuggestedPicks players={[player(1, "Skater", "C", 100), player(2, "Goalie", "G", 90)]} currentPick={1} teamCount={1} draftProEligible />);
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     const request = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body);
+    expect(draftProRecommendationsInputSchema.parse(request)).toEqual(request);
     expect(request.limit).toBe(100);
     expect(request.candidates.map((candidate: { role: string }) => candidate.role).sort()).toEqual(["goalie", "skater"]);
   });
@@ -205,5 +207,28 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<SuggestedPicks players={[]} currentPick={1} teamCount={1} draftProEligible />);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("sends a goalie-only filtered request through the shared contract", async () => {
+    getSession.mockResolvedValue({ data: { session: { access_token: "token" } } });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: [] }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<SuggestedPicks players={[player(1, "Goalie", "G", 90)]} currentPick={1} teamCount={1} draftProEligible />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const request = draftProRecommendationsInputSchema.parse(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(request.candidates).toHaveLength(1);
+    expect(request.candidates[0]?.role).toBe("goalie");
+  });
+
+  it("sends more than 200 filtered candidates without dropping later positions", async () => {
+    getSession.mockResolvedValue({ data: { session: { access_token: "token" } } });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: [] }) });
+    vi.stubGlobal("fetch", fetchMock);
+    const players = Array.from({ length: 201 }, (_, index) => player(index + 1, `Player ${index + 1}`, index === 200 ? "G" : "C", 100 - index));
+    render(<SuggestedPicks players={players} currentPick={1} teamCount={1} draftProEligible />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const request = draftProRecommendationsInputSchema.parse(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(request.candidates).toHaveLength(201);
+    expect(request.candidates.at(-1)?.role).toBe("goalie");
   });
 });

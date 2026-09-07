@@ -32,4 +32,14 @@ describe("useDraftProRecommendations", () => {
     await act(async () => {});
     expect(result.current.results?.[0]?.candidate.id).toBe("2");
   });
+
+  it("clears ready premium results synchronously when capability access is revoked", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: [{ candidate: { id: "1" } }] }) }));
+    const { result, rerender } = renderHook(({ enabled }) => useDraftProRecommendations(input, enabled), { initialProps: { enabled: true } });
+    await act(async () => { await vi.advanceTimersByTimeAsync(200); });
+    expect(result.current.results?.[0]?.candidate.id).toBe("1");
+    rerender({ enabled: false });
+    expect(result.current).toMatchObject({ status: "idle", results: null });
+  });
 });
