@@ -41,7 +41,7 @@ async function main() {
   const id = saved.json.data.id; const detail = await call(`/api/v1/account/draft-pro/drafts/${id}`, ownerSecond); assert.equal(detail.status, 200); assert.deepEqual(detail.json.data.snapshot, snapshot);
   const importId = detail.json.data.privateImports[0].id;
   const read = await fetch(`${base}/api/v1/account/draft-pro/drafts/${id}/imports/${importId}?ordinal=0`, { headers: { Authorization: `Bearer ${ownerSecond}` } });
-  if (read.status !== 200) throw new Error(`private chunk ${read.status}: ${await read.text()}`); const bytes = Buffer.from(await read.arrayBuffer()); assert.equal(createHash("sha256").update(bytes).digest("hex"), read.headers.get("x-draft-pro-sha256")); const downloadedRows = JSON.parse(bytes.toString()); assert.deepEqual(downloadedRows, normalized[0].rows);
+  if (read.status !== 200) throw new Error(`private chunk ${read.status}: ${await read.text()}`); const bytes = new Uint8Array(await read.arrayBuffer()); assert.equal(createHash("sha256").update(bytes).digest("hex"), read.headers.get("x-draft-pro-sha256")); const downloadedRows = JSON.parse(Buffer.from(bytes).toString()); assert.deepEqual(downloadedRows, normalized[0].rows);
   const restored = restoreBrowserSnapshot(detail.json.data.snapshot, [{ id: importId, name: detail.json.data.privateImports[0].name, sourceId: "custom_csv_1", mapping: detail.json.data.privateImports[0].mapping.headers, rows: downloadedRows }]);
   assert.deepEqual(restored.customCsvList[0].rows, downloadedRows);
   assert.deepEqual(restored.draftSettings, browser.draftSettings);
