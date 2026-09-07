@@ -28,9 +28,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const result = await commitSavedDraft({ userId: user.id, draftId: id, name: input.name, expectedVersion: input.expectedVersion, snapshot: input.snapshot, attemptKey: input.attemptKey, importIds: input.importIds });
       return result.conflict ? res.status(409).json({ data: { current: result.current } }) : res.status(200).json({ data: result.draft });
     }
-    const input = req.method === "DELETE" ? deleteSchema.parse(req.body ?? {}) : mutateSchema.parse(req.body ?? {});
-    const action = req.method === "DELETE" ? "delete" : input.action;
-    const result = await mutateSavedDraft({ userId: user.id, draftId: id, action, name: "name" in input ? input.name : undefined, expectedVersion: input.expectedVersion });
+    if (req.method === "DELETE") {
+      const input = deleteSchema.parse(req.body ?? {});
+      const result = await mutateSavedDraft({ userId: user.id, draftId: id, action: "delete", expectedVersion: input.expectedVersion });
+      return result.conflict ? res.status(409).json({ data: { current: result.current } }) : res.status(200).json({ data: result.draft });
+    }
+    const input = mutateSchema.parse(req.body ?? {});
+    const result = await mutateSavedDraft({ userId: user.id, draftId: id, action: input.action, name: input.name, expectedVersion: input.expectedVersion });
     return result.conflict ? res.status(409).json({ data: { current: result.current } }) : res.status(200).json({ data: result.draft });
   } catch (cause) {
     const error = cause as { statusCode?: number; code?: string; message?: string };

@@ -5,7 +5,7 @@ import { PRIVATE_IMPORT_CHUNK_BYTES, putPrivateImportChunk } from "lib/draft-pro
 import { loadDraftProAccess, requireDraftProServerCapability } from "lib/draft-pro/server";
 
 export const config = { api: { bodyParser: false } };
-async function body(req: NextApiRequest) { const pieces: Buffer[] = []; let bytes = 0; for await (const piece of req) { const value = Buffer.from(piece); bytes += value.byteLength; if (bytes > PRIVATE_IMPORT_CHUNK_BYTES) throw new Error("Chunk exceeds 750 KiB."); pieces.push(value); } return Buffer.concat(pieces); }
+async function body(req: NextApiRequest) { const pieces: Uint8Array<ArrayBuffer>[] = []; let bytes = 0; for await (const piece of req) { const value = new Uint8Array(piece); bytes += value.byteLength; if (bytes > PRIVATE_IMPORT_CHUNK_BYTES) throw new Error("Chunk exceeds 750 KiB."); pieces.push(value); } const result = new Uint8Array(bytes); let offset = 0; for (const piece of pieces) { result.set(piece, offset); offset += piece.byteLength; } return result; }
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "PUT") return res.status(405).json({ error: { code: "method_not_allowed" } });
   const user = await requireApiUser(req, res, { onUnauthorized: (message) => res.status(401).json({ error: { code: "authentication_required", message } }) }); if (!user) return;

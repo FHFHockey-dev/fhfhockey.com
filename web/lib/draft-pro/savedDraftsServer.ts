@@ -69,8 +69,8 @@ export async function readSavedDraft(userId: string, draftId: string) {
   return { ...savedDraft(result), snapshot: result.snapshot, privateImports: result.imports };
 }
 
-export async function mutateSavedDraft(args: { userId: string; draftId: string; action: "rename" | "duplicate" | "delete"; name?: string; expectedVersion?: number }) {
-  const mutationArgs = { p_user_id: args.userId, p_draft_id: args.draftId, p_expected_version: args.expectedVersion ?? null };
+export async function mutateSavedDraft(args: { userId: string; draftId: string; action: "rename" | "duplicate" | "delete"; name?: string; expectedVersion: number }) {
+  const mutationArgs = { p_user_id: args.userId, p_draft_id: args.draftId, p_expected_version: args.expectedVersion };
   if (args.action === "delete") {
     const { data, error } = await serviceRoleClient.rpc("delete_draft_pro_saved_draft", mutationArgs);
     if (error) throw error;

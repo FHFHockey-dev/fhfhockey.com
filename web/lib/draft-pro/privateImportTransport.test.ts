@@ -5,6 +5,8 @@ const rpc = vi.hoisted(() => vi.fn());
 const storageUpload = vi.hoisted(() => vi.fn());
 const storageDownload = vi.hoisted(() => vi.fn());
 vi.mock("lib/supabase/server", () => ({ default: { rpc, storage: { from: () => ({ upload: storageUpload, download: storageDownload }) } } }));
+const arrayBuffer = (value: Uint8Array) => new Uint8Array(value).buffer;
+const binary = (value: Uint8Array) => new Uint8Array(value);
 
 import { putPrivateImportChunk, readPrivateImportChunk, stagePrivateImport, PRIVATE_IMPORT_CHUNK_BYTES } from "./privateImportTransport";
 
@@ -36,33 +38,33 @@ describe("private import transport ownership boundary", () => {
 
   it("accepts an identical duplicate chunk but rejects changed retry bytes", async () => {
     const upload = uploadRow();
-    rpc.mockResolvedValueOnce({ data: [upload], error: null }); storageUpload.mockResolvedValueOnce({ error: { message: "already exists" } }); storageDownload.mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => Buffer.from("[]") } });
+    rpc.mockResolvedValueOnce({ data: [upload], error: null }); storageUpload.mockResolvedValueOnce({ error: { message: "already exists" } }); storageDownload.mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => arrayBuffer(Buffer.from("[]")) } });
     await expect(putPrivateImportChunk({ userId: "user", uploadId: "upload-1", prefix: upload.storage_prefix, ordinal: 0, bytes: Buffer.from("[]") })).resolves.toContain("/0");
-    rpc.mockResolvedValueOnce({ data: [upload], error: null }); storageUpload.mockResolvedValueOnce({ error: { message: "already exists" } }); storageDownload.mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => Buffer.from("different") } });
+    rpc.mockResolvedValueOnce({ data: [upload], error: null }); storageUpload.mockResolvedValueOnce({ error: { message: "already exists" } }); storageDownload.mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => arrayBuffer(Buffer.from("different")) } });
     await expect(putPrivateImportChunk({ userId: "user", uploadId: "upload-1", prefix: upload.storage_prefix, ordinal: 0, bytes: Buffer.from("[]") })).rejects.toThrow("differs");
   });
 
   it("allows an identical staged replay after checking persisted metadata and final bytes", async () => {
-    const body = Buffer.from(JSON.stringify([{ player: "A" }])); const hash = createHash("sha256").update(body).digest("hex");
+    const body = Buffer.from(JSON.stringify([{ player: "A" }])); const hash = createHash("sha256").update(binary(body)).digest("hex");
     rpc.mockResolvedValueOnce({ data: [uploadRow({ status: "staged", actual_bytes: body.byteLength, row_count: 1, content_sha256: hash })], error: null });
     rpc.mockResolvedValueOnce({ data: [{ status: "staged", upload_id: "upload-1", storage_path: "draft-pro-imports/upload-1/normalized.json", expires_at: "2099-01-01T00:00:00.000Z" }], error: null });
-    storageDownload.mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => body } }).mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => body } });
+    storageDownload.mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => arrayBuffer(body) } }).mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => arrayBuffer(body) } });
     await expect(stagePrivateImport({ userId: "user", uploadId: "upload-1", chunkPaths: ["draft-pro-import-staging/user/upload-1/0"] })).resolves.toMatchObject({ importId: "upload-1", hash });
     expect(storageUpload).not.toHaveBeenCalled(); expect(rpc).toHaveBeenCalledTimes(2);
   });
 
   it("rejects changed staged replay content before a final Storage write", async () => {
     const stored = Buffer.from(JSON.stringify([{ player: "A" }])); const changed = Buffer.from(JSON.stringify([{ player: "B" }]));
-    rpc.mockResolvedValueOnce({ data: [uploadRow({ status: "staged", actual_bytes: stored.byteLength, row_count: 1, content_sha256: createHash("sha256").update(stored).digest("hex") })], error: null });
-    storageDownload.mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => changed } });
+    rpc.mockResolvedValueOnce({ data: [uploadRow({ status: "staged", actual_bytes: stored.byteLength, row_count: 1, content_sha256: createHash("sha256").update(binary(stored)).digest("hex") })], error: null });
+    storageDownload.mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => arrayBuffer(changed) } });
     await expect(stagePrivateImport({ userId: "user", uploadId: "upload-1", chunkPaths: ["draft-pro-import-staging/user/upload-1/0"] })).rejects.toThrow("differs from the staged upload");
     expect(storageUpload).not.toHaveBeenCalled(); expect(storageDownload).toHaveBeenCalledTimes(1);
   });
 
   it("rejects a staged replay when the persisted final object hash changed", async () => {
-    const body = Buffer.from(JSON.stringify([{ player: "A" }])); const hash = createHash("sha256").update(body).digest("hex");
+    const body = Buffer.from(JSON.stringify([{ player: "A" }])); const hash = createHash("sha256").update(binary(body)).digest("hex");
     rpc.mockResolvedValueOnce({ data: [uploadRow({ status: "staged", actual_bytes: body.byteLength, row_count: 1, content_sha256: hash })], error: null });
-    storageDownload.mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => body } }).mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => Buffer.from("changed final") } });
+    storageDownload.mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => arrayBuffer(body) } }).mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => arrayBuffer(Buffer.from("changed final")) } });
     await expect(stagePrivateImport({ userId: "user", uploadId: "upload-1", chunkPaths: ["draft-pro-import-staging/user/upload-1/0"] })).rejects.toThrow("existing staged object");
     expect(storageUpload).not.toHaveBeenCalled();
   });
@@ -77,17 +79,17 @@ describe("private import transport ownership boundary", () => {
     const body = Buffer.from(JSON.stringify(Array.from({ length: 100_001 }, () => ({ player: "A" }))));
     const splitAt = Math.ceil(body.byteLength / 2); const first = body.subarray(0, splitAt); const second = body.subarray(splitAt);
     rpc.mockResolvedValueOnce({ data: [uploadRow({ declared_max_bytes: body.byteLength })], error: null });
-    storageDownload.mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => first } }).mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => second } });
+    storageDownload.mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => arrayBuffer(first) } }).mockResolvedValueOnce({ error: null, data: { arrayBuffer: async () => arrayBuffer(second) } });
     await expect(stagePrivateImport({ userId: "user", uploadId: "upload-1", chunkPaths: ["draft-pro-import-staging/user/upload-1/0", "draft-pro-import-staging/user/upload-1/1"] })).rejects.toThrow("100,000-row limit");
     expect(storageUpload).not.toHaveBeenCalled(); expect(rpc).toHaveBeenCalledTimes(1);
   });
 
   it("returns bounded first/last chunks that reassemble with metadata", async () => {
     const body = Buffer.from(JSON.stringify([{ player: "A" }, { player: "B" }]));
-    const metadata = { storage_path: "private/final.json", byte_size: body.byteLength, row_count: 2, content_sha256: createHash("sha256").update(body).digest("hex") };
+    const metadata = { storage_path: "private/final.json", byte_size: body.byteLength, row_count: 2, content_sha256: createHash("sha256").update(binary(body)).digest("hex") };
     rpc.mockResolvedValue({ data: [metadata], error: null });
-    storageDownload.mockResolvedValue({ error: null, data: { arrayBuffer: async () => body } });
+    storageDownload.mockResolvedValue({ error: null, data: { arrayBuffer: async () => arrayBuffer(body) } });
     const first = await readPrivateImportChunk({ userId: "user", draftId: "draft", importId: "import", ordinal: 0 });
-    expect(Buffer.concat([first.bytes])).toEqual(body); expect(first.totalChunks).toBe(1); expect(first.rowCount).toBe(2);
+    expect(Buffer.from(first.bytes)).toEqual(body); expect(first.totalChunks).toBe(1); expect(first.rowCount).toBe(2);
   });
 });
