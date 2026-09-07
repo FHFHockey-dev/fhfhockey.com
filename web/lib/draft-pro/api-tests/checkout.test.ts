@@ -5,7 +5,7 @@ vi.mock("lib/draft-pro/features",()=>({getDraftProFeatureFlags:flags}));
 vi.mock("lib/draft-pro/server",()=>({loadDraftProAccess:access}));
 vi.mock("lib/integrations/stripe/checkout",()=>({createDraftProCheckout:create}));
 vi.mock("lib/integrations/stripe/config",()=>({isStripeConfigured:()=>true,getStripeClient:()=>({})}));
-import handler from "./checkout";
+import handler from "../../../pages/api/v1/account/draft-pro/checkout";
 const res=()=>{const s:any={statusCode:0};return Object.assign(s,{status(n:number){s.statusCode=n;return s},json(body:any){s.body=body;return s},setHeader:vi.fn()})};
 describe("checkout route guards",()=>{beforeEach(()=>{vi.clearAllMocks();auth.mockResolvedValue({id:"u1"});flags.mockReturnValue({checkout:true});access.mockResolvedValue({eligible:false});});
 it("does not create without authentication",async()=>{auth.mockResolvedValue(null);await handler({method:"POST",headers:{}} as any,res());expect(create).not.toHaveBeenCalled()});
