@@ -368,19 +368,39 @@ export async function materializePatreonEntitlement({
     return;
   }
 
-  const { error } = await client
+  const { data: retainedEntitlements, error: retainedError } = await client
     .from("user_entitlements")
-    .update({
-      source_account_id: account.id,
-      entitlement_status: "inactive",
-      effective_to: now.toISOString(),
-      metadata: entitlementMetadata,
-      updated_at: now.toISOString(),
-    })
+    .select("id,metadata")
     .eq("user_id", userId)
     .eq("source_provider", PATREON_PROVIDER)
     .eq("entitlement_key", PATREON_ENTITLEMENT_KEY);
-  if (error) throw error;
+  if (retainedError) throw retainedError;
+  await Promise.all((retainedEntitlements ?? []).map(async (retained) => {
+    const previousMetadata = (retained.metadata && typeof retained.metadata === "object" && !Array.isArray(retained.metadata)
+      ? retained.metadata
+      : {}) as Record<string, unknown>;
+    const metadata = {
+      ...previousMetadata,
+      ...((snapshot.metadata || {}) as Record<string, unknown>),
+      provider_user_id: snapshot.providerUserId,
+      verified_at: now.toISOString(),
+      draft_pro_eligible: false,
+      connected_account_id: account.id,
+      last_verified_paid_benefit: previousMetadata.last_verified_paid_benefit || null,
+    } as Json;
+    const { error } = await client
+      .from("user_entitlements")
+      .update({
+        source_account_id: account.id,
+        entitlement_status: "inactive",
+        effective_to: now.toISOString(),
+        metadata,
+        updated_at: now.toISOString(),
+      })
+      .eq("id", retained.id)
+      .eq("user_id", userId);
+    if (error) throw error;
+  }));
 }
 
 async function createSyncRun({
