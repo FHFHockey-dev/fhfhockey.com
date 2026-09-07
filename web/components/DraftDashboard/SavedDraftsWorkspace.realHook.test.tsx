@@ -7,7 +7,7 @@ vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession, onAuthSta
 vi.mock("hooks/useDraftProAccess", () => ({ useDraftProAccess: () => ({ access: { capabilities: ["saved_drafts"] } }) }));
 
 import SavedDraftsWorkspace from "./SavedDraftsWorkspace";
-import { serializeSavedDraft } from "lib/draft-pro/savedDrafts";
+import { serializeSavedDraft, type BrowserDraftSnapshot } from "lib/draft-pro/savedDrafts";
 
 const browser = (goaliePoints = 1) => ({
   v: 2 as const,
@@ -32,7 +32,7 @@ describe("SavedDraftsWorkspace with the real Saved Drafts hook", () => {
   afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.clearAllMocks(); });
 
   it("hydrates keeper/trade content, then debounces rapid edits into one latest autosave", async () => {
-    const base = browser(); const detail = { ...summary, snapshot: serializeSavedDraft(base), privateImports: [] };
+    const base: BrowserDraftSnapshot = browser(); const detail = { ...summary, snapshot: serializeSavedDraft(base), privateImports: [] };
     const saves: RequestInit[] = [];
     vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => {
       if (url === "/api/v1/account/draft-pro/drafts" && !init?.method) return Promise.resolve(json([summary]));
@@ -40,7 +40,7 @@ describe("SavedDraftsWorkspace with the real Saved Drafts hook", () => {
       if (url === "/api/v1/account/draft-pro/drafts/draft-1") return Promise.resolve(json(detail));
       throw new Error(`Unexpected ${url}`);
     }));
-    let current = base;
+    let current: BrowserDraftSnapshot = base;
     const view = render(<SavedDraftsWorkspace getBrowserSnapshot={() => current} applyBrowserSnapshot={(next) => { current = next; return next; }} players={[]} annotations={{ selectedPlayerId: null, notes: [], tiers: {} }} onAnnotationsChange={vi.fn()} />);
     await act(async () => { await Promise.resolve(); });
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Saved draft" })); await Promise.resolve(); });

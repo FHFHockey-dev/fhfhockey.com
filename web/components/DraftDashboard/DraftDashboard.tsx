@@ -296,6 +296,15 @@ function normalizeDraftSettingsOrder(
   };
 }
 
+function isDraftSettings(value: unknown): value is DraftSettings {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate.teamCount === "number" &&
+    !!candidate.rosterConfig && typeof candidate.rosterConfig === "object" && !Array.isArray(candidate.rosterConfig) &&
+    !!candidate.scoringCategories && typeof candidate.scoringCategories === "object" && !Array.isArray(candidate.scoringCategories) &&
+    Array.isArray(candidate.draftOrder) && candidate.draftOrder.every((team) => typeof team === "string");
+}
+
 function resizeDraftOrder(order: string[], teamCount: number) {
   return Array.from(
     { length: teamCount },
@@ -855,7 +864,8 @@ const DraftDashboard: React.FC = () => {
       // writing the session or touching live dashboard state.
       const imports = toNormalizedPrivateImports(validated.customCsvList as SessionCsvEntry[]);
       const restored = restoreBrowserSnapshot(serializeSavedDraft(validated), imports) as BrowserDraftSnapshot;
-      const prepared = prepareSnapshot({ ...restored, ts: Date.now() } as DraftSnapshotV2);
+      if (!isDraftSettings(restored.draftSettings)) throw new Error("Saved draft settings are invalid.");
+      const prepared = prepareSnapshot({ ...restored, draftSettings: restored.draftSettings, ts: Date.now() });
       sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({ ...prepared.browser, ts: Date.now() }));
       prepared.apply();
       return prepared.browser;
