@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireApiUser } from "lib/api/requireApiUser";
 import { evaluateDraftProDust, type DraftProDustInput } from "lib/draft-pro/dust";
 import { enforceDraftProDustRateLimit } from "lib/draft-pro/dustRateLimit";
+import { assertDustScheduleRowsMatchResolution, normalizeDustProjectionSeason, resolveDustScheduleSeason, type DustScheduleSeasonMetadata } from "lib/draft-pro/dustSeason";
 import { getDraftProFeatureFlags } from "lib/draft-pro/features";
 import { loadDraftProAccess, requireDraftProServerCapability } from "lib/draft-pro/server";
 import { parseRosterScheduleReadFilter, readRosterSchedule, type ScheduleReadClient } from "lib/rosterScheduleData";
@@ -26,7 +27,7 @@ const requestSchema = z.object({
   sort: z.enum(["ordinary", "schedule_fit"]).optional(),
   inputOrigin: z.enum(["draft", "private_import"]),
   privateImportAccountSaved: z.boolean().optional(),
-  gameKey: z.string().trim().min(1).max(40),
+  gameKey: z.string().trim().min(1).max(40).optional(),
   startWeek: z.number().int().min(1).max(40),
   endWeek: z.number().int().min(1).max(40),
   roster: z.array(playerSchema).max(60),
@@ -39,6 +40,34 @@ const requestSchema = z.object({
 function failure(res: NextApiResponse, status: number, code: string, message: string, retryAfterSeconds?: number) {
   if (retryAfterSeconds) res.setHeader("Retry-After", String(retryAfterSeconds));
   return res.status(status).json({ success: false, error: { code, message } });
+}
+
+type SeasonMetadataClient = {
+  from(table: "roster_optimizer_team_games"): {
+    select(columns: string): {
+      eq(column: "source_season_id", value: number): PromiseLike<{
+        data: DustScheduleSeasonMetadata[] | null;
+        error: { message: string } | null;
+      }>;
+    };
+  };
+};
+
+async function loadPersistedSeasonMapping(
+  client: SeasonMetadataClient,
+  projectionSeason: string,
+  requestedGameKey?: string,
+) {
+  const sourceSeasonId = Number(projectionSeason);
+  if (!/^\d{8}$/.test(projectionSeason) || !Number.isSafeInteger(sourceSeasonId)) {
+    return resolveDustScheduleSeason(projectionSeason, [], requestedGameKey);
+  }
+  const { data, error } = await client
+    .from("roster_optimizer_team_games")
+    .select("game_key,season,source_season_id")
+    .eq("source_season_id", sourceSeasonId);
+  if (error) throw error;
+  return resolveDustScheduleSeason(projectionSeason, data ?? [], requestedGameKey);
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -59,18 +88,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     requireDraftProServerCapability(access, "dust");
     const rate = await enforceDraftProDustRateLimit(user.id);
     const parsed = requestSchema.parse(req.body);
+    const resolution = await loadPersistedSeasonMapping(
+      serviceRoleClient as unknown as SeasonMetadataClient,
+      parsed.season,
+      parsed.gameKey,
+    );
     const filter = parseRosterScheduleReadFilter({
-      gameKey: parsed.gameKey,
+      gameKey: resolution.gameKey,
       startWeek: String(parsed.startWeek),
       endWeek: String(parsed.endWeek),
     });
     const games = await readRosterSchedule(serviceRoleClient as unknown as ScheduleReadClient, filter);
-    const seasons = new Set(games.map((game) => game.season));
+    assertDustScheduleRowsMatchResolution(games, resolution);
     const fetchedAt = games.map((game) => game.fetched_at).filter((value): value is string => Boolean(value)).sort();
     const result = evaluateDraftProDust({
       ...parsed,
+      season: String(resolution.sourceSeasonId),
+      roster: normalizeDustProjectionSeason(parsed.roster, parsed.season, String(resolution.sourceSeasonId)),
+      candidates: normalizeDustProjectionSeason(parsed.candidates, parsed.season, String(resolution.sourceSeasonId)),
       schedule: {
-        season: seasons.size === 1 ? [...seasons][0] : "",
+        season: String(resolution.sourceSeasonId),
         freshness: {
           // DUST is unavailable if any selected schedule row is stale or unverified.
           oldestFetchedAt: games.length && fetchedAt.length === games.length ? fetchedAt[0] ?? null : null,
@@ -82,7 +119,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           teamAbbreviation: game.team_abbreviation,
           yahooWeek: game.week,
           status: "scheduled" as const,
-          season: game.season,
+          season: String(resolution.sourceSeasonId),
         })),
       },
     } satisfies DraftProDustInput);
