@@ -43,6 +43,7 @@ function refreshClient({ deleteBeforePersist = false } = {}) {
     created_at: "2026-01-01T00:00:00Z", updated_at: "2026-09-06T00:00:00Z",
   };
   const activeWrites: any[] = [];
+  const statusFilters: unknown[][] = [];
 
   const client: any = {
     rpc: vi.fn(async (name: string) => name === "get_connected_account_tokens_secure"
@@ -50,13 +51,18 @@ function refreshClient({ deleteBeforePersist = false } = {}) {
       : { data: "token-row", error: null }),
     from(table: string) {
       const filters: Record<string, unknown> = {};
+      const inFilters: Record<string, unknown[]> = {};
       let action = "select";
       let value: any;
       const query: any = {
         select: () => query,
         eq: (key: string, expected: unknown) => { filters[key] = expected; return query; },
         neq: (key: string, expected: unknown) => { filters[`neq:${key}`] = expected; return query; },
-        in: () => query,
+        in: (key: string, allowed: unknown[]) => {
+          inFilters[key] = allowed;
+          if (key === "status") statusFilters.push(allowed);
+          return query;
+        },
         order: () => query,
         limit: () => query,
         insert: (input: any) => { action = "insert"; value = input; return query; },
@@ -64,7 +70,8 @@ function refreshClient({ deleteBeforePersist = false } = {}) {
         maybeSingle: async () => {
           if (table === "connected_accounts") {
             accountReads += 1;
-            return { data: deleteBeforePersist && accountReads > 1 ? null : account, error: null };
+            const excludedByStatus = inFilters.status && !inFilters.status.includes(account.status);
+            return { data: (deleteBeforePersist && accountReads > 1) || excludedByStatus ? null : account, error: null };
           }
           if (table === "user_entitlements") return { data: entitlement, error: null };
           if (table === "provider_sync_runs") return { data: null, error: null };
@@ -89,6 +96,7 @@ function refreshClient({ deleteBeforePersist = false } = {}) {
     },
     entitlement: () => entitlement,
     activeWrites,
+    statusFilters,
   };
   return client;
 }
@@ -107,6 +115,7 @@ describe("Patreon refresh outage recovery", () => {
     await refreshPatreonAccount({ userId: "user-1", client, fetchImpl: fetchImpl as any, now: () => new Date("2026-09-07T12:00:00Z") });
     expect(client.entitlement()).toMatchObject({ id: "entitlement-1", entitlement_status: "active", source_reference: "member-1", metadata: { draft_pro_eligible: true, connected_account_id: "account-1" } });
     expect(client.activeWrites).toHaveLength(1);
+    expect(client.statusFilters).toContainEqual(["connected", "syncing", "error"]);
   });
 
   it("cannot persist an active grant after the account is deleted mid-refresh", async () => {
