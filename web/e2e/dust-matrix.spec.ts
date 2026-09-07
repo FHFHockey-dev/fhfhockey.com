@@ -21,15 +21,29 @@ test("full-season DUST lattice keeps all player-week intersections available", a
   await matrix.getByRole("button", { name: /DUST schedule overview/ }).click();
   await expect(matrix.getByText("Every Yahoo 477 week is shown.", { exact: false })).toBeVisible();
   const cells = matrix.locator("[data-dust-state] button");
-  console.log(await page.evaluate(() => {
+  const diagnostic = await page.evaluate(() => {
     const snapshot = JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}");
     return {
       draftSettings: snapshot.draftSettings,
       picksByTeam: (snapshot.draftedPlayers || []).reduce((counts: Record<string, string[]>, pick: { teamId: string; playerId: string }) => ({ ...counts, [pick.teamId]: [...(counts[pick.teamId] || []), pick.playerId] }), {}),
-      matrixPlayers: [...document.querySelectorAll("[aria-label='DUST schedule overview'] [title]")].map((element) => element.getAttribute("title")).filter(Boolean),
+      matrixCellLabels: [...document.querySelectorAll("[aria-label='DUST schedule overview'] [data-dust-state] button")].map((element) => element.getAttribute("aria-label")),
+      geometry: ["[data-dust-matrix]", "[data-dust-matrix] .viewport", "[data-dust-matrix] .plot", "[class*='dashboardContainer']", "[class*='mainContent']"].map((selector) => {
+        const element = document.querySelector(selector) as HTMLElement | null;
+        if (!element) return { selector, missing: true };
+        const rect = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return { selector, rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height }, clientHeight: element.clientHeight, scrollHeight: element.scrollHeight, height: style.height, minHeight: style.minHeight, flex: style.flex, overflow: style.overflow, zoom: style.zoom };
+      }),
     };
-  }));
+  });
+  console.log(diagnostic);
+  await testInfo.attach("dust-matrix-diagnostic.json", { body: JSON.stringify(diagnostic, null, 2), contentType: "application/json" });
   await page.screenshot({ path: testInfo.outputPath("dust-matrix-desktop-1280.png"), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: testInfo.outputPath("dust-matrix-mobile-390.png"), fullPage: true });
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.screenshot({ path: testInfo.outputPath("dust-matrix-mobile-320.png"), fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 900 });
   await expect(cells).toHaveCount(10 * 27);
   await expect(matrix.locator("[data-dust-state='zero']")).toHaveCount(27);
   await expect(matrix.locator("[data-dust-state='bench']")).toHaveCount(9 * 27);

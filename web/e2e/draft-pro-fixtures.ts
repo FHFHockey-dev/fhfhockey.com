@@ -131,7 +131,7 @@ export async function installDustMatrixFixtures(page: Page, { incomplete = false
       : table === "players"
         ? skaters.map((player) => ({ id: player.player_id, fullName: player.Player_Name, position: player.Position, lastName: player.Player_Name.split(" ").at(-1) }))
         : table.startsWith("PROJECTIONS_")
-          ? skaters
+          ? (table.includes("GOALIES") ? [] : skaters)
           : [];
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(data) });
   });
