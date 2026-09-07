@@ -1,6 +1,6 @@
 # Draft Pro Launch Copy
 
-Status: copy contract for review. Free Draft is currently available. Checkout, the Draft Pro pass, and all premium features below are future-ready copy pending launch and readiness approval. W07 is still in progress; do not present premium features as available until the post-W07 availability copy review.
+Status: copy contract for review. Free Draft is currently available. The Draft Pro pass and premium capabilities below are not currently advertised as live. The initial-release candidates have implementation work locally approved but still require the listed engineering, provider, and owner launch gates. W07 browser release-candidate review is still in progress; do not present premium features as available until that review and the relevant gates are complete.
 
 ## Free Draft: currently available
 
@@ -52,26 +52,26 @@ We do not issue automatic refunds. Submitting a request does not automatically r
 
 You may optionally tell us what would improve Draft Pro and whether you used it during a live draft. These answers are optional.
 
-## Proposed premium copy: also pending launch
+## Initial-release candidate copy: pending launch gates
 
-The following copy is proposed for future enabled premium features. It is intentionally not launch copy and must not be displayed as an available capability before the relevant implementation and readiness checks pass.
+The following copy describes locally implemented initial-release candidates. It is not launch copy and must not be displayed as available before the relevant implementation, provider, and owner readiness checks pass.
 
 ### Proposed Draft Pro value message
 
-**Make a sharper plan for your league.** Draft Pro is proposed to add roster-aware recommendations, personalized replacement suggestions, DUST insights, alternatives, and schedule-fit sorting. It is also proposed to support blended CSV analysis, Saved Drafts and private imports, scenarios, and reports.
+**Make a sharper plan for your league.** Draft Pro is intended to provide roster-aware recommendations, personalized replacement suggestions, DUST insights, alternatives, and schedule-fit sorting, plus blended CSV analysis and the account/graph views. These initial-release candidates remain gated pending release evidence and owner/provider approval.
 
-These are proposed capabilities only. Yahoo support remains separately gated and is not promised by this copy.
+Saved Drafts/private imports, scenarios, reports, and Yahoo remain future milestones or separately gated work and are not promised by this copy.
 
 ### Proposed feature descriptions
 
 - **Roster-aware recommendations:** Proposed recommendations that account for your roster, needs, and configured league settings.
 - **Personalized replacements:** Proposed replacement suggestions for your roster context. They are suggestions, not guarantees.
-- **DUST insights:** Proposed insights, alternatives, and schedule-fit sorting with freshness and estimate labels where applicable.
-- **Saved Drafts:** Proposed cloud-saved draft states and private imports, available only after explicit save and account eligibility.
-- **Scenarios and reports:** Proposed read-only scenario comparisons and deterministic reports based on saved draft inputs.
+- **DUST insights:** Initial-release candidate insights, alternatives, and schedule-fit sorting with freshness and estimate labels where applicable. The current DUST contract covers full weeks 1 through 30 and daily views only; free schedule matrix, OFF, and B2B views may follow the selected playoffs.
+- **Saved Drafts:** Future milestone for cloud-saved draft states and private imports, available only after explicit save and account eligibility.
+- **Scenarios and reports:** Future milestone for read-only scenario comparisons and deterministic reports based on saved draft inputs.
 
 Until each feature is explicitly enabled, show the free Draft experience and do not imply that a paid pass unlocks an unshipped feature.
 
 ## Short disclosure
 
-Draft Pro is a one-time US$5.99 pass for the 2026-27 season, expiring July 1, 2027 at 12:00 AM Eastern. It does not renew. Recommendation and schedule-fit availability may depend on provider readiness and estimate freshness; proposed recommendations remain suggestions.
+Draft Pro is a one-time US$5.99 pass for the 2026-27 season, expiring July 1, 2027 at 12:00 AM Eastern. It does not renew. Recommendation and schedule-fit availability may depend on provider readiness and estimate freshness; recommendations remain suggestions and initial-release candidates remain gated pending release approval.
