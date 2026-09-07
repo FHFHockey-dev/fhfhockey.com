@@ -1803,6 +1803,15 @@ const DraftDashboard: React.FC = () => {
     vorpMetrics,
     calculateCandidates: false,
   });
+  const dustRoster = useMemo(
+    () => rosterAssignments
+      .filter((assignment) => assignment.teamId === myTeamId)
+      .map((assignment) => {
+        const player = allPlayers.find((candidate) => String(candidate.playerId) === assignment.playerId);
+        return { playerId: assignment.playerId, playerName: player?.fullName };
+      }),
+    [allPlayers, myTeamId, rosterAssignments],
+  );
 
   const effectiveRosterConfig = useMemo(
     () => getEffectiveRosterConfig(draftSettings.rosterConfig, forwardGrouping),
@@ -3576,6 +3585,7 @@ const DraftDashboard: React.FC = () => {
       <DustMatrix
         state={rosterScheduleOptimizer}
         weeks={draftSchedule.weeks}
+        roster={dustRoster}
         selectedWeeks={draftSchedule.selectedWeeks}
         period={draftSchedule.periodLabel}
         error={draftSchedule.weeksError}

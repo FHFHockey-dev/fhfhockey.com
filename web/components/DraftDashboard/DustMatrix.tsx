@@ -3,9 +3,12 @@ import type { RosterScheduleOptimizerState } from "hooks/useRosterScheduleOptimi
 import type { DashboardMatchupWeek } from "lib/draftDashboard/scheduleMetrics";
 import styles from "./DustMatrix.module.scss";
 
-export default function DustMatrix({ state, weeks, selectedWeeks = weeks, period, error }: {
+type DustRosterPlayer = { playerId: string; playerName?: string };
+
+export default function DustMatrix({ state, weeks, roster = [], selectedWeeks = weeks, period, error }: {
   state: RosterScheduleOptimizerState;
   weeks: readonly DashboardMatchupWeek[];
+  roster?: readonly DustRosterPlayer[];
   selectedWeeks?: readonly DashboardMatchupWeek[];
   period: string;
   error?: string | null;
@@ -19,7 +22,11 @@ export default function DustMatrix({ state, weeks, selectedWeeks = weeks, period
   const rows = useMemo(() => {
     const baseline = state.baseline;
     if (!baseline?.players || !baseline.daily) return [];
-    return baseline.players.map((player) => ({
+    const baselineByPlayerId = new Map(baseline.players.map((player) => [player.playerId, player]));
+    const matrixPlayers = roster.length
+      ? roster.map((player) => baselineByPlayerId.get(player.playerId) ?? { ...player, benchGames: 0 })
+      : baseline.players;
+    return matrixPlayers.map((player) => ({
       ...player,
       cells: new Map(weeks.map((week) => {
         const days = baseline.daily.filter((day) => day.yahooWeek === week.week);
@@ -27,11 +34,11 @@ export default function DustMatrix({ state, weeks, selectedWeeks = weeks, period
           scheduled: days.filter((day) => day.scheduledPlayerIds.includes(player.playerId)).length,
           active: days.filter((day) => day.assignments.some((assignment) => assignment.playerId === player.playerId)).length,
           bench: days.filter((day) => day.benchedPlayerIds.includes(player.playerId)).length,
-          unresolved: !baseline.complete || days.some((day) => day.unresolvedPlayers.some((item) => item.playerId === player.playerId)),
+          unresolved: !baseline.complete || !baselineByPlayerId.has(player.playerId) || days.some((day) => day.unresolvedPlayers.some((item) => item.playerId === player.playerId)),
         }];
       })),
     })).sort((a, b) => b.benchGames - a.benchGames || (a.playerName ?? a.playerId).localeCompare(b.playerName ?? b.playerId));
-  }, [state.baseline, weeks]);
+  }, [roster, state.baseline, weeks]);
   const max = Math.max(1, ...rows.flatMap((row) => [...row.cells.values()].map((cell) => cell.bench)));
   const ready = !error && state.status === "ready" && Boolean(state.baseline) && weeks.length > 0;
   const weekTotals = useMemo(() => new Map(weeks.map((week) => [week.week, rows.reduce((total, row) => total + (row.cells.get(week.week)?.bench ?? 0), 0)])), [rows, weeks]);

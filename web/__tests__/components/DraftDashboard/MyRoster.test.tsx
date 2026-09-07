@@ -140,3 +140,18 @@ it("shows every Yahoo week at once, highlights playoff weeks, and keeps baseline
   expect(screen.getByRole("status").textContent).toContain("1 benched");
   expect(JSON.stringify(baseline)).toBe(before);
 });
+
+it("keeps an unknown-team roster player as unavailable intersections", () => {
+  const weeks = Array.from({ length: 27 }, (_, index) => ({ week: index + 1, start_date: "2027-02-01", end_date: "2027-02-14" }));
+  const baseline = {
+    complete: false,
+    players: [{ playerId: "1", playerName: "Known", benchGames: 0 }],
+    daily: [],
+    diagnostics: [{ code: "UNKNOWN_TEAM", severity: "error", playerId: "2", playerName: "Unknown" }],
+  };
+  const { container } = render(<DustMatrix state={{ status: "ready", stale: false, baseline } as any} weeks={weeks} roster={[{ playerId: "1", playerName: "Known" }, { playerId: "2", playerName: "Unknown" }]} period="Season" />);
+  fireEvent.click(screen.getByRole("button", { name: /DUST schedule overview/ }));
+  expect(container.querySelectorAll("[data-dust-state=unresolved]")).toHaveLength(54);
+  expect(screen.getByText("W1 Unavailable", { exact: true })).toBeTruthy();
+  expect(screen.getAllByRole("button", { name: /Unknown · Week 27.*coverage unavailable/ })).toHaveLength(2);
+});
