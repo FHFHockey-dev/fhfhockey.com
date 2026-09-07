@@ -62,6 +62,7 @@ export default function DraftProPanel() {
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [patreonAction, setPatreonAction] = useState<"refresh" | "connect" | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const selectedPurchase = useMemo(
     () => account?.purchases.find((purchase) => purchase.id === purchaseId) ?? account?.purchases[0] ?? null,
@@ -137,6 +138,27 @@ export default function DraftProPanel() {
     }
   }
 
+  async function startCheckout() {
+    setCheckoutLoading(true);
+    setFeedback(null);
+    try {
+      const session = (await supabase.auth.getSession()).data.session;
+      if (!session?.access_token) throw new Error("Sign in before purchasing Draft Pro.");
+      const response = await fetch("/api/v1/account/draft-pro/checkout", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok || typeof body.url !== "string") {
+        throw new Error(body.error?.message ?? body.error ?? "Checkout could not be started.");
+      }
+      window.location.assign(body.url);
+    } catch (checkoutError) {
+      setFeedback(checkoutError instanceof Error ? checkoutError.message : "Checkout could not be started.");
+      setCheckoutLoading(false);
+    }
+  }
+
   if (loading) return <section className={styles.panel} aria-busy="true"><h2>Draft Pro</h2><p>Loading account access…</p></section>;
   if (error) return <section className={styles.panel} role="alert"><h2>Draft Pro</h2><p>{error}</p></section>;
   if (!account) return null;
@@ -146,6 +168,7 @@ export default function DraftProPanel() {
   return <section className={styles.panel} aria-labelledby="draft-pro-panel-title">
     <div className={styles.heading}><div><p className={styles.eyebrow}>Account access</p><h2 id="draft-pro-panel-title">Draft Pro</h2></div><span className={account.access.eligible ? styles.active : styles.inactive}>{account.access.eligible ? "Active" : "Inactive"}</span></div>
     <p className={styles.summary}>{account.access.eligible ? `Access from ${account.access.grantingSources.join(" and ")}.` : "Your retained Draft Pro work is locked while access is inactive."} No automatic renewal.</p>
+    {!account.access.eligible ? <div className={styles.actions}><button type="button" onClick={() => void startCheckout()} disabled={checkoutLoading}>{checkoutLoading ? "Opening checkout…" : "Get Draft Pro — $5.99 one-time"}</button><span className={styles.notice}>One-time access through June 30, 2027 (Eastern). No automatic renewal.</span></div> : null}
     <dl className={styles.details}><div><dt>Access expires</dt><dd>{formatEasternDate(account.access.expiresAt)} (Eastern)</dd></div><div><dt>Verified</dt><dd>{formatDate(account.access.verifiedAt)}</dd></div><div><dt>Patreon status</dt><dd>{account.access.grantingSources.includes("patreon") ? "Granting access" : "Not granting access"}</dd></div></dl>
     <div className={styles.actions}><button type="button" onClick={() => void patreonActionRequest("refresh")} disabled={Boolean(patreonAction)}>{patreonAction === "refresh" ? "Refreshing…" : "Refresh Patreon"}</button><button type="button" onClick={() => void patreonActionRequest("connect")} disabled={Boolean(patreonAction)}>{patreonAction === "connect" ? "Opening…" : "Connect Patreon"}</button></div>
     {account.purchases.length > 0 ? <div className={styles.purchaseList}><h3>Purchases</h3>{account.purchases.map((purchase) => { const request = account.refundRequests.find((item) => item.purchaseId === purchase.id); return <div className={styles.purchase} key={purchase.id}><div><strong>${(purchase.amountCents / 100).toFixed(2)} one-time pass</strong><span>{purchase.status} · activated {formatDate(purchase.activatedAt)}{request ? ` · refund request ${request.status}` : ""}</span></div>{purchase.receiptUrl ? <a href={purchase.receiptUrl} target="_blank" rel="noreferrer">Receipt</a> : <span className={styles.muted}>Receipt unavailable</span>}</div>; })}</div> : null}
