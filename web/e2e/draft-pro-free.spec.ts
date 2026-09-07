@@ -42,3 +42,31 @@ test("free current two-player comparison uses fictional local projections", asyn
   await expect(comparison.getByText("Fixture Center", { exact: true }).first()).toBeVisible();
   await expect(comparison.getByText("Fixture Center Two", { exact: true }).first()).toBeVisible();
 });
+
+test("free source weights change a blend without changing drafted picks", async ({ page }) => {
+  await installDraftProFreeFixtures(page);
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.goto("/draft-dashboard");
+  const players = page.locator("#mobile-draft-panel-players");
+  await expect(players.locator("tbody tr").first()).toBeVisible({ timeout: 60_000 });
+  await page.getByLabel("Position filter").selectOption("C");
+  const remainingPlayer = players.locator('tr[data-player-id="1002"]');
+  const beforeProjection = await remainingPlayer.innerText();
+  expect(beforeProjection).toContain("207.0");
+  await players.locator("tbody tr").first().getByRole("button", { name: "Draft", exact: true }).click();
+  const draftedBefore = await page.evaluate(() => JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").draftedPlayers);
+  await page.getByRole("button", { name: "Setup", exact: true }).click();
+  await page.getByRole("button", { name: "Projections", exact: true }).click();
+  await page.getByRole("button", { name: "Edit Weights", exact: true }).click();
+  const skaterSources = page.getByRole("region", { name: "Skaters projection sources" });
+  const weights = skaterSources.getByRole("spinbutton");
+  for (const input of await weights.all()) if (await input.isEnabled()) await input.fill("0");
+  await skaterSources.getByLabel("Cullen weight percent", { exact: true }).fill("100");
+  await page.getByRole("button", { name: "Done", exact: false }).click();
+  await expect.poll(() => page.evaluate(() => JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").draftedPlayers)).toEqual(draftedBefore);
+  await expect.poll(() => page.evaluate(() =>
+    JSON.parse(localStorage.getItem("draft.sourceControls.v4") || "{}").skater?.cullen_skaters?.weight,
+  )).toBe(1);
+  await expect(remainingPlayer).toContainText("255.0");
+  await expect(remainingPlayer).not.toHaveText(beforeProjection);
+});

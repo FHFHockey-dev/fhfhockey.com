@@ -16,8 +16,13 @@ export async function installDraftProFreeFixtures(page: Page) {
   };
   await page.route("**/rest/v1/**", (route) => {
     const table = decodeURIComponent(new URL(route.request().url()).pathname.split("/").pop() || "");
+    const sourceAdjustedSkaters = skaters.map((player) => ({
+      ...player,
+      Goals: table.includes("CULLEN") ? player.Goals + 20 : player.Goals,
+      Points: table.includes("CULLEN") ? player.Points + 30 : player.Points,
+    }));
     const data = table.startsWith("PROJECTIONS_")
-      ? (table.includes("GOALIES") ? [goalie] : skaters)
+      ? (table.includes("GOALIES") ? [goalie] : sourceAdjustedSkaters)
       : [];
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(data) });
   });
@@ -27,6 +32,9 @@ export async function installDraftProFreeFixtures(page: Page) {
       contentType: "application/json",
       body: JSON.stringify({ error: "Authentication is required." }),
     }),
+  );
+  await page.route("**/api/v1/player**", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
   );
   await page.route("**://*.stripe.com/**", (route) => route.abort());
   await page.route("**://*.patreon.com/**", (route) => route.abort());
