@@ -22,7 +22,7 @@ All tasks moved into the Draft Pro section. W01 active foundation; W12 released 
 - Base: 4476fb90f (octoberBranch); user checkout left unchanged.
 - Integration: codex/draft-pro at /Users/tim/.codex/worktrees/draft-pro-chef/fhfhockey.com
 - Yahoo one-time heartbeat: yahoo-draft-pro-readiness, September 11 09:00 Eastern.
-- Status: orchestration setup; no application implementation accepted yet.
+- Status: foundation under Chef review; no application implementation accepted yet.
 - External checks pending: isolated DB availability, Stripe test credentials and merchant setup; never print secrets.
 
 Task registrations and Chef decisions follow below.
@@ -45,6 +45,14 @@ Task registrations and Chef decisions follow below.
 | W12 | gpt-5.6-terra / medium | client-new-thread:89040bc2-f0f7-4db3-8a71-643705f9eb19 | Queued; awaiting release |
 | W13 | gpt-5.4-mini / low | client-new-thread:3f937164-88f2-4c53-89e6-997771a9f03b | Queued; awaiting release |
 
-App worktrees exist but list_threads has not yet returned persistent IDs. Next Chef continuation must resolve W01–W13 by exact title, move each into section 3b3f2bf5-2939-484d-a6a6-655ae70f4039, record task IDs, and wait for W01. Do not create duplicates. Emit pending created-thread directives to surface queued setup.
+Registration is complete: all persistent task IDs above were resolved and section moves verified. Original client setup IDs remain as audit history; do not create duplicate tasks.
 
 Environment: Node 22.11.0 and existing web/node_modules available; Docker running. Existing supabase_*_fhfhockey-super-goal-baseline belongs to another effort; do not reset/mutate it. Port 54322 also has an SSH listener; do not assume localhost is isolated. Provision a distinct isolated test database/container for this project. Stripe and Patreon configuration keys absent from root web/.env.local; Resend key present (no values exposed). No application changes accepted or runtime tests executed yet.
+
+## Foundation review checkpoint
+- W01: returned corrections for direct premium payload access after expiry, entitlement date bounds, explicit capability flags/reasons, server entitlement loader, and durable refund delivery state. Not approved.
+- W12: isolated DB harness replay in progress; existing baseline stack untouched.
+- W13: reviewed df65650ba; returned missing OAuth/mapping/manual-fallback/access-loss acceptance criteria and activation authorization wording. Documentation only; not yet approved.
+- No model escalation. W01 and W12 implementation/preparation active; W13 bounded document correction active. Other orders await dependency release.
+
+- W13 preparation APPROVED: 8aa0965da reviewed; expanded checklist and existing link verification accepted, documentation-only diff. Integrated locally. Yahoo remains PARKED; no provider evidence or activation claimed.
