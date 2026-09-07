@@ -1,0 +1,260 @@
+-- Saved Drafts keep lightweight snapshots in Postgres and normalized imports in
+-- the private bucket. Blob ownership is separate from draft links so replacing,
+-- duplicating, and deleting drafts cannot orphan or double-charge imports.
+alter table public.draft_pro_drafts drop constraint draft_pro_drafts_status_check;
+alter table public.draft_pro_drafts add constraint draft_pro_drafts_status_check check (status in ('active', 'archived', 'deleted'));
+alter table public.draft_pro_private_imports drop constraint draft_pro_private_imports_storage_path_key;
+alter table public.draft_pro_private_imports add column blob_id uuid;
+alter table public.draft_pro_private_imports add column deleted_at timestamptz;
+
+create table public.draft_pro_private_import_blobs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  storage_path text not null unique check (char_length(storage_path) between 1 and 500),
+  byte_size integer not null check (byte_size between 1 and 10485760),
+  row_count integer not null check (row_count between 0 and 100000),
+  content_sha256 text not null check (content_sha256 ~ '^[a-f0-9]{64}$'),
+  status text not null default 'active' check (status in ('active', 'cleanup_pending', 'deleted')),
+  created_at timestamptz not null default now(),
+  cleanup_requested_at timestamptz,
+  deleted_at timestamptz
+);
+alter table public.draft_pro_private_imports add constraint draft_pro_private_imports_blob_id_fkey foreign key (blob_id) references public.draft_pro_private_import_blobs(id) on delete restrict;
+create index draft_pro_private_imports_blob_id_idx on public.draft_pro_private_imports(blob_id) where deleted_at is null;
+
+create table public.draft_pro_save_sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  draft_id uuid references public.draft_pro_drafts(id) on delete cascade,
+  expected_version integer,
+  status text not null default 'pending' check (status in ('pending', 'committed', 'expired')),
+  expires_at timestamptz not null default (now() + interval '2 hours'),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create unique index draft_pro_one_pending_save_per_draft on public.draft_pro_save_sessions(user_id, draft_id) where draft_id is not null and status = 'pending';
+
+create table public.draft_pro_private_import_uploads (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  save_session_id uuid not null references public.draft_pro_save_sessions(id) on delete cascade,
+  replacement_import_id uuid references public.draft_pro_private_imports(id) on delete set null,
+  name text not null check (char_length(btrim(name)) between 1 and 160),
+  content_type text not null check (content_type in ('text/csv', 'application/json')),
+  mapping jsonb not null default '{}'::jsonb,
+  declared_max_bytes integer not null check (declared_max_bytes between 1 and 10485760),
+  reserved_bytes integer not null check (reserved_bytes between 0 and 10485760),
+  actual_bytes integer check (actual_bytes between 1 and 10485760),
+  row_count integer check (row_count between 0 and 100000),
+  content_sha256 text check (content_sha256 ~ '^[a-f0-9]{64}$'),
+  storage_prefix text not null unique,
+  final_storage_path text unique,
+  chunk_paths jsonb not null default '[]'::jsonb,
+  status text not null default 'uploading' check (status in ('uploading', 'staged', 'committed', 'expired')),
+  expires_at timestamptz not null default (now() + interval '2 hours'),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index draft_pro_private_import_uploads_owner_status_idx on public.draft_pro_private_import_uploads(user_id, status, expires_at);
+
+alter table public.draft_pro_private_import_blobs enable row level security;
+alter table public.draft_pro_save_sessions enable row level security;
+alter table public.draft_pro_private_import_uploads enable row level security;
+revoke all on table public.draft_pro_private_import_blobs, public.draft_pro_save_sessions, public.draft_pro_private_import_uploads from anon, authenticated;
+grant select, insert, update, delete on table public.draft_pro_private_import_blobs, public.draft_pro_save_sessions, public.draft_pro_private_import_uploads to service_role;
+create trigger draft_pro_save_sessions_touch_updated_at before update on public.draft_pro_save_sessions for each row execute function public.update_updated_at_column();
+create trigger draft_pro_private_import_uploads_touch_updated_at before update on public.draft_pro_private_import_uploads for each row execute function public.update_updated_at_column();
+
+create or replace function public.begin_draft_pro_save_session(p_user_id uuid, p_draft_id uuid, p_expected_version integer)
+returns table(status text, save_session_id uuid, draft_id uuid, current_version integer, expires_at timestamptz)
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare draft public.draft_pro_drafts%rowtype; session_row public.draft_pro_save_sessions%rowtype; draft_count integer;
+begin
+  if p_user_id is null then raise exception 'Draft Pro user is required'; end if;
+  perform pg_advisory_xact_lock(hashtext('draft-pro-save:' || p_user_id::text || ':' || coalesce(p_draft_id::text, 'new')));
+  update public.draft_pro_save_sessions set status = 'expired' where user_id = p_user_id and status = 'pending' and expires_at <= now();
+  if p_draft_id is not null then
+    select * into draft from public.draft_pro_drafts where id = p_draft_id and user_id = p_user_id and status <> 'deleted' for update;
+    if not found then raise exception 'Draft was not found'; end if;
+    if p_expected_version is null or p_expected_version <> draft.lock_version then return query select 'conflict', null::uuid, draft.id, draft.lock_version, null::timestamptz; return; end if;
+    select * into session_row from public.draft_pro_save_sessions where user_id = p_user_id and draft_id = p_draft_id and status = 'pending' for update;
+    if found then return query select 'ready', session_row.id, draft.id, draft.lock_version, session_row.expires_at; return; end if;
+  else
+    if p_expected_version is not null then raise exception 'New draft cannot have an expected version'; end if;
+    select count(*) into draft_count from public.draft_pro_drafts where user_id = p_user_id and status <> 'deleted';
+    if draft_count >= 10 then raise exception 'Draft Pro saved draft quota exceeded'; end if;
+  end if;
+  insert into public.draft_pro_save_sessions(user_id, draft_id, expected_version) values (p_user_id, p_draft_id, p_expected_version) returning * into session_row;
+  return query select 'ready', session_row.id, session_row.draft_id, coalesce(draft.lock_version, 0), session_row.expires_at;
+end;
+$$;
+
+create or replace function public.begin_draft_pro_private_import_upload(
+  p_user_id uuid, p_save_session_id uuid, p_replacement_import_id uuid, p_declared_max_bytes integer, p_name text, p_content_type text, p_mapping jsonb
+) returns table(status text, upload_id uuid, storage_prefix text, reserved_bytes integer, expires_at timestamptz)
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare session_row public.draft_pro_save_sessions%rowtype; replacement public.draft_pro_private_imports%rowtype; reclaimable integer := 0; reservation integer; account_bytes bigint; pending_bytes bigint; cleanup_bytes bigint; upload public.draft_pro_private_import_uploads%rowtype;
+begin
+  if p_user_id is null or p_declared_max_bytes not between 1 and 10485760 or p_name is null or char_length(btrim(p_name)) not between 1 and 160 or p_content_type not in ('text/csv','application/json') then raise exception 'Invalid private import upload request'; end if;
+  perform pg_advisory_xact_lock(hashtext('draft-pro-import:' || p_user_id::text));
+  select * into session_row from public.draft_pro_save_sessions where id = p_save_session_id and user_id = p_user_id and status = 'pending' and expires_at > now() for update;
+  if not found then raise exception 'Draft Pro save session is unavailable'; end if;
+  if p_replacement_import_id is not null then
+    select * into replacement from public.draft_pro_private_imports where id = p_replacement_import_id and user_id = p_user_id and draft_id = session_row.draft_id and deleted_at is null for update;
+    if not found then raise exception 'Replacement import was not found'; end if;
+    if not exists (select 1 from public.draft_pro_private_imports where blob_id = replacement.blob_id and deleted_at is null and id <> replacement.id) then reclaimable := replacement.byte_size; end if;
+  end if;
+  reservation := greatest(p_declared_max_bytes - reclaimable, 0);
+  select coalesce(sum(byte_size),0) into account_bytes from public.draft_pro_private_import_blobs where user_id = p_user_id and status = 'active';
+  select coalesce(sum(reserved_bytes),0) into pending_bytes from public.draft_pro_private_import_uploads where user_id = p_user_id and status in ('uploading','staged') and expires_at > now();
+  if account_bytes + pending_bytes + reservation > 104857600 then raise exception 'Draft Pro account import quota exceeded'; end if;
+  select coalesce(sum(byte_size),0) into cleanup_bytes from public.draft_pro_private_import_blobs where user_id=p_user_id and status='cleanup_pending';
+  if cleanup_bytes + pending_bytes + p_declared_max_bytes > 20971520 then raise exception 'Draft Pro temporary import cleanup quota exceeded'; end if;
+  insert into public.draft_pro_private_import_uploads(user_id, save_session_id, replacement_import_id, name, content_type, mapping, declared_max_bytes, reserved_bytes, storage_prefix)
+  values (p_user_id, session_row.id, p_replacement_import_id, btrim(p_name), p_content_type, coalesce(p_mapping,'{}'::jsonb), p_declared_max_bytes, reservation, '') returning * into upload;
+  update public.draft_pro_private_import_uploads set storage_prefix = 'draft-pro-import-staging/' || p_user_id::text || '/' || upload.id::text where id = upload.id returning * into upload;
+  return query select 'ready', upload.id, upload.storage_prefix, upload.reserved_bytes, upload.expires_at;
+end;
+$$;
+
+create or replace function public.stage_draft_pro_private_import_upload(
+  p_user_id uuid, p_upload_id uuid, p_chunk_paths text[], p_actual_bytes integer, p_row_count integer, p_content_sha256 text
+) returns table(status text, upload_id uuid, storage_path text, expires_at timestamptz)
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare upload public.draft_pro_private_import_uploads%rowtype; ordinal integer;
+begin
+  if p_user_id is null or p_chunk_paths is null or cardinality(p_chunk_paths) not between 1 and 32 or p_actual_bytes not between 1 and 10485760 or p_row_count not between 0 and 100000 or p_content_sha256 !~ '^[a-f0-9]{64}$' then raise exception 'Invalid private import staging request'; end if;
+  select * into upload from public.draft_pro_private_import_uploads where id = p_upload_id and user_id = p_user_id and status = 'uploading' and expires_at > now() for update;
+  if not found or p_actual_bytes > upload.declared_max_bytes then raise exception 'Private import upload is unavailable'; end if;
+  for ordinal in 1..cardinality(p_chunk_paths) loop if p_chunk_paths[ordinal] <> upload.storage_prefix || '/' || (ordinal - 1)::text then raise exception 'Private import chunk path is not server-owned'; end if; end loop;
+  update public.draft_pro_private_import_uploads set chunk_paths = to_jsonb(p_chunk_paths), actual_bytes = p_actual_bytes, row_count = p_row_count, content_sha256 = p_content_sha256, final_storage_path = 'draft-pro-imports/' || upload.id::text || '/normalized.json', status = 'staged', expires_at = now() + interval '2 hours' where id = upload.id returning * into upload;
+  return query select 'staged', upload.id, upload.final_storage_path, upload.expires_at;
+end;
+$$;
+
+create or replace function public.commit_draft_pro_save_session(
+  p_user_id uuid, p_save_session_id uuid, p_name text, p_snapshot jsonb, p_snapshot_bytes integer, p_import_ids uuid[]
+) returns table(status text, draft_id uuid, lock_version integer, name text, updated_at timestamptz, import_count integer, conflict_lock_version integer)
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare session_row public.draft_pro_save_sessions%rowtype; draft public.draft_pro_drafts%rowtype; upload public.draft_pro_private_import_uploads%rowtype; replacement public.draft_pro_private_imports%rowtype; blob public.draft_pro_private_import_blobs%rowtype; draft_bytes bigint; draft_count integer; added_bytes bigint; reclaimed_bytes bigint; account_bytes bigint; pending_bytes bigint;
+begin
+  if p_user_id is null or p_name is null or char_length(btrim(p_name)) not between 1 and 120 or p_snapshot is null or p_snapshot_bytes not between 0 and 10485760 then raise exception 'Invalid saved draft request'; end if;
+  perform pg_advisory_xact_lock(hashtext('draft-pro-save:' || p_user_id::text));
+  select * into session_row from public.draft_pro_save_sessions where id = p_save_session_id and user_id = p_user_id and status = 'pending' and expires_at > now() for update;
+  if not found then raise exception 'Draft Pro save session is unavailable'; end if;
+  if session_row.draft_id is null then
+    select count(*) into draft_count from public.draft_pro_drafts where user_id = p_user_id and status <> 'deleted'; if draft_count >= 10 then raise exception 'Draft Pro saved draft quota exceeded'; end if;
+    insert into public.draft_pro_drafts(user_id,name,snapshot,snapshot_bytes) values(p_user_id,btrim(p_name),p_snapshot,p_snapshot_bytes) returning * into draft;
+    update public.draft_pro_save_sessions set draft_id = draft.id where id = session_row.id;
+  else
+    select * into draft from public.draft_pro_drafts where id = session_row.draft_id and user_id = p_user_id and status <> 'deleted' for update;
+    if not found then raise exception 'Draft was not found'; end if;
+    if draft.lock_version <> session_row.expected_version then return query select 'conflict', draft.id, draft.lock_version, draft.name, draft.updated_at, 0, draft.lock_version; return; end if;
+    update public.draft_pro_drafts set name=btrim(p_name),snapshot=p_snapshot,snapshot_bytes=p_snapshot_bytes,lock_version=lock_version+1 where id=draft.id returning * into draft;
+  end if;
+  select coalesce(sum(byte_size),0) into draft_bytes from public.draft_pro_private_imports where draft_id = draft.id and deleted_at is null;
+  select coalesce(sum(actual_bytes),0) into added_bytes from public.draft_pro_private_import_uploads where save_session_id = session_row.id and status = 'staged';
+  select coalesce(sum(i.byte_size),0) into reclaimed_bytes from public.draft_pro_private_import_uploads u join public.draft_pro_private_imports i on i.id=u.replacement_import_id where u.save_session_id=session_row.id and u.status='staged' and i.draft_id=draft.id and i.deleted_at is null;
+  if draft_bytes - reclaimed_bytes + added_bytes > 10485760 then raise exception 'Draft Pro draft import quota exceeded'; end if;
+  for upload in select * from public.draft_pro_private_import_uploads where save_session_id = session_row.id and status = 'staged' for update loop
+    if upload.replacement_import_id is not null then
+      select * into replacement from public.draft_pro_private_imports where id=upload.replacement_import_id and user_id=p_user_id and draft_id=draft.id and deleted_at is null for update;
+      if not found then raise exception 'Replacement import was not found'; end if;
+      update public.draft_pro_private_imports set deleted_at=now() where id=replacement.id;
+      if not exists (select 1 from public.draft_pro_private_imports where blob_id=replacement.blob_id and deleted_at is null) then
+        update public.draft_pro_private_import_blobs set status='cleanup_pending', cleanup_requested_at=now() where id=replacement.blob_id and status='active';
+      end if;
+    end if;
+    select coalesce(sum(byte_size),0) into account_bytes from public.draft_pro_private_import_blobs where user_id=p_user_id and status='active';
+    select coalesce(sum(reserved_bytes),0) into pending_bytes from public.draft_pro_private_import_uploads where user_id=p_user_id and status in ('uploading','staged') and id<>upload.id and expires_at>now();
+    if account_bytes + pending_bytes + upload.actual_bytes > 104857600 then raise exception 'Draft Pro account import quota exceeded'; end if;
+    insert into public.draft_pro_private_import_blobs(user_id,storage_path,byte_size,row_count,content_sha256) values(upload.user_id,upload.final_storage_path,upload.actual_bytes,upload.row_count,upload.content_sha256) returning * into blob;
+    insert into public.draft_pro_private_imports(user_id,draft_id,name,content_type,storage_path,normalized_rows,mapping,byte_size,row_count,blob_id) values(upload.user_id,draft.id,upload.name,upload.content_type,upload.final_storage_path,'[]'::jsonb,upload.mapping,upload.actual_bytes,upload.row_count,blob.id);
+  end loop;
+  update public.draft_pro_private_import_uploads set status='committed' where save_session_id=session_row.id and status='staged';
+  update public.draft_pro_private_imports set draft_id=draft.id where id=any(coalesce(p_import_ids,'{}'::uuid[])) and user_id=p_user_id and (draft_id is null or draft_id=draft.id) and deleted_at is null;
+  update public.draft_pro_save_sessions set status='committed' where id=session_row.id;
+  select count(*) into draft_count from public.draft_pro_private_imports where draft_id=draft.id and deleted_at is null;
+  return query select 'saved',draft.id,draft.lock_version,draft.name,draft.updated_at,draft_count,null::integer;
+end;
+$$;
+
+-- List/read are service-only ownership checks. The application guard remains the
+-- sole eligibility/capability authority before these are invoked.
+create or replace function public.list_draft_pro_saved_drafts(p_user_id uuid)
+returns table(id uuid,name text,status text,lock_version integer,updated_at timestamptz,import_count integer)
+language sql security definer set search_path = public, pg_temp as $$
+  select d.id,d.name,d.status,d.lock_version,d.updated_at,count(i.id)::integer from public.draft_pro_drafts d left join public.draft_pro_private_imports i on i.draft_id=d.id and i.deleted_at is null where d.user_id=p_user_id group by d.id order by d.updated_at desc;
+$$;
+create or replace function public.read_draft_pro_snapshot(p_user_id uuid,p_draft_id uuid)
+returns table(id uuid,name text,lock_version integer,snapshot jsonb,updated_at timestamptz,imports jsonb)
+language sql security definer set search_path = public, pg_temp as $$
+  select d.id,d.name,d.lock_version,d.snapshot,d.updated_at,coalesce(jsonb_agg(jsonb_build_object('id',i.id,'name',i.name,'content_type',i.content_type,'byte_size',i.byte_size,'row_count',i.row_count,'mapping',i.mapping) order by i.created_at) filter(where i.id is not null),'[]'::jsonb) from public.draft_pro_drafts d left join public.draft_pro_private_imports i on i.draft_id=d.id and i.deleted_at is null where d.id=p_draft_id and d.user_id=p_user_id and d.status='active' group by d.id;
+$$;
+
+create or replace function public.rename_draft_pro_saved_draft(p_user_id uuid,p_draft_id uuid,p_expected_version integer,p_name text)
+returns table(status text,draft_id uuid,lock_version integer,name text,updated_at timestamptz,conflict_lock_version integer)
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare draft public.draft_pro_drafts%rowtype;
+begin
+  select * into draft from public.draft_pro_drafts where id=p_draft_id and user_id=p_user_id and status<>'deleted' for update;
+  if not found then raise exception 'Draft was not found'; end if;
+  if p_expected_version is null or draft.lock_version<>p_expected_version then return query select 'conflict',draft.id,draft.lock_version,draft.name,draft.updated_at,draft.lock_version; return; end if;
+  update public.draft_pro_drafts set name=btrim(p_name),lock_version=lock_version+1 where id=draft.id returning * into draft;
+  return query select 'saved',draft.id,draft.lock_version,draft.name,draft.updated_at,null::integer;
+end;
+$$;
+
+create or replace function public.delete_draft_pro_saved_draft(p_user_id uuid,p_draft_id uuid,p_expected_version integer)
+returns table(status text,draft_id uuid,lock_version integer,cleanup_count integer,conflict_lock_version integer)
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare draft public.draft_pro_drafts%rowtype; cleanup_count integer;
+begin
+  perform pg_advisory_xact_lock(hashtext('draft-pro-save:' || p_user_id::text));
+  select * into draft from public.draft_pro_drafts where id=p_draft_id and user_id=p_user_id and status<>'deleted' for update;
+  if not found then raise exception 'Draft was not found'; end if;
+  if p_expected_version is null or draft.lock_version<>p_expected_version then return query select 'conflict',draft.id,draft.lock_version,0,draft.lock_version; return; end if;
+  update public.draft_pro_drafts set status='deleted',lock_version=lock_version+1 where id=draft.id returning * into draft;
+  update public.draft_pro_private_imports set deleted_at=now() where draft_id=draft.id and deleted_at is null;
+  update public.draft_pro_private_import_blobs b set status='cleanup_pending',cleanup_requested_at=now() where b.user_id=p_user_id and b.status='active' and not exists(select 1 from public.draft_pro_private_imports i where i.blob_id=b.id and i.deleted_at is null);
+  select count(*) into cleanup_count from public.draft_pro_private_import_blobs where user_id=p_user_id and status='cleanup_pending';
+  return query select 'deleted',draft.id,draft.lock_version,cleanup_count,null::integer;
+end;
+$$;
+
+create or replace function public.duplicate_draft_pro_saved_draft(p_user_id uuid,p_draft_id uuid,p_expected_version integer,p_name text)
+returns table(status text,draft_id uuid,lock_version integer,name text,updated_at timestamptz,import_count integer,conflict_lock_version integer)
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare source_draft public.draft_pro_drafts%rowtype; copy_draft public.draft_pro_drafts%rowtype; draft_count integer; import_count integer;
+begin
+  perform pg_advisory_xact_lock(hashtext('draft-pro-save:' || p_user_id::text));
+  select * into source_draft from public.draft_pro_drafts where id=p_draft_id and user_id=p_user_id and status<>'deleted' for update;
+  if not found then raise exception 'Draft was not found'; end if;
+  if p_expected_version is null or source_draft.lock_version<>p_expected_version then return query select 'conflict',source_draft.id,source_draft.lock_version,source_draft.name,source_draft.updated_at,0,source_draft.lock_version; return; end if;
+  select count(*) into draft_count from public.draft_pro_drafts where user_id=p_user_id and status<>'deleted'; if draft_count>=10 then raise exception 'Draft Pro saved draft quota exceeded'; end if;
+  insert into public.draft_pro_drafts(user_id,name,snapshot,snapshot_bytes) values(p_user_id,btrim(p_name),source_draft.snapshot,source_draft.snapshot_bytes) returning * into copy_draft;
+  insert into public.draft_pro_private_imports(user_id,draft_id,name,content_type,storage_path,normalized_rows,mapping,byte_size,row_count,blob_id)
+  select user_id,copy_draft.id,name,content_type,storage_path,normalized_rows,mapping,byte_size,row_count,blob_id from public.draft_pro_private_imports where draft_id=source_draft.id and deleted_at is null;
+  select count(*) into import_count from public.draft_pro_private_imports where draft_id=copy_draft.id and deleted_at is null;
+  return query select 'saved',copy_draft.id,copy_draft.lock_version,copy_draft.name,copy_draft.updated_at,import_count,null::integer;
+end;
+$$;
+
+create or replace function public.claim_draft_pro_private_import_cleanup(p_user_id uuid,p_limit integer default 20)
+returns table(blob_id uuid,storage_path text)
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if p_limit not between 1 and 100 then raise exception 'Invalid cleanup limit'; end if;
+  return query select id,storage_path from public.draft_pro_private_import_blobs where user_id=p_user_id and status='cleanup_pending' order by cleanup_requested_at limit p_limit for update skip locked;
+end;
+$$;
+create or replace function public.confirm_draft_pro_private_import_cleanup(p_user_id uuid,p_blob_ids uuid[])
+returns integer language plpgsql security definer set search_path = public, pg_temp as $$
+declare changed integer;
+begin
+  update public.draft_pro_private_import_blobs set status='deleted',deleted_at=now() where user_id=p_user_id and id=any(p_blob_ids) and status='cleanup_pending'; get diagnostics changed = row_count; return changed;
+end;
+$$;
+
+revoke all on function public.begin_draft_pro_save_session(uuid,uuid,integer), public.begin_draft_pro_private_import_upload(uuid,uuid,uuid,integer,text,text,jsonb), public.stage_draft_pro_private_import_upload(uuid,uuid,text[],integer,integer,text), public.commit_draft_pro_save_session(uuid,uuid,text,jsonb,integer,uuid[]), public.list_draft_pro_saved_drafts(uuid), public.read_draft_pro_snapshot(uuid,uuid), public.rename_draft_pro_saved_draft(uuid,uuid,integer,text), public.delete_draft_pro_saved_draft(uuid,uuid,integer), public.duplicate_draft_pro_saved_draft(uuid,uuid,integer,text), public.claim_draft_pro_private_import_cleanup(uuid,integer), public.confirm_draft_pro_private_import_cleanup(uuid,uuid[]) from public, anon, authenticated;
+grant execute on function public.begin_draft_pro_save_session(uuid,uuid,integer), public.begin_draft_pro_private_import_upload(uuid,uuid,uuid,integer,text,text,jsonb), public.stage_draft_pro_private_import_upload(uuid,uuid,text[],integer,integer,text), public.commit_draft_pro_save_session(uuid,uuid,text,jsonb,integer,uuid[]), public.list_draft_pro_saved_drafts(uuid), public.read_draft_pro_snapshot(uuid,uuid), public.rename_draft_pro_saved_draft(uuid,uuid,integer,text), public.delete_draft_pro_saved_draft(uuid,uuid,integer), public.duplicate_draft_pro_saved_draft(uuid,uuid,integer,text), public.claim_draft_pro_private_import_cleanup(uuid,integer), public.confirm_draft_pro_private_import_cleanup(uuid,uuid[]) to service_role;
