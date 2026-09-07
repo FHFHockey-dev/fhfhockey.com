@@ -43,9 +43,9 @@ describe("private import cleanup leases", () => {
       if (name === "claim_draft_pro_private_import_upload_cleanup") return Promise.resolve({ data: [expired], error: null });
       return Promise.resolve({ data: 1, error: null });
     });
-    remove.mockResolvedValueOnce({ error: null }).mockResolvedValueOnce({ error: { message: "final missing" } });
+    remove.mockResolvedValueOnce({ error: { message: "final missing" } });
     await expect(cleanupPrivateImports("owner-1")).resolves.toEqual({ deletedBlobCount: 0, cleanedUploadCount: 0 });
-    expect(remove).toHaveBeenNthCalledWith(1, [expired.chunk_paths[0]]); expect(remove).toHaveBeenNthCalledWith(2, [expired.final_storage_path]);
+    expect(remove).toHaveBeenCalledWith([expired.chunk_paths[0], expired.final_storage_path]);
     expect(rpc).not.toHaveBeenCalledWith("confirm_draft_pro_private_import_upload_cleanup", expect.anything());
   });
 });

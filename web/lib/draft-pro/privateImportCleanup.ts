@@ -14,11 +14,10 @@ function uploadPaths(uploadId: string, chunkPaths: Json, finalStoragePath: strin
 }
 
 async function removeAll(paths: readonly string[]) {
-  for (const path of paths) {
-    const { error } = await serviceRoleClient.storage.from(BUCKET).remove([path]);
-    if (error) return false;
-  }
-  return true;
+  // Supabase Storage supports removing up to 1,000 paths in one request. A
+  // NoSuchKey is also an error, so leave the lease unconfirmed for retry.
+  const { error } = await serviceRoleClient.storage.from(BUCKET).remove([...paths]);
+  return !error;
 }
 
 /** Best-effort cleanup is intentionally non-throwing so a failed bucket delete

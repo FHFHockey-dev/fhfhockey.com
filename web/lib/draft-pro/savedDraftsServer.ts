@@ -2,6 +2,7 @@ import serviceRoleClient from "lib/supabase/server";
 import type { Json } from "lib/supabase/database-generated.types";
 
 import type { DraftProSnapshot } from "./contracts";
+import { cleanupPrivateImports } from "./privateImportCleanup";
 
 type DraftRow = { id: string; name: string; lock_version: number; updated_at: string };
 type SummaryRow = DraftRow & { status: string };
@@ -29,6 +30,10 @@ function conflict(row: ConflictRow): SavedDraftConflict {
   return { id: row.draft_id, lockVersion: row.lock_version, ...(row.name === undefined ? {} : { name: row.name }), ...(row.updated_at === undefined ? {} : { updatedAt: row.updated_at }) };
 }
 
+async function cleanupAfterSave(userId: string) {
+  try { await cleanupPrivateImports(userId); } catch { /* Successful saves must not fail because cleanup can retry later. */ }
+}
+
 export async function listSavedDrafts(userId: string): Promise<SavedDraftSummary[]> {
   const { data, error } = await serviceRoleClient.rpc("list_draft_pro_saved_drafts", { p_user_id: userId });
   if (error) throw error;
@@ -51,7 +56,9 @@ export async function commitSavedDraft(args: { userId: string; draftId: string |
   const result = requireRow(commitRows, "Saved Drafts transaction returned no result.");
   if (result.status === "conflict") return { conflict: true as const, current: conflict(result) };
   if (result.status !== "saved") throw new Error("Saved Drafts transaction returned an unsupported save status.");
-  return { conflict: false as const, draft: savedDraft({ id: result.draft_id, name: result.name, lock_version: result.lock_version, updated_at: result.updated_at }) };
+  const saved = { conflict: false as const, draft: savedDraft({ id: result.draft_id, name: result.name, lock_version: result.lock_version, updated_at: result.updated_at }) };
+  await cleanupAfterSave(args.userId);
+  return saved;
 }
 
 export async function readSavedDraft(userId: string, draftId: string) {
@@ -70,7 +77,9 @@ export async function mutateSavedDraft(args: { userId: string; draftId: string; 
     const result = requireRow(data, "Saved Drafts transaction returned no result.");
     if (result.status === "conflict") return { conflict: true as const, current: conflict(result) };
     if (result.status !== "deleted") throw new Error("Saved Drafts transaction returned an unsupported delete status.");
-    return { conflict: false as const, draft: null };
+    const deleted = { conflict: false as const, draft: null };
+    await cleanupAfterSave(args.userId);
+    return deleted;
   }
   const { data, error } = await serviceRoleClient.rpc(args.action === "rename" ? "rename_draft_pro_saved_draft" : "duplicate_draft_pro_saved_draft", { ...mutationArgs, p_name: args.name ?? "" });
   if (error) throw error;
