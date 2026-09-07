@@ -10,7 +10,7 @@
 | W04 refunds/account | Approved, 17 focused tests; CLI follow-on integrated | Mounted UI/browser and real email configuration checks |
 | W05 recommendations | Approved pure/hook/API checkpoint, 19 tests | W07 remote UI wiring and premium boundary |
 | W06 DUST | Approved pure/API/adapter checkpoint, 11 tests | W07 UI, season/window display and capability wiring |
-| W07 integration/CSV/graph | Active; initial UI slices rejected pending access race/timer fixes | Remote recommendations, DUST wiring, CSV, expanded graph and full UI tests |
+| W07 integration/CSV/graph | Active; access hook and checkout checkpoint integrated | Remote recommendations, DUST wiring, CSV, expanded graph and full UI tests |
 | W08 Saved Drafts | Queued | Initial-release checkpoint, quotas/concurrency/private restore implementation |
 | W09 scenarios | Queued | W08 and shared calculation integration |
 | W10 reports | Queued | W09 and deterministic report implementation |
@@ -178,3 +178,21 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 - W12 081d2e05d APPROVED/integrated5595ab7d8: actualChromium minimal2team/2pick fullcompletion withlocalfavoritepersist,1/1pass. W12idleuntilW07; broaderfree/paid/mobileregressionspending.
 - W04 CLIamendeddelta353fa6a59..136122c86 reviewed/appliedexactlyandintegratedd9cd4e018 (avoidduplicatingapprovedbase). Genericfailure/repeatedsendchecks, noemail/DBexecuted.
 - W07 access/checkout588ff2dbd+e728b5b3f rejectedforseasonexpirysetTimeoutoverflow andasyncgetSessionlogoutresurrection; checkouttimersuntracked/noexplicitretry/misleadingpaymentreceivedbeforeverification. EscalatedTerra/high onlyrace/timerfix+tests aftermediumslice; exitpassreview thenTerra/medium. OnlyW07active.
+
+- W07 b515894d0 access-hook correction approved as a scoped checkpoint: epoch before session lookup, stale/logout/unmount invalidation, 24-hour timer cap with fresh session, 30 focused tests and scoped hook/panel TypeScript passed. Integrated four UI commits ending92fd17ccf. Terra/high exit met; downgraded Terra/medium for remote recommendation wiring.
+- W07 finishing-pass issues remain explicit: clearing/invalidating the checkout query must cancel pending verification; transient verification errors need an explicit retry action. These are not release-approved merely because the access hook checkpoint passed.
+- W12 free regression slice active: actual comparison, source weights, local import/bookmark/autosave with fictional fixtures. Broader free preservation is not inferred from earlier unrun specs.
+
+- W12 comparison timeout diagnosed from retained DOM: wrong accessible label, not an app failure. Corrected224f9e3b2 approved/integrated6949ab63b after actual Chromium1/1 pass. Next source-weight numerical/persistence browser case active; CSV/bookmark still pending.
+- W02 return URLs lacked section=draft-pro, so AccountSettingsPage would not mount the verifier. Owner388e06815 approved/integrated26e2d265a with exact URL regression; W02 idle.
+- W07 12483c2d9 recommendation slice rejected: limit200 violates servermax100; raw first200 pool can omit goalies; blocked/private fallback still personalizes locally; legacy toggle migration missing. W05 released bounded shared schema/candidate2000/body4MiB follow-on; W07 owns corrected adapter, tests against actual schema/handler, and duplicate table needs-control removal. No new scoring formulas.
+- Remaining account contract gap identified for the finishing pass: providerReadiness defaults false unless supplied, but account loader supplies none; checkout button currently ignores checkout feature/provider readiness. Add an explicit server-computed checkout availability/pass-information field and truthful provider configuration/readiness before launch. Yahoo must remain independently false/parked.
+
+- W05 full-pool contract 9d66892e2 approved and integrated as 1efd2dfd5. Shared client-safe Zod schema bounds 2,000 candidates and 100 results; Pages body limit 4 MiB. Chef reran 13 pure/API tests and strict explicit-file TypeScript, both passed. W05 is idle. W07 has the published contract for serialized UI request verification.
+- W04 released Luna/medium for a bounded account response follow-on: truthful configuration/readiness and checkout availability, fixed pass information, no provider calls or UI changes. Active W04/W07/W12, three.
+- W07 recommendation follow-on 111d22eb7 reviewed provisionally: raw table metrics restored, duplicate need weighting removed, canonical preference migration and filtered full pool included. Approval awaits shared-schema/real-handler contract tests and immediate disabled-result invalidation.
+
+- W07 recommendation UI checkpoint approved through a436f3af8 and integrated as 3936a163a. Chef reran 33 component/adapter/API tests successfully. Full pool includes goalies, payload matches shared schema, raw table values preserved, disabled/stale results hidden. Released W07 Terra/medium for DUST wiring and matching adapter invalidation only.
+- W12 source-weight browser test remains unapproved: repeated navigation locator timeouts; Chef requested actual visible role/name evidence and exact blocker instead of guessed retries. No product defect or test pass claimed.
+
+- W04 account response follow-on 1d1b10d5c approved and integrated as e029c5902: fixed pass info, stable checkout availability, separate configuration readiness, Yahoo false. Owner reported 10 tests/types/lint passing; Chef reran eight helper tests successfully (the additional supplied route path matched no file). W04 is idle; W07 has the response contract for later UI finishing.
