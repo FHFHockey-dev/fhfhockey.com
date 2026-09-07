@@ -36,7 +36,10 @@ async function restoreImportChunks(draftId: string, metadata: unknown, isCurrent
     if (!session?.access_token || !isCurrent()) throw new Error("Saved draft restore was cancelled.");
     const response = await fetch(`/api/v1/account/draft-pro/drafts/${draftId}/imports/${importId}?ordinal=${ordinal}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
     if (!response.ok) throw new Error("Private import file is unavailable; the draft was not restored.");
-    totalChunks = Number(response.headers.get("X-Draft-Pro-Total-Chunks")); totalBytes = Number(response.headers.get("X-Draft-Pro-Total-Bytes")); sha256 = response.headers.get("X-Draft-Pro-SHA256") ?? ""; rowCount = Number(response.headers.get("X-Draft-Pro-Row-Count"));
+    const nextChunks = Number(response.headers.get("X-Draft-Pro-Total-Chunks")); const nextBytes = Number(response.headers.get("X-Draft-Pro-Total-Bytes")); const nextHash = response.headers.get("X-Draft-Pro-SHA256") ?? ""; const nextRows = Number(response.headers.get("X-Draft-Pro-Row-Count"));
+    if (!Number.isInteger(nextChunks) || nextChunks < 1 || nextChunks > 32 || !Number.isInteger(nextBytes) || nextBytes < 1 || nextBytes > 10 * 1024 * 1024 || !/^[a-f0-9]{64}$/.test(nextHash) || !Number.isInteger(nextRows) || nextRows < 0 || nextRows > 100_000) throw new Error("Private import metadata is invalid.");
+    if (ordinal && (nextChunks !== totalChunks || nextBytes !== totalBytes || nextHash !== sha256 || nextRows !== rowCount)) throw new Error("Private import metadata changed during restore.");
+    totalChunks = nextChunks; totalBytes = nextBytes; sha256 = nextHash; rowCount = nextRows;
     chunks.push(new Uint8Array(await response.arrayBuffer()));
   }
   const bytes = new Uint8Array(chunks.reduce((size, chunk) => size + chunk.byteLength, 0)); let offset = 0; for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
