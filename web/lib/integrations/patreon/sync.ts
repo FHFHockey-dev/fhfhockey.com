@@ -910,12 +910,14 @@ export async function processPatreonWebhook({
   payload,
   client = serviceRoleClient,
   fetchImpl = fetchPatreonWithDeadline,
+  refreshImpl = refreshPatreonAccount,
 }: {
   eventId: string;
   eventType: string;
   payload: PatreonWebhookPayload;
   client?: SupabaseClient<Database>;
   fetchImpl?: typeof fetch;
+  refreshImpl?: typeof refreshPatreonAccount;
 }) {
   const memberId = webhookMembershipId(payload);
   let userId: string | null = null;
@@ -954,8 +956,15 @@ export async function processPatreonWebhook({
   if (!event) throw new Error("Patreon webhook event was not recorded.");
 
   try {
-    if (!userId) return { duplicate: false, userId: null, pending: true };
-    await refreshPatreonAccount({ userId, client, fetchImpl, triggerSource: "webhook" });
+    if (!userId) {
+      const { error } = await client
+        .from("draft_pro_provider_events")
+        .update({ processed_at: new Date().toISOString(), processing_error: "ignored_unlinked_member" })
+        .eq("id", event.id);
+      if (error) throw error;
+      return { duplicate: false, userId: null, ignored: true };
+    }
+    await refreshImpl({ userId, client, fetchImpl, triggerSource: "webhook" });
     const { error } = await client
       .from("draft_pro_provider_events")
       .update({ processed_at: new Date().toISOString() })
