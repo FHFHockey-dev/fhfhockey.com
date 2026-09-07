@@ -95,3 +95,11 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 
 - W12 payment SQL checkpoint APPROVED: debfed557+6f6f9cd6a integrated; actual concurrent begin/event, full/partial refunds, terminal dispute order, six RPC grants, session/intent/account mismatch, immutable activation, same-user repurchase/provider-row retention passed. Fixture independent Patreon row uses draft_pro rather than actual supporter mapping; proves SQL isolation only, integrated access test still later. W12 idle Terra/medium.
 - W02 c44816043 adds configured catalog Price/Product validation; still unapproved pending actual session line item validation, CLI, checkout recovery and full evidence. W03 final outage-recovery test pending;22 tests/full tsc/lint passed before added test.
+
+- RELEASED W05 at5a4fcf867 Terra/medium: pure recommendations/hooks/API/tests only, no central dashboard/SuggestedPicks/table edits. W07 owns composition. Active W02(high),W03(Luna/medium),W05(Terra/medium) three. W12 idle.
+
+- W03 bounded Sol/medium escalation for two final recovery/disconnect tests: Luna then Terra could not construct mocked IO fixture and stopped after reads without actual blocker. Security regression evidence unresolved after focused attempts+Chef review. Scope only real refresh/persist recovery/deleted-account tests; exit pass+review then Terra/medium idle. W02 still high, W05 medium.
+
+- Integration privacy constraint sent W05: no background API upload of local private imports before explicit account save; private-source premium calculations may be unavailable until W08 save/restoration rather than silently uploading/substituting rows. W07/W08 must preserve local free workflow and explain this boundary.
+
+- W03 LOCAL IMPLEMENTATION APPROVED through eb71ffad7; all11 commits eeff92517..eb71ffad7 integrated.22 focused tests +2 real refresh recovery/deleted account tests passed; full tsc/targeted lint passed owner. Recovery mock corrected to enforce actual .in status filter. Sol exit met, W03 downgraded Terra/medium and idle. Provider live OAuth/webhook validation blocked by absent config; not launch-approved. W07 must align any remaining account UI disconnect copy/navigation.
