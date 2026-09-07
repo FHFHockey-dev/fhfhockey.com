@@ -43,14 +43,17 @@ docker run --detach --rm --name "$CONTAINER" \
   "$IMAGE" >/dev/null
 
 for _ in $(seq 1 30); do
-  if docker logs "$CONTAINER" 2>&1 | grep -Fq "PostgreSQL init process complete; ready for start up." \
+  init_log="$(docker logs "$CONTAINER" 2>&1)"
+  if grep -Fq "PostgreSQL init process complete; ready for start up." <<< "$init_log" \
     && docker exec "$CONTAINER" pg_isready --username postgres --dbname postgres >/dev/null 2>&1; then
     break
   fi
   sleep 1
 done
 
-if ! docker exec "$CONTAINER" pg_isready --username postgres --dbname postgres >/dev/null 2>&1; then
+init_log="$(docker logs "$CONTAINER" 2>&1)"
+if ! grep -Fq "PostgreSQL init process complete; ready for start up." <<< "$init_log" \
+  || ! docker exec "$CONTAINER" pg_isready --username postgres --dbname postgres >/dev/null 2>&1; then
   echo "Disposable Draft Pro database did not become ready." >&2
   exit 1
 fi
@@ -74,9 +77,9 @@ psql_in_container --tuples-only --no-align --command "
 
 if [[ -n "$migration" ]]; then
   psql_in_container < "$migration" >/dev/null
+  echo "migration=$migration"
   psql_in_container --tuples-only --no-align --command "
-    select 'migration=' || '$migration' ||
-           '; public_tables=' || count(*)
+    select 'public_tables=' || count(*)
     from pg_catalog.pg_class
     where relnamespace = 'public'::regnamespace and relkind = 'r';
   "
