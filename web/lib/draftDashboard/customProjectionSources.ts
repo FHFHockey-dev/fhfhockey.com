@@ -2,6 +2,7 @@ import type {
   ProjectionSourceConfig,
   SourceStatMapping
 } from "lib/projectionsConfig/projectionSourcesConfig";
+import type { SessionCsvEntry } from "./csvImportSession";
 
 export interface CustomAdditionalProjectionSource {
   id: string;
@@ -25,6 +26,35 @@ export interface CustomAdditionalProjectionSource {
     lastUpdated: number;
     unresolvedNames: string[];
   };
+}
+
+export function buildCustomProjectionSources(
+  entries: readonly SessionCsvEntry[],
+  playerType: "skater" | "goalie",
+  statMappings: SourceStatMapping[],
+): CustomAdditionalProjectionSource[] {
+  return entries.flatMap((entry) => {
+    const rows = (entry.rows || []).filter((row) => {
+      const positions = String(row.Position || "")
+        .toUpperCase()
+        .split(",")
+        .map((position) => position.trim());
+      return playerType === "goalie" ? positions.includes("G") : !positions.includes("G");
+    });
+    if (!rows.length) return [];
+    return [{
+      id: entry.id,
+      displayName: entry.label || entry.id,
+      playerType,
+      rows,
+      primaryPlayerIdKey: "player_id",
+      originalPlayerNameKey: "Player_Name",
+      teamKey: "Team_Abbreviation",
+      positionKey: "Position",
+      statMappings,
+      resolution: entry.resolution,
+    }];
+  });
 }
 
 export function buildActiveProjectionSources({
