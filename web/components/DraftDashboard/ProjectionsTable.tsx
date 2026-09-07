@@ -1,5 +1,6 @@
 // components/DraftDashboard/ProjectionsTable.tsx
 
+import type { PlayerScheduleMetrics } from "lib/draftDashboard/scheduleMetrics";
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { DraftedPlayer } from "./DraftDashboard";
 // Import ProcessedPlayer from the correct location
@@ -31,6 +32,7 @@ import {
 } from "lib/projectionsConfig/proration";
 
 interface ProjectionsTableProps {
+  scheduleMetrics?: PlayerScheduleMetrics;
   currentSeasonId?: string | number;
   players: ProcessedPlayer[];
   // Full pool including drafted; used for diagnostics cross-check
@@ -81,7 +83,9 @@ type SortableField =
   | "vona"
   | "vbd"
   | "myRank"
-  | "risk";
+  | "risk"
+  | "off"
+  | "b2b";
 
 const DEFAULT_SKATER_STAT_KEYS = [
   "GOALS",
@@ -127,6 +131,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   emptyStateMessage = "No players found matching your filters.",
   personalRankByPlayerId = {},
   dustInsights,
+  scheduleMetrics,
 }) => {
   const hasPersonalRanks = Object.keys(personalRankByPlayerId).length > 0;
   const [sortField, setSortField] = useState<SortableField>("yahooAvgPick");
@@ -723,6 +728,13 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       let aValue: any;
       let bValue: any;
 
+      if (!statSortKey && (sortField === "off" || sortField === "b2b")) {
+        const av = scheduleMetrics?.get(String(a.playerId))?.[sortField];
+        const bv = scheduleMetrics?.get(String(b.playerId))?.[sortField];
+        if (av == null) return bv == null ? 0 : 1;
+        if (bv == null) return -1;
+        return (sortDirection === "asc" ? 1 : -1) * (av - bv);
+      }
       if (statSortKey) {
         const av = getProratedStat(a, statSortKey, prorate84);
         const bv = getProratedStat(b, statSortKey, prorate84);
@@ -798,6 +810,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     return filtered;
   }, [
     players,
+    scheduleMetrics,
     positionFilter,
     debouncedSearchTerm,
     sortField,
@@ -1491,6 +1504,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
             <col className={styles.colVorp} />
             <col className={styles.colAdp} />
             {hasPersonalRanks && <col className={styles.colAdp} />}
+            <col className={styles.colSchedule} />
+            <col className={styles.colSchedule} />
             <col className={styles.colNextPick} />
             <col className={styles.colAction} />
             <col className={styles.colCompare} />
@@ -1739,6 +1754,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   </button>
                 </th>
               )}
+              {(["off", "b2b"] as const).map((metric) => <th key={metric} scope="col" className={styles.colSchedule} aria-sort={getAriaSort(metric)}>
+                <button type="button" className={styles.sortButton} onClick={() => handleSort(metric)} title={metric === "off" ? "Off-Nights: NHL opportunities on dates with at most 8 games" : "Back-to-Backs: consecutive-day NHL pairs, counted on the second day"}>{metric.toUpperCase()}</button>
+              </th>)}
               <th
                 className={`${styles.sortableHeader} ${styles.colNextPick}`}
                 aria-sort={getAriaSort("risk")}
@@ -1809,6 +1827,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     : metricColumnsCount) +
                   1 + // ADP
                   (hasPersonalRanks ? 1 : 0) + // personal board rank
+                  2 + // OFF and B2B
                   1 + // Next Pick
                   1 + // Action
                   1; // Compare
@@ -1892,6 +1911,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                             {Math.abs(sourceRankImpacts[player.playerId].delta)}
                           </span>
                         )}
+                      </div>
                       {dust && (
                         <div className={styles.dustInsight}>
                           <span
@@ -1915,7 +1935,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                           )}
                         </div>
                       )}
-                      </div>
                     </td>
                     <td
                       className={styles.position}
@@ -2096,6 +2115,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         {personalRankByPlayerId[key] ?? "-"}
                       </td>
                     )}
+                    {(["off", "b2b"] as const).map((metric) => <td key={metric} className={styles.colSchedule} data-label={metric.toUpperCase()} title="Scheduled NHL opportunities; not projected appearances">{scheduleMetrics?.get(key)?.[metric] ?? "—"}</td>)}
                     <td
                       className={`${styles.nextPick} ${riskClass ? riskClass : ""}`}
                       data-label="AVL%"

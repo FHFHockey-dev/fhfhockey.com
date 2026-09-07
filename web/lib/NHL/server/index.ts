@@ -437,6 +437,8 @@ type GameWeek = {
   games: {
     id: number;
     season: number;
+    gameScheduleState?: string;
+    gameState?: string;
     awayTeam: {
       id: number;
       abbrev: string;
@@ -468,6 +470,7 @@ export async function getSchedule(
   const result = {
     data: TEAM_DAY_DATA,
     numGamesPerDay,
+    coveredDates: gameWeek.map((day) => day.date),
   };
 
   // Get number of games per day
@@ -527,6 +530,9 @@ export async function getSchedule(
       const gameData: GameData = {
         id: game.id,
         season: game.season,
+        gameDate: day.date,
+        gameScheduleState: game.gameScheduleState,
+        gameState: game.gameState,
         gameType: derivedGameType,
         homeTeam: {
           id: homeTeam.id,

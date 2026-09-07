@@ -1,5 +1,6 @@
 // components/DraftDashboard/DraftSettings.tsx
 import React from "react";
+import type { DashboardMatchupWeek } from "lib/draftDashboard/scheduleMetrics";
 import {
   decompressFromEncodedURIComponent,
 } from "lz-string";
@@ -37,6 +38,8 @@ export interface DraftSettingsHandle {
 type LeagueType = "points" | "categories";
 
 interface DraftSettingsProps {
+  matchupWeeks?: readonly DashboardMatchupWeek[];
+  matchupWeeksError?: string | null;
   validation?: DraftSettingsValidation;
   variant?: "standalone" | "inline" | "full";
   activeSection?: SettingsDomain;
@@ -119,6 +122,8 @@ interface DraftSettingsProps {
 import PlayerAutocomplete from "components/PlayerAutocomplete";
 
 const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(({
+  matchupWeeks = [],
+  matchupWeeksError,
   validation,
   variant = "standalone",
   activeSection = "league",
@@ -480,6 +485,20 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
               <button type="button" disabled={!importText.trim() || draftLocked} onClick={applyBookmark}>Import Bookmark</button>
               <button type="button" onClick={() => setImportOpen(false)}>Cancel Import</button>
             </div>}
+
+            <div className={styles.playoffWeeks}>
+              <label htmlFor="draft-playoff-weeks">Playoff Weeks</label>
+              <select id="draft-playoff-weeks" multiple size={5} value={(settings.playoffWeeks ?? []).map(String)} disabled={!matchupWeeks.length}
+                aria-describedby="playoff-weeks-help"
+                onChange={(event) => {
+                  const playoffWeeks = Array.from(event.currentTarget.selectedOptions, (option) => Number(option.value));
+                  onSettingsChange({ playoffWeeks, ...(!playoffWeeks.length ? { scheduleScope: "season" as const } : {}) });
+                }}>
+                {matchupWeeks.map((week) => <option key={week.week} value={week.week}>Week {week.week} · {week.start_date} – {week.end_date}</option>)}
+              </select>
+              <small id="playoff-weeks-help">{matchupWeeksError ?? (matchupWeeks.length ? "Select your Yahoo playoff weeks. Hold Command/Ctrl to select separate weeks." : "Loading Yahoo weeks…")}</small>
+              <button type="button" disabled={!settings.playoffWeeks?.length} onClick={() => onSettingsChange({ playoffWeeks: [], scheduleScope: "season" })}>Clear playoff weeks</button>
+            </div>
 
             <div className={styles.settingRow}>
               <label className={styles.label} htmlFor="teamCount">
