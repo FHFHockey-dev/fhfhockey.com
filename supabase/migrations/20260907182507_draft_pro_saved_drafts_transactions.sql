@@ -147,22 +147,31 @@ declare session_row public.draft_pro_save_sessions%rowtype; draft public.draft_p
 begin
   if p_user_id is null or p_name is null or char_length(btrim(p_name)) not between 1 and 120 or p_snapshot is null or p_snapshot_bytes not between 0 and 10485760 then raise exception 'Invalid saved draft request'; end if;
   perform pg_advisory_xact_lock(hashtext('draft-pro-save:' || p_user_id::text));
-  select * into session_row from public.draft_pro_save_sessions where id = p_save_session_id and user_id = p_user_id and status = 'pending' and expires_at > now() for update;
-  if not found then raise exception 'Draft Pro save session is unavailable'; end if;
+  select s.* into session_row from public.draft_pro_save_sessions as s where s.id = p_save_session_id and s.user_id = p_user_id for update;
+  if not found then raise exception 'Draft Pro save session was not found'; end if;
+  if session_row.status='committed' then
+    select d.* into draft from public.draft_pro_drafts as d where d.id=session_row.draft_id and d.user_id=p_user_id;
+    select count(*) into draft_count from public.draft_pro_private_imports as i where i.draft_id=draft.id and i.deleted_at is null;
+    return query select 'saved',draft.id,draft.lock_version,draft.name,draft.updated_at,draft_count,null::integer; return;
+  end if;
+  if session_row.status<>'pending' or session_row.expires_at<=now() then raise exception 'Draft Pro save session is unavailable'; end if;
+  if exists (select 1 from public.draft_pro_private_import_uploads as u where u.save_session_id=session_row.id and u.status='uploading') then raise exception 'Private import upload is incomplete'; end if;
   if session_row.draft_id is null then
-    select count(*) into draft_count from public.draft_pro_drafts where user_id = p_user_id and status <> 'deleted'; if draft_count >= 10 then raise exception 'Draft Pro saved draft quota exceeded'; end if;
+    select count(*) into draft_count from public.draft_pro_drafts as d where d.user_id = p_user_id and d.status <> 'deleted'; if draft_count >= 10 then raise exception 'Draft Pro saved draft quota exceeded'; end if;
     insert into public.draft_pro_drafts(user_id,name,snapshot,snapshot_bytes) values(p_user_id,btrim(p_name),p_snapshot,p_snapshot_bytes) returning * into draft;
     update public.draft_pro_save_sessions set draft_id = draft.id where id = session_row.id;
   else
-    select * into draft from public.draft_pro_drafts where id = session_row.draft_id and user_id = p_user_id and status <> 'deleted' for update;
+    select d.* into draft from public.draft_pro_drafts as d where d.id = session_row.draft_id and d.user_id = p_user_id and d.status <> 'deleted' for update;
     if not found then raise exception 'Draft was not found'; end if;
     if draft.lock_version <> session_row.expected_version then return query select 'conflict', draft.id, draft.lock_version, draft.name, draft.updated_at, 0, draft.lock_version; return; end if;
     update public.draft_pro_drafts set name=btrim(p_name),snapshot=p_snapshot,snapshot_bytes=p_snapshot_bytes,lock_version=lock_version+1 where id=draft.id returning * into draft;
   end if;
-  select coalesce(sum(byte_size),0) into draft_bytes from public.draft_pro_private_imports where draft_id = draft.id and deleted_at is null;
-  select coalesce(sum(actual_bytes),0) into added_bytes from public.draft_pro_private_import_uploads where save_session_id = session_row.id and status = 'staged';
-  select coalesce(sum(i.byte_size),0) into reclaimed_bytes from public.draft_pro_private_import_uploads u join public.draft_pro_private_imports i on i.id=u.replacement_import_id where u.save_session_id=session_row.id and u.status='staged' and i.draft_id=draft.id and i.deleted_at is null;
-  if draft_bytes - reclaimed_bytes + added_bytes > 10485760 then raise exception 'Draft Pro draft import quota exceeded'; end if;
+  if cardinality(coalesce(p_import_ids,'{}'::uuid[])) <> (select count(distinct requested_id) from unnest(coalesce(p_import_ids,'{}'::uuid[])) as requested(requested_id)) then raise exception 'Duplicate retained import IDs are not allowed'; end if;
+  if exists (select 1 from public.draft_pro_private_imports as i where i.id=any(coalesce(p_import_ids,'{}'::uuid[])) and (i.user_id<>p_user_id or i.draft_id<>draft.id or i.deleted_at is not null)) then raise exception 'Retained private import was not found'; end if;
+  select coalesce(sum(i.byte_size),0) into draft_bytes from public.draft_pro_private_imports as i where i.id=any(coalesce(p_import_ids,'{}'::uuid[])) and i.deleted_at is null;
+  select coalesce(sum(u.actual_bytes),0) into added_bytes from public.draft_pro_private_import_uploads as u where u.save_session_id = session_row.id and u.status = 'staged';
+  if draft_bytes + added_bytes > 10485760 then raise exception 'Draft Pro draft import quota exceeded'; end if;
+  update public.draft_pro_private_imports as i set deleted_at=now() where i.draft_id=draft.id and i.deleted_at is null and not (i.id=any(coalesce(p_import_ids,'{}'::uuid[])));
   for upload in select * from public.draft_pro_private_import_uploads where save_session_id = session_row.id and status = 'staged' for update loop
     if upload.replacement_import_id is not null then
       select * into replacement from public.draft_pro_private_imports where id=upload.replacement_import_id and user_id=p_user_id and draft_id=draft.id and deleted_at is null for update;
@@ -178,10 +187,10 @@ begin
     insert into public.draft_pro_private_import_blobs(user_id,storage_path,byte_size,row_count,content_sha256) values(upload.user_id,upload.final_storage_path,upload.actual_bytes,upload.row_count,upload.content_sha256) returning * into blob;
     insert into public.draft_pro_private_imports(user_id,draft_id,name,content_type,storage_path,normalized_rows,mapping,byte_size,row_count,blob_id) values(upload.user_id,draft.id,upload.name,upload.content_type,upload.final_storage_path,'[]'::jsonb,upload.mapping,upload.actual_bytes,upload.row_count,blob.id);
   end loop;
-  update public.draft_pro_private_import_uploads set status='committed' where save_session_id=session_row.id and status='staged';
-  update public.draft_pro_private_imports set draft_id=draft.id where id=any(coalesce(p_import_ids,'{}'::uuid[])) and user_id=p_user_id and (draft_id is null or draft_id=draft.id) and deleted_at is null;
-  update public.draft_pro_save_sessions set status='committed' where id=session_row.id;
-  select count(*) into draft_count from public.draft_pro_private_imports where draft_id=draft.id and deleted_at is null;
+  update public.draft_pro_private_import_uploads as u set status='committed' where u.save_session_id=session_row.id and u.status='staged';
+  update public.draft_pro_save_sessions as s set status='committed' where s.id=session_row.id;
+  update public.draft_pro_private_import_blobs as b set status='cleanup_pending',cleanup_requested_at=now() where b.user_id=p_user_id and b.status='active' and not exists(select 1 from public.draft_pro_private_imports as i where i.blob_id=b.id and i.deleted_at is null);
+  select count(*) into draft_count from public.draft_pro_private_imports as i where i.draft_id=draft.id and i.deleted_at is null;
   return query select 'saved',draft.id,draft.lock_version,draft.name,draft.updated_at,draft_count,null::integer;
 end;
 $$;
@@ -204,7 +213,7 @@ returns table(status text,draft_id uuid,lock_version integer,name text,updated_a
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare draft public.draft_pro_drafts%rowtype;
 begin
-  select * into draft from public.draft_pro_drafts where id=p_draft_id and user_id=p_user_id and status<>'deleted' for update;
+  select d.* into draft from public.draft_pro_drafts as d where d.id=p_draft_id and d.user_id=p_user_id and d.status<>'deleted' for update;
   if not found then raise exception 'Draft was not found'; end if;
   if p_expected_version is null or draft.lock_version<>p_expected_version then return query select 'conflict',draft.id,draft.lock_version,draft.name,draft.updated_at,draft.lock_version; return; end if;
   update public.draft_pro_drafts set name=btrim(p_name),lock_version=lock_version+1 where id=draft.id returning * into draft;
@@ -218,13 +227,13 @@ language plpgsql security definer set search_path = public, pg_temp as $$
 declare draft public.draft_pro_drafts%rowtype; cleanup_count integer;
 begin
   perform pg_advisory_xact_lock(hashtext('draft-pro-save:' || p_user_id::text));
-  select * into draft from public.draft_pro_drafts where id=p_draft_id and user_id=p_user_id and status<>'deleted' for update;
+  select d.* into draft from public.draft_pro_drafts as d where d.id=p_draft_id and d.user_id=p_user_id and d.status<>'deleted' for update;
   if not found then raise exception 'Draft was not found'; end if;
   if p_expected_version is null or draft.lock_version<>p_expected_version then return query select 'conflict',draft.id,draft.lock_version,0,draft.lock_version; return; end if;
   update public.draft_pro_drafts set status='deleted',lock_version=lock_version+1 where id=draft.id returning * into draft;
-  update public.draft_pro_private_imports set deleted_at=now() where draft_id=draft.id and deleted_at is null;
+  update public.draft_pro_private_imports as i set deleted_at=now() where i.draft_id=draft.id and i.deleted_at is null;
   update public.draft_pro_private_import_blobs b set status='cleanup_pending',cleanup_requested_at=now() where b.user_id=p_user_id and b.status='active' and not exists(select 1 from public.draft_pro_private_imports i where i.blob_id=b.id and i.deleted_at is null);
-  select count(*) into cleanup_count from public.draft_pro_private_import_blobs where user_id=p_user_id and status='cleanup_pending';
+  select count(*) into cleanup_count from public.draft_pro_private_import_blobs as b where b.user_id=p_user_id and b.status='cleanup_pending';
   return query select 'deleted',draft.id,draft.lock_version,cleanup_count,null::integer;
 end;
 $$;
@@ -235,14 +244,14 @@ language plpgsql security definer set search_path = public, pg_temp as $$
 declare source_draft public.draft_pro_drafts%rowtype; copy_draft public.draft_pro_drafts%rowtype; draft_count integer; import_count integer;
 begin
   perform pg_advisory_xact_lock(hashtext('draft-pro-save:' || p_user_id::text));
-  select * into source_draft from public.draft_pro_drafts where id=p_draft_id and user_id=p_user_id and status<>'deleted' for update;
+  select d.* into source_draft from public.draft_pro_drafts as d where d.id=p_draft_id and d.user_id=p_user_id and d.status<>'deleted' for update;
   if not found then raise exception 'Draft was not found'; end if;
   if p_expected_version is null or source_draft.lock_version<>p_expected_version then return query select 'conflict',source_draft.id,source_draft.lock_version,source_draft.name,source_draft.updated_at,0,source_draft.lock_version; return; end if;
-  select count(*) into draft_count from public.draft_pro_drafts where user_id=p_user_id and status<>'deleted'; if draft_count>=10 then raise exception 'Draft Pro saved draft quota exceeded'; end if;
+  select count(*) into draft_count from public.draft_pro_drafts as d where d.user_id=p_user_id and d.status<>'deleted'; if draft_count>=10 then raise exception 'Draft Pro saved draft quota exceeded'; end if;
   insert into public.draft_pro_drafts(user_id,name,snapshot,snapshot_bytes) values(p_user_id,btrim(p_name),source_draft.snapshot,source_draft.snapshot_bytes) returning * into copy_draft;
   insert into public.draft_pro_private_imports(user_id,draft_id,name,content_type,storage_path,normalized_rows,mapping,byte_size,row_count,blob_id)
   select user_id,copy_draft.id,name,content_type,storage_path,normalized_rows,mapping,byte_size,row_count,blob_id from public.draft_pro_private_imports where draft_id=source_draft.id and deleted_at is null;
-  select count(*) into import_count from public.draft_pro_private_imports where draft_id=copy_draft.id and deleted_at is null;
+  select count(*) into import_count from public.draft_pro_private_imports as i where i.draft_id=copy_draft.id and i.deleted_at is null;
   return query select 'saved',copy_draft.id,copy_draft.lock_version,copy_draft.name,copy_draft.updated_at,import_count,null::integer;
 end;
 $$;
@@ -252,14 +261,14 @@ returns table(blob_id uuid,storage_path text)
 language plpgsql security definer set search_path = public, pg_temp as $$
 begin
   if p_limit not between 1 and 100 then raise exception 'Invalid cleanup limit'; end if;
-  return query select id,storage_path from public.draft_pro_private_import_blobs where user_id=p_user_id and status='cleanup_pending' order by cleanup_requested_at limit p_limit for update skip locked;
+  return query select b.id,b.storage_path from public.draft_pro_private_import_blobs as b where b.user_id=p_user_id and b.status='cleanup_pending' order by b.cleanup_requested_at limit p_limit for update skip locked;
 end;
 $$;
 create or replace function public.confirm_draft_pro_private_import_cleanup(p_user_id uuid,p_blob_ids uuid[])
 returns integer language plpgsql security definer set search_path = public, pg_temp as $$
 declare changed integer;
 begin
-  update public.draft_pro_private_import_blobs set status='deleted',deleted_at=now() where user_id=p_user_id and id=any(p_blob_ids) and status='cleanup_pending'; get diagnostics changed = row_count; return changed;
+  update public.draft_pro_private_import_blobs as b set status='deleted',deleted_at=now() where b.user_id=p_user_id and b.id=any(p_blob_ids) and b.status='cleanup_pending'; get diagnostics changed = row_count; return changed;
 end;
 $$;
 
