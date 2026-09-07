@@ -133,6 +133,9 @@ if [[ ${#migrations[@]} -gt 0 ]]; then
     where relnamespace = 'public'::regnamespace and relkind = 'r';
   "
   psql_in_container < "$RLS_PROBES"
+  if [[ ${#migrations[@]} -eq 2 ]]; then
+    web/scripts/draft-pro/stripe-concurrency-probes.sh "$CONTAINER"
+  fi
   if [[ -n "$extra_probe" ]]; then
     git show "$extra_probe" | psql_in_container
     echo "probe=$extra_probe"
