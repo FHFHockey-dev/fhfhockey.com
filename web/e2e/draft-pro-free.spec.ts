@@ -71,7 +71,7 @@ test("free source weights change a blend without changing drafted picks", async 
   await expect(remainingPlayer).not.toHaveText(beforeProjection);
 });
 
-test("regression: free CSV source stays out of the visible blend after autosave", async ({ page }) => {
+test("free CSV source blends and restores after autosave", async ({ page }) => {
   await installDraftProFreeFixtures(page);
   page.once("dialog", (dialog) => dialog.accept());
   await page.goto("/draft-dashboard");
@@ -111,7 +111,7 @@ test("regression: free CSV source stays out of the visible blend after autosave"
     "5v5_skaters": { isSelected: true, weight: 0 },
     custom_csv_1: { isSelected: true, weight: 1 },
   });
-  await expect.soft(players.locator('tr[data-player-id="1002"]')).toContainText("405.0", { timeout: 2_000 });
+  await expect(players.locator('tr[data-player-id="1002"]')).toContainText("418.0");
 
   page.once("dialog", (dialog) => dialog.accept());
   await page.reload();
@@ -128,5 +128,5 @@ test("regression: free CSV source stays out of the visible blend after autosave"
   await expect(skaterSources.getByLabel("Toggle source Fixture CSV")).toBeChecked();
   await page.getByRole("button", { name: "Edit Weights", exact: true }).click();
   await expect(skaterSources.getByLabel("Fixture CSV weight percent", { exact: true })).toHaveValue("100");
-  await expect.soft(players.locator('tr[data-player-id="1002"]')).toContainText("405.0", { timeout: 2_000 });
+  await expect(players.locator('tr[data-player-id="1002"]')).toContainText("418.0");
 });
