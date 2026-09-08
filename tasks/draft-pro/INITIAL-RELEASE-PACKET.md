@@ -4,9 +4,9 @@ Status: preparation packet only. Draft Pro is not advertised as live from this p
 
 ## Proposed initial-release scope
 
-The locally approved initial-release candidates are the one-time 2026-27 pass, Stripe purchase and entitlement lifecycle, Patreon eligibility grant, refund request/access handling, roster-aware recommendations, personalized replacement suggestions, DUST, and aggregate CSV export. Account and expanded graph views are integration surfaces; the expanded graph remains free. DUST supports full-season daily-lineup analysis with its actual schedule window and freshness displayed. The free schedule matrix shows all 27 Yahoo weeks, with selected playoffs highlighted; OFF and B2B views may follow the selected playoffs.
+The locally approved initial-release candidates are the one-time 2026-27 pass, Stripe purchase and entitlement lifecycle, Patreon eligibility grant, refund request/access handling, roster-aware recommendations, personalized replacement suggestions, DUST, and aggregate CSV export. Account and expanded graph views are integration surfaces; the expanded graph remains free. The free DUST schedule matrix provides a position-by-week overview with player-by-week drilldown across all 27 Yahoo weeks, with selected playoffs highlighted; OFF and B2B views may follow the selected playoffs. Paid candidate DUST insights, alternatives, and schedule-fit sorting remain gated, with the actual analysis window and freshness displayed.
 
-Saved Drafts and private imports are a separately approved later milestone included in the same pass when enabled; production availability remains gated. Scenarios are being implemented, reports are queued, and Yahoo is parked. These milestones must not appear as currently available in launch copy.
+Saved Drafts and private imports are a separately approved later milestone set in the same pass when enabled; production availability remains gated. Scenarios and reports are locally approved, while Yahoo is parked. The initial candidates, Saved Drafts, and decision tools are ready for owner review when enabled; these milestones must not appear as currently available in launch copy.
 
 ## Contract
 
@@ -42,20 +42,26 @@ Canonical Draft Pro flags are all off by default: `DRAFT_PRO_CHECKOUT_ENABLED`, 
 
 ## Evidence and blockers
 
-Current approved local integration is `ab217e935`, which includes the later verification documentation on top of the approved Saved Drafts milestone set (`35edc72a2` and `c4e1bbb10`).
-
-- The full unit release candidate at `acc95703d` passed 4,349 tests with 3 skipped. After the subsequent autosave/import corrections, 29 targeted hook/workspace tests passed.
-- Current standalone TypeScript evidence is session `61020`, exit 0, recorded in `/tmp/draft-pro-chef-browser-fixture-types.log`.
-- Full real-service browser session `56624` and final styling-only session `37500` both exited 0, with cleanup verified. These are execution session IDs, not commit IDs.
-- Screenshots are retained under `/Users/tim/.codex/visualizations/2026/09/07/01a07c49-af48-7d63-8efd-734ea1d6c002/`.
-- The browser acceptance used 200% pinch plus a 640 CSS width reflow-equivalent check; actual desktop browser-chrome zoom is not claimed.
+- Product release-candidate checkpoint is `2d7cba039`; later verification commits are recorded separately and this packet does not make a provider launch claim.
+- Prior release-candidate evidence stays at `acc95703d`: root unit RC4349 passed with 3 skipped, plus targeted 29 tests after the final corrections, and full root TypeScript exited 0.
+- DUST is accepted at root code `4d371a801` and `a3e0fcb50`, with spec `28a9c8698` and Chef approval `19e037839`. Screenshots are retained under `/Users/tim/.codex/visualizations/2026/09/07/01a07c1d-047d-7660-954c-b3ce7d8ef7d2/dust-position-matrix/`.
+- The accepted DUST contract is the position-by-week overview with player-by-week drilldown and actual diamond-grid user reference; desktop and 390/320 verification are complete.
+- Scenario module/API and dashboard integration are locally approved: full desktop/private browser verification passed from sources `4fb5ce916` and `1e5db4c23` at roots `3cb5f069e` and `7dfac74c1`, with session `12014` exiting 0, cleanup verified, and the populated 390px mobile view showing no overflow. Artifacts are retained under the Chef `scenarios/` visualizations.
+- Report module integration is recorded at `7d834b147`; 18 focused tests passed in `/tmp/draft-pro-chef-report-module-tests.log`, final mount verification passed 19 tests from source `2d7cba039` in `/tmp/draft-pro-chef-report-mount-tests.log`, and the root typecheck session `33629` exited 0 with output in `/tmp/draft-pro-decision-tools-rc-types.log`. The real API is accepted from source `b6df29909` at root `58bde5036`, with session `99831` exiting 0 and cleanup verified. Final browser/print verification passed from source `cc51beb73` with stylesheet `12e1e88ad` at root `dd8c69c9c`, README correction `08d4353c`, session `95517` exiting 0, and cleanup verified; artifacts are retained under the Chef `reports/` visualizations.
+- Saved Drafts evidence and the external Stripe, Patreon, and Resend blockers remain unchanged. Do not claim provider launch readiness.
+- RC full suite source `2d7cba039` passed: session `67978` exited 0 with 763 files passed and 2 files skipped; 4,412 tests passed and 3 tests skipped. Output is in `/tmp/draft-pro-decision-tools-rc-full.log`.
+- Full real-service browser session `56624`, final styling-only session `37500`, and standalone TypeScript session `61020` remain the earlier Saved Drafts evidence; the screenshots live under `/Users/tim/.codex/visualizations/2026/09/07/01a07c49-af48-7d63-8efd-734ea1d6c002/`.
+- The Saved Draft browser acceptance used 200% pinch plus a 640 CSS width reflow-equivalent check; actual desktop browser-chrome zoom is not claimed.
 - Isolated verification covered the local Storage service, denied anon/two-user payload access, empty private listings, repeated batch deletion with missing paths, and overlapping Saved Drafts transactions where the second caller waited on the first lock and the stale caller received a conflict.
-- The free/account Chromium suite passed all 8 cases on the corrected integration baseline and covered manual drafting, comparison, source weights, local CSV restoration, graph keyboard close, free export denial, mocked paid export, and mocked account retry/access denial.
-- The full-season diagonal matrix follow-on is locally approved and covers 20 selected players by 27 weeks, unknown-team unavailable cells, desktop/mobile views, and the combined free/matrix and account flows.
+- The free/account matrix suite passed all 10 cases: the original run had 8 passed and 2 account failures caused solely by a synthetic URL mismatch; corrected loopback URL rerun passed both account cases in 13.1s. Session `29631` and outputs `/tmp/draft-pro-decision-tools-browser-regression.log` and `/tmp/draft-pro-decision-tools-account-regression.log` are retained.
 - Real Stripe test-mode Checkout/webhook validation, Patreon provider validation, and Resend delivery validation remain blocked until the owner supplies authorized provider configuration and test access.
+- The current matrix fixture is 2 position groups by 27 weeks, with player-by-week drilldown; the superseded 20-player claim is not current evidence.
+- Full unit/type evidence at `2d7cba039` preceded the CSS-only report browser verification at `dd8c69c9c`; no full-suite claim is made for the CSS-only head.
 
 ## Rollout and rollback
 
 Roll out with all flags off, then enable only the candidate capability whose implementation evidence, provider readiness, copy review, and owner approval are complete. Keep provider secrets server-side and use test-mode evidence first.
+
+Remaining external steps, in order: authorized test provider configuration; real test-mode events and reconciliation; owner review of terms, source permissions, and tax setup; then explicit authorization for production migrations, deployment, and activation.
 
 Rollback disables the affected feature flag or provider integration and preserves purchases, entitlements, refund records, retained data, and local drafts. Do not delete entitlements, private imports, or saved drafts. Reconcile Stripe and Patreon events received during an incident before re-enabling access.
