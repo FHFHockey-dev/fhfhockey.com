@@ -11,6 +11,21 @@ readonly DB="$ROOT-db" REST="$ROOT-rest" AUTH="$ROOT-auth" STORAGE="$ROOT-storag
 readonly PASSWORD="draft_pro_routes_local_only" JWT_SECRET="draft-pro-routes-local-only-jwt-secret"
 readonly WORK="$(mktemp -d)"
 next_pid="" gateway_pid="" schema_container=""
+stripe_interactive="${DRAFT_PRO_STRIPE_INTERACTIVE:-false}"
+stripe_env_file="${DRAFT_PRO_STRIPE_ENV_FILE:-}"
+if [[ "$stripe_interactive" == true ]]; then
+  [[ -n "$stripe_env_file" && -f "$stripe_env_file" ]] || { echo "DRAFT_PRO_STRIPE_ENV_FILE must name an existing ignored local env file." >&2; exit 64; }
+  git check-ignore -q -- "$stripe_env_file" || { echo "DRAFT_PRO_STRIPE_ENV_FILE must be ignored by Git." >&2; exit 64; }
+  set -a
+  # shellcheck disable=SC1090
+  source "$stripe_env_file"
+  set +a
+  for required in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET STRIPE_DRAFT_PRO_PRICE_ID STRIPE_DRAFT_PRO_PRODUCT_ID; do
+    [[ -n "${!required:-}" ]] || { echo "DRAFT_PRO_STRIPE_ENV_FILE is missing $required." >&2; exit 64; }
+  done
+  [[ "$STRIPE_SECRET_KEY" =~ ^(sk|rk)_test_ ]] || { echo "Interactive Stripe validation requires a Stripe test secret key." >&2; exit 64; }
+  DRAFT_PRO_CHECKOUT_ENABLED=true
+fi
 cleanup() {
   [[ -z "$next_pid" ]] || kill "$next_pid" >/dev/null 2>&1 || true
   [[ -z "$gateway_pid" ]] || kill "$gateway_pid" >/dev/null 2>&1 || true
@@ -73,9 +88,10 @@ SQL
 pg <<'SQL' >/dev/null
 insert into auth.users (instance_id,id,aud,role,email,raw_app_meta_data,raw_user_meta_data)
 values ('00000000-0000-0000-0000-000000000000','00000000-0000-4000-8000-000000000041','authenticated','authenticated','route-a@example.invalid','{}','{}'),
-       ('00000000-0000-0000-0000-000000000000','00000000-0000-4000-8000-000000000042','authenticated','authenticated','route-b@example.invalid','{}','{}')
+       ('00000000-0000-0000-0000-000000000000','00000000-0000-4000-8000-000000000042','authenticated','authenticated','route-b@example.invalid','{}','{}'),
+       ('00000000-0000-0000-0000-000000000000','00000000-0000-4000-8000-000000000043','authenticated','authenticated','stripe-sandbox@example.invalid','{}','{}')
 on conflict (id) do nothing;
-update auth.users set confirmation_token='', recovery_token='', email_change='', email_change_token_new='', email_change_token_current='', reauthentication_token='', phone_change='', phone_change_token='', created_at=now(), updated_at=now() where id in ('00000000-0000-4000-8000-000000000041','00000000-0000-4000-8000-000000000042');
+update auth.users set confirmation_token='', recovery_token='', email_change='', email_change_token_new='', email_change_token_current='', reauthentication_token='', phone_change='', phone_change_token='', created_at=now(), updated_at=now() where id in ('00000000-0000-4000-8000-000000000041','00000000-0000-4000-8000-000000000042','00000000-0000-4000-8000-000000000043');
 insert into public.user_entitlements (user_id,source_provider,entitlement_key,entitlement_status,source_reference,effective_from,effective_to)
 values ('00000000-0000-4000-8000-000000000041','stripe','draft_pro','active','route-a',now()-interval '1 day','2027-07-01T04:00:00Z'),
        ('00000000-0000-4000-8000-000000000042','stripe','draft_pro','active','route-b',now()-interval '1 day','2027-07-01T04:00:00Z');
@@ -87,7 +103,7 @@ const h=enc({alg:'HS256',typ:'JWT'}), p=enc({aud:'authenticated',role:process.en
 process.stdout.write(`${h}.${p}.${crypto.createHmac('sha256',process.env.TOKEN_SECRET).update(`${h}.${p}`).digest('base64url')}`);
 NODE
 }
-anon_key="$(token anon)"; service_key="$(token service_role)"; user_a="$(TOKEN_JTI=device-a token authenticated 00000000-0000-4000-8000-000000000041 route-a@example.invalid)"; user_a_second="$(TOKEN_JTI=device-b token authenticated 00000000-0000-4000-8000-000000000041 route-a@example.invalid)"; user_b="$(token authenticated 00000000-0000-4000-8000-000000000042 route-b@example.invalid)"
+anon_key="$(token anon)"; service_key="$(token service_role)"; user_a="$(TOKEN_JTI=device-a token authenticated 00000000-0000-4000-8000-000000000041 route-a@example.invalid)"; user_a_second="$(TOKEN_JTI=device-b token authenticated 00000000-0000-4000-8000-000000000041 route-a@example.invalid)"; user_b="$(token authenticated 00000000-0000-4000-8000-000000000042 route-b@example.invalid)"; user_stripe="$(TOKEN_JTI=stripe-sandbox token authenticated 00000000-0000-4000-8000-000000000043 stripe-sandbox@example.invalid)"
 storage_files="$WORK/storage"; mkdir -p "$storage_files"
 docker run -d --name "$REST" --network "$NET" --publish 127.0.0.1::3000 -e "PGRST_DB_URI=postgres://authenticator:$PASSWORD@db:5432/postgres" -e "PGRST_DB_SCHEMAS=public,storage" -e "PGRST_DB_ANON_ROLE=anon" -e "PGRST_JWT_SECRET=$JWT_SECRET" "$REST_IMAGE" >/dev/null
 docker run -d --name "$AUTH" --network "$NET" --publish 127.0.0.1::9999 -e GOTRUE_API_HOST=0.0.0.0 -e GOTRUE_API_PORT=9999 -e "GOTRUE_DB_DATABASE_URL=postgres://supabase_auth_admin:$PASSWORD@db:5432/postgres" -e GOTRUE_DB_DRIVER=postgres -e "GOTRUE_JWT_SECRET=$JWT_SECRET" -e GOTRUE_SITE_URL=http://localhost -e API_EXTERNAL_URL=http://localhost -e GOTRUE_INSTANCE_ID=00000000-0000-0000-0000-000000000000 -e GOTRUE_DISABLE_SIGNUP=true "$AUTH_IMAGE" >/dev/null
@@ -113,7 +129,9 @@ for _ in $(seq 1 45); do curl -sf -H "Authorization: Bearer $user_a" "$gateway/a
 curl -sf -H "Authorization: Bearer $user_a" "$gateway/auth/v1/user" >/dev/null
 
 next_port="$(node -e 'const net=require("net");const s=net.createServer().listen(0,"127.0.0.1",()=>{console.log(s.address().port);s.close()})')"
-(cd web && exec env PLAYER_FORECAST_ISOLATED_NEXT=1 NEXT_PUBLIC_SUPABASE_URL="$gateway" NEXT_PUBLIC_SUPABASE_PUBLIC_KEY="$anon_key" SUPABASE_SERVICE_ROLE_KEY="$service_key" DRAFT_PRO_SAVED_DRAFTS_ENABLED=true DRAFT_PRO_PRIVATE_IMPORTS_ENABLED=true DRAFT_PRO_SCENARIOS_ENABLED=true DRAFT_PRO_REPORTS_ENABLED="${DRAFT_PRO_REPORTS_ENABLED:-${DRAFT_PRO_REPORTS_ONLY:-false}}" NEXT_TELEMETRY_DISABLED=1 ./node_modules/.bin/next dev -H 127.0.0.1 -p "$next_port") >"$WORK/next.log" 2>&1 &
+next_url="http://127.0.0.1:$next_port"
+[[ "$stripe_interactive" != true ]] || NEXT_PUBLIC_SITE_URL="$next_url"
+(cd web && exec env PLAYER_FORECAST_ISOLATED_NEXT=1 NEXT_PUBLIC_SUPABASE_URL="$gateway" NEXT_PUBLIC_SUPABASE_PUBLIC_KEY="$anon_key" SUPABASE_SERVICE_ROLE_KEY="$service_key" DRAFT_PRO_SAVED_DRAFTS_ENABLED=true DRAFT_PRO_PRIVATE_IMPORTS_ENABLED=true DRAFT_PRO_SCENARIOS_ENABLED=true DRAFT_PRO_REPORTS_ENABLED="${DRAFT_PRO_REPORTS_ENABLED:-${DRAFT_PRO_REPORTS_ONLY:-false}}" DRAFT_PRO_CHECKOUT_ENABLED="${DRAFT_PRO_CHECKOUT_ENABLED:-false}" NEXT_PUBLIC_SITE_URL="${NEXT_PUBLIC_SITE_URL:-$next_url}" NEXT_TELEMETRY_DISABLED=1 ./node_modules/.bin/next dev -H 127.0.0.1 -p "$next_port") >"$WORK/next.log" 2>&1 &
 next_pid=$!
 for _ in $(seq 1 60); do
   kill -0 "$next_pid" >/dev/null 2>&1 || { cat "$WORK/next.log" >&2; exit 1; }
@@ -122,7 +140,23 @@ for _ in $(seq 1 60); do
 done
 kill -0 "$next_pid" >/dev/null 2>&1
 [[ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$next_port/api/v1/account/draft-pro/drafts")" == 401 ]]
-export NEXT_URL="http://127.0.0.1:$next_port" SUPABASE_GATEWAY="$gateway" USER_A="$user_a" USER_A_SECOND="$user_a_second" USER_B="$user_b" SERVICE_KEY="$service_key"
+export NEXT_URL="$next_url" SUPABASE_GATEWAY="$gateway" USER_A="$user_a" USER_A_SECOND="$user_a_second" USER_B="$user_b" USER_STRIPE="$user_stripe" SERVICE_KEY="$service_key" STRIPE_SANDBOX_USER_ID="00000000-0000-4000-8000-000000000043"
+if [[ "$stripe_interactive" == true ]]; then
+  browser_auth_file="$WORK/stripe-sandbox-browser-auth.js"
+  NEXT_URL="$next_url" USER_STRIPE="$user_stripe" node - <<'NODE' >"$browser_auth_file"
+const session={access_token:process.env.USER_STRIPE,refresh_token:process.env.USER_STRIPE,token_type:"bearer",expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,user:{id:"00000000-0000-4000-8000-000000000043",aud:"authenticated",role:"authenticated",email:"stripe-sandbox@example.invalid"}};
+localStorage.setItem("sb-127-auth-token",JSON.stringify(session));
+location.assign(`${process.env.NEXT_URL}/account?section=draft-pro`);
+NODE
+  echo "stripe_sandbox=ready; next=$next_url; webhook=$next_url/api/v1/webhooks/stripe"
+  echo "Open $next_url, run the local-only browser bootstrap at $browser_auth_file in DevTools, then complete the sandbox Checkout for the free stripe-sandbox@example.invalid user."
+  echo "Forward Stripe CLI webhooks to $next_url/api/v1/webhooks/stripe. After the signed event and return-page verification complete, press Enter to verify the isolated database and clean up."
+  [[ -t 0 ]] || { echo "Stripe interactive mode requires a terminal for explicit cleanup." >&2; exit 64; }
+  read -r -p "Press Enter after sandbox Checkout, webhook delivery, and return verification: "
+  (cd web && NODE_PATH=.:node_modules ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/verify-stripe-sandbox-runner.ts)
+  finish
+  exit 0
+fi
 if [[ "${DRAFT_PRO_SCENARIOS_BROWSER_ONLY:-false}" == true ]]; then
   (cd web && NODE_PATH=.:node_modules ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/verify-scenarios-browser-runner.ts)
   finish

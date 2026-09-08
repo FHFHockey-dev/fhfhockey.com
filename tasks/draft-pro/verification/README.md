@@ -89,3 +89,17 @@ DRAFT_PRO_REPORTS_BROWSER_ONLY=true DRAFT_PRO_REPORTS_ENABLED=true web/scripts/d
 It covers lazy opening, a complete current report, an owned opened Saved Draft with a private import, history reopen, a failed generation retry, source-weight mismatch blocking until the Saved Draft succeeds, exact submitted totals/scoring/source provenance, unchanged picks, inactive names-only locking, popup-block guidance, report-only print output, loaded 390px mobile output, and denied anonymous, owner, and foreign-user direct PostgREST payload reads. Screenshots default to `/tmp/draft-pro-reports-browser-artifacts` and can be redirected with `DRAFT_PRO_REPORTS_BROWSER_ARTIFACTS`.
 
 All scenario and report modes use synthetic public projection fixtures. Authentication, account routes, PostgREST, private Storage, persistence, and ownership checks use the disposable real local services. The mobile report artifact is evidence of loaded output; it is not an actual browser-chrome 200% zoom claim.
+
+## Interactive Stripe sandbox
+
+For an operator-run Stripe test-mode checkout against an isolated local database, put the required Stripe test configuration in an ignored local file (for example `web/.env.draft-pro-stripe-sandbox.local`) and run:
+
+```sh
+DRAFT_PRO_STRIPE_INTERACTIVE=true \
+  DRAFT_PRO_STRIPE_ENV_FILE=web/.env.draft-pro-stripe-sandbox.local \
+  web/scripts/draft-pro/verify-saved-drafts-routes.sh
+```
+
+The supplied file must be ignored by Git and define `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_DRAFT_PRO_PRICE_ID`, and `STRIPE_DRAFT_PRO_PRODUCT_ID`. The harness never prints their values or starts Stripe calls itself. It creates a fresh, entitlement-free local user (`stripe-sandbox@example.invalid`), starts the local services, and prints the local Next URL, Stripe CLI forwarding target, and a temporary browser-auth bootstrap file. Use that file in browser DevTools, initiate checkout from the account page, and have Stripe CLI forward signed events to the emitted webhook URL. Complete the Stripe test checkout and allow the return page to verify it.
+
+Press Enter in the harness terminal only after both the signed CLI event and return-page verification have completed. The final local-only runner requires one route-created `cs_test_` session, a processed `evt_` provider event, a processed `return:cs_test_` replay, an active Stripe entitlement, and an account API read that exposes the active purchase; it then cleans up all owned local services. This mode is intentionally interactive and must not be used with production Stripe credentials.
