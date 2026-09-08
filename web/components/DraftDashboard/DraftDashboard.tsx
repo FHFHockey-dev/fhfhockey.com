@@ -33,6 +33,7 @@ import SavedDraftsWorkspace from "./SavedDraftsWorkspace";
 import type { SavedDraftAnnotations } from "./SavedDraftsPanel";
 import { adaptScenarioDashboard, type ScenarioSavedImportContext } from "lib/draft-pro/scenarioDashboardAdapter";
 import { ScenarioComparisonWorkspace } from "./ScenarioComparisonWorkspace";
+import { showScenarioWorkspace, toggleScenarioWorkspace, type ScenarioWorkspaceState } from "lib/draftDashboard/scenarioWorkspaceState";
 import ProjectionsTable from "./ProjectionsTable";
 import { useVORPCalculations } from "hooks/useVORPCalculations";
 import { useDraftProAccess } from "hooks/useDraftProAccess";
@@ -515,6 +516,7 @@ const DraftDashboard: React.FC = () => {
     draftProAccess?.capabilities.includes("recommendations"),
   );
   const canUseProScenarios = Boolean(draftProAccess?.capabilities.includes("scenarios"));
+  const canOpenScenarioHistory = Boolean(user);
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(
@@ -581,9 +583,7 @@ const DraftDashboard: React.FC = () => {
   const [suggestedCompareOpen, setSuggestedCompareOpen] = useState(false);
   const [savedDraftsOpen, setSavedDraftsOpen] = useState(false);
   const [savedDraftsMounted, setSavedDraftsMounted] = useState(false);
-  const [scenarioWorkspaceOpen, setScenarioWorkspaceOpen] = useState(false);
-  const [scenarioWorkspaceMounted, setScenarioWorkspaceMounted] = useState(false);
-  const [scenarioCandidateIds, setScenarioCandidateIds] = useState<string[]>([]);
+  const [scenarioWorkspace, setScenarioWorkspace] = useState<ScenarioWorkspaceState>({ mounted: false, open: false, candidateIds: [] });
   const [favoriteIds, setFavoriteIds] = useState<string[]>(readStoredFavoriteIds);
   const [scenarioSavedImportContext, setScenarioSavedImportContext] = useState<ScenarioSavedImportContext | null>(null);
   const [workspaceAnnotations, setWorkspaceAnnotations] = useState<SavedDraftAnnotations>({
@@ -2283,10 +2283,10 @@ const DraftDashboard: React.FC = () => {
     availablePlayers,
     rosterAssignments,
     myTeamId,
-    candidateIds: scenarioCandidateIds,
+    candidateIds: scenarioWorkspace.candidateIds,
     vorpMetrics,
     leagueType: draftSettings.leagueType || "points",
-    scoring: activeScoringCategories,
+    scoring: { ...draftSettings.scoringCategories, ...goaliePointValues },
     categoryWeights: draftSettings.categoryWeights,
     positionNeeds: posNeeds,
     season: currentSeasonId == null ? null : String(currentSeasonId),
@@ -2295,12 +2295,11 @@ const DraftDashboard: React.FC = () => {
     goalieSourceControls,
     customCsvList,
     savedImportContext: scenarioSavedImportContext,
-  }), [activeScoringCategories, allPlayers, availablePlayers, currentSeasonId, customCsvList, draftSettings.categoryWeights, draftSettings.leagueType, goalieSourceControls, myTeamId, posNeeds, rosterAssignments, scenarioCandidateIds, scenarioSavedImportContext, scenarioSchedule, sourceControls, vorpMetrics]);
+  }), [allPlayers, availablePlayers, currentSeasonId, customCsvList, draftSettings.categoryWeights, draftSettings.leagueType, draftSettings.scoringCategories, goaliePointValues, goalieSourceControls, myTeamId, posNeeds, rosterAssignments, scenarioWorkspace.candidateIds, scenarioSavedImportContext, scenarioSchedule, sourceControls, vorpMetrics]);
   const openRosterImpact = useCallback((candidateIds: readonly string[] = []) => {
-    setScenarioCandidateIds([...candidateIds]);
-    setScenarioWorkspaceMounted(true);
-    setScenarioWorkspaceOpen(true);
+    setScenarioWorkspace((current) => showScenarioWorkspace(current, candidateIds));
   }, []);
+  const toggleRosterImpact = useCallback(() => setScenarioWorkspace(toggleScenarioWorkspace), []);
 
   // NEW: category deficits vector for my team (categories mode): league mean - my totals
   const catNeeds = React.useMemo(() => {
@@ -3351,11 +3350,11 @@ const DraftDashboard: React.FC = () => {
           onAnnotationsChange={setWorkspaceAnnotations}
           onSavedImportContextChange={setScenarioSavedImportContext}
         /></div> : null}
-        {canUseProScenarios ? <>
-          <button type="button" onClick={() => openRosterImpact()} aria-expanded={scenarioWorkspaceOpen}>
-            {scenarioWorkspaceOpen ? "Hide Roster Impact" : "Roster Impact Scenarios"}
+        {canOpenScenarioHistory ? <>
+          <button type="button" onClick={toggleRosterImpact} aria-expanded={scenarioWorkspace.open}>
+            {scenarioWorkspace.open ? "Hide Roster Impact" : "Roster Impact Scenarios"}
           </button>
-          {scenarioWorkspaceMounted ? <div hidden={!scenarioWorkspaceOpen}>
+          {scenarioWorkspace.mounted ? <div hidden={!scenarioWorkspace.open}>
             {scenarioAdapter.unavailableReason ? <p role="status">{scenarioAdapter.unavailableReason}</p> : null}
             <ScenarioComparisonWorkspace eligible={canUseProScenarios} input={scenarioAdapter.input} draftId={scenarioAdapter.draftId} />
           </div> : null}
