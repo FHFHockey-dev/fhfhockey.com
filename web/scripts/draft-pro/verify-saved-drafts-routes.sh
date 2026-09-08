@@ -11,15 +11,18 @@ readonly DB="$ROOT-db" REST="$ROOT-rest" AUTH="$ROOT-auth" STORAGE="$ROOT-storag
 readonly PASSWORD="draft_pro_routes_local_only" JWT_SECRET="draft-pro-routes-local-only-jwt-secret"
 readonly WORK="$(mktemp -d)"
 next_pid="" gateway_pid="" schema_container=""
+[[ -d web/node_modules ]] || { echo "web/node_modules is required (reuse an existing workspace install)." >&2; exit 66; }
 stripe_interactive="${DRAFT_PRO_STRIPE_INTERACTIVE:-false}"
 stripe_env_file="${DRAFT_PRO_STRIPE_ENV_FILE:-}"
 if [[ "$stripe_interactive" == true ]]; then
   [[ -n "$stripe_env_file" && -f "$stripe_env_file" ]] || { echo "DRAFT_PRO_STRIPE_ENV_FILE must name an existing ignored local env file." >&2; exit 64; }
   git check-ignore -q -- "$stripe_env_file" || { echo "DRAFT_PRO_STRIPE_ENV_FILE must be ignored by Git." >&2; exit 64; }
-  set -a
-  # shellcheck disable=SC1090
-  source "$stripe_env_file"
-  set +a
+  while IFS= read -r -d '' stripe_entry; do export "$stripe_entry"; done < <(STRIPE_ENV_FILE="$stripe_env_file" node - <<'NODE'
+const fs=require('fs'),dotenv=require('./web/node_modules/dotenv');
+const values=dotenv.parse(fs.readFileSync(process.env.STRIPE_ENV_FILE));
+for (const key of ['STRIPE_SECRET_KEY','STRIPE_WEBHOOK_SECRET','STRIPE_DRAFT_PRO_PRICE_ID','STRIPE_DRAFT_PRO_PRODUCT_ID']) if (values[key] !== undefined) process.stdout.write(`${key}=${values[key]}\0`);
+NODE
+)
   for required in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET STRIPE_DRAFT_PRO_PRICE_ID STRIPE_DRAFT_PRO_PRODUCT_ID; do
     [[ -n "${!required:-}" ]] || { echo "DRAFT_PRO_STRIPE_ENV_FILE is missing $required." >&2; exit 64; }
   done
@@ -60,7 +63,6 @@ finish() {
   echo "saved_drafts_routes=passed; auth=gotrue; rest=postgrest; storage=storage-api; cleanup=verified"
 }
 
-[[ -d web/node_modules ]] || { echo "web/node_modules is required (reuse an existing workspace install)." >&2; exit 66; }
 docker network create "$NET" >/dev/null
 docker run -d --rm --name "$DB" --network "$NET" --network-alias db -e "POSTGRES_PASSWORD=$PASSWORD" "$PG_IMAGE" >/dev/null
 for _ in $(seq 1 45); do docker exec "$DB" pg_isready -U postgres -d postgres >/dev/null 2>&1 && break; sleep 1; done
@@ -145,9 +147,10 @@ if [[ "$stripe_interactive" == true ]]; then
   browser_auth_file="$WORK/stripe-sandbox-browser-auth.js"
   NEXT_URL="$next_url" USER_STRIPE="$user_stripe" node - <<'NODE' >"$browser_auth_file"
 const session={access_token:process.env.USER_STRIPE,refresh_token:process.env.USER_STRIPE,token_type:"bearer",expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,user:{id:"00000000-0000-4000-8000-000000000043",aud:"authenticated",role:"authenticated",email:"stripe-sandbox@example.invalid"}};
-localStorage.setItem("sb-127-auth-token",JSON.stringify(session));
-location.assign(`${process.env.NEXT_URL}/account?section=draft-pro`);
+process.stdout.write(`localStorage.setItem("sb-127-auth-token",${JSON.stringify(JSON.stringify(session))});\n`);
+process.stdout.write(`location.assign(${JSON.stringify(`${process.env.NEXT_URL}/account?section=draft-pro`)});\n`);
 NODE
+  chmod 600 "$browser_auth_file"
   echo "stripe_sandbox=ready; next=$next_url; webhook=$next_url/api/v1/webhooks/stripe"
   echo "Open $next_url, run the local-only browser bootstrap at $browser_auth_file in DevTools, then complete the sandbox Checkout for the free stripe-sandbox@example.invalid user."
   echo "Forward Stripe CLI webhooks to $next_url/api/v1/webhooks/stripe. After the signed event and return-page verification complete, press Enter to verify the isolated database and clean up."
