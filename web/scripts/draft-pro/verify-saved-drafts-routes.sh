@@ -52,6 +52,8 @@ for _ in $(seq 1 45); do docker exec "$DB" pg_isready -U postgres -d postgres >/
 docker exec "$DB" pg_isready -U postgres -d postgres >/dev/null
 pg() { docker exec -i "$DB" psql -v ON_ERROR_STOP=1 -U postgres -d postgres "$@"; }
 pg_storage() { docker exec -e "PGPASSWORD=$PASSWORD" -i "$DB" psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U supabase_admin -d postgres "$@"; }
+for _ in $(seq 1 45); do pg_storage -c 'select 1' >/dev/null 2>&1 && break; sleep 1; done
+pg_storage -c 'select 1' >/dev/null
 
 schema_container="$ROOT-storage-schema"; docker create --name "$schema_container" "$STORAGE_IMAGE" >/dev/null
 for migration in 0008-add-public-to-buckets.sql 0013-add-bucket-custom-limits.sql 0014-use-bytes-for-max-size.sql; do docker cp "$schema_container:/app/migrations/tenant/$migration" "$WORK/$migration"; pg_storage < "$WORK/$migration" >/dev/null; done
