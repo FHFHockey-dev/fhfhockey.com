@@ -31,7 +31,8 @@ import MyRoster from "./MyRoster";
 import DustMatrix from "./DustMatrix";
 import SavedDraftsWorkspace from "./SavedDraftsWorkspace";
 import type { SavedDraftAnnotations } from "./SavedDraftsPanel";
-import type { ScenarioSavedImportContext } from "lib/draft-pro/scenarioDashboardAdapter";
+import { adaptScenarioDashboard, type ScenarioSavedImportContext } from "lib/draft-pro/scenarioDashboardAdapter";
+import { ScenarioComparisonWorkspace } from "./ScenarioComparisonWorkspace";
 import ProjectionsTable from "./ProjectionsTable";
 import { useVORPCalculations } from "hooks/useVORPCalculations";
 import { useDraftProAccess } from "hooks/useDraftProAccess";
@@ -513,6 +514,7 @@ const DraftDashboard: React.FC = () => {
   const canUseProRecommendations = Boolean(
     draftProAccess?.capabilities.includes("recommendations"),
   );
+  const canUseProScenarios = Boolean(draftProAccess?.capabilities.includes("scenarios"));
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(
@@ -579,6 +581,9 @@ const DraftDashboard: React.FC = () => {
   const [suggestedCompareOpen, setSuggestedCompareOpen] = useState(false);
   const [savedDraftsOpen, setSavedDraftsOpen] = useState(false);
   const [savedDraftsMounted, setSavedDraftsMounted] = useState(false);
+  const [scenarioWorkspaceOpen, setScenarioWorkspaceOpen] = useState(false);
+  const [scenarioWorkspaceMounted, setScenarioWorkspaceMounted] = useState(false);
+  const [scenarioCandidateIds, setScenarioCandidateIds] = useState<string[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>(readStoredFavoriteIds);
   const [scenarioSavedImportContext, setScenarioSavedImportContext] = useState<ScenarioSavedImportContext | null>(null);
   const [workspaceAnnotations, setWorkspaceAnnotations] = useState<SavedDraftAnnotations>({
@@ -2263,6 +2268,40 @@ const DraftDashboard: React.FC = () => {
     return res;
   }, [effectiveRosterConfig, forwardGrouping, myTeamStats]);
 
+  const scenarioSchedule = useMemo(() => {
+    if (!draftSchedule.selectedWeeks.length) return null;
+    const weeks = draftSchedule.selectedWeeks.map((week) => week.week);
+    return {
+      startWeek: Math.min(...weeks),
+      endWeek: Math.max(...weeks),
+      lineupMode: dustLineupMode,
+      rosterSlots: effectiveRosterConfig,
+    };
+  }, [draftSchedule.selectedWeeks, dustLineupMode, effectiveRosterConfig]);
+  const scenarioAdapter = useMemo(() => adaptScenarioDashboard({
+    players: allPlayers,
+    availablePlayers,
+    rosterAssignments,
+    myTeamId,
+    candidateIds: scenarioCandidateIds,
+    vorpMetrics,
+    leagueType: draftSettings.leagueType || "points",
+    scoring: activeScoringCategories,
+    categoryWeights: draftSettings.categoryWeights,
+    positionNeeds: posNeeds,
+    season: currentSeasonId == null ? null : String(currentSeasonId),
+    schedule: scenarioSchedule,
+    sourceControls,
+    goalieSourceControls,
+    customCsvList,
+    savedImportContext: scenarioSavedImportContext,
+  }), [activeScoringCategories, allPlayers, availablePlayers, currentSeasonId, customCsvList, draftSettings.categoryWeights, draftSettings.leagueType, goalieSourceControls, myTeamId, posNeeds, rosterAssignments, scenarioCandidateIds, scenarioSavedImportContext, scenarioSchedule, sourceControls, vorpMetrics]);
+  const openRosterImpact = useCallback((candidateIds: readonly string[] = []) => {
+    setScenarioCandidateIds([...candidateIds]);
+    setScenarioWorkspaceMounted(true);
+    setScenarioWorkspaceOpen(true);
+  }, []);
+
   // NEW: category deficits vector for my team (categories mode): league mean - my totals
   const catNeeds = React.useMemo(() => {
     if ((draftSettings.leagueType || "points") !== "categories")
@@ -3242,6 +3281,7 @@ const DraftDashboard: React.FC = () => {
             dustInsights={canUseProDust ? draftProDustInsights : undefined}
             emptyStateMessage={projectionEmptyStateMessage}
             onFavoriteIdsChange={setFavoriteIds}
+            onOpenRosterImpact={canUseProScenarios ? openRosterImpact : undefined}
           />
   ), [
     currentSeasonId, availablePlayers, allPlayers, draftedPlayers,
@@ -3254,7 +3294,7 @@ const DraftDashboard: React.FC = () => {
     goaliePointValues, skaterData.yahooMappingDiagnostics,
     goalieData.yahooMappingDiagnostics, sourceRankImpacts,
     skaterData.inclusionDiagnostics, goalieData.inclusionDiagnostics,
-    draftSchedule.playerMetrics, tableDataNotices, canUseProDust, draftProDustInsights, projectionEmptyStateMessage, setFavoriteIds,
+    draftSchedule.playerMetrics, tableDataNotices, canUseProDust, draftProDustInsights, projectionEmptyStateMessage, setFavoriteIds, canUseProScenarios, openRosterImpact,
   ]);
 
   return (
@@ -3311,6 +3351,15 @@ const DraftDashboard: React.FC = () => {
           onAnnotationsChange={setWorkspaceAnnotations}
           onSavedImportContextChange={setScenarioSavedImportContext}
         /></div> : null}
+        {canUseProScenarios ? <>
+          <button type="button" onClick={() => openRosterImpact()} aria-expanded={scenarioWorkspaceOpen}>
+            {scenarioWorkspaceOpen ? "Hide Roster Impact" : "Roster Impact Scenarios"}
+          </button>
+          {scenarioWorkspaceMounted ? <div hidden={!scenarioWorkspaceOpen}>
+            {scenarioAdapter.unavailableReason ? <p role="status">{scenarioAdapter.unavailableReason}</p> : null}
+            <ScenarioComparisonWorkspace eligible={canUseProScenarios} input={scenarioAdapter.input} draftId={scenarioAdapter.draftId} />
+          </div> : null}
+        </> : null}
       </section>
 
       <DraftSettingsShell

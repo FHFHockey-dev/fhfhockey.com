@@ -74,6 +74,7 @@ interface ProjectionsTableProps {
   personalRankByPlayerId?: Readonly<Record<string, number>>;
   dustInsights?: ReadonlyMap<string, DraftDashboardDustInsight>;
   onFavoriteIdsChange?: (ids: string[]) => void;
+  onOpenRosterImpact?: (selectedIds: readonly string[]) => void;
 }
 
 type SortableField =
@@ -134,6 +135,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   dustInsights,
   scheduleMetrics,
   onFavoriteIdsChange,
+  onOpenRosterImpact,
 }) => {
   const hasPersonalRanks = Object.keys(personalRankByPlayerId).length > 0;
   const [sortField, setSortField] = useState<SortableField>("yahooAvgPick");
@@ -1283,6 +1285,19 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 >
                   {`Compare`}
                 </button>
+                {onOpenRosterImpact && (
+                  <button
+                    type="button"
+                    className={styles.controlToggleBtn}
+                    onClick={() => onOpenRosterImpact(Array.from(selectedIds))}
+                    aria-label="Open roster impact scenarios"
+                    title={selectedIds.size === 2
+                      ? "Compare the selected players against your current roster"
+                      : "Open saved roster-impact scenarios; select two available players to compare"}
+                  >
+                    Roster impact
+                  </button>
+                )}
                 {selectedIds.size > 0 && (
                   <button
                     type="button"

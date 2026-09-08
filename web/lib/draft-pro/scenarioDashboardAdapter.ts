@@ -23,7 +23,7 @@ export type ScenarioDashboardAdapterArgs = Readonly<{
   categoryWeights?: Readonly<Record<string, number>>;
   positionNeeds: Readonly<Record<string, number>>;
   season: string | null;
-  schedule: Omit<ScenarioSource["schedule"], "season">;
+  schedule: Omit<ScenarioSource["schedule"], "season"> | null;
   sourceControls: ProjectionSourceControls;
   goalieSourceControls: ProjectionSourceControls;
   customCsvList: readonly SessionCsvEntry[];
@@ -100,6 +100,7 @@ function scenarioPlayer(
 
 export function adaptScenarioDashboard(args: ScenarioDashboardAdapterArgs): ScenarioDashboardAdapterResult {
   if (!args.season || !/^\d{8}$/.test(args.season)) return unavailable("Scenario analysis is unavailable until the projection season is loaded.");
+  if (!args.schedule) return unavailable("Scenario analysis is unavailable until the current matchup-week range is loaded.");
   if (args.schedule.endWeek < args.schedule.startWeek) return unavailable("Scenario analysis is unavailable because the matchup-week range is invalid.");
   if (args.candidateIds.length !== 2 || args.candidateIds[0] === args.candidateIds[1]) return unavailable("Choose two distinct available players to compare.");
 

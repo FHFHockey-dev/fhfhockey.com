@@ -96,6 +96,7 @@ describe("adaptScenarioDashboard", () => {
   });
 
   it("returns readable reasons when candidates or required point values are unavailable", () => {
+    expect(adaptScenarioDashboard({ ...base(), schedule: null }).unavailableReason).toMatch(/matchup-week range is loaded/);
     expect(adaptScenarioDashboard({ ...base(), candidateIds: ["2", "9"] }).unavailableReason).toMatch(/must still be available/);
     const missingPoints = player(2, "LW", null);
     const args = base();
