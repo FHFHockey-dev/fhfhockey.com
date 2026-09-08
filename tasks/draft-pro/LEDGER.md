@@ -8,6 +8,12 @@ User requested an overall percentage now and at every major checkpoint, without 
 
 Account-wide weekly usage: **47% consumed / 53% remaining**. Goal counter: **991,571 tokens / 8,976 seconds**. Account usage includes other tasks and is not per-project billing; no dollar-cost claim. Chef acknowledged excessive correction cycles and orchestration overhead. Execution tightened to one implementation task, with targeted verification only when a concrete checkpoint is ready. Bundle acceptance corrections, avoid repeated history reads/passed checks, downgrade after bounded hard issues. Report completion estimate and fresh account usage at major checkpoints. No reset credits authorized or consumed. Full scope remains active; no assurance the remaining weekly allowance suffices at the previous burn rate.
 
+## September 8 — authorized provider setup in progress
+
+Owner authorized Chrome-assisted Stripe, Patreon, and Resend setup, with all login/authentication handled personally. Stripe sandbox product `prod_VDtr5clMeJ09yF` and price `price_1UDS3mLaomqkve47XESASC1S` created. Actual Stripe API verified active, sandbox-only, USD 599 cents, one-time, matching product. Default sandbox payment-method configuration confirms Card and Link available and enabled. Owner saved test key in ignored local configuration; CLI signing secret saved without printing either secret. Stripe CLI 1.50.10 installed from Homebrew core for real signed local event forwarding. No live keys, payments, deployment, or production changes.
+
+W12 reopened at Terra/medium for a bounded interactive provider-validation extension of the existing isolated harness; exclusive scope is test harness/runner, no product or schema changes. Chef owns Chrome, sandbox credentials, provider actions, and acceptance. Actual checkout, webhook delivery/replay, and fulfillment remain pending; Patreon and Resend configuration remain pending. Overall estimate remains approximately 95% until end-to-end provider evidence is accepted.
+
 ## Current acceptance state
 
 | Work order | Local checkpoint | Remaining gate |
