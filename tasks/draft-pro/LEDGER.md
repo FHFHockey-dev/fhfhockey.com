@@ -26,6 +26,10 @@ Owner completed hosted sandbox Checkout; Stripe API confirms `complete`, `paid`,
 
 Real one-cent sandbox partial refund succeeded (`re_3UDXfCLaomqkve4722BPFDAN`). Stripe CLI forwarded signed `charge.refunded` event `evt_3UDXfCLaomqkve472i9Hijqe`; local webhook returned200, database event processed without error, purchase remained active/paid. W12 isolated runner passed against retained DB: one purchase, processed return event and CLI event, active entitlement, account-readable grant. Explicit limitation: this CLI event was the partial-refund event; original payment webhook was missed during outage, so payment-event delivery and other provider lifecycle checks remain open. Original connection error is resolved. Current restored service PIDs are in `/tmp/draft-pro-restored-pids.json`; cleanup pending after interactive validation.
 
+## September 8 — full sandbox refund and revoked replay passed
+
+Remaining 598-cent sandbox refund `re_3UDXfCLaomqkve472lws6MwS` succeeded (599 cents cumulative). Real signed refund event processed; purchase status/payment_state refunded, grant inactive, history retained. Replaying the original owned checkout verification returned200/ineligible and did not restore the revoked purchase. No real funds transacted. Patreon credentials awaiting owner secure paste; client configuration unchanged. Overall estimate stays96%; original payment-event delivery and remaining provider lifecycle checks are still unverified.
+
 ## Current acceptance state
 
 | Work order | Local checkpoint | Remaining gate |
