@@ -111,7 +111,7 @@ export async function installDustMatrixFixtures(page: Page, { incomplete = false
     player_id: 1001 + index,
     Player_Name: `Matrix Player ${String(index + 1).padStart(2, "0")}`,
     Team_Abbreviation: incomplete && index === 40 ? "ZZZ" : "AAA",
-    Position: index === 0 ? "C,RW" : "C",
+    Position: index === 0 ? "C,RW" : ["C", "LW", "RW", "D"][index % 4],
     Games_Played: 82,
     Goals: 20 + index,
     Assists: 35,
