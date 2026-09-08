@@ -11,6 +11,9 @@ export async function installDraftProFreeFixtures(page: Page, { seedSnapshot = t
   }, {
     player_id: 1002, Player_Name: "Fixture Center Two", Team_Abbreviation: "CCC", Position: "C",
     Games_Played: 82, Goals: 25, Assists: 40, Points: 65, Shots_on_Goal: 200,
+  }, {
+    player_id: 1003, Player_Name: "Fixture Center Three", Team_Abbreviation: "DDD", Position: "C",
+    Games_Played: 82, Goals: 20, Assists: 35, Points: 55, Shots_on_Goal: 180,
   }];
   const goalie = {
     player_id: 2001, Player_Name: "Fixture Goalie", Team_Abbreviation: "BBB", Position: "G",
@@ -28,7 +31,10 @@ export async function installDraftProFreeFixtures(page: Page, { seedSnapshot = t
       ? [
           { id: 1001, fullName: "Fixture Center", position: "C", lastName: "Center" },
           { id: 1002, fullName: "Fixture Center Two", position: "C", lastName: "Two" },
+          { id: 1003, fullName: "Fixture Center Three", position: "C", lastName: "Three" },
         ]
+      : table === "yahoo_matchup_weeks"
+        ? [{ week: 1, start_date: "2026-10-05", end_date: "2026-10-11" }]
       : table.startsWith("PROJECTIONS_")
         ? (table.includes("GOALIES") ? [goalie] : sourceAdjustedSkaters)
         : [];

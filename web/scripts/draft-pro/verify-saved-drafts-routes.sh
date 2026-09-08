@@ -118,6 +118,11 @@ done
 kill -0 "$next_pid" >/dev/null 2>&1
 [[ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$next_port/api/v1/account/draft-pro/drafts")" == 401 ]]
 export NEXT_URL="http://127.0.0.1:$next_port" SUPABASE_GATEWAY="$gateway" USER_A="$user_a" USER_A_SECOND="$user_a_second" USER_B="$user_b" SERVICE_KEY="$service_key"
+if [[ "${DRAFT_PRO_SCENARIOS_BROWSER_ONLY:-false}" == true ]]; then
+  (cd web && NODE_PATH=.:node_modules ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/verify-scenarios-browser-runner.ts)
+  finish
+  exit 0
+fi
 if [[ "${DRAFT_PRO_SCENARIOS_ONLY:-false}" == true ]]; then
   (cd web && NODE_PATH=.:node_modules ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/verify-scenarios-routes-runner.ts)
   finish
