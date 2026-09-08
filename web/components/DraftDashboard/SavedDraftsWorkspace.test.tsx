@@ -106,14 +106,17 @@ describe("SavedDraftsWorkspace", () => {
   it("exposes and clears the opened saved-import context", async () => {
     const snapshot: BrowserDraftSnapshot = browser();
     const onSavedImportContextChange = vi.fn();
-    const props = { getBrowserSnapshot: () => snapshot, applyBrowserSnapshot: (next: BrowserDraftSnapshot) => next, players: [], annotations: { selectedPlayerId: null, notes: [], tiers: {} }, onAnnotationsChange: vi.fn(), onSavedImportContextChange };
+    const onOpenedReportDraftChange = vi.fn();
+    const props = { getBrowserSnapshot: () => snapshot, applyBrowserSnapshot: (next: BrowserDraftSnapshot) => next, players: [], annotations: { selectedPlayerId: null, notes: [], tiers: {} }, onAnnotationsChange: vi.fn(), onSavedImportContextChange, onOpenedReportDraftChange };
     const view = render(<SavedDraftsWorkspace {...props} />);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Saved draft" })); await Promise.resolve(); });
     view.rerender(<SavedDraftsWorkspace {...props} />);
     expect(onSavedImportContextChange).toHaveBeenLastCalledWith(expect.objectContaining({ draftId: "draft-1", privateImports: expect.any(Array) }));
+    expect(onOpenedReportDraftChange).toHaveBeenLastCalledWith(expect.objectContaining({ id: "draft-1", snapshot: expect.any(Object), privateImports: expect.any(Array) }));
 
     saved.opened = null;
     view.rerender(<SavedDraftsWorkspace {...props} />);
     expect(onSavedImportContextChange).toHaveBeenLastCalledWith(null);
+    expect(onOpenedReportDraftChange).toHaveBeenLastCalledWith(null);
   });
 });

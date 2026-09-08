@@ -34,6 +34,8 @@ import type { SavedDraftAnnotations } from "./SavedDraftsPanel";
 import { adaptScenarioDashboard, type ScenarioSavedImportContext } from "lib/draft-pro/scenarioDashboardAdapter";
 import { ScenarioComparisonWorkspace } from "./ScenarioComparisonWorkspace";
 import { showScenarioWorkspace, toggleScenarioWorkspace, type ScenarioWorkspaceState } from "lib/draftDashboard/scenarioWorkspaceState";
+import { adaptReportDashboard, type OpenedReportDraft } from "lib/draft-pro/reportDashboardAdapter";
+import { AnalyticalReportsPanel } from "./AnalyticalReportsPanel";
 import ProjectionsTable from "./ProjectionsTable";
 import { useVORPCalculations } from "hooks/useVORPCalculations";
 import { useDraftProAccess } from "hooks/useDraftProAccess";
@@ -516,7 +518,9 @@ const DraftDashboard: React.FC = () => {
     draftProAccess?.capabilities.includes("recommendations"),
   );
   const canUseProScenarios = Boolean(draftProAccess?.capabilities.includes("scenarios"));
+  const canUseProReports = Boolean(draftProAccess?.capabilities.includes("reports"));
   const canOpenScenarioHistory = Boolean(user);
+  const canOpenReportHistory = Boolean(user);
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(
@@ -584,6 +588,9 @@ const DraftDashboard: React.FC = () => {
   const [savedDraftsOpen, setSavedDraftsOpen] = useState(false);
   const [savedDraftsMounted, setSavedDraftsMounted] = useState(false);
   const [scenarioWorkspace, setScenarioWorkspace] = useState<ScenarioWorkspaceState>({ mounted: false, open: false, candidateIds: [] });
+  const [reportsOpen, setReportsOpen] = useState(false);
+  const [reportsMounted, setReportsMounted] = useState(false);
+  const [openedReportDraft, setOpenedReportDraft] = useState<OpenedReportDraft | null>(null);
   const [favoriteIds, setFavoriteIds] = useState<string[]>(readStoredFavoriteIds);
   const [scenarioSavedImportContext, setScenarioSavedImportContext] = useState<ScenarioSavedImportContext | null>(null);
   const [workspaceAnnotations, setWorkspaceAnnotations] = useState<SavedDraftAnnotations>({
@@ -2309,6 +2316,43 @@ const DraftDashboard: React.FC = () => {
     setScenarioWorkspace((current) => showScenarioWorkspace(current, candidateIds));
   }, []);
   const toggleRosterImpact = useCallback(() => setScenarioWorkspace(toggleScenarioWorkspace), []);
+  const currentReportComplete = useMemo(() => {
+    const expectedPicks = draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig);
+    return new Set([...draftedPlayers, ...keepers].map((player) => player.playerId)).size >= expectedPicks;
+  }, [draftSettings.rosterConfig, draftSettings.teamCount, draftedPlayers, keepers]);
+  const currentReportSnapshot = useMemo(() => ({
+    ...getSavedBrowserSnapshot(),
+    draftedPlayers: draftedPlayers as unknown as BrowserDraftSnapshot["draftedPlayers"],
+  }), [draftedPlayers, getSavedBrowserSnapshot]);
+  const reportReference = useMemo(() => {
+    if (!currentReportComplete) return null;
+    const myRosterCount = rosterAssignments.filter((assignment) => assignment.teamId === myTeamId).length;
+    const expectedRosterSize = rosterRoundCount(draftSettings.rosterConfig);
+    const teamId = draftSettings.draftOrder.find((team) => team !== myTeamId && rosterAssignments.filter((assignment) => assignment.teamId === team).length >= expectedRosterSize && myRosterCount >= expectedRosterSize);
+    return teamId ? { teamId, teamName: `${customTeamNames[teamId] || teamId} roster`, complete: true } : null;
+  }, [currentReportComplete, customTeamNames, draftSettings.draftOrder, draftSettings.rosterConfig, myTeamId, rosterAssignments]);
+  const reportAdapter = useMemo(() => adaptReportDashboard({
+    players: allPlayers,
+    rosterAssignments,
+    myTeamId,
+    vorpMetrics,
+    leagueType: draftSettings.leagueType || "points",
+    scoring: { ...draftSettings.scoringCategories, ...goaliePointValues },
+    goaliePointValues,
+    categoryWeights: draftSettings.categoryWeights,
+    season: currentSeasonId == null ? null : String(currentSeasonId),
+    schedule: scenarioSchedule,
+    sourceControls,
+    goalieSourceControls,
+    customCsvList,
+    current: openedReportDraft ? null : { snapshot: currentReportSnapshot, complete: currentReportComplete, savedImportContext: scenarioSavedImportContext },
+    openedDraft: openedReportDraft,
+    reference: reportReference,
+  }), [allPlayers, currentReportComplete, currentReportSnapshot, currentSeasonId, customCsvList, draftSettings.categoryWeights, draftSettings.leagueType, draftSettings.scoringCategories, goaliePointValues, goalieSourceControls, myTeamId, openedReportDraft, reportReference, rosterAssignments, scenarioSavedImportContext, scenarioSchedule, sourceControls, vorpMetrics]);
+  const toggleReports = useCallback(() => {
+    setReportsMounted(true);
+    setReportsOpen((open) => !open);
+  }, []);
 
   // NEW: category deficits vector for my team (categories mode): league mean - my totals
   const catNeeds = React.useMemo(() => {
@@ -3358,6 +3402,7 @@ const DraftDashboard: React.FC = () => {
           annotations={workspaceAnnotations}
           onAnnotationsChange={setWorkspaceAnnotations}
           onSavedImportContextChange={setScenarioSavedImportContext}
+          onOpenedReportDraftChange={setOpenedReportDraft}
         /></div> : null}
         {canOpenScenarioHistory ? <>
           <button type="button" onClick={toggleRosterImpact} aria-expanded={scenarioWorkspace.open}>
@@ -3366,6 +3411,21 @@ const DraftDashboard: React.FC = () => {
           {scenarioWorkspace.mounted ? <div hidden={!scenarioWorkspace.open}>
             {scenarioAdapter.unavailableReason ? <p role="status">{scenarioAdapter.unavailableReason}</p> : null}
             <ScenarioComparisonWorkspace eligible={canUseProScenarios} input={scenarioAdapter.input} draftId={scenarioAdapter.draftId} />
+          </div> : null}
+        </> : null}
+        {canOpenReportHistory ? <>
+          <button type="button" onClick={toggleReports} aria-expanded={reportsOpen}>
+            {reportsOpen ? "Hide Analytical Reports" : "Analytical Reports"}
+          </button>
+          {reportsMounted ? <div hidden={!reportsOpen}>
+            {reportAdapter.unavailableReason ? <p role="status">{reportAdapter.unavailableReason}</p> : null}
+            <AnalyticalReportsPanel
+              eligible={canUseProReports}
+              input={reportAdapter.input}
+              snapshot={reportAdapter.snapshot}
+              draftId={reportAdapter.draftId}
+              privateImportDraftId={reportAdapter.privateImportDraftId}
+            />
           </div> : null}
         </> : null}
       </section>

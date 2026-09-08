@@ -11,6 +11,7 @@ import {
 } from "lib/draft-pro/savedDrafts";
 import type { DraftProSnapshot } from "lib/draft-pro/contracts";
 import type { ScenarioSavedImportContext } from "lib/draft-pro/scenarioDashboardAdapter";
+import type { OpenedReportDraft } from "lib/draft-pro/reportDashboardAdapter";
 import type { SessionCsvEntry } from "lib/draftDashboard/csvImportSession";
 import {
   SavedDraftsPanel,
@@ -25,6 +26,7 @@ type Props = {
   annotations: SavedDraftAnnotations;
   onAnnotationsChange: (next: SavedDraftAnnotations) => void;
   onSavedImportContextChange?: (context: ScenarioSavedImportContext | null) => void;
+  onOpenedReportDraftChange?: (draft: OpenedReportDraft | null) => void;
 };
 
 const canonicalize = (entry: unknown): unknown => Array.isArray(entry)
@@ -38,7 +40,7 @@ const restore = (snapshot: DraftProSnapshot, imports: readonly NormalizedPrivate
 const contentFingerprint = (snapshot: BrowserDraftSnapshot, imports: readonly NormalizedPrivateImport[]) =>
   JSON.stringify(canonicalize(restoreBrowserSnapshot(serializeSavedDraft(snapshot), imports)));
 
-export default function SavedDraftsWorkspace({ getBrowserSnapshot, applyBrowserSnapshot, players, annotations, onAnnotationsChange, onSavedImportContextChange }: Props) {
+export default function SavedDraftsWorkspace({ getBrowserSnapshot, applyBrowserSnapshot, players, annotations, onAnnotationsChange, onSavedImportContextChange, onOpenedReportDraftChange }: Props) {
   const { access } = useDraftProAccess();
   const eligible = Boolean(access?.capabilities.includes("saved_drafts"));
   const saved = useSavedDrafts();
@@ -74,6 +76,10 @@ export default function SavedDraftsWorkspace({ getBrowserSnapshot, applyBrowserS
     onSavedImportContextChange?.(eligible && saved.opened ? { draftId: saved.opened.id, privateImports: saved.opened.privateImports } : null);
   }, [eligible, onSavedImportContextChange, saved.opened]);
   useEffect(() => () => onSavedImportContextChange?.(null), [onSavedImportContextChange]);
+  useEffect(() => {
+    onOpenedReportDraftChange?.(saved.opened ? { id: saved.opened.id, snapshot: saved.opened.snapshot, privateImports: saved.opened.privateImports } : null);
+  }, [onOpenedReportDraftChange, saved.opened]);
+  useEffect(() => () => onOpenedReportDraftChange?.(null), [onOpenedReportDraftChange]);
   const importsForOpenedDraft = useCallback((imports: readonly NormalizedPrivateImport[]) => imports.map((entry) => {
     const stored = saved.opened?.privateImports.find((candidate) => candidate.sourceId === entry.sourceId);
     return stored ? { ...entry, id: stored.id } : entry;
