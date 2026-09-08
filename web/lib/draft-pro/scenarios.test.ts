@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DraftProDustResult } from "./dust";
-import { compareDraftProScenarios, scenarioFingerprint, scenarioIsStale, type ScenarioInput, type ScenarioPlayer } from "./scenarios";
+import { compareDraftProScenarios, scenarioFingerprint, scenarioIsStale, summarizeScenarioRoster, type ScenarioInput, type ScenarioPlayer } from "./scenarios";
 
 const source = { projection: { id: "public", version: "v1", origin: "server" as const }, schedule: { season: "20262027", gameKey: "500", startWeek: 1, endWeek: 2, lineupMode: "daily" as const, rosterSlots: { C: 1, G: 1 } } };
 const skater = (id: string, goals: number, points = 50): ScenarioPlayer => ({ id, name: id, role: "skater", eligiblePositions: ["C", "LW"], teamAbbreviation: "AAA", projectionSeason: "20262027", globalVorp: goals, rankValue: goals, projectedPoints: points, categoryValues: { GOALS: goals } });
@@ -9,7 +9,9 @@ const goalie = (id: string, saves: number, shots: number, against: number, toi: 
 describe("Draft Pro scenarios", () => {
   it("uses weighted goalie workloads and excludes skater TOI from GAA", () => {
     const roster = [skater("s", 20), goalie("g1", 90, 100, 10, 3600), goalie("g2", 45, 50, 3, 1800)];
-    const result = compareDraftProScenarios({ roster, candidateA: goalie("a", 80, 100, 20, 3600), candidateB: goalie("b", 99, 100, 5, 3600), leagueType: "categories", categoryWeights: { SAVE_PERCENTAGE: 1, GOALS_AGAINST_AVERAGE: 2 }, source });
+    const categoryWeights = { SAVE_PERCENTAGE: 1, GOALS_AGAINST_AVERAGE: 2 };
+    const result = compareDraftProScenarios({ roster, candidateA: goalie("a", 80, 100, 20, 3600), candidateB: goalie("b", 99, 100, 5, 3600), leagueType: "categories", categoryWeights, source });
+    expect(summarizeScenarioRoster(roster, categoryWeights)).toEqual(result.baseline);
     expect(result.baseline.categories.SAVE_PERCENTAGE).toBeCloseTo(0.9);
     expect(result.baseline.categories.GOALS_AGAINST_AVERAGE).toBeCloseTo(8.6666667);
     expect(result.candidates[0].categories.SAVE_PERCENTAGE.after).toBeCloseTo(0.86);

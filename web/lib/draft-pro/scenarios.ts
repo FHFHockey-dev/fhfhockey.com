@@ -13,9 +13,10 @@ export type ScenarioSource = Readonly<{
 }>;
 export type ScenarioInput = Readonly<{ roster: readonly ScenarioPlayer[]; candidateA: ScenarioPlayer; candidateB: ScenarioPlayer; leagueType: "points" | "categories"; categoryWeights?: Readonly<Record<string, number>>; positionNeeds?: Readonly<Record<string, number>>; source: ScenarioSource }>;
 export type ScenarioCategoryResult = Readonly<{ baseline: number | null; after: number | null; delta: number | null; direction: "higher" | "lower"; state: "available" | "missing" | "irrelevant" }>;
+export type ScenarioRosterSummary = Readonly<{ rawVorp: number; projectedPoints: number | null; categories: Record<string, number | null> }>;
 export type ScenarioResult = Readonly<{
   fingerprint: string;
-  baseline: { rawVorp: number; projectedPoints: number | null; categories: Record<string, number | null> };
+  baseline: ScenarioRosterSummary;
   schedule: { state: DraftProDustResult["state"] | "schedule_unavailable" | "not_requested"; freshness: DraftProDustResult["freshness"] | null; window: DraftProDustResult["window"] | null; diagnostics: readonly string[] };
   candidates: readonly ScenarioCandidateResult[];
 }>;
@@ -51,6 +52,10 @@ function categoryTotal(players: readonly ScenarioPlayer[], key: string): number 
 }
 function pointsTotal(players: readonly ScenarioPlayer[]) { if (!players.length) return 0; const all = players.map((player) => player.projectedPoints); return all.every(finite) ? all.reduce((total, value) => total + (value as number), 0) : null; }
 function serializable(player: ScenarioPlayer) { return { ...player, eligiblePositions: [...player.eligiblePositions].sort(), categoryValues: values(player) }; }
+export function summarizeScenarioRoster(roster: readonly ScenarioPlayer[], categoryWeights: Readonly<Record<string, number>> = {}): ScenarioRosterSummary {
+  const keys = Object.keys(categoryWeights).filter((key) => finite(categoryWeights[key]) && categoryWeights[key] !== 0);
+  return { rawVorp: roster.reduce((total, player) => total + player.globalVorp, 0), projectedPoints: pointsTotal(roster), categories: Object.fromEntries(keys.map((key) => [key, categoryTotal(roster, key)])) };
+}
 
 export type ScenarioDustResult = DraftProDustResult | Readonly<{ state: "schedule_unavailable"; freshness: DraftProDustResult["freshness"]; window: DraftProDustResult["window"]; baseline: null; insights: readonly []; diagnostics: readonly string[] }>;
 export function compareDraftProScenarios(input: ScenarioInput, dust: ScenarioDustResult | null = null): ScenarioResult {
@@ -59,8 +64,8 @@ export function compareDraftProScenarios(input: ScenarioInput, dust: ScenarioDus
   for (const candidate of [input.candidateA, input.candidateB]) if (rosterIds.has(candidate.id) || candidate.drafted || candidate.available === false) throw new Error("Candidates must be available players outside the current roster.");
   const keys = Object.keys(input.categoryWeights ?? {}).filter((key) => finite(input.categoryWeights?.[key]) && input.categoryWeights?.[key] !== 0);
   const fingerprint = scenarioFingerprint({ roster: input.roster.map(serializable).sort((a, b) => a.id.localeCompare(b.id)), candidates: [input.candidateA, input.candidateB].map(serializable).sort((a, b) => a.id.localeCompare(b.id)), leagueType: input.leagueType, categoryWeights: input.categoryWeights ?? {}, positionNeeds: input.positionNeeds ?? {}, source: input.source, scheduleAnalysis: dust });
-  const baselineCategories = Object.fromEntries(keys.map((key) => [key, categoryTotal(input.roster, key)]));
-  const baseline = { rawVorp: input.roster.reduce((total, player) => total + player.globalVorp, 0), projectedPoints: pointsTotal(input.roster), categories: baselineCategories };
+  const baseline = summarizeScenarioRoster(input.roster, input.categoryWeights);
+  const baselineCategories = baseline.categories;
   const makeCandidate = (candidate: ScenarioPlayer): ScenarioCandidateResult => {
     const afterRoster = [...input.roster, candidate]; const afterPoints = pointsTotal(afterRoster); const insight = dust?.state === "ready" ? dust.insights.find((item) => item.playerId === candidate.id) : undefined;
     const categories: Record<string, ScenarioCategoryResult> = Object.fromEntries(keys.map((key) => { const baselineValue = baselineCategories[key] ?? null; if (!categoryAppliesToRole(key, candidate.role)) return [key, { baseline: baselineValue, after: baselineValue, delta: 0, direction: isInvertedCategory(key) ? "lower" as const : "higher" as const, state: "irrelevant" as const }]; const after = categoryTotal(afterRoster, key); return [key, { baseline: baselineValue, after, delta: baselineValue === null || after === null ? null : after - baselineValue, direction: isInvertedCategory(key) ? "lower" as const : "higher" as const, state: baselineValue === null || after === null ? "missing" as const : "available" as const }]; }));

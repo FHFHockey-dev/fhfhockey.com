@@ -7,6 +7,7 @@
 - `evaluateScenarioDust` resolves the persisted W06 season mapping and schedule rows, evaluates the exact scenario roster and two candidate IDs with `evaluateDraftProDust`, and preserves freshness/window/diagnostics and unavailable states.
 - Saved-private projection inputs require both an owned saved draft and every selected owned, non-deleted private import attached to that draft. The server re-reads each validated saved blob and matches its normalized-row content fingerprint. No import data is uploaded by scenarios.
 - `compareDraftProScenarios` is read-only and reusable by W10. It provides baseline, after-A/after-B, and incremental point/VORP/category effects; role-correct category totals; workload-weighted SV%/GAA; position needs; and DUST effects.
+- `summarizeScenarioRoster` exposes that same pure raw-VORP, projected-points, and enabled-category baseline calculation for W10 reports without fabricating candidates.
 
 ## W07 integration
 
