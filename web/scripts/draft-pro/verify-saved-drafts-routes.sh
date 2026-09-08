@@ -133,6 +133,11 @@ if [[ "${DRAFT_PRO_REPORTS_ONLY:-false}" == true ]]; then
   finish
   exit 0
 fi
+if [[ "${DRAFT_PRO_REPORTS_BROWSER_ONLY:-false}" == true ]]; then
+  (cd web && NODE_PATH=.:node_modules ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/verify-reports-browser-runner.ts)
+  finish
+  exit 0
+fi
 if [[ "${DRAFT_PRO_SCENARIOS_ONLY:-false}" == true ]]; then
   (cd web && NODE_PATH=.:node_modules ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/verify-scenarios-routes-runner.ts)
   finish

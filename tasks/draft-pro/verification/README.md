@@ -57,3 +57,35 @@ The final success marker includes `cleanup=verified` only after the harness remo
 ## Scenario real-service routes
 
 Run `DRAFT_PRO_SCENARIOS_ONLY=true web/scripts/draft-pro/verify-saved-drafts-routes.sh` from the repository root for the focused scenario API gate. This uses the same disposable services and cleanup assertions, skipping Saved Drafts route/browser assertions. It verifies public and saved-private analysis, persistence, ownership, inactive names-only access and reactivation, duplicate input rejection, and unchanged draft contents. The fixture has no persisted schedule, so it verifies visible schedule unavailability while preserving valid projection totals; schedule-present optimizer behavior is covered separately by calculation fixtures. This mode does not verify the scenario browser UI.
+
+## Scenario browser
+
+Run the focused scenario browser gate against the same disposable real services:
+
+```sh
+DRAFT_PRO_SCENARIOS_BROWSER_ONLY=true web/scripts/draft-pro/verify-saved-drafts-routes.sh
+```
+
+This mode covers real public and owned saved-private analysis, save/open history, action and list retries, stale-context handling, inactive names-only locking, unchanged live picks, and loaded 390px mobile output. Screenshots default to `/tmp/draft-pro-scenarios-browser-artifacts` and can be redirected with `DRAFT_PRO_SCENARIOS_BROWSER_ARTIFACTS`.
+
+## Analytical report routes
+
+Run the focused report API gate:
+
+```sh
+DRAFT_PRO_REPORTS_ONLY=true web/scripts/draft-pro/verify-saved-drafts-routes.sh
+```
+
+It verifies current and owned saved-private reports, exact totals and scoring/source provenance, ready persisted schedule data, ownership and inactive-account boundaries, history retention after reactivation, cleanup, and denied direct PostgREST payload reads.
+
+## Analytical report browser
+
+Run the focused report browser gate:
+
+```sh
+DRAFT_PRO_REPORTS_BROWSER_ONLY=true DRAFT_PRO_REPORTS_ENABLED=true web/scripts/draft-pro/verify-saved-drafts-routes.sh
+```
+
+It covers lazy opening, a complete current report, an owned opened Saved Draft with a private import, history reopen, a failed generation retry, source-weight mismatch blocking until the Saved Draft succeeds, exact submitted totals/scoring/source provenance, unchanged picks, inactive names-only locking, popup-block guidance, report-only print output, and loaded 390px mobile output. Screenshots default to `/tmp/draft-pro-reports-browser-artifacts` and can be redirected with `DRAFT_PRO_REPORTS_BROWSER_ARTIFACTS`.
+
+All scenario and report modes use synthetic public projection fixtures. Authentication, account routes, PostgREST, private Storage, persistence, and ownership checks use the disposable real local services. The mobile report artifact is evidence of loaded output; it is not an actual browser-chrome 200% zoom claim.
