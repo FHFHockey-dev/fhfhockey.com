@@ -14,6 +14,12 @@ Owner authorized Chrome-assisted Stripe, Patreon, and Resend setup, with all log
 
 W12 reopened at Terra/medium for a bounded interactive provider-validation extension of the existing isolated harness; exclusive scope is test harness/runner, no product or schema changes. Chef owns Chrome, sandbox credentials, provider actions, and acceptance. Actual checkout, webhook delivery/replay, and fulfillment remain pending; Patreon and Resend configuration remain pending. Overall estimate remains approximately 95% until end-to-end provider evidence is accepted.
 
+## September 8 — Resend test delivery accepted; Stripe checkout pending
+
+Resend domain `fhfhockey.com` visibly verified. Created `Draft Pro local validation` with sending-only access restricted to that domain; owner saved the key into ignored local configuration. Actual SDK send from `draft-pro@fhfhockey.com` to provider sink `delivered+draft-pro-validation@resend.dev` accepted; email ID `d6291524-a027-4fa8-b343-7107a74b8d79` visibly delivered in Resend dashboard. Identical idempotency-key retry returned the same ID. This is provider test-recipient evidence, not real Tim-inbox or complete refund-route delivery evidence.
+
+Chef rejected W12 d8102ba14's Node/browser bootstrap mixup and shell sourcing, then reviewed and integrated the focused correction 210a097d2 as 9bf85a322/52349028f. Isolated real Stripe harness running on loopback port 58664; API created sandbox checkout successfully for synthetic local user, purchase `1d4c792f-c23e-4f5c-ace5-4eefd067e13a`. CLI forwarding active. Checkout browser automation repeatedly timed out; no payment submitted, no grant claimed. Native fallback found an unrelated foreground window and made no UI changes. Awaiting user bringing Checkout forward. Logs: `/tmp/draft-pro-stripe-provider-gate.log`; private listener log must not be printed unredacted (signing secret). Required checkout, signed delivery, reconciliation/replay and cleanup still pending. Patreon existing API v2 client inspected, configuration unchanged; credentials/OAuth/webhook evidence pending.
+
 ## Current acceptance state
 
 | Work order | Local checkpoint | Remaining gate |
