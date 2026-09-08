@@ -2,7 +2,7 @@
 
 ## Progress and usage reporting
 
-Latest accepted estimate: **75% overall / 95% initial paid release**. Saved Drafts is Chef-approved through the real-service browser and final visual gates. W09 scenarios is released from the committed integration checkpoint; W10 reports remains queued. The user redeemed the banked reset; latest sampled weekly usage was **19% used / 81% remaining**. The figures below at ~13:00 are historical, not the current estimate.
+Latest accepted estimate: **95% overall / 95% initial paid release**. All feature implementation, isolated persistence/security checks, and local browser gates are Chef-approved; the final release-packet evidence update is finishing. Real Stripe, Patreon, and Resend provider validation remains blocked on authorized test configuration. Latest weekly usage: **70% used / 30% remaining**. The developer-provided reset has not yet been observed; the conditional cost-control follow-up is scheduled. Historical estimates below are not current status.
 
 User requested an overall percentage now and at every major checkpoint, without changing the goal. At the September 7 ~13:00 checkpoint: overall engineering completion approximately **50%**, initial paid release approximately **75%**. Estimates include remaining implementation and verification; they are not task-count percentages or launch approval. Area estimates: foundation/billing/lifecycle/refunds90%, recommendations/DUST90%, central integration55%, Saved Drafts/scenarios/reports0%, launch documentation70%, integrated verification35%. Yahoo preparation complete, live milestone separate.
 
@@ -15,15 +15,15 @@ Account-wide weekly usage: **47% consumed / 53% remaining**. Goal counter: **991
 | W01 foundation | Approved, including payment RPCs and nullable types | Later schema changes only through W01 |
 | W02 Stripe | Approved, 30 focused tests; combined account/Stripe strict types pass | Real Stripe test-mode Checkout, Link and webhook delivery blocked on credentials |
 | W03 Patreon | Approved local lifecycle/mapping/recovery | Real campaign/OAuth/webhook validation blocked on credentials |
-| W04 refunds/account | Approved, 17 focused tests; CLI follow-on integrated | Mounted UI/browser and real email configuration checks |
-| W05 recommendations | Approved shared calculations, API and W07 adapter | Integrated browser/RC checks |
-| W06 DUST | Approved shared optimizer/API, season resolution and W07 UI | Schedule-handoff compatibility and integrated browser/RC checks |
-| W07 integration/CSV/graph | Initial integration, expanded graph and full-season matrix approved | Saved Drafts normalization/autosave acceptance; W09–W10 panels |
-| W08 Saved Drafts | Chef-approved: runtime, private storage, real cross-device browser flow and final responsive panel | Production/provider activation remains separate |
-| W09 scenarios | In progress, Sol/high after focused review escalations | Complete calculation, private access and workspace contract, then Chef review |
-| W10 reports | Queued | W09 and deterministic report implementation |
-| W11 copy/operator | Initial release copy/packet approved through4790fce53 | Refresh evidence after browser checkpoint and later milestones |
-| W12 verification | SQL/RLS, real overlapping saves, Storage HTTP, Saved Drafts routes and browser, free/account and matrix checks approved | Scenarios/reports and final RC packet; actual desktop browser-chrome zoom not claimed |
+| W04 refunds/account | Approved runtime, mounted account UI and browser recovery | Real Resend delivery validation blocked on configuration |
+| W05 recommendations | Approved shared calculations, API, adapter and regression suite | Provider/production activation separate |
+| W06 DUST | Approved optimizer/API, season handling and position/week drilldown browser gates | Production data freshness/readiness required at activation |
+| W07 integration/CSV/graph | Approved initial, Saved Drafts, scenarios, reports and final free/account/matrix regression | Production activation separate |
+| W08 Saved Drafts | Approved private persistence, populated cross-session restore, conflicts, retention and mobile | Production activation separate |
+| W09 scenarios | Approved calculations, real API/private boundaries, browser and populated mobile | Production activation separate |
+| W10 reports | Approved deterministic reports, real API, private save consistency, mobile and isolated print | Production activation separate |
+| W11 copy/operator | Policies and current evidence reviewed; final report-browser evidence patch finishing | Final packet integration |
+| W12 verification | Approved isolated SQL/RLS/Storage/concurrency, real routes/browser, 4412-test RC and TypeScript | Stripe/Patreon/Resend provider checks blocked; actual desktop browser-chrome zoom not claimed |
 | W13 Yahoo | Readiness work order approved and parked | September 11 one-time check; real provider evidence, separate activation approval |
 
 No remote build, deployment, production migration, live payment, or live email has been performed. Checkpoint approval is scoped engineering evidence, not release authorization. Full repository TypeScript passed with an 8 GiB heap at 3dcf15b05; /tmp/draft-pro-rc-types-final.log is empty and command exited 0. Earlier OOM and correction failures remain historical evidence below.
@@ -50,7 +50,7 @@ All tasks are in the Draft Pro section. At initial registration, the app listing
 - Base: 4476fb90f (octoberBranch); user checkout left unchanged.
 - Integration: codex/draft-pro at /Users/tim/.codex/worktrees/draft-pro-chef/fhfhockey.com
 - Yahoo one-time heartbeat: yahoo-draft-pro-readiness, September 11 09:00 Eastern.
-- Current worker: visible W09, Sol/high for the bounded unresolved scenario architecture. W07, W11, W12 and internal helpers are idle. W01–W08 local checkpoints approved, W10 queued, W11 current documentation approved, W13 parked. Historical entries below retain prior states.
+- Current worker: W11 Luna/low finishing the release packet. All implementation and verification tasks are idle after scoped Chef approval; internal helpers remain idle. W13 stays parked. Historical entries below retain prior states.
 - External checks pending: real Stripe/Patreon credentials and provider validation; isolated SQL/RLS verification passed. Never print secrets.
 
 Task registrations and Chef decisions follow below.
@@ -457,3 +457,6 @@ Environment: Node 22.11.0 and existing web/node_modules available; Docker runnin
 
 - Report functional browser gate passed current/retry/history, private save recovery/source match, exact totals, inactive locks and isolated print. Chef visual review found mobile artifact432pxwide for390pxviewport. Final W10 mobile acceptance withheld; W10 Luna/medium owns narrowly scoped panel wrapping/min-content CSS correction, W12 adds explicit390pxnooverflow and specific401/403direct-PostgREST assertions. No optional redesign or fullsuite repeat requested forCSS-only fix.
 - W11 final evidence packet refresh assigned Luna/low because prior mini turns repeatedly rewrote artifact paths and mixed stale facts; bounded existingdocs only, returnidleafterexactfinalhandoff.
+
+- **Final local report browser checkpoint Chef-approved:** sourcecc51beb73 verifier/root16b76e752; CSS12e1e88ad/rootdd8c69c9c; harness prerequisites9067067d0 and README correction728bf52cb. Actual finalsession95517 exit0, cleanup verified (/tmp/draft-pro-reports-browser-final.log). Strict390pxnooverflow and direct anon/owner/foreign401/403 for both payload tables passed. Chef inspected mobile390x3412 and report-only print, retained allfour artifacts in Chefvisualizations/reports/. W10/W12 returned Luna/low idle. No fullsuite repeated for CSS-only correction; 4412-test and TypeScriptRC evidence remains at2d7cba039.
+- Final local-feature checkpoint estimate95%overall/95%initial; freshweekly70%used/30%remaining, resetnotobserved. FinalpacketupdateW11inflight; externalproviderchecks remain explicit, no production authorization inferred.
