@@ -2,7 +2,7 @@
 
 ## Progress and usage reporting
 
-Latest accepted estimate: **95% overall / 95% initial paid release**. All feature implementation, isolated persistence/security checks, and local browser gates are Chef-approved; the final release packet is approved and integrated. Real Stripe, Patreon, and Resend provider validation remains blocked on authorized test configuration. Latest weekly usage: **70% used / 30% remaining**. The developer-provided reset has not yet been observed; the conditional cost-control follow-up is scheduled. Historical estimates below are not current status.
+Latest accepted estimate: **95% overall / 95% initial paid release**. W01–W12 implementation, local persistence/security checks, browser gates, regression suite, and release packet are Chef-approved. External Stripe, Patreon, and Resend validation remains blocked on authorized provider configuration; Yahoo W13 remains parked for its September 11 readiness check. Latest weekly usage: **1% used / 99% remaining** after the developer-provided reset. Historical entries below are retained for audit history, not current status.
 
 User requested an overall percentage now and at every major checkpoint, without changing the goal. At the September 7 ~13:00 checkpoint: overall engineering completion approximately **50%**, initial paid release approximately **75%**. Estimates include remaining implementation and verification; they are not task-count percentages or launch approval. Area estimates: foundation/billing/lifecycle/refunds90%, recommendations/DUST90%, central integration55%, Saved Drafts/scenarios/reports0%, launch documentation70%, integrated verification35%. Yahoo preparation complete, live milestone separate.
 
