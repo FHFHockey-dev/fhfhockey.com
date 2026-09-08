@@ -2001,9 +2001,18 @@ const DraftDashboard: React.FC = () => {
       .filter((assignment) => assignment.teamId === myTeamId)
       .map((assignment) => {
         const player = allPlayers.find((candidate) => String(candidate.playerId) === assignment.playerId);
-        return { playerId: assignment.playerId, playerName: player?.fullName };
+        const positions = groupPlayerEligibility(
+          normalizePlayerEligibility(player?.displayPosition, player?.eligiblePositions),
+          forwardGrouping,
+        );
+        const override = positionOverrides[assignment.playerId]?.toUpperCase();
+        return {
+          playerId: assignment.playerId,
+          playerName: player?.fullName,
+          position: override && positions.includes(override) ? override : positions[0] ?? "Unassigned",
+        };
       }),
-    [allPlayers, myTeamId, rosterAssignments],
+    [allPlayers, forwardGrouping, myTeamId, positionOverrides, rosterAssignments],
   );
 
   const effectiveRosterConfig = useMemo(

@@ -4,10 +4,12 @@
 .matrix {
   flex: 0 0 auto;
   width: 100%;
-  border: 1px solid v.$draft-border;
-  border-radius: 6px;
-  padding: 12px;
-  background: v.$draft-surface;
+  border: 1px solid color.adjust(v.$draft-border, $lightness: 5%);
+  border-radius: 10px;
+  padding: 14px;
+  background: linear-gradient(145deg, #111714 0%, v.$draft-surface 52%, #101412 100%);
+  box-shadow: inset 0 1px hsl(0 0% 100% / .035), 0 12px 30px hsl(0 0% 0% / .16);
+  color: v.$color-neutral-200;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
@@ -20,7 +22,8 @@
   background: transparent;
   color: inherit;
   font: inherit;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: .01em;
   text-align: start;
   cursor: pointer;
 
@@ -28,36 +31,55 @@
 }
 
 .toggle:focus-visible,
-.cellButton:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
+.cellButton:focus-visible,
+.positionLabel:focus-visible,
+.back:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 3px; }
 
-.legend { margin: 8px 0; color: v.$text-secondary; line-height: 1.5; }
+.heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; margin: 10px 0 8px; }
+.heading h3 { margin: 0 0 4px; color: #f4f8f4; font-size: 15px; text-wrap: balance; }
+.legend { max-width: 660px; margin: 0; color: v.$text-secondary; line-height: 1.5; text-wrap: pretty; }
+.back { min-height: 36px; padding: 7px 10px; border: 1px solid v.$draft-border; border-radius: 6px; background: v.$draft-input; color: inherit; font: inherit; cursor: pointer; white-space: nowrap; }
+.scaleLegend { display: flex; align-items: center; gap: 8px; min-height: 36px; color: v.$text-secondary; white-space: nowrap; }
+.scaleLegend i { display: block; }
+.legendZero { color: v.$text-secondary; font-size: 15px; font-style: normal; }
+.legendDiamond { width: calc(6px + var(--strength) * 13px); height: calc(6px + var(--strength) * 13px); transform: rotate(45deg); border: 1px solid #78b78e; border-radius: 3px; background: hsl(150 58% calc(27% + var(--strength) * 49%)); box-shadow: 0 0 calc(var(--strength) * 6px) hsl(150 75% 65% / .42); }
+
 .viewport { overflow: auto; padding: 8px 0 14px; @include v.custom-scrollbar(v.$primary-color, v.$draft-surface); }
-.plot { position: relative; min-width: 100%; zoom: var(--fit-scale, 1); }
+.plot { position: relative; min-width: 100%; isolation: isolate; zoom: var(--fit-scale, 1); }
+.plot::before { position: absolute; z-index: -1; inset: 22px 0 0 160px; background-image: repeating-linear-gradient(45deg, transparent 0 21px, hsl(146 22% 69% / .13) 22px 23px, transparent 24px 42px), repeating-linear-gradient(-45deg, transparent 0 21px, hsl(146 22% 69% / .1) 22px 23px, transparent 24px 42px); content: ""; opacity: .72; pointer-events: none; }
 .axisTitle,
 .weekLabel,
-.playerName,
+.rowLabel,
+.positionLabel,
 .cell { position: absolute; }
-.axisTitle { inset: 8px auto auto 4px; color: v.$text-secondary; font-size: 10px; }
-.weekLabel { width: 24px; color: v.$text-secondary; font-size: 10px; text-align: center; transform: translate(-3px, 0); }
-.playerName { width: 142px; overflow: hidden; padding-inline-start: 4px; color: v.$color-neutral-200; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; transform: translateY(2px); }
-.cell { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 2px; transform: translate(-2px, -2px); }
+.axisTitle { inset: 8px auto auto 4px; color: v.$text-secondary; font-size: 10px; letter-spacing: .03em; text-transform: uppercase; }
+.weekLabel { width: 26px; color: v.$text-secondary; font-size: 10px; text-align: center; transform: translate(-3px, 0); }
+.rowLabel,
+.positionLabel { width: 158px; overflow: hidden; padding-inline-start: 4px; color: v.$color-neutral-200; font-weight: 650; text-align: start; text-overflow: ellipsis; white-space: nowrap; transform: translateY(2px); }
+.positionLabel { min-height: 28px; border: 0; border-radius: 4px; background: transparent; font: inherit; cursor: pointer; }
+.positionLabel:hover { color: #c8f9d3; background: hsl(150 60% 45% / .1); }
+.cell { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 3px; transform: translate(-2px, -2px); }
 .cellVisual { display: grid; place-items: center; width: 100%; height: 100%; }
-.cell .cellButton { position: absolute; inset: 0; width: 24px; height: 24px; appearance: none; padding: 0; border: 0; border-radius: 2px; background: transparent; box-shadow: none; color: v.$text-secondary; cursor: pointer; }
-.cell .cellButton:hover { background: transparent; }
-.diamond { display: block; width: calc(7px + var(--strength) * 13px); height: calc(7px + var(--strength) * 13px); transform: rotate(45deg); border: 1px solid #719783; border-radius: 3px; background: hsl(150 55% calc(28% + var(--strength) * 49%)); box-shadow: 0 0 calc(var(--strength) * 5px) hsl(150 65% 60% / .45); }
-.zero { color: v.$text-secondary; font-size: 13px; line-height: 1; }
+.cell .cellButton { position: absolute; inset: 0; width: 25px; height: 25px; appearance: none; padding: 0; border: 0; border-radius: 3px; background: transparent; box-shadow: none; color: v.$text-secondary; cursor: pointer; }
+.cell .cellButton:hover { background: hsl(150 60% 65% / .12); }
+.diamond { display: block; width: calc(7px + var(--strength) * 14px); height: calc(7px + var(--strength) * 14px); transform: rotate(45deg); border: 1px solid #78b78e; border-radius: 3px; background: hsl(150 58% calc(27% + var(--strength) * 49%)); box-shadow: 0 0 calc(var(--strength) * 6px) hsl(150 75% 65% / .42); transition: scale 120ms ease-out, filter 120ms ease-out; }
+.cell:hover .diamond { scale: 1.08; filter: brightness(1.08); }
+.zero { color: v.$text-secondary; font-size: 14px; line-height: 1; }
 .unresolved { color: v.$color-gold-400; font-weight: 700; }
 .selectedWeek { box-shadow: inset 0 -2px 0 v.$color-gold-400; }
 .cell.selectedWeek { background: color.adjust(v.$draft-input, $lightness: 2%); }
 .matrixFooter { display: flex; flex-wrap: wrap; gap: 4px 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid v.$draft-border; color: v.$text-secondary; font-size: 10px; }
 .matrixFooter strong { margin-inline-end: 8px; color: v.$color-neutral-200; }
 .matrixFooter span { min-width: 28px; }
-.detail { min-height: 3em; margin: 8px 0 0; line-height: 1.5; overflow-wrap: anywhere; }
+.detail { min-height: 3em; margin: 8px 0 0; color: v.$text-secondary; line-height: 1.5; overflow-wrap: anywhere; }
 .mobileHint { display: none; }
 .detailList { display: none; }
 
 @media (max-width: v.$breakpoint-tablet) {
   .matrix { padding: 10px; }
+  .heading { display: block; }
+  .scaleLegend { margin-top: 8px; }
+  .back { margin-top: 8px; }
   .viewport { overflow: visible; }
   .plot { min-width: 0; }
   .matrixFooter { gap: 2px 4px; font-size: 8px; }
@@ -66,6 +88,6 @@
   .detailList { display: block; margin-top: 10px; color: v.$text-secondary; }
   .detailList summary { cursor: pointer; font-weight: 600; }
   .detailList ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin: 8px 0 0; padding: 0; list-style: none; }
-  .detailList button { width: 100%; min-height: 32px; padding: 4px 6px; border: 1px solid v.$draft-border; border-radius: 4px; background: v.$draft-input; color: inherit; font: inherit; text-align: start; }
+  .detailList button { width: 100%; min-height: 40px; padding: 4px 6px; border: 1px solid v.$draft-border; border-radius: 4px; background: v.$draft-input; color: inherit; font: inherit; text-align: start; }
   .mobileHint { display: block; margin: 0; color: v.$text-secondary; font-size: 11px; line-height: 1.4; }
 }

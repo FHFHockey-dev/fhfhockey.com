@@ -126,7 +126,7 @@ it("shows every Yahoo week at once, highlights playoff weeks, and keeps baseline
     ]),
   };
   const before = JSON.stringify(baseline);
-  const { container } = render(<DustMatrix state={{ status: "ready", stale: false, baseline } as any} weeks={weeks} selectedWeeks={[weeks[23], weeks[26]]} period="Playoffs · Weeks 24, 27" />);
+  const { container } = render(<DustMatrix state={{ status: "ready", stale: false, baseline } as any} weeks={weeks} roster={[{ playerId: "1", playerName: "Winger", position: "LW" }, { playerId: "2", playerName: "Goalie", position: "G" }]} selectedWeeks={[weeks[23], weeks[26]]} period="Playoffs · Weeks 24, 27" />);
   const toggle = screen.getByRole("button", { name: /DUST schedule overview/ });
   expect(toggle.getAttribute("aria-expanded")).toBe("false");
   fireEvent.click(toggle);
@@ -138,6 +138,11 @@ it("shows every Yahoo week at once, highlights playoff weeks, and keeps baseline
   expect(container.querySelector('[data-dust-state="unresolved"]')).toBeTruthy();
   fireEvent.focus(within(cell as HTMLElement).getByRole("button"));
   expect(screen.getByRole("status").textContent).toContain("1 benched");
+  fireEvent.click(screen.getByRole("button", { name: "LW" }));
+  expect(screen.getByRole("heading", { name: "LW players by week" })).toBeTruthy();
+  expect(container.querySelectorAll("[data-dust-state]")).toHaveLength(27);
+  fireEvent.click(screen.getByRole("button", { name: "Back to positions" }));
+  expect(screen.getByRole("heading", { name: "Position overlap by week" })).toBeTruthy();
   expect(JSON.stringify(baseline)).toBe(before);
 });
 
@@ -149,9 +154,10 @@ it("keeps an unknown-team roster player as unavailable intersections", () => {
     daily: [],
     diagnostics: [{ code: "UNKNOWN_TEAM", severity: "error", playerId: "2", playerName: "Unknown" }],
   };
-  const { container } = render(<DustMatrix state={{ status: "ready", stale: false, baseline } as any} weeks={weeks} roster={[{ playerId: "1", playerName: "Known" }, { playerId: "2", playerName: "Unknown" }]} period="Season" />);
+  const { container } = render(<DustMatrix state={{ status: "ready", stale: false, baseline } as any} weeks={weeks} roster={[{ playerId: "1", playerName: "Known", position: "C" }, { playerId: "2", playerName: "Unknown", position: "D" }]} period="Season" />);
   fireEvent.click(screen.getByRole("button", { name: /DUST schedule overview/ }));
   expect(container.querySelectorAll("[data-dust-state=unresolved]")).toHaveLength(54);
   expect(screen.getByText("W1 Unavailable", { exact: true })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "D" }));
   expect(screen.getAllByRole("button", { name: /Unknown · Week 27.*coverage unavailable/ })).toHaveLength(2);
 });
