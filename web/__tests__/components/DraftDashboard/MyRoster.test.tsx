@@ -132,6 +132,7 @@ it("shows every Yahoo week at once, highlights playoff weeks, and keeps baseline
   fireEvent.click(toggle);
   expect(toggle.getAttribute("aria-expanded")).toBe("true");
   expect(container.querySelectorAll("[data-dust-state]")).toHaveLength(54);
+  expect(screen.getByRole("button", { name: "Show LW players" })).toBeTruthy();
   const cell = container.querySelector('[data-selected-week][data-dust-state="bench"]')!;
   expect(cell.getAttribute("data-selected-week")).toBe("true");
   expect(container.querySelector('[data-dust-state="zero"]')?.getAttribute("data-selected-week")).toBeNull();
@@ -149,14 +150,14 @@ it("shows every Yahoo week at once, highlights playoff weeks, and keeps baseline
 it("keeps an unknown-team roster player as unavailable intersections", () => {
   const weeks = Array.from({ length: 27 }, (_, index) => ({ week: index + 1, start_date: "2027-02-01", end_date: "2027-02-14" }));
   const baseline = {
-    complete: false,
+    complete: true,
     players: [{ playerId: "1", playerName: "Known", benchGames: 0 }],
     daily: [],
     diagnostics: [{ code: "UNKNOWN_TEAM", severity: "error", playerId: "2", playerName: "Unknown" }],
   };
   const { container } = render(<DustMatrix state={{ status: "ready", stale: false, baseline } as any} weeks={weeks} roster={[{ playerId: "1", playerName: "Known", position: "C" }, { playerId: "2", playerName: "Unknown", position: "D" }]} period="Season" />);
   fireEvent.click(screen.getByRole("button", { name: /DUST schedule overview/ }));
-  expect(container.querySelectorAll("[data-dust-state=unresolved]")).toHaveLength(54);
+  expect(container.querySelectorAll("[data-dust-state=unresolved]")).toHaveLength(27);
   expect(screen.getByText("W1 Unavailable", { exact: true })).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "D" }));
   expect(screen.getAllByRole("button", { name: /Unknown · Week 27.*coverage unavailable/ })).toHaveLength(2);

@@ -38,7 +38,7 @@
 .heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; margin: 10px 0 8px; }
 .heading h3 { margin: 0 0 4px; color: #f4f8f4; font-size: 15px; text-wrap: balance; }
 .legend { max-width: 660px; margin: 0; color: v.$text-secondary; line-height: 1.5; text-wrap: pretty; }
-.back { min-height: 36px; padding: 7px 10px; border: 1px solid v.$draft-border; border-radius: 6px; background: v.$draft-input; color: inherit; font: inherit; cursor: pointer; white-space: nowrap; }
+.back { min-height: 40px; padding: 7px 10px; border: 1px solid v.$draft-border; border-radius: 6px; background: v.$draft-input; color: inherit; font: inherit; cursor: pointer; white-space: nowrap; }
 .scaleLegend { display: flex; align-items: center; gap: 8px; min-height: 36px; color: v.$text-secondary; white-space: nowrap; }
 .scaleLegend i { display: block; }
 .legendZero { color: v.$text-secondary; font-size: 15px; font-style: normal; }
@@ -46,7 +46,8 @@
 
 .viewport { overflow: auto; padding: 8px 0 14px; @include v.custom-scrollbar(v.$primary-color, v.$draft-surface); }
 .plot { position: relative; min-width: 100%; isolation: isolate; zoom: var(--fit-scale, 1); }
-.plot::before { position: absolute; z-index: -1; inset: 22px 0 0 160px; background-image: repeating-linear-gradient(45deg, transparent 0 21px, hsl(146 22% 69% / .13) 22px 23px, transparent 24px 42px), repeating-linear-gradient(-45deg, transparent 0 21px, hsl(146 22% 69% / .1) 22px 23px, transparent 24px 42px); content: ""; opacity: .72; pointer-events: none; }
+.lattice { position: absolute; inset: 0; z-index: -1; overflow: visible; pointer-events: none; }
+.lattice line { stroke: hsl(146 22% 69% / .24); stroke-width: 1; }
 .axisTitle,
 .weekLabel,
 .rowLabel,
@@ -73,6 +74,7 @@
 .matrixFooter span { min-width: 28px; }
 .detail { min-height: 3em; margin: 8px 0 0; color: v.$text-secondary; line-height: 1.5; overflow-wrap: anywhere; }
 .mobileHint { display: none; }
+.mobilePositionControls { display: none; }
 .detailList { display: none; }
 
 @media (max-width: v.$breakpoint-tablet) {
@@ -80,6 +82,8 @@
   .heading { display: block; }
   .scaleLegend { margin-top: 8px; }
   .back { margin-top: 8px; }
+  .mobilePositionControls { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  .mobilePositionControls button { min-height: 40px; padding: 7px 10px; border: 1px solid v.$draft-border; border-radius: 6px; background: v.$draft-input; color: inherit; font: inherit; font-weight: 600; }
   .viewport { overflow: visible; }
   .plot { min-width: 0; }
   .matrixFooter { gap: 2px 4px; font-size: 8px; }
