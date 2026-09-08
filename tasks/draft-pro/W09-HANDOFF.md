@@ -8,6 +8,8 @@
 - Saved-private projection inputs require both an owned saved draft and every selected owned, non-deleted private import attached to that draft. The server re-reads each validated saved blob and matches its normalized-row content fingerprint. No import data is uploaded by scenarios.
 - `compareDraftProScenarios` is read-only and reusable by W10. It provides baseline, after-A/after-B, and incremental point/VORP/category effects; role-correct category totals; workload-weighted SV%/GAA; position needs; and DUST effects.
 - `summarizeScenarioRoster` exposes that same pure raw-VORP, projected-points, and enabled-category baseline calculation for W10 reports without fabricating candidates.
+- `evaluateRosterDust({ roster, candidates, source })` exposes the persisted-schedule DUST adapter for real roster baselines; `evaluateScenarioDust` remains its A/B compatibility wrapper.
+- `validateAnalysisReferences(userId, source, draftId)` exposes the saved-draft/private-import ownership checks; `validateScenarioReferences` remains its scenario compatibility wrapper.
 
 ## W07 integration
 
