@@ -33,10 +33,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       : { data: null };
     if (purchaseError) throw purchaseError;
     const access = await loadDraftProAccess(user.id, { now: new Date(), flags: getDraftProFeatureFlags(), patreonVerificationAvailable: true });
+    const verifiedPaidPurchase = Boolean(result.purchaseId) && session.payment_status === "paid" &&
+      (purchase?.status === "pending" || purchase?.status === "active");
     const state = access.eligible && purchase?.status === "active"
       ? "confirmed"
-      : purchase?.status === "pending" && session.payment_status === "paid"
-        ? (session.payment_status === "paid" ? "confirming" : "waiting")
+      : verifiedPaidPurchase
+        ? "confirming"
         : "ineligible";
     return res.status(200).json({ state, purchaseId });
   } catch (error) {
