@@ -39,7 +39,7 @@ async function serviceRows(path: string) {
 async function assertDirectStorageDenied(token: string, storagePath: string) {
   const headers = { Authorization: `Bearer ${token}` };
   const download = await fetch(`${gateway}/storage/v1/object/draft-pro-private-imports/${storagePath}`, { headers });
-  assert.notEqual(download.status, 200, "A redeemed account directly downloaded a private Storage object.");
+  assert([400, 401, 403, 404].includes(download.status), `Direct private Storage download returned ${download.status}.`);
   const listed = await fetch(`${gateway}/storage/v1/object/list/draft-pro-private-imports`, { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ prefix: "access-code-fixtures" }) });
   if (listed.status === 200) assert.equal((await listed.text()).includes(storagePath.split("/").at(-1)!), false, "A redeemed account directly listed a private Storage object.");
   else assert([400, 401, 403].includes(listed.status), `Private Storage list returned ${listed.status}.`);
@@ -83,6 +83,8 @@ async function main() {
   const storagePath = `access-code-fixtures/${randomUUID()}.json`;
   const seeded = await fetch(`${gateway}/storage/v1/object/draft-pro-private-imports/${storagePath}`, { method: "POST", headers: { Authorization: `Bearer ${service}`, apikey: service, "Content-Type": "application/json", "x-upsert": "true" }, body: JSON.stringify({ fixture: "service-only" }) });
   assert.equal(seeded.status, 200, `Service-only private Storage seed failed: ${seeded.status} ${await seeded.text()}`);
+  const seededRead = await fetch(`${gateway}/storage/v1/object/draft-pro-private-imports/${storagePath}`, { headers: { Authorization: `Bearer ${service}`, apikey: service } });
+  assert.equal(seededRead.status, 200, `Service-only private Storage read failed: ${seededRead.status} ${await seededRead.text()}`);
   await assertDirectStorageDenied(paid, storagePath); await assertDirectStorageDenied(owner, storagePath); await assertDirectStorageDenied(foreign, storagePath);
   const codeRows = await serviceRows(`draft_pro_access_codes?select=redeemed_at,revoked_at,redeemed_by_user_id&id=eq.${codeId}`);
   assert.equal(codeRows.length, 1); assert.equal(codeRows[0].redeemed_by_user_id, ownerId); assert(codeRows[0].redeemed_at);
@@ -99,7 +101,8 @@ async function main() {
     await page.addInitScript((token) => localStorage.setItem("sb-127-auth-token", JSON.stringify({ access_token: token, refresh_token: token, token_type: "bearer", expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, user: { id: "00000000-0000-4000-8000-000000000043", aud: "authenticated", role: "authenticated", email: "stripe-sandbox@example.invalid" } })), owner);
     await page.goto(`${base}/account?section=draft-pro`);
     await page.getByLabel("Draft Pro access code", { exact: true }).focus(); await page.keyboard.press("Tab");
-    assert.equal(await page.getByRole("button", { name: "Redeem code", exact: true }).count(), 1);
+    const redeem = page.getByRole("button", { name: "Redeem code", exact: true });
+    assert.equal(await redeem.evaluate((element) => document.activeElement === element), true, "Keyboard focus did not reach the redemption submit button.");
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true, "The mobile access-code panel overflows horizontally.");
     await page.screenshot({ path: `${artifacts}/mobile-code-form.png`, fullPage: true }); await mobile.close();
   } finally { await mobileBrowser.close(); }
