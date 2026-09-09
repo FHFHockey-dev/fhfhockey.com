@@ -54,3 +54,12 @@ refunded Checkout test payment was not reused.
 - Reference for the fixed sandbox OTP: [Stripe testing](https://docs.stripe.com/testing#link).
 
 - Temporary Link cleanup verified by reopening its URL: “The link is no longer active.” Test payment retained as provider audit evidence; no live Payment Link created.
+
+## Managed Payments — September 9 evening
+
+- Owner approved Managed Payments fee/refund conditions. Live enrollment reports Ready to use; ordinary sessions remain unaffected until the new per-session flag is deployed.
+- Set sandbox/live Draft Pro product tax code to `txcd_10103000` (SaaS, personal use). The initial sandbox request correctly rejected a missing product tax code.
+- Standalone sandbox session `cs_test_a1Jy3lNoshm1qw9jRkQvoaqe9hEavfGu2Wb582Xl4EesnuQA9lMQZAda5p` showed Sold through Link, $5.99 subtotal, Pennsylvania tax $0.36, total $6.35. Provider retrieval confirmed paid, `managed_payments.enabled=true`, and balance transaction `txn_3UDuaXLaomqkve473wGZDNAh` explicitly withheld 36 cents of sales tax. No real money moved.
+- An isolated FHFH authenticated checkout route then created `cs_test_a1jHkrYt9JFBVb2or4J2LziDfUrlt31SDOcrIQepn87moGVD4EetWLmXYl` for synthetic local purchase `c3dec1be-ca38-4779-a8ee-46ed7fd5ff1a`. Browser test-card payment completed. Stripe CLI delivered actual signed `checkout.session.completed` event `evt_1UDudwLaomqkve47mv2r9f9A`; webhook returned 200.
+- Authenticated return verification and account-bound recovery-code verification both returned 200/confirmed. Existing isolated runner verified one active paid purchase, processed provider/return events, an active entitlement and account-readable access. Owned local services were cleaned up; temporary ignored sandbox credentials were removed.
+- 51 targeted tests and TypeScript passed; release suite passed 4,477 tests, 3 skipped (766 files passed, 2 skipped). Receipt inbox delivery remains unverified. Sandbox fees are not used to predict live total fees.

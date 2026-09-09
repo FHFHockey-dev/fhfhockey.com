@@ -1,24 +1,24 @@
 # Draft Pro Operator Checklist
 
-Status: pre-launch checklist. Complete locally first. Do not create live accounts, activate providers, send real email, move money, or publish production changes from this checklist without explicit owner authorization.
+Status: sales enabled September 9, 2026 through Stripe Managed Payments. Do not create live accounts, activate providers, send real email, move money, or publish production changes from this checklist without explicit owner authorization.
 
 
 ## Current launch gate audit — September 9, 2026
 
-This audit supersedes the older chronological checkpoints below. **6/10 launch gates verified (60%)**; this is a gate count, not percentage of implementation effort.
+This audit supersedes the older chronological checkpoints below. **9/10 launch gates resolved (90%): 8 verified, 1 owner-waived, 1 delivery check remaining**; this is a gate count, not percentage of implementation effort.
 
 | Gate | Current evidence / remaining action |
 | --- | --- |
 | 1. Catalog | PASS — live $5.99 USD one-time product/price verified. Owner now selects $5.99 **plus applicable tax**. |
 | 2. Production credentials | PASS — Production Stripe credentials/catalog references configured; signed delivery proves webhook secret correctness. |
-| 3. Database and deployment | PASS — four migrations applied previously; f57df7ec4 promoted with sales off. Staged source panel excludes LineupExperts, including disabled options; free manual pick passed. Dashboard/policies 200, anonymous account 401, unsigned webhook 400 after promotion. |
+| 3. Database and deployment | PASS — release 0bf0d5f39 promoted as dpl_EdQ7AHzgznPy3icqzzgwn9J2SyDS. Staged free pick passed; public dashboard/policies 200, anonymous checkout 401, unsigned webhook 400. |
 | 4. Live webhook transport | PASS — actual Stripe-signed catalog event returned 200. No live payment made. |
 | 5. Core sandbox payment lifecycle | PASS — route-created payment, return reconciliation, replay and partial/full refund evidence in verification/stripe-provider-20260909.md. |
 | 6. Receipts, Link, support and payouts | IN PROGRESS — sandbox Link OTP/payment and receipt preview passed; live Payments/Payouts/Link active, bank configured, receipts enabled, reply-to tim@fhfhockey.com verified in a fresh settings page. Stripe does not send receipts for test charges. Actual live receipt delivery and the previously requested synthetic Resend-to-support inbox check are not claimed. |
-| 7. Terms/privacy/refund pages | PASS — owner approved; wording changed to “7 days” without changing the server deadline. Published at https://fhfhockey.com/draft-pro/policies and verified HTTP 200. Stripe Checkout legal links, support email and support URL enabled and saved. Its preset refund promise stays off because its purchase/delivery window does not precisely describe our activation-based, case-by-case request policy; the full policy is linked. |
-| 8. Tax setup | PARKED at owner request — owner will complete paperwork and await the response. Registration/classification unconfirmed; no collection enabled. Deployed tax-ready code is behind DRAFT_PRO_STRIPE_AUTOMATIC_TAX_ENABLED (default false). Sandbox tax flow and registration confirmation remain. |
+| 7. Terms/privacy/refund pages | PASS — owner approved Managed Payments fee/refund conditions. Published policy explains Stripe’s 60-day refund authority and Link support; seven-day FHFH form remains subject to Stripe policy. |
+| 8. Tax setup | PASS for Managed Payments transaction handling — live Ready to use, eligible SaaS personal-use product tax code. Sandbox Pennsylvania checkout collected 36 cents on $5.99; provider balance explicitly withheld sales tax. Owner’s separate income-tax/business paperwork is outside this transaction test. |
 | 9. Source permissions | OWNER-WAIVED — September 9 explicit instruction to proceed without verification. This is an accepted launch exception, not a finding of permission. LineupExperts remains removed from dashboard use; database unchanged. |
-| 10. Paid production capabilities and sales activation | PENDING — no premium capability flags configured in Production. Published account panel lists server-enabled features only (including before purchase), rather than implying unavailable features are included. Verify authenticated access and enabled launch scope before enabling checkout. Yahoo stays off. |
+| 10. Paid production capabilities and sales activation | PASS — checkout, Managed Payments, recommendations, DUST, CSV, Saved Drafts/private imports, scenarios and reports enabled and deployed. Yahoo stays off. No real-money transaction performed. |
 
 Owner preparation: confirm/register applicable PA sales-tax account through myPATH or a qualified adviser; confirm other jurisdictions before offering sales there. Do not enter a Stripe tax registration as active until it exists. Stripe Tax needs both registration configuration and API automatic_tax enablement. Current generic product tax category also needs classification review.
 
@@ -33,7 +33,7 @@ Checked items below mean implementation/configuration verified or an operator pr
 - Support and rollback owner: Tim Branson, `tim@fhfhockey.com`. Triage billing/access first using request ID, account email, purchase ID and timestamp; route Patreon refunds to Patreon. Escalate reproducible application failures to the Chef with sanitized error text. Never request credentials, cookies or private projection files.
 - Refunds: review saved requests manually, approve/decline case by case; execute an approved refund in Stripe and let its webhook reconcile that individual grant. A request does not change access. The deadline remains exactly 168 hours (7 days) from activation.
 - Rollback decision signals: duplicate/incorrect charges or grants, unauthorized payload access, data loss, or repeated failures of an enabled capability. Disable new checkout for payment defects; disable only the affected capability for isolated feature failures. Preserve records and local work. Record UTC timestamp, release, affected flags/provider, reason, impacted accounts, customer notice and restore criteria in this checklist. Reconcile incident-period provider events and rerun the affected test before restoration. There is no actual incident to record now.
-- All-off values: every listed `DRAFT_PRO_*_ENABLED` capability is false when absent; checkout and live reconciliation apply are explicitly false. Yahoo remains independently disabled. Automatic tax is also off pending the owner's paperwork.
+- Current production flags: checkout, Managed Payments, live reconciliation apply and all shipped premium capabilities enabled. Ordinary automatic tax remains off because Managed Payments handles transaction taxes. Yahoo remains independently disabled.
 - Patreon campaign: `3827245`; verified paid benefits required. Actual creator OAuth/refresh passed. Real paid-member and signed-webhook checks are **DEFERRED by owner**, not passed; complimentary-code support is the accepted fallback.
 - Complimentary-code issue/revoke and refund-email resend are conditional procedures, not outstanding instructions to create a customer grant or send customer messages now. Their dry-run defaults and isolated acceptance evidence are recorded in the release packet.
 
@@ -178,3 +178,15 @@ September 9 sales activation instruction: owner explicitly authorized enabling s
 Launch decisions: **7/10 gates resolved (6 verified, 1 owner-waived)**; this is not 70% provider verification. Tax remains parked and collection off. A specific tax-setting question is pending before enabling checkout: proceed with automatic tax off, or wait for registration. No answer inferred from elapsed time.
 
 Recovery-code candidate 5d7f32aef is committed and Chef-reviewed. No migration is needed. It is not deployed yet; publication and sales activation await the owner’s pending choice about automatic tax remaining off. The permission waiver is recorded separately from verified gates.
+
+### Managed Payments transition — September 9, 2026
+
+- Owner approved Stripe Managed Payments' additional 3.5% fee and refund authority (up to 60 days; 48-hour merchant response).
+- Live Dashboard setup completed: `Ready to use`, one eligible product, per-session opt-in; default remains disabled. Refund preference remains email for approval.
+- Local Checkout implementation adds `DRAFT_PRO_STRIPE_MANAGED_PAYMENTS_ENABLED=true`, omits incompatible ordinary tax/payment-method options, rejects inclusive prices, and expires old ordinary open sessions before replacement. USD price remains $5.99 plus applicable tax. Existing account-bound fulfillment remains authoritative.
+- Public/account refund copy explains Stripe policy precedence and links to Link support; FHFH's seven-day request form remains available.
+- Verification: 51 targeted Checkout/fulfillment/account tests passed; TypeScript passed. No Managed Payments provider test or deployment is claimed yet.
+- Sandbox CLI authorization requested: current authorization covers only the live account. Complete sandbox validation before enabling sales. Production sales remain off.
+- Managed Payments provider gate passed: real sandbox tax withholding, route-created account-bound purchase, signed webhook, return replay, recovery code, active grant and account API verified against disposable services. See `verification/stripe-provider-20260909.md`.
+- Full release suite: 4,477 passed, 3 skipped; TypeScript passed. Production feature/checkout/Managed Payments flags saved for the next deployment; Yahoo stays off. Staging and promotion pending. Receipt inbox delivery remains unverified.
+- Rollback for this release: promote `dpl_hmnsKom2TvUHzbw2KyJVj2o7kgXA` (previous sales-off release), and reset `DRAFT_PRO_CHECKOUT_ENABLED=false` before any subsequent deployment. Preserve purchases, entitlements, provider events and retained work. Do not roll back database history.

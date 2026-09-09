@@ -1,19 +1,19 @@
 # Draft Pro Initial Release Packet
 
-Status: sales-off production release f57df7ec4 deployed September 9, 2026 as dpl_hmnsKom2TvUHzbw2KyJVj2o7kgXA. LineupExperts is removed from dashboard source selection and averaging; its database copy remains untouched. Required initial migrations are applied. Approved policies and receipt recovery fixes are published; checkout remains disabled. Tax registration is parked pending owner paperwork. See OPERATOR-CHECKLIST.md for current launch gates; historical local-only evidence below does not claim live payment validation.
+Status: sales enabled September 9, 2026 via Stripe Managed Payments. Release 0bf0d5f39 deployed and promoted as dpl_EdQ7AHzgznPy3icqzzgwn9J2SyDS (https://fhfhockey-813vyeyv3-fhfhockeydevs-projects.vercel.app). Sandbox tax withholding, account fulfillment and recovery verified; 4,477 tests passed. All shipped premium capability flags enabled; Yahoo stays parked. Receipt inbox delivery remains unverified; source-permission review is owner-waived. Rollback: promote dpl_hmnsKom2TvUHzbw2KyJVj2o7kgXA and disable checkout for subsequent builds. No production data deletion or real payment test.
 
 ## Proposed initial-release scope
 
 The locally approved initial-release candidates are the one-time 2026-27 pass, Stripe purchase and entitlement lifecycle, Patreon eligibility grant, refund request/access handling, roster-aware recommendations, personalized replacement suggestions, DUST, and aggregate CSV export. Account and expanded graph views are integration surfaces; the expanded graph remains free. The free DUST schedule matrix provides a position-by-week overview with player-by-week drilldown across all 27 Yahoo weeks, with selected playoffs highlighted; OFF and B2B views may follow the selected playoffs. Paid candidate DUST insights, alternatives, and schedule-fit sorting remain gated, with the actual analysis window and freshness displayed.
 
-Saved Drafts and private imports are a separately approved later milestone set in the same pass when enabled; production availability remains gated. Scenarios and reports are locally approved, while Yahoo is parked. The initial candidates, Saved Drafts, and decision tools are ready for owner review when enabled; these milestones must not appear as currently available in launch copy.
+Saved Drafts, private imports, scenarios and reports are enabled in this release and included in the same pass. Yahoo remains parked.
 
 ## Contract
 
 - Price: US$5.99 plus applicable tax, one time for `draft_pro_2026_27`.
 - Expiration: `2027-07-01T04:00:00.000Z` (July 1, 2027 at 12:00 AM Eastern).
 - Renewal: none; no subscription.
-- Refund requests: case by case, within 168 hours of first server-recorded purchase activation; one open request per purchase; no automatic refund or access revocation.
+- Refund requests: FHFH form accepts case-by-case requests within seven days (168 hours) of activation. For Sold through Link purchases, Stripe may refund within 60 days and its policy takes precedence. Merchant response preference: email for approval, 48 hours.
 - Patreon: refunds stay with Patreon; a purchased pass survives Patreon loss, while Patreon eligibility follows paid access through its expiry.
 
 ## Schema and configuration
