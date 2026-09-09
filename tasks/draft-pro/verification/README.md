@@ -92,6 +92,16 @@ It covers lazy opening, a complete current report, an owned opened Saved Draft w
 
 All scenario and report modes use synthetic public projection fixtures. Authentication, account routes, PostgREST, private Storage, persistence, and ownership checks use the disposable real local services. The mobile report artifact is evidence of loaded output; it is not an actual browser-chrome 200% zoom claim.
 
+## Complimentary access-code acceptance
+
+After the complimentary-code migration and redemption route are integrated, run the focused local gate:
+
+```sh
+DRAFT_PRO_ACCESS_CODES_ONLY=true web/scripts/draft-pro/verify-saved-drafts-routes.sh
+```
+
+It creates only synthetic local codes and account identities. The gate verifies browser redemption, entitlement-gated API unlock, generic foreign and rate-limited failures, and that direct code-table reads remain denied for free, redeemed, and foreign users. It then revokes through the service-only admin fixture and requires retained audit and Saved Draft names with locked entitlement-gated content.
+
 ## Interactive Stripe sandbox
 
 For an operator-run Stripe test-mode checkout against an isolated local database, put the required Stripe test configuration in an ignored local file (for example `web/.env.draft-pro-stripe-sandbox.local`) and run:

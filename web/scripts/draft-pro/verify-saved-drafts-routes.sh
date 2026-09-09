@@ -16,6 +16,7 @@ next_pid="" gateway_pid="" schema_container=""
 [[ -d web/node_modules ]] || { echo "web/node_modules is required (reuse an existing workspace install)." >&2; exit 66; }
 stripe_interactive="${DRAFT_PRO_STRIPE_INTERACTIVE:-false}"
 stripe_env_file="${DRAFT_PRO_STRIPE_ENV_FILE:-}"
+access_codes_only="${DRAFT_PRO_ACCESS_CODES_ONLY:-false}"
 if [[ "$stripe_interactive" == true ]]; then
   [[ -n "$stripe_env_file" && -f "$stripe_env_file" ]] || { echo "DRAFT_PRO_STRIPE_ENV_FILE must name an existing ignored local env file." >&2; exit 64; }
   git check-ignore -q -- "$stripe_env_file" || { echo "DRAFT_PRO_STRIPE_ENV_FILE must be ignored by Git." >&2; exit 64; }
@@ -121,6 +122,9 @@ bootstrap_patreon_token_storage
 pg < supabase/migrations/20260907143356_draft_pro_foundation.sql >/dev/null
 pg < supabase/migrations/20260907145602_draft_pro_stripe_fulfillment.sql >/dev/null
 pg < supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql >/dev/null
+if [[ "$access_codes_only" == true ]]; then
+  pg < supabase/migrations/20260909120000_draft_pro_complimentary_access_codes.sql >/dev/null
+fi
 if [[ "${DRAFT_PRO_REPORTS_ONLY:-false}" == true || "${DRAFT_PRO_REPORTS_BROWSER_ONLY:-false}" == true ]]; then
   pg < supabase/migrations/20260829161013_add_roster_optimizer_team_game_schedule.sql >/dev/null
 fi
@@ -133,14 +137,19 @@ pg <<'SQL' >/dev/null
 insert into auth.users (instance_id,id,aud,role,email,raw_app_meta_data,raw_user_meta_data)
 values ('00000000-0000-0000-0000-000000000000','00000000-0000-4000-8000-000000000041','authenticated','authenticated','route-a@example.invalid','{}','{}'),
        ('00000000-0000-0000-0000-000000000000','00000000-0000-4000-8000-000000000042','authenticated','authenticated','route-b@example.invalid','{}','{}'),
-       ('00000000-0000-0000-0000-000000000000','00000000-0000-4000-8000-000000000043','authenticated','authenticated','stripe-sandbox@example.invalid','{}','{}')
+       ('00000000-0000-0000-0000-000000000000','00000000-0000-4000-8000-000000000043','authenticated','authenticated','stripe-sandbox@example.invalid','{}','{}'),
+       ('00000000-0000-0000-0000-000000000000','00000000-0000-4000-8000-000000000044','authenticated','authenticated','access-code-foreign@example.invalid','{}','{}'),
+       ('00000000-0000-0000-0000-000000000000','00000000-0000-4000-8000-000000000045','authenticated','authenticated','access-code-admin@example.invalid','{}','{}')
 on conflict (id) do nothing;
-update auth.users set confirmation_token='', recovery_token='', email_change='', email_change_token_new='', email_change_token_current='', reauthentication_token='', phone_change='', phone_change_token='', created_at=now(), updated_at=now() where id in ('00000000-0000-4000-8000-000000000041','00000000-0000-4000-8000-000000000042','00000000-0000-4000-8000-000000000043');
+update auth.users set confirmation_token='', recovery_token='', email_change='', email_change_token_new='', email_change_token_current='', reauthentication_token='', phone_change='', phone_change_token='', created_at=now(), updated_at=now() where id in ('00000000-0000-4000-8000-000000000041','00000000-0000-4000-8000-000000000042','00000000-0000-4000-8000-000000000043','00000000-0000-4000-8000-000000000044','00000000-0000-4000-8000-000000000045');
 insert into public.user_entitlements (user_id,source_provider,entitlement_key,entitlement_status,source_reference,effective_from,effective_to)
 values ('00000000-0000-4000-8000-000000000041','stripe','draft_pro','active','route-a',now()-interval '1 day','2027-07-01T04:00:00Z'),
        ('00000000-0000-4000-8000-000000000042','stripe','draft_pro','active','route-b',now()-interval '1 day','2027-07-01T04:00:00Z');
 SQL
 assert_patreon_token_storage
+if [[ "$access_codes_only" == true ]]; then
+  pg -c "insert into public.users (user_id, role) select '00000000-0000-4000-8000-000000000045', 'admin' where not exists (select 1 from public.users where user_id = '00000000-0000-4000-8000-000000000045');" >/dev/null
+fi
 
 token() { TOKEN_ROLE="$1" TOKEN_SUBJECT="${2:-}" TOKEN_EMAIL="${3:-}" TOKEN_SECRET="$JWT_SECRET" TOKEN_TTL_SECONDS="${TOKEN_TTL_SECONDS:-3600}" node - <<'NODE'
 const crypto=require('crypto'); const enc=x=>Buffer.from(JSON.stringify(x)).toString('base64url');
@@ -149,7 +158,7 @@ process.stdout.write(`${h}.${p}.${crypto.createHmac('sha256',process.env.TOKEN_S
 NODE
 }
 [[ "$stripe_interactive" != true ]] || TOKEN_TTL_SECONDS=86400
-anon_key="$(token anon)"; service_key="$(token service_role)"; user_a="$(TOKEN_JTI=device-a token authenticated 00000000-0000-4000-8000-000000000041 route-a@example.invalid)"; user_a_second="$(TOKEN_JTI=device-b token authenticated 00000000-0000-4000-8000-000000000041 route-a@example.invalid)"; user_b="$(token authenticated 00000000-0000-4000-8000-000000000042 route-b@example.invalid)"; user_stripe="$(TOKEN_JTI=stripe-sandbox token authenticated 00000000-0000-4000-8000-000000000043 stripe-sandbox@example.invalid)"
+anon_key="$(token anon)"; service_key="$(token service_role)"; user_a="$(TOKEN_JTI=device-a token authenticated 00000000-0000-4000-8000-000000000041 route-a@example.invalid)"; user_a_second="$(TOKEN_JTI=device-b token authenticated 00000000-0000-4000-8000-000000000041 route-a@example.invalid)"; user_b="$(token authenticated 00000000-0000-4000-8000-000000000042 route-b@example.invalid)"; user_stripe="$(TOKEN_JTI=stripe-sandbox token authenticated 00000000-0000-4000-8000-000000000043 stripe-sandbox@example.invalid)"; user_code_foreign="$(token authenticated 00000000-0000-4000-8000-000000000044 access-code-foreign@example.invalid)"
 storage_files="$WORK/storage"; mkdir -p "$storage_files"
 docker run -d --name "$REST" --network "$NET" --publish 127.0.0.1::3000 -e "PGRST_DB_URI=postgres://authenticator:$PASSWORD@db:5432/postgres" -e "PGRST_DB_SCHEMAS=public,storage" -e "PGRST_DB_ANON_ROLE=anon" -e "PGRST_JWT_SECRET=$JWT_SECRET" "$REST_IMAGE" >/dev/null
 docker run -d --name "$AUTH" --network "$NET" --publish 127.0.0.1::9999 -e GOTRUE_API_HOST=0.0.0.0 -e GOTRUE_API_PORT=9999 -e "GOTRUE_DB_DATABASE_URL=postgres://supabase_auth_admin:$PASSWORD@db:5432/postgres" -e GOTRUE_DB_DRIVER=postgres -e "GOTRUE_JWT_SECRET=$JWT_SECRET" -e GOTRUE_SITE_URL=http://localhost -e API_EXTERNAL_URL=http://localhost -e GOTRUE_INSTANCE_ID=00000000-0000-0000-0000-000000000000 -e GOTRUE_DISABLE_SIGNUP=true "$AUTH_IMAGE" >/dev/null
@@ -186,7 +195,12 @@ for _ in $(seq 1 60); do
 done
 kill -0 "$next_pid" >/dev/null 2>&1
 [[ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$next_port/api/v1/account/draft-pro/drafts")" == 401 ]]
-export NEXT_URL="$next_url" SUPABASE_GATEWAY="$gateway" USER_A="$user_a" USER_A_SECOND="$user_a_second" USER_B="$user_b" USER_STRIPE="$user_stripe" SERVICE_KEY="$service_key" STRIPE_SANDBOX_USER_ID="00000000-0000-4000-8000-000000000043"
+export NEXT_URL="$next_url" SUPABASE_GATEWAY="$gateway" USER_A="$user_a" USER_A_SECOND="$user_a_second" USER_B="$user_b" USER_STRIPE="$user_stripe" USER_ACCESS_CODE_FOREIGN="$user_code_foreign" SERVICE_KEY="$service_key" STRIPE_SANDBOX_USER_ID="00000000-0000-4000-8000-000000000043" ACCESS_CODE_ADMIN_ID="00000000-0000-4000-8000-000000000045"
+if [[ "$access_codes_only" == true ]]; then
+  (cd web && NODE_PATH=.:node_modules ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/verify-access-codes-runner.ts)
+  finish
+  exit 0
+fi
 if [[ "$stripe_interactive" == true ]]; then
   browser_auth_file="$WORK/stripe-sandbox-browser-auth.js"
   NEXT_URL="$next_url" USER_STRIPE="$user_stripe" node - <<'NODE' >"$browser_auth_file"
