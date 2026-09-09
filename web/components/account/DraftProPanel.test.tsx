@@ -205,26 +205,67 @@ describe("DraftProPanel", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<DraftProPanel />);
     const input = await screen.findByLabelText("Draft Pro access code");
-    fireEvent.change(input, { target: { value: "COMP-TEST-2026" } });
+    fireEvent.change(input, { target: { value: "COMP-TEST-2026-VALID" } });
     fireEvent.submit(input.closest("form")!);
     expect(await screen.findByText(/Complimentary Draft Pro access is now active/)).toBeTruthy();
     expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/v1/account/draft-pro/access-codes/redeem");
-    expect(fetchMock.mock.calls[1]?.[1]?.body).toBe(JSON.stringify({ code: "COMP-TEST-2026" }));
+    expect(fetchMock.mock.calls[1]?.[1]?.body).toBe(JSON.stringify({ code: "COMP-TEST-2026-VALID" }));
     expect(await screen.findByText(/Access from complimentary\./)).toBeTruthy();
     expect(screen.getByText(/December 31, 2026/)).toBeTruthy();
   });
 
-  it("shows an access-code error without persisting the code", async () => {
+  it.each([400, 429])("shows an access-code error without persisting the code for HTTP %s", async (status) => {
     const inactive = { ...account, access: { ...account.access, eligible: false, grantingSources: [], expiresAt: null }, purchases: [] };
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({ data: inactive }) })
-      .mockResolvedValueOnce({ ok: false, json: async () => ({ error: { message: "That access code is invalid." } }) });
+      .mockResolvedValueOnce({ ok: false, status, json: async () => ({ error: "Code could not be redeemed." }) });
     vi.stubGlobal("fetch", fetchMock);
     render(<DraftProPanel />);
     const input = await screen.findByLabelText("Draft Pro access code");
-    fireEvent.change(input, { target: { value: "BAD-CODE" } });
+    fireEvent.change(input, { target: { value: "BAD-CODE-2026-VALIDX" } });
     fireEvent.submit(input.closest("form")!);
-    expect((await screen.findByRole("alert")).textContent).toContain("That access code is invalid.");
-    expect((screen.getByLabelText("Draft Pro access code") as HTMLInputElement).value).toBe("BAD-CODE");
+    expect((await screen.findByRole("alert")).textContent).toContain("Code could not be redeemed.");
+    expect((screen.getByLabelText("Draft Pro access code") as HTMLInputElement).value).toBe("BAD-CODE-2026-VALIDX");
+  });
+
+  it("recovers when the post-redemption account refresh fails", async () => {
+    const inactive = { ...account, access: { ...account.access, eligible: false, grantingSources: [], expiresAt: null }, purchases: [] };
+    const complimentary = { ...inactive, access: { ...inactive.access, eligible: true, grantingSources: ["complimentary"], expiresAt: "2027-01-01T05:00:00.000Z" } };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: inactive }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ redeemed: true }) })
+      .mockResolvedValueOnce({ ok: false, json: async () => ({ error: { message: "Account refresh failed." } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ redeemed: true }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: complimentary }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<DraftProPanel />);
+    const input = await screen.findByLabelText("Draft Pro access code");
+    fireEvent.change(input, { target: { value: "COMP-RETRY-2026-VALID" } });
+    fireEvent.submit(input.closest("form")!);
+    expect((await screen.findByRole("alert")).textContent).toContain("Account refresh failed.");
+    fireEvent.submit(screen.getByLabelText("Draft Pro access code").closest("form")!);
+    expect(await screen.findByText(/Access from complimentary\./)).toBeTruthy();
+  });
+
+  it("suppresses a late redemption after the account changes", async () => {
+    const inactive = { ...account, access: { ...account.access, eligible: false, grantingSources: [], expiresAt: null }, purchases: [] };
+    const accountB = { ...inactive, savedDrafts: [{ id: "draft-b", name: "B draft", status: "active", updatedAt: "2026-09-06T00:00:00.000Z" }] };
+    let resolveRedeem: ((value: unknown) => void) | undefined;
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: inactive }) })
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveRedeem = resolve; }))
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: accountB }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<DraftProPanel />);
+    const input = await screen.findByLabelText("Draft Pro access code");
+    fireEvent.change(input, { target: { value: "COMP-LATE-2026-VALID" } });
+    fireEvent.submit(input.closest("form")!);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    getSession.mockResolvedValue({ data: { session: { access_token: "token-b", user: { id: "B" } } } });
+    const listener = onAuthStateChange.mock.calls[0]?.[0];
+    act(() => listener?.("SIGNED_IN", { access_token: "token-b", user: { id: "B" } }));
+    expect(await screen.findByText("B draft")).toBeTruthy();
+    await act(async () => { resolveRedeem?.({ ok: true, json: async () => ({ redeemed: true }) }); });
+    expect(screen.queryByText(/Access code redeemed/)).toBeNull();
   });
 });
