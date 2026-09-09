@@ -181,7 +181,7 @@ SELECT cron.schedule(
           rowsUpserted: null,
           failedRows: null,
         }),
-      }),
+      })
     );
     expect(res.body).toMatchObject({
       success: true,
@@ -314,7 +314,7 @@ SELECT cron.schedule(
             statusCode: 200,
           }),
         ],
-      }),
+      })
     );
   });
 
@@ -477,7 +477,7 @@ SELECT cron.schedule(
             reason: "Returned 1 warning(s).",
           }),
         ],
-      }),
+      })
     );
   });
 
@@ -561,7 +561,7 @@ SELECT cron.schedule(
       }),
     });
     expect(res.body.warnings.missingObservationJobs[0].warnings).toContain(
-      "Cron submission was recorded, but no route audit payload was recorded; route execution is unverified.",
+      "Cron submission was recorded, but no route audit payload was recorded; route execution is unverified."
     );
   });
 
@@ -660,14 +660,18 @@ SELECT cron.schedule(
     cronJobReportSelectMock.mockReturnValue({
       gte: vi.fn().mockReturnValue({
         order: vi.fn().mockResolvedValue({
-          data: jobs.map((job) => ({
-            jobname: job.jobname,
-            scheduled_time: "2026-03-20T12:00:00.000Z",
-            end_time: "2026-03-20T12:00:01.000Z",
-            status: "success",
-            return_message: "OK",
-            sql_text: `select net.http_get(url:='https://fhfhockey.com${job.route}');`,
-          })),
+          data: jobs.map((job) => {
+            const [minute, hour] = job.schedule.split(" ");
+            const scheduledTime = `2026-03-20T${hour.padStart(2, "0")}:${minute.padStart(2, "0")}:00.000Z`;
+            return {
+              jobname: job.jobname,
+              scheduled_time: scheduledTime,
+              end_time: scheduledTime,
+              status: "success",
+              return_message: "OK",
+              sql_text: `select net.http_get(url:='https://fhfhockey.com${job.route}');`,
+            };
+          }),
           error: null,
         }),
       }),
@@ -684,7 +688,7 @@ ${JSON.stringify(
     ...job,
     active: true,
     method: "GET",
-  })),
+  }))
 )}
 \`\`\`
 `);
@@ -705,7 +709,7 @@ ${JSON.stringify(
     expect(res.body.warnings.missingObservationJobs).toHaveLength(4);
     for (const warning of res.body.warnings.missingObservationJobs) {
       expect(warning.warnings).toContain(
-        "Cron submission was recorded, but no route audit payload was recorded; route execution is unverified.",
+        "Cron submission was recorded, but no route audit payload was recorded; route execution is unverified."
       );
     }
   });
@@ -1005,7 +1009,7 @@ ${JSON.stringify(
       expect.objectContaining({
         audits: [expect.objectContaining({ status: "disabled" })],
         summary: expect.objectContaining({ auditDisabled: 1 }),
-      }),
+      })
     );
   });
 });

@@ -3465,7 +3465,13 @@
 }
 
 .leagueChartPanel {
+  display: grid;
   overflow: hidden;
+
+  > div {
+    display: grid;
+    min-width: 0;
+  }
 }
 
 .inlineEmptyState {
@@ -3492,6 +3498,44 @@
   flex-direction: column;
   min-height: 100%;
   background: v.$background-medium;
+}
+
+.injuriesContainer {
+  align-self: start;
+  min-height: 0;
+  height: var(--updates-height, auto);
+}
+
+.standingsContainer {
+  align-self: start;
+  min-height: 0;
+}
+
+@media (min-width: #{v.$breakpoint-tablet + 1px}) {
+  .injuriesContainer .injuryTable {
+    height: 100%;
+
+    tbody td {
+      height: 48px;
+      padding-block: 6px;
+    }
+
+    .descriptionColumn {
+      padding-block: 6px !important;
+    }
+
+    .desktopUpdateDetails {
+      display: flex;
+      align-items: center;
+    }
+
+    .descriptionContent {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  }
 }
 
 .panelMeta {
@@ -3562,7 +3606,7 @@
   border-collapse: collapse;
   color: v.$text-primary;
   font-family: v.$font-family-primary;
-  font-size: 0.7rem;
+  font-size: 0.76rem;
   font-variant-numeric: tabular-nums;
 
   thead th {
@@ -3570,11 +3614,11 @@
     top: 0;
     z-index: 1;
     height: 24px;
-    padding: 1px v.$space-xs;
+    padding: 4px 6px;
     border-bottom: 1px solid rgba(v.$primary-color, 0.36);
     background: v.$background-dark;
     color: v.$text-secondary;
-    font-size: 0.62rem;
+    font-size: 0.68rem;
     font-weight: v.$font-weight-semibold;
     letter-spacing: 0.06em;
     text-align: center;
@@ -3597,9 +3641,9 @@
 
   tbody td,
   tbody th {
-    height: 18px;
-    padding: 1px v.$space-xs;
-    line-height: 1.15;
+    height: 28px;
+    padding: 4px 6px;
+    line-height: 1.3;
     text-align: center;
     white-space: nowrap;
   }
@@ -3607,7 +3651,7 @@
   tbody th {
     color: v.$text-secondary;
     font-family: v.$font-family-numbers;
-    font-size: 0.66rem;
+    font-size: 0.72rem;
     font-weight: v.$font-weight-medium;
   }
 }
@@ -3630,7 +3674,7 @@
 
   td:nth-child(n + 3) {
     font-family: v.$font-family-numbers;
-    font-size: 0.66rem;
+    font-size: 0.72rem;
   }
 }
 
@@ -3714,7 +3758,7 @@
   width: 60px;
   color: v.$text-secondary;
   font-family: v.$font-family-numbers;
-  font-size: 0.65rem;
+  font-size: 0.71rem;
 }
 
 .teamColumn {
@@ -4919,7 +4963,7 @@
   .standingsHeader,
   .injuriesHeader {
     align-items: center;
-    min-height: 44px;
+    min-height: 50px;
     padding: 5px v.$space-sm;
     border-bottom-color: rgba(v.$primary-color, 0.16);
     background: color.adjust(v.$surface-0, $lightness: -1%);
@@ -4995,16 +5039,17 @@
 
     tbody td,
     tbody th {
-      height: 25px;
+      height: 30px;
+      padding-block: 4px;
       color: v.$text-primary;
-      font-size: 0.64rem;
+      font-size: 0.7rem;
       font-weight: v.$font-weight-regular;
     }
 
     tbody th,
     td:nth-child(n + 3) {
       font-family: v.$font-family-numbers;
-      font-size: 0.62rem;
+      font-size: 0.68rem;
     }
 
     .teamLink {
@@ -5032,15 +5077,15 @@
     }
 
     tbody tr:not(.expandedUpdateRow) {
-      min-height: 44px;
+      min-height: 50px;
       background: transparent;
     }
 
     tbody td,
     tbody th {
-      height: 44px;
-      padding: 3px;
-      font-size: 0.64rem;
+      height: 50px;
+      padding: 6px 3px;
+      font-size: 0.7rem;
       font-weight: v.$font-weight-regular;
     }
   }
@@ -5053,7 +5098,7 @@
 
   .dateColumn {
     color: v.$color-neutral-400;
-    font-size: 0.58rem !important;
+    font-size: 0.64rem !important;
   }
 
   .nameColumn {
@@ -5062,7 +5107,7 @@
 
   .statusColumn {
     color: v.$primary-color;
-    font-size: 0.56rem !important;
+    font-size: 0.62rem !important;
     font-weight: v.$font-weight-medium !important;
     letter-spacing: 0.025em;
   }
@@ -6095,5 +6140,28 @@
     left: 50%;
     width: min(320px, calc(100vw - 24px));
     transform: translate(-50%, -50%);
+  }
+}
+
+// Keep status treatments consistent in the desktop table and mobile rows.
+.standingsInjuriesContainer .injuryTable tbody {
+  tr.injuredRow {
+    background: rgba(v.$danger-color, 0.09);
+    outline: 1px solid v.$danger-color;
+    outline-offset: -1px;
+
+    .statusColumn { color: v.$danger-color; }
+  }
+
+  tr.returningRow {
+    background: rgba(v.$success-color, 0.09);
+    outline: 1px solid v.$success-color;
+    outline-offset: -1px;
+
+    .statusColumn { color: v.$success-color; }
+  }
+
+  tr.transactionRow .statusColumn {
+    color: v.$primary-color;
   }
 }

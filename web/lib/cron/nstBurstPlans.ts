@@ -1,27 +1,37 @@
 import {
   assessNstRequestPlan,
+  canBurstNstRequests,
   selectNstSafeInterval
 } from "./nstRateLimitPolicy";
+import { getNstCronBurstClearance } from "./nstCoordination";
 
-export const NST_SMALL_DATE_BURST_MAX_DATES = 2;
 export const NST_SAFE_INTERVAL_MS = 21_000;
 export const NST_GOALIES_REQUEST_INTERVAL_MS = NST_SAFE_INTERVAL_MS;
 export const DEFAULT_MAX_PENDING_URLS_PER_RUN = 20;
+export const NST_STRICT_MAX_URLS_PER_RUN = 6;
 export const GOALIE_URLS_PER_DATE = 10;
 
 function resolveSharedSmallDateBurstPlan(options: {
+  jobName: string;
   queuedDates: number;
   requestCount: number;
   safeIntervalMs?: number;
   explicitRequestIntervalMs?: number;
 }) {
   const safeIntervalMs = options.safeIntervalMs ?? NST_SAFE_INTERVAL_MS;
-  const burstEligibleByDateCount =
-    options.queuedDates <= NST_SMALL_DATE_BURST_MAX_DATES;
+  const burstEligibleByRequestCount = canBurstNstRequests(
+    options.requestCount
+  );
+  const scheduleClearance = getNstCronBurstClearance(options.jobName);
+  const burstAllowedByPolicy =
+    burstEligibleByRequestCount && scheduleClearance.allowed;
   const candidateIntervalsMs =
     options.explicitRequestIntervalMs !== undefined
-      ? [options.explicitRequestIntervalMs, safeIntervalMs]
-      : burstEligibleByDateCount
+      ? burstAllowedByPolicy ||
+        options.explicitRequestIntervalMs >= safeIntervalMs
+        ? [options.explicitRequestIntervalMs, safeIntervalMs]
+        : [safeIntervalMs]
+      : burstAllowedByPolicy
         ? [0, safeIntervalMs]
         : [safeIntervalMs];
 
@@ -41,7 +51,8 @@ function resolveSharedSmallDateBurstPlan(options: {
     queuedDates: options.queuedDates,
     requestIntervalMs: assessment.intervalMs,
     burstAllowed: assessment.intervalMs === 0,
-    burstEligibleByDateCount,
+    burstEligibleByRequestCount,
+    scheduleClearance,
     usedExplicitInterval:
       options.explicitRequestIntervalMs !== undefined &&
       assessment.intervalMs === options.explicitRequestIntervalMs,
@@ -63,8 +74,9 @@ export function resolveGoalieNstRequestPlan(options: {
     options.maxPendingUrls
   );
   const sharedPlan = resolveSharedSmallDateBurstPlan({
+    jobName: "update-nst-goalies",
     queuedDates: options.queuedDates,
-    requestCount: requestCountBudget,
+    requestCount: options.totalQueuedUrls,
     safeIntervalMs: NST_GOALIES_REQUEST_INTERVAL_MS,
     explicitRequestIntervalMs: options.explicitRequestIntervalMs
   });
@@ -76,7 +88,8 @@ export function resolveGoalieNstRequestPlan(options: {
     requestCountBudget,
     requestIntervalMs: sharedPlan.requestIntervalMs,
     burstAllowed: sharedPlan.burstAllowed,
-    burstEligibleByDateCount: sharedPlan.burstEligibleByDateCount,
+    burstEligibleByRequestCount: sharedPlan.burstEligibleByRequestCount,
+    scheduleClearance: sharedPlan.scheduleClearance,
     usedExplicitInterval: sharedPlan.usedExplicitInterval,
     explicitIntervalRejected: sharedPlan.explicitIntervalRejected,
     assessment: sharedPlan.assessment
@@ -90,6 +103,7 @@ export const TEAM_DAILY_URLS_PER_DATE = 8;
 export function resolveTeamDailyNstRequestPlan(targetDates: string[]) {
   const requestCount = targetDates.length * TEAM_DAILY_URLS_PER_DATE;
   const sharedPlan = resolveSharedSmallDateBurstPlan({
+    jobName: "update-nst-team-daily-incremental",
     queuedDates: targetDates.length,
     requestCount,
     safeIntervalMs: NST_TEAM_DAILY_SAFE_INTERVAL_MS
@@ -101,7 +115,8 @@ export function resolveTeamDailyNstRequestPlan(targetDates: string[]) {
     requestCount,
     requestIntervalMs: sharedPlan.requestIntervalMs,
     burstAllowed: sharedPlan.burstAllowed,
-    burstEligibleByDateCount: sharedPlan.burstEligibleByDateCount,
+    burstEligibleByRequestCount: sharedPlan.burstEligibleByRequestCount,
+    scheduleClearance: sharedPlan.scheduleClearance,
     assessment: sharedPlan.assessment
   };
 }
@@ -115,6 +130,7 @@ export function resolveNstTeamStatsRequestPlan(options: {
 }) {
   const requestCount = options.dateRequestCount + options.seasonRequestCount;
   const sharedPlan = resolveSharedSmallDateBurstPlan({
+    jobName: "update-nst-team-stats-all",
     queuedDates: options.queuedDates,
     requestCount,
     safeIntervalMs: NST_TEAM_STATS_SAFE_INTERVAL_MS
@@ -127,7 +143,8 @@ export function resolveNstTeamStatsRequestPlan(options: {
     seasonRequestCount: options.seasonRequestCount,
     requestIntervalMs: sharedPlan.requestIntervalMs,
     burstAllowed: sharedPlan.burstAllowed,
-    burstEligibleByDateCount: sharedPlan.burstEligibleByDateCount,
+    burstEligibleByRequestCount: sharedPlan.burstEligibleByRequestCount,
+    scheduleClearance: sharedPlan.scheduleClearance,
     assessment: sharedPlan.assessment
   };
 }
@@ -137,6 +154,7 @@ export function resolveNstCurrentSeasonRequestPlan(options: {
   requestCount: number;
 }) {
   return resolveSharedSmallDateBurstPlan({
+    jobName: "update-nst-current-season",
     queuedDates: options.queuedDates,
     requestCount: options.requestCount,
     safeIntervalMs: NST_SAFE_INTERVAL_MS
@@ -148,6 +166,7 @@ export function resolveNstGamelogRequestPlan(options: {
   requestCount: number;
 }) {
   return resolveSharedSmallDateBurstPlan({
+    jobName: "update-nst-gamelog",
     queuedDates: options.queuedDates,
     requestCount: options.requestCount,
     safeIntervalMs: NST_SAFE_INTERVAL_MS

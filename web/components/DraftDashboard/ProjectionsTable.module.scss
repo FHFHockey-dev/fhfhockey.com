@@ -1603,10 +1603,36 @@
 .playersTable td.position { white-space: normal; }
 .playersTable.statColumnsTable .statHeader,
 .playersTable.statColumnsTable .statCol { min-width: 0; }
-.inlineGoalieStatsCell { padding-inline: 3px !important; }
-.inlineGoalieStats { display: grid; grid-template-columns: repeat(auto-fit, minmax(44px, 1fr)); align-items: center; gap: 1px 4px; width: 100%; text-align: center; }
-.inlineGoalieStat { display: inline-flex; align-items: baseline; justify-content: center; gap: 3px; min-width: 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.inlineGoalieStatLabel { color: v.$primary-color; font-size: .8em; font-weight: 700; }
+.inlineGoalieStatsCell { padding-inline: 4px !important; }
+.inlineGoalieStats {
+  display: flex;
+  flex-wrap: wrap;
+  container-type: inline-size;
+  align-items: center;
+  gap: 6px 8px;
+  width: 100%;
+  text-align: center;
+}
+.inlineGoalieStat {
+  display: flex;
+  flex: 1 0 calc(25% - 6px);
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  line-height: 1.1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.inlineGoalieStatLabel {
+  color: v.$primary-color;
+  font-size: .8em;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+@container (max-width: 220px) {
+  .inlineGoalieStat { flex-basis: calc(50% - 4px); }
+}
 .playerRow[data-stripe="0"], .expandRow[data-stripe="0"] { background: v.$draft-input; }
 .playerRow[data-stripe="1"], .expandRow[data-stripe="1"] { background: v.$draft-zebra; }
 .playerRow:hover { background: v.$draft-surface-raised; }

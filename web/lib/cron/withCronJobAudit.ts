@@ -126,6 +126,10 @@ function inferFailure(body: unknown): boolean {
 
   if (typeof b.error === "string" && b.error.trim()) return true;
 
+  if (typeof b.failedRequests === "number" && b.failedRequests > 0) return true;
+  if (Array.isArray(b.summary?.errors) && b.summary.errors.length > 0)
+    return true;
+
   if (b.success === true) return false;
   if (
     normalizedStatus &&
@@ -151,7 +155,7 @@ export function withCronJobAudit(
     jobName?: string;
     includeFinalAuditReceipt?: boolean;
     recordRowMetrics?: boolean;
-  },
+  }
 ): (req: any, res: any) => Promise<void> {
   return async (req: NextApiRequest, res: NextApiResponse) => {
     const startedAt = Date.now();
@@ -185,7 +189,7 @@ export function withCronJobAudit(
       if (!res.headersSent) {
         const errorBody = withCronJobTiming(
           { success: false, error: (err as any)?.message ?? "Unknown error" },
-          startedAt,
+          startedAt
         );
         capturedBody = errorBody;
         res.status(500).json(errorBody);
@@ -210,7 +214,10 @@ export function withCronJobAudit(
       : null;
     const failedRows = recordRowMetrics ? inferFailedRows(capturedBody) : null;
     const inferredFailure =
-      thrown != null || statusCode >= 400 || inferFailure(capturedBody);
+      thrown != null ||
+      statusCode === 207 ||
+      statusCode >= 400 ||
+      inferFailure(capturedBody);
 
     if (
       opts?.includeFinalAuditReceipt &&
@@ -280,7 +287,7 @@ export function withCronJobAudit(
             "cron_job_audit insert failed",
             auditInsertError.message ??
               safeJson(auditInsertError, 2000) ??
-              "Unknown audit insert error",
+              "Unknown audit insert error"
           );
         }
       } catch (e) {

@@ -97,7 +97,10 @@ import {
   isNstResponseError,
   toNstOperatorMessage
 } from "lib/nst/client";
-import { resolveNstGamelogRequestPlan } from "lib/cron/nstBurstPlans";
+import {
+  NST_STRICT_MAX_URLS_PER_RUN,
+  resolveNstGamelogRequestPlan
+} from "lib/cron/nstBurstPlans";
 import { buildCronJobTiming } from "lib/cron/timingContract";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import adminOnly from "utils/adminOnlyMiddleware";
@@ -776,21 +779,18 @@ async function getLatestDateSupabase(): Promise<string | null> {
       .maybeSingle();
 
     if (error) {
-      console.warn(
-        `Error querying latest date from ${table}: ${error.message}. Skipping table.`
-      );
-      continue; // Skip this table if error occurs
+      throw new Error(`Error querying latest date from ${table}: ${error.message}`);
     }
-    if (data && data.date_scraped) {
-      // Use date-fns for reliable comparison
-      const currentDate = parse(data.date_scraped, "yyyy-MM-dd", new Date());
-      if (
-        !latestDate ||
-        isAfter(currentDate, parse(latestDate, "yyyy-MM-dd", new Date()))
-      ) {
-        latestDate = data.date_scraped;
-        console.log(`Found new latest date ${latestDate} in table: ${table}`);
-      }
+    if (!data?.date_scraped) {
+      return null;
+    }
+    const currentDate = parse(data.date_scraped, "yyyy-MM-dd", new Date());
+    if (
+      !latestDate ||
+      isAfter(parse(latestDate, "yyyy-MM-dd", new Date()), currentDate)
+    ) {
+      latestDate = data.date_scraped;
+      console.log(`Found least-current date ${latestDate} in table: ${table}`);
     }
   }
   if (latestDate) {
@@ -1652,13 +1652,23 @@ async function processUrls(
   isFullRefresh: boolean,
   processedPlayerIds: Set<number>,
   failedUrls: UrlQueueItem[],
-  options?: { bypassRateLimit?: boolean; minIntervalMs?: number }
-): Promise<{ totalRowsProcessed: number }> {
+  options?: {
+    bypassRateLimit?: boolean;
+    minIntervalMs?: number;
+    maxRequests?: number;
+  }
+): Promise<{
+  totalRowsProcessed: number;
+  requestsAttempted: number;
+  stoppedEarly: boolean;
+}> {
   banner(
     `Starting processing | URLs: ${urlsQueue.length} | Full Refresh: ${isFullRefresh}`
   );
   let totalProcessed = 0;
   let totalRowsProcessed = 0;
+  let requestsAttempted = 0;
+  let stoppedEarly = false;
 
   for (let i = 0; i < urlsQueue.length; i++) {
     const item = urlsQueue[i];
@@ -1709,13 +1719,21 @@ async function processUrls(
     let upsertedCount = 0;
 
     if (shouldFetch) {
+      if (
+        options?.maxRequests !== undefined &&
+        requestsAttempted >= options.maxRequests
+      ) {
+        stoppedEarly = true;
+        break;
+      }
+      requestsAttempted += 1;
       console.log("\nFetching NST data from URL\n");
       const fetchParseResponse = await fetchAndParseData(
         url,
         datasetType,
         date,
         seasonId,
-        2,
+        options?.bypassRateLimit ? 1 : 2,
         options
       );
       fetchSuccess = fetchParseResponse.success;
@@ -1774,7 +1792,7 @@ async function processUrls(
     `\n--- Initial URL processing complete. ${failedUrls.length} failures recorded. ---`
   );
 
-  return { totalRowsProcessed };
+  return { totalRowsProcessed, requestsAttempted, stoppedEarly };
 }
 
 // --- NHL API Cross-Referencing ---
@@ -2275,7 +2293,10 @@ async function main(
         fullRefreshFlag("reverse"),
         processedPlayerIds,
         failedUrls,
-        { bypassRateLimit: false }
+        {
+          bypassRateLimit: false,
+          maxRequests: NST_STRICT_MAX_URLS_PER_RUN
+        }
       );
       totalRowsAffected += initialResult.totalRowsProcessed || 0;
 
@@ -2520,7 +2541,10 @@ async function main(
     });
     const nstPacing = initialNstRequestPlan.burstAllowed
       ? { bypassRateLimit: true }
-      : { minIntervalMs: initialNstRequestPlan.requestIntervalMs };
+      : {
+          minIntervalMs: initialNstRequestPlan.requestIntervalMs,
+          maxRequests: NST_STRICT_MAX_URLS_PER_RUN
+        };
     const initialProcessResult = await processUrls(
       initialUrlsQueue,
       fullRefreshFlag(isForwardFull ? "forward" : "incremental"),
@@ -2544,9 +2568,12 @@ async function main(
         queuedDates: retryUniqueDateCount,
         requestCount: failedUrlsRetryCopy.length
       });
-      const retryNstPacing = retryNstRequestPlan.burstAllowed
-        ? { bypassRateLimit: true }
-        : { minIntervalMs: retryNstRequestPlan.requestIntervalMs };
+      const retryNstPacing = {
+        minIntervalMs: Math.max(
+          retryNstRequestPlan.requestIntervalMs,
+          REQUEST_INTERVAL_MS
+        )
+      };
       const retryResult = await processUrls(
         failedUrlsRetryCopy,
         true,
@@ -2589,7 +2616,9 @@ async function main(
         details: {
           timing: { ...buildCronJobTiming(startTime, endTime), source: "audit" },
           failedRows: failedUrlCountAfterRetry,
-          urlsProcessed: initialUrlsQueue.length,
+          urlsProcessed: initialProcessResult.requestsAttempted,
+          urlsQueued: initialUrlsQueue.length,
+          stoppedEarly: initialProcessResult.stoppedEarly,
           playersProcessed: processedPlayerIds.size,
           troublesomePlayersCount: troublesomePlayers.length,
           isForwardFull: isForwardFull,

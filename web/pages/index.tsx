@@ -634,15 +634,12 @@ export async function getServerSideProps({ req, res }) {
         ),
       )
       .slice(0, 32);
-    recentInjuryNews = publishedNews
-      .filter((item) =>
-        ["INJURY", "REPORTED INJURY", "RETURN", "RETURNING"].includes(
-          String(item.category ?? "")
-            .trim()
-            .toUpperCase(),
-        ),
-      )
-      .slice(0, 32);
+    recentInjuryNews = await fetchNewsFeedItems({
+      supabase: supabaseServer,
+      status: "published",
+      categories: ["INJURY", "REPORTED INJURY", "RETURN", "RETURNING"],
+      limit: 32,
+    });
   } catch (error: any) {
     console.error("Error fetching homepage news cards:", error.message);
   }

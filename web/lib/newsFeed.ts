@@ -461,6 +461,7 @@ export async function fetchNewsFeedItems(args: {
   supabase: any;
   status?: "draft" | "published" | "archived" | "all";
   limit?: number;
+  categories?: string[];
   reviewItemId?: string | null;
 }): Promise<NewsFeedItem[]> {
   let query = args.supabase
@@ -477,6 +478,9 @@ export async function fetchNewsFeedItems(args: {
   }
   if (args.status && args.status !== "all") {
     query = query.eq("card_status", args.status);
+  }
+  if (args.categories?.length) {
+    query = query.in("category", args.categories);
   }
 
   const { data: itemRows, error: itemError } = await query;

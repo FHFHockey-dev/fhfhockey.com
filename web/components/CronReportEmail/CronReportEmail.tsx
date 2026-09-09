@@ -114,7 +114,7 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
       job.lastStatus !== "success" ||
       (job.failedRowsLast ?? 0) > 0 ||
       Boolean(job.optimizationDenotation) ||
-      (job.missingObservationWarnings ?? []).length > 0,
+      (job.missingObservationWarnings ?? []).length > 0
   );
 
   const renderTable = (children: React.ReactNode) => (
@@ -129,7 +129,7 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
 
   const pill = (
     label: string,
-    colors: { background: string; color: string },
+    colors: { background: string; color: string }
   ) => (
     <>
       <span
@@ -166,7 +166,7 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
 
   const badge = (
     status: JobStatus | RunDigest["status"],
-    source?: "audit" | "cron" | "missing" | "unknown",
+    source?: "audit" | "cron" | "missing" | "unknown"
   ) => {
     const common: React.CSSProperties = {
       display: "inline-block",
@@ -222,7 +222,7 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
   const renderReasonCell = (
     reason: string | null,
     samples: string[],
-    tone: "danger" | "neutral" = "neutral",
+    tone: "danger" | "neutral" = "neutral"
   ) => (
     <td style={tone === "danger" ? { color: "#991B1B" } : undefined}>
       <div>{reason ?? "—"}</div>
@@ -361,12 +361,12 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                     {renderReasonCell(
                       job.why ?? job.note,
                       job.failedRowSamples,
-                      "danger",
+                      "danger"
                     )}
                   </tr>
                 ))}
               </tbody>
-            </>,
+            </>
           )}
         </>
       ) : !telemetryUnavailable ? (
@@ -402,7 +402,7 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                   </tr>
                 ))}
               </tbody>
-            </>,
+            </>
           )}
         </>
       ) : null}
@@ -447,7 +447,7 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                   </tr>
                 ))}
               </tbody>
-            </>,
+            </>
           )}
         </>
       ) : null}
@@ -520,7 +520,7 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                             "bottleneck",
                             "rate_limited",
                             "side_effect",
-                          ].includes(annotation.kind),
+                          ].includes(annotation.kind)
                         )
                         .slice(0, 2)
                         .map((annotation) => (
@@ -528,11 +528,15 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                             key={`${job.jobKey}-${annotation.kind}`}
                           >
                             {pill(
-                              annotation.kind.replace(/_/g, " ").toUpperCase(),
+                              annotation.kind === "rate_limited"
+                                ? "RATE-LIMIT SENSITIVE"
+                                : annotation.kind
+                                    .replace(/_/g, " ")
+                                    .toUpperCase(),
                               {
                                 background: "#E0F2FE",
                                 color: "#075985",
-                              },
+                              }
                             )}
                           </React.Fragment>
                         ))}
@@ -577,7 +581,7 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                   </tr>
                 ))}
               </tbody>
-            </>,
+            </>
           )}
         </>
       ) : null}

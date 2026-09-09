@@ -187,7 +187,7 @@
     "jobname": "update-nst-tables-all",
     "schedule": "10 8 * * *",
     "run_time_utc": "08:10 UTC",
-    "active": true,
+    "active": false,
     "method": "GET",
     "route": "/api/Teams/nst-team-stats?date=all"
   },
@@ -367,7 +367,7 @@
     "jobname": "update-nst-team-daily",
     "schedule": "55 9 * * *",
     "run_time_utc": "09:55 UTC",
-    "active": true,
+    "active": false,
     "method": "GET",
     "route": "/api/v1/db/update-nst-team-daily"
   },
@@ -423,7 +423,7 @@
     "jobname": "update-rolling-games-recent",
     "schedule": "25 10 * * *",
     "run_time_utc": "10:25 UTC",
-    "active": true,
+    "active": false,
     "method": "GET",
     "route": "/api/v1/db/update-rolling-games?date=recent",
     "auth": "Supabase Vault cron_secret"
@@ -516,8 +516,8 @@
   {
     "jobid": 328,
     "jobname": "update-nst-team-daily-incremental",
-    "schedule": "50 10 * * *",
-    "run_time_utc": "10:50 UTC",
+    "schedule": "55 9 * * *",
+    "run_time_utc": "09:55 UTC",
     "active": true,
     "method": "GET",
     "route": "/api/v1/db/update-nst-team-daily"
@@ -717,7 +717,7 @@ protected routes.
 -- - 08:00 UTC / 03:00 EST: update-line-combinations-all
 -- - 08:05 UTC / 03:05 EST: update-power-play-combinations
 -- - 08:05 UTC / 03:05 EST: update-team-yearly-summary
--- - 08:10 UTC / 03:10 EST: update-nst-tables-all
+-- - 08:10 UTC / 03:10 EST: update-nst-tables-all (inactive duplicate)
 -- - 08:15 UTC / 03:15 EST: update-rolling-player-averages
 -- - 08:15 UTC / 03:15 EST: update-standings-details
 -- - 08:20 UTC / 03:20 EST: update-all-wgo-goalie-totals
@@ -735,14 +735,14 @@ protected routes.
 -- - 09:35 UTC / 04:35 EST: update-wgo-teams
 -- - 09:45 UTC / 04:45 EST: ingest-projection-inputs
 -- - 09:50 UTC / 04:50 EST: build-forge-derived-v2
--- - 09:55 UTC / 04:55 EST: update-nst-team-daily
+-- - 09:55 UTC / 04:55 EST: update-nst-team-daily-incremental
 -- - 10:00 UTC / 05:00 EST: daily-refresh-matview
 -- - 10:05 UTC / 05:05 EST: run-forge-projection-v2
 -- - 10:10 UTC / 05:10 EST: update-team-ctpi-daily (after WGO/NST team sources)
 -- - 10:12 UTC / 05:12 EST: run-forge-projection-v2-weekly (horizonGames=5, Vault-backed)
 -- - 10:15 UTC / 05:15 EST: update-team-power-ratings (after WGO/NST team sources)
 -- - 10:20 UTC / 05:20 EST: update-season-stats-current-season
--- - 10:25 UTC / 05:25 EST: update-rolling-games-recent
+-- - 10:25 UTC / 05:25 EST: update-rolling-games-recent (inactive legacy route)
 -- - 10:30 UTC / 05:30 EST: update-sko-stats-full-season
 -- - 10:35 UTC / 05:35 EST: update-wgo-averages
 -- - 10:40 UTC / 05:40 EST: rebuild-sustainability-baselines
@@ -752,7 +752,6 @@ protected routes.
 -- - 10:44 UTC / 05:44 EST: rebuild-sustainability-score
 -- - 10:45 UTC / 05:45 EST: update-predictions-sko
 -- - 10:46 UTC / 05:46 EST: rebuild-sustainability-trend-bands
--- - 10:50 UTC / 05:50 EST: update-nst-team-daily-incremental
 -- - 10:55 UTC / 05:55 EST: update-nst-team-stats-all
 -- - 11:30 UTC / 06:30 EST: run-projection-accuracy
 -- - 11:34 UTC / 06:34 EST: game-predictions-ingest-espn-odds-h0-h7
@@ -771,7 +770,8 @@ protected routes.
 -- - Daily report should run after the final scheduled data job.
 -- - Current intended final data job: 21:10 UTC / 16:10 EST game-predictions-ingest-espn-odds-utc-spillover.
 -- - Current intended report job: 21:15 UTC / 16:15 EST daily-cron-report.
--- - Direct NST cron starts should keep at least 15 minutes of separation where possible.
+-- - Direct NST cron starts require at least 10 minutes of separation. The active
+--   schedule currently provides a minimum of 15 minutes (08:30 -> 08:45 UTC).
 --
 -- Gap notes
 -- - update-stats-job and update-line-combinations-job are interval jobs and are not part of the daily floor cluster.

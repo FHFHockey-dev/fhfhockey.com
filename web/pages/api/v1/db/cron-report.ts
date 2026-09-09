@@ -28,14 +28,14 @@ import {
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
 const REPORT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const SELF_AUDIT_WRITE_GRACE_MS = 5 * 60 * 1000;
-const MATCH_WINDOW_MS = 6 * 60 * 60 * 1000;
+const MATCH_WINDOW_MS = 30 * 60 * 1000;
 const MAX_UNSCHEDULED_ALERTS = 8;
 const ROUTE_AUDIT_MISSING_WARNING =
   "Cron submission was recorded, but no route audit payload was recorded; route execution is unverified.";
@@ -81,8 +81,7 @@ const ROUTE_TARGET_TABLE_MAP: Record<string, string> = {
   "/api/v1/db/update-seasons": "seasons",
   "/api/v1/db/update-players": "players, rosters",
   "/api/v1/db/update-games": "games",
-  "/api/v1/db/update-roster-optimizer-schedule":
-    "roster_optimizer_team_games",
+  "/api/v1/db/update-roster-optimizer-schedule": "roster_optimizer_team_games",
   "/api/v1/db/update-yahoo-weeks": "yahoo_weeks",
   "/api/v1/db/update-nst-gamelog": "nst_* game logs",
   "/api/v1/db/update-wgo-skaters": "wgo_skater_stats",
@@ -105,7 +104,7 @@ const ROUTE_TARGET_TABLE_MAP: Record<string, string> = {
   "/api/internal/sync-yahoo-players-to-sheet": "external sheet sync",
   "/api/v1/db/update-team-ctpi-daily": "team_ctpi_daily",
   "/api/v1/db/update-team-sos": "team_sos",
-  "/api/v1/db/update-team-power-ratings": "team_power_ratings",
+  "/api/v1/db/update-team-power-ratings": "team_power_ratings_daily",
   "/api/v1/db/update-team-power-ratings-new": "team_power_ratings_daily",
   "/api/v1/db/run-fetch-wgo-data": "wgo_team_stats",
   "/api/v1/db/update-nhl-edge-stats": "nhl_edge_*",
@@ -401,7 +400,7 @@ function sanitizeErrorMessage(value: unknown, maxLen = 240): string | null {
     [provider, code ? `${code}` : null, reason, host ? `from ${host}` : null]
       .filter((part): part is string => Boolean(part))
       .join(" "),
-    maxLen,
+    maxLen
   );
 }
 
@@ -481,7 +480,7 @@ function extractDetailsMessage(details: unknown): string | null {
 
 function getDirectNumericField(
   value: unknown,
-  keys: readonly string[],
+  keys: readonly string[]
 ): number | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const obj = value as Record<string, unknown>;
@@ -495,7 +494,7 @@ function getDirectNumericField(
 function sumNumericFields(
   value: unknown,
   keys: readonly string[],
-  skipKeys: ReadonlySet<string>,
+  skipKeys: ReadonlySet<string>
 ): { found: boolean; total: number } {
   if (!value || typeof value !== "object") {
     return { found: false, total: 0 };
@@ -509,7 +508,7 @@ function sumNumericFields(
           ? { found: true, total: acc.total + nested.total }
           : acc;
       },
-      { found: false, total: 0 },
+      { found: false, total: 0 }
     );
   }
 
@@ -565,7 +564,7 @@ function inferRowsUpserted(response: unknown): number | null {
       "totalUpdates",
       "total_updates",
     ],
-    new Set(["observability", "debug", "errors", "warnings"]),
+    new Set(["observability", "debug", "errors", "warnings"])
   );
 
   return nested.found ? nested.total : null;
@@ -723,7 +722,7 @@ function parseUrlPieces(rawUrl: string | null): {
 
 function inferTargetTable(
   routePath: string | null,
-  jobName: string,
+  jobName: string
 ): string | null {
   if (routePath && ROUTE_TARGET_TABLE_MAP[routePath]) {
     return ROUTE_TARGET_TABLE_MAP[routePath];
@@ -777,7 +776,7 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
   const response = parseJsonMaybe(obj.response);
   const timing = extractAuditTimingRecord(parsedDetails);
   const { route, routePath } = parseUrlPieces(
-    typeof obj.url === "string" ? obj.url : null,
+    typeof obj.url === "string" ? obj.url : null
   );
   const goalieRowsProcessed = getDirectNumericField(response, [
     "goalieRowsProcessed",
@@ -803,7 +802,7 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
           "processed",
           "succeeded",
         ]) ?? 0)
-      : toFiniteNumber(obj.rowsUpserted) ?? inferRowsUpserted(response);
+      : (toFiniteNumber(obj.rowsUpserted) ?? inferRowsUpserted(response));
 
   return {
     timing,
@@ -827,7 +826,7 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
 }
 
 function parseRowsAffectedFromReturnMessage(
-  returnMessage: string | null,
+  returnMessage: string | null
 ): number | null {
   if (!returnMessage) return null;
 
@@ -912,7 +911,7 @@ function formatScheduleTime(cronExpression: string): string {
 function expectedRunAtWithinWindow(
   cronExpression: string,
   since: Date,
-  now: Date,
+  now: Date
 ): string | null {
   const parts = cronExpression.trim().split(/\s+/);
   if (parts.length < 2) return null;
@@ -929,8 +928,8 @@ function expectedRunAtWithinWindow(
       hour,
       minute,
       0,
-      0,
-    ),
+      0
+    )
   );
 
   if (candidate.getTime() > now.getTime()) {
@@ -958,7 +957,7 @@ function parseScheduleJsonEntries(markdown: string): CronScheduleJsonEntry[] {
 
 async function loadScheduledCronJobs(
   since: Date,
-  now: Date,
+  now: Date
 ): Promise<ScheduledCronJob[]> {
   const markdown = await readCronScheduleMarkdown();
   const activeMarkdown =
@@ -972,8 +971,8 @@ async function loadScheduledCronJobs(
 
   const matches = Array.from(
     normalized.matchAll(
-      /SELECT\s+cron\.schedule\(\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*([\s\S]*?)\);\s*/gi,
-    ),
+      /SELECT\s+cron\.schedule\(\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*([\s\S]*?)\);\s*/gi
+    )
   );
 
   const sqlDefinitions = matches.map((match, index) => {
@@ -1021,7 +1020,7 @@ async function loadScheduledCronJobs(
         sqlDefinitions.find(
           (candidate) =>
             candidate.name === name &&
-            candidate.cronExpression === cronExpression,
+            candidate.cronExpression === cronExpression
         ) ??
         sqlDefinitions.find((candidate) => candidate.name === name) ??
         null;
@@ -1064,14 +1063,14 @@ async function loadScheduledCronJobs(
             candidate.route ?? "",
             candidate.url ?? "",
             candidate.sqlText ?? "",
-          ].join("::") === signature,
+          ].join("::") === signature
       )
     );
   });
 
   const duplicateCounts = dedupedJobs.reduce(
     (acc, job) => acc.set(job.name, (acc.get(job.name) ?? 0) + 1),
-    new Map<string, number>(),
+    new Map<string, number>()
   );
 
   return dedupedJobs.map((job) => {
@@ -1091,8 +1090,8 @@ async function loadScheduledCronJobs(
             job.routePath,
             job.url,
             ...(SCHEDULE_ALIAS_MAP[job.name] ?? []),
-          ].filter((value): value is string => Boolean(value)),
-        ),
+          ].filter((value): value is string => Boolean(value))
+        )
       ),
     };
   });
@@ -1106,12 +1105,12 @@ function candidateMatchesSchedule(
     method: string | null;
     route: string | null;
     routePath: string | null;
-  },
+  }
 ): boolean {
   const aliases = new Set(
     [candidate.jobName, candidate.route, candidate.routePath].filter(
-      (value): value is string => Boolean(value),
-    ),
+      (value): value is string => Boolean(value)
+    )
   );
 
   const aliasMatch = job.aliases.some((alias) => aliases.has(alias));
@@ -1163,7 +1162,7 @@ function statusSortValue(status: ReportJobStatus): number {
 
 function buildRunDigestFromAudit(
   row: AuditRow,
-  lastKnownSuccessDisplay: string | null = null,
+  lastKnownSuccessDisplay: string | null = null
 ): RunDigest {
   const benchmarkAnnotations = getBenchmarkAnnotations(row.jobName);
   const optimizationDenotation = isSlowJobDuration(row.parsed.durationMs)
@@ -1205,7 +1204,7 @@ function buildRunDigestFromAudit(
 
 function buildRunDigestFromCron(
   row: RunRow,
-  lastKnownSuccessDisplay: string | null = null,
+  lastKnownSuccessDisplay: string | null = null
 ): RunDigest {
   const benchmarkAnnotations = getBenchmarkAnnotations(row.jobName);
   const optimizationDenotation = isSlowJobDuration(row.durationMs)
@@ -1286,7 +1285,7 @@ function findLastKnownSuccessDisplay(
     jobName: string;
     route: string | null;
     routePath: string | null;
-  },
+  }
 ): string | null {
   return (
     successMap.get(candidate.jobName) ??
@@ -1372,13 +1371,13 @@ function collectMissingObservationWarnings(job: {
 
   if (job.method === "SQL" && job.runsCount > 0 && !job.hasObservedSqlTiming) {
     warnings.push(
-      "SQL observation is missing scheduled_time or end_time timing fields.",
+      "SQL observation is missing scheduled_time or end_time timing fields."
     );
   }
 
   if (job.method === "SQL" && !job.runDataAvailable) {
     warnings.push(
-      "Cron run telemetry is unavailable for SQL schedule matching.",
+      "Cron run telemetry is unavailable for SQL schedule matching."
     );
   }
 
@@ -1414,7 +1413,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { data: runs, error: runErr } = await supabase
     .from("cron_job_report")
     .select(
-      "jobname, scheduled_time, status, return_message, end_time, sql_text",
+      "jobname, scheduled_time, status, return_message, end_time, sql_text"
     )
     .gte("scheduled_time", since)
     .order("scheduled_time", { ascending: true });
@@ -1424,7 +1423,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     errors.push(
       `Failed to fetch cron_job_report: ${
         sanitizeErrorMessage(runErr.message) ?? "Unknown upstream error"
-      }`,
+      }`
     );
   }
 
@@ -1439,7 +1438,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     errors.push(
       `Failed to fetch cron_job_audit: ${
         sanitizeErrorMessage(auditErr.message) ?? "Unknown upstream error"
-      }`,
+      }`
     );
   }
 
@@ -1477,7 +1476,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       details: row.details,
       detailsMessage: extractDetailsMessage(row.details),
       parsed: parseAuditDetails(row.details),
-    }),
+    })
   );
   const lastKnownSuccessMap = buildLastKnownSuccessMap(auditRows);
   const auditGapGraceStartedAt =
@@ -1487,7 +1486,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const runRows: RunRow[] = (runs ?? []).map((row: any, index: number) => {
     const invocation = parseCronInvocation(
-      (row.sql_text ?? null) as string | null,
+      (row.sql_text ?? null) as string | null
     );
     const timing = buildSqlCronTimingObservation({
       jobname: (row.jobname ?? null) as string | null,
@@ -1507,14 +1506,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       sqlText: (row.sql_text ?? null) as string | null,
       endTime: (row.end_time ?? null) as string | null,
       rowsAffected: parseRowsAffectedFromReturnMessage(
-        (row.return_message ?? null) as string | null,
+        (row.return_message ?? null) as string | null
       ),
       timing,
       durationMs:
         timing?.durationMs ??
         safeDurationMs(
           (row.scheduled_time ?? null) as string | null,
-          (row.end_time ?? null) as string | null,
+          (row.end_time ?? null) as string | null
         ),
       method: invocation.method,
       url: invocation.url,
@@ -1531,26 +1530,30 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const jobSummaries: JobSummary[] = scheduledJobs
     .map((job) => {
       const matchingAudits = auditRows
-        .filter((row) =>
-          candidateMatchesSchedule(job, {
-            jobName: row.jobName,
-            time: row.time,
-            method: row.parsed.method,
-            route: row.parsed.route,
-            routePath: row.parsed.routePath,
-          }),
+        .filter(
+          (row) =>
+            !matchedAuditIds.has(row.id) &&
+            candidateMatchesSchedule(job, {
+              jobName: row.jobName,
+              time: row.time,
+              method: row.parsed.method,
+              route: row.parsed.route,
+              routePath: row.parsed.routePath,
+            })
         )
         .sort((a, b) => Date.parse(b.time) - Date.parse(a.time));
 
       const matchingRuns = runRows
-        .filter((row) =>
-          candidateMatchesSchedule(job, {
-            jobName: row.jobName,
-            time: row.time,
-            method: row.method,
-            route: row.route,
-            routePath: row.routePath,
-          }),
+        .filter(
+          (row) =>
+            !matchedRunIds.has(row.id) &&
+            candidateMatchesSchedule(job, {
+              jobName: row.jobName,
+              time: row.time,
+              method: row.method,
+              route: row.route,
+              routePath: row.routePath,
+            })
         )
         .sort((a, b) => Date.parse(b.time) - Date.parse(a.time));
 
@@ -1601,12 +1604,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         durations.length > 0
           ? Math.round(
               durations.reduce((acc, value) => acc + value, 0) /
-                durations.length,
+                durations.length
             )
           : fallbackDurations.length > 0
             ? Math.round(
                 fallbackDurations.reduce((acc, value) => acc + value, 0) /
-                  fallbackDurations.length,
+                  fallbackDurations.length
               )
             : null;
 
@@ -1622,10 +1625,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const rowsUpsertedLast =
         lastAudit?.parsed.rowsUpserted ??
         lastAudit?.rowsAffected ??
-        lastRun?.rowsAffected ??
+        (job.method === "SQL" ? lastRun?.rowsAffected : null) ??
         null;
       const rowsAffectedLast =
-        lastAudit?.rowsAffected ?? lastRun?.rowsAffected ?? null;
+        lastAudit?.rowsAffected ??
+        (job.method === "SQL" ? lastRun?.rowsAffected : null) ??
+        null;
       const failedRowsLast = lastAudit?.parsed.failedRows ?? null;
       const failedRowSamples = lastAudit?.parsed.failedRowSamples ?? [];
       const route = job.route ?? job.sqlText;
@@ -1636,7 +1641,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           jobName: job.name,
           route,
           routePath,
-        },
+        }
       );
 
       const message =
@@ -1685,7 +1690,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
       if (lastStatus === "disabled") {
         notes.push(
-          "Quarantined legacy route returned HTTP 410; remove its stale scheduler reference before route retirement.",
+          "Quarantined legacy route returned HTTP 410; remove its stale scheduler reference before route retirement."
         );
       }
       if (
@@ -1699,7 +1704,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
       if (!lastAudit && !lastRun && !hasFullCoverageForMissing) {
         notes.push(
-          "Telemetry is incomplete, so missing-run status could not be determined.",
+          "Telemetry is incomplete, so missing-run status could not be determined."
         );
       }
       if (lastStatus === "success" && (failedRowsLast ?? 0) > 0) {
@@ -1707,12 +1712,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
       if ((lastAudit?.parsed.dataQualityWarningCount ?? 0) > 0) {
         notes.push(
-          `Returned ${lastAudit?.parsed.dataQualityWarningCount} warning(s).`,
+          `Returned ${lastAudit?.parsed.dataQualityWarningCount} warning(s).`
         );
       }
       if ((lastAudit?.parsed.skaterFreshnessFailureCount ?? 0) > 0) {
         notes.push(
-          `FORGE skater freshness has ${lastAudit?.parsed.skaterFreshnessFailureCount} blocking gate(s).`,
+          `FORGE skater freshness has ${lastAudit?.parsed.skaterFreshnessFailureCount} blocking gate(s).`
         );
       }
       if (
@@ -1726,7 +1731,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
       if (hasBenchmarkAnnotationKind(benchmarkAnnotations, "bottleneck")) {
         const firstBottleneckNote = benchmarkAnnotations.find(
-          (annotation) => annotation.kind === "bottleneck",
+          (annotation) => annotation.kind === "bottleneck"
         )?.note;
         if (firstBottleneckNote) {
           notes.push(`Bottleneck: ${firstBottleneckNote}`);
@@ -1739,7 +1744,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       ) {
         const sanitizedReturnMessage = sanitizeErrorMessage(
           lastRun.returnMessage,
-          140,
+          140
         );
         if (sanitizedReturnMessage) {
           notes.push(sanitizedReturnMessage);
@@ -1796,10 +1801,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     });
 
   const failureHighlights = jobSummaries.filter(
-    (job) => job.lastStatus === "failure",
+    (job) => job.lastStatus === "failure"
   );
   const missingJobs = jobSummaries.filter(
-    (job) => job.lastStatus === "missing",
+    (job) => job.lastStatus === "missing"
   );
 
   const unmatchedAuditRuns = auditRows
@@ -1811,8 +1816,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           jobName: row.jobName,
           route: row.parsed.route,
           routePath: row.parsed.routePath,
-        }),
-      ),
+        })
+      )
     );
   const unmatchedCronRuns = runRows
     .filter((row) => !matchedRunIds.has(row.id))
@@ -1823,11 +1828,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           jobName: row.jobName,
           route: row.route,
           routePath: row.routePath,
-        }),
-      ),
+        })
+      )
     );
   const unscheduledRuns = [...unmatchedAuditRuns, ...unmatchedCronRuns].sort(
-    (a, b) => Date.parse(b.runTime) - Date.parse(a.runTime),
+    (a, b) => Date.parse(b.runTime) - Date.parse(a.runTime)
   );
   const notableUnscheduledRuns = compactUnscheduledRuns(unscheduledRuns);
 
@@ -1839,8 +1844,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           jobName: row.jobName,
           route: row.parsed.route,
           routePath: row.parsed.routePath,
-        }),
-      ),
+        })
+      )
     )
     .sort((a, b) => Date.parse(b.runTime) - Date.parse(a.runTime));
   const auditBriefings = jobSummaries.map(
@@ -1867,18 +1872,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         optimizationDenotation: job.optimizationDenotation,
         benchmarkAnnotations: job.benchmarkAnnotations,
         missingObservationWarnings: job.missingObservationWarnings,
-      }) satisfies RunDigest,
+      }) satisfies RunDigest
   );
 
   const WARN_SLOW: SlowJobWarning[] = jobSummaries
     .filter((job) => isSlowJobDuration(job.lastDurationMs))
     .map((job) =>
-      buildSlowJobWarning(job.displayName, job.lastDurationMs ?? 0),
+      buildSlowJobWarning(job.displayName, job.lastDurationMs ?? 0)
     );
 
   const WARN_PARTIAL_FAILURE = jobSummaries
     .filter(
-      (job) => job.lastStatus === "success" && (job.failedRowsLast ?? 0) > 0,
+      (job) => job.lastStatus === "success" && (job.failedRowsLast ?? 0) > 0
     )
     .map((job) => ({
       displayName: job.displayName,
@@ -1893,7 +1898,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         job.auditRunsCount === 0 &&
         job.method !== "SQL" &&
         auditDataAvailable &&
-        job.missingObservationWarnings.includes(ROUTE_AUDIT_MISSING_WARNING),
+        job.missingObservationWarnings.includes(ROUTE_AUDIT_MISSING_WARNING)
     )
     .map((job) => job.displayName);
 
@@ -1908,7 +1913,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       .filter(
         (row) =>
           row.parsed.routePath === "/api/v1/db/update-yahoo-players" ||
-          row.jobName === "update-yahoo-players",
+          row.jobName === "update-yahoo-players"
       )
       .map((row) => ({
         time: row.time,
@@ -1920,11 +1925,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const benchmarkSummary: BenchmarkSummary = {
     annotatedJobCount: jobSummaries.filter(
-      (job) => job.benchmarkAnnotations.length > 0,
+      (job) => job.benchmarkAnnotations.length > 0
     ).length,
     bottleneckJobs: jobSummaries
       .filter((job) =>
-        hasBenchmarkAnnotationKind(job.benchmarkAnnotations, "bottleneck"),
+        hasBenchmarkAnnotationKind(job.benchmarkAnnotations, "bottleneck")
       )
       .map((job) => ({
         displayName: job.displayName,
@@ -1947,20 +1952,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const counts: ReportCounts = {
     scheduledJobs: scheduledJobs.length,
     scheduledJobsWithActivity: jobSummaries.filter(
-      (job) => job.runsCount > 0 || job.auditRunsCount > 0,
+      (job) => job.runsCount > 0 || job.auditRunsCount > 0
     ).length,
     auditRuns: auditRows.length,
     auditSuccesses: auditRows.filter(
-      (row) => classifyAuditStatus(row) === "success",
+      (row) => classifyAuditStatus(row) === "success"
     ).length,
     auditFailures: auditRows.filter(
-      (row) => classifyAuditStatus(row) === "failure",
+      (row) => classifyAuditStatus(row) === "failure"
     ).length,
     auditUnknown: auditRows.filter(
-      (row) => classifyAuditStatus(row) === "unknown",
+      (row) => classifyAuditStatus(row) === "unknown"
     ).length,
     auditDisabled: auditRows.filter(
-      (row) => classifyAuditStatus(row) === "disabled",
+      (row) => classifyAuditStatus(row) === "disabled"
     ).length,
     jobsOkLast: jobSummaries.filter((job) => job.lastStatus === "success")
       .length,
@@ -1971,16 +1976,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     jobsUnknownLast: jobSummaries.filter((job) => job.lastStatus === "unknown")
       .length,
     jobsDisabledLast: jobSummaries.filter(
-      (job) => job.lastStatus === "disabled",
+      (job) => job.lastStatus === "disabled"
     ).length,
     unscheduledRuns: unscheduledRuns.length,
     totalRowsUpserted: jobSummaries.reduce(
       (acc, job) => acc + (job.rowsUpsertedLast ?? job.rowsAffectedLast ?? 0),
-      0,
+      0
     ),
     totalFailedRows: jobSummaries.reduce(
       (acc, job) => acc + (job.failedRowsLast ?? 0),
-      0,
+      0
     ),
     warnSlow: WARN_SLOW.length,
     warnPartialFailure: WARN_PARTIAL_FAILURE.length,
@@ -2037,22 +2042,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             slowJobDenotation: SLOW_JOB_DENOTATION,
             slowMsThreshold: SLOW_JOB_THRESHOLD_MS,
             annotatedJobCount: auditRunDigests.filter(
-              (audit) => audit.benchmarkAnnotations.length > 0,
+              (audit) => audit.benchmarkAnnotations.length > 0
             ).length,
             slowRuns: auditRunDigests.filter(
-              (audit) => audit.optimizationDenotation != null,
+              (audit) => audit.optimizationDenotation != null
             ).length,
-            missingObservationRuns: auditRunDigests.filter(
-              (audit) => audit.missingObservationWarnings.length > 0,
+            missingObservationRuns: auditBriefings.filter(
+              (audit) => audit.missingObservationWarnings.length > 0
             ).length,
-            totalRowsUpserted: auditRunDigests.reduce(
+            totalRowsUpserted: auditBriefings.reduce(
               (acc, audit) =>
                 acc + (audit.rowsUpserted ?? audit.rowsAffected ?? 0),
-              0,
+              0
             ),
-            totalFailedRows: auditRunDigests.reduce(
+            totalFailedRows: auditBriefings.reduce(
               (acc, audit) => acc + (audit.failedRows ?? 0),
-              0,
+              0
             ),
           },
         }),

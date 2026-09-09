@@ -66,7 +66,7 @@ describe("withCronJobAudit", () => {
       async () => {
         throw new Error("boom");
       },
-      { jobName: "test-job" },
+      { jobName: "test-job" }
     );
 
     const req = createMockReq();
@@ -106,11 +106,11 @@ describe("withCronJobAudit", () => {
               processedRows: 17,
             },
             startedAt,
-            endedAt,
-          ),
+            endedAt
+          )
         );
       },
-      { jobName: "timed-failure-job" },
+      { jobName: "timed-failure-job" }
     );
 
     const req = createMockReq();
@@ -155,7 +155,7 @@ describe("withCronJobAudit", () => {
           ],
         });
       },
-      { jobName: "season-stats-partial-failure" },
+      { jobName: "season-stats-partial-failure" }
     );
 
     const req = createMockReq();
@@ -168,6 +168,25 @@ describe("withCronJobAudit", () => {
     expect(row.status).toBe("failure");
     expect(row.details.failedRows).toBe(2);
     expect(row.details.response).toContain("GOALIE_GAME_STATS_BATCH_FAILED");
+  });
+
+  it("records HTTP 207 and nested request errors as a partial failure", async () => {
+    const wrapped = withCronJobAudit(
+      async (_req, res) =>
+        res.status(207).json({
+          message: "Processed 1 day.",
+          failedRequests: 1,
+          summary: { errors: ["NST helper returned HTTP 503"] },
+        }),
+      { jobName: "nst-team-daily" }
+    );
+
+    const req = createMockReq();
+    const res = createMockRes();
+
+    await wrapped(req, res);
+
+    expect(insertMock.mock.calls[0][0].status).toBe("failure");
   });
 
   it("uses explicit success before legacy failure words and records the season succeeded count", async () => {
@@ -186,7 +205,7 @@ describe("withCronJobAudit", () => {
           deferred: 2,
         });
       },
-      { jobName: "season-stats-success" },
+      { jobName: "season-stats-success" }
     );
 
     const req = createMockReq();
@@ -209,7 +228,7 @@ describe("withCronJobAudit", () => {
           message: "Completed with 0 errors.",
         });
       },
-      { jobName: "explicit-status-success" },
+      { jobName: "explicit-status-success" }
     );
 
     const req = createMockReq();
@@ -232,7 +251,7 @@ describe("withCronJobAudit", () => {
             ],
           },
         }),
-      { jobName: "daily-cron-report", recordRowMetrics: false },
+      { jobName: "daily-cron-report", recordRowMetrics: false }
     );
 
     await wrapped(createMockReq(), createMockRes());
@@ -252,7 +271,7 @@ describe("withCronJobAudit", () => {
     });
     const wrapped = withCronJobAudit(
       async (_req, res) => res.json({ success: true }),
-      { jobName: "audit-insert-error" },
+      { jobName: "audit-insert-error" }
     );
 
     const req = createMockReq();
@@ -263,7 +282,7 @@ describe("withCronJobAudit", () => {
     expect(insertMock).toHaveBeenCalledTimes(1);
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       "cron_job_audit insert failed",
-      "audit insert unavailable",
+      "audit insert unavailable"
     );
   });
 
@@ -271,7 +290,7 @@ describe("withCronJobAudit", () => {
     delete process.env.SUPABASE_SERVICE_ROLE_KEY;
     const wrapped = withCronJobAudit(
       async (_req, res) => res.json({ success: true }),
-      { jobName: "runtime-config-audit" },
+      { jobName: "runtime-config-audit" }
     );
 
     await wrapped(createMockReq(), createMockRes());
@@ -284,11 +303,11 @@ describe("withCronJobAudit", () => {
     insertMock.mockReturnValueOnce(
       new Promise((resolve) => {
         resolveInsert = resolve;
-      }),
+      })
     );
     const wrapped = withCronJobAudit(
       async (_req, res) => res.json({ success: true, rowsAffected: 0 }),
-      { jobName: "durable-audit" },
+      { jobName: "durable-audit" }
     );
     const res = createMockRes();
 
@@ -309,7 +328,7 @@ describe("withCronJobAudit", () => {
     const wrapped = withCronJobAudit(
       async (_req, res) =>
         res.json({ success: true, termination: { state: "completed" } }),
-      { jobName: "long-running-job", includeFinalAuditReceipt: true },
+      { jobName: "long-running-job", includeFinalAuditReceipt: true }
     );
     const res = createMockRes();
 
@@ -328,7 +347,7 @@ describe("withCronJobAudit", () => {
       status: "persisted",
     });
     expect(insertMock.mock.calls[0][0].details.response).toContain(
-      '"finalAudit":{"owner":"withCronJobAudit","status":"persisted"}',
+      '"finalAudit":{"owner":"withCronJobAudit","status":"persisted"}'
     );
   });
 
@@ -342,7 +361,7 @@ describe("withCronJobAudit", () => {
     const wrapped = withCronJobAudit(
       async (_req, res) =>
         res.json({ success: true, termination: { state: "completed" } }),
-      { jobName: "long-running-audit-failure", includeFinalAuditReceipt: true },
+      { jobName: "long-running-audit-failure", includeFinalAuditReceipt: true }
     );
     const res = createMockRes();
 
@@ -361,7 +380,7 @@ describe("withCronJobAudit", () => {
     });
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       "cron_job_audit insert failed",
-      "audit insert unavailable",
+      "audit insert unavailable"
     );
   });
 });

@@ -60,8 +60,8 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
       audit.status === "unknown" &&
       ((audit.reason ?? "").includes("No cron or audit") ||
         (audit.missingObservationWarnings ?? []).some((warning) =>
-          warning.includes("No cron or audit"),
-        )),
+          warning.includes("No cron or audit")
+        ))
   );
   const auditGaps = audits.filter(
     (audit) =>
@@ -71,18 +71,18 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
           warning.includes("no audit payload") ||
           warning.includes("No audit row") ||
           warning.includes("timing metadata") ||
-          warning.includes("Telemetry source unavailable"),
-      ),
+          warning.includes("Telemetry source unavailable")
+      )
   );
   const partialSuccesses = audits.filter(
-    (audit) => audit.status === "success" && (audit.failedRows ?? 0) > 0,
+    (audit) => audit.status === "success" && (audit.failedRows ?? 0) > 0
   );
   const noteworthySuccesses = audits.filter(
     (audit) =>
       audit.status === "success" &&
       (audit.failedRows ?? 0) === 0 &&
       (audit.optimizationDenotation ||
-        (audit.missingObservationWarnings ?? []).length > 0),
+        (audit.missingObservationWarnings ?? []).length > 0)
   );
   const telemetryUnavailable = fetchErrors.length > 0 && audits.length === 0;
 
@@ -130,7 +130,7 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
 
   const pill = (
     label: string,
-    colors: { background: string; color: string },
+    colors: { background: string; color: string }
   ) => (
     <>
       <span
@@ -222,16 +222,21 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
               {(audit.benchmarkAnnotations ?? [])
                 .filter((annotation) =>
                   ["bottleneck", "rate_limited", "side_effect"].includes(
-                    annotation.kind,
-                  ),
+                    annotation.kind
+                  )
                 )
                 .slice(0, 2)
                 .map((annotation) => (
                   <React.Fragment key={`${audit.key}-${annotation.kind}`}>
-                    {pill(annotation.kind.replace(/_/g, " ").toUpperCase(), {
-                      background: "#E0F2FE",
-                      color: "#075985",
-                    })}
+                    {pill(
+                      annotation.kind === "rate_limited"
+                        ? "RATE-LIMIT SENSITIVE"
+                        : annotation.kind.replace(/_/g, " ").toUpperCase(),
+                      {
+                        background: "#E0F2FE",
+                        color: "#075985",
+                      }
+                    )}
                   </React.Fragment>
                 ))}
               {(audit.missingObservationWarnings ?? []).length > 0 ? (
@@ -340,7 +345,7 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
         ? renderSection(
             "Successful jobs needing attention",
             noteworthySuccesses,
-            "#374151",
+            "#374151"
           )
         : null}
     </div>
