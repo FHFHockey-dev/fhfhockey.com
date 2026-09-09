@@ -90,7 +90,10 @@ async function main() {
     await page.addInitScript((token) => localStorage.setItem("sb-127-auth-token", JSON.stringify({ access_token: token, refresh_token: token, token_type: "bearer", expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, user: { id: "00000000-0000-4000-8000-000000000043", aud: "authenticated", role: "authenticated", email: "stripe-sandbox@example.invalid" } })), owner);
     await page.goto(`${base}/account?section=draft-pro`);
     await page.getByLabel("Draft Pro access code", { exact: true }).fill(code);
+    const redemption = page.waitForResponse((response) => response.request().method() === "POST" && new URL(response.url()).pathname === "/api/v1/account/draft-pro/access-codes/redeem");
     await page.getByRole("button", { name: "Redeem code", exact: true }).click();
+    const redemptionResponse = await redemption;
+    assert.equal(redemptionResponse.status(), 200, `Browser redemption returned ${redemptionResponse.status()}: ${await redemptionResponse.text()}`);
     await page.getByRole("status").filter({ hasText: "Access code redeemed. Complimentary Draft Pro access is now active." }).waitFor();
     await context.close();
   } finally { await browser.close(); }
