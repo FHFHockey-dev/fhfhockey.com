@@ -19,7 +19,7 @@ const snapshot = serializeSavedDraft({
   draftSettings: { teamCount: 2, draftOrder: ["Team 1", "Team 2"], draftOrderMode: "standard", leagueType: "points" as const, rosterConfig: { C: 1, LW: 0, RW: 0, D: 0, G: 0, utility: 0, bench: 0 }, scoringCategories: { GOALS: 3 } },
   draftedPlayers: [], keepers: [], pickOwnerOverrides: {}, pickTrades: [], positionOverrides: {}, customTeamNames: {},
   baselineMode: "remaining" as const, needWeightEnabled: false, needAlpha: 0.5, forwardGrouping: "split" as const, personalizeReplacement: false,
-  goaliePointValues: {}, sourceControls: {}, goalieSourceControls: {}, customCsvList: [], favorites: [], notes: [], tiers: {},
+  goaliePointValues: {}, sourceControls: { ag_skaters: { isSelected: true, weight: 1 } }, goalieSourceControls: { cullen_goalies: { isSelected: true, weight: 1 } }, customCsvList: [], favorites: [], notes: [], tiers: {},
 });
 async function call(path: string, token: string | null, method = "GET", body?: unknown) {
   const response = await fetch(base + path, { method, headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body === undefined ? {} : { "Content-Type": "application/json" }) }, body: body === undefined ? undefined : JSON.stringify(body) });
@@ -44,11 +44,32 @@ async function assertDirectStorageDenied(token: string, storagePath: string) {
   if (listed.status === 200) assert.equal((await listed.text()).includes(storagePath.split("/").at(-1)!), false, "A redeemed account directly listed a private Storage object.");
   else assert([400, 401, 403].includes(listed.status), `Private Storage list returned ${listed.status}.`);
 }
+async function assertForgedEntitlementsDenied() {
+  const candidates = [
+    { source_provider: "stripe", entitlement_key: "draft_pro" },
+    { source_provider: "patreon", entitlement_key: "patreon_supporter" },
+    { source_provider: "forged", entitlement_key: "draft_pro" },
+    { source_provider: "complimentary", entitlement_key: "draft_pro" },
+  ];
+  for (const candidate of candidates) {
+    const sourceReference = `forged-access-${randomUUID()}`;
+    const response = await fetch(`${gateway}/rest/v1/user_entitlements`, { method: "POST", headers: { Authorization: `Bearer ${foreign}`, "Content-Type": "application/json", Prefer: "return=representation" }, body: JSON.stringify({ user_id: "00000000-0000-4000-8000-000000000044", ...candidate, entitlement_status: "active", source_reference: sourceReference, effective_from: new Date().toISOString(), effective_to: "2027-07-01T04:00:00.000Z", metadata: {} }) });
+    assert([400, 401, 403].includes(response.status), `Forged ${candidate.source_provider}/${candidate.entitlement_key} entitlement returned ${response.status}.`);
+    assert.equal((await serviceRows(`user_entitlements?select=id&source_reference=eq.${sourceReference}`)).length, 0, "A forged entitlement was persisted.");
+  }
+  const benignReference = `benign-access-${randomUUID()}`;
+  const benign = await fetch(`${gateway}/rest/v1/user_entitlements`, { method: "POST", headers: { Authorization: `Bearer ${foreign}`, "Content-Type": "application/json" }, body: JSON.stringify({ user_id: "00000000-0000-4000-8000-000000000044", source_provider: "benign", entitlement_key: "benign", entitlement_status: "active", source_reference: benignReference, effective_from: new Date().toISOString(), effective_to: "2027-07-01T04:00:00.000Z", metadata: {} }) });
+  assert.equal(benign.status, 201, `The baseline benign entitlement fixture failed: ${benign.status}.`);
+  await fetch(`${gateway}/rest/v1/user_entitlements?source_reference=eq.${benignReference}`, { method: "PATCH", headers: { Authorization: `Bearer ${foreign}`, "Content-Type": "application/json" }, body: JSON.stringify({ entitlement_key: "draft_pro" }) });
+  const benignRow = await serviceRows(`user_entitlements?select=entitlement_key&source_reference=eq.${benignReference}`);
+  assert.equal(benignRow[0]?.entitlement_key, "benign", "A direct update changed a benign entitlement into Draft Pro authority.");
+}
 async function main() {
   const code = `local-${randomUUID()}-${randomUUID()}`;
   const hash = createHash("sha256").update(code).digest("hex");
   const codeId = await rpc("issue_draft_pro_access_code", { p_issued_by_user_id: adminId, p_target_user_id: ownerId, p_code_hash: hash, p_reason: "isolated acceptance fixture", p_expires_at: "2027-06-30T00:00:00.000Z" });
   assert.match(String(codeId), /^[0-9a-f-]{36}$/i);
+  await assertForgedEntitlementsDenied();
   assert.equal((await call("/api/v1/account/draft-pro/drafts", owner, "POST", { name: "Complimentary retained draft", snapshot, attemptKey: randomUUID() })).status, 403, "A free account saved a Draft Pro draft before redemption.");
   assert.equal((await call("/api/v1/account/draft-pro/access-codes/redeem", null, "POST", { code })).status, 401);
   const foreignResult = await call("/api/v1/account/draft-pro/access-codes/redeem", foreign, "POST", { code });
@@ -93,6 +114,15 @@ async function main() {
   assert(revokedRows[0].redeemed_at && revokedRows[0].revoked_at && revokedRows[0].revoked_reason === "isolated acceptance revocation", "Revocation did not retain the required access-code audit record.");
   const entitlements = await serviceRows(`user_entitlements?select=entitlement_status,source_reference&user_id=eq.${ownerId}&source_provider=eq.complimentary`);
   assert(entitlements.some((row) => row.entitlement_status === "inactive" && row.source_reference === `draft_pro_access_code:${codeId}`), "Revocation did not lock the complimentary entitlement.");
+  const protectedEntitlement = `user_id=eq.${ownerId}&source_provider=eq.complimentary&source_reference=eq.draft_pro_access_code:${codeId}`;
+  for (const request of [
+    { method: "PATCH", body: { entitlement_status: "active" } },
+    { method: "DELETE" },
+  ]) {
+    await fetch(`${gateway}/rest/v1/user_entitlements?${protectedEntitlement}`, { method: request.method, headers: { Authorization: `Bearer ${owner}`, ...(request.body ? { "Content-Type": "application/json" } : {}) }, body: request.body ? JSON.stringify(request.body) : undefined });
+    const retained = await serviceRows(`user_entitlements?select=entitlement_status&${protectedEntitlement}`);
+    assert.equal(retained[0]?.entitlement_status, "inactive", `Direct owner ${request.method} changed a protected entitlement.`);
+  }
   const names = await call("/api/v1/account/draft-pro/drafts", owner); assert.equal(names.status, 200); assert(names.json.data.some((draft: { id: string }) => draft.id === draftId), "Revocation did not retain the saved draft name.");
   assert.equal((await call(`/api/v1/account/draft-pro/drafts/${draftId}`, owner)).status, 403, "Revocation did not lock retained Draft Pro data.");
   const mobileBrowser = await chromium.launch({ headless: true });
