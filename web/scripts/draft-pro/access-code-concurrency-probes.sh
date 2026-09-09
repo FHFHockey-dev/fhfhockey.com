@@ -18,7 +18,7 @@ query "
     ('$USER_ID','authenticated','authenticated','access-race@example.invalid','{}','{}'),
     ('$ADMIN_ID','authenticated','authenticated','access-race-admin@example.invalid','{}','{}');
   insert into public.users (user_id,role) values ('$USER_ID','basic'),('$ADMIN_ID','admin');
-  select public.issue_draft_pro_access_code('$ADMIN_ID','$USER_ID',encode(digest('$RAW_CODE','sha256'),'hex'),'race probe','2027-07-01T04:00:00Z');
+  select public.issue_draft_pro_access_code('$ADMIN_ID','$USER_ID',encode(extensions.digest('$RAW_CODE','sha256'),'hex'),'race probe','2027-07-01T04:00:00Z');
 " >/dev/null
 
 query "select public.redeem_draft_pro_access_code('$USER_ID','$RAW_CODE')" > "$OUTPUT_DIRECTORY/one" &

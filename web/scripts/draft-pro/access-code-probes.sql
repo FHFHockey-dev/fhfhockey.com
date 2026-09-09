@@ -24,7 +24,7 @@ begin
     perform public.issue_draft_pro_access_code(
       '00000000-0000-4000-8000-000000000052',
       '00000000-0000-4000-8000-000000000053',
-      encode(digest('metadata-admin-must-fail-0001', 'sha256'), 'hex'),
+      encode(extensions.digest('metadata-admin-must-fail-0001', 'sha256'), 'hex'),
       'untrusted metadata admin',
       '2027-07-01T04:00:00Z'
     );
@@ -37,7 +37,7 @@ begin
     perform public.issue_draft_pro_access_code(
       '00000000-0000-4000-8000-000000000051',
       '00000000-0000-4000-8000-000000000053',
-      encode(digest('past-code-must-fail-000000001', 'sha256'), 'hex'),
+      encode(extensions.digest('past-code-must-fail-000000001', 'sha256'), 'hex'),
       'past expiry',
       now() - interval '1 second'
     );
@@ -53,7 +53,7 @@ insert into access_probe_ids
 select 'owner', public.issue_draft_pro_access_code(
   '00000000-0000-4000-8000-000000000051',
   '00000000-0000-4000-8000-000000000053',
-  encode(digest('complimentary-owner-code-000001', 'sha256'), 'hex'),
+  encode(extensions.digest('complimentary-owner-code-000001', 'sha256'), 'hex'),
   'support grant',
   '2027-07-01T04:00:00Z'
 );
@@ -74,7 +74,7 @@ begin
   if not exists (
     select 1 from public.draft_pro_access_codes
     where id = code_id
-      and code_hash = encode(digest('complimentary-owner-code-000001', 'sha256'), 'hex')
+      and code_hash = encode(extensions.digest('complimentary-owner-code-000001', 'sha256'), 'hex')
       and code_hash <> 'complimentary-owner-code-000001'
       and expires_at = '2027-07-01T04:00:00Z'
   ) then
@@ -90,7 +90,7 @@ end $$;
 
 insert into public.draft_pro_access_codes (code_hash, target_user_id, issued_by_user_id, reason, expires_at)
 values (
-  encode(digest('complimentary-expired-code-0001', 'sha256'), 'hex'),
+  encode(extensions.digest('complimentary-expired-code-0001', 'sha256'), 'hex'),
   '00000000-0000-4000-8000-000000000053',
   '00000000-0000-4000-8000-000000000051',
   'expired fixture',
@@ -108,7 +108,7 @@ insert into access_probe_ids
 select 'revoked-before-use', public.issue_draft_pro_access_code(
   '00000000-0000-4000-8000-000000000051',
   '00000000-0000-4000-8000-000000000053',
-  encode(digest('complimentary-revoked-code-0001', 'sha256'), 'hex'),
+  encode(extensions.digest('complimentary-revoked-code-0001', 'sha256'), 'hex'),
   'revoked fixture',
   '2027-07-01T04:00:00Z'
 );
@@ -143,7 +143,7 @@ insert into access_probe_ids
 select 'revoke-after-use', public.issue_draft_pro_access_code(
   '00000000-0000-4000-8000-000000000051',
   '00000000-0000-4000-8000-000000000053',
-  encode(digest('complimentary-revoke-audit-0001', 'sha256'), 'hex'),
+  encode(extensions.digest('complimentary-revoke-audit-0001', 'sha256'), 'hex'),
   'audited grant',
   '2027-07-01T04:00:00Z'
 );
@@ -192,6 +192,12 @@ begin
   end if;
 end $$;
 
+insert into public.user_entitlements (
+  user_id, source_provider, entitlement_key, entitlement_status, source_reference, effective_from, metadata
+) values (
+  '00000000-0000-4000-8000-000000000053', 'other-provider', 'unrelated-benefit', 'active', 'access-probe-benign', now(), '{}'
+);
+
 do $$
 declare visible_rows integer;
 begin
@@ -206,6 +212,29 @@ begin
   exception when insufficient_privilege then null;
   end;
   begin
+    insert into public.user_entitlements (user_id, source_provider, entitlement_key, entitlement_status, effective_from, effective_to)
+    values ('00000000-0000-4000-8000-000000000053', 'stripe', 'draft_pro', 'active', now(), '2027-07-01T04:00:00Z');
+    raise exception 'browser unexpectedly forged Stripe grant';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    insert into public.user_entitlements (user_id, source_provider, entitlement_key, entitlement_status, effective_from, metadata)
+    values ('00000000-0000-4000-8000-000000000053', 'patreon', 'patreon_supporter', 'active', now(), '{"draft_pro_eligible":true}');
+    raise exception 'browser unexpectedly forged Patreon grant';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.user_entitlements set entitlement_key = 'draft_pro', source_provider = 'stripe'
+    where source_reference = 'access-probe-benign';
+    raise exception 'browser unexpectedly converted an unrelated entitlement into a Draft Pro grant';
+  exception when insufficient_privilege then null;
+  end;
+  update public.user_entitlements
+  set entitlement_status = 'active', effective_to = '2027-07-01T04:00:00Z', metadata = '{"draft_pro_eligible":true}'
+  where source_reference = 'draft_pro_access_code:' || (select id from access_probe_ids where name = 'revoke-after-use');
+  delete from public.user_entitlements
+  where source_reference = 'draft_pro_access_code:' || (select id from access_probe_ids where name = 'revoke-after-use');
+  begin
     perform 1 from public.draft_pro_access_codes;
     raise exception 'browser unexpectedly read access-code table';
   exception when insufficient_privilege then null;
@@ -214,6 +243,19 @@ begin
   execute 'reset role';
   if (select role from public.users where user_id = '00000000-0000-4000-8000-000000000053') <> 'basic' then
     raise exception 'browser unexpectedly promoted canonical admin role';
+  end if;
+  if not exists (
+    select 1 from public.user_entitlements
+    where source_reference = 'draft_pro_access_code:' || (select id from access_probe_ids where name = 'revoke-after-use')
+      and entitlement_status = 'inactive' and metadata->>'revoked_reason' = 'customer request'
+  ) then
+    raise exception 'browser unexpectedly updated or deleted a protected grant';
+  end if;
+  if not exists (
+    select 1 from public.user_entitlements
+    where source_reference = 'access-probe-benign' and source_provider = 'other-provider' and entitlement_key = 'unrelated-benefit'
+  ) then
+    raise exception 'browser unexpectedly converted an unrelated entitlement';
   end if;
 end $$;
 

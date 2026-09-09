@@ -24,12 +24,12 @@ revoke all on table public.draft_pro_access_code_attempts from public, anon, aut
 grant select, insert, update, delete on table public.draft_pro_access_codes, public.draft_pro_access_code_attempts to service_role;
 
 -- The baseline permits users to manage their own generic entitlement rows. A
--- restrictive policy keeps complimentary grants service-authored and hidden
--- from browser clients without changing behavior for unrelated providers.
-create policy user_entitlements_complimentary_service_only
+-- restrictive policy keeps every Draft Pro-authorizing shape service-authored
+-- and hidden without changing behavior for unrelated entitlement keys.
+create policy user_entitlements_draft_pro_service_only
   on public.user_entitlements as restrictive for all to anon, authenticated
-  using (source_provider <> 'complimentary')
-  with check (source_provider <> 'complimentary');
+  using (source_provider <> 'complimentary' and entitlement_key not in ('draft_pro', 'patreon_supporter'))
+  with check (source_provider <> 'complimentary' and entitlement_key not in ('draft_pro', 'patreon_supporter'));
 
 create or replace function public.redeem_draft_pro_access_code(p_user_id uuid,p_code text)
 returns text language plpgsql security definer set search_path=public,pg_temp as $$
@@ -38,7 +38,7 @@ begin
   if p_user_id is null or p_code is null or char_length(p_code) not between 20 and 200 then return 'invalid'; end if;
   perform pg_advisory_xact_lock(hashtext('draft-pro-access-code:' || p_user_id::text));
   select c.* into access_code from public.draft_pro_access_codes as c
-  where c.code_hash=encode(digest(p_code,'sha256'),'hex') for update;
+  where c.code_hash=encode(extensions.digest(p_code,'sha256'),'hex') for update;
   code_found := found;
   if code_found and access_code.target_user_id=p_user_id and access_code.redeemed_by_user_id=p_user_id and access_code.revoked_at is null and access_code.expires_at>now() then return 'redeemed'; end if;
   insert into public.draft_pro_access_code_attempts(user_id,window_started_at,attempt_count) values(p_user_id,now(),1)
