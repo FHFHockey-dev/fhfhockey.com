@@ -1,4 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { RosterScheduleOptimizerState } from "hooks/useRosterScheduleOptimizer";
 import type { DashboardMatchupWeek } from "lib/draftDashboard/scheduleMetrics";
 import styles from "./DustMatrix.module.scss";
@@ -104,7 +105,7 @@ export default function DustMatrix({ state, weeks, roster = [], selectedWeeks = 
       if (event.key !== "Tab") return;
       const dialog = closeRef.current?.closest("[role=dialog]");
       if (!dialog) return;
-      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])")).filter((element) => !element.hasAttribute("disabled"));
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])")).filter((element) => !element.hasAttribute("disabled") && element.tabIndex >= 0 && element.getClientRects().length > 0);
       if (!focusable.length) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
@@ -128,7 +129,7 @@ export default function DustMatrix({ state, weeks, roster = [], selectedWeeks = 
     <button ref={triggerRef} type="button" className={styles.toggle} aria-expanded={open} aria-controls={contentId} onClick={() => setOpen((value) => !value)}>
       {open ? "▾" : "▸"} DUST schedule overview <span>Full-season DUST baseline · {period}</span>
     </button>
-    {open && <div className={styles.modalLayer}>
+    {open && typeof document !== "undefined" ? createPortal(<div className={styles.modalLayer}>
       <button type="button" tabIndex={-1} className={styles.modalBackdrop} aria-label="Close DUST schedule overview" onClick={() => setOpen(false)} />
       <div id={contentId} className={styles.modal} role="dialog" aria-modal="true" aria-labelledby={`${contentId}-title`}>
         <h2 id={`${contentId}-title`} className={styles.visuallyHidden}>DUST schedule overview</h2>
@@ -166,6 +167,6 @@ export default function DustMatrix({ state, weeks, roster = [], selectedWeeks = 
       </>}
         </div>
       </div>
-    </div>}
+    </div>, document.body) : null}
   </section>;
 }
