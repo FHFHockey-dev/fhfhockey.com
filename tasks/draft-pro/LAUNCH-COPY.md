@@ -35,6 +35,8 @@ If eligibility ends, retained premium data is locked rather than deleted. **Your
 
 Account status should say whether access is active, locked pending renewed eligibility, or unavailable because verification is pending. A successful refund request should say that the request was received and will be reviewed case by case. If notification email fails, say that the request was saved and provide `tim@fhfhockey.com` for support.
 
+If the owner sends an account-bound support code during development or an approved fallback flow, send it only to the verified account holder. The code is independent of Patreon access, expires no later than the end of the season, and does not imply a refund or guarantee access to an unfinished feature. Support should ask for the exact error, approximate time, and support reference; never request raw credentials, provider secrets, or logs containing them. Do not describe support codes as available until the owner explicitly enables that flow.
+
 ### Refund requests
 
 Refunds are reviewed **case by case**. Submit a request within **168 hours of the first server-recorded purchase activation**. Each purchase can have only one open request.
