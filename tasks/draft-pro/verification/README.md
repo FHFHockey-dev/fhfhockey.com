@@ -54,6 +54,8 @@ Set `DRAFT_PRO_BROWSER_ARTIFACTS` to retain screenshots in a chosen directory; t
 
 The final success marker includes `cleanup=verified` only after the harness removes its services and listening ports. A browser-only run does not rerun the separate route assertion suite.
 
+Before starting local account-provider routes, this harness reconstructs the missing private connected-account token table from the authoritative archived baseline segment and applies the authoritative Vault encryption migration in one disposable database transaction. It does not modify production migrations. A rollback-only synthetic public-RPC roundtrip proves Vault storage works without printing token material; it also requires no raw token columns and no `anon`/`authenticated` access to the private schema or public token RPCs.
+
 ## Scenario real-service routes
 
 Run `DRAFT_PRO_SCENARIOS_ONLY=true web/scripts/draft-pro/verify-saved-drafts-routes.sh` from the repository root for the focused scenario API gate. This uses the same disposable services and cleanup assertions, skipping Saved Drafts route/browser assertions. It verifies public and saved-private analysis, persistence, ownership, inactive names-only access and reactivation, duplicate input rejection, and unchanged draft contents. The fixture has no persisted schedule, so it verifies visible schedule unavailability while preserving valid projection totals; schedule-present optimizer behavior is covered separately by calculation fixtures. This mode does not verify the scenario browser UI.

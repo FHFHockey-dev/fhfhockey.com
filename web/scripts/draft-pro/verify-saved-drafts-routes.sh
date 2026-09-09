@@ -10,6 +10,8 @@ readonly ROOT="draft-pro-routes-${RANDOM}${RANDOM}"
 readonly DB="$ROOT-db" REST="$ROOT-rest" AUTH="$ROOT-auth" STORAGE="$ROOT-storage" NET="$ROOT-net"
 readonly PASSWORD="draft_pro_routes_local_only" JWT_SECRET="draft-pro-routes-local-only-jwt-secret"
 readonly WORK="$(mktemp -d)"
+readonly PATREON_PRIVATE_ARCHIVE="supabase/migration-archive/pre-baseline-20260716/authoritative-root/20260713055508_auth_user_settings_platform_baseline.sql"
+readonly PATREON_VAULT_ARCHIVE="supabase/migration-archive/pre-baseline-20260716/authoritative-root/20260713055537_encrypt_connected_account_tokens_with_vault.sql"
 next_pid="" gateway_pid="" schema_container=""
 [[ -d web/node_modules ]] || { echo "web/node_modules is required (reuse an existing workspace install)." >&2; exit 66; }
 stripe_interactive="${DRAFT_PRO_STRIPE_INTERACTIVE:-false}"
@@ -69,6 +71,45 @@ for _ in $(seq 1 45); do docker exec "$DB" pg_isready -U postgres -d postgres >/
 docker exec "$DB" pg_isready -U postgres -d postgres >/dev/null
 pg() { docker exec -i "$DB" psql -v ON_ERROR_STOP=1 -U postgres -d postgres "$@"; }
 pg_storage() { docker exec -e "PGPASSWORD=$PASSWORD" -i "$DB" psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U supabase_admin -d postgres "$@"; }
+bootstrap_patreon_token_storage() {
+  [[ -s "$PATREON_PRIVATE_ARCHIVE" && -s "$PATREON_VAULT_ARCHIVE" ]] || { echo "Authoritative Patreon token migrations are unavailable." >&2; exit 65; }
+  [[ "$(grep -c '^CREATE SCHEMA IF NOT EXISTS private;$' "$PATREON_PRIVATE_ARCHIVE")" == 1 ]] || { echo "Private token archive start boundary is ambiguous." >&2; exit 65; }
+  [[ "$(grep -c '^ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;$' "$PATREON_PRIVATE_ARCHIVE")" == 1 ]] || { echo "Private token archive end boundary is ambiguous." >&2; exit 65; }
+  local start_line end_line token_block
+  start_line="$(grep -n '^CREATE SCHEMA IF NOT EXISTS private;$' "$PATREON_PRIVATE_ARCHIVE" | cut -d: -f1)"
+  end_line="$(grep -n '^ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;$' "$PATREON_PRIVATE_ARCHIVE" | cut -d: -f1)"
+  (( start_line < end_line )) || { echo "Private token archive boundaries are out of order." >&2; exit 65; }
+  token_block="$WORK/patreon-private-token-bootstrap.sql"
+  sed -n "${start_line},$((end_line - 1))p" "$PATREON_PRIVATE_ARCHIVE" >"$token_block"
+  grep -qx 'CREATE SCHEMA IF NOT EXISTS private;' "$token_block" && grep -qx 'ON DELETE CASCADE;' "$token_block" && ! grep -q 'ENABLE ROW LEVEL SECURITY' "$token_block" || { echo "Private token archive extraction failed boundary validation." >&2; exit 65; }
+  { printf 'BEGIN;\n'; sed -n '1,$p' "$token_block"; sed -n '1,$p' "$PATREON_VAULT_ARCHIVE"; printf 'COMMIT;\n'; } | pg >/dev/null
+}
+assert_patreon_token_storage() {
+  pg <<'SQL' >/dev/null
+BEGIN;
+DO $$
+DECLARE
+  v_user uuid := '00000000-0000-4000-8000-000000000043';
+  v_account uuid := '00000000-0000-4000-8000-000000000143';
+  v_access text;
+  v_refresh text;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'supabase_vault') THEN RAISE EXCEPTION 'Vault extension is unavailable'; END IF;
+  IF has_schema_privilege('anon', 'private', 'USAGE') OR has_schema_privilege('authenticated', 'private', 'USAGE') THEN RAISE EXCEPTION 'Private schema is exposed to API roles'; END IF;
+  IF has_function_privilege('anon', 'public.upsert_connected_account_tokens_secure(uuid,uuid,text,text,text,text,jsonb,text,timestamp with time zone,timestamp with time zone,timestamp with time zone,jsonb)'::regprocedure, 'EXECUTE')
+    OR has_function_privilege('authenticated', 'public.upsert_connected_account_tokens_secure(uuid,uuid,text,text,text,text,jsonb,text,timestamp with time zone,timestamp with time zone,timestamp with time zone,jsonb)'::regprocedure, 'EXECUTE')
+    OR has_function_privilege('anon', 'public.get_connected_account_tokens_secure(uuid,uuid)'::regprocedure, 'EXECUTE')
+    OR has_function_privilege('authenticated', 'public.get_connected_account_tokens_secure(uuid,uuid)'::regprocedure, 'EXECUTE') THEN RAISE EXCEPTION 'Public token RPC is exposed to API roles'; END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'private' AND table_name = 'connected_account_tokens' AND column_name IN ('access_token', 'refresh_token')) THEN RAISE EXCEPTION 'Raw token columns remain in private storage'; END IF;
+  INSERT INTO public.connected_accounts (id, user_id, provider, status) VALUES (v_account, v_user, 'patreon', 'connected');
+  PERFORM public.upsert_connected_account_tokens_secure(v_account, v_user, 'patreon', 'synthetic-access-token', 'synthetic-refresh-token');
+  SELECT access_token, refresh_token INTO v_access, v_refresh FROM public.get_connected_account_tokens_secure(v_account, v_user);
+  IF v_access <> 'synthetic-access-token' OR v_refresh <> 'synthetic-refresh-token' THEN RAISE EXCEPTION 'Vault token roundtrip failed'; END IF;
+END;
+$$;
+ROLLBACK;
+SQL
+}
 for _ in $(seq 1 45); do pg_storage -c 'select 1' >/dev/null 2>&1 && break; sleep 1; done
 pg_storage -c 'select 1' >/dev/null
 
@@ -76,6 +117,7 @@ schema_container="$ROOT-storage-schema"; docker create --name "$schema_container
 for migration in 0008-add-public-to-buckets.sql 0013-add-bucket-custom-limits.sql 0014-use-bytes-for-max-size.sql; do docker cp "$schema_container:/app/migrations/tenant/$migration" "$WORK/$migration"; pg_storage < "$WORK/$migration" >/dev/null; done
 docker rm "$schema_container" >/dev/null; schema_container=""
 pg < supabase/migrations/20260716112908_production_schema_baseline.sql >/dev/null
+bootstrap_patreon_token_storage
 pg < supabase/migrations/20260907143356_draft_pro_foundation.sql >/dev/null
 pg < supabase/migrations/20260907145602_draft_pro_stripe_fulfillment.sql >/dev/null
 pg < supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql >/dev/null
@@ -98,13 +140,15 @@ insert into public.user_entitlements (user_id,source_provider,entitlement_key,en
 values ('00000000-0000-4000-8000-000000000041','stripe','draft_pro','active','route-a',now()-interval '1 day','2027-07-01T04:00:00Z'),
        ('00000000-0000-4000-8000-000000000042','stripe','draft_pro','active','route-b',now()-interval '1 day','2027-07-01T04:00:00Z');
 SQL
+assert_patreon_token_storage
 
-token() { TOKEN_ROLE="$1" TOKEN_SUBJECT="${2:-}" TOKEN_EMAIL="${3:-}" TOKEN_SECRET="$JWT_SECRET" node - <<'NODE'
+token() { TOKEN_ROLE="$1" TOKEN_SUBJECT="${2:-}" TOKEN_EMAIL="${3:-}" TOKEN_SECRET="$JWT_SECRET" TOKEN_TTL_SECONDS="${TOKEN_TTL_SECONDS:-3600}" node - <<'NODE'
 const crypto=require('crypto'); const enc=x=>Buffer.from(JSON.stringify(x)).toString('base64url');
-const h=enc({alg:'HS256',typ:'JWT'}), p=enc({aud:'authenticated',role:process.env.TOKEN_ROLE,sub:process.env.TOKEN_SUBJECT,email:process.env.TOKEN_EMAIL,jti:process.env.TOKEN_JTI,exp:Math.floor(Date.now()/1000)+3600});
+const h=enc({alg:'HS256',typ:'JWT'}), p=enc({aud:'authenticated',role:process.env.TOKEN_ROLE,sub:process.env.TOKEN_SUBJECT,email:process.env.TOKEN_EMAIL,jti:process.env.TOKEN_JTI,exp:Math.floor(Date.now()/1000)+Number(process.env.TOKEN_TTL_SECONDS)});
 process.stdout.write(`${h}.${p}.${crypto.createHmac('sha256',process.env.TOKEN_SECRET).update(`${h}.${p}`).digest('base64url')}`);
 NODE
 }
+[[ "$stripe_interactive" != true ]] || TOKEN_TTL_SECONDS=86400
 anon_key="$(token anon)"; service_key="$(token service_role)"; user_a="$(TOKEN_JTI=device-a token authenticated 00000000-0000-4000-8000-000000000041 route-a@example.invalid)"; user_a_second="$(TOKEN_JTI=device-b token authenticated 00000000-0000-4000-8000-000000000041 route-a@example.invalid)"; user_b="$(token authenticated 00000000-0000-4000-8000-000000000042 route-b@example.invalid)"; user_stripe="$(TOKEN_JTI=stripe-sandbox token authenticated 00000000-0000-4000-8000-000000000043 stripe-sandbox@example.invalid)"
 storage_files="$WORK/storage"; mkdir -p "$storage_files"
 docker run -d --name "$REST" --network "$NET" --publish 127.0.0.1::3000 -e "PGRST_DB_URI=postgres://authenticator:$PASSWORD@db:5432/postgres" -e "PGRST_DB_SCHEMAS=public,storage" -e "PGRST_DB_ANON_ROLE=anon" -e "PGRST_JWT_SECRET=$JWT_SECRET" "$REST_IMAGE" >/dev/null
@@ -146,7 +190,7 @@ export NEXT_URL="$next_url" SUPABASE_GATEWAY="$gateway" USER_A="$user_a" USER_A_
 if [[ "$stripe_interactive" == true ]]; then
   browser_auth_file="$WORK/stripe-sandbox-browser-auth.js"
   NEXT_URL="$next_url" USER_STRIPE="$user_stripe" node - <<'NODE' >"$browser_auth_file"
-const session={access_token:process.env.USER_STRIPE,refresh_token:process.env.USER_STRIPE,token_type:"bearer",expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,user:{id:"00000000-0000-4000-8000-000000000043",aud:"authenticated",role:"authenticated",email:"stripe-sandbox@example.invalid"}};
+const session={access_token:process.env.USER_STRIPE,refresh_token:process.env.USER_STRIPE,token_type:"bearer",expires_in:86400,expires_at:Math.floor(Date.now()/1000)+86400,user:{id:"00000000-0000-4000-8000-000000000043",aud:"authenticated",role:"authenticated",email:"stripe-sandbox@example.invalid"}};
 process.stdout.write(`localStorage.setItem("sb-127-auth-token",${JSON.stringify(JSON.stringify(session))});\n`);
 process.stdout.write(`location.assign(${JSON.stringify(`${process.env.NEXT_URL}/account?section=draft-pro`)});\n`);
 NODE
