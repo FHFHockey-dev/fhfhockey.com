@@ -16,9 +16,7 @@ details, email, production data, or public endpoint were used.
   with a local signature after Chef had verified signed partial then full
   `charge.refunded` events for its charge. The webhook returned HTTP 200 with
   `processed:true`; this is a simulated out-of-order delivery that exercises
-  the database's terminal full-refund precedence. The existing SQL probes
-  remain the direct state assertion for late paid events not reopening a full
-  refund.
+  the database's terminal full-refund precedence. Chef queried the isolated database after this delivery: the old purchase remained refunded/refunded and its grant inactive; the new purchase remained active/paid with its own active grant.
 
 ## Replay and dispute limits
 
