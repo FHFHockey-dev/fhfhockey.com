@@ -105,6 +105,40 @@ describe("DraftSettings A&G component confirmation", () => {
   });
 });
 
+describe("DraftSettings inline league views", () => {
+  it("keeps the format default compact while exposing schedule and management controls on demand", () => {
+    render(
+      <DraftSettings
+        variant="inline"
+        activeSection="league"
+        matchupWeeks={[{ week: 24, start_date: "2027-03-15", end_date: "2027-03-21" }]}
+        settings={settings}
+        onSettingsChange={vi.fn()}
+        myTeamId="Team 1"
+        onMyTeamIdChange={vi.fn()}
+        undoLastPick={vi.fn()}
+        resetDraft={vi.fn()}
+        draftHistory={[]}
+        draftedPlayers={[]}
+        currentPick={1}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Format" }).getAttribute("aria-pressed")).toBe("true");
+    const playoffWeeks = screen.getByLabelText("Playoff Weeks");
+    const teamCount = screen.getByLabelText("Number of teams");
+    expect(playoffWeeks.closest("[hidden]")).toBeTruthy();
+    expect(teamCount.closest("[hidden]")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Schedule" }));
+    expect(playoffWeeks.closest("[hidden]")).toBeNull();
+    expect(teamCount.closest("[hidden]")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Management" }));
+    expect(screen.getByRole("button", { name: "Export Settings" })).toBeTruthy();
+  });
+});
+
 describe("DraftSettings goalie scoring manager", () => {
   it("edits exact custom reversed rounds and locks them after drafting starts", () => {
     const onDraftOrderPatternChange = vi.fn();

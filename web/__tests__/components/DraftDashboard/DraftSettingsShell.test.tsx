@@ -82,4 +82,18 @@ describe("DraftSettingsShell", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Saved Drafts" }));
     expect((screen.getByRole("textbox", { name: "Saved draft note" }) as HTMLInputElement).value).toBe("keep this draft");
   });
+  it("uses one keyboard-navigable tab list without duplicate setup navigation", async () => {
+    render(<Harness />);
+    fireEvent.click(screen.getByRole("button", { name: "Open settings" }));
+    await screen.findByRole("dialog", { name: "Draft Settings" });
+    expect(screen.getAllByRole("tablist")).toHaveLength(1);
+    const league = screen.getByRole("tab", { name: "League & Draft" });
+    fireEvent.keyDown(league, { key: "ArrowDown" });
+    expect(screen.getByRole("tab", { name: "Roster" }).getAttribute("aria-selected")).toBe("true");
+    fireEvent.keyDown(screen.getByRole("tab", { name: "Roster" }), { key: "End" });
+    expect(screen.getByRole("tab", { name: "Reports" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.queryByRole("button", { name: /^Setup$/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Open Full Setup/ })).toBeNull();
+  });
+
 });

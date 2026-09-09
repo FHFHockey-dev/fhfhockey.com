@@ -3419,7 +3419,7 @@ const DraftDashboard: React.FC = () => {
         matchupWeeksError={draftSchedule.weeksError}
         ref={settingsEditorRef}
         validation={settingsValidation}
-        variant={fullSettings ? "full" : "inline"}
+        variant="inline"
         activeSection={settingsSection === "integrations" || settingsSection === "saved-drafts" || settingsSection === "roster-impact" || settingsSection === "reports" ? "league" : settingsSection}
         settings={draftSettings}
         onSettingsChange={updateDraftSettings}

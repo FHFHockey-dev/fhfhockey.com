@@ -196,19 +196,18 @@
 
 :global([data-variant="inline"]) .scoring {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(250px, 0.7fr);
-  grid-template-rows: auto auto 1fr;
-  column-gap: v.$space-md;
-  row-gap: v.$space-xs;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 20px;
+  row-gap: 12px;
   align-items: start;
 
-  > .scoringGroup { grid-row: 1 / span 3; }
+  > .scoringGroup { grid-row: 1; }
   > .scoringGroup:first-of-type { grid-column: 1; }
   > .scoringGroup:nth-of-type(2) { grid-column: 2; }
 
   .categoryList {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 2px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
   }
 
   .scoringGroup {
@@ -226,11 +225,12 @@
   .categoryHeading { padding: 2px 6px; }
 
   .categoryRow {
-    padding: 1px 6px;
+    min-height: 40px;
+    padding: 5px 8px;
 
     input {
-      width: 56px;
-      padding: 3px 5px;
+      width: 64px;
+      padding: 6px;
     }
 
     button {
@@ -241,7 +241,7 @@
 
   .wideButton {
     grid-column: 1 / -1;
-    min-height: 26px;
+    min-height: 36px;
     margin-top: v.$space-xs;
   }
 
@@ -259,22 +259,19 @@
   }
 
   > .profile {
-    grid-column: 3;
-    grid-row: 1;
-    align-items: flex-start;
-    flex-direction: column;
-    gap: v.$space-xs;
-    padding-top: v.$space-sm;
+    grid-column: 1;
+    grid-row: 2;
+    padding-top: 10px;
   }
 
   > .actions {
-    grid-column: 3;
+    grid-column: 2;
     grid-row: 2;
-    gap: v.$space-xs;
+    gap: 8px;
   }
 
   > .note {
-    grid-column: 3;
+    grid-column: 1 / -1;
     grid-row: 3;
     margin: 0;
     padding-top: v.$space-sm;
@@ -282,22 +279,18 @@
 }
 :global([data-variant="inline"]) .sources {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(250px, 0.7fr);
-  grid-template-rows: auto auto auto 1fr;
-  column-gap: v.$space-md;
-  row-gap: v.$space-xs;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: auto auto auto;
+  column-gap: 20px;
+  row-gap: 12px;
   align-items: start;
 
   > .sourceGroup {
-    grid-row: 1 / span 4;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: v.$space-sm;
-    align-content: start;
+    grid-row: 2;
+    display: block;
     padding: v.$space-sm;
 
     h4 {
-      grid-column: 1 / -1;
       margin-bottom: v.$space-xs;
     }
   }
@@ -305,15 +298,15 @@
   > .sourceGroup:nth-of-type(2) { grid-column: 2; }
 
   .sourceRow {
-    gap: 6px;
-    min-height: 32px;
+    gap: 8px;
+    min-height: 40px;
 
-    > label:first-child { flex-basis: 84px; }
-    > strong { min-width: 32px; }
+    > label:first-child { flex-basis: 170px; }
+    > strong { min-width: 38px; }
   }
 
   > .modeSwitch {
-    grid-column: 3;
+    grid-column: 1;
     grid-row: 1;
     align-self: stretch;
     width: 100%;
@@ -325,14 +318,14 @@
   }
 
   > .wideButton {
-    grid-column: 3;
-    grid-row: 2;
-    min-height: 30px;
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 36px;
     margin-top: 0;
   }
 
   > .actions {
-    grid-column: 3;
+    grid-column: 1 / -1;
     grid-row: 3;
     gap: v.$space-xs;
 
@@ -340,7 +333,7 @@
   }
 
   > .note {
-    grid-column: 3;
+    grid-column: 1 / -1;
     grid-row: 4;
     margin: 0;
     padding-top: v.$space-xs;
