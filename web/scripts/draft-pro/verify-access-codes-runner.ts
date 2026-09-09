@@ -61,7 +61,7 @@ async function main() {
   }
   assert.equal(limited, true, "The generic access-code attempt limit did not return 429.");
   const attempts = await serviceRows(`draft_pro_access_code_attempts?select=user_id,attempt_count&user_id=eq.00000000-0000-4000-8000-000000000044`);
-  assert.equal(attempts.length, 1); assert(Number(attempts[0].attempt_count) > 0, "The failed redemption attempt was not persisted.");
+  assert.equal(attempts.length, 1); assert(Number(attempts[0].attempt_count) > 0 && Number(attempts[0].attempt_count) <= 9, "The persisted attempt count exceeded its documented cap.");
 
   const browser = await chromium.launch({ headless: true });
   try {
@@ -86,11 +86,11 @@ async function main() {
   const seededRead = await fetch(`${gateway}/storage/v1/object/draft-pro-private-imports/${storagePath}`, { headers: { Authorization: `Bearer ${service}`, apikey: service } });
   assert.equal(seededRead.status, 200, `Service-only private Storage read failed: ${seededRead.status} ${await seededRead.text()}`);
   await assertDirectStorageDenied(paid, storagePath); await assertDirectStorageDenied(owner, storagePath); await assertDirectStorageDenied(foreign, storagePath);
-  const codeRows = await serviceRows(`draft_pro_access_codes?select=redeemed_at,revoked_at,redeemed_by_user_id&id=eq.${codeId}`);
+  const codeRows = await serviceRows(`draft_pro_access_codes?select=redeemed_at,revoked_at,redeemed_by_user_id,revoked_reason&id=eq.${codeId}`);
   assert.equal(codeRows.length, 1); assert.equal(codeRows[0].redeemed_by_user_id, ownerId); assert(codeRows[0].redeemed_at);
-  assert.equal(await rpc("revoke_draft_pro_access_code", { p_issued_by_user_id: adminId, p_code_id: codeId }), true);
-  const revokedRows = await serviceRows(`draft_pro_access_codes?select=redeemed_at,revoked_at&id=eq.${codeId}`);
-  assert(revokedRows[0].redeemed_at && revokedRows[0].revoked_at, "Revocation removed the retained access-code audit record.");
+  assert.equal(await rpc("revoke_draft_pro_access_code", { p_issued_by_user_id: adminId, p_code_id: codeId, p_reason: "isolated acceptance revocation" }), true);
+  const revokedRows = await serviceRows(`draft_pro_access_codes?select=redeemed_at,revoked_at,revoked_reason&id=eq.${codeId}`);
+  assert(revokedRows[0].redeemed_at && revokedRows[0].revoked_at && revokedRows[0].revoked_reason === "isolated acceptance revocation", "Revocation did not retain the required access-code audit record.");
   const entitlements = await serviceRows(`user_entitlements?select=entitlement_status,source_reference&user_id=eq.${ownerId}&source_provider=eq.complimentary`);
   assert(entitlements.some((row) => row.entitlement_status === "inactive" && row.source_reference === `draft_pro_access_code:${codeId}`), "Revocation did not lock the complimentary entitlement.");
   const names = await call("/api/v1/account/draft-pro/drafts", owner); assert.equal(names.status, 200); assert(names.json.data.some((draft: { id: string }) => draft.id === draftId), "Revocation did not retain the saved draft name.");
