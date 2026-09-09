@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { DraftSettings } from "./DraftDashboard";
 import type { ProjectionSourceControls } from "lib/draftDashboard/sourceControlPreferences";
@@ -7,7 +8,7 @@ import type {
 } from "lib/draftDashboard/settingsValidation";
 import styles from "./DraftWorkspace.module.scss";
 
-export type SettingsSection = SettingsDomain | "integrations";
+export type SettingsSection = SettingsDomain | "integrations" | "saved-drafts" | "roster-impact" | "reports";
 const domains: Array<{ id: SettingsDomain; label: string }> = [
   { id: "league", label: "League & Draft" },
   { id: "roster", label: "Roster" },
@@ -22,7 +23,9 @@ interface DraftSettingsShellProps {
   open: boolean;
   full: boolean;
   configured: boolean;
+  draftProEligible?: boolean;
   onToggle: () => void;
+  onClose: () => void;
   onFullSetup: () => void;
   onDone: () => boolean;
   onResetSettings: () => void;
@@ -43,7 +46,9 @@ export default function DraftSettingsShell({
   open,
   full,
   configured,
+  draftProEligible = false,
   onToggle,
+  onClose,
   onFullSetup,
   onDone,
   onResetSettings,
@@ -54,8 +59,9 @@ export default function DraftSettingsShell({
   saveError,
   children,
 }: DraftSettingsShellProps) {
-  const toggle = useRef<HTMLButtonElement>(null);
   const shell = useRef<HTMLElement>(null);
+  const previousFocus = useRef<HTMLElement | null>(null);
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const [reviewErrors, setReviewErrors] = useState(false);
   const custom = [sourceControls, goalieSourceControls].some((controls) =>
     Object.entries(controls).some(
@@ -75,6 +81,14 @@ export default function DraftSettingsShell({
       control?.scrollIntoView({ block: "nearest", inline: "nearest" });
     });
   };
+  const restoreFocus = () => {
+    previousFocus.current?.focus({ preventScroll: true });
+    previousFocus.current = null;
+  };
+  const dismiss = () => {
+    restoreFocus();
+    onClose();
+  };
   const done = () => {
     setReviewErrors(true);
     if (!validation.valid) {
@@ -84,20 +98,48 @@ export default function DraftSettingsShell({
     }
     if (onDone()) {
       setReviewErrors(false);
-      requestAnimationFrame(() =>
-        toggle.current?.focus({ preventScroll: true }),
-      );
+      restoreFocus();
     }
   };
+  useEffect(() => {
+    setPortalRoot(document.body);
+  }, []);
+  useEffect(() => {
+    if (open) previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (!open && previousFocus.current) {
+      restoreFocus();
+    }
+  }, [open]);
   useEffect(() => {
     if (open)
       shell.current
         ?.querySelector<HTMLButtonElement>(`#draft-tab-${section}`)
         ?.focus({ preventScroll: true });
-    // Focus only on entry, not while typing or navigating sections.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, full]);
-  return (
+  }, [open, full, section]);
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        previousFocus.current?.focus({ preventScroll: true });
+        previousFocus.current = null;
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !shell.current) return;
+      const focusable = Array.from(shell.current.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')).filter((element) => element.tabIndex >= 0 && element.getClientRects().length > 0);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, open]);
+  if (!portalRoot) return null;
+  return createPortal(
+    <div className={styles.settingsBackdrop} hidden={!open} onMouseDown={(event) => { if (event.target === event.currentTarget) dismiss(); }}>
     <section
       ref={shell}
       className={styles.settingsShell}
@@ -105,6 +147,9 @@ export default function DraftSettingsShell({
       data-full={full}
       data-section={section}
       aria-label="Draft Settings"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="draft-settings-title"
     >
       <div className={styles.settingsSummary}>
         <svg
@@ -114,7 +159,7 @@ export default function DraftSettingsShell({
         >
           <path d="M9.6 3.1 10 1h4l.4 2.1a9 9 0 0 1 1.7.7l1.8-1.2 2.8 2.8-1.2 1.8a9 9 0 0 1 .7 1.7l2.1.4v4l-2.1.4a9 9 0 0 1-.7 1.7l1.2 1.8-2.8 2.8-1.8-1.2a9 9 0 0 1-1.7.7L14 23h-4l-.4-2.1a9 9 0 0 1-1.7-.7l-1.8 1.2-2.8-2.8 1.2-1.8a9 9 0 0 1-.7-1.7l-2.1-.4v-4l2.1-.4a9 9 0 0 1 .7-1.7L3.3 5.4l2.8-2.8 1.8 1.2a9 9 0 0 1 1.7-.7ZM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z" />
         </svg>
-        <h2>Draft Settings</h2>
+        <h2 id="draft-settings-title">Draft Settings</h2>
         <span>{settings.teamCount} Teams</span>
         <span>{validation.spots} Roster Spots</span>
         <span>
@@ -128,29 +173,21 @@ export default function DraftSettingsShell({
         <span className={validation.valid ? styles.healthy : styles.warning}>
           {validation.valid ? "✓ Settings valid" : "⚠ Review configuration"}
         </span>
-        {open && (
-          <div className={styles.settingsActions}>
-            <button type="button" onClick={onResetSettings}>
-              Reset Settings
-            </button>
-            <button type="button" onClick={onImport}>
-              Import
-            </button>
-            <button type="button" onClick={onExport}>
-              Export
-            </button>
-          </div>
-        )}
+        <a className={styles.draftProLink} href="/account?section=draft-pro">
+          {draftProEligible ? "Manage Draft Pro" : "Explore Draft Pro"}
+        </a>
+        <div className={styles.settingsActions}>
+          <button type="button" onClick={onResetSettings}>Reset Settings</button>
+          <button type="button" onClick={onImport}>Import</button>
+          <button type="button" onClick={onExport}>Export</button>
+        </div>
         <button
-          ref={toggle}
           type="button"
-          onClick={open ? done : onToggle}
-          aria-expanded={open}
-          aria-controls="draft-inline-settings"
+          onClick={done}
         >
-          {open ? "Done" : "Edit Settings"}{" "}
-          <span aria-hidden="true">{open ? "⌃" : "⌄"}</span>
+          Done
         </button>
+        <button type="button" className={styles.closeSettings} onClick={dismiss} aria-label="Close settings">×</button>
       </div>
       <div
         id="draft-inline-settings"
@@ -161,6 +198,12 @@ export default function DraftSettingsShell({
           className={styles.settingsTabs}
           aria-label="Draft settings sections"
         >
+          <div className={styles.settingsQuickActions} aria-label="Workspace actions">
+            <button type="button" onClick={() => onSectionChange("league")}>Setup</button>
+            <button type="button" onClick={() => onSectionChange("projections")}>Sources</button>
+            <button type="button" onClick={() => onSectionChange("integrations")}>Integrations</button>
+            <button type="button" onClick={onToggle}>Summary</button>
+          </div>
           <div role={full ? "group" : "tablist"} aria-label="Settings domains">
             {domains.map(({ id, label }, index) => (
               <button
@@ -226,6 +269,11 @@ export default function DraftSettingsShell({
             </button>
           )}
         </nav>
+        <div className={styles.workspaceOptions} role="tablist" aria-label="Draft Pro workspaces">
+          <button id="draft-tab-saved-drafts" type="button" role="tab" aria-selected={section === "saved-drafts"} onClick={() => onSectionChange("saved-drafts")}>Saved Drafts</button>
+          <button id="draft-tab-roster-impact" type="button" role="tab" aria-selected={section === "roster-impact"} onClick={() => onSectionChange("roster-impact")}>Roster Impact</button>
+          <button id="draft-tab-reports" type="button" role="tab" aria-selected={section === "reports"} onClick={() => onSectionChange("reports")}>Analytical Reports</button>
+        </div>
         {!configured && (
           <p className={styles.setupNotice}>
             Review your league setup, then select Done to start drafting.
@@ -279,5 +327,7 @@ export default function DraftSettingsShell({
         </footer>
       </div>
     </section>
+    </div>,
+    portalRoot,
   );
 }

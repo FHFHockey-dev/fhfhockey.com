@@ -521,3 +521,23 @@ Dispatched from c760ce0e1: W01 Terra/medium owns code schema/types/shared eligib
 - Final revised runtime8d9bd3840 Chef-approved: fullsuite session29931 exit0 (4433passed/3skip,765files/2skip); TypeScript8GiB session9221 exit0. EarlierRC2DUSTfailures were deterministicfixtureclock defects fixed2a0e9cbb8, noproductionstalenesschange. Backend c9 speculativegrantmerge rejected/reverted and neverintegrated; authoritative reread preserved.
 - W12 exactcombinedgate642a3dd28+3741d856c passedrealredemption, forgedgrantdenial,429, compAPIunlock,directtable/storagedenial,revoke-lock-retention,mobilekeyboard390 andcleanup. Sevenverifiercommits integratedthroughb58884c8f. Finalgate output is W12tooltranscript (noinventedlog); Chefinspected andcopiedmobileartifact to persistentChefvisualizations/access-codes/.
 - W04 retry8d9bd3840 handlesbriefactivationboundary via boundedGET-onlyreads;20focusedtests/lintpassed, no automaticPOSTreplay. AllLineCooksreturnedlowcostidle. OriginalChef-ownedgateway/Next/StripeCLIlistener stopped afterownershipchecks; ports58651/58664closed, ownedDockerstack/networkgone, generatednext-envrestored. Ignoredsecretsretained, notprinted/committed. Final verifier-only TypeScript check after b58884c8f passed: session 45956, exit 0, `/tmp/draft-pro-complimentary-verifier-types.log`. No redundant full unit run was needed.
+
+## September 9 dashboard overlay follow-up
+
+The owner reopened UI acceptance after viewing the merged dashboard. This follow-up replaces stacked workspace controls with one compact settings entry and an overlay, and moves the DUST matrix into a My Roster overlay. Existing Pro capabilities and calculations are unchanged. Work is directly on `octoberBranch` in the main checkout, preserving independent local edits and the pre-integration stash.
+
+- W07 (Terra/medium): central composition, compact header, settings overlay, Saved Drafts/scenario/report placement. Exclusive ownership of central TSX/SCSS.
+- W06 (Luna/medium): My Roster slot and DUST overlay, matrix tests/styles. No central composition edits.
+- Chef: integration review, desktop/mobile browser checks and final TypeScript. W12 retained for targeted verification if needed.
+- Archived completed W01–W05 and W08–W11 tasks; retained W06, W07, W12, and parked W13. No new tasks, production changes, or provider configuration.
+- Acceptance additionally requires Escape/close behavior, focus containment/return, internal scrolling, and no underlying dashboard layout shift. UI approval is pending those checks.
+
+### Overlay UI acceptance
+
+W07 and W06 browser review is complete. The compact bar retains season/source health and Draft Pro access; Yahoo league/mode controls are hidden. Settings now contains the setup actions and side-by-side premium workspace selectors. DUST opens from My Roster. Both layers render above site navigation without changing the dashboard grid. Saved workspace children stay mounted.
+
+Review corrections included portal theme inheritance, explicit hidden-backdrop CSS, visible-only focus targets, opener focus restoration, removal of old full-setup layout suppression, independent mobile tab/modal state, CSV modal handoff, and roster bottom navigation clearance. W06 commits: `94953faed`, `614644451`, `48838a0f3`.
+
+Evidence: worker focused tests 23/23 (shell, mobile tabs, roster/matrix, projections), scoped ESLint zero errors with one pre-existing exhaustive-deps warning. Chef real browser at 1280×720 verified identical Suggested Picks bounds before/during settings (x12,y111.1953125,width931,height215), themed overlay, workspace switching, Escape and focus return. At 390×844 verified preserved Roster/Players selection, sources pane, keyboard wrapping, CSV modal transition, DUST trigger reaching its dialog rather than fixed navigation, overlay stacking and Escape. Empty-roster DUST state was used in browser; populated matrix calculations remain covered by the existing focused fixtures. Temporary browser tab closed and viewport override reset. Final TypeScript result follows.
+
+Final TypeScript passed (session 40146, exit 0; `/tmp/draft-overlay-final-types.log`) after correcting the new shell fixture's missing `issues` field; its focused test passed again. UI follow-up is 100% locally implemented and verified. Overall launch readiness remains approximately 98%, with prior external/provider deferrals unchanged. Latest account-wide weekly usage: 43% used / 57% remaining. W06/W07/W12 finished and are archived after acceptance; W13 remains parked for September 11.

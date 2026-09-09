@@ -13,6 +13,7 @@ import {
 } from "hooks/useProcessedProjectionsData";
 import { getDefaultFantasyPointsConfig } from "lib/projectionsConfig/fantasyPointsConfig";
 import { PROJECTION_SOURCES_CONFIG } from "lib/projectionsConfig/projectionSourcesConfig";
+import { FANTASY_PROJECTION_SEASON_ID } from "lib/fantasy-projections/contracts";
 import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
 import { useDraftRanking } from "hooks/useDraftRanking";
 import { useYahooDraftSync } from "hooks/useYahooDraftSync";
@@ -33,7 +34,7 @@ import SavedDraftsWorkspace from "./SavedDraftsWorkspace";
 import type { SavedDraftAnnotations } from "./SavedDraftsPanel";
 import { adaptScenarioDashboard, type ScenarioSavedImportContext } from "lib/draft-pro/scenarioDashboardAdapter";
 import { ScenarioComparisonWorkspace } from "./ScenarioComparisonWorkspace";
-import { showScenarioWorkspace, toggleScenarioWorkspace, type ScenarioWorkspaceState } from "lib/draftDashboard/scenarioWorkspaceState";
+import { showScenarioWorkspace, type ScenarioWorkspaceState } from "lib/draftDashboard/scenarioWorkspaceState";
 import { adaptReportDashboard, type OpenedReportDraft } from "lib/draft-pro/reportDashboardAdapter";
 import { AnalyticalReportsPanel } from "./AnalyticalReportsPanel";
 import ProjectionsTable from "./ProjectionsTable";
@@ -574,21 +575,18 @@ const DraftDashboard: React.FC = () => {
   const initialSetupChecked = useRef(false);
   const openSettings = useCallback((section: SettingsSection) => {
     setSettingsSection(section);
-    setFullSettings(current => current || section === "league");
+    setFullSettings(false);
     setSettingsOpen(true);
-    setActiveMobileTab("setup");
-  }, [setActiveMobileTab]);
+  }, []);
   useEffect(() => {
-    if (mobileWorkspaceEnabled) {
-      setSettingsOpen(activeMobileTab === "setup");
+    if (mobileWorkspaceEnabled && activeMobileTab === "setup") {
+      setActiveMobileTab("players");
     }
-  }, [mobileWorkspaceEnabled, activeMobileTab]);
+  }, [activeMobileTab, mobileWorkspaceEnabled, setActiveMobileTab]);
   const [suggestedCompareIds, setSuggestedCompareIds] = useState<string[]>([]);
   const [suggestedCompareOpen, setSuggestedCompareOpen] = useState(false);
-  const [savedDraftsOpen, setSavedDraftsOpen] = useState(false);
   const [savedDraftsMounted, setSavedDraftsMounted] = useState(false);
   const [scenarioWorkspace, setScenarioWorkspace] = useState<ScenarioWorkspaceState>({ mounted: false, open: false, candidateIds: [] });
-  const [reportsOpen, setReportsOpen] = useState(false);
   const [reportsMounted, setReportsMounted] = useState(false);
   const [openedReportDraft, setOpenedReportDraft] = useState<OpenedReportDraft | null>(null);
   const [favoriteIds, setFavoriteIds] = useState<string[]>(readStoredFavoriteIds);
@@ -1054,9 +1052,8 @@ const DraftDashboard: React.FC = () => {
       setFullSettings(true);
       setSettingsOpen(true);
       setSettingsSection("league");
-      setActiveMobileTab("setup");
     }
-  }, [authLoading, sessionReady, user, accountSettingsKnown, settingsConfigured, setActiveMobileTab]);
+  }, [authLoading, sessionReady, user, accountSettingsKnown, settingsConfigured]);
 
   // Persist snapshot as state changes
   useEffect(() => {
@@ -2314,8 +2311,9 @@ const DraftDashboard: React.FC = () => {
   }), [allPlayers, availablePlayers, currentSeasonId, customCsvList, draftSettings.categoryWeights, draftSettings.leagueType, draftSettings.scoringCategories, goaliePointValues, goalieSourceControls, myTeamId, posNeeds, rosterAssignments, scenarioWorkspace.candidateIds, scenarioSavedImportContext, scenarioSchedule, sourceControls, vorpMetrics]);
   const openRosterImpact = useCallback((candidateIds: readonly string[] = []) => {
     setScenarioWorkspace((current) => showScenarioWorkspace(current, candidateIds));
+    setSettingsSection("roster-impact");
+    setSettingsOpen(true);
   }, []);
-  const toggleRosterImpact = useCallback(() => setScenarioWorkspace(toggleScenarioWorkspace), []);
   const currentReportComplete = useMemo(() => {
     const expectedPicks = draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig);
     return new Set([...draftedPlayers, ...keepers].map((player) => player.playerId)).size >= expectedPicks;
@@ -2349,10 +2347,6 @@ const DraftDashboard: React.FC = () => {
     openedDraft: openedReportDraft,
     reference: reportReference,
   }), [allPlayers, currentReportComplete, currentReportSnapshot, currentSeasonId, customCsvList, draftSettings.categoryWeights, draftSettings.leagueType, draftSettings.scoringCategories, goaliePointValues, goalieSourceControls, myTeamId, openedReportDraft, reportReference, rosterAssignments, scenarioSavedImportContext, scenarioSchedule, sourceControls, vorpMetrics]);
-  const toggleReports = useCallback(() => {
-    setReportsMounted(true);
-    setReportsOpen((open) => !open);
-  }, []);
 
   // NEW: category deficits vector for my team (categories mode): league mean - my totals
   const catNeeds = React.useMemo(() => {
@@ -2511,7 +2505,6 @@ const DraftDashboard: React.FC = () => {
     setSettingsSaveError(null);
     setSettingsOpen(false);
     setFullSettings(false);
-    if (mobileWorkspaceEnabled) setActiveMobileTab("players");
     return true;
   };
 
@@ -3357,14 +3350,7 @@ const DraftDashboard: React.FC = () => {
       data-mobile-tab={activeMobileTab}
     >
       <DraftWorkspaceHeader
-        leagueName={
-          espnLeagueOverride ? `ESPN ${espnLeagueOverride.externalLeagueId}`
-            : fantraxLeagueOverride ? `Fantrax ${fantraxLeagueOverride.externalLeagueId}`
-            : draftMode === "yahoo" && yahooDraftSync.selectedLeagueId ? `Yahoo ${yahooDraftSync.selectedLeagueId}`
-            : "Local draft"
-        }
-        seasonId={currentSeasonId}
-        manual={manualDraftingEnabled}
+        seasonId={FANTASY_PROJECTION_SEASON_ID}
         health={sourcesRefreshing ? "loading" : sourcesUnavailable || syncError || !hasLoadedPlayers ? "warning" : "healthy"}
         healthLabel={
           sourcesRefreshing ? "Loading draft sources"
@@ -3375,60 +3361,21 @@ const DraftDashboard: React.FC = () => {
             : !manualDraftingEnabled ? `${espnLiveActive ? "ESPN" : "Yahoo"} live sync`
             : "Draft sources ready"
         }
-        onSettings={openSettings}
-        onManual={() => {
-          if (espnLiveActive) void stopEspnAndContinueManually();
-          else if (draftMode === "yahoo") void stopYahooAndContinueManually();
-        }}
-        onSummary={() => setIsSummaryOpen(true)}
+        draftProEligible={draftProEligible}
+        onSettings={() => openSettings("league")}
+        onHealth={() => openSettings("integrations")}
       />
       <MobileDraftTabs
         activeTab={activeMobileTab}
         onChange={(tab) => {
-          if (tab !== "setup" && settingsOpen && !closeSettings()) return;
+          if (tab === "setup") {
+            openSettings("league");
+            return;
+          }
+          if (settingsOpen && !closeSettings()) return;
           setActiveMobileTab(tab);
-          setSettingsOpen(tab === "setup");
         }}
       />
-
-      <section className={styles.savedDraftsArea} aria-label="Saved Drafts controls">
-        <button type="button" onClick={() => { setSavedDraftsMounted(true); setSavedDraftsOpen((open) => !open); }} aria-expanded={savedDraftsOpen}>
-          {savedDraftsOpen ? "Hide Saved Drafts" : "Saved Drafts"}
-        </button>
-        {savedDraftsMounted ? <div hidden={!savedDraftsOpen}><SavedDraftsWorkspace
-          getBrowserSnapshot={getSavedBrowserSnapshot}
-          applyBrowserSnapshot={applySavedBrowserSnapshot}
-          players={allPlayers.map((player) => ({ id: String(player.playerId), name: player.fullName }))}
-          annotations={workspaceAnnotations}
-          onAnnotationsChange={setWorkspaceAnnotations}
-          onSavedImportContextChange={setScenarioSavedImportContext}
-          onOpenedReportDraftChange={setOpenedReportDraft}
-        /></div> : null}
-        {canOpenScenarioHistory ? <>
-          <button type="button" onClick={toggleRosterImpact} aria-expanded={scenarioWorkspace.open}>
-            {scenarioWorkspace.open ? "Hide Roster Impact" : "Roster Impact Scenarios"}
-          </button>
-          {scenarioWorkspace.mounted ? <div hidden={!scenarioWorkspace.open}>
-            {scenarioAdapter.unavailableReason ? <p role="status">{scenarioAdapter.unavailableReason}</p> : null}
-            <ScenarioComparisonWorkspace eligible={canUseProScenarios} input={scenarioAdapter.input} draftId={scenarioAdapter.draftId} />
-          </div> : null}
-        </> : null}
-        {canOpenReportHistory ? <>
-          <button type="button" onClick={toggleReports} aria-expanded={reportsOpen}>
-            {reportsOpen ? "Hide Analytical Reports" : "Analytical Reports"}
-          </button>
-          {reportsMounted ? <div hidden={!reportsOpen}>
-            {reportAdapter.unavailableReason ? <p role="status">{reportAdapter.unavailableReason}</p> : null}
-            <AnalyticalReportsPanel
-              eligible={canUseProReports}
-              input={reportAdapter.input}
-              snapshot={reportAdapter.snapshot}
-              draftId={reportAdapter.draftId}
-              privateImportDraftId={reportAdapter.privateImportDraftId}
-            />
-          </div> : null}
-        </> : null}
-      </section>
 
       <DraftSettingsShell
         settings={draftSettings}
@@ -3437,16 +3384,23 @@ const DraftDashboard: React.FC = () => {
         open={settingsOpen}
         full={fullSettings}
         configured={settingsConfigured}
+        draftProEligible={draftProEligible}
         validation={settingsValidation}
         saveError={settingsSaveError}
-        onToggle={() => { setSettingsOpen(true); setActiveMobileTab("setup"); }}
+        onToggle={() => { setSettingsOpen(false); setFullSettings(false); setIsSummaryOpen(true); }}
+        onClose={() => { setSettingsOpen(false); setFullSettings(false); }}
         onFullSetup={() => setFullSettings(true)}
         onDone={closeSettings}
         onResetSettings={resetSettings}
         onImport={() => { setSettingsSection("league"); settingsEditorRef.current?.importBookmark(); }}
         onExport={() => settingsEditorRef.current?.exportBookmark()}
         section={settingsSection}
-        onSectionChange={setSettingsSection}
+        onSectionChange={(section) => {
+          setSettingsSection(section);
+          if (section === "saved-drafts") setSavedDraftsMounted(true);
+          if (section === "roster-impact") setScenarioWorkspace((current) => ({ ...current, mounted: true, open: true }));
+          if (section === "reports") setReportsMounted(true);
+        }}
       >
       <div
         id="mobile-draft-panel-setup"
@@ -3457,17 +3411,16 @@ const DraftDashboard: React.FC = () => {
         aria-labelledby={
           mobileWorkspaceEnabled ? "mobile-draft-tab-setup" : undefined
         }
-        hidden={mobileWorkspaceEnabled && activeMobileTab !== "setup"}
       >
         <div className={styles.setupCore}>
-          <div hidden={settingsSection === "integrations"}>
+          <div hidden={settingsSection === "integrations" || settingsSection === "saved-drafts" || settingsSection === "roster-impact" || settingsSection === "reports"}>
           <DraftSettings
         matchupWeeks={draftSchedule.weeks}
         matchupWeeksError={draftSchedule.weeksError}
         ref={settingsEditorRef}
         validation={settingsValidation}
         variant={fullSettings ? "full" : "inline"}
-        activeSection={settingsSection === "integrations" ? "league" : settingsSection}
+        activeSection={settingsSection === "integrations" || settingsSection === "saved-drafts" || settingsSection === "roster-impact" || settingsSection === "reports" ? "league" : settingsSection}
         settings={draftSettings}
         onSettingsChange={updateDraftSettings}
         draftOrderPattern={draftOrderPattern}
@@ -3500,8 +3453,8 @@ const DraftDashboard: React.FC = () => {
             setGoaliePointValues(value);
           }
         }}
-        onOpenSummary={() => setIsSummaryOpen(true)}
-        onOpenImportCsv={() => setIsImportCsvOpen(true)}
+        onOpenSummary={() => { setSettingsOpen(false); setFullSettings(false); setIsSummaryOpen(true); }}
+        onOpenImportCsv={() => { setSettingsOpen(false); setFullSettings(false); setIsImportCsvOpen(true); }}
         customSourceLabel={customCsvLabel}
         customSourceMetadata={customSourceMetadata}
         availableSkaterStatKeys={availableSkaterStatKeys}
@@ -3726,11 +3679,36 @@ const DraftDashboard: React.FC = () => {
         onClear={espnDraftSync.clear}
       />
       </div>
+      {savedDraftsMounted ? <div className={styles.workspacePanel} hidden={settingsSection !== "saved-drafts"}>
+        <SavedDraftsWorkspace
+          getBrowserSnapshot={getSavedBrowserSnapshot}
+          applyBrowserSnapshot={applySavedBrowserSnapshot}
+          players={allPlayers.map((player) => ({ id: String(player.playerId), name: player.fullName }))}
+          annotations={workspaceAnnotations}
+          onAnnotationsChange={setWorkspaceAnnotations}
+          onSavedImportContextChange={setScenarioSavedImportContext}
+          onOpenedReportDraftChange={setOpenedReportDraft}
+        />
+      </div> : null}
+      {scenarioWorkspace.mounted ? <div className={styles.workspacePanel} hidden={settingsSection !== "roster-impact"}>
+        {scenarioAdapter.unavailableReason ? <p role="status">{scenarioAdapter.unavailableReason}</p> : null}
+        <ScenarioComparisonWorkspace eligible={canUseProScenarios} input={scenarioAdapter.input} draftId={scenarioAdapter.draftId} />
+      </div> : null}
+      {reportsMounted ? <div className={styles.workspacePanel} hidden={settingsSection !== "reports"}>
+        {reportAdapter.unavailableReason ? <p role="status">{reportAdapter.unavailableReason}</p> : null}
+        <AnalyticalReportsPanel
+          eligible={canUseProReports}
+          input={reportAdapter.input}
+          snapshot={reportAdapter.snapshot}
+          draftId={reportAdapter.draftId}
+          privateImportDraftId={reportAdapter.privateImportDraftId}
+        />
+      </div> : null}
         </div>
       </div>
       </DraftSettingsShell>
 
-      <div className={styles.mainContent} hidden={fullSettings}>
+      <div className={styles.mainContent}>
       {/* Recommendations and roster progress share the left workspace track. */}
       <section
         id="mobile-draft-panel-suggested"
@@ -3744,7 +3722,7 @@ const DraftDashboard: React.FC = () => {
         hidden={mobileWorkspaceEnabled && activeMobileTab !== "suggested"}
       >
         <SuggestedPicks
-          compact={settingsOpen}
+          compact={false}
           onReturnToDraft={closeSettings}
           players={availablePlayers}
           isLoading={isLoading}
@@ -3854,6 +3832,14 @@ const DraftDashboard: React.FC = () => {
             needAlpha={needAlpha}
             posNeeds={posNeeds}
             forwardGrouping={forwardGrouping}
+            scheduleOverview={<DustMatrix
+              state={rosterScheduleOptimizer}
+              weeks={draftSchedule.weeks}
+              roster={dustRoster}
+              selectedWeeks={draftSchedule.selectedWeeks}
+              period={draftSchedule.periodLabel}
+              error={draftSchedule.weeksError}
+            />}
           />
         </section>
 
@@ -3901,15 +3887,6 @@ const DraftDashboard: React.FC = () => {
           </button>
         </section>
       </div>
-
-      <DustMatrix
-        state={rosterScheduleOptimizer}
-        weeks={draftSchedule.weeks}
-        roster={dustRoster}
-        selectedWeeks={draftSchedule.selectedWeeks}
-        period={draftSchedule.periodLabel}
-        error={draftSchedule.weeksError}
-      />
 
       <DraftSummaryModal
         isOpen={isSummaryOpen}
