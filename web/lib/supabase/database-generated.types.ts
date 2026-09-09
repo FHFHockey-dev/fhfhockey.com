@@ -557,6 +557,18 @@ export type Database = {
         Update: { id?: string; user_id?: string; storage_path?: string; byte_size?: number; row_count?: number; content_sha256?: string; status?: string; created_at?: string; cleanup_requested_at?: string | null; cleanup_lease_id?: string | null; deleted_at?: string | null }
         Relationships: []
       }
+      draft_pro_access_codes: {
+        Row: { id: string; code_hash: string; target_user_id: string; issued_by_user_id: string; reason: string; expires_at: string; redeemed_at: string | null; redeemed_by_user_id: string | null; revoked_at: string | null; revoked_by_user_id: string | null; created_at: string }
+        Insert: { id?: string; code_hash: string; target_user_id: string; issued_by_user_id: string; reason: string; expires_at: string; redeemed_at?: string | null; redeemed_by_user_id?: string | null; revoked_at?: string | null; revoked_by_user_id?: string | null; created_at?: string }
+        Update: { id?: string; code_hash?: string; target_user_id?: string; issued_by_user_id?: string; reason?: string; expires_at?: string; redeemed_at?: string | null; redeemed_by_user_id?: string | null; revoked_at?: string | null; revoked_by_user_id?: string | null; created_at?: string }
+        Relationships: []
+      }
+      draft_pro_access_code_attempts: {
+        Row: { user_id: string; window_started_at: string; attempt_count: number }
+        Insert: { user_id: string; window_started_at?: string; attempt_count?: number }
+        Update: { user_id?: string; window_started_at?: string; attempt_count?: number }
+        Relationships: []
+      }
       draft_pro_private_import_uploads: {
         Row: { id: string; user_id: string; save_session_id: string; replacement_import_id: string | null; name: string; content_type: string; mapping: Json; source_id: string; declared_max_bytes: number; reserved_bytes: number; actual_bytes: number | null; row_count: number | null; content_sha256: string | null; storage_prefix: string; final_storage_path: string | null; chunk_paths: Json; cleanup_requested_at: string | null; cleaned_at: string | null; status: string; expires_at: string; created_at: string; updated_at: string }
         Insert: { id?: string; user_id: string; save_session_id: string; replacement_import_id?: string | null; name: string; content_type: string; mapping?: Json; source_id: string; declared_max_bytes: number; reserved_bytes: number; actual_bytes?: number | null; row_count?: number | null; content_sha256?: string | null; storage_prefix: string; final_storage_path?: string | null; chunk_paths?: Json; cleanup_requested_at?: string | null; cleaned_at?: string | null; status?: string; expires_at?: string; created_at?: string; updated_at?: string }
