@@ -48,6 +48,8 @@ interface MyRosterProps {
   posNeeds?: Record<string, number>;
   // Forward grouping preference
   forwardGrouping?: "split" | "fwd";
+  /** Optional slot for the schedule overview trigger and overlay. */
+  scheduleOverview?: React.ReactNode;
 }
 
 const MyRoster: React.FC<MyRosterProps> = ({
@@ -70,7 +72,8 @@ const MyRoster: React.FC<MyRosterProps> = ({
   needWeightEnabled = false,
   needAlpha = 0.5,
   posNeeds = {},
-  forwardGrouping = "split"
+  forwardGrouping = "split",
+  scheduleOverview
 }) => {
   const [selectedPlayerId, setSelectedPlayerId] = useState<
     number | undefined
@@ -606,6 +609,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
                 : "No schedule data available"}
           </p>
         )}
+        {scheduleOverview}
       </div>
     </div>
   );

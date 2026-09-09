@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RosterScheduleOptimizerState } from "hooks/useRosterScheduleOptimizer";
 import type { DashboardMatchupWeek } from "lib/draftDashboard/scheduleMetrics";
 import styles from "./DustMatrix.module.scss";
@@ -27,6 +27,8 @@ export default function DustMatrix({ state, weeks, roster = [], selectedWeeks = 
   const contentId = useId();
   const [detail, setDetail] = useState<string | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
   const [fitScale, setFitScale] = useState(1);
   const selectedWeekNumbers = useMemo(() => new Set(selectedWeeks.map((week) => week.week)), [selectedWeeks]);
   const playerRows = useMemo(() => {
@@ -87,11 +89,51 @@ export default function DustMatrix({ state, weeks, roster = [], selectedWeeks = 
     return () => observer.disconnect();
   }, [open, plotWidth]);
 
-  return <section className={styles.matrix} data-dust-matrix="true" data-open={open ? "true" : "false"} aria-label="DUST schedule overview">
-    <button type="button" className={styles.toggle} aria-expanded={open} aria-controls={contentId} onClick={() => setOpen((value) => !value)}>
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    const trigger = triggerRef.current;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const dialog = closeRef.current?.closest("[role=dialog]");
+      if (!dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])")).filter((element) => !element.hasAttribute("disabled"));
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      trigger?.focus();
+    };
+  }, [open]);
+
+  return <section className={styles.matrix} data-dust-matrix="true" aria-label="DUST schedule overview">
+    <button ref={triggerRef} type="button" className={styles.toggle} aria-expanded={open} aria-controls={contentId} onClick={() => setOpen((value) => !value)}>
       {open ? "▾" : "▸"} DUST schedule overview <span>Full-season DUST baseline · {period}</span>
     </button>
-    <div id={contentId} hidden={!open}>
+    {open && <div className={styles.modalLayer}>
+      <button type="button" tabIndex={-1} className={styles.modalBackdrop} aria-label="Close DUST schedule overview" onClick={() => setOpen(false)} />
+      <div id={contentId} className={styles.modal} role="dialog" aria-modal="true" aria-labelledby={`${contentId}-title`}>
+        <h2 id={`${contentId}-title`} className={styles.visuallyHidden}>DUST schedule overview</h2>
+        <button ref={closeRef} type="button" className={styles.modalClose} onClick={() => setOpen(false)}>Close</button>
+        <div className={styles.modalContent}>
       {!ready ? <p role="status">{error ?? (state.status === "loading" || !weeks.length ? "Loading weekly schedule…" : state.error ?? "Complete schedule and eligibility data are required for the matrix.")}</p> : !rows.length ? <p>Draft players to see weekly lineup conflicts.</p> : <>
         <div className={styles.heading}><div><h3>{drilldown ? `${selectedPosition} players by week` : "Position overlap by week"}</h3><p id={`${contentId}-legend`} className={styles.legend}>Each diamond is a known DUST count. Larger, brighter green diamonds mean more benched or unstartable games—more is worse. ◇ is a known zero; — is unavailable. Positions are a single display grouping per player, not a claim that a specific position caused a benching.</p></div>{drilldown ? <button type="button" className={styles.back} onClick={() => setSelectedPosition(null)}>Back to positions</button> : <div className={styles.scaleLegend} aria-label="Diamond size legend"><span>0</span><i className={styles.legendZero} aria-hidden="true">◇</i><i className={styles.legendDiamond} style={{ "--strength": .45 } as React.CSSProperties} aria-hidden="true" /><i className={styles.legendDiamond} style={{ "--strength": 1 } as React.CSSProperties} aria-hidden="true" /><span>{max}</span></div>}</div>
         {state.stale && <p role="status">Using cached schedule data that may be out of date.</p>}
@@ -122,6 +164,8 @@ export default function DustMatrix({ state, weeks, roster = [], selectedWeeks = 
         <p className={styles.mobileHint}>All weeks remain visible in the overview. Open the exact-count list to select a {drilldown ? "player" : "position"}-week.</p>
         <p className={styles.detail} role="status">{detail ?? (drilldown ? "Select or focus a diamond for its exact player and week counts." : "Select a position label to inspect its players, or focus a diamond for exact weekly counts.")}</p>
       </>}
-    </div>
+        </div>
+      </div>
+    </div>}
   </section>;
 }

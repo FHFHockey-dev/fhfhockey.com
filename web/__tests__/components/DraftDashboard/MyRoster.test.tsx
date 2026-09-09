@@ -46,6 +46,7 @@ it("shows full eligibility independently of assigned slots, including bench play
       },
     ],
     onDraftPlayer: vi.fn(),
+    scheduleOverview: <div data-testid="schedule-overview-slot">Overview</div>,
     canDraft: true,
     currentPick: 3,
     currentTurn: { round: 2, pickInRound: 1, teamId: "2", isMyTurn: false },
@@ -67,6 +68,7 @@ it("shows full eligibility independently of assigned slots, including bench play
       /Eligible positions/,
     ),
   ).toBeNull();
+  expect(screen.getByTestId("schedule-overview-slot")).toBeTruthy();
 });
 
 it("shows and explains the roster DUST rate", () => {
@@ -161,4 +163,16 @@ it("keeps an unknown-team roster player as unavailable intersections", () => {
   expect(screen.getByText("W1 Unavailable", { exact: true })).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "D" }));
   expect(screen.getAllByRole("button", { name: /Unknown · Week 27.*coverage unavailable/ })).toHaveLength(2);
+});
+
+it("opens DUST in a bounded dialog and restores focus after Escape", () => {
+  const weeks = [{ week: 1, start_date: "2027-02-01", end_date: "2027-02-07" }];
+  const { container } = render(<DustMatrix state={{ status: "ready", stale: false, baseline: { complete: true, players: [{ playerId: "1", playerName: "Winger", benchGames: 1 }], daily: [{ yahooWeek: 1, scheduledPlayerIds: ["1"], assignments: [], benchedPlayerIds: ["1"], unresolvedPlayers: [] }] } } as any} weeks={weeks} roster={[{ playerId: "1", playerName: "Winger", position: "LW" }]} period="Week 1" />);
+  const trigger = screen.getByRole("button", { name: /DUST schedule overview/ });
+  fireEvent.click(trigger);
+  expect(screen.getByRole("dialog", { name: "DUST schedule overview" })).toBeTruthy();
+  expect(document.activeElement).toBe(screen.getByRole("button", { name: "Close" }));
+  fireEvent.keyDown(document, { key: "Escape" });
+  expect(container.querySelector("[role=dialog]")).toBeNull();
+  expect(document.activeElement).toBe(trigger);
 });
