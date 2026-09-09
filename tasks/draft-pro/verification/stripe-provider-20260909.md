@@ -44,3 +44,13 @@ localhost.
 The installed CLI exposes no generic test-helper dispute resource, but Stripe
 documents test PaymentMethods and evidence values for this API workflow. The
 refunded Checkout test payment was not reused.
+
+## Link and merchant readiness follow-through — September 9 evening
+
+- A temporary **sandbox-only** Dashboard Payment Link (`plink_1UDthxLaomqkve474VoYcvKJ`) used the existing one-time $5.99 product and quantity one. This separately exercises hosted Link, not FHFH account association or fulfillment; the route-created evidence above covers those paths.
+- Stripe displayed Sandbox and its documented instruction to use `000000` with no real OTP sent. Authentication succeeded; the saved test Visa ending 4242 was selected. The confirmation page showed “Thanks for your payment,” Link, and $5.99. The sandbox Dashboard independently showed `pi_3UDtjdLaomqkve471DGkhkbR` Succeeded, Link, USD 5.99; charge `ch_3UDtjdLaomqkve471NnAHwYJ`. No real money moved.
+- The receipt preview rendered. Stripe explicitly states “Receipts are not sent for test charges”; its history showed no receipts sent. This is preview evidence, **not inbox delivery**. Sandbox receipt branding/support still uses sandbox settings and is not evidence of the live receipt footer.
+- Fresh **live** account settings independently showed Payments, Payouts and Link Active, no active tasks, successful-payment/refund receipt switches enabled, and receipt replies directed to `tim@fhfhockey.com`. No live payment was created.
+- Reference for the fixed sandbox OTP: [Stripe testing](https://docs.stripe.com/testing#link).
+
+- Temporary Link cleanup verified by reopening its URL: “The link is no longer active.” Test payment retained as provider audit evidence; no live Payment Link created.

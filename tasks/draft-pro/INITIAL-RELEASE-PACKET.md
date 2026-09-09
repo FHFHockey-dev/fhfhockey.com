@@ -1,6 +1,6 @@
 # Draft Pro Initial Release Packet
 
-Status: local engineering release candidate approved September 9, 2026, including the complimentary-code fallback. Production activation is pending owner authorization and live configuration. No production deployment, production migration, live charge, or real support-inbox test was performed.
+Status: sales-off production release f57df7ec4 deployed September 9, 2026 as dpl_hmnsKom2TvUHzbw2KyJVj2o7kgXA. LineupExperts is removed from dashboard source selection and averaging; its database copy remains untouched. Required initial migrations are applied. Approved policies and receipt recovery fixes are published; checkout remains disabled. Tax registration is parked pending owner paperwork. See OPERATOR-CHECKLIST.md for current launch gates; historical local-only evidence below does not claim live payment validation.
 
 ## Proposed initial-release scope
 
@@ -10,7 +10,7 @@ Saved Drafts and private imports are a separately approved later milestone set i
 
 ## Contract
 
-- Price: US$5.99 one time for `draft_pro_2026_27`.
+- Price: US$5.99 plus applicable tax, one time for `draft_pro_2026_27`.
 - Expiration: `2027-07-01T04:00:00.000Z` (July 1, 2027 at 12:00 AM Eastern).
 - Renewal: none; no subscription.
 - Refund requests: case by case, within 168 hours of first server-recorded purchase activation; one open request per purchase; no automatic refund or access revocation.
@@ -79,6 +79,6 @@ Earlier milestone evidence follows; the candidate above supersedes earlier incom
 
 Roll out with all flags off, then enable only the candidate capability whose implementation evidence, provider readiness, copy review, and owner approval are complete. Keep provider secrets server-side and use test-mode evidence first.
 
-Remaining external steps: configure and verify live provider settings; retain explicit disclosure of unverified provider paths and the deferred paid-patron test; owner review of terms, source permissions, and tax setup; then explicit authorization for production migrations, deployment, and activation. Complimentary-code implementation and verification are complete in the revised local release candidate.
+Remaining external steps: resolve the parked tax setup and remaining source permissions; finish support-email delivery evidence; retain disclosure of the deferred paid-patron test and unverified provider paths; then enable and verify the approved production capabilities before sales activation. Migrations, deployment, approved policy publication and live Stripe configuration are already complete. Complimentary-code implementation and verification are complete in the revised local release candidate.
 
 Rollback disables the affected feature flag or provider integration and preserves purchases, entitlements, refund records, retained data, and local drafts. Do not delete entitlements, private imports, or saved drafts. Reconcile Stripe and Patreon events received during an incident before re-enabling access.
