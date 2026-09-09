@@ -14,7 +14,7 @@ function client(rows: any[]) {
 function stripe(session: any) {
   return { checkout: { sessions: { retrieve: vi.fn().mockResolvedValue(session), create: vi.fn() } }, prices: { retrieve: vi.fn() } } as any;
 }
-beforeEach(() => { verify.mockClear(); process.env.STRIPE_DRAFT_PRO_PRICE_ID = "price1"; process.env.STRIPE_DRAFT_PRO_PRODUCT_ID = "prod1"; delete process.env.DRAFT_PRO_STRIPE_AUTOMATIC_TAX_ENABLED; });
+beforeEach(() => { verify.mockClear(); process.env.STRIPE_DRAFT_PRO_PRICE_ID = "price1"; process.env.STRIPE_DRAFT_PRO_PRODUCT_ID = "prod1"; delete process.env.DRAFT_PRO_STRIPE_AUTOMATIC_TAX_ENABLED; delete process.env.DRAFT_PRO_STRIPE_MANAGED_PAYMENTS_ENABLED; });
 
 describe("createDraftProCheckout lifecycle", () => {
   it("reuses an open session without creating another", async () => {
@@ -67,4 +67,28 @@ describe("createDraftProCheckout lifecycle", () => {
     await expect(createDraftProCheckout({ stripe: s, userId: "u1", origin: "https://app.test", client: client([attempt({ checkout_session_id: null })]) })).rejects.toThrow("Draft Pro Stripe Price configuration is invalid.");
     expect(s.checkout.sessions.create).not.toHaveBeenCalled();
   });
+  it("uses Managed Payments without conflicting tax or payment-method parameters", async () => {
+    process.env.DRAFT_PRO_STRIPE_MANAGED_PAYMENTS_ENABLED = "true";
+    process.env.DRAFT_PRO_STRIPE_AUTOMATIC_TAX_ENABLED = "true";
+    const s = stripe({});
+    s.prices.retrieve.mockResolvedValue({ active: true, type: "one_time", unit_amount: 599, currency: "usd", product: "prod1" });
+    s.checkout.sessions.create.mockResolvedValue({ id: "cs2", url: "https://new.test", expires_at: 2 });
+    await createDraftProCheckout({ stripe: s, userId: "u1", origin: "https://app.test", client: client([attempt({ checkout_session_id: null })]) });
+    const [params, options] = s.checkout.sessions.create.mock.calls[0];
+    expect(params.managed_payments).toEqual({ enabled: true });
+    expect(params).not.toHaveProperty("automatic_tax");
+    expect(params).not.toHaveProperty("payment_method_types");
+    expect(params.mode).toBe("payment");
+    expect(options.idempotencyKey).toBe("key1:managed");
+  });
+  it("expires an ordinary open checkout before creating a managed checkout", async () => {
+    process.env.DRAFT_PRO_STRIPE_MANAGED_PAYMENTS_ENABLED = "true";
+    const s = stripe({ id: "cs1", status: "open", url: "https://old.test" });
+    s.checkout.sessions.expire = vi.fn().mockResolvedValue({ id: "cs1", status: "expired" });
+    s.prices.retrieve.mockResolvedValue({ active: true, type: "one_time", unit_amount: 599, currency: "usd", product: "prod1" });
+    s.checkout.sessions.create.mockResolvedValue({ id: "cs2", url: "https://new.test", expires_at: 2 });
+    await expect(createDraftProCheckout({ stripe: s, userId: "u1", origin: "https://app.test", client: client([attempt(), attempt({ purchase_id: "p2", checkout_session_id: null })]) })).resolves.toMatchObject({ url: "https://new.test" });
+    expect(s.checkout.sessions.expire).toHaveBeenCalledWith("cs1");
+  });
+
 });

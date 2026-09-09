@@ -23,6 +23,7 @@ export default function DraftProPolicies() {
       </section>
       <section id="refunds">
         <h2>Refund requests</h2>
+        <p>For purchases sold through Link using Stripe Managed Payments, Stripe handles transaction taxes and transaction support. Stripe may issue refunds within 60 days of purchase, and its refund policy takes precedence over any more restrictive FHFH policy. You can also request help through <a href="https://support.link.com/questions/sold-through-link-refunds">Link’s refund support</a>. The seven-day window below applies to the FHFH account request form; it does not limit Stripe’s policy or your statutory rights.</p>
         <p>Request review in <Link href="/account?section=draft-pro">Account → Draft Pro</Link> within 7 days of the purchase’s first successful server-recorded activation. Submission time determines eligibility; review may occur later. Requests are reviewed case by case, and approval is not guaranteed.</p>
         <p>Select a reason and provide an explanation of 10–2,000 characters. Improvement feedback and whether you used Pro in a live draft are optional. One open request is allowed per purchase. Submitting a request does not automatically refund payment or remove access.</p>
         <p>If a technical issue prevents submission, contact <a href="mailto:tim@fhfhockey.com">tim@fhfhockey.com</a> promptly with the account email and purchase reference. Do not send card numbers, passwords, or private projection files. Patreon payment refunds are handled through Patreon.</p>

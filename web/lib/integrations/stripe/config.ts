@@ -19,6 +19,10 @@ export function isDraftProStripeAutomaticTaxEnabled() {
   return process.env.DRAFT_PRO_STRIPE_AUTOMATIC_TAX_ENABLED === "true";
 }
 
+export function isDraftProStripeManagedPaymentsEnabled() {
+  return process.env.DRAFT_PRO_STRIPE_MANAGED_PAYMENTS_ENABLED === "true";
+}
+
 export function getDraftProStripeCatalog() {
   const priceId = process.env.STRIPE_DRAFT_PRO_PRICE_ID?.trim();
   const productId = process.env.STRIPE_DRAFT_PRO_PRODUCT_ID?.trim();
