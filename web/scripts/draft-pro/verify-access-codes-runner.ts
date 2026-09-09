@@ -23,7 +23,7 @@ const snapshot = serializeSavedDraft({
 });
 async function call(path: string, token: string | null, method = "GET", body?: unknown) {
   const response = await fetch(base + path, { method, headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body === undefined ? {} : { "Content-Type": "application/json" }) }, body: body === undefined ? undefined : JSON.stringify(body) });
-  return { status: response.status, json: await response.json().catch(() => ({})) as any };
+  return { status: response.status, retryAfter: response.headers.get("retry-after"), json: await response.json().catch(() => ({})) as any };
 }
 async function rpc(name: string, body: unknown) {
   const response = await fetch(`${gateway}/rest/v1/rpc/${name}`, { method: "POST", headers: { Authorization: `Bearer ${service}`, apikey: service, "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -56,7 +56,7 @@ async function main() {
   let limited = false;
   for (let attempt = 0; attempt < 8; attempt += 1) {
     const result = await call("/api/v1/account/draft-pro/access-codes/redeem", foreign, "POST", { code: `invalid-${randomUUID()}-${randomUUID()}` });
-    if (result.status === 429) { assert.equal(typeof result.json.error, "string"); limited = true; break; }
+    if (result.status === 429) { assert.equal(typeof result.json.error, "string"); if (result.retryAfter !== null) assert(Number(result.retryAfter) > 0, "Retry-After must be a positive number of seconds."); limited = true; break; }
     assert.equal(result.status, 400);
   }
   assert.equal(limited, true, "The generic access-code attempt limit did not return 429.");
