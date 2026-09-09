@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   requireApiUser: vi.fn(),
@@ -41,6 +41,8 @@ function response() {
 
 describe("Draft Pro DUST API", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-09T12:00:00.000Z"));
     vi.resetAllMocks();
     mocks.requireApiUser.mockResolvedValue({ id: "user-1" });
     mocks.loadDraftProAccess.mockResolvedValue({});
@@ -62,6 +64,10 @@ describe("Draft Pro DUST API", () => {
     mocks.from.mockReturnValue(query);
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   const requestBody = {
     season: "20262027",
     lineupMode: "daily",
@@ -74,8 +80,8 @@ describe("Draft Pro DUST API", () => {
   };
 
   const mappedScheduleRows = [
-    { game_key: "500", season: "2026", source_season_id: 20262027, source_game_id: 1, game_date: "2026-10-06", team_abbreviation: "AAA", week: 1, fetched_at: "2026-09-07T11:00:00.000Z" },
-    { game_key: "500", season: "2026", source_season_id: 20262027, source_game_id: 2, game_date: "2026-10-06", team_abbreviation: "BBB", week: 1, fetched_at: "2026-09-07T11:00:00.000Z" },
+    { game_key: "500", season: "2026", source_season_id: 20262027, source_game_id: 1, game_date: "2026-10-06", team_abbreviation: "AAA", week: 1, fetched_at: "2026-09-09T11:00:00.000Z" },
+    { game_key: "500", season: "2026", source_season_id: 20262027, source_game_id: 2, game_date: "2026-10-06", team_abbreviation: "BBB", week: 1, fetched_at: "2026-09-09T11:00:00.000Z" },
   ];
 
   it("returns the shared 401 fixture before premium work", async () => {
