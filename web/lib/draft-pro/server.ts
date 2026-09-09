@@ -81,6 +81,8 @@ export async function loadDraftProAccess(
   const entitlements: DraftProEntitlement[] = rows.flatMap((row) => {
     const source = row.source_provider === "stripe" && row.entitlement_key === DRAFT_PRO_ENTITLEMENT_KEY
       ? "purchase"
+      : row.source_provider === "complimentary" && row.entitlement_key === DRAFT_PRO_ENTITLEMENT_KEY
+        ? "complimentary"
       : isDraftProPatreonGrant(row)
         ? "patreon"
         : null;

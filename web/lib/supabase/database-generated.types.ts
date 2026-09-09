@@ -47796,6 +47796,8 @@ export type Database = {
         Args: { p_checkout_session_id: string | null; p_dispute_id: string | null; p_dispute_status: string | null; p_event_id: string; p_event_type: string; p_full_refund: boolean; p_occurred_at: string; p_payload: Json | null; p_payment_intent_id: string | null; p_payment_state: string; p_purchase_id: string; p_user_id: string }
         Returns: { processed: boolean; purchase_id: string }[]
       }
+      redeem_draft_pro_access_code: { Args: { p_code: string; p_user_id: string }; Returns: boolean }
+      revoke_draft_pro_access_code: { Args: { p_code_id: string; p_issued_by_user_id: string }; Returns: boolean }
       advance_projection_pipeline_state_v1: {
         Args: {
           p_expected_revision: number

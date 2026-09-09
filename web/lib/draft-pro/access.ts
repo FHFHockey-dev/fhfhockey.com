@@ -1,7 +1,7 @@
 import type { DraftProAccess, DraftProCapability, DraftProEligibilityReason } from "./contracts";
 
 export type DraftProEntitlement = {
-  source: "purchase" | "patreon";
+  source: "purchase" | "patreon" | "complimentary";
   status: "active" | "inactive" | "refunded" | "disputed";
   effectiveFrom: string | null;
   effectiveTo: string | null;
@@ -50,9 +50,10 @@ export function resolveDraftProAccess(input: DraftProAccessInput): DraftProAcces
     return grant.source === "purchase" && isCurrentGrant(grant, now, true) && expiry !== null && expiry <= seasonEnd && now < seasonEnd;
   });
   const activePatreon = input.entitlements.find((grant) => grant.source === "patreon" && isCurrentGrant(grant, now));
+  const complimentary = input.entitlements.find((grant) => grant.source === "complimentary" && isCurrentGrant(grant, now, true));
   const verifiedAt = activePatreon?.verifiedAt ? dateValue(activePatreon.verifiedAt) : null;
   const stalePatreon = activePatreon && (!input.patreonVerificationAvailable || verifiedAt === null || verifiedAt > now || verifiedAt < now - 60 * 60 * 1000);
-  const grants = [purchase, stalePatreon ? undefined : activePatreon].filter(Boolean) as DraftProEntitlement[];
+  const grants = [purchase, stalePatreon ? undefined : activePatreon, complimentary].filter(Boolean) as DraftProEntitlement[];
   const hasExpiredOrRevokedGrant = input.entitlements.some((grant) => hasEndedOrBeenRevoked(grant, now));
   const reason: DraftProEligibilityReason = grants.length ? "eligible" : stalePatreon ? "verification_unavailable" : hasExpiredOrRevokedGrant ? "expired" : "no_active_grant";
   const activeExpiries = grants.map(grantExpiry);

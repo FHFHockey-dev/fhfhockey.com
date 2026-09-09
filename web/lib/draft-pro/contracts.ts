@@ -56,7 +56,7 @@ export type DraftProEligibilityReason = z.infer<
 export const draftProAccessSchema = z
   .object({
     eligible: z.boolean(),
-    grantingSources: z.array(z.enum(["purchase", "patreon"])),
+    grantingSources: z.array(z.enum(["purchase", "patreon", "complimentary"])),
     expiresAt: z.string().datetime().nullable(),
     verifiedAt: z.string().datetime().nullable(),
     nextVerificationAt: z.string().datetime().nullable(),
