@@ -75,6 +75,7 @@ export default function DraftProPanel() {
   const [account, setAccount] = useState<AccountData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copyStatus, setCopyStatus] = useState("");
   const [purchaseId, setPurchaseId] = useState("");
   const [reason, setReason] = useState<(typeof reasons)[number][0]>("other");
   const [explanation, setExplanation] = useState("");
@@ -152,6 +153,7 @@ export default function DraftProPanel() {
       setUsedDuringLiveDraft("");
       setFeedback(null);
       setAccessCode("");
+      setCopyStatus("");
       setAccessCodeState("idle");
       setAccessCodeMessage(null);
       if (!session) {
@@ -212,6 +214,7 @@ export default function DraftProPanel() {
   async function redeemAccessCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const code = accessCode.trim();
+    const recoveringPurchase = /^DPRO-/i.test(code);
     if (!code) {
       setAccessCodeState("error");
       setAccessCodeMessage("Enter an access code.");
@@ -225,15 +228,15 @@ export default function DraftProPanel() {
       if (!session?.access_token) throw new Error("Authentication required.");
       const identity = session.user?.id ?? null;
       if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
-      const response = await fetch("/api/v1/account/draft-pro/access-codes/redeem", {
+      const response = await fetch(recoveringPurchase ? "/api/v1/account/draft-pro/checkout/verify" : "/api/v1/account/draft-pro/access-codes/redeem", {
         method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify(recoveringPurchase ? { recoveryCode: code } : { code }),
       });
       const body = await response.json().catch(() => ({}));
       if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
       if (!response.ok) throw new Error(body.error?.message ?? body.error ?? "That access code could not be redeemed.");
-      if (body.redeemed !== true) throw new Error("That access code could not be redeemed.");
+      if (recoveringPurchase ? !["confirmed", "confirming"].includes(body.state) : body.redeemed !== true) throw new Error("That code could not activate Draft Pro. Contact support if you completed payment.");
       let refreshedAccount: AccountData | null = null;
       let refreshError: unknown = null;
       for (const delay of [0, 250, 500, 1_000]) {
@@ -246,15 +249,15 @@ export default function DraftProPanel() {
           refreshError = error;
           refreshedAccount = null;
         }
-        if (refreshedAccount?.access.eligible && refreshedAccount.access.grantingSources.includes("complimentary")) break;
+        if (refreshedAccount?.access.eligible && (recoveringPurchase || refreshedAccount.access.grantingSources.includes("complimentary"))) break;
       }
       if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
       if (refreshError && !refreshedAccount) throw refreshError;
       if (!refreshedAccount) return;
-      const complimentaryAccessActive = refreshedAccount.access.eligible && refreshedAccount.access.grantingSources.includes("complimentary");
+      const complimentaryAccessActive = refreshedAccount.access.eligible && (recoveringPurchase || refreshedAccount.access.grantingSources.includes("complimentary"));
       setAccessCode("");
       setAccessCodeState("success");
-      setAccessCodeMessage(complimentaryAccessActive ? "Access code redeemed. Complimentary Draft Pro access is now active." : "Access code redeemed. Access is still being confirmed; refresh this page to check again.");
+      setAccessCodeMessage(complimentaryAccessActive ? recoveringPurchase ? "Purchase recovered. Draft Pro access is now active." : "Access code redeemed. Complimentary Draft Pro access is now active." : "Access code redeemed. Access is still being confirmed; refresh this page to check again.");
     } catch (redeemError) {
       if (checkoutMountedRef.current && epoch === accountEpochRef.current) {
         setAccessCodeState("error");
@@ -408,12 +411,13 @@ export default function DraftProPanel() {
     {account.access.capabilities?.includes("god_view") ? <p>God View — upcoming picks and team roster openings — is included in your season pass.</p> : null}
     {accessCodeState === "success" && accessCodeMessage ? <p className={styles.successNotice} role="status">{accessCodeMessage}</p> : null}
     {checkoutState !== "idle" ? <div className={styles.notice} role="status"><p>{checkoutState === "waiting" ? "Checking payment status…" : checkoutState === "confirming" ? "Payment is confirming with Stripe." : checkoutState === "confirmed" ? "Draft Pro access is confirmed." : checkoutState === "cancelled" ? "Checkout was cancelled. Your free draft remains available." : "Your purchase could not be confirmed yet. Try refreshing this page or contact support if payment was completed."}</p>{checkoutRetryAvailable ? <div className={styles.actions}><button type="button" onClick={() => { const sessionId = checkoutVerificationRef.current; if (sessionId) { cancelCheckoutVerification(); void verifyCheckout(sessionId, 0, checkoutEpochRef.current); } else void loadAccount(); }}>Check purchase status again</button></div> : null}</div> : null}
-    {!account.access.eligible ? <><div className={styles.actions}>{checkoutAvailability.available ? <button type="button" onClick={() => void startCheckout()} disabled={checkoutLoading}>{checkoutLoading ? "Opening checkout…" : `Get Draft Pro — $${(passInfo.priceCents / 100).toFixed(2)} one-time`}</button> : <span className={styles.notice}>{checkoutUnavailableReason(checkoutAvailability.reason)}</span>}<span className={styles.notice}>One-time access through {formatEasternDate(passInfo.expiresAt)} (Eastern). No automatic renewal.</span></div><form className={styles.accessCodeForm} onSubmit={redeemAccessCode} aria-labelledby="draft-pro-access-code-title"><h3 id="draft-pro-access-code-title">Have an access code?</h3><p>Redeem a complimentary Draft Pro code for this signed-in account.</p><label htmlFor="draft-pro-access-code">Draft Pro access code</label><div className={styles.accessCodeRow}><input id="draft-pro-access-code" name="code" type="text" autoComplete="off" inputMode="text" minLength={20} maxLength={200} value={accessCode} onChange={(event) => setAccessCode(event.target.value)} disabled={accessCodeState === "submitting"} /><button type="submit" disabled={accessCodeState === "submitting"}>{accessCodeState === "submitting" ? "Redeeming…" : "Redeem code"}</button></div>{accessCodeState === "error" && accessCodeMessage ? <p className={styles.errorNotice} role="alert">{accessCodeMessage}</p> : null}</form></> : null}
+    {!account.access.eligible ? <><div className={styles.actions}>{checkoutAvailability.available ? <button type="button" onClick={() => void startCheckout()} disabled={checkoutLoading}>{checkoutLoading ? "Opening checkout…" : `Get Draft Pro — $${(passInfo.priceCents / 100).toFixed(2)} one-time`}</button> : <span className={styles.notice}>{checkoutUnavailableReason(checkoutAvailability.reason)}</span>}<span className={styles.notice}>One-time access through {formatEasternDate(passInfo.expiresAt)} (Eastern). No automatic renewal.</span></div><form className={styles.accessCodeForm} onSubmit={redeemAccessCode} aria-labelledby="draft-pro-access-code-title"><h3 id="draft-pro-access-code-title">Have an access code?</h3><p>Enter your purchase recovery code or a complimentary code. Codes work only with the account they belong to.</p><label htmlFor="draft-pro-access-code">Draft Pro access code</label><div className={styles.accessCodeRow}><input id="draft-pro-access-code" name="code" type="text" autoComplete="off" inputMode="text" minLength={20} maxLength={200} value={accessCode} onChange={(event) => setAccessCode(event.target.value)} disabled={accessCodeState === "submitting"} /><button type="submit" disabled={accessCodeState === "submitting"}>{accessCodeState === "submitting" ? "Redeeming…" : "Redeem code"}</button></div>{accessCodeState === "error" && accessCodeMessage ? <p className={styles.errorNotice} role="alert">{accessCodeMessage}</p> : null}</form></> : null}
     <p className={styles.muted}>Pass price excludes applicable tax. <a href="/draft-pro/policies#terms">Terms</a> · <a href="/draft-pro/policies#privacy">Privacy</a> · <a href="/draft-pro/policies#refunds">Refund requests</a> · <a href="mailto:tim@fhfhockey.com">Support</a></p>
     <div><h3>Available with Draft Pro</h3>{account.availableFeatures?.some((feature) => featureLabels[feature]) ? <ul>{account.availableFeatures.filter((feature) => featureLabels[feature]).map((feature) => <li key={feature}>{featureLabels[feature]}</li>)}</ul> : <p>No premium capabilities are currently available. Free manual drafting remains available.</p>}<p className={styles.muted}>Yahoo sync is planned, with no guaranteed launch date. Features released before this pass expires are included.</p></div>
     <dl className={styles.details}><div><dt>Access expires</dt><dd>{formatEasternDate(account.access.expiresAt)} (Eastern)</dd></div><div><dt>Verified</dt><dd>{formatDate(account.access.verifiedAt)}</dd></div><div><dt>Patreon status</dt><dd>{account.access.grantingSources.includes("patreon") ? "Granting access" : "Not granting access"}</dd></div></dl>
     <div className={styles.actions}><button type="button" onClick={() => void patreonActionRequest("refresh")} disabled={Boolean(patreonAction)}>{patreonAction === "refresh" ? "Refreshing…" : "Refresh Patreon"}</button><button type="button" onClick={() => void patreonActionRequest("connect")} disabled={Boolean(patreonAction)}>{patreonAction === "connect" ? "Opening…" : "Connect Patreon"}</button></div>
-    {account.purchases.length > 0 ? <div className={styles.purchaseList}><h3>Purchases</h3>{account.purchases.map((purchase) => { const request = account.refundRequests.find((item) => item.purchaseId === purchase.id); return <div className={styles.purchase} key={purchase.id}><div><strong>${(purchase.amountCents / 100).toFixed(2)} pass base price</strong><span>{purchase.status} · activated {formatDate(purchase.activatedAt)}{request ? ` · refund request ${request.status}` : ""}</span></div>{purchase.receiptUrl ? <a href={purchase.receiptUrl} target="_blank" rel="noreferrer">Receipt</a> : <span className={styles.muted}>Receipt unavailable</span>}</div>; })}</div> : null}
+    {copyStatus ? <p role="status">{copyStatus}</p> : null}
+    {account.purchases.length > 0 ? <div className={styles.purchaseList}><h3>Purchases</h3><p>Draft Pro activates on this account after payment. Keep your recovery code if automatic activation needs to be retried; it cannot transfer access or override a refund.</p>{account.purchases.map((purchase) => { const request = account.refundRequests.find((item) => item.purchaseId === purchase.id); return <div className={styles.purchase} key={purchase.id}><div><strong>${(purchase.amountCents / 100).toFixed(2)} pass base price</strong><span>{purchase.status} · activated {formatDate(purchase.activatedAt)}{request ? ` · refund request ${request.status}` : ""}</span></div><div className={styles.recoveryCode}><label>Purchase recovery code<input aria-label={`Recovery code for purchase ${purchase.id}`} readOnly value={`DPRO-${purchase.id}`} /></label><button type="button" onClick={async () => { try { await navigator.clipboard.writeText(`DPRO-${purchase.id}`); setCopyStatus("Recovery code copied. Keep it with your receipt and use the same account to recover access."); } catch { setCopyStatus("Select the recovery code and copy it manually."); } }}>Copy recovery code</button></div>{purchase.receiptUrl ? <a href={purchase.receiptUrl} target="_blank" rel="noreferrer">Receipt</a> : <span className={styles.muted}>Receipt unavailable</span>}</div>; })}</div> : null}
     {account.savedDrafts.length > 0 ? <div className={styles.savedItems}><h3>Saved work</h3>{account.savedDrafts.map((draft) => <div key={draft.id}><span>{draft.name}</span><span>{draft.status}</span></div>)}</div> : null}
     {selectedPurchase ? <div className={styles.refundSection}><label>Purchase<select value={purchaseId} onChange={(event) => setPurchaseId(event.target.value)}>{account.purchases.map((purchase) => <option key={purchase.id} value={purchase.id}>${(purchase.amountCents / 100).toFixed(2)} · {formatDate(purchase.activatedAt)} · {purchase.refundEligibility.reason}</option>)}</select></label>{canRequest ? <form className={styles.form} onSubmit={submitRefund}><h3>Request a refund review</h3><p>Requests are reviewed case by case. Submit within 7 days of activation; sending a request does not automatically refund or revoke access.</p><label>Reason<select value={reason} onChange={(event) => setReason(event.target.value as typeof reason)}>{reasons.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label>Explanation <span>(10–2000 characters)</span><textarea minLength={10} maxLength={2000} required value={explanation} onChange={(event) => setExplanation(event.target.value)} /></label><label>What could improve this? <span>(optional)</span><textarea maxLength={2000} value={improvementNotes} onChange={(event) => setImprovementNotes(event.target.value)} /></label><label>Used during a live draft? <select value={usedDuringLiveDraft} onChange={(event) => setUsedDuringLiveDraft(event.target.value)}><option value="">Prefer not to say</option><option value="yes">Yes</option><option value="no">No</option></select></label><button type="submit" disabled={submitting}>{submitting ? "Submitting…" : "Submit request"}</button>{feedback ? <p role="status">{feedback}</p> : null}</form> : <p className={styles.notice}>Refund eligibility: {selectedPurchase.refundEligibility.reason}. {selectedPurchase.refundEligibility.deadline ? `The request window ended ${formatEasternDate(selectedPurchase.refundEligibility.deadline)} Eastern.` : "Patreon refunds are handled by Patreon."}</p>}</div> : null}
     {feedback && !canRequest ? <p role="status">{feedback}</p> : null}

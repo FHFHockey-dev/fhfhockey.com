@@ -180,10 +180,11 @@ export async function verifyStripeCheckoutSession(
   stripe: Stripe,
   session: Stripe.Checkout.Session,
   client: Pick<typeof serviceRoleClient, "rpc"> = serviceRoleClient,
+  recovery = false,
 ) {
   if (!(await verifyDraftProCheckoutSession(stripe, session))) return { purchaseId: null, processed: false };
   const event = {
-    id: `return:${session.id}`,
+    id: `${recovery ? "recovery" : "return"}:${session.id}`,
     created: session.created,
     type: "checkout.session.completed",
     data: { object: session },
