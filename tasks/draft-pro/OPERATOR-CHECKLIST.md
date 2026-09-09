@@ -5,7 +5,7 @@ Status: sales enabled September 9, 2026 through Stripe Managed Payments. Do not 
 
 ## Current launch gate audit — September 9, 2026
 
-This audit supersedes the older chronological checkpoints below. **9/10 launch gates resolved (90%): 8 verified, 1 owner-waived, 1 delivery check remaining**; this is a gate count, not percentage of implementation effort.
+This audit supersedes the older chronological checkpoints below. **10/10 launch gates resolved (100%): 9 verified, 1 owner-waived**; this is a gate count, not percentage of implementation effort.
 
 | Gate | Current evidence / remaining action |
 | --- | --- |
@@ -14,7 +14,7 @@ This audit supersedes the older chronological checkpoints below. **9/10 launch g
 | 3. Database and deployment | PASS — release 0bf0d5f39 promoted as dpl_EdQ7AHzgznPy3icqzzgwn9J2SyDS. Staged free pick passed; public dashboard/policies 200, anonymous checkout 401, unsigned webhook 400. |
 | 4. Live webhook transport | PASS — actual Stripe-signed catalog event returned 200. No live payment made. |
 | 5. Core sandbox payment lifecycle | PASS — route-created payment, return reconciliation, replay and partial/full refund evidence in verification/stripe-provider-20260909.md. |
-| 6. Receipts, Link, support and payouts | IN PROGRESS — sandbox Link OTP/payment and receipt preview passed; live Payments/Payouts/Link active, bank configured, receipts enabled, reply-to tim@fhfhockey.com verified in a fresh settings page. Stripe does not send receipts for test charges. Actual live receipt delivery and the previously requested synthetic Resend-to-support inbox check are not claimed. |
+| 6. Receipts, Link, support and payouts | PASS — production-configured Resend support test observed in tim@fhfhockey.com Inbox; manually sent Managed Payments sandbox receipt observed in TimBranson515@gmail.com Inbox at 7:37 PM Eastern, showing $6.35 and invoice/receipt attachments. Stripe receipt history independently confirms send. Live payout/receipt configuration previously verified; no real-money payment or automatic live receipt delivery claimed. |
 | 7. Terms/privacy/refund pages | PASS — owner approved Managed Payments fee/refund conditions. Published policy explains Stripe’s 60-day refund authority and Link support; seven-day FHFH form remains subject to Stripe policy. |
 | 8. Tax setup | PASS for Managed Payments transaction handling — live Ready to use, eligible SaaS personal-use product tax code. Sandbox Pennsylvania checkout collected 36 cents on $5.99; provider balance explicitly withheld sales tax. Owner’s separate income-tax/business paperwork is outside this transaction test. |
 | 9. Source permissions | OWNER-WAIVED — September 9 explicit instruction to proceed without verification. This is an accepted launch exception, not a finding of permission. LineupExperts remains removed from dashboard use; database unchanged. |
@@ -190,3 +190,9 @@ Recovery-code candidate 5d7f32aef is committed and Chef-reviewed. No migration i
 - Managed Payments provider gate passed: real sandbox tax withholding, route-created account-bound purchase, signed webhook, return replay, recovery code, active grant and account API verified against disposable services. See `verification/stripe-provider-20260909.md`.
 - Full release suite: 4,477 passed, 3 skipped; TypeScript passed. Production feature/checkout/Managed Payments flags saved for the next deployment; Yahoo stays off. Staging and promotion pending. Receipt inbox delivery remains unverified.
 - Rollback for this release: promote `dpl_hmnsKom2TvUHzbw2KyJVj2o7kgXA` (previous sales-off release), and reset `DRAFT_PRO_CHECKOUT_ENABLED=false` before any subsequent deployment. Preserve purchases, entitlements, provider events and retained work. Do not roll back database history.
+
+### Support inbox delivery — September 9, 2026
+
+Owner explicitly authorized test emails. Production-configured Resend accepted message `1fc3a097-0ba9-4aa1-ad40-86a65a9d4a0e`; Chrome independently showed `[TEST] FHFH Draft Pro refund-support delivery verification` in tim@fhfhockey.com Inbox from draft-pro@fhfhockey.com at 7:36 PM Eastern. This used the production sender/recipient configuration with synthetic content; no real refund request or entitlement was created. Stripe sandbox receipt delivery to the support address was rejected: only team-member addresses/aliases are allowed. Authorization to use the existing Stripe account email was requested; receipt delivery remains pending.
+
+Final delivery acceptance: owner authorized the alternate Stripe team-member recipient after sandbox rejected the support address. Chrome verified the Link message “Your Five Hole Fantasy Hockey sandbox receipt” in Gmail Inbox on September 9 at 7:37 PM Eastern with Invoice-MPIFS5NA-0001.pdf and Receipt-2300-7777.pdf. This closes the delivery gate using actual sandbox receipt delivery and actual production-configured Resend sender delivery. All launch gates are resolved; source-permission verification remains owner-waived, Patreon paid-member validation owner-deferred, and Yahoo a separate parked milestone. No real charge or refund was created.

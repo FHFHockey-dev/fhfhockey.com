@@ -1,6 +1,6 @@
 # Draft Pro Initial Release Packet
 
-Status: sales enabled September 9, 2026 via Stripe Managed Payments. Release 0bf0d5f39 deployed and promoted as dpl_EdQ7AHzgznPy3icqzzgwn9J2SyDS (https://fhfhockey-813vyeyv3-fhfhockeydevs-projects.vercel.app). Sandbox tax withholding, account fulfillment and recovery verified; 4,477 tests passed. All shipped premium capability flags enabled; Yahoo stays parked. Receipt inbox delivery remains unverified; source-permission review is owner-waived. Rollback: promote dpl_hmnsKom2TvUHzbw2KyJVj2o7kgXA and disable checkout for subsequent builds. No production data deletion or real payment test.
+Status: sales enabled September 9, 2026 via Stripe Managed Payments. Release 0bf0d5f39 deployed and promoted as dpl_EdQ7AHzgznPy3icqzzgwn9J2SyDS (https://fhfhockey-813vyeyv3-fhfhockeydevs-projects.vercel.app). Sandbox tax withholding, account fulfillment and recovery verified; 4,477 tests passed. All shipped premium capability flags enabled; Yahoo stays parked. Receipt and support inbox delivery verified September 9 using a manually sent sandbox Link receipt and production-configured Resend test. Launch checklist 10/10 resolved: nine verified and source-permission review owner-waived. Automatic live receipt delivery was not tested with real money. Rollback: promote dpl_hmnsKom2TvUHzbw2KyJVj2o7kgXA and disable checkout for subsequent builds. No production data deletion or real payment test.
 
 ## Proposed initial-release scope
 
