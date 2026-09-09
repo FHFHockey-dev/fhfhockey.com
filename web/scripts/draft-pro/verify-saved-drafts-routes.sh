@@ -104,7 +104,7 @@ BEGIN
   INSERT INTO public.connected_accounts (id, user_id, provider, status) VALUES (v_account, v_user, 'patreon', 'connected');
   PERFORM public.upsert_connected_account_tokens_secure(v_account, v_user, 'patreon', 'synthetic-access-token', 'synthetic-refresh-token');
   SELECT access_token, refresh_token INTO v_access, v_refresh FROM public.get_connected_account_tokens_secure(v_account, v_user);
-  IF v_access <> 'synthetic-access-token' OR v_refresh <> 'synthetic-refresh-token' THEN RAISE EXCEPTION 'Vault token roundtrip failed'; END IF;
+  IF v_access IS DISTINCT FROM 'synthetic-access-token' OR v_refresh IS DISTINCT FROM 'synthetic-refresh-token' THEN RAISE EXCEPTION 'Vault token roundtrip failed'; END IF;
 END;
 $$;
 ROLLBACK;
