@@ -78,4 +78,16 @@ describe("Draft Pro Patreon source mapping", () => {
     });
     expect(access).toMatchObject({ eligible: true, grantingSources: ["purchase"] });
   });
+
+  it("keeps a current complimentary grant eligible when stale Patreon revalidation fails", async () => {
+    mocks.refreshPatreonAccount.mockRejectedValueOnce(new Error("provider unavailable"));
+    const access = await loadDraftProAccess("user-1", {
+      now: new Date("2026-09-07T01:00:00Z"), patreonVerificationAvailable: true, flags,
+      client: clientWith([
+        { source_provider: "complimentary", entitlement_key: "draft_pro", source_account_id: null, entitlement_status: "active", effective_from: "2026-09-01T00:00:00Z", effective_to: "2027-07-01T04:00:00Z", metadata: {} },
+        { source_provider: "patreon", entitlement_key: "patreon_supporter", source_account_id: "account-1", entitlement_status: "active", effective_from: "2026-09-01T00:00:00Z", effective_to: null, metadata: { draft_pro_eligible: true, connected_account_id: "account-1", verified_at: "2026-09-06T00:00:00Z" } },
+      ]),
+    });
+    expect(access).toMatchObject({ eligible: true, grantingSources: ["complimentary"], expiresAt: "2027-07-01T04:00:00.000Z" });
+  });
 });

@@ -50,7 +50,10 @@ export function resolveDraftProAccess(input: DraftProAccessInput): DraftProAcces
     return grant.source === "purchase" && isCurrentGrant(grant, now, true) && expiry !== null && expiry <= seasonEnd && now < seasonEnd;
   });
   const activePatreon = input.entitlements.find((grant) => grant.source === "patreon" && isCurrentGrant(grant, now));
-  const complimentary = input.entitlements.find((grant) => grant.source === "complimentary" && isCurrentGrant(grant, now, true));
+  const complimentary = input.entitlements.find((grant) => {
+    const expiry = grantExpiry(grant);
+    return grant.source === "complimentary" && isCurrentGrant(grant, now, true) && expiry !== null && expiry <= seasonEnd && now < seasonEnd;
+  });
   const verifiedAt = activePatreon?.verifiedAt ? dateValue(activePatreon.verifiedAt) : null;
   const stalePatreon = activePatreon && (!input.patreonVerificationAvailable || verifiedAt === null || verifiedAt > now || verifiedAt < now - 60 * 60 * 1000);
   const grants = [purchase, stalePatreon ? undefined : activePatreon, complimentary].filter(Boolean) as DraftProEntitlement[];

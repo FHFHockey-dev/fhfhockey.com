@@ -136,7 +136,7 @@ begin
     and allowed_mime_types = array['text/csv', 'application/json']::text[]
   into private_bucket_valid
   from storage.buckets where id = 'draft-pro-private-imports';
-  if draft_pro_tables not in (7, 10) or rls_enabled <> draft_pro_tables or browser_privileges <> 0
+  if draft_pro_tables not in (7, 10, 12) or rls_enabled <> draft_pro_tables or browser_privileges <> 0
     or service_role_crud <> draft_pro_tables * 4 or private_policy_count <> 3 or private_bucket_valid is not true then
     raise exception 'Draft Pro catalog boundary assertion failed: tables %, RLS %, browser grants %, service CRUD %, private policies %, bucket valid %',
       draft_pro_tables, rls_enabled, browser_privileges, service_role_crud, private_policy_count, private_bucket_valid;

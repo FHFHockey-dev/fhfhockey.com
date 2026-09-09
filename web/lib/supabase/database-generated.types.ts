@@ -558,9 +558,9 @@ export type Database = {
         Relationships: []
       }
       draft_pro_access_codes: {
-        Row: { id: string; code_hash: string; target_user_id: string; issued_by_user_id: string; reason: string; expires_at: string; redeemed_at: string | null; redeemed_by_user_id: string | null; revoked_at: string | null; revoked_by_user_id: string | null; created_at: string }
-        Insert: { id?: string; code_hash: string; target_user_id: string; issued_by_user_id: string; reason: string; expires_at: string; redeemed_at?: string | null; redeemed_by_user_id?: string | null; revoked_at?: string | null; revoked_by_user_id?: string | null; created_at?: string }
-        Update: { id?: string; code_hash?: string; target_user_id?: string; issued_by_user_id?: string; reason?: string; expires_at?: string; redeemed_at?: string | null; redeemed_by_user_id?: string | null; revoked_at?: string | null; revoked_by_user_id?: string | null; created_at?: string }
+        Row: { id: string; code_hash: string; target_user_id: string; issued_by_user_id: string; reason: string; expires_at: string; redeemed_at: string | null; redeemed_by_user_id: string | null; revoked_at: string | null; revoked_by_user_id: string | null; revoked_reason: string | null; created_at: string }
+        Insert: { id?: string; code_hash: string; target_user_id: string; issued_by_user_id: string; reason: string; expires_at: string; redeemed_at?: string | null; redeemed_by_user_id?: string | null; revoked_at?: string | null; revoked_by_user_id?: string | null; revoked_reason?: string | null; created_at?: string }
+        Update: { id?: string; code_hash?: string; target_user_id?: string; issued_by_user_id?: string; reason?: string; expires_at?: string; redeemed_at?: string | null; redeemed_by_user_id?: string | null; revoked_at?: string | null; revoked_by_user_id?: string | null; revoked_reason?: string | null; created_at?: string }
         Relationships: []
       }
       draft_pro_access_code_attempts: {
@@ -47808,8 +47808,8 @@ export type Database = {
         Args: { p_checkout_session_id: string | null; p_dispute_id: string | null; p_dispute_status: string | null; p_event_id: string; p_event_type: string; p_full_refund: boolean; p_occurred_at: string; p_payload: Json | null; p_payment_intent_id: string | null; p_payment_state: string; p_purchase_id: string; p_user_id: string }
         Returns: { processed: boolean; purchase_id: string }[]
       }
-      redeem_draft_pro_access_code: { Args: { p_code: string; p_user_id: string }; Returns: boolean }
-      revoke_draft_pro_access_code: { Args: { p_code_id: string; p_issued_by_user_id: string }; Returns: boolean }
+      redeem_draft_pro_access_code: { Args: { p_code: string; p_user_id: string }; Returns: string }
+      revoke_draft_pro_access_code: { Args: { p_code_id: string; p_issued_by_user_id: string; p_reason: string }; Returns: boolean }
       issue_draft_pro_access_code: { Args: { p_code_hash: string; p_expires_at: string; p_issued_by_user_id: string; p_reason: string; p_target_user_id: string }; Returns: string }
       advance_projection_pipeline_state_v1: {
         Args: {

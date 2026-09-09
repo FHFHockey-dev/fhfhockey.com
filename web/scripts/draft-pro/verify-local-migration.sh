@@ -14,11 +14,6 @@ readonly PASSWORD="draft_pro_w12_local_only"
 readonly STORAGE_MIGRATIONS_DIRECTORY="$(mktemp -d)"
 readonly STORAGE_MIGRATIONS_CONTAINER="${CONTAINER}-storage-schema"
 
-if [[ $# -gt 3 ]]; then
-  echo "Usage: $0 [foundation migration] [follow-on migration] [transaction migration]" >&2
-  exit 64
-fi
-
 if [[ ! -f "$BASELINE" ]]; then
   echo "Missing committed baseline: $BASELINE" >&2
   exit 66
@@ -138,6 +133,9 @@ if [[ ${#migrations[@]} -gt 0 ]]; then
   fi
   if [[ ${#migrations[@]} -ge 3 ]]; then
     web/scripts/draft-pro/saved-drafts-concurrency-probes.sh "$CONTAINER"
+  fi
+  if [[ ${#migrations[@]} -ge 4 ]]; then
+    web/scripts/draft-pro/access-code-concurrency-probes.sh "$CONTAINER"
   fi
   if [[ -n "$extra_probe" ]]; then
     git show "$extra_probe" | psql_in_container

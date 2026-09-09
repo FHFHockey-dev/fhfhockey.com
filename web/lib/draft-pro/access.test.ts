@@ -58,6 +58,16 @@ describe("Draft Pro access contracts", () => {
     expect(boundary).toMatchObject({ eligible: true, nextVerificationAt: "2026-09-07T01:00:00.000Z" });
     expect(afterSeason.eligible).toBe(false);
   });
+  it("keeps a season-bounded complimentary grant independent of refunded or stale providers", () => {
+    const access = resolveDraftProAccess({ ...draftProAccessFixtures.purchase, patreonVerificationAvailable: false, entitlements: [
+      { source: "purchase", status: "refunded", effectiveFrom: "2026-09-01T00:00:00Z", effectiveTo: "2027-07-01T04:00:00Z" },
+      { source: "patreon", status: "active", effectiveFrom: "2026-09-01T00:00:00Z", effectiveTo: null, verifiedAt: "2026-09-01T00:00:00Z" },
+      { source: "complimentary", status: "active", effectiveFrom: "2026-09-01T00:00:00Z", effectiveTo: "2027-07-01T04:00:00Z" },
+    ] });
+    expect(access).toMatchObject({ eligible: true, grantingSources: ["complimentary"], expiresAt: "2027-07-01T04:00:00.000Z" });
+    const overlong = resolveDraftProAccess({ ...draftProAccessFixtures.purchase, entitlements: [{ source: "complimentary", status: "active", effectiveFrom: "2026-09-01T00:00:00Z", effectiveTo: "2027-07-01T04:00:01Z" }] });
+    expect(overlong.eligible).toBe(false);
+  });
   it("bounds refund and snapshot inputs", () => {
     expect(createDraftProRefundRequestSchema.safeParse({ purchaseId: "00000000-0000-4000-8000-000000000001", reason: "Changed my mind", explanation: "too short" }).success).toBe(false);
     expect(saveDraftProDraftSchema.safeParse({ name: "My draft", snapshot: { picks: Array.from({ length: 501 }, () => ({})) } }).success).toBe(false);
