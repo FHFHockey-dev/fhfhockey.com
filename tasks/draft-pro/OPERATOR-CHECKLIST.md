@@ -53,6 +53,8 @@ September 9 exception: owner explicitly deferred actual paid-patron testing and 
 - [ ] Confirm refund request notifications are addressed to `tim@fhfhockey.com` and email failure is persisted for retry.
 - [ ] Confirm Patreon refund instructions point customers to Patreon rather than promising an FHFH refund.
 - [ ] Confirm support can identify purchase activation, entitlement source, expiration, refund status, and relevant provider verification without exposing secrets or private imports.
+- [ ] If the owner enables the account-bound support-code fallback, use the installed runner from `web/`: `NODE_PATH=. ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/access-codes.ts issue <userUUID> '<reason>' 2027-07-01T04:00:00Z [--apply]` or `revoke <codeUUID> '<reason>' [--apply]`. Dry-run is the default and does not create codes or mutate data. `--apply` requires `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `DRAFT_PRO_ACCESS_CODE_ADMIN_USER_ID`; the database rechecks that the canonical `public.users.role` is `admin`.
+- [ ] On an applied issue, record the returned `codeId`, send the one-time raw code only to the intended account holder, and do not suggest automatic email delivery. The database stores only the hash; retain `codeId` for later revocation. Support codes are independent of Patreon, expire no later than season end, and do not imply a refund or unfinished-feature access.
 
 ## 5. Private imports and retained data
 
