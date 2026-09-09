@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import serviceRoleClient from "lib/supabase/server";
 import { DRAFT_PRO_SEASON } from "lib/draft-pro/contracts";
 
-import { DRAFT_PRO_STRIPE_PRICE, getDraftProStripeCatalog } from "./config";
+import { DRAFT_PRO_STRIPE_PRICE, getDraftProStripeCatalog, isDraftProStripeAutomaticTaxEnabled } from "./config";
 import { verifyStripeCheckoutSession } from "./fulfillment";
 
 type CheckoutClient = Pick<typeof serviceRoleClient, "rpc" | "from">;
@@ -47,12 +47,17 @@ export async function createDraftProCheckout({
   }
 
   const catalog = getDraftProStripeCatalog();
+  const automaticTaxEnabled = isDraftProStripeAutomaticTaxEnabled();
   const price = await stripe.prices.retrieve(catalog.priceId);
-  if (!price.active || price.type !== "one_time" || price.unit_amount !== DRAFT_PRO_STRIPE_PRICE.unitAmount || price.currency !== DRAFT_PRO_STRIPE_PRICE.currency || (typeof price.product === "string" ? price.product : price.product.id) !== catalog.productId) throw new Error("Draft Pro Stripe Price configuration is invalid.");
+  if (!price.active || price.type !== "one_time" || price.unit_amount !== DRAFT_PRO_STRIPE_PRICE.unitAmount || price.currency !== DRAFT_PRO_STRIPE_PRICE.currency || (typeof price.product === "string" ? price.product : price.product.id) !== catalog.productId || (automaticTaxEnabled && price.tax_behavior === "inclusive")) throw new Error("Draft Pro Stripe Price configuration is invalid.");
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     payment_method_types: ["card", "link"],
     line_items: [{ price: catalog.priceId, quantity: 1 }],
+    ...(automaticTaxEnabled ? {
+      automatic_tax: { enabled: true },
+      billing_address_collection: "required" as const,
+    } : {}),
     client_reference_id: attempt.purchase_id,
     metadata: { draft_pro_user_id: userId, draft_pro_purchase_id: attempt.purchase_id, draft_pro_season: DRAFT_PRO_SEASON },
     payment_intent_data: { metadata: { draft_pro_user_id: userId, draft_pro_purchase_id: attempt.purchase_id, draft_pro_season: DRAFT_PRO_SEASON } },

@@ -24,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!isStripeConfigured()) return res.status(503).json({ error: "Stripe checkout is not configured." });
   try {
     const stripe = getStripeClient();
-    const session = await stripe.checkout.sessions.retrieve(parsed.data.sessionId);
+    const session = await stripe.checkout.sessions.retrieve(parsed.data.sessionId, { expand: ["payment_intent.latest_charge"] });
     if (checkoutUserId(session) !== user.id) return res.status(403).json({ error: "This Checkout session belongs to another account." });
     const result = await verifyStripeCheckoutSession(stripe, session);
     const purchaseId = result.purchaseId ?? session.metadata?.draft_pro_purchase_id ?? null;

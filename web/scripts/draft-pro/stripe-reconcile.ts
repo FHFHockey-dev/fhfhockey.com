@@ -17,7 +17,7 @@ export async function runStripeReconciliation(options: ReconcileOptions, deps = 
   const { data, error } = await deps.client.from("draft_pro_purchases").select("id,user_id,provider_checkout_session_id,status").eq("provider", "stripe").eq("status", "pending").not("provider_checkout_session_id", "is", null).limit(options.limit);
   if (error) throw error;
   let checked = 0, eligible = 0;
-  for (const row of data ?? []) { if (!row.provider_checkout_session_id) continue; const session = await deps.stripe.checkout.sessions.retrieve(row.provider_checkout_session_id); if (session.metadata?.draft_pro_purchase_id !== row.id || session.metadata?.draft_pro_user_id !== row.user_id) continue; if (await verifyDraftProCheckoutSession(deps.stripe, session)) { eligible++; if (options.apply) await verifyStripeCheckoutSession(deps.stripe, session); } checked++; }
+  for (const row of data ?? []) { if (!row.provider_checkout_session_id) continue; const session = await deps.stripe.checkout.sessions.retrieve(row.provider_checkout_session_id, { expand: ["payment_intent.latest_charge"] }); if (session.metadata?.draft_pro_purchase_id !== row.id || session.metadata?.draft_pro_user_id !== row.user_id) continue; if (await verifyDraftProCheckoutSession(deps.stripe, session)) { eligible++; if (options.apply) await verifyStripeCheckoutSession(deps.stripe, session); } checked++; }
   return { dryRun: !options.apply, checked, eligible };
 }
 if (require.main === module) runStripeReconciliation(parseReconcileOptions(process.argv.slice(2))).then((r) => console.log(JSON.stringify(r))).catch(() => { console.error("Reconciliation failed."); process.exitCode = 1; });

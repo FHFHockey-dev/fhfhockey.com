@@ -43,6 +43,14 @@ describe("DraftProPanel", () => {
     expect(screen.getByText("Opening night")).toBeTruthy();
   });
 
+  it("lists only server-enabled features before purchase", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { ...account, access: { ...account.access, eligible: false }, availableFeatures: ["recommendations"] } }) }));
+    render(<DraftProPanel />);
+    expect(await screen.findByText("Roster-aware recommendations and personalized replacement analysis")).toBeTruthy();
+    expect(screen.queryByText("Aggregated projection CSV export")).toBeNull();
+    expect(screen.getByRole("link", { name: "Refund requests" }).getAttribute("href")).toBe("/draft-pro/policies#refunds");
+  });
+
   it("shows a server error without rendering a refund form", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, json: async () => ({ error: { message: "Account unavailable" } }) }));
     render(<DraftProPanel />);

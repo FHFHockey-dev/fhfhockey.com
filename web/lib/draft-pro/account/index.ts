@@ -43,9 +43,7 @@ export function getDraftProCheckoutAvailability({
   return { available: true, reason: "available" };
 }
 
-function receiptUrl(metadata: unknown) {
-  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return null;
-  const value = (metadata as Record<string, unknown>).receipt_url;
+function validReceiptUrl(value: unknown) {
   if (typeof value !== "string") return null;
   try {
     const url = new URL(value);
@@ -53,6 +51,11 @@ function receiptUrl(metadata: unknown) {
   } catch {
     return null;
   }
+}
+
+function receiptUrl(metadata: unknown) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return null;
+  return validReceiptUrl((metadata as Record<string, unknown>).receipt_url);
 }
 
 export async function loadDraftProAccount({
@@ -101,6 +104,37 @@ export async function loadDraftProAccount({
     .order("updated_at", { ascending: false });
   if (privateImports.error) throw privateImports.error;
 
+  const purchaseRows = (purchases.data ?? []) as Array<Record<string, unknown>>;
+  const missingReceiptPurchaseIds = purchaseRows
+    .filter((purchase) => !receiptUrl(purchase.metadata))
+    .map((purchase) => purchase.id)
+    .filter((purchaseId): purchaseId is string => typeof purchaseId === "string");
+  const receiptByPurchaseId = new Map<string, string>();
+  if (missingReceiptPurchaseIds.length) {
+    try {
+      const { data, error } = await client.from("draft_pro_provider_events")
+        .select("provider,user_id,purchase_id,receipt_url:payload->>receipt_url,provider_occurred_at")
+        .eq("provider", "stripe")
+        .eq("user_id", userId)
+        .in("purchase_id", missingReceiptPurchaseIds)
+        .not("payload->>receipt_url", "is", null)
+        .order("provider_occurred_at", { ascending: false })
+        .limit(100);
+      if (!error) {
+        const ownedPurchaseIds = new Set(missingReceiptPurchaseIds);
+        for (const event of (data ?? []) as Array<Record<string, unknown>>) {
+          const purchaseId = event.purchase_id;
+          const receipt = validReceiptUrl(event.receipt_url);
+          if (event.provider === "stripe" && event.user_id === userId && typeof purchaseId === "string" && ownedPurchaseIds.has(purchaseId) && receipt && !receiptByPurchaseId.has(purchaseId)) {
+            receiptByPurchaseId.set(purchaseId, receipt);
+          }
+        }
+      }
+    } catch {
+      // Receipt history is optional; account access must not depend on it.
+    }
+  }
+
   const refundByPurchase = new Map<string, { status: string }>();
   for (const refund of (refunds.data ?? []) as Array<{ purchase_id: string; status: string }>) {
     if (!['open', 'reviewing'].includes(refund.status)) continue;
@@ -118,12 +152,15 @@ export async function loadDraftProAccount({
       renewal: "none" as const,
     },
     checkoutAvailability,
+    availableFeatures: Object.entries(getDraftProFeatureFlags())
+      .filter(([feature, enabled]) => feature !== "checkout" && enabled)
+      .map(([feature]) => feature),
     configurationReadiness: {
       stripe: isStripeConfigured(),
       patreon: isPatreonConfigured(),
       yahoo: false,
     },
-    purchases: ((purchases.data ?? []) as Array<Record<string, unknown>>).map((purchase) => {
+    purchases: purchaseRows.map((purchase) => {
       const activatedAt = typeof purchase.activated_at === "string" ? purchase.activated_at : null;
       const deadlineMs = activatedAt ? new Date(activatedAt).getTime() + REFUND_WINDOW_MS : NaN;
       const openRefund = refundByPurchase.get(String(purchase.id));
@@ -137,7 +174,7 @@ export async function loadDraftProAccount({
       expiresAt: purchase.expires_at,
       amountCents: purchase.amount_cents,
       currency: purchase.currency,
-      receiptUrl: receiptUrl(purchase.metadata),
+      receiptUrl: receiptUrl(purchase.metadata) ?? receiptByPurchaseId.get(String(purchase.id)) ?? null,
       refundEligibility: { eligible, deadline: Number.isFinite(deadlineMs) ? new Date(deadlineMs).toISOString() : null, reason: eligible ? "eligible" : openRefund ? "request_open" : deadlineMs <= nowMs ? "window_closed" : "purchase_ineligible" },
     }; }),
     refundRequests: ((refunds.data ?? []) as Array<Record<string, unknown>>).map((refund) => ({
