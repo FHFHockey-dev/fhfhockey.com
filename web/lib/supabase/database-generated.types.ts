@@ -47798,6 +47798,7 @@ export type Database = {
       }
       redeem_draft_pro_access_code: { Args: { p_code: string; p_user_id: string }; Returns: boolean }
       revoke_draft_pro_access_code: { Args: { p_code_id: string; p_issued_by_user_id: string }; Returns: boolean }
+      issue_draft_pro_access_code: { Args: { p_code_hash: string; p_expires_at: string; p_issued_by_user_id: string; p_reason: string; p_target_user_id: string }; Returns: string }
       advance_projection_pipeline_state_v1: {
         Args: {
           p_expected_revision: number

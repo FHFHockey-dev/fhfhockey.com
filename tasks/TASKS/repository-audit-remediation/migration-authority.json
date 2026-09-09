@@ -625,7 +625,7 @@
     {
       "order": 62,
       "path": "supabase/migrations/20260909120000_draft_pro_complimentary_access_codes.sql",
-      "sha256": "8cc6a31a254a2b38650dbc8cce41f2a9fa616c071b9836d0a99b4ac528a182be",
+      "sha256": "e382db38a6001319d8cbc2181f55bc52b7ba5b8f4cbfa1524f92fb8cfb35bed3",
       "sourceStatus": "source-authorized",
       "deploymentState": "unknown",
       "migrationClass": "feature",
