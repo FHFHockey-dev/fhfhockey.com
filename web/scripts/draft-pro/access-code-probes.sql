@@ -199,7 +199,9 @@ insert into public.user_entitlements (
 );
 
 do $$
-declare visible_rows integer;
+declare
+  visible_rows integer;
+  protected_code_id uuid := (select id from access_probe_ids where name = 'revoke-after-use');
 begin
   execute 'set local role authenticated';
   perform set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000053', true);
@@ -231,9 +233,9 @@ begin
   end;
   update public.user_entitlements
   set entitlement_status = 'active', effective_to = '2027-07-01T04:00:00Z', metadata = '{"draft_pro_eligible":true}'
-  where source_reference = 'draft_pro_access_code:' || (select id from access_probe_ids where name = 'revoke-after-use');
+  where source_reference = 'draft_pro_access_code:' || protected_code_id;
   delete from public.user_entitlements
-  where source_reference = 'draft_pro_access_code:' || (select id from access_probe_ids where name = 'revoke-after-use');
+  where source_reference = 'draft_pro_access_code:' || protected_code_id;
   begin
     perform 1 from public.draft_pro_access_codes;
     raise exception 'browser unexpectedly read access-code table';
@@ -246,7 +248,7 @@ begin
   end if;
   if not exists (
     select 1 from public.user_entitlements
-    where source_reference = 'draft_pro_access_code:' || (select id from access_probe_ids where name = 'revoke-after-use')
+    where source_reference = 'draft_pro_access_code:' || protected_code_id
       and entitlement_status = 'inactive' and metadata->>'revoked_reason' = 'customer request'
   ) then
     raise exception 'browser unexpectedly updated or deleted a protected grant';
