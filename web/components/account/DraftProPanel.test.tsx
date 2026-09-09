@@ -194,4 +194,37 @@ describe("DraftProPanel", () => {
     expect(screen.getByText("B draft")).toBeTruthy();
     expect(screen.queryByText("Opening night")).toBeNull();
   });
+
+  it("redeems an access code, refreshes access, and shows complimentary expiry", async () => {
+    const inactive = { ...account, access: { ...account.access, eligible: false, grantingSources: [], expiresAt: null }, purchases: [] };
+    const complimentary = { ...inactive, access: { ...inactive.access, eligible: true, grantingSources: ["complimentary"], expiresAt: "2027-01-01T05:00:00.000Z" } };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: inactive }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ redeemed: true }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: complimentary }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<DraftProPanel />);
+    const input = await screen.findByLabelText("Draft Pro access code");
+    fireEvent.change(input, { target: { value: "COMP-TEST-2026" } });
+    fireEvent.submit(input.closest("form")!);
+    expect(await screen.findByText(/Complimentary Draft Pro access is now active/)).toBeTruthy();
+    expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/v1/account/draft-pro/access-codes/redeem");
+    expect(fetchMock.mock.calls[1]?.[1]?.body).toBe(JSON.stringify({ code: "COMP-TEST-2026" }));
+    expect(await screen.findByText(/Access from complimentary\./)).toBeTruthy();
+    expect(screen.getByText(/December 31, 2026/)).toBeTruthy();
+  });
+
+  it("shows an access-code error without persisting the code", async () => {
+    const inactive = { ...account, access: { ...account.access, eligible: false, grantingSources: [], expiresAt: null }, purchases: [] };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: inactive }) })
+      .mockResolvedValueOnce({ ok: false, json: async () => ({ error: { message: "That access code is invalid." } }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<DraftProPanel />);
+    const input = await screen.findByLabelText("Draft Pro access code");
+    fireEvent.change(input, { target: { value: "BAD-CODE" } });
+    fireEvent.submit(input.closest("form")!);
+    expect((await screen.findByRole("alert")).textContent).toContain("That access code is invalid.");
+    expect((screen.getByLabelText("Draft Pro access code") as HTMLInputElement).value).toBe("BAD-CODE");
+  });
 });

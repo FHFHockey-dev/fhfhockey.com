@@ -20,6 +20,18 @@
 .refundSection { display: grid; gap: v.$space-sm; }
 .refundSection > label { display: grid; gap: 4px; color: v.$color-white; font-size: v.$font-size-sm; }
 .refundSection > label select { min-height: v.$control-height-md; padding: 8px 10px; border: v.$border-default; border-radius: v.$radius-control; background: v.$surface-0; color: v.$text-primary; font: inherit; }
+.accessCodeForm { display: grid; gap: v.$space-sm; padding-top: v.$space-sm; border-top: v.$border-subtle; }
+.accessCodeForm h3, .accessCodeForm p { margin: 0; }
+.accessCodeForm h3 { color: v.$color-white; }
+.accessCodeForm p { color: v.$text-secondary; line-height: 1.5; }
+.accessCodeForm label { color: v.$color-white; font-size: v.$font-size-sm; }
+.accessCodeRow { display: flex; gap: v.$space-sm; }
+.accessCodeRow input { min-width: 0; flex: 1; min-height: v.$control-height-md; padding: 8px 10px; border: v.$border-default; border-radius: v.$radius-control; background: v.$surface-0; color: v.$text-primary; font: inherit; }
+.accessCodeRow button { min-height: v.$control-height-md; padding: 6px 10px; border: v.$border-default; border-radius: v.$radius-control; background: v.$primary-color; color: v.$color-white; cursor: pointer; font: inherit; font-weight: v.$font-weight-bold; }
+.accessCodeRow button:disabled { cursor: wait; opacity: .6; }
+.errorNotice, .successNotice { font-size: v.$font-size-sm; }
+.errorNotice { color: v.$danger-color !important; }
+.successNotice { color: v.$success-color !important; }
 .savedItems { display: grid; gap: v.$space-xs; }
 .savedItems h3 { margin: 0; color: v.$color-white; }
 .savedItems div { display: flex; justify-content: space-between; gap: v.$space-sm; color: v.$text-secondary; }
