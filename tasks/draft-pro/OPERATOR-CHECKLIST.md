@@ -31,6 +31,8 @@ W02 owns the Stripe implementation. Confirm the actual names and values with W02
 
 ## 3. Patreon and source permissions
 
+September 9 exception: owner explicitly deferred actual paid-patron testing and accepted the risk, requesting independently tested complimentary access codes as the support fallback. OAuth, encrypted storage and manual refresh passed with the creator identity. Do not tick paid-membership or signed-webhook provider checks based on that evidence; local fixture coverage is distinct. Request error text/time and a support reference before asking users for sanitized logs; never request tokens, cookies or authorization URLs.
+
 - [ ] Confirm the exact FHFH Patreon campaign and the definition of active paid membership with the owner.
 - [ ] Confirm Patreon API/webhook credentials and redirect/source permissions through W03. Do not print or copy secrets.
 - [ ] Confirm paid eligibility is independently verified and stale verification blocks premium operations without deleting retained history.
