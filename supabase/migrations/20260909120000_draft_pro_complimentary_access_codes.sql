@@ -30,7 +30,7 @@ begin
   perform pg_advisory_xact_lock(hashtext('draft-pro-access-code:' || p_user_id::text));
   insert into public.draft_pro_access_code_attempts(user_id,window_started_at,attempt_count) values(p_user_id,now(),1)
   on conflict(user_id) do update set window_started_at=case when public.draft_pro_access_code_attempts.window_started_at <= now()-interval '1 minute' then now() else public.draft_pro_access_code_attempts.window_started_at end,
-    attempt_count=case when public.draft_pro_access_code_attempts.window_started_at <= now()-interval '1 minute' then 1 else public.draft_pro_access_code_attempts.attempt_count+1 end;
+    attempt_count=case when public.draft_pro_access_code_attempts.window_started_at <= now()-interval '1 minute' then 1 else least(public.draft_pro_access_code_attempts.attempt_count+1,9) end;
   if (select a.attempt_count from public.draft_pro_access_code_attempts as a where a.user_id=p_user_id)>8 then return false; end if;
   select c.* into access_code from public.draft_pro_access_codes as c
   where c.code_hash=encode(digest(p_code,'sha256'),'hex') for update;
@@ -49,7 +49,7 @@ returns uuid language plpgsql security definer set search_path=public,pg_temp as
 declare code_id uuid;
 begin
   if not exists(select 1 from auth.users as u where u.id=p_issued_by_user_id and coalesce(u.raw_app_meta_data->>'role','')='admin') then raise exception 'Draft Pro access-code administrator is required'; end if;
-  if p_code_hash !~ '^[a-f0-9]{64}$' or p_reason is null or char_length(btrim(p_reason)) not between 1 and 500 or p_expires_at is null or p_expires_at>='2027-07-01T04:00:00Z' then raise exception 'Invalid Draft Pro access code'; end if;
+  if p_code_hash !~ '^[a-f0-9]{64}$' or p_reason is null or char_length(btrim(p_reason)) not between 1 and 500 or p_expires_at is null or p_expires_at<=now() or p_expires_at>'2027-07-01T04:00:00Z' then raise exception 'Invalid Draft Pro access code'; end if;
   insert into public.draft_pro_access_codes(code_hash,target_user_id,issued_by_user_id,reason,expires_at) values(p_code_hash,p_target_user_id,p_issued_by_user_id,btrim(p_reason),p_expires_at) returning id into code_id;
   return code_id;
 end;
@@ -58,10 +58,11 @@ create or replace function public.revoke_draft_pro_access_code(p_issued_by_user_
 returns boolean language plpgsql security definer set search_path=public,pg_temp as $$
 declare access_code public.draft_pro_access_codes%rowtype;
 begin
+  if not exists(select 1 from auth.users as u where u.id=p_issued_by_user_id and coalesce(u.raw_app_meta_data->>'role','')='admin') then raise exception 'Draft Pro access-code administrator is required'; end if;
   select c.* into access_code from public.draft_pro_access_codes as c where c.id=p_code_id and c.issued_by_user_id=p_issued_by_user_id for update;
   if not found then return false; end if;
   update public.draft_pro_access_codes as c set revoked_at=now(),revoked_by_user_id=p_issued_by_user_id where c.id=access_code.id and c.revoked_at is null;
-  update public.user_entitlements as e set entitlement_status='inactive',effective_to=now() where e.user_id=access_code.target_user_id and e.source_provider='complimentary' and e.source_reference='draft_pro_access_code:' || access_code.id::text;
+  update public.user_entitlements as e set entitlement_status='inactive',effective_to=now() where e.user_id=access_code.target_user_id and e.source_provider='complimentary' and e.source_reference='draft_pro_access_code:' || access_code.id::text and e.entitlement_status='active';
   return true;
 end;
 $$;
