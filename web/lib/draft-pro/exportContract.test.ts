@@ -12,6 +12,9 @@ const input = {
 };
 
 describe("Draft Pro export contract", () => {
+  it("refuses to format a LineupExperts blend", () => {
+    expect(() => formatDraftProExportCsv({ ...input, sourceWeights: { source: 1, lineupexperts_skaters: 1 } })).toThrow(/LineupExperts/);
+  });
   it("preserves numeric cells and neutralizes formula-like text with CSV quoting", () => {
     const parsed = draftProExportInputSchema.parse(input);
     const csv = formatDraftProExportCsv(parsed);

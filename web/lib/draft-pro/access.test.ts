@@ -4,6 +4,13 @@ import { draftProAccessFixtures } from "./access.fixtures";
 import { createDraftProRefundRequestSchema, saveDraftProDraftSchema } from "./contracts";
 
 describe("Draft Pro access contracts", () => {
+  it("gates God View independently for purchases, Patreon and expired access", () => {
+    const fixture = draftProAccessFixtures.purchase;
+    expect(resolveDraftProAccess(fixture).capabilities).toContain("god_view");
+    expect(resolveDraftProAccess({ ...fixture, flags: { ...fixture.flags, god_view: false } }).capabilities).not.toContain("god_view");
+    expect(resolveDraftProAccess({ ...fixture, now: new Date("2027-07-02T00:00:00Z") }).capabilities).not.toContain("god_view");
+    expect(resolveDraftProAccess({ ...draftProAccessFixtures.stalePatreon, now: new Date("2026-09-07T00:30:00Z") }).capabilities).toContain("god_view");
+  });
   it("denies anonymous and free accounts", () => {
     expect(resolveDraftProAccess(draftProAccessFixtures.unauthenticated).reason).toBe("authentication_required");
     expect(resolveDraftProAccess({ ...draftProAccessFixtures.purchase, entitlements: [] })).toMatchObject({ eligible: false, reason: "no_active_grant" });
@@ -21,7 +28,7 @@ describe("Draft Pro access contracts", () => {
   it("rejects future grants and gives disabled features a stable reason", () => {
     const access = resolveDraftProAccess({ ...draftProAccessFixtures.purchase, entitlements: [{ source: "purchase", status: "active", effectiveFrom: "2026-10-01T00:00:00Z", effectiveTo: "2027-07-01T04:00:00Z" }] });
     expect(access.reason).toBe("no_active_grant");
-    const disabled = resolveDraftProAccess({ ...draftProAccessFixtures.purchase, flags: { checkout: false, recommendations: false, dust: false, blended_csv: false, saved_drafts: false, private_imports: false, scenarios: false, reports: false } });
+    const disabled = resolveDraftProAccess({ ...draftProAccessFixtures.purchase, flags: { checkout: false, recommendations: false, dust: false, blended_csv: false, saved_drafts: false, private_imports: false, scenarios: false, god_view: false, reports: false } });
     expect(disabled.reason).toBe("feature_disabled");
     expect(requireDraftProCapability(disabled, "dust")).toMatchObject({ reason: "feature_disabled" });
     const partiallyDisabled = resolveDraftProAccess({ ...draftProAccessFixtures.purchase, flags: { ...draftProAccessFixtures.purchase.flags, dust: false } });

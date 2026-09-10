@@ -4,7 +4,7 @@ const loadAccess = vi.hoisted(() => vi.fn());
 const stripeConfigured = vi.hoisted(() => vi.fn(() => false));
 const patreonConfigured = vi.hoisted(() => vi.fn(() => false));
 vi.mock("../server", () => ({ loadDraftProAccess: loadAccess }));
-vi.mock("../features", () => ({ getDraftProFeatureFlags: () => ({ checkout: false, recommendations: false, dust: false, blended_csv: false, saved_drafts: false, private_imports: false, scenarios: false, reports: false }) }));
+vi.mock("../features", () => ({ getDraftProFeatureFlags: () => ({ checkout: false, recommendations: false, dust: false, blended_csv: false, saved_drafts: false, private_imports: false, scenarios: false, god_view: false, reports: false }) }));
 vi.mock("lib/integrations/stripe/config", () => ({ isStripeConfigured: stripeConfigured }));
 vi.mock("lib/integrations/patreon/config", () => ({ isPatreonConfigured: patreonConfigured }));
 

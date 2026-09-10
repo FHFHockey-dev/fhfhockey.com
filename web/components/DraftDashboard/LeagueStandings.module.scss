@@ -8,7 +8,7 @@
   overflow: hidden;
   background: v.$draft-surface;
   border: 1px solid v.$draft-border;
-  border-radius: 5px;
+  border-radius: v.$radius-panel;
   container-type: inline-size;
   header {
     display: flex;
@@ -34,10 +34,10 @@
     width: 100%;
     min-width: 0;
     table-layout: fixed;
-    height: 100%;
+    height: auto;
     border-collapse: separate;
     border-spacing: 0;
-    font-size: 12px;
+    font-size: clamp(10px, 2.6cqw, 12px);
     font-variant-numeric: tabular-nums;
   }
   th,
@@ -75,7 +75,7 @@
     position: sticky;
     left: 22px;
     text-align: left;
-    width: 80px;
+    width: clamp(60px, 17.8cqw, 80px);
     background: v.$draft-surface;
     z-index: 2;
     button {
@@ -89,7 +89,7 @@
     }
   }
   tr > :nth-last-child(-n + 2) {
-    width: 43px;
+    width: clamp(30px, 9.5cqw, 43px);
   }
   tr[data-my-team="true"] > * {
     box-shadow:
@@ -112,7 +112,7 @@
     display: inline-block;
     width: 8px;
     height: 8px;
-    border-radius: 2px;
+    border-radius: v.$radius-xs;
   }
   @each $band,
     $color
@@ -134,10 +134,9 @@
 }
 .tableViewport {
   min-width: 0;
+  flex: 1 1 auto;
   min-height: 0;
-  flex: 1;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: clip;
 }
 @container (max-width: 450px) {
   .tableViewport {
@@ -160,3 +159,36 @@
   }
 }
 .schedulePeriod { margin: 0; padding: 0 12px 8px; font-size: 11px; }
+
+@media (min-width: 1101px) and (max-height: 1050px) {
+  .standings {
+    header { padding-block: 5px; }
+    footer { padding-block: 4px; }
+    th, td { padding-block: 2px; }
+    thead th { height: 21px; }
+  }
+}
+@media (min-width: 1101px) and (max-height: 840px) {
+  .standings tbody :is(th, td) { padding-block: 0; }
+}
+
+@media (min-width: 1101px) {
+  .standings {
+    header { flex: none; padding: 3px 10px; flex-wrap: nowrap; }
+    footer { flex: none; padding: 3px 10px; font-size: 10px; line-height: 1; }
+  }
+  .tableViewport {
+    container-type: size;
+    table { height: 100%; font-size: clamp(11px, calc(100cqh / var(--standings-rows) * .8), 12px); }
+    th, td { line-height: 1; padding-block: clamp(0px, calc((100cqh / var(--standings-rows) - 16px) / 2), 4px); }
+    thead th { height: auto; font-size: inherit; }
+    th button { display: block; width: 100%; line-height: 1; }
+  }
+  .schedulePeriod { padding: 0 10px 2px; font-size: 10px; line-height: 1; }
+}
+
+@media (min-width: 1101px) and (max-height: 840px) {
+  .standings header { padding-block: 1px; }
+  .standings header select { min-height: 20px; height: 20px; padding-block: 0; }
+  .standings footer { padding-block: 0; }
+}

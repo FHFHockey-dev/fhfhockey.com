@@ -29,6 +29,8 @@ import DraftSettingsShell, { type SettingsSection } from "./DraftSettingsShell";
 import DraftStatus from "./DraftStatus";
 import LeagueStandings from "./LeagueStandings";
 import MyRoster from "./MyRoster";
+import GodView from "./GodView";
+import { selectGodViewQueue } from "lib/draftDashboard/godView";
 import DustMatrix from "./DustMatrix";
 import SavedDraftsWorkspace from "./SavedDraftsWorkspace";
 import type { SavedDraftAnnotations } from "./SavedDraftsPanel";
@@ -446,6 +448,9 @@ const DraftDashboard: React.FC = () => {
   const [positionOverrides, setPositionOverrides] = useState<
     Record<string, string>
   >({});
+  const [godViewOpen, setGodViewOpen] = useState(false);
+  const [rosterViewRequest, setRosterViewRequest] = useState<{ teamId: string }>();
+  const [graphExpandRequest, setGraphExpandRequest] = useState(0);
   const [currentPick, setCurrentPick] = useState<number>(1);
   const [activeMobileTab, setActiveMobileTab] = useMobileDraftTab();
   const [mobileWorkspaceEnabled, setMobileWorkspaceEnabled] = useState(false);
@@ -2445,6 +2450,24 @@ const DraftDashboard: React.FC = () => {
     draftMode === "manual"
       ? nextManualActionablePick > totalPicks
       : draftedPlayers.length >= totalPicks;
+  const [scoreboardPaused, setScoreboardPaused] = useState(false);
+  const scoreboardSections = useMemo(() => {
+    const recentPicks = [...draftedPlayers]
+      .filter((pick) => pick.pickNumber < currentPick)
+      .sort((a, b) => b.pickNumber - a.pickNumber)
+      .slice(0, 5)
+      .map((pick) => {
+        const player = allPlayers.find((entry) => String(entry.playerId) === pick.playerId);
+        const name = player?.fullName || pick.espnDisplayName || pick.yahooDisplayName || `Player #${pick.playerId}`;
+        return `#${pick.pickNumber} ${name} — ${customTeamNames[pick.teamId] || pick.teamId}`;
+      });
+    return [
+      draftComplete ? "Draft complete" : `On the clock: ${customTeamNames[currentTurn.teamId] || currentTurn.teamId}`,
+      `Pick ${Math.min(currentPick, totalPicks)} of ${totalPicks}`,
+      recentPicks.length ? `Last ${recentPicks.length} picks: ${recentPicks.join(" • ")}` : "Awaiting the first pick",
+    ];
+  }, [allPlayers, currentPick, currentTurn.teamId, customTeamNames, draftComplete, draftedPlayers, totalPicks]);
+  const scoreboardText = scoreboardSections.join("   •   ");
   const startYahooDraftSync = useCallback(async () => {
     if (espnLiveActive) return;
     const started = await startYahooSession();
@@ -3345,6 +3368,7 @@ const DraftDashboard: React.FC = () => {
   return (
     <main
       className={styles.dashboardContainer}
+      data-god-view-open={godViewOpen}
       data-settings-open={settingsOpen}
       data-full-settings={fullSettings}
       data-mobile-tab={activeMobileTab}
@@ -3708,7 +3732,18 @@ const DraftDashboard: React.FC = () => {
       </div>
       </DraftSettingsShell>
 
-      <div className={styles.mainContent}>
+      <GodView
+        queue={selectGodViewQueue({ startPick: currentPick, maxPickNumber: totalPicks,
+          draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern,
+          trades: manualDraftingEnabled ? pickTrades : [], keepers: manualDraftingEnabled ? keepers : [],
+          completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), teamRosterCounts, rosterCapacity: totalRosterSize })}
+        teams={teamStats} rosterConfig={effectiveRosterConfig} myTeamId={myTeamId}
+        round={currentTurn.round} format={draftOrderPattern.mode} access={draftProAccess}
+        onSelectTeam={(teamId) => { setRosterViewRequest({ teamId }); if (mobileWorkspaceEnabled) setActiveMobileTab("roster"); }}
+        onExpandGraph={() => setGraphExpandRequest((value) => value + 1)}
+        onSummary={() => setIsSummaryOpen(true)} onOpenChange={setGodViewOpen}
+      />
+      <div className={styles.mainContent} style={{ "--board-track": `${draftSettings.teamCount + 4}fr`, "--standings-track": `${draftSettings.teamCount + 6}fr` } as React.CSSProperties}>
       {/* Recommendations and roster progress share the left workspace track. */}
       <section
         id="mobile-draft-panel-suggested"
@@ -3758,9 +3793,34 @@ const DraftDashboard: React.FC = () => {
           onComparePlayer={toggleSuggestedComparison}
           compareSelectedIds={suggestedCompareIds}
         />
+        <div
+          className={styles.scoreboard}
+          role="region"
+          aria-label={`Draft scoreboard. ${scoreboardText}`}
+          data-paused={scoreboardPaused}
+          style={{ "--scoreboard-duration": `${Math.max(30, scoreboardText.length * 0.15)}s` } as React.CSSProperties}
+        >
+          <div className={styles.scoreboardViewport}>
+            <div className={styles.scoreboardTrack} aria-hidden="true">
+              {[0, 1].map((copy) => (
+                <div key={copy} className={styles.scoreboardCycle}>
+                  {scoreboardSections.map((section, index) => <span key={index}>{section}</span>)}
+                </div>
+              ))}
+            </div>
+          </div>
+          <button
+            type="button"
+            className={styles.scoreboardPause}
+            onClick={() => setScoreboardPaused((paused) => !paused)}
+            aria-label={scoreboardPaused ? "Resume draft scoreboard" : "Pause draft scoreboard"}
+            aria-pressed={scoreboardPaused}
+          >
+            {scoreboardPaused ? "▶" : "Ⅱ"}
+          </button>
+        </div>
       </section>
 
-        <LeagueStandings scheduleMetrics={draftSchedule.playerMetrics} schedulePeriod={draftSchedule.periodLabel} teams={teamStats} categories={activeScoringCategories} leagueType={draftSettings.leagueType || "points"} myTeamId={myTeamId} vorpMetrics={vorpMetrics} onUpdateTeamName={updateTeamName} canEdit={manualDraftingEnabled} isLoading={isLoading} error={errorMessage} />
         <section
           id="mobile-draft-panel-board"
           className={styles.leftPanel}
@@ -3787,6 +3847,7 @@ const DraftDashboard: React.FC = () => {
             picksUntilNext={currentTurn.isMyTurn ? 0 : picksUntilNext}
           />
           <DraftBoard
+            expandRequest={graphExpandRequest}
             myTeamId={myTeamId}
             draftSettings={draftSettings}
             draftedPlayers={draftedPlayers}
@@ -3802,6 +3863,8 @@ const DraftDashboard: React.FC = () => {
           />
         </section>
 
+        <LeagueStandings scheduleMetrics={draftSchedule.playerMetrics} schedulePeriod={draftSchedule.periodLabel} teams={teamStats} categories={activeScoringCategories} leagueType={draftSettings.leagueType || "points"} myTeamId={myTeamId} vorpMetrics={vorpMetrics} onUpdateTeamName={updateTeamName} canEdit={manualDraftingEnabled} isLoading={isLoading} error={errorMessage} />
+
         <section
           id="mobile-draft-panel-roster"
           className={styles.centerPanel}
@@ -3814,6 +3877,7 @@ const DraftDashboard: React.FC = () => {
           hidden={mobileWorkspaceEnabled && activeMobileTab !== "roster"}
         >
           <MyRoster
+            viewRequest={rosterViewRequest}
             nextPickByTeam={Object.fromEntries(draftSettings.draftOrder.map((teamId) => [teamId, currentPick + findPicksUntilTeamTurn({ currentPick, teamId, draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern, trades: manualDraftingEnabled ? pickTrades : [], keepers: manualDraftingEnabled ? keepers : [], completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), teamRosterCounts, rosterCapacity: rosterRoundCount(draftSettings.rosterConfig), maxPickNumber: draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig) })]))}
             scheduleState={rosterScheduleOptimizer}
             myTeamId={myTeamId}
@@ -3867,14 +3931,6 @@ const DraftDashboard: React.FC = () => {
                 ? "Refreshing…"
                 : ""}
             </div>
-          </div>
-          <div className={styles.scheduleScope}>
-            <label>Schedule period <select aria-label="Schedule period" value={draftSchedule.scope} onChange={(event) => updateDraftSettings({ scheduleScope: event.target.value as "season" | "playoffs" })}>
-              <option value="season">Season</option>
-              <option value="playoffs" disabled={!draftSchedule.weeks.some((week) => scheduleSettings.playoffWeeks.includes(week.week))}>Playoffs</option>
-            </select></label>
-            <span title="NHL schedule opportunities, including goalies; not projected appearances.">{draftSchedule.periodLabel}</span>
-            {(draftSchedule.error || draftSchedule.loading) && <small role="status">{draftSchedule.error ?? "Loading schedule…"}</small>}
           </div>
           {projectionsTable}
           <button

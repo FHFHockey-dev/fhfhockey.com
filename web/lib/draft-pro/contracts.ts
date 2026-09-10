@@ -37,6 +37,7 @@ export const draftProCapabilitySchema = z.enum([
   "private_imports",
   "scenarios",
   "reports",
+  "god_view",
 ]);
 export type DraftProCapability = z.infer<typeof draftProCapabilitySchema>;
 

@@ -24,6 +24,13 @@ const account = {
 };
 
 describe("DraftProPanel", () => {
+  it.each([true, false])("lists God View only when the capability is available (%s)", async (enabled) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { ...account, access: { ...account.access, capabilities: enabled ? ["god_view"] : [] } } }) }));
+    render(<DraftProPanel />);
+    await screen.findByText("Active");
+    expect(Boolean(screen.queryByText(/God View — upcoming picks/))).toBe(enabled);
+  });
+
   beforeEach(() => { getSession.mockResolvedValue({ data: { session: { access_token: "token", user: { id: "A" } } } }); replace.mockClear(); onAuthStateChange.mockClear(); });
   afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); vi.restoreAllMocks(); delete routerQuery.draft_pro_checkout; });
 

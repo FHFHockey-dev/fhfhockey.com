@@ -4,7 +4,7 @@ import { requireApiUser } from "lib/api/requireApiUser";
 import { getDraftProFeatureFlags } from "lib/draft-pro/features";
 import { loadDraftProAccess, requireDraftProServerCapability } from "lib/draft-pro/server";
 import { consumeRecommendationRequest } from "lib/draft-pro/recommendationsRateLimit";
-import { draftProExportInputSchema, formatDraftProExportCsv } from "lib/draft-pro/exportContract";
+import { draftProExportInputSchema, formatDraftProExportCsv, hasRestrictedExportSource, RESTRICTED_EXPORT_MESSAGE } from "lib/draft-pro/exportContract";
 
 export const config = { api: { bodyParser: { sizeLimit: "4mb" } } };
 
@@ -18,6 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const access = await loadDraftProAccess(user.id, { now: new Date(), flags: getDraftProFeatureFlags(), patreonVerificationAvailable: true });
     requireDraftProServerCapability(access, "blended_csv");
     const input = draftProExportInputSchema.parse(req.body ?? {});
+    if (hasRestrictedExportSource(input.sourceWeights)) return res.status(403).json({ error: { code: "source_export_restricted", message: RESTRICTED_EXPORT_MESSAGE } });
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", 'attachment; filename="fhfhockey-blended-projections.csv"');
     return res.status(200).send(formatDraftProExportCsv(input));

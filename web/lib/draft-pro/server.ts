@@ -5,11 +5,13 @@ import { refreshPatreonAccount } from "lib/integrations/patreon/sync";
 import { requireDraftProCapability, resolveDraftProAccess, type DraftProAccessInput, type DraftProEntitlement } from "./access";
 import { DRAFT_PRO_ENTITLEMENT_KEY, type DraftProCapability } from "./contracts";
 
+import { ensureDraftProOwnerAccess } from "./ownerAccess";
+
 const PATREON_SUPPORTER_ENTITLEMENT_KEY = "patreon_supporter";
 
 export type DraftProFeatureFlags = Record<"checkout" | DraftProCapability, boolean>;
 
-type EntitlementsClient = Pick<typeof serviceRoleClient, "from">;
+type EntitlementsClient = Pick<typeof serviceRoleClient, "from"> & Partial<Pick<typeof serviceRoleClient, "auth">>;
 const metadataString = (metadata: Json, key: string) =>
   metadata && typeof metadata === "object" && !Array.isArray(metadata) && typeof metadata[key] === "string"
     ? metadata[key] as string
@@ -45,6 +47,7 @@ export async function loadDraftProAccess(
   options: Omit<DraftProAccessInput, "userId" | "entitlements"> & { client?: EntitlementsClient },
 ) {
   const client = options.client ?? serviceRoleClient;
+  const owner = client.auth ? await ensureDraftProOwnerAccess(userId, options.now, { from: client.from.bind(client), auth: client.auth }) : false;
   const { data, error } = await client
     .from("user_entitlements")
     .select("source_provider,entitlement_key,source_account_id,entitlement_status,effective_from,effective_to,metadata")
@@ -89,7 +92,7 @@ export async function loadDraftProAccess(
     if (!source) return [];
     return [{ source, status: row.entitlement_status === "active" ? "active" : "inactive", effectiveFrom: row.effective_from, effectiveTo: row.effective_to, verifiedAt: metadataString(row.metadata, "verified_at") }];
   });
-  return resolveDraftProAccess({ ...options, patreonVerificationAvailable, userId, entitlements });
+  return resolveDraftProAccess({ ...options, flags: owner ? Object.fromEntries(Object.entries(options.flags).map(([key, value]) => [key, key === "checkout" ? value : true])) as DraftProFeatureFlags : options.flags, patreonVerificationAvailable, userId, entitlements });
 }
 
 export function requireDraftProServerCapability(access: Awaited<ReturnType<typeof loadDraftProAccess>>, capability: DraftProCapability) {

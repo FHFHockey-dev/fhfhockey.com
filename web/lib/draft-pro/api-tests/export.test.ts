@@ -54,6 +54,15 @@ describe("Draft Pro export API", () => {
     expect(res.state.status).toBe(400);
   });
 
+  it.each(["lineupexperts_skaters", "lineupexperts_goalies", "Lineup Experts"])("rejects declared %s sources server-side", async (source) => {
+    const res = response();
+    await handler({ method: "POST", body: { ...body, sourceWeights: { projections: 1, [source]: 0.5 } } } as any, res.api as any);
+    expect(res.state.status).toBe(403);
+    expect(res.state.body).toMatchObject({ error: { code: "source_export_restricted" } });
+    expect(res.api.send).not.toHaveBeenCalled();
+    expect(res.state.headers.has("Content-Disposition")).toBe(false);
+  });
+
   it("returns a fixed-download CSV with provenance", async () => {
     const res = response();
     await handler({ method: "POST", body } as any, res.api as any);

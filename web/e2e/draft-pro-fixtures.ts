@@ -4,7 +4,7 @@ import type { DraftProAccess } from "lib/draft-pro/contracts";
 type DraftProAccountResponse = { access: DraftProAccess };
 
 /** Keeps browser smoke coverage local, free, and independent of real accounts. */
-export async function installDraftProFreeFixtures(page: Page, { seedSnapshot = true }: { seedSnapshot?: boolean } = {}) {
+export async function installDraftProFreeFixtures(page: Page, { seedSnapshot = true, skaterCount = 3 }: { seedSnapshot?: boolean; skaterCount?: number } = {}) {
   const skaters = [{
     player_id: 1001, Player_Name: "Fixture Center", Team_Abbreviation: "AAA", Position: "C",
     Games_Played: 82, Goals: 30, Assists: 45, Points: 75, Shots_on_Goal: 220,
@@ -15,6 +15,9 @@ export async function installDraftProFreeFixtures(page: Page, { seedSnapshot = t
     player_id: 1003, Player_Name: "Fixture Center Three", Team_Abbreviation: "DDD", Position: "C",
     Games_Played: 82, Goals: 20, Assists: 35, Points: 55, Shots_on_Goal: 180,
   }];
+  while (skaters.length < skaterCount) {
+    skaters.push({ ...skaters[0], player_id: 1001 + skaters.length, Player_Name: `Fixture Skater ${skaters.length + 1}` });
+  }
   const goalie = {
     player_id: 2001, Player_Name: "Fixture Goalie", Team_Abbreviation: "BBB", Position: "G",
     Games_Played: 55, Games_Started_Goalie: 50, Wins_Goalie: 30, Saves_Goalie: 1400,
@@ -28,11 +31,7 @@ export async function installDraftProFreeFixtures(page: Page, { seedSnapshot = t
       Points: table.includes("CULLEN") ? player.Points + 30 : player.Points,
     }));
     const data = table === "players"
-      ? [
-          { id: 1001, fullName: "Fixture Center", position: "C", lastName: "Center" },
-          { id: 1002, fullName: "Fixture Center Two", position: "C", lastName: "Two" },
-          { id: 1003, fullName: "Fixture Center Three", position: "C", lastName: "Three" },
-        ]
+      ? skaters.map((player) => ({ id: player.player_id, fullName: player.Player_Name, position: player.Position, lastName: player.Player_Name.split(" ").pop() }))
       : table === "yahoo_matchup_weeks"
         ? [{ week: 1, start_date: "2026-10-05", end_date: "2026-10-11" }]
       : table.startsWith("PROJECTIONS_")

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  normalizeYahooEligiblePositions,
   resolveYahooMappings,
   type YahooMappingRow,
   type YahooPlayerDetailRow,
@@ -15,6 +16,15 @@ function hint(
 }
 
 describe("resolveYahooMappings", () => {
+  it("normalizes game-detail eligible-position objects", () => {
+    expect(
+      normalizeYahooEligiblePositions([
+        { position: "C" },
+        { position: "RW" },
+      ]),
+    ).toEqual(["C", "RW"]);
+  });
+
   it("uses current-game type and position to reject same-name false matches", () => {
     const mappings: YahooMappingRow[] = [
       { nhl_player_id: "8476473", yahoo_player_id: "31437" },

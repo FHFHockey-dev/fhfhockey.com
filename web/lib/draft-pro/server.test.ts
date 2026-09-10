@@ -6,7 +6,7 @@ vi.mock("lib/integrations/patreon/sync", () => ({ refreshPatreonAccount: mocks.r
 
 import { loadDraftProAccess } from "./server";
 
-const flags = { checkout: true, recommendations: true, dust: true, blended_csv: true, saved_drafts: true, private_imports: true, scenarios: true, reports: true };
+const flags = { checkout: true, recommendations: true, dust: true, blended_csv: true, saved_drafts: true, private_imports: true, scenarios: true, god_view: true, reports: true };
 
 function clientWith(rows: unknown[]) {
   const query = {
@@ -89,5 +89,36 @@ describe("Draft Pro Patreon source mapping", () => {
       ]),
     });
     expect(access).toMatchObject({ eligible: true, grantingSources: ["complimentary"], expiresAt: "2027-07-01T04:00:00.000Z" });
+  });
+});
+
+
+describe("verified owner access", () => {
+  it("accepts verified owner emails and the immutable GitHub identity only", async () => {
+    const { isDraftProOwner } = await import("./ownerAccess");
+    expect(isDraftProOwner({ email: "TimBranson515@gmail.com", email_confirmed_at: "2026-09-01" })).toBe(true);
+    expect(isDraftProOwner({ email: "fiveholefantasyhockey@gmail.com", email_confirmed_at: "2026-09-01" })).toBe(true);
+    expect(isDraftProOwner({ email: "TimBranson515@gmail.com" })).toBe(false);
+    expect(isDraftProOwner({ email: "other@example.com", email_confirmed_at: "2026-09-01" })).toBe(false);
+    expect(isDraftProOwner({ identities: [{ provider: "github", id: "52942235" } as any] })).toBe(true);
+    expect(isDraftProOwner({ identities: [{ provider: "github", id: "wrong", identity_data: { user_name: "TjsUsername", email: "TimBranson515@gmail.com" } } as any] })).toBe(false);
+  });
+  it.each([false, true])("persists owner grants once and tolerates concurrent creation (%s)", async (duplicate) => {
+    const { ensureDraftProOwnerAccess } = await import("./ownerAccess");
+    const query: any = { select: vi.fn(), eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }), insert: vi.fn().mockResolvedValue({ error: duplicate ? { code: "23505" } : null }) };
+    query.select.mockReturnValue(query); query.eq.mockReturnValue(query);
+    const client = { from: vi.fn(() => query), auth: { admin: { getUserById: vi.fn().mockResolvedValue({ data: { user: { email: "TimBranson515@gmail.com", email_confirmed_at: "2026-09-01" } }, error: null }) } } } as any;
+    expect(await ensureDraftProOwnerAccess("owner", new Date("2026-09-09"), client)).toBe(true);
+    expect(query.insert).toHaveBeenCalledWith(expect.objectContaining({ user_id: "owner", source_provider: "complimentary", entitlement_key: "draft_pro" }));
+    query.maybeSingle.mockResolvedValue({ data: { entitlement_status: "active", effective_to: "2027-07-01T04:00:00+00:00" }, error: null });
+    query.insert.mockClear();
+    expect(await ensureDraftProOwnerAccess("owner", new Date("2026-09-09"), client)).toBe(true);
+    expect(query.insert).not.toHaveBeenCalled();
+  });
+  it("does not persist a grant when auth lookup fails", async () => {
+    const { ensureDraftProOwnerAccess } = await import("./ownerAccess");
+    const client = { from: vi.fn(), auth: { admin: { getUserById: vi.fn().mockResolvedValue({ data: { user: null }, error: new Error("unavailable") }) } } } as any;
+    expect(await ensureDraftProOwnerAccess("owner", new Date(), client)).toBe(false);
+    expect(client.from).not.toHaveBeenCalled();
   });
 });

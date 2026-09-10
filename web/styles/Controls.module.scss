@@ -1,0 +1,120 @@
+@use "styles/vars" as v;
+
+// Shared compact control family from fhfh-styles.md §§9.4–9.6.
+// The repeated scope class gives this family precedence over panel-local chrome.
+.scope.scope {
+  --control-height: #{v.$control-height-sm};
+
+  :where(button:not(thead button), select, input:not([type="checkbox"]):not([type="range"]), summary) {
+    box-sizing: border-box;
+    height: var(--control-height);
+    min-height: var(--control-height);
+    max-width: 100%;
+    padding: v.$space-xs v.$space-sm;
+    border: 1px solid v.$border-secondary !important;
+    border-radius: v.$radius-control !important;
+    background: v.$draft-input !important;
+    color: v.$text-primary !important;
+    font-family: v.$font-family-primary !important;
+    font-size: v.$font-size-xs !important;
+    font-weight: v.$font-weight-semibold;
+    line-height: 1;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    box-shadow: none;
+    transform: none;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+
+    &:hover:not(:disabled) {
+      border-color: v.$primary-color !important;
+      background: rgba(v.$primary-color, 0.08) !important;
+      color: v.$color-white !important;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+  }
+
+  :is(button:not(thead button), summary) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: v.$font-family-accent !important;
+    font-size: v.$font-size-xxs !important;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  :is(button[aria-pressed="true"], button[aria-expanded="true"], details[open] > summary, [data-control-variant="primary"]) {
+    border: 2px solid v.$primary-color !important;
+    background: v.$primary-color-opaque !important;
+    color: v.$color-white !important;
+  }
+
+  input::placeholder {
+    color: rgba(v.$text-secondary, 0.7);
+    font-family: v.$font-family-primary;
+    font-style: italic;
+    font-weight: v.$font-weight-regular;
+  }
+
+  :is(button, select, input, summary):focus-visible {
+    outline: 2px solid v.$primary-color !important;
+    outline-offset: 2px;
+    box-shadow: v.$focus-ring-desktop;
+  }
+
+  input[type="range"] { accent-color: v.$primary-color; }
+
+  input[type="checkbox"] {
+    appearance: none;
+    position: relative;
+    display: inline-grid;
+    place-content: center;
+    flex: 0 0 v.$control-checkbox-size;
+    width: v.$control-checkbox-size;
+    height: v.$control-checkbox-size;
+    margin: 0;
+    padding: 0;
+    opacity: 1;
+    border: 1px solid v.$border-secondary;
+    border-radius: v.$radius-xs;
+    background: v.$draft-input;
+    cursor: pointer;
+    box-shadow: none;
+
+    &::after {
+      content: "";
+      position: static;
+      width: 4px;
+      height: 8px;
+      border: solid v.$color-white;
+      border-width: 0 2px 2px 0;
+      border-radius: 0;
+      background: transparent;
+      transform: translateY(-1px) rotate(45deg);
+      opacity: 0;
+    }
+
+    &:checked { background: v.$primary-color; border-color: v.$primary-color; }
+    &:checked::after { opacity: 1; }
+    &:hover:not(:disabled) { border-color: v.$primary-color; }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+  }
+
+  [data-control-size="icon"] {
+    width: var(--control-height);
+    min-width: var(--control-height);
+    padding: 0;
+    font-family: v.$font-family-primary !important;
+    font-size: v.$font-size-md !important;
+  }
+
+  tbody {
+    --control-height: #{v.$control-height-xs};
+    [data-control-variant="primary"] { width: auto; padding-inline: v.$space-xs; }
+  }
+}

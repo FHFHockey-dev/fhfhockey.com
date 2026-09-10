@@ -6,6 +6,7 @@ import { PlayerVorpMetrics } from "hooks/useVORPCalculations";
 import { buildRecommendationCandidates, usePlayerRecommendations } from "hooks/usePlayerRecommendations";
 import { useDraftProRecommendations } from "hooks/useDraftProRecommendations";
 import styles from "./SuggestedPicks.module.scss";
+import controls from "styles/Controls.module.scss";
 import type { DraftDashboardDustInsight } from "hooks/useRosterScheduleOptimizer";
 import {
   getProjectionDisplayPosition,
@@ -531,7 +532,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         <h2 className={styles.title}>
           Suggested <span className={styles.titleAccent}>Picks</span>
         </h2>
-        <div className={styles.controls}>
+        <div className={`${styles.controls} ${controls.scope}`}>
           <div className={styles.controlGroup}>
             <label className={styles.label}>Pos</label>
             <select
@@ -547,6 +548,53 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
               ))}
             </select>
           </div>
+          <div className={styles.controlGroup}>
+            <label className={styles.label}>Sort</label>
+            <select
+              className={styles.select}
+              value={sortField}
+              onChange={(e) => setSortField(e.target.value as SortField)}
+              aria-label="Sort suggested picks"
+            >
+              <option value="rank">Rank</option>
+              {hasPersonalRanks && <option value="myRank">My Rank</option>}
+              <option value="vorp">VORP</option>
+              <option value="vbd">VBD</option>
+              <option value="projFp">Proj FP</option>
+              <option value="adp">ADP</option>
+              <option value="avail">Avail %</option>
+              <option value="fit">Cat Fit</option>
+            </select>
+            <button
+              type="button"
+              className={styles.sortDirBtn}
+              data-control-size="icon"
+              onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+              aria-label={`Toggle sort direction (${sortDir})`}
+            >
+              {sortDir === "asc" ? "↑" : "↓"}
+            </button>
+          </div>
+          <div className={styles.controlGroup}>
+            <label className={styles.label}>Show</label>
+            <select
+              className={styles.select}
+              value={limit}
+              onChange={(e) => setLimit(parseInt(e.target.value, 10))}
+              aria-label="How many suggestions to show"
+            >
+              {[5, 10, 12, 16, 20].map((n) => (
+                <option key={n} value={n}>
+                  Top {n}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div
+            id="suggested-picks-advanced-controls"
+            className={styles.advancedControls}
+            hidden={!advancedOpen}
+          >
           <div className={styles.controlGroup}>
             <label className={styles.label} htmlFor="dust-lineup-mode">DUST lineup</label>
             <select id="dust-lineup-mode" className={styles.select} value={dustLineupMode} onChange={(event) => onDustLineupModeChange?.(event.target.value as "daily" | "weekly")} disabled={!canUseProDust} aria-label="DUST lineup mode">
@@ -598,52 +646,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
               aria-label="Toggle personalized replacement baselines"
             />
           </div>
-          <div className={styles.controlGroup}>
-            <label className={styles.label}>Sort</label>
-            <select
-              className={styles.select}
-              value={sortField}
-              onChange={(e) => setSortField(e.target.value as SortField)}
-              aria-label="Sort suggested picks"
-            >
-              <option value="rank">Rank</option>
-              {hasPersonalRanks && <option value="myRank">My Rank</option>}
-              <option value="vorp">VORP</option>
-              <option value="vbd">VBD</option>
-              <option value="projFp">Proj FP</option>
-              <option value="adp">ADP</option>
-              <option value="avail">Avail %</option>
-              <option value="fit">Cat Fit</option>
-            </select>
-            <button
-              type="button"
-              className={styles.sortDirBtn}
-              onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
-              aria-label={`Toggle sort direction (${sortDir})`}
-            >
-              {sortDir === "asc" ? "↑" : "↓"}
-            </button>
-          </div>
-          <div className={styles.controlGroup}>
-            <label className={styles.label}>Show</label>
-            <select
-              className={styles.select}
-              value={limit}
-              onChange={(e) => setLimit(parseInt(e.target.value, 10))}
-              aria-label="How many suggestions to show"
-            >
-              {[5, 10, 12, 16, 20].map((n) => (
-                <option key={n} value={n}>
-                  Top {n}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div
-            id="suggested-picks-advanced-controls"
-            className={styles.advancedControls}
-            hidden={!advancedOpen}
-          >
+
           <div className={styles.controlGroup}>
             <label className={styles.label} htmlFor="rosterBarToggle">
               Roster
@@ -678,7 +681,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         </div>
       </div>
 
-      {recommendationDataOrigin !== "server" ? <p className={styles.loading} role="status">Roster-aware Draft Pro recommendations are unavailable for local CSV data. Save the import to your account first; your local draft and rows stay unchanged.</p> : remoteInputOversized ? <p className={styles.loading} role="status">This filtered player pool is too large for roster-aware recommendations. Narrow the position filter; no projection rows were uploaded.</p> : !draftProEligible ? <p className={styles.loading} role="status">Draft Pro unlocks roster-aware ranking and personalized replacement. Free suggestions use the standard league-wide baseline.</p> : remoteRecommendations.status === "error" ? <p className={styles.loading} role="status">{remoteRecommendations.error} Standard suggestions remain available.</p> : null}
+      {recommendationDataOrigin !== "server" ? <p className={styles.loading} role="status">Roster-aware Draft Pro recommendations are unavailable for local CSV data. Save the import to your account first; your local draft and rows stay unchanged.</p> : remoteInputOversized ? <p className={styles.loading} role="status">This filtered player pool is too large for roster-aware recommendations. Narrow the position filter; no projection rows were uploaded.</p> : !draftProEligible ? null : remoteRecommendations.status === "error" ? <p className={styles.loading} role="status">{remoteRecommendations.error} Standard suggestions remain available.</p> : null}
 
       {compact && <button type="button" className={styles.returnToDraft} onClick={onReturnToDraft}>Return to suggested players</button>}
         <div
@@ -734,6 +737,10 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                     <div className={styles.name} title={name}>
                       {name}
                     </div>
+                    <div className={styles.tagsRow}>
+                      <span className={styles.tag}>VONA {typeof r.vona === "number" ? r.vona.toFixed(1) : "—"}</span>
+                      {dustInsights?.has(id) && <span className={styles.tag} title="Additional scheduled games benched by lineup conflicts">DUST +{dustInsights.get(id)!.marginalDustGames}</span>}
+                    </div>
                     <div className={styles.meta}>
                       {team && <span className={styles.team}>{team}</span>}
                       {pos && <span className={styles.pos}>{pos}</span>}
@@ -784,11 +791,6 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                     </div>
                   </div>
                   <div className={styles.bottomRow}>
-                    <div className={styles.tagsRow}>
-                      <span className={styles.tag}>VONA {typeof r.vona === "number" ? r.vona.toFixed(1) : "—"}</span>
-                      {dustInsights?.has(id) && <span className={styles.tag} title="Additional scheduled games benched by lineup conflicts">DUST +{dustInsights.get(id)!.marginalDustGames}</span>}
-                    </div>
-                    <div className={styles.reason} title={r.reasonTags?.join(" · ")}>{r.reasonTags?.filter((tag) => !/^(VBD|VONA|Available next pick)/.test(tag)).join(" · ") || "Best remaining value for your draft"}</div>
                     <div className={styles.cardFooter}>
                       {
                         <button

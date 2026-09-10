@@ -48,6 +48,16 @@ function normalizedTokens(value: unknown): string[] {
     .filter(Boolean);
 }
 
+export function normalizeYahooEligiblePositions(value: unknown): string[] {
+  const entries = Array.isArray(value) ? value : [value];
+  return entries.flatMap((entry) => {
+    if (typeof entry === "object" && entry !== null && "position" in entry) {
+      return normalizedTokens(entry.position);
+    }
+    return normalizedTokens(entry);
+  });
+}
+
 function normalizeTeam(value: unknown): string | null {
   const team = String(value ?? "")
     .trim()
@@ -78,7 +88,7 @@ function positionsOverlap(expected: Set<string>, actual: Set<string>) {
 
 function detailPositions(detail: YahooPlayerDetailRow) {
   return new Set([
-    ...normalizedTokens(detail.eligible_positions),
+    ...normalizeYahooEligiblePositions(detail.eligible_positions),
     ...normalizedTokens(detail.display_position),
   ]);
 }

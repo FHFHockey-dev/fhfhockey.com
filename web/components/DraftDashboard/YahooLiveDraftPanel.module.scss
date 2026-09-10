@@ -31,7 +31,7 @@
   display: inline-flex;
   padding: 5px 8px;
   background: rgba(v.$background-dark, 0.5);
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   vertical-align: middle;
 
   img {
@@ -92,7 +92,7 @@
     color: v.$text-primary;
     background: v.$background-dark;
     border: 1px solid v.$border-secondary;
-    border-radius: v.$border-radius-sm;
+    border-radius: v.$radius-sm;
 
     &:focus {
       outline: 2px solid rgba(v.$primary-color, 0.45);
@@ -152,7 +152,7 @@
     padding: v.$space-sm;
     background: rgba(v.$background-dark, 0.6);
     border: 1px solid v.$border-secondary;
-    border-radius: v.$border-radius-sm;
+    border-radius: v.$radius-sm;
   }
 
   strong,
@@ -206,7 +206,7 @@
 .error,
 .staleWarning {
   padding: v.$space-sm v.$space-md;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   font-size: v.$font-size-sm;
 }
 

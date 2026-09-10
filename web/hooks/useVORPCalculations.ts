@@ -278,6 +278,19 @@ export function useVORPCalculations({
       const val = values.get(id) || 0;
       const elig = eligibility.get(id) || [];
 
+      if (elig.length === 0) {
+        playerMetrics.set(id, {
+          value: val,
+          vorp: 0,
+          vols: 0,
+          vona: 0,
+          vbd: 0,
+          bestPos: "",
+          eligible: elig,
+        });
+        return;
+      }
+
       let bestVorp = -Infinity;
       let bestVols = -Infinity;
       let bestVona = -Infinity;
@@ -290,10 +303,13 @@ export function useVORPCalculations({
 
         const arr = byPosAvail[pos];
         const curIdx = currentRankIdx[pos][id];
-        if (arr && arr.length > 0 && Number.isFinite(curIdx)) {
+        if (arr && arr.length > 0) {
+          const baselineIndex = Number.isFinite(curIdx)
+            ? (curIdx as number) + (expectedTaken[pos] || 0)
+            : expectedTaken[pos] || 0;
           const nextRank = Math.min(
             arr.length - 1,
-            Math.floor((curIdx as number) + (expectedTaken[pos] || 0)),
+            Math.floor(baselineIndex),
           );
           const nextBaselineVal = arr[nextRank]?.value ?? 0;
           const vona = val - nextBaselineVal;
@@ -308,9 +324,15 @@ export function useVORPCalculations({
             bestPos = pos;
           }
         } else {
-          if (vorp > bestVorp || (vorp === bestVorp && vols > bestVols)) {
+          const vona = val;
+          if (
+            vorp > bestVorp ||
+            (vorp === bestVorp &&
+              (vona > bestVona || (vona === bestVona && vols > bestVols)))
+          ) {
             bestVorp = vorp;
             bestVols = vols;
+            bestVona = vona;
             bestPos = pos;
           }
         }

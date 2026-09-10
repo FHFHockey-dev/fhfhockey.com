@@ -21,7 +21,7 @@
     color.adjust(v.$background-dark, $lightness: -2%) 100%
   );
   border: 1px solid color.adjust(v.$primary-color, $alpha: -0.7);
-  border-radius: v.$border-radius-md;
+  border-radius: v.$radius-md;
   box-shadow:
     0 10px 40px rgba(0, 0, 0, 0.6),
     0 0 0 1px rgba(v.$primary-color, 0.15) inset,
@@ -79,7 +79,7 @@
   );
   color: v.$color-white;
   border: 1px solid color.adjust(v.$primary-color, $lightness: -10%);
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   padding: v.$space-xs v.$space-md;
   font-weight: 700;
   cursor: pointer;
@@ -166,7 +166,7 @@
   margin-bottom: v.$space-md;
   padding: v.$space-sm;
   border: 1px solid v.$border-soft;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   color: v.$text-secondary;
   font-size: v.$font-size-xs;
 }
@@ -175,7 +175,7 @@
   margin-bottom: v.$space-md;
   padding: v.$space-sm;
   border: 1px solid rgba(v.$success-color, 0.55);
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   background: rgba(v.$success-color, 0.08);
   font-size: v.$font-size-xs;
 
@@ -203,7 +203,7 @@
   margin-bottom: v.$space-md;
   padding: v.$space-sm;
   border: 1px solid v.$border-soft;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   color: v.$text-secondary;
   font-size: v.$font-size-xs;
 }
@@ -292,7 +292,7 @@
 .rosterCol {
   background: color.adjust(v.$background-dark, $lightness: 2%);
   border: 1px solid v.$border-secondary;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
 }
 
 .posLabel {
@@ -334,7 +334,7 @@
   border-collapse: collapse;
   font-size: v.$font-size-sm;
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   overflow: hidden;
 }
 
@@ -467,7 +467,7 @@
 
 .highlightCard {
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   background: color.adjust(v.$background-medium, $lightness: -2%);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.05) inset,
@@ -511,7 +511,7 @@
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 4px;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
 }
 
 .toggleBtn {
@@ -520,7 +520,7 @@
   color: v.$text-primary;
   border: 1px solid transparent;
   padding: 4px 10px;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   font-weight: 700;
   letter-spacing: 0.02em;
   cursor: pointer;
@@ -554,7 +554,7 @@
   padding: v.$space-sm v.$space-md;
   margin-top: v.$space-md;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: v.$border-radius-md;
+  border-radius: v.$radius-md;
   background:
     linear-gradient(
       135deg,
@@ -646,7 +646,7 @@
   min-height: 48px;
   padding: 6px 8px 6px 10px;
   border: 1px solid v.$border-secondary;
-  border-radius: v.$border-radius-md;
+  border-radius: v.$radius-md;
   color: v.$color-white;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
 }

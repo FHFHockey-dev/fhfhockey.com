@@ -1,4 +1,4 @@
-import type { DraftProExportInput } from "lib/draft-pro/exportContract";
+import { hasRestrictedExportSource, RESTRICTED_EXPORT_MESSAGE, type DraftProExportInput } from "lib/draft-pro/exportContract";
 
 export async function requestDraftProExport({
   hasPrivateImport,
@@ -13,6 +13,7 @@ export async function requestDraftProExport({
   payload: DraftProExportInput;
   fetcher?: typeof fetch;
 }) {
+  if (hasRestrictedExportSource(payload.sourceWeights)) return { response: null, message: RESTRICTED_EXPORT_MESSAGE };
   if (hasPrivateImport) return { response: null, message: "Save your private CSV to your account before exporting blended projections." };
   if (!canUseProExport) return { response: null, message: "Blended projections export is available with Draft Pro." };
   if (!token) return { response: null, message: "Sign in to export blended projections." };

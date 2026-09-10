@@ -14,6 +14,7 @@ export const DRAFT_PRO_FEATURE_ENV_NAMES = {
   private_imports: "DRAFT_PRO_PRIVATE_IMPORTS_ENABLED",
   scenarios: "DRAFT_PRO_SCENARIOS_ENABLED",
   reports: "DRAFT_PRO_REPORTS_ENABLED",
+  god_view: "DRAFT_PRO_GOD_VIEW_ENABLED",
 } as const;
 
 export function getDraftProFeatureFlags(
@@ -31,5 +32,6 @@ export function getDraftProFeatureFlags(
     private_imports: savedDrafts && enabled("private_imports"),
     scenarios: enabled("scenarios"),
     reports: enabled("reports"),
+    god_view: enabled("god_view"),
   };
 }

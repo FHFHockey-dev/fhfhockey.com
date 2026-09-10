@@ -27,6 +27,7 @@ import {
 import styles from "./DraftBoard.module.scss";
 
 interface DraftBoardProps {
+  expandRequest?: number;
   myTeamId?: string;
   draftSettings: DraftSettings;
   draftedPlayers: DraftedPlayer[];
@@ -50,6 +51,7 @@ interface DraftBoardProps {
 }
 
 const DraftBoard: React.FC<DraftBoardProps> = ({
+  expandRequest = 0,
   myTeamId,
   draftSettings,
   draftedPlayers,
@@ -73,13 +75,24 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   const closeExpandedButtonRef = useRef<HTMLButtonElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
   const wasExpandedRef = useRef(false);
+  const externalTriggerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (expandRequest > 0) {
+      externalTriggerRef.current = document.activeElement as HTMLElement;
+      setIsExpanded(true);
+    }
+  }, [expandRequest]);
   const contributionInputRef = useRef<HTMLInputElement>(null);
   // NEW: manage blur timeout safely via ref instead of window-scoped var
   const blurTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!isExpanded) {
-      if (wasExpandedRef.current) expandButtonRef.current?.focus();
+      if (wasExpandedRef.current) {
+        (externalTriggerRef.current ?? expandButtonRef.current)?.focus();
+        externalTriggerRef.current = null;
+        wasExpandedRef.current = false;
+      }
       return;
     }
     wasExpandedRef.current = true;
@@ -537,25 +550,25 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
 
   const board = (
     <div ref={boardRef} id="draft-graph" className={`${styles.draftBoardContainer} ${isExpanded ? styles.expandedDraftBoard : ""}`} aria-label="Draft Graph" aria-modal={isExpanded || undefined} role={isExpanded ? "dialog" : undefined} style={{ "--team-count": draftSettings.teamCount, "--team-rows": Math.ceil(draftSettings.teamCount / 2), "--round-count": roundsToShow } as React.CSSProperties}>
-      <div className={styles.graphToolbar}>
-        <span className={styles.graphTitle}>Draft Graph</span>
-        <button
-          ref={isExpanded ? closeExpandedButtonRef : expandButtonRef}
-          type="button"
-          className={styles.expandGraphButton}
-          aria-expanded={isExpanded}
-          aria-controls="draft-graph"
-          onClick={() => setIsExpanded((value) => !value)}
-        >
-          {isExpanded ? "Close expanded graph" : "Expand draft graph"}
-        </button>
-      </div>
       <div className={styles.contributionGraphContainer}>
         <div className={styles.contributionGraph}>
           {/* Round labels (columns) */}
           <div className={styles.roundLabelsRow}>
           {[0, 1].map((copy) => <div key={copy} className={styles.roundLabels} aria-hidden={copy === 1 ? true : undefined}>
-            <div className={styles.teamLabelSpacer}></div>
+            <div className={styles.teamLabelSpacer}>
+              {copy === 0 && <button
+                ref={isExpanded ? closeExpandedButtonRef : expandButtonRef}
+                type="button"
+                className={styles.expandGraphButton}
+                aria-label={isExpanded ? "Close expanded graph" : "Expand draft graph"}
+                title={isExpanded ? "Close expanded graph" : "Expand draft graph"}
+                aria-expanded={isExpanded}
+                aria-controls="draft-graph"
+                onClick={() => setIsExpanded((value) => !value)}
+              >
+                {isExpanded ? "↙" : "↗"}
+              </button>}
+            </div>
             <div
               className={styles.roundLabelsGrid}
               style={{ gridTemplateColumns: `repeat(${roundsToShow}, minmax(0, 1fr))` }}

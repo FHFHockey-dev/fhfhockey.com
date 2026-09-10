@@ -1,0 +1,43 @@
+@use '../../styles/vars' as v;
+.root { flex: none; margin: 0 12px; min-width: 0; border: 1px solid v.$draft-border; border-radius: v.$radius-panel; background: v.$draft-canvas; }
+.header { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 8px; }
+.root button, .root a { color: inherit; font: inherit; }
+.header button, .pagination button { background: transparent; border: 1px solid v.$draft-border; border-radius: v.$radius-sm; padding: 7px 10px; cursor: pointer; }
+.header button:first-child { color: v.$primary-color; font-weight: bold; }
+.graph { margin-left: auto; }
+.explanation { margin: 6px 10px 10px; font-size: 12px; }
+.explanation a { text-decoration: underline; }
+.viewport { display: flex; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; padding: 3px 0; }
+.page { flex: 0 0 100%; min-width: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; padding: 0 6px; box-sizing: border-box; scroll-snap-align: start; align-content: start; }
+.card { display: flex; flex-direction: column; gap: 5px; min-width: 0; text-align: left; padding: 8px; background: v.$draft-canvas; border: 1px solid v.$draft-border; border-radius: v.$radius-card; cursor: pointer; }
+.card[data-on-clock='true'] { border: 2px solid v.$color-gold-400; }
+.badges { display: flex; flex-wrap: wrap; gap: 5px; justify-content: space-between; font-size: 11px; }
+.card[data-on-clock='true'] .badges { color: v.$color-gold-400; }
+.name { overflow-wrap: anywhere; }
+.coordinate { font-size: 11px; }
+.slots { display: grid; gap: 5px; }
+.slot { display: grid; grid-template-columns: 26px minmax(12px, 1fr) auto auto; justify-content: stretch; gap: 4px; font-size: 12px; align-items: center; }
+
+.track { height: 4px; align-self: center; border-radius: v.$radius-xs; background: #343a40; min-width: 24px; }
+.track > span { display: block; height: 100%; border-radius: inherit; background: var(--position-color, #{v.$primary-color}); }
+.openCount { text-align: right; }
+.pagination { display: flex; justify-content: center; gap: 12px; align-items: center; padding: 8px; }
+.pagination button:disabled { opacity: .5; cursor: default; }
+.root :focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
+@container draft-dashboard (min-width: 1920px) { .page { grid-template-columns: repeat(12, minmax(0, 1fr)); } }
+@container draft-dashboard (max-width: 1023px) { .viewport > .card { flex: 0 0 190px; box-sizing: border-box; margin: 0 4px; scroll-snap-align: start; } }
+
+// Keep expanded analysis out of the desktop drafting grid's height budget.
+@media (min-width: 1101px) {
+  .root { position: relative; z-index: 20; }
+  .root > div {
+    position: absolute;
+    inset: 100% 0 auto;
+    max-height: 65dvh;
+    overflow-y: auto;
+    background: v.$draft-canvas;
+    border: 1px solid v.$draft-border;
+    border-radius: 0 0 v.$radius-panel v.$radius-panel;
+    box-shadow: 0 12px 24px #0008;
+  }
+}

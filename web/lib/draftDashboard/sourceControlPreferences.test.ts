@@ -37,11 +37,11 @@ describe("source-control preferences", () => {
     expect(loaded.goalie.cullen_goalies.isSelected).toBe(true);
     expect(
       Object.values(loaded.skater).filter((s) => s.isSelected)
-    ).toHaveLength(5);
+    ).toHaveLength(4);
     expect(
       Object.values(loaded.goalie).filter((s) => s.isSelected)
-    ).toHaveLength(4);
-    expect(PROJECTION_SOURCES_CONFIG).toHaveLength(11);
+    ).toHaveLength(3);
+    expect(PROJECTION_SOURCES_CONFIG).toHaveLength(9);
     expect(
       PROJECTION_SOURCES_CONFIG.find((source) => source.id === "cullen_skaters")
     ).toMatchObject({
@@ -58,6 +58,18 @@ describe("source-control preferences", () => {
       expect(source.tableName).toMatch(/^PROJECTIONS_20262027_/);
       expect(source.id).not.toMatch(/dom_|dobber_|master|dfo|fhfh|kubota|laidlaw/);
     }
+  });
+
+  it("drops retired LineupExperts selections from stored preferences and restored controls", () => {
+    const skater = { ...defaults.skater, lineupexperts_skaters: { isSelected: true, weight: 2 } };
+    const goalie = { ...defaults.goalie, lineupexperts_goalies: { isSelected: true, weight: 2 } };
+    const loaded = loadSourceControlPreferences(defaults, memoryStorage({
+      [SOURCE_CONTROL_PREFERENCES_KEY]: JSON.stringify({ version: 4, skater, goalie })
+    }));
+    expect(loaded.skater.lineupexperts_skaters).toBeUndefined();
+    expect(loaded.goalie.lineupexperts_goalies).toBeUndefined();
+    expect(sanitizeControls(defaults.skater, skater)).toEqual(defaults.skater);
+    expect(sanitizeControls(defaults.goalie, goalie)).toEqual(defaults.goalie);
   });
 
   it("persists only known official IDs and clamps the scalar domain", () => {

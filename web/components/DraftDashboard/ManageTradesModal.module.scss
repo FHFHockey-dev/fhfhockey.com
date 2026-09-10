@@ -14,7 +14,7 @@
   gap: v.$space-sm;
   padding: v.$space-md;
   border: 1px solid v.$border-soft;
-  border-radius: v.$border-radius-md;
+  border-radius: v.$radius-md;
   background: v.$background-medium;
 
   h3,
@@ -27,7 +27,7 @@
   select {
     width: 100%;
     border: 1px solid v.$border-soft;
-    border-radius: v.$border-radius-sm;
+    border-radius: v.$radius-sm;
     background: v.$background-dark;
     color: v.$text-primary;
     padding: v.$space-xs;
@@ -74,7 +74,7 @@
     gap: v.$space-sm;
     padding: v.$space-sm;
     border: 1px solid v.$border-soft;
-    border-radius: v.$border-radius-sm;
+    border-radius: v.$radius-sm;
   }
 }
 

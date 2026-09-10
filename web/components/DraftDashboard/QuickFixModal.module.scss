@@ -33,7 +33,7 @@
 .replacementField input {
   min-width: 0;
   border: 1px solid v.$border-soft;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   background: v.$background-medium;
   color: v.$text-primary;
   padding: v.$space-sm;
@@ -45,7 +45,7 @@
   gap: v.$space-xs v.$space-sm;
   padding: v.$space-sm;
   border: 1px solid v.$border-soft;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   background: v.$background-medium;
 
   p {

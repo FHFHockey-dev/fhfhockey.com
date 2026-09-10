@@ -21,6 +21,16 @@ export const draftProExportInputSchema = z.object({
 
 export type DraftProExportInput = z.infer<typeof draftProExportInputSchema>;
 
+export const RESTRICTED_EXPORT_MESSAGE = "This export contains a retired LineupExperts source. Reload the dashboard to recalculate with the current sources, then export again. Your draft picks will stay in place.";
+
+/** Blocks declared sources, including blends and zero-weight selections (which may use fallback weights). */
+export function hasRestrictedExportSource(sourceWeights: Record<string, number>) {
+  return Object.keys(sourceWeights).some((id) =>
+    id.toLowerCase().replace(/[^a-z0-9]/g, "").includes("lineupexperts"),
+  );
+}
+
+
 function neutralizeFormula(value: string) {
   return /^[\s\u0000-\u001f]*[=+\-@]/.test(value) ? `'${value}` : value;
 }
@@ -32,6 +42,7 @@ export function csvCell(value: unknown) {
 }
 
 export function formatDraftProExportCsv(input: DraftProExportInput) {
+  if (hasRestrictedExportSource(input.sourceWeights)) throw new Error(RESTRICTED_EXPORT_MESSAGE);
   const columns = [...reservedColumns, ...Array.from(new Set(input.rows.flatMap((row) => Object.keys(row))))];
   const provenance = {
     projectionSeason: input.season,

@@ -1,5 +1,5 @@
 import { totalRosterScheduleMetrics, type PlayerScheduleMetrics } from "lib/draftDashboard/scheduleMetrics";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import type { TeamDraftStats } from "./DraftDashboard";
 import type { PlayerVorpMetrics } from "hooks/useVORPCalculations";
 import { STATS_MASTER_LIST } from "lib/projectionsConfig/statsMasterList";
@@ -92,7 +92,7 @@ export default function LeagueStandings({
       ascending: current.key === key ? !current.ascending : false,
     }));
   return (
-    <section className={styles.standings} aria-label="League Standings">
+    <section className={styles.standings} aria-label="League Standings" style={{ "--standings-rows": Math.max(1, teams.length + 1) } as CSSProperties}>
       <header>
         <h2>League Standings</h2>
         <label>

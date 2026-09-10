@@ -8,7 +8,7 @@
   color: v.$text-primary;
   border: 2px solid v.$border-secondary;
   padding: 16px 24px;
-  border-radius: v.$border-radius-lg;
+  border-radius: v.$radius-lg;
 
   @include v.glass-panel(
     $padding: v.$space-md v.$space-lg,
@@ -35,7 +35,7 @@
   color: v.$warning-color;
   background: rgba(v.$warning-color, 0.1);
   border: 1px solid rgba(v.$warning-color, 0.55);
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   font-size: v.$font-size-sm;
 }
 
@@ -64,7 +64,7 @@
 .draftTypeToggle {
   display: flex;
   background-color: v.$background-dark;
-  border-radius: v.$border-radius-md;
+  border-radius: v.$radius-md;
   padding: v.$space-xs;
   border: 1px solid v.$border-secondary;
 }
@@ -79,7 +79,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
@@ -109,7 +109,7 @@
   background-color: transparent;
   color: v.$text-primary;
   border: 1px solid v.$border-secondary;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
 
   &:hover:not(:disabled) {
     background-color: color.adjust(v.$secondary-color, $alpha: -0.85);
@@ -130,7 +130,7 @@
   height: 28px;
   line-height: 28px;
   text-align: center;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   border: 1px solid v.$border-secondary;
   color: v.$text-secondary;
   background: v.$background-dark;
@@ -154,7 +154,7 @@
 
 .settingsGroup {
   background-color: color.adjust(v.$background-dark, $lightness: -2%);
-  border-radius: v.$border-radius-sm; // Smaller radius
+  border-radius: v.$radius-sm; // Smaller radius
   padding: v.$space-sm v.$space-md; // Reduced padding
   border: 1px solid v.$border-secondary;
 }
@@ -241,7 +241,7 @@
   background-color: v.$background-dark;
   color: v.$text-primary;
   border: 1px solid v.$border-secondary;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   padding: v.$space-xs v.$space-sm;
   font-size: v.$font-size-sm;
   min-width: 120px;
@@ -340,7 +340,7 @@
   font-weight: 600;
   padding: v.$space-xxs v.$space-xs;
   background-color: color.adjust(v.$primary-color, $alpha: -0.9);
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   border: 1px solid color.adjust(v.$primary-color, $alpha: -0.7);
   text-transform: none;
   letter-spacing: normal;
@@ -371,7 +371,7 @@
 }
 
 .rosterStepperError {
-  border-radius: v.$border-radius-md;
+  border-radius: v.$radius-md;
   box-shadow: 0 0 0 2px rgba(v.$danger-color, 0.4);
 }
 
@@ -400,7 +400,7 @@
   font-size: v.$font-size-xxs;
   color: v.$primary-color;
   border: 1px solid v.$border-secondary;
-  border-radius: v.$border-radius-md;
+  border-radius: v.$radius-md;
   background: linear-gradient(
     135deg,
     color.adjust(v.$primary-color, $alpha: -0.92),
@@ -528,7 +528,7 @@
   width: 100%;
   border-left: 2px solid v.$primary-color;
   border-right: 2px solid v.$primary-color;
-  border-radius: v.$border-radius-md;
+  border-radius: v.$radius-md;
 }
 
 .expandButton {
@@ -538,7 +538,7 @@
   background-color: transparent;
   color: v.$text-secondary;
   border: 1px dashed v.$border-secondary;
-  border-radius: v.$border-radius-md;
+  border-radius: v.$radius-md;
   padding: v.$space-sm;
   font-size: v.$font-size-xs;
   cursor: pointer;
@@ -559,7 +559,7 @@
 /* Inline manage container that replaces expand button when open */
 .inlineManage {
   border: 1px dashed v.$border-secondary;
-  border-radius: v.$border-radius-md;
+  border-radius: v.$radius-md;
   padding: v.$space-xs;
   margin-top: v.$space-sm;
   background: color.adjust(v.$background-dark, $lightness: 2%);
@@ -658,7 +658,7 @@
   margin-top: v.$space-sm;
   padding: v.$space-sm v.$space-md;
   border: 1px dashed v.$border-secondary;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   background: color.adjust(v.$background-dark, $lightness: 2%);
   display: flex;
   flex-direction: column;
@@ -710,7 +710,7 @@
   min-height: 84px;
   resize: vertical;
   border: 1px solid v.$border-secondary;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   background: v.$background-lighter;
   color: v.$text-primary;
   padding: 8px;
@@ -762,7 +762,7 @@
   color: v.$text-secondary;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: v.$radius-sm;
   position: absolute;
   top: 2px;
   right: 2px;
@@ -807,7 +807,7 @@
       rgba(v.$background-dark, 0.25)
     );
     border: 1px solid v.$border-secondary;
-    border-radius: v.$radius-sm;
+    border-radius: v.$radius-md;
   }
 
   // WebKit thumb
@@ -844,13 +844,13 @@
       rgba(v.$background-dark, 0.25)
     );
     border: 1px solid v.$border-secondary;
-    border-radius: v.$radius-sm;
+    border-radius: v.$radius-md;
   }
 
   &::-moz-range-progress {
     height: 6px;
     background: linear-gradient(90deg, v.$secondary-color, v.$primary-color);
-    border-radius: v.$radius-sm 0 0 v.$radius-sm;
+    border-radius: v.$radius-md 0 0 v.$radius-md;
   }
 
   &::-moz-range-thumb {
@@ -898,7 +898,7 @@
   padding: v.$space-xs v.$space-sm; // Reduced padding
   font-size: v.$font-size-xs; // Smaller font
   text-align: center;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
@@ -947,7 +947,7 @@
   letter-spacing: 0.05em;
   text-transform: uppercase;
   padding: 4px 16px;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   background: linear-gradient(
     135deg,
     color.adjust(v.$warning-color, $lightness: -10%),
@@ -1063,7 +1063,7 @@
 /* Accessible fieldset styling */
 .fieldset {
   border: 1px solid v.$border-secondary;
-  border-radius: v.$border-radius-md;
+  border-radius: v.$radius-md;
   padding: v.$space-sm v.$space-md v.$space-md;
   margin: 0 0 v.$space-md 0;
 }
@@ -1120,7 +1120,7 @@
   gap: 4px;
   padding: 2px 6px;
   border: 1px solid v.$border-secondary;
-  border-radius: 4px;
+  border-radius: v.$radius-sm;
   cursor: pointer;
   transition:
     border-color 150ms ease,
@@ -1154,7 +1154,7 @@
   justify-content: space-between;
   align-items: center;
   box-sizing: border-box;
-  border-radius: v.$border-radius-md;
+  border-radius: v.$radius-md;
   font-size: v.$font-size-xs;
   font-family: v.$font-family-primary, sans-serif;
   padding: 4px 8px;
@@ -1186,7 +1186,7 @@
 .sourceChipShare {
   font-size: 10px;
   padding: 2px 4px;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   background: linear-gradient(
     135deg,
     color.adjust(v.$primary-color, $alpha: -0.85),
@@ -1215,7 +1215,7 @@
     color.adjust(v.$secondary-color, $alpha: -0.62)
   );
   border: 2px solid v.$primary-color;
-  border-radius: v.$border-radius-md;
+  border-radius: v.$radius-md;
   text-align: center;
   height: 100%; // stretch to tallest in row for alignment
   display: flex;
@@ -1254,7 +1254,7 @@
     color.adjust(v.$background-dark, $lightness: 2%)
   );
   border: 1px solid v.$border-secondary;
-  border-radius: 12px;
+  border-radius: v.$radius-lg;
   padding: 16px 20px 20px;
   box-shadow:
     0 8px 32px -4px rgba(0, 0, 0, 0.65),
@@ -1300,7 +1300,7 @@
   width: 30px;
   height: 30px;
   border: 1px solid v.$border-secondary;
-  border-radius: 6px;
+  border-radius: v.$radius-md;
   color: v.$text-secondary;
   background: v.$background-dark;
   display: inline-flex;
@@ -1389,7 +1389,7 @@
   line-height: 30px !important;
   padding: 0 30px 0 10px !important; // leave space for status icon
   border: 2px solid v.$primary-color !important;
-  border-radius: v.$border-radius-md !important;
+  border-radius: v.$radius-md !important;
 }
 
 /* Add a little spacing under the autocomplete */
@@ -1435,7 +1435,7 @@
 
 .popoverSourceCard {
   border: 1px solid v.$border-secondary;
-  border-radius: 8px;
+  border-radius: v.$radius-md;
   padding: 8px 10px 10px;
   background: radial-gradient(
     circle at 40% 20%,
@@ -1487,7 +1487,7 @@
 .shareBadge {
   font-size: 10px;
   padding: 2px 6px;
-  border-radius: 6px;
+  border-radius: v.$radius-md;
   background: linear-gradient(
     135deg,
     color.adjust(v.$primary-color, $alpha: -0.85),
@@ -1501,7 +1501,7 @@
   width: 54px;
   background: v.$background-dark;
   border: 1px solid v.$border-secondary;
-  border-radius: 6px;
+  border-radius: v.$radius-md;
   padding: 4px 6px;
   font-size: 11px;
   text-align: center;
@@ -1689,13 +1689,13 @@
   &.settingsContainer { height: 100%; min-height: 0; padding: 0; border: 0; border-radius: 0; background: v.$draft-surface; box-shadow: none; gap: 8px; }
   .settingsGrid { flex: 1; min-height: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
   .settingsGrid > * { min-height: 0; min-width: 0; overflow: auto; scrollbar-gutter: stable; }
-  .fieldset { min-width: 0; margin: 0; padding: 14px; border: 1px solid v.$draft-border; border-radius: 4px; background: v.$draft-input; }
+  .fieldset { min-width: 0; margin: 0; padding: 14px; border: 1px solid v.$draft-border; border-radius: v.$radius-sm; background: v.$draft-input; }
   .leagueDomain > .fieldset + .fieldset { margin-top: 12px; }
   .legend { font: 12px v.$font-family-accent; color: v.$primary-color; text-transform: uppercase; padding: 0 5px; margin-bottom: 10px; }
   .settingRow { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
   .label { font-size: 13px; flex: 0 1 auto; }
   .select { width: auto; max-width: 60%; min-width: 0; padding: 6px 8px; font-size: 13px; }
-  .draftTypeToggle { padding: 2px; width: auto; border: 1px solid v.$draft-border; border-radius: 4px; }
+  .draftTypeToggle { padding: 2px; width: auto; border: 1px solid v.$draft-border; border-radius: v.$radius-sm; }
   .toggleButton { padding: 5px 10px; min-height: 30px; font: 12px v.$font-family-primary; letter-spacing: 0; transition: background-color 180ms; }
   .toggleButton.active { border: 0; background: v.$draft-action; color: v.$color-white; }
   .orderControls {
@@ -1729,13 +1729,13 @@
   .rosterGroup { margin-bottom: 18px; h4 { font: 11px v.$font-family-accent; color: v.$primary-color; margin: 12px 0 10px; text-transform: uppercase; } }
   .rosterGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .rosterGroup[data-roster-group="Forwards"] .rosterGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .rosterSetting { display: flex; flex-direction: column; align-items: center; gap: 8px; border: 1px solid var(--position-color, v.$draft-border); background: v.$draft-surface; border-radius: 5px; padding: 10px 4px; }
+  .rosterSetting { display: flex; flex-direction: column; align-items: center; gap: 8px; border: 1px solid var(--position-color, v.$draft-border); background: v.$draft-surface; border-radius: v.$radius-sm; padding: 10px 4px; }
   .positionLabel { color: var(--position-color, v.$text-secondary); margin: 0; font-size: 13px; }
-  .rosterStepper { display: flex; align-items: center; width: auto; border: 1px solid v.$draft-border; border-radius: 4px; background: v.$draft-input; }
+  .rosterStepper { display: flex; align-items: center; width: auto; border: 1px solid v.$draft-border; border-radius: v.$radius-sm; background: v.$draft-input; }
   .numberInput { width: 32px; padding: 4px 0; font-size: 14px; min-width: 0; border: 0; text-align: center; -moz-appearance: textfield; &::-webkit-inner-spin-button, &::-webkit-outer-spin-button { appearance: none; margin: 0; } }
   .stepButton { min-width: 24px; width: 24px; height: 30px; padding: 0; border: 0; font: 16px v.$font-family-primary; }
   .rosterSetting small { color: v.$text-secondary; font-size: 11px; }
-  .rosterSummary { padding: 12px; border: 1px solid v.$draft-border; border-radius: 4px; h4 { margin: 0 0 10px; color: v.$primary-color; font: 11px v.$font-family-accent; span { float: right; font-family: v.$font-family-primary; } } p { margin: 0; line-height: 1.6; } }
+  .rosterSummary { padding: 12px; border: 1px solid v.$draft-border; border-radius: v.$radius-sm; h4 { margin: 0 0 10px; color: v.$primary-color; font: 11px v.$font-family-accent; span { float: right; font-family: v.$font-family-primary; } } p { margin: 0; line-height: 1.6; } }
   .rosterTotal { font: 12px v.$font-family-primary; margin-left: 4px; background: none; border: 0; }
   .settingsGroupScoring { min-height: 0; }
   .roundChips { flex-wrap: wrap; gap: 4px; }
@@ -1751,7 +1751,7 @@
       min-height: 32px;
       padding: 5px 10px;
       border: 1px solid v.$draft-border;
-      border-radius: 4px;
+      border-radius: v.$radius-sm;
       color: v.$text-secondary;
       background: v.$draft-surface;
     }
