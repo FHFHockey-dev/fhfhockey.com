@@ -1,43 +1,33 @@
 @use '../../styles/vars' as v;
-.root { flex: none; margin: 0 12px; min-width: 0; border: 1px solid v.$draft-border; border-radius: v.$radius-panel; background: v.$draft-canvas; }
-.header { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 8px; }
+.root { flex: none; margin: 0 12px; min-width: 0; border: 1px solid v.$draft-border; border-radius: v.$radius-sm; background: v.$draft-canvas; }
+.header { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 10px; white-space: nowrap; }
 .root button, .root a { color: inherit; font: inherit; }
-.header button, .pagination button { background: transparent; border: 1px solid v.$draft-border; border-radius: v.$radius-sm; padding: 7px 10px; cursor: pointer; }
-.header button:first-child { color: v.$primary-color; font-weight: bold; }
+.root .header button { display: inline-flex; align-items: center; gap: 8px; height: 40px; background: transparent; border: 0; padding: 0 8px; cursor: pointer; }
+.root .header .toggle { color: v.$primary-color; font-weight: bold; }
+.context { border-left: 1px solid v.$draft-border; padding-left: 14px; }
+.pickProgress { border: 1px solid v.$draft-border; border-radius: v.$radius-sm; padding: 2px 8px; font-variant-numeric: tabular-nums; }
 .graph { margin-left: auto; }
+.graph > span:first-child { color: v.$primary-color; border: 1px solid v.$draft-border; border-radius: v.$radius-sm; padding: 2px 7px; }
 .explanation { margin: 6px 10px 10px; font-size: 12px; }
 .explanation a { text-decoration: underline; }
-.viewport { display: flex; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; padding: 3px 0; }
-.page { flex: 0 0 100%; min-width: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; padding: 0 6px; box-sizing: border-box; scroll-snap-align: start; align-content: start; }
-.card { display: flex; flex-direction: column; gap: 5px; min-width: 0; text-align: left; padding: 8px; background: v.$draft-canvas; border: 1px solid v.$draft-border; border-radius: v.$radius-card; cursor: pointer; }
-.card[data-on-clock='true'] { border: 2px solid v.$color-gold-400; }
-.badges { display: flex; flex-wrap: wrap; gap: 5px; justify-content: space-between; font-size: 11px; }
-.card[data-on-clock='true'] .badges { color: v.$color-gold-400; }
-.name { overflow-wrap: anywhere; }
-.coordinate { font-size: 11px; }
-.slots { display: grid; gap: 5px; }
-.slot { display: grid; grid-template-columns: 26px minmax(12px, 1fr) auto auto; justify-content: stretch; gap: 4px; font-size: 12px; align-items: center; }
-
-.track { height: 4px; align-self: center; border-radius: v.$radius-xs; background: #343a40; min-width: 24px; }
-.track > span { display: block; height: 100%; border-radius: inherit; background: var(--position-color, #{v.$primary-color}); }
-.openCount { text-align: right; }
-.pagination { display: flex; justify-content: center; gap: 12px; align-items: center; padding: 8px; }
-.pagination button:disabled { opacity: .5; cursor: default; }
+.cards { display: grid; gap: 8px; padding: 6px 8px 8px; }
+.root .card { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; min-width: 0; text-align: left; padding: 5px 8px 3px; height: clamp(100px, calc(15dvh - 15px), 150px); background: v.$draft-surface; border: 1px solid v.$draft-border; border-radius: v.$radius-sm; cursor: pointer; }
+.card[aria-pressed='true'] { box-shadow: inset 0 -2px v.$primary-color; }
+.root .card[data-on-clock='true'] { border-color: v.$color-gold-400; }
+.onClock { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); padding: 0 8px; border-radius: v.$radius-sm; background: v.$color-gold-400; color: v.$draft-canvas; font-size: 10px; line-height: 15px; font-weight: bold; white-space: nowrap; }
+.identity { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.order { display: grid; place-items: center; min-width: 26px; height: 28px; border-radius: v.$radius-sm; background: v.$draft-surface-raised; font-size: 16px; font-weight: bold; }
+.teamIdentity { flex: 1; min-width: 0; }
+.teamIdentity > strong { line-height: 15px; }
+.name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.details { display: flex; justify-content: space-between; gap: 5px; font-size: 11px; line-height: 11px; color: v.$text-secondary; }
+.details > span:last-child { white-space: nowrap; }
+.slots { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; }
+.slot { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; line-height: 11px; font-variant-numeric: tabular-nums; }
+.track { display: flex; align-items: end; height: clamp(14px, calc(4dvh - 16px), 28px); width: 10px; border: 1px solid v.$draft-border; border-radius: v.$radius-xs; background: v.$draft-surface-raised; }
+.track > span { display: block; width: 100%; border-radius: inherit; background: v.$primary-color; }
+.needs { display: flex; gap: 5px; align-items: center; font-size: 11px; line-height: 14px; white-space: nowrap; }
+.needs > span { padding: 0 6px; border: 1px solid v.$draft-border; border-radius: v.$radius-xs; color: var(--position-color, #{v.$primary-color}); }
+.pagination { margin-left: auto; display: flex; gap: 8px; align-items: center; font-size: 11px; }
+.pagination button { padding: 1px 8px; cursor: pointer; }
 .root :focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
-@container draft-dashboard (min-width: 1920px) { .page { grid-template-columns: repeat(12, minmax(0, 1fr)); } }
-@container draft-dashboard (max-width: 1023px) { .viewport > .card { flex: 0 0 190px; box-sizing: border-box; margin: 0 4px; scroll-snap-align: start; } }
-
-// Keep expanded analysis out of the desktop drafting grid's height budget.
-@media (min-width: 1101px) {
-  .root { position: relative; z-index: 20; }
-  .root > div {
-    position: absolute;
-    inset: 100% 0 auto;
-    max-height: 65dvh;
-    overflow-y: auto;
-    background: v.$draft-canvas;
-    border: 1px solid v.$draft-border;
-    border-radius: 0 0 v.$radius-panel v.$radius-panel;
-    box-shadow: 0 12px 24px #0008;
-  }
-}

@@ -30,7 +30,7 @@ import DraftStatus from "./DraftStatus";
 import LeagueStandings from "./LeagueStandings";
 import MyRoster from "./MyRoster";
 import GodView from "./GodView";
-import { selectGodViewQueue } from "lib/draftDashboard/godView";
+import { godViewRosterNeeds, godViewRosterProgress, selectGodViewQueue } from "lib/draftDashboard/godView";
 import DustMatrix from "./DustMatrix";
 import SavedDraftsWorkspace from "./SavedDraftsWorkspace";
 import type { SavedDraftAnnotations } from "./SavedDraftsPanel";
@@ -449,6 +449,7 @@ const DraftDashboard: React.FC = () => {
     Record<string, string>
   >({});
   const [godViewOpen, setGodViewOpen] = useState(false);
+  const [inspectedTeamId, setInspectedTeamId] = useState<string>("");
   const [rosterViewRequest, setRosterViewRequest] = useState<{ teamId: string }>();
   const [graphExpandRequest, setGraphExpandRequest] = useState(0);
   const [currentPick, setCurrentPick] = useState<number>(1);
@@ -3299,6 +3300,7 @@ const DraftDashboard: React.FC = () => {
   // Keep table rendering independent of settings navigation and visibility.
   const projectionsTable = useMemo(() => (
     <ProjectionsTable
+            onRefresh={() => setDataRefreshKey((k) => k + 1)}
             currentSeasonId={currentSeasonId}
             players={availablePlayers}
             allPlayers={allPlayers}
@@ -3737,8 +3739,8 @@ const DraftDashboard: React.FC = () => {
           draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern,
           trades: manualDraftingEnabled ? pickTrades : [], keepers: manualDraftingEnabled ? keepers : [],
           completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), teamRosterCounts, rosterCapacity: totalRosterSize })}
-        teams={teamStats} rosterConfig={effectiveRosterConfig} myTeamId={myTeamId}
-        round={currentTurn.round} format={draftOrderPattern.mode} access={draftProAccess}
+        teams={teamStats} rosterConfig={effectiveRosterConfig} myTeamId={myTeamId} selectedTeamId={inspectedTeamId || myTeamId}
+        round={currentTurn.round} currentPick={currentPick} totalPicks={totalPicks} format={draftOrderPattern.mode} access={draftProAccess}
         onSelectTeam={(teamId) => { setRosterViewRequest({ teamId }); if (mobileWorkspaceEnabled) setActiveMobileTab("roster"); }}
         onExpandGraph={() => setGraphExpandRequest((value) => value + 1)}
         onSummary={() => setIsSummaryOpen(true)} onOpenChange={setGodViewOpen}
@@ -3847,6 +3849,10 @@ const DraftDashboard: React.FC = () => {
             picksUntilNext={currentTurn.isMyTurn ? 0 : picksUntilNext}
           />
           <DraftBoard
+            expandedMetrics={<>
+              <LeagueStandings scheduleMetrics={draftSchedule.playerMetrics} schedulePeriod={draftSchedule.periodLabel} teams={teamStats} categories={activeScoringCategories} leagueType={draftSettings.leagueType || "points"} myTeamId={myTeamId} vorpMetrics={vorpMetrics} onUpdateTeamName={updateTeamName} canEdit={manualDraftingEnabled} isLoading={isLoading} error={errorMessage} />
+              {draftProAccess?.eligible && draftProAccess.capabilities.includes("god_view") && <section className={styles.graphRosterMetrics} aria-label="Team roster progress"><h2>Roster Progress · Pro</h2><div>{teamStats.map((team) => <div key={team.teamId}><strong title={team.teamName}>{team.teamName}</strong><span>{Object.values(team.rosterSlots).reduce((sum, slots) => sum + slots.length, team.bench.length)} / {totalRosterSize}</span><span>Needs: {godViewRosterNeeds(godViewRosterProgress(effectiveRosterConfig, team)).map((slot) => slot.label).join(" · ") || "Filled"}</span></div>)}</div></section>}
+            </>}
             expandRequest={graphExpandRequest}
             myTeamId={myTeamId}
             draftSettings={draftSettings}
@@ -3877,6 +3883,7 @@ const DraftDashboard: React.FC = () => {
           hidden={mobileWorkspaceEnabled && activeMobileTab !== "roster"}
         >
           <MyRoster
+            onSelectedTeamChange={setInspectedTeamId}
             viewRequest={rosterViewRequest}
             nextPickByTeam={Object.fromEntries(draftSettings.draftOrder.map((teamId) => [teamId, currentPick + findPicksUntilTeamTurn({ currentPick, teamId, draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern, trades: manualDraftingEnabled ? pickTrades : [], keepers: manualDraftingEnabled ? keepers : [], completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), teamRosterCounts, rosterCapacity: rosterRoundCount(draftSettings.rosterConfig), maxPickNumber: draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig) })]))}
             scheduleState={rosterScheduleOptimizer}
@@ -3933,14 +3940,7 @@ const DraftDashboard: React.FC = () => {
             </div>
           </div>
           {projectionsTable}
-          <button
-            type="button"
-            onClick={() => setDataRefreshKey((k) => k + 1)}
-            className={styles.refreshButton}
-            title="Force refresh projections from database"
-          >
-            Refresh Data
-          </button>
+
         </section>
       </div>
 

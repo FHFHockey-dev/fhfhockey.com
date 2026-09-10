@@ -1552,7 +1552,7 @@
 }
 
 // Compact workspace presentation; existing table, filter and drawer state is retained.
-.projectionsContainer { flex: 1; height: auto; min-height: 0; max-height: none; overflow: hidden; background: v.$draft-surface; font-variant-numeric: tabular-nums; container-type: inline-size; container-name: player-table; }
+.projectionsContainer { flex: 1; height: auto; min-height: 0; max-height: none; overflow: visible; background: v.$draft-surface; font-variant-numeric: tabular-nums; container-type: inline-size; container-name: player-table; }
 .controlsBar { min-height: 0; flex-shrink: 0; border-bottom: 1px solid v.$draft-border; background: v.$draft-surface; }
 .controlsBarTitle { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "title controls tools"; align-items: end; gap: 8px; border: 0; padding: 10px 12px; height: auto; width: 100%; font-size: 12px; font-weight: normal; }
 .controlsBarTitle > .panelTitle { grid-area: title; align-self: center; }
@@ -1591,7 +1591,7 @@
   }
 }
 .controlLabelMini { font-size: 10px; letter-spacing: 0; }
-.primaryControls { order: 1; padding: 0; gap: 6px; height: auto; width: 100%; overflow-x: auto; align-items: flex-end; justify-content: flex-start; margin-left: 0; flex: 0 1 auto; flex-wrap: nowrap; scrollbar-width: thin; }
+.primaryControls { order: 1; padding: 0; gap: 6px; height: auto; width: 100%; overflow: visible; align-items: flex-end; justify-content: flex-start; margin-left: 0; flex: 0 1 auto; flex-wrap: nowrap; }
 .stackedControlsRow { gap: 6px; flex: none; min-width: 0; width: auto; margin-left: auto; justify-content: flex-end; flex-wrap: nowrap; }
 .primaryControls .stackedControlsRow > .stackedControl:last-child { flex: 0 0 auto; min-width: 63px; }
 .stackedControl { width: auto; min-width: 0; flex: 1; gap: 2px; }
@@ -1605,7 +1605,7 @@
 .miniRunDescriptor { font-size: 10px; }
 .miniRunItems { gap: 8px; }
 .miniRunLabel, .miniRunVal { font-size: 10px; }
-.tableContainer { flex: 1 1 auto; height: auto; min-height: 72px; max-height: none; overflow-x: hidden; overflow-y: auto; scroll-padding-block: 40px; padding-block-end: 40px; color-scheme: dark; scrollbar-width: thin; scrollbar-color: v.$primary-color v.$draft-input; @include v.custom-scrollbar(v.$primary-color, v.$draft-input); }
+.tableContainer { flex: 1 1 auto; height: auto; min-height: 0; max-height: none; overflow: auto; scroll-padding-block: 40px; padding-block-end: 40px; color-scheme: dark; scrollbar-width: thin; scrollbar-color: v.$primary-color v.$draft-input; @include v.custom-scrollbar(v.$primary-color, v.$draft-input); }
 .playersTable { table-layout: fixed; width: 100%; min-width: 0; border-collapse: separate; border-spacing: 0; font-size: 12px; }
 .playersTable th { position: sticky; top: 0; z-index: 2; padding: 7px 4px; height: 30px; font-size: 11px; letter-spacing: .02em; background: v.$draft-surface-raised; border-bottom: 1px solid v.$draft-border; }
 .playersTable td { padding: 5px 4px; height: 32px; font-size: 13px; border-bottom: 1px solid v.$draft-border; }
@@ -1713,6 +1713,7 @@
   .miniRunItem { min-width: 0; }
 }
 .pagination { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-top: 1px solid v.$draft-border; flex-shrink: 0; font-size: 11px; button { padding: 2px 6px; } select { padding: 1px 3px; } }
+.refreshButton { margin-left: auto; white-space: nowrap; }
 .pageCount { margin-left: auto; white-space: nowrap; }
 
 @container player-table (max-width: 620px) {
@@ -1760,3 +1761,13 @@
   .nameContainer { display: flex; width: 100%; }
   .dustInsight { display: flex; margin: 1px 0 0 21px; }
 }
+
+@container player-table (max-width: 850px) {
+  .controlsBarTitle { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "title tools" "controls controls"; padding: 4px 8px; gap: 4px; }
+  .primaryControls { gap: 4px; }
+  .searchStack { flex: 1 1 90px; width: auto; min-width: 70px; }
+  .stackedControlsRow { gap: 4px; margin-left: 0; }
+  .primaryControls .compactPrimaryControl { flex-basis: 60px; width: 60px; }
+  .controlToggleBtn { padding-inline: 3px; }
+}
+.playersTable { min-width: 720px; }

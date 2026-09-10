@@ -102,6 +102,14 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   // UI state
   type SortField = "rank" | "myRank" | "projFp" | "vorp" | "vbd" | "adp" | "avail" | "fit";
   const cardsRef = React.useRef<HTMLDivElement>(null);
+  const [cardCount, setCardCount] = useState(4);
+  const [cardPage, setCardPage] = useState(0);
+  React.useEffect(() => {
+    if (!cardsRef.current) return;
+    const observer = new ResizeObserver(([entry]) => setCardCount(Math.max(1, Math.floor((entry.contentRect.width + 8) / 308))));
+    observer.observe(cardsRef.current);
+    return () => observer.disconnect();
+  }, []);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const hasPersonalRanks = Object.keys(personalRankByPlayerId).length > 0;
   const [sortField, setSortField] = useState<SortField>(() => {
@@ -238,7 +246,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         e.preventDefault();
         setSortDir((d) => (d === "asc" ? "desc" : "asc"));
       } else if (key === "d") {
-        if (canDraft && selectedId && onDraftPlayer) {
+        if (canDraft && selectedId && onDraftPlayer && cardsRef.current?.querySelector(`[data-player-id="${selectedId}"]`)) {
           e.preventDefault();
           onDraftPlayer(selectedId);
         }
@@ -492,6 +500,16 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     [sorted, limit]
   );
 
+  const pageCount = Math.max(1, Math.ceil(top.length / cardCount));
+  const visiblePage = Math.min(cardPage, pageCount - 1);
+  React.useEffect(() => setCardPage(0), [posFilter, selectedPositions, sortField, sortDir, dustSort, limit, cardCount]);
+
+  const changeCardPage = (nextPage: number) => {
+    setCardPage(nextPage);
+    setSelectedId(null);
+    onSelectPlayer?.(null);
+  };
+
   const onCardClick = useCallback(
     (id: string) => {
       setSelectedId((prev) => {
@@ -509,17 +527,19 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     const idx = selectedId ? ids.indexOf(selectedId) : -1;
     if (e.key === "ArrowRight") {
       e.preventDefault();
-      const next = idx < 0 ? 0 : Math.min(ids.length - 1, idx + 1);
+      const next = idx < 0 ? visiblePage * cardCount : Math.min(ids.length - 1, idx + 1);
+      setCardPage(Math.floor(next / cardCount));
       setSelectedId(ids[next]);
       onSelectPlayer && onSelectPlayer(ids[next]);
     } else if (e.key === "ArrowLeft") {
       e.preventDefault();
-      const prev = idx < 0 ? 0 : Math.max(0, idx - 1);
+      const prev = idx < 0 ? visiblePage * cardCount : Math.max(0, idx - 1);
+      setCardPage(Math.floor(prev / cardCount));
       setSelectedId(ids[prev]);
       onSelectPlayer && onSelectPlayer(ids[prev]);
     } else if (e.key === "Enter" || e.key.toLowerCase() === "d") {
       // Draft selected player
-      if (canDraft && selectedId && onDraftPlayer) {
+      if (canDraft && selectedId && onDraftPlayer && top.slice(visiblePage * cardCount, (visiblePage + 1) * cardCount).some((entry) => String(entry.player.playerId) === selectedId)) {
         e.preventDefault();
         onDraftPlayer(selectedId);
       }
@@ -532,6 +552,11 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         <h2 className={styles.title}>
           Suggested <span className={styles.titleAccent}>Picks</span>
         </h2>
+        <nav className={styles.cardPagination} aria-label="Suggested players pages">
+          <button type="button" aria-label="Previous suggested players" disabled={visiblePage === 0} onClick={() => changeCardPage(visiblePage - 1)}>‹</button>
+          <span>{visiblePage + 1}/{pageCount}</span>
+          <button type="button" aria-label="Next suggested players" disabled={visiblePage === pageCount - 1} onClick={() => changeCardPage(visiblePage + 1)}>›</button>
+        </nav>
         <div className={`${styles.controls} ${controls.scope}`}>
           <div className={styles.controlGroup}>
             <label className={styles.label}>Pos</label>
@@ -692,6 +717,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         <div
           ref={cardsRef}
           className={styles.cardsRow}
+          style={{ gridTemplateColumns: `repeat(${cardCount}, minmax(0, 1fr))` }}
           role="list"
           tabIndex={0}
           onKeyDown={onKeyDown}
@@ -703,7 +729,8 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
               <div className={styles.loading}>Computing suggestions…</div>
             )
           ) : (
-            top.map((r, idx) => {
+            top.slice(visiblePage * cardCount, (visiblePage + 1) * cardCount).map((r, offset) => {
+              const idx = visiblePage * cardCount + offset;
               const id = String(r.player.playerId);
               const name = r.player.fullName || id;
               const team =
@@ -832,7 +859,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
             })
           )}
         </div>
-        {top.length > 3 && <button type="button" className={styles.carouselNext} aria-label="Next suggested players" onClick={() => cardsRef.current?.scrollBy({ left: cardsRef.current.clientWidth * .8, behavior: "smooth" })}>›</button>}
+
         </div>
 
       {/* Roster progress bar across positions */}
@@ -841,6 +868,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         rosterProgress.length > 0 && (
           <div
             className={styles.progressBar}
+            style={{ gridTemplateColumns: `repeat(${rosterProgress.length}, minmax(0, 1fr))` }}
             role="group"
             aria-label="Roster progress by position"
           >

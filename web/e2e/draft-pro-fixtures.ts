@@ -4,7 +4,7 @@ import type { DraftProAccess } from "lib/draft-pro/contracts";
 type DraftProAccountResponse = { access: DraftProAccess };
 
 /** Keeps browser smoke coverage local, free, and independent of real accounts. */
-export async function installDraftProFreeFixtures(page: Page, { seedSnapshot = true, skaterCount = 3 }: { seedSnapshot?: boolean; skaterCount?: number } = {}) {
+export async function installDraftProFreeFixtures(page: Page, { seedSnapshot = true, skaterCount = 3, skaterPositions }: { seedSnapshot?: boolean; skaterCount?: number; skaterPositions?: string[] } = {}) {
   const skaters = [{
     player_id: 1001, Player_Name: "Fixture Center", Team_Abbreviation: "AAA", Position: "C",
     Games_Played: 82, Goals: 30, Assists: 45, Points: 75, Shots_on_Goal: 220,
@@ -18,6 +18,7 @@ export async function installDraftProFreeFixtures(page: Page, { seedSnapshot = t
   while (skaters.length < skaterCount) {
     skaters.push({ ...skaters[0], player_id: 1001 + skaters.length, Player_Name: `Fixture Skater ${skaters.length + 1}` });
   }
+  if (skaterPositions?.length) skaters.forEach((player, index) => { player.Position = skaterPositions[index % skaterPositions.length]; });
   const goalie = {
     player_id: 2001, Player_Name: "Fixture Goalie", Team_Abbreviation: "BBB", Position: "G",
     Games_Played: 55, Games_Started_Goalie: 50, Wins_Goalie: 30, Saves_Goalie: 1400,

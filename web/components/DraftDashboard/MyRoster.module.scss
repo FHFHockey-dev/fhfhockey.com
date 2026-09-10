@@ -74,13 +74,13 @@
   padding: 4px 8px;
   font-size: 12px !important;
 }
-.searchResults {
+.playerSearch .searchResults {
   position: absolute;
   top: 100%;
   left: 0;
   right: 0;
-  max-height: 220px;
-  overflow: auto;
+  max-height: none;
+  overflow: visible;
   z-index: 10;
   background: v.$draft-surface-raised;
   border: 1px solid v.$draft-border;
@@ -138,7 +138,8 @@
 .rosterSlots, .slotsList { display: contents; }
 .rosterWorkspace {
   order: 4;
-  flex: 1 0 auto;
+  flex: 1 1 0;
+  min-height: 0;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -167,7 +168,7 @@
 .slotPlayers, .benchSlots {
   display: grid;
   flex: 1;
-  grid-auto-rows: minmax(24px, 1fr);
+  grid-auto-rows: minmax(0, 1fr);
 }
 .slotPlayer,
 .benchSlot {
@@ -233,8 +234,9 @@
   grid-column: 1;
   grid-row: 1;
   min-width: 0;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .playerEligibility {
   grid-column: 2;
@@ -382,7 +384,7 @@
     max-width: 150px;
   }
 }
-@container roster (max-height: 720px) {
+@container roster (max-height: 850px) {
   .myRosterContainer { gap: 4px; padding-block-end: 6px; }
   .panelHeader { padding-block: 5px; }
   .teamSummary { padding-block: 2px; }
@@ -427,3 +429,19 @@
   }
   .slotPlayers { grid-auto-rows: minmax(28px, auto); }
 }
+
+@container roster (max-height: 680px) {
+  .myRosterContainer { padding: 0 6px 4px; gap: 3px; }
+  .panelHeader { padding-block: 3px; }
+  .rosterWorkspace { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: var(--roster-row-tracks); gap: 4px 6px; }
+  .rosterSlot, .benchSection { min-height: 0; }
+  .slotPlayers, .benchSlots { grid-auto-rows: minmax(0, 1fr); min-height: 0; }
+  .slotPlayer, .benchSlot { min-height: 0; padding: 1px 3px; line-height: 1.1; }
+  .positionHeader { gap: 3px; min-height: 12px; }
+  .positionHeader h3 { width: auto; }
+  .positionHeader span { font-size: 9px; }
+  .summaryValue { font-size: 15px; }
+  .rosterAnalysis { padding-top: 2px; }
+}
+
+.searchHint { margin: 4px 0; font-size: 11px; color: v.$text-secondary; }

@@ -10,7 +10,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
   background: v.$draft-canvas;
   color: v.$color-neutral-200;
   font: 13px/1.4 v.$font-family-primary;
@@ -76,7 +76,7 @@
   min-height: 0;
   min-width: 0;
   margin: 0 12px 12px;
-  gap: 10px;
+  gap: clamp(6px, calc(2dvh - 10px), 10px);
   // Two successive 8% roster increases, taken from the left track only.
   --roster-base-width: 315px;
   --roster-extra-width: calc(var(--roster-base-width) * 0.1664);
@@ -85,9 +85,9 @@
     minmax(0, 1fr)
     calc(var(--roster-base-width) + var(--roster-extra-width));
   grid-template-rows:
-    clamp(235px, calc(27dvh - 5px), 245px)
-    minmax(0, var(--board-track, 12fr))
-    minmax(0, var(--standings-track, 17fr));
+    minmax(clamp(164px, calc(12dvh + 72px), 180px), var(--suggested-track, 12fr))
+    minmax(124px, var(--board-track, 12fr))
+    minmax(190px, var(--standings-track, 17fr));
   grid-template-areas:
     "suggested suggested roster"
     "graph players roster"
@@ -100,7 +100,7 @@
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   background: v.$draft-surface;
   border: 2px solid v.$draft-border;
   border-radius: v.$radius-panel;
@@ -186,28 +186,13 @@
   .scoreboardCycle + .scoreboardCycle, .scoreboardPause { display: none; }
   .scoreboard { flex-basis: auto; }
 }
-.refreshButton {
-  flex: 0 0 28px;
-  width: 100%;
-  font-size: 11px !important;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
 .warningBanner {
   color: v.$color-gold-400;
   padding: 8px;
   border: 1px solid v.$draft-border;
 }
-@media (min-width: 1101px) and (max-height: 840px) {
-  .mainContent {
-    grid-template-rows:
-      235px
-      minmax(0, var(--board-track, 12fr))
-      minmax(0, var(--standings-track, 17fr));
-  }
-}
 @media (min-width: 1101px) {
-  .mainContent { overflow: hidden; }
+  .mainContent { container: workspace / size; }
 }
 @media (max-width: 1100px) {
   .dashboardContainer {
@@ -273,3 +258,12 @@
     height: 650px;
   }
 }
+
+.graphRosterMetrics { display: flex; flex-direction: column; padding: 8px; border: 1px solid v.$draft-border; border-radius: v.$radius-panel; }
+.graphRosterMetrics h2 { margin: 0 0 8px; font: 14px v.$font-family-accent; color: v.$primary-color; }
+.graphRosterMetrics > div { display: grid; flex: 1; min-height: 0; grid-auto-rows: minmax(0, 1fr); }
+.graphRosterMetrics > div > div { display: grid; grid-template-columns: minmax(0, 1fr) 70px minmax(0, 1fr); align-items: center; gap: 8px; border-bottom: 1px solid v.$draft-border; font-size: 12px; }
+.graphRosterMetrics strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+
+.scoreboard { flex-basis: clamp(20px, 2.4dvh, 26px); line-height: 18px; }

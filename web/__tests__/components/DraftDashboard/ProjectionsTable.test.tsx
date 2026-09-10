@@ -41,6 +41,18 @@ function player(playerId: number, fullName: string, position: string) {
 }
 
 describe("ProjectionsTable visibility diagnostics", () => {
+  it("defaults to 50 rows and keeps refresh between row size and page navigation", () => {
+    const refresh = vi.fn();
+    render(<ProjectionsTable players={Array.from({ length: 61 }, (_, i) => player(i + 1, `Pagination Player ${i + 1}`, "C"))} draftedPlayers={[]} isLoading={false} error={null} onDraftPlayer={vi.fn()} onRefresh={refresh} canDraft />);
+    const pagination = screen.getByRole("navigation", { name: "Available players pagination" });
+    expect((screen.getByRole("combobox", { name: "Available players per page" }) as HTMLSelectElement).value).toBe("50");
+    expect(pagination.textContent).toContain("1–50 of 61");
+    expect(Array.from(pagination.querySelectorAll("button")).map((button) => button.textContent)).toEqual(["First", "Refresh Data", "Prev", "Next"]);
+    fireEvent.click(screen.getByRole("button", { name: "Refresh Data" }));
+    expect(refresh).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(pagination.textContent).toContain("51–61 of 61");
+  });
   it("keeps league-wide table values raw and exposes no roster-needs control", () => {
     render(<ProjectionsTable players={[player(1, "Raw Value", "C")]} draftedPlayers={[]} isLoading={false} error={null} onDraftPlayer={vi.fn()} canDraft vorpMetrics={new Map([["1", { vorp: 12, vona: 8, vbd: 10 } as any]])} />);
     fireEvent.click(screen.getByRole("button", { name: "Open settings drawer" }));

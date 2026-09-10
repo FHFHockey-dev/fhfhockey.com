@@ -88,32 +88,14 @@
 .cardsRow {
   display: grid;
   height: 100%;
-  grid-auto-flow: column;
-  grid-auto-columns: calc(
-    var(--lane-width) * var(--card-span) + (var(--card-span) - 1) *
-      var(--track-gap)
-  );
   gap: var(--track-gap);
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  &::-webkit-scrollbar { display: none; }
-  scrollbar-color: v.$primary-color v.$draft-input;
-  padding-bottom: 3px;
 }
-.carouselNext {
-  position: absolute;
-  right: -3px;
-  top: 40%;
-  width: 22px;
-  height: 34px;
-  z-index: 2;
-  font-size: 24px !important;
-  background: v.$draft-input !important;
-}
+.cardPagination { display: flex; gap: 5px; align-items: center; font-size: 11px; margin-left: 8px; }
+.cardPagination button { padding: 0 7px; font-size: 18px; }
+
 .card {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   min-width: 0;
   min-height: 0;
   padding: 8px 8px 7px 10px;
@@ -238,7 +220,7 @@
 .progressBar {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: var(--lane-width);
+  grid-auto-columns: minmax(0, 1fr);
   gap: var(--track-gap);
   flex: 0 0 27px;
 }
@@ -329,14 +311,14 @@
 }
 .card {
   gap: 6px;
-  padding-top: 8px;
-  padding-bottom: 8px;
+  padding-top: 5px;
+  padding-bottom: 4px;
 }
 .header {
   line-height: 1.25;
 }
 .rankBadge {
-  line-height: 1;
+  line-height: 1.15;
 }
 .statLabel {
   line-height: 12px;
@@ -371,3 +353,28 @@
 }
 
 .advancedControls { flex-wrap: wrap; width: min(440px, 85vw); gap: 10px; }
+
+@container workspace (max-height: 820px) {
+  .suggestedContainer { padding: 4px 8px; gap: 3px; }
+  .card { padding: 4px 6px; gap: 3px; }
+  .headerRow, .controls { flex-wrap: nowrap; gap: 6px; }
+  .rankBadge { font-size: 20px; line-height: 1.15; }
+  .header { line-height: 1.1; }
+  .statLabel { line-height: 11px; }
+  .statValue { line-height: 14px; }
+  .linkBtn { padding-block: 2px; }
+  .bottomRow { min-height: 24px; }
+  .progressBar { flex-basis: 20px; }
+
+  .card { display: grid; grid-template-columns: minmax(0, 1fr) 66px; grid-template-rows: auto minmax(0, 1fr); align-items: center; column-gap: 6px; }
+  .header { grid-column: 1 / -1; }
+  .bottomRow { display: block; min-height: 0; }
+  .cardFooter { flex-direction: column; gap: 2px; }
+  .linkBtn { padding: 0 3px; line-height: 17px; min-height: 18px; }
+  .statsRow { gap: 3px; }
+}
+
+@container workspace (max-height: 620px) {
+  .card { padding-block: 3px; }
+  .linkBtn { min-height: 17px; line-height: 16px; }
+}

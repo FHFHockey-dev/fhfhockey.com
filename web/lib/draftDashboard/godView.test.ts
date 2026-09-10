@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectGodViewQueue, godViewRosterProgress } from "./godView";
+import { selectGodViewQueue, godViewRosterProgress, godViewRosterNeeds } from "./godView";
 import { getEffectiveRosterConfig } from "./forwardGrouping";
 
 const base = { startPick: 3, maxPickNumber: 12, draftOrder: ["A", "B", "C", "D"], rosterCapacity: 3 };
@@ -44,4 +44,10 @@ describe("God View assigned roster slots", () => {
     expect(progress.find(p => p.label === "G")).toMatchObject({ filled: 1, capacity: 0, over: 1, fraction: 1 });
     expect(progress.some(p => p.label === "C")).toBe(false);
   });
+});
+
+it("summarizes required vacancies before utility and bench without changing occupancy", () => {
+  const progress = godViewRosterProgress({ C: 2, utility: 3, D: 4, bench: 6, G: 2 }, { rosterSlots: { C: [{}], D: [{}, {}], G: [{}] }, bench: [] });
+  expect(godViewRosterNeeds(progress).map(slot => [slot.label, slot.open])).toEqual([["D", 2], ["C", 1], ["G", 1]]);
+  expect(progress.find(slot => slot.label === "D")?.filled).toBe(2);
 });

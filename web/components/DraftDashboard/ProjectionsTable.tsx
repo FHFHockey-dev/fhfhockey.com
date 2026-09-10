@@ -33,6 +33,7 @@ import {
 } from "lib/projectionsConfig/proration";
 
 interface ProjectionsTableProps {
+  onRefresh?: () => void;
   scheduleMetrics?: PlayerScheduleMetrics;
   currentSeasonId?: string | number;
   players: ProcessedPlayer[];
@@ -126,6 +127,7 @@ const getOffNightRankColor = (rankPercentile: number) => {
 };
 
 const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
+  onRefresh,
   currentSeasonId,
   players,
   allPlayers,
@@ -161,7 +163,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   const [positionFilter, setPositionFilter] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
   const [pageIndex, setPageIndex] = useState(0);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(50);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   // Value band scope: overall or per-position (default per-position)
   const [bandScope, setBandScope] = useState<"overall" | "position">(
@@ -2361,11 +2363,12 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
 
       <nav className={styles.pagination} aria-label="Available players pagination">
         <button type="button" disabled={currentPage === 0} onClick={() => setPageIndex(0)}>First</button>
+        <label>Rows <select aria-label="Available players per page" value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))}>{[15, 25, 50, 100].map((size) => <option key={size}>{size}</option>)}</select></label>
+        {onRefresh && <button type="button" className={styles.refreshButton} onClick={onRefresh} title="Force refresh projections from database">Refresh Data</button>}
+        <span className={styles.pageCount}>{orderedPlayers.length ? currentPage * pageSize + 1 : 0}–{Math.min((currentPage + 1) * pageSize, orderedPlayers.length)} of {orderedPlayers.length}</span>
         <button type="button" disabled={currentPage === 0} onClick={() => setPageIndex(currentPage - 1)}>Prev</button>
         <span>{currentPage + 1} / {pageCount}</span>
         <button type="button" disabled={currentPage === pageCount - 1} onClick={() => setPageIndex(currentPage + 1)}>Next</button>
-        <label>Rows <select aria-label="Available players per page" value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))}>{[15, 25, 50, 100].map((size) => <option key={size}>{size}</option>)}</select></label>
-        <span className={styles.pageCount}>{orderedPlayers.length ? currentPage * pageSize + 1 : 0}–{Math.min((currentPage + 1) * pageSize, orderedPlayers.length)} of {orderedPlayers.length}</span>
       </nav>
       {showDiagnostics && (
         <div

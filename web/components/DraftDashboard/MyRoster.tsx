@@ -30,6 +30,7 @@ function PositionProgress({ label, filled, capacity }: { label: string; filled: 
 }
 
 interface MyRosterProps {
+  onSelectedTeamChange?: (teamId: string) => void;
   viewRequest?: { teamId: string };
   schedulePeriod?: string;
   nextPickByTeam: Record<string, number>;
@@ -62,6 +63,7 @@ interface MyRosterProps {
 }
 
 const MyRoster: React.FC<MyRosterProps> = ({
+  onSelectedTeamChange,
   viewRequest,
   schedulePeriod = "Full season baseline · Yahoo 477",
   myTeamId,
@@ -95,6 +97,8 @@ const MyRoster: React.FC<MyRosterProps> = ({
   useEffect(() => {
     if (viewRequest) setSelectedViewTeamId(viewRequest.teamId);
   }, [viewRequest]);
+
+  useEffect(() => { onSelectedTeamChange?.(selectedViewTeamId); }, [selectedViewTeamId, onSelectedTeamChange]);
 
   // Keep selection synced when myTeamId changes IF user is viewing their team
   useEffect(() => {
@@ -389,6 +393,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
             onPlayerIdChange={setSelectedPlayerId}
             onPlayerChange={handlePlayerSelect}
             showButton={false}
+            maxOptions={5}
             inputClassName={styles.searchInput}
             listClassName={styles.searchResults}
             adpByPlayerId={adpByPlayerId}
@@ -403,6 +408,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
           />
         </div>
 
+        <p className={styles.searchHint}>Up to 5 matches · type a name to narrow results.</p>
         <button
           className={styles.draftButton}
           onClick={handleDraftClick}
@@ -452,7 +458,10 @@ const MyRoster: React.FC<MyRosterProps> = ({
         </div>
       </div>
 
-      <div className={styles.rosterWorkspace}>
+      <div className={styles.rosterWorkspace} style={{ "--roster-row-tracks": (() => {
+        const counts = [...positionsToShow.map((position) => Math.max(effectiveRosterConfig[position === "UTILITY" ? "utility" : position] || 0, selectedTeamStats?.rosterSlots[position]?.length || 0)), Math.max(draftSettings.rosterConfig.bench, selectedTeamStats?.bench.length || 0)];
+        return Array.from({ length: Math.ceil(counts.length / 2) }, (_, index) => `${Math.max(counts[index * 2], counts[index * 2 + 1] || 0) + 1}fr`).join(" ");
+      })() } as React.CSSProperties}>
       {/* Roster Slots */}
       <div className={styles.rosterSlots}>
         <div className={styles.slotsList}>

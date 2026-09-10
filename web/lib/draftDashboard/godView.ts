@@ -38,3 +38,11 @@ export function godViewRosterProgress(
       fraction: capacity > 0 ? Math.min(1, filled / capacity) : filled > 0 ? 1 : 0 }];
   });
 }
+
+/** A vacancy summary: required lineup slots precede utility and bench slots. */
+export function godViewRosterNeeds(progress: ReturnType<typeof godViewRosterProgress>) {
+  const optional = new Set(["BENCH", "BN", "UTILITY", "UTIL"]);
+  return progress.filter((slot) => slot.open > 0)
+    .sort((a, b) => Number(optional.has(a.position)) - Number(optional.has(b.position)) || b.open - a.open)
+    .slice(0, 3);
+}
