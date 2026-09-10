@@ -3,18 +3,16 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import { PlayerVorpMetrics } from "hooks/useVORPCalculations";
-import { usePlayerRecommendations } from "hooks/usePlayerRecommendations";
+import { buildRecommendationCandidates, usePlayerRecommendations } from "hooks/usePlayerRecommendations";
+import { useDraftProRecommendations } from "hooks/useDraftProRecommendations";
 import styles from "./SuggestedPicks.module.scss";
+import controls from "styles/Controls.module.scss";
 import type { DraftDashboardDustInsight } from "hooks/useRosterScheduleOptimizer";
 import {
   getProjectionDisplayPosition,
   matchesProjectionPosition
 } from "lib/draftDashboard/projectionVisibility";
-import {
-  groupPlayerEligibility,
-  normalizePlayerEligibility,
-  type ForwardGrouping
-} from "lib/draftDashboard/forwardGrouping";
+import { type ForwardGrouping } from "lib/draftDashboard/forwardGrouping";
 import { isGlobalShortcutBlockedTarget } from "lib/draftDashboard/keyboardShortcuts";
 
 export interface SuggestedPicksProps {
@@ -25,6 +23,16 @@ export interface SuggestedPicksProps {
   dustInsights?: ReadonlyMap<string, DraftDashboardDustInsight>;
   players: ProcessedPlayer[]; // available players only
   vorpMetrics?: Map<string, PlayerVorpMetrics>;
+  personalizedVorpMetrics?: Map<string, PlayerVorpMetrics>;
+  draftProEligible?: boolean;
+  categoryWeights?: Record<string, number>;
+  recommendationDataOrigin?: "server" | "local_csv" | "private_import";
+  onNeedWeightEnabledChange?: (enabled: boolean) => void;
+  dustSort?: "ordinary" | "schedule_fit";
+  onDustSortChange?: (sort: "ordinary" | "schedule_fit") => void;
+  canUseProDust?: boolean;
+  dustLineupMode?: "daily" | "weekly";
+  onDustLineupModeChange?: (mode: "daily" | "weekly") => void;
   needWeightEnabled?: boolean;
   needAlpha?: number; // 0..1
   posNeeds?: Record<string, number>;
@@ -59,6 +67,16 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   error,
   dustInsights,
   vorpMetrics,
+  personalizedVorpMetrics,
+  draftProEligible = false,
+  categoryWeights = {},
+  recommendationDataOrigin = "server",
+  onNeedWeightEnabledChange,
+  dustSort = "ordinary",
+  onDustSortChange,
+  canUseProDust = false,
+  dustLineupMode = "daily",
+  onDustLineupModeChange,
   needWeightEnabled = false,
   needAlpha = 0.5,
   posNeeds = {},
@@ -84,6 +102,14 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   // UI state
   type SortField = "rank" | "myRank" | "projFp" | "vorp" | "vbd" | "adp" | "avail" | "fit";
   const cardsRef = React.useRef<HTMLDivElement>(null);
+  const [cardCount, setCardCount] = useState(4);
+  const [cardPage, setCardPage] = useState(0);
+  React.useEffect(() => {
+    if (!cardsRef.current) return;
+    const observer = new ResizeObserver(([entry]) => setCardCount(Math.max(1, Math.floor((entry.contentRect.width + 8) / 308))));
+    observer.observe(cardsRef.current);
+    return () => observer.disconnect();
+  }, []);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const hasPersonalRanks = Object.keys(personalRankByPlayerId).length > 0;
   const [sortField, setSortField] = useState<SortField>(() => {
@@ -148,11 +174,6 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     const v = localStorage.getItem("suggested.showRosterBar");
     return v == null ? true : v === "true";
   });
-  // NEW: toggle to adjust (recalculate) displayed VORP by roster needs (lightweight client multiplier)
-  const [rosterVorpEnabled, setRosterVorpEnabled] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("suggested.rosterVorpEnabled") === "true";
-  });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -185,13 +206,6 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     if (typeof window === "undefined") return;
     localStorage.setItem("suggested.showRosterBar", String(showRosterBar));
   }, [showRosterBar]);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem(
-      "suggested.rosterVorpEnabled",
-      String(rosterVorpEnabled)
-    );
-  }, [rosterVorpEnabled]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -232,26 +246,31 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         e.preventDefault();
         setSortDir((d) => (d === "asc" ? "desc" : "asc"));
       } else if (key === "d") {
-        if (canDraft && selectedId && onDraftPlayer) {
+        if (canDraft && selectedId && onDraftPlayer && cardsRef.current?.querySelector(`[data-player-id="${selectedId}"]`)) {
           e.preventDefault();
           onDraftPlayer(selectedId);
         }
       } else if (key === "r") {
-        // quick toggle roster-adjusted VORP
-        e.preventDefault();
-        setRosterVorpEnabled((v) => !v);
+        if (draftProEligible && recommendationDataOrigin === "server") {
+          e.preventDefault();
+          onNeedWeightEnabledChange?.(!needWeightEnabled);
+        }
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [canDraft, sortField, limit, selectedId, onDraftPlayer]);
+  }, [canDraft, sortField, limit, selectedId, onDraftPlayer, draftProEligible, recommendationDataOrigin, onNeedWeightEnabledChange, needWeightEnabled]);
 
   // Compute recommendations
   const { recommendations } = usePlayerRecommendations({
     players,
     vorpMetrics,
+    personalizedVorpMetrics,
+    usePersonalizedReplacement: false,
     posNeeds,
-    needWeightEnabled,
+    // Free recommendations stay on the established local baseline. The
+    // capability-gated endpoint owns personalized rank changes.
+    needWeightEnabled: false,
     needAlpha,
     limit: 200, // compute a bigger set, we'll slice after sorting/filters
     baselineMode,
@@ -259,92 +278,99 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     teamCount,
     leagueType,
     catNeeds,
-    forwardGrouping
+    forwardGrouping,
   });
 
-  // Availability heuristic: Normal CDF around ADP
-  const [riskSd, setRiskSd] = useState<number>(() => {
-    if (typeof window === "undefined") return 12;
-    const v = parseFloat(localStorage.getItem("projections.riskSd") || "12");
-    return Number.isFinite(v) ? Math.max(2, Math.min(40, v)) : 12;
-  });
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === "projections.riskSd" && e.newValue) {
-        const v = parseFloat(e.newValue);
-        if (Number.isFinite(v)) setRiskSd(Math.max(2, Math.min(40, v)));
-      }
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
+  const requestPlayers = useMemo(() => {
+    if (selectedPositions.size > 0) {
+      return players.filter((player) => Array.from(selectedPositions).some((position) =>
+        matchesProjectionPosition(player, position === "Goalie" ? "G" : position === "Skater" ? "SKATER" : position, forwardGrouping),
+      ));
+    }
+    if (posFilter === "ALL") return players;
+    if (posFilter === "Skater") return players.filter((player) => matchesProjectionPosition(player, "SKATER", forwardGrouping));
+    if (posFilter === "Goalie") return players.filter((player) => matchesProjectionPosition(player, "G", forwardGrouping));
+    return players.filter((player) => matchesProjectionPosition(player, posFilter, forwardGrouping));
+  }, [forwardGrouping, players, posFilter, selectedPositions]);
+  const remoteInputOversized = requestPlayers.length > 2_000;
 
-  const normalCdf = (z: number) => {
-    const t = 1 / (1 + 0.2316419 * Math.abs(z));
-    const d = Math.exp((-z * z) / 2) / Math.sqrt(2 * Math.PI);
-    const p =
-      d *
-      (0.31938153 * t -
-        0.356563782 * Math.pow(t, 2) +
-        1.781477937 * Math.pow(t, 3) -
-        1.821255978 * Math.pow(t, 4) +
-        1.330274429 * Math.pow(t, 5));
-    return z >= 0 ? 1 - p : p;
-  };
-
-  const withAvail = useMemo(() => {
-    if (!nextPickNumber) return recommendations;
-    return recommendations.map((r) => {
-      const adp = (r.player as any).yahooAvgPick;
-      let availability: number | undefined = r.availability;
-      if (typeof adp === "number" && Number.isFinite(adp)) {
-        const z = (adp - nextPickNumber) / riskSd;
-        availability = Math.max(0.01, Math.min(0.99, normalCdf(z)));
-      }
-      const goneRisk =
-        typeof availability === "number" ? 1 - availability : undefined;
-      const riskBoost =
-        typeof goneRisk === "number"
-          ? 0.25 * goneRisk * Math.max(0, r.vbd ?? 0)
-          : 0;
-      return {
-        ...r,
-        availability,
-        score: r.score + riskBoost,
-        reasonTags:
-          typeof goneRisk === "number"
-            ? [
-                ...(r.reasonTags ?? []),
-                `Available next pick ${Math.round((1 - goneRisk) * 100)}%`
-              ]
-            : r.reasonTags
-      };
+  const recommendationCandidates = useMemo(() => buildRecommendationCandidates({
+    players: requestPlayers,
+    vorpMetrics,
+    personalizedVorpMetrics,
+    usePersonalizedReplacement: draftProEligible && Boolean(personalizeReplacement),
+    forwardGrouping,
+  }), [draftProEligible, forwardGrouping, personalizedVorpMetrics, personalizeReplacement, requestPlayers, vorpMetrics]);
+  const remoteRecommendations = useDraftProRecommendations(
+    draftProEligible && recommendationDataOrigin === "server" && !remoteInputOversized && recommendationCandidates.length
+      ? {
+          candidates: recommendationCandidates,
+          dataOrigin: "server",
+          leagueType: leagueType ?? "points",
+          positionNeeds: posNeeds,
+          categoryNeeds: catNeeds,
+          categoryWeights,
+          needAlpha: needWeightEnabled ? needAlpha : 0,
+          currentPick,
+          teamCount,
+          limit: 100,
+        }
+      : null,
+    draftProEligible && recommendationDataOrigin === "server" && !remoteInputOversized && recommendationCandidates.length > 0,
+  );
+  const activeRecommendations = useMemo(() => {
+    if (!remoteRecommendations.results) return recommendations;
+    const playerById = new Map(players.map((player) => [String(player.playerId), player]));
+    return remoteRecommendations.results.flatMap((result) => {
+      const player = playerById.get(result.candidate.id);
+      if (!player) return [];
+      const metrics = vorpMetrics?.get(result.candidate.id);
+      return [{
+        player,
+        score: result.recommendationScore,
+        value: metrics?.value ?? player.fantasyPoints?.projected ?? 0,
+        vorp: result.globalVorp,
+        vona: metrics?.vona ?? 0,
+        vbd: metrics?.vbd ?? metrics?.vorp ?? 0,
+        availability: result.availabilityEstimate ?? undefined,
+        fitScore: 0,
+        reasonTags: result.reasons,
+      }];
     });
-  }, [recommendations, nextPickNumber, riskSd]);
+  }, [players, recommendations, remoteRecommendations.results, vorpMetrics]);
 
-  // NEW: apply roster-need multiplier directly to VORP (does not change underlying vorpMetrics)
+  const scheduleFitRecommendations = useMemo(() => {
+    if (dustSort !== "schedule_fit" || !dustInsights?.size) return null;
+    return players.flatMap((player) => {
+      if (!dustInsights.has(String(player.playerId))) return [];
+      const metrics = vorpMetrics?.get(String(player.playerId));
+      return [{
+        player,
+        score: metrics?.value ?? player.fantasyPoints?.projected ?? 0,
+        value: metrics?.value ?? player.fantasyPoints?.projected ?? 0,
+        vorp: metrics?.vorp ?? 0,
+        vona: metrics?.vona ?? 0,
+        vbd: metrics?.vbd ?? metrics?.vorp ?? 0,
+        availability: undefined,
+        fitScore: undefined,
+        reasonTags: undefined,
+      }];
+    });
+  }, [dustInsights, dustSort, players, vorpMetrics]);
+
   const withRosterAdjustedVorp = useMemo(() => {
-    if (!rosterVorpEnabled) return withAvail;
-    return withAvail.map((r) => {
-      const baseVorp = r.vorp ?? 0;
-      const elig = groupPlayerEligibility(
-        normalizePlayerEligibility(
-          r.player.displayPosition,
-          r.player.eligiblePositions
-        ),
-        forwardGrouping
-      );
-      if (elig.length === 0) return { ...r, vorpAdj: baseVorp };
-      const avgNeed =
-        elig.reduce((acc, pos) => acc + (posNeeds[pos] || 0), 0) /
-        Math.max(1, elig.length);
-      // Multiplier: positions fully filled (need≈0) still retain 25% of VORP; unfilled keep ~100%.
-      const multiplier = 0.25 + 0.75 * Math.max(0, Math.min(1, avgNeed));
-      const adj = baseVorp * multiplier;
-      return { ...r, vorpAdj: adj } as typeof r & { vorpAdj: number };
+    if (scheduleFitRecommendations) return scheduleFitRecommendations;
+    // Preserve the established free rank ordering while using the shared
+    // availability estimate generated by the recommendation contract.
+    if (remoteRecommendations.results) return activeRecommendations;
+    return activeRecommendations.map((recommendation) => {
+      const availability = recommendation.availability;
+      const riskBoost = typeof availability === "number"
+        ? 0.25 * (1 - availability) * Math.max(0, recommendation.vbd ?? 0)
+        : 0;
+      return { ...recommendation, score: recommendation.score + riskBoost };
     });
-  }, [forwardGrouping, withAvail, rosterVorpEnabled, posNeeds]);
+  }, [activeRecommendations, remoteRecommendations.results, scheduleFitRecommendations]);
 
   // Position filter options from players
   const availablePositions = useMemo(() => {
@@ -420,10 +446,19 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     const arr = [...filtered];
     const mul = sortDir === "asc" ? 1 : -1;
     arr.sort((a, b) => {
+      if (dustSort === "schedule_fit" && dustInsights?.size) {
+        const aDust = dustInsights.get(String(a.player.playerId));
+        const bDust = dustInsights.get(String(b.player.playerId));
+        const byActiveGames = (bDust?.activeGamesAdded ?? Number.NEGATIVE_INFINITY) - (aDust?.activeGamesAdded ?? Number.NEGATIVE_INFINITY);
+        if (byActiveGames) return byActiveGames;
+        const byValue = (b.value ?? 0) - (a.value ?? 0);
+        if (byValue) return byValue;
+        return String(a.player.playerId).localeCompare(String(b.player.playerId));
+      }
       const aFp = a.player.fantasyPoints?.projected ?? 0;
       const bFp = b.player.fantasyPoints?.projected ?? 0;
-      const aVorp = (rosterVorpEnabled ? (a as any).vorpAdj : a.vorp) ?? 0;
-      const bVorp = (rosterVorpEnabled ? (b as any).vorpAdj : b.vorp) ?? 0;
+      const aVorp = a.vorp ?? 0;
+      const bVorp = b.vorp ?? 0;
       const aVbd = a.vbd ?? 0;
       const bVbd = b.vbd ?? 0;
       const aAdp = (a.player as any).yahooAvgPick || Infinity;
@@ -458,12 +493,22 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
       }
     });
     return arr;
-  }, [filtered, personalRankByPlayerId, rosterVorpEnabled, sortField, sortDir]);
+  }, [dustInsights, dustSort, filtered, personalRankByPlayerId, sortField, sortDir]);
 
   const top = useMemo(
     () => sorted.slice(0, Math.max(1, limit)),
     [sorted, limit]
   );
+
+  const pageCount = Math.max(1, Math.ceil(top.length / cardCount));
+  const visiblePage = Math.min(cardPage, pageCount - 1);
+  React.useEffect(() => setCardPage(0), [posFilter, selectedPositions, sortField, sortDir, dustSort, limit, cardCount]);
+
+  const changeCardPage = (nextPage: number) => {
+    setCardPage(nextPage);
+    setSelectedId(null);
+    onSelectPlayer?.(null);
+  };
 
   const onCardClick = useCallback(
     (id: string) => {
@@ -482,17 +527,19 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     const idx = selectedId ? ids.indexOf(selectedId) : -1;
     if (e.key === "ArrowRight") {
       e.preventDefault();
-      const next = idx < 0 ? 0 : Math.min(ids.length - 1, idx + 1);
+      const next = idx < 0 ? visiblePage * cardCount : Math.min(ids.length - 1, idx + 1);
+      setCardPage(Math.floor(next / cardCount));
       setSelectedId(ids[next]);
       onSelectPlayer && onSelectPlayer(ids[next]);
     } else if (e.key === "ArrowLeft") {
       e.preventDefault();
-      const prev = idx < 0 ? 0 : Math.max(0, idx - 1);
+      const prev = idx < 0 ? visiblePage * cardCount : Math.max(0, idx - 1);
+      setCardPage(Math.floor(prev / cardCount));
       setSelectedId(ids[prev]);
       onSelectPlayer && onSelectPlayer(ids[prev]);
     } else if (e.key === "Enter" || e.key.toLowerCase() === "d") {
       // Draft selected player
-      if (canDraft && selectedId && onDraftPlayer) {
+      if (canDraft && selectedId && onDraftPlayer && top.slice(visiblePage * cardCount, (visiblePage + 1) * cardCount).some((entry) => String(entry.player.playerId) === selectedId)) {
         e.preventDefault();
         onDraftPlayer(selectedId);
       }
@@ -505,7 +552,12 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         <h2 className={styles.title}>
           Suggested <span className={styles.titleAccent}>Picks</span>
         </h2>
-        <div className={styles.controls}>
+        <nav className={styles.cardPagination} aria-label="Suggested players pages">
+          <button type="button" aria-label="Previous suggested players" disabled={visiblePage === 0} onClick={() => changeCardPage(visiblePage - 1)}>‹</button>
+          <span>{visiblePage + 1}/{pageCount}</span>
+          <button type="button" aria-label="Next suggested players" disabled={visiblePage === pageCount - 1} onClick={() => changeCardPage(visiblePage + 1)}>›</button>
+        </nav>
+        <div className={`${styles.controls} ${controls.scope}`}>
           <div className={styles.controlGroup}>
             <label className={styles.label}>Pos</label>
             <select
@@ -520,41 +572,6 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                 </option>
               ))}
             </select>
-          </div>
-          <div className={styles.controlGroup}>
-            <label
-              className={styles.label}
-              htmlFor="rosterVorpToggle"
-              title="Adjust VORP values by remaining roster needs"
-            >
-              Need weight
-            </label>
-            <input
-              id="rosterVorpToggle"
-              type="checkbox"
-              checked={rosterVorpEnabled}
-              onChange={(e) => setRosterVorpEnabled(e.target.checked)}
-              aria-label="Toggle roster-adjusted VORP"
-            />
-          </div>
-          <div className={styles.controlGroup}>
-            <label
-              className={styles.label}
-              htmlFor="personalReplaceToggle"
-              title="Personalize replacement baselines using your filled slots"
-            >
-              Personalized
-            </label>
-            <input
-              id="personalReplaceToggle"
-              type="checkbox"
-              checked={!!personalizeReplacement}
-              onChange={(e) =>
-                onPersonalizeReplacementChange &&
-                onPersonalizeReplacementChange(e.target.checked)
-              }
-              aria-label="Toggle personalized replacement baselines"
-            />
           </div>
           <div className={styles.controlGroup}>
             <label className={styles.label}>Sort</label>
@@ -576,6 +593,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
             <button
               type="button"
               className={styles.sortDirBtn}
+              data-control-size="icon"
               onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
               aria-label={`Toggle sort direction (${sortDir})`}
             >
@@ -602,6 +620,58 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
             className={styles.advancedControls}
             hidden={!advancedOpen}
           >
+          <div className={styles.controlGroup}>
+            <label className={styles.label} htmlFor="dust-lineup-mode">DUST lineup</label>
+            <select id="dust-lineup-mode" className={styles.select} value={dustLineupMode} onChange={(event) => onDustLineupModeChange?.(event.target.value as "daily" | "weekly")} disabled={!canUseProDust} aria-label="DUST lineup mode">
+              <option value="daily">Daily lineup</option>
+              <option value="weekly">Weekly lock (unavailable)</option>
+            </select>
+          </div>
+          <div className={styles.controlGroup}>
+            <label className={styles.label} htmlFor="dust-sort">DUST sort</label>
+            <select id="dust-sort" className={styles.select} value={dustSort} onChange={(event) => onDustSortChange?.(event.target.value as "ordinary" | "schedule_fit")} disabled={!canUseProDust} aria-label="DUST sort">
+              <option value="ordinary">Ordinary value</option>
+              <option value="schedule_fit">Schedule fit</option>
+            </select>
+          </div>
+          <div className={styles.controlGroup}>
+            <label
+              className={styles.label}
+              htmlFor="rosterVorpToggle"
+              title={draftProEligible ? "Use Draft Pro roster-aware ranking" : "Draft Pro access is required for roster-aware ranking"}
+            >
+              Prioritize roster needs
+            </label>
+            <input
+              id="rosterVorpToggle"
+              type="checkbox"
+              checked={needWeightEnabled}
+              onChange={(e) => onNeedWeightEnabledChange?.(e.target.checked)}
+              disabled={!draftProEligible || recommendationDataOrigin !== "server"}
+              aria-label="Prioritize my roster needs"
+            />
+          </div>
+          <div className={styles.controlGroup}>
+            <label
+              className={styles.label}
+              htmlFor="personalReplaceToggle"
+              title="Personalize replacement baselines using your filled slots"
+            >
+              Personalized
+            </label>
+            <input
+              id="personalReplaceToggle"
+              type="checkbox"
+              checked={!!personalizeReplacement}
+              onChange={(e) =>
+                onPersonalizeReplacementChange &&
+                onPersonalizeReplacementChange(e.target.checked)
+              }
+              disabled={!draftProEligible || recommendationDataOrigin !== "server"}
+              aria-label="Toggle personalized replacement baselines"
+            />
+          </div>
+
           <div className={styles.controlGroup}>
             <label className={styles.label} htmlFor="rosterBarToggle">
               Roster
@@ -636,6 +706,8 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         </div>
       </div>
 
+      {recommendationDataOrigin !== "server" ? <p className={styles.loading} role="status">Roster-aware Draft Pro recommendations are unavailable for local CSV data. Save the import to your account first; your local draft and rows stay unchanged.</p> : remoteInputOversized ? <p className={styles.loading} role="status">This filtered player pool is too large for roster-aware recommendations. Narrow the position filter; no projection rows were uploaded.</p> : !draftProEligible ? null : remoteRecommendations.status === "error" ? <p className={styles.loading} role="status">{remoteRecommendations.error} Standard suggestions remain available.</p> : null}
+
       {compact && <button type="button" className={styles.returnToDraft} onClick={onReturnToDraft}>Return to suggested players</button>}
         <div
           id="suggested-picks-cards"
@@ -645,6 +717,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         <div
           ref={cardsRef}
           className={styles.cardsRow}
+          style={{ gridTemplateColumns: `repeat(${cardCount}, minmax(0, 1fr))` }}
           role="list"
           tabIndex={0}
           onKeyDown={onKeyDown}
@@ -656,7 +729,8 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
               <div className={styles.loading}>Computing suggestions…</div>
             )
           ) : (
-            top.map((r, idx) => {
+            top.slice(visiblePage * cardCount, (visiblePage + 1) * cardCount).map((r, offset) => {
+              const idx = visiblePage * cardCount + offset;
               const id = String(r.player.playerId);
               const name = r.player.fullName || id;
               const team =
@@ -690,6 +764,10 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                     <div className={styles.name} title={name}>
                       {name}
                     </div>
+                    <div className={styles.tagsRow}>
+                      <span className={styles.tag}>VONA {typeof r.vona === "number" ? r.vona.toFixed(1) : "—"}</span>
+                      {dustInsights?.has(id) && <span className={styles.tag} title="Additional scheduled games benched by lineup conflicts">DUST +{dustInsights.get(id)!.marginalDustGames}</span>}
+                    </div>
                     <div className={styles.meta}>
                       {team && <span className={styles.team}>{team}</span>}
                       {pos && <span className={styles.pos}>{pos}</span>}
@@ -711,16 +789,10 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                       </div>
                     </div>
                     <div className={styles.stat}>
-                      <div className={styles.statLabel}>
-                        {rosterVorpEnabled ? "AdjV" : "VORP"}
-                      </div>
+                      <div className={styles.statLabel}>VORP</div>
                       <div className={styles.statValue}>
-                        {typeof (rosterVorpEnabled
-                          ? (r as any).vorpAdj
-                          : r.vorp) === "number"
-                          ? (rosterVorpEnabled
-                              ? (r as any).vorpAdj
-                              : r.vorp)!.toFixed(1)
+                        {typeof r.vorp === "number"
+                          ? r.vorp.toFixed(1)
                           : "—"}
                       </div>
                     </div>
@@ -746,11 +818,6 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                     </div>
                   </div>
                   <div className={styles.bottomRow}>
-                    <div className={styles.tagsRow}>
-                      <span className={styles.tag}>VONA {typeof r.vona === "number" ? r.vona.toFixed(1) : "—"}</span>
-                      {dustInsights?.has(id) && <span className={styles.tag} title="Additional scheduled games benched by lineup conflicts">DUST +{dustInsights.get(id)!.marginalDustGames}</span>}
-                    </div>
-                    <div className={styles.reason} title={r.reasonTags?.join(" · ")}>{r.reasonTags?.filter((tag) => !/^(VBD|VONA|Available next pick)/.test(tag)).join(" · ") || "Best remaining value for your draft"}</div>
                     <div className={styles.cardFooter}>
                       {
                         <button
@@ -792,7 +859,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
             })
           )}
         </div>
-        {top.length > 3 && <button type="button" className={styles.carouselNext} aria-label="Next suggested players" onClick={() => cardsRef.current?.scrollBy({ left: cardsRef.current.clientWidth * .8, behavior: "smooth" })}>›</button>}
+
         </div>
 
       {/* Roster progress bar across positions */}
@@ -801,6 +868,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         rosterProgress.length > 0 && (
           <div
             className={styles.progressBar}
+            style={{ gridTemplateColumns: `repeat(${rosterProgress.length}, minmax(0, 1fr))` }}
             role="group"
             aria-label="Roster progress by position"
           >

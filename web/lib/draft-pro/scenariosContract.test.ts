@@ -1,0 +1,8 @@
+import { describe, expect, it } from "vitest";
+import { scenarioAnalysisSchema } from "./scenariosContract";
+const player = { id: "a", name: "A", role: "skater", eligiblePositions: ["C"], teamAbbreviation: "AAA", projectionSeason: "20262027", globalVorp: 1, rankValue: 1, projectedPoints: 10 };
+const source = { projection: { id: "public", version: "v1", origin: "server" }, schedule: { season: "20262027", startWeek: 1, endWeek: 1, lineupMode: "daily", rosterSlots: { C: 1 } } };
+describe("scenario analysis contract", () => {
+  it("rejects duplicate roster player IDs before calculation", () => { const result = scenarioAnalysisSchema.safeParse({ roster: [player, { ...player, name: "Duplicate" }], candidateA: { ...player, id: "b" }, candidateB: { ...player, id: "c" }, leagueType: "points", source }); expect(result.success).toBe(false); if (!result.success) expect(result.error.issues.some((issue) => issue.message.includes("Roster player IDs"))).toBe(true); });
+  it("rejects duplicate private import IDs before any download", () => { const reference = { id: "00000000-0000-4000-8000-000000000001", contentFingerprint: "scenario-v1-0123456789abcdef0123456789abcdef" }; const result = scenarioAnalysisSchema.safeParse({ roster: [], candidateA: player, candidateB: { ...player, id: "b" }, leagueType: "points", source: { ...source, projection: { id: "private", version: "v1", origin: "saved_private_import", privateImports: [reference, reference] } } }); expect(result.success).toBe(false); if (!result.success) expect(result.error.issues.some((issue) => issue.message.includes("must be distinct"))).toBe(true); });
+});

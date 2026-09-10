@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { totalRosterScheduleMetrics, type PlayerScheduleMetrics } from "lib/draftDashboard/scheduleMetrics";
+import { useMemo, useState, type CSSProperties } from "react";
 import type { TeamDraftStats } from "./DraftDashboard";
 import type { PlayerVorpMetrics } from "hooks/useVORPCalculations";
 import { STATS_MASTER_LIST } from "lib/projectionsConfig/statsMasterList";
@@ -9,6 +10,8 @@ import {
 import styles from "./LeagueStandings.module.scss";
 
 interface LeagueStandingsProps {
+  scheduleMetrics?: PlayerScheduleMetrics;
+  schedulePeriod?: string;
   teams: TeamDraftStats[];
   categories: Record<string, number>;
   leagueType: "points" | "categories";
@@ -21,6 +24,8 @@ interface LeagueStandingsProps {
 }
 
 export default function LeagueStandings({
+  scheduleMetrics,
+  schedulePeriod = "Season · Yahoo 477",
   teams,
   categories,
   leagueType,
@@ -31,6 +36,8 @@ export default function LeagueStandings({
   isLoading,
   error,
 }: LeagueStandingsProps) {
+  const [view, setView] = useState("value");
+  const scheduleTotals = useMemo(() => new Map(teams.map((team) => [team.teamId, totalRosterScheduleMetrics([...Object.values(team.rosterSlots).flat(), ...team.bench].map((player) => String(player.playerId)), scheduleMetrics)])), [teams, scheduleMetrics]);
   const [sort, setSort] = useState({ key: "value", ascending: false });
   const [editing, setEditing] = useState<string | null>(null);
   const ranks = useMemo(
@@ -69,10 +76,15 @@ export default function LeagueStandings({
     const value = (team: TeamDraftStats) =>
       sort.key === "value"
         ? values[team.teamId]
+        : sort.key === "off" || sort.key === "b2b"
+          ? (scheduleTotals.get(team.teamId)?.[sort.key] ?? null)
         : sort.key === "vorp"
           ? (team.teamVorp ?? 0)
           : (team.categoryTotals[sort.key] ?? 0);
-    return (sort.ascending ? 1 : -1) * (value(a) - value(b));
+    const av = value(a), bv = value(b);
+    if (av == null) return bv == null ? 0 : 1;
+    if (bv == null) return -1;
+    return (sort.ascending ? 1 : -1) * (av - bv);
   });
   const changeSort = (key: string) =>
     setSort((current) => ({
@@ -80,15 +92,15 @@ export default function LeagueStandings({
       ascending: current.key === key ? !current.ascending : false,
     }));
   return (
-    <section className={styles.standings} aria-label="League Standings">
+    <section className={styles.standings} aria-label="League Standings" style={{ "--standings-rows": Math.max(1, teams.length + 1) } as CSSProperties}>
       <header>
         <h2>League Standings</h2>
         <label>
           View{" "}
           <select
             aria-label="Standings summary"
-            value={sort.key === "vorp" ? "vorp" : "value"}
-            onChange={(event) => changeSort(event.target.value)}
+            value={view}
+            onChange={(event) => { setView(event.target.value); setSort({ key: event.target.value, ascending: false }); }}
           >
             <option value="value">
               {leagueType === "categories" ? "Score" : "Projected points"}
@@ -97,13 +109,15 @@ export default function LeagueStandings({
           </select>
         </label>
       </header>
+      {view === "vorp" && <p className={styles.schedulePeriod}>{schedulePeriod} · NHL opportunities, including bench players</p>}
       <div className={styles.tableViewport}>
         <table aria-label="League scoring category standings">
           <thead>
             <tr>
               <th scope="col">#</th>
               <th scope="col">Team</th>
-              {Object.keys(categories).map((key) => (
+              {view === "vorp" && (["off", "b2b"] as const).map((key) => <th scope="col" key={key} aria-sort={sort.key === key ? sort.ascending ? "ascending" : "descending" : "none"}><button type="button" onClick={() => changeSort(key)} title={key === "off" ? "Player games on NHL dates with at most 8 games" : "Consecutive-day pairs, counted on the second day"}>{key === "off" ? "Off-Nights" : "Back-to-Backs"}</button></th>)}
+              {view !== "vorp" && Object.keys(categories).map((key) => (
                 <th
                   scope="col"
                   key={key}
@@ -191,7 +205,8 @@ export default function LeagueStandings({
                     </button>
                   )}
                 </th>
-                {Object.keys(categories).map((key) => {
+                {view === "vorp" && (["off", "b2b"] as const).map((key) => <td key={key}>{scheduleTotals.get(team.teamId)?.[key] ?? "—"}</td>)}
+                {view !== "vorp" && Object.keys(categories).map((key) => {
                   const rank = ranks[team.teamId][key];
                   const definition = STATS_MASTER_LIST.find(
                     (stat) => stat.key === key,

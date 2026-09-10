@@ -2,7 +2,7 @@ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import adminOnly from "utils/adminOnlyMiddleware";
 import {
   NST_TEAM_DAILY_BURST_INTERVAL_MS,
-  resolveTeamDailyNstRequestPlan
+  resolveTeamDailyNstRequestPlan,
 } from "lib/cron/nstBurstPlans";
 import type { NextApiRequest, NextApiResponse } from "next";
 import * as cheerio from "cheerio";
@@ -61,6 +61,11 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
+const MAX_DATE_BASED_DATES_PER_RUN = 2;
+
+export const config = {
+  maxDuration: 300,
+};
 
 type RunMode = "incremental" | "forward" | "reverse";
 
@@ -85,7 +90,7 @@ const DATASETS: DatasetConfig[] = [
     rate: "n",
     description: "All strengths counts",
     isRateTable: false,
-    situationLabel: "all"
+    situationLabel: "all",
   },
   {
     key: "as_rates",
@@ -94,7 +99,7 @@ const DATASETS: DatasetConfig[] = [
     rate: "y",
     description: "All strengths rates",
     isRateTable: true,
-    situationLabel: "all"
+    situationLabel: "all",
   },
   {
     key: "es_counts",
@@ -103,7 +108,7 @@ const DATASETS: DatasetConfig[] = [
     rate: "n",
     description: "Even strength counts",
     isRateTable: false,
-    situationLabel: "5v5"
+    situationLabel: "5v5",
   },
   {
     key: "es_rates",
@@ -112,7 +117,7 @@ const DATASETS: DatasetConfig[] = [
     rate: "y",
     description: "Even strength rates",
     isRateTable: true,
-    situationLabel: "5v5"
+    situationLabel: "5v5",
   },
   {
     key: "pp_counts",
@@ -121,7 +126,7 @@ const DATASETS: DatasetConfig[] = [
     rate: "n",
     description: "Power play counts",
     isRateTable: false,
-    situationLabel: "pp"
+    situationLabel: "pp",
   },
   {
     key: "pp_rates",
@@ -130,7 +135,7 @@ const DATASETS: DatasetConfig[] = [
     rate: "y",
     description: "Power play rates",
     isRateTable: true,
-    situationLabel: "pp"
+    situationLabel: "pp",
   },
   {
     key: "pk_counts",
@@ -139,7 +144,7 @@ const DATASETS: DatasetConfig[] = [
     rate: "n",
     description: "Penalty kill counts",
     isRateTable: false,
-    situationLabel: "pk"
+    situationLabel: "pk",
   },
   {
     key: "pk_rates",
@@ -148,8 +153,8 @@ const DATASETS: DatasetConfig[] = [
     rate: "y",
     description: "Penalty kill rates",
     isRateTable: true,
-    situationLabel: "pk"
-  }
+    situationLabel: "pk",
+  },
 ];
 
 const TEAM_TABLES = DATASETS.map((dataset) => dataset.table);
@@ -189,7 +194,7 @@ const sharedHeaderMap: Record<string, string> = {
   "ldsv%": "ldsv_pct",
   "sh%": "sh_pct",
   "sv%": "sv_pct",
-  pdo: "pdo"
+  pdo: "pdo",
 };
 
 const countsHeaderMap: Record<string, string> = {
@@ -227,7 +232,7 @@ const countsHeaderMap: Record<string, string> = {
   ldsf: "ldsf",
   ldsa: "ldsa",
   ldgf: "ldgf",
-  ldga: "ldga"
+  ldga: "ldga",
 };
 
 const ratesHeaderMap: Record<string, string> = {
@@ -265,7 +270,7 @@ const ratesHeaderMap: Record<string, string> = {
   "ldsf/60": "ldsf_per_60",
   "ldsa/60": "ldsa_per_60",
   "ldgf/60": "ldgf_per_60",
-  "ldga/60": "ldga_per_60"
+  "ldga/60": "ldga_per_60",
 };
 
 type RawRow = Record<string, string | null>;
@@ -340,7 +345,7 @@ function parsePercentage(value: string | null | undefined): number | null {
 
 function formatEstDate(date: Date): string {
   return tzFormat(toZonedTime(date, TIME_ZONE), "yyyy-MM-dd", {
-    timeZone: TIME_ZONE
+    timeZone: TIME_ZONE,
   });
 }
 
@@ -467,12 +472,12 @@ function buildDatasetUrl(
     loc: "B",
     gpf: "410",
     fd: date,
-    td: date
+    td: date,
   });
   return `${NST_BASE_URL}?${query.toString()}`;
 }
 
-async function getLatestProcessedDate(): Promise<string | null> {
+async function getEarliestDatasetLatestDate(): Promise<string | null> {
   let latest: string | null = null;
   for (const table of TEAM_TABLES) {
     const { data, error } = await supabase
@@ -481,25 +486,39 @@ async function getLatestProcessedDate(): Promise<string | null> {
       .order("date", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (error || !data?.date) continue;
-    if (!latest || data.date > latest) {
+    if (error) {
+      throw new Error(
+        `Failed to read latest NST date from ${table}: ${error.message}`
+      );
+    }
+    if (!data?.date) {
+      return null;
+    }
+    if (!latest || data.date < latest) {
       latest = data.date;
     }
   }
   return latest;
 }
 
-async function dateHasData(date: string): Promise<boolean> {
-  const table = "nst_team_gamelogs_as_counts";
-  const { error, count } = await supabase
-    .from(table)
-    .select("team_abbreviation", { count: "exact", head: true })
-    .eq("date", date);
-  if (error) {
-    console.warn(`Supabase check failed for ${date}: ${error.message}`);
-    return false;
-  }
-  return (count ?? 0) > 0;
+async function dateHasCompleteData(date: string): Promise<boolean> {
+  const results = await Promise.all(
+    DATASETS.map(async ({ table }) => {
+      const { error, count } = await supabase
+        .from(table)
+        .select("team_abbreviation", { count: "exact", head: true })
+        .eq("date", date);
+      if (error) {
+        console.warn(
+          `Supabase completeness check failed for ${table} (${date}): ${error.message}`
+        );
+        return false;
+      }
+      return (count ?? 0) > 0;
+    })
+  );
+
+  return results.every(Boolean);
 }
 
 function parseDateInput(value: string | undefined): Date | null {
@@ -543,7 +562,9 @@ function buildDateQueue(
   if (startDateInput) {
     start = startDateInput;
   } else if (latestDate) {
-    start = addDays(parseISO(latestDate), 1);
+    // Recheck the least-current date so a partially written dataset can be
+    // repaired instead of being skipped permanently.
+    start = parseISO(latestDate);
   } else {
     start = seasonStartDate;
   }
@@ -582,7 +603,7 @@ function mapRowToInsert(
     season_id: seasonIdFromDate(date),
     date,
     situation: dataset.situationLabel,
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
   };
 
   for (const [headerKey, columnName] of Object.entries(headerMap)) {
@@ -657,6 +678,7 @@ function parseBooleanParam(
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const startedAt = Date.now();
+  lastNstRequestAt = 0;
   if (req.method !== "GET" && req.method !== "POST") {
     res.setHeader("Allow", "GET,POST");
     return res.status(405).json({ message: "Method not allowed" });
@@ -668,7 +690,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (!["incremental", "forward", "reverse"].includes(runMode)) {
     return res.status(400).json({
       message:
-        "Invalid runMode. Use incremental (default), forward, or reverse."
+        "Invalid runMode. Use incremental (default), forward, or reverse.",
     });
   }
 
@@ -693,8 +715,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     const season = await fetchCurrentSeason();
     const todayEst = toZonedTime(new Date(), TIME_ZONE);
     const seasonStart = parseISO(season.startDate);
-    const latestDate = await getLatestProcessedDate();
-    const targetDates = buildDateQueue(
+    const latestDate = await getEarliestDatasetLatestDate();
+    const queuedDates = buildDateQueue(
       runMode,
       todayEst,
       seasonStart,
@@ -703,21 +725,28 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       endDateParsed
     );
 
-    if (targetDates.length === 0) {
+    if (queuedDates.length === 0) {
       return res.status(200).json({
         message: "No dates to process for the provided parameters.",
+        success: true,
+        complete: true,
         runMode,
-        overwrite
+        overwrite,
       });
     }
 
-    const nstRequestPlan = resolveTeamDailyNstRequestPlan(targetDates);
+    const nstRequestPlan = resolveTeamDailyNstRequestPlan(queuedDates);
+    const maxDatesThisRun = nstRequestPlan.burstAllowed
+      ? MAX_DATE_BASED_DATES_PER_RUN
+      : 1;
+    const targetDates = queuedDates.slice(0, maxDatesThisRun);
+    const deferredDates = queuedDates.slice(maxDatesThisRun);
     currentRequestIntervalMs = nstRequestPlan.requestIntervalMs;
 
     const summary = {
       runMode,
       overwrite,
-      totalDates: targetDates.length,
+      totalDates: queuedDates.length,
       processedDates: 0,
       skippedDates: 0,
       datasetResults: [] as Array<{
@@ -725,18 +754,19 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         table: string;
         inserted: number;
       }>,
-      errors: [] as string[]
+      errors: [] as string[],
     };
 
     for (const date of targetDates) {
       if (!overwrite) {
-        const alreadyExists = await dateHasData(date);
+        const alreadyExists = await dateHasCompleteData(date);
         if (alreadyExists) {
           summary.skippedDates += 1;
           continue;
         }
       }
 
+      const errorsBeforeDate = summary.errors.length;
       for (const dataset of DATASETS) {
         try {
           const result = await processDatasetForDate(date, dataset);
@@ -744,7 +774,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             summary.datasetResults.push({
               date,
               table: result.table,
-              inserted: result.inserted
+              inserted: result.inserted,
             });
           }
         } catch (error: any) {
@@ -755,21 +785,33 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         }
       }
       summary.processedDates += 1;
+      if (summary.errors.length > errorsBeforeDate) {
+        deferredDates.unshift(date);
+      }
     }
 
-    const statusCode = summary.errors.length > 0 ? 207 : 200;
+    const success = summary.errors.length === 0;
+    const complete = success && deferredDates.length === 0;
+    const statusCode = success ? 200 : 207;
     return res.status(statusCode).json({
       message: `Processed ${summary.processedDates} day(s); ${summary.skippedDates} skipped.`,
+      success,
+      complete,
       durationMs: Date.now() - startedAt,
       nstRequestPlan,
-      summary
+      failedRequests: summary.errors.length,
+      failures: summary.errors.slice(0, 10).map((reason) => ({ reason })),
+      remainingDatesCount: deferredDates.length,
+      remainingDates: deferredDates.slice(0, 10),
+      nextStartDate: deferredDates[0] ?? null,
+      summary,
     });
   } catch (error: any) {
     console.error("update-nst-team-daily failed:", error);
     return res.status(500).json({
       message: "Unexpected error while updating NST team gamelogs.",
       durationMs: Date.now() - startedAt,
-      error: error?.message ?? error
+      error: error?.message ?? error,
     });
   }
 };

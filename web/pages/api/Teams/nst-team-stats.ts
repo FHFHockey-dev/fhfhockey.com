@@ -4,11 +4,12 @@ import { formatInTimeZone } from "date-fns-tz";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import {
   NST_TEAM_STATS_SAFE_INTERVAL_MS,
-  resolveNstTeamStatsRequestPlan
+  resolveNstTeamStatsRequestPlan,
 } from "lib/cron/nstBurstPlans";
 import {
   buildNstTeamStatsDiagnostics,
-  NstTeamStatsSkip
+  isNstConfigurationFailure,
+  NstTeamStatsSkip,
 } from "lib/cron/nstTeamStatsOutcome";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { getCurrentSeason } from "lib/NHL/server";
@@ -23,7 +24,7 @@ const MIN_REQUEST_BUDGET_MS = 55_000;
 const MAX_DATE_BASED_DATES_PER_RUN = 1;
 
 export const config = {
-  maxDuration: 300
+  maxDuration: 300,
 };
 
 /**
@@ -44,14 +45,14 @@ const dateBasedResponseKeys: {
   countsAll: { situation: "all", rate: "n", table: "nst_team_all" },
   counts5v5: { situation: "5v5", rate: "n", table: "nst_team_5v5" },
   countsPP: { situation: "pp", rate: "n", table: "nst_team_pp" },
-  countsPK: { situation: "pk", rate: "n", table: "nst_team_pk" }
+  countsPK: { situation: "pk", rate: "n", table: "nst_team_pk" },
 };
 
 const seasonBasedResponseKeys: {
   [key: string]: { situation: string; rate: string; table: string };
 } = {
   seasonStats: { situation: "all", rate: "n", table: "nst_team_stats" },
-  lastSeasonStats: { situation: "all", rate: "n", table: "nst_team_stats_ly" }
+  lastSeasonStats: { situation: "all", rate: "n", table: "nst_team_stats_ly" },
 };
 
 interface PythonScriptOutput {
@@ -128,7 +129,7 @@ Object.entries(
 
 Object.entries(teamNameToAbbreviationMap as Record<string, string>).forEach(
   ([name, abbr]) => {
-  normalizedTeamLookup.set(normalizeTeamName(name), abbr);
+    normalizedTeamLookup.set(normalizeTeamName(name), abbr);
   }
 );
 
@@ -193,8 +194,11 @@ function getTodayEstString(): string {
   return formatInTimeZone(new Date(), TIME_ZONE, "yyyy-MM-dd");
 }
 
-function resolveTeam(teamName: string): { abbreviation: string; name: string } | null {
-  let teamAbbreviation: string | undefined = teamNameToAbbreviationMap[teamName];
+function resolveTeam(
+  teamName: string
+): { abbreviation: string; name: string } | null {
+  let teamAbbreviation: string | undefined =
+    teamNameToAbbreviationMap[teamName];
   if (!teamAbbreviation) {
     teamAbbreviation = normalizedTeamLookup.get(normalizeTeamName(teamName));
   }
@@ -206,11 +210,14 @@ function resolveTeam(teamName: string): { abbreviation: string; name: string } |
   }
   return {
     abbreviation: teamAbbreviation,
-    name: teamsInfo[teamAbbreviation]?.name || teamName
+    name: teamsInfo[teamAbbreviation]?.name || teamName,
   };
 }
 
-function mapStatToRow(stat: TeamStat, options: { date?: string; season?: string }) {
+function mapStatToRow(
+  stat: TeamStat,
+  options: { date?: string; season?: string }
+) {
   const team = resolveTeam(stat.Team);
   if (!team) {
     console.error(`Unable to find abbreviation for team name "${stat.Team}".`);
@@ -261,7 +268,7 @@ function mapStatToRow(stat: TeamStat, options: { date?: string; season?: string 
     pdo: stat.PDO !== null ? parseFloat(stat.PDO) : null,
     situation: stat.situation || "all",
     ...(options.date ? { date: options.date } : {}),
-    ...(options.season ? { season: options.season } : {})
+    ...(options.season ? { season: options.season } : {}),
   };
 }
 
@@ -298,7 +305,7 @@ async function fetchTeamTable(
     table: string;
     situation: string;
   }
-) : Promise<
+): Promise<
   PythonScriptOutput & {
     requestSequence: number;
     waitMs: number;
@@ -336,8 +343,8 @@ async function fetchTeamTable(
     const parsed = JSON.parse(responseText);
     const output =
       typeof parsed === "string"
-      ? (JSON.parse(parsed) as PythonScriptOutput)
-      : (parsed as PythonScriptOutput);
+        ? (JSON.parse(parsed) as PythonScriptOutput)
+        : (parsed as PythonScriptOutput);
     const fetchDurationMs = Date.now() - fetchStartedAt;
 
     logNst(
@@ -350,14 +357,17 @@ async function fetchTeamTable(
       ...output,
       requestSequence,
       waitMs: actualWaitMs,
-      fetchDurationMs
+      fetchDurationMs,
     };
   } finally {
     clearTimeout(timeout);
   }
 }
 
-async function getLatestDate(supabase: any, table: string): Promise<string | null> {
+async function getLatestDate(
+  supabase: any,
+  table: string
+): Promise<string | null> {
   const { data, error } = await supabase
     .from(table)
     .select("date")
@@ -400,7 +410,7 @@ async function getSeasonWindows(
   return (data ?? []).map((row: any) => ({
     seasonId: Number(row.id),
     startDate: String(row.startDate).slice(0, 10),
-    endDate: String(row.endDate).slice(0, 10)
+    endDate: String(row.endDate).slice(0, 10),
   }));
 }
 
@@ -420,10 +430,13 @@ function buildSeasonDateTargets(
       continue;
     }
 
-    for (const date of buildDateRange(parseISO(rangeStart), parseISO(rangeEnd))) {
+    for (const date of buildDateRange(
+      parseISO(rangeStart),
+      parseISO(rangeEnd)
+    )) {
       targets.push({
         date,
-        seasonId: seasonWindow.seasonId
+        seasonId: seasonWindow.seasonId,
       });
     }
   }
@@ -497,11 +510,10 @@ async function getEarliestIncompleteDate(
         dates: new Set(
           (data ?? [])
             .map((row: { date?: string | null }) => row.date)
-            .filter(
-              (value: string | null | undefined): value is string =>
-                Boolean(value)
+            .filter((value: string | null | undefined): value is string =>
+              Boolean(value)
             )
-        )
+        ),
       };
     })
   );
@@ -571,15 +583,16 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
 
     if ((startDateParam || endDateParam) && date !== "all") {
       return res.status(400).json({
-        message: "Use either 'date' or the startDate/endDate backfill params, not both.",
-        success: false
+        message:
+          "Use either 'date' or the startDate/endDate backfill params, not both.",
+        success: false,
       });
     }
 
     if (endDateParam && !startDateParam) {
       return res.status(400).json({
         message: "The 'endDate' query parameter requires 'startDate'.",
-        success: false
+        success: false,
       });
     }
 
@@ -603,6 +616,7 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
     const seasonBasedConfigs = Object.entries(seasonBasedResponseKeys);
     let remainingDates: string[] = [];
     let remainingTargets: DateTarget[] = [];
+    let fatalNstConfigurationFailure = false;
     let ranSeasonTables = false;
     let totalDateCount = 0;
     const isManualStartDateMode = Boolean(startDateParam && !endDateParam);
@@ -619,14 +633,14 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
         return res.status(400).json({
           message:
             "Invalid 'startDate' or 'endDate' query parameter. Use YYYY-MM-DD.",
-          success: false
+          success: false,
         });
       }
 
       if (startDateParam! > endDateParam!) {
         return res.status(400).json({
           message: "'startDate' must be on or before 'endDate'.",
-          success: false
+          success: false,
         });
       }
 
@@ -646,20 +660,23 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
           processedDates: [],
           remainingDates: [],
           nextStartDate: null,
-          nextEndDate: null
+          nextEndDate: null,
         });
       }
 
       totalDateCount = targetDateObjects.length;
       remainingTargets = targetDateObjects.slice(MAX_DATE_BASED_DATES_PER_RUN);
-      targetDateObjects = targetDateObjects.slice(0, MAX_DATE_BASED_DATES_PER_RUN);
+      targetDateObjects = targetDateObjects.slice(
+        0,
+        MAX_DATE_BASED_DATES_PER_RUN
+      );
     } else if (isManualStartDateMode) {
       const forwardStartDate = startDateParam!;
       const parsedStartDate = parseISO(forwardStartDate);
       if (Number.isNaN(parsedStartDate.getTime())) {
         return res.status(400).json({
           message: "Invalid 'startDate' query parameter. Use YYYY-MM-DD.",
-          success: false
+          success: false,
         });
       }
 
@@ -671,7 +688,7 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
           processedDates: [],
           remainingDates: [],
           nextStartDate: null,
-          nextEndDate: null
+          nextEndDate: null,
         });
       }
 
@@ -691,13 +708,16 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
           processedDates: [],
           remainingDates: [],
           nextStartDate: null,
-          nextEndDate: null
+          nextEndDate: null,
         });
       }
 
       totalDateCount = targetDateObjects.length;
       remainingTargets = targetDateObjects.slice(MAX_DATE_BASED_DATES_PER_RUN);
-      targetDateObjects = targetDateObjects.slice(0, MAX_DATE_BASED_DATES_PER_RUN);
+      targetDateObjects = targetDateObjects.slice(
+        0,
+        MAX_DATE_BASED_DATES_PER_RUN
+      );
     } else if (date === "all") {
       const earliestIncompleteDate =
         latestCompleteCheckDate >= regularSeasonStartDate
@@ -713,8 +733,8 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
         const latestDates = await Promise.all(
           dateBasedConfigs.map(({ table }) => getLatestDate(supabase, table))
         );
-        const validDates = latestDates.filter(
-          (value): value is string => Boolean(value)
+        const validDates = latestDates.filter((value): value is string =>
+          Boolean(value)
         );
         const resumeFromDate =
           validDates.length > 0
@@ -729,7 +749,7 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
             processedDates: [],
             remainingDates: [],
             nextStartDate: null,
-            nextEndDate: null
+            nextEndDate: null,
           });
         }
 
@@ -738,7 +758,7 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
           parseISO(currentProcessingEndDate)
         ).map((formattedDate) => ({
           date: formattedDate,
-          seasonId
+          seasonId,
         }));
       } else {
         targetDateObjects = buildDateRange(
@@ -746,24 +766,30 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
           parseISO(currentProcessingEndDate)
         ).map((formattedDate) => ({
           date: formattedDate,
-          seasonId
+          seasonId,
         }));
       }
 
       totalDateCount = targetDateObjects.length;
       remainingTargets = targetDateObjects.slice(MAX_DATE_BASED_DATES_PER_RUN);
-      targetDateObjects = targetDateObjects.slice(0, MAX_DATE_BASED_DATES_PER_RUN);
+      targetDateObjects = targetDateObjects.slice(
+        0,
+        MAX_DATE_BASED_DATES_PER_RUN
+      );
     } else {
       const parsedDate = parseISO(date);
       if (Number.isNaN(parsedDate.getTime())) {
         return res.status(400).json({
           message: "Invalid 'date' query parameter. Use YYYY-MM-DD or 'all'.",
-          success: false
+          success: false,
         });
       }
 
       const formattedDate = format(parsedDate, "yyyy-MM-dd");
-      const resolvedSeasonId = await resolveSeasonIdForDate(supabase, formattedDate);
+      const resolvedSeasonId = await resolveSeasonIdForDate(
+        supabase,
+        formattedDate
+      );
       if (!resolvedSeasonId) {
         return res.status(200).json({
           message: `No active season window contains ${formattedDate}; skipping NST team stats fetch.`,
@@ -772,7 +798,7 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
           processedDates: [],
           remainingDates: [],
           nextStartDate: null,
-          nextEndDate: null
+          nextEndDate: null,
         });
       }
 
@@ -787,11 +813,9 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
       remainingDates.length === 0 &&
       hasBudgetForRequests(scriptStartTime, 2);
     const nstRequestPlan = resolveNstTeamStatsRequestPlan({
-      queuedDates: targetDateObjects.length,
-      dateRequestCount: targetDateObjects.length * dateBasedConfigs.length,
-      seasonRequestCount: shouldRunSeasonTables
-        ? seasonBasedConfigs.length
-        : 0
+      queuedDates: totalDateCount,
+      dateRequestCount: totalDateCount * dateBasedConfigs.length,
+      seasonRequestCount: shouldRunSeasonTables ? seasonBasedConfigs.length : 0,
     });
     currentNstRequestIntervalMs = nstRequestPlan.requestIntervalMs;
 
@@ -800,10 +824,10 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
         isBackwardRangeMode
           ? "end-date-backfill"
           : startDateParam
-          ? "start-date-backfill"
-          : date === "all"
-            ? "incremental"
-            : "single-date"
+            ? "start-date-backfill"
+            : date === "all"
+              ? "incremental"
+              : "single-date"
       } | requested date=${date} | startDate=${startDateParam ?? "n/a"} | endDate=${endDateParam ?? "n/a"} | dates this run=${targetDateObjects.length}/${totalDateCount} | remaining after slice=${remainingDates.length}`
     );
 
@@ -814,7 +838,9 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
           `Stopping before date ${formattedDate} | insufficient runtime budget for 4 date-based requests`
         );
         remainingTargets = [target, ...remainingTargets];
-        remainingDates = remainingTargets.map((remainingTarget) => remainingTarget.date);
+        remainingDates = remainingTargets.map(
+          (remainingTarget) => remainingTarget.date
+        );
         break;
       }
 
@@ -822,7 +848,10 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
         `Date ${dateIndex + 1}/${totalDateCount} | processing ${formattedDate} | season=${target.seasonId} | strengths=${dateBasedConfigs.length}`
       );
 
-      for (const [strengthIndex, { situation, rate, table }] of dateBasedConfigs.entries()) {
+      for (const [
+        strengthIndex,
+        { situation, rate, table },
+      ] of dateBasedConfigs.entries()) {
         const queryParams = new URLSearchParams({
           sit: situation,
           rate,
@@ -834,7 +863,7 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
           score: "all",
           team: "all",
           loc: "B",
-          gpf: "410"
+          gpf: "410",
         });
         const runLabel = `Date ${dateIndex + 1}/${totalDateCount} ${formattedDate} | season ${target.seasonId} | strength ${strengthIndex + 1}/${dateBasedConfigs.length}`;
 
@@ -842,7 +871,7 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
           const scriptOutput = await fetchTeamTable(queryParams, {
             label: runLabel,
             table,
-            situation
+            situation,
           });
           if (!scriptOutput.data || scriptOutput.data.length === 0) {
             logNst(
@@ -852,7 +881,7 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
               scope: "date",
               table,
               date: formattedDate,
-              reason: "empty_source"
+              reason: "empty_source",
             });
             continue;
           }
@@ -878,28 +907,45 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
             `${runLabel} | request ${scriptOutput.requestSequence} | table=${table} | situation=${situation} | raw rows=${scriptOutput.data.length} | mapped rows=${upsertData.length} | upserting=${upsertData.length}`
           );
           const { error } = await supabase.from(table).upsert(upsertData, {
-            onConflict: "team_abbreviation,date"
+            onConflict: "team_abbreviation,date",
           });
 
           if (error) {
-            throw new Error(`Supabase upsert error for ${table}: ${error.message}`);
+            throw new Error(
+              `Supabase upsert error for ${table}: ${error.message}`
+            );
           }
 
           logNst(
             `${runLabel} | request ${scriptOutput.requestSequence} | table=${table} | situation=${situation} | upsert complete in ${formatDuration(
               Date.now() - upsertStartedAt
             )} | request cycle=${formatDuration(
-              scriptOutput.waitMs + scriptOutput.fetchDurationMs + (Date.now() - upsertStartedAt)
+              scriptOutput.waitMs +
+                scriptOutput.fetchDurationMs +
+                (Date.now() - upsertStartedAt)
             )}`
           );
           processedTables.push(`${table}:${formattedDate}`);
         } catch (error: any) {
+          const failureReason = error?.message ?? String(error);
           const message = `Failed for ${table} on ${formattedDate}: ${
-            error?.message ?? String(error)
+            failureReason
           }`;
           console.error(message);
           fetchIssues.push(message);
+          if (isNstConfigurationFailure(failureReason)) {
+            fatalNstConfigurationFailure = true;
+            break;
+          }
         }
+      }
+
+      if (fatalNstConfigurationFailure) {
+        remainingTargets = [target, ...remainingTargets];
+        remainingDates = remainingTargets.map(
+          (remainingTarget) => remainingTarget.date
+        );
+        break;
       }
 
       processedDates.push(formattedDate);
@@ -907,7 +953,10 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
 
     if (shouldRunSeasonTables) {
       logNst("Date backlog is clear; starting season-based refresh.");
-      for (const [seasonIndex, [key, { situation, rate, table }]] of seasonBasedConfigs.entries()) {
+      for (const [
+        seasonIndex,
+        [key, { situation, rate, table }],
+      ] of seasonBasedConfigs.entries()) {
         const season = key === "seasonStats" ? seasonId : lastSeasonId;
         const queryParams = new URLSearchParams({
           sit: situation,
@@ -918,7 +967,7 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
           score: "all",
           team: "all",
           loc: "B",
-          gpf: "410"
+          gpf: "410",
         });
         const runLabel = `Season ${season} | table ${key} ${seasonIndex + 1}/${seasonBasedConfigs.length}`;
 
@@ -926,7 +975,7 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
           const scriptOutput = await fetchTeamTable(queryParams, {
             label: runLabel,
             table,
-            situation
+            situation,
           });
           if (!scriptOutput.data || scriptOutput.data.length === 0) {
             logNst(
@@ -936,7 +985,7 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
               scope: "season",
               table,
               season,
-              reason: "empty_source"
+              reason: "empty_source",
             });
             continue;
           }
@@ -962,84 +1011,104 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
             `${runLabel} | request ${scriptOutput.requestSequence} | table=${table} | situation=${situation} | raw rows=${scriptOutput.data.length} | mapped rows=${upsertData.length} | upserting=${upsertData.length}`
           );
           const { error } = await supabase.from(table).upsert(upsertData, {
-            onConflict: "team_abbreviation,season"
+            onConflict: "team_abbreviation,season",
           });
 
           if (error) {
-            throw new Error(`Supabase upsert error for ${table}: ${error.message}`);
+            throw new Error(
+              `Supabase upsert error for ${table}: ${error.message}`
+            );
           }
 
           logNst(
             `${runLabel} | request ${scriptOutput.requestSequence} | table=${table} | situation=${situation} | upsert complete in ${formatDuration(
               Date.now() - upsertStartedAt
             )} | request cycle=${formatDuration(
-              scriptOutput.waitMs + scriptOutput.fetchDurationMs + (Date.now() - upsertStartedAt)
+              scriptOutput.waitMs +
+                scriptOutput.fetchDurationMs +
+                (Date.now() - upsertStartedAt)
             )}`
           );
           processedTables.push(`${table}:${season}`);
         } catch (error: any) {
-          const message = `Failed for ${table}: ${error?.message ?? String(error)}`;
+          const failureReason = error?.message ?? String(error);
+          const message = `Failed for ${table}: ${failureReason}`;
           console.error(message);
           fetchIssues.push(message);
+          if (isNstConfigurationFailure(failureReason)) {
+            fatalNstConfigurationFailure = true;
+            break;
+          }
         }
       }
 
       ranSeasonTables = true;
     } else if (isManualStartDateMode || isBackwardRangeMode) {
-      logNst("Skipping season-based refresh because manual date-range backfill mode is date-only.");
+      logNst(
+        "Skipping season-based refresh because manual date-range backfill mode is date-only."
+      );
     } else if (remainingDates.length > 0) {
       logNst(
         `Skipping season-based refresh because ${remainingDates.length} date(s) remain in the backlog.`
       );
     } else {
-      logNst("Skipping season-based refresh because runtime budget is too low.");
+      logNst(
+        "Skipping season-based refresh because runtime budget is too low."
+      );
     }
 
     const complete = remainingDates.length === 0;
     const diagnostics = buildNstTeamStatsDiagnostics({
       failures: fetchIssues,
       skips: skippedRequests,
-      deferredDates: remainingDates
+      deferredDates: remainingDates,
     });
+    const success = fetchIssues.length === 0;
+    const responseStatus = success
+      ? 200
+      : fatalNstConfigurationFailure
+        ? 503
+        : 207;
+    const primaryFailure = diagnostics.failures[0]?.reason ?? null;
     const durationSeconds = (Date.now() - scriptStartTime) / 1000;
     logNst(
       `Run finished in ${durationSeconds.toFixed(1)}s | processed dates=${processedDates.length} | processed tables=${processedTables.length} | issues=${fetchIssues.length} | remaining dates=${remainingDates.length}`
     );
 
-    return res.status(200).json({
-      message: complete
-        ? `NST team stats completed in ${durationSeconds.toFixed(1)} seconds.`
-        : isBackwardRangeMode
-          ? `NST team stats processed ${processedDates.length} date(s) in ${durationSeconds.toFixed(
-              1
-            )} seconds. Continue with endDate=${remainingDates[0]}.`
-          : isManualStartDateMode
-          ? `NST team stats processed ${processedDates.length} date(s) in ${durationSeconds.toFixed(
-              1
-            )} seconds. Continue with startDate=${remainingDates[0]}.`
-          : `NST team stats processed ${processedDates.length} date(s) in ${durationSeconds.toFixed(
-              1
-            )} seconds and stopped before the Vercel timeout.`,
-      success: fetchIssues.length === 0,
+    return res.status(responseStatus).json({
+      message: !success
+        ? `NST team stats encountered ${fetchIssues.length} request failure(s): ${primaryFailure}`
+        : complete
+          ? `NST team stats completed in ${durationSeconds.toFixed(1)} seconds.`
+          : isBackwardRangeMode
+            ? `NST team stats processed ${processedDates.length} date(s) in ${durationSeconds.toFixed(
+                1
+              )} seconds. Continue with endDate=${remainingDates[0]}.`
+            : isManualStartDateMode
+              ? `NST team stats processed ${processedDates.length} date(s) in ${durationSeconds.toFixed(
+                  1
+                )} seconds. Continue with startDate=${remainingDates[0]}.`
+              : `NST team stats processed ${processedDates.length} date(s) in ${durationSeconds.toFixed(
+                  1
+                )} seconds and stopped before the Vercel timeout.`,
+      success,
       complete,
       ranSeasonTables,
       nstRequestPlan,
+      ...diagnostics,
       processedDates,
-      remainingDates,
-      nextStartDate:
-        isManualStartDateMode && !isBackwardRangeMode
-          ? remainingDates[0] ?? null
-          : null,
-      nextEndDate: isBackwardRangeMode ? remainingDates[0] ?? null : null,
+      remainingDatesCount: remainingDates.length,
+      remainingDates: remainingDates.slice(0, 10),
+      nextStartDate: !isBackwardRangeMode ? (remainingDates[0] ?? null) : null,
+      nextEndDate: isBackwardRangeMode ? (remainingDates[0] ?? null) : null,
       processedTables,
-      issues: fetchIssues,
-      ...diagnostics
+      issues: fetchIssues.slice(0, 10),
     });
   } catch (error: any) {
     console.error("Error in nst-team-stats API:", error.message);
     return res.status(500).json({
       message: "Failed to upsert team statistics: " + error.message,
-      success: false
+      success: false,
     });
   }
 });

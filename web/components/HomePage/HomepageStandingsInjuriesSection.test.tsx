@@ -1,4 +1,5 @@
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -10,6 +11,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import HomepageStandingsInjuriesSection, {
   buildHomepageTransactionTitle,
 } from "./HomepageStandingsInjuriesSection";
+import styles from "styles/Home.module.scss";
 
 vi.mock("components/common/OptimizedImage", () => ({
   default: ({ alt }: { alt: string }) => <img alt={alt} />
@@ -18,11 +20,43 @@ vi.mock("components/common/OptimizedImage", () => ({
 describe("HomepageStandingsInjuriesSection", () => {
   afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("fits desktop pages to the standings height and keeps every update reachable", () => {
+    let height = 986;
+    let resize = () => {};
+    vi.stubGlobal("ResizeObserver", class {
+      constructor(callback: () => void) { resize = callback; }
+      observe() {}
+      disconnect() {}
+    });
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      return { top: 0, height: this.classList.contains(styles.standingsContainer) ? height : 0 } as DOMRect;
+    });
+    render(<HomepageStandingsInjuriesSection standings={[]} injuries={
+      Array.from({ length: 45 }, (_, i) => ({ key: i, date: "2026-09-09", player: { displayName: `Update ${i + 1}` }, status: "Out" }))
+    } snapshotGeneratedAt={null} standingsError={null} injuriesError={null} />);
+
+    expect(screen.getByText("Update 20")).toBeTruthy();
+    expect(screen.queryByText("Update 21")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(screen.getByText("Update 21")).toBeTruthy();
+    expect(screen.getByText("Update 40")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(screen.getByText("Update 45")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Next" }).hasAttribute("disabled")).toBe(true);
+
+    act(() => { height = 1466; resize(); });
+    expect(screen.getByText("Page 2 of 2")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Previous" }));
+    expect(screen.getByText("Update 30")).toBeTruthy();
   });
 
   it("sorts standings by league rank and paginates injury rows", () => {
     const injuries = Array.from({ length: 33 }, (_, index) => ({
-      date: `2026-04-${String((index % 9) + 1).padStart(2, "0")}`,
+      date: "2026-04-09",
       team: "BOS",
       player: { displayName: `Player ${index + 1}` },
       status: "Out",
@@ -73,7 +107,7 @@ describe("HomepageStandingsInjuriesSection", () => {
     expect(screen.queryByText("Player 1")).toBeNull();
   });
 
-  it("opens on Injuries and keeps Transactions available", () => {
+  it("opens on combined updates and keeps Transactions available", () => {
     render(
       <HomepageStandingsInjuriesSection
         standings={[]}
@@ -105,14 +139,19 @@ describe("HomepageStandingsInjuriesSection", () => {
     );
 
     expect(
-      screen.getByRole("tab", { name: "Injuries" }).getAttribute(
+      screen.getByRole("tab", { name: "All updates" }).getAttribute(
         "aria-selected",
       ),
     ).toBe("true");
     expect(screen.getByText("Connor Bedard")).toBeTruthy();
+    expect(screen.getByText("Connor Bedard").closest("tr")?.className).toContain(styles.injuredRow);
     expect(
-      screen.queryByRole("table", { name: /recent nhl transactions/i }),
-    ).toBeNull();
+      screen.getByRole("table", { name: /recent nhl transactions and injury updates/i }),
+    ).toBeTruthy();
+    expect(screen.getByText("P. One signing")).toBeTruthy();
+    const combinedRows = screen.getByRole("table", { name: /recent nhl transactions and injury updates/i }).querySelectorAll("tbody tr:not([hidden])");
+    expect(combinedRows[0].textContent).toContain("P. One signing");
+    expect(combinedRows[0].className).toContain(styles.transactionRow);
 
     fireEvent.click(screen.getByRole("tab", { name: "Transactions" }));
     expect(
@@ -160,6 +199,7 @@ describe("HomepageStandingsInjuriesSection", () => {
     );
 
     expect(screen.getByText("Returning")).toBeTruthy();
+    expect(screen.getByText("Returning").closest("tr")?.className).toContain(styles.returningRow);
     expect(
       screen.getAllByText("No longer listed on the injury report."),
     ).toHaveLength(2);

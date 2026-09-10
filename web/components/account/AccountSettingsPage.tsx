@@ -29,6 +29,7 @@ import {
 import FantraxImportPanel from "./FantraxImportPanel";
 import EspnImportPanel from "./EspnImportPanel";
 import PatreonConnectionPanel from "./PatreonConnectionPanel";
+import DraftProPanel from "./DraftProPanel";
 
 import styles from "./AccountSettingsPage.module.scss";
 
@@ -49,7 +50,8 @@ type AccountSection =
   | "league-settings"
   | "saved-teams"
   | "connected-accounts"
-  | "patreon";
+  | "patreon"
+  | "draft-pro";
 
 type LeagueSettingsView = "scoring" | "categories" | "roster" | "context";
 type ConnectedAccountsView = "yahoo" | "fantrax" | "espn";
@@ -134,6 +136,12 @@ const SECTION_CONFIG: Record<
     description: "Membership and supporter access",
     title: "Patreon",
     body: "Link Patreon and review your supporter status.",
+  },
+  "draft-pro": {
+    label: "Draft Pro",
+    description: "Paid access, receipts, and retained draft work",
+    title: "Draft Pro",
+    body: "Review your Draft Pro access, purchase, and retained work.",
   },
 };
 
@@ -286,7 +294,8 @@ function resolveSection(
     rawSection === "league-settings" ||
     rawSection === "saved-teams" ||
     rawSection === "connected-accounts" ||
-    rawSection === "patreon"
+    rawSection === "patreon" ||
+    rawSection === "draft-pro"
   ) {
     return rawSection;
   }
@@ -3608,6 +3617,12 @@ export default function AccountSettingsPage() {
                 <h2 className={styles.panelTitle}>Membership</h2>
 
                 <PatreonConnectionPanel />
+              </div>
+            ) : null}
+
+            {activeSection === "draft-pro" ? (
+              <div className={styles.panel}>
+                <DraftProPanel />
               </div>
             ) : null}
           </div>

@@ -14,6 +14,7 @@ type PlayerAutocompleteProps = {
   inputClassName?: string;
   listClassName?: string;
   showButton?: boolean;
+  maxOptions?: number;
   adpByPlayerId?: Map<number, number> | Record<number, number>;
   sortByAdp?: boolean;
   // Optional override to supply a custom player pool (e.g., processed projections)
@@ -39,6 +40,7 @@ function PlayerAutocomplete({
   inputClassName,
   listClassName,
   showButton = true,
+  maxOptions = 10000,
   adpByPlayerId,
   sortByAdp = false,
   playersOverride
@@ -105,8 +107,7 @@ function PlayerAutocomplete({
       stringify(option) {
         return option.fullName.replaceAll(".", "");
       },
-      // Ensure a complete list is available without truncation
-      limit: 10000
+      limit: maxOptions
     })
   });
 

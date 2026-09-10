@@ -57,7 +57,7 @@ describe("Patreon entitlement anti-sharing", () => {
     metadata: {},
   } as any;
 
-  it("materializes an active generic supporter entitlement without a feature grant", async () => {
+  it("marks a paid generic Patreon supporter entitlement as a verified Draft Pro source", async () => {
     const query = {
       select: vi.fn(),
       eq: vi.fn(),
@@ -89,11 +89,104 @@ describe("Patreon entitlement anti-sharing", () => {
         entitlement_status: "active",
         effective_to: null,
         metadata: expect.objectContaining({
-          generic_entitlement_only: true,
           provider_user_id: "patreon-user-1",
+          verified_at: "2026-07-14T15:00:00.000Z",
+          draft_pro_eligible: true,
         }),
       }),
     );
+  });
+
+  it("retains the paid benefit snapshot across expiry and reuses the owned row on renewal", async () => {
+    let row: any = null;
+    const query: any = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      neq: vi.fn(),
+      maybeSingle: vi.fn(() => Promise.resolve({ data: row, error: null })),
+      insert: vi.fn((value) => {
+        row = { ...value, id: "entitlement-1", user_id: "user-1" };
+        return query;
+      }),
+      update: vi.fn((value) => {
+        // The post-write stale-member update excludes the current member; the
+        // harness models that predicate instead of mutating the current row.
+        if (value.metadata !== undefined || value.entitlement_status !== "inactive") {
+          row = { ...row, ...value };
+        }
+        return query;
+      }),
+      then: (resolve: (value: { error: null }) => unknown) => resolve({ error: null }),
+    };
+    query.select.mockReturnValue(query);
+    query.eq.mockReturnValue(query);
+    query.neq.mockReturnValue(query);
+    const client = { from: vi.fn(() => query) } as any;
+    const base = {
+      providerUserId: "patreon-user-1",
+      memberId: "member-1",
+      pledgeRelationshipStart: "2026-01-01T00:00:00Z",
+      metadata: {},
+      hasPaidMembership: true,
+    } as any;
+
+    await materializePatreonEntitlement({
+      userId: "user-1", account, client,
+      snapshot: { ...base, isEligibleSupporter: true, currentlyEntitledAmountCents: 500, tiers: [{ id: "tier-5", title: "Power Play", amountCents: 500 }] },
+      now: new Date("2026-07-14T15:00:00Z"),
+    });
+    const originalId = row.id;
+    const originalActivation = row.metadata.paid_activated_at;
+
+    await materializePatreonEntitlement({
+      userId: "user-1", account, client,
+      snapshot: { ...base, isEligibleSupporter: false, currentlyEntitledAmountCents: 0, tiers: [] },
+      now: new Date("2026-07-15T15:00:00Z"),
+    });
+    expect(row).toMatchObject({ id: originalId, source_reference: "member-1", entitlement_status: "inactive" });
+    expect(row.metadata).toMatchObject({ paid_activated_at: originalActivation, last_verified_paid_benefit: { amount_cents: 500, tiers: [{ id: "tier-5" }] } });
+
+    await materializePatreonEntitlement({
+      userId: "user-1", account, client,
+      snapshot: { ...base, isEligibleSupporter: true, currentlyEntitledAmountCents: 600, tiers: [{ id: "tier-6", title: "Center Ice", amountCents: 600 }] },
+      now: new Date("2026-07-16T15:00:00Z"),
+    });
+    expect(row).toMatchObject({ id: originalId, source_reference: "member-1", entitlement_status: "active" });
+    expect(row.metadata.paid_activated_at).toBe(originalActivation);
+    expect(row.metadata.last_verified_paid_benefit.amount_cents).toBe(600);
+  });
+
+  it("invalidates a missing campaign membership without erasing paid history", async () => {
+    const retained = {
+      id: "entitlement-1",
+      metadata: {
+        draft_pro_eligible: true,
+        last_verified_paid_benefit: { amount_cents: 500, tiers: [{ id: "tier-1" }] },
+      },
+    };
+    let call = 0;
+    const updates: any[] = [];
+    const client = {
+      from: vi.fn(() => {
+        call += 1;
+        const query: any = {
+          select: vi.fn(() => query),
+          eq: vi.fn(() => query),
+          update: vi.fn((value) => { updates.push(value); return query; }),
+          then: (resolve: (value: any) => unknown) => resolve(
+            call === 1 ? { data: [retained], error: null } : { error: null },
+          ),
+        };
+        return query;
+      }),
+    } as any;
+    await materializePatreonEntitlement({
+      userId: "user-1", account, client,
+      snapshot: { ...snapshot, memberId: null, isEligibleSupporter: false, metadata: { patron_status: null } },
+      now: new Date("2026-07-17T15:00:00Z"),
+    });
+    expect(updates).toHaveLength(1);
+    expect(updates[0]).toMatchObject({ entitlement_status: "inactive", metadata: { draft_pro_eligible: false, last_verified_paid_benefit: { amount_cents: 500 } } });
   });
 
   it("rejects a member identity already owned by another site user", async () => {

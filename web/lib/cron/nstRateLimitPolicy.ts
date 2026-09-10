@@ -1,5 +1,5 @@
 export interface NstRateLimitWindow {
-  label: "5m_burst" | "1h_standard";
+  label: "1m_burst" | "5m_burst" | "15m_burst" | "1h_standard";
   windowMs: number;
   maxRequests: number;
 }
@@ -23,11 +23,14 @@ export interface NstRateLimitAssessment {
 }
 
 export const NST_RATE_LIMIT_WINDOWS: readonly NstRateLimitWindow[] = [
+  { label: "1m_burst", windowMs: 60_000, maxRequests: 40 },
   { label: "5m_burst", windowMs: 300_000, maxRequests: 80 },
+  { label: "15m_burst", windowMs: 900_000, maxRequests: 100 },
   { label: "1h_standard", windowMs: 3_600_000, maxRequests: 180 }
 ] as const;
 
 export const NST_BURST_INTERVAL_MS = 0;
+export const NST_MAX_BURST_REQUESTS = 39;
 export const NST_TOKENS_PER_PAGE = 10;
 export const NST_STANDARD_TOKEN_CAP = 1_800;
 export const NST_STANDARD_TOKEN_REFRESH = 150;
@@ -96,10 +99,13 @@ export function assessNstRequestPlan(
 }
 
 export function canBurstNstRequests(requestCount: number): boolean {
-  return assessNstRequestPlan({
-    requestCount,
-    intervalMs: NST_BURST_INTERVAL_MS
-  }).isCompliant;
+  return (
+    requestCount <= NST_MAX_BURST_REQUESTS &&
+    assessNstRequestPlan({
+      requestCount,
+      intervalMs: NST_BURST_INTERVAL_MS
+    }).isCompliant
+  );
 }
 
 export function selectNstSafeInterval(

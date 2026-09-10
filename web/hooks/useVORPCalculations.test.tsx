@@ -153,7 +153,34 @@ describe("useVORPCalculations grouped forwards", () => {
     );
 
     expect(result.current.replacementByPos.FWD.vorp).toBe(60);
+    expect(result.current.playerMetrics.get("1")).toMatchObject({
+      vorp: 40,
+      vona: 10,
+      vbd: 30
+    });
     rerender({ baselineMode: "full" });
     expect(result.current.replacementByPos.FWD.vorp).toBe(70);
+  });
+
+  it("returns finite neutral metrics when a player has no usable position", () => {
+    const positionlessPlayer = player(10, "", 25);
+    const { result } = renderHook(() =>
+      useVORPCalculations({
+        players: [positionlessPlayer],
+        availablePlayers: [positionlessPlayer],
+        draftSettings: { teamCount: 1, rosterConfig },
+        picksUntilNext: 0
+      })
+    );
+
+    expect(result.current.playerMetrics.get("10")).toMatchObject({
+      value: 25,
+      vorp: 0,
+      vols: 0,
+      vona: 0,
+      vbd: 0,
+      bestPos: "",
+      eligible: []
+    });
   });
 });

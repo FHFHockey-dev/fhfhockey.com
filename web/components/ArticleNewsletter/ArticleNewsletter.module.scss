@@ -1,0 +1,66 @@
+@use "styles/vars" as v;
+@use "styles/panel" as panel;
+
+.panel {
+  @include panel.panel-shell($padding: v.$space-lg, $variant: soft, $overflow: visible);
+  min-width: 0;
+  color: v.$text-secondary;
+
+  h2 {
+    margin: v.$space-xs 0 v.$space-sm;
+    color: v.$color-brand-white;
+    font-family: v.$font-family-condensed;
+    font-size: 1.75rem;
+    line-height: 1.2;
+    text-transform: none;
+  }
+
+  p { margin: 0; line-height: 1.7; }
+}
+
+.icon { color: v.$primary-color; flex-shrink: 0; margin-bottom: v.$space-lg; }
+
+.eyebrow {
+  font-family: v.$font-family-condensed;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.action {
+  margin-top: v.$space-lg;
+
+  a {
+    @include v.focus-ring-desktop;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: v.$space-sm;
+    min-height: v.$touch-target-min;
+    padding: v.$space-sm v.$space-md;
+    border: 1px solid v.$primary-color;
+    border-radius: v.$radius-sm;
+    background: v.$primary-color;
+    color: v.$color-neutral-950;
+    font-weight: 700;
+    text-decoration: none;
+
+    &:hover { background: v.$color-blue-400; }
+  }
+
+  p { margin-top: v.$space-sm; font-size: 0.8rem; }
+}
+
+.reader {
+  .introduction { display: flex; align-items: flex-start; gap: v.$space-md; }
+  .icon { margin: v.$space-xs 0 0; }
+
+  @media (min-width: v.$screen-large) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 0.55fr);
+    align-items: center;
+    gap: v.$space-xl;
+    .action { margin: 0; }
+  }
+}

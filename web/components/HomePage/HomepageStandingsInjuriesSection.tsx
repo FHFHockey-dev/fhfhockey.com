@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import moment from "moment-timezone";
 import Link from "next/link";
 
@@ -249,16 +249,21 @@ export default function HomepageStandingsInjuriesSection({
   standingsError,
   injuriesError,
 }: HomepageStandingsInjuriesSectionProps) {
-  const [injuryPage, setInjuryPage] = useState(0);
+  const [updatesPage, setUpdatesPage] = useState(0);
+  const [pageSize, setPageSize] = useState(HOMEPAGE_UPDATES_PER_PAGE);
+  const [panelHeight, setPanelHeight] = useState<number | null>(null);
+  const standingsRef = useRef<HTMLDivElement>(null);
+  const updatesRef = useRef<HTMLDivElement>(null);
   const [activeUpdatesTab, setActiveUpdatesTab] = useState<
-    "transactions" | "injuries"
-  >("injuries");
+    "all" | "transactions" | "injuries"
+  >("all");
   const [expandedUpdateKey, setExpandedUpdateKey] = useState<string | null>(
     null,
   );
 
-  const selectUpdatesTab = (tab: "transactions" | "injuries") => {
+  const selectUpdatesTab = (tab: "all" | "transactions" | "injuries") => {
     setActiveUpdatesTab(tab);
+    setUpdatesPage(0);
     setExpandedUpdateKey(null);
   };
 
@@ -281,19 +286,65 @@ export default function HomepageStandingsInjuriesSection({
     [injuries, recentInjuryNews],
   );
 
-  const currentPageInjuries = useMemo(() => {
-    if (!Array.isArray(injuryUpdates)) return [];
-
-    return injuryUpdates.slice(
-      injuryPage * HOMEPAGE_UPDATES_PER_PAGE,
-      (injuryPage + 1) * HOMEPAGE_UPDATES_PER_PAGE,
+  const updates = useMemo(() => {
+    const rows = [
+      ...(activeUpdatesTab === "transactions" ? [] : injuryUpdates.map((injury) => ({
+        ...injury,
+        kind: "injury",
+        statusState: injury.statusState ??
+          (/return|healthy/i.test(injury.status ?? "") ? "returning" : "injured"),
+      }))),
+      ...(activeUpdatesTab === "injuries" ? [] : recentTransactions.map((transaction) => ({
+        key: `transaction-${transaction.id}`,
+        kind: "transaction",
+        date: transaction.published_at ?? transaction.created_at,
+        team: transaction.team_abbreviation,
+        player: { displayName: buildHomepageTransactionTitle(transaction) },
+        status: normalizeNewsCategory(transaction.category),
+        statusState: "transaction",
+        description: getPublicNewsItemDetails(transaction),
+        sourceUrl: transaction.source_url,
+        sourceAttribution: transaction.source_account ?? transaction.source_label,
+      }))),
+    ];
+    return rows.sort((a, b) =>
+      (Date.parse(b.date) || 0) - (Date.parse(a.date) || 0),
     );
-  }, [injuryUpdates, injuryPage]);
+  }, [activeUpdatesTab, injuryUpdates, recentTransactions]);
+  const pageCount = Math.max(1, Math.ceil(updates.length / pageSize));
+  const currentPage = Math.min(updatesPage, pageCount - 1);
+  const currentPageUpdates = updates.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
 
-  const homepageTransactions = useMemo(
-    () => recentTransactions.slice(0, HOMEPAGE_UPDATES_PER_PAGE),
-    [recentTransactions],
-  );
+  useEffect(() => {
+    const standingsPanel = standingsRef.current;
+    const updatesPanel = updatesRef.current;
+    if (!standingsPanel || !updatesPanel || typeof ResizeObserver === "undefined") return;
+    const measure = () => {
+      // The panels share a row only on desktop; stacked panels use compact pages.
+      const sideBySide = Math.abs(
+        standingsPanel.getBoundingClientRect().top - updatesPanel.getBoundingClientRect().top,
+      ) < 2;
+      const height = standingsPanel.getBoundingClientRect().height;
+      const chromeHeight = Array.from(updatesPanel.children).reduce((sum, child) =>
+        child.classList.contains(styles.tableWrapper) ? sum : sum + child.getBoundingClientRect().height,
+      0);
+      setPanelHeight(sideBySide && height > 0 ? height : null);
+      setPageSize(sideBySide && height > 0
+        ? Math.max(1, Math.floor((height - chromeHeight - 26) / 48))
+        : HOMEPAGE_UPDATES_PER_PAGE);
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(standingsPanel);
+    Array.from(updatesPanel.children).forEach((child) => {
+      if (!child.classList.contains(styles.tableWrapper)) observer.observe(child);
+    });
+    window.addEventListener("resize", measure);
+    measure();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [activeUpdatesTab, updates.length]);
 
   const standingsPresentation = buildHomepageModulePresentation({
     source: "homepage-standings",
@@ -319,7 +370,7 @@ export default function HomepageStandingsInjuriesSection({
       className={styles.standingsInjuriesContainer}
       aria-label="NHL standings and roster updates"
     >
-      <div className={styles.standingsContainer}>
+      <div ref={standingsRef} className={styles.standingsContainer}>
         <div className={styles.standingsHeader}>
           <h2>
             NHL <span>Standings</span>
@@ -407,7 +458,8 @@ export default function HomepageStandingsInjuriesSection({
         </div>
       </div>
 
-      <div className={styles.injuriesContainer}>
+      <div ref={updatesRef} className={styles.injuriesContainer}
+        style={{ "--updates-height": panelHeight ? `${panelHeight}px` : "auto" } as CSSProperties}>
         <div className={styles.injuriesHeader}>
           <h2>
             Recent <span>Transactions &amp; Injuries</span>
@@ -421,6 +473,9 @@ export default function HomepageStandingsInjuriesSection({
           role="tablist"
           aria-label="Roster updates"
         >
+          <button type="button" role="tab" aria-selected={activeUpdatesTab === "all"}
+            className={activeUpdatesTab === "all" ? styles.activeTab : ""}
+            onClick={() => selectUpdatesTab("all")}>All updates</button>
           <button
             type="button"
             role="tab"
@@ -443,7 +498,7 @@ export default function HomepageStandingsInjuriesSection({
           </button>
         </div>
 
-        {activeUpdatesTab === "injuries" && injuriesPresentation.panelState ? (
+        {activeUpdatesTab !== "transactions" && injuriesPresentation.panelState ? (
           <PanelStatus
             state={injuriesPresentation.panelState}
             message={injuriesPresentation.message ?? ""}
@@ -452,139 +507,10 @@ export default function HomepageStandingsInjuriesSection({
         ) : null}
 
         <div className={styles.tableWrapper}>
-          {activeUpdatesTab === "transactions" ? (
-            recentTransactions.length > 0 ? (
-              <table className={styles.transactionTable} aria-live="polite">
-                <caption className={styles.visuallyHidden}>
-                  Recent NHL transactions from the published news feed
-                </caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Date</th>
-                    <th scope="col">Team</th>
-                    <th scope="col">Transaction</th>
-                    <th scope="col">Type</th>
-                    <th scope="col" className={styles.descriptionColumn}>
-                      <span className={styles.desktopDetailsLabel}>Details</span>
-                      <span className={styles.mobileSourceLabel}>Source</span>
-                      <span className={styles.mobileExpandLabel}>
-                        <span className={styles.visuallyHidden}>Expand</span>
-                      </span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {homepageTransactions.map((transaction) => {
-                    const teamAbbrev = transaction.team_abbreviation ?? "NHL";
-                    const details = getPublicNewsItemDetails(transaction);
-                    const displayTitle =
-                      buildHomepageTransactionTitle(transaction);
-                    const sourceLabel = displayTitle || "news update";
-                    const updateKey = `transaction-${transaction.id}`;
-                    const detailId = `${updateKey.replace(
-                      /[^a-zA-Z0-9_-]/g,
-                      "-",
-                    )}-details`;
-                    const isExpanded = expandedUpdateKey === updateKey;
-
-                    return (
-                      <Fragment key={transaction.id}>
-                        <tr
-                          className={
-                            isExpanded
-                              ? styles.expandedUpdateSummaryRow
-                              : undefined
-                          }
-                        >
-                          <td className={styles.dateColumn}>
-                            {formatHomepageDate(
-                              transaction.published_at ??
-                                transaction.created_at,
-                            )}
-                          </td>
-                          <td className={styles.teamColumn}>
-                            <OptimizedImage
-                              className={styles.injuryTeamLogo}
-                              src={getTeamLogoSvg(teamAbbrev)}
-                              alt={`${teamAbbrev} logo`}
-                              width={24}
-                              height={24}
-                              priority={false}
-                              fallbackSrc={fallbackNHLLogo}
-                            />
-                          </td>
-                          <td className={styles.nameColumn}>
-                            {displayTitle}
-                          </td>
-                          <td className={styles.statusColumn}>
-                            {normalizeNewsCategory(transaction.category)}
-                          </td>
-                          <td className={styles.descriptionColumn}>
-                            <span className={styles.desktopUpdateDetails}>
-                              <span className={styles.descriptionContent}>
-                                {details}
-                              </span>
-                              {transaction.source_url ? (
-                                <ExternalNewsLink
-                                  href={transaction.source_url}
-                                  className={styles.externalNewsLink}
-                                  label={`View original post for ${sourceLabel}`}
-                                />
-                              ) : null}
-                            </span>
-                            <button
-                              type="button"
-                              className={styles.expandUpdateButton}
-                              aria-expanded={isExpanded}
-                              aria-controls={detailId}
-                              onClick={() => toggleUpdate(updateKey)}
-                            >
-                              <span aria-hidden="true">
-                                {isExpanded ? "−" : "+"}
-                              </span>
-                              <span className={styles.visuallyHidden}>
-                                {isExpanded ? "Collapse" : "Expand"} update for{" "}
-                                {sourceLabel}
-                              </span>
-                            </button>
-                          </td>
-                        </tr>
-                        <tr
-                          id={detailId}
-                          className={styles.expandedUpdateRow}
-                          hidden={!isExpanded}
-                        >
-                          <td colSpan={5} className={styles.expandedUpdateCell}>
-                            <span>{details}</span>
-                            <span className={styles.expandedUpdateMeta}>
-                              {formatHomepageTimestamp(
-                                transaction.published_at ??
-                                  transaction.created_at,
-                              )}
-                              {transaction.source_account ??
-                              transaction.source_label
-                                ? ` · ${
-                                    transaction.source_account ??
-                                    transaction.source_label
-                                  }`
-                                : ""}
-                            </span>
-                          </td>
-                        </tr>
-                      </Fragment>
-                    );
-                  })}
-                </tbody>
-              </table>
-            ) : (
-              <p className={styles.inlineEmptyState}>
-                No published transaction updates are available right now.
-              </p>
-            )
-          ) : currentPageInjuries.length > 0 ? (
+          {currentPageUpdates.length > 0 ? (
             <table className={styles.injuryTable} aria-live="polite">
               <caption className={styles.visuallyHidden}>
-                Recent NHL Injury Updates
+                {activeUpdatesTab === "transactions" ? "Recent NHL transactions from the published news feed" : activeUpdatesTab === "injuries" ? "Recent NHL Injury Updates" : "Recent NHL transactions and injury updates"}
               </caption>
               <thead>
                 <tr>
@@ -610,7 +536,7 @@ export default function HomepageStandingsInjuriesSection({
                 </tr>
               </thead>
               <tbody>
-                {currentPageInjuries.map((injury) => {
+                {currentPageUpdates.map((injury) => {
                   const teamAbbrev = injury.team?.toUpperCase() ?? "NHL";
                   const playerId = injury.player?.id;
                   const rowClassName =
@@ -618,9 +544,9 @@ export default function HomepageStandingsInjuriesSection({
                       ? styles.returningRow
                       : injury.statusState === "injured"
                         ? styles.injuredRow
-                        : "";
+                        : styles.transactionRow;
                   const playerName = injury.player?.displayName ?? "N/A";
-                  const updateKey = `injury-${injury.key}`;
+                  const updateKey = `${injury.kind}-${injury.key}`;
                   const detailId = `${updateKey.replace(
                     /[^a-zA-Z0-9_-]/g,
                     "-",
@@ -664,7 +590,7 @@ export default function HomepageStandingsInjuriesSection({
                         </td>
                         <td className={styles.descriptionColumn}>
                           <span className={styles.desktopUpdateDetails}>
-                            <span className={styles.descriptionContent}>
+                            <span className={styles.descriptionContent} title={injury.description ?? undefined}>
                               {injury.description ?? "N/A"}
                             </span>
                             {injury.sourceUrl ? (
@@ -712,27 +638,26 @@ export default function HomepageStandingsInjuriesSection({
                 })}
               </tbody>
             </table>
-          ) : null}
+          ) : <p className={styles.inlineEmptyState}>
+            {activeUpdatesTab === "transactions" ? "No published transaction updates are available right now." : "No recent updates are available right now."}
+          </p>}
         </div>
 
-        {activeUpdatesTab === "injuries" &&
-        injuryUpdates.length > HOMEPAGE_UPDATES_PER_PAGE ? (
+        {updates.length > 0 ? (
           <div className={styles.pagination}>
             <button
-              onClick={() => setInjuryPage((prev) => Math.max(prev - 1, 0))}
-              disabled={injuryPage === 0}
+              onClick={() => setUpdatesPage(Math.max(currentPage - 1, 0))}
+              disabled={currentPage === 0}
             >
               Previous
             </button>
             <span>
-              Page {injuryPage + 1} of{" "}
-              {Math.ceil(injuryUpdates.length / HOMEPAGE_UPDATES_PER_PAGE)}
+              Page {currentPage + 1} of {pageCount}
             </span>
             <button
-              onClick={() => setInjuryPage((prev) => prev + 1)}
+              onClick={() => setUpdatesPage(Math.min(currentPage + 1, pageCount - 1))}
               disabled={
-                injuryUpdates.length <=
-                (injuryPage + 1) * HOMEPAGE_UPDATES_PER_PAGE
+                currentPage >= pageCount - 1
               }
             >
               Next

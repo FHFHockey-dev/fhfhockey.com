@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import { DraftSettings, DraftedPlayer, TeamDraftStats } from "./DraftDashboard";
 import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import type { PlayerVorpMetrics } from "hooks/useVORPCalculations";
@@ -26,6 +27,8 @@ import {
 import styles from "./DraftBoard.module.scss";
 
 interface DraftBoardProps {
+  expandedMetrics?: React.ReactNode;
+  expandRequest?: number;
   myTeamId?: string;
   draftSettings: DraftSettings;
   draftedPlayers: DraftedPlayer[];
@@ -49,6 +52,8 @@ interface DraftBoardProps {
 }
 
 const DraftBoard: React.FC<DraftBoardProps> = ({
+  expandedMetrics,
+  expandRequest = 0,
   myTeamId,
   draftSettings,
   draftedPlayers,
@@ -67,9 +72,68 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
     draftOrderPattern ?? draftOrderPatternFromSnake(isSnakeDraft);
   const [editingTeam, setEditingTeam] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [overlayTop, setOverlayTop] = useState(80);
+  const expandButtonRef = useRef<HTMLButtonElement>(null);
+  const closeExpandedButtonRef = useRef<HTMLButtonElement>(null);
+  const boardRef = useRef<HTMLDivElement>(null);
+  const wasExpandedRef = useRef(false);
+  const externalTriggerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (expandRequest > 0) {
+      externalTriggerRef.current = document.activeElement as HTMLElement;
+      setIsExpanded(true);
+    }
+  }, [expandRequest]);
   const contributionInputRef = useRef<HTMLInputElement>(null);
   // NEW: manage blur timeout safely via ref instead of window-scoped var
   const blurTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!isExpanded) {
+      if (wasExpandedRef.current) {
+        (externalTriggerRef.current ?? expandButtonRef.current)?.focus();
+        externalTriggerRef.current = null;
+        wasExpandedRef.current = false;
+      }
+      return;
+    }
+    wasExpandedRef.current = true;
+    const updateTop = () => setOverlayTop((document.querySelector("[data-god-view-open]")?.getBoundingClientRect().top ?? 64) + 8);
+    updateTop();
+    window.addEventListener("resize", updateTop);
+    const appRoot = document.getElementById("__next");
+    appRoot?.setAttribute("aria-hidden", "true");
+    appRoot?.setAttribute("inert", "");
+    closeExpandedButtonRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setIsExpanded(false);
+        return;
+      }
+      if (event.key === "Tab") {
+        const focusable = boardRef.current?.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (!focusable?.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("resize", updateTop);
+      document.removeEventListener("keydown", onKeyDown);
+      appRoot?.removeAttribute("aria-hidden");
+      appRoot?.removeAttribute("inert");
+    };
+  }, [isExpanded]);
 
   const augmentedAllPlayers = useMemo(() => {
     const allPlayersMap = new Map<string, ProcessedPlayer>();
@@ -419,7 +483,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
             aria-label={tooltip}
           >
             {isCurrentPick && (
-              <div className={styles.currentPickIndicator}>●</div>
+              <span className={styles.currentPickIndicator} aria-hidden="true" />
             )}
             {traded && (
               <span className={styles.tradeIcon} aria-hidden="true">
@@ -471,7 +535,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
               aria-disabled={!canEditTeamNames || undefined}
               title={
                 canEditTeamNames
-                  ? "Click to edit team name"
+                  ? `${teamNameById.get(teamId) || teamId} · Click to edit team name`
                   : "Yahoo live sync controls team names"
               }
             >
@@ -491,14 +555,31 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
     return grid;
   };
 
-  return (
-    <div className={styles.draftBoardContainer} aria-label="Draft Graph" style={{ "--team-count": draftSettings.teamCount, "--team-rows": Math.ceil(draftSettings.teamCount / 2), "--round-count": roundsToShow } as React.CSSProperties}>
+  const board = (
+    <div ref={boardRef} id="draft-graph" className={`${styles.draftBoardContainer} ${isExpanded ? styles.expandedDraftBoard : ""}`} aria-label="Draft Graph" aria-modal={isExpanded || undefined} role={isExpanded ? "dialog" : undefined} style={{ "--graph-top": `${overlayTop}px`, "--team-count": draftSettings.teamCount, "--team-rows": Math.ceil(draftSettings.teamCount / 2), "--round-count": roundsToShow } as React.CSSProperties}>
+      {isExpanded && <header className={styles.expandedHeader}>
+        <h2>Draft Graph</h2><span>Round {currentTurn.round} · Pick {currentOverallPick} of {draftSettings.teamCount * roundsToShow}</span>
+        <button ref={closeExpandedButtonRef} type="button" onClick={() => setIsExpanded(false)} aria-label="Close expanded graph">Close ×</button>
+      </header>}
       <div className={styles.contributionGraphContainer}>
         <div className={styles.contributionGraph}>
           {/* Round labels (columns) */}
           <div className={styles.roundLabelsRow}>
           {[0, 1].map((copy) => <div key={copy} className={styles.roundLabels} aria-hidden={copy === 1 ? true : undefined}>
-            <div className={styles.teamLabelSpacer}></div>
+            <div className={styles.teamLabelSpacer}>
+              {copy === 0 && !isExpanded && <button
+                ref={expandButtonRef}
+                type="button"
+                className={styles.expandGraphButton}
+                aria-label={isExpanded ? "Close expanded graph" : "Expand draft graph"}
+                title={isExpanded ? "Close expanded graph" : "Expand draft graph"}
+                aria-expanded={isExpanded}
+                aria-controls="draft-graph"
+                onClick={() => setIsExpanded((value) => !value)}
+              >
+                {isExpanded ? "↙" : "↗"}
+              </button>}
+            </div>
             <div
               className={styles.roundLabelsGrid}
               style={{ gridTemplateColumns: `repeat(${roundsToShow}, minmax(0, 1fr))` }}
@@ -547,8 +628,10 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         <span><i className={styles.tradeLegend} /> Traded</span>
         {noPickKeepers.length > 0 && <details className={styles.noPickKeepers}><summary><span>No-Pick Keepers</span> ({noPickKeepers.length})</summary><ul>{noPickKeepers.map((keeper) => <li key={keeper.playerId}><strong>{allPlayersData.get(keeper.playerId)?.fullName || `Player #${keeper.playerId}`}</strong> · {teamNameById.get(keeper.teamId) || keeper.teamId}</li>)}</ul></details>}
       </div>
+      {isExpanded && expandedMetrics && <div className={styles.expandedMetrics}>{expandedMetrics}</div>}
     </div>
   );
+  return isExpanded && typeof document !== "undefined" ? createPortal(board, document.body) : board;
 };
 
 export default DraftBoard;

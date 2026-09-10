@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\blog\[slug].tsx
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { GetStaticPaths, GetStaticProps } from "next";
 import { useRouter } from "next/router";
 
@@ -13,15 +13,13 @@ import { NextSeo } from "next-seo";
 
 import styles from "styles/Post.module.scss";
 import { TextBanner } from "components/Banner/Banner";
-import IconButton from "components/IconButton";
-import Tooltip from "components/Tooltip";
-import { Tooltip as MUI_Tooltip } from "@mui/material";
 import CommentForm from "components/CommentForm";
-import RecentPosts from "components/RecentPosts";
 import Comments from "components/Comments";
 
-import { PostPreviewData } from ".";
-import scrollTop from "utils/scrollTop";
+import type { PostPreviewData } from ".";
+import { relatedArticles } from "components/ArticleReader/related.server";
+import ArticleReader from "components/ArticleReader/ArticleReader";
+import { portableHeadings, headingTone } from "components/ArticleReader/headings";
 import Container from "components/Layout/Container";
 
 import Image from "next/image";
@@ -46,6 +44,9 @@ type PostDetailsData = {
    * e.g., '7/19/2022'
    */
   createdAt: string;
+  publishedAt: string;
+  topics: string[];
+  imageAlt: string;
   /**
    * PortableText value
    */
@@ -53,7 +54,7 @@ type PostDetailsData = {
   author: UserData;
 };
 
-const postsQuery = groq`*[_type == "post" && defined(slug.current)][].slug.current`;
+const postsQuery = groq`*[_type == "post" && defined(slug.current) && !(_id in path("drafts.**")) && defined(publishedAt) && dateTime(publishedAt) <= dateTime(now())][].slug.current`;
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const slugs = await getClient().fetch(postsQuery);
@@ -65,11 +66,12 @@ export const getStaticPaths: GetStaticPaths = async () => {
 };
 
 const postQuery = groq`
-  *[_type == "post" && slug.current == $slug][0] {
+  *[_type == "post" && slug.current == $slug && !(_id in path("drafts.**")) && defined(publishedAt) && dateTime(publishedAt) <= dateTime(now())][0] {
     _id,
     title,
     summary,
     mainImage,
+    "topics": categories[]->title,
     "slug": slug.current,
     publishedAt,
     body,
@@ -79,16 +81,6 @@ const postQuery = groq`
       bio,
       image
     }
-  }
-`;
-
-const recentPostsQuery = groq`
-  *[_type == "post" && slug.current != $slug] | order(publishedAt desc)[0...3] {
-    title,
-    summary,
-    mainImage,
-    publishedAt,
-    "slug": slug.current
   }
 `;
 
@@ -105,14 +97,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   }
 
   const slug = params.slug as string;
-  const [data, recentPostsData] = await Promise.all([
-    getClient().fetch(postQuery, {
-      slug
-    }),
-    getClient().fetch(recentPostsQuery, {
-      slug
-    })
-  ]);
+  const data = await getClient().fetch(postQuery, { slug });
 
   if (!data) {
     return {
@@ -126,24 +111,21 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     _id,
     slug,
     title,
-    summary,
-    imageUrl: urlFor(mainImage).url(),
-    content: body,
-    createdAt: new Date(publishedAt).toLocaleDateString("en-US"),
+    summary: summary || "",
+    imageUrl: mainImage?.asset ? urlFor(mainImage).url() : "",
+    imageAlt: mainImage?.alt || "",
+    topics: (data.topics || []).filter(Boolean),
+    publishedAt: publishedAt && Number.isFinite(Date.parse(publishedAt)) ? new Date(publishedAt).toISOString() : "",
+    content: body || [],
+    createdAt: publishedAt ? new Date(publishedAt).toLocaleDateString("en-US", { timeZone: "UTC" }) : "",
     author: {
-      name: author.name,
-      bio: author.bio,
-      image: urlFor(author.image).url()
+      name: author?.name || "",
+      bio: author?.bio || "",
+      image: author?.image?.asset ? urlFor(author.image).url() : ""
     }
   };
 
-  const recentPosts: PostPreviewData[] = recentPostsData.map((post: any) => ({
-    slug: post.slug,
-    title: post.title,
-    summary: post.summary,
-    createdAt: new Date(post.publishedAt).toLocaleDateString("en-US"),
-    imageUrl: urlFor(post.mainImage).url()
-  }));
+  const recentPosts = await relatedArticles(slug, post.topics);
 
   return {
     props: { post, recentPosts },
@@ -163,158 +145,35 @@ function Post({ post, recentPosts }: PostPageProps) {
   const router = useRouter();
   const [like, setLike] = useState(false);
   const commentsRef = useRef<any>(null);
-
-  const fetchComments = () => {
-    commentsRef.current?.refetch();
+  if (router.isFallback) return <TextBanner text="Loading article…" />;
+  const { slug, title, summary, imageUrl, content, publishedAt, author, topics } = post;
+  const headings = portableHeadings(content);
+  const heading = ({ value, children }: any) => {
+    const entry = headings.find((item) => item.key === value._key);
+    const Tag = `h${entry?.level || 2}` as "h2" | "h3" | "h4";
+    return <Tag id={entry?.id} tabIndex={-1} data-tone={headingTone(entry?.text || "")}>{children}</Tag>;
   };
-
-  useEffect(() => {
-    scrollTop();
-  }, []);
-
-  // If the page is not yet generated, this will be displayed
-  // initially until getStaticProps() finishes running
-  if (router.isFallback) {
-    return <TextBanner text="Loading..." />;
-  }
-
-  const { slug, title, summary, imageUrl, content, createdAt, author } = post;
-  return (
-    <Container>
-      <NextSeo
-        title={`${title} | FHFH Blog`}
-        description={summary}
-        canonical={`${process.env.NEXT_PUBLIC_SITE_URL}/blog/${slug}`}
-        openGraph={{
-          type: "article",
-          url: `${process.env.NEXT_PUBLIC_SITE_URL}/blog/${slug}`,
-          images: [{ url: imageUrl, alt: title }],
-          article: {
-            publishedTime: new Date(createdAt).toISOString()
-          }
-        }}
-      />
-      <div className={styles.postPage}>
-        <div className={styles.mainContent}>
-          {/* Post Content */}
-          <article className={styles.post}>
-            <header className={styles.header}>
-              <h1>{title}</h1>
-              <div
-                style={{
-                  color: "white",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-end"
-                }}
-              >
-                <User user={author} />
-                <div>{createdAt}</div>
-              </div>
-            </header>
-            <div className={styles.portableText}>
-              <PortableText
-                value={content}
-                components={{
-                  types: {
-                    image: ({ value }) => {
-                      const alignment = value.alignment || "inline";
-                      const alt = value.alt || "";
-                      const src = urlFor(value).url();
-                      const figureStyle: React.CSSProperties = {
-                        margin:
-                          alignment === "inline"
-                            ? "1rem 0"
-                            : alignment === "left"
-                              ? "0.5rem 1rem 0.5rem 0"
-                              : "0.5rem 0 0.5rem 1rem",
-                        float:
-                          alignment === "left" || alignment === "right"
-                            ? (alignment as any)
-                            : undefined,
-                        maxWidth: alignment === "inline" ? "100%" : "45%"
-                      };
-                      const sizes =
-                        alignment === "inline"
-                          ? "(max-width: 480px) 100vw, (max-width: 1024px) 90vw, 900px"
-                          : "(max-width: 480px) 100vw, (max-width: 1024px) 50vw, 45vw";
-                      return (
-                        <figure className={styles.figure} style={figureStyle}>
-                          <Image
-                            alt={alt}
-                            src={src}
-                            width={700}
-                            height={475}
-                            sizes={sizes}
-                          />
-                          {value.caption ? (
-                            <figcaption className={styles.figcaption}>
-                              {value.caption}
-                            </figcaption>
-                          ) : null}
-                        </figure>
-                      );
-                    }
-                  }
-                }}
-              />
-            </div>
-
-            <div className={styles.actions}>
-              <Tooltip onHoverText={!like ? "like" : "dislike"}>
-                <IconButton
-                  icon={like ? "heart-filled" : "heart-outlined"}
-                  onClick={() => setLike((prev) => !prev)}
-                />
-              </Tooltip>
-              <Tooltip onHoverText="Share" onClickText="Copied!">
-                <IconButton
-                  icon="share"
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.href);
-                  }}
-                />
-              </Tooltip>
-            </div>
-          </article>
-          {/* Comment Form*/}
-          <CommentForm
-            className={styles.commentForm}
-            postId={post._id}
-            fetchComments={fetchComments}
-          />
-
-          {/* Comments */}
-          <Comments ref={commentsRef} slug={post.slug} />
-        </div>
-        <div className={styles.recentPosts}>
-          <RecentPosts posts={recentPosts} />
-        </div>
-      </div>
-    </Container>
-  );
-}
-
-function User({ user }: { user: UserData }) {
-  const { image, name, bio } = user;
-  return (
-    <MUI_Tooltip arrow title={<p style={{ whiteSpace: "pre-line" }}>{bio}</p>}>
-      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-        <div
-          style={{
-            borderRadius: "100%",
-            overflow: "hidden",
-            width: "32px",
-            height: "32px",
-            flexShrink: 0
-          }}
-        >
-          <Image src={image} width={32} height={32} alt={name} />
-        </div>
-        <div>{name}</div>
-      </div>
-    </MUI_Tooltip>
-  );
+  return <Container contentVariant="full" className={styles.readerCanvas}>
+    <NextSeo
+      title={`${title} | FHFH Blog`}
+      description={summary}
+      canonical={`${process.env.NEXT_PUBLIC_SITE_URL}/blog/${slug}`}
+      openGraph={{ type: "article", url: `${process.env.NEXT_PUBLIC_SITE_URL}/blog/${slug}`, images: imageUrl ? [{ url: imageUrl, alt: title }] : [], article: { publishedTime: publishedAt || undefined } }}
+    />
+    <ArticleReader title={title} summary={summary} imageUrl={imageUrl} imageAlt={post.imageAlt} author={author.name} authorImage={author.image} publishedAt={publishedAt} topics={topics} headings={headings} related={recentPosts} interactions={<>
+      <button className={styles.likeButton} type="button" aria-pressed={like} onClick={() => setLike((previous) => !previous)}>{like ? "♥ Liked" : "♡ Like article"}</button>
+      <CommentForm className={styles.commentForm} postId={post._id} fetchComments={() => commentsRef.current?.refetch()} />
+      <Comments ref={commentsRef} slug={post.slug} />
+    </>}>
+      <PortableText value={content} components={{
+        block: { h1: heading, h2: heading, h3: heading, h4: heading },
+        types: { image: ({ value }) => <figure className={styles.figure} data-alignment={value.alignment || "inline"}>
+          <Image alt={value.alt || ""} src={urlFor(value).url()} width={1200} height={800} sizes="(max-width: 1023px) 100vw, 740px" />
+          {value.caption && <figcaption>{value.caption}</figcaption>}
+        </figure> }
+      }} />
+    </ArticleReader>
+  </Container>;
 }
 
 export default Post;

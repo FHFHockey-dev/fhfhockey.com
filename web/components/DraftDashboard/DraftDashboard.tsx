@@ -13,6 +13,7 @@ import {
 } from "hooks/useProcessedProjectionsData";
 import { getDefaultFantasyPointsConfig } from "lib/projectionsConfig/fantasyPointsConfig";
 import { PROJECTION_SOURCES_CONFIG } from "lib/projectionsConfig/projectionSourcesConfig";
+import { FANTASY_PROJECTION_SEASON_ID } from "lib/fantasy-projections/contracts";
 import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
 import { useDraftRanking } from "hooks/useDraftRanking";
 import { useYahooDraftSync } from "hooks/useYahooDraftSync";
@@ -28,8 +29,24 @@ import DraftSettingsShell, { type SettingsSection } from "./DraftSettingsShell";
 import DraftStatus from "./DraftStatus";
 import LeagueStandings from "./LeagueStandings";
 import MyRoster from "./MyRoster";
+import GodView from "./GodView";
+import { godViewRosterNeeds, godViewRosterProgress, selectGodViewQueue } from "lib/draftDashboard/godView";
+import DustMatrix from "./DustMatrix";
+import SavedDraftsWorkspace from "./SavedDraftsWorkspace";
+import type { SavedDraftAnnotations } from "./SavedDraftsPanel";
+import { adaptScenarioDashboard, type ScenarioSavedImportContext } from "lib/draft-pro/scenarioDashboardAdapter";
+import { ScenarioComparisonWorkspace } from "./ScenarioComparisonWorkspace";
+import { showScenarioWorkspace, type ScenarioWorkspaceState } from "lib/draftDashboard/scenarioWorkspaceState";
+import { adaptReportDashboard, type OpenedReportDraft } from "lib/draft-pro/reportDashboardAdapter";
+import { AnalyticalReportsPanel } from "./AnalyticalReportsPanel";
 import ProjectionsTable from "./ProjectionsTable";
 import { useVORPCalculations } from "hooks/useVORPCalculations";
+import { useDraftProAccess } from "hooks/useDraftProAccess";
+import { useDraftProDust } from "hooks/useDraftProDust";
+import { buildDraftProDustNotices } from "lib/draftDashboard/draftProDustPresentation";
+import { buildDraftProDustRequest } from "lib/draftDashboard/draftProDustRequest";
+import { useDraftSchedule } from "hooks/useDraftSchedule";
+import { normalizeScheduleSettings } from "lib/draftDashboard/scheduleMetrics";
 import { useRosterScheduleOptimizer } from "hooks/useRosterScheduleOptimizer";
 import SuggestedPicks from "./SuggestedPicks";
 import DraftSummaryModal from "./DraftSummaryModal";
@@ -60,13 +77,22 @@ import {
   sanitizeControls,
 } from "lib/draftDashboard/sourceControlPreferences";
 import {
+  parseBrowserSnapshot,
+  restoreBrowserSnapshot,
+  serializeSavedDraft,
+  toNormalizedPrivateImports,
+  type BrowserDraftSnapshot,
+} from "lib/draft-pro/savedDrafts";
+import {
   calculateSourceRankImpacts,
   rankProjectionPlayers,
   type SourceRankImpact,
 } from "lib/draftDashboard/sourceRankImpact";
-import type { CustomAdditionalProjectionSource } from "hooks/useProcessedProjectionsData";
+import { buildCustomProjectionSources } from "lib/draftDashboard/customProjectionSources";
+import { requestDraftProExport } from "lib/draftDashboard/draftProExportRequest";
 import {
   allocateGroupedRosterSlots,
+  groupPlayerEligibility,
   getEffectiveRosterConfig,
   getRosterPositions,
   loadForwardGroupingPreference,
@@ -129,9 +155,20 @@ import styles from "./DraftDashboard.module.scss";
 
 const EMPTY_PROJECTION_STYLES: Record<string, string> = {};
 const NOOP_PROJECTION_TOGGLE = () => {};
+const readStoredFavoriteIds = (): string[] => {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem("projections.favorites") ?? "[]");
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+};
 
 // Data Models from PRD
 export interface DraftSettings {
+  playoffWeeks?: number[];
+  scheduleScope?: "season" | "playoffs";
   teamCount: number;
   scoringCategories: Record<string, number>;
   leagueType?: "points" | "categories";
@@ -207,6 +244,8 @@ export interface VORPCalculation {
 }
 
 const DEFAULT_DRAFT_SETTINGS: DraftSettings = {
+  playoffWeeks: [],
+  scheduleScope: "season",
   teamCount: 12,
   scoringCategories: getDefaultFantasyPointsConfig("skater"),
   leagueType: "points",
@@ -259,9 +298,65 @@ function normalizeDraftSettingsOrder(
   );
   return {
     ...settings,
+    ...normalizeScheduleSettings(settings),
     draftOrderMode: pattern.mode,
     reversedRounds: pattern.reversedRounds,
   };
+}
+
+function isDraftSettings(value: unknown): value is DraftSettings {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate.teamCount === "number" &&
+    !!candidate.rosterConfig && typeof candidate.rosterConfig === "object" && !Array.isArray(candidate.rosterConfig) &&
+    !!candidate.scoringCategories && typeof candidate.scoringCategories === "object" && !Array.isArray(candidate.scoringCategories) &&
+    Array.isArray(candidate.draftOrder) && candidate.draftOrder.every((team) => typeof team === "string");
+}
+
+const isSnapshotRecord = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && !Array.isArray(value);
+
+export function adaptSavedDraftRows(snapshot: { draftedPlayers: readonly unknown[]; customCsvList?: readonly unknown[] }) {
+  const draftedPlayers = snapshot.draftedPlayers.map((value) => {
+    if (!isSnapshotRecord(value) || typeof value.playerId !== "string" || typeof value.teamId !== "string" || !Number.isInteger(value.pickNumber) || !Number.isInteger(value.round) || !Number.isInteger(value.pickInRound)) throw new Error("Saved draft picks are invalid.");
+    const optionalStrings = ["yahooSessionId", "yahooPlayerKey", "yahooPlayerId", "yahooDisplayName", "espnSessionId", "espnPlayerId", "espnDisplayName"] as const;
+    if (optionalStrings.some((field) => value[field] !== undefined && typeof value[field] !== "string")) throw new Error("Saved draft pick metadata is invalid.");
+    if (value.source !== undefined && !["manual", "yahoo", "espn"].includes(String(value.source))) throw new Error("Saved draft pick source is invalid.");
+    if (value.yahooMappingStatus !== undefined && !["mapped", "unresolved", "review_required"].includes(String(value.yahooMappingStatus))) throw new Error("Saved Yahoo mapping status is invalid.");
+    if (value.espnMappingStatus !== undefined && !["mapped", "unresolved", "review_required"].includes(String(value.espnMappingStatus))) throw new Error("Saved ESPN mapping status is invalid.");
+    if (value.isKeeper !== undefined && typeof value.isKeeper !== "boolean" || value.keeperVersion !== undefined && !Number.isInteger(value.keeperVersion) || value.auctionCost !== undefined && value.auctionCost !== null && typeof value.auctionCost !== "number") throw new Error("Saved draft pick metadata is invalid.");
+    const player: DraftedPlayer = { playerId: value.playerId, teamId: value.teamId, pickNumber: value.pickNumber as number, round: value.round as number, pickInRound: value.pickInRound as number };
+    for (const field of optionalStrings) if (typeof value[field] === "string") Object.assign(player, { [field]: value[field] });
+    if (value.source) player.source = value.source as DraftedPlayer["source"];
+    if (value.yahooMappingStatus) player.yahooMappingStatus = value.yahooMappingStatus as DraftedPlayer["yahooMappingStatus"];
+    if (value.espnMappingStatus) player.espnMappingStatus = value.espnMappingStatus as DraftedPlayer["espnMappingStatus"];
+    if (typeof value.isKeeper === "boolean") player.isKeeper = value.isKeeper;
+    if (typeof value.keeperVersion === "number") player.keeperVersion = value.keeperVersion;
+    if (typeof value.auctionCost === "number" || value.auctionCost === null) player.auctionCost = value.auctionCost;
+    return player;
+  });
+  const customCsvList: SessionCsvEntry[] = (snapshot.customCsvList ?? []).map((value) => {
+    if (!isSnapshotRecord(value) || typeof value.id !== "string" || typeof value.label !== "string" || !Array.isArray(value.rows) || value.rows.some((row) => !isSnapshotRecord(row))) throw new Error("Saved private import data is invalid.");
+    const headers = value.headers;
+    if (headers !== undefined && (!Array.isArray(headers) || headers.some((header) => !isSnapshotRecord(header) || typeof header.original !== "string" || typeof header.standardized !== "string" || typeof header.selected !== "boolean"))) throw new Error("Saved private import mapping is invalid.");
+    const entry: SessionCsvEntry = { id: value.id, label: value.label, rows: value.rows as Record<string, unknown>[] };
+    if (headers) entry.headers = headers.map((header) => ({ original: header.original as string, standardized: header.standardized as string, selected: header.selected as boolean }));
+    const resolution = value.resolution;
+    if (isSnapshotRecord(resolution) && Object.keys(resolution).length) {
+      const requiredNumbers = ["totalRows", "idMatched", "nameMatched", "unresolved", "coverage", "lastUpdated"] as const;
+      const optionalNumbers = ["fuzzyMatched", "manualOverrides", "invalidIds"] as const;
+      if (requiredNumbers.some((field) => typeof resolution[field] !== "number" || !Number.isFinite(resolution[field])) || optionalNumbers.some((field) => resolution[field] !== undefined && (typeof resolution[field] !== "number" || !Number.isFinite(resolution[field]))) || !Array.isArray(resolution.unresolvedNames) || resolution.unresolvedNames.some((name) => typeof name !== "string")) throw new Error("Saved private import resolution is invalid.");
+      entry.resolution = {
+        totalRows: resolution.totalRows as number, idMatched: resolution.idMatched as number, nameMatched: resolution.nameMatched as number,
+        unresolved: resolution.unresolved as number, coverage: resolution.coverage as number, lastUpdated: resolution.lastUpdated as number,
+        unresolvedNames: resolution.unresolvedNames as string[],
+        ...(typeof resolution.fuzzyMatched === "number" ? { fuzzyMatched: resolution.fuzzyMatched } : {}),
+        ...(typeof resolution.manualOverrides === "number" ? { manualOverrides: resolution.manualOverrides } : {}),
+        ...(typeof resolution.invalidIds === "number" ? { invalidIds: resolution.invalidIds } : {}),
+      };
+    } else if (resolution !== undefined && !isSnapshotRecord(resolution)) throw new Error("Saved private import resolution is invalid.");
+    return entry;
+  });
+  return { draftedPlayers, customCsvList };
 }
 
 function resizeDraftOrder(order: string[], teamCount: number) {
@@ -353,6 +448,10 @@ const DraftDashboard: React.FC = () => {
   const [positionOverrides, setPositionOverrides] = useState<
     Record<string, string>
   >({});
+  const [godViewOpen, setGodViewOpen] = useState(false);
+  const [inspectedTeamId, setInspectedTeamId] = useState<string>("");
+  const [rosterViewRequest, setRosterViewRequest] = useState<{ teamId: string }>();
+  const [graphExpandRequest, setGraphExpandRequest] = useState(0);
   const [currentPick, setCurrentPick] = useState<number>(1);
   const [activeMobileTab, setActiveMobileTab] = useMobileDraftTab();
   const [mobileWorkspaceEnabled, setMobileWorkspaceEnabled] = useState(false);
@@ -419,6 +518,16 @@ const DraftDashboard: React.FC = () => {
       );
     },
   );
+  const { access: draftProAccess } = useDraftProAccess();
+  const draftProEligible = Boolean(draftProAccess?.eligible);
+  const canUseProExport = Boolean(draftProAccess?.capabilities.includes("blended_csv"));
+  const canUseProRecommendations = Boolean(
+    draftProAccess?.capabilities.includes("recommendations"),
+  );
+  const canUseProScenarios = Boolean(draftProAccess?.capabilities.includes("scenarios"));
+  const canUseProReports = Boolean(draftProAccess?.capabilities.includes("reports"));
+  const canOpenScenarioHistory = Boolean(user);
+  const canOpenReportHistory = Boolean(user);
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(
@@ -472,17 +581,27 @@ const DraftDashboard: React.FC = () => {
   const initialSetupChecked = useRef(false);
   const openSettings = useCallback((section: SettingsSection) => {
     setSettingsSection(section);
-    setFullSettings(current => current || section === "league");
+    setFullSettings(false);
     setSettingsOpen(true);
-    setActiveMobileTab("setup");
-  }, [setActiveMobileTab]);
+  }, []);
   useEffect(() => {
-    if (mobileWorkspaceEnabled) {
-      setSettingsOpen(activeMobileTab === "setup");
+    if (mobileWorkspaceEnabled && activeMobileTab === "setup") {
+      setActiveMobileTab("players");
     }
-  }, [mobileWorkspaceEnabled, activeMobileTab]);
+  }, [activeMobileTab, mobileWorkspaceEnabled, setActiveMobileTab]);
   const [suggestedCompareIds, setSuggestedCompareIds] = useState<string[]>([]);
   const [suggestedCompareOpen, setSuggestedCompareOpen] = useState(false);
+  const [savedDraftsMounted, setSavedDraftsMounted] = useState(false);
+  const [scenarioWorkspace, setScenarioWorkspace] = useState<ScenarioWorkspaceState>({ mounted: false, open: false, candidateIds: [] });
+  const [reportsMounted, setReportsMounted] = useState(false);
+  const [openedReportDraft, setOpenedReportDraft] = useState<OpenedReportDraft | null>(null);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(readStoredFavoriteIds);
+  const [scenarioSavedImportContext, setScenarioSavedImportContext] = useState<ScenarioSavedImportContext | null>(null);
+  const [workspaceAnnotations, setWorkspaceAnnotations] = useState<SavedDraftAnnotations>({
+    selectedPlayerId: null,
+    notes: [],
+    tiers: {},
+  });
 
   // Import CSV modal state
   const [isImportCsvOpen, setIsImportCsvOpen] = useState(false);
@@ -491,10 +610,9 @@ const DraftDashboard: React.FC = () => {
     undefined,
   );
   // Multi-CSV rows live in memory with a versioned, tab-scoped fallback only.
-  const [customCsvList, setCustomCsvList] = useState<SessionCsvEntry[]>(() => {
-    if (typeof window === "undefined") return [];
-    return loadCustomCsvSession();
-  });
+  const [customCsvList, setCustomCsvList] = useState<SessionCsvEntry[]>([]);
+  const [exportCsvState, setExportCsvState] = useState<"idle" | "loading">("idle");
+  const [exportCsvMessage, setExportCsvMessage] = useState<string | null>(null);
   const getCsvList = useCallback(() => customCsvList, [customCsvList]);
   const setCsvList = useCallback((next: SessionCsvEntry[]) => {
     if (typeof window === "undefined") return;
@@ -502,6 +620,9 @@ const DraftDashboard: React.FC = () => {
       setCustomCsvList(next);
       saveCustomCsvSession(next);
     } catch {}
+  }, []);
+  useEffect(() => {
+    setCustomCsvList(loadCustomCsvSession());
   }, []);
 
   // Snapshot V2 will be defined after dependent state declarations
@@ -599,11 +720,49 @@ const DraftDashboard: React.FC = () => {
       { isSelected: boolean; weight: number }
     >;
     customCsvList: SessionCsvEntry[];
+    favorites?: (string | number)[];
+    notes?: readonly { readonly id: string; readonly text: string }[];
+    tiers?: Record<string, string>;
     fantraxLeagueOverride?: DraftFantraxSelection | null;
     espnLeagueOverride?: EspnLeagueSelection | null;
     preserveExactCategoryWeights?: boolean;
     configured?: boolean;
   };
+  type AdaptableBrowserSnapshot = ReturnType<typeof parseBrowserSnapshot> | ReturnType<typeof restoreBrowserSnapshot>;
+
+  const adaptBrowserSnapshot = useCallback((snapshot: AdaptableBrowserSnapshot): DraftSnapshotV2 => {
+    if (!isDraftSettings(snapshot.draftSettings)) throw new Error("Saved draft settings are invalid.");
+    const isRecord = isSnapshotRecord;
+    const { draftedPlayers, customCsvList } = adaptSavedDraftRows(snapshot);
+    const stringRecord = (value: Record<string, unknown>, label: string) => {
+      if (Object.values(value).some((entry) => typeof entry !== "string")) throw new Error(`Saved ${label} are invalid.`);
+      return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, entry as string]));
+    };
+    const sourceControlRecord = (value: Record<string, unknown>, label: string) => Object.fromEntries(Object.entries(value).map(([id, control]) => {
+      if (!isRecord(control) || typeof control.isSelected !== "boolean" || typeof control.weight !== "number" || !Number.isFinite(control.weight)) throw new Error(`Saved ${label} source controls are invalid.`);
+      return [id, { isSelected: control.isSelected, weight: control.weight }];
+    }));
+    const fantrax = snapshot.fantraxLeagueOverride;
+    if (fantrax !== undefined && fantrax !== null && (!isRecord(fantrax) || typeof fantrax.connectedAccountId !== "string" || typeof fantrax.externalLeagueId !== "string" || !(typeof fantrax.externalTeamId === "string" || fantrax.externalTeamId === null) || typeof fantrax.settingsHash !== "string")) throw new Error("Saved Fantrax league selection is invalid.");
+    const espn = snapshot.espnLeagueOverride;
+    if (espn !== undefined && espn !== null && (!isRecord(espn) || espn.provider !== "espn" || typeof espn.namespace !== "string" || typeof espn.connectedAccountId !== "string" || typeof espn.externalLeagueId !== "string" || !(typeof espn.externalTeamId === "string" || espn.externalTeamId === null) || typeof espn.settingsHash !== "string")) throw new Error("Saved ESPN league selection is invalid.");
+    const roundCount = rosterRoundCount(snapshot.draftSettings.rosterConfig);
+    return {
+      v: 2, ts: Date.now(), draftSettings: snapshot.draftSettings, draftedPlayers,
+      keepers: migrateKeeperEntries(snapshot.keepers, snapshot.draftSettings.teamCount),
+      pickOwnerOverrides: snapshot.pickOwnerOverrides,
+      pickTrades: migratePickTrades(snapshot.pickTrades ?? snapshot.pickOwnerOverrides, { draftOrder: snapshot.draftSettings.draftOrder, roundCount, orderPattern: normalizeDraftOrderPattern({ mode: snapshot.draftSettings.draftOrderMode, reversedRounds: snapshot.draftSettings.reversedRounds }, roundCount, snapshot.isSnakeDraft) }),
+      positionOverrides: snapshot.positionOverrides, customTeamNames: snapshot.customTeamNames, currentPick: snapshot.currentPick,
+      isSnakeDraft: snapshot.isSnakeDraft, myTeamId: snapshot.myTeamId, baselineMode: snapshot.baselineMode,
+      needWeightEnabled: snapshot.needWeightEnabled, needAlpha: snapshot.needAlpha, forwardGrouping: snapshot.forwardGrouping,
+      personalizeReplacement: snapshot.personalizeReplacement, goaliePointValues: snapshot.goaliePointValues,
+      sourceControls: sourceControlRecord(snapshot.sourceControls, "skater"), goalieSourceControls: sourceControlRecord(snapshot.goalieSourceControls, "goalie"), customCsvList,
+      favorites: snapshot.favorites, notes: snapshot.notes, tiers: isRecord(snapshot.tiers) ? stringRecord(snapshot.tiers, "tiers") : (() => { throw new Error("Saved tiers are invalid."); })(),
+      fantraxLeagueOverride: fantrax as DraftFantraxSelection | null | undefined,
+      espnLeagueOverride: espn as EspnLeagueSelection | null | undefined,
+      preserveExactCategoryWeights: snapshot.preserveExactCategoryWeights, configured: snapshot.configured,
+    };
+  }, []);
 
   const saveSnapshot = useCallback(() => {
     if (typeof window === "undefined" || !manualDraftingEnabled) return;
@@ -629,6 +788,9 @@ const DraftDashboard: React.FC = () => {
       sourceControls,
       goalieSourceControls,
       customCsvList: getCsvList(),
+      favorites: favoriteIds,
+      notes: workspaceAnnotations.notes,
+      tiers: workspaceAnnotations.tiers,
       fantraxLeagueOverride,
       espnLeagueOverride,
       preserveExactCategoryWeights,
@@ -666,15 +828,12 @@ const DraftDashboard: React.FC = () => {
     fantraxLeagueOverride,
     espnLeagueOverride,
     preserveExactCategoryWeights,
+    workspaceAnnotations,
+    favoriteIds,
   ]);
 
-  const loadSnapshot = useCallback(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      const raw = sessionStorage.getItem("draft.snapshot.v2");
-      if (!raw) return false;
-      const snap = JSON.parse(raw) as DraftSnapshotV2;
-      if (snap.v !== 2) return false;
+  const prepareSnapshot = useCallback((snap: DraftSnapshotV2) => {
+    if (snap.v !== 2) throw new Error("Unsupported draft snapshot.");
       const restoredSettings = normalizeDraftSettingsOrder({
         ...DEFAULT_DRAFT_SETTINGS,
         ...snap.draftSettings,
@@ -685,18 +844,15 @@ const DraftDashboard: React.FC = () => {
             ? snap.draftSettings.customSourceMinimumCoverage
             : 25,
       }, snap.isSnakeDraft ?? true);
-      setDraftSettings(restoredSettings);
-      setSettingsConfigured(snap.configured !== false);
       const restoredKeepers = migrateKeeperEntries(
         snap.keepers,
         snap.draftSettings?.teamCount || DEFAULT_DRAFT_SETTINGS.teamCount,
       );
-      setKeepers(restoredKeepers);
-      setManualDraftedPlayers(
-        materializeKeeperPicks(snap.draftedPlayers || [], restoredKeepers),
+      const restoredDraftedPlayers = materializeKeeperPicks(
+        snap.draftedPlayers || [], restoredKeepers,
       );
-      setPickTrades(
-        migratePickTrades(snap.pickTrades ?? snap.pickOwnerOverrides, {
+      const restoredPickTrades = migratePickTrades(
+        snap.pickTrades ?? snap.pickOwnerOverrides, {
           draftOrder: restoredSettings.draftOrder,
           roundCount: rosterRoundCount(restoredSettings.rosterConfig),
           orderPattern: normalizeDraftOrderPattern(
@@ -707,46 +863,116 @@ const DraftDashboard: React.FC = () => {
             rosterRoundCount(restoredSettings.rosterConfig),
             snap.isSnakeDraft ?? true,
           ),
-        }),
+        },
       );
-      setPositionOverrides(snap.positionOverrides || {});
-      setCustomTeamNames(snap.customTeamNames || {});
-      setCurrentPick(snap.currentPick || 1);
-      setMyTeamId(snap.myTeamId || "Team 1");
-      setBaselineMode(snap.baselineMode || "remaining");
-      setNeedWeightEnabled(!!snap.needWeightEnabled);
-      setNeedAlpha(typeof snap.needAlpha === "number" ? snap.needAlpha : 0.5);
-      setForwardGrouping(snap.forwardGrouping || "split");
-      setPersonalizeReplacement(!!snap.personalizeReplacement);
-      setGoaliePointValues(
-        snap.goaliePointValues || getDefaultFantasyPointsConfig("goalie"),
-      );
+      const customCsvList = Array.isArray(snap.customCsvList) ? snap.customCsvList : [];
       const customSourceIds = Array.isArray(snap.customCsvList)
         ? snap.customCsvList.map((entry: SessionCsvEntry) => entry.id)
         : [];
-      setSourceControls(
-        sanitizeControls(sourceControlDefaults.skater, snap.sourceControls, customSourceIds),
-      );
-      setGoalieSourceControls(
-        sanitizeControls(sourceControlDefaults.goalie, snap.goalieSourceControls, customSourceIds),
-      );
-      setFantraxLeagueOverride(snap.fantraxLeagueOverride ?? null);
-      setEspnLeagueOverride(snap.espnLeagueOverride ?? null);
-      setPreserveExactCategoryWeights(
-        snap.preserveExactCategoryWeights === true ||
+      const restoredSourceControls = sanitizeControls(sourceControlDefaults.skater, snap.sourceControls, customSourceIds);
+      const restoredGoalieSourceControls = sanitizeControls(sourceControlDefaults.goalie, snap.goalieSourceControls, customSourceIds);
+      const preserveExactCategoryWeights = snap.preserveExactCategoryWeights === true ||
           Boolean(
             (snap.fantraxLeagueOverride || snap.espnLeagueOverride) &&
               snap.draftSettings?.leagueType === "categories",
-          ),
-      );
-      if (Array.isArray(snap.customCsvList)) setCsvList(snap.customCsvList);
-      restoredLeagueSettingsRef.current = true;
-      manualLeagueSettingsDirtyRef.current = true;
+          );
+      const nextFavorites = Array.isArray(snap.favorites) ? snap.favorites.map(String) : favoriteIds;
+      const browser: BrowserDraftSnapshot = {
+        v: 2,
+        draftSettings: restoredSettings as unknown as Record<string, unknown>,
+        draftedPlayers: restoredDraftedPlayers as BrowserDraftSnapshot["draftedPlayers"],
+        keepers: restoredKeepers as BrowserDraftSnapshot["keepers"],
+        pickOwnerOverrides: snap.pickOwnerOverrides || {},
+        pickTrades: restoredPickTrades as BrowserDraftSnapshot["pickTrades"],
+        positionOverrides: snap.positionOverrides || {}, customTeamNames: snap.customTeamNames || {},
+        currentPick: snap.currentPick || 1, isSnakeDraft: snap.isSnakeDraft ?? true, myTeamId: snap.myTeamId || "Team 1",
+        baselineMode: snap.baselineMode || "remaining", needWeightEnabled: !!snap.needWeightEnabled,
+        needAlpha: typeof snap.needAlpha === "number" ? snap.needAlpha : 0.5,
+        forwardGrouping: snap.forwardGrouping || "split", personalizeReplacement: !!snap.personalizeReplacement,
+        goaliePointValues: snap.goaliePointValues || getDefaultFantasyPointsConfig("goalie"),
+        sourceControls: restoredSourceControls, goalieSourceControls: restoredGoalieSourceControls,
+        customCsvList: customCsvList as BrowserDraftSnapshot["customCsvList"], favorites: nextFavorites,
+        notes: [...(snap.notes ?? [])], tiers: snap.tiers ?? {}, fantraxLeagueOverride: snap.fantraxLeagueOverride ?? null,
+        espnLeagueOverride: snap.espnLeagueOverride ?? null, preserveExactCategoryWeights, configured: snap.configured !== false,
+      };
+      return { browser, apply: () => {
+        setDraftSettings(restoredSettings); setSettingsConfigured(snap.configured !== false); setKeepers(restoredKeepers);
+        setManualDraftedPlayers(restoredDraftedPlayers); setPickTrades(restoredPickTrades); setPositionOverrides(snap.positionOverrides || {});
+        setCustomTeamNames(snap.customTeamNames || {}); setCurrentPick(snap.currentPick || 1); setMyTeamId(snap.myTeamId || "Team 1");
+        setBaselineMode(snap.baselineMode || "remaining"); setNeedWeightEnabled(!!snap.needWeightEnabled);
+        setNeedAlpha(typeof snap.needAlpha === "number" ? snap.needAlpha : 0.5); setForwardGrouping(snap.forwardGrouping || "split");
+        setPersonalizeReplacement(!!snap.personalizeReplacement); setGoaliePointValues(snap.goaliePointValues || getDefaultFantasyPointsConfig("goalie"));
+        setSourceControls(restoredSourceControls); setGoalieSourceControls(restoredGoalieSourceControls);
+        setFantraxLeagueOverride(snap.fantraxLeagueOverride ?? null); setEspnLeagueOverride(snap.espnLeagueOverride ?? null);
+        setPreserveExactCategoryWeights(preserveExactCategoryWeights); setCsvList(customCsvList);
+        setWorkspaceAnnotations({ selectedPlayerId: null, notes: [...(snap.notes ?? [])], tiers: snap.tiers ?? {} });
+        setFavoriteIds(nextFavorites);
+        try { window.localStorage.setItem("projections.favorites", JSON.stringify(nextFavorites)); } catch {}
+        window.dispatchEvent(new CustomEvent("draft-saved-favorites-changed"));
+        restoredLeagueSettingsRef.current = true; manualLeagueSettingsDirtyRef.current = true;
+      } };
+  }, [favoriteIds, setCsvList, sourceControlDefaults]);
+
+  const loadSnapshot = useCallback(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const raw = sessionStorage.getItem("draft.snapshot.v2");
+      if (!raw) return false;
+      const prepared = prepareSnapshot(JSON.parse(raw) as DraftSnapshotV2);
+      prepared.apply();
       return true;
     } catch {
       return false;
     }
-  }, [setCsvList, sourceControlDefaults]);
+  }, [prepareSnapshot]);
+
+  const getSavedBrowserSnapshot = useCallback((): BrowserDraftSnapshot => ({
+    v: 2,
+    draftSettings: draftSettings as unknown as Record<string, unknown>,
+    draftedPlayers: manualDraftedPlayers as unknown as BrowserDraftSnapshot["draftedPlayers"],
+    keepers: keepers as unknown as BrowserDraftSnapshot["keepers"],
+    pickOwnerOverrides,
+    pickTrades: pickTrades as unknown as BrowserDraftSnapshot["pickTrades"],
+    positionOverrides,
+    customTeamNames,
+    currentPick,
+    isSnakeDraft,
+    myTeamId,
+    baselineMode,
+    needWeightEnabled,
+    needAlpha,
+    forwardGrouping,
+    personalizeReplacement,
+    goaliePointValues,
+    sourceControls,
+    goalieSourceControls,
+    customCsvList: customCsvList as BrowserDraftSnapshot["customCsvList"],
+    favorites: favoriteIds,
+    notes: [...workspaceAnnotations.notes],
+    tiers: workspaceAnnotations.tiers,
+    fantraxLeagueOverride,
+    espnLeagueOverride,
+    preserveExactCategoryWeights,
+    configured: settingsConfigured,
+  }), [customCsvList, currentPick, draftSettings, espnLeagueOverride, fantraxLeagueOverride, favoriteIds, forwardGrouping, goaliePointValues, goalieSourceControls, isSnakeDraft, keepers, manualDraftedPlayers, myTeamId, needAlpha, needWeightEnabled, pickOwnerOverrides, pickTrades, positionOverrides, preserveExactCategoryWeights, sourceControls, customTeamNames, settingsConfigured, baselineMode, personalizeReplacement, workspaceAnnotations]);
+
+  const applySavedBrowserSnapshot = useCallback((snapshot: BrowserDraftSnapshot) => {
+    try {
+      const validated = parseBrowserSnapshot(snapshot);
+      // Validate the same canonical round trip used by cloud restores before
+      // writing the session or touching live dashboard state.
+      const serialized = serializeSavedDraft(validated);
+      const incoming = adaptBrowserSnapshot(validated);
+      const imports = toNormalizedPrivateImports(incoming.customCsvList);
+      const restored = restoreBrowserSnapshot(serialized, imports);
+      const prepared = prepareSnapshot(adaptBrowserSnapshot(restored));
+      sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({ ...prepared.browser, ts: Date.now() }));
+      prepared.apply();
+      return prepared.browser;
+    } catch {
+      return false;
+    }
+  }, [adaptBrowserSnapshot, prepareSnapshot]);
 
   // On mount: offer to resume snapshot
   useEffect(() => {
@@ -832,9 +1058,8 @@ const DraftDashboard: React.FC = () => {
       setFullSettings(true);
       setSettingsOpen(true);
       setSettingsSection("league");
-      setActiveMobileTab("setup");
     }
-  }, [authLoading, sessionReady, user, accountSettingsKnown, settingsConfigured, setActiveMobileTab]);
+  }, [authLoading, sessionReady, user, accountSettingsKnown, settingsConfigured]);
 
   // Persist snapshot as state changes
   useEffect(() => {
@@ -844,6 +1069,27 @@ const DraftDashboard: React.FC = () => {
 
   // Get player projections data (skaters)
   const [dataRefreshKey, setDataRefreshKey] = useState<number>(0);
+  const customSkaterSources = useMemo(() => buildCustomProjectionSources(
+    customCsvList,
+    "skater",
+    [
+      ["Games_Played", "GAMES_PLAYED"], ["Goals", "GOALS"], ["Assists", "ASSISTS"], ["Points", "POINTS"],
+      ["Plus_Minus", "PLUS_MINUS"], ["Shots_on_Goal", "SHOTS_ON_GOAL"], ["Hits", "HITS"], ["Blocked_Shots", "BLOCKED_SHOTS"],
+      ["Penalty_Minutes", "PENALTY_MINUTES"], ["PP_Points", "PP_POINTS"], ["PP_Goals", "PP_GOALS"], ["PP_Assists", "PP_ASSISTS"],
+      ["SH_Points", "SH_POINTS"], ["SH_Goals", "SH_GOALS"], ["Time_on_Ice_Per_Game", "TIME_ON_ICE_PER_GAME"],
+      ["Faceoffs_Won", "FACEOFFS_WON"], ["Faceoffs_Lost", "FACEOFFS_LOST"],
+    ].map(([dbColumnName, key]) => ({ key: key as any, dbColumnName })),
+  ), [customCsvList]);
+  const customGoalieSources = useMemo(() => buildCustomProjectionSources(
+    customCsvList,
+    "goalie",
+    [
+      ["Games_Played", "GAMES_PLAYED"], ["Wins_Goalie", "WINS_GOALIE"], ["Losses_Goalie", "LOSSES_GOALIE"],
+      ["Otl", "OTL_GOALIE"], ["Saves_Goalie", "SAVES_GOALIE"], ["Sa", "SHOTS_AGAINST_GOALIE"],
+      ["Ga", "GOALS_AGAINST_GOALIE"], ["Save_Percentage", "SAVE_PERCENTAGE"], ["Goals_Against_Average", "GOALS_AGAINST_AVERAGE"],
+      ["Shutouts_Goalie", "SHUTOUTS_GOALIE"],
+    ].map(([dbColumnName, key]) => ({ key: key as any, dbColumnName })),
+  ), [customCsvList]);
   const skaterData = useProcessedProjectionsData({
     activePlayerType: "skater",
     sourceControls,
@@ -855,59 +1101,7 @@ const DraftDashboard: React.FC = () => {
     showPerGameFantasyPoints: false,
     togglePerGameFantasyPoints: NOOP_PROJECTION_TOGGLE,
     teamCountForRoundSummaries: draftSettings.teamCount,
-    // inject custom CSVs as additional sources for skaters
-    customAdditionalSources: (() => {
-      const list = getCsvList();
-      if (!list.length) return undefined;
-      const COL_TO_STAT: Record<string, string> = {
-        Games_Played: "GAMES_PLAYED",
-        Goals: "GOALS",
-        Assists: "ASSISTS",
-        Points: "POINTS",
-        Plus_Minus: "PLUS_MINUS",
-        Shots_on_Goal: "SHOTS_ON_GOAL",
-        Hits: "HITS",
-        Blocked_Shots: "BLOCKED_SHOTS",
-        Penalty_Minutes: "PENALTY_MINUTES",
-        PP_Points: "PP_POINTS",
-        PP_Goals: "PP_GOALS",
-        PP_Assists: "PP_ASSISTS",
-        SH_Points: "SH_POINTS",
-        SH_Goals: "SH_GOALS",
-        Time_on_Ice_Per_Game: "TIME_ON_ICE_PER_GAME",
-        Faceoffs_Won: "FACEOFFS_WON",
-        Faceoffs_Lost: "FACEOFFS_LOST",
-      };
-      const statMappings = Object.entries(COL_TO_STAT).map(([col, key]) => ({
-        key: key as any,
-        dbColumnName: col,
-      }));
-      return list
-        .map((entry) => {
-          const rows = (entry.rows || []).filter((r) => {
-            const pos = String(r["Position"] || "").toUpperCase();
-            return !pos
-              .split(",")
-              .map((s: string) => s.trim())
-              .includes("G");
-          });
-          if (!rows.length) return undefined as any;
-          const src: CustomAdditionalProjectionSource = {
-            id: entry.id,
-            displayName: entry.label || entry.id,
-            playerType: "skater",
-            rows,
-            primaryPlayerIdKey: "player_id",
-            originalPlayerNameKey: "Player_Name",
-            teamKey: "Team_Abbreviation",
-            positionKey: "Position",
-            statMappings,
-            resolution: entry.resolution,
-          };
-          return src;
-        })
-        .filter(Boolean) as CustomAdditionalProjectionSource[];
-    })(),
+    customAdditionalSources: customSkaterSources,
     refreshKey: dataRefreshKey,
     allowCustomNameFallback: draftSettings.allowCustomNameFallback ?? true,
   });
@@ -924,51 +1118,7 @@ const DraftDashboard: React.FC = () => {
     showPerGameFantasyPoints: false,
     togglePerGameFantasyPoints: NOOP_PROJECTION_TOGGLE,
     teamCountForRoundSummaries: draftSettings.teamCount,
-    customAdditionalSources: (() => {
-      const list = getCsvList();
-      if (!list.length) return undefined;
-      const COL_TO_STAT: Record<string, string> = {
-        Games_Played: "GAMES_PLAYED",
-        Wins_Goalie: "WINS_GOALIE",
-        Losses_Goalie: "LOSSES_GOALIE",
-        Otl: "OTL_GOALIE",
-        Saves_Goalie: "SAVES_GOALIE",
-        Sa: "SHOTS_AGAINST_GOALIE",
-        Ga: "GOALS_AGAINST_GOALIE",
-        Save_Percentage: "SAVE_PERCENTAGE",
-        Goals_Against_Average: "GOALS_AGAINST_AVERAGE",
-        Shutouts_Goalie: "SHUTOUTS_GOALIE",
-      };
-      const statMappings = Object.entries(COL_TO_STAT).map(([col, key]) => ({
-        key: key as any,
-        dbColumnName: col,
-      }));
-      return list
-        .map((entry) => {
-          const rows = (entry.rows || []).filter((r) => {
-            const pos = String(r["Position"] || "").toUpperCase();
-            return pos
-              .split(",")
-              .map((s: string) => s.trim())
-              .includes("G");
-          });
-          if (!rows.length) return undefined as any;
-          const src: CustomAdditionalProjectionSource = {
-            id: entry.id,
-            displayName: entry.label || entry.id,
-            playerType: "goalie",
-            rows,
-            primaryPlayerIdKey: "player_id",
-            originalPlayerNameKey: "Player_Name",
-            teamKey: "Team_Abbreviation",
-            positionKey: "Position",
-            statMappings,
-            resolution: entry.resolution,
-          };
-          return src;
-        })
-        .filter(Boolean) as CustomAdditionalProjectionSource[];
-    })(),
+    customAdditionalSources: customGoalieSources,
     refreshKey: dataRefreshKey,
     allowCustomNameFallback: draftSettings.allowCustomNameFallback ?? true,
   });
@@ -1054,6 +1204,11 @@ const DraftDashboard: React.FC = () => {
     const saved = window.localStorage.getItem("draftDashboard.needWeight.v1");
     if (saved === "true" || saved === "false")
       setNeedWeightEnabled(saved === "true");
+    else {
+      const legacy = window.localStorage.getItem("suggested.rosterVorpEnabled");
+      if (legacy === "true" || legacy === "false")
+        setNeedWeightEnabled(legacy === "true");
+    }
   }, []);
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1821,22 +1976,94 @@ const DraftDashboard: React.FC = () => {
     categoryWeights: draftSettings.categoryWeights,
     forwardGrouping,
     myFilledSlots: myFilledSlotsForVorp,
-    personalizeReplacement,
+    personalizeReplacement: false,
     prorate84,
   });
 
+  const { playerMetrics: personalizedVorpMetrics } = useVORPCalculations({
+    players: allPlayers,
+    availablePlayers,
+    draftSettings,
+    picksUntilNext,
+    leagueType: draftSettings.leagueType || "points",
+    baselineMode,
+    categoryWeights: draftSettings.categoryWeights,
+    forwardGrouping,
+    myFilledSlots: myFilledSlotsForVorp,
+    personalizeReplacement: draftProEligible && personalizeReplacement,
+    prorate84,
+  });
+
+  const scheduleSettings = useMemo(() => normalizeScheduleSettings(draftSettings), [draftSettings]);
+  const draftSchedule = useDraftSchedule(allPlayers, scheduleSettings.playoffWeeks, scheduleSettings.scheduleScope);
   const rosterScheduleOptimizer = useRosterScheduleOptimizer({
+    gameKey: "477",
+    endWeek: 27,
     players: allPlayers,
     rosterAssignments,
     myTeamId,
     rosterConfig: draftSettings.rosterConfig,
     vorpMetrics,
+    calculateCandidates: false,
   });
+  const dustRoster = useMemo(
+    () => rosterAssignments
+      .filter((assignment) => assignment.teamId === myTeamId)
+      .map((assignment) => {
+        const player = allPlayers.find((candidate) => String(candidate.playerId) === assignment.playerId);
+        const positions = groupPlayerEligibility(
+          normalizePlayerEligibility(player?.displayPosition, player?.eligiblePositions),
+          forwardGrouping,
+        );
+        const override = positionOverrides[assignment.playerId]?.toUpperCase();
+        return {
+          playerId: assignment.playerId,
+          playerName: player?.fullName,
+          position: override && positions.includes(override) ? override : positions[0] ?? "Unassigned",
+        };
+      }),
+    [allPlayers, forwardGrouping, myTeamId, positionOverrides, rosterAssignments],
+  );
 
   const effectiveRosterConfig = useMemo(
     () => getEffectiveRosterConfig(draftSettings.rosterConfig, forwardGrouping),
     [draftSettings.rosterConfig, forwardGrouping],
   );
+
+  const canUseProDust = Boolean(draftProAccess?.capabilities.includes("dust"));
+  const [dustSort, setDustSort] = useState<"ordinary" | "schedule_fit">("ordinary");
+  const [dustLineupMode, setDustLineupMode] = useState<"daily" | "weekly">("daily");
+  const dustInput = useMemo(() => buildDraftProDustRequest({
+    season: currentSeasonId == null ? null : String(currentSeasonId),
+    lineupMode: dustLineupMode,
+    sort: dustSort,
+    inputOrigin: customCsvList.length ? "private_import" : "draft",
+    allPlayers,
+    availablePlayers,
+    rosterAssignments,
+    myTeamId,
+    forwardGrouping,
+    vorpMetrics,
+    rosterSlots: effectiveRosterConfig,
+  }), [allPlayers, availablePlayers, currentSeasonId, customCsvList.length, dustLineupMode, dustSort, effectiveRosterConfig, forwardGrouping, myTeamId, rosterAssignments, vorpMetrics]);
+  const dustCandidateScopeLimited = availablePlayers.length > 500;
+  const dustRequestAllowed = Boolean(dustInput && !customCsvList.length);
+  const draftProDust = useDraftProDust(dustInput, canUseProDust && dustRequestAllowed);
+  const draftProDustInsights = useMemo(() => new Map(
+    draftProDust.result?.insights.map((insight) => [insight.playerId, {
+      marginalDustGames: insight.marginalBenchGames,
+      candidateScheduledGames: insight.candidateScheduledGames,
+      activeGamesAdded: insight.activeGamesAdded,
+      dustRate: insight.dustRate,
+      risk: insight.risk,
+      alternative: insight.alternatives[0] ? {
+        playerId: insight.alternatives[0].playerId,
+        playerName: insight.alternatives[0].playerName ?? insight.alternatives[0].playerId,
+        dustReduction: insight.alternatives[0].dustReduction,
+        valueDifference: insight.alternatives[0].valueDifference,
+      } : undefined,
+    }]) ?? [],
+  ), [draftProDust.result]);
 
   const activeScoringCategories = useMemo(() =>
     draftSettings.leagueType === "categories"
@@ -2060,6 +2287,73 @@ const DraftDashboard: React.FC = () => {
     return res;
   }, [effectiveRosterConfig, forwardGrouping, myTeamStats]);
 
+  const scenarioSchedule = useMemo(() => {
+    if (!draftSchedule.selectedWeeks.length) return null;
+    const weeks = draftSchedule.selectedWeeks.map((week) => week.week);
+    return {
+      startWeek: Math.min(...weeks),
+      endWeek: Math.max(...weeks),
+      lineupMode: dustLineupMode,
+      rosterSlots: effectiveRosterConfig,
+    };
+  }, [draftSchedule.selectedWeeks, dustLineupMode, effectiveRosterConfig]);
+  const scenarioAdapter = useMemo(() => adaptScenarioDashboard({
+    players: allPlayers,
+    availablePlayers,
+    rosterAssignments,
+    myTeamId,
+    candidateIds: scenarioWorkspace.candidateIds,
+    vorpMetrics,
+    leagueType: draftSettings.leagueType || "points",
+    scoring: { ...draftSettings.scoringCategories, ...goaliePointValues },
+    categoryWeights: draftSettings.categoryWeights,
+    positionNeeds: posNeeds,
+    season: currentSeasonId == null ? null : String(currentSeasonId),
+    schedule: scenarioSchedule,
+    sourceControls,
+    goalieSourceControls,
+    customCsvList,
+    savedImportContext: scenarioSavedImportContext,
+  }), [allPlayers, availablePlayers, currentSeasonId, customCsvList, draftSettings.categoryWeights, draftSettings.leagueType, draftSettings.scoringCategories, goaliePointValues, goalieSourceControls, myTeamId, posNeeds, rosterAssignments, scenarioWorkspace.candidateIds, scenarioSavedImportContext, scenarioSchedule, sourceControls, vorpMetrics]);
+  const openRosterImpact = useCallback((candidateIds: readonly string[] = []) => {
+    setScenarioWorkspace((current) => showScenarioWorkspace(current, candidateIds));
+    setSettingsSection("roster-impact");
+    setSettingsOpen(true);
+  }, []);
+  const currentReportComplete = useMemo(() => {
+    const expectedPicks = draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig);
+    return new Set([...draftedPlayers, ...keepers].map((player) => player.playerId)).size >= expectedPicks;
+  }, [draftSettings.rosterConfig, draftSettings.teamCount, draftedPlayers, keepers]);
+  const currentReportSnapshot = useMemo(() => ({
+    ...getSavedBrowserSnapshot(),
+    draftedPlayers: draftedPlayers as unknown as BrowserDraftSnapshot["draftedPlayers"],
+  }), [draftedPlayers, getSavedBrowserSnapshot]);
+  const reportReference = useMemo(() => {
+    if (!currentReportComplete) return null;
+    const myRosterCount = rosterAssignments.filter((assignment) => assignment.teamId === myTeamId).length;
+    const expectedRosterSize = rosterRoundCount(draftSettings.rosterConfig);
+    const teamId = draftSettings.draftOrder.find((team) => team !== myTeamId && rosterAssignments.filter((assignment) => assignment.teamId === team).length >= expectedRosterSize && myRosterCount >= expectedRosterSize);
+    return teamId ? { teamId, teamName: `${customTeamNames[teamId] || teamId} roster`, complete: true } : null;
+  }, [currentReportComplete, customTeamNames, draftSettings.draftOrder, draftSettings.rosterConfig, myTeamId, rosterAssignments]);
+  const reportAdapter = useMemo(() => adaptReportDashboard({
+    players: allPlayers,
+    rosterAssignments,
+    myTeamId,
+    vorpMetrics,
+    leagueType: draftSettings.leagueType || "points",
+    scoring: { ...draftSettings.scoringCategories, ...goaliePointValues },
+    goaliePointValues,
+    categoryWeights: draftSettings.categoryWeights,
+    season: currentSeasonId == null ? null : String(currentSeasonId),
+    schedule: scenarioSchedule,
+    sourceControls,
+    goalieSourceControls,
+    customCsvList,
+    current: openedReportDraft ? null : { snapshot: currentReportSnapshot, complete: currentReportComplete, savedImportContext: scenarioSavedImportContext },
+    openedDraft: openedReportDraft,
+    reference: reportReference,
+  }), [allPlayers, currentReportComplete, currentReportSnapshot, currentSeasonId, customCsvList, draftSettings.categoryWeights, draftSettings.leagueType, draftSettings.scoringCategories, goaliePointValues, goalieSourceControls, myTeamId, openedReportDraft, reportReference, rosterAssignments, scenarioSavedImportContext, scenarioSchedule, sourceControls, vorpMetrics]);
+
   // NEW: category deficits vector for my team (categories mode): league mean - my totals
   const catNeeds = React.useMemo(() => {
     if ((draftSettings.leagueType || "points") !== "categories")
@@ -2157,6 +2451,24 @@ const DraftDashboard: React.FC = () => {
     draftMode === "manual"
       ? nextManualActionablePick > totalPicks
       : draftedPlayers.length >= totalPicks;
+  const [scoreboardPaused, setScoreboardPaused] = useState(false);
+  const scoreboardSections = useMemo(() => {
+    const recentPicks = [...draftedPlayers]
+      .filter((pick) => pick.pickNumber < currentPick)
+      .sort((a, b) => b.pickNumber - a.pickNumber)
+      .slice(0, 5)
+      .map((pick) => {
+        const player = allPlayers.find((entry) => String(entry.playerId) === pick.playerId);
+        const name = player?.fullName || pick.espnDisplayName || pick.yahooDisplayName || `Player #${pick.playerId}`;
+        return `#${pick.pickNumber} ${name} — ${customTeamNames[pick.teamId] || pick.teamId}`;
+      });
+    return [
+      draftComplete ? "Draft complete" : `On the clock: ${customTeamNames[currentTurn.teamId] || currentTurn.teamId}`,
+      `Pick ${Math.min(currentPick, totalPicks)} of ${totalPicks}`,
+      recentPicks.length ? `Last ${recentPicks.length} picks: ${recentPicks.join(" • ")}` : "Awaiting the first pick",
+    ];
+  }, [allPlayers, currentPick, currentTurn.teamId, customTeamNames, draftComplete, draftedPlayers, totalPicks]);
+  const scoreboardText = scoreboardSections.join("   •   ");
   const startYahooDraftSync = useCallback(async () => {
     if (espnLiveActive) return;
     const started = await startYahooSession();
@@ -2217,7 +2529,6 @@ const DraftDashboard: React.FC = () => {
     setSettingsSaveError(null);
     setSettingsOpen(false);
     setFullSettings(false);
-    if (mobileWorkspaceEnabled) setActiveMobileTab("players");
     return true;
   };
 
@@ -2846,32 +3157,18 @@ const DraftDashboard: React.FC = () => {
     skaterSourcesEnabled,
   ]);
   const tableDataNotices = useMemo(() => {
-    const notices = [...projectionDataNotices];
-    if (rosterScheduleOptimizer.status === "error") {
-      notices.push(
-        `DUST schedule insights are unavailable. ${rosterScheduleOptimizer.error ?? "Schedule data could not be loaded."}`,
-      );
-    } else if (rosterScheduleOptimizer.status === "empty") {
-      notices.push(
-        "DUST schedule insights are unavailable because the current Yahoo team-game cache is empty.",
-      );
-    } else if (rosterScheduleOptimizer.stale) {
-      notices.push(
-        "DUST schedule insights are using stale schedule data; refresh the optimizer schedule cache before relying on rescheduled games.",
-      );
-    }
-    if (rosterScheduleOptimizer.status === "ready") {
-      notices.push(
-        "DUST uses exact daily lineup assignment; weekly-lock leagues are not yet supported.",
-      );
-      if (rosterScheduleOptimizer.skippedCandidates > 0) {
-        notices.push(
-          `${rosterScheduleOptimizer.skippedCandidates} DUST candidate calculations were skipped because team or eligibility data could not be resolved.`,
-        );
-      }
+    const notices = buildDraftProDustNotices({
+      projectionDataNotices,
+      canUseProDust,
+      hasPrivateImport: Boolean(customCsvList.length),
+      candidateScopeLimited: dustCandidateScopeLimited,
+      dust: draftProDust,
+    });
+    if (canUseProDust && draftSchedule.scope === "playoffs") {
+      notices.push("Draft Pro DUST badges use the full regular-season Week 1–30 schedule. The playoff selection applies to free schedule metrics and the weekly matrix.");
     }
     return notices;
-  }, [projectionDataNotices, rosterScheduleOptimizer]);
+  }, [canUseProDust, customCsvList.length, draftProDust, dustCandidateScopeLimited, draftSchedule.scope, projectionDataNotices]);
   const projectionEmptyStateMessage =
     !skaterSourcesEnabled && !goalieSourcesEnabled
       ? "No projection sources are enabled. Enable at least one skater or goalie source in Draft Settings."
@@ -2886,78 +3183,71 @@ const DraftDashboard: React.FC = () => {
     [currentPick, picksUntilNext],
   );
 
-  // --- CSV Export: Blended Projections ---
-  const exportBlendedProjectionsCsv = useCallback(() => {
-    try {
-      const players = allPlayers; // blended list already includes custom CSV players
-      if (!players.length) return;
-      // Collect all stat keys present
-      const statKeySet = new Set<string>();
-      players.forEach((p) => {
-        Object.keys(p.combinedStats || {}).forEach((k) => statKeySet.add(k));
-      });
-      const statKeys = Array.from(statKeySet).sort();
-
-      const headers = [
-        "playerId",
-        "fullName",
-        "team",
-        "positions",
-        "fantasyPointsProjected",
-        "fantasyPointsPerGame",
-        "yahooAvgPick",
-        "yahooAvgRound",
-        "yahooPctDrafted",
-        "projectedRank",
-        ...statKeys.map((k) => `${k}_proj`),
-      ];
-
-      const esc = (v: any) => {
-        if (v == null) return "";
-        const s = String(v);
-        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-      };
-
-      const lines: string[] = [headers.join(",")];
-      players.forEach((p) => {
-        const rowBase = [
-          p.playerId,
-          p.fullName,
-          p.displayTeam || "",
-          p.displayPosition || "",
-          p.fantasyPoints.projected ?? "",
-          p.fantasyPoints.projectedPerGame ?? "",
-          p.yahooAvgPick ?? "",
-          p.yahooAvgRound ?? "",
-          p.yahooPctDrafted ?? "",
-          p.projectedRank ?? "",
-        ];
-        const statVals = statKeys.map((k) => {
-          const v = (p.combinedStats as any)?.[k]?.projected;
-          return typeof v === "number" && Number.isFinite(v) ? v : "";
-        });
-        const row = [...rowBase, ...statVals].map(esc).join(",");
-        lines.push(row);
-      });
-
-      const blob = new Blob([lines.join("\n")], {
-        type: "text/csv;charset=utf-8",
-      });
-      const filename = `blended-projections-${players.length}players-${Date.now()}.csv`;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 0);
-    } catch (e) {
-      console.error("Failed to export projections CSV", e);
+  // --- CSV Export: server-formatted blended projections ---
+  const exportBlendedProjectionsCsv = useCallback(async () => {
+    setExportCsvMessage(null);
+    if (!allPlayers.length) {
+      setExportCsvMessage("There are no projections available to export yet.");
+      return;
     }
-  }, [allPlayers]);
+    setExportCsvState("loading");
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) throw new Error("Sign in to export blended projections.");
+      const statKeys = Array.from(new Set(allPlayers.flatMap((player) => Object.keys(player.combinedStats || {})))).sort().slice(0, 64);
+      const rows = allPlayers.map((player) => ({
+        playerId: player.playerId,
+        fullName: player.fullName,
+        team: player.displayTeam || "",
+        positions: player.displayPosition || "",
+        fantasyPointsProjected: player.fantasyPoints.projected,
+        fantasyPointsPerGame: player.fantasyPoints.projectedPerGame,
+        yahooAvgPick: player.yahooAvgPick ?? null,
+        yahooAvgRound: player.yahooAvgRound ?? null,
+        yahooPctDrafted: player.yahooPctDrafted ?? null,
+        projectedRank: player.projectedRank ?? null,
+        ...Object.fromEntries(statKeys.map((key) => [`${key}_proj`, player.combinedStats[key]?.projected ?? null])),
+      }));
+      const sourceWeights = Object.fromEntries([
+        ...Object.entries(sourceControls || {}).filter(([, control]) => control.isSelected).map(([key, control]) => [key, control.weight]),
+        ...Object.entries(goalieSourceControls || {}).filter(([, control]) => control.isSelected).map(([key, control]) => [key, control.weight]),
+      ]);
+      const exportRequest = await requestDraftProExport({
+        hasPrivateImport: Boolean(customCsvList.length),
+        canUseProExport,
+        token,
+        payload: {
+          season: currentSeasonId == null ? "unknown" : String(currentSeasonId),
+          leagueType: (draftSettings.leagueType || "points") as "points" | "categories",
+          sourceWeights,
+          scoring: draftSettings.leagueType === "categories" ? draftSettings.categoryWeights || {} : draftSettings.scoringCategories,
+          goalieScoring: goaliePointValues,
+          adjustments: { prorate84: window.localStorage.getItem("projections.prorate84") === "true" },
+          rows,
+        },
+      });
+      if (exportRequest.message) {
+        setExportCsvMessage(exportRequest.message);
+        return;
+      }
+      const response = exportRequest.response!;
+      if (!response.ok) throw new Error((await response.json().catch(() => null))?.error?.message || "Unable to create the CSV export.");
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "fhfhockey-blended-projections.csv";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setExportCsvMessage("Blended projections CSV downloaded.");
+    } catch (error) {
+      setExportCsvMessage(error instanceof Error ? error.message : "Unable to create the CSV export.");
+    } finally {
+      setExportCsvState("idle");
+    }
+  }, [allPlayers, canUseProExport, currentSeasonId, customCsvList.length, draftSettings.categoryWeights, draftSettings.leagueType, draftSettings.scoringCategories, goaliePointValues, goalieSourceControls, sourceControls]);
 
   const handleForwardGroupingChange = (mode: "split" | "fwd") => {
     const conflict = validateDraftSettings({ ...settingsValidationInput, forwardGrouping: mode }).errors.find(issue => issue.domain === "roster");
@@ -3010,6 +3300,7 @@ const DraftDashboard: React.FC = () => {
   // Keep table rendering independent of settings navigation and visibility.
   const projectionsTable = useMemo(() => (
     <ProjectionsTable
+            onRefresh={() => setDataRefreshKey((k) => k + 1)}
             currentSeasonId={currentSeasonId}
             players={availablePlayers}
             allPlayers={allPlayers}
@@ -3029,11 +3320,6 @@ const DraftDashboard: React.FC = () => {
                 ? { byPos: expectedTakenByPos, N: expectedN }
                 : undefined
             }
-            needWeightEnabled={needWeightEnabled}
-            onNeedWeightChange={setNeedWeightEnabled}
-            posNeeds={posNeeds}
-            needAlpha={needAlpha}
-            onNeedAlphaChange={setNeedAlpha}
             nextPickNumber={nextPickNumber}
             leagueType={draftSettings.leagueType || "points"}
             forwardGrouping={forwardGrouping}
@@ -3061,8 +3347,11 @@ const DraftDashboard: React.FC = () => {
               goalie: goalieData.inclusionDiagnostics,
             }}
             dataNotices={tableDataNotices}
-            dustInsights={rosterScheduleOptimizer.insights}
+            scheduleMetrics={draftSchedule.playerMetrics}
+            dustInsights={canUseProDust ? draftProDustInsights : undefined}
             emptyStateMessage={projectionEmptyStateMessage}
+            onFavoriteIdsChange={setFavoriteIds}
+            onOpenRosterImpact={canUseProScenarios ? openRosterImpact : undefined}
           />
   ), [
     currentSeasonId, availablePlayers, allPlayers, draftedPlayers,
@@ -3075,25 +3364,19 @@ const DraftDashboard: React.FC = () => {
     goaliePointValues, skaterData.yahooMappingDiagnostics,
     goalieData.yahooMappingDiagnostics, sourceRankImpacts,
     skaterData.inclusionDiagnostics, goalieData.inclusionDiagnostics,
-    tableDataNotices, rosterScheduleOptimizer.insights, projectionEmptyStateMessage,
+    draftSchedule.playerMetrics, tableDataNotices, canUseProDust, draftProDustInsights, projectionEmptyStateMessage, setFavoriteIds, canUseProScenarios, openRosterImpact,
   ]);
 
   return (
     <main
       className={styles.dashboardContainer}
+      data-god-view-open={godViewOpen}
       data-settings-open={settingsOpen}
       data-full-settings={fullSettings}
       data-mobile-tab={activeMobileTab}
     >
       <DraftWorkspaceHeader
-        leagueName={
-          espnLeagueOverride ? `ESPN ${espnLeagueOverride.externalLeagueId}`
-            : fantraxLeagueOverride ? `Fantrax ${fantraxLeagueOverride.externalLeagueId}`
-            : draftMode === "yahoo" && yahooDraftSync.selectedLeagueId ? `Yahoo ${yahooDraftSync.selectedLeagueId}`
-            : "Local draft"
-        }
-        seasonId={currentSeasonId}
-        manual={manualDraftingEnabled}
+        seasonId={FANTASY_PROJECTION_SEASON_ID}
         health={sourcesRefreshing ? "loading" : sourcesUnavailable || syncError || !hasLoadedPlayers ? "warning" : "healthy"}
         healthLabel={
           sourcesRefreshing ? "Loading draft sources"
@@ -3104,19 +3387,19 @@ const DraftDashboard: React.FC = () => {
             : !manualDraftingEnabled ? `${espnLiveActive ? "ESPN" : "Yahoo"} live sync`
             : "Draft sources ready"
         }
-        onSettings={openSettings}
-        onManual={() => {
-          if (espnLiveActive) void stopEspnAndContinueManually();
-          else if (draftMode === "yahoo") void stopYahooAndContinueManually();
-        }}
-        onSummary={() => setIsSummaryOpen(true)}
+        draftProEligible={draftProEligible}
+        onSettings={() => openSettings("league")}
+        onHealth={() => openSettings("integrations")}
       />
       <MobileDraftTabs
         activeTab={activeMobileTab}
         onChange={(tab) => {
-          if (tab !== "setup" && settingsOpen && !closeSettings()) return;
+          if (tab === "setup") {
+            openSettings("league");
+            return;
+          }
+          if (settingsOpen && !closeSettings()) return;
           setActiveMobileTab(tab);
-          setSettingsOpen(tab === "setup");
         }}
       />
 
@@ -3127,16 +3410,23 @@ const DraftDashboard: React.FC = () => {
         open={settingsOpen}
         full={fullSettings}
         configured={settingsConfigured}
+        draftProEligible={draftProEligible}
         validation={settingsValidation}
         saveError={settingsSaveError}
-        onToggle={() => { setSettingsOpen(true); setActiveMobileTab("setup"); }}
+        onToggle={() => { setSettingsOpen(false); setFullSettings(false); setIsSummaryOpen(true); }}
+        onClose={() => { setSettingsOpen(false); setFullSettings(false); }}
         onFullSetup={() => setFullSettings(true)}
         onDone={closeSettings}
         onResetSettings={resetSettings}
         onImport={() => { setSettingsSection("league"); settingsEditorRef.current?.importBookmark(); }}
         onExport={() => settingsEditorRef.current?.exportBookmark()}
         section={settingsSection}
-        onSectionChange={setSettingsSection}
+        onSectionChange={(section) => {
+          setSettingsSection(section);
+          if (section === "saved-drafts") setSavedDraftsMounted(true);
+          if (section === "roster-impact") setScenarioWorkspace((current) => ({ ...current, mounted: true, open: true }));
+          if (section === "reports") setReportsMounted(true);
+        }}
       >
       <div
         id="mobile-draft-panel-setup"
@@ -3147,15 +3437,16 @@ const DraftDashboard: React.FC = () => {
         aria-labelledby={
           mobileWorkspaceEnabled ? "mobile-draft-tab-setup" : undefined
         }
-        hidden={mobileWorkspaceEnabled && activeMobileTab !== "setup"}
       >
         <div className={styles.setupCore}>
-          <div hidden={settingsSection === "integrations"}>
+          <div hidden={settingsSection === "integrations" || settingsSection === "saved-drafts" || settingsSection === "roster-impact" || settingsSection === "reports"}>
           <DraftSettings
+        matchupWeeks={draftSchedule.weeks}
+        matchupWeeksError={draftSchedule.weeksError}
         ref={settingsEditorRef}
         validation={settingsValidation}
-        variant={fullSettings ? "full" : "inline"}
-        activeSection={settingsSection === "integrations" ? "league" : settingsSection}
+        variant="inline"
+        activeSection={settingsSection === "integrations" || settingsSection === "saved-drafts" || settingsSection === "roster-impact" || settingsSection === "reports" ? "league" : settingsSection}
         settings={draftSettings}
         onSettingsChange={updateDraftSettings}
         draftOrderPattern={draftOrderPattern}
@@ -3188,13 +3479,16 @@ const DraftDashboard: React.FC = () => {
             setGoaliePointValues(value);
           }
         }}
-        onOpenSummary={() => setIsSummaryOpen(true)}
-        onOpenImportCsv={() => setIsImportCsvOpen(true)}
+        onOpenSummary={() => { setSettingsOpen(false); setFullSettings(false); setIsSummaryOpen(true); }}
+        onOpenImportCsv={() => { setSettingsOpen(false); setFullSettings(false); setIsImportCsvOpen(true); }}
         customSourceLabel={customCsvLabel}
         customSourceMetadata={customSourceMetadata}
         availableSkaterStatKeys={availableSkaterStatKeys}
         availableGoalieStatKeys={availableGoalieStatKeys}
         onExportCsv={exportBlendedProjectionsCsv}
+        exportCsvDisabled={exportCsvState === "loading"}
+        exportCsvMessage={exportCsvMessage}
+        exportCsvUpgradeHref="/account?section=draft-pro"
         onRemoveCustomSource={(id) => {
           // Remove from session list and controls
           const list = getCsvList();
@@ -3411,11 +3705,47 @@ const DraftDashboard: React.FC = () => {
         onClear={espnDraftSync.clear}
       />
       </div>
+      {savedDraftsMounted ? <div className={styles.workspacePanel} hidden={settingsSection !== "saved-drafts"}>
+        <SavedDraftsWorkspace
+          getBrowserSnapshot={getSavedBrowserSnapshot}
+          applyBrowserSnapshot={applySavedBrowserSnapshot}
+          players={allPlayers.map((player) => ({ id: String(player.playerId), name: player.fullName }))}
+          annotations={workspaceAnnotations}
+          onAnnotationsChange={setWorkspaceAnnotations}
+          onSavedImportContextChange={setScenarioSavedImportContext}
+          onOpenedReportDraftChange={setOpenedReportDraft}
+        />
+      </div> : null}
+      {scenarioWorkspace.mounted ? <div className={styles.workspacePanel} hidden={settingsSection !== "roster-impact"}>
+        {scenarioAdapter.unavailableReason ? <p role="status">{scenarioAdapter.unavailableReason}</p> : null}
+        <ScenarioComparisonWorkspace eligible={canUseProScenarios} input={scenarioAdapter.input} draftId={scenarioAdapter.draftId} />
+      </div> : null}
+      {reportsMounted ? <div className={styles.workspacePanel} hidden={settingsSection !== "reports"}>
+        {reportAdapter.unavailableReason ? <p role="status">{reportAdapter.unavailableReason}</p> : null}
+        <AnalyticalReportsPanel
+          eligible={canUseProReports}
+          input={reportAdapter.input}
+          snapshot={reportAdapter.snapshot}
+          draftId={reportAdapter.draftId}
+          privateImportDraftId={reportAdapter.privateImportDraftId}
+        />
+      </div> : null}
         </div>
       </div>
       </DraftSettingsShell>
 
-      <div className={styles.mainContent} hidden={fullSettings}>
+      <GodView
+        queue={selectGodViewQueue({ startPick: currentPick, maxPickNumber: totalPicks,
+          draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern,
+          trades: manualDraftingEnabled ? pickTrades : [], keepers: manualDraftingEnabled ? keepers : [],
+          completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), teamRosterCounts, rosterCapacity: totalRosterSize })}
+        teams={teamStats} rosterConfig={effectiveRosterConfig} myTeamId={myTeamId} selectedTeamId={inspectedTeamId || myTeamId}
+        round={currentTurn.round} currentPick={currentPick} totalPicks={totalPicks} format={draftOrderPattern.mode} access={draftProAccess}
+        onSelectTeam={(teamId) => { setRosterViewRequest({ teamId }); if (mobileWorkspaceEnabled) setActiveMobileTab("roster"); }}
+        onExpandGraph={() => setGraphExpandRequest((value) => value + 1)}
+        onSummary={() => setIsSummaryOpen(true)} onOpenChange={setGodViewOpen}
+      />
+      <div className={styles.mainContent} style={{ "--board-track": `${draftSettings.teamCount + 4}fr`, "--standings-track": `${draftSettings.teamCount + 6}fr` } as React.CSSProperties}>
       {/* Recommendations and roster progress share the left workspace track. */}
       <section
         id="mobile-draft-panel-suggested"
@@ -3429,13 +3759,23 @@ const DraftDashboard: React.FC = () => {
         hidden={mobileWorkspaceEnabled && activeMobileTab !== "suggested"}
       >
         <SuggestedPicks
-          compact={settingsOpen}
+          compact={false}
           onReturnToDraft={closeSettings}
           players={availablePlayers}
           isLoading={isLoading}
           error={errorMessage}
-          dustInsights={rosterScheduleOptimizer.insights}
+          dustInsights={canUseProDust ? draftProDustInsights : undefined}
           vorpMetrics={vorpMetrics}
+          personalizedVorpMetrics={personalizedVorpMetrics}
+          draftProEligible={canUseProRecommendations}
+          categoryWeights={draftSettings.categoryWeights}
+          recommendationDataOrigin={customCsvList.length ? "local_csv" : "server"}
+          onNeedWeightEnabledChange={setNeedWeightEnabled}
+          dustSort={dustSort}
+          onDustSortChange={setDustSort}
+          canUseProDust={canUseProDust && dustRequestAllowed}
+          dustLineupMode={dustLineupMode}
+          onDustLineupModeChange={setDustLineupMode}
           needWeightEnabled={needWeightEnabled}
           needAlpha={needAlpha}
           posNeeds={posNeeds}
@@ -3455,9 +3795,34 @@ const DraftDashboard: React.FC = () => {
           onComparePlayer={toggleSuggestedComparison}
           compareSelectedIds={suggestedCompareIds}
         />
+        <div
+          className={styles.scoreboard}
+          role="region"
+          aria-label={`Draft scoreboard. ${scoreboardText}`}
+          data-paused={scoreboardPaused}
+          style={{ "--scoreboard-duration": `${Math.max(30, scoreboardText.length * 0.15)}s` } as React.CSSProperties}
+        >
+          <div className={styles.scoreboardViewport}>
+            <div className={styles.scoreboardTrack} aria-hidden="true">
+              {[0, 1].map((copy) => (
+                <div key={copy} className={styles.scoreboardCycle}>
+                  {scoreboardSections.map((section, index) => <span key={index}>{section}</span>)}
+                </div>
+              ))}
+            </div>
+          </div>
+          <button
+            type="button"
+            className={styles.scoreboardPause}
+            onClick={() => setScoreboardPaused((paused) => !paused)}
+            aria-label={scoreboardPaused ? "Resume draft scoreboard" : "Pause draft scoreboard"}
+            aria-pressed={scoreboardPaused}
+          >
+            {scoreboardPaused ? "▶" : "Ⅱ"}
+          </button>
+        </div>
       </section>
 
-        <LeagueStandings teams={teamStats} categories={activeScoringCategories} leagueType={draftSettings.leagueType || "points"} myTeamId={myTeamId} vorpMetrics={vorpMetrics} onUpdateTeamName={updateTeamName} canEdit={manualDraftingEnabled} isLoading={isLoading} error={errorMessage} />
         <section
           id="mobile-draft-panel-board"
           className={styles.leftPanel}
@@ -3484,6 +3849,11 @@ const DraftDashboard: React.FC = () => {
             picksUntilNext={currentTurn.isMyTurn ? 0 : picksUntilNext}
           />
           <DraftBoard
+            expandedMetrics={<>
+              <LeagueStandings scheduleMetrics={draftSchedule.playerMetrics} schedulePeriod={draftSchedule.periodLabel} teams={teamStats} categories={activeScoringCategories} leagueType={draftSettings.leagueType || "points"} myTeamId={myTeamId} vorpMetrics={vorpMetrics} onUpdateTeamName={updateTeamName} canEdit={manualDraftingEnabled} isLoading={isLoading} error={errorMessage} />
+              {draftProAccess?.eligible && draftProAccess.capabilities.includes("god_view") && <section className={styles.graphRosterMetrics} aria-label="Team roster progress"><h2>Roster Progress · Pro</h2><div>{teamStats.map((team) => <div key={team.teamId}><strong title={team.teamName}>{team.teamName}</strong><span>{Object.values(team.rosterSlots).reduce((sum, slots) => sum + slots.length, team.bench.length)} / {totalRosterSize}</span><span>Needs: {godViewRosterNeeds(godViewRosterProgress(effectiveRosterConfig, team)).map((slot) => slot.label).join(" · ") || "Filled"}</span></div>)}</div></section>}
+            </>}
+            expandRequest={graphExpandRequest}
             myTeamId={myTeamId}
             draftSettings={draftSettings}
             draftedPlayers={draftedPlayers}
@@ -3499,6 +3869,8 @@ const DraftDashboard: React.FC = () => {
           />
         </section>
 
+        <LeagueStandings scheduleMetrics={draftSchedule.playerMetrics} schedulePeriod={draftSchedule.periodLabel} teams={teamStats} categories={activeScoringCategories} leagueType={draftSettings.leagueType || "points"} myTeamId={myTeamId} vorpMetrics={vorpMetrics} onUpdateTeamName={updateTeamName} canEdit={manualDraftingEnabled} isLoading={isLoading} error={errorMessage} />
+
         <section
           id="mobile-draft-panel-roster"
           className={styles.centerPanel}
@@ -3511,6 +3883,8 @@ const DraftDashboard: React.FC = () => {
           hidden={mobileWorkspaceEnabled && activeMobileTab !== "roster"}
         >
           <MyRoster
+            onSelectedTeamChange={setInspectedTeamId}
+            viewRequest={rosterViewRequest}
             nextPickByTeam={Object.fromEntries(draftSettings.draftOrder.map((teamId) => [teamId, currentPick + findPicksUntilTeamTurn({ currentPick, teamId, draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern, trades: manualDraftingEnabled ? pickTrades : [], keepers: manualDraftingEnabled ? keepers : [], completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), teamRosterCounts, rosterCapacity: rosterRoundCount(draftSettings.rosterConfig), maxPickNumber: draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig) })]))}
             scheduleState={rosterScheduleOptimizer}
             myTeamId={myTeamId}
@@ -3529,6 +3903,14 @@ const DraftDashboard: React.FC = () => {
             needAlpha={needAlpha}
             posNeeds={posNeeds}
             forwardGrouping={forwardGrouping}
+            scheduleOverview={<DustMatrix
+              state={rosterScheduleOptimizer}
+              weeks={draftSchedule.weeks}
+              roster={dustRoster}
+              selectedWeeks={draftSchedule.selectedWeeks}
+              period={draftSchedule.periodLabel}
+              error={draftSchedule.weeksError}
+            />}
           />
         </section>
 
@@ -3558,14 +3940,7 @@ const DraftDashboard: React.FC = () => {
             </div>
           </div>
           {projectionsTable}
-          <button
-            type="button"
-            onClick={() => setDataRefreshKey((k) => k + 1)}
-            className={styles.refreshButton}
-            title="Force refresh projections from database"
-          >
-            Refresh Data
-          </button>
+
         </section>
       </div>
 

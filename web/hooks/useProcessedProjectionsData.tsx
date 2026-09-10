@@ -35,6 +35,7 @@ import {
   fetchAllSupabasePages,
 } from "lib/supabase/pagination";
 import {
+  normalizeYahooEligiblePositions,
   resolveYahooMappings,
   type YahooMappingDiagnostics,
   type YahooPlayerDetailRow,
@@ -57,6 +58,7 @@ import {
   fetchProjectionSourcesSettled,
   type ProjectionSourceWarning,
 } from "lib/draftDashboard/projectionSourceSettling";
+import { DEFAULT_YAHOO_GAME_KEY } from "lib/rosterScheduleData/constants";
 export type { CustomAdditionalProjectionSource } from "lib/draftDashboard/customProjectionSources";
 
 // --- Types ---
@@ -670,6 +672,8 @@ async function fetchAllSourceData(
 
   // 3. Fetch Yahoo NHL Player Map
   const yahooMapSelectString = `${YAHOO_PLAYER_MAP_KEYS.fhfhPlayerId}, ${YAHOO_PLAYER_MAP_KEYS.nhlPlayerId}, ${YAHOO_PLAYER_MAP_KEYS.yahooPlayerId}, ${YAHOO_PLAYER_MAP_KEYS.teamAbbreviation}, ${YAHOO_PLAYER_MAP_KEYS.position}, ${YAHOO_PLAYER_MAP_KEYS.nhlPlayerName}, ${YAHOO_PLAYER_MAP_KEYS.yahooPlayerNameInMap}`;
+  // Draft ADP is tied to Yahoo's game context, which can advance before the
+  // NHL current-season lookup does during the offseason.
   const yahooMapData = await fetchAllSupabaseFilterChunks<
     YahooNhlPlayerMapEntry,
     string
@@ -677,6 +681,10 @@ async function fetchAllSourceData(
     supabaseClient
       .from("yahoo_nhl_player_map_read")
       .select(yahooMapSelectString)
+      .like(
+        YAHOO_PLAYER_MAP_KEYS.yahooPlayerId,
+        `${DEFAULT_YAHOO_GAME_KEY}.p.%`,
+      )
       .in(YAHOO_PLAYER_MAP_KEYS.nhlPlayerId, playerIdChunk)
       .order(YAHOO_PLAYER_MAP_KEYS.nhlPlayerId, { ascending: true })
       .order(YAHOO_PLAYER_MAP_KEYS.yahooPlayerId, {
@@ -699,10 +707,6 @@ async function fetchAllSourceData(
 
   let yahooPlayersMap = new Map<string, YahooPlayerDetailData>();
   if (uniqueYahooPlayerIdsFromMap.size > 0) {
-    const yahooSeason = Number.parseInt(currentSeasonId.slice(0, 4), 10);
-    if (!Number.isFinite(yahooSeason)) {
-      throw new Error("Current season cannot be mapped to a Yahoo season.");
-    }
     const yahooPlayersSelectString = `${YAHOO_PLAYERS_TABLE_KEYS.primaryKey}, ${YAHOO_PLAYERS_TABLE_KEYS.yahooSpecificPlayerId}, ${YAHOO_PLAYERS_TABLE_KEYS.fullName}, ${YAHOO_PLAYERS_TABLE_KEYS.draftAnalysis}, ${YAHOO_PLAYERS_TABLE_KEYS.editorialTeamAbbreviation}, ${YAHOO_PLAYERS_TABLE_KEYS.displayPosition}, ${YAHOO_PLAYERS_TABLE_KEYS.eligiblePositions}, average_draft_pick, average_draft_round, percent_drafted, game_id, season`;
 
     // Split IDs into composite (player_key-like) and bare numeric IDs
@@ -728,7 +732,7 @@ async function fetchAllSourceData(
         supabaseClient
           .from("yahoo_players_with_normalized_history")
           .select(yahooPlayersSelectString)
-          .eq("season", yahooSeason)
+          .eq("game_id", Number(DEFAULT_YAHOO_GAME_KEY))
           .in(YAHOO_PLAYERS_TABLE_KEYS.primaryKey, playerIdChunk)
           .order(YAHOO_PLAYERS_TABLE_KEYS.primaryKey, { ascending: true })
           .range(from, to),
@@ -744,7 +748,7 @@ async function fetchAllSourceData(
         supabaseClient
           .from("yahoo_players_with_normalized_history")
           .select(yahooPlayersSelectString)
-          .eq("season", yahooSeason)
+          .eq("game_id", Number(DEFAULT_YAHOO_GAME_KEY))
           .in(YAHOO_PLAYERS_TABLE_KEYS.yahooSpecificPlayerId, playerIdChunk)
           .order(YAHOO_PLAYERS_TABLE_KEYS.primaryKey, { ascending: true })
           .range(from, to),
@@ -1199,95 +1203,76 @@ function processRawDataIntoPlayers(
       };
     }
 
-    let teamFromSources: string | null = null;
-    let positionFromSources: string | null = null;
+    const yahooTeam = String(
+      yahooPlayerDetail?.[YAHOO_PLAYERS_TABLE_KEYS.editorialTeamAbbreviation] ??
+        "",
+    ).trim();
+    const yahooPosition = String(
+      yahooPlayerDetail?.[YAHOO_PLAYERS_TABLE_KEYS.displayPosition] ?? "",
+    ).trim();
+    let resolvedTeam: string | null = yahooTeam || null;
+    let resolvedPosition: string | null = yahooPosition || null;
 
     for (const sourceConfig of activeSourceConfigs) {
       const sourceDataForPlayer = getSourceRowForPlayer(sourceConfig);
       if (sourceDataForPlayer) {
         if (
-          !teamFromSources &&
+          !resolvedTeam &&
           sourceConfig.teamKey &&
           sourceDataForPlayer[sourceConfig.teamKey]
         ) {
-          teamFromSources = sourceDataForPlayer[sourceConfig.teamKey];
+          resolvedTeam = String(sourceDataForPlayer[sourceConfig.teamKey]);
         }
         if (
-          !positionFromSources &&
+          !resolvedPosition &&
           sourceConfig.positionKey &&
           sourceDataForPlayer[sourceConfig.positionKey]
         ) {
-          positionFromSources = sourceDataForPlayer[sourceConfig.positionKey];
+          resolvedPosition = String(
+            sourceDataForPlayer[sourceConfig.positionKey],
+          );
         }
       }
-      if (teamFromSources && positionFromSources) break;
+      if (resolvedTeam && resolvedPosition) break;
     }
 
     if (
-      !teamFromSources &&
+      !resolvedTeam &&
       playerYahooMapEntry?.[YAHOO_PLAYER_MAP_KEYS.teamAbbreviation]
     ) {
-      teamFromSources =
-        playerYahooMapEntry[YAHOO_PLAYER_MAP_KEYS.teamAbbreviation];
+      resolvedTeam = String(
+        playerYahooMapEntry[YAHOO_PLAYER_MAP_KEYS.teamAbbreviation],
+      );
     }
     if (
-      !positionFromSources &&
+      !resolvedPosition &&
       playerYahooMapEntry?.[YAHOO_PLAYER_MAP_KEYS.position]
     ) {
-      positionFromSources = playerYahooMapEntry[YAHOO_PLAYER_MAP_KEYS.position];
-    }
-
-    if (
-      !teamFromSources &&
-      yahooPlayerDetail?.[YAHOO_PLAYERS_TABLE_KEYS.editorialTeamAbbreviation]
-    ) {
-      teamFromSources =
-        yahooPlayerDetail[YAHOO_PLAYERS_TABLE_KEYS.editorialTeamAbbreviation];
-    }
-    if (
-      !positionFromSources &&
-      yahooPlayerDetail?.[YAHOO_PLAYERS_TABLE_KEYS.displayPosition]
-    ) {
-      positionFromSources =
-        yahooPlayerDetail[YAHOO_PLAYERS_TABLE_KEYS.displayPosition];
+      resolvedPosition = String(
+        playerYahooMapEntry[YAHOO_PLAYER_MAP_KEYS.position],
+      );
     }
 
     const actualTeamAbbreviation =
       playerActualStatsRow?.current_team_abbreviation;
 
     if (
+      !resolvedTeam &&
       actualTeamAbbreviation &&
       typeof actualTeamAbbreviation === "string" &&
       actualTeamAbbreviation.trim() !== ""
     ) {
       processedPlayer.displayTeam = actualTeamAbbreviation.trim();
     } else {
-      processedPlayer.displayTeam = teamFromSources;
+      processedPlayer.displayTeam = resolvedTeam;
     }
-    processedPlayer.displayPosition = positionFromSources;
-    // Eligible positions from yahoo_players (array of strings like ["C","RW"])
-    try {
-      const rawElig = yahooPlayerDetail?.[
-        YAHOO_PLAYERS_TABLE_KEYS.eligiblePositions
-      ] as any;
-      if (Array.isArray(rawElig)) {
-        const norm = rawElig
-          .map((s) =>
-            String(s || "")
-              .trim()
-              .toUpperCase(),
-          )
-          .filter(Boolean);
-        if (norm.length) processedPlayer.eligiblePositions = norm;
-      } else if (typeof rawElig === "string" && rawElig.trim() !== "") {
-        // Fallback if stored as comma-delimited string
-        const norm = rawElig
-          .split(",")
-          .map((s) => s.trim().toUpperCase())
-          .filter(Boolean);
-        if (norm.length) processedPlayer.eligiblePositions = norm;
-      }
-    } catch {}
+    processedPlayer.displayPosition = resolvedPosition;
+    const eligiblePositions = normalizeYahooEligiblePositions(
+      yahooPlayerDetail?.[YAHOO_PLAYERS_TABLE_KEYS.eligiblePositions],
+    );
+    if (eligiblePositions.length) {
+      processedPlayer.eligiblePositions = eligiblePositions;
+    }
 
     // Add derived stat: DEFENSE_POINTS (Defensemen goals + assists)
     try {

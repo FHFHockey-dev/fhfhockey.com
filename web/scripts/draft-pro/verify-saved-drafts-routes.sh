@@ -1,0 +1,249 @@
+#!/usr/bin/env bash
+# Disposable, loopback-only acceptance of the Saved Drafts Next routes.
+set -euo pipefail
+
+readonly PG_IMAGE="public.ecr.aws/supabase/postgres:15.8.1.085"
+readonly REST_IMAGE="public.ecr.aws/supabase/postgrest:v12.0.2"
+readonly AUTH_IMAGE="public.ecr.aws/supabase/gotrue:v2.195.0"
+readonly STORAGE_IMAGE="public.ecr.aws/supabase/storage-api:v1.69.0"
+readonly ROOT="draft-pro-routes-${RANDOM}${RANDOM}"
+readonly DB="$ROOT-db" REST="$ROOT-rest" AUTH="$ROOT-auth" STORAGE="$ROOT-storage" NET="$ROOT-net"
+readonly PASSWORD="draft_pro_routes_local_only" JWT_SECRET="draft-pro-routes-local-only-jwt-secret"
+readonly WORK="$(mktemp -d)"
+readonly PATREON_PRIVATE_ARCHIVE="supabase/migration-archive/pre-baseline-20260716/authoritative-root/20260713055508_auth_user_settings_platform_baseline.sql"
+readonly PATREON_VAULT_ARCHIVE="supabase/migration-archive/pre-baseline-20260716/authoritative-root/20260713055537_encrypt_connected_account_tokens_with_vault.sql"
+next_pid="" gateway_pid="" schema_container=""
+[[ -d web/node_modules ]] || { echo "web/node_modules is required (reuse an existing workspace install)." >&2; exit 66; }
+stripe_interactive="${DRAFT_PRO_STRIPE_INTERACTIVE:-false}"
+stripe_env_file="${DRAFT_PRO_STRIPE_ENV_FILE:-}"
+access_codes_only="${DRAFT_PRO_ACCESS_CODES_ONLY:-false}"
+if [[ "$stripe_interactive" == true ]]; then
+  [[ -n "$stripe_env_file" && -f "$stripe_env_file" ]] || { echo "DRAFT_PRO_STRIPE_ENV_FILE must name an existing ignored local env file." >&2; exit 64; }
+  git check-ignore -q -- "$stripe_env_file" || { echo "DRAFT_PRO_STRIPE_ENV_FILE must be ignored by Git." >&2; exit 64; }
+  while IFS= read -r -d '' stripe_entry; do export "$stripe_entry"; done < <(STRIPE_ENV_FILE="$stripe_env_file" node - <<'NODE'
+const fs=require('fs'),dotenv=require('./web/node_modules/dotenv');
+const values=dotenv.parse(fs.readFileSync(process.env.STRIPE_ENV_FILE));
+for (const key of ['STRIPE_SECRET_KEY','STRIPE_WEBHOOK_SECRET','STRIPE_DRAFT_PRO_PRICE_ID','STRIPE_DRAFT_PRO_PRODUCT_ID']) if (values[key] !== undefined) process.stdout.write(`${key}=${values[key]}\0`);
+NODE
+)
+  for required in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET STRIPE_DRAFT_PRO_PRICE_ID STRIPE_DRAFT_PRO_PRODUCT_ID; do
+    [[ -n "${!required:-}" ]] || { echo "DRAFT_PRO_STRIPE_ENV_FILE is missing $required." >&2; exit 64; }
+  done
+  [[ "$STRIPE_SECRET_KEY" =~ ^(sk|rk)_test_ ]] || { echo "Interactive Stripe validation requires a Stripe test secret key." >&2; exit 64; }
+  DRAFT_PRO_CHECKOUT_ENABLED=true
+fi
+cleanup() {
+  [[ -z "$next_pid" ]] || kill "$next_pid" >/dev/null 2>&1 || true
+  [[ -z "$gateway_pid" ]] || kill "$gateway_pid" >/dev/null 2>&1 || true
+  [[ -z "$schema_container" ]] || docker rm -f "$schema_container" >/dev/null 2>&1 || true
+  docker rm -f "$STORAGE" "$AUTH" "$REST" "$DB" >/dev/null 2>&1 || true
+  docker network rm "$NET" >/dev/null 2>&1 || true
+  rm -rf "$WORK"
+}
+trap cleanup EXIT
+close_owned_port() {
+  node - "$1" <<'NODE'
+const net=require('net'); const socket=net.connect(Number(process.argv[2]), '127.0.0.1');
+socket.once('connect',()=>process.exit(1)); socket.once('error',()=>process.exit(0));
+NODE
+}
+finish() {
+  kill "$next_pid" "$gateway_pid" >/dev/null 2>&1 || true
+  wait "$next_pid" "$gateway_pid" 2>/dev/null || true
+  next_pid=""; gateway_pid=""
+  docker rm -f "$STORAGE" "$AUTH" "$REST" "$DB" >/dev/null
+  docker network rm "$NET" >/dev/null
+  for _ in $(seq 1 10); do
+    ! docker container inspect "$STORAGE" "$AUTH" "$REST" "$DB" >/dev/null 2>&1 && ! docker network inspect "$NET" >/dev/null 2>&1 && close_owned_port "$next_port" && close_owned_port "$gateway_port" && break
+    sleep 0.1
+  done
+  ! docker container inspect "$STORAGE" "$AUTH" "$REST" "$DB" >/dev/null 2>&1
+  ! docker network inspect "$NET" >/dev/null 2>&1
+  close_owned_port "$next_port"
+  close_owned_port "$gateway_port"
+  rm -rf "$WORK"
+  trap - EXIT
+  echo "saved_drafts_routes=passed; auth=gotrue; rest=postgrest; storage=storage-api; cleanup=verified"
+}
+
+docker network create "$NET" >/dev/null
+docker run -d --rm --name "$DB" --network "$NET" --network-alias db -e "POSTGRES_PASSWORD=$PASSWORD" "$PG_IMAGE" >/dev/null
+for _ in $(seq 1 45); do docker exec "$DB" pg_isready -U postgres -d postgres >/dev/null 2>&1 && break; sleep 1; done
+docker exec "$DB" pg_isready -U postgres -d postgres >/dev/null
+pg() { docker exec -i "$DB" psql -v ON_ERROR_STOP=1 -U postgres -d postgres "$@"; }
+pg_storage() { docker exec -e "PGPASSWORD=$PASSWORD" -i "$DB" psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U supabase_admin -d postgres "$@"; }
+bootstrap_patreon_token_storage() {
+  [[ -s "$PATREON_PRIVATE_ARCHIVE" && -s "$PATREON_VAULT_ARCHIVE" ]] || { echo "Authoritative Patreon token migrations are unavailable." >&2; exit 65; }
+  [[ "$(grep -c '^CREATE SCHEMA IF NOT EXISTS private;$' "$PATREON_PRIVATE_ARCHIVE")" == 1 ]] || { echo "Private token archive start boundary is ambiguous." >&2; exit 65; }
+  [[ "$(grep -c '^ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;$' "$PATREON_PRIVATE_ARCHIVE")" == 1 ]] || { echo "Private token archive end boundary is ambiguous." >&2; exit 65; }
+  local start_line end_line token_block
+  start_line="$(grep -n '^CREATE SCHEMA IF NOT EXISTS private;$' "$PATREON_PRIVATE_ARCHIVE" | cut -d: -f1)"
+  end_line="$(grep -n '^ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;$' "$PATREON_PRIVATE_ARCHIVE" | cut -d: -f1)"
+  (( start_line < end_line )) || { echo "Private token archive boundaries are out of order." >&2; exit 65; }
+  token_block="$WORK/patreon-private-token-bootstrap.sql"
+  sed -n "${start_line},$((end_line - 1))p" "$PATREON_PRIVATE_ARCHIVE" >"$token_block"
+  grep -qx 'CREATE SCHEMA IF NOT EXISTS private;' "$token_block" && grep -qx 'ON DELETE CASCADE;' "$token_block" && ! grep -q 'ENABLE ROW LEVEL SECURITY' "$token_block" || { echo "Private token archive extraction failed boundary validation." >&2; exit 65; }
+  { printf 'BEGIN;\n'; sed -n '1,$p' "$token_block"; sed -n '1,$p' "$PATREON_VAULT_ARCHIVE"; printf 'COMMIT;\n'; } | pg >/dev/null
+}
+assert_patreon_token_storage() {
+  pg <<'SQL' >/dev/null
+BEGIN;
+DO $$
+DECLARE
+  v_user uuid := '00000000-0000-4000-8000-000000000043';
+  v_account uuid := '00000000-0000-4000-8000-000000000143';
+  v_access text;
+  v_refresh text;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'supabase_vault') THEN RAISE EXCEPTION 'Vault extension is unavailable'; END IF;
+  IF has_schema_privilege('anon', 'private', 'USAGE') OR has_schema_privilege('authenticated', 'private', 'USAGE') THEN RAISE EXCEPTION 'Private schema is exposed to API roles'; END IF;
+  IF has_function_privilege('anon', 'public.upsert_connected_account_tokens_secure(uuid,uuid,text,text,text,text,jsonb,text,timestamp with time zone,timestamp with time zone,timestamp with time zone,jsonb)'::regprocedure, 'EXECUTE')
+    OR has_function_privilege('authenticated', 'public.upsert_connected_account_tokens_secure(uuid,uuid,text,text,text,text,jsonb,text,timestamp with time zone,timestamp with time zone,timestamp with time zone,jsonb)'::regprocedure, 'EXECUTE')
+    OR has_function_privilege('anon', 'public.get_connected_account_tokens_secure(uuid,uuid)'::regprocedure, 'EXECUTE')
+    OR has_function_privilege('authenticated', 'public.get_connected_account_tokens_secure(uuid,uuid)'::regprocedure, 'EXECUTE') THEN RAISE EXCEPTION 'Public token RPC is exposed to API roles'; END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'private' AND table_name = 'connected_account_tokens' AND column_name IN ('access_token', 'refresh_token')) THEN RAISE EXCEPTION 'Raw token columns remain in private storage'; END IF;
+  INSERT INTO public.connected_accounts (id, user_id, provider, status) VALUES (v_account, v_user, 'patreon', 'connected');
+  PERFORM public.upsert_connected_account_tokens_secure(v_account, v_user, 'patreon', 'synthetic-access-token', 'synthetic-refresh-token');
+  SELECT access_token, refresh_token INTO v_access, v_refresh FROM public.get_connected_account_tokens_secure(v_account, v_user);
+  IF v_access IS DISTINCT FROM 'synthetic-access-token' OR v_refresh IS DISTINCT FROM 'synthetic-refresh-token' THEN RAISE EXCEPTION 'Vault token roundtrip failed'; END IF;
+END;
+$$;
+ROLLBACK;
+SQL
+}
+for _ in $(seq 1 45); do pg_storage -c 'select 1' >/dev/null 2>&1 && break; sleep 1; done
+pg_storage -c 'select 1' >/dev/null
+
+schema_container="$ROOT-storage-schema"; docker create --name "$schema_container" "$STORAGE_IMAGE" >/dev/null
+for migration in 0008-add-public-to-buckets.sql 0013-add-bucket-custom-limits.sql 0014-use-bytes-for-max-size.sql; do docker cp "$schema_container:/app/migrations/tenant/$migration" "$WORK/$migration"; pg_storage < "$WORK/$migration" >/dev/null; done
+docker rm "$schema_container" >/dev/null; schema_container=""
+pg < supabase/migrations/20260716112908_production_schema_baseline.sql >/dev/null
+bootstrap_patreon_token_storage
+pg < supabase/migrations/20260907143356_draft_pro_foundation.sql >/dev/null
+pg < supabase/migrations/20260907145602_draft_pro_stripe_fulfillment.sql >/dev/null
+pg < supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql >/dev/null
+if [[ "$access_codes_only" == true ]]; then
+  pg < supabase/migrations/20260909120000_draft_pro_complimentary_access_codes.sql >/dev/null
+fi
+if [[ "${DRAFT_PRO_REPORTS_ONLY:-false}" == true || "${DRAFT_PRO_REPORTS_BROWSER_ONLY:-false}" == true ]]; then
+  pg < supabase/migrations/20260829161013_add_roster_optimizer_team_game_schedule.sql >/dev/null
+fi
+pg_storage <<SQL >/dev/null
+alter role authenticator password '$PASSWORD';
+alter role supabase_auth_admin password '$PASSWORD';
+alter table auth.users add column if not exists email_change_token_new varchar(255), add column if not exists email_change_token_current varchar(255), add column if not exists reauthentication_token varchar(255), add column if not exists phone_change text, add column if not exists phone_change_token varchar(255);
+SQL
+pg <<'SQL' >/dev/null
+insert into auth.users (instance_id,id,aud,role,email,raw_app_meta_data,raw_user_meta_data)
+values ('00000000-0000-0000-0000-000000000000','00000000-0000-4000-8000-000000000041','authenticated','authenticated','route-a@example.invalid','{}','{}'),
+       ('00000000-0000-0000-0000-000000000000','00000000-0000-4000-8000-000000000042','authenticated','authenticated','route-b@example.invalid','{}','{}'),
+       ('00000000-0000-0000-0000-000000000000','00000000-0000-4000-8000-000000000043','authenticated','authenticated','stripe-sandbox@example.invalid','{}','{}'),
+       ('00000000-0000-0000-0000-000000000000','00000000-0000-4000-8000-000000000044','authenticated','authenticated','access-code-foreign@example.invalid','{}','{}'),
+       ('00000000-0000-0000-0000-000000000000','00000000-0000-4000-8000-000000000045','authenticated','authenticated','access-code-admin@example.invalid','{}','{}')
+on conflict (id) do nothing;
+update auth.users set confirmation_token='', recovery_token='', email_change='', email_change_token_new='', email_change_token_current='', reauthentication_token='', phone_change='', phone_change_token='', created_at=now(), updated_at=now() where id in ('00000000-0000-4000-8000-000000000041','00000000-0000-4000-8000-000000000042','00000000-0000-4000-8000-000000000043','00000000-0000-4000-8000-000000000044','00000000-0000-4000-8000-000000000045');
+insert into public.user_entitlements (user_id,source_provider,entitlement_key,entitlement_status,source_reference,effective_from,effective_to)
+values ('00000000-0000-4000-8000-000000000041','stripe','draft_pro','active','route-a',now()-interval '1 day','2027-07-01T04:00:00Z'),
+       ('00000000-0000-4000-8000-000000000042','stripe','draft_pro','active','route-b',now()-interval '1 day','2027-07-01T04:00:00Z');
+SQL
+assert_patreon_token_storage
+if [[ "$access_codes_only" == true ]]; then
+  pg -c "insert into public.users (user_id, role) select '00000000-0000-4000-8000-000000000045', 'admin' where not exists (select 1 from public.users where user_id = '00000000-0000-4000-8000-000000000045');" >/dev/null
+fi
+
+token() { TOKEN_ROLE="$1" TOKEN_SUBJECT="${2:-}" TOKEN_EMAIL="${3:-}" TOKEN_SECRET="$JWT_SECRET" TOKEN_TTL_SECONDS="${TOKEN_TTL_SECONDS:-3600}" node - <<'NODE'
+const crypto=require('crypto'); const enc=x=>Buffer.from(JSON.stringify(x)).toString('base64url');
+const h=enc({alg:'HS256',typ:'JWT'}), p=enc({aud:'authenticated',role:process.env.TOKEN_ROLE,sub:process.env.TOKEN_SUBJECT,email:process.env.TOKEN_EMAIL,jti:process.env.TOKEN_JTI,exp:Math.floor(Date.now()/1000)+Number(process.env.TOKEN_TTL_SECONDS)});
+process.stdout.write(`${h}.${p}.${crypto.createHmac('sha256',process.env.TOKEN_SECRET).update(`${h}.${p}`).digest('base64url')}`);
+NODE
+}
+[[ "$stripe_interactive" != true ]] || TOKEN_TTL_SECONDS=86400
+anon_key="$(token anon)"; service_key="$(token service_role)"; user_a="$(TOKEN_JTI=device-a token authenticated 00000000-0000-4000-8000-000000000041 route-a@example.invalid)"; user_a_second="$(TOKEN_JTI=device-b token authenticated 00000000-0000-4000-8000-000000000041 route-a@example.invalid)"; user_b="$(token authenticated 00000000-0000-4000-8000-000000000042 route-b@example.invalid)"; user_stripe="$(TOKEN_JTI=stripe-sandbox token authenticated 00000000-0000-4000-8000-000000000043 stripe-sandbox@example.invalid)"; user_code_foreign="$(token authenticated 00000000-0000-4000-8000-000000000044 access-code-foreign@example.invalid)"
+storage_files="$WORK/storage"; mkdir -p "$storage_files"
+docker run -d --name "$REST" --network "$NET" --publish 127.0.0.1::3000 -e "PGRST_DB_URI=postgres://authenticator:$PASSWORD@db:5432/postgres" -e "PGRST_DB_SCHEMAS=public,storage" -e "PGRST_DB_ANON_ROLE=anon" -e "PGRST_JWT_SECRET=$JWT_SECRET" "$REST_IMAGE" >/dev/null
+docker run -d --name "$AUTH" --network "$NET" --publish 127.0.0.1::9999 -e GOTRUE_API_HOST=0.0.0.0 -e GOTRUE_API_PORT=9999 -e "GOTRUE_DB_DATABASE_URL=postgres://supabase_auth_admin:$PASSWORD@db:5432/postgres" -e GOTRUE_DB_DRIVER=postgres -e "GOTRUE_JWT_SECRET=$JWT_SECRET" -e GOTRUE_SITE_URL=http://localhost -e API_EXTERNAL_URL=http://localhost -e GOTRUE_INSTANCE_ID=00000000-0000-0000-0000-000000000000 -e GOTRUE_DISABLE_SIGNUP=true "$AUTH_IMAGE" >/dev/null
+docker run -d --name "$STORAGE" --network "$NET" --publish 127.0.0.1::5000 -e "DATABASE_URL=postgres://supabase_admin:$PASSWORD@db:5432/postgres" -e "AUTH_JWT_SECRET=$JWT_SECRET" -e "ANON_KEY=$anon_key" -e "SERVICE_KEY=$service_key" -e STORAGE_BACKEND=file -e STORAGE_FILE_BACKEND_PATH=/var/lib/storage -e REGION=local -v "$storage_files:/var/lib/storage" "$STORAGE_IMAGE" >/dev/null
+for container in "$REST" "$AUTH" "$STORAGE"; do
+  if ! docker container inspect "$container" >/dev/null 2>&1; then
+    docker logs "$container" >&2 || true
+    exit 1
+  fi
+done
+rest_port="$(docker port "$REST" 3000/tcp | sed 's/.*://')"
+auth_port="$(docker port "$AUTH" 9999/tcp | sed 's/.*://')"
+storage_port="$(docker port "$STORAGE" 5000/tcp | sed 's/.*://')"
+# A deliberately tiny local-only gateway gives all three real Supabase APIs one base URL.
+REST_PORT="$rest_port" AUTH_PORT="$auth_port" STORAGE_PORT="$storage_port" GATEWAY_FILE="$WORK/gateway-port" node - <<'NODE' >/dev/null 2>&1 &
+const http=require('http'),fs=require('fs'); const targets={auth:'127.0.0.1:'+process.env.AUTH_PORT,rest:'127.0.0.1:'+process.env.REST_PORT,storage:'127.0.0.1:'+process.env.STORAGE_PORT};
+http.createServer((req,res)=>{const key=req.url.startsWith('/auth/v1')?'auth':req.url.startsWith('/rest/v1')?'rest':req.url.startsWith('/storage/v1')?'storage':null;if(!key){res.writeHead(404);return res.end();}const upstream=http.request({host:targets[key].split(':')[0],port:targets[key].split(':')[1],path:req.url.replace(/^\/(auth|rest|storage)\/v1/,''),method:req.method,headers:req.headers},r=>{res.writeHead(r.statusCode,r.headers);r.pipe(res)});upstream.on('error',e=>{res.writeHead(502);res.end(e.message)});req.pipe(upstream)}).listen(0,'127.0.0.1',function(){fs.writeFileSync(process.env.GATEWAY_FILE,String(this.address().port))});
+NODE
+gateway_pid=$!
+for _ in $(seq 1 30); do [[ -s "$WORK/gateway-port" ]] && break; sleep 1; done
+gateway_port="$(cat "$WORK/gateway-port")"; gateway="http://127.0.0.1:$gateway_port"
+for _ in $(seq 1 45); do curl -sf -H "Authorization: Bearer $user_a" "$gateway/auth/v1/user" >/dev/null && curl -sf "$gateway/rest/v1/" >/dev/null && curl -sf "$gateway/storage/v1/status" >/dev/null && break; sleep 1; done
+curl -sf -H "Authorization: Bearer $user_a" "$gateway/auth/v1/user" >/dev/null
+
+next_port="$(node -e 'const net=require("net");const s=net.createServer().listen(0,"127.0.0.1",()=>{console.log(s.address().port);s.close()})')"
+next_url="http://127.0.0.1:$next_port"
+[[ "$stripe_interactive" != true ]] || NEXT_PUBLIC_SITE_URL="$next_url"
+(cd web && exec env PLAYER_FORECAST_ISOLATED_NEXT=1 NEXT_PUBLIC_SUPABASE_URL="$gateway" NEXT_PUBLIC_SUPABASE_PUBLIC_KEY="$anon_key" SUPABASE_SERVICE_ROLE_KEY="$service_key" DRAFT_PRO_SAVED_DRAFTS_ENABLED=true DRAFT_PRO_PRIVATE_IMPORTS_ENABLED=true DRAFT_PRO_SCENARIOS_ENABLED=true DRAFT_PRO_REPORTS_ENABLED="${DRAFT_PRO_REPORTS_ENABLED:-${DRAFT_PRO_REPORTS_ONLY:-false}}" DRAFT_PRO_CHECKOUT_ENABLED="${DRAFT_PRO_CHECKOUT_ENABLED:-false}" NEXT_PUBLIC_SITE_URL="${NEXT_PUBLIC_SITE_URL:-$next_url}" NEXT_TELEMETRY_DISABLED=1 ./node_modules/.bin/next dev -H 127.0.0.1 -p "$next_port") >"$WORK/next.log" 2>&1 &
+next_pid=$!
+for _ in $(seq 1 60); do
+  kill -0 "$next_pid" >/dev/null 2>&1 || { cat "$WORK/next.log" >&2; exit 1; }
+  [[ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$next_port/api/v1/account/draft-pro/drafts")" == 401 ]] && break
+  sleep 1
+done
+kill -0 "$next_pid" >/dev/null 2>&1
+[[ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$next_port/api/v1/account/draft-pro/drafts")" == 401 ]]
+export NEXT_URL="$next_url" SUPABASE_GATEWAY="$gateway" USER_A="$user_a" USER_A_SECOND="$user_a_second" USER_B="$user_b" USER_STRIPE="$user_stripe" USER_ACCESS_CODE_FOREIGN="$user_code_foreign" SERVICE_KEY="$service_key" STRIPE_SANDBOX_USER_ID="00000000-0000-4000-8000-000000000043" ACCESS_CODE_ADMIN_ID="00000000-0000-4000-8000-000000000045"
+if [[ "$access_codes_only" == true ]]; then
+  (cd web && NODE_PATH=.:node_modules ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/verify-access-codes-runner.ts)
+  finish
+  exit 0
+fi
+if [[ "$stripe_interactive" == true ]]; then
+  browser_auth_file="$WORK/stripe-sandbox-browser-auth.js"
+  NEXT_URL="$next_url" USER_STRIPE="$user_stripe" node - <<'NODE' >"$browser_auth_file"
+const session={access_token:process.env.USER_STRIPE,refresh_token:process.env.USER_STRIPE,token_type:"bearer",expires_in:86400,expires_at:Math.floor(Date.now()/1000)+86400,user:{id:"00000000-0000-4000-8000-000000000043",aud:"authenticated",role:"authenticated",email:"stripe-sandbox@example.invalid"}};
+process.stdout.write(`localStorage.setItem("sb-127-auth-token",${JSON.stringify(JSON.stringify(session))});\n`);
+process.stdout.write(`location.assign(${JSON.stringify(`${process.env.NEXT_URL}/account?section=draft-pro`)});\n`);
+NODE
+  chmod 600 "$browser_auth_file"
+  echo "stripe_sandbox=ready; next=$next_url; webhook=$next_url/api/v1/webhooks/stripe"
+  echo "Open $next_url, run the local-only browser bootstrap at $browser_auth_file in DevTools, then complete the sandbox Checkout for the free stripe-sandbox@example.invalid user."
+  echo "Forward Stripe CLI webhooks to $next_url/api/v1/webhooks/stripe. After the signed event and return-page verification complete, press Enter to verify the isolated database and clean up."
+  [[ -t 0 ]] || { echo "Stripe interactive mode requires a terminal for explicit cleanup." >&2; exit 64; }
+  read -r -p "Press Enter after sandbox Checkout, webhook delivery, and return verification: "
+  (cd web && NODE_PATH=.:node_modules ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/verify-stripe-sandbox-runner.ts)
+  finish
+  exit 0
+fi
+if [[ "${DRAFT_PRO_SCENARIOS_BROWSER_ONLY:-false}" == true ]]; then
+  (cd web && NODE_PATH=.:node_modules ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/verify-scenarios-browser-runner.ts)
+  finish
+  exit 0
+fi
+if [[ "${DRAFT_PRO_REPORTS_ONLY:-false}" == true ]]; then
+  (cd web && NODE_PATH=.:node_modules ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/verify-reports-routes-runner.ts)
+  finish
+  exit 0
+fi
+if [[ "${DRAFT_PRO_REPORTS_BROWSER_ONLY:-false}" == true ]]; then
+  (cd web && NODE_PATH=.:node_modules ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/verify-reports-browser-runner.ts)
+  finish
+  exit 0
+fi
+if [[ "${DRAFT_PRO_SCENARIOS_ONLY:-false}" == true ]]; then
+  (cd web && NODE_PATH=.:node_modules ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/verify-scenarios-routes-runner.ts)
+  finish
+  exit 0
+fi
+if [[ "${DRAFT_PRO_BROWSER_ONLY:-false}" != true ]]; then
+  (cd web && NODE_PATH=.:node_modules ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/verify-saved-drafts-routes-runner.ts)
+fi
+if ! (cd web && NODE_PATH=.:node_modules ./node_modules/.bin/ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/draft-pro/verify-saved-drafts-browser-runner.ts); then
+  cat "$WORK/next.log" >&2
+  exit 1
+fi
+
+finish

@@ -1,0 +1,42 @@
+@use "styles/vars" as v;
+
+.panel { margin: 1rem 0; padding: 1rem; border: 1px solid v.$draft-border; border-radius: v.$radius-lg; background: v.$draft-surface; color: v.$color-neutral-200; }
+.heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.heading h2 { margin: 0; color: v.$primary-color; }
+.saveControls { display: flex; flex: 1 1 34rem; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .5rem; }
+.saveControls label { font-weight: 600; color: v.$text-secondary; }
+.privateImportHint { flex-basis: 100%; color: v.$text-secondary; font-size: .8125rem; }
+.status { color: v.$text-secondary; }
+.error { color: v.$color-coral-500; font-weight: 600; }
+.panel input, .panel select, .panel textarea { box-sizing: border-box; color: v.$color-neutral-050; background: v.$draft-input; border: 1px solid v.$draft-border; border-radius: v.$radius-sm; }
+.panel input, .panel select, .panel button { min-height: 40px; }
+.panel input, .panel select { padding: .5rem .625rem; }
+.panel textarea { padding: .625rem; }
+.panel button { padding: .5rem .75rem; color: v.$color-white; background: v.$draft-action; border: 1px solid v.$draft-border; border-radius: v.$radius-sm; }
+.panel button:hover:not(:disabled) { background: v.$color-blue-600; }
+.panel button:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
+.panel button:disabled { color: v.$color-neutral-400; background: v.$draft-input; border-color: v.$draft-border; cursor: not-allowed; }
+.list { display: grid; gap: .5rem; padding: 0; list-style: none; }
+.list li { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding-top: .5rem; border-top: 1px solid v.$draft-border; }
+.list span { color: v.$text-secondary; font-size: .875rem; }
+.locked { flex-basis: 100%; color: v.$text-secondary; font-size: .875rem; }
+.annotations { display: grid; gap: .75rem; margin-top: 1rem; padding: .75rem; border: 1px solid v.$draft-border; border-radius: v.$radius-md; }
+.annotationRows { display: grid; gap: .5rem; }
+.annotations textarea { min-height: 4rem; min-width: min(100%, 20rem); }
+.annotationRow { display: flex; flex-wrap: wrap; gap: .5rem; align-items: flex-start; }
+.annotationRow textarea { min-height: 4rem; min-width: min(100%, 20rem); flex: 1; }
+.annotationRow input { min-width: 8rem; flex: 1; }
+@media (max-width: 640px) {
+  .heading { flex-direction: column; }
+  .saveControls { flex: 0 1 auto; justify-content: flex-start; }
+  .list li { align-items: stretch; }
+  .list li > button, .list li > input { flex: 1 1 10rem; }
+}
+@media (max-width: 390px) {
+  .panel { padding: .75rem; }
+  .saveControls { flex-basis: auto; }
+  .privateImportHint { flex-basis: auto; }
+  .saveControls, .list li { flex-direction: column; align-items: stretch; }
+  .list li > button, .list li > input { flex: 0 1 auto; }
+  .saveControls > *, .list li > * { width: 100%; }
+}

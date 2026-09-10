@@ -1,5 +1,6 @@
 // components/DraftDashboard/DraftSettings.tsx
 import React from "react";
+import type { DashboardMatchupWeek } from "lib/draftDashboard/scheduleMetrics";
 import {
   decompressFromEncodedURIComponent,
 } from "lz-string";
@@ -37,6 +38,8 @@ export interface DraftSettingsHandle {
 type LeagueType = "points" | "categories";
 
 interface DraftSettingsProps {
+  matchupWeeks?: readonly DashboardMatchupWeek[];
+  matchupWeeksError?: string | null;
   validation?: DraftSettingsValidation;
   variant?: "standalone" | "inline" | "full";
   activeSection?: SettingsDomain;
@@ -77,6 +80,9 @@ interface DraftSettingsProps {
   availableSkaterStatKeys?: string[];
   availableGoalieStatKeys?: string[];
   onExportCsv?: () => void;
+  exportCsvDisabled?: boolean;
+  exportCsvMessage?: string | null;
+  exportCsvUpgradeHref?: string;
   onRemoveCustomSource?: (id: string) => void;
   pickOwnerOverrides?: Record<string, string>;
   pickTrades?: PickTradeEntry[];
@@ -116,6 +122,8 @@ interface DraftSettingsProps {
 import PlayerAutocomplete from "components/PlayerAutocomplete";
 
 const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(({
+  matchupWeeks = [],
+  matchupWeeksError,
   validation,
   variant = "standalone",
   activeSection = "league",
@@ -148,6 +156,9 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
   availableSkaterStatKeys = [],
   availableGoalieStatKeys = [],
   onExportCsv,
+  exportCsvDisabled = false,
+  exportCsvMessage = null,
+  exportCsvUpgradeHref,
   onRemoveCustomSource,
   pickOwnerOverrides = {},
   pickTrades = [],
@@ -258,6 +269,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
   };
 
   const leagueType: LeagueType = settings.leagueType || "points";
+  const useLeagueViews = variant === "inline";
 
   const stepRoster = (position: string, delta: number) => {
     const current =
@@ -337,6 +349,9 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
   const [confirmReset, setConfirmReset] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
   const [importText, setImportText] = React.useState("");
+  const [leagueView, setLeagueView] = React.useState<
+    "format" | "schedule" | "management"
+  >("format");
   const handleResetDraftClick = () => {
     if (draftLocked) return;
     if (!confirmReset) { setConfirmReset(true); return; }
@@ -455,6 +470,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
         <button type="button" onClick={handleCreateBookmark}>Export</button>
       </div>}
       {tradeFeedback && <div className={styles.lockNotice} role={tradeFeedback.ok ? "status" : "alert"}>{tradeFeedback.message}<button type="button" aria-label="Dismiss settings message" onClick={() => setTradeFeedback(null)}>×</button></div>}
+      {exportCsvMessage && <div className={styles.lockNotice} role="alert">{exportCsvMessage}{exportCsvUpgradeHref ? <> <a href={exportCsvUpgradeHref}>Manage Draft Pro access</a></> : null}</div>}
       {draftLocked && (
         <div className={styles.lockNotice} role="status">
           {draftLockReason}
@@ -466,6 +482,11 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
           <fieldset className={styles.fieldset}>
             <legend className={styles.legend}>League Format</legend>
             {domainIssues("league")}
+            {useLeagueViews && <div className={styles.leagueLocalTabs} role="group" aria-label="League settings views">
+              <button type="button" aria-pressed={leagueView === "format"} onClick={() => setLeagueView("format")}>Format</button>
+              <button type="button" aria-pressed={leagueView === "schedule"} onClick={() => setLeagueView("schedule")}>Schedule</button>
+              <button type="button" aria-pressed={leagueView === "management"} onClick={() => setLeagueView("management")}>Management</button>
+            </div>}
             {importOpen && <div className={styles.importPanel}>
               <label htmlFor="draft-bookmark">Import draft bookmark</label>
               <textarea id="draft-bookmark" value={importText} onChange={event => setImportText(event.target.value)} placeholder="Paste a bookmark key or exported JSON" rows={3} />
@@ -474,6 +495,21 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
               <button type="button" onClick={() => setImportOpen(false)}>Cancel Import</button>
             </div>}
 
+            <div className={styles.playoffWeeks} hidden={useLeagueViews && leagueView !== "schedule"}>
+              <label htmlFor="draft-playoff-weeks">Playoff Weeks</label>
+              <select id="draft-playoff-weeks" multiple size={5} value={(settings.playoffWeeks ?? []).map(String)} disabled={!matchupWeeks.length}
+                aria-describedby="playoff-weeks-help"
+                onChange={(event) => {
+                  const playoffWeeks = Array.from(event.currentTarget.selectedOptions, (option) => Number(option.value));
+                  onSettingsChange({ playoffWeeks, ...(!playoffWeeks.length ? { scheduleScope: "season" as const } : {}) });
+                }}>
+                {matchupWeeks.map((week) => <option key={week.week} value={week.week}>Week {week.week} · {week.start_date} – {week.end_date}</option>)}
+              </select>
+              <small id="playoff-weeks-help">{matchupWeeksError ?? (matchupWeeks.length ? "Select your Yahoo playoff weeks. Hold Command/Ctrl to select separate weeks." : "Loading Yahoo weeks…")}</small>
+              <button type="button" disabled={!settings.playoffWeeks?.length} onClick={() => onSettingsChange({ playoffWeeks: [], scheduleScope: "season" })}>Clear playoff weeks</button>
+            </div>
+
+            <div className={styles.leagueFormatView} hidden={useLeagueViews && leagueView !== "format"}>
             <div className={styles.settingRow}>
               <label className={styles.label} htmlFor="teamCount">
                 Teams:
@@ -702,6 +738,8 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
                 </button>
               </div>
             </div>
+            </div>
+            <div hidden={useLeagueViews && leagueView !== "management"}>
             <h3 className={styles.managementTitle}>Draft Management</h3>
             <div id="resetDraftWarning" className={styles.visuallyHidden}>
               This will clear all picks. Action cannot be undone.
@@ -797,6 +835,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
                     console.error("Failed to export settings", e);
                   }
                 }}
+                disabled={onExportCsv && exportCsvDisabled}
                 data-testid="export-settings-btn"
                 title={
                   onExportCsv
@@ -806,6 +845,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
               >
                 {onExportCsv ? "Export CSV" : "Export Settings"}
               </button>
+            </div>
             </div>
           </fieldset>
           {settings.isKeeper && (

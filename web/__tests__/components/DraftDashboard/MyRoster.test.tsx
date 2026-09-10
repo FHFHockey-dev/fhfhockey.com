@@ -1,6 +1,7 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import type { ComponentProps } from "react";
+import DustMatrix from "../../../components/DraftDashboard/DustMatrix";
 import MyRoster from "../../../components/DraftDashboard/MyRoster";
 
 vi.mock("components/PlayerAutocomplete", () => ({ default: () => null }));
@@ -45,6 +46,7 @@ it("shows full eligibility independently of assigned slots, including bench play
       },
     ],
     onDraftPlayer: vi.fn(),
+    scheduleOverview: <div data-testid="schedule-overview-slot">Overview</div>,
     canDraft: true,
     currentPick: 3,
     currentTurn: { round: 2, pickInRound: 1, teamId: "2", isMyTurn: false },
@@ -66,6 +68,7 @@ it("shows full eligibility independently of assigned slots, including bench play
       /Eligible positions/,
     ),
   ).toBeNull();
+  expect(screen.getByTestId("schedule-overview-slot")).toBeTruthy();
 });
 
 it("shows and explains the roster DUST rate", () => {
@@ -111,4 +114,72 @@ it("shows and explains the roster DUST rate", () => {
   expect(document.getElementById(tooltipId!)?.textContent).toContain(
     "Daily Unstartable Schedule Tax",
   );
+});
+
+
+it("shows every Yahoo week at once, highlights playoff weeks, and keeps baseline data unchanged", () => {
+  const weeks = Array.from({ length: 27 }, (_, index) => ({ week: index + 1, start_date: "2027-02-01", end_date: "2027-02-14" }));
+  const baseline = {
+    complete: true,
+    players: [{ playerId: "1", playerName: "Winger", benchGames: 2 }, { playerId: "2", playerName: "Goalie", benchGames: 0 }],
+    daily: weeks.flatMap((week) => [
+      { yahooWeek: week.week, scheduledPlayerIds: ["1"], assignments: [], benchedPlayerIds: week.week === 24 ? ["1"] : [], unresolvedPlayers: [] },
+      { yahooWeek: week.week, scheduledPlayerIds: ["2"], assignments: [], benchedPlayerIds: [], unresolvedPlayers: week.week === 27 ? [{ playerId: "2" }] : [] },
+    ]),
+  };
+  const before = JSON.stringify(baseline);
+  render(<DustMatrix state={{ status: "ready", stale: false, baseline } as any} weeks={weeks} roster={[{ playerId: "1", playerName: "Winger", position: "LW" }, { playerId: "2", playerName: "Goalie", position: "G" }]} selectedWeeks={[weeks[23], weeks[26]]} period="Playoffs · Weeks 24, 27" />);
+  const toggle = screen.getByRole("button", { name: /DUST schedule overview/ });
+  expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  fireEvent.click(toggle);
+  expect(toggle.getAttribute("aria-expanded")).toBe("true");
+  expect(document.querySelectorAll("[data-dust-state]")).toHaveLength(54);
+  expect(screen.getByRole("button", { name: "Show LW players" })).toBeTruthy();
+  const cell = document.querySelector('[data-selected-week][data-dust-state="bench"]')!;
+  expect(cell.getAttribute("data-selected-week")).toBe("true");
+  expect(document.querySelector('[data-dust-state="zero"]')?.getAttribute("data-selected-week")).toBeNull();
+  expect(document.querySelector('[data-dust-state="unresolved"]')).toBeTruthy();
+  fireEvent.focus(within(cell as HTMLElement).getByRole("button"));
+  expect(screen.getByRole("status").textContent).toContain("1 benched");
+  fireEvent.click(screen.getByRole("button", { name: "LW" }));
+  expect(screen.getByRole("heading", { name: "LW players by week" })).toBeTruthy();
+  expect(document.querySelectorAll("[data-dust-state]")).toHaveLength(27);
+  fireEvent.click(screen.getByRole("button", { name: "Back to positions" }));
+  expect(screen.getByRole("heading", { name: "Position overlap by week" })).toBeTruthy();
+  expect(JSON.stringify(baseline)).toBe(before);
+});
+
+it("keeps an unknown-team roster player as unavailable intersections", () => {
+  const weeks = Array.from({ length: 27 }, (_, index) => ({ week: index + 1, start_date: "2027-02-01", end_date: "2027-02-14" }));
+  const baseline = {
+    complete: true,
+    players: [{ playerId: "1", playerName: "Known", benchGames: 0 }],
+    daily: [],
+    diagnostics: [{ code: "UNKNOWN_TEAM", severity: "error", playerId: "2", playerName: "Unknown" }],
+  };
+  render(<DustMatrix state={{ status: "ready", stale: false, baseline } as any} weeks={weeks} roster={[{ playerId: "1", playerName: "Known", position: "C" }, { playerId: "2", playerName: "Unknown", position: "D" }]} period="Season" />);
+  fireEvent.click(screen.getByRole("button", { name: /DUST schedule overview/ }));
+  expect(document.querySelectorAll("[data-dust-state=unresolved]")).toHaveLength(27);
+  expect(screen.getByText("W1 Unavailable", { exact: true })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "D" }));
+  expect(screen.getAllByRole("button", { name: /Unknown · Week 27.*coverage unavailable/ })).toHaveLength(2);
+});
+
+it("opens DUST in a bounded dialog and restores focus after Escape", () => {
+  const weeks = [{ week: 1, start_date: "2027-02-01", end_date: "2027-02-07" }];
+  render(<DustMatrix state={{ status: "ready", stale: false, baseline: { complete: true, players: [{ playerId: "1", playerName: "Winger", benchGames: 1 }], daily: [{ yahooWeek: 1, scheduledPlayerIds: ["1"], assignments: [], benchedPlayerIds: ["1"], unresolvedPlayers: [] }] } } as any} weeks={weeks} roster={[{ playerId: "1", playerName: "Winger", position: "LW" }]} period="Week 1" />);
+  const trigger = screen.getByRole("button", { name: /DUST schedule overview/ });
+  fireEvent.click(trigger);
+  const dialog = screen.getByRole("dialog", { name: "DUST schedule overview" });
+  expect(dialog).toBeTruthy();
+  const close = screen.getByRole("button", { name: "Close" });
+  const position = screen.getByRole("button", { name: "Show LW players" });
+  Object.defineProperty(close, "getClientRects", { value: () => [{ width: 1 }] });
+  Object.defineProperty(position, "getClientRects", { value: () => [{ width: 1 }] });
+  expect(document.activeElement).toBe(close);
+  fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+  expect(document.activeElement).toBe(position);
+  fireEvent.keyDown(document, { key: "Escape" });
+  expect(screen.queryByRole("dialog", { name: "DUST schedule overview" })).toBeNull();
+  expect(document.activeElement).toBe(trigger);
 });

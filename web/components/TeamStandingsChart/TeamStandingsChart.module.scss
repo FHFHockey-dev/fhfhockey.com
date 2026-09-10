@@ -538,6 +538,8 @@
 }
 
 .compact {
+  display: flex;
+  flex-direction: column;
   gap: v.$space-xs;
   height: 100%;
 
@@ -589,9 +591,16 @@
   }
 
   .chartAndToggles {
+    flex: 1;
+    align-items: stretch;
     grid-template-columns: minmax(0, 1fr) 168px;
     gap: v.$space-xs;
     padding: 0 v.$space-xs v.$space-xs;
+  }
+
+  .leftColumn {
+    display: flex;
+    flex-direction: column;
   }
 
   .filters {
@@ -623,7 +632,7 @@
 
   .chartContainer {
     min-height: 260px;
-    height: 260px;
+    height: auto;
   }
 
   .teamToggleDetails {

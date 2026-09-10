@@ -6,7 +6,7 @@
   margin-bottom: v.$space-md;
   padding: v.$space-md;
   border: v.$border-subtle;
-  border-radius: v.$radius-card;
+  border-radius: v.$radius-lg;
   background: v.$background-medium;
   color: v.$text-primary;
 }
@@ -38,7 +38,7 @@
   > span {
     padding: v.$space-xs v.$space-sm;
     border: 1px solid v.$warning-color;
-    border-radius: v.$radius-control;
+    border-radius: v.$radius-md;
     color: v.$warning-color;
     font-size: v.$font-size-xxs;
     text-transform: uppercase;
@@ -62,7 +62,7 @@
     min-height: v.$control-height-md;
     padding: 0 v.$space-sm;
     border: v.$border-subtle;
-    border-radius: v.$radius-control;
+    border-radius: v.$radius-md;
     background: v.$background-dark;
     color: v.$text-primary;
   }
@@ -84,7 +84,7 @@
 .error {
   padding: v.$space-sm;
   border: v.$border-default;
-  border-radius: v.$radius-control;
+  border-radius: v.$radius-md;
   background: v.$background-dark;
   font-size: v.$font-size-xs;
 }

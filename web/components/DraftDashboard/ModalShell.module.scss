@@ -19,7 +19,7 @@
   flex-direction: column;
   overflow: hidden;
   border: 1px solid v.$border-soft;
-  border-radius: v.$border-radius-lg;
+  border-radius: v.$radius-lg;
   background: v.$background-dark;
   color: v.$text-primary;
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.58);
@@ -54,7 +54,7 @@
   justify-content: center;
   flex: 0 0 auto;
   border: 1px solid v.$border-soft;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$radius-sm;
   color: v.$text-secondary;
   font-size: v.$font-size-xl;
   cursor: pointer;

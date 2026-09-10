@@ -1,11 +1,13 @@
 // components/DraftDashboard/ProjectionsTable.tsx
 
+import type { PlayerScheduleMetrics } from "lib/draftDashboard/scheduleMetrics";
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { DraftedPlayer } from "./DraftDashboard";
 // Import ProcessedPlayer from the correct location
 import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import { PlayerVorpMetrics } from "hooks/useVORPCalculations";
 import styles from "./ProjectionsTable.module.scss";
+import controls from "styles/Controls.module.scss";
 import supabase from "lib/supabase";
 import { STATS_MASTER_LIST } from "lib/projectionsConfig/statsMasterList";
 import type { StatDefinition } from "lib/projectionsConfig/statsMasterList";
@@ -31,6 +33,8 @@ import {
 } from "lib/projectionsConfig/proration";
 
 interface ProjectionsTableProps {
+  onRefresh?: () => void;
+  scheduleMetrics?: PlayerScheduleMetrics;
   currentSeasonId?: string | number;
   players: ProcessedPlayer[];
   // Full pool including drafted; used for diagnostics cross-check
@@ -50,12 +54,6 @@ interface ProjectionsTableProps {
   onBaselineModeChange?: (mode: "remaining" | "full") => void;
   //  expected position runs before next pick
   expectedRuns?: { byPos: Record<string, number>; N: number };
-  //  need-weight controls and data
-  needWeightEnabled?: boolean;
-  onNeedWeightChange?: (enabled: boolean) => void;
-  posNeeds?: Record<string, number>; // e.g., { C: 0.5, LW: 1 }
-  needAlpha?: number; // 0..1 strength of weighting, default 0.5
-  onNeedAlphaChange?: (alpha: number) => void;
   // pick risk context: absolute next pick number (currentPick + picksUntilNext)
   nextPickNumber?: number;
   // league type for value semantics
@@ -77,6 +75,8 @@ interface ProjectionsTableProps {
   emptyStateMessage?: string;
   personalRankByPlayerId?: Readonly<Record<string, number>>;
   dustInsights?: ReadonlyMap<string, DraftDashboardDustInsight>;
+  onFavoriteIdsChange?: (ids: string[]) => void;
+  onOpenRosterImpact?: (selectedIds: readonly string[]) => void;
 }
 
 type SortableField =
@@ -86,8 +86,9 @@ type SortableField =
   | "vorp"
   | "vona"
   | "vbd"
-  | "myRank"
-  | "risk";
+  | "risk"
+  | "off"
+  | "b2b";
 
 const DEFAULT_SKATER_STAT_KEYS = [
   "GOALS",
@@ -105,7 +106,28 @@ const DEFAULT_GOALIE_STAT_KEYS = [
   "SHUTOUTS_GOALIE",
 ];
 
+type RgbColor = readonly [number, number, number];
+
+const mixRgb = (from: RgbColor, to: RgbColor, amount: number) =>
+  `rgb(${from.map((channel, index) =>
+    Math.round(channel + (to[index] - channel) * amount),
+  ).join(", ")})`;
+
+const getOffNightRankColor = (rankPercentile: number) => {
+  const quartiles: readonly [RgbColor, RgbColor][] = [
+    [[22, 163, 74], [163, 230, 53]],
+    [[250, 204, 21], [249, 115, 22]],
+    [[249, 115, 22], [239, 68, 68]],
+    [[239, 68, 68], [153, 27, 27]],
+  ];
+  const scaled = Math.min(Math.max(rankPercentile, 0), 1) * quartiles.length;
+  const quartileIndex = Math.min(Math.floor(scaled), quartiles.length - 1);
+  const [from, to] = quartiles[quartileIndex];
+  return mixRgb(from, to, scaled - quartileIndex);
+};
+
 const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
+  onRefresh,
   currentSeasonId,
   players,
   allPlayers,
@@ -120,11 +142,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   baselineMode = "remaining",
   onBaselineModeChange,
   expectedRuns,
-  needWeightEnabled = false,
-  onNeedWeightChange,
-  posNeeds = {},
-  needAlpha = 0.5,
-  onNeedAlphaChange,
   nextPickNumber,
   forwardGrouping = "split",
   leagueType = "points",
@@ -136,16 +153,17 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   inclusionDiagnostics,
   dataNotices = [],
   emptyStateMessage = "No players found matching your filters.",
-  personalRankByPlayerId = {},
   dustInsights,
+  scheduleMetrics,
+  onFavoriteIdsChange,
+  onOpenRosterImpact,
 }) => {
-  const hasPersonalRanks = Object.keys(personalRankByPlayerId).length > 0;
   const [sortField, setSortField] = useState<SortableField>("yahooAvgPick");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [positionFilter, setPositionFilter] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
   const [pageIndex, setPageIndex] = useState(0);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(50);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   // Value band scope: overall or per-position (default per-position)
   const [bandScope, setBandScope] = useState<"overall" | "position">(
@@ -182,13 +200,25 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       );
     } catch {}
   }, [favoriteIds, favoritesOnly]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const refreshFavorites = () => {
+      try {
+        const parsed = JSON.parse(window.localStorage.getItem("projections.favorites") ?? "[]");
+        setFavoriteIds(new Set((Array.isArray(parsed) ? parsed : []).map(String)));
+      } catch {
+        setFavoriteIds(new Set());
+      }
+    };
+    window.addEventListener("draft-saved-favorites-changed", refreshFavorites);
+    return () => window.removeEventListener("draft-saved-favorites-changed", refreshFavorites);
+  }, []);
   const toggleFavorite = (id: string) => {
-    setFavoriteIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    const next = new Set(favoriteIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setFavoriteIds(next);
+    onFavoriteIdsChange?.(Array.from(next));
   };
   // Optional stat sort
   const [statSortKey, setStatSortKey] = useState<string>("");
@@ -518,7 +548,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         "vorp",
         "vona",
         "vbd",
-        "myRank",
         "risk",
       ];
       const savedSortField = window.localStorage.getItem(
@@ -642,17 +671,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     favoritesOnly,
   ]);
 
-  // Build a quick lookup for each player's primary position (first listed)
-  const primaryPosById = useMemo(() => {
-    const m = new Map<string, string>();
-    players.forEach((p) => {
-      const first = getDisplayPos(p)?.split(",")[0]?.trim()?.toUpperCase();
-      if (first) m.set(String(p.playerId), first);
-    });
-    return m;
-  }, [getDisplayPos, players]);
-
-  // Precompute VORP/VONA/VBD for quick lookup (with need-adjusted VBD when enabled)
+  // League-wide values remain raw; roster-aware ranking belongs to Draft Pro suggestions.
   const vorpMap = useMemo(() => {
     const m = new Map<
       string,
@@ -668,14 +687,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     if (vorpMetrics) {
       vorpMetrics.forEach((metrics, id) => {
         const baseVbd = metrics.vbd;
-        const posKey = (
-          metrics.bestPos ||
-          primaryPosById.get(String(id)) ||
-          "UTIL"
-        ).toUpperCase();
-        const need = posNeeds[posKey] ?? 0;
-        const weight = needWeightEnabled ? 1 + (need - 0.5) * 2 * needAlpha : 1;
-        const vbdAdj = baseVbd * weight;
+        const vbdAdj = baseVbd;
         m.set(id, {
           vorp: metrics.vorp,
           vona: metrics.vona,
@@ -687,7 +699,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       });
     }
     return m;
-  }, [vorpMetrics, needWeightEnabled, needAlpha, posNeeds, primaryPosById]);
+  }, [vorpMetrics]);
 
   // Precompute pick-risk based on ADP vs next pick number using a Normal CDF model
   const normalCdf = (z: number) => {
@@ -751,6 +763,13 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       let aValue: any;
       let bValue: any;
 
+      if (!statSortKey && (sortField === "off" || sortField === "b2b")) {
+        const av = scheduleMetrics?.get(String(a.playerId))?.[sortField];
+        const bv = scheduleMetrics?.get(String(b.playerId))?.[sortField];
+        if (av == null) return bv == null ? 0 : 1;
+        if (bv == null) return -1;
+        return (sortDirection === "asc" ? 1 : -1) * (av - bv);
+      }
       if (statSortKey) {
         const av = getProratedStat(a, statSortKey, prorate84);
         const bv = getProratedStat(b, statSortKey, prorate84);
@@ -787,11 +806,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       } else if (sortField === "vbd") {
         const aM = vorpMap.get(String(a.playerId));
         const bM = vorpMap.get(String(b.playerId));
-        aValue = needWeightEnabled ? (aM?.vbdAdj ?? 0) : (aM?.vbd ?? 0);
-        bValue = needWeightEnabled ? (bM?.vbdAdj ?? 0) : (bM?.vbd ?? 0);
-      } else if (sortField === "myRank") {
-        aValue = personalRankByPlayerId[String(a.playerId)];
-        bValue = personalRankByPlayerId[String(b.playerId)];
+        aValue = aM?.vbd ?? 0;
+        bValue = bM?.vbd ?? 0;
       } else if (sortField === "risk") {
         aValue = riskMap.has(String(a.playerId)) ? 1 - riskMap.get(String(a.playerId))! : undefined;
         bValue = riskMap.has(String(b.playerId)) ? 1 - riskMap.get(String(b.playerId))! : undefined;
@@ -826,12 +842,12 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     return filtered;
   }, [
     players,
+    scheduleMetrics,
     positionFilter,
     debouncedSearchTerm,
     sortField,
     sortDirection,
     vorpMap,
-    needWeightEnabled,
     riskMap,
     statSortKey,
     prorate84,
@@ -839,7 +855,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     favoriteIds,
     getDisplayPos,
     forwardGrouping,
-    personalRankByPlayerId,
   ]);
 
   // Helpers for percentile calculations
@@ -872,8 +887,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     eligible.forEach((p) => {
       const key = String(p.playerId);
       const m = vorpMap.get(key);
-      // Use adjusted VBD when enabled for banding
-      const vbd = needWeightEnabled ? m?.vbdAdj : m?.vbd;
+      const vbd = m?.vbd;
       const fpOrScore = m?.value ?? p.fantasyPoints.projected;
       const scopeKey = getPrimaryPos(p, m?.bestPos);
       pushVal(scopeKey, vbd, fpOrScore);
@@ -914,7 +928,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       const id = String(p.playerId);
       const m = vorpMap.get(id);
       const scopeKey = getPrimaryPos(p, m?.bestPos);
-      const vbd = needWeightEnabled ? m?.vbdAdj : m?.vbd;
+      const vbd = m?.vbd;
       const fpOrScore = m?.value ?? p.fantasyPoints.projected;
       const g = groups[scopeKey];
       if (g) {
@@ -935,8 +949,40 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     draftedIdSet,
     getPrimaryPos,
     vorpMap,
-    needWeightEnabled,
   ]);
+
+  const offNightRankById = useMemo(() => {
+    const ranked = filteredAndSortedPlayers
+      .map((player) => ({
+        id: String(player.playerId),
+        total: scheduleMetrics?.get(String(player.playerId))?.off,
+      }))
+      .filter((entry): entry is { id: string; total: number } =>
+        typeof entry.total === "number" && Number.isFinite(entry.total),
+      )
+      .sort((a, b) => b.total - a.total);
+    const result = new Map<string, { color: string; quartile: number }>();
+
+    for (let start = 0; start < ranked.length;) {
+      let end = start;
+      while (end + 1 < ranked.length && ranked[end + 1].total === ranked[start].total) {
+        end += 1;
+      }
+      const rankPercentile = ranked.length === 1
+        ? 0
+        : ((start + end) / 2) / (ranked.length - 1);
+      const rankStyle = {
+        color: getOffNightRankColor(rankPercentile),
+        quartile: Math.min(4, Math.floor(rankPercentile * 4) + 1),
+      };
+      for (let index = start; index <= end; index += 1) {
+        result.set(ranked[index].id, rankStyle);
+      }
+      start = end + 1;
+    }
+
+    return result;
+  }, [filteredAndSortedPlayers, scheduleMetrics]);
 
   const handleSort = (field: SortableField) => {
     if (statSortKey) setStatSortKey("");
@@ -1017,7 +1063,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   const getAriaSort = (
     field: SortableField,
   ): "none" | "ascending" | "descending" => {
-    if (sortField !== field) return "none";
+    if (statSortKey || sortField !== field) return "none";
     return sortDirection === "asc" ? "ascending" : "descending";
   };
 
@@ -1065,7 +1111,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   }
 
   return (
-    <div className={styles.projectionsContainer}>
+    <div className={`${styles.projectionsContainer} ${controls.scope}`}>
       {/* Primary Controls Bar */}
       <div className={styles.controlsBar}>
         <div className={styles.controlsBarTitle}>
@@ -1073,7 +1119,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
             Available <span className={styles.panelTitleAccent}>Players</span>
           </h2>
           <details className={styles.tableTools}>
-            <summary aria-label="Player table options" title="Player table options">⋯</summary>
+            <summary data-control-size="icon" aria-label="Player table options" title="Player table options">⋯</summary>
             <div className={styles.settingsAndTooltips}>
             {/* Full-season Prorate Toggle */}
             <div
@@ -1141,6 +1187,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 <button
                   type="button"
                   className={`${styles.infoButton} ${dataNotices.length > 0 ? styles.infoButtonNotice : ""}`}
+                  data-control-size="icon"
                   aria-describedby="projections-help"
                   aria-label={
                     dataNotices.length > 0 ? "Data notices and legend" : "Legend"
@@ -1196,7 +1243,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
             />
           </div>
           <div className={styles.stackedControlsRow}>
-            <div className={styles.stackedControl}>
+            <div className={`${styles.stackedControl} ${styles.compactPrimaryControl}`}>
               <span className={styles.controlLabelMini}>Position</span>
               <select
                 id="position-filter"
@@ -1215,7 +1262,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 ))}
               </select>
             </div>
-            <div className={styles.stackedControl}>
+            <div className={`${styles.stackedControl} ${styles.compactPrimaryControl}`}>
               <span className={styles.controlLabelMini}>Favorites</span>
               <div className={styles.toggleButtonsGroup}>
                 <button
@@ -1231,7 +1278,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 </button>
               </div>
             </div>
-            <div className={styles.stackedControl}>
+            <div className={`${styles.stackedControl} ${styles.compactPrimaryControl}`}>
               <span className={styles.controlLabelMini}>View</span>
               <div className={styles.toggleButtonsGroup}>
                 <button
@@ -1252,7 +1299,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 </button>
               </div>
             </div>
-            <div className={styles.stackedControl}>
+            <div className={`${styles.stackedControl} ${styles.compactPrimaryControl}`}>
               <span className={styles.controlLabelMini}>Drafted</span>
               <div className={styles.toggleButtonsGroup}>
                 <button
@@ -1287,6 +1334,19 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 >
                   {`Compare`}
                 </button>
+                {onOpenRosterImpact && (
+                  <button
+                    type="button"
+                    className={styles.controlToggleBtn}
+                    onClick={() => onOpenRosterImpact(Array.from(selectedIds))}
+                    aria-label="Open roster impact scenarios"
+                    title={selectedIds.size === 2
+                      ? "Compare the selected players against your current roster"
+                      : "Open saved roster-impact scenarios; select two available players to compare"}
+                  >
+                    Roster impact
+                  </button>
+                )}
                 {selectedIds.size > 0 && (
                   <button
                     type="button"
@@ -1368,6 +1428,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
               type="button"
               onClick={() => setSettingsOpen(false)}
               className={styles.drawerClose}
+              data-control-size="icon"
               aria-label="Close settings"
             >
               ×
@@ -1402,44 +1463,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
               </select>
             </section>
             <section className={styles.drawerSection}>
-              <h4>Need Weighting</h4>
-              <label className={styles.toggle}>
-                <input
-                  type="checkbox"
-                  className={styles.toggleInput}
-                  checked={!!needWeightEnabled}
-                  onChange={(e) =>
-                    onNeedWeightChange && onNeedWeightChange(e.target.checked)
-                  }
-                  aria-label="Enable need weighting"
-                />
-                <span className={styles.toggleTrack}>
-                  <span className={styles.toggleThumb} />
-                </span>
-                <span className={styles.toggleText}>Enabled</span>
-              </label>
-              {needWeightEnabled && (
-                <div className={styles.sliderRow}>
-                  <label htmlFor="need-alpha" className={styles.sliderLabel}>
-                    Strength (α {needAlpha.toFixed(2)})
-                  </label>
-                  <input
-                    id="need-alpha"
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.05}
-                    value={needAlpha}
-                    onChange={(e) =>
-                      onNeedAlphaChange &&
-                      onNeedAlphaChange(parseFloat(e.target.value))
-                    }
-                    className={styles.rangeInput}
-                  />
-                </div>
-              )}
-            </section>
-            <section className={styles.drawerSection}>
               <h4>Risk Model</h4>
               <div className={styles.sliderRow}>
                 <label htmlFor="risk-sd" className={styles.sliderLabel}>
@@ -1467,9 +1490,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   onChange={(e) => setShowDiagnostics(e.target.checked)}
                   aria-label="Show diagnostics"
                 />
-                <span className={styles.toggleTrack}>
-                  <span className={styles.toggleThumb} />
-                </span>
                 <span className={styles.toggleText}>Show Excluded</span>
               </label>
               <div className={styles.drawerNote} style={{ marginTop: 8 }}>
@@ -1535,7 +1555,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
           className={`${styles.playersTable} ${statColumnsMode ? styles.statColumnsTable : ""}`}
           style={{
             "--distributed-column-count": Math.max(
-              statColumns.length + (hasPersonalRanks ? 6 : 5),
+              statColumns.length + 5,
               1,
             ),
           } as React.CSSProperties}
@@ -1559,7 +1579,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
             <col className={styles.colVorp} />
             <col className={styles.colVorp} />
             <col className={styles.colAdp} />
-            {hasPersonalRanks && <col className={styles.colAdp} />}
+            <col className={styles.colSchedule} />
+            <col className={styles.colSchedule} />
             <col className={styles.colNextPick} />
             <col className={styles.colAction} />
             <col className={styles.colCompare} />
@@ -1579,9 +1600,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   className={styles.sortButton}
                   onClick={() => handleSort("fullName")}
                 >
-                  Player{" "}
-                  {sortField === "fullName" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
+                  Player
                 </button>
               </th>
               <th
@@ -1594,9 +1613,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   className={styles.sortButton}
                   onClick={() => handleSort("displayPosition")}
                 >
-                  Pos{" "}
-                  {sortField === "displayPosition" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
+                  Pos
                 </button>
               </th>
               <th
@@ -1609,9 +1626,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   className={styles.sortButton}
                   onClick={() => handleSort("displayTeam")}
                 >
-                  Team{" "}
-                  {sortField === "displayTeam" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
+                  Team
                 </button>
               </th>
               {!statColumnsMode ? (
@@ -1641,12 +1656,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                           : "Projected Fantasy Points"
                       }
                     >
-                      {leagueType === "categories" ? "Score" : "Proj FP"}{" "}
-                      {sortField ===
-                        (leagueType === "categories"
-                          ? "score"
-                          : "fantasyPoints") &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      {leagueType === "categories" ? "Score" : "Proj FP"}
                     </button>
                   </th>
                   <th
@@ -1660,9 +1670,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       onClick={() => handleSort("vorp")}
                       title="Value Over Replacement Player"
                     >
-                      VORP{" "}
-                      {sortField === "vorp" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      VORP
                     </button>
                   </th>
                   <th
@@ -1676,9 +1684,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       onClick={() => handleSort("vona")}
                       title="Value Over Next Available"
                     >
-                      VONA{" "}
-                      {sortField === "vona" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      VONA
                     </button>
                   </th>
                   <th
@@ -1692,9 +1698,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       onClick={() => handleSort("vbd")}
                       title="Value Based Drafting (blend)"
                     >
-                      VBD{" "}
-                      {sortField === "vbd" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      VBD
                     </button>
                   </th>
                 </>
@@ -1719,9 +1723,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         onClick={() => handleStatHeaderSort(key)}
                         title={`Projected ${statDefByKey.get(key)?.displayName || key}`}
                       >
-                        {statDefByKey.get(key)?.displayName || key}{" "}
-                        {statSortKey === key &&
-                          (sortDirection === "asc" ? "↑" : "↓")}
+                        {statDefByKey.get(key)?.displayName || key}
                       </button>
                     </th>
                   ))}
@@ -1736,9 +1738,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       onClick={() => handleSort("vorp")}
                       title="Value Over Replacement Player"
                     >
-                      VORP{" "}
-                      {sortField === "vorp" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      VORP
                     </button>
                   </th>
                   <th
@@ -1752,9 +1752,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       onClick={() => handleSort("vona")}
                       title="Value Over Next Available"
                     >
-                      VONA{" "}
-                      {sortField === "vona" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      VONA
                     </button>
                   </th>
                   <th
@@ -1768,9 +1766,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       onClick={() => handleSort("vbd")}
                       title="Value Based Drafting (blend)"
                     >
-                      VBD{" "}
-                      {sortField === "vbd" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      VBD
                     </button>
                   </th>
                 </>
@@ -1785,29 +1781,12 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   className={styles.sortButton}
                   onClick={() => handleSort("yahooAvgPick")}
                 >
-                  ADP{" "}
-                  {sortField === "yahooAvgPick" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
+                  ADP
                 </button>
               </th>
-              {hasPersonalRanks && (
-                <th
-                  className={`${styles.sortableHeader} ${styles.colAdp}`}
-                  aria-sort={getAriaSort("myRank")}
-                  scope="col"
-                >
-                  <button
-                    type="button"
-                    className={styles.sortButton}
-                    onClick={() => handleSort("myRank")}
-                    title="Your immutable personal draft-board rank"
-                  >
-                    My Rank{" "}
-                    {sortField === "myRank" &&
-                      (sortDirection === "asc" ? "↑" : "↓")}
-                  </button>
-                </th>
-              )}
+              {(["off", "b2b"] as const).map((metric) => <th key={metric} scope="col" className={`${styles.sortableHeader} ${styles.colSchedule}`} aria-sort={getAriaSort(metric)}>
+                <button type="button" className={styles.sortButton} onClick={() => handleSort(metric)} title={metric === "off" ? "Off-Nights: NHL opportunities on dates with at most 8 games" : "Back-to-Backs: consecutive-day NHL pairs, counted on the second day"}>{metric.toUpperCase()}</button>
+              </th>)}
               <th
                 className={`${styles.sortableHeader} ${styles.colNextPick}`}
                 aria-sort={getAriaSort("risk")}
@@ -1847,9 +1826,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 const vorp = m?.vorp ?? 0;
                 const vona = m?.vona ?? 0;
                 const vbdBase = m?.vbd ?? 0;
-                const vbdAdj = m?.vbdAdj ?? vbdBase;
                 const bestPos = m?.bestPos;
-                const vbdDisplay = needWeightEnabled ? vbdAdj : vbdBase;
+                const vbdDisplay = vbdBase;
                 const vbdBand = percentileBands.vbdBandById.get(key);
                 const fpBand = percentileBands.valBandById.get(key);
                 const vbdClasses = [styles.vorp, styles.valueNumeric];
@@ -1878,7 +1856,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     ? statColumns.length + 3
                     : metricColumnsCount) +
                   1 + // ADP
-                  (hasPersonalRanks ? 1 : 0) + // personal board rank
+                  2 + // OFF and B2B
                   1 + // Next Pick
                   1 + // Action
                   1; // Compare
@@ -1898,6 +1876,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       <button
                         type="button"
                         className={`${styles.favoriteButton} ${favoriteIds.has(key) ? styles.favorited : ""}`}
+                        data-control-size="icon"
+                        aria-pressed={favoriteIds.has(key)}
                         onClick={() => toggleFavorite(key)}
                         aria-label={
                           favoriteIds.has(key)
@@ -1917,6 +1897,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       <div className={styles.nameContainer}>
                         <button
                           className={styles.expandToggle}
+                          data-control-size="icon"
                           onClick={() => toggleExpand(player)}
                           title={
                             expanded[key]
@@ -1962,6 +1943,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                             {Math.abs(sourceRankImpacts[player.playerId].delta)}
                           </span>
                         )}
+                      </div>
                       {dust && (
                         <div className={styles.dustInsight}>
                           <span
@@ -1985,7 +1967,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                           )}
                         </div>
                       )}
-                      </div>
                     </td>
                     <td
                       className={styles.position}
@@ -2039,11 +2020,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         <td
                           className={vbdClasses.join(" ")}
                           data-label="VBD"
-                          title={
-                            needWeightEnabled
-                              ? "Value Based Drafting (need-adjusted)"
-                              : "Value Based Drafting"
-                          }
+                          title="Value Based Drafting"
                         >
                           {typeof vbdDisplay === "number"
                             ? vbdDisplay.toFixed(1)
@@ -2147,11 +2124,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         <td
                           className={vbdClasses.join(" ")}
                           data-label="VBD"
-                          title={
-                            needWeightEnabled
-                              ? "Value Based Drafting (need-adjusted)"
-                              : "Value Based Drafting"
-                          }
+                          title="Value Based Drafting"
                         >
                           {typeof vbdDisplay === "number"
                             ? vbdDisplay.toFixed(1)
@@ -2165,15 +2138,24 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         ? player.yahooAvgPick.toFixed(1)
                         : "-"}
                     </td>
-                    {hasPersonalRanks && (
-                      <td
-                        className={styles.adp}
-                        data-label="My Rank"
-                        title="Your immutable personal draft-board rank"
-                      >
-                        {personalRankByPlayerId[key] ?? "-"}
-                      </td>
-                    )}
+                    {(["off", "b2b"] as const).map((metric) => {
+                      const offNightRank = metric === "off"
+                        ? offNightRankById.get(key)
+                        : undefined;
+                      return (
+                        <td
+                          key={metric}
+                          className={styles.colSchedule}
+                          data-label={metric.toUpperCase()}
+                          style={offNightRank ? { color: offNightRank.color } : undefined}
+                          title={offNightRank
+                            ? `Off-night opportunities; rank quartile ${offNightRank.quartile} of 4 (highest to lowest)`
+                            : "Scheduled NHL opportunities; not projected appearances"}
+                        >
+                          {scheduleMetrics?.get(key)?.[metric] ?? "—"}
+                        </td>
+                      );
+                    })}
                     <td
                       className={`${styles.nextPick} ${riskClass ? riskClass : ""}`}
                       data-label="AVL%"
@@ -2188,6 +2170,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     <td className={styles.colAction}>
                       <button
                         className={styles.draftButton}
+                        data-control-variant="primary"
                         onClick={() => handleDraftClick(player.playerId)}
                         disabled={!canDraft || draftedIdSet.has(key)}
                         title={
@@ -2380,11 +2363,12 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
 
       <nav className={styles.pagination} aria-label="Available players pagination">
         <button type="button" disabled={currentPage === 0} onClick={() => setPageIndex(0)}>First</button>
+        <label>Rows <select aria-label="Available players per page" value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))}>{[15, 25, 50, 100].map((size) => <option key={size}>{size}</option>)}</select></label>
+        {onRefresh && <button type="button" className={styles.refreshButton} onClick={onRefresh} title="Force refresh projections from database">Refresh Data</button>}
+        <span className={styles.pageCount}>{orderedPlayers.length ? currentPage * pageSize + 1 : 0}–{Math.min((currentPage + 1) * pageSize, orderedPlayers.length)} of {orderedPlayers.length}</span>
         <button type="button" disabled={currentPage === 0} onClick={() => setPageIndex(currentPage - 1)}>Prev</button>
         <span>{currentPage + 1} / {pageCount}</span>
         <button type="button" disabled={currentPage === pageCount - 1} onClick={() => setPageIndex(currentPage + 1)}>Next</button>
-        <label>Rows <select aria-label="Available players per page" value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))}>{[15, 25, 50, 100].map((size) => <option key={size}>{size}</option>)}</select></label>
-        <span className={styles.pageCount}>{orderedPlayers.length ? currentPage * pageSize + 1 : 0}–{Math.min((currentPage + 1) * pageSize, orderedPlayers.length)} of {orderedPlayers.length}</span>
       </nav>
       {showDiagnostics && (
         <div

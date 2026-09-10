@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { DraftSettings } from "./DraftDashboard";
 import type { ProjectionSourceControls } from "lib/draftDashboard/sourceControlPreferences";
@@ -7,12 +8,19 @@ import type {
 } from "lib/draftDashboard/settingsValidation";
 import styles from "./DraftWorkspace.module.scss";
 
-export type SettingsSection = SettingsDomain | "integrations";
+export type SettingsSection = SettingsDomain | "integrations" | "saved-drafts" | "roster-impact" | "reports";
 const domains: Array<{ id: SettingsDomain; label: string }> = [
   { id: "league", label: "League & Draft" },
   { id: "roster", label: "Roster" },
   { id: "scoring", label: "Scoring" },
   { id: "projections", label: "Projections" },
+];
+const sections: Array<{ id: SettingsSection; label: string }> = [
+  ...domains,
+  { id: "integrations", label: "Integrations" },
+  { id: "saved-drafts", label: "Saved Drafts" },
+  { id: "roster-impact", label: "Roster Impact" },
+  { id: "reports", label: "Reports" },
 ];
 interface DraftSettingsShellProps {
   settings: DraftSettings;
@@ -22,7 +30,9 @@ interface DraftSettingsShellProps {
   open: boolean;
   full: boolean;
   configured: boolean;
+  draftProEligible?: boolean;
   onToggle: () => void;
+  onClose: () => void;
   onFullSetup: () => void;
   onDone: () => boolean;
   onResetSettings: () => void;
@@ -43,8 +53,9 @@ export default function DraftSettingsShell({
   open,
   full,
   configured,
+  draftProEligible = false,
   onToggle,
-  onFullSetup,
+  onClose,
   onDone,
   onResetSettings,
   onImport,
@@ -54,14 +65,10 @@ export default function DraftSettingsShell({
   saveError,
   children,
 }: DraftSettingsShellProps) {
-  const toggle = useRef<HTMLButtonElement>(null);
   const shell = useRef<HTMLElement>(null);
+  const previousFocus = useRef<HTMLElement | null>(null);
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const [reviewErrors, setReviewErrors] = useState(false);
-  const custom = [sourceControls, goalieSourceControls].some((controls) =>
-    Object.entries(controls).some(
-      ([id, control]) => id.startsWith("custom_csv") && control.isSelected,
-    ),
-  );
   const reveal = (
     domain: SettingsDomain,
     target = `draft-domain-${domain}`,
@@ -75,6 +82,14 @@ export default function DraftSettingsShell({
       control?.scrollIntoView({ block: "nearest", inline: "nearest" });
     });
   };
+  const restoreFocus = () => {
+    previousFocus.current?.focus({ preventScroll: true });
+    previousFocus.current = null;
+  };
+  const dismiss = () => {
+    restoreFocus();
+    onClose();
+  };
   const done = () => {
     setReviewErrors(true);
     if (!validation.valid) {
@@ -84,20 +99,48 @@ export default function DraftSettingsShell({
     }
     if (onDone()) {
       setReviewErrors(false);
-      requestAnimationFrame(() =>
-        toggle.current?.focus({ preventScroll: true }),
-      );
+      restoreFocus();
     }
   };
+  useEffect(() => {
+    setPortalRoot(document.body);
+  }, []);
+  useEffect(() => {
+    if (open) previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (!open && previousFocus.current) {
+      restoreFocus();
+    }
+  }, [open]);
   useEffect(() => {
     if (open)
       shell.current
         ?.querySelector<HTMLButtonElement>(`#draft-tab-${section}`)
         ?.focus({ preventScroll: true });
-    // Focus only on entry, not while typing or navigating sections.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, full]);
-  return (
+  }, [open, full, section]);
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        previousFocus.current?.focus({ preventScroll: true });
+        previousFocus.current = null;
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !shell.current) return;
+      const focusable = Array.from(shell.current.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')).filter((element) => element.tabIndex >= 0 && element.getClientRects().length > 0);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, open]);
+  if (!portalRoot) return null;
+  return createPortal(
+    <div className={styles.settingsBackdrop} hidden={!open} onMouseDown={(event) => { if (event.target === event.currentTarget) dismiss(); }}>
     <section
       ref={shell}
       className={styles.settingsShell}
@@ -105,6 +148,9 @@ export default function DraftSettingsShell({
       data-full={full}
       data-section={section}
       aria-label="Draft Settings"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="draft-settings-title"
     >
       <div className={styles.settingsSummary}>
         <svg
@@ -114,118 +160,44 @@ export default function DraftSettingsShell({
         >
           <path d="M9.6 3.1 10 1h4l.4 2.1a9 9 0 0 1 1.7.7l1.8-1.2 2.8 2.8-1.2 1.8a9 9 0 0 1 .7 1.7l2.1.4v4l-2.1.4a9 9 0 0 1-.7 1.7l1.2 1.8-2.8 2.8-1.8-1.2a9 9 0 0 1-1.7.7L14 23h-4l-.4-2.1a9 9 0 0 1-1.7-.7l-1.8 1.2-2.8-2.8 1.2-1.8a9 9 0 0 1-.7-1.7l-2.1-.4v-4l2.1-.4a9 9 0 0 1 .7-1.7L3.3 5.4l2.8-2.8 1.8 1.2a9 9 0 0 1 1.7-.7ZM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z" />
         </svg>
-        <h2>Draft Settings</h2>
-        <span>{settings.teamCount} Teams</span>
-        <span>{validation.spots} Roster Spots</span>
-        <span>
-          {settings.leagueType === "categories" ? "Categories" : "Points"}{" "}
-          League
-        </span>
-        <span>{custom ? "Custom" : "Blended"} Projections</span>
-        <span className={styles.weightSummary}>
-          Weights {validation.skaterWeight}% / {validation.goalieWeight}%
-        </span>
-        <span className={validation.valid ? styles.healthy : styles.warning}>
-          {validation.valid ? "✓ Settings valid" : "⚠ Review configuration"}
-        </span>
-        {open && (
-          <div className={styles.settingsActions}>
-            <button type="button" onClick={onResetSettings}>
-              Reset Settings
-            </button>
-            <button type="button" onClick={onImport}>
-              Import
-            </button>
-            <button type="button" onClick={onExport}>
-              Export
-            </button>
-          </div>
-        )}
-        <button
-          ref={toggle}
-          type="button"
-          onClick={open ? done : onToggle}
-          aria-expanded={open}
-          aria-controls="draft-inline-settings"
-        >
-          {open ? "Done" : "Edit Settings"}{" "}
-          <span aria-hidden="true">{open ? "⌃" : "⌄"}</span>
-        </button>
+        <h2 id="draft-settings-title">Draft Settings</h2>
+        <span className={styles.settingsContext}>{settings.teamCount} teams · {validation.spots} spots · {settings.leagueType === "categories" ? "Categories" : "Points"}</span>
+        <a className={styles.draftProLink} href="/account?section=draft-pro">
+          {draftProEligible ? "Manage Draft Pro" : "Explore Draft Pro"}
+        </a>
+        <button type="button" className={styles.closeSettings} onClick={dismiss} aria-label="Close settings">×</button>
       </div>
       <div
         id="draft-inline-settings"
         className={styles.settingsBody}
         hidden={!open}
       >
-        <nav
-          className={styles.settingsTabs}
-          aria-label="Draft settings sections"
-        >
-          <div role={full ? "group" : "tablist"} aria-label="Settings domains">
-            {domains.map(({ id, label }, index) => (
-              <button
-                id={`draft-tab-${id}`}
-                key={id}
-                type="button"
-                role={full ? undefined : "tab"}
-                aria-selected={full ? undefined : section === id}
-                aria-pressed={full ? section === id : undefined}
-                aria-controls={`draft-domain-${id}`}
-                tabIndex={
-                  full ||
-                  section === id ||
-                  (section === "integrations" && index === 0)
-                    ? 0
-                    : -1
-                }
-                onClick={() => (full ? reveal(id) : onSectionChange(id))}
+        <nav className={styles.settingsRail} aria-label="Draft settings sections">
+          <div role="tablist" aria-label="Settings domains" aria-orientation="vertical" className={styles.sectionTabs}>
+            {sections.map(({ id, label }, index) => (
+              <button id={`draft-tab-${id}`} key={id} type="button" role="tab"
+                aria-selected={section === id} tabIndex={section === id ? 0 : -1}
+                onClick={() => onSectionChange(id)}
                 onKeyDown={(event) => {
-                  if (
-                    !["ArrowLeft", "ArrowRight", "Home", "End"].includes(
-                      event.key,
-                    )
-                  )
-                    return;
+                  if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
                   event.preventDefault();
-                  const next =
-                    event.key === "Home"
-                      ? 0
-                      : event.key === "End"
-                        ? domains.length - 1
-                        : (index +
-                            (event.key === "ArrowRight" ? 1 : -1) +
-                            domains.length) %
-                          domains.length;
-                  onSectionChange(domains[next].id);
-                  document
-                    .getElementById(`draft-tab-${domains[next].id}`)
-                    ?.focus();
-                }}
-              >
-                {label}
-                {!validation.domains[id] && (
-                  <span aria-label="Needs review"> ⚠</span>
-                )}
+                  const next = event.key === "Home" ? 0 : event.key === "End" ? sections.length - 1
+                    : (index + (["ArrowDown", "ArrowRight"].includes(event.key) ? 1 : -1) + sections.length) % sections.length;
+                  onSectionChange(sections[next].id);
+                  document.getElementById(`draft-tab-${sections[next].id}`)?.focus();
+                }}>
+                {label}{id in validation.domains && !validation.domains[id as SettingsDomain] ? " ⚠" : ""}
               </button>
             ))}
           </div>
-          <button
-            type="button"
-            aria-pressed={section === "integrations"}
-            onClick={() => onSectionChange("integrations")}
-          >
-            Integrations & Live Sync
-          </button>
-          {!full && (
-            <button
-              type="button"
-              className={styles.fullSetupButton}
-              onClick={onFullSetup}
-            >
-              Open Full Setup ↗
-            </button>
-          )}
+          <div className={styles.railActions} aria-label="Draft utilities">
+            <button type="button" onClick={onToggle}>Draft summary</button>
+            <button type="button" onClick={onImport}>Import bookmark</button>
+            <button type="button" onClick={onExport}>Export bookmark</button>
+            <button type="button" onClick={onResetSettings}>Reset settings</button>
+          </div>
         </nav>
+        <div className={styles.settingsMain}>
         {!configured && (
           <p className={styles.setupNotice}>
             Review your league setup, then select Done to start drafting.
@@ -254,30 +226,17 @@ export default function DraftSettingsShell({
           <span className={validation.valid ? styles.healthy : styles.warning}>
             {validation.valid ? "✓ Settings valid" : "⚠ Settings need review"}
           </span>
-          {domains.map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => reveal(id)}
-              className={validation.domains[id] ? undefined : styles.warning}
-            >
-              {validation.domains[id] ? "✓" : "⚠"}{" "}
-              {id === "roster"
-                ? `Roster: ${validation.spots} spots`
-                : id === "scoring"
-                  ? `Scoring: ${validation.scoringCount} cats`
-                  : id === "projections"
-                    ? `Weights: ${validation.skaterWeight}% / ${validation.goalieWeight}%`
-                    : label}
-            </button>
-          ))}
           <span>
             {validation.errors.length
               ? `${validation.errors.length} configuration conflicts`
               : validation.warnings[0]?.message || "No configuration conflicts"}
           </span>
+          <button type="button" className={styles.settingsDone} onClick={done}>Done</button>
         </footer>
+        </div>
       </div>
     </section>
+    </div>,
+    portalRoot,
   );
 }

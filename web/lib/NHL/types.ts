@@ -280,6 +280,9 @@ export type TeamGameData = {
 export type GameData = {
   id: number;
   season: number;
+  gameDate?: string;
+  gameScheduleState?: string;
+  gameState?: string;
   /** NHL game type: 1=Preseason, 2=Regular, 3=Playoffs */
   gameType?: number;
   homeTeam: TeamGameData;
@@ -293,6 +296,7 @@ export type GameSituation = "all" | "5v5" | "pp" | "pk";
 export type ScheduleData = {
   data: Record<number, WeekData>;
   numGamesPerDay: number[];
+  coveredDates?: string[];
 };
 
 export interface ExtendedWeekData extends WeekData {

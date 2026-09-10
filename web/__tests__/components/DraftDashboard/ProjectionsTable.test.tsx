@@ -41,6 +41,25 @@ function player(playerId: number, fullName: string, position: string) {
 }
 
 describe("ProjectionsTable visibility diagnostics", () => {
+  it("defaults to 50 rows and keeps refresh between row size and page navigation", () => {
+    const refresh = vi.fn();
+    render(<ProjectionsTable players={Array.from({ length: 61 }, (_, i) => player(i + 1, `Pagination Player ${i + 1}`, "C"))} draftedPlayers={[]} isLoading={false} error={null} onDraftPlayer={vi.fn()} onRefresh={refresh} canDraft />);
+    const pagination = screen.getByRole("navigation", { name: "Available players pagination" });
+    expect((screen.getByRole("combobox", { name: "Available players per page" }) as HTMLSelectElement).value).toBe("50");
+    expect(pagination.textContent).toContain("1–50 of 61");
+    expect(Array.from(pagination.querySelectorAll("button")).map((button) => button.textContent)).toEqual(["First", "Refresh Data", "Prev", "Next"]);
+    fireEvent.click(screen.getByRole("button", { name: "Refresh Data" }));
+    expect(refresh).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(pagination.textContent).toContain("51–61 of 61");
+  });
+  it("keeps league-wide table values raw and exposes no roster-needs control", () => {
+    render(<ProjectionsTable players={[player(1, "Raw Value", "C")]} draftedPlayers={[]} isLoading={false} error={null} onDraftPlayer={vi.fn()} canDraft vorpMetrics={new Map([["1", { vorp: 12, vona: 8, vbd: 10 } as any]])} />);
+    fireEvent.click(screen.getByRole("button", { name: "Open settings drawer" }));
+    expect(screen.queryByRole("checkbox", { name: "Enable need weighting" })).toBeNull();
+    expect(screen.getByText("10.0")).toBeTruthy();
+  });
+
   it("displays next-pick availability, with high availability marked green", () => {
     const early = { ...player(1, "Early", "C"), yahooAvgPick: 1 };
     const later = { ...player(2, "Later", "C"), yahooAvgPick: 100 };
@@ -556,4 +575,15 @@ describe("ProjectionsTable visibility diagnostics", () => {
     expect(screen.getByText("DUST +0")).toBeTruthy();
     expect(screen.queryByText(/Alt:/)).toBeNull();
   });
+});
+
+
+it("sorts compact OFF/B2B counts while keeping unavailable values last", () => {
+  const { container } = render(<ProjectionsTable players={[player(1, "First", "C"), player(2, "Second", "C"), player(3, "Unknown", "C")]} draftedPlayers={[]} isLoading={false} error={null} onDraftPlayer={vi.fn()} canDraft scheduleMetrics={new Map([["1", { games: 4, off: 1, b2b: 0 }], ["2", { games: 4, off: 3, b2b: 1 }]])} />);
+  fireEvent.click(screen.getByRole("button", { name: "OFF" }));
+  const ids = () => [...container.querySelectorAll("tr[data-player-id]")].map((row) => row.getAttribute("data-player-id"));
+  expect(ids()).toEqual(["1", "2", "3"]);
+  fireEvent.click(screen.getByRole("button", { name: "OFF" }));
+  expect(ids()).toEqual(["2", "1", "3"]);
+  expect(container.querySelector('tr[data-player-id="3"] [data-label="OFF"]')?.textContent).toBe("—");
 });

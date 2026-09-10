@@ -1,6 +1,7 @@
 @use "styles/vars" as v;
 
 .dashboardContainer {
+  container: draft-dashboard / inline-size;
   @include v.draft-position-colors;
   flex: 1;
   min-height: 0;
@@ -9,7 +10,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
   background: v.$draft-canvas;
   color: v.$color-neutral-200;
   font: 13px/1.4 v.$font-family-primary;
@@ -30,7 +31,7 @@
     color: v.$color-neutral-200;
     background-color: v.$draft-input;
     border: 1px solid v.$draft-border;
-    border-radius: 4px;
+    border-radius: v.$radius-sm;
   }
   button {
     cursor: pointer;
@@ -50,6 +51,7 @@
     display: none !important;
   }
 }
+
 .setupPanel,
 .setupCore {
   min-width: 0;
@@ -57,6 +59,12 @@
   height: 100%;
 }
 .setupCore > div { height: 100%; min-height: 0; overflow: auto; }
+.workspacePanel {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
 .dashboardContainer[data-full-settings="true"] { min-height: 0; }
 
 .mobileTabs {
@@ -68,19 +76,22 @@
   min-height: 0;
   min-width: 0;
   margin: 0 12px 12px;
-  gap: 10px;
+  gap: clamp(6px, calc(2dvh - 10px), 10px);
+  // Two successive 8% roster increases, taken from the left track only.
+  --roster-base-width: 315px;
+  --roster-extra-width: calc(var(--roster-base-width) * 0.1664);
   grid-template-columns:
-    minmax(450px, 39fr)
-    minmax(0, 61fr)
-    minmax(285px, 315px);
+    max(calc(450px - var(--roster-extra-width)), calc((100% - 20px - var(--roster-base-width)) * 0.39 - var(--roster-extra-width)))
+    minmax(0, 1fr)
+    calc(var(--roster-base-width) + var(--roster-extra-width));
   grid-template-rows:
-    clamp(215px, 27dvh, 250px)
-    minmax(0, 58fr)
-    minmax(0, 42fr);
+    minmax(clamp(164px, calc(12dvh + 72px), 180px), var(--suggested-track, 12fr))
+    minmax(124px, var(--board-track, 12fr))
+    minmax(190px, var(--standings-track, 17fr));
   grid-template-areas:
     "suggested suggested roster"
-    "standings players roster"
-    "graph players roster";
+    "graph players roster"
+    "standings players roster";
 }
 .leftPanel,
 .centerPanel,
@@ -89,10 +100,10 @@
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   background: v.$draft-surface;
   border: 2px solid v.$draft-border;
-  border-radius: 5px;
+  border-radius: v.$radius-panel;
 }
 .leftPanel {
   grid-area: graph;
@@ -111,34 +122,77 @@
 }
 .suggestedSection {
   grid-area: suggested;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   min-width: 0;
   min-height: 0;
 }
-.refreshButton {
-  flex: 0 0 28px;
-  width: 100%;
-  font-size: 11px !important;
+.scoreboard {
+  display: flex;
+  align-items: center;
+  flex: 0 0 26px;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid v.$draft-border;
+  border-radius: 50% / 3px;
+  background: linear-gradient(180deg, #30383c 0%, #131b20 40%, #0a1014 80%, #1e282d 100%);
+  box-shadow: inset 0 1px 0 #ffffff25, inset 0 -2px 3px #00000080;
+  color: #facc66;
+  font: 700 12px/24px ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  text-shadow: 0 0 5px #facc6650;
+}
+.scoreboardViewport { flex: 1; min-width: 0; overflow: hidden; container-type: inline-size; }
+.scoreboardTrack {
+  display: flex;
+  width: max-content;
+  animation: scoreboardScroll var(--scoreboard-duration, 45s) linear infinite;
+}
+.scoreboardCycle {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  flex: none;
+  min-width: 100cqw;
+  white-space: nowrap;
+  padding-right: 48px;
+  > span { text-shadow: 0 0 5px currentColor; }
+  > span:nth-child(2) { color: v.$primary-color; }
+  > span:nth-child(3) { color: v.$color-mint-300; }
+}
+.scoreboard[data-paused="true"] .scoreboardTrack,
+.scoreboard:hover .scoreboardTrack,
+.scoreboard:focus-within .scoreboardTrack { animation-play-state: paused; }
+.scoreboard .scoreboardPause {
+  flex: 0 0 26px;
+  align-self: stretch;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid v.$draft-border;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+@keyframes scoreboardScroll {
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scoreboardTrack { animation: none; width: auto; }
+  .scoreboardCycle { min-width: 0; flex: 1; flex-wrap: wrap; gap: 0 24px; white-space: normal; padding: 0 8px; }
+  .scoreboardCycle + .scoreboardCycle, .scoreboardPause { display: none; }
+  .scoreboard { flex-basis: auto; }
 }
 .warningBanner {
   color: v.$color-gold-400;
   padding: 8px;
   border: 1px solid v.$draft-border;
 }
-.dashboardContainer[data-settings-open="true"] .mainContent {
-  grid-template-rows:
-    clamp(106px, 14dvh, 122px)
-    minmax(0, 58fr)
-    minmax(0, 42fr);
-}
-@media (min-width: 1101px) and (max-height: 840px) {
-  .mainContent {
-    grid-template-rows:
-      clamp(215px, 28dvh, 235px)
-      minmax(0, 58fr)
-      minmax(0, 42fr);
-  }
+@media (min-width: 1101px) {
+  .mainContent { container: workspace / size; }
 }
 @media (max-width: 1100px) {
   .dashboardContainer {
@@ -149,15 +203,12 @@
   .mainContent {
     flex: none;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: 280px 500px 340px 600px;
+    grid-template-rows: 275px minmax(0, 1fr) max-content 600px;
     grid-template-areas:
       "suggested suggested"
-      "standings players"
       "graph players"
+      "standings players"
       "roster roster";
-  }
-  .dashboardContainer[data-settings-open="true"] .mainContent {
-    grid-template-rows: 280px 500px 340px 600px;
   }
 }
 @media (max-width: 799px) {
@@ -186,7 +237,7 @@
   .dashboardContainer[data-mobile-tab="board"] .mainContent {
     > [aria-label="League Standings"] {
       display: flex;
-      height: 470px;
+      height: auto;
       order: 2;
     }
   }
@@ -200,8 +251,19 @@
   .centerPanel {
     container-type: normal;
     min-height: 0;
+    // Keep the final roster analysis action above the fixed primary mobile nav.
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   }
   .rightPanel {
     height: 650px;
   }
 }
+
+.graphRosterMetrics { display: flex; flex-direction: column; padding: 8px; border: 1px solid v.$draft-border; border-radius: v.$radius-panel; }
+.graphRosterMetrics h2 { margin: 0 0 8px; font: 14px v.$font-family-accent; color: v.$primary-color; }
+.graphRosterMetrics > div { display: grid; flex: 1; min-height: 0; grid-auto-rows: minmax(0, 1fr); }
+.graphRosterMetrics > div > div { display: grid; grid-template-columns: minmax(0, 1fr) 70px minmax(0, 1fr); align-items: center; gap: 8px; border-bottom: 1px solid v.$draft-border; font-size: 12px; }
+.graphRosterMetrics strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+
+.scoreboard { flex-basis: clamp(20px, 2.4dvh, 26px); line-height: 18px; }

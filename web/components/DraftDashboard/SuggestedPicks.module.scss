@@ -7,17 +7,20 @@
     (100% - (var(--track-lanes) - 1) * var(--track-gap)) / var(--track-lanes)
   );
   height: 100%;
+  flex: 1;
+  min-width: 0;
   min-height: 0;
   padding: 10px;
   background: v.$draft-surface;
   border: 1px solid v.$draft-border;
-  border-radius: 5px;
+  border-radius: v.$radius-panel;
   display: flex;
   flex-direction: column;
   gap: 7px;
 }
 .headerRow {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
@@ -40,6 +43,9 @@
   gap: 10px;
   position: relative;
   font-size: 12px;
+  min-width: 0;
+  flex-wrap: wrap;
+  margin-left: auto;
 }
 .controlGroup {
   display: inline-flex;
@@ -54,7 +60,7 @@
 }
 .select {
   min-width: 65px;
-  max-width: 85px;
+  max-width: 160px;
   padding: 3px 5px;
 }
 .sortDirBtn,
@@ -67,12 +73,12 @@
   gap: 10px;
   position: absolute;
   right: 0;
-  top: 30px;
+  top: calc(100% + #{v.$space-xs});
   background: v.$draft-surface-raised;
   border: 1px solid v.$draft-border;
   padding: 10px;
   z-index: 5;
-  border-radius: 4px;
+  border-radius: v.$radius-sm;
 }
 .carousel {
   position: relative;
@@ -82,37 +88,20 @@
 .cardsRow {
   display: grid;
   height: 100%;
-  grid-auto-flow: column;
-  grid-auto-columns: calc(
-    var(--lane-width) * var(--card-span) + (var(--card-span) - 1) *
-      var(--track-gap)
-  );
   gap: var(--track-gap);
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: v.$primary-color v.$draft-input;
-  padding-bottom: 3px;
 }
-.carouselNext {
-  position: absolute;
-  right: -3px;
-  top: 40%;
-  width: 22px;
-  height: 34px;
-  z-index: 2;
-  font-size: 24px !important;
-  background: v.$draft-input !important;
-}
+.cardPagination { display: flex; gap: 5px; align-items: center; font-size: 11px; margin-left: 8px; }
+.cardPagination button { padding: 0 7px; font-size: 18px; }
+
 .card {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   min-width: 0;
   min-height: 0;
   padding: 8px 8px 7px 10px;
   border: 1px solid var(--position-color, #{v.$primary-color});
-  border-left-width: 8px;
-  border-radius: 6px;
+  border-left-width: 10px;
+  border-radius: v.$radius-md;
   background: color-mix(in srgb, var(--position-color, #{v.$primary-color}) 7%, transparent);
   display: flex;
   flex-direction: column;
@@ -126,7 +115,7 @@
 }
 .header {
   display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
+  grid-template-columns: max-content minmax(0, 1fr) auto;
   align-items: center;
   column-gap: 6px;
 }
@@ -147,6 +136,7 @@
   font-weight: 700;
 }
 .meta {
+  grid-column: 2;
   display: flex;
   gap: 5px;
   color: v.$text-secondary;
@@ -198,26 +188,21 @@
   justify-content: flex-end;
   gap: 5px;
   flex: 1;
-  min-height: 58px;
+  min-height: 26px;
 }
 .tagsRow {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  flex-direction: column;
+  align-items: flex-end;
   display: flex;
   gap: 6px;
 }
 .tag {
   font-size: 10px;
   border: 1px solid v.$draft-border;
-  border-radius: 3px;
+  border-radius: v.$radius-xs;
   padding: 2px 5px;
-}
-.reason {
-  flex: 0 0 14px;
-  line-height: 14px;
-  font-size: 11px;
-  color: v.$text-secondary;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .cardFooter {
   display: flex;
@@ -235,21 +220,22 @@
 .progressBar {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: var(--lane-width);
+  grid-auto-columns: minmax(0, 1fr);
   gap: var(--track-gap);
   flex: 0 0 27px;
 }
-.progressSegment {
+.suggestedContainer button.progressSegment[data-position] {
   display: flex;
   align-items: center;
   min-width: 0;
   gap: 6px;
   padding: 3px 6px;
-  background: v.$draft-input;
-  border: 1px solid v.$draft-border;
-  border-radius: 4px;
+  background: color-mix(in srgb, var(--position-color) 18%, transparent) !important;
+  border: 1px solid var(--position-color) !important;
+  border-radius: v.$radius-sm;
 }
-.progressSegmentActive {
+.suggestedContainer button.progressSegmentActive[data-position] {
+  background: color-mix(in srgb, var(--position-color) 30%, transparent) !important;
   outline: 1px solid var(--position-color);
 }
 .segmentHeader {
@@ -269,13 +255,13 @@
   flex: 1;
   height: 4px;
   background: v.$draft-surface-raised;
-  border-radius: 2px;
+  border-radius: v.$radius-xs;
   overflow: hidden;
 }
 .segmentFill {
   height: 100%;
   background: var(--position-color);
-  border-radius: 2px;
+  border-radius: v.$radius-xs;
 }
 .loading {
   color: v.$text-secondary;
@@ -325,14 +311,14 @@
 }
 .card {
   gap: 6px;
-  padding-top: 8px;
-  padding-bottom: 8px;
+  padding-top: 5px;
+  padding-bottom: 4px;
 }
 .header {
   line-height: 1.25;
 }
 .rankBadge {
-  line-height: 1;
+  line-height: 1.15;
 }
 .statLabel {
   line-height: 12px;
@@ -342,15 +328,11 @@
 }
 .bottomRow {
   gap: 5px;
-  min-height: 55px;
+  min-height: 26px;
 }
 .tag {
   line-height: 11px;
   padding: 1px 4px;
-}
-.reason {
-  flex-basis: 12px;
-  line-height: 12px;
 }
 .linkBtn {
   line-height: 16px;
@@ -368,4 +350,31 @@
     gap: 3px 6px;
   }
   .cardFooter { grid-column: 1 / -1; }
+}
+
+.advancedControls { flex-wrap: wrap; width: min(440px, 85vw); gap: 10px; }
+
+@container workspace (max-height: 820px) {
+  .suggestedContainer { padding: 4px 8px; gap: 3px; }
+  .card { padding: 4px 6px; gap: 3px; }
+  .headerRow, .controls { flex-wrap: nowrap; gap: 6px; }
+  .rankBadge { font-size: 20px; line-height: 1.15; }
+  .header { line-height: 1.1; }
+  .statLabel { line-height: 11px; }
+  .statValue { line-height: 14px; }
+  .linkBtn { padding-block: 2px; }
+  .bottomRow { min-height: 24px; }
+  .progressBar { flex-basis: 20px; }
+
+  .card { display: grid; grid-template-columns: minmax(0, 1fr) 66px; grid-template-rows: auto minmax(0, 1fr); align-items: center; column-gap: 6px; }
+  .header { grid-column: 1 / -1; }
+  .bottomRow { display: block; min-height: 0; }
+  .cardFooter { flex-direction: column; gap: 2px; }
+  .linkBtn { padding: 0 3px; line-height: 17px; min-height: 18px; }
+  .statsRow { gap: 3px; }
+}
+
+@container workspace (max-height: 620px) {
+  .card { padding-block: 3px; }
+  .linkBtn { min-height: 17px; line-height: 16px; }
 }

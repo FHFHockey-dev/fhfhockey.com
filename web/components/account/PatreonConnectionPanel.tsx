@@ -215,7 +215,7 @@ export default function PatreonConnectionPanel() {
   async function disconnect() {
     if (
       !window.confirm(
-        "Disconnect Patreon and remove its local entitlement state?",
+        "Disconnect Patreon? Your retained Draft Pro work will stay on your account, but Patreon access will become inactive until you reconnect or have another active grant.",
       )
     ) {
       return;

@@ -13,10 +13,11 @@ function BlogPost({
   slug,
   createdAt,
   summary,
-  imageUrl
+  imageUrl,
+  unoptimizedImage
 }: PostPreviewData) {
   return (
-    <Link href={`/blog/${slug}`} legacyBehavior>
+    <Link href={`/blog/${slug}`} style={{ color: "inherit", textDecoration: "none" }}>
       <article className={styles.post}>
         <div className={styles.textArea}>
           <header className={styles.header}>
@@ -32,6 +33,7 @@ function BlogPost({
           <Image
             alt={title}
             src={imageUrl}
+            unoptimized={unoptimizedImage}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 420px"
             style={{ objectFit: "cover" }}

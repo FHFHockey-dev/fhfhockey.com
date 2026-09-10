@@ -6,6 +6,13 @@ export type NstTeamStatsSkip = {
   season?: number;
 };
 
+export function isNstConfigurationFailure(reason: string): boolean {
+  return (
+    reason.includes('"code":"missing_key"') ||
+    reason.includes("NST_KEY missing")
+  );
+}
+
 export function buildNstTeamStatsDiagnostics(args: {
   failures: string[];
   skips: NstTeamStatsSkip[];
@@ -18,6 +25,6 @@ export function buildNstTeamStatsDiagnostics(args: {
     skippedRequests: args.skips.length,
     skips: args.skips.slice(0, 10),
     deferredDatesCount: args.deferredDates.length,
-    deferredDates: args.deferredDates,
+    deferredDates: args.deferredDates.slice(0, 10),
   };
 }

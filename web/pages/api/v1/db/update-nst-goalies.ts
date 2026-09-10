@@ -61,6 +61,7 @@ import {
   DEFAULT_MAX_PENDING_URLS_PER_RUN,
   GOALIE_URLS_PER_DATE,
   NST_GOALIES_REQUEST_INTERVAL_MS,
+  NST_STRICT_MAX_URLS_PER_RUN,
   resolveGoalieNstRequestPlan
 } from "lib/cron/nstBurstPlans";
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -319,7 +320,7 @@ async function fetchAndParseData(
   datasetType: string,
   date: string,
   seasonId: string,
-  retries: number = 3
+  retries: number = 1
 ): Promise<any[]> {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
@@ -752,21 +753,28 @@ async function main(
       }
     });
 
-    const maxPendingUrls =
+    const requestedMaxPendingUrls =
       options.maxPendingUrls ??
       (runMode === "forward" ? undefined : DEFAULT_MAX_PENDING_URLS_PER_RUN);
-    const maxPendingUrlsForPlan = maxPendingUrls ?? urlsQueue.length;
+    const preliminaryNstRequestPlan = resolveGoalieNstRequestPlan({
+      queuedDates: datesToScrape.length,
+      totalQueuedUrls: urlsQueue.length,
+      maxPendingUrls: requestedMaxPendingUrls ?? urlsQueue.length,
+      explicitRequestIntervalMs: options.requestIntervalMs
+    });
+    const maxPendingUrls = preliminaryNstRequestPlan.burstAllowed
+      ? requestedMaxPendingUrls
+      : Math.min(
+          requestedMaxPendingUrls ?? urlsQueue.length,
+          NST_STRICT_MAX_URLS_PER_RUN
+        );
     const nstRequestPlan = resolveGoalieNstRequestPlan({
       queuedDates: datesToScrape.length,
       totalQueuedUrls: urlsQueue.length,
-      maxPendingUrls: maxPendingUrlsForPlan,
+      maxPendingUrls: maxPendingUrls ?? urlsQueue.length,
       explicitRequestIntervalMs: options.requestIntervalMs
     });
-    const requestIntervalMs =
-      options.requestIntervalMs ??
-      (runMode === "forward"
-        ? NST_GOALIES_REQUEST_INTERVAL_MS
-        : nstRequestPlan.requestIntervalMs);
+    const requestIntervalMs = nstRequestPlan.requestIntervalMs;
 
     const result = await processUrlsSequentially(urlsQueue, {
       requestIntervalMs,

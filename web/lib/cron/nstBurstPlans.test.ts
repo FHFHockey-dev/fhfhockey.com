@@ -5,7 +5,6 @@ import {
   GOALIE_URLS_PER_DATE,
   NST_GOALIES_REQUEST_INTERVAL_MS,
   NST_SAFE_INTERVAL_MS,
-  NST_SMALL_DATE_BURST_MAX_DATES,
   resolveGoalieNstRequestPlan
 } from "./nstBurstPlans";
 import {
@@ -28,24 +27,24 @@ describe("NST route burst plans", () => {
     });
 
     expect(plan.requestCountBudget).toBe(DEFAULT_MAX_PENDING_URLS_PER_RUN);
-    expect(plan.burstEligibleByDateCount).toBe(true);
+    expect(plan.burstEligibleByRequestCount).toBe(true);
     expect(plan.burstAllowed).toBe(true);
     expect(plan.requestIntervalMs).toBe(0);
   });
 
-  it("forces update-nst-goalies onto the safe interval once the queued date count exceeds the burst threshold", () => {
+  it("allows update-nst-goalies to burst when its full queue remains below 40 URLs", () => {
     const plan = resolveGoalieNstRequestPlan({
-      queuedDates: NST_SMALL_DATE_BURST_MAX_DATES + 1,
-      totalQueuedUrls: GOALIE_URLS_PER_DATE * (NST_SMALL_DATE_BURST_MAX_DATES + 1),
-      maxPendingUrls: GOALIE_URLS_PER_DATE * (NST_SMALL_DATE_BURST_MAX_DATES + 1)
+      queuedDates: 3,
+      totalQueuedUrls: GOALIE_URLS_PER_DATE * 3,
+      maxPendingUrls: GOALIE_URLS_PER_DATE * 3
     });
 
     expect(plan.requestCountBudget).toBe(
-      GOALIE_URLS_PER_DATE * (NST_SMALL_DATE_BURST_MAX_DATES + 1)
+      GOALIE_URLS_PER_DATE * 3
     );
-    expect(plan.burstEligibleByDateCount).toBe(false);
-    expect(plan.burstAllowed).toBe(false);
-    expect(plan.requestIntervalMs).toBe(NST_GOALIES_REQUEST_INTERVAL_MS);
+    expect(plan.burstEligibleByRequestCount).toBe(true);
+    expect(plan.burstAllowed).toBe(true);
+    expect(plan.requestIntervalMs).toBe(0);
   });
 
   it("keeps update-nst-team-daily on burst for one or two queued dates", () => {
@@ -64,13 +63,13 @@ describe("NST route burst plans", () => {
     expect(twoDayPlan.burstAllowed).toBe(true);
   });
 
-  it("moves update-nst-team-daily to the safe interval at three dates", () => {
+  it("allows update-nst-team-daily to burst while the full queue is below 40 URLs", () => {
     const dates = ["2026-03-19", "2026-03-20", "2026-03-21"];
     const plan = resolveTeamDailyNstRequestPlan(dates);
 
     expect(plan.requestCount).toBe(TEAM_DAILY_URLS_PER_DATE * dates.length);
-    expect(plan.burstAllowed).toBe(false);
-    expect(plan.requestIntervalMs).toBe(NST_TEAM_DAILY_SAFE_INTERVAL_MS);
+    expect(plan.burstAllowed).toBe(true);
+    expect(plan.requestIntervalMs).toBe(NST_TEAM_DAILY_BURST_INTERVAL_MS);
   });
 
   it("keeps update-nst-team-daily on the safe interval for larger queued date counts", () => {
@@ -108,15 +107,40 @@ describe("NST route burst plans", () => {
     expect(plan.requestIntervalMs).toBe(0);
   });
 
-  it("keeps nst-team-stats on the safe interval once the queued date count exceeds the burst threshold", () => {
+  it("uses URL count rather than date count to decide nst-team-stats bursts", () => {
     const plan = resolveNstTeamStatsRequestPlan({
       queuedDates: 3,
       dateRequestCount: 12,
       seasonRequestCount: 0
     });
 
+    expect(plan.burstAllowed).toBe(true);
+    expect(plan.requestIntervalMs).toBe(0);
+  });
+
+  it("paces nst-team-stats queues of 40 or more URLs at 21 seconds", () => {
+    const plan = resolveNstTeamStatsRequestPlan({
+      queuedDates: 10,
+      dateRequestCount: 40,
+      seasonRequestCount: 0
+    });
+
+    expect(plan.burstEligibleByRequestCount).toBe(false);
     expect(plan.burstAllowed).toBe(false);
     expect(plan.requestIntervalMs).toBe(NST_TEAM_STATS_SAFE_INTERVAL_MS);
+  });
+
+  it("does not hide a large goalie backlog behind a small per-run cap", () => {
+    const plan = resolveGoalieNstRequestPlan({
+      queuedDates: 5,
+      totalQueuedUrls: 50,
+      maxPendingUrls: 20
+    });
+
+    expect(plan.requestCountBudget).toBe(20);
+    expect(plan.burstEligibleByRequestCount).toBe(false);
+    expect(plan.burstAllowed).toBe(false);
+    expect(plan.requestIntervalMs).toBe(NST_GOALIES_REQUEST_INTERVAL_MS);
   });
 
   it("retains the safe interval candidate if a future request footprint stops qualifying for burst by request volume", () => {

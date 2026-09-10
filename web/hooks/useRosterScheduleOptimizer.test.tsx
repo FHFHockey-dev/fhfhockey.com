@@ -210,3 +210,19 @@ describe("useRosterScheduleOptimizer", () => {
     expect(result.current.insights.size).toBe(0);
   });
 });
+
+
+it("filters explicit nonconsecutive weeks and updates DUST without refetching", async () => {
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true, data: {
+    gameKey: "477", version: "v1", freshness: { latestFetchedAt: new Date().toISOString(), rowCount: 3 },
+    games: [19, 20, 21].map((week) => ({ source_game_id: week, game_date: `2027-02-${String(week - 18).padStart(2, "0")}`, team_abbreviation: "CAR", week })),
+  } }) });
+  vi.stubGlobal("fetch", fetchMock);
+  const players = [player(1, "Wing", "CAR")];
+  const { result, rerender } = renderHook(({ selectedWeeks }) => useRosterScheduleOptimizer({ players, rosterAssignments: [{ playerId: "1", teamId: "1" }], myTeamId: "1", rosterConfig: { RW: 1 }, selectedWeeks }), { initialProps: { selectedWeeks: [19, 21] } });
+  await waitFor(() => expect(result.current.baseline?.totalScheduledGames).toBe(2));
+  rerender({ selectedWeeks: [20] });
+  expect(result.current.baseline?.totalScheduledGames).toBe(1);
+  expect(result.current.baseline?.daily[0].yahooWeek).toBe(20);
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+});

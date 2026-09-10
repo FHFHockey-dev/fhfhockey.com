@@ -48,6 +48,29 @@ const player = {
 afterEach(cleanup);
 
 describe("keeper workflow surfaces", () => {
+  it("opens the draft graph as a keyboard modal and restores focus on Escape", () => {
+    const priorFocus = document.createElement("button");
+    document.body.appendChild(priorFocus);
+    priorFocus.focus();
+    render(<DraftBoard draftSettings={settings} draftedPlayers={[]} currentTurn={{ round: 1, pickInRound: 1, teamId: "Team 1", isMyTurn: true }} teamStats={[]} allPlayers={[player]} onUpdateTeamName={vi.fn()} />);
+    expect(document.activeElement).toBe(priorFocus);
+    const open = screen.getByRole("button", { name: "Expand draft graph" });
+    open.focus();
+    fireEvent.keyDown(open, { key: "Enter" });
+    fireEvent.click(open);
+    expect(screen.getByRole("dialog", { name: "Draft Graph" })).toBeTruthy();
+    const close = screen.getByRole("button", { name: "Close expanded graph" });
+    expect(document.activeElement).toBe(close);
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Team 2" }));
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(document.activeElement).toBe(close);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Draft Graph" })).toBeNull();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Expand draft graph" }));
+    priorFocus.remove();
+  });
+
   it("retains value intensities and the user's row across completed picks", () => {
     const players = [10, 35, 60, 100].map((value, index) => ({ ...player, playerId: index + 1, fantasyPoints: { ...player.fantasyPoints, projected: value } }));
     const view = render(<DraftBoard myTeamId="Team 2" draftSettings={{ ...settings, rosterConfig: { C: 2, bench: 0, utility: 0 } }} draftedPlayers={players.map((item, index) => ({ playerId: String(item.playerId), teamId: index % 2 ? "Team 2" : "Team 1", round: Math.floor(index / 2) + 1, pickInRound: index % 2 + 1, pickNumber: index + 1 }))} currentTurn={{ round: 3, pickInRound: 1, teamId: "Team 1", isMyTurn: false }} teamStats={[]} allPlayers={players} onUpdateTeamName={vi.fn()} />);
@@ -242,5 +265,14 @@ describe("keeper workflow surfaces", () => {
 
     expect(onImportKeepers).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("alert").textContent).toContain("Row 2");
+  });
+
+  it("explains unavailable CSV export access with an account link", () => {
+    const onExportCsv = vi.fn();
+    render(<DraftSettings settings={settings} onSettingsChange={vi.fn()} myTeamId="Team 1" onMyTeamIdChange={vi.fn()} undoLastPick={vi.fn()} resetDraft={vi.fn()} draftHistory={[]} draftedPlayers={[]} currentPick={1} onExportCsv={onExportCsv} exportCsvMessage="Blended projections export is available with Draft Pro." exportCsvUpgradeHref="/account?section=draft-pro" />);
+    fireEvent.click(screen.getByRole("button", { name: "Export CSV" }));
+    expect(onExportCsv).toHaveBeenCalledOnce();
+    expect(screen.getByRole("alert").textContent).toContain("Blended projections export is available");
+    expect(screen.getByRole("link", { name: "Manage Draft Pro access" }).getAttribute("href")).toBe("/account?section=draft-pro");
   });
 });

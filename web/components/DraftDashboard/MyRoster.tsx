@@ -21,7 +21,18 @@ import {
   normalizePlayerEligibility
 } from "lib/draftDashboard/forwardGrouping";
 
+function PositionProgress({ label, filled, capacity }: { label: string; filled: number; capacity: number }) {
+  return <div className={styles.positionHeader}>
+    <h3>{label}</h3>
+    <progress aria-label={`${label} roster spots filled`} value={Math.min(filled, capacity)} max={capacity || 1} />
+    <span>{filled}/{capacity} · {filled > capacity ? `${filled - capacity} over` : `${capacity - filled} open`}</span>
+  </div>;
+}
+
 interface MyRosterProps {
+  onSelectedTeamChange?: (teamId: string) => void;
+  viewRequest?: { teamId: string };
+  schedulePeriod?: string;
   nextPickByTeam: Record<string, number>;
   scheduleState: RosterScheduleOptimizerState;
   myTeamId: string;
@@ -47,9 +58,14 @@ interface MyRosterProps {
   posNeeds?: Record<string, number>;
   // Forward grouping preference
   forwardGrouping?: "split" | "fwd";
+  /** Optional slot for the schedule overview trigger and overlay. */
+  scheduleOverview?: React.ReactNode;
 }
 
 const MyRoster: React.FC<MyRosterProps> = ({
+  onSelectedTeamChange,
+  viewRequest,
+  schedulePeriod = "Full season baseline · Yahoo 477",
   myTeamId,
   nextPickByTeam,
   scheduleState,
@@ -68,7 +84,8 @@ const MyRoster: React.FC<MyRosterProps> = ({
   needWeightEnabled = false,
   needAlpha = 0.5,
   posNeeds = {},
-  forwardGrouping = "split"
+  forwardGrouping = "split",
+  scheduleOverview
 }) => {
   const [selectedPlayerId, setSelectedPlayerId] = useState<
     number | undefined
@@ -76,6 +93,12 @@ const MyRoster: React.FC<MyRosterProps> = ({
   const [searchValue, setSearchValue] = useState("");
   const [selectedViewTeamId, setSelectedViewTeamId] =
     useState<string>(myTeamId);
+
+  useEffect(() => {
+    if (viewRequest) setSelectedViewTeamId(viewRequest.teamId);
+  }, [viewRequest]);
+
+  useEffect(() => { onSelectedTeamChange?.(selectedViewTeamId); }, [selectedViewTeamId, onSelectedTeamChange]);
 
   // Keep selection synced when myTeamId changes IF user is viewing their team
   useEffect(() => {
@@ -363,12 +386,14 @@ const MyRoster: React.FC<MyRosterProps> = ({
       {/* Draft Player Section */}
       <details className={styles.draftSection}>
         <summary>Add a player to the team on the clock</summary>
+        <div className={styles.draftPopover}>
         <div className={styles.playerSearch}>
           <PlayerAutocomplete
             playerId={selectedPlayerId}
             onPlayerIdChange={setSelectedPlayerId}
             onPlayerChange={handlePlayerSelect}
             showButton={false}
+            maxOptions={5}
             inputClassName={styles.searchInput}
             listClassName={styles.searchResults}
             adpByPlayerId={adpByPlayerId}
@@ -383,6 +408,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
           />
         </div>
 
+        <p className={styles.searchHint}>Up to 5 matches · type a name to narrow results.</p>
         <button
           className={styles.draftButton}
           onClick={handleDraftClick}
@@ -395,6 +421,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
         >
           Add Player to {currentTurn.teamId}
         </button>
+        </div>
       </details>
 
       {/* Team Stats Summary */}
@@ -421,13 +448,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
 
       {/* Roster Progress */}
       <div className={styles.rosterProgress}>
-        <div className={styles.progressHeader}>
-          <span className={styles.progressLabel}>Roster Progress</span>
-          <span className={styles.progressCount}>
-            {currentPlayerCount} / {totalRosterSpots}
-          </span>
-        </div>
-        <div className={styles.progressBar}>
+        <div className={styles.progressBar} role="progressbar" aria-label="Roster progress" aria-valuenow={currentPlayerCount} aria-valuemin={0} aria-valuemax={totalRosterSpots}>
           <div
             className={styles.progressFill}
             style={{
@@ -437,6 +458,10 @@ const MyRoster: React.FC<MyRosterProps> = ({
         </div>
       </div>
 
+      <div className={styles.rosterWorkspace} style={{ "--roster-row-tracks": (() => {
+        const counts = [...positionsToShow.map((position) => Math.max(effectiveRosterConfig[position === "UTILITY" ? "utility" : position] || 0, selectedTeamStats?.rosterSlots[position]?.length || 0)), Math.max(draftSettings.rosterConfig.bench, selectedTeamStats?.bench.length || 0)];
+        return Array.from({ length: Math.ceil(counts.length / 2) }, (_, index) => `${Math.max(counts[index * 2], counts[index * 2 + 1] || 0) + 1}fr`).join(" ");
+      })() } as React.CSSProperties}>
       {/* Roster Slots */}
       <div className={styles.rosterSlots}>
         <div className={styles.slotsList}>
@@ -447,18 +472,13 @@ const MyRoster: React.FC<MyRosterProps> = ({
               selectedTeamStats?.rosterSlots[pos] || [];
             return (
               <div key={pos} className={styles.rosterSlot} data-position={pos} style={{ flexGrow: maxCount, "--slot-count": maxCount } as React.CSSProperties}>
-                <div className={styles.slotHeader}>
-                  <span className={styles.slotPosition}>{pos}</span>
-                  <span className={styles.slotCount}>
-                    {currentPlayers.length} / {maxCount}
-                  </span>
-                </div>
+                <PositionProgress label={pos === "UTILITY" ? "UTIL" : pos} filled={currentPlayers.length} capacity={maxCount} />
                 <div
                   className={`${styles.slotPlayers} ${
                     pos === "FWD" ? styles.slotPlayersFwd : ""
                   }`}
                 >
-                  {Array.from({ length: maxCount }, (_, index) => {
+                  {Array.from({ length: Math.max(maxCount, currentPlayers.length) }, (_, index) => {
                     const drafted = currentPlayers[index];
                     const player = drafted ? playerMap.get(drafted.playerId) : undefined;
                     const eligibility = normalizePlayerEligibility(player?.displayPosition, player?.eligiblePositions).join("/");
@@ -518,14 +538,11 @@ const MyRoster: React.FC<MyRosterProps> = ({
       </div>
 
       {/* Bench Section */}
-      <div className={styles.benchSection} data-position="BENCH">
-        <h3 className={styles.sectionTitle}>
-          Bench ({selectedTeamStats?.bench.length || 0} /{" "}
-          {draftSettings.rosterConfig.bench})
-        </h3>
+      <div className={styles.benchSection} data-position="BENCH" style={{ flexGrow: draftSettings.rosterConfig.bench }}>
+        <PositionProgress label="BN" filled={selectedTeamStats?.bench.length || 0} capacity={draftSettings.rosterConfig.bench} />
         <div className={styles.benchSlots}>
           {Array.from(
-            { length: draftSettings.rosterConfig.bench },
+            { length: Math.max(draftSettings.rosterConfig.bench, selectedTeamStats?.bench.length || 0) },
             (_, index) => {
               const drafted = selectedTeamStats?.bench[index];
               const player = drafted ? playerMap.get(drafted.playerId) : undefined;
@@ -554,10 +571,9 @@ const MyRoster: React.FC<MyRosterProps> = ({
           )}
         </div>
       </div>
+      </div>
       <div className={styles.rosterAnalysis}>
-        <h3>Roster needs</h3>
-        <div className={styles.needs}>{positionsToShow.map((pos) => { const required = effectiveRosterConfig[pos === "UTILITY" ? "utility" : pos] || 0; const open = Math.max(0, required - (selectedTeamStats?.rosterSlots[pos]?.length || 0)); return <span key={pos} data-position={pos}>{pos === "UTILITY" ? "UTIL" : pos} <strong>{open} open</strong></span>; })}</div>
-        <h3>Schedule fit</h3>
+        <div className={styles.scheduleHeader}><h3>Schedule fit</h3><p>{schedulePeriod}</p></div>
         {selectedViewTeamId !== myTeamId ? (
           <p>Select My Team for schedule analysis.</p>
         ) : scheduleState.status === "ready" && scheduleState.baseline ? (
@@ -580,7 +596,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
               aria-describedby="my-roster-dust-explainer"
               aria-label={`DUST ${rosterDustPercent} percent`}
             >
-              DUST <span aria-hidden="true">ⓘ</span>
+              <span>DUST <span aria-hidden="true">ⓘ</span></span>
               <strong>{rosterDustPercent}%</strong>
               <span
                 id="my-roster-dust-explainer"
@@ -603,6 +619,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
                 : "No schedule data available"}
           </p>
         )}
+        {scheduleOverview}
       </div>
     </div>
   );

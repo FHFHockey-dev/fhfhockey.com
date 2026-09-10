@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { ProjectionSourceConfig } from "lib/projectionsConfig/projectionSourcesConfig";
+import { PROJECTION_SOURCES_CONFIG, type ProjectionSourceConfig } from "lib/projectionsConfig/projectionSourcesConfig";
 import {
+  buildCustomProjectionSources,
   buildActiveProjectionSources,
   buildProjectionInputCacheKey,
   type CustomAdditionalProjectionSource
@@ -32,6 +33,35 @@ function custom(
 }
 
 describe("custom projection-source registration", () => {
+  it.each(["skater", "goalie"] as const)("excludes retired sources from %s fetch and blending inputs even with stale controls", (playerType) => {
+    const sourceControls = Object.fromEntries(PROJECTION_SOURCES_CONFIG.map(source => [source.id, { isSelected: true, weight: 1 }]));
+    sourceControls.lineupexperts_skaters = { isSelected: true, weight: 2 };
+    sourceControls.lineupexperts_goalies = { isSelected: true, weight: 2 };
+    const { activeSources } = buildActiveProjectionSources({ baseSources: PROJECTION_SOURCES_CONFIG, playerType, sourceControls });
+    expect(activeSources.length).toBeGreaterThan(0);
+    expect(activeSources.some(source => /lineupexperts/i.test(source.id + source.tableName))).toBe(false);
+  });
+
+  it("builds a stable, player-type-specific source from normalized CSV rows", () => {
+    const rows = [{ player_id: 1002, Player_Name: "Fixture Center Two", Team_Abbreviation: "CCC", Position: "C", Goals: 65 }];
+    const sources = buildCustomProjectionSources(
+      [{ id: "custom_csv_1", label: "Fixture CSV", rows }],
+      "skater",
+      [{ key: "GOALS", dbColumnName: "Goals" }],
+    );
+    expect(sources).toEqual([expect.objectContaining({
+      id: "custom_csv_1",
+      playerType: "skater",
+      rows,
+      statMappings: [{ key: "GOALS", dbColumnName: "Goals" }],
+    })]);
+    expect(buildCustomProjectionSources(
+      [{ id: "custom_csv_1", label: "Fixture CSV", rows }],
+      "goalie",
+      [{ key: "WINS_GOALIE", dbColumnName: "Wins_Goalie" }],
+    )).toEqual([]);
+  });
+
   it("registers a selected custom CSV beside selected official sources", () => {
     const source = custom("custom_csv_1");
     const result = buildActiveProjectionSources({

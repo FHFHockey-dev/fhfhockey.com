@@ -25,7 +25,9 @@ export function useMobileDraftTab() {
 
   useEffect(() => {
     const saved = window.sessionStorage.getItem(MOBILE_DRAFT_TAB_STORAGE_KEY);
-    if (MOBILE_DRAFT_TABS.some((tab) => tab.id === saved)) {
+    if (saved === "setup") {
+      setActiveTab("players");
+    } else if (MOBILE_DRAFT_TABS.some((tab) => tab.id === saved)) {
       setActiveTab(saved as MobileDraftTab);
     }
     setInitialized(true);

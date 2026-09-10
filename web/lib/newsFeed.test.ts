@@ -1,11 +1,36 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
+  fetchNewsFeedItems,
   getPublicNewsItemDetails,
   getPublicNewsSourceAttribution,
   sanitizePublicNewsFeedItem,
   type NewsFeedItem,
 } from "./newsFeed";
+
+it("filters injury categories in the database query before limiting results", async () => {
+  const query = {
+    select: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
+    then: (resolve: (result: unknown) => unknown) =>
+      Promise.resolve({ data: [], error: null }).then(resolve),
+  };
+  const categories = ["INJURY", "REPORTED INJURY", "RETURN", "RETURNING"];
+
+  await fetchNewsFeedItems({
+    supabase: { from: vi.fn().mockReturnValue(query) },
+    status: "published",
+    categories,
+    limit: 32,
+  });
+
+  expect(query.in).toHaveBeenCalledWith("category", categories);
+  expect(query.eq).toHaveBeenCalledWith("card_status", "published");
+  expect(query.limit).toHaveBeenCalledWith(32);
+});
 
 function buildItem(overrides: Partial<NewsFeedItem> = {}): NewsFeedItem {
   return {
