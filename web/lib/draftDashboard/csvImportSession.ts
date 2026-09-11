@@ -7,6 +7,7 @@ export const LEGACY_CUSTOM_CSV_SESSION_KEYS = [
 export type SessionCsvEntry = {
   id: string;
   label: string;
+  playerType?: "skater" | "goalie" | "both";
   headers?: { original: string; standardized: string; selected: boolean }[];
   rows?: Record<string, unknown>[];
   resolution?: {

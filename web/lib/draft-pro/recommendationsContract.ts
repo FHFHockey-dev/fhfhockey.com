@@ -31,3 +31,9 @@ export const draftProRecommendationsInputSchema = z.object({
 }).strict();
 
 export type DraftProRecommendationsInput = z.infer<typeof draftProRecommendationsInputSchema>;
+
+// Imported projections remain in the browser; this request checks access only.
+export const localRecommendationsAccessSchema = z.object({
+  dataOrigin: z.enum(["local_csv", "private_import"]),
+  authorizeOnly: z.literal(true),
+}).strict();

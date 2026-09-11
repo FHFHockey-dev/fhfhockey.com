@@ -70,3 +70,19 @@ describe("POST /api/v1/draft-pro/recommendations", () => {
     expect(config.api.bodyParser.sizeLimit).toBe("4mb");
   });
 });
+
+it("authorizes local calculations through the existing capability guard", async () => {
+  requireApiUserMock.mockResolvedValue({ id: "user-1" });
+  consumeMock.mockReturnValue(true);
+  loadAccessMock.mockResolvedValue({});
+  requireCapabilityMock.mockReset();
+  const res = response();
+  const request = { method: "POST", body: { dataOrigin: "local_csv", authorizeOnly: true } };
+  await handler(request as any, res as any);
+  expect(res.body).toEqual({ data: { authorized: true } });
+  expect(requireCapabilityMock).toHaveBeenCalledWith({}, "recommendations");
+  requireCapabilityMock.mockImplementationOnce(() => { throw Object.assign(new Error("Expired"), { statusCode: 403 }); });
+  const denied = response();
+  await handler(request as any, denied as any);
+  expect(denied.statusCode).toBe(403);
+});

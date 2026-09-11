@@ -198,6 +198,7 @@ type ImportCsvModalProps = {
   onImported: (args: {
     headers: HeaderConfig[];
     rows: CsvPreviewRow[];
+    playerType: "skater" | "goalie" | "both";
     sourceId: string;
     label: string;
     resolution: {
@@ -227,6 +228,7 @@ export default function ImportCsvModal({
   const [allRows, setAllRows] = useState<CsvPreviewRow[]>([]);
   const [rawRows, setRawRows] = useState<CsvPreviewRow[]>([]); // preview (first 50)
   const [headers, setHeaders] = useState<HeaderConfig[]>([]);
+  const [playerType, setPlayerType] = useState<"skater" | "goalie" | "both">("skater");
   const [isGoalieCsv, setIsGoalieCsv] = useState(false);
   const [playerHeader, setPlayerHeader] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -265,6 +267,7 @@ export default function ImportCsvModal({
     setAllRows([]);
     setRawRows([]);
     setHeaders([]);
+    setPlayerType("skater");
     setIsGoalieCsv(false);
     setPlayerHeader(null);
     setError(null);
@@ -300,8 +303,8 @@ export default function ImportCsvModal({
   }, [open]);
 
   const REQUIRED_COLUMNS = useMemo(
-    () => getRequiredCsvColumns(isGoalieCsv ? "goalie" : "skater"),
-    [isGoalieCsv],
+    () => playerType === "both" ? Array.from(new Set([...getRequiredCsvColumns("skater"), ...getRequiredCsvColumns("goalie")])) : getRequiredCsvColumns(playerType),
+    [playerType],
   );
   const REQUIRED_COLUMN_SET = useMemo(
     () => new Set(REQUIRED_COLUMNS),
@@ -569,7 +572,10 @@ export default function ImportCsvModal({
                 typeof row[positionHeader] === "string" &&
                 row[positionHeader].toUpperCase() === "G",
             ).length;
-            if (goalieCount / data.length > 0.5) {
+            if (goalieCount > 0 && goalieCount < data.length) {
+              setPlayerType("both");
+            } else if (goalieCount === data.length) {
+              setPlayerType("goalie");
               setIsGoalieCsv(true);
             }
           }
@@ -897,8 +903,8 @@ export default function ImportCsvModal({
     (!forceImportDespiteUnresolved &&
       (hasUnresolvedRows || coverageBelowThreshold));
   const validatedImport = useMemo(
-    () => validateCsvProjectionRows(resolvedRows, REQUIRED_COLUMNS),
-    [resolvedRows, REQUIRED_COLUMNS]
+    () => validateCsvProjectionRows(resolvedRows, REQUIRED_COLUMNS, playerType === "both"),
+    [resolvedRows, REQUIRED_COLUMNS, playerType]
   );
 
   useEffect(() => {
@@ -1060,6 +1066,8 @@ export default function ImportCsvModal({
     const set = new Set(
       headers.filter((h) => h.selected).map((h) => h.standardized),
     );
+    if (set.has("Games_Played")) set.add("Games_Started_Goalie");
+    if (set.has("Games_Started_Goalie")) set.add("Games_Played");
     return REQUIRED_COLUMNS.filter((r) => !set.has(r));
   }, [headers, REQUIRED_COLUMNS]);
 
@@ -1124,6 +1132,7 @@ export default function ImportCsvModal({
       rows: mapped,
       sourceId: "custom_csv",
       label: sourceName,
+      playerType,
       resolution: resolutionPayload,
     } as const;
     onImported(payload);
@@ -2027,6 +2036,18 @@ export default function ImportCsvModal({
             </div>
           )}
 
+          <div style={{ marginBottom: 12 }}>
+            <label htmlFor="importPlayerType">Use projections for: </label>
+            <select id="importPlayerType" value={playerType} onChange={(event) => {
+              const value = event.target.value as "skater" | "goalie" | "both";
+              setPlayerType(value);
+              setIsGoalieCsv(value === "goalie");
+            }}>
+              <option value="skater">Skaters</option>
+              <option value="goalie">Goalies</option>
+              <option value="both">Both</option>
+            </select>
+          </div>
           <div style={{ marginBottom: 12 }}>
             <label
               htmlFor="sourceName"

@@ -99,6 +99,13 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   compareSelectedIds = [],
   personalRankByPlayerId = {}
 }) => {
+  const recommendationAccessHint = !draftProEligible
+    ? " Requires Draft Pro."
+    : "";
+  const rosterGapDescription =
+    "Adds a recommendation bonus for players at positions where you have open slots. A larger share of empty slots means a larger positional bonus. In category leagues, players who help your weak categories also get a boost. The bonus varies; it is not a fixed percentage of a player's value. Displayed VORP stays unchanged." + recommendationAccessHint;
+  const filledPositionDescription =
+    "As you fill a position, raises the standard used to value additional players there, generally lowering their recommendations. This changes the value comparison instead of adding a roster-needs bonus. Displayed VORP still uses the league-wide comparison." + recommendationAccessHint;
   // UI state
   type SortField = "rank" | "myRank" | "projFp" | "vorp" | "vbd" | "adp" | "avail" | "fit";
   const cardsRef = React.useRef<HTMLDivElement>(null);
@@ -244,7 +251,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
           onDraftPlayer(selectedId);
         }
       } else if (key === "r") {
-        if (draftProEligible && recommendationDataOrigin === "server") {
+        if (draftProEligible) {
           e.preventDefault();
           onNeedWeightEnabledChange?.(!needWeightEnabled);
         }
@@ -295,10 +302,10 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     forwardGrouping,
   }), [draftProEligible, forwardGrouping, personalizedVorpMetrics, personalizeReplacement, requestPlayers, vorpMetrics]);
   const remoteRecommendations = useDraftProRecommendations(
-    draftProEligible && recommendationDataOrigin === "server" && !remoteInputOversized && recommendationCandidates.length
+    draftProEligible && !remoteInputOversized && recommendationCandidates.length
       ? {
           candidates: recommendationCandidates,
-          dataOrigin: "server",
+          dataOrigin: recommendationDataOrigin,
           leagueType: leagueType ?? "points",
           positionNeeds: posNeeds,
           categoryNeeds: catNeeds,
@@ -309,7 +316,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
           limit: 100,
         }
       : null,
-    draftProEligible && recommendationDataOrigin === "server" && !remoteInputOversized && recommendationCandidates.length > 0,
+    draftProEligible && !remoteInputOversized && recommendationCandidates.length > 0,
   );
   const activeRecommendations = useMemo(() => {
     if (!remoteRecommendations.results) return recommendations;
@@ -636,30 +643,29 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
               <option value="schedule_fit">Schedule fit</option>
             </select>
           </div>
-          <div className={styles.controlGroup}>
+          <div className={styles.controlGroup} title={rosterGapDescription}>
             <label
               className={styles.label}
               htmlFor="rosterVorpToggle"
-              title={draftProEligible ? "Use Draft Pro roster-aware ranking" : "Draft Pro access is required for roster-aware ranking"}
             >
-              Prioritize roster needs
+              Boost roster gaps
             </label>
             <input
               id="rosterVorpToggle"
               type="checkbox"
               checked={needWeightEnabled}
               onChange={(e) => onNeedWeightEnabledChange?.(e.target.checked)}
-              disabled={!draftProEligible || recommendationDataOrigin !== "server"}
-              aria-label="Prioritize my roster needs"
+              disabled={!draftProEligible}
+              aria-describedby="rosterGapDescription"
             />
+            <span id="rosterGapDescription" hidden>{rosterGapDescription}</span>
           </div>
-          <div className={styles.controlGroup}>
+          <div className={styles.controlGroup} title={filledPositionDescription}>
             <label
               className={styles.label}
               htmlFor="personalReplaceToggle"
-              title="Personalize replacement baselines using your filled slots"
             >
-              Personalized
+              Discount filled positions
             </label>
             <input
               id="personalReplaceToggle"
@@ -669,9 +675,10 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                 onPersonalizeReplacementChange &&
                 onPersonalizeReplacementChange(e.target.checked)
               }
-              disabled={!draftProEligible || recommendationDataOrigin !== "server"}
-              aria-label="Toggle personalized replacement baselines"
+              disabled={!draftProEligible}
+              aria-describedby="filledPositionDescription"
             />
+            <span id="filledPositionDescription" hidden>{filledPositionDescription}</span>
           </div>
 
           <div className={styles.controlGroup}>
@@ -708,7 +715,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         </div>
       </div>
 
-      {recommendationDataOrigin !== "server" ? <p className={styles.loading} role="status">Roster-aware Draft Pro recommendations are unavailable for local CSV data. Save the import to your account first; your local draft and rows stay unchanged.</p> : remoteInputOversized ? <p className={styles.loading} role="status">This filtered player pool is too large for roster-aware recommendations. Narrow the position filter; no projection rows were uploaded.</p> : !draftProEligible ? null : remoteRecommendations.status === "error" ? <p className={styles.loading} role="status">{remoteRecommendations.error} Standard suggestions remain available.</p> : null}
+      {remoteInputOversized ? <p className={styles.loading} role="status">This filtered player pool is too large for roster-aware recommendations. Narrow the position filter; no projection rows were uploaded.</p> : !draftProEligible ? null : remoteRecommendations.status === "error" ? <p className={styles.loading} role="status">{remoteRecommendations.error} Standard suggestions remain available.</p> : null}
 
       {compact && <button type="button" className={styles.returnToDraft} onClick={onReturnToDraft}>Return to suggested players</button>}
         <div

@@ -196,14 +196,17 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     await waitFor(() => expect(screen.getAllByRole("listitem")[0].textContent).toContain("Roster Fit"));
   });
 
-  it("does not send local CSV rows to Draft Pro recommendations and explains the lock", () => {
-    const fetchMock = vi.fn();
+  it("enables imported roster-aware recommendations without uploading projections", async () => {
+    getSession.mockResolvedValue({ data: { session: { access_token: "token" } } });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { authorized: true } }) });
     vi.stubGlobal("fetch", fetchMock);
     render(<SuggestedPicks players={[player(1, "Local Player", "C", 100)]} currentPick={1} teamCount={1} draftProEligible recommendationDataOrigin="local_csv" />);
-    expect(screen.getByText(/Save the import to your account first/)).toBeTruthy();
+    expect(screen.queryByText(/Save the import to your account first/)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Advanced" }));
-    expect((screen.getByRole("checkbox", { name: "Prioritize my roster needs" }) as HTMLInputElement).disabled).toBe(true);
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect((screen.getByRole("checkbox", { name: "Boost roster gaps" }) as HTMLInputElement).disabled).toBe(false);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ dataOrigin: "local_csv", authorizeOnly: true });
+    expect(screen.getAllByRole("listitem")[0].textContent).toContain("Local Player");
   });
 
   it("serializes filtered skater and goalie candidates within the endpoint's output bound", async () => {

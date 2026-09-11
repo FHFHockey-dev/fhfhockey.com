@@ -43,3 +43,29 @@ describe("useDraftProRecommendations", () => {
     expect(result.current).toMatchObject({ status: "idle", results: null });
   });
 });
+
+it("computes private roster-aware ranks only after authorization and clears them on loss of access", async () => {
+  vi.useFakeTimers();
+  getSession.mockResolvedValue({ data: { session: { access_token: "token" } } });
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { authorized: true } }) });
+  vi.stubGlobal("fetch", fetchMock);
+  const privateInput = { ...input, dataOrigin: "local_csv" as const, needAlpha: 1, positionNeeds: { C: 0, D: 1 }, candidates: [input.candidates[0], { ...input.candidates[0], id: "2", name: "Private Defender", eligiblePositions: ["D"], rankValue: .95 }] };
+  const { result, rerender, unmount } = renderHook(({ enabled }) => useDraftProRecommendations(privateInput, enabled), { initialProps: { enabled: true } });
+  expect(result.current.results).toBeNull();
+  await act(async () => { await vi.advanceTimersByTimeAsync(200); });
+  expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ dataOrigin: "local_csv", authorizeOnly: true });
+  expect(result.current.results?.[0].candidate.id).toBe("2");
+  rerender({ enabled: false });
+  expect(result.current.results).toBeNull();
+  unmount(); vi.unstubAllGlobals(); vi.useRealTimers();
+});
+
+it("does not calculate imported premium results after server denial", async () => {
+  vi.useFakeTimers();
+  getSession.mockResolvedValue({ data: { session: { access_token: "token" } } });
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, json: async () => ({ error: { message: "Draft Pro access is required." } }) }));
+  const { result, unmount } = renderHook(() => useDraftProRecommendations({ ...input, dataOrigin: "private_import" }, true));
+  await act(async () => { await vi.advanceTimersByTimeAsync(200); });
+  expect(result.current).toMatchObject({ status: "error", results: null });
+  unmount(); vi.unstubAllGlobals(); vi.useRealTimers();
+});

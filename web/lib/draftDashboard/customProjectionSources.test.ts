@@ -148,3 +148,17 @@ describe("custom projection-source registration", () => {
     );
   });
 });
+
+it("respects the explicit import player type even with mixed rows", () => {
+  const entry = { id: "custom_csv_1", label: "Private", rows: [{ Position: "C" }, { Position: "G" }] };
+  expect(buildCustomProjectionSources([{ ...entry, playerType: "skater" }], "goalie", [])).toEqual([]);
+  expect(buildCustomProjectionSources([{ ...entry, playerType: "goalie" }], "skater", [])).toEqual([]);
+  expect(buildCustomProjectionSources([{ ...entry, playerType: "both" }], "goalie", [])[0].rows).toEqual([{ Position: "G" }]);
+});
+
+it("restores legacy goalie column names and thousands separators without mutating imports", () => {
+  const row = { Position: "G", Saves_Goalie: "1,579", Goals_Against_Goalie: 156, Games_Started_Goalie: 60 };
+  const source = buildCustomProjectionSources([{ id: "custom_csv_1", label: "Private", rows: [row] }], "goalie", [])[0];
+  expect(source.rows[0]).toMatchObject({ Saves_Goalie: 1579, Ga: 156, Games_Played: 60 });
+  expect(row.Saves_Goalie).toBe("1,579");
+});

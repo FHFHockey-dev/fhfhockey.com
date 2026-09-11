@@ -38,6 +38,7 @@ const browserSnapshotSchema = z.object({
   customCsvList: z.array(z.object({
     id: z.string().regex(/^custom_csv_/),
     label: z.string().min(1).max(160),
+    playerType: z.enum(["skater", "goalie", "both"]).optional(),
     headers: z.array(z.object({ original: z.string(), standardized: z.string(), selected: z.boolean() })).optional(),
     resolution: z.record(z.unknown()).optional(),
   }).passthrough()).default([]),
@@ -117,7 +118,7 @@ export function serializeSavedDraft(browserSnapshot: BrowserDraftSnapshot): Draf
     team: { myTeamId: parsed.myTeamId, customTeamNames: parsed.customTeamNames, positionOverrides: parsed.positionOverrides },
     sourceWeights: { skater: parsed.sourceControls, goalie: parsed.goalieSourceControls, goaliePointValues: parsed.goaliePointValues },
     // Metadata only. The rows are independently saved as normalized private imports.
-    importMappings: parsed.customCsvList.map(({ id, label, headers, resolution }) => ({ id, label, headers: headers ?? [], resolution: resolution ?? {} })),
+    importMappings: parsed.customCsvList.map(({ id, label, playerType, headers, resolution }) => ({ id, label, playerType, headers: headers ?? [], resolution: resolution ?? {} })),
     favorites: parsed.favorites,
     notes: parsed.notes,
     tiers: parsed.tiers,
@@ -144,7 +145,7 @@ export function assertPrivateImportBounds(imports: readonly NormalizedPrivateImp
 
 export function restoreBrowserSnapshot(snapshot: DraftProSnapshot, imports: readonly NormalizedPrivateImport[]) {
   const parsed = draftProSnapshotSchema.parse(snapshot);
-  const metadata = z.array(z.object({ id: z.string(), label: z.string(), headers: z.array(z.unknown()), resolution: z.unknown() })).parse(parsed.importMappings);
+  const metadata = z.array(z.object({ id: z.string(), label: z.string(), playerType: z.enum(["skater", "goalie", "both"]).optional(), headers: z.array(z.unknown()), resolution: z.unknown() })).parse(parsed.importMappings);
   const importsBySource = new Map(imports.map((entry) => [entry.sourceId, entry]));
   const missing = metadata.filter((entry) => !importsBySource.has(entry.id));
   if (missing.length) throw new Error(`Private import data is missing for ${missing.map((entry) => entry.label).join(", ")}. The draft was not restored.`);
@@ -174,7 +175,7 @@ export function restoreBrowserSnapshot(snapshot: DraftProSnapshot, imports: read
     goalieSourceControls: weights.goalie,
     customCsvList: metadata.map((entry) => {
       const source = importsBySource.get(entry.id)!;
-      return { id: source.sourceId, label: source.name, headers: source.mapping, rows: source.rows, resolution: entry.resolution };
+      return { id: source.sourceId, label: source.name, playerType: entry.playerType, headers: source.mapping, rows: source.rows, resolution: entry.resolution };
     }),
     favorites: parsed.favorites,
     notes: parsed.notes,

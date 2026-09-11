@@ -264,6 +264,13 @@ export function bookmarkImportError(
     );
   if (!record(data) || ![2, 3].includes(data.v))
     return "Unsupported bookmark. Use a v2 or v3 draft bookmark.";
+  if (data.customCsvList !== undefined) {
+    if (!Array.isArray(data.customCsvList) || data.customCsvList.some((entry: any) =>
+      !record(entry) || typeof entry.id !== "string" || !entry.id.startsWith("custom_csv_") ||
+      typeof entry.label !== "string" || !Array.isArray(entry.rows) || !entry.rows.length || entry.rows.some((row: any) => !record(row))
+    )) return "Invalid custom CSV data in bookmark. The current draft has not changed.";
+    availableCustomSourceIds = data.customCsvList.map((entry: any) => entry.id);
+  }
   const s = data.settings;
   if (
     !record(s) ||

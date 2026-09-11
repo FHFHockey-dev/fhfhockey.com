@@ -92,6 +92,12 @@ describe("ImportCsvModal", () => {
       ]);
     });
     expect(screen.getByRole("button", { name: "Clear file" })).toBeTruthy();
+    const scope = screen.getByRole("combobox", { name: "Use projections for:" }) as HTMLSelectElement;
+    expect(scope.value).toBe("skater");
+    fireEvent.change(scope, { target: { value: "goalie" } });
+    expect(scope.value).toBe("goalie");
+    fireEvent.change(scope, { target: { value: "both" } });
+    expect(scope.value).toBe("both");
 
     fireEvent.click(screen.getByRole("button", { name: "Clear file" }));
     expect(screen.queryByRole("button", { name: "Clear file" })).toBeNull();

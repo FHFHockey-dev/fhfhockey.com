@@ -1,5 +1,6 @@
 // components/DraftDashboard/DraftSettings.tsx
 import React from "react";
+import type { SessionCsvEntry } from "lib/draftDashboard/csvImportSession";
 import type { DashboardMatchupWeek } from "lib/draftDashboard/scheduleMetrics";
 import {
   decompressFromEncodedURIComponent,
@@ -77,6 +78,7 @@ interface DraftSettingsProps {
   onOpenSummary?: () => void;
   onOpenImportCsv?: () => void;
   customSourceLabel?: string;
+  customCsvEntries?: SessionCsvEntry[];
   customSourceMetadata?: DraftCustomSourceMetadata[];
   availableSkaterStatKeys?: string[];
   availableGoalieStatKeys?: string[];
@@ -155,6 +157,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
   onOpenImportCsv,
   customSourceLabel,
   customSourceMetadata = [],
+  customCsvEntries = [],
   availableSkaterStatKeys = [],
   availableGoalieStatKeys = [],
   onExportCsv,
@@ -402,6 +405,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
       pickOwnerOverrides,
       pickTrades,
       customSourceMetadata,
+      customCsvList: customCsvEntries,
     };
   }, [
     settings,
@@ -418,6 +422,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
     pickOwnerOverrides,
     pickTrades,
     customSourceMetadata,
+    customCsvEntries,
   ]);
 
   const deserializeBookmark = (key: string): any | null => {

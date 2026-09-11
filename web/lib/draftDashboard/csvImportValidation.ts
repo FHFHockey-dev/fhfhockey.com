@@ -1,4 +1,4 @@
-import { CSV_IDENTITY_COLUMNS } from "./csvImportContract";
+import { CSV_IDENTITY_COLUMNS, getRequiredCsvColumns } from "./csvImportContract";
 
 export type CsvImportRow = Record<string, string | number | null | unknown>;
 
@@ -12,10 +12,10 @@ export type CsvImportValidationResult = {
   issues: string[];
 };
 
-function coerceSafeNumber(value: unknown): number | null {
+export function coerceSafeNumber(value: unknown): number | null {
   if (typeof value === "number") return Number.isFinite(value) ? value : null;
   if (typeof value !== "string") return null;
-  const trimmed = value.trim();
+  const trimmed = value.trim().replace(/(?<=\d),(?=\d{3}(?:,|\.|$))/g, "");
   if (!trimmed) return null;
   if (!/^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?$/i.test(trimmed)) {
     return null;
@@ -35,20 +35,30 @@ function normalizedIdentity(value: unknown) {
 
 export function validateCsvProjectionRows(
   rows: CsvImportRow[],
-  requiredColumns: string[]
+  requiredColumns: string[],
+  mixedPlayerTypes = false,
 ): CsvImportValidationResult {
   const acceptedRows: CsvImportRow[] = [];
   const issues: string[] = [];
   const seen = new Set<string>();
-  const numericColumns = requiredColumns.filter(
-    (column) => !(CSV_IDENTITY_COLUMNS as readonly string[]).includes(column)
-  );
   let duplicates = 0;
   let invalid = 0;
 
   rows.forEach((sourceRow, index) => {
     const rowNumber = index + 2; // header is row 1
     const row = { ...sourceRow };
+    const goalie = String(row.Position ?? "").toUpperCase().split(/[,/]/).includes("G");
+    if (goalie) {
+      row.Games_Started_Goalie ??= row.Games_Played;
+      row.Games_Played ??= row.Games_Started_Goalie;
+    }
+    const numericColumns = (mixedPlayerTypes ? getRequiredCsvColumns(goalie ? "goalie" : "skater") : requiredColumns)
+      .filter((column) => !(CSV_IDENTITY_COLUMNS as readonly string[]).includes(column));
+    for (const [key, value] of Object.entries(row)) {
+      if ((CSV_IDENTITY_COLUMNS as readonly string[]).includes(key)) continue;
+      const numeric = coerceSafeNumber(value);
+      if (numeric !== null) row[key] = numeric;
+    }
     const missingIdentity = (CSV_IDENTITY_COLUMNS as readonly string[]).filter(
       (column) => !String(row[column] ?? "").trim()
     );
