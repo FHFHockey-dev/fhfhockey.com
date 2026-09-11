@@ -31,11 +31,23 @@ function checkoutDetails(session: Stripe.Checkout.Session) {
   return { paymentIntent, sessionId, userId };
 }
 
+function receiptUrl(session: Stripe.Checkout.Session) {
+  const paymentIntent = typeof session.payment_intent === "string" ? null : session.payment_intent;
+  const charge = paymentIntent && typeof paymentIntent.latest_charge === "object" ? paymentIntent.latest_charge : null;
+  return typeof charge?.receipt_url === "string" ? charge.receipt_url : null;
+}
+
 export function isVerifiedDraftProCheckout(session: Stripe.Checkout.Session) {
+  const totals = session.total_details;
   return session.mode === "payment"
     && session.payment_status === "paid"
-    && session.amount_total === DRAFT_PRO_STRIPE_PRICE.unitAmount
+    && session.amount_subtotal === DRAFT_PRO_STRIPE_PRICE.unitAmount
     && session.currency === DRAFT_PRO_STRIPE_PRICE.currency
+    && totals?.amount_discount === 0
+    && totals.amount_shipping === 0
+    && Number.isInteger(totals.amount_tax)
+    && totals.amount_tax >= 0
+    && session.amount_total === session.amount_subtotal + totals.amount_tax
     && Boolean(session.metadata?.draft_pro_user_id)
     && Boolean(session.metadata?.draft_pro_purchase_id)
     && session.metadata?.draft_pro_season === DRAFT_PRO_SEASON
@@ -48,7 +60,7 @@ export async function verifyDraftProCheckoutSession(stripe: Stripe, session: Str
   const items = await stripe.checkout.sessions.listLineItems(session.id, { limit: 2, expand: ["data.price.product"] });
   const item = items.data[0];
   const product = typeof item?.price?.product === "string" ? item.price.product : item?.price?.product?.id;
-  return items.data.length === 1 && item.quantity === 1 && item.price?.id === catalog.priceId && product === catalog.productId && item.price.unit_amount === DRAFT_PRO_STRIPE_PRICE.unitAmount && item.price.currency === DRAFT_PRO_STRIPE_PRICE.currency;
+  return items.data.length === 1 && item.quantity === 1 && item.amount_subtotal === DRAFT_PRO_STRIPE_PRICE.unitAmount && item.price?.id === catalog.priceId && product === catalog.productId && item.price.unit_amount === DRAFT_PRO_STRIPE_PRICE.unitAmount && item.price.currency === DRAFT_PRO_STRIPE_PRICE.currency;
 }
 
 /**
@@ -67,7 +79,9 @@ async function fulfillStripeEvent(
   }
   const { paymentIntent, sessionId, userId } = checkoutDetails(session);
   const purchaseId = session.metadata?.draft_pro_purchase_id ?? null;
-  if (!sessionId || !userId || !purchaseId || !Number.isFinite(event.created)) {
+  const amountTax = session.total_details?.amount_tax;
+  const receipt = receiptUrl(session);
+  if (!sessionId || !userId || !purchaseId || !Number.isFinite(event.created) || !Number.isInteger(amountTax)) {
     return { purchaseId: null, processed: false };
   }
   const { data, error } = await client.rpc("record_draft_pro_stripe_event", {
@@ -83,11 +97,14 @@ async function fulfillStripeEvent(
       checkout_session_id: sessionId,
       payment_intent_id: paymentIntent,
       customer_id: typeof session.customer === "string" ? session.customer : session.customer?.id ?? null,
+      amount_subtotal: session.amount_subtotal,
+      amount_tax: amountTax,
       amount_total: session.amount_total,
       currency: session.currency,
       season: session.metadata?.draft_pro_season,
       account_association: userId,
       purchase_association: purchaseId,
+      ...(receipt ? { receipt_url: receipt } : {}),
     } as Json,
     p_occurred_at: new Date(event.created * 1000).toISOString(),
     p_purchase_id: purchaseId,
@@ -111,7 +128,7 @@ export async function fulfillStripeProviderEvent({
 }): Promise<StripeFulfillmentResult> {
   if (event.type.startsWith("checkout.session.")) {
     const eventSession = event.data.object as Stripe.Checkout.Session;
-    const session = await stripe.checkout.sessions.retrieve(eventSession.id);
+    const session = await stripe.checkout.sessions.retrieve(eventSession.id, { expand: ["payment_intent.latest_charge"] });
     if (!(await verifyDraftProCheckoutSession(stripe, session))) return { purchaseId: null, processed: false };
     return fulfillStripeEvent(event, session, client);
   }
@@ -163,10 +180,11 @@ export async function verifyStripeCheckoutSession(
   stripe: Stripe,
   session: Stripe.Checkout.Session,
   client: Pick<typeof serviceRoleClient, "rpc"> = serviceRoleClient,
+  recovery = false,
 ) {
   if (!(await verifyDraftProCheckoutSession(stripe, session))) return { purchaseId: null, processed: false };
   const event = {
-    id: `return:${session.id}`,
+    id: `${recovery ? "recovery" : "return"}:${session.id}`,
     created: session.created,
     type: "checkout.session.completed",
     data: { object: session },

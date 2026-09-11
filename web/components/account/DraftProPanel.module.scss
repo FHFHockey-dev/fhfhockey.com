@@ -26,8 +26,8 @@
 .accessCodeForm p { color: v.$text-secondary; line-height: 1.5; }
 .accessCodeForm label { color: v.$color-white; font-size: v.$font-size-sm; }
 .accessCodeRow { display: flex; gap: v.$space-sm; }
-.accessCodeRow input { min-width: 0; flex: 1; min-height: v.$control-height-md; padding: 8px 10px; border: v.$border-default; border-radius: v.$radius-control; background: v.$surface-0; color: v.$text-primary; font: inherit; }
-.accessCodeRow button { min-height: v.$control-height-md; padding: 6px 10px; border: v.$border-default; border-radius: v.$radius-control; background: v.$color-gold-400; color: v.$draft-canvas; cursor: pointer; font: inherit; font-weight: v.$font-weight-bold; }
+.accessCodeRow input, .recoveryCode input { min-width: 0; flex: 1; min-height: v.$control-height-md; padding: 8px 10px; border: v.$border-default; border-radius: v.$radius-control; background: v.$surface-0; color: v.$text-primary; font: inherit; }
+.accessCodeRow button, .recoveryCode button { min-height: v.$control-height-md; padding: 6px 10px; border: v.$border-default; border-radius: v.$radius-control; background: v.$color-gold-400; color: v.$draft-canvas; cursor: pointer; font: inherit; font-weight: v.$font-weight-bold; }
 .accessCodeRow button:disabled { cursor: wait; opacity: .6; }
 .errorNotice, .successNotice { font-size: v.$font-size-sm; }
 .errorNotice { color: v.$danger-color !important; }
@@ -35,7 +35,7 @@
 .savedItems { display: grid; gap: v.$space-xs; }
 .savedItems h3 { margin: 0; color: v.$color-white; }
 .savedItems div { display: flex; justify-content: space-between; gap: v.$space-sm; color: v.$text-secondary; }
-.purchase { padding: v.$space-sm 0; }
+.purchase { flex-wrap: wrap; padding: v.$space-sm 0; }
 .purchase div { display: grid; gap: 3px; }
 .purchase a { color: v.$color-gold-400; }
 .form label { display: grid; gap: 4px; color: v.$color-white; font-size: v.$font-size-sm; }
@@ -49,3 +49,7 @@
 .actions .premiumButton { background: v.$color-gold-400; color: v.$draft-canvas; border-color: v.$color-gold-400; font-weight: 700; }
 .actions .premiumButton:hover:not(:disabled) { filter: brightness(1.08); }
 .actions .premiumButton:focus-visible { outline: 2px solid v.$color-gold-400; outline-offset: 3px; }
+.recoveryCode { flex: 1 1 22rem; min-width: 0; }
+.recoveryCode label { display: grid; gap: 4px; }
+.recoveryCode input { width: 100%; box-sizing: border-box; }
+.recoveryCode button { justify-self: start; }

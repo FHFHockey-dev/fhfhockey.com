@@ -1,0 +1,23 @@
+@use "styles/vars" as v;
+
+.policies {
+  width: min(100% - 32px, 800px);
+  margin: 32px auto;
+  padding: 24px;
+  background: v.$surface-0;
+  color: v.$text-primary;
+  border: v.$border-default;
+  border-radius: v.$radius-panel;
+  font-family: v.$font-family-primary;
+  font-size: 16px;
+  line-height: 1.6;
+
+  h1, h2 { line-height: 1.25; }
+  section { scroll-margin-top: 100px; margin-top: 32px; }
+  nav { display: flex; flex-wrap: wrap; gap: 20px; }
+  a { color: v.$primary-color; text-decoration: underline; }
+  a:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+}
+
+
+@media (max-width: 480px) { .policies { padding: 16px; } }

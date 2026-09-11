@@ -10,8 +10,9 @@ vi.mock("lib/integrations/patreon/config", () => ({ isPatreonConfigured: patreon
 
 import { getDraftProCheckoutAvailability, loadDraftProAccount } from "./index";
 
-function result(data: unknown) {
-  const query: any = { select: vi.fn(() => query), eq: vi.fn(() => query), order: vi.fn(async () => ({ data, error: null })) };
+function result(data: unknown, error: unknown = null) {
+  const ordered: any = { data, error, limit: vi.fn(async () => ({ data, error })) };
+  const query: any = { select: vi.fn(() => query), eq: vi.fn(() => query), in: vi.fn(() => query), not: vi.fn(() => query), order: vi.fn(() => ordered) };
   return query;
 }
 
@@ -24,11 +25,13 @@ describe("loadDraftProAccount", () => {
         draft_pro_refund_requests: result([{ id: "refund-old", purchase_id: "purchase-1", reason: "other", status: "resolved", submitted_at: "2026-09-01T00:00:00.000Z", email_status: "sent" }]),
         draft_pro_drafts: result([{ id: "draft-1", name: "Retained work", status: "archived", updated_at: "2026-09-02T00:00:00.000Z" }]),
         draft_pro_private_imports: result([{ id: "import-1", name: "Private CSV", draft_id: "draft-1", byte_size: 22, updated_at: "2026-09-02T00:00:00.000Z" }]),
+        draft_pro_provider_events: result([]),
       } as Record<string, unknown>)[table]),
     } as any;
     const account = await loadDraftProAccount({ client, userId: "user-1", now: new Date("2026-09-02T00:00:00.000Z") });
     expect(account.purchases[0]).toEqual(expect.objectContaining({ id: "purchase-1", receiptUrl: "https://receipt.example/1", refundEligibility: expect.objectContaining({ eligible: true }) }));
     expect(JSON.stringify(account)).not.toContain("never-return");
+    expect(account.availableFeatures).toEqual([]);
     expect(account.savedDrafts).toEqual([{ id: "draft-1", name: "Retained work", status: "archived", updatedAt: "2026-09-02T00:00:00.000Z" }]);
   });
 
@@ -40,10 +43,41 @@ describe("loadDraftProAccount", () => {
         draft_pro_refund_requests: result([{ id: "refund-open", purchase_id: "open", reason: "other", status: "open", submitted_at: "2026-09-01T00:00:00.000Z", email_status: "pending" }]),
         draft_pro_drafts: result([]),
         draft_pro_private_imports: result([]),
+        draft_pro_provider_events: result([]),
       } as Record<string, unknown>)[table]),
     } as any;
     const account = await loadDraftProAccount({ client, userId: "user-1", now: new Date("2026-09-02T00:00:00.000Z") });
     expect(account.purchases.map((purchase) => purchase.refundEligibility.reason)).toEqual(["purchase_ineligible", "request_open"]);
+  });
+
+  it("uses the newest valid receipt from a matching Stripe provider event", async () => {
+    loadAccess.mockResolvedValue({ eligible: false, providerReadiness: { stripe: false, patreon: false, yahoo: false } });
+    const events = result([
+      { provider: "stripe", user_id: "user-1", purchase_id: "purchase-1", receipt_url: "https://receipt.example/newest", provider_occurred_at: "2026-09-02T00:00:00.000Z" },
+      { provider: "stripe", user_id: "user-1", purchase_id: "purchase-1", receipt_url: "https://receipt.example/older", provider_occurred_at: "2026-09-01T00:00:00.000Z" },
+      { provider: "stripe", user_id: "other-user", purchase_id: "purchase-1", receipt_url: "https://receipt.example/wrong-user" },
+      { provider: "stripe", user_id: "user-1", purchase_id: "other-purchase", receipt_url: "https://receipt.example/wrong-purchase" },
+    ]);
+    const client = { from: vi.fn((table: string) => ({
+      draft_pro_purchases: result([{ id: "purchase-1", season: "draft_pro_2026_27", status: "active", activated_at: "2026-09-01T00:00:00.000Z", expires_at: "2027-07-01T04:00:00.000Z", amount_cents: 599, currency: "usd", metadata: {} }]),
+      draft_pro_refund_requests: result([]), draft_pro_drafts: result([]), draft_pro_private_imports: result([]), draft_pro_provider_events: events,
+    } as Record<string, unknown>)[table]) } as any;
+    const account = await loadDraftProAccount({ client, userId: "user-1" });
+    expect(account.purchases[0].receiptUrl).toBe("https://receipt.example/newest");
+    expect(events.eq).toHaveBeenCalledWith("provider", "stripe");
+    expect(events.eq).toHaveBeenCalledWith("user_id", "user-1");
+    expect(events.in).toHaveBeenCalledWith("purchase_id", ["purchase-1"]);
+    expect(events.not).toHaveBeenCalledWith("payload->>receipt_url", "is", null);
+    expect(events.order.mock.results[0].value.limit).toHaveBeenCalledWith(100);
+  });
+
+  it("continues when the optional receipt history query fails", async () => {
+    loadAccess.mockResolvedValue({ eligible: false, providerReadiness: { stripe: false, patreon: false, yahoo: false } });
+    const client = { from: vi.fn((table: string) => ({
+      draft_pro_purchases: result([{ id: "purchase-1", season: "draft_pro_2026_27", status: "active", activated_at: "2026-09-01T00:00:00.000Z", expires_at: "2027-07-01T04:00:00.000Z", amount_cents: 599, currency: "usd", metadata: {} }]),
+      draft_pro_refund_requests: result([]), draft_pro_drafts: result([]), draft_pro_private_imports: result([]), draft_pro_provider_events: result(null, new Error("optional query failed")),
+    } as Record<string, unknown>)[table]) } as any;
+    await expect(loadDraftProAccount({ client, userId: "user-1" })).resolves.toMatchObject({ purchases: [expect.objectContaining({ receiptUrl: null })] });
   });
 });
 

@@ -34,6 +34,31 @@ describe("DraftProPanel", () => {
   beforeEach(() => { getSession.mockResolvedValue({ data: { session: { access_token: "token", user: { id: "A" } } } }); replace.mockClear(); onAuthStateChange.mockClear(); });
   afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); vi.restoreAllMocks(); delete routerQuery.draft_pro_checkout; });
 
+  it("shows a copyable account-bound purchase recovery code", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: account }) }));
+    render(<DraftProPanel />);
+    const code = await screen.findByLabelText("Recovery code for purchase purchase-1");
+    expect((code as HTMLInputElement).value).toBe("DPRO-purchase-1");
+    fireEvent.click(screen.getByRole("button", { name: "Copy recovery code" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("DPRO-purchase-1"));
+  });
+
+  it("recovers a purchased pass without requiring a complimentary grant", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: { ...account, access: { ...account.access, eligible: false } } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ state: "confirmed" }) })
+      .mockResolvedValue({ ok: true, json: async () => ({ data: account }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<DraftProPanel />);
+    fireEvent.change(await screen.findByLabelText("Draft Pro access code"), { target: { value: "DPRO-11111111-1111-4111-8111-111111111111" } });
+    fireEvent.submit(screen.getByRole("button", { name: "Redeem code" }).closest("form")!);
+    expect(await screen.findByText("Purchase recovered. Draft Pro access is now active.")).toBeTruthy();
+    expect(fetchMock.mock.calls[1][0]).toBe("/api/v1/account/draft-pro/checkout/verify");
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ recoveryCode: "DPRO-11111111-1111-4111-8111-111111111111" });
+  });
+
   it("shows loading and then the server-computed refund form", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: account }) }));
     render(<DraftProPanel />);
@@ -41,6 +66,14 @@ describe("DraftProPanel", () => {
     expect(await screen.findByRole("button", { name: "Submit request" })).toBeTruthy();
     expect(screen.getByText(/June 30, 2027.*Eastern/)).toBeTruthy();
     expect(screen.getByText("Opening night")).toBeTruthy();
+  });
+
+  it("lists only server-enabled features before purchase", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { ...account, access: { ...account.access, eligible: false }, availableFeatures: ["recommendations"] } }) }));
+    render(<DraftProPanel />);
+    expect(await screen.findByText("Roster-aware recommendations and personalized replacement analysis")).toBeTruthy();
+    expect(screen.queryByText("Aggregated projection CSV export")).toBeNull();
+    expect(screen.getByRole("link", { name: "Refund requests" }).getAttribute("href")).toBe("/draft-pro/policies#refunds");
   });
 
   it("shows a server error without rendering a refund form", async () => {
