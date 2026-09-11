@@ -383,3 +383,32 @@ it("selects nonconsecutive playoff weeks and clears playoff scope", () => {
   fireEvent.click(screen.getByRole("button", { name: "Clear playoff weeks" }));
   expect(onSettingsChange).toHaveBeenLastCalledWith({ playoffWeeks: [], scheduleScope: "season" });
 });
+
+
+describe("Settings team names and stable draft order", () => {
+  const setup = (extra = {}) => {
+    const onUpdateTeamName = vi.fn(), onSettingsChange = vi.fn();
+    render(<DraftSettings settings={settings} onSettingsChange={onSettingsChange} onUpdateTeamName={onUpdateTeamName}
+      myTeamId="Team 1" onMyTeamIdChange={vi.fn()} undoLastPick={vi.fn()} resetDraft={vi.fn()} draftHistory={[]}
+      draftedPlayers={[]} currentPick={1} customTeamNames={{ "Team 1": "Ice Owls" }} {...extra} />);
+    return { onUpdateTeamName, onSettingsChange };
+  };
+  it("renames shared IDs and moves IDs without renumbering them", () => {
+    const callbacks = setup();
+    fireEvent.change(screen.getByLabelText("Team name at draft position 1"), { target: { value: "Snow Owls" } });
+    expect(callbacks.onUpdateTeamName).toHaveBeenCalledWith("Team 1", "Snow Owls");
+    fireEvent.click(screen.getByRole("button", { name: "Move Ice Owls down" }));
+    expect(callbacks.onSettingsChange).toHaveBeenCalledWith({ draftOrder: ["Team 2", "Team 1"] });
+    expect((screen.getByRole("button", { name: "Move Ice Owls up" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+  it.each([{ structuralSettingsLocked: true }, { draftedPlayers: [{}] }, { keepers: [{ cost: "none", teamId: "Team 1", playerId: "1" }] }, { pickTrades: [{ round: 1 }] }])("locks reordering while retaining manual name edits: %j", extra => {
+    setup(extra);
+    expect((screen.getByRole("button", { name: "Move Ice Owls down" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByLabelText("Team name at draft position 1") as HTMLInputElement).disabled).toBe(false);
+  });
+  it("locks both controls during authoritative sync", () => {
+    setup({ draftLocked: true });
+    expect((screen.getByRole("button", { name: "Move Ice Owls down" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByLabelText("Team name at draft position 1") as HTMLInputElement).disabled).toBe(true);
+  });
+});

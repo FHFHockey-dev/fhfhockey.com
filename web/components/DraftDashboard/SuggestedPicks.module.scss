@@ -1,8 +1,7 @@
 @use "styles/vars" as v;
 .suggestedContainer {
   --track-gap: 10px;
-  --track-lanes: 6;
-  --card-span: 1;
+  --track-lanes: var(--roster-lanes, 6);
   --lane-width: calc(
     (100% - (var(--track-lanes) - 1) * var(--track-gap)) / var(--track-lanes)
   );
@@ -88,17 +87,26 @@
 .cardsRow {
   display: grid;
   height: 100%;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--lane-width);
   gap: var(--track-gap);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: v.$primary-color v.$draft-input;
 }
-.cardPagination { display: flex; gap: 5px; align-items: center; font-size: 11px; margin-left: 8px; }
-.cardPagination button { padding: 0 7px; font-size: 18px; }
+.scrollControls { display: flex; gap: 5px; align-items: center; font-size: 11px; margin-left: 8px; }
+.scrollControls button { padding: 0 7px; font-size: 18px; }
 
 .card {
   position: relative;
+  scroll-snap-align: start;
   overflow: visible;
   min-width: 0;
   min-height: 0;
-  padding: 8px 8px 7px 10px;
+  padding: 8px 4px 7px;
   border: 1px solid var(--position-color, #{v.$primary-color});
   border-left-width: 10px;
   border-radius: v.$radius-md;
@@ -117,14 +125,14 @@
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr) auto;
   align-items: center;
-  column-gap: 6px;
+  column-gap: 3px;
 }
 .rankBadge {
   min-width: 25px;
   white-space: nowrap;
   grid-row: span 2;
   color: var(--position-color);
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -146,7 +154,9 @@
   color: var(--position-color);
 }
 .statsRow {
-  display: flex;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(max-content, 1fr);
   gap: 0;
   justify-content: space-between;
   flex-shrink: 0;
@@ -154,7 +164,7 @@
 .stat {
   flex: 1;
   min-width: 0;
-  padding: 0 4px;
+  padding: 0 1px;
   border-right: 1px solid v.$draft-border;
   &:first-child {
     padding-left: 0;
@@ -166,11 +176,11 @@
 }
 .statLabel {
   color: v.$text-secondary;
-  font-size: 10px;
+  font-size: 9px;
   white-space: nowrap;
 }
 .statValue {
-  font-size: 14px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 .statValue[data-availability="high"] {
@@ -196,13 +206,13 @@
   flex-direction: column;
   align-items: flex-end;
   display: flex;
-  gap: 6px;
+  gap: 2px;
 }
 .tag {
-  font-size: 10px;
+  font-size: 9px;
   border: 1px solid v.$draft-border;
   border-radius: v.$radius-xs;
-  padding: 2px 5px;
+  padding: 2px;
 }
 .cardFooter {
   display: flex;
@@ -219,8 +229,7 @@
 }
 .progressBar {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(var(--track-lanes), minmax(0, 1fr));
   gap: var(--track-gap);
   flex: 0 0 27px;
 }
@@ -269,9 +278,6 @@
   grid-column: 1 / -1;
 }
 @media (max-width: 1300px) {
-  .suggestedContainer {
-    --card-span: 2;
-  }
   .controls {
     gap: 6px;
   }
@@ -294,7 +300,6 @@
 @media (max-width: 799px) {
   .suggestedContainer {
     --track-lanes: 3;
-    --card-span: 3;
     min-height: 360px;
   }
   .progressBar {
@@ -332,7 +337,7 @@
 }
 .tag {
   line-height: 11px;
-  padding: 1px 4px;
+  padding: 1px 2px;
 }
 .linkBtn {
   line-height: 16px;
@@ -356,25 +361,22 @@
 
 @container workspace (max-height: 820px) {
   .suggestedContainer { padding: 4px 8px; gap: 3px; }
-  .card { padding: 4px 6px; gap: 3px; }
+  .card { padding: 2px 4px; gap: 1px; }
   .headerRow, .controls { flex-wrap: nowrap; gap: 6px; }
-  .rankBadge { font-size: 20px; line-height: 1.15; }
+  .rankBadge { font-size: 18px; line-height: 1.15; }
   .header { line-height: 1.1; }
-  .statLabel { line-height: 11px; }
-  .statValue { line-height: 14px; }
+  .name { font-size: 12px; line-height: 12px; }
+  .meta { font-size: 10px; line-height: 10px; }
+  .statLabel { line-height: 10px; }
+  .statValue { line-height: 12px; }
   .linkBtn { padding-block: 2px; }
   .bottomRow { min-height: 24px; }
   .progressBar { flex-basis: 20px; }
 
-  .card { display: grid; grid-template-columns: minmax(0, 1fr) 66px; grid-template-rows: auto minmax(0, 1fr); align-items: center; column-gap: 6px; }
+  .card { display: flex; flex-direction: column; justify-content: space-between; }
   .header { grid-column: 1 / -1; }
   .bottomRow { display: block; min-height: 0; }
-  .cardFooter { flex-direction: column; gap: 2px; }
-  .linkBtn { padding: 0 3px; line-height: 17px; min-height: 18px; }
-  .statsRow { gap: 3px; }
-}
-
-@container workspace (max-height: 620px) {
-  .card { padding-block: 3px; }
-  .linkBtn { min-height: 17px; line-height: 16px; }
+  .cardFooter { flex-direction: row; gap: 3px; }
+  .linkBtn { padding: 0 3px; line-height: 14px; min-height: 16px; }
+  .statsRow { gap: 0; }
 }

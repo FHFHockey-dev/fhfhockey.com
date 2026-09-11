@@ -3,6 +3,14 @@
 Status: sales enabled September 9, 2026 through Stripe Managed Payments. Do not create live accounts, activate providers, send real email, move money, or publish production changes from this checklist without explicit owner authorization.
 
 
+## Production repair — September 10, 2026
+
+The later Git deployment `8da5c0590` omitted the isolated release's policy page, Managed Payments opt-in, receipt handling and account-bound purchase recovery. The September 9 acceptance record did not describe that newer deployed code. Restored the three approved payment commits onto the current production source, preserving the newer dashboard. Repair commit `f4b5f722e` was pushed to `master` with owner authorization and deployed as `dpl_9mzTKaayySvr9y6odGnrFVkXKTqs` (READY; canonical domain independently checked).
+
+Verification: 92 targeted checkout, fulfillment, webhook, account, recovery and reconciliation tests passed; TypeScript passed. Live policy page returned 200 with pricing, Managed Payments and seven-day/60-day refund disclosures. Anonymous checkout returned 401; unsigned webhook returned 400. The signed-in owner account retained complimentary access and displayed the restored policy links and refund disclosure. Production checkout and Managed Payments flags read true. Live catalog: active one-time USD 599-cent price and personal-use SaaS product category. Stripe returned one unpaid, open, Managed Payments-enabled Draft Pro session since the superseding deployment, zero paid sessions, and no further result pages. No session was charged, refunded, expired or otherwise modified. The new deployment's five-minute error-level log query returned no records.
+
+Limit: no new live purchase was performed; the owner already has Pro access. Prior real sandbox payment-to-entitlement evidence remains the transaction validation. This repair is on production `master`; unrelated uncommitted development work was not deployed. Do not roll back to the superseded deployment for payment incidents: disable checkout first, since that version omits the Managed Payments integration.
+
 ## Current launch gate audit — September 9, 2026
 
 This audit supersedes the older chronological checkpoints below. **10/10 launch gates resolved (100%): 9 verified, 1 owner-waived**; this is a gate count, not percentage of implementation effort.

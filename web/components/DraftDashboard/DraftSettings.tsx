@@ -57,6 +57,7 @@ interface DraftSettingsProps {
   draftedPlayers: DraftedPlayer[];
   currentPick: number;
   customTeamNames?: Record<string, string>;
+  onUpdateTeamName?: (teamId: string, name: string) => void;
   forwardGrouping?: "split" | "fwd";
   onForwardGroupingChange?: (mode: "split" | "fwd") => void;
   sourceControls?: Record<string, { isSelected: boolean; weight: number }>;
@@ -141,6 +142,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
   draftedPlayers,
   currentPick,
   customTeamNames = {},
+  onUpdateTeamName,
   forwardGrouping = "split",
   onForwardGroupingChange,
   sourceControls,
@@ -357,6 +359,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
     if (!confirmReset) { setConfirmReset(true); return; }
     resetDraft();
     setConfirmReset(false);
+    setLeagueView("format");
   };
 
   // --- Bookmark (Portable Draft Session) ---
@@ -590,6 +593,21 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
                 ))}
               </select>
             </div>
+            <fieldset className={styles.teamEditor}>
+              <legend>Teams & draft order</legend>
+              {settings.draftOrder.map((teamId, index) => <div className={styles.teamEditorRow} key={teamId}>
+                <span>{index + 1}</span>
+                <input aria-label={`Team name at draft position ${index + 1}`} value={customTeamNames[teamId] ?? teamId} disabled={draftLocked || !onUpdateTeamName}
+                  onChange={event => onUpdateTeamName?.(teamId, event.target.value)}
+                  onBlur={event => onUpdateTeamName?.(teamId, event.target.value.trim() || teamId)} />
+                {([-1, 1] as const).map(direction => <button key={direction} type="button" aria-label={`Move ${customTeamNames[teamId] || teamId} ${direction === -1 ? "up" : "down"}`} disabled={draftLocked || structuralSettingsLocked || draftedPlayers.length > 0 || keepers.length > 0 || pickTrades.length > 0 || index + direction < 0 || index + direction >= settings.draftOrder.length}
+                  onClick={() => {
+                    const order = [...settings.draftOrder];
+                    [order[index], order[index + direction]] = [order[index + direction], order[index]];
+                    onSettingsChange({ draftOrder: order });
+                  }}>{direction === -1 ? "↑" : "↓"}</button>)}
+              </div>)}
+            </fieldset>
             <div id="draft-order-mode" tabIndex={-1} className={styles.orderControls}>
               <span id="draft-order-mode-label" className={styles.label}>
                 Draft Order

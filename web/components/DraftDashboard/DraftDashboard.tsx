@@ -579,6 +579,7 @@ const DraftDashboard: React.FC = () => {
   const [accountSettingsKnown, setAccountSettingsKnown] = useState(false);
   const settingsEditorRef = useRef<DraftSettingsHandle>(null);
   const initialSetupChecked = useRef(false);
+  const sessionResumedRef = useRef(false);
   const openSettings = useCallback((section: SettingsSection) => {
     setSettingsSection(section);
     setFullSettings(false);
@@ -988,7 +989,13 @@ const DraftDashboard: React.FC = () => {
     if (raw) {
       snapshotWasPresentRef.current = true;
       const ok = window.confirm("Resume your last Draft Dashboard session?");
-      if (ok) loadSnapshot();
+      if (ok) sessionResumedRef.current = loadSnapshot();
+      else {
+        sessionStorage.removeItem("draft.snapshot.v2");
+        window.localStorage.removeItem("draftDashboard.session.v1");
+        sessionStorage.setItem("draft.resume.declined", "true");
+        clearCustomCsvSession();
+      }
     }
   }, [draftMode, loadSnapshot]);
 
@@ -1012,9 +1019,9 @@ const DraftDashboard: React.FC = () => {
       .eq("user_id", userId)
       .maybeSingle()
       .then(({ data, error }) => {
-        if (!active || error) return;
+        if (!active) return;
         setAccountSettingsKnown(true);
-        if (!data || manualLeagueSettingsDirtyRef.current) return;
+        if (error || !data || manualLeagueSettingsDirtyRef.current) return;
         restoredLeagueSettingsRef.current = true;
         setSettingsConfigured(true);
         const defaults = mapUserSettingsRowToLeagueSettings(data);
@@ -1053,13 +1060,13 @@ const DraftDashboard: React.FC = () => {
   useEffect(() => {
     if (authLoading || !sessionReady || initialSetupChecked.current || (user && !accountSettingsKnown && !restoredLeagueSettingsRef.current)) return;
     initialSetupChecked.current = true;
-    if (!restoredLeagueSettingsRef.current || !settingsConfigured) {
+    if (manualDraftingEnabled && (!sessionResumedRef.current || !settingsConfigured)) {
       setSettingsConfigured(false);
       setFullSettings(true);
       setSettingsOpen(true);
       setSettingsSection("league");
     }
-  }, [authLoading, sessionReady, user, accountSettingsKnown, settingsConfigured]);
+  }, [authLoading, sessionReady, user, accountSettingsKnown, settingsConfigured, manualDraftingEnabled]);
 
   // Persist snapshot as state changes
   useEffect(() => {
@@ -1250,6 +1257,7 @@ const DraftDashboard: React.FC = () => {
         if (saved && typeof saved === "object") {
           const ok = window.confirm("Resume draft from previous session?");
           if (ok) {
+            sessionResumedRef.current = true;
             const restoredSettings = normalizeDraftSettingsOrder(
               {
                 ...DEFAULT_DRAFT_SETTINGS,
@@ -1565,6 +1573,14 @@ const DraftDashboard: React.FC = () => {
     manualDraftedPlayers,
     yahooDraftedPlayers,
   );
+  const draftPlayerNames = useMemo(() => {
+    const names = new Map(allPlayers.map(player => [String(player.playerId), player.fullName]));
+    for (const pick of draftedPlayers) {
+      const name = pick.espnDisplayName || pick.yahooDisplayName;
+      if (name && !names.has(pick.playerId)) names.set(pick.playerId, name);
+    }
+    return names;
+  }, [allPlayers, draftedPlayers]);
   const noPickKeeperAssignments = useMemo<RosterAssignment[]>(
     () =>
       draftMode === "manual"
@@ -2646,6 +2662,10 @@ const DraftDashboard: React.FC = () => {
   // Add reset draft functionality
   const resetDraft = useCallback(() => {
     if (!manualDraftingEnabled) return;
+    setSettingsConfigured(false);
+    setSettingsOpen(true);
+    setFullSettings(true);
+    setSettingsSection("league");
     setManualDraftedPlayers([]);
     setKeepers([]);
     setPickTrades([]);
@@ -2655,6 +2675,7 @@ const DraftDashboard: React.FC = () => {
     if (typeof window !== "undefined") {
       try {
         window.localStorage.removeItem("draftDashboard.session.v1");
+        sessionStorage.removeItem("draft.snapshot.v2");
       } catch {}
     }
   }, [manualDraftingEnabled]);
@@ -3461,6 +3482,7 @@ const DraftDashboard: React.FC = () => {
         draftedPlayers={draftedPlayers}
         currentPick={currentPick}
         customTeamNames={customTeamNames}
+        onUpdateTeamName={updateTeamName}
         forwardGrouping={forwardGrouping}
         onForwardGroupingChange={(value) => {
           if (manualDraftingEnabled) {
@@ -3738,7 +3760,9 @@ const DraftDashboard: React.FC = () => {
         queue={selectGodViewQueue({ startPick: currentPick, maxPickNumber: totalPicks,
           draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern,
           trades: manualDraftingEnabled ? pickTrades : [], keepers: manualDraftingEnabled ? keepers : [],
-          completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), teamRosterCounts, rosterCapacity: totalRosterSize })}
+          completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), draftedPlayers, teamRosterCounts, rosterCapacity: totalRosterSize })}
+        categories={activeScoringCategories} leagueType={draftSettings.leagueType || "points"}
+        playerNames={draftPlayerNames}
         teams={teamStats} rosterConfig={effectiveRosterConfig} myTeamId={myTeamId} selectedTeamId={inspectedTeamId || myTeamId}
         round={currentTurn.round} currentPick={currentPick} totalPicks={totalPicks} format={draftOrderPattern.mode} access={draftProAccess}
         onSelectTeam={(teamId) => { setRosterViewRequest({ teamId }); if (mobileWorkspaceEnabled) setActiveMobileTab("roster"); }}

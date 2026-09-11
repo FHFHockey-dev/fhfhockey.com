@@ -31,6 +31,7 @@
 }
 
 .lockNotice {
+  a { color: v.$color-gold-400; }
   padding: v.$space-xs v.$space-sm;
   color: v.$warning-color;
   background: rgba(v.$warning-color, 0.1);
@@ -1868,3 +1869,8 @@
   select { width: 100%; max-width: 100%; padding: 8px; font: inherit; }
   button { justify-self: start; min-height: 40px; }
 }
+
+.teamEditor { min-width: 0; margin: 12px 0; border: 1px solid v.$draft-border; border-radius: v.$radius-sm; padding: 8px; }
+.teamEditorRow { display: grid; grid-template-columns: 24px minmax(0, 1fr) 32px 32px; align-items: center; gap: 6px; margin-top: 6px; }
+.teamEditorRow input { min-width: 0; width: 100%; }
+.teamEditorRow button { min-height: 32px; }
