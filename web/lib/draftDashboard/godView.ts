@@ -1,27 +1,30 @@
 import { findNextActionablePick, resolvePickOwner } from "./pickTrades";
 import { keeperUsesPick } from "./keepers";
 
-export type GodViewPick = { pickNumber: number; round: number; pickInRound: number; teamId: string };
+export type GodViewPick = { pickNumber: number; round: number; pickInRound: number; teamId: string; status: "upcoming" | "completed" | "keeper" | "skipped"; playerId?: string };
+type TimelineInput = Parameters<typeof findNextActionablePick>[0] & {
+  draftedPlayers?: readonly { pickNumber: number; playerId: string; teamId: string; isKeeper?: boolean }[];
+};
 
-/** A window into known selectable picks; never projects future roster changes. */
-export function selectGodViewQueue(input: Parameters<typeof findNextActionablePick>[0]): GodViewPick[] {
+/** Every scheduled pick, retaining history and the existing ownership rules. */
+export function selectGodViewQueue(input: TimelineInput): GodViewPick[] {
   const count = input.draftOrder.length;
   if (!count) return [];
+  const drafted = new Map(input.draftedPlayers?.map(pick => [pick.pickNumber, pick]));
   const completed = new Set(input.completedPickNumbers);
-  input.keepers?.filter(keeperUsesPick).forEach((keeper) => completed.add(keeper.pickNumber));
-  const context = { ...input, completedPickNumbers: completed };
-  const queue: GodViewPick[] = [];
-  let cursor = input.startPick;
-  while (queue.length < count) {
-    const pickNumber = findNextActionablePick({ ...context, startPick: cursor });
-    if (pickNumber > input.maxPickNumber) break;
+  const keepers = new Map(input.keepers?.filter(keeperUsesPick).map(keeper => [keeper.pickNumber, keeper]));
+  return Array.from({ length: Math.max(0, input.maxPickNumber) }, (_, index) => {
+    const pickNumber = index + 1;
     const round = Math.ceil(pickNumber / count);
-    const pickInRound = ((pickNumber - 1) % count) + 1;
-    const { currentTeamId: teamId } = resolvePickOwner({ ...input, round, pickInRound });
-    queue.push({ pickNumber, round, pickInRound, teamId });
-    cursor = pickNumber + 1;
-  }
-  return queue;
+    const pickInRound = index % count + 1;
+    const selection = drafted.get(pickNumber);
+    const keeper = keepers.get(pickNumber);
+    const teamId = selection?.teamId ?? resolvePickOwner({ ...input, round, pickInRound }).currentTeamId;
+    const status: GodViewPick["status"] = keeper || selection?.isKeeper ? "keeper"
+      : selection || completed.has(pickNumber) ? "completed"
+      : pickNumber < input.startPick ? "skipped" : "upcoming";
+    return { pickNumber, round, pickInRound, teamId, status, playerId: selection?.playerId ?? keeper?.playerId };
+  });
 }
 
 /** Read assigned slots, not eligibility, so multi-position players count once. */

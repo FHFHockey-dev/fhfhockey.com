@@ -4,6 +4,7 @@ import type { NextPage } from "next";
 import { useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import Image from "next/image";
 import { NextSeo } from "next-seo";
 import moment from "moment";
 import "moment-timezone"; // Import moment-timezone
@@ -183,6 +184,18 @@ const Home: NextPage = ({
           openingNightDate={openingNightDate}
           openingNightStartTime={openingNightStartTime}
         />
+        <section className={styles.draftDashboardBanner} aria-labelledby="draft-dashboard-banner-title">
+          <Image src="/pictures/draft-dashboard-hero.png" alt="" fill sizes="(max-width: 768px) 100vw, 1200px" className={styles.draftBannerArt} />
+          <div className={styles.draftBannerCopy}>
+            <p className={styles.draftBannerEyebrow}>Your draft. Every angle.</p>
+            <h2 id="draft-dashboard-banner-title">FHFH <span>Draft Dashboard</span></h2>
+            <p>Compare projections, track every pick, and build your roster.</p>
+            <div className={styles.draftBannerActions}>
+              <Link href="/draft-dashboard">Open Draft Dashboard</Link>
+              <Link href="/account?section=draft-pro" className={styles.draftProPromotion}>Explore Draft Pro</Link>
+            </div>
+          </div>
+        </section>
         <ClientOnly>
           {draftRankerHomepageEnabled ? (
             <div className={styles.homepageToolSwitcher}>

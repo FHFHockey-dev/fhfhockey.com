@@ -3,7 +3,7 @@
 .panel { display: grid; gap: v.$space-md; padding: v.$space-lg; border: v.$border-default; border-radius: v.$radius-panel; background: v.$background-dark; color: v.$text-primary; }
 .heading, .purchase, .details { display: flex; align-items: center; justify-content: space-between; gap: v.$space-md; }
 .heading h2, .purchaseList h3, .form h3 { margin: 0; color: v.$color-white; }
-.eyebrow { margin: 0 0 4px; color: v.$primary-color; font-size: v.$font-size-xs; font-weight: v.$font-weight-bold; letter-spacing: .12em; text-transform: uppercase; }
+.eyebrow { margin: 0 0 4px; color: v.$color-gold-400; font-size: v.$font-size-xs; font-weight: v.$font-weight-bold; letter-spacing: .12em; text-transform: uppercase; }
 .summary, .form p, .notice { margin: 0; color: v.$text-secondary; line-height: 1.5; }
 .active, .inactive { padding: 4px 8px; border-radius: 999px; font-size: v.$font-size-xs; font-weight: v.$font-weight-bold; text-transform: uppercase; }
 .active { background: rgba(v.$success-color, .15); color: v.$success-color; }
@@ -14,7 +14,7 @@
 .details dt, .muted, .purchase span, .form label span { color: v.$text-secondary; font-size: v.$font-size-xs; }
 .details dd { margin-top: 4px; color: v.$color-white; }
 .actions { display: flex; flex-wrap: wrap; gap: v.$space-sm; }
-.actions button { min-height: v.$control-height-md; padding: 6px 10px; border: v.$border-default; border-radius: v.$radius-control; background: transparent; color: v.$primary-color; cursor: pointer; font: inherit; }
+.actions button { min-height: v.$control-height-md; padding: 6px 10px; border: v.$border-default; border-radius: v.$radius-control; background: transparent; color: v.$color-gold-400; cursor: pointer; font: inherit; }
 .actions button:disabled { cursor: wait; opacity: .6; }
 .purchaseList, .form { display: grid; gap: v.$space-sm; padding-top: v.$space-sm; border-top: v.$border-subtle; }
 .refundSection { display: grid; gap: v.$space-sm; }
@@ -27,7 +27,7 @@
 .accessCodeForm label { color: v.$color-white; font-size: v.$font-size-sm; }
 .accessCodeRow { display: flex; gap: v.$space-sm; }
 .accessCodeRow input { min-width: 0; flex: 1; min-height: v.$control-height-md; padding: 8px 10px; border: v.$border-default; border-radius: v.$radius-control; background: v.$surface-0; color: v.$text-primary; font: inherit; }
-.accessCodeRow button { min-height: v.$control-height-md; padding: 6px 10px; border: v.$border-default; border-radius: v.$radius-control; background: v.$primary-color; color: v.$color-white; cursor: pointer; font: inherit; font-weight: v.$font-weight-bold; }
+.accessCodeRow button { min-height: v.$control-height-md; padding: 6px 10px; border: v.$border-default; border-radius: v.$radius-control; background: v.$color-gold-400; color: v.$draft-canvas; cursor: pointer; font: inherit; font-weight: v.$font-weight-bold; }
 .accessCodeRow button:disabled { cursor: wait; opacity: .6; }
 .errorNotice, .successNotice { font-size: v.$font-size-sm; }
 .errorNotice { color: v.$danger-color !important; }
@@ -37,11 +37,15 @@
 .savedItems div { display: flex; justify-content: space-between; gap: v.$space-sm; color: v.$text-secondary; }
 .purchase { padding: v.$space-sm 0; }
 .purchase div { display: grid; gap: 3px; }
-.purchase a { color: v.$primary-color; }
+.purchase a { color: v.$color-gold-400; }
 .form label { display: grid; gap: 4px; color: v.$color-white; font-size: v.$font-size-sm; }
 .form select, .form textarea, .form button { min-height: v.$control-height-md; padding: 8px 10px; border: v.$border-default; border-radius: v.$radius-control; background: v.$surface-0; color: v.$text-primary; font: inherit; }
 .form textarea { min-height: 90px; resize: vertical; }
-.form button { width: fit-content; background: v.$primary-color; color: v.$color-white; cursor: pointer; font-weight: v.$font-weight-bold; }
+.form button { width: fit-content; background: v.$color-gold-400; color: v.$draft-canvas; cursor: pointer; font-weight: v.$font-weight-bold; }
 .form button:disabled { cursor: wait; opacity: .6; }
 
 @media (max-width: 520px) { .panel { padding: v.$space-md; } .details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } .purchase { align-items: flex-start; } }
+
+.actions .premiumButton { background: v.$color-gold-400; color: v.$draft-canvas; border-color: v.$color-gold-400; font-weight: 700; }
+.actions .premiumButton:hover:not(:disabled) { filter: brightness(1.08); }
+.actions .premiumButton:focus-visible { outline: 2px solid v.$color-gold-400; outline-offset: 3px; }

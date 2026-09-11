@@ -6165,3 +6165,22 @@
     color: v.$primary-color;
   }
 }
+
+.draftDashboardBanner { position: relative; isolation: isolate; min-height: 320px; margin-block: 24px; border: 1px solid v.$draft-border; border-radius: v.$radius-panel; overflow: hidden; display: flex; align-items: center; background: v.$draft-canvas; }
+.draftBannerArt { object-fit: contain; object-position: right center; z-index: -2; }
+.draftDashboardBanner::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(0,0,0,.88), rgba(0,0,0,.55) 45%, transparent 75%); }
+.draftBannerCopy { padding: clamp(24px, 4vw, 48px); max-width: 600px; color: v.$text-primary; }
+.draftBannerCopy h2 { margin: 8px 0 16px; font: 700 clamp(32px, 4vw, 54px)/1 v.$font-family-accent; text-transform: uppercase; }
+.draftBannerCopy h2 span { display: block; color: v.$primary-color; }
+.draftBannerCopy p { line-height: 1.5; }
+.draftBannerEyebrow { margin: 0; text-transform: uppercase; letter-spacing: .12em; font-size: 12px; }
+.draftBannerActions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+.draftBannerActions a { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 16px; border: 1px solid v.$primary-color; border-radius: v.$radius-sm; color: v.$draft-canvas; background: v.$primary-color; font-weight: 700; text-decoration: none; }
+.draftBannerActions .draftProPromotion { color: v.$draft-canvas; background: v.$color-gold-400; border-color: v.$color-gold-400; }
+.draftBannerActions a:hover { filter: brightness(1.1); }
+.draftBannerActions a:focus-visible { outline: 2px solid v.$text-primary; outline-offset: 3px; }
+@media (max-width: 600px) {
+  .draftDashboardBanner { min-height: 380px; align-items: flex-end; }
+  .draftBannerArt { object-fit: cover; object-position: 70% center; }
+  .draftDashboardBanner::after { background: linear-gradient(0deg, rgba(0,0,0,.95), rgba(0,0,0,.65) 65%, rgba(0,0,0,.25)); }
+}

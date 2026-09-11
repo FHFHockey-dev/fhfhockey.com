@@ -28,6 +28,8 @@ function player(playerId: number, name: string, position: string, points: number
 
 beforeEach(() => {
   vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
+  HTMLElement.prototype.scrollTo = vi.fn();
+  HTMLElement.prototype.scrollIntoView = vi.fn();
 });
 
 afterEach(() => {
@@ -38,18 +40,14 @@ afterEach(() => {
 });
 
 describe("SuggestedPicks grouped-forward presentation", () => {
-  it("paginates suggestions without a scrolling track and preserves ranks", () => {
+  it("keeps every suggestion in the swipe track and reveals keyboard selection", () => {
     const selectPlayer = vi.fn();
     render(<SuggestedPicks onSelectPlayer={selectPlayer} players={Array.from({ length: 8 }, (_, i) => player(i + 1, `Page Player ${i + 1}`, "C", 100 - i))} currentPick={1} teamCount={12} canDraft onDraftPlayer={vi.fn()} />);
-    expect(screen.getAllByRole("listitem")).toHaveLength(4);
-    fireEvent.click(screen.getByRole("button", { name: "Next suggested players" }));
-    expect(screen.getByText("#5")).toBeTruthy();
-    expect(screen.queryByText("#1")).toBeNull();
-    fireEvent.keyDown(screen.getByRole("list"), { key: "ArrowRight" });
+    expect(screen.getAllByRole("listitem")).toHaveLength(8);
+    for (let i = 0; i < 5; i++) fireEvent.keyDown(screen.getByRole("list"), { key: "ArrowRight" });
     expect(selectPlayer).toHaveBeenLastCalledWith("5");
-    expect(screen.getByText("#5")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Previous suggested players" }));
-    expect(screen.getByText("#1")).toBeTruthy();
+    expect(HTMLElement.prototype.scrollIntoView).toHaveBeenLastCalledWith({ block: "nearest", inline: "nearest" });
+    expect(screen.getByText("#8")).toBeTruthy();
   });
   it("replaces stale split filters with FWD and filters cards by that contract", async () => {
     window.localStorage.setItem(

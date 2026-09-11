@@ -2034,7 +2034,7 @@ export default function AccountSettingsPage() {
                 aria-current={
                   activeSection === sectionKey ? "page" : undefined
                 }
-                className={`${styles.navButton} ${activeSection === sectionKey ? styles.navButtonActive : ""}`}
+                className={`${styles.navButton} ${activeSection === sectionKey ? styles.navButtonActive : ""} ${sectionKey === "draft-pro" ? styles.draftProTab : ""}`}
                 onClick={() => updateSection(sectionKey)}
                 title={config.description}
               >

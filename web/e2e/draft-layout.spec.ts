@@ -13,14 +13,16 @@ async function audit(page: Page) {
     const dashboard = document.querySelector<HTMLElement>("[data-god-view-open]")!;
     const visible = Array.from(dashboard.querySelectorAll<HTMLElement>("*")).filter(el => el.getClientRects().length && el.clientWidth && el.clientHeight);
     const dataViewport = dashboard.querySelector<HTMLElement>('[class*="ProjectionsTable_tableContainer"]')!;
+    const suggestionsViewport = dashboard.querySelector<HTMLElement>('[class*="SuggestedPicks_cardsRow"]')!;
+    const timeline = dashboard.querySelector('[aria-label="All draft picks"]');
     const scrollers = visible.filter(el => /auto|scroll/.test(`${getComputedStyle(el).overflowX} ${getComputedStyle(el).overflowY}`) && (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1));
     const overflow = visible.filter(el => {
       if (el === dataViewport || dataViewport.contains(el) || /INPUT|SELECT|TEXTAREA/.test(el.tagName)) return false;
       if (el.closest('[class*="scoreboard"], [aria-hidden="true"], [class*="srOnly"]')) return false;
       const style = getComputedStyle(el);
       if (style.textOverflow === "ellipsis") return false; // Names retain full accessible text/title.
-      return el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1;
-    }).map(el => ({ className: el.className, height: [el.clientHeight, el.scrollHeight], width: [el.clientWidth, el.scrollWidth] }));
+      return el.scrollHeight > el.clientHeight + 1 || (el !== suggestionsViewport && el !== timeline && el.scrollWidth > el.clientWidth + 1);
+    }).map(el => ({ className: el.className, text: el.textContent?.slice(0, 30), parentLayout: `${getComputedStyle(el.parentElement!).display} ${getComputedStyle(el.parentElement!).gridTemplateColumns}`, height: [el.clientHeight, el.scrollHeight], width: [el.clientWidth, el.scrollWidth] }));
     const rect = (selector: string) => dashboard.querySelector(selector)!.getBoundingClientRect();
     const workspace = rect('[class*="DraftDashboard_mainContent"]');
     const strip = rect('[aria-label="Draft Order"]');
@@ -38,7 +40,7 @@ async function audit(page: Page) {
     dashboard.querySelectorAll('[class*="MyRoster_slotPlayer"], [class*="MyRoster_benchSlot"], [class*="MyRoster_rosterAnalysis"]').forEach(el => inside(el, rail, "roster slot / Schedule Fit"));
     dashboard.querySelectorAll('[data-overall-pick]').forEach(el => inside(el, graph, "graph cell"));
     dashboard.querySelectorAll('[aria-label="League Standings"] tr').forEach(el => inside(el, standings, "standings row"));
-    dashboard.querySelectorAll('[class*="GodView_card"][data-on-clock]').forEach(el => inside(el, strip, "pick card"));
+    dashboard.querySelectorAll('[data-on-clock="true"]').forEach(el => inside(el, strip, "current pick card"));
     const badge = dashboard.querySelector('[class*="GodView_onClock"]');
     if (badge?.getClientRects().length) {
       const b = badge.getBoundingClientRect(), c = badge.parentElement!.getBoundingClientRect();
@@ -55,22 +57,29 @@ async function audit(page: Page) {
     }
     return {
       root: [document.documentElement.scrollWidth, document.documentElement.scrollHeight], viewport: [innerWidth, innerHeight],
-      overflow, failures: [...new Set(failures)], scrollers: scrollers.map(el => el === dataViewport ? "projections-data" : el.className),
+      overflow, failures: [...new Set(failures)], scrollers: scrollers.map(el => el === dataViewport ? "projections-data" : el === suggestionsViewport ? "suggested-players" : el === timeline ? "draft-timeline" : el.className),
       heights: { row1: rect('[class*="DraftWorkspace_workspaceHeader"]').height, row2: rows.height, strip: strip.height, workspace: workspace.height, graphCell: rect('[data-overall-pick]').height, rosterSlot: rect('[class*="MyRoster_slotPlayer__"]').height, standingsRow: rect('[aria-label="League Standings"] tbody tr').height },
     };
   });
   expect(result.root).toEqual(result.viewport);
   expect(result.failures).toEqual([]);
+  const widths = await page.getByRole("region", { name: "Suggested Picks", exact: true }).evaluate(el => {
+    const card = el.querySelector('[class*="SuggestedPicks_card__"]')!.getBoundingClientRect();
+    const segment = el.querySelector('[class*="SuggestedPicks_progressSegment__"]')!.getBoundingClientRect();
+    return [card.width, segment.width];
+  });
+  expect(Math.abs(widths[0] - widths[1])).toBeLessThan(1);
   expect(result.overflow).toEqual([]);
-  expect(result.scrollers).toEqual(["projections-data"]);
+  expect(result.scrollers.filter(name => name !== "draft-timeline")).toEqual(["suggested-players", "projections-data"]);
   return result;
 }
 
-async function openFixture(page: Page) {
-  page.on("dialog", dialog => dialog.accept());
+async function openFixture(page: Page, options: { setup?: "fresh" | "decline-tab" | "decline-legacy" | "accept-legacy"; accountDefaults?: boolean; keepSetup?: boolean } = {}) {
+  page.on("dialog", dialog => options.setup?.startsWith("decline") ? dialog.dismiss() : dialog.accept());
   await page.route("**/api/**", route => route.fulfill({ json: route.request().url().endsWith("/season") ? { seasonId: 20262027 } : [] }));
   await installDraftProAuthenticatedFixtures(page, () => ({ access: { ...access, grantingSources: [...access.grantingSources], capabilities: [...access.capabilities] } }));
   await installDraftProFreeFixtures(page, { seedSnapshot: false, skaterCount: 120, skaterPositions: ["C,LW", "LW", "RW", "D", "C", "D"] });
+  if (options.accountDefaults) await page.route("**/rest/v1/user_settings**", route => route.fulfill({ json: { team_count: 8, league_type: "points", roster_config: { C: 2, LW: 2, RW: 2, D: 4, G: 2, utility: 1, bench: 4 }, scoring_categories: { GOALS: 3, ASSISTS: 2 }, draft_order_type: "snake" } }));
   await page.route("**/api/v1/account/espn/**", route => route.fulfill({ json: { enabled: false, leagues: [], sessions: [] } }));
   await page.route("**/api/v1/account/draft-pro", route => route.fulfill({ json: { data: { access } } }));
   await page.route("**/api/v1/roster-schedule-optimizer/schedule**", route => route.fulfill({ json: { success: true, data: {
@@ -79,7 +88,7 @@ async function openFixture(page: Page) {
     games: ["AAA", "BBB", "CCC", "DDD"].map(team => ({ source_game_id: `fixture-${team}`, game_date: "2026-10-05", game_status: "FUT", team_abbreviation: team, week: 1 })),
   } } }));
   const storageKey = `sb-${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1").hostname.split(".")[0]}-auth-token`;
-  await page.addInitScript(({ key, name }) => {
+  await page.addInitScript(({ key, name, setup }) => {
     const session = localStorage.getItem("sb-127-auth-token");
     if (session) localStorage.setItem(key, session);
     if (sessionStorage.getItem("layout-fixture-installed")) return;
@@ -91,11 +100,13 @@ async function openFixture(page: Page) {
       draftSettings: { teamCount: 12, draftOrder: Array.from({ length: 12 }, (_, i) => `Team ${i + 1}`), draftOrderMode: "snake", rosterConfig: { C: 2, LW: 2, RW: 2, D: 4, G: 2, utility: 1, bench: 4 } },
       customTeamNames: { "Team 1": name },
     }));
-  }, { key: storageKey, name: longName });
+    if (setup && setup !== "fresh") localStorage.setItem("draftDashboard.session.v1", sessionStorage.getItem("draft.snapshot.v2")!);
+    if (setup === "fresh" || setup?.includes("legacy")) sessionStorage.removeItem("draft.snapshot.v2");
+  }, { key: storageKey, name: longName, setup: options.setup });
   await page.goto("/draft-dashboard", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#mobile-draft-panel-players tbody tr").first()).toBeVisible({ timeout: 60_000 });
   const done = page.getByRole("button", { name: "Done", exact: true });
-  if (await done.isVisible()) await done.click();
+  if (!options.keepSetup && await done.isVisible()) await done.click();
 }
 
 test("Draft Order fits every required viewport and resizes its contents", async ({ page }, testInfo) => {
@@ -162,26 +173,34 @@ test("selection, snake turns, undo, graph dismissal and alternate rosters stay f
   await page.getByRole("button", { name: "Expand God View - Pro" }).click();
   const strip = page.getByRole("region", { name: "Draft Order" });
   const cards = strip.locator('button[data-on-clock]');
-  await expect(cards.nth(0)).toHaveAccessibleName(/Team 12 roster, pick 12, on the clock/);
-  await expect(cards.nth(1)).toHaveAccessibleName(/Team 12 roster, pick 13$/);
-  await cards.nth(2).click();
+  await expect(cards.nth(11)).toHaveAccessibleName(/Team 12 roster, pick 12, on the clock/);
+  await expect(cards.nth(12)).toHaveAccessibleName(/Team 12 roster, pick 13$/);
+  await cards.nth(13).click();
   const roster = page.locator("#mobile-draft-panel-roster");
   await expect(roster.locator("select").first()).toHaveValue("Team 11");
   await roster.getByRole("button", { name: "My Team", exact: true }).click();
-  await expect(cards.nth(2)).toHaveAttribute("aria-pressed", "false");
-  await strip.getByRole("button", { name: "Next", exact: true }).click();
-  await expect(strip.getByText("6–10 of 12 picks")).toBeVisible();
-  await strip.getByRole("button", { name: "Next", exact: true }).click();
-  await expect(strip.getByText("11–12 of 12 picks")).toBeVisible();
-  await strip.getByRole("button", { name: "Previous", exact: true }).click();
+  await expect(cards.nth(13)).toHaveAttribute("aria-pressed", "false");
+  await expect(cards).toHaveCount(204);
+  await expect(strip.locator('[class*="roundBreak"]')).toHaveCount(17);
+  const timeline = strip.getByRole("region", { name: "All draft picks" });
+  await timeline.evaluate(el => { el.scrollLeft = 0; });
+  await expect(cards.first()).toBeInViewport();
+  await expect(cards.first()).toContainText("Fixture Center");
+  await expect(cards.first().locator('[aria-label="Live team category ranks"]')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("completed-picks-and-ranks.png"), fullPage: true });
+  await roster.locator("select").first().selectOption("Team 2");
+  expect(await timeline.evaluate(el => el.scrollLeft)).toBe(0);
+  await strip.getByRole("button", { name: "Current pick", exact: true }).click();
+  expect(await cards.nth(11).evaluate(el => Math.abs(el.getBoundingClientRect().left - el.parentElement!.getBoundingClientRect().left - 8))).toBeLessThan(1);
+  await roster.getByRole("button", { name: "My Team", exact: true }).click();
   const players = page.locator("#mobile-draft-panel-players");
   const viewport = players.locator('[class*="tableContainer"]');
   await viewport.evaluate(el => { el.scrollLeft = el.scrollWidth; });
   await players.getByRole("button", { name: "Draft", exact: true }).first().click();
-  await expect(cards.first()).toHaveAccessibleName(/pick 13, on the clock/);
+  await expect(cards.nth(12)).toHaveAccessibleName(/pick 13, on the clock/);
   await page.evaluate(() => (document.activeElement as HTMLElement)?.blur());
   await page.keyboard.press("u");
-  await expect(cards.first()).toHaveAccessibleName(/pick 12, on the clock/);
+  await expect(cards.nth(11)).toHaveAccessibleName(/pick 12, on the clock/);
   await page.getByRole("button", { name: "Collapse God View - Pro" }).click();
   await expect(roster.locator("select").first()).toHaveValue("Team 1");
   await page.getByRole("button", { name: "Settings", exact: true }).click();
@@ -264,4 +283,123 @@ test("table controls, roster search and free graph metrics remain available", as
   await expect(graph.getByRole("region", { name: "League Standings" })).toBeVisible();
   await expect(graph.getByRole("region", { name: "Team roster progress" })).toHaveCount(0);
   await graph.getByRole("button", { name: "Close expanded graph" }).click();
+});
+
+
+test("suggested players swipe in both directions without moving the page", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await openFixture(page);
+  const row = page.getByRole("region", { name: "Suggested Picks", exact: true }).getByRole("list");
+  await expect(row.getByRole("listitem")).toHaveCount(10);
+  await row.hover();
+  await page.mouse.wheel(700, 0);
+  await expect.poll(() => row.evaluate(el => el.scrollLeft)).toBeGreaterThan(100);
+  await page.mouse.wheel(-700, 0);
+  await expect.poll(() => row.evaluate(el => el.scrollLeft)).toBeLessThan(2);
+  expect(await page.evaluate(() => window.scrollX)).toBe(0);
+});
+
+for (const setup of ["fresh", "decline-tab", "decline-legacy", "accept-legacy"] as const) {
+  for (const accountDefaults of setup === "fresh" ? [false, true] : [false]) {
+    test(`setup review: ${setup}, account defaults ${accountDefaults}`, async ({ page }, testInfo) => {
+      await page.setViewportSize({ width: 1366, height: 768 });
+      await openFixture(page, { setup, accountDefaults, keepSetup: true });
+      const shell = page.getByRole("dialog", { name: "Draft Settings", exact: true });
+      if (setup === "accept-legacy") {
+        await expect(shell).not.toBeVisible();
+        await expect(page.locator('[class*="GodView_pickProgress"]')).toHaveText("Pick 12 of 204");
+      } else {
+        await expect(shell).toBeVisible();
+        await expect(shell.getByRole("tab", { name: "League & Draft", exact: true })).toHaveAttribute("aria-selected", "true");
+        await expect(shell.getByLabel("Team name at draft position 1", { exact: true })).toHaveValue("Team 1");
+        if (accountDefaults) await expect(shell.getByLabel("Team name at draft position 8")).toBeVisible();
+        const snapshot = await page.evaluate(() => JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}"));
+        expect(snapshot.currentPick).toBe(1);
+        expect(snapshot.draftedPlayers).toEqual([]);
+        expect(snapshot.configured).toBe(false);
+        if (accountDefaults) expect(snapshot.draftSettings.teamCount).toBe(8);
+        await page.screenshot({ path: testInfo.outputPath("initial-settings.png"), fullPage: true });
+      }
+    });
+  }
+}
+
+test("Settings names and order persist downstream, and reset reopens League & Draft", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openFixture(page, { setup: "fresh", keepSetup: true });
+  const shell = page.getByRole("dialog", { name: "Draft Settings", exact: true });
+  await shell.getByLabel("Team name at draft position 1", { exact: true }).fill("Ice Owls");
+  await shell.getByRole("button", { name: "Move Ice Owls down" }).click();
+  await expect(shell.getByLabel("Team name at draft position 2")).toHaveValue("Ice Owls");
+  await shell.getByRole("button", { name: "Done", exact: true }).click();
+  await page.getByRole("button", { name: "Expand God View - Pro" }).click();
+  await expect(page.locator('button[data-pick="2"]')).toHaveAccessibleName(/Ice Owls/);
+  await expect(page.locator('#mobile-draft-panel-roster select').first().locator('option[value="Team 1"]')).toHaveText("Ice Owls");
+  await expect(page.getByRole("region", { name: "League Standings", exact: true }).getByText(/Ice Owls/)).toBeVisible();
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator('button[data-pick="2"]')).toHaveAccessibleName(/Ice Owls/);
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await expect(shell.getByLabel("Team name at draft position 2")).toHaveValue("Ice Owls");
+  await shell.getByRole("button", { name: "Done", exact: true }).click();
+  const players = page.locator('#mobile-draft-panel-players');
+  await players.locator('[class*="tableContainer"]').evaluate(el => { el.scrollLeft = el.scrollWidth; });
+  await players.getByRole("button", { name: "Draft", exact: true }).first().click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await expect(shell.getByRole("button", { name: "Move Ice Owls up" })).toBeDisabled();
+  await expect(shell.getByLabel("Team name at draft position 2")).toBeEnabled();
+  await shell.getByRole("button", { name: "Management", exact: true }).click();
+  await shell.getByRole("button", { name: "Reset Entire Draft", exact: true }).click();
+  await shell.getByRole("button", { name: "Confirm Reset Entire Draft", exact: true }).click();
+  await expect(shell).toBeVisible();
+  await expect(shell.getByRole("tab", { name: "League & Draft", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(shell.getByRole("button", { name: "Move Ice Owls up" })).toBeEnabled();
+});
+
+test("the final pick can align left with trailing space", async ({ page }) => {
+  await openFixture(page);
+  await page.evaluate(() => {
+    const snapshot = JSON.parse(sessionStorage.getItem("draft.snapshot.v2")!);
+    snapshot.currentPick = 204;
+    sessionStorage.setItem("draft.snapshot.v2", JSON.stringify(snapshot));
+    localStorage.setItem("draft.god-view.open", "true");
+  });
+  await page.reload({ waitUntil: "domcontentloaded" });
+  const last = page.locator('[data-pick="204"]');
+  await expect(last).toHaveAttribute("data-on-clock", "true");
+  await expect.poll(() => last.evaluate(el => Math.abs(el.getBoundingClientRect().left - el.parentElement!.getBoundingClientRect().left - 8))).toBeLessThan(1);
+});
+
+test("homepage promotion works on desktop and mobile", async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const banner = page.getByRole("region", { name: "FHFH Draft Dashboard" });
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await banner.scrollIntoViewIfNeeded();
+    await expect(banner.getByRole("link", { name: "Open Draft Dashboard", exact: true })).toHaveAttribute("href", "/draft-dashboard");
+    const premium = banner.getByRole("link", { name: "Explore Draft Pro", exact: true });
+    await expect(premium).toHaveAttribute("href", "/account?section=draft-pro");
+    expect(await premium.evaluate(el => ({ foreground: getComputedStyle(el).color, background: getComputedStyle(el).backgroundColor }))).toEqual({ foreground: "rgb(13, 15, 17)", background: "rgb(255, 200, 87)" });
+    await expect.poll(() => banner.locator("img").evaluate(img => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+    expect(await banner.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await banner.screenshot({ path: testInfo.outputPath(`homepage-banner-${width}.png`) });
+  }
+});
+
+test("Draft Pro account controls use accessible marigold styling", async ({ page }, testInfo) => {
+  await openFixture(page);
+  await page.route("**/api/v1/account/draft-pro", route => route.fulfill({ json: { data: {
+    access: { ...access, eligible: false, grantingSources: [], capabilities: [] },
+    passInfo: { priceCents: 599, expiresAt: "2027-07-01T04:00:00.000Z", renewal: "none" },
+    checkoutAvailability: { available: true, reason: "available" },
+    configurationReadiness: { stripe: true, patreon: false, yahoo: false },
+    purchases: [], refundRequests: [], savedDrafts: [], privateImports: [],
+  } } }));
+  await page.goto("/account?section=draft-pro", { waitUntil: "domcontentloaded" });
+  const purchase = page.getByRole("button", { name: /Get Draft Pro/ });
+  await expect(purchase).toBeVisible();
+  expect(await purchase.evaluate(el => [getComputedStyle(el).color, getComputedStyle(el).backgroundColor])).toEqual(["rgb(13, 15, 17)", "rgb(255, 200, 87)"]);
+  await purchase.focus();
+  expect(await purchase.evaluate(el => getComputedStyle(el).outlineStyle)).toBe("solid");
+  await page.screenshot({ path: testInfo.outputPath("draft-pro-account.png"), fullPage: true });
 });

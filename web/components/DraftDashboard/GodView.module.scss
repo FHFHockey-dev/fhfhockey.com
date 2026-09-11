@@ -1,33 +1,212 @@
-@use '../../styles/vars' as v;
-.root { flex: none; margin: 0 12px; min-width: 0; border: 1px solid v.$draft-border; border-radius: v.$radius-sm; background: v.$draft-canvas; }
-.header { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 10px; white-space: nowrap; }
-.root button, .root a { color: inherit; font: inherit; }
-.root .header button { display: inline-flex; align-items: center; gap: 8px; height: 40px; background: transparent; border: 0; padding: 0 8px; cursor: pointer; }
-.root .header .toggle { color: v.$primary-color; font-weight: bold; }
-.context { border-left: 1px solid v.$draft-border; padding-left: 14px; }
-.pickProgress { border: 1px solid v.$draft-border; border-radius: v.$radius-sm; padding: 2px 8px; font-variant-numeric: tabular-nums; }
-.graph { margin-left: auto; }
-.graph > span:first-child { color: v.$primary-color; border: 1px solid v.$draft-border; border-radius: v.$radius-sm; padding: 2px 7px; }
-.explanation { margin: 6px 10px 10px; font-size: 12px; }
-.explanation a { text-decoration: underline; }
-.cards { display: grid; gap: 8px; padding: 6px 8px 8px; }
-.root .card { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; min-width: 0; text-align: left; padding: 5px 8px 3px; height: clamp(100px, calc(15dvh - 15px), 150px); background: v.$draft-surface; border: 1px solid v.$draft-border; border-radius: v.$radius-sm; cursor: pointer; }
-.card[aria-pressed='true'] { box-shadow: inset 0 -2px v.$primary-color; }
-.root .card[data-on-clock='true'] { border-color: v.$color-gold-400; }
-.onClock { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); padding: 0 8px; border-radius: v.$radius-sm; background: v.$color-gold-400; color: v.$draft-canvas; font-size: 10px; line-height: 15px; font-weight: bold; white-space: nowrap; }
-.identity { display: flex; gap: 8px; align-items: center; min-width: 0; }
-.order { display: grid; place-items: center; min-width: 26px; height: 28px; border-radius: v.$radius-sm; background: v.$draft-surface-raised; font-size: 16px; font-weight: bold; }
-.teamIdentity { flex: 1; min-width: 0; }
-.teamIdentity > strong { line-height: 15px; }
-.name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.details { display: flex; justify-content: space-between; gap: 5px; font-size: 11px; line-height: 11px; color: v.$text-secondary; }
-.details > span:last-child { white-space: nowrap; }
-.slots { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; }
-.slot { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; line-height: 11px; font-variant-numeric: tabular-nums; }
-.track { display: flex; align-items: end; height: clamp(14px, calc(4dvh - 16px), 28px); width: 10px; border: 1px solid v.$draft-border; border-radius: v.$radius-xs; background: v.$draft-surface-raised; }
-.track > span { display: block; width: 100%; border-radius: inherit; background: v.$primary-color; }
-.needs { display: flex; gap: 5px; align-items: center; font-size: 11px; line-height: 14px; white-space: nowrap; }
-.needs > span { padding: 0 6px; border: 1px solid v.$draft-border; border-radius: v.$radius-xs; color: var(--position-color, #{v.$primary-color}); }
-.pagination { margin-left: auto; display: flex; gap: 8px; align-items: center; font-size: 11px; }
-.pagination button { padding: 1px 8px; cursor: pointer; }
-.root :focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
+@use "../../styles/vars" as v;
+.root {
+  flex: none;
+  margin: 0 12px;
+  min-width: 0;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-sm;
+  background: v.$draft-canvas;
+}
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+.root button,
+.root a {
+  color: inherit;
+  font: inherit;
+}
+.root .header button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  background: transparent;
+  border: 0;
+  padding: 0 8px;
+  cursor: pointer;
+}
+.root .header .toggle {
+  color: v.$color-gold-400;
+  font-weight: bold;
+}
+.context {
+  border-left: 1px solid v.$draft-border;
+  padding-left: 14px;
+}
+.pickProgress {
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-sm;
+  padding: 2px 8px;
+  font-variant-numeric: tabular-nums;
+}
+.graph {
+  margin-left: auto;
+}
+.graph > span:first-child {
+  color: v.$primary-color;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-sm;
+  padding: 2px 7px;
+}
+.explanation {
+  margin: 6px 10px 10px;
+  font-size: 12px;
+}
+.explanation a {
+  text-decoration: underline;
+}
+.cards {
+  display: flex;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: v.$primary-color v.$draft-input;
+  position: relative;
+  gap: 8px;
+  padding: 6px 8px 8px;
+}
+.root .card {
+  flex: 0 0 var(--pick-card-width);
+  width: var(--pick-card-width);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
+  text-align: left;
+  padding: 5px 8px 3px;
+  height: clamp(100px, calc(15dvh - 15px), 150px);
+  background: v.$draft-surface;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-sm;
+  cursor: pointer;
+}
+.card[aria-pressed="true"] {
+//   box-shadow: inset 0 -2px v.$primary-color;
+    border: 1px solid v.$primary-color;
+  border-left-width: 6px;
+  .onClock { left: calc(50% - 2.5px); }
+
+}
+.root .card[data-on-clock="true"] {
+  border-color: v.$color-gold-400;
+}
+.onClock {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0 8px;
+  border-radius: v.$radius-sm;
+  background: v.$color-gold-400;
+  color: v.$draft-canvas;
+  font-size: 10px;
+  line-height: 15px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.identity {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+.order {
+  display: grid;
+  place-items: center;
+  min-width: 26px;
+  height: 28px;
+  border-radius: v.$radius-sm;
+  background: v.$draft-surface-raised;
+  font-size: 16px;
+  font-weight: bold;
+}
+.teamIdentity {
+  flex: 1;
+  min-width: 0;
+}
+.teamIdentity > strong {
+  line-height: 15px;
+}
+.name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.details {
+  display: flex;
+  justify-content: space-between;
+  gap: 5px;
+  font-size: 11px;
+  line-height: 11px;
+  color: v.$text-secondary;
+}
+.details > span:last-child {
+  white-space: nowrap;
+}
+.slots {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 3px;
+}
+.slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  line-height: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.track {
+  display: flex;
+  align-items: end;
+  height: clamp(14px, calc(4dvh - 16px), 28px);
+  width: 10px;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-xs;
+  background: v.$draft-surface-raised;
+}
+.track > span {
+  display: block;
+  width: 100%;
+  border-radius: inherit;
+  background: v.$primary-color;
+}
+.needs {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  font-size: 11px;
+  line-height: 14px;
+  white-space: nowrap;
+}
+.needs > span {
+  padding: 0 6px;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-xs;
+  color: var(--position-color, #{v.$primary-color});
+}
+.root :focus-visible {
+  outline: 2px solid v.$primary-color;
+  outline-offset: 2px;
+}
+
+.cards::after { content: ""; flex: 0 0 max(0px, calc(100% - var(--pick-card-width))); }
+.roundBreak { flex: 0 0 26px; writing-mode: vertical-rl; text-align: center; border-left: 1px solid v.$draft-border; color: v.$text-secondary; font-size: 11px; }
+.currentPick { margin-left: auto; }
+.explanation a { color: v.$color-gold-400; }
+.categoryRanks { display: grid; gap: 4px; width: 100%; font-size: 11px; line-height: 12px; }
+.categoryRanks > span { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.categoryRanks strong { font-size: 12px; font-variant-numeric: tabular-nums; }
+@each $band, $color in ("red": v.$color-coral-500, "orange": v.$color-orange-400, "yellow": v.$color-gold-400, "green": v.$color-mint-300) {
+  .categoryRanks [data-band="#{$band}"] { color: $color; }
+}

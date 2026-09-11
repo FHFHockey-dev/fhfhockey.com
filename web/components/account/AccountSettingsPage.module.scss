@@ -1511,3 +1511,6 @@
     width: 100%;
   }
 }
+
+.navButton.draftProTab { color: v.$color-gold-400; border-color: v.$color-gold-400; }
+.navButton.draftProTab.navButtonActive { background: rgba(v.$color-gold-400, .12); }
