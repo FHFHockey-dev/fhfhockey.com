@@ -43,6 +43,24 @@ describe("YahooLiveDraftPanel", () => {
     expect(screen.getByRole("heading", { name: "Yahoo Fantasy Draft Sync" })).toBeTruthy();
   });
 
+  it("gates live actions while keeping stop available after access loss", () => {
+    render(
+      <YahooLiveDraftPanel
+        {...baseProps}
+        authenticated
+        draftProEligible
+        liveSyncEnabled={false}
+        requestState="ready"
+        mode="yahoo"
+      />,
+    );
+
+    expect((screen.getByRole("button", { name: "Refresh leagues" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Check for updates" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Apply Yahoo settings" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Stop & continue manually" }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
   it("shows live status, predicted next pick, unresolved picks, and Yahoo attribution", () => {
     const onStop = vi.fn();
     const onApplySettings = vi.fn();

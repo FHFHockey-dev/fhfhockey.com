@@ -16,8 +16,11 @@ export type YahooLiveDraftEnvironment = {
   YAHOO_LIVE_DRAFT_STAFF_USER_IDS?: string;
 };
 
+const defaultYahooLiveDraftEnvironment =
+  process.env as YahooLiveDraftEnvironment;
+
 export function isYahooLiveDraftProviderReady(
-  environment: YahooLiveDraftEnvironment = process.env,
+  environment: YahooLiveDraftEnvironment = defaultYahooLiveDraftEnvironment,
 ) {
   return environment.YAHOO_LIVE_DRAFT_PROVIDER_VALIDATED === "true";
 }
@@ -36,7 +39,8 @@ export function assertYahooLiveDraftServerAccess(args: {
   environment?: YahooLiveDraftEnvironment;
   userId: string;
 }) {
-  const environment = args.environment ?? process.env;
+  const environment =
+    args.environment ?? defaultYahooLiveDraftEnvironment;
   if (!isYahooLiveDraftEnabled(environment.YAHOO_LIVE_DRAFT_ENABLED)) {
     throw new YahooLiveDraftError(
       "Yahoo live draft sync is not currently available.",
