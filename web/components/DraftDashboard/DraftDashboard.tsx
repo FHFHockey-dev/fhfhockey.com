@@ -766,12 +766,15 @@ const DraftDashboard: React.FC = () => {
     };
   }, []);
 
-  const saveSnapshot = useCallback(() => {
-    if (typeof window === "undefined" || !manualDraftingEnabled) return;
+  const saveSnapshot = useCallback((draftSettingsOverride?: DraftSettings) => {
+    if (
+      typeof window === "undefined" ||
+      (!manualDraftingEnabled && !draftSettingsOverride)
+    ) return;
     const payload: DraftSnapshotV2 = {
       v: 2,
       ts: Date.now(),
-      draftSettings,
+      draftSettings: draftSettingsOverride || draftSettings,
       draftedPlayers: manualDraftedPlayers,
       keepers,
       pickOwnerOverrides,
@@ -779,7 +782,7 @@ const DraftDashboard: React.FC = () => {
       positionOverrides,
       customTeamNames,
       currentPick,
-      isSnakeDraft,
+      isSnakeDraft: (draftSettingsOverride?.draftOrderMode || draftSettings.draftOrderMode) === "snake",
       myTeamId,
       baselineMode,
       needWeightEnabled,
@@ -984,6 +987,7 @@ const DraftDashboard: React.FC = () => {
     if (draftMode === "yahoo") {
       restoredLeagueSettingsRef.current = true;
       setSettingsConfigured(true);
+      loadSnapshot();
       return;
     }
     const raw = sessionStorage.getItem("draft.snapshot.v2");
@@ -1800,14 +1804,14 @@ const DraftDashboard: React.FC = () => {
     ) {
       return;
     }
-    setDraftSettings((previous) => ({
-      ...previous,
+    const nextDraftSettings: DraftSettings = {
+      ...draftSettings,
       teamCount: configuration.draftOrder.length
         ? configuration.teamCount
-        : previous.teamCount,
+        : draftSettings.teamCount,
       draftOrder: configuration.draftOrder.length
         ? configuration.draftOrder
-        : previous.draftOrder,
+        : draftSettings.draftOrder,
       ...(configuration.rosterConfig
         ? { rosterConfig: configuration.rosterConfig as DraftSettings["rosterConfig"] }
         : {}),
@@ -1823,10 +1827,15 @@ const DraftDashboard: React.FC = () => {
       draftOrderMode:
         configuration.isSnakeDraft === false ? "standard" : "snake",
       reversedRounds: [],
+    };
+    setDraftSettings((previous) => ({
+      ...previous,
+      ...nextDraftSettings,
     }));
     setCustomTeamNames(configuration.customTeamNames);
     if (configuration.myTeamId) setMyTeamId(configuration.myTeamId);
-  }, [yahooDraftSync.draftState]);
+    saveSnapshot(nextDraftSettings);
+  }, [draftSettings, saveSnapshot, yahooDraftSync.draftState]);
 
   useEffect(() => {
     if (skaterData.isLoading || goalieData.isLoading || !allPlayers.length)
