@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   correctedIncomingPickNumbers,
+  deferYahooDraftSessionForAccessCheck,
   pauseYahooDraftSessionForAccessLoss,
   postdraftConfirmation,
   pollYahooDraftSession,
@@ -156,6 +157,44 @@ describe("Yahoo live draft ownership", () => {
     ]);
     expect(updates[0]).not.toHaveProperty("completed_at");
     expect(updates[0]).not.toHaveProperty("picks");
+  });
+
+  it("scopes access transitions and preserves completed rows, picks, and leases", async () => {
+    const rows = [
+      { id: "active", user_id: "owner", status: "active", completed_at: null, picks: [1], poll_lease_token: "lease", poll_lease_expires_at: "2099-01-01" },
+      { id: "complete", user_id: "owner", status: "complete", completed_at: "2026-09-12T01:00:00Z", picks: [2], poll_lease_token: null, poll_lease_expires_at: null },
+      { id: "other", user_id: "other", status: "active", completed_at: null, picks: [3], poll_lease_token: "other-lease", poll_lease_expires_at: "2099-01-01" },
+    ];
+    const updates: Array<{ id: string; values: Record<string, unknown> }> = [];
+    const client: any = {
+      from: () => {
+        const query: any = { id: null, user: null, statuses: null, values: null };
+        const builder: any = {
+          update: (values: Record<string, unknown>) => { query.values = values; return builder; },
+          eq: (column: string, value: string) => { if (column === "id") query.id = value; if (column === "user_id") query.user = value; return builder; },
+          in: (_column: string, values: string[]) => { query.statuses = values; return builder; },
+          select: () => builder,
+          maybeSingle: () => {
+            const row = rows.find((candidate) => candidate.id === query.id && candidate.user_id === query.user && (!query.statuses || query.statuses.includes(candidate.status)));
+            if (query.values && row) { updates.push({ id: row.id, values: query.values }); Object.assign(row, query.values); }
+            return Promise.resolve({ data: row ? { id: row.id } : null, error: null });
+          },
+          then: (resolve: (value: unknown) => unknown) => {
+            const row = rows.find((candidate) => candidate.id === query.id && candidate.user_id === query.user && (!query.statuses || query.statuses.includes(candidate.status)));
+            if (query.values && row) { updates.push({ id: row.id, values: query.values }); Object.assign(row, query.values); }
+            return Promise.resolve({ data: row ? { id: row.id } : null, error: null }).then(resolve);
+          },
+        };
+        return builder;
+      },
+    };
+    await pauseYahooDraftSessionForAccessLoss({ client, error: new Error("expired"), sessionId: "complete", userId: "owner" });
+    await pauseYahooDraftSessionForAccessLoss({ client, error: new Error("expired"), sessionId: "active", userId: "other" });
+    await deferYahooDraftSessionForAccessCheck({ client, error: new Error("temporary"), now: new Date("2026-09-12T01:00:00Z"), sessionId: "active", userId: "owner" });
+    expect(rows[1]).toMatchObject({ status: "complete", completed_at: "2026-09-12T01:00:00Z", picks: [2] });
+    expect(rows[2]).toMatchObject({ status: "active", picks: [3] });
+    expect(rows[0]).toMatchObject({ status: "active", poll_lease_token: "lease", poll_lease_expires_at: "2099-01-01", picks: [1] });
+    expect(updates.map((update) => update.id)).toEqual(["active"]);
   });
 
   it("returns owner-scoped state without calling Yahoo when the poll lease is not claimed", async () => {
