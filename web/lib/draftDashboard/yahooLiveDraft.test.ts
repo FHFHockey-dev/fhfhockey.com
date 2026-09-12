@@ -344,4 +344,8 @@ describe("Yahoo live draft reconciliation", () => {
     };
     expect(reconcileYahooDraftState(inferredState, []).warnings).toHaveLength(1);
   });
+
+  it("does not warn about inferred order before a Yahoo draft state exists", () => {
+    expect(reconcileYahooDraftState(null, []).warnings).toEqual([]);
+  });
 });

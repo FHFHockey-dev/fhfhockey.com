@@ -41,6 +41,7 @@ describe("YahooLiveDraftPanel", () => {
     expect(screen.getByText(status)).toBeTruthy();
     if (linkName) expect(screen.getByRole("link", { name: linkName })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Yahoo Fantasy Draft Sync" })).toBeTruthy();
+    expect(screen.queryByText(/did not provide an explicit snake or straight draft order/)).toBeNull();
   });
 
   it("gates live actions while keeping stop available after access loss", () => {
