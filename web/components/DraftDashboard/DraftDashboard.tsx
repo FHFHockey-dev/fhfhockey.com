@@ -3682,9 +3682,12 @@ const DraftDashboard: React.FC = () => {
         </div>
       )}
 
-      {yahooDraftSync.enabled && (
-        <YahooLiveDraftPanel
+      <YahooLiveDraftPanel
           mode={draftMode}
+          authenticated={Boolean(user?.id)}
+          draftProEligible={draftProEligible}
+          liveSyncEnabled={yahooDraftSync.enabled}
+          requestState={yahooDraftSync.requestState}
           leagues={yahooDraftSync.leagues}
           selectedLeagueId={yahooDraftSync.selectedLeagueId}
           draftState={yahooDraftSync.draftState}
@@ -3712,7 +3715,6 @@ const DraftDashboard: React.FC = () => {
             void stopYahooAndContinueManually()
           }
         />
-      )}
 
       <EspnLiveDraftPanel
         enabled={espnDraftSync.enabled}

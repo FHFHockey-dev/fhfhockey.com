@@ -6,12 +6,52 @@ import YahooLiveDraftPanel from "../../../components/DraftDashboard/YahooLiveDra
 afterEach(cleanup);
 
 describe("YahooLiveDraftPanel", () => {
+  const baseProps = {
+    mode: "manual" as const,
+    leagues: [],
+    selectedLeagueId: "",
+    draftState: null,
+    reconciliation: {
+      draftedPlayers: [],
+      unresolved: [],
+      warnings: [],
+      currentPick: 1,
+      expectedNext: { pickNumber: 1, roundNumber: 1, pickInRound: 1, predicted: true as const },
+    },
+    isLoading: false,
+    isPolling: false,
+    error: null,
+    onLeagueChange: vi.fn(),
+    onConnect: vi.fn(),
+    onRefreshAccount: vi.fn(),
+    onRefreshDraft: vi.fn(),
+    onStart: vi.fn(),
+    onApplySettings: vi.fn(),
+    onStopAndContinueManually: vi.fn(),
+  };
+
+  it.each([
+    ["signed out", { authenticated: false, draftProEligible: false, liveSyncEnabled: false }, "Sign in required", "Sign in"],
+    ["free", { authenticated: true, draftProEligible: false, liveSyncEnabled: false }, "Draft Pro required", "Explore Draft Pro"],
+    ["paid and preparing", { authenticated: true, draftProEligible: true, liveSyncEnabled: false, requestState: "loading" as const }, "Preparing", null],
+    ["paid but unavailable", { authenticated: true, draftProEligible: true, liveSyncEnabled: false, requestState: "ready" as const }, "Unavailable", null],
+    ["paid and ready", { authenticated: true, draftProEligible: true, liveSyncEnabled: true }, "Ready to connect", null],
+  ])("keeps the Yahoo setup visible for %s", (_name, state, status, linkName) => {
+    render(<YahooLiveDraftPanel {...baseProps} {...state} />);
+    expect(screen.getByText(status)).toBeTruthy();
+    if (linkName) expect(screen.getByRole("link", { name: linkName })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Yahoo Fantasy Draft Sync" })).toBeTruthy();
+  });
+
   it("shows live status, predicted next pick, unresolved picks, and Yahoo attribution", () => {
     const onStop = vi.fn();
     const onApplySettings = vi.fn();
     render(
       <YahooLiveDraftPanel
         mode="yahoo"
+        authenticated
+        draftProEligible
+        liveSyncEnabled
         leagues={[
           {
             externalLeagueId: "league-1",
