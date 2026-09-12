@@ -380,3 +380,19 @@
   .linkBtn { padding: 0 3px; line-height: 14px; min-height: 16px; }
   .statsRow { gap: 0; }
 }
+
+.withPickWindows { padding-top: 23px; box-sizing: border-box; }
+.pickWindow {
+  position: absolute; pointer-events: none; left: -10px; top: -20px; height: 16px;
+  width: calc(100% + 10px);
+  border-left: 2px solid v.$info-color;
+  &::before { content: ""; position: absolute; left: 0; top: 0; width: calc(var(--window-cards) * (100% + var(--track-gap)) - var(--track-gap)); height: 2px; background: linear-gradient(to right, v.$info-color var(--fade-start, 50%), transparent var(--fade-end, 98%)); }
+  > span { position: relative; display: block; width: max-content; max-width: calc(100% - 12px); margin: -7px auto 0; background: v.$draft-surface; padding: 0 5px; font-size: 10px; line-height: 14px; color: v.$info-color; white-space: nowrap; }
+}
+.card { justify-content: space-evenly; padding-block: 7px; gap: 6px; }
+.rankBadge { font-family: v.$font-family-accent; }
+.statsRow { margin-left: 5px; align-items: center; text-align: center; }
+.statValue { font-size: 15px; line-height: 22px; }
+.statLabel { font-size: 10px; line-height: 14px; }
+.bottomRow { flex: 0 0 auto; }
+.cardFooter .linkBtn { font-family: v.$font-family-accent; font-size: 11px !important; border-radius: v.$radius-sm; min-height: 28px; padding: 4px 6px; }

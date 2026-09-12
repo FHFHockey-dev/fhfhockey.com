@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectGodViewQueue, godViewRosterProgress, godViewRosterNeeds } from "./godView";
+import { selectMyPickWindows, selectGodViewQueue, godViewRosterProgress, godViewRosterNeeds } from "./godView";
 import { getEffectiveRosterConfig } from "./forwardGrouping";
 
 const base = { startPick: 3, maxPickNumber: 12, draftOrder: ["A", "B", "C", "D"], rosterCapacity: 3 };
@@ -56,4 +56,28 @@ it("summarizes required vacancies before utility and bench without changing occu
   const progress = godViewRosterProgress({ C: 2, utility: 3, D: 4, bench: 6, G: 2 }, { rosterSlots: { C: [{}], D: [{}, {}], G: [{}] }, bench: [] });
   expect(godViewRosterNeeds(progress).map(slot => [slot.label, slot.open])).toEqual([["D", 2], ["C", 1], ["G", 1]]);
   expect(progress.find(slot => slot.label === "D")?.filled).toBe(2);
+});
+
+describe("user pick-window offsets", () => {
+  it("labels fourth and thirteenth picks in an eight-team snake", () => {
+    const windows = selectMyPickWindows({ startPick: 1, maxPickNumber: 24, draftOrder: ["A", "B", "C", "D", "E", "F", "G", "H"], isSnakeDraft: true }, "D");
+    expect(windows.slice(0, 2)).toEqual([{ offset: 3, pickNumber: 4, round: 1, pickInRound: 4 }, { offset: 12, pickNumber: 13, round: 2, pickInRound: 5 }]);
+  });
+  it("skips completed picks and full rosters and respects traded ownership", () => {
+    const trades = [{ version: 1 as const, status: "valid" as const, round: 1, pickInRound: 3, pickNumber: 3, originalTeamId: "C", currentTeamId: "D" }];
+    const input = { ...base, startPick: 1, isSnakeDraft: false, trades, completedPickNumbers: [1], teamRosterCounts: { B: 3 } };
+    expect(selectMyPickWindows(input, "D").slice(0, 2).map(p => [p.offset, p.pickNumber])).toEqual([[0,3],[1,4]]);
+    expect(selectMyPickWindows({ ...input, startPick: 13 }, "D")).toEqual([]);
+    expect(selectMyPickWindows({ ...input, trades: [], completedPickNumbers: [] }, "A")[0].offset).toBe(0);
+  });
+  it.each(["standard", "custom"] as const)("uses %s round direction", mode => {
+    expect(selectMyPickWindows({ ...base, startPick: 5, orderPattern: { mode, reversedRounds: [2] } }, "D")[0].pickNumber).toBe(mode === "custom" ? 5 : 8);
+  });
+});
+
+it("excludes pick-cost keepers from upcoming slot offsets", () => {
+  const windows = selectMyPickWindows({ ...base, startPick: 1, isSnakeDraft: false,
+    keepers: [{ version: 2, status: "valid", cost: "pick", playerId: "keeper", teamId: "B", round: 1, pickInRound: 2, pickNumber: 2 }],
+  }, "D");
+  expect(windows[0]).toMatchObject({ offset: 2, pickNumber: 4 });
 });

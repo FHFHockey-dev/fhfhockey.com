@@ -1,3 +1,4 @@
+import { canonicalScheduleTeam } from "lib/draftDashboard/scheduleMetrics";
 // components/DraftDashboard/ProjectionsTable.tsx
 
 import type { PlayerScheduleMetrics } from "lib/draftDashboard/scheduleMetrics";
@@ -34,6 +35,7 @@ import {
 
 interface ProjectionsTableProps {
   onRefresh?: () => void;
+  picksBeforeTurn?: number;
   scheduleMetrics?: PlayerScheduleMetrics;
   currentSeasonId?: string | number;
   players: ProcessedPlayer[];
@@ -154,6 +156,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   dataNotices = [],
   emptyStateMessage = "No players found matching your filters.",
   dustInsights,
+  picksBeforeTurn,
   scheduleMetrics,
   onFavoriteIdsChange,
   onOpenRosterImpact,
@@ -1865,6 +1868,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   <tr
                     key={player.playerId}
                     data-player-id={key}
+                    data-next-pick={picksBeforeTurn != null && currentPage * pageSize + rowIndex === picksBeforeTurn}
                     data-stripe={rowIndex % 2}
                     data-expanded={!!expanded[key]}
                     data-selected={selectedIds.has(key)}
@@ -1894,6 +1898,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       </button>
                     </td>
                     <td className={styles.playerName}>
+                      {picksBeforeTurn != null && currentPage * pageSize + rowIndex === picksBeforeTurn && <span className={styles.pickLabel} title="Estimated slot in the displayed order; availability is not guaranteed">Your next pick · estimate</span>}
                       <div className={styles.nameContainer}>
                         <button
                           className={styles.expandToggle}
@@ -1990,7 +1995,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       data-label="Team"
                       title={player.displayTeam || undefined}
                     >
-                      {player.displayTeam || "-"}
+                      {canonicalScheduleTeam(player.displayTeam) || "-"}
                     </td>
                     {!statColumnsMode ? (
                       <>

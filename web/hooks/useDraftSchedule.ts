@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import publicSupabase from "lib/supabase/public-client";
 import { useScheduleRange } from "components/GameGrid/utils/useSchedule";
 import type { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
-import { calculateScheduleMetrics, type DashboardMatchupWeek, type PlayerScheduleMetrics } from "lib/draftDashboard/scheduleMetrics";
+import { calculateScheduleMetrics, canonicalScheduleTeam, type DashboardMatchupWeek, type PlayerScheduleMetrics } from "lib/draftDashboard/scheduleMetrics";
 
 export function useDraftSchedule(players: readonly ProcessedPlayer[], playoffWeeks: readonly number[], scope: "season" | "playoffs") {
   const [weeks, setWeeks] = useState<DashboardMatchupWeek[]>([]);
@@ -27,9 +27,9 @@ export function useDraftSchedule(players: readonly ProcessedPlayer[], playoffWee
     if (range.status !== "ready" || !selectedWeeks.length) return undefined;
     const metrics = calculateScheduleMetrics(range.games, selectedWeeks);
     const teams = new Map<string, number>();
-    range.teams.forEach((team) => teams.set(team.abbreviation.toUpperCase(), Math.max(team.id, teams.get(team.abbreviation.toUpperCase()) ?? 0)));
+    range.teams.forEach((team) => teams.set(canonicalScheduleTeam(team.abbreviation), Math.max(team.id, teams.get(canonicalScheduleTeam(team.abbreviation)) ?? 0)));
     return new Map(players.flatMap((player) => {
-      const team = teams.get(player.displayTeam?.trim().toUpperCase() ?? "");
+      const team = teams.get(canonicalScheduleTeam(player.displayTeam));
       if (team == null) return [];
       return [[String(player.playerId), metrics.get(team) ?? { games: 0, off: 0, b2b: 0 }]];
     }));

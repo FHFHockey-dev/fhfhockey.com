@@ -1,6 +1,6 @@
 import { cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
-import { shiftScheduleDate } from "lib/draftDashboard/scheduleMetrics";
+import { canonicalScheduleTeam, shiftScheduleDate } from "lib/draftDashboard/scheduleMetrics";
 import { useDraftSchedule } from "./useDraftSchedule";
 import { useScheduleRange } from "components/GameGrid/utils/useSchedule";
 
@@ -11,12 +11,13 @@ afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 it("shares NHL windows across scope changes and maps missing teams to unavailable", async () => {
   mocks.weeks.mockResolvedValue({ data: [{ week: 24, start_date: "2027-03-15", end_date: "2027-03-21" }, { week: 25, start_date: "2027-03-22", end_date: "2027-03-28" }], error: null });
-  mocks.teams.mockResolvedValue([{ id: 1, abbreviation: "CAR" }]);
+  mocks.teams.mockResolvedValue([{ id: 1, abbreviation: "CAR" }, { id: 2, abbreviation: "TBL" }]);
   mocks.schedule.mockImplementation(async (start: string) => ({ coveredDates: Array.from({ length: 7 }, (_, i) => shiftScheduleDate(start, i)), numGamesPerDay: [], data: { 1: { MON: { id: Number(start.replaceAll("-", "")), gameDate: shiftScheduleDate(start, 1), gameType: 2, season: 20262027, homeTeam: { id: 1 }, awayTeam: { id: 2 } } } } }));
-  const players = [{ playerId: 1, displayTeam: "CAR" }, { playerId: 2, displayTeam: "UNKNOWN" }] as any;
+  const players = [{ playerId: 1, displayTeam: "CAR" }, { playerId: 2, displayTeam: "UNKNOWN" }, { playerId: 3, displayTeam: "TB" }] as any;
   const { result, rerender } = renderHook(({ scope }) => useDraftSchedule(players, [24], scope), { initialProps: { scope: "season" as "season" | "playoffs" } });
   await waitFor(() => expect(result.current.playerMetrics?.get("1")?.games).toBe(2));
   expect(result.current.playerMetrics?.has("2")).toBe(false);
+  expect(result.current.playerMetrics?.get("3")).toEqual({ games: 2, off: 2, b2b: 0 });
   const requests = mocks.schedule.mock.calls.length;
   rerender({ scope: "playoffs" });
   expect(result.current.playerMetrics?.get("1")?.games).toBe(1);
@@ -36,4 +37,8 @@ it("reports failed NHL requests", async () => {
   mocks.schedule.mockRejectedValue(new Error("NHL unavailable"));
   const { result } = renderHook(() => useScheduleRange("2029-01-03", "2029-01-09"));
   await waitFor(() => expect(result.current.error).toBe("NHL unavailable"));
+});
+
+it.each([["TB", "TBL"], [" NJ ", "NJD"], ["SJ", "SJS"], ["LA", "LAK"], ["UNKNOWN", "UNKNOWN"]])("normalizes schedule alias %s", (alias, expected) => {
+  expect(canonicalScheduleTeam(alias)).toBe(expected);
 });

@@ -49,3 +49,25 @@ export function godViewRosterNeeds(progress: ReturnType<typeof godViewRosterProg
     .sort((a, b) => Number(optional.has(a.position)) - Number(optional.has(b.position)) || b.open - a.open)
     .slice(0, 3);
 }
+
+export type PickWindow = { offset: number; pickNumber: number; round: number; pickInRound: number };
+/** Offsets count selectable picks only, using current ownership without simulating selections. */
+export function selectMyPickWindows(input: TimelineInput, myTeamId: string): PickWindow[] {
+  if (!input.draftOrder.length) return [];
+  const completed = new Set(input.completedPickNumbers);
+  input.keepers?.filter(keeperUsesPick).forEach(keeper => completed.add(keeper.pickNumber));
+  const windows: PickWindow[] = [];
+  let offset = 0;
+  for (let start = input.startPick; start <= input.maxPickNumber;) {
+    const pickNumber = findNextActionablePick({ ...input, startPick: start, completedPickNumbers: completed });
+    if (pickNumber > input.maxPickNumber) break;
+    const round = Math.ceil(pickNumber / input.draftOrder.length);
+    const pickInRound = (pickNumber - 1) % input.draftOrder.length + 1;
+    if (resolvePickOwner({ ...input, round, pickInRound }).currentTeamId === myTeamId) {
+      windows.push({ offset, pickNumber, round, pickInRound });
+    }
+    offset++;
+    start = pickNumber + 1;
+  }
+  return windows;
+}

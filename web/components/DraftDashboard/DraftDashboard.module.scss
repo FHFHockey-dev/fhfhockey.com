@@ -85,8 +85,8 @@
     minmax(0, 1fr)
     calc(var(--roster-base-width) + var(--roster-extra-width));
   grid-template-rows:
-    minmax(clamp(164px, calc(12dvh + 72px), 180px), var(--suggested-track, 12fr))
-    minmax(124px, var(--board-track, 12fr))
+    minmax(300px, var(--suggested-track, 12fr))
+    minmax(260px, var(--board-track, 12fr))
     minmax(190px, var(--standings-track, 17fr));
   grid-template-areas:
     "suggested suggested roster"
@@ -267,3 +267,17 @@
 
 
 .scoreboard { flex-basis: clamp(20px, 2.4dvh, 26px); line-height: 18px; }
+
+.rightPanel { overflow: hidden; }
+
+.quickSettings { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 24px; padding: 12px; border-top: 1px solid v.$draft-border;
+  > div { display: grid; gap: 4px; }
+  label { display: flex; align-items: center; gap: 6px; }
+  nav { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+  span { color: v.$text-secondary; font-size: 12px; }
+}
+
+@media (min-width: 1101px) {
+  .dashboardContainer { overflow-y: auto; }
+  .mainContent { min-height: 770px; }
+}
