@@ -85,9 +85,9 @@
     minmax(0, 1fr)
     calc(var(--roster-base-width) + var(--roster-extra-width));
   grid-template-rows:
-    minmax(clamp(164px, calc(12dvh + 72px), 180px), var(--suggested-track, 12fr))
+    minmax(max-content, var(--suggested-track, 12fr))
     minmax(124px, var(--board-track, 12fr))
-    minmax(190px, var(--standings-track, 17fr));
+    minmax(182px, var(--standings-track, 17fr));
   grid-template-areas:
     "suggested suggested roster"
     "graph players roster"

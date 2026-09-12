@@ -31,6 +31,17 @@ describe("POST /api/v1/draft-pro/recommendations", () => {
     expect(res.body).toEqual({ data: [expect.objectContaining({ globalVorp: 12, rankScore: 8 })] });
   });
 
+  it("shares explicit horizon estimates and accepts legacy requests without estimates", async () => {
+    const candidates = [{ ...body.candidates[0], adp: 50 }];
+    const res = response();
+    await handler({ method: "POST", body: { ...body, candidates, selectionHorizon: { currentPick: 20, targetPick: 21, opposingPicks: 0 }, availabilitySpread: 12 } } as any, res as any);
+    expect(res.body).toEqual({ data: [expect.objectContaining({ availabilityEstimate: 1 })] });
+    const legacy = response();
+    await handler({ method: "POST", body: { ...body, candidates, currentPick: 20, teamCount: 12 } } as any, legacy as any);
+    expect(legacy.body).toEqual({ data: [expect.objectContaining({ availabilityEstimate: null })] });
+    expect(draftProRecommendationsInputSchema.safeParse({ ...body, selectionHorizon: { currentPick: 20, targetPick: 21, opposingPicks: 3 } }).success).toBe(false);
+  });
+
   it("rejects oversized and unauthorized work before calculating", async () => {
     const res = response();
     consumeMock.mockReturnValue(false);
@@ -69,4 +80,20 @@ describe("POST /api/v1/draft-pro/recommendations", () => {
     expect(() => draftProRecommendationsInputSchema.parse({ ...body, candidates: [...candidates, { ...body.candidates[0], id: "2000" }] })).toThrow();
     expect(config.api.bodyParser.sizeLimit).toBe("4mb");
   });
+});
+
+it("authorizes local calculations through the existing capability guard", async () => {
+  requireApiUserMock.mockResolvedValue({ id: "user-1" });
+  consumeMock.mockReturnValue(true);
+  loadAccessMock.mockResolvedValue({});
+  requireCapabilityMock.mockReset();
+  const res = response();
+  const request = { method: "POST", body: { dataOrigin: "local_csv", authorizeOnly: true } };
+  await handler(request as any, res as any);
+  expect(res.body).toEqual({ data: { authorized: true } });
+  expect(requireCapabilityMock).toHaveBeenCalledWith({}, "recommendations");
+  requireCapabilityMock.mockImplementationOnce(() => { throw Object.assign(new Error("Expired"), { statusCode: 403 }); });
+  const denied = response();
+  await handler(request as any, denied as any);
+  expect(denied.statusCode).toBe(403);
 });

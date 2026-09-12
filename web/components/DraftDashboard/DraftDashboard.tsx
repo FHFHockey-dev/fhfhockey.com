@@ -1,3 +1,6 @@
+import { buildDashboardTiers } from "lib/draftDashboard/tierDashboardAdapter";
+import { normalizeAvailabilitySpread } from "lib/draftDashboard/availability";
+import { findSelectionHorizon } from "lib/draftDashboard/pickTrades";
 // components/DraftDashboard/DraftDashboard.tsx
 
 import React, {
@@ -339,6 +342,7 @@ export function adaptSavedDraftRows(snapshot: { draftedPlayers: readonly unknown
     const headers = value.headers;
     if (headers !== undefined && (!Array.isArray(headers) || headers.some((header) => !isSnapshotRecord(header) || typeof header.original !== "string" || typeof header.standardized !== "string" || typeof header.selected !== "boolean"))) throw new Error("Saved private import mapping is invalid.");
     const entry: SessionCsvEntry = { id: value.id, label: value.label, rows: value.rows as Record<string, unknown>[] };
+    if (value.playerType === "skater" || value.playerType === "goalie" || value.playerType === "both") entry.playerType = value.playerType;
     if (headers) entry.headers = headers.map((header) => ({ original: header.original as string, standardized: header.standardized as string, selected: header.selected as boolean }));
     const resolution = value.resolution;
     if (isSnapshotRecord(resolution) && Object.keys(resolution).length) {
@@ -1355,14 +1359,16 @@ const DraftDashboard: React.FC = () => {
       setSourceControls((prev) => {
         const next = { ...prev };
         for (const entry of customCsvList) {
-          next[entry.id] ||= { isSelected: true, weight: 1 };
+          if (entry.playerType === "goalie") delete next[entry.id];
+          else next[entry.id] ||= { isSelected: true, weight: 1 };
         }
         return next;
       });
       setGoalieSourceControls((prev) => {
         const next = { ...prev };
         for (const entry of customCsvList) {
-          next[entry.id] ||= { isSelected: true, weight: 1 };
+          if (entry.playerType === "skater") delete next[entry.id];
+          else next[entry.id] ||= { isSelected: true, weight: 1 };
         }
         return next;
       });
@@ -1976,6 +1982,31 @@ const DraftDashboard: React.FC = () => {
     positionOverrides,
   ]);
 
+  const [availabilitySpread, setAvailabilitySpread] = useState(12);
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem("projections.riskSd");
+      if (stored !== null) setAvailabilitySpread(normalizeAvailabilitySpread(Number(stored)));
+    } catch {}
+  }, []);
+  const updateAvailabilitySpread = useCallback((value: number) => {
+    const normalized = normalizeAvailabilitySpread(value);
+    setAvailabilitySpread(normalized);
+    try { window.localStorage.setItem("projections.riskSd", String(normalized)); } catch {}
+  }, []);
+  const tierAnalysis = useMemo(() => {
+    if (!canUseProRecommendations) return { positions: [], error: null };
+    try {
+      return { positions: buildDashboardTiers({
+        players: allPlayers, draftSettings,
+        leagueType: draftSettings.leagueType || "points", categoryWeights: draftSettings.categoryWeights,
+        forwardGrouping, prorate84, fantasyPointSettings: draftSettings.scoringCategories, goaliePointValues,
+      }), error: null };
+    } catch {
+      return { positions: [], error: "Tier analysis is unavailable. Ordinary Picks remain available." };
+    }
+  }, [canUseProRecommendations, allPlayers, draftSettings, forwardGrouping, prorate84, goaliePointValues]);
+
   // NEW: VORP metrics computed on full player pool (not just available)
   const {
     playerMetrics: vorpMetrics,
@@ -1994,6 +2025,7 @@ const DraftDashboard: React.FC = () => {
     myFilledSlots: myFilledSlotsForVorp,
     personalizeReplacement: false,
     prorate84,
+    fantasyPointSettings: draftSettings.scoringCategories,
   });
 
   const { playerMetrics: personalizedVorpMetrics } = useVORPCalculations({
@@ -2008,6 +2040,7 @@ const DraftDashboard: React.FC = () => {
     myFilledSlots: myFilledSlotsForVorp,
     personalizeReplacement: draftProEligible && personalizeReplacement,
     prorate84,
+    fantasyPointSettings: draftSettings.scoringCategories,
   });
 
   const scheduleSettings = useMemo(() => normalizeScheduleSettings(draftSettings), [draftSettings]);
@@ -2538,6 +2571,17 @@ const DraftDashboard: React.FC = () => {
   const playerEligibility = useMemo(() => new Map(allPlayers.map(player => [String(player.playerId), normalizePlayerEligibility(player.displayPosition, player.eligiblePositions)])), [allPlayers]);
   const settingsValidationInput = useMemo(() => ({ settings: draftSettings, myTeamId, goalieScoring: goaliePointValues, skaterSources: sourceControls, goalieSources: goalieSourceControls, draftedPlayers, keepers, trades: pickTrades, playerEligibility, forwardGrouping }), [draftSettings, myTeamId, goaliePointValues, sourceControls, goalieSourceControls, draftedPlayers, keepers, pickTrades, playerEligibility, forwardGrouping]);
   const settingsValidation = useMemo(() => validateDraftSettings(settingsValidationInput), [settingsValidationInput]);
+  const tierContextReady = settingsConfigured && settingsValidation.valid && draftSettings.draftOrder.includes(myTeamId);
+  const selectionHorizon = useMemo(() => tierContextReady ? findSelectionHorizon({
+    currentPick, teamId: myTeamId, onClock: currentTurn.isMyTurn,
+    draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern,
+    trades: draftMode === "manual" ? pickTrades : [],
+    keepers: draftMode === "manual" ? keepers : [],
+    completedPickNumbers: draftedPlayers.map(player => player.pickNumber),
+    teamRosterCounts, rosterCapacity: rosterRoundCount(draftSettings.rosterConfig),
+    maxPickNumber: draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig),
+  }) : null, [tierContextReady, currentPick, myTeamId, currentTurn.isMyTurn, draftSettings.draftOrder, draftSettings.rosterConfig, draftSettings.teamCount, draftOrderPattern, draftMode, pickTrades, keepers, draftedPlayers, teamRosterCounts]);
+
   const closeSettings = () => {
     if (!settingsValidation.valid) return false;
     if (manualDraftingEnabled && !saveSnapshot()) return false;
@@ -3341,6 +3385,9 @@ const DraftDashboard: React.FC = () => {
                 ? { byPos: expectedTakenByPos, N: expectedN }
                 : undefined
             }
+            selectionHorizon={selectionHorizon}
+            riskSd={availabilitySpread}
+            onRiskSdChange={updateAvailabilitySpread}
             nextPickNumber={nextPickNumber}
             leagueType={draftSettings.leagueType || "points"}
             forwardGrouping={forwardGrouping}
@@ -3380,7 +3427,7 @@ const DraftDashboard: React.FC = () => {
     manualDraftingEnabled, settingsConfigured, settingsValidation.valid,
     personalRankByPlayerId, vorpMetrics, replacementByPos, baselineMode,
     expectedTakenByPos, expectedN, needWeightEnabled, posNeeds, needAlpha,
-    nextPickNumber, draftSettings.leagueType, draftSettings.categoryWeights,
+    selectionHorizon, availabilitySpread, updateAvailabilitySpread, nextPickNumber, draftSettings.leagueType, draftSettings.categoryWeights,
     draftSettings.scoringCategories, forwardGrouping, availableGoalieStatKeys,
     goaliePointValues, skaterData.yahooMappingDiagnostics,
     goalieData.yahooMappingDiagnostics, sourceRankImpacts,
@@ -3505,6 +3552,7 @@ const DraftDashboard: React.FC = () => {
         onOpenImportCsv={() => { setSettingsOpen(false); setFullSettings(false); setIsImportCsvOpen(true); }}
         customSourceLabel={customCsvLabel}
         customSourceMetadata={customSourceMetadata}
+        customCsvEntries={customCsvList}
         availableSkaterStatKeys={availableSkaterStatKeys}
         availableGoalieStatKeys={availableGoalieStatKeys}
         onExportCsv={exportBlendedProjectionsCsv}
@@ -3555,6 +3603,7 @@ const DraftDashboard: React.FC = () => {
           const importError = bookmarkImportError(data, getCsvList().map(source => source.id));
           if (importError) { setSettingsSaveError(importError); return; }
           try {
+            const importedCsv = data.customCsvList === undefined ? getCsvList() : adaptSavedDraftRows({ draftedPlayers: [], customCsvList: data.customCsvList }).customCsvList;
             const importedSettings = normalizeDraftSettingsOrder(
               {
                 ...draftSettings,
@@ -3564,6 +3613,7 @@ const DraftDashboard: React.FC = () => {
                 ? data.isSnakeDraft
                 : isSnakeDraft,
             );
+            setCsvList(importedCsv);
             setDraftSettings(importedSettings);
             setSettingsConfigured(true);
             setSettingsSaveError(null);
@@ -3604,7 +3654,7 @@ const DraftDashboard: React.FC = () => {
               data.forwardGrouping === "split"
             )
               setForwardGrouping(data.forwardGrouping);
-            const customSourceIds = getCsvList().map((entry) => entry.id);
+            const customSourceIds = importedCsv.map((entry) => entry.id);
             if (data.sourceControls)
               setSourceControls(
                 sanitizeControls(sourceControlDefaults.skater, data.sourceControls, customSourceIds),
@@ -3792,6 +3842,12 @@ const DraftDashboard: React.FC = () => {
           vorpMetrics={vorpMetrics}
           personalizedVorpMetrics={personalizedVorpMetrics}
           draftProEligible={canUseProRecommendations}
+          tierPositions={tierAnalysis.positions}
+          tierError={tierAnalysis.error}
+          tierContextReady={tierContextReady}
+          selectionHorizon={selectionHorizon}
+          availabilitySpread={availabilitySpread}
+          onClock={currentTurn.isMyTurn}
           categoryWeights={draftSettings.categoryWeights}
           recommendationDataOrigin={customCsvList.length ? "local_csv" : "server"}
           onNeedWeightEnabledChange={setNeedWeightEnabled}
@@ -3997,16 +4053,17 @@ const DraftDashboard: React.FC = () => {
             customSourceMinimumCoverage: minimumCoveragePercent,
           }));
         }}
-        onImported={({ headers, rows, sourceId, label, resolution }) => {
+        onImported={({ headers, rows, playerType, label, resolution }) => {
           // Append to list with incremental id custom_csv_1..n
           const list = getCsvList();
-          const nextIndex = list.length + 1;
+          const nextIndex = Math.max(0, ...list.map((entry) => Number(entry.id.replace("custom_csv_", "")) || 0)) + 1;
           const id = `custom_csv_${nextIndex}`;
           const next = [
             ...list,
             {
               id,
               label,
+              playerType,
               headers,
               rows,
               resolution: {
@@ -4016,13 +4073,12 @@ const DraftDashboard: React.FC = () => {
             },
           ];
           setCsvList(next);
-          // Add/enable the custom source control so it appears in settings (skater controls by default)
-          setSourceControls((prev) => ({
+          // Enable the imported source only for the chosen player groups.
+          if (playerType !== "goalie") setSourceControls((prev) => ({
             ...prev,
             [id]: prev[id] || { isSelected: true, weight: 1 },
           }));
-          // Also add goalie controls entry so it can be toggled
-          setGoalieSourceControls((prev) => ({
+          if (playerType !== "skater") setGoalieSourceControls((prev) => ({
             ...prev,
             [id]: prev[id] || { isSelected: true, weight: 1 },
           }));

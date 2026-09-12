@@ -1,3 +1,4 @@
+import type { SelectionHorizon } from "lib/draftDashboard/availability";
 // filepath: /Users/tim/Desktop/fhfhockey.com/web/hooks/usePlayerRecommendations.ts
 // Computes top-N recommended players based on VORP/VBD and optional team needs weighting.
 // Lightweight and memoized. Safe in absence of some fields.
@@ -26,6 +27,8 @@ export interface Recommendation {
 }
 
 interface Args {
+  selectionHorizon?: SelectionHorizon | null;
+  availabilitySpread?: number;
   players: ProcessedPlayer[];
   vorpMetrics?: Map<string, PlayerVorpMetrics>;
   /** A separately calculated filled-roster replacement map; never mutate global table VORP. */
@@ -91,6 +94,8 @@ export function usePlayerRecommendations({
   baselineMode,
   currentPick,
   teamCount,
+  selectionHorizon,
+  availabilitySpread,
   leagueType = "points",
   forwardGrouping = "split"
 }: Args) {
@@ -105,6 +110,8 @@ export function usePlayerRecommendations({
       needAlpha: needWeightEnabled ? needAlpha : 0,
       currentPick,
       teamCount,
+      selectionHorizon,
+      availabilitySpread,
       limit,
     });
     const playerById = new Map(players.map((player) => [String(player.playerId), player]));
@@ -131,6 +138,8 @@ export function usePlayerRecommendations({
     baselineMode,
     currentPick,
     teamCount,
+    selectionHorizon,
+    availabilitySpread,
     leagueType,
     forwardGrouping
   ]);

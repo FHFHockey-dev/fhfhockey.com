@@ -1,3 +1,6 @@
+import { TierCards } from "./TierCards";
+import { estimatePlayerAvailability, type SelectionHorizon } from "lib/draftDashboard/availability";
+import type { PositionTiers } from "lib/draftDashboard/positionalTiers";
 // components/DraftDashboard/SuggestedPicks.tsx
 
 import React, { useEffect, useMemo, useState, useCallback } from "react";
@@ -16,6 +19,12 @@ import { type ForwardGrouping } from "lib/draftDashboard/forwardGrouping";
 import { isGlobalShortcutBlockedTarget } from "lib/draftDashboard/keyboardShortcuts";
 
 export interface SuggestedPicksProps {
+  tierPositions?: PositionTiers[];
+  tierError?: string | null;
+  tierContextReady?: boolean;
+  selectionHorizon?: SelectionHorizon | null;
+  availabilitySpread?: number;
+  onClock?: boolean;
   compact?: boolean;
   onReturnToDraft?: () => void;
   isLoading?: boolean;
@@ -59,7 +68,11 @@ export interface SuggestedPicksProps {
   personalRankByPlayerId?: Readonly<Record<string, number>>;
 }
 
+const EMPTY_TIERS: PositionTiers[] = [];
+
 const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
+  tierPositions = EMPTY_TIERS, tierError, tierContextReady = false,
+  selectionHorizon = null, availabilitySpread = 12, onClock = false,
   compact = false,
   onReturnToDraft,
   players,
@@ -99,11 +112,36 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   compareSelectedIds = [],
   personalRankByPlayerId = {}
 }) => {
+  const recommendationAccessHint = !draftProEligible
+    ? " Requires Draft Pro."
+    : "";
+  const rosterGapDescription =
+    "Adds a recommendation bonus for players at positions where you have open slots. A larger share of empty slots means a larger positional bonus. In category leagues, players who help your weak categories also get a boost. The bonus varies; it is not a fixed percentage of a player's value. Displayed VORP stays unchanged." + recommendationAccessHint;
+  const filledPositionDescription =
+    "As you fill a position, raises the standard used to value additional players there, generally lowering their recommendations. This changes the value comparison instead of adding a roster-needs bonus. Displayed VORP still uses the league-wide comparison." + recommendationAccessHint;
   // UI state
   type SortField = "rank" | "myRank" | "projFp" | "vorp" | "vbd" | "adp" | "avail" | "fit";
-  const cardsRef = React.useRef<HTMLDivElement>(null);
+  const picksRef = React.useRef<HTMLDivElement>(null);
+  const tiersRef = React.useRef<HTMLDivElement>(null);
   const [scrollEdges, setScrollEdges] = useState({ start: true, end: false });
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [view, setView] = useState<"picks" | "tiers">("picks");
+  const tierView = view === "tiers";
+  const cardsRef = tierView ? tiersRef : picksRef;
+  const availableTierIds = useMemo(() => new Set(players.map(player => String(player.playerId))), [players]);
+  const playerTierLabels = useMemo(() => {
+    const labels = new Map<string, { position: string; label: string }[]>();
+    if (!draftProEligible || tierError || isLoading || error) return labels;
+    tierPositions.forEach(position => position.bands.forEach(band => {
+      if (band.tier == null) return;
+      band.players.forEach(player => {
+        const entries = labels.get(player.id) ?? [];
+        entries.push({ position: position.position, label: `${position.position} · Tier ${band.tier}` });
+        labels.set(player.id, entries);
+      });
+    }));
+    return labels;
+  }, [draftProEligible, tierError, isLoading, error, tierPositions]);
   const hasPersonalRanks = Object.keys(personalRankByPlayerId).length > 0;
   const [sortField, setSortField] = useState<SortField>(() => {
     if (typeof window !== "undefined") {
@@ -211,6 +249,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         return;
 
       const key = e.key.toLowerCase();
+      if (tierView && ["c", "f", "t", "o", "r"].includes(key)) return;
       if (key === "c") {
         e.preventDefault();
         setCollapsed((c) => !c);
@@ -244,7 +283,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
           onDraftPlayer(selectedId);
         }
       } else if (key === "r") {
-        if (draftProEligible && recommendationDataOrigin === "server") {
+        if (draftProEligible) {
           e.preventDefault();
           onNeedWeightEnabledChange?.(!needWeightEnabled);
         }
@@ -252,7 +291,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [canDraft, sortField, limit, selectedId, onDraftPlayer, draftProEligible, recommendationDataOrigin, onNeedWeightEnabledChange, needWeightEnabled]);
+  }, [cardsRef, tierView, canDraft, sortField, limit, selectedId, onDraftPlayer, draftProEligible, recommendationDataOrigin, onNeedWeightEnabledChange, needWeightEnabled]);
 
   // Compute recommendations
   const { recommendations } = usePlayerRecommendations({
@@ -269,6 +308,8 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     baselineMode,
     currentPick,
     teamCount,
+    selectionHorizon,
+    availabilitySpread,
     leagueType,
     catNeeds,
     forwardGrouping,
@@ -295,10 +336,10 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     forwardGrouping,
   }), [draftProEligible, forwardGrouping, personalizedVorpMetrics, personalizeReplacement, requestPlayers, vorpMetrics]);
   const remoteRecommendations = useDraftProRecommendations(
-    draftProEligible && recommendationDataOrigin === "server" && !remoteInputOversized && recommendationCandidates.length
+    draftProEligible && !remoteInputOversized && recommendationCandidates.length
       ? {
           candidates: recommendationCandidates,
-          dataOrigin: "server",
+          dataOrigin: recommendationDataOrigin,
           leagueType: leagueType ?? "points",
           positionNeeds: posNeeds,
           categoryNeeds: catNeeds,
@@ -306,10 +347,12 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
           needAlpha: needWeightEnabled ? needAlpha : 0,
           currentPick,
           teamCount,
+          selectionHorizon,
+          availabilitySpread,
           limit: 100,
         }
       : null,
-    draftProEligible && recommendationDataOrigin === "server" && !remoteInputOversized && recommendationCandidates.length > 0,
+    draftProEligible && !remoteInputOversized && recommendationCandidates.length > 0,
   );
   const activeRecommendations = useMemo(() => {
     if (!remoteRecommendations.results) return recommendations;
@@ -382,7 +425,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     list.push("Skater");
     list.push("Goalie");
     // Avoid listing raw 'G' since 'Goalie' covers it
-    normalized.forEach((p) => {
+    (tierView ? Array.from(new Set([...normalized, ...tierPositions.map(item => item.position)])) : normalized).forEach((p) => {
       const up = p.toUpperCase();
       const low = p.toLowerCase();
       if (low === "all" || low === "skater" || low === "goalie") return;
@@ -390,7 +433,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
       list.push(p);
     });
     return list;
-  }, [forwardGrouping, players]);
+  }, [forwardGrouping, players, tierView, tierPositions]);
 
   useEffect(() => {
     const allowed = new Set(availablePositions);
@@ -456,8 +499,8 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
       const bVbd = b.vbd ?? 0;
       const aAdp = (a.player as any).yahooAvgPick || Infinity;
       const bAdp = (b.player as any).yahooAvgPick || Infinity;
-      const aAvail = typeof a.availability === "number" ? a.availability : -1;
-      const bAvail = typeof b.availability === "number" ? b.availability : -1;
+      const aAvail = estimatePlayerAvailability(a.player.yahooAvgPick, selectionHorizon, availabilitySpread) ?? -1;
+      const bAvail = estimatePlayerAvailability(b.player.yahooAvgPick, selectionHorizon, availabilitySpread) ?? -1;
       const aFit = a.fitScore ?? 0;
       const bFit = b.fitScore ?? 0;
       switch (sortField) {
@@ -486,7 +529,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
       }
     });
     return arr;
-  }, [dustInsights, dustSort, filtered, personalRankByPlayerId, sortField, sortDir]);
+  }, [selectionHorizon, availabilitySpread, dustInsights, dustSort, filtered, personalRankByPlayerId, sortField, sortDir]);
 
   const top = useMemo(
     () => sorted.slice(0, Math.max(1, limit)),
@@ -496,7 +539,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   const updateScrollEdges = useCallback(() => {
     const row = cardsRef.current;
     if (row) setScrollEdges({ start: row.scrollLeft <= 1, end: row.scrollLeft + row.clientWidth >= row.scrollWidth - 1 });
-  }, []);
+  }, [cardsRef]);
   React.useEffect(() => {
     const row = cardsRef.current;
     if (!row) return;
@@ -504,8 +547,8 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     observer.observe(row);
     updateScrollEdges();
     return () => observer.disconnect();
-  }, [updateScrollEdges, top.length, rosterProgress?.length]);
-  React.useEffect(() => { cardsRef.current?.scrollTo({ left: 0 }); }, [posFilter, selectedPositions, sortField, sortDir, dustSort, limit]);
+  }, [cardsRef, updateScrollEdges, top.length, rosterProgress?.length, tierView, tierPositions, posFilter]);
+  React.useEffect(() => { cardsRef.current?.scrollTo({ left: 0 }); }, [cardsRef, posFilter, selectedPositions, sortField, sortDir, dustSort, limit, tierView]);
   const scrollCards = (direction: number) => {
     const row = cardsRef.current;
     if (row) row.scrollBy({ left: direction * row.clientWidth, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
@@ -523,7 +566,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   );
 
   const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
-    if (top.length === 0 || (e.target instanceof Element && e.target.closest("button, input, select"))) return;
+    if (tierView || top.length === 0 || (e.target instanceof Element && e.target.closest("button, input, select"))) return;
     const ids = top.map((r) => String(r.player.playerId));
     const idx = selectedId ? ids.indexOf(selectedId) : -1;
     const row = cardsRef.current;
@@ -555,6 +598,16 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         <h2 className={styles.title}>
           Suggested <span className={styles.titleAccent}>Picks</span>
         </h2>
+        <div role="tablist" aria-label="Suggested picks view" className={styles.viewTabs}>
+          {(["picks", "tiers"] as const).map(tab => <button key={tab} id={`suggested-tab-${tab}`} type="button" role="tab" aria-selected={view === tab} aria-controls="suggested-picks-cards" tabIndex={view === tab ? 0 : -1}
+            onClick={() => { setView(tab); setAdvancedOpen(false); }}
+            onKeyDown={event => {
+              if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+              event.preventDefault();
+              const next = event.key === "Home" ? "picks" : event.key === "End" ? "tiers" : tab === "picks" ? "tiers" : "picks";
+              setView(next); setAdvancedOpen(false); document.getElementById(`suggested-tab-${next}`)?.focus();
+            }}>{tab === "picks" ? "Picks" : "Tiers · Pro"}</button>)}
+        </div>
         <nav className={styles.scrollControls} aria-label="Scroll suggested players">
           <button type="button" aria-label="Previous suggested players" disabled={scrollEdges.start} onClick={() => scrollCards(-1)}>‹</button>
           <button type="button" aria-label="Next suggested players" disabled={scrollEdges.end} onClick={() => scrollCards(1)}>›</button>
@@ -575,7 +628,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
               ))}
             </select>
           </div>
-          <div className={styles.controlGroup}>
+          <div className={`${styles.controlGroup} ${tierView ? styles.sizingOnly : ""}`} aria-hidden={tierView}>
             <label className={styles.label}>Sort</label>
             <select
               className={styles.select}
@@ -602,7 +655,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
               {sortDir === "asc" ? "↑" : "↓"}
             </button>
           </div>
-          <div className={styles.controlGroup}>
+          <div className={`${styles.controlGroup} ${tierView ? styles.sizingOnly : ""}`} aria-hidden={tierView}>
             <label className={styles.label}>Show</label>
             <select
               className={styles.select}
@@ -620,7 +673,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
           <div
             id="suggested-picks-advanced-controls"
             className={styles.advancedControls}
-            hidden={!advancedOpen}
+            hidden={!advancedOpen || tierView}
           >
           <div className={styles.controlGroup}>
             <label className={styles.label} htmlFor="dust-lineup-mode">DUST lineup</label>
@@ -636,30 +689,29 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
               <option value="schedule_fit">Schedule fit</option>
             </select>
           </div>
-          <div className={styles.controlGroup}>
+          <div className={styles.controlGroup} title={rosterGapDescription}>
             <label
               className={styles.label}
               htmlFor="rosterVorpToggle"
-              title={draftProEligible ? "Use Draft Pro roster-aware ranking" : "Draft Pro access is required for roster-aware ranking"}
             >
-              Prioritize roster needs
+              Boost roster gaps
             </label>
             <input
               id="rosterVorpToggle"
               type="checkbox"
               checked={needWeightEnabled}
               onChange={(e) => onNeedWeightEnabledChange?.(e.target.checked)}
-              disabled={!draftProEligible || recommendationDataOrigin !== "server"}
-              aria-label="Prioritize my roster needs"
+              disabled={!draftProEligible}
+              aria-describedby="rosterGapDescription"
             />
+            <span id="rosterGapDescription" hidden>{rosterGapDescription}</span>
           </div>
-          <div className={styles.controlGroup}>
+          <div className={styles.controlGroup} title={filledPositionDescription}>
             <label
               className={styles.label}
               htmlFor="personalReplaceToggle"
-              title="Personalize replacement baselines using your filled slots"
             >
-              Personalized
+              Discount filled positions
             </label>
             <input
               id="personalReplaceToggle"
@@ -669,9 +721,10 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                 onPersonalizeReplacementChange &&
                 onPersonalizeReplacementChange(e.target.checked)
               }
-              disabled={!draftProEligible || recommendationDataOrigin !== "server"}
-              aria-label="Toggle personalized replacement baselines"
+              disabled={!draftProEligible}
+              aria-describedby="filledPositionDescription"
             />
+            <span id="filledPositionDescription" hidden>{filledPositionDescription}</span>
           </div>
 
           <div className={styles.controlGroup}>
@@ -700,6 +753,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
             type="button"
             className={styles.collapseBtn}
             aria-expanded={advancedOpen}
+            style={tierView ? { visibility: "hidden" } : undefined}
             aria-controls="suggested-picks-advanced-controls"
             onClick={() => setAdvancedOpen((open) => !open)}
           >
@@ -708,17 +762,28 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         </div>
       </div>
 
-      {recommendationDataOrigin !== "server" ? <p className={styles.loading} role="status">Roster-aware Draft Pro recommendations are unavailable for local CSV data. Save the import to your account first; your local draft and rows stay unchanged.</p> : remoteInputOversized ? <p className={styles.loading} role="status">This filtered player pool is too large for roster-aware recommendations. Narrow the position filter; no projection rows were uploaded.</p> : !draftProEligible ? null : remoteRecommendations.status === "error" ? <p className={styles.loading} role="status">{remoteRecommendations.error} Standard suggestions remain available.</p> : null}
+      {remoteInputOversized ? <p className={styles.loading} role="status">This filtered player pool is too large for roster-aware recommendations. Narrow the position filter; no projection rows were uploaded.</p> : !draftProEligible ? null : remoteRecommendations.status === "error" ? <p className={styles.loading} role="status">{remoteRecommendations.error} Standard suggestions remain available.</p> : null}
 
       {compact && <button type="button" className={styles.returnToDraft} onClick={onReturnToDraft}>Return to suggested players</button>}
         <div
           id="suggested-picks-cards"
           className={styles.carousel}
-          hidden={collapsed || compact}
+          hidden={!tierView && (collapsed || compact)}
+          role="tabpanel"
+          aria-labelledby={`suggested-tab-${view}`}
         >
+        {tierView && <div ref={tiersRef} className={`${styles.cardsRow} ${styles.tierRow}`} onScroll={updateScrollEdges} role="list" tabIndex={0}>
+          {!draftProEligible ? <div className={styles.tierCard}><p>Positional tiers and pick advice require Draft Pro.</p><a href="/account?section=draft-pro">Explore Draft Pro</a></div> : tierError || isLoading || error ? <p className={styles.tierCard} role="status">{tierError || (isLoading ? "Loading positional tiers…" : "Tier analysis is unavailable while projections recover. Ordinary Picks remain available.")}</p> : <>
+            <article className={styles.tierCard} role="listitem"><h3>Scoring-based tiers</h3><p>{leagueType === "categories" ? "Weighted category score" : "Custom projected fantasy points"} · {forwardGrouping === "fwd" ? "Combined forwards" : "Split forwards"}</p>
+              <details><summary>How tiers and advice work</summary><p>Automatic value bands use the full projection pool. Bands wider than 5% of the positional value range are split into tighter groups at scoring boundaries. Drafted players keep their tier. A meaningful break exceeds three times the median adjacent gap and one quarter of the positional interquartile range.</p><p>Yahoo ADP estimates use a {availabilitySpread}-pick spread, conditional on availability now. Take now means fewer than 0.5 comparable players estimated to remain before a meaningful drop; Can wait requires at least 1.5, or consecutive picks. These are heuristics, not calibrated probabilities for the whole tier.</p><p>Automatic tiers do not overwrite manual tiers or reorder ordinary Picks.</p></details>
+            </article>
+            <TierCards positions={tierPositions} available={availableTierIds} filter={posFilter} selectedPositions={selectedPositions} horizon={selectionHorizon} spread={availabilitySpread} onClock={onClock} contextReady={tierContextReady} rosterProgress={rosterProgress} leagueType={leagueType ?? "points"} onExplore={position => { setSelectedPositions(new Set()); setPosFilter(position); }} onSelect={onCardClick} selectedId={selectedId} onDraft={onDraftPlayer} canDraft={canDraft} />
+          </>}
+        </div>}
         <div
-          ref={cardsRef}
-          className={styles.cardsRow}
+          ref={picksRef}
+          className={`${styles.cardsRow} ${tierView ? styles.sizingOnly : ""}`}
+          aria-hidden={tierView}
           onScroll={updateScrollEdges}
           role="list"
           tabIndex={0}
@@ -745,7 +810,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                 | number
                 | undefined;
               const avail =
-                typeof r.availability === "number" ? r.availability : undefined;
+                estimatePlayerAvailability(r.player.yahooAvgPick, selectionHorizon, availabilitySpread) ?? undefined;
               const selected = selectedId === id;
               const compareSelected = compareSelectedIds.includes(id);
               const personalRank = personalRankByPlayerId[id];
@@ -771,7 +836,18 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                     </div>
                     <div className={styles.meta}>
                       {team && <span className={styles.team}>{team}</span>}
-                      {pos && <span className={styles.pos}>{pos}</span>}
+                      {playerTierLabels.get(id)?.length ? <button
+                        type="button"
+                        className={styles.tierBadge}
+                        aria-label={`Explore positional tiers for ${name}: ${playerTierLabels.get(id)!.map(tier => tier.label).join(", ")}`}
+                        onClick={event => {
+                          event.stopPropagation();
+                          setSelectedPositions(new Set());
+                          setPosFilter(playerTierLabels.get(id)![0].position);
+                          setView("tiers");
+                          document.getElementById("suggested-tab-tiers")?.focus();
+                        }}
+                      >{playerTierLabels.get(id)!.map(tier => tier.label).join(" / ")}</button> : pos && <span className={styles.pos}>{pos}</span>}
                     </div>
                   </div>
                   <div className={styles.statsRow}>

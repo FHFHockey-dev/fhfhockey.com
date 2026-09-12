@@ -220,10 +220,11 @@
   }
 }
 
-.roundChipActive {
-  border-color: v.$primary-color;
-  background: v.$primary-color-opaque;
-  color: v.$secondary-color;
+.roundChip.roundChipActive,
+.inlineSettings .roundChip[aria-pressed="true"] {
+  border-color: v.$warning-color;
+  background: rgba(v.$warning-color, 0.22);
+  color: v.$warning-color;
 }
 
 .structuralLockHint {

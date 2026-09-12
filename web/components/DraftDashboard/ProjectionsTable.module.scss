@@ -1771,3 +1771,19 @@
   .controlToggleBtn { padding-inline: 3px; }
 }
 .playersTable { min-width: 720px; }
+
+.queueHandle, .queueMove {
+  background: transparent;
+  color: inherit;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  min-height: 28px;
+  flex-shrink: 0;
+  &:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+  &:disabled { opacity: 0.35; }
+}
+.queueHandle { cursor: grab; white-space: nowrap; }
+.queueMove { cursor: pointer; min-width: 24px; }
+
+.queueName { flex-wrap: wrap; }
+.queueControls { display: flex; flex: 0 0 100%; order: 2; gap: 4px; padding-top: 4px; }

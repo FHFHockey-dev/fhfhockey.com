@@ -1,5 +1,6 @@
 // components/DraftDashboard/ProjectionsTable.tsx
 
+import { estimatePlayerAvailability, type SelectionHorizon } from "lib/draftDashboard/availability";
 import type { PlayerScheduleMetrics } from "lib/draftDashboard/scheduleMetrics";
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { DraftedPlayer } from "./DraftDashboard";
@@ -56,6 +57,9 @@ interface ProjectionsTableProps {
   expectedRuns?: { byPos: Record<string, number>; N: number };
   // pick risk context: absolute next pick number (currentPick + picksUntilNext)
   nextPickNumber?: number;
+  selectionHorizon?: SelectionHorizon | null;
+  riskSd?: number;
+  onRiskSdChange?: (value: number) => void;
   // league type for value semantics
   leagueType?: "points" | "categories";
   // forward grouping display mode (C/LW/RW vs FWD)
@@ -143,6 +147,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   onBaselineModeChange,
   expectedRuns,
   nextPickNumber,
+  selectionHorizon,
+  riskSd = 12,
+  onRiskSdChange,
   forwardGrouping = "split",
   leagueType = "points",
   activeCategoryKeys = [],
@@ -170,7 +177,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     "position",
   );
   // configurable risk standard deviation (in picks)
-  const [riskSd, setRiskSd] = useState<number>(12);
   // Favorites
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
@@ -219,6 +225,19 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     else next.add(id);
     setFavoriteIds(next);
     onFavoriteIdsChange?.(Array.from(next));
+  };
+  const [draggedFavorite, setDraggedFavorite] = useState<string | null>(null);
+  const favoriteOrder = useMemo(() => Array.from(favoriteIds), [favoriteIds]);
+  const moveFavorite = (id: string, target: string) => {
+    if (!favoritesOnly || id === target) return;
+    const order = Array.from(favoriteIds);
+    const from = order.indexOf(id);
+    const to = order.indexOf(target);
+    if (from < 0 || to < 0) return;
+    order.splice(from, 1);
+    order.splice(to, 0, id);
+    setFavoriteIds(new Set(order));
+    onFavoriteIdsChange?.(order);
   };
   // Optional stat sort
   const [statSortKey, setStatSortKey] = useState<string>("");
@@ -528,10 +547,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       if (saved === "overall" || saved === "position") {
         setBandScope(saved);
       }
-      // Load risk SD
-      const savedSd = window.localStorage.getItem("projections.riskSd");
-      const v = savedSd != null ? parseFloat(savedSd) : NaN;
-      if (!Number.isNaN(v) && v > 0) setRiskSd(Math.max(2, Math.min(40, v)));
       // Load position filter
       const savedPos = window.localStorage.getItem(
         "projections.positionFilter",
@@ -572,14 +587,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       window.localStorage.setItem("projections.bandScope", bandScope);
     } catch {}
   }, [bandScope]);
-
-  // Persist risk SD on change
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem("projections.riskSd", String(riskSd));
-    } catch {}
-  }, [riskSd]);
 
   // Persist hide drafted on change
   useEffect(() => {
@@ -701,36 +708,16 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     return m;
   }, [vorpMetrics]);
 
-  // Precompute pick-risk based on ADP vs next pick number using a Normal CDF model
-  const normalCdf = (z: number) => {
-    // Abramowitz and Stegun approximation for Phi(z)
-    const t = 1 / (1 + 0.2316419 * Math.abs(z));
-    const d = Math.exp((-z * z) / 2) / Math.sqrt(2 * Math.PI);
-    const p =
-      d *
-      (0.31938153 * t -
-        0.356563782 * Math.pow(t, 2) +
-        1.781477937 * Math.pow(t, 3) -
-        1.821255978 * Math.pow(t, 4) +
-        1.330274429 * Math.pow(t, 5));
-    return z >= 0 ? 1 - p : p;
-  };
-
   const riskMap = useMemo(() => {
-    const m = new Map<string, number>();
-    if (!players?.length || !nextPickNumber) return m;
-    const sd = Math.max(2, Math.min(40, riskSd)); // clamp reasonable range
-    players.forEach((p) => {
-      const adp = p.yahooAvgPick;
-      // Treat 0 or negative ADP as missing
-      if (typeof adp === "number" && Number.isFinite(adp) && adp > 0) {
-        const z = (nextPickNumber - adp) / sd;
-        const risk = Math.max(0, Math.min(1, normalCdf(z)));
-        m.set(String(p.playerId), risk);
-      }
-    });
-    return m;
-  }, [players, nextPickNumber, riskSd]);
+    const risks = new Map<string, number>();
+    for (const player of players) {
+      const id = String(player.playerId);
+      if (unavailablePlayerIds?.has(id) || draftedPlayers.some(pick => String(pick.playerId) === id)) continue;
+      const availability = estimatePlayerAvailability(player.yahooAvgPick, selectionHorizon, riskSd);
+      if (availability !== null) risks.set(id, 1 - availability);
+    }
+    return risks;
+  }, [players, draftedPlayers, unavailablePlayerIds, selectionHorizon, riskSd]);
 
   // Filter and sort players
   const filteredAndSortedPlayers = useMemo(() => {
@@ -759,7 +746,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       typeof v === "number" && Number.isFinite(v) && v > 0 ? v : null;
 
     // Sort players
+    const queueRanks = new Map(Array.from(favoriteIds, (id, index) => [id, index]));
     filtered.sort((a, b) => {
+      if (favoritesOnly) return queueRanks.get(String(a.playerId))! - queueRanks.get(String(b.playerId))!;
       let aValue: any;
       let bValue: any;
 
@@ -1475,7 +1464,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   max={40}
                   step={1}
                   value={riskSd}
-                  onChange={(e) => setRiskSd(parseInt(e.target.value, 10))}
+                  onChange={(e) => onRiskSdChange?.(parseInt(e.target.value, 10))}
                   className={styles.rangeInput}
                 />
               </div>
@@ -1864,6 +1853,12 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 const mainRow = (
                   <tr
                     key={player.playerId}
+                    onDragOver={favoritesOnly ? (event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; } : undefined}
+                    onDrop={favoritesOnly ? (event) => {
+                      event.preventDefault();
+                      if (draggedFavorite) moveFavorite(draggedFavorite, key);
+                      setDraggedFavorite(null);
+                    } : undefined}
                     data-player-id={key}
                     data-stripe={rowIndex % 2}
                     data-expanded={!!expanded[key]}
@@ -1894,7 +1889,30 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       </button>
                     </td>
                     <td className={styles.playerName}>
-                      <div className={styles.nameContainer}>
+                      <div className={`${styles.nameContainer} ${favoritesOnly ? styles.queueName : ""}`}>
+                        {favoritesOnly && <span className={styles.queueControls}>
+                          <button type="button" draggable
+                            className={styles.queueHandle}
+                            aria-label={`Reorder ${player.fullName}; use arrow up or down`}
+                            title="Drag to reorder; or use Up/Down arrow keys"
+                            onDragStart={(event) => { setDraggedFavorite(key); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", key); }}
+                            onDragEnd={() => setDraggedFavorite(null)}
+                            onKeyDown={(event) => {
+                              const delta = event.key === "ArrowUp" ? -1 : event.key === "ArrowDown" ? 1 : 0;
+                              if (!delta) return;
+                              event.preventDefault();
+                              const target = favoriteOrder[favoriteOrder.indexOf(key) + delta];
+                              if (target) moveFavorite(key, target);
+                            }}
+                          >☰ {favoriteOrder.indexOf(key) + 1}</button>
+                          <button type="button" className={styles.queueMove} aria-label={`Move ${player.fullName} up in queue`}
+                            disabled={favoriteOrder.indexOf(key) === 0}
+                            onClick={() => moveFavorite(key, favoriteOrder[favoriteOrder.indexOf(key) - 1])}>↑</button>
+                          <button type="button" className={styles.queueMove} aria-label={`Move ${player.fullName} down in queue`}
+                            disabled={favoriteOrder.indexOf(key) === favoriteOrder.length - 1}
+                            onClick={() => moveFavorite(key, favoriteOrder[favoriteOrder.indexOf(key) + 1])}>↓</button>
+                        </span>}
+
                         <button
                           className={styles.expandToggle}
                           data-control-size="icon"

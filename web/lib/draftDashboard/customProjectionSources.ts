@@ -2,6 +2,8 @@ import type {
   ProjectionSourceConfig,
   SourceStatMapping
 } from "lib/projectionsConfig/projectionSourcesConfig";
+import { coerceSafeNumber } from "./csvImportValidation";
+import { CSV_IDENTITY_COLUMNS } from "./csvImportContract";
 import type { SessionCsvEntry } from "./csvImportSession";
 
 export interface CustomAdditionalProjectionSource {
@@ -34,7 +36,13 @@ export function buildCustomProjectionSources(
   statMappings: SourceStatMapping[],
 ): CustomAdditionalProjectionSource[] {
   return entries.flatMap((entry) => {
-    const rows = (entry.rows || []).filter((row) => {
+    if (entry.playerType && entry.playerType !== "both" && entry.playerType !== playerType) return [];
+    const rows = (entry.rows || []).map((raw): Record<string, any> => {
+      const row = Object.fromEntries(Object.entries(raw).map(([key, value]) => [
+        key, (CSV_IDENTITY_COLUMNS as readonly string[]).includes(key) ? value : coerceSafeNumber(value) ?? value,
+      ]));
+      return { ...row, Ga: row.Goals_Against_Goalie ?? row.Ga, Sa: row.Shots_Against ?? row.Sa, Otl: row.Overtime_Losses_Goalie ?? row.Otl, Games_Played: row.Games_Played ?? row.Games_Started_Goalie };
+    }).filter((row) => {
       const positions = String(row.Position || "")
         .toUpperCase()
         .split(",")

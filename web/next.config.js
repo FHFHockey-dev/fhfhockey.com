@@ -4,9 +4,11 @@ const CMS_URL = process.env.CMS_URL;
 const isProd = process.env.NODE_ENV === "production";
 const preserveDistDir = process.env.PRESERVE_NEXT_DIST === "1";
 const nextDistDir =
-  process.env.PLAYER_FORECAST_ISOLATED_NEXT === "1"
-    ? ".next-player-forecasts"
-    : ".next";
+  process.env.PLAYWRIGHT_ISOLATED_NEXT === "1"
+    ? ".next-playwright"
+    : process.env.PLAYER_FORECAST_ISOLATED_NEXT === "1"
+      ? ".next-player-forecasts"
+      : ".next";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -61,6 +63,7 @@ const nextConfig = {
     if (dev) {
       const ignored = [
         "**/.next/**",
+        "**/.next-playwright/**",
         "**/.next-codex-reconcile/**",
         "**/.next-player-forecasts/**",
         "**/node_modules/**",

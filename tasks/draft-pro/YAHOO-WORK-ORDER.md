@@ -63,3 +63,13 @@ The gates permit a proposed activation after validation passes; they do not auth
 
 - September 11, 2026 is not itself the activation trigger.
 - The correct state is PARKED pending actual API access plus rehearsal/worker readiness, with no polling while access is unavailable.
+
+## September 11 readiness checkpoint — 09:00 EDT
+
+Status remains **PARKED**. UTC time verified after 13:00 UTC.
+
+- Earlier direct Fantasy API requests returned HTTP 401 (`token_expired` for the shared token and `token_rejected` for the local token). The shared refresh attempt returned HTTP 400 `invalid_grant` / `Invalid refresh token`.
+- At the scheduled checkpoint, the owner's linked Yahoo account still reported `error`. One secure lookup reported token presence, but the subsequent lookup used for the bounded API probe returned no token row. No authenticated Fantasy request completed at this checkpoint; credential availability is not established.
+- These authentication failures do not establish that Yahoo has failed to provision the contractual API permission. Fresh, working account authorization and a successful provider request are still required.
+- The owner has contacted Yahoo about activation. Resume only after a meaningful authorization/provider update; do not repeatedly poll or enable live sync.
+- The one-time readiness automation is complete and removed. No production settings were changed, and the live-draft rehearsal remains unverified.

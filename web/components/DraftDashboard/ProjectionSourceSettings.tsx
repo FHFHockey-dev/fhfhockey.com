@@ -2,6 +2,7 @@ import { useState } from "react";
 import { PROJECTION_SOURCES_CONFIG } from "lib/projectionsConfig/projectionSourcesConfig";
 import {
   getEffectiveSourceShares,
+  equalizeSourceWeights,
   normalizeSourceWeights,
 } from "lib/draftDashboard/sourceWeights";
 import type { ProjectionSourceControls } from "lib/draftDashboard/sourceControlPreferences";
@@ -249,11 +250,11 @@ export default function ProjectionSourceSettings({
         <button
           type="button"
           onClick={() => {
-            if (skaters) onSkatersChange?.(normalizeSourceWeights(skaters));
-            if (goalies) onGoaliesChange?.(normalizeSourceWeights(goalies));
+            if (skaters) onSkatersChange?.(equalizeSourceWeights(skaters));
+            if (goalies) onGoaliesChange?.(equalizeSourceWeights(goalies));
           }}
         >
-          Normalize Weights
+          Equalize Weights
         </button>
         <button
           type="button"

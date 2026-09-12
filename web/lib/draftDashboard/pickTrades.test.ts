@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   PICK_TRADE_CONTRACT_VERSION,
   findNextActionablePick,
+  findSelectionHorizon,
   findPicksUntilTeamTurn,
   migratePickTrades,
   parsePickTradeImport,
@@ -228,5 +229,27 @@ describe("pick trade contract", () => {
         teamRosterCounts: { "Team 1": 1, "Team 2": 1 },
       }),
     ).toBe(5);
+  });
+});
+
+
+describe("tier selection horizon", () => {
+  const input = { draftOrder: ["A", "B", "C", "D"], isSnakeDraft: true, currentPick: 4, teamId: "D", onClock: true, maxPickNumber: 12, rosterCapacity: 3 };
+  it("recognizes consecutive snake selections and previews off-clock selections", () => {
+    expect(findSelectionHorizon(input)).toEqual({ currentPick: 4, targetPick: 5, opposingPicks: 0 });
+    expect(findSelectionHorizon({ ...input, currentPick: 1, onClock: false })).toEqual({ currentPick: 1, targetPick: 4, opposingPicks: 3 });
+  });
+  it("never invents a final selection or a slot on a full roster", () => {
+    expect(findSelectionHorizon({ ...input, currentPick: 12 })).toBeNull();
+    expect(findSelectionHorizon({ ...input, teamRosterCounts: { D: 2 } })).toBeNull();
+    expect(findSelectionHorizon({ ...input, draftOrder: [] })).toBeNull();
+  });
+  it("accounts for trades, keepers, completed selections and opponent capacity", () => {
+    const trade = upsertPickTrade({ round: 2, pickInRound: 1, currentTeamId: "A" }, { draftOrder: input.draftOrder, roundCount: 3, isSnakeDraft: true });
+    expect(trade.ok).toBe(true);
+    if (!trade.ok) return;
+    const result = findSelectionHorizon({ ...input, trades: trade.trades, completedPickNumbers: [6], teamRosterCounts: { B: 3 } });
+    expect(result).toEqual({ currentPick: 4, targetPick: 12, opposingPicks: 4 });
+    expect(findSelectionHorizon({ ...input, keepers: [{ version: KEEPER_CONTRACT_VERSION, playerId: "k", teamId: "D", cost: "pick", pickNumber: 5, round: 2, pickInRound: 1 } as any] })?.targetPick).toBe(12);
   });
 });

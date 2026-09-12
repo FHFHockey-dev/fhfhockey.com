@@ -27,7 +27,19 @@ export const draftProRecommendationsInputSchema = z.object({
   needAlpha: finiteNumber.min(0).max(1).optional(),
   currentPick: finiteNumber.int().min(1).max(2_000).optional(),
   teamCount: finiteNumber.int().min(1).max(32).optional(),
+  selectionHorizon: z.object({
+    currentPick: finiteNumber.int().min(1).max(2_000),
+    targetPick: finiteNumber.int().min(1).max(2_000),
+    opposingPicks: finiteNumber.int().min(0).max(2_000),
+  }).strict().refine(value => value.targetPick >= value.currentPick && value.opposingPicks <= value.targetPick - value.currentPick, "Invalid selection horizon").nullable().optional(),
+  availabilitySpread: finiteNumber.min(2).max(40).optional(),
   limit: finiteNumber.int().min(1).max(100).optional(),
 }).strict();
 
 export type DraftProRecommendationsInput = z.infer<typeof draftProRecommendationsInputSchema>;
+
+// Imported projections remain in the browser; this request checks access only.
+export const localRecommendationsAccessSchema = z.object({
+  dataOrigin: z.enum(["local_csv", "private_import"]),
+  authorizeOnly: z.literal(true),
+}).strict();

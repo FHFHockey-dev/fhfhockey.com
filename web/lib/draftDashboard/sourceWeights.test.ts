@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   calculateWeightedProjection,
+  equalizeSourceWeights,
   getEffectiveSourceShares,
   normalizeSourceWeights
 } from "./sourceWeights";
@@ -86,4 +87,12 @@ describe("projection source weights", () => {
     );
     expect(elapsedMs).toBeLessThan(150);
   });
+});
+
+it("equalizes enabled sources without enabling disabled ones", () => {
+  const controls = { a: { isSelected: true, weight: .4 }, b: { isSelected: true, weight: .2 }, c: { isSelected: true, weight: .2 }, d: { isSelected: true, weight: .2 }, off: { isSelected: false, weight: .8 } };
+  const result = equalizeSourceWeights(controls);
+  expect([result.a.weight, result.b.weight, result.c.weight, result.d.weight]).toEqual([.25, .25, .25, .25]);
+  expect(result.off).toEqual(controls.off);
+  expect(controls.a.weight).toBe(.4);
 });

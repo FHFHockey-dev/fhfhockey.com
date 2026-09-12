@@ -6,7 +6,7 @@ import { buildPersonalizedRecommendations } from "lib/draft-pro/recommendations"
 import { consumeRecommendationRequest } from "lib/draft-pro/recommendationsRateLimit";
 import { getDraftProFeatureFlags } from "lib/draft-pro/features";
 import { loadDraftProAccess, requireDraftProServerCapability } from "lib/draft-pro/server";
-import { draftProRecommendationsInputSchema } from "lib/draft-pro/recommendationsContract";
+import { draftProRecommendationsInputSchema, localRecommendationsAccessSchema } from "lib/draft-pro/recommendationsContract";
 
 export const config = { api: { bodyParser: { sizeLimit: "4mb" } } };
 
@@ -30,9 +30,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       patreonVerificationAvailable: true,
     });
     requireDraftProServerCapability(access, "recommendations");
+    if (localRecommendationsAccessSchema.safeParse(req.body).success) {
+      return res.status(200).json({ data: { authorized: true } });
+    }
     const input = draftProRecommendationsInputSchema.parse(req.body ?? {});
     if (input.dataOrigin !== "server") {
-      return res.status(422).json({ error: { code: "private_source_requires_saved_draft", message: "Save this private import to your account before requesting remote recommendations." } });
+      return res.status(422).json({ error: { code: "private_source_requires_saved_draft", message: "Imported projections must be calculated locally after checking Draft Pro access." } });
     }
     return res.status(200).json({ data: buildPersonalizedRecommendations(input.candidates, input) });
   } catch (error) {

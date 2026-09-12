@@ -98,3 +98,11 @@ describe("validateCsvProjectionRows", () => {
     expect(result.issues[0]).toContain("Blocked_Shots");
   });
 });
+
+it("validates mixed imports by role and preserves grouped goalie numbers", () => {
+  const goalie = { Player_Name: "Example Goalie", Team_Abbreviation: "TST", Position: "G", Games_Played: 60, Wins_Goalie: 31, Goals_Against_Average: 2.61, Save_Percentage: .91, Shutouts_Goalie: 4, Saves_Goalie: "1,579", Goals_Against_Goalie: 156 };
+  const result = validateCsvProjectionRows([validSkater, goalie], getRequiredCsvColumns("skater"), true);
+  expect(result.issues).toEqual([]);
+  expect(result.accepted).toBe(2);
+  expect(result.acceptedRows[1]).toMatchObject({ Games_Started_Goalie: 60, Saves_Goalie: 1579 });
+});

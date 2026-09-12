@@ -335,6 +335,27 @@ export function findNextActionablePick({
   return maxPickNumber + 1;
 }
 
+/** The next real selection, skipping fixed keepers and simulating roster capacity. */
+export function findSelectionHorizon(input: Omit<Parameters<typeof findNextActionablePick>[0], "startPick"> & { currentPick: number; teamId: string; onClock: boolean }) {
+  const { currentPick, teamId, onClock, draftOrder, maxPickNumber, rosterCapacity } = input;
+  if (!draftOrder.length || !draftOrder.includes(teamId)) return null;
+  const completed = new Set(input.completedPickNumbers);
+  const fixed = new Set(input.keepers?.filter(keeperUsesPick).map(keeper => keeper.pickNumber));
+  const counts = { ...input.teamRosterCounts };
+  if (onClock) counts[teamId] = (counts[teamId] ?? 0) + 1;
+  if (rosterCapacity != null && (counts[teamId] ?? 0) >= rosterCapacity) return null;
+  let opposingPicks = 0;
+  for (let pick = currentPick + (onClock ? 1 : 0); pick <= maxPickNumber; pick++) {
+    if (completed.has(pick) || fixed.has(pick)) continue;
+    const owner = resolvePickOwner({ ...input, round: Math.ceil(pick / draftOrder.length), pickInRound: (pick - 1) % draftOrder.length + 1 }).currentTeamId;
+    if (rosterCapacity != null && (counts[owner] ?? 0) >= rosterCapacity) continue;
+    if (owner === teamId) return { currentPick, targetPick: pick, opposingPicks };
+    counts[owner] = (counts[owner] ?? 0) + 1;
+    opposingPicks++;
+  }
+  return null;
+}
+
 export function parsePickTradeImport(input: string):
   | { ok: true; candidates: PickTradeCandidate[] }
   | { ok: false; errors: string[] } {

@@ -8,6 +8,11 @@
 - Prefer the smallest complete, maintainable diff. Preserve unrelated code, formatting, comments, and user changes already in the working tree.
 - Stop when the requested outcome is complete and proportionate verification has passed. Do not continue with optional cleanup, broader checks, or extra improvements merely for additional confidence.
 
+## Branch Naming
+
+- Name new agent-created branches `chef/<descriptive-name>`, not `codex/`. Keep `master` and `octoberBranch` as the long-lived branches.
+- Before deleting a branch, check for unmerged commits and unfinished work; preserve unique work before cleanup.
+
 ## Task Routing and Repository Map
 
 - `web/`: primary Next.js application, API routes, Vitest tests, Playwright E2E tests, scripts, and most Supabase client/migration tooling.

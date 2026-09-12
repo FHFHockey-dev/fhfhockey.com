@@ -5,10 +5,8 @@ import {
   buildPositionPools,
   getEffectiveRosterConfig,
   getRosterPositions,
-  groupPlayerEligibility,
-  normalizePlayerEligibility,
 } from "lib/draftDashboard/forwardGrouping";
-import { calculateCategoryScores } from "lib/scoring/categoryScores";
+import { buildPlayerValues } from "lib/draftDashboard/playerValues";
 
 export type LeagueType = "points" | "categories";
 
@@ -77,100 +75,7 @@ export function useVORPCalculations({
   fantasyPointSettings = EMPTY_NUMERIC_RECORD,
 }: UseVORPParams): UseVORPResult {
   return useMemo(() => {
-    // Value per player (points or categories composite)
-    const values = new Map<string, number>();
-    const eligibility = new Map<string, string[]>();
-    const includeGenericForward =
-      forwardGrouping === "split" &&
-      (draftSettings.rosterConfig.FWD ?? 0) > 0;
-
-    players.forEach((p) => {
-      const id = String(p.playerId);
-      const parsed = normalizePlayerEligibility(
-        p.displayPosition,
-        Array.isArray(p.eligiblePositions) ? p.eligiblePositions : undefined,
-      );
-      const elig = groupPlayerEligibility(
-        parsed,
-        forwardGrouping,
-        includeGenericForward,
-      );
-      eligibility.set(id, elig);
-    });
-
-    // Compute player comparable values
-    if (leagueType === "points") {
-      // Points leagues: optionally recompute fantasy points using an 84G pace for skaters.
-      let computeProrated:
-        | ((
-            p: ProcessedPlayer,
-            enable: boolean,
-            scoring?: Record<string, number>,
-          ) => number | null)
-        | null = null;
-      if (prorate84) {
-        try {
-          const mod = require("lib/projectionsConfig/proration");
-          computeProrated = mod.computeProratedFantasyPoints;
-        } catch {
-          computeProrated = null;
-        }
-      }
-      players.forEach((p) => {
-        const id = String(p.playerId);
-        let val = p.fantasyPoints?.projected ?? 0;
-        if (prorate84 && computeProrated) {
-          const fp = computeProrated(p, true, fantasyPointSettings);
-          if (fp != null && Number.isFinite(fp)) val = fp;
-        }
-        values.set(id, Number.isFinite(val) ? val : 0);
-      });
-    } else {
-      const categoryPlayers = players.map((player) => {
-        const combinedStats = (player.combinedStats || {}) as Record<
-          string,
-          { projected?: unknown }
-        >;
-        const projectedValues = Object.fromEntries(
-          Object.entries(combinedStats).flatMap(([key, stat]) =>
-            typeof stat?.projected === "number" && Number.isFinite(stat.projected)
-              ? [[key, stat.projected]]
-              : [],
-          ),
-        );
-        if (projectedValues.SHOTS_AGAINST_GOALIE == null) {
-          const saves = projectedValues.SAVES_GOALIE;
-          const goalsAgainst = projectedValues.GOALS_AGAINST_GOALIE;
-          if (Number.isFinite(saves) && Number.isFinite(goalsAgainst)) {
-            projectedValues.SHOTS_AGAINST_GOALIE = saves + goalsAgainst;
-          }
-        }
-        if (projectedValues.GAMES_STARTED == null) {
-          for (const key of [
-            "STARTS_GOALIE",
-            "GAMES_STARTED_GOALIE",
-            "GAMES_GOALIE",
-            "GAMES_PLAYED_GOALIE",
-            "GP_GOALIE",
-          ]) {
-            if (Number.isFinite(projectedValues[key])) {
-              projectedValues.GAMES_STARTED = projectedValues[key];
-              break;
-            }
-          }
-        }
-        return {
-          id: String(player.playerId),
-          role: eligibility.get(String(player.playerId))?.includes("G")
-            ? ("goalie" as const)
-            : ("skater" as const),
-          values: projectedValues,
-        };
-      });
-      calculateCategoryScores(categoryPlayers, categoryWeights).forEach(
-        (score, playerId) => values.set(playerId, score),
-      );
-    }
+    const { values, eligibility } = buildPlayerValues({ players, draftSettings, leagueType, categoryWeights, forwardGrouping, prorate84, fantasyPointSettings });
 
     const T = draftSettings.teamCount;
     const starters = getEffectiveRosterConfig(

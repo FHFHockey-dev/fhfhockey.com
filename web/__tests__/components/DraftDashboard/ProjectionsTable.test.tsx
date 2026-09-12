@@ -63,7 +63,7 @@ describe("ProjectionsTable visibility diagnostics", () => {
   it("displays next-pick availability, with high availability marked green", () => {
     const early = { ...player(1, "Early", "C"), yahooAvgPick: 1 };
     const later = { ...player(2, "Later", "C"), yahooAvgPick: 100 };
-    render(<ProjectionsTable players={[early, later]} draftedPlayers={[]} nextPickNumber={50} isLoading={false} error={null} onDraftPlayer={vi.fn()} canDraft />);
+    render(<ProjectionsTable players={[early, later]} draftedPlayers={[]} nextPickNumber={50} selectionHorizon={{ currentPick: 1, targetPick: 50, opposingPicks: 49 }} isLoading={false} error={null} onDraftPlayer={vi.fn()} canDraft />);
     expect(screen.getByTitle("100% likely available at your next pick").className).toContain("riskLow");
     expect(screen.getByTitle("0% likely available at your next pick").className).toContain("riskHigh");
   });
@@ -586,4 +586,25 @@ it("sorts compact OFF/B2B counts while keeping unavailable values last", () => {
   fireEvent.click(screen.getByRole("button", { name: "OFF" }));
   expect(ids()).toEqual(["2", "1", "3"]);
   expect(container.querySelector('tr[data-player-id="3"] [data-label="OFF"]')?.textContent).toBe("—");
+});
+
+it("reorders only the favorites queue and persists its order", () => {
+  window.localStorage.setItem("projections.favorites", JSON.stringify(["1", "2"]));
+  window.localStorage.setItem("projections.favoritesOnly", "true");
+  const changed = vi.fn();
+  const { container } = render(<ProjectionsTable players={[player(1, "Alpha", "C"), player(2, "Beta", "C")]} draftedPlayers={[]} isLoading={false} error={null} onDraftPlayer={vi.fn()} onFavoriteIdsChange={changed} canDraft />);
+  const order = () => Array.from(container.querySelectorAll("tr[data-player-id]")).map((row) => row.getAttribute("data-player-id"));
+  expect(order()).toEqual(["1", "2"]);
+  fireEvent.keyDown(screen.getByRole("button", { name: "Reorder Beta; use arrow up or down" }), { key: "ArrowUp" });
+  expect(order()).toEqual(["2", "1"]);
+  expect(changed).toHaveBeenLastCalledWith(["2", "1"]);
+  expect(JSON.parse(window.localStorage.getItem("projections.favorites")!)).toEqual(["2", "1"]);
+  fireEvent.click(screen.getByRole("button", { name: "Toggle favorites only" }));
+  expect(order()).toEqual(["1", "2"]);
+  expect(screen.queryByRole("button", { name: "Reorder Beta; use arrow up or down" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Toggle favorites only" }));
+  const transfer = { setData: vi.fn(), effectAllowed: "", dropEffect: "" };
+  fireEvent.dragStart(screen.getByRole("button", { name: "Reorder Alpha; use arrow up or down" }), { dataTransfer: transfer });
+  fireEvent.drop(container.querySelector('tr[data-player-id="2"]')!, { dataTransfer: transfer });
+  expect(order()).toEqual(["1", "2"]);
 });

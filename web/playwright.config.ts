@@ -23,6 +23,7 @@ export default defineConfig({
       ? undefined
       : {
           command: `npm run dev:stable -- -p ${port}`,
+          env: { PLAYWRIGHT_ISOLATED_NEXT: "1" },
           url: baseURL,
           reuseExistingServer: !process.env.CI,
           timeout: 120_000,

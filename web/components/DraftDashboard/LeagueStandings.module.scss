@@ -169,7 +169,7 @@
   }
   .tableViewport {
     container-type: size;
-    table { height: 100%; font-size: clamp(11px, calc(100cqh / var(--standings-rows) * .8), 12px); }
+    table { height: 100%; font-size: clamp(10px, calc(100cqh / var(--standings-rows) * .8), 12px); }
     th, td { line-height: 1; padding-block: clamp(0px, calc((100cqh / var(--standings-rows) - 16px) / 2), 4px); }
     thead th { height: auto; font-size: inherit; }
     th button { display: block; width: 100%; line-height: 1; }

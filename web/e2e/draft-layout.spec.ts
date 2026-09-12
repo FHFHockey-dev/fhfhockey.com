@@ -74,21 +74,26 @@ async function audit(page: Page) {
   return result;
 }
 
-async function openFixture(page: Page, options: { setup?: "fresh" | "decline-tab" | "decline-legacy" | "accept-legacy"; accountDefaults?: boolean; keepSetup?: boolean } = {}) {
+async function openFixture(page: Page, options: { setup?: "fresh" | "decline-tab" | "decline-legacy" | "accept-legacy"; accountDefaults?: boolean; keepSetup?: boolean; tierAccess?: boolean } = {}) {
+  const fixtureAccess = { ...access, capabilities: [...access.capabilities, ...(options.tierAccess ? ["recommendations" as const] : [])] };
   page.on("dialog", dialog => options.setup?.startsWith("decline") ? dialog.dismiss() : dialog.accept());
   await page.route("**/api/**", route => route.fulfill({ json: route.request().url().endsWith("/season") ? { seasonId: 20262027 } : [] }));
-  await installDraftProAuthenticatedFixtures(page, () => ({ access: { ...access, grantingSources: [...access.grantingSources], capabilities: [...access.capabilities] } }));
+  await installDraftProAuthenticatedFixtures(page, () => ({ access: { ...fixtureAccess, grantingSources: [...access.grantingSources] } }));
   await installDraftProFreeFixtures(page, { seedSnapshot: false, skaterCount: 120, skaterPositions: ["C,LW", "LW", "RW", "D", "C", "D"] });
   if (options.accountDefaults) await page.route("**/rest/v1/user_settings**", route => route.fulfill({ json: { team_count: 8, league_type: "points", roster_config: { C: 2, LW: 2, RW: 2, D: 4, G: 2, utility: 1, bench: 4 }, scoring_categories: { GOALS: 3, ASSISTS: 2 }, draft_order_type: "snake" } }));
   await page.route("**/api/v1/account/espn/**", route => route.fulfill({ json: { enabled: false, leagues: [], sessions: [] } }));
-  await page.route("**/api/v1/account/draft-pro", route => route.fulfill({ json: { data: { access } } }));
+  await page.route("**/api/v1/account/draft-pro", route => route.fulfill({ json: { data: { access: fixtureAccess } } }));
   await page.route("**/api/v1/roster-schedule-optimizer/schedule**", route => route.fulfill({ json: { success: true, data: {
     gameKey: "477", startWeek: 1, endWeek: 27, version: "fixture-v1",
     freshness: { latestFetchedAt: new Date().toISOString(), oldestFetchedAt: new Date().toISOString(), rowCount: 4 },
     games: ["AAA", "BBB", "CCC", "DDD"].map(team => ({ source_game_id: `fixture-${team}`, game_date: "2026-10-05", game_status: "FUT", team_abbreviation: team, week: 1 })),
   } } }));
+  if (options.tierAccess) await page.route("**/api/v1/draft-pro/recommendations", async route => {
+    const request = route.request().postDataJSON();
+    await route.fulfill({ json: { data: request.candidates.map((candidate: { baselineScore?: number; rankValue: number; globalVorp: number }) => ({ candidate, rankScore: candidate.baselineScore ?? candidate.rankValue, recommendationScore: candidate.baselineScore ?? candidate.rankValue, globalVorp: candidate.globalVorp, availabilityEstimate: null, reasons: [], missingCategories: [] })) } });
+  });
   const storageKey = `sb-${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1").hostname.split(".")[0]}-auth-token`;
-  await page.addInitScript(({ key, name, setup }) => {
+  await page.addInitScript(({ key, name, setup, tierAccess }) => {
     const session = localStorage.getItem("sb-127-auth-token");
     if (session) localStorage.setItem(key, session);
     if (sessionStorage.getItem("layout-fixture-installed")) return;
@@ -97,12 +102,12 @@ async function openFixture(page: Page, options: { setup?: "fresh" | "decline-tab
     sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({
       v: 2, configured: true, currentPick: 12, isSnakeDraft: true,
       draftedPlayers: Array.from({ length: 11 }, (_, i) => ({ playerId: String(1001 + i), teamId: `Team ${i + 1}`, pickNumber: i + 1, round: 1, pickInRound: i + 1 })),
-      draftSettings: { teamCount: 12, draftOrder: Array.from({ length: 12 }, (_, i) => `Team ${i + 1}`), draftOrderMode: "snake", rosterConfig: { C: 2, LW: 2, RW: 2, D: 4, G: 2, utility: 1, bench: 4 } },
+      draftSettings: { ...(tierAccess ? { scoringCategories: { GOALS: 3, ASSISTS: 2, PP_POINTS: 0, SHOTS_ON_GOAL: 0, HITS: 0, BLOCKED_SHOTS: 0 } } : {}), teamCount: 12, draftOrder: Array.from({ length: 12 }, (_, i) => `Team ${i + 1}`), draftOrderMode: "snake", rosterConfig: { C: 2, LW: 2, RW: 2, D: 4, G: 2, utility: 1, bench: 4 } },
       customTeamNames: { "Team 1": name },
     }));
     if (setup && setup !== "fresh") localStorage.setItem("draftDashboard.session.v1", sessionStorage.getItem("draft.snapshot.v2")!);
     if (setup === "fresh" || setup?.includes("legacy")) sessionStorage.removeItem("draft.snapshot.v2");
-  }, { key: storageKey, name: longName, setup: options.setup });
+  }, { key: storageKey, name: longName, setup: options.setup, tierAccess: options.tierAccess });
   await page.goto("/draft-dashboard", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#mobile-draft-panel-players tbody tr").first()).toBeVisible({ timeout: 60_000 });
   const done = page.getByRole("button", { name: "Done", exact: true });
@@ -403,3 +408,40 @@ test("Draft Pro account controls use accessible marigold styling", async ({ page
   expect(await purchase.evaluate(el => getComputedStyle(el).outlineStyle)).toBe("solid");
   await page.screenshot({ path: testInfo.outputPath("draft-pro-account.png"), fullPage: true });
 });
+
+
+for (const viewport of [{ width: 1366, height: 768 }, { width: 390, height: 844 }]) {
+  test(`tier view stays inside Suggested Picks at ${viewport.width}px`, async ({ page }, testInfo) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize(viewport);
+    const errors: string[] = [];
+    page.on("pageerror", error => errors.push(error.message));
+    await openFixture(page, { tierAccess: true });
+    if (viewport.width < 600) await page.getByRole("tab", { name: "Suggested", exact: true }).click();
+    const panel = page.getByRole("region", { name: "Suggested Picks", exact: true });
+    const before = await panel.boundingBox();
+    const pageBefore = await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.scrollHeight]);
+    await panel.getByRole("tab", { name: "Tiers · Pro" }).click();
+    await expect(panel.getByText("Scoring-based tiers", { exact: true })).toBeVisible();
+    await expect(panel.getByRole("combobox", { name: "Sort suggested picks" })).toBeHidden();
+    const after = await panel.boundingBox();
+    expect(after?.height).toBe(before?.height);
+    expect(after?.width).toBe(before?.width);
+    expect(await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.scrollHeight])).toEqual(pageBefore);
+    expect((after?.x ?? 0) + (after?.width ?? 0)).toBeLessThanOrEqual(viewport.width);
+    await panel.getByRole("combobox", { name: "Filter by position" }).selectOption("D");
+    await expect(panel.getByRole("heading", { name: /D · Tier 1/ })).toBeAttached();
+    await panel.getByText("How tiers and advice work", { exact: true }).click();
+    await expect(panel.getByText(/These are heuristics/)).toBeVisible();
+    expect((await panel.boundingBox())?.height).toBe(before?.height);
+    await page.screenshot({ path: testInfo.outputPath("tier-view.png") });
+    await panel.getByRole("tab", { name: "Picks", exact: true }).click();
+    await expect(panel.getByRole("combobox", { name: "Sort suggested picks" })).toBeVisible();
+    const tierBadge = panel.getByRole("button", { name: /Explore positional tiers for/ }).first();
+    await expect(tierBadge).toBeVisible();
+    await tierBadge.click();
+    await expect(panel.getByRole("tab", { name: "Tiers · Pro" })).toHaveAttribute("aria-selected", "true");
+    expect((await panel.boundingBox())?.height).toBe(before?.height);
+    expect(errors).toEqual([]);
+  });
+}

@@ -56,7 +56,7 @@ describe("personalized draft recommendations", () => {
   });
 
   it("keeps availability as one bounded ADP estimate", () => {
-    expect(estimateAvailability(120, 80, 12)).toBeGreaterThan(0.9);
+    expect(estimateAvailability(120, { currentPick: 80, targetPick: 92, opposingPicks: 11 }, 12)).toBeGreaterThan(0.9);
     expect(estimateAvailability(null, 80, 12)).toBeNull();
   });
 

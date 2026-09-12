@@ -1,3 +1,4 @@
+import { estimatePlayerAvailability, type SelectionHorizon } from "lib/draftDashboard/availability";
 import {
   calculateCategoryScores,
   categoryAppliesToRole,
@@ -29,6 +30,8 @@ export type RecommendationOptions = {
   needAlpha?: number;
   currentPick?: number;
   teamCount?: number;
+  selectionHorizon?: SelectionHorizon | null;
+  availabilitySpread?: number;
   limit?: number;
 };
 
@@ -58,15 +61,11 @@ const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
  */
 export function estimateAvailability(
   adp: number | null | undefined,
-  currentPick: number | undefined,
-  teamCount: number | undefined,
+  horizon?: SelectionHorizon | number | null,
+  spread?: number,
 ) {
-  if (!finite(adp) || adp <= 0 || !finite(currentPick) || !finite(teamCount) || teamCount <= 0) {
-    return null;
-  }
-  const nextPick = currentPick + teamCount;
-  const logistic = 1 / (1 + Math.exp(-(adp - nextPick) / 12));
-  return Math.min(0.99, Math.max(0.01, logistic));
+  // Legacy positional arguments cannot establish an actionable selection horizon.
+  return estimatePlayerAvailability(adp, typeof horizon === "object" ? horizon : null, spread);
 }
 
 export function enabledCategoryWeights(weights: Record<string, number> = {}) {
@@ -181,7 +180,7 @@ export function buildPersonalizedRecommendations(
     const reasons = [alpha > 0 ? "Personalized recommendation" : "Standard recommendation", `Rank ${rankScore.toFixed(1)}`];
     if (normalizedFit > 0) reasons.push(`${options.leagueType === "categories" ? "Category" : "Roster"} need ${Math.round(normalizedFit * 100)}%`);
     if (missing.length) reasons.push(`Missing analysis: ${missing.join(", ")}`);
-    const availabilityEstimate = estimateAvailability(candidate.adp, options.currentPick, options.teamCount);
+    const availabilityEstimate = estimateAvailability(candidate.adp, options.selectionHorizon, options.availabilitySpread);
     if (availabilityEstimate !== null) reasons.push("Availability is an ADP estimate");
     return { candidate, rankScore, recommendationScore, globalVorp: candidate.globalVorp, availabilityEstimate, reasons, missingCategories: missing };
   }).sort((left, right) => right.recommendationScore - left.recommendationScore || right.rankScore - left.rankScore || (right.candidate.tieBreaker ?? 0) - (left.candidate.tieBreaker ?? 0) || left.candidate.name.localeCompare(right.candidate.name))

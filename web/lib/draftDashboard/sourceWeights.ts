@@ -56,3 +56,11 @@ export function calculateWeightedProjection(
   }
   return totalWeight > 0 ? weightedSum / totalWeight : null;
 }
+
+export function equalizeSourceWeights(controls: ProjectionSourceControls): ProjectionSourceControls {
+  const count = Object.values(controls).filter((control) => control.isSelected).length;
+  if (!count) return controls;
+  return Object.fromEntries(Object.entries(controls).map(([id, control]) => [
+    id, control.isSelected ? { ...control, weight: 1 / count } : { ...control },
+  ]));
+}

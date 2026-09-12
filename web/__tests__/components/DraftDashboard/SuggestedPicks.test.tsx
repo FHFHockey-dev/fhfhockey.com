@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const getSession = vi.hoisted(() => vi.fn());
 vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession } } }));
 
+import { buildPositionTiers } from "../../../lib/draftDashboard/positionalTiers";
 import SuggestedPicks from "../../../components/DraftDashboard/SuggestedPicks";
 import { draftProRecommendationsInputSchema } from "../../../lib/draft-pro/recommendationsContract";
 
@@ -107,6 +108,7 @@ describe("SuggestedPicks grouped-forward presentation", () => {
         vorpMetrics={metrics}
         currentPick={1}
         nextPickNumber={10}
+        selectionHorizon={{ currentPick: 1, targetPick: 10, opposingPicks: 9 }}
         teamCount={1}
         onDraftPlayer={onDraftPlayer}
         onComparePlayer={onComparePlayer}
@@ -196,14 +198,17 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     await waitFor(() => expect(screen.getAllByRole("listitem")[0].textContent).toContain("Roster Fit"));
   });
 
-  it("does not send local CSV rows to Draft Pro recommendations and explains the lock", () => {
-    const fetchMock = vi.fn();
+  it("enables imported roster-aware recommendations without uploading projections", async () => {
+    getSession.mockResolvedValue({ data: { session: { access_token: "token" } } });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { authorized: true } }) });
     vi.stubGlobal("fetch", fetchMock);
     render(<SuggestedPicks players={[player(1, "Local Player", "C", 100)]} currentPick={1} teamCount={1} draftProEligible recommendationDataOrigin="local_csv" />);
-    expect(screen.getByText(/Save the import to your account first/)).toBeTruthy();
+    expect(screen.queryByText(/Save the import to your account first/)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Advanced" }));
-    expect((screen.getByRole("checkbox", { name: "Prioritize my roster needs" }) as HTMLInputElement).disabled).toBe(true);
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect((screen.getByRole("checkbox", { name: "Boost roster gaps" }) as HTMLInputElement).disabled).toBe(false);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ dataOrigin: "local_csv", authorizeOnly: true });
+    expect(screen.getAllByRole("listitem")[0].textContent).toContain("Local Player");
   });
 
   it("serializes filtered skater and goalie candidates within the endpoint's output bound", async () => {
@@ -249,7 +254,8 @@ describe("SuggestedPicks grouped-forward presentation", () => {
       { ...player(2, "Higher Value", "C", 100), yahooAvgPick: 100 },
     ];
     const metrics = new Map([["1", { value: 90, vbd: 9, vorp: 9, vona: 0 } as any], ["2", { value: 100, vbd: 10, vorp: 10, vona: 0 } as any]]);
-    render(<SuggestedPicks players={players} vorpMetrics={metrics} currentPick={1} nextPickNumber={10} teamCount={1} dustInsights={new Map()} dustSort="schedule_fit" canUseProDust />);
+    render(<SuggestedPicks players={players} vorpMetrics={metrics} currentPick={1} nextPickNumber={10}
+        selectionHorizon={{ currentPick: 1, targetPick: 10, opposingPicks: 9 }} teamCount={1} dustInsights={new Map()} dustSort="schedule_fit" canUseProDust />);
     expect(screen.getAllByRole("listitem")[0].textContent).toContain("Urgent Player");
   });
 
@@ -291,5 +297,50 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     const request = draftProRecommendationsInputSchema.parse(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body));
     expect(request.candidates).toHaveLength(201);
     expect(request.candidates.at(-1)?.role).toBe("goalie");
+  });
+});
+
+
+describe("Suggested Picks tier view", () => {
+  const players = [100, 99, 98, 50, 49, 48].map((points, i) => player(i + 1, `Tier Player ${i + 1}`, "D", points));
+  const tiers = [buildPositionTiers("D", players.map(p => ({ id: String(p.playerId), name: p.fullName, value: p.fantasyPoints.projected, adp: p.yahooAvgPick })))];
+  it("offers an accessible Pro tab without changing the free Picks view", () => {
+    render(<SuggestedPicks players={players} currentPick={1} teamCount={12} />);
+    const picks = screen.getByRole("tab", { name: "Picks" });
+    fireEvent.keyDown(picks, { key: "ArrowRight" });
+    expect(screen.getByRole("tab", { name: "Tiers · Pro" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("link", { name: "Explore Draft Pro" })).toBeTruthy();
+    expect(screen.queryByRole("combobox", { name: "Sort suggested picks" })).toBeNull();
+    fireEvent.click(picks);
+    expect(screen.getAllByRole("listitem")).toHaveLength(6);
+  });
+  it("shows stable tiers, explanations, player actions and live-draft restrictions", () => {
+    const draft = vi.fn(), select = vi.fn();
+    const props = { players, currentPick: 1, teamCount: 12, draftProEligible: true, tierPositions: tiers, tierContextReady: true, onClock: true, selectionHorizon: { currentPick: 1, targetPick: 24, opposingPicks: 22 }, rosterProgress: [{ pos: "D", filled: 0, total: 4 }], onDraftPlayer: draft, onSelectPlayer: select };
+    const view = render(<SuggestedPicks {...props} />);
+    const orderBefore = screen.getAllByRole("listitem").map(card => card.getAttribute("data-player-id"));
+    fireEvent.click(screen.getByRole("button", { name: "Explore positional tiers for Tier Player 1: D · Tier 1" }));
+    expect(select).not.toHaveBeenCalled();
+    expect(screen.getByRole("tab", { name: "Tiers · Pro" }).getAttribute("aria-selected")).toBe("true");
+    fireEvent.click(screen.getByRole("tab", { name: "Picks" }));
+    expect(screen.getAllByRole("listitem").map(card => card.getAttribute("data-player-id"))).toEqual(orderBefore);
+    fireEvent.click(screen.getByRole("tab", { name: "Tiers · Pro" }));
+    expect(screen.getByText("How tiers and advice work")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "D · Tier 1" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Tier Player 1" }));
+    expect(select).toHaveBeenCalledWith("1");
+    fireEvent.click(screen.getByRole("button", { name: "Draft Tier Player 1" }));
+    expect(draft).toHaveBeenCalledWith("1");
+    view.rerender(<SuggestedPicks {...props} players={players.slice(1)} canDraft={false} />);
+    expect(screen.getByRole("heading", { name: "D · Tier 1" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Draft Tier Player 2" }).hasAttribute("disabled")).toBe(true);
+    expect(screen.getByText("Drafted / keeper")).toBeTruthy();
+  });
+  it("retains ordinary Picks after a tier calculation failure", () => {
+    render(<SuggestedPicks players={players} currentPick={1} teamCount={12} draftProEligible tierError="Tier computation failed" />);
+    fireEvent.click(screen.getByRole("tab", { name: "Tiers · Pro" }));
+    expect(screen.getByText("Tier computation failed")).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: "Picks" }));
+    expect(screen.getAllByRole("listitem")).toHaveLength(6);
   });
 });
