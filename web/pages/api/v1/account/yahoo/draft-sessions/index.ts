@@ -10,6 +10,7 @@ import {
   sendYahooLiveDraftMethodNotAllowed,
   setYahooLiveDraftNoStore,
 } from "lib/integrations/yahoo/liveDraftApi";
+import { requireYahooLiveDraftServerAccess } from "lib/integrations/yahoo/liveDraftAccess";
 import {
   createYahooDraftSession,
   listYahooDraftLeagues,
@@ -33,6 +34,7 @@ export default async function handler(
   }
 
   try {
+    await requireYahooLiveDraftServerAccess(user.id);
     if (req.method === "GET") {
       return res.status(200).json(await listYahooDraftLeagues(user.id));
     }

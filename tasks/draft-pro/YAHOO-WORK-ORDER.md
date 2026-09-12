@@ -1,22 +1,22 @@
 # W13 Yahoo Work Order
 
-Status: **PARKED**
+Status: **IN PROGRESS**
 
-This note is a preparation-only handoff for the Yahoo draft-pro work order. No API calls, provider configuration edits, runtime code changes, credential checks, or activation work are included here.
+Yahoo Fantasy API approval was reported on September 12, 2026. This work remains bounded to implementation and validation; production activation, provider configuration changes, and deployment remain separately owner-authorized.
 
 ## Prerequisites
 
-- Actual Yahoo API access must be available before any entitlement integration work starts.
+- Connected-account provider access must remain available before controlled live-draft validation starts.
 - The rehearsal worker must be ready to run the approved validation flow.
-- The Chef heartbeat on September 11, 2026 at 09:00 America/New_York is already scheduled; do not create another automation.
-- This work remains separate from production activation and should stay parked until the access gate opens.
+- The September 11, 2026 one-time readiness check is complete and removed; do not recreate it or add polling automation.
+- This work remains separate from production activation.
 
 ## Current Implementation Pointers
 
 - The approved contract and rollout rules live in `tasks/draft-pro/PLAN.md`.
 - The current readiness tracker lives in `tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md`.
 - The live-draft runbook and rollout gates are documented in `tasks/TASKS/draft-dashboard-yahoo/docs/live-draft-runbook.md`.
-- The release status indicates local provider plumbing, polling, OAuth hardening, and rehearsal harness work already exist, but provider validation is still blocked.
+- The release status indicates local provider plumbing, polling, OAuth hardening, and rehearsal harness work already exist; controlled live-draft validation remains outstanding.
 
 ## Readiness Validation
 
@@ -49,17 +49,31 @@ Acceptance requires current provider evidence, Chef acceptance of the validation
 
 The gates permit a proposed activation after validation passes; they do not authorize production changes. Any provider configuration or entitlement change remains subject to explicit owner approval and is not, by itself, a permanent blocker once the approved evidence is available.
 
-## Blocked Activation Criteria
+## Production Activation Criteria
 
-- Parked until actual Yahoo API access is available.
-- Parked until the rehearsal worker is ready.
-- Parked until the approved validation checkpoint is explicitly reached.
-- Parked if the entitlement/reconnect path cannot be validated without changing production settings.
-- Parked if provider evidence, Chef acceptance, or owner production authorization is missing.
-- At the September 11 availability check, if Yahoo access is unavailable, record the blocker, keep this work parked, and do not start polling.
-- Do not create additional automation; the existing September 11 Chef heartbeat is the only scheduled check in scope.
+- Require the rehearsal worker and approved validation checkpoint.
+- Require provider evidence, Chef acceptance, and owner production authorization.
+- Do not enable live activation, provider configuration, or additional automation from this work order.
 
 ## Notes
 
-- September 11, 2026 is not itself the activation trigger.
-- The correct state is PARKED pending actual API access plus rehearsal/worker readiness, with no polling while access is unavailable.
+- The September 11 readiness check was historical evidence, not an activation trigger.
+- A stale local token does not override current connected-account evidence.
+
+## Historical September 11 Checkpoint
+
+- Direct Fantasy API requests returned HTTP 401 and the shared-token refresh returned `invalid_grant`; neither result established that Yahoo had denied the approved API permission.
+- The one-time readiness automation completed and was removed. No production settings changed and no live-draft rehearsal ran.
+
+## September 12 Provider Evidence
+
+- The current signed-in `fhfhockey.com` connected-account page reported a completed Yahoo refresh: 4 leagues and 16 teams, with account status `connected`.
+- A local environment access token still returns HTTP 401 and is treated as stale. It is not used as readiness evidence and no token values are recorded here.
+- Connected-account access is verified. Real active-draft polling, closed-browser ingestion, and private-league rehearsal remain external validation checks.
+
+## Chef Review Follow-up
+
+- Yahoo access now uses current Draft Pro eligibility, independent Yahoo enablement/rollout, and the existing controlled staff/allowlist rehearsal path. It does not depend on the recommendations feature flag.
+- Only confirmed expired or absent Draft Pro entitlement stops a live session. Readiness, rollout, database, and Patreon-verification failures defer the next poll without deleting picks or changing a completed session.
+- An authenticated owner may always stop an owned session; this does not grant premium access or start provider work.
+- Release readiness remains externally unverified for durable worker deployment/substrate, target migration/types/RLS verification, and controlled provider rehearsal. No production action occurred.

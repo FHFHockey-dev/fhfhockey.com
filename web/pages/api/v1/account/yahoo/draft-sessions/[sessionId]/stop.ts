@@ -2,11 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { requireApiUser } from "lib/api/requireApiUser";
 import {
-  isYahooLiveDraftEnabled,
-  isYahooLiveDraftUserEntitled,
-  sendYahooLiveDraftDisabled,
   sendYahooLiveDraftError,
-  sendYahooLiveDraftForbidden,
   sendYahooLiveDraftMethodNotAllowed,
   setYahooLiveDraftNoStore,
   yahooLiveDraftSessionId,
@@ -21,12 +17,8 @@ export default async function handler(
   if (req.method !== "POST") {
     return sendYahooLiveDraftMethodNotAllowed(res, ["POST"]);
   }
-  if (!isYahooLiveDraftEnabled()) return sendYahooLiveDraftDisabled(res);
   const user = await requireApiUser(req, res);
   if (!user) return;
-  if (!isYahooLiveDraftUserEntitled(user.id)) {
-    return sendYahooLiveDraftForbidden(res);
-  }
   try {
     return res
       .status(200)

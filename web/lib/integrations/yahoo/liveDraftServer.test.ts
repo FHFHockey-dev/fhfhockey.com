@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   correctedIncomingPickNumbers,
+  pauseYahooDraftSessionForAccessLoss,
   postdraftConfirmation,
   pollYahooDraftSession,
   requireOwnedYahooDraftLeague,
@@ -115,6 +116,46 @@ describe("Yahoo live draft ownership", () => {
         GAME_CONTEXT,
       ),
     ).rejects.toMatchObject({ statusCode: 404, code: "yahoo_league_not_found" });
+  });
+
+  it("stops automatic updates on access loss without changing retained picks", async () => {
+    const updates: Array<Record<string, unknown>> = [];
+    const builder: any = {
+      eq: () => builder,
+      in: () => builder,
+      maybeSingle: () => Promise.resolve({ data: { id: "session" }, error: null }),
+      select: () => builder,
+      then: (resolve: (value: unknown) => unknown) =>
+        Promise.resolve({ error: null }).then(resolve),
+    };
+    const client: any = {
+      from: (table: string) => ({
+        update: (values: Record<string, unknown>) => {
+          expect(table).toBe("yahoo_draft_sessions");
+          updates.push(values);
+          return builder;
+        },
+      }),
+    };
+
+    await pauseYahooDraftSessionForAccessLoss({
+      client,
+      error: Object.assign(new Error("Draft Pro access is required."), {
+        code: "no_active_grant",
+        statusCode: 403,
+      }),
+      sessionId: "22222222-2222-4222-8222-222222222222",
+      userId: "11111111-1111-4111-8111-111111111111",
+    });
+
+    expect(updates).toEqual([
+      expect.objectContaining({
+        last_error_code: "yahoo_draft_pro_access_required",
+        status: "stopped",
+      }),
+    ]);
+    expect(updates[0]).not.toHaveProperty("completed_at");
+    expect(updates[0]).not.toHaveProperty("picks");
   });
 
   it("returns owner-scoped state without calling Yahoo when the poll lease is not claimed", async () => {

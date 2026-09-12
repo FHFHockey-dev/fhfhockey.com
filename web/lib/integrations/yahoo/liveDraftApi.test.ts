@@ -5,14 +5,18 @@ import {
   isYahooLiveDraftUserEntitled,
 } from "./liveDraftApi";
 
-const { requireApiUser, listYahooDraftLeagues, createYahooDraftSession } =
+const { requireApiUser, requireYahooLiveDraftServerAccess, listYahooDraftLeagues, createYahooDraftSession } =
   vi.hoisted(() => ({
     requireApiUser: vi.fn(),
+    requireYahooLiveDraftServerAccess: vi.fn(),
     listYahooDraftLeagues: vi.fn(),
     createYahooDraftSession: vi.fn(),
   }));
 
 vi.mock("lib/api/requireApiUser", () => ({ requireApiUser }));
+vi.mock("lib/integrations/yahoo/liveDraftAccess", () => ({
+  requireYahooLiveDraftServerAccess,
+}));
 vi.mock("lib/integrations/yahoo/liveDraftServer", () => ({
   listYahooDraftLeagues,
   createYahooDraftSession,
@@ -43,6 +47,7 @@ function mockResponse() {
 describe("Yahoo live draft API safeguards", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    requireYahooLiveDraftServerAccess.mockResolvedValue({});
     delete process.env.YAHOO_LIVE_DRAFT_ENABLED;
     delete process.env.YAHOO_LIVE_DRAFT_ROLLOUT_STAGE;
     delete process.env.YAHOO_LIVE_DRAFT_STAFF_USER_IDS;
@@ -133,5 +138,27 @@ describe("Yahoo live draft API safeguards", () => {
     expect(response.statusCode).toBe(400);
     expect(response.body.code).toBe("validation_error");
     expect(createYahooDraftSession).not.toHaveBeenCalled();
+  });
+
+  it("checks Draft Pro server access before exposing Yahoo league state", async () => {
+    process.env.YAHOO_LIVE_DRAFT_ENABLED = "true";
+    process.env.YAHOO_LIVE_DRAFT_ROLLOUT_STAGE = "authenticated";
+    process.env.YAHOO_LIVE_DRAFT_PROVIDER_VALIDATED = "true";
+    requireApiUser.mockResolvedValue({
+      id: "11111111-1111-4111-8111-111111111111",
+    });
+    requireYahooLiveDraftServerAccess.mockRejectedValue(
+      Object.assign(new Error("Draft Pro access is required for this action."), {
+        code: "no_active_grant",
+        statusCode: 403,
+      }),
+    );
+    const response = mockResponse();
+
+    await handler({ method: "GET", headers: {}, query: {} } as any, response);
+
+    expect(response.statusCode).toBe(403);
+    expect(response.body.code).toBe("no_active_grant");
+    expect(listYahooDraftLeagues).not.toHaveBeenCalled();
   });
 });

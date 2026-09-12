@@ -11,6 +11,7 @@ import {
   setYahooLiveDraftNoStore,
   yahooLiveDraftSessionId,
 } from "lib/integrations/yahoo/liveDraftApi";
+import { requireYahooLiveDraftServerAccess } from "lib/integrations/yahoo/liveDraftAccess";
 import { loadYahooDraftSession } from "lib/integrations/yahoo/liveDraftServer";
 
 export default async function handler(
@@ -28,6 +29,7 @@ export default async function handler(
     return sendYahooLiveDraftForbidden(res);
   }
   try {
+    await requireYahooLiveDraftServerAccess(user.id);
     return res
       .status(200)
       .json(await loadYahooDraftSession(user.id, yahooLiveDraftSessionId(req)));

@@ -1,16 +1,34 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { pollYahooDraftSession, resolveYahooGameContext } = vi.hoisted(() => ({
+const { deferYahooDraftSessionForAccessCheck, isConfirmedYahooLiveDraftAccessLoss, pollYahooDraftSession, pauseYahooDraftSessionForAccessLoss, requireYahooLiveDraftServerAccess, resolveYahooGameContext } = vi.hoisted(() => ({
+  deferYahooDraftSessionForAccessCheck: vi.fn(),
+  isConfirmedYahooLiveDraftAccessLoss: vi.fn(),
   pollYahooDraftSession: vi.fn(),
+  pauseYahooDraftSessionForAccessLoss: vi.fn(),
+  requireYahooLiveDraftServerAccess: vi.fn(),
   resolveYahooGameContext: vi.fn(),
 }));
 
-vi.mock("./liveDraftServer", () => ({ pollYahooDraftSession }));
+vi.mock("./liveDraftAccess", () => ({
+  isConfirmedYahooLiveDraftAccessLoss,
+  requireYahooLiveDraftServerAccess,
+}));
+vi.mock("./liveDraftServer", () => ({
+  deferYahooDraftSessionForAccessCheck,
+  pauseYahooDraftSessionForAccessLoss,
+  pollYahooDraftSession,
+}));
 vi.mock("./gameContext", () => ({ resolveYahooGameContext }));
 
 import { runYahooDraftPollCoordinator } from "./pollCoordinator";
 
 describe("Yahoo live-draft coordinator", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    isConfirmedYahooLiveDraftAccessLoss.mockReturnValue(false);
+    requireYahooLiveDraftServerAccess.mockResolvedValue({});
+  });
+
   it("processes due sessions with browsers absent and serializes each account", async () => {
     resolveYahooGameContext.mockResolvedValue({
       gameCode: "nhl",
@@ -54,5 +72,41 @@ describe("Yahoo live-draft coordinator", () => {
     ).resolves.toEqual({ attempted: 3, failed: 0, succeeded: 3 });
     expect(maximum.get("account-a")).toBe(1);
     expect(pollYahooDraftSession).toHaveBeenCalledTimes(3);
+  });
+
+  it("stops polling but retains the session when Draft Pro access is lost", async () => {
+    requireYahooLiveDraftServerAccess.mockRejectedValue(
+      Object.assign(new Error("Draft Pro access is required for this action."), {
+        code: "no_active_grant",
+        statusCode: 403,
+      }),
+    );
+    isConfirmedYahooLiveDraftAccessLoss.mockReturnValue(true);
+    const response = {
+      data: [{ connected_account_id: "account-a", id: "session-a", user_id: "user-a" }],
+      error: null,
+    };
+    const builder: any = {
+      in: () => builder,
+      limit: () => Promise.resolve(response),
+      lte: () => builder,
+      order: () => builder,
+      select: () => builder,
+    };
+    const client = { from: () => builder } as any;
+
+    await expect(runYahooDraftPollCoordinator({ client })).resolves.toEqual({
+      attempted: 1,
+      failed: 1,
+      succeeded: 0,
+    });
+
+    expect(pauseYahooDraftSessionForAccessLoss).toHaveBeenCalledWith({
+      client,
+      error: expect.objectContaining({ code: "no_active_grant" }),
+      sessionId: "session-a",
+      userId: "user-a",
+    });
+    expect(pollYahooDraftSession).not.toHaveBeenCalled();
   });
 });
