@@ -8,6 +8,7 @@ import {
   pollYahooDraftSession,
   requireOwnedYahooDraftLeague,
   snapshotRequiresCorrectionConfirmation,
+  stopYahooDraftSession,
 } from "./liveDraftServer";
 import { fetchYahooDraftResource } from "./providerClient";
 
@@ -190,7 +191,9 @@ describe("Yahoo live draft ownership", () => {
     };
     await pauseYahooDraftSessionForAccessLoss({ client, error: new Error("expired"), sessionId: "complete", userId: "owner" });
     await pauseYahooDraftSessionForAccessLoss({ client, error: new Error("expired"), sessionId: "active", userId: "other" });
+    await deferYahooDraftSessionForAccessCheck({ client, error: new Error("temporary"), now: new Date("2026-09-12T01:00:00Z"), sessionId: "complete", userId: "owner" });
     await deferYahooDraftSessionForAccessCheck({ client, error: new Error("temporary"), now: new Date("2026-09-12T01:00:00Z"), sessionId: "active", userId: "owner" });
+    await expect(stopYahooDraftSession("other", "active", client)).rejects.toMatchObject({ statusCode: 404, code: "yahoo_draft_session_not_found" });
     expect(rows[1]).toMatchObject({ status: "complete", completed_at: "2026-09-12T01:00:00Z", picks: [2] });
     expect(rows[2]).toMatchObject({ status: "active", picks: [3] });
     expect(rows[0]).toMatchObject({ status: "active", poll_lease_token: "lease", poll_lease_expires_at: "2099-01-01", picks: [1] });
