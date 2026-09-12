@@ -1,6 +1,6 @@
 # W13 Yahoo Work Order
 
-Status: **IN PROGRESS**
+Status: **LOCAL CODE APPROVED — EXTERNAL VALIDATION PENDING**
 
 Yahoo Fantasy API approval was reported on September 12, 2026. This work remains bounded to implementation and validation; production activation, provider configuration changes, and deployment remain separately owner-authorized.
 
@@ -76,7 +76,7 @@ The gates permit a proposed activation after validation passes; they do not auth
 - Yahoo access now uses current Draft Pro eligibility, independent Yahoo enablement/rollout, and the existing controlled staff/allowlist rehearsal path. It does not depend on the recommendations feature flag.
 - Only confirmed expired or absent Draft Pro entitlement stops a live session. Readiness, rollout, database, and Patreon-verification failures defer the next poll without deleting picks or changing a completed session.
 - An authenticated owner may always stop an owned session; this does not grant premium access or start provider work.
-- Release readiness remains externally unverified for durable worker deployment/substrate, functional cross-user behavior, and controlled provider rehearsal. The target migration/types/RLS preflight is verified read-only; no production action occurred.
+- Release readiness remains externally unverified for durable worker deployment/substrate, functional cross-user behavior, and controlled provider rehearsal. The installed migration, table/RPC permissions, RLS policies, and Realtime publication were inspected read-only. Regenerating types from the target and functional cross-user checks were not performed; no production settings changed.
 
 ## Final Correction Evidence
 
@@ -85,3 +85,10 @@ The gates permit a proposed activation after validation passes; they do not auth
 - The model downgrade to Luna/medium was limited to targeted test corrections after Chef review; no architecture redesign or scope expansion was needed.
 - Read-only infrastructure inspection confirmed migration `20260824152127_yahoo_live_draft_production_hardening` is installed, all five live-draft tables have enabled and forced RLS, authenticated access is limited to owner-scoped reads on sessions/picks, state-changing RPCs are service-role-only, and Realtime publishes only sessions/picks.
 - No draft sessions or polling observations were present in the inspected target, so functional cross-user rehearsal, worker operation/observations, closed-browser ingestion, and active-draft provider validation remain unverified prerequisites.
+
+## Chef acceptance — September 12
+
+- Code through `c182b1d9a` is approved and integrated into the local `codex/draft-pro` branch. The combined five affected test suites passed 31/31; TypeScript passed. Chef inspected the full runtime diff, required the recovery/ownership/rollout corrections, and caught the stale API error fixture in an earlier combined run before acceptance.
+- Launch-gate accounting: **3/5 (60%)** — connected-account API access, installed database structure/access-policy inspection, and reviewed local implementation. This is a checklist count, not an estimate of all implementation effort.
+- Remaining: demonstrate a supervised durable Node worker using the reviewed artifact and verify actual owner isolation, refresh/reconnect, picks/settings mapping, browser-closed ingestion and manual fallback in a consenting private league using the linked runbook. No target type regeneration, worker deployment or active-draft rehearsal is claimed.
+- Keep public rollout disabled. Before a controlled test, prepare the exact worker host, environment/secret source and private league, then obtain the applicable owner authorization for deployment or production configuration. Do not rerun the already installed migration merely because older notes list it as missing. Rollback stops new automatic updates via the rollout/enablement settings and preserves existing picks.
