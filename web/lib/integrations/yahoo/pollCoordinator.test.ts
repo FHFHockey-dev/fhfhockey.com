@@ -1,16 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { deferYahooDraftSessionForAccessCheck, isConfirmedYahooLiveDraftAccessLoss, pollYahooDraftSession, pauseYahooDraftSessionForAccessLoss, requireYahooLiveDraftServerAccess, resolveYahooGameContext } = vi.hoisted(() => ({
+const { deferYahooDraftSessionForAccessCheck, pollYahooDraftSession, pauseYahooDraftSessionForAccessLoss, requireYahooLiveDraftServerAccess, resolveYahooGameContext } = vi.hoisted(() => ({
   deferYahooDraftSessionForAccessCheck: vi.fn(),
-  isConfirmedYahooLiveDraftAccessLoss: vi.fn(),
   pollYahooDraftSession: vi.fn(),
   pauseYahooDraftSessionForAccessLoss: vi.fn(),
   requireYahooLiveDraftServerAccess: vi.fn(),
   resolveYahooGameContext: vi.fn(),
 }));
 
-vi.mock("./liveDraftAccess", () => ({
-  isConfirmedYahooLiveDraftAccessLoss,
+vi.mock("./liveDraftAccess", async () => ({
+  ...(await vi.importActual<typeof import("./liveDraftAccess")>("./liveDraftAccess")),
   requireYahooLiveDraftServerAccess,
 }));
 vi.mock("./liveDraftServer", () => ({
@@ -25,17 +24,17 @@ import { runYahooDraftPollCoordinator } from "./pollCoordinator";
 describe("Yahoo live-draft coordinator", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    isConfirmedYahooLiveDraftAccessLoss.mockReturnValue(false);
     requireYahooLiveDraftServerAccess.mockResolvedValue({});
+    resolveYahooGameContext.mockResolvedValue({ gameCode: "nhl", gameKey: "477", season: "2026", targetSeasonId: 20262027 });
   });
 
+  function clientFor(sessions: Array<{ connected_account_id: string; id: string; user_id: string }>) {
+    const response = { data: sessions, error: null };
+    const builder: any = { in: () => builder, limit: () => Promise.resolve(response), lte: () => builder, order: () => builder, select: () => builder };
+    return { from: () => builder } as any;
+  }
+
   it("processes due sessions with browsers absent and serializes each account", async () => {
-    resolveYahooGameContext.mockResolvedValue({
-      gameCode: "nhl",
-      gameKey: "477",
-      season: "2026",
-      targetSeasonId: 20262027,
-    });
     const accountBySession = new Map([
       ["session-a-1", "account-a"],
       ["session-a-2", "account-a"],
@@ -50,22 +49,11 @@ describe("Yahoo live-draft coordinator", () => {
       await new Promise((resolve) => setTimeout(resolve, 2));
       active.set(account, (active.get(account) ?? 1) - 1);
     });
-    const response = {
-      data: [
+    const client = clientFor([
         { connected_account_id: "account-a", id: "session-a-1", user_id: "user-a" },
         { connected_account_id: "account-b", id: "session-b-1", user_id: "user-b" },
         { connected_account_id: "account-a", id: "session-a-2", user_id: "user-a" },
-      ],
-      error: null,
-    };
-    const builder: any = {
-      in: () => builder,
-      limit: () => Promise.resolve(response),
-      lte: () => builder,
-      order: () => builder,
-      select: () => builder,
-    };
-    const client = { from: () => builder } as any;
+      ]);
 
     await expect(
       runYahooDraftPollCoordinator({ client, concurrency: 2 }),
@@ -81,19 +69,13 @@ describe("Yahoo live-draft coordinator", () => {
         statusCode: 403,
       }),
     );
-    isConfirmedYahooLiveDraftAccessLoss.mockReturnValue(true);
+    const { YahooLiveDraftError } = await import("./liveDraft");
+    const error = new YahooLiveDraftError("expired", 403, "yahoo_draft_pro_expired");
     const response = {
-      data: [{ connected_account_id: "account-a", id: "session-a", user_id: "user-a" }],
-      error: null,
+      data: [{ connected_account_id: "account-a", id: "session-a", user_id: "user-a" }], error: null,
     };
-    const builder: any = {
-      in: () => builder,
-      limit: () => Promise.resolve(response),
-      lte: () => builder,
-      order: () => builder,
-      select: () => builder,
-    };
-    const client = { from: () => builder } as any;
+    const client = clientFor(response.data);
+    requireYahooLiveDraftServerAccess.mockRejectedValue(error);
 
     await expect(runYahooDraftPollCoordinator({ client })).resolves.toEqual({
       attempted: 1,
@@ -103,10 +85,49 @@ describe("Yahoo live-draft coordinator", () => {
 
     expect(pauseYahooDraftSessionForAccessLoss).toHaveBeenCalledWith({
       client,
-      error: expect.objectContaining({ code: "no_active_grant" }),
+      error,
       sessionId: "session-a",
       userId: "user-a",
     });
     expect(pollYahooDraftSession).not.toHaveBeenCalled();
+  });
+
+  it("defers a transient denial and recovers on the next due cycle", async () => {
+    const error = new Error("resolver unavailable");
+    requireYahooLiveDraftServerAccess.mockRejectedValueOnce(error).mockResolvedValueOnce({});
+    const client = clientFor([{ connected_account_id: "account-a", id: "session-a", user_id: "user-a" }]);
+    await runYahooDraftPollCoordinator({ client, now: new Date("2026-09-12T00:00:00Z") });
+    expect(deferYahooDraftSessionForAccessCheck).toHaveBeenCalledWith(expect.objectContaining({ error, now: expect.any(Date) }));
+    expect(pollYahooDraftSession).not.toHaveBeenCalled();
+    await runYahooDraftPollCoordinator({ client, now: new Date("2026-09-12T00:01:00Z") });
+    expect(pollYahooDraftSession).toHaveBeenCalledTimes(1);
+    expect(pauseYahooDraftSessionForAccessLoss).not.toHaveBeenCalled();
+  });
+
+  it("defers verification_unavailable without provider I/O", async () => {
+    const { YahooLiveDraftError } = await import("./liveDraft");
+    const error = new YahooLiveDraftError("verification unavailable", 503, "yahoo_draft_pro_verification_unavailable");
+    requireYahooLiveDraftServerAccess.mockRejectedValue(error);
+    const client = clientFor([{ connected_account_id: "account-a", id: "session-a", user_id: "user-a" }]);
+    await runYahooDraftPollCoordinator({ client });
+    expect(deferYahooDraftSessionForAccessCheck).toHaveBeenCalled();
+    expect(pauseYahooDraftSessionForAccessLoss).not.toHaveBeenCalled();
+    expect(pollYahooDraftSession).not.toHaveBeenCalled();
+  });
+
+  it("continues a healthy session when access-state writes fail", async () => {
+    const { YahooLiveDraftError } = await import("./liveDraft");
+    const expired = new YahooLiveDraftError("expired", 403, "yahoo_draft_pro_expired");
+    const transient = new Error("temporary resolver failure");
+    requireYahooLiveDraftServerAccess.mockRejectedValueOnce(expired).mockRejectedValueOnce(transient).mockResolvedValueOnce({});
+    pauseYahooDraftSessionForAccessLoss.mockRejectedValueOnce(new Error("stop write failed"));
+    deferYahooDraftSessionForAccessCheck.mockRejectedValueOnce(new Error("defer write failed"));
+    const client = clientFor([
+      { connected_account_id: "account-a", id: "expired", user_id: "user-a" },
+      { connected_account_id: "account-b", id: "transient", user_id: "user-b" },
+      { connected_account_id: "account-c", id: "healthy", user_id: "user-c" },
+    ]);
+    await expect(runYahooDraftPollCoordinator({ client })).resolves.toMatchObject({ attempted: 3, failed: 2, succeeded: 1 });
+    expect(pollYahooDraftSession).toHaveBeenCalledWith("user-c", "healthy", expect.anything());
   });
 });
