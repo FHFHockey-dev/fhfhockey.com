@@ -1,3 +1,4 @@
+import { canonicalScheduleTeam } from "lib/draftDashboard/scheduleMetrics";
 // components/DraftDashboard/ProjectionsTable.tsx
 
 import { estimatePlayerAvailability, type SelectionHorizon } from "lib/draftDashboard/availability";
@@ -35,6 +36,7 @@ import {
 
 interface ProjectionsTableProps {
   onRefresh?: () => void;
+  picksBeforeTurn?: number;
   scheduleMetrics?: PlayerScheduleMetrics;
   currentSeasonId?: string | number;
   players: ProcessedPlayer[];
@@ -141,6 +143,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   error,
   onDraftPlayer,
   canDraft,
+  personalRankByPlayerId,
   vorpMetrics,
   replacementByPos,
   baselineMode = "remaining",
@@ -161,6 +164,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   dataNotices = [],
   emptyStateMessage = "No players found matching your filters.",
   dustInsights,
+  picksBeforeTurn,
   scheduleMetrics,
   onFavoriteIdsChange,
   onOpenRosterImpact,
@@ -1551,6 +1555,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         >
           <colgroup>
             <col className={styles.colFav} />
+            {personalRankByPlayerId && <col className={styles.colAdp} />}
             <col className={styles.colName} />
             <col className={styles.colPos} />
             <col className={styles.colTeam} />
@@ -1579,6 +1584,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
               <th className={styles.colFav} scope="col" title="Favorite">
                 Fav
               </th>
+              {personalRankByPlayerId && <th scope="col">My Rank</th>}
               <th
                 className={`${styles.sortableHeader} ${styles.colName}`}
                 aria-sort={getAriaSort("fullName")}
@@ -1838,6 +1844,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 const metricColumnsCount = 4; // FP/Score, VORP, VONA, VBD
                 const detailColSpan =
                   1 + // favorite star
+                  (personalRankByPlayerId ? 1 : 0) +
                   1 + // name
                   1 + // pos
                   1 + // team
@@ -1860,6 +1867,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       setDraggedFavorite(null);
                     } : undefined}
                     data-player-id={key}
+                    data-next-pick={picksBeforeTurn != null && currentPage * pageSize + rowIndex === picksBeforeTurn}
                     data-stripe={rowIndex % 2}
                     data-expanded={!!expanded[key]}
                     data-selected={selectedIds.has(key)}
@@ -1888,7 +1896,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         {favoriteIds.has(key) ? "★" : "☆"}
                       </button>
                     </td>
+                    {personalRankByPlayerId && <td>{personalRankByPlayerId[key] ?? "—"}</td>}
                     <td className={styles.playerName}>
+                      {picksBeforeTurn != null && currentPage * pageSize + rowIndex === picksBeforeTurn && <span className={styles.pickLabel} title="Estimated slot in the displayed order; availability is not guaranteed">Your next pick · estimate</span>}
                       <div className={`${styles.nameContainer} ${favoritesOnly ? styles.queueName : ""}`}>
                         {favoritesOnly && <span className={styles.queueControls}>
                           <button type="button" draggable
@@ -2008,7 +2018,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       data-label="Team"
                       title={player.displayTeam || undefined}
                     >
-                      {player.displayTeam || "-"}
+                      {canonicalScheduleTeam(player.displayTeam) || "-"}
                     </td>
                     {!statColumnsMode ? (
                       <>

@@ -1,22 +1,22 @@
 # W13 Yahoo Work Order
 
-Status: **PARKED**
+Status: **LOCAL CODE APPROVED — EXTERNAL VALIDATION PENDING**
 
-This note is a preparation-only handoff for the Yahoo draft-pro work order. No API calls, provider configuration edits, runtime code changes, credential checks, or activation work are included here.
+Yahoo Fantasy API approval was reported on September 12, 2026. This work remains bounded to implementation and validation; production activation, provider configuration changes, and deployment remain separately owner-authorized.
 
 ## Prerequisites
 
-- Actual Yahoo API access must be available before any entitlement integration work starts.
+- Connected-account provider access must remain available before controlled live-draft validation starts.
 - The rehearsal worker must be ready to run the approved validation flow.
-- The Chef heartbeat on September 11, 2026 at 09:00 America/New_York is already scheduled; do not create another automation.
-- This work remains separate from production activation and should stay parked until the access gate opens.
+- The September 11, 2026 one-time readiness check is complete and removed; do not recreate it or add polling automation.
+- This work remains separate from production activation.
 
 ## Current Implementation Pointers
 
 - The approved contract and rollout rules live in `tasks/draft-pro/PLAN.md`.
 - The current readiness tracker lives in `tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md`.
 - The live-draft runbook and rollout gates are documented in `tasks/TASKS/draft-dashboard-yahoo/docs/live-draft-runbook.md`.
-- The release status indicates local provider plumbing, polling, OAuth hardening, and rehearsal harness work already exist, but provider validation is still blocked.
+- The release status indicates local provider plumbing, polling, OAuth hardening, and rehearsal harness work already exist; controlled live-draft validation remains outstanding.
 
 ## Readiness Validation
 
@@ -49,27 +49,46 @@ Acceptance requires current provider evidence, Chef acceptance of the validation
 
 The gates permit a proposed activation after validation passes; they do not authorize production changes. Any provider configuration or entitlement change remains subject to explicit owner approval and is not, by itself, a permanent blocker once the approved evidence is available.
 
-## Blocked Activation Criteria
+## Production Activation Criteria
 
-- Parked until actual Yahoo API access is available.
-- Parked until the rehearsal worker is ready.
-- Parked until the approved validation checkpoint is explicitly reached.
-- Parked if the entitlement/reconnect path cannot be validated without changing production settings.
-- Parked if provider evidence, Chef acceptance, or owner production authorization is missing.
-- At the September 11 availability check, if Yahoo access is unavailable, record the blocker, keep this work parked, and do not start polling.
-- Do not create additional automation; the existing September 11 Chef heartbeat is the only scheduled check in scope.
+- Require the rehearsal worker and approved validation checkpoint.
+- Require provider evidence, Chef acceptance, and owner production authorization.
+- Do not enable live activation, provider configuration, or additional automation from this work order.
 
 ## Notes
 
-- September 11, 2026 is not itself the activation trigger.
-- The correct state is PARKED pending actual API access plus rehearsal/worker readiness, with no polling while access is unavailable.
+- The September 11 readiness check was historical evidence, not an activation trigger.
+- A stale local token does not override current connected-account evidence.
 
-## September 11 readiness checkpoint — 09:00 EDT
+## Historical September 11 Checkpoint
 
-Status remains **PARKED**. UTC time verified after 13:00 UTC.
+- Direct Fantasy API requests returned HTTP 401 and the shared-token refresh returned `invalid_grant`; neither result established that Yahoo had denied the approved API permission.
+- The one-time readiness automation completed and was removed. No production settings changed and no live-draft rehearsal ran.
 
-- Earlier direct Fantasy API requests returned HTTP 401 (`token_expired` for the shared token and `token_rejected` for the local token). The shared refresh attempt returned HTTP 400 `invalid_grant` / `Invalid refresh token`.
-- At the scheduled checkpoint, the owner's linked Yahoo account still reported `error`. One secure lookup reported token presence, but the subsequent lookup used for the bounded API probe returned no token row. No authenticated Fantasy request completed at this checkpoint; credential availability is not established.
-- These authentication failures do not establish that Yahoo has failed to provision the contractual API permission. Fresh, working account authorization and a successful provider request are still required.
-- The owner has contacted Yahoo about activation. Resume only after a meaningful authorization/provider update; do not repeatedly poll or enable live sync.
-- The one-time readiness automation is complete and removed. No production settings were changed, and the live-draft rehearsal remains unverified.
+## September 12 Provider Evidence
+
+- The current signed-in `fhfhockey.com` connected-account page reported a completed Yahoo refresh: 4 leagues and 16 teams, with account status `connected`.
+- A local environment access token still returns HTTP 401 and is treated as stale. It is not used as readiness evidence and no token values are recorded here.
+- Connected-account access is verified. Real active-draft polling, closed-browser ingestion, and private-league rehearsal remain external validation checks.
+
+## Chef Review Follow-up
+
+- Yahoo access now uses current Draft Pro eligibility, independent Yahoo enablement/rollout, and the existing controlled staff/allowlist rehearsal path. It does not depend on the recommendations feature flag.
+- Only confirmed expired or absent Draft Pro entitlement stops a live session. Readiness, rollout, database, and Patreon-verification failures defer the next poll without deleting picks or changing a completed session.
+- An authenticated owner may always stop an owned session; this does not grant premium access or start provider work.
+- Release readiness remains externally unverified for durable worker deployment/substrate, functional cross-user behavior, and controlled provider rehearsal. The installed migration, table/RPC permissions, RLS policies, and Realtime publication were inspected read-only. Regenerating types from the target and functional cross-user checks were not performed; no production settings changed.
+
+## Final Correction Evidence
+
+- Chef corrections are represented by commits `19e3354cf` (runtime guards and retry-safe transitions), `f21a9d91e` (coordinator recovery tests), and `eb20dd787` (stateful ownership/retained-state tests), with final permission-matrix coverage in the current follow-up commit.
+- The final targeted suites passed: access/server 17/17, coordinator 5/5, live-draft API 6/6, OAuth/connect/callback/refresh 6/6, parser/mapping 12/12, and hook coverage 7/7. `npx tsc --noEmit` completed successfully.
+- The model downgrade to Luna/medium was limited to targeted test corrections after Chef review; no architecture redesign or scope expansion was needed.
+- Read-only infrastructure inspection confirmed migration `20260824152127_yahoo_live_draft_production_hardening` is installed, all five live-draft tables have enabled and forced RLS, authenticated access is limited to owner-scoped reads on sessions/picks, state-changing RPCs are service-role-only, and Realtime publishes only sessions/picks.
+- No draft sessions or polling observations were present in the inspected target, so functional cross-user rehearsal, worker operation/observations, closed-browser ingestion, and active-draft provider validation remain unverified prerequisites.
+
+## Chef acceptance — September 12
+
+- Code through `c182b1d9a` is approved and integrated into the local `codex/draft-pro` branch. The combined five affected test suites passed 31/31; TypeScript passed. Chef inspected the full runtime diff, required the recovery/ownership/rollout corrections, and caught the stale API error fixture in an earlier combined run before acceptance.
+- Launch-gate accounting: **3/5 (60%)** — connected-account API access, installed database structure/access-policy inspection, and reviewed local implementation. This is a checklist count, not an estimate of all implementation effort.
+- Remaining: demonstrate a supervised durable Node worker using the reviewed artifact and verify actual owner isolation, refresh/reconnect, picks/settings mapping, browser-closed ingestion and manual fallback in a consenting private league using the linked runbook. No target type regeneration, worker deployment or active-draft rehearsal is claimed.
+- Keep public rollout disabled. Before a controlled test, prepare the exact worker host, environment/secret source and private league, then obtain the applicable owner authorization for deployment or production configuration. Do not rerun the already installed migration merely because older notes list it as missing. Rollback stops new automatic updates via the rollout/enablement settings and preserves existing picks.

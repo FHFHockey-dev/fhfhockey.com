@@ -688,7 +688,7 @@ export function reconcileYahooDraftState(
   return {
     draftedPlayers,
     unresolved,
-    warnings: draftOrderMode.explicit
+    warnings: !state || draftOrderMode.explicit
       ? []
       : [
           "Yahoo did not provide an explicit snake or straight draft order. The companion is predicting a snake draft until confirmed.",

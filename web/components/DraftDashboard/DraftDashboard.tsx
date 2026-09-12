@@ -33,7 +33,7 @@ import DraftStatus from "./DraftStatus";
 import LeagueStandings from "./LeagueStandings";
 import MyRoster from "./MyRoster";
 import GodView from "./GodView";
-import { godViewRosterNeeds, godViewRosterProgress, selectGodViewQueue } from "lib/draftDashboard/godView";
+import { godViewRosterNeeds, godViewRosterProgress, selectGodViewQueue, selectMyPickWindows } from "lib/draftDashboard/godView";
 import DustMatrix from "./DustMatrix";
 import SavedDraftsWorkspace from "./SavedDraftsWorkspace";
 import type { SavedDraftAnnotations } from "./SavedDraftsPanel";
@@ -148,6 +148,7 @@ import {
   yahooSettingsRequireGeneralConfirmation,
   yahooSettingsWarnings,
   type DraftDashboardMode,
+  type YahooDraftDashboardConfiguration,
 } from "lib/draftDashboard/yahooLiveDraft";
 import {
   espnDraftDashboardConfiguration,
@@ -189,6 +190,36 @@ export interface DraftSettings {
   draftOrder: string[];
   draftOrderMode?: DraftOrderMode;
   reversedRounds?: number[];
+}
+
+export function buildAppliedYahooDraftSettings(
+  current: DraftSettings,
+  configuration: YahooDraftDashboardConfiguration,
+): DraftSettings {
+  return {
+    ...current,
+    teamCount: configuration.draftOrder.length
+      ? configuration.teamCount
+      : current.teamCount,
+    draftOrder: configuration.draftOrder.length
+      ? configuration.draftOrder
+      : current.draftOrder,
+    ...(configuration.rosterConfig
+      ? { rosterConfig: configuration.rosterConfig as DraftSettings["rosterConfig"] }
+      : {}),
+    ...(configuration.leagueType
+      ? { leagueType: configuration.leagueType }
+      : {}),
+    ...(configuration.scoringCategories
+      ? { scoringCategories: configuration.scoringCategories }
+      : {}),
+    ...(configuration.categoryWeights
+      ? { categoryWeights: configuration.categoryWeights }
+      : {}),
+    draftOrderMode:
+      configuration.isSnakeDraft === false ? "standard" : "snake",
+    reversedRounds: [],
+  };
 }
 
 export interface DraftedPlayer {
@@ -453,6 +484,7 @@ const DraftDashboard: React.FC = () => {
     Record<string, string>
   >({});
   const [godViewOpen, setGodViewOpen] = useState(false);
+  const [quickSettingsOpen, setQuickSettingsOpen] = useState(false);
   const [inspectedTeamId, setInspectedTeamId] = useState<string>("");
   const [rosterViewRequest, setRosterViewRequest] = useState<{ teamId: string }>();
   const [graphExpandRequest, setGraphExpandRequest] = useState(0);
@@ -769,12 +801,15 @@ const DraftDashboard: React.FC = () => {
     };
   }, []);
 
-  const saveSnapshot = useCallback(() => {
-    if (typeof window === "undefined" || !manualDraftingEnabled) return;
+  const saveSnapshot = useCallback((draftSettingsOverride?: DraftSettings) => {
+    if (
+      typeof window === "undefined" ||
+      (!manualDraftingEnabled && !draftSettingsOverride)
+    ) return;
     const payload: DraftSnapshotV2 = {
       v: 2,
       ts: Date.now(),
-      draftSettings,
+      draftSettings: draftSettingsOverride || draftSettings,
       draftedPlayers: manualDraftedPlayers,
       keepers,
       pickOwnerOverrides,
@@ -782,7 +817,9 @@ const DraftDashboard: React.FC = () => {
       positionOverrides,
       customTeamNames,
       currentPick,
-      isSnakeDraft,
+      isSnakeDraft: draftSettingsOverride
+        ? draftSettingsOverride.draftOrderMode === "snake"
+        : isSnakeDraft,
       myTeamId,
       baselineMode,
       needWeightEnabled,
@@ -987,6 +1024,7 @@ const DraftDashboard: React.FC = () => {
     if (draftMode === "yahoo") {
       restoredLeagueSettingsRef.current = true;
       setSettingsConfigured(true);
+      loadSnapshot();
       return;
     }
     const raw = sessionStorage.getItem("draft.snapshot.v2");
@@ -1803,33 +1841,15 @@ const DraftDashboard: React.FC = () => {
     ) {
       return;
     }
-    setDraftSettings((previous) => ({
-      ...previous,
-      teamCount: configuration.draftOrder.length
-        ? configuration.teamCount
-        : previous.teamCount,
-      draftOrder: configuration.draftOrder.length
-        ? configuration.draftOrder
-        : previous.draftOrder,
-      ...(configuration.rosterConfig
-        ? { rosterConfig: configuration.rosterConfig as DraftSettings["rosterConfig"] }
-        : {}),
-      ...(configuration.leagueType
-        ? { leagueType: configuration.leagueType }
-        : {}),
-      ...(configuration.scoringCategories
-        ? { scoringCategories: configuration.scoringCategories }
-        : {}),
-      ...(configuration.categoryWeights
-        ? { categoryWeights: configuration.categoryWeights }
-        : {}),
-      draftOrderMode:
-        configuration.isSnakeDraft === false ? "standard" : "snake",
-      reversedRounds: [],
-    }));
+    const nextDraftSettings = buildAppliedYahooDraftSettings(
+      draftSettings,
+      configuration,
+    );
+    setDraftSettings(nextDraftSettings);
     setCustomTeamNames(configuration.customTeamNames);
     if (configuration.myTeamId) setMyTeamId(configuration.myTeamId);
-  }, [yahooDraftSync.draftState]);
+    saveSnapshot(nextDraftSettings);
+  }, [draftSettings, saveSnapshot, yahooDraftSync.draftState]);
 
   useEffect(() => {
     if (skaterData.isLoading || goalieData.isLoading || !allPlayers.length)
@@ -2471,6 +2491,12 @@ const DraftDashboard: React.FC = () => {
     () => draftSettings.teamCount * totalRosterSize,
     [draftSettings.teamCount, totalRosterSize],
   );
+  const myPickWindows = useMemo(() => selectMyPickWindows({
+    startPick: currentPick, maxPickNumber: totalPicks, draftOrder: draftSettings.draftOrder,
+    orderPattern: draftOrderPattern, trades: manualDraftingEnabled ? pickTrades : [],
+    keepers: manualDraftingEnabled ? keepers : [], completedPickNumbers: draftedPlayers.map(p => p.pickNumber),
+    teamRosterCounts, rosterCapacity: totalRosterSize,
+  }, myTeamId), [currentPick, totalPicks, draftSettings.draftOrder, draftOrderPattern, manualDraftingEnabled, pickTrades, keepers, draftedPlayers, teamRosterCounts, totalRosterSize, myTeamId]);
   const nextManualActionablePick = useMemo(
     () =>
       findNextActionablePick({
@@ -3365,6 +3391,7 @@ const DraftDashboard: React.FC = () => {
   // Keep table rendering independent of settings navigation and visibility.
   const projectionsTable = useMemo(() => (
     <ProjectionsTable
+            picksBeforeTurn={myPickWindows[0]?.offset}
             onRefresh={() => setDataRefreshKey((k) => k + 1)}
             currentSeasonId={currentSeasonId}
             players={availablePlayers}
@@ -3422,7 +3449,7 @@ const DraftDashboard: React.FC = () => {
             onOpenRosterImpact={canUseProScenarios ? openRosterImpact : undefined}
           />
   ), [
-    currentSeasonId, availablePlayers, allPlayers, draftedPlayers,
+    myPickWindows, currentSeasonId, availablePlayers, allPlayers, draftedPlayers,
     unavailablePlayerIds, isLoading, errorMessage, draftPlayer,
     manualDraftingEnabled, settingsConfigured, settingsValidation.valid,
     personalRankByPlayerId, vorpMetrics, replacementByPos, baselineMode,
@@ -3438,27 +3465,11 @@ const DraftDashboard: React.FC = () => {
   return (
     <main
       className={styles.dashboardContainer}
-      data-god-view-open={godViewOpen}
+      data-god-view-open={godViewOpen || quickSettingsOpen}
       data-settings-open={settingsOpen}
       data-full-settings={fullSettings}
       data-mobile-tab={activeMobileTab}
     >
-      <DraftWorkspaceHeader
-        seasonId={FANTASY_PROJECTION_SEASON_ID}
-        health={sourcesRefreshing ? "loading" : sourcesUnavailable || syncError || !hasLoadedPlayers ? "warning" : "healthy"}
-        healthLabel={
-          sourcesRefreshing ? "Loading draft sources"
-            : errorMessage ? "Draft source error"
-            : sourcesUnavailable ? "Some sources unavailable"
-            : syncError ? "Sync needs attention"
-            : !hasLoadedPlayers ? "No projection data"
-            : !manualDraftingEnabled ? `${espnLiveActive ? "ESPN" : "Yahoo"} live sync`
-            : "Draft sources ready"
-        }
-        draftProEligible={draftProEligible}
-        onSettings={() => openSettings("league")}
-        onHealth={() => openSettings("integrations")}
-      />
       <MobileDraftTabs
         activeTab={activeMobileTab}
         onChange={(tab) => {
@@ -3726,9 +3737,12 @@ const DraftDashboard: React.FC = () => {
         </div>
       )}
 
-      {yahooDraftSync.enabled && (
-        <YahooLiveDraftPanel
+      <YahooLiveDraftPanel
           mode={draftMode}
+          authenticated={Boolean(user?.id)}
+          draftProEligible={draftProEligible}
+          liveSyncEnabled={yahooDraftSync.enabled}
+          requestState={yahooDraftSync.requestState}
           leagues={yahooDraftSync.leagues}
           selectedLeagueId={yahooDraftSync.selectedLeagueId}
           draftState={yahooDraftSync.draftState}
@@ -3756,7 +3770,6 @@ const DraftDashboard: React.FC = () => {
             void stopYahooAndContinueManually()
           }
         />
-      )}
 
       <EspnLiveDraftPanel
         enabled={espnDraftSync.enabled}
@@ -3807,6 +3820,30 @@ const DraftDashboard: React.FC = () => {
       </DraftSettingsShell>
 
       <GodView
+        toolbar={<DraftWorkspaceHeader
+        health={sourcesRefreshing ? "loading" : sourcesUnavailable || syncError || !hasLoadedPlayers ? "warning" : "healthy"}
+        healthLabel={
+          sourcesRefreshing ? "Loading draft sources"
+            : errorMessage ? "Draft source error"
+            : sourcesUnavailable ? "Some sources unavailable"
+            : syncError ? "Sync needs attention"
+            : !hasLoadedPlayers ? "No projection data"
+            : !manualDraftingEnabled ? `${espnLiveActive ? "ESPN" : "Yahoo"} live sync`
+            : "Draft sources ready"
+        }
+        draftProEligible={draftProEligible}
+        onSettings={() => setQuickSettingsOpen(value => !value)}
+        settingsExpanded={quickSettingsOpen}
+        onHealth={() => openSettings("integrations")}
+      />}
+        settingsOpen={quickSettingsOpen}
+        onShowGodView={() => setQuickSettingsOpen(false)}
+        quickSettings={<div className={styles.quickSettings}>
+          <div><strong>Quick settings</strong><span>{draftSettings.teamCount} teams · {totalRosterSize} roster spots · {draftSettings.leagueType || "points"}</span></div>
+          <label>My team <select value={myTeamId} onChange={event => setMyTeamId(event.target.value)}>{teamStats.map(team => <option key={team.teamId} value={team.teamId}>{team.teamName}</option>)}</select></label>
+          <label><input type="checkbox" checked={needWeightEnabled && canUseProRecommendations} disabled={!canUseProRecommendations} onChange={event => setNeedWeightEnabled(event.target.checked)} /> Prioritize my roster needs · Pro</label>
+          <nav aria-label="Quick settings sections">{([['league', 'Full draft settings'], ['roster', 'Roster slots'], ['scoring', 'Scoring'], ['projections', 'Source weights'], ['integrations', 'Integrations'], ['saved-drafts', 'Saved drafts']] as const).map(([section, label]) => <button type="button" key={section} onClick={() => openSettings(section)}>{label}</button>)}<button type="button" onClick={() => setIsImportCsvOpen(true)}>Import CSV</button></nav>
+        </div>}
         queue={selectGodViewQueue({ startPick: currentPick, maxPickNumber: totalPicks,
           draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern,
           trades: manualDraftingEnabled ? pickTrades : [], keepers: manualDraftingEnabled ? keepers : [],
@@ -3833,6 +3870,7 @@ const DraftDashboard: React.FC = () => {
         hidden={mobileWorkspaceEnabled && activeMobileTab !== "suggested"}
       >
         <SuggestedPicks
+          pickWindows={myPickWindows}
           compact={false}
           onReturnToDraft={closeSettings}
           players={availablePlayers}

@@ -1787,3 +1787,7 @@
 
 .queueName { flex-wrap: wrap; }
 .queueControls { display: flex; flex: 0 0 100%; order: 2; gap: 4px; padding-top: 4px; }
+.playersTable td { border-radius: 0 !important; }
+.playerRow[data-next-pick="true"] > td { border-top: 2px solid v.$info-color; }
+.pickLabel { display: block; color: v.$info-color; font-size: 10px; line-height: 14px; text-transform: uppercase; }
+.projectionsContainer { border-radius: inherit; }

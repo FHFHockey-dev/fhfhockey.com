@@ -75,6 +75,18 @@
   box-shadow: 0 0 10px rgba(v.$success-color, 0.8);
 }
 
+.setupNotice {
+  padding: v.$space-sm v.$space-md;
+  color: v.$text-secondary;
+  background: rgba(v.$background-dark, 0.45);
+  border-left: 3px solid v.$primary-color;
+  font-size: v.$font-size-sm;
+
+  a {
+    color: v.$primary-color;
+  }
+}
+
 .syncing {
   color: v.$primary-color;
 }

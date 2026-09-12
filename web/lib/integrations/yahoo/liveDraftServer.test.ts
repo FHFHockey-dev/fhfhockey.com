@@ -2,10 +2,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   correctedIncomingPickNumbers,
+  deferYahooDraftSessionForAccessCheck,
+  pauseYahooDraftSessionForAccessLoss,
   postdraftConfirmation,
   pollYahooDraftSession,
   requireOwnedYahooDraftLeague,
   snapshotRequiresCorrectionConfirmation,
+  stopYahooDraftSession,
 } from "./liveDraftServer";
 import { fetchYahooDraftResource } from "./providerClient";
 
@@ -115,6 +118,86 @@ describe("Yahoo live draft ownership", () => {
         GAME_CONTEXT,
       ),
     ).rejects.toMatchObject({ statusCode: 404, code: "yahoo_league_not_found" });
+  });
+
+  it("stops automatic updates on access loss without changing retained picks", async () => {
+    const updates: Array<Record<string, unknown>> = [];
+    const builder: any = {
+      eq: () => builder,
+      in: () => builder,
+      maybeSingle: () => Promise.resolve({ data: { id: "session" }, error: null }),
+      select: () => builder,
+      then: (resolve: (value: unknown) => unknown) =>
+        Promise.resolve({ error: null }).then(resolve),
+    };
+    const client: any = {
+      from: (table: string) => ({
+        update: (values: Record<string, unknown>) => {
+          expect(table).toBe("yahoo_draft_sessions");
+          updates.push(values);
+          return builder;
+        },
+      }),
+    };
+
+    await pauseYahooDraftSessionForAccessLoss({
+      client,
+      error: Object.assign(new Error("Draft Pro access is required."), {
+        code: "no_active_grant",
+        statusCode: 403,
+      }),
+      sessionId: "22222222-2222-4222-8222-222222222222",
+      userId: "11111111-1111-4111-8111-111111111111",
+    });
+
+    expect(updates).toEqual([
+      expect.objectContaining({
+        last_error_code: "yahoo_draft_pro_access_required",
+        status: "stopped",
+      }),
+    ]);
+    expect(updates[0]).not.toHaveProperty("completed_at");
+    expect(updates[0]).not.toHaveProperty("picks");
+  });
+
+  it("scopes access transitions and preserves completed rows, picks, and leases", async () => {
+    const rows = [
+      { id: "active", user_id: "owner", status: "active", completed_at: null, picks: [1], poll_lease_token: "lease", poll_lease_expires_at: "2099-01-01" },
+      { id: "complete", user_id: "owner", status: "complete", completed_at: "2026-09-12T01:00:00Z", picks: [2], poll_lease_token: null, poll_lease_expires_at: null },
+      { id: "other", user_id: "other", status: "active", completed_at: null, picks: [3], poll_lease_token: "other-lease", poll_lease_expires_at: "2099-01-01" },
+    ];
+    const updates: Array<{ id: string; values: Record<string, unknown> }> = [];
+    const client: any = {
+      from: () => {
+        const query: any = { id: null, user: null, statuses: null, values: null };
+        const builder: any = {
+          update: (values: Record<string, unknown>) => { query.values = values; return builder; },
+          eq: (column: string, value: string) => { if (column === "id") query.id = value; if (column === "user_id") query.user = value; return builder; },
+          in: (_column: string, values: string[]) => { query.statuses = values; return builder; },
+          select: () => builder,
+          maybeSingle: () => {
+            const row = rows.find((candidate) => candidate.id === query.id && candidate.user_id === query.user && (!query.statuses || query.statuses.includes(candidate.status)));
+            if (query.values && row) { updates.push({ id: row.id, values: query.values }); Object.assign(row, query.values); }
+            return Promise.resolve({ data: row ? { id: row.id } : null, error: null });
+          },
+          then: (resolve: (value: unknown) => unknown) => {
+            const row = rows.find((candidate) => candidate.id === query.id && candidate.user_id === query.user && (!query.statuses || query.statuses.includes(candidate.status)));
+            if (query.values && row) { updates.push({ id: row.id, values: query.values }); Object.assign(row, query.values); }
+            return Promise.resolve({ data: row ? { id: row.id } : null, error: null }).then(resolve);
+          },
+        };
+        return builder;
+      },
+    };
+    await pauseYahooDraftSessionForAccessLoss({ client, error: new Error("expired"), sessionId: "complete", userId: "owner" });
+    await pauseYahooDraftSessionForAccessLoss({ client, error: new Error("expired"), sessionId: "active", userId: "other" });
+    await deferYahooDraftSessionForAccessCheck({ client, error: new Error("temporary"), now: new Date("2026-09-12T01:00:00Z"), sessionId: "complete", userId: "owner" });
+    await deferYahooDraftSessionForAccessCheck({ client, error: new Error("temporary"), now: new Date("2026-09-12T01:00:00Z"), sessionId: "active", userId: "owner" });
+    await expect(stopYahooDraftSession("other", "active", client)).rejects.toMatchObject({ statusCode: 404, code: "yahoo_draft_session_not_found" });
+    expect(rows[1]).toMatchObject({ status: "complete", completed_at: "2026-09-12T01:00:00Z", picks: [2] });
+    expect(rows[2]).toMatchObject({ status: "active", picks: [3] });
+    expect(rows[0]).toMatchObject({ status: "active", poll_lease_token: "lease", poll_lease_expires_at: "2099-01-01", picks: [1] });
+    expect(updates.map((update) => update.id)).toEqual(["active"]);
   });
 
   it("returns owner-scoped state without calling Yahoo when the poll lease is not claimed", async () => {

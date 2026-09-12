@@ -1,8 +1,16 @@
 import serviceRoleClient from "lib/supabase/server";
 
 import { resolveYahooGameContext } from "./gameContext";
+import {
+  isConfirmedYahooLiveDraftAccessLoss,
+  requireYahooLiveDraftServerAccess,
+} from "./liveDraftAccess";
 import type { YahooLiveDraftClient } from "./liveDraftDatabase";
-import { pollYahooDraftSession } from "./liveDraftServer";
+import {
+  pauseYahooDraftSessionForAccessLoss,
+  pollYahooDraftSession,
+  deferYahooDraftSessionForAccessCheck,
+} from "./liveDraftServer";
 
 type DueSession = {
   connected_account_id: string;
@@ -28,11 +36,38 @@ async function runAccountQueue(args: {
   client: YahooLiveDraftClient;
   context: Awaited<ReturnType<typeof resolveYahooGameContext>>;
   fetchImpl: typeof fetch;
+  now: Date;
   sessions: DueSession[];
 }) {
   let succeeded = 0;
   let failed = 0;
   for (const session of args.sessions) {
+    try {
+      await requireYahooLiveDraftServerAccess(session.user_id);
+    } catch (error) {
+      try {
+        if (isConfirmedYahooLiveDraftAccessLoss(error)) {
+          await pauseYahooDraftSessionForAccessLoss({
+            client: args.client,
+            error,
+            sessionId: session.id,
+            userId: session.user_id,
+          });
+        } else {
+          await deferYahooDraftSessionForAccessCheck({
+            client: args.client,
+            error,
+            now: args.now,
+            sessionId: session.id,
+            userId: session.user_id,
+          });
+        }
+      } catch {
+        // A failed state update must not prevent other due sessions from running.
+      }
+      failed += 1;
+      continue;
+    }
     try {
       await pollYahooDraftSession(session.user_id, session.id, {
         client: args.client,
@@ -93,6 +128,7 @@ export async function runYahooDraftPollCoordinator(
           client,
           context,
           fetchImpl: options.fetchImpl ?? fetch,
+          now,
           sessions: queue,
         });
         succeeded += result.succeeded;
@@ -111,4 +147,3 @@ export async function runYahooDraftPollCoordinator(
     { attempted: 0, failed: 0, succeeded: 0 },
   );
 }
-

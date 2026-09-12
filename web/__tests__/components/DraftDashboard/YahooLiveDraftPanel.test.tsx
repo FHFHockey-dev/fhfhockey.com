@@ -6,12 +6,71 @@ import YahooLiveDraftPanel from "../../../components/DraftDashboard/YahooLiveDra
 afterEach(cleanup);
 
 describe("YahooLiveDraftPanel", () => {
+  const baseProps = {
+    mode: "manual" as const,
+    leagues: [],
+    selectedLeagueId: "",
+    draftState: null,
+    reconciliation: {
+      draftedPlayers: [],
+      unresolved: [],
+      warnings: [],
+      currentPick: 1,
+      expectedNext: { pickNumber: 1, roundNumber: 1, pickInRound: 1, predicted: true as const },
+    },
+    isLoading: false,
+    isPolling: false,
+    error: null,
+    onLeagueChange: vi.fn(),
+    onConnect: vi.fn(),
+    onRefreshAccount: vi.fn(),
+    onRefreshDraft: vi.fn(),
+    onStart: vi.fn(),
+    onApplySettings: vi.fn(),
+    onStopAndContinueManually: vi.fn(),
+  };
+
+  it.each([
+    ["signed out", { authenticated: false, draftProEligible: false, liveSyncEnabled: false }, "Sign in required", "Sign in"],
+    ["free", { authenticated: true, draftProEligible: false, liveSyncEnabled: false }, "Draft Pro required", "Explore Draft Pro"],
+    ["paid and preparing", { authenticated: true, draftProEligible: true, liveSyncEnabled: false, requestState: "loading" as const }, "Preparing", null],
+    ["paid but unavailable", { authenticated: true, draftProEligible: true, liveSyncEnabled: false, requestState: "ready" as const }, "Unavailable", null],
+    ["paid and ready", { authenticated: true, draftProEligible: true, liveSyncEnabled: true }, "Ready to connect", null],
+  ])("keeps the Yahoo setup visible for %s", (_name, state, status, linkName) => {
+    render(<YahooLiveDraftPanel {...baseProps} {...state} />);
+    expect(screen.getByText(status)).toBeTruthy();
+    if (linkName) expect(screen.getByRole("link", { name: linkName })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Yahoo Fantasy Draft Sync" })).toBeTruthy();
+    expect(screen.queryByText(/did not provide an explicit snake or straight draft order/)).toBeNull();
+  });
+
+  it("gates live actions while keeping stop available after access loss", () => {
+    render(
+      <YahooLiveDraftPanel
+        {...baseProps}
+        authenticated
+        draftProEligible
+        liveSyncEnabled={false}
+        requestState="ready"
+        mode="yahoo"
+      />,
+    );
+
+    expect((screen.getByRole("button", { name: "Refresh leagues" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Check for updates" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Apply Yahoo settings" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Stop & continue manually" }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
   it("shows live status, predicted next pick, unresolved picks, and Yahoo attribution", () => {
     const onStop = vi.fn();
     const onApplySettings = vi.fn();
     render(
       <YahooLiveDraftPanel
         mode="yahoo"
+        authenticated
+        draftProEligible
+        liveSyncEnabled
         leagues={[
           {
             externalLeagueId: "league-1",
@@ -98,6 +157,7 @@ describe("YahooLiveDraftPanel", () => {
         ?.textContent,
     ).toContain("Unknown Player");
     expect(screen.getByText(/scoring values incomplete/)).toBeTruthy();
+    expect(screen.getByText(/apply to update dashboard roster and scoring/)).toBeTruthy();
     expect(screen.getByText("Your team: Tim's Team")).toBeTruthy();
     expect(screen.getByText(/Live updates are delayed/)).toBeTruthy();
     const attribution = screen.getByRole("img", { name: "Powered by Yahoo" });

@@ -9,6 +9,7 @@ import { PlayerVorpMetrics } from "hooks/useVORPCalculations";
 import { buildRecommendationCandidates, usePlayerRecommendations } from "hooks/usePlayerRecommendations";
 import { useDraftProRecommendations } from "hooks/useDraftProRecommendations";
 import styles from "./SuggestedPicks.module.scss";
+import type { PickWindow } from "lib/draftDashboard/godView";
 import controls from "styles/Controls.module.scss";
 import type { DraftDashboardDustInsight } from "hooks/useRosterScheduleOptimizer";
 import {
@@ -25,6 +26,7 @@ export interface SuggestedPicksProps {
   selectionHorizon?: SelectionHorizon | null;
   availabilitySpread?: number;
   onClock?: boolean;
+  pickWindows?: PickWindow[];
   compact?: boolean;
   onReturnToDraft?: () => void;
   isLoading?: boolean;
@@ -96,6 +98,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   currentPick,
   teamCount,
   baselineMode,
+  pickWindows = [],
   nextPickNumber,
   defaultLimit = 10,
   onSelectPlayer,
@@ -782,7 +785,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         </div>}
         <div
           ref={picksRef}
-          className={`${styles.cardsRow} ${tierView ? styles.sizingOnly : ""}`}
+          className={`${styles.cardsRow} ${tierView ? styles.sizingOnly : ""} ${pickWindows.length ? styles.withPickWindows : ""}`}
           aria-hidden={tierView}
           onScroll={updateScrollEdges}
           role="list"
@@ -814,6 +817,11 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
               const selected = selectedId === id;
               const compareSelected = compareSelectedIds.includes(id);
               const personalRank = personalRankByPlayerId[id];
+              const windowIndex = pickWindows.findIndex(window => window.offset === idx);
+              const pickWindow = pickWindows[windowIndex];
+              const nextOffset = pickWindows[windowIndex + 1]?.offset ?? top.length;
+              const visibleSpan = Math.min(top.length, nextOffset) - idx;
+              const fadeScale = pickWindow ? (nextOffset - idx) / visibleSpan : 1;
               return (
                 <article
                   key={id}
@@ -825,6 +833,16 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                   tabIndex={-1}
                   title={`${name}${team ? ` · ${team}` : ""}${typeof adp === "number" ? ` · ADP ${adp.toFixed(1)}` : ""}`}
                 >
+                  {pickWindow && <span
+                    className={styles.pickWindow}
+                    style={{
+                      "--window-cards": visibleSpan,
+                      "--fade-start": `${fadeScale * 50}%`,
+                      "--fade-end": `${fadeScale * 98}%`,
+                    } as React.CSSProperties}
+                    aria-label={`${windowIndex === 0 ? "Your next pick" : "Upcoming pick"}, round ${pickWindow.round}, pick ${pickWindow.pickInRound}. Estimate based on displayed order.`}>
+                    <span>{windowIndex === 0 ? "YOUR NEXT PICK" : `UPCOMING RD. ${pickWindow.round}, PICK ${pickWindow.pickInRound}`}</span>
+                  </span>}
                   <div className={styles.header}>
                     <div className={styles.rankBadge}>#{idx + 1}</div>
                     <div className={styles.name} title={name}>

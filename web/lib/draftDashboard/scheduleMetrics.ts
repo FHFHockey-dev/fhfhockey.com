@@ -68,3 +68,10 @@ export function totalRosterScheduleMetrics(
   }
   return metrics ? total : null;
 }
+
+/** Projection vendors use two-letter aliases; schedules use NHL tricodes. */
+export function canonicalScheduleTeam(value: string | null | undefined): string {
+  const team = value?.trim().toUpperCase() ?? "";
+  const aliases: Record<string, string> = { TB: "TBL", NJ: "NJD", SJ: "SJS", LA: "LAK", MON: "MTL", WAS: "WSH", NAS: "NSH" };
+  return aliases[team] ?? team;
+}

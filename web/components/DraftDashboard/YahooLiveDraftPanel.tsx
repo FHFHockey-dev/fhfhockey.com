@@ -18,6 +18,10 @@ import styles from "./YahooLiveDraftPanel.module.scss";
 
 interface YahooLiveDraftPanelProps {
   mode: DraftDashboardMode;
+  authenticated?: boolean;
+  draftProEligible?: boolean;
+  liveSyncEnabled?: boolean;
+  requestState?: "idle" | "loading" | "ready" | "error";
   leagues: YahooDraftLeague[];
   selectedLeagueId: string;
   draftState: YahooDraftState | null;
@@ -60,6 +64,21 @@ function statusLabel(draftState: YahooDraftState | null): string {
   }
 }
 
+function setupLabel(args: {
+  authenticated: boolean;
+  draftProEligible: boolean;
+  liveSyncEnabled: boolean;
+  requestState: "idle" | "loading" | "ready" | "error";
+}): string {
+  if (!args.authenticated) return "Sign in required";
+  if (!args.draftProEligible) return "Draft Pro required";
+  if (args.liveSyncEnabled) return "Ready to connect";
+  if (args.requestState === "idle" || args.requestState === "loading") {
+    return "Preparing";
+  }
+  return "Unavailable";
+}
+
 function formatTimestamp(value?: string | null): string | null {
   if (!value) return null;
   const date = new Date(value);
@@ -69,6 +88,10 @@ function formatTimestamp(value?: string | null): string | null {
 
 const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
   mode,
+  authenticated = false,
+  draftProEligible = false,
+  liveSyncEnabled = false,
+  requestState = "ready",
   leagues,
   selectedLeagueId,
   draftState,
@@ -86,6 +109,7 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
   onApplySettings,
   onStopAndContinueManually,
 }) => {
+  const liveSyncReady = authenticated && draftProEligible && liveSyncEnabled;
   const activePicks = draftState?.picks.filter((pick) => pick.active) || [];
   const unresolvedCount = reconciliation.unresolved.length;
   const resolvedCount = Math.max(0, activePicks.length - unresolvedCount);
@@ -136,10 +160,42 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
             className={`${styles.statusDot} ${draftState?.session.providerStatus === "drafting" || (draftState?.session.status === "active" && activePicks.length > 0) ? styles.statusLive : ""}`}
             aria-hidden="true"
           />
-          <span>{statusLabel(draftState)}</span>
+          <span>
+            {draftState
+              ? statusLabel(draftState)
+              : setupLabel({
+                  authenticated,
+                  draftProEligible,
+                  liveSyncEnabled,
+                  requestState,
+                })}
+          </span>
           {isPolling && <span className={styles.syncing}>Requesting update…</span>}
         </div>
       </div>
+
+      {!authenticated && (
+        <div className={styles.setupNotice} role="status">
+          Sign in to connect Yahoo and use Live Sync{" "}
+          <a href="/auth?mode=sign-in">Sign in</a>
+        </div>
+      )}
+      {authenticated && !draftProEligible && (
+        <div className={styles.setupNotice} role="status">
+          Yahoo Live Sync is included with Draft Pro{" "}
+          <a href="/account?section=draft-pro">Explore Draft Pro</a>
+        </div>
+      )}
+      {authenticated && draftProEligible && !liveSyncEnabled && (
+        <div className={error ? styles.error : styles.setupNotice} role={error ? "alert" : "status"}>
+          {error
+            ? "Yahoo Live Sync is unavailable right now. Try again later."
+            : requestState === "idle" || requestState === "loading"
+              ? "Yahoo Live Sync is preparing for this account while Yahoo access is verified."
+              : "Yahoo Live Sync is unavailable for this account right now."
+          }
+        </div>
+      )}
 
       <div className={styles.controls}>
         <label className={styles.leagueControl}>
@@ -171,10 +227,10 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
         </label>
 
         <div className={styles.actions}>
-          <button type="button" onClick={onConnect} disabled={isLoading}>
+          <button type="button" onClick={onConnect} disabled={!authenticated || isLoading}>
             Connect Yahoo
           </button>
-          <button type="button" onClick={onRefreshAccount} disabled={isLoading}>
+          <button type="button" onClick={onRefreshAccount} disabled={!liveSyncReady || isLoading}>
             Refresh leagues
           </button>
           {mode === "manual" ? (
@@ -182,7 +238,7 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
               type="button"
               className={styles.primaryAction}
               onClick={onStart}
-              disabled={!canStart || isLoading}
+              disabled={!canStart || !liveSyncReady || isLoading}
             >
               {canResumeExisting ? "Resume live sync" : "Start live sync"}
             </button>
@@ -191,14 +247,14 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
               <button
                 type="button"
                 onClick={onRefreshDraft}
-                disabled={isPolling || isLoading}
+                disabled={!liveSyncReady || isPolling || isLoading}
               >
                 Check for updates
               </button>
               <button
                 type="button"
                 onClick={onApplySettings}
-                disabled={isLoading || !draftState}
+                disabled={!liveSyncReady || isLoading || !draftState}
               >
                 Apply Yahoo settings
               </button>
@@ -237,6 +293,7 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
             {draftOrderIsInferred && (
               <span> · snake order is assumed and requires confirmation</span>
             )}
+            <span> · apply to update dashboard roster and scoring</span>
           </div>
           <div className={styles.metrics}>
           <div>

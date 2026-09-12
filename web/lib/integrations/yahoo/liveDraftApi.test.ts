@@ -3,16 +3,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   isYahooLiveDraftEnabled,
   isYahooLiveDraftUserEntitled,
+  sendYahooLiveDraftError,
 } from "./liveDraftApi";
+import { YahooLiveDraftError } from "./liveDraft";
 
-const { requireApiUser, listYahooDraftLeagues, createYahooDraftSession } =
+const { requireApiUser, requireYahooLiveDraftServerAccess, listYahooDraftLeagues, createYahooDraftSession } =
   vi.hoisted(() => ({
     requireApiUser: vi.fn(),
+    requireYahooLiveDraftServerAccess: vi.fn(),
     listYahooDraftLeagues: vi.fn(),
     createYahooDraftSession: vi.fn(),
   }));
 
 vi.mock("lib/api/requireApiUser", () => ({ requireApiUser }));
+vi.mock("lib/integrations/yahoo/liveDraftAccess", () => ({
+  requireYahooLiveDraftServerAccess,
+}));
 vi.mock("lib/integrations/yahoo/liveDraftServer", () => ({
   listYahooDraftLeagues,
   createYahooDraftSession,
@@ -43,6 +49,7 @@ function mockResponse() {
 describe("Yahoo live draft API safeguards", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    requireYahooLiveDraftServerAccess.mockResolvedValue({});
     delete process.env.YAHOO_LIVE_DRAFT_ENABLED;
     delete process.env.YAHOO_LIVE_DRAFT_ROLLOUT_STAGE;
     delete process.env.YAHOO_LIVE_DRAFT_STAFF_USER_IDS;
@@ -133,5 +140,31 @@ describe("Yahoo live draft API safeguards", () => {
     expect(response.statusCode).toBe(400);
     expect(response.body.code).toBe("validation_error");
     expect(createYahooDraftSession).not.toHaveBeenCalled();
+  });
+
+  it("checks Draft Pro server access before exposing Yahoo league state", async () => {
+    process.env.YAHOO_LIVE_DRAFT_ENABLED = "true";
+    process.env.YAHOO_LIVE_DRAFT_ROLLOUT_STAGE = "authenticated";
+    process.env.YAHOO_LIVE_DRAFT_PROVIDER_VALIDATED = "true";
+    requireApiUser.mockResolvedValue({
+      id: "11111111-1111-4111-8111-111111111111",
+    });
+    requireYahooLiveDraftServerAccess.mockRejectedValue(
+      new YahooLiveDraftError("Draft Pro access is required for this action.", 403, "yahoo_draft_pro_access_required"),
+    );
+    const response = mockResponse();
+
+    await handler({ method: "GET", headers: {}, query: {} } as any, response);
+
+    expect(response.statusCode).toBe(403);
+    expect(response.body.code).toBe("yahoo_draft_pro_access_required");
+    expect(listYahooDraftLeagues).not.toHaveBeenCalled();
+  });
+
+  it("sanitizes unexpected structured errors", () => {
+    const response = mockResponse();
+    sendYahooLiveDraftError(response, Object.assign(new Error("secret upstream detail"), { code: "upstream_secret", statusCode: 418 }));
+    expect(response.statusCode).toBe(500);
+    expect(response.body).toEqual({ error: "Yahoo live draft request could not be completed.", code: "internal_error" });
   });
 });

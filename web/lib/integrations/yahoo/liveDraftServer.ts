@@ -1748,3 +1748,59 @@ export async function stopYahooDraftSession(
   }
   return loadYahooDraftSession(userId, sessionId, client);
 }
+
+export async function pauseYahooDraftSessionForAccessLoss(args: {
+  client: LiveDraftDb;
+  error: unknown;
+  sessionId: string;
+  userId: string;
+}) {
+  const message =
+    "Yahoo updates stopped because Draft Pro or Yahoo readiness is no longer active. Existing picks are retained; continue the draft manually.";
+  const code = args.error instanceof YahooLiveDraftError
+    ? args.error.code
+    : "yahoo_draft_pro_access_required";
+  const { data, error } = await args.client
+    .from("yahoo_draft_sessions")
+    .update({
+      status: "stopped",
+      poll_lease_token: null,
+      poll_lease_expires_at: null,
+      last_error_code: code,
+      last_error_message: message,
+    })
+    .eq("id", args.sessionId)
+    .eq("user_id", args.userId)
+    .in("status", ["predraft", "active"])
+    .select("id")
+    .maybeSingle();
+  if (error) {
+    throw queryError("Failed to stop Yahoo draft updates after access loss", error);
+  }
+  return Boolean(data);
+}
+
+export async function deferYahooDraftSessionForAccessCheck(args: {
+  client: LiveDraftDb;
+  error: unknown;
+  now?: Date;
+  sessionId: string;
+  userId: string;
+}) {
+  const code = args.error instanceof YahooLiveDraftError
+    ? args.error.code
+    : "yahoo_draft_pro_verification_unavailable";
+  const { error } = await args.client
+    .from("yahoo_draft_sessions")
+    .update({
+      last_error_code: code,
+      last_error_message: "Yahoo updates are temporarily paused while access is rechecked.",
+      next_poll_at: isoAfter(args.now ?? new Date(), 60),
+    })
+    .eq("id", args.sessionId)
+    .eq("user_id", args.userId)
+    .in("status", ["predraft", "active"]);
+  if (error) {
+    throw queryError("Failed to defer Yahoo draft updates for access recheck", error);
+  }
+}

@@ -9,6 +9,10 @@ import { STATS_MASTER_LIST } from "lib/projectionsConfig/statsMasterList";
 
 const OPEN_KEY = "draft.god-view.open";
 type Props = {
+  toolbar?: React.ReactNode;
+  quickSettings?: React.ReactNode;
+  settingsOpen?: boolean;
+  onShowGodView?: () => void;
   queue: GodViewPick[];
   categories: Record<string, number>;
   leagueType: "points" | "categories";
@@ -28,7 +32,7 @@ type Props = {
   onOpenChange: (open: boolean) => void;
 };
 
-export default function GodView({ queue, categories, leagueType, playerNames, teams, rosterConfig, myTeamId, selectedTeamId, round, currentPick, totalPicks, format, access, onSelectTeam, onExpandGraph, onSummary, onOpenChange }: Props) {
+export default function GodView({ toolbar, quickSettings, settingsOpen = false, onShowGodView, queue, categories, leagueType, playerNames, teams, rosterConfig, myTeamId, selectedTeamId, round, currentPick, totalPicks, format, access, onSelectTeam, onExpandGraph, onSummary, onOpenChange }: Props) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLElement>(null);
   const track = useRef<HTMLDivElement>(null);
@@ -59,7 +63,8 @@ export default function GodView({ queue, categories, leagueType, playerNames, te
     return () => observer.disconnect();
   }, [open, allowed, goToCurrent, cardWidth]);
   const toggle = () => {
-    const next = !open;
+    const next = settingsOpen || !open;
+    onShowGodView?.();
     setOpen(next);
     onOpenChange(next);
     try { localStorage.setItem(OPEN_KEY, String(next)); } catch { /* Keep the local UI usable. */ }
@@ -97,14 +102,16 @@ export default function GodView({ queue, categories, leagueType, playerNames, te
   };
   return <section ref={root} className={styles.root} aria-label="Draft Order">
     <header className={styles.header}>
-      <button type="button" className={styles.toggle} onClick={toggle} aria-label={`${open ? "Collapse" : "Expand"} God View - Pro`} aria-expanded={open} aria-controls="god-view-content"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 5h13M8 12h13M8 19h13M3 4v2M3 11v2M3 18v2"/></svg> God View - Pro <span aria-hidden="true">{open ? "⌃" : "⌄"}</span></button>
+      <button type="button" className={styles.toggle} onClick={toggle} aria-label={`${open && !settingsOpen ? "Collapse" : "Expand"} God View - Pro`} aria-expanded={open && !settingsOpen} aria-controls="god-view-content"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 5h13M8 12h13M8 19h13M3 4v2M3 11v2M3 18v2"/></svg> God View - Pro <span aria-hidden="true">{open && !settingsOpen ? "⌃" : "⌄"}</span></button>
       <span className={styles.context}>Round {round} · {format.charAt(0).toUpperCase() + format.slice(1)}</span>
       <span className={styles.pickProgress}>Pick {Math.min(currentPick, totalPicks)} of {totalPicks}</span>
       {open && allowed && <button type="button" onClick={goToCurrent} className={styles.currentPick}>Current pick</button>}
       {currentPick > totalPicks && <button type="button" onClick={onSummary}>Draft summary</button>}
+      {toolbar}
       <button type="button" className={styles.graph} onClick={onExpandGraph} aria-haspopup="dialog" aria-controls="draft-graph"><span aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 12h4v9H3zM10 3h4v18h-4zM17 8h4v13h-4z"/></svg></span> Expand Draft Graph <span aria-hidden="true">⌄</span></button>
     </header>
-    <div id="god-view-content" hidden={!open}>
+    <div id="draft-quick-settings" hidden={!settingsOpen}>{quickSettings}</div>
+    <div id="god-view-content" hidden={!open || settingsOpen}>
       {!allowed ? <p className={styles.explanation}>{access?.eligible ? "God View is not available yet. It is included in your season pass when enabled." : "Explore upcoming picks and each team’s open roster slots with Draft Pro."} {!access?.eligible && <a href="/account?section=draft-pro">Explore Draft Pro</a>}</p> : queue.length === 0 ? <p className={styles.explanation}>Draft complete. <button type="button" onClick={onSummary}>View draft summary</button></p> : <>
         <div ref={track} className={styles.cards} role="region" aria-label="All draft picks" tabIndex={0} style={{ "--pick-card-width": `${cardWidth}px` } as React.CSSProperties}>
           {queue.map(pick => <React.Fragment key={pick.pickNumber}>

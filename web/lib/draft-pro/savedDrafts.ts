@@ -118,7 +118,7 @@ export function serializeSavedDraft(browserSnapshot: BrowserDraftSnapshot): Draf
     team: { myTeamId: parsed.myTeamId, customTeamNames: parsed.customTeamNames, positionOverrides: parsed.positionOverrides },
     sourceWeights: { skater: parsed.sourceControls, goalie: parsed.goalieSourceControls, goaliePointValues: parsed.goaliePointValues },
     // Metadata only. The rows are independently saved as normalized private imports.
-    importMappings: parsed.customCsvList.map(({ id, label, playerType, headers, resolution }) => ({ id, label, playerType, headers: headers ?? [], resolution: resolution ?? {} })),
+    importMappings: parsed.customCsvList.map(({ id, label, playerType, headers, resolution }) => ({ id, label, ...(playerType ? { playerType } : {}), headers: headers ?? [], resolution: resolution ?? {} })),
     favorites: parsed.favorites,
     notes: parsed.notes,
     tiers: parsed.tiers,

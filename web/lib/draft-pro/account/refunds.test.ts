@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const resendSend = vi.hoisted(() => vi.fn());
 vi.mock("resend", () => ({ Resend: vi.fn(() => ({ emails: { send: resendSend } })) }));
@@ -42,6 +42,8 @@ const input = {
 const purchase = { id: input.purchaseId, user_id: "user-1", status: "active", activated_at: "2026-09-05T00:00:00.000Z" };
 
 describe("Draft Pro refund requests", () => {
+  beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date("2026-09-06T00:00:00.000Z")); });
+  afterEach(() => { vi.useRealTimers(); });
   it("rejects a purchase owned by another user", async () => {
     await expect(createDraftProRefundRequest({ userId: "user-2", accountEmail: "user@example.com", input, client: clientFor({ purchase: { ...purchase, user_id: "user-1" } }) })).rejects.toMatchObject({ statusCode: 404, code: "purchase_not_found" });
   });
