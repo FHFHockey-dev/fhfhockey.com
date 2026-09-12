@@ -76,12 +76,12 @@ The gates permit a proposed activation after validation passes; they do not auth
 - Yahoo access now uses current Draft Pro eligibility, independent Yahoo enablement/rollout, and the existing controlled staff/allowlist rehearsal path. It does not depend on the recommendations feature flag.
 - Only confirmed expired or absent Draft Pro entitlement stops a live session. Readiness, rollout, database, and Patreon-verification failures defer the next poll without deleting picks or changing a completed session.
 - An authenticated owner may always stop an owned session; this does not grant premium access or start provider work.
-- Release readiness remains externally unverified for durable worker deployment/substrate, target migration/types/RLS verification, and controlled provider rehearsal. No production action occurred.
+- Release readiness remains externally unverified for durable worker deployment/substrate, functional cross-user behavior, and controlled provider rehearsal. The target migration/types/RLS preflight is verified read-only; no production action occurred.
 
 ## Final Correction Evidence
 
 - Chef corrections are represented by commits `19e3354cf` (runtime guards and retry-safe transitions), `f21a9d91e` (coordinator recovery tests), and `eb20dd787` (stateful ownership/retained-state tests), with final permission-matrix coverage in the current follow-up commit.
-- The final targeted suites passed: `liveDraftAccess.test.ts` and `liveDraftServer.test.ts` passed 17/17 tests; the preceding coordinator suite passed 5/5 tests; OAuth/connect/callback/refresh passed 6/6; parser/mapping and hook coverage passed 21/21 combined. `npx tsc --noEmit` completed successfully.
+- The final targeted suites passed: access/server 17/17, coordinator 5/5, live-draft API 6/6, OAuth/connect/callback/refresh 6/6, parser/mapping 12/12, and hook coverage 7/7. `npx tsc --noEmit` completed successfully.
 - The model downgrade to Luna/medium was limited to targeted test corrections after Chef review; no architecture redesign or scope expansion was needed.
 - Read-only infrastructure inspection confirmed migration `20260824152127_yahoo_live_draft_production_hardening` is installed, all five live-draft tables have enabled and forced RLS, authenticated access is limited to owner-scoped reads on sessions/picks, state-changing RPCs are service-role-only, and Realtime publishes only sessions/picks.
 - No draft sessions or polling observations were present in the inspected target, so functional cross-user rehearsal, worker operation/observations, closed-browser ingestion, and active-draft provider validation remain unverified prerequisites.

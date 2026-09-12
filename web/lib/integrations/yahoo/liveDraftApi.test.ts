@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   isYahooLiveDraftEnabled,
   isYahooLiveDraftUserEntitled,
+  sendYahooLiveDraftError,
 } from "./liveDraftApi";
+import { YahooLiveDraftError } from "./liveDraft";
 
 const { requireApiUser, requireYahooLiveDraftServerAccess, listYahooDraftLeagues, createYahooDraftSession } =
   vi.hoisted(() => ({
@@ -148,17 +150,21 @@ describe("Yahoo live draft API safeguards", () => {
       id: "11111111-1111-4111-8111-111111111111",
     });
     requireYahooLiveDraftServerAccess.mockRejectedValue(
-      Object.assign(new Error("Draft Pro access is required for this action."), {
-        code: "no_active_grant",
-        statusCode: 403,
-      }),
+      new YahooLiveDraftError("Draft Pro access is required for this action.", 403, "yahoo_draft_pro_access_required"),
     );
     const response = mockResponse();
 
     await handler({ method: "GET", headers: {}, query: {} } as any, response);
 
     expect(response.statusCode).toBe(403);
-    expect(response.body.code).toBe("no_active_grant");
+    expect(response.body.code).toBe("yahoo_draft_pro_access_required");
     expect(listYahooDraftLeagues).not.toHaveBeenCalled();
+  });
+
+  it("sanitizes unexpected structured errors", () => {
+    const response = mockResponse();
+    sendYahooLiveDraftError(response, Object.assign(new Error("secret upstream detail"), { code: "upstream_secret", statusCode: 418 }));
+    expect(response.statusCode).toBe(500);
+    expect(response.body).toEqual({ error: "Yahoo live draft request could not be completed.", code: "internal_error" });
   });
 });
