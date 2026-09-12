@@ -157,6 +157,7 @@ describe("YahooLiveDraftPanel", () => {
         ?.textContent,
     ).toContain("Unknown Player");
     expect(screen.getByText(/scoring values incomplete/)).toBeTruthy();
+    expect(screen.getByText(/apply to update dashboard roster and scoring/)).toBeTruthy();
     expect(screen.getByText("Your team: Tim's Team")).toBeTruthy();
     expect(screen.getByText(/Live updates are delayed/)).toBeTruthy();
     const attribution = screen.getByRole("img", { name: "Powered by Yahoo" });

@@ -293,6 +293,7 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
             {draftOrderIsInferred && (
               <span> · snake order is assumed and requires confirmation</span>
             )}
+            <span> · apply to update dashboard roster and scoring</span>
           </div>
           <div className={styles.metrics}>
           <div>
