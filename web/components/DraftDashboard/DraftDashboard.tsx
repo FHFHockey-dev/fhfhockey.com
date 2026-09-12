@@ -145,6 +145,7 @@ import {
   yahooSettingsRequireGeneralConfirmation,
   yahooSettingsWarnings,
   type DraftDashboardMode,
+  type YahooDraftDashboardConfiguration,
 } from "lib/draftDashboard/yahooLiveDraft";
 import {
   espnDraftDashboardConfiguration,
@@ -186,6 +187,36 @@ export interface DraftSettings {
   draftOrder: string[];
   draftOrderMode?: DraftOrderMode;
   reversedRounds?: number[];
+}
+
+export function buildAppliedYahooDraftSettings(
+  current: DraftSettings,
+  configuration: YahooDraftDashboardConfiguration,
+): DraftSettings {
+  return {
+    ...current,
+    teamCount: configuration.draftOrder.length
+      ? configuration.teamCount
+      : current.teamCount,
+    draftOrder: configuration.draftOrder.length
+      ? configuration.draftOrder
+      : current.draftOrder,
+    ...(configuration.rosterConfig
+      ? { rosterConfig: configuration.rosterConfig as DraftSettings["rosterConfig"] }
+      : {}),
+    ...(configuration.leagueType
+      ? { leagueType: configuration.leagueType }
+      : {}),
+    ...(configuration.scoringCategories
+      ? { scoringCategories: configuration.scoringCategories }
+      : {}),
+    ...(configuration.categoryWeights
+      ? { categoryWeights: configuration.categoryWeights }
+      : {}),
+    draftOrderMode:
+      configuration.isSnakeDraft === false ? "standard" : "snake",
+    reversedRounds: [],
+  };
 }
 
 export interface DraftedPlayer {
@@ -782,7 +813,9 @@ const DraftDashboard: React.FC = () => {
       positionOverrides,
       customTeamNames,
       currentPick,
-      isSnakeDraft: (draftSettingsOverride?.draftOrderMode || draftSettings.draftOrderMode) === "snake",
+      isSnakeDraft: draftSettingsOverride
+        ? draftSettingsOverride.draftOrderMode === "snake"
+        : isSnakeDraft,
       myTeamId,
       baselineMode,
       needWeightEnabled,
@@ -1804,34 +1837,11 @@ const DraftDashboard: React.FC = () => {
     ) {
       return;
     }
-    const nextDraftSettings: DraftSettings = {
-      ...draftSettings,
-      teamCount: configuration.draftOrder.length
-        ? configuration.teamCount
-        : draftSettings.teamCount,
-      draftOrder: configuration.draftOrder.length
-        ? configuration.draftOrder
-        : draftSettings.draftOrder,
-      ...(configuration.rosterConfig
-        ? { rosterConfig: configuration.rosterConfig as DraftSettings["rosterConfig"] }
-        : {}),
-      ...(configuration.leagueType
-        ? { leagueType: configuration.leagueType }
-        : {}),
-      ...(configuration.scoringCategories
-        ? { scoringCategories: configuration.scoringCategories }
-        : {}),
-      ...(configuration.categoryWeights
-        ? { categoryWeights: configuration.categoryWeights }
-        : {}),
-      draftOrderMode:
-        configuration.isSnakeDraft === false ? "standard" : "snake",
-      reversedRounds: [],
-    };
-    setDraftSettings((previous) => ({
-      ...previous,
-      ...nextDraftSettings,
-    }));
+    const nextDraftSettings = buildAppliedYahooDraftSettings(
+      draftSettings,
+      configuration,
+    );
+    setDraftSettings(nextDraftSettings);
     setCustomTeamNames(configuration.customTeamNames);
     if (configuration.myTeamId) setMyTeamId(configuration.myTeamId);
     saveSnapshot(nextDraftSettings);

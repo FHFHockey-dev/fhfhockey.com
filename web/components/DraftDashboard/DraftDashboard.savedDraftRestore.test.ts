@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { adaptSavedDraftRows } from "./DraftDashboard";
+import {
+  adaptSavedDraftRows,
+  buildAppliedYahooDraftSettings,
+  type DraftSettings,
+} from "./DraftDashboard";
 
 const pick = { playerId: "1", teamId: "Team 1", pickNumber: 1, round: 1, pickInRound: 1 };
 const csv = {
@@ -11,6 +15,30 @@ const csv = {
 };
 
 describe("Saved Drafts dashboard restore boundary", () => {
+  it("builds persisted Yahoo settings from the confirmed configuration", () => {
+    const current: DraftSettings = {
+      teamCount: 12,
+      scoringCategories: { GOALS: 1 },
+      rosterConfig: { C: 1, G: 1, bench: 1, utility: 0 },
+      draftOrder: Array.from({ length: 12 }, (_, index) => "Team " + (index + 1)),
+      draftOrderMode: "snake",
+      reversedRounds: [],
+    };
+    const applied = buildAppliedYahooDraftSettings(current, {
+      teamCount: 8,
+      draftOrder: Array.from({ length: 8 }, (_, index) => "team." + (index + 1)),
+      customTeamNames: {},
+      isSnakeDraft: true,
+      rosterConfig: { C: 1, LW: 1, RW: 1, FWD: 1, D: 2, G: 2, bench: 8, utility: 2 },
+      scoringCategories: { GOALS: 3 },
+    });
+
+    expect(applied.teamCount).toBe(8);
+    expect(applied.rosterConfig.utility).toBe(2);
+    expect(Object.values(applied.rosterConfig).reduce((sum, count) => sum + count, 0)).toBe(18);
+    expect(applied.scoringCategories).toEqual({ GOALS: 3 });
+  });
+
   it("rejects malformed required pick fields", () => {
     expect(() => adaptSavedDraftRows({ draftedPlayers: [{ ...pick, teamId: null }], customCsvList: [] })).toThrow("Saved draft picks are invalid");
   });
