@@ -1,9 +1,9 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import YahooLiveDraftPanel from "../../../components/DraftDashboard/YahooLiveDraftPanel";
+import YahooLiveDraftPanel, { YahooDraftOrderReminder, yahooDraftTimeMs } from "../../../components/DraftDashboard/YahooLiveDraftPanel";
 
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.useRealTimers(); window.sessionStorage.clear(); });
 
 describe("YahooLiveDraftPanel", () => {
   const baseProps = {
@@ -29,6 +29,106 @@ describe("YahooLiveDraftPanel", () => {
     onApplySettings: vi.fn(),
     onStopAndContinueManually: vi.fn(),
   };
+
+  const waitingState = {
+    session: { id: "waiting", status: "predraft" as const },
+    teams: [{ yahooTeamKey: "team.1", name: "One" }],
+    settings: { teamCount: 1, inferredDraftOrder: true }, picks: [],
+  };
+
+  it("highlights unapplied settings and removes the cue only when the parent reports they match", () => {
+    const props = { ...baseProps, mode: "yahoo" as const, authenticated: true, draftProEligible: true,
+      liveSyncEnabled: true, draftState: waitingState, settingsNeedApplying: true };
+    const { rerender } = render(<YahooLiveDraftPanel {...props} />);
+    const button = screen.getByRole("button", { name: "Apply Yahoo settings" });
+    expect(button.className).toContain("applyNeeded");
+    fireEvent.click(button);
+    expect(button.className).toContain("applyNeeded"); // A cancelled confirmation must not clear it.
+    rerender(<YahooLiveDraftPanel {...props} settingsNeedApplying={false} />);
+    expect(button.className).not.toContain("applyNeeded");
+  });
+
+  it("combines snake notices without disguising actual connection errors", () => {
+    render(<YahooLiveDraftPanel {...baseProps} draftState={waitingState}
+      reconciliation={{ ...baseProps.reconciliation, warnings: ["Yahoo did not provide an explicit snake or straight draft order."] }}
+      error="Reconnect failed" />);
+    expect(screen.getAllByText(/Draft format is not confirmed/)).toHaveLength(1);
+    expect(screen.queryByText(/did not provide an explicit snake/)).toBeNull();
+    expect(screen.getByText("Reconnect failed").closest('[role="alert"]')).toBeTruthy();
+  });
+
+  it("shows a dismissible reminder only inside the pre-draft window and remembers dismissal", () => {
+    vi.useFakeTimers();
+    const start = Date.parse("2026-09-13T20:00:00Z");
+    vi.setSystemTime(start - 31 * 60_000);
+    const props = { state: waitingState, enabled: true, onReview: vi.fn(),
+      league: { externalLeagueId: "league", name: "League", supported: true, draftTime: String(start / 1000) } };
+    const { unmount } = render(<YahooDraftOrderReminder {...props} />);
+    expect(screen.queryByRole("button", { name: "Refresh leagues & review" })).toBeNull();
+    act(() => vi.advanceTimersByTime(60_000));
+    fireEvent.click(screen.getByRole("button", { name: "Refresh leagues & review" }));
+    expect(props.onReview).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("button", { name: "Dismiss" })).toBeNull();
+    unmount();
+    render(<YahooDraftOrderReminder {...props} />);
+    expect(screen.queryByRole("button", { name: "Dismiss" })).toBeNull();
+  });
+
+  it.each(["disabled", "started", "complete-order", "missing-time", "at-start"])("does not prompt for %s", (condition) => {
+    vi.useFakeTimers();
+    const start = Date.parse("2026-09-13T20:00:00Z");
+    vi.setSystemTime(condition === "at-start" ? start : start - 10 * 60_000);
+    render(<YahooDraftOrderReminder enabled={condition !== "disabled"} onReview={vi.fn()}
+      league={{ externalLeagueId: "league", name: "League", supported: true,
+        draftTime: condition === "missing-time" ? undefined : new Date(start).toISOString() }}
+      state={{ ...waitingState, session: { ...waitingState.session, status: condition === "started" ? "active" : "predraft" },
+        teams: [{ ...waitingState.teams[0], draftPosition: condition === "complete-order" ? 1 : undefined }] }} />);
+    expect(screen.queryByRole("button", { name: "Dismiss" })).toBeNull();
+  });
+
+  it("also reminds a connected league before sync starts", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(Date.parse("2026-09-13T19:45:00Z"));
+    render(<YahooDraftOrderReminder enabled onReview={vi.fn()} state={null}
+      league={{ externalLeagueId: "league", name: "League", supported: true,
+        draftStatus: "predraft", draftTime: "2026-09-13T20:00:00Z" }} />);
+    expect(screen.getByRole("button", { name: "Dismiss" })).toBeTruthy();
+  });
+
+  it("asks whether missing positions are already set, refreshing only on confirmation", () => {
+    const refresh = vi.fn();
+    const props = { ...baseProps, draftState: waitingState, mode: "yahoo" as const,
+      authenticated: true, draftProEligible: true, liveSyncEnabled: true, onRefreshAccount: refresh,
+      selectedLeagueId: "one" };
+    const { rerender } = render(<YahooLiveDraftPanel {...props} />);
+    expect((screen.getByRole("button", { name: /^Confirm$/ }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole("radio", { name: "Already set" }));
+    expect(refresh).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: /^Confirm$/ }));
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(/FHFH’s order remains provisional/)).toBeTruthy();
+    rerender(<YahooLiveDraftPanel {...props} selectedLeagueId="two" />);
+    fireEvent.click(screen.getByRole("radio", { name: "Randomized before the draft" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Confirm$/ }));
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(/A reminder appears in the final 30 minutes/)).toBeTruthy();
+  });
+
+  it("reports imported playoffs separately from unknown playoff settings", () => {
+    const { rerender } = render(<YahooLiveDraftPanel {...baseProps} mode="yahoo"
+      draftState={{ ...waitingState, settings: { ...waitingState.settings, playoffWeeks: [24, 25, 26] } }} />);
+    expect(screen.getByText(/Yahoo weeks 24, 25, 26 · synced automatically/)).toBeTruthy();
+    rerender(<YahooLiveDraftPanel {...baseProps} draftState={waitingState} />);
+    expect(screen.getByText(/Your existing selection is preserved/)).toBeTruthy();
+  });
+
+  it("parses Unix seconds, milliseconds and zoned dates without guessing a timezone", () => {
+    const expected = Date.parse("2026-09-13T20:00:00Z");
+    for (const value of [expected / 1000, String(expected), "2026-09-13T13:00:00-07:00"]) {
+      expect(yahooDraftTimeMs(value)).toBe(expected);
+    }
+    for (const value of [null, "", "2026-09-13 13:00", "garbage"]) expect(yahooDraftTimeMs(value)).toBeNull();
+  });
 
   it.each([
     ["signed out", { authenticated: false, draftProEligible: false, liveSyncEnabled: false }, "Sign in required", "Sign in"],
@@ -157,7 +257,7 @@ describe("YahooLiveDraftPanel", () => {
         ?.textContent,
     ).toContain("Unknown Player");
     expect(screen.getByText(/scoring values incomplete/)).toBeTruthy();
-    expect(screen.getByText(/apply to update dashboard roster and scoring/)).toBeTruthy();
+    expect(screen.getByText(/Applying updates roster and scoring/)).toBeTruthy();
     expect(screen.getByText("Your team: Tim's Team")).toBeTruthy();
     expect(screen.getByText(/Live updates are delayed/)).toBeTruthy();
     const attribution = screen.getByRole("img", { name: "Powered by Yahoo" });

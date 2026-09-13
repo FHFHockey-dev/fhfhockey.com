@@ -435,6 +435,9 @@ export async function syncYahooDiscovery({
         is_auction_draft: draftMetadata.is_auction_draft,
       }),
       roster_settings: toJsonObject({
+        uses_playoff: settingsResponse.settings?.uses_playoff ?? settingsResponse.uses_playoff ?? null,
+        playoff_start_week: settingsResponse.settings?.playoff_start_week ?? settingsResponse.playoff_start_week ?? null,
+        end_week: settingsResponse.end_week ?? league.end_week ?? null,
         roster_positions: settingsResponse.settings?.roster_positions || [],
         weekly_deadline:
           settingsResponse.settings?.weekly_deadline ||

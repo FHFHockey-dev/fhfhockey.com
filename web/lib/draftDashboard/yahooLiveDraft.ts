@@ -19,6 +19,7 @@ export interface YahooDraftLeague {
   teamName?: string;
   season?: string | number;
   draftStatus?: string;
+  draftTime?: string;
   yahooLeagueUrl?: string;
   supported: boolean;
   unsupportedReason?: string;
@@ -148,6 +149,7 @@ export interface YahooDraftDashboardConfiguration {
   myTeamId?: string;
   isSnakeDraft?: boolean;
   rosterConfig?: Record<string, number>;
+  playoffWeeks?: number[];
   leagueType?: "points" | "categories";
   scoringCategories?: Record<string, number>;
   categoryWeights?: Record<string, number>;
@@ -273,6 +275,7 @@ export function normalizeYahooDraftListResponse(
             readString(candidate, "name", "leagueName", "league_name") ||
             "Yahoo league",
           teamName: readString(candidate, "teamName", "team_name"),
+          draftTime: readString(candidate, "draftTime", "draft_time"),
           season: readString(candidate, "season") || readNumber(candidate, "season"),
           draftStatus: readString(
             candidate,
@@ -751,6 +754,10 @@ export function deriveYahooDraftDashboardConfiguration(
     myTeamId: teams.find((team) => team.isUserTeam)?.yahooTeamKey,
     isSnakeDraft: readDraftOrderMode(state.settings).isSnakeDraft,
     rosterConfig: normalizeNumericRecord(rawRoster),
+    playoffWeeks: Array.isArray(state.settings.playoffWeeks) &&
+      state.settings.playoffWeeks.every((week) => Number.isInteger(week) && week > 0 && week <= 53)
+      ? [...new Set(state.settings.playoffWeeks as number[])].sort((a, b) => a - b)
+      : undefined,
     leagueType:
       leagueType === "points" || leagueType === "categories"
         ? leagueType

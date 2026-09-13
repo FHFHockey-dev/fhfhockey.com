@@ -1,4 +1,5 @@
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -144,6 +145,20 @@ describe("Header auth entry", () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+  });
+
+  it("refreshes the supporter image daily without changing the donation destination", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-13T23:59:30Z"));
+    try {
+      const { unmount } = render(<Header />);
+      const image = screen.getByAltText("Buy me a coffee");
+      expect(image.getAttribute("src")).toContain("&v=2026-09-13");
+      expect(image.closest("a")?.getAttribute("href")).toBe("https://www.buymeacoffee.com/tjsusername");
+      act(() => vi.advanceTimersByTime(60_000));
+      expect(image.getAttribute("src")).toContain("&v=2026-09-14");
+      unmount();
+    } finally { vi.useRealTimers(); }
   });
 
   it("renders the logged-out CTA and opens the auth modal", () => {

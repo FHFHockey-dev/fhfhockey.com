@@ -6,6 +6,7 @@ import {
   parseRetryAfterSeconds,
   parseYahooDraftResults,
   parseYahooDraftSettings,
+  parseYahooPlayoffWeeks,
 } from "./liveDraft";
 
 const GAME_CONTEXT = {
@@ -16,6 +17,14 @@ const GAME_CONTEXT = {
 };
 
 describe("Yahoo live draft parser", () => {
+  it("uses Yahoo's explicit playoff range and preserves unknown data", () => {
+    expect(parseYahooPlayoffWeeks({ league: [{ end_week: "26" }, { settings: [{ uses_playoff: "1", playoff_start_week: "24" }] }] })).toEqual([24, 25, 26]);
+    expect(parseYahooPlayoffWeeks({ uses_playoff: "0", playoff_start_week: "24", end_week: "26" })).toEqual([]);
+    for (const value of [{}, { playoff_start_week: 24 }, { playoff_start_week: 27, end_week: 26 }, { playoff_start_week: 24.5, end_week: 26 }, { playoff_start_week: 1, end_week: 999 }]) {
+      expect(parseYahooPlayoffWeeks(value)).toBeUndefined();
+    }
+  });
+
   it("normalizes json_f settings, roster slots, and category scoring", () => {
     const settings = parseYahooDraftSettings({
       fantasy_content: {
@@ -25,8 +34,11 @@ describe("Yahoo live draft parser", () => {
           draft_type: "live",
           is_auction_draft: "0",
           num_teams: "12",
+          end_week: "26",
           settings: {
             scoring_type: "head",
+            uses_playoff: "1",
+            playoff_start_week: "24",
             is_snake_draft: "1",
             roster_positions: [
               { roster_position: { position: "C", count: "2" } },
@@ -51,6 +63,7 @@ describe("Yahoo live draft parser", () => {
 
     expect(settings).toMatchObject({
       teamCount: 12,
+      playoffWeeks: [24, 25, 26],
       isSnakeDraft: true,
       draftOrder: "snake",
       leagueType: "categories",

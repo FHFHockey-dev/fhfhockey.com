@@ -57,7 +57,7 @@ import SuggestedPicks from "./SuggestedPicks";
 import DraftSummaryModal from "./DraftSummaryModal";
 import ImportCsvModal from "./ImportCsvModal";
 import ComparePlayersModal from "./ComparePlayersModal";
-import YahooLiveDraftPanel from "./YahooLiveDraftPanel";
+import YahooLiveDraftPanel, { YahooDraftOrderReminder } from "./YahooLiveDraftPanel";
 import EspnLiveDraftPanel from "./EspnLiveDraftPanel";
 import MobileDraftTabs, { useMobileDraftTab } from "./MobileDraftTabs";
 import FantraxLeagueSettingsPanel, {
@@ -192,6 +192,11 @@ export interface DraftSettings {
   draftOrder: string[];
   draftOrderMode?: DraftOrderMode;
   reversedRounds?: number[];
+}
+
+export function applyYahooPlayoffSchedule(current: DraftSettings, weeks?: number[]): DraftSettings {
+  if (!weeks || JSON.stringify(current.playoffWeeks || []) === JSON.stringify(weeks)) return current;
+  return { ...current, playoffWeeks: weeks, ...(weeks.length ? {} : { scheduleScope: "season" as const }) };
 }
 
 export function buildAppliedYahooDraftSettings(
@@ -1806,6 +1811,15 @@ const DraftDashboard: React.FC = () => {
     setMyTeamId(
       configuration.myTeamId || configuration.draftOrder[0] || "Team 1",
     );
+  }, [draftMode, yahooDraftSync.draftState]);
+
+  // Schedule weeks come from the connected league without a separate Apply action.
+  // Unknown provider data must never erase an existing manual selection.
+  useEffect(() => {
+    if (draftMode !== "yahoo" || !yahooDraftSync.draftState) return;
+    const { playoffWeeks } = deriveYahooDraftDashboardConfiguration(yahooDraftSync.draftState);
+    if (!playoffWeeks) return;
+    setDraftSettings((previous) => applyYahooPlayoffSchedule(previous, playoffWeeks));
   }, [draftMode, yahooDraftSync.draftState]);
 
   const applyYahooSettings = useCallback(() => {
@@ -3484,6 +3498,12 @@ const DraftDashboard: React.FC = () => {
         }}
       />
 
+      <YahooDraftOrderReminder
+        state={draftMode === "yahoo" ? yahooDraftSync.draftState : null}
+        league={yahooDraftSync.leagues.find((league) => league.externalLeagueId === yahooDraftSync.selectedLeagueId)}
+        enabled={draftProEligible && yahooDraftSync.enabled && !espnLiveActive}
+        onReview={() => { openSettings("integrations"); void yahooDraftSync.refreshAccount(); }}
+      />
       <DraftSettingsShell
         settings={draftSettings}
         sourceControls={sourceControls}
@@ -3740,6 +3760,9 @@ const DraftDashboard: React.FC = () => {
       )}
 
       <YahooLiveDraftPanel
+        settingsNeedApplying={Boolean(yahooDraftSync.draftState && JSON.stringify(draftSettings) !== JSON.stringify(
+          buildAppliedYahooDraftSettings(draftSettings, deriveYahooDraftDashboardConfiguration(yahooDraftSync.draftState)),
+        ))}
           mode={draftMode}
           authenticated={Boolean(user?.id)}
           draftProEligible={draftProEligible}

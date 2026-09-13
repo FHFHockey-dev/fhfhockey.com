@@ -174,6 +174,14 @@ function BurgerButton({ onClick }: { onClick: () => void }) {
 }
 
 function Header() {
+  const [supportCountDate, setSupportCountDate] = useState("");
+  useEffect(() => {
+    // BMC caches generated count images for a year; use a fresh URL each UTC day.
+    const refreshDate = () => setSupportCountDate(new Date().toISOString().slice(0, 10));
+    refreshDate();
+    const timer = window.setInterval(refreshDate, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuEntryPoint, setMenuEntryPoint] = useState<
     "default" | "tools" | "search"
@@ -288,7 +296,7 @@ function Header() {
             <img
               src={`https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=${
                 isUnderlyingStatsRoute ? "DBA507" : "07aae2"
-              }&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00`}
+              }&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00${supportCountDate ? `&v=${supportCountDate}` : ""}`}
               alt="Buy me a coffee"
             />
           </a>

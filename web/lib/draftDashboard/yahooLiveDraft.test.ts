@@ -305,6 +305,12 @@ describe("Yahoo live draft reconciliation", () => {
     expect(result.unresolved[0]?.reason).toContain("requires review");
   });
 
+  it("retains validated playoff week IDs from the server", () => {
+    expect(deriveYahooDraftDashboardConfiguration({ ...state, settings: { ...state.settings, playoffWeeks: [26, 24, 25] } }).playoffWeeks).toEqual([24, 25, 26]);
+    expect(deriveYahooDraftDashboardConfiguration({ ...state, settings: { ...state.settings, playoffWeeks: [] } }).playoffWeeks).toEqual([]);
+    expect(deriveYahooDraftDashboardConfiguration({ ...state, settings: { ...state.settings, playoffWeeks: [0, 999] } }).playoffWeeks).toBeUndefined();
+  });
+
   it("derives a sorted Yahoo team configuration without provider keys leaking", () => {
     expect(deriveYahooDraftDashboardConfiguration(state)).toMatchObject({
       teamCount: 2,

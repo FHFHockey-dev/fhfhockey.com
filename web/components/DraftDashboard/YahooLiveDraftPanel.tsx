@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 
 import type {
   DraftDashboardMode,
@@ -30,6 +31,7 @@ interface YahooLiveDraftPanelProps {
   isPolling: boolean;
   error: string | null;
   hasPersonalRanking?: boolean;
+  settingsNeedApplying?: boolean;
   externalDraftLock?: boolean;
   onLeagueChange: (leagueId: string) => void;
   onConnect: () => void;
@@ -86,6 +88,100 @@ function formatTimestamp(value?: string | null): string | null {
   return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
+export function hasCompleteYahooDraftPositions(state: YahooDraftState | null): boolean {
+  if (!state) return false;
+  const count = Number(state.settings.teamCount) || state.teams.length;
+  const positions = state.teams.map((team) => team.draftPosition);
+  return count > 0 && positions.length === count && new Set(positions).size === count &&
+    positions.every((position) => Number.isInteger(position) && Number(position) >= 1 && Number(position) <= count);
+}
+
+export function yahooDraftTimeMs(value: unknown): number | null {
+  if (typeof value !== "string" && typeof value !== "number") return null;
+  const text = String(value).trim();
+  // Yahoo uses Unix seconds. Only accept timezone-qualified date strings otherwise.
+  const time = /^\d{10}(?:\d{3})?$/.test(text)
+    ? Number(text) * (text.length === 10 ? 1000 : 1)
+    : /T.*(?:Z|[+-]\d{2}:?\d{2})$/i.test(text) ? Date.parse(text) : NaN;
+  return Number.isFinite(time) ? time : null;
+}
+
+export function YahooDraftOrderReminder({ state, league, enabled, onReview }: {
+  state: YahooDraftState | null;
+  league?: YahooDraftLeague;
+  enabled: boolean;
+  onReview: () => void;
+}) {
+  const [now, setNow] = React.useState<number | null>(null);
+  const [dismissed, setDismissed] = React.useState<string | null>(null);
+  const normalized = state?.settings.normalized as Record<string, unknown> | undefined;
+  const startsAt = yahooDraftTimeMs(league?.draftTime ?? normalized?.draftTime);
+  const key = `yahoo-draft-order-reminder:${league?.externalLeagueId || state?.session.id}:${startsAt}`;
+  React.useEffect(() => {
+    const tick = () => setNow(Date.now());
+    tick();
+    const timer = window.setInterval(tick, 15_000);
+    try { setDismissed(window.sessionStorage.getItem(key) === "dismissed" ? key : null); } catch { /* Storage is optional. */ }
+    return () => window.clearInterval(timer);
+  }, [key]);
+  const dismiss = () => {
+    setDismissed(key);
+    try { window.sessionStorage.setItem(key, "dismissed"); } catch { /* Keep the in-memory dismissal. */ }
+  };
+  const predraft = state ? state.session.status === "predraft" && !state.picks.some((pick) => pick.active)
+    : league?.draftStatus === "predraft";
+  if (!enabled || !predraft || now === null || startsAt === null ||
+      now < startsAt - 30 * 60_000 || now >= startsAt || dismissed === key ||
+      hasCompleteYahooDraftPositions(state)) return null;
+  return createPortal(
+    <aside className={styles.orderReminder} aria-label="Yahoo draft order reminder" role="status">
+      <strong>Your Yahoo draft starts within 30 minutes</strong>
+      <p>Yahoo may now have your team order. Refresh leagues, then compare the order with your Yahoo draft room. Availability depends on Yahoo.</p>
+      <div className={styles.actions}>
+        <button type="button" onClick={() => { onReview(); dismiss(); }}>Refresh leagues &amp; review</button>
+        <button type="button" onClick={dismiss}>Dismiss</button>
+      </div>
+    </aside>, document.body,
+  );
+}
+
+function YahooDraftOrderCheck({ identity, onRefresh }: { identity: string; onRefresh: () => void }) {
+  const [choice, setChoice] = React.useState<"set" | "random" | "">("");
+  const [confirmed, setConfirmed] = React.useState<"set" | "random" | "">("");
+  React.useEffect(() => {
+    let saved: string | null = null;
+    try { saved = window.sessionStorage.getItem(`yahoo-order-check:${identity}`); } catch { /* Optional storage. */ }
+    const next = saved === "set" || saved === "random" ? saved : "";
+    setChoice(next);
+    setConfirmed(next);
+  }, [identity]);
+  const confirm = () => {
+    if (!choice) return;
+    setConfirmed(choice);
+    try { window.sessionStorage.setItem(`yahoo-order-check:${identity}`, choice); } catch { /* Keep in memory. */ }
+    if (choice === "set") onRefresh();
+  };
+  return (
+    <div className={styles.infoNotice}>
+      {confirmed ? <>
+        <strong>{confirmed === "set" ? "Order already set in Yahoo" : "Order will be randomized before the draft"}</strong>
+        <p>{confirmed === "set"
+          ? "We’ve requested a league refresh. If positions are still missing, use the Yahoo draft room as your reference; FHFH’s order remains provisional."
+          : "Refresh leagues once Yahoo sets the order. A reminder appears in the final 30 minutes when Yahoo supplies a draft time."}</p>
+        <div className={styles.actions}><button type="button" onClick={() => setConfirmed("")}>Change answer</button></div>
+      </> : <>
+        <fieldset className={styles.orderChoices}>
+          <legend>Is your draft order set in Yahoo?</legend>
+          <p>We haven’t received every team’s position yet.</p>
+          <label><input type="radio" name="yahoo-order-expectation" checked={choice === "set"} onChange={() => setChoice("set")} /> Already set</label>
+          <label><input type="radio" name="yahoo-order-expectation" checked={choice === "random"} onChange={() => setChoice("random")} /> Randomized before the draft</label>
+        </fieldset>
+        <div className={styles.actions}><button type="button" disabled={!choice} onClick={confirm}>Confirm</button></div>
+      </>}
+    </div>
+  );
+}
+
 const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
   mode,
   authenticated = false,
@@ -100,6 +196,7 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
   isPolling,
   error,
   hasPersonalRanking = false,
+  settingsNeedApplying = false,
   externalDraftLock = false,
   onLeagueChange,
   onConnect,
@@ -129,6 +226,9 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
   const scoringIsIncomplete = yahooSettingsRequireScoringConfirmation(draftState);
   const draftOrderIsInferred = yahooSettingsRequireDraftOrderConfirmation(draftState);
   const settingsWarnings = yahooSettingsWarnings(draftState);
+  const informationalNotes = [...new Set([...reconciliation.warnings, ...settingsWarnings])]
+    .filter((warning) => !draftOrderIsInferred || !/snake|draft-order mode/i.test(warning))
+    .filter((warning) => !warning.includes("complete, unique draft position") || !hasCompleteYahooDraftPositions(draftState));
   const selectedLeague = leagues.find(
     (league) => league.externalLeagueId === selectedLeagueId,
   );
@@ -254,6 +354,8 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
               <button
                 type="button"
                 onClick={onApplySettings}
+                className={settingsNeedApplying ? styles.applyNeeded : undefined}
+                aria-describedby={settingsNeedApplying ? "yahoo-apply-hint" : undefined}
                 disabled={!liveSyncReady || isLoading || !draftState}
               >
                 Apply Yahoo settings
@@ -293,7 +395,17 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
             {draftOrderIsInferred && (
               <span> · snake order is assumed and requires confirmation</span>
             )}
-            <span> · apply to update dashboard roster and scoring</span>
+            <span id="yahoo-apply-hint">{settingsNeedApplying
+              ? " · Next step: apply Yahoo settings to update roster and scoring. No need to stop sync."
+              : " · Applying updates roster and scoring."}</span>
+          </div>
+          <div className={styles.settingsPreview}>
+            <strong>Playoff schedule:</strong>{" "}
+            {yahooConfiguration?.playoffWeeks
+              ? yahooConfiguration.playoffWeeks.length
+                ? `Yahoo weeks ${yahooConfiguration.playoffWeeks.join(", ")} · ${mode === "yahoo" ? "synced automatically" : "syncs when live sync starts"}`
+                : "Yahoo has playoffs disabled."
+              : "Yahoo hasn’t provided a complete playoff range. Your existing selection is preserved."}
           </div>
           <div className={styles.metrics}>
           <div>
@@ -323,6 +435,13 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
         </>
       )}
 
+      {liveSyncReady && draftState?.session.status === "predraft" && !hasCompleteYahooDraftPositions(draftState) && (
+        <YahooDraftOrderCheck
+          identity={`${selectedLeagueId || draftState.session.id}:${selectedLeague?.draftTime || ""}`}
+          onRefresh={onRefreshAccount}
+        />
+      )}
+
       {unresolvedCount > 0 && (
         <div className={styles.warning} role="alert">
           <strong>
@@ -342,16 +461,15 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
         </div>
       )}
 
-      {reconciliation.warnings.map((warning) => (
-        <div className={styles.warning} role="status" key={warning}>
-          {warning}
+      {(draftOrderIsInferred || informationalNotes.length > 0) && (
+        <div className={styles.infoNotice} role="status">
+          <strong>Draft order &amp; settings notes</strong>
+          {draftOrderIsInferred && <p>Draft format is not confirmed by Yahoo; upcoming turns currently assume a snake draft. Check the order in your Yahoo draft room.</p>}
+          {informationalNotes.map((warning) => <p key={warning}>{warning.includes("complete, unique draft position")
+              ? "Team draft positions are not fully available yet. Refresh leagues when Yahoo publishes the order; predicted turns may change."
+              : warning}</p>)}
         </div>
-      ))}
-      {settingsWarnings.map((warning) => (
-        <div className={styles.warning} role="status" key={warning}>
-          {warning}
-        </div>
-      ))}
+      )}
 
       {draftState?.session.stale && (
         <div className={styles.staleWarning} role="alert">

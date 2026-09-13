@@ -269,9 +269,9 @@ describe("Yahoo live draft ownership", () => {
           external_league_key: "477.l.123",
           league_name: "Five Hole",
           season_key: "2026",
-          league_metadata: {},
+          league_metadata: { end_week: "26" },
           scoring_settings: {},
-          roster_settings: {},
+          roster_settings: { uses_playoff: "1", playoff_start_week: "24" },
         },
         error: null,
       },
@@ -317,6 +317,7 @@ describe("Yahoo live draft ownership", () => {
       unchanged: true,
       retryAfterSeconds: 10,
     });
+    expect(result.settings.playoffWeeks).toEqual([24, 25, 26]);
     expect(fetchImpl).not.toHaveBeenCalled();
     expect(filters).toContainEqual(["yahoo_draft_sessions", "user_id", userId]);
   });

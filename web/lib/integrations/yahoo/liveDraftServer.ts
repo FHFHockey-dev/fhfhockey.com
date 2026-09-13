@@ -16,6 +16,7 @@ import {
   hashYahooDraftSnapshot,
   parseYahooDraftResults,
   parseYahooDraftSettings,
+  parseYahooPlayoffWeeks,
   parseYahooDraftTeams,
   sessionStatusForProvider,
   yahooLeagueDraftUrl,
@@ -894,7 +895,14 @@ export async function loadYahooDraftSession(
   return {
     session: formatSession(session as YahooDraftSessionRow, now),
     teams: teams.map(apiTeamFromRow),
-    settings,
+    // Discovery refreshes playoff fields even for sessions created before support existed.
+    settings: {
+      ...settings,
+      playoffWeeks: parseYahooPlayoffWeeks({
+        ...record(leagueResult.data.league_metadata),
+        ...record(leagueResult.data.roster_settings),
+      }) ?? settings.playoffWeeks,
+    },
     picks: formatPicks(pickRows, nhlPlayerIdByIdentityId, context.gameKey),
   };
 }

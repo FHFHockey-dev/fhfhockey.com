@@ -156,6 +156,14 @@ describe("useYahooDraftSync", () => {
     );
     expect(calls.at(-1)?.init?.method).toBe("POST");
 
+    calls.splice(0);
+    await act(async () => result.current.refreshAccount());
+    expect(calls.map((call) => call.url)).toEqual([
+      "/api/v1/account/yahoo/refresh",
+      "/api/v1/account/yahoo/draft-sessions",
+      "/api/v1/account/yahoo/draft-sessions/session-1",
+    ]);
+
     unmount();
     expect(realtime.removeChannel).toHaveBeenCalledWith(realtime.channel);
   });

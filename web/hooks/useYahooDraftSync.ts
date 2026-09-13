@@ -274,6 +274,8 @@ export function useYahooDraftSync(
         throw new Error(errorMessage(body, "Yahoo leagues could not be refreshed."));
       }
       await loadList();
+      // Discovery refreshes external team positions; reload the active view too.
+      if (sessionId) await loadSessionState(sessionId);
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -282,7 +284,7 @@ export function useYahooDraftSync(
       );
       setRequestState("error");
     }
-  }, [loadList]);
+  }, [loadList, loadSessionState, sessionId]);
 
   const start = useCallback(
     async (externalLeagueId = selectedLeagueId) => {

@@ -35,6 +35,7 @@ export type YahooDraftSettings = {
   teamCount: number | null;
   isSnakeDraft: boolean;
   rosterConfig: Record<string, number>;
+  playoffWeeks?: number[];
   leagueType: "points" | "categories";
   scoringCategories: Record<string, number>;
   categoryWeights: Record<string, number>;
@@ -318,6 +319,16 @@ const YAHOO_STAT_KEY_BY_LABEL: Record<string, string> = {
   TIMEONICEPERGAME: "TIME_ON_ICE_PER_GAME",
 };
 
+// Use Yahoo matchup-week IDs directly; do not infer bracket duration from team count.
+export function parseYahooPlayoffWeeks(payload: unknown): number[] | undefined {
+  const enabled = findFirstScalar(payload, ["uses_playoff"]);
+  if (enabled === false || enabled === 0 || enabled === "0") return [];
+  const start = toInteger(findFirstScalar(payload, ["playoff_start_week"]));
+  const end = toInteger(findFirstScalar(payload, ["end_week"]));
+  if (start === null || end === null || start < 1 || end < start || end > 53) return undefined;
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+}
+
 function rosterPositionRows(payload: unknown) {
   const source = findFirstValue(payload, ["roster_positions"]);
   return collectEntities(source, "position").flatMap((entity) => {
@@ -596,6 +607,7 @@ export function parseYahooDraftSettings(
     teamCount,
     isSnakeDraft: draftOrder === "snake",
     rosterConfig: roster.rosterConfig,
+    playoffWeeks: parseYahooPlayoffWeeks(payload),
     leagueType: scoring.leagueType,
     scoringCategories: scoring.scoringCategories,
     categoryWeights: scoring.categoryWeights,

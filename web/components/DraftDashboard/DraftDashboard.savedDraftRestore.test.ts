@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   adaptSavedDraftRows,
+  applyYahooPlayoffSchedule,
   buildAppliedYahooDraftSettings,
   type DraftSettings,
 } from "./DraftDashboard";
@@ -15,6 +16,15 @@ const csv = {
 };
 
 describe("Saved Drafts dashboard restore boundary", () => {
+  it("syncs Yahoo playoff weeks while preserving unknown schedules and unrelated settings", () => {
+    const current: DraftSettings = { teamCount: 8, draftOrder: ["A"], rosterConfig: { C: 1, bench: 1, utility: 0 },
+      scoringCategories: { GOALS: 3 }, playoffWeeks: [21, 22], scheduleScope: "playoffs" };
+    expect(applyYahooPlayoffSchedule(current)).toBe(current);
+    expect(applyYahooPlayoffSchedule(current, [21, 22])).toBe(current);
+    expect(applyYahooPlayoffSchedule(current, [24, 25, 26])).toEqual({ ...current, playoffWeeks: [24, 25, 26] });
+    expect(applyYahooPlayoffSchedule(current, [])).toEqual({ ...current, playoffWeeks: [], scheduleScope: "season" });
+  });
+
   it("builds persisted Yahoo settings from the confirmed configuration", () => {
     const current: DraftSettings = {
       teamCount: 12,
