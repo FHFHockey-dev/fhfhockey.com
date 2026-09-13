@@ -43,6 +43,7 @@
 }
 .workspaceHeader .draftProLink { margin-left: auto; min-height: 36px; padding: 0 8px; gap: 7px; border: 0; }
 .toolbarDivider { flex: 0 0 1px; height: 22px; background: v.$draft-border; }
+.settingsActionsGroup { display: inline-flex; align-items: center; gap: v.$space-xs; }
 .workspaceHeader .settingsButton { border: 0; background: transparent; color: v.$text-primary; }
 .settingsShell {
   width: min(1240px, 96vw);

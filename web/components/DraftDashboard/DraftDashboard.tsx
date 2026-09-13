@@ -1,3 +1,5 @@
+import ProjectionSourceSettings from "./ProjectionSourceSettings";
+import controls from "styles/Controls.module.scss";
 import { buildDashboardTiers } from "lib/draftDashboard/tierDashboardAdapter";
 import { normalizeAvailabilitySpread } from "lib/draftDashboard/availability";
 import { findSelectionHorizon } from "lib/draftDashboard/pickTrades";
@@ -3833,16 +3835,33 @@ const DraftDashboard: React.FC = () => {
         }
         draftProEligible={draftProEligible}
         onSettings={() => setQuickSettingsOpen(value => !value)}
+        onFullSettings={() => { setQuickSettingsOpen(false); openSettings("league"); }}
         settingsExpanded={quickSettingsOpen}
         onHealth={() => openSettings("integrations")}
       />}
         settingsOpen={quickSettingsOpen}
         onShowGodView={() => setQuickSettingsOpen(false)}
-        quickSettings={<div className={styles.quickSettings}>
-          <div><strong>Quick settings</strong><span>{draftSettings.teamCount} teams · {totalRosterSize} roster spots · {draftSettings.leagueType || "points"}</span></div>
-          <label>My team <select value={myTeamId} onChange={event => setMyTeamId(event.target.value)}>{teamStats.map(team => <option key={team.teamId} value={team.teamId}>{team.teamName}</option>)}</select></label>
-          <label><input type="checkbox" checked={needWeightEnabled && canUseProRecommendations} disabled={!canUseProRecommendations} onChange={event => setNeedWeightEnabled(event.target.checked)} /> Prioritize my roster needs · Pro</label>
-          <nav aria-label="Quick settings sections">{([['league', 'Full draft settings'], ['roster', 'Roster slots'], ['scoring', 'Scoring'], ['projections', 'Source weights'], ['integrations', 'Integrations'], ['saved-drafts', 'Saved drafts']] as const).map(([section, label]) => <button type="button" key={section} onClick={() => openSettings(section)}>{label}</button>)}<button type="button" onClick={() => setIsImportCsvOpen(true)}>Import CSV</button></nav>
+        quickSettings={<div className={`${styles.quickSettings} ${controls.scope}`}>
+          <section className={styles.quickSection} aria-label="Draft actions">
+            <h3>Draft actions</h3>
+            <div className={styles.quickActions}>
+              <button type="button" data-control-variant="primary" onClick={undoLastPick} disabled={!manualDraftingEnabled || !draftHistory.length}>Undo Last Pick</button>
+              <button type="button" data-control-variant="primary" disabled={!manualDraftingEnabled || !draftedPlayers.some(player => !player.isKeeper)} onClick={() => { openSettings("league"); settingsEditorRef.current?.openPickCorrection(); }}>Pick Correction</button>
+              <button type="button" data-control-variant="primary" onClick={() => setIsImportCsvOpen(true)}>Import CSV</button>
+              <button type="button" data-control-variant="primary" disabled={!manualDraftingEnabled || (!draftedPlayers.length && !keepers.length && !pickTrades.length)} onClick={() => { if (window.confirm("Reset this draft? All picks, keepers, trades, and pick history will be cleared. Export a bookmark first if you want to keep a copy.")) { setQuickSettingsOpen(false); resetDraft(); } }}>Reset Draft</button>
+            </div>
+          </section>
+          <section className={styles.quickSection} aria-label="Projection weights">
+            <h3>Projection weights</h3>
+            <ProjectionSourceSettings compact onManageSources={() => openSettings("projections")} skaters={sourceControls} goalies={goalieSourceControls} onSkatersChange={setSourceControls} onGoaliesChange={setGoalieSourceControls} customSources={customSourceMetadata} hasPicks={draftedPlayers.length > 0} />
+          </section>
+          <section className={styles.quickSection} aria-label="Team and sync">
+            <h3>Team &amp; sync</h3>
+            <label>My team <select disabled={!manualDraftingEnabled} value={myTeamId} onChange={event => setMyTeamId(event.target.value)}>{teamStats.map(team => <option key={team.teamId} value={team.teamId}>{team.teamName}</option>)}</select></label>
+            <label><input type="checkbox" checked={needWeightEnabled && canUseProRecommendations} disabled={!canUseProRecommendations} onChange={event => setNeedWeightEnabled(event.target.checked)} /> Prioritize my roster needs · Pro</label>
+            <button type="button" data-control-variant="primary" onClick={() => openSettings("integrations")}>Yahoo Sync</button>
+            <span>{draftSettings.teamCount} teams · {totalRosterSize} roster spots · {draftSettings.leagueType || "points"}</span>
+          </section>
         </div>}
         queue={selectGodViewQueue({ startPick: currentPick, maxPickNumber: totalPicks,
           draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern,

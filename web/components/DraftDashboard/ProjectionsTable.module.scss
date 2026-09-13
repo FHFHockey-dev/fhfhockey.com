@@ -686,6 +686,7 @@
 }
 
 /* Updated compare checkbox styling for right-most column */
+.playersTable th.colCompare { color: v.$color-gold-400; }
 .compareCheckbox {
   appearance: none;
   -webkit-appearance: none;

@@ -32,6 +32,7 @@ import ProjectionSourceSettings from "./ProjectionSourceSettings";
 import { bookmarkImportError, type DraftSettingsValidation, type SettingsDomain } from "lib/draftDashboard/settingsValidation";
 
 export interface DraftSettingsHandle {
+  openPickCorrection: () => void;
   importBookmark: () => void;
   exportBookmark: () => void;
 }
@@ -455,7 +456,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
   const handleImportBookmark = () => setImportOpen(true);
-  React.useImperativeHandle(ref, () => ({ importBookmark: handleImportBookmark, exportBookmark: handleCreateBookmark }));
+  React.useImperativeHandle(ref, () => ({ openPickCorrection: () => { if (!draftLocked) setQuickFixOpen(true); }, importBookmark: handleImportBookmark, exportBookmark: handleCreateBookmark }));
   const applyBookmark = () => {
     const data = deserializeBookmark(importText.trim());
     const message = bookmarkImportError(data, customSourceMetadata.map(source => source.id));

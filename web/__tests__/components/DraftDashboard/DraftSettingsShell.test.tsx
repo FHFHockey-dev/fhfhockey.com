@@ -1,6 +1,39 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
+import DraftWorkspaceHeader from "../../../components/DraftDashboard/DraftWorkspaceHeader";
+import ProjectionSourceSettings from "../../../components/DraftDashboard/ProjectionSourceSettings";
+
+it("changes quick weight shares and equalizes only the displayed player group", () => {
+  const onSkatersChange = vi.fn();
+  const onGoaliesChange = vi.fn();
+  const sources = { alpha: { isSelected: true, weight: 0.5 }, beta: { isSelected: true, weight: 0.5 } };
+  render(<ProjectionSourceSettings compact skaters={sources} goalies={sources} onSkatersChange={onSkatersChange} onGoaliesChange={onGoaliesChange} customSources={[]} hasPicks={false} />);
+  fireEvent.change(screen.getByRole("slider", { name: "Skaters alpha weight percent" }), { target: { value: "40" } });
+  expect(onSkatersChange).toHaveBeenCalledWith({ alpha: { isSelected: true, weight: 0.4 }, beta: { isSelected: true, weight: 0.6 } });
+  expect(onGoaliesChange).not.toHaveBeenCalled();
+  onSkatersChange.mockClear();
+  fireEvent.click(screen.getByRole("button", { name: "Goalies" }));
+  expect(screen.queryByRole("slider", { name: "Skaters alpha weight percent" })).toBeNull();
+  expect(screen.getByRole("slider", { name: "Goalies alpha weight percent" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Equalize Weights" }));
+  expect(onGoaliesChange).toHaveBeenCalledWith(sources);
+  expect(onSkatersChange).not.toHaveBeenCalled();
+});
+
+it("separates quick-settings expansion from the full settings dialog", () => {
+  const onSettings = vi.fn();
+  const onFullSettings = vi.fn();
+  render(<DraftWorkspaceHeader health="healthy" healthLabel="Draft sources ready" draftProEligible={false} settingsExpanded onSettings={onSettings} onFullSettings={onFullSettings} onHealth={vi.fn()} />);
+  const toggle = screen.getByRole("button", { name: "Toggle quick settings" });
+  expect(toggle.getAttribute("aria-expanded")).toBe("true");
+  fireEvent.click(toggle);
+  expect(onSettings).toHaveBeenCalledTimes(1);
+  expect(onFullSettings).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Open full draft settings" }));
+  expect(onFullSettings).toHaveBeenCalledTimes(1);
+  expect(onSettings).toHaveBeenCalledTimes(1);
+});
 
 import DraftSettingsShell, {
   type SettingsSection,

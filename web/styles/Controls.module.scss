@@ -54,6 +54,19 @@
     color: v.$color-white !important;
   }
 
+  [data-control-variant="gold"] {
+    box-shadow: none !important;
+    border: 2px solid v.$color-gold-400 !important;
+    background: rgba(v.$color-gold-400, 0.12) !important;
+    color: v.$color-gold-400 !important;
+    &:hover:not(:disabled), &[aria-pressed="true"], &:checked {
+      background: rgba(v.$color-gold-400, 0.25) !important;
+      border-color: v.$color-gold-400 !important;
+      color: v.$color-gold-400 !important;
+    }
+    &:focus-visible { outline-color: v.$color-gold-400 !important; }
+  }
+
   input::placeholder {
     color: rgba(v.$text-secondary, 0.7);
     font-family: v.$font-family-primary;

@@ -2216,6 +2216,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       <input
                         type="checkbox"
                         className={styles.compareCheckbox}
+                        data-control-variant="gold"
                         checked={selectedIds.has(key)}
                         onChange={() => toggleSelected(key)}
                         aria-label={`Select ${player.fullName} for comparison`}

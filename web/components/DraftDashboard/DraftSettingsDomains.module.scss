@@ -1,5 +1,21 @@
 @use "styles/vars" as v;
 
+.sources.compactSources {
+  gap: v.$space-xs;
+  .sourceGroup { padding: 0; border: 0; background: transparent; }
+  .sourceGroup { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: v.$space-md; }
+  .sourceGroup h4 { display: none; }
+  .modeSwitch { justify-content: flex-start; }
+  .sourceRow { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(80px, 2fr) 40px; min-height: v.$control-height-sm; gap: v.$space-sm; }
+  input[type="range"] { width: 100%; min-width: 0; margin: 0; accent-color: v.$primary-color; cursor: pointer; }
+  .sourceRow > strong { text-align: right; font-size: v.$font-size-xs; }
+  .actions { display: flex; flex-wrap: wrap; gap: v.$space-sm; margin: 0; }
+  .actions button { flex: 1; }
+}
+@media (max-width: 1100px) {
+  .sources.compactSources .sourceGroup { grid-template-columns: minmax(0, 1fr); }
+}
+
 .scoring,
 .sources {
   display: flex;

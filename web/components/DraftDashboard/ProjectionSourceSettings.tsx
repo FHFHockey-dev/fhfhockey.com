@@ -10,6 +10,8 @@ import type { DraftCustomSourceMetadata } from "lib/draftDashboard/summaryConfig
 import styles from "./DraftSettingsDomains.module.scss";
 
 interface Props {
+  compact?: boolean;
+  onManageSources?: () => void;
   skaters?: ProjectionSourceControls;
   goalies?: ProjectionSourceControls;
   onSkatersChange?: (controls: ProjectionSourceControls) => void;
@@ -20,6 +22,8 @@ interface Props {
 }
 
 export default function ProjectionSourceSettings({
+  compact = false,
+  onManageSources,
   skaters,
   goalies,
   onSkatersChange,
@@ -31,6 +35,7 @@ export default function ProjectionSourceSettings({
   const [mode, setMode] = useState<"weights" | "multipliers">("weights");
   const [editing, setEditing] = useState(false);
   const [showDisabled, setShowDisabled] = useState(false);
+  const [quickGroup, setQuickGroup] = useState("skater");
   const disabledCount = [skaters, goalies].reduce(
     (sum, group) =>
       sum + Object.values(group || {}).filter((c) => !c.isSelected).length,
@@ -64,7 +69,10 @@ export default function ProjectionSourceSettings({
     onChange(next);
   };
   return (
-    <div className={styles.sources}>
+    <div className={`${styles.sources} ${compact ? styles.compactSources : ""}`}>
+      {compact ? <div className={styles.modeSwitch} role="group" aria-label="Quick projection weights">
+        {([['skater', 'Skaters'], ['goalie', 'Goalies']] as const).map(([id, label]) => <button type="button" key={id} aria-pressed={quickGroup === id} onClick={() => setQuickGroup(id)}>{label}</button>)}
+      </div> : <>
       <div
         className={styles.modeSwitch}
         role="group"
@@ -85,6 +93,7 @@ export default function ProjectionSourceSettings({
           Multipliers
         </button>
       </div>
+      </>}
       {[
         {
           name: "Skaters",
@@ -99,7 +108,7 @@ export default function ProjectionSourceSettings({
           onChange: onGoaliesChange,
         },
       ].map(({ name, id: group, controls, onChange }) => {
-        if (!controls || !onChange) return null;
+        if (!controls || !onChange || (compact && group !== quickGroup)) return null;
         const shares = getEffectiveSourceShares(controls);
         const total = Math.round(
           Object.values(shares).reduce((sum, value) => sum + value, 0) * 100,
@@ -107,7 +116,7 @@ export default function ProjectionSourceSettings({
         return (
           <section
             key={group}
-            id={`sources-${group}`}
+            id={`${compact ? "quick-" : ""}sources-${group}`}
             tabIndex={-1}
             className={styles.sourceGroup}
             aria-label={`${name} projection sources`}
@@ -135,6 +144,7 @@ export default function ProjectionSourceSettings({
                     data-disabled={!control.isSelected}
                   >
                     <label title={label}>
+                      {!compact &&
                       <input
                         type="checkbox"
                         checked={control.isSelected}
@@ -166,14 +176,20 @@ export default function ProjectionSourceSettings({
                           });
                         }}
                       />
+                      }
                       <span>{label}</span>
                     </label>
-                    <meter
+                    {compact ? <input type="range" min={0} max={100} step={1} value={share}
+                      aria-label={`${name} ${label} weight percent`}
+                      disabled={Object.values(controls).filter(control => control.isSelected).length < 2}
+                      onChange={event => changeWeight(controls, id, Number(event.target.value), onChange)}
+                    /> : <meter
                       min={0}
                       max={100}
                       value={share}
                       aria-label={`${label} share`}
                     />
+                    }
                     {editing ? (
                       <label className={styles.weightInput}>
                         <input
@@ -235,7 +251,7 @@ export default function ProjectionSourceSettings({
           </section>
         );
       })}
-      {disabledCount > 0 && (
+      {!compact && disabledCount > 0 && (
         <button
           type="button"
           className={styles.wideButton}
@@ -250,13 +266,14 @@ export default function ProjectionSourceSettings({
         <button
           type="button"
           onClick={() => {
-            if (skaters) onSkatersChange?.(equalizeSourceWeights(skaters));
-            if (goalies) onGoaliesChange?.(equalizeSourceWeights(goalies));
+            if (skaters && (!compact || quickGroup === "skater")) onSkatersChange?.(equalizeSourceWeights(skaters));
+            if (goalies && (!compact || quickGroup === "goalie")) onGoaliesChange?.(equalizeSourceWeights(goalies));
           }}
         >
           Equalize Weights
         </button>
-        <button
+        {compact && onManageSources && <button type="button" onClick={onManageSources}>Manage Sources</button>}
+        {!compact && <button
           type="button"
           data-testid="open-weights-popover"
           aria-pressed={editing}
@@ -266,12 +283,12 @@ export default function ProjectionSourceSettings({
           }}
         >
           {editing ? "Finish Editing" : "Edit Weights"}
-        </button>
+        </button>}
       </div>
-      <p className={styles.note}>
+      {!compact && <p className={styles.note}>
         Weights are blended independently for skaters and goalies. Multipliers
         preserve relative influence.
-      </p>
+      </p>}
     </div>
   );
 }

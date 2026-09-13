@@ -913,11 +913,12 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                     </div>
                   </div>
                   <div className={styles.bottomRow}>
-                    <div className={styles.cardFooter}>
+                    <div className={`${styles.cardFooter} ${controls.scope}`}>
                       {
                         <button
                           type="button"
                           className={styles.linkBtn}
+                          data-control-variant="primary"
                           onClick={(e) => {
                             e.stopPropagation();
                             onDraftPlayer && onDraftPlayer(id);
@@ -937,6 +938,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                         <button
                           type="button"
                           className={styles.linkBtn}
+                          data-control-variant="gold"
                           aria-pressed={compareSelected}
                           aria-label={`${compareSelected ? "Remove" : "Add"} ${name} ${compareSelected ? "from" : "to"} comparison`}
                           onClick={(e) => {

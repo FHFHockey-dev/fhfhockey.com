@@ -270,11 +270,37 @@
 
 .rightPanel { overflow: hidden; }
 
-.quickSettings { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 24px; padding: 12px; border-top: 1px solid v.$draft-border;
-  > div { display: grid; gap: 4px; }
-  label { display: flex; align-items: center; gap: 6px; }
-  nav { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
-  span { color: v.$text-secondary; font-size: 12px; }
+.quickSettings {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(320px, 2fr) minmax(220px, 1fr);
+  gap: v.$space-md;
+  padding: v.$space-sm;
+  border-top: 1px solid v.$draft-border;
+  background: v.$draft-surface;
+}
+.quickSection {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: v.$space-sm;
+  min-width: 0;
+  padding: v.$space-sm;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-card;
+  h3 { margin: 0; font: v.$font-size-xs v.$font-family-accent; color: v.$primary-color; text-transform: uppercase; }
+  label { display: flex; align-items: center; gap: v.$space-xs; font-size: v.$font-size-xs; }
+  > span { color: v.$text-secondary; font-size: v.$font-size-xs; }
+}
+.quickActions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: v.$space-sm; }
+@media (max-width: 1100px) {
+  .quickSettings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .quickSection:nth-child(2) { grid-row: span 2; }
+  .quickActions { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .quickSettings { grid-template-columns: minmax(0, 1fr); }
+  .quickSection:nth-child(2) { grid-row: auto; }
+  .quickActions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (min-width: 1101px) {
