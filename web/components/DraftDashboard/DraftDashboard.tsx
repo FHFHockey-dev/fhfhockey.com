@@ -223,9 +223,9 @@ export function buildAppliedYahooDraftSettings(
     ...(configuration.categoryWeights
       ? { categoryWeights: configuration.categoryWeights }
       : {}),
-    draftOrderMode:
-      configuration.isSnakeDraft === false ? "standard" : "snake",
-    reversedRounds: [],
+    draftOrderMode: configuration.draftOrderMode ??
+      (configuration.isSnakeDraft === false ? "standard" : "snake"),
+    reversedRounds: configuration.reversedRounds ?? [],
   };
 }
 
@@ -1528,8 +1528,12 @@ const DraftDashboard: React.FC = () => {
   );
 
   const yahooReconciliation = useMemo(
-    () => reconcileYahooDraftState(yahooDraftSync.draftState, allPlayers),
-    [allPlayers, yahooDraftSync.draftState],
+    () => reconcileYahooDraftState(yahooDraftSync.draftState, allPlayers, {
+      draftOrder: draftSettings.draftOrder,
+      draftOrderMode: draftSettings.draftOrderMode,
+      reversedRounds: draftSettings.reversedRounds,
+    }),
+    [allPlayers, yahooDraftSync.draftState, draftSettings.draftOrder, draftSettings.draftOrderMode, draftSettings.reversedRounds],
   );
   const espnReconciliation = useMemo(
     () => reconcileEspnDraftState(espnDraftSync.draftState, allPlayers),
@@ -1771,18 +1775,18 @@ const DraftDashboard: React.FC = () => {
     );
     if (!configuration.draftOrder.length) return;
     setDraftSettings((previous) => {
+      const configuration = deriveYahooDraftDashboardConfiguration(yahooDraftSync.draftState!, previous);
       const sameDraftOrder =
         previous.draftOrder.length === configuration.draftOrder.length &&
         previous.draftOrder.every(
           (teamKey, index) => teamKey === configuration.draftOrder[index],
         );
-      const nextOrderMode = configuration.isSnakeDraft
-        ? "snake"
-        : "standard";
+      const nextOrderMode = configuration.draftOrderMode || "snake";
       if (
         previous.teamCount === configuration.teamCount &&
         sameDraftOrder &&
-        previous.draftOrderMode === nextOrderMode
+        previous.draftOrderMode === nextOrderMode &&
+        JSON.stringify(previous.reversedRounds || []) === JSON.stringify(configuration.reversedRounds || [])
       ) {
         return previous;
       }
@@ -1791,7 +1795,7 @@ const DraftDashboard: React.FC = () => {
         teamCount: configuration.teamCount,
         draftOrder: configuration.draftOrder,
         draftOrderMode: nextOrderMode,
-        reversedRounds: [],
+        reversedRounds: configuration.reversedRounds || [],
       };
     });
     setCustomTeamNames((previous) => {
@@ -1824,7 +1828,7 @@ const DraftDashboard: React.FC = () => {
 
   const applyYahooSettings = useCallback(() => {
     if (!yahooDraftSync.draftState) return;
-    const configuration = deriveYahooDraftDashboardConfiguration(yahooDraftSync.draftState);
+    const configuration = deriveYahooDraftDashboardConfiguration(yahooDraftSync.draftState, draftSettings);
     const scoringIncomplete = yahooSettingsRequireScoringConfirmation(
       yahooDraftSync.draftState,
     );
@@ -3761,7 +3765,7 @@ const DraftDashboard: React.FC = () => {
 
       <YahooLiveDraftPanel
         settingsNeedApplying={Boolean(yahooDraftSync.draftState && JSON.stringify(draftSettings) !== JSON.stringify(
-          buildAppliedYahooDraftSettings(draftSettings, deriveYahooDraftDashboardConfiguration(yahooDraftSync.draftState)),
+          buildAppliedYahooDraftSettings(draftSettings, deriveYahooDraftDashboardConfiguration(yahooDraftSync.draftState, draftSettings)),
         ))}
           mode={draftMode}
           authenticated={Boolean(user?.id)}

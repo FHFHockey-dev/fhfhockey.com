@@ -311,6 +311,38 @@ describe("Yahoo live draft reconciliation", () => {
     expect(deriveYahooDraftDashboardConfiguration({ ...state, settings: { ...state.settings, playoffWeeks: [0, 999] } }).playoffWeeks).toBeUndefined();
   });
 
+  it("preserves this league's local order when Yahoo omits positions, including resume and apply", () => {
+    const missing = { ...state, teams: state.teams.map((team) => ({ ...team, draftPosition: undefined })),
+      settings: { ...state.settings, isSnakeDraft: true, diagnostics: { inferredDraftOrder: true } }, picks: [] };
+    const local = { draftOrder: ["team.2", "team.1"], draftOrderMode: "standard" as const, reversedRounds: [] };
+    const configuration = deriveYahooDraftDashboardConfiguration(missing, local);
+    expect(configuration.draftOrder).toEqual(local.draftOrder);
+    expect(configuration.draftOrderMode).toBe("standard");
+    expect(reconcileYahooDraftState(missing, [], local).expectedNext.yahooTeamKey).toBe("team.2");
+    expect(deriveYahooDraftDashboardConfiguration(missing, configuration).draftOrder).toEqual(local.draftOrder);
+    expect(missing.teams.every((team) => team.draftPosition === undefined)).toBe(true);
+  });
+
+  it("never uses another league's order and prefers complete provider positions", () => {
+    const local = { draftOrder: ["team.2", "team.1"], draftOrderMode: "snake" as const };
+    expect(deriveYahooDraftDashboardConfiguration(state, local).draftOrder).toEqual(["team.1", "team.2"]);
+    const missing = { ...state, teams: state.teams.map((team) => ({ ...team, draftPosition: undefined })) };
+    for (const draftOrder of [["other.1", "other.2"], ["team.1", "team.1"], ["team.1"]]) {
+      expect(deriveYahooDraftDashboardConfiguration(missing, { draftOrder }).draftOrder).toEqual(["team.1", "team.2"]);
+    }
+  });
+
+  it("uses local custom reversed rounds for predictions without changing actual pick ownership", () => {
+    const missing = { ...state, teams: state.teams.map((team) => ({ ...team, draftPosition: undefined })),
+      settings: { ...state.settings, isSnakeDraft: true, diagnostics: { inferredDraftOrder: true } },
+      picks: [1, 2].map((pickNumber) => ({ ...state.picks[0], pickNumber })) };
+    const local = { draftOrder: ["team.2", "team.1"], draftOrderMode: "custom" as const, reversedRounds: [2] };
+    const result = reconcileYahooDraftState(missing, [], local);
+    expect(result.expectedNext).toMatchObject({ roundNumber: 2, yahooTeamKey: "team.1" });
+    expect(result.draftedPlayers.every((pick) => pick.teamId === state.picks[0].yahooTeamKey)).toBe(true);
+    expect(deriveYahooDraftDashboardConfiguration(missing, local).reversedRounds).toEqual([2]);
+  });
+
   it("derives a sorted Yahoo team configuration without provider keys leaking", () => {
     expect(deriveYahooDraftDashboardConfiguration(state)).toMatchObject({
       teamCount: 2,

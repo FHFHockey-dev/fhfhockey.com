@@ -142,7 +142,29 @@ export interface YahooDraftReconciliation {
   };
 }
 
+export interface YahooDraftLocalOrder {
+  draftOrder: string[];
+  draftOrderMode?: "standard" | "snake" | "custom";
+  reversedRounds?: number[];
+}
+
+export function hasCompleteYahooDraftPositions(state: YahooDraftState | null): boolean {
+  if (!state) return false;
+  const count = Number(state.settings.teamCount) || state.teams.length;
+  const positions = state.teams.map((team) => team.draftPosition);
+  return count > 0 && positions.length === count && new Set(positions).size === count &&
+    positions.every((position) => Number.isInteger(position) && Number(position) >= 1 && Number(position) <= count);
+}
+
+function localOrderMatchesLeague(state: YahooDraftState, local?: YahooDraftLocalOrder): boolean {
+  return Boolean(local && local.draftOrder.length === state.teams.length &&
+    new Set(local.draftOrder).size === state.teams.length &&
+    state.teams.every((team) => local.draftOrder.includes(team.yahooTeamKey)));
+}
+
 export interface YahooDraftDashboardConfiguration {
+  draftOrderMode?: "standard" | "snake" | "custom";
+  reversedRounds?: number[];
   teamCount: number;
   draftOrder: string[];
   customTeamNames: Record<string, string>;
@@ -544,8 +566,11 @@ function readDraftOrderMode(settings: Record<string, unknown>): {
   return { isSnakeDraft: true, explicit: false };
 }
 
-function orderedTeams(state: YahooDraftState): YahooDraftTeam[] {
+function orderedTeams(state: YahooDraftState, local?: YahooDraftLocalOrder): YahooDraftTeam[] {
   const teams = [...state.teams];
+  if (!hasCompleteYahooDraftPositions(state) && localOrderMatchesLeague(state, local)) {
+    return teams.sort((a, b) => local!.draftOrder.indexOf(a.yahooTeamKey) - local!.draftOrder.indexOf(b.yahooTeamKey));
+  }
   teams.sort((a, b) => {
     if (a.draftPosition && b.draftPosition) {
       return a.draftPosition - b.draftPosition;
@@ -560,6 +585,7 @@ function orderedTeams(state: YahooDraftState): YahooDraftTeam[] {
 export function reconcileYahooDraftState(
   state: YahooDraftState | null,
   players: ProcessedPlayer[],
+  localOrder?: YahooDraftLocalOrder,
 ): YahooDraftReconciliation {
   const picks = state?.picks || [];
   const currentPick = getFirstMissingYahooPick(picks);
@@ -679,11 +705,14 @@ export function reconcileYahooDraftState(
     });
   }
 
-  const teams = state ? orderedTeams(state) : [];
+  const configuration = state ? deriveYahooDraftDashboardConfiguration(state, localOrder) : null;
+  const teams = state ? orderedTeams(state, localOrder) : [];
   const baseIndex = (currentPick - 1) % teamCount;
   const draftOrderMode = readDraftOrderMode(state?.settings || {});
   const teamIndex =
-    state && draftOrderMode.isSnakeDraft && roundNumber % 2 === 0
+    (configuration?.draftOrderMode === "custom"
+      ? configuration.reversedRounds?.includes(roundNumber)
+      : (configuration?.isSnakeDraft ?? draftOrderMode.isSnakeDraft) && roundNumber % 2 === 0)
       ? teamCount - baseIndex - 1
       : baseIndex;
   const expectedTeam = teams[teamIndex];
@@ -694,7 +723,7 @@ export function reconcileYahooDraftState(
     warnings: !state || draftOrderMode.explicit
       ? []
       : [
-          "Yahoo did not provide an explicit snake or straight draft order. The companion is predicting a snake draft until confirmed.",
+          "Yahoo did not provide an explicit snake or straight draft order. Upcoming turns use the dashboard's configured draft format; check it against your Yahoo draft room.",
         ],
     currentPick,
     expectedNext: {
@@ -719,8 +748,13 @@ function normalizeNumericRecord(value: unknown): Record<string, number> | undefi
 
 export function deriveYahooDraftDashboardConfiguration(
   state: YahooDraftState,
+  localOrder?: YahooDraftLocalOrder,
 ): YahooDraftDashboardConfiguration {
-  const teams = orderedTeams(state);
+  const teams = orderedTeams(state, localOrder);
+  const providerMode = readDraftOrderMode(state.settings);
+  const keepLocalFormat = !providerMode.explicit && localOrderMatchesLeague(state, localOrder);
+  const draftOrderMode = keepLocalFormat && localOrder?.draftOrderMode
+    ? localOrder.draftOrderMode : providerMode.isSnakeDraft ? "snake" : "standard";
   const draftOrder = teams.map((team) => team.yahooTeamKey);
   for (const pick of state.picks) {
     if (pick.active && pick.yahooTeamKey && !draftOrder.includes(pick.yahooTeamKey)) {
@@ -752,7 +786,9 @@ export function deriveYahooDraftDashboardConfiguration(
       teams.map((team) => [team.yahooTeamKey, team.name]),
     ),
     myTeamId: teams.find((team) => team.isUserTeam)?.yahooTeamKey,
-    isSnakeDraft: readDraftOrderMode(state.settings).isSnakeDraft,
+    isSnakeDraft: draftOrderMode === "snake",
+    draftOrderMode,
+    reversedRounds: draftOrderMode === "custom" ? [...(localOrder?.reversedRounds || [])] : [],
     rosterConfig: normalizeNumericRecord(rawRoster),
     playoffWeeks: Array.isArray(state.settings.playoffWeeks) &&
       state.settings.playoffWeeks.every((week) => Number.isInteger(week) && week > 0 && week <= 53)

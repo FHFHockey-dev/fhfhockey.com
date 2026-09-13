@@ -9,6 +9,7 @@ import type {
 } from "lib/draftDashboard/yahooLiveDraft";
 import {
   deriveYahooDraftDashboardConfiguration,
+  hasCompleteYahooDraftPositions,
   yahooUnsupportedLeagueMessage,
   yahooSettingsRequireScoringConfirmation,
   yahooSettingsRequireDraftOrderConfirmation,
@@ -86,14 +87,6 @@ function formatTimestamp(value?: string | null): string | null {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
   return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-}
-
-export function hasCompleteYahooDraftPositions(state: YahooDraftState | null): boolean {
-  if (!state) return false;
-  const count = Number(state.settings.teamCount) || state.teams.length;
-  const positions = state.teams.map((team) => team.draftPosition);
-  return count > 0 && positions.length === count && new Set(positions).size === count &&
-    positions.every((position) => Number.isInteger(position) && Number(position) >= 1 && Number(position) <= count);
 }
 
 export function yahooDraftTimeMs(value: unknown): number | null {
@@ -393,7 +386,7 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
               </span>
             )}
             {draftOrderIsInferred && (
-              <span> · snake order is assumed and requires confirmation</span>
+              <span> · draft format requires confirmation</span>
             )}
             <span id="yahoo-apply-hint">{settingsNeedApplying
               ? " · Next step: apply Yahoo settings to update roster and scoring. No need to stop sync."
@@ -464,7 +457,7 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
       {(draftOrderIsInferred || informationalNotes.length > 0) && (
         <div className={styles.infoNotice} role="status">
           <strong>Draft order &amp; settings notes</strong>
-          {draftOrderIsInferred && <p>Draft format is not confirmed by Yahoo; upcoming turns currently assume a snake draft. Check the order in your Yahoo draft room.</p>}
+          {draftOrderIsInferred && <p>Draft format is not confirmed by Yahoo. Check your dashboard’s configured order against your Yahoo draft room; live picks still follow Yahoo’s reported selections.</p>}
           {informationalNotes.map((warning) => <p key={warning}>{warning.includes("complete, unique draft position")
               ? "Team draft positions are not fully available yet. Refresh leagues when Yahoo publishes the order; predicted turns may change."
               : warning}</p>)}
