@@ -41,6 +41,73 @@ function player(playerId: number, fullName: string, position: string) {
 }
 
 describe("ProjectionsTable visibility diagnostics", () => {
+  it("shows scoring-rank ADP value without exposing a personal-rank column", () => {
+    const first = { ...player(1, "First", "C"), yahooAvgPick: 5 };
+    const value = { ...player(2, "Value", "C"), yahooAvgPick: 110 };
+    const third = { ...player(3, "Third", "C"), yahooAvgPick: 30 };
+    first.fantasyPoints.projected = 300;
+    value.fantasyPoints.projected = 200;
+    third.fantasyPoints.projected = 100;
+    render(
+      <ProjectionsTable
+        players={[first, value, third]}
+        allPlayers={[first, value, third]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+        personalRankByPlayerId={{ "2": 999 }}
+        vorpMetrics={new Map([
+          // Invert VORP values to verify the delta remains FP-rank based.
+          ["1", { value: 100 } as any],
+          ["2", { value: 300 } as any],
+          ["3", { value: 200 } as any],
+        ])}
+      />,
+    );
+
+    expect(screen.queryByRole("columnheader", { name: "My Rank" })).toBeNull();
+    expect(screen.getByRole("columnheader", { name: /Value/ })).toBeTruthy();
+    expect(screen.getByText("+108")).toBeTruthy();
+  });
+
+  it("keeps projected fantasy points visible in stats mode", () => {
+    const projected = player(1, "Stats Player", "C");
+    projected.fantasyPoints.projected = 42.5;
+    render(<ProjectionsTable players={[projected]} draftedPlayers={[]} isLoading={false} error={null} onDraftPlayer={vi.fn()} canDraft />);
+    fireEvent.click(screen.getByRole("button", { name: "Toggle stat columns" }));
+    expect(screen.getByRole("columnheader", { name: /Proj/ })).toBeTruthy();
+    expect(screen.getByText("42.5")).toBeTruthy();
+  });
+
+  it("uses the unfiltered full pool and leaves incomplete value inputs blank", () => {
+    const leader = { ...player(1, "Full Pool Leader", "C"), yahooAvgPick: 10 };
+    const filtered = { ...player(2, "Filtered Value", "C"), yahooAvgPick: 1 };
+    const missingPoints = { ...player(3, "Missing Points", "C"), yahooAvgPick: 100 };
+    const missingAdp = { ...player(4, "Missing ADP", "C"), yahooAvgPick: null };
+    leader.fantasyPoints.projected = 300;
+    filtered.fantasyPoints.projected = 200;
+    missingPoints.fantasyPoints.projected = null;
+    missingAdp.fantasyPoints.projected = 100;
+
+    render(
+      <ProjectionsTable
+        players={[filtered, missingPoints, missingAdp]}
+        allPlayers={[leader, filtered, missingPoints, missingAdp]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={vi.fn()}
+        canDraft
+      />,
+    );
+
+    const valueCells = Array.from(document.querySelectorAll('td[data-label="Value Δ"]'));
+    expect(valueCells.map((cell) => cell.textContent)).toEqual(["-1", "-", "-"]);
+    expect(valueCells[0].className).toContain("valueDeltaNegative");
+  });
+
   it("defaults to 50 rows and keeps refresh between row size and page navigation", () => {
     const refresh = vi.fn();
     render(<ProjectionsTable players={Array.from({ length: 61 }, (_, i) => player(i + 1, `Pagination Player ${i + 1}`, "C"))} draftedPlayers={[]} isLoading={false} error={null} onDraftPlayer={vi.fn()} onRefresh={refresh} canDraft />);
@@ -475,7 +542,7 @@ describe("ProjectionsTable visibility diagnostics", () => {
     expect(screen.queryByRole("status")).toBeNull();
   });
 
-  it("shows immutable personal ranks and locks manual draft actions", () => {
+  it("hides personal ranks and locks manual draft actions", () => {
     const onDraftPlayer = vi.fn();
     render(
       <ProjectionsTable
@@ -490,8 +557,7 @@ describe("ProjectionsTable visibility diagnostics", () => {
       />,
     );
 
-    expect(screen.getByRole("columnheader", { name: /My Rank/ })).toBeTruthy();
-    expect(screen.getByText("7")).toBeTruthy();
+    expect(screen.queryByRole("columnheader", { name: /My Rank/ })).toBeNull();
     const draftButton = screen.getByRole("button", { name: "Draft" });
     expect((draftButton as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(draftButton);

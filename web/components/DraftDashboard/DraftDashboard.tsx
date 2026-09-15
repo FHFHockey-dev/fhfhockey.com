@@ -46,6 +46,8 @@ import { adaptReportDashboard, type OpenedReportDraft } from "lib/draft-pro/repo
 import { AnalyticalReportsPanel } from "./AnalyticalReportsPanel";
 import ProjectionsTable from "./ProjectionsTable";
 import { useVORPCalculations } from "hooks/useVORPCalculations";
+import { buildRoundRankHistory } from "lib/draftDashboard/roundRankHistory";
+import DraftSoundCues from "./DraftSoundCues";
 import { useDraftProAccess } from "hooks/useDraftProAccess";
 import { useDraftProDust } from "hooks/useDraftProDust";
 import { buildDraftProDustNotices } from "lib/draftDashboard/draftProDustPresentation";
@@ -2162,6 +2164,22 @@ const DraftDashboard: React.FC = () => {
   );
 
   // Team stats calculations
+  const roundRankHistory = useMemo(() => buildRoundRankHistory({
+    teamIds: draftSettings.draftOrder,
+    picks: draftedPlayers,
+    keepers: manualDraftingEnabled ? keepers : [],
+    trades: manualDraftingEnabled ? pickTrades : [],
+    pattern: draftOrderPattern,
+    rosterCapacity: rosterRoundCount(draftSettings.rosterConfig),
+    currentPick,
+    leagueType: draftSettings.leagueType || "points",
+    values: new Map(allPlayers.flatMap((player) => {
+      const value = draftSettings.leagueType === "categories"
+        ? vorpMetrics.get(String(player.playerId))?.value : player.fantasyPoints.projected;
+      return typeof value === "number" && Number.isFinite(value) ? [[String(player.playerId), value] as const] : [];
+    })),
+  }), [draftSettings.draftOrder, draftSettings.rosterConfig, draftSettings.leagueType, draftedPlayers, manualDraftingEnabled, keepers, pickTrades, draftOrderPattern, currentPick, allPlayers, vorpMetrics]);
+
   const teamStats = useMemo((): TeamDraftStats[] => {
     return draftSettings.draftOrder.map((teamId) => {
       const teamPlayers = rosterAssignments.filter((p) => p.teamId === teamId);
@@ -3850,6 +3868,14 @@ const DraftDashboard: React.FC = () => {
 
       <GodView
         toolbar={<DraftWorkspaceHeader
+          soundControl={sessionReady && !isLoading && (draftMode !== "yahoo" || yahooDraftSync.draftState) ? <DraftSoundCues
+            key={`${draftMode}:${yahooDraftSync.draftState?.session.id || "local"}:${myTeamId}`}
+            currentPickNumber={currentPick}
+            nextPickNumber={myPickWindows[0]?.pickNumber ?? null}
+            isMyTurn={currentTurn.isMyTurn}
+            isNextUp={!currentTurn.isMyTurn && myPickWindows[0]?.offset === 1}
+            draftComplete={currentPick > totalPicks}
+          /> : null}
         health={sourcesRefreshing ? "loading" : sourcesUnavailable || syncError || !hasLoadedPlayers ? "warning" : "healthy"}
         healthLabel={
           sourcesRefreshing ? "Loading draft sources"
@@ -4013,6 +4039,7 @@ const DraftDashboard: React.FC = () => {
             picksUntilNext={currentTurn.isMyTurn ? 0 : picksUntilNext}
           />
           <DraftBoard
+            rankHistory={roundRankHistory}
             expandedMetrics={<>
               <LeagueStandings scheduleMetrics={draftSchedule.playerMetrics} schedulePeriod={draftSchedule.periodLabel} teams={teamStats} categories={activeScoringCategories} leagueType={draftSettings.leagueType || "points"} myTeamId={myTeamId} vorpMetrics={vorpMetrics} onUpdateTeamName={updateTeamName} canEdit={manualDraftingEnabled} isLoading={isLoading} error={errorMessage} />
               {draftProAccess?.eligible && draftProAccess.capabilities.includes("god_view") && <section className={styles.graphRosterMetrics} aria-label="Team roster progress"><h2>Roster Progress · Pro</h2><div>{teamStats.map((team) => <div key={team.teamId}><strong title={team.teamName}>{team.teamName}</strong><span>{Object.values(team.rosterSlots).reduce((sum, slots) => sum + slots.length, team.bench.length)} / {totalRosterSize}</span><span>Needs: {godViewRosterNeeds(godViewRosterProgress(effectiveRosterConfig, team)).map((slot) => slot.label).join(" · ") || "Filled"}</span></div>)}</div></section>}
@@ -4109,6 +4136,8 @@ const DraftDashboard: React.FC = () => {
       </div>
 
       <DraftSummaryModal
+        rankHistory={roundRankHistory}
+        myTeamId={myTeamId}
         isOpen={isSummaryOpen}
         onClose={() => setIsSummaryOpen(false)}
         draftSettings={draftSettings}

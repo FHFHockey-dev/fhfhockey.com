@@ -25,8 +25,10 @@ import {
   type PickTradeEntry
 } from "lib/draftDashboard/pickTrades";
 import styles from "./DraftBoard.module.scss";
+import { rankMovementLabel, roundRankMovement, type RoundRankSnapshot } from "lib/draftDashboard/roundRankHistory";
 
 interface DraftBoardProps {
+  rankHistory?: RoundRankSnapshot[];
   expandedMetrics?: React.ReactNode;
   expandRequest?: number;
   myTeamId?: string;
@@ -52,6 +54,7 @@ interface DraftBoardProps {
 }
 
 const DraftBoard: React.FC<DraftBoardProps> = ({
+  rankHistory = [],
   expandedMetrics,
   expandRequest = 0,
   myTeamId,
@@ -73,6 +76,19 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   const [editingTeam, setEditingTeam] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
   const [isExpanded, setIsExpanded] = useState(false);
+  const latestRankRound = rankHistory.at(-1)?.round || 0;
+  const previousRankRound = useRef(latestRankRound);
+  const [departingRankRound, setDepartingRankRound] = useState<number | null>(null);
+  useEffect(() => {
+    const previous = previousRankRound.current;
+    previousRankRound.current = latestRankRound;
+    if (previous > 0 && latestRankRound > previous) {
+      setDepartingRankRound(previous);
+      const timer = setTimeout(() => setDepartingRankRound(null), 300);
+      return () => clearTimeout(timer);
+    }
+    setDepartingRankRound(null);
+  }, [latestRankRound]);
   const [overlayTop, setOverlayTop] = useState(80);
   const expandButtonRef = useRef<HTMLButtonElement>(null);
   const closeExpandedButtonRef = useRef<HTMLButtonElement>(null);
@@ -458,7 +474,8 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
           ? `\nTraded: ${rowTeamName} → ${ownerName}`
           : "";
         const isKeeper = Boolean(keeper);
-        const tooltip = draftedPlayer
+        const movement = roundRankMovement(rankHistory, round, draftedPlayer?.teamId || ownerTeamId);
+        const tooltip = (draftedPlayer
           ? isKeeper
             ? `${playerName}\nKeeper: ${ownerName}\nForfeited round ${round}, pick ${pickInRound}\nProjected: ${fantasyPoints} pts`
             : `${playerName}\n${rowTeamName}${ownershipLine}\nRound ${round}, Pick ${pickInRound}\nProjected: ${fantasyPoints} pts`
@@ -466,7 +483,8 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
             ? `Roster full: ${ownerName}\nRound ${round}, Pick ${pickInRound} skipped`
             : isCurrentPick
             ? `Current Pick: ${ownerName}${ownershipLine}\nRound ${round}, Pick ${pickInRound}`
-            : `Available Pick${ownershipLine}\nRound ${round}, Pick ${pickInRound}`;
+            : `Available Pick${ownershipLine}\nRound ${round}, Pick ${pickInRound}`) +
+            (movement ? `\n${rankMovementLabel(movement)}` : "");
 
         teamCells.push(
           <div
@@ -482,6 +500,11 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
             role="img"
             aria-label={tooltip}
           >
+            {movement && (round === latestRankRound || round === departingRankRound) && (
+              <span key={`movement-${round}`} className={styles.rankMovement} data-departing={round === departingRankRound} data-direction={Math.sign(movement.delta)} aria-hidden="true">
+                {movement.delta > 0 ? "↑" : movement.delta < 0 ? "↓" : "–"}
+              </span>
+            )}
             {isCurrentPick && (
               <span className={styles.currentPickIndicator} aria-hidden="true" />
             )}

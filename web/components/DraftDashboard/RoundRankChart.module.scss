@@ -1,0 +1,29 @@
+@use "styles/vars" as v;
+
+.chart {
+  padding: 12px;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-panel;
+  margin-bottom: 16px;
+  h3 { margin: 0 0 6px; }
+  p { font-size: 13px; margin: 6px 0; }
+  svg { display: block; width: 100%; min-height: 220px; }
+}
+.axis { fill: currentColor; font-size: 11px; }
+.midline { stroke: currentColor; stroke-dasharray: 4 5; opacity: .3; }
+.teamLine {
+  opacity: .18;
+  transition: opacity 180ms ease;
+  line { stroke-width: 3; }
+  circle { fill: v.$color-brand-primary; stroke: v.$draft-surface; stroke-width: 1; }
+  &[data-active="true"] { opacity: 1; }
+}
+.up { stroke: v.$success-color; }
+.down { stroke: v.$danger-color; }
+.level { stroke: v.$color-brand-primary; }
+.legend {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  button { color: inherit; border: 1px solid v.$draft-border; border-radius: v.$radius-panel; padding: 5px 9px; background: transparent; cursor: pointer; }
+  button[aria-pressed="true"] { border-color: v.$color-brand-primary; background: rgba(v.$color-brand-primary, .12); }
+}
+@media (prefers-reduced-motion: reduce) { .teamLine { transition: none; } }

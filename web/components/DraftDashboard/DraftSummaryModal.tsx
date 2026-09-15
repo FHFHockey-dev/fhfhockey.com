@@ -11,6 +11,8 @@ import type { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import { toPng } from "html-to-image";
 import type { PlayerVorpMetrics } from "hooks/useVORPCalculations";
 import Image from "next/image";
+import RoundRankChart from "./RoundRankChart";
+import type { RoundRankSnapshot } from "lib/draftDashboard/roundRankHistory";
 import {
   getEffectiveRosterConfig,
   getRosterPositions,
@@ -24,6 +26,8 @@ import {
 } from "lib/draftDashboard/keepers";
 
 interface DraftSummaryModalProps {
+  rankHistory?: RoundRankSnapshot[];
+  myTeamId?: string;
   isOpen: boolean;
   onClose: () => void;
   draftSettings: DraftSettings;
@@ -40,6 +44,8 @@ interface DraftSummaryModalProps {
 const MAX_TEAMS_PER_ROW = 16;
 
 export default function DraftSummaryModal({
+  rankHistory = [],
+  myTeamId,
   isOpen,
   onClose,
   draftSettings,
@@ -623,6 +629,8 @@ export default function DraftSummaryModal({
               </div>
             </div>
           )}
+
+          <RoundRankChart history={rankHistory} teams={teamStats} myTeamId={myTeamId} players={playerMap} />
 
           {viewMode === "roster" ? (
             <div className={styles.rostersSection}>

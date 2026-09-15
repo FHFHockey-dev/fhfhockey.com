@@ -92,6 +92,7 @@ type SortableField =
   | "vorp"
   | "vona"
   | "vbd"
+  | "valueDelta"
   | "risk"
   | "off"
   | "b2b";
@@ -567,6 +568,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         "vorp",
         "vona",
         "vbd",
+        "valueDelta",
         "risk",
       ];
       const savedSortField = window.localStorage.getItem(
@@ -712,6 +714,31 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     return m;
   }, [vorpMetrics]);
 
+  // The ADP comparison uses the complete league pool, including drafted
+  // players, ranked strictly by projected fantasy points (never VORP/value or
+  // a user's separate personal ranking list).
+  const leagueRankByPlayerId = useMemo(() => {
+    const rankByPlayerId = new Map<string, number>();
+    const rankedPlayers = (allPlayers ?? players)
+      .map((player, index) => ({
+        player,
+        index,
+        points: player.fantasyPoints.projected,
+      }))
+      .filter((entry): entry is typeof entry & { points: number } =>
+        typeof entry.points === "number" && Number.isFinite(entry.points),
+      )
+      .sort((a, b) => b.points - a.points || a.index - b.index);
+    let previousPoints: number | null = null;
+    let rank = 0;
+    rankedPlayers.forEach((entry, index) => {
+      if (entry.points !== previousPoints) rank = index + 1;
+      rankByPlayerId.set(String(entry.player.playerId), rank);
+      previousPoints = entry.points;
+    });
+    return rankByPlayerId;
+  }, [allPlayers, players]);
+
   const riskMap = useMemo(() => {
     const risks = new Map<string, number>();
     for (const player of players) {
@@ -801,6 +828,15 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         const bM = vorpMap.get(String(b.playerId));
         aValue = aM?.vbd ?? 0;
         bValue = bM?.vbd ?? 0;
+      } else if (sortField === "valueDelta") {
+        const aRank = leagueRankByPlayerId.get(String(a.playerId));
+        const bRank = leagueRankByPlayerId.get(String(b.playerId));
+        aValue = typeof a.yahooAvgPick === "number" && a.yahooAvgPick > 0 && aRank != null
+          ? a.yahooAvgPick - aRank
+          : undefined;
+        bValue = typeof b.yahooAvgPick === "number" && b.yahooAvgPick > 0 && bRank != null
+          ? b.yahooAvgPick - bRank
+          : undefined;
       } else if (sortField === "risk") {
         aValue = riskMap.has(String(a.playerId)) ? 1 - riskMap.get(String(a.playerId))! : undefined;
         bValue = riskMap.has(String(b.playerId)) ? 1 - riskMap.get(String(b.playerId))! : undefined;
@@ -848,6 +884,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     favoriteIds,
     getDisplayPos,
     forwardGrouping,
+    leagueRankByPlayerId,
   ]);
 
   // Helpers for percentile calculations
@@ -1548,19 +1585,19 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
           className={`${styles.playersTable} ${statColumnsMode ? styles.statColumnsTable : ""}`}
           style={{
             "--distributed-column-count": Math.max(
-              statColumns.length + 5,
+              statColumns.length + 6,
               1,
             ),
           } as React.CSSProperties}
         >
           <colgroup>
             <col className={styles.colFav} />
-            {personalRankByPlayerId && <col className={styles.colAdp} />}
             <col className={styles.colName} />
             <col className={styles.colPos} />
             <col className={styles.colTeam} />
-            {!statColumnsMode && (
-              <col className={styles.colFP} />
+            <col className={styles.colFP} />
+            {!statColumnsMode && leagueType === "categories" && (
+              <col className={styles.colScore} />
             )}
             {statColumnsMode && (
               <>
@@ -1572,6 +1609,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
             <col className={styles.colVorp} />
             <col className={styles.colVorp} />
             <col className={styles.colVorp} />
+            <col className={styles.colValueDelta} />
             <col className={styles.colAdp} />
             <col className={styles.colSchedule} />
             <col className={styles.colSchedule} />
@@ -1584,7 +1622,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
               <th className={styles.colFav} scope="col" title="Favorite">
                 Fav
               </th>
-              {personalRankByPlayerId && <th scope="col">My Rank</th>}
               <th
                 className={`${styles.sortableHeader} ${styles.colName}`}
                 aria-sort={getAriaSort("fullName")}
@@ -1624,36 +1661,35 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   Team
                 </button>
               </th>
+              <th
+                className={`${styles.sortableHeader} ${styles.colFP}`}
+                aria-sort={getAriaSort("fantasyPoints")}
+                scope="col"
+              >
+                <button
+                  type="button"
+                  className={`${styles.sortButton} ${styles.stackedSortButton}`}
+                  onClick={() =>
+                    handleSort("fantasyPoints")
+                  }
+                  title="Projected Fantasy Points"
+                >
+                  <span className={styles.stackedSortLabel}><span>Proj</span><span>FPts</span></span>
+                </button>
+              </th>
               {!statColumnsMode ? (
                 <>
-                  <th
-                    className={`${styles.sortableHeader} ${styles.colFP}`}
-                    aria-sort={getAriaSort(
-                      leagueType === "categories"
-                        ? ("score" as any)
-                        : "fantasyPoints",
-                    )}
-                    scope="col"
-                  >
-                    <button
-                      type="button"
-                      className={styles.sortButton}
-                      onClick={() =>
-                        handleSort(
-                          leagueType === "categories"
-                            ? ("score" as any)
-                            : "fantasyPoints",
-                        )
-                      }
-                      title={
-                        leagueType === "categories"
-                          ? "Score: percentile-weighted composite (0–100) across selected categories, weighted by category weights and metric scarcity."
-                          : "Projected Fantasy Points"
-                      }
+                  {leagueType === "categories" && (
+                    <th
+                      className={`${styles.sortableHeader} ${styles.colScore}`}
+                      aria-sort={getAriaSort("score")}
+                      scope="col"
                     >
-                      {leagueType === "categories" ? "Score" : "Proj FP"}
-                    </button>
-                  </th>
+                      <button type="button" className={styles.sortButton} onClick={() => handleSort("score")} title="Percentile-weighted category score">
+                        Score
+                      </button>
+                    </th>
+                  )}
                   <th
                     className={`${styles.sortableHeader} ${styles.colVorp}`}
                     aria-sort={getAriaSort("vorp")}
@@ -1694,6 +1730,15 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       title="Value Based Drafting (blend)"
                     >
                       VBD
+                    </button>
+                  </th>
+                  <th
+                    className={`${styles.sortableHeader} ${styles.colValueDelta}`}
+                    aria-sort={getAriaSort("valueDelta")}
+                    scope="col"
+                  >
+                    <button type="button" className={`${styles.sortButton} ${styles.stackedSortButton}`} onClick={() => handleSort("valueDelta")} title="Yahoo ADP minus full-pool scoring rank; positive values indicate draft value">
+                      <span className={styles.stackedSortLabel}><span>Value</span><span>Δ</span></span>
                     </button>
                   </th>
                 </>
@@ -1762,6 +1807,15 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       title="Value Based Drafting (blend)"
                     >
                       VBD
+                    </button>
+                  </th>
+                  <th
+                    className={`${styles.sortableHeader} ${styles.colValueDelta}`}
+                    aria-sort={getAriaSort("valueDelta")}
+                    scope="col"
+                  >
+                    <button type="button" className={`${styles.sortButton} ${styles.stackedSortButton}`} onClick={() => handleSort("valueDelta")} title="Yahoo ADP minus full-pool scoring rank; positive values indicate draft value">
+                      <span className={styles.stackedSortLabel}><span>Value</span><span>Δ</span></span>
                     </button>
                   </th>
                 </>
@@ -1841,15 +1895,14 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         ? styles.riskMed
                         : styles.riskHigh;
                 const dust = dustInsights?.get(key);
-                const metricColumnsCount = 4; // FP/Score, VORP, VONA, VBD
+                const metricColumnsCount = leagueType === "categories" ? 6 : 5;
                 const detailColSpan =
                   1 + // favorite star
-                  (personalRankByPlayerId ? 1 : 0) +
                   1 + // name
                   1 + // pos
                   1 + // team
                   (statColumnsMode
-                    ? statColumns.length + 3
+                    ? statColumns.length + 5 // FP/Score, VORP, VONA, VBD, value delta
                     : metricColumnsCount) +
                   1 + // ADP
                   2 + // OFF and B2B
@@ -1896,7 +1949,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         {favoriteIds.has(key) ? "★" : "☆"}
                       </button>
                     </td>
-                    {personalRankByPlayerId && <td>{personalRankByPlayerId[key] ?? "—"}</td>}
                     <td className={styles.playerName}>
                       {picksBeforeTurn != null && currentPage * pageSize + rowIndex === picksBeforeTurn && <span className={styles.pickLabel} title="Estimated slot in the displayed order; availability is not guaranteed">Your next pick · estimate</span>}
                       <div className={`${styles.nameContainer} ${favoritesOnly ? styles.queueName : ""}`}>
@@ -2020,17 +2072,18 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     >
                       {canonicalScheduleTeam(player.displayTeam) || "-"}
                     </td>
+                    <td className={fpClasses.join(" ")} data-label="Projected FPTs">
+                      {typeof player.fantasyPoints.projected === "number"
+                        ? player.fantasyPoints.projected.toFixed(1)
+                        : "-"}
+                    </td>
                     {!statColumnsMode ? (
                       <>
-                        <td className={fpClasses.join(" ")} data-label={leagueType === "categories" ? "Score" : "Proj FP"}>
-                          {leagueType === "categories"
-                            ? typeof m?.value === "number"
-                              ? m.value.toFixed(1)
-                              : "-"
-                            : typeof m?.value === "number"
-                              ? m.value.toFixed(1)
-                              : player.fantasyPoints.projected?.toFixed(1) || "-"}
-                        </td>
+                        {leagueType === "categories" && (
+                          <td className={`${styles.score} ${styles.valueNumeric}`} data-label="Score">
+                            {typeof m?.value === "number" ? m.value.toFixed(1) : "-"}
+                          </td>
+                        )}
                         <td
                           className={styles.vorp}
                           data-label="VORP"
@@ -2160,6 +2213,24 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         </td>
                       </>
                     )}
+                    {(() => {
+                      const leagueRank = leagueRankByPlayerId.get(key);
+                      const yahooAdp = typeof player.yahooAvgPick === "number" && player.yahooAvgPick > 0
+                        ? player.yahooAvgPick
+                        : null;
+                      const valueDelta = yahooAdp != null && leagueRank != null
+                        ? Math.round(yahooAdp - leagueRank)
+                        : null;
+                      return (
+                        <td
+                          className={`${styles.valueDelta} ${valueDelta == null ? "" : valueDelta > 0 ? styles.valueDeltaPositive : valueDelta < 0 ? styles.valueDeltaNegative : ""}`}
+                          data-label="Value Δ"
+                          title={yahooAdp == null || leagueRank == null ? "Yahoo ADP or full-pool scoring rank is unavailable" : `Yahoo ADP ${yahooAdp.toFixed(1)} minus full-pool scoring rank ${leagueRank}`}
+                        >
+                          {valueDelta == null ? "-" : `${valueDelta > 0 ? "+" : ""}${valueDelta}`}
+                        </td>
+                      );
+                    })()}
                     <td className={styles.adp} data-label="ADP">
                       {typeof player.yahooAvgPick === "number" &&
                       player.yahooAvgPick > 0

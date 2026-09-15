@@ -1,5 +1,6 @@
 import {
   cleanup,
+  act,
   fireEvent,
   render,
   screen,
@@ -13,8 +14,38 @@ vi.mock("next/image", () => ({
 }));
 
 import DraftSummaryModal from "../../../components/DraftDashboard/DraftSummaryModal";
+import RoundRankChart from "../../../components/DraftDashboard/RoundRankChart";
 
 afterEach(cleanup);
+
+describe("round rank chart", () => {
+  it("delays hover emphasis and retains an explicitly selected team", () => {
+    vi.useFakeTimers();
+    try {
+      render(<RoundRankChart teams={[{ teamId: "a", teamName: "Alpha" }, { teamId: "b", teamName: "Beta" }]} myTeamId="a"
+        history={[{ round: 0, ranks: { a: 1, b: 1 }, picks: [] }, { round: 1, ranks: { a: 2, b: 1 }, picks: [{ teamId: "b", playerId: "p", round: 1, pickInRound: 2, pickNumber: 2 }] }]}
+        players={new Map([["p", { fullName: "Test Player", displayPosition: "C" }]])} />);
+      const beta = screen.getByRole("button", { name: "Beta" });
+      fireEvent.mouseEnter(beta);
+      act(() => vi.advanceTimersByTime(999));
+      expect(beta.getAttribute("aria-pressed")).toBe("false");
+      act(() => vi.advanceTimersByTime(1));
+      expect(beta.getAttribute("aria-pressed")).toBe("true");
+      fireEvent.mouseLeave(beta);
+      expect(beta.getAttribute("aria-pressed")).toBe("false");
+      fireEvent.click(beta);
+      fireEvent.mouseLeave(beta);
+      expect(beta.getAttribute("aria-pressed")).toBe("true");
+      const alphaLine = screen.getByLabelText(/Alpha · Round 1 · Rank 2/).parentElement!;
+      fireEvent.mouseEnter(alphaLine);
+      act(() => vi.advanceTimersByTime(1000));
+      expect(alphaLine.getAttribute("data-active")).toBe("true");
+      fireEvent.mouseLeave(alphaLine);
+      expect(beta.getAttribute("aria-pressed")).toBe("true");
+      expect(screen.getByLabelText(/Beta · Round 1 · Rank 1/).textContent).toContain("Test Player · C · Round 1, pick 2, overall #2");
+    } finally { vi.useRealTimers(); }
+  });
+});
 
 describe("DraftSummaryModal configuration evidence", () => {
   it("lists no-pick keepers separately from the recap board", () => {

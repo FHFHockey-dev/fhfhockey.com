@@ -1606,7 +1606,7 @@
 .miniRunDescriptor { font-size: 10px; }
 .miniRunItems { gap: 8px; }
 .miniRunLabel, .miniRunVal { font-size: 10px; }
-.tableContainer { flex: 1 1 auto; height: auto; min-height: 0; max-height: none; overflow: auto; scroll-padding-block: 40px; padding-block-end: 40px; color-scheme: dark; scrollbar-width: thin; scrollbar-color: v.$primary-color v.$draft-input; @include v.custom-scrollbar(v.$primary-color, v.$draft-input); }
+.tableContainer { flex: 1 1 auto; height: auto; min-height: 0; max-height: none; overflow-y: auto; overflow-x: hidden; scroll-padding-block: 40px; padding-block-end: 40px; color-scheme: dark; scrollbar-width: thin; scrollbar-color: v.$primary-color v.$draft-input; @include v.custom-scrollbar(v.$primary-color, v.$draft-input); }
 .playersTable { table-layout: fixed; width: 100%; min-width: 0; border-collapse: separate; border-spacing: 0; font-size: 12px; }
 .playersTable th { position: sticky; top: 0; z-index: 2; padding: 7px 4px; height: 30px; font-size: 11px; letter-spacing: .02em; background: v.$draft-surface-raised; border-bottom: 1px solid v.$draft-border; }
 .playersTable td { padding: 5px 4px; height: 32px; font-size: 13px; border-bottom: 1px solid v.$draft-border; }
@@ -1615,7 +1615,7 @@
 .playersTable .colPos { width: 52px; min-width: 0; }
 .playersTable .colTeam { width: 32px; min-width: 0; }
 .playersTable .colStat { width: 46px; min-width: 0; }
-.playersTable .colFP, .playersTable .colVorp, .playersTable .colAdp, .playersTable .colNextPick { width: 46px; min-width: 0; }
+.playersTable .colFP, .playersTable .colScore, .playersTable .colVorp, .playersTable .colValueDelta, .playersTable .colAdp, .playersTable .colNextPick { width: 46px; min-width: 0; }
 .playersTable .colAction { width: 56px; min-width: 56px; }
 .playersTable .colCompare { width: 36px; min-width: 36px; }
 .playersTable.statColumnsTable .colFav { width: 4%; min-width: 0; }
@@ -1624,6 +1624,7 @@
 .playersTable.statColumnsTable .colTeam { width: 5%; min-width: 0; }
 .playersTable.statColumnsTable .colStat,
 .playersTable.statColumnsTable .colVorp,
+.playersTable.statColumnsTable .colValueDelta,
 .playersTable.statColumnsTable .colAdp,
 .playersTable.statColumnsTable .colNextPick {
   width: calc(48% / var(--distributed-column-count));
@@ -1723,7 +1724,9 @@
   .playersTable .colPos { width: 6%; }
   .playersTable .colTeam { width: 6%; }
   .playersTable .colFP,
+  .playersTable .colScore,
   .playersTable .colVorp,
+  .playersTable .colValueDelta,
   .playersTable .colAdp,
   .playersTable .colNextPick { width: 8%; }
   .playersTable .colAction { width: 10%; min-width: 0; }
@@ -1740,6 +1743,7 @@
   .playersTable.statColumnsTable .colTeam { width: 5%; }
   .playersTable.statColumnsTable .colStat,
   .playersTable.statColumnsTable .colVorp,
+  .playersTable.statColumnsTable .colValueDelta,
   .playersTable.statColumnsTable .colAdp,
   .playersTable.statColumnsTable .colNextPick { width: calc(57% / var(--distributed-column-count)); }
   .playersTable.statColumnsTable .colAction { width: 8%; }
@@ -1754,13 +1758,22 @@
   .colPos, .colTeam { width: 5%; }
   .colAction { width: 7%; min-width: 0; }
   .colCompare { width: 4%; min-width: 0; }
-  .colStat, .colFP, .colVorp, .colAdp, .colNextPick { width: auto; min-width: 0; }
+  .colStat, .colScore, .colVorp, .colValueDelta, .colNextPick { width: auto; min-width: 0; }
+  // Five-character point and ADP values need a stable, readable footprint in
+  // the narrow center panel; the remaining compact columns share the balance.
+  .colFP, .colAdp { width: 44px; min-width: 0; }
   .colSchedule { width: 4%; padding-inline: 1px; text-align: center; font-variant-numeric: tabular-nums; }
   .statHeader, .statCol { min-width: 0; padding-inline: 1px; }
   th { overflow: visible; }
   th button { max-width: 100%; overflow: visible; text-overflow: clip; }
   .nameContainer { display: flex; width: 100%; }
   .dustInsight { display: flex; margin: 1px 0 0 21px; }
+}
+
+.playersTable .fantasyPoints,
+.playersTable .adp {
+  min-width: 0;
+  padding-inline: 2px;
 }
 
 @container player-table (max-width: 850px) {
@@ -1771,7 +1784,7 @@
   .primaryControls .compactPrimaryControl { flex-basis: 60px; width: 60px; }
   .controlToggleBtn { padding-inline: 3px; }
 }
-.playersTable { min-width: 720px; }
+.playersTable { min-width: 0; }
 
 .queueHandle, .queueMove {
   background: transparent;
@@ -1790,5 +1803,25 @@
 .queueControls { display: flex; flex: 0 0 100%; order: 2; gap: 4px; padding-top: 4px; }
 .playersTable td { border-radius: 0 !important; }
 .playerRow[data-next-pick="true"] > td { border-top: 2px solid v.$info-color; }
-.pickLabel { display: block; color: v.$info-color; font-size: 10px; line-height: 14px; text-transform: uppercase; }
+.playerRow[data-next-pick="true"] > .playerName { position: relative; }
+.pickLabel {
+  position: absolute;
+  top: -9px;
+  left: 4px;
+  z-index: 1;
+  display: block;
+  padding: 0 5px;
+  color: v.$info-color;
+  background: v.$draft-surface-raised;
+  font-size: 10px;
+  line-height: 14px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.stackedSortButton { position: relative; width: 100%; min-width: 0; margin: 0; padding: 0; justify-content: center; gap: 0; letter-spacing: 0; }
+.stackedSortButton::after { position: absolute; right: 0; bottom: 1px; }
+.stackedSortLabel { display: inline-flex; min-width: 0; flex-direction: column; align-items: center; line-height: 1; transform: translateX(-3px); }
+.valueDelta { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+.valueDeltaPositive { color: v.$color-mint-300; }
+.valueDeltaNegative { color: v.$color-coral-500; }
 .projectionsContainer { border-radius: inherit; }

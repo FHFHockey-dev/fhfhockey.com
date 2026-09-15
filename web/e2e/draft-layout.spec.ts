@@ -49,9 +49,12 @@ async function audit(page: Page) {
     }
     for (const selector of ['[class*="DraftWorkspace_workspaceHeader"]', '[class*="GodView_header"]']) {
       const toolbar = dashboard.querySelector(selector)!;
+      // The workspace controls use display: contents inside the shared header.
+      // Their containing visual box is the parent, not their zero-sized wrapper.
+      const toolbarBounds = (getComputedStyle(toolbar).display === "contents" ? toolbar.parentElement! : toolbar).getBoundingClientRect();
       const controls = Array.from(toolbar.querySelectorAll('button, a, output')).map(el => el.getBoundingClientRect());
       controls.forEach((b, i) => {
-        if (b.top < toolbar.getBoundingClientRect().top - 1 || b.bottom > toolbar.getBoundingClientRect().bottom + 1) failures.push("toolbar wraps");
+        if (b.top < toolbarBounds.top - 1 || b.bottom > toolbarBounds.bottom + 1) failures.push("toolbar wraps");
         if (controls.slice(i + 1).some(c => Math.min(b.right, c.right) - Math.max(b.left, c.left) > 1 && Math.min(b.bottom, c.bottom) - Math.max(b.top, c.top) > 1)) failures.push("toolbar control overlap");
       });
     }
@@ -113,6 +116,89 @@ async function openFixture(page: Page, options: { setup?: "fresh" | "decline-tab
   const done = page.getByRole("button", { name: "Done", exact: true });
   if (!options.keepSetup && await done.isVisible()) await done.click();
 }
+
+test("projection value columns and rounded standings fit desktop", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await openFixture(page);
+  const panel = page.locator('#mobile-draft-panel-players');
+  for (const width of [1920, 1366]) {
+    await page.setViewportSize({ width, height: width === 1920 ? 1080 : 768 });
+    for (let mode = 0; mode < 2; mode++) {
+      await expect(panel.getByRole('columnheader', { name: /PROJ.*FPTs/i })).toBeVisible();
+      await expect(panel.getByRole('columnheader', { name: 'My Rank', exact: true })).toHaveCount(0);
+      const valueHeader = panel.getByRole('columnheader', { name: /Value/ });
+      const headerHeight = await valueHeader.evaluate(el => el.getBoundingClientRect().height);
+      await valueHeader.getByRole('button').click();
+      expect(await valueHeader.evaluate(el => el.getBoundingClientRect().height)).toBe(headerHeight);
+      const overflow = await panel.locator('table').evaluate(table => {
+        const wrapper = table.parentElement!;
+        return { table: table.scrollWidth - wrapper.clientWidth,
+          headers: Array.from(table.querySelectorAll('th')).filter(th => th.scrollWidth > th.clientWidth + 2).map(th => th.textContent),
+          cells: Array.from(table.querySelectorAll('tbody tr:first-child td')).filter(td => !td.querySelector('button') && td.scrollWidth > td.clientWidth + 2).map(td => td.textContent) };
+      });
+      expect(overflow).toEqual({ table: 0, headers: [], cells: [] });
+      for (const selector of ['#mobile-draft-panel-board', '[aria-label="League Standings"]']) {
+        expect(await page.locator(selector).evaluate(panel => {
+          const bounds = panel.getBoundingClientRect();
+          return panel.scrollWidth <= panel.clientWidth + 1 &&
+            Array.from(panel.querySelectorAll('tr, [data-overall-pick]')).every(child => {
+              const box = child.getBoundingClientRect();
+              return box.left >= bounds.left - 1 && box.right <= bounds.right + 1;
+            });
+        })).toBe(true);
+      }
+      await panel.screenshot({ path: testInfo.outputPath(`projection-${width}-${mode}.png`) });
+      await panel.getByRole('button', { name: 'Toggle stat columns' }).click();
+    }
+  }
+  await page.getByRole('region', { name: 'League Standings', exact: true }).screenshot({ path: testInfo.outputPath('standings-border.png') });
+});
+
+test("opt-in sounds announce next-up and current turn without replay", async ({ page }) => {
+  await page.addInitScript(() => {
+    const win = window as typeof window & { draftCueNotes?: number };
+    win.draftCueNotes = 0;
+    const original = AudioContext.prototype.createOscillator;
+    AudioContext.prototype.createOscillator = function () {
+      win.draftCueNotes = (win.draftCueNotes || 0) + 1;
+      return original.call(this);
+    };
+  });
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await openFixture(page);
+  await page.getByRole('button', { name: 'Turn on draft sounds' }).click();
+  const notes = () => page.evaluate(() => (window as typeof window & { draftCueNotes: number }).draftCueNotes);
+  expect(await notes()).toBe(0);
+  for (let pick = 0; pick < 11; pick++) await page.locator('#mobile-draft-panel-players').getByRole('button', { name: 'Draft', exact: true }).first().click();
+  await expect.poll(notes).toBe(2);
+  await page.locator('#mobile-draft-panel-players').getByRole('button', { name: 'Draft', exact: true }).first().click();
+  await expect.poll(notes).toBe(5);
+  await page.getByRole('button', { name: 'Turn off draft sounds' }).click();
+  await page.locator('#mobile-draft-panel-players').getByRole('button', { name: 'Draft', exact: true }).first().click();
+  expect(await notes()).toBe(5);
+});
+
+test("completed-round movement and rank chart preserve the draft workflow", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await openFixture(page);
+  const board = page.locator('#draft-graph');
+  await expect(board.locator('[class*="rankMovement"]')).toHaveCount(0);
+  await page.locator('#mobile-draft-panel-players').getByRole('button', { name: 'Draft', exact: true }).first().click();
+  await expect(board.locator('[class*="rankMovement"]')).toHaveCount(12);
+  await expect(board.locator('[data-overall-pick="1"]')).toHaveAttribute('title', /Round movement: Rank 1/);
+  for (let pick = 0; pick < 12; pick++) {
+    await page.locator('#mobile-draft-panel-players').getByRole('button', { name: 'Draft', exact: true }).first().click();
+  }
+  await expect(board.locator('[data-round="1"] [class*="rankMovement"]')).toHaveCount(0);
+  await expect(board.locator('[data-round="2"] [class*="rankMovement"]')).toHaveCount(12);
+  await expect(board.locator('[data-overall-pick="1"]')).toHaveAttribute('title', /Round movement:/);
+  await board.screenshot({ path: testInfo.outputPath('round-movement-board.png') });
+  await page.getByRole('button', { name: 'Open full draft settings', exact: true }).click();
+  await page.getByRole('button', { name: 'Draft summary', exact: true }).click();
+  const chart = page.getByRole('region', { name: 'Round-by-round rank history' });
+  await expect(chart.getByRole('img', { name: 'Team ranks at the end of each completed round' })).toBeVisible();
+  await chart.screenshot({ path: testInfo.outputPath('round-rank-chart.png') });
+});
 
 test("Draft Order fits every required viewport and resizes its contents", async ({ page }, testInfo) => {
   test.setTimeout(120_000);

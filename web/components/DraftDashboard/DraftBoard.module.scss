@@ -1,4 +1,24 @@
 @use "styles/vars" as v;
+.rankMovement {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  line-height: 1;
+  color: v.$color-neutral-200;
+  background: rgba(v.$draft-surface, .45);
+  border-radius: inherit;
+  text-shadow: 0 1px 2px v.$draft-surface;
+  pointer-events: none;
+  animation: rankPulse 450ms ease-out;
+  &[data-departing="true"] { animation: rankFade 300ms ease-out forwards; }
+  &[data-direction="1"] { color: v.$success-color; }
+  &[data-direction="-1"] { color: v.$danger-color; }
+}
+@keyframes rankPulse { from { opacity: 0; transform: scale(.65); } to { opacity: 1; transform: scale(1); } }
+@keyframes rankFade { to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .rankMovement { animation: none; &[data-departing="true"] { display: none; } } }
 .draftBoardContainer {
   display: flex;
   flex-direction: column;
