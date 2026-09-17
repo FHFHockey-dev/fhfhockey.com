@@ -762,6 +762,28 @@ function GameGridInternal({
   const [isBottomDrawerOpen, setIsBottomDrawerOpen] = useState(false);
   const [isDateRangeOpen, setIsDateRangeOpen] = useState(false);
   const weekScoreHelpRef = useRef<HTMLDivElement | null>(null);
+  const [controlsOpen, setControlsOpen] = useState(false);
+  const controlsMenuRef = useRef<HTMLDivElement | null>(null);
+  const controlsTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!controlsOpen) return;
+    const dismissOutside = (event: PointerEvent) => {
+      if (!controlsMenuRef.current?.contains(event.target as Node)) setControlsOpen(false);
+    };
+    const dismissOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setControlsOpen(false);
+        controlsTriggerRef.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", dismissOutside);
+    document.addEventListener("keydown", dismissOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", dismissOutside);
+      document.removeEventListener("keydown", dismissOnEscape);
+    };
+  }, [controlsOpen]);
   const [dateRangeDraft, setDateRangeDraft] = useState(() => ({
     start: format(new Date(dates[0]), "yyyy-MM-dd"),
     end: format(new Date(dates[1]), "yyyy-MM-dd")
@@ -920,6 +942,11 @@ function GameGridInternal({
         </ul>
       </div>
 
+
+    </div>
+  );
+
+  const weekScoreHelp = (
       <div className={styles.legendBarEnd} ref={weekScoreHelpRef}>
         <button
           type="button"
@@ -951,7 +978,6 @@ function GameGridInternal({
           </div>
         )}
       </div>
-    </div>
   );
 
   if (isMobile) {
@@ -1373,42 +1399,67 @@ function GameGridInternal({
         </div>
 
         <div className={styles.controlsBar}>
-          <div className={styles.leftControls}>
-            <div className={styles.viewToggleWrapper}>
-              <button
-                type="button"
-                className={styles.panelControlButton}
-                onClick={() => setIsBottomDrawerOpen((v) => !v)}
-                aria-pressed={isBottomDrawerOpen}
-                aria-controls="gg-bottom-drawer"
-              >
-                Pickups
-              </button>
-            </div>
-            <div className={styles.viewToggleWrapper}>
-              <button
-                type="button"
-                className={styles.panelControlButton}
-                onClick={openDateRange}
-              >
-                Date Range
-              </button>
-            </div>
-            <div className={styles.viewToggleWrapper}>
-              <button
-                type="button"
-                aria-label="Toggle orientation"
-                className={styles.orientationToggleButton}
-                onClick={handleOrientationToggle}
-              >
-                {isDesktop
-                  ? orientation === "horizontal"
-                    ? "Legacy Vertical"
-                    : "Master Table"
-                  : orientation === "horizontal"
-                    ? "Vertical"
-                    : "Horizontal"}
-              </button>
+          <div className={styles.leftControls} ref={controlsMenuRef}
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setControlsOpen(false);
+            }}
+          >
+            <button
+              type="button"
+              ref={controlsTriggerRef}
+              className={styles.controlsMenuTrigger}
+              aria-label={controlsOpen ? "Close grid controls" : "Open grid controls"}
+              aria-expanded={controlsOpen}
+              aria-controls="gg-controls-menu"
+              onClick={() => setControlsOpen((open) => !open)}
+            >
+              <span className={styles.hamburgerIcon} aria-hidden="true"><span /><span /><span /></span>
+            </button>
+            <div id="gg-controls-menu" role="group" aria-label="Grid controls"
+              className={styles.controlsMenu} data-open={controlsOpen}
+              onClick={(event) => {
+                if ((event.target as HTMLElement).closest("button")) {
+                  setControlsOpen(false);
+                  controlsTriggerRef.current?.focus();
+                }
+              }}
+            >
+              <div className={styles.viewToggleWrapper}>
+                <button
+                  type="button"
+                  className={styles.panelControlButton}
+                  onClick={() => setIsBottomDrawerOpen((v) => !v)}
+                  aria-pressed={isBottomDrawerOpen}
+                  aria-controls="gg-bottom-drawer"
+                >
+                  Pickups
+                </button>
+              </div>
+              <div className={styles.viewToggleWrapper}>
+                <button
+                  type="button"
+                  className={styles.panelControlButton}
+                  onClick={openDateRange}
+                >
+                  Date Range
+                </button>
+              </div>
+              <div className={styles.viewToggleWrapper}>
+                <button
+                  type="button"
+                  aria-label="Toggle orientation"
+                  className={styles.orientationToggleButton}
+                  onClick={handleOrientationToggle}
+                >
+                  {isDesktop
+                    ? orientation === "horizontal"
+                      ? "Legacy Vertical"
+                      : "Master Table"
+                    : orientation === "horizontal"
+                      ? "Vertical"
+                      : "Horizontal"}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1457,36 +1508,40 @@ function GameGridInternal({
             </div>
           </div>
 
-          <div
-            className={styles.modeToggle}
-            role="group"
-            aria-label="Forecast span"
-          >
-            <button
-              type="button"
-              aria-pressed={mode === "7-Day-Forecast"}
-              className={
-                mode === "7-Day-Forecast"
-                  ? styles.modeButtonActive
-                  : styles.modeButton
-              }
-              onClick={() => setMode("7-Day-Forecast")}
+          <div className={styles.rightControls}>
+            <div
+              className={styles.modeToggle}
+              role="group"
+              aria-label="Forecast span"
             >
-              7-Day
-            </button>
-            <button
-              type="button"
-              aria-pressed={mode === "10-Day-Forecast"}
-              className={
-                mode === "10-Day-Forecast"
-                  ? styles.modeButtonActive
-                  : styles.modeButton
-              }
-              onClick={() => setMode("10-Day-Forecast")}
-            >
-              10-Day
-            </button>
+              <button
+                type="button"
+                aria-pressed={mode === "7-Day-Forecast"}
+                className={
+                  mode === "7-Day-Forecast"
+                    ? styles.modeButtonActive
+                    : styles.modeButton
+                }
+                onClick={() => setMode("7-Day-Forecast")}
+              >
+                7-Day
+              </button>
+              <button
+                type="button"
+                aria-pressed={mode === "10-Day-Forecast"}
+                className={
+                  mode === "10-Day-Forecast"
+                    ? styles.modeButtonActive
+                    : styles.modeButton
+                }
+                onClick={() => setMode("10-Day-Forecast")}
+              >
+                10-Day
+              </button>
+            </div>
+            {weekScoreHelp}
           </div>
+          {legendBar}
         </div>
 
         {/* New 3-Column Dashboard Layout */}
@@ -1494,7 +1549,6 @@ function GameGridInternal({
           {gridLayout === "master" ? (
             <div className={styles.desktopMasterSection}>
               <div className={styles.scheduleGridContainer}>
-                {legendBar}
                 <DesktopMasterTable
                   start={dates[0]}
                   extended={mode === "10-Day-Forecast"}
@@ -1528,8 +1582,7 @@ function GameGridInternal({
               {/* Center: Main Game Grid */}
               <div className={styles.centerGrid}>
                 <div className={styles.scheduleGridContainer}>
-                  {legendBar}
-                  {orientation === "vertical" ? (
+                    {orientation === "vertical" ? (
                     <TransposedGrid
                       sortedTeams={sortedTeams}
                       games={currentNumGamesPerDay}

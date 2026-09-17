@@ -345,7 +345,8 @@ function statCategoryRows(payload: unknown) {
     const abbreviation = toText(
       entityScalar(entity, ["abbr", "display_name", "name"]),
     );
-    return statId ? [{ statId, abbreviation }] : [];
+    const displayOnly = entityScalar(entity, ["is_only_display_stat"]);
+    return statId ? [{ statId, abbreviation, displayOnly: displayOnly === true || displayOnly === 1 || displayOnly === "1" }] : [];
   });
 }
 
@@ -417,7 +418,8 @@ function adaptScoring(payload: unknown) {
   const modifiers = new Map(
     statModifierRows(payload).map(({ statId, value }) => [statId, value]),
   );
-  for (const { statId, abbreviation } of categories) {
+  for (const { statId, abbreviation, displayOnly } of categories) {
+    if (displayOnly) continue;
     const labelKey = String(abbreviation ?? "")
       .toUpperCase()
       .replace(/\+\/-/g, "PLUSMINUS")
@@ -449,6 +451,29 @@ function adaptScoring(payload: unknown) {
     unsupportedStatIds: [...unsupportedStatIds].sort(),
     scoringTypeRaw: scoringType || null,
     scoringTypeRecognized,
+  };
+}
+
+// Older sessions may have cached display-only statistics as scoring categories.
+export function removeYahooDisplayOnlyScoring(settings: YahooDraftSettings, payload: unknown): YahooDraftSettings {
+  const scoringCategories = { ...settings.scoringCategories };
+  const categoryWeights = { ...settings.categoryWeights };
+  for (const { statId, displayOnly } of statCategoryRows(payload)) {
+    if (!displayOnly) continue;
+    const key = YAHOO_STAT_KEY_BY_ID[statId];
+    if (!key) continue;
+    delete scoringCategories[key];
+    delete categoryWeights[key];
+  }
+  return { ...settings, scoringCategories, categoryWeights };
+}
+
+// Shared in-season vocabulary without imposing draft-order or auction restrictions.
+export function parseYahooBoardSettings(payload: unknown) {
+  return { ...adaptRosterConfig(payload), ...adaptScoring(payload),
+    weeklyDeadline: toText(findFirstScalar(payload, ["weekly_deadline"])),
+    rosterType: toText(findFirstScalar(payload, ["roster_type"])),
+    minimumGoalieStarts: toInteger(findFirstScalar(payload, ["min_goalie_appearances"])),
   };
 }
 

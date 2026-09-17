@@ -1,18 +1,23 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { fromMock, insertMock, upsertMock } = vi.hoisted(() => ({
+const { fromMock, insertMock, upsertMock, rpcMock, dispatchMock } = vi.hoisted(() => ({
   fromMock: vi.fn(),
   insertMock: vi.fn(),
   upsertMock: vi.fn(),
+  rpcMock: vi.fn(),
+  dispatchMock: vi.fn(),
 }));
 
 vi.mock("lib/supabase/server", () => ({
   default: {
     from: fromMock,
+    rpc: rpcMock,
   },
 }));
+vi.mock("lib/projections/starterBoardQueue", () => ({ dispatchStarterBoardJobs: dispatchMock }));
 
 import { createLineSourceIftttReceiver } from "lib/sources/lineSourceIftttReceiver";
+import scheduler from "../../pages/api/internal/starter-board";
 
 function createMockReq(overrides: Record<string, unknown> = {}) {
   return {
@@ -56,9 +61,54 @@ function createMockRes() {
 }
 
 describe("createLineSourceIftttReceiver", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it("processes automatically with capture enabled, respects explicit deferral, and never trusts Host", async () => {
+    vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "true");
+    vi.stubEnv("STARTER_BOARD_WORKER_ORIGIN", "https://trusted.example");
+    const request = vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", request);
+    const handler = createLineSourceIftttReceiver({ sourceGroup: "gdl_suite", sourceKey: "gamedaygoalies",
+      sourceAccount: "GameDayGoalies", secretEnvVar: "IFTTT_GAMEDAYGOALIES_WEBHOOK_SECRET",
+      processorPath: "/api/v1/db/update-line-sources" });
+    await handler(createMockReq({ headers: { "x-fhfh-ifttt-secret": "test-secret", host: "untrusted.example" } }), createMockRes());
+    expect(new URL(request.mock.calls[0][0]).origin).toBe("https://trusted.example");
+    expect(request.mock.calls[0][1]).toMatchObject({ redirect: "error", signal: expect.any(AbortSignal) });
+    await handler(createMockReq({ query: { process: "false" } }), createMockRes());
+    expect(request).toHaveBeenCalledOnce();
+  });
+  it("preserves pending work when production has no trusted processor origin", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "true");
+    vi.stubEnv("STARTER_BOARD_WORKER_ORIGIN", "");
+    const request = vi.fn();
+    vi.stubGlobal("fetch", request);
+    const handler = createLineSourceIftttReceiver({ sourceGroup: "gdl_suite", sourceKey: "gamedaygoalies",
+      sourceAccount: "GameDayGoalies", secretEnvVar: "IFTTT_GAMEDAYGOALIES_WEBHOOK_SECRET",
+      processorPath: "/api/v1/db/update-line-sources" });
+    const res = createMockRes();
+    await handler(createMockReq(), res);
+    expect(upsertMock).toHaveBeenCalledOnce();
+    expect(request).not.toHaveBeenCalled();
+    expect(res.body).toMatchObject({ success: true, processor: { success: false } });
+  });
+  it.each(["2026-01-01T02:00:00Z", "2026-07-01T02:00:00Z"])("keeps evening news on the Eastern slate at %s", async (now) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(now));
+    const request = vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", request);
+    try {
+      const handler = createLineSourceIftttReceiver({ sourceGroup: "gdl_suite", sourceKey: "gamedaygoalies",
+        sourceAccount: "GameDayGoalies", secretEnvVar: "IFTTT_GAMEDAYGOALIES_WEBHOOK_SECRET",
+        processorPath: "/api/v1/db/update-line-sources" });
+      await handler(createMockReq({ query: { process: "true" } }), createMockRes());
+      expect(new URL(request.mock.calls[0][0]).searchParams.get("date")).toBe(now.startsWith("2026-01") ? "2025-12-31" : "2026-06-30");
+    } finally { vi.useRealTimers(); vi.unstubAllGlobals(); }
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();
+    rpcMock.mockResolvedValue({ data: 0, error: null });
+    dispatchMock.mockResolvedValue({ dispatched: 16, failed: 0, results: [] });
     process.env.IFTTT_GAMEDAYGOALIES_WEBHOOK_SECRET = "test-secret";
     process.env.IFTTT_GAMEDAYLINES_WEBHOOK_SECRET = "test-secret";
     upsertMock.mockResolvedValue({ error: null });
@@ -67,6 +117,34 @@ describe("createLineSourceIftttReceiver", () => {
       insert: insertMock,
       upsert: upsertMock,
     });
+  });
+
+  it.each([false, true])("runs bounded source retries independently of computation enabled=%s", async (compute) => {
+    vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "true");
+    vi.stubEnv("STARTER_BOARD_COMPUTE_ENABLED", String(compute));
+    vi.stubEnv("STARTER_BOARD_SCHEDULER_ENABLED", "true");
+    vi.stubEnv("STARTER_BOARD_WORKER_ORIGIN", "https://trusted.example");
+    vi.stubEnv("CRON_SECRET", "scheduler-test");
+    const releases: Array<() => void> = [];
+    const request = vi.fn(() => new Promise<Response>((resolve) => releases.push(() => resolve(new Response("{}", { status: 200 })))));
+    vi.stubGlobal("fetch", request);
+    const res = createMockRes();
+    const pending = scheduler(createMockReq({ method: "GET", headers: { authorization: "Bearer scheduler-test" } }), res);
+    await vi.waitFor(() => {
+      expect(request).toHaveBeenCalledTimes(3);
+      if (compute) expect(dispatchMock).toHaveBeenCalledOnce();
+    });
+    // Accepted work dispatches while all three source calls are still pending.
+    if (!compute) { expect(dispatchMock).not.toHaveBeenCalled(); expect(rpcMock).not.toHaveBeenCalled(); }
+    for (const [url] of request.mock.calls as unknown as Array<[URL]>) {
+      expect(url.searchParams.get("currentDayOnly")).toBe("true");
+      expect(url.searchParams.get("limit")).toBe("5");
+      expect(url.searchParams.has("reprocess")).toBe(false);
+    }
+    releases.forEach((release) => release());
+    await pending;
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ dispatched: compute ? 16 : 0, capture: { attempted: 3, failed: 0 } });
   });
 
   it("routes a GameDayGoalies event into the generic queue with source metadata", async () => {

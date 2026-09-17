@@ -14,6 +14,7 @@ describe("Draft Pro feature flags", () => {
       scenarios: false,
       reports: false,
       god_view: false,
+      mock_draft_advanced: false,
     });
     expect(getDraftProFeatureFlags({ DRAFT_PRO_GOD_VIEW_ENABLED: "true" }).god_view).toBe(true);
     expect(getDraftProFeatureFlags({ DRAFT_PRO_DUST_ENABLED: "true" })).toMatchObject({

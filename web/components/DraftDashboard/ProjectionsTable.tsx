@@ -1913,14 +1913,29 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 const mainRow = (
                   <tr
                     key={player.playerId}
-                    onDragOver={favoritesOnly ? (event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; } : undefined}
-                    onDrop={favoritesOnly ? (event) => {
-                      event.preventDefault();
-                      if (draggedFavorite) moveFavorite(draggedFavorite, key);
-                      setDraggedFavorite(null);
-                    } : undefined}
+                    onDragOver={
+                      favoritesOnly
+                        ? (event) => {
+                            event.preventDefault();
+                            event.dataTransfer.dropEffect = "move";
+                          }
+                        : undefined
+                    }
+                    onDrop={
+                      favoritesOnly
+                        ? (event) => {
+                            event.preventDefault();
+                            if (draggedFavorite)
+                              moveFavorite(draggedFavorite, key);
+                            setDraggedFavorite(null);
+                          }
+                        : undefined
+                    }
                     data-player-id={key}
-                    data-next-pick={picksBeforeTurn != null && currentPage * pageSize + rowIndex === picksBeforeTurn}
+                    data-next-pick={
+                      picksBeforeTurn != null &&
+                      currentPage * pageSize + rowIndex === picksBeforeTurn
+                    }
                     data-stripe={rowIndex % 2}
                     data-expanded={!!expanded[key]}
                     data-selected={selectedIds.has(key)}
@@ -1950,30 +1965,84 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       </button>
                     </td>
                     <td className={styles.playerName}>
-                      {picksBeforeTurn != null && currentPage * pageSize + rowIndex === picksBeforeTurn && <span className={styles.pickLabel} title="Estimated slot in the displayed order; availability is not guaranteed">Your next pick · estimate</span>}
-                      <div className={`${styles.nameContainer} ${favoritesOnly ? styles.queueName : ""}`}>
-                        {favoritesOnly && <span className={styles.queueControls}>
-                          <button type="button" draggable
-                            className={styles.queueHandle}
-                            aria-label={`Reorder ${player.fullName}; use arrow up or down`}
-                            title="Drag to reorder; or use Up/Down arrow keys"
-                            onDragStart={(event) => { setDraggedFavorite(key); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", key); }}
-                            onDragEnd={() => setDraggedFavorite(null)}
-                            onKeyDown={(event) => {
-                              const delta = event.key === "ArrowUp" ? -1 : event.key === "ArrowDown" ? 1 : 0;
-                              if (!delta) return;
-                              event.preventDefault();
-                              const target = favoriteOrder[favoriteOrder.indexOf(key) + delta];
-                              if (target) moveFavorite(key, target);
-                            }}
-                          >☰ {favoriteOrder.indexOf(key) + 1}</button>
-                          <button type="button" className={styles.queueMove} aria-label={`Move ${player.fullName} up in queue`}
-                            disabled={favoriteOrder.indexOf(key) === 0}
-                            onClick={() => moveFavorite(key, favoriteOrder[favoriteOrder.indexOf(key) - 1])}>↑</button>
-                          <button type="button" className={styles.queueMove} aria-label={`Move ${player.fullName} down in queue`}
-                            disabled={favoriteOrder.indexOf(key) === favoriteOrder.length - 1}
-                            onClick={() => moveFavorite(key, favoriteOrder[favoriteOrder.indexOf(key) + 1])}>↓</button>
-                        </span>}
+                      {picksBeforeTurn != null &&
+                        currentPage * pageSize + rowIndex ===
+                          picksBeforeTurn && (
+                          <span
+                            className={styles.pickLabel}
+                            title="Estimated slot in the displayed order; availability is not guaranteed"
+                          >
+                            Your next pick · estimate
+                          </span>
+                        )}
+                      <div
+                        className={`${styles.nameContainer} ${favoritesOnly ? styles.queueName : ""}`}
+                      >
+                        {favoritesOnly && (
+                          <span className={styles.queueControls}>
+                            <button
+                              type="button"
+                              draggable
+                              className={styles.queueHandle}
+                              aria-label={`Reorder ${player.fullName}; use arrow up or down`}
+                              title="Drag to reorder; or use Up/Down arrow keys"
+                              onDragStart={(event) => {
+                                setDraggedFavorite(key);
+                                event.dataTransfer.effectAllowed = "move";
+                                event.dataTransfer.setData("text/plain", key);
+                              }}
+                              onDragEnd={() => setDraggedFavorite(null)}
+                              onKeyDown={(event) => {
+                                const delta =
+                                  event.key === "ArrowUp"
+                                    ? -1
+                                    : event.key === "ArrowDown"
+                                      ? 1
+                                      : 0;
+                                if (!delta) return;
+                                event.preventDefault();
+                                const target =
+                                  favoriteOrder[
+                                    favoriteOrder.indexOf(key) + delta
+                                  ];
+                                if (target) moveFavorite(key, target);
+                              }}
+                            >
+                              ☰ {favoriteOrder.indexOf(key) + 1}
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.queueMove}
+                              aria-label={`Move ${player.fullName} up in queue`}
+                              disabled={favoriteOrder.indexOf(key) === 0}
+                              onClick={() =>
+                                moveFavorite(
+                                  key,
+                                  favoriteOrder[favoriteOrder.indexOf(key) - 1]
+                                )
+                              }
+                            >
+                              ↑
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.queueMove}
+                              aria-label={`Move ${player.fullName} down in queue`}
+                              disabled={
+                                favoriteOrder.indexOf(key) ===
+                                favoriteOrder.length - 1
+                              }
+                              onClick={() =>
+                                moveFavorite(
+                                  key,
+                                  favoriteOrder[favoriteOrder.indexOf(key) + 1]
+                                )
+                              }
+                            >
+                              ↓
+                            </button>
+                          </span>
+                        )}
 
                         <button
                           className={styles.expandToggle}
@@ -2014,7 +2083,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                                   ? "#6ee7a8"
                                   : "#ff9a9a",
                               fontSize: 11,
-                              whiteSpace: "nowrap",
+                              whiteSpace: "nowrap"
                             }}
                           >
                             {sourceRankImpacts[player.playerId].delta > 0
@@ -2039,8 +2108,12 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                               title={`${dust.alternative.playerName} reduces DUST by ${dust.alternative.dustReduction} with a ${dust.alternative.valueDifference.toFixed(1)} ${leagueType === "categories" ? "score" : "projected-points"} difference.`}
                             >
                               Alt: {dust.alternative.playerName} ·{" "}
-                              {dust.alternative.valueDifference >= 0 ? "+" : "−"}
-                              {Math.abs(dust.alternative.valueDifference).toFixed(1)}{" "}
+                              {dust.alternative.valueDifference >= 0
+                                ? "+"
+                                : "−"}
+                              {Math.abs(
+                                dust.alternative.valueDifference
+                              ).toFixed(1)}{" "}
                               {leagueType === "categories" ? "score" : "FP"} · −
                               {dust.alternative.dustReduction} DUST
                             </span>
@@ -2054,7 +2127,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       title={(() => {
                         const disp = getDisplayPos(player) || "-";
                         const elig = Array.isArray(
-                          (player as any).eligiblePositions,
+                          (player as any).eligiblePositions
                         )
                           ? ((player as any).eligiblePositions as string[])
                           : [];
@@ -2072,7 +2145,10 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     >
                       {canonicalScheduleTeam(player.displayTeam) || "-"}
                     </td>
-                    <td className={fpClasses.join(" ")} data-label="Projected FPTs">
+                    <td
+                      className={fpClasses.join(" ")}
+                      data-label="Projected FPTs"
+                    >
                       {typeof player.fantasyPoints.projected === "number"
                         ? player.fantasyPoints.projected.toFixed(1)
                         : "-"}
@@ -2080,8 +2156,13 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     {!statColumnsMode ? (
                       <>
                         {leagueType === "categories" && (
-                          <td className={`${styles.score} ${styles.valueNumeric}`} data-label="Score">
-                            {typeof m?.value === "number" ? m.value.toFixed(1) : "-"}
+                          <td
+                            className={`${styles.score} ${styles.valueNumeric}`}
+                            data-label="Score"
+                          >
+                            {typeof m?.value === "number"
+                              ? m.value.toFixed(1)
+                              : "-"}
                           </td>
                         )}
                         <td
@@ -2120,19 +2201,28 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                             data-label="Goalie stats"
                             aria-label="Goalie projected statistics"
                           >
-                            <span className={styles.inlineGoalieStats}>
+                            <span
+                              className={styles.inlineGoalieStats}
+                              style={
+                                {
+                                  "--goalie-stat-count":
+                                    goalieStatColumns.length,
+                                  "--goalie-label-width": `${Math.max(2, ...goalieStatColumns.map((key) => (statDefByKey.get(key)?.displayName || key).length))}ch`
+                                } as React.CSSProperties
+                              }
+                            >
                               {goalieStatColumns.map((goalieKey) => {
                                 const value = getProratedStat(
                                   player,
                                   goalieKey,
-                                  prorate84,
+                                  prorate84
                                 );
                                 const label =
                                   statDefByKey.get(goalieKey)?.displayName ||
                                   goalieKey;
                                 const formatted = formatStatValue(
                                   goalieKey,
-                                  value,
+                                  value
                                 );
                                 return (
                                   <span
@@ -2149,7 +2239,11 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                                     >
                                       {label}
                                     </span>
-                                    <span>{formatted}</span>
+                                    <span
+                                      className={styles.inlineGoalieStatValue}
+                                    >
+                                      {formatted}
+                                    </span>
                                   </span>
                                 );
                               })}
@@ -2215,19 +2309,28 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     )}
                     {(() => {
                       const leagueRank = leagueRankByPlayerId.get(key);
-                      const yahooAdp = typeof player.yahooAvgPick === "number" && player.yahooAvgPick > 0
-                        ? player.yahooAvgPick
-                        : null;
-                      const valueDelta = yahooAdp != null && leagueRank != null
-                        ? Math.round(yahooAdp - leagueRank)
-                        : null;
+                      const yahooAdp =
+                        typeof player.yahooAvgPick === "number" &&
+                        player.yahooAvgPick > 0
+                          ? player.yahooAvgPick
+                          : null;
+                      const valueDelta =
+                        yahooAdp != null && leagueRank != null
+                          ? Math.round(yahooAdp - leagueRank)
+                          : null;
                       return (
                         <td
                           className={`${styles.valueDelta} ${valueDelta == null ? "" : valueDelta > 0 ? styles.valueDeltaPositive : valueDelta < 0 ? styles.valueDeltaNegative : ""}`}
                           data-label="Value Δ"
-                          title={yahooAdp == null || leagueRank == null ? "Yahoo ADP or full-pool scoring rank is unavailable" : `Yahoo ADP ${yahooAdp.toFixed(1)} minus full-pool scoring rank ${leagueRank}`}
+                          title={
+                            yahooAdp == null || leagueRank == null
+                              ? "Yahoo ADP or full-pool scoring rank is unavailable"
+                              : `Yahoo ADP ${yahooAdp.toFixed(1)} minus full-pool scoring rank ${leagueRank}`
+                          }
                         >
-                          {valueDelta == null ? "-" : `${valueDelta > 0 ? "+" : ""}${valueDelta}`}
+                          {valueDelta == null
+                            ? "-"
+                            : `${valueDelta > 0 ? "+" : ""}${valueDelta}`}
                         </td>
                       );
                     })()}
@@ -2238,18 +2341,25 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         : "-"}
                     </td>
                     {(["off", "b2b"] as const).map((metric) => {
-                      const offNightRank = metric === "off"
-                        ? offNightRankById.get(key)
-                        : undefined;
+                      const offNightRank =
+                        metric === "off"
+                          ? offNightRankById.get(key)
+                          : undefined;
                       return (
                         <td
                           key={metric}
                           className={styles.colSchedule}
                           data-label={metric.toUpperCase()}
-                          style={offNightRank ? { color: offNightRank.color } : undefined}
-                          title={offNightRank
-                            ? `Off-night opportunities; rank quartile ${offNightRank.quartile} of 4 (highest to lowest)`
-                            : "Scheduled NHL opportunities; not projected appearances"}
+                          style={
+                            offNightRank
+                              ? { color: offNightRank.color }
+                              : undefined
+                          }
+                          title={
+                            offNightRank
+                              ? `Off-night opportunities; rank quartile ${offNightRank.quartile} of 4 (highest to lowest)`
+                              : "Scheduled NHL opportunities; not projected appearances"
+                          }
                         >
                           {scheduleMetrics?.get(key)?.[metric] ?? "—"}
                         </td>
@@ -2276,8 +2386,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                           !canDraft
                             ? "Manual drafting is locked while Yahoo sync is authoritative"
                             : draftedIdSet.has(key)
-                            ? "Player already drafted"
-                            : "Draft this player"
+                              ? "Player already drafted"
+                              : "Draft this player"
                         }
                       >
                         {draftedIdSet.has(key) ? "Drafted" : "Draft"}

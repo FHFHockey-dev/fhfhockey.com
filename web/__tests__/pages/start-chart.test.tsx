@@ -1,6 +1,7 @@
 import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { buildBoardValidationDisclosure } from "lib/projections/starterBoardValidation";
 
 const swrState = vi.hoisted(() => ({
   data: null as any,
@@ -8,6 +9,8 @@ const swrState = vi.hoisted(() => ({
   isLoading: false,
   mutate: vi.fn(),
 }));
+
+const deploymentState = vi.hoisted(() => ({ data: undefined as any, error: null as Error | null, request: vi.fn(), mutate: vi.fn() }));
 
 const routerState = vi.hoisted(() => ({
   router: {
@@ -17,6 +20,10 @@ const routerState = vi.hoisted(() => ({
     replace: vi.fn(),
   },
 }));
+
+const yahooAuth = vi.hoisted(() => ({ user: null as { id: string } | null }));
+vi.mock("contexts/AuthProviderContext", () => ({ useAuth: () => ({ user: yahooAuth.user }) }));
+vi.mock("lib/supabase/client", () => ({ default: { from: vi.fn(), auth: { getSession: async () => ({ data: { session: { access_token: "fixture-session" } } }) } } }));
 
 const readySourceStatus = {
   overall: "ready",
@@ -179,12 +186,18 @@ vi.mock("next/router", () => ({
 }));
 
 vi.mock("swr", () => ({
-  default: () => ({
+  default: (key: unknown) => {
+    if (!key || (Array.isArray(key) && key[0] === "starter-board-deployment")) {
+      deploymentState.request(key);
+      return deploymentState;
+    }
+    return ({
     data: swrState.data,
     error: swrState.error,
     isLoading: swrState.isLoading,
     mutate: swrState.mutate,
-  }),
+    });
+  },
 }));
 
 vi.mock("recharts", () => ({
@@ -200,9 +213,116 @@ vi.mock("recharts", () => ({
 }));
 
 import StartChartPage from "../../pages/start-chart";
+import StarterBoardPlayerDetails, { fetchStarterBoardDeployment } from "components/StarterBoardPlayerDetails";
+import { PlayerLineupDeploymentGrid, type PlayerLineupDeploymentTally } from "components/PlayerStats/PlayerLineupDeploymentGrid";
+import supabase from "lib/supabase/client";
+
+const deploymentRows: PlayerLineupDeploymentTally[] = [
+  { deployment_group: "forward", deployment_code: "F1_C", deployment_label: "Line 1 center", games: 8, total_games: 10, share: 0.8 },
+  { deployment_group: "defense", deployment_code: "D1_LD", deployment_label: "Pair 1 left", games: 6, total_games: 10, share: 0.6 },
+  { deployment_group: "power_play", deployment_code: "PP1", deployment_label: "PP1", games: 7, total_games: 10, share: 0.7 },
+];
 
 describe("StartChartPage", () => {
+  it.each([
+    [["C", "LW", "RW"], "Forwards", "Defense"],
+    [["D"], "Defense", "Forwards"],
+  ] as const)("shows only the relevant deployment group for %j", (positions, shown, hidden) => {
+    render(<PlayerLineupDeploymentGrid rows={deploymentRows} positions={positions} compact />);
+    expect(screen.getByText(shown)).toBeTruthy();
+    expect(screen.queryByText(hidden)).toBeNull();
+    expect(screen.getByText("Power Play")).toBeTruthy();
+    expect(screen.getByTitle("PP1: 70% (7/10)")).toBeTruthy();
+  });
+
+  it("loads deployment only after expansion and labels previous-season history", async () => {
+    deploymentState.data = deploymentRows.map((row) => ({ ...row, season_id: 20252026, last_game_date: "2026-04-16" }));
+    const view = render(<StarterBoardPlayerDetails playerId={8478402} positions={["C"]} date="2026-10-01" className="details">Evidence</StarterBoardPlayerDetails>);
+    expect(deploymentState.request).toHaveBeenLastCalledWith(null);
+    expect(screen.queryByRole("region", { name: "Lineup deployment" })).toBeNull();
+    const details = view.container.querySelector("details")!;
+    details.open = true;
+    fireEvent(details, new Event("toggle"));
+    await waitFor(() => expect(deploymentState.request).toHaveBeenLastCalledWith(["starter-board-deployment", 8478402, 20262027]));
+    expect(screen.getByText("2025–26 · Regular season")).toBeTruthy();
+    expect(screen.getByText(/Recorded deployment through 2026-04-16/)).toBeTruthy();
+    expect(screen.queryByText("Defense")).toBeNull();
+    view.rerender(<StarterBoardPlayerDetails playerId={8478402} positions={["C"]} date="2026-02-07" className="details">Evidence</StarterBoardPlayerDetails>);
+    expect(screen.getByText(/season totals include games after this slate/)).toBeTruthy();
+  });
+
+  it("shows loading, empty and retry states without inventing deployment", async () => {
+    const props = { playerId: 8478402, positions: ["D"], date: "2026-10-01", className: "details" };
+    const view = render(<StarterBoardPlayerDetails {...props}>Evidence</StarterBoardPlayerDetails>);
+    const details = view.container.querySelector("details")!;
+    details.open = true;
+    fireEvent(details, new Event("toggle"));
+    expect(await screen.findByText("Loading deployment history…")).toBeTruthy();
+    deploymentState.data = [];
+    view.rerender(<StarterBoardPlayerDetails {...props}>Evidence</StarterBoardPlayerDetails>);
+    expect(screen.getByText(/No recorded deployment/)).toBeTruthy();
+    deploymentState.error = new Error("private error detail");
+    view.rerender(<StarterBoardPlayerDetails {...props}>Evidence</StarterBoardPlayerDetails>);
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(deploymentState.mutate).toHaveBeenCalledOnce();
+    expect(screen.queryByText("private error detail")).toBeNull();
+    view.rerender(<StarterBoardPlayerDetails {...props} positions={["G"]}>Evidence</StarterBoardPlayerDetails>);
+    expect(deploymentState.request).toHaveBeenLastCalledWith(null);
+    expect(screen.queryByText(/Deployment history unavailable/)).toBeNull();
+  });
+
+  it("queries bounded regular-season tallies and never combines seasons", async () => {
+    const latest = { ...deploymentRows[0], season_id: 20262027 };
+    const previous = { ...deploymentRows[1], season_id: 20252026 };
+    const query = { select: vi.fn(), eq: vi.fn(), in: vi.fn(), order: vi.fn(), limit: vi.fn() };
+    for (const method of [query.select, query.eq, query.in, query.order]) method.mockReturnValue(query);
+    query.limit.mockResolvedValue({ data: [latest, previous], error: null });
+    vi.mocked(supabase.from).mockReturnValue(query as any);
+    expect(await fetchStarterBoardDeployment(["starter-board-deployment", 8478402, 20262027])).toEqual([latest]);
+    expect(query.eq).toHaveBeenCalledWith("player_id", 8478402);
+    expect(query.eq).toHaveBeenCalledWith("game_type", 2);
+    expect(query.in).toHaveBeenCalledWith("season_id", [20262027, 20252026]);
+    expect(query.limit).toHaveBeenCalledWith(40);
+    query.limit.mockResolvedValue({ data: [previous], error: null });
+    expect(await fetchStarterBoardDeployment(["starter-board-deployment", 8478402, 20262027])).toEqual([previous]);
+    query.limit.mockResolvedValue({ data: null, error: new Error("unavailable") });
+    await expect(fetchStarterBoardDeployment(["starter-board-deployment", 8478402, 20262027])).rejects.toThrow("unavailable");
+  });
+
+  it("loads a private Yahoo comparison and clears it when the account signs out", async () => {
+    yahooAuth.user = { id: "owner" };
+    const request = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: {
+      date: "2026-10-01", teamId: "team", teamName: "Private team", status: "incomplete",
+      teams: [{ id: "team", name: "Private team" }], mode: "points", roster: [{ id: "idle", name: "Idle Player", valueBasis: "no_game" }],
+      streaming: [{ playerId: "candidate", name: "Candidate", availability: "unknown", incrementalValue: null, dropPlayerId: null,
+        limitations: ["Acquisition timing does not establish usability today."] }],
+      lineup: { status: "incomplete", assignments: [], limitations: [] }, limitations: ["Participation estimates are missing."],
+      streamingCoverage: { playersChecked: 75, matchedToday: 12 },
+    } }) });
+    vi.stubGlobal("fetch", request);
+    try {
+      const view = render(<StartChartPage />);
+      fireEvent.click(screen.getByText("My Yahoo team · Today · Draft Pro"));
+      fireEvent.click(screen.getByRole("button", { name: "Refresh today’s comparison" }));
+      await screen.findByText("Incomplete lineup comparison");
+      expect(screen.getByText("Participation estimates are missing.")).toBeTruthy();
+      expect(screen.getByText(/No game today: Idle Player/)).toBeTruthy();
+      expect(screen.getByText("Acquisition timing does not establish usability today.")).toBeTruthy();
+      expect(screen.getByText("75 available players checked · 12 matched to today’s projections.")).toBeTruthy();
+      expect(request).toHaveBeenCalledWith("/api/v1/account/yahoo/starter-board", expect.objectContaining({ cache: "no-store", method: "POST",
+        headers: expect.objectContaining({ Authorization: "Bearer fixture-session" }) }));
+      yahooAuth.user = null;
+      view.rerender(<StartChartPage />);
+      expect(screen.queryByText("Incomplete lineup comparison")).toBeNull();
+      expect(screen.queryByText("Private team")).toBeNull();
+    } finally { vi.unstubAllGlobals(); }
+  });
   beforeEach(() => {
+    deploymentState.data = undefined;
+    deploymentState.error = null;
+    deploymentState.request.mockClear();
+    deploymentState.mutate.mockClear();
+    yahooAuth.user = null;
     swrState.data = buildApiData();
     swrState.error = null;
     swrState.isLoading = false;
@@ -237,6 +357,38 @@ describe("StartChartPage", () => {
         /Fixture scoring \[fixture-scoring-v9\] \(G=4, A=3, PPP=2, SOG=0\.33, HIT=0\.44, BLK=0\.55\)/,
       ),
     ).toBeTruthy();
+  });
+
+  it("keeps the early notice after thirty days when measured evidence is unavailable", () => {
+    swrState.data = { ...buildApiData(), validation: buildBoardValidationDisclosure({ startedOn: "2026-10-01", liveRegularSlates: 24 }, "2026-10-31") };
+    render(<StartChartPage />);
+    fireEvent.click(screen.getByText("Early validation · FORGE retained pending review"));
+    expect(screen.getByText(/day 31 · 24 live slates observed/)).toBeTruthy();
+    expect(screen.getByText("Settled evaluation counts are not yet available.")).toBeTruthy();
+    expect(screen.getByText(/Day 30 review · 2026-10-30 · due/)).toBeTruthy();
+    expect(screen.getByText(/Calendar time alone does not establish calibration/)).toBeTruthy();
+  });
+
+  it("shows registry failure explicitly without claiming accuracy or calibration", () => {
+    swrState.data = { ...buildApiData(), validation: buildBoardValidationDisclosure(null, "2026-10-31", true) };
+    render(<StartChartPage />);
+    expect(screen.getByText(/Validation records are temporarily unavailable/)).toBeTruthy();
+    expect(screen.queryByText(/settled games across/)).toBeNull();
+  });
+
+  it("shows measured results while keeping an eligible challenger separate from the serving model", () => {
+    const validation = buildBoardValidationDisclosure({ startedOn: "2026-10-01", liveRegularSlates: 30 }, "2026-10-31");
+    swrState.data = { ...buildApiData(), validation: { ...validation, status: "review_available", evaluatedGames: 200,
+      evaluatedSlates: 30, evaluatedForecasts: 1240, latestReview: { id: "review-1", kind: "day30", asOf: "2026-10-31T12:00:00Z",
+        reportHash: "a".repeat(64), evidenceClass: "captured_live", gameType: "regular_season",
+        metrics: [{ target: "participation", metric: "brier", value: 0.12, samples: 1240 }],
+        decisions: [{ component: "participation", candidateId: "logistic-v1", decision: "eligible_for_promotion_review", reasons: [] }] } } };
+    render(<StartChartPage />);
+    fireEvent.click(screen.getByText("Early validation · FORGE retained · review available"));
+    expect(screen.getByText(/200 settled games across 30 slates · 1240 evaluated forecasts/)).toBeTruthy();
+    expect(screen.getByText(/Brier score: 0.120 \(1240 forecasts; lower is better\)/)).toBeTruthy();
+    expect(screen.getByText(/candidate meets comparison gates; serving component remains in place/)).toBeTruthy();
+    expect(screen.getByText(/Uncertainty ranges remain withheld until evaluated/)).toBeTruthy();
   });
 
   it("rebrands CTPI as plain-language recent team form", () => {
@@ -526,7 +678,7 @@ describe("StartChartPage", () => {
     );
   });
 
-  it("labels the first visible goalie candidate and treats null probability as unavailable", () => {
+  it("preserves the first visible goalie's probability without redistributing missing mass", () => {
     swrState.data = {
       ...buildApiData(),
       games: [
@@ -566,7 +718,7 @@ describe("StartChartPage", () => {
 
     render(<StartChartPage />);
 
-    expect(screen.getByText("One 17%")).toBeTruthy();
+    expect(screen.getByText("One 10%")).toBeTruthy();
     expect(screen.getByText("Goalie TBD")).toBeTruthy();
   });
 

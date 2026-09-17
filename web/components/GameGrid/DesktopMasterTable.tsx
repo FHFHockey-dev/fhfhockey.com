@@ -82,6 +82,7 @@ type MasterRow = TeamScheduleRow & {
 
 const DESKTOP_STICKY_BREAKPOINT = 1024;
 const MASTER_METRIC_COL_BASE_WIDTH = 50;
+const MASTER_PERCENT_METRIC_COL_BASE_WIDTH = 80;
 const MASTER_TEAM_COL_BASE_WIDTH = 72;
 const MASTER_DAY_COL_BASE_WIDTH = 80;
 const MASTER_FOUR_WEEK_COL_BASE_WIDTH = 72;
@@ -464,7 +465,11 @@ export default function DesktopMasterTable({
   const fourWeekColumnSpan = isFourWeekCollapsed ? 1 : 4;
   const baseColumnWidths = useMemo(() => {
     const widths = [
-      ...Array(opponentMetricColumns.length).fill(MASTER_METRIC_COL_BASE_WIDTH),
+      ...opponentMetricColumns.map(({ key }) =>
+        key === "avgWinPct"
+          ? MASTER_PERCENT_METRIC_COL_BASE_WIDTH
+          : MASTER_METRIC_COL_BASE_WIDTH,
+      ),
       MASTER_TEAM_COL_BASE_WIDTH,
       ...Array(dayKeys.length).fill(MASTER_DAY_COL_BASE_WIDTH),
       MASTER_SUMMARY_COL_BASE_WIDTH,
@@ -484,7 +489,7 @@ export default function DesktopMasterTable({
     }
 
     return widths;
-  }, [dayKeys.length, isFourWeekCollapsed, opponentMetricColumns.length]);
+  }, [dayKeys.length, isFourWeekCollapsed, opponentMetricColumns]);
 
   const columnWidths = useMemo(
     () => distributeMasterTableWidths(baseColumnWidths, containerWidth),

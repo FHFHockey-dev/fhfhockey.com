@@ -1,4 +1,6 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import moment from "moment-timezone";
+import { starterBoardFlags } from "lib/projections/starterBoardFlags";
 import { getCurrentSeason, getTeams } from "lib/NHL/server";
 import { buildTeamDirectory } from "lib/sources/lineupSourceIngestion";
 import {
@@ -28,6 +30,7 @@ import {
   buildLinesCccWrapperOEmbedSuccessState,
   buildLinesCccSourceFromIftttEvent,
   fetchLinesCccTweetOEmbedAttempt,
+  getPrimaryTextForSource,
   readLinesCccWrapperOEmbedBackfillState,
   refreshLinesCccSourceFromPrimaryText,
   rejectInsufficientQuoteWrapper,
@@ -61,12 +64,18 @@ async function fetchPendingLineSourceEvents(args: {
   tweetId: string | null;
   sourceGroup: string | null;
   sourceKeys: string[];
+  currentDateOnly: string | null;
 }): Promise<LineSourceIftttEventInput[]> {
   let query = args.supabase
     .from("line_source_ifttt_events")
     .select(
       "id, source, source_group, source_key, source_account, username, text, link_to_tweet, tweet_id, tweet_created_at, created_at_label, raw_payload, received_at",
     );
+
+  if (args.currentDateOnly) {
+    const start = moment.tz(args.currentDateOnly, "YYYY-MM-DD", "America/New_York").startOf("day");
+    query = query.gte("received_at", start.toISOString()).lt("received_at", start.clone().add(1, "day").toISOString());
+  }
 
   if (args.sourceGroup) {
     query = query.eq("source_group", args.sourceGroup);
@@ -348,6 +357,7 @@ export default withCronJobAudit(
       tweetId: requestedTweetId,
       sourceGroup,
       sourceKeys,
+      currentDateOnly: parseBooleanFlag(req.query.currentDayOnly) ? requestedDate : null,
     });
     const discoveredTweets = pendingEvents
       .map((event) => ({
@@ -609,6 +619,23 @@ export default withCronJobAudit(
       }
     }
 
+    // A requested processing date is not evidence that an older report applies
+    // to that game's lineup. Keep the raw report and an explicit review reason.
+    for (const candidate of parsedCandidates) {
+      if (candidate.nhlFilterStatus !== "accepted") continue;
+      const timestamp = candidate.tweetPostedAt;
+      const posted = moment(timestamp ?? "", moment.ISO_8601, true);
+      const text = getPrimaryTextForSource(candidate);
+      const reason = !posted.isValid() ? "unknown_report_date"
+        : posted.tz("America/New_York").format("YYYY-MM-DD") !== requestedDate ? "report_date_mismatch"
+        : /\b(tomorrow|yesterday)\b/i.test(text) ? "relative_game_date_requires_review" : null;
+      if (reason) {
+        candidate.gameId = null;
+        candidate.nhlFilterStatus = "rejected_ambiguous";
+        candidate.nhlFilterReason = reason;
+      }
+    }
+
     const rowsToUpsert = parsedCandidates.map((candidate, index) =>
       toLineSourceSnapshotRow({
         event: parsedEvents[index]!,
@@ -742,6 +769,9 @@ export default withCronJobAudit(
         rows: rowsToUpsert as unknown as ForecastLineSourceRow[],
       });
     } catch (error) {
+      // Preserve pending raw events so the capture-enabled pipeline can retry.
+      // Legacy source ingestion retains its existing best-effort behavior.
+      if (starterBoardFlags().capture) throw error;
       playerForecastCapture = {
         error: error instanceof Error ? error.message : String(error),
       };

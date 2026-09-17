@@ -910,7 +910,7 @@ export function resolveLinesCccTeam(args: {
   return null;
 }
 
-function getPrimaryTextForSource(source: ParsedLinesCccSource): string {
+export function getPrimaryTextForSource(source: ParsedLinesCccSource): string {
   if (source.primaryTextSource === "quoted_oembed") {
     return source.quotedEnrichedText ?? source.quotedRawText ?? "";
   }
@@ -1451,7 +1451,8 @@ export function buildLinesCccSourceFromIftttEvent(args: {
   const source: ParsedLinesCccSource = {
     snapshotDate: args.snapshotDate,
     observedAt: args.event.received_at,
-    tweetPostedAt: args.event.tweet_created_at,
+    tweetPostedAt: normalizeTweetPostedAt(args.event.tweet_created_at) ??
+      tweetPublicationFromUrl(args.event.link_to_tweet),
     tweetPostedLabel: args.event.created_at_label,
     gameId: team ? (args.gameIdByTeamId?.get(team.id) ?? null) : null,
     team,
@@ -1487,6 +1488,8 @@ export function buildLinesCccSourceFromIftttEvent(args: {
       iftttEventId: args.event.id,
       iftttSource: args.event.source,
       iftttSourceAccount: args.event.source_account,
+      publicationTimeBasis: normalizeTweetPostedAt(args.event.tweet_created_at)
+        ? "provider_timestamp" : "tweet_id_or_unknown",
       teamLabelMatches: labelMatchedTeams.map(
         (matchedTeam) => matchedTeam.abbreviation,
       ),
@@ -1655,12 +1658,20 @@ function normalizeTweetPostedAt(
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
 }
 
-function parseDateLabelToIso(
-  dateLabel: string | null | undefined,
-): string | null {
-  if (!dateLabel) return null;
-  const parsed = Date.parse(`${String(dateLabel).trim()} 00:00:00 UTC`);
-  return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
+export function tweetPublicationFromUrl(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || !/^(?:www\.)?(?:twitter\.com|x\.com)$/.test(url.hostname)) return null;
+    const id = url.pathname.match(/^\/(?:[A-Za-z0-9_]+|i\/web)\/status(?:es)?\/(\d{15,20})\/?$/)?.[1];
+    if (!id || BigInt(id) > BigInt("18446744073709551615")) return null;
+    // X Snowflake creation time, not application receipt time. Keep IDs as strings:
+    // https://github.com/twitter-archive/snowflake/blob/snowflake-2010/src/main/scala/com/twitter/service/snowflake/IdWorker.scala
+    const timestamp = Number((BigInt(id) >> BigInt(22)) + BigInt("1288834974657"));
+    return new Date(timestamp).toISOString();
+  } catch {
+    return null;
+  }
 }
 
 function parseAuthorHandleFromUrl(
@@ -1776,12 +1787,17 @@ export async function fetchLinesCccTweetOEmbedAttempt(
   }
 
   const parsed = parseTweetOEmbedHtml(payload.html);
+  if (!parsed.sourceTweetUrl || !tweetPublicationFromUrl(parsed.sourceTweetUrl) ||
+      extractTweetIdFromUrl(parsed.sourceTweetUrl) !== extractTweetIdFromUrl(tweetUrl)) {
+    return { ok: false, httpStatus: response.status, retryable: false, error: "oembed_tweet_identity_mismatch" };
+  }
   return {
     ok: true,
     httpStatus: response.status,
     data: {
       text: parsed.text,
-      postedAt: parseDateLabelToIso(parsed.postedLabel),
+      // A date label has no time or timezone; it cannot establish publication.
+      postedAt: tweetPublicationFromUrl(parsed.sourceTweetUrl),
       postedLabel: parsed.postedLabel,
       sourceTweetUrl: parsed.sourceTweetUrl,
       authorName: payload.author_name?.trim() || null,
@@ -1802,7 +1818,8 @@ export function applyLinesCccWrapperOEmbed(args: {
       args.source.rawText ??
       null,
     tweetPostedAt:
-      args.oembedData.postedAt ?? args.source.tweetPostedAt ?? null,
+      normalizeTweetPostedAt(args.source.tweetPostedAt) ??
+      tweetPublicationFromUrl(args.oembedData.sourceTweetUrl) ?? null,
     tweetPostedLabel:
       args.oembedData.postedLabel ?? args.source.tweetPostedLabel ?? null,
     sourceUrl:
@@ -1823,6 +1840,8 @@ export function applyLinesCccWrapperOEmbed(args: {
     ...nextSource,
     metadata: {
       ...nextSource.metadata,
+      publicationTimeBasis: normalizeTweetPostedAt(args.source.tweetPostedAt)
+        ? args.source.metadata?.publicationTimeBasis ?? "provider_timestamp" : "tweet_id_or_unknown",
       ...buildPrimaryTextMetadata(nextSource),
     },
   };
@@ -1925,10 +1944,18 @@ export function applyQuotedTweetPreference(args: {
 
   const preferredSource: ParsedLinesCccSource = {
     ...nextSource,
+    tweetPostedAt: quotedTweet.retrievalStatus === "x_api_success"
+      ? normalizeTweetPostedAt(quotedTweet.quotedPostedAt)
+      : tweetPublicationFromUrl(quotedTweet.quotedTweetUrl),
+    tweetPostedLabel: quotedTweet.quotedPostedLabel,
     primaryTextSource: "quoted_oembed",
     sourceLabel: nextSource.sourceLabel ?? "quoted_oembed",
     metadata: {
       ...nextSource.metadata,
+      wrapperPostedAt: args.source.tweetPostedAt ?? null,
+      wrapperPostedLabel: args.source.tweetPostedLabel ?? null,
+      publicationTimeBasis: quotedTweet.retrievalStatus === "x_api_success"
+        ? "provider_timestamp" : "tweet_id_or_unknown",
       preferredQuotedTweet: true,
     },
   };
@@ -2089,6 +2116,9 @@ export function toLinesCccRow(args: {
       matchedNames: source.matchedNames ?? [],
       unmatchedNames: source.unmatchedNames ?? [],
       ...source.metadata,
+      powerPlayUnitPlayerIds: Array.isArray(source.metadata?.powerPlayUnits)
+        ? (source.metadata.powerPlayUnits as string[][]).map((unit) => mapNamesToPlayerIdsOrdered(unit, rosterEntries))
+        : [],
     },
     updated_at: now,
   };

@@ -1,3 +1,5 @@
+import { starterBoardFlags } from "../starterBoardFlags";
+import { bootstrapSkaterLine, loadSeasonBootstrap, type SeasonBootstrap } from "../seasonBootstrap";
 import supabase from "lib/supabase/server";
 import { resolveNullableCompatibilityValue } from "lib/rollingPlayerMetricCompatibility";
 import { fetchRecentTeamLineCombinations } from "lib/projections/queries/line-combo-queries";
@@ -581,7 +583,7 @@ function parseRosterEventPayload(payload: unknown): Record<string, unknown> {
     : {};
 }
 
-function roleTagFromRosterEvent(
+export function roleTagFromRosterEvent(
   event: RosterEventRow | null,
 ): SkaterRoleTag | null {
   if (!event) return null;
@@ -892,6 +894,7 @@ export function filterActiveSkaterCandidateIds(args: {
   rawSkaterIds: number[];
   playerMetaById: Map<number, PlayerTeamPositionRow>;
   latestMetricDateByPlayerId: Map<number, string>;
+  seasonBootstrapPlayerIds?: ReadonlySet<number>;
 }): ActiveSkaterFilterResult {
   const uniqueRaw = Array.from(new Set(args.rawSkaterIds)).filter((id) =>
     Number.isFinite(id),
@@ -926,6 +929,11 @@ export function filterActiveSkaterCandidateIds(args: {
 
     const latestMetricDate =
       args.latestMetricDateByPlayerId.get(playerId) ?? null;
+    if (args.seasonBootstrapPlayerIds?.has(playerId)) {
+      eligibleSkaterIds.push(playerId);
+      recencyMultiplierByPlayerId.set(playerId, 1);
+      continue;
+    }
     if (!latestMetricDate) {
       stats.filteredMissingRecentMetrics += 1;
       excludedSkaterIdsByReason.missingRecentMetrics.push(playerId);
@@ -1219,6 +1227,7 @@ async function fetchPlayerMetaByIds(
 }
 
 export async function runPerGameSkaterStage(args: {
+  seasonBootstrap?: boolean;
   asOfDate: string;
   runId: string;
   horizonGames: number;
@@ -1230,6 +1239,8 @@ export async function runPerGameSkaterStage(args: {
   playerAvailabilityMultiplier: Map<number, number>;
   availabilityEventByPlayer: Map<number, RosterEventRow>;
   roleEventByPlayer: Map<number, RosterEventRow>;
+  ppEventByPlayer?: Map<number, RosterEventRow>;
+  dailyBoardEvidence?: import("../dailyBoardEvidence").DailyBoardEvidence;
   goalieOverrideByTeamId: Map<
     number,
     { goalieId: number; starterProb: number }
@@ -1435,6 +1446,13 @@ export async function runPerGameSkaterStage(args: {
       return meta.position !== "G" && meta.team_id === teamId;
     });
 
+    const seasonYear = Math.floor(game.id / 1_000_000);
+    const bootstrapSeasonId = seasonYear * 10000 + seasonYear + 1;
+    let bootstrap = args.seasonBootstrap
+      ? await loadSeasonBootstrap(teamPositionFilteredSkaterIds, bootstrapSeasonId, asOfDate, "skater", true)
+      : new Map<number, SeasonBootstrap>();
+    const bootstrapEligible = () => new Set([...bootstrap].filter(([, prior]) => prior.currentSeasonGames === 0
+      && (prior.historyGames > 0 || prior.sourceIds.length > 0)).map(([id]) => id));
     let evRows = await fetchRollingRows(
       teamPositionFilteredSkaterIds,
       "ev",
@@ -1466,6 +1484,7 @@ export async function runPerGameSkaterStage(args: {
       rawSkaterIds,
       playerMetaById,
       latestMetricDateByPlayerId,
+      seasonBootstrapPlayerIds: bootstrapEligible(),
     });
     let skaterPoolRecoveryPath:
       | "none"
@@ -1545,6 +1564,7 @@ export async function runPerGameSkaterStage(args: {
           return meta.position !== "G" && meta.team_id === teamId;
         });
 
+        if (args.seasonBootstrap) bootstrap = await loadSeasonBootstrap(teamPositionFilteredSkaterIds, bootstrapSeasonId, asOfDate, "skater", true);
         evRows = await fetchRollingRows(
           teamPositionFilteredSkaterIds,
           "ev",
@@ -1575,6 +1595,7 @@ export async function runPerGameSkaterStage(args: {
           rawSkaterIds,
           playerMetaById,
           latestMetricDateByPlayerId,
+          seasonBootstrapPlayerIds: bootstrapEligible(),
         });
         unavailableSkaters = activeSkaterFilter.eligibleSkaterIds.filter(
           (playerId) => (playerAvailabilityMultiplier.get(playerId) ?? 1) <= 0,
@@ -1735,6 +1756,8 @@ export async function runPerGameSkaterStage(args: {
     const opponentGoalieContext = await fetchOpponentGoalieContextForGame({
       gameId: game.id,
       opponentTeamId,
+      confirmedGoalieId: goalieOverrideByTeamId.get(opponentTeamId)?.starterProb === 1
+        ? goalieOverrideByTeamId.get(opponentTeamId)?.goalieId : undefined,
     });
     if (opponentGoalieContext != null) {
       metrics.data_quality.opponent_goalie_context_profiles_found += 1;
@@ -1904,7 +1927,7 @@ export async function runPerGameSkaterStage(args: {
       const ev = evLatest.get(playerId);
       const pp = ppLatest.get(playerId);
       const isEmergencyMissingMetricsInclusion =
-        !ev && !pp && emergencyMissingMetricSkaterIdSet.has(playerId);
+        !ev && !pp && (emergencyMissingMetricSkaterIdSet.has(playerId) || bootstrapEligible().has(playerId));
       if (!ev && !pp && !isEmergencyMissingMetricsInclusion) {
         noMetricsPlayersSkipped += 1;
         continue;
@@ -2059,13 +2082,18 @@ export async function runPerGameSkaterStage(args: {
         sogPer60Es: sogPer60EvPreBound,
         sogPer60Pp: sogPer60PpPreBound,
       });
+      const ppRole = roleTagFromRosterEvent(args.ppEventByPlayer?.get(playerId) ?? null);
+      const ppUsage = ppRole ? applyRoleSpecificUsageBounds({
+        roleTag: ppRole, toiEsSeconds: shrunkToiEs, toiPpSeconds: shrunkToiPp,
+        sogPer60Es: sogPer60EvPreBound, sogPer60Pp: sogPer60PpPreBound,
+      }) : boundedUsage;
       if (boundedUsage.wasBounded) {
         metrics.data_quality.role_usage_bounds_applied += 1;
       }
       const boundedToiEs = boundedUsage.toiEsSeconds;
-      const boundedToiPp = boundedUsage.toiPpSeconds;
+      const boundedToiPp = ppUsage.toiPpSeconds;
       const sogPer60Ev = boundedUsage.sogPer60Es;
-      const sogPer60Pp = boundedUsage.sogPer60Pp;
+      const sogPer60Pp = ppUsage.sogPer60Pp;
 
       const hitsPer60 = safeNumber(
         resolveNullableCompatibilityValue(
@@ -2193,8 +2221,11 @@ export async function runPerGameSkaterStage(args: {
         metrics.data_quality.role_continuity_boosts_applied += 1;
       }
 
-      const eventAvailabilityMultiplier =
-        playerAvailabilityMultiplier.get(playerId) ?? 1;
+      const legacyAvailabilityMultiplier = playerAvailabilityMultiplier.get(playerId) ?? 1;
+      // Board production is conditional on playing. The legacy DTD/benched
+      // multipliers are not calibrated participation probabilities.
+      const eventAvailabilityMultiplier = starterBoardFlags().compute
+        ? (legacyAvailabilityMultiplier <= 0 ? 0 : 1) : legacyAvailabilityMultiplier;
       if (eventAvailabilityMultiplier < 1) {
         metrics.data_quality.skater_availability_penalties_applied += 1;
       }
@@ -2383,7 +2414,7 @@ export async function runPerGameSkaterStage(args: {
       projectedByPlayer: new Map(
         Array.from(projected.entries()).map(([playerId, p]) => [
           playerId,
-          { toiPp: p.toiPp, roleTag: p.roleTag },
+          { toiPp: p.toiPp, roleTag: roleTagFromRosterEvent(args.ppEventByPlayer?.get(playerId) ?? null) ?? p.roleTag },
         ]),
       ),
       targetTeamPpSeconds: toiPpTarget,
@@ -2582,8 +2613,8 @@ export async function runPerGameSkaterStage(args: {
     };
 
     for (const [playerId, p] of projected.entries()) {
-      const shotsEs = p.shotsEs;
-      const shotsPp = p.shotsPp;
+      let shotsEs = p.shotsEs;
+      let shotsPp = p.shotsPp;
       const baseGoalsEs = shotsEs * p.goalRateEs;
       const baseGoalsPp = shotsPp * p.goalRatePp;
       const baseAssistsEs = baseGoalsEs * p.assistRateEs;
@@ -2613,14 +2644,27 @@ export async function runPerGameSkaterStage(args: {
           assistsPp: baseAssistsPp,
         },
       });
-      const goalsEs = selectedSkaterStatLine.goalsEs;
-      const goalsPp = selectedSkaterStatLine.goalsPp;
-      const assistsEs = selectedSkaterStatLine.assistsEs;
-      const assistsPp = selectedSkaterStatLine.assistsPp;
+      let goalsEs = selectedSkaterStatLine.goalsEs;
+      let goalsPp = selectedSkaterStatLine.goalsPp;
+      let assistsEs = selectedSkaterStatLine.assistsEs;
+      let assistsPp = selectedSkaterStatLine.assistsPp;
 
       const totalToiMinutes = (p.toiEs + p.toiPp) / 60;
-      const projHits = (totalToiMinutes / 60) * p.hitsRate;
-      const projBlocks = (totalToiMinutes / 60) * p.blocksRate;
+      let projHits = (totalToiMinutes / 60) * p.hitsRate;
+      let projBlocks = (totalToiMinutes / 60) * p.blocksRate;
+      const seasonPrior = bootstrap.get(playerId);
+      const seasonLine = seasonPrior ? bootstrapSkaterLine({ goalsEs, goalsPp, assistsEs, assistsPp,
+        shotsEs, shotsPp, hits: projHits, blocks: projBlocks }, seasonPrior, {
+        goals: p.teamLevelGoalRateMultiplier * p.opponentGoalieGoalRateMultiplier * p.restScheduleGoalRateMultiplier,
+        assists: p.teamLevelAssistRateMultiplier * p.opponentGoalieAssistRateMultiplier * p.restScheduleAssistRateMultiplier,
+        shots: p.teamLevelShotRateMultiplier * p.restScheduleShotRateMultiplier,
+        ppUsage: p.toiPp <= 0 ? 0 : seasonPrior.previous.PP_TOI
+          ? clamp(p.toiPp / (seasonPrior.previous.PP_TOI * 60), 0, 2) : 1,
+      }) : null;
+      if (seasonLine) {
+        ({ goalsEs, goalsPp, assistsEs, assistsPp, shotsEs, shotsPp } = seasonLine);
+        projHits = seasonLine.hits; projBlocks = seasonLine.blocks;
+      }
       const naivePriorGoalsEs = shotsEs * 0.095;
       const naivePriorGoalsPp = shotsPp * 0.145;
       const naivePriorAssistsEs = naivePriorGoalsEs * 0.72;
@@ -2707,6 +2751,14 @@ export async function runPerGameSkaterStage(args: {
             },
           },
           skater_selection: {
+            season_bootstrap: seasonLine?.disclosure ?? null,
+            production_conditioning: starterBoardFlags().compute ? "conditional_playing" : "legacy_availability_adjusted",
+            participation_probability: null,
+            same_day_evidence: args.dailyBoardEvidence ? {
+              assertions: args.dailyBoardEvidence.assertions.filter((item) => item.gameId === game.id && item.playerId === playerId),
+              conflicts: args.dailyBoardEvidence.conflicts.filter((item) => item.gameId === game.id && item.teamId === teamId && (item.playerId == null || item.playerId === playerId)),
+            } : null,
+            pp_role: roleTagFromRosterEvent(args.ppEventByPlayer?.get(playerId) ?? null)?.esRole ?? null,
             source: roleTag?.source ?? null,
             es_role: roleTag?.esRole ?? null,
             unit_tier: roleTag?.unitTier ?? null,
@@ -3209,7 +3261,7 @@ export async function runPerGameSkaterStage(args: {
     const { data: goalieStarts, error: gsErr } = await supabase
       .from("goalie_start_projections")
       .select(
-        "player_id,start_probability,confirmed_status,l10_start_pct,season_start_pct,games_played,projected_gsaa_per_60",
+        "player_id,start_probability,confirmed_status,l10_start_pct,season_start_pct,games_played,projected_gsaa_per_60,updated_at,game_date",
       )
       .eq("game_id", game.id)
       .eq("team_id", teamId)

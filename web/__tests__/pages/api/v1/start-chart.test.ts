@@ -383,6 +383,7 @@ describe("/api/v1/start-chart", () => {
   });
 
   beforeEach(() => {
+    vi.unstubAllEnvs();
     vi.clearAllMocks();
     rpcMock.mockResolvedValue({
       data: null,
@@ -564,6 +565,78 @@ describe("/api/v1/start-chart", () => {
       }
       return createQueryBuilder(() => ({ data: [], error: null }));
     });
+  });
+
+  it("serves frozen game revisions and exposes only public provenance", async () => {
+    vi.stubEnv("START_CHART_GAME_REVISIONS", "true");
+    rpcMock.mockImplementation(async (name: string) => name === "read_forge_game_revisions" ? {
+      error: null,
+      data: [{
+        id: "revision-1", game_id: 1001, run_id: "published-run",
+        decision_as_of: "2026-02-07T12:00:00Z", published_at: "2026-02-07T12:01:00Z",
+        input_snapshot_id: "private-evidence-id",
+        payload: { players: [{ ...defaultProjection, run_id: "published-run", proj_goals_es: 2 }],
+          inputCutoff: "2026-02-07T11:59:00Z", calculatedAt: "2026-02-07T12:00:30Z",
+          teams: [], goalies: [], goalieStarts: [], codeVersion: "commit-123", modelMode: "baseline", privateEvidence: "secret" },
+      }],
+    } : { data: null, error: { code: "PGRST202", message: "function is not installed" } });
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.projectionRunId).toBe("published-run");
+    expect(res.body.projectionRun).toBeNull();
+    expect(res.body.contractVersion).toBe(2);
+    expect(res.body.gameRevisions).toEqual([{
+      gameId: 1001, revisionId: "revision-1", runId: "published-run",
+      decisionAsOf: "2026-02-07T12:00:00Z", publishedAt: "2026-02-07T12:01:00Z",
+      inputCutoff: "2026-02-07T11:59:00Z", calculatedAt: "2026-02-07T12:00:30Z",
+      codeVersion: "commit-123", modelMode: "baseline",
+    }]);
+    expect(res.body.sourceStatus.projection.updatedAt).toBe("2026-02-07T12:01:00Z");
+    expect(JSON.stringify(res.body)).not.toContain("private-evidence-id");
+    expect(JSON.stringify(res.body)).not.toContain("secret");
+    expect(res.body.validation.status).toBe("unavailable");
+    expect(res.body.validation.evaluatedGames).toBeNull();
+  });
+
+  it("discloses release identity without returning the private evaluation policy", async () => {
+    vi.stubEnv("START_CHART_GAME_REVISIONS", "true");
+    const previousRpc = rpcMock.getMockImplementation();
+    rpcMock.mockImplementation(async (name: string, ...args: unknown[]) => name === "read_starter_board_validation" ? {
+      error: null, data: { startedOn: null, liveRegularSlates: 0, reviews: [], release: { id: "release-1", release_key: "canary-1",
+        code_version: "sha-1", model_identity: "FORGE", evaluation_version: "daily-v1", policy: { privateArtifact: "/private/training/data" },
+        internalSecret: "private-registry-token" } },
+    } : name === "read_forge_game_revisions" ? { data: [], error: null } : previousRpc?.(name, ...args));
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.validation).toMatchObject({ status: "awaiting_prospective_evidence", evaluatedGames: null,
+      release: { key: "canary-1", modelIdentity: "FORGE", evaluationVersion: "daily-v1" } });
+    expect(JSON.stringify(res.body)).not.toMatch(/privateArtifact|private-registry-token|private\/training/);
+  });
+
+  it("re-scores a shared cached forecast without caching private scoring settings", async () => {
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const first = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, first);
+    const calls = fromMock.mock.calls.length;
+    const custom = createMockRes();
+    await handler({ method: "POST", query: { date: "2026-02-07" }, body: { profile: { skater: { GOALS: 10 } } } } as any, custom);
+    expect(custom.statusCode).toBe(200);
+    expect(custom.headers["Cache-Control"]).toBe("private, no-store");
+    expect(fromMock.mock.calls.length).toBe(calls);
+    const after = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, after);
+    expect(after.body.players).toEqual(first.body.players);
+    expect(after.body.scoringProfile).toBeUndefined();
+    const invalid = createMockRes();
+    await handler({ method: "POST", query: {}, body: { profile: { skater: { FACEOFFS_WON: 1 } } } } as any, invalid);
+    expect(invalid.statusCode).toBe(422);
   });
 
   it("reads skaters through the exact FORGE run and exposes canonical-source metadata", async () => {

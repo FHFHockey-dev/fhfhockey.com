@@ -223,7 +223,8 @@
 
 .lcpgLayout {
   display: grid;
-  grid-template-columns: minmax(132px, 1fr) minmax(88px, 0.7fr) minmax(88px, 0.6fr);
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: v.$space-md;
   align-items: start;
 }
@@ -275,6 +276,26 @@
     ),
     #1f2937;
   border-color: rgba(96, 165, 250, 0.5);
+}
+
+.lcpgCompact {
+  container-type: inline-size;
+  width: 100%;
+  box-sizing: border-box;
+  margin: v.$space-sm 0;
+  padding: v.$space-sm;
+
+  .lcpgHeader {
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+    h2 { font-size: 0.85rem; }
+    span { font-size: 0.65rem; }
+  }
+  .lcpgLayout { gap: 8px; max-width: 280px; }
+  .lcpgGroupLabel { font-size: 0.65rem; }
+  .lcpgForwardGrid, .lcpgDefenseGrid, .lcpgPowerPlayGrid { gap: 3px; }
+  .lcpgCell { border-radius: 3px; font-size: clamp(0.5rem, 4cqi, 0.75rem); }
 }
 
 // =============================================================================

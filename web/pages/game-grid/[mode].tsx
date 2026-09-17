@@ -6,10 +6,8 @@ import Router from "next/router";
 import { NextSeo } from "next-seo";
 import GameGrid from "components/GameGrid";
 import Container from "components/Layout/Container";
-import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
 
 import { GameGridMode } from "components/GameGrid/GameGrid";
-import { GAME_GRID_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 
 function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
   const MODE_TO_LABEL = {
@@ -50,12 +48,6 @@ function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
         </button>
         <GameGrid mode={mode} setMode={setMode} />
       </div>
-      <SurfaceWorkflowLinks
-        eyebrow="Keep exploring"
-        title="Carry the schedule edge into the next decision"
-        description="Connect weekly volume and opponents to recent form, deployment, and goalie reliability."
-        links={GAME_GRID_SURFACE_LINKS}
-      />
       <div style={{ marginBottom: "30px" }} />
     </Container>
   );

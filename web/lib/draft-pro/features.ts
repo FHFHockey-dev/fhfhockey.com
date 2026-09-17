@@ -15,6 +15,7 @@ export const DRAFT_PRO_FEATURE_ENV_NAMES = {
   scenarios: "DRAFT_PRO_SCENARIOS_ENABLED",
   reports: "DRAFT_PRO_REPORTS_ENABLED",
   god_view: "DRAFT_PRO_GOD_VIEW_ENABLED",
+  mock_draft_advanced: "DRAFT_PRO_MOCK_ADVANCED_ENABLED",
 } as const;
 
 export function getDraftProFeatureFlags(
@@ -33,5 +34,6 @@ export function getDraftProFeatureFlags(
     scenarios: enabled("scenarios"),
     reports: enabled("reports"),
     god_view: enabled("god_view"),
+    mock_draft_advanced: enabled("mock_draft_advanced"),
   };
 }

@@ -28,7 +28,7 @@ describe("Draft Pro access contracts", () => {
   it("rejects future grants and gives disabled features a stable reason", () => {
     const access = resolveDraftProAccess({ ...draftProAccessFixtures.purchase, entitlements: [{ source: "purchase", status: "active", effectiveFrom: "2026-10-01T00:00:00Z", effectiveTo: "2027-07-01T04:00:00Z" }] });
     expect(access.reason).toBe("no_active_grant");
-    const disabled = resolveDraftProAccess({ ...draftProAccessFixtures.purchase, flags: { checkout: false, recommendations: false, dust: false, blended_csv: false, saved_drafts: false, private_imports: false, scenarios: false, god_view: false, reports: false } });
+    const disabled = resolveDraftProAccess({ ...draftProAccessFixtures.purchase, flags: { checkout: false, recommendations: false, dust: false, blended_csv: false, saved_drafts: false, private_imports: false, scenarios: false, god_view: false, reports: false, mock_draft_advanced: false } });
     expect(disabled.reason).toBe("feature_disabled");
     expect(requireDraftProCapability(disabled, "dust")).toMatchObject({ reason: "feature_disabled" });
     const partiallyDisabled = resolveDraftProAccess({ ...draftProAccessFixtures.purchase, flags: { ...draftProAccessFixtures.purchase.flags, dust: false } });

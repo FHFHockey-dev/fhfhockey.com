@@ -7,6 +7,7 @@ import {
   parseYahooDraftResults,
   parseYahooDraftSettings,
   parseYahooPlayoffWeeks,
+  parseYahooBoardSettings,
 } from "./liveDraft";
 
 const GAME_CONTEXT = {
@@ -17,6 +18,44 @@ const GAME_CONTEXT = {
 };
 
 describe("Yahoo live draft parser", () => {
+  it.each(["head", "roto", "headpoint"])("excludes display-only stats from %s scoring without excluding genuine goalie categories", (scoringType) => {
+    const settings = parseYahooDraftSettings({
+      league_key: "477.l.123", draft_type: "live", num_teams: "10",
+      scoring_type: scoringType,
+      stat_categories: { stats: [
+        { stat: { stat_id: "22", abbr: "GA", is_only_display_stat: "1" } },
+        { stat: { stat_id: "25", abbr: "SV", is_only_display_stat: 1 } },
+        { stat: { stat_id: "24", abbr: "SA", is_only_display_stat: true } },
+        { stat: { stat_id: "23", abbr: "GAA", is_only_display_stat: "0" } },
+        { stat: { stat_id: "26", abbr: "SV%", is_only_display_stat: false } },
+        { stat: { stat_id: "27", abbr: "SHO" } },
+        { stat: { stat_id: "999", abbr: "DISPLAY", is_only_display_stat: "1" } },
+      ] },
+      stat_modifiers: { stats: [
+        { stat_id: "23", value: -2 }, { stat_id: "26", value: 3 }, { stat_id: "27", value: 4 },
+      ] },
+    }, GAME_CONTEXT);
+    expect(settings.categoryWeights).toEqual(scoringType === "headpoint" ? {} : {
+      GOALS_AGAINST_AVERAGE: 1, SAVE_PERCENTAGE: 1, SHUTOUTS_GOALIE: 1,
+    });
+    expect(settings.scoringCategories).toEqual(scoringType === "headpoint" ? {
+      GOALS_AGAINST_AVERAGE: -2, SAVE_PERCENTAGE: 3, SHUTOUTS_GOALIE: 4,
+    } : {});
+    expect(settings.diagnostics.unsupportedStatIds).toEqual([]);
+    expect(settings.requiresScoringConfirmation).toBe(false);
+  });
+
+  it("reuses league scoring for in-season boards without applying auction draft restrictions", () => {
+    const result = parseYahooBoardSettings({ draft_type: "auction", scoring_type: "headpoint", weekly_deadline: "intraday",
+      roster_positions: [{ position: "C", count: 2 }, { position: "IR+", count: 1 }, { position: "F", count: 1 }],
+      stat_categories: { stats: [{ stat_id: "1", abbr: "G" }, { stat_id: "999", abbr: "CUSTOM" }] },
+      stat_modifiers: { stats: [{ stat_id: "1", value: "3" }] } });
+    expect(result.scoringCategories).toEqual({ GOALS: 3 });
+    expect(result.unsupportedStatIds).toEqual(["999"]);
+    expect(result.weeklyDeadline).toBe("intraday");
+    expect(result.rosterConfig).toMatchObject({ C: 2, FWD: 1 });
+    expect(result.excludedInjurySlots).toEqual({ "IR+": 1 });
+  });
   it("uses Yahoo's explicit playoff range and preserves unknown data", () => {
     expect(parseYahooPlayoffWeeks({ league: [{ end_week: "26" }, { settings: [{ uses_playoff: "1", playoff_start_week: "24" }] }] })).toEqual([24, 25, 26]);
     expect(parseYahooPlayoffWeeks({ uses_playoff: "0", playoff_start_week: "24", end_week: "26" })).toEqual([]);

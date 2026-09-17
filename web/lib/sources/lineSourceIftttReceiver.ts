@@ -3,6 +3,7 @@ import moment from "moment-timezone";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import supabase from "lib/supabase/server";
+import { starterBoardFlags } from "lib/projections/starterBoardFlags";
 
 type LineSourceIftttReceiverConfig = {
   sourceGroup: string;
@@ -85,26 +86,18 @@ function parseBooleanQueryFlag(value: string | string[] | undefined): boolean {
   return rawValue === "1" || rawValue === "true" || rawValue === "yes";
 }
 
-function getHeaderValue(value: string | string[] | undefined): string | null {
-  if (Array.isArray(value)) return value[0] ?? null;
-  return value ?? null;
-}
-
-function getBaseUrl(req: NextApiRequest): string {
+function getBaseUrl(): string {
   const configuredUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? process.env.SITE_URL ?? null;
-  if (configuredUrl) return configuredUrl.replace(/\/$/, "");
-
-  const host = getHeaderValue(req.headers.host);
-  const forwardedProto =
-    getHeaderValue(req.headers["x-forwarded-proto"]) ?? "https";
-  if (host) return `${forwardedProto}://${host}`;
-
-  return "http://localhost:3000";
+    process.env.STARTER_BOARD_WORKER_ORIGIN ?? process.env.NEXT_PUBLIC_SITE_URL ?? process.env.SITE_URL;
+  const url = new URL(configuredUrl ?? (process.env.NODE_ENV !== "production" ? "http://localhost:3000" : ""));
+  if (url.username || url.password || (url.protocol !== "https:" &&
+    !(process.env.NODE_ENV !== "production" && ["localhost", "127.0.0.1"].includes(url.hostname)))) {
+    throw new Error("A trusted processor origin is required");
+  }
+  return url.origin;
 }
 
 async function processStoredTweetEvent(args: {
-  req: NextApiRequest;
   config: LineSourceIftttReceiverConfig;
   tweetId: string;
 }): Promise<{
@@ -127,19 +120,42 @@ async function processStoredTweetEvent(args: {
     reprocess: "true",
     tweetId: args.tweetId,
     sourceKey: args.config.sourceKey,
-    date: new Date().toISOString().slice(0, 10),
+    // The NHL slate follows Eastern dates; UTC midnight occurs during games.
+    date: moment().tz("America/New_York").format("YYYY-MM-DD"),
   });
-  const url = `${getBaseUrl(args.req)}${args.config.processorPath}?${params.toString()}`;
+  return requestLineSourceProcessor(args.config.processorPath, params);
+}
+
+/** Small current-day retries; historic pending reports are never a live backfill. */
+export async function retryPendingLineSourceEvents() {
+  const date = moment().tz("America/New_York").format("YYYY-MM-DD");
+  const results = await Promise.all(["gamedaylines", "gamedaygoalies", "gamedaynewsnhl"].map(async (sourceKey) => ({
+    sourceKey,
+    ...await requestLineSourceProcessor("/api/v1/db/update-line-sources", new URLSearchParams({
+      sourceKey, date, limit: "5", currentDayOnly: "true",
+    })),
+  })));
+  return { attempted: results.length, failed: results.filter((result) => !result.success).length, results };
+}
+
+async function requestLineSourceProcessor(path: string, params: URLSearchParams) {
   const headers: Record<string, string> = {};
 
   if (process.env.CRON_SECRET) {
     headers.Authorization = `Bearer ${process.env.CRON_SECRET}`;
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25_000);
   try {
+    const origin = getBaseUrl();
+    const url = new URL(`${path}?${params.toString()}`, origin);
+    if (url.origin !== origin) throw new Error("Processor must share the configured origin");
     const response = await fetch(url, {
       method: "POST",
       headers,
+      redirect: "error",
+      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -160,6 +176,8 @@ async function processStoredTweetEvent(args: {
       status: null,
       error: "Processor request failed",
     };
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -225,7 +243,9 @@ export function createLineSourceIftttReceiver(
       getBodyValue(req.body, ["source_account", "sourceAccount"]) ??
       config.sourceAccount;
     const tweetId = extractTweetId(linkToTweet);
-    const shouldProcessImmediately = parseBooleanQueryFlag(req.query.process);
+    const shouldProcessImmediately = req.query.process == null
+      ? starterBoardFlags().capture
+      : parseBooleanQueryFlag(req.query.process);
 
     if (!linkToTweet && !text) {
       return res.status(400).json({
@@ -271,7 +291,7 @@ export function createLineSourceIftttReceiver(
 
     const processor =
       shouldProcessImmediately && tweetId
-        ? await processStoredTweetEvent({ req, config, tweetId })
+        ? await processStoredTweetEvent({ config, tweetId })
         : undefined;
 
     if (processor && !processor.success && !processor.skipped) {

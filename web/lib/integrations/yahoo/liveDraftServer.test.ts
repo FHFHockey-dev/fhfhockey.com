@@ -10,7 +10,7 @@ import {
   snapshotRequiresCorrectionConfirmation,
   stopYahooDraftSession,
 } from "./liveDraftServer";
-import { fetchYahooDraftResource } from "./providerClient";
+import { fetchYahooBoardResource, fetchYahooDraftResource } from "./providerClient";
 
 const GAME_CONTEXT = {
   gameCode: "nhl" as const,
@@ -44,6 +44,31 @@ function queryBuilder(
 }
 
 describe("Yahoo live draft ownership", () => {
+  it("rejects cross-league and cross-season board resource scopes before loading credentials", async () => {
+    const rpc = vi.fn(), fetchImpl = vi.fn();
+    const args = { client: { rpc } as any, connectedAccountId: "account", userId: "user", context: GAME_CONTEXT,
+      leagueKey: "477.l.1", fetchImpl };
+    await expect(fetchYahooBoardResource({ ...args, resource: { type: "roster", teamKey: "477.l.2.t.1", date: "2026-10-01" } })).rejects.toThrow("scope");
+    await expect(fetchYahooBoardResource({ ...args, resource: { type: "availability", playerKeys: ["465.p.1"] } })).rejects.toThrow("scope");
+    await expect(fetchYahooBoardResource({ ...args, resource: { type: "available_players", start: 100 } })).rejects.toThrow("scope");
+    await expect(fetchYahooBoardResource({ ...args, resource: { type: "available_players", start: -1 } })).rejects.toThrow("scope");
+    expect(rpc).not.toHaveBeenCalled();
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("uses explicit league ownership reads and the existing token service for board availability", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: { access_token: "fixture-access", refresh_token: "fixture-refresh", expires_at: null }, error: null });
+    const fetchImpl = vi.fn().mockImplementation(async () => new Response(JSON.stringify({ fantasy_content: {} }), { status: 200 }));
+    await fetchYahooBoardResource({ client: { rpc } as any, connectedAccountId: "account", userId: "user", context: GAME_CONTEXT,
+      leagueKey: "477.l.1", fetchImpl, format: "standard_json", resource: { type: "availability", playerKeys: ["477.p.1", "477.p.2"] } });
+    expect(fetchImpl).toHaveBeenCalledWith("https://fantasysports.yahooapis.com/fantasy/v2/league/477.l.1/players;player_keys=477.p.1,477.p.2/ownership?format=json",
+      expect.objectContaining({ method: "GET", cache: "no-store" }));
+    expect(rpc).toHaveBeenCalledWith("get_connected_account_tokens_secure", expect.objectContaining({ p_user_id: "user", p_connected_account_id: "account" }));
+    await fetchYahooBoardResource({ client: { rpc } as any, connectedAccountId: "account", userId: "user", context: GAME_CONTEXT,
+      leagueKey: "477.l.1", fetchImpl, format: "standard_json", resource: { type: "available_players", start: 25 } });
+    expect(fetchImpl).toHaveBeenLastCalledWith("https://fantasysports.yahooapis.com/fantasy/v2/league/477.l.1/players;status=A;sort=OR;start=25;count=25/ownership?format=json",
+      expect.objectContaining({ method: "GET", cache: "no-store" }));
+  });
   afterEach(() => {
     vi.unstubAllEnvs();
   });
@@ -223,7 +248,7 @@ describe("Yahoo live draft ownership", () => {
         rosterConfig: { C: 1, bench: 0, utility: 0 },
         leagueType: "categories",
         scoringCategories: {},
-        categoryWeights: { GOALS: 1 },
+        categoryWeights: { GOALS: 1, GOALS_AGAINST_GOALIE: 1, SAVES_GOALIE: 1 },
         draftOrder: "snake",
         requiresConfirmation: false,
         requiresScoringConfirmation: false,
@@ -270,7 +295,10 @@ describe("Yahoo live draft ownership", () => {
           league_name: "Five Hole",
           season_key: "2026",
           league_metadata: { end_week: "26" },
-          scoring_settings: {},
+          scoring_settings: { stat_categories: [
+            { stat_id: "22", abbr: "GA", is_only_display_stat: "1" },
+            { stat_id: "25", abbr: "SV", is_only_display_stat: "0" },
+          ] },
           roster_settings: { uses_playoff: "1", playoff_start_week: "24" },
         },
         error: null,
@@ -318,6 +346,8 @@ describe("Yahoo live draft ownership", () => {
       retryAfterSeconds: 10,
     });
     expect(result.settings.playoffWeeks).toEqual([24, 25, 26]);
+    expect(result.settings.categoryWeights).toEqual({ GOALS: 1, SAVES_GOALIE: 1 });
+    expect(session.normalized_settings.categoryWeights.GOALS_AGAINST_GOALIE).toBe(1);
     expect(fetchImpl).not.toHaveBeenCalled();
     expect(filters).toContainEqual(["yahoo_draft_sessions", "user_id", userId]);
   });

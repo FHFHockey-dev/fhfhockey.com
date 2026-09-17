@@ -1,0 +1,2545 @@
+{
+  "season": "2026-27",
+  "researchedAt": "2026-09-17",
+  "players": [
+    {
+      "name": "Auston Matthews",
+      "nhlPlayerId": 8479318,
+      "team": "TOR",
+      "positions": ["C"],
+      "tags": ["bounce_back", "reach_target"],
+      "confidence": "high",
+      "thesis": "Confirmed: Matthews was limited to 60 games in 2025-26 and set career lows with 27 goals, 53 points and 12 power-play points, while shooting a career-low 11.9%. He entered 2026-27 camp describing himself as healthy after the prior season's injury problems. Projection: ordinary shooting regression and better health can restore first-round-caliber goal and shot production even if his absolute offensive environment is less certain after Toronto's roster changes.",
+      "scoringFit": [
+        "Strong in goals and shots because his historical shot volume remains elite.",
+        "Better in multi-category formats than a points-only evaluation may imply because NHL.com noted meaningful blocks and some hits across the prior two seasons.",
+        "Power-play formats preserve substantial ceiling if his health holds."
+      ],
+      "scoringCautions": [
+        "He is already priced as an elite asset, so the bounce-back case does not create a large margin for error.",
+        "Games-played risk is meaningful after 37 missed games across the prior two seasons."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 17,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 17.2,
+          "format": "Yahoo Fantasy ADP displayed in Daily Faceoff's consensus table",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": "A small reach relative to a room that discounts him for 2025-26 is defensible in goal- and shot-heavy formats because the weak season combined depressed health and shooting percentage rather than a disappearance of his historical scoring profile.",
+      "goalieWorkload": null,
+      "risks": [
+        "Recent injury history.",
+        "Bounce-back requires both availability and shooting recovery.",
+        "A top-20 acquisition cost leaves little protection against another shortened season."
+      ],
+      "sources": [
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-bounce-back-candidates-for-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-08-20",
+          "supports": "Career-low 2025-26 production, 11.9% shooting rate, historical goal and shot ceiling, and multi-category profile."
+        },
+        {
+          "url": "https://thehockeynews.com/news/latest-news/i-feel-as-good-as-possible-auston-matthews-confident-in-return-to-goal-scoring-dominance",
+          "publisher": "The Hockey News",
+          "publishedAt": "2026-09-16",
+          "supports": "Current health and training-camp context."
+        }
+      ]
+    },
+    {
+      "name": "Brayden Point",
+      "nhlPlayerId": 8478010,
+      "team": "TBL",
+      "positions": ["C"],
+      "tags": ["bounce_back", "value", "reach_target"],
+      "confidence": "high",
+      "thesis": "Confirmed: Point was limited to 63 games by multiple injuries and fell to 50 points and 18 goals, after previously reaching 51 goals and 95 points. He remains attached to an elite Tampa Bay power-play environment and has 67 power-play goals over the past five seasons. Projection: normal health creates a substantial rebound path, while his Daily Faceoff consensus rank of 58 is materially earlier than the displayed Yahoo ADP of 85.2.",
+      "scoringFit": [
+        "Strong fit for goals, points and power-play scoring.",
+        "Especially attractive in formats that reward power-play goals or power-play points."
+      ],
+      "scoringCautions": [
+        "He supplies less hits/blocks volume than many similarly priced category forwards.",
+        "The value case depends heavily on staying healthier than in 2025-26."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 58,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 85.2,
+          "format": "Yahoo Fantasy ADP displayed in Daily Faceoff's consensus table",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": "Reaching modestly ahead of the displayed Yahoo price is defensible in point/PPP-heavy settings because the market gap is large and his prior elite power-play history remains relevant.",
+      "goalieWorkload": null,
+      "risks": [
+        "Multiple injuries in 2025-26.",
+        "Limited peripheral-category floor compared with banger-league forwards."
+      ],
+      "sources": [
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-bounce-back-candidates-for-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-08-20",
+          "supports": "Injury-shortened 2025-26, previous 51-goal/95-point ceiling and long-term power-play production."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current team, position, consensus rank and displayed Yahoo ADP."
+        }
+      ]
+    },
+    {
+      "name": "Zach Hyman",
+      "nhlPlayerId": 8475786,
+      "team": "EDM",
+      "positions": ["LW", "RW"],
+      "tags": ["bounce_back", "value"],
+      "confidence": "high",
+      "thesis": "Confirmed: Hyman still scored 31 goals despite playing only 58 games in 2025-26, and his recent history includes a 54-goal season. Over the past four seasons he has combined more than three shots per game, roughly half a goal per game and useful hit production. Projection: a healthier season beside Edmonton's elite creators can beat a Yahoo market price around the 100-pick range.",
+      "scoringFit": [
+        "Excellent for goals and shots.",
+        "Useful in hits leagues because his peripheral production differentiates him from many scoring wings.",
+        "Strong ceiling in formats rewarding power-play production."
+      ],
+      "scoringCautions": [
+        "Recent availability is the central concern.",
+        "Goal value is more important than assist value in his fantasy profile."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 69,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 101.3,
+          "format": "Yahoo Fantasy ADP displayed in Daily Faceoff's consensus table",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Missed 26 games last season.",
+        "A repeat of recent injury trouble would erase much of the apparent ADP discount."
+      ],
+      "sources": [
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-bounce-back-candidates-for-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-08-20",
+          "supports": "31 goals in 58 games, prior 54-goal ceiling and combined shots/hits profile."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current team, multi-position listing, consensus rank and market price."
+        }
+      ]
+    },
+    {
+      "name": "Connor Hellebuyck",
+      "nhlPlayerId": 8476945,
+      "team": "WPG",
+      "positions": ["G"],
+      "tags": ["bounce_back", "bust_risk", "fade"],
+      "confidence": "high",
+      "thesis": "Confirmed: Hellebuyck entered the market as a bounce-back candidate after a career-worst .895 save percentage in 2025-26, but on September 17 Winnipeg suspended him after he failed to report to camp following a public trade request. Projection: his historical Vezina-level ratios still support enormous upside if the dispute is resolved, but a top-30 market cost no longer properly reflects the newly acute availability and destination risk.",
+      "scoringFit": [
+        "If active, his historical profile supports wins, save percentage, goals-against average and shutouts.",
+        "A trade to a strong team could preserve or improve win potential."
+      ],
+      "scoringCautions": [
+        "Current suspension makes volume unknowable.",
+        "A trade could materially change defensive support and win probability.",
+        "His 2025-26 ratios were already far below his own baseline before the off-ice uncertainty."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 24,
+          "format": "2026-27 multi-category consensus overall ranking published before the September 17 suspension",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 24.2,
+          "format": "Yahoo Fantasy ADP displayed before the September 17 suspension",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": {
+        "type": "availability_unresolved",
+        "projectedStarts": null,
+        "priorGamesPlayed": 57,
+        "priorGamesPlayedSeason": "2025-26",
+        "source": "https://www.reuters.com/sports/jets-suspend-g-connor-hellebuyck-failing-report-camp--flm-2026-09-17/",
+        "uncertainty": "Very high. The 57 figure is prior-season games played, not projected 2026-27 starts. No defensible 2026-27 start estimate exists while he is suspended and seeking a trade."
+      },
+      "risks": [
+        "Suspended for failing to report to training camp as of September 17.",
+        "Public trade request.",
+        "Unknown duration of absence.",
+        "Unknown future team context.",
+        "Career-worst .895 save percentage last season."
+      ],
+      "sources": [
+        {
+          "url": "https://www.reuters.com/sports/jets-suspend-g-connor-hellebuyck-failing-report-camp--flm-2026-09-17/",
+          "publisher": "Reuters",
+          "publishedAt": "2026-09-17",
+          "supports": "Current suspension, trade request, 2025-26 statistics and unresolved status."
+        },
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-bounce-back-candidates-for-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-08-20",
+          "supports": "Pre-suspension bounce-back argument, historical Vezina/Hart ceiling and prior workload."
+        }
+      ]
+    },
+    {
+      "name": "Connor Bedard",
+      "nhlPlayerId": 8484144,
+      "team": "CHI",
+      "positions": ["C", "RW"],
+      "tags": ["bust_risk", "fade"],
+      "confidence": "high",
+      "thesis": "Confirmed: Bedard underwent surgery on his left shoulder in July with an announced four-month recovery timeline; reporting around his September 15 captaincy appointment said he was expected back around mid-November. He had career highs of 30 goals, 45 assists and 75 points in 69 games last season. Projection: his per-game upside remains elite, but an ADP in the mid-60s can overstate season-long totals because the market must absorb a meaningful expected absence plus reintegration risk.",
+      "scoringFit": [
+        "Points, goals, shots and power-play scoring remain strong on a per-game basis once healthy.",
+        "Daily/head-to-head formats with injured-reserve flexibility reduce the cost of an early absence."
+      ],
+      "scoringCautions": [
+        "Season-long roto formats with limited IR are more exposed to missed games.",
+        "Shoulder recovery can affect shooting and contact tolerance even after clearance."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 54,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 64.6,
+          "format": "Yahoo Fantasy ADP displayed by Daily Faceoff",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Expected to miss the opening portion of the regular season.",
+        "Recent shoulder surgery.",
+        "Return date remains a medical projection rather than a guarantee."
+      ],
+      "sources": [
+        {
+          "url": "https://www.reuters.com/sports/blackhawks-connor-bedard-out-4-months-after-shoulder-surgery--flm-2026-07-08/",
+          "publisher": "Reuters",
+          "publishedAt": "2026-07-08",
+          "supports": "Left-shoulder surgery, four-month recovery estimate and prior-season production."
+        },
+        {
+          "url": "https://www.reuters.com/sports/blackhawks-appoint-connor-bedard-21-team-captain--flm-2026-09-15/",
+          "publisher": "Reuters",
+          "publishedAt": "2026-09-15",
+          "supports": "Current Chicago identity/captaincy and mid-November expected return context."
+        }
+      ]
+    },
+    {
+      "name": "Will Smith",
+      "nhlPlayerId": 8484227,
+      "team": "SJS",
+      "positions": ["LW", "RW"],
+      "tags": ["breakout", "bust_risk"],
+      "confidence": "high",
+      "thesis": "Confirmed: Smith rose to 59 points in 69 games, 24 goals, 17 power-play points and 166 shots while his average ice time increased to 18:11. He developed top-line chemistry with Macklin Celebrini; the pair factored on the same goal 47 times. Projection: that role supports another sizeable step, although a Yahoo ADP around 65 is already charging managers for much of the breakout.",
+      "scoringFit": [
+        "Best in points, goals, shots and power-play formats.",
+        "Line-stack appeal with Celebrini increases in daily formats."
+      ],
+      "scoringCautions": [
+        "Less compelling in heavy hits/blocks leagues.",
+        "Market price is aggressive: Daily Faceoff consensus rank 79 trails the displayed Yahoo ADP."
+      ],
+      "marketReferences": [
+        {
+          "provider": "NHL.com Fantasy",
+          "kind": "adp",
+          "value": 65,
+          "format": "ADP published by NHL.com; underlying platform not identified in article",
+          "asOf": "2026-09-11",
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-breakout-candidates-for-nhl-2026-27-season"
+        },
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 79,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Breakout expectations are substantially priced in.",
+        "Young-player production can fluctuate even with stable deployment.",
+        "Peripheral categories do not provide the same downside protection as for banger forwards."
+      ],
+      "sources": [
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-breakout-candidates-for-nhl-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-09-11",
+          "supports": "2025-26 career highs, increased ice time, Celebrini chemistry and ADP."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current team, fantasy positions and consensus-market counterevidence."
+        }
+      ]
+    },
+    {
+      "name": "Jesper Wallstedt",
+      "nhlPlayerId": 8482661,
+      "team": "MIN",
+      "positions": ["G"],
+      "tags": ["breakout", "reach_target", "high_volume_goalie"],
+      "confidence": "high",
+      "thesis": "Confirmed: Wallstedt went 18 wins with a 2.61 GAA and .916 save percentage in 35 regular-season games as a rookie, then started 10 of Minnesota's 11 playoff games. Filip Gustavsson is expected to miss the start of the season. Projection: Wallstedt is the clearest young goalie with a path to a large workload increase; The Hockey News floated 50-plus starts if he establishes himself as Minnesota's bona fide No. 1, but that number is explicitly a projection.",
+      "scoringFit": [
+        "High upside in wins, save percentage, GAA and shutouts.",
+        "Potential volume makes him attractive in starts/saves leagues as well as conventional goalie formats."
+      ],
+      "scoringCautions": [
+        "Gustavsson's return could restore a timeshare.",
+        "A 50-plus-start season is an analyst projection, not a team commitment.",
+        "Young-goalie ratios are inherently volatile."
+      ],
+      "marketReferences": [
+        {
+          "provider": "NHL.com Fantasy",
+          "kind": "adp",
+          "value": 60,
+          "format": "ADP published by NHL.com; underlying platform not identified",
+          "asOf": "2026-09-11",
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-breakout-candidates-for-nhl-2026-27-season"
+        },
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 56,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": "Selecting him somewhat ahead of goalie ADP can be justified when a roster needs volume plus ratio upside because the Gustavsson injury creates an early opportunity to seize the crease; this is not a universal recommended pick number.",
+      "goalieWorkload": {
+        "type": "projected_starts",
+        "projectedStarts": "50+ if he becomes the bona fide starter",
+        "priorGamesPlayed": 35,
+        "priorGamesPlayedSeason": "2025-26",
+        "source": "https://thehockeynews.com/news/latest-news/2026-27-nhl-fantasy-hockey-rankings-top-10-breakout-candidates",
+        "uncertainty": "Medium-high. The Hockey News described 50-plus starts as an upside scenario, while Gustavsson's injury only confirms extra early-season opportunity."
+      },
+      "risks": [
+        "Gustavsson could reclaim meaningful starts after returning.",
+        "Small NHL sample relative to established starters.",
+        "Breakout price has moved aggressively."
+      ],
+      "sources": [
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-breakout-candidates-for-nhl-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-09-11",
+          "supports": "Rookie performance, playoff usage, Gustavsson injury and top-10 goalie upside."
+        },
+        {
+          "url": "https://thehockeynews.com/news/latest-news/2026-27-nhl-fantasy-hockey-rankings-top-10-breakout-candidates",
+          "publisher": "The Hockey News",
+          "publishedAt": "2026-09-16",
+          "supports": "Independent breakout case and conditional 50-plus-start projection."
+        }
+      ]
+    },
+    {
+      "name": "Jimmy Snuggerud",
+      "nhlPlayerId": 8483516,
+      "team": "STL",
+      "positions": ["RW"],
+      "tags": ["breakout", "value", "reach_target"],
+      "confidence": "high",
+      "thesis": "Confirmed: from December 27 onward Snuggerud led NHL rookies with 16 goals, 24 assists and 40 points in 44 games; he finished with 51 points, 169 shots, 71 hits and nine power-play points despite playing 70 games. He frequently skated with Robert Thomas and Dylan Holloway. Projection: the combination of shot quality, line context and multi-category coverage supports a second-year jump. Market evidence is unusually dispersed, with NHL.com publishing a 134.5 ADP while Daily Faceoff's displayed Yahoo ADP was 189.8.",
+      "scoringFit": [
+        "Strong for points, goals, shots and some hits.",
+        "Power-play contribution gives him usefulness in standard category formats."
+      ],
+      "scoringCautions": [
+        "Second-year progression is not guaranteed.",
+        "ADP differs sharply by source/platform, so 'value' is highly room-specific."
+      ],
+      "marketReferences": [
+        {
+          "provider": "NHL.com Fantasy",
+          "kind": "adp",
+          "value": 134.5,
+          "format": "ADP published by NHL.com; underlying platform not identified",
+          "asOf": "2026-09-11",
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-breakout-candidates-for-nhl-2026-27-season"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 189.8,
+          "format": "Yahoo Fantasy ADP displayed in Daily Faceoff's consensus table",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 110,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": "A controlled reach can be defended when his room is using the much later Yahoo-style cost because his late-season rookie production, shot profile and Thomas/Holloway exposure support a materially earlier talent valuation.",
+      "goalieWorkload": null,
+      "risks": [
+        "Market sources disagree by several rounds.",
+        "Line and power-play deployment can change.",
+        "Late-season rates may overstate a full-season baseline."
+      ],
+      "sources": [
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-breakout-candidates-for-nhl-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-09-11",
+          "supports": "Late-season scoring surge, shots/hits/PPP, linemates and NHL.com ADP."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Independent consensus rank, current team/position and Yahoo-market discrepancy."
+        }
+      ]
+    },
+    {
+      "name": "Quinton Byfield",
+      "nhlPlayerId": 8482124,
+      "team": "LAK",
+      "positions": ["C"],
+      "tags": ["breakout", "value", "reach_target"],
+      "confidence": "high",
+      "thesis": "Confirmed: Byfield set career highs with 24 goals, 180 shots and 20:01 average ice time. With Anze Kopitar retired, NHL.com says he will begin as Los Angeles' No. 1 center with Artemi Panarin and Adrian Kempe; he scored 19 points in 24 games after Panarin arrived. Projection: permanent first-line responsibility and elite winger exposure create a credible step toward 30 goals and materially more points.",
+      "scoringFit": [
+        "Strong fit for points, goals and shots.",
+        "Top-line exposure raises assist and plus/minus potential in formats that count it."
+      ],
+      "scoringCautions": [
+        "Center is deep in most fantasy pools.",
+        "The jump assumes the Panarin-era late-season chemistry sustains over a full season."
+      ],
+      "marketReferences": [
+        {
+          "provider": "NHL.com Fantasy",
+          "kind": "adp",
+          "value": 136.2,
+          "format": "ADP published by NHL.com; underlying platform not identified",
+          "asOf": "2026-09-11",
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-breakout-candidates-for-nhl-2026-27-season"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 185.7,
+          "format": "Yahoo Fantasy ADP displayed in Daily Faceoff's consensus table",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 114,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": "Earlier-than-ADP selection is defensible because the No. 1-center promotion and Panarin/Kempe linemates are concrete deployment changes rather than a breakout case based only on age.",
+      "goalieWorkload": null,
+      "risks": [
+        "Large disagreement among market sources.",
+        "His career scoring rate has not yet matched the new role's implied ceiling.",
+        "Power-play role is less central to the thesis than even-strength line opportunity."
+      ],
+      "sources": [
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-breakout-candidates-for-nhl-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-09-11",
+          "supports": "No. 1-center role, Panarin/Kempe line, career highs and post-Panarin production."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Consensus rank, position and late Yahoo ADP."
+        }
+      ]
+    },
+    {
+      "name": "Logan Stankoven",
+      "nhlPlayerId": 8482702,
+      "team": "CAR",
+      "positions": ["C", "RW"],
+      "tags": ["breakout", "sleeper", "value", "reach_target"],
+      "confidence": "high",
+      "thesis": "Confirmed: Stankoven scored 11 goals in 19 playoff games and his playoff ice time rose to 17:12 from 15:27 in the regular season. Daily Faceoff also documented a large post-Olympic increase in individual expected-goal generation. Projection: increased five-on-five responsibility can produce a substantial jump even without first-unit power-play work; that lack of PP1 time is the principal cap on his ceiling.",
+      "scoringFit": [
+        "Useful in points and goals formats.",
+        "Shot-volume growth makes him more interesting in category leagues.",
+        "Dual C/RW listing in Daily Faceoff increases roster flexibility."
+      ],
+      "scoringCautions": [
+        "No secure PP1 role.",
+        "His hot stretch included an elevated shooting percentage that should not simply be extrapolated."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "adp",
+          "value": 136.3,
+          "format": "ADP reported in Brock Seguin's sleeper article; underlying platform not specified",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/brock-seguins-2026-27-fantasy-hockey-sleepers"
+        },
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 157,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": "A moderate reach is defensible when drafting for goals and upside because both independent sources identify a real workload/shot-quality change, not merely a lucky scoring streak.",
+      "goalieWorkload": null,
+      "risks": [
+        "PP1 access is uncertain.",
+        "Postseason shooting conversion is unlikely to repeat exactly.",
+        "Carolina traditionally spreads forward ice time."
+      ],
+      "sources": [
+        {
+          "url": "https://www.dailyfaceoff.com/news/brock-seguins-2026-27-fantasy-hockey-sleepers",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Post-Olympic production, expected-goal improvement and sleeper-market argument."
+        },
+        {
+          "url": "https://thehockeynews.com/news/latest-news/2026-27-nhl-fantasy-hockey-rankings-top-10-breakout-candidates",
+          "publisher": "The Hockey News",
+          "publishedAt": "2026-09-16",
+          "supports": "Independent breakout case, playoff ice-time increase and PP1 limitation."
+        }
+      ]
+    },
+    {
+      "name": "Jackson Blake",
+      "nhlPlayerId": 8482809,
+      "team": "CAR",
+      "positions": ["RW"],
+      "tags": ["breakout", "sleeper", "value"],
+      "confidence": "medium",
+      "thesis": "Confirmed: Blake led Carolina forwards in even-strength ice time per game during the playoffs and received steady second-unit power-play work. Across his post-Olympic stretch plus playoffs he produced 40 points in 43 games. Projection: Seth Jarvis' shoulder recovery can create extra early-season minutes, giving Blake a window to lock in an expanded role.",
+      "scoringFit": [
+        "Best for points and assists with secondary value in goals.",
+        "Late acquisition cost makes him attractive in deep leagues and daily formats."
+      ],
+      "scoringCautions": [
+        "PP2 limits power-play ceiling.",
+        "Jarvis' return could compress Blake's usage.",
+        "Carolina's forward depth creates competition for ice time."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "adp",
+          "value": 140.4,
+          "format": "ADP reported in sleeper article; underlying platform not specified",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/brock-seguins-2026-27-fantasy-hockey-sleepers"
+        },
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 150,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Expanded role may be temporary.",
+        "No confirmed PP1 job.",
+        "Late-season scoring pace should not be assumed to persist unchanged."
+      ],
+      "sources": [
+        {
+          "url": "https://www.dailyfaceoff.com/news/brock-seguins-2026-27-fantasy-hockey-sleepers",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Playoff EV usage, PP2 deployment, post-Olympic production and Jarvis-related opportunity."
+        },
+        {
+          "url": "https://www.reuters.com/sports/hurricanes-standout-seth-jarvis-shoulder-expected-miss-start-next-season--flm-2026-06-27/",
+          "publisher": "Reuters",
+          "publishedAt": "2026-06-27",
+          "supports": "Independent confirmation that Jarvis underwent shoulder surgery and was expected to miss the start of the season."
+        }
+      ]
+    },
+    {
+      "name": "Gabriel Perreault",
+      "nhlPlayerId": 8484210,
+      "team": "NYR",
+      "positions": ["RW"],
+      "tags": ["breakout", "sleeper", "value", "reach_target"],
+      "confidence": "high",
+      "thesis": "Confirmed: Perreault closed 2025-26 with 19 points in 23 games as his average ice time increased from 15:05 to 17:01. Daily Faceoff expects a first- or second-line role; The Hockey News independently identified a plausible top-line fit with Mika Zibanejad and Alexis Lafreniere and potential top-power-play use. Projection: expanded deployment creates a credible 50-plus-point path at a late cost.",
+      "scoringFit": [
+        "Points and assists are the main appeal.",
+        "Potential PP1 access would materially improve power-play value.",
+        "Late price is attractive in keeper-adjacent or upside-heavy redraft rooms."
+      ],
+      "scoringCautions": [
+        "Top-line and PP1 assignments are projections, not confirmed opening-night deployment.",
+        "The Rangers' broader offensive environment remains uncertain."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "adp",
+          "value": 128.4,
+          "format": "ADP reported in Matt Larkin's sleeper article; underlying platform not specified",
+          "asOf": "2026-09-14",
+          "url": "https://www.dailyfaceoff.com/news/matt-larkins-2026-27-fantasy-hockey-sleepers"
+        },
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 202,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": "A selective reach is defensible in leagues that reward pure scoring upside because two independent sources see a path to top-six and possibly PP1 deployment, but the role should be checked before locking in a large reach.",
+      "goalieWorkload": null,
+      "risks": [
+        "Large gap between sleeper-article ADP and consensus rank signals market uncertainty.",
+        "Top-line and PP1 jobs are not guaranteed.",
+        "Limited NHL track record."
+      ],
+      "sources": [
+        {
+          "url": "https://www.dailyfaceoff.com/news/matt-larkins-2026-27-fantasy-hockey-sleepers",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-14",
+          "supports": "Late-season production, TOI increase and projected top-six role."
+        },
+        {
+          "url": "https://thehockeynews.com/news/latest-news/2026-27-nhl-fantasy-hockey-rankings-top-10-breakout-candidates",
+          "publisher": "The Hockey News",
+          "publishedAt": "2026-09-16",
+          "supports": "Independent top-line/top-PP upside case and Yahoo-listed RW position."
+        }
+      ]
+    },
+    {
+      "name": "Bowen Byram",
+      "nhlPlayerId": 8481524,
+      "team": "CHI",
+      "positions": ["D"],
+      "tags": ["breakout", "bust_risk"],
+      "confidence": "medium",
+      "thesis": "Confirmed: Chicago acquired Byram and The Hockey News describes him as having no established defenseman ahead of him on a thin, inexperienced blue line, creating a major-minutes opportunity. Projection: more responsibility can generate a career offensive season, but THN also flags his historically low shot volume as the key obstacle to a 50-point-type ceiling.",
+      "scoringFit": [
+        "Opportunity is attractive in points leagues and formats requiring several defensemen.",
+        "Heavy minutes can indirectly support blocks and secondary counting stats."
+      ],
+      "scoringCautions": [
+        "Shot volume must rise for a large offensive breakout.",
+        "Chicago's overall offense still introduces team-context risk."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 129,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 116.1,
+          "format": "Yahoo Fantasy ADP displayed by Daily Faceoff",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Yahoo market is already somewhat more aggressive than Daily Faceoff's consensus rank.",
+        "Low historical shot rate.",
+        "Large projected role does not automatically create efficient scoring."
+      ],
+      "sources": [
+        {
+          "url": "https://thehockeynews.com/news/latest-news/2026-27-nhl-fantasy-hockey-rankings-top-10-breakout-candidates",
+          "publisher": "The Hockey News",
+          "publishedAt": "2026-09-16",
+          "supports": "Top-of-depth-chart opportunity, expected heavy minutes and shot-volume counterevidence."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current Chicago team, D eligibility, consensus rank and market price."
+        }
+      ]
+    },
+    {
+      "name": "Michael Misa",
+      "nhlPlayerId": 8485402,
+      "team": "SJS",
+      "positions": ["C"],
+      "tags": ["breakout", "sleeper"],
+      "confidence": "medium",
+      "thesis": "Confirmed: Misa averaged under 13 minutes per game as a rookie yet produced 1.88 five-on-five points per 60 in at least 500 minutes, according to the Natural Stat Trick data cited by The Hockey News. San Jose did not add a major forward ahead of him and THN sees a path to the No. 2 center role. Projection: even a moderate ice-time increase could create a large raw-points jump.",
+      "scoringFit": [
+        "Points formats benefit most from a role-driven jump.",
+        "Deep leagues can exploit a potential promotion before the production fully appears."
+      ],
+      "scoringCautions": [
+        "No. 2-center status is a projection.",
+        "Center-only eligibility reduces scarcity value.",
+        "San Jose still has young-player and team-level volatility."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 241,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 204.2,
+          "format": "Yahoo Fantasy ADP displayed by Daily Faceoff",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Role competition at center.",
+        "Limited rookie workload makes rate-stat extrapolation uncertain.",
+        "Very late consensus rank reflects significant uncertainty."
+      ],
+      "sources": [
+        {
+          "url": "https://thehockeynews.com/news/latest-news/2026-27-nhl-fantasy-hockey-rankings-top-10-breakout-candidates",
+          "publisher": "The Hockey News",
+          "publishedAt": "2026-09-16",
+          "supports": "Rookie usage, five-on-five efficiency, No. 2-center opportunity and 59-point editorial projection."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current team, center listing and market context."
+        }
+      ]
+    },
+    {
+      "name": "Mavrik Bourque",
+      "nhlPlayerId": 8482145,
+      "team": "NSH",
+      "positions": ["C", "RW"],
+      "tags": ["breakout", "sleeper"],
+      "confidence": "medium",
+      "thesis": "Confirmed: Nashville acquired Bourque from Dallas. The Hockey News sees a more stable role and a path to No. 2 center, although it explicitly notes that leaving Dallas costs him exposure to stronger offensive teammates. Projection: the opportunity gain can outweigh the team-quality loss if Nashville gives him sustained top-six minutes.",
+      "scoringFit": [
+        "Deep points leagues benefit most.",
+        "C/RW flexibility can be useful where matching eligibility exists."
+      ],
+      "scoringCautions": [
+        "Nashville's offense is a downgrade from Dallas.",
+        "Exact winger combination and power-play role remain uncertain."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 220,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Weaker offensive environment.",
+        "No confirmed PP1 assignment.",
+        "No verified platform ADP was used here."
+      ],
+      "sources": [
+        {
+          "url": "https://thehockeynews.com/news/latest-news/2026-27-nhl-fantasy-hockey-rankings-top-10-breakout-candidates",
+          "publisher": "The Hockey News",
+          "publishedAt": "2026-09-16",
+          "supports": "Trade context, projected No. 2-center role and offensive-environment downside."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current Nashville team and C/RW listing."
+        }
+      ]
+    },
+    {
+      "name": "Matvei Gridin",
+      "nhlPlayerId": 8484860,
+      "team": "CGY",
+      "positions": ["LW", "RW"],
+      "tags": ["breakout", "sleeper"],
+      "confidence": "medium",
+      "thesis": "Confirmed: after returning from the AHL, Gridin produced 14 points in 22 games and averaged 17:15 in April. The Hockey News projects him as part of Calgary's top power-play core with Morgan Frost and Matt Coronato. Projection: that man-advantage opportunity creates deep-league breakout potential, but Calgary's weak team scoring environment meaningfully caps the ceiling.",
+      "scoringFit": [
+        "Most useful in points and PPP formats.",
+        "Dual-wing eligibility is useful where a platform matches Daily Faceoff/THN listings."
+      ],
+      "scoringCautions": [
+        "Calgary's offense is a major contextual weakness.",
+        "Top-power-play usage is a projection, not a confirmed season-long assignment."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 219,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Weak team scoring.",
+        "Limited NHL sample.",
+        "Possible role churn among Calgary's young forwards."
+      ],
+      "sources": [
+        {
+          "url": "https://thehockeynews.com/news/latest-news/2026-27-nhl-fantasy-hockey-rankings-top-10-breakout-candidates",
+          "publisher": "The Hockey News",
+          "publishedAt": "2026-09-16",
+          "supports": "Late-season production, April workload and projected top-power-play role."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current Calgary identity and LW/RW fantasy listing."
+        }
+      ]
+    },
+    {
+      "name": "Zeev Buium",
+      "nhlPlayerId": 8484798,
+      "team": "VAN",
+      "positions": ["D"],
+      "tags": ["breakout", "sleeper"],
+      "confidence": "medium",
+      "thesis": "Confirmed: half of Buium's 26 rookie-season points came on the power play. Filip Hronek currently stands between him and the first power-play unit. Projection: Buium becomes a major breakout if he eventually takes PP1, but without that promotion his 2026-27 ceiling is far less dramatic.",
+      "scoringFit": [
+        "Strong speculative fit for PPP and defense scoring.",
+        "More valuable in formats where offensive defensemen are scarce."
+      ],
+      "scoringCautions": [
+        "PP1 is not currently his job.",
+        "Much of his upside thesis depends on a future deployment change."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 225,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 199.5,
+          "format": "Yahoo Fantasy ADP displayed by Daily Faceoff",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Hronek blocks the cleanest route to PP1.",
+        "Only 26 points as a rookie.",
+        "Upside requires a deployment change that may never occur this season."
+      ],
+      "sources": [
+        {
+          "url": "https://thehockeynews.com/news/latest-news/2026-27-nhl-fantasy-hockey-rankings-top-10-breakout-candidates",
+          "publisher": "The Hockey News",
+          "publishedAt": "2026-09-16",
+          "supports": "Power-play share, PP1 obstacle and breakout scenario."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current Vancouver team, D position and market cost."
+        }
+      ]
+    },
+    {
+      "name": "Egor Chinakhov",
+      "nhlPlayerId": 8482475,
+      "team": "PIT",
+      "positions": ["LW", "RW"],
+      "tags": ["sleeper", "breakout", "value"],
+      "confidence": "high",
+      "thesis": "Confirmed: Chinakhov produced 36 points in 43 games after moving to Pittsburgh, compared with six in 29 before the trade, while his ice time rose from 10:18 to 15:37. NHL EDGE metrics showed elite shot speed and skating traits, and NHL.com highlighted chemistry with Evgeni Malkin. Projection: a full season with Pittsburgh-level deployment can turn last year's post-trade surge into a genuine breakout.",
+      "scoringFit": [
+        "Goals and shots are the strongest categories.",
+        "Wing eligibility and a very late market cost make him useful as an upside bench forward.",
+        "Some PP production adds standard-category value."
+      ],
+      "scoringCautions": [
+        "The Pittsburgh sample is only 43 games.",
+        "Line combinations involving veteran centers can change.",
+        "Athletic tools do not guarantee repeat shooting efficiency."
+      ],
+      "marketReferences": [
+        {
+          "provider": "NHL.com Fantasy",
+          "kind": "adp",
+          "value": 130.5,
+          "format": "ADP published by NHL.com; underlying platform not specified",
+          "asOf": "2026-09-11",
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-sleeper-candidates-for-2026-27-season"
+        },
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 165,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 203.4,
+          "format": "Yahoo Fantasy ADP displayed by Daily Faceoff",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "ADP varies greatly by source.",
+        "Post-trade pace may regress.",
+        "Pittsburgh's veteran lineup could create role volatility."
+      ],
+      "sources": [
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-sleeper-candidates-for-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-09-11",
+          "supports": "Post-trade scoring, ice-time increase, EDGE metrics, Malkin chemistry and NHL.com ADP."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current Pittsburgh team, LW/RW listing and alternate market cost."
+        }
+      ]
+    },
+    {
+      "name": "Joel Hofer",
+      "nhlPlayerId": 8480981,
+      "team": "STL",
+      "positions": ["G"],
+      "tags": ["sleeper", "value", "high_volume_goalie", "reach_target"],
+      "confidence": "high",
+      "thesis": "Confirmed: Hofer went 24-13-5 with a 2.61 GAA, .910 save percentage and six shutouts, then posted a .933 save percentage and 2.04 GAA after the Olympic break. Jordan Binnington simultaneously posted career-worst rate statistics. The Hockey News notes Hofer played 46 games and ranked 13th in MoneyPuck goals saved above expected. Projection: Hofer has a credible path from a timeshare into the larger side of the workload.",
+      "scoringFit": [
+        "Excellent upside for save percentage, GAA and shutouts.",
+        "More starts would turn ratio quality into useful win volume.",
+        "Strong fit for managers who delay goalie and seek upside later."
+      ],
+      "scoringCautions": [
+        "St. Louis has not guaranteed a full-time starter role.",
+        "Binnington remains competition.",
+        "Goalie ratios can swing sharply year to year."
+      ],
+      "marketReferences": [
+        {
+          "provider": "NHL.com Fantasy",
+          "kind": "adp",
+          "value": 125.7,
+          "format": "ADP published by NHL.com; underlying platform not specified",
+          "asOf": "2026-09-11",
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-sleeper-candidates-for-2026-27-season"
+        },
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 130,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": "A modest reach is defensible after secure goalies are gone because Hofer combines demonstrated ratio performance with a concrete path to more games; it should not be modeled as a guaranteed starter workload.",
+      "goalieWorkload": {
+        "type": "role_projection",
+        "projectedStarts": null,
+        "priorGamesPlayed": 46,
+        "priorGamesPlayedSeason": "2025-26",
+        "source": "https://thehockeynews.com/news/latest-news/three-nhl-dark-horse-candidates-for-the-2026-27-vezina-trophy",
+        "uncertainty": "Medium. Independent sources expect more work and NHL.com says he has a chance to become the full-time starter, but no sourced numeric start projection is used."
+      },
+      "risks": [
+        "Crease competition with Binnington.",
+        "No verified numeric start commitment.",
+        "Team performance can limit wins even if individual ratios remain strong."
+      ],
+      "sources": [
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-sleeper-candidates-for-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-09-11",
+          "supports": "2025-26 ratios, late-season surge and chance to become full-time starter."
+        },
+        {
+          "url": "https://thehockeynews.com/news/latest-news/three-nhl-dark-horse-candidates-for-the-2026-27-vezina-trophy",
+          "publisher": "The Hockey News",
+          "publishedAt": "2026-09-16",
+          "supports": "Independent workload argument, 46 games and goals-saved-above-expected context."
+        }
+      ]
+    },
+    {
+      "name": "Mason Marchment",
+      "nhlPlayerId": 8478975,
+      "team": "SJS",
+      "positions": ["LW"],
+      "tags": ["sleeper"],
+      "confidence": "medium",
+      "thesis": "Confirmed: Marchment signed a five-year deal with San Jose after scoring 15 goals and 32 points in 39 games following his move to Columbus. NHL.com says he has a chance to skate on the Sharks' top line with Macklin Celebrini and Will Smith. He also recorded 84 hits last season. Projection: top-line exposure would give him points upside plus banger-league utility at a late cost.",
+      "scoringFit": [
+        "Good blend of goals, points and hits.",
+        "Particularly useful in banger leagues if the top-line projection materializes."
+      ],
+      "scoringCautions": [
+        "Celebrini/Smith line placement is not confirmed.",
+        "His late-season Columbus scoring pace was well above his full-career norm."
+      ],
+      "marketReferences": [
+        {
+          "provider": "NHL.com Fantasy",
+          "kind": "adp",
+          "value": 131.5,
+          "format": "ADP published by NHL.com; underlying platform not specified",
+          "asOf": "2026-09-11",
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-sleeper-candidates-for-2026-27-season"
+        },
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 205,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Projected rather than confirmed top-line role.",
+        "Market sources differ substantially.",
+        "Scoring regression from his Columbus pace is plausible."
+      ],
+      "sources": [
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-sleeper-candidates-for-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-09-11",
+          "supports": "San Jose signing, Columbus production, possible Celebrini/Smith line and hit volume."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current SJS team, LW position and consensus counterweight."
+        }
+      ]
+    },
+    {
+      "name": "Valeri Nichushkin",
+      "nhlPlayerId": 8477501,
+      "team": "CBJ",
+      "positions": ["LW", "RW"],
+      "tags": ["sleeper", "bounce_back", "value"],
+      "confidence": "high",
+      "thesis": "Confirmed: Columbus acquired Nichushkin from Colorado on June 25 after a 49-point season in 72 games. His 17:44 average ice time was his lowest since 2020-21, and NHL.com identifies a possible first-power-play and top-line role with Adam Fantilli and Kirill Marchenko. Projection: increased minutes and PP1 access can restore some of the power-play-goal ceiling he showed in 2023-24.",
+      "scoringFit": [
+        "Goals and power-play formats offer the most upside.",
+        "LW/RW flexibility helps in roster construction.",
+        "Category formats can benefit from his power-forward profile."
+      ],
+      "scoringCautions": [
+        "PP1 and top-line deployment are projections.",
+        "His prior Colorado efficiency came in a stronger established offense."
+      ],
+      "marketReferences": [
+        {
+          "provider": "NHL.com Fantasy",
+          "kind": "adp",
+          "value": 135,
+          "format": "ADP published by NHL.com; underlying platform not specified",
+          "asOf": "2026-09-11",
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-sleeper-candidates-for-2026-27-season"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 205.2,
+          "format": "Yahoo Fantasy ADP displayed by Daily Faceoff",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "New-team deployment is not settled.",
+        "Large source-to-source ADP spread.",
+        "Age-31 season introduces some decline risk."
+      ],
+      "sources": [
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-sleeper-candidates-for-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-09-11",
+          "supports": "Trade, ice-time decline, possible PP1/top-line deployment and historical power-play ceiling."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current Columbus identity, LW/RW listing and Yahoo-market cost."
+        }
+      ]
+    },
+    {
+      "name": "Joel Eriksson Ek",
+      "nhlPlayerId": 8478493,
+      "team": "MIN",
+      "positions": ["C"],
+      "tags": ["sleeper", "value"],
+      "confidence": "high",
+      "thesis": "Confirmed: Eriksson Ek remains Minnesota's No. 1 center and Daily Faceoff expects heavy minutes with Matt Boldy plus first-unit power-play time alongside Kirill Kaprizov and Quinn Hughes. After Hughes arrived last season, Eriksson Ek had 30 points in 39 games while continuing to supply shots and hits. Projection: health plus elite surrounding talent can restore a 30-goal/60-point neighborhood without sacrificing peripheral value.",
+      "scoringFit": [
+        "Excellent multi-category fit: goals, shots, hits and points.",
+        "PP1 exposure adds value in standard-category leagues."
+      ],
+      "scoringCautions": [
+        "Injuries cost him 48 games over the prior two seasons.",
+        "Pure points leagues discount the hit-based floor."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "adp",
+          "value": 138.9,
+          "format": "ADP reported in sleeper article; underlying platform not specified",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/brock-seguins-2026-27-fantasy-hockey-sleepers"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 195.6,
+          "format": "Yahoo Fantasy ADP displayed in consensus table",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Recent injury history.",
+        "Center-only roster slot on the cited listing.",
+        "Some of his value depends on hits being counted."
+      ],
+      "sources": [
+        {
+          "url": "https://www.dailyfaceoff.com/news/brock-seguins-2026-27-fantasy-hockey-sleepers",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "No. 1-center status, Boldy line, PP1 role, Hughes-era production and category floor."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current team, center listing and platform market context."
+        }
+      ]
+    },
+    {
+      "name": "Jordan Kyrou",
+      "nhlPlayerId": 8479385,
+      "team": "WSH",
+      "positions": ["RW"],
+      "tags": ["sleeper", "bounce_back", "value"],
+      "confidence": "high",
+      "thesis": "Confirmed: Kyrou fell to 18 goals and 46 points as his ice time declined to 15:44 with St. Louis, after three straight 30-goal seasons and four straight 67-plus-point seasons. Washington paid a substantial trade package for him, and both NHL.com and Daily Faceoff see a path to a major offensive role, potentially including line one and PP1. Projection: restored minutes and a career-low-adjacent shooting percentage create one of the clearest mid/late-round rebound profiles.",
+      "scoringFit": [
+        "Goals, shots, points and PPP are the main categories.",
+        "Washington's unusually high number of light schedule nights is a bonus in daily-lineup formats."
+      ],
+      "scoringCautions": [
+        "First-line and PP1 assignments were not yet guaranteed.",
+        "Schedule advantage matters little in set-and-forget leagues."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "adp",
+          "value": 139.9,
+          "format": "ADP reported in sleeper article; underlying platform not specified",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/brock-seguins-2026-27-fantasy-hockey-sleepers"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 195,
+          "format": "Yahoo Fantasy ADP displayed in consensus table",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 121,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "New-team chemistry.",
+        "Projected rather than confirmed PP1/line-one placement.",
+        "ADP differs heavily across data sources."
+      ],
+      "sources": [
+        {
+          "url": "https://www.dailyfaceoff.com/news/brock-seguins-2026-27-fantasy-hockey-sleepers",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Historical 30-goal/70-point profile, 2025-26 TOI decline, trade cost and schedule advantage."
+        },
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-bounce-back-candidates-for-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-08-20",
+          "supports": "Independent bounce-back case, shooting-rate downside in 2025-26 and possible first-line/PP role."
+        }
+      ]
+    },
+    {
+      "name": "Owen Tippett",
+      "nhlPlayerId": 8480015,
+      "team": "PHI",
+      "positions": ["LW", "RW"],
+      "tags": ["sleeper", "value"],
+      "confidence": "high",
+      "thesis": "Confirmed: Tippett tied his career high with 28 goals and set a personal best with 166 hits. Over the past four seasons he has averaged 26 goals, 49 points, 232 shots and 139 hits. Projection: even without a true scoring breakout, that category bundle is underpriced in many banger formats.",
+      "scoringFit": [
+        "Excellent late source of shots and hits.",
+        "Goals provide additional value.",
+        "Much stronger in categories than points-only leagues."
+      ],
+      "scoringCautions": [
+        "At age 27, a large new points breakout is less probable than simple maintenance of his category floor.",
+        "Points-only formats can leave him replacement-level."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "adp",
+          "value": 137.3,
+          "format": "ADP reported in sleeper article; underlying platform not specified",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/brock-seguins-2026-27-fantasy-hockey-sleepers"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 206.6,
+          "format": "Yahoo Fantasy ADP displayed in consensus table",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Offensive ceiling may already be established.",
+        "Value collapses in formats that omit hits and shots."
+      ],
+      "sources": [
+        {
+          "url": "https://www.dailyfaceoff.com/news/brock-seguins-2026-27-fantasy-hockey-sleepers",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "28 goals, 166 hits, four-year category averages and sleeper argument."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "PHI identity and LW/RW market listing."
+        }
+      ]
+    },
+    {
+      "name": "Yaroslav Askarov",
+      "nhlPlayerId": 8482137,
+      "team": "SJS",
+      "positions": ["G"],
+      "tags": ["sleeper", "high_volume_goalie", "bust_risk"],
+      "confidence": "medium",
+      "thesis": "Confirmed: Askarov is coming off a poor first full San Jose season, but his current crease competition is Alex Nedeljkovic and Eric Comrie. Daily Faceoff believes that construction gives Askarov a starter's path. Projection: the author expects 50-plus starts, making him particularly interesting in saves leagues, but ratio risk is substantial and the 50-plus figure is not a team-announced plan.",
+      "scoringFit": [
+        "Saves and start-volume leagues are the best fit.",
+        "Late cost gives upside if San Jose improves defensively."
+      ],
+      "scoringCautions": [
+        "Ratio leagues are exposed if last season's struggles continue.",
+        "The 50-plus-start number is an analyst projection.",
+        "Nedeljkovic and Comrie can still take meaningful work."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "adp",
+          "value": 128.1,
+          "format": "ADP reported in sleeper article; underlying platform not specified",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/beebs-bondys-2026-27-fantasy-hockey-sleepers"
+        },
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 174,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": {
+        "type": "projected_starts",
+        "projectedStarts": "50+",
+        "priorGamesPlayed": null,
+        "priorGamesPlayedSeason": null,
+        "source": "https://www.dailyfaceoff.com/news/beebs-bondys-2026-27-fantasy-hockey-sleepers",
+        "uncertainty": "High. The 50-plus figure is one analyst's projection based on San Jose's crease competition, not a confirmed team workload."
+      },
+      "risks": [
+        "Poor 2025-26 NHL performance.",
+        "Potential ratio damage.",
+        "Projected workload is less certain than for established No. 1 goalies."
+      ],
+      "sources": [
+        {
+          "url": "https://www.dailyfaceoff.com/news/beebs-bondys-2026-27-fantasy-hockey-sleepers",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Crease competition, defensive additions, late ADP and 50-plus-start analyst projection."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current San Jose identity and consensus rank."
+        }
+      ]
+    },
+    {
+      "name": "Gabriel Vilardi",
+      "nhlPlayerId": 8480014,
+      "team": "WPG",
+      "positions": ["C", "RW"],
+      "tags": ["sleeper", "value"],
+      "confidence": "high",
+      "thesis": "Confirmed: Vilardi reached 30 goals and 30 assists and is expected to remain with Mark Scheifele and Kyle Connor on Winnipeg's top line and power play. He produced 13 power-play goals and 30 power-play points last season. Projection: established premium deployment gives him a higher floor than many players available in the same market range.",
+      "scoringFit": [
+        "Excellent in goals and PPP formats.",
+        "Top-line exposure supports points and plus/minus where counted."
+      ],
+      "scoringCautions": [
+        "Shot volume is less dominant than elite goal scorers.",
+        "His value is weaker in heavy peripheral formats."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "adp",
+          "value": 144.9,
+          "format": "ADP reported in sleeper article; underlying platform not specified",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/beebs-bondys-2026-27-fantasy-hockey-sleepers"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 185.2,
+          "format": "Yahoo Fantasy ADP displayed in consensus table",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "ADP data differs by source.",
+        "Less category breadth than banger-style forwards."
+      ],
+      "sources": [
+        {
+          "url": "https://www.dailyfaceoff.com/news/beebs-bondys-2026-27-fantasy-hockey-sleepers",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Top-line/PP role, 30-goal/30-assist season and 30 PPP."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current team, C/RW listing and market context."
+        }
+      ]
+    },
+    {
+      "name": "Dylan Cozens",
+      "nhlPlayerId": 8481528,
+      "team": "OTT",
+      "positions": ["C"],
+      "tags": ["sleeper", "value", "reach_target"],
+      "confidence": "high",
+      "thesis": "Confirmed: Cozens posted 28 goals, 59 points, 204 shots and 215 hits, making him one of only two NHL players with both 200-plus shots and 200-plus hits last season. Daily Faceoff expects him in Ottawa's top six and top power-play unit after Brady Tkachuk's departure. Projection: even modest scoring growth creates outsized multi-category value because the shots/hits base is already proven.",
+      "scoringFit": [
+        "Elite fit for banger categories because of simultaneous shot and hit volume.",
+        "Goals and PP opportunity add points upside."
+      ],
+      "scoringCautions": [
+        "Center-only listing reduces positional scarcity.",
+        "Points-only leagues do not capture much of his edge."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "adp",
+          "value": 140.6,
+          "format": "ADP reported in sleeper article; underlying platform not specified",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/beebs-bondys-2026-27-fantasy-hockey-sleepers"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 204,
+          "format": "Yahoo Fantasy ADP displayed in consensus table",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 113,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": "Earlier-than-market selection is particularly defensible in hits-plus-shots leagues because the rare 200/200 peripheral profile is already confirmed and does not require a scoring breakout to return value.",
+      "goalieWorkload": null,
+      "risks": [
+        "Role after Ottawa's roster changes still must be confirmed in camp.",
+        "Less attractive in points-only leagues."
+      ],
+      "sources": [
+        {
+          "url": "https://www.dailyfaceoff.com/news/beebs-bondys-2026-27-fantasy-hockey-sleepers",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "28 goals, 59 points, 204 shots, 215 hits and projected top-six/PP1 role."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Market rank, Yahoo price and current Ottawa identity."
+        }
+      ]
+    },
+    {
+      "name": "Bobby McMann",
+      "nhlPlayerId": 8482259,
+      "team": "SEA",
+      "positions": ["LW", "RW"],
+      "tags": ["sleeper", "value"],
+      "confidence": "medium",
+      "thesis": "Confirmed: after joining Seattle, McMann produced 10 goals, 58 shots and 30 hits in 18 games. Daily Faceoff expects a top-six role and says he has a chance to reach PP1. Projection: even significant regression from that 18-game pace can produce useful late-round goals, shots and hits.",
+      "scoringFit": [
+        "Strong late banger-league profile.",
+        "Goals, shots and hits are the main attractions."
+      ],
+      "scoringCautions": [
+        "The Seattle sample is only 18 games.",
+        "PP1 is a possibility, not a confirmed role.",
+        "Age limits the classic young-player breakout narrative."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "adp",
+          "value": 136.8,
+          "format": "ADP reported in sleeper article; underlying platform not specified",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/beebs-bondys-2026-27-fantasy-hockey-sleepers"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 206.6,
+          "format": "Yahoo Fantasy ADP displayed in consensus table",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Tiny post-trade sample.",
+        "Power-play role uncertain.",
+        "Scoring pace is almost certain to regress from its 18-game extrapolation."
+      ],
+      "sources": [
+        {
+          "url": "https://www.dailyfaceoff.com/news/beebs-bondys-2026-27-fantasy-hockey-sleepers",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Seattle sample, category production and projected top-six/possible PP1 role."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current SEA team, LW/RW listing and Yahoo market cost."
+        }
+      ]
+    },
+    {
+      "name": "Viktor Arvidsson",
+      "nhlPlayerId": 8478042,
+      "team": "DET",
+      "positions": ["LW", "RW"],
+      "tags": ["sleeper"],
+      "confidence": "medium",
+      "thesis": "Confirmed: Arvidsson signed a two-year contract with Detroit after finishing strongly in Boston; Daily Faceoff notes 11 goals and 26 points over his final 24 games and expects a top-six, power-play role. He has four career seasons with at least 200 shots. Projection: healthy deployment can make him a nearly free source of shots and secondary scoring.",
+      "scoringFit": [
+        "Shots and goals are his primary fantasy strengths.",
+        "Potential power-play work adds value in standard formats."
+      ],
+      "scoringCautions": [
+        "Injuries cost him 13 games last season.",
+        "Detroit entered camp with broader organizational and Dylan Larkin uncertainty.",
+        "No verified ADP was supplied in the cited sleeper piece."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 197,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Recent injury history.",
+        "Detroit line combinations may change if Larkin is traded.",
+        "No source-verified ADP available in the sleeper article."
+      ],
+      "sources": [
+        {
+          "url": "https://www.dailyfaceoff.com/news/beebs-bondys-2026-27-fantasy-hockey-sleepers",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Detroit signing, late-season Boston performance, expected top-six/PP role and shot history."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current Detroit identity and LW/RW listing."
+        }
+      ]
+    },
+    {
+      "name": "Sergei Murashov",
+      "nhlPlayerId": 8483703,
+      "team": "PIT",
+      "positions": ["G"],
+      "tags": ["sleeper"],
+      "confidence": "medium",
+      "thesis": "Confirmed: Pittsburgh allowed Stuart Skinner to leave and did not add a comparable replacement. Murashov posted a .919 AHL save percentage in the regular season and .931 in the playoffs. Projection: Daily Faceoff expects he may begin as Arturs Silovs' 1B and speculates he could overtake him; that latter outcome is not confirmed and should be treated as upside, not baseline workload.",
+      "scoringFit": [
+        "Deep leagues and keeper-adjacent redrafts.",
+        "Potentially useful in starts/saves formats if he earns the larger crease share."
+      ],
+      "scoringCautions": [
+        "No established NHL workload.",
+        "Ratio translation from the AHL is uncertain.",
+        "The predicted 1A takeover is analyst speculation."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "adp",
+          "value": 134.8,
+          "format": "ADP reported in Matt Larkin's sleeper article; underlying platform not specified",
+          "asOf": "2026-09-14",
+          "url": "https://www.dailyfaceoff.com/news/matt-larkins-2026-27-fantasy-hockey-sleepers"
+        },
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 240,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": {
+        "type": "role_projection",
+        "projectedStarts": null,
+        "priorGamesPlayed": null,
+        "priorGamesPlayedSeason": null,
+        "source": "https://www.dailyfaceoff.com/news/matt-larkins-2026-27-fantasy-hockey-sleepers",
+        "uncertainty": "High. A 1B opening role and possible later takeover are analyst projections; no numeric NHL start estimate is supplied."
+      },
+      "risks": [
+        "Minimal established NHL track record.",
+        "Competition with Silovs.",
+        "Market price in some rooms may be far more aggressive than consensus ranking."
+      ],
+      "sources": [
+        {
+          "url": "https://www.dailyfaceoff.com/news/matt-larkins-2026-27-fantasy-hockey-sleepers",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-14",
+          "supports": "AHL ratios, Pittsburgh crease changes and speculative 1B/1A pathway."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current Pittsburgh identity and consensus valuation."
+        }
+      ]
+    },
+    {
+      "name": "Josh Norris",
+      "nhlPlayerId": 8480064,
+      "team": "BUF",
+      "positions": ["C"],
+      "tags": ["sleeper", "bust_risk"],
+      "confidence": "medium",
+      "thesis": "Confirmed: Norris has averaged 0.70 points per game over the past five seasons and Daily Faceoff lists him in a top-line and first-unit power-play role. The same source notes he missed 186 games over those five seasons. Projection: the role makes him a late scoring bargain whenever healthy, but the injury history is severe enough that a realistic GM should simultaneously treat him as a bust-risk roster slot.",
+      "scoringFit": [
+        "Points, goals and PPP benefit from the top-line/PP1 role.",
+        "Late price reduces the cost of failure."
+      ],
+      "scoringCautions": [
+        "Extremely high games-missed history.",
+        "Center-only listing reduces roster flexibility."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 217,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "186 games missed over five seasons according to Daily Faceoff.",
+        "Another injury is a material probability, not a remote tail risk.",
+        "No source-verified ADP in the sleeper article."
+      ],
+      "sources": [
+        {
+          "url": "https://www.dailyfaceoff.com/news/nick-szemans-2026-27-fantasy-hockey-sleepers",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Top-line/PP1 deployment, five-year scoring rate and extensive injury history."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current Buffalo identity, center listing and consensus rank."
+        }
+      ]
+    },
+    {
+      "name": "Will Cuylle",
+      "nhlPlayerId": 8482157,
+      "team": "NYR",
+      "positions": ["LW", "RW"],
+      "tags": ["sleeper", "bounce_back"],
+      "confidence": "high",
+      "thesis": "Confirmed: Cuylle fell to 38 points in 2025-26 after a 45-point, 301-hit 2024-25 season. Even his down scoring season retained his physical identity. Projection: he does not need a large offensive leap to matter; merely returning toward his prior scoring level while maintaining elite hit volume makes him highly format-dependent value.",
+      "scoringFit": [
+        "Excellent in hits leagues.",
+        "Useful as a late dual-wing piece in formats counting goals plus peripherals."
+      ],
+      "scoringCautions": [
+        "Low priority in points-only leagues.",
+        "The offensive ceiling is much lower than the elite hit ceiling."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 185,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Limited points ceiling.",
+        "Value is extremely scoring-system dependent."
+      ],
+      "sources": [
+        {
+          "url": "https://www.dailyfaceoff.com/news/nick-szemans-2026-27-fantasy-hockey-sleepers",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "38-point down year, prior 45 points/301 hits and projected continued hit dominance."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "NYR identity and LW/RW listing."
+        }
+      ]
+    },
+    {
+      "name": "Lukas Dostal",
+      "nhlPlayerId": 8480843,
+      "team": "ANA",
+      "positions": ["G"],
+      "tags": ["bounce_back", "value", "high_volume_goalie"],
+      "confidence": "high",
+      "thesis": "Confirmed: Dostal posted a poor .888 save percentage last season yet still collected 30 wins in 56 appearances. The Hockey News argues that both his prior save-percentage history and Anaheim's potential team improvement create rebound upside. Projection: if his ratios normalize while the 50-plus-game level of opportunity persists, he can substantially outperform a Yahoo ADP around 158.",
+      "scoringFit": [
+        "Strong for goalie volume and wins.",
+        "Major upside in ratio formats if the .888 season proves anomalous."
+      ],
+      "scoringCautions": [
+        "Last year's .888 is a serious warning for ratio leagues.",
+        "56 was games played/appearances, not a 2026-27 projected-start number."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 96,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 157.6,
+          "format": "Yahoo Fantasy ADP displayed by Daily Faceoff",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": {
+        "type": "prior_games_played_and_role_projection",
+        "projectedStarts": null,
+        "priorGamesPlayed": 56,
+        "priorGamesPlayedSeason": "2025-26",
+        "source": "https://thehockeynews.com/news/latest-news/three-nhl-dark-horse-candidates-for-the-2026-27-vezina-trophy",
+        "uncertainty": "Medium. The 56 figure is prior-season appearances, not starts and not a 2026-27 estimate; the high-volume tag reflects an established large role rather than a sourced numeric start forecast."
+      },
+      "risks": [
+        ".888 save percentage last season.",
+        "Anaheim improvement is a projection.",
+        "Wins can mask poor fantasy ratios in some scoring systems."
+      ],
+      "sources": [
+        {
+          "url": "https://thehockeynews.com/news/latest-news/three-nhl-dark-horse-candidates-for-the-2026-27-vezina-trophy",
+          "publisher": "The Hockey News",
+          "publishedAt": "2026-09-16",
+          "supports": "30 wins, 56 appearances, .888 SV% and rebound case."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current Anaheim identity, consensus rank and Yahoo-market discount."
+        }
+      ]
+    },
+    {
+      "name": "Jacob Markstrom",
+      "nhlPlayerId": 8474593,
+      "team": "FLA",
+      "positions": ["G"],
+      "tags": ["bounce_back", "high_volume_goalie", "bust_risk"],
+      "confidence": "medium",
+      "thesis": "Confirmed: Florida acquired Markstrom from New Jersey on June 30. NHL.com sees rebound potential because of Florida's defensive structure and support, while Daily Faceoff separately notes that his most recent season graded poorly and identifies Akira Schmid as a plausible alternative if Markstrom falters. Projection: the team context creates 30-win-type upside, but age and recent performance make this a genuine boom/bust starter profile.",
+      "scoringFit": [
+        "Wins are the clearest attraction because of Florida's team quality.",
+        "Ratio categories benefit strongly if the change in environment produces a rebound."
+      ],
+      "scoringCautions": [
+        "Recent underlying performance was weak.",
+        "Akira Schmid could gain work if Markstrom struggles.",
+        "No sourced numeric 2026-27 start projection is used."
+      ],
+      "marketReferences": [
+        {
+          "provider": "NHL.com Fantasy",
+          "kind": "ranking",
+          "value": 79,
+          "format": "NHL.com overall fantasy rank in bounce-back article",
+          "asOf": "2026-08-20",
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-bounce-back-candidates-for-2026-27-season"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 78.7,
+          "format": "Yahoo Fantasy ADP displayed by Daily Faceoff",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": {
+        "type": "projected_starter_role",
+        "projectedStarts": null,
+        "priorGamesPlayed": null,
+        "priorGamesPlayedSeason": null,
+        "source": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-bounce-back-candidates-for-2026-27-season",
+        "uncertainty": "Medium-high. Florida acquired him as the leading veteran option, but no numeric start estimate is supplied and Daily Faceoff identifies Schmid as a meaningful fallback."
+      },
+      "risks": [
+        "Age 36.",
+        "Poor recent underlying goaltending.",
+        "Schmid could erode the workload.",
+        "Mid-round acquisition cost assumes meaningful rebound."
+      ],
+      "sources": [
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-bounce-back-candidates-for-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-08-20",
+          "supports": "Florida trade, defensive support and 30-win upside."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/matt-larkins-2026-27-fantasy-hockey-sleepers",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-14",
+          "supports": "Counterevidence on recent performance and Schmid's contingent opportunity."
+        }
+      ]
+    },
+    {
+      "name": "Sergei Bobrovsky",
+      "nhlPlayerId": 8475683,
+      "team": "TOR",
+      "positions": ["G"],
+      "tags": ["bounce_back", "bust_risk", "fade"],
+      "confidence": "high",
+      "thesis": "Confirmed: Bobrovsky moved to Toronto after recording a career-low .877 save percentage with 27 wins in 52 games. He had reached at least 30 wins in three of the previous five seasons and led the NHL with 15 shutouts over the prior three-year span. Projection: a ratio rebound is plausible, but Yahoo's roughly 93 ADP is more aggressive than Daily Faceoff's No. 116 consensus rank, so managers are paying a meaningful price for that rebound.",
+      "scoringFit": [
+        "Wins and shutouts retain upside if Toronto supplies strong team support.",
+        "Ratio formats benefit greatly if last year's .877 proves anomalous."
+      ],
+      "scoringCautions": [
+        "A repeat of anything near .877 would be severely damaging in ratio leagues.",
+        "The market price is not a true late-round reclamation cost."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 116,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 93.4,
+          "format": "Yahoo Fantasy ADP displayed by Daily Faceoff",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": {
+        "type": "prior_games_played_and_starter_projection",
+        "projectedStarts": null,
+        "priorGamesPlayed": 52,
+        "priorGamesPlayedSeason": "2025-26",
+        "source": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-bounce-back-candidates-for-2026-27-season",
+        "uncertainty": "Medium. The 52 figure is 2025-26 games played, not projected starts. Toronto's precise split is not supplied in the cited source."
+      },
+      "risks": [
+        "Career-low .877 SV% last year.",
+        "Age-related volatility.",
+        "Yahoo market is earlier than expert consensus."
+      ],
+      "sources": [
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-bounce-back-candidates-for-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-08-20",
+          "supports": "Current Toronto team, .877 SV%, 27 wins and historical win/shutout ceiling."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Market-price versus consensus-rank fade case."
+        }
+      ]
+    },
+    {
+      "name": "Elias Pettersson",
+      "nhlPlayerId": 8480012,
+      "team": "VAN",
+      "positions": ["C"],
+      "tags": ["bounce_back", "value"],
+      "confidence": "high",
+      "thesis": "Confirmed: Pettersson led Vancouver with 51 points in 74 games but scored only 15 goals for a second straight year and posted a career-low 11.4% shooting rate. He previously recorded three consecutive 30-goal seasons, including 39 goals and 102 points in 2022-23, while last year still adding 108 blocks and 67 hits. Projection: even partial shooting regression can create a rebound while his expanded peripherals provide a better category floor than his reputation suggests.",
+      "scoringFit": [
+        "Points and goals carry rebound potential.",
+        "Surprisingly useful in formats counting blocks and hits.",
+        "PP production can add to the upside."
+      ],
+      "scoringCautions": [
+        "Two consecutive 15-goal seasons make a return to old scoring levels uncertain.",
+        "Vancouver remains a volatile team environment."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 161,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 200.3,
+          "format": "Yahoo Fantasy ADP displayed by Daily Faceoff",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Scoring decline has lasted more than one season.",
+        "Health and team quality remain concerns.",
+        "Center-only position on the cited consensus list."
+      ],
+      "sources": [
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-bounce-back-candidates-for-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-08-20",
+          "supports": "51-point season, career-low shooting rate, prior 39-goal/102-point peak and blocks/hits floor."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current team, C position and market discount."
+        }
+      ]
+    },
+    {
+      "name": "William Eklund",
+      "nhlPlayerId": 8482667,
+      "team": "OTT",
+      "positions": ["LW", "RW"],
+      "tags": ["bounce_back", "value"],
+      "confidence": "high",
+      "thesis": "Confirmed: Ottawa acquired Eklund after a 53-point season in San Jose. He set a career high with 176 shots and has produced at least 15 goals and 15 power-play points in three straight seasons. NHL.com says Brady Tkachuk's departure creates a path to Ottawa's top line and first power play. Projection: larger deployment can turn an already stable 50-point player into a significant late-round surplus value.",
+      "scoringFit": [
+        "Points, shots and PPP are all supported.",
+        "Dual-wing eligibility improves flexibility."
+      ],
+      "scoringCautions": [
+        "Top-line and PP1 roles are projected rather than confirmed.",
+        "A new team creates chemistry uncertainty."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 146,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 196.7,
+          "format": "Yahoo Fantasy ADP displayed by Daily Faceoff",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "New-team transition.",
+        "Role projection depends partly on the post-Tkachuk lineup configuration."
+      ],
+      "sources": [
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-bounce-back-candidates-for-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-08-20",
+          "supports": "Ottawa acquisition, 53 points, 176 shots and potential top-line/PP1 role."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current team, LW/RW listing and large rank-to-ADP discount."
+        }
+      ]
+    },
+    {
+      "name": "Thomas Harley",
+      "nhlPlayerId": 8481581,
+      "team": "DAL",
+      "positions": ["D"],
+      "tags": ["bounce_back", "bust_risk", "fade"],
+      "confidence": "high",
+      "thesis": "Confirmed: Harley fell to six goals and 36 points in 70 games after consecutive 15-plus-goal seasons; his 5.3% shooting rate was far below the 9.4% and 10.4% marks of the preceding two years. He remains unusually strong across blocks and hits for an offensive defenseman. Projection: shooting regression supports a bounce-back, but the displayed Yahoo ADP of 115.7 is much earlier than Daily Faceoff's consensus rank of 154, so the market is already paying for much of it.",
+      "scoringFit": [
+        "Very useful in leagues counting blocks plus offense.",
+        "Goals from defense can rebound with shooting normalization."
+      ],
+      "scoringCautions": [
+        "Market price is aggressive relative to expert consensus.",
+        "A rebound does not necessarily mean a return to 15-plus goals."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 154,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 115.7,
+          "format": "Yahoo Fantasy ADP displayed by Daily Faceoff",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Yahoo market already anticipates rebound.",
+        "Last year's injuries and shooting decline may not fully reverse.",
+        "Defense scoring is sensitive to power-play deployment."
+      ],
+      "sources": [
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-bounce-back-candidates-for-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-08-20",
+          "supports": "Prior goal totals, 2025-26 shooting decline and unusual blocks/hits profile."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current Dallas identity and expensive Yahoo cost relative to consensus."
+        }
+      ]
+    },
+    {
+      "name": "J.T. Miller",
+      "nhlPlayerId": 8476468,
+      "team": "NYR",
+      "positions": ["C", "LW", "RW"],
+      "tags": ["bounce_back", "value"],
+      "confidence": "high",
+      "thesis": "Confirmed: Miller fell to 53 points in 68 games after previously reaching 103, but still averaged 0.78 points, 1.81 hits and 2.12 shots per game. NHL.com describes him as a top-six and first-power-play fixture and notes a 61.5% faceoff win rate. Projection: even a moderate scoring rebound on top of that category floor can beat his later market cost.",
+      "scoringFit": [
+        "Excellent for formats counting points, shots, hits and faceoff wins.",
+        "PP1 deployment supports power-play production.",
+        "Multi-position listing is unusually flexible."
+      ],
+      "scoringCautions": [
+        "His 103-point peak should not be treated as the median outcome.",
+        "Faceoff value disappears in leagues that do not count the category."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 101,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 116.6,
+          "format": "Yahoo Fantasy ADP displayed by Daily Faceoff",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Age-related decline remains possible.",
+        "Prior 100-point peak can anchor expectations too high."
+      ],
+      "sources": [
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-bounce-back-candidates-for-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-08-20",
+          "supports": "Top-six/PP1 role, category rates, faceoff strength and prior scoring ceiling."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current NYR identity, C/LW/RW listing and market valuation."
+        }
+      ]
+    },
+    {
+      "name": "Dylan Larkin",
+      "nhlPlayerId": 8477946,
+      "team": "DET",
+      "positions": ["C"],
+      "tags": ["value", "bust_risk"],
+      "confidence": "medium",
+      "thesis": "Confirmed: Larkin remains a Detroit player as of September 17 but requested a trade in June and suffered an upper-body injury immediately before camp; the Red Wings said he would miss the start of on-ice camp activities and supplied no return timeline. Projection: his Yahoo price was discounted relative to Daily Faceoff consensus before the injury, but uncertainty around health and team destination makes that apparent value fragile.",
+      "scoringFit": [
+        "Points and power-play formats can benefit if he resumes a normal first-line role.",
+        "A later cost can be attractive once health is clarified."
+      ],
+      "scoringCautions": [
+        "Current injury has no public timetable.",
+        "A trade would change linemates, role and team context.",
+        "Center is comparatively replaceable."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 71,
+          "format": "2026-27 multi-category consensus overall ranking published before the latest camp injury update",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 91.9,
+          "format": "Yahoo Fantasy ADP displayed before the September 16 injury update",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Upper-body injury with no announced timeline.",
+        "Public trade request.",
+        "Possible change in team and role."
+      ],
+      "sources": [
+        {
+          "url": "https://thehockeynews.com/news/latest-news/nhl-injury-roundup-latest-on-larkin-barzal-domi-demko-and-more",
+          "publisher": "The Hockey News",
+          "publishedAt": "2026-09-16",
+          "supports": "Current upper-body injury, absence from start of camp and trade-request context."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Pre-injury market value and current Detroit listing."
+        }
+      ]
+    },
+    {
+      "name": "Mathew Barzal",
+      "nhlPlayerId": 8478445,
+      "team": "NYI",
+      "positions": ["C", "RW"],
+      "tags": ["value", "bust_risk"],
+      "confidence": "medium",
+      "thesis": "Confirmed: the Islanders announced that Barzal would not skate for two weeks because he aggravated a prior injury and developed inflammation. That two-week period runs to approximately opening night, leaving his availability uncertain. Projection: his pre-injury market price was already later than Daily Faceoff's consensus rank, so he can still become value if the absence is brief; any setback would reverse that conclusion.",
+      "scoringFit": [
+        "Points and assists are the primary strengths.",
+        "Later ADP creates upside if he quickly resumes top offensive usage."
+      ],
+      "scoringCautions": [
+        "Opening-night availability is uncertain.",
+        "Recurring/aggravated injury is more concerning than a routine maintenance absence."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 117,
+          "format": "2026-27 multi-category consensus overall ranking before the latest injury announcement",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 155.6,
+          "format": "Yahoo Fantasy ADP displayed before the latest injury announcement",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Aggravation of a prior injury.",
+        "No skating for two weeks.",
+        "Return timing overlaps the Islanders' first regular-season game."
+      ],
+      "sources": [
+        {
+          "url": "https://thehockeynews.com/news/latest-news/nhl-injury-roundup-latest-on-larkin-barzal-domi-demko-and-more",
+          "publisher": "The Hockey News",
+          "publishedAt": "2026-09-16",
+          "supports": "Islanders statement, two-week shutdown and opening-night uncertainty."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Pre-news market rank/ADP and C/RW listing."
+        }
+      ]
+    },
+    {
+      "name": "Porter Martone",
+      "nhlPlayerId": 8485406,
+      "team": "PHI",
+      "positions": ["RW"],
+      "tags": ["breakout", "bust_risk", "fade"],
+      "confidence": "medium",
+      "thesis": "Confirmed: Philadelphia's young right wing carries one of the highest rookie market prices; Daily Faceoff's consensus ranked him 109th while its displayed Yahoo ADP was 68.8. NHL.com's Philadelphia projection also placed him around the top-70 fantasy range. Projection: his talent and role ceiling are legitimate, but the cost assumes a fast conversion of rookie opportunity into NHL production, leaving substantial downside if minutes, power-play share or scoring efficiency develop more slowly.",
+      "scoringFit": [
+        "Upside is strongest in goals, points and power-play formats.",
+        "Rookie ceiling has more value in upside-oriented redraft strategies."
+      ],
+      "scoringCautions": [
+        "Yahoo market price already assumes a major immediate impact.",
+        "Rookie scoring ranges are wide.",
+        "A player can be an excellent long-term asset while still being a redraft fade at an aggressive cost."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 109,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 68.8,
+          "format": "Yahoo Fantasy ADP displayed by Daily Faceoff",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Large rookie premium.",
+        "Roughly 40-pick gap between Yahoo cost and Daily Faceoff consensus ranking.",
+        "NHL role and scoring translation are inherently less established than for veteran players at a similar price."
+      ],
+      "sources": [
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Philadelphia identity, RW position, consensus rank and Yahoo ADP."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-adp-yahoo-vs-espn-vs-fantrax-vs-cbs",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-14",
+          "supports": "Cross-platform evidence that Martone's draft cost differs materially by site and that Yahoo pricing is aggressive."
+        }
+      ]
+    },
+    {
+      "name": "Gavin McKenna",
+      "nhlPlayerId": 8486067,
+      "team": "TOR",
+      "positions": ["LW"],
+      "tags": ["breakout", "bust_risk", "fade"],
+      "confidence": "medium",
+      "thesis": "Confirmed: Toronto selected McKenna first overall in the 2026 NHL Draft and signed him to an entry-level contract; he had 51 points in 35 games at Penn State and 14 in seven games at the World Juniors. In fantasy markets, Daily Faceoff's consensus had him 112th versus a displayed Yahoo ADP of 93.7. Projection: he has immediate NHL scoring upside, but the redraft market is asking managers to pay before his exact NHL line, power-play share and ice-time floor are established.",
+      "scoringFit": [
+        "Points and assists offer the clearest rookie upside.",
+        "More attractive in leagues willing to tolerate early-season role volatility."
+      ],
+      "scoringCautions": [
+        "Exact top-six and power-play deployment was not verified as locked.",
+        "Rookie production is volatile.",
+        "Yahoo price is earlier than Daily Faceoff consensus."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 112,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 93.7,
+          "format": "Yahoo Fantasy ADP displayed by Daily Faceoff",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": null,
+      "goalieWorkload": null,
+      "risks": [
+        "Uncertain NHL deployment.",
+        "First-year scoring variance.",
+        "Market already prices meaningful immediate production."
+      ],
+      "sources": [
+        {
+          "url": "https://www.reuters.com/sports/leafs-no-1-pick-gavin-mckenna-signs-entry-level-contract--flm-2026-07-03/",
+          "publisher": "Reuters",
+          "publishedAt": "2026-07-03",
+          "supports": "Toronto identity, No. 1 draft status, contract and pre-NHL production."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "Current TOR listing, LW position, consensus ranking and Yahoo ADP."
+        }
+      ]
+    },
+    {
+      "name": "John Carlson",
+      "nhlPlayerId": 8474590,
+      "team": "TBL",
+      "positions": ["D"],
+      "tags": ["bounce_back", "value", "reach_target"],
+      "confidence": "high",
+      "thesis": "Confirmed: Carlson is coming off his fifth 60-point season and is now in Tampa Bay. NHL.com projects him on the first power play with Nikita Kucherov, Brayden Point and Jake Guentzel. Projection: moving into that man-advantage environment can sustain or even increase his offensive output despite his age, making him a defensible way to chase high-end defense scoring after the first defense tier is gone.",
+      "scoringFit": [
+        "Excellent for defenseman points and PPP.",
+        "Particularly valuable in leagues where offensive defensemen create positional scarcity."
+      ],
+      "scoringCautions": [
+        "Age raises durability and decline risk.",
+        "First-power-play deployment should still be monitored through camp."
+      ],
+      "marketReferences": [
+        {
+          "provider": "Daily Faceoff",
+          "kind": "ranking",
+          "value": 67,
+          "format": "2026-27 multi-category consensus overall ranking",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        },
+        {
+          "provider": "Yahoo Fantasy via Daily Faceoff",
+          "kind": "adp",
+          "value": 83.8,
+          "format": "Yahoo Fantasy ADP displayed by Daily Faceoff",
+          "asOf": "2026-09-15",
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus"
+        }
+      ],
+      "reachRationale": "A modest reach is defensible for managers who need power-play offense from defense because confirmed team context gives him access to Tampa Bay's elite creators; this is a positional/format argument, not a universal pick recommendation.",
+      "goalieWorkload": null,
+      "risks": [
+        "Age-related decline.",
+        "Power-play quarterback role must hold.",
+        "Defense ADP varies sharply with league scoring."
+      ],
+      "sources": [
+        {
+          "url": "https://www.nhl.com/news/topic/fantasy/fantasy-hockey-bounce-back-candidates-for-2026-27-season",
+          "publisher": "NHL.com",
+          "publishedAt": "2026-08-20",
+          "supports": "Tampa Bay identity, 60-point history and expected PP1 role with Kucherov/Point/Guentzel."
+        },
+        {
+          "url": "https://www.dailyfaceoff.com/news/2026-27-fantasy-hockey-rankings-top-250-consensus",
+          "publisher": "Daily Faceoff",
+          "publishedAt": "2026-09-15",
+          "supports": "D position, current ranking and market discount."
+        }
+      ]
+    }
+  ]
+}

@@ -8,7 +8,7 @@ import { assertYahooLiveDraftServerAccess, isConfirmedYahooLiveDraftAccessLoss, 
 
 const userId = "11111111-1111-4111-8111-111111111111";
 const environment = { YAHOO_LIVE_DRAFT_ENABLED: "true", YAHOO_LIVE_DRAFT_PROVIDER_VALIDATED: "false", YAHOO_LIVE_DRAFT_ROLLOUT_STAGE: "staff", YAHOO_LIVE_DRAFT_STAFF_USER_IDS: userId };
-const flags = { checkout: false, recommendations: false, dust: false, blended_csv: false, saved_drafts: false, private_imports: false, scenarios: false, reports: false, god_view: false };
+const flags = { checkout: false, recommendations: false, dust: false, blended_csv: false, saved_drafts: false, private_imports: false, scenarios: false, reports: false, god_view: false, mock_draft_advanced: false };
 const eligibleAccess = resolveDraftProAccess({ now: new Date("2026-09-12T00:00:00Z"), userId, flags, patreonVerificationAvailable: true, entitlements: [{ source: "complimentary", status: "active", effectiveFrom: "2026-09-01T00:00:00Z", effectiveTo: "2027-07-01T04:00:00Z" }] });
 const assert = (access: DraftProAccess, overrides = {}) => assertYahooLiveDraftServerAccess({ access, environment: { ...environment, ...overrides }, userId });
 

@@ -370,6 +370,7 @@ export default function PlayerStatsPage({
                   {!isGoalie && lineupDeploymentTallies.length > 0 && (
                     <PlayerLineupDeploymentGrid
                       rows={lineupDeploymentTallies}
+                      positions={player.position ? [player.position] : undefined}
                     />
                   )}
                 </div>

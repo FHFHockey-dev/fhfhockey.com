@@ -30,6 +30,9 @@ import DraftSettings, { type DraftSettingsHandle } from "./DraftSettings";
 import { validateDraftSettings, bookmarkImportError } from "lib/draftDashboard/settingsValidation";
 import DraftBoard from "./DraftBoard";
 import DraftWorkspaceHeader from "./DraftWorkspaceHeader";
+import dynamic from "next/dynamic";
+import type { MockFlags } from "lib/mockDraft/flags";
+const MockDraftWorkspace = dynamic(() => import("./MockDraftWorkspace"), { ssr: false });
 import DraftSettingsShell, { type SettingsSection } from "./DraftSettingsShell";
 import DraftStatus from "./DraftStatus";
 import LeagueStandings from "./LeagueStandings";
@@ -420,7 +423,8 @@ function forwardGroupingForRoster(rosterConfig: Record<string, number>) {
   return null;
 }
 
-const DraftDashboard: React.FC = () => {
+const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { enabled: false, collection: false, board: false } }) => {
+  const [mockOpen, setMockOpen] = useState(false);
   const { user, isLoading: authLoading } = useAuth();
   const draftRanking = useDraftRanking(user?.id || null);
   const yahooDraftSync = useYahooDraftSync(Boolean(user?.id));
@@ -3179,6 +3183,7 @@ const DraftDashboard: React.FC = () => {
   // Add handy keyboard shortcuts for power users
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (mockOpen) return;
       // Avoid when focused inside inputs/textareas/contenteditable
       if (
         isGlobalShortcutBlockedTarget(e.target) ||
@@ -3207,7 +3212,7 @@ const DraftDashboard: React.FC = () => {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [manualDraftingEnabled, undoLastPick]);
+  }, [manualDraftingEnabled, undoLastPick, mockOpen]);
 
   const hasLoadedPlayers = allPlayers.length > 0;
   const isLoading =
@@ -3508,6 +3513,7 @@ const DraftDashboard: React.FC = () => {
       data-full-settings={fullSettings}
       data-mobile-tab={activeMobileTab}
     >
+      {mockOpen && <MockDraftWorkspace flags={mockFlags} players={allPlayers} prorate84={prorate84} league={{ season: String(FANTASY_PROJECTION_SEASON_ID), teamCount: draftSettings.teamCount, leagueType: draftSettings.leagueType ?? "points", scoring: draftSettings.leagueType === "categories" ? draftSettings.categoryWeights ?? {} : draftSettings.scoringCategories, goalieScoring: goaliePointValues, roster: effectiveRosterConfig, grouping: forwardGrouping }} onExit={() => setMockOpen(false)} />}
       <MobileDraftTabs
         activeTab={activeMobileTab}
         onChange={(tab) => {
@@ -3868,6 +3874,7 @@ const DraftDashboard: React.FC = () => {
 
       <GodView
         toolbar={<DraftWorkspaceHeader
+          onMock={mockFlags.enabled ? () => setMockOpen(true) : undefined}
           soundControl={sessionReady && !isLoading && (draftMode !== "yahoo" || yahooDraftSync.draftState) ? <DraftSoundCues
             key={`${draftMode}:${yahooDraftSync.draftState?.session.id || "local"}:${myTeamId}`}
             currentPickNumber={currentPick}

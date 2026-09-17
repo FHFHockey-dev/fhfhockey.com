@@ -167,12 +167,12 @@
   height: 100%; // Force full height
   border-radius: 0;
   overflow: hidden;
-  border: 1px solid rgba(v.$color-white, 0.06);
-  background: v.$surface-1;
-  box-shadow:
-    0 20px 44px rgba(v.$color-black, 0.32),
-    0 0 0 1px rgba(v.$color-white, 0.04) inset,
-    0 0 24px rgba(v.$primary-color, 0.06);
+  // border: 1px solid rgba(v.$color-white, 0.06);
+  background: #14181e;
+  // box-shadow:
+  //   0 20px 44px rgba(v.$color-black, 0.32),
+  //   0 0 0 1px rgba(v.$color-white, 0.04) inset,
+  //   0 0 24px rgba(v.$primary-color, 0.06);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -362,7 +362,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    border-left: 0; // let the center separator read as the shared boundary
+    border-left: 2px solid rgba(v.$secondary-color, 0.55);
   }
 }
 
@@ -382,7 +382,7 @@
 
   @media (min-width: v.$breakpoint-desktop) {
     height: 100%;
-    border-right: 0; // let the center separator read as the shared boundary
+    border-right: 2px solid rgba(v.$secondary-color, 0.55);
   }
 }
 
@@ -646,7 +646,7 @@
   align-items: stretch;
   flex-shrink: 0;
   border: 1px solid rgba(v.$color-white, 0.06);
-  border-bottom: 1px solid rgba(v.$secondary-color, 0.22);
+  border-bottom: 4px solid rgba(v.$secondary-color, 0.22);
   border-radius: 18px 18px 0 0;
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
   text-transform: uppercase;
@@ -727,37 +727,144 @@
 
 .controlsBar {
   display: grid;
-  grid-template-columns: auto minmax(0, 2fr) auto;
-  align-items: end;
-  gap: v.$space-md;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: v.$space-sm;
   width: 95%;
   margin: -18px auto;
-  padding: v.$space-md clamp(14px, 1.8vw, 24px);
+  padding: 12px clamp(14px, 1.8vw, 24px) 36px;
   background: v.$surface-1;
   border: 1px solid rgba(v.$color-white, 0.08);
-  box-shadow:
-    0 18px 36px rgba(v.$color-black, 0.28),
-    inset 0 1px 0 rgba(v.$color-white, 0.04);
+  box-shadow: 0 18px 36px rgba(v.$color-black, 0.28), inset 0 1px 0 rgba(v.$color-white, 0.04);
   position: relative;
   z-index: 4;
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
+  margin-bottom: 0;
 
-  @media (max-width: 980px) {
-    grid-template-columns: 1fr;
-    align-items: stretch;
-    gap: v.$space-sm;
-    margin-top: v.$space-xs;
+  .dateNav { width: max-content; position: relative; }
+  .dateButtonPrev, .dateButtonNext { width: auto; flex-shrink: 0; }
+  .navSpinner { position: absolute; left: calc(100% + 6px); }
+
+  button:hover:not(:disabled) {
+    color: v.$surface-1 !important;
+
+    .weekScoreHelpIcon { color: v.$surface-1 !important; }
+  }
+
+  @media (max-width: 1100px) {
+    padding-inline: 10px;
+    .weekRange { padding-inline: 4px; font-size: 0.75rem; }
+    .dateNav { gap: 4px; }
+    .dateButtonPrev, .dateButtonNext { padding-inline: 6px; }
+    .rightControls { gap: 4px; }
+    .modeButton, .modeButtonActive { padding-inline: 6px; font-size: 0.7rem; }
+  }
+
+  @media (max-width: 700px) {
+    padding-bottom: 58px;
+    .rightControls { flex-direction: column; }
   }
 }
 
 .leftControls {
-  display: inline-flex;
-  align-items: center;
-  gap: v.$space-sm;
-  justify-content: flex-start;
-  min-width: 0;
-  flex-wrap: wrap;
+  --controls-menu-accent: #{v.$primary-color};
+  position: relative;
   justify-self: start;
   grid-column: 1;
+  z-index: 6;
+}
+
+.rightControls {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: v.$space-sm;
+}
+
+.controlsMenuTrigger {
+  @extend .panelControlButton;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+}
+
+.hamburgerIcon {
+  position: relative;
+  width: 18px;
+  height: 14px;
+  span {
+    position: absolute;
+    left: 0;
+    width: 18px;
+    height: 2px;
+    background: currentColor;
+    transition: transform 200ms ease, opacity 150ms ease;
+    &:nth-child(1) { top: 0; }
+    &:nth-child(2) { top: 6px; }
+    &:nth-child(3) { top: 12px; }
+  }
+}
+
+.controlsMenuTrigger[aria-expanded="true"] .hamburgerIcon span {
+  &:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+  &:nth-child(2) { opacity: 0; }
+  &:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+}
+
+.leftControls .controlsMenuTrigger[aria-expanded="true"] {
+  background: var(--controls-menu-accent) !important;
+  border-color: var(--controls-menu-accent);
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.controlsMenu {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: max-content;
+  height: 40px;
+  box-sizing: border-box;
+  max-width: calc(95vw - 80px);
+  padding: 2px 6px;
+  background: v.$surface-1;
+  border: 2px solid rgba(v.$primary-color, 0.55);
+  border-left: 0;
+  border-right: 6px solid var(--controls-menu-accent);
+  border-radius: 0 v.$border-radius-sm v.$border-radius-sm 0;
+  box-shadow: 0 8px 24px rgba(v.$color-black, 0.45);
+  visibility: hidden;
+  overflow: hidden;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 350ms ease-in, visibility 0s linear 350ms;
+  pointer-events: none;
+
+  &[data-open="true"] {
+    visibility: visible;
+    transform: scaleX(1);
+    transition: transform 350ms cubic-bezier(0.5, -0.3, 0.5, 1.5), visibility 0s;
+    pointer-events: auto;
+  }
+
+  .panelControlButton,
+  .orientationToggleButton {
+    height: 32px;
+    min-height: 32px;
+    padding: 0 8px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .controlsMenu, .controlsMenu[data-open="true"], .hamburgerIcon span { transition: none; }
 }
 
 .dateCluster {
@@ -1001,29 +1108,21 @@
 
 // Legend bar
 .legendBar {
-  margin: v.$space-sm v.$space-sm;
-  padding: v.$space-sm v.$space-md;
+  position: absolute;
+  bottom: 4px;
+  left: 0;
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   font-size: 0.65rem;
   letter-spacing: 0.05em;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border-bottom: 1px solid rgba(v.$color-white, 0.06);
-  background: v.$surface-1;
-  border-radius: 0;
-
-  @media (max-width: 980px) {
-    grid-template-columns: 1fr;
-    justify-items: start;
-  }
 }
 
 .legendMeta {
   min-width: 0;
-  width: 67%;
+  width: auto;
 
   ul {
     list-style: none;
@@ -1032,7 +1131,7 @@
     align-items: flex-start;
     justify-content: center;
     flex-wrap: wrap;
-    gap: v.$space-lg;
+    gap: 6px 16px;
     padding: 0;
     margin: 0;
   }
@@ -1054,7 +1153,7 @@
   flex-direction: row;
   align-items: center;
   justify-content: flex-end;
-  width: 33%;
+  width: auto;
 
   @media (max-width: 980px) {
     justify-self: start;
@@ -1113,16 +1212,18 @@
   box-shadow: 0 0 0 1px rgba(v.$color-white, 0.15);
 }
 .legendOffNight {
-  background: var(--color-off-night);
-}
-.legendHeavy {
-  background: var(--color-heavy);
-}
-.legendBest {
   background: v.$schedule-green;
 }
-.legendWorst {
+.legendHeavy {
   background: v.$schedule-red;
+}
+.legendBest {
+  background: rgba(v.$schedule-green, 0.17);
+  box-shadow: inset 0 0 0 1px rgba(v.$schedule-green, 0.62);
+}
+.legendWorst {
+  background: rgba(v.$schedule-red, 0.17);
+  box-shadow: inset 0 0 0 1px rgba(v.$schedule-red, 0.62);
 }
 
 .desktopMasterSection {
@@ -1133,7 +1234,10 @@
 
 @media (min-width: v.$breakpoint-desktop) {
   .desktopMasterSection .scheduleGridContainer {
+    background: v.$surface-1;
     overflow: visible;
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
   }
 
   .desktopMasterSection .masterTableShell {
@@ -1149,7 +1253,7 @@
 .masterTableShell {
   width: 100%;
   min-width: 0;
-  padding: 0 v.$space-sm v.$space-sm;
+  // padding: 0 v.$space-sm v.$space-sm;
 }
 
 .masterMetricsUnavailable {
@@ -1313,7 +1417,7 @@
 
 .masterSectionBanner {
   height: var(--master-group-row-height);
-  background: #1b2026 !important;
+  background: #14181e !important;
   text-align: center;
   border-right: 1px solid rgba(v.$color-white, 0.05);
   box-shadow:
@@ -1322,10 +1426,12 @@
 }
 
 .masterSectionBannerMetrics {
+  border-right: 2px solid rgba(v.$secondary-color, 0.55) !important;
   background: #1d2329 !important;
 }
 
 .masterSectionBannerFourWeek {
+  border-left: 2px solid rgba(v.$secondary-color, 0.55) !important;
   background: #1c2530 !important;
 }
 
@@ -1641,7 +1747,7 @@
   min-width: 0 !important;
   max-width: none;
   background: #1c2530 !important;
-  border-left: 1px solid rgba(v.$color-blue-300, 0.24);
+  border-left: 2px solid rgba(v.$secondary-color, 0.55);
   border-right: 1px solid rgba(v.$color-blue-300, 0.12);
 }
 
@@ -1716,12 +1822,12 @@
 }
 
 .masterFourWeekLead {
-  border-left: 1px solid rgba(v.$color-blue-300, 0.24);
+  border-left: 2px solid rgba(v.$secondary-color, 0.55);
 }
 
 .masterFourWeekLeadCell {
   background: #1a242e !important;
-  border-left: 1px solid rgba(v.$color-blue-300, 0.24);
+  border-left: 2px solid rgba(v.$secondary-color, 0.55);
   border-right: 1px solid rgba(v.$color-blue-300, 0.18);
 }
 
@@ -1749,11 +1855,11 @@
   border-right: 1px solid rgba(v.$color-blue-300, 0.18);
 }
 
-.masterRowBest td:first-child {
+.masterRowBest .masterTeamCell {
   box-shadow: inset 6px 0 0 rgba(v.$schedule-green, 0.95);
 }
 
-.masterRowWorst td:first-child {
+.masterRowWorst .masterTeamCell {
   box-shadow: inset 6px 0 0 rgba(v.$schedule-red, 0.95);
 }
 
@@ -1883,25 +1989,25 @@
 
 // Shared matchup cell intensity fill backgrounds (when there IS a game)
 .masterTable tbody td.cellInnerBorder.off-night-day {
-  background: rgba(v.$schedule-green, 0.12) !important;
+  background: color.mix(v.$schedule-green, #14181e, 12%) !important;
 }
 .masterTable tbody td.cellInnerBorder.medium-heavy-day {
-  background: rgba(v.$schedule-yellow, 0.1) !important;
+  background: color.mix(v.$schedule-yellow, #14181e, 10%) !important;
 }
 .masterTable tbody td.cellInnerBorder.heavy-day {
-  background: rgba(v.$schedule-red, 0.12) !important;
+  background: color.mix(v.$schedule-red, #14181e, 12%) !important;
 }
 
 .masterTable tbody tr:nth-child(even) td.cellInnerBorder.off-night-day {
-  background: rgba(v.$schedule-green, 0.16) !important;
+  background: color.mix(v.$schedule-green, #14181e, 16%) !important;
 }
 
 .masterTable tbody tr:nth-child(even) td.cellInnerBorder.medium-heavy-day {
-  background: rgba(v.$schedule-yellow, 0.14) !important;
+  background: color.mix(v.$schedule-yellow, #14181e, 14%) !important;
 }
 
 .masterTable tbody tr:nth-child(even) td.cellInnerBorder.heavy-day {
-  background: rgba(v.$schedule-red, 0.16) !important;
+  background: color.mix(v.$schedule-red, #14181e, 16%) !important;
 }
 
 .cellInnerBorder.off-night-day {
@@ -2351,7 +2457,7 @@
   justify-content: flex-start;
   min-height: 32px;
   line-height: 100%;
-  width: 33%;
+  width: auto;
   padding: 0;
   border: 0;
   background: transparent;
@@ -4562,5 +4668,21 @@
       object-fit: contain;
       opacity: 0.75;
     }
+  }
+}
+
+// Keep the adjoining metric panels unchanged while darkening the schedule.
+.masterTable {
+  tbody td:not(.masterMetricCell):not(.masterFourWeekCell):not(.masterFourWeekLeadCell):not(.masterCollapseSpacer):not([data-intensity]) {
+    background-color: #14181e;
+  }
+
+  tbody tr:nth-child(even) td:not(.masterMetricCell):not(.masterFourWeekCell):not(.masterFourWeekLeadCell):not(.masterCollapseSpacer):not([data-intensity]) {
+    background-color: #171c22;
+  }
+
+  .masterMetricCell.masterGroupEdge,
+  .masterMetricHeader.masterGroupEdge {
+    border-right: 2px solid rgba(v.$secondary-color, 0.55) !important;
   }
 }

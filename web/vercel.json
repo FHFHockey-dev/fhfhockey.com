@@ -8,6 +8,10 @@
   },
   "crons": [
     {
+      "path": "/api/internal/starter-board",
+      "schedule": "* * * * *"
+    },
+    {
       "path": "/api/internal/yahoo-live-draft",
       "schedule": "* * * * *"
     },

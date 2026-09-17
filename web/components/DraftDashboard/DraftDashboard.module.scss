@@ -107,6 +107,7 @@
 }
 .leftPanel {
   grid-area: graph;
+  overflow: hidden;
   container-type: size;
   container-name: graph;
 }

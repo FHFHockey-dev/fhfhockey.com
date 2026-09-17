@@ -2,6 +2,7 @@
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./database-generated.types";
+import { interceptProjectionQuery } from "lib/projections/queryCaptureHook";
 
 let cachedServiceRoleClient: SupabaseClient<Database> | undefined;
 
@@ -34,6 +35,12 @@ export function getServiceRoleClient(): SupabaseClient<Database> {
 // client. Configuration is validated when a privileged method is first used.
 const serviceRoleClient = new Proxy({} as SupabaseClient<Database>, {
   get(_target, property) {
+    if (property === "from" || property === "rpc") {
+      return (...args: unknown[]) => {
+        const live = () => (getServiceRoleClient()[property] as any)(...args);
+        return interceptProjectionQuery(property, args, live) ?? live();
+      };
+    }
     const client = getServiceRoleClient();
     const value = Reflect.get(client, property, client);
     return typeof value === "function" ? value.bind(client) : value;

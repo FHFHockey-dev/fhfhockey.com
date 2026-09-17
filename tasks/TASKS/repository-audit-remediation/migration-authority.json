@@ -631,6 +631,96 @@
       "migrationClass": "feature",
       "rolloutGate": "Separate deployment authorization and an exact environment receipt are required.",
       "stateEvidence": "No exact applied-state receipt recorded; complimentary access codes remain local-only pending release validation."
+    },
+    {
+      "order": 63,
+      "path": "supabase/migrations/20260909161959_consolidate_duplicate_nst_and_remove_legacy_rolling.sql",
+      "sha256": "cf4c033158b0a329ff8f45554124f26aac0d2b5900fb290e8005c95fa1cee046",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "ordered",
+      "rolloutGate": "Existing hosted migration; preserve production rollout configuration.",
+      "stateEvidence": "Confirmed in fyhftlxokyjtpndbkfse hosted migration history on 2026-09-17."
+    },
+    {
+      "order": 64,
+      "path": "supabase/migrations/20260916012353_starter_board_game_revisions.sql",
+      "sha256": "b9010cce9b65ce587903e8a7ac489ffe706492f502b0d7b34bbd61ec18b18cde",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Existing hosted migration; preserve production rollout configuration.",
+      "stateEvidence": "Confirmed in fyhftlxokyjtpndbkfse hosted migration history on 2026-09-17."
+    },
+    {
+      "order": 65,
+      "path": "supabase/migrations/20260916014510_starter_board_news_queue.sql",
+      "sha256": "9f808d710c45fd7b82e7b452609f246332bcad762d6cd843236229c0b11c1203",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Existing hosted migration; preserve production rollout configuration.",
+      "stateEvidence": "Confirmed in fyhftlxokyjtpndbkfse hosted migration history on 2026-09-17."
+    },
+    {
+      "order": 66,
+      "path": "supabase/migrations/20260916023000_starter_board_release_control.sql",
+      "sha256": "a5796fadca8673f9bb813adec52a51f5dda8ce36c48f3d5cb78200ef1a8be8ab",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Existing hosted migration; preserve production rollout configuration.",
+      "stateEvidence": "Confirmed in fyhftlxokyjtpndbkfse hosted migration history on 2026-09-17."
+    },
+    {
+      "order": 67,
+      "path": "supabase/migrations/20260916044919_starter_board_atomic_lineup_capture.sql",
+      "sha256": "5b29e8c4337d0e6f0b2d34c421e0f26bbe00327713d9800dcf7cecfb3f34c93a",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Existing hosted migration; preserve production rollout configuration.",
+      "stateEvidence": "Confirmed in fyhftlxokyjtpndbkfse hosted migration history on 2026-09-17."
+    },
+    {
+      "order": 68,
+      "path": "supabase/migrations/20260916045842_starter_board_operational_reporting.sql",
+      "sha256": "5342299a0e898b9013827169fccdcd2e9bae99af46e939827d04865f911d3058",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Existing hosted migration; preserve production rollout configuration.",
+      "stateEvidence": "Confirmed in fyhftlxokyjtpndbkfse hosted migration history on 2026-09-17."
+    },
+    {
+      "order": 69,
+      "path": "supabase/migrations/20260916052239_starter_board_validation_registry.sql",
+      "sha256": "8918c3486c2d28314443cf6e4cb7d816f4a47f9fa9430a6ecb527875b33b92a7",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Existing hosted migration; preserve production rollout configuration.",
+      "stateEvidence": "Confirmed in fyhftlxokyjtpndbkfse hosted migration history on 2026-09-17."
+    },
+    {
+      "order": 70,
+      "path": "supabase/migrations/20260916060521_starter_board_atomic_goalie_capture.sql",
+      "sha256": "2563061e3d283472dda3ad0106557e78c2e15202c23b5b530273e7db016ae1cb",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Existing hosted migration; preserve production rollout configuration.",
+      "stateEvidence": "Confirmed in fyhftlxokyjtpndbkfse hosted migration history on 2026-09-17."
+    },
+    {
+      "order": 71,
+      "path": "supabase/migrations/20260917133519_mock_draft_adp.sql",
+      "sha256": "4220ab13befcd5231d1030a699296525e4d63126c9b06141aeb2c04546df1f04",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "feature",
+      "rolloutGate": "Keep rollout flags disabled until feature activation is authorized.",
+      "stateEvidence": "Not present in hosted migration history on 2026-09-17; mock draft rollout flags remain disabled."
     }
   ]
 }

@@ -7,6 +7,8 @@ import {
   parseRetryAfterSeconds,
   yahooFantasyResourceUrl,
   YahooLiveDraftError,
+  assertYahooLeagueKey,
+  YAHOO_FANTASY_API_BASE_URL,
 } from "./liveDraft";
 import type { YahooLiveDraftClient } from "./liveDraftDatabase";
 import {
@@ -165,20 +167,51 @@ export async function fetchYahooDraftResource(args: {
   resource: YahooDraftResource;
   userId: string;
 }): Promise<YahooProviderJsonResult> {
+  const format = args.format ?? getYahooLiveDraftResponseFormat();
+  return fetchYahooJson(args, yahooFantasyResourceUrl(args.leagueKey, args.resource, args.context, format), format);
+}
+
+/** Read-only board resources; callers must first authorize the stored league/team. */
+export async function fetchYahooBoardResource(args: Omit<Parameters<typeof fetchYahooDraftResource>[0], "resource"> & {
+  resource: { type: "roster"; teamKey: string; date: string }
+    | { type: "league_rosters" }
+    | { type: "availability"; playerKeys: string[] }
+    | { type: "available_players"; start: number };
+}) {
+  assertYahooLeagueKey(args.leagueKey, args.context);
+  const format = args.format ?? getYahooLiveDraftResponseFormat();
+  let path: string;
+  if (args.resource.type === "league_rosters") {
+    path = `league/${encodeURIComponent(args.leagueKey)}/teams/roster/players`;
+  } else if (args.resource.type === "roster") {
+    const { teamKey, date } = args.resource;
+    if (!/^\d+\.l\.\d+\.t\.\d+$/.test(teamKey) || !teamKey.startsWith(`${args.leagueKey}.t.`)
+      || !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Invalid Yahoo roster scope");
+    path = `team/${encodeURIComponent(teamKey)}/roster;date=${date}`;
+  } else if (args.resource.type === "available_players") {
+    const { start } = args.resource;
+    if (!Number.isInteger(start) || start < 0 || start > 75 || start % 25 !== 0) throw new Error("Invalid Yahoo availability page scope");
+    // Yahoo's league-context A filter includes both free agents and waivers.
+    // Explicit ownership still determines each returned player's status.
+    path = `league/${encodeURIComponent(args.leagueKey)}/players;status=A;sort=OR;start=${start};count=25/ownership`;
+  } else {
+    const keys = args.resource.playerKeys;
+    if (!keys.length || keys.length > 25 || keys.some((key) => !/^\d+\.p\.\d+$/.test(key)
+      || !key.startsWith(`${args.context.gameKey}.p.`))) throw new Error("Invalid Yahoo player scope");
+    path = `league/${encodeURIComponent(args.leagueKey)}/players;player_keys=${keys.map(encodeURIComponent).join(",")}/ownership`;
+  }
+  return fetchYahooJson(args, `${YAHOO_FANTASY_API_BASE_URL}/${path}?format=${format === "json_f" ? "json_f" : "json"}`, format);
+}
+
+async function fetchYahooJson(args: Omit<Parameters<typeof fetchYahooDraftResource>[0], "resource">,
+  url: string, format: YahooLiveDraftResponseFormat): Promise<YahooProviderJsonResult> {
   const fetchImpl = args.fetchImpl ?? fetch;
   const now = args.now ?? new Date();
-  const format = args.format ?? getYahooLiveDraftResponseFormat();
   let token = await getYahooAccessToken(args.connectedAccountId, args.userId, {
     client: args.client,
     fetchImpl,
     now,
   });
-  const url = yahooFantasyResourceUrl(
-    args.leagueKey,
-    args.resource,
-    args.context,
-    format,
-  );
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const startedAt = Date.now();

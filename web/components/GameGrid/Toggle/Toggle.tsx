@@ -49,7 +49,7 @@ export default function Toggle({
         tabIndex={-1}
       />
       <span
-        className={`${styles.slider} ${styles.round}`}
+        className={styles.slider}
         role="switch"
         aria-label={ariaLabel}
         aria-describedby={ariaDescribedby}

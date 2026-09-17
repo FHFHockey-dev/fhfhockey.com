@@ -1,3 +1,4 @@
+import { starterBoardFlags } from "../starterBoardFlags";
 import { resolveLatestStartedSeasonIdForDate } from "lib/NHL/server";
 import supabase from "lib/supabase/server";
 
@@ -13,6 +14,7 @@ import type {
 } from "../types/run-forge-projections.types";
 import { toDayBoundsUtc } from "../utils/date-utils";
 import { clamp } from "../utils/number-utils";
+import { loadDailyBoardEvidence, type DailyBoardEvidence } from "../dailyBoardEvidence";
 
 export type ProjectionPreflightStageResult = {
   currentSeasonId: number;
@@ -23,6 +25,8 @@ export type ProjectionPreflightStageResult = {
   playerAvailabilityMultiplier: Map<number, number>;
   availabilityEventByPlayer: Map<number, RosterEventRow>;
   roleEventByPlayer: Map<number, RosterEventRow>;
+  ppEventByPlayer: Map<number, RosterEventRow>;
+  dailyBoardEvidence: DailyBoardEvidence;
   goalieOverrideByTeamId: Map<
     number,
     { goalieId: number; starterProb: number }
@@ -68,6 +72,7 @@ export function availabilityMultiplierForEvent(
 export async function runProjectionPreflightStage(args: {
   asOfDate: string;
   requestedGameIds: number[];
+  decisionAsOf?: string;
 }): Promise<ProjectionPreflightStageResult> {
   const currentSeasonId = await resolveLatestStartedSeasonIdForDate(
     args.asOfDate,
@@ -100,6 +105,7 @@ export async function runProjectionPreflightStage(args: {
   const playerAvailabilityMultiplier = new Map<number, number>();
   const availabilityEventByPlayer = new Map<number, RosterEventRow>();
   const roleEventByPlayer = new Map<number, RosterEventRow>();
+  const ppEventByPlayer = new Map<number, RosterEventRow>();
   const goalieOverrideByTeamId = new Map<
     number,
     { goalieId: number; starterProb: number }
@@ -107,11 +113,13 @@ export async function runProjectionPreflightStage(args: {
   const gameMarketContextByGameId = await fetchGameMarketContextByGameIds({
     snapshotDate: args.asOfDate,
     gameIds,
+    decisionAsOf: args.decisionAsOf,
   });
   const playerPropContextByGamePlayerKey =
     await fetchPlayerPropContextByGameIds({
       snapshotDate: args.asOfDate,
       gameIds,
+      decisionAsOf: args.decisionAsOf,
     });
 
   if (teamIds.length > 0) {
@@ -121,7 +129,8 @@ export async function runProjectionPreflightStage(args: {
         "event_id,team_id,player_id,event_type,confidence,payload,effective_from,effective_to",
       )
       .in("team_id", teamIds)
-      .lte("effective_from", endTs)
+      .lte("created_at", args.decisionAsOf ?? endTs)
+      .lte("effective_from", args.decisionAsOf && args.decisionAsOf < endTs ? args.decisionAsOf : endTs)
       .order("effective_from", { ascending: false })
       .limit(5000);
     if (eventsErr) throw eventsErr;
@@ -144,14 +153,14 @@ export async function runProjectionPreflightStage(args: {
             bestAvailabilityEventByPlayer.set(event.player_id, event);
           }
         }
-        if (
-          event.event_type === "LINE_CHANGE" ||
-          event.event_type === "PP_UNIT_CHANGE"
-        ) {
+        if (event.event_type === "LINE_CHANGE") {
           const existing = bestRoleEventByPlayer.get(event.player_id);
           if (!existing || event.effective_from > existing.effective_from) {
             bestRoleEventByPlayer.set(event.player_id, event);
           }
+        }
+        if (event.event_type === "PP_UNIT_CHANGE" && !ppEventByPlayer.has(event.player_id)) {
+          ppEventByPlayer.set(event.player_id, event);
         }
       }
 
@@ -159,7 +168,7 @@ export async function runProjectionPreflightStage(args: {
         event.team_id != null &&
         event.player_id != null &&
         (event.event_type === "GOALIE_START_CONFIRMED" ||
-          event.event_type === "GOALIE_START_LIKELY")
+          (event.event_type === "GOALIE_START_LIKELY" && !starterBoardFlags().compute))
       ) {
         const starterProb =
           event.event_type === "GOALIE_START_CONFIRMED"
@@ -199,6 +208,9 @@ export async function runProjectionPreflightStage(args: {
     playerAvailabilityMultiplier,
     availabilityEventByPlayer,
     roleEventByPlayer,
+    ppEventByPlayer,
+    dailyBoardEvidence: starterBoardFlags().compute && args.decisionAsOf
+      ? await loadDailyBoardEvidence(gameIds, args.decisionAsOf) : { assertions: [], conflicts: [] },
     goalieOverrideByTeamId,
     gameMarketContextByGameId,
     playerPropContextByGamePlayerKey,

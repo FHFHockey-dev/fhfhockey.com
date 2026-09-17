@@ -1,3 +1,5 @@
+import { starterBoardFlags } from "../starterBoardFlags";
+import { bootstrapGoalieLine, loadSeasonBootstrap, type SeasonBootstrap } from "../seasonBootstrap";
 import { buildGoalieUncertainty } from "../uncertainty";
 import {
   computeGoalieProjectionModel,
@@ -94,6 +96,7 @@ export type SelectedGoalieProjection = {
 };
 
 export async function runPerGameGoalieStage(args: {
+  seasonBootstrap?: boolean;
   asOfDate: string;
   runId: string;
   horizonGames: number;
@@ -153,6 +156,10 @@ export async function runPerGameGoalieStage(args: {
   const teamDateKey = (teamId: number) => `${teamId}:${asOfDate}`;
   const playerDateKey = (playerId: number) => `${playerId}:${asOfDate}`;
   let goalieRowsUpserted = 0;
+  const seasonYear = Math.floor(game.id / 1_000_000);
+  const bootstrap = args.seasonBootstrap ? await loadSeasonBootstrap(
+    [...new Set(goalieCandidates.flatMap((candidate) => candidate.candidateGoalieIds))],
+    seasonYear * 10000 + seasonYear + 1, asOfDate, "goalie", true) : new Map<number, SeasonBootstrap>();
   for (const c of goalieCandidates) {
     if (Date.now() > deadlineMs) {
       return { timedOut: true, goalieRowsUpserted };
@@ -350,7 +357,10 @@ export async function runPerGameGoalieStage(args: {
     let starterProb = 0.5;
     let starterModelMeta: Record<string, unknown> = {};
     let topStarterScenarios: StarterScenario[] = [];
+    let boardStarterProbabilities = new Map<number, number>();
     if (c.override) {
+      boardStarterProbabilities = new Map(c.candidateGoalieIds.map((id) => [id, id === c.override!.goalieId ? c.override!.starterProb : 0]));
+      boardStarterProbabilities.set(c.override.goalieId, c.override.starterProb);
       selectedGoalieId = c.override.goalieId;
       starterProb = c.override.starterProb;
       topStarterScenarios = [
@@ -398,6 +408,7 @@ export async function runPerGameGoalieStage(args: {
         opponentGoalsFor,
       });
       const ranked = Array.from(probs.entries()).sort((a, b) => b[1] - a[1]);
+      boardStarterProbabilities = probs;
       topStarterScenarios = buildTopStarterScenarios({
         probabilitiesByGoalieId: probs,
         maxScenarios: 2,
@@ -508,7 +519,11 @@ export async function runPerGameGoalieStage(args: {
     });
 
     const scenarioProjections: StarterScenarioProjection[] = [];
-    for (const scenario of topStarterScenarios) {
+    const dailyBoardCandidates: Array<Record<string, unknown>> = [];
+    const computationScenarios = starterBoardFlags().compute
+      ? [...boardStarterProbabilities.entries()].map(([goalieId, probability], index) => ({ goalieId, probability, rawProbability: probability, rank: index + 1 }))
+      : topStarterScenarios;
+    for (const scenario of computationScenarios) {
       if (!goalieEvidenceCache.has(playerDateKey(scenario.goalieId))) {
         goalieEvidenceCache.set(
           playerDateKey(scenario.goalieId),
@@ -555,12 +570,25 @@ export async function runPerGameGoalieStage(args: {
         evidence: scenarioEvidence,
         leagueSavePct: scenarioLeagueSavePct,
       });
-      scenarioProjections.push({
+      const organicConditional = { SHOTS_AGAINST_GOALIE: shotsAgainst, SAVES_GOALIE: scenarioModel.projectedSaves,
+        GOALS_AGAINST_GOALIE: scenarioModel.projectedGoalsAllowed,
+        WINS_GOALIE: scenarioModel.winProbability, SHUTOUTS_GOALIE: scenarioModel.shutoutProbability };
+      const seasonPrior = bootstrap.get(scenario.goalieId);
+      const seasonForecast = seasonPrior ? bootstrapGoalieLine(organicConditional, seasonPrior) : null;
+      if (starterBoardFlags().compute) dailyBoardCandidates.push({
+        playerId: scenario.goalieId, startingProbability: scenario.rawProbability,
+        probabilityStatus: c.override?.starterProb === 1 ? "confirmed_evidence" : "uncalibrated_model",
+        nonStartAssumption: "zero_relief_minutes",
+        conditional: seasonForecast?.stats ?? organicConditional,
+        seasonBootstrap: seasonForecast?.disclosure ?? null,
+      });
+      const legacyScenario = topStarterScenarios.find((item) => item.goalieId === scenario.goalieId);
+      if (legacyScenario) scenarioProjections.push({
         goalie_id: scenario.goalieId,
         rank: scenario.rank,
         starter_probability_raw: Number(scenario.rawProbability.toFixed(4)),
         starter_probability_top2_normalized: Number(
-          scenario.probability.toFixed(4),
+          legacyScenario.probability.toFixed(4),
         ),
         proj_shots_against: shotsAgainst,
         proj_saves: Number(scenarioModel.projectedSaves.toFixed(3)),
@@ -710,7 +738,7 @@ export async function runPerGameGoalieStage(args: {
       proj_shutout_prob: Number(
         (shutoutProb * goalieHorizonTotalScalar).toFixed(4),
       ),
-      uncertainty: goalieUncertainty as any,
+      uncertainty: { ...goalieUncertainty, daily_board_candidates: dailyBoardCandidates } as any,
       updated_at: new Date().toISOString(),
     };
 

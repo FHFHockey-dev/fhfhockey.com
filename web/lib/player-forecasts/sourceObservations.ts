@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { starterBoardFlags } from "lib/projections/starterBoardFlags";
 
 import { PLAYER_FORECAST_DEBOUNCE_MS } from "./contracts";
 import { buildNextTenGameScopes, type PlayerForecastScheduleGame } from "./schedule";
@@ -9,6 +10,12 @@ export type ForecastLineSourceRow = {
   source_key: string;
   source_account: string | null;
   source_url: string | null;
+  quoted_tweet_id?: string | null;
+  quoted_tweet_url?: string | null;
+  quoted_author_handle?: string | null;
+  primary_text_source?: string | null;
+  quoted_enriched_text?: string | null;
+  quoted_raw_text?: string | null;
   raw_text: string | null;
   enriched_text: string | null;
   classification: string | null;
@@ -66,6 +73,21 @@ function availableAt(row: ForecastLineSourceRow): string {
   return Date.parse(observed) >= Date.parse(posted) ? observed : posted;
 }
 
+function sourceTiming(row: ForecastLineSourceRow) {
+  const known = (value: string | null) => value && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
+  const usesQuote = row.primary_text_source === "quoted_oembed";
+  const sourceUrl = usesQuote ? row.quoted_tweet_url : row.source_url;
+  const tweetId = (usesQuote ? row.quoted_tweet_id : null) ?? sourceUrl?.match(/\/status(?:es)?\/(\d+)/i)?.[1];
+  return { sourcePublishedAt: known(row.tweet_posted_at), receivedAt: known(row.observed_at),
+    sourceReference: tweetId ? `tweet:${tweetId}` : sourceUrl || null };
+}
+
+function primaryReportText(row: ForecastLineSourceRow): string | null {
+  return row.primary_text_source === "quoted_oembed"
+    ? row.quoted_enriched_text ?? row.quoted_raw_text ?? null
+    : row.enriched_text ?? row.raw_text;
+}
+
 export function goalieObservationStatus(
   text: string | null | undefined,
 ): "confirmed" | "likely" | "projected" | "unconfirmed" | "ruled_out" {
@@ -79,7 +101,15 @@ export function goalieObservationStatus(
   return "unconfirmed";
 }
 
-function assignmentsFor(row: ForecastLineSourceRow) {
+export function injuryObservationStatus(text: string | null | undefined): "observed" | "confirmed" | "ruled_out" {
+  const value = String(text ?? "").toLowerCase();
+  if (/\b(not (?:yet )?ruled out|hasn't been ruled out|not out tonight|not cleared|could|might|may|if)\b/.test(value)) return "observed";
+  if (/\b(ruled out|will not play|won't play|will not return|won't return|out tonight|out for tonight|placed on (?:injured reserve|ir|ltir))\b/.test(value)) return "ruled_out";
+  if (/\b(will play|will return|returns tonight|cleared to play)\b/.test(value)) return "confirmed";
+  return "observed";
+}
+
+export function assignmentsFor(row: ForecastLineSourceRow) {
   const result: Array<{
     player_id: number | null;
     raw_player_name: string | null;
@@ -127,6 +157,19 @@ function assignmentsFor(row: ForecastLineSourceRow) {
       pair,
     ),
   );
+  // The parser preserves PP units independently of forward lines/defense pairs.
+  const ppIds = row.metadata?.powerPlayUnitPlayerIds;
+  const ppNames = row.metadata?.powerPlayUnits;
+  const ppLabels = row.metadata?.powerPlayUnitLabels;
+  if (Array.isArray(ppIds) && Array.isArray(ppNames)) {
+    ppIds.forEach((ids, index) => {
+      const label = Array.isArray(ppLabels) ? ppLabels[index] : null;
+      const unit = label === "pp1" ? 1 : label === "pp2" ? 2 : null;
+      if (unit != null && Array.isArray(ids) && Array.isArray(ppNames[index])) {
+        addGroup(ids, ppNames[index], "power_play", unit);
+      }
+    });
+  }
   addGroup(
     [row.goalie_1_player_id, row.goalie_2_player_id],
     [row.goalie_1_name ?? "", row.goalie_2_name ?? ""],
@@ -134,7 +177,11 @@ function assignmentsFor(row: ForecastLineSourceRow) {
     null,
   );
   addGroup(row.scratches_player_ids, row.scratches_player_names, "scratch", null, "ruled_out");
-  addGroup(row.injured_player_ids, row.injured_player_names, "injury", null, "ruled_out");
+  // Ambiguous multi-player reports cannot safely attach one sentence's status
+  // to every mentioned player. Mere injury mentions are not exclusions.
+  const injuryCount = Math.max(row.injured_player_ids?.length ?? 0, row.injured_player_names?.length ?? 0);
+  addGroup(row.injured_player_ids, row.injured_player_names, "injury", null,
+    injuryCount === 1 ? injuryObservationStatus(primaryReportText(row)) : "observed");
   return result;
 }
 
@@ -148,16 +195,23 @@ async function recordGoalieConflict(args: {
   if (args.currentPlayerId == null) return false;
   const { data: observations, error } = await args.supabase
     .from("player_forecast_goalie_start_observations")
-    .select("id,player_id,available_at")
+    .select("id,player_id,available_at,observed_at,source_account,source_key")
     .eq("game_id", args.row.game_id!)
     .eq("team_id", args.row.team_id!)
     .eq("accepted", true)
     .eq("observation_status", "confirmed")
     .neq("player_id", args.currentPlayerId)
     .order("available_at", { ascending: false })
-    .limit(1);
+    .limit(50);
   if (error) throw error;
-  const prior = observations?.[0];
+  // A reporter correcting their own earlier starter assertion is supersession,
+  // not independent conflicting confirmation. Retain both immutable records.
+  const reporter = args.row.source_account || args.row.source_key;
+  const currentPublished = Date.parse(args.row.tweet_posted_at || args.watermark);
+  const prior = observations?.find((item) => !(
+    reporter && (item.source_account || item.source_key) === reporter &&
+    Date.parse(item.observed_at) <= currentPublished
+  ));
   if (!prior?.id || prior.player_id == null) return false;
 
   const conflictKey = `goalie:${args.row.game_id}:${args.row.team_id}`;
@@ -277,9 +331,17 @@ export async function capturePlayerForecastSourceRows(args: {
     conflicts: 0,
     jobsQueued: 0,
   };
-  const parserVersion = args.parserVersion ?? "line-source-v1";
+  const parserVersion = args.parserVersion ?? "line-source-v2";
 
-  for (const row of args.rows) {
+  for (const sourceRow of args.rows) {
+    const usesQuote = sourceRow.primary_text_source === "quoted_oembed";
+    const quoteAuthor = sourceRow.quoted_author_handle?.replace(/^@/, "");
+    const row = usesQuote ? { ...sourceRow,
+      source_account: quoteAuthor && /^[A-Za-z0-9_]{1,15}$/.test(quoteAuthor) ? quoteAuthor.toLowerCase() : sourceRow.source_account,
+      source_url: sourceRow.quoted_tweet_url ?? sourceRow.source_url,
+      metadata: { ...sourceRow.metadata, relaySourceAccount: sourceRow.source_account, relaySourceUrl: sourceRow.source_url,
+        originalAuthorKnown: Boolean(quoteAuthor && /^[A-Za-z0-9_]{1,15}$/.test(quoteAuthor)) },
+    } : sourceRow;
     if (
       row.status !== "observed" ||
       row.nhl_filter_status !== "accepted" ||
@@ -289,37 +351,45 @@ export async function capturePlayerForecastSourceRows(args: {
 
     const watermark = availableAt(row);
     const observedAt = row.tweet_posted_at ? validDate(row.tweet_posted_at) : watermark;
-    const text = row.enriched_text ?? row.raw_text;
+    const text = primaryReportText(row);
 
     if (row.classification === "goalie_start") {
-      const status = goalieObservationStatus(text);
+      const parsedStatus = goalieObservationStatus(text);
       const goalies = [
         { playerId: row.goalie_1_player_id, name: row.goalie_1_name },
         { playerId: row.goalie_2_player_id, name: row.goalie_2_name },
       ].filter((goalie) => goalie.playerId != null || goalie.name);
-      for (const goalie of goalies) {
+      // A sentence about one starter must not confirm every mentioned goalie.
+      const status = goalies.length === 1 ? parsedStatus : "unconfirmed";
+      const observations = goalies.map((goalie) => ({
+        game_id: row.game_id,
+        team_id: row.team_id,
+        player_id: goalie.playerId,
+        raw_player_name: goalie.name,
+        observation_status: status,
+        confidence: null,
+        raw_status: text,
+        source_group: row.source_group,
+        source_key: row.source_key,
+        source_account: row.source_account,
+        source_capture_key: row.capture_key,
+        source_url: row.source_url,
+        observed_at: observedAt,
+        available_at: watermark,
+        expires_at: null,
+        parser_version: parserVersion,
+        accepted: true,
+        metadata: { ...row.metadata, sourceTiming: sourceTiming(row) },
+      }));
+      if (starterBoardFlags().capture && observations.length) {
+        const { data: captured, error } = await args.supabase.rpc("capture_starter_board_goalies", { p_observations: observations });
+        if (error) throw error;
+        summary.goalieObservations += captured.insertedObservations;
+        summary.conflicts += captured.insertedConflicts;
+      } else for (const observation of observations) {
         const { data, error } = await args.supabase
           .from("player_forecast_goalie_start_observations")
-          .insert({
-            game_id: row.game_id,
-            team_id: row.team_id,
-            player_id: goalie.playerId,
-            raw_player_name: goalie.name,
-            observation_status: status,
-            confidence: null,
-            raw_status: text,
-            source_group: row.source_group,
-            source_key: row.source_key,
-            source_account: row.source_account,
-            source_capture_key: row.capture_key,
-            source_url: row.source_url,
-            observed_at: observedAt,
-            available_at: watermark,
-            expires_at: null,
-            parser_version: parserVersion,
-            accepted: true,
-            metadata: row.metadata ?? {},
-          })
+          .insert(observation)
           .select("id")
           .single();
         if (error) {
@@ -333,7 +403,7 @@ export async function capturePlayerForecastSourceRows(args: {
             supabase: args.supabase,
             row,
             currentObservationId: data.id,
-            currentPlayerId: goalie.playerId,
+            currentPlayerId: observation.player_id,
             watermark,
           })
         ) summary.conflicts += 1;
@@ -343,48 +413,58 @@ export async function capturePlayerForecastSourceRows(args: {
     if (["lineup", "practice_lines", "power_play", "injury"].includes(row.classification ?? "")) {
       const assignments = assignmentsFor(row);
       const denominator = row.classification === "injury" ? Math.max(1, assignments.length) : 20;
-      let snapshotId: string | null = null;
-      const { data, error } = await args.supabase
-        .from("player_forecast_lineup_snapshots")
-        .insert({
-          game_id: row.game_id,
-          team_id: row.team_id,
-          source_group: row.source_group,
-          source_key: row.source_key,
-          source_account: row.source_account,
-          source_capture_key: row.capture_key,
-          source_url: row.source_url,
-          classification: row.classification,
-          observed_at: observedAt,
-          available_at: watermark,
-          expires_at: null,
-          completeness: Math.min(1, assignments.length / denominator),
-          accepted: true,
-          parser_version: parserVersion,
-          metadata: row.metadata ?? {},
-        })
-        .select("id")
-        .single();
-      if (error && !isDuplicate(error)) throw error;
-      if (data?.id) {
-        snapshotId = data.id;
-        summary.lineupSnapshots += 1;
+      const snapshot = {
+        game_id: row.game_id,
+        team_id: row.team_id,
+        source_group: row.source_group,
+        source_key: row.source_key,
+        source_account: row.source_account,
+        source_capture_key: row.capture_key,
+        source_url: row.source_url,
+        classification: row.classification,
+        observed_at: observedAt,
+        available_at: watermark,
+        expires_at: null,
+        completeness: Math.min(1, assignments.length / denominator),
+        accepted: true,
+        parser_version: parserVersion,
+        metadata: { ...row.metadata, sourceTiming: sourceTiming(row) },
+      };
+      if (starterBoardFlags().capture) {
+        const { data: captured, error: captureError } = await args.supabase.rpc("capture_starter_board_lineup", {
+          p_snapshot: snapshot, p_assignments: assignments,
+        });
+        if (captureError) throw captureError;
+        summary.lineupSnapshots += captured.insertedSnapshot ? 1 : 0;
+        summary.lineupAssignments += captured.insertedAssignments;
       } else {
-        const { data: existing, error: existingError } = await args.supabase
+        let snapshotId: string | null = null;
+        const { data, error } = await args.supabase
           .from("player_forecast_lineup_snapshots")
+          .insert(snapshot)
           .select("id")
-          .eq("source_capture_key", row.capture_key)
-          .eq("team_id", row.team_id)
           .single();
-        if (existingError) throw existingError;
-        snapshotId = existing.id;
-      }
-      if (snapshotId && assignments.length > 0 && data?.id) {
-        const { error: assignmentError } = await args.supabase
-          .from("player_forecast_lineup_assignments")
-          .insert(assignments.map((assignment) => ({ ...assignment, snapshot_id: snapshotId })));
-        if (assignmentError && !isDuplicate(assignmentError)) throw assignmentError;
-        if (!assignmentError) summary.lineupAssignments += assignments.length;
+        if (error && !isDuplicate(error)) throw error;
+        if (data?.id) {
+          snapshotId = data.id;
+          summary.lineupSnapshots += 1;
+        } else {
+          const { data: existing, error: existingError } = await args.supabase
+            .from("player_forecast_lineup_snapshots")
+            .select("id")
+            .eq("source_capture_key", row.capture_key)
+            .eq("team_id", row.team_id)
+            .single();
+          if (existingError) throw existingError;
+          snapshotId = existing.id;
+        }
+        if (snapshotId && assignments.length > 0 && data?.id) {
+          const { error: assignmentError } = await args.supabase
+            .from("player_forecast_lineup_assignments")
+            .insert(assignments.map((assignment) => ({ ...assignment, snapshot_id: snapshotId })));
+          if (assignmentError && !isDuplicate(assignmentError)) throw assignmentError;
+          if (!assignmentError) summary.lineupAssignments += assignments.length;
+        }
       }
     }
 

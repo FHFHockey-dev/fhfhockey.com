@@ -30,6 +30,16 @@
   }
 }
 
+.personalization {
+  @include v.glass-panel($padding: v.$space-lg, $radius: v.$radius-lg);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  summary { cursor: pointer; padding: 12px 0; }
+  label { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 12px 8px 0; }
+  select, button { max-width: 100%; min-height: 44px; padding: 8px; color: v.$text-primary; background: v.$background-dark; border: 1px solid v.$text-secondary; border-radius: v.$radius-sm; }
+  li { margin: 8px 0; }
+}
+
 .eyebrow {
   margin: 0 0 v.$space-xs;
   color: v.$primary-color;
@@ -43,6 +53,47 @@
   max-width: 680px;
   margin: v.$space-xs 0 0;
   color: v.$text-secondary;
+}
+
+.scoringEditor {
+  width: 100%;
+  summary { cursor: pointer; padding: 12px 0; }
+  form { display: flex; flex-wrap: wrap; gap: v.$space-md; }
+  fieldset { flex: 1 1 260px; min-width: 0; border: 1px solid v.$text-secondary; border-radius: v.$radius-sm; }
+  label { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0; font-size: v.$font-size-xs; }
+  input { width: 90px; min-height: 44px; padding: 8px; color: v.$text-primary; background: v.$background-dark; border: 1px solid v.$text-secondary; border-radius: v.$radius-sm; font-variant-numeric: tabular-nums; }
+}
+
+.playerDetails {
+  font-size: v.$font-size-xs;
+  overflow-wrap: anywhere;
+  > summary {
+    cursor: pointer;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid v.$text-secondary;
+    border-radius: v.$radius-sm;
+    list-style: none;
+    &::-webkit-details-marker { display: none; }
+    &::after {
+      content: "";
+      width: 7px;
+      height: 7px;
+      flex-shrink: 0;
+      margin-right: 3px;
+      border-right: 2px solid currentColor;
+      border-bottom: 2px solid currentColor;
+      transform: rotate(45deg);
+    }
+    &:hover { background: rgba(148, 163, 184, 0.12); }
+    &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 3px; }
+  }
+  &[open] > summary::after { transform: rotate(225deg); }
+  p { color: v.$text-secondary; }
 }
 
 .provenanceSummary {

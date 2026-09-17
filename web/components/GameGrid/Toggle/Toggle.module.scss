@@ -25,7 +25,10 @@ $toggle-sizes: (
 
 .switch {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  vertical-align: middle;
   cursor: pointer;
   user-select: none;
   touch-action: manipulation;
@@ -43,6 +46,8 @@ $toggle-sizes: (
   .slider {
     position: relative;
     display: block;
+    box-sizing: border-box;
+    flex-shrink: 0;
     background: linear-gradient(
       135deg,
       rgba(v.$color-white, 0.1),
@@ -50,7 +55,7 @@ $toggle-sizes: (
     );
     border: 1px solid rgba(v.$color-white, 0.2);
     border-radius: 34px;
-    transition: all v.$transition-duration v.$transition-easing;
+    transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
     backdrop-filter: blur(8px);
     box-shadow:
       0 2px 4px rgba(v.$color-black, 0.1),
@@ -105,10 +110,10 @@ $toggle-sizes: (
         rgba(v.$color-white, 0.85)
       );
       border-radius: 50%;
-      transition: all v.$transition-duration v.$transition-easing;
       box-shadow:
         0 2px 4px rgba(v.$color-black, 0.2),
         inset 0 1px 2px rgba(v.$color-white, 0.8);
+      transition: transform 150ms ease;
       z-index: 2;
     }
 
@@ -152,13 +157,13 @@ $toggle-sizes: (
       .slider {
         width: $width;
         height: $height;
-        min-height: 24px;
+        min-height: 0;
         left: 0;
 
         &::before {
           width: $thumb-size;
           height: $thumb-size;
-          left: $thumb-offset;
+          left: $thumb-offset - 1px;
         }
 
         // Adjust thumb position for checked state
@@ -199,60 +204,5 @@ $toggle-sizes: (
     .slider::before {
       transition: none;
     }
-
-    .slider:focus-visible,
-    .slider:active::after {
-      animation: none;
-    }
   }
-}
-
-// Animation keyframes for enhanced interactions
-@keyframes togglePulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.02);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-// Enhanced focus animation
-.switch .slider:focus-visible {
-  animation: togglePulse 0.2s ease-in-out;
-}
-
-// Ripple effect for modern interactions
-@keyframes toggleRipple {
-  0% {
-    transform: scale(0);
-    opacity: 0.4;
-  }
-  100% {
-    transform: scale(2);
-    opacity: 0;
-  }
-}
-
-.switch .slider::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: rgba(v.$secondary-color, 0.3);
-  transform: translate(-50%, -50%) scale(0);
-  opacity: 0;
-  transition: all v.$transition-duration v.$transition-easing;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.switch .slider:active::after {
-  animation: toggleRipple 0.6s ease-out;
 }

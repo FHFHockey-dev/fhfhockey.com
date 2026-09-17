@@ -1,10 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getCurrentSeason: vi.fn(),
   getTeams: vi.fn(),
   from: vi.fn(),
+  rpc: vi.fn(),
   syncLineCombinationSourceWinners: vi.fn(),
+  capturePlayerForecastSourceRows: vi.fn(),
 }));
 
 vi.mock("lib/NHL/server", () => ({
@@ -19,6 +21,7 @@ vi.mock("utils/adminOnlyMiddleware", () => ({
         ...req,
         supabase: {
           from: mocks.from,
+          rpc: mocks.rpc,
         },
       },
       res,
@@ -41,8 +44,13 @@ vi.mock("lib/cron/withCronJobAudit", () => ({
 vi.mock("lib/sources/lineSourceLineCombinations", () => ({
   syncLineCombinationSourceWinners: mocks.syncLineCombinationSourceWinners,
 }));
+vi.mock("lib/player-forecasts/sourceObservations", () => ({
+  capturePlayerForecastSourceRows: mocks.capturePlayerForecastSourceRows,
+}));
 
 import handler from "../../../../../pages/api/v1/db/update-line-sources";
+import releaseHandler from "../../../../../pages/api/v1/db/starter-board-release";
+import { projectionInputHash } from "lib/projections/inputCapture";
 
 type LineSourceEventFixture = {
   id: string;
@@ -110,7 +118,7 @@ function buildEvent(args: {
     text: args.text,
     link_to_tweet: `https://twitter.com/${args.sourceAccount}/status/${args.tweetId}`,
     tweet_id: args.tweetId,
-    tweet_created_at: null,
+    tweet_created_at: "2026-04-29T23:11:00.000Z",
     created_at_label: "April 29, 2026 at 07:11PM",
     processing_status: "pending",
     raw_payload: {
@@ -132,7 +140,7 @@ function buildEvent(args: {
 
 function createLineSourceEventsQuery(eventRows: LineSourceEventFixture[]) {
   const filters: Array<{
-    type: "eq" | "in";
+    type: "eq" | "in" | "gte" | "lt";
     column: string;
     value: unknown;
   }> = [];
@@ -145,11 +153,15 @@ function createLineSourceEventsQuery(eventRows: LineSourceEventFixture[]) {
       filters.push({ type: "in", column, value });
       return query;
     }),
+    gte: vi.fn((column: string, value: string) => { filters.push({ type: "gte", column, value }); return query; }),
+    lt: vi.fn((column: string, value: string) => { filters.push({ type: "lt", column, value }); return query; }),
     order: vi.fn(() => query),
     limit: vi.fn(async (limit: number) => {
       const filteredRows = eventRows.filter((row) =>
         filters.every((filter) => {
           const rowValue = row[filter.column as keyof LineSourceEventFixture];
+          if (filter.type === "gte") return String(rowValue) >= String(filter.value);
+          if (filter.type === "lt") return String(rowValue) < String(filter.value);
           return filter.type === "eq"
             ? rowValue === filter.value
             : (filter.value as unknown[]).includes(rowValue);
@@ -368,10 +380,90 @@ function getUpsertedRows(upsertMock: ReturnType<typeof vi.fn>) {
   return upsertMock.mock.calls.flatMap((call) => call[0]);
 }
 
+describe("private Starter Board release operations", () => {
+  beforeEach(() => vi.clearAllMocks());
+  const policy = { version: "starter-board-policy-v1", featureDefinitionHash: "a".repeat(64),
+    candidateRuleHash: "b".repeat(64), refitPolicyHash: "c".repeat(64), components: [{ component: "skaters", baselineId: "FORGE",
+      primaryTarget: "fantasy_points", primaryMetric: "mae", protectedMetrics: [{ target: "shots", metric: "mae" }], probability: false }] };
+  const releaseId = "00000000-0000-4000-8000-000000000003";
+  it("registers a server-hashed frozen policy without activating it", async () => {
+    const insert = vi.fn().mockReturnValue({ select: () => ({ single: async () => ({ data: { id: releaseId, policy_hash: projectionInputHash(policy) }, error: null }) }) });
+    mocks.from.mockReturnValue({ insert });
+    const res = createMockRes();
+    await releaseHandler(createMockReq({ body: { action: "register_release", release: { releaseKey: "canary-1", codeVersion: "sha-1",
+      modelIdentity: "FORGE", evaluationVersion: "daily-v1", policy } } }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["Cache-Control"]).toBe("private, no-store");
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ policy, policy_hash: projectionInputHash(policy) }));
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it("publishes a matching review as evidence without promoting a model or intervals", async () => {
+    const report = { contractVersion: "starter-board-review-v1", evaluationVersion: "daily-v1", policyHash: projectionInputHash(policy),
+      dataHash: "d".repeat(64), forecastHash: "e".repeat(64), asOf: "2025-12-31T23:00:00Z", windowStart: "2025-12-01", windowEnd: "2025-12-31",
+      evidenceClass: "captured_live", gameType: "regular_season", settledGames: 0, settledSlates: 0, settledForecasts: 0, metrics: [], comparisons: [] };
+    const insert = vi.fn().mockReturnValue({ select: () => ({ single: async () => ({ data: { id: "review-1" }, error: null }) }) });
+    mocks.from.mockImplementation((table: string) => table === "forge_board_releases"
+      ? { select: () => ({ eq: () => ({ single: async () => ({ data: { policy, policy_hash: projectionInputHash(policy), evaluation_version: "daily-v1" }, error: null }) }) }) }
+      : { insert });
+    const req = { action: "publish_review", releaseId, kind: "weekly", report };
+    const res = createMockRes();
+    await releaseHandler(createMockReq({ body: req }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ modelActivated: false, intervalsActivated: false,
+      decisions: [{ decision: "retain_serving_component", reasons: ["comparison_missing"] }] });
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ report, report_hash: projectionInputHash(report) }));
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    insert.mockClear();
+    const mismatch = createMockRes();
+    await releaseHandler(createMockReq({ body: { ...req, report: { ...report, policyHash: "f".repeat(64) } } }), mismatch);
+    expect(mismatch.statusCode).toBe(409);
+    expect(insert).not.toHaveBeenCalled();
+    insert.mockReturnValue({ select: () => ({ single: async () => ({ data: null, error: { message: "private milestone details" } }) }) });
+    const early = createMockRes();
+    await releaseHandler(createMockReq({ body: { ...req, kind: "day14" } }), early);
+    expect(early.statusCode).toBe(409);
+    expect(JSON.stringify(early.body)).not.toContain("private milestone details");
+  });
+  it("returns a no-store bounded report with honest empty evidence", async () => {
+    mocks.rpc.mockResolvedValueOnce({ data: [], error: null });
+    const res = createMockRes();
+    await releaseHandler(createMockReq({ body: { action: "report", from: "2026-01-01T00:00:00Z", until: "2026-01-02T00:00:00Z",
+      asOf: "2026-01-02T00:00:00Z" } }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["Cache-Control"]).toBe("private, no-store");
+    expect(res.body).toMatchObject({ version: "starter-board-operations-v1", reviewStatus: "insufficient_operational_evidence",
+      cohorts: { regularSeason: { acceptedEvents: 0, onTimeShare: null } } });
+  });
+  it("rejects unbounded windows and does not disclose database errors", async () => {
+    const invalid = createMockRes();
+    await releaseHandler(createMockReq({ body: { action: "report", from: "2026-01-01T00:00:00Z", until: "2026-03-02T00:00:00Z" } }), invalid);
+    expect(invalid.statusCode).toBe(400);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    mocks.rpc.mockResolvedValueOnce({ data: null, error: { message: "private database evidence" } });
+    const failed = createMockRes();
+    await releaseHandler(createMockReq({ body: { action: "report", from: "2026-01-01T00:00:00Z", until: "2026-01-02T00:00:00Z" } }), failed);
+    expect(failed.statusCode).toBe(503);
+    expect(JSON.stringify(failed.body)).not.toContain("private database evidence");
+  });
+  it("records render time separately while retaining legacy receipt compatibility", async () => {
+    const probeId = "00000000-0000-4000-8000-000000000001", revisionId = "00000000-0000-4000-8000-000000000002";
+    mocks.rpc.mockResolvedValue({ data: 1, error: null });
+    const res = createMockRes();
+    await releaseHandler(createMockReq({ body: { action: "visibility", probeId, revisionIds: [revisionId], renderedAt: "2026-01-01T00:00:00Z" } }), res);
+    expect(res.statusCode).toBe(200);
+    expect(mocks.rpc).toHaveBeenLastCalledWith("record_starter_board_visibility_timed", { p_probe_id: probeId, p_revision_ids: [revisionId], p_rendered_at: "2026-01-01T00:00:00Z" });
+    await releaseHandler(createMockReq({ body: { action: "visibility", probeId, revisionIds: [revisionId] } }), createMockRes());
+    expect(mocks.rpc).toHaveBeenLastCalledWith("record_starter_board_visibility", { p_probe_id: probeId, p_revision_ids: [revisionId] });
+  });
+});
+
 describe("/api/v1/db/update-line-sources", () => {
+  afterEach(() => vi.unstubAllEnvs());
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();
+    mocks.capturePlayerForecastSourceRows.mockResolvedValue({ goalieObservations: 0, lineupSnapshots: 0,
+      lineupAssignments: 0, conflicts: 0, jobsQueued: 0 });
     mocks.getCurrentSeason.mockResolvedValue({ seasonId: 20252026 });
     mocks.syncLineCombinationSourceWinners.mockResolvedValue({
       sourceRows: 3,
@@ -429,6 +521,51 @@ describe("/api/v1/db/update-line-sources", () => {
         logo: "/teamLogos/UTA.png",
       },
     ]);
+  });
+
+  it("leaves events pending when required immutable evidence capture fails", async () => {
+    vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "true");
+    const event = buildEvent({ id: "retry", sourceKey: "gamedaylines", sourceAccount: "GameDayLines",
+      tweetId: "2049626619221008663", text: "#Habs lines\nCaufield - Suzuki - Slafkovsky" });
+    const { eventUpdateMock } = createSupabaseMocks([event]);
+    mocks.capturePlayerForecastSourceRows.mockRejectedValueOnce(new Error("Capture temporarily unavailable"));
+    const res = createMockRes();
+    await handler(createMockReq(), res);
+    expect(res.statusCode).toBe(500);
+    expect(eventUpdateMock).not.toHaveBeenCalled();
+    const retry = createMockRes();
+    await handler(createMockReq(), retry);
+    expect(retry.statusCode).toBe(200);
+    expect(eventUpdateMock).toHaveBeenCalledWith(expect.objectContaining({ processing_status: "processed" }));
+  });
+
+  it("limits automatic retries to receipts on the Eastern slate, including UTC midnight", async () => {
+    const events = ["2026-04-28T23:00:00Z", "2026-04-30T02:00:00Z", "2026-04-30T06:00:00Z"].map((receivedAt, index) =>
+      buildEvent({ id: `bounded-${index}`, sourceKey: "gamedaylines", sourceAccount: "GameDayLines",
+        tweetId: `204962661922100866${index}`, receivedAt, text: "#Habs lines\nCaufield - Suzuki - Slafkovsky" }));
+    const { eventUpdateEqMock } = createSupabaseMocks(events);
+    const res = createMockRes();
+    await handler(createMockReq({ query: { date: "2026-04-29", currentDayOnly: "true" } }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.summary).toMatchObject({ eventsLoaded: 1, acceptedNhl: 1 });
+    expect(eventUpdateEqMock).toHaveBeenCalledWith("id", "bounded-1");
+  });
+
+  it.each([
+    [null, "#Habs lines\nCaufield - Suzuki - Slafkovsky", "unknown_report_date"],
+    ["2026-04-28T23:00:00Z", "#Habs lines\nCaufield - Suzuki - Slafkovsky", "report_date_mismatch"],
+    ["2026-04-30T02:00:00Z", "#Habs lines tomorrow\nCaufield - Suzuki - Slafkovsky", "relative_game_date_requires_review"],
+  ])("withholds game applicability for %s / %s", async (postedAt, text, reason) => {
+    const event = buildEvent({ id: "old", sourceKey: "gamedaylines", sourceAccount: "GameDayLines",
+      tweetId: "2049626619221008663", text });
+    event.tweet_created_at = postedAt;
+    if (postedAt === null) event.link_to_tweet = "https://twitter.com/reporter/status/123";
+    const { lineSourceSnapshotsUpsertMock } = createSupabaseMocks([event]);
+    const res = createMockRes();
+    await handler(createMockReq(), res);
+    expect(res.statusCode).toBe(200);
+    expect(getUpsertedRows(lineSourceSnapshotsUpsertMock)[0]).toMatchObject({ game_id: null,
+      nhl_filter_status: "rejected_ambiguous", nhl_filter_reason: reason });
   });
 
   it("processes GDL goalie, lines, news, non-NHL, and ambiguous events by source key", async () => {
@@ -653,14 +790,18 @@ describe("/api/v1/db/update-line-sources", () => {
     expect(captureKeys[0]).not.toEqual(captureKeys[1]);
   });
 
-  it("resolves quoted tweet text for generic line sources", async () => {
+  it.each([
+    ["2049560345441206272", "", "accepted", null],
+    ["2047808467969220779", "", "rejected_ambiguous", "report_date_mismatch"],
+    ["2049560345441206272", " tomorrow", "rejected_ambiguous", "relative_game_date_requires_review"],
+  ])("uses the quoted report date and text for %s%s", async (quoteId, relativeDay, status, reason) => {
     const fetchMock = vi.fn(async (url: string) => {
       if (url === "https://t.co/9cZkBXydVn") {
         return new Response(null, {
           status: 302,
           headers: {
             location:
-              "https://x.com/BenjaminJReport/status/2047808467969220779",
+              `https://x.com/BenjaminJReport/status/${quoteId}`,
           },
         });
       }
@@ -669,7 +810,7 @@ describe("/api/v1/db/update-line-sources", () => {
           JSON.stringify({
             author_name: "Benjamin Pierce",
             author_url: "https://twitter.com/BenjaminJReport",
-            html: '<blockquote><p>The #GoBolts lines unchanged in warmups:<br>Goncalves-Point-Kucherov<br><br>Vasilevskiy</p>&mdash; Benjamin Pierce <a href="https://twitter.com/BenjaminJReport/status/2047808467969220779">April 29, 2026</a></blockquote>',
+            html: `<blockquote><p>The #GoBolts lines unchanged in warmups${relativeDay}:<br>Goncalves-Point-Kucherov<br><br>Vasilevskiy</p>&mdash; Benjamin Pierce <a href="https://twitter.com/BenjaminJReport/status/${quoteId}">April 29, 2026</a></blockquote>`,
           }),
           {
             status: 200,
@@ -705,7 +846,7 @@ describe("/api/v1/db/update-line-sources", () => {
         quoteTweetsResolved: 1,
         quoteResolveAttempts: 1,
         quoteResolveFailures: 0,
-        acceptedNhl: 1,
+        acceptedNhl: status === "accepted" ? 1 : 0,
         rowsUpserted: 1,
       },
     });
@@ -716,13 +857,15 @@ describe("/api/v1/db/update-line-sources", () => {
       source_account: "GameDayLines",
       source: "gamedaylines",
       tweet_id: "2047808711494902155",
-      quoted_tweet_id: "2047808467969220779",
-      quoted_tweet_url: "https://twitter.com/i/web/status/2047808467969220779",
+      quoted_tweet_id: quoteId,
+      quoted_tweet_url: `https://twitter.com/i/web/status/${quoteId}`,
       quoted_author_handle: "BenjaminJReport",
       quoted_author_name: "Benjamin Pierce",
       primary_text_source: "quoted_oembed",
       team_abbreviation: "TBL",
-      nhl_filter_status: "accepted",
+      nhl_filter_status: status,
+      nhl_filter_reason: reason,
+      tweet_posted_at: quoteId === "2049560345441206272" ? "2026-04-29T18:44:00.000Z" : "2026-04-24T22:42:39.862Z",
     });
     expect(quoteRow.capture_key).toMatch(/^gamedaylines:/);
     expect(quoteRow.quoted_enriched_text).toContain("Goncalves-Point-Kucherov");
@@ -747,7 +890,7 @@ describe("/api/v1/db/update-line-sources", () => {
     const { lineSourceSnapshotsUpsertMock } = createSupabaseMocks(events);
     const req = createMockReq({
       query: {
-        date: "2026-04-30",
+        date: "2026-04-29",
         limit: "10",
       },
     });
@@ -820,7 +963,7 @@ describe("/api/v1/db/update-line-sources", () => {
     const { lineSourceSnapshotsUpsertMock } = createSupabaseMocks(events);
     const req = createMockReq({
       query: {
-        date: "2026-04-30",
+        date: "2026-04-29",
         limit: "10",
       },
     });
@@ -884,7 +1027,7 @@ describe("/api/v1/db/update-line-sources", () => {
     const { lineSourceSnapshotsUpsertMock } = createSupabaseMocks(events);
     const req = createMockReq({
       query: {
-        date: "2026-04-30",
+        date: "2026-04-29",
         limit: "10",
       },
     });
@@ -925,7 +1068,7 @@ describe("/api/v1/db/update-line-sources", () => {
     const { lineSourceSnapshotsUpsertMock } = createSupabaseMocks(events);
     const req = createMockReq({
       query: {
-        date: "2026-04-30",
+        date: "2026-04-29",
         limit: "10",
       },
     });

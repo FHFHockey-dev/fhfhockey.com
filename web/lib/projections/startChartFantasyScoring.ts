@@ -25,11 +25,11 @@ export type StartChartRankingContract = {
   scope: "eligible_position";
   tieMethod: "competition";
   scoreFields: {
-    skater: "proj_fantasy_points";
-    goalie: "start_probability";
+    skater: "proj_fantasy_points" | "category_value";
+    goalie: "start_probability" | "proj_fantasy_points" | "category_value";
   };
   unavailable: {
-    categoryMode: true;
+    categoryMode: boolean;
     riskP75: true;
   };
 };
@@ -72,7 +72,7 @@ export function addStartChartPositionRanks<
     proj_fantasy_points: number | null;
     start_probability?: number | null;
   },
->(players: T[]): Array<T & { position_ranks: StartChartPositionRanks }> {
+>(players: T[], scoreFor?: (player: T) => number | null | undefined): Array<T & { position_ranks: StartChartPositionRanks }> {
   const ranksByRow = new Map<T, StartChartPositionRanks>();
 
   START_CHART_POSITIONS.forEach((position) => {
@@ -81,7 +81,7 @@ export function addStartChartPositionRanks<
       .map((player) => ({
         player,
         score:
-          position === "G"
+          scoreFor ? scoreFor(player) : position === "G"
             ? player.start_probability
             : player.proj_fantasy_points,
       }))

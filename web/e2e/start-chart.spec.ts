@@ -1,4 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
+import { loadEnvConfig } from "@next/env";
+import { boardGoalieForecast } from "../lib/projections/starterBoardScoring";
+import { buildBoardValidationDisclosure } from "../lib/projections/starterBoardValidation";
+import { installDraftProAuthenticatedFixtures } from "./draft-pro-fixtures";
+
+loadEnvConfig(process.cwd(), true);
 
 const positions = ["C", "LW", "RW", "D", "G"] as const;
 
@@ -214,7 +220,240 @@ const viewports = [
   { name: "narrow mobile", width: 320, height: 568 },
 ] as const;
 
+const yahooFixture = (teamId = "team-one", category?: string) => {
+  const categories = teamId === "team-two";
+  const incomplete = categories && !category;
+  return { date: "2026-02-07", status: incomplete ? "incomplete" : "complete", teamId,
+    teams: [{ id: "team-one", name: "Private Team One" }, { id: "team-two", name: "Private Team Two" }],
+    teamName: categories ? "Private Team Two" : "Private Team One", leagueName: "Fixture League",
+    mode: categories ? "categories" : "points", category: categories ? category ?? null : null,
+    categoryOptions: ["GOALS", "SHOTS_ON_GOAL"], rosterFetchedAt: "2026-02-07T16:00:00Z",
+    settingsFetchedAt: "2026-02-07T16:00:00Z", availabilityFetchedAt: "2026-02-07T16:00:00Z",
+    roster: [{ id: "private-center", name: "Private Center", valueBasis: "unconditional" }],
+    lineup: { status: incomplete ? "incomplete" : "complete", expectedValue: incomplete ? null : 5,
+      assignments: [{ id: "C:0", position: "C", playerId: "private-center", value: incomplete ? null : 5, preserved: true }],
+      limitations: incomplete ? ["Select a supported individual league category."] : [] },
+    streamingCoverage: { playersChecked: 25, matchedToday: 1 },
+    streaming: [{ playerId: "private-stream", name: "Tomorrow Goalie", availability: "free_agent", usableToday: false,
+      incrementalValue: null, dropPlayerId: null,
+      limitations: ["This league applies new acquisitions on the following day; they cannot improve today's lineup."] }],
+    limitations: incomplete ? ["Select a supported individual league category."] : [],
+  };
+};
+
 test.describe("/start-chart", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route("**/rest/v1/player_lineup_deployment_tallies?**", async (route) => {
+      const playerId = new URL(route.request().url()).searchParams.get("player_id");
+      const defense = playerId === "eq.8470301";
+      await route.fulfill({ json: [
+        { season_id: 20252026, deployment_group: defense ? "defense" : "forward",
+          deployment_code: defense ? "D1_LD" : "F1_C", deployment_label: defense ? "Pair 1 left" : "Line 1 center",
+          games: 8, total_games: 10, share: 0.8, last_game_date: "2026-02-06" },
+        { season_id: 20252026, deployment_group: "power_play", deployment_code: "PP1", deployment_label: "PP1",
+          games: 7, total_games: 10, share: 0.7, last_game_date: "2026-02-06" },
+      ] });
+    });
+  });
+  for (const width of [1440, 390]) {
+    test(`protects the private Yahoo comparison through selection, errors and sign-out at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.route("**/api/**", route => route.fulfill({ json: [] }));
+      await page.route("**/auth/v1/**", route => route.fulfill({ status: 204 }));
+      await installDraftProAuthenticatedFixtures(page, () => ({ access: {
+        eligible: true, grantingSources: ["purchase"], expiresAt: null, verifiedAt: null, nextVerificationAt: null,
+        reason: "eligible", capabilities: ["recommendations"], providerReadiness: { stripe: false, patreon: false, yahoo: true },
+      } }));
+      const storageKey = `sb-${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fyhftlxokyjtpndbkfse.supabase.co").hostname.split(".")[0]}-auth-token`;
+      await page.addInitScript(key => {
+        const fictionalSession = localStorage.getItem("sb-127-auth-token");
+        if (fictionalSession) localStorage.setItem(key, fictionalSession);
+      }, storageKey);
+      await installFixture(page);
+      let responseMode: "ready" | "denied" | "expired" | "pending" = "ready";
+      const requests: Array<{ teamId?: string; category?: string }> = [];
+      let releasePending!: () => void;
+      const pending = new Promise<void>(resolve => { releasePending = resolve; });
+      await page.route("**/api/v1/account/yahoo/starter-board", async route => {
+        expect(route.request().method()).toBe("POST");
+        const args = route.request().postDataJSON();
+        requests.push(args);
+        const mode = responseMode;
+        if (mode === "pending") await pending;
+        if (mode === "denied" || mode === "expired") {
+          await route.fulfill({ status: mode === "denied" ? 403 : 401,
+            json: { error: mode === "denied" ? "Draft Pro access is required." : "Yahoo connection expired. Reconnect Yahoo." } });
+        } else {
+          const response = { headers: { "Cache-Control": "private, no-store" }, json: { data: yahooFixture(args.teamId, args.category) } };
+          // Sign-out deliberately aborts the pending request; a late response
+          // must not restore private data even if its server work completes.
+          if (mode === "pending") await route.fulfill(response).catch(() => undefined);
+          else await route.fulfill(response);
+        }
+      });
+      await page.goto("/start-chart?date=2026-02-07&position=C");
+      const summary = page.getByText("My Yahoo team · Today · Draft Pro", { exact: true });
+      await expect(summary).toBeVisible();
+      await summary.click();
+      const panel = page.locator("details").filter({ has: summary });
+      const refresh = panel.getByRole("button", { name: "Refresh today’s comparison" });
+      await refresh.click();
+      await expect(panel.getByText(/C: Private Center.*Current position preserved/)).toBeVisible();
+      await expect(panel.getByText(/Tomorrow Goalie.*Today’s gain unavailable/)).toBeVisible();
+      await expect(panel.getByText(/This league applies new acquisitions on the following day/)).toBeVisible();
+      expect(requests[0]).toEqual({});
+      await panel.getByRole("combobox", { name: "Team", exact: true }).selectOption("team-two");
+      await refresh.click();
+      await expect(panel.getByRole("heading", { name: "Incomplete lineup comparison" })).toBeVisible();
+      await panel.getByRole("combobox", { name: "Individual category", exact: true }).selectOption("GOALS");
+      await refresh.click();
+      await expect(panel.getByRole("heading", { name: "Highest projected value for today’s eligible slots" })).toBeVisible();
+      expect(requests.at(-1)).toEqual({ teamId: "team-two", category: "GOALS" });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+      for (const mode of ["denied", "expired"] as const) {
+        responseMode = mode;
+        await refresh.click();
+        await expect(panel.getByRole("alert")).toContainText(mode === "denied" ? "Draft Pro access is required." : "Yahoo connection expired.");
+        await expect(panel.getByText(/C: Private Center/)).toHaveCount(0);
+      }
+      responseMode = "ready";
+      await refresh.click();
+      await expect(panel.getByText(/C: Private Center/)).toBeVisible();
+      responseMode = "pending";
+      const before = requests.length;
+      await refresh.click();
+      await expect.poll(() => requests.length).toBe(before + 1);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      if (width === 1440) {
+        await page.getByRole("button", { name: "Open account menu" }).click();
+        await page.getByRole("menuitem", { name: "Sign Out" }).click();
+      } else {
+        await page.getByRole("button", { name: "Open menu", exact: true }).click();
+        await page.getByRole("button", { name: "Sign Out", exact: true }).click();
+      }
+      releasePending();
+      await expect(page.getByRole("link", { name: "Sign in and connect Yahoo" })).toBeVisible();
+      await expect(summary).toHaveCount(0);
+      await expect(page.getByText(/C: Private Center/)).toHaveCount(0);
+      await expect(page.getByText(/Tomorrow Goalie/)).toHaveCount(0);
+    });
+  }
+  for (const width of [1440, 390]) {
+    test(`refreshes revisions after stale responses and background return at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.clock.install({ time: new Date("2026-02-07T16:00:00Z") });
+      let revision = 1, requests = 0, staleResponses = 0;
+      const id = (value: number) => `00000000-0000-4000-8000-${String(value).padStart(12, "0")}`;
+      await page.route("**/api/v1/start-chart?**", async (route) => {
+        requests++;
+        const delivered = staleResponses > 0 ? (staleResponses--, 1) : revision;
+        const fixture = apiFixture("2026-02-07");
+        await route.fulfill({ json: { ...fixture, contractVersion: 2,
+          gameRevisions: [{ gameId: 1001, revisionId: id(delivered), runId: `run-${delivered}`,
+            decisionAsOf: "2026-02-07T15:00:00Z", publishedAt: "2026-02-07T16:00:00Z" }],
+          players: fixture.players.map((row, index) => index === 0 ? { ...row, name: `Revision ${delivered} Skater` } : row),
+        } });
+      });
+      await page.goto("/start-chart?date=2026-02-07&position=C");
+      const marker = page.locator("[data-board-revisions]");
+      await expect(marker).toHaveAttribute("data-board-revisions", JSON.stringify([id(1)]));
+      revision = 2;
+      staleResponses = 1;
+      const before = requests;
+      await page.clock.runFor(31_000);
+      await expect.poll(() => requests).toBeGreaterThan(before);
+      await expect(marker).toHaveAttribute("data-board-revisions", JSON.stringify([id(1)]));
+      await page.clock.runFor(31_000);
+      await expect(marker).toHaveAttribute("data-board-revisions", JSON.stringify([id(2)]));
+      await expect(page.getByRole("link", { name: /Revision 2 Skater/ }).first()).toBeVisible();
+
+      // Controlled lifecycle signals exercise SWR's visibility/focus handling;
+      // this is not a deployed browser/cache latency measurement.
+      await page.evaluate(() => {
+        Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      revision = 3;
+      const beforeHidden = requests;
+      await page.clock.runFor(60_000);
+      expect(requests).toBe(beforeHidden);
+      await expect(marker).toHaveAttribute("data-board-revisions", JSON.stringify([id(2)]));
+      await page.evaluate(() => {
+        Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+        document.dispatchEvent(new Event("visibilitychange"));
+        window.dispatchEvent(new Event("focus"));
+      });
+      await page.clock.runFor(1000);
+      await expect(marker).toHaveAttribute("data-board-revisions", JSON.stringify([id(3)]));
+      await expect(page.getByRole("link", { name: /Revision 3 Skater/ }).first()).toBeVisible();
+    });
+  }
+  for (const width of [1440, 390]) {
+    test(`re-scores published forecasts and shows participation limits at ${width}px`, async ({ page }, testInfo) => {
+      let forecastRequests = 0;
+      const skater = (id: number, goals: number, shots: number) => ({ ...player("C", id),
+        forecast: { conditioning: "conditional_playing", participationProbability: null, probabilityStatus: "missing",
+          conditional: { GOALS: goals, ASSISTS: 0, PP_POINTS: 0, SHOTS_ON_GOAL: shots, HITS: 0, BLOCKED_SHOTS: 0 },
+          expected: null, distributionStatus: "means_only_unvalidated", evidence: [], conflicts: [],
+          seasonBootstrap: { version: "season-bootstrap-v1", currentSeasonGames: 0, historyGames: 20,
+            transitionGames: 20, sourceIds: ["ag_skaters"], fantasyWeight: 0.6, historyWeight: 0.4,
+            validation: "unvalidated", limitations: [] } },
+      });
+      const goalie = (id: number, probability: number, saves: number) => ({ ...player("G", id),
+        start_probability: probability, forecast: boardGoalieForecast({ startingProbability: probability,
+          conditional: { SHOTS_AGAINST_GOALIE: saves + 2, SAVES_GOALIE: saves, GOALS_AGAINST_GOALIE: 2, WINS_GOALIE: 0.5, SHUTOUTS_GOALIE: 0.1 } }),
+      });
+      await page.setViewportSize({ width, height: 900 });
+      await page.route("**/api/v1/start-chart?**", async (route) => {
+        forecastRequests += 1;
+        await route.fulfill({ json: { ...apiFixture("2026-02-07"), contractVersion: 2,
+          validation: width === 390 ? buildBoardValidationDisclosure({ startedOn: "2026-10-01", liveRegularSlates: 24 }, "2026-10-31")
+            : { status: "awaiting_prospective_evidence" },
+          gameRevisions: [{ gameId: 1001, revisionId: "00000000-0000-4000-8000-000000000001", runId: "run-e2e",
+            decisionAsOf: "2026-02-07T15:00:00Z", publishedAt: "2026-02-07T16:00:00Z" }],
+          players: [skater(1, 2, 1), skater(2, 0, 8), goalie(1, 0.8, 15), goalie(2, 0.6, 35)],
+          newsStatus: { available: true, pendingGames: 0, freshnessBreachedGames: 0, unresolvedConflicts: 0, oldestAcceptedAt: null },
+        } });
+      });
+      await page.goto("/start-chart?date=2026-02-07&position=C");
+      await expect(page.locator("[data-board-revisions]")).toHaveAttribute("data-board-revisions", '["00000000-0000-4000-8000-000000000001"]');
+      await page.getByText("Early validation · FORGE retained pending review", { exact: true }).click();
+      if (width === 390) {
+        await expect(page.getByText(/day 31 · 24 live slates observed/)).toBeVisible();
+        await expect(page.getByText(/Day 30 review · 2026-10-30 · due/)).toBeVisible();
+        await expect(page.getByText("Settled evaluation counts are not yet available.")).toBeVisible();
+      } else {
+        await expect(page.getByText(/Regular-season validation start and settled sample counts are not yet available/)).toBeVisible();
+      }
+      const cPanel = page.locator("#start-chart-panel-C");
+      await expect(cPanel.locator("ol > li").first()).toContainText("C Player 1");
+      await expect(cPanel.locator("ol > li").first()).toContainText("FP if playing");
+      await page.getByLabel("Compare", { exact: true }).selectOption("categories");
+      await expect(cPanel.locator("ol > li").first()).toContainText("C Player 2");
+      await page.getByLabel("Compare", { exact: true }).selectOption("points");
+      await page.getByText("Scoring profile · customize points", { exact: true }).click();
+      await page.locator('input[name="skater.GOALS"]').fill("0");
+      await page.locator('input[name="skater.SHOTS_ON_GOAL"]').fill("1");
+      await page.getByRole("button", { name: "Apply scoring" }).click();
+      await expect(cPanel.locator("ol > li").first()).toContainText("C Player 2");
+      await cPanel.getByText("Projection details and evidence", { exact: true }).first().click();
+      await expect(cPanel.getByText("Participation probability unavailable. This is not an unconditional expectation.").first()).toBeVisible();
+      await expect(cPanel.getByText(/Season-opening prior: 20 previous-season games/).first()).toBeVisible();
+      await expect(cPanel.getByText(/Starting weights are uncalibrated/).first()).toBeVisible();
+      await page.getByLabel("Goalie order").selectOption("fantasy");
+      if (width < 1200) await page.getByRole("tab", { name: /^G 2$/ }).click();
+      const gPanel = page.locator("#start-chart-panel-G");
+      await expect(gPanel.locator("ol > li").first()).toContainText("G Player 2");
+      await page.getByLabel("Goalie order").selectOption("start_probability");
+      await expect(gPanel.locator("ol > li").first()).toContainText("G Player 1");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+      await page.screenshot({ path: testInfo.outputPath("starter-board.png"), fullPage: true });
+      if (width === 1440) {
+        const requestsBeforeRefresh = forecastRequests;
+        await expect.poll(() => forecastRequests, { timeout: 40_000 }).toBeGreaterThan(requestsBeforeRefresh);
+      }
+    });
+  }
   for (const viewport of viewports) {
     test(`completes the board workflow at ${viewport.width}x${viewport.height}`, async ({
       page,
@@ -231,6 +470,29 @@ test.describe("/start-chart", () => {
       await expect(page.getByRole("heading", { name: "Starter Board" })).toBeVisible();
       const cPanel = page.locator("#start-chart-panel-C");
       await expect(cPanel.locator("ol").first().locator(":scope > li")).toHaveCount(25);
+
+      const firstCard = cPanel.locator("ol > li").first();
+      const disclosure = firstCard.locator("summary");
+      await disclosure.focus();
+      await page.keyboard.press("Enter");
+      const deployment = firstCard.getByRole("region", { name: "Lineup deployment" });
+      await expect(deployment).toBeVisible();
+      await expect(deployment.getByText("Forwards", { exact: true })).toBeVisible();
+      await expect(deployment.getByText("Defense", { exact: true })).toHaveCount(0);
+      await expect(deployment.getByText("80%", { exact: true })).toBeVisible();
+      const cardBox = (await firstCard.boundingBox())!;
+      const gridBox = (await deployment.boundingBox())!;
+      expect(gridBox.x).toBeGreaterThanOrEqual(cardBox.x);
+      expect(gridBox.x + gridBox.width).toBeLessThanOrEqual(cardBox.x + cardBox.width);
+      await page.keyboard.press("Enter");
+      await expect(firstCard.locator("details")).not.toHaveAttribute("open", "");
+
+      if (viewport.width < 1200) await page.getByRole("tab", { name: /^D 1$/ }).click();
+      const defenseCard = page.locator("#start-chart-panel-D ol > li").first();
+      await defenseCard.locator("summary").click();
+      await expect(defenseCard.getByText("Defense", { exact: true })).toBeVisible();
+      await expect(defenseCard.getByText("Forwards", { exact: true })).toHaveCount(0);
+      if (viewport.width < 1200) await page.getByRole("tab", { name: /^C 30$/ }).click();
 
       if (viewport.width >= 1200) {
         for (const position of positions) {
@@ -251,13 +513,13 @@ test.describe("/start-chart", () => {
 
       await cPanel.getByRole("button", { name: "Load 25 more C" }).click();
       await expect(cPanel.locator("ol").first().locator(":scope > li")).toHaveCount(30);
-      await page.getByLabel("Player").fill("C Player 30");
+      await page.getByLabel("Player", { exact: true }).fill("C Player 30");
       await expect(cPanel.locator("ol").first().locator(":scope > li")).toHaveCount(1);
-      await page.getByLabel("Player").fill("");
+      await page.getByLabel("Player", { exact: true }).fill("");
       await expect(cPanel.locator("ol").first().locator(":scope > li")).toHaveCount(25);
 
       await page.getByLabel("Date").fill("2026-02-08");
-      await expect(page.getByRole("status")).toContainText(
+      await expect(page.getByRole("status").filter({ hasText: "Showing 2026-02-07, not 2026-02-08." })).toContainText(
         "Showing 2026-02-07, not 2026-02-08.",
       );
       await expect(page).toHaveURL(/(?:\?|&)date=2026-02-08(?:&|$)/);

@@ -1,0 +1,15 @@
+{
+  "contractVersion": "starter-board-evaluation-v1",
+  "releaseChannel": "research",
+  "promotionEligible": false,
+  "requiredComparators": ["forge", "season_rate", "recent_season", "role_aware", "empirical_bayes"],
+  "timeRules": ["training_end < validation_start", "maximum_feature_available_at <= cutoff_at < scheduled_start_at", "source team membership is as of cutoff", "evaluate final settled outcomes only"],
+  "conditioning": ["conditional_playing", "conditional_start", "unconditional", "probability"],
+  "evidenceClasses": ["captured_live", "historical_reconstruction"],
+  "probabilityTargets": ["participation", "goalie_start"],
+  "segments": ["position", "usage_tier", "low_owned", "rookie", "injury_return", "traded", "uncertain_lineup"],
+  "ablations": ["without_trend", "without_opponent", "without_goalie", "without_rest_home", "without_teammates", "without_reconciliation"],
+  "seed": 20260915,
+  "intervalPolicy": "Evaluate joint scenario draws; never add marginal quantiles. No public calibrated interval or model promotion follows automatically from this report.",
+  "protectedResearch": "Existing player-forecasts contracts and the 2026-01-03 through 2026-04-16 holdout remain protected. This evaluator refuses those dates."
+}

@@ -1150,6 +1150,14 @@ describe("skater scenario metadata", () => {
 });
 
 describe("active skater filtering", () => {
+  it("retains a verified season-opening prior without weakening team or position filters", () => {
+    const result = filterActiveSkaterCandidateIds({ asOfDate: "2026-10-06", teamId: 5, rawSkaterIds: [1, 2, 3, 4],
+      playerMetaById: new Map([[1, { id: 1, team_id: 5, position: "C" }], [2, { id: 2, team_id: 5, position: "LW" }],
+        [3, { id: 3, team_id: 8, position: "C" }], [4, { id: 4, team_id: 5, position: "G" }]]),
+      latestMetricDateByPlayerId: new Map([[1, "2026-04-15"]]), seasonBootstrapPlayerIds: new Set([1, 2, 3, 4]) });
+    expect(result.eligibleSkaterIds).toEqual([1, 2]);
+    expect(result.recencyMultiplierByPlayerId.get(1)).toBe(1);
+  });
   it("filters out non-team and goalie-position candidates", () => {
     const result = filterActiveSkaterCandidateIds({
       asOfDate: "2026-02-07",

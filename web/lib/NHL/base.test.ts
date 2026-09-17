@@ -16,6 +16,18 @@ describe("NHL base HTTP errors", () => {
     vi.unstubAllGlobals();
   });
 
+  it("passes a caller deadline through to the official schedule fetch", async () => {
+    const controller = new AbortController();
+    const fetchMock = vi.fn().mockImplementation(async (_url, options) => {
+      expect(options.signal).toBe(controller.signal);
+      throw new DOMException("The operation was aborted", "AbortError");
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    controller.abort();
+    await expect(get("/schedule/2026-10-10", false, controller.signal)).rejects.toThrow("aborted");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("preserves exact status and official URL through the public get wrapper", async () => {
     vi.stubGlobal(
       "fetch",

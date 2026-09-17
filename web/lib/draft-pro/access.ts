@@ -17,7 +17,7 @@ export type DraftProAccessInput = {
   providerReadiness?: Partial<Record<"stripe" | "patreon" | "yahoo", boolean>>;
 };
 
-const allCapabilities: DraftProCapability[] = ["recommendations", "dust", "blended_csv", "saved_drafts", "private_imports", "scenarios", "reports", "god_view"];
+const allCapabilities: DraftProCapability[] = ["recommendations", "dust", "blended_csv", "saved_drafts", "private_imports", "scenarios", "reports", "god_view", "mock_draft_advanced"];
 const dateValue = (value: string) => {
   const parsed = new Date(value).getTime();
   return Number.isFinite(parsed) ? parsed : null;

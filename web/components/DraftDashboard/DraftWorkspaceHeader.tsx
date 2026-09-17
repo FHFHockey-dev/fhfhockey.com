@@ -11,6 +11,7 @@ interface DraftWorkspaceHeaderProps {
   onSettings: () => void;
   onFullSettings: () => void;
   onHealth: () => void;
+  onMock?: () => void;
 }
 
 export default function DraftWorkspaceHeader({
@@ -22,6 +23,7 @@ export default function DraftWorkspaceHeader({
   onSettings,
   onFullSettings,
   onHealth,
+  onMock,
 }: DraftWorkspaceHeaderProps) {
   return (
     <div className={styles.workspaceHeader}>
@@ -39,6 +41,7 @@ export default function DraftWorkspaceHeader({
       <span className={styles.toolbarDivider} aria-hidden="true" />
       <div className={`${styles.settingsActionsGroup} ${controls.scope}`}>
       {soundControl}
+      {onMock && <button type="button" onClick={onMock}>Practice / Mock Draft</button>}
       <button type="button" data-control-variant="primary" className={styles.settingsButton} aria-label="Toggle quick settings" title="Quick settings" onClick={onSettings} aria-expanded={settingsExpanded} aria-controls="draft-quick-settings">
         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m9 3-1 3-3 1-2 3 2 2-1 3 3 3 3-1 2 2 3-1 1-3 3-1 1-3-2-2 1-3-3-2-3 1-2-2Z"/><circle cx="11" cy="11" r="3"/></svg> Settings <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: settingsExpanded ? "rotate(180deg)" : undefined }}><path d="m3 6 5 5 5-5" /></svg>
       </button>

@@ -1727,3 +1727,25 @@ $selected-border-width: 2px; // The width of the indicator
   color: v.$text-color-secondary;
   font-size: 1.1em;
 }
+
+.yahooContext {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  font-size: 0.85rem;
+
+  p { margin: 0 0 8px; }
+  a { color: #77cfff; margin-right: 12px; }
+  button {
+    margin: 0 8px 8px 0;
+    padding: 6px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    background: #20252d;
+    color: inherit;
+    cursor: pointer;
+    &[aria-pressed="true"] { border-color: #77cfff; background: #10384e; }
+    &:disabled { opacity: 0.5; cursor: wait; }
+    &:focus-visible { outline: 2px solid #77cfff; outline-offset: 2px; }
+  }
+  summary { cursor: pointer; }
+}

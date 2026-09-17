@@ -1,0 +1,273 @@
+@use "styles/vars" as v;
+
+.workspace {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  overflow: auto;
+  background: v.$draft-canvas;
+  color: v.$color-neutral-200;
+  padding: clamp(v.$space-md, 3vw, v.$space-xl);
+  color-scheme: dark;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-base;
+  line-height: 1.5;
+  overscroll-behavior: contain;
+  @include v.custom-scrollbar;
+
+  &,
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+}
+.header {
+  display: flex;
+  align-items: center;
+  gap: v.$space-md;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: v.$space-md;
+}
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$mobile-space-sm;
+  align-items: center;
+  margin-block: v.$space-md;
+}
+.controls label {
+  display: flex;
+  gap: v.$space-sm;
+  align-items: center;
+}
+.setup label {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+  align-items: stretch;
+}
+.setup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: v.$space-md;
+}
+.panel {
+  background: v.$draft-surface;
+  box-shadow: v.$shadow-panel;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-panel;
+  padding: v.$space-md;
+  margin-block: v.$space-md;
+}
+.room {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: v.$mobile-space-sm;
+}
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(min(100%, 220px), 1fr);
+  gap: v.$space-lg;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  th,
+  td {
+    padding: v.$space-sm;
+    border-bottom: 1px solid v.$draft-border;
+  }
+}
+.scroll {
+  overflow-x: auto;
+  @include v.custom-scrollbar;
+}
+.notice {
+  padding: v.$mobile-space-sm;
+  border-left: 3px solid v.$color-gold-400;
+  background: v.$draft-surface-raised;
+}
+.workspace button,
+.workspace select,
+.workspace input:not([type="checkbox"]) {
+  font: inherit;
+  padding: v.$space-sm;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-control;
+  background: v.$draft-input;
+  color: inherit;
+}
+.workspace button:not(:disabled) {
+  cursor: pointer;
+}
+.workspace :focus-visible {
+  outline: 2px solid v.$color-gold-400;
+  outline-offset: 2px;
+}
+.workspace :disabled {
+  opacity: 0.55;
+}
+.workspace a {
+  color: v.$color-blue-400;
+}
+@media (max-width: v.$breakpoint-tablet) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.workspace {
+  h1,
+  h2 {
+    font-family: v.$font-family-accent;
+    font-weight: v.$font-weight-bold;
+    text-transform: uppercase;
+    letter-spacing: v.$mobile-letter-spacing-wide;
+    line-height: v.$mobile-line-height-tight;
+    margin: 0 0 v.$space-sm;
+  }
+
+  h1 {
+    color: v.$color-brand-white;
+    font-size: clamp(v.$mobile-font-size-xxl, 3vw, v.$font-size-xxl + 0.5 * v.$font-size-xs);
+  }
+
+  h2 {
+    color: v.$primary-color;
+    font-size: v.$font-size-lg;
+  }
+
+  p { margin-block: v.$space-sm v.$space-md; }
+  p,
+  label,
+  li,
+  td { font-size: v.$font-size-base; }
+  small {
+    color: v.$text-secondary;
+    font-size: v.$font-size-sm;
+  }
+
+  button {
+    @include v.button-ghost;
+    min-height: v.$control-height-md;
+    background: v.$draft-input;
+    border-color: v.$draft-border;
+    border-radius: v.$radius-control;
+    font-size: v.$font-size-sm;
+  }
+
+  button.primaryAction,
+  button[aria-pressed="true"] {
+    border: 2px solid v.$primary-color;
+    background: rgba(v.$primary-color, v.$fill-opacity-subtle);
+    color: v.$color-brand-white;
+
+    &:hover:not(:disabled) {
+      background: rgba(v.$primary-color, v.$fill-opacity-strong);
+    }
+  }
+
+  select,
+  input:not([type="checkbox"]) {
+    font-size: v.$font-size-base;
+    min-height: v.$control-height-md;
+    min-width: 0;
+    max-width: 100%;
+    &:focus { border-color: v.$primary-color; }
+  }
+
+  input[type="checkbox"] {
+    width: v.$control-checkbox-size;
+    height: v.$control-checkbox-size;
+    accent-color: v.$primary-color;
+    vertical-align: middle;
+  }
+
+  a:hover { color: v.$color-blue-300; }
+  :disabled { cursor: not-allowed; }
+}
+
+.header {
+  padding-bottom: v.$space-sm;
+  border-bottom: 1px solid v.$draft-border;
+  p { margin: 0; color: v.$text-secondary; }
+}
+
+.room label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: v.$space-sm;
+}
+
+.columns > * { min-width: 0; }
+
+.table {
+  background: v.$draft-surface;
+  th {
+    background: v.$draft-input;
+    color: v.$text-secondary;
+    font-size: v.$font-size-sm;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  tbody tr:nth-child(even) { background: v.$draft-zebra; }
+  tbody tr:hover { background: v.$draft-surface-raised; }
+  td:not(:first-child):not(:last-child) {
+    font-family: v.$font-family-numbers;
+    font-size: v.$font-size-sm;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (max-width: v.$screen-small-max) {
+  .workspace button,
+  .workspace select,
+  .workspace input:not([type="checkbox"]) {
+    min-height: v.$touch-target-min;
+  }
+  .controls label { flex-wrap: wrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace button { transition: none; }
+}
+
+.setupLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: v.$space-lg;
+
+  > .panel { margin-block: 0; }
+}
+
+.setupSettings {
+  min-width: 0;
+  > .primaryAction { margin-top: v.$space-md; }
+}
+
+.room {
+  > div,
+  > p {
+    margin: 0;
+    padding-block: v.$space-sm;
+    border-bottom: 1px solid v.$draft-border;
+  }
+
+  label {
+    display: grid;
+    grid-template-columns: minmax(5rem, 1fr) minmax(0, 2fr);
+    + label { margin-top: v.$space-sm; }
+  }
+
+  select { width: 100%; }
+}
+
+@media (max-width: v.$breakpoint-tablet) {
+  .setupLayout { grid-template-columns: minmax(0, 1fr); }
+}

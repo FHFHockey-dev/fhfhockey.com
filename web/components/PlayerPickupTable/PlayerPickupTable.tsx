@@ -3,7 +3,10 @@ import publicSupabase from "lib/supabase/public-client";
 import styles from "./PlayerPickupTable.module.scss";
 import Image from "next/image";
 import clsx from "clsx";
-import useCurrentSeason from "hooks/useCurrentSeason";
+import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
+import { useDraftProAccess } from "hooks/useDraftProAccess";
+import supabase from "lib/supabase/client";
+import { isYahooPickupPlayer, type YahooPickupContext } from "lib/integrations/yahoo/pickup";
 import { teamsInfo } from "lib/teamsInfo";
 import PanelStatus from "components/common/PanelStatus";
 import { getLocalTeamLogoPath } from "lib/images";
@@ -486,6 +489,7 @@ function getRankColorStyle(
 // Filters Component
 interface FiltersProps {
   ownershipThreshold: number;
+  leagueMode?: boolean;
   setOwnershipThreshold: (value: number) => void;
   teamFilter: string;
   setTeamFilter: (value: string) => void;
@@ -512,6 +516,7 @@ interface FiltersProps {
 }
 
 const Filters: React.FC<FiltersProps> = ({
+  leagueMode = false,
   ownershipThreshold,
   setOwnershipThreshold,
   teamFilter,
@@ -750,6 +755,8 @@ const Filters: React.FC<FiltersProps> = ({
                       min="0"
                       max="100"
                       value={ownershipThreshold}
+                      disabled={leagueMode}
+                      title={leagueMode ? "Yahoo league availability replaces the ownership filter" : undefined}
                       onChange={(e) =>
                         setOwnershipThreshold(Number(e.target.value))
                       }
@@ -817,6 +824,8 @@ const Filters: React.FC<FiltersProps> = ({
                       min="0"
                       max="100"
                       value={ownershipThreshold}
+                      disabled={leagueMode}
+                      title={leagueMode ? "Yahoo league availability replaces the ownership filter" : undefined}
                       onChange={(e) =>
                         setOwnershipThreshold(Number(e.target.value))
                       }
@@ -1651,7 +1660,49 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
 }) => {
   const isMobile = useIsMobile();
   const isSidebarLayout = layoutVariant === "sidebar";
-  const currentSeasonInfo = useCurrentSeason();
+  const seasonQuery = useCurrentSeasonQuery();
+  const currentSeasonInfo = seasonQuery.data;
+  const pro = useDraftProAccess();
+  const [yahooContext, setYahooContext] = useState<YahooPickupContext | null>(null);
+  const [yahooStatus, setYahooStatus] = useState<"loading" | "ready" | "error">("ready");
+  const [yahooError, setYahooError] = useState<string | null>(null);
+  const [yahooRefresh, setYahooRefresh] = useState(0);
+  const [playerView, setPlayerView] = useState<"available" | "roster">("available");
+  const [retryCount, setRetryCount] = useState(0);
+  const leagueContext = pro.status === "ready" && pro.access?.eligible ? yahooContext : null;
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setYahooContext(null);
+    setYahooError(null);
+    setPlayerView("available");
+    if (pro.status !== "ready" || !pro.access?.eligible) {
+      setYahooStatus("ready");
+      return;
+    }
+    setYahooStatus("loading");
+    void (async () => {
+      try {
+        const token = (await supabase.auth.getSession()).data.session?.access_token;
+        if (!token) throw new Error("Sign in to sync your Yahoo league.");
+        const response = await fetch("/api/v1/account/yahoo/pickup", {
+          headers: { Authorization: `Bearer ${token}` }, signal: controller.signal,
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "Yahoo sync is unavailable.");
+        if (!controller.signal.aborted) {
+          setYahooContext(payload.data);
+          setYahooStatus("ready");
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setYahooStatus("error");
+          setYahooError(error instanceof Error ? error.message : "Yahoo sync is unavailable.");
+        }
+      }
+    })();
+    return () => controller.abort();
+  }, [pro.status, pro.access, yahooRefresh]);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isInBottomDrawer, setIsInBottomDrawer] = useState(false);
 
@@ -1664,8 +1715,8 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   }, []);
 
   const yahooSeasonYear = useMemo(() => {
-    return getYahooSeasonStartYear(currentSeasonInfo?.seasonId);
-  }, [currentSeasonInfo]);
+    return leagueContext?.season ?? getYahooSeasonStartYear(currentSeasonInfo?.seasonId);
+  }, [currentSeasonInfo, leagueContext?.season]);
 
   // --- States ---
   const [ownershipThreshold, setOwnershipThreshold] = useState<number>(
@@ -1748,11 +1799,12 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         while (true) {
           const { data: seasonPlayerRows, error: seasonPlayersError } =
             await publicSupabase
-              .from("yahoo_players_with_normalized_history")
+              .from("yahoo_players")
               .select(
-                "player_key, player_id, percent_ownership, ownership_timeline:normalized_ownership_timeline"
+                "player_key, player_id, percent_ownership"
               )
               .eq("season", yahooSeasonYear)
+              .order("player_key")
               .range(playersFrom, playersFrom + supabasePageSize - 1);
 
           if (seasonPlayersError) throw seasonPlayersError;
@@ -1761,13 +1813,8 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           (seasonPlayerRows as any[]).forEach((row) => {
             const key = row?.player_key;
             const id = row?.player_id;
-            const latestPercent = getLatestOwnershipValue(
-              row?.ownership_timeline
-            );
             const percentFromRow =
-              latestPercent !== null
-                ? latestPercent
-                : typeof row?.percent_ownership === "number"
+              typeof row?.percent_ownership === "number"
                   ? row.percent_ownership
                   : row?.percent_ownership != null
                     ? Number(row.percent_ownership)
@@ -1803,9 +1850,10 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
 
         // Query the security-invoker canonical Yahoo/NHL mapping reader with pagination
         while (true) {
-          const { data, error, count } = await publicSupabase
+          const { data, error } = await publicSupabase
             .from("yahoo_nhl_player_map_read")
-            .select("*", { count: "exact" })
+            .select("*")
+            .order("yahoo_player_id")
             .range(from, from + supabasePageSize - 1);
 
           if (error) throw error;
@@ -1832,14 +1880,10 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
                   : "";
               if (!yahooIdString) return false;
 
-              if (!allowedPlayerKeys.has(yahooIdString)) {
-                const numericTail = yahooIdString.includes(".")
-                  ? yahooIdString.split(".").pop()
-                  : yahooIdString;
-                if (!numericTail || !allowedPlayerIds.has(numericTail)) {
-                  return false;
-                }
-              }
+              const matchesSeason = yahooIdString.includes(".")
+                ? allowedPlayerKeys.has(yahooIdString)
+                : allowedPlayerIds.has(yahooIdString);
+              if (!matchesSeason) return false;
             }
 
             if (gameIdOverride) {
@@ -2043,7 +2087,6 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
 
           allData.push(...(mapped as UnifiedPlayerData[]));
 
-          if (count !== null && allData.length >= count) break;
           if (data.length < supabasePageSize) break;
           from += supabasePageSize;
         }
@@ -2068,7 +2111,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     return () => {
       isCancelled = true;
     };
-  }, [yahooSeasonYear]);
+  }, [yahooSeasonYear, retryCount]);
 
   // Fetch latest team games played for the season (used to compute GP%).
   useEffect(() => {
@@ -2294,12 +2337,12 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   // --- Filtered Players (Now depends on selectedPositions state) ---
   const filteredPlayers = useMemo(() => {
     const result = playersDataWithComputedGp.filter((player) => {
-      // Ownership filter
-      if (
-        player.percent_ownership === null ||
-        player.percent_ownership === 0 ||
+      if (leagueContext && !isYahooPickupPlayer(player.yahoo_player_id, leagueContext, playerView)) return false;
+      // League rosters determine availability regardless of global ownership.
+      if (!leagueContext && (
+        player.percent_ownership !== null &&
         player.percent_ownership > ownershipThreshold
-      )
+      ))
         return false;
 
       // Team filter
@@ -2330,7 +2373,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     });
     return result;
     // Dependency on selectedPositions is key here!
-  }, [playersDataWithComputedGp, ownershipThreshold, teamFilter, selectedPositions]);
+  }, [playersDataWithComputedGp, ownershipThreshold, teamFilter, selectedPositions, leagueContext, playerView]);
 
   // --- Compute Percentiles (Logic unchanged) ---
   const playersWithPercentiles: PlayerWithPercentiles[] = useMemo(() => {
@@ -2667,7 +2710,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
 
   // --- Team Options Calculation (Unchanged) ---
   const teamOptions = useMemo(() => {
-    const teamsSet = new Set<string>();
+    const teamsSet = new Set<string>(teamWeekData?.map((team) => team.teamAbbreviation) ?? []);
     playersData.forEach((p) => {
       const teamAbbr = normalizeTeamAbbreviation(
         p.current_team_abbreviation || p.yahoo_team
@@ -2675,7 +2718,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
       if (teamAbbr) teamsSet.add(teamAbbr);
     });
     return ["ALL", ...Array.from(teamsSet).sort()];
-  }, [playersData]);
+  }, [playersData, teamWeekData]);
 
   // --- Event Handlers (handleSort, toggleExpand, toggleMobileMinimize unchanged) ---
   const handleSort = (column: SortKey) => {
@@ -2719,7 +2762,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   useEffect(() => {
     setCurrentPage(1);
     setExpanded({});
-  }, [ownershipThreshold, teamFilter, selectedPositions, selectedMetrics]);
+  }, [ownershipThreshold, teamFilter, selectedPositions, selectedMetrics, leagueContext, playerView]);
 
   useEffect(() => {
     if (totalPages > 0 && currentPage > totalPages) {
@@ -2743,6 +2786,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     <div ref={containerRef} className={containerClass}>
       {/* Pass position state and setter to Filters */}
       <Filters
+        leagueMode={Boolean(leagueContext)}
         ownershipThreshold={ownershipThreshold}
         setOwnershipThreshold={setOwnershipThreshold}
         teamFilter={teamFilter}
@@ -2774,8 +2818,8 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           <div className={styles.tableToolbar}>
             <div className={styles.tableToolbarLeft}>
               <span className={styles.tableToolbarTitle}>
-                Best Available{" "}
-                <span className={styles.tableToolbarAccent}>Players</span>
+                {leagueContext && playerView === "roster" ? "My Yahoo" : "Best Available"}{" "}
+                <span className={styles.tableToolbarAccent}>{leagueContext && playerView === "roster" ? "Roster" : "Players"}</span>
               </span>
               <span className={styles.tableToolbarMeta}>
                 {sortedPlayers.length.toLocaleString()} results
@@ -2793,10 +2837,33 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           </div>
         )}
 
-        {loading ? (
+        {pro.access?.eligible && (
+          <div className={styles.yahooContext}>
+            <p role="status">
+              {yahooStatus === "loading" ? "Syncing Yahoo league rosters…" : leagueContext
+                ? `${leagueContext.leagueName} · ${leagueContext.teamName} · Synced ${new Date(leagueContext.fetchedAt).toLocaleTimeString()}`
+                : yahooError || "Connect Yahoo and select your team in account settings to use your league’s player pool."}
+            </p>
+            <a href="/account?section=connected-accounts">Yahoo account settings</a>
+            <button type="button" onClick={() => setYahooRefresh((value) => value + 1)} disabled={yahooStatus === "loading"}>Refresh Yahoo</button>
+            {leagueContext ? <>
+              <button type="button" aria-pressed={playerView === "available"} onClick={() => setPlayerView("available")}>Available in my league</button>
+              <button type="button" aria-pressed={playerView === "roster"} onClick={() => setPlayerView("roster")}>My roster ({leagueContext.roster.length})</button>
+              <p>Available players are unrostered, including free agents, waivers and undrafted players. Global ownership % is not applied.</p>
+              <details><summary>Synced roster · {leagueContext.roster.length} players</summary>
+                {leagueContext.roster.length ? <ul>{leagueContext.roster.map((player) => <li key={player.key}>{player.name}{player.position ? ` · ${player.position}` : ""}</li>)}</ul> : <p>Your Yahoo roster is empty.</p>}
+                <p>The scored table includes players with verified NHL mappings; the full Yahoo roster is listed here.</p>
+              </details>
+            </> : yahooStatus !== "loading" && <p>Showing the general player pool; Yahoo league availability is not applied.</p>}
+          </div>
+        )}
+        {loading || seasonQuery.isLoading || yahooStatus === "loading" ? (
           <PanelStatus state="loading" message="Loading players..." />
-        ) : loadError ? (
-          <PanelStatus state="error" message={loadError} />
+        ) : loadError || seasonQuery.isError || yahooSeasonYear === null ? (
+          <div>
+            <PanelStatus state="error" message={loadError || "The current season could not be loaded."} />
+            <button type="button" className={styles.toolbarButton} onClick={() => { setRetryCount((value) => value + 1); void seasonQuery.refetch(); }}>Retry player data</button>
+          </div>
         ) : paginatedPlayers.length === 0 ? (
           <div className={styles.message}>
             No players match the current filters.

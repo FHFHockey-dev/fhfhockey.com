@@ -17,6 +17,7 @@ import {
   shouldAttemptLinesCccWrapperOEmbedBackfill,
   toLinesCccTweetOEmbedDataFromBackfillState,
   toLinesCccRow,
+  tweetPublicationFromUrl,
 } from "./linesCccIngestion";
 
 const [canadiens, lightning, utah] = buildTeamDirectory([
@@ -169,7 +170,7 @@ describe("linesCccIngestion", () => {
       ),
     ).resolves.toEqual({
       text: "Lightning lines\nhttps://t.co/9cZkBXydVn",
-      postedAt: "2026-04-24T00:00:00.000Z",
+      postedAt: "2026-04-24T22:43:37.923Z",
       postedLabel: "Apr 24, 2026",
       sourceTweetUrl:
         "https://twitter.com/CcCMiddleton/status/2047808711494902155",
@@ -469,7 +470,7 @@ describe("linesCccIngestion", () => {
       quotedTweetUrl: "https://twitter.com/i/web/status/2047808467969220779",
       quotedText:
         "The #GoBolts lines unchanged in warmups:\nGoncalves-Point-Kucherov\nHagel-Cirelli-Guentzel",
-      quotedPostedAt: "2026-04-24T00:00:00.000Z",
+      quotedPostedAt: "2026-04-24T22:42:39.862Z",
       quotedPostedLabel: "Apr 24, 2026",
       quotedSourceTweetUrl:
         "https://twitter.com/BenjaminJReport/status/2047808467969220779",
@@ -529,6 +530,8 @@ describe("linesCccIngestion", () => {
     const preferred = applyQuotedTweetPreference({
       source: {
         snapshotDate: "2026-04-25",
+        tweetPostedAt: "2026-04-25T19:00:00.000Z",
+        observedAt: "2026-04-25T19:01:00.000Z",
         rawText: "Lightning lines https://t.co/9cZkBXydVn",
         primaryTextSource: "ifttt_text",
         classification: "lineup",
@@ -555,6 +558,8 @@ describe("linesCccIngestion", () => {
 
     expect(preferred).toMatchObject({
       primaryTextSource: "quoted_oembed",
+      tweetPostedAt: "2026-04-24T22:42:39.862Z",
+      observedAt: "2026-04-25T19:01:00.000Z",
       quotedTweetId: "2047808467969220779",
       quotedTweetUrl: "https://twitter.com/i/web/status/2047808467969220779",
       quotedRawText:
@@ -563,6 +568,8 @@ describe("linesCccIngestion", () => {
         "Goncalves-Point-Kucherov\nHagel-Cirelli-Guentzel\nVasilevskiy\nJohansson",
       metadata: {
         preferredQuotedTweet: true,
+        wrapperPostedAt: "2026-04-25T19:00:00.000Z",
+        publicationTimeBasis: "tweet_id_or_unknown",
         primaryTextSource: "quoted_oembed",
         primarySourceUrl:
           "https://twitter.com/i/web/status/2047808467969220779",
@@ -576,6 +583,7 @@ describe("linesCccIngestion", () => {
     const source = applyLinesCccWrapperOEmbed({
       source: {
         snapshotDate: "2026-04-25",
+        tweetPostedAt: "2026-04-24T22:43:38.000Z",
         rawText: "Lightning lines https://t.co/9cZkBXydVn",
         tweetUrl: "https://twitter.com/i/web/status/2047808711494902155",
         primaryTextSource: "ifttt_text",
@@ -605,6 +613,7 @@ describe("linesCccIngestion", () => {
 
     expect(source).toMatchObject({
       enrichedText: "Lightning lines\nGoncalves-Point-Kucherov",
+      tweetPostedAt: "2026-04-24T22:43:38.000Z",
       primaryTextSource: "wrapper_oembed",
       sourceUrl: "https://twitter.com/CcCMiddleton/status/2047808711494902155",
       authorName: "LinesLinesLines",
@@ -1321,5 +1330,37 @@ describe("linesCccIngestion", () => {
       goalie_1_name: "Jon Gillies",
       goalie_1_player_id: null,
     });
+  });
+});
+
+describe("tweet publication timing", () => {
+  it("decodes exact publication without rounding the tweet ID", () => {
+    expect(tweetPublicationFromUrl("https://x.com/reporter/status/2047808467969220779")).toBe("2026-04-24T22:42:39.862Z");
+    expect(tweetPublicationFromUrl("https://twitter.com/i/web/status/2047808467969220779")).toBe("2026-04-24T22:42:39.862Z");
+  });
+  it.each([null, "https://example.com/status/2047808467969220779", "https://x.com.evil.com/a/status/2047808467969220779", "https://x.com/a/status/123", "https://x.com/a/status/99999999999999999999", "https://x.com/a/status/2047808467969220779garbage"])("does not invent a publication time for %s", (url) => {
+    expect(tweetPublicationFromUrl(url)).toBeNull();
+  });
+  it("rejects oEmbed content returned for a different tweet", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({
+      html: '<blockquote><p>Woll will start</p><a href="https://x.com/reporter/status/2047808467969220779">Apr 24, 2026</a></blockquote>',
+    }) }));
+    try {
+      expect(await fetchLinesCccTweetOEmbedData("https://x.com/reporter/status/2047808711494902155")).toBeNull();
+    } finally { vi.unstubAllGlobals(); }
+  });
+  it("keeps missing quoted publication unknown without borrowing wrapper time", () => {
+    const source = applyQuotedTweetPreference({ source: {
+      snapshotDate: "2026-04-25", tweetPostedAt: "2026-04-25T19:00:00.000Z",
+      rawText: "Lightning lines https://t.co/example", classification: "lineup", nhlFilterStatus: "accepted",
+    }, quotedTweet: {
+      quotedTweetId: "123", quotedTweetUrl: "https://x.com/reporter/status/123",
+      quotedText: "Goncalves-Point-Kucherov\nHagel-Cirelli-Guentzel", quotedPostedAt: null,
+      quotedPostedLabel: null, quotedSourceTweetUrl: null, quotedAuthorName: null, quotedAuthorHandle: null,
+      resolvedUrl: "https://x.com/reporter/status/123", shortUrl: null, retrievalStatus: "x_api_success",
+    } });
+    expect(source.primaryTextSource).toBe("quoted_oembed");
+    expect(source.tweetPostedAt).toBeNull();
+    expect(source.metadata?.wrapperPostedAt).toBe("2026-04-25T19:00:00.000Z");
   });
 });

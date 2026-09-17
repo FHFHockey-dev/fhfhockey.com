@@ -16,6 +16,7 @@ import {
   hashYahooDraftSnapshot,
   parseYahooDraftResults,
   parseYahooDraftSettings,
+  removeYahooDisplayOnlyScoring,
   parseYahooPlayoffWeeks,
   parseYahooDraftTeams,
   sessionStatusForProvider,
@@ -897,7 +898,7 @@ export async function loadYahooDraftSession(
     teams: teams.map(apiTeamFromRow),
     // Discovery refreshes playoff fields even for sessions created before support existed.
     settings: {
-      ...settings,
+      ...removeYahooDisplayOnlyScoring(settings, leagueResult.data.scoring_settings),
       playoffWeeks: parseYahooPlayoffWeeks({
         ...record(leagueResult.data.league_metadata),
         ...record(leagueResult.data.roster_settings),

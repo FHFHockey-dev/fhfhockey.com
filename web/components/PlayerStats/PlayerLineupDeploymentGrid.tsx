@@ -11,6 +11,9 @@ export type PlayerLineupDeploymentTally = {
 
 type PlayerLineupDeploymentGridProps = {
   rows: PlayerLineupDeploymentTally[];
+  positions?: readonly string[];
+  compact?: boolean;
+  seasonLabel?: string;
 };
 
 const FORWARD_GRID = [
@@ -75,27 +78,36 @@ function renderGrid(
 }
 
 export function PlayerLineupDeploymentGrid({
-  rows
+  rows,
+  positions,
+  compact = false,
+  seasonLabel = "Regular season",
 }: PlayerLineupDeploymentGridProps) {
   if (rows.length === 0) return null;
 
   const rowByCode = buildMap(rows);
+  const normalizedPositions = positions?.map((position) => position.toUpperCase());
+  const hasForward = normalizedPositions?.some((position) => ["F", "C", "LW", "RW", "W", "L", "R"].includes(position));
+  const hasDefense = normalizedPositions?.some((position) => ["D", "LD", "RD"].includes(position));
+  const knownPosition = hasForward || hasDefense;
+  const showForwards = knownPosition ? hasForward : rows.some((row) => row.deployment_group === "forward" && row.games > 0);
+  const showDefense = knownPosition ? hasDefense : rows.some((row) => row.deployment_group === "defense" && row.games > 0);
 
   return (
-    <section className={styles.lcpgSection}>
+    <section aria-label="Lineup deployment" className={`${styles.lcpgSection} ${compact ? styles.lcpgCompact : ""}`}>
       <div className={styles.lcpgHeader}>
         <h2>Lineup Deployment</h2>
-        <span>Regular season</span>
+        <span>{seasonLabel}</span>
       </div>
       <div className={styles.lcpgLayout}>
-        <div>
+        {showForwards && <div>
           <div className={styles.lcpgGroupLabel}>Forwards</div>
           {renderGrid(rowByCode, FORWARD_GRID, styles.lcpgForwardGrid)}
-        </div>
-        <div>
+        </div>}
+        {showDefense && <div>
           <div className={styles.lcpgGroupLabel}>Defense</div>
           {renderGrid(rowByCode, DEFENSE_GRID, styles.lcpgDefenseGrid)}
-        </div>
+        </div>}
         <div>
           <div className={styles.lcpgGroupLabel}>Power Play</div>
           {renderGrid(rowByCode, POWER_PLAY_GRID, styles.lcpgPowerPlayGrid)}

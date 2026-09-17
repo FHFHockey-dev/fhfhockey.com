@@ -161,6 +161,7 @@ export function summarizePropMarketRows(
 export async function fetchGameMarketContextByGameIds(args: {
   snapshotDate: string;
   gameIds: number[];
+  decisionAsOf?: string;
 }): Promise<Map<number, Record<string, MarketTypeSummary>>> {
   if (args.gameIds.length === 0) return new Map();
 
@@ -181,7 +182,7 @@ export async function fetchGameMarketContextByGameIds(args: {
 
   const result = new Map<number, Record<string, MarketTypeSummary>>();
   for (const [gameId, rows] of rowsByGameId.entries()) {
-    result.set(gameId, summarizeGameMarketRows(rows));
+    result.set(gameId, summarizeGameMarketRows(rows.filter((row) => !args.decisionAsOf || !row.source_observed_at || row.source_observed_at <= args.decisionAsOf), args.decisionAsOf));
   }
   return result;
 }
@@ -189,6 +190,7 @@ export async function fetchGameMarketContextByGameIds(args: {
 export async function fetchPlayerPropContextByGameIds(args: {
   snapshotDate: string;
   gameIds: number[];
+  decisionAsOf?: string;
 }): Promise<Map<string, Record<string, MarketTypeSummary>>> {
   if (args.gameIds.length === 0) return new Map();
 
@@ -210,7 +212,7 @@ export async function fetchPlayerPropContextByGameIds(args: {
 
   const result = new Map<string, Record<string, MarketTypeSummary>>();
   for (const [key, rows] of rowsByKey.entries()) {
-    result.set(key, summarizePropMarketRows(rows));
+    result.set(key, summarizePropMarketRows(rows.filter((row) => !args.decisionAsOf || !row.source_observed_at || row.source_observed_at <= args.decisionAsOf), args.decisionAsOf));
   }
   return result;
 }

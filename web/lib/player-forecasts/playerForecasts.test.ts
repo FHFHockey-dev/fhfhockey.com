@@ -3,7 +3,7 @@ import path from "path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { buildAccountabilityCandles, buildPlayerForecastCandles } from "./accountability";
-import { goalieObservationStatus } from "./sourceObservations";
+import { assignmentsFor, capturePlayerForecastSourceRows, goalieObservationStatus, injuryObservationStatus, type ForecastLineSourceRow } from "./sourceObservations";
 import { createPlayerForecastReviewToken, verifyPlayerForecastReviewToken } from "./reviewToken";
 import { probePlayerForecastTable } from "./readiness";
 import {
@@ -99,6 +99,68 @@ describe("player forecast accountability", () => {
 });
 
 describe("source semantics", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  const goalieRow = { status: "observed", nhl_filter_status: "accepted", classification: "goalie_start", game_id: 100, team_id: 10,
+    capture_key: "goalie-retry", source_group: "gdl", source_key: "gamedaygoalies", source_account: "reporter", source_url: "https://x.com/reporter/status/123",
+    observed_at: "2026-10-10T18:01:00.000Z", tweet_posted_at: "2026-10-10T18:00:00.000Z", raw_text: "Woll is confirmed to start tonight",
+    goalie_1_player_id: 1, goalie_1_name: "Woll", goalie_2_player_id: null, goalie_2_name: null } as ForecastLineSourceRow;
+  it("captures goalie evidence and conflicts through one atomic RPC before queueing research work", async () => {
+    vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "true");
+    const rpc = vi.fn(async (name: string) => ({ data: name === "capture_starter_board_goalies"
+      ? { insertedObservations: 1, insertedConflicts: 1, observationIds: ["observation-1"] } : null, error: null }));
+    const from = vi.fn(() => { throw new Error("No split table writes allowed"); });
+    const result = await capturePlayerForecastSourceRows({ supabase: { rpc, from } as any, rows: [goalieRow] });
+    expect(result).toMatchObject({ goalieObservations: 1, conflicts: 1, jobsQueued: 1 });
+    expect(rpc.mock.calls.map((call) => call[0])).toEqual(["capture_starter_board_goalies", "enqueue_player_forecast_job"]);
+    expect(rpc).toHaveBeenNthCalledWith(1, "capture_starter_board_goalies", { p_observations: [expect.objectContaining({
+      observation_status: "confirmed", confidence: null, observed_at: goalieRow.tweet_posted_at,
+      available_at: goalieRow.observed_at, metadata: { sourceTiming: { sourcePublishedAt: goalieRow.tweet_posted_at,
+        receivedAt: goalieRow.observed_at, sourceReference: "tweet:123" } },
+    })] });
+    expect(from).not.toHaveBeenCalled();
+  });
+  it("propagates atomic goalie failures so processing can retry the original receipt", async () => {
+    vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "true");
+    const error = { message: "member write failed" };
+    const rpc = vi.fn().mockResolvedValue({ data: null, error });
+    await expect(capturePlayerForecastSourceRows({ supabase: { rpc } as any, rows: [goalieRow] })).rejects.toEqual(error);
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
+  it.each([true, false])("uses the primary report for goalie status and deduplication (quote=%s)", async (usesQuote) => {
+    vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "true");
+    const rpc = vi.fn().mockResolvedValue({ data: { insertedObservations: 1, insertedConflicts: 0, observationIds: ["obs"] }, error: null });
+    await capturePlayerForecastSourceRows({ supabase: { rpc } as any, rows: [{ ...goalieRow,
+      raw_text: "Woll is likely to start", primary_text_source: usesQuote ? "quoted_oembed" : "ifttt_text",
+      quoted_tweet_id: "456", quoted_tweet_url: "https://x.com/original/status/456",
+      quoted_author_handle: "Original",
+      quoted_enriched_text: "Woll is confirmed to start tonight",
+    }] });
+    expect(rpc).toHaveBeenNthCalledWith(1, "capture_starter_board_goalies", { p_observations: [expect.objectContaining({
+      observation_status: usesQuote ? "confirmed" : "likely",
+      source_account: usesQuote ? "original" : "reporter",
+      source_url: usesQuote ? "https://x.com/original/status/456" : goalieRow.source_url,
+      metadata: expect.objectContaining({ sourceTiming: expect.objectContaining({ sourceReference: usesQuote ? "tweet:456" : "tweet:123" }) }),
+    })] });
+  });
+  it("keeps multiple named goalies unconfirmed in a single capture transaction", async () => {
+    vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "true");
+    const rpc = vi.fn().mockResolvedValue({ data: { insertedObservations: 2, insertedConflicts: 0 }, error: null });
+    await capturePlayerForecastSourceRows({ supabase: { rpc } as any, rows: [{ ...goalieRow, goalie_2_player_id: 2, goalie_2_name: "Other goalie" }] });
+    expect(rpc.mock.calls[0][1].p_observations.map((row: any) => row.observation_status)).toEqual(["unconfirmed", "unconfirmed"]);
+  });
+  it("does not equate an injury mention with being out, and keeps PP separate from EV", () => {
+    expect(injuryObservationStatus("Player is day-to-day with an injury")).toBe("observed");
+    expect(injuryObservationStatus("Player is ruled out tonight")).toBe("ruled_out");
+    expect(injuryObservationStatus("Player is cleared to play")).toBe("confirmed");
+    const rows = assignmentsFor({
+      line_1_player_ids: [1], line_1_player_names: ["A"],
+      injured_player_ids: [2], injured_player_names: ["B"], raw_text: "B has an injury update",
+      metadata: { powerPlayUnitPlayerIds: [[1, 3]], powerPlayUnits: [["A", "C"]], powerPlayUnitLabels: ["pp2"] },
+    } as unknown as ForecastLineSourceRow);
+    expect(rows.filter((r) => r.player_id === 1).map((r) => [r.unit_type, r.unit_number])).toEqual([["forward_line", 1], ["power_play", 2]]);
+    expect(rows.find((r) => r.player_id === 2)?.assignment_status).toBe("observed");
+    expect(rows.some((r) => r.unit_type === "scratch")).toBe(false);
+  });
   it("keeps explicit goalie language separate from model probabilities", () => {
     expect(goalieObservationStatus("Joseph Woll is confirmed to start tonight")).toBe("confirmed");
     expect(goalieObservationStatus("Woll is expected in goal")).toBe("projected");

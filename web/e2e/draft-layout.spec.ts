@@ -77,7 +77,7 @@ async function audit(page: Page) {
   return result;
 }
 
-async function openFixture(page: Page, options: { setup?: "fresh" | "decline-tab" | "decline-legacy" | "accept-legacy"; accountDefaults?: boolean; keepSetup?: boolean; tierAccess?: boolean } = {}) {
+async function openFixture(page: Page, options: { setup?: "fresh" | "decline-tab" | "decline-legacy" | "accept-legacy"; accountDefaults?: boolean; keepSetup?: boolean; tierAccess?: boolean; myTeamId?: string } = {}) {
   const fixtureAccess = { ...access, capabilities: [...access.capabilities, ...(options.tierAccess ? ["recommendations" as const] : [])] };
   page.on("dialog", dialog => options.setup?.startsWith("decline") ? dialog.dismiss() : dialog.accept());
   await page.route("**/api/**", route => route.fulfill({ json: route.request().url().endsWith("/season") ? { seasonId: 20262027 } : [] }));
@@ -96,21 +96,21 @@ async function openFixture(page: Page, options: { setup?: "fresh" | "decline-tab
     await route.fulfill({ json: { data: request.candidates.map((candidate: { baselineScore?: number; rankValue: number; globalVorp: number }) => ({ candidate, rankScore: candidate.baselineScore ?? candidate.rankValue, recommendationScore: candidate.baselineScore ?? candidate.rankValue, globalVorp: candidate.globalVorp, availabilityEstimate: null, reasons: [], missingCategories: [] })) } });
   });
   const storageKey = `sb-${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1").hostname.split(".")[0]}-auth-token`;
-  await page.addInitScript(({ key, name, setup, tierAccess }) => {
+  await page.addInitScript(({ key, name, setup, tierAccess, myTeamId }) => {
     const session = localStorage.getItem("sb-127-auth-token");
     if (session) localStorage.setItem(key, session);
     if (sessionStorage.getItem("layout-fixture-installed")) return;
     sessionStorage.setItem("layout-fixture-installed", "true");
     localStorage.setItem("draft.god-view.open", "false");
     sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({
-      v: 2, configured: true, currentPick: 12, isSnakeDraft: true,
+      v: 2, configured: true, currentPick: 12, isSnakeDraft: true, myTeamId,
       draftedPlayers: Array.from({ length: 11 }, (_, i) => ({ playerId: String(1001 + i), teamId: `Team ${i + 1}`, pickNumber: i + 1, round: 1, pickInRound: i + 1 })),
       draftSettings: { ...(tierAccess ? { scoringCategories: { GOALS: 3, ASSISTS: 2, PP_POINTS: 0, SHOTS_ON_GOAL: 0, HITS: 0, BLOCKED_SHOTS: 0 } } : {}), teamCount: 12, draftOrder: Array.from({ length: 12 }, (_, i) => `Team ${i + 1}`), draftOrderMode: "snake", rosterConfig: { C: 2, LW: 2, RW: 2, D: 4, G: 2, utility: 1, bench: 4 } },
       customTeamNames: { "Team 1": name },
     }));
     if (setup && setup !== "fresh") localStorage.setItem("draftDashboard.session.v1", sessionStorage.getItem("draft.snapshot.v2")!);
     if (setup === "fresh" || setup?.includes("legacy")) sessionStorage.removeItem("draft.snapshot.v2");
-  }, { key: storageKey, name: longName, setup: options.setup, tierAccess: options.tierAccess });
+  }, { key: storageKey, name: longName, setup: options.setup, tierAccess: options.tierAccess, myTeamId: options.myTeamId });
   await page.goto("/draft-dashboard", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#mobile-draft-panel-players tbody tr").first()).toBeVisible({ timeout: 60_000 });
   const done = page.getByRole("button", { name: "Done", exact: true });
@@ -119,7 +119,7 @@ async function openFixture(page: Page, options: { setup?: "fresh" | "decline-tab
 
 test("projection value columns and rounded standings fit desktop", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await openFixture(page);
+  await openFixture(page, { myTeamId: "Team 12" });
   const panel = page.locator('#mobile-draft-panel-players');
   for (const width of [1920, 1366]) {
     await page.setViewportSize({ width, height: width === 1920 ? 1080 : 768 });
@@ -137,6 +137,16 @@ test("projection value columns and rounded standings fit desktop", async ({ page
           cells: Array.from(table.querySelectorAll('tbody tr:first-child td')).filter(td => !td.querySelector('button') && td.scrollWidth > td.clientWidth + 2).map(td => td.textContent) };
       });
       expect(overflow).toEqual({ table: 0, headers: [], cells: [] });
+      const boundary = await panel.locator('table').evaluate(table => {
+        const label = table.querySelector('[class*="pickLabel"]')!;
+        const header = table.querySelector('thead')!.getBoundingClientRect();
+        const rect = label.getBoundingClientRect();
+        return { headerHeight: header.height, visibleBelowHeader: rect.top >= header.bottom,
+          hit: document.elementFromPoint(rect.x + 10, rect.y + rect.height / 2) === label };
+      });
+      expect(boundary.headerHeight).toBeLessThanOrEqual(31);
+      expect(boundary.visibleBelowHeader).toBe(true);
+      expect(boundary.hit).toBe(true);
       for (const selector of ['#mobile-draft-panel-board', '[aria-label="League Standings"]']) {
         expect(await page.locator(selector).evaluate(panel => {
           const bounds = panel.getBoundingClientRect();

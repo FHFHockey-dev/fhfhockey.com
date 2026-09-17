@@ -51,10 +51,11 @@ function tryParseJson<T>(value: string): T | null {
   }
 }
 
-async function fetchJson<T>(url: string): Promise<T> {
+async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
   const response = await fetch(url, {
     headers: DEFAULT_HEADERS,
     cache: "no-store",
+    ...(signal ? { signal } : {}),
   });
   const contentType = response.headers.get("content-type") ?? "";
   const bodyText = await response.text();
@@ -113,12 +114,12 @@ async function fetchJson<T>(url: string): Promise<T> {
  * @param path
  * @returns
  */
-export function get<T = any>(path: string, debug: boolean = false): Promise<T> {
+export function get<T = any>(path: string, debug: boolean = false, signal?: AbortSignal): Promise<T> {
   const url = `${BASE_URL_ONE}${path}`;
   if (debug) {
     console.log({ url });
   }
-  return fetchJson<T>(url).catch((e) => {
+  return fetchJson<T>(url, signal).catch((e) => {
     if (e instanceof NhlApiHttpError) {
       throw new NhlApiHttpError({
         status: e.status,

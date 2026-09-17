@@ -115,7 +115,6 @@ describe("Yahoo player writer permissions", () => {
     expect(migration).not.toMatch(/grant\s+(insert|update|delete|all)/i);
 
     for (const relativePath of [
-      "web/components/PlayerPickupTable/PlayerPickupTable.tsx",
       "web/lib/draft-ranker/discoveryServer.ts",
       "web/lib/sync/syncYahooPlayersToSheet.ts",
       "web/pages/api/v1/transactions/ownership-snapshots.ts",

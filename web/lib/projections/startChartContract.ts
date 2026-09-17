@@ -1,5 +1,7 @@
 import type { TeamPowerSnapshotLike } from "lib/dashboard/teamContext";
+import { normalizeBoardValidationDisclosure, type BoardValidationDisclosure } from "./starterBoardValidation";
 import type { ResolvedDataServingContract } from "lib/dashboard/freshness";
+import { BOARD_CATEGORIES, parseBoardScoringRequest, type BoardForecast, type BoardScoringRequest } from "./starterBoardScoring";
 import {
   START_CHART_FANTASY_SCORING_CONTRACT,
   START_CHART_RANKING_CONTRACT,
@@ -82,6 +84,8 @@ export type StartChartPlayerContext = {
 };
 
 export type StartChartPlayer = {
+  forecast?: BoardForecast | null;
+  boardScore?: { points: number | null; categoryValue: number | null; sortValue: number | null; basis: string; missingCategories: string[]; change?: number | null };
   row_key: string;
   game_id: number;
   player_id: number;
@@ -144,6 +148,16 @@ export type StartChartServing = ResolvedDataServingContract & {
 };
 
 export type StartChartResponse = {
+  validation?: BoardValidationDisclosure;
+  newsStatus?: { available: boolean; pendingGames: number; freshnessBreachedGames: number; unresolvedConflicts: number; oldestAcceptedAt: string | null };
+  scoringProfile?: BoardScoringRequest & { id: string };
+  contractVersion?: 1 | 2;
+  gameRevisions?: Array<{
+    gameId: number; revisionId: string; runId: string;
+    decisionAsOf: string; publishedAt: string;
+    inputCutoff?: string | null; calculatedAt?: string | null;
+    modelMode: string | null; codeVersion: string | null;
+  }>;
   dateUsed: string;
   date: string;
   resolvedDate: string;
@@ -172,6 +186,38 @@ const finiteOrNull = (value: unknown): number | null => {
 
 const stringOrNull = (value: unknown): string | null =>
   typeof value === "string" && value.trim() ? value : null;
+
+function normalizeForecast(value: unknown): BoardForecast | null {
+  if (!value || typeof value !== "object") return null;
+  const row = asRecord(value);
+  const stats = (data: unknown) => data && typeof data === "object"
+    ? Object.fromEntries(BOARD_CATEGORIES.map((key) => [key, finiteOrNull(asRecord(data)[key])])) : null;
+  return {
+    conditioning: row.conditioning === "conditional_playing" || row.conditioning === "unconditional" ? row.conditioning : "legacy_unclassified",
+    participationProbability: finiteOrNull(row.participationProbability),
+    probabilityStatus: row.probabilityStatus === "confirmed_evidence" || row.probabilityStatus === "uncalibrated_model" ? row.probabilityStatus : "missing",
+    conditional: stats(row.conditional), expected: stats(row.expected), legacy: stats(row.legacy),
+    previous: row.previous && stats(row.previous.stats) ? { revisionId: String(row.previous.revisionId), stats: stats(row.previous.stats)!,
+      changedInputs: Array.isArray(row.previous.changedInputs) ? row.previous.changedInputs.filter((item: unknown) => typeof item === "string") : [] } : null,
+    distributionStatus: "means_only_unvalidated", ppRole: stringOrNull(row.ppRole),
+    seasonBootstrap: row.seasonBootstrap?.version === "season-bootstrap-v1" ? {
+      version: "season-bootstrap-v1", validation: "unvalidated",
+      currentSeasonGames: finiteOrNull(row.seasonBootstrap.currentSeasonGames) ?? 0,
+      historyGames: finiteOrNull(row.seasonBootstrap.historyGames) ?? 0,
+      transitionGames: finiteOrNull(row.seasonBootstrap.transitionGames) ?? 20,
+      fantasyWeight: finiteOrNull(row.seasonBootstrap.fantasyWeight) ?? 0,
+      historyWeight: finiteOrNull(row.seasonBootstrap.historyWeight) ?? 0,
+      sourceIds: Array.isArray(row.seasonBootstrap.sourceIds) ? row.seasonBootstrap.sourceIds.filter((v: unknown) => typeof v === "string") : [],
+      limitations: Array.isArray(row.seasonBootstrap.limitations) ? row.seasonBootstrap.limitations.filter((v: unknown) => typeof v === "string") : [],
+    } : null,
+    ...(row.nonStartAssumption === "zero_relief_minutes" ? { nonStartAssumption: "zero_relief_minutes" as const } : {}),
+    evidence: Array.isArray(row.evidence) ? row.evidence.map((item: any) => ({
+      dimension: String(item.dimension ?? ""), value: String(item.value ?? ""),
+      publishedAt: String(item.publishedAt ?? ""), receivedAt: String(item.receivedAt ?? ""),
+    })) : [],
+    conflicts: Array.isArray(row.conflicts) ? row.conflicts.filter((item: unknown) => typeof item === "string") : [],
+  };
+}
 
 const sourceState = (value: unknown): StartChartSourceState =>
   value === "partial" || value === "missing" || value === "error"
@@ -252,6 +298,13 @@ export function normalizeStartChartResponse(payload: unknown): StartChartRespons
           team_id: finiteOrNull(row.team_id),
           team_abbrev: stringOrNull(row.team_abbrev),
           proj_fantasy_points: finiteOrNull(row.proj_fantasy_points),
+          forecast: normalizeForecast(row.forecast),
+          ...(row.boardScore ? { boardScore: {
+            points: finiteOrNull(row.boardScore.points), categoryValue: finiteOrNull(row.boardScore.categoryValue),
+            change: finiteOrNull(row.boardScore.change),
+            sortValue: finiteOrNull(row.boardScore.sortValue), basis: String(row.boardScore.basis ?? "legacy_unclassified"),
+            missingCategories: Array.isArray(row.boardScore.missingCategories) ? row.boardScore.missingCategories.filter((item: unknown) => typeof item === "string") : [],
+          } } : {}),
           proj_goals: finiteOrNull(row.proj_goals),
           proj_assists: finiteOrNull(row.proj_assists),
           proj_shots: finiteOrNull(row.proj_shots),
@@ -334,9 +387,33 @@ export function normalizeStartChartResponse(payload: unknown): StartChartRespons
     affectsRanking,
     date: null,
   });
+  let scoringProfile: StartChartResponse["scoringProfile"];
+  if (root.scoringProfile) {
+    try {
+      const request = parseBoardScoringRequest(root.scoringProfile);
+      scoringProfile = { ...request, id: JSON.stringify([Object.entries(request.profile.skater).sort(), Object.entries(request.profile.goalie).sort()]) };
+    } catch { /* Invalid optional profiles cannot change the normalized forecasts. */ }
+  }
 
   return {
+    scoringProfile,
+    validation: normalizeBoardValidationDisclosure(root.validation),
     dateUsed: resolvedDate,
+    contractVersion: root.contractVersion === 2 ? 2 : 1,
+    newsStatus: root.newsStatus ? { available: root.newsStatus.available === true,
+      pendingGames: finiteOrNull(root.newsStatus.pendingGames) ?? 0,
+      freshnessBreachedGames: finiteOrNull(root.newsStatus.freshnessBreachedGames) ?? 0,
+      unresolvedConflicts: finiteOrNull(root.newsStatus.unresolvedConflicts) ?? 0,
+      oldestAcceptedAt: stringOrNull(root.newsStatus.oldestAcceptedAt) } : undefined,
+    gameRevisions: Array.isArray(root.gameRevisions) ? root.gameRevisions.flatMap((value: unknown) => {
+      const row = asRecord(value);
+      if (!finiteOrNull(row.gameId) || !stringOrNull(row.revisionId) || !stringOrNull(row.runId)
+        || !stringOrNull(row.decisionAsOf) || !stringOrNull(row.publishedAt)) return [];
+      return [{ gameId: Number(row.gameId), revisionId: row.revisionId, runId: row.runId,
+        decisionAsOf: row.decisionAsOf, publishedAt: row.publishedAt,
+        inputCutoff: stringOrNull(row.inputCutoff), calculatedAt: stringOrNull(row.calculatedAt),
+        modelMode: stringOrNull(row.modelMode), codeVersion: stringOrNull(row.codeVersion) }];
+    }) : [],
     date: resolvedDate,
     resolvedDate,
     requestedDate,

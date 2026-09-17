@@ -69,20 +69,20 @@ describe("scheduled cron audit coverage", () => {
       {},
     );
 
-    expect(authFindings).toHaveLength(48);
+    expect(authFindings).toHaveLength(47);
     expect(
       authFindings.reduce(
         (jobCount, finding) => jobCount + finding.jobNames.length,
         0,
       ),
-    ).toBe(54);
+    ).toBe(51);
     expect(modeCounts).toEqual({
-      "admin-or-cron": 48,
+      "admin-or-cron": 47,
     });
     expect(callerCounts).toEqual({
       "browser-admin": 5,
       "browser-admin-and-internal": 4,
-      "cron-only": 27,
+      "cron-only": 26,
       "internal-server": 12,
     });
     expect(authFindings.filter((finding) => !finding.filePath)).toEqual([]);

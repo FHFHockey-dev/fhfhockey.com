@@ -1638,31 +1638,34 @@
 .playersTable.statColumnsTable .statCol { min-width: 0; }
 .inlineGoalieStatsCell { padding-inline: 4px !important; }
 .inlineGoalieStats {
-  display: flex;
-  flex-wrap: nowrap;
+  display: grid;
+  grid-template-columns: repeat(var(--goalie-stat-count), minmax(0, 1fr));
   align-items: center;
-  justify-content: space-evenly;
-  gap: 12px;
+  justify-content: space-between;
+  gap: 14px;
   width: 100%;
   text-align: center;
 }
 .inlineGoalieStat {
-  display: flex;
-  flex: 0 1 auto;
-  flex-direction: row;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: var(--goalie-label-width) minmax(0, 1fr);
+  justify-content: space-between;
   align-items: center;
   gap: 3px;
   min-width: 0;
   line-height: 1.1;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  text-align: left;
 }
 .inlineGoalieStatLabel {
   color: v.$primary-color;
   font-size: .8em;
   font-weight: 700;
   letter-spacing: .04em;
+}
+.inlineGoalieStatValue {
+  text-align: right;
 }
 .playerRow[data-stripe="0"], .expandRow[data-stripe="0"] { background: v.$draft-input; }
 .playerRow[data-stripe="1"], .expandRow[data-stripe="1"] { background: v.$draft-zebra; }
@@ -1753,16 +1756,17 @@
 .playersTable,
 .playersTable.statColumnsTable {
   table-layout: fixed;
-  .colName { width: 18%; }
-  .colFav { width: 4%; min-width: 0; }
-  .colPos, .colTeam { width: 5%; }
-  .colAction { width: 7%; min-width: 0; }
+  .colName { width: 16.5%; }
+  .colFav { width: 3.5%; min-width: 0; }
+  .colPos { width: 4.5%; }
+  .colTeam { width: 4%; }
+  .colAction { width: 6.5%; min-width: 0; }
   .colCompare { width: 4%; min-width: 0; }
   .colStat, .colScore, .colVorp, .colValueDelta, .colNextPick { width: auto; min-width: 0; }
   // Five-character point and ADP values need a stable, readable footprint in
   // the narrow center panel; the remaining compact columns share the balance.
   .colFP, .colAdp { width: 44px; min-width: 0; }
-  .colSchedule { width: 4%; padding-inline: 1px; text-align: center; font-variant-numeric: tabular-nums; }
+  .colSchedule { width: 2.8%; padding-inline: 1px; text-align: center; font-variant-numeric: tabular-nums; }
   .statHeader, .statCol { min-width: 0; padding-inline: 1px; }
   th { overflow: visible; }
   th button { max-width: 100%; overflow: visible; text-overflow: clip; }
@@ -1802,11 +1806,16 @@
 .queueName { flex-wrap: wrap; }
 .queueControls { display: flex; flex: 0 0 100%; order: 2; gap: 4px; padding-top: 4px; }
 .playersTable td { border-radius: 0 !important; }
-.playerRow[data-next-pick="true"] > td { border-top: 2px solid v.$info-color; }
+.playerRow[data-next-pick="true"] > td {
+  position: relative;
+  border-top: 0;
+  padding-top: 17px;
+  &::before { content: ""; position: absolute; top: 7px; left: 0; right: 0; height: 2px; background: v.$info-color; pointer-events: none; }
+}
 .playerRow[data-next-pick="true"] > .playerName { position: relative; }
 .pickLabel {
   position: absolute;
-  top: -9px;
+  top: 0;
   left: 4px;
   z-index: 1;
   display: block;
@@ -1818,10 +1827,22 @@
   text-transform: uppercase;
   white-space: nowrap;
 }
-.stackedSortButton { position: relative; width: 100%; min-width: 0; margin: 0; padding: 0; justify-content: center; gap: 0; letter-spacing: 0; }
+.stackedSortButton { position: relative; width: 100%; min-width: 0; margin: 0; padding: 0; justify-content: flex-start; gap: 0; letter-spacing: 0; }
 .stackedSortButton::after { position: absolute; right: 0; bottom: 1px; }
-.stackedSortLabel { display: inline-flex; min-width: 0; flex-direction: column; align-items: center; line-height: 1; transform: translateX(-3px); }
+.stackedSortLabel { display: inline-flex; min-width: 0; flex-direction: column; align-items: flex-start; font-size: 9px; line-height: 9px; letter-spacing: 0; }
 .valueDelta { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
 .valueDeltaPositive { color: v.$color-mint-300; }
 .valueDeltaNegative { color: v.$color-coral-500; }
 .projectionsContainer { border-radius: inherit; }
+
+// One compact header height, including explicitly stacked labels.
+.playersTable th { height: 30px; padding-block: 2px; text-align: left; }
+.playersTable th .sortButton { height: 24px; min-height: 0; padding-block: 0; justify-content: flex-start; text-align: left; }
+.playersTable th:is(.colPos, .colTeam, .colAdp, .colSchedule, .colNextPick) { text-align: center; }
+.playersTable th:is(.colPos, .colTeam, .colAdp, .colSchedule, .colNextPick) .sortButton { justify-content: center; text-align: center; }
+.playersTable td:is(.playerName, .fantasyPoints, .statCol, .vorp, .valueDelta) { text-align: left; }
+.playersTable td:is(.position, .team, .adp, .colSchedule, .nextPick) { text-align: center; }
+.playersTable .expandToggle[data-control-size="icon"] {
+  width: 18px; height: 18px; min-width: 18px; min-height: 18px;
+  padding: 0; font-size: 15px !important; color: v.$primary-color !important;
+}

@@ -25,6 +25,11 @@ vi.mock("lib/integrations/yahoo/liveDraftServer", () => ({
 }));
 
 import handler from "../../../pages/api/v1/account/yahoo/draft-sessions";
+import boardHandler from "../../../pages/api/v1/account/yahoo/starter-board";
+const boardMocks = vi.hoisted(() => ({ load: vi.fn(), access: vi.fn(), require: vi.fn() }));
+vi.mock("lib/integrations/yahoo/starterBoard", () => ({ loadYahooStarterBoard: boardMocks.load }));
+vi.mock("lib/draft-pro/server", () => ({ loadDraftProAccess: boardMocks.access, requireDraftProServerCapability: boardMocks.require }));
+vi.mock("lib/draft-pro/recommendationsRateLimit", () => ({ consumeRecommendationRequest: () => true }));
 
 function mockResponse() {
   const response: any = {
@@ -47,6 +52,31 @@ function mockResponse() {
 }
 
 describe("Yahoo live draft API safeguards", () => {
+  it("keeps the board private and enforces entitlement before loading personal data", async () => {
+    requireApiUser.mockResolvedValue({ id: "owner" });
+    boardMocks.access.mockResolvedValue({});
+    boardMocks.require.mockImplementation(() => { throw Object.assign(new Error("private entitlement detail"), { statusCode: 403 }); });
+    const response = mockResponse();
+    await boardHandler({ method: "POST", headers: {}, body: {} } as any, response);
+    expect(response.statusCode).toBe(403);
+    expect(response.headers["cache-control"]).toBe("private, no-store");
+    expect(response.headers.vary).toBe("Authorization");
+    expect(boardMocks.load).not.toHaveBeenCalled();
+    expect(JSON.stringify(response.body)).not.toContain("private entitlement detail");
+    boardMocks.require.mockReset();
+  });
+  it("passes the authenticated account to the board loader and rejects injected account identifiers", async () => {
+    requireApiUser.mockResolvedValue({ id: "owner" });
+    boardMocks.access.mockResolvedValue({});
+    boardMocks.load.mockResolvedValue({ status: "incomplete", limitations: [] });
+    const bad = mockResponse();
+    await boardHandler({ method: "POST", headers: {}, body: { userId: "another-account" } } as any, bad);
+    expect(bad.statusCode).toBe(400);
+    const good = mockResponse();
+    await boardHandler({ method: "POST", headers: {}, body: {} } as any, good);
+    expect(boardMocks.load).toHaveBeenCalledWith({ userId: "owner" });
+    expect(good.statusCode).toBe(200);
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     requireYahooLiveDraftServerAccess.mockResolvedValue({});

@@ -20,7 +20,7 @@ describe("benchmarkObservationMetadata", () => {
       touchedSystems: expect.arrayContaining(["supabase", "nst", "external_api"]),
       notes: expect.arrayContaining([
         expect.stringContaining("must run serially"),
-        expect.stringContaining("5-minute cooldown")
+        expect.stringContaining("10-minute cooldown")
       ])
     });
   });

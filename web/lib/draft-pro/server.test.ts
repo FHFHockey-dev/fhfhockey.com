@@ -6,7 +6,7 @@ vi.mock("lib/integrations/patreon/sync", () => ({ refreshPatreonAccount: mocks.r
 
 import { loadDraftProAccess } from "./server";
 
-const flags = { checkout: true, recommendations: true, dust: true, blended_csv: true, saved_drafts: true, private_imports: true, scenarios: true, god_view: true, reports: true };
+const flags = { checkout: true, recommendations: true, dust: true, blended_csv: true, saved_drafts: true, private_imports: true, scenarios: true, god_view: true, reports: true, mock_draft_advanced: true };
 
 function clientWith(rows: unknown[]) {
   const query = {

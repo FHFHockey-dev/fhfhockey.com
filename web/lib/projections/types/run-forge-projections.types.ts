@@ -330,12 +330,18 @@ export type ProjectionTotals = {
 };
 
 export type RunProjectionOptions = {
+  /** Internal live-capture policy; historical reconstructions do not use mutable preseason imports. */
+  seasonBootstrap?: boolean;
+  decisionAsOf?: string;
   deadlineMs?: number;
+  boardLease?: { owner: string; version: number };
   horizonGames?: number;
   gameIds?: number[];
 };
 
 export type RunProjectionResult = {
+  inputSnapshotId?: string;
+  publishedGames?: number;
   runId: string;
   gamesProcessed: number;
   playerRowsUpserted: number;

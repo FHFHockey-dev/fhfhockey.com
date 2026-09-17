@@ -376,19 +376,147 @@ export {
 } from "./calculators/team-context-adjustments";
 
 export { buildSequentialHorizonScalarsFromDates } from "./utils/date-utils";
+import { captureProjectionInputs, replayProjectionInputs, projectionInputHash } from "./inputCapture";
+import { saveForgeInputSnapshot, publishForgeGameRevisions, projectionWritesHash, capturedGoalieStarts, type ForgeInputSnapshot } from "./gameRevisions";
+import { applyDailyBoardEvidence } from "./dailyBoardEvidence";
+import { starterBoardFlags, starterBoardScopeAllowed } from "./starterBoardFlags";
+
+const projectionModelEnvironment = () => Object.fromEntries([
+  "FORGE_SKATER_MODEL_MODE", "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION", "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION",
+  "NHL_XG_TEAM_AGGREGATE_WINDOW_GAMES", "NHL_XG_MODEL_VERSION",
+  "START_CHART_GAME_REVISIONS", "STARTER_BOARD_COMPUTE_ENABLED", "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED",
+].map((key) => [key, process.env[key] ?? null]));
 
 export async function runProjectionV2ForDate(
   asOfDate: string,
   opts?: RunProjectionOptions,
 ): Promise<RunProjectionResult> {
   assertSupabase();
-  const runId = await createRun(asOfDate);
+  const decisionAsOf = opts?.decisionAsOf ?? new Date().toISOString();
+  if (!Number.isFinite(Date.parse(decisionAsOf)) || Date.parse(decisionAsOf) > Date.now()) {
+    throw new Error("Projection cutoff must be a valid timestamp no later than now.");
+  }
+  const { capture: captureEnabled, compute: computeEnabled } = starterBoardFlags();
+  if (computeEnabled && !captureEnabled) throw new Error("Starter Board computation requires input capture.");
+  // Existing full-slate FORGE jobs retain their legacy outputs and captured inputs,
+  // but only explicitly scoped canary runs may publish new Starter Board revisions.
+  const compute = computeEnabled && starterBoardScopeAllowed(opts?.gameIds);
+  const seasonBootstrap = compute && !opts?.decisionAsOf && (opts?.horizonGames ?? 1) === 1
+    && process.env.STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED === "true"
+    && asOfDate >= new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(decisionAsOf));
+  const codeVersion = process.env.FORGE_CODE_VERSION ?? process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GIT_SHA;
+  if (captureEnabled && !codeVersion) throw new Error("Captured FORGE runs require an immutable FORGE_CODE_VERSION or deployment commit SHA.");
+  const reservation = compute ? await (supabase as any).rpc("begin_forge_game_run", {
+    p_date: asOfDate, p_game_ids: opts?.gameIds ?? [], p_code_version: codeVersion,
+    p_owner: opts?.boardLease?.owner ?? null, p_version: opts?.boardLease?.version ?? null,
+  }) : null;
+  if (reservation?.error) throw reservation.error;
+  const runId: string = reservation?.data ?? await createRun(asOfDate);
+  if (!captureEnabled) return runProjectionCalculations(asOfDate, { ...opts, decisionAsOf }, runId);
+  try {
+    const capture = await captureProjectionInputs(() => runProjectionCalculations(asOfDate, { ...opts, decisionAsOf, seasonBootstrap }, runId), { deadlineMs: opts?.deadlineMs });
+    if (capture.result.timedOut) return capture.result;
+    const snapshot: ForgeInputSnapshot = {
+      version: "forge-inputs-v1", runId, slateDate: asOfDate,
+      inputCutoff: decisionAsOf,
+      decisionAsOf: capture.reads.reduce((latest, read) => read.receivedAt > latest ? read.receivedAt : latest, decisionAsOf),
+      capturedAt: new Date().toISOString(),
+      codeVersion: codeVersion!,
+      modelMode: resolveSkaterRolloutConfig().mode,
+      modelEnvironment: projectionModelEnvironment(),
+      seasonBootstrapApplied: seasonBootstrap,
+      inputProvenance: buildForgeInputProvenance(),
+      dailyBoardEvidence: capture.writes.filter((ops) => ops[0]?.args[0] === "forge_runs")
+        .map((ops) => (ops.find((op) => op.method === "update")?.args[0] as any)?.metrics?.daily_board_evidence)
+        .find(Boolean) ?? { assertions: [], conflicts: [] },
+      deterministicSeed: 0,
+      horizonGames: opts?.horizonGames ?? 1,
+      gameIds: opts?.gameIds ?? [],
+      replayClassification: opts?.decisionAsOf || asOfDate < new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit",
+      }).format(new Date(decisionAsOf)) ? "historical_reconstruction" : "captured_live",
+      reads: capture.reads,
+      goalieStarts: capturedGoalieStarts(capture.reads, capture.writes),
+      outputHash: projectionWritesHash(capture.writes),
+    };
+    const inputSnapshotId = await saveForgeInputSnapshot(snapshot);
+    const publishedGames = compute && snapshot.horizonGames === 1 && snapshot.replayClassification === "captured_live"
+      ? await publishForgeGameRevisions(runId, inputSnapshotId) : 0;
+    return { ...capture.result, inputSnapshotId, publishedGames };
+  } catch (error) {
+    await finalizeRun(runId, "failed", { error: getErrorMessage(error), publication_failed: true });
+    throw error;
+  }
+}
+
+/** Bounded diagnostic capture: no run reservation, publication or database writes. */
+export async function captureForgeReconstruction(args: {
+  slateDate: string; gameId: number; inputCutoff: string; codeVersion: string; deadlineMs: number;
+  controlledNews?: { classification: "controlled_news_fixture"; lineups?: import("./dailyBoardEvidence").BoardLineupEvidence[];
+    goalies?: import("./dailyBoardEvidence").BoardGoalieEvidence[]; conflicts?: import("./dailyBoardEvidence").BoardConflict[] };
+}) {
+  if (!starterBoardFlags().compute || !starterBoardFlags().capture) throw new Error("Reconstruction requires the captured Starter Board calculation path");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(args.slateDate) || !Number.isSafeInteger(args.gameId) || args.gameId <= 0
+    || !args.codeVersion || !Number.isFinite(Date.parse(args.inputCutoff)) || Date.parse(args.inputCutoff) > Date.now()
+    || !Number.isFinite(args.deadlineMs) || args.deadlineMs <= Date.now()) throw new Error("Invalid bounded reconstruction request");
+  if (args.slateDate >= "2026-01-03" && args.slateDate <= "2026-04-16") throw new Error("Protected research holdout cannot be reconstructed under this contract");
+  if (args.controlledNews && (args.controlledNews.classification !== "controlled_news_fixture"
+    || [...args.controlledNews.lineups ?? [], ...args.controlledNews.goalies ?? [], ...args.controlledNews.conflicts ?? []]
+      .some((row) => row.game_id !== args.gameId))) throw new Error("Controlled news must identify this game and remain explicitly synthetic");
+  const runId = "00000000-0000-4000-8000-000000000001";
+  const capture = await captureProjectionInputs(() => runProjectionCalculations(args.slateDate, {
+    gameIds: [args.gameId], horizonGames: 1, decisionAsOf: args.inputCutoff, deadlineMs: args.deadlineMs,
+  }, runId), { deadlineMs: args.deadlineMs, suppressWrites: true, controlledNewsReads: args.controlledNews ? {
+    player_forecast_lineup_snapshots: args.controlledNews.lineups ?? [],
+    player_forecast_goalie_start_observations: args.controlledNews.goalies ?? [],
+    player_forecast_observation_conflicts: args.controlledNews.conflicts ?? [],
+  } : undefined });
+  const snapshot: ForgeInputSnapshot = {
+    version: "forge-inputs-v1", runId, slateDate: args.slateDate,
+    decisionAsOf: capture.reads.reduce((latest, read) => read.receivedAt > latest ? read.receivedAt : latest, args.inputCutoff),
+    inputCutoff: args.inputCutoff, capturedAt: new Date().toISOString(), codeVersion: args.codeVersion,
+    modelMode: resolveSkaterRolloutConfig().mode, modelEnvironment: projectionModelEnvironment(),
+    inputProvenance: buildForgeInputProvenance(), deterministicSeed: 0, horizonGames: 1, gameIds: [args.gameId],
+    replayClassification: "historical_reconstruction", reads: capture.reads,
+    ...(args.controlledNews ? { controlledScenario: { classification: "controlled_news_fixture" as const, fixtureHash: projectionInputHash(args.controlledNews) } } : {}),
+    outputHash: projectionWritesHash(capture.writes), goalieStarts: capturedGoalieStarts(capture.reads, capture.writes),
+  };
+  return { result: capture.result, snapshot, writes: capture.writes, snapshotHash: projectionInputHash(snapshot) };
+}
+
+/** Replays recorded reads, suppressing all database writes and network access. */
+export async function replayForgeSnapshot(snapshot: ForgeInputSnapshot, expectedHash: string) {
+  if (!starterBoardFlags().capture) throw new Error("Replay requires Starter Board capture configuration.");
+  if (projectionInputHash(snapshot) !== expectedHash || snapshot.version !== "forge-inputs-v1") {
+    throw new Error("FORGE snapshot checksum or version mismatch.");
+  }
+  if (resolveSkaterRolloutConfig().mode !== snapshot.modelMode) throw new Error("FORGE replay model mode mismatch.");
+  const currentEnvironment = projectionModelEnvironment();
+  // Earlier v1 captures predate the split rollout flags. Compare every captured
+  // setting, and preserve the legacy evidence-enabled execution semantics.
+  const comparableEnvironment = Object.fromEntries(Object.keys(snapshot.modelEnvironment ?? {}).map((key) => [key, currentEnvironment[key] ?? null]));
+  if (snapshot.modelEnvironment && (projectionInputHash(snapshot.modelEnvironment) !== projectionInputHash(comparableEnvironment)
+    || (!("STARTER_BOARD_COMPUTE_ENABLED" in snapshot.modelEnvironment) && !starterBoardFlags().compute))) {
+    throw new Error("FORGE replay environment mismatch; restore the captured non-secret model configuration.");
+  }
+  const replay = await replayProjectionInputs(snapshot.reads, () => runProjectionCalculations(snapshot.slateDate, {
+    decisionAsOf: snapshot.inputCutoff, horizonGames: snapshot.horizonGames, gameIds: snapshot.gameIds,
+    seasonBootstrap: snapshot.seasonBootstrapApplied === true,
+  }, snapshot.runId));
+  const outputHash = projectionWritesHash(replay.writes);
+  if (outputHash !== snapshot.outputHash) throw new Error("FORGE replay output mismatch; use the captured code/model version.");
+  return { runId: snapshot.runId, outputHash, matched: true };
+}
+
+async function runProjectionCalculations(asOfDate: string, opts: RunProjectionOptions | undefined, runId: string): Promise<RunProjectionResult> {
   const skaterRollout = resolveSkaterRolloutConfig();
 
   const metrics: Record<string, any> = {
     as_of_date: asOfDate,
     horizon_games: clampHorizonGames(opts?.horizonGames ?? 1),
     input_provenance: buildForgeInputProvenance(),
+    decision_as_of: opts?.decisionAsOf,
+    board_lease: opts?.boardLease ?? null,
     execution_scope: {
       mode: opts?.gameIds?.length ? "selected_games" : "full_slate",
       requested_game_ids: opts?.gameIds ?? [],
@@ -490,10 +618,12 @@ export async function runProjectionV2ForDate(
     const playerDateKey = (playerId: number) => `${playerId}:${asOfDate}`;
     const preflight = await runProjectionPreflightStage({
       asOfDate,
+      decisionAsOf: opts?.decisionAsOf,
       requestedGameIds: opts?.gameIds ?? [],
     });
 
     const currentSeasonId = preflight.currentSeasonId;
+    metrics.daily_board_evidence = preflight.dailyBoardEvidence;
     const games = preflight.games;
     const teamAbbreviationById = preflight.teamAbbreviationById;
     const playerAvailabilityMultiplier = preflight.playerAvailabilityMultiplier;
@@ -599,12 +729,15 @@ export async function runProjectionV2ForDate(
         game,
         deadlineMs,
         currentSeasonId,
+        seasonBootstrap: opts?.seasonBootstrap,
         skaterRollout,
         teamAbbreviationById,
-        playerAvailabilityMultiplier,
-        availabilityEventByPlayer,
-        roleEventByPlayer,
-        goalieOverrideByTeamId,
+        ...applyDailyBoardEvidence({
+          gameId: game.id, evidence: preflight.dailyBoardEvidence,
+          playerAvailabilityMultiplier, availabilityEventByPlayer, roleEventByPlayer,
+          ppEventByPlayer: preflight.ppEventByPlayer, goalieOverrideByTeamId,
+        }),
+        dailyBoardEvidence: preflight.dailyBoardEvidence,
         activeRosterSkaterIdsByTeamId,
         teamHorizonScalarsCache,
         teamSkaterRoleHistoryCache,
@@ -637,6 +770,7 @@ export async function runProjectionV2ForDate(
 
       // Create goalie projections after both teams are projected so we can use opponent shots.
       const goalieStageResult = await runPerGameGoalieStage({
+        seasonBootstrap: opts?.seasonBootstrap,
         asOfDate,
         runId,
         horizonGames,

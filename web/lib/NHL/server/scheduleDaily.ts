@@ -8,6 +8,8 @@ export interface ScheduleDailyOdds {
 export interface ScheduleDailyGame {
   id: number;
   startTimeUTC: string;
+  gameState?: string;
+  gameScheduleState?: string;
   awayTeam: {
     id: number;
     abbrev: string;
@@ -31,6 +33,6 @@ export interface ScheduleDailyData {
   }>;
 }
 
-export async function getScheduleDaily(date: string): Promise<ScheduleDailyData> {
-  return await get(`/schedule/${date}`);
+export async function getScheduleDaily(date: string, signal?: AbortSignal): Promise<ScheduleDailyData> {
+  return signal ? await get(`/schedule/${date}`, false, signal) : await get(`/schedule/${date}`);
 }

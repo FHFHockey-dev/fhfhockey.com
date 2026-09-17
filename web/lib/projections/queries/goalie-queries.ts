@@ -360,6 +360,7 @@ export async function fetchGoalieEvidence(
 export async function fetchOpponentGoalieContextForGame(args: {
   gameId: number;
   opponentTeamId: number;
+  confirmedGoalieId?: number;
 }): Promise<OpponentGoalieContext | null> {
   assertSupabase();
   const { data, error } = await supabase
@@ -371,7 +372,8 @@ export async function fetchOpponentGoalieContextForGame(args: {
     .limit(3);
   if (error) throw error;
 
-  const rows = (data ?? []) as Array<any>;
+  const rows = ((data ?? []) as Array<any>).filter((row) => args.confirmedGoalieId == null || row.player_id === args.confirmedGoalieId)
+    .map((row) => args.confirmedGoalieId == null ? row : { ...row, start_probability: 1, confirmed_status: true });
   if (rows.length === 0) return null;
 
   let probabilityMass = 0;
@@ -387,8 +389,8 @@ export async function fetchOpponentGoalieContextForGame(args: {
       isConfirmedStarter = Boolean(row?.confirmed_status);
     }
     probabilityMass += p;
-    const gsaa = Number(row?.projected_gsaa_per_60);
-    if (Number.isFinite(gsaa)) {
+    const gsaa = row?.projected_gsaa_per_60 == null ? null : Number(row.projected_gsaa_per_60);
+    if (gsaa != null && Number.isFinite(gsaa)) {
       weightedGsaa += p * gsaa;
       weightedGsaaMass += p;
     }

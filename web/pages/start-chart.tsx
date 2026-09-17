@@ -21,6 +21,9 @@ import ResizeObserverPolyfill from "resize-observer-polyfill";
 import useSWR from "swr";
 
 import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
+import StarterBoardYahoo from "components/StarterBoardYahoo";
+import StarterBoardValidation from "components/StarterBoardValidation";
+import StarterBoardPlayerDetails from "components/StarterBoardPlayerDetails";
 import { START_CHART_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import {
   normalizeStartChartResponse,
@@ -35,6 +38,7 @@ import {
   type StartChartPosition,
 } from "lib/projections/startChartFantasyScoring";
 import { teamsInfo } from "lib/teamsInfo";
+import { BOARD_CATEGORIES, DEFAULT_BOARD_SCORING, boardSkaterForecast, parseBoardScoringRequest, scoreStarterBoardPayload, type BoardScoringRequest } from "lib/projections/starterBoardScoring";
 
 import styles from "./start-chart.module.scss";
 
@@ -237,17 +241,12 @@ const RenderGoalie = ({ goalies }: { goalies?: StartChartGoalie[] }) => {
           right.probability - left.probability ||
           left.goalie.player_id - right.goalie.player_id,
       );
-    const total = candidates.reduce((sum, row) => sum + row.probability, 0);
-    const withNormalizedProbability = candidates.map((row) => ({
-      ...row,
-      probability: total > 0 ? row.probability / total : 0,
-    }));
-    const visible = withNormalizedProbability.filter(
+    const visible = candidates.filter(
       (row) => row.probability >= 0.05,
     );
     return visible.length > 0
       ? visible
-      : withNormalizedProbability.slice(0, 1);
+      : candidates.slice(0, 1);
   }, [goalies]);
 
   if (normalized.length === 0) {
@@ -354,7 +353,7 @@ const ContextChips = ({
           }`
         : "PP role unavailable",
     player.context?.role_probability != null
-      ? `Role confidence ${formatPercent(player.context.role_probability)}`
+      ? `Role scenario weight ${formatPercent(player.context.role_probability)}`
       : null,
     player.context?.role_continuity != null
       ? `Continuity ${formatPercent(player.context.role_continuity)}`
@@ -396,6 +395,9 @@ export default function StartChartPage() {
   const [ownershipMax, setOwnershipMax] = useState(100);
   const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const [scoring, setScoring] = useState<BoardScoringRequest>(() => parseBoardScoringRequest({}));
+  const [scoringTouched, setScoringTouched] = useState(false);
+  const [scoringError, setScoringError] = useState<string | null>(null);
   const [activePosition, setActivePosition] =
     useState<StartChartPosition>("C");
   const [positionLimits, setPositionLimits] = useState<
@@ -447,10 +449,19 @@ export default function StartChartPage() {
     validQueryPosition,
   ]);
 
-  const { data, error, isLoading, mutate } = useSWR<StartChartResponse>(
+  const { data: publishedData, error, isLoading, mutate } = useSWR<StartChartResponse>(
     date ? `/api/v1/start-chart?date=${encodeURIComponent(date)}` : null,
     fetcher,
+    { refreshInterval: 30_000, dedupingInterval: 5_000, revalidateOnFocus: true },
   );
+  const data = useMemo(() => {
+    if (!publishedData || (!scoringTouched && publishedData.contractVersion !== 2)) return publishedData;
+    return { ...publishedData, ...scoreStarterBoardPayload({ ...publishedData,
+      players: publishedData.players.map((player) => ({ ...player,
+        forecast: player.forecast ?? (player.positions.includes("G") ? null : boardSkaterForecast(player, null)),
+      })),
+    }, scoring) } as StartChartResponse;
+  }, [publishedData, scoring, scoringTouched]);
   const { ref: chartGraphicRef, size: chartSize } = useMeasuredChart(
     (data?.ctpi?.length ?? 0) > 0,
   );
@@ -730,7 +741,7 @@ export default function StartChartPage() {
           <div>
             <dt>Scoring</dt>
             <dd title={data?.fantasyScoringContract?.version}>
-              {data?.fantasyScoringContract?.label ?? "Unavailable"}
+              {scoringTouched ? scoring.mode === "categories" ? "Category comparison" : "Selected points weights" : data?.fantasyScoringContract?.label ?? "Unavailable"}
             </dd>
           </div>
           <div>
@@ -741,6 +752,18 @@ export default function StartChartPage() {
           </div>
         </dl>
       </header>
+
+      <section className={styles.personalization} aria-label="Yahoo today comparison"><StarterBoardYahoo /></section>
+
+      {data?.validation ? <StarterBoardValidation validation={data.validation} className={styles.statusBanner} /> : null}
+
+      {data?.contractVersion === 2 ? <div className={styles.statusBanner} aria-label="Slate news freshness"
+        data-board-revisions={JSON.stringify((data.gameRevisions ?? []).map((revision) => revision.revisionId))}>
+        <strong>{data.newsStatus?.available === false ? "News freshness unavailable" : data.newsStatus?.pendingGames ? `${data.newsStatus.pendingGames} games refreshing` : "Latest published projections"}</strong>
+        <span>{data.sourceStatus.projection.updatedAt ? `Published ${data.sourceStatus.projection.updatedAt}` : "Publication pending"} · refreshes every 30 seconds</span>
+        {data.newsStatus?.freshnessBreachedGames ? <span role="status">Five-minute update target exceeded for {data.newsStatus.freshnessBreachedGames} games. Showing the last successful projections.</span> : null}
+        {data.newsStatus?.unresolvedConflicts ? <span>{data.newsStatus.unresolvedConflicts} unresolved news conflicts</span> : null}
+      </div> : null}
 
       {isFallback || isPartial || isDegraded ? (
         <section
@@ -761,6 +784,435 @@ export default function StartChartPage() {
           </span>
         </section>
       ) : null}
+
+      <section className={styles.filters} aria-label="Starter Board controls">
+        <div className={styles.filterGroup}>
+          <label htmlFor="start-chart-search">Player</label>
+          <input
+            id="start-chart-search"
+            className={styles.search}
+            placeholder="Player name…"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </div>
+        <div className={styles.filterGroup}>
+          <label htmlFor="start-chart-date">Date</label>
+          <input
+            id="start-chart-date"
+            type="date"
+            className={styles.dateInput}
+            value={date}
+            onChange={(event) => selectDate(event.target.value)}
+          />
+        </div>
+        <div className={styles.filterGroup}>
+          <label htmlFor="start-chart-team">Team</label>
+          <select
+            id="start-chart-team"
+            className={styles.selectInput}
+            value={selectedTeam ?? ""}
+            onChange={(event) => {
+              const team = event.target.value || null;
+              setSelectedTeam(team);
+              updateQuery({ team });
+            }}
+          >
+            <option value="">All slate teams</option>
+            {teamsPlaying.map((team) => (
+              <option key={team} value={team}>
+                {team}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className={styles.filterGroup}>
+          <label htmlFor="start-chart-ownership">
+            {ownershipMax === 100 ? "All ownership" : `Ownership ≤ ${ownershipMax}%`}
+          </label>
+          <input
+            id="start-chart-ownership"
+            className={styles.rangeInput}
+            type="range"
+            min={0}
+            max={100}
+            value={ownershipMax}
+            onChange={(event) => setOwnershipMax(Number(event.target.value))}
+          />
+        </div>
+        <div className={styles.filterGroup}>
+          <label htmlFor="start-chart-mode">Compare</label>
+          <select
+            id="start-chart-mode"
+            className={styles.selectInput}
+            value={scoring.mode}
+            onChange={(event) => { setScoringTouched(true); setScoring({ ...scoring, mode: event.target.value as "points" | "categories", category: event.target.value === "categories" ? "SHOTS_ON_GOAL" : null }); }}
+          >
+            <option value="points">Fantasy points</option>
+            <option value="categories">Individual category</option>
+          </select>
+        </div>
+        {scoring.mode === "categories" ? <div className={styles.filterGroup}>
+          <label htmlFor="start-chart-category">Category</label>
+          <select id="start-chart-category" className={styles.selectInput} value={scoring.category ?? "SHOTS_ON_GOAL"}
+            onChange={(event) => { setScoringTouched(true); setScoring({ ...scoring, category: event.target.value }); }}>
+            {BOARD_CATEGORIES.map((category) => <option key={category} value={category}>{category.replaceAll("_", " ")}</option>)}
+          </select>
+        </div> : null}
+        <div className={styles.filterGroup}>
+          <label htmlFor="start-chart-goalie-sort">Goalie order</label>
+          <select id="start-chart-goalie-sort" className={styles.selectInput} value={!scoringTouched && data?.contractVersion !== 2 ? "start_probability" : scoring.goalieSort}
+            disabled={scoring.mode === "categories"}
+            onChange={(event) => { setScoringTouched(true); setScoring({ ...scoring, goalieSort: event.target.value as "fantasy" | "start_probability" }); }}>
+            <option value="fantasy">Expected fantasy points</option>
+            <option value="start_probability">Starting probability</option>
+          </select>
+        </div>
+        <details className={styles.scoringEditor}>
+          <summary>Scoring profile · customize points</summary>
+          <form onSubmit={(event) => {
+            event.preventDefault();
+            const values = new FormData(event.currentTarget);
+            const profile = Object.fromEntries((["skater", "goalie"] as const).map((population) => [population,
+              Object.fromEntries(Object.keys(DEFAULT_BOARD_SCORING[population]).map((key) => [key, Number(values.get(`${population}.${key}`))])),
+            ]));
+            try { setScoring(parseBoardScoringRequest({ ...scoring, profile })); setScoringTouched(true); setScoringError(null); }
+            catch (error) { setScoringError(error instanceof Error ? error.message : String(error)); }
+          }}>
+            {(["skater", "goalie"] as const).map((population) => <fieldset key={population}>
+              <legend>{population === "skater" ? "Skaters" : "Goalies"}</legend>
+              {Object.entries(DEFAULT_BOARD_SCORING[population]).map(([key, weight]) => <label key={key}>
+                {key.replaceAll("_", " ")}
+                <input name={`${population}.${key}`} type="number" step="any" min={-100} max={100} required defaultValue={weight} />
+              </label>)}
+            </fieldset>)}
+            <button type="submit" className={styles.loadMore}>Apply scoring</button>
+            {scoringError ? <p role="alert">{scoringError}</p> : null}
+          </form>
+        </details>
+        {unknownOwnershipExcluded > 0 ? (
+          <p className={styles.controlNote} role="status">
+            {unknownOwnershipExcluded} player
+            {unknownOwnershipExcluded === 1 ? " was" : "s were"} excluded because
+            ownership is unavailable; unknown values are never treated as 0%.
+          </p>
+        ) : null}
+        <p className={styles.controlNote}>
+          Compare streaming candidates using points or one category. Skater forecasts marked “if playing” exclude participation risk.
+          Unavailable statistics are shown as —. Goalie expected points assume no relief appearance when not starting.
+        </p>
+        <details className={styles.legendContainer}>
+          <summary className={styles.legendIcon} aria-label="Explain metrics">
+            i
+          </summary>
+          <div className={styles.legendTooltip}>
+            <div className={styles.legendItem}>
+              <strong>Fantasy points</strong>
+              {fantasyScoringDescription}.
+            </div>
+            <div className={styles.legendItem}>
+              <strong>DEF ease</strong>
+              Slate-relative opponent defense grade. Higher opponent xGA/60 is
+              easier; missing as-of ratings display as unavailable.
+            </div>
+            <div className={styles.legendItem}>
+              <strong>NHL PTS uncertainty</strong>
+              Low/high values bound projected goals plus assists, not fantasy
+              points or guarantees.
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <div
+        className={styles.positionTabs}
+        role="tablist"
+        aria-label="Starter Board positions"
+      >
+        {POSITION_ORDER.map((position) => (
+          <button
+            id={`start-chart-tab-${position}`}
+            key={position}
+            type="button"
+            role="tab"
+            aria-selected={activePosition === position}
+            aria-controls={`start-chart-panel-${position}`}
+            tabIndex={activePosition === position ? 0 : -1}
+            onClick={() => selectPosition(position)}
+            onKeyDown={(event) => handleTabKeyDown(event, position)}
+          >
+            {position}
+            <span>{playersByPosition.get(position)?.length ?? 0}</span>
+          </button>
+        ))}
+      </div>
+
+      <section
+        className={styles.columns}
+        aria-label="Starter Board rankings by position"
+        aria-busy={isLoading || !date}
+      >
+        {error ? (
+          <div className={styles.requestState} role="alert">
+            <strong>Starter Board is unavailable.</strong>
+            <span>{error.message}</span>
+            <button type="button" onClick={() => void mutate()}>
+              Retry
+            </button>
+          </div>
+        ) : null}
+        {!error && data?.serving?.mode === "no_games" ? (
+          <div className={styles.requestState} role="status">
+            <strong>No games found.</strong>
+            <span>{data.serving.message}</span>
+          </div>
+        ) : null}
+        {!error && data?.games?.length && data.players.length === 0 ? (
+          <div className={styles.requestState} role="status">
+            <strong>No player projections found.</strong>
+            <span>
+              {data.games.length} game{data.games.length === 1 ? " is" : "s are"}
+              scheduled, but canonical projection rows are not ready.
+            </span>
+          </div>
+        ) : null}
+
+        {POSITION_ORDER.map((position) => {
+          const fullList = playersByPosition.get(position) ?? [];
+          const visibleList = fullList.slice(0, positionLimits[position]);
+          const headingId = `start-chart-position-${position}`;
+          const isActive = activePosition === position;
+          return (
+            <section
+              id={`start-chart-panel-${position}`}
+              role="tabpanel"
+              aria-labelledby={`start-chart-tab-${position}`}
+              className={`${styles.column} ${styles[`pos${position}`]} ${
+                isActive ? "" : styles.columnInactive
+              }`}
+              key={position}
+            >
+              <div className={styles.columnHeader}>
+                <h2 id={headingId}>{position}</h2>
+                <span className={styles.pill}>{fullList.length}</span>
+              </div>
+              {isLoading || !date ? (
+                <div className={styles.emptyState} role="status">
+                  Loading projections…
+                </div>
+              ) : fullList.length === 0 ? (
+                <div className={styles.emptyState}>
+                  No players match this position and filter set.
+                </div>
+              ) : (
+                <ol className={styles.cardList}>
+                  {visibleList.map((player) => {
+                    const game = gamesById.get(player.game_id);
+                    const opponentGoalie = game
+                      ? player.team_id === game.homeTeamId
+                        ? (game.awayGoalies[0] ?? null)
+                        : (game.homeGoalies[0] ?? null)
+                      : null;
+                    const playerHref = buildContextHref(
+                      `/forge/player/${player.player_id}`,
+                      {
+                        ...workflowContext,
+                        team: player.team_abbrev,
+                        position,
+                      },
+                    );
+                    const teamHref = player.team_abbrev
+                      ? buildContextHref(`/forge/team/${player.team_abbrev}`, {
+                          ...workflowContext,
+                          team: player.team_abbrev,
+                          position,
+                        })
+                      : null;
+                    const opponentHref = player.opponent_abbrev
+                      ? buildContextHref(
+                          `/forge/team/${player.opponent_abbrev}`,
+                          {
+                            ...workflowContext,
+                            team: player.opponent_abbrev,
+                            position,
+                          },
+                        )
+                      : null;
+                    return (
+                      <li className={styles.card} key={`${position}-${player.row_key}`}>
+                        <div className={styles.header}>
+                          <Link
+                            href={playerHref}
+                            className={styles.name}
+                            title={player.name}
+                          >
+                            {player.position_ranks[position] != null
+                              ? `#${player.position_ranks[position]} ${player.name}`
+                              : player.name}
+                          </Link>
+                          <div className={styles.meta}>
+                            <span>
+                              {teamHref ? (
+                                <Link href={teamHref}>{player.team_abbrev}</Link>
+                              ) : (
+                                "Team TBD"
+                              )}{" "}
+                              vs{" "}
+                              {opponentHref ? (
+                                <Link href={opponentHref}>
+                                  {player.opponent_abbrev}
+                                </Link>
+                              ) : (
+                                "Opponent TBD"
+                              )}
+                              {game ? ` · ${formatGameTime(game.startTime)}` : ""}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className={styles.statsContainer}>
+                          {(data?.contractVersion === 2 || scoringTouched) ? <Metric
+                            label={scoring.mode === "categories" ? scoring.category?.replaceAll("_", " ") ?? "Category" : player.forecast?.conditioning === "conditional_playing" ? "FP if playing" : position === "G" ? "Expected FP" : "FORGE FP"}
+                            value={formatNumber(scoring.mode === "categories" ? player.boardScore?.categoryValue : player.proj_fantasy_points, 2)} /> : null}
+                          {position === "G" ? (
+                            <>
+                              <Metric label="Start" value={formatPercent(player.start_probability)} />
+                              <Metric label="GSAA/60" value={formatNumber(player.projected_gsaa, 2)} />
+                              <Metric
+                                label="Status"
+                                value={
+                                  player.confirmed_status
+                                    ? "Confirmed"
+                                    : player.start_probability == null
+                                      ? "Unavailable"
+                                      : "Projected"
+                                }
+                              />
+                            </>
+                          ) : (
+                            <>
+                              {data?.contractVersion !== 2 && !scoringTouched ? <Metric
+                                label="FP"
+                                value={formatNumber(player.proj_fantasy_points, 2)}
+                              /> : null}
+                              <Metric
+                                label="G / A / S"
+                                value={`${formatNumber(player.proj_goals)} / ${formatNumber(
+                                  player.proj_assists,
+                                )} / ${formatNumber(player.proj_shots)}`}
+                              />
+                              <Metric
+                                label="DEF ease"
+                                value={formatNumber(player.matchup_grade, 0)}
+                              />
+                            </>
+                          )}
+                        </div>
+
+                        {player.forecast ? <div className={styles.uncertainty}>
+                          {position === "G" ? `Start ${formatPercent(player.forecast.participationProbability)}`
+                            : player.forecast.participationProbability === 0 ? "Confirmed out"
+                            : player.forecast.participationProbability == null ? "Participation unknown" : `Plays ${formatPercent(player.forecast.participationProbability)}`}
+                          {player.boardScore?.change != null ? ` · ${player.boardScore.change >= 0 ? "+" : ""}${formatNumber(player.boardScore.change, 2)} since prior revision` : ""}
+                        </div> : null}
+                        <StarterBoardPlayerDetails
+                          className={styles.playerDetails}
+                          playerId={player.player_id}
+                          positions={player.positions}
+                          date={data?.resolvedDate ?? data?.dateUsed ?? date}
+                        >
+                          {player.forecast ? <>
+                            <p>{player.forecast.participationProbability == null
+                              ? "Participation probability unavailable. This is not an unconditional expectation."
+                              : `${position === "G" ? "Starting" : "Participation"} probability ${formatPercent(player.forecast.participationProbability)} · ${player.forecast.probabilityStatus.replaceAll("_", " ")}`}</p>
+                            {player.forecast.previous?.changedInputs.length ? <p>Changed inputs: {player.forecast.previous.changedInputs.join(", ").replaceAll("_", " ")}</p> : null}
+                            <p>{player.forecast.ppRole ? `${player.forecast.ppRole} · ` : ""}Fantasy intervals are unavailable pending calibration.</p>
+                            {player.forecast.seasonBootstrap ? <p>
+                              Season-opening prior: {player.forecast.seasonBootstrap.historyGames} previous-season games;
+                              {" "}{player.forecast.seasonBootstrap.currentSeasonGames} current-season appearances.
+                              {" "}Public fantasy prior {formatPercent(player.forecast.seasonBootstrap.fantasyWeight)}
+                              {" "}({player.forecast.seasonBootstrap.sourceIds.join(", ") || "unavailable"}).
+                              {" "}Starting weights are uncalibrated; missing categories use the available inputs.
+                            </p> : null}
+                            {player.forecast.conflicts.length ? <p role="status">Unresolved news: {player.forecast.conflicts.join(", ")}</p> : null}
+                            {player.forecast.evidence.map((item, index) => <p key={index}>
+                              {item.dimension.toUpperCase()}: {item.value} · published <time dateTime={item.publishedAt}>{item.publishedAt}</time> · received <time dateTime={item.receivedAt}>{item.receivedAt}</time>
+                            </p>)}
+                            {position === "G" ? <dl className={styles.secondaryStats}>
+                              <StatTerm label="Expected saves" value={formatNumber(player.forecast.expected?.SAVES_GOALIE)} />
+                              <StatTerm label="Expected GA" value={formatNumber(player.forecast.expected?.GOALS_AGAINST_GOALIE)} />
+                              <StatTerm label="Win" value={formatPercent(player.forecast.expected?.WINS_GOALIE)} />
+                              <StatTerm label="Shutout" value={formatPercent(player.forecast.expected?.SHUTOUTS_GOALIE)} />
+                            </dl> : null}
+                          </> : null}
+                        {position !== "G" ? (
+                          <dl className={styles.secondaryStats}>
+                            <StatTerm label="PPP" value={formatNumber(player.proj_pp_points)} />
+                            <StatTerm label="HIT" value={formatNumber(player.proj_hits)} />
+                            <StatTerm label="BLK" value={formatNumber(player.proj_blocks)} />
+                            <StatTerm label="PIM" value={formatNumber(player.proj_pim)} />
+                            <StatTerm
+                              label="TOI"
+                              value={
+                                player.proj_toi_minutes == null
+                                  ? "—"
+                                  : `${player.proj_toi_minutes.toFixed(1)}m`
+                              }
+                            />
+                          </dl>
+                        ) : null}
+
+                        {player.context?.projection_low != null ||
+                        player.context?.projection_high != null ? (
+                          <div className={styles.uncertainty}>
+                            NHL PTS range {formatNumber(player.context.projection_low, 2)}–
+                            {formatNumber(player.context.projection_high, 2)}
+                          </div>
+                        ) : null}
+                        <ContextChips
+                          player={player}
+                          position={position}
+                          opponentGoalie={opponentGoalie}
+                        />
+                        </StarterBoardPlayerDetails>
+                        <div className={styles.cardFooter}>
+                          <span>
+                            Own {formatPercent(player.percent_ownership, false)}
+                            {player.ownership_as_of_date
+                              ? ` · ${player.ownership_as_of_date}`
+                              : ""}
+                          </span>
+                          <span>
+                            {player.games_remaining_week == null
+                              ? "Weekly volume unavailable"
+                              : `${player.games_remaining_week} ${
+                                  player.games_remaining_week === 1 ? "game" : "games"
+                                } left this week`}
+                          </span>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+              {visibleList.length < fullList.length ? (
+                <button
+                  type="button"
+                  className={styles.loadMore}
+                  onClick={() =>
+                    setPositionLimits((current) => ({
+                      ...current,
+                      [position]: current[position] + INITIAL_POSITION_LIMIT,
+                    }))
+                  }
+                >
+                  Load 25 more {position}
+                </button>
+              ) : null}
+            </section>
+          );
+        })}
+      </section>
 
       <section
         className={styles.chartPanel}
@@ -974,359 +1426,6 @@ export default function StartChartPage() {
           })}
         </section>
       ) : null}
-
-      <section className={styles.filters} aria-label="Starter Board controls">
-        <div className={styles.filterGroup}>
-          <label htmlFor="start-chart-search">Player</label>
-          <input
-            id="start-chart-search"
-            className={styles.search}
-            placeholder="Player name…"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </div>
-        <div className={styles.filterGroup}>
-          <label htmlFor="start-chart-date">Date</label>
-          <input
-            id="start-chart-date"
-            type="date"
-            className={styles.dateInput}
-            value={date}
-            onChange={(event) => selectDate(event.target.value)}
-          />
-        </div>
-        <div className={styles.filterGroup}>
-          <label htmlFor="start-chart-team">Team</label>
-          <select
-            id="start-chart-team"
-            className={styles.selectInput}
-            value={selectedTeam ?? ""}
-            onChange={(event) => {
-              const team = event.target.value || null;
-              setSelectedTeam(team);
-              updateQuery({ team });
-            }}
-          >
-            <option value="">All slate teams</option>
-            {teamsPlaying.map((team) => (
-              <option key={team} value={team}>
-                {team}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className={styles.filterGroup}>
-          <label htmlFor="start-chart-ownership">
-            {ownershipMax === 100 ? "All ownership" : `Ownership ≤ ${ownershipMax}%`}
-          </label>
-          <input
-            id="start-chart-ownership"
-            className={styles.rangeInput}
-            type="range"
-            min={0}
-            max={100}
-            value={ownershipMax}
-            onChange={(event) => setOwnershipMax(Number(event.target.value))}
-          />
-        </div>
-        <div className={styles.filterGroup}>
-          <label htmlFor="start-chart-profile">Profile</label>
-          <select
-            id="start-chart-profile"
-            className={styles.selectInput}
-            disabled
-          >
-            <option>
-              {data?.fantasyScoringContract?.label ??
-                START_CHART_FANTASY_SCORING_CONTRACT.label}
-            </option>
-          </select>
-        </div>
-        {unknownOwnershipExcluded > 0 ? (
-          <p className={styles.controlNote} role="status">
-            {unknownOwnershipExcluded} player
-            {unknownOwnershipExcluded === 1 ? " was" : "s were"} excluded because
-            ownership is unavailable; unknown values are never treated as 0%.
-          </p>
-        ) : null}
-        <p className={styles.controlNote}>
-          Weekly game volume and Yahoo ownership are informational only. FORGE
-          one-game fantasy points determine skater rank; starter probability
-          determines goalie rank.
-        </p>
-        <details className={styles.legendContainer}>
-          <summary className={styles.legendIcon} aria-label="Explain metrics">
-            i
-          </summary>
-          <div className={styles.legendTooltip}>
-            <div className={styles.legendItem}>
-              <strong>Fantasy points</strong>
-              {fantasyScoringDescription}.
-            </div>
-            <div className={styles.legendItem}>
-              <strong>DEF ease</strong>
-              Slate-relative opponent defense grade. Higher opponent xGA/60 is
-              easier; missing as-of ratings display as unavailable.
-            </div>
-            <div className={styles.legendItem}>
-              <strong>NHL PTS uncertainty</strong>
-              Low/high values bound projected goals plus assists, not fantasy
-              points or guarantees.
-            </div>
-          </div>
-        </details>
-      </section>
-
-      <div
-        className={styles.positionTabs}
-        role="tablist"
-        aria-label="Starter Board positions"
-      >
-        {POSITION_ORDER.map((position) => (
-          <button
-            id={`start-chart-tab-${position}`}
-            key={position}
-            type="button"
-            role="tab"
-            aria-selected={activePosition === position}
-            aria-controls={`start-chart-panel-${position}`}
-            tabIndex={activePosition === position ? 0 : -1}
-            onClick={() => selectPosition(position)}
-            onKeyDown={(event) => handleTabKeyDown(event, position)}
-          >
-            {position}
-            <span>{playersByPosition.get(position)?.length ?? 0}</span>
-          </button>
-        ))}
-      </div>
-
-      <section
-        className={styles.columns}
-        aria-label="Starter Board rankings by position"
-        aria-busy={isLoading || !date}
-      >
-        {error ? (
-          <div className={styles.requestState} role="alert">
-            <strong>Starter Board is unavailable.</strong>
-            <span>{error.message}</span>
-            <button type="button" onClick={() => void mutate()}>
-              Retry
-            </button>
-          </div>
-        ) : null}
-        {!error && data?.serving?.mode === "no_games" ? (
-          <div className={styles.requestState} role="status">
-            <strong>No games found.</strong>
-            <span>{data.serving.message}</span>
-          </div>
-        ) : null}
-        {!error && data?.games?.length && data.players.length === 0 ? (
-          <div className={styles.requestState} role="status">
-            <strong>No player projections found.</strong>
-            <span>
-              {data.games.length} game{data.games.length === 1 ? " is" : "s are"}
-              scheduled, but canonical projection rows are not ready.
-            </span>
-          </div>
-        ) : null}
-
-        {POSITION_ORDER.map((position) => {
-          const fullList = playersByPosition.get(position) ?? [];
-          const visibleList = fullList.slice(0, positionLimits[position]);
-          const headingId = `start-chart-position-${position}`;
-          const isActive = activePosition === position;
-          return (
-            <section
-              id={`start-chart-panel-${position}`}
-              role="tabpanel"
-              aria-labelledby={`start-chart-tab-${position}`}
-              className={`${styles.column} ${styles[`pos${position}`]} ${
-                isActive ? "" : styles.columnInactive
-              }`}
-              key={position}
-            >
-              <div className={styles.columnHeader}>
-                <h2 id={headingId}>{position}</h2>
-                <span className={styles.pill}>{fullList.length}</span>
-              </div>
-              {isLoading || !date ? (
-                <div className={styles.emptyState} role="status">
-                  Loading projections…
-                </div>
-              ) : fullList.length === 0 ? (
-                <div className={styles.emptyState}>
-                  No players match this position and filter set.
-                </div>
-              ) : (
-                <ol className={styles.cardList}>
-                  {visibleList.map((player) => {
-                    const game = gamesById.get(player.game_id);
-                    const opponentGoalie = game
-                      ? player.team_id === game.homeTeamId
-                        ? (game.awayGoalies[0] ?? null)
-                        : (game.homeGoalies[0] ?? null)
-                      : null;
-                    const playerHref = buildContextHref(
-                      `/forge/player/${player.player_id}`,
-                      {
-                        ...workflowContext,
-                        team: player.team_abbrev,
-                        position,
-                      },
-                    );
-                    const teamHref = player.team_abbrev
-                      ? buildContextHref(`/forge/team/${player.team_abbrev}`, {
-                          ...workflowContext,
-                          team: player.team_abbrev,
-                          position,
-                        })
-                      : null;
-                    const opponentHref = player.opponent_abbrev
-                      ? buildContextHref(
-                          `/forge/team/${player.opponent_abbrev}`,
-                          {
-                            ...workflowContext,
-                            team: player.opponent_abbrev,
-                            position,
-                          },
-                        )
-                      : null;
-                    return (
-                      <li className={styles.card} key={`${position}-${player.row_key}`}>
-                        <div className={styles.header}>
-                          <Link
-                            href={playerHref}
-                            className={styles.name}
-                            title={player.name}
-                          >
-                            {player.position_ranks[position] != null
-                              ? `#${player.position_ranks[position]} ${player.name}`
-                              : player.name}
-                          </Link>
-                          <div className={styles.meta}>
-                            <span>
-                              {teamHref ? (
-                                <Link href={teamHref}>{player.team_abbrev}</Link>
-                              ) : (
-                                "Team TBD"
-                              )}{" "}
-                              vs{" "}
-                              {opponentHref ? (
-                                <Link href={opponentHref}>
-                                  {player.opponent_abbrev}
-                                </Link>
-                              ) : (
-                                "Opponent TBD"
-                              )}
-                              {game ? ` · ${formatGameTime(game.startTime)}` : ""}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className={styles.statsContainer}>
-                          {position === "G" ? (
-                            <>
-                              <Metric label="Start" value={formatPercent(player.start_probability)} />
-                              <Metric label="GSAA/60" value={formatNumber(player.projected_gsaa, 2)} />
-                              <Metric
-                                label="Status"
-                                value={
-                                  player.confirmed_status
-                                    ? "Confirmed"
-                                    : player.start_probability == null
-                                      ? "Unavailable"
-                                      : "Projected"
-                                }
-                              />
-                            </>
-                          ) : (
-                            <>
-                              <Metric
-                                label="FP"
-                                value={formatNumber(player.proj_fantasy_points, 2)}
-                              />
-                              <Metric
-                                label="G / A / S"
-                                value={`${formatNumber(player.proj_goals)} / ${formatNumber(
-                                  player.proj_assists,
-                                )} / ${formatNumber(player.proj_shots)}`}
-                              />
-                              <Metric
-                                label="DEF ease"
-                                value={formatNumber(player.matchup_grade, 0)}
-                              />
-                            </>
-                          )}
-                        </div>
-
-                        {position !== "G" ? (
-                          <dl className={styles.secondaryStats}>
-                            <StatTerm label="PPP" value={formatNumber(player.proj_pp_points)} />
-                            <StatTerm label="HIT" value={formatNumber(player.proj_hits)} />
-                            <StatTerm label="BLK" value={formatNumber(player.proj_blocks)} />
-                            <StatTerm label="PIM" value={formatNumber(player.proj_pim)} />
-                            <StatTerm
-                              label="TOI"
-                              value={
-                                player.proj_toi_minutes == null
-                                  ? "—"
-                                  : `${player.proj_toi_minutes.toFixed(1)}m`
-                              }
-                            />
-                          </dl>
-                        ) : null}
-
-                        {player.context?.projection_low != null ||
-                        player.context?.projection_high != null ? (
-                          <div className={styles.uncertainty}>
-                            NHL PTS range {formatNumber(player.context.projection_low, 2)}–
-                            {formatNumber(player.context.projection_high, 2)}
-                          </div>
-                        ) : null}
-                        <ContextChips
-                          player={player}
-                          position={position}
-                          opponentGoalie={opponentGoalie}
-                        />
-                        <div className={styles.cardFooter}>
-                          <span>
-                            Own {formatPercent(player.percent_ownership, false)}
-                            {player.ownership_as_of_date
-                              ? ` · ${player.ownership_as_of_date}`
-                              : ""}
-                          </span>
-                          <span>
-                            {player.games_remaining_week == null
-                              ? "Weekly volume unavailable"
-                              : `${player.games_remaining_week} ${
-                                  player.games_remaining_week === 1 ? "game" : "games"
-                                } left this week`}
-                          </span>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ol>
-              )}
-              {visibleList.length < fullList.length ? (
-                <button
-                  type="button"
-                  className={styles.loadMore}
-                  onClick={() =>
-                    setPositionLimits((current) => ({
-                      ...current,
-                      [position]: current[position] + INITIAL_POSITION_LIMIT,
-                    }))
-                  }
-                >
-                  Load 25 more {position}
-                </button>
-              ) : null}
-            </section>
-          );
-        })}
-      </section>
 
       {data?.sourceStatus ? (
         <details className={styles.sourceDetails}>
