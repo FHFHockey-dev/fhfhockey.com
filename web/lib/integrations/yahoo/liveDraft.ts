@@ -36,6 +36,10 @@ export type YahooDraftSettings = {
   isSnakeDraft: boolean;
   rosterConfig: Record<string, number>;
   playoffWeeks?: number[];
+  draftKeepers?: YahooDraftKeeper[];
+  draftKeepersCheckedAt?: string;
+  draftKeepersWarning?: string;
+  draftPickOwners?: { pickNumber: number; roundNumber: number; yahooTeamKey: string }[];
   leagueType: "points" | "categories";
   scoringCategories: Record<string, number>;
   categoryWeights: Record<string, number>;
@@ -80,10 +84,52 @@ export type YahooDraftTeam = {
   isOwned: boolean;
 };
 
+export type YahooDraftKeeper = {
+  yahooPlayerKey: string;
+  yahooTeamKey: string;
+  displayName: string;
+};
+
+/** Keeper costs are not assumed to be draft rounds: Yahoo also uses auction costs. */
+export function parseYahooDraftKeepers(payload: unknown, context: YahooGameContext, leagueKey: string): { keepers: YahooDraftKeeper[]; playerCount: number } {
+  assertYahooLeagueKey(leagueKey, context);
+  const entities: unknown[] = [];
+  const visit = (value: unknown) => {
+    if (Array.isArray(value)) {
+      if (entityScalar(value, ["player_key"]) !== null) entities.push(value);
+      else value.forEach(visit);
+    } else if (isRecord(value)) {
+      if (value.player !== undefined) entities.push(value.player);
+      else if (value.player_key !== undefined) entities.push(value);
+      else Object.values(value).forEach(visit);
+    }
+  };
+  visit(payload);
+  const keepers = new Map<string, YahooDraftKeeper>();
+  for (const entity of entities) {
+    const flag = findFirstValue(entity, ["is_keeper"]);
+    if (!(isRecord(flag) ? isTruthyYahooValue(flag.kept) : isTruthyYahooValue(flag))) continue;
+    const yahooPlayerKey = toText(findFirstScalar(entity, ["player_key"]));
+    const keeperTeam = isRecord(flag) ? toInteger(flag.ik_tid) : null;
+    const yahooTeamKey = toText(findFirstScalar(entity, ["owner_team_key"])) || (keeperTeam ? `${leagueKey}.t.${keeperTeam}` : null);
+    if (!yahooPlayerKey || !yahooPlayerKeyPattern(context).test(yahooPlayerKey) ||
+      !yahooTeamKey || !yahooTeamKeyPattern(context).test(yahooTeamKey) || !yahooTeamKey.startsWith(`${leagueKey}.t.`) ||
+      (keeperTeam && yahooTeamKey !== `${leagueKey}.t.${keeperTeam}`)) {
+      throw new YahooLiveDraftError("Yahoo returned a keeper without a valid player/team identity.", 502, "yahoo_keeper_response_invalid");
+    }
+    if (keepers.has(yahooPlayerKey) && keepers.get(yahooPlayerKey)!.yahooTeamKey !== yahooTeamKey) {
+      throw new YahooLiveDraftError("Yahoo returned conflicting keeper owners.", 502, "yahoo_keeper_response_invalid");
+    }
+    keepers.set(yahooPlayerKey, { yahooPlayerKey, yahooTeamKey, displayName: toText(findFirstScalar(entity, ["full"])) || yahooPlayerKey });
+  }
+  return { keepers: [...keepers.values()], playerCount: entities.length };
+}
+
 export type YahooDraftSnapshot = {
   providerStatus: YahooDraftProviderStatus;
   leagueKey: string | null;
   picks: YahooDraftPick[];
+  pickOwners?: { pickNumber: number; roundNumber: number; yahooTeamKey: string }[];
 };
 
 export class YahooLiveDraftError extends Error {
@@ -758,12 +804,26 @@ export function parseYahooDraftResults(
     findFirstScalar(payload, ["draft_status"]),
   );
   const picksByNumber = new Map<number, YahooDraftPick>();
+  const pickOwners = new Map<number, { pickNumber: number; roundNumber: number; yahooTeamKey: string }>();
 
   for (const entity of collectEntities(payload, "pick")) {
     const pickNumber = toInteger(entityScalar(entity, ["pick"]));
     const yahooPlayerKey = toText(entityScalar(entity, ["player_key"]));
     const yahooTeamKey = toText(entityScalar(entity, ["team_key"]));
-    if (!pickNumber || !yahooPlayerKey || !yahooTeamKey) continue;
+    if (!pickNumber || pickNumber < 1 || !yahooTeamKey) continue;
+    const slotRound = toInteger(entityScalar(entity, ["round"]));
+    if (!slotRound || slotRound < 1) {
+      throw new YahooLiveDraftError("Yahoo returned a draft pick without a round number.", 502, "yahoo_draft_response_invalid");
+    }
+    if (!yahooTeamKeyPattern(context).test(yahooTeamKey)) {
+      throw new YahooLiveDraftError("Yahoo returned a draft result from a different game.", 502, "yahoo_draft_response_invalid");
+    }
+    if ((leagueKey && !yahooTeamKey.startsWith(`${leagueKey}.t.`)) || pickOwners.has(pickNumber)) {
+      throw new YahooLiveDraftError("Yahoo returned invalid ownership or duplicate draft pick numbers.", 502, "yahoo_draft_response_invalid");
+    }
+    pickOwners.set(pickNumber, { pickNumber, roundNumber: slotRound, yahooTeamKey });
+    // Unfilled slots carry future ownership, not completed player selections.
+    if (!yahooPlayerKey) continue;
 
     const playerMatch = yahooPlayerKeyPattern(context).exec(yahooPlayerKey);
     if (!playerMatch || !yahooTeamKeyPattern(context).test(yahooTeamKey)) {
@@ -806,6 +866,7 @@ export function parseYahooDraftResults(
   return {
     providerStatus,
     leagueKey,
+    pickOwners: [...pickOwners.values()].sort((a, b) => a.pickNumber - b.pickNumber),
     picks: [...picksByNumber.values()].sort(
       (left, right) => left.pickNumber - right.pickNumber,
     ),
@@ -817,6 +878,7 @@ export function hashYahooDraftSnapshot(
 ) {
   const canonical = {
     providerStatus: snapshot.providerStatus,
+    ...(snapshot.pickOwners ? { pickOwners: [...snapshot.pickOwners].sort((a, b) => a.pickNumber - b.pickNumber) } : {}),
     picks: [...snapshot.picks]
       .sort((left, right) => left.pickNumber - right.pickNumber)
       .map((pick) => ({

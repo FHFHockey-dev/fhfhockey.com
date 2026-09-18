@@ -10,6 +10,7 @@ import type {
 import {
   deriveYahooDraftDashboardConfiguration,
   hasCompleteYahooDraftPositions,
+  hasCompleteYahooPickOwnership,
   yahooUnsupportedLeagueMessage,
   yahooSettingsRequireScoringConfirmation,
   yahooSettingsRequireDraftOrderConfirmation,
@@ -217,11 +218,12 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
       )
     : null;
   const scoringIsIncomplete = yahooSettingsRequireScoringConfirmation(draftState);
-  const draftOrderIsInferred = yahooSettingsRequireDraftOrderConfirmation(draftState);
+  const orderSuppliedByYahoo = hasCompleteYahooPickOwnership(draftState);
+  const draftOrderIsInferred = !orderSuppliedByYahoo && yahooSettingsRequireDraftOrderConfirmation(draftState);
   const settingsWarnings = yahooSettingsWarnings(draftState);
   const informationalNotes = [...new Set([...reconciliation.warnings, ...settingsWarnings])]
-    .filter((warning) => !draftOrderIsInferred || !/snake|draft-order mode/i.test(warning))
-    .filter((warning) => !warning.includes("complete, unique draft position") || !hasCompleteYahooDraftPositions(draftState));
+    .filter((warning) => !(draftOrderIsInferred || orderSuppliedByYahoo) || !/snake|draft-order mode/i.test(warning))
+    .filter((warning) => !warning.includes("complete, unique draft position") || (!orderSuppliedByYahoo && !hasCompleteYahooDraftPositions(draftState)));
   const selectedLeague = leagues.find(
     (league) => league.externalLeagueId === selectedLeagueId,
   );
@@ -416,7 +418,7 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
             <strong>Pick {expected.pickNumber}</strong>
             <small>
               {expected.teamName || expected.yahooTeamKey || "Team pending"} · R
-              {expected.roundNumber}.{expected.pickInRound} (predicted)
+              {expected.roundNumber}.{expected.pickInRound} {expected.predicted ? "(predicted)" : "(owner supplied by Yahoo)"}
             </small>
           </div>
           <div>
@@ -428,7 +430,7 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
         </>
       )}
 
-      {liveSyncReady && draftState?.session.status === "predraft" && !hasCompleteYahooDraftPositions(draftState) && (
+      {liveSyncReady && draftState?.session.status === "predraft" && !orderSuppliedByYahoo && !hasCompleteYahooDraftPositions(draftState) && (
         <YahooDraftOrderCheck
           identity={`${selectedLeagueId || draftState.session.id}:${selectedLeague?.draftTime || ""}`}
           onRefresh={onRefreshAccount}

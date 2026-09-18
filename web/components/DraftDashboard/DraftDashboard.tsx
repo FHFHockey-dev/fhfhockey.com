@@ -149,6 +149,8 @@ import {
   loadYahooDraftPersistence,
   reconcileYahooDraftState,
   yahooCompatibleKeepers,
+  yahooDraftKeepers,
+  yahooDraftPickTrades,
   saveYahooDraftPersistence,
   selectDraftedPlayersForMode,
   yahooSettingsRequireScoringConfirmation,
@@ -1534,6 +1536,10 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     [skaterPlayers, goaliePlayers],
   );
 
+  const effectivePickTrades = useMemo(() => draftMode === "yahoo"
+    ? yahooDraftPickTrades(yahooDraftSync.draftState, { ...draftSettings, trades: pickTrades })
+    : pickTrades, [draftMode, yahooDraftSync.draftState, draftSettings, pickTrades]);
+
   const yahooReconciliation = useMemo(
     () => reconcileYahooDraftState(yahooDraftSync.draftState, allPlayers, {
       draftOrder: draftSettings.draftOrder,
@@ -1633,8 +1639,8 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   }, [draftMode, manualCurrentTurn, myTeamId, yahooReconciliation.expectedNext]);
   const yahooDraftedPlayers = yahooReconciliation.draftedPlayers;
   const activeKeepers = useMemo(() => draftMode === "yahoo"
-    ? yahooCompatibleKeepers(keepers, yahooDraftedPlayers) : keepers,
-  [draftMode, keepers, yahooDraftedPlayers]);
+    ? yahooCompatibleKeepers(yahooDraftKeepers(yahooDraftSync.draftState, allPlayers, keepers).keepers, yahooDraftedPlayers) : keepers,
+  [draftMode, keepers, yahooDraftedPlayers, yahooDraftSync.draftState, allPlayers]);
   const draftedPlayers: DraftedPlayer[] = selectDraftedPlayersForMode(
     draftMode,
     manualDraftedPlayers,
@@ -1987,7 +1993,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       teamId: myTeamId,
       draftOrder: draftSettings.draftOrder,
       orderPattern: draftOrderPattern,
-      trades: pickTrades,
+      trades: effectivePickTrades,
       keepers: activeKeepers,
       completedPickNumbers: draftedPlayers.map((player) => player.pickNumber),
       teamRosterCounts,
@@ -2002,7 +2008,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     draftOrderPattern,
     currentPick,
     draftedPlayers,
-    pickTrades,
+    effectivePickTrades,
     activeKeepers,
     teamRosterCounts,
   ]);
@@ -2181,7 +2187,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     teamIds: draftSettings.draftOrder,
     picks: draftedPlayers,
     keepers: activeKeepers,
-    trades: pickTrades,
+    trades: effectivePickTrades,
     pattern: draftOrderPattern,
     rosterCapacity: rosterRoundCount(draftSettings.rosterConfig),
     currentPick,
@@ -2191,7 +2197,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         ? vorpMetrics.get(String(player.playerId))?.value : player.fantasyPoints.projected;
       return typeof value === "number" && Number.isFinite(value) ? [[String(player.playerId), value] as const] : [];
     })),
-  }), [draftSettings.draftOrder, draftSettings.rosterConfig, draftSettings.leagueType, draftedPlayers, activeKeepers, pickTrades, draftOrderPattern, currentPick, allPlayers, vorpMetrics]);
+  }), [draftSettings.draftOrder, draftSettings.rosterConfig, draftSettings.leagueType, draftedPlayers, activeKeepers, effectivePickTrades, draftOrderPattern, currentPick, allPlayers, vorpMetrics]);
 
   const teamStats = useMemo((): TeamDraftStats[] => {
     return draftSettings.draftOrder.map((teamId) => {
@@ -2544,10 +2550,10 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   );
   const myPickWindows = useMemo(() => selectMyPickWindows({
     startPick: currentPick, maxPickNumber: totalPicks, draftOrder: draftSettings.draftOrder,
-    orderPattern: draftOrderPattern, trades: pickTrades,
+    orderPattern: draftOrderPattern, trades: effectivePickTrades,
     keepers: activeKeepers, completedPickNumbers: draftedPlayers.map(p => p.pickNumber),
     teamRosterCounts, rosterCapacity: totalRosterSize,
-  }, myTeamId), [currentPick, totalPicks, draftSettings.draftOrder, draftOrderPattern, pickTrades, activeKeepers, draftedPlayers, teamRosterCounts, totalRosterSize, myTeamId]);
+  }, myTeamId), [currentPick, totalPicks, draftSettings.draftOrder, draftOrderPattern, effectivePickTrades, activeKeepers, draftedPlayers, teamRosterCounts, totalRosterSize, myTeamId]);
   const nextManualActionablePick = useMemo(
     () =>
       findNextActionablePick({
@@ -2629,7 +2635,8 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     );
     const continuation = continueManuallyFromYahoo(stoppedReconciliation);
     setManualDraftedPlayers(continuation.draftedPlayers);
-    setKeepers(yahooCompatibleKeepers(keepers, continuation.draftedPlayers));
+    setPickTrades(yahooDraftPickTrades(stoppedState, { ...draftSettings, trades: pickTrades }));
+    setKeepers(yahooCompatibleKeepers(yahooDraftKeepers(stoppedState, allPlayers, keepers).keepers, continuation.draftedPlayers));
     setCurrentPick(continuation.currentPick);
     setDraftHistory([]);
     setDraftMode("manual");
@@ -2655,12 +2662,12 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   const selectionHorizon = useMemo(() => tierContextReady ? findSelectionHorizon({
     currentPick, teamId: myTeamId, onClock: currentTurn.isMyTurn,
     draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern,
-    trades: pickTrades,
+    trades: effectivePickTrades,
     keepers: activeKeepers,
     completedPickNumbers: draftedPlayers.map(player => player.pickNumber),
     teamRosterCounts, rosterCapacity: rosterRoundCount(draftSettings.rosterConfig),
     maxPickNumber: draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig),
-  }) : null, [tierContextReady, currentPick, myTeamId, currentTurn.isMyTurn, draftSettings.draftOrder, draftSettings.rosterConfig, draftSettings.teamCount, draftOrderPattern, pickTrades, activeKeepers, draftedPlayers, teamRosterCounts]);
+  }) : null, [tierContextReady, currentPick, myTeamId, currentTurn.isMyTurn, draftSettings.draftOrder, draftSettings.rosterConfig, draftSettings.teamCount, draftOrderPattern, effectivePickTrades, activeKeepers, draftedPlayers, teamRosterCounts]);
 
   const closeSettings = () => {
     if (!settingsValidation.valid) return false;
@@ -3937,7 +3944,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         </div>}
         queue={selectGodViewQueue({ startPick: currentPick, maxPickNumber: totalPicks,
           draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern,
-          trades: pickTrades, keepers: activeKeepers,
+          trades: effectivePickTrades, keepers: activeKeepers,
           completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), draftedPlayers, teamRosterCounts, rosterCapacity: totalRosterSize })}
         categories={activeScoringCategories} leagueType={draftSettings.leagueType || "points"}
         playerNames={draftPlayerNames}
@@ -4073,7 +4080,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
             allPlayers={allPlayers}
             onUpdateTeamName={updateTeamName}
             canEditTeamNames={manualDraftingEnabled}
-            pickTrades={pickTrades}
+            pickTrades={effectivePickTrades}
             keepers={activeKeepers}
             vorpMetrics={vorpMetrics}
           />
@@ -4095,7 +4102,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
           <MyRoster
             onSelectedTeamChange={setInspectedTeamId}
             viewRequest={rosterViewRequest}
-            nextPickByTeam={Object.fromEntries(draftSettings.draftOrder.map((teamId) => [teamId, currentPick + findPicksUntilTeamTurn({ currentPick, teamId, draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern, trades: pickTrades, keepers: activeKeepers, completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), teamRosterCounts, rosterCapacity: rosterRoundCount(draftSettings.rosterConfig), maxPickNumber: draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig) })]))}
+            nextPickByTeam={Object.fromEntries(draftSettings.draftOrder.map((teamId) => [teamId, currentPick + findPicksUntilTeamTurn({ currentPick, teamId, draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern, trades: effectivePickTrades, keepers: activeKeepers, completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), teamRosterCounts, rosterCapacity: rosterRoundCount(draftSettings.rosterConfig), maxPickNumber: draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig) })]))}
             scheduleState={rosterScheduleOptimizer}
             myTeamId={myTeamId}
             teamStatsList={teamStats}
@@ -4165,7 +4172,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         allPlayers={allPlayers}
         vorpMetrics={vorpMetrics}
         forwardGrouping={forwardGrouping}
-        pickTrades={pickTrades}
+        pickTrades={effectivePickTrades}
         keepers={activeKeepers}
         configurationSummary={draftConfigurationSummary}
       />

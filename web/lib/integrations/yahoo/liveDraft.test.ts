@@ -5,6 +5,7 @@ import {
   hashYahooDraftSnapshot,
   parseRetryAfterSeconds,
   parseYahooDraftResults,
+  parseYahooDraftKeepers,
   parseYahooDraftSettings,
   parseYahooPlayoffWeeks,
   parseYahooBoardSettings,
@@ -18,6 +19,19 @@ const GAME_CONTEXT = {
 };
 
 describe("Yahoo live draft parser", () => {
+  it("reads keeper allocations from nested Yahoo JSON without inventing round costs", () => {
+    const player = [[{ player_key: "477.p.100" }, { name: { full: "Keeper" } },
+      { is_keeper: { status: true, kept: true, cost: false, ik_tid: "2" } }],
+      { ownership: { owner_team_key: "477.l.123.t.2" } }];
+    expect(parseYahooDraftKeepers({ players: { "0": { player }, count: 1 } }, GAME_CONTEXT, "477.l.123")).toEqual({
+      playerCount: 1, keepers: [{ yahooPlayerKey: "477.p.100", yahooTeamKey: "477.l.123.t.2", displayName: "Keeper" }],
+    });
+    expect(parseYahooDraftKeepers({ players: [{ player_key: "477.p.101", is_keeper: 1, ownership: { owner_team_key: "477.l.123.t.1" } }] }, GAME_CONTEXT, "477.l.123").keepers).toHaveLength(1);
+    expect(parseYahooDraftKeepers({ players: [{ player_key: "477.p.101", is_keeper: { status: true, kept: false } }] }, GAME_CONTEXT, "477.l.123")).toEqual({ playerCount: 1, keepers: [] });
+    expect(() => parseYahooDraftKeepers({ player: { player_key: "476.p.100", is_keeper: 1, owner_team_key: "477.l.123.t.2" } }, GAME_CONTEXT, "477.l.123")).toThrow();
+    expect(() => parseYahooDraftKeepers({ player: { player_key: "477.p.100", is_keeper: 1, owner_team_key: "477.l.456.t.2" } }, GAME_CONTEXT, "477.l.123")).toThrow();
+  });
+
   it.each(["head", "roto", "headpoint"])("excludes display-only stats from %s scoring without excluding genuine goalie categories", (scoringType) => {
     const settings = parseYahooDraftSettings({
       league_key: "477.l.123", draft_type: "live", num_teams: "10",
@@ -246,6 +260,18 @@ describe("Yahoo live draft parser", () => {
       season: "2027",
       targetSeasonId: 20272028,
     };
+    const upcoming = parseYahooDraftResults({ league_key: "500.l.88", draft_status: "predraft", results: [
+      { pick: 1, round: 1, team_key: "500.l.88.t.2" },
+      { pick: 2, round: 1, team_key: "500.l.88.t.1" },
+    ] }, context);
+    expect(upcoming.picks).toEqual([]);
+    expect(upcoming.pickOwners).toEqual([
+      { pickNumber: 1, roundNumber: 1, yahooTeamKey: "500.l.88.t.2" },
+      { pickNumber: 2, roundNumber: 1, yahooTeamKey: "500.l.88.t.1" },
+    ]);
+    expect(() => parseYahooDraftResults({ league_key: "500.l.88", results: [
+      { pick: 1, round: 1, team_key: "500.l.99.t.2" },
+    ] }, context)).toThrow("invalid ownership");
     expect(
       parseYahooDraftResults(
         {

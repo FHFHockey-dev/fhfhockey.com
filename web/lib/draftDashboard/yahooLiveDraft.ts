@@ -1,5 +1,6 @@
 import { getNextOpenPick, keeperUsesPick, type KeeperEntry } from "./keepers";
-import type { PickTradeEntry } from "./pickTrades";
+import { originalPickOwner, type PickTradeEntry } from "./pickTrades";
+import { normalizeDraftOrderPattern } from "./draftOrder";
 
 import type { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 
@@ -143,7 +144,7 @@ export interface YahooDraftReconciliation {
     pickInRound: number;
     yahooTeamKey?: string;
     teamName?: string;
-    predicted: true;
+    predicted: boolean;
   };
 }
 
@@ -153,6 +154,16 @@ export interface YahooDraftLocalOrder {
   reversedRounds?: number[];
   keepers?: KeeperEntry[];
   trades?: PickTradeEntry[];
+}
+
+export function hasCompleteYahooPickOwnership(state: YahooDraftState | null): boolean {
+  if (!state || !Array.isArray(state.settings.draftPickOwners) || !isRecord(state.settings.rosterConfig)) return false;
+  const count = state.teams.length;
+  const capacity = Object.values(state.settings.rosterConfig).reduce<number>((sum, value) => sum + (Number(value) || 0), 0);
+  const slots = [...state.settings.draftPickOwners].sort((a, b) => Number(a.pickNumber) - Number(b.pickNumber));
+  return count > 0 && capacity > 0 && slots.length === count * capacity && slots.every((slot, index) =>
+    isRecord(slot) && slot.pickNumber === index + 1 && slot.roundNumber === Math.ceil((index + 1) / count) &&
+    state.teams.some((team) => team.yahooTeamKey === slot.yahooTeamKey));
 }
 
 export function hasCompleteYahooDraftPositions(state: YahooDraftState | null): boolean {
@@ -575,6 +586,15 @@ function readDraftOrderMode(settings: Record<string, unknown>): {
 
 function orderedTeams(state: YahooDraftState, local?: YahooDraftLocalOrder): YahooDraftTeam[] {
   const teams = [...state.teams];
+  const slots = state.settings.draftPickOwners;
+  if (!hasCompleteYahooDraftPositions(state) && Array.isArray(slots)) {
+    const firstRound = slots.filter((slot) => isRecord(slot) && Number(slot.roundNumber) === 1)
+      .sort((a, b) => Number(a.pickNumber) - Number(b.pickNumber));
+    if (firstRound.length === teams.length && new Set(firstRound.map((slot) => slot.yahooTeamKey)).size === teams.length &&
+      firstRound.every((slot, index) => Number(slot.pickNumber) === index + 1 && teams.some((team) => team.yahooTeamKey === slot.yahooTeamKey))) {
+      return firstRound.map((slot) => teams.find((team) => team.yahooTeamKey === slot.yahooTeamKey)!);
+    }
+  }
   if (!hasCompleteYahooDraftPositions(state) && localOrderMatchesLeague(state, local)) {
     return teams.sort((a, b) => local!.draftOrder.indexOf(a.yahooTeamKey) - local!.draftOrder.indexOf(b.yahooTeamKey));
   }
@@ -587,6 +607,56 @@ function orderedTeams(state: YahooDraftState, local?: YahooDraftLocalOrder): Yah
     return a.yahooTeamKey.localeCompare(b.yahooTeamKey);
   });
   return teams;
+}
+
+/** Yahoo-owned slots override manual ownership only where the provider supplied it. */
+export function yahooDraftPickTrades(state: YahooDraftState | null, local: YahooDraftLocalOrder): PickTradeEntry[] {
+  const trades = new Map((local.trades || []).map((trade) => [trade.pickNumber, trade]));
+  const rows = state?.settings.draftPickOwners;
+  const count = local.draftOrder.length;
+  if (!state || !Array.isArray(rows) || !count || !localOrderMatchesLeague(state, local)) return [...trades.values()];
+  const pattern = normalizeDraftOrderPattern({ mode: local.draftOrderMode, reversedRounds: local.reversedRounds }, Math.max(1, ...rows.map((row) => isRecord(row) ? Number(row.roundNumber) || 1 : 1)));
+  for (const row of rows) {
+    if (!isRecord(row)) continue;
+    const pickNumber = Number(row.pickNumber), round = Number(row.roundNumber);
+    const currentTeamId = String(row.yahooTeamKey || "");
+    if (!Number.isInteger(pickNumber) || pickNumber < 1 || round !== Math.ceil(pickNumber / count) || !local.draftOrder.includes(currentTeamId)) continue;
+    const pickInRound = (pickNumber - 1) % count + 1;
+    const originalTeamId = originalPickOwner(local.draftOrder, round, pickInRound, pattern);
+    if (!originalTeamId) continue;
+    if (originalTeamId === currentTeamId) { trades.delete(pickNumber); continue; }
+    trades.set(pickNumber, { version: 1, status: "valid", round, pickInRound, pickNumber, originalTeamId, currentTeamId });
+  }
+  return [...trades.values()].sort((a, b) => a.pickNumber - b.pickNumber);
+}
+
+/** Match keeper identities exactly; unknown costs reserve no draft slot. */
+export function yahooDraftKeepers(state: YahooDraftState | null, players: ProcessedPlayer[], manual: KeeperEntry[]) {
+  const keepers = new Map(manual.map((keeper) => [keeper.playerId, keeper]));
+  const warnings: string[] = [];
+  const rows = state?.settings.draftKeepers;
+  if (typeof state?.settings.draftKeepersWarning === "string") warnings.push(state.settings.draftKeepersWarning);
+  if (!state || !Array.isArray(rows)) return { keepers: [...keepers.values()], warnings };
+  let unknownCosts = 0;
+  for (const row of rows) {
+    if (!isRecord(row)) continue;
+    const candidates = players.filter((player) => {
+      const id = String(player.yahooPlayerId || "");
+      const key = /^\d+$/.test(id) ? `${state.session.gameKey}.p.${id}` : id;
+      return Boolean(yahooIdFromPlayerKey(key, state.session.gameKey || null)) && key === row.yahooPlayerKey;
+    });
+    if (candidates.length !== 1 || !state.teams.some((team) => team.yahooTeamKey === row.yahooTeamKey)) {
+      warnings.push(`Keeper ${String(row.displayName || row.yahooPlayerKey)} needs an exact player/team match before it can be imported.`);
+      continue;
+    }
+    const playerId = String(candidates[0].playerId);
+    const existing = keepers.get(playerId);
+    if (existing?.teamId === row.yahooTeamKey) continue;
+    keepers.set(playerId, { version: 2, status: "valid", cost: "none", playerId, teamId: String(row.yahooTeamKey) });
+    unknownCosts++;
+  }
+  if (unknownCosts) warnings.push("Yahoo keepers were added to rosters without reserving draft picks. Yahoo did not supply round costs; enter those manually if your league uses them.");
+  return { keepers: [...keepers.values()], warnings };
 }
 
 export function yahooCompatibleKeepers(
@@ -725,10 +795,11 @@ export function reconcileYahooDraftState(
 
   // Manual keeper reservations supplement Yahoo's confirmed picks; they never
   // overwrite a confirmed pick or duplicate a player Yahoo has already reported.
-  const setupWarnings: string[] = [];
+  const importedKeepers = yahooDraftKeepers(state, players, localOrder?.keepers || []);
+  const setupWarnings: string[] = [...importedKeepers.warnings];
   const confirmedPlayers = new Set(draftedPlayers.map((pick) => pick.playerId));
   const confirmedPicks = new Set(draftedPlayers.map((pick) => pick.pickNumber));
-  for (const keeper of localOrder?.keepers || []) {
+  for (const keeper of importedKeepers.keepers) {
     if (!state?.teams.some((team) => team.yahooTeamKey === keeper.teamId)) continue;
     if (confirmedPlayers.has(keeper.playerId)) continue;
     if (!keeperUsesPick(keeper)) continue;
@@ -757,13 +828,17 @@ export function reconcileYahooDraftState(
       : (configuration?.isSnakeDraft ?? draftOrderMode.isSnakeDraft) && roundNumber % 2 === 0)
       ? teamCount - baseIndex - 1
       : baseIndex;
-  const trade = localOrder?.trades?.find((entry) => entry.pickNumber === currentPick);
-  const expectedTeam = teams.find((team) => team.yahooTeamKey === trade?.currentTeamId) || teams[teamIndex];
+  const trade = localOrder ? yahooDraftPickTrades(state, localOrder).find((entry) => entry.pickNumber === currentPick) : undefined;
+  const suppliedOwner = Array.isArray(state?.settings.draftPickOwners)
+    ? state.settings.draftPickOwners.find((slot) => isRecord(slot) && slot.pickNumber === currentPick && slot.roundNumber === roundNumber)
+    : undefined;
+  const suppliedTeam = teams.find((team) => team.yahooTeamKey === suppliedOwner?.yahooTeamKey);
+  const expectedTeam = suppliedTeam || teams.find((team) => team.yahooTeamKey === trade?.currentTeamId) || teams[teamIndex];
 
   return {
     draftedPlayers,
     unresolved,
-    warnings: [...setupWarnings, ...(!state || draftOrderMode.explicit
+    warnings: [...setupWarnings, ...(!state || draftOrderMode.explicit || hasCompleteYahooPickOwnership(state)
       ? []
       : [
           "Yahoo did not provide an explicit snake or straight draft order. Upcoming turns use the dashboard's configured draft format; check it against your Yahoo draft room.",
@@ -775,7 +850,7 @@ export function reconcileYahooDraftState(
       pickInRound,
       yahooTeamKey: expectedTeam?.yahooTeamKey,
       teamName: expectedTeam?.name,
-      predicted: true,
+      predicted: !suppliedTeam,
     },
   };
 }

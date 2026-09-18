@@ -52,8 +52,17 @@ describe("Yahoo live draft ownership", () => {
     await expect(fetchYahooBoardResource({ ...args, resource: { type: "availability", playerKeys: ["465.p.1"] } })).rejects.toThrow("scope");
     await expect(fetchYahooBoardResource({ ...args, resource: { type: "available_players", start: 100 } })).rejects.toThrow("scope");
     await expect(fetchYahooBoardResource({ ...args, resource: { type: "available_players", start: -1 } })).rejects.toThrow("scope");
+    await expect(fetchYahooBoardResource({ ...args, resource: { type: "keepers", start: -25 } })).rejects.toThrow("scope");
     expect(rpc).not.toHaveBeenCalled();
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("requests the league-scoped keeper filter with ownership and pagination", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: { access_token: "fixture-access", refresh_token: "fixture-refresh", expires_at: null }, error: null });
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ players: { count: 0 } }), { status: 200 }));
+    await fetchYahooBoardResource({ client: { rpc } as any, connectedAccountId: "account", userId: "user", context: GAME_CONTEXT,
+      leagueKey: "477.l.1", fetchImpl, format: "standard_json", resource: { type: "keepers", start: 25 } });
+    expect(fetchImpl).toHaveBeenCalledWith("https://fantasysports.yahooapis.com/fantasy/v2/league/477.l.1/players;status=K;start=25;count=25/ownership?format=json", expect.objectContaining({ method: "GET" }));
   });
 
   it("uses explicit league ownership reads and the existing token service for board availability", async () => {

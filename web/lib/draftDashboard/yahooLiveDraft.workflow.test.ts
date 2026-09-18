@@ -4,6 +4,9 @@ import {
   continueManuallyFromYahoo,
   reconcileYahooDraftState,
   yahooCompatibleKeepers,
+  yahooDraftKeepers,
+  hasCompleteYahooPickOwnership,
+  yahooDraftPickTrades,
   type YahooDraftState,
   loadYahooDraftPersistence,
   saveYahooDraftPersistence,
@@ -26,6 +29,54 @@ describe("Yahoo/manual draft workflow", () => {
     draftOrder: [team1, team2], keepers: [keeper, benchKeeper],
     trades: [{ version: 1 as const, status: "valid" as const, round: 1, pickInRound: 2, pickNumber: 2, originalTeamId: team2, currentTeamId: team1 }],
   };
+
+  it("preloads exact keeper identities, preserves manual costs, and avoids duplicating confirmed selections", () => {
+    const players = [{ playerId: 100, yahooPlayerId: "10" }, { playerId: 200, yahooPlayerId: "477.p.20" }] as import("hooks/useProcessedProjectionsData").ProcessedPlayer[];
+    const imported = { ...state, settings: { ...state.settings, draftKeepers: [
+      { yahooPlayerKey: "477.p.10", yahooTeamKey: team1, displayName: "One" },
+      { yahooPlayerKey: "477.p.20", yahooTeamKey: team2, displayName: "Two" },
+      { yahooPlayerKey: "477.p.999", yahooTeamKey: team2, displayName: "Unmapped" },
+    ] } };
+    const result = yahooDraftKeepers(imported, players, [keeper]);
+    expect(result.keepers).toEqual([keeper, benchKeeper]);
+    expect(result.warnings.join(" ")).toContain("Unmapped");
+    expect(result.warnings.join(" ")).toContain("round costs");
+    const automatic = yahooDraftKeepers(imported, players, []);
+    expect(automatic.keepers.every((entry) => entry.cost === "none")).toBe(true);
+    expect(reconcileYahooDraftState(imported, players, { ...setup, keepers: [] }).currentPick).toBe(1);
+    const confirmed = reconcileYahooDraftState({ ...imported, picks: [{ active: true, pickNumber: 1, roundNumber: 1, nhlPlayerId: 200, yahooTeamKey: team2 }] }, players);
+    expect(yahooCompatibleKeepers(automatic.keepers, confirmed.draftedPlayers).map((entry) => entry.playerId)).toEqual(["100"]);
+    expect(yahooDraftKeepers({ ...imported, session: { ...state.session, gameKey: "476" } }, players, []).keepers).toEqual([]);
+    expect(yahooDraftKeepers(null, players, [keeper]).keepers).toEqual([keeper]);
+  });
+
+  it("recognizes complete per-pick order without a snake flag or team draft positions", () => {
+    const supplied = { ...state, settings: { rosterConfig: { C: 1 }, draftPickOwners: [
+      { pickNumber: 1, roundNumber: 1, yahooTeamKey: team2 },
+      { pickNumber: 2, roundNumber: 1, yahooTeamKey: team1 },
+    ] } };
+    expect(hasCompleteYahooPickOwnership(supplied)).toBe(true);
+    const result = reconcileYahooDraftState(supplied, []);
+    expect(result.expectedNext).toMatchObject({ yahooTeamKey: team2, predicted: false });
+    expect(result.warnings).toEqual([]);
+    expect(hasCompleteYahooPickOwnership({ ...supplied, settings: { ...supplied.settings, draftPickOwners: supplied.settings.draftPickOwners.slice(0, 1) } })).toBe(false);
+    expect(reconcileYahooDraftState(state, []).expectedNext.predicted).toBe(true);
+  });
+
+  it("imports future Yahoo ownership without creating player selections or erasing missing manual slots", () => {
+    const future = { ...state, settings: { ...state.settings, draftPickOwners: [
+      { pickNumber: 1, roundNumber: 1, yahooTeamKey: team2 },
+      { pickNumber: 3, roundNumber: 2, yahooTeamKey: team1 },
+    ] } };
+    const trades = yahooDraftPickTrades(future, setup);
+    expect(trades.map((trade) => [trade.pickNumber, trade.currentTeamId])).toEqual([[1, team2], [2, team1], [3, team1]]);
+    const live = reconcileYahooDraftState(future, [], { ...setup, keepers: [] });
+    expect(live.draftedPlayers).toEqual([]);
+    expect(live.currentPick).toBe(1);
+    expect(live.expectedNext.yahooTeamKey).toBe(team2);
+    expect(live.expectedNext.predicted).toBe(false);
+    expect(yahooDraftPickTrades({ ...future, settings: { draftPickOwners: [{ pickNumber: 2, roundNumber: 1, yahooTeamKey: team2 }] } }, setup)).toEqual([]);
+  });
 
   it("keeps manual keeper reservations and traded turns across stop/resume", () => {
     const live = reconcileYahooDraftState(state, [], setup);

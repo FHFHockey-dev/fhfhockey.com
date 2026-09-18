@@ -175,13 +175,18 @@ export async function fetchYahooDraftResource(args: {
 export async function fetchYahooBoardResource(args: Omit<Parameters<typeof fetchYahooDraftResource>[0], "resource"> & {
   resource: { type: "roster"; teamKey: string; date: string }
     | { type: "league_rosters" }
+    | { type: "keepers"; start: number }
     | { type: "availability"; playerKeys: string[] }
     | { type: "available_players"; start: number };
 }) {
   assertYahooLeagueKey(args.leagueKey, args.context);
   const format = args.format ?? getYahooLiveDraftResponseFormat();
   let path: string;
-  if (args.resource.type === "league_rosters") {
+  if (args.resource.type === "keepers") {
+    const { start } = args.resource;
+    if (!Number.isInteger(start) || start < 0 || start > 1000 || start % 25 !== 0) throw new Error("Invalid Yahoo keeper page scope");
+    path = `league/${encodeURIComponent(args.leagueKey)}/players;status=K;start=${start};count=25/ownership`;
+  } else if (args.resource.type === "league_rosters") {
     path = `league/${encodeURIComponent(args.leagueKey)}/teams/roster/players`;
   } else if (args.resource.type === "roster") {
     const { teamKey, date } = args.resource;

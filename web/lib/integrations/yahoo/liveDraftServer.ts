@@ -15,6 +15,7 @@ import {
   applyYahooTeamDraftPositionDiagnostics,
   hashYahooDraftSnapshot,
   parseYahooDraftResults,
+  parseYahooDraftKeepers,
   parseYahooDraftSettings,
   removeYahooDisplayOnlyScoring,
   parseYahooPlayoffWeeks,
@@ -38,6 +39,7 @@ import {
 } from "./pollPolicy";
 import {
   fetchYahooDraftResource,
+  fetchYahooBoardResource,
   YahooProviderRequestError,
   type YahooProviderTransportMetadata,
 } from "./providerClient";
@@ -1059,7 +1061,7 @@ function assertSnapshotMatchesSession(
     );
   }
   if (
-    snapshot.picks.some(
+    [...snapshot.picks, ...(snapshot.pickOwners || [])].some(
       (pick) => !pick.yahooTeamKey.startsWith(`${session.yahoo_league_key}.t.`),
     )
   ) {
@@ -1305,12 +1307,35 @@ export async function pollYahooDraftSession(
           diagnostics: record(session.diagnostics),
         } as YahooDraftSettings)
       : storedSettings(leagueResult.data as ExternalLeagueRow, context);
+    if (snapshot.pickOwners?.length) settings.draftPickOwners = snapshot.pickOwners;
     const providerStatus = inferProviderStatus({
       parsed: snapshot.providerStatus,
       current: session.provider_status as YahooDraftProviderStatus,
       pickCount: snapshot.picks.length,
     });
     snapshot.providerStatus = providerStatus;
+    // Refresh pre-draft allocations at most once a minute; keep failures separate
+    // from the live pick feed and preserve the last successful allocation snapshot.
+    if (!settings.draftKeepersCheckedAt || ((providerStatus === "predraft" || settings.draftKeepersWarning) &&
+      observedAt.getTime() - Date.parse(settings.draftKeepersCheckedAt) >= 60_000)) {
+      settings.draftKeepersCheckedAt = observedAt.toISOString();
+      try {
+        const keepers: NonNullable<YahooDraftSettings["draftKeepers"]> = [];
+        for (let start = 0; start <= 1000; start += 25) {
+          const result = await fetchYahooBoardResource({ client, connectedAccountId: session.connected_account_id,
+            context, fetchImpl, format: responseFormat, leagueKey: session.yahoo_league_key,
+            now: observedAt, userId, resource: { type: "keepers", start } });
+          const page = parseYahooDraftKeepers(result.payload, context, session.yahoo_league_key);
+          keepers.push(...page.keepers);
+          if (page.playerCount < 25) break;
+          if (start === 1000) throw new Error("Keeper pagination limit exceeded");
+        }
+        settings.draftKeepers = keepers;
+        delete settings.draftKeepersWarning;
+      } catch {
+        settings.draftKeepersWarning = "Yahoo keeper allocations could not be refreshed. Existing keepers are preserved; live picks can still sync.";
+      }
+    }
     const picks = await resolveYahooDraftPicks({
       client,
       context,
