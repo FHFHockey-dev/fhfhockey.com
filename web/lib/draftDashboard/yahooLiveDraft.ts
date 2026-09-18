@@ -650,10 +650,30 @@ export function yahooDraftKeepers(state: YahooDraftState | null, players: Proces
       continue;
     }
     const playerId = String(candidates[0].playerId);
+    const reportedPick = state.picks.find((pick) => pick.active && pick.yahooPlayerKey === row.yahooPlayerKey && pick.yahooTeamKey === row.yahooTeamKey);
+    if (reportedPick && reportedPick.pickNumber > 0 && state.teams.length > 0) {
+      keepers.set(playerId, { version: 2, status: "valid", cost: "pick", playerId, teamId: String(row.yahooTeamKey),
+        pickNumber: reportedPick.pickNumber, round: reportedPick.roundNumber,
+        pickInRound: reportedPick.pickInRound || (reportedPick.pickNumber - 1) % state.teams.length + 1 });
+      continue;
+    }
     const existing = keepers.get(playerId);
     if (existing?.teamId === row.yahooTeamKey) continue;
     keepers.set(playerId, { version: 2, status: "valid", cost: "none", playerId, teamId: String(row.yahooTeamKey) });
     unknownCosts++;
+  }
+  // Resolve collisions after all reported assignments have been applied, so swaps
+  // are independent of keeper row order. Never discard a displaced roster player.
+  for (const [playerId, keeper] of keepers) {
+    if (!keeperUsesPick(keeper)) continue;
+    const occupied = state.picks.find((pick) => pick.active && pick.pickNumber === keeper.pickNumber);
+    const player = players.find((entry) => String(entry.playerId) === playerId);
+    const yahooId = String(player?.yahooPlayerId || "");
+    const yahooKey = /^\d+$/.test(yahooId) ? `${state.session.gameKey}.p.${yahooId}` : yahooId;
+    if (occupied && (occupied.yahooPlayerKey !== yahooKey || occupied.yahooTeamKey !== keeper.teamId)) {
+      keepers.set(playerId, { version: 2, status: "valid", cost: "none", playerId, teamId: keeper.teamId });
+      warnings.push(`Yahoo assigned pick ${keeper.pickNumber} to another player. Keeper ${player?.fullName || playerId} remains on the roster; assign a different keeper pick.`);
+    }
   }
   if (unknownCosts) warnings.push("Yahoo keepers were added to rosters without reserving draft picks. Yahoo did not supply round costs; enter those manually if your league uses them.");
   return { keepers: [...keepers.values()], warnings };
@@ -664,12 +684,16 @@ export function yahooCompatibleKeepers(
   picks: YahooReconciledDraftedPlayer[],
 ): KeeperEntry[] {
   const confirmed = picks.filter((pick) => pick.source === "yahoo");
-  return keepers.filter((keeper) => !confirmed.some((pick) =>
-    keeperUsesPick(keeper)
-      ? (pick.playerId === keeper.playerId || pick.pickNumber === keeper.pickNumber) &&
-        (pick.playerId !== keeper.playerId || pick.pickNumber !== keeper.pickNumber || pick.teamId !== keeper.teamId)
-      : pick.playerId === keeper.playerId,
-  ));
+  return keepers.flatMap((keeper): KeeperEntry[] => {
+    const selected = confirmed.find((pick) => pick.playerId === keeper.playerId);
+    if (selected) {
+      return keeperUsesPick(keeper) && selected.pickNumber === keeper.pickNumber && selected.teamId === keeper.teamId ? [keeper] : [];
+    }
+    if (keeperUsesPick(keeper) && confirmed.some((pick) => pick.pickNumber === keeper.pickNumber)) {
+      return [{ version: 2, status: "valid", cost: "none", playerId: keeper.playerId, teamId: keeper.teamId }];
+    }
+    return [keeper];
+  });
 }
 
 export function reconcileYahooDraftState(
@@ -779,6 +803,8 @@ export function reconcileYahooDraftState(
       round: pick.roundNumber,
       pickInRound:
         pick.pickInRound || ((pick.pickNumber - 1) % teamCount) + 1,
+      isKeeper: Array.isArray(state?.settings.draftKeepers) && state.settings.draftKeepers.some((entry) =>
+        isRecord(entry) && entry.yahooPlayerKey === pick.yahooPlayerKey && entry.yahooTeamKey === pick.yahooTeamKey),
       source: "yahoo",
       yahooSessionId: state?.session.id || "",
       yahooPlayerKey: pick.yahooPlayerKey || undefined,

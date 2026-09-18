@@ -49,6 +49,7 @@ interface DraftBoardProps {
   pickTrades?: PickTradeEntry[];
   // NEW: keepers list
   keepers?: KeeperEntry[];
+  onAssignKeeperPick?: (playerId: string, pickNumber: number) => { ok: boolean; message: string };
   // NEW: per-player VORP/value metrics (value used as Score in categories)
   vorpMetrics?: Map<string, PlayerVorpMetrics>;
 }
@@ -69,10 +70,12 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   canEditTeamNames = true,
   pickTrades = [],
   keepers = [],
+  onAssignKeeperPick,
   vorpMetrics
 }) => {
   const activeDraftOrderPattern =
     draftOrderPattern ?? draftOrderPatternFromSnake(isSnakeDraft);
+  const [keeperFeedback, setKeeperFeedback] = useState<{ ok: boolean; message: string } | null>(null);
   const [editingTeam, setEditingTeam] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
   const [isExpanded, setIsExpanded] = useState(false);
@@ -473,7 +476,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         const ownershipLine = traded
           ? `\nTraded: ${rowTeamName} → ${ownerName}`
           : "";
-        const isKeeper = Boolean(keeper);
+        const isKeeper = Boolean(keeper || draftedPlayer?.isKeeper);
         const movement = roundRankMovement(rankHistory, round, draftedPlayer?.teamId || ownerTeamId);
         const tooltip = (draftedPlayer
           ? isKeeper
@@ -565,6 +568,14 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
               {teamNameById.get(teamId) || `T${teamIndex + 1}`}{teamId === myTeamId ? " (You)" : ""}
             </button>
           )}
+          {noPickKeepers.length > 0 && (
+            <div className={styles.preloadedKeepers} aria-label={`Preloaded keepers for ${teamNameById.get(teamId) || teamId}`}>
+              {noPickKeepers.filter((keeper) => keeper.teamId === teamId).map((keeper) => {
+                const name = allPlayersData.get(keeper.playerId)?.fullName || `Player #${keeper.playerId}`;
+                return <span key={keeper.playerId} className={styles.preloadedKeeper} title={`${name} · Keeper · No draft slot assigned`} tabIndex={0}>{name}</span>;
+              })}
+            </div>
+          )}
           <div
             className={styles.teamRoundCells}
             style={{ gridTemplateColumns: `repeat(${roundsToShow}, minmax(0, 1fr))` }}
@@ -603,6 +614,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                 {isExpanded ? "↙" : "↗"}
               </button>}
             </div>
+            {noPickKeepers.length > 0 && <span className={styles.preloadedKeepersHeading} title="Rostered keepers without an assigned draft slot">Keepers</span>}
             <div
               className={styles.roundLabelsGrid}
               style={{ gridTemplateColumns: `repeat(${roundsToShow}, minmax(0, 1fr))` }}
@@ -649,7 +661,27 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         <span><i className={styles.myTeamLegend} /> Your team</span>
         <span><i className={styles.keeperLegend} /> Keeper</span>
         <span><i className={styles.tradeLegend} /> Traded</span>
-        {noPickKeepers.length > 0 && <details className={styles.noPickKeepers}><summary><span>No-Pick Keepers</span> ({noPickKeepers.length})</summary><ul>{noPickKeepers.map((keeper) => <li key={keeper.playerId}><strong>{allPlayersData.get(keeper.playerId)?.fullName || `Player #${keeper.playerId}`}</strong> · {teamNameById.get(keeper.teamId) || keeper.teamId}</li>)}</ul></details>}
+        {noPickKeepers.length > 0 && <details className={styles.noPickKeepers}>
+          <summary><span>{onAssignKeeperPick ? "Assign keeper rounds" : "Keepers without draft slots"}</span> ({noPickKeepers.length})</summary>
+          <div className={styles.keeperAssignments}>
+            <p>Keeper teams are imported. Assign a pick only if your league charges one; Yahoo may supply the assignment later.</p>
+            <ul>{noPickKeepers.map((keeper) => {
+              const name = allPlayersData.get(keeper.playerId)?.fullName || `Player #${keeper.playerId}`;
+              return <li key={keeper.playerId}><strong>{name}</strong> · {teamNameById.get(keeper.teamId) || keeper.teamId}
+                {onAssignKeeperPick && <select aria-label={`Draft pick for ${name}`} value="" onChange={(event) => setKeeperFeedback(onAssignKeeperPick(keeper.playerId, Number(event.target.value)))}>
+                  <option value="">Select round / pick…</option>
+                  {Array.from({ length: roundsToShow * draftSettings.teamCount }, (_, index) => {
+                    const pick = index + 1, round = Math.ceil(pick / draftSettings.teamCount), slot = index % draftSettings.teamCount + 1;
+                    if (resolvePickOwner({ draftOrder: draftSettings.draftOrder, round, pickInRound: slot, trades: pickTrades, orderPattern: activeDraftOrderPattern }).currentTeamId !== keeper.teamId ||
+                      draftedPlayers.some((entry) => entry.pickNumber === pick) || keepers.some((entry) => keeperUsesPick(entry) && entry.pickNumber === pick)) return null;
+                    return <option key={pick} value={pick}>Round {round} · Pick {slot} (#{pick})</option>;
+                  })}
+                </select>}
+              </li>;
+            })}</ul>
+            {keeperFeedback && <p role={keeperFeedback.ok ? "status" : "alert"}>{keeperFeedback.message}</p>}
+          </div>
+        </details>}
       </div>
       {isExpanded && expandedMetrics && <div className={styles.expandedMetrics}>{expandedMetrics}</div>}
     </div>

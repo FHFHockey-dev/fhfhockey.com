@@ -3076,6 +3076,27 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     if (manualDraftingEnabled) setPickTrades([]);
   }, [manualDraftingEnabled]);
 
+  const assignImportedKeeperPick = (playerId: string, pickNumber: number) => {
+    const keeper = activeKeepers.find((entry) => entry.playerId === playerId);
+    if (draftMode !== "yahoo" || !keeper || !Number.isInteger(pickNumber)) return { ok: false, message: "Keeper assignment is unavailable." };
+    if (draftedPlayers.some((pick) => pick.source === "yahoo" && (pick.playerId === playerId || pick.pickNumber === pickNumber))) {
+      return { ok: false, message: "Yahoo has already supplied this player or pick. Use the updated keeper assignments." };
+    }
+    const round = Math.ceil(pickNumber / draftSettings.teamCount);
+    const pickInRound = (pickNumber - 1) % draftSettings.teamCount + 1;
+    const owner = resolvePickOwner({ draftOrder: draftSettings.draftOrder, round, pickInRound, trades: effectivePickTrades, orderPattern: draftOrderPattern }).currentTeamId;
+    if (owner !== keeper.teamId) return { ok: false, message: "That pick belongs to another team." };
+    const result = validateKeeperCandidate({ playerId, teamId: keeper.teamId, cost: "pick", round, pickInRound }, {
+      teamCount: draftSettings.teamCount, roundCount: totalRosterSize,
+      teamIds: draftSettings.draftOrder, playerIds: allPlayers.map((player) => String(player.playerId)),
+      keepers: activeKeepers.filter((entry) => entry.playerId !== playerId), draftedPlayers,
+    });
+    if (!result.ok) return { ok: false, message: result.errors.join(" ") };
+    setKeepers((previous) => [...previous.filter((entry) => entry.playerId !== playerId), result.keeper]);
+    setDraftSettings((previous) => ({ ...previous, isKeeper: true }));
+    return { ok: true, message: "Keeper pick assigned. Yahoo's reported selections take precedence when available." };
+  };
+
   const addKeeper = useCallback(
     (candidate: KeeperCandidate) => {
       if (!manualDraftingEnabled) {
@@ -4082,6 +4103,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
             canEditTeamNames={manualDraftingEnabled}
             pickTrades={effectivePickTrades}
             keepers={activeKeepers}
+            onAssignKeeperPick={draftMode === "yahoo" ? assignImportedKeeperPick : undefined}
             vorpMetrics={vorpMetrics}
           />
         </section>

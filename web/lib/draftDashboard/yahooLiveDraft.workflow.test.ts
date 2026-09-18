@@ -50,6 +50,40 @@ describe("Yahoo/manual draft workflow", () => {
     expect(yahooDraftKeepers(null, players, [keeper]).keepers).toEqual([keeper]);
   });
 
+  it("replaces a missing/manual keeper cost with Yahoo's reported later-round slot", () => {
+    const players = [{ playerId: 100, yahooPlayerId: "477.p.10" }] as import("hooks/useProcessedProjectionsData").ProcessedPlayer[];
+    const reported = { ...state, settings: { draftKeepers: [{ yahooPlayerKey: "477.p.10", yahooTeamKey: team1, displayName: "Keeper" }] },
+      picks: [{ active: true, pickNumber: 8, roundNumber: 4, yahooPlayerKey: "477.p.10", yahooTeamKey: team1, nhlPlayerId: 100 }] };
+    const imported = yahooDraftKeepers(reported, players, [keeper]);
+    expect(imported.keepers[0]).toMatchObject({ cost: "pick", pickNumber: 8, round: 4, pickInRound: 2 });
+    const live = reconcileYahooDraftState(reported, players, { ...setup, keepers: imported.keepers });
+    expect(live.draftedPlayers).toHaveLength(1);
+    expect(live.draftedPlayers[0].isKeeper).toBe(true);
+    expect(live.currentPick).toBe(1);
+  });
+
+  it("preserves displaced keepers and applies Yahoo swaps without duplicate slots", () => {
+    const players = [{ playerId: 100, yahooPlayerId: "477.p.10" }, { playerId: 200, yahooPlayerId: "477.p.20" }] as import("hooks/useProcessedProjectionsData").ProcessedPlayer[];
+    const second = { ...keeper, playerId: "200", pickNumber: 3, round: 2 };
+    const reported = { ...state, settings: { draftKeepers: [
+      { yahooPlayerKey: "477.p.10", yahooTeamKey: team1 },
+      { yahooPlayerKey: "477.p.20", yahooTeamKey: team1 },
+    ] }, picks: [{ active: true, pickNumber: 3, roundNumber: 2, yahooPlayerKey: "477.p.10", yahooTeamKey: team1, nhlPlayerId: 100 }] };
+    const result = yahooDraftKeepers(reported, players, [keeper, second]);
+    expect(result.keepers).toEqual([
+      expect.objectContaining({ playerId: "100", cost: "pick", pickNumber: 3 }),
+      expect.objectContaining({ playerId: "200", cost: "none" }),
+    ]);
+    expect(result.warnings.join(" ")).toContain("remains on the roster");
+    expect(yahooDraftKeepers(reported, players, result.keepers).keepers).toEqual(result.keepers);
+    const live = reconcileYahooDraftState(reported, players, { ...setup, keepers: result.keepers });
+    expect(yahooCompatibleKeepers(result.keepers, live.draftedPlayers)).toEqual(result.keepers);
+    const swapped = { ...reported, picks: [...reported.picks, { active: true, pickNumber: 1, roundNumber: 1, yahooPlayerKey: "477.p.20", yahooTeamKey: team1, nhlPlayerId: 200 }] };
+    expect(yahooDraftKeepers(swapped, players, [keeper, second]).keepers.map((entry) => entry.cost === "pick" && entry.pickNumber)).toEqual([3, 1]);
+    const ordinary = { ...reported, picks: [{ ...reported.picks[0], yahooPlayerKey: "477.p.99", nhlPlayerId: 999 }] };
+    expect(yahooDraftKeepers(ordinary, players, [keeper, second]).keepers[1].cost).toBe("none");
+  });
+
   it("recognizes complete per-pick order without a snake flag or team draft positions", () => {
     const supplied = { ...state, settings: { rosterConfig: { C: 1 }, draftPickOwners: [
       { pickNumber: 1, roundNumber: 1, yahooTeamKey: team2 },
@@ -101,7 +135,9 @@ describe("Yahoo/manual draft workflow", () => {
     const conflict = reconcileYahooDraftState({ ...confirmed, picks: [{ ...confirmed.picks[0], nhlPlayerId: 999 }] }, [], setup);
     expect(conflict.draftedPlayers).toHaveLength(1);
     expect(conflict.warnings.join(" ")).toContain("different player at keeper pick 1");
-    expect(yahooCompatibleKeepers(setup.keepers, conflict.draftedPlayers)).toEqual([benchKeeper]);
+    expect(yahooCompatibleKeepers(setup.keepers, conflict.draftedPlayers)).toEqual([
+      { version: 2, status: "valid", cost: "none", playerId: keeper.playerId, teamId: keeper.teamId }, benchKeeper,
+    ]);
     expect(reconcileYahooDraftState(state, [], setup).draftedPlayers[0].playerId).toBe("100");
   });
 

@@ -273,18 +273,60 @@
 .tradeLegend {
   background: v.$color-violet-400;
 }
-.noPickKeepers {
-  position: relative;
-  ul {
-    position: absolute;
-    bottom: 100%;
-    right: 0;
-    width: 220px;
-    padding: 10px 24px;
-    background: v.$draft-surface-raised;
-    border: 1px solid v.$draft-border;
-    z-index: 4;
-  }
+.preloadedKeepers,
+.preloadedKeepersHeading {
+  flex: 0 0 clamp(88px, 22cqw, 180px);
+  min-width: 0;
+}
+.preloadedKeepersHeading {
+  font-size: 10px;
+  color: v.$color-teal-500;
+  text-align: center;
+}
+.preloadedKeepers {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  height: 100%;
+}
+.preloadedKeeper {
+  flex: 1;
+  min-width: 0;
+  padding: 1px 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  line-height: 1.2;
+  color: v.$text-primary;
+  border: 1px solid rgba(v.$color-teal-500, .5);
+  border-radius: v.$radius-xs;
+  background: rgba(v.$color-teal-500, .15);
+  &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 1px; }
+}
+.expandedDraftBoard {
+  .preloadedKeepers,
+  .preloadedKeepersHeading { flex-basis: clamp(180px, 22vw, 360px); }
+  .preloadedKeeper { font-size: 12px; }
+}
+.noPickKeepers { position: relative; }
+.keeperAssignments {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  width: min(360px, 80vw);
+  max-height: min(420px, 65vh);
+  overflow-y: auto;
+  padding: 12px;
+  background: v.$draft-surface-raised;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-sm;
+  z-index: 4;
+  text-align: left;
+  font-size: 12px;
+  ul { list-style: none; padding: 0; margin: 0; }
+  li { padding: 6px 0; border-bottom: 1px solid v.$draft-border; }
+  select { display: block; width: 100%; margin-top: 4px; color: v.$text-primary; background: v.$draft-input; }
 }
 
 @container graph (max-height: 240px) {

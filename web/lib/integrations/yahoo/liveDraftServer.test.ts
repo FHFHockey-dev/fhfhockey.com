@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   correctedIncomingPickNumbers,
+  assertYahooSelectablePickSequence,
   deferYahooDraftSessionForAccessCheck,
   pauseYahooDraftSessionForAccessLoss,
   postdraftConfirmation,
@@ -44,6 +45,16 @@ function queryBuilder(
 }
 
 describe("Yahoo live draft ownership", () => {
+  it("accepts prefilled later-round keeper picks while rejecting gaps in ordinary selections", () => {
+    const keeper = { yahooPlayerKey: "477.p.2", yahooTeamKey: "477.l.1.t.2", displayName: "Keeper" };
+    const future = { ...keeper, yahooPlayerId: "2", pickNumber: 12, roundNumber: 6, cost: null, playerName: "Keeper", nhlTeamAbbreviation: null, position: null };
+    expect(() => assertYahooSelectablePickSequence([future], [keeper])).not.toThrow();
+    expect(() => assertYahooSelectablePickSequence([future], [])).toThrow("ordering");
+    expect(() => assertYahooSelectablePickSequence([{ ...future, yahooTeamKey: "477.l.1.t.1" }], [keeper])).toThrow("ordering");
+    expect(() => assertYahooSelectablePickSequence([{ ...future, pickNumber: 1, roundNumber: 1 }, future], [keeper])).not.toThrow();
+    expect(() => assertYahooSelectablePickSequence([{ ...future, pickNumber: 3, yahooPlayerKey: "477.p.3" }, future], [keeper])).toThrow("ordering");
+  });
+
   it("rejects cross-league and cross-season board resource scopes before loading credentials", async () => {
     const rpc = vi.fn(), fetchImpl = vi.fn();
     const args = { client: { rpc } as any, connectedAccountId: "account", userId: "user", context: GAME_CONTEXT,

@@ -1042,17 +1042,22 @@ function adaptiveDiagnostics(args: {
   };
 }
 
+export function assertYahooSelectablePickSequence(
+  picks: YahooDraftPick[], keepers: NonNullable<YahooDraftSettings["draftKeepers"]>,
+) {
+  let next = 1;
+  for (const pick of [...picks].sort((a, b) => a.pickNumber - b.pickNumber)) {
+    const keeper = keepers.some((entry) => entry.yahooPlayerKey === pick.yahooPlayerKey && entry.yahooTeamKey === pick.yahooTeamKey);
+    if (pick.pickNumber !== next && !keeper) throw new YahooLiveDraftError(
+      "Yahoo returned draft picks with missing or invalid ordering.", 502, "yahoo_draft_response_invalid");
+    if (pick.pickNumber === next) next++;
+  }
+}
+
 function assertSnapshotMatchesSession(
   snapshot: ReturnType<typeof parseYahooDraftResults>,
   session: YahooDraftSessionRow,
 ) {
-  if (snapshot.picks.some((pick, index) => pick.pickNumber !== index + 1)) {
-    throw new YahooLiveDraftError(
-      "Yahoo returned draft picks with missing or invalid ordering.",
-      502,
-      "yahoo_draft_response_invalid",
-    );
-  }
   if (snapshot.leagueKey && snapshot.leagueKey !== session.yahoo_league_key) {
     throw new YahooLiveDraftError(
       "Yahoo returned draft results for a different league.",
@@ -1308,15 +1313,9 @@ export async function pollYahooDraftSession(
         } as YahooDraftSettings)
       : storedSettings(leagueResult.data as ExternalLeagueRow, context);
     if (snapshot.pickOwners?.length) settings.draftPickOwners = snapshot.pickOwners;
-    const providerStatus = inferProviderStatus({
-      parsed: snapshot.providerStatus,
-      current: session.provider_status as YahooDraftProviderStatus,
-      pickCount: snapshot.picks.length,
-    });
-    snapshot.providerStatus = providerStatus;
     // Refresh pre-draft allocations at most once a minute; keep failures separate
     // from the live pick feed and preserve the last successful allocation snapshot.
-    if (!settings.draftKeepersCheckedAt || ((providerStatus === "predraft" || settings.draftKeepersWarning) &&
+    if (!settings.draftKeepersCheckedAt || ((snapshot.providerStatus === "predraft" || settings.draftKeepersWarning) &&
       observedAt.getTime() - Date.parse(settings.draftKeepersCheckedAt) >= 60_000)) {
       settings.draftKeepersCheckedAt = observedAt.toISOString();
       try {
@@ -1336,6 +1335,14 @@ export async function pollYahooDraftSession(
         settings.draftKeepersWarning = "Yahoo keeper allocations could not be refreshed. Existing keepers are preserved; live picks can still sync.";
       }
     }
+    const providerStatus = inferProviderStatus({
+      parsed: snapshot.providerStatus,
+      current: session.provider_status as YahooDraftProviderStatus,
+      pickCount: snapshot.picks.filter((pick) => !(settings.draftKeepers || []).some((keeper) =>
+        keeper.yahooPlayerKey === pick.yahooPlayerKey && keeper.yahooTeamKey === pick.yahooTeamKey)).length,
+    });
+    snapshot.providerStatus = providerStatus;
+    assertYahooSelectablePickSequence(snapshot.picks, settings.draftKeepers || []);
     const picks = await resolveYahooDraftPicks({
       client,
       context,
