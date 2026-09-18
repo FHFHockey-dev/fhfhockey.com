@@ -1,3 +1,6 @@
+import { getNextOpenPick, keeperUsesPick, type KeeperEntry } from "./keepers";
+import type { PickTradeEntry } from "./pickTrades";
+
 import type { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 
 export const YAHOO_DRAFT_SESSION_STORAGE_KEY =
@@ -110,12 +113,14 @@ export interface YahooReconciledDraftedPlayer {
   pickNumber: number;
   round: number;
   pickInRound: number;
-  source: "yahoo";
-  yahooSessionId: string;
+  isKeeper?: boolean;
+  keeperVersion?: number;
+  source?: "yahoo";
+  yahooSessionId?: string;
   yahooPlayerKey?: string;
   yahooPlayerId?: string;
   yahooDisplayName?: string;
-  yahooMappingStatus: "mapped" | "unresolved" | "review_required";
+  yahooMappingStatus?: "mapped" | "unresolved" | "review_required";
   auctionCost?: number | null;
 }
 
@@ -146,6 +151,8 @@ export interface YahooDraftLocalOrder {
   draftOrder: string[];
   draftOrderMode?: "standard" | "snake" | "custom";
   reversedRounds?: number[];
+  keepers?: KeeperEntry[];
+  trades?: PickTradeEntry[];
 }
 
 export function hasCompleteYahooDraftPositions(state: YahooDraftState | null): boolean {
@@ -582,21 +589,32 @@ function orderedTeams(state: YahooDraftState, local?: YahooDraftLocalOrder): Yah
   return teams;
 }
 
+export function yahooCompatibleKeepers(
+  keepers: KeeperEntry[],
+  picks: YahooReconciledDraftedPlayer[],
+): KeeperEntry[] {
+  const confirmed = picks.filter((pick) => pick.source === "yahoo");
+  return keepers.filter((keeper) => !confirmed.some((pick) =>
+    keeperUsesPick(keeper)
+      ? (pick.playerId === keeper.playerId || pick.pickNumber === keeper.pickNumber) &&
+        (pick.playerId !== keeper.playerId || pick.pickNumber !== keeper.pickNumber || pick.teamId !== keeper.teamId)
+      : pick.playerId === keeper.playerId,
+  ));
+}
+
 export function reconcileYahooDraftState(
   state: YahooDraftState | null,
   players: ProcessedPlayer[],
   localOrder?: YahooDraftLocalOrder,
 ): YahooDraftReconciliation {
   const picks = state?.picks || [];
-  const currentPick = getFirstMissingYahooPick(picks);
+  let currentPick = getFirstMissingYahooPick(picks);
   const teamCount = Math.max(
     1,
     state?.teams.length ||
       readNumber(state?.settings || {}, "teamCount", "numTeams", "num_teams") ||
       1,
   );
-  const roundNumber = Math.ceil(currentPick / teamCount);
-  const pickInRound = ((currentPick - 1) % teamCount) + 1;
 
   const byNhlId = new Map<number, ProcessedPlayer[]>();
   const byFhfhId = new Map<number, ProcessedPlayer[]>();
@@ -705,6 +723,30 @@ export function reconcileYahooDraftState(
     });
   }
 
+  // Manual keeper reservations supplement Yahoo's confirmed picks; they never
+  // overwrite a confirmed pick or duplicate a player Yahoo has already reported.
+  const setupWarnings: string[] = [];
+  const confirmedPlayers = new Set(draftedPlayers.map((pick) => pick.playerId));
+  const confirmedPicks = new Set(draftedPlayers.map((pick) => pick.pickNumber));
+  for (const keeper of localOrder?.keepers || []) {
+    if (!state?.teams.some((team) => team.yahooTeamKey === keeper.teamId)) continue;
+    if (confirmedPlayers.has(keeper.playerId)) continue;
+    if (!keeperUsesPick(keeper)) continue;
+    if (confirmedPicks.has(keeper.pickNumber)) {
+      setupWarnings.push(`Yahoo reported a different player at keeper pick ${keeper.pickNumber}. The Yahoo pick is shown; review your manual keeper setup.`);
+      continue;
+    }
+    draftedPlayers.push({
+      playerId: keeper.playerId, teamId: keeper.teamId,
+      pickNumber: keeper.pickNumber, round: keeper.round, pickInRound: keeper.pickInRound,
+      isKeeper: true, keeperVersion: keeper.version,
+    });
+  }
+  draftedPlayers.sort((a, b) => a.pickNumber - b.pickNumber);
+  currentPick = getNextOpenPick(currentPick, Number.MAX_SAFE_INTEGER, draftedPlayers);
+  const roundNumber = Math.ceil(currentPick / teamCount);
+  const pickInRound = ((currentPick - 1) % teamCount) + 1;
+
   const configuration = state ? deriveYahooDraftDashboardConfiguration(state, localOrder) : null;
   const teams = state ? orderedTeams(state, localOrder) : [];
   const baseIndex = (currentPick - 1) % teamCount;
@@ -715,16 +757,17 @@ export function reconcileYahooDraftState(
       : (configuration?.isSnakeDraft ?? draftOrderMode.isSnakeDraft) && roundNumber % 2 === 0)
       ? teamCount - baseIndex - 1
       : baseIndex;
-  const expectedTeam = teams[teamIndex];
+  const trade = localOrder?.trades?.find((entry) => entry.pickNumber === currentPick);
+  const expectedTeam = teams.find((team) => team.yahooTeamKey === trade?.currentTeamId) || teams[teamIndex];
 
   return {
     draftedPlayers,
     unresolved,
-    warnings: !state || draftOrderMode.explicit
+    warnings: [...setupWarnings, ...(!state || draftOrderMode.explicit
       ? []
       : [
           "Yahoo did not provide an explicit snake or straight draft order. Upcoming turns use the dashboard's configured draft format; check it against your Yahoo draft room.",
-        ],
+        ])],
     currentPick,
     expectedNext: {
       pickNumber: currentPick,
@@ -951,7 +994,6 @@ export function continueManuallyFromYahoo(
   return {
     draftedPlayers: reconciliation.draftedPlayers.map((player) => ({
       ...player,
-      source: "yahoo",
     })),
     currentPick: reconciliation.currentPick,
   };
