@@ -1,3 +1,5 @@
+import { extractTweetPlayerEvents } from "./tweetPlayerEvents";
+import { interpretTweetUnits, tweetPipelineFlags } from "./tweetInterpretation";
 import type {
   GameDayTweetsClassification,
   RosterNameEntry,
@@ -1243,6 +1245,7 @@ function extractGoalieNameFromKeywordLine(args: {
 }
 
 function buildStructuredContent(args: {
+  publishedAt?: string | null;
   text: string;
   classification: GameDayTweetsClassification;
   rosterEntries: RosterNameEntry[];
@@ -1354,12 +1357,12 @@ function buildStructuredContent(args: {
     ]).slice(0, 2);
   }
 
-  const scratches = parseNamedListFromLabel({
+  let scratches = parseNamedListFromLabel({
     text: args.text,
     labelPattern: /\b(?:scratched|scratches)\b[:\s-]+([^\n]+)/i,
     rosterEntries: args.rosterEntries,
   });
-  const injuries = extractInjuryNames({
+  let injuries = extractInjuryNames({
     text: args.text,
     classification: args.classification,
     rosterEntries: args.rosterEntries,
@@ -1376,6 +1379,18 @@ function buildStructuredContent(args: {
     rosterEntries: args.rosterEntries,
   });
 
+  const interpretation = tweetPipelineFlags().interpretation ? interpretTweetUnits(args.text, args.rosterEntries) : null;
+  const playerEvents = interpretation ? extractTweetPlayerEvents({ text: args.text, players: args.rosterEntries, publishedAt: args.publishedAt ?? null }) : [];
+  if (interpretation) {
+    scratches = interpretation.units.filter((unit) => unit.situation === "scratch").flatMap((unit) => unit.players.map((player) => player.name));
+    injuries = playerEvents.filter((event) => event.kind === "injury" && ["new_injury", "ongoing", "setback"].includes(event.state)).flatMap((event) => args.rosterEntries.filter((entry) => entry.playerId === event.playerId).map((entry) => entry.fullName));
+    forwards = interpretation.units.filter((unit) => unit.situation === "es_forward").map((unit) => unit.players.map((player) => player.name));
+    defensePairs = interpretation.units.filter((unit) => unit.situation === "es_defense").map((unit) => unit.players.map((player) => player.name));
+    goalies = interpretation.units.filter((unit) => unit.situation === "goalie").flatMap((unit) => unit.players.map((player) => player.name));
+    goalies = dedupeOrderedNames([...goalies, ...playerEvents.filter((event) => event.kind === "goalie").flatMap((event) => args.rosterEntries.filter((entry) => entry.playerId === event.playerId && entry.position === "G").map((entry) => entry.fullName))]);
+    powerPlayDetection.units = interpretation.units.filter((unit) => unit.situation === "pp" && unit.complete).map((unit) => unit.players.map((player) => player.name));
+    powerPlayDetection.labels = interpretation.units.filter((unit) => unit.situation === "pp" && unit.complete).map((unit) => unit.number === 1 ? "pp1" : unit.number === 2 ? "pp2" : null);
+  }
   return {
     forwards,
     defensePairs,
@@ -1383,6 +1398,7 @@ function buildStructuredContent(args: {
     scratches,
     injuries,
     metadata: {
+      ...(interpretation ? { interpretation: { ...interpretation, events: playerEvents } } : {}),
       powerPlayUnits: powerPlayDetection.units,
       powerPlayUnitLabels: powerPlayDetection.labels,
       transactionSignals,
@@ -1423,6 +1439,7 @@ export function buildLinesCccSourceFromIftttEvent(args: {
   const goalieName = extractGoalieName(text);
   const structuredContent = buildStructuredContent({
     text,
+    publishedAt: args.event.tweet_created_at,
     classification,
     rosterEntries,
   });
@@ -1478,7 +1495,7 @@ export function buildLinesCccSourceFromIftttEvent(args: {
     goalies:
       (structuredContent.goalies ?? []).length > 0
         ? (structuredContent.goalies ?? [])
-        : goalieName
+        : goalieName && !tweetPipelineFlags().interpretation
           ? [goalieName]
           : [],
     scratches: structuredContent.scratches,
@@ -1498,6 +1515,8 @@ export function buildLinesCccSourceFromIftttEvent(args: {
       ...structuredContent.metadata,
     },
   };
+
+  if (tweetPipelineFlags().interpretation && (source.metadata?.interpretation as { context?: string } | undefined)?.context !== "game") source.gameId = null;
 
   return {
     ...source,
@@ -1543,6 +1562,7 @@ export function refreshLinesCccSourceFromPrimaryText(args: {
   const matched = matchRosterNamesInTweet(text, rosterEntries);
   const structuredContent = buildStructuredContent({
     text,
+    publishedAt: args.source.tweetPostedAt,
     classification,
     rosterEntries,
   });
@@ -1582,7 +1602,7 @@ export function refreshLinesCccSourceFromPrimaryText(args: {
     goalies:
       (structuredContent.goalies ?? []).length > 0
         ? (structuredContent.goalies ?? [])
-        : goalieName
+        : goalieName && !tweetPipelineFlags().interpretation
           ? [goalieName]
           : [],
     scratches: structuredContent.scratches,
@@ -1599,6 +1619,8 @@ export function refreshLinesCccSourceFromPrimaryText(args: {
     },
   };
 
+  if (tweetPipelineFlags().interpretation && (refreshedSource.metadata?.interpretation as { context?: string } | undefined)?.context !== "game") refreshedSource.gameId = null;
+
   return {
     ...refreshedSource,
     metadata: {
@@ -1614,25 +1636,7 @@ function mapNamesToPlayerIdsOrdered(
 ): Array<number | null> | null {
   if (!names) return null;
 
-  const rosterByLastName = new Map<string, RosterNameEntry[]>();
-
-  for (const rosterEntry of rosterEntries) {
-    const lastName = normalizeNameKey(rosterEntry.lastName);
-    rosterByLastName.set(lastName, [
-      ...(rosterByLastName.get(lastName) ?? []),
-      rosterEntry,
-    ]);
-  }
-
-  return names.map((name) => {
-    const resolvedEntry = resolveTweetNameToRosterEntry(name, rosterEntries);
-    if (resolvedEntry) return resolvedEntry.playerId;
-
-    const normalizedName = normalizeNameKey(name);
-    const lastName = normalizedName.split(" ").pop() ?? normalizedName;
-    const lastNameMatches = rosterByLastName.get(lastName) ?? [];
-    return lastNameMatches.length === 1 ? lastNameMatches[0]!.playerId : null;
-  });
+  return names.map((name) => resolveTweetNameToRosterEntry(name, rosterEntries)?.playerId ?? null);
 }
 
 function toStoredForwardOrder(players: string[] | null): string[] | null {
@@ -1719,6 +1723,7 @@ export async function fetchLinesCccTweetApiData(
       "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",
     },
     cache: "no-store",
+    signal: AbortSignal.timeout(8000),
   });
   if (!response.ok) return null;
 
@@ -1761,6 +1766,7 @@ export async function fetchLinesCccTweetOEmbedAttempt(
       "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",
     },
     cache: "no-store",
+    signal: AbortSignal.timeout(8000),
   });
 
   if (!response.ok) {

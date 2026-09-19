@@ -61,6 +61,7 @@ describe("CCC IFTTT receiver", () => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();
     process.env.IFTTT_CCC_WEBHOOK_SECRET = "test-secret";
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://example.test");
     insertMock.mockResolvedValue({ error: null });
     upsertMock.mockResolvedValue({ error: null });
     fromMock.mockReturnValue({

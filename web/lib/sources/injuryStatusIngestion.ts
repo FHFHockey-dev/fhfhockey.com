@@ -184,6 +184,7 @@ export function inferInjuryAttributes(args: {
     .filter((value): value is string => Boolean(value))
     .join(" ");
   const normalized = normalizeKey(sourceText);
+  const positiveReturn = !/\b(could|might|may|if|possible|expected)\b/i.test(sourceText) && !/\b(?:not|never|won't|will not|cannot|can't)\b[^.;\n]{0,35}\b(?:return|play|available|cleared|back in)\b/i.test(sourceText);
   const evidencePhrases: string[] = [];
   const inferredFrom: string[] = [];
 
@@ -228,7 +229,7 @@ export function inferInjuryAttributes(args: {
   if (addEvidence(evidencePhrases, normalized, /\b(ruled out|confirmed out|will not play|won't play|out tonight|out for)\b/, "ruled out")) {
     returnLimitations.add("ruled_out");
   }
-  if (addEvidence(evidencePhrases, normalized, /\b(will play|returns? to the lineup|back in the lineup|available|good to go)\b/, "returning to lineup")) {
+  if (positiveReturn && addEvidence(evidencePhrases, normalized, /\b(will play|returns? to the lineup|back in the lineup|available|good to go)\b/, "returning to lineup")) {
     returnLimitations.add("returning_to_lineup");
   }
   if (addEvidence(evidencePhrases, normalized, /\b(returned to practice|practiced|full participant)\b/, "practice participant")) {
@@ -246,7 +247,7 @@ export function inferInjuryAttributes(args: {
             ? "week_to_week"
             : /\b(day[- ]to[- ]day|questionable|game[- ]time decision|gtd)\b/.test(normalized)
               ? "day_to_day"
-              : /\b(will play|returns? to the lineup|back in the lineup|available|good to go)\b/.test(normalized)
+              : positiveReturn && /\b(will play|returns? to the lineup|back in the lineup|available|good to go)\b/.test(normalized)
                 ? "same_day"
                 : "unknown";
 
@@ -393,6 +394,8 @@ function classifyGameDayTweetsNewsItem(
   value: string
 ): GameDayTweetsNewsClassification {
   const normalized = normalizeKey(value);
+  if (/\b(?:not|never|won't|will not|cannot|can't)\b[^.;\n]{0,35}\b(?:return|play|available|cleared|back in)\b/i.test(value)) return "injury";
+  if (/\b(could|might|may|if|possible|expected)\b[^.;\n]{0,65}\b(return|play|available)\b/i.test(value)) return "questionable";
 
   if (
     /\b(will play|will be in|returns tonight|returns? to the lineup|back in the lineup|available tonight|good to go|set to return|confirmed in)\b/i.test(
@@ -650,6 +653,7 @@ export function detectReturningStatusRows(args: {
     raw_status: string | null;
   }>;
   currentInjuredRows: PlayerStatusHistoryRow[];
+  confirmedReturningPlayerIds?: number[];
 }): PlayerStatusHistoryRow[] {
   const observedAt = args.observedAt ?? new Date().toISOString();
   const currentKeys = new Set(
@@ -660,6 +664,8 @@ export function detectReturningStatusRows(args: {
 
   return args.latestStatuses.flatMap((row) => {
     if (row.status_state !== "injured") return [];
+    // Feed omissions, offseason resets and fetch gaps are not return confirmations.
+    if (row.player_id == null || !args.confirmedReturningPlayerIds?.includes(row.player_id)) return [];
 
     const key = `${row.team_id ?? "team-null"}:${row.player_id ?? normalizeKey(row.player_name)}`;
     if (currentKeys.has(key)) return [];
@@ -682,7 +688,7 @@ export function detectReturningStatusRows(args: {
         team_abbreviation: row.team_abbreviation,
         status_state: "returning",
         raw_status: "Returning",
-        status_detail: "No longer listed on the injury report.",
+        status_detail: "Return confirmed by player-specific evidence.",
         source_name: "bell-tsn",
         source_url: BELL_MEDIA_INJURIES_URL,
         source_rank: 1,

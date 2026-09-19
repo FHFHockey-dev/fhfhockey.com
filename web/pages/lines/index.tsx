@@ -1,3 +1,4 @@
+import ProjectedLineups from "components/LineCombinations/ProjectedLineups";
 import React, { useState } from "react";
 import { NextSeo } from "next-seo";
 import Image from "next/legacy/image";
@@ -55,6 +56,7 @@ function Lines({
         NHL LINE <PageTitle.Highlight>COMBINATIONS</PageTitle.Highlight>
       </PageTitle>
       <Teams teams={teams} />
+      <ProjectedLineups />
       <Players
         lastUpdated={lastUpdated}
         promotions={promotions}

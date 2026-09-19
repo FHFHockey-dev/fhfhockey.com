@@ -92,7 +92,7 @@ describe("injuryStatusIngestion", () => {
     });
   });
 
-  it("creates returning rows for players no longer on the injury feed", () => {
+  it("does not infer a return from disappearance from the injury feed", () => {
     const rows = detectReturningStatusRows({
       snapshotDate: "2026-04-22",
       observedAt: "2026-04-22T12:00:00.000Z",
@@ -109,13 +109,7 @@ describe("injuryStatusIngestion", () => {
       currentInjuredRows: []
     });
 
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({
-      player_id: 7,
-      status_state: "returning",
-      raw_status: "Returning"
-    });
-    expect(rows[0].status_expires_at).toContain("2026-04-29");
+    expect(rows).toEqual([]);
   });
 
   it("parses GameDayTweets news into injury and return status candidates", () => {
@@ -388,5 +382,16 @@ describe("injuryStatusIngestion", () => {
       status_state: "injured",
       source_rank: 1
     });
+  });
+});
+
+
+describe("tweet injury event regressions", () => {
+  it("never interprets a negated return as same-day availability", () => {
+    for (const text of ["not available tonight", "will not return to the lineup tonight"]) {
+      const result = inferInjuryAttributes({ text });
+      expect(result.expectedReturnWindow).not.toBe("same_day");
+      expect(result.returnLimitations).not.toContain("returning_to_lineup");
+    }
   });
 });

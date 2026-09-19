@@ -1,3 +1,5 @@
+import { createHash, randomUUID } from "node:crypto";
+import { tweetPipelineFlags } from "lib/sources/tweetInterpretation";
 import type { NextApiResponse } from "next";
 import { Resend } from "resend";
 
@@ -43,22 +45,49 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
     });
   }
 
-  const { data, error } = await req.supabase
+  const flags = tweetPipelineFlags();
+  if (flags.interpretation && !flags.publishing) return res.json({ success: true, skipped: true, message: "Shadow interpretation does not send review mail." });
+  const digestOwner = randomUUID();
+  const recipientLock = `alias-mail:${createHash("sha256").update(recipient).digest("hex")}`;
+  const releaseRecipient = async () => {
+    if (!flags.interpretation) return;
+    const result = await req.supabase.from("tweet_pipeline_jobs").update({ status: "complete", lease_expires_at: null, updated_at: new Date().toISOString() }).eq("job_key", recipientLock).eq("owner", digestOwner);
+    if (result.error) throw result.error;
+  };
+  if (flags.interpretation) {
+    const claim = await req.supabase.rpc("claim_tweet_pipeline_job", { p_key: recipientLock, p_owner: digestOwner, p_reprocess: true });
+    if (claim.error) throw claim.error;
+    if (!claim.data) return res.json({ success: true, skipped: true, message: "A review digest is already being prepared." });
+  }
+
+  let pendingQuery = req.supabase
     .from("lineup_unresolved_player_names" as any)
-    .select("id, raw_name, team_abbreviation, source, tweet_id, context_text, created_at")
-    .eq("status", "pending")
+    .select("id, raw_name, team_abbreviation, source, tweet_id, context_text, created_at, metadata")
+    .eq("status", "pending");
+  if (tweetPipelineFlags().interpretation) pendingQuery = pendingQuery.is("metadata->>aliasReviewNotifiedAt", null);
+  const { data, error } = await pendingQuery
     .order("created_at", { ascending: false })
     .limit(25);
   if (error) throw error;
 
   const pending = data ?? [];
   if (pending.length === 0) {
+    await releaseRecipient();
     return res.json({
       success: true,
       message: "No pending unresolved player names."
     });
   }
 
+  const digestKey = `alias-digest:${createHash("sha256").update(recipient + ":" + pending.map((row: any) => row.id).sort().join(":" )).digest("hex")}`;
+  if (tweetPipelineFlags().interpretation) {
+    const { data: claimed, error: claimError } = await req.supabase.rpc("claim_tweet_pipeline_job", { p_key: digestKey, p_owner: digestOwner });
+    if (claimError) throw claimError;
+    if (!claimed) {
+      await releaseRecipient();
+      return res.json({ success: true, skipped: true, message: "This digest was already sent or is being sent." });
+    }
+  }
   const baseUrl = resolveBaseUrl(req);
   const queueToken = createPlayerAliasQueueReviewToken();
   const reviewAllUrl = new URL("/db/player-aliases", baseUrl);
@@ -100,7 +129,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
           <tbody>${rowsHtml}</tbody>
         </table>
       </div>`
-  });
+  }, { idempotencyKey: digestKey });
 
   if (emailError) {
     return res.status(500).json({
@@ -109,6 +138,16 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
     });
   }
 
+  if (tweetPipelineFlags().interpretation) {
+    const notifiedAt = new Date().toISOString();
+    for (const row of pending) {
+      const { error: updateError } = await req.supabase.from("lineup_unresolved_player_names").update({ metadata: { ...(row.metadata ?? {}), aliasReviewNotifiedAt: notifiedAt } }).eq("id", row.id);
+      if (updateError) throw updateError;
+    }
+    const { error: finishError } = await req.supabase.from("tweet_pipeline_jobs").update({ status: "complete", lease_expires_at: null, updated_at: notifiedAt }).eq("job_key", digestKey).eq("owner", digestOwner);
+    if (finishError) throw finishError;
+  }
+  await releaseRecipient();
   return res.json({
     success: true,
     message: `Sent ${pending.length} unresolved names for review.`,

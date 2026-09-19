@@ -1,6 +1,6 @@
+import { fetchPlayerIdentityDirectory } from "lib/sources/playerIdentity";
 import type { NextApiResponse } from "next";
 
-import { getCurrentSeason } from "lib/NHL/server";
 import {
   buildTweetPatternReviewExportSummary,
   buildTweetPatternReviewDedupeKey,
@@ -262,30 +262,10 @@ function parseReviewAssignments(value: unknown): TweetPatternReviewAssignment[] 
 }
 
 async function fetchRosterPlayers(supabase: any): Promise<PlayerOption[]> {
-  const currentSeason = await getCurrentSeason();
-  const { data: rosterRows, error: rosterError } = await supabase
-    .from("rosters")
-    .select("teamId, players!inner(id, fullName, lastName, position)")
-    .eq("seasonId", currentSeason.seasonId)
-    .eq("is_current", true);
-  if (rosterError) throw rosterError;
-
-  return (rosterRows ?? [])
-    .map((row: any): PlayerOption | null => {
-      const player = row.players;
-      if (!player) return null;
-      return {
-        id: Number(player.id),
-        fullName: String(player.fullName ?? ""),
-        lastName: String(player.lastName ?? ""),
-        position: player.position ?? null,
-        team_id: Number(row.teamId)
-      };
-    })
-    .filter((player: PlayerOption | null): player is PlayerOption => Boolean(player))
-    .sort((left: PlayerOption, right: PlayerOption) =>
-      left.fullName.localeCompare(right.fullName)
-    );
+  return (await fetchPlayerIdentityDirectory(supabase)).map((player) => ({
+    id: player.playerId, fullName: player.fullName, lastName: player.lastName,
+    position: player.position ?? null, team_id: player.teamId ?? null,
+  })).sort((a, b) => a.fullName.localeCompare(b.fullName));
 }
 
 function toMillis(value: string | null | undefined): number {

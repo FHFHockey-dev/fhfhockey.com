@@ -1,3 +1,5 @@
+import dynamic from "next/dynamic";
+import ProjectedLineups from "components/LineCombinations/ProjectedLineups";
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\lines\[abbreviation].tsx
 
 import React, { useMemo, useRef } from "react";
@@ -68,6 +70,8 @@ export type GoalieStats = PlayerBasic & {
   };
 };
 
+const ObservedLinemateMatrix = dynamic(() => import("components/LinemateMatrix"), { ssr: false });
+
 type Props = {
   teamName: string;
   /**
@@ -75,7 +79,7 @@ type Props = {
    */
   teams: Team[];
 
-  lineCombinations: LineCombinations;
+  lineCombinations: LineCombinations | null;
   lastUpdated: string;
 };
 
@@ -89,8 +93,8 @@ export default function TeamLC({
   const { abbreviation } = router.query;
   const mappedAbbreviation = mapTeamAbbreviation(abbreviation as string); // Map abbreviation
   const sourceTeamMeta = useMemo(
-    () => teams.find((team) => team.id === lineCombinations.game.teamId),
-    [teams, lineCombinations.game.teamId]
+    () => teams.find((team) => lineCombinations ? team.id === lineCombinations.game.teamId : team.abbreviation === mappedAbbreviation),
+    [teams, lineCombinations, mappedAbbreviation]
   );
 
   const onTeamChange = (newAbbreviation: string) => {
@@ -120,9 +124,12 @@ export default function TeamLC({
   };
 
   // NOTE: workaround for weird vercel client side bug
-  if (!teams || !lineCombinations) {
-    return <Custom404 />;
-  }
+  if (!teams || !sourceTeamMeta) return <Custom404 />;
+  if (!lineCombinations) return <Container className={styles.container}>
+    <h1>{teamName} line combinations</h1>
+    <ProjectedLineups teamId={sourceTeamMeta.id} />
+    <section aria-label="Observed shared ice time"><h2>Observed shared ice time</h2><p>No observed lineup data is available yet.</p></section>
+  </Container>;
 
   return (
     <TeamColorProvider teamName={teamName}>
@@ -154,6 +161,12 @@ export default function TeamLC({
           />
         </div>
 
+        <ProjectedLineups teamId={sourceTeamMeta?.id} />
+        <section aria-label="Observed shared ice time">
+          <h2>Observed shared ice time</h2>
+          <ObservedLinemateMatrix id={lineCombinations.game.id} mode="line-combination" />
+        </section>
+        <h2>Previous lineup and player statistics</h2>
         <div ref={lineComboRef}>
           <Header
             sourceUrl={
@@ -358,7 +371,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
         `Insufficient line combination data for ${mappedAbbreviation} at build time. Will retry on-demand.`
       );
     }
-    return { notFound: true };
+    return { props: { teamName: team.name, teams, lineCombinations: null, lastUpdated: null }, revalidate: 60 };
   }
 };
 

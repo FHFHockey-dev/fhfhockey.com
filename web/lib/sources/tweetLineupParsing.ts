@@ -51,6 +51,7 @@ export async function expandRedirectUrl(url: string): Promise<string | null> {
   const response = await fetch(url, {
     method: "GET",
     redirect: "manual",
+    signal: AbortSignal.timeout(8000),
     headers: {
       Accept: "text/html,application/xhtml+xml",
       "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)"

@@ -1,3 +1,6 @@
+import { fetchPlayerIdentityDirectory } from "lib/sources/playerIdentity";
+import { verifiedOriginalTweetUrl } from "lib/sources/projectedLineups";
+import { tweetPipelineFlags } from "lib/sources/tweetInterpretation";
 import type { NextApiResponse } from "next";
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
@@ -163,22 +166,10 @@ async function fetchReviewRows(args: {
 async function fetchPlayers(args: {
   supabase: any;
 }): Promise<TweetNewsAutomationPlayer[]> {
-  const { data, error } = await args.supabase
-    .from("players" as any)
-    .select("id, fullName, position, team_id")
-    .not("fullName", "is", null);
-  if (error) throw error;
-
-  return ((data ?? []) as any[])
-    .map((row) => ({
-      id: Number(row.id),
-      fullName: typeof row.fullName === "string" ? row.fullName : "",
-      position: typeof row.position === "string" ? row.position : null,
-      team_id: Number.isFinite(Number(row.team_id))
-        ? Number(row.team_id)
-        : null,
-    }))
-    .filter((row) => Number.isFinite(row.id) && row.fullName);
+  return (await fetchPlayerIdentityDirectory(args.supabase)).map((player) => ({
+    id: player.playerId, fullName: player.fullName, lastName: player.lastName, aliases: player.aliases, position: player.position ?? null,
+    team_id: player.teamId ?? null,
+  }));
 }
 
 async function fetchTeams(args: {
@@ -350,11 +341,19 @@ async function persistAutomatedNewsItem(args: {
   validTeamIds: ReadonlySet<number>;
   nowIso: string;
 }): Promise<{ itemId: string; action: "inserted" | "updated" }> {
+  const originalId = tweetPipelineFlags().publishing ? verifiedOriginalTweetUrl(args.candidate.sourceUrl)?.match(/\/status\/(\d+)/)?.[1] ?? null : null;
+  if (!args.existing && originalId) {
+    const existing = await args.supabase.from("news_feed_items").select("id,source_review_item_id,card_status,published_at,metadata").eq("original_tweet_id", originalId).maybeSingle();
+    if (existing.error) throw existing.error;
+    if (existing.data?.card_status !== "draft" && existing.data) return { itemId: existing.data.id, action: "updated" };
+    if (existing.data) args.existing = existing.data;
+  }
   const cardStatus = resolveAutomatedNewsCardStatus({
     existingStatus: args.existing?.card_status,
     candidateStatus: args.candidate.cardStatus,
   });
   const payload = {
+    ...(tweetPipelineFlags().publishing ? { original_tweet_id: originalId } : {}),
     source_review_item_id: args.candidate.reviewItemId,
     source_tweet_id: args.candidate.sourceTweetId,
     source_url: args.candidate.sourceUrl,
@@ -392,6 +391,11 @@ async function persistAutomatedNewsItem(args: {
       .insert({ ...payload, created_at: args.nowIso })
       .select("id")
       .single();
+    if (error?.code === "23505" && originalId) {
+      const winner = await args.supabase.from("news_feed_items").select("id").eq("original_tweet_id", originalId).single();
+      if (winner.error) throw winner.error;
+      return { itemId: winner.data.id, action: "updated" };
+    }
     if (error) throw error;
     itemId = data?.id ?? null;
     action = "inserted";
@@ -436,10 +440,11 @@ export default withCronJobAudit(
     }
 
     const limit = parseLimit(req.query.limit, 200);
-    const dryRun =
+    const flags = tweetPipelineFlags();
+    const dryRun = (flags.interpretation && !flags.publishing) || (
       req.query.dryRun === undefined
         ? req.method === "GET" && isLocalDevRequest(req)
-        : parseBooleanFlag(req.query.dryRun);
+        : parseBooleanFlag(req.query.dryRun));
     const reprocess = parseBooleanFlag(req.query.reprocess);
     const includeAmbiguous = req.query.includeAmbiguous
       ? parseBooleanFlag(req.query.includeAmbiguous)
@@ -535,6 +540,7 @@ export default withCronJobAudit(
           row: entry.row,
           sources,
           model: inferenceModel,
+          players,
         });
         const stateId = await claimTweetNewsInference({
           supabase: req.supabase,

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { NextPage } from "next";
 import Head from "next/head";
 
+import type { NhlProspectIdentity } from "lib/sources/nhlProspectIdentity";
 import supabase from "lib/supabase";
 
 type UnresolvedName = {
@@ -18,6 +19,7 @@ type UnresolvedName = {
   metadata: {
     contextAlias?: string | null;
     reason?: string | null;
+    reviewKind?: string | null;
   } | null;
   created_at: string;
 };
@@ -35,6 +37,9 @@ type ApiData = {
   unresolvedNames: UnresolvedName[];
   players: PlayerOption[];
   message?: string;
+  membershipReviewEnabled?: boolean;
+  lookup?: NhlProspectIdentity;
+  unlinkedProspects?: Array<{ id: number; canonical_name: string }>;
 };
 
 async function fetchWithOptionalAuth(url: string): Promise<ApiData> {
@@ -168,6 +173,12 @@ const PlayerAliasesPage: NextPage = () => {
   const [players, setPlayers] = useState<PlayerOption[]>([]);
   const [selectedUnresolvedId, setSelectedUnresolvedId] = useState<string>("");
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>("");
+  const [lookup, setLookup] = useState<NhlProspectIdentity | null>(null);
+  const [lookupBusy, setLookupBusy] = useState(false);
+  const [unlinkedProspects, setUnlinkedProspects] = useState<Array<{ id: number; canonical_name: string }>>([]);
+  const [playerSearch, setPlayerSearch] = useState("");
+  const [membershipSourceUrl, setMembershipSourceUrl] = useState("");
+  const [membershipReviewEnabled, setMembershipReviewEnabled] = useState(false);
   const [alias, setAlias] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -186,6 +197,10 @@ const PlayerAliasesPage: NextPage = () => {
     const payload = await fetchWithOptionalAuth(endpoint);
     setUnresolvedNames(payload.unresolvedNames);
     setPlayers(payload.players);
+    setUnlinkedProspects(payload.unlinkedProspects ?? []);
+    setLookup(null);
+    setMembershipReviewEnabled(payload.membershipReviewEnabled ?? false);
+    setMembershipSourceUrl("");
     const first = payload.unresolvedNames[0];
     setSelectedUnresolvedId(first?.id ?? "");
     setAlias(first?.raw_name ?? "");
@@ -205,10 +220,30 @@ const PlayerAliasesPage: NextPage = () => {
   );
   const selectedReviewSlot = getReviewSlotLabel(selectedUnresolved?.metadata?.reason);
   const filteredPlayers = useMemo(() => {
-    if (!selectedUnresolved?.team_id) return players;
-    const teamPlayers = players.filter((player) => player.team_id === selectedUnresolved.team_id);
-    return teamPlayers.length > 0 ? teamPlayers : players;
-  }, [players, selectedUnresolved?.team_id]);
+    const search = playerSearch.trim().toLowerCase();
+    return players.filter((player) => !search || player.fullName.toLowerCase().includes(search) || String(player.id) === search)
+      .sort((a, b) => Number(b.team_id === selectedUnresolved?.team_id) - Number(a.team_id === selectedUnresolved?.team_id));
+  }, [players, playerSearch, selectedUnresolved?.team_id]);
+
+  async function lookupNhlPlayer() {
+    setLookupBusy(true);
+    setLookup(null);
+    try {
+      const params = new URLSearchParams(window.location.search);
+      params.set("nhlId", playerSearch.trim());
+      params.set("unresolvedId", selectedUnresolvedId);
+      const payload = await fetchWithOptionalAuth(`/api/v1/db/player-name-aliases?${params}`);
+      if (!payload.lookup?.nhlId) throw new Error("No verified NHL player was found.");
+      setLookup(payload.lookup);
+      setPlayers((previous) => [...previous.filter((player) => player.id !== payload.lookup!.nhlId), {
+        id: payload.lookup!.nhlId!, fullName: payload.lookup!.fullName, lastName: payload.lookup!.lastName,
+        position: payload.lookup!.position, team_id: payload.lookup!.currentTeamId,
+      }]);
+      setSelectedPlayerId(String(payload.lookup.nhlId));
+      setStatusMessage("NHL identity verified. Review the player below, then save to import and resolve.");
+    } catch (error) { setStatusMessage(error instanceof Error ? error.message : "NHL lookup failed."); }
+    finally { setLookupBusy(false); }
+  }
 
   async function resolveName() {
     if (!selectedUnresolved || !selectedPlayerId) return;
@@ -216,6 +251,8 @@ const PlayerAliasesPage: NextPage = () => {
     const payload = await postWithOptionalAuth("/api/v1/db/player-name-aliases", {
       unresolvedId: selectedUnresolved.id,
       playerId: Number(selectedPlayerId),
+      importNhlIdentity: lookup?.nhlId === Number(selectedPlayerId),
+      membershipSourceUrl: membershipSourceUrl.trim() || undefined,
       alias: alias || selectedUnresolved.raw_name,
       ...(reviewToken ? { reviewToken } : {}),
     });
@@ -242,7 +279,7 @@ const PlayerAliasesPage: NextPage = () => {
       </Head>
       <main style={{ margin: "0 auto", maxWidth: 960, padding: 24 }}>
         <h1>Player Alias Review</h1>
-        {statusMessage ? <p>{statusMessage}</p> : null}
+        {statusMessage ? <p role="status">{statusMessage}</p> : null}
         {isLoading ? <p>Loading...</p> : null}
         {!isLoading && unresolvedNames.length === 0 ? (
           <p>No matching unresolved player name was found.</p>
@@ -263,6 +300,7 @@ const PlayerAliasesPage: NextPage = () => {
                   setSelectedUnresolvedId(event.target.value);
                   setAlias(next?.raw_name ?? "");
                   setSelectedPlayerId("");
+                  setMembershipSourceUrl("");
                 }}
               >
                 {unresolvedNames.map((name) => (
@@ -282,26 +320,49 @@ const PlayerAliasesPage: NextPage = () => {
             </label>
 
             <label>
+              Search all players by name or NHL ID
+              <input value={playerSearch} onChange={(event) => setPlayerSearch(event.target.value)} />
+            </label>
+            {membershipReviewEnabled && <button disabled={lookupBusy || !/^\d{7}$/.test(playerSearch.trim())} onClick={() => void lookupNhlPlayer()}>
+              {lookupBusy ? "Checking NHL…" : "Look up NHL ID"}
+            </button>}
+            {lookup && <p>{lookup.fullName} · NHL {lookup.nhlId} · <a href={lookup.sourceUrl} target="_blank" rel="noreferrer">Verified NHL profile</a>.
+              {lookup.currentTeamId ? " Current organization is verified separately from active roster status." : " Current organization is unknown; membership will still need review."}
+            </p>}
+            {playerSearch.trim() && unlinkedProspects.filter((player) => player.canonical_name.toLowerCase().includes(playerSearch.trim().toLowerCase())).slice(0, 20).map((player) => (
+              <p key={player.id}>{player.canonical_name} — verified prospect; NHL ID is not linked yet. Enter an NHL ID above to verify the link.</p>
+            ))}
+            <p>Team matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.</p>
+            {selectedUnresolved.metadata?.reviewKind && <p>Review reason: {selectedUnresolved.metadata.reviewKind.replace(/_/g, " ")}.</p>}
+            {selectedUnresolved.metadata?.reviewKind === "invalid_extraction" && <p>This may contain several players or non-player text. <a href="/db/tweet-pattern-review">Review tweet parsing</a> before creating an alias.</p>}
+            <label>
               Match player
               <select
+                aria-label="Match player"
                 value={selectedPlayerId}
                 onChange={(event) => setSelectedPlayerId(event.target.value)}
               >
                 <option value="">Choose a player...</option>
                 {filteredPlayers.map((player) => (
                   <option key={player.id} value={player.id}>
-                    {player.fullName} {player.position ? `- ${player.position}` : ""}
+                    {player.fullName} · {player.id} {player.position ? `- ${player.position}` : ""} {player.team_id === selectedUnresolved.team_id ? "· team match" : "· verify membership"}
                   </option>
                 ))}
               </select>
             </label>
 
+            {membershipReviewEnabled && <label>
+              Verified NHL camp roster URL (optional)
+              <input type="url" value={membershipSourceUrl} onChange={(event) => setMembershipSourceUrl(event.target.value)} />
+              <span>Supply an NHL.com source only after verifying this player belongs to the reported team’s camp. Saving records camp membership for 30 days and preserves historical rosters.</span>
+            </label>}
+
             <div style={{ display: "flex", gap: 12 }}>
               <button
                 disabled={selectedUnresolved.status !== "pending" || !selectedPlayerId}
-                onClick={() => void resolveName()}
+                onClick={() => void resolveName().catch((error) => setStatusMessage(error.message))}
               >
-                Save alias
+                {lookup?.nhlId === Number(selectedPlayerId) ? "Import NHL player and save alias" : membershipSourceUrl.trim() ? "Save alias and camp membership" : "Save alias"}
               </button>
               <button
                 disabled={selectedUnresolved.status !== "pending"}

@@ -1,4 +1,5 @@
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
+import { tweetPipelineFlags } from "./tweetInterpretation";
 import {
   selectFirstArrivalBuckets,
   type FirstArrivalCandidate,
@@ -187,6 +188,8 @@ export async function syncLineCombinationSourceWinners(args: {
   supabase: any;
   date: string;
 }) {
+  // Versioned projections are served separately; do not overwrite observed history.
+  if (tweetPipelineFlags().interpretation) return { sourceRows: 0, eligibleWinners: 0, written: 0, failures: [], mode: "versioned_projection_reports" };
   const rows = await fetchLineCombinationSourceRowsForDate(args);
   const mutations = selectLineCombinationSourceMutations(rows);
   const results = await Promise.allSettled(

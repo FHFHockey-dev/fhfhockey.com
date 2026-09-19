@@ -1,3 +1,4 @@
+import { tweetPipelineFlags, type TweetInterpretation } from "lib/sources/tweetInterpretation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { starterBoardFlags } from "lib/projections/starterBoardFlags";
 
@@ -140,6 +141,28 @@ export function assignmentsFor(row: ForecastLineSourceRow) {
       });
     }
   };
+
+  const interpretation = row.metadata?.interpretation as TweetInterpretation | undefined;
+  if (interpretation) {
+    if (interpretation.context !== "game") return result;
+    const complete = interpretation.units.filter((unit) => unit.complete && !unit.group);
+    const forwards = complete.filter((unit) => unit.situation === "es_forward");
+    const defense = complete.filter((unit) => unit.situation === "es_defense");
+    if (forwards.length === 4 && defense.length === 3 && new Set([...forwards, ...defense].flatMap((unit) => unit.players.map((player) => player.playerId))).size === 18) {
+      for (const unit of [...forwards, ...defense]) addGroup(unit.players.map((player) => player.playerId), unit.players.map((player) => player.name), unit.situation === "es_forward" ? "forward_line" : "defense_pair", unit.number);
+    }
+    for (const situation of ["pp", "pk"] as const) {
+      const units = complete.filter((unit) => unit.situation === situation);
+      if (units.length === 2 && units.some((unit) => unit.number === 1) && units.some((unit) => unit.number === 2)) {
+        for (const unit of units) addGroup(unit.players.map((player) => player.playerId), unit.players.map((player) => player.name), situation === "pp" ? "power_play" : "penalty_kill", unit.number);
+      }
+    }
+    for (const event of interpretation.events ?? []) {
+      if (event.kind === "injury" && event.availability !== "available") addGroup([event.playerId], [event.playerName], "injury", null, event.availability === "out" ? "ruled_out" : "observed");
+      if (event.kind === "goalie" && event.state !== "ruled_out") addGroup([event.playerId], [event.playerName], "goalie_order", null, event.state === "confirmed" ? "confirmed" : "observed");
+    }
+    return result;
+  }
 
   [1, 2, 3, 4].forEach((line) =>
     addGroup(
@@ -331,7 +354,6 @@ export async function capturePlayerForecastSourceRows(args: {
     conflicts: 0,
     jobsQueued: 0,
   };
-  const parserVersion = args.parserVersion ?? "line-source-v2";
 
   for (const sourceRow of args.rows) {
     const usesQuote = sourceRow.primary_text_source === "quoted_oembed";
@@ -349,6 +371,9 @@ export async function capturePlayerForecastSourceRows(args: {
       row.team_id == null
     ) continue;
 
+    const interpretation = row.metadata?.interpretation as TweetInterpretation | undefined;
+    if (interpretation && !tweetPipelineFlags().publishing) continue;
+    const parserVersion = args.parserVersion ?? interpretation?.version ?? "line-source-v2";
     const watermark = availableAt(row);
     const observedAt = row.tweet_posted_at ? validDate(row.tweet_posted_at) : watermark;
     const text = primaryReportText(row);
@@ -366,7 +391,7 @@ export async function capturePlayerForecastSourceRows(args: {
         team_id: row.team_id,
         player_id: goalie.playerId,
         raw_player_name: goalie.name,
-        observation_status: status,
+        observation_status: interpretation?.events?.find((event) => event.kind === "goalie" && event.playerId === goalie.playerId)?.state ?? status,
         confidence: null,
         raw_status: text,
         source_group: row.source_group,
@@ -381,7 +406,7 @@ export async function capturePlayerForecastSourceRows(args: {
         accepted: true,
         metadata: { ...row.metadata, sourceTiming: sourceTiming(row) },
       }));
-      if (starterBoardFlags().capture && observations.length) {
+      if ((starterBoardFlags().capture || interpretation) && observations.length) {
         const { data: captured, error } = await args.supabase.rpc("capture_starter_board_goalies", { p_observations: observations });
         if (error) throw error;
         summary.goalieObservations += captured.insertedObservations;
@@ -412,6 +437,7 @@ export async function capturePlayerForecastSourceRows(args: {
 
     if (["lineup", "practice_lines", "power_play", "injury"].includes(row.classification ?? "")) {
       const assignments = assignmentsFor(row);
+      if (interpretation && !assignments.length) continue;
       const denominator = row.classification === "injury" ? Math.max(1, assignments.length) : 20;
       const snapshot = {
         game_id: row.game_id,
@@ -430,7 +456,7 @@ export async function capturePlayerForecastSourceRows(args: {
         parser_version: parserVersion,
         metadata: { ...row.metadata, sourceTiming: sourceTiming(row) },
       };
-      if (starterBoardFlags().capture) {
+      if (starterBoardFlags().capture || interpretation) {
         const { data: captured, error: captureError } = await args.supabase.rpc("capture_starter_board_lineup", {
           p_snapshot: snapshot, p_assignments: assignments,
         });

@@ -1,3 +1,6 @@
+import { identityMentionPresent, tweetPipelineFlags, TWEET_INTERPRETATION_VERSION } from "./tweetInterpretation";
+import { resolvePlayerIdentity } from "./playerIdentity";
+import { classifyInjuryEvent, extractInjuryTimeline } from "./tweetPlayerEvents";
 import { createHash } from "node:crypto";
 
 import { z } from "zod";
@@ -13,7 +16,7 @@ import type {
 } from "lib/sources/tweetNewsAutomation";
 import { getTweetNewsCandidateSource } from "lib/sources/tweetNewsAutomation";
 
-export const TWEET_NEWS_INFERENCE_PROMPT_VERSION = "2026-07-14.3";
+export const TWEET_NEWS_INFERENCE_PROMPT_VERSION = "2026-09-18.1";
 export const DEFAULT_TWEET_NEWS_INFERENCE_MODEL = "openai/gpt-5.4-mini";
 
 const CATEGORY_OPTIONS = [
@@ -131,6 +134,13 @@ export const tweetNewsInferenceSchema = z.object({
     "conflicting_evidence",
     "non_news",
   ]),
+  playerEvents: z.array(z.object({
+    playerId: z.number().int().positive(),
+    state: z.enum(["new_injury", "ongoing", "setback", "possible_return", "confirmed_return", "unknown"]),
+    sourceId: z.enum(["wrapper", "quoted"]),
+    excerpt: z.string().min(2).max(500),
+    timeframe: z.string().max(120).nullable(),
+  })).max(5).optional(),
 });
 
 export type TweetNewsInferenceResult = z.infer<
@@ -223,21 +233,25 @@ export function buildTweetNewsInferencePlayerCandidates(args: {
   );
   const candidates = args.players.filter((player) => {
     const fullName = normalizeEvidence(player.fullName);
-    const lastName = fullName.split(" ").filter(Boolean).at(-1) ?? "";
+    const lastName = player.lastName ?? fullName.split(" ").slice(1).join(" ");
     const explicitlyMentioned =
-      normalizedText.includes(fullName) ||
-      (lastName.length >= 5 && normalizedText.includes(lastName));
+      identityMentionPresent(normalizedText, fullName) ||
+      (lastName.length >= 2 && identityMentionPresent(normalizedText, lastName));
     return explicitlyMentioned ||
       (args.row.team_id != null && player.team_id === args.row.team_id);
   });
 
-  return candidates.slice(0, 40);
+  return candidates.sort((a, b) => {
+    const score = (player: TweetNewsAutomationPlayer) => identityMentionPresent(normalizedText, player.fullName) ? 2 : identityMentionPresent(normalizedText, player.lastName ?? player.fullName.split(" ").slice(1).join(" ")) ? 1 : 0;
+    return score(b) - score(a) || a.id - b.id;
+  }).slice(0, 40);
 }
 
 export function buildTweetNewsInferenceDedupeKey(args: {
   row: TweetNewsAutomationReviewRow;
   sources: TweetNewsInferenceSource[];
   model: string;
+  players?: TweetNewsAutomationPlayer[];
 }): string {
   const fingerprint = createHash("sha256")
     .update(
@@ -246,6 +260,8 @@ export function buildTweetNewsInferenceDedupeKey(args: {
         sources: args.sources,
         model: args.model,
         promptVersion: TWEET_NEWS_INFERENCE_PROMPT_VERSION,
+        interpretationVersion: TWEET_INTERPRETATION_VERSION,
+        identities: args.players?.map(({ id, fullName, lastName, team_id, aliases }) => [id, fullName, lastName, team_id, aliases]).sort((a, b) => Number(a[0]) - Number(b[0])),
       }),
     )
     .digest("hex");
@@ -303,11 +319,21 @@ export function validateTweetNewsInference(args: {
   const playerById = new Map(
     args.playerCandidates.map((player) => [player.id, player]),
   );
+  const identities = args.playerCandidates.map((player) => ({ playerId: player.id, fullName: player.fullName, lastName: player.lastName ?? player.fullName.split(" ").slice(1).join(" "), aliases: player.aliases }));
+  const supportedSubject = (text: string, player: TweetNewsAutomationPlayer) => {
+    if (identityMentionPresent(text, player.fullName)) return true;
+    return [player.lastName ?? player.fullName.split(" ").slice(1).join(" "), ...(player.aliases ?? [])].some((name) => {
+      const match = resolvePlayerIdentity(name, identities);
+      return identityMentionPresent(text, name) && match.status === "matched" && match.player.playerId === player.id;
+    });
+  };
   for (const subject of args.result.subjects) {
     if (subject.playerId != null) {
       const player = playerById.get(subject.playerId);
       if (!player || normalizeEvidence(player.fullName) !== normalizeEvidence(subject.playerName)) {
         errors.push("invalid_player_mapping");
+      } else if (!args.result.evidence.some((evidence) => supportedSubject(evidence.excerpt, player))) {
+        errors.push("subject_missing_from_evidence");
       }
     } else if (
       !args.sources.some((source) =>
@@ -316,6 +342,14 @@ export function validateTweetNewsInference(args: {
     ) {
       errors.push("unmapped_player_not_present_in_evidence");
     }
+  }
+
+  for (const event of args.result.playerEvents ?? []) {
+    const player = playerById.get(event.playerId);
+    const source = sourceById.get(event.sourceId);
+    if (!player || !source || !supportedSubject(event.excerpt, player) || !containsEvidence(source.text, event.excerpt)) errors.push("unsupported_player_event");
+    if (event.timeframe && !containsEvidence(event.excerpt, event.timeframe)) errors.push("unsupported_timeframe");
+    if (classifyInjuryEvent(event.excerpt) !== event.state && event.state !== "unknown") errors.push("event_requires_review");
   }
 
   const selectedTeam = args.result.teamAbbreviation
@@ -354,6 +388,7 @@ export function validateTweetNewsInference(args: {
   }
 
   const publish =
+    (!tweetPipelineFlags().interpretation || tweetPipelineFlags().publishing) &&
     args.result.decision === "publish" &&
     args.result.confidence >= minimumPublishConfidence(args.result) &&
     errors.length === 0;
@@ -454,6 +489,7 @@ export function buildTweetNewsInferenceCandidate(args: {
         verificationState: args.result.verificationState,
         summary: summary ?? null,
         evidence: args.result.evidence,
+        playerEvents: args.result.playerEvents?.map((event) => ({ ...event, timeline: extractInjuryTimeline(event.excerpt, args.row.source_created_at) })) ?? [],
         validationErrors: validation.errors,
       },
     },
@@ -509,6 +545,7 @@ export async function inferTweetNewsCandidate(args: {
       "Use NEWS UPDATE/CONTRACT NEGOTIATION for extension talks that are getting done or closing in.",
       "Use REPORTED INJURY/AWAITING OFFICIAL CONFIRMATION for a specific injury report not yet confirmed by the club.",
       "Choose review whenever identity or event status is uncertain.",
+      "For injury/return news, extract playerEvents separately for each subject. Copy a subject-specific excerpt and timeframe verbatim. Preserve negation, possible versus confirmed return, and reassessment versus return dates. Without prior history do not infer that an injury is new or ongoing. Never apply one player's event to another named player.",
     ].join(" "),
     prompt: JSON.stringify({
       taxonomy: Object.fromEntries(

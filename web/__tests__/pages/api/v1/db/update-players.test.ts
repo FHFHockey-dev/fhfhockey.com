@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("lib/NHL/server", () => ({
+  isValidNhlSeasonId: (id: number) => id === 20262027 || id === 20252026,
   getCurrentSeason: mocks.getCurrentSeason,
   getTeams: mocks.getTeams,
 }));
@@ -58,19 +59,20 @@ describe("/api/v1/db/update-players", () => {
     });
   });
 
-  it("uses the current-canonical team catalog for the current roster writer", async () => {
+  it("targets an explicit preseason roster without writing during dry-run", async () => {
+    mocks.getTeams.mockResolvedValue([{ id: 59, abbreviation: "UTA" }]);
+    mocks.get.mockResolvedValue({ forwards: [{ id: 8476389, firstName: { default: "Vincent" }, lastName: { default: "Trocheck" }, positionCode: "C", birthDate: "1993-07-11" }], defensemen: [], goalies: [] });
     const response = createResponse();
-
-    await handler({ method: "POST", query: {} } as never, response as never);
-
-    expect(mocks.getTeams).toHaveBeenCalledWith(20252026, {
-      mode: "current-canonical",
-    });
-    expect(mocks.get).not.toHaveBeenCalled();
-    expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({
-      message: "Successfully updated the players & rosters tables.",
-      success: true,
-    });
+    await handler({ method: "POST", query: { seasonId: "20262027" } } as never, response as never);
+    expect(mocks.getTeams).toHaveBeenCalledWith(20262027, { mode: "current-canonical" });
+    expect(mocks.get).toHaveBeenCalledWith("/roster/UTA/20262027");
+    expect(mocks.from).not.toHaveBeenCalled();
+    expect(response.body).toMatchObject({ success: true, dryRun: true, seasonId: 20262027, players: [{ id: 8476389, teamId: 59 }] });
+  });
+  it("fails an empty refresh before any database writes", async () => {
+    const response = createResponse();
+    await handler({ method: "POST", query: { seasonId: "20262027" } } as never, response as never);
+    expect(response.statusCode).toBe(400);
+    expect(mocks.from).not.toHaveBeenCalled();
   });
 });

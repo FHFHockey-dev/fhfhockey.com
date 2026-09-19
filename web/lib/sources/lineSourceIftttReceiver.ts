@@ -11,6 +11,7 @@ type LineSourceIftttReceiverConfig = {
   sourceAccount: string;
   secretEnvVar: string;
   processorPath?: string;
+  eventTable?: "lines_ccc_ifttt_events" | "line_source_ifttt_events";
 };
 
 type ResponseBody =
@@ -117,7 +118,7 @@ async function processStoredTweetEvent(args: {
 
   const params = new URLSearchParams({
     limit: "1",
-    reprocess: "true",
+    reprocess: "false",
     tweetId: args.tweetId,
     sourceKey: args.config.sourceKey,
     // The NHL slate follows Eastern dates; UTC midnight occurs during games.
@@ -129,9 +130,9 @@ async function processStoredTweetEvent(args: {
 /** Small current-day retries; historic pending reports are never a live backfill. */
 export async function retryPendingLineSourceEvents() {
   const date = moment().tz("America/New_York").format("YYYY-MM-DD");
-  const results = await Promise.all(["gamedaylines", "gamedaygoalies", "gamedaynewsnhl"].map(async (sourceKey) => ({
+  const results = await Promise.all(["gamedaylines", "gamedaygoalies", "gamedaynewsnhl", "cccmiddleton"].map(async (sourceKey) => ({
     sourceKey,
-    ...await requestLineSourceProcessor("/api/v1/db/update-line-sources", new URLSearchParams({
+    ...await requestLineSourceProcessor(sourceKey === "cccmiddleton" ? "/api/v1/db/update-lines-ccc" : "/api/v1/db/update-line-sources", new URLSearchParams({
       sourceKey, date, limit: "5", currentDayOnly: "true",
     })),
   })));
@@ -256,8 +257,7 @@ export function createLineSourceIftttReceiver(
 
     const row = {
       source: "ifttt",
-      source_group: config.sourceGroup,
-      source_key: config.sourceKey,
+      ...(config.eventTable === "lines_ccc_ifttt_events" ? {} : { source_group: config.sourceGroup, source_key: config.sourceKey }),
       source_account: sourceAccount,
       username,
       text,
@@ -271,10 +271,11 @@ export function createLineSourceIftttReceiver(
       updated_at: new Date().toISOString(),
     };
 
-    const query = supabase.from("line_source_ifttt_events" as any);
+    const query = supabase.from((config.eventTable ?? "line_source_ifttt_events") as any);
     const { error } = tweetId
       ? await query.upsert(row as any, {
-          onConflict: "source_key,tweet_id",
+          onConflict: config.eventTable === "lines_ccc_ifttt_events" ? "tweet_id" : "source_key,tweet_id",
+          ignoreDuplicates: true,
         })
       : await query.insert(row as any);
 

@@ -1,3 +1,6 @@
+import { claimTweetEvents, finishTweetEvents, failTweetEvents } from "lib/sources/tweetProcessingJobs";
+import { persistTweetProjectionReports, enrichTweetInjuryHistory } from "lib/sources/tweetProjectionStorage";
+import { rosterSeasonForDate } from "lib/sources/playerIdentity";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import moment from "moment-timezone";
 import { starterBoardFlags } from "lib/projections/starterBoardFlags";
@@ -105,7 +108,7 @@ async function fetchPendingLineSourceEvents(args: {
 
   if (error) throw error;
 
-  return (data ?? []) as LineSourceIftttEventInput[];
+  return claimTweetEvents(args.supabase, "line_source_ifttt_events", (data ?? []) as LineSourceIftttEventInput[], args.reprocess);
 }
 
 function shouldResolveQuotedTweetForCandidate(source: {
@@ -338,7 +341,7 @@ export default withCronJobAudit(
       rosterByTeam: await fetchRosterEntriesByTeam({
         supabase: req.supabase,
         teamIds: scheduledTeamIds,
-        seasonId: currentSeason.seasonId,
+        seasonId: rosterSeasonForDate(requestedDate),
       }),
       aliases: await fetchPlayerNameAliases({
         supabase: req.supabase,
@@ -346,10 +349,14 @@ export default withCronJobAudit(
       }),
     });
     const gameIdByTeamId = new Map<number, number>();
+    const ambiguousGameTeams = new Set<number>();
     for (const game of scheduledGames) {
-      gameIdByTeamId.set(game.homeTeamId, game.id);
-      gameIdByTeamId.set(game.awayTeamId, game.id);
+      for (const teamId of [game.homeTeamId, game.awayTeamId]) {
+        if (gameIdByTeamId.has(teamId)) ambiguousGameTeams.add(teamId);
+        gameIdByTeamId.set(teamId, game.id);
+      }
     }
+    for (const teamId of ambiguousGameTeams) gameIdByTeamId.delete(teamId);
     const pendingEvents = await fetchPendingLineSourceEvents({
       supabase: req.supabase,
       limit: batchSize,
@@ -376,6 +383,8 @@ export default withCronJobAudit(
       raw_payload: Record<string, unknown>;
       updated_at: string;
     }> = [];
+    let processingStage = "interpretation";
+    try {
     const parsedCandidates: ReturnType<
       typeof buildLinesCccSourceFromIftttEvent
     >[] = [];
@@ -554,7 +563,7 @@ export default withCronJobAudit(
         rosterByTeam: await fetchRosterEntriesByTeam({
           supabase: req.supabase,
           teamIds: unscheduledAcceptedTeamIds,
-          seasonId: currentSeason.seasonId,
+          seasonId: rosterSeasonForDate(requestedDate),
         }),
         aliases: await fetchPlayerNameAliases({
           supabase: req.supabase,
@@ -591,7 +600,7 @@ export default withCronJobAudit(
         rosterByTeam: await fetchRosterEntriesByTeam({
           supabase: req.supabase,
           teamIds: unloadedTeamIds,
-          seasonId: currentSeason.seasonId,
+          seasonId: rosterSeasonForDate(requestedDate),
         }),
         aliases: await fetchPlayerNameAliases({
           supabase: req.supabase,
@@ -636,6 +645,9 @@ export default withCronJobAudit(
       }
     }
 
+    processingStage = "injury_history";
+    await enrichTweetInjuryHistory(req.supabase, parsedCandidates);
+    processingStage = "snapshot_storage";
     const rowsToUpsert = parsedCandidates.map((candidate, index) =>
       toLineSourceSnapshotRow({
         event: parsedEvents[index]!,
@@ -766,7 +778,7 @@ export default withCronJobAudit(
     try {
       playerForecastCapture = await capturePlayerForecastSourceRows({
         supabase: req.supabase,
-        rows: rowsToUpsert as unknown as ForecastLineSourceRow[],
+        rows: rowsToUpsert.filter((_row, index) => !parsedCandidates[index]?.metadata?.interpretation) as unknown as ForecastLineSourceRow[],
       });
     } catch (error) {
       // Preserve pending raw events so the capture-enabled pipeline can retry.
@@ -830,6 +842,9 @@ export default withCronJobAudit(
         error: error instanceof Error ? error.message : String(error),
       };
     }
+    processingStage = "projection_storage";
+    await persistTweetProjectionReports(req.supabase, parsedCandidates);
+    processingStage = "review_queue";
     const unresolvedNamesQueued = await persistUnresolvedPlayerNames({
       supabase: req.supabase,
       rows: rowsToUpsert,
@@ -838,6 +853,7 @@ export default withCronJobAudit(
       req,
       unresolvedNamesQueued,
     });
+    processingStage = "event_finalization";
     const processedEventUpdates = parsedCandidates.map((candidate, index) => {
       const event = parsedEvents[index]!;
       return {
@@ -880,6 +896,8 @@ export default withCronJobAudit(
       if (error) throw error;
     }
 
+    await finishTweetEvents(req.supabase, pendingEvents.filter((event) => processedEventUpdates.some((update) => update.id === event.id)));
+    await failTweetEvents(req.supabase, pendingEvents, "enrichment_deferred");
     return res.json({
       success: true,
       route: "/api/v1/db/update-line-sources",
@@ -887,7 +905,7 @@ export default withCronJobAudit(
       batchSize,
       sourceGroup,
       sourceKeys,
-      seasonId: currentSeason.seasonId,
+      seasonId: rosterSeasonForDate(requestedDate),
       teamsLoaded: teamDirectory.length,
       scheduledGamesLoaded: scheduledGames.length,
       scheduledTeamsLoaded: scheduledTeamIds.length,
@@ -945,6 +963,10 @@ export default withCronJobAudit(
       message:
         "line source processor route parsed pending events, upserted source snapshots, synchronized eligible first-arrival line combinations, and updated source event statuses.",
     });
+    } catch (error) {
+      await failTweetEvents(req.supabase, pendingEvents, processingStage);
+      throw error;
+    }
   }),
   {
     jobName: "/api/v1/db/update-line-sources",

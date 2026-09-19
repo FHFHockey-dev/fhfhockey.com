@@ -1,4 +1,13 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+function paginatedRoster(result: { data: any[]; error: null }) {
+  const query: any = {
+    eq: vi.fn(() => query), order: vi.fn(() => query),
+    range: vi.fn((from: number, to: number) => Promise.resolve({ ...result, data: result.data.slice(from, to + 1) })),
+  };
+  return query;
+}
 
 const mocks = vi.hoisted(() => ({
   getCurrentSeason: vi.fn(),
@@ -108,7 +117,7 @@ function createSupabaseMocks(args?: {
   const eventUpdateMock = vi.fn(() => ({
     eq: eventUpdateEqMock,
   }));
-  const unresolvedNamesUpsertMock = vi.fn().mockResolvedValue({ error: null });
+  const unresolvedNamesUpsertMock = vi.fn((rows: any[]) => ({ select: vi.fn().mockResolvedValue({ data: rows.map((_, index) => ({ id: String(index) })), error: null }) }));
   const eventRows = [
     {
       id: "event-nhl",
@@ -213,7 +222,7 @@ function createSupabaseMocks(args?: {
     rosters: {
       select: vi.fn(() => ({
         in: vi.fn(() => ({
-          eq: vi.fn().mockResolvedValue({
+          eq: vi.fn(() => paginatedRoster({
             data: [
               {
                 teamId: 8,
@@ -225,21 +234,16 @@ function createSupabaseMocks(args?: {
               },
             ],
             error: null,
-          }),
+          })),
         })),
       })),
     },
     lineup_player_name_aliases: {
-      select: vi.fn(() => ({
-        or: vi.fn().mockResolvedValue({
-          data: [],
-          error: null,
-        }),
-        is: vi.fn().mockResolvedValue({
-          data: [],
-          error: null,
-        }),
-      })),
+      select: vi.fn(() => {
+        const query: any = { or: () => query, is: () => query, order: () => query,
+          range: () => Promise.resolve({ data: [], error: null }) };
+        return query;
+      }),
     },
     lines_ccc_ifttt_events: {
       select: vi.fn(() => {

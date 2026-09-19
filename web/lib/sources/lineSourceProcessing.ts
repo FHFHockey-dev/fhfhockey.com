@@ -1,3 +1,6 @@
+import { fetchRegisteredPlayerIdentities } from "./playerIdentity";
+import { tweetPipelineFlags, type TweetInterpretation } from "./tweetInterpretation";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import type { RosterNameEntry } from "lib/sources/lineupSourceIngestion";
 import {
   buildUnresolvedPlayerNameDedupeKey,
@@ -14,6 +17,7 @@ export type ScheduledGameRow = {
 };
 
 export type LineSourceRowForUnresolvedNameReview = {
+  metadata?: Record<string, unknown>;
   capture_key: string;
   source: string;
   source_group?: string | null;
@@ -106,8 +110,8 @@ export function parseRequestedDate(
 export function parseBatchSize(value: string | string[] | undefined): number {
   const rawValue = Array.isArray(value) ? value[0] : value;
   const parsed = rawValue ? Number.parseInt(rawValue, 10) : 25;
-  if (!Number.isFinite(parsed)) return 25;
-  return Math.min(Math.max(parsed, 1), 100);
+  const maximum = tweetPipelineFlags().interpretation ? 5 : 100;
+  return Math.min(Math.max(Number.isFinite(parsed) ? parsed : 25, 1), maximum);
 }
 
 export function parseBooleanFlag(
@@ -150,20 +154,22 @@ export async function fetchRosterEntriesByTeam(args: {
 }): Promise<Map<number, RosterNameEntry[]>> {
   if (args.teamIds.length === 0) return new Map();
 
-  const { data, error } = await args.supabase
-    .from("rosters")
-    .select("teamId, playerId, is_current, players!inner(fullName, lastName)")
-    .in("teamId", args.teamIds)
-    .eq("seasonId", args.seasonId);
-
-  if (error) throw error;
+  const data = await fetchAllSupabasePages<any>(({ from, to }) => {
+    let query = args.supabase.from("rosters")
+      .select("teamId, playerId, is_current, players!inner(fullName, lastName, position)");
+    if (!tweetPipelineFlags().interpretation) query = query.in("teamId", args.teamIds);
+    return query.eq("seasonId", args.seasonId).eq("is_current", true)
+      .order("teamId", { ascending: true }).order("playerId", { ascending: true }).range(from, to);
+  });
 
   const result = new Map<number, RosterNameEntry[]>();
   for (const row of data ?? []) {
     const teamId = Number((row as any).teamId);
-    if (!Number.isFinite(teamId)) continue;
+    if (!Number.isFinite(teamId) || !args.teamIds.includes(teamId)) continue;
     const entry: RosterNameEntry = {
       playerId: Number((row as any).playerId),
+      teamId,
+      position: (row as any).players?.position ?? null,
       fullName: String((row as any).players?.fullName ?? ""),
       lastName: String((row as any).players?.lastName ?? ""),
     };
@@ -173,6 +179,39 @@ export async function fetchRosterEntriesByTeam(args: {
     result.get(teamId)?.push(entry);
   }
 
+  if (tweetPipelineFlags().interpretation) {
+    const memberships = await fetchAllSupabasePages<any>(({ from, to }) => args.supabase
+      .from("tweet_player_memberships").select("player_id, team_id, expires_at, players!inner(fullName, lastName, position)")
+      .eq("season_id", args.seasonId)
+      .order("team_id").order("player_id").order("membership_kind").range(from, to));
+    const supportedTeams = new Map<number, Set<number>>();
+    for (const row of [...data.map((entry) => ({ player_id: entry.playerId, team_id: entry.teamId, expires_at: null })), ...memberships]) {
+      if (row.expires_at && Date.parse(row.expires_at) <= Date.now()) continue;
+      const teams = supportedTeams.get(Number(row.player_id)) ?? new Set<number>();
+      teams.add(Number(row.team_id));
+      supportedTeams.set(Number(row.player_id), teams);
+    }
+    for (const [teamId, entries] of result) result.set(teamId, entries.filter((entry) => supportedTeams.get(entry.playerId)?.size === 1));
+    for (const row of memberships) {
+      if (!args.teamIds.includes(Number(row.team_id)) || supportedTeams.get(Number(row.player_id))?.size !== 1) continue;
+      if (row.expires_at && Date.parse(row.expires_at) <= Date.now()) continue;
+      const entries = result.get(Number(row.team_id)) ?? [];
+      if (!entries.some((entry) => entry.playerId === Number(row.player_id))) entries.push({
+        playerId: Number(row.player_id), teamId: Number(row.team_id), fullName: row.players.fullName,
+        lastName: row.players.lastName, position: row.players.position,
+      });
+      result.set(Number(row.team_id), entries);
+    }
+  }
+
+  if (tweetPipelineFlags().interpretation) {
+    const registered = await fetchRegisteredPlayerIdentities(args.supabase);
+    const byNhlId = new Map(registered.filter((row) => row.nhl_player_id).map((row) => [Number(row.nhl_player_id), row]));
+    for (const entries of result.values()) for (const entry of entries) {
+      const identity = byNhlId.get(entry.playerId);
+      if (identity) entry.aliases = [...(entry.aliases ?? []), identity.canonical_name, ...identity.aliases];
+    }
+  }
   return result;
 }
 
@@ -180,20 +219,13 @@ export async function fetchPlayerNameAliases(args: {
   supabase: any;
   teamIds: number[];
 }): Promise<PlayerNameAliasRow[]> {
-  let query = args.supabase
-    .from("lineup_player_name_aliases" as any)
-    .select("alias, player_id, team_id");
-
-  query =
-    args.teamIds.length > 0
+  return fetchAllSupabasePages<PlayerNameAliasRow>(({ from, to }) => {
+    let query = args.supabase.from("lineup_player_name_aliases").select("alias, player_id, team_id");
+    query = args.teamIds.length > 0
       ? query.or(`team_id.is.null,team_id.in.(${args.teamIds.join(",")})`)
       : query.is("team_id", null);
-
-  const { data, error } = await query;
-
-  if (error) throw error;
-
-  return (data ?? []) as PlayerNameAliasRow[];
+    return query.order("normalized_alias").order("player_id").range(from, to);
+  });
 }
 
 export function applyPlayerNameAliasesToRosterMap(args: {
@@ -244,7 +276,7 @@ function isReviewablePlayerName(rawName: string | null | undefined) {
   }
   if (!/^[A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-öø-ÿ.' -]+$/.test(trimmed)) return false;
   if (
-    /^(rt|per|confirmed|lineup|lines|starting|goalie|starter)$/i.test(trimmed)
+    /^(rt|per|confirmed|lineup|lines|starting|goalie|starter|news|gm|president|so not o|montreal|montréal|nashville|edmonton|colorado|los angeles|star|all|utah|vegas|toronto|islanders)$/i.test(trimmed)
   ) {
     return false;
   }
@@ -346,6 +378,14 @@ export function collectUnresolvedNamesFromLineRows(
       });
     };
 
+    const interpretation = row.metadata?.interpretation as TweetInterpretation | undefined;
+    if (interpretation) {
+      for (const issue of interpretation.unresolved) {
+        addName(issue.text, issue.reason, { evidence: { start: issue.start, end: issue.end }, reviewKind: issue.reason === "ambiguous" ? "ambiguous_identity" : issue.reason === "invalid_extraction" ? "invalid_extraction" : "missing_membership" });
+      }
+      continue;
+    }
+
     for (const rawName of row.unmatched_names ?? []) {
       for (const expanded of expandNameWithContextAliases({
         rawName,
@@ -437,15 +477,15 @@ export async function persistUnresolvedPlayerNames(args: {
   const unresolvedRows = collectUnresolvedNamesFromLineRows(args.rows);
   if (unresolvedRows.length === 0) return 0;
 
-  const { error } = await args.supabase
+  const { data, error } = await args.supabase
     .from("lineup_unresolved_player_names" as any)
     .upsert(unresolvedRows as any, {
       onConflict: "dedupe_key",
       ignoreDuplicates: true,
-    });
+    }).select("id");
 
   if (error) throw error;
-  return unresolvedRows.length;
+  return data?.length ?? 0;
 }
 
 export async function sendPlayerAliasReviewEmailForQueuedNames(args: {

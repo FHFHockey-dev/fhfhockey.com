@@ -1,4 +1,13 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+function paginatedRoster(result: { data: any[]; error: null }) {
+  const query: any = {
+    eq: vi.fn(() => query), order: vi.fn(() => query),
+    range: vi.fn((from: number, to: number) => Promise.resolve({ ...result, data: result.data.slice(from, to + 1) })),
+  };
+  return query;
+}
 
 const mocks = vi.hoisted(() => ({
   getCurrentSeason: vi.fn(),
@@ -190,7 +199,7 @@ function createSupabaseMocks(eventRows: LineSourceEventFixture[]) {
   const eventUpdateMock = vi.fn((_values: Record<string, unknown>) => ({
     eq: eventUpdateEqMock,
   }));
-  const unresolvedNamesUpsertMock = vi.fn().mockResolvedValue({ error: null });
+  const unresolvedNamesUpsertMock = vi.fn((rows: any[]) => ({ select: vi.fn().mockResolvedValue({ data: rows.map((_, index) => ({ id: String(index) })), error: null }) }));
   const lineSourceEventsQuery = createLineSourceEventsQuery(eventRows);
 
   const tables: Record<string, any> = {
@@ -214,7 +223,7 @@ function createSupabaseMocks(eventRows: LineSourceEventFixture[]) {
     rosters: {
       select: vi.fn(() => ({
         in: vi.fn((_column: string, teamIds: number[]) => ({
-          eq: vi.fn().mockResolvedValue({
+          eq: vi.fn(() => paginatedRoster({
             data: [
               {
                 teamId: 8,
@@ -274,7 +283,7 @@ function createSupabaseMocks(eventRows: LineSourceEventFixture[]) {
               },
               {
                 teamId: 54,
-                playerId: 8475913,
+                playerId: 8479353,
                 players: { fullName: "Brett Howden", lastName: "Howden" },
               },
               {
@@ -337,21 +346,16 @@ function createSupabaseMocks(eventRows: LineSourceEventFixture[]) {
               },
             ].filter((row) => teamIds.includes(row.teamId)),
             error: null,
-          }),
+          })),
         })),
       })),
     },
     lineup_player_name_aliases: {
-      select: vi.fn(() => ({
-        or: vi.fn().mockResolvedValue({
-          data: [],
-          error: null,
-        }),
-        is: vi.fn().mockResolvedValue({
-          data: [],
-          error: null,
-        }),
-      })),
+      select: vi.fn(() => {
+        const query: any = { or: () => query, is: () => query, order: () => query,
+          range: () => Promise.resolve({ data: [], error: null }) };
+        return query;
+      }),
     },
     line_source_ifttt_events: {
       select: vi.fn(() => lineSourceEventsQuery),
@@ -912,7 +916,7 @@ describe("/api/v1/db/update-line-sources", () => {
       source_key: "gamedaylines",
       team_abbreviation: "VGK",
       nhl_filter_status: "accepted",
-      line_1_player_ids: [8475913, 8478403, 8474565],
+      line_1_player_ids: [8479353, 8478403, 8474565],
       goalie_1_player_id: 8479394,
     });
   });

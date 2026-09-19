@@ -1,3 +1,6 @@
+import { resolvePlayerIdentity } from "./playerIdentity";
+import { identityMentionPresent, tweetPipelineFlags } from "./tweetInterpretation";
+import { extractTweetPlayerEvents } from "./tweetPlayerEvents";
 import {
   buildNewsFeedHeadline,
   getPublicNewsSourceAttribution,
@@ -46,6 +49,8 @@ export type TweetNewsAutomationReviewRow = {
 };
 
 export type TweetNewsAutomationPlayer = {
+  lastName?: string;
+  aliases?: string[];
   id: number;
   fullName: string;
   position: string | null;
@@ -255,37 +260,18 @@ function resolveMentionedPlayers(args: {
   players: TweetNewsAutomationPlayer[];
   text: string;
 }): TweetNewsAutomationPlayer[] {
-  const scopedPlayers = args.row.team_id
-    ? args.players.filter((player) => player.team_id === args.row.team_id)
-    : args.players;
-  const text = normalizeForMatch(args.text);
-  const fullNameMatches = scopedPlayers.filter((player) =>
-    includesPlayerName(text, normalizeForMatch(player.fullName)),
-  );
-  if (fullNameMatches.length > 0) return fullNameMatches.slice(0, 12);
-
-  // Transaction tweets frequently name a destination team before the players
-  // table reflects the move. Fall back to a global exact-name lookup before
-  // trying less precise last-name matching inside the inferred team.
-  if (args.row.team_id) {
-    const globalFullNameMatches = args.players.filter((player) =>
-      includesPlayerName(text, normalizeForMatch(player.fullName)),
-    );
-    if (globalFullNameMatches.length > 0) {
-      return globalFullNameMatches.slice(0, 12);
-    }
-  }
-
-  const lastNameMatches = scopedPlayers.filter((player) => {
-    const lastName = normalizeForMatch(getLastName(player.fullName));
-    return (
-      lastName.length >= 4 &&
-      includesPlayerName(text, lastName) &&
-      !hasConflictingFullNameMention(args.text, player)
-    );
-  });
-
-  return lastNameMatches.slice(0, 12);
+  const identities = args.players.map((player) => ({ playerId: player.id, fullName: player.fullName,
+    lastName: player.lastName ?? getLastName(player.fullName), aliases: player.aliases, teamId: player.team_id, position: player.position }));
+  const scoped = args.row.team_id ? identities.filter((player) => player.teamId === args.row.team_id) : identities;
+  return args.players.filter((player) => {
+    if (identityMentionPresent(args.text, player.fullName)) return true;
+    if (hasConflictingFullNameMention(args.text, player)) return false;
+    return [player.lastName ?? getLastName(player.fullName), ...(player.aliases ?? [])].some((name) => {
+      if (!identityMentionPresent(args.text, name)) return false;
+      const match = resolvePlayerIdentity(name, scoped);
+      return match.status === "matched" && match.player.playerId === player.id;
+    });
+  }).slice(0, 12);
 }
 
 function resolveManualAssignments(
@@ -349,8 +335,18 @@ function buildRuleAssignment(args: {
   match: TweetNewsPhraseMatch;
   matchedPlayers: TweetNewsAutomationPlayer[];
 }): TweetNewsAutomationAssignment {
-  const playerNames = args.matchedPlayers.map((player) => player.fullName);
-  const playerIds = args.matchedPlayers.map((player) => player.id);
+  let assignedPlayers = args.matchedPlayers;
+  if (tweetPipelineFlags().interpretation && ["INJURY", "REPORTED INJURY", "RETURN", "GOALIE START"].includes(args.match.category)) {
+    const events = extractTweetPlayerEvents({ text: getReviewText(args.row), publishedAt: args.row.source_created_at,
+      players: args.matchedPlayers.map((player) => ({ playerId: player.id, fullName: player.fullName, lastName: player.lastName ?? getLastName(player.fullName), position: player.position, aliases: player.aliases })) });
+    const matchingEvents = events.filter((event) => new RegExp(args.match.regex, "i").test(event.evidence.text) &&
+      (args.match.category === "RETURN" ? event.state === "confirmed_return" || event.state === "possible_return" :
+        args.match.category === "GOALIE START" ? event.kind === "goalie" && event.state !== "ruled_out" :
+        event.kind === "injury" && event.state !== "confirmed_return" && event.state !== "possible_return"));
+    assignedPlayers = args.matchedPlayers.filter((player) => matchingEvents.some((event) => event.playerId === player.id));
+  }
+  const playerNames = assignedPlayers.map((player) => player.fullName);
+  const playerIds = assignedPlayers.map((player) => player.id);
 
   return {
     id: `auto-${args.match.ruleId}`,
@@ -595,6 +591,9 @@ export function buildTweetNewsAutomationCandidate(args: {
       })
     : null;
   const shouldPublish =
+    (!tweetPipelineFlags().interpretation || tweetPipelineFlags().publishing) &&
+    (!primaryAssignment.requiredEvidence.includes("player") || primaryAssignment.playerIds.length > 0) &&
+    (!primaryAssignment.requiredEvidence.includes("goalie") || primaryAssignment.playerIds.length > 0) &&
     primaryAssignment.autoPublish &&
     primaryAssignment.confidence === "auto" &&
     hasRequiredEvidence(primaryAssignment.requiredEvidence, context.evidence);

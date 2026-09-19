@@ -226,6 +226,7 @@ function firstOriginalHandle(
 function safeOriginalSourceUrl(
   value: string | null | undefined,
   originalHandle: string | null,
+  verifiedOriginal = false,
 ): string | null {
   if (!value || NEWS_RELAY_MENTION_PATTERN.test(value)) {
     NEWS_RELAY_MENTION_PATTERN.lastIndex = 0;
@@ -235,8 +236,8 @@ function safeOriginalSourceUrl(
 
   const parsed = parseTweetUrl(value);
   if (parsed.handle && isNewsRelayAccount(parsed.handle)) return null;
-  if (!parsed.handle && parsed.tweetId && originalHandle) {
-    return `https://x.com/${originalHandle}/status/${parsed.tweetId}`;
+  if (!parsed.handle && parsed.tweetId) {
+    return verifiedOriginal && originalHandle ? `https://x.com/${originalHandle}/status/${parsed.tweetId}` : null;
   }
   return value;
 }
@@ -282,7 +283,7 @@ export function getPublicNewsSourceAttribution(args: {
   ];
   const url =
     urlCandidates
-      .map((candidate) => safeOriginalSourceUrl(candidate, originalHandle))
+      .map((candidate) => safeOriginalSourceUrl(candidate, originalHandle, Boolean(quotedTweetUrl && candidate === quotedTweetUrl)))
       .find(Boolean) ?? null;
 
   return {

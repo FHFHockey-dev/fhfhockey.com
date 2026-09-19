@@ -1,6 +1,9 @@
+import { fetchNhlPlayerIdentity, importNhlIdentity } from "lib/sources/nhlProspectIdentity";
 import type { NextApiResponse } from "next";
 
-import { getCurrentSeason } from "lib/NHL/server";
+import { fetchPlayerIdentityDirectory, fetchRegisteredPlayerIdentities, rosterSeasonForDate } from "lib/sources/playerIdentity";
+import { fetchRosterEntriesByTeam } from "lib/sources/lineSourceProcessing";
+import { tweetPipelineFlags } from "lib/sources/tweetInterpretation";
 import { normalizePlayerNameAlias } from "lib/sources/playerNameAliases";
 import { verifyPlayerAliasReviewToken } from "lib/sources/playerAliasReviewToken";
 import serviceRoleClient from "lib/supabase/server";
@@ -21,6 +24,11 @@ function parseLimit(value: string | string[] | undefined): number {
 }
 
 async function handleGet(req: any, res: NextApiResponse) {
+  if (req.query.nhlId != null) {
+    if (!tweetPipelineFlags().interpretation) return res.status(409).json({ success: false, message: "NHL lookup requires the new identity pipeline." });
+    const identity = await fetchNhlPlayerIdentity(Number(req.query.nhlId), true);
+    return res.json({ success: true, lookup: identity });
+  }
   const limit = parseLimit(req.query.limit);
   const unresolvedId = Array.isArray(req.query.unresolvedId)
     ? req.query.unresolvedId[0]
@@ -45,32 +53,18 @@ async function handleGet(req: any, res: NextApiResponse) {
     .limit(limit);
   if (unresolvedError) throw unresolvedError;
 
-  const currentSeason = await getCurrentSeason();
-  const { data: rosterRows, error: rosterError } = await req.supabase
-    .from("rosters")
-    .select("teamId, players!inner(id, fullName, lastName, position)")
-    .eq("seasonId", currentSeason.seasonId)
-    .eq("is_current", true);
-  if (rosterError) throw rosterError;
-
-  const players = (rosterRows ?? [])
-    .map((row: any): PlayerOption | null => {
-      const player = row.players;
-      if (!player) return null;
-      return {
-        id: Number(player.id),
-        fullName: String(player.fullName ?? ""),
-        lastName: String(player.lastName ?? ""),
-        position: player.position ?? null,
-        team_id: Number(row.teamId)
-      };
-    })
-    .filter((player: PlayerOption | null): player is PlayerOption => Boolean(player))
-    .sort((left: PlayerOption, right: PlayerOption) => left.fullName.localeCompare(right.fullName));
+  const registered = tweetPipelineFlags().interpretation ? await fetchRegisteredPlayerIdentities(req.supabase) : [];
+  const directory = await fetchPlayerIdentityDirectory(req.supabase, registered);
+  const players: PlayerOption[] = directory.map((player) => ({
+    id: player.playerId, fullName: player.fullName, lastName: player.lastName,
+    position: player.position ?? null, team_id: player.teamId ?? null,
+  })).sort((a, b) => a.fullName.localeCompare(b.fullName));
 
   return res.json({
     success: true,
+    unlinkedProspects: registered.filter((identity) => !identity.nhl_player_id),
     unresolvedNames: unresolvedRows ?? [],
+    membershipReviewEnabled: tweetPipelineFlags().interpretation,
     players
   });
 }
@@ -100,7 +94,7 @@ async function handlePost(req: any, res: NextApiResponse) {
   }
 
   const playerId = Number(body.playerId);
-  if (!Number.isFinite(playerId)) {
+  if (!Number.isSafeInteger(playerId) || playerId <= 0) {
     return res.status(400).json({
       success: false,
       message: "Missing playerId."
@@ -109,10 +103,18 @@ async function handlePost(req: any, res: NextApiResponse) {
 
   const { data: unresolved, error: unresolvedError } = await req.supabase
     .from("lineup_unresolved_player_names" as any)
-    .select("id, raw_name, normalized_name, team_id")
+    .select("id, raw_name, normalized_name, team_id, metadata")
     .eq("id", unresolvedId)
     .single();
   if (unresolvedError) throw unresolvedError;
+
+  if (body.importNhlIdentity === true) {
+    if (!tweetPipelineFlags().interpretation) return res.status(409).json({ success: false, message: "Prospect imports require the new identity pipeline." });
+    // Re-fetch server-side; never trust a browser-supplied name or team association.
+    const imported = await importNhlIdentity(req.supabase, await fetchNhlPlayerIdentity(playerId, true));
+    if (imported.status === "review") return res.status(409).json({ success: false, message: `Identity needs review: ${imported.reason}` });
+    if (!imported.availableToPipeline) return res.status(409).json({ success: false, message: "Identity recorded, but NHL profile details are incomplete. It remains pending for review." });
+  }
 
   const { data: player, error: playerError } = await req.supabase
     .from("players")
@@ -120,6 +122,26 @@ async function handlePost(req: any, res: NextApiResponse) {
     .eq("id", playerId)
     .single();
   if (playerError) throw playerError;
+
+  let membershipConfirmed = true;
+  if (tweetPipelineFlags().interpretation && unresolved.team_id) {
+    const seasonId = rosterSeasonForDate();
+    if (body.membershipSourceUrl) {
+      let evidenceUrl: URL;
+      try { evidenceUrl = new URL(body.membershipSourceUrl); } catch { return res.status(400).json({ success: false, message: "Enter a valid NHL roster or camp source URL." }); }
+      if (evidenceUrl.protocol !== "https:" || evidenceUrl.username || evidenceUrl.password || !(evidenceUrl.hostname === "nhl.com" || evidenceUrl.hostname.endsWith(".nhl.com") || evidenceUrl.hostname === "api-web.nhle.com")) {
+        return res.status(400).json({ success: false, message: "Camp membership needs an HTTPS NHL.com or NHL API source." });
+      }
+      const membership = await req.supabase.from("tweet_player_memberships").upsert({
+        player_id: playerId, team_id: unresolved.team_id, season_id: seasonId, membership_kind: "camp",
+        source_url: evidenceUrl.toString(), verified_at: new Date().toISOString(), expires_at: new Date(Date.now() + 30 * 86400_000).toISOString(),
+      }, { onConflict: "player_id,team_id,season_id,membership_kind" });
+      if (membership.error) throw membership.error;
+    } else {
+      const roster = await fetchRosterEntriesByTeam({ supabase: req.supabase, teamIds: [unresolved.team_id], seasonId });
+      membershipConfirmed = (roster.get(unresolved.team_id) ?? []).some((entry) => entry.playerId === playerId);
+    }
+  }
 
   const alias = typeof body.alias === "string" && body.alias.trim()
     ? body.alias.trim()
@@ -149,7 +171,8 @@ async function handlePost(req: any, res: NextApiResponse) {
   const { error: updateError } = await req.supabase
     .from("lineup_unresolved_player_names" as any)
     .update({
-      status: "resolved",
+      status: membershipConfirmed ? "resolved" : "pending",
+      ...(!membershipConfirmed ? { metadata: { ...unresolved.metadata, reviewKind: "missing_membership", identityResolved: true } } : {}),
       resolved_player_id: playerId,
       resolved_alias_id: aliasRow?.id ?? null,
       updated_at: new Date().toISOString()
@@ -157,24 +180,37 @@ async function handlePost(req: any, res: NextApiResponse) {
     .eq("id", unresolvedId);
   if (updateError) throw updateError;
 
+  if (tweetPipelineFlags().interpretation) {
+    const { error } = await req.supabase.from("tweet_pipeline_jobs").upsert({
+      job_key: `alias-replay:${unresolvedId}`, status: "pending", attempts: 0, lease_expires_at: null, next_attempt_at: new Date().toISOString(),
+      payload: { normalizedName: unresolved.normalized_name, teamId: unresolved.team_id, playerId, alias, afterId: null },
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "job_key" });
+    if (error) throw error;
+  }
+
   return res.json({
     success: true,
-    message: `Saved alias "${alias}" for ${player.fullName}.`
+    message: membershipConfirmed ? `Saved alias "${alias}" for ${player.fullName}.` : `Identity saved for ${player.fullName}. This name remains pending until roster or camp membership is verified.`
   });
 }
 
 async function playerNameAliasesHandler(req: any, res: NextApiResponse) {
-  if (req.method === "GET") {
-    return handleGet(req, res);
+  try {
+    if (req.method === "GET") {
+      return await handleGet(req, res);
+    }
+    if (req.method === "POST") {
+      return await handlePost(req, res);
+    }
+    res.setHeader("Allow", "GET, POST");
+    return res.status(405).json({
+      success: false,
+      message: "Method not allowed."
+    });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error instanceof Error ? error.message : "Player identity request failed." });
   }
-  if (req.method === "POST") {
-    return handlePost(req, res);
-  }
-  res.setHeader("Allow", "GET, POST");
-  return res.status(405).json({
-    success: false,
-    message: "Method not allowed."
-  });
 }
 
 const adminHandler = adminOnly(playerNameAliasesHandler);

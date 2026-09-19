@@ -1,15 +1,24 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
-import { getCurrentSeason, getTeams } from "lib/NHL/server";
-import { differenceInYears } from "date-fns";
-import { get } from "lib/NHL/base";
+import { isValidNhlSeasonId } from "lib/NHL/server";
+import { rosterSeasonForDate } from "lib/sources/playerIdentity";
 import adminOnly from "utils/adminOnlyMiddleware";
-import { Database } from "lib/supabase/database-generated.types";
+import { fetchNhlRosterPreview, type Player } from "lib/sources/nhlRosterPreview";
 
 export default withCronJobAudit(adminOnly(async function handler(req, res) {
   try {
     const { supabase } = req;
-    const season = await getCurrentSeason();
-    const players = await getAllPlayers(season.seasonId);
+    const seasonId = req.query.seasonId == null ? rosterSeasonForDate() : Number(req.query.seasonId);
+    if (!isValidNhlSeasonId(seasonId)) throw new Error("Invalid seasonId; expected consecutive YYYY years.");
+    const dryRun = req.query.dryRun !== "false";
+    if (!dryRun && seasonId !== rosterSeasonForDate()) {
+      throw new Error("Historical roster refresh is dry-run only; current player memberships must be preserved.");
+    }
+    const players = await fetchNhlRosterPreview(seasonId);
+    if (!players.length) throw new Error("No roster players returned; no writes performed.");
+    if (dryRun) return res.json({ success: true, dryRun: true, seasonId,
+      playerCount: players.length, teams: [...new Set(players.map((player) => player.teamId))],
+      players: players.map(({ id, fullName, teamId, positionCode }) => ({ id, fullName, teamId, position: positionCode })),
+    });
     console.log(`${players.length} players fetched from NHL.com `);
     console.log(`Updating the 'players' table.`);
     const { error: players_error } = await supabase.from("players").upsert(
@@ -35,7 +44,7 @@ export default withCronJobAudit(adminOnly(async function handler(req, res) {
     await syncCurrentRosterMemberships({
       supabase,
       players,
-      seasonId: season.seasonId
+      seasonId
     });
 
     res.json({
@@ -51,27 +60,6 @@ export default withCronJobAudit(adminOnly(async function handler(req, res) {
     console.table(e);
   }
 }));
-
-type Player = {
-  id: number;
-  firstName: string;
-  fullName: string;
-  lastName: string;
-  positionCode: Database["public"]["Enums"]["NHL_Position_Code"];
-  sweaterNumber: number;
-  age: number;
-  birthDate: string;
-  birthCity: string;
-  birthCountry: string;
-  weight: number;
-  height: number;
-  image: string;
-  // Team info
-  teamId: number;
-  teamName: string;
-  teamAbbreviation: string;
-  teamLogo: string;
-};
 
 const ROSTER_SYNC_BATCH_SIZE = 50;
 
@@ -100,57 +88,4 @@ async function syncCurrentRosterMemberships(args: {
     const firstError = results.find((result: { error?: any }) => result?.error)?.error;
     if (firstError) throw firstError;
   }
-}
-
-async function getAllPlayers(seasonId?: number) {
-  const teams = await getTeams(seasonId, { mode: "current-canonical" });
-  const tasks = teams.map((team) => async () => {
-    try {
-      const { forwards, defensemen, goalies } = await get(
-        `/roster/${team.abbreviation}/${seasonId ?? "current"}`
-      );
-      // add current team id
-      const array = [...forwards, ...defensemen, ...goalies].map((item) => ({
-        ...item,
-        teamId: team.id,
-        teamName: team.name,
-        teamAbbreviation: team.abbreviation,
-        teamLogo: team.logo
-      }));
-      return array;
-    } catch (e: any) {
-      // console.error(`/roster/${team.abbreviation}/current`, "is missing");
-      return [];
-    }
-  });
-
-  const result = (await Promise.all(tasks.map((task) => task()))).flat();
-  const players: Player[] = result.map((item) => ({
-    id: item.id,
-    teamId: item.teamId,
-    teamName: item.teamName,
-    teamAbbreviation: item.teamAbbreviation,
-    teamLogo: item.teamLogo,
-    firstName: item.firstName?.default ?? item.firstName, // Use the default field, but fall back to the original if undefined
-    lastName: item.lastName?.default ?? item.lastName, // Same as above
-    fullName: `${item.firstName?.default ?? item.firstName} ${
-      item.lastName?.default ?? item.lastName
-    }`, // Handle potential undefineds
-    positionCode: item.positionCode,
-    sweaterNumber: item.sweaterNumber,
-    birthDate: item.birthDate,
-    birthCity: item.birthCity?.default ?? item.birthCity, // Handle birthCity safely
-    birthCountry: item.birthCountry,
-    age: differenceInYears(new Date(), new Date(item.birthDate)),
-    height: item.heightInCentimeters,
-    weight: item.weightInKilograms,
-    image: item.headshot
-  }));
-
-  // remove duplicate players
-  const playersMap: Record<number, Player> = {};
-  players.forEach((player) => {
-    playersMap[player.id] = player;
-  });
-  return Object.values(playersMap);
 }

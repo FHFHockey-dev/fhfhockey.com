@@ -76,7 +76,7 @@ function buildNewsUpdateResult(
     evidence: [
       {
         sourceId: "wrapper",
-        excerpt: "closing in on a 5 Yr Contract Extension",
+        excerpt: "C Hischier and the Devils are closing in on a 5 Yr Contract Extension",
       },
     ],
     rationaleCode: "reported_unconfirmed",
