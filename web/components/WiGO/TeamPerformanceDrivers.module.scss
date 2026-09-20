@@ -73,3 +73,19 @@
 .sourceNote {
   margin: 0;
 }
+
+.driverHelp {
+  position: relative;
+  font-size: 12px;
+  summary { cursor: pointer; }
+  > div { position: absolute; z-index: 20; right: 0; width: 280px; padding: 12px; border: v.$border-subtle; background: v.$background-header; }
+}
+@media (min-width: 1600px) {
+  .body { padding: 4px; gap: 4px; }
+  .driverGrid { gap: 4px; }
+  .driverCard { padding: 4px; }
+  .driverHeader { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .driverLabel, .driverValue, .driverBand, .sourceNote { font-size: 12px; line-height: 1.2; }
+  .driverValue { font-family: v.$font-family-primary; font-variant-numeric: tabular-nums; }
+  .driverBand { margin-top: 3px; }
+}

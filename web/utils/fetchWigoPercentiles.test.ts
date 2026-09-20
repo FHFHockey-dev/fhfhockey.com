@@ -1,3 +1,4 @@
+import { QueryClient } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 type QueryResponse = {
@@ -211,7 +212,7 @@ describe("fetchWigoPercentiles", () => {
 
     expect(result.appliedSeasonId).toBe(20242025);
     expect(result.canonicalPlayerGp).toBe(72);
-    expect(result.fallbackReason).toContain("Using 20242025 percentile cohort");
+    expect(result.fallbackReason).toContain("Showing 20242025 player values and league cohort");
     expect(result.stats[0]).toEqual(
       expect.objectContaining({
         player_id: 8476453,
@@ -219,4 +220,73 @@ describe("fetchWigoPercentiles", () => {
       })
     );
   });
+  it("propagates source failures instead of interpreting them as an incomplete season", async () => {
+    const error = { message: "source unavailable" };
+    offenseRangeMock.mockResolvedValue({ data: null, error });
+    defenseRangeMock.mockResolvedValue({ data: [], error: null });
+    totalsMaybeSingleMock.mockResolvedValue({ data: { games_played: 80 }, error: null });
+    await expect(fetchPercentileCohortForPlayer("as", 20252026, 1)).rejects.toEqual(error);
+    expect(offenseRangeMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("propagates canonical coverage lookup failures", async () => {
+    offenseRangeMock.mockResolvedValue({ data: [], error: null });
+    defenseRangeMock.mockResolvedValue({ data: [], error: null });
+    const error = { message: "coverage unavailable" };
+    totalsMaybeSingleMock.mockResolvedValue({ data: null, error });
+    await expect(fetchPercentileCohortForPlayer("as", 20252026, 1)).rejects.toEqual(error);
+    expect(offenseRangeMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("reuses league rows across players and coverage lookups across strengths", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    offenseRangeMock.mockResolvedValue({
+      data: [1, 2].map(player_id => ({ player_id, season: 20252026, gp: 72, toi_seconds: 7000 })),
+      error: null
+    });
+    defenseRangeMock.mockResolvedValue({ data: [], error: null });
+    totalsMaybeSingleMock.mockResolvedValue({ data: { games_played: 72 }, error: null });
+
+    await fetchPercentileCohortForPlayer("as", 20252026, 1, client);
+    await fetchPercentileCohortForPlayer("as", 20252026, 2, client);
+    expect(offenseRangeMock).toHaveBeenCalledTimes(1);
+    expect(defenseRangeMock).toHaveBeenCalledTimes(1);
+    // One season maximum and one canonical lookup for each selected player.
+    expect(totalsMaybeSingleMock).toHaveBeenCalledTimes(3);
+
+    await fetchPercentileCohortForPlayer("es", 20252026, 2, client);
+    expect(offenseRangeMock).toHaveBeenCalledTimes(2);
+    expect(totalsMaybeSingleMock).toHaveBeenCalledTimes(3);
+
+    await fetchPercentileCohortForPlayer("as", 20252026, 1, client);
+    expect(offenseRangeMock).toHaveBeenCalledTimes(2);
+    client.clear();
+  });
+
+  it("shares requested and fallback cohorts without sharing player-specific fallback decisions", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    offenseRangeMock
+      .mockResolvedValueOnce({
+        data: [
+          { player_id: 1, season: 20252026, gp: 4, toi_seconds: 100 },
+          { player_id: 2, season: 20252026, gp: 72, toi_seconds: 7000 }
+        ], error: null
+      })
+      .mockResolvedValueOnce({
+        data: [{ player_id: 1, season: 20242025, gp: 78, toi_seconds: 8000 }], error: null
+      });
+    defenseRangeMock.mockResolvedValue({ data: [], error: null });
+    totalsMaybeSingleMock.mockResolvedValue({ data: { games_played: 72 }, error: null });
+
+    const first = await fetchPercentileCohortForPlayer("as", 20252026, 1, client);
+    const second = await fetchPercentileCohortForPlayer("as", 20252026, 2, client);
+    const revisit = await fetchPercentileCohortForPlayer("as", 20252026, 1, client);
+    expect(first.appliedSeasonId).toBe(20242025);
+    expect(second.appliedSeasonId).toBe(20252026);
+    expect(revisit.appliedSeasonId).toBe(20242025);
+    expect(offenseRangeMock).toHaveBeenCalledTimes(2);
+    expect(defenseRangeMock).toHaveBeenCalledTimes(2);
+    client.clear();
+  });
+
 });

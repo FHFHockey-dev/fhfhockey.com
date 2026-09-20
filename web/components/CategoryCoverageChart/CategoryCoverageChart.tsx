@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import classNames from "classnames";
 import { Radar } from "react-chartjs-2";
 import {
@@ -26,7 +26,7 @@ const LABELS: { key: keyof PercentileRank; label: string }[] = [
   { key: "assists", label: "ASSISTS" },
   { key: "powerPlayPoints", label: "PPP" },
   { key: "shots", label: "SOG" },
-  { key: "plusMinus", label: "+/-" },
+  { key: "plusMinus", label: "+/−" },
   { key: "pim", label: "PIM" },
   { key: "blockedShots", label: "BLK" },
   { key: "hits", label: "HITS" }
@@ -55,6 +55,7 @@ type CategoryCoverageChartProps = {
   playerId: number | undefined;
   timeOption: TimeOption;
   showTitle?: boolean;
+  compact?: boolean;
 };
 
 // This surface intentionally stays on the legacy usePercentileRank pipeline.
@@ -62,22 +63,14 @@ type CategoryCoverageChartProps = {
 function CategoryCoverageChart({
   playerId,
   timeOption,
-  showTitle = false
+  showTitle = false,
+  compact = false
 }: CategoryCoverageChartProps) {
-  const chartRef = useRef<ChartJS>(null);
   const size = useScreenSize();
 
-  const { data, loading } = usePercentileRank(playerId, timeOption);
-
-  useEffect(() => {
-    const chart = chartRef.current;
-    if (loading || !chart) return;
-    // update the radar chart
-    chart.data.datasets[0].data = data
-      ? LABELS.map(({ key }) => data[key])
-      : [];
-    chart.update();
-  }, [data, loading]);
+  const { data, loading, error, retry, retrying } = usePercentileRank(playerId, timeOption);
+  const hasData = data && LABELS.every(({ key }) => Number.isFinite(data[key]));
+  const chartData = { ...DATA, datasets: [{ ...DATA.datasets[0], data: hasData ? LABELS.map(({ key }) => data[key]) : [] }] };
 
   const LABEL_PLUGIN = {
     id: "label_with_percentage",
@@ -177,6 +170,25 @@ function CategoryCoverageChart({
     }
   } as const;
 
+  if (!playerId) return <p role="status">Select a player to view category percentiles.</p>;
+  if (loading) return <p role="status">Loading category percentiles…</p>;
+  if (error && !hasData) return <div className={styles.status} role="status">
+    <p>{"code" in error && error.code === "57014" ? "Category percentile request timed out." : "Unable to load category percentiles right now."}</p>
+    <button type="button" onClick={() => void retry()} disabled={retrying}>{retrying ? "Retrying…" : "Retry category percentiles"}</button>
+  </div>;
+  if (!hasData) return <p role="status">Category percentiles unavailable for this player and season.</p>;
+
+  if (compact) {
+    return <div className={styles.compactRadar}><Radar data={chartData} options={{
+      ...OPTIONS, maintainAspectRatio: false,
+      layout: { padding: 6 },
+      scales: { r: { ...OPTIONS.scales.r,
+        pointLabels: { color: "#ccc", font: { size: 12 }, callback: (label: string) => label },
+        ticks: { display: true, stepSize: 50, font: { size: 12 }, color: "#ccc", showLabelBackdrop: false }
+      } }
+    }} /></div>;
+  }
+
   return (
     <Chart
       className={styles.container}
@@ -193,9 +205,7 @@ function CategoryCoverageChart({
       }
     >
       <Radar
-        // @ts-ignore
-        ref={chartRef}
-        data={DATA}
+        data={chartData}
         options={OPTIONS}
         plugins={[LABEL_PLUGIN]}
       />

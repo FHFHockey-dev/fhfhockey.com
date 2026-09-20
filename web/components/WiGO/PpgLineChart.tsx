@@ -1,6 +1,6 @@
 // components/WiGO/PpgLineChart.tsx
 import React, { useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import useWigoPlayerTotals from "hooks/useWigoPlayerTotals";
 import { Chart } from "react-chartjs-2"; // Use mixed type Chart component
 import {
   Chart as ChartJS,
@@ -18,12 +18,7 @@ import {
   ChartOptions,
   ChartData
 } from "chart.js";
-import {
-  fetchPlayerGameLogPoints,
-  fetchPlayerPerGameTotals,
-  SkaterGameLogPointsData,
-  SkaterTotalsData
-} from "utils/fetchWigoPlayerStats";
+import useWigoGameLog from "hooks/useWigoGameLog";
 import { formatDateToMMDD } from "utils/formattingUtils";
 import { calculateRollingAverage } from "utils/formattingUtils";
 import styles from "styles/wigoCharts.module.scss";
@@ -57,27 +52,14 @@ const dummyLabels = ["", "Start", "", "Mid", "", "End", ""];
 
 const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
   const chartRef = useRef<ChartJS<"bar" | "line"> | null>(null);
-  const { data, isLoading, error } = useQuery<{
-    gameLogData: SkaterGameLogPointsData[];
-    averagePpg: number | null;
-  }>({
-    queryKey: ["wigoPpgChart", playerId, seasonId],
-    queryFn: async () => {
-      const [totals, gameLogs] = await Promise.all([
-        fetchPlayerPerGameTotals(playerId as number, seasonId),
-        fetchPlayerGameLogPoints(playerId as number, String(seasonId))
-      ]);
-
-      return {
-        gameLogData: gameLogs,
-        averagePpg: (totals as SkaterTotalsData | null)?.points_per_game ?? null
-      };
-    },
-    enabled: typeof playerId === "number" && typeof seasonId === "number"
-  });
-
-  const gameLogData = data?.gameLogData ?? [];
-  const averagePpg = data?.averagePpg ?? null;
+  const totals = useWigoPlayerTotals(playerId, seasonId);
+  const logs = useWigoGameLog(playerId, seasonId);
+  const isLoading = totals.isLoading || logs.isLoading;
+  const error = totals.error || logs.error;
+  const gameLogData = logs.data ?? [];
+  const averagePpg = totals.data?.points != null && (totals.data.games_played ?? 0) > 0
+    ? totals.data.points / totals.data.games_played!
+    : null;
 
   // --- Prepare Chart Data ---
   const getChartData = (): ChartData<
@@ -102,7 +84,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
       : calculateRollingAverage(gameLogData, 10, (item) => item.points);
     const pointsData = useDummyData
       ? getNullData()
-      : gameLogData.map((log) => log.points ?? 0); // Use null data for dummy
+      : gameLogData.map((log) => log.points ?? null);
     const avgPpgData = useDummyData
       ? getNullData()
       : gameLogData.map(() => averagePpg);
@@ -194,14 +176,15 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
         y: {
           beginAtZero: true,
           title: {
-            display: true,
+            display: false,
             text: "Points",
-            font: { size: 10 },
+            font: { size: 12 },
             color: "#ccc"
           },
           ticks: {
             color: "#ccc",
-            font: { size: 9 },
+            font: { size: 12 },
+            maxTicksLimit: 3,
             stepSize: 1,
             precision: 0 // Display ticks as whole numbers
           },
@@ -211,11 +194,11 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
           title: { display: false },
           ticks: {
             color: "#ccc",
-            font: { size: 9 },
-            maxRotation: 90,
-            minRotation: 45,
+            font: { size: 12 },
+            maxRotation: 0,
+            minRotation: 0,
             autoSkip: true,
-            maxTicksLimit: 10
+            maxTicksLimit: 6
           },
           grid: { display: false }
         }
@@ -225,7 +208,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
           display: false,
           position: "top" as const,
           align: "end" as const,
-          labels: { color: "#ccc", boxWidth: 12, font: { size: 10 } }
+          labels: { color: "#ccc", boxWidth: 12, font: { size: 12 } }
         },
         datalabels: {
           display: false // Explicitly disable the plugin for this chart
@@ -260,6 +243,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
         },
         zoom: {
           pan: {
+            modifierKey: "shift",
             enabled: true, // Enable panning
             mode: "x" // Allow panning only on the x-axis
             // modifierKey: 'ctrl', // Optional: Require Ctrl key for panning
@@ -286,7 +270,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
   const chartData = getChartData();
   const chartOptions = getChartOptions();
   return (
-    <WigoSectionCard title="Points / Game">
+    <WigoSectionCard title="Points / Game" toolbar={<><span className="wigo-trend-legend"><span style={{ color: CHART_COLORS.BAR_PRIMARY }}>▮Pts</span> · <span style={{ color: CHART_COLORS.LINE_PRIMARY }}>━5-GM</span> · <span style={{ color: CHART_COLORS.PP_TOI }}>━10-GM</span> · <span style={{ color: CHART_COLORS.AVG_LINE_PRIMARY }}>┄Avg</span></span><button type="button" title="Drag to zoom; Shift+drag to pan; Reset restores all games" onClick={() => chartRef.current?.resetZoom()}>Reset</button></>}>
       {/* Render the chart structure if NO error */}
       {/* Shows empty state (with dummy labels) while loading */}
       {!error && (
@@ -308,7 +292,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
       )}
 
       {/* Error Message */}
-      {error instanceof Error && !isLoading && (
+      {error && !isLoading && (
         <div style={placeholderStyle}>{WIGO_ERROR_MESSAGES.chart}</div>
       )}
 

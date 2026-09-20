@@ -1539,3 +1539,570 @@
   }
 }
 /* Rate Stat Percentiles Styles */
+
+// WiGO's wide desktop work surface. Narrow screens retain the existing tabs.
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+}
+
+@media (min-width: 1600px) {
+  .wigoDashHeader {
+    margin: 0;
+  }
+  .wigoDashboardContainer {
+    max-width: none;
+    padding: 8px 12px 12px;
+  }
+  .wigoDashboardContent {
+    grid-template-columns: minmax(0, 708fr) minmax(0, 528fr) minmax(0, 640fr);
+    grid-template-rows: 46px 260px 280px 396px;
+    grid-template-areas: "context context context" "summary summary summary" "comparison comparison comparison" "selected trends percentiles";
+    gap: 10px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    min-height: 0;
+    background: v.$background-dark;
+  }
+  .headerRowWrapper {
+    min-height: 0;
+    padding: 0 8px;
+  }
+  .leftColumnWrapper {
+    grid-area: summary;
+    display: grid;
+    grid-template-columns: 252fr 196fr 212fr 224fr 226fr 236fr 246fr 248fr;
+    gap: 8px;
+    overflow: visible;
+    border: 0;
+    background: none;
+    > * {
+      min-width: 0;
+      min-height: 0;
+    }
+  }
+  .summaryProduction,
+  .consistencyAndCategoryWrapper,
+  .comparisonColumnWrapper {
+    display: contents;
+  }
+  .identitySummary,
+  .opponentLogContainer,
+  .ratingsContainer,
+  .teamDriversSummary,
+  .consistencyRatingContainer,
+  .percentileChartContainer,
+  .comparisonMatrixPanel,
+  .selectedStatPanel,
+  .percentilesBand,
+  .toiChartContainer,
+  .ppgChartContainer,
+  .gameScoreContainer {
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    max-height: none;
+    border: v.$border-subtle;
+    border-radius: v.$radius-sm;
+    background: v.$background-medium;
+    overflow: visible;
+  }
+  .playerIdentityCard {
+    padding: 8px;
+    grid-template-columns: 104px minmax(0, 1fr);
+    height: 180px;
+  }
+  .playerHeaderContainer {
+    width: 104px;
+    height: 142px;
+  }
+  .playerIdentityCopy {
+    padding: 0;
+  }
+  .playerName {
+    font-size: 20px;
+    overflow-wrap: anywhere;
+    span {
+      font-size: 16px;
+    }
+  }
+  .playerTeam,
+  .playerRole {
+    font-size: 12px;
+  }
+  .playerMetaGrid {
+    padding: 6px;
+    span {
+      font-size: 13px;
+      padding: 0 3px;
+    }
+    small {
+      font-size: 12px;
+    }
+  }
+  .ratingsContainer {
+    padding: 0;
+  }
+  .consistencyRatingContainer,
+  .percentileChartContainer {
+    width: auto;
+    flex: none;
+  }
+  .percentileChartContainer .chartTitle {
+    padding: 6px;
+    h3 {
+      font-size: 12px;
+      letter-spacing: 0;
+    }
+  }
+  .trendsColumnWrapper {
+    grid-area: trends;
+    display: grid;
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    border: 0;
+    overflow: visible;
+  }
+  .percentilesBand {
+    grid-area: percentiles;
+  }
+  .comparisonMatrixPanel {
+    grid-area: comparison;
+  }
+  .selectedStatPanel {
+    grid-area: selected;
+    padding: 8px;
+  }
+  .selectedStatPanel h3 {
+    font-size: 14px;
+    margin: 0;
+    color: v.$primary-color;
+  }
+  .selectedStatPanel p {
+    font-size: 12px;
+    margin: 2px 0 4px;
+  }
+  .chartContainer,
+  .chartCanvasContainer {
+    min-height: 0;
+    overflow: visible;
+  }
+  .chartCanvasContainer {
+    padding: 4px;
+  }
+  .chartHeader {
+    padding: 3px 6px;
+    border-bottom-width: 1px;
+    h3 {
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      padding: 0;
+    }
+  }
+  .chartHeader .toggleButtons button {
+    font-size: 12px;
+    padding: 1px 4px;
+  }
+  .chartLoadingPlaceholder {
+    min-height: 0;
+    font-size: 12px;
+  }
+  .matrixToolbar {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 4px 8px;
+    font-size: 12px;
+    > div {
+      width: 410px;
+    }
+  }
+  .comparisonMatrix {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 12px;
+    font-family: v.$font-family-primary;
+    font-variant-numeric: tabular-nums;
+    th,
+    td {
+      padding: 0 2px;
+      text-align: center;
+      border-bottom: v.$border-subtle;
+      height: 25px;
+      white-space: nowrap;
+    }
+    thead th {
+      height: 38px;
+      background: v.$background-header;
+      white-space: normal;
+    }
+    th button {
+      width: 100%;
+      padding: 4px 0;
+      background: none;
+      border: 0;
+      color: inherit;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    th button:focus-visible {
+      outline: 2px solid v.$focus-color;
+      outline-offset: -2px;
+    }
+    tbody th {
+      text-align: left;
+      padding-left: 8px;
+    }
+    tr[data-left] {
+      background: rgba(v.$primary-color, 0.18);
+      outline: 1px solid v.$primary-color;
+      outline-offset: -1px;
+    }
+    tr[data-right] {
+      background: rgba(v.$warning-color, 0.15);
+      outline: 1px solid v.$warning-color;
+      outline-offset: -1px;
+    }
+    tr[data-left][data-right] {
+      outline: 2px double v.$primary-color;
+    }
+    [data-selected] {
+      background: rgba(v.$primary-color, 0.12);
+      border-inline: 1px solid v.$primary-color;
+    }
+    // Transpose the legacy metric-row hover treatment across the full column.
+    @for $column from 2 through 37 {
+      &:has(tr > :nth-child(#{$column}):hover) {
+        tr > :nth-child(#{$column}) {
+          background-color: color.change(
+            color.adjust(v.$focus-color, $lightness: -5%),
+            $alpha: 0.2
+          );
+          border-inline-color: v.$focus-color;
+          box-shadow: inset 1px 0 v.$focus-color, inset -1px 0 v.$focus-color;
+        }
+        thead tr > :nth-child(#{$column}) {
+          box-shadow: inset 1px 0 v.$focus-color, inset -1px 0 v.$focus-color,
+            inset 0 1px v.$focus-color;
+        }
+        tbody tr:last-child > :nth-child(#{$column}) {
+          box-shadow: inset 1px 0 v.$focus-color, inset -1px 0 v.$focus-color,
+            inset 0 -1px v.$focus-color;
+        }
+      }
+    }
+  }
+  .periodMarker {
+    font-size: 12px;
+    color: v.$text-secondary;
+  }
+  .matrixDiff {
+    border-top: 2px solid v.$primary-color;
+    // Fixed scale: white at 0%, full red/green at -100%/+100% and beyond.
+    [data-diff-sign] {
+      color: color-mix(in srgb, var(--diff-color) var(--diff-strength), white);
+    }
+    [data-diff-sign="negative"] { --diff-color: #{v.$danger-color}; }
+    [data-diff-sign="positive"] { --diff-color: #{v.$success-color}; }
+  }
+  .selectedStatPanel .gameLogChartContainer {
+    padding: 0;
+    height: auto;
+  }
+  .selectedStatPanel .averageToggleButtons {
+    gap: 4px;
+    margin-bottom: 4px;
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .selectedStatPanel .avgButton {
+    font-size: 12px;
+    padding: 2px 4px;
+  }
+  .rateStatBarPercentilesContainer {
+    height: 100%;
+    border: 0;
+  }
+}
+
+@media (min-width: 1600px) {
+  .trendsColumnWrapper > div {
+    height: 100%;
+    flex-shrink: 1;
+  }
+  .trendsColumnWrapper .chartContainer {
+    height: 100%;
+    min-height: 0;
+  }
+  .trendsColumnWrapper .chartCanvasContainer {
+    flex: 1;
+    min-height: 0;
+  }
+  .percentileDesktop {
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    .mainContentWrapper {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+    }
+    .percentileFiltersContainer {
+      padding: 4px 8px;
+      gap: 4px;
+    }
+    .filtersTitle {
+      font-size: 12px;
+      margin: 0;
+      padding: 0;
+    }
+    .filterControlsWrapper {
+      gap: 12px;
+    }
+    .strengthSelector button {
+      font-size: 12px;
+      padding: 2px 10px;
+    }
+    .gpSliderContainer {
+      font-size: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+    .thresholdMessagesContainer {
+      margin: 0;
+    }
+    .thresholdMessage {
+      font-size: 12px;
+      padding: 3px;
+      line-height: 1.2;
+    }
+  }
+  .percentileContext {
+    font-size: 12px;
+  }
+  .percentileTileGrid {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    padding: 4px;
+  }
+  .percentileTile {
+    border: v.$border-subtle;
+    border-radius: v.$radius-sm;
+    padding: 2px 6px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    font-size: 12px;
+    strong {
+      font-size: 14px;
+      color: v.$primary-color;
+    }
+    small {
+      font-size: 12px;
+      grid-column: 1 / -1;
+    }
+    meter {
+      width: 100%;
+      height: 8px;
+      grid-column: 1 / -1;
+      accent-color: v.$primary-color;
+    }
+  }
+}
+
+@media (min-width: 1600px) {
+  .consistencyRatingContainer {
+    .chartContainer,
+    .consistencyContent,
+    .consistencyListArea {
+      overflow: visible;
+    }
+    .consistencyContent {
+      gap: 4px;
+      padding: 4px;
+      align-items: center;
+    }
+    .consistencyChartArea {
+      padding: 0;
+      min-width: 72px;
+      flex: 0 0 38%;
+    }
+    .consistencyListArea {
+      flex: 1;
+      min-width: 0;
+    }
+    .consistencyLabel,
+    .consistencyValue,
+    .consistencyCount {
+      font-size: 12px;
+      width: auto;
+      margin: 0;
+    }
+    .consistencyItem {
+      gap: 3px;
+      padding: 2px 0;
+    }
+  }
+  .selectedPlayerText span,
+  .selectedPlayerControl button,
+  .wigoContextTagline,
+  .headerText {
+    font-size: 12px;
+  }
+  .playerMetaGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px;
+    span {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      gap: 2px;
+    }
+  }
+  .playerIdentityCard {
+    height: 198px;
+  }
+  .chartToolbar button {
+    font-size: 12px;
+    background: v.$background-dark;
+    color: v.$text-primary;
+    border: v.$border-subtle;
+    border-radius: v.$radius-sm;
+  }
+}
+
+@media (min-width: 1600px) {
+  .playerName {
+    line-height: 1.1;
+  }
+  .headshotContainer {
+    overflow: visible;
+  }
+  .teamLogo {
+    width: 100%;
+    left: 0;
+    transform: none;
+  }
+  .percentileDesktop {
+    overflow: visible;
+    .mainContentWrapper,
+    .filterControlsWrapper {
+      overflow: visible;
+    }
+    .filterControlsWrapper {
+      align-items: center;
+    }
+    .strengthSelector {
+      flex: 0 0 200px;
+      width: auto;
+      padding: 0;
+    }
+    .gpSliderContainer {
+      padding: 0;
+      gap: 6px;
+      width: auto;
+      label {
+        font-size: 12px;
+      }
+    }
+    .gpSliderMaxLabel,
+    .gpSliderMinLabel {
+      width: auto;
+      flex: none;
+      font-size: 12px;
+    }
+    .gpSlider {
+      min-width: 50px;
+    }
+  }
+  .radarContext,
+  .consistencyGp {
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  .percentileChartContainer {
+    display: flex;
+    flex-direction: column;
+  }
+  .wigoDashHeader :global(.wigo-trend-legend) {
+    font-size: 12px;
+    text-transform: none;
+    white-space: nowrap;
+  }
+  .wigoDashHeader :global(.wigo-chart-help) {
+    position: relative;
+    font-size: 12px;
+    summary {
+      cursor: pointer;
+    }
+    p {
+      position: absolute;
+      right: 0;
+      bottom: 20px;
+      z-index: 20;
+      width: 260px;
+      background: v.$background-header;
+      border: v.$border-subtle;
+      padding: 12px;
+    }
+  }
+}
+
+.matrixHelp {
+  position: relative;
+  font-size: 12px;
+  summary {
+    cursor: pointer;
+  }
+  p {
+    position: absolute;
+    z-index: 20;
+    width: 320px;
+    padding: 12px;
+    background: v.$background-header;
+    border: v.$border-subtle;
+  }
+}
+
+.selectedStatPanel :global(.recharts-surface) {
+  display: block;
+}
+
+@media (min-width: 1600px) {
+  .noSelectedPlayer,
+  .wigoHeader .headerText {
+    font-size: 12px;
+  }
+  .percentileTile meter::-webkit-meter-bar {
+    background: v.$background-dark;
+    border: v.$border-subtle;
+  }
+  .percentileTile meter::-webkit-meter-optimum-value {
+    background: v.$primary-color;
+  }
+  .percentileTile meter::-moz-meter-bar {
+    background: v.$primary-color;
+  }
+}
+
+@media (min-width: 1600px) {
+  .ratingsContainer :global(.wigo-chart-help) p {
+    bottom: auto;
+    top: 20px;
+  }
+}

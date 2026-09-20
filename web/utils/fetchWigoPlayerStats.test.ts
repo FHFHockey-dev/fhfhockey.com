@@ -20,10 +20,35 @@ import type { WigoCareerRow, WigoRecentRow } from "./fetchWigoPlayerStats";
 import {
   buildPlayerAggregatedStats,
   fetchPaginatedData,
-  fetchPlayerGameLogForStat
+  fetchPlayerGameLogForStat,
+  fetchPlayerGameLogConsistencyData,
+  fetchPlayerPerGameTotals
 } from "./fetchWigoPlayerStats";
 
-function installGameLogQueryMock(rows: Record<string, unknown>[]) {
+describe("shared points and consistency game log", () => {
+  const game = { game_id: 2025020001, date: "2025-10-07", points: 0, shots: 0, hits: null, blocked_shots: 1 };
+
+  it("deduplicates identical game identities and preserves missing activity fields", async () => {
+    queryTraces.length = 0;
+    installGameLogQueryMock([game, { ...game }]);
+    expect(await fetchPlayerGameLogConsistencyData(1, "20252026")).toEqual([game]);
+    expect(queryTraces[0]?.calls).toContainEqual(["eq", "games_played", 1]);
+    expect(queryTraces[0]?.calls).toContainEqual(["eq", "season_id", 20252026]);
+    expect(queryTraces[0]?.calls).toContainEqual(["eq", "player_id", 1]);
+  });
+
+  it("surfaces conflicting duplicates instead of choosing a score", async () => {
+    installGameLogQueryMock([game, { ...game, points: 2 }]);
+    await expect(fetchPlayerGameLogConsistencyData(1, "20252026")).rejects.toThrow("conflicting rows");
+  });
+
+  it("rejects unknown game identities rather than silently merging them", async () => {
+    installGameLogQueryMock([{ ...game, game_id: null }]);
+    await expect(fetchPlayerGameLogConsistencyData(1, "20252026")).rejects.toThrow("invalid game identity");
+  });
+});
+
+function installGameLogQueryMock(rows: Record<string, unknown>[], error: unknown = null) {
   fromMock.mockImplementation((table: string) => {
     const trace: QueryTrace = { table, calls: [] };
     queryTraces.push(trace);
@@ -41,11 +66,13 @@ function installGameLogQueryMock(rows: Record<string, unknown>[]) {
         trace.calls.push(["order", ...orderArgs]);
         return builder;
       },
+      limit() { return builder; },
+      maybeSingle() { return Promise.resolve({ data: rows[0] ?? null, error }); },
       then(
         onFulfilled: (value: unknown) => unknown,
         onRejected?: () => unknown
       ) {
-        return Promise.resolve({ data: rows, error: null }).then(
+        return Promise.resolve({ data: rows, error }).then(
           onFulfilled,
           onRejected
         );
@@ -191,6 +218,10 @@ describe("buildPlayerAggregatedStats", () => {
 });
 
 describe("fetchPlayerGameLogForStat query contract", () => {
+  it("preserves a source failure as an error instead of an empty game log", async () => {
+    installGameLogQueryMock([], new Error("source unavailable"));
+    await expect(fetchPlayerGameLogForStat(1, 20252026, "Goals")).rejects.toThrow("source unavailable");
+  });
   it("uses numeric season_id and date for WGO game logs", async () => {
     installGameLogQueryMock([{ date: "2026-01-01", goals: 2 }]);
 
@@ -268,4 +299,16 @@ describe("fetchPaginatedData query contract", () => {
       }
     ]);
   });
+});
+
+describe("per-game totals units", () => {
+  it.each([[0.005, 0.5], [0, 0], [1, 100], [null, null]])(
+    "converts the source fraction %s to percentage points %s",
+    async (source, expected) => {
+      installGameLogQueryMock([{ player_id: 1, shooting_percentage: source, pp_toi_pct_per_game: 0.35 }]);
+      const totals = await fetchPlayerPerGameTotals(1, 20252026);
+      expect(totals?.shooting_percentage).toBe(expected);
+      expect(totals?.pp_toi_pct_per_game).toBe(35);
+    }
+  );
 });

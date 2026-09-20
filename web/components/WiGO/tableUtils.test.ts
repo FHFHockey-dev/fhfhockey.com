@@ -45,3 +45,21 @@ describe("formatCell", () => {
     expect(formatCell({ label: "PTS/60", STD: 2.456 }, "STD")).toBe("2.46");
   });
 });
+
+describe("DIFF boundary cases", () => {
+  it("keeps zero, unavailable baselines, equal selections and direction distinct", () => {
+    const data: TableAggregateData[] = [
+      { label: "GP", STD: 10, CA: 20 },
+      { label: "Goals", STD: 0, CA: 0 },
+      { label: "Assists", STD: 5, CA: 0 },
+      { label: "SOG", STD: 10, CA: 40 },
+      { label: "IPP", STD: null, CA: 40 },
+      { label: "S%", STD: Infinity, CA: 10 },
+    ];
+    expect(computeDiffColumn(data, "STD", "CA").map(row => row.DIFF)).toEqual([undefined, 0, undefined, -50, undefined, undefined]);
+    expect(computeDiffColumn(data, "STD", "STD")[3].DIFF).toBe(0);
+    expect(data[3].DIFF).toBeUndefined();
+    expect(formatCell({ label: "Goals", STD: 0 }, "STD")).toBe("0");
+    expect(formatCell({ label: "Goals", STD: null }, "STD")).toBe("-");
+  });
+});

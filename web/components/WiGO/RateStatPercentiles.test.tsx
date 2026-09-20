@@ -1,7 +1,7 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import RateStatPercentiles from "./RateStatPercentiles";
 
@@ -26,12 +26,15 @@ function renderWithClient(ui: React.ReactElement) {
     }
   });
 
-  return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
-  );
+  return render(ui, {
+    wrapper: ({ children }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    )
+  });
 }
 
 describe("RateStatPercentiles", () => {
+  afterEach(cleanup);
   beforeEach(() => {
     mockFetchPercentileCohortForPlayer.mockReset();
   });
@@ -206,7 +209,7 @@ describe("RateStatPercentiles", () => {
     );
   });
 
-  it("surfaces the fallback notice and uses canonical GP when current-season percentile tables are stale", async () => {
+  it("shows applied-season GP and a low-GP warning even for fallback player values", async () => {
     mockFetchPercentileCohortForPlayer.mockResolvedValue({
       stats: [
         {
@@ -233,7 +236,7 @@ describe("RateStatPercentiles", () => {
       requestedSeasonId: 20252026,
       appliedSeasonId: 20242025,
       fallbackReason:
-        "Current-season percentile data is incomplete for AS. Using 20242025 percentile cohort while 20252026 catches up.",
+        "Current-season percentile data is incomplete for AS. Showing 20242025 player values and league cohort; these are not 20252026 player values.",
       canonicalPlayerGp: 72
     });
 
@@ -241,7 +244,7 @@ describe("RateStatPercentiles", () => {
       <RateStatPercentiles
         playerId={8476453}
         seasonId={20252026}
-        minGp={10}
+        minGp={80}
         onMinGpChange={vi.fn()}
       />
     );
@@ -249,14 +252,55 @@ describe("RateStatPercentiles", () => {
     await waitFor(() => {
       expect(
         screen.getByText(
-          /Using 20242025 percentile cohort while 20252026 catches up/
+          /Showing 20242025 player values and league cohort/
         )
       ).toBeTruthy();
     });
 
-    expect(
-      screen.queryByText(/Selected Player GP \(4\) below threshold/)
-    ).toBeNull();
+    expect(screen.getByText("Player GP: 78 · Requested 20252026 · Applied 20242025")).toBeTruthy();
+    expect(screen.getByText(/Selected Player GP \(78\) below threshold \(80\)/)).toBeTruthy();
+  });
+
+  it("excludes nonfinite metric values from both rank and percentile populations", async () => {
+    mockFetchPercentileCohortForPlayer.mockResolvedValue({
+      stats: [
+        { player_id: 1, gp: 20, toi: 1200, goals_per_60: 1 },
+        { player_id: 2, gp: 20, toi: Infinity, goals_per_60: Infinity },
+        { player_id: 3, gp: 20, toi: 1200, goals_per_60: 1 }
+      ],
+      requestedSeasonId: 20252026,
+      appliedSeasonId: 20252026,
+      canonicalPlayerGp: 20,
+      fallbackReason: null
+    });
+    renderWithClient(
+      <RateStatPercentiles playerId={1} seasonId={20252026} minGp={10} onMinGpChange={vi.fn()} desktop />
+    );
+    await waitFor(() => expect(screen.getAllByText("50%")).toHaveLength(2));
+    expect(screen.getAllByText("1st rank")).toHaveLength(2);
+  });
+
+  it("recalculates the minimum-GP population without refetching", async () => {
+    mockFetchPercentileCohortForPlayer.mockResolvedValue({
+      stats: [
+        { player_id: 1, gp: 7, toi: 420, goals_per_60: 1 },
+        { player_id: 2, gp: 5, toi: 300, goals_per_60: 0 },
+        { player_id: 3, gp: 20, toi: 1200, goals_per_60: 2 }
+      ],
+      requestedSeasonId: 20252026,
+      appliedSeasonId: 20252026,
+      canonicalPlayerGp: 7,
+      fallbackReason: null
+    });
+    const props = { playerId: 1, seasonId: 20252026, onMinGpChange: vi.fn() };
+    const { rerender } = renderWithClient(<RateStatPercentiles {...props} minGp={0} />);
+    const goalsPercentile = () => JSON.parse(
+      screen.getByTestId("percentile-chart").getAttribute("data-chart") ?? "{}"
+    ).datasets[0].data[1];
+    await waitFor(() => expect(goalsPercentile()).toBe(50));
+    rerender(<RateStatPercentiles {...props} minGp={10} />);
+    await waitFor(() => expect(goalsPercentile()).toBe(25));
+    expect(mockFetchPercentileCohortForPlayer).toHaveBeenCalledTimes(1);
   });
 
   it("does not expose dependency details when percentile loading fails", async () => {

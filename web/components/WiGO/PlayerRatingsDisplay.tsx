@@ -1,9 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { fetchRawStatsForAllStrengths } from "utils/fetchWigoRatingStats";
 import { calculatePlayerRatings } from "utils/calculateWigoRatings";
-import { CalculatedPlayerRatings } from "components/WiGO/types";
 
 import styles from "./PlayerRatingsDisplay.module.scss";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
@@ -59,24 +58,18 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
   seasonId,
   minGp
 }) => {
-  const {
-    data: ratings,
-    isLoading,
-    error
-  } = useQuery<CalculatedPlayerRatings | null>({
-    queryKey: ["wigoPlayerRatings", playerId, seasonId, minGp],
-    queryFn: async () => {
-      const rawStats = await fetchRawStatsForAllStrengths(seasonId as number);
-      return calculatePlayerRatings(
-        playerId as number,
-        rawStats,
-        undefined,
-        undefined,
-        minGp
-      );
-    },
-    enabled: typeof playerId === "number" && typeof seasonId === "number"
+  const { data: rawStats, isLoading, error } = useQuery({
+    queryKey: ["wigoRatingCohort", seasonId],
+    queryFn: () => fetchRawStatsForAllStrengths(seasonId!),
+    enabled: !!playerId && !!seasonId,
+    staleTime: 60_000
   });
+  const ratings = useMemo(
+    () => playerId && rawStats
+      ? calculatePlayerRatings(playerId, rawStats, undefined, undefined, minGp)
+      : null,
+    [playerId, rawStats, minGp]
+  );
 
   const formatRating = (rating: number | null): string => {
     return rating !== null && !isNaN(rating) ? rating.toFixed(1) : "-";
@@ -85,10 +78,8 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
   const renderContent = () => {
     if (isLoading)
       return <div className={styles.loading}>Loading Ratings...</div>;
-    if (error instanceof Error)
+    if (error)
       return <div className={styles.error}>{WIGO_ERROR_MESSAGES.ratings}</div>;
-    if (!ratings && !isLoading && playerId)
-      return <div className={styles.calculating}>Calculating...</div>;
     if (!playerId)
       return <div className={styles.noPlayer}>Select player for ratings</div>;
     if (!seasonId)
@@ -106,8 +97,10 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
         boxStyle: {
           borderColor: borderColor,
           borderWidth: "3px",
-          borderStyle: "solid"
-        },
+          borderStyle: "solid",
+          "--rating-width": `${ratingValue == null ? 0 : Math.max(0, Math.min(100, ratingValue))}%`,
+          "--rating-color": color
+        } as React.CSSProperties,
         valueStyle: { color: color }
       };
     };

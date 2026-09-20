@@ -56,34 +56,16 @@ export async function fetchRawStatsForAllStrengths(
   }[] = [];
 
   strengths.forEach((strength) => {
-    const offenseTable = TABLE_MAP[strength].offense;
-    const defenseTable = TABLE_MAP[strength].defense;
-
-    tableIdentifiers.push({
-      strength,
-      type: "offense",
-      tableName: offenseTable
-    });
-    fetchPromises.push(
-      fetchPaginatedData<PlayerStrengthStats>(
-        offenseTable as keyof Database["public"]["Tables"],
-        offenseSelectColumns,
+    for (const type of ["offense", "defense"] as const) {
+      if (!RATING_WEIGHTS[strength]?.[type]?.length) continue;
+      const tableName = TABLE_MAP[strength][type];
+      tableIdentifiers.push({ strength, type, tableName });
+      fetchPromises.push(fetchPaginatedData<PlayerStrengthStats>(
+        tableName as keyof Database["public"]["Tables"],
+        type === "offense" ? offenseSelectColumns : defenseSelectColumns,
         { column: "season", value: seasonId }
-      )
-    );
-
-    tableIdentifiers.push({
-      strength,
-      type: "defense",
-      tableName: defenseTable
-    });
-    fetchPromises.push(
-      fetchPaginatedData<PlayerStrengthStats>(
-        defenseTable as keyof Database["public"]["Tables"],
-        defenseSelectColumns,
-        { column: "season", value: seasonId }
-      )
-    );
+      ));
+    }
   });
 
   try {

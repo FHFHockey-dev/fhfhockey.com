@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { Player, TeamColors } from "./types";
 import styles from "styles/wigoCharts.module.scss";
@@ -20,14 +20,18 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({
   teamColors,
   placeholderImage
 }) => {
+  const [failedHeadshot, setFailedHeadshot] = useState<string | null>(null);
+  const [failedLogo, setFailedLogo] = useState<string | null>(null);
+  const displayedHeadshot = headshotUrl && headshotUrl !== failedHeadshot ? headshotUrl : null;
   return (
     <div className={styles.playerHeadshot}>
       <div className={styles.headshotContainer}>
         <div className={styles.teamLogo}>
-          {teamAbbreviation && selectedPlayer ? (
+          {teamAbbreviation && teamAbbreviation !== failedLogo && selectedPlayer ? (
             <Image
               src={`/teamLogos/${teamAbbreviation}.png`}
               alt={`${teamName} logo`}
+              onError={() => setFailedLogo(teamAbbreviation)}
               fill
               sizes="(max-width: 768px) 160px, 220px"
               className={styles.teamLogoImage}
@@ -38,16 +42,17 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({
         </div>
         <div className={styles.headshot}>
           <Image
-            src={headshotUrl || placeholderImage}
+            src={displayedHeadshot || placeholderImage}
+            onError={() => setFailedHeadshot(headshotUrl)}
             alt={
-              headshotUrl
+              displayedHeadshot
                 ? `${selectedPlayer?.fullName ?? "Player"} headshot`
                 : "Placeholder headshot"
             }
             className={styles.headshotImage}
             fill
             sizes="(max-width: 768px) 220px, 320px"
-            priority={Boolean(headshotUrl)}
+            priority={Boolean(displayedHeadshot)}
           />
         </div>
       </div>

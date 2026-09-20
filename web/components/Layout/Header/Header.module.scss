@@ -542,3 +542,9 @@ $desktop-header-height: 58px;
     transform: rotate(90deg);
   }
 }
+
+@media (min-width: 1600px) {
+  .header.desktopHeader.wigoHeader {
+    .logoSubline, .authCta { font-size: 12px; }
+  }
+}

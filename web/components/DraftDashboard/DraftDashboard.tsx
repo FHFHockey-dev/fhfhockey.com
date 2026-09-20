@@ -628,6 +628,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   const [fullSettings, setFullSettings] = useState(false);
   const [settingsConfigured, setSettingsConfigured] = useState(false);
   const [settingsSaveError, setSettingsSaveError] = useState<string | null>(null);
+  const settingsMismatchNoticeShownRef = useRef(false);
   const [accountSettingsKnown, setAccountSettingsKnown] = useState(false);
   const settingsEditorRef = useRef<DraftSettingsHandle>(null);
   const initialSetupChecked = useRef(false);
@@ -2219,7 +2220,21 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         }
       });
 
-      teamPlayers.forEach((draftedPlayer) => {
+      const assignmentOrder = [...teamPlayers].sort((left, right) => {
+        const leftPlayer = allPlayers.find((player) => String(player.playerId) === left.playerId);
+        const rightPlayer = allPlayers.find((player) => String(player.playerId) === right.playerId);
+        const leftEligibility = groupPlayerEligibility(
+          normalizePlayerEligibility(leftPlayer?.displayPosition, leftPlayer?.eligiblePositions),
+          forwardGrouping,
+        ).length;
+        const rightEligibility = groupPlayerEligibility(
+          normalizePlayerEligibility(rightPlayer?.displayPosition, rightPlayer?.eligiblePositions),
+          forwardGrouping,
+        ).length;
+        return leftEligibility - rightEligibility;
+      });
+
+      assignmentOrder.forEach((draftedPlayer) => {
         const player = allPlayers.find(
           (p) => String(p.playerId) === draftedPlayer.playerId,
         );
@@ -2658,6 +2673,23 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   const playerEligibility = useMemo(() => new Map(allPlayers.map(player => [String(player.playerId), normalizePlayerEligibility(player.displayPosition, player.eligiblePositions)])), [allPlayers]);
   const settingsValidationInput = useMemo(() => ({ settings: draftSettings, myTeamId, goalieScoring: goaliePointValues, skaterSources: sourceControls, goalieSources: goalieSourceControls, draftedPlayers, keepers, trades: pickTrades, playerEligibility, forwardGrouping }), [draftSettings, myTeamId, goaliePointValues, sourceControls, goalieSourceControls, draftedPlayers, keepers, pickTrades, playerEligibility, forwardGrouping]);
   const settingsValidation = useMemo(() => validateDraftSettings(settingsValidationInput), [settingsValidationInput]);
+  useEffect(() => {
+    if (settingsValidation.valid) {
+      settingsMismatchNoticeShownRef.current = false;
+      return;
+    }
+    if (!manualDraftingEnabled || !settingsConfigured || settingsMismatchNoticeShownRef.current) return;
+    settingsMismatchNoticeShownRef.current = true;
+    const issues = settingsValidation.issues
+      .map((issue) => issue.message)
+      .filter(Boolean)
+      .slice(0, 5)
+      .join(" ");
+    setSettingsSaveError(`Your saved league settings need attention before drafting. ${issues}`);
+    setSettingsSection("league");
+    setFullSettings(true);
+    setSettingsOpen(true);
+  }, [manualDraftingEnabled, settingsConfigured, settingsValidation]);
   const tierContextReady = settingsConfigured && settingsValidation.valid && draftSettings.draftOrder.includes(myTeamId);
   const selectionHorizon = useMemo(() => tierContextReady ? findSelectionHorizon({
     currentPick, teamId: myTeamId, onClock: currentTurn.isMyTurn,

@@ -233,6 +233,7 @@ function Header() {
       <header
         ref={navbarRef}
         className={classNames(styles.header, styles.desktopHeader, {
+          [styles.wigoHeader]: router.pathname === "/wigoCharts",
           [styles.hidden]: menuOpen ? false : !isNavbarVisible,
         })}
       >

@@ -4,7 +4,7 @@ import { renderHook, waitFor, act } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Player, TableAggregateData } from "components/WiGO/types";
-import useWigoPlayerDashboard from "./useWigoPlayerDashboard";
+import useWigoPlayerDashboard, { getPlayerIdFromQueryValue } from "./useWigoPlayerDashboard";
 
 const {
   mockReplace,
@@ -113,6 +113,16 @@ function createDeferred<T>() {
 }
 
 describe("useWigoPlayerDashboard", () => {
+  it.each([undefined, "", "abc", "123abc", "0", "-1", "1.5", "Infinity", "9007199254740992"])(
+    "rejects invalid player query value %s", value => {
+      expect(getPlayerIdFromQueryValue(value)).toBeNull();
+    }
+  );
+
+  it("accepts positive safe player IDs and the first array query value", () => {
+    expect(getPlayerIdFromQueryValue("8476453")).toBe(8476453);
+    expect(getPlayerIdFromQueryValue(["8476453", "1"])).toBe(8476453);
+  });
   beforeEach(() => {
     mockRouter.query = {};
     mockReplace.mockClear();

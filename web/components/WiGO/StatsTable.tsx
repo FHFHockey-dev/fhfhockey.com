@@ -1,12 +1,10 @@
 import React, { useState, useCallback, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { TableAggregateData } from "./types";
 import styles from "styles/wigoCharts.module.scss";
 import GameLogChart from "./StatsTableRowChart";
 import { isWigoCountChartStat } from "./statMetadata";
-import {
-  fetchPlayerGameLogForStat,
-  GameLogDataPoint
-} from "utils/fetchWigoPlayerStats";
+import { fetchPlayerGameLogForStat } from "utils/fetchWigoPlayerStats";
 import clsx from "clsx";
 
 interface StatsTableProps {
@@ -63,15 +61,32 @@ const StatsTable: React.FC<StatsTableProps> = ({
   rightTimeframe,
   visibleColumns
 }) => {
-  const [expandedStatLabel, setExpandedStatLabel] = useState<string | null>(
-    null
-  );
-  const [gameLogData, setGameLogData] = useState<GameLogDataPoint[]>([]);
-  const [isLoadingGameLog, setIsLoadingGameLog] = useState<boolean>(false);
-  const [gameLogError, setGameLogError] = useState<string | null>(null);
-  const [expandedStatType, setExpandedStatType] = useState<"COUNTS" | "RATES">(
-    "RATES"
-  );
+  const [expansion, setExpansion] = useState<{
+    playerId: number;
+    seasonId: number;
+    label: string | null;
+  }>({ playerId, seasonId: currentSeasonId, label: null });
+  const contextChanged =
+    expansion.playerId !== playerId || expansion.seasonId !== currentSeasonId;
+  if (contextChanged) {
+    setExpansion({ playerId, seasonId: currentSeasonId, label: null });
+  }
+  const expandedStatLabel = contextChanged ? null : expansion.label;
+  const gameLog = useQuery({
+    queryKey: ["wigoSelectedStatLog", playerId, currentSeasonId, expandedStatLabel],
+    queryFn: () =>
+      fetchPlayerGameLogForStat(playerId, currentSeasonId, expandedStatLabel!),
+    enabled: playerId > 0 && currentSeasonId > 0 && expandedStatLabel !== null,
+    staleTime: 60_000
+  });
+  const gameLogData = gameLog.data ?? [];
+  const isLoadingGameLog = gameLog.isLoading;
+  const gameLogError = gameLog.error
+    ? `Failed to load game log for ${expandedStatLabel}.`
+    : null;
+  const expandedStatType = isWigoCountChartStat(expandedStatLabel ?? "")
+    ? "COUNTS"
+    : "RATES";
 
   // const statRowsData = useMemo(
   //   () => data.filter((d) => d.label !== "GP"),
@@ -100,39 +115,11 @@ const StatsTable: React.FC<StatsTableProps> = ({
 
   const handleExpandClick = useCallback(
     (statLabel: string) => {
-      // Don't allow expanding the GP row if it doesn't make sense
-      if (statLabel === "GP") {
-        setExpandedStatLabel(null); // Close any open chart
-        return;
-      }
-
-      const newLabel = expandedStatLabel === statLabel ? null : statLabel;
-      setExpandedStatLabel(newLabel);
-
-      setGameLogError(null);
-      setGameLogData([]);
-      setIsLoadingGameLog(false);
-
-      if (newLabel !== null) {
-        const typeForChart: "COUNTS" | "RATES" = isWigoCountChartStat(newLabel)
-          ? "COUNTS"
-          : "RATES";
-        setExpandedStatType(typeForChart);
-
-        setIsLoadingGameLog(true);
-        fetchPlayerGameLogForStat(playerId, currentSeasonId, statLabel)
-          .then((fetchedData) => {
-            setGameLogData(fetchedData);
-            setGameLogError(null);
-            setIsLoadingGameLog(false);
-          })
-          .catch((err) => {
-            console.error("Error fetching game log:", err);
-            setGameLogError(`Failed to load game log for ${statLabel}.`);
-            setGameLogData([]);
-            setIsLoadingGameLog(false);
-          });
-      }
+      setExpansion({
+        playerId,
+        seasonId: currentSeasonId,
+        label: statLabel === "GP" || expandedStatLabel === statLabel ? null : statLabel
+      });
     },
     [expandedStatLabel, playerId, currentSeasonId] // Removed dependency on statRowsData/gpRowData
   );

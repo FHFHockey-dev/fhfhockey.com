@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import useWigoPlayerTotals from "hooks/useWigoPlayerTotals";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -16,8 +17,6 @@ import {
   ChartData
 } from "chart.js";
 import {
-  fetchPlayerPerGameTotals,
-  SkaterTotalsData,
   SkaterGameLogStatsData,
   fetchPlayerGameLogStats
 } from "utils/fetchWigoPlayerStats";
@@ -63,31 +62,18 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
   const chartRef = useRef<ChartJS<"line">>(null);
   // --- State to control which chart is displayed ---
   const [chartView, setChartView] = useState<ChartView>("toi"); // Default to 'toi'
-  const { data, isLoading, error } = useQuery<{
-    gameLogData: SkaterGameLogStatsData[];
-    averageToi: number | null;
-    averagePpToiPct: number | null;
-  }>({
-    queryKey: ["wigoToiChart", playerId, seasonId],
-    queryFn: async () => {
-      const [totals, gameLogs] = await Promise.all([
-        fetchPlayerPerGameTotals(playerId as number, seasonId),
-        fetchPlayerGameLogStats(playerId as number, String(seasonId))
-      ]);
-
-      return {
-        gameLogData: gameLogs,
-        averageToi: (totals as SkaterTotalsData | null)?.toi_per_game ?? null,
-        averagePpToiPct:
-          (totals as SkaterTotalsData | null)?.pp_toi_pct_per_game ?? null
-      };
-    },
-    enabled: typeof playerId === "number" && typeof seasonId === "number"
+  const totals = useWigoPlayerTotals(playerId, seasonId);
+  const logs = useQuery({
+    queryKey: ["wigoToiGameLog", playerId, seasonId],
+    queryFn: () => fetchPlayerGameLogStats(playerId!, String(seasonId)),
+    enabled: !!playerId && !!seasonId,
+    staleTime: 60_000
   });
-
-  const gameLogData = data?.gameLogData ?? [];
-  const averageToi = data?.averageToi ?? null;
-  const averagePpToiPct = data?.averagePpToiPct ?? null;
+  const isLoading = totals.isLoading || logs.isLoading;
+  const error = totals.error || logs.error;
+  const gameLogData = logs.data ?? [];
+  const averageToi = totals.data?.toi_per_game ?? null;
+  const averagePpToiPct = totals.data?.pp_toi_pct_per_game ?? null;
 
   // --- Prepare Chart Data based on the selected view ---
   const getChartData = (): ChartData<"line", (number | null)[], string> => {
@@ -219,11 +205,11 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
           title: { display: false },
           ticks: {
             color: CHART_COLORS.TICK_LABEL,
-            font: { size: 9 },
-            maxRotation: 90,
-            minRotation: 45,
+            font: { size: 12 },
+            maxRotation: 0,
+            minRotation: 0,
             autoSkip: true,
-            maxTicksLimit: 10
+            maxTicksLimit: 6
           },
           grid: { display: false },
           border: { color: CHART_COLORS.AXIS_BORDER }
@@ -237,14 +223,14 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
           min: 0,
           max: 60 * 30,
           title: {
-            display: true,
+            display: false,
             text: "Time On Ice (Minutes)",
-            font: { size: 10 },
+            font: { size: 12 },
             color: CHART_COLORS.TICK_LABEL
           },
           ticks: {
             color: CHART_COLORS.TICK_LABEL,
-            font: { size: 9 },
+            font: { size: 12 },
             callback: (value) =>
               typeof value === "number" ? formatSecondsToMMSS(value) : value
           },
@@ -257,14 +243,14 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
           min: 0,
           max: 100,
           title: {
-            display: true,
+            display: false,
             text: "PP TOI Percentage (%)",
-            font: { size: 10 },
+            font: { size: 12 },
             color: CHART_COLORS.TICK_LABEL
           },
           ticks: {
             color: CHART_COLORS.TICK_LABEL,
-            font: { size: 9 },
+            font: { size: 12 },
             callback: (value) =>
               typeof value === "number" ? `${value}%` : value // Format as percentage
           },
@@ -280,7 +266,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
           labels: {
             color: CHART_COLORS.TICK_LABEL,
             boxWidth: 12,
-            font: { size: 10 }
+            font: { size: 12 }
           }
         },
         datalabels: { display: false },
@@ -314,7 +300,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
           }
         },
         zoom: {
-          pan: { enabled: true, mode: "x" },
+          pan: { enabled: true, mode: "x", modifierKey: "shift" },
           zoom: {
             wheel: { enabled: true },
             pinch: { enabled: true },
@@ -339,6 +325,8 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
       title={chartTitle}
       toolbar={
         <div className={styles.toggleButtons}>
+          <span className="wigo-trend-legend">{chartView === "toi" ? <><span style={{ color: CHART_COLORS.BAR_PRIMARY }}>━Total</span> · <span style={{ color: CHART_COLORS.PP_TOI }}>━PP</span> · Avg (min)</> : "PP share · Avg (%)"}</span>
+          <button type="button" title="Drag to zoom; Shift+drag to pan; Reset restores all games" onClick={() => chartRef.current?.resetZoom()}>Reset</button>
           <button
             onClick={() => setChartView("toi")}
             disabled={chartView === "toi"}
@@ -371,7 +359,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
 
       {/* Error Message (replaces chart or overlaps) */}
       {/* Show error overlay if an error occurred */}
-      {error instanceof Error &&
+      {error &&
         !isLoading && ( // Show only if not also loading
           <div style={placeholderStyle}>{WIGO_ERROR_MESSAGES.chart}</div>
         )}

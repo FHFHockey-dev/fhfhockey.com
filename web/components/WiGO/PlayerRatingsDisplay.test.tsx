@@ -1,10 +1,12 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { RawStatsCollection } from "components/WiGO/types";
 import PlayerRatingsDisplay from "./PlayerRatingsDisplay";
+
+afterEach(cleanup);
 
 const mockFetchRawStatsForAllStrengths = vi.hoisted(() => vi.fn());
 
@@ -303,7 +305,7 @@ describe("PlayerRatingsDisplay", () => {
         "No rating data available for this player/season."
       )
     ).toBeNull();
-    expect(screen.getAllByText("58.3").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("75.0").length).toBeGreaterThan(0);
   });
 
   it("does not expose dependency details when ratings fail", async () => {
@@ -321,5 +323,21 @@ describe("PlayerRatingsDisplay", () => {
       ).toBeTruthy();
     });
     expect(screen.queryByText(/private_ratings/)).toBeNull();
+  });
+
+  it("reuses the season cohort when min GP or selected player changes", async () => {
+    mockFetchRawStatsForAllStrengths.mockResolvedValue({});
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const view = (playerId: number, minGp: number, seasonId = 20252026) =>
+      <QueryClientProvider client={client}>
+        <PlayerRatingsDisplay playerId={playerId} seasonId={seasonId} minGp={minGp} />
+      </QueryClientProvider>;
+    const { rerender } = render(view(1, 10));
+    await screen.findByText("No rating data available for this player/season.");
+    rerender(view(1, 20));
+    rerender(view(2, 20));
+    expect(mockFetchRawStatsForAllStrengths).toHaveBeenCalledTimes(1);
+    rerender(view(2, 20, 20262027));
+    await waitFor(() => expect(mockFetchRawStatsForAllStrengths).toHaveBeenCalledTimes(2));
   });
 });

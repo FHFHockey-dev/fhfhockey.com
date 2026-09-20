@@ -1,4 +1,5 @@
 import supabase from "lib/supabase";
+import type { QueryClient } from "@tanstack/react-query";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import {
   PercentileStrength,
@@ -94,8 +95,7 @@ async function fetchCanonicalPlayerGp(
     .maybeSingle();
 
   if (error) {
-    console.warn("Failed to fetch canonical player GP:", error.message);
-    return null;
+    throw error;
   }
 
   const gamesPlayed = data?.games_played;
@@ -112,8 +112,7 @@ async function fetchCanonicalSeasonMaxGp(seasonId: number): Promise<number> {
     .maybeSingle();
 
   if (error) {
-    console.warn("Failed to fetch canonical season max GP:", error.message);
-    return 0;
+    throw error;
   }
 
   return typeof data?.games_played === "number" ? data.games_played : 0;
@@ -206,20 +205,42 @@ export async function fetchAllPlayerStatsForStrength(
       `Error fetching all player stats for strength ${strength}:`,
       err
     );
-    return [];
+    throw err;
   }
 }
 
 export async function fetchPercentileCohortForPlayer(
   strength: PercentileStrength,
   seasonId: number,
-  playerId: number
+  playerId: number,
+  queryClient?: QueryClient
 ): Promise<PercentileCohortResult> {
+  // League inputs are independent of the selected player and minimum-GP filter.
+  const fetchSeasonStats = (requestedSeason: number) =>
+    queryClient
+      ? queryClient.fetchQuery({
+          queryKey: ["wigoPercentileCohort", strength, requestedSeason],
+          queryFn: () => fetchAllPlayerStatsForStrength(strength, requestedSeason),
+          staleTime: 60_000
+        })
+      : fetchAllPlayerStatsForStrength(strength, requestedSeason);
   const [requestedStats, canonicalPlayerGp, canonicalSeasonMaxGp] =
     await Promise.all([
-      fetchAllPlayerStatsForStrength(strength, seasonId),
-      fetchCanonicalPlayerGp(playerId, seasonId),
-      fetchCanonicalSeasonMaxGp(seasonId)
+      fetchSeasonStats(seasonId),
+      queryClient
+        ? queryClient.fetchQuery({
+            queryKey: ["wigoPercentilePlayerGp", seasonId, playerId],
+            queryFn: () => fetchCanonicalPlayerGp(playerId, seasonId),
+            staleTime: 60_000
+          })
+        : fetchCanonicalPlayerGp(playerId, seasonId),
+      queryClient
+        ? queryClient.fetchQuery({
+            queryKey: ["wigoPercentileSeasonMaxGp", seasonId],
+            queryFn: () => fetchCanonicalSeasonMaxGp(seasonId),
+            staleTime: 60_000
+          })
+        : fetchCanonicalSeasonMaxGp(seasonId)
     ]);
 
   const percentilePlayerGp =
@@ -247,10 +268,7 @@ export async function fetchPercentileCohortForPlayer(
   }
 
   const fallbackSeasonId = getPreviousSeasonId(seasonId);
-  const fallbackStats = await fetchAllPlayerStatsForStrength(
-    strength,
-    fallbackSeasonId
-  );
+  const fallbackStats = await fetchSeasonStats(fallbackSeasonId);
   const fallbackHasPlayer = fallbackStats.some(
     (player) => player.player_id === playerId
   );
@@ -270,7 +288,7 @@ export async function fetchPercentileCohortForPlayer(
     stats: fallbackStats,
     requestedSeasonId: seasonId,
     appliedSeasonId: fallbackSeasonId,
-    fallbackReason: `Current-season percentile data is incomplete for ${strength.toUpperCase()}. Using ${fallbackSeasonId} percentile cohort while ${seasonId} catches up.`,
+    fallbackReason: `Current-season percentile data is incomplete for ${strength.toUpperCase()}. Showing ${fallbackSeasonId} player values and league cohort; these are not ${seasonId} player values.`,
     canonicalPlayerGp
   };
 }

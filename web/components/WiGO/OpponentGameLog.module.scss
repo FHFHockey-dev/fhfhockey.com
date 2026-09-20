@@ -98,3 +98,7 @@
 }
 
 // Add styles for loading/error states if needed
+
+@media (min-width: 1600px) {
+  .scheduleTable { overflow: visible; th, td, th:not(:first-child), td:not(:first-child), thead th { font-size: 12px; letter-spacing: 0; padding: 2px; white-space: normal; } thead th { position: static; } }
+}

@@ -42,7 +42,7 @@ export const getPlayerIdFromQueryValue = (
   }
 
   const parsedId = Number(rawValue);
-  return Number.isFinite(parsedId) ? parsedId : null;
+  return Number.isSafeInteger(parsedId) && parsedId > 0 ? parsedId : null;
 };
 
 export const buildWigoBranding = (
@@ -221,11 +221,11 @@ export default function useWigoPlayerDashboard(): UseWigoPlayerDashboardResult {
     isLoadingAggData: aggregatedStatsQuery.isLoading,
     isLoadingPlayer: selectedPlayerQuery.isLoading,
     aggDataError:
-      aggregatedStatsQuery.error instanceof Error
+      aggregatedStatsQuery.error
         ? WIGO_ERROR_MESSAGES.comparison
         : null,
     playerDataError:
-      selectedPlayerQuery.error instanceof Error
+      selectedPlayerQuery.error
         ? WIGO_ERROR_MESSAGES.player
         : null,
     handlePlayerSelect,

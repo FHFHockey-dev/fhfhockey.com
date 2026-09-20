@@ -6,7 +6,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   ReferenceLine,
   Area
@@ -39,14 +38,15 @@ interface GameLogChartProps {
   isLoading: boolean;
   error: string | null;
   tableType: "COUNTS" | "RATES";
+  height?: number;
 }
 
 type AverageKey = keyof GameLogChartProps["averages"];
 const availableAverages: AverageKey[] = [
   "STD",
   "LY",
-  "3YA",
   "CA",
+  "3YA",
   "L5",
   "L10",
   "L20"
@@ -69,7 +69,8 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
   gpData,
   isLoading,
   error,
-  tableType
+  tableType,
+  height = 230
 }) => {
   const [visibleAverages, setVisibleAverages] = useState<
     Record<AverageKey, boolean>
@@ -155,23 +156,9 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
   };
 
   // Adjust chart height if needed for row layout, REMOVE fixed width
-  const chartHeight = 220; // Increased height slightly for better visibility in a row
+  const chartHeight = height; // Increased height slightly for better visibility in a row
 
-  // **** RENDER LOGIC ****
-  if (isLoading)
-    return <div className={styles.chartStatus}>Loading game log...</div>;
-  if (error)
-    return (
-      <div className={styles.chartStatus} style={{ color: "red" }}>
-        {error}
-      </div>
-    );
-  if (gameLogData.length === 0)
-    return (
-      <div className={styles.chartStatus}>
-        No game log data available for this season.
-      </div>
-    );
+  const status = isLoading ? "Loading game log..." : error || (gameLogData.length === 0 ? "No game log data available for this season." : null);
 
   return (
     <div className={styles.gameLogChartContainer}>
@@ -185,7 +172,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
           let suffix = "";
           if (avgValue != null) {
             if (isTOIStat) {
-              valueForButton = avgValue * 60;
+              valueForButton = avgValue;
               formattingType = "TOI";
             } else if (isPercentStat) {
               formattingType = "Percent";
@@ -197,23 +184,27 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
               valueForButton = avgValue / gpValue;
               formattingType = "CountPerGame";
               suffix = "/GP";
+            } else if (shouldUseGpForDiff(statLabel)) {
+              valueForButton = null;
             } else if (tableType === "RATES") {
               formattingType = "Other";
             }
           }
           const buttonColor = averageColors[key];
           const isActive = visibleAverages[key];
-          if (valueForButton != null) {
+          {
             return (
               <button
                 key={key}
+                aria-pressed={isActive}
+                aria-label={`Toggle ${key} reference`}
                 onClick={() => handleAverageToggle(key)}
                 className={`${styles.avgButton} ${
                   isActive ? styles.active : ""
                 }`}
                 style={
                   isActive
-                    ? { backgroundColor: buttonColor, borderColor: buttonColor }
+                    ? { backgroundColor: "#1a1d21", borderColor: buttonColor, color: "#fff", textDecoration: "underline", fontWeight: 700 }
                     : {}
                 }
               >
@@ -222,34 +213,35 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
               </button>
             );
           }
-          return null;
         })}
       </div>
-      <ResponsiveContainer width="100%" height={chartHeight}>
+      {status ? <div className={styles.chartStatus} role="status">{status}</div> : <ResponsiveContainer width="100%" height={chartHeight}>
         <LineChart
           data={chartData}
-          margin={{ top: 5, right: 20, left: 0, bottom: 20 }}
+          margin={{ top: 5, right: 10, left: 0, bottom: 16 }}
         >
           {" "}
           {/* Adjusted margins */}
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey="game"
+            minTickGap={40}
+            tickFormatter={(game) => chartData[Number(game) - 1]?.date.slice(5) ?? String(game)}
             label={{
-              value: "Game",
+              value: "Game date",
               position: "insideBottom",
               offset: -15,
               style: {
                 textAnchor: "middle",
-                fontSize: "10px",
+                fontSize: "12px",
                 fill: "#ccc",
                 fontWeight: "bold",
-                letterSpacing: "2px",
+                letterSpacing: "0",
                 textTransform: "uppercase"
               }
             }}
-            tick={{ fontSize: 9, fill: "#aaa" }}
-            height={35} // Increased height for label
+            tick={{ fontSize: 12, fill: "#aaa" }}
+            height={40} // Increased height for label
           />
           <YAxis
             tickFormatter={(tick) =>
@@ -258,22 +250,9 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                 isTOIStat ? "TOI" : isPercentStat ? "Percent" : "Other"
               )
             }
-            tick={{ fontSize: 9, fill: "#aaa" }}
-            width={85} // Slightly increased width
-            label={{
-              value: statLabel,
-              angle: -90,
-              position: "insideLeft",
-              offset: -5,
-              style: {
-                textAnchor: "middle",
-                fontSize: "10px",
-                fill: "#ccc",
-                fontWeight: "bold",
-                letterSpacing: "2px",
-                textTransform: "uppercase"
-              }
-            }}
+            tick={{ fontSize: 12, fill: "#aaa" }}
+            width={65} // Slightly increased width
+
           />
           <Tooltip content={<CustomTooltip />} />
           <Area
@@ -322,8 +301,8 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
               if (shouldUseGpForDiff(statLabel) && typeof gpValue === "number" && gpValue > 0) {
                 referenceValue = avgValue / gpValue;
               } else if (isTOIStat) {
-                referenceValue = avgValue;
-              } // Already average minutes
+                referenceValue = avgValue / 60;
+              } // Aggregate times are seconds; the chart axis uses minutes.
               else if (tableType === "RATES" || isPercentStat) {
                 referenceValue = avgValue;
               } else if (
@@ -350,7 +329,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
             return null;
           })}
         </LineChart>
-      </ResponsiveContainer>
+      </ResponsiveContainer>}
     </div>
   );
 };

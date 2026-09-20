@@ -70,6 +70,24 @@ describe("grouped forward contract", () => {
     expect(result.counts).toMatchObject({ FWD: 1, D: 1, G: 1, UTILITY: 1 });
   });
 
+  it("reserves open eligible slots for multi-position players", () => {
+    const allocation = allocateGroupedRosterSlots({
+      players: [
+        { id: "marner", eligibility: ["C", "RW"] },
+        { id: "center", eligibility: ["C"] },
+        { id: "wing", eligibility: ["RW"] },
+      ],
+      rosterConfig: { C: 1, LW: 0, RW: 1, D: 0, G: 0, utility: 0, bench: 1 },
+      grouping: "split",
+    });
+
+    expect(allocation.assignments).toEqual({
+      center: "C",
+      marner: "RW",
+      wing: "BENCH",
+    });
+  });
+
   it("supports an exact generic-forward flex alongside split forward slots", () => {
     const rosterConfig = {
       C: 1,

@@ -9,11 +9,82 @@ export interface TeamFiveOnFiveSnapshot {
   gf: number | null;
 }
 
+export function aggregateTeamFiveOnFive(
+  rows: TeamFiveOnFiveSnapshot[],
+  expectedDates: Map<string, Map<string, number>>
+): TeamFiveOnFiveSnapshot[] {
+  const teams = new Map<string, Map<string, TeamFiveOnFiveSnapshot>>();
+  for (const row of rows) {
+    if (!expectedDates.get(row.team_abbreviation)?.has(row.date)) continue;
+    const dates = teams.get(row.team_abbreviation) ?? new Map<string, TeamFiveOnFiveSnapshot>();
+    const prior = dates.get(row.date);
+    if (prior && (["gp", "xgf", "xga", "gf"] as const).some(key => prior[key] !== row[key])) {
+      throw new Error("Conflicting team five-on-five rows");
+    }
+    dates.set(row.date, row);
+    teams.set(row.team_abbreviation, dates);
+  }
+  return [...teams.entries()].flatMap(([team_abbreviation, dates]) => {
+    const expected = expectedDates.get(team_abbreviation)!;
+    const games = [...dates.values()];
+    if (dates.size !== expected.size || games.some(row =>
+      row.gp !== expected.get(row.date) ||
+      [row.xgf, row.xga, row.gf].some(value => value == null || !Number.isFinite(value) || value < 0)
+    )) return [];
+    return [{
+      team_abbreviation,
+      date: games.reduce((last, row) => row.date > last ? row.date : last, ""),
+      gp: games.reduce((sum, row) => sum + row.gp!, 0),
+      xgf: games.reduce((sum, row) => sum + row.xgf!, 0),
+      xga: games.reduce((sum, row) => sum + row.xga!, 0),
+      gf: games.reduce((sum, row) => sum + row.gf!, 0)
+    }];
+  });
+}
+
 export interface TeamSpecialTeamsSnapshot {
   team_id: number | null;
   date: string;
   power_play_pct: number | null;
   penalty_kill_pct: number | null;
+}
+
+export interface TeamSpecialTeamsGame {
+  team_id: number;
+  game_id: number;
+  date: string;
+  pp_opportunities: number | null;
+  power_play_goals_for: number | null;
+  times_shorthanded: number | null;
+  pp_goals_against: number | null;
+}
+
+// Percentages at this boundary are percentage points, never fractions.
+export function aggregateTeamSpecialTeams(rows: TeamSpecialTeamsGame[]): TeamSpecialTeamsSnapshot[] {
+  const teams = new Map<number, Map<number, TeamSpecialTeamsGame>>();
+  for (const row of rows) {
+    const games = teams.get(row.team_id) ?? new Map<number, TeamSpecialTeamsGame>();
+    const prior = games.get(row.game_id);
+    if (prior && JSON.stringify(prior) !== JSON.stringify(row)) throw new Error("Conflicting team game rows");
+    games.set(row.game_id, row);
+    teams.set(row.team_id, games);
+  }
+  return [...teams.entries()].map(([team_id, games]) => {
+    const values = [...games.values()];
+    const valid = values.every(row =>
+      [row.pp_opportunities, row.power_play_goals_for, row.times_shorthanded, row.pp_goals_against]
+        .every(value => value != null && Number.isInteger(value) && value >= 0) &&
+      row.power_play_goals_for! <= row.pp_opportunities! && row.pp_goals_against! <= row.times_shorthanded!
+    );
+    const ppOpp = values.reduce((sum, row) => sum + (row.pp_opportunities ?? 0), 0);
+    const pkOpp = values.reduce((sum, row) => sum + (row.times_shorthanded ?? 0), 0);
+    return {
+      team_id,
+      date: values.reduce((latest, row) => row.date > latest ? row.date : latest, ""),
+      power_play_pct: valid && ppOpp > 0 ? 100 * values.reduce((sum, row) => sum + row.power_play_goals_for!, 0) / ppOpp : null,
+      penalty_kill_pct: valid && pkOpp > 0 ? 100 * (1 - values.reduce((sum, row) => sum + row.pp_goals_against!, 0) / pkOpp) : null
+    };
+  });
 }
 
 export type TeamDriverStatus = "strength" | "neutral" | "concern";
@@ -74,10 +145,10 @@ const statusForPercentile = (value: number): TeamDriverStatus => {
 };
 
 const metricPerGame = (row: TeamFiveOnFiveSnapshot, key: "xgf" | "xga") =>
-  finite(row[key]) && finite(row.gp) && row.gp > 0 ? row[key] / row.gp : null;
+  finite(row[key]) && row[key] >= 0 && finite(row.gp) && row.gp > 0 ? row[key] / row.gp : null;
 
 const finishingRate = (row: TeamFiveOnFiveSnapshot) =>
-  finite(row.gf) && finite(row.xgf) && row.xgf > 0 ? row.gf / row.xgf : null;
+  finite(row.gf) && row.gf >= 0 && finite(row.xgf) && row.xgf > 0 ? row.gf / row.xgf : null;
 
 export const buildTeamPerformanceDrivers = ({
   teamAbbreviation,
@@ -139,6 +210,10 @@ export const buildTeamPerformanceDrivers = ({
   const pkPopulation = Array.from(uniqueSpecialTeams.values())
     .map((row) => row.penalty_kill_pct)
     .filter(finite);
+  if ([generationPopulation, suppressionPopulation, finishingPopulation, ppPopulation, pkPopulation]
+    .some(population => population.length < TEAM_DRIVER_MIN_LEAGUE_SAMPLE)) {
+    return null;
+  }
   const generation = metricPerGame(teamFiveOnFive, "xgf");
   const suppression = metricPerGame(teamFiveOnFive, "xga");
   const finishing = finishingRate(teamFiveOnFive);
@@ -175,7 +250,7 @@ export const buildTeamPerformanceDrivers = ({
       percentile(pk, pkPopulation, "higher")) /
     2;
   const formatPercentage = (value: number) =>
-    `${(Math.abs(value) <= 1 ? value * 100 : value).toFixed(1)}%`;
+    `${value.toFixed(1)}%`;
 
   const driver = (
     key: TeamPerformanceDriver["key"],
