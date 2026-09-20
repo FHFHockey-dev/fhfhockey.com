@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -17,8 +17,7 @@ import styles from "styles/wigoCharts.module.scss";
 import { fetchPercentileCohortForPlayer } from "utils/fetchWigoPercentiles";
 import { PlayerRawStats, PercentileStrength } from "components/WiGO/types";
 import {
-  calculatePercentileRank,
-  calculatePlayerRank
+  calculateRankingResult
 } from "utils/calculatePercentiles";
 import { formatOrdinal } from "utils/formattingUtils";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
@@ -34,6 +33,7 @@ ChartJS.register(
 );
 
 interface RateStatPercentilesProps {
+  desktop?: boolean;
   playerId: number | null | undefined;
   seasonId?: number | null;
   minGp: number;
@@ -229,10 +229,12 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
   playerId,
   seasonId,
   minGp,
-  onMinGpChange
+  onMinGpChange,
+  desktop = false
 }) => {
   const [selectedStrength, setSelectedStrength] =
     useState<PercentileStrength>("as");
+  const queryClient = useQueryClient();
   const {
     data: percentileCohort,
     isLoading,
@@ -243,17 +245,16 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
       fetchPercentileCohortForPlayer(
         selectedStrength,
         seasonId as number,
-        playerId as number
+        playerId as number,
+        queryClient
       ),
+    staleTime: 60_000,
     enabled: typeof seasonId === "number" && typeof playerId === "number"
   });
   const allPlayersStats = useMemo<PlayerRawStats[]>(
     () => percentileCohort?.stats ?? [],
     [percentileCohort?.stats]
   );
-  const usingFallbackSeason =
-    (percentileCohort?.appliedSeasonId ?? seasonId) !==
-    (percentileCohort?.requestedSeasonId ?? seasonId);
 
   const maxPossibleGp = useMemo(() => {
     const maxGpOverall = allPlayersStats.reduce(
@@ -273,8 +274,8 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
       allPlayersStats.find((player) => player.player_id === playerId)?.gp ??
       null;
 
-    return percentileCohort?.canonicalPlayerGp ?? cohortGp;
-  }, [allPlayersStats, percentileCohort?.canonicalPlayerGp, playerId]);
+    return cohortGp;
+  }, [allPlayersStats, playerId]);
 
   const { calculatedPercentiles, calculatedRanks } = useMemo(() => {
     if (!playerId || allPlayersStats.length === 0) {
@@ -310,20 +311,12 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
       }))
       .filter(
         (player): player is { player_id: number; value: number } =>
-          player.value !== null
+          player.value !== null && Number.isFinite(player.value)
       );
 
-    percentileResults.toi_per_gp_calc = calculatePercentileRank(
-      toiGpData,
-      playerId,
-      "value",
-      true
-    );
-    rankResults.toi_per_gp_calc = calculatePlayerRank(
-      toiGpData,
-      playerId,
-      true
-    );
+    const toiRanking = calculateRankingResult(toiGpData, playerId, true);
+    percentileResults.toi_per_gp_calc = toiRanking?.percentile ?? null;
+    rankResults.toi_per_gp_calc = toiRanking?.rank ?? null;
 
     ALL_STATS_TO_DISPLAY.forEach((stat) => {
       if (stat.key === "toi_per_gp_calc") {
@@ -338,20 +331,12 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
         }))
         .filter(
           (player): player is { player_id: number; value: number } =>
-            player.value !== null && !isNaN(player.value)
+            player.value !== null && Number.isFinite(player.value)
         );
 
-      percentileResults[validStatKey] = calculatePercentileRank(
-        statData,
-        playerId,
-        "value",
-        stat.higherIsBetter
-      );
-      rankResults[validStatKey] = calculatePlayerRank(
-        statData,
-        playerId,
-        stat.higherIsBetter
-      );
+      const ranking = calculateRankingResult(statData, playerId, stat.higherIsBetter);
+      percentileResults[validStatKey] = ranking?.percentile ?? null;
+      rankResults[validStatKey] = ranking?.rank ?? null;
     });
 
     return {
@@ -388,7 +373,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
   );
 
   return (
-    <div className={styles.rateStatPercentilesComponent}>
+    <div className={`${styles.rateStatPercentilesComponent} ${desktop ? styles.percentileDesktop : ""}`}>
       {isLoading && (
         <div className={styles.loadingMessage}>Loading Player Data...</div>
       )}
@@ -423,6 +408,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                       className={
                         selectedStrength === strength ? styles.active : ""
                       }
+                      aria-pressed={selectedStrength === strength}
                       disabled={isLoading}
                     >
                       {strength.toUpperCase()}
@@ -465,6 +451,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
               </div>
             </div>
 
+            <div className={styles.percentileContext}>Player GP: {selectedPlayerGp ?? "—"} · Requested {seasonId} · Applied {percentileCohort?.appliedSeasonId ?? seasonId}</div>
             <div className={styles.thresholdMessagesContainer}>
               {calculatedPercentiles !== null &&
                 percentileCohort?.fallbackReason && (
@@ -473,7 +460,6 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                   </div>
                 )}
               {calculatedPercentiles !== null &&
-                !usingFallbackSeason &&
                 !selectedPlayerMeetsGpThreshold &&
                 selectedPlayerGp !== null && (
                   <div className={styles.thresholdMessage}>
@@ -494,7 +480,19 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
               )}
             </div>
           </div>
-          <div className={styles.chartAndRanksArea}>
+          {desktop ? <div className={styles.percentileTileGrid}>
+            {ALL_STATS_TO_DISPLAY.map(stat => {
+              const percentile = calculatedPercentiles?.[stat.key];
+              const rank = calculatedRanks?.[stat.key];
+              const available = percentile != null && Number.isFinite(percentile);
+              return <div className={styles.percentileTile} key={stat.key}>
+                <span>{stat.label}</span>
+                <strong>{available ? `${Math.round(percentile * 100)}%` : "—"}</strong>
+                <meter aria-label={`${stat.label} percentile`} min={0} max={100} value={available ? percentile * 100 : 0} />
+                <small>{rank != null ? `${formatOrdinal(rank)} rank` : "Rank unavailable"}</small>
+              </div>;
+            })}
+          </div> : <div className={styles.chartAndRanksArea}>
             <div className={styles.percentileChartsContainer}>
               {calculatedPercentiles !== null ? (
                 <Bar
@@ -508,7 +506,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                 </div>
               )}
             </div>
-          </div>
+          </div>}
         </div>
       )}
     </div>

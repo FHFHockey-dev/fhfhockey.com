@@ -225,3 +225,29 @@ table.verticalStatsTable {
 .noPlayerMessage {
   color: #aaa;
 }
+
+@media (min-width: 1600px) {
+  .desktopSummary {
+    display: contents;
+    .productionSnapshot, .projectionTableSection {
+      min-width: 0;
+      border: v.$border-subtle;
+      border-radius: v.$radius-sm;
+      background: v.$background-medium;
+      h3 { padding: 6px; font-size: 12px; letter-spacing: .02em; span { display: block; } }
+    }
+    .productionGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 8px; }
+    .productionStat { border: v.$border-subtle; border-radius: v.$radius-sm; padding: 10px 0; span, small { font-size: 12px; } strong { font-size: 24px; } }
+    .verticalStatsTable { border: 0; th, td, tbody td.valueCell, thead th { font-size: 12px; letter-spacing: 0; padding: 2px 3px; height: 20px; } thead th { position: static; border-bottom-width: 1px; } }
+  }
+}
+
+.summaryStatus { padding: 8px; font-size: 12px; }
+
+.paceHelp {
+  position: relative;
+  summary { cursor: pointer; }
+  summary h3 { display: inline; }
+  summary { padding: 6px; border-bottom: v.$border-subtle; font-size: 12px; }
+  p { position: absolute; top: 100%; left: 0; z-index: 10; width: 260px; margin: 0; padding: 10px; border: v.$border-subtle; border-radius: v.$radius-sm; background: v.$background-dark; font-size: 12px; line-height: 1.4; }
+}

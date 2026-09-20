@@ -11,11 +11,13 @@ import {
 import { ChartOptions, ChartData, ChartDataset } from "chart.js";
 import { WIGO_COLORS, addAlpha, CHART_COLORS } from "styles/wigoColors";
 import { WIGO_ERROR_MESSAGES } from "../errorMessages";
+import useWigoGameLog from "hooks/useWigoGameLog";
 
 // --- Define props and dummy labels ---
 type GameScoreLineChartProps = {
   playerId: number | null | undefined; // Allow null/undefined
   seasonId?: number | null;
+  resetKey?: number;
 };
 const dummyLabels = ["", "Start", "", "Mid", "", "End", ""];
 
@@ -28,12 +30,13 @@ interface GameScoreDataPoint {
 
 export default function GameScoreLineChart({
   playerId,
-  seasonId
+  seasonId,
+  resetKey
 }: GameScoreLineChartProps) {
   const queryKey = ["skaterGameScoresForSeason", playerId, seasonId];
 
   const {
-    data: rawData,
+    data: scoreData,
     isLoading: isQueryLoading,
     error: queryError
   } = useQuery<GameScoreDataPoint[]>({
@@ -71,17 +74,40 @@ export default function GameScoreLineChart({
       return rpcData ?? [];
     },
     // Enable query only when both IDs are valid numbers
-    enabled: typeof playerId === "number" && typeof seasonId === "number"
+    enabled: Number.isSafeInteger(playerId) && Number.isSafeInteger(seasonId) && playerId! > 0 && seasonId! > 0,
+    staleTime: 60_000
     // Keep previous data while loading new player/season? Optional.
     // keepPreviousData: true,
   });
 
+  // Share the canonical game calendar with PPG. The score RPC omits games with
+  // incomplete inputs; those games must still occupy their rolling-window slot.
+  const logs = useWigoGameLog(playerId, seasonId);
+  const scoresByDate = new Map<string, (number | null)[]>();
+  for (const score of scoreData ?? []) {
+    if (!score.game_date) continue;
+    const values = scoresByDate.get(score.game_date) ?? [];
+    values.push(score.game_score);
+    scoresByDate.set(score.game_date, values);
+  }
+  const gamesPerDate = new Map<string, number>();
+  for (const game of logs.data ?? []) {
+    gamesPerDate.set(game.date, (gamesPerDate.get(game.date) ?? 0) + 1);
+  }
+  const rawData: GameScoreDataPoint[] = (logs.data ?? []).map(game => {
+    const scores = scoresByDate.get(game.date);
+    // The existing RPC exposes dates, not game IDs. Ambiguous matches are gaps.
+    const score = gamesPerDate.get(game.date) === 1 && scores?.length === 1 ? scores[0] : null;
+    return { game_date: game.date, game_score: score != null && Number.isFinite(score) ? score : null };
+  });
+  const missingScores = rawData.filter(game => game.game_score == null).length;
+
   // --- Determine effective loading and error states ---
   // Consider loading if query is running OR if we have a player but no season yet
   const isLoading =
-    isQueryLoading ||
+    isQueryLoading || logs.isLoading ||
     (typeof playerId === "number" && typeof seasonId !== "number");
-  const error = queryError as Error | null; // Cast error type
+  const error = queryError || logs.error;
 
   // --- Prepare Chart Data (including dummy data) ---
   const getChartData = (): ChartData<
@@ -103,7 +129,7 @@ export default function GameScoreLineChart({
     // Prepare base game score data
     const gameScoreValues = useDummyData
       ? getNullData()
-      : gameLogData.map((item) => item.game_score ?? 0); // Default null to 0 for bars
+      : gameLogData.map((item) => item.game_score ?? null);
 
     // Prepare datasets for rolling averages
     const rollingAvgDatasets = windowSizes.map((windowSize, index) => {
@@ -112,7 +138,7 @@ export default function GameScoreLineChart({
         : calculateRollingAverage(
             gameLogData,
             windowSize,
-            (item) => item.game_score ?? 0
+            (item) => item.game_score
           ); // Handle nulls in calculation
       const lineColor =
         index === 0 ? CHART_COLORS.LINE_PRIMARY : CHART_COLORS.PP_TOI;
@@ -167,23 +193,23 @@ export default function GameScoreLineChart({
           // Adjust suggestedMax based on typical Game Score range if needed
           // suggestedMax: 5,
           title: {
-            display: true,
+            display: false,
             text: "Game Score",
-            font: { size: 10 },
+            font: { size: 12 },
             color: "#ccc"
           },
-          ticks: { color: "#ccc", font: { size: 9 }, precision: 1 }, // Allow decimals?
+          ticks: { color: "#ccc", font: { size: 12 }, maxTicksLimit: 3, precision: 1 }, // Allow decimals?
           grid: { color: "rgba(255, 255, 255, 0.1)" }
         },
         x: {
           title: { display: false },
           ticks: {
             color: "#ccc",
-            font: { size: 9 },
-            maxRotation: 90,
-            minRotation: 45,
+            font: { size: 12 },
+            maxRotation: 0,
+            minRotation: 0,
             autoSkip: true,
-            maxTicksLimit: 10
+            maxTicksLimit: 6
           },
           grid: { display: false }
         }
@@ -210,7 +236,7 @@ export default function GameScoreLineChart({
           }
         },
         zoom: {
-          pan: { enabled: true, mode: "x" },
+          pan: { enabled: true, mode: "x", modifierKey: "shift" },
           zoom: {
             wheel: { enabled: true },
             pinch: { enabled: true },
@@ -230,15 +256,25 @@ export default function GameScoreLineChart({
 
   return (
     // This component now renders the chart AND the status overlays
-    <>
+    <div style={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column", position: "relative" }}>
       {/* Render the presentational chart component if NO error */}
       {/* It receives dummy data/options while loading */}
       {!error && (
+        <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
         <RollingAverageChart
+          key={`${playerId}:${seasonId}`}
+          resetKey={resetKey}
           chartType="bar" // Base type
           chartData={chartData}
           chartOptions={chartOptions}
         />
+        </div>
+      )}
+
+      {!isLoading && !error && missingScores > 0 && (
+        <span role="status" style={{ flexShrink: 0, fontSize: 12, lineHeight: "16px" }} title="Missing scores remain gaps. Five- and ten-game averages require every game in the window.">
+          Game Score unavailable for {missingScores} of {rawData.length} games.
+        </span>
       )}
 
       {/* --- Overlapping Status Indicators --- */}
@@ -270,7 +306,7 @@ export default function GameScoreLineChart({
             No Game Score data available for this player.
           </div>
         )}
-    </>
+    </div>
   );
 }
 

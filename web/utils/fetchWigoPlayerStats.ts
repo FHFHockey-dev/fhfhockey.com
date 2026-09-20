@@ -34,6 +34,7 @@ export interface SkaterTotalsData {
 }
 
 export interface SkaterGameLogConsistencyData {
+  game_id: number;
   date: string;
   points: number | null;
   shots: number | null;
@@ -562,7 +563,7 @@ export async function fetchPlayerGameLogForStat(
       `Supabase error fetching game log for ${statLabel} (Player ${playerId}, Season ${seasonId}):`, // Be more specific about Supabase errors
       err.message || err
     );
-    return [];
+    throw err;
   }
 }
 
@@ -735,11 +736,8 @@ export const fetchPlayerPerGameTotals = async (
       // comes from totals as a decimal (e.g., 0.35)
       processedData.pp_toi_pct_per_game *= 100;
     }
-    if (
-      processedData &&
-      processedData.shooting_percentage !== null &&
-      Math.abs(processedData.shooting_percentage) <= 1
-    ) {
+    // NHL totals store shooting percentage as a fraction, including 0 and 1.
+    if (processedData && processedData.shooting_percentage !== null) {
       processedData.shooting_percentage *= 100;
     }
 
@@ -879,6 +877,7 @@ export const fetchPlayerGameLogConsistencyData = async (
       .from("wgo_skater_stats") // Query the game log table
       .select(
         `
+        game_id,
         date,
         points,
         shots,
@@ -888,6 +887,7 @@ export const fetchPlayerGameLogConsistencyData = async (
       )
       .eq("player_id", playerId)
       .eq("season_id", seasonIdNumber) // Filter by the specific season ID (numeric)
+      .eq("games_played", 1)
       .order("date", { ascending: true }); // Order chronologically (optional for this calc)
 
     if (error) {
@@ -897,7 +897,19 @@ export const fetchPlayerGameLogConsistencyData = async (
       );
       throw error;
     }
-    return (data as SkaterGameLogConsistencyData[]) || []; // Ensure result is an array
+    const games = new Map<number, SkaterGameLogConsistencyData>();
+    for (const game of (data ?? []) as SkaterGameLogConsistencyData[]) {
+      if (!Number.isSafeInteger(game.game_id) || game.game_id <= 0) {
+        throw new Error("Game log contains a missing or invalid game identity.");
+      }
+      const prior = games.get(game.game_id);
+      if (prior && (["date", "points", "shots", "hits", "blocked_shots"] as const)
+        .some(field => prior[field] !== game[field])) {
+        throw new Error("Game log contains conflicting rows for the same game.");
+      }
+      games.set(game.game_id, game);
+    }
+    return [...games.values()];
   } catch (err) {
     console.error(
       `Unexpected error in fetchPlayerGameLogConsistencyData for player ${playerId}, season ${season}:`,

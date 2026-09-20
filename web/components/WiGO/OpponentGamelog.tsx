@@ -1,7 +1,7 @@
 // components/WiGO/OpponentGamelog.tsx
 import React, { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { parseISO, format, isToday, isTomorrow } from "date-fns";
+import { format, isToday, isTomorrow } from "date-fns";
 import { toZonedTime, formatInTimeZone } from "date-fns-tz"; // For timezone handling
 import Fetch from "lib/cors-fetch";
 
@@ -91,30 +91,33 @@ const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
     enabled:
       typeof teamId === "number" &&
       Boolean(teamAbbreviation) &&
-      typeof seasonId === "number"
+      typeof seasonId === "number",
+    staleTime: 60_000,
+    refetchInterval: query => query.state.data?.some(game => ["LIVE", "CRIT"].includes(game.gameState)) ? 30_000 : 300_000
   });
 
   // Data processing logic remains the same
-  const { gamesToShow, nextGameIndexOverall } = useMemo(() => {
+  const { gamesToShow, nextGameId } = useMemo(() => {
     if (!schedule || schedule.length === 0) {
-      return { gamesToShow: [], nextGameIndexOverall: -1 };
+      return { gamesToShow: [], nextGameId: null };
     }
 
-    let nextGameIdx = schedule.findIndex(
-      (game) => game.gameState !== "FINAL" && game.gameState !== "OFF"
+    // Include preseason, regular season and playoffs for the selected team.
+    const games = [...new Map(schedule.filter(game =>
+      game.season === seasonId && [1, 2, 3].includes(game.gameType) &&
+      (game.homeTeam.id === teamId || game.awayTeam.id === teamId)
+    ).map(game => [game.id, game])).values()].sort((a, b) =>
+      (a.startTimeUTC || a.gameDate).localeCompare(b.startTimeUTC || b.gameDate) || a.id - b.id
     );
+    const nextGameIdx = games.findIndex(game =>
+      ["FUT", "PRE", "LIVE", "CRIT"].includes(game.gameState) &&
+      !["PPD", "CNCL", "CANCELLED"].includes(game.gameScheduleState)
+    );
+    const anchor = nextGameIdx === -1 ? games.length - 1 : nextGameIdx;
+    const gamesSlice = games.slice(Math.max(0, anchor - 5), Math.min(games.length, anchor + 5));
 
-    if (nextGameIdx === -1) {
-      nextGameIdx = schedule.length > 0 ? schedule.length - 1 : 0;
-    }
-
-    const startIndex = Math.max(0, nextGameIdx - 5);
-    const endIndex = Math.min(schedule.length, nextGameIdx + 5);
-
-    const gamesSlice = schedule.slice(startIndex, endIndex);
-
-    return { gamesToShow: gamesSlice, nextGameIndexOverall: nextGameIdx };
-  }, [schedule]);
+    return { gamesToShow: gamesSlice, nextGameId: nextGameIdx === -1 ? null : games[nextGameIdx].id };
+  }, [schedule, teamId, seasonId]);
 
   // Opponent display logic remains the same
   const getOpponentDisplay = (game: ApiGame, currentTeamId: number): string => {
@@ -126,6 +129,14 @@ const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
   // --- Updated formatting functions using date-fns ---
 
   const getResultDisplay = (game: ApiGame, currentTeamId: number): string => {
+    if (game.gameScheduleState === "PPD") return "Postponed";
+    if (["CNCL", "CANCELLED"].includes(game.gameScheduleState)) return "Cancelled";
+    if (["LIVE", "CRIT"].includes(game.gameState)) {
+      const home = game.homeTeam.id === currentTeamId;
+      const own = home ? game.homeTeam.score : game.awayTeam.score;
+      const other = home ? game.awayTeam.score : game.homeTeam.score;
+      return own != null && other != null ? `Live ${own}-${other}` : "Live";
+    }
     if (game.gameState === "FINAL" || game.gameState === "OFF") {
       const isHome = game.homeTeam.id === currentTeamId;
       const teamScore = isHome ? game.homeTeam.score : game.awayTeam.score;
@@ -159,8 +170,7 @@ const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
           localTimeZone
         );
         // Fallback if formatting fails
-        const fallbackDate = parseISO(game.startTimeUTC);
-        return format(fallbackDate, "h:mm a"); // Format in UTC as fallback
+        return "Time TBD";
       }
     }
   };
@@ -169,6 +179,7 @@ const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
     try {
       // Convert UTC ISO string to a Date object representing the *local* time
       const gameDateLocal = toZonedTime(startTimeUTC, localTimeZone);
+      if (!Number.isFinite(gameDateLocal.getTime())) return "Date TBD";
 
       if (isToday(gameDateLocal)) return "Today";
       if (isTomorrow(gameDateLocal)) return "Tomorrow";
@@ -176,8 +187,7 @@ const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
     } catch (err) {
       console.error("Error formatting date:", err, startTimeUTC, localTimeZone);
       // Fallback if parsing/conversion fails
-      const fallbackDate = parseISO(startTimeUTC);
-      return format(fallbackDate, "yyyy-MM-dd"); // Basic fallback
+      return "Date TBD";
     }
   };
 
@@ -228,7 +238,7 @@ const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
 
   return (
     <div className={styles.opponentLogContainer}>
-      <table className={styles.scheduleTable}>
+      <table className={styles.scheduleTable} aria-label={`${teamAbbreviation} team schedule; player participation is not guaranteed`}>
         <thead>
           <tr>
             <th>Date</th>
@@ -238,13 +248,13 @@ const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
         </thead>
         <tbody>
           {gamesToShow.map((game) => {
-            const isNextGame = schedule.indexOf(game) === nextGameIndexOverall;
+            const isNextGame = game.id === nextGameId;
             const rowStyle = isNextGame
               ? { backgroundColor: highlightColor, color: "#fff" }
               : {};
 
             return (
-              <tr key={game.id} style={rowStyle}>
+              <tr key={game.id} style={rowStyle} aria-current={isNextGame ? "true" : undefined}>
                 {/* Pass startTimeUTC to formatDate now */}
                 <td>{formatDate(game.startTimeUTC)}</td>
                 <td>{getOpponentDisplay(game, teamId)}</td>

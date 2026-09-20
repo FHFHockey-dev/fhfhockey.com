@@ -141,14 +141,14 @@ export const formatTOIFromSecondsWithLeadingZero = (
  * @param data Array of data points.
  * @param windowSize The number of data points to include in the average.
  * @param getValue Function to extract the numeric value from a data point.
- * @returns Array of rolling averages (or null if not enough data).
+ * @returns Array of rolling averages; an incomplete or non-finite window is null.
  */
 export function calculateRollingAverage<T>(
   data: T[],
   windowSize: number,
   getValue: (item: T) => number | null | undefined
 ): (number | null)[] {
-  if (!data || data.length === 0 || windowSize <= 0) {
+  if (!data || data.length === 0 || !Number.isInteger(windowSize) || windowSize <= 0) {
     return [];
   }
 
@@ -158,16 +158,14 @@ export function calculateRollingAverage<T>(
     }
     const window = data.slice(index - windowSize + 1, index + 1);
     let sum = 0;
-    let count = 0;
     for (const item of window) {
       const value = getValue(item);
-      if (value !== null && value !== undefined && !isNaN(value)) {
-        sum += value;
-        count++;
+      if (value == null || !Number.isFinite(value)) {
+        return null;
       }
+      sum += value;
     }
-    // Return null if the window had no valid data points
-    return count > 0 ? sum / count : null;
+    return sum / windowSize;
   });
 }
 

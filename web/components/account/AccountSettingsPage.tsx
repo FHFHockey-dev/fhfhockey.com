@@ -30,6 +30,7 @@ import FantraxImportPanel from "./FantraxImportPanel";
 import EspnImportPanel from "./EspnImportPanel";
 import PatreonConnectionPanel from "./PatreonConnectionPanel";
 import DraftProPanel from "./DraftProPanel";
+import { useDraftProAccess } from "hooks/useDraftProAccess";
 
 import styles from "./AccountSettingsPage.module.scss";
 
@@ -585,6 +586,8 @@ function getSettingLabel(key: string) {
 export default function AccountSettingsPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { access: draftProAccess } = useDraftProAccess();
+  const draftProEligible = Boolean(draftProAccess?.eligible);
   const userId = user?.id ?? null;
   const userDisplayName = user?.displayName ?? "";
   const userAvatarUrl = user?.avatarUrl ?? "";
@@ -657,6 +660,15 @@ export default function AccountSettingsPage() {
   const [connectedAccountsView, setConnectedAccountsView] =
     useState<ConnectedAccountsView>("yahoo");
   const timezoneInputRef = useRef<HTMLInputElement>(null);
+
+  const requireDraftProForYahoo = useCallback(() => {
+    if (draftProEligible) return true;
+    setYahooFeedback({
+      tone: "info",
+      message: "Yahoo league sync and Yahoo league settings require Draft Pro. Your manual league settings remain available.",
+    });
+    return false;
+  }, [draftProEligible]);
 
   const activeSection = useMemo(
     () => resolveSection(router.query.section),
@@ -1063,6 +1075,7 @@ export default function AccountSettingsPage() {
   useEffect(() => {
     if (
       !userId ||
+      !draftProEligible ||
       (activeSection !== "connected-accounts" &&
         activeSection !== "league-settings" &&
         activeSection !== "saved-teams")
@@ -1117,6 +1130,7 @@ export default function AccountSettingsPage() {
     };
   }, [
     activeSection,
+    draftProEligible,
     router.query.yahoo_message,
     router.query.yahoo_status,
     reloadYahooState,
@@ -1476,6 +1490,7 @@ export default function AccountSettingsPage() {
   }
 
   async function handleYahooConnect() {
+    if (!requireDraftProForYahoo()) return;
     setYahooFeedback(null);
     setIsYahooActionLoading(true);
 
@@ -1563,6 +1578,7 @@ export default function AccountSettingsPage() {
   }
 
   async function handleYahooRefresh() {
+    if (!requireDraftProForYahoo()) return;
     setYahooFeedback(null);
     setIsYahooActionLoading(true);
 
@@ -1604,6 +1620,7 @@ export default function AccountSettingsPage() {
   }
 
   async function handleYahooTeamRoster(team: ExternalTeamRow) {
+    if (!requireDraftProForYahoo()) return;
     if (expandedYahooRosterTeamId === team.id) {
       setExpandedYahooRosterTeamId(null);
       return;
@@ -1667,6 +1684,7 @@ export default function AccountSettingsPage() {
   }
 
   async function handleSetYahooDefaultTeam(team: ExternalTeamRow) {
+    if (!requireDraftProForYahoo()) return;
     if (!user?.id || !yahooConnectedAccount) {
       return;
     }
@@ -1742,6 +1760,7 @@ export default function AccountSettingsPage() {
   }
 
   async function handleSaveYahooTeam(team: ExternalTeamRow) {
+    if (!requireDraftProForYahoo()) return;
     if (!user?.id) {
       return;
     }
@@ -1863,6 +1882,7 @@ export default function AccountSettingsPage() {
     nextLeagueId: string,
     nextTeamId?: string,
   ) {
+    if (!requireDraftProForYahoo()) return;
     if (!user?.id || !yahooConnectedAccount) {
       return;
     }
@@ -3306,6 +3326,12 @@ export default function AccountSettingsPage() {
                       </span>
                     </div>
 
+                    {!draftProEligible ? (
+                      <div className={styles.infoMessage} role="status">
+                        Yahoo league sync and imported Yahoo league settings are a Draft Pro feature. Upgrade to connect or refresh Yahoo; manual league settings remain available on the free tier.
+                      </div>
+                    ) : null}
+
                     {yahooConnectedAccount ? (
                       <div className={styles.providerMetrics}>
                         <span>
@@ -3338,7 +3364,7 @@ export default function AccountSettingsPage() {
                           type="button"
                           className={styles.saveButton}
                           onClick={() => void handleYahooConnect()}
-                          disabled={isYahooActionLoading}
+                          disabled={isYahooActionLoading || !draftProEligible}
                         >
                           Connect Yahoo Fantasy
                         </button>
@@ -3349,7 +3375,7 @@ export default function AccountSettingsPage() {
                             className={styles.secondaryButton}
                             onClick={() => void handleYahooRefresh()}
                             disabled={
-                              isYahooActionLoading || yahooRefreshBlocked
+                              isYahooActionLoading || yahooRefreshBlocked || !draftProEligible
                             }
                           >
                             {yahooLatestSyncRun?.status === "running"

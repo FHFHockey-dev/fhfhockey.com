@@ -9,7 +9,6 @@ import React, {
 } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import Fetch from "lib/cors-fetch";
 import supabase from "lib/supabase";
 import styles from "./NameSearchBar.module.scss";
 import { Player } from "./types";
@@ -81,10 +80,11 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({
   });
 
   const fetchError =
-    error instanceof Error ? "Failed to load players." : null;
+    error ? "Failed to load players." : null;
   const shouldShowDropdown =
     isDropdownVisible &&
     searchTerm.trim().length > 0 &&
+    searchTerm.trim() === debouncedSearchTerm &&
     searchTerm.trim() !== selectedPlayerName &&
     filteredPlayers.length > 0;
 
@@ -139,42 +139,15 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({
   );
 
   const handleSelect = useCallback(
-    async (player: Player) => {
+    (player: Player) => {
       setSearchTerm(player.fullName);
       setSelectedPlayerName(player.fullName);
       setIsDropdownVisible(false);
       setActiveIndex(-1);
-      inputRef.current?.blur();
+      inputRef.current?.focus();
 
-      let headshotUrl = player.image_url || "";
-
-      if (!player.image_url) {
-        try {
-          const response = await Fetch(
-            `https://api-web.nhle.com/v1/player/${player.id}/landing`
-          );
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
-          const data = await response.json();
-          headshotUrl = data.headshot || "";
-
-          void supabase
-            .from("players")
-            .update({
-              image_url: headshotUrl,
-              sweater_number: data.sweaterNumber,
-              team_id: data.teamId
-            })
-            .eq("id", player.id);
-        } catch (fetchError) {
-          console.error("Error fetching headshot:", fetchError);
-        }
-      }
-
-      onSelect(player, headshotUrl);
+      // Selection is immediate; the keyed player-details query owns fallback imagery.
+      onSelect(player, player.image_url || "");
     },
     [onSelect]
   );
@@ -183,7 +156,7 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({
     (event: KeyboardEvent<HTMLInputElement>) => {
       if (!shouldShowDropdown) {
         if (event.key === "Enter") {
-          inputRef.current?.blur();
+          inputRef.current?.focus();
         }
         return;
       }
@@ -216,7 +189,7 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({
           } else {
             setIsDropdownVisible(false);
             setActiveIndex(-1);
-            inputRef.current?.blur();
+            inputRef.current?.focus();
           }
           break;
         case "Tab":
@@ -227,7 +200,7 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({
           event.preventDefault();
           setIsDropdownVisible(false);
           setActiveIndex(-1);
-          inputRef.current?.blur();
+          inputRef.current?.focus();
           break;
         default:
           break;
@@ -248,6 +221,8 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({
     <div className={styles.searchBarContainer} ref={dropdownRef}>
       <input
         ref={inputRef}
+        id="wigo-player-search"
+        aria-label="Search player"
         type="text"
         value={searchTerm}
         onChange={handleInputChange}
@@ -262,7 +237,7 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({
         role="combobox"
         aria-expanded={shouldShowDropdown}
         aria-controls="player-search-results"
-        aria-activedescendant={activeDescendantId}
+        aria-activedescendant={shouldShowDropdown ? activeDescendantId : undefined}
         aria-autocomplete="list"
       />
 

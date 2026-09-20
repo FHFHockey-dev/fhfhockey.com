@@ -341,7 +341,7 @@ export function normalizeWigoAggregateValue(
   label: string,
   value: number | null | undefined
 ): number | null {
-  if (value == null || Number.isNaN(value)) {
+  if (value == null || !Number.isFinite(value)) {
     return null;
   }
 
@@ -365,7 +365,7 @@ export function formatWigoStatValue(
   label: string,
   value: number | null | undefined
 ): string {
-  if (value == null || typeof value !== "number" || Number.isNaN(value)) {
+  if (value == null || typeof value !== "number" || !Number.isFinite(value)) {
     return "-";
   }
 

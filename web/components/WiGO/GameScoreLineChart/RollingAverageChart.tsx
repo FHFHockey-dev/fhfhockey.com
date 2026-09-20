@@ -1,6 +1,7 @@
 // components/WiGO/RollingAverageChart.tsx
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { Chart } from "react-chartjs-2";
+import zoomPlugin from "chartjs-plugin-zoom";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -21,6 +22,7 @@ import {
 
 // Register Chart.js components (ensure all needed types are registered)
 ChartJS.register(
+  zoomPlugin,
   CategoryScale,
   LinearScale,
   PointElement,
@@ -36,6 +38,7 @@ ChartJS.register(
 
 // Define props types for the simplified component
 interface RollingAverageChartProps {
+  resetKey?: number;
   chartType: ChartType; // e.g., 'bar' or 'line' as the base type
   chartData: ChartData<any, (number | null)[], string>; // Pass the whole data object
   chartOptions: ChartOptions<any>; // Pass the whole options object
@@ -45,9 +48,12 @@ interface RollingAverageChartProps {
 const RollingAverageChart: React.FC<RollingAverageChartProps> = ({
   chartType,
   chartData,
-  chartOptions
+  chartOptions,
+  resetKey
 }) => {
   const chartRef = useRef<ChartJS | null>(null);
+
+  useEffect(() => { chartRef.current?.resetZoom(); }, [resetKey]);
 
   // Basic validation
   if (!chartData || !chartOptions) {

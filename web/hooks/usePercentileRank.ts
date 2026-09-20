@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 
 import { TimeOption } from "components/TimeOptions/TimeOptions";
@@ -6,6 +7,7 @@ import getTimes from "lib/getTimes";
 import supabase from "lib/supabase/public-client";
 import useCurrentSeason from "./useCurrentSeason";
 import { PercentileRank } from "lib/NHL/types";
+import { calculateRankingResult } from "utils/calculatePercentiles";
 
 type PlayerAvgStats = {
   id: number;
@@ -17,7 +19,7 @@ type PlayerAvgStats = {
   avgblockedshots: number;
   avgpowerplaypoints: number;
   avgshots: number;
-  count: number;
+  numgames: number;
 };
 
 type Stat =
@@ -38,34 +40,20 @@ const statMapping: Record<Stat, keyof PlayerAvgStats> = {
   hits: "avghits",
   blockedShots: "avgblockedshots",
   powerPlayPoints: "avgpowerplaypoints",
-  shots: "avgshots"
+  shots: "avgshots",
 };
 
 function getSinglePercentileRank(
   allStats: PlayerAvgStats[],
   playerStats: PlayerAvgStats,
-  statType: Stat
+  statType: Stat,
 ) {
   const key = statMapping[statType];
-  const sorted = allStats
-    .map((stats) => stats[key])
-    .sort((left, right) => left - right);
-  const position = sorted.findIndex((item) => item === playerStats[key]);
-
-  return Number(((position / sorted.length) * 100).toFixed(2));
-}
-
-function emptyPercentileRank(): PercentileRank {
-  return {
-    goals: 0,
-    assists: 0,
-    plusMinus: 0,
-    pim: 0,
-    hits: 0,
-    blockedShots: 0,
-    powerPlayPoints: 0,
-    shots: 0
-  };
+  const rows = allStats
+    .filter((stats) => typeof stats[key] === "number" && Number.isFinite(stats[key]))
+    .map((stats) => ({ player_id: stats.id, value: stats[key] }));
+  const result = calculateRankingResult(rows, playerStats.id, true);
+  return result === null ? null : result.percentile * 100;
 }
 
 /**
@@ -74,86 +62,74 @@ function emptyPercentileRank(): PercentileRank {
  */
 export default function usePercentileRank(
   playerId: number | undefined,
-  timeOption: TimeOption
+  timeOption: TimeOption,
 ) {
   const season = useCurrentSeason();
-  const [data, setData] = useState<PercentileRank>();
-  const [loading, setLoading] = useState(false);
+  let { StartTime, EndTime } = getTimes(timeOption);
+  if (timeOption === "SEASON") {
+    StartTime = season?.regularSeasonStartDate ?? null;
+    const today = format(new Date(Date.now()), "yyyy-MM-dd");
+    // Season boundaries are calendar dates, not UTC instants.
+    EndTime = season?.regularSeasonEndDate
+      ? today < season.regularSeasonEndDate
+        ? today
+        : season.regularSeasonEndDate
+      : null;
+  }
 
-  useEffect(() => {
-    let mount = true;
-    if (!playerId || !season?.seasonId) return;
-    (async () => {
-      setLoading(true);
-      let { StartTime, EndTime } = getTimes(timeOption);
-
-      if (timeOption === "SEASON") {
-        StartTime = season.regularSeasonStartDate;
-        EndTime = format(
-          new Date(
-            Math.min(Date.now(), new Date(season.regularSeasonEndDate).getTime())
-          ),
-          "yyyy-MM-dd"
-        );
-      }
-
-      if (!StartTime || !EndTime) {
-        if (mount) {
-          setLoading(false);
-          setData(undefined);
-        }
-        return;
-      }
-
-      const { data: averages, error } = await supabase
+  const enabled = Boolean(
+    playerId && season?.seasonId && StartTime && EndTime && StartTime <= EndTime
+  );
+  const query = useQuery({
+    // Every player uses the same cohort. Share and cache that expensive request.
+    queryKey: ["skaterPercentileCohort", StartTime, EndTime],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase
         .rpc("get_skaters_avg_stats", {
-          start_date: StartTime,
-          end_date: EndTime
+          start_date: StartTime!,
+          end_date: EndTime!,
         })
         .returns<PlayerAvgStats[]>();
+      if (error) throw error;
+      return data ?? [];
+    },
+    staleTime: 10 * 60 * 1000,
+    retry: 1,
+    retryDelay: 1000,
+    refetchOnWindowFocus: false,
+  });
 
-      if (mount) {
-        setLoading(false);
-
-        if (error) {
-          setData(undefined);
-          console.error(error.message);
-          return;
-        }
-
-        const rows = averages ?? [];
-        const playerStats = rows.find((stats) => stats.id === playerId);
-
-        if (!playerStats) {
-          setData(emptyPercentileRank());
-          return;
-        }
-
-        setData({
-          goals: getSinglePercentileRank(rows, playerStats, "goals"),
-          assists: getSinglePercentileRank(rows, playerStats, "assists"),
-          plusMinus: getSinglePercentileRank(rows, playerStats, "plusMinus"),
-          pim: getSinglePercentileRank(rows, playerStats, "pim"),
-          hits: getSinglePercentileRank(rows, playerStats, "hits"),
-          blockedShots: getSinglePercentileRank(
-            rows,
-            playerStats,
-            "blockedShots"
-          ),
-          powerPlayPoints: getSinglePercentileRank(
-            rows,
-            playerStats,
-            "powerPlayPoints"
-          ),
-          shots: getSinglePercentileRank(rows, playerStats, "shots")
-        });
-      }
-    })();
-
-    return () => {
-      mount = false;
+  const data = useMemo(() => {
+    if (!enabled) return undefined;
+    const rows = query.data ?? [];
+    const playerStats = rows.find((stats) => stats.id === playerId);
+    if (!playerStats) return undefined;
+    const percentiles = {
+      goals: getSinglePercentileRank(rows, playerStats, "goals"),
+      assists: getSinglePercentileRank(rows, playerStats, "assists"),
+      plusMinus: getSinglePercentileRank(rows, playerStats, "plusMinus"),
+      pim: getSinglePercentileRank(rows, playerStats, "pim"),
+      hits: getSinglePercentileRank(rows, playerStats, "hits"),
+      blockedShots: getSinglePercentileRank(rows, playerStats, "blockedShots"),
+      powerPlayPoints: getSinglePercentileRank(
+        rows,
+        playerStats,
+        "powerPlayPoints",
+      ),
+      shots: getSinglePercentileRank(rows, playerStats, "shots"),
     };
-  }, [playerId, timeOption, season]);
+    // A missing category cannot be drawn as zero performance on a closed radar.
+    return Object.values(percentiles).some((value) => value === null)
+      ? undefined
+      : percentiles as PercentileRank;
+  }, [enabled, query.data, playerId]);
 
-  return { loading, data };
+  return {
+    data,
+    loading: enabled && query.isPending,
+    error: enabled ? query.error : null,
+    retry: query.refetch,
+    retrying: query.isFetching,
+  };
 }

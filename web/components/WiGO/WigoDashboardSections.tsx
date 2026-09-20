@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 
@@ -6,10 +6,12 @@ import CategoryCoverageChart from "components/CategoryCoverageChart";
 import OpponentGamelog from "components/WiGO/OpponentGamelog";
 import PerGameStatsTable from "components/WiGO/PerGameStatsTable";
 import PlayerHeader from "components/WiGO/PlayerHeader";
+import { formatHeight, formatWeight, getAge, formatPosition } from "./playerBiography";
 import PlayerRatingsDisplay from "components/WiGO/PlayerRatingsDisplay";
-import GameScoreSection from "components/WiGO/GameScoreSection";
 import NameSearchBar from "components/WiGO/NameSearchBar";
 import RateStatPercentiles from "components/WiGO/RateStatPercentiles";
+import WigoSectionCard from "./WigoSectionCard";
+import WigoComparisonMatrix from "./WigoComparisonMatrix";
 import StatsTable from "components/WiGO/StatsTable";
 import TimeframeComparison from "components/WiGO/TimeframeComparison";
 import TeamPerformanceDrivers from "components/WiGO/TeamPerformanceDrivers";
@@ -20,6 +22,11 @@ import styles from "styles/wigoCharts.module.scss";
 const ChartLoadingPlaceholder = ({ message }: { message: string }) => (
   <div className={styles.chartLoadingPlaceholder}>{message}</div>
 );
+
+const GameScoreSection = dynamic(() => import("components/WiGO/GameScoreSection"), {
+  ssr: false,
+  loading: () => <ChartLoadingPlaceholder message="Loading Game Score…" />,
+});
 
 const ToiLineChart = dynamic(() => import("components/WiGO/ToiLineChart"), {
   ssr: false,
@@ -56,14 +63,18 @@ interface WigoOverviewSectionProps {
   teamIdForLog: number | null;
   currentSeasonId: number | null;
   minGp: number;
+  desktop?: boolean;
 }
 
 interface WigoTrendsSectionProps {
+  summaryOnly?: boolean;
+  trendsOnly?: boolean;
   selectedPlayer: Player | null;
   currentSeasonId: number | null;
 }
 
 interface WigoPercentilesSectionProps {
+  desktop?: boolean;
   playerId: number | undefined;
   seasonId: number | null;
   minGp: number;
@@ -80,30 +91,10 @@ interface WigoComparisonSectionProps {
   rightTimeframe: keyof TableAggregateData;
   onCompare: (left: string, right: string) => void;
   visibleColumns?: Array<keyof TableAggregateData>;
+  desktop?: boolean;
 }
 
 const placeholderImage = "/pictures/player-placeholder.jpg";
-
-const formatHeight = (heightInCentimeters: number) => {
-  const totalInches = Math.round(heightInCentimeters / 2.54);
-  return `${Math.floor(totalInches / 12)}' ${totalInches % 12}\"`;
-};
-
-const formatWeight = (weightInKilograms: number) =>
-  `${Math.round(weightInKilograms * 2.20462)} lbs`;
-
-const getAge = (birthDate: string) => {
-  const birth = new Date(`${birthDate}T00:00:00Z`);
-  const today = new Date();
-  let age = today.getUTCFullYear() - birth.getUTCFullYear();
-  const hasNotHadBirthday =
-    today.getUTCMonth() < birth.getUTCMonth() ||
-    (today.getUTCMonth() === birth.getUTCMonth() &&
-      today.getUTCDate() < birth.getUTCDate());
-
-  if (hasNotHadBirthday) age -= 1;
-  return age;
-};
 
 function WigoPlayerIdentity({
   selectedPlayer,
@@ -143,7 +134,7 @@ function WigoPlayerIdentity({
               {selectedPlayer.sweater_number
                 ? `#${selectedPlayer.sweater_number} · `
                 : ""}
-              {selectedPlayer.position}
+              {formatPosition(selectedPlayer.position)}
               {teamAbbreviation ? ` · ${teamAbbreviation}` : ""}
             </span>
           </div>
@@ -167,7 +158,7 @@ function WigoPlayerIdentity({
           </span>
           <span>
             <small>Position</small>
-            {selectedPlayer.position}
+            {formatPosition(selectedPlayer.position)}
           </span>
         </div>
       ) : null}
@@ -182,6 +173,7 @@ export function WigoDashboardHeader({
   teamAbbreviation,
   onPlayerClear,
 }: WigoDashboardHeaderProps) {
+  const [failedThumbnail, setFailedThumbnail] = useState<string | null>(null);
   return (
     <>
       <div className={styles.wigoContextIdentity}>
@@ -199,7 +191,8 @@ export function WigoDashboardHeader({
           <>
             <div className={styles.selectedPlayerThumb}>
               <Image
-                src={headshotUrl || placeholderImage}
+                src={headshotUrl && headshotUrl !== failedThumbnail ? headshotUrl : placeholderImage}
+                onError={() => setFailedThumbnail(headshotUrl)}
                 alt=""
                 fill
                 sizes="40px"
@@ -208,7 +201,7 @@ export function WigoDashboardHeader({
             <div className={styles.selectedPlayerText}>
               <strong>{selectedPlayer.fullName}</strong>
               <span>
-                {teamAbbreviation || "NHL"} · {selectedPlayer.position}
+                {teamAbbreviation || "NHL"} · {formatPosition(selectedPlayer.position)}
               </span>
             </div>
             <button type="button" onClick={onPlayerClear}>
@@ -237,30 +230,35 @@ export function WigoOverviewSection({
   teamIdForLog,
   currentSeasonId,
   minGp,
+  desktop = false,
 }: WigoOverviewSectionProps) {
   return (
     <>
-      <WigoPlayerIdentity
+      <div className={styles.identitySummary} data-coverage="C02 C03"><WigoPlayerIdentity
         selectedPlayer={selectedPlayer}
         headshotUrl={headshotUrl}
         teamName={teamName}
         teamAbbreviation={teamAbbreviation}
         teamColors={teamColors}
-      />
-      <div className={styles.perGameStatsContainer}>
+      /></div>
+      <div className={desktop ? styles.summaryProduction : styles.perGameStatsContainer}>
         <PerGameStatsTable
           playerId={selectedPlayer?.id}
           seasonId={currentSeasonId}
+          desktop={desktop}
         />
       </div>
-      <div className={styles.opponentLogContainer}>
+      <div className={styles.opponentLogContainer} data-coverage="C06">
         <OpponentGamelog
           teamId={teamIdForLog}
           seasonId={currentSeasonId}
           highlightColor={teamColors.primaryColor || "#07aae2"}
         />
       </div>
-      <div className={styles.ratingsContainer}>
+      <div className={styles.ratingsContainer} data-coverage="C07">
+        {desktop ? <WigoSectionCard title="Player ratings" toolbar={<details className="wigo-chart-help"><summary aria-label="Player rating methodology and cohort">ⓘ</summary><p>Weighted percentile composites, using the existing {currentSeasonId} cohorts and minimum {minGp} GP. Overall All/Even combines offense and defense. Special combines PP offense and PK defense with ice-time weighting. Adjust the rate panel’s minimum GP to change the cohort.</p></details>}>
+          <PlayerRatingsDisplay playerId={selectedPlayer?.id} seasonId={currentSeasonId} minGp={minGp} />
+        </WigoSectionCard> : <>
         {selectedPlayer ? (
           <PlayerRatingsDisplay
             playerId={selectedPlayer.id}
@@ -271,13 +269,13 @@ export function WigoOverviewSection({
           <div className={styles.chartLoadingPlaceholder}>
             Select player for ratings
           </div>
-        )}
+        )}</>}
       </div>
-      <TeamPerformanceDrivers
+      <div className={styles.teamDriversSummary} data-coverage="C08 C09 C10 C11"><TeamPerformanceDrivers
         teamId={teamIdForLog}
         teamAbbreviation={teamAbbreviation}
         seasonId={currentSeasonId}
-      />
+      /></div>
     </>
   );
 }
@@ -285,11 +283,13 @@ export function WigoOverviewSection({
 export function WigoTrendsSection({
   selectedPlayer,
   currentSeasonId,
+  summaryOnly = false,
+  trendsOnly = false,
 }: WigoTrendsSectionProps) {
   return (
     <>
-      <div className={styles.consistencyAndCategoryWrapper}>
-        <div className={styles.consistencyRatingContainer}>
+      {!trendsOnly && <div className={styles.consistencyAndCategoryWrapper}>
+        <div className={styles.consistencyRatingContainer} data-coverage="C14">
           {selectedPlayer ? (
             <ConsistencyChart
               playerId={selectedPlayer.id}
@@ -299,34 +299,36 @@ export function WigoTrendsSection({
             <ChartLoadingPlaceholder message="Select a player" />
           )}
         </div>
-        <div className={styles.percentileChartContainer}>
+        <div className={styles.percentileChartContainer} data-coverage="C15">
           <div className={styles.chartTitle}>
-            <h3 style={{ margin: 0 }}>Percentiles</h3>
+            <h3 style={{ margin: 0 }}>Category percentiles</h3>
+            {summaryOnly && <span className={styles.radarContext}>Skaters · {currentSeasonId ?? "Season unavailable"} · 0–100</span>}
           </div>
           <CategoryCoverageChart
             playerId={selectedPlayer?.id}
+            compact={summaryOnly}
             timeOption="SEASON"
           />
         </div>
-      </div>
-      <div className={styles.toiChartContainer}>
+      </div>}
+      {!summaryOnly && <><div className={styles.toiChartContainer} data-coverage="C16">
         <ToiLineChart
           playerId={selectedPlayer?.id}
           seasonId={currentSeasonId}
         />
       </div>
-      <div className={styles.ppgChartContainer}>
+      <div className={styles.ppgChartContainer} data-coverage="C17">
         <PpgLineChart
           playerId={selectedPlayer?.id}
           seasonId={currentSeasonId}
         />
       </div>
-      <div className={styles.gameScoreContainer}>
+      <div className={styles.gameScoreContainer} data-coverage="C18">
         <GameScoreSection
           playerId={selectedPlayer?.id}
           seasonId={currentSeasonId}
         />
-      </div>
+      </div></>}
     </>
   );
 }
@@ -336,14 +338,16 @@ export function WigoPercentilesSection({
   seasonId,
   minGp,
   onMinGpChange,
+  desktop = false,
 }: WigoPercentilesSectionProps) {
   return (
-    <div className={styles.rateStatBarPercentilesContainer}>
+    <div className={styles.rateStatBarPercentilesContainer} data-coverage="C19">
       <RateStatPercentiles
         playerId={playerId}
         seasonId={seasonId}
         minGp={minGp}
         onMinGpChange={onMinGpChange}
+        desktop={desktop}
       />
     </div>
   );
@@ -359,7 +363,9 @@ export function WigoComparisonSection({
   rightTimeframe,
   onCompare,
   visibleColumns,
+  desktop = false,
 }: WigoComparisonSectionProps) {
+  if (desktop) return <WigoComparisonMatrix {...{data, isLoadingAggData, aggDataError, playerId, currentSeasonId, leftTimeframe, rightTimeframe, onCompare}} />;
   return (
     <div className={styles.timeframeComparisonWrapper}>
       <TimeframeComparison

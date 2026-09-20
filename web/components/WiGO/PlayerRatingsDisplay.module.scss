@@ -132,3 +132,23 @@
 .error {
   color: #ff6b6b;
 }
+
+@media (min-width: 1600px) {
+  .ratingsRoot { flex-direction: column; overflow: visible; padding: 0; gap: 2px; }
+  .ratingSection { overflow: visible; border: 0; }
+  .ratingSection:nth-child(2) { order: 3; }
+  .ratingTitle { text-align: left; font-size: 12px; padding: 1px 2px; }
+  .ratingsBoxes { padding: 0; gap: 1px; }
+  .ratingBox { flex-direction: row; justify-content: space-between; min-height: 18px; padding: 0 6px; border-width: 1px; }
+  .ratingLabel, .ratingValue, .finalRating .ratingValue { font-size: 12px; }
+}
+
+@media (min-width: 1600px) {
+  .ratingBox {
+    position: relative;
+    border: 0 !important;
+    background: v.$background-dark;
+    &::before { content: ""; position: absolute; height: 5px; width: calc(var(--rating-width) * .55); max-width: 55%; left: 25%; bottom: 6px; background: var(--rating-color); border-radius: 2px; opacity: .7; }
+    .ratingLabel, .ratingValue { position: relative; z-index: 1; }
+  }
+}

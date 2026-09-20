@@ -2,13 +2,16 @@ import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   fireEvent,
+  cleanup,
   render,
   screen,
   waitFor
 } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import Fetch from "lib/cors-fetch";
 
 import NameSearchBar from "./NameSearchBar";
+afterEach(cleanup);
 
 const { fromMock, selectMock, ilikeMock, limitMock } = vi.hoisted(() => {
   const limitMock = vi.fn();
@@ -106,5 +109,35 @@ describe("NameSearchBar", () => {
     });
 
     expect(screen.queryByText("Jack Hughes")).toBeNull();
+  });
+
+  it("selects immediately without an image request or database update", async () => {
+    limitMock.mockResolvedValue({ data: [{ id: 2, fullName: "Test Skater", image_url: null }], error: null });
+    const onSelect = vi.fn();
+    renderWithClient(<NameSearchBar onSelect={onSelect} />);
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "Test" } });
+    fireEvent.mouseDown(await screen.findByRole("option"));
+    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 2 }), "");
+    expect(Fetch).not.toHaveBeenCalled();
+    expect(fromMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("hides old results immediately when the search text changes", async () => {
+    limitMock.mockResolvedValue({ data: [{ id: 2, fullName: "Test Skater" }], error: null });
+    renderWithClient(<NameSearchBar onSelect={vi.fn()} />);
+    const input = screen.getByRole("combobox");
+    fireEvent.change(input, { target: { value: "Test" } });
+    await screen.findByRole("option");
+    fireEvent.keyDown(input, { key: "ArrowDown" });
+    fireEvent.change(input, { target: { value: "Other" } });
+    expect(screen.queryByRole("option")).toBeNull();
+    expect(input.getAttribute("aria-activedescendant")).toBeNull();
+  });
+
+  it("surfaces plain-object database errors", async () => {
+    limitMock.mockResolvedValue({ data: null, error: { message: "source failure", code: "XX000" } });
+    renderWithClient(<NameSearchBar onSelect={vi.fn()} />);
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "Test" } });
+    await screen.findByText("Failed to load players.");
   });
 });

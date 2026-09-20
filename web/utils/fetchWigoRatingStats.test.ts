@@ -26,7 +26,7 @@ describe("fetchRawStatsForAllStrengths", () => {
 
     const result = await fetchRawStatsForAllStrengths(20242025);
 
-    expect(mockFetchPaginatedData).toHaveBeenCalledTimes(8);
+    expect(mockFetchPaginatedData).toHaveBeenCalledTimes(6);
     expect(mockFetchPaginatedData).toHaveBeenNthCalledWith(
       1,
       "nst_percentile_as_offense",
@@ -39,6 +39,10 @@ describe("fetchRawStatsForAllStrengths", () => {
       expect.stringContaining("xga_per_60"),
       { column: "season", value: 20242025 }
     );
+    expect(mockFetchPaginatedData.mock.calls.map(call => call[0])).not.toContain("nst_percentile_pp_defense");
+    expect(mockFetchPaginatedData.mock.calls.map(call => call[0])).not.toContain("nst_percentile_pk_offense");
+    expect(result.pp?.defense).toEqual([]);
+    expect(result.pk?.offense).toEqual([]);
     expect(result.as?.offense).toHaveLength(1);
     expect(result.pk?.defense).toHaveLength(1);
   });

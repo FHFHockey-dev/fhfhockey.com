@@ -29,3 +29,10 @@
     white-space: nowrap;
   }
 }
+
+.compactRadar { position: relative; width: 100%; flex: 1; min-height: 0; }
+
+.status {
+  font-size: 12px;
+  button { font: inherit; color: vars.$text-color-primary; background: vars.$background-dark; border: vars.$border-subtle; border-radius: vars.$radius-sm; padding: 6px; cursor: pointer; }
+}

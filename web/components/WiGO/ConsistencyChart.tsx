@@ -1,8 +1,7 @@
 import React, { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from "chart.js";
-import { fetchPlayerGameLogConsistencyData } from "utils/fetchWigoPlayerStats";
+import useWigoGameLog from "hooks/useWigoGameLog";
 import { formatPercentage } from "utils/formattingUtils";
 import styles from "styles/wigoCharts.module.scss";
 import {
@@ -35,15 +34,18 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
     data: gameLogs = [],
     isLoading,
     error
-  } = useQuery({
-    queryKey: ["wigoConsistencyGameLog", playerId, seasonId],
-    queryFn: () =>
-      fetchPlayerGameLogConsistencyData(playerId as number, String(seasonId)),
-    enabled: typeof playerId === "number" && typeof seasonId === "number"
-  });
+  } = useWigoGameLog(playerId, seasonId);
 
+  const incompleteData = gameLogs.some(log =>
+    log.points == null || !Number.isInteger(log.points) || log.points < 0
+  );
+  const incompleteCardio = gameLogs.some(log =>
+    [log.shots, log.hits, log.blocked_shots].some(value =>
+      value == null || !Number.isInteger(value) || value < 0
+    )
+  );
   const { processedData, chartData } = useMemo(() => {
-    if (!gameLogs || gameLogs.length === 0) {
+    if (!gameLogs || gameLogs.length === 0 || incompleteData) {
       return {
         processedData: [] as ConsistencyDataPoint[],
         chartData: { datasets: [] }
@@ -84,7 +86,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
       chartBackgroundColors.push(color);
     }
 
-    displayData.push({
+    if (!incompleteCardio) displayData.push({
       label: "Cardio",
       percentage: totalGames > 0 ? cardioGameCount / totalGames : 0,
       count: cardioGameCount,
@@ -106,7 +108,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
         ]
       }
     };
-  }, [gameLogs]);
+  }, [gameLogs, incompleteData, incompleteCardio]);
 
   // --- chartOptions remain the same ---
   const chartOptions: any = {
@@ -153,6 +155,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
   return (
     <WigoSectionCard
       title="Point Consistency"
+      toolbar={<span className={styles.consistencyGp}>{gameLogs.length} GP</span>}
       bodyClassName={styles.sectionCardBodyFlush}
     >
       <div className={styles.consistencyContent}>
@@ -165,7 +168,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
             Loading Consistency...
           </div>
         )}
-        {error instanceof Error && (
+        {error && (
           <div
             className={styles.chartErrorPlaceholder}
             style={{ width: "100%" }}
@@ -198,7 +201,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
               className={styles.chartLoadingPlaceholder}
               style={{ width: "100%" }}
             >
-              No game data found...
+              {incompleteData ? "Consistency unavailable: incomplete game data." : "No game data found..."}
             </div>
           )}
 
@@ -213,9 +216,10 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
               )}
             </div>
             <div className={styles.consistencyListArea}>
+              {incompleteCardio && <p role="status">Cardio unavailable: incomplete activity stats.</p>}
               <ul>
                 {processedData.map((item) => (
-                  <li key={item.label} className={styles.consistencyItem}>
+                  <li key={item.label} className={styles.consistencyItem} title={item.label === "Cardio" ? "Games with zero points, shots, hits and blocks. These also count in the zero-point bucket; Cardio is not a separate doughnut segment." : undefined}>
                     {/* Color applied to label text via inline style */}
                     <span
                       className={styles.consistencyLabel}

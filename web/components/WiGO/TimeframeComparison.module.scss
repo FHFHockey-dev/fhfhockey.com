@@ -160,3 +160,9 @@ $arrow-color: v.$text-color-secondary; // Use theme variable for arrow color
     width: 100%;
   }
 }
+
+@media (min-width: 1600px) {
+  .timeframeContainer { min-height: 30px; padding: 0 4px; }
+  .timeframeSelectContainer { padding: 0; }
+  .countsTableTitle, .vsText { font-size: 12px; }
+}

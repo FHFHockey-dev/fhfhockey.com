@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter } from "next/router";
 
 import styles from "styles/wigoCharts.module.scss";
 import { TableAggregateData } from "components/WiGO/types";
@@ -21,11 +22,20 @@ const VALID_TABS: TabKey[] = [
 ];
 
 const WigoCharts: React.FC = () => {
+  const router = useRouter();
   const [leftTimeframe, setLeftTimeframe] =
     useState<keyof TableAggregateData>("STD");
   const [rightTimeframe, setRightTimeframe] =
     useState<keyof TableAggregateData>("CA");
   const [minGp, setMinGp] = useState<number>(10);
+  const [viewportWidth, setViewportWidth] = useState<number | null>(null);
+  useEffect(() => {
+    const update = () => setViewportWidth(window.innerWidth);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  const wideDesktop = (viewportWidth ?? 0) >= 1600;
 
   const {
     selectedPlayer,
@@ -38,19 +48,12 @@ const WigoCharts: React.FC = () => {
     rawCombinedData,
     isLoadingAggData,
     aggDataError,
+    playerDataError,
     handlePlayerSelect,
     updateUrlWith,
   } = useWigoPlayerDashboard();
-  const [activeTab, setActiveTab] = useState<TabKey>("overview");
-
-  // Sync tab from URL on mount/change
-  useEffect(() => {
-    const t = window.location.search
-      ? new URLSearchParams(window.location.search).get("tab")
-      : null;
-    if (!t) return;
-    if (VALID_TABS.includes(t as TabKey)) setActiveTab(t as TabKey);
-  }, []);
+  const tab = Array.isArray(router.query.tab) ? router.query.tab[0] : router.query.tab;
+  const activeTab: TabKey = VALID_TABS.includes(tab as TabKey) ? tab as TabKey : "overview";
 
   useEffect(() => {
     setLeftTimeframe("STD");
@@ -71,11 +74,9 @@ const WigoCharts: React.FC = () => {
 
   const handlePlayerClear = useCallback(() => {
     void updateUrlWith({ playerId: undefined });
+    document.getElementById("wigo-player-search")?.focus();
   }, [updateUrlWith]);
 
-  const mobileVisibleColumns = useMemo(() => {
-    return [leftTimeframe, rightTimeframe] as Array<keyof TableAggregateData>;
-  }, [leftTimeframe, rightTimeframe]);
   const renderTabs = () => (
     <div className={styles.mobileTabsBar}>
       {VALID_TABS.map((t) => (
@@ -83,7 +84,6 @@ const WigoCharts: React.FC = () => {
           key={t}
           className={t === activeTab ? styles.activeTab : styles.tabBtn}
           onClick={() => {
-            setActiveTab(t);
             updateUrlWith({ tab: t });
           }}
         >
@@ -99,7 +99,8 @@ const WigoCharts: React.FC = () => {
   return (
     <div className={styles.wigoDashHeader}>
       <div className={styles.wigoDashboardContainer}>
-        <div
+        {playerDataError && <p role="alert">{playerDataError}</p>}
+        {viewportWidth !== null && viewportWidth > 768 && <div
           className={styles.wigoDashboardContent}
           style={
             {
@@ -111,7 +112,7 @@ const WigoCharts: React.FC = () => {
             } as React.CSSProperties
           }
         >
-          <div className={styles.headerRowWrapper}>
+          <div className={styles.headerRowWrapper} data-coverage="C01">
             <WigoDashboardHeader
               onPlayerSelect={handlePlayerSelect}
               selectedPlayer={selectedPlayer}
@@ -131,7 +132,9 @@ const WigoCharts: React.FC = () => {
               teamIdForLog={teamIdForLog}
               currentSeasonId={currentSeasonId}
               minGp={minGp}
+              desktop={wideDesktop}
             />
+            {wideDesktop && <WigoTrendsSection selectedPlayer={selectedPlayer} currentSeasonId={currentSeasonId} summaryOnly />}
           </div>
 
           <div className={styles.comparisonColumnWrapper}>
@@ -144,6 +147,7 @@ const WigoCharts: React.FC = () => {
               leftTimeframe={leftTimeframe}
               rightTimeframe={rightTimeframe}
               onCompare={handleTimeframeCompare}
+              desktop={wideDesktop}
             />
           </div>
 
@@ -151,18 +155,23 @@ const WigoCharts: React.FC = () => {
             <WigoTrendsSection
               selectedPlayer={selectedPlayer}
               currentSeasonId={currentSeasonId}
+              trendsOnly={wideDesktop}
             />
+            {!wideDesktop && <WigoPercentilesSection playerId={selectedPlayer?.id} seasonId={currentSeasonId} minGp={minGp} onMinGpChange={setMinGp} />}
+          </div>
+          {wideDesktop && <div className={styles.percentilesBand}>
             <WigoPercentilesSection
               playerId={selectedPlayer?.id}
               seasonId={currentSeasonId}
               minGp={minGp}
               onMinGpChange={setMinGp}
+              desktop
             />
-          </div>
+          </div>}
 
-        </div>
+        </div>}
 
-        <div
+        {viewportWidth !== null && viewportWidth <= 768 && <div
           className={styles.mobileContainer}
           style={
             {
@@ -226,11 +235,10 @@ const WigoCharts: React.FC = () => {
                 leftTimeframe={leftTimeframe}
                 rightTimeframe={rightTimeframe}
                 onCompare={handleTimeframeCompare}
-                visibleColumns={mobileVisibleColumns}
               />
             )}
           </div>
-        </div>
+        </div>}
       </div>
     </div>
   );

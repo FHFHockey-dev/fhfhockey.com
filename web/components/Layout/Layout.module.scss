@@ -221,3 +221,7 @@
     }
   }
 }
+
+@media (min-width: 1600px) {
+  .container.wigoLayout > header { height: 48px; min-height: 48px; flex-shrink: 0; }
+}

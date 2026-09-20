@@ -109,7 +109,7 @@ interface CombinedGameData {
   wgo_pim: number;
   wgo_pp_toi_pct: number | null;
   wgo_pp_toi: number | null; // Seconds
-  nst_toi_all: number | null; // Minutes
+  nst_toi_all: number | null; // Seconds in NST game logs
   nst_ixg: number | null;
   nst_icf: number | null;
   nst_ihdcf: number | null; // From gamelog hdcf
@@ -461,10 +461,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       // [ STD Logic ]
       const stdData = playerSeasons.find((s) => s.season === currentSeasonId);
       if (stdData) {
-        const ppToiMinutesStd = safeDivide(stdData.wgo_pp_toi, 60);
         careerStats.std_gp = stdData.gp;
         careerStats.std_atoi = safeDivide(stdData.toi_all, stdData.gp);
-        careerStats.std_pptoi = ppToiMinutesStd;
+        careerStats.std_pptoi = safeDivide(stdData.wgo_pp_toi, stdData.gp);
         careerStats.std_pp_pct = stdData.wgo_pp_toi_pct;
         careerStats.std_g = stdData.wgo_g;
         careerStats.std_a = stdData.wgo_a;
@@ -553,10 +552,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       // [ LY Logic ]
       const lyData = playerSeasons.find((s) => s.season === lastSeasonId);
       if (lyData) {
-        const ppToiMinutesLy = safeDivide(lyData.wgo_pp_toi, 60);
         careerStats.ly_gp = lyData.gp;
         careerStats.ly_atoi = safeDivide(lyData.toi_all, lyData.gp);
-        careerStats.ly_pptoi = ppToiMinutesLy;
+        careerStats.ly_pptoi = safeDivide(lyData.wgo_pp_toi, lyData.gp);
         careerStats.ly_pp_pct = lyData.wgo_pp_toi_pct;
         careerStats.ly_g = lyData.wgo_g;
         careerStats.ly_a = lyData.wgo_a;
@@ -698,10 +696,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             pp_toi_pct_values: [] as number[]
           }
         );
-        const totalPpToiMinutesYa3 = safeDivide(totals.wgo_pp_toi, 60);
         careerStats.ya3_gp = safeDivide(totals.gp, numSeasons);
         careerStats.ya3_atoi = safeDivide(totals.toi_all, totals.gp);
-        careerStats.ya3_pptoi = safeDivide(totalPpToiMinutesYa3, numSeasons);
+        careerStats.ya3_pptoi = safeDivide(totals.wgo_pp_toi, totals.gp);
         careerStats.ya3_pp_pct = safeAverage(totals.pp_toi_pct_values);
         careerStats.ya3_g = safeDivide(totals.wgo_g, numSeasons);
         careerStats.ya3_a = safeDivide(totals.wgo_a, numSeasons);
@@ -843,10 +840,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             pp_toi_pct_values: [] as number[]
           }
         );
-        const totalPpToiMinutesCa = safeDivide(totals.wgo_pp_toi, 60);
         careerStats.ca_gp = safeDivide(totals.gp, numSeasons);
         careerStats.ca_atoi = safeDivide(totals.toi_all, totals.gp);
-        careerStats.ca_pptoi = safeDivide(totalPpToiMinutesCa, numSeasons);
+        careerStats.ca_pptoi = safeDivide(totals.wgo_pp_toi, totals.gp);
         careerStats.ca_pp_pct = safeAverage(totals.pp_toi_pct_values);
         careerStats.ca_g = safeDivide(totals.wgo_g, numSeasons);
         careerStats.ca_a = safeDivide(totals.wgo_a, numSeasons);
@@ -941,7 +937,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         if (numGames > 0) {
           const totals = gamesInInterval.reduce(
             (acc, game) => {
-              // nst_toi_all is already per game in minutes
+              // nst_toi_all is per-game ice time in seconds
               acc.nst_toi_all += game.nst_toi_all ?? 0;
               acc.gp += 1;
               acc.wgo_g += game.wgo_g;
@@ -1038,39 +1034,39 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           (recentStats as any)[`${prefix}hit`] = totals.wgo_hit;
           (recentStats as any)[`${prefix}blk`] = totals.wgo_blk;
           (recentStats as any)[`${prefix}pim`] = totals.wgo_pim;
-          (recentStats as any)[`${prefix}g_per_60`] = calculatePer60(
+          (recentStats as any)[`${prefix}g_per_60`] = calculatePer60FromSeconds(
             totals.wgo_g,
             totals.nst_toi_all
           );
-          (recentStats as any)[`${prefix}a_per_60`] = calculatePer60(
+          (recentStats as any)[`${prefix}a_per_60`] = calculatePer60FromSeconds(
             totals.wgo_a,
             totals.nst_toi_all
           );
-          (recentStats as any)[`${prefix}pts_per_60`] = calculatePer60(
+          (recentStats as any)[`${prefix}pts_per_60`] = calculatePer60FromSeconds(
             totals.wgo_pts,
             totals.nst_toi_all
           );
-          (recentStats as any)[`${prefix}pts1_per_60`] = calculatePer60(
+          (recentStats as any)[`${prefix}pts1_per_60`] = calculatePer60FromSeconds(
             totals.wgo_g + totals.wgo_a1,
             totals.nst_toi_all
           );
-          (recentStats as any)[`${prefix}sog_per_60`] = calculatePer60(
+          (recentStats as any)[`${prefix}sog_per_60`] = calculatePer60FromSeconds(
             totals.wgo_sog,
             totals.nst_toi_all
           );
-          (recentStats as any)[`${prefix}ixg_per_60`] = calculatePer60(
+          (recentStats as any)[`${prefix}ixg_per_60`] = calculatePer60FromSeconds(
             totals.nst_ixg,
             totals.nst_toi_all
           );
-          (recentStats as any)[`${prefix}icf_per_60`] = calculatePer60(
+          (recentStats as any)[`${prefix}icf_per_60`] = calculatePer60FromSeconds(
             totals.nst_icf,
             totals.nst_toi_all
           );
-          (recentStats as any)[`${prefix}ihdcf_per_60`] = calculatePer60(
+          (recentStats as any)[`${prefix}ihdcf_per_60`] = calculatePer60FromSeconds(
             totals.nst_ihdcf,
             totals.nst_toi_all
           );
-          (recentStats as any)[`${prefix}iscf_per_60`] = calculatePer60(
+          (recentStats as any)[`${prefix}iscf_per_60`] = calculatePer60FromSeconds(
             totals.nst_iscfs,
             totals.nst_toi_all
           );
@@ -1080,15 +1076,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             calculatePer60FromSeconds(totals.wgo_ppa, totals.wgo_pp_toi);
           (recentStats as any)[`${prefix}ppp_per_60`] =
             calculatePer60FromSeconds(totals.wgo_ppp, totals.wgo_pp_toi);
-          (recentStats as any)[`${prefix}hit_per_60`] = calculatePer60(
+          (recentStats as any)[`${prefix}hit_per_60`] = calculatePer60FromSeconds(
             totals.wgo_hit,
             totals.nst_toi_all
           );
-          (recentStats as any)[`${prefix}blk_per_60`] = calculatePer60(
+          (recentStats as any)[`${prefix}blk_per_60`] = calculatePer60FromSeconds(
             totals.wgo_blk,
             totals.nst_toi_all
           );
-          (recentStats as any)[`${prefix}pim_per_60`] = calculatePer60(
+          (recentStats as any)[`${prefix}pim_per_60`] = calculatePer60FromSeconds(
             totals.wgo_pim,
             totals.nst_toi_all
           );

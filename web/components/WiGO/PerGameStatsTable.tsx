@@ -1,8 +1,7 @@
 // components/WiGO/PerGameStatsTable.tsx
 import React, { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import useWigoPlayerTotals from "hooks/useWigoPlayerTotals";
 import {
-  fetchPlayerPerGameTotals,
   SkaterTotalsData
 } from "utils/fetchWigoPlayerStats";
 import { formatWigoStatValue } from "./statMetadata";
@@ -18,13 +17,14 @@ type NumericSkaterTotalsKeys = {
 interface PerGameStatsTableProps {
   playerId: number | null | undefined;
   seasonId?: number | null;
+  desktop?: boolean;
 }
 
 // Interface for the calculated data rows
 interface CalculatedStatRow {
   stat: string; // GP, G, A, PTS, SOG, PPP, HIT, BLK, PIM
   perGame: string;
-  per82: string;
+  per84: string;
 }
 
 // Formatting functions remain the same
@@ -50,17 +50,14 @@ const formatPercentageValue = (value: number | null | undefined): string => {
 
 const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
   playerId,
-  seasonId
+  seasonId,
+  desktop = false
 }) => {
   const {
     data: totalsData,
     isLoading,
     error
-  } = useQuery<SkaterTotalsData | null>({
-    queryKey: ["wigoPerGameTotals", playerId, seasonId ?? "latest"],
-    queryFn: () => fetchPlayerPerGameTotals(playerId as number, seasonId),
-    enabled: typeof playerId === "number"
-  });
+  } = useWigoPlayerTotals(playerId, seasonId);
 
   const statRows = useMemo(() => {
     if (!totalsData?.games_played || totalsData.games_played <= 0) {
@@ -87,28 +84,30 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
       const totalValue = totalsData[key] ?? null;
 
       if (key === "shooting_percentage") {
+        const shootingPercentage = totalsData.goals != null && totalsData.shots != null && totalsData.shots > 0
+          ? 100 * totalsData.goals / totalsData.shots
+          : null;
         return {
           stat: name,
-          perGame: formatPercentageValue(totalValue),
-          per82: "-"
+          perGame: formatPercentageValue(shootingPercentage),
+          per84: "-"
         };
       }
 
-      const numericTotalValue = Number(totalValue ?? 0);
-      const perGameValue = numericTotalValue / gp;
-      const per82Value = perGameValue * 82;
+      const perGameValue = totalValue == null ? null : totalValue / gp;
+      const per84Value = perGameValue == null ? null : perGameValue * 84;
 
       return {
         stat: name,
         perGame: formatStatValue(perGameValue),
-        per82: formatPaceValue(per82Value)
+        per84: formatPaceValue(per84Value)
       };
     });
 
     rows.unshift({
       stat: "GP",
       perGame: gp.toString(),
-      per82: "-"
+      per84: "-"
     });
 
     return rows;
@@ -119,7 +118,7 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
       return null;
     }
 
-    if (error instanceof Error) {
+    if (error) {
       return WIGO_ERROR_MESSAGES.stats;
     }
 
@@ -139,68 +138,35 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
 
     const gp = totalsData.games_played;
     return [
-      { label: "Points", value: totalsData.points, perGame: totalsData.points_per_game },
-      { label: "Goals", value: totalsData.goals, perGame: (totalsData.goals ?? 0) / gp },
-      { label: "Assists", value: totalsData.assists, perGame: (totalsData.assists ?? 0) / gp },
-      { label: "SOG", value: totalsData.shots, perGame: (totalsData.shots ?? 0) / gp }
+      { label: "Points", value: totalsData.points, perGame: totalsData.points == null ? null : totalsData.points / gp },
+      { label: "Goals", value: totalsData.goals, perGame: totalsData.goals == null ? null : totalsData.goals / gp },
+      { label: "Assists", value: totalsData.assists, perGame: totalsData.assists == null ? null : totalsData.assists / gp },
+      { label: "SOG", value: totalsData.shots, perGame: totalsData.shots == null ? null : totalsData.shots / gp }
     ];
   }, [totalsData]);
 
+  const status = !playerId ? "Select a player to view stats." : !seasonId ? "Loading season info..." : isLoading ? "Loading Stats..." : errorMessage;
+  const visibleRows = statRows.length ? statRows : ["GP", "G", "A", "PTS", "SOG", "S%", "PPP", "HIT", "BLK", "PIM"].map(stat => ({ stat, perGame: "-", per84: "-" }));
   return (
-    <div className={styles.perGameTableContainer}>
-      {isLoading && (
-        <div className={styles.loadingMessage}>Loading Stats...</div>
-      )}
-      {errorMessage && (
-        <div className={styles.errorMessage}>{errorMessage}</div>
-      )}
-      {!isLoading && !errorMessage && statRows.length === 0 && playerId && (
-        <div className={styles.noDataMessage}>No data available.</div>
-      )}
-      {!isLoading && !errorMessage && statRows.length > 0 && (
-        <>
-          <section className={styles.productionSnapshot}>
-            <h3>Production Snapshot <span>(This season)</span></h3>
-            <div className={styles.productionGrid}>
-              {productionSnapshot.map((stat) => (
-                <div key={stat.label} className={styles.productionStat}>
-                  <span>{stat.label}</span>
-                  <strong>{stat.value ?? "-"}</strong>
-                  <small>{formatStatValue(stat.perGame)} / GP</small>
-                </div>
-              ))}
-            </div>
-          </section>
-          <section className={styles.projectionTableSection}>
-            <h3>Per-game / Per-82 projection</h3>
-            <table className={styles.verticalStatsTable}>
-              <thead>
-                <tr>
-                  <th className={styles.metricHeader}>Metric</th>
-                  <th className={styles.valueHeader}>Per/GP</th>
-                  <th className={styles.valueHeader}>Per/82</th>
-                </tr>
-              </thead>
-              <tbody>
-                {statRows.map((row) => (
-                  <tr key={row.stat}>
-                    <th scope="row" className={styles.metricCell}>
-                      {row.stat}
-                    </th>
-                    <td className={styles.valueCell}>{row.perGame}</td>
-                    <td className={styles.valueCell}>{row.per82}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-        </>
-      )}
-      {!playerId && !isLoading && (
-        <div className={styles.noPlayerMessage}>
-          Select a player to view stats.
-        </div>
-      )}
+    <div className={`${styles.perGameTableContainer} ${desktop ? styles.desktopSummary : ""}`}>
+      <section className={styles.productionSnapshot} data-coverage="C04">
+        <h3>Season production <span>{totalsData?.season || seasonId || "Season unavailable"}</span></h3>
+        {status ? <p className={styles.summaryStatus} role="status">{status}</p> : <div className={styles.productionGrid}>
+          {productionSnapshot.map(stat => <div key={stat.label} className={styles.productionStat}>
+            <span>{stat.label}</span><strong>{stat.value ?? "-"}</strong><small>{formatStatValue(stat.perGame)} / GP</small>
+          </div>)}
+        </div>}
+      </section>
+      <section className={styles.projectionTableSection} data-coverage="C05">
+        <details className={styles.paceHelp}>
+          <summary><h3>Per-game / 84-game pace</h3></summary>
+          <p>Observed counting rate × 84, rounded to a whole count. Constant-rate pace, not a remaining-game, availability or health prediction.</p>
+        </details>
+        <table className={styles.verticalStatsTable}>
+          <thead><tr><th className={styles.metricHeader}>Metric</th><th className={styles.valueHeader}>Per/GP</th><th className={styles.valueHeader}>Pace/84</th></tr></thead>
+          <tbody>{visibleRows.map(row => <tr key={row.stat}><th scope="row" className={styles.metricCell}>{row.stat}</th><td className={styles.valueCell}>{row.perGame}</td><td className={styles.valueCell}>{row.per84}</td></tr>)}</tbody>
+        </table>
+      </section>
     </div>
   );
 };

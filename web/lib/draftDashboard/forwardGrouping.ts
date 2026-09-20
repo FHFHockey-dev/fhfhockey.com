@@ -178,29 +178,65 @@ export function allocateGroupedRosterSlots({
     ["BENCH", 0]
   ]);
   const assignments: Record<string, string> = {};
+  const occupants: Record<string, string[]> = Object.fromEntries(
+    [...positions, "UTILITY", "BENCH"].map((position) => [position, []]),
+  );
 
-  for (const player of players) {
+  const place = (player: { id: string; eligibility: string[] }, blocked = new Set<string>(), relocating = false): boolean => {
     const eligible = groupPlayerEligibility(
       player.eligibility,
       grouping,
       includeGenericForward
     );
     const override = overrides[player.id]?.toUpperCase();
+    const candidates = override && eligible.includes(override)
+      ? [override, ...eligible.filter((position) => position !== override)]
+      : eligible;
     const canUse = (position: string) =>
       eligible.includes(position) &&
       counts[position] < Math.max(0, Number(effective[position]) || 0);
-    let assignment = override && canUse(override) ? override : undefined;
-    if (!assignment) assignment = eligible.find(canUse);
-    if (
-      !assignment &&
-      !eligible.includes("G") &&
-      counts.UTILITY < Math.max(0, Number(effective.utility) || 0)
-    ) {
-      assignment = "UTILITY";
+    for (const position of candidates) {
+      if (blocked.has(position)) continue;
+      if (canUse(position)) {
+        counts[position] += 1;
+        occupants[position].push(player.id);
+        assignments[player.id] = position;
+        return true;
+      }
     }
-    assignment ||= "BENCH";
-    counts[assignment] += 1;
-    assignments[player.id] = assignment;
-  }
+    for (const position of candidates) {
+      if (blocked.has(position)) continue;
+      const currentOccupant = occupants[position]?.[occupants[position].length - 1];
+      if (!currentOccupant || blocked.has(currentOccupant)) continue;
+      const occupiedPosition = assignments[currentOccupant];
+      const occupiedPlayer = players.find((candidate) => candidate.id === currentOccupant);
+      if (!occupiedPlayer || !occupiedPosition) continue;
+      occupants[position].pop();
+      counts[position] -= 1;
+      delete assignments[currentOccupant];
+      if (place(occupiedPlayer, new Set([...blocked, position]), true)) {
+        counts[position] += 1;
+        occupants[position].push(player.id);
+        assignments[player.id] = position;
+        return true;
+      }
+      counts[position] += 1;
+      occupants[position].push(currentOccupant);
+      assignments[currentOccupant] = occupiedPosition;
+    }
+    if (relocating) return false;
+    if (!eligible.includes("G") && counts.UTILITY < Math.max(0, Number(effective.utility) || 0) && !blocked.has("UTILITY")) {
+      counts.UTILITY += 1;
+      occupants.UTILITY.push(player.id);
+      assignments[player.id] = "UTILITY";
+      return true;
+    }
+    counts.BENCH += 1;
+    occupants.BENCH.push(player.id);
+    assignments[player.id] = "BENCH";
+    return true;
+  };
+
+  for (const player of players) place(player);
   return { assignments, counts, effectiveRosterConfig: effective };
 }
