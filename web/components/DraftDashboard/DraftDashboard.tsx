@@ -2640,18 +2640,26 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     try {
       stoppedState = await stopYahooSession();
     } catch {
+      // The provider token may already be disconnected or expired. We can
+      // still release the local draft lock and continue from the last local
+      // Yahoo snapshot.
+    }
+    const state = stoppedState || yahooDraftSync.draftState;
+    if (!state) {
+      setDraftMode("manual");
+      setCurrentPick(getNextOpenPick(1, Number.MAX_SAFE_INTEGER, manualDraftedPlayers));
+      clearYahooSession();
       return;
     }
-    if (!stoppedState) return;
     const stoppedReconciliation = reconcileYahooDraftState(
-      stoppedState,
+      state,
       allPlayers,
       { ...draftSettings, keepers, trades: pickTrades },
     );
     const continuation = continueManuallyFromYahoo(stoppedReconciliation);
     setManualDraftedPlayers(continuation.draftedPlayers);
-    setPickTrades(yahooDraftPickTrades(stoppedState, { ...draftSettings, trades: pickTrades }));
-    setKeepers(yahooCompatibleKeepers(yahooDraftKeepers(stoppedState, allPlayers, keepers).keepers, continuation.draftedPlayers));
+    setPickTrades(yahooDraftPickTrades(state, { ...draftSettings, trades: pickTrades }));
+    setKeepers(yahooCompatibleKeepers(yahooDraftKeepers(state, allPlayers, keepers).keepers, continuation.draftedPlayers));
     setCurrentPick(continuation.currentPick);
     setDraftHistory([]);
     setDraftMode("manual");
@@ -2663,6 +2671,8 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     draftSettings,
     keepers,
     pickTrades,
+    manualDraftedPlayers,
+    yahooDraftSync.draftState,
   ]);
 
   // Auto-open summary when draft completes
