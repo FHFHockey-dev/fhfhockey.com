@@ -322,7 +322,7 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
         </label>
 
         <div className={styles.actions}>
-          <button type="button" onClick={onConnect} disabled={!authenticated || isLoading}>
+          <button type="button" onClick={onConnect} disabled={!authenticated || !draftProEligible || isLoading}>
             Connect Yahoo
           </button>
           <button type="button" onClick={onRefreshAccount} disabled={!liveSyncReady || isLoading}>
