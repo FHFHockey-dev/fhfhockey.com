@@ -4,6 +4,7 @@ import Head from "next/head";
 
 import type { NhlProspectIdentity } from "lib/sources/nhlProspectIdentity";
 import supabase from "lib/supabase";
+import styles from "./player-aliases.module.scss";
 
 type UnresolvedName = {
   id: string;
@@ -201,7 +202,7 @@ const PlayerAliasesPage: NextPage = () => {
     setLookup(null);
     setMembershipReviewEnabled(payload.membershipReviewEnabled ?? false);
     setMembershipSourceUrl("");
-    const first = payload.unresolvedNames[0];
+    const first = payload.unresolvedNames.find((name) => name.status === "pending") ?? payload.unresolvedNames[0];
     setSelectedUnresolvedId(first?.id ?? "");
     setAlias(first?.raw_name ?? "");
     setSelectedPlayerId("");
@@ -219,6 +220,8 @@ const PlayerAliasesPage: NextPage = () => {
     (name) => name.id === selectedUnresolvedId
   );
   const selectedReviewSlot = getReviewSlotLabel(selectedUnresolved?.metadata?.reason);
+  const pendingNames = unresolvedNames.filter((name) => name.status === "pending");
+  const resolvedNames = unresolvedNames.filter((name) => name.status === "resolved");
   const filteredPlayers = useMemo(() => {
     const search = playerSearch.trim().toLowerCase();
     return players.filter((player) => !search || player.fullName.toLowerCase().includes(search) || String(player.id) === search)
@@ -277,21 +280,38 @@ const PlayerAliasesPage: NextPage = () => {
       <Head>
         <title>Player Alias Review | FHFH</title>
       </Head>
-      <main style={{ margin: "0 auto", maxWidth: 960, padding: 24 }}>
-        <h1>Player Alias Review</h1>
-        {statusMessage ? <p role="status">{statusMessage}</p> : null}
-        {isLoading ? <p>Loading...</p> : null}
+      <main className={styles.page}>
+        <header className={styles.header}>
+          <div>
+            <p className={styles.eyebrow}>Database tools</p>
+            <h1>Player Alias Review</h1>
+          </div>
+          <div className={styles.queueCount} aria-label={`${pendingNames.length} names remaining`}>
+            <strong>{pendingNames.length}</strong>
+            <span>remaining</span>
+          </div>
+        </header>
+        {statusMessage ? <p className={styles.statusMessage} role="status">{statusMessage}</p> : null}
+        {isLoading ? <p className={styles.emptyState}>Loading...</p> : null}
         {!isLoading && unresolvedNames.length === 0 ? (
-          <p>No matching unresolved player name was found.</p>
+          <p className={styles.emptyState}>No matching unresolved player name was found.</p>
         ) : null}
         {selectedUnresolved ? (
-          <section style={{ display: "grid", gap: 16 }}>
+          <section className={styles.layout}>
+            <aside className={styles.queuePanel} aria-label="Alias review queue">
+              <div className={styles.panelHeader}>
+                <div><p className={styles.eyebrow}>Work queue</p><h2>{pendingNames.length} names to review</h2></div>
+              </div>
+              <ol className={styles.queueList}>
+                {pendingNames.map((name) => <li key={name.id} className={name.id === selectedUnresolvedId ? styles.current : undefined}><button type="button" onClick={() => { setSelectedUnresolvedId(name.id); setAlias(name.raw_name); setSelectedPlayerId(""); setMembershipSourceUrl(""); }}>{name.raw_name}{name.team_abbreviation ? <span>{name.team_abbreviation}</span> : null}</button></li>)}
+              </ol>
+              {resolvedNames.length ? <p className={styles.resolvedSummary}>✓ {resolvedNames.length} resolved in this queue</p> : null}
+            </aside>
+            <div className={styles.reviewPanel}>
             {selectedUnresolved.status !== "pending" ? (
-              <p>
-                This name is already {selectedUnresolved.status}. You can leave this page as-is.
-              </p>
+              <p className={styles.resolvedNotice}>✓ This name is already {selectedUnresolved.status}. Select a pending name from the queue to continue.</p>
             ) : null}
-            <label>
+            <label className={styles.field}>
               Pending name
               <select
                 value={selectedUnresolvedId}
@@ -311,7 +331,7 @@ const PlayerAliasesPage: NextPage = () => {
               </select>
             </label>
 
-            <label>
+            <label className={styles.field}>
               Alias to save
               <input
                 value={alias}
@@ -319,7 +339,7 @@ const PlayerAliasesPage: NextPage = () => {
               />
             </label>
 
-            <label>
+            <label className={styles.field}>
               Search all players by name or NHL ID
               <input value={playerSearch} onChange={(event) => setPlayerSearch(event.target.value)} />
             </label>
@@ -335,7 +355,7 @@ const PlayerAliasesPage: NextPage = () => {
             <p>Team matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.</p>
             {selectedUnresolved.metadata?.reviewKind && <p>Review reason: {selectedUnresolved.metadata.reviewKind.replace(/_/g, " ")}.</p>}
             {selectedUnresolved.metadata?.reviewKind === "invalid_extraction" && <p>This may contain several players or non-player text. <a href="/db/tweet-pattern-review">Review tweet parsing</a> before creating an alias.</p>}
-            <label>
+            <label className={styles.field}>
               Match player
               <select
                 aria-label="Match player"
@@ -372,7 +392,7 @@ const PlayerAliasesPage: NextPage = () => {
               </button>
             </div>
 
-            <article>
+            <article className={styles.context}>
               <h2>Context</h2>
               <p>
                 {selectedUnresolved.source} · {selectedUnresolved.team_abbreviation ?? "No team"} ·{" "}
@@ -384,10 +404,11 @@ const PlayerAliasesPage: NextPage = () => {
                   <a href={selectedUnresolved.source_url}>Open source tweet</a>
                 </p>
               ) : null}
-              <pre style={{ whiteSpace: "pre-wrap" }}>
+              <pre>
                 {renderHighlightedContext(selectedUnresolved)}
               </pre>
             </article>
+            </div>
           </section>
         ) : null}
       </main>
