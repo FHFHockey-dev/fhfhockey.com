@@ -23,6 +23,9 @@
 .field input:focus-visible, .field select:focus-visible, .queueList button:focus-visible { outline: 2px solid v.$focus-color; outline-offset: 2px; }
 .reviewPanel button { min-height: 42px; padding: 0 16px; border: 1px solid v.$primary-color; border-radius: v.$radius-control; background: v.$primary-color; color: v.$color-white; font: inherit; font-weight: 700; cursor: pointer; }
 .reviewPanel button:disabled { opacity: .45; cursor: not-allowed; }
+.splitPanel { padding: v.$space-md; border: 1px solid rgba(v.$color-gold-400, .45); border-radius: v.$radius-control; background: rgba(v.$color-gold-400, .06); }
+.splitPanel p { margin: 6px 0 v.$space-md; color: v.$text-secondary; }
+.splitGrid { display: grid; grid-template-columns: 1fr 1fr; gap: v.$space-md; margin-bottom: v.$space-md; }
 .context { background: v.$background-dark; }
 .context h2 { margin-top: 0; color: v.$color-white; }
 .context pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: v.$text-secondary; line-height: 1.55; }

@@ -174,6 +174,7 @@ const PlayerAliasesPage: NextPage = () => {
   const [players, setPlayers] = useState<PlayerOption[]>([]);
   const [selectedUnresolvedId, setSelectedUnresolvedId] = useState<string>("");
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>("");
+  const [splitPlayerIds, setSplitPlayerIds] = useState<[string, string]>(["", ""]);
   const [lookup, setLookup] = useState<NhlProspectIdentity | null>(null);
   const [lookupBusy, setLookupBusy] = useState(false);
   const [unlinkedProspects, setUnlinkedProspects] = useState<Array<{ id: number; canonical_name: string }>>([]);
@@ -206,6 +207,7 @@ const PlayerAliasesPage: NextPage = () => {
     setSelectedUnresolvedId(first?.id ?? "");
     setAlias(first?.raw_name ?? "");
     setSelectedPlayerId("");
+    setSplitPlayerIds(["", ""]);
     setIsLoading(false);
   }
 
@@ -275,6 +277,14 @@ const PlayerAliasesPage: NextPage = () => {
     await loadData();
   }
 
+  async function splitName() {
+    if (!selectedUnresolved || splitPlayerIds.some((id) => !id)) return;
+    const parts = selectedUnresolved.raw_name.split("-").map((part) => part.trim());
+    const payload = await postWithOptionalAuth("/api/v1/db/player-name-aliases", { unresolvedId: selectedUnresolved.id, action: "split", parts: parts.map((part, index) => ({ alias: part, playerId: Number(splitPlayerIds[index]) })) });
+    setStatusMessage(payload.message ?? "Name split and resolved.");
+    await loadData();
+  }
+
   return (
     <>
       <Head>
@@ -319,7 +329,7 @@ const PlayerAliasesPage: NextPage = () => {
                   const next = unresolvedNames.find((name) => name.id === event.target.value);
                   setSelectedUnresolvedId(event.target.value);
                   setAlias(next?.raw_name ?? "");
-                  setSelectedPlayerId("");
+                  setSelectedPlayerId(""); setSplitPlayerIds(["", ""]);
                   setMembershipSourceUrl("");
                 }}
               >
@@ -391,6 +401,16 @@ const PlayerAliasesPage: NextPage = () => {
                 Ignore
               </button>
             </div>
+            {selectedUnresolved.status === "pending" && /^\S+-\S+$/.test(selectedUnresolved.raw_name) ? (
+              <div className={styles.splitPanel}>
+                <strong>Is this two players?</strong>
+                <p>Choose one player for each side of the hyphen. A split saves both aliases separately.</p>
+                <div className={styles.splitGrid}>
+                  {selectedUnresolved.raw_name.split("-").map((part, index) => <label className={styles.field} key={part}><span>{part.trim()}</span><select value={splitPlayerIds[index]} onChange={(event) => setSplitPlayerIds((previous) => { const next = [...previous] as [string, string]; next[index] = event.target.value; return next; })}><option value="">Choose player…</option>{filteredPlayers.map((player) => <option key={player.id} value={player.id}>{player.fullName} · {player.id}</option>)}</select></label>)}
+                </div>
+                <button type="button" disabled={splitPlayerIds.some((id) => !id)} onClick={() => void splitName().catch((error) => setStatusMessage(error.message))}>Save as two players</button>
+              </div>
+            ) : null}
 
             <article className={styles.context}>
               <h2>Context</h2>
