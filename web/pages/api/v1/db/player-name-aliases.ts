@@ -93,6 +93,26 @@ async function handlePost(req: any, res: NextApiResponse) {
     return res.json({ success: true, message: "Name ignored." });
   }
 
+  if (action === "split") {
+    const parts = typeof body.parts === "object" && Array.isArray(body.parts) ? body.parts : [];
+    if (parts.length !== 2 || parts.some((part: any) => !Number.isSafeInteger(Number(part?.playerId)) || !String(part?.alias ?? "").trim())) {
+      return res.status(400).json({ success: false, message: "Choose two players and provide both aliases." });
+    }
+    const { data: unresolved, error: unresolvedError } = await req.supabase.from("lineup_unresolved_player_names" as any)
+      .select("id, raw_name, team_id, metadata").eq("id", unresolvedId).single();
+    if (unresolvedError) throw unresolvedError;
+    const playerIds = parts.map((part: any) => Number(part.playerId));
+    const { data: players, error: playersError } = await req.supabase.from("players").select("id, fullName").in("id", playerIds);
+    if (playersError) throw playersError;
+    if (!players || players.length !== 2) return res.status(400).json({ success: false, message: "Both players must exist." });
+    const aliases = parts.map((part: any) => ({ alias: String(part.alias).trim(), normalized_alias: normalizePlayerNameAlias(String(part.alias)), player_id: Number(part.playerId), player_name: players.find((player: any) => Number(player.id) === Number(part.playerId))?.fullName, team_id: unresolved.team_id ?? null, source: "manual", updated_at: new Date().toISOString() }));
+    const { error: aliasError } = await req.supabase.from("lineup_player_name_aliases" as any).upsert(aliases, { onConflict: "normalized_alias,player_id" });
+    if (aliasError) throw aliasError;
+    const { error: updateError } = await req.supabase.from("lineup_unresolved_player_names" as any).update({ status: "resolved", resolved_player_id: playerIds[0], metadata: { ...unresolved.metadata, splitPlayerIds: playerIds, splitAliases: aliases.map((alias: any) => alias.alias) }, updated_at: new Date().toISOString() }).eq("id", unresolvedId);
+    if (updateError) throw updateError;
+    return res.json({ success: true, message: `Saved ${aliases.map((alias: any) => alias.player_name).join(" and ")} as two players.` });
+  }
+
   const playerId = Number(body.playerId);
   if (!Number.isSafeInteger(playerId) || playerId <= 0) {
     return res.status(400).json({

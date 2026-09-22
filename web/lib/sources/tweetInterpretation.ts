@@ -94,7 +94,8 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
       flush();
       // Unknown names are reviewable only in an established structured block.
       if (sawStructure && !PROSE.test(line) && /^[\p{L}.'’\s–—/-]+$/u.test(line) && line.length < 90 && /[-–—/]/.test(line)) {
-        const tokens = line.split(/\s+[-–—]\s+|\s*[/]\s*/);
+        const compactHyphen = line.match(/^([\p{L}.'’]+)-([\p{L}.'’]+)$/u);
+        const tokens = compactHyphen ? [compactHyphen[1]!, compactHyphen[2]!] : line.split(/\s+[-–—]\s+|\s*[/]\s*/);
         if (tokens.length === 1 && /[-–—]/.test(line)) {
           result.unresolved.push({ start: lineStart + rawLine.indexOf(line), end: lineStart + rawLine.indexOf(line) + line.length, text: line, reason: "invalid_extraction" });
           continue;

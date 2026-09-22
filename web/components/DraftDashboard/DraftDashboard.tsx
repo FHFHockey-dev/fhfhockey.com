@@ -28,6 +28,7 @@ import { useAuth } from "contexts/AuthProviderContext";
 
 import DraftSettings, { type DraftSettingsHandle } from "./DraftSettings";
 import { validateDraftSettings, bookmarkImportError } from "lib/draftDashboard/settingsValidation";
+import { applyCategoryBoosts } from "lib/draftDashboard/categoryBoosts";
 import DraftBoard from "./DraftBoard";
 import DraftWorkspaceHeader from "./DraftWorkspaceHeader";
 import dynamic from "next/dynamic";
@@ -187,6 +188,8 @@ export interface DraftSettings {
   scoringCategories: Record<string, number>;
   leagueType?: "points" | "categories";
   categoryWeights?: Record<string, number>; // used in categories mode
+  /** Draft Pro valuation-only boosts, expressed as percentages from 0 to 100. */
+  categoryBoosts?: Record<string, number>;
   // Whether this is a keeper league. Controls visibility of Keepers & Traded Picks section.
   isKeeper?: boolean;
   // Custom source safeguards
@@ -312,6 +315,7 @@ const DEFAULT_DRAFT_SETTINGS: DraftSettings = {
     SAVES_GOALIE: 1,
     SAVE_PERCENTAGE: 1,
   },
+  categoryBoosts: {},
   rosterConfig: {
     C: 2,
     LW: 2,
@@ -743,6 +747,27 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   const [goaliePointValues, setGoaliePointValues] = useState<
     Record<string, number>
   >(() => getDefaultFantasyPointsConfig("goalie"));
+  const effectiveSkaterPointValues = useMemo(
+    () => applyCategoryBoosts(
+      draftSettings.scoringCategories,
+      draftProEligible ? draftSettings.categoryBoosts : {},
+    ),
+    [draftProEligible, draftSettings.categoryBoosts, draftSettings.scoringCategories],
+  );
+  const effectiveGoaliePointValues = useMemo(
+    () => applyCategoryBoosts(
+      goaliePointValues,
+      draftProEligible ? draftSettings.categoryBoosts : {},
+    ),
+    [draftProEligible, draftSettings.categoryBoosts, goaliePointValues],
+  );
+  const effectiveCategoryWeights = useMemo(
+    () => applyCategoryBoosts(
+      draftSettings.categoryWeights || {},
+      draftProEligible ? draftSettings.categoryBoosts : {},
+    ),
+    [draftProEligible, draftSettings.categoryBoosts, draftSettings.categoryWeights],
+  );
   const [fantraxLeagueOverride, setFantraxLeagueOverride] =
     useState<DraftFantraxSelection | null>(null);
   const [espnLeagueOverride, setEspnLeagueOverride] =
@@ -1160,7 +1185,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     activePlayerType: "skater",
     sourceControls,
     yahooDraftMode: "ALL",
-    fantasyPointSettings: draftSettings.scoringCategories,
+    fantasyPointSettings: effectiveSkaterPointValues,
     supabaseClient: supabase,
     currentSeasonId: currentSeasonId ? String(currentSeasonId) : undefined,
     styles: EMPTY_PROJECTION_STYLES,
@@ -1177,7 +1202,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     activePlayerType: "goalie",
     sourceControls: goalieSourceControls,
     yahooDraftMode: "ALL",
-    fantasyPointSettings: goaliePointValues,
+    fantasyPointSettings: effectiveGoaliePointValues,
     supabaseClient: supabase,
     currentSeasonId: currentSeasonId ? String(currentSeasonId) : undefined,
     styles: EMPTY_PROJECTION_STYLES,
