@@ -119,6 +119,7 @@ interface DraftSettingsProps {
     teamId?: number;
   }>;
   draftLocked?: boolean;
+  draftProEligible?: boolean;
   draftLockReason?: string;
   structuralSettingsLocked?: boolean;
 }
@@ -182,6 +183,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
   onBookmarkImport,
   playersForKeeperAutocomplete,
   draftLocked = false,
+  draftProEligible = false,
   draftLockReason = "Yahoo live sync is authoritative.",
   structuralSettingsLocked = false,
 }, ref) => {
@@ -1584,10 +1586,10 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
             </div>)}
             <div className={styles.rosterSummary}><h4>Roster Summary <span>{totalRosterSpots} total spots</span></h4><p>{["C", "LW", "RW", "FWD"].reduce((sum, pos) => sum + (displayedRosterConfig[pos] || 0), 0)} forwards · {displayedRosterConfig.D || 0} defense · {displayedRosterConfig.G || 0} goalies · {displayedRosterConfig.utility || 0} utility · {displayedRosterConfig.bench || 0} bench</p></div>
           </fieldset>
-          <fieldset data-settings-domain="scoring" hidden={variant === "inline" && activeSection !== "scoring"} role={variant === "inline" ? "tabpanel" : undefined} aria-labelledby={variant === "inline" ? "draft-tab-scoring" : undefined} id="draft-domain-scoring" tabIndex={-1} className={`${styles.fieldset} ${styles.settingsGroupScoring}`} disabled={draftLocked}>
+          <fieldset data-settings-domain="scoring" hidden={variant === "inline" && activeSection !== "scoring"} role={variant === "inline" ? "tabpanel" : undefined} aria-labelledby={variant === "inline" ? "draft-tab-scoring" : undefined} id="draft-domain-scoring" tabIndex={-1} className={`${styles.fieldset} ${styles.settingsGroupScoring}`}>
             <legend className={styles.legend}>Scoring Configuration</legend>
             {domainIssues("scoring")}
-            <DraftScoringSettings settings={settings} onSettingsChange={onSettingsChange} goalieScoring={goalieScoringCategories} onGoalieScoringChange={onGoalieScoringChange} availableSkaterStats={availableSkaterStatKeys} availableGoalieStats={availableGoalieStatKeys} hasPicks={draftedPlayers.length > 0} />
+            <DraftScoringSettings settings={settings} onSettingsChange={onSettingsChange} goalieScoring={goalieScoringCategories} onGoalieScoringChange={onGoalieScoringChange} availableSkaterStats={availableSkaterStatKeys} availableGoalieStats={availableGoalieStatKeys} hasPicks={draftedPlayers.length > 0} draftProEligible={draftProEligible} rawSettingsLocked={draftLocked} />
           </fieldset>
           <fieldset data-settings-domain="projections" hidden={variant === "inline" && activeSection !== "projections"} role={variant === "inline" ? "tabpanel" : undefined} aria-labelledby={variant === "inline" ? "draft-tab-projections" : undefined} id="draft-domain-projections" tabIndex={-1} className={styles.fieldset}>
             <legend className={styles.legend}>Projection Sources</legend>

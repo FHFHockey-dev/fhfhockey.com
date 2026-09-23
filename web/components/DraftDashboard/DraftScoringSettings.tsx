@@ -27,6 +27,10 @@ function ScoringGroup({
   onChange,
   categories,
   hasPicks,
+  boosts,
+  onBoostChange,
+  draftProEligible,
+  rawSettingsLocked,
 }: {
   title: "Skaters" | "Goalies";
   values: Record<string, number>;
@@ -34,6 +38,10 @@ function ScoringGroup({
   onChange: (values: Record<string, number>) => void;
   categories: boolean;
   hasPicks: boolean;
+  boosts: Record<string, number>;
+  onBoostChange: (stat: string, boost: number) => void;
+  draftProEligible: boolean;
+  rawSettingsLocked: boolean;
 }) {
   const [manage, setManage] = useState(false);
   const [key, setKey] = useState("");
@@ -49,7 +57,7 @@ function ScoringGroup({
       </h4>
       <div className={styles.categoryHeading}>
         <span>Category</span>
-        <span>Weight</span>
+        <span>{categories ? "Weight" : "Points"} · Boost (Pro)</span>
       </div>
       <div className={styles.categoryList}>
         {Object.entries(values).map(([stat, points]) => (
@@ -65,6 +73,7 @@ function ScoringGroup({
                 aria-describedby="draft-issues-scoring"
               aria-label={`${stat} ${goalie ? "goalie" : "skater"} weight`}
               type="number"
+              disabled={rawSettingsLocked}
               step={0.1}
               min={categories ? 0 : undefined}
               value={Number.isFinite(points) ? points : ""}
@@ -79,9 +88,26 @@ function ScoringGroup({
                 })
               }
             />
+            <input
+              aria-label={`${stat} ${goalie ? "goalie" : "skater"} Draft Pro boost percent`}
+              title="Draft Pro valuation boost; league scoring stays unchanged"
+              type="number"
+              min={0}
+              max={100}
+              step={1}
+              value={draftProEligible ? boosts[stat] ?? 0 : 0}
+              disabled={!draftProEligible}
+              onChange={(event) => onBoostChange(stat, Math.max(0, Math.min(100, Number(event.target.value) || 0)))}
+            />
+            {draftProEligible && (boosts[stat] ?? 0) > 0 && (
+              <span className={styles.boostValue} aria-label={`${stat} effective value`}>
+                {categories ? `×${(1 + Math.min(100, boosts[stat]) / 100).toFixed(2)}` : `= ${Number((points * (1 + Math.min(100, boosts[stat]) / 100)).toFixed(3))}`}
+              </span>
+            )}
             {manage && (
               <button
                 type="button"
+                disabled={rawSettingsLocked}
                 aria-label={`Remove ${stat}`}
                 onClick={() => {
                   if (
@@ -104,6 +130,7 @@ function ScoringGroup({
       <button
         type="button"
         className={styles.wideButton}
+        disabled={rawSettingsLocked}
         aria-expanded={manage}
         title={
           categories && !goalie
@@ -121,6 +148,7 @@ function ScoringGroup({
       {manage && (
         <div className={styles.addCategory}>
           <select
+            disabled={rawSettingsLocked}
             aria-label={
               categories && !goalie
                 ? "Select category to add"
@@ -140,6 +168,7 @@ function ScoringGroup({
           </select>
           <input
             type="number"
+            disabled={rawSettingsLocked}
             step={0.1}
             min={categories ? 0 : undefined}
             aria-label={
@@ -151,6 +180,7 @@ function ScoringGroup({
           <button
             type="button"
             disabled={
+              rawSettingsLocked ||
               !key ||
               weight === "" ||
               !Number.isFinite(Number(weight)) ||
@@ -178,6 +208,8 @@ export default function DraftScoringSettings({
   availableSkaterStats,
   availableGoalieStats,
   hasPicks,
+  draftProEligible = false,
+  rawSettingsLocked = false,
 }: {
   settings: DraftSettings;
   onSettingsChange: (settings: Partial<DraftSettings>) => void;
@@ -186,6 +218,8 @@ export default function DraftScoringSettings({
   availableSkaterStats: string[];
   availableGoalieStats: string[];
   hasPicks: boolean;
+  draftProEligible?: boolean;
+  rawSettingsLocked?: boolean;
 }) {
   const categories = settings.leagueType === "categories";
   const entries = Object.entries(settings.categoryWeights || {});
@@ -198,6 +232,13 @@ export default function DraftScoringSettings({
   const goalies = categories
     ? Object.fromEntries(entries.filter(([key]) => goalieKey(key)))
     : goalieScoring;
+  const boosts = settings.categoryBoosts || {};
+  const onBoostChange = (stat: string, boost: number) => {
+    const next = { ...boosts };
+    if (boost === 0) delete next[stat];
+    else next[stat] = boost;
+    onSettingsChange({ categoryBoosts: next });
+  };
   const reset = (goalie: boolean) => {
     if (
       hasPicks &&
@@ -228,6 +269,10 @@ export default function DraftScoringSettings({
         }
         categories={categories}
         hasPicks={hasPicks}
+        boosts={boosts}
+        onBoostChange={onBoostChange}
+        draftProEligible={draftProEligible}
+        rawSettingsLocked={rawSettingsLocked}
       />
       {(categories || onGoalieScoringChange) && (
         <ScoringGroup
@@ -241,6 +286,10 @@ export default function DraftScoringSettings({
           }
           categories={categories}
           hasPicks={hasPicks}
+          boosts={boosts}
+          onBoostChange={onBoostChange}
+          draftProEligible={draftProEligible}
+          rawSettingsLocked={rawSettingsLocked}
         />
       )}
       <div className={styles.profile}>
@@ -252,11 +301,11 @@ export default function DraftScoringSettings({
       </div>
       {!categories && (
         <div className={styles.actions}>
-          <button type="button" onClick={() => reset(false)}>
+          <button type="button" disabled={rawSettingsLocked} onClick={() => reset(false)}>
             Reset Skater Scoring
           </button>
           {onGoalieScoringChange && (
-            <button type="button" onClick={() => reset(true)}>
+            <button type="button" disabled={rawSettingsLocked} onClick={() => reset(true)}>
               Reset Goalie Scoring
             </button>
           )}
@@ -266,7 +315,7 @@ export default function DraftScoringSettings({
         {categories
           ? "Category weights control relative importance."
           : "Negative weights reduce fantasy points."}{" "}
-        Changes update values and standings without resetting picks.
+        Draft Pro boosts change draft valuations and projected fantasy points without changing your league scoring. Editing league scoring recalculates values and standings without resetting picks.
       </p>
     </div>
   );

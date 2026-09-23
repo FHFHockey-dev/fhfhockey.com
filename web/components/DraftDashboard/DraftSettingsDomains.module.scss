@@ -77,6 +77,13 @@
     padding: 6px;
     font-variant-numeric: tabular-nums;
   }
+  .boostValue {
+    min-width: 42px;
+    color: v.$primary-color;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    text-align: right;
+  }
   [data-negative="true"] {
     color: v.$color-coral-500 !important;
   }
