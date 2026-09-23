@@ -2121,13 +2121,13 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     try {
       return { positions: buildDashboardTiers({
         players: allPlayers, draftSettings,
-        leagueType: draftSettings.leagueType || "points", categoryWeights: draftSettings.categoryWeights,
-        forwardGrouping, prorate84, fantasyPointSettings: draftSettings.scoringCategories, goaliePointValues,
+        leagueType: draftSettings.leagueType || "points", categoryWeights: effectiveCategoryWeights,
+        forwardGrouping, prorate84, fantasyPointSettings: effectiveSkaterPointValues, goaliePointValues: effectiveGoaliePointValues,
       }), error: null };
     } catch {
       return { positions: [], error: "Tier analysis is unavailable. Ordinary Picks remain available." };
     }
-  }, [canUseProRecommendations, allPlayers, draftSettings, forwardGrouping, prorate84, goaliePointValues]);
+  }, [canUseProRecommendations, allPlayers, draftSettings, effectiveCategoryWeights, effectiveSkaterPointValues, effectiveGoaliePointValues, forwardGrouping, prorate84]);
 
   // NEW: VORP metrics computed on full player pool (not just available)
   const {
@@ -2142,12 +2142,12 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     picksUntilNext,
     leagueType: draftSettings.leagueType || "points",
     baselineMode,
-    categoryWeights: draftSettings.categoryWeights,
+    categoryWeights: effectiveCategoryWeights,
     forwardGrouping,
     myFilledSlots: myFilledSlotsForVorp,
     personalizeReplacement: false,
     prorate84,
-    fantasyPointSettings: draftSettings.scoringCategories,
+    fantasyPointSettings: effectiveSkaterPointValues,
   });
 
   const { playerMetrics: personalizedVorpMetrics } = useVORPCalculations({
@@ -2157,12 +2157,12 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     picksUntilNext,
     leagueType: draftSettings.leagueType || "points",
     baselineMode,
-    categoryWeights: draftSettings.categoryWeights,
+    categoryWeights: effectiveCategoryWeights,
     forwardGrouping,
     myFilledSlots: myFilledSlotsForVorp,
     personalizeReplacement: draftProEligible && personalizeReplacement,
     prorate84,
-    fantasyPointSettings: draftSettings.scoringCategories,
+    fantasyPointSettings: effectiveSkaterPointValues,
   });
 
   const scheduleSettings = useMemo(() => normalizeScheduleSettings(draftSettings), [draftSettings]);
@@ -2940,6 +2940,13 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
 
   const updateDraftSettings = useCallback(
     (newSettings: Partial<DraftSettings>) => {
+      if (Object.keys(newSettings).length === 1 && newSettings.categoryBoosts) {
+        if (!draftProEligible) return;
+        const next = { ...draftSettings, categoryBoosts: newSettings.categoryBoosts };
+        setDraftSettings(next);
+        if (!manualDraftingEnabled) saveSnapshot(next);
+        return;
+      }
       if (!manualDraftingEnabled) return;
       const next = { ...draftSettings, ...newSettings };
       const structureChanged = next.teamCount !== draftSettings.teamCount || JSON.stringify(next.draftOrder) !== JSON.stringify(draftSettings.draftOrder) || next.draftOrderMode !== draftSettings.draftOrderMode || JSON.stringify(next.reversedRounds) !== JSON.stringify(draftSettings.reversedRounds);
@@ -2957,7 +2964,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       setDraftSettings(normalizeDraftSettingsOrder(next, isSnakeDraft));
       if (!next.draftOrder.includes(myTeamId)) setMyTeamId(next.draftOrder[0] || "Team 1");
     },
-    [draftSettings, draftedPlayers.length, keepers.length, pickTrades.length, isSnakeDraft, manualDraftingEnabled, myTeamId, settingsValidationInput],
+    [draftProEligible, draftSettings, draftedPlayers.length, keepers.length, pickTrades.length, isSnakeDraft, manualDraftingEnabled, myTeamId, saveSnapshot, settingsValidationInput],
   );
   const resetSettings = () => {
     if (!manualDraftingEnabled) return;
@@ -3737,6 +3744,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         <div className={styles.setupCore}>
           <div hidden={settingsSection === "integrations" || settingsSection === "saved-drafts" || settingsSection === "roster-impact" || settingsSection === "reports"}>
           <DraftSettings
+        draftProEligible={draftProEligible}
         matchupWeeks={draftSchedule.weeks}
         matchupWeeksError={draftSchedule.weeksError}
         ref={settingsEditorRef}
@@ -4150,7 +4158,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
           selectionHorizon={selectionHorizon}
           availabilitySpread={availabilitySpread}
           onClock={currentTurn.isMyTurn}
-          categoryWeights={draftSettings.categoryWeights}
+          categoryWeights={effectiveCategoryWeights}
           recommendationDataOrigin={customCsvList.length ? "local_csv" : "server"}
           onNeedWeightEnabledChange={setNeedWeightEnabled}
           dustSort={dustSort}

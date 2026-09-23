@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import DraftSettings from "../../../components/DraftDashboard/DraftSettings";
 import type { DraftSettings as DraftSettingsContract } from "../../../components/DraftDashboard/DraftDashboard";
+import { applyCategoryBoosts } from "../../../lib/draftDashboard/categoryBoosts";
 
 vi.mock("components/PlayerAutocomplete", () => ({ default: () => null }));
 
@@ -15,6 +16,77 @@ const settings: DraftSettingsContract = {
 };
 
 afterEach(cleanup);
+
+describe("Draft Pro category boosts", () => {
+  it("keeps league scoring at 0.2 while displaying 0.3 for a 50% Hits boost", () => {
+    const onSettingsChange = vi.fn();
+    render(
+      <DraftSettings
+        settings={{ ...settings, scoringCategories: { HITS: 0.2 }, categoryBoosts: { HITS: 50 } }}
+        onSettingsChange={onSettingsChange}
+        myTeamId="Team 1"
+        onMyTeamIdChange={vi.fn()}
+        undoLastPick={vi.fn()}
+        resetDraft={vi.fn()}
+        draftHistory={[]}
+        draftedPlayers={[]}
+        currentPick={1}
+        draftProEligible
+      />,
+    );
+    expect((screen.getByRole("spinbutton", { name: "HITS skater weight" }) as HTMLInputElement).value).toBe("0.2");
+    expect(screen.getByLabelText("HITS effective value").textContent).toBe("= 0.3");
+    const rawScoring = { HITS: 0.2 };
+    expect(applyCategoryBoosts(rawScoring, { HITS: 50 }).HITS).toBeCloseTo(0.3);
+    expect(rawScoring.HITS).toBe(0.2);
+    fireEvent.change(screen.getByRole("spinbutton", { name: "HITS skater Draft Pro boost percent" }), { target: { value: "75" } });
+    expect(onSettingsChange).toHaveBeenCalledWith({ categoryBoosts: { HITS: 75 } });
+    expect(onSettingsChange).not.toHaveBeenCalledWith(expect.objectContaining({ scoringCategories: expect.anything() }));
+  });
+
+  it("keeps league scoring locked during Yahoo sync while allowing Pro boosts", () => {
+    const onSettingsChange = vi.fn();
+    render(
+      <DraftSettings
+        settings={{ ...settings, scoringCategories: { HITS: 0.2 } }}
+        onSettingsChange={onSettingsChange}
+        myTeamId="Team 1"
+        onMyTeamIdChange={vi.fn()}
+        undoLastPick={vi.fn()}
+        resetDraft={vi.fn()}
+        draftHistory={[]}
+        draftedPlayers={[]}
+        currentPick={1}
+        draftLocked
+        draftProEligible
+      />,
+    );
+    expect((screen.getByRole("spinbutton", { name: "HITS skater weight" }) as HTMLInputElement).disabled).toBe(true);
+    const boost = screen.getByRole("spinbutton", { name: "HITS skater Draft Pro boost percent" }) as HTMLInputElement;
+    expect(boost.disabled).toBe(false);
+    fireEvent.change(boost, { target: { value: "50" } });
+    expect(onSettingsChange).toHaveBeenCalledWith({ categoryBoosts: { HITS: 50 } });
+  });
+
+  it("does not expose boost editing to free users", () => {
+    render(
+      <DraftSettings
+        settings={{ ...settings, scoringCategories: { HITS: 0.2 }, categoryBoosts: { HITS: 50 } }}
+        onSettingsChange={vi.fn()}
+        myTeamId="Team 1"
+        onMyTeamIdChange={vi.fn()}
+        undoLastPick={vi.fn()}
+        resetDraft={vi.fn()}
+        draftHistory={[]}
+        draftedPlayers={[]}
+        currentPick={1}
+      />,
+    );
+    const boost = screen.getByRole("spinbutton", { name: "HITS skater Draft Pro boost percent" }) as HTMLInputElement;
+    expect(boost.disabled).toBe(true);
+    expect(boost.value).toBe("0");
+  });
+});
 
 describe("DraftSettings A&G component confirmation", () => {
   afterEach(() => vi.restoreAllMocks());
