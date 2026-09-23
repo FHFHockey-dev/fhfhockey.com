@@ -8,7 +8,7 @@ import serviceRoleClient from "lib/supabase/server";
 import { FantraxApiError, getFantraxDraftResults, getFantraxPlayerIds, type FantraxPlayerInfo } from "./client";
 import { FANTRAX_PROVIDER } from "./config";
 import { normalizeFantraxDraftResults, type FantraxDraftSnapshot } from "./draftResults";
-import { fantraxPlayerName, matchFantraxPlayerIds } from "./playerIdentity";
+import { fantraxPlayerName, matchFantraxPlayerIds, normalizeName } from "./playerIdentity";
 import {
   discoverLinkedFantraxLeagues,
   FantraxIntegrationError,
@@ -20,6 +20,7 @@ type DbClient = SupabaseClient<Database>;
 type Session = Database["public"]["Tables"]["fantrax_draft_sessions"]["Row"];
 
 const POLL_INTERVAL_MS = 30_000;
+const IDENTITY_MATCH_VERSION = "fantrax-nhl-v2-verified-alias";
 let playerCatalog: { value: Record<string, FantraxPlayerInfo>; expiresAt: number } | null = null;
 let pendingCatalog: Promise<Record<string, FantraxPlayerInfo>> | null = null;
 
@@ -95,18 +96,26 @@ async function enrichPickIdentities(client: DbClient, snapshot: FantraxDraftSnap
     if (mappedError) throw mappedError;
     const existing = new Set((mapped ?? []).map((row) => row.external_player_id));
     const unresolved = picks.filter((pick) => !existing.has(pick.playerId) && pick.playerName).map((pick) => pick.playerId);
-    if (!unresolved.length) return enriched;
-    const names = [...new Set(unresolved.map((id) => fantraxPlayerName(catalog[id])).filter((name): name is string => Boolean(name)))];
+    if (!unresolved.length) return { ...enriched, identityMatchVersion: IDENTITY_MATCH_VERSION };
+    const names = [...new Set(unresolved.map((id) => fantraxPlayerName(catalog[id])).filter((name): name is string => Boolean(name)).map(normalizeName))];
     const abbreviations = [...new Set(unresolved.map((id) => catalog[id]?.team).filter((team): team is string => Boolean(team && team !== "(N/A)")))];
-    if (!names.length || !abbreviations.length) return enriched;
-    const [teamsResult, identitiesResult] = await Promise.all([
-      client.from("teams").select("id,abbreviation").in("abbreviation", abbreviations),
-      client.from("fhfh_player_identities")
-        .select("id,canonical_name,canonical_position,current_nhl_team_id,nhl_player_id")
-        .in("canonical_name", names).eq("verification_status", "verified").is("merged_into_id", null),
+    if (!names.length) return { ...enriched, identityMatchVersion: IDENTITY_MATCH_VERSION };
+    const [teamsResult, aliasesResult] = await Promise.all([
+      abbreviations.length
+        ? client.from("teams").select("id,abbreviation").in("abbreviation", abbreviations)
+        : Promise.resolve({ data: [], error: null }),
+      client.from("fhfh_player_identity_aliases")
+        .select("fhfh_player_id,normalized_alias").in("normalized_alias", names).eq("verification_status", "verified"),
     ]);
-    if (teamsResult.error || identitiesResult.error) throw teamsResult.error ?? identitiesResult.error;
-    const matches = matchFantraxPlayerIds(unresolved, catalog, teamsResult.data ?? [], identitiesResult.data ?? []);
+    if (teamsResult.error || aliasesResult.error) throw teamsResult.error ?? aliasesResult.error;
+    const identityIds = [...new Set((aliasesResult.data ?? []).map((alias) => alias.fhfh_player_id))];
+    const identitiesResult = identityIds.length
+      ? await client.from("fhfh_player_identities")
+        .select("id,canonical_name,canonical_position,current_nhl_team_id,nhl_player_id")
+        .in("id", identityIds).eq("verification_status", "verified").is("merged_into_id", null)
+      : { data: [], error: null };
+    if (identitiesResult.error) throw identitiesResult.error;
+    const matches = matchFantraxPlayerIds(unresolved, catalog, teamsResult.data ?? [], identitiesResult.data ?? [], aliasesResult.data ?? []);
     if (matches.size) {
       const rows: Database["public"]["Tables"]["fhfh_player_external_identities"]["Insert"][] = [...matches].map(([externalId, identity]) => ({
         fhfh_player_id: identity.id,
@@ -114,11 +123,11 @@ async function enrichPickIdentities(client: DbClient, snapshot: FantraxDraftSnap
         context_key: "nhl",
         external_player_id: externalId,
         is_primary: false,
-        match_method: "exact_name_team_position",
-        match_confidence: 1,
+        match_method: "verified_alias_unique_or_exact_team_position",
+        match_confidence: 0.98,
         verification_status: "verified",
         verified_at: new Date().toISOString(),
-        verified_by_system: "fantrax-nhl-v1-exact-name-team-position",
+        verified_by_system: IDENTITY_MATCH_VERSION,
         source_provenance: {
           source: "fantrax_getPlayerIds",
           name: catalog[externalId].name,
@@ -132,8 +141,9 @@ async function enrichPickIdentities(client: DbClient, snapshot: FantraxDraftSnap
     }
   } catch {
     console.warn(JSON.stringify({ event: "fantrax_player_identity_unavailable" }));
+    return enriched;
   }
-  return enriched;
+  return { ...enriched, identityMatchVersion: IDENTITY_MATCH_VERSION };
 }
 
 async function mappedPicks(client: DbClient, snapshot: FantraxDraftSnapshot) {
@@ -302,7 +312,7 @@ export async function pollFantraxDraftSession(args: { userId: string; sessionId:
       throw new FantraxIntegrationError("Fantrax draft order changed. Continue manually and review the league.", 422, "FANTRAX_DRAFT_ORDER_CHANGED");
     }
     const needsIdentityRefresh = snapshot.hash !== session.snapshot_hash ||
-      previous.picks.some((pick) => pick.playerName === undefined);
+      previous.identityMatchVersion !== IDENTITY_MATCH_VERSION;
     if (needsIdentityRefresh) snapshot = await enrichPickIdentities(client, snapshot);
     const status = snapshot.providerStatus.toLowerCase() === "completed" ? "complete" : "active";
     const { data, error } = await client.from("fantrax_draft_sessions").update({
