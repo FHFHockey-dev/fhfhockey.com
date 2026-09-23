@@ -10,7 +10,7 @@ function restoredSessionId() {
   return window.sessionStorage.getItem(SESSION_KEY);
 }
 
-export function useFantraxDraftSync(authenticated: boolean) {
+export function useFantraxDraftSync(authenticated: boolean, authLoading = false) {
   const [enabled, setEnabled] = useState(false);
   const [eligible, setEligible] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(restoredSessionId);
@@ -39,24 +39,28 @@ export function useFantraxDraftSync(authenticated: boolean) {
   useEffect(() => { void refreshAccess(); }, [refreshAccess]);
 
   useEffect(() => {
-    if (authenticated) return;
+    if (authLoading || authenticated) return;
     setEnabled(false);
     setEligible(false);
     setDraftState(null);
     setSessionId(null);
     if (typeof window !== "undefined") window.sessionStorage.removeItem(SESSION_KEY);
-  }, [authenticated]);
+  }, [authenticated, authLoading]);
 
   useEffect(() => {
     if (!authenticated || !sessionId) return;
     let mounted = true;
     void fantraxAccountRequest<FantraxDraftState>(
       `/api/v1/account/fantrax/draft-sessions/${encodeURIComponent(sessionId)}`,
-    ).then((state) => { if (mounted) setDraftState(state); }).catch(() => {
+    ).then((state) => {
+      if (mounted) {
+        setDraftState(state);
+        setError(null);
+      }
+    }).catch((requestError) => {
       if (!mounted) return;
-      setSessionId(null);
       setDraftState(null);
-      window.sessionStorage.removeItem(SESSION_KEY);
+      setError(requestError instanceof Error ? requestError.message : "Fantrax live sync could not be resumed. Try again shortly.");
     });
     return () => { mounted = false; };
   }, [authenticated, sessionId]);
