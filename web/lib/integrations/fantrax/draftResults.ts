@@ -6,9 +6,10 @@ export type FantraxDraftPick = {
   pickInRound: number;
   teamId: string;
   playerId: string;
+  playerName?: string | null;
 };
 
-export type FantraxDraftSlot = Omit<FantraxDraftPick, "playerId"> & {
+export type FantraxDraftSlot = Omit<FantraxDraftPick, "playerId" | "playerName"> & {
   playerId: string | null;
 };
 

@@ -5,9 +5,10 @@ import { loadDraftProAccess } from "lib/draft-pro/server";
 import type { Database, Json } from "lib/supabase/database-generated.types";
 import serviceRoleClient from "lib/supabase/server";
 
-import { FantraxApiError, getFantraxDraftResults } from "./client";
+import { FantraxApiError, getFantraxDraftResults, getFantraxPlayerIds, type FantraxPlayerInfo } from "./client";
 import { FANTRAX_PROVIDER } from "./config";
 import { normalizeFantraxDraftResults, type FantraxDraftSnapshot } from "./draftResults";
+import { fantraxPlayerName, matchFantraxPlayerIds } from "./playerIdentity";
 import {
   discoverLinkedFantraxLeagues,
   FantraxIntegrationError,
@@ -19,6 +20,20 @@ type DbClient = SupabaseClient<Database>;
 type Session = Database["public"]["Tables"]["fantrax_draft_sessions"]["Row"];
 
 const POLL_INTERVAL_MS = 30_000;
+let playerCatalog: { value: Record<string, FantraxPlayerInfo>; expiresAt: number } | null = null;
+let pendingCatalog: Promise<Record<string, FantraxPlayerInfo>> | null = null;
+
+async function getPlayerCatalog() {
+  if (playerCatalog && playerCatalog.expiresAt > Date.now()) return playerCatalog.value;
+  pendingCatalog ??= getFantraxPlayerIds();
+  try {
+    const value = await pendingCatalog;
+    playerCatalog = { value, expiresAt: Date.now() + 30 * 60_000 };
+    return value;
+  } finally {
+    pendingCatalog = null;
+  }
+}
 
 export function isFantraxLiveDraftEnabled(env: Readonly<Record<string, string | undefined>> = process.env) {
   return env.FANTRAX_LIVE_DRAFT_ENABLED === "true";
@@ -56,12 +71,77 @@ async function ownedSession(client: DbClient, userId: string, sessionId: string)
   return data;
 }
 
+async function enrichPickIdentities(client: DbClient, snapshot: FantraxDraftSnapshot): Promise<FantraxDraftSnapshot> {
+  if (!snapshot.picks.length) return snapshot;
+  let catalog: Record<string, FantraxPlayerInfo>;
+  try {
+    catalog = await getPlayerCatalog();
+  } catch {
+    console.warn(JSON.stringify({ event: "fantrax_player_catalog_unavailable" }));
+    return snapshot;
+  }
+  const picks = snapshot.picks.map((pick) => ({
+    ...pick,
+    playerName: catalog[pick.playerId]?.fantraxId === pick.playerId
+      ? fantraxPlayerName(catalog[pick.playerId])
+      : null,
+  }));
+  const enriched = { ...snapshot, picks };
+  try {
+    const ids = [...new Set(picks.map((pick) => pick.playerId))];
+    const { data: mapped, error: mappedError } = await client.from("fhfh_player_external_identities")
+      .select("external_player_id").eq("provider", FANTRAX_PROVIDER).eq("context_key", "nhl")
+      .eq("verification_status", "verified").in("external_player_id", ids);
+    if (mappedError) throw mappedError;
+    const existing = new Set((mapped ?? []).map((row) => row.external_player_id));
+    const unresolved = picks.filter((pick) => !existing.has(pick.playerId) && pick.playerName).map((pick) => pick.playerId);
+    if (!unresolved.length) return enriched;
+    const names = [...new Set(unresolved.map((id) => fantraxPlayerName(catalog[id])).filter((name): name is string => Boolean(name)))];
+    const abbreviations = [...new Set(unresolved.map((id) => catalog[id]?.team).filter((team): team is string => Boolean(team && team !== "(N/A)")))];
+    if (!names.length || !abbreviations.length) return enriched;
+    const [teamsResult, identitiesResult] = await Promise.all([
+      client.from("teams").select("id,abbreviation").in("abbreviation", abbreviations),
+      client.from("fhfh_player_identities")
+        .select("id,canonical_name,canonical_position,current_nhl_team_id,nhl_player_id")
+        .in("canonical_name", names).eq("verification_status", "verified").is("merged_into_id", null),
+    ]);
+    if (teamsResult.error || identitiesResult.error) throw teamsResult.error ?? identitiesResult.error;
+    const matches = matchFantraxPlayerIds(unresolved, catalog, teamsResult.data ?? [], identitiesResult.data ?? []);
+    if (matches.size) {
+      const rows: Database["public"]["Tables"]["fhfh_player_external_identities"]["Insert"][] = [...matches].map(([externalId, identity]) => ({
+        fhfh_player_id: identity.id,
+        provider: FANTRAX_PROVIDER,
+        context_key: "nhl",
+        external_player_id: externalId,
+        is_primary: false,
+        match_method: "exact_name_team_position",
+        match_confidence: 1,
+        verification_status: "verified",
+        verified_at: new Date().toISOString(),
+        verified_by_system: "fantrax-nhl-v1-exact-name-team-position",
+        source_provenance: {
+          source: "fantrax_getPlayerIds",
+          name: catalog[externalId].name,
+          team: catalog[externalId].team,
+          position: catalog[externalId].position,
+        } as Json,
+      }));
+      const { error } = await client.from("fhfh_player_external_identities")
+        .upsert(rows, { onConflict: "provider,context_key,external_player_id", ignoreDuplicates: true });
+      if (error) throw error;
+    }
+  } catch {
+    console.warn(JSON.stringify({ event: "fantrax_player_identity_unavailable" }));
+  }
+  return enriched;
+}
+
 async function mappedPicks(client: DbClient, snapshot: FantraxDraftSnapshot) {
   const ids = [...new Set(snapshot.picks.map((pick) => pick.playerId))];
   if (!ids.length) return snapshot.picks.map((pick) => ({ ...pick, nhlPlayerId: null }));
   const { data: mappings, error } = await client.from("fhfh_player_external_identities")
     .select("external_player_id,fhfh_player_id,verification_status")
-    .eq("provider", FANTRAX_PROVIDER).in("external_player_id", ids);
+    .eq("provider", FANTRAX_PROVIDER).eq("context_key", "nhl").in("external_player_id", ids);
   if (error) throw error;
   const verified = new Map<string, number>();
   const conflicting = new Set<string>();
@@ -73,14 +153,24 @@ async function mappedPicks(client: DbClient, snapshot: FantraxDraftSnapshot) {
   }
   const identityIds = [...new Set([...verified.values()])];
   const identities = identityIds.length
-    ? await client.from("fhfh_player_identities").select("id,nhl_player_id").in("id", identityIds)
+    ? await client.from("fhfh_player_identities").select("id,nhl_player_id,verification_status,merged_into_id").in("id", identityIds)
     : { data: [], error: null };
   if (identities.error) throw identities.error;
-  const nhlByIdentity = new Map((identities.data ?? []).map((identity) => [identity.id, identity.nhl_player_id]));
-  return snapshot.picks.map((pick) => ({
-    ...pick,
-    nhlPlayerId: conflicting.has(pick.playerId) ? null : nhlByIdentity.get(verified.get(pick.playerId) ?? -1) ?? null,
-  }));
+  const nhlByIdentity = new Map((identities.data ?? [])
+    .filter((identity) => identity.verification_status === "verified" && identity.merged_into_id == null)
+    .map((identity) => [identity.id, identity.nhl_player_id]));
+  const nhlUse = new Map<number, number>();
+  for (const pick of snapshot.picks) {
+    const nhlId = nhlByIdentity.get(verified.get(pick.playerId) ?? -1);
+    if (nhlId != null) nhlUse.set(nhlId, (nhlUse.get(nhlId) ?? 0) + 1);
+  }
+  return snapshot.picks.map((pick) => {
+    const nhlId = nhlByIdentity.get(verified.get(pick.playerId) ?? -1);
+    return {
+      ...pick,
+      nhlPlayerId: !conflicting.has(pick.playerId) && nhlId != null && nhlUse.get(nhlId) === 1 ? nhlId : null,
+    };
+  });
 }
 
 async function response(client: DbClient, session: Session) {
@@ -160,6 +250,7 @@ export async function startFantraxDraftSession(args: {
   if (snapshot.draftOrder.some((id) => !knownTeams.has(id))) {
     throw new FantraxIntegrationError("Fantrax draft teams no longer match the linked league. Continue manually.", 422, "FANTRAX_DRAFT_TEAMS_CHANGED");
   }
+  snapshot = await enrichPickIdentities(client, snapshot);
   const now = new Date().toISOString();
   const status = snapshot.providerStatus.toLowerCase() === "completed" ? "complete" : "active";
   const { data, error } = await client.from("fantrax_draft_sessions").upsert({
@@ -204,17 +295,20 @@ export async function pollFantraxDraftSession(args: { userId: string; sessionId:
     const { data: league, error: leagueError } = await client.from("external_leagues")
       .select("external_league_key").eq("id", session.external_league_id).eq("user_id", args.userId).eq("provider", FANTRAX_PROVIDER).maybeSingle();
     if (leagueError || !league) throw leagueError ?? new Error("Fantrax league disappeared.");
-    const snapshot = normalizeFantraxDraftResults(await getFantraxDraftResults(league.external_league_key));
+    let snapshot = normalizeFantraxDraftResults(await getFantraxDraftResults(league.external_league_key));
     if (!snapshot.safeToApply) throw new FantraxIntegrationError(snapshot.warning ?? "Fantrax draft data is ambiguous.", 422, "FANTRAX_DRAFT_AMBIGUOUS");
     const previous = session.snapshot as unknown as FantraxDraftSnapshot;
     if (JSON.stringify(snapshot.draftOrder) !== JSON.stringify(previous.draftOrder)) {
       throw new FantraxIntegrationError("Fantrax draft order changed. Continue manually and review the league.", 422, "FANTRAX_DRAFT_ORDER_CHANGED");
     }
+    const needsIdentityRefresh = snapshot.hash !== session.snapshot_hash ||
+      previous.picks.some((pick) => pick.playerName === undefined);
+    if (needsIdentityRefresh) snapshot = await enrichPickIdentities(client, snapshot);
     const status = snapshot.providerStatus.toLowerCase() === "completed" ? "complete" : "active";
     const { data, error } = await client.from("fantrax_draft_sessions").update({
       status,
       provider_status: snapshot.providerStatus,
-      ...(snapshot.hash !== session.snapshot_hash ? { snapshot: snapshot as unknown as Json, snapshot_hash: snapshot.hash } : {}),
+      ...(needsIdentityRefresh ? { snapshot: snapshot as unknown as Json, snapshot_hash: snapshot.hash } : {}),
       last_polled_at: now.toISOString(),
       next_poll_at: new Date(now.getTime() + POLL_INTERVAL_MS).toISOString(),
       consecutive_failures: 0,
