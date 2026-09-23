@@ -163,6 +163,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         const placeholder: ProcessedPlayer = {
           playerId: Number(p.playerId),
           fullName:
+            p.fantraxDisplayName ||
             p.espnDisplayName ||
             p.yahooDisplayName ||
             (p.yahooPlayerId

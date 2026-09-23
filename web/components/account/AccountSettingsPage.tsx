@@ -3274,6 +3274,7 @@ export default function AccountSettingsPage() {
                     role={yahooFeedback.tone === "error" ? "alert" : undefined}
                   >
                     {yahooFeedback.message}
+                    {yahooFeedback.tone === "error" ? <p>If Yahoo asked you to sign in, use the Yahoo account that owns your hockey team and approve access. Then click Refresh Yahoo Data. If the league is still missing, check that it appears in that Yahoo account.</p> : null}
                   </div>
                 ) : null}
 
@@ -3329,6 +3330,12 @@ export default function AccountSettingsPage() {
                     {!draftProEligible ? (
                       <div className={styles.infoMessage} role="status">
                         Yahoo league sync and imported Yahoo league settings are a Draft Pro feature. Upgrade to connect or refresh Yahoo; manual league settings remain available on the free tier.
+                      </div>
+                    ) : null}
+
+                    {draftProEligible && !yahooConnectedAccount ? (
+                      <div className={styles.infoMessage} role="status">
+                        <strong>Connect in three steps:</strong> Click Connect Yahoo Fantasy, sign in on Yahoo and approve access, then return here to choose your NHL league and team. Open the Draft Dashboard to start live draft sync.
                       </div>
                     ) : null}
 

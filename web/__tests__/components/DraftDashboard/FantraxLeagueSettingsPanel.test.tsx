@@ -150,11 +150,40 @@ describe("Draft Dashboard Fantrax settings picker", () => {
     rerender(
       <FantraxLeagueSettingsPanel enabled disabled onApply={onApply} />,
     );
-    expect(screen.getByText(/Yahoo live draft sync is authoritative/)).toBeTruthy();
+    expect(screen.getByText(/cannot be applied while live sync or manual draft work is active/)).toBeTruthy();
     expect(
       (screen.getByRole("button", {
         name: "Apply to this draft",
       }) as HTMLButtonElement).disabled,
     ).toBe(true);
+  });
+
+  it("keeps settings apply available when live sync is rolled off", async () => {
+    useFantraxConnections.mockReturnValue(hookData());
+    const onApply = vi.fn();
+    render(<FantraxLeagueSettingsPanel enabled disabled={false} onApply={onApply} liveSync={{
+      enabled: false, eligible: false, state: null, error: null, isLoading: false,
+      isPolling: false, blocked: false, onStart: vi.fn(), onStop: vi.fn(), onPoll: vi.fn(),
+    }} />);
+    await screen.findByText(/points · 2 scoring mappings/);
+    fireEvent.click(screen.getByRole("button", { name: "Apply to this draft" }));
+    expect(onApply).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("button", { name: "Start live sync" })).toBeNull();
+  });
+
+  it("offers stop and manual continuation from the last snapshot", async () => {
+    useFantraxConnections.mockReturnValue(hookData());
+    const onStop = vi.fn();
+    render(<FantraxLeagueSettingsPanel enabled disabled onApply={vi.fn()} liveSync={{
+      enabled: true, eligible: true,
+      state: {
+        session: { id: "session", status: "active", providerStatus: "inProgress", externalLeagueId: "league-row-1", externalTeamId: "team-row-1", lastPolledAt: null, nextPollAt: "", lastErrorCode: null },
+        draftOrder: ["team-key-1"], slots: [], picks: [], warning: null, pollIntervalMs: 30000,
+      },
+      error: null, isLoading: false, isPolling: false, blocked: true,
+      onStart: vi.fn(), onStop, onPoll: vi.fn(),
+    }} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Stop & continue manually" }));
+    expect(onStop).toHaveBeenCalledTimes(1);
   });
 });

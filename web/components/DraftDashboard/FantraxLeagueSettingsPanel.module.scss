@@ -93,6 +93,25 @@
   display: grid;
   gap: v.$space-xs;
 
+  p {
+    margin: 0;
+  }
+
+  button {
+    min-height: v.$control-height-md;
+    padding: 0 v.$space-sm;
+    border: v.$border-subtle;
+    border-radius: v.$radius-md;
+    background: v.$background-medium;
+    color: v.$text-primary;
+    cursor: pointer;
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+  }
+
   ul {
     margin: 0;
     padding-left: v.$space-md;

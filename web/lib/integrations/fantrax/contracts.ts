@@ -85,5 +85,36 @@ export type FantraxConnectionsResponse = {
   defaultExternalTeamId: string | null;
 };
 
+export type FantraxDraftState = {
+  session: {
+    id: string;
+    status: string;
+    providerStatus: string;
+    externalLeagueId: string;
+    externalTeamId: string;
+    lastPolledAt: string | null;
+    nextPollAt: string;
+    lastErrorCode: string | null;
+  };
+  draftOrder: string[];
+  slots: Array<{
+    pickNumber: number;
+    roundNumber: number;
+    pickInRound: number;
+    teamId: string;
+    playerId: string | null;
+  }>;
+  picks: Array<{
+    pickNumber: number;
+    roundNumber: number;
+    pickInRound: number;
+    teamId: string;
+    playerId: string;
+    nhlPlayerId: number | null;
+  }>;
+  warning: string | null;
+  pollIntervalMs: number;
+};
+
 export const FANTRAX_CONSENT_VERSION = "fantrax-settings-v1";
 export const FANTRAX_MAPPING_VERSION = "fantrax-nhl-v1";

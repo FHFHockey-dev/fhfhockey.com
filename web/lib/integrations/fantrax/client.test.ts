@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  getFantraxDraftResults,
   getFantraxLeagueInfo,
   getFantraxLeagues,
 } from "./client";
@@ -15,6 +16,17 @@ function jsonResponse(payload: unknown, status = 200, headers?: HeadersInit) {
 describe("Fantrax FXEA client", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it("reads the officially documented numbered draft results with GET", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({
+      draftState: "completed", draftType: "snake", draftOrder: ["team"], draftPicks: [],
+    }));
+    await getFantraxDraftResults("league-1", { fetchImpl, maxAttempts: 1 });
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(String(url)).toBe("https://www.fantrax.com/fxea/general/getDraftResults?leagueId=league-1");
+    expect(init?.method).toBe("GET");
+    expect(String(url)).not.toContain("userSecretId");
   });
 
   it("retries 429 responses, respects Retry-After, and never logs credentials", async () => {

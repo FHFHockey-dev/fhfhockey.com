@@ -2837,6 +2837,66 @@ export type Database = {
           },
         ]
       }
+      fantrax_draft_sessions: {
+        Row: {
+          id: string
+          user_id: string
+          connected_account_id: string
+          external_league_id: string
+          external_team_id: string
+          status: string
+          provider_status: string
+          snapshot: Json
+          snapshot_hash: string | null
+          next_poll_at: string
+          poll_lease_token: string | null
+          poll_lease_expires_at: string | null
+          consecutive_failures: number
+          last_error_code: string | null
+          last_polled_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          connected_account_id: string
+          external_league_id: string
+          external_team_id: string
+          status?: string
+          provider_status?: string
+          snapshot?: Json
+          snapshot_hash?: string | null
+          next_poll_at?: string
+          poll_lease_token?: string | null
+          poll_lease_expires_at?: string | null
+          consecutive_failures?: number
+          last_error_code?: string | null
+          last_polled_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          connected_account_id?: string
+          external_league_id?: string
+          external_team_id?: string
+          status?: string
+          provider_status?: string
+          snapshot?: Json
+          snapshot_hash?: string | null
+          next_poll_at?: string
+          poll_lease_token?: string | null
+          poll_lease_expires_at?: string | null
+          consecutive_failures?: number
+          last_error_code?: string | null
+          last_polled_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       espn_draft_picks: {
         Row: {
           bid_amount: number | null
@@ -48015,6 +48075,14 @@ export type Database = {
           p_user_id: string
         }
         Returns: Json
+      }
+      claim_fantrax_draft_poll: {
+        Args: {
+          p_session_id: string
+          p_user_id: string
+          p_now: string
+        }
+        Returns: string | null
       }
       claim_espn_sync_lease: {
         Args: {
