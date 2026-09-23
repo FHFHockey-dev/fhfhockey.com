@@ -141,6 +141,7 @@ describe("YahooLiveDraftPanel", () => {
     expect(screen.getByText(status)).toBeTruthy();
     if (linkName) expect(screen.getByRole("link", { name: linkName })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Yahoo Fantasy Draft Sync" })).toBeTruthy();
+    if (state.liveSyncEnabled) expect(screen.getByText("Connect your Yahoo draft")).toBeTruthy();
     expect(screen.queryByText(/did not provide an explicit snake or straight draft order/)).toBeNull();
   });
 
@@ -259,7 +260,8 @@ describe("YahooLiveDraftPanel", () => {
     expect(screen.getByText(/scoring values incomplete/)).toBeTruthy();
     expect(screen.getByText(/Applying updates roster and scoring/)).toBeTruthy();
     expect(screen.getByText("Your team: Tim's Team")).toBeTruthy();
-    expect(screen.getByText(/Live updates are delayed/)).toBeTruthy();
+    expect(screen.getByText(/Yahoo updates are delayed/)).toBeTruthy();
+    expect(screen.getByText(/use Quick Fix to assign the players manually/)).toBeTruthy();
     const attribution = screen.getByRole("img", { name: "Powered by Yahoo" });
     expect(attribution.getAttribute("src")).toBe(
       "https://poweredby.yahoo.com/poweredby_yahoo_h_white_retina.png",

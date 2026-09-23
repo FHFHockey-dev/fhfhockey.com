@@ -23,6 +23,8 @@ import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
 import { useDraftRanking } from "hooks/useDraftRanking";
 import { useYahooDraftSync } from "hooks/useYahooDraftSync";
 import { useEspnDraftSync } from "hooks/useEspnDraftSync";
+import { useFantraxDraftSync } from "hooks/useFantraxDraftSync";
+import { reconcileFantraxDraftState } from "lib/draftDashboard/fantraxLiveDraft";
 import supabase from "lib/supabase";
 import { useAuth } from "contexts/AuthProviderContext";
 
@@ -248,7 +250,7 @@ export interface DraftedPlayer {
   pickInRound: number;
   isKeeper?: boolean;
   keeperVersion?: number;
-  source?: "manual" | "yahoo" | "espn";
+  source?: "manual" | "yahoo" | "espn" | "fantrax";
   yahooSessionId?: string;
   yahooPlayerKey?: string;
   yahooPlayerId?: string;
@@ -258,6 +260,9 @@ export interface DraftedPlayer {
   espnPlayerId?: string;
   espnDisplayName?: string;
   espnMappingStatus?: "mapped" | "unresolved" | "review_required";
+  fantraxPlayerId?: string;
+  fantraxDisplayName?: string;
+  fantraxMappingStatus?: "mapped" | "unresolved";
   auctionCost?: number | null;
 }
 
@@ -371,17 +376,19 @@ const isSnapshotRecord = (value: unknown): value is Record<string, unknown> => B
 export function adaptSavedDraftRows(snapshot: { draftedPlayers: readonly unknown[]; customCsvList?: readonly unknown[] }) {
   const draftedPlayers = snapshot.draftedPlayers.map((value) => {
     if (!isSnapshotRecord(value) || typeof value.playerId !== "string" || typeof value.teamId !== "string" || !Number.isInteger(value.pickNumber) || !Number.isInteger(value.round) || !Number.isInteger(value.pickInRound)) throw new Error("Saved draft picks are invalid.");
-    const optionalStrings = ["yahooSessionId", "yahooPlayerKey", "yahooPlayerId", "yahooDisplayName", "espnSessionId", "espnPlayerId", "espnDisplayName"] as const;
+    const optionalStrings = ["yahooSessionId", "yahooPlayerKey", "yahooPlayerId", "yahooDisplayName", "espnSessionId", "espnPlayerId", "espnDisplayName", "fantraxPlayerId", "fantraxDisplayName"] as const;
     if (optionalStrings.some((field) => value[field] !== undefined && typeof value[field] !== "string")) throw new Error("Saved draft pick metadata is invalid.");
-    if (value.source !== undefined && !["manual", "yahoo", "espn"].includes(String(value.source))) throw new Error("Saved draft pick source is invalid.");
+    if (value.source !== undefined && !["manual", "yahoo", "espn", "fantrax"].includes(String(value.source))) throw new Error("Saved draft pick source is invalid.");
     if (value.yahooMappingStatus !== undefined && !["mapped", "unresolved", "review_required"].includes(String(value.yahooMappingStatus))) throw new Error("Saved Yahoo mapping status is invalid.");
     if (value.espnMappingStatus !== undefined && !["mapped", "unresolved", "review_required"].includes(String(value.espnMappingStatus))) throw new Error("Saved ESPN mapping status is invalid.");
+    if (value.fantraxMappingStatus !== undefined && !["mapped", "unresolved"].includes(String(value.fantraxMappingStatus))) throw new Error("Saved Fantrax mapping status is invalid.");
     if (value.isKeeper !== undefined && typeof value.isKeeper !== "boolean" || value.keeperVersion !== undefined && !Number.isInteger(value.keeperVersion) || value.auctionCost !== undefined && value.auctionCost !== null && typeof value.auctionCost !== "number") throw new Error("Saved draft pick metadata is invalid.");
     const player: DraftedPlayer = { playerId: value.playerId, teamId: value.teamId, pickNumber: value.pickNumber as number, round: value.round as number, pickInRound: value.pickInRound as number };
     for (const field of optionalStrings) if (typeof value[field] === "string") Object.assign(player, { [field]: value[field] });
     if (value.source) player.source = value.source as DraftedPlayer["source"];
     if (value.yahooMappingStatus) player.yahooMappingStatus = value.yahooMappingStatus as DraftedPlayer["yahooMappingStatus"];
     if (value.espnMappingStatus) player.espnMappingStatus = value.espnMappingStatus as DraftedPlayer["espnMappingStatus"];
+    if (value.fantraxMappingStatus) player.fantraxMappingStatus = value.fantraxMappingStatus as DraftedPlayer["fantraxMappingStatus"];
     if (typeof value.isKeeper === "boolean") player.isKeeper = value.isKeeper;
     if (typeof value.keeperVersion === "number") player.keeperVersion = value.keeperVersion;
     if (typeof value.auctionCost === "number" || value.auctionCost === null) player.auctionCost = value.auctionCost;
@@ -436,6 +443,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   const draftRanking = useDraftRanking(user?.id || null);
   const yahooDraftSync = useYahooDraftSync(Boolean(user?.id));
   const espnDraftSync = useEspnDraftSync(Boolean(user?.id));
+  const fantraxDraftSync = useFantraxDraftSync(Boolean(user?.id));
   const {
     enabled: yahooFeatureEnabled,
     selectedLeagueId: yahooSelectedLeagueId,
@@ -493,7 +501,8 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   const espnLiveActive =
     espnDraftSync.draftState?.session.status === "predraft" ||
     espnDraftSync.draftState?.session.status === "active";
-  const manualDraftingEnabled = draftMode === "manual" && !espnLiveActive;
+  const fantraxLiveActive = fantraxDraftSync.eligible && fantraxDraftSync.draftState?.session.status === "active";
+  const manualDraftingEnabled = draftMode === "manual" && !espnLiveActive && !fantraxLiveActive;
   const restoredYahooPersistenceRef = useRef(
     typeof window === "undefined"
       ? null
@@ -1580,6 +1589,21 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     () => reconcileEspnDraftState(espnDraftSync.draftState, allPlayers),
     [allPlayers, espnDraftSync.draftState],
   );
+  const fantraxReconciliation = useMemo(
+    () => reconcileFantraxDraftState(fantraxDraftSync.draftState, allPlayers, draftSettings.draftOrder),
+    [allPlayers, draftSettings.draftOrder, fantraxDraftSync.draftState],
+  );
+
+  useEffect(() => {
+    const state = fantraxDraftSync.draftState;
+    if (!state || !fantraxDraftSync.eligible || !["active", "complete"].includes(state.session.status) || !fantraxReconciliation.safe) return;
+    setManualDraftedPlayers((previous) => {
+      const next = fantraxReconciliation.draftedPlayers;
+      return JSON.stringify(previous) === JSON.stringify(next) ? previous : next;
+    });
+    setCurrentPick(fantraxReconciliation.currentPick);
+    setDraftHistory([]);
+  }, [fantraxDraftSync.draftState, fantraxDraftSync.eligible, fantraxReconciliation]);
 
   useEffect(() => {
     const state = espnDraftSync.draftState;
@@ -1653,6 +1677,16 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     setKeepers((previous) => (previous.length ? [] : previous));
   }, [espnDraftSync.draftState, espnReconciliation]);
   const currentTurn = useMemo(() => {
+    if (fantraxLiveActive) {
+      const teamId = fantraxReconciliation.nextTeamId ?? "";
+      return {
+        ...manualCurrentTurn,
+        round: fantraxReconciliation.nextRound ?? manualCurrentTurn.round,
+        pickInRound: fantraxReconciliation.nextPickInRound ?? manualCurrentTurn.pickInRound,
+        teamId,
+        isMyTurn: teamId === myTeamId,
+      };
+    }
     if (draftMode === "manual") return manualCurrentTurn;
     const expected = yahooReconciliation.expectedNext;
     const teamId = expected.yahooTeamKey || manualCurrentTurn.teamId;
@@ -1662,7 +1696,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       teamId,
       isMyTurn: teamId === myTeamId,
     };
-  }, [draftMode, manualCurrentTurn, myTeamId, yahooReconciliation.expectedNext]);
+  }, [draftMode, fantraxLiveActive, fantraxReconciliation.nextPickInRound, fantraxReconciliation.nextRound, fantraxReconciliation.nextTeamId, manualCurrentTurn, myTeamId, yahooReconciliation.expectedNext]);
   const yahooDraftedPlayers = yahooReconciliation.draftedPlayers;
   const activeKeepers = useMemo(() => draftMode === "yahoo"
     ? yahooCompatibleKeepers(yahooDraftKeepers(yahooDraftSync.draftState, allPlayers, keepers).keepers, yahooDraftedPlayers) : keepers,
@@ -1675,7 +1709,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   const draftPlayerNames = useMemo(() => {
     const names = new Map(allPlayers.map(player => [String(player.playerId), player.fullName]));
     for (const pick of draftedPlayers) {
-      const name = pick.espnDisplayName || pick.yahooDisplayName;
+      const name = pick.fantraxDisplayName || pick.espnDisplayName || pick.yahooDisplayName;
       if (name && !names.has(pick.playerId)) names.set(pick.playerId, name);
     }
     return names;
@@ -1710,6 +1744,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   const hasOrdinaryManualPick = manualDraftedPlayers.some(
     (player) => !player.isKeeper,
   );
+  const hasNonFantraxDraftWork = manualDraftedPlayers.some((player) => player.source !== "fantrax");
 
   const personalRankByPlayerId = useMemo(() => {
     const rankByNhlPlayerId = new Map<number, number>();
@@ -2631,7 +2666,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       .slice(0, 5)
       .map((pick) => {
         const player = allPlayers.find((entry) => String(entry.playerId) === pick.playerId);
-        const name = player?.fullName || pick.espnDisplayName || pick.yahooDisplayName || `Player #${pick.playerId}`;
+        const name = player?.fullName || pick.fantraxDisplayName || pick.espnDisplayName || pick.yahooDisplayName || `Player #${pick.playerId}`;
         return `#${pick.pickNumber} ${name} — ${customTeamNames[pick.teamId] || pick.teamId}`;
       });
     return [
@@ -2642,18 +2677,43 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   }, [allPlayers, currentPick, currentTurn.teamId, customTeamNames, draftComplete, draftedPlayers, totalPicks]);
   const scoreboardText = scoreboardSections.join("   •   ");
   const startYahooDraftSync = useCallback(async () => {
-    if (espnLiveActive) return;
+    if (espnLiveActive || fantraxLiveActive) return;
     const started = await startYahooSession();
     if (!started) return;
     setDraftMode("yahoo");
     setDraftHistory([]);
-  }, [espnLiveActive, startYahooSession]);
+  }, [espnLiveActive, fantraxLiveActive, startYahooSession]);
 
   const startEspnDraftSync = useCallback(async () => {
-    if (draftMode !== "manual") return;
+    if (draftMode !== "manual" || fantraxLiveActive) return;
     const started = await espnDraftSync.start();
     if (started) setDraftHistory([]);
-  }, [draftMode, espnDraftSync]);
+  }, [draftMode, espnDraftSync, fantraxLiveActive]);
+
+  const startFantraxDraftSync = useCallback(async (league: FantraxConnectionLeague, teamId: string) => {
+    if (!manualDraftingEnabled || hasNonFantraxDraftWork || keepers.length || pickTrades.length) return;
+    if (!window.confirm("Start Fantrax live sync? Your team count and displayed team names will match Fantrax. Existing league scoring and roster settings will stay in place.")) return;
+    const state = await fantraxDraftSync.start(league.id, teamId);
+    if (state) {
+      const localOrder = resizeDraftOrder(draftSettings.draftOrder, state.draftOrder.length);
+      const names = new Map(league.teams.map((team) => [team.externalTeamKey, team.name]));
+      const nextNames = Object.fromEntries(state.draftOrder.map((externalId, index) => [
+        localOrder[index], names.get(externalId) ?? `Fantrax team ${index + 1}`,
+      ]));
+      setDraftSettings((previous) => ({ ...previous, teamCount: localOrder.length, draftOrder: localOrder }));
+      setCustomTeamNames(nextNames);
+      const ownTeam = league.teams.find((team) => team.id === teamId);
+      const ownIndex = state.draftOrder.indexOf(ownTeam?.externalTeamKey ?? "");
+      if (ownIndex >= 0) setMyTeamId(localOrder[ownIndex]);
+      espnDraftSync.clear();
+      setDraftHistory([]);
+    }
+  }, [draftSettings.draftOrder, espnDraftSync, fantraxDraftSync, hasNonFantraxDraftWork, keepers.length, manualDraftingEnabled, pickTrades.length]);
+
+  const stopFantraxAndContinueManually = useCallback(async () => {
+    await fantraxDraftSync.stop();
+    setDraftHistory([]);
+  }, [fantraxDraftSync]);
 
   const stopEspnAndContinueManually = useCallback(async () => {
     await espnDraftSync.stop();
@@ -3333,7 +3393,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     skaterData.sourceWarnings?.length ||
     goalieData.sourceWarnings?.length,
   );
-  const syncError = yahooDraftSync.error || espnDraftSync.error;
+  const syncError = yahooDraftSync.error || espnDraftSync.error || fantraxDraftSync.error;
   const errorMessage =
     !seasonLoading && !hasLoadedPlayers && combinedSourceErrors.length > 0
       ? combinedSourceErrors.join(" ")
@@ -3764,7 +3824,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         }))}
         draftLocked={!manualDraftingEnabled}
         structuralSettingsLocked={hasOrdinaryManualPick}
-        draftLockReason={`${espnLiveActive ? "ESPN" : "Yahoo"} live sync controls picks and league structure. Stop sync to edit manual draft settings.`}
+        draftLockReason={`${espnLiveActive ? "ESPN" : fantraxLiveActive ? "Fantrax" : "Yahoo"} live sync controls picks and league structure. Stop sync to edit manual draft settings.`}
         onBookmarkCreate={() => {}}
         onBookmarkImport={(data) => {
           if (!manualDraftingEnabled) return;
@@ -3876,6 +3936,24 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         enabled={Boolean(user?.id)}
         disabled={!manualDraftingEnabled || hasOrdinaryManualPick || keepers.length > 0 || pickTrades.length > 0}
         onApply={applyFantraxLeagueSettings}
+        liveSync={{
+          enabled: fantraxDraftSync.enabled,
+          eligible: fantraxDraftSync.eligible,
+          state: fantraxDraftSync.draftState,
+          error: fantraxDraftSync.error,
+          isLoading: fantraxDraftSync.isLoading,
+          isPolling: fantraxDraftSync.isPolling,
+          blocked: !manualDraftingEnabled || hasNonFantraxDraftWork || keepers.length > 0 || pickTrades.length > 0,
+          unresolvedCount: fantraxReconciliation.unresolved.length,
+          orderMatches: fantraxReconciliation.safe,
+          nextPickNumber: fantraxReconciliation.currentPick,
+          nextTeamLabel: fantraxReconciliation.nextTeamId
+            ? customTeamNames[fantraxReconciliation.nextTeamId] ?? fantraxReconciliation.nextTeamId
+            : null,
+          onStart: (league, teamId) => { void startFantraxDraftSync(league, teamId); },
+          onStop: () => { void stopFantraxAndContinueManually(); },
+          onPoll: () => { void fantraxDraftSync.poll(); },
+        }}
       />
 
       <EspnLeagueSettingsPanel
@@ -3938,7 +4016,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         state={espnDraftSync.draftState}
         reconciliation={espnReconciliation}
         active={espnLiveActive}
-        blocked={draftMode === "yahoo"}
+        blocked={draftMode === "yahoo" || fantraxLiveActive}
         isLoading={espnDraftSync.isLoading}
         isPolling={espnDraftSync.isPolling}
         error={espnDraftSync.error}
@@ -4191,7 +4269,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
           <MyRoster
             onSelectedTeamChange={setInspectedTeamId}
             viewRequest={rosterViewRequest}
-            nextPickByTeam={Object.fromEntries(draftSettings.draftOrder.map((teamId) => [teamId, currentPick + findPicksUntilTeamTurn({ currentPick, teamId, draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern, trades: effectivePickTrades, keepers: activeKeepers, completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), teamRosterCounts, rosterCapacity: rosterRoundCount(draftSettings.rosterConfig), maxPickNumber: draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig) })]))}
+            nextPickByTeam={fantraxLiveActive ? fantraxReconciliation.nextPickByTeam : Object.fromEntries(draftSettings.draftOrder.map((teamId) => [teamId, currentPick + findPicksUntilTeamTurn({ currentPick, teamId, draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern, trades: effectivePickTrades, keepers: activeKeepers, completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), teamRosterCounts, rosterCapacity: rosterRoundCount(draftSettings.rosterConfig), maxPickNumber: draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig) })]))}
             scheduleState={rosterScheduleOptimizer}
             myTeamId={myTeamId}
             teamStatsList={teamStats}

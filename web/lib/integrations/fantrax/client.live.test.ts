@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { getFantraxLeagueInfo, getFantraxLeagues } from "./client";
+import { getFantraxDraftResults, getFantraxLeagueInfo, getFantraxLeagues } from "./client";
+import { normalizeFantraxDraftResults } from "./draftResults";
 import {
   normalizeFantraxDiscovery,
   normalizeFantraxLeagueInfo,
@@ -40,3 +41,19 @@ const liveEnabled =
     45_000,
   );
 });
+
+(!process.env.CI && process.env.FANTRAX_DRAFT_LIVE_LEAGUE_ID ? describe : describe.skip)(
+  "Fantrax numbered draft live smoke",
+  () => {
+    it("maps a real response without treating future empty slots as skipped picks", async () => {
+      const snapshot = normalizeFantraxDraftResults(
+        await getFantraxDraftResults(process.env.FANTRAX_DRAFT_LIVE_LEAGUE_ID!),
+      );
+      expect(snapshot.safeToApply).toBe(true);
+      expect(snapshot.slots.length).toBeGreaterThan(0);
+      expect(snapshot.slots.length).toBeGreaterThanOrEqual(snapshot.picks.length);
+      const lastSelected = snapshot.picks.at(-1)?.pickNumber ?? 0;
+      expect(snapshot.slots.some((slot) => slot.playerId === null && slot.pickNumber <= lastSelected)).toBe(false);
+    }, 45_000);
+  },
+);

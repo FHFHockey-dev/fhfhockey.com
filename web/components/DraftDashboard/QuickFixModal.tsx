@@ -127,8 +127,8 @@ export default function QuickFixModal({
               Quick Fix Draft Pick
             </h2>
             <p id="quick-fix-description" className={styles.description}>
-              Replace one completed manual pick without changing draft order or
-              later selections.
+              Replace one completed manual or unresolved Fantrax pick without
+              changing draft order or later selections.
             </p>
           </div>
           <button

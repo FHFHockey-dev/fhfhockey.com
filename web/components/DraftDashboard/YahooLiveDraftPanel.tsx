@@ -292,6 +292,17 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
         </div>
       )}
 
+      {liveSyncReady && mode === "manual" && (
+        <div className={styles.setupNotice} role="status">
+          <strong>Connect your Yahoo draft</strong>
+          <ol>
+            <li>Click <strong>Connect Yahoo</strong>. Sign in on Yahoo and allow FHFH to read your fantasy leagues.</li>
+            <li>Choose your NHL league below. If it is missing, click <strong>Refresh leagues</strong>.</li>
+            <li>Click <strong>Start live sync</strong>. Check the first picks against your Yahoo draft room, then apply Yahoo settings if prompted.</li>
+          </ol>
+        </div>
+      )}
+
       <div className={styles.controls}>
         <label className={styles.leagueControl}>
           <span>Yahoo league</span>
@@ -374,6 +385,11 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
           {yahooUnsupportedLeagueMessage(selectedLeague.unsupportedReason)}
         </div>
       )}
+      {liveSyncReady && leagues.length === 0 && requestState !== "loading" && (
+        <div className={styles.infoNotice} role="status">
+          No Yahoo NHL league found yet. Connect Yahoo, then click Refresh leagues. If your league is still missing, check that you signed in to the Yahoo account that owns the team.
+        </div>
+      )}
 
       {draftState && (
         <>
@@ -444,7 +460,7 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
             not be mapped automatically.
           </strong>{" "}
           The picks remain visible as placeholders and no name-based match was
-          applied.
+          applied. Compare them with Yahoo. If they are correct, stop sync and use Quick Fix to assign the players manually.
           <ul>
             {reconciliation.unresolved.map((pick) => (
               <li key={pick.pickNumber}>
@@ -469,21 +485,20 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
       {draftState?.session.stale && (
         <div className={styles.staleWarning} role="alert">
           {draftState.session.staleSeverity === "critical"
-            ? "Live updates are critically delayed. Verify every pick in Yahoo and continue manually if the delay persists."
-            : "Live updates are delayed. Check for updates and verify Yahoo before relying on the expected-next-pick prediction."}
+            ? "Yahoo updates are very late. Click Check for updates and compare the picks with your Yahoo draft room. If they still differ, stop sync and continue manually."
+            : "Yahoo updates are delayed. Click Check for updates and compare the next pick with your Yahoo draft room before relying on it."}
         </div>
       )}
 
       {draftState?.session.status === "reauth_required" && (
         <div className={styles.error} role="alert">
-          Yahoo authorization expired. Reconnect Yahoo, or stop live sync and
-          continue manually.
+          Yahoo needs you to sign in again. Click Connect Yahoo, then Check for updates. You can stop sync and continue manually at any time.
         </div>
       )}
 
       {(error || draftState?.session.lastErrorMessage) && (
         <div className={styles.error} role="alert">
-          {error || draftState?.session.lastErrorMessage}
+          <strong>Yahoo sync needs attention.</strong> Click Check for updates and compare the picks with your Yahoo draft room. If they still differ, stop sync and continue manually. <small>{error || draftState?.session.lastErrorMessage}</small>
         </div>
       )}
 

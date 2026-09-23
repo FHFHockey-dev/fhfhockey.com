@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useFantraxConnections } from "hooks/useFantraxConnections";
 import type {
   FantraxConnectionLeague,
+  FantraxDraftState,
   FantraxLeagueSettingsV1,
 } from "lib/integrations/fantrax/contracts";
 
@@ -28,6 +29,7 @@ export default function FantraxLeagueSettingsPanel({
   disabled,
   enabled,
   onApply,
+  liveSync,
 }: {
   disabled: boolean;
   enabled: boolean;
@@ -36,6 +38,22 @@ export default function FantraxLeagueSettingsPanel({
     teamId: string | null,
     selection: DraftFantraxSelection,
   ) => void;
+  liveSync?: {
+    enabled: boolean;
+    eligible: boolean;
+    state: FantraxDraftState | null;
+    error: string | null;
+    isLoading: boolean;
+    isPolling: boolean;
+    blocked: boolean;
+    unresolvedCount?: number;
+    orderMatches?: boolean;
+    nextPickNumber?: number;
+    nextTeamLabel?: string | null;
+    onStart: (league: FantraxConnectionLeague, teamId: string) => void;
+    onStop: () => void;
+    onPoll: () => void;
+  };
 }) {
   const { data, isLoading, error } = useFantraxConnections(enabled);
   const [accountId, setAccountId] = useState("");
@@ -68,8 +86,8 @@ export default function FantraxLeagueSettingsPanel({
   }, [account, leagueId]);
 
   useEffect(() => {
-    if (teamId && league?.teams.some((candidate) => candidate.id === teamId)) return;
-    const ownedTeam = league?.teams.find((candidate) => candidate.isOwned) ?? league?.teams[0];
+    if (teamId && league?.teams.some((candidate) => candidate.id === teamId && candidate.isOwned)) return;
+    const ownedTeam = league?.teams.find((candidate) => candidate.isOwned);
     setTeamId(ownedTeam?.id ?? "");
   }, [league, teamId]);
 
@@ -119,10 +137,13 @@ export default function FantraxLeagueSettingsPanel({
       </div>
       {disabled ? (
         <div className={styles.notice}>
-          Fantrax application is disabled while Yahoo live draft sync is authoritative.
+          Fantrax settings cannot be applied while live sync or manual draft work is active.
         </div>
       ) : null}
       {error ? <div className={styles.error}>{error}</div> : null}
+      {!isLoading && !data.accounts.length ? <div className={styles.notice} role="status">
+        First, <a href="/account">open Account settings</a> and choose Connected Accounts → Fantrax. Copy the Secret ID from your Fantrax User Profile; FHFH will find your NHL leagues. Then return here to choose your league and team.
+      </div> : null}
       <div className={styles.controls}>
         <label>
           <span>Linked account</span>
@@ -159,10 +180,10 @@ export default function FantraxLeagueSettingsPanel({
           <select
             value={teamId}
             onChange={(event) => setTeamId(event.target.value)}
-            disabled={disabled || !league || league.teams.length === 0}
+            disabled={disabled || !league || !league.teams.some((team) => team.isOwned)}
           >
             <option value="">No team identity</option>
-            {league?.teams.map((team) => (
+            {league?.teams.filter((team) => team.isOwned).map((team) => (
               <option key={team.id} value={team.id}>
                 {team.name}
               </option>
@@ -192,6 +213,34 @@ export default function FantraxLeagueSettingsPanel({
             </ul>
           ) : (
             <span>Exact supported mapping.</span>
+          )}
+        </div>
+      ) : null}
+      {liveSync && (liveSync.enabled || liveSync.state) ? (
+        <div className={styles.summary}>
+          <strong>Fantrax live draft sync</strong>
+          <p>Choose your league and team above, then start live sync. Fantrax teams will fill the local draft slots in Fantrax order, and the team names will update after you confirm. Your scoring and roster settings stay in place. Future pick owners come from Fantrax when available. Keeper labels are not provided; only numbered selections sync.</p>
+          {!liveSync.enabled ? <p role="status">Fantrax live sync is paused. Manual drafting remains available.</p> : !liveSync.eligible ? <p role="status">Draft Pro access is required to start live sync. Manual drafting remains available.</p> : null}
+          {liveSync.blocked && liveSync.state?.session.status !== "active" ? <p role="status">Finish the other live sync or preserve and reset manual picks, keepers, and trades before starting Fantrax sync.</p> : null}
+          {liveSync.state?.warning ? <p role="alert">{liveSync.state.warning}</p> : null}
+          {liveSync.state && liveSync.orderMatches === false ? <p role="alert">The Fantrax team order does not match this local draft. Picks are paused; stop sync and review the draft settings.</p> : null}
+          {liveSync.unresolvedCount ? <p role="alert">{liveSync.unresolvedCount} Fantrax picks lack verified FHFH player identities. They remain placeholders and do not remove projection players from the available list. Stop sync, then use Quick Fix to resolve them manually.</p> : null}
+          {liveSync.state?.session.lastErrorCode ? <p role="alert">Fantrax stopped updating. Compare the last synced picks with your Fantrax draft room, then continue drafting manually. You can try starting sync again after checking your connection.</p> : null}
+          {liveSync.error ? <p role="alert">{liveSync.error}</p> : null}
+          <p>{liveSync.state ? `${liveSync.state.picks.length} numbered picks · ${liveSync.state.session.status}` : "Not syncing"}</p>
+          {liveSync.state?.session.status === "active" ? <p>{liveSync.nextTeamLabel
+            ? `Next Fantrax pick #${liveSync.nextPickNumber}: ${liveSync.nextTeamLabel}`
+            : "Fantrax has not supplied an owner for the next pick; future order is unavailable."}</p> : null}
+          {liveSync.state?.session.status === "active" ? (
+            <>
+              <button type="button" onClick={liveSync.onPoll} disabled={liveSync.isPolling}>Sync now</button>{" "}
+              <button type="button" onClick={liveSync.onStop}>Stop &amp; continue manually</button>
+            </>
+          ) : (
+            <button type="button" onClick={() => league && liveSync.onStart(league, teamId)}
+              disabled={!league || !teamId || !liveSync.enabled || !liveSync.eligible || liveSync.blocked || liveSync.isLoading}>
+              Start live sync
+            </button>
           )}
         </div>
       ) : null}
