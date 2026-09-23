@@ -130,7 +130,7 @@ const SECTION_CONFIG: Record<
     label: "Connected Accounts",
     description: "Yahoo, Fantrax, and ESPN",
     title: "Connected Accounts",
-    body: "Connect Yahoo or import league data from Fantrax and ESPN.",
+    body: "Connect Yahoo or Fantrax, or import league data from ESPN.",
   },
   patreon: {
     label: "Patreon",

@@ -845,8 +845,8 @@ function FantraxSettingsPanel({
         <div>
           <h3 id="fantrax-settings-title">Fantrax League Settings</h3>
           <p>
-            Link Secret IDs server-side, choose NHL leagues, review exact mappings,
-            and explicitly apply one league as your account default.
+            Connect Fantrax with the Secret ID from your profile, then choose
+            your NHL league. You never need to give FHFH your Fantrax password.
           </p>
         </div>
         <span className={styles.status}>
