@@ -204,6 +204,7 @@ const ROSTER_POSITION_ALIASES: Record<string, string> = {
   BENCH: "bench",
   UTIL: "utility",
   UTILITY: "utility",
+  SKT: "utility",
 };
 
 function record(value: unknown): UnknownRecord {

@@ -85,6 +85,29 @@ describe("Fantrax NHL settings normalization", () => {
     expect(normalized.draftOrderType).toBe("straight");
   });
 
+  it("maps Fantrax Skt roster slots to UTIL", () => {
+    const normalized = normalizeFantraxLeagueInfo({
+      externalLeagueKey: "skt-league",
+      payload: {
+        ...categoryFixture,
+        rosterInfo: {
+          ...categoryFixture.rosterInfo,
+          positionConstraints: categoryFixture.rosterInfo.positionConstraints.map((slot) =>
+            slot.position.code === "UTILITY"
+              ? { ...slot, position: { code: "Skt" } }
+              : slot,
+          ),
+        },
+      },
+      fetchedAt: new Date("2026-08-14T12:00:00.000Z"),
+    });
+
+    expect(normalized.rosterConfig.utility).toBe(1);
+    expect(normalized.diagnostics.unsupported).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ code: "Skt" })]),
+    );
+  });
+
   it("maps projected v4/v5 categories without guessing unknown labels", () => {
     const normalized = normalizeFantraxLeagueInfo({
       externalLeagueKey: "v4-category-league",

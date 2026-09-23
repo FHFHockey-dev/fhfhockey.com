@@ -867,7 +867,7 @@ function FantraxSettingsPanel({
           role={feedback.tone === "error" ? "alert" : "status"}
         >
           {feedback.message}
-          {feedback.tone === "error" ? <p>Check that you copied the Secret ID from your Fantrax profile, not a league ID or password. If your NHL league is missing, confirm you belong to it in Fantrax, then try again.</p> : null}
+          {feedback.tone === "error" ? <p>In Fantrax, go to Settings → Profile → Information and copy your Secret ID, not your league ID or password. If your NHL league is missing, confirm you belong to it in Fantrax, then try again.</p> : null}
         </div>
       ) : null}
 
@@ -876,8 +876,8 @@ function FantraxSettingsPanel({
         {!data.accounts.length ? <div className={styles.info}>
           <strong>Connect Fantrax in three steps</strong>
           <ol>
-            <li><a href="https://www.fantrax.com/user/profile" target="_blank" rel="noopener noreferrer">Open your Fantrax profile ↗</a> and sign in there if asked.</li>
-            <li>Open <strong>Information</strong>, find <strong>Secret ID</strong> beside your username, and copy it. This is different from your password and league ID.</li>
+            <li>Sign in to Fantrax, then go to <strong>Settings → Profile → Information</strong>. You can also <a href="https://www.fantrax.com/user/profile" target="_blank" rel="noopener noreferrer">open your Fantrax profile ↗</a> directly.</li>
+            <li>Find <strong>Secret ID</strong> and copy it. This is different from your password and league ID.</li>
             <li>Paste it below, select your NHL league, preview the settings, and save the link. We find the league ID for you.</li>
           </ol>
         </div> : null}
@@ -917,7 +917,7 @@ function FantraxSettingsPanel({
                 required
               />
               <small>
-                In Fantrax, open your <a href="https://www.fantrax.com/user/profile" target="_blank" rel="noopener noreferrer">User Profile ↗</a> → Information → Secret ID. Do not enter your password or league ID. FHFH stores the Secret ID securely and never displays it again.
+                In Fantrax, go to Settings → Profile → Information → Secret ID. You can <a href="https://www.fantrax.com/user/profile" target="_blank" rel="noopener noreferrer">open your profile ↗</a> directly. Do not enter your password or league ID. FHFH stores the Secret ID securely and never displays it again.
               </small>
             </label>
           ) : null}

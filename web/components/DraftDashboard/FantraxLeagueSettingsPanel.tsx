@@ -142,7 +142,7 @@ export default function FantraxLeagueSettingsPanel({
       ) : null}
       {error ? <div className={styles.error}>{error}</div> : null}
       {!isLoading && !data.accounts.length ? <div className={styles.notice} role="status">
-        First, <a href="/account">open Account settings</a> and choose Connected Accounts → Fantrax. Copy the Secret ID from your Fantrax User Profile; FHFH will find your NHL leagues. Then return here to choose your league and team.
+        First, sign in to Fantrax and go to Settings → Profile → Information → Secret ID. Copy it, then <a href="/account">open Account settings</a> and choose Connected Accounts → Fantrax. FHFH will find your NHL leagues. Return here to choose your league and team.
       </div> : null}
       <div className={styles.controls}>
         <label>
