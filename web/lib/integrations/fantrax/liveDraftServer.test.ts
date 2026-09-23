@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { loadDraftProAccess } from "lib/draft-pro/server";
-import { getFantraxDraftResults } from "./client";
+import { getFantraxDraftResults, getFantraxPlayerIds } from "./client";
 import { isFantraxLiveDraftEnabled, pollFantraxDraftSession, requireFantraxDraftAccess, startFantraxDraftSession, stopFantraxDraftSession } from "./liveDraftServer";
 import { discoverLinkedFantraxLeagues, getFantraxConnections } from "./server";
 
@@ -9,6 +9,7 @@ vi.mock("lib/draft-pro/server", () => ({ loadDraftProAccess: vi.fn().mockResolve
 vi.mock("./client", async (importOriginal) => ({
   ...await importOriginal<typeof import("./client")>(),
   getFantraxDraftResults: vi.fn(),
+  getFantraxPlayerIds: vi.fn(),
 }));
 vi.mock("./server", async (importOriginal) => ({
   ...await importOriginal<typeof import("./server")>(),
@@ -79,6 +80,59 @@ describe("Fantrax live draft access and session lifecycle", () => {
       code: "FANTRAX_DRAFT_TEAM_NOT_OWNED",
     });
     expect(getFantraxDraftResults).toHaveBeenCalledTimes(1);
+  });
+
+  it("resolves numbered picks through the official catalog and verified identities", async () => {
+    vi.stubEnv("FANTRAX_LIVE_DRAFT_ENABLED", "true");
+    vi.stubEnv("FANTRAX_API_ENABLED", "true");
+    const league = {
+      id: "league", connectedAccountId: "account", externalLeagueKey: "fx-league",
+      name: "NHL", seasonKey: null, importedAt: null, settings: {} as never,
+      isDefault: true, settingsChanged: false,
+      teams: [{ id: "team", externalTeamKey: "fx-team", name: "Team", division: null, isOwned: true }],
+    };
+    vi.mocked(getFantraxConnections).mockResolvedValue({
+      apiEnabled: true, defaultExternalLeagueId: "league", defaultExternalTeamId: "team",
+      accounts: [{ id: "account", label: "Fantrax", status: "connected", lastSyncedAt: null,
+        integrationModes: ["api"], leagues: [league] }],
+    });
+    vi.mocked(discoverLinkedFantraxLeagues).mockResolvedValue({ leagues: [{
+      externalLeagueKey: "fx-league", name: "NHL", sport: "NHL",
+      ownedTeams: [{ externalTeamKey: "fx-team", name: "Team", division: null, isOwned: true }],
+    }], previews: [] });
+    vi.mocked(getFantraxDraftResults).mockResolvedValue({
+      draftState: "running", draftType: "snake", draftOrder: ["fx-team"],
+      draftPicks: [{ round: 1, pick: 1, pickInRound: 1, teamId: "fx-team", playerId: "fx-player" }],
+    });
+    vi.mocked(getFantraxPlayerIds).mockResolvedValue({
+      "fx-player": { fantraxId: "fx-player", name: "Dobson, Noah", team: "MTL", position: "D" },
+    });
+    let mappingRows: Array<Record<string, unknown>> = [];
+    let sessionRow: Record<string, unknown> = {};
+    const client = { from: vi.fn((table: string) => {
+      const query: Record<string, unknown> = {};
+      for (const method of ["select", "eq", "in", "is"]) query[method] = vi.fn(() => query);
+      query.upsert = vi.fn((rows: unknown) => {
+        if (table === "fhfh_player_external_identities") mappingRows = rows as typeof mappingRows;
+        if (table === "fantrax_draft_sessions") sessionRow = rows as typeof sessionRow;
+        return query;
+      });
+      query.single = vi.fn(async () => ({ data: { id: "session", user_id: "owner", ...sessionRow }, error: null }));
+      query.then = (resolve: (value: unknown) => void) => resolve({
+        data: table === "teams" ? [{ id: 1, abbreviation: "MTL" }]
+          : table === "fhfh_player_identities" ? [{ id: 10, canonical_name: "Noah Dobson", canonical_position: "D",
+            current_nhl_team_id: 1, nhl_player_id: 101, verification_status: "verified", merged_into_id: null }]
+          : table === "fhfh_player_external_identities" ? mappingRows.map((row) => ({
+            ...row, external_player_id: row.external_player_id, fhfh_player_id: row.fhfh_player_id,
+          })) : [],
+        error: null,
+      });
+      return query;
+    }) };
+    const state = await startFantraxDraftSession({ userId: "owner", externalLeagueId: "league", externalTeamId: "team", client: client as never });
+    expect(mappingRows).toMatchObject([{ external_player_id: "fx-player", fhfh_player_id: 10, verification_status: "verified" }]);
+    expect(state.picks).toMatchObject([{ pickNumber: 1, playerName: "Noah Dobson", nhlPlayerId: 101 }]);
+    expect(getFantraxPlayerIds).toHaveBeenCalledTimes(1);
   });
 
   it("allows the owner to stop and retain the last snapshot even when access is unavailable", async () => {

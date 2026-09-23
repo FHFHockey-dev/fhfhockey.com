@@ -4,6 +4,7 @@ import {
   getFantraxDraftResults,
   getFantraxLeagueInfo,
   getFantraxLeagues,
+  getFantraxPlayerIds,
 } from "./client";
 
 function jsonResponse(payload: unknown, status = 200, headers?: HeadersInit) {
@@ -27,6 +28,16 @@ describe("Fantrax FXEA client", () => {
     expect(String(url)).toBe("https://www.fantrax.com/fxea/general/getDraftResults?leagueId=league-1");
     expect(init?.method).toBe("GET");
     expect(String(url)).not.toContain("userSecretId");
+  });
+
+  it("reads the official NHL player ID catalog without a user credential", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({
+      "fx-1": { name: "Dobson, Noah", fantraxId: "fx-1", team: "MTL", position: "D" },
+    }));
+    await expect(getFantraxPlayerIds({ fetchImpl, maxAttempts: 1 })).resolves.toHaveProperty("fx-1.name", "Dobson, Noah");
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(String(url)).toBe("https://www.fantrax.com/fxea/general/getPlayerIds?sport=NHL");
+    expect(init?.method).toBe("GET");
   });
 
   it("retries 429 responses, respects Retry-After, and never logs credentials", async () => {

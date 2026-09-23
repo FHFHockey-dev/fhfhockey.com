@@ -7,7 +7,7 @@ const state = {
   draftOrder: ["team-a", "team-b"],
   picks: [
     { pickNumber: 1, roundNumber: 1, pickInRound: 1, teamId: "team-b", playerId: "fx-1", nhlPlayerId: 42 },
-    { pickNumber: 2, roundNumber: 1, pickInRound: 2, teamId: "team-a", playerId: "fx-2", nhlPlayerId: null },
+    { pickNumber: 2, roundNumber: 1, pickInRound: 2, teamId: "team-a", playerId: "fx-2", nhlPlayerId: null, playerName: "Nikolaj Ehlers" },
   ],
   slots: [
     { pickNumber: 1, roundNumber: 1, pickInRound: 1, teamId: "team-b", playerId: "fx-1" },
@@ -24,7 +24,8 @@ describe("Fantrax dashboard reconciliation", () => {
     expect(result.safe).toBe(true);
     expect(result.draftedPlayers.map((pick) => [pick.pickNumber, pick.teamId])).toEqual([[1, "local-b"], [2, "local-a"]]);
     expect(result.draftedPlayers[0].playerId).toBe("42");
-    expect(result.unresolved).toEqual([{ pickNumber: 2, playerId: "fx-2" }]);
+    expect(result.unresolved).toEqual([{ pickNumber: 2, playerId: "fx-2", playerName: "Nikolaj Ehlers" }]);
+    expect(result.draftedPlayers[1].fantraxDisplayName).toBe("Nikolaj Ehlers");
     expect(result.currentPick).toBe(3);
     expect(result.nextTeamId).toBe("local-a");
     expect([result.nextRound, result.nextPickInRound]).toEqual([2, 1]);

@@ -11,12 +11,12 @@ export function reconcileFantraxDraftState(
     state.draftOrder.length > 0 && new Set(state.draftOrder).size === state.draftOrder.length;
   const byNhlId = new Set(players.map((player) => String(player.playerId)));
   const teamByFantraxId = new Map(state.draftOrder.map((id, index) => [id, localDraftOrder[index]]));
-  const unresolved: Array<{ pickNumber: number; playerId: string }> = [];
+  const unresolved: Array<{ pickNumber: number; playerId: string; playerName: string | null }> = [];
   const draftedPlayers = safe ? state.picks.flatMap((pick) => {
     const teamId = teamByFantraxId.get(pick.teamId);
     if (!teamId) return [];
     const matched = pick.nhlPlayerId != null && byNhlId.has(String(pick.nhlPlayerId));
-    if (!matched) unresolved.push({ pickNumber: pick.pickNumber, playerId: pick.playerId });
+    if (!matched) unresolved.push({ pickNumber: pick.pickNumber, playerId: pick.playerId, playerName: pick.playerName ?? null });
     return [{
       playerId: matched ? String(pick.nhlPlayerId) : String(-2_000_000 - pick.pickNumber),
       teamId,
@@ -25,7 +25,7 @@ export function reconcileFantraxDraftState(
       pickInRound: pick.pickInRound,
       source: "fantrax" as const,
       fantraxPlayerId: pick.playerId,
-      fantraxDisplayName: matched ? "" : `Fantrax player ${pick.playerId}`,
+      fantraxDisplayName: matched ? "" : pick.playerName ?? `Fantrax player ${pick.playerId}`,
       fantraxMappingStatus: matched ? "mapped" as const : "unresolved" as const,
     }];
   }) : [];
