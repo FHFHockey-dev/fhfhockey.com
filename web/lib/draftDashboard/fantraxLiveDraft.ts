@@ -6,7 +6,7 @@ export function reconcileFantraxDraftState(
   players: ProcessedPlayer[],
   localDraftOrder: string[],
 ) {
-  if (!state) return { draftedPlayers: [], unresolved: [], currentPick: 1, nextTeamId: null, nextRound: null, nextPickInRound: null, safe: false };
+  if (!state) return { draftedPlayers: [], unresolved: [], currentPick: 1, nextTeamId: null, nextRound: null, nextPickInRound: null, nextPickByTeam: {}, safe: false };
   const safe = state.draftOrder.length === localDraftOrder.length &&
     state.draftOrder.length > 0 && new Set(state.draftOrder).size === state.draftOrder.length;
   const byNhlId = new Set(players.map((player) => String(player.playerId)));
@@ -33,6 +33,10 @@ export function reconcileFantraxDraftState(
   let currentPick = 1;
   while (completed.has(currentPick)) currentPick += 1;
   const nextSlot = state.slots.find((slot) => slot.pickNumber === currentPick);
+  const nextPickByTeam = safe ? Object.fromEntries(state.draftOrder.map((externalId, index) => [
+    localDraftOrder[index],
+    state.slots.find((slot) => slot.pickNumber >= currentPick && slot.teamId === externalId && slot.playerId === null)?.pickNumber ?? Infinity,
+  ])) : {};
   return {
     draftedPlayers,
     unresolved,
@@ -40,6 +44,7 @@ export function reconcileFantraxDraftState(
     nextTeamId: safe && nextSlot ? teamByFantraxId.get(nextSlot.teamId) ?? null : null,
     nextRound: safe && nextSlot ? nextSlot.roundNumber : null,
     nextPickInRound: safe && nextSlot ? nextSlot.pickInRound : null,
+    nextPickByTeam,
     safe,
   };
 }

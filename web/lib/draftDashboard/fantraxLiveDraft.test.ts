@@ -28,6 +28,7 @@ describe("Fantrax dashboard reconciliation", () => {
     expect(result.currentPick).toBe(3);
     expect(result.nextTeamId).toBe("local-a");
     expect([result.nextRound, result.nextPickInRound]).toEqual([2, 1]);
+    expect(result.nextPickByTeam).toEqual({ "local-a": 3, "local-b": Infinity });
   });
 
   it("does not apply picks when the local team order cannot be mapped", () => {
