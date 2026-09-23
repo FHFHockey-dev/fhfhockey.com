@@ -14,6 +14,7 @@ export type FantraxDraftSlot = Omit<FantraxDraftPick, "playerId" | "playerName">
 };
 
 export type FantraxDraftSnapshot = {
+  identityMatchVersion?: string;
   providerStatus: string;
   draftType: string;
   draftOrder: string[];
