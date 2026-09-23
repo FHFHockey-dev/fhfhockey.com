@@ -443,7 +443,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   const draftRanking = useDraftRanking(user?.id || null);
   const yahooDraftSync = useYahooDraftSync(Boolean(user?.id));
   const espnDraftSync = useEspnDraftSync(Boolean(user?.id));
-  const fantraxDraftSync = useFantraxDraftSync(Boolean(user?.id));
+  const fantraxDraftSync = useFantraxDraftSync(Boolean(user?.id), authLoading);
   const {
     enabled: yahooFeatureEnabled,
     selectedLeagueId: yahooSelectedLeagueId,
@@ -1568,8 +1568,11 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   );
 
   const allPlayers: ProcessedPlayer[] = useMemo(
-    () => [...skaterPlayers, ...goaliePlayers],
-    [skaterPlayers, goaliePlayers],
+    () => (skaterData.isLoading && !skaterPlayers.length) ||
+      (goalieData.isLoading && !goaliePlayers.length)
+      ? []
+      : [...skaterPlayers, ...goaliePlayers],
+    [skaterPlayers, goaliePlayers, skaterData.isLoading, goalieData.isLoading],
   );
 
   const effectivePickTrades = useMemo(() => fantraxLiveActive

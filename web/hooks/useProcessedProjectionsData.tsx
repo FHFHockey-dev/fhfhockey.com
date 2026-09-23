@@ -2199,6 +2199,7 @@ export const useProcessedProjectionsData = ({
           togglePerGameFantasyPoints,
         );
         setTableColumns(derivedCols);
+        if (runId === fetchRunIdRef.current) setIsLoading(false);
       });
       mark("render:prepareColumns:done");
       if (DEV) {
@@ -2232,7 +2233,6 @@ export const useProcessedProjectionsData = ({
           sourceWarnings: sourceWarningsForRun,
         };
       }
-      if (runId === fetchRunIdRef.current) setIsLoading(false);
     } catch (err: any) {
       console.error(
         `Error processing ${activePlayerType} projections (custom source aware):`,
