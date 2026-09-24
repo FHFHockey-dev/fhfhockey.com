@@ -35,6 +35,8 @@ import {
 } from "lib/projectionsConfig/proration";
 
 interface ProjectionsTableProps {
+  adpSource?: "Yahoo" | "Fantrax";
+  draftUnavailableReason?: string;
   onRefresh?: () => void;
   picksBeforeTurn?: number;
   scheduleMetrics?: PlayerScheduleMetrics;
@@ -134,6 +136,8 @@ const getOffNightRankColor = (rankPercentile: number) => {
 };
 
 const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
+  adpSource = "Yahoo",
+  draftUnavailableReason = "Manual drafting is unavailable",
   onRefresh,
   currentSeasonId,
   players,
@@ -1737,7 +1741,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     aria-sort={getAriaSort("valueDelta")}
                     scope="col"
                   >
-                    <button type="button" className={`${styles.sortButton} ${styles.stackedSortButton}`} onClick={() => handleSort("valueDelta")} title="Yahoo ADP minus full-pool scoring rank; positive values indicate draft value">
+                    <button type="button" className={`${styles.sortButton} ${styles.stackedSortButton}`} onClick={() => handleSort("valueDelta")} title={`${adpSource} ADP minus full-pool scoring rank; positive values indicate draft value`}>
                       <span className={styles.stackedSortLabel}><span>Value</span><span>Δ</span></span>
                     </button>
                   </th>
@@ -1814,7 +1818,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     aria-sort={getAriaSort("valueDelta")}
                     scope="col"
                   >
-                    <button type="button" className={`${styles.sortButton} ${styles.stackedSortButton}`} onClick={() => handleSort("valueDelta")} title="Yahoo ADP minus full-pool scoring rank; positive values indicate draft value">
+                    <button type="button" className={`${styles.sortButton} ${styles.stackedSortButton}`} onClick={() => handleSort("valueDelta")} title={`${adpSource} ADP minus full-pool scoring rank; positive values indicate draft value`}>
                       <span className={styles.stackedSortLabel}><span>Value</span><span>Δ</span></span>
                     </button>
                   </th>
@@ -2324,8 +2328,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                           data-label="Value Δ"
                           title={
                             yahooAdp == null || leagueRank == null
-                              ? "Yahoo ADP or full-pool scoring rank is unavailable"
-                              : `Yahoo ADP ${yahooAdp.toFixed(1)} minus full-pool scoring rank ${leagueRank}`
+                              ? `${adpSource} ADP or full-pool scoring rank is unavailable`
+                              : `${adpSource} ADP ${yahooAdp.toFixed(1)} minus full-pool scoring rank ${leagueRank}`
                           }
                         >
                           {valueDelta == null
@@ -2384,7 +2388,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         disabled={!canDraft || draftedIdSet.has(key)}
                         title={
                           !canDraft
-                            ? "Manual drafting is locked while Yahoo sync is authoritative"
+                            ? draftUnavailableReason
                             : draftedIdSet.has(key)
                               ? "Player already drafted"
                               : "Draft this player"

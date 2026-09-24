@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  getFantraxAdp,
   getFantraxDraftResults,
   getFantraxLeagueInfo,
   getFantraxLeagues,
@@ -38,6 +39,17 @@ describe("Fantrax FXEA client", () => {
     const [url, init] = fetchImpl.mock.calls[0];
     expect(String(url)).toBe("https://www.fantrax.com/fxea/general/getPlayerIds?sport=NHL");
     expect(init?.method).toBe("GET");
+  });
+
+  it("reads the official NHL ADP feed and rejects changed response shapes", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse([
+      { id: "fx-1", name: "MacKinnon, Nathan", pos: "C", ADP: 1.51 },
+    ]));
+    await expect(getFantraxAdp({ fetchImpl, maxAttempts: 1 })).resolves.toHaveLength(1);
+    expect(String(fetchImpl.mock.calls[0][0])).toBe("https://www.fantrax.com/fxea/general/getAdp?sport=NHL&limit=1000");
+    expect(fetchImpl.mock.calls[0][1]?.method).toBe("GET");
+    fetchImpl.mockResolvedValueOnce(jsonResponse([{ id: "fx-1", ADP: "unknown" }]));
+    await expect(getFantraxAdp({ fetchImpl, maxAttempts: 1 })).rejects.toMatchObject({ code: "FANTRAX_SCHEMA_MISMATCH" });
   });
 
   it("retries 429 responses, respects Retry-After, and never logs credentials", async () => {

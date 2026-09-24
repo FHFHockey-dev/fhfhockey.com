@@ -113,6 +113,7 @@ export interface ProcessedPlayer {
   yahooAvgPick?: number | null;
   yahooAvgRound?: number | null;
   yahooPctDrafted?: number | null;
+  fantraxMetadataMatched?: boolean;
 
   // Overall Ranks (across skaters & goalies)
   projectedRank?: number | null;

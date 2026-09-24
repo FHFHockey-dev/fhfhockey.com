@@ -9,6 +9,97 @@ import {
 } from "./normalize";
 
 describe("Fantrax NHL settings normalization", () => {
+  it("maps documented scoring types and codes observed in Fantrax league responses", () => {
+    const configs = [
+      ["HOCKEY_SKATING", "INDIVIDUAL_ASSISTS", "ASSISTS", 2],
+      ["HOCKEY_SKATING", "INDIVIDUAL_BLOCKS", "BLOCKED_SHOTS", 0.25],
+      ["HOCKEY_SKATING", "INDIVIDUAL_GOALS", "GOALS", 3],
+      ["HOCKEY_SKATING", "INDIVIDUAL_HITS", "HITS", 0.2],
+      ["HOCKEY_SKATING", "INDIVIDUAL_SHOTS_ON_GOAL", "SHOTS_ON_GOAL", 0.2],
+      ["HOCKEY_SKATING", "INDIVIDUAL_POWER_PLAY_POINTS", "PP_POINTS", 1],
+      ["HOCKEY_GOALIE", "INDIVIDUAL_GOALS_AGAINST", "GOALS_AGAINST_GOALIE", -1],
+      ["HOCKEY_GOALIE", "INDIVIDUAL_SAVES", "SAVES_GOALIE", 0.2],
+      ["HOCKEY_GOALIE", "INDIVIDUAL_SHUTOUTS", "SHUTOUTS_GOALIE", 3],
+      ["HOCKEY_GOALIE", "INDIVIDUAL_GOALIE_WINS", "WINS_GOALIE", 4],
+      ["HOCKEY_GOALIE", "INDIVIDUAL_SHOTS_ON_GOAL_AGAINST", "SHOTS_AGAINST_GOALIE", 0.1],
+    ] as const;
+    for (const type of ["POINTS_BASED", "HEAD_TO_HEAD_POINTS_BASED"]) {
+      const normalized = normalizeFantraxLeagueInfo({
+        externalLeagueKey: "official-points",
+        payload: {
+          ...pointsFixture,
+          scoringSystem: {
+            type,
+            scoringCategorySettings: ["HOCKEY_SKATING", "HOCKEY_GOALIE"].map((group) => ({
+              group: { code: group },
+              configs: configs.filter(([role]) => role === group).map(([, code, , points]) => ({
+                scoringCategory: { code }, points,
+              })),
+            })),
+          },
+        },
+      });
+      expect(normalized.leagueType).toBe("points");
+      expect(normalized.diagnostics.unsupported.filter((item) => item.kind === "scoring")).toEqual([]);
+      for (const [role, , key, points] of configs) {
+        expect(role === "HOCKEY_GOALIE" ? normalized.goalieScoringCategories[key] : normalized.skaterScoringCategories[key]).toBe(points);
+      }
+    }
+    for (const type of ["ROTISSERIE", "HEAD_TO_HEAD_ROTI_SINGLE_WIN", "HEAD_TO_HEAD_ROTI_MULTI_WIN"]) {
+      expect(normalizeFantraxLeagueInfo({
+        externalLeagueKey: "official-categories",
+        payload: { ...categoryFixture, scoringSystem: { ...categoryFixture.scoringSystem, type } },
+      }).leagueType).toBe("categories");
+    }
+    const bracket = normalizeFantraxLeagueInfo({
+      externalLeagueKey: "bracket",
+      payload: { ...pointsFixture, scoringSystem: { ...pointsFixture.scoringSystem, type: "BRACKET" } },
+    });
+    expect(bracket.diagnostics.status).toBe("unsupported");
+    expect(bracket.diagnostics.warnings).toEqual(expect.arrayContaining([expect.stringContaining("BRACKET")]));
+  });
+
+  it("maps the sanitized Dynasty Hockey Challenge multi-win category response", () => {
+    const groups = [
+      ["HOCKEY_SKATING", [
+        ["INDIVIDUAL_ASSISTS", "ASSISTS"],
+        ["INDIVIDUAL_GOALS", "GOALS"],
+        ["INDIVIDUAL_HITS", "HITS"],
+        ["INDIVIDUAL_PLUS_MINUS", "PLUS_MINUS"],
+        ["INDIVIDUAL_SHOTS_ON_GOAL", "SHOTS_ON_GOAL"],
+        ["INDIVIDUAL_POWER_PLAY_POINTS", "PP_POINTS"],
+        ["INDIVIDUAL_TIME_ON_ICE_SKATERS_PER_GAME", "TIME_ON_ICE_PER_GAME"],
+      ]],
+      ["HOCKEY_GOALIE", [
+        ["INDIVIDUAL_GOALIE_WINS", "WINS_GOALIE"],
+        ["INDIVIDUAL_GOALS_AGAINST_AVERAGE", "GOALS_AGAINST_AVERAGE"],
+        ["INDIVIDUAL_SAVE_PERCENTAGE", "SAVE_PERCENTAGE"],
+      ]],
+    ] as const;
+    const normalized = normalizeFantraxLeagueInfo({
+      externalLeagueKey: "sanitized-multi-win",
+      payload: {
+        ...categoryFixture,
+        scoringSystem: {
+          type: "HEAD_TO_HEAD_ROTI_MULTI_WIN",
+          scoringCategorySettings: groups.map(([group, configs]) => ({
+            group: { code: group },
+            configs: configs.map(([code]) => ({
+              position: { code: "DEFAULT" },
+              scoringCategory: { code },
+              weight: 1,
+            })),
+          })),
+        },
+      },
+    });
+    expect(normalized.leagueType).toBe("categories");
+    expect(normalized.diagnostics.unsupported.filter((item) => item.kind === "scoring")).toEqual([]);
+    for (const [, configs] of groups) {
+      for (const [, key] of configs) expect(normalized.categoryWeights[key]).toBe(1);
+    }
+  });
+
   it("scopes duplicate scoring codes by skater and goalie position", () => {
     const normalized = normalizeFantraxLeagueInfo({
       externalLeagueKey: "points-league",

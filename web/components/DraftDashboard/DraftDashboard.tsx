@@ -25,6 +25,8 @@ import { useYahooDraftSync } from "hooks/useYahooDraftSync";
 import { useEspnDraftSync } from "hooks/useEspnDraftSync";
 import { useFantraxDraftSync } from "hooks/useFantraxDraftSync";
 import { reconcileFantraxDraftState } from "lib/draftDashboard/fantraxLiveDraft";
+import { applyFantraxDisplay, type FantraxDisplayPlayer } from "lib/draftDashboard/fantraxDisplay";
+import { fantraxAccountRequest } from "hooks/useFantraxConnections";
 import supabase from "lib/supabase";
 import { useAuth } from "contexts/AuthProviderContext";
 
@@ -504,6 +506,13 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   const fantraxLiveActive = fantraxDraftSync.eligible && fantraxDraftSync.draftState?.session.status === "active";
   const displayedDraftMode = fantraxLiveActive ? "manual" : draftMode;
   const manualDraftingEnabled = draftMode === "manual" && !espnLiveActive && !fantraxLiveActive;
+  const draftUnavailableReason = fantraxLiveActive
+    ? "Fantrax live sync controls picks. Stop sync to draft manually."
+    : espnLiveActive
+      ? "ESPN live sync controls picks. Stop sync to draft manually."
+      : draftMode === "yahoo"
+        ? "Yahoo live sync controls picks. Stop sync to draft manually."
+        : "Complete draft settings before adding players.";
   const restoredYahooPersistenceRef = useRef(
     typeof window === "undefined"
       ? null
@@ -780,6 +789,30 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   );
   const [fantraxLeagueOverride, setFantraxLeagueOverride] =
     useState<DraftFantraxSelection | null>(null);
+  const [fantraxDisplayPlayers, setFantraxDisplayPlayers] = useState<FantraxDisplayPlayer[] | null>(null);
+  const [fantraxDisplayLeagueId, setFantraxDisplayLeagueId] = useState<string | null>(null);
+  const [fantraxDisplayError, setFantraxDisplayError] = useState<string | null>(null);
+  const [fantraxEligibilityLoaded, setFantraxEligibilityLoaded] = useState(true);
+  const selectedFantraxLeagueId = fantraxLeagueOverride?.externalLeagueId ?? null;
+  const fantraxDisplayAuthenticated = Boolean(user);
+  const activeFantraxDisplayPlayers = fantraxDisplayLeagueId === fantraxLeagueOverride?.externalLeagueId
+    ? fantraxDisplayPlayers : null;
+  useEffect(() => {
+    if (!fantraxDisplayAuthenticated || !selectedFantraxLeagueId) {
+      setFantraxDisplayPlayers(null);
+      setFantraxDisplayLeagueId(null);
+      setFantraxDisplayError(null);
+      setFantraxEligibilityLoaded(true);
+      return;
+    }
+    let active = true;
+    void fantraxAccountRequest<{ players: FantraxDisplayPlayer[]; eligibilityLoaded: boolean }>(
+      `/api/v1/account/fantrax/player-data?externalLeagueId=${encodeURIComponent(selectedFantraxLeagueId)}`,
+    )
+      .then((result) => { if (active) { setFantraxDisplayPlayers(result.players); setFantraxDisplayLeagueId(selectedFantraxLeagueId); setFantraxEligibilityLoaded(result.eligibilityLoaded); setFantraxDisplayError(null); } })
+      .catch(() => { if (active) setFantraxDisplayError("Fantrax player details are unavailable. Draft picks can still sync; ADP is hidden until Fantrax responds."); });
+    return () => { active = false; };
+  }, [fantraxDisplayAuthenticated, selectedFantraxLeagueId]);
   const [espnLeagueOverride, setEspnLeagueOverride] =
     useState<EspnLeagueSelection | null>(null);
 
@@ -1571,9 +1604,14 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     () => (skaterData.isLoading && !skaterPlayers.length) ||
       (goalieData.isLoading && !goaliePlayers.length)
       ? []
-      : [...skaterPlayers, ...goaliePlayers],
-    [skaterPlayers, goaliePlayers, skaterData.isLoading, goalieData.isLoading],
+      : fantraxLeagueOverride
+        ? applyFantraxDisplay([...skaterPlayers, ...goaliePlayers], activeFantraxDisplayPlayers)
+        : [...skaterPlayers, ...goaliePlayers],
+    [skaterPlayers, goaliePlayers, skaterData.isLoading, goalieData.isLoading, fantraxLeagueOverride, activeFantraxDisplayPlayers],
   );
+  const fantraxUnmatchedPlayers = fantraxLeagueOverride && activeFantraxDisplayPlayers
+    ? allPlayers.filter((player) => !player.fantraxMetadataMatched).length
+    : 0;
 
   const effectivePickTrades = useMemo(() => fantraxLiveActive
     ? []
@@ -3636,6 +3674,8 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   // Keep table rendering independent of settings navigation and visibility.
   const projectionsTable = useMemo(() => (
     <ProjectionsTable
+            adpSource={fantraxLeagueOverride ? "Fantrax" : "Yahoo"}
+            draftUnavailableReason={draftUnavailableReason}
             picksBeforeTurn={myPickWindows[0]?.offset}
             onRefresh={() => setDataRefreshKey((k) => k + 1)}
             currentSeasonId={currentSeasonId}
@@ -3677,7 +3717,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
                   )
                 : Object.keys(goaliePointValues || {})
             }
-            yahooMappingDiagnostics={{
+            yahooMappingDiagnostics={fantraxLeagueOverride ? undefined : {
               skater: skaterData.yahooMappingDiagnostics,
               goalie: goalieData.yahooMappingDiagnostics,
             }}
@@ -3701,7 +3741,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     expectedTakenByPos, expectedN, needWeightEnabled, posNeeds, needAlpha,
     selectionHorizon, availabilitySpread, updateAvailabilitySpread, nextPickNumber, draftSettings.leagueType, draftSettings.categoryWeights,
     draftSettings.scoringCategories, forwardGrouping, availableGoalieStatKeys,
-    goaliePointValues, skaterData.yahooMappingDiagnostics,
+    goaliePointValues, fantraxLeagueOverride, draftUnavailableReason, skaterData.yahooMappingDiagnostics,
     goalieData.yahooMappingDiagnostics, sourceRankImpacts,
     skaterData.inclusionDiagnostics, goalieData.inclusionDiagnostics,
     draftSchedule.playerMetrics, tableDataNotices, canUseProDust, draftProDustInsights, projectionEmptyStateMessage, setFavoriteIds, canUseProScenarios, openRosterImpact,
@@ -4160,6 +4200,14 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         onExpandGraph={() => setGraphExpandRequest((value) => value + 1)}
         onSummary={() => setIsSummaryOpen(true)} onOpenChange={setGodViewOpen}
       />
+      {fantraxLeagueOverride && (fantraxDisplayError || !activeFantraxDisplayPlayers || !fantraxEligibilityLoaded) ? (
+        <p role="status">{fantraxDisplayError || (!activeFantraxDisplayPlayers
+          ? "Loading Fantrax player positions, teams, and ADP…"
+          : "Fantrax league eligibility is unavailable. Check multi-position eligibility in Fantrax before drafting; primary positions and ADP are still available.")}</p>
+      ) : null}
+      {fantraxUnmatchedPlayers > 0 ? (
+        <p role="status">{fantraxUnmatchedPlayers} players could not be matched to Fantrax by name. Their ADP is hidden; check team and position in Fantrax before drafting them.</p>
+      ) : null}
       <div className={styles.mainContent} style={{ "--board-track": `${draftSettings.teamCount + 4}fr`, "--standings-track": `${draftSettings.teamCount + 6}fr` } as React.CSSProperties}>
       {/* Recommendations and roster progress share the left workspace track. */}
       <section
@@ -4174,6 +4222,8 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         hidden={mobileWorkspaceEnabled && activeMobileTab !== "suggested"}
       >
         <SuggestedPicks
+          adpSource={fantraxLeagueOverride ? "Fantrax" : "Yahoo"}
+          draftUnavailableReason={draftUnavailableReason}
           pickWindows={myPickWindows}
           compact={false}
           onReturnToDraft={closeSettings}
@@ -4308,6 +4358,8 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
           hidden={mobileWorkspaceEnabled && activeMobileTab !== "roster"}
         >
           <MyRoster
+            schedulePeriod={draftSchedule.periodLabel}
+            draftUnavailableReason={draftUnavailableReason}
             onSelectedTeamChange={setInspectedTeamId}
             viewRequest={rosterViewRequest}
             nextPickByTeam={fantraxLiveActive ? fantraxReconciliation.nextPickByTeam : Object.fromEntries(draftSettings.draftOrder.map((teamId) => [teamId, currentPick + findPicksUntilTeamTurn({ currentPick, teamId, draftOrder: draftSettings.draftOrder, orderPattern: draftOrderPattern, trades: effectivePickTrades, keepers: activeKeepers, completedPickNumbers: draftedPlayers.map((player) => player.pickNumber), teamRosterCounts, rosterCapacity: rosterRoundCount(draftSettings.rosterConfig), maxPickNumber: draftSettings.teamCount * rosterRoundCount(draftSettings.rosterConfig) })]))}
