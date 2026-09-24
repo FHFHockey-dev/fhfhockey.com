@@ -1619,8 +1619,8 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     [rawPlayers, fantraxLeagueOverride, activeFantraxDisplayPlayers],
   );
   const fantraxUnmatchedPlayers = fantraxLeagueOverride && activeFantraxDisplayPlayers
-    ? allPlayers.filter((player) => !player.fantraxMetadataMatched).length
-    : 0;
+    ? allPlayers.filter((player) => !player.fantraxMetadataMatched)
+    : [];
 
   const [fantraxPlayerData, setFantraxPlayerData] = useState<{ key: string; players: FantraxPlayerRow[]; hasLeagueEligibility: boolean } | null>(null);
   const [fantraxPlayerError, setFantraxPlayerError] = useState<{ key: string; message: string } | null>(null);
@@ -4258,8 +4258,14 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
           ? "Loading Fantrax player positions, teams, and ADP…"
           : "Fantrax league eligibility is unavailable. Check multi-position eligibility in Fantrax before drafting; primary positions and ADP are still available.")}</p>
       ) : null}
-      {fantraxUnmatchedPlayers > 0 ? (
-        <p role="status">{fantraxUnmatchedPlayers} players still lack a safe Fantrax match. Their Fantrax ADP is unavailable; check their availability in your league before drafting.</p>
+      {fantraxUnmatchedPlayers.length > 0 ? (
+        <div>
+          <p role="status">{fantraxUnmatchedPlayers.length} {fantraxUnmatchedPlayers.length === 1 ? "player" : "players"} still lack a safe Fantrax match. Their Fantrax ADP is unavailable; check their availability in your league before drafting.</p>
+          <details open={fantraxUnmatchedPlayers.length <= 5}>
+            <summary>Unmatched players</summary>
+            <ul>{fantraxUnmatchedPlayers.map((player) => <li key={player.playerId}>{player.fullName}</li>)}</ul>
+          </details>
+        </div>
       ) : null}
       <div className={styles.mainContent} style={{ "--board-track": `${draftSettings.teamCount + 4}fr`, "--standings-track": `${draftSettings.teamCount + 6}fr` } as React.CSSProperties}>
       {/* Recommendations and roster progress share the left workspace track. */}
