@@ -41,7 +41,10 @@ describe("Fantrax dashboard player data access", () => {
   });
 
   it("returns Fantrax ADP and league eligibility for a linked league", async () => {
-    mocks.getFantraxPlayerIds.mockResolvedValue({ "fx-1": { fantraxId: "fx-1", name: "Stützle, Tim", team: "OTT", position: "C" } });
+    mocks.getFantraxPlayerIds.mockResolvedValue({
+      "fx-1": { fantraxId: "fx-1", name: "Stützle, Tim", team: "OTT", position: "C" },
+      "fx-2": { fantraxId: "fx-2", name: "Reaves, Ryan", team: "(N/A)", position: "RW" },
+    });
     mocks.getFantraxAdp.mockResolvedValue([{ id: "fx-1", ADP: 15.2 }]);
     mocks.getFantraxLeagueInfo.mockResolvedValue({ playerInfo: { "fx-1": { eligiblePos: "C,LW,Skt" } } });
     const res = response();
@@ -50,7 +53,10 @@ describe("Fantrax dashboard player data access", () => {
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       eligibilityLoaded: true,
-      players: [{ name: "Tim Stützle", team: "OTT", position: "C", eligiblePositions: ["C", "LW"], adp: 15.2 }],
+      players: [
+        { id: "fx-1", name: "Tim Stützle", team: "OTT", position: "C", eligiblePositions: ["C", "LW"], adp: 15.2 },
+        { id: "fx-2", name: "Ryan Reaves", team: null, position: "RW", eligiblePositions: null, adp: null },
+      ],
     });
   });
 });

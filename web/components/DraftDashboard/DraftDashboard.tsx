@@ -4259,7 +4259,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
           : "Fantrax league eligibility is unavailable. Check multi-position eligibility in Fantrax before drafting; primary positions and ADP are still available.")}</p>
       ) : null}
       {fantraxUnmatchedPlayers > 0 ? (
-        <p role="status">{fantraxUnmatchedPlayers} players could not be matched to Fantrax by name. Their ADP is hidden; check team and position in Fantrax before drafting them.</p>
+        <p role="status">{fantraxUnmatchedPlayers} players still lack a safe Fantrax match. Their Fantrax ADP is unavailable; check their availability in your league before drafting.</p>
       ) : null}
       <div className={styles.mainContent} style={{ "--board-track": `${draftSettings.teamCount + 4}fr`, "--standings-track": `${draftSettings.teamCount + 6}fr` } as React.CSSProperties}>
       {/* Recommendations and roster progress share the left workspace track. */}
