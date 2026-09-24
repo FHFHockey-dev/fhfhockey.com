@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  getFantraxAdp,
   getFantraxDraftResults,
   getFantraxLeagueInfo,
   getFantraxLeagues,
+  getFantraxPlayerIds,
 } from "./client";
 
 function jsonResponse(payload: unknown, status = 200, headers?: HeadersInit) {
@@ -27,6 +29,17 @@ describe("Fantrax FXEA client", () => {
     expect(String(url)).toBe("https://www.fantrax.com/fxea/general/getDraftResults?leagueId=league-1");
     expect(init?.method).toBe("GET");
     expect(String(url)).not.toContain("userSecretId");
+  });
+
+  it("loads public NHL player IDs and ADP independently of a league secret", async () => {
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse([{ id: "abc", name: "Player, Test", pos: "C", ADP: 12.5 }]))
+      .mockResolvedValueOnce(jsonResponse({ abc: { name: "Player, Test", team: "TOR", position: "C" } }));
+    vi.spyOn(console, "info").mockImplementation(() => undefined);
+    await expect(getFantraxAdp({ fetchImpl, maxAttempts: 1 })).resolves.toHaveLength(1);
+    await expect(getFantraxPlayerIds({ fetchImpl, maxAttempts: 1 })).resolves.toHaveProperty("abc.team", "TOR");
+    expect(String(fetchImpl.mock.calls[0][0])).toContain("getAdp?sport=NHL&showAllPositions=true");
+    expect(String(fetchImpl.mock.calls[1][0])).toContain("getPlayerIds?sport=NHL");
   });
 
   it("retries 429 responses, respects Retry-After, and never logs credentials", async () => {
@@ -91,6 +104,7 @@ describe("Fantrax FXEA client", () => {
             additiveScoringField: 1,
           },
           teamInfo: {},
+          playerInfo: { abc: { eligiblePos: "C,LW" } },
         }),
       );
     vi.spyOn(console, "info").mockImplementation(() => undefined);
@@ -101,6 +115,7 @@ describe("Fantrax FXEA client", () => {
       additiveLeagueField: true,
       rosterInfo: { additiveRosterField: "kept" },
       scoringSystem: { additiveScoringField: 1 },
+      playerInfo: { abc: { eligiblePos: "C,LW" } },
     });
   });
 

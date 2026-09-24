@@ -120,6 +120,7 @@ interface DraftSettingsProps {
   }>;
   draftLocked?: boolean;
   draftProEligible?: boolean;
+  fantraxLeagueEligibilityAvailable?: boolean;
   draftLockReason?: string;
   structuralSettingsLocked?: boolean;
 }
@@ -184,6 +185,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
   playersForKeeperAutocomplete,
   draftLocked = false,
   draftProEligible = false,
+  fantraxLeagueEligibilityAvailable = false,
   draftLockReason = "Yahoo live sync is authoritative.",
   structuralSettingsLocked = false,
 }, ref) => {
@@ -1594,6 +1596,19 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
           <fieldset data-settings-domain="projections" hidden={variant === "inline" && activeSection !== "projections"} role={variant === "inline" ? "tabpanel" : undefined} aria-labelledby={variant === "inline" ? "draft-tab-projections" : undefined} id="draft-domain-projections" tabIndex={-1} className={styles.fieldset}>
             <legend className={styles.legend}>Projection Sources</legend>
             {domainIssues("projections")}
+            <div className={styles.settingRow}>
+              <label className={styles.label} htmlFor="draft-adp-source">ADP source {draftProEligible ? "· Pro" : "· Draft Pro"}</label>
+              <select id="draft-adp-source" className={styles.select} value={draftProEligible ? settings.adpSource ?? "yahoo" : "yahoo"} disabled={!draftProEligible} onChange={(event) => onSettingsChange({ adpSource: event.target.value as "yahoo" | "fantrax" })}>
+                <option value="yahoo">Yahoo</option><option value="fantrax">Fantrax</option>
+              </select>
+            </div>
+            <div className={styles.settingRow}>
+              <label className={styles.label} htmlFor="draft-position-source">Position source {draftProEligible ? "· Pro" : "· Draft Pro"}</label>
+              <select id="draft-position-source" className={styles.select} value={draftProEligible ? settings.positionSource ?? "yahoo" : "yahoo"} disabled={!draftProEligible} onChange={(event) => onSettingsChange({ positionSource: event.target.value as "yahoo" | "fantrax" })}>
+                <option value="yahoo">Yahoo</option><option value="fantrax">Fantrax</option>
+              </select>
+            </div>
+            {draftProEligible && settings.positionSource === "fantrax" && !fantraxLeagueEligibilityAvailable && <small>Full Fantrax eligibility loads from a connected league. Public player data supplies primary positions only.</small>}
             <ProjectionSourceSettings skaters={sourceControls} goalies={goalieSourceControls} onSkatersChange={onSourceControlsChange} onGoaliesChange={onGoalieSourceControlsChange} customSources={customSourceMetadata} onRemoveCustomSource={onRemoveCustomSource} hasPicks={draftedPlayers.length > 0} />
           </fieldset>
           {/* Quick Actions fieldset removed; actions moved under League Setup */}

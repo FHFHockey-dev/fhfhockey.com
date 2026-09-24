@@ -37,11 +37,19 @@ export function matchesProjectionPosition(
   forwardGrouping: "split" | "fwd"
 ) {
   if (positionFilter === "ALL") return true;
-  const tokens = getProjectionDisplayPosition(player, forwardGrouping)
+  const tokens = getProjectionDisplayPosition(player, positionFilter.startsWith("ELIGIBLE_") ? "split" : forwardGrouping)
     .toUpperCase()
     .split(",")
     .map((position) => position.trim())
     .filter(Boolean);
+  const forwardPositions = ["C", "LW", "RW"];
+  const eligibleForwards = forwardPositions.filter((position) => tokens.includes(position));
+  if (positionFilter === "ELIGIBLE_DUAL") return eligibleForwards.length === 2;
+  if (positionFilter === "ELIGIBLE_TRI") return eligibleForwards.length === 3;
+  if (positionFilter.startsWith("ELIGIBLE_")) {
+    const pair = positionFilter.slice("ELIGIBLE_".length).split("_");
+    return pair.length === 2 && eligibleForwards.length === 2 && pair.every((position) => eligibleForwards.includes(position));
+  }
   const isGoalie = tokens.includes("G");
   const isDefense = tokens.includes("D");
   const isForward = tokens.some((position) =>

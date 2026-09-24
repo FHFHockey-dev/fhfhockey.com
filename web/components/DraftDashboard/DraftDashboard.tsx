@@ -24,6 +24,8 @@ import { useDraftRanking } from "hooks/useDraftRanking";
 import { useYahooDraftSync } from "hooks/useYahooDraftSync";
 import { useEspnDraftSync } from "hooks/useEspnDraftSync";
 import { useFantraxDraftSync } from "hooks/useFantraxDraftSync";
+import { fantraxAccountRequest } from "hooks/useFantraxConnections";
+import { applyFantraxPlayerSources, type FantraxPlayerRow } from "lib/draftDashboard/fantraxPlayerSources";
 import { reconcileFantraxDraftState } from "lib/draftDashboard/fantraxLiveDraft";
 import supabase from "lib/supabase";
 import { useAuth } from "contexts/AuthProviderContext";
@@ -192,6 +194,8 @@ export interface DraftSettings {
   categoryWeights?: Record<string, number>; // used in categories mode
   /** Draft Pro valuation-only boosts, expressed as percentages from 0 to 100. */
   categoryBoosts?: Record<string, number>;
+  adpSource?: "yahoo" | "fantrax";
+  positionSource?: "yahoo" | "fantrax";
   // Whether this is a keeper league. Controls visibility of Keepers & Traded Picks section.
   isKeeper?: boolean;
   // Custom source safeguards
@@ -321,6 +325,8 @@ const DEFAULT_DRAFT_SETTINGS: DraftSettings = {
     SAVE_PERCENTAGE: 1,
   },
   categoryBoosts: {},
+  adpSource: "yahoo",
+  positionSource: "yahoo",
   rosterConfig: {
     C: 2,
     LW: 2,
@@ -1571,6 +1577,34 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     [skaterPlayers, goaliePlayers],
   );
 
+  const [fantraxPlayerData, setFantraxPlayerData] = useState<{ key: string; players: FantraxPlayerRow[]; hasLeagueEligibility: boolean } | null>(null);
+  const [fantraxPlayerError, setFantraxPlayerError] = useState<{ key: string; message: string } | null>(null);
+  const adpSource = draftProEligible ? draftSettings.adpSource ?? "yahoo" : "yahoo";
+  const positionSource = draftProEligible ? draftSettings.positionSource ?? "yahoo" : "yahoo";
+  const needsFantraxPlayerData = adpSource === "fantrax" || positionSource === "fantrax";
+  const fantraxRequestKey = positionSource === "fantrax" ? `league:${fantraxLeagueOverride?.externalLeagueId ?? "default"}` : "public";
+  useEffect(() => {
+    if (!needsFantraxPlayerData || fantraxPlayerData?.key === fantraxRequestKey) return;
+    let active = true;
+    const query = positionSource === "fantrax"
+      ? `?includeLeaguePositions=1${fantraxLeagueOverride?.externalLeagueId ? `&leagueId=${encodeURIComponent(fantraxLeagueOverride.externalLeagueId)}` : ""}`
+      : "";
+    void fantraxAccountRequest<{ players: FantraxPlayerRow[]; hasLeagueEligibility: boolean }>(`/api/v1/draft-pro/fantrax-player-data${query}`)
+      .then((result) => { if (active) { setFantraxPlayerData({ ...result, key: fantraxRequestKey }); setFantraxPlayerError(null); } })
+      .catch(() => { if (active) setFantraxPlayerError({ key: fantraxRequestKey, message: "Fantrax player data is unavailable; Yahoo data is shown." }); });
+    return () => { active = false; };
+  }, [needsFantraxPlayerData, fantraxPlayerData, fantraxRequestKey, positionSource, fantraxLeagueOverride?.externalLeagueId]);
+  const currentFantraxPlayerData = fantraxPlayerData?.key === fantraxRequestKey ? fantraxPlayerData : null;
+  const fantraxPlayerDataLoaded = Boolean(currentFantraxPlayerData);
+  const fantraxLeagueEligibilityAvailable = Boolean(currentFantraxPlayerData?.hasLeagueEligibility);
+  const tableAllPlayers = useMemo(() => currentFantraxPlayerData && needsFantraxPlayerData
+    ? applyFantraxPlayerSources(allPlayers, currentFantraxPlayerData.players, adpSource, positionSource)
+    : allPlayers,
+  [allPlayers, currentFantraxPlayerData, needsFantraxPlayerData, adpSource, positionSource]);
+  const fantraxSourceNotice = needsFantraxPlayerData && !currentFantraxPlayerData
+    ? fantraxPlayerError?.key === fantraxRequestKey ? fantraxPlayerError.message : "Loading Fantrax player data; Yahoo values are shown until it is ready."
+    : null;
+
   const effectivePickTrades = useMemo(() => draftMode === "yahoo"
     ? yahooDraftPickTrades(yahooDraftSync.draftState, { ...draftSettings, trades: pickTrades })
     : pickTrades, [draftMode, yahooDraftSync.draftState, draftSettings, pickTrades]);
@@ -1990,6 +2024,9 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       (player) => !unavailablePlayerIds.has(String(player.playerId)),
     );
   }, [allPlayers, unavailablePlayerIds]);
+  const tableAvailablePlayers = useMemo(() => tableAllPlayers.filter(
+    (player) => !unavailablePlayerIds.has(String(player.playerId)),
+  ), [tableAllPlayers, unavailablePlayerIds]);
 
   // Track the 84-game proration toggle (shared via localStorage).
   const [prorate84, setProrate84] = React.useState<boolean>(() => {
@@ -2947,6 +2984,14 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         if (!manualDraftingEnabled) saveSnapshot(next);
         return;
       }
+      const keys = Object.keys(newSettings);
+      if (keys.length && keys.every((key) => key === "adpSource" || key === "positionSource")) {
+        if (!draftProEligible) return;
+        const next = { ...draftSettings, ...newSettings };
+        setDraftSettings(next);
+        if (!manualDraftingEnabled) saveSnapshot(next);
+        return;
+      }
       if (!manualDraftingEnabled) return;
       const next = { ...draftSettings, ...newSettings };
       const structureChanged = next.teamCount !== draftSettings.teamCount || JSON.stringify(next.draftOrder) !== JSON.stringify(draftSettings.draftOrder) || next.draftOrderMode !== draftSettings.draftOrderMode || JSON.stringify(next.reversedRounds) !== JSON.stringify(draftSettings.reversedRounds);
@@ -3611,14 +3656,19 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
             picksBeforeTurn={myPickWindows[0]?.offset}
             onRefresh={() => setDataRefreshKey((k) => k + 1)}
             currentSeasonId={currentSeasonId}
-            players={availablePlayers}
-            allPlayers={allPlayers}
+            players={tableAvailablePlayers}
+            allPlayers={tableAllPlayers}
             draftedPlayers={draftedPlayers}
             unavailablePlayerIds={unavailablePlayerIds}
             isLoading={isLoading}
             error={errorMessage}
             onDraftPlayer={draftPlayer}
             canDraft={manualDraftingEnabled && settingsConfigured && settingsValidation.valid}
+            draftProEligible={draftProEligible}
+            adpSource={adpSource}
+            positionSource={positionSource}
+            fantraxLeagueEligibilityAvailable={fantraxLeagueEligibilityAvailable}
+            fantraxPlayerDataLoaded={fantraxPlayerDataLoaded}
             personalRankByPlayerId={personalRankByPlayerId}
             vorpMetrics={vorpMetrics}
             replacementByPos={replacementByPos}
@@ -3658,7 +3708,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
               skater: skaterData.inclusionDiagnostics,
               goalie: goalieData.inclusionDiagnostics,
             }}
-            dataNotices={tableDataNotices}
+            dataNotices={fantraxSourceNotice ? [...tableDataNotices, fantraxSourceNotice] : tableDataNotices}
             scheduleMetrics={draftSchedule.playerMetrics}
             dustInsights={canUseProDust ? draftProDustInsights : undefined}
             emptyStateMessage={projectionEmptyStateMessage}
@@ -3666,9 +3716,9 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
             onOpenRosterImpact={canUseProScenarios ? openRosterImpact : undefined}
           />
   ), [
-    myPickWindows, currentSeasonId, availablePlayers, allPlayers, draftedPlayers,
+    myPickWindows, currentSeasonId, tableAvailablePlayers, tableAllPlayers, draftedPlayers,
     unavailablePlayerIds, isLoading, errorMessage, draftPlayer,
-    manualDraftingEnabled, settingsConfigured, settingsValidation.valid,
+    manualDraftingEnabled, settingsConfigured, settingsValidation.valid, draftProEligible, adpSource, positionSource, fantraxLeagueEligibilityAvailable, fantraxPlayerDataLoaded,
     personalRankByPlayerId, vorpMetrics, replacementByPos, baselineMode,
     expectedTakenByPos, expectedN, needWeightEnabled, posNeeds, needAlpha,
     selectionHorizon, availabilitySpread, updateAvailabilitySpread, nextPickNumber, draftSettings.leagueType, draftSettings.categoryWeights,
@@ -3676,7 +3726,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     goaliePointValues, skaterData.yahooMappingDiagnostics,
     goalieData.yahooMappingDiagnostics, sourceRankImpacts,
     skaterData.inclusionDiagnostics, goalieData.inclusionDiagnostics,
-    draftSchedule.playerMetrics, tableDataNotices, canUseProDust, draftProDustInsights, projectionEmptyStateMessage, setFavoriteIds, canUseProScenarios, openRosterImpact,
+    draftSchedule.playerMetrics, tableDataNotices, fantraxSourceNotice, canUseProDust, draftProDustInsights, projectionEmptyStateMessage, setFavoriteIds, canUseProScenarios, openRosterImpact,
   ]);
 
   return (
@@ -3745,6 +3795,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
           <div hidden={settingsSection === "integrations" || settingsSection === "saved-drafts" || settingsSection === "roster-impact" || settingsSection === "reports"}>
           <DraftSettings
         draftProEligible={draftProEligible}
+        fantraxLeagueEligibilityAvailable={fantraxLeagueEligibilityAvailable}
         matchupWeeks={draftSchedule.weeks}
         matchupWeeksError={draftSchedule.weeksError}
         ref={settingsEditorRef}
@@ -4145,7 +4196,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
           pickWindows={myPickWindows}
           compact={false}
           onReturnToDraft={closeSettings}
-          players={availablePlayers}
+          players={tableAvailablePlayers}
           isLoading={isLoading}
           error={errorMessage}
           dustInsights={canUseProDust ? draftProDustInsights : undefined}

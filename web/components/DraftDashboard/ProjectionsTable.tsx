@@ -48,6 +48,11 @@ interface ProjectionsTableProps {
   error: string | null;
   onDraftPlayer: (playerId: string) => void;
   canDraft: boolean;
+  draftProEligible?: boolean;
+  adpSource?: "yahoo" | "fantrax";
+  positionSource?: "yahoo" | "fantrax";
+  fantraxLeagueEligibilityAvailable?: boolean;
+  fantraxPlayerDataLoaded?: boolean;
   // VORP metrics map
   vorpMetrics?: Map<string, PlayerVorpMetrics>;
   //  replacement baselines for tooltip/context
@@ -144,6 +149,11 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   error,
   onDraftPlayer,
   canDraft,
+  draftProEligible = false,
+  adpSource = "yahoo",
+  positionSource = "yahoo",
+  fantraxLeagueEligibilityAvailable = false,
+  fantraxPlayerDataLoaded = false,
   personalRankByPlayerId,
   vorpMetrics,
   replacementByPos,
@@ -173,6 +183,11 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   const [sortField, setSortField] = useState<SortableField>("yahooAvgPick");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [positionFilter, setPositionFilter] = useState<string>("ALL");
+  const canFilterMultiplePositions = draftProEligible && (positionSource === "yahoo" || fantraxLeagueEligibilityAvailable);
+  const activePositionFilter = !positionFilter.startsWith("ELIGIBLE_") || canFilterMultiplePositions ? positionFilter : "ALL";
+  useEffect(() => {
+    if ((!draftProEligible || (positionSource === "fantrax" && fantraxPlayerDataLoaded && !fantraxLeagueEligibilityAvailable)) && positionFilter.startsWith("ELIGIBLE_")) setPositionFilter("ALL");
+  }, [draftProEligible, positionSource, fantraxPlayerDataLoaded, fantraxLeagueEligibilityAvailable, positionFilter]);
   const [searchTerm, setSearchTerm] = useState("");
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(50);
@@ -665,7 +680,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   const diagnostics = useMemo(() => {
     return diagnoseProjectionVisibility({
       players,
-      positionFilter,
+      positionFilter: activePositionFilter,
       forwardGrouping,
       searchTerm: debouncedSearchTerm,
       hideDrafted,
@@ -675,7 +690,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     });
   }, [
     players,
-    positionFilter,
+    activePositionFilter,
     debouncedSearchTerm,
     hideDrafted,
     draftedIdSet,
@@ -754,9 +769,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   const filteredAndSortedPlayers = useMemo(() => {
     let filtered = [...players];
     // Position filter predicate
-    if (positionFilter !== "ALL") {
+    if (activePositionFilter !== "ALL") {
       filtered = filtered.filter((player) =>
-        matchesProjectionPosition(player, positionFilter, forwardGrouping),
+        matchesProjectionPosition(player, activePositionFilter, forwardGrouping),
       );
     }
 
@@ -872,7 +887,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   }, [
     players,
     scheduleMetrics,
-    positionFilter,
+    activePositionFilter,
     debouncedSearchTerm,
     sortField,
     sortDirection,
@@ -1277,7 +1292,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
               <span className={styles.controlLabelMini}>Position</span>
               <select
                 id="position-filter"
-                value={positionFilter}
+                value={activePositionFilter}
                 onChange={(e) => setPositionFilter(e.target.value)}
                 className={styles.inlineSelect}
                 aria-label="Position filter"
@@ -1290,6 +1305,15 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     {position}
                   </option>
                 ))}
+                {draftProEligible && (
+                  <optgroup label={canFilterMultiplePositions ? "Draft Pro · Eligibility" : "Connect a Fantrax league for dual eligibility"} disabled={!canFilterMultiplePositions}>
+                    <option value="ELIGIBLE_DUAL">Dual eligible</option>
+                    <option value="ELIGIBLE_C_LW">C/LW</option>
+                    <option value="ELIGIBLE_C_RW">C/RW</option>
+                    <option value="ELIGIBLE_LW_RW">LW/RW</option>
+                    <option value="ELIGIBLE_TRI">Tri eligible · C/LW/RW</option>
+                  </optgroup>
+                )}
               </select>
             </div>
             <div className={`${styles.stackedControl} ${styles.compactPrimaryControl}`}>
@@ -1737,7 +1761,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     aria-sort={getAriaSort("valueDelta")}
                     scope="col"
                   >
-                    <button type="button" className={`${styles.sortButton} ${styles.stackedSortButton}`} onClick={() => handleSort("valueDelta")} title="Yahoo ADP minus full-pool scoring rank; positive values indicate draft value">
+                    <button type="button" className={`${styles.sortButton} ${styles.stackedSortButton}`} onClick={() => handleSort("valueDelta")} title={`${adpSource === "fantrax" ? "Fantrax" : "Yahoo"} ADP minus full-pool scoring rank; positive values indicate draft value`}>
                       <span className={styles.stackedSortLabel}><span>Value</span><span>Δ</span></span>
                     </button>
                   </th>
@@ -1814,7 +1838,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     aria-sort={getAriaSort("valueDelta")}
                     scope="col"
                   >
-                    <button type="button" className={`${styles.sortButton} ${styles.stackedSortButton}`} onClick={() => handleSort("valueDelta")} title="Yahoo ADP minus full-pool scoring rank; positive values indicate draft value">
+                    <button type="button" className={`${styles.sortButton} ${styles.stackedSortButton}`} onClick={() => handleSort("valueDelta")} title={`${adpSource === "fantrax" ? "Fantrax" : "Yahoo"} ADP minus full-pool scoring rank; positive values indicate draft value`}>
                       <span className={styles.stackedSortLabel}><span>Value</span><span>Δ</span></span>
                     </button>
                   </th>
@@ -2309,23 +2333,23 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     )}
                     {(() => {
                       const leagueRank = leagueRankByPlayerId.get(key);
-                      const yahooAdp =
+                      const selectedAdp =
                         typeof player.yahooAvgPick === "number" &&
                         player.yahooAvgPick > 0
                           ? player.yahooAvgPick
                           : null;
                       const valueDelta =
-                        yahooAdp != null && leagueRank != null
-                          ? Math.round(yahooAdp - leagueRank)
+                        selectedAdp != null && leagueRank != null
+                          ? Math.round(selectedAdp - leagueRank)
                           : null;
                       return (
                         <td
                           className={`${styles.valueDelta} ${valueDelta == null ? "" : valueDelta > 0 ? styles.valueDeltaPositive : valueDelta < 0 ? styles.valueDeltaNegative : ""}`}
                           data-label="Value Δ"
                           title={
-                            yahooAdp == null || leagueRank == null
-                              ? "Yahoo ADP or full-pool scoring rank is unavailable"
-                              : `Yahoo ADP ${yahooAdp.toFixed(1)} minus full-pool scoring rank ${leagueRank}`
+                            selectedAdp == null || leagueRank == null
+                              ? `${adpSource === "fantrax" ? "Fantrax" : "Yahoo"} ADP or full-pool scoring rank is unavailable`
+                              : `${adpSource === "fantrax" ? "Fantrax" : "Yahoo"} ADP ${selectedAdp.toFixed(1)} minus full-pool scoring rank ${leagueRank}`
                           }
                         >
                           {valueDelta == null

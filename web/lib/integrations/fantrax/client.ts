@@ -39,7 +39,14 @@ const draftResultsResponseSchema = z.object({
   draftPicks: z.array(z.unknown()),
 }).passthrough();
 
-export type FantraxEndpoint = "getLeagues" | "getLeagueInfo" | "getDraftResults";
+const adpResponseSchema = z.array(z.object({
+  id: z.string(), name: z.string(), pos: z.string(), ADP: z.number().nullable(),
+}).passthrough());
+const playerIdsResponseSchema = z.record(z.object({
+  name: z.string(), team: z.string().optional(), position: z.string().optional(),
+}).passthrough());
+
+export type FantraxEndpoint = "getLeagues" | "getLeagueInfo" | "getDraftResults" | "getAdp" | "getPlayerIds";
 
 export class FantraxApiError extends Error {
   constructor(
@@ -89,7 +96,11 @@ function parseResponse(endpoint: FantraxEndpoint, payload: unknown): unknown {
       ? leaguesResponseSchema.safeParse(payload)
       : endpoint === "getLeagueInfo"
         ? leagueInfoResponseSchema.safeParse(payload)
-        : draftResultsResponseSchema.safeParse(payload);
+        : endpoint === "getDraftResults"
+          ? draftResultsResponseSchema.safeParse(payload)
+          : endpoint === "getAdp"
+            ? adpResponseSchema.safeParse(payload)
+            : playerIdsResponseSchema.safeParse(payload);
   if (!parsed.success) {
     throw new FantraxApiError(
       "Fantrax returned an unsupported response shape.",
@@ -258,4 +269,12 @@ export function getFantraxDraftResults(
   options?: Parameters<typeof fantraxGet>[2],
 ) {
   return fantraxGet("getDraftResults", { leagueId }, options);
+}
+
+export function getFantraxAdp(options?: Parameters<typeof fantraxGet>[2]) {
+  return fantraxGet("getAdp", { sport: "NHL", showAllPositions: "true" }, options) as Promise<z.infer<typeof adpResponseSchema>>;
+}
+
+export function getFantraxPlayerIds(options?: Parameters<typeof fantraxGet>[2]) {
+  return fantraxGet("getPlayerIds", { sport: "NHL" }, options) as Promise<z.infer<typeof playerIdsResponseSchema>>;
 }
