@@ -77,6 +77,22 @@ describe("keeper workflow surfaces", () => {
     expect(Array.from(view.container.querySelectorAll("[data-intensity]")).map((cell) => cell.getAttribute("data-intensity")).sort()).toEqual(["1", "2", "3", "4"]);
     expect(view.container.querySelector('[data-my-team="true"]')?.textContent).toContain("Team 2 (You)");
   });
+  it("shows unresolved Fantrax selections and their provider owner on the graph", () => {
+    const view = render(<DraftBoard
+      draftSettings={settings}
+      draftedPlayers={[{ playerId: "-2000001", teamId: "Team 2", round: 1, pickInRound: 1,
+        pickNumber: 1, source: "fantrax", fantraxDisplayName: "Noah Dobson", fantraxMappingStatus: "unresolved" }]}
+      currentTurn={{ round: 1, pickInRound: 2, teamId: "Team 1", isMyTurn: false }}
+      teamStats={[]} allPlayers={[]} onUpdateTeamName={vi.fn()}
+      providerPickOwnerByNumber={{ 1: "Team 2", 2: "Team 1" }}
+    />);
+    const pick = view.container.querySelector('[data-overall-pick="1"]');
+    expect(pick?.getAttribute("data-owner")).toBe("Team 2");
+    expect(pick?.getAttribute("title")).toContain("Noah Dobson");
+    expect(pick?.getAttribute("title")).toContain("Fantrax owner: Team 2");
+    expect(pick?.textContent).toContain("?");
+    expect(screen.getByText("Fantrax pick needs review")).toBeTruthy();
+  });
   it("attributes a forfeited Draft Board pick to the keeper team", () => {
     const view = render(
       <DraftBoard
@@ -191,8 +207,8 @@ describe("keeper workflow surfaces", () => {
       />,
     );
 
-    expect(screen.getByText("No-Pick Keepers")).toBeTruthy();
-    expect(screen.getByText("Keeper Player")).toBeTruthy();
+    expect(screen.getByText("Keepers without draft slots")).toBeTruthy();
+    expect(screen.getAllByText("Keeper Player").length).toBeGreaterThan(0);
     const skipped = view.container.querySelector(
       '[data-round="1"][data-pick="1"]',
     );

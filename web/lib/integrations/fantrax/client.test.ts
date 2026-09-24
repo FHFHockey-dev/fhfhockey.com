@@ -31,15 +31,25 @@ describe("Fantrax FXEA client", () => {
     expect(String(url)).not.toContain("userSecretId");
   });
 
-  it("loads public NHL player IDs and ADP independently of a league secret", async () => {
-    const fetchImpl = vi.fn<typeof fetch>()
-      .mockResolvedValueOnce(jsonResponse([{ id: "abc", name: "Player, Test", pos: "C", ADP: 12.5 }]))
-      .mockResolvedValueOnce(jsonResponse({ abc: { name: "Player, Test", team: "TOR", position: "C" } }));
-    vi.spyOn(console, "info").mockImplementation(() => undefined);
+  it("reads the official NHL player ID catalog without a user credential", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({
+      "fx-1": { name: "Dobson, Noah", fantraxId: "fx-1", team: "MTL", position: "D" },
+    }));
+    await expect(getFantraxPlayerIds({ fetchImpl, maxAttempts: 1 })).resolves.toHaveProperty("fx-1.name", "Dobson, Noah");
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(String(url)).toBe("https://www.fantrax.com/fxea/general/getPlayerIds?sport=NHL");
+    expect(init?.method).toBe("GET");
+  });
+
+  it("reads the official NHL ADP feed and rejects changed response shapes", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse([
+      { id: "fx-1", name: "MacKinnon, Nathan", pos: "C", ADP: 1.51 },
+    ]));
     await expect(getFantraxAdp({ fetchImpl, maxAttempts: 1 })).resolves.toHaveLength(1);
-    await expect(getFantraxPlayerIds({ fetchImpl, maxAttempts: 1 })).resolves.toHaveProperty("abc.team", "TOR");
-    expect(String(fetchImpl.mock.calls[0][0])).toContain("getAdp?sport=NHL&showAllPositions=true");
-    expect(String(fetchImpl.mock.calls[1][0])).toContain("getPlayerIds?sport=NHL");
+    expect(String(fetchImpl.mock.calls[0][0])).toBe("https://www.fantrax.com/fxea/general/getAdp?sport=NHL&limit=1000");
+    expect(fetchImpl.mock.calls[0][1]?.method).toBe("GET");
+    fetchImpl.mockResolvedValueOnce(jsonResponse([{ id: "fx-1", ADP: "unknown" }]));
+    await expect(getFantraxAdp({ fetchImpl, maxAttempts: 1 })).rejects.toMatchObject({ code: "FANTRAX_SCHEMA_MISMATCH" });
   });
 
   it("retries 429 responses, respects Retry-After, and never logs credentials", async () => {
@@ -104,7 +114,6 @@ describe("Fantrax FXEA client", () => {
             additiveScoringField: 1,
           },
           teamInfo: {},
-          playerInfo: { abc: { eligiblePos: "C,LW" } },
         }),
       );
     vi.spyOn(console, "info").mockImplementation(() => undefined);
@@ -115,7 +124,6 @@ describe("Fantrax FXEA client", () => {
       additiveLeagueField: true,
       rosterInfo: { additiveRosterField: "kept" },
       scoringSystem: { additiveScoringField: 1 },
-      playerInfo: { abc: { eligiblePos: "C,LW" } },
     });
   });
 

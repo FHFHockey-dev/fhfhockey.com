@@ -47,6 +47,7 @@ interface DraftBoardProps {
   onUpdateTeamName: (teamId: string, newName: string) => void; // Add this prop
   canEditTeamNames?: boolean;
   pickTrades?: PickTradeEntry[];
+  providerPickOwnerByNumber?: Record<number, string>;
   // NEW: keepers list
   keepers?: KeeperEntry[];
   onAssignKeeperPick?: (playerId: string, pickNumber: number) => { ok: boolean; message: string };
@@ -69,6 +70,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   onUpdateTeamName,
   canEditTeamNames = true,
   pickTrades = [],
+  providerPickOwnerByNumber,
   keepers = [],
   onAssignKeeperPick,
   vorpMetrics
@@ -325,6 +327,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   );
   const skippedPickNumbers = useMemo(() => {
     const skipped = new Set<number>();
+    if (providerPickOwnerByNumber) return skipped;
     const completed = new Set(
       draftedPlayers.map((player) => player.pickNumber),
     );
@@ -356,6 +359,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
     draftedPlayers,
     keepers,
     pickTrades,
+    providerPickOwnerByNumber,
     roundsToShow,
     teamRosterCountById,
     totalRosterSize,
@@ -443,7 +447,8 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
           trades: pickTrades,
           keepers
         });
-        const ownerTeamId = ownership.currentTeamId;
+        const providerOwner = providerPickOwnerByNumber?.[overallPick];
+        const ownerTeamId = providerOwner ?? ownership.currentTeamId;
         const draftedPlayer = draftedPlayerByPick.get(overallPick);
         const isRosterFullSkip = skippedPickNumbers.has(overallPick);
         const isCurrentPick =
@@ -462,21 +467,22 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
             playerData?.fantasyPoints.projected || null
           );
           cellClass += ` ${styles[`intensity${intensity}`]}`;
+          if (draftedPlayer.fantraxMappingStatus === "unresolved") cellClass += ` ${styles.unresolvedCell}`;
         } else if (isCurrentPick) {
           cellClass += ` ${styles.currentPick}`;
         } else {
           cellClass += ` ${styles.intensity0}`;
         }
 
-        const playerName = playerData?.fullName || `Pick #${overallPick}`;
+        const playerName = playerData?.fullName || draftedPlayer?.fantraxDisplayName || `Pick #${overallPick}`;
         const fantasyPoints =
           playerData?.fantasyPoints.projected?.toFixed(1) || "N/A";
         const ownerName = teamNameById.get(ownerTeamId) || ownerTeamId;
         const rowTeamName = teamNameById.get(teamId) || teamId;
-        const traded = ownership.source === "trade";
-        const ownershipLine = traded
-          ? `\nTraded: ${rowTeamName} → ${ownerName}`
-          : "";
+        const traded = providerOwner ? providerOwner !== teamId : ownership.source === "trade";
+        const ownershipLine = providerOwner
+          ? `\nFantrax owner: ${ownerName}${traded ? ` (shown in ${rowTeamName}'s slot)` : ""}`
+          : traded ? `\nTraded: ${rowTeamName} → ${ownerName}` : "";
         const isKeeper = Boolean(keeper || draftedPlayer?.isKeeper);
         const movement = roundRankMovement(rankHistory, round, draftedPlayer?.teamId || ownerTeamId);
         const tooltip = (draftedPlayer
@@ -489,12 +495,15 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
             ? `Current Pick: ${ownerName}${ownershipLine}\nRound ${round}, Pick ${pickInRound}`
             : `Available Pick${ownershipLine}\nRound ${round}, Pick ${pickInRound}`) +
             (movement ? `\n${rankMovementLabel(movement)}` : "");
+        const cellTooltip = draftedPlayer?.fantraxMappingStatus === "unresolved"
+          ? `Fantrax pick needs a player match\n${tooltip}`
+          : tooltip;
 
         teamCells.push(
           <div
             key={`${teamId}-${round}`}
             className={`${cellClass} ${traded ? styles.tradedCell : ""} ${isKeeper ? styles.keeperCell : ""} ${isRosterFullSkip ? styles.rosterFullSkip : ""} ${activeDraftOrderPattern.mode === "custom" && isRoundReversed(activeDraftOrderPattern, round) ? styles.customReversedCell : ""}`}
-            title={tooltip}
+            title={cellTooltip}
             data-round={round}
             data-pick={pickInRound}
             data-team={teamId}
@@ -502,7 +511,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
             data-overall-pick={overallPick}
             data-intensity={draftedPlayer ? intensity : undefined}
             role="img"
-            aria-label={tooltip}
+            aria-label={cellTooltip}
           >
             {movement && (round === latestRankRound || round === departingRankRound) && (
               <span key={`movement-${round}`} className={styles.rankMovement} data-departing={round === departingRankRound} data-direction={Math.sign(movement.delta)} aria-hidden="true">
@@ -511,6 +520,9 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
             )}
             {isCurrentPick && (
               <span className={styles.currentPickIndicator} aria-hidden="true" />
+            )}
+            {draftedPlayer?.fantraxMappingStatus === "unresolved" && (
+              <span className={styles.unresolvedBadge} aria-hidden="true">?</span>
             )}
             {traded && (
               <span className={styles.tradeIcon} aria-hidden="true">
@@ -658,6 +670,8 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
       <div className={styles.legend} aria-label="Draft Graph legend">
         <span className={styles.contributionSummary}>{draftedPlayers.length} selected · {skippedPickNumbers.size} skipped</span>
         <span><i className={styles.intensity3} /> Completed</span>
+        {providerPickOwnerByNumber && <span title="Graph rows follow numbered draft slots. Hover a pick to see the team Fantrax assigned it to.">Fantrax owner in pick details</span>}
+        {draftedPlayers.some((pick) => pick.fantraxMappingStatus === "unresolved") && <span><i className={styles.unresolvedCell} /> Fantrax pick needs review</span>}
         <span><i className={styles.currentPick} /> Current pick</span>
         <span><i className={styles.myTeamLegend} /> Your team</span>
         <span><i className={styles.keeperLegend} /> Keeper</span>

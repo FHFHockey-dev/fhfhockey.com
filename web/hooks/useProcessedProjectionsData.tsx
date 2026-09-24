@@ -113,6 +113,7 @@ export interface ProcessedPlayer {
   yahooAvgPick?: number | null;
   yahooAvgRound?: number | null;
   yahooPctDrafted?: number | null;
+  fantraxMetadataMatched?: boolean;
 
   // Overall Ranks (across skaters & goalies)
   projectedRank?: number | null;
@@ -2199,6 +2200,7 @@ export const useProcessedProjectionsData = ({
           togglePerGameFantasyPoints,
         );
         setTableColumns(derivedCols);
+        if (runId === fetchRunIdRef.current) setIsLoading(false);
       });
       mark("render:prepareColumns:done");
       if (DEV) {
@@ -2232,7 +2234,6 @@ export const useProcessedProjectionsData = ({
           sourceWarnings: sourceWarningsForRun,
         };
       }
-      if (runId === fetchRunIdRef.current) setIsLoading(false);
     } catch (err: any) {
       console.error(
         `Error processing ${activePlayerType} projections (custom source aware):`,

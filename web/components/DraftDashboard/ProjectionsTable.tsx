@@ -35,6 +35,7 @@ import {
 } from "lib/projectionsConfig/proration";
 
 interface ProjectionsTableProps {
+  draftUnavailableReason?: string;
   onRefresh?: () => void;
   picksBeforeTurn?: number;
   scheduleMetrics?: PlayerScheduleMetrics;
@@ -139,6 +140,7 @@ const getOffNightRankColor = (rankPercentile: number) => {
 };
 
 const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
+  draftUnavailableReason = "Manual drafting is unavailable",
   onRefresh,
   currentSeasonId,
   players,
@@ -2408,7 +2410,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         disabled={!canDraft || draftedIdSet.has(key)}
                         title={
                           !canDraft
-                            ? "Manual drafting is locked while Yahoo sync is authoritative"
+                            ? draftUnavailableReason
                             : draftedIdSet.has(key)
                               ? "Player already drafted"
                               : "Draft this player"

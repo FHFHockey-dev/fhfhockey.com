@@ -111,6 +111,7 @@ export type FantraxDraftState = {
     teamId: string;
     playerId: string;
     nhlPlayerId: number | null;
+    playerName?: string | null;
   }>;
   warning: string | null;
   pollIntervalMs: number;

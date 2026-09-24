@@ -39,14 +39,21 @@ const draftResultsResponseSchema = z.object({
   draftPicks: z.array(z.unknown()),
 }).passthrough();
 
-const adpResponseSchema = z.array(z.object({
-  id: z.string(), name: z.string(), pos: z.string(), ADP: z.number().nullable(),
-}).passthrough());
 const playerIdsResponseSchema = z.record(z.object({
-  name: z.string(), team: z.string().optional(), position: z.string().optional(),
+  name: z.string(),
+  fantraxId: z.string(),
+  team: z.string().optional(),
+  position: z.string(),
 }).passthrough());
 
-export type FantraxEndpoint = "getLeagues" | "getLeagueInfo" | "getDraftResults" | "getAdp" | "getPlayerIds";
+const adpResponseSchema = z.array(z.object({
+  id: z.string(), name: z.string(), pos: z.string(), ADP: z.number().finite(),
+}).passthrough());
+
+export type FantraxPlayerInfo = z.infer<typeof playerIdsResponseSchema>[string];
+export type FantraxAdpRow = z.infer<typeof adpResponseSchema>[number];
+
+export type FantraxEndpoint = "getLeagues" | "getLeagueInfo" | "getDraftResults" | "getPlayerIds" | "getAdp";
 
 export class FantraxApiError extends Error {
   constructor(
@@ -271,10 +278,10 @@ export function getFantraxDraftResults(
   return fantraxGet("getDraftResults", { leagueId }, options);
 }
 
-export function getFantraxAdp(options?: Parameters<typeof fantraxGet>[2]) {
-  return fantraxGet("getAdp", { sport: "NHL", showAllPositions: "true" }, options) as Promise<z.infer<typeof adpResponseSchema>>;
+export function getFantraxPlayerIds(options?: Parameters<typeof fantraxGet>[2]): Promise<Record<string, FantraxPlayerInfo>> {
+  return fantraxGet("getPlayerIds", { sport: "NHL" }, options) as Promise<Record<string, FantraxPlayerInfo>>;
 }
 
-export function getFantraxPlayerIds(options?: Parameters<typeof fantraxGet>[2]) {
-  return fantraxGet("getPlayerIds", { sport: "NHL" }, options) as Promise<z.infer<typeof playerIdsResponseSchema>>;
+export function getFantraxAdp(options?: Parameters<typeof fantraxGet>[2]): Promise<FantraxAdpRow[]> {
+  return fantraxGet("getAdp", { sport: "NHL", limit: "1000" }, options) as Promise<FantraxAdpRow[]>;
 }
