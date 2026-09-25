@@ -107,6 +107,7 @@ describe("Fantrax live draft access and session lifecycle", () => {
     });
     vi.mocked(getFantraxPlayerIds).mockResolvedValue({
       "fx-player": { fantraxId: "fx-player", name: "Slafkovsky, Juraj", team: "MTL", position: "RW" },
+      "062h5": { fantraxId: "062h5", name: "McKenna, Gavin", team: "TOR", position: "LW" },
     });
     let mappingRows: Array<Record<string, unknown>> = [];
     let sessionRow: Record<string, unknown> = {};
@@ -134,7 +135,7 @@ describe("Fantrax live draft access and session lifecycle", () => {
     const state = await startFantraxDraftSession({ userId: "owner", externalLeagueId: "league", externalTeamId: "team", client: client as never });
     expect(mappingRows).toMatchObject([{ external_player_id: "fx-player", fhfh_player_id: 10, verification_status: "verified" }]);
     expect(state.picks).toMatchObject([{ pickNumber: 1, playerName: "Juraj Slafkovsky", nhlPlayerId: 101 }]);
-    expect(sessionRow.snapshot).toMatchObject({ identityMatchVersion: "fantrax-nhl-v2-verified-alias" });
+    expect(sessionRow.snapshot).toMatchObject({ identityMatchVersion: "fantrax-nhl-v3-canonical-name" });
     expect(getFantraxPlayerIds).toHaveBeenCalledTimes(1);
   });
 
@@ -142,11 +143,11 @@ describe("Fantrax live draft access and session lifecycle", () => {
     vi.stubEnv("FANTRAX_LIVE_DRAFT_ENABLED", "true");
     vi.stubEnv("FANTRAX_API_ENABLED", "true");
     const provider = { draftState: "running", draftType: "snake", draftOrder: ["fx-team"],
-      draftPicks: [{ round: 1, pick: 1, pickInRound: 1, teamId: "fx-team", playerId: "fx-player" }] };
-    const previous = normalizeFantraxDraftResults(provider);
+      draftPicks: [{ round: 1, pick: 1, pickInRound: 1, teamId: "fx-team", playerId: "062h5" }] };
+    const previous = { ...normalizeFantraxDraftResults(provider), identityMatchVersion: "fantrax-nhl-v2-verified-alias" };
     vi.mocked(getFantraxDraftResults).mockResolvedValue(provider);
     vi.mocked(getFantraxPlayerIds).mockResolvedValue({
-      "fx-player": { fantraxId: "fx-player", name: "Slafkovsky, Juraj", team: "MTL", position: "RW" },
+      "062h5": { fantraxId: "062h5", name: "McKenna, Gavin", team: "TOR", position: "LW" },
     });
     let session = { id: "session", user_id: "owner", status: "active", external_league_id: "league",
       snapshot: previous, snapshot_hash: previous.hash, consecutive_failures: 0, poll_lease_token: null };
@@ -172,10 +173,10 @@ describe("Fantrax live draft access and session lifecycle", () => {
         query.maybeSingle = vi.fn(async () => ({ data: table === "external_leagues"
           ? { external_league_key: "fx-league" } : session, error: null }));
         query.then = (resolve: (value: unknown) => void) => resolve({
-          data: table === "teams" ? [{ id: 1, abbreviation: "MTL" }]
-            : table === "fhfh_player_identity_aliases" ? [{ fhfh_player_id: 10, normalized_alias: "juraj slafkovsky" }]
-            : table === "fhfh_player_identities" ? [{ id: 10, canonical_name: "Juraj Slafkovský", canonical_position: "L",
-              current_nhl_team_id: 1, nhl_player_id: 101, verification_status: "verified", merged_into_id: null }]
+          data: table === "teams" ? [{ id: 10, abbreviation: "TOR" }]
+            : table === "fhfh_player_identity_aliases" ? []
+            : table === "fhfh_player_identities" ? [{ id: 10655, canonical_name: "Gavin McKenna", canonical_position: "L",
+              current_nhl_team_id: 10, nhl_player_id: 8486067, verification_status: "verified", merged_into_id: null }]
             : table === "fhfh_player_external_identities" ? mappingRows : [],
           error: null,
         });
@@ -183,9 +184,9 @@ describe("Fantrax live draft access and session lifecycle", () => {
       }),
     };
     const state = await pollFantraxDraftSession({ userId: "owner", sessionId: "session", client: client as never });
-    expect(updatedSnapshot).toMatchObject({ identityMatchVersion: "fantrax-nhl-v2-verified-alias" });
-    expect(mappingRows).toMatchObject([{ external_player_id: "fx-player", fhfh_player_id: 10 }]);
-    expect(state.picks).toMatchObject([{ pickNumber: 1, nhlPlayerId: 101 }]);
+    expect(updatedSnapshot).toMatchObject({ identityMatchVersion: "fantrax-nhl-v3-canonical-name" });
+    expect(mappingRows).toMatchObject([{ external_player_id: "062h5", fhfh_player_id: 10655 }]);
+    expect(state.picks).toMatchObject([{ pickNumber: 1, nhlPlayerId: 8486067 }]);
   });
 
   it("allows the owner to stop and retain the last snapshot even when access is unavailable", async () => {

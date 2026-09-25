@@ -36,6 +36,19 @@ describe("Fantrax player identity matching", () => {
       [{ ...identities[0], current_nhl_team_id: 2, canonical_position: "C" }], aliases).size).toBe(1);
   });
 
+  it("matches a verified canonical identity without an alias only when team and position agree", () => {
+    const gavin = { fantraxId: "062h5", name: "McKenna, Gavin", team: "TOR", position: "LW" };
+    const identity = { id: 10655, canonical_name: "Gavin McKenna", canonical_position: "L",
+      current_nhl_team_id: 10, nhl_player_id: 8486067 };
+    const toronto = [{ id: 10, abbreviation: "TOR" }];
+    expect([...matchFantraxPlayerIds(["062h5"], { "062h5": gavin }, toronto, [identity], [])])
+      .toEqual([["062h5", identity]]);
+    expect(matchFantraxPlayerIds(["062h5"], { "062h5": gavin }, toronto,
+      [{ ...identity, canonical_position: "D" }], []).size).toBe(0);
+    expect(matchFantraxPlayerIds(["062h5"], { "062h5": gavin }, toronto,
+      [identity, { ...identity, id: 10656, nhl_player_id: 8486068 }], []).size).toBe(0);
+  });
+
   it("leaves missing, ambiguous, and conflicting identities unresolved", () => {
     const duplicate = { ...identities[0], id: 11 };
     const duplicateAliases = [...aliases, { fhfh_player_id: 11, normalized_alias: "noah dobson" }];
