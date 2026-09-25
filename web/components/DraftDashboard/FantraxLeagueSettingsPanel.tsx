@@ -32,6 +32,7 @@ export default function FantraxLeagueSettingsPanel({
   onRestoreLiveSession,
   lockReason,
   liveSync,
+  playerData,
 }: {
   disabled: boolean;
   enabled: boolean;
@@ -42,6 +43,12 @@ export default function FantraxLeagueSettingsPanel({
     selection: DraftFantraxSelection,
   ) => void;
   onRestoreLiveSession?: (league: FantraxConnectionLeague, state: FantraxDraftState) => void;
+  playerData?: {
+    error: string | null;
+    isLoading: boolean;
+    eligibilityLoaded: boolean;
+    unmatchedPlayers: Array<{ playerId: number; fullName: string }>;
+  };
   liveSync?: {
     enabled: boolean;
     eligible: boolean;
@@ -132,7 +139,13 @@ export default function FantraxLeagueSettingsPanel({
     return `${settings.leagueType} · ${scoringCount} scoring mappings · ${settings.teamCount ?? "unknown"} teams · ${settings.draftOrderType} draft`;
   }, [league]);
 
-  if (!data.apiEnabled && !data.accounts.length) return null;
+  if (!data.apiEnabled && !data.accounts.length && !playerData) return null;
+
+  const playerDataMessage = playerData?.error || (playerData?.isLoading
+    ? "Loading Fantrax player positions, teams, and ADP…"
+    : playerData && !playerData.eligibilityLoaded
+      ? "Fantrax league eligibility is unavailable. Check multi-position eligibility in Fantrax before drafting; primary positions and ADP are still available."
+      : null);
 
   const leagueWarnings = league ? warnings(league.settings) : [];
   const apply = () => {
@@ -258,6 +271,21 @@ export default function FantraxLeagueSettingsPanel({
           ) : (
             <span>Exact supported mapping.</span>
           )}
+        </div>
+      ) : null}
+      {playerData && (playerDataMessage || playerData.unmatchedPlayers.length > 0) ? (
+        <div className={styles.summary}>
+          <strong>Fantrax player data for this draft</strong>
+          {playerDataMessage ? <p role="status">{playerDataMessage}</p> : null}
+          {playerData.unmatchedPlayers.length > 0 ? (
+            <>
+              <p role="status">{playerData.unmatchedPlayers.length} {playerData.unmatchedPlayers.length === 1 ? "player" : "players"} still lack a safe Fantrax match. Their Fantrax ADP is unavailable; check their availability in your league before drafting.</p>
+              <details open={playerData.unmatchedPlayers.length <= 5}>
+                <summary>Unmatched players</summary>
+                <ul>{playerData.unmatchedPlayers.map((player) => <li key={player.playerId}>{player.fullName}</li>)}</ul>
+              </details>
+            </>
+          ) : null}
         </div>
       ) : null}
       {liveSync && (liveSync.enabled || liveSync.state) ? (

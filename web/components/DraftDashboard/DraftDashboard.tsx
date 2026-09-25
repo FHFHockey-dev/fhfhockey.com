@@ -4065,6 +4065,12 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         enabled={Boolean(user?.id)}
         disabled={!manualDraftingEnabled || hasOrdinaryManualPick || keepers.length > 0 || pickTrades.length > 0}
         lockReason={fantraxLiveActive ? "fantrax" : espnLiveActive ? "espn" : draftMode === "yahoo" ? "yahoo" : hasNonFantraxDraftWork || keepers.length > 0 || pickTrades.length > 0 ? "draft-work" : hasOrdinaryManualPick ? "fantrax-picks" : null}
+        playerData={fantraxLeagueOverride ? {
+          error: fantraxDisplayError,
+          isLoading: !activeFantraxDisplayPlayers,
+          eligibilityLoaded: fantraxEligibilityLoaded,
+          unmatchedPlayers: fantraxUnmatchedPlayers.map(({ playerId, fullName }) => ({ playerId, fullName })),
+        } : undefined}
         onApply={applyFantraxLeagueSettings}
         onRestoreLiveSession={applyFantraxDraftTeams}
         liveSync={{
@@ -4253,20 +4259,6 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         onExpandGraph={() => setGraphExpandRequest((value) => value + 1)}
         onSummary={() => setIsSummaryOpen(true)} onOpenChange={setGodViewOpen}
       />
-      {fantraxLeagueOverride && (fantraxDisplayError || !activeFantraxDisplayPlayers || !fantraxEligibilityLoaded) ? (
-        <p role="status">{fantraxDisplayError || (!activeFantraxDisplayPlayers
-          ? "Loading Fantrax player positions, teams, and ADP…"
-          : "Fantrax league eligibility is unavailable. Check multi-position eligibility in Fantrax before drafting; primary positions and ADP are still available.")}</p>
-      ) : null}
-      {fantraxUnmatchedPlayers.length > 0 ? (
-        <div>
-          <p role="status">{fantraxUnmatchedPlayers.length} {fantraxUnmatchedPlayers.length === 1 ? "player" : "players"} still lack a safe Fantrax match. Their Fantrax ADP is unavailable; check their availability in your league before drafting.</p>
-          <details open={fantraxUnmatchedPlayers.length <= 5}>
-            <summary>Unmatched players</summary>
-            <ul>{fantraxUnmatchedPlayers.map((player) => <li key={player.playerId}>{player.fullName}</li>)}</ul>
-          </details>
-        </div>
-      ) : null}
       <div className={styles.mainContent} style={{ "--board-track": `${draftSettings.teamCount + 4}fr`, "--standings-track": `${draftSettings.teamCount + 6}fr` } as React.CSSProperties}>
       {/* Recommendations and roster progress share the left workspace track. */}
       <section
