@@ -469,7 +469,10 @@ export function resolveYahooPlayerMappings(
   >();
   for (const row of rows) {
     const nhlId = finiteOrNull(row.nhl_player_id);
-    const yahooId = finiteOrNull(row.yahoo_player_id);
+    const yahooKey = typeof row.yahoo_player_id === "string"
+      ? row.yahoo_player_id.match(/^\d+\.p\.([1-9]\d*)$/)
+      : null;
+    const yahooId = finiteOrNull(yahooKey?.[1] ?? row.yahoo_player_id);
     if (nhlId == null || nhlId <= 0 || yahooId == null || yahooId <= 0) {
       continue;
     }
