@@ -113,6 +113,25 @@ describe("Draft Dashboard Fantrax settings picker", () => {
     });
   });
 
+  it("shows Fantrax player-data warnings and unmatched names inside Integrations", async () => {
+    useFantraxConnections.mockReturnValue(hookData());
+    render(<FantraxLeagueSettingsPanel enabled disabled={false} onApply={vi.fn()} playerData={{
+      error: null, isLoading: false, eligibilityLoaded: false,
+      unmatchedPlayers: [
+        { playerId: 8475763, fullName: "Kevin Hayes" },
+        { playerId: 8475906, fullName: "John Klingberg" },
+        { playerId: 8478971, fullName: "Connor Ingram" },
+      ],
+    }} />);
+    expect(await screen.findByText("Fantrax player data for this draft")).toBeTruthy();
+    expect(screen.getByText(/Fantrax league eligibility is unavailable/)).toBeTruthy();
+    expect(screen.getByText(/3 players still lack a safe Fantrax match/)).toBeTruthy();
+    expect((screen.getByText("Unmatched players").closest("details") as HTMLDetailsElement).open).toBe(true);
+    expect(screen.getByText("Kevin Hayes")).toBeTruthy();
+    expect(screen.getByText("John Klingberg")).toBeTruthy();
+    expect(screen.getByText("Connor Ingram")).toBeTruthy();
+  });
+
   it("requires partial-warning confirmation and disables application in Yahoo mode", async () => {
     const partialLeague = {
       ...league,
