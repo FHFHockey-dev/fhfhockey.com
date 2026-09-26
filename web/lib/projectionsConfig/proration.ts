@@ -8,6 +8,7 @@ import {
   DEFAULT_GOALIE_FANTASY_POINTS
 } from "./fantasyPointsConfig";
 import type { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
+import { pointValueForPlayerStat } from "lib/draftDashboard/fantasyPointRecalculation";
 
 export const NHL_REGULAR_SEASON_GAMES = 84;
 
@@ -96,8 +97,12 @@ export function computeProratedFantasyPoints(
   };
   let total = 0;
   let used = false;
-  for (const statKey in scoring) {
-    const weight = scoring[statKey];
+  const statKeys = new Set(Object.keys(scoring).filter((key) => !key.endsWith("_D")));
+  for (const key of ["HITS", "BLOCKED_SHOTS"]) {
+    if (`${key}_D` in scoring) statKeys.add(key);
+  }
+  for (const statKey of statKeys) {
+    const weight = pointValueForPlayerStat(player, statKey, scoring);
     if (!weight) continue;
     const val = getProratedStat(player, statKey, enable);
     if (val != null && Number.isFinite(val)) {

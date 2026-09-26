@@ -39,7 +39,7 @@ interface ProjectionsTableProps {
   onRefresh?: () => void;
   picksBeforeTurn?: number;
   scheduleMetrics?: PlayerScheduleMetrics;
-  currentSeasonId?: string | number;
+  projectionSeasonId?: string | number;
   players: ProcessedPlayer[];
   // Full pool including drafted; used for diagnostics cross-check
   allPlayers?: ProcessedPlayer[];
@@ -142,7 +142,7 @@ const getOffNightRankColor = (rankPercentile: number) => {
 const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   draftUnavailableReason = "Manual drafting is unavailable",
   onRefresh,
-  currentSeasonId,
+  projectionSeasonId,
   players,
   allPlayers,
   draftedPlayers,
@@ -502,13 +502,13 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
           skaterRows,
           "player_id",
           "season",
-          currentSeasonId,
+          projectionSeasonId,
         );
         const latestGoalies = selectLatestSeasonRows(
           goalieRows,
           "goalie_id",
           "season_id",
-          currentSeasonId,
+          projectionSeasonId,
         );
         setSeasonTotals((current) => {
           const next = { ...current };

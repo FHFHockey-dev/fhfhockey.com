@@ -471,12 +471,12 @@ describe("ProjectionsTable visibility diagnostics", () => {
       order: vi.fn(() => chain),
       range: vi.fn(() =>
         Promise.resolve({
-          data: players.map((entry) => ({
+          data: players.flatMap((entry) => [20242025, 20252026].map((season) => ({
             player_id: entry.playerId,
-            season: 20242025,
+            season,
             games_played: 82,
             goals: 10,
-          })),
+          }))),
           error: null,
         }),
       ),
@@ -492,13 +492,14 @@ describe("ProjectionsTable visibility diagnostics", () => {
         error={null}
         onDraftPlayer={vi.fn()}
         canDraft
+        projectionSeasonId={20262027}
       />,
     );
 
     fireEvent.click(
       screen.getByRole("button", { name: "Expand details for First Player" }),
     );
-    await screen.findByText("Last Season: 2024-25");
+    await screen.findByText("Last Season: 2025-26");
     const firstRow = screen.getByText("First Player").closest("tr")!;
     expect(firstRow.getAttribute("data-stripe")).toBe(firstRow.nextElementSibling?.getAttribute("data-stripe"));
     expect(screen.getByText("Second Player").closest("tr")?.getAttribute("data-stripe")).not.toBe(firstRow.getAttribute("data-stripe"));
@@ -509,7 +510,7 @@ describe("ProjectionsTable visibility diagnostics", () => {
       screen.getByRole("button", { name: "Expand details for Second Player" }),
     );
     await waitFor(() =>
-      expect(screen.getAllByText("Last Season: 2024-25")).toHaveLength(2),
+      expect(screen.getAllByText("Last Season: 2025-26")).toHaveLength(2),
     );
     expect(fromMock).toHaveBeenCalledTimes(1);
   });

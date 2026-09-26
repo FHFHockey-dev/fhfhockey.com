@@ -3751,7 +3751,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
             draftUnavailableReason={draftUnavailableReason}
             picksBeforeTurn={myPickWindows[0]?.offset}
             onRefresh={() => setDataRefreshKey((k) => k + 1)}
-            currentSeasonId={currentSeasonId}
+            projectionSeasonId={FANTASY_PROJECTION_SEASON_ID}
             players={tableAvailablePlayers}
             allPlayers={tableAllPlayers}
             draftedPlayers={draftedPlayers}

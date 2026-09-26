@@ -1,5 +1,19 @@
 import type { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 
+export function pointValueForPlayerStat(
+  player: Pick<ProcessedPlayer, "displayPosition">,
+  statKey: string,
+  pointValues: Record<string, number>,
+): number | undefined {
+  if (
+    (statKey === "HITS" || statKey === "BLOCKED_SHOTS") &&
+    player.displayPosition?.toUpperCase().split(/[,/]/).some((position) => position.trim() === "D")
+  ) {
+    return pointValues[`${statKey}_D`] ?? pointValues[statKey];
+  }
+  return pointValues[statKey];
+}
+
 function diffPercentage(actual: number | null, projected: number | null) {
   if (actual == null || projected == null) return null;
   if (projected === 0) {
@@ -19,7 +33,7 @@ export function recalculateFantasyPoints(
     let hasProjected = false;
     let hasActual = false;
     for (const [statKey, stat] of Object.entries(player.combinedStats)) {
-      const pointValue = pointValues[statKey];
+      const pointValue = pointValueForPlayerStat(player, statKey, pointValues);
       if (typeof pointValue !== "number" || pointValue === 0) continue;
       if (typeof stat?.projected === "number" && Number.isFinite(stat.projected)) {
         projected += stat.projected * pointValue;

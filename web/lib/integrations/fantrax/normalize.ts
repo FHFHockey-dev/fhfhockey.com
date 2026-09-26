@@ -67,6 +67,7 @@ const SKATER_STAT_ALIASES: Record<string, string> = {
   POWERPLAYPOINTS: "PP_POINTS",
   INDIVIDUALPOWERPLAYPOINTS: "PP_POINTS",
   PPP: "PP_POINTS",
+  INDIVIDUALSPECIALTEAMSPOINTS: "SPECIAL_TEAMS_POINTS",
   SHORTHANDEDGOALS: "SH_GOALS",
   SHG: "SH_GOALS",
   SHORTHANDEDASSISTS: "SH_ASSISTS",
@@ -489,6 +490,8 @@ function normalizeScoring(scoringSystem: UnknownRecord) {
   const skaterSources: Record<string, { code: string; label: string }> = {};
   const goalieSources: Record<string, { code: string; label: string }> = {};
   const categorySources: Record<string, { code: string; label: string }> = {};
+  let specialTeamsPoints: number | null = null;
+  let conflictingSpecialTeamsPoints = false;
 
   for (const settingRaw of array(scoringSystem.scoringCategorySettings)) {
     const setting = record(settingRaw);
@@ -521,7 +524,12 @@ function normalizeScoring(scoringSystem: UnknownRecord) {
         });
         continue;
       }
-      const statKey = mappedStatKey(config, role);
+      const mappedKey = mappedStatKey(config, role);
+      const position = token(firstText(record(config.position), ["code", "name", "shortName"]) ?? config.position);
+      const defenseOnly = role === "skater" && ["D", "DEFENSE", "DEFENCE", "DEFENSEMAN", "DEFENCEMAN"].includes(position);
+      const statKey = defenseOnly && (mappedKey === "HITS" || mappedKey === "BLOCKED_SHOTS")
+        ? `${mappedKey}_D`
+        : mappedKey;
       if (!statKey) {
         addUnsupported(unsupported, {
           kind: "scoring",
@@ -549,6 +557,26 @@ function normalizeScoring(scoringSystem: UnknownRecord) {
             label: category.label,
             reason: "Fantrax did not provide a finite point value.",
           });
+          continue;
+        }
+        if (statKey === "SPECIAL_TEAMS_POINTS") {
+          if (position && position !== "DEFAULT") {
+            addUnsupported(unsupported, {
+              kind: "scoring", code: category.code, label: category.label,
+              reason: "Position-specific special teams points require manual setup.",
+            });
+          } else if (conflictingSpecialTeamsPoints) {
+            continue;
+          } else if (specialTeamsPoints != null && specialTeamsPoints !== points) {
+            addUnsupported(unsupported, {
+              kind: "scoring", code: category.code, label: category.label,
+              reason: "Conflicting special teams point rules require manual setup.",
+            });
+            specialTeamsPoints = null;
+            conflictingSpecialTeamsPoints = true;
+          } else {
+            specialTeamsPoints = points;
+          }
           continue;
         }
         const target = role === "goalie" ? goalieScoringCategories : skaterScoringCategories;
@@ -580,6 +608,13 @@ function normalizeScoring(scoringSystem: UnknownRecord) {
         target[statKey] = points;
         sources[statKey] = category;
       } else if (type === "categories") {
+        if (statKey === "SPECIAL_TEAMS_POINTS") {
+          addUnsupported(unsupported, {
+            kind: "scoring", code: category.code, label: category.label,
+            reason: "Special teams points cannot be mapped exactly as a category.",
+          });
+          continue;
+        }
         if (conflictingCategoryKeys.has(statKey)) continue;
         const weight = finiteNumber(config.weight ?? setting.weight) ?? 1;
         if (categoryWeights[statKey] != null && categoryWeights[statKey] !== weight) {
@@ -605,6 +640,14 @@ function normalizeScoring(scoringSystem: UnknownRecord) {
         }
         categoryWeights[statKey] = weight;
         categorySources[statKey] = category;
+      }
+    }
+  }
+
+  if (specialTeamsPoints != null) {
+    for (const key of ["PP_POINTS", "SH_POINTS"]) {
+      if (!conflictingSkaterKeys.has(key)) {
+        skaterScoringCategories[key] = (skaterScoringCategories[key] ?? 0) + specialTeamsPoints;
       }
     }
   }

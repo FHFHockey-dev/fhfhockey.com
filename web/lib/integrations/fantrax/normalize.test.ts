@@ -9,6 +9,37 @@ import {
 } from "./normalize";
 
 describe("Fantrax NHL settings normalization", () => {
+  it("keeps defense-only hits and blocks and adds special teams points to PP and SH points", () => {
+    const config = (code: string, points: number, position = "DEFAULT") => ({
+      scoringCategory: { code }, points, position: { code: position },
+    });
+    const normalized = normalizeFantraxLeagueInfo({
+      externalLeagueKey: "defense-bonus",
+      payload: {
+        ...pointsFixture,
+        scoringSystem: {
+          type: "HEAD_TO_HEAD_POINTS_BASED",
+          scoringCategorySettings: [{
+            group: { code: "HOCKEY_SKATING" },
+            configs: [
+              config("INDIVIDUAL_HITS", 0.3),
+              config("INDIVIDUAL_HITS", 0.32, "DEFENSE"),
+              config("INDIVIDUAL_BLOCKS", 0.3),
+              config("INDIVIDUAL_BLOCKS", 0.32, "DEFENSE"),
+              config("INDIVIDUAL_POWER_PLAY_POINTS", 0.5),
+              config("INDIVIDUAL_SPECIAL_TEAMS_POINTS", 1),
+            ],
+          }],
+        },
+      },
+    });
+    expect(normalized.skaterScoringCategories).toMatchObject({
+      HITS: 0.3, HITS_D: 0.32, BLOCKED_SHOTS: 0.3, BLOCKED_SHOTS_D: 0.32,
+      PP_POINTS: 1.5, SH_POINTS: 1,
+    });
+    expect(normalized.diagnostics.unsupported.filter((item) => item.kind === "scoring")).toEqual([]);
+  });
+
   it("maps documented scoring types and codes observed in Fantrax league responses", () => {
     const configs = [
       ["HOCKEY_SKATING", "INDIVIDUAL_ASSISTS", "ASSISTS", 2],

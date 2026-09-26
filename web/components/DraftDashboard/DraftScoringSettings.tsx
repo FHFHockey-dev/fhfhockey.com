@@ -48,7 +48,7 @@ function ScoringGroup({
   const [key, setKey] = useState("");
   const [weight, setWeight] = useState("1");
   const goalie = title === "Goalies";
-  const addable = Array.from(new Set(available)).filter(
+  const addable = Array.from(new Set([...available, ...(!categories && !goalie ? ["HITS_D", "BLOCKED_SHOTS_D"] : [])])).filter(
     (stat) => !(stat in values),
   );
   return (
@@ -65,7 +65,7 @@ function ScoringGroup({
           <div className={styles.categoryRow} key={stat}>
             <label
               htmlFor={`scoring-${title}-${stat}`}
-              title={stat.replaceAll("_", " ")}
+              title={stat.endsWith("_D") ? "Defensemen point value; replaces the regular skater value" : stat.replaceAll("_", " ")}
             >
               {labelFor(stat)}
             </label>
@@ -75,7 +75,7 @@ function ScoringGroup({
               aria-label={`${stat} ${goalie ? "goalie" : "skater"} weight`}
               type="number"
               disabled={rawSettingsLocked}
-              step={0.1}
+              step="any"
               min={categories ? 0 : undefined}
               value={Number.isFinite(points) ? points : ""}
               data-negative={points < 0}
@@ -170,7 +170,7 @@ function ScoringGroup({
           <input
             type="number"
             disabled={rawSettingsLocked}
-            step={0.1}
+            step="any"
             min={categories ? 0 : undefined}
             aria-label={
               goalie ? "New goalie stat point value" : "New stat point value"

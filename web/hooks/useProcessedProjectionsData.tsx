@@ -52,7 +52,7 @@ import {
   type ProjectionInclusionDiagnostics,
 } from "lib/draftDashboard/projectionInclusionDiagnostics";
 import { selectProjectionRowForPlayer } from "lib/draftDashboard/projectionRowSelection";
-import { recalculateFantasyPoints } from "lib/draftDashboard/fantasyPointRecalculation";
+import { pointValueForPlayerStat, recalculateFantasyPoints } from "lib/draftDashboard/fantasyPointRecalculation";
 import { deriveShortHandedAssists } from "lib/draftDashboard/derivedProjectionStats";
 import {
   fetchProjectionSourcesSettled,
@@ -1400,7 +1400,7 @@ function processRawDataIntoPlayers(
 
     for (const statKey in processedPlayer.combinedStats) {
       const combinedStat = processedPlayer.combinedStats[statKey];
-      const pointValueForStat = fantasyPointSettings[statKey];
+      const pointValueForStat = pointValueForPlayerStat(processedPlayer, statKey, fantasyPointSettings);
 
       if (pointValueForStat !== undefined && pointValueForStat !== 0) {
         if (combinedStat?.projected !== null) {

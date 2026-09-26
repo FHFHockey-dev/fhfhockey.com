@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { recalculateFantasyPoints } from "./fantasyPointRecalculation";
+import { computeProratedFantasyPoints } from "lib/projectionsConfig/proration";
 
 const player = {
   playerId: 1,
@@ -50,5 +51,21 @@ describe("cached fantasy-point recalculation", () => {
     const second = recalculateFantasyPoints([player], { GOALS: 3 })[0];
     expect(first.fantasyPoints.projected).toBe(4);
     expect(second.fantasyPoints.projected).toBe(12);
+  });
+
+  it("uses defense-only hits and blocks as overrides without double counting", () => {
+    const scoring = { HITS: 0.3, HITS_D: 0.32, BLOCKED_SHOTS: 0.3, BLOCKED_SHOTS_D: 0.32, PP_POINTS: 1, SH_POINTS: 1 };
+    const combinedStats = {
+      GAMES_PLAYED: { projected: 10, actual: null },
+      HITS: { projected: 10, actual: null },
+      BLOCKED_SHOTS: { projected: 5, actual: null },
+      PP_POINTS: { projected: 2, actual: null },
+      SH_POINTS: { projected: 1, actual: null },
+    };
+    const defense = recalculateFantasyPoints([{ ...player, displayPosition: "D", combinedStats }], scoring)[0];
+    const forward = recalculateFantasyPoints([{ ...player, displayPosition: "LW", combinedStats }], scoring)[0];
+    expect(defense.fantasyPoints.projected).toBeCloseTo(10 * 0.32 + 5 * 0.32 + 3);
+    expect(forward.fantasyPoints.projected).toBeCloseTo(10 * 0.3 + 5 * 0.3 + 3);
+    expect(computeProratedFantasyPoints(defense, true, scoring)).toBeCloseTo((10 * 0.32 + 5 * 0.32 + 3) * 84 / 10);
   });
 });
