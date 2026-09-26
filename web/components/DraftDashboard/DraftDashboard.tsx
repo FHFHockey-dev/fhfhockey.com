@@ -34,6 +34,7 @@ import { useAuth } from "contexts/AuthProviderContext";
 import DraftSettings, { type DraftSettingsHandle } from "./DraftSettings";
 import { validateDraftSettings, bookmarkImportError } from "lib/draftDashboard/settingsValidation";
 import { applyCategoryBoosts } from "lib/draftDashboard/categoryBoosts";
+import { buildPositionWeightMultipliers, normalizePositionWeights, type PositionWeights } from "lib/draftDashboard/positionWeights";
 import DraftBoard from "./DraftBoard";
 import DraftWorkspaceHeader from "./DraftWorkspaceHeader";
 import dynamic from "next/dynamic";
@@ -195,6 +196,8 @@ export interface DraftSettings {
   categoryWeights?: Record<string, number>; // used in categories mode
   /** Draft Pro valuation-only boosts, expressed as percentages from 0 to 100. */
   categoryBoosts?: Record<string, number>;
+  /** Draft Pro valuation multipliers, from 0 to 2; omitted positions use 1. */
+  positionWeights?: PositionWeights;
   adpSource?: "yahoo" | "fantrax";
   positionSource?: "yahoo" | "fantrax";
   // Whether this is a keeper league. Controls visibility of Keepers & Traded Picks section.
@@ -326,6 +329,7 @@ const DEFAULT_DRAFT_SETTINGS: DraftSettings = {
     SAVE_PERCENTAGE: 1,
   },
   categoryBoosts: {},
+  positionWeights: {},
   adpSource: "yahoo",
   positionSource: "yahoo",
   rosterConfig: {
@@ -364,6 +368,7 @@ function normalizeDraftSettingsOrder(
   return {
     ...settings,
     ...normalizeScheduleSettings(settings),
+    positionWeights: normalizePositionWeights(settings.positionWeights),
     draftOrderMode: pattern.mode,
     reversedRounds: pattern.reversedRounds,
   };
@@ -1646,6 +1651,10 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     ? applyFantraxPlayerSources(rawPlayers, currentFantraxPlayerData.players, adpSource, positionSource)
     : rawPlayers,
   [rawPlayers, currentFantraxPlayerData, needsFantraxPlayerData, adpSource, positionSource]);
+  const positionWeightMultipliers = useMemo(
+    () => buildPositionWeightMultipliers(tableAllPlayers, draftSettings.positionWeights, draftProEligible),
+    [tableAllPlayers, draftSettings.positionWeights, draftProEligible],
+  );
   const fantraxSourceNotice = needsFantraxPlayerData && !currentFantraxPlayerData
     ? fantraxPlayerError?.key === fantraxRequestKey ? fantraxPlayerError.message : "Loading Fantrax player data; Yahoo values are shown until it is ready."
     : null;
@@ -2232,11 +2241,12 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         players: allPlayers, draftSettings,
         leagueType: draftSettings.leagueType || "points", categoryWeights: effectiveCategoryWeights,
         forwardGrouping, prorate84, fantasyPointSettings: effectiveSkaterPointValues, goaliePointValues: effectiveGoaliePointValues,
+        positionWeightMultipliers,
       }), error: null };
     } catch {
       return { positions: [], error: "Tier analysis is unavailable. Ordinary Picks remain available." };
     }
-  }, [canUseProRecommendations, allPlayers, draftSettings, effectiveCategoryWeights, effectiveSkaterPointValues, effectiveGoaliePointValues, forwardGrouping, prorate84]);
+  }, [canUseProRecommendations, allPlayers, draftSettings, effectiveCategoryWeights, effectiveSkaterPointValues, effectiveGoaliePointValues, forwardGrouping, prorate84, positionWeightMultipliers]);
 
   // NEW: VORP metrics computed on full player pool (not just available)
   const {
@@ -2255,6 +2265,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     forwardGrouping,
     myFilledSlots: myFilledSlotsForVorp,
     personalizeReplacement: false,
+    positionWeightMultipliers,
     prorate84,
     fantasyPointSettings: effectiveSkaterPointValues,
   });
@@ -2270,6 +2281,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     forwardGrouping,
     myFilledSlots: myFilledSlotsForVorp,
     personalizeReplacement: draftProEligible && personalizeReplacement,
+    positionWeightMultipliers,
     prorate84,
     fantasyPointSettings: effectiveSkaterPointValues,
   });
@@ -3053,6 +3065,13 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
 
   const updateDraftSettings = useCallback(
     (newSettings: Partial<DraftSettings>) => {
+      if (Object.keys(newSettings).length === 1 && newSettings.positionWeights) {
+        if (!draftProEligible) return;
+        const next = { ...draftSettings, positionWeights: normalizePositionWeights(newSettings.positionWeights) };
+        setDraftSettings(next);
+        if (!manualDraftingEnabled) saveSnapshot(next);
+        return;
+      }
       if (Object.keys(newSettings).length === 1 && newSettings.categoryBoosts) {
         if (!draftProEligible) return;
         const next = { ...draftSettings, categoryBoosts: newSettings.categoryBoosts };
@@ -3972,6 +3991,8 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
               {
                 ...draftSettings,
                 ...(data.settings || {}),
+                // Legacy bookmarks represent a neutral configuration, not the current draft's weights.
+                positionWeights: normalizePositionWeights(data.settings?.positionWeights),
               },
               typeof data.isSnakeDraft === "boolean"
                 ? data.isSnakeDraft

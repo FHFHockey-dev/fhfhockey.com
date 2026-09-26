@@ -115,6 +115,67 @@ describe("Draft Pro category boosts", () => {
   });
 });
 
+describe("Draft Pro position weights", () => {
+  const renderWeights = (
+    positionWeights: DraftSettingsContract["positionWeights"],
+    draftProEligible = true,
+    rawSettingsLocked = false,
+  ) => {
+    const onSettingsChange = vi.fn();
+    render(
+      <DraftScoringSettings
+        settings={{ ...settings, positionWeights, categoryBoosts: { GOALS: 50 } }}
+        onSettingsChange={onSettingsChange}
+        availableSkaterStats={[]}
+        availableGoalieStats={[]}
+        hasPicks={false}
+        draftProEligible={draftProEligible}
+        rawSettingsLocked={rawSettingsLocked}
+      />,
+    );
+    return onSettingsChange;
+  };
+
+  it("labels all positions and changes only valuation weights while raw scoring is locked", () => {
+    const onSettingsChange = renderWeights({ C: 1.2, D: 0.8 }, true, true);
+    const section = within(screen.getByRole("region", { name: "Position weights" }));
+    for (const position of ["C", "LW", "RW", "D", "G"]) {
+      expect(section.getByRole("spinbutton", { name: `${position} position weight percent` })).toBeTruthy();
+    }
+    expect((screen.getByRole("spinbutton", { name: "GOALS skater weight" }) as HTMLInputElement).disabled).toBe(true);
+    const defense = section.getByRole("spinbutton", { name: "D position weight percent" }) as HTMLInputElement;
+    expect(defense.value).toBe("80");
+    expect(defense.disabled).toBe(false);
+    fireEvent.change(defense, { target: { value: "50" } });
+    expect(onSettingsChange).toHaveBeenCalledExactlyOnceWith({ positionWeights: { C: 1.2, D: 0.5 } });
+    expect(section.getByText(/selected Yahoo or Fantrax source/)).toBeTruthy();
+    expect(section.getByText(/highest eligible weight once/)).toBeTruthy();
+    expect(section.getByText(/negative values toward zero/)).toBeTruthy();
+  });
+
+  it("clamps invalid percentages and resets weights independently", () => {
+    const onSettingsChange = renderWeights({ D: 0.8 });
+    const defense = screen.getByRole("spinbutton", { name: "D position weight percent" });
+    fireEvent.change(defense, { target: { value: "250" } });
+    expect(onSettingsChange).toHaveBeenLastCalledWith({ positionWeights: { D: 2 } });
+    fireEvent.change(defense, { target: { value: "-10" } });
+    expect(onSettingsChange).toHaveBeenLastCalledWith({ positionWeights: { D: 0 } });
+    fireEvent.change(defense, { target: { value: "" } });
+    expect(onSettingsChange).toHaveBeenLastCalledWith({ positionWeights: {} });
+    fireEvent.click(screen.getByRole("button", { name: "Reset Position Weights" }));
+    expect(onSettingsChange).toHaveBeenLastCalledWith({ positionWeights: {} });
+  });
+
+  it("shows neutral effective weights and disables edits without Draft Pro", () => {
+    const onSettingsChange = renderWeights({ D: 0.5 }, false);
+    const defense = screen.getByRole("spinbutton", { name: "D position weight percent" }) as HTMLInputElement;
+    expect(defense.value).toBe("100");
+    expect(defense.disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Reset Position Weights" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(onSettingsChange).not.toHaveBeenCalled();
+  });
+});
+
 describe("DraftSettings A&G component confirmation", () => {
   afterEach(() => vi.restoreAllMocks());
 

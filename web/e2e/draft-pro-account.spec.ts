@@ -67,6 +67,63 @@ test("paid export posts fictional projection numbers and downloads provider prov
   await expect(page.getByRole("alert").filter({ hasText: "Blended projections CSV downloaded." })).toBeVisible();
 });
 
+test("position weights update valuation, survive reload, and become neutral without Pro", async ({ page }, testInfo) => {
+  let eligible = true;
+  await installDraftProAuthenticatedFixtures(page, () => accountResponse(eligible));
+  page.on("dialog", (dialog) => dialog.accept());
+  await page.goto("/draft-dashboard");
+  const row = page.locator('#mobile-draft-panel-players tr[data-player-id="1001"]');
+  const vorp = row.locator('td[data-label="VORP"]');
+  const projection = row.locator('td[data-label="Projected FPTs"]');
+  await expect(vorp).toBeVisible({ timeout: 60_000 });
+  const original = Number(await vorp.innerText());
+  const originalProjection = await projection.innerText();
+  expect(original).toBeGreaterThan(0);
+  const legacyBookmark = await page.evaluate(() => {
+    const snapshot = JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}");
+    const { positionWeights: _weights, ...settings } = snapshot.draftSettings;
+    return { v: 3, settings, draftedPlayers: snapshot.draftedPlayers, currentPick: snapshot.currentPick, myTeamId: snapshot.myTeamId };
+  });
+  const scoring = async () => {
+    await page.getByRole("button", { name: "Open full draft settings", exact: true }).click();
+    await page.getByRole("tab", { name: "Scoring", exact: true }).click();
+  };
+  const done = () => page.getByRole("button", { name: "Done", exact: false }).click();
+  await scoring();
+  await page.getByLabel("C position weight percent").fill("50");
+  await page.getByLabel("D position weight percent").fill("70");
+  await page.screenshot({ path: testInfo.outputPath("position-weights.png") });
+  await done();
+  await expect(vorp).toHaveText((original * 0.5).toFixed(1));
+  await expect(projection).toHaveText(originalProjection);
+  await expect.poll(() => page.evaluate(() => JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").draftSettings.positionWeights)).toEqual({ C: 0.5, D: 0.7 });
+  await page.reload();
+  await expect(vorp).toHaveText((original * 0.5).toFixed(1), { timeout: 60_000 });
+  eligible = false;
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(vorp).toHaveText(original.toFixed(1));
+  await scoring();
+  await expect(page.getByLabel("C position weight percent")).toBeDisabled();
+  await expect(page.getByLabel("C position weight percent")).toHaveValue("100");
+  await done();
+  eligible = true;
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(vorp).toHaveText((original * 0.5).toFixed(1));
+  await scoring();
+  await page.getByRole("button", { name: "Reset Position Weights", exact: true }).click();
+  await done();
+  await expect(vorp).toHaveText(original.toFixed(1));
+  await expect(projection).toHaveText(originalProjection);
+  await scoring();
+  await page.getByLabel("C position weight percent").fill("25");
+  await page.getByRole("button", { name: "Import bookmark", exact: true }).click();
+  await page.getByLabel("Import draft bookmark", { exact: true }).fill(JSON.stringify(legacyBookmark));
+  await page.getByRole("button", { name: "Import Bookmark", exact: true }).click();
+  await done();
+  await expect(vorp).toHaveText(original.toFixed(1));
+  await expect.poll(() => page.evaluate(() => JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").draftSettings.positionWeights)).toEqual({});
+});
+
 test("inactive access blocks export and shows retained summaries while checkout return confirms after retry", async ({ page }) => {
   let eligible = true;
   let verificationCalls = 0;

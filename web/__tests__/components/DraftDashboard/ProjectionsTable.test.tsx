@@ -81,6 +81,23 @@ describe("ProjectionsTable visibility diagnostics", () => {
     expect(screen.getByText("42.5")).toBeTruthy();
   });
 
+  it("keeps projection sorting separate from position-weighted valuation sorting", () => {
+    const defender = player(1, "Defender", "D");
+    const forward = player(2, "Forward", "C");
+    defender.fantasyPoints.projected = 100;
+    forward.fantasyPoints.projected = 80;
+    render(<ProjectionsTable players={[defender, forward]} draftedPlayers={[]} isLoading={false} error={null} onDraftPlayer={vi.fn()} canDraft vorpMetrics={new Map([
+      ["1", { value: 0, unweightedValue: 100, vorp: 0, vona: 0, vols: 0, vbd: 0, bestPos: "D", eligible: ["D"] }],
+      ["2", { value: 80, vorp: 20, vona: 0, vols: 0, vbd: 12, bestPos: "C", eligible: ["C"] }],
+    ])} />);
+    const order = () => Array.from(document.querySelectorAll("tbody tr[data-player-id]")).map(row => row.getAttribute("data-player-id"));
+    fireEvent.click(screen.getByTitle("Projected Fantasy Points"));
+    expect(order()).toEqual(["1", "2"]);
+    fireEvent.click(screen.getByRole("button", { name: "VORP" }));
+    expect(order()).toEqual(["2", "1"]);
+    expect(screen.getByText("100.0")).toBeTruthy();
+  });
+
   it("uses the unfiltered full pool and leaves incomplete value inputs blank", () => {
     const leader = { ...player(1, "Full Pool Leader", "C"), yahooAvgPick: 10 };
     const filtered = { ...player(2, "Filtered Value", "C"), yahooAvgPick: 1 };

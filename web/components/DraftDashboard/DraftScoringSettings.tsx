@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { DraftSettings } from "./DraftDashboard";
 import { SKATER_LABELS } from "lib/projectionsConfig/skaterScoringLabels";
 import { getDefaultFantasyPointsConfig } from "lib/projectionsConfig/fantasyPointsConfig";
+import { normalizePositionWeights, POSITION_WEIGHT_KEYS } from "lib/draftDashboard/positionWeights";
 import styles from "./DraftSettingsDomains.module.scss";
 
 const GOALIE_LABELS: Record<string, string> = {
@@ -233,6 +234,17 @@ export default function DraftScoringSettings({
     ? Object.fromEntries(entries.filter(([key]) => goalieKey(key)))
     : goalieScoring;
   const boosts = settings.categoryBoosts || {};
+  const positionWeights = draftProEligible
+    ? normalizePositionWeights(settings.positionWeights)
+    : {};
+  const onPositionWeightChange = (position: typeof POSITION_WEIGHT_KEYS[number], value: string) => {
+    const percent = value === "" ? 100 : Number(value);
+    const weight = Number.isFinite(percent) ? Math.max(0, Math.min(200, percent)) / 100 : 1;
+    const next = { ...positionWeights };
+    if (weight === 1) delete next[position];
+    else next[position] = weight;
+    onSettingsChange({ positionWeights: next });
+  };
   const onBoostChange = (stat: string, boost: number) => {
     const next = { ...boosts };
     if (boost === 0) delete next[stat];
@@ -311,6 +323,38 @@ export default function DraftScoringSettings({
           )}
         </div>
       )}
+      <div id="position-weights" className={styles.positionWeights} role="region" aria-label="Position weights">
+        <h4>Position weights (Draft Pro)</h4>
+        <p>
+          Weights multiply draft value using positions shown by the selected Yahoo or Fantrax source. Multi-eligible players receive the highest eligible weight once. 100% is neutral; a lower weight moves negative values toward zero. League scoring, projections, and category boosts stay unchanged.
+        </p>
+        <div className={styles.positionWeightList}>
+          {POSITION_WEIGHT_KEYS.map((position) => (
+            <div className={styles.positionWeightRow} key={position}>
+              <label htmlFor={`draft-position-weight-${position}`}>{position}</label>
+              <input
+                id={`draft-position-weight-${position}`}
+                aria-label={`${position} position weight percent`}
+                type="number"
+                min={0}
+                max={200}
+                step={1}
+                value={Number(((positionWeights[position] ?? 1) * 100).toFixed(2))}
+                disabled={!draftProEligible}
+                onChange={(event) => onPositionWeightChange(position, event.target.value)}
+              />
+              <span aria-hidden="true">%</span>
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          disabled={!draftProEligible}
+          onClick={() => onSettingsChange({ positionWeights: {} })}
+        >
+          Reset Position Weights
+        </button>
+      </div>
       <p className={styles.note}>
         {categories
           ? "Category weights control relative importance."
