@@ -67,6 +67,21 @@ describe("representative draft workflow", () => {
     expect(bookmarkImportError({ ...bookmark, goalieScoringCategories: { GOALS_AGAINST_GOALIE: -1 } })).toBeNull();
   });
 
+  it("accepts optional position weights and rejects malformed settings and bookmarks", () => {
+    const bookmark = { v: 3, settings, myTeamId: "Team 1", draftedPlayers: picks, currentPick: 4, sourceControls: input.skaterSources, goalieSourceControls: input.goalieSources, goalieScoringCategories: input.goalieScoring };
+    const weightedSettings = { ...settings, positionWeights: { D: 0, G: 2 } };
+    expect(validateDraftSettings({ ...input, settings: weightedSettings }).valid).toBe(true);
+    expect(bookmarkImportError({ ...bookmark, settings: weightedSettings })).toBeNull();
+    expect(bookmarkImportError({ ...bookmark, v: 2 })).toBeNull();
+    expect(bookmarkImportError({ ...bookmark, v: 2, settings: weightedSettings })).toBeNull();
+
+    for (const positionWeights of [null, [], { F: 1 }, { D: NaN }, { D: Infinity }, { D: -0.1 }, { G: 2.1 }, { C: "1" }]) {
+      const malformedSettings = { ...settings, positionWeights };
+      expect(validateDraftSettings({ ...input, settings: malformedSettings as any }).domains.scoring).toBe(false);
+      expect(bookmarkImportError({ ...bookmark, settings: malformedSettings })).toContain("Invalid bookmark settings");
+    }
+  });
+
   it("colors category ranks in quartiles, respects stat direction, and preserves ties", () => {
     const teams = Array.from({ length: 12 }, (_, index) => ({
       teamId: String(index),

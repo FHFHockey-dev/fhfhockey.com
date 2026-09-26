@@ -1,3 +1,4 @@
+import { selectTeamFormGames, type StartChartTeamForm } from "lib/projections/startChartTeamForm";
 import { starterBoardFlags } from "lib/projections/starterBoardFlags";
 import type { NextApiRequest, NextApiResponse } from "next";
 
@@ -469,7 +470,10 @@ export function resolveYahooPlayerMappings(
   >();
   for (const row of rows) {
     const nhlId = finiteOrNull(row.nhl_player_id);
-    const yahooId = finiteOrNull(row.yahoo_player_id);
+    const yahooKey = typeof row.yahoo_player_id === "string"
+      ? row.yahoo_player_id.match(/^\d+\.p\.([1-9]\d*)$/)
+      : null;
+    const yahooId = finiteOrNull(yahooKey?.[1] ?? row.yahoo_player_id);
     if (nhlId == null || nhlId <= 0 || yahooId == null || yahooId <= 0) {
       continue;
     }
@@ -1240,6 +1244,26 @@ export default async function handler(
       )
         .then((rows) => ({ rows, error: false as const }))
         .catch(() => ({ rows: [] as CtpiRow[], error: true as const }));
+      const recentGoalsPromise = Promise.all(slateTeamIds.map(async (teamId) => {
+        const team = findAbbrev(teamId)!;
+        try {
+          const { data, error } = await supabase.from("pbp_games")
+            .select("id,date,type,season,hometeamid,awayteamid,hometeamscore,awayteamscore")
+            .eq("season", String(seasonId)).or(`hometeamid.eq.${teamId},awayteamid.eq.${teamId}`)
+            .in("type", [2, 3]).lte("date", teamFormThroughDate)
+            .order("date", { ascending: false }).order("id", { ascending: false }).limit(20);
+          if (error) return { team, games: [] };
+          // pbp_games contains completed games; games also contains conditional
+          // playoff dates that never took place and must not enter this window.
+          const rows = (data ?? []).map((game) => ({
+            game_id: game.id, season_id: Number(game.season), game_type: game.type,
+            game_date: game.date, game_state: "OFF", home_team_id: game.hometeamid,
+            away_team_id: game.awayteamid, home_team_score: game.hometeamscore,
+            away_team_score: game.awayteamscore,
+          }));
+          return { team, games: selectTeamFormGames(rows, seasonId, resolvedDate, teamId) };
+        } catch { return { team, games: [] }; }
+      })).then((teams): StartChartTeamForm => ({ seasonId, beforeDate: resolvedDate, source: "nhl_final_scores", teams }));
       const weekGamesPromise = supabase
         .from("games")
         .select("id,date,homeTeamId,awayTeamId")
@@ -1378,10 +1402,11 @@ export default async function handler(
         }),
       );
 
-      const [ratingsResult, ctpiResult, weekGamesResponse] = await Promise.all([
+      const [ratingsResult, ctpiResult, weekGamesResponse, recentGoals] = await Promise.all([
         ratingsPromise,
         ctpiPromise,
         weekGamesPromise,
+        recentGoalsPromise,
       ]);
       const revisionMode = Boolean(slate.revisions?.length);
       const runMetrics = asRecord(revisionMode ? null : forgeRun?.metrics);
@@ -2088,6 +2113,7 @@ export default async function handler(
         projections: responsePlayers.length,
         players: responsePlayers,
         ctpi,
+        recentGoals,
         games: enrichedGames,
       };
     })();

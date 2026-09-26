@@ -20,6 +20,7 @@ To guide an AI assistant in creating a detailed, step-by-step task list in Markd
 1. **Receive PRD Reference:** The user points the AI to a specific PRD file.
 2. **Analyze PRD:** The AI reads and analyzes the functional requirements, user stories, constraints, dependencies, and success criteria in the specified PRD.
 3. **Generate Tasks:** Create the file and generate the main, high-level parent tasks and their sub-tasks in a single pass by default.
+   - Task numbers are reference IDs, not a required execution order. Mark real prerequisites; identify independent tasks that may be delegated and worked on concurrently.
 4. **Pause only when necessary:** If the PRD is ambiguous, unusually large, contains major architectural forks, or presents meaningful strategic uncertainty, generate only the parent tasks first and ask for confirmation before expanding into sub-tasks.
 5. **Identify Relevant Files:** Based on the tasks and PRD, identify potential files that will need to be created or modified. List these under the `Relevant Files` section, including corresponding test files only when genuinely useful.
    - Prefer a short, high-confidence `Relevant Files` list.
@@ -36,6 +37,7 @@ To guide an AI assistant in creating a detailed, step-by-step task list in Markd
 - Avoid over-fragmenting obvious work into excessively tiny sub-tasks.
 - Avoid vague task wording such as "handle logic" or "make it work" when more precise language is possible.
 - Prefer the smallest task structure that still preserves clarity, sequencing, and reviewability.
+- Do not turn a task list into a serial-only workflow. Allow independent tasks to run in parallel, while sequencing work that shares files, state, or a prerequisite. If agents share a checkout, give each affected file or subsystem a clear owner and reserve integration and final verification for the lead agent.
 - Do not assume every implementation task requires a new test file.
 - Include test files in `Relevant Files` only when they are likely to be genuinely useful for the planned change.
 - Prefer tasks that allow Codex to focus on implementation, while routine manual verification or terminal steps can be delegated to the user later during execution.
@@ -56,6 +58,7 @@ The generated task list *must* follow this structure:
 
 - Unit tests should typically be placed alongside the code files they are testing.
 - Use the project's existing test runner and conventions where known.
+- Numbered tasks identify work; independent tasks may run concurrently. Note dependencies and file ownership where they affect delegation.
 - If the project conventions are unknown, note that the test command should be confirmed from the repo before execution.
 
 ## Tasks

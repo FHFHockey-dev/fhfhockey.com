@@ -1,15 +1,54 @@
 import { describe, expect, it } from "vitest";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
   POSTGREST_PAGE_SIZE,
   calculateEwma,
   calculateLeagueMetrics,
   calculateZScores,
+  fetchGameLogs,
   fetchPaginatedRows,
   type TeamGame,
 } from "./power-ratings";
 
 describe("power-ratings PostgREST pagination", () => {
+  it("starts independent game log queries together", async () => {
+    const started: string[] = [];
+    let release = () => {};
+    const pending = new Promise<{ data: []; error: null }>((resolve) => {
+      release = () => resolve({ data: [], error: null });
+    });
+    const client = {
+      from(table: string) {
+        started.push(table);
+        return {
+          select() { return this; },
+          eq() { return this; },
+          gte() { return this; },
+          lte() { return this; },
+          order() { return this; },
+          range() { return pending; },
+          then(resolve: (value: { data: []; error: null }) => void) {
+            return pending.then(resolve);
+          },
+        };
+      },
+    } as unknown as SupabaseClient;
+
+    const result = fetchGameLogs(client, "2026-03-01", "2026-03-10");
+
+    expect(started).toEqual([
+      "nst_team_gamelogs_as_rates",
+      "nst_team_5v5",
+      "nst_team_gamelogs_pp_rates",
+      "nst_team_gamelogs_pk_rates",
+      "wgo_team_stats",
+      "teams",
+    ]);
+    release();
+    await expect(result).resolves.toEqual([]);
+  });
+
   it("continues after a full 1,000-row page with deterministic ordering", async () => {
     const rows = Array.from(
       { length: POSTGREST_PAGE_SIZE + 7 },

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildPositionTiers, remainingBands, advisePosition } from "./positionalTiers";
 import { buildDashboardTiers } from "./tierDashboardAdapter";
+import { buildPositionWeightMultipliers } from "./positionWeights";
 import { estimatePlayerAvailability } from "./availability";
 import { buildPersonalizedRecommendations } from "lib/draft-pro/recommendations";
 
@@ -119,5 +120,44 @@ describe("tier scoring adapter", () => {
   it("does not silently use unprorated values when projected games are missing", () => {
     const noGames = players.map((p: any) => ({ ...p, combinedStats: { GOALS: p.combinedStats.GOALS } }));
     expect(buildDashboardTiers({ ...input, players: noGames, prorate84: true })[0].missing).toHaveLength(4);
+  });
+  it("keeps neutral tiers identical and weights defense values after points proration", () => {
+    const defenders = players.map((p: any) => ({ ...p, displayPosition: "D", eligiblePositions: ["D"] }));
+    const defenderInput = { ...input, players: defenders, prorate84: true };
+    const snapshot = JSON.stringify(defenders);
+    const neutral = buildDashboardTiers(defenderInput);
+    const explicitNeutral = buildDashboardTiers({
+      ...defenderInput,
+      positionWeightMultipliers: buildPositionWeightMultipliers(defenders, { D: 1 }, true)
+    });
+    const weighted = buildDashboardTiers({
+      ...defenderInput,
+      positionWeightMultipliers: buildPositionWeightMultipliers(defenders, { D: 0.5 }, true)
+    });
+    const bandValues = (tiers: typeof neutral) => tiers.find(tier => tier.position === "D")!
+      .bands.flatMap(band => band.players.map(player => player.value));
+
+    expect(explicitNeutral).toEqual(neutral);
+    expect(bandValues(neutral)).toEqual([200, 180, 60, 40]);
+    expect(bandValues(weighted)).toEqual([100, 90, 30, 20]);
+    expect(JSON.stringify(defenders)).toBe(snapshot);
+  });
+  it("uses the same signed category composite in tiers as in valuation", () => {
+    const categoryInput = { ...input, leagueType: "categories" as const, categoryWeights: { GOALS: 1 } };
+    const before = buildDashboardTiers(categoryInput);
+    const weighted = buildDashboardTiers({
+      ...categoryInput,
+      positionWeightMultipliers: buildPositionWeightMultipliers(players, { C: 0.5, LW: 0.5 }, true)
+    });
+    const values = (tiers: typeof before) => new Map(tiers.find(tier => tier.position === "C")!
+      .bands.flatMap(band => band.players.map(player => [player.id, player.value] as const)));
+    const neutralValues = values(before);
+    const weightedValues = values(weighted);
+
+    expect(neutralValues.get("0")!).toBeGreaterThan(0);
+    expect(neutralValues.get("3")!).toBeLessThan(0);
+    for (const [id, value] of neutralValues) {
+      expect(weightedValues.get(id)).toBeCloseTo(value! * 0.5);
+    }
   });
 });

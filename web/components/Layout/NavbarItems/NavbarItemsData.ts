@@ -1,244 +1,226 @@
-// web/components/Layout/NavbarItems/NavbarItemsData.ts
-
-export type NavbarItem = NavbarItemLink | NavbarItemCategory;
+import type { NavigationIconName } from "../NavigationIcon";
 
 export type NavbarItemLink = {
   type: "link";
   label: string;
   href: string;
-  accent?: "yellow";
-  mobile: {
-    tier: "primary" | "secondary";
-    icon: string;
-    label?: string;
-    order: number;
-  };
+  icon: NavigationIconName;
+  description: string;
 };
 
+export type NavigationGroup = { label: string; items: NavbarItemLink[] };
 export type NavbarItemCategory = {
   type: "category";
-  label: string; // navbar label text.
-  items: NavbarItem[]; // Array of navbar items.
+  id: "analytics" | "tools" | "community";
+  label: string;
+  icon: NavigationIconName;
+  description: string;
+  groups: NavigationGroup[];
 };
+export type NavbarItem = NavbarItemLink | NavbarItemCategory;
 
-const ITEMS_DATA: NavbarItem[] = [
-  {
+export const SUPPORT_URL = "https://www.buymeacoffee.com/tjsusername";
+
+export const NAVIGATION_LINKS = {
+  home: {
     type: "link",
     label: "Home",
     href: "/",
-    mobile: { tier: "primary", icon: "/pictures/homeNavIcon.png", order: 1 },
+    icon: "home",
+    description: "Five Hole Fantasy Hockey",
   },
-  {
+  underlying: {
     type: "link",
     label: "Underlying Stats",
     href: "/underlying-stats",
-    mobile: { tier: "secondary", icon: "/pictures/ULSlogo.png", order: 1 },
+    icon: "activity",
+    description: "Examine performance beneath results",
   },
-  {
+  gameGrid: {
     type: "link",
     label: "Game Grid",
     href: "/game-grid",
-    mobile: { tier: "primary", icon: "/pictures/gameGrid.png", order: 3 },
+    icon: "calendar",
+    description: "Explore the weekly schedule",
   },
-  {
-    type: "category",
-    label: "Tools",
-    items: [
-      {
-        type: "link",
-        label: "Stats",
-        href: "/stats",
-        mobile: { tier: "primary", icon: "/pictures/statsIcon.png", order: 2 },
-      },
-      {
-        type: "link",
-        label: "Trends",
-        href: "/trends",
-        mobile: {
-          tier: "secondary",
-          icon: "/pictures/chart-line-bar.png",
-          order: 2,
-        },
-      },
-      {
-        type: "link",
-        label: "NHL Predictions",
-        href: "/nhl-predictions",
-        mobile: {
-          tier: "secondary",
-          icon: "/pictures/playersTable.png",
-          order: 3,
-        },
-      },
-      {
-        type: "link",
-        label: "Lines",
-        href: "/lines",
-        mobile: {
-          tier: "primary",
-          icon: "/pictures/lineCombosIcon.png",
-          label: "Line Combinations",
-          order: 4,
-        },
-      },
-      {
-        type: "link",
-        label: "Line Combo Matrix",
-        href: "/drm",
-        mobile: {
-          tier: "primary",
-          icon: "/pictures/drmIcon.png",
-          label: "Date Range Line Matrix",
-          order: 7,
-        },
-      },
-      {
-        type: "link",
-        label: "Splits",
-        href: "/splits",
-        mobile: {
-          tier: "secondary",
-          icon: "/pictures/statsTable.png",
-          order: 4,
-        },
-      },
-      {
-        type: "link",
-        label: "Draft Dashboard",
-        href: "/draft-dashboard",
-        mobile: {
-          tier: "primary",
-          icon: "/pictures/playersTable.png",
-          order: 7,
-        },
-      },
-      {
-        type: "link",
-        label: "Roster Schedule Optimizer",
-        href: "/roster-schedule-optimizer",
-        mobile: {
-          tier: "secondary",
-          icon: "/pictures/gameGrid.png",
-          order: 8,
-        },
-      },
-    ],
+  stats: {
+    type: "link",
+    label: "Stats",
+    href: "/stats",
+    icon: "stats",
+    description: "Explore player statistics",
   },
-  {
-    type: "category",
-    label: "Charts",
-    items: [
-      {
-        type: "link",
-        label: "Start Chart",
-        href: "/start-chart",
-        mobile: {
-          tier: "secondary",
-          icon: "/pictures/chart-line-up.svg",
-          order: 6,
-        },
-      },
-      {
-        type: "link",
-        label: "WiGO",
-        href: "/wigoCharts",
-        mobile: {
-          tier: "primary",
-          icon: "/pictures/wigoIcon.png",
-          label: "WiGO Charts",
-          order: 5,
-        },
-      },
-      {
-        type: "link",
-        label: "Shift Chart",
-        href: "/shiftChart",
-        mobile: {
-          tier: "primary",
-          icon: "/pictures/shiftChartsIcon.png",
-          order: 6,
-        },
-      },
-    ],
+  trends: {
+    type: "link",
+    label: "Trends",
+    href: "/trends",
+    icon: "trend",
+    description: "Follow recent performance",
   },
-  {
-    type: "category",
-    label: "Variance",
-    items: [
-      {
-        type: "link",
-        label: "Skaters",
-        href: "/variance/skaters",
-        mobile: {
-          tier: "secondary",
-          icon: "/pictures/bar-chart.png",
-          label: "Variance Skaters",
-          order: 7,
-        },
-      },
-      {
-        type: "link",
-        label: "Goalies",
-        href: "/variance/goalies",
-        mobile: {
-          tier: "secondary",
-          icon: "/pictures/bar-chart.png",
-          label: "Variance Goalies",
-          order: 8,
-        },
-      },
-    ],
+  predictions: {
+    type: "link",
+    label: "NHL Predictions",
+    href: "/nhl-predictions",
+    icon: "trend",
+    description: "Explore game predictions",
   },
-  {
+  lines: {
+    type: "link",
+    label: "Line Combinations",
+    href: "/lines",
+    icon: "lines",
+    description: "Review team lines",
+  },
+  matrix: {
+    type: "link",
+    label: "Line Combo Matrix",
+    href: "/drm",
+    icon: "grid",
+    description: "Compare lines across dates",
+  },
+  splits: {
+    type: "link",
+    label: "Splits",
+    href: "/splits",
+    icon: "grid",
+    description: "Compare performance by context",
+  },
+  draft: {
+    type: "link",
+    label: "Draft Dashboard",
+    href: "/draft-dashboard",
+    icon: "draft",
+    description: "Open your draft workspace",
+  },
+  optimizer: {
+    type: "link",
+    label: "Roster Schedule Optimizer",
+    href: "/roster-schedule-optimizer",
+    icon: "calendar",
+    description: "Plan roster schedules",
+  },
+  start: {
+    type: "link",
+    label: "Start Chart",
+    href: "/start-chart",
+    icon: "stats",
+    description: "Review starter probabilities",
+  },
+  wigo: {
+    type: "link",
+    label: "WiGO Charts",
+    href: "/wigoCharts",
+    icon: "network",
+    description: "Explore player combinations",
+  },
+  shift: {
+    type: "link",
+    label: "Shift Chart",
+    href: "/shiftChart",
+    icon: "clock",
+    description: "Inspect shift usage",
+  },
+  skaters: {
+    type: "link",
+    label: "Variance Skaters",
+    href: "/variance/skaters",
+    icon: "trend",
+    description: "Explore skater variance",
+  },
+  goalies: {
+    type: "link",
+    label: "Variance Goalies",
+    href: "/variance/goalies",
+    icon: "shield",
+    description: "Explore goalie variance",
+  },
+  blog: {
     type: "link",
     label: "Blog",
     href: "/blog",
-    mobile: { tier: "primary", icon: "/pictures/blogIcon.png", order: 9 },
+    icon: "article",
+    description: "Read fantasy hockey articles",
   },
-  {
+  podcast: {
     type: "link",
     label: "Podcast",
     href: "/podfeed",
-    mobile: { tier: "primary", icon: "/pictures/podcastIcon.png", order: 8 },
+    icon: "mic",
+    description: "Listen to Five Hole Fantasy Hockey",
+  },
+} satisfies Record<string, NavbarItemLink>;
+
+const links = NAVIGATION_LINKS;
+
+export const MOBILE_NAVIGATION_GROUPS: NavbarItemCategory[] = [
+  {
+    type: "category",
+    id: "analytics",
+    label: "Analytics",
+    icon: "stats",
+    description: "Stats, trends & variance",
+    groups: [
+      {
+        label: "Player analysis",
+        items: [links.stats, links.underlying, links.trends, links.splits],
+      },
+      { label: "Variance", items: [links.skaters, links.goalies] },
+    ],
+  },
+  {
+    type: "category",
+    id: "tools",
+    label: "Tools",
+    icon: "tools",
+    description: "Game Grid, lines, draft & more",
+    groups: [
+      {
+        label: "Schedule & lineup",
+        items: [links.gameGrid, links.start, links.optimizer],
+      },
+      {
+        label: "Lines & deployment",
+        items: [links.lines, links.matrix, links.wigo, links.shift],
+      },
+      { label: "Draft & predictions", items: [links.draft, links.predictions] },
+    ],
+  },
+  {
+    type: "category",
+    id: "community",
+    label: "Community",
+    icon: "community",
+    description: "Blog, podcast & social",
+    groups: [{ label: "Read & listen", items: [links.blog, links.podcast] }],
   },
 ];
 
-export type MobileNavigationItem = {
-  id: string;
-  label: string;
-  href: string;
-  icon: string;
-  tier: "primary" | "secondary";
-  order: number;
-};
+// These destinations remain standalone on desktop, never duplicated in a dropdown.
+const desktopStandalone = new Set<string>([
+  links.gameGrid.href,
+  links.underlying.href,
+  links.blog.href,
+]);
+const desktopGroups = MOBILE_NAVIGATION_GROUPS.map((category) => ({
+  ...category,
+  groups: category.groups.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => !desktopStandalone.has(item.href)),
+  })),
+}));
 
-function flattenLinks(items: NavbarItem[]): NavbarItemLink[] {
-  return items.flatMap((item) =>
-    item.type === "link" ? [item] : flattenLinks(item.items),
-  );
+const ITEMS_DATA: NavbarItem[] = [
+  links.home,
+  links.gameGrid,
+  links.underlying,
+  desktopGroups[0],
+  desktopGroups[1],
+  links.blog,
+  desktopGroups[2],
+];
+
+export function isNavigationLinkActive(pathname: string, href: string) {
+  return pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
 }
-
-export const MOBILE_NAVIGATION_ITEMS: MobileNavigationItem[] = flattenLinks(
-  ITEMS_DATA,
-).map((item) => ({
-  id: item.href === "/" ? "home" : item.href.replace(/^\//, "").replace(/\W+/g, "-"),
-  label: item.mobile.label ?? item.label,
-  href: item.href,
-  icon: item.mobile.icon,
-  tier: item.mobile.tier,
-  order: item.mobile.order,
-})).sort((left, right) =>
-  left.tier === right.tier
-    ? left.order - right.order
-    : left.tier.localeCompare(right.tier),
-);
-
-export const MOBILE_PRIMARY_NAVIGATION_ITEMS = MOBILE_NAVIGATION_ITEMS.filter(
-  (item) => item.tier === "primary",
-);
-
-export const MOBILE_SECONDARY_NAVIGATION_ITEMS = MOBILE_NAVIGATION_ITEMS.filter(
-  (item) => item.tier === "secondary",
-);
 
 export default ITEMS_DATA;

@@ -32,3 +32,24 @@
     width: 35px;
   }
 }
+
+.socialMedias.labeled {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  height: auto;
+  padding: 0;
+  gap: 4px 12px;
+  a {
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 6px;
+    font-size: 15px;
+    &:hover { transform: none; background: #263139; }
+    &:focus-visible { outline: 2px solid #07aae2; outline-offset: -2px; }
+  }
+  a img { width: 22px; height: 22px; object-fit: contain; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .socialMedias > *:hover { transform: none; transition: none; }
+}

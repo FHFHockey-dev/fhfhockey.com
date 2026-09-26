@@ -3,225 +3,126 @@
 .container.draftLayout > header {
   z-index: vars.$z-desktop-sticky;
 }
-
 @media (min-width: 1101px) {
   .container.draftLayout {
     height: 100dvh;
     min-height: 0;
     overflow: hidden;
-
     > header {
       flex-shrink: 0;
     }
   }
 }
-
 .container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-
-  .footer {
-    position: fixed;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: vars.$z-desktop-sticky;
-    height: 65px;
-    background: rgba(0, 0, 0, 0.3);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(100%);
-    transition:
-      opacity vars.$transition-duration vars.$transition-easing,
-      transform vars.$transition-duration vars.$transition-easing;
-
-    &.footerVisible {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateY(0);
-    }
-
-    &::before {
-      content: "";
-      position: absolute;
-      background-color: white;
-      height: 2.5px;
-      width: 100%;
-      top: 0;
-    }
-    &::after {
-      content: "";
-      position: absolute;
-      background-color: white;
-      height: 2.5px;
-      width: 100%;
-      top: 3.75px;
-    }
-
-    .footerLogoDefault,
-    .footerLogoUnderlyingStats {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 80px;
-      height: 24px;
-    }
-
-    .footerLogoDefault {
-      color: #4ca7dd;
-    }
-
-    .footerLogoUnderlyingStats {
-      color: vars.$color-brand-yellow;
-    }
-
-    &.homepageFooter {
-      position: static;
-      z-index: auto;
-      display: block;
-      width: 100%;
-      height: auto;
-      min-height: 52px;
-      margin-top: vars.$space-sm;
-      padding: vars.$space-xs vars.$space-md;
-      border-top: 1px solid vars.$border-soft;
-      background: color-mix(in srgb, vars.$background-dark 92%, black);
-      opacity: 1;
-      pointer-events: auto;
-      transform: none;
-
-      &::before,
-      &::after {
-        display: none;
-      }
-    }
+  @media (max-width: 1099px) {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
   }
 }
-
-.homepageFooterInner {
-  width: min(100%, 1680px);
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: auto minmax(180px, 1fr) auto auto;
-  align-items: center;
-  gap: vars.$space-md;
-
-  > p {
-    margin: 0;
-    color: vars.$text-secondary;
-    font-size: 0.6rem;
+.footer {
+  position: static;
+  margin-top: auto;
+  flex-shrink: 0;
+  padding: 24px;
+  background: #141719;
+  border-top: 1px solid #33414a;
+  color: #c0cbd3;
+  font-family: vars.$font-family-primary;
+  a:focus-visible {
+    outline: 2px solid vars.$primary-color;
+    outline-offset: 3px;
   }
-
-  > nav {
-    display: flex;
-    align-items: center;
-    gap: vars.$space-lg;
-
-    a {
-      color: vars.$text-secondary;
-      font-family: vars.$font-family-primary;
-      font-size: 0.6rem;
-      letter-spacing: 0.08em;
-      text-decoration: none;
-      text-transform: uppercase;
-
-      &:hover,
-      &:focus-visible {
-        color: vars.$primary-color;
-      }
-
-      &:focus-visible {
-        outline: 2px solid vars.$primary-color;
-        outline-offset: 2px;
-      }
-    }
-  }
-}
-
-.homepageFooterBrand {
-  display: grid;
-  justify-items: center;
-  gap: 2px;
-
-  small {
+  a:hover {
     color: vars.$primary-color;
-    font-size: 0.42rem;
-    font-style: italic;
-    font-weight: vars.$font-weight-bold;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
 }
-
-.homepageFooterSocials {
+.footerInner {
   display: flex;
   align-items: center;
-
-  > :global(div) {
-    gap: vars.$space-sm;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 24px;
+  max-width: 1680px;
+  margin: 0 auto;
+  > nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      font-size: 15px;
+    }
   }
-
+}
+.footerBrand {
+  display: grid;
+  gap: 6px;
+  color: vars.$primary-color;
+  small {
+    font-size: 13px;
+    color: #c0cbd3;
+  }
+  > a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    width: fit-content;
+  }
+}
+.footerCommunity {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  > a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 15px;
+  }
+}
+.footerSocials {
+  :global(a) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 44px;
+    &:hover {
+      transform: none;
+    }
+  }
   :global(img) {
-    width: 14px !important;
-    height: 14px !important;
+    width: 22px !important;
+    height: 22px !important;
+    object-fit: contain;
   }
+  gap: 4px !important;
+  height: auto !important;
+  padding: 0 !important;
 }
-
 @media (max-width: 760px) {
-  .homepageFooterInner {
-    grid-template-columns: auto 1fr auto;
-
-    > nav {
-      grid-column: 1 / -1;
-      grid-row: 2;
-      justify-content: center;
-    }
-  }
-}
-
-@media (max-width: vars.$breakpoint-mobile-lg) {
-  .container .footer.homepageFooter {
-    padding: vars.$space-md vars.$space-sm;
-  }
-
-  .homepageFooterInner {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    gap: vars.$space-sm;
+  .footerInner {
+    flex-direction: column;
     text-align: center;
-
+    gap: 16px;
     > nav {
-      grid-column: auto;
-      grid-row: auto;
-      flex-wrap: wrap;
       justify-content: center;
-      gap: vars.$space-sm vars.$space-md;
     }
   }
-
-  .homepageFooterBrand {
-    gap: vars.$space-xs;
-
-    .footerLogoDefault {
-      width: 96px !important;
-      height: 29px !important;
-    }
-
-    .footerLogoDefault svg {
-      width: 96px;
-      height: auto;
-    }
-
-    small {
-      font-size: 0.48rem;
-    }
+  .footerBrand {
+    justify-items: center;
+  }
+  .footerCommunity {
+    flex-direction: column;
   }
 }
-
 @media (min-width: 1600px) {
-  .container.wigoLayout > header { height: 48px; min-height: 48px; flex-shrink: 0; }
+  .container.wigoLayout > header {
+    flex-shrink: 0;
+  }
 }

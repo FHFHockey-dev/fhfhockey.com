@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from "react";
+import { useRef, useState, type ChangeEvent, type KeyboardEvent, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
@@ -7,7 +7,6 @@ import OwnershipSparkline from "../TransactionTrends/OwnershipSparkline";
 import OptimizedImage from "../common/OptimizedImage";
 import { computeTeamPowerScore } from "../../lib/dashboard/teamContext";
 import { getLocalTeamLogoPath } from "../../lib/images";
-import { getAnalyticsSurfaceContract } from "../../lib/navigation/analyticsSurfaceOwnership";
 import { UNDERLYING_STATS_SURFACE_LINKS } from "../../lib/navigation/siteSurfaceLinks";
 import { teamsInfo } from "../../lib/teamsInfo";
 import type { UnderlyingStatsLandingDashboard as DashboardData } from "../../lib/underlying-stats/teamLandingDashboard";
@@ -25,6 +24,7 @@ const UnderlyingStatsQuadrantMap = dynamic(
 
 type UnderlyingStatsDashboardProps = {
   activeTeamAbbr: string | null;
+  children: ReactNode;
   dashboard: DashboardData;
   dateOptions: string[];
   error: string | null;
@@ -40,18 +40,6 @@ type UnderlyingStatsDashboardProps = {
 };
 
 type FreshnessState = "failed" | "fresh" | "pending" | "unavailable";
-
-const EXPLORER_CONTRACTS = [
-  getAnalyticsSurfaceContract("uls-skater-explorer"),
-  getAnalyticsSurfaceContract("uls-goalie-explorer"),
-  getAnalyticsSurfaceContract("uls-team-explorer")
-];
-
-const EXPLORER_DESCRIPTIONS: Record<string, string> = {
-  "uls-goalie-explorer": "Goaltender performance and workload.",
-  "uls-skater-explorer": "Player performance and production metrics.",
-  "uls-team-explorer": "Filterable team rates and split-downs."
-};
 
 const formatDateLabel = (isoDate: string): string => {
   try {
@@ -100,6 +88,7 @@ function TeamLogo({
 
 export default function UnderlyingStatsDashboard({
   activeTeamAbbr,
+  children,
   dashboard,
   dateOptions,
   error,
@@ -116,6 +105,23 @@ export default function UnderlyingStatsDashboard({
   const [mobileMoverLane, setMobileMoverLane] = useState<"rising" | "sliding">(
     "rising"
   );
+  const [activeWorkspace, setActiveWorkspace] = useState<"rankings" | "chart">("rankings");
+  const rankingsTabRef = useRef<HTMLButtonElement>(null);
+  const chartTabRef = useRef<HTMLButtonElement>(null);
+  const handleWorkspaceKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    const nextWorkspace = event.key === "Home"
+      ? "rankings"
+      : event.key === "End"
+        ? "chart"
+        : event.key === "ArrowRight" || event.key === "ArrowLeft"
+          ? activeWorkspace === "rankings" ? "chart" : "rankings"
+          : null;
+    if (nextWorkspace) {
+      event.preventDefault();
+      setActiveWorkspace(nextWorkspace);
+      (nextWorkspace === "rankings" ? rankingsTabRef : chartTabRef).current?.focus();
+    }
+  };
   const activeTeam = activeTeamAbbr
     ? ratings.find((team) => team.teamAbbr === activeTeamAbbr) ?? null
     : null;
@@ -139,98 +145,6 @@ export default function UnderlyingStatsDashboard({
     pending: "Pending",
     unavailable: "Unavailable"
   };
-
-  const renderTrustGroup = (
-    label: string,
-    tone: "buyLow" | "heatCheck" | "processBacked",
-    items: DashboardData["sustainability"][keyof DashboardData["sustainability"]]
-  ) => (
-    <div className={styles.signalGroup} data-tone={tone}>
-      <h3 className={styles.signalGroupTitle}>{label}</h3>
-      <div className={styles.signalList}>
-        {items.length ? (
-          items.slice(0, 3).map((item) => (
-            <button
-              key={`${tone}-${item.teamAbbr}`}
-              type="button"
-              className={`${styles.signalItem} ${
-                activeTeamAbbr === item.teamAbbr ? styles.itemActive : ""
-              }`}
-              aria-label={`Pin ${item.teamName}`}
-              aria-pressed={pinnedTeamAbbr === item.teamAbbr}
-              onClick={() => onTeamPin(item.teamAbbr)}
-              onFocus={() => onTeamPreview(item.teamAbbr)}
-              onBlur={() => onTeamPreview(null)}
-              onMouseEnter={() => onTeamPreview(item.teamAbbr)}
-              onMouseLeave={() => onTeamPreview(null)}
-            >
-              <span className={styles.signalIdentity}>
-                <TeamLogo teamAbbr={item.teamAbbr} size={24} />
-                <span>
-                  <strong>{item.teamAbbr}</strong>
-                  <small>{item.teamName}</small>
-                </span>
-              </span>
-              <span className={styles.signalPower}>{item.power.toFixed(1)}</span>
-              <span className={styles.signalNote}>{item.note}</span>
-            </button>
-          ))
-        ) : (
-          <p className={styles.inlineEmpty}>No teams qualify in this snapshot.</p>
-        )}
-      </div>
-    </div>
-  );
-
-  const renderInefficiencyGroup = (
-    label: string,
-    tone: "overvalued" | "undervalued",
-    items: DashboardData["inefficiency"][keyof DashboardData["inefficiency"]]
-  ) => (
-    <div className={styles.radarGroup} data-tone={tone}>
-      <h3 className={styles.signalGroupTitle}>{label}</h3>
-      <div className={styles.radarList}>
-        {items.length ? (
-          items.slice(0, 3).map((item) => (
-            <button
-              key={`${tone}-${item.teamAbbr}`}
-              type="button"
-              className={`${styles.radarItem} ${
-                activeTeamAbbr === item.teamAbbr ? styles.itemActive : ""
-              }`}
-              aria-label={`Pin ${item.teamName}`}
-              aria-pressed={pinnedTeamAbbr === item.teamAbbr}
-              onClick={() => onTeamPin(item.teamAbbr)}
-              onFocus={() => onTeamPreview(item.teamAbbr)}
-              onBlur={() => onTeamPreview(null)}
-              onMouseEnter={() => onTeamPreview(item.teamAbbr)}
-              onMouseLeave={() => onTeamPreview(null)}
-            >
-              <span className={styles.radarTopline}>
-                <span className={styles.signalIdentity}>
-                  <TeamLogo teamAbbr={item.teamAbbr} size={22} />
-                  <strong>{item.teamAbbr}</strong>
-                </span>
-                <span className={styles.signalPower}>{item.power.toFixed(1)}</span>
-              </span>
-              <span className={styles.signalNote}>{item.note}</span>
-              {item.archetypes.length ? (
-                <span className={styles.tagRow}>
-                  {item.archetypes.slice(0, 2).map((tag) => (
-                    <span key={`${item.teamAbbr}-${tag}`} className={styles.tag}>
-                      {tag}
-                    </span>
-                  ))}
-                </span>
-              ) : null}
-            </button>
-          ))
-        ) : (
-          <p className={styles.inlineEmpty}>No teams qualify in this snapshot.</p>
-        )}
-      </div>
-    </div>
-  );
 
   const renderMoverLane = (
     direction: "rising" | "sliding",
@@ -315,8 +229,7 @@ export default function UnderlyingStatsDashboard({
             <p className={styles.eyebrow}>Team intelligence</p>
             <h1 className={styles.pageTitle}>Underlying Stats Dashboard</h1>
             <p className={styles.pageDescription}>
-              Diagnose team strength, process, sustainability, and schedule
-              context across the NHL.
+              Compare NHL team strength and explore the process behind each rating.
             </p>
             <span className={styles.lensBadge}>
               Primary lens: <strong>Team diagnosis</strong>
@@ -362,12 +275,12 @@ export default function UnderlyingStatsDashboard({
         </div>
 
         <div className={styles.commandNavRow}>
-          <div className={styles.teamHub}>
-            <span className={styles.teamHubLabel}>Team Hub</span>
-            <div className={styles.teamHubScroller}>
-              <UnderlyingStatsNavBar variant="connected" />
+          <details className={styles.readinessDisclosure}>
+            <summary>Data readiness</summary>
+            <div className={styles.readinessContent}>
+              <UlsStatusPanel status={routeStatus} variant="landing" />
             </div>
-          </div>
+          </details>
           <details className={styles.aboutDisclosure}>
             <summary>About this dashboard</summary>
             <div className={styles.aboutContent}>
@@ -402,80 +315,7 @@ export default function UnderlyingStatsDashboard({
         ) : null}
       </header>
 
-      <section className={styles.primaryWorkspace} aria-label="Primary analytics">
-        <UnderlyingStatsDashboardCard
-          className={styles.quadrantCard}
-          kicker="League map"
-          title="Process quadrant"
-          info="Offensive process combines expected-goal and shot generation. Defensive process rewards suppressing those same inputs."
-          description="Offensive process on the x-axis and defensive process on the y-axis. Preview a team, then pin it for cross-dashboard context."
-          actions={
-            <div className={styles.cardMeta}>
-              <span>{selectedDate ? formatDateLabel(selectedDate) : "Latest"}</span>
-              {activeTeam ? (
-                <strong>
-                  {activeTeam.teamAbbr} · {computeTeamPowerScore(activeTeam).toFixed(1)}
-                </strong>
-              ) : null}
-            </div>
-          }
-        >
-          {dashboard.quadrant.points.length ? (
-            <UnderlyingStatsQuadrantMap
-              activeTeamAbbr={activeTeamAbbr}
-              pinnedTeamAbbr={pinnedTeamAbbr}
-              averageDefenseProcess={dashboard.quadrant.averageDefenseProcess}
-              averageOffenseProcess={dashboard.quadrant.averageOffenseProcess}
-              onTeamPin={onTeamPin}
-              onTeamPreview={onTeamPreview}
-              points={dashboard.quadrant.points}
-            />
-          ) : (
-            <p className={styles.moduleEmpty}>
-              No quadrant data is available for this snapshot.
-            </p>
-          )}
-          <div className={styles.chartFooter}>
-            <span>
-              League avg · offense {dashboard.quadrant.averageOffenseProcess.toFixed(2)} · defense{" "}
-              {dashboard.quadrant.averageDefenseProcess.toFixed(2)}
-            </span>
-            <span>{selectedDate ? `Snapshot ${formatDateLabel(selectedDate)}` : "Latest snapshot"}</span>
-          </div>
-        </UnderlyingStatsDashboardCard>
-
-        <UnderlyingStatsDashboardCard
-          className={styles.moversCard}
-          kicker="Movement"
-          title="Team movers"
-          info="Movement compares the current rating with the team's recent snapshot baseline."
-          description="Recent rating movement with the existing reasons and profile tags."
-          actions={<span className={styles.windowBadge}>Recent snapshots</span>}
-        >
-          <div className={styles.mobileMoverToggle} role="tablist" aria-label="Mover direction">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mobileMoverLane === "rising"}
-              onClick={() => setMobileMoverLane("rising")}
-            >
-              Rising
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mobileMoverLane === "sliding"}
-              onClick={() => setMobileMoverLane("sliding")}
-            >
-              Sliding
-            </button>
-          </div>
-          <div className={styles.moverLanes}>
-            {renderMoverLane("rising", dashboard.risers)}
-            {renderMoverLane("sliding", dashboard.fallers)}
-          </div>
-        </UnderlyingStatsDashboardCard>
-      </section>
+      <UnderlyingStatsNavBar pinnedTeamId={pinnedTeamId} />
 
       <UnderlyingStatsDashboardCard
         className={styles.powerLeadersPanel}
@@ -573,195 +413,116 @@ export default function UnderlyingStatsDashboard({
         </div>
       </UnderlyingStatsDashboardCard>
 
-      <section className={styles.signalGrid} aria-label="Decision signals">
-        <UnderlyingStatsDashboardCard
-          className={styles.whatLooksReal}
-          title="What looks real?"
-          info="Compares underlying process with finishing, goaltending, and puck-luck context."
-          description="Separate process-backed strength from heat checks and rebound candidates."
+      <div className={styles.workspaceTabs} role="tablist" aria-label="Primary analytics views">
+        <button
+          ref={rankingsTabRef}
+          id="rankings-tab"
+          type="button"
+          role="tab"
+          aria-controls="rankings-panel"
+          aria-selected={activeWorkspace === "rankings"}
+          tabIndex={activeWorkspace === "rankings" ? 0 : -1}
+          onClick={() => setActiveWorkspace("rankings")}
+          onKeyDown={handleWorkspaceKeyDown}
         >
-          <div className={styles.trustGrid}>
-            {renderTrustGroup(
-              "Process-backed",
-              "processBacked",
-              dashboard.sustainability.processBacked
-            )}
-            {renderTrustGroup(
-              "Heat check",
-              "heatCheck",
-              dashboard.sustainability.heatCheck
-            )}
-            {renderTrustGroup("Buy low", "buyLow", dashboard.sustainability.buyLow)}
-          </div>
-        </UnderlyingStatsDashboardCard>
-
-        <UnderlyingStatsDashboardCard
-          className={styles.underRadar}
-          title="Under the radar"
-          info="Highlights the largest gaps between underlying and actual goal margins."
-          description="Where results and process disagree."
+          Team Rankings
+        </button>
+        <button
+          ref={chartTabRef}
+          id="chart-tab"
+          type="button"
+          role="tab"
+          aria-controls="chart-panel"
+          aria-selected={activeWorkspace === "chart"}
+          tabIndex={activeWorkspace === "chart" ? 0 : -1}
+          onClick={() => setActiveWorkspace("chart")}
+          onKeyDown={handleWorkspaceKeyDown}
         >
-          <div className={styles.radarGrid}>
-            {renderInefficiencyGroup(
-              "Undervalued",
-              "undervalued",
-              dashboard.inefficiency.undervalued
-            )}
-            {renderInefficiencyGroup(
-              "Overvalued",
-              "overvalued",
-              dashboard.inefficiency.overvalued
-            )}
-          </div>
-        </UnderlyingStatsDashboardCard>
-
-        <UnderlyingStatsDashboardCard
-          className={styles.schedulePanel}
-          title="Schedule texture"
-          info="Upcoming game density, back-to-backs, compressed stretches, rest, and venue balance."
-          description="The most notable upcoming schedule contexts."
-        >
-          {dashboard.context.length ? (
-            <div className={styles.scheduleTableWrap}>
-              <table
-                className={styles.scheduleTable}
-                aria-label="Schedule texture overview"
-              >
-                <thead>
-                  <tr>
-                    <th scope="col">Team</th>
-                    <th scope="col">7D G</th>
-                    <th scope="col">B2B</th>
-                    <th scope="col">3 in 4</th>
-                    <th scope="col">Rest</th>
-                    <th scope="col">H/R</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dashboard.context.slice(0, 5).map((item) => {
-                    const rating = ratings.find(
-                      (team) => team.teamAbbr === item.teamAbbr
-                    );
-                    const texture = rating?.scheduleTexture;
-                    const restDelta = texture
-                      ? texture.restAdvantageGamesNext14 -
-                        texture.restDisadvantageGamesNext14
-                      : null;
-                    const venue = texture
-                      ? texture.homeGamesNext14 >= texture.roadGamesNext14 + 2
-                        ? "Home"
-                        : texture.roadGamesNext14 >= texture.homeGamesNext14 + 2
-                          ? "Road"
-                          : "Even"
-                      : "—";
-
-                    return (
-                      <tr
-                        key={`schedule-${item.teamAbbr}`}
-                        className={
-                          activeTeamAbbr === item.teamAbbr
-                            ? styles.scheduleRowActive
-                            : ""
-                        }
-                      >
-                        <td>
-                          <button
-                            type="button"
-                            className={styles.scheduleTeamButton}
-                            aria-label={`Pin ${item.teamName}`}
-                            aria-pressed={pinnedTeamAbbr === item.teamAbbr}
-                            onClick={() => onTeamPin(item.teamAbbr)}
-                            onFocus={() => onTeamPreview(item.teamAbbr)}
-                            onBlur={() => onTeamPreview(null)}
-                            onMouseEnter={() => onTeamPreview(item.teamAbbr)}
-                            onMouseLeave={() => onTeamPreview(null)}
-                            title={item.note}
-                          >
-                            <TeamLogo teamAbbr={item.teamAbbr} size={22} />
-                            <span>
-                              <strong>{item.teamAbbr}</strong>
-                              <small>{item.power.toFixed(1)}</small>
-                            </span>
-                          </button>
-                        </td>
-                        <td>{texture?.gamesNext7 ?? "—"}</td>
-                        <td>{texture?.backToBacksNext14 ?? "—"}</td>
-                        <td>{texture?.threeInFourNext14 ?? "—"}</td>
-                        <td>
-                          {restDelta == null
-                            ? "—"
-                            : restDelta > 0
-                              ? `+${restDelta}`
-                              : restDelta}
-                        </td>
-                        <td>{venue}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className={styles.inlineEmpty}>
-              No standout schedule context is available.
-            </p>
-          )}
-        </UnderlyingStatsDashboardCard>
-      </section>
-
-      <section className={styles.utilityGrid} aria-label="Dashboard utilities">
-        <UnderlyingStatsDashboardCard
-          className={styles.explorerPanel}
-          title="Explorer paths"
-          description="Open the right detail surface with pinned team context."
-        >
-          <div className={styles.utilityList}>
-            {EXPLORER_CONTRACTS.map((surface) => (
-              <Link
-                key={surface.id}
-                href={
-                  pinnedTeamId == null
-                    ? surface.href
-                    : { pathname: surface.href, query: { teamId: pinnedTeamId } }
-                }
-                className={styles.utilityLink}
-              >
+          Chart
+        </button>
+      </div>
+      <div id="rankings-panel" role="tabpanel" aria-labelledby="rankings-tab" hidden={activeWorkspace !== "rankings"}>
+        {children}
+      </div>
+      <div id="chart-panel" role="tabpanel" aria-labelledby="chart-tab" hidden={activeWorkspace !== "chart"}>
+        {activeWorkspace === "chart" ? (
+          <section className={styles.primaryWorkspace} aria-label="Primary analytics">
+            <UnderlyingStatsDashboardCard
+              className={styles.quadrantCard}
+              kicker="League map"
+              title="Process quadrant"
+              info="Offensive process combines expected-goal and shot generation. Defensive process rewards suppressing those same inputs."
+              description="Offensive process on the x-axis and defensive process on the y-axis. Preview a team, then pin it for cross-dashboard context."
+              actions={
+                <div className={styles.cardMeta}>
+                  <span>{selectedDate ? formatDateLabel(selectedDate) : "Latest"}</span>
+                  {activeTeam ? (
+                    <strong>
+                      {activeTeam.teamAbbr} · {computeTeamPowerScore(activeTeam).toFixed(1)}
+                    </strong>
+                    ) : null}
+                </div>
+              }
+            >
+              {dashboard.quadrant.points.length ? (
+                <UnderlyingStatsQuadrantMap
+                  activeTeamAbbr={activeTeamAbbr}
+                  pinnedTeamAbbr={pinnedTeamAbbr}
+                  averageDefenseProcess={dashboard.quadrant.averageDefenseProcess}
+                  averageOffenseProcess={dashboard.quadrant.averageOffenseProcess}
+                  onTeamPin={onTeamPin}
+                  onTeamPreview={onTeamPreview}
+                  points={dashboard.quadrant.points}
+                />
+              ) : (
+                <p className={styles.moduleEmpty}>
+                  No quadrant data is available for this snapshot.
+                </p>
+              )}
+              <div className={styles.chartFooter}>
                 <span>
-                  <strong>{surface.shortLabel}</strong>
-                  <small>{EXPLORER_DESCRIPTIONS[surface.id]}</small>
+                  League avg · offense {dashboard.quadrant.averageOffenseProcess.toFixed(2)} · defense{" "}
+                  {dashboard.quadrant.averageDefenseProcess.toFixed(2)}
                 </span>
-                <span>Open →</span>
-              </Link>
-            ))}
-          </div>
-        </UnderlyingStatsDashboardCard>
+                <span>{selectedDate ? `Snapshot ${formatDateLabel(selectedDate)}` : "Latest snapshot"}</span>
+              </div>
+            </UnderlyingStatsDashboardCard>
 
-        <UnderlyingStatsDashboardCard
-          className={styles.readinessPanel}
-          title="Data readiness"
-          description="Availability for the datasets that power this route family."
-        >
-          <UlsStatusPanel status={routeStatus} variant="landing" />
-        </UnderlyingStatsDashboardCard>
+            <UnderlyingStatsDashboardCard
+              className={styles.moversCard}
+              kicker="Movement"
+              title="Team movers"
+              info="Movement compares the current rating with the team's recent snapshot baseline."
+              description="Recent rating movement with the existing reasons and profile tags."
+              actions={<span className={styles.windowBadge}>Recent snapshots</span>}
+            >
+              <div className={styles.mobileMoverToggle} role="tablist" aria-label="Mover direction">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mobileMoverLane === "rising"}
+                  onClick={() => setMobileMoverLane("rising")}
+                >
+                  Rising
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mobileMoverLane === "sliding"}
+                  onClick={() => setMobileMoverLane("sliding")}
+                >
+                  Sliding
+                </button>
+              </div>
+              <div className={styles.moverLanes}>
+                {renderMoverLane("rising", dashboard.risers)}
+                {renderMoverLane("sliding", dashboard.fallers)}
+              </div>
+            </UnderlyingStatsDashboardCard>
+          </section>
 
-        <UnderlyingStatsDashboardCard
-          className={styles.continuePanel}
-          title="Continue your analysis"
-          description="Carry the team read into the next workflow."
-        >
-          <div className={styles.utilityList}>
-            {UNDERLYING_STATS_SURFACE_LINKS.map((link) => (
-              <Link key={link.href} href={link.href} className={styles.utilityLink}>
-                <span>
-                  <strong>{link.label}</strong>
-                  <small>{link.description}</small>
-                </span>
-                <span aria-hidden="true">→</span>
-              </Link>
-            ))}
-          </div>
-        </UnderlyingStatsDashboardCard>
-      </section>
+        ) : null}
+      </div>
     </>
   );
 }

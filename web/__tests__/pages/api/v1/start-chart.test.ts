@@ -46,6 +46,7 @@ function createQueryBuilder(resolver: () => QueryResult) {
       eqMock(...args);
       return builder;
     },
+    or() { return builder; },
     in() {
       return builder;
     },
@@ -280,16 +281,28 @@ describe("/api/v1/start-chart", () => {
           nhl_player_id: "2",
           yahoo_player_id: "20",
         },
+        {
+          nhl_player_id: "3",
+          yahoo_player_id: "465.p.6743",
+          yahoo_team: "EDM",
+        },
+        {
+          nhl_player_id: "3",
+          yahoo_player_id: "477.p.6743",
+          yahoo_team: "EDM",
+        },
       ],
       new Map([
         [8478427, "CAR"],
         [1, null],
         [2, "MTL"],
+        [3, "EDM"],
       ]),
     );
 
     expect(mapped.get(8478427)).toBe(6777);
     expect(mapped.get(2)).toBe(20);
+    expect(mapped.get(3)).toBe(6743);
     expect(mapped.has(1)).toBe(false);
     expect(ambiguousPlayerIds).toEqual(new Set([1]));
   });
@@ -637,6 +650,26 @@ describe("/api/v1/start-chart", () => {
     const invalid = createMockRes();
     await handler({ method: "POST", query: {}, body: { profile: { skater: { FACEOFFS_WON: 1 } } } } as any, invalid);
     expect(invalid.statusCode).toBe(422);
+  });
+
+  it.each([false, true])("uses completed games and ignores unplayed playoff schedule rows (missing=%s)", async (missing) => {
+    const original = fromMock.getMockImplementation()!;
+    fromMock.mockImplementation((table: string) => {
+      if (table === "pbp_games") return createQueryBuilder(() => ({ error: null, data: [...(missing ? [] : [{
+        id: 999, season: "20252026", type: 2, date: "2026-02-06",
+        hometeamid: 10, awayteamid: 8, hometeamscore: 4, awayteamscore: 2,
+      }]), { id: 998, season: "20252026", type: 2, date: "2026-02-05",
+        hometeamid: 10, awayteamid: 8, hometeamscore: 0, awayteamscore: 0 }] }));
+      return original(table);
+    });
+    vi.resetModules();
+    const { default: handler } = await import("../../../../pages/api/v1/start-chart");
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.recentGoals.source).toBe("nhl_final_scores");
+    expect(res.body.recentGoals.teams.find((team: any) => team.team === "MTL").games).toEqual(missing ? [] : [{ date: "2026-02-06", goalsFor: 2, goalsAgainst: 4 }]);
+    expect(eqMock).toHaveBeenCalledWith("season", "20252026");
   });
 
   it("reads skaters through the exact FORGE run and exposes canonical-source metadata", async () => {

@@ -1,426 +1,236 @@
-// /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/Layout/Header/Header.tsx
-
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import classNames from "classnames";
 import { useRouter } from "next/router";
-
-import useHideableNavbar from "hooks/useHideableNavbar";
 import MobileMenu from "components/Layout/MobileMenu";
 import NavbarItems from "components/Layout/NavbarItems";
 import ITEMS_DATA, {
-  MOBILE_PRIMARY_NAVIGATION_ITEMS,
+  isNavigationLinkActive,
+  MOBILE_NAVIGATION_GROUPS,
+  NAVIGATION_LINKS,
+  SUPPORT_URL,
 } from "components/Layout/NavbarItems/NavbarItemsData";
-import ClientOnly from "components/ClientOnly";
-import SocialMedias from "components/SocialMedias";
 import AuthModal from "components/auth/AuthModal";
 import UserMenu from "components/auth/UserMenu";
 import { useAuth } from "contexts/AuthProviderContext";
-
+import NavigationIcon from "../NavigationIcon";
 import styles from "./Header.module.scss";
 import LOGO from "public/pictures/FHFHonly.png";
 import UNDERLYING_STATS_LOGO from "public/pictures/ULSlogo.png";
-//         src="/pictures/logo-fhfh.svg"
-
-// Bottom Navigation Items
-const BOTTOM_NAV_ITEMS = [
-  ...["/", "/game-grid", "/stats"].map(
-    (href) =>
-      MOBILE_PRIMARY_NAVIGATION_ITEMS.find((item) => item.href === href)!,
-  ),
-  {
-    id: "tools",
-    label: "Tools",
-    href: "#",
-    icon: "/pictures/playersTable.png",
-  },
-  {
-    id: "more",
-    label: "More",
-    href: "#",
-    icon: "/pictures/hamburgerMenu.png",
-  },
-];
 
 function BottomNavigation({
-  onMoreClick,
   onToolsClick,
+  onMoreClick,
 }: {
-  onMoreClick: () => void;
   onToolsClick: () => void;
+  onMoreClick: () => void;
 }) {
-  const router = useRouter();
-  const [offset, setOffset] = useState(0);
-  const [supportsDynamicVH, setSupportsDynamicVH] = useState(false);
-
-  // Fallback for browsers that don't fully support CSS dynamic viewport units
-  // Listen to visualViewport changes and adjust translateY so the nav clamps
-  // to the visible bottom when URL bars expand/collapse.
+  const { pathname } = useRouter();
+  const [hidden, setHidden] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const supports =
-      typeof CSS !== "undefined" && CSS.supports?.("height: 100dvh");
-    setSupportsDynamicVH(!!supports);
-    // Use visualViewport (when available) to compute a tiny runtime offset that
-    // nudges the bar exactly flush with the visible bottom. We do this even when
-    // dvh is supported, as Safari sometimes leaves a fractional gap due to rounding.
-    const vv = (window as any).visualViewport as VisualViewport | undefined;
-    if (!vv) return;
-
-    const handler = () => {
-      const bottomInset =
-        (window as any).innerHeight - vv.height - vv.offsetTop;
-      // ceil to avoid tiny fractional gaps from subpixel rounding
-      setOffset(Math.max(0, Math.ceil(bottomInset)));
+    setHidden(false);
+    let previous = window.scrollY;
+    const onScroll = () => {
+      const next = Math.max(0, window.scrollY);
+      if (next <= 24) setHidden(false);
+      else if (Math.abs(next - previous) < 8) return;
+      else
+        setHidden(
+          next > previous && !navRef.current?.contains(document.activeElement),
+        );
+      previous = next;
     };
-    handler();
-    vv.addEventListener("resize", handler);
-    vv.addEventListener("scroll", handler);
-    window.addEventListener("orientationchange", handler);
-    return () => {
-      vv.removeEventListener("resize", handler);
-      vv.removeEventListener("scroll", handler);
-      window.removeEventListener("orientationchange", handler);
-    };
-  }, []);
-
-  const handleNavClick = (item: (typeof BOTTOM_NAV_ITEMS)[0]) => {
-    if (item.id === "tools") {
-      onToolsClick();
-      return;
-    }
-    if (item.id === "more") {
-      onMoreClick();
-    }
-    // For other items, Link component handles navigation
-  };
-
-  const isActive = (href: string) => {
-    if (href === "/") {
-      return router.pathname === "/";
-    }
-    return router.pathname.startsWith(href);
-  };
-
-  // Inline style drives a CSS custom property used by the CSS transform when dvh is supported.
-  const navStyle: React.CSSProperties | undefined = supportsDynamicVH
-    ? // dvh path: expose --vv-offset to CSS so it can add a tiny nudge if needed
-      ({ ["--vv-offset" as any]: `${Math.max(0, offset)}px` } as any)
-    : // no-dvh path: directly translate by the computed offset
-      offset
-      ? { transform: `translateY(-${offset}px)` }
-      : undefined;
-
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [pathname]);
+  const toolsActive = MOBILE_NAVIGATION_GROUPS.find(
+    (group) => group.id === "tools",
+  )!.groups.some((group) =>
+    group.items.some(
+      (link) =>
+        link.href !== "/game-grid" &&
+        isNavigationLinkActive(pathname, link.href),
+    ),
+  );
   return (
     <nav
-      className={styles.bottomNav}
-      style={navStyle}
+      ref={navRef}
       aria-label="Primary mobile navigation"
+      className={classNames(styles.bottomNav, {
+        [styles.bottomNavHidden]: hidden,
+      })}
+      onFocus={() => setHidden(false)}
     >
-      <div className={styles.bottomNavContainer}>
-        {BOTTOM_NAV_ITEMS.map((item) => (
-          <div key={item.id} className={styles.bottomNavItem}>
-            {item.id === "more" || item.id === "tools" ? (
-              <button
-                onClick={() => handleNavClick(item)}
-                className={classNames(
-                  styles.bottomNavButton,
-                  item.id === "more" ? styles.moreButton : undefined,
-                )}
-                aria-label={item.label}
-              >
-                <div className={styles.bottomNavIcon}>
-                  <Image
-                    src={item.icon}
-                    alt={item.label}
-                    width={20}
-                    height={20}
-                  />
-                </div>
-                <span className={styles.bottomNavLabel}>{item.label}</span>
-              </button>
-            ) : (
-              <Link
-                href={item.href}
-                className={classNames(styles.bottomNavButton, {
-                  [styles.active]: isActive(item.href),
-                })}
-              >
-                <div className={styles.bottomNavIcon}>
-                  <Image
-                    src={item.icon}
-                    alt={item.label}
-                    width={20}
-                    height={20}
-                  />
-                </div>
-                <span className={styles.bottomNavLabel}>{item.label}</span>
-              </Link>
-            )}
-          </div>
-        ))}
-      </div>
+      {[
+        NAVIGATION_LINKS.home,
+        NAVIGATION_LINKS.gameGrid,
+        NAVIGATION_LINKS.stats,
+      ].map((item) => (
+        <Link
+          key={item.href}
+          href={item.href}
+          className={styles.bottomNavButton}
+          aria-current={
+            isNavigationLinkActive(pathname, item.href) ? "page" : undefined
+          }
+        >
+          <NavigationIcon name={item.icon} />
+          <span>{item.label}</span>
+        </Link>
+      ))}
+      <button
+        type="button"
+        className={classNames(styles.bottomNavButton, {
+          [styles.active]: toolsActive,
+        })}
+        onClick={onToolsClick}
+        aria-haspopup="dialog"
+      >
+        <NavigationIcon name="tools" />
+        <span>Tools</span>
+      </button>
+      <button
+        type="button"
+        className={styles.bottomNavButton}
+        onClick={onMoreClick}
+        aria-haspopup="dialog"
+      >
+        <NavigationIcon name="menu" />
+        <span>Menu</span>
+      </button>
     </nav>
   );
 }
 
-function BurgerButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button className={styles.burgerButton} onClick={onClick}>
-      <Image src="/pictures/burgerMenu.svg" alt="menu" width={24} height={16} />
-    </button>
-  );
-}
-
 function Header() {
-  const [supportCountDate, setSupportCountDate] = useState("");
-  useEffect(() => {
-    // BMC caches generated count images for a year; use a fresh URL each UTC day.
-    const refreshDate = () => setSupportCountDate(new Date().toISOString().slice(0, 10));
-    refreshDate();
-    const timer = window.setInterval(refreshDate, 60_000);
-    return () => window.clearInterval(timer);
-  }, []);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuEntryPoint, setMenuEntryPoint] = useState<
     "default" | "tools" | "search"
   >("default");
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const { navbarRef, isNavbarVisible } = useHideableNavbar();
   const router = useRouter();
   const { user, isLoading, signOut } = useAuth();
   const isUnderlyingStatsRoute =
     router.pathname.startsWith("/underlying-stats");
-
-  // When taking automated screenshots, append ?isScreenshot=1 to the URL
-  // to hide mobile-only UI like the bottom nav. This avoids layout overlays
-  // regardless of viewport size the screenshot tool uses.
-  const isScreenshot = (() => {
-    const q = router?.query ?? {};
-    const raw = (q.isScreenshot || q.screenshot || q.capture) as
-      | string
-      | string[]
-      | undefined;
-    const val = Array.isArray(raw) ? raw[0] : raw;
-    return val === "1" || val === "true";
-  })();
-
-  const onItemClick = () => {
-    setTimeout(() => {
-      setMenuOpen(false);
-    }, 200);
-  };
-
-  const handleMobileAuthClick = () => {
-    setMenuOpen(false);
-    setAuthModalOpen(true);
-  };
-
-  const handleMobileSignOut = async () => {
-    setMenuOpen(false);
-    await signOut();
-  };
-
+  const rawScreenshot =
+    router.query?.isScreenshot ||
+    router.query?.screenshot ||
+    router.query?.capture;
+  const screenshot = Array.isArray(rawScreenshot)
+    ? rawScreenshot[0]
+    : rawScreenshot;
+  const isScreenshot = screenshot === "1" || screenshot === "true";
+  const onItemClick = useCallback(() => setMenuOpen(false), []);
   const openMobileMenu = (entryPoint: "default" | "tools" | "search") => {
     setMenuEntryPoint(entryPoint);
     setMenuOpen(true);
   };
+  const handleMobileAuthClick = () => {
+    setMenuOpen(false);
+    setAuthModalOpen(true);
+  };
+  const handleMobileSignOut = async () => {
+    await signOut();
+    setMenuOpen(false);
+  };
 
   return (
     <>
-      {/* Desktop Header */}
       <header
-        ref={navbarRef}
-        className={classNames(styles.header, styles.desktopHeader, {
-          [styles.wigoHeader]: router.pathname === "/wigoCharts",
-          [styles.hidden]: menuOpen ? false : !isNavbarVisible,
+        className={classNames(styles.desktopHeader, {
+          [styles.underlyingStats]: isUnderlyingStatsRoute,
         })}
       >
-        {/* logo */}
-        <Link
-          href="/"
-          className={classNames(styles.logo, {
-            [styles.underlyingStatsLogo]: isUnderlyingStatsRoute,
-          })}
-        >
-          {/* Main Logo Image */}
+        <Link href="/" className={styles.logo} aria-label="FHFH home">
           <Image
             src={isUnderlyingStatsRoute ? UNDERLYING_STATS_LOGO : LOGO}
-            alt={isUnderlyingStatsRoute ? "Underlying Stats logo" : "FHFH logo"}
-            width={isUnderlyingStatsRoute ? 194 : 118}
-            height={isUnderlyingStatsRoute ? 29 : 34}
+            alt={isUnderlyingStatsRoute ? "Underlying Stats" : "FHFH"}
+            width={isUnderlyingStatsRoute ? 154 : 106}
+            height={32}
             priority
           />
-          {!isUnderlyingStatsRoute ? (
-            <span className={styles.logoSubline}>Hockey Analytics</span>
-          ) : null}
+          {!isUnderlyingStatsRoute && <span>Hockey Analytics</span>}
         </Link>
-
-        {/* nav bar items */}
-        <ClientOnly className={styles.nav}>
-          <NavbarItems
-            items={ITEMS_DATA}
-            onItemClick={onItemClick}
-            forceLarge
-            className={
-              isUnderlyingStatsRoute
-                ? styles.underlyingStatsNavTheme
-                : undefined
-            }
-          />
-        </ClientOnly>
-
-        {/* social medias */}
-        <div className={styles.socials}>
-          <SocialMedias
-            className={
-              isUnderlyingStatsRoute
-                ? styles.underlyingStatsSocialsTheme
-                : undefined
-            }
-          />
-        </div>
-
-        {/* Buy Me a Coffee */}
-        <div
-          className={classNames(styles.bmcWrap, {
-            [styles.underlyingStatsBmcWrap]: isUnderlyingStatsRoute,
-          })}
-        >
+        <NavbarItems items={ITEMS_DATA} onItemClick={onItemClick} />
+        <div className={styles.utilities}>
+          <button
+            type="button"
+            className={styles.utility}
+            onClick={() => openMobileMenu("search")}
+            aria-label="Search players"
+            aria-haspopup="dialog"
+          >
+            <NavigationIcon name="search" />
+            <span>Search players</span>
+          </button>
           <a
-            href="https://www.buymeacoffee.com/tjsusername"
+            className={styles.utility}
+            href={SUPPORT_URL}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Buy me a coffee"
+            aria-label="Support FHFH"
           >
-            <img
-              src={`https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=${
-                isUnderlyingStatsRoute ? "DBA507" : "07aae2"
-              }&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00${supportCountDate ? `&v=${supportCountDate}` : ""}`}
-              alt="Buy me a coffee"
-            />
+            <NavigationIcon name="heart" />
+            <span>Support</span>
           </a>
+          {!user && !isLoading ? (
+            <button
+              type="button"
+              className={styles.authCta}
+              onClick={() => setAuthModalOpen(true)}
+            >
+              Sign In / Sign Up
+            </button>
+          ) : user ? (
+            <UserMenu />
+          ) : (
+            <div className={styles.authPlaceholder} aria-hidden="true" />
+          )}
         </div>
-
-        {!user && !isLoading ? (
-          <button
-            type="button"
-            className={classNames(styles.authCta, {
-              [styles.underlyingStatsAuthCta]: isUnderlyingStatsRoute,
-            })}
-            onClick={() => setAuthModalOpen(true)}
-          >
-            Sign In / Sign Up
-          </button>
-        ) : user ? (
-          <UserMenu />
-        ) : (
-          <div className={styles.authCtaPlaceholder} aria-hidden="true" />
-        )}
-
-        {/* burger menu - mobile only (fallback) */}
-        {!menuOpen ? (
-          <BurgerButton
-            onClick={() => {
-              setMenuOpen(true);
-            }}
-          />
-        ) : (
-          <button
-            type="button"
-            className={styles.menuToggleButton}
-            onClick={() => setMenuOpen(false)}
-          >
-            <Image
-              src="/pictures/close.svg"
-              alt="close menu"
-              width={22}
-              height={22}
-            />
-          </button>
-        )}
       </header>
-
       <header className={styles.mobileHeader}>
         <button
           type="button"
           className={styles.mobileHeaderAction}
           onClick={() => openMobileMenu("default")}
           aria-label="Open menu"
+          aria-haspopup="dialog"
         >
-          <Image
-            src="/pictures/burgerMenu.svg"
-            alt=""
-            width={22}
-            height={16}
-          />
+          <NavigationIcon name="menu" />
         </button>
-        <Link href="/" className={styles.mobileHeaderLogo} aria-label="FHFH home">
-          <Image
-            src="/pictures/fhfhMobileHeaderLogo.png"
-            alt="FHFH Hockey Analytics"
-            width={1536}
-            height={1024}
-            priority
-          />
+        <Link href="/" className={styles.mobileLogo} aria-label="FHFH home">
+          <Image src={LOGO} alt="FHFH" width={88} height={28} priority />
         </Link>
         <button
           type="button"
           className={styles.mobileHeaderAction}
           onClick={() => openMobileMenu("search")}
           aria-label="Search players"
+          aria-haspopup="dialog"
         >
-          <svg
-            width="21"
-            height="21"
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path
-              d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-          </svg>
+          <NavigationIcon name="search" />
         </button>
       </header>
-
-      {/* Mobile Bottom Navigation (hidden during screenshots via ?isScreenshot=1) */}
       {!isScreenshot && (
-        <ClientOnly>
-          <div className={styles.mobileNavWrapper}>
-            <BottomNavigation
-              onToolsClick={() => openMobileMenu("tools")}
-              onMoreClick={() => openMobileMenu("default")}
-            />
-          </div>
-        </ClientOnly>
+        <BottomNavigation
+          onToolsClick={() => openMobileMenu("tools")}
+          onMoreClick={() => openMobileMenu("default")}
+        />
       )}
-
-      <ClientOnly>
-        <MobileMenu
-          visible={menuOpen}
-          entryPoint={menuEntryPoint}
-          onItemClick={onItemClick}
-          onAuthClick={handleMobileAuthClick}
-          onSignOut={handleMobileSignOut}
-          accountUser={user}
-          showAccountControls={Boolean(user) && !isLoading}
-          showAuthButton={!user && !isLoading}
-        />
-      </ClientOnly>
-
-      <ClientOnly>
-        <AuthModal
-          open={authModalOpen}
-          onClose={() => setAuthModalOpen(false)}
-        />
-      </ClientOnly>
+      <MobileMenu
+        visible={menuOpen}
+        entryPoint={menuEntryPoint}
+        onItemClick={onItemClick}
+        onAuthClick={handleMobileAuthClick}
+        onSignOut={handleMobileSignOut}
+        accountUser={user}
+        showAccountControls={Boolean(user) && !isLoading}
+        showAuthButton={!user && !isLoading}
+      />
+      <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
     </>
   );
 }
-
 export default Header;

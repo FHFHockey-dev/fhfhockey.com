@@ -109,25 +109,32 @@ async function updateBoundedSchedule(req: NextApiRequest & { supabase: typeof su
   } finally { clearTimeout(timer); }
 }
 
+async function getScheduleSeasonId(): Promise<number> {
+  const current = await getCurrentSeason();
+  const endDate = current.seasonEndDate?.slice(0, 10);
+  if (!endDate || endDate >= new Date().toISOString().slice(0, 10)) return current.seasonId;
+
+  // The next season's preseason starts before its recorded season start date.
+  const { data, error } = await supabase.from("seasons").select("id")
+    .gt("id", current.seasonId).order("id", { ascending: true }).limit(1);
+  if (error || !data?.[0]?.id) throw new Error("Upcoming schedule season is unavailable");
+  return data[0].id;
+}
+
 export default withCronJobAudit(adminOnly(async (req, res) => {
   if (req.query.mode !== undefined || req.body?.date !== undefined || req.body?.gameIds !== undefined || req.body?.dryRun !== undefined) {
     if (req.query.mode !== "bounded_slate") return res.status(400).json({ success: false, message: "Unknown schedule ingestion mode" });
     return updateBoundedSchedule(req, res);
   }
   const { supabase } = req;
-  let season = { seasonId: 0 };
-  if (req.query.seasonId) {
-    const seasonId = Number(req.query.seasonId);
-    season.seasonId = seasonId;
-  } else {
-    season = await getCurrentSeason();
-  }
   try {
-    const teams = (await getAllTeams(season.seasonId)) ?? [];
+    const seasonId = req.query.seasonId ? Number(req.query.seasonId) : await getScheduleSeasonId();
+    if (!Number.isSafeInteger(seasonId) || seasonId <= 0) throw new Error("Invalid schedule season");
+    const teams = (await getAllTeams(seasonId)) ?? [];
     const taskResults = await Promise.allSettled(
       teams.map(async (team) => ({
         abbreviation: team.abbreviation,
-        games: await getGamesByTeam(team.abbreviation, season.seasonId)
+        games: await getGamesByTeam(team.abbreviation, seasonId)
       }))
     );
     const failedTeams: Array<{ abbreviation: string; message: string }> = [];
@@ -172,7 +179,7 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
         games.map((game: any) => ({
           id: game.id,
           date: game.gameDate,
-          seasonId: season.seasonId,
+          seasonId,
           startTime: game.startTimeUTC,
           type: game.gameType,
           homeTeamId: game.homeTeam.id,
@@ -184,7 +191,7 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
     res.status(200).json({
       message:
         "Successfully updated the games table. " +
-        `${games.length} games in ${season.seasonId}.`,
+        `${games.length} games in ${seasonId}.`,
       success: true,
       partialFailures: failedTeams.length,
       warnings:

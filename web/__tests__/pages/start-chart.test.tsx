@@ -1,4 +1,5 @@
 import React from "react";
+import { selectTeamFormGames, summarizeTeamForm } from "lib/projections/startChartTeamForm";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildBoardValidationDisclosure } from "lib/projections/starterBoardValidation";
@@ -201,6 +202,10 @@ vi.mock("swr", () => ({
 }));
 
 vi.mock("recharts", () => ({
+  BarChart: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  Bar: () => null,
+  CartesianGrid: () => null,
+  Legend: () => null,
   LineChart: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   Line: () => null,
   ReferenceLine: () => null,
@@ -391,6 +396,44 @@ describe("StartChartPage", () => {
     expect(screen.getByText(/Uncertainty ranges remain withheld until evaluated/)).toBeTruthy();
   });
 
+  it("uses official images with stable placeholder and logo fallbacks", () => {
+    swrState.data = { ...buildApiData(), players: [player()] };
+    render(<StartChartPage />);
+    const headshot = screen.getByRole("img", { name: "Nick Suzuki headshot" });
+    expect(headshot.getAttribute("src")).toContain("assets.nhle.com/mugs/nhl/latest/");
+    fireEvent.error(headshot);
+    expect(headshot.getAttribute("src")).toContain("cms.nhl.bamgrid.com");
+    fireEvent.error(headshot);
+    expect(headshot.getAttribute("src")).toBe("/pictures/player-placeholder.jpg");
+    const logo = screen.getByRole("img", { name: "MTL logo" });
+    fireEvent.error(logo);
+    expect(logo.getAttribute("src")).toBe("/teamLogos/FHFH.png");
+    fireEvent.error(headshot);
+    expect(screen.getByRole("img", { name: "Nick Suzuki headshot unavailable" })).toBeTruthy();
+  });
+
+  it("shows the publication time rather than a run UUID and opens real mobile settings", () => {
+    swrState.data = buildApiData();
+    render(<StartChartPage />);
+    expect(screen.getByText("Feb 7, 7:00 AM EST")).toBeTruthy();
+    expect(screen.queryByText("Up to date")).toBeNull();
+    Element.prototype.scrollIntoView = vi.fn();
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(document.getElementById("board-settings")?.hasAttribute("open")).toBe(true);
+  });
+
+  it("changes the goals calculation with the selected window and reports missing teams", () => {
+    swrState.data = { ...buildApiData(), recentGoals: { seasonId: 20252026, beforeDate: "2026-02-07", source: "nhl_final_scores", teams: [
+      { team: "MTL", games: Array.from({ length: 10 }, (_, i) => ({ date: `2026-01-${20 - i}`, goalsFor: i < 5 ? 4 : 2, goalsAgainst: 1 })) },
+      { team: "TOR", games: [] },
+    ] } };
+    render(<StartChartPage />);
+    expect(screen.getByRole("img", { name: /Goals per game: MTL, 10 games, GF 3.00/ })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Team form window"), { target: { value: "5" } });
+    expect(screen.getByRole("img", { name: /Goals per game: MTL, 5 games, GF 4.00/ })).toBeTruthy();
+    expect(screen.getByText(/TOR: unavailable/)).toBeTruthy();
+  });
+
   it("rebrands CTPI as plain-language recent team form", () => {
     swrState.data = {
       ...buildApiData(),
@@ -521,12 +564,21 @@ describe("StartChartPage", () => {
 
     render(<StartChartPage />);
 
-    expect(screen.getByText("#1 Nick Suzuki")).toBeTruthy();
+    expect(screen.getAllByRole("link", { name: "Nick Suzuki" })[0]).toBeTruthy();
+    expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["LW0", "RW0", "C2", "D0", "G0"]);
+    const games = screen.getByRole("region", { name: "Games on this slate" });
+    const controls = screen.getByRole("region", { name: "Starter Board controls" });
+    expect(games.compareDocumentPosition(controls) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("link", { name: /View Full Schedule/ }).getAttribute("href")).toBe("/game-grid/7-Day-Forecast");
     const gameFilter = screen.getByRole("button", {
       name: /MTL at TOR; apply game filter/,
     });
     fireEvent.click(gameFilter);
-    expect(screen.queryByText("WPG vs COL")).toBeNull();
+    expect(gameFilter.textContent).toContain("Selected");
+    expect(screen.getAllByRole("link", { name: "Nick Suzuki" })).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Clear game filter" }));
+    expect(screen.getAllByRole("link", { name: "Nick Suzuki" })).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: /MTL at TOR; apply game filter/ }));
     const teamHref = screen.getByRole("link", { name: "MTL" }).getAttribute("href");
     expect(teamHref).toContain("/forge/team/MTL");
     expect(teamHref).toContain("date=2026-02-07");
@@ -542,7 +594,7 @@ describe("StartChartPage", () => {
     });
     expect(routerState.router.replace).toHaveBeenCalledWith(
       expect.objectContaining({
-        query: expect.objectContaining({ position: "LW" }),
+        query: expect.objectContaining({ position: "D" }),
       }),
       undefined,
       { shallow: true },
@@ -560,13 +612,17 @@ describe("StartChartPage", () => {
         { shallow: true },
       ),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Previous day" }));
+    expect((screen.getByLabelText("Date") as HTMLInputElement).value).toBe("2026-02-07");
+    fireEvent.click(screen.getByRole("button", { name: "Next day" }));
+    expect((screen.getByLabelText("Date") as HTMLInputElement).value).toBe("2026-02-08");
 
     const href = screen
       .getByRole("link", { name: /FORGE Command Center/ })
       .getAttribute("href");
     expect(href).toContain("date=2026-02-08");
     expect(href).toContain("resolvedDate=2026-02-07");
-    expect(href).toContain("position=LW");
+    expect(href).toContain("position=D");
     expect(href).toContain("mode=week");
     expect(
       screen.getByRole("img", { name: /Recent team form/ }),
@@ -718,8 +774,8 @@ describe("StartChartPage", () => {
 
     render(<StartChartPage />);
 
-    expect(screen.getByText("One 10%")).toBeTruthy();
-    expect(screen.getByText("Goalie TBD")).toBeTruthy();
+    expect(screen.getByText("Goalie One · Projected 10%")).toBeTruthy();
+    expect(screen.getByText("Unknown Goalie · Probability unavailable")).toBeTruthy();
   });
 
   it("never treats unknown ownership as zero when a numeric filter is active", () => {
@@ -805,6 +861,7 @@ describe("StartChartPage", () => {
     };
     render(<StartChartPage />);
 
+    fireEvent.click(screen.getByText("More Filters"));
     fireEvent.change(screen.getByLabelText("Team"), {
       target: { value: "MTL" },
     });
@@ -841,6 +898,7 @@ describe("StartChartPage", () => {
     render(<StartChartPage />);
 
     expect(screen.getByText("Showing 2026-02-07, not 2026-02-08.")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "View Full Schedule · current" })).toBeTruthy();
     expect(
       screen.getByText(
         "This is the nearest earlier slate with projections (1 day old). Use it as historical reference, not today's recommendation. Projection provenance is unverified.",
@@ -933,7 +991,7 @@ describe("StartChartPage", () => {
     expect(screen.getAllByText("Goalie TBD")).toHaveLength(2);
   });
 
-  it("loads 25 more rows and resets the position limit when filters change", () => {
+  it("reveals all ranked rows and resets the position limit when filters change", () => {
     swrState.data = {
       ...buildApiData(),
       projections: 30,
@@ -949,9 +1007,9 @@ describe("StartChartPage", () => {
     };
     render(<StartChartPage />);
 
-    expect(screen.queryByText("#30 C Player 30")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Load 25 more C" }));
-    expect(screen.getByText("#30 C Player 30")).toBeTruthy();
+    expect(screen.queryByText("C Player 30")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "View all C (30)" }));
+    expect(screen.getByText("C Player 30")).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText("Player"), {
       target: { value: "no match" },
@@ -959,7 +1017,28 @@ describe("StartChartPage", () => {
     fireEvent.change(screen.getByLabelText("Player"), {
       target: { value: "" },
     });
-    expect(screen.queryByText("#30 C Player 30")).toBeNull();
-    expect(screen.getByRole("button", { name: "Load 25 more C" })).toBeTruthy();
+    expect(screen.queryByText("C Player 30")).toBeNull();
+    expect(screen.getByRole("button", { name: "View all C (30)" })).toBeTruthy();
+  });
+});
+
+
+describe("Start Chart historical goals", () => {
+  it("excludes slate-day, future, prior-season, unfinished and invalid games", () => {
+    const base = { season_id: 20252026, home_team_id: 8, away_team_id: 10, game_type: 2, game_state: "OFF", home_team_score: 3, away_team_score: 2, game_id: 100 };
+    const rows = Array.from({ length: 12 }, (_, i) => ({ ...base, game_id: i + 1, game_date: `2026-01-${String(i + 1).padStart(2, "0")}` }));
+    const games = selectTeamFormGames([...rows, rows[0],
+      { ...base, game_date: "2026-02-07" }, { ...base, game_date: "2026-02-08" },
+      { ...base, game_date: "2026-02-06", season_id: 20242025 },
+      { ...base, game_date: "2026-02-05", game_state: "LIVE" }, { ...base, game_date: "2026-02-04", home_team_score: null },
+      { ...base, game_date: "2026-02-03", home_team_id: 7 },
+      { ...base, game_date: "2026-02-02", game_type: 1 },
+    ], 20252026, "2026-02-07", 8);
+    expect(games).toHaveLength(10);
+    expect(games[0].date).toBe("2026-01-12");
+    expect(games.at(-1)?.date).toBe("2026-01-03");
+    const form = { seasonId: 20252026, beforeDate: "2026-02-07", source: "nhl_final_scores" as const, teams: [{ team: "MTL", games: [{ date: "2026-02-06", goalsFor: 8, goalsAgainst: 0 }, ...games] }] };
+    expect(summarizeTeamForm(form, 5)[0]).toMatchObject({ games: 5, goalsFor: 4, goalsAgainst: 1.6 });
+    expect(summarizeTeamForm(form, 10)[0].goalsFor).toBe(3.5);
   });
 });

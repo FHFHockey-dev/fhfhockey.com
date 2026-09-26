@@ -311,6 +311,40 @@ describe("Yahoo live draft reconciliation", () => {
     expect(deriveYahooDraftDashboardConfiguration({ ...state, settings: { ...state.settings, playoffWeeks: [0, 999] } }).playoffWeeks).toBeUndefined();
   });
 
+  it("separates Yahoo points by player type and retains fractional and negative scoring", () => {
+    const configuration = deriveYahooDraftDashboardConfiguration({ ...state, settings: {
+      ...state.settings,
+      scoringCategories: {
+        HITS: 0.5, GOALS: 6, ASSISTS: 4, PP_POINTS: 1.5, SH_POINTS: 3,
+        PLUS_MINUS: 1, BLOCKED_SHOTS: 1.2, SHOTS_ON_GOAL: 0.9,
+        WINS_GOALIE: 5, SAVES_GOALIE: 0.6, SHUTOUTS_GOALIE: 5, GOALS_AGAINST_GOALIE: -2.5,
+        PENALTY_MINUTES: -0.5, FACEOFFS_WON: 0, INVALID: "invalid",
+      },
+    } });
+    expect(configuration.scoringCategories).toEqual({
+      HITS: 0.5, GOALS: 6, ASSISTS: 4, PP_POINTS: 1.5, SH_POINTS: 3,
+      PLUS_MINUS: 1, BLOCKED_SHOTS: 1.2, SHOTS_ON_GOAL: 0.9,
+      PENALTY_MINUTES: -0.5, FACEOFFS_WON: 0,
+    });
+    expect(configuration.goalieScoringCategories).toEqual({
+      WINS_GOALIE: 5, SAVES_GOALIE: 0.6, SHUTOUTS_GOALIE: 5, GOALS_AGAINST_GOALIE: -2.5,
+    });
+  });
+
+  it("clears an absent scoring group without supplying defaults, and retains category league weights", () => {
+    expect(deriveYahooDraftDashboardConfiguration(state).goalieScoringCategories).toEqual({});
+    expect(deriveYahooDraftDashboardConfiguration({ ...state, settings: {
+      ...state.settings, scoringCategories: { SAVE_PERCENTAGE: 2, GOALS_AGAINST_AVERAGE: -3 },
+    } })).toMatchObject({ scoringCategories: {}, goalieScoringCategories: { SAVE_PERCENTAGE: 2, GOALS_AGAINST_AVERAGE: -3 } });
+    const categories = deriveYahooDraftDashboardConfiguration({ ...state, settings: {
+      ...state.settings, leagueType: "categories", scoringCategories: {},
+      categoryWeights: { GOALS: 1, WINS_GOALIE: 1, SAVE_PERCENTAGE: 1 },
+    } });
+    expect(categories.categoryWeights).toEqual({ GOALS: 1, WINS_GOALIE: 1, SAVE_PERCENTAGE: 1 });
+    expect(categories.scoringCategories).toBeUndefined();
+    expect(categories.goalieScoringCategories).toBeUndefined();
+  });
+
   it("preserves this league's local order when Yahoo omits positions, including resume and apply", () => {
     const missing = { ...state, teams: state.teams.map((team) => ({ ...team, draftPosition: undefined })),
       settings: { ...state.settings, isSnakeDraft: true, diagnostics: { inferredDraftOrder: true } }, picks: [] };
@@ -321,6 +355,10 @@ describe("Yahoo live draft reconciliation", () => {
     expect(reconcileYahooDraftState(missing, [], local).expectedNext.yahooTeamKey).toBe("team.2");
     expect(deriveYahooDraftDashboardConfiguration(missing, configuration).draftOrder).toEqual(local.draftOrder);
     expect(missing.teams.every((team) => team.draftPosition === undefined)).toBe(true);
+    const stopped = { ...missing, session: { ...missing.session, status: "stopped" as const } };
+    const resumed = { ...missing, session: { ...missing.session, status: "predraft" as const } };
+    expect(deriveYahooDraftDashboardConfiguration(stopped, local).draftOrder).toEqual(local.draftOrder);
+    expect(deriveYahooDraftDashboardConfiguration(resumed, local).draftOrderMode).toBe("standard");
   });
 
   it("never uses another league's order and prefers complete provider positions", () => {

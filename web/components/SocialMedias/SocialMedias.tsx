@@ -6,11 +6,11 @@ import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import ClientOnly from "components/ClientOnly";
 import classNames from "classnames";
 
-function SocialMedias({ className }: { className?: string }) {
+function SocialMedias({ className, labeled = false }: { className?: string; labeled?: boolean }) {
   const size = useScreenSize();
   const imgSize = size.screen === BreakPoint.l ? 32 : 48;
   return (
-    <ClientOnly className={classNames(styles.socialMedias, className)}>
+    <ClientOnly className={classNames(styles.socialMedias, className, { [styles.labeled]: labeled })}>
       <a
         href="https://www.twitter.com/fhfhockey"
         target="_blank"
@@ -18,11 +18,12 @@ function SocialMedias({ className }: { className?: string }) {
       >
         <Image
           src="/pictures/socials/twitter.png"
-          alt="Twitter"
+          alt={labeled ? "" : "Twitter"}
           width={imgSize}
           height={imgSize}
           priority
         />
+        {labeled && <span>Twitter</span>}
       </a>
       <a
         href="https://discord.gg/kfnyrn7"
@@ -31,11 +32,12 @@ function SocialMedias({ className }: { className?: string }) {
       >
         <Image
           src="/pictures/socials/discord.png"
-          alt="Discord"
+          alt={labeled ? "" : "Discord"}
           width={imgSize}
           height={imgSize}
           priority
         />
+        {labeled && <span>Discord</span>}
       </a>
       <a
         href="https://www.patreon.com/FHFHRadio"
@@ -44,11 +46,12 @@ function SocialMedias({ className }: { className?: string }) {
       >
         <Image
           src="/pictures/socials/patreon.png"
-          alt="Patreon"
+          alt={labeled ? "" : "Patreon"}
           width={imgSize}
           height={imgSize}
           priority
         />
+        {labeled && <span>Patreon</span>}
       </a>
       <a
         href="https://www.youtube.com/fiveholefantasyhockey"
@@ -57,11 +60,12 @@ function SocialMedias({ className }: { className?: string }) {
       >
         <Image
           src="/pictures/socials/youtube.png"
-          alt="Youtube"
+          alt={labeled ? "" : "Youtube"}
           width={imgSize}
           height={imgSize}
           priority
         />
+        {labeled && <span>YouTube</span>}
       </a>
       <a
         href="https://open.spotify.com/show/0tcyfS62ZHdLYA3Xf3QgSQ?si=HtfgMe8_QD6KfwiOw2fC1g"
@@ -70,11 +74,12 @@ function SocialMedias({ className }: { className?: string }) {
       >
         <Image
           src="/pictures/socials/spotify.png"
-          alt="Spotify"
+          alt={labeled ? "" : "Spotify"}
           width={imgSize}
           height={imgSize}
           priority
         />
+        {labeled && <span>Spotify</span>}
       </a>
     </ClientOnly>
   );

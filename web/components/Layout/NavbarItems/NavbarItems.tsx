@@ -1,194 +1,187 @@
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import classNames from "classnames";
-import Image from "next/image";
-
-import type {
-  NavbarItem,
-  NavbarItemCategory as NavbarItemCategoryType,
-  NavbarItemLink,
+import SocialMedias from "components/SocialMedias";
+import NavigationIcon from "../NavigationIcon";
+import {
+  isNavigationLinkActive,
+  SUPPORT_URL,
+  type NavbarItem,
 } from "./NavbarItemsData";
-import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
-
 import styles from "./NavbarItems.module.scss";
 
-function isCategoryActive(category: NavbarItemCategoryType): boolean {
-  return category.items.some((item) => {
-    const currentPath = window.location.pathname;
-
-    if (item.type === "link") {
-      // TODO: handle external site
-      return item.href === currentPath;
-    } else if (item.type === "category") {
-      return isCategoryActive(item);
-    }
-  });
-}
-
-function isLinkActive(link: NavbarItemLink): boolean {
-  const currentPath = window.location.pathname;
-  return link.href === currentPath;
-}
-
-type NavBarCategoryProps = {
-  item: NavbarItemCategoryType;
-  onItemClick: (item?: NavbarItem) => void;
-  large: boolean;
-};
-
-function NavbarItemCategory({
-  item,
-  onItemClick,
-  large,
-}: NavBarCategoryProps) {
-  const [disclosureOpen, setDisclosureOpen] = useState(
-    () => !large && isCategoryActive(item),
-  );
-  const [hoverOpen, setHoverOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const reactId = useId();
-  const submenuId = `navbar-submenu-${reactId.replace(/:/g, "")}`;
-  const expanded = disclosureOpen || hoverOpen;
-
-  const close = () => {
-    setDisclosureOpen(false);
-    setHoverOpen(false);
-  };
-
-  const handleItemClick = (selectedItem?: NavbarItem) => {
-    close();
-    onItemClick(selectedItem);
-  };
-
-  return (
-    <li
-      className={classNames(styles.category, {
-        [styles.active]: isCategoryActive(item),
-        [styles.expanded]: expanded,
-      })}
-      onMouseEnter={() => {
-        if (large) setHoverOpen(true);
-      }}
-      onMouseLeave={() => {
-        if (large) setHoverOpen(false);
-      }}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-          close();
-        }
-      }}
-      onKeyDown={(event) => {
-        if (event.key === "Escape" && expanded) {
-          event.preventDefault();
-          close();
-          triggerRef.current?.focus();
-        }
-      }}
-    >
-      <button
-        ref={triggerRef}
-        type="button"
-        className={styles.categoryTrigger}
-        aria-expanded={expanded}
-        aria-controls={submenuId}
-        onClick={() => {
-          setDisclosureOpen((open) => !open);
-          setHoverOpen(false);
-        }}
-      >
-        <span className={styles.category_item}>
-          {item.label}{" "}
-          <span className={styles.arrow} aria-hidden="true">
-            <Image
-              src="/pictures/menu-arrow-drop-down.svg"
-              alt=""
-              width={32}
-              height={32}
-            />
-          </span>
-        </span>
-      </button>
-      <NavbarItems_
-        id={submenuId}
-        hidden={!expanded}
-        large={large}
-        onItemClick={handleItemClick}
-        items={item.items}
-      />
-    </li>
-  );
-}
-
-type NavBarItemsProps = {
-  items: NavbarItem[];
-  onItemClick: (item?: NavbarItem) => void;
-  className?: string;
-  forceLarge?: boolean;
-};
-
-type NavBarItemsListProps = Pick<NavBarItemsProps, "items" | "onItemClick"> & {
-  large: boolean;
-  id?: string;
-  hidden?: boolean;
-};
-
-function NavbarItems_({
+export default function NavbarItems({
   items,
   onItemClick,
-  large,
-  id,
-  hidden,
-}: NavBarItemsListProps) {
-  return (
-    <>
-      {/* navbar items */}
-      <ul className={styles.menu_list} id={id} hidden={hidden}>
-        {items.map((item, idx) => {
-          if (item.type === "category") {
-            return (
-              <NavbarItemCategory
-                key={idx}
-                item={item}
-                onItemClick={onItemClick}
-                large={large}
-              />
-            );
-          } else if (item.type === "link") {
-            return (
-              <li
-                key={idx}
-                className={classNames(styles.link, {
-                  [styles.active]: isLinkActive(item),
-                  [styles.underlyingStatsLink]: item.accent === "yellow",
-                })}
-                onClick={() => onItemClick(item)}
-              >
-                <Link href={item.href}>{item.label}</Link>
-              </li>
-            );
-          }
-        })}
-      </ul>
-    </>
-  );
-}
-
-export default function NavbarItems({
   className,
-  forceLarge = false,
-  ...props
-}: NavBarItemsProps) {
-  const size = useScreenSize();
-  const large = forceLarge || size.screen === BreakPoint.l;
+}: {
+  items: NavbarItem[];
+  onItemClick: () => void;
+  className?: string;
+}) {
+  const { pathname } = useRouter();
+  const [open, setOpen] = useState<string | null>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const rootRef = useRef<HTMLElement>(null);
+  const id = useId();
+
+  useEffect(() => {
+    if (!open && !hovered) return;
+    const dismiss = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(null);
+        setHovered(null);
+      }
+    };
+    document.addEventListener("pointerdown", dismiss);
+    return () => document.removeEventListener("pointerdown", dismiss);
+  }, [open, hovered]);
+
+  useEffect(() => {
+    setOpen(null);
+    setHovered(null);
+  }, [pathname]);
+
   return (
     <nav
-      className={classNames(
-        styles.items,
-        className,
-        large ? styles.large : styles.small,
-      )}
+      ref={rootRef}
+      aria-label="Primary navigation"
+      className={classNames(styles.items, className)}
     >
-      <NavbarItems_ {...props} large={large} />
+      <ul className={styles.menuList}>
+        {items.map((item) => {
+          if (item.type === "link")
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className={styles.topLink}
+                  aria-current={
+                    isNavigationLinkActive(pathname, item.href)
+                      ? "page"
+                      : undefined
+                  }
+                  onClick={() => {
+                    setOpen(null);
+                    setHovered(null);
+                    onItemClick();
+                  }}
+                >
+                  {item.label}
+                </Link>
+              </li>
+            );
+          const expanded = open === item.id || (!open && hovered === item.id);
+          const active = item.groups.some((group) =>
+            group.items.some((link) =>
+              isNavigationLinkActive(pathname, link.href),
+            ),
+          );
+          const panelId = `${id}-${item.id}`;
+          return (
+            <li
+              key={item.id}
+              className={styles.category}
+              onMouseEnter={() => {
+                setHovered(item.id);
+                if (open !== item.id) setOpen(null);
+              }}
+              onMouseLeave={() => setHovered(null)}
+              onBlur={(event) => {
+                if (
+                  !event.currentTarget.contains(
+                    event.relatedTarget as Node | null,
+                  )
+                ) {
+                  setOpen(null);
+                  setHovered(null);
+                }
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Escape" && expanded) {
+                  event.preventDefault();
+                  setOpen(null);
+                  setHovered(null);
+                  event.currentTarget
+                    .querySelector<HTMLButtonElement>("button")
+                    ?.focus();
+                }
+              }}
+            >
+              <button
+                type="button"
+                className={classNames(styles.trigger, {
+                  [styles.active]: active,
+                })}
+                aria-expanded={expanded}
+                aria-controls={panelId}
+                onClick={() => {
+                  setHovered(null);
+                  setOpen(open === item.id ? null : item.id);
+                }}
+              >
+                {item.label}
+                <NavigationIcon name="chevron" />
+              </button>
+              <div
+                id={panelId}
+                hidden={!expanded}
+                className={classNames(styles.panel, styles[item.id])}
+              >
+                <div className={styles.groups}>
+                  {item.groups.map((group) => (
+                    <div key={group.label} className={styles.group}>
+                      <p className={styles.groupTitle}>{group.label}</p>
+                      <ul>
+                        {group.items.map((link) => (
+                          <li key={link.href}>
+                            <Link
+                              href={link.href}
+                              className={styles.destination}
+                              aria-current={
+                                isNavigationLinkActive(pathname, link.href)
+                                  ? "page"
+                                  : undefined
+                              }
+                              onClick={() => {
+                                setOpen(null);
+                                setHovered(null);
+                                onItemClick();
+                              }}
+                            >
+                              <NavigationIcon name={link.icon} />
+                              <span>
+                                <strong>{link.label}</strong>
+                                <small>{link.description}</small>
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+                {item.id === "community" && (
+                  <div className={styles.communityLinks}>
+                    <p className={styles.groupTitle}>Follow & connect</p>
+                    <SocialMedias labeled />
+                    <a
+                      className={styles.support}
+                      href={SUPPORT_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <NavigationIcon name="heart" />
+                      Support FHFH
+                    </a>
+                  </div>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
 }

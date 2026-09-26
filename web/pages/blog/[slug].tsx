@@ -10,6 +10,7 @@ import { getClient } from "lib/sanity/sanity.server";
 import { PortableText } from "@portabletext/react";
 import { urlFor } from "lib/sanity/sanity";
 import { NextSeo } from "next-seo";
+import { canonicalUrl } from "lib/seo";
 
 import styles from "styles/Post.module.scss";
 import { TextBanner } from "components/Banner/Banner";
@@ -157,8 +158,8 @@ function Post({ post, recentPosts }: PostPageProps) {
     <NextSeo
       title={`${title} | FHFH Blog`}
       description={summary}
-      canonical={`${process.env.NEXT_PUBLIC_SITE_URL}/blog/${slug}`}
-      openGraph={{ type: "article", url: `${process.env.NEXT_PUBLIC_SITE_URL}/blog/${slug}`, images: imageUrl ? [{ url: imageUrl, alt: title }] : [], article: { publishedTime: publishedAt || undefined } }}
+      canonical={canonicalUrl(`/blog/${slug}`)}
+      openGraph={{ type: "article", url: canonicalUrl(`/blog/${slug}`), images: imageUrl ? [{ url: imageUrl, alt: title }] : undefined, article: { publishedTime: publishedAt || undefined } }}
     />
     <ArticleReader title={title} summary={summary} imageUrl={imageUrl} imageAlt={post.imageAlt} author={author.name} authorImage={author.image} publishedAt={publishedAt} topics={topics} headings={headings} related={recentPosts} interactions={<>
       <button className={styles.likeButton} type="button" aria-pressed={like} onClick={() => setLike((previous) => !previous)}>{like ? "♥ Liked" : "♡ Like article"}</button>

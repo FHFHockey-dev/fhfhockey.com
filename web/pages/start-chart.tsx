@@ -1,3 +1,4 @@
+import { summarizeTeamForm } from "lib/projections/startChartTeamForm";
 import {
   type KeyboardEvent as ReactKeyboardEvent,
   useEffect,
@@ -6,10 +7,14 @@ import {
   useState,
 } from "react";
 import Head from "next/head";
-import Image from "next/image";
+import { buildPlayerHeadshotSources, getLocalTeamLogoPath, fallbackTeamLogo } from "lib/images";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
   Line,
   LineChart,
   ReferenceLine,
@@ -27,7 +32,6 @@ import StarterBoardPlayerDetails from "components/StarterBoardPlayerDetails";
 import { START_CHART_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import {
   normalizeStartChartResponse,
-  type StartChartGame,
   type StartChartGoalie,
   type StartChartPlayer,
   type StartChartResponse,
@@ -42,8 +46,29 @@ import { BOARD_CATEGORIES, DEFAULT_BOARD_SCORING, boardSkaterForecast, parseBoar
 
 import styles from "./start-chart.module.scss";
 
-const POSITION_ORDER = ["C", "LW", "RW", "D", "G"] as const;
-const INITIAL_POSITION_LIMIT = 25;
+const POSITION_ORDER = ["LW", "RW", "C", "D", "G"] as const;
+const INITIAL_POSITION_LIMIT = 5;
+
+function BoardImage({ sources, className, label }: { sources: string[]; className: string; label: string }) {
+  const [index, setIndex] = useState(0);
+  return index < sources.length ? (
+    // Official headshots use a validated CMS host; keep the fallback sequence local.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={sources[index]} alt={label} width={48} height={48} className={className}
+      referrerPolicy="no-referrer" onError={() => setIndex((current) => current + 1)} />
+  ) : <span className={className} role="img" aria-label={`${label} unavailable`} />;
+}
+
+const logoSources = (team: string | null | undefined) => Array.from(new Set([getLocalTeamLogoPath(team), fallbackTeamLogo]));
+const publicationTime = (value?: string | null) => value && Number.isFinite(Date.parse(value))
+  ? new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(new Date(value))
+  : "Time unavailable";
+
+const shiftDate = (date: string, days: number): string => {
+  const parsed = new Date(`${date}T12:00:00Z`);
+  parsed.setUTCDate(parsed.getUTCDate() + days);
+  return parsed.toISOString().slice(0, 10);
+};
 
 const describeTeamForm = (value: number | null | undefined): string => {
   if (value == null || !Number.isFinite(value)) return "Unavailable";
@@ -223,104 +248,13 @@ const TeamEndpointDot = (props: any) => {
 };
 
 const RenderGoalie = ({ goalies }: { goalies?: StartChartGoalie[] }) => {
-  const normalized = useMemo(() => {
-    const candidates = (goalies ?? [])
-      .flatMap((goalie) =>
-        typeof goalie.start_probability === "number" &&
-        Number.isFinite(goalie.start_probability)
-          ? [
-              {
-                goalie,
-                probability: Math.max(0, Math.min(1, goalie.start_probability)),
-              },
-            ]
-          : [],
-      )
-      .sort(
-        (left, right) =>
-          right.probability - left.probability ||
-          left.goalie.player_id - right.goalie.player_id,
-      );
-    const visible = candidates.filter(
-      (row) => row.probability >= 0.05,
-    );
-    return visible.length > 0
-      ? visible
-      : candidates.slice(0, 1);
-  }, [goalies]);
-
-  if (normalized.length === 0) {
-    return <div className={styles.goalieUnavailable}>Goalie TBD</div>;
-  }
-
-  return (
-    <div className={styles.goalieBarContainer}>
-      {normalized.map(({ goalie, probability }, visibleIndex) => {
-        const percent = probability * 100;
-        const barColor =
-          percent >= 80
-            ? "#3bd4ae"
-            : percent >= 50
-              ? "#ffd166"
-              : percent >= 30
-                ? "#118ab2"
-                : "#6c757d";
-        const name = goalie.name.split(" ").at(-1) ?? goalie.name;
-        return (
-          <div
-            key={goalie.player_id}
-            className={styles.goalieSegment}
-            style={{
-              width: `${percent}%`,
-              backgroundColor: `${barColor}66`,
-              borderColor: barColor,
-            }}
-            title={`${goalie.name}: ${percent.toFixed(0)}%${
-              goalie.confirmed_status ? ", confirmed" : ""
-            }`}
-            role="img"
-            aria-label={`${goalie.name}, ${percent.toFixed(0)} percent start probability${
-              goalie.confirmed_status ? ", confirmed starter" : ""
-            }`}
-          >
-            {visibleIndex === 0 ? (
-              <span className={styles.goalieSegmentText}>
-                {name} {percent.toFixed(0)}%
-                {goalie.confirmed_status ? " ✓" : ""}
-              </span>
-            ) : null}
-          </div>
-        );
-      })}
-    </div>
-  );
-};
-
-const ratingClass = (value: number | null | undefined): string => {
-  if (value == null || !Number.isFinite(value)) return "";
-  if (value > 102) return styles.glowGreen;
-  if (value < 98) return styles.glowRed;
-  return "";
-};
-
-const RenderRating = ({ rating }: { rating?: StartChartGame["homeRating"] }) => {
-  if (!rating) return <div className={styles.ratingUnavailable}>Ratings —</div>;
-  return (
-    <div className={styles.teamRating} title="Team ratings use 100 as neutral.">
-      <div className={styles.ratingRow}>
-        <span className={styles.ratingLabel}>OFF</span>
-        <span className={`${styles.ratingValue} ${ratingClass(rating.offRating)}`}>
-          {formatNumber(rating.offRating, 0)}
-        </span>
-      </div>
-      <div className={styles.ratingRow}>
-        <span className={styles.ratingLabel}>DEF</span>
-        <span className={`${styles.ratingValue} ${ratingClass(rating.defRating)}`}>
-          {formatNumber(rating.defRating, 0)}
-        </span>
-      </div>
-    </div>
-  );
+  const likely = [...(goalies ?? [])].sort((left, right) =>
+    Number(right.confirmed_status) - Number(left.confirmed_status) ||
+    (right.start_probability ?? -1) - (left.start_probability ?? -1))[0];
+  if (!likely) return <span className={styles.goalieUnavailable}>Goalie TBD</span>;
+  return <span className={styles.goalieSummary} title={likely.name}>
+    {likely.name} · {likely.confirmed_status ? "Confirmed" : likely.start_probability == null ? "Probability unavailable" : `Projected ${formatPercent(likely.start_probability)}`}
+  </span>;
 };
 
 const ContextChips = ({
@@ -402,7 +336,7 @@ export default function StartChartPage() {
     useState<StartChartPosition>("C");
   const [positionLimits, setPositionLimits] = useState<
     Record<StartChartPosition, number>
-  >({ C: 25, LW: 25, RW: 25, D: 25, G: 25 });
+  >({ C: INITIAL_POSITION_LIMIT, LW: INITIAL_POSITION_LIMIT, RW: INITIAL_POSITION_LIMIT, D: INITIAL_POSITION_LIMIT, G: INITIAL_POSITION_LIMIT });
 
   const queryDate = Array.isArray(router.query.date)
     ? router.query.date[0]
@@ -482,6 +416,7 @@ export default function StartChartPage() {
   };
 
   const selectDate = (nextDate: string) => {
+    if (!isCalendarDate(nextDate)) return;
     setDate(nextDate);
     setSelectedGameId(null);
     updateQuery({ date: nextDate, resolvedDate: null });
@@ -515,8 +450,8 @@ export default function StartChartPage() {
   };
 
   useEffect(() => {
-    setPositionLimits({ C: 25, LW: 25, RW: 25, D: 25, G: 25 });
-  }, [date, search, ownershipMax, selectedGameId, selectedTeam]);
+    setPositionLimits({ C: INITIAL_POSITION_LIMIT, LW: INITIAL_POSITION_LIMIT, RW: INITIAL_POSITION_LIMIT, D: INITIAL_POSITION_LIMIT, G: INITIAL_POSITION_LIMIT });
+  }, [date, search, ownershipMax, selectedGameId, selectedTeam, scoring]);
 
   const allowedGameTeamIds = useMemo(() => {
     if (!selectedGameId) return null;
@@ -680,6 +615,10 @@ export default function StartChartPage() {
   const fantasyScoringDescription = formatStartChartFantasyScoringContract(
     data?.fantasyScoringContract ?? START_CHART_FANTASY_SCORING_CONTRACT,
   );
+  const [formCount, setFormCount] = useState(10);
+  const goalForm = summarizeTeamForm(data?.recentGoals, formCount);
+  const hasGoalForm = goalForm.some((team) => team.games > 0);
+  const { ref: goalChartRef, size: goalChartSize } = useMeasuredChart(hasGoalForm);
   const isFallback = data?.serving?.mode === "fallback" || data?.fallbackApplied;
   const isPartial = data?.serving?.mode === "partial";
   const isDegraded = data?.sourceStatus?.overall === "degraded";
@@ -710,52 +649,79 @@ export default function StartChartPage() {
         <title>Starter Board | FHFH</title>
       </Head>
 
-      <header className={styles.pageHeader}>
-        <div>
+      <header className={`${styles.pageHeader} ${isFallback ? styles.fallbackHeader : ""}`}>
+        <div className={styles.headerIntro}>
           <p className={styles.eyebrow}>FORGE Daily</p>
           <h1>Starter Board</h1>
           <p className={styles.subtitle}>
-            One-game projections, matchup context, and starter probabilities for
-            the selected slate.
+            One-game projections, matchup context, and starter probabilities.
           </p>
         </div>
+        <div className={styles.dateCommand}>
+          <button type="button" aria-label="Previous day" disabled={!date} onClick={() => selectDate(shiftDate(date, -1))}>‹</button>
+          <label htmlFor="start-chart-date" className={styles.dateTile}>
+            <span aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M7 3v4M17 3v4M3 10h18" /></svg></span>
+            <strong>{date ? new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric", year: "numeric" }).format(new Date(`${date}T12:00:00Z`)) : "Choose date"}</strong>
+            <small>{data ? `${data.games.length} games · ${teamsPlaying.length} teams` : "Slate loading"}</small>
+            <input aria-label="Date" id="start-chart-date" type="date" value={date} onChange={(event) => selectDate(event.target.value)} />
+          </label>
+          <button type="button" aria-label="Next day" disabled={!date} onClick={() => selectDate(shiftDate(date, 1))}>›</button>
+        </div>
         <dl className={styles.provenanceSummary}>
-          <div>
-            <dt>Requested</dt>
-            <dd>{data?.requestedDate ?? (date || "—")}</dd>
-          </div>
-          <div>
-            <dt>Resolved</dt>
-            <dd>{data?.resolvedDate ?? data?.dateUsed ?? "—"}</dd>
-          </div>
-          <div>
-            <dt>Model</dt>
-            <dd>{data?.sourceStatus?.projection?.modelVersion ?? "Unavailable"}</dd>
-          </div>
-          <div>
-            <dt>Run</dt>
-            <dd title={data?.projectionRunId ?? undefined}>
-              {data?.projectionRunId?.slice(0, 12) ?? "Unavailable"}
-            </dd>
-          </div>
-          <div>
-            <dt>Scoring</dt>
-            <dd title={data?.fantasyScoringContract?.version}>
-              {scoringTouched ? scoring.mode === "categories" ? "Category comparison" : "Selected points weights" : data?.fantasyScoringContract?.label ?? "Unavailable"}
-            </dd>
-          </div>
-          <div>
-            <dt>Input</dt>
-            <dd title={data?.sourceStatus?.projection?.inputVersion ?? undefined}>
-              {data?.sourceStatus?.projection?.inputVersion ?? "Unverified"}
-            </dd>
-          </div>
+          <div><dt>Model</dt><dd title={data?.sourceStatus.projection.modelVersion ?? undefined}>{data?.sourceStatus.projection.modelVersion ?? "Unavailable"}</dd></div>
+          <div><dt>Scoring</dt><dd title={fantasyScoringDescription}>{scoringTouched ? scoring.mode === "categories" ? "Category comparison" : "Selected points weights" : data?.fantasyScoringContract?.label ?? "Unavailable"}</dd></div>
+          <div><dt>Run</dt><dd title={data?.projectionRunId ?? undefined}>{publicationTime(data?.sourceStatus.projection.updatedAt)}</dd></div>
+          <div><dt>Input</dt><dd title={data?.sourceStatus.projection.inputVersion ?? undefined}>{data?.sourceStatus.projection.inputVersion ?? "Unverified"}</dd></div>
         </dl>
+        <div className={`${styles.headerStatus} ${isFallback || isPartial || isDegraded ? styles.statusAmber : ""}`} role="status">
+          <strong><span aria-hidden="true">{isFallback || isPartial || isDegraded ? "◷" : "◉"}</span> {error ? "Unavailable" : !data ? "Loading" : isFallback ? "Historical fallback" : isPartial || isDegraded || data.newsStatus?.freshnessBreachedGames || data.newsStatus?.unresolvedConflicts ? "Review coverage" : data.newsStatus?.available === false ? "News unavailable" : data.newsStatus?.pendingGames ? "Refreshing" : data.newsStatus?.available && data.serving.mode === "exact" && data.requestedDate === data.resolvedDate && data.resolvedDate === easternDate() && data.sourceStatus.projection.updatedAt ? "Up to date" : "Published slate"}</strong>
+          <span>Page refresh · 30 seconds</span>
+        </div>
+        <details className={styles.mobileProvenance}>
+          <summary>Run details</summary>
+          <p>Requested {data?.requestedDate ?? date} · Resolved {data?.resolvedDate ?? "Unavailable"}</p>
+          <p>Model {data?.sourceStatus?.projection?.modelVersion ?? "Unavailable"} · Scoring {scoringTouched ? scoring.mode : data?.fantasyScoringContract?.label ?? "Unavailable"}</p>
+          <p>Run {data?.projectionRunId ?? "Unavailable"} · Input {data?.sourceStatus?.projection?.inputVersion ?? "Unverified"}</p>
+        </details>
       </header>
 
-      <section className={styles.personalization} aria-label="Yahoo today comparison"><StarterBoardYahoo /></section>
-
-      {data?.validation ? <StarterBoardValidation validation={data.validation} className={styles.statusBanner} /> : null}
+      <nav className={styles.mobileNav} aria-label="Board panels">
+        <a href="#slate-games">Games</a><a href="#board-filters">Filters</a><a href="#board-yahoo">Yahoo</a>
+        <button type="button" onClick={() => { document.querySelectorAll<HTMLDetailsElement>("#board-filters > details, #board-settings").forEach((element) => { element.open = true; }); document.getElementById("board-settings")?.scrollIntoView({ block: "start" }); }}>Settings</button>
+      </nav>
+      <section id="slate-games" className={styles.gamesPanel} aria-label="Games on this slate">
+        <div className={styles.gamesHeading}>
+          <div><h2>{data?.resolvedDate === easternDate() ? "Today’s Games" : "Selected Slate Games"}</h2>
+            <p>{data ? `${data.games.length} games · ${teamsPlaying.length} teams · ${data.resolvedDate}` : "Slate loading"}</p></div>
+          <div className={styles.gamesActions}>
+            {selectedGameId != null ? <button type="button" onClick={() => setSelectedGameId(null)}>Clear game filter</button> : null}
+            <Link href="/game-grid/7-Day-Forecast">View Full Schedule{data?.resolvedDate && data.resolvedDate !== easternDate() ? " · current" : ""}</Link>
+          </div>
+        </div>
+        {(data?.games?.length ?? 0) > 0 ? <div className={styles.gameStrip}>
+          {data!.games.map((game) => {
+            const home = teamFor(game.homeTeamId);
+            const away = teamFor(game.awayTeamId);
+            const homeAbbrev = game.homeAbbrev ?? home?.abbrev;
+            const awayAbbrev = game.awayAbbrev ?? away?.abbrev;
+            const isSelected = selectedGameId === game.id;
+            return <button type="button" key={game.id}
+              className={`${styles.gameCard} ${isSelected ? styles.selected : ""}`}
+              onClick={() => setSelectedGameId(isSelected ? null : game.id)}
+              aria-pressed={isSelected}
+              aria-label={`${awayAbbrev ?? "Away"} at ${homeAbbrev ?? "Home"}; ${isSelected ? "remove" : "apply"} game filter`}>
+              <span className={styles.gameTime}>{formatGameTime(game.startTime)}{isSelected ? " · Selected" : ""}</span>
+              <span className={styles.gameMatchup}>
+                {awayAbbrev ? <BoardImage sources={logoSources(awayAbbrev)} label={`${awayAbbrev} logo`} className={styles.teamLogo} /> : null}
+                <strong>{awayAbbrev ?? "TBD"}</strong><span>@</span>
+                {homeAbbrev ? <BoardImage sources={logoSources(homeAbbrev)} label={`${homeAbbrev} logo`} className={styles.teamLogo} /> : null}
+                <strong>{homeAbbrev ?? "TBD"}</strong>
+              </span>
+              <span className={styles.gameGoalies}><RenderGoalie goalies={game.awayGoalies} /><RenderGoalie goalies={game.homeGoalies} /></span>
+            </button>;
+          })}
+        </div> : <p className={styles.gamesEmpty}>{error ? "Games unavailable while the board request failed." : isLoading || !data ? "Loading games…" : "No games available for this slate."}</p>}
+      </section>
 
       {data?.contractVersion === 2 ? <div className={styles.statusBanner} aria-label="Slate news freshness"
         data-board-revisions={JSON.stringify((data.gameRevisions ?? []).map((revision) => revision.revisionId))}>
@@ -785,7 +751,7 @@ export default function StartChartPage() {
         </section>
       ) : null}
 
-      <section className={styles.filters} aria-label="Starter Board controls">
+      <section id="board-filters" className={styles.filters} aria-label="Starter Board controls">
         <div className={styles.filterGroup}>
           <label htmlFor="start-chart-search">Player</label>
           <input
@@ -796,50 +762,28 @@ export default function StartChartPage() {
             onChange={(event) => setSearch(event.target.value)}
           />
         </div>
-        <div className={styles.filterGroup}>
-          <label htmlFor="start-chart-date">Date</label>
-          <input
-            id="start-chart-date"
-            type="date"
-            className={styles.dateInput}
-            value={date}
-            onChange={(event) => selectDate(event.target.value)}
-          />
-        </div>
-        <div className={styles.filterGroup}>
-          <label htmlFor="start-chart-team">Team</label>
-          <select
-            id="start-chart-team"
-            className={styles.selectInput}
-            value={selectedTeam ?? ""}
-            onChange={(event) => {
-              const team = event.target.value || null;
-              setSelectedTeam(team);
-              updateQuery({ team });
-            }}
+      <div
+        className={styles.positionTabs}
+        role="tablist"
+        aria-label="Starter Board positions"
+      >
+        {POSITION_ORDER.map((position) => (
+          <button
+            id={`start-chart-tab-${position}`}
+            key={position}
+            type="button"
+            role="tab"
+            aria-selected={activePosition === position}
+            aria-controls={`start-chart-panel-${position}`}
+            tabIndex={activePosition === position ? 0 : -1}
+            onClick={() => selectPosition(position)}
+            onKeyDown={(event) => handleTabKeyDown(event, position)}
           >
-            <option value="">All slate teams</option>
-            {teamsPlaying.map((team) => (
-              <option key={team} value={team}>
-                {team}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className={styles.filterGroup}>
-          <label htmlFor="start-chart-ownership">
-            {ownershipMax === 100 ? "All ownership" : `Ownership ≤ ${ownershipMax}%`}
-          </label>
-          <input
-            id="start-chart-ownership"
-            className={styles.rangeInput}
-            type="range"
-            min={0}
-            max={100}
-            value={ownershipMax}
-            onChange={(event) => setOwnershipMax(Number(event.target.value))}
-          />
-        </div>
+            {position}
+            <span>{data ? playersByPosition.get(position)?.length ?? 0 : "—"}</span>
+          </button>
+        ))}
+      </div>
         <div className={styles.filterGroup}>
           <label htmlFor="start-chart-mode">Compare</label>
           <select
@@ -859,93 +803,118 @@ export default function StartChartPage() {
             {BOARD_CATEGORIES.map((category) => <option key={category} value={category}>{category.replaceAll("_", " ")}</option>)}
           </select>
         </div> : null}
-        <div className={styles.filterGroup}>
-          <label htmlFor="start-chart-goalie-sort">Goalie order</label>
-          <select id="start-chart-goalie-sort" className={styles.selectInput} value={!scoringTouched && data?.contractVersion !== 2 ? "start_probability" : scoring.goalieSort}
-            disabled={scoring.mode === "categories"}
-            onChange={(event) => { setScoringTouched(true); setScoring({ ...scoring, goalieSort: event.target.value as "fantasy" | "start_probability" }); }}>
-            <option value="fantasy">Expected fantasy points</option>
-            <option value="start_probability">Starting probability</option>
-          </select>
+        <div className={styles.desktopFilters}>
+          <label>Slate team <select className={styles.selectInput} value={selectedTeam ?? ""} onChange={(event) => { const team = event.target.value || null; setSelectedTeam(team); updateQuery({ team }); }}>
+            <option value="">All teams</option>{teamsPlaying.map((team) => <option key={team} value={team}>{team}</option>)}
+          </select></label>
+          <label>Ownership cap <input aria-label="Ownership cap" type="range" min={0} max={100} value={ownershipMax} onChange={(event) => setOwnershipMax(Number(event.target.value))} /><span>{ownershipMax === 100 ? "All" : `${ownershipMax}%`}</span></label>
+          <label>Goalie ranking <select className={styles.selectInput} value={!scoringTouched && data?.contractVersion !== 2 ? "start_probability" : scoring.goalieSort} disabled={scoring.mode === "categories"} onChange={(event) => { setScoringTouched(true); setScoring({ ...scoring, goalieSort: event.target.value as "fantasy" | "start_probability" }); }}><option value="fantasy">Expected points</option><option value="start_probability">Start probability</option></select></label>
         </div>
-        <details className={styles.scoringEditor}>
-          <summary>Scoring profile · customize points</summary>
-          <form onSubmit={(event) => {
-            event.preventDefault();
-            const values = new FormData(event.currentTarget);
-            const profile = Object.fromEntries((["skater", "goalie"] as const).map((population) => [population,
-              Object.fromEntries(Object.keys(DEFAULT_BOARD_SCORING[population]).map((key) => [key, Number(values.get(`${population}.${key}`))])),
-            ]));
-            try { setScoring(parseBoardScoringRequest({ ...scoring, profile })); setScoringTouched(true); setScoringError(null); }
-            catch (error) { setScoringError(error instanceof Error ? error.message : String(error)); }
-          }}>
-            {(["skater", "goalie"] as const).map((population) => <fieldset key={population}>
-              <legend>{population === "skater" ? "Skaters" : "Goalies"}</legend>
-              {Object.entries(DEFAULT_BOARD_SCORING[population]).map(([key, weight]) => <label key={key}>
-                {key.replaceAll("_", " ")}
-                <input name={`${population}.${key}`} type="number" step="any" min={-100} max={100} required defaultValue={weight} />
-              </label>)}
-            </fieldset>)}
-            <button type="submit" className={styles.loadMore}>Apply scoring</button>
-            {scoringError ? <p role="alert">{scoringError}</p> : null}
-          </form>
-        </details>
-        {unknownOwnershipExcluded > 0 ? (
-          <p className={styles.controlNote} role="status">
-            {unknownOwnershipExcluded} player
-            {unknownOwnershipExcluded === 1 ? " was" : "s were"} excluded because
-            ownership is unavailable; unknown values are never treated as 0%.
-          </p>
-        ) : null}
-        <p className={styles.controlNote}>
-          Compare streaming candidates using points or one category. Skater forecasts marked “if playing” exclude participation risk.
-          Unavailable statistics are shown as —. Goalie expected points assume no relief appearance when not starting.
-        </p>
-        <details className={styles.legendContainer}>
-          <summary className={styles.legendIcon} aria-label="Explain metrics">
-            i
-          </summary>
-          <div className={styles.legendTooltip}>
-            <div className={styles.legendItem}>
-              <strong>Fantasy points</strong>
-              {fantasyScoringDescription}.
+        <details className={styles.moreFilters}>
+          <summary>More Filters</summary>
+          <div className={styles.moreFiltersContent}>
+            <div className={styles.filterGroup}>
+              <label htmlFor="start-chart-team">Team</label>
+              <select
+                id="start-chart-team"
+                className={styles.selectInput}
+                value={selectedTeam ?? ""}
+                onChange={(event) => {
+                  const team = event.target.value || null;
+                  setSelectedTeam(team);
+                  updateQuery({ team });
+                }}
+              >
+                <option value="">All slate teams</option>
+                {teamsPlaying.map((team) => (
+                  <option key={team} value={team}>
+                    {team}
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className={styles.legendItem}>
-              <strong>DEF ease</strong>
-              Slate-relative opponent defense grade. Higher opponent xGA/60 is
-              easier; missing as-of ratings display as unavailable.
+            <div className={styles.filterGroup}>
+              <label htmlFor="start-chart-ownership">
+                {ownershipMax === 100 ? "All ownership" : `Ownership ≤ ${ownershipMax}%`}
+              </label>
+              <input
+                id="start-chart-ownership"
+                className={styles.rangeInput}
+                type="range"
+                min={0}
+                max={100}
+                value={ownershipMax}
+                onChange={(event) => setOwnershipMax(Number(event.target.value))}
+              />
             </div>
-            <div className={styles.legendItem}>
-              <strong>NHL PTS uncertainty</strong>
-              Low/high values bound projected goals plus assists, not fantasy
-              points or guarantees.
+            <div className={styles.filterGroup}>
+              <label htmlFor="start-chart-goalie-sort">Goalie order</label>
+              <select id="start-chart-goalie-sort" className={styles.selectInput} value={!scoringTouched && data?.contractVersion !== 2 ? "start_probability" : scoring.goalieSort}
+                disabled={scoring.mode === "categories"}
+                onChange={(event) => { setScoringTouched(true); setScoring({ ...scoring, goalieSort: event.target.value as "fantasy" | "start_probability" }); }}>
+                <option value="fantasy">Expected fantasy points</option>
+                <option value="start_probability">Starting probability</option>
+              </select>
             </div>
+            <details id="board-settings" className={styles.scoringEditor}>
+              <summary>Scoring profile · customize points</summary>
+              <form onSubmit={(event) => {
+                event.preventDefault();
+                const values = new FormData(event.currentTarget);
+                const profile = Object.fromEntries((["skater", "goalie"] as const).map((population) => [population,
+                  Object.fromEntries(Object.keys(DEFAULT_BOARD_SCORING[population]).map((key) => [key, Number(values.get(`${population}.${key}`))])),
+                ]));
+                try { setScoring(parseBoardScoringRequest({ ...scoring, profile })); setScoringTouched(true); setScoringError(null); }
+                catch (error) { setScoringError(error instanceof Error ? error.message : String(error)); }
+              }}>
+                {(["skater", "goalie"] as const).map((population) => <fieldset key={population}>
+                  <legend>{population === "skater" ? "Skaters" : "Goalies"}</legend>
+                  {Object.entries(DEFAULT_BOARD_SCORING[population]).map(([key, weight]) => <label key={key}>
+                    {key.replaceAll("_", " ")}
+                    <input name={`${population}.${key}`} type="number" step="any" min={-100} max={100} required defaultValue={weight} />
+                  </label>)}
+                </fieldset>)}
+                <button type="submit" className={styles.loadMore}>Apply scoring</button>
+                {scoringError ? <p role="alert">{scoringError}</p> : null}
+              </form>
+            </details>
+            {unknownOwnershipExcluded > 0 ? (
+              <p className={styles.controlNote} role="status">
+                {unknownOwnershipExcluded} player
+                {unknownOwnershipExcluded === 1 ? " was" : "s were"} excluded because
+                ownership is unavailable; unknown values are never treated as 0%.
+              </p>
+            ) : null}
+            <p className={styles.controlNote}>
+              Compare streaming candidates using points or one category. Skater forecasts marked “if playing” exclude participation risk.
+              Unavailable statistics are shown as —. Goalie expected points assume no relief appearance when not starting.
+            </p>
+            <details className={styles.legendContainer}>
+              <summary className={styles.legendIcon} aria-label="Explain metrics">
+                i
+              </summary>
+              <div className={styles.legendTooltip}>
+                <div className={styles.legendItem}>
+                  <strong>Fantasy points</strong>
+                  {fantasyScoringDescription}.
+                </div>
+                <div className={styles.legendItem}>
+                  <strong>DEF ease</strong>
+                  Slate-relative opponent defense grade. Higher opponent xGA/60 is
+                  easier; missing as-of ratings display as unavailable.
+                </div>
+                <div className={styles.legendItem}>
+                  <strong>NHL PTS uncertainty</strong>
+                  Low/high values bound projected goals plus assists, not fantasy
+                  points or guarantees.
+                </div>
+              </div>
+            </details>
           </div>
         </details>
       </section>
 
-      <div
-        className={styles.positionTabs}
-        role="tablist"
-        aria-label="Starter Board positions"
-      >
-        {POSITION_ORDER.map((position) => (
-          <button
-            id={`start-chart-tab-${position}`}
-            key={position}
-            type="button"
-            role="tab"
-            aria-selected={activePosition === position}
-            aria-controls={`start-chart-panel-${position}`}
-            tabIndex={activePosition === position ? 0 : -1}
-            onClick={() => selectPosition(position)}
-            onKeyDown={(event) => handleTabKeyDown(event, position)}
-          >
-            {position}
-            <span>{playersByPosition.get(position)?.length ?? 0}</span>
-          </button>
-        ))}
-      </div>
+
 
       <section
         className={styles.columns}
@@ -994,9 +963,25 @@ export default function StartChartPage() {
             >
               <div className={styles.columnHeader}>
                 <h2 id={headingId}>{position}</h2>
-                <span className={styles.pill}>{fullList.length}</span>
+              {visibleList.length < fullList.length ? (
+                <button
+                  type="button"
+                  className={styles.columnViewAll}
+                  onClick={() =>
+                    setPositionLimits((current) => ({
+                      ...current,
+                      [position]: fullList.length,
+                    }))
+                  }
+                >
+                  View all {position} ({fullList.length})
+                </button>
+              ) : null}
+                {visibleList.length === fullList.length ? <span className={styles.pill}>{data ? fullList.length : "—"}</span> : null}
               </div>
-              {isLoading || !date ? (
+              {error ? (
+                <div className={styles.emptyState}>Projections unavailable.</div>
+              ) : isLoading || !date ? (
                 <div className={styles.emptyState} role="status">
                   Loading projections…
                 </div>
@@ -1040,16 +1025,23 @@ export default function StartChartPage() {
                       : null;
                     return (
                       <li className={styles.card} key={`${position}-${player.row_key}`}>
+                        <div className={styles.playerIdentity}>
+                          <span className={styles.playerRank}>{player.position_ranks[position] ?? "—"}</span>
+                          <BoardImage sources={buildPlayerHeadshotSources(`https://assets.nhle.com/mugs/nhl/latest/${player.player_id}.png`, player.player_id)} label={`${player.name} headshot`} className={styles.playerHeadshot} />
+                          <BoardImage sources={logoSources(player.team_abbrev)} label={`${player.team_abbrev ?? "Team"} logo`} className={styles.playerLogo} />
+                        </div>
                         <div className={styles.header}>
                           <Link
                             href={playerHref}
                             className={styles.name}
                             title={player.name}
                           >
-                            {player.position_ranks[position] != null
-                              ? `#${player.position_ranks[position]} ${player.name}`
-                              : player.name}
+                            {player.name}
                           </Link>
+                          <div className={styles.primaryProjection}>
+                            <strong>{formatNumber(scoring.mode === "categories" ? player.boardScore?.categoryValue : player.proj_fantasy_points, 2)}</strong>
+                            <span>{scoring.mode === "categories" ? scoring.category?.replaceAll("_", " ") ?? "Category" : player.forecast?.conditioning === "conditional_playing" ? "FP if playing" : position === "G" ? "Expected FP" : "FP"}</span>
+                          </div>
                           <div className={styles.meta}>
                             <span>
                               {teamHref ? (
@@ -1069,11 +1061,21 @@ export default function StartChartPage() {
                             </span>
                           </div>
                         </div>
-
+                        <div className={styles.cardSignals}>
+                          <span className={styles.positionBadge}>{position}</span>
+                          {position !== "G" || player.percent_ownership != null ? <span>Own {formatPercent(player.percent_ownership, false)}</span> : null}
+                          {position !== "G" ? <span>{player.games_remaining_week == null ? "Games —" : `${player.games_remaining_week} GM`}</span> : null}
+                          {position === "G" ? <span title="Goalie start probability">{formatPercent(player.start_probability)} {player.confirmed_status ? "confirmed" : player.start_probability == null ? "start unknown" : "projected"}</span>
+                            : player.context?.unit_tier ? <span className={styles.positionBadge} title={player.context.pp_share != null ? `PP share ${formatPercent(player.context.pp_share)}` : undefined}>{player.context.unit_tier}</span> : null}
+                          {player.forecast?.participationProbability === 0 ? <span>Confirmed out</span> : null}
+                        </div>
+                        <StarterBoardPlayerDetails
+                          className={styles.playerDetails}
+                          playerId={player.player_id}
+                          positions={player.positions}
+                          date={data?.resolvedDate ?? data?.dateUsed ?? date}
+                        >
                         <div className={styles.statsContainer}>
-                          {(data?.contractVersion === 2 || scoringTouched) ? <Metric
-                            label={scoring.mode === "categories" ? scoring.category?.replaceAll("_", " ") ?? "Category" : player.forecast?.conditioning === "conditional_playing" ? "FP if playing" : position === "G" ? "Expected FP" : "FORGE FP"}
-                            value={formatNumber(scoring.mode === "categories" ? player.boardScore?.categoryValue : player.proj_fantasy_points, 2)} /> : null}
                           {position === "G" ? (
                             <>
                               <Metric label="Start" value={formatPercent(player.start_probability)} />
@@ -1091,10 +1093,6 @@ export default function StartChartPage() {
                             </>
                           ) : (
                             <>
-                              {data?.contractVersion !== 2 && !scoringTouched ? <Metric
-                                label="FP"
-                                value={formatNumber(player.proj_fantasy_points, 2)}
-                              /> : null}
                               <Metric
                                 label="G / A / S"
                                 value={`${formatNumber(player.proj_goals)} / ${formatNumber(
@@ -1115,12 +1113,6 @@ export default function StartChartPage() {
                             : player.forecast.participationProbability == null ? "Participation unknown" : `Plays ${formatPercent(player.forecast.participationProbability)}`}
                           {player.boardScore?.change != null ? ` · ${player.boardScore.change >= 0 ? "+" : ""}${formatNumber(player.boardScore.change, 2)} since prior revision` : ""}
                         </div> : null}
-                        <StarterBoardPlayerDetails
-                          className={styles.playerDetails}
-                          playerId={player.player_id}
-                          positions={player.positions}
-                          date={data?.resolvedDate ?? data?.dateUsed ?? date}
-                        >
                           {player.forecast ? <>
                             <p>{player.forecast.participationProbability == null
                               ? "Participation probability unavailable. This is not an unconditional expectation."
@@ -1174,7 +1166,6 @@ export default function StartChartPage() {
                           position={position}
                           opponentGoalie={opponentGoalie}
                         />
-                        </StarterBoardPlayerDetails>
                         <div className={styles.cardFooter}>
                           <span>
                             Own {formatPercent(player.percent_ownership, false)}
@@ -1190,32 +1181,37 @@ export default function StartChartPage() {
                                 } left this week`}
                           </span>
                         </div>
+                        </StarterBoardPlayerDetails>
                       </li>
                     );
                   })}
                 </ol>
               )}
-              {visibleList.length < fullList.length ? (
-                <button
-                  type="button"
-                  className={styles.loadMore}
-                  onClick={() =>
-                    setPositionLimits((current) => ({
-                      ...current,
-                      [position]: current[position] + INITIAL_POSITION_LIMIT,
-                    }))
-                  }
-                >
-                  Load 25 more {position}
-                </button>
-              ) : null}
+
             </section>
           );
         })}
       </section>
 
+      <section className={`${styles.chartPanel} ${styles.goalFormPanel}`} aria-label="Recent goals for and against">
+        <div className={styles.chartHeader}>
+          <div><h2 className={styles.chartTitle}>Recent Team Form</h2><p>Goals For / Goals Against per game · completed games before {data?.resolvedDate ?? date}</p></div>
+          {hasGoalForm ? <label>Window <select aria-label="Team form window" value={formCount} onChange={(event) => setFormCount(Number(event.target.value))}><option value={10}>Last 10 Games</option><option value={5}>Last 5 Games</option></select></label> : null}
+        </div>
+        {hasGoalForm ? <>
+          <div ref={goalChartRef} className={styles.goalChart} role="img" aria-label={`Goals per game: ${goalForm.map((team) => `${team.team}, ${team.games} games, GF ${formatNumber(team.goalsFor, 2)}, GA ${formatNumber(team.goalsAgainst, 2)}`).join("; ")}`}>
+            {goalChartSize.width > 0 ? <BarChart width={goalChartSize.width} height={goalChartSize.height} data={goalForm} margin={{ top: 5, right: 10, bottom: 0, left: -20 }}>
+              <CartesianGrid stroke="currentColor" opacity={0.15} vertical={false} /><XAxis dataKey="team" tick={{ fill: "currentColor", fontSize: 11 }} /><YAxis tick={{ fill: "currentColor", fontSize: 10 }} />
+              <Tooltip formatter={(value: number) => value.toFixed(2)} /><Legend /><Bar dataKey="goalsFor" name="Goals For" fill="var(--gf-color)" barSize={18} isAnimationActive={false} /><Bar dataKey="goalsAgainst" name="Goals Against" fill="var(--ga-color)" barSize={18} isAnimationActive={false} />
+            </BarChart> : null}
+          </div>
+          <p className={styles.formProvenance}>{goalForm.map((team) => `${team.team}: ${team.games ? `${team.games} games, through ${data?.recentGoals?.teams.find((row) => row.team === team.team)?.games[0]?.date}` : "unavailable"}`).join(" · ")} · NHL final scores (including shootouts) · Season {data?.recentGoals?.seasonId}. Regular season + playoffs; no prior-season games.</p>
+        </> : <p className={styles.formProvenance} role="status">Goals history unavailable: final NHL scores do not cover the preceding scheduled games for this slate. Only completed games in this season qualify; no older games are substituted.</p>}
+      </section>
+      <details className={styles.ctpiDisclosure}>
+        <summary>CTPI · all-around team form and provenance</summary>
       <section
-        className={styles.chartPanel}
+        className={`${styles.chartPanel} ${!data?.ctpi?.length ? styles.chartUnavailable : ""}`}
         aria-labelledby="team-form-heading"
         aria-describedby="team-form-description"
       >
@@ -1223,7 +1219,7 @@ export default function StartChartPage() {
           <div>
             <p className={styles.chartEyebrow}>Team context</p>
             <h2 id="team-form-heading" className={styles.chartTitle}>
-              Recent Team Form
+              CTPI Team Form
             </h2>
             <p>
               How each team has been playing lately, compared with the league.
@@ -1354,82 +1350,16 @@ export default function StartChartPage() {
         )}
       </section>
 
-      {(data?.games?.length ?? 0) > 0 ? (
-        <section className={styles.gameStrip} aria-label="Games on this slate">
-          {data?.games.map((game) => {
-            const home = teamFor(game.homeTeamId);
-            const away = teamFor(game.awayTeamId);
-            const isSelected = selectedGameId === game.id;
-            return (
-              <button
-                type="button"
-                key={game.id}
-                className={`${styles.gameCard} ${
-                  isSelected ? styles.selected : ""
-                }`}
-                onClick={() => setSelectedGameId(isSelected ? null : game.id)}
-                aria-pressed={isSelected}
-                aria-label={`${away?.abbrev ?? "Away"} at ${
-                  home?.abbrev ?? "Home"
-                }; ${isSelected ? "remove" : "apply"} game filter`}
-                style={
-                  {
-                    "--away-color": away?.primaryColor ?? "#333",
-                    "--home-color": home?.primaryColor ?? "#333",
-                  } as React.CSSProperties
-                }
-              >
-                <div className={styles.gameTime}>{formatGameTime(game.startTime)}</div>
-                <div className={styles.teamRow}>
-                  <div className={styles.teamRowHeader}>
-                    <div className={styles.teamIdentity}>
-                      {away?.abbrev ? (
-                        <Image
-                          src={`/teamLogos/${away.abbrev}.png`}
-                          alt=""
-                          width={28}
-                          height={28}
-                          className={styles.teamLogo}
-                        />
-                      ) : null}
-                      <span className={styles.teamAbbrev}>{away?.abbrev ?? "TBD"}</span>
-                    </div>
-                    <RenderRating rating={game.awayRating} />
-                  </div>
-                  <RenderGoalie goalies={game.awayGoalies} />
-                </div>
-                <div className={styles.gameDivider}>
-                  <div className={styles.dividerLine} />
-                  <div className={styles.vsCircle}>vs</div>
-                  <div className={styles.dividerLine} />
-                </div>
-                <div className={styles.teamRow}>
-                  <div className={`${styles.teamRowHeader} ${styles.reverse}`}>
-                    <div className={`${styles.teamIdentity} ${styles.reverse}`}>
-                      {home?.abbrev ? (
-                        <Image
-                          src={`/teamLogos/${home.abbrev}.png`}
-                          alt=""
-                          width={28}
-                          height={28}
-                          className={styles.teamLogo}
-                        />
-                      ) : null}
-                      <span className={styles.teamAbbrev}>{home?.abbrev ?? "TBD"}</span>
-                    </div>
-                    <RenderRating rating={game.homeRating} />
-                  </div>
-                  <RenderGoalie goalies={game.homeGoalies} />
-                </div>
-              </button>
-            );
-          })}
-        </section>
-      ) : null}
+      </details>
+
+      <section id="board-yahoo" className={styles.personalization} aria-label="Yahoo today comparison"><StarterBoardYahoo /></section>
+
+      {data?.validation ? <StarterBoardValidation validation={data.validation} className={styles.statusBanner} /> : null}
 
       {data?.sourceStatus ? (
         <details className={styles.sourceDetails}>
           <summary>Source coverage and provenance</summary>
+          <p>Requested {data.requestedDate} · Resolved {data.resolvedDate} · Model {data.sourceStatus.projection.modelVersion ?? "Unavailable"} · Run {data.projectionRunId ?? "Unavailable"} · Published {publicationTime(data.sourceStatus.projection.updatedAt)}</p>
           <dl>
             <SourceRow
               label="FORGE projections"

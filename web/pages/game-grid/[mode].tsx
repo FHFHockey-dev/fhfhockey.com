@@ -31,8 +31,8 @@ function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
   return (
     <Container contentVariant="full">
       <NextSeo
-        title="FHFH | Game Grid"
-        description="Five Hole Fantasy Hockey Podcast Game Grid."
+        title="NHL Schedule & Fantasy Hockey Game Grid | FHFH"
+        description="Compare NHL team schedules, off-night games, and upcoming matchups to plan your fantasy hockey lineup and waiver pickups."
       />
 
       <div style={{ marginTop: "0px", width: "100%" }}>
@@ -53,9 +53,11 @@ function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async ({ query }) => {
-  const mode =
-    query.mode === "10-Day-Forecast" ? "10-Day-Forecast" : "7-Day-Forecast";
+export const getServerSideProps: GetServerSideProps = async ({ params }) => {
+  const mode = params?.mode;
+  if (mode !== "7-Day-Forecast" && mode !== "10-Day-Forecast") {
+    return { notFound: true };
+  }
   return { props: { initialMode: mode } };
 };
 

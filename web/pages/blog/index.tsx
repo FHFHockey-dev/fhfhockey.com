@@ -2,7 +2,7 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\blog\index.tsx
 
 import { GetStaticProps, NextPage } from "next";
-import Head from "next/head";
+import { NextSeo } from "next-seo";
 import Image from "next/image";
 import Link from "next/link";
 import { ChangeEvent, useMemo, useState } from "react";
@@ -182,9 +182,10 @@ const Blog: NextPage<{ posts: PostPreviewData[] }> = ({ posts }) => {
 
   return (
     <Container contentVariant="full" className={styles.page}>
-      <Head>
-        <title>FHFH | Articles</title>
-      </Head>
+      <NextSeo
+        title="Fantasy Hockey Articles & Analysis | FHFH"
+        description="Read Five Hole Fantasy Hockey articles on player performance, draft strategy, and practical advice for managing your fantasy hockey team."
+      />
       <div className={styles.content}>
         <header className={styles.intro}>
           <div>

@@ -147,18 +147,9 @@ describe("Header auth entry", () => {
     vi.clearAllMocks();
   });
 
-  it("refreshes the supporter image daily without changing the donation destination", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-09-13T23:59:30Z"));
-    try {
-      const { unmount } = render(<Header />);
-      const image = screen.getByAltText("Buy me a coffee");
-      expect(image.getAttribute("src")).toContain("&v=2026-09-13");
-      expect(image.closest("a")?.getAttribute("href")).toBe("https://www.buymeacoffee.com/tjsusername");
-      act(() => vi.advanceTimersByTime(60_000));
-      expect(image.getAttribute("src")).toContain("&v=2026-09-14");
-      unmount();
-    } finally { vi.useRealTimers(); }
+  it("preserves the donation destination", () => {
+    render(<Header />);
+    expect(screen.getByRole("link", { name: "Support FHFH" }).getAttribute("href")).toBe("https://www.buymeacoffee.com/tjsusername");
   });
 
   it("renders the logged-out CTA and opens the auth modal", () => {
@@ -198,14 +189,14 @@ describe("Header auth entry", () => {
   it("opens the shared mobile menu at the requested entry point", () => {
     render(<Header />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Search players" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Search players" })[0]);
     expect(screen.getByTestId("mobile-menu").dataset.entryPoint).toBe("search");
     expect(screen.getByTestId("mobile-menu").dataset.visible).toBe("true");
 
     fireEvent.click(screen.getByRole("button", { name: "Tools" }));
     expect(screen.getByTestId("mobile-menu").dataset.entryPoint).toBe("tools");
 
-    fireEvent.click(screen.getByRole("button", { name: "More" }));
+    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     expect(screen.getByTestId("mobile-menu").dataset.entryPoint).toBe("default");
 
     fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
@@ -269,7 +260,6 @@ describe("desktop NavbarItems disclosure", () => {
       <NavbarItems
         items={items}
         onItemClick={vi.fn()}
-        forceLarge
       />,
     );
   }
@@ -283,7 +273,7 @@ describe("desktop NavbarItems disclosure", () => {
 
   it("keeps category triggers in tab order with stable disclosure semantics", async () => {
     const { container } = await renderDesktopNavigation();
-    const triggers = ["Tools", "Charts", "Variance"].map((name) =>
+    const triggers = ["Analytics", "Tools", "Community"].map((name) =>
       screen.getByRole("button", { name }),
     );
     const focusableElements = Array.from(
@@ -321,23 +311,17 @@ describe("desktop NavbarItems disclosure", () => {
         .getAllByRole("link")
         .map((link) => link.getAttribute("href")),
     ).toEqual([
-      "/stats",
-      "/trends",
-      "/nhl-predictions",
-      "/lines",
-      "/drm",
-      "/splits",
-      "/draft-dashboard",
-      "/roster-schedule-optimizer",
+      "/start-chart", "/roster-schedule-optimizer", "/lines", "/drm",
+      "/wigoCharts", "/shiftChart", "/draft-dashboard", "/nhl-predictions",
     ]);
 
-    const statsLink = within(toolsMenu).getByRole("link", { name: "Stats" });
+    const statsLink = within(toolsMenu).getByRole("link", { name: /Start Chart/ });
     statsLink.focus();
     fireEvent.keyDown(statsLink, { key: "Escape" });
     expect(tools.getAttribute("aria-expanded")).toBe("false");
     expect(document.activeElement).toBe(tools);
 
-    const charts = screen.getByRole("button", { name: "Charts" });
+    const charts = screen.getByRole("button", { name: "Analytics" });
     activateNativeButton(charts, " ");
     expect(charts.getAttribute("aria-expanded")).toBe("true");
     const blogLink = screen.getByRole("link", { name: "Blog" });
@@ -348,7 +332,7 @@ describe("desktop NavbarItems disclosure", () => {
 
   it("keeps pointer hover and aria-expanded in sync", async () => {
     await renderDesktopNavigation();
-    const variance = screen.getByRole("button", { name: "Variance" });
+    const variance = screen.getByRole("button", { name: "Community" });
     const category = variance.closest("li")!;
 
     fireEvent.mouseEnter(category);
@@ -361,68 +345,56 @@ describe("desktop NavbarItems disclosure", () => {
 describe("cross-viewport navigation membership", () => {
   afterEach(cleanup);
 
-  it("promotes Draft Dashboard into primary mobile navigation", async () => {
-    const data = await vi.importActual<
-      typeof import("components/Layout/NavbarItems/NavbarItemsData")
-    >("components/Layout/NavbarItems/NavbarItemsData");
-
-    expect(data.MOBILE_PRIMARY_NAVIGATION_ITEMS.map((item) => item.href)).toEqual([
-      "/",
-      "/stats",
-      "/game-grid",
-      "/lines",
-      "/wigoCharts",
-      "/shiftChart",
-      "/drm",
-      "/draft-dashboard",
-      "/podfeed",
-      "/blog",
-    ]);
-    expect(data.MOBILE_SECONDARY_NAVIGATION_ITEMS.map((item) => item.href)).toEqual([
-      "/underlying-stats",
-      "/trends",
-      "/nhl-predictions",
-      "/splits",
-      "/start-chart",
-      "/variance/skaters",
-      "/roster-schedule-optimizer",
-      "/variance/goalies",
-    ]);
+  it("keeps all 18 destinations and promotes the required desktop links without duplicates", async () => {
+    const data = await import("components/Layout/NavbarItems/NavbarItemsData");
+    const desktopLinks = data.default.flatMap((item) => item.type === "link" ? [item] : item.groups.flatMap((group) => group.items));
+    const mobileLinks = [data.NAVIGATION_LINKS.home, ...data.MOBILE_NAVIGATION_GROUPS.flatMap((category) => category.groups.flatMap((group) => group.items))];
+    expect(new Set(desktopLinks.map((item) => item.href)).size).toBe(18);
+    expect(desktopLinks).toHaveLength(18);
+    expect(mobileLinks.map((item) => item.href).sort()).toEqual(desktopLinks.map((item) => item.href).sort());
+    expect(data.default.filter((item) => item.type === "link").map((item) => item.label)).toEqual(["Home", "Game Grid", "Underlying Stats", "Blog"]);
   });
 
-  it("renders secondary links in More and preserves menu-close interaction", async () => {
-    const { default: MobileMenu } = await vi.importActual<
-      typeof import("components/Layout/MobileMenu/MobileMenu")
-    >("components/Layout/MobileMenu/MobileMenu");
-    const onItemClick = vi.fn();
-    const { container } = render(
-      <MobileMenu visible onItemClick={onItemClick} entryPoint="default" />,
-    );
-    const moreSection = container.querySelector<HTMLElement>(
-      '[data-menu-section="more"]',
-    );
+  it("matches nested routes without matching unrelated prefixes", async () => {
+    const { isNavigationLinkActive: active } = await import("components/Layout/NavbarItems/NavbarItemsData");
+    expect(active("/stats/player/1", "/stats")).toBe(true);
+    expect(active("/stats-extra", "/stats")).toBe(false);
+    expect(active("/stats", "/")).toBe(false);
+  });
+});
 
-    expect(moreSection).toBeTruthy();
-    expect(
-      within(moreSection!)
-        .getAllByRole("link")
-        .map((link) => link.getAttribute("href")),
-    ).toEqual([
-      "/underlying-stats",
-      "/trends",
-      "/nhl-predictions",
-      "/splits",
-      "/start-chart",
-      "/variance/skaters",
-      "/roster-schedule-optimizer",
-      "/variance/goalies",
-    ]);
+describe("account navigation", () => {
+  afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
-    const secondaryLink = within(moreSection!).getAllByRole("link")[0];
-    secondaryLink.addEventListener("click", (event) => event.preventDefault(), {
-      once: true,
-    });
-    fireEvent.click(secondaryLink);
-    expect(onItemClick).toHaveBeenCalledOnce();
+  it("keeps mobile account actions collapsed and reports sign-out failures", async () => {
+    const { default: MobileMenu } = await vi.importActual<typeof import("components/Layout/MobileMenu/MobileMenu")>("components/Layout/MobileMenu/MobileMenu");
+    // jsdom lacks native dialog behavior; real focus/scroll behavior is covered by Playwright.
+    HTMLDialogElement.prototype.showModal = function () { this.setAttribute("open", ""); };
+    HTMLDialogElement.prototype.close = function () { this.removeAttribute("open"); };
+    const signOut = vi.fn().mockRejectedValueOnce(new Error("offline")).mockResolvedValueOnce(undefined);
+    const close = vi.fn();
+    const { container } = render(<MobileMenu visible onItemClick={close} accountUser={{ displayName: "Tim Tester" }} showAccountControls onSignOut={signOut} />);
+    const account = container.querySelector("details")!;
+    expect(account.open).toBe(false);
+    fireEvent.click(account.querySelector("summary")!);
+    expect(account.open).toBe(true);
+    expect(screen.getByRole("link", { name: "League Settings" }).getAttribute("href")).toBe("/account?section=league-settings");
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Sign Out" })); });
+    expect(screen.getByRole("alert").textContent).toContain("Unable to sign out");
+    expect(close).not.toHaveBeenCalled();
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Sign Out" })); });
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  it("restores desktop account trigger focus on Escape", async () => {
+    authState.mockUser = { displayName: "Tim Tester", email: "tim@example.com" };
+    const { default: UserMenu } = await vi.importActual<typeof import("components/auth/UserMenu")>("components/auth/UserMenu");
+    render(<UserMenu />);
+    const trigger = screen.getByRole("button", { name: "Open account menu" });
+    fireEvent.click(trigger);
+    screen.getByRole("link", { name: "Account Settings" }).focus();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(trigger);
   });
 });

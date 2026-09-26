@@ -6,7 +6,7 @@ import { installDraftProAuthenticatedFixtures } from "./draft-pro-fixtures";
 
 loadEnvConfig(process.cwd(), true);
 
-const positions = ["C", "LW", "RW", "D", "G"] as const;
+const positions = ["LW", "RW", "C", "D", "G"] as const;
 
 const player = (
   position: (typeof positions)[number],
@@ -243,6 +243,9 @@ const yahooFixture = (teamId = "team-one", category?: string) => {
 
 test.describe("/start-chart", () => {
   test.beforeEach(async ({ page }) => {
+    // Invented IDs exercise the placeholder without external network errors.
+    await page.route("https://assets.nhle.com/mugs/**", (route) => route.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("unavailable") }));
+    await page.route("https://cms.nhl.bamgrid.com/**", (route) => route.fulfill({ status: 200, contentType: "image/png", body: Buffer.from("unavailable") }));
     await page.route("**/rest/v1/player_lineup_deployment_tallies?**", async (route) => {
       const playerId = new URL(route.request().url()).searchParams.get("player_id");
       const defense = playerId === "eq.8470301";
@@ -255,6 +258,40 @@ test.describe("/start-chart", () => {
       ] });
     });
   });
+  test("renders five-row previews and an interactive goals chart at reference sizes", async ({ page }, testInfo) => {
+    const fixture = { ...apiFixture("2026-02-07"),
+      players: positions.flatMap((position) => Array.from({ length: 5 }, (_, i) => player(position, i + 1))),
+      recentGoals: { seasonId: 20252026, beforeDate: "2026-02-07", source: "nhl_final_scores", teams: [
+        { team: "MTL", games: Array.from({ length: 10 }, (_, i) => ({ date: `2026-01-${20 - i}`, goalsFor: i < 5 ? 4 : 2, goalsAgainst: 2 })) },
+        { team: "TOR", games: Array.from({ length: 10 }, (_, i) => ({ date: `2026-01-${20 - i}`, goalsFor: 2, goalsAgainst: 3 })) },
+      ] },
+    };
+    fixture.games.push({ ...fixture.games[0], id: 1002, homeTeamId: 6, awayTeamId: 3, homeAbbrev: "BOS", awayAbbrev: "NYR" });
+    await page.route("**/api/v1/start-chart?**", route => route.fulfill({ json: fixture }));
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: width === 1440 ? 900 : 844 });
+      await page.goto("/start-chart?date=2026-02-07&position=LW");
+      await expect(page.locator("#start-chart-panel-LW ol > li")).toHaveCount(5);
+      await expect(page.locator("#start-chart-panel-LW img").first()).toHaveAttribute("src", "/pictures/player-placeholder.jpg");
+      await page.screenshot({ path: testInfo.outputPath(`preview-${width}.png`) });
+      const chart = page.getByRole("img", { name: /Goals per game:/ });
+      await expect(chart).toHaveAttribute("aria-label", /MTL, 10 games, GF 3.00/);
+      await page.getByLabel("Team form window").selectOption("5");
+      await expect(chart).toHaveAttribute("aria-label", /MTL, 5 games, GF 4.00/);
+      if (width === 1440) {
+        expect((await page.getByRole("region", { name: "Recent goals for and against" }).boundingBox())!.y).toBeLessThan(900);
+      } else {
+        await page.getByRole("navigation", { name: "Board panels" }).getByRole("button", { name: "Settings" }).click();
+        await expect(page.getByRole("button", { name: "Apply scoring" })).toBeVisible();
+        const rail = page.locator("#slate-games > div").last();
+        expect(await rail.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+        await page.locator("#start-chart-panel-LW ol > li").last().scrollIntoViewIfNeeded();
+        const bottom = (await page.locator("#start-chart-panel-LW ol > li").last().boundingBox())!;
+        expect(bottom.y + bottom.height).toBeLessThan(774);
+      }
+    }
+  });
+
   for (const width of [1440, 390]) {
     test(`protects the private Yahoo comparison through selection, errors and sign-out at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
@@ -431,6 +468,7 @@ test.describe("/start-chart", () => {
       await page.getByLabel("Compare", { exact: true }).selectOption("categories");
       await expect(cPanel.locator("ol > li").first()).toContainText("C Player 2");
       await page.getByLabel("Compare", { exact: true }).selectOption("points");
+      await page.getByText("More Filters", { exact: true }).click();
       await page.getByText("Scoring profile · customize points", { exact: true }).click();
       await page.locator('input[name="skater.GOALS"]').fill("0");
       await page.locator('input[name="skater.SHOTS_ON_GOAL"]').fill("1");
@@ -457,7 +495,7 @@ test.describe("/start-chart", () => {
   for (const viewport of viewports) {
     test(`completes the board workflow at ${viewport.width}x${viewport.height}`, async ({
       page,
-    }) => {
+    }, testInfo) => {
       const browserErrors: string[] = [];
       page.on("pageerror", (error) => browserErrors.push(error.message));
       page.on("console", (message) => {
@@ -469,9 +507,18 @@ test.describe("/start-chart", () => {
 
       await expect(page.getByRole("heading", { name: "Starter Board" })).toBeVisible();
       const cPanel = page.locator("#start-chart-panel-C");
-      await expect(cPanel.locator("ol").first().locator(":scope > li")).toHaveCount(25);
+      await expect(cPanel.locator("ol").first().locator(":scope > li")).toHaveCount(5);
 
       const firstCard = cPanel.locator("ol > li").first();
+      const headshot = firstCard.getByRole("img", { name: /headshot/ });
+      await expect(headshot).toHaveAttribute("src", "/pictures/player-placeholder.jpg");
+      expect(await headshot.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
+      const rail = await cPanel.evaluate((panel) => ({ column: getComputedStyle(panel, "::before").width, row: getComputedStyle(panel.querySelector("ol > li")!, "::before").display }));
+      expect(rail).toEqual({ column: "4px", row: "none" });
+      if (viewport.width === 1440 || viewport.width === 390) {
+        await page.screenshot({ path: testInfo.outputPath("starter-board-initial.png") });
+      }
+
       const disclosure = firstCard.locator("summary");
       await disclosure.focus();
       await page.keyboard.press("Enter");
@@ -502,21 +549,21 @@ test.describe("/start-chart", () => {
         const cTab = page.getByRole("tab", { name: /^C 30$/ });
         await expect(cTab).toBeVisible();
         await cTab.press("ArrowRight");
-        await expect(page.getByRole("tab", { name: /^LW 1$/ })).toHaveAttribute(
+        await expect(page.getByRole("tab", { name: /^D 1$/ })).toHaveAttribute(
           "aria-selected",
           "true",
         );
-        await expect(page.locator("#start-chart-panel-LW")).toBeVisible();
-        await expect(page).toHaveURL(/(?:\?|&)position=LW(?:&|$)/);
+        await expect(page.locator("#start-chart-panel-D")).toBeVisible();
+        await expect(page).toHaveURL(/(?:\?|&)position=D(?:&|$)/);
         await cTab.click();
       }
 
-      await cPanel.getByRole("button", { name: "Load 25 more C" }).click();
+      await cPanel.getByRole("button", { name: "View all C (30)" }).click();
       await expect(cPanel.locator("ol").first().locator(":scope > li")).toHaveCount(30);
       await page.getByLabel("Player", { exact: true }).fill("C Player 30");
       await expect(cPanel.locator("ol").first().locator(":scope > li")).toHaveCount(1);
       await page.getByLabel("Player", { exact: true }).fill("");
-      await expect(cPanel.locator("ol").first().locator(":scope > li")).toHaveCount(25);
+      await expect(cPanel.locator("ol").first().locator(":scope > li")).toHaveCount(5);
 
       await page.getByLabel("Date").fill("2026-02-08");
       await expect(page.getByRole("status").filter({ hasText: "Showing 2026-02-07, not 2026-02-08." })).toContainText(

@@ -7,6 +7,8 @@ import {
   KEEPER_CONTRACT_VERSION,
   materializeKeeperPicks
 } from "../lib/draftDashboard/keepers";
+import { applyFantraxPlayerSources } from "../lib/draftDashboard/fantraxPlayerSources";
+import { buildPositionWeightMultipliers } from "../lib/draftDashboard/positionWeights";
 
 function player(
   playerId: number,
@@ -30,6 +32,27 @@ function player(
     },
     yahooAvgPick
   } as ProcessedPlayer;
+}
+
+function projectedStat(key: string, projected: number): ProcessedPlayer["combinedStats"][string] {
+  return {
+    projected,
+    actual: null,
+    diffPercentage: null,
+    projectedDetail: {
+      value: projected,
+      contributingSources: [],
+      missingFromSelectedSources: [],
+      statDefinition: {
+        key,
+        displayName: key,
+        dataType: "numeric",
+        higherIsBetter: true,
+        isGoalieStat: false,
+        isSkaterStat: true
+      }
+    }
+  };
 }
 
 const players = [
@@ -182,5 +205,142 @@ describe("useVORPCalculations grouped forwards", () => {
       bestPos: "",
       eligible: []
     });
+  });
+});
+
+describe("useVORPCalculations position weights", () => {
+  const params = {
+    players,
+    availablePlayers: players,
+    draftSettings: { teamCount: 1, rosterConfig },
+    picksUntilNext: 0,
+    forwardGrouping: "fwd" as const
+  };
+
+  it("preserves every neutral metric and applies Pro gating without changing saved choices", () => {
+    const weights = { C: 1, LW: 1, RW: 1, D: 0.5, G: 1 };
+    const neutral = renderHook(() => useVORPCalculations(params)).result.current;
+    const explicitNeutral = renderHook(() => useVORPCalculations({
+      ...params,
+      positionWeightMultipliers: buildPositionWeightMultipliers(players, { D: 1 }, true)
+    })).result.current;
+    const disabled = renderHook(() => useVORPCalculations({
+      ...params,
+      positionWeightMultipliers: buildPositionWeightMultipliers(players, weights, false)
+    })).result.current;
+
+    expect(explicitNeutral).toEqual(neutral);
+    expect(disabled).toEqual(neutral);
+    expect(weights.D).toBe(0.5);
+  });
+
+  it("reduces defense values once and recomputes their replacement baseline", () => {
+    const multipliers = buildPositionWeightMultipliers(players, { D: 0.5 }, true);
+    const before = players.map(p => p.fantasyPoints.projected);
+    const weighted = renderHook(() => useVORPCalculations({
+      ...params,
+      positionWeightMultipliers: multipliers
+    })).result.current;
+
+    expect(weighted.playerMetrics.get("6")).toMatchObject({ value: 25, vorp: 5, bestPos: "D" });
+    expect(weighted.playerMetrics.get("7")?.value).toBe(20);
+    expect(weighted.replacementByPos.D).toEqual({ vorp: 20, vols: 25 });
+    expect(weighted.replacementByPos.FWD.vorp).toBe(70);
+    expect(players.map(p => p.fantasyPoints.projected)).toEqual(before);
+  });
+
+  it("weights the prorated points total, leaving the projection and source stats intact", () => {
+    const skater = {
+      ...player(20, "D", 100),
+      combinedStats: {
+        GOALS: projectedStat("GOALS", 10),
+        GAMES_PLAYED: projectedStat("GAMES_PLAYED", 42)
+      }
+    };
+    const weighted = renderHook(() => useVORPCalculations({
+      ...params,
+      players: [skater],
+      availablePlayers: [skater],
+      prorate84: true,
+      fantasyPointSettings: { GOALS: 10, ASSISTS: 0, PP_POINTS: 0, SHOTS_ON_GOAL: 0, HITS: 0, BLOCKED_SHOTS: 0 },
+      positionWeightMultipliers: buildPositionWeightMultipliers([skater], { D: 0.5 }, true)
+    })).result.current;
+
+    expect(weighted.playerMetrics.get("20")?.value).toBe(100);
+    expect(skater.fantasyPoints.projected).toBe(100);
+    expect(skater.combinedStats.GOALS.projected).toBe(10);
+  });
+
+  it("multiplies positive, negative, and zero category composites with their signs", () => {
+    const categoryPlayers = [0, 10, 20].map((goals, index) => ({
+      ...player(index + 30, "D", 500),
+      combinedStats: { GOALS: projectedStat("GOALS", goals) }
+    }));
+    const base = {
+      ...params,
+      players: categoryPlayers,
+      availablePlayers: categoryPlayers,
+      leagueType: "categories" as const,
+      categoryWeights: { GOALS: 1 }
+    };
+    const neutral = renderHook(() => useVORPCalculations(base)).result.current;
+    const explicitNeutral = renderHook(() => useVORPCalculations({
+      ...base,
+      positionWeightMultipliers: buildPositionWeightMultipliers(categoryPlayers, { D: 1 }, true)
+    })).result.current;
+    const weighted = renderHook(() => useVORPCalculations({
+      ...base,
+      positionWeightMultipliers: buildPositionWeightMultipliers(categoryPlayers, { D: 0.5 }, true)
+    })).result.current;
+
+    expect(explicitNeutral).toEqual(neutral);
+    for (const id of ["30", "31", "32"]) {
+      expect(weighted.playerMetrics.get(id)?.value).toBeCloseTo(neutral.playerMetrics.get(id)!.value * 0.5);
+    }
+    expect(neutral.playerMetrics.get("30")!.value).toBeLessThan(0);
+    expect(weighted.playerMetrics.get("30")!.value).toBeGreaterThan(neutral.playerMetrics.get("30")!.value);
+    expect(weighted.playerMetrics.get("31")!.value).toBe(0);
+    expect(weighted.replacementByPos.D.vorp).toBeCloseTo(neutral.replacementByPos.D.vorp * 0.5);
+    expect(weighted.replacementByPos.D.vols).toBeCloseTo(neutral.replacementByPos.D.vols * 0.5);
+    expect(categoryPlayers.map(p => p.fantasyPoints.projected)).toEqual([500, 500, 500]);
+  });
+
+  it("uses the highest eligible weight once before forward grouping and leaves missing positions neutral", () => {
+    const candidates = [player(40, "C,D", 100), player(41, "F", 80), player(42, "", 60)];
+    const multipliers = buildPositionWeightMultipliers(candidates, { C: 0.6, LW: 1.3, RW: 0.8, D: 0.5 }, true);
+    const weighted = renderHook(() => useVORPCalculations({
+      ...params,
+      players: candidates,
+      availablePlayers: candidates,
+      positionWeightMultipliers: multipliers
+    })).result.current;
+
+    expect([...multipliers]).toEqual([["40", 0.6], ["41", 1.3]]);
+    expect(weighted.playerMetrics.get("40")).toMatchObject({ value: 60, eligible: ["FWD", "D"] });
+    expect(weighted.playerMetrics.get("41")).toMatchObject({ value: 104, eligible: ["FWD"] });
+    expect(weighted.playerMetrics.get("42")).toMatchObject({ value: 60, eligible: [] });
+  });
+
+  it("resolves the selected Yahoo or Fantrax eligibility without changing roster eligibility", () => {
+    const original = [player(50, "C", 100), player(51, "C", 80)];
+    const fantraxRows = [{ name: "50, Player", team: "TST", positions: ["D"], adp: 5 }];
+    const yahoo = applyFantraxPlayerSources(original, fantraxRows, "yahoo", "yahoo");
+    const fantrax = applyFantraxPlayerSources(original, fantraxRows, "yahoo", "fantrax");
+    const weights = { C: 1.2, D: 0.5 };
+    const yahooMultipliers = buildPositionWeightMultipliers(yahoo, weights, true);
+    const fantraxMultipliers = buildPositionWeightMultipliers(fantrax, weights, true);
+    const weighted = renderHook(() => useVORPCalculations({
+      ...params,
+      players: original,
+      availablePlayers: original,
+      positionWeightMultipliers: fantraxMultipliers
+    })).result.current;
+
+    expect(yahooMultipliers.get("50")).toBe(1.2);
+    expect(fantraxMultipliers.get("50")).toBe(0.5);
+    expect(fantraxMultipliers.has("51")).toBe(false);
+    expect(weighted.playerMetrics.get("50")).toMatchObject({ value: 50, eligible: ["FWD"] });
+    expect(weighted.playerMetrics.get("51")?.value).toBe(80);
+    expect(original.map(p => p.displayPosition)).toEqual(["C", "C"]);
   });
 });

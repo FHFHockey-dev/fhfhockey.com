@@ -181,27 +181,9 @@
 .commandNavRow {
   display: flex;
   align-items: flex-end;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: v.$space-md;
   padding-bottom: v.$space-md;
-}
-
-.teamHub {
-  display: flex;
-  align-items: center;
-  gap: v.$space-sm;
-  min-width: 0;
-}
-
-.teamHubLabel {
-  flex: 0 0 auto;
-  color: v.$text-secondary;
-  font-size: v.$font-size-xs;
-  font-weight: 600;
-}
-
-.teamHubScroller {
-  min-width: 0;
 }
 
 .aboutDisclosure {
@@ -248,7 +230,40 @@
   }
 }
 
-.aboutContent {
+.readinessDisclosure {
+  @extend .aboutDisclosure;
+}
+
+.workspaceTabs {
+  display: flex;
+  gap: v.$space-xs;
+  border-bottom: 1px solid v.$border-soft;
+
+  button {
+    min-height: v.$touch-target-min;
+    padding: 0 v.$space-lg;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    background: transparent;
+    color: v.$text-secondary;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+
+    &[aria-selected="true"] {
+      border-color: v.$primary-color;
+      color: v.$text-primary;
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: v.$focus-ring;
+    }
+  }
+}
+
+.aboutContent,
+.readinessContent {
   position: absolute;
   top: calc(100% + v.$space-sm);
   right: 0;
@@ -269,6 +284,12 @@
       margin-top: v.$space-sm;
     }
   }
+}
+
+.readinessContent {
+  width: min(660px, calc(100vw - 48px));
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
 }
 
 .aboutLinks {
@@ -317,13 +338,7 @@
 
 .quadrantCard,
 .moversCard,
-.powerLeadersPanel,
-.whatLooksReal,
-.underRadar,
-.schedulePanel,
-.explorerPanel,
-.readinessPanel,
-.continuePanel {
+.powerLeadersPanel {
   min-width: 0;
 }
 
@@ -428,8 +443,6 @@
 }
 
 .moverItem,
-.signalItem,
-.radarItem,
 .powerLeader {
   width: 100%;
   border: 0;
@@ -470,24 +483,19 @@
 .moverIdentity,
 .moverMetrics,
 .leaderTopline,
-.leaderIdentity,
-.signalIdentity,
-.radarTopline,
-.scheduleTeamButton {
+.leaderIdentity {
   display: flex;
   align-items: center;
 }
 
 .moverTopline,
-.leaderTopline,
-.radarTopline {
+.leaderTopline {
   justify-content: space-between;
   gap: v.$space-sm;
 }
 
 .moverIdentity,
-.leaderIdentity,
-.signalIdentity {
+.leaderIdentity {
   min-width: 0;
   gap: v.$space-sm;
 
@@ -568,7 +576,6 @@
 }
 
 .moverEmpty,
-.inlineEmpty,
 .moduleEmpty {
   margin: 0;
   padding: v.$space-sm;
@@ -753,285 +760,6 @@
   line-height: 1.4;
 }
 
-.signalGrid,
-.utilityGrid {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: v.$space-md;
-  align-items: stretch;
-}
-
-.whatLooksReal {
-  grid-column: span 5;
-}
-
-.underRadar {
-  grid-column: span 3;
-}
-
-.schedulePanel {
-  grid-column: span 4;
-}
-
-.trustGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: v.$space-sm;
-}
-
-.signalGroup,
-.radarGroup {
-  min-width: 0;
-  border: v.$border-subtle;
-  border-radius: v.$radius-control;
-  overflow: hidden;
-}
-
-.signalGroupTitle {
-  margin: 0;
-  padding: v.$space-sm;
-  border-bottom: 1px solid v.$border-soft;
-  background: v.$background-header;
-  color: v.$primary-color;
-  font-family: v.$font-family-primary, sans-serif;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.signalGroup[data-tone="processBacked"] .signalGroupTitle,
-.radarGroup[data-tone="undervalued"] .signalGroupTitle {
-  color: v.$success-color;
-}
-
-.signalGroup[data-tone="heatCheck"] .signalGroupTitle {
-  color: v.$warning-color;
-}
-
-.radarGroup[data-tone="overvalued"] .signalGroupTitle {
-  color: v.$danger-color;
-}
-
-.signalList,
-.radarList {
-  display: grid;
-}
-
-.signalItem,
-.radarItem {
-  display: grid;
-  gap: v.$space-xs;
-  min-width: 0;
-  padding: v.$space-sm;
-  border-bottom: 1px solid v.$border-soft;
-
-  &:last-child {
-    border-bottom: 0;
-  }
-
-  &:hover {
-    background: rgba(v.$primary-color, 0.05);
-  }
-
-  &:focus-visible {
-    position: relative;
-    z-index: 1;
-    outline: none;
-    box-shadow: inset v.$focus-ring;
-  }
-}
-
-.signalItem {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.signalIdentity {
-  gap: v.$space-xs;
-
-  strong {
-    font-size: 0.75rem;
-  }
-}
-
-.signalPower {
-  align-self: center;
-  color: v.$text-primary;
-  font-family: v.$font-family-numbers, monospace;
-  font-size: 0.7rem;
-  font-weight: 700;
-}
-
-.signalNote {
-  grid-column: 1 / -1;
-  display: -webkit-box;
-  overflow: hidden;
-  color: v.$text-secondary;
-  font-size: 0.66rem;
-  line-height: 1.35;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.radarGrid {
-  display: grid;
-  gap: v.$space-sm;
-}
-
-.radarTopline .signalIdentity {
-  strong {
-    display: block;
-  }
-}
-
-.scheduleTableWrap {
-  overflow: auto;
-  border: v.$border-subtle;
-  border-radius: v.$radius-control;
-}
-
-.scheduleTable {
-  width: 100%;
-  min-width: 440px;
-  border-collapse: collapse;
-
-  th,
-  td {
-    padding: v.$space-sm;
-    border-bottom: 1px solid v.$border-soft;
-    color: v.$text-secondary;
-    font-family: v.$font-family-numbers, monospace;
-    font-size: 0.67rem;
-    text-align: center;
-    white-space: nowrap;
-  }
-
-  th {
-    background: v.$background-header;
-    font-family: v.$font-family-primary, sans-serif;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-
-  th:first-child,
-  td:first-child {
-    text-align: left;
-  }
-
-  tbody tr:last-child td {
-    border-bottom: 0;
-  }
-}
-
-.scheduleRowActive {
-  background: rgba(v.$primary-color, 0.08);
-}
-
-.scheduleTeamButton {
-  gap: v.$space-xs;
-  min-height: 30px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  text-align: left;
-
-  strong,
-  small {
-    display: block;
-  }
-
-  strong {
-    color: v.$text-primary;
-    font-family: v.$font-family-accent, sans-serif;
-    font-size: 0.72rem;
-    letter-spacing: 0.04em;
-  }
-
-  small {
-    margin-top: 2px;
-    color: v.$text-secondary;
-    font-family: v.$font-family-numbers, monospace;
-    font-size: 0.6rem;
-  }
-
-  &:focus-visible {
-    outline: none;
-    box-shadow: v.$focus-ring;
-  }
-}
-
-.explorerPanel {
-  grid-column: span 3;
-}
-
-.readinessPanel {
-  grid-column: span 6;
-}
-
-.continuePanel {
-  grid-column: span 3;
-}
-
-.utilityList {
-  display: grid;
-  gap: v.$space-xs;
-}
-
-.utilityLink {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: v.$space-sm;
-  min-height: 48px;
-  padding: v.$space-sm;
-  border: v.$border-subtle;
-  border-radius: v.$radius-control;
-  background: v.$background-dark;
-  color: v.$text-secondary;
-  text-decoration: none;
-  transition:
-    border-color 0.16s ease,
-    color 0.16s ease;
-
-  strong,
-  small {
-    display: block;
-  }
-
-  strong {
-    color: v.$text-primary;
-    font-size: v.$font-size-sm;
-  }
-
-  small {
-    margin-top: 2px;
-    overflow: hidden;
-    font-size: 0.68rem;
-    line-height: 1.3;
-    text-overflow: ellipsis;
-  }
-
-  > span:last-child {
-    flex: 0 0 auto;
-    color: v.$primary-color;
-    font-size: 0.68rem;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-
-  &:hover {
-    border-color: rgba(v.$primary-color, 0.6);
-  }
-
-  &:focus-visible {
-    outline: none;
-    box-shadow: v.$focus-ring;
-  }
-}
-
 .itemActive {
   border-color: rgba(v.$primary-color, 0.78) !important;
   background: rgba(v.$primary-color, 0.09) !important;
@@ -1053,33 +781,6 @@
     flex: 1 1 0;
   }
 
-  .whatLooksReal {
-    grid-column: 1 / -1;
-  }
-
-  .underRadar {
-    grid-column: span 5;
-  }
-
-  .schedulePanel {
-    grid-column: span 7;
-  }
-
-  .explorerPanel {
-    grid-column: span 5;
-  }
-
-  .readinessPanel {
-    grid-column: span 7;
-  }
-
-  .continuePanel {
-    grid-column: 1 / -1;
-  }
-
-  .continuePanel .utilityList {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 1050px) {
@@ -1135,28 +836,24 @@
   }
 
   .commandNavRow {
-    align-items: stretch;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: v.$space-xs;
   }
 
-  .teamHub {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .teamHubScroller {
-    overflow-x: auto;
-    padding-bottom: 2px;
-    scrollbar-width: none;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
+  .readinessDisclosure[open] {
+    grid-column: 1 / -1;
   }
 
   .aboutDisclosure,
   .aboutDisclosure summary {
-    width: 100%;
+    width: auto;
+  }
+
+  .aboutDisclosure summary,
+  .readinessDisclosure summary {
+    min-height: v.$touch-target-min;
   }
 
   .aboutContent {
@@ -1165,19 +862,14 @@
     margin-top: v.$space-sm;
   }
 
-  .primaryWorkspace,
-  .signalGrid,
-  .utilityGrid {
-    grid-template-columns: 1fr;
+  .readinessContent {
+    position: static;
+    width: 100%;
+    margin-top: v.$space-sm;
   }
 
-  .whatLooksReal,
-  .underRadar,
-  .schedulePanel,
-  .explorerPanel,
-  .readinessPanel,
-  .continuePanel {
-    grid-column: auto;
+  .primaryWorkspace {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .mobileMoverToggle {
@@ -1238,9 +930,6 @@
     scroll-snap-align: start;
   }
 
-  .continuePanel .utilityList {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: v.$breakpoint-tablet) {
@@ -1254,21 +943,17 @@
     gap: v.$space-xs;
   }
 
-  .trustGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .signalItem,
-  .radarItem,
-  .moverItem,
-  .utilityLink {
-    min-height: v.$touch-target-min;
-  }
 }
 
 @media (max-width: v.$breakpoint-mobile-lg) {
   .commandMeta {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .snapshotControl select {
+    padding-left: v.$space-xs;
+    padding-right: 18px;
+    font-size: 0.68rem;
   }
 
   .metaItem strong {

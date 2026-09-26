@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 
 import Header from "./Header";
 import SocialMedias from "components/SocialMedias";
 import styles from "./Layout.module.scss";
+import { SUPPORT_URL } from "./NavbarItems/NavbarItemsData";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -12,78 +13,13 @@ type LayoutProps = {
 
 function Layout({ children }: LayoutProps) {
   const router = useRouter();
-  const isUnderlyingStatsRoute =
-    router.pathname.startsWith("/underlying-stats");
-  const isHomepage = router.pathname === "/";
   const isWigo = router.pathname === "/wigoCharts";
   const hideFooter = router.pathname === "/draft-dashboard" || isWigo;
-  const [isFooterVisible, setIsFooterVisible] = useState(false);
-  const touchStartYRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (hideFooter) return;
-
-    const updateFooterVisibility = (
-      isScrollingDown: boolean,
-      allowAtPageTop = false,
-    ) => {
-      setIsFooterVisible(
-        isScrollingDown && (allowAtPageTop || window.scrollY > 24),
-      );
-    };
-
-    let lastScrollY = window.scrollY;
-
-    const handleScroll = () => {
-      const nextScrollY = window.scrollY;
-
-      updateFooterVisibility(nextScrollY > lastScrollY);
-      lastScrollY = nextScrollY;
-    };
-
-    const handleWheel = (event: WheelEvent) => {
-      if (event.deltaY !== 0) {
-        updateFooterVisibility(event.deltaY > 0, true);
-      }
-    };
-
-    const handleTouchStart = (event: TouchEvent) => {
-      touchStartYRef.current = event.touches[0]?.clientY ?? null;
-    };
-
-    const handleTouchMove = (event: TouchEvent) => {
-      const touchStartY = touchStartYRef.current;
-      const nextTouchY = event.touches[0]?.clientY;
-
-      if (touchStartY != null && nextTouchY != null) {
-        updateFooterVisibility(nextTouchY < touchStartY, true);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    window.addEventListener("wheel", handleWheel, { passive: true });
-    window.addEventListener("touchstart", handleTouchStart, { passive: true });
-    window.addEventListener("touchmove", handleTouchMove, { passive: true });
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("wheel", handleWheel);
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchmove", handleTouchMove);
-    };
-  }, [hideFooter]);
-
   return (
     <div className={`${styles.container} ${router.pathname === "/draft-dashboard" ? styles.draftLayout : ""} ${isWigo ? styles.wigoLayout : ""}`}>
       <Header />
       {children}
-      {!hideFooter && (
-        <Footer
-          isUnderlyingStatsRoute={isUnderlyingStatsRoute}
-          isVisible={isFooterVisible}
-          isHomepage={isHomepage}
-        />
-      )}
+      {!hideFooter && <Footer />}
     </div>
   );
 }
@@ -125,51 +61,28 @@ function FooterLogo() {
   );
 }
 
-export function Footer({
-  isUnderlyingStatsRoute = false,
-  isVisible = false,
-  isHomepage = false,
-}: {
-  isUnderlyingStatsRoute?: boolean;
-  isVisible?: boolean;
-  isHomepage?: boolean;
-}) {
+export function Footer() {
   return (
-    <footer
-      className={`${styles.footer} ${isHomepage ? styles.homepageFooter : ""} ${
-        isVisible ? styles.footerVisible : ""
-      }`}
-      aria-hidden={!isHomepage && !isVisible}
-    >
-      {isHomepage ? (
-        <div className={styles.homepageFooterInner}>
-          <div className={styles.homepageFooterBrand}>
-            <span className={styles.footerLogoDefault} aria-label="FHFH logo">
-              <FooterLogo />
-            </span>
-            <small>Hockey Analytics</small>
-          </div>
-          <p>© {new Date().getFullYear()} FHFHockey. All rights reserved.</p>
-          <nav aria-label="Footer navigation">
-            <Link href="/underlying-stats">Analytics</Link>
-            <Link href="/news">News</Link>
-            <Link href="/podfeed">Podcast</Link>
-            <Link href="/game-grid">Tools</Link>
-          </nav>
-          <SocialMedias className={styles.homepageFooterSocials} />
+    <footer className={styles.footer}>
+      <div className={styles.footerInner}>
+        <div className={styles.footerBrand}>
+          <Link href="/" aria-label="FHFH home"><FooterLogo /></Link>
+          <small>Five Hole Fantasy Hockey</small>
+          <small>© {new Date().getFullYear()} FHFHockey</small>
         </div>
-      ) : (
-        <span
-          className={
-            isUnderlyingStatsRoute
-              ? styles.footerLogoUnderlyingStats
-              : styles.footerLogoDefault
-          }
-          aria-label="FHFH logo"
-        >
-          <FooterLogo />
-        </span>
-      )}
+        <nav aria-label="Footer navigation">
+          <Link href="/underlying-stats">Underlying Stats</Link>
+          <Link href="/game-grid">Game Grid</Link>
+          <Link href="/stats">Stats</Link>
+          <Link href="/blog">Blog</Link>
+          <Link href="/podfeed">Podcast</Link>
+          <Link href="/privacy">Privacy</Link>
+        </nav>
+        <div className={styles.footerCommunity}>
+          <a href={SUPPORT_URL} target="_blank" rel="noopener noreferrer">Support FHFH</a>
+          <SocialMedias className={styles.footerSocials} />
+        </div>
+      </div>
     </footer>
   );
 }

@@ -712,6 +712,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         bestPos?: string;
         vbdAdj: number;
         value?: number;
+        unweightedValue?: number;
       }
     >();
     if (vorpMetrics) {
@@ -725,6 +726,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
           bestPos: metrics.bestPos,
           vbdAdj,
           value: metrics.value,
+          unweightedValue: metrics.unweightedValue,
         });
       });
     }
@@ -813,8 +815,10 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         aValue = typeof av === "number" ? av : -Infinity;
         bValue = typeof bv === "number" ? bv : -Infinity;
       } else if (sortField === "fantasyPoints") {
-        aValue = vorpMap.get(String(a.playerId))?.value ?? a.fantasyPoints.projected;
-        bValue = vorpMap.get(String(b.playerId))?.value ?? b.fantasyPoints.projected;
+        const aMetrics = vorpMap.get(String(a.playerId));
+        const bMetrics = vorpMap.get(String(b.playerId));
+        aValue = aMetrics?.unweightedValue ?? aMetrics?.value ?? a.fantasyPoints.projected;
+        bValue = bMetrics?.unweightedValue ?? bMetrics?.value ?? b.fantasyPoints.projected;
       } else if (sortField === "yahooAvgPick") {
         const aAdp = normAdp(a.yahooAvgPick);
         const bAdp = normAdp(b.yahooAvgPick);
