@@ -1,9 +1,11 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import DraftSettings from "../../../components/DraftDashboard/DraftSettings";
 import type { DraftSettings as DraftSettingsContract } from "../../../components/DraftDashboard/DraftDashboard";
 import { applyCategoryBoosts } from "../../../lib/draftDashboard/categoryBoosts";
+import { deriveYahooDraftDashboardConfiguration } from "../../../lib/draftDashboard/yahooLiveDraft";
+import DraftScoringSettings from "../../../components/DraftDashboard/DraftScoringSettings";
 
 vi.mock("components/PlayerAutocomplete", () => ({ default: () => null }));
 
@@ -16,6 +18,31 @@ const settings: DraftSettingsContract = {
 };
 
 afterEach(cleanup);
+
+it("shows imported Yahoo goalie categories only in the goalie group, including the goals-against penalty", () => {
+  const configuration = deriveYahooDraftDashboardConfiguration({
+    session: { id: "yahoo-points", status: "predraft" }, teams: [], picks: [],
+    settings: { leagueType: "points", scoringCategories: {
+      GOALS: 6, HITS: 0.5, WINS_GOALIE: 5, SAVES_GOALIE: 0.6,
+      SHUTOUTS_GOALIE: 5, GOALS_AGAINST_GOALIE: -2.5,
+    } },
+  });
+  render(<DraftScoringSettings
+    settings={{ ...settings, leagueType: "points", scoringCategories: configuration.scoringCategories!, categoryBoosts: { HITS: 50 } }}
+    goalieScoring={configuration.goalieScoringCategories}
+    onSettingsChange={vi.fn()} onGoalieScoringChange={vi.fn()}
+    availableSkaterStats={[]} availableGoalieStats={[]} hasPicks={false} draftProEligible
+  />);
+  const skaters = within(screen.getByRole("region", { name: "Skaters scoring" }));
+  const goalies = within(screen.getByRole("region", { name: "Goalies scoring" }));
+  for (const label of ["W", "SV", "SHO", "GA"]) {
+    expect(skaters.queryByText(label, { exact: true })).toBeNull();
+    expect(goalies.getByText(label, { exact: true })).toBeTruthy();
+  }
+  expect(goalies.getByDisplayValue("-2.5")).toBeTruthy();
+  expect(goalies.getByDisplayValue("0.6")).toBeTruthy();
+  expect(skaters.getByDisplayValue("0.5")).toBeTruthy();
+});
 
 describe("Draft Pro category boosts", () => {
   it("keeps league scoring at 0.2 while displaying 0.3 for a 50% Hits boost", () => {

@@ -891,7 +891,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     };
   }, []);
 
-  const saveSnapshot = useCallback((draftSettingsOverride?: DraftSettings) => {
+  const saveSnapshot = useCallback((draftSettingsOverride?: DraftSettings, goaliePointValuesOverride?: Record<string, number>) => {
     if (
       typeof window === "undefined" ||
       (!manualDraftingEnabled && !draftSettingsOverride)
@@ -916,7 +916,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       needAlpha,
       forwardGrouping,
       personalizeReplacement,
-      goaliePointValues,
+      goaliePointValues: goaliePointValuesOverride ?? goaliePointValues,
       sourceControls,
       goalieSourceControls,
       customCsvList: getCsvList(),
@@ -2008,9 +2008,13 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     setDraftSettings((previous) => applyYahooPlayoffSchedule(previous, playoffWeeks));
   }, [displayedDraftMode, yahooDraftSync.draftState]);
 
+  const yahooSettingsConfiguration = useMemo(() => yahooDraftSync.draftState
+    ? deriveYahooDraftDashboardConfiguration(yahooDraftSync.draftState, draftSettings)
+    : null, [draftSettings, yahooDraftSync.draftState]);
+
   const applyYahooSettings = useCallback(() => {
-    if (!yahooDraftSync.draftState) return;
-    const configuration = deriveYahooDraftDashboardConfiguration(yahooDraftSync.draftState, draftSettings);
+    if (!yahooDraftSync.draftState || !yahooSettingsConfiguration) return;
+    const configuration = yahooSettingsConfiguration;
     const scoringIncomplete = yahooSettingsRequireScoringConfirmation(
       yahooDraftSync.draftState,
     );
@@ -2030,7 +2034,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
             ? "Yahoo scoring is incomplete or includes unsupported stats; rankings will use only the supported Yahoo stats that were mapped."
             : "",
           draftOrderInferred
-            ? "Yahoo did not explicitly confirm draft order, so snake order is assumed."
+            ? "Yahoo's draft-order data is incomplete. Compare the team order and draft format with your Yahoo draft room. Your configured order and format are preserved where Yahoo has not supplied them."
             : "",
           settingsWarnings.length
             ? `Yahoo also reported: ${settingsWarnings.join(" ")}`
@@ -2048,10 +2052,13 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       configuration,
     );
     setDraftSettings(nextDraftSettings);
+    if (configuration.goalieScoringCategories) {
+      setGoaliePointValues(configuration.goalieScoringCategories);
+    }
     setCustomTeamNames(configuration.customTeamNames);
     if (configuration.myTeamId) setMyTeamId(configuration.myTeamId);
-    saveSnapshot(nextDraftSettings);
-  }, [draftSettings, saveSnapshot, yahooDraftSync.draftState]);
+    saveSnapshot(nextDraftSettings, configuration.goalieScoringCategories);
+  }, [draftSettings, saveSnapshot, yahooDraftSync.draftState, yahooSettingsConfiguration]);
 
   useEffect(() => {
     if (skaterData.isLoading || goalieData.isLoading || !allPlayers.length)
@@ -4111,8 +4118,9 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       )}
 
       <YahooLiveDraftPanel
-        settingsNeedApplying={Boolean(yahooDraftSync.draftState && JSON.stringify(draftSettings) !== JSON.stringify(
-          buildAppliedYahooDraftSettings(draftSettings, deriveYahooDraftDashboardConfiguration(yahooDraftSync.draftState, draftSettings)),
+        settingsNeedApplying={Boolean(yahooSettingsConfiguration && (
+          JSON.stringify(draftSettings) !== JSON.stringify(buildAppliedYahooDraftSettings(draftSettings, yahooSettingsConfiguration)) ||
+          (yahooSettingsConfiguration.goalieScoringCategories && JSON.stringify(goaliePointValues) !== JSON.stringify(yahooSettingsConfiguration.goalieScoringCategories))
         ))}
           mode={displayedDraftMode}
           authenticated={Boolean(user?.id)}
