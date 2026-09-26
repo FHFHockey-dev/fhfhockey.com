@@ -25,11 +25,12 @@ async function playerData(leagueKey: string) {
     const adpById = new Map(adpRows.map((row) => [row.id, row.ADP]));
     const players = Object.entries(catalog).flatMap(([id, player]) => {
       const name = fantraxPlayerName(player);
-      if (player.fantraxId !== id || !name || ((!player.team || player.team === "(N/A)") && !adpById.has(id))) return [];
+      if (player.fantraxId !== id || !name) return [];
       const adp = adpById.get(id);
       const eligiblePos = playerInfo?.[id]?.eligiblePos;
       const eligiblePositions = fantraxEligiblePositions(eligiblePos);
       return [{
+        id,
         name,
         team: player.team && player.team !== "(N/A)" ? player.team : null,
         position: player.position,

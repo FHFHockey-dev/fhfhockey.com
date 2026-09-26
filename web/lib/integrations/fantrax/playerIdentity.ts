@@ -65,6 +65,11 @@ export function matchFantraxPlayerIds(
     }
   }
   const identitiesByKey = new Map<string, Identity[]>();
+  for (const identity of identities) {
+    if (!identity.canonical_position || identity.current_nhl_team_id == null || identity.nhl_player_id == null) continue;
+    const identityKey = key(identity.canonical_name, identity.current_nhl_team_id, identity.canonical_position);
+    identitiesByKey.set(identityKey, [...(identitiesByKey.get(identityKey) ?? []), identity]);
+  }
   for (const alias of aliases) {
     const identity = identityById.get(alias.fhfh_player_id);
     if (!identity?.canonical_position || identity.current_nhl_team_id == null) continue;

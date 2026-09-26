@@ -323,7 +323,7 @@ describe("useVORPCalculations position weights", () => {
 
   it("resolves the selected Yahoo or Fantrax eligibility without changing roster eligibility", () => {
     const original = [player(50, "C", 100), player(51, "C", 80)];
-    const fantraxRows = [{ name: "50, Player", team: "TST", positions: ["D"], adp: 5 }];
+    const fantraxRows = [{ id: "fx-50", name: "50, Player", team: "TST", positions: ["D"], adp: 5 }];
     const yahoo = applyFantraxPlayerSources(original, fantraxRows, "yahoo", "yahoo");
     const fantrax = applyFantraxPlayerSources(original, fantraxRows, "yahoo", "fantrax");
     const weights = { C: 1.2, D: 0.5 };

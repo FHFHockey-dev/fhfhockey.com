@@ -1,7 +1,9 @@
 import type { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
+import { FANTRAX_IDENTITY_EXCEPTIONS } from "./fantraxDisplay";
 import { canonicalScheduleTeam } from "./scheduleMetrics";
 
 export type FantraxPlayerRow = {
+  id: string;
   name: string;
   team: string | null;
   positions: string[];
@@ -22,9 +24,11 @@ export function applyFantraxPlayerSources(
   positionSource: "yahoo" | "fantrax",
 ): ProcessedPlayer[] {
   if (adpSource === "yahoo" && positionSource === "yahoo") return [...players];
+  const byId = new Map<string, FantraxPlayerRow | null>();
   const byName = new Map<string, FantraxPlayerRow | null>();
   const byNameAndTeam = new Map<string, FantraxPlayerRow | null>();
   for (const row of fantraxRows) {
+    byId.set(row.id, byId.has(row.id) ? null : row);
     const name = normalizedName(row.name, true);
     const team = canonicalScheduleTeam(row.team);
     byName.set(name, byName.has(name) ? null : row);
@@ -34,7 +38,11 @@ export function applyFantraxPlayerSources(
   return players.map((player) => {
     const name = normalizedName(player.fullName, false);
     const exact = byNameAndTeam.get(`${name}:${canonicalScheduleTeam(player.displayTeam)}`);
-    const row = exact ?? byName.get(name);
+    const exception = FANTRAX_IDENTITY_EXCEPTIONS[player.playerId];
+    const exceptionRow = exception ? byId.get(exception.id) : null;
+    const row = exceptionRow && exception && normalizedName(exceptionRow.name, true) === normalizedName(exception.name, false)
+      && exceptionRow.positions.includes(exception.position) ? exceptionRow
+      : !exception ? exact ?? byName.get(name) : null;
     if (!row) return {
       ...player,
       ...(adpSource === "fantrax" ? { yahooAvgPick: null } : {}),
