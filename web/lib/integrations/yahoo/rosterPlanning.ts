@@ -17,6 +17,15 @@ export function yahooPlanningEditable(rosterEditable: unknown, playerEditable: u
   return fresh && yes(rosterEditable) && yes(playerEditable) && !started && daily;
 }
 
+/** Standard JSON nests collections under numeric keys and represents an empty one as []. */
+export function yahooPlanningPlayers(payload: unknown): Row[] {
+  const collection = yahooValue(payload, "players");
+  const rows = yahooBoardPlayers(payload);
+  const count = Array.isArray(collection) && collection.length === 0 ? 0 : numeric(yahooFields(collection).count);
+  if (count !== rows.length) throw new YahooLiveDraftError("Yahoo returned an incomplete player list. Try refreshing again; your selected plan is preserved.", 502, "yahoo_player_collection_incomplete");
+  return rows;
+}
+
 function eligibility(node: unknown): string[] {
   if (!node || typeof node !== "object") return [];
   const row = node as Row;
@@ -100,8 +109,13 @@ export async function loadYahooPlanningSnapshot(args: {
   if (text(yahooValue(rosterResponse.payload, "team_key")) !== team.external_team_key
     || text(rosterPayload.date) !== today || text(rosterPayload.coverage_type) !== "date"
     || !yes(yahooValue(rosterResponse.payload, "is_owned_by_current_login"))) throw new Error("Yahoo did not verify roster date, scope and ownership");
-  const ownRows = yahooBoardPlayers(rosterResponse.payload);
-  if (numeric(yahooFields(rosterPayload.players).count) !== ownRows.length) throw new Error("Incomplete Yahoo roster response");
+  const ownRows = yahooPlanningPlayers(rosterResponse.payload);
+  if (!ownRows.length) throw new YahooLiveDraftError(
+    text(yahooValue(settingsResponse.payload, "draft_status")) === "predraft"
+      ? "Yahoo reports this league is still pre-draft. Select your drafted league from My team; league names are shown beside each team."
+      : "Yahoo returned an empty roster for this team today. Check the selected league and team, then refresh after Yahoo makes the roster available.",
+    409, "yahoo_roster_empty",
+  );
   const fresh = providerFresh(settingsResponse, now) && providerFresh(rosterResponse, now);
   const limitations: string[] = [];
   if (!fresh) limitations.push("Yahoo roster/settings freshness could not be verified; affected lock and availability claims remain unknown.");
@@ -117,15 +131,17 @@ export async function loadYahooPlanningSnapshot(args: {
   const byNhl = new Map(data.players.map(player => [player.nhlId, player]));
   const byYahoo = new Map<string, Set<number>>(), reverse = new Map<number, Set<string>>();
   for (const row of mapping) {
-    const nhl = Number(row.nhl_player_id), yahoo = String(row.yahoo_player_id ?? "");
-    if (!Number.isSafeInteger(nhl) || !/^\d+$/.test(yahoo)) continue;
+    const nhl = Number(row.nhl_player_id), rawYahoo = String(row.yahoo_player_id ?? "");
+    const yahoo = /^\d+$/.test(rawYahoo) ? `${gameContext.gameKey}.p.${rawYahoo}` : rawYahoo;
+    // The mapping view contains full keys from multiple Yahoo seasons.
+    if (!Number.isSafeInteger(nhl) || !/^\d+\.p\.\d+$/.test(yahoo) || !yahoo.startsWith(`${gameContext.gameKey}.p.`)) continue;
     byYahoo.set(yahoo, new Set([...(byYahoo.get(yahoo) ?? []), nhl]));
     reverse.set(nhl, new Set([...(reverse.get(nhl) ?? []), yahoo]));
   }
   const resolve = (row: Row) => {
     const key = String(row.player_key ?? "");
     if (!key.startsWith(`${gameContext.gameKey}.p.`)) return undefined;
-    const matches = byYahoo.get(key.split(".p.")[1]);
+    const matches = byYahoo.get(key);
     const nhl = matches?.size === 1 ? [...matches][0] : null;
     return nhl !== null && reverse.get(nhl)?.size === 1 ? byNhl.get(nhl) : undefined;
   };
@@ -193,8 +209,8 @@ export async function loadYahooPlanningSnapshot(args: {
       const result = await fetchYahooPlanningResource({ ...provider, resource: { type: "available_page", start } });
       pagesChecked++;
       if (!providerFresh(result, now) || text(yahooValue(result.payload, "league_key")) !== league.external_league_key) throw new Error("Unverified availability scope/freshness");
-      const rows = yahooBoardPlayers(result.payload);
-      if (numeric(yahooFields(yahooValue(result.payload, "players")).count) !== rows.length || rows.length > 25) throw new Error("Incomplete availability page");
+      const rows = yahooPlanningPlayers(result.payload);
+      if (rows.length > 25) throw new Error("Incomplete availability page");
       for (const row of rows) {
         if (candidates.has(row.player_key)) { repeatedPageIdentity = true; candidates.set(row.player_key, { ...row, ownership: null }); limitations.push("Availability pages changed while reading; repeated identities remain unknown."); }
         else candidates.set(row.player_key, row);
