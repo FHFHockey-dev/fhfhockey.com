@@ -1,6 +1,6 @@
 export const IN_SEASON_CAPABILITIES = ["rso_sync", "rso_account_save", "rso_auto_upkeep"] as const;
 export type InSeasonCapability = typeof IN_SEASON_CAPABILITIES[number];
-export type InSeasonGrantSource = "purchase" | "grandfather" | "common_preview" | "patreon";
+export type InSeasonGrantSource = "purchase" | "grandfather" | "common_preview" | "patreon" | "owner_testing";
 export type InSeasonGrant = {
   source: InSeasonGrantSource;
   reference: string;

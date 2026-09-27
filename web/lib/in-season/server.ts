@@ -1,14 +1,21 @@
 import serviceRoleClient from "lib/supabase/server";
 import type { Json } from "lib/supabase/database-generated.types";
 import { refreshPatreonAccount } from "lib/integrations/patreon/sync";
-import { resolveInSeasonAccess, type InSeasonCapability, type InSeasonGrant } from "./access";
+import { isDraftProOwner } from "lib/draft-pro/ownerAccess";
+import { IN_SEASON_CAPABILITIES, resolveInSeasonAccess, type InSeasonAccess, type InSeasonCapability, type InSeasonGrant } from "./access";
 
 const metadataString = (metadata: Json, key: string) => metadata && typeof metadata === "object" && !Array.isArray(metadata) && typeof metadata[key] === "string" ? metadata[key] as string : null;
 const metadataBoolean = (metadata: Json, key: string) => metadata && typeof metadata === "object" && !Array.isArray(metadata) && metadata[key] === true;
 
-export async function loadInSeasonAccess(userId: string, options: { now?: Date; client?: typeof serviceRoleClient } = {}) {
+export async function loadInSeasonAccess(userId: string, options: { now?: Date; client?: typeof serviceRoleClient } = {}): Promise<InSeasonAccess> {
   const now = options.now ?? new Date();
   const client = options.client ?? serviceRoleClient;
+  // Reuse Draft Pro's verified owner allowlist, independent of paid or seasonal grants.
+  // Only the server's Auth record can authorize testing access; never client metadata.
+  const { data: ownerData, error: ownerError } = await client.auth.admin.getUserById(userId);
+  if (!ownerError && ownerData.user?.id === userId && isDraftProOwner(ownerData.user)) {
+    return { eligible: true, capabilities: [...IN_SEASON_CAPABILITIES], grantingSources: ["owner_testing"], expiresAt: null, reason: "eligible" };
+  }
   // The generated DB type is updated only after the local migration is applied.
   const grantsClient = client as any;
   const [grantResult, patreonResult] = await Promise.all([
