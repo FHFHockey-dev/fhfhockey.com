@@ -165,6 +165,7 @@ export type PlanningResult = {
   noMoveOutcome: PlanEvaluation;
   selected: PlanEvaluation;
   alternatives: PlanEvaluation[];
+  scheduleFits?: Array<{ teamAbbreviation: string; positions: string[]; playerIds: string[]; addedGames: number; dates: string[] }>;
   /** Legal prefix plans if a selected conditional claim fails before later dependent legs. */
   noClaimContinuations?: Array<{ claimStepId: string; evaluation: PlanEvaluation }>;
   search: { evaluated: number; candidates: number; maxDepthReached?: number; complete: boolean; elapsedMs: number; limitations: string[] };
@@ -180,6 +181,7 @@ export type ProviderCapabilities = {
   limitations: string[];
 };
 export type PlanningData = {
+  matchupWeeks?: Array<{ gameKey: string; week: number; startDate: string; endDate: string }>;
   players: PlanningPlayer[];
   games: PlanningGame[];
   forecasts: GameForecast[];

@@ -442,13 +442,42 @@ function safeAlternative(snapshot: PlanningSnapshot, baseline: PlanEvaluation, e
   }
   return true;
 }
-function shortlist(snapshot: PlanningSnapshot, intent: PlanIntent, limit: number): PlanningPlayer[] {
+/** Marginal lineup capacity only: one hypothetical extra roster place, no acquisition/drop claim. */
+export function scheduleFits(snapshot: PlanningSnapshot, intent: PlanIntent, baseline: PlanEvaluation, budgetMs = Infinity) {
+  const started = Date.now();
+  const owned = new Set(snapshot.roster.map(entry => entry.playerId));
+  const groups = new Map<string, PlanningPlayer[]>();
+  const teams = new Set(snapshot.games.filter(game => game.status === "scheduled" && eligibleGame(game, snapshot)).map(game => game.teamAbbreviation));
+  for (const player of snapshot.players) {
+    if (owned.has(player.id) || intent.excludedPlayerIds.includes(player.id) || !player.teamAbbreviation || !teams.has(player.teamAbbreviation) || player.availability === "rostered" || !player.eligiblePositions.length) continue;
+    const key = `${player.teamAbbreviation}:${[...player.eligiblePositions].sort().join(",")}`;
+    groups.set(key, [...(groups.get(key) ?? []), player]);
+  }
+  const fits: NonNullable<PlanningResult["scheduleFits"]> = [];
+  let complete = true;
+  for (const candidates of groups.values()) {
+    if (Date.now() - started >= budgetMs) { complete = false; break; }
+    const player = candidates[0];
+    const hypothetical = { ...snapshot, roster: [...snapshot.roster, { playerId: player.id, position: "bench" as const }],
+      rules: { ...snapshot.rules, rosterSlots: { ...snapshot.rules.rosterSlots, BN: (snapshot.rules.rosterSlots.BN ?? 0) + 1 } } };
+    const evaluation = evaluatePlan(hypothetical, { ...intent, goalieCoverage: "accept_risk" }, "agp", []);
+    const addedGames = evaluation.activeGames - baseline.activeGames;
+    if (addedGames <= 0) continue;
+    const dates = [...new Set(evaluation.assignments.map(row => row.date))].filter(date => evaluation.assignments.filter(row => row.date === date).length > baseline.assignments.filter(row => row.date === date).length);
+    fits.push({ teamAbbreviation: player.teamAbbreviation!, positions: [...player.eligiblePositions], playerIds: candidates.map(row => row.id), addedGames, dates });
+  }
+  fits.sort((a, b) => b.addedGames - a.addedGames || a.teamAbbreviation.localeCompare(b.teamAbbreviation) || a.positions.join(",").localeCompare(b.positions.join(",")));
+  return { fits, complete };
+}
+
+function shortlist(snapshot: PlanningSnapshot, intent: PlanIntent, limit: number, fits: NonNullable<PlanningResult["scheduleFits"]>): PlanningPlayer[] {
   const owned = new Set(snapshot.roster.map(entry => entry.playerId));
   const games = snapshot.games.filter(game => game.status === "scheduled" && game.date >= snapshot.context.startDate && game.date <= snapshot.context.endDate && eligibleGame(game, snapshot));
   const forecasted = new Set(snapshot.forecasts.map(item => `${item.playerId}:${item.gameId}`));
   const candidates = snapshot.players.filter(player => !owned.has(player.id) && !intent.excludedPlayerIds.includes(player.id) && ["free_agent", "manager_available", "waivers"].includes(player.availability));
+  const fitScores = new Map(fits.flatMap(fit => fit.playerIds.map(id => [id, fit.addedGames] as const)));
   const sorted = candidates.map(player => ({ player, coverage: games.filter(game => game.teamAbbreviation === player.teamAbbreviation && forecasted.has(`${player.id}:${game.id}`)).length }))
-    .sort((a, b) => b.coverage - a.coverage || a.player.id.localeCompare(b.player.id));
+    .sort((a, b) => (fitScores.get(b.player.id) ?? 0) - (fitScores.get(a.player.id) ?? 0) || b.coverage - a.coverage || a.player.id.localeCompare(b.player.id));
   const selected: PlanningPlayer[] = [], used = new Set<string>();
   for (const label of ["G", "C", "LW", "RW", "D", ...new Set(games.map(game => game.date))]) {
     const item = sorted.find(({ player }) => !used.has(player.id) && (label.match(/^\d{4}-/) ? games.some(game => game.date === label && game.teamAbbreviation === player.teamAbbreviation) : player.eligiblePositions.includes(label)));
@@ -521,8 +550,13 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
     const evaluation = evaluatePlan(snapshot, intent, objective, prefix);
     return evaluation.legal && evaluation.budgetVerified ? [{ claimStepId: step.id, evaluation }] : [];
   });
-  const candidates = shortlist(snapshot, intent, maxCandidates);
+  const fitResult = scheduleFits(snapshot, intent, noMoveAgp, Math.min(500, timeBudgetMs / 3));
+  const candidates = shortlist(snapshot, intent, maxCandidates, fitResult.fits);
   const limitations = new Set<string>();
+  if (!fitResult.complete) limitations.add("Schedule-fit analysis reached its time budget; additional team/position targets remain unevaluated.");
+  if (snapshot.rules.acquisitionTiming === "unknown") limitations.add("Add/drop plans need acquisition-effective timing. Review League rules and scoring.");
+  if (snapshot.rules.acquisitionCost === null || !snapshot.rules.periods.length || snapshot.rules.periods.some(period => period.remaining === null)) limitations.add("Add/drop plans need acquisition cost and remaining allowance for every affected period. Review Scoring, budgets, and lock windows.");
+  if (baseline.projectedValue === null) limitations.add("Safe drop recommendations need game-level contribution forecasts. Schedule-fit targets remain available, but are not verified add/drop plans.");
   const availableCount = snapshot.players.filter(player => ["free_agent", "manager_available", "waivers"].includes(player.availability)).length;
   const coverageComplete = candidates.length >= availableCount;
   if (!coverageComplete) limitations.add(`Candidate shortlist contains ${candidates.length} of ${availableCount} available players.`);
@@ -573,6 +607,6 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   if (snapshot.rules.scoring.mode === "categories") limitations.add("Category alternatives use projected means without calibrated joint scenarios.");
   all.sort((a, b) => compareEvaluations(a.evaluation, b.evaluation, intent, objective) || a.steps.length - b.steps.length);
   const alternatives = [baseline, ...all.filter(state => state.steps.length && safeAlternative(snapshot, state.evaluation.objective === "agp" ? noMoveAgp : noMoveOutcome, state.evaluation)).map(state => state.evaluation)].slice(0, intent.alternativeCount);
-  return { snapshotId: snapshot.id, intentRevision: intent.revision, baseline, noMoveAgp, noMoveOutcome, selected, alternatives, noClaimContinuations,
-    search: { evaluated, candidates: generated, maxDepthReached, complete: complete && !phasePruned && coverageComplete && !beamPruned && !depthPruned, elapsedMs: Date.now() - start, limitations: [...limitations] } };
+  return { snapshotId: snapshot.id, intentRevision: intent.revision, baseline, noMoveAgp, noMoveOutcome, selected, alternatives, noClaimContinuations, scheduleFits: fitResult.fits,
+    search: { evaluated, candidates: generated, maxDepthReached, complete: complete && fitResult.complete && !phasePruned && coverageComplete && !beamPruned && !depthPruned, elapsedMs: Date.now() - start, limitations: [...limitations] } };
 }

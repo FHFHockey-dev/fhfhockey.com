@@ -78,6 +78,15 @@ function providerFresh(result: YahooProviderJsonResult, now: Date) {
     && (result.transport.ageSeconds === null || result.transport.ageSeconds <= 60);
 }
 
+/** Retry one timed-out required read; rate limits and access errors are never retried. */
+export async function readRequiredPlanningResource<T>(read: () => Promise<T>): Promise<T> {
+  try { return await read(); }
+  catch (error) {
+    if (!(error instanceof YahooLiveDraftError) || error.code !== "yahoo_api_timeout") throw error;
+    return read();
+  }
+}
+
 export async function loadYahooPlanningSnapshot(args: {
   db: SupabaseClient<any>; userId: string; teamId: string; startDate: string; endDate: string; timeZone?: string; now?: Date;
 }): Promise<{ snapshot: PlanningSnapshot; capabilities: ProviderCapabilities }> {
@@ -93,7 +102,7 @@ export async function loadYahooPlanningSnapshot(args: {
   assertYahooLeagueGameContext(league.external_league_key, gameContext);
   const query = parsePlanningDataQuery({ seasonId: gameContext.targetSeasonId, startDate: args.startDate, endDate: args.endDate });
   const provider = { client: db, userId, connectedAccountId: team.connected_account_id, context: gameContext, leagueKey: league.external_league_key, format: "standard_json" as const, now };
-  const settingsResponse = await fetchYahooDraftResource({ ...provider, resource: "settings" });
+  const settingsResponse = await readRequiredPlanningResource(() => fetchYahooDraftResource({ ...provider, resource: "settings" }));
   if (text(yahooValue(settingsResponse.payload, "league_key")) !== league.external_league_key) throw new Error("Yahoo settings league mismatch");
   const providerTimeZone = text(yahooValue(settingsResponse.payload, "time_zone"));
   const timeZone = providerTimeZone ?? args.timeZone ?? "UTC";
@@ -101,7 +110,7 @@ export async function loadYahooPlanningSnapshot(args: {
   const today = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
   const [data, rosterResponse, scoreboardResult, leagueRosterResult] = await Promise.all([
     loadPlanningData(db, { ...query, timeZone }, { now }),
-    fetchYahooBoardResource({ ...provider, resource: { type: "roster", teamKey: team.external_team_key, date: today } }),
+    readRequiredPlanningResource(() => fetchYahooBoardResource({ ...provider, resource: { type: "roster", teamKey: team.external_team_key, date: today } })),
     fetchYahooPlanningResource({ ...provider, resource: { type: "scoreboard" } }).then(value => value, () => null),
     fetchYahooBoardResource({ ...provider, resource: { type: "league_rosters" } }).then(value => value, () => null),
   ]);

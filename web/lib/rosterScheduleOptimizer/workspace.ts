@@ -1,4 +1,4 @@
-import type { LeagueRules, PlanIntent, PlanningContext, PlanningPlayer, PlanningSnapshot, PlanningWorkspace } from "./planningTypes";
+import type { LeagueRules, PlanIntent, PlanningContext, PlanningData, PlanningPlayer, PlanningSnapshot, PlanningWorkspace } from "./planningTypes";
 import { workspaceSchema } from "lib/in-season/workspaceSchema";
 
 export const WORKSPACE_KEY = "fhfh:rso:workspace:v1";
@@ -70,4 +70,17 @@ export function resolveImportedNames(names: string, catalog: readonly PlanningPl
     else unresolved.push(name);
   }
   return { matched: [...matched.values()], unresolved };
+}
+
+/** Retained roster evidence supports schedule analysis, never fresh availability or transactions. */
+export function retainedScheduleSnapshot(workspace: PlanningWorkspace, data: PlanningData, asOf: string): PlanningSnapshot | null {
+  if (!workspace.roster.length) return null;
+  const players = [...new Map([...data.players, ...workspace.manualPlayers].map(player => [player.id, { ...player, availability: "unknown" as const, canDrop: null, reserveEligibility: [] }])).values()];
+  return {
+    id: `retained:${workspace.context.teamId}:${workspace.context.startDate}:${workspace.context.endDate}:${asOf}`,
+    context: { ...workspace.context, asOf }, players, roster: workspace.roster, games: data.games, forecasts: data.forecasts,
+    rules: { ...workspace.rules, acquisitionTiming: "unknown", acquisitionCost: null, periods: [], goalieMinimum: { ...workspace.rules.goalieMinimum, credited: null }, unsupported: [...workspace.rules.unsupported, "Retained roster inputs are unverified; this is provisional schedule analysis."] },
+    lockedAssignments: workspace.lockedAssignments ?? [], realized: {}, opponent: null,
+    evidence: { ...data.evidence, roster: { source: "Retained local roster", asOf: workspace.context.asOf, seasonId: workspace.context.seasonId, completeness: "partial", limitations: ["Yahoo has not verified this roster, its locks or player availability for the current analysis."] } },
+  };
 }

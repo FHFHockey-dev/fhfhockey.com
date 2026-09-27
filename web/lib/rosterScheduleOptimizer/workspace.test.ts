@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultWorkspace, readWorkspace, resolveImportedNames, retainProviderInputs, writeWorkspace } from "./workspace";
+import { defaultWorkspace, readWorkspace, resolveImportedNames, retainedScheduleSnapshot, retainProviderInputs, writeWorkspace } from "./workspace";
 
 const player = { id: "fhfh:1", nhlId: 1, name: "Alpha Center", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "unknown" as const, ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] };
 describe("manual workspace", () => {
@@ -36,4 +36,20 @@ describe("manual workspace", () => {
     expect(writeWorkspace({ setItem: (key, value) => storage.set(key, value) }, retained)).toBeNull();
     expect(readWorkspace({ getItem: (key) => storage.get(key) ?? null })?.manualPlayers).toEqual(retained.manualPlayers);
   });
+});
+
+
+it("keeps shared schedule analysis after a provider failure without restoring availability or minimum credit", () => {
+  const workspace = defaultWorkspace(new Date("2026-10-01T00:00:00Z"));
+  workspace.context.provider = "yahoo";
+  workspace.roster = [{ playerId: player.id, position: "active" }];
+  workspace.manualPlayers = [{ ...player, availability: "rostered", canDrop: true }];
+  workspace.rules.goalieMinimum.credited = 4;
+  const data = { players: [], games: [{ id: "g", date: "2026-10-05", startsAt: "2026-10-05T23:00:00Z", teamAbbreviation: "CAR", opponent: "NJD", home: true, status: "scheduled" as const }], forecasts: [], evidence: {} };
+  const result = retainedScheduleSnapshot(workspace, data, "2026-10-02T00:00:00Z")!;
+  expect(result.games).toEqual(data.games);
+  expect(result.players[0]).toMatchObject({ availability: "unknown", canDrop: null });
+  expect(result.rules.goalieMinimum.credited).toBeNull();
+  expect(result.rules.periods).toEqual([]);
+  expect(result.opponent).toBeNull();
 });

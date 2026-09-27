@@ -91,7 +91,7 @@ test("streams A to B to C through successive conditional acquisitions and keeps 
   await expect(page.getByRole("region", { name: "Itinerary" }).getByText("ADD Charlie Center")).toBeVisible();
   await page.getByRole("button", { name: "Show full suggested lineup" }).click();
   await page.getByText("League rules and scoring").click();
-  await page.getByText("Scoring, budgets, and lock windows").click();
+  await page.getByText("Scoring, budgets, and lock windows", { exact: true }).click();
   for (const [width, height] of [[1440, 900], [1920, 1080]]) {
     await page.setViewportSize({ width, height });
     await expectDesktopFrameVisible(page);
@@ -190,7 +190,7 @@ test("shows sequential stream occupants with real games and retains workspace la
   await expect(page.getByRole("region", { name: "Itinerary" }).getByRole("table").first()).toContainText("Alpha Center");
   await expect(page.getByRole("region", { name: "Itinerary" }).getByRole("table").first()).toContainText("Bravo Center");
   await page.getByRole("button", { name: "Show full suggested lineup" }).click();
-  await page.getByText("Scoring, budgets, and lock windows").click({ timeout: 10000 });
+  await page.getByText("Scoring, budgets, and lock windows", { exact: true }).click({ timeout: 10000 });
   await expectDesktopFrameVisible(page);
   await page.screenshot({ path: testInfo.outputPath("roster-optimizer-1440.png"), fullPage: true });
 });
@@ -225,4 +225,39 @@ test("dense roster keeps schedule views and their scrollbars inside the desktop 
   await expect(page.getByRole("button", { name: "Show full suggested lineup" })).toHaveAttribute("aria-pressed", "true");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await page.screenshot({ path: testInfo.outputPath("rso-mobile.png"), fullPage: true });
+});
+
+test("Yahoo timeout retains schedule analysis and matchup-week navigation without actionable acquisitions", async ({ page }, testInfo) => {
+  await installDraftProAuthenticatedFixtures(page, () => ({ access: { eligible: false, grantingSources: [], expiresAt: null, verifiedAt: null, nextVerificationAt: null, reason: "no_active_grant", capabilities: [], providerReadiness: { stripe: false, patreon: false, yahoo: false } } }));
+  const storageKey = `sb-${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fyhftlxokyjtpndbkfse.supabase.co").hostname.split(".")[0]}-auth-token`;
+  await page.addInitScript((key) => { const session = localStorage.getItem("sb-127-auth-token"); if (session) localStorage.setItem(key, session); }, storageKey);
+  await page.route("**/rest/v1/**", route => route.fulfill({ json: [] }));
+  const players = [fixturePlayer(1, "Alpha Center", "CAR"), fixturePlayer(2, "Bravo Center", "NJD")];
+  const workspace = fixtureWorkspace(players, { ...fixtureRules, rosterSlots: { C: 2 }, acquisitionTiming: "unknown", acquisitionCost: null, periods: [] });
+  workspace.context = { ...workspace.context, provider: "yahoo", teamId: "team", leagueId: "league", startDate: "2026-10-05", endDate: "2026-10-11" };
+  await seedWorkspace(page, workspace);
+  await page.route("**/api/v1/roster-schedule-optimizer/access", route => route.fulfill({ json: { data: { eligible: true, capabilities: ["rso_sync"], grantingSources: ["test"] } } }));
+  await page.route("**/api/v1/roster-schedule-optimizer/provider", route => route.fulfill({ status: 502, json: { success: false, error: "Yahoo roster/settings reads timed out after retrying." } }));
+  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => {
+    const start = new URL(route.request().url()).searchParams.get("startDate")!;
+    const games = players.map(player => ({ ...fixtureGame(player.id, 5, player.teamAbbreviation!), date: start, startsAt: `${start}T23:00:00Z` }));
+    return route.fulfill({ json: { success: true, data: { players, games, forecasts: [], evidence: {}, matchupWeeks: [{ gameKey: "477", week: 1, startDate: "2026-09-29", endDate: "2026-10-04" }, { gameKey: "477", week: 2, startDate: "2026-10-05", endDate: "2026-10-11" }] } } });
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/roster-schedule-optimizer");
+  await expect(page.getByText("Yahoo roster/settings reads timed out after retrying.")).toBeVisible();
+  await expect(page.getByText(/Using retained roster inputs/)).toBeVisible();
+  await expect(page.getByRole("region", { name: "Itinerary", exact: true }).getByRole("table")).toContainText("Alpha Center");
+  await expect(page.getByRole("region", { name: "Schedule-fit targets" })).toContainText("+1 potential active games");
+  await expect(page.getByText(/Add\/drop plans need acquisition-effective timing/).first()).toBeVisible();
+  await page.getByRole("button", { name: "Previous matchup week" }).click();
+  await expect(page.getByLabel("From", { exact: true })).toHaveValue("2026-09-29");
+  await expect(page.getByLabel("Through", { exact: true })).toHaveValue("2026-10-04");
+  await expect(page.getByRole("region", { name: "Itinerary", exact: true }).getByRole("table")).toContainText("Alpha Center");
+  await page.getByRole("button", { name: "Next matchup week" }).click();
+  await expect(page.getByLabel("From", { exact: true })).toHaveValue("2026-10-05");
+  await expect(page.getByRole("region", { name: "Itinerary", exact: true }).getByRole("table")).toContainText("Alpha Center");
+  await expect(page.getByRole("region", { name: "Schedule-fit targets" })).toContainText("+1 potential active games");
+  await expectDesktopFrameVisible(page);
+  await page.screenshot({ path: testInfo.outputPath("rso-timeout-schedule.png"), fullPage: true });
 });

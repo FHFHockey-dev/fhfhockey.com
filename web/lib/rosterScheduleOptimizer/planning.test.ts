@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluatePlan, planRoster } from "./planning";
+import { evaluatePlan, planRoster, scheduleFits } from "./planning";
 import type { PlanIntent, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
 
 const player = (id: string, team: string, availability: PlanningPlayer["availability"] = "rostered"): PlanningPlayer => ({
@@ -500,5 +500,39 @@ describe("planning engine", () => {
     const result = planRoster(data, protectedIntent, { maxCandidates: 1, maxSteps: 1 });
     expect(result.alternatives.some(item => item.steps.some(step => step.type === "reserve" && step.playerId === "b")
       && item.steps.some(step => step.type === "add" && step.playerId === "c"))).toBe(true);
+  });
+});
+
+
+describe("schedule-first targets", () => {
+  it("moves a flexible winger and shares UTIL capacity without recommending an unverified drop", () => {
+    const data = snapshot();
+    data.rules.rosterSlots = { LW: 1, RW: 1, UTIL: 1 };
+    data.players = [{ ...player("flex", "A"), eligiblePositions: ["LW", "RW"] }, { ...player("d", "B"), eligiblePositions: ["D"] }, { ...player("wing", "C", "free_agent"), eligiblePositions: ["LW"] }];
+    data.roster = [{ playerId: "flex", position: "active" }, { playerId: "d", position: "active" }];
+    data.forecasts = [];
+    data.rules.acquisitionTiming = "unknown";
+    data.rules.acquisitionCost = null;
+    data.rules.periods = [];
+    const baseline = evaluatePlan(data, intent, "agp", []);
+    const fits = scheduleFits(data, intent, baseline).fits;
+    expect(baseline.activeGames).toBe(4);
+    expect(fits).toEqual([{ teamAbbreviation: "C", positions: ["LW"], playerIds: ["wing"], addedGames: 2, dates: ["2026-10-05", "2026-10-06"] }]);
+    const result = planRoster(data, intent);
+    expect(result.alternatives.every(plan => !plan.steps.length)).toBe(true);
+    expect(result.search.limitations.join(" ")).toContain("acquisition-effective timing");
+    expect(result.scheduleFits).toEqual(fits);
+    data.rules.rosterSlots = { LW: 1, UTIL: 1 };
+    expect(scheduleFits(data, intent, evaluatePlan(data, intent, "agp", [])).fits).toEqual([]);
+  });
+  it("does not move a locked flexible player to manufacture an opening", () => {
+    const data = snapshot();
+    data.players = [{ ...player("a", "A"), eligiblePositions: ["LW", "RW"] }, { ...player("c", "C", "free_agent"), eligiblePositions: ["LW"] }];
+    data.roster = [{ playerId: "a", position: "active" }];
+    data.rules.rosterSlots = { LW: 1, RW: 1 };
+    data.lockedAssignments = [{ date: "2026-10-05", playerId: "a", slotId: "LW#1" }];
+    const fits = scheduleFits(data, intent, evaluatePlan(data, intent, "agp", [])).fits;
+    expect(fits[0].addedGames).toBe(1);
+    expect(fits[0].dates).toEqual(["2026-10-06"]);
   });
 });

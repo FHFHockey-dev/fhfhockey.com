@@ -51,6 +51,7 @@ describe("public RSO data boundary", () => {
     const tables: Record<string, unknown[]> = {
       roster_optimizer_team_games: [...rows, { ...rows[0], source_game_id: 2026020002 }],
       fhfh_player_identities: [{ id: "canonical-1", nhl_player_id: 847001, canonical_name: "Goalie", canonical_position: "G" }],
+      yahoo_matchup_weeks: [{ game_key: "477", week: 1, start_date: "2026-09-29", end_date: "2026-10-04" }, { game_key: "477", week: 2, start_date: "2026-10-05", end_date: "2026-10-11" }],
       teams: [{ id: 1, abbreviation: "TOR" }], rosters: [{ playerId: 847001, teamId: 1 }],
     };
     const db = { from: (table: string) => {
@@ -62,5 +63,6 @@ describe("public RSO data boundary", () => {
     expect(result.games).toHaveLength(2);
     expect(result.forecasts.map(row => row.gameId)).toEqual(["2026020001"]);
     expect(result.evidence.forecasts.limitations.join(" ")).toContain("rollout");
+    expect(result.matchupWeeks).toEqual([{ gameKey: "477", week: 1, startDate: "2026-09-29", endDate: "2026-10-04" }, { gameKey: "477", week: 2, startDate: "2026-10-05", endDate: "2026-10-11" }]);
   });
 });
