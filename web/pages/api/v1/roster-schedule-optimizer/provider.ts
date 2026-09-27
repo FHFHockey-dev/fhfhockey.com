@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { requireApiUser } from "lib/api/requireApiUser";
 import { loadInSeasonAccess, requireInSeasonCapability } from "lib/in-season/server";
 import { loadYahooPlanningSnapshot } from "lib/integrations/yahoo/rosterPlanning";
+import { YahooLiveDraftError } from "lib/integrations/yahoo/liveDraft";
 import serviceRoleClient from "lib/supabase/server";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -19,6 +20,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.json({ success: true, ...result });
   } catch (error) {
     const status = error && typeof error === "object" && "statusCode" in error && typeof error.statusCode === "number" ? error.statusCode : 503;
-    return res.status(status).json({ success: false, error: status < 500 && error instanceof Error ? error.message : "Provider inputs could not be verified. Your selected plan is preserved." });
+    // Typed provider errors contain curated messages, never raw response bodies or credentials.
+    const providerError = error instanceof YahooLiveDraftError;
+    if (status >= 500) console.error("[rso/provider] snapshot failed", { status, code: providerError ? error.code : "snapshot_unavailable" });
+    return res.status(status).json({ success: false, error: (providerError || status < 500) && error instanceof Error ? error.message : "Provider inputs could not be verified. Your selected plan is preserved.", ...(providerError ? { code: error.code } : {}) });
   }
 }

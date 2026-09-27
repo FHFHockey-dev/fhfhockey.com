@@ -3,18 +3,29 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PlanningData, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import { WORKSPACE_KEY, defaultWorkspace } from "lib/rosterScheduleOptimizer/workspace";
 
-const { authState } = vi.hoisted(() => ({ authState: { user: null as { id: string } | null } }));
+const { authState } = vi.hoisted(() => ({ authState: { user: null as { id: string } | null, teams: [] as unknown[] } }));
 vi.mock("contexts/AuthProviderContext", () => ({ useAuth: () => authState }));
-vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession: async () => ({ data: { session: authState.user ? { access_token: `token-${authState.user.id}` } : null } }) }, from: () => ({ select: () => ({ eq: async () => ({ data: [] }) }) }) } }));
+vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession: async () => ({ data: { session: authState.user ? { access_token: `token-${authState.user.id}` } : null } }) }, from: () => ({ select: () => ({ eq: async () => ({ data: authState.teams }) }) }) } }));
 vi.mock("hooks/useRosterPlanning", () => ({ useRosterPlanning: () => ({ result: null, loading: false, error: null }) }));
 import RosterScheduleOptimizer, { grossAcquisitionGames } from "components/RosterScheduleOptimizer/RosterScheduleOptimizer";
 
 const player = { id: "fhfh:1", nhlId: 1, name: "Alpha Center", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "unknown" as const, ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] };
 const data: PlanningData = { players: [player], games: [], forecasts: [], evidence: {} };
 const fetchMock = vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data }) }));
-afterEach(() => { cleanup(); window.localStorage.clear(); vi.unstubAllGlobals(); fetchMock.mockClear(); authState.user = null; });
+afterEach(() => { cleanup(); window.localStorage.clear(); vi.unstubAllGlobals(); fetchMock.mockClear(); authState.user = null; authState.teams = []; });
 
 describe("RosterScheduleOptimizer workspace", () => {
+  it("distinguishes identically named Yahoo teams by league and selects the matching context", async () => {
+    authState.user = { id: "owner" };
+    authState.teams = ["Dummy League", "Drafted League"].map((league, index) => ({ id: `team-${index}`, external_league_id: `league-${index}`, team_name: "Same team", provider: "yahoo", team_metadata: { is_owned: true }, external_leagues: { league_name: league } }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<RosterScheduleOptimizer />);
+    fireEvent.change(screen.getByRole("combobox", { name: "Source" }), { target: { value: "yahoo" } });
+    expect(await screen.findByRole("option", { name: "Same team — Dummy League" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Same team — Drafted League" })).toBeTruthy();
+    fireEvent.change(screen.getByRole("combobox", { name: "My team" }), { target: { value: "team-1" } });
+    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).context).toMatchObject({ teamId: "team-1", leagueId: "league-1" });
+  });
   it("counts only acquired players' future games before their next drop", () => {
     const workspace = defaultWorkspace(new Date("2026-09-26T12:00:00Z"));
     const snapshot: PlanningSnapshot = { id: "gross", context: workspace.context, players: [player], roster: [], games: ["2026-09-27", "2026-09-29", "2026-10-01"].map((date, index) => ({ id: `g${index}`, date, startsAt: `${date}T23:00:00Z`, teamAbbreviation: "CAR", opponent: "NJD", home: true, status: "scheduled" })), forecasts: [], rules: workspace.rules, lockedAssignments: [], realized: {}, opponent: null, evidence: {} };
