@@ -144,11 +144,18 @@ test("provider refresh proposes repairs while keeping a selected move", async ({
       rules: { lineupMode: "daily", rosterSlots: { C: 1, BN: 1 }, acquisitionTiming: "same_day", acquisitionCost: null, periods: [], lineupPeriods: [], scoring: { mode: "points", weights: {}, categories: [] }, goalieMinimum: { required: null, credited: null, counts: "unknown", penalty: "unknown" }, unsupported: [] },
       lockedAssignments: [], realized: {}, opponent: null, evidence: {},
     };
-    await route.fulfill({ json: { success: true, snapshot, capabilities: { roster: true, availability: true, rules: true, matchup: false, acquisitions: false, limitations: [] } } });
+    await route.fulfill({ json: { success: true, snapshot, capabilities: { roster: true, availability: true, rules: true, matchup: false, acquisitions: false, limitations: ["League time zone supplied by the manager; Yahoo did not verify it.", "Available-player discovery did not reach the end of the provider list."] } } });
   });
   await page.goto("/roster-schedule-optimizer");
   await page.getByLabel("Source").selectOption("yahoo");
   await page.getByLabel("Team ID").fill("team");
+  const health = page.locator("details").filter({ has: page.getByText("Data health", { exact: true }) });
+  await expect(health.locator("summary")).toContainText("2 items to review");
+  await expect(health.getByRole("list")).toBeHidden();
+  await health.locator("summary").focus();
+  await page.keyboard.press("Enter");
+  await expect(health.getByRole("list")).toContainText("Yahoo did not verify it");
+  await page.keyboard.press("Enter");
   await page.getByRole("searchbox", { name: "Find candidate" }).fill("Alpha");
   await page.getByRole("button", { name: "Select add" }).click();
   await expect(page.getByText("ADD Alpha Center")).toBeVisible();
@@ -186,4 +193,36 @@ test("shows sequential stream occupants with real games and retains workspace la
   await page.getByText("Scoring, budgets, and lock windows").click({ timeout: 10000 });
   await expectDesktopFrameVisible(page);
   await page.screenshot({ path: testInfo.outputPath("roster-optimizer-1440.png"), fullPage: true });
+});
+
+
+test("dense roster keeps schedule views and their scrollbars inside the desktop frame", async ({ page }, testInfo) => {
+  const players = Array.from({ length: 18 }, (_, i) => fixturePlayer(i + 1, `Roster Player ${i + 1}`, "CAR"));
+  const workspace = fixtureWorkspace(players, { ...fixtureRules, rosterSlots: { C: 12, BN: 6 } });
+  workspace.context.endDate = "2026-10-11";
+  workspace.roster = players.map((player) => ({ playerId: player.id, position: "active" }));
+  await seedWorkspace(page, workspace);
+  const games = Array.from({ length: 7 }, (_, i) => ({ ...fixtureGame(`g-${i}`, 5, "CAR"), date: `2026-10-${String(i + 5).padStart(2, "0")}`, startsAt: `2026-10-${String(i + 5).padStart(2, "0")}T23:00:00Z` }));
+  await page.route("**/api/v1/roster-schedule-optimizer/data?**", (route) => route.fulfill({ json: { success: true, data: { players, games, forecasts: [], evidence: {} } } }));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/roster-schedule-optimizer");
+  const itinerary = page.getByRole("region", { name: "Itinerary", exact: true });
+  await expect(itinerary.getByRole("table")).toContainText("Roster Player 1");
+  for (const [width, height] of [[1440, 900], [1920, 1080]]) {
+    await page.setViewportSize({ width, height });
+    await page.getByRole("button", { name: "Streaming itinerary", exact: true }).click();
+    await expectDesktopFrameVisible(page);
+    await page.screenshot({ path: testInfo.outputPath(`rso-itinerary-${width}.png`), fullPage: true });
+    await page.getByRole("button", { name: "Show full suggested lineup" }).click();
+    await expect(itinerary.getByRole("table")).toHaveCount(1);
+    await expect(itinerary.getByRole("columnheader", { name: "Player", exact: true })).toBeVisible();
+    const nestedVerticalScrolls = await itinerary.evaluate((panel) => Array.from(panel.querySelectorAll("div")).filter((node) => node.scrollHeight > node.clientHeight + 1 && ["auto", "scroll"].includes(getComputedStyle(node).overflowY)).length);
+    expect(nestedVerticalScrolls).toBe(1);
+    await expectDesktopFrameVisible(page);
+    await page.screenshot({ path: testInfo.outputPath(`rso-lineup-${width}.png`), fullPage: true });
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole("button", { name: "Show full suggested lineup" })).toHaveAttribute("aria-pressed", "true");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await page.screenshot({ path: testInfo.outputPath("rso-mobile.png"), fullPage: true });
 });
