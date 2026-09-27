@@ -1,17 +1,38 @@
 @use "styles/vars";
 
-.container.draftLayout > header {
+.container.draftLayout > header,
+.container.rosterOptimizerLayout > header {
   z-index: vars.$z-desktop-sticky;
 }
 
 @media (min-width: 1101px) {
-  .container.draftLayout {
+  .container.draftLayout, .container.rosterOptimizerLayout {
     height: 100dvh;
     min-height: 0;
     overflow: hidden;
 
     > header {
       flex-shrink: 0;
+    }
+  }
+}
+
+@media (min-width: 1101px) {
+  .container.rosterOptimizerLayout {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    overflow: clip;
+  }
+  .container.rosterOptimizerLayout > main {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: clip;
+    > div {
+      flex: 1 1 0;
+      min-height: 0;
+      overflow: clip;
     }
   }
 }

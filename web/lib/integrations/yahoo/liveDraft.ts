@@ -272,7 +272,7 @@ function findFirstValue(value: unknown, keys: readonly string[]): unknown {
   return undefined;
 }
 
-const YAHOO_STAT_KEY_BY_ID: Record<string, string> = {
+export const YAHOO_STAT_KEY_BY_ID: Readonly<Record<string, string>> = {
   "1": "GOALS",
   "2": "ASSISTS",
   "3": "POINTS",

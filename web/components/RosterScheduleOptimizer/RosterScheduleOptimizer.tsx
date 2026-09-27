@@ -1,957 +1,390 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { fromZonedTime } from "date-fns-tz";
 import { useAuth } from "contexts/AuthProviderContext";
-import useCurrentSeason from "hooks/useCurrentSeason";
-import {
-  type ProcessedPlayer,
-  type TableDataRow,
-  useProcessedProjectionsData,
-} from "hooks/useProcessedProjectionsData";
-import { useVORPCalculations } from "hooks/useVORPCalculations";
-import {
-  createDefaultSourceControls,
-  loadSourceControlPreferences,
-} from "lib/draftDashboard/sourceControlPreferences";
-import { PROJECTION_SOURCES_CONFIG } from "lib/projectionsConfig/projectionSourcesConfig";
-import { DEFAULT_YAHOO_GAME_KEY } from "lib/rosterScheduleData/constants";
-import {
-  calculateCandidateDust,
-  classifyDustRisk,
-  evaluateRosterSchedule,
-  expandActiveSlots,
-  prepareTeamSchedule,
-  rankAlternativeRecommendations,
-  type ActiveSlotInstance,
-  type AlternativeRecommendation,
-  type CandidateDustEvaluation,
-  type DailyAssignment,
-  type OptimizerPlayer,
-  type RosterPlayerStatus,
-  type RosterEvaluation,
-  type TeamScheduleGame,
-} from "lib/rosterScheduleOptimizer";
-import supabase from "lib/supabase";
-import {
-  createDefaultUserLeagueSettings,
-  type RosterConfig,
-  type UserLeagueSettings,
-} from "lib/user-settings/defaults";
-import { mapUserSettingsRowToLeagueSettings } from "lib/user-settings/mappers";
-
+import { useRosterPlanning } from "hooks/useRosterPlanning";
+import { comparePlanSensitivity } from "lib/player-forecasts/planComparison";
+import { expandActiveSlots } from "lib/rosterScheduleOptimizer/slots";
+import { reconcileIntent } from "lib/rosterScheduleOptimizer/reconciliation";
+import { supplementProviderRules } from "lib/rosterScheduleOptimizer/providerRules";
+import type { LeagueRules, LockedAssignment, ManagerRuleOverrides, PlanIntent, PlanStep, PlanningAssignment, PlanningData, PlanningGame, PlanningPlayer, PlanningSnapshot, PlanningWorkspace, ProviderCapabilities, RevisionProposal } from "lib/rosterScheduleOptimizer/planningTypes";
+import { defaultWorkspace, readWorkspace, resolveImportedNames, retainProviderInputs, writeWorkspace } from "lib/rosterScheduleOptimizer/workspace";
+import supabase from "lib/supabase/client";
 import styles from "./RosterScheduleOptimizer.module.scss";
 
-const SCHEDULE_START_WEEK = 1;
-const SCHEDULE_END_WEEK = 30;
-const SCHEDULE_STALE_AFTER_MS = 36 * 60 * 60 * 1000;
-const EMPTY_STYLES: Record<string, string> = {};
-const NOOP = () => undefined;
-const SLOT_ORDER = ["C", "LW", "RW", "FWD", "W", "D", "utility", "G", "bench"];
-
-type ScheduleRow = {
-  source_game_id: string | number;
-  game_date: string;
-  game_status: string;
-  team_abbreviation: string;
-  week: number;
-};
-
-type SchedulePayload = {
-  gameKey: string;
-  startWeek: number;
-  endWeek: number;
-  version: string;
-  freshness: {
-    latestFetchedAt: string | null;
-    oldestFetchedAt: string | null;
-    rowCount: number;
-  };
-  games: ScheduleRow[];
-};
-
-type ConnectedRosterState = {
-  status: "idle" | "loading" | "ready" | "error";
-  teamName: string | null;
-  players: unknown[];
-  error: string | null;
-};
-
-type ExplicitRosterIdentity = {
-  nhlIds: string[];
-  yahooIds: string[];
-};
-
-function isProcessedPlayer(row: TableDataRow): row is ProcessedPlayer {
-  return !("type" in row && row.type === "summary");
-}
-
-function textValue(value: unknown): string | null {
-  if (typeof value === "string" && value.trim()) return value.trim();
-  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+type Access = { eligible: boolean; capabilities: string[]; expiresAt?: string | null };
+type AccountRecord = { workspace: PlanningWorkspace; snapshot: PlanningSnapshot | null; version: number; updatedAt: string };
+type Tab = "itinerary" | "roster" | "candidates" | "matchup";
+type OwnTeam = { id: string; external_league_id: string; team_name: string; provider: string; team_metadata: unknown };
+const message = (error: unknown) => error instanceof Error ? error.message : "Request failed.";
+async function authHeaders(): Promise<Record<string, string>> { const token = (await supabase.auth.getSession()).data.session?.access_token; return token ? { Authorization: `Bearer ${token}` } : {}; }
+const dateLabel = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
+const actionTime = (value: string, timeZone: string) => new Intl.DateTimeFormat(undefined, { timeZone, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value));
+const periodName = (value: string, rules: LeagueRules) => rules.periods.find((period) => Date.parse(value) >= Date.parse(period.start) && Date.parse(value) < Date.parse(period.end))?.id ?? "period unknown";
+function leagueDate(value: string, timeZone: string) { const parts = new Intl.DateTimeFormat("en-US", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(value)); const part = (name: string) => parts.find((item) => item.type === name)?.value ?? ""; return `${part("year")}-${part("month")}-${part("day")}`; }
+function leagueDateTime(value: string, timeZone: string) { const parts = new Intl.DateTimeFormat("en-US", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(value)); const part = (name: string) => parts.find((item) => item.type === name)?.value ?? ""; return `${part("year")}-${part("month")}-${part("day")}T${part("hour")}:${part("minute")}`; }
+function opponentDemandHint(snapshot: PlanningSnapshot | null, player: PlanningPlayer | undefined) {
+  if (!snapshot?.opponent?.roster.length || !player?.teamAbbreviation) return null;
+  const position = player.eligiblePositions.find((slot) => (snapshot.rules.rosterSlots[slot] ?? 0) > 0);
+  if (!position) return null;
+  const need = snapshot.rules.rosterSlots[position];
+  for (const game of snapshot.games.filter((row) => row.teamAbbreviation === player.teamAbbreviation && row.status === "scheduled")) {
+    const playing = snapshot.opponent.roster.filter((entry) => entry.position !== "IR" && entry.position !== "IR+" && entry.position !== "NA").map((entry) => snapshot.players.find((row) => row.id === entry.playerId)).filter((row): row is PlanningPlayer => Boolean(row)).filter((row) => row.eligiblePositions.includes(position) && snapshot.games.some((scheduled) => scheduled.date === game.date && scheduled.teamAbbreviation === row.teamAbbreviation && scheduled.status === "scheduled"));
+    if (playing.length < need) return `Inferred opponent ${position} shortage on ${dateLabel(game.date)} (${playing.length}/${need} scheduled). This does not establish their intent.`;
+  }
   return null;
 }
-
-function nestedTextValue(value: unknown, key: string): string | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  return textValue((value as Record<string, unknown>)[key]);
-}
-
-function connectedRosterStatus(value: unknown): RosterPlayerStatus {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return "active";
+function instantFromLeagueTime(value: string, timeZone: string) { try { return fromZonedTime(value, timeZone).toISOString(); } catch { return null; } }
+function leagueDayBoundary(date: string, timeZone: string, end = false) { const value = new Date(`${date}T12:00:00Z`); if (end) value.setUTCDate(value.getUTCDate() + 1); return fromZonedTime(`${value.toISOString().slice(0, 10)}T00:00:00`, timeZone).toISOString(); }
+const number = (value: number | null | undefined) => value == null ? "—" : Number.isInteger(value) ? String(value) : value.toFixed(1);
+function fingerprint(value: unknown) { let hash = 0; for (const char of JSON.stringify(value)) hash = (Math.imul(hash, 31) + char.charCodeAt(0)) | 0; return (hash >>> 0).toString(36); }
+export function grossAcquisitionGames(steps: PlanStep[], snapshot: PlanningSnapshot | null): number {
+  if (!snapshot) return 0;
+  let gross = 0;
+  for (const add of steps.filter((step) => step.type === "add")) {
+    const player = snapshot.players.find((row) => row.id === add.playerId);
+    if (!player?.teamAbbreviation) continue;
+    const start = Date.parse(add.effectiveAt);
+    const end = Math.min(...steps.filter((step) => Date.parse(step.effectiveAt) >= start && ((step.type === "drop" && step.playerId === add.playerId) || (step.type === "add" && step.dropPlayerId === add.playerId))).map((step) => Date.parse(step.effectiveAt)), Infinity);
+    gross += snapshot.games.filter((game) => game.teamAbbreviation === player.teamAbbreviation && game.status === "scheduled" && game.startsAt && Date.parse(game.startsAt) > Date.parse(snapshot.context.asOf) && Date.parse(game.startsAt) >= start && Date.parse(game.startsAt) < end).length;
   }
-  const player = value as Record<string, unknown>;
-  const selectedPosition =
-    textValue(player.selected_position) ??
-    nestedTextValue(player.selected_position, "position") ??
-    textValue(player.selectedPosition) ??
-    nestedTextValue(player.selectedPosition, "position") ??
-    textValue(player.roster_position) ??
-    textValue(player.rosterPosition);
-  const normalized = selectedPosition?.trim().toUpperCase() ?? "";
-  if (["BN", "BE", "BENCH"].includes(normalized)) return "bench";
-  if (["IR+", "IL+"].includes(normalized)) return "ir+";
-  if (["IR", "IR-LT", "IL", "LTIR"].includes(normalized)) return "ir";
-  if (normalized === "NA") return "na";
-  return "active";
+  return gross;
 }
-
-function explicitRosterIdentity(value: unknown): ExplicitRosterIdentity {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return { nhlIds: [], yahooIds: [] };
-  }
-  const player = value as Record<string, unknown>;
-  const nhlIds = [
-    textValue(player.nhl_player_id),
-  ].filter((id): id is string => Boolean(id));
-  const yahooPlayerKey = textValue(player.player_key);
-  const yahooIds = [
-    textValue(player.yahoo_player_id),
-    textValue(player.player_id),
-    textValue(player.editorial_player_id),
-    textValue(player.editorial_player_key),
-    textValue(player.editorial_player_key)?.split(".").at(-1) ?? null,
-    yahooPlayerKey,
-    yahooPlayerKey?.split(".").at(-1) ?? null,
-  ].filter((id): id is string => Boolean(id));
-  return {
-    nhlIds: Array.from(new Set(nhlIds)),
-    yahooIds: Array.from(new Set(yahooIds)),
-  };
-}
-
-function snapshotPlayers(value: unknown): unknown[] {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
-  const players = (value as Record<string, unknown>).players;
-  return Array.isArray(players) ? players : [];
-}
-
-function toOptimizerPlayer(player: ProcessedPlayer, comparableValue?: number): OptimizerPlayer {
-  const projectedValue = comparableValue ?? player.fantasyPoints.projected ?? 0;
-  return {
-    id: String(player.playerId),
-    name: player.fullName,
-    teamAbbreviation: player.displayTeam,
-    eligiblePositions:
-      player.eligiblePositions?.length
-        ? player.eligiblePositions
-        : player.displayPosition,
-    value: Number.isFinite(projectedValue) ? projectedValue : 0,
-    available: true,
-  };
-}
-
-function rosterPlayerIdsFromSnapshot(
-  roster: readonly unknown[],
-  players: readonly ProcessedPlayer[],
-): {
-  ids: string[];
-  statuses: ReadonlyMap<string, RosterPlayerStatus>;
-  unmatched: number;
-} {
-  const byNhlId = new Map(players.map((player) => [String(player.playerId), player]));
-  const byYahooId = new Map<string, ProcessedPlayer>();
-  for (const player of players) {
-    const yahooId = textValue(player.yahooPlayerId);
-    if (!yahooId) continue;
-    byYahooId.set(yahooId, player);
-    byYahooId.set(yahooId.split(".").at(-1) ?? yahooId, player);
-  }
-
-  const matched = new Set<string>();
-  const statuses = new Map<string, RosterPlayerStatus>();
-  let unmatched = 0;
-  for (const entry of roster) {
-    const identity = explicitRosterIdentity(entry);
-    const player =
-      identity.nhlIds.map((id) => byNhlId.get(id)).find(Boolean) ??
-      identity.yahooIds.map((id) => byYahooId.get(id)).find(Boolean);
-    if (player) {
-      const playerId = String(player.playerId);
-      matched.add(playerId);
-      statuses.set(playerId, connectedRosterStatus(entry));
-    } else unmatched += 1;
-  }
-  return { ids: Array.from(matched).sort(), statuses, unmatched };
-}
-
-function scheduleGames(rows: readonly ScheduleRow[]): TeamScheduleGame[] {
-  return rows.map((row) => ({
-    gameId: String(row.source_game_id),
-    date: row.game_date,
-    teamAbbreviation: row.team_abbreviation,
-    yahooWeek: row.week,
-    status: "scheduled",
-  }));
-}
-
-function isScheduleStale(timestamp: string | null): boolean {
-  if (!timestamp) return true;
-  const parsed = Date.parse(timestamp);
-  return !Number.isFinite(parsed) || Date.now() - parsed > SCHEDULE_STALE_AFTER_MS;
-}
-
-function formatPercent(value: number): string {
-  return `${Math.round(value * 100)}%`;
-}
-
-function formatSignedCount(value: number): string {
-  return value > 0 ? `+${value}` : String(value);
-}
-
-function formatSignedPercent(value: number): string {
-  const percentage = Math.round(value * 100);
-  return percentage > 0 ? `+${percentage}%` : `${percentage}%`;
-}
-
-function formatValue(value: number): string {
-  return value.toLocaleString(undefined, { maximumFractionDigits: 1 });
-}
-
-function formatDate(value: string): string {
-  const parsed = new Date(`${value}T12:00:00`);
-  return Number.isNaN(parsed.getTime())
-    ? value
-    : parsed.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-
-function paretoFront(
-  recommendations: readonly AlternativeRecommendation[],
-): AlternativeRecommendation[] {
-  return recommendations.filter(
-    (candidate) =>
-      !recommendations.some(
-        (other) =>
-          other.player.id !== candidate.player.id &&
-          other.dustImprovement >= candidate.dustImprovement &&
-          other.valueDifference >= candidate.valueDifference &&
-          (other.dustImprovement > candidate.dustImprovement ||
-            other.valueDifference > candidate.valueDifference),
-      ),
-  );
-}
-
-function SummaryCard({ label, value, detail }: { label: string; value: string; detail: string }) {
-  return (
-    <article className={styles.summaryCard}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <small>{detail}</small>
-    </article>
-  );
-}
-
-function EmptyPanel({ children }: { children: React.ReactNode }) {
-  return <div className={styles.emptyPanel}>{children}</div>;
-}
-
-function PlayerName({ player }: { player: OptimizerPlayer }) {
-  return (
-    <span className={styles.playerName}>
-      <strong>{player.name ?? player.id}</strong>
-      <small>
-        {player.teamAbbreviation ?? "No team"} · {Array.isArray(player.eligiblePositions) ? player.eligiblePositions.join("/") : player.eligiblePositions ?? "No position"}
-      </small>
-    </span>
-  );
-}
-
-function DailyHeatmap({
-  activeSlots,
-  daily,
-  playersById,
-}: {
-  activeSlots: readonly ActiveSlotInstance[];
-  daily: readonly DailyAssignment[];
-  playersById: ReadonlyMap<string, OptimizerPlayer>;
-}) {
-  const [expandedDate, setExpandedDate] = useState<string | null>(null);
-  if (daily.length === 0) return <EmptyPanel>No scheduled roster games in this horizon.</EmptyPanel>;
-  return (
-    <>
-      <div className={styles.heatmap} aria-label="Daily roster congestion heatmap">
-        {daily.map((day) => {
-          const level = day.benchGames === 0 ? "clear" : day.benchGames <= 2 ? "busy" : "heavy";
-          const expanded = expandedDate === day.date;
-          return (
-            <button
-              key={day.date}
-              type="button"
-              className={`${styles.heatCell} ${styles[level]}`}
-              aria-expanded={expanded}
-              aria-controls={`optimizer-day-${day.date}`}
-              onClick={() => setExpandedDate(expanded ? null : day.date)}
-            >
-              <span>{formatDate(day.date)}</span>
-              <strong>{day.benchGames}</strong>
-              <small>bench</small>
-            </button>
-          );
-        })}
-      </div>
-      {expandedDate ? (
-        <div id={`optimizer-day-${expandedDate}`} className={styles.dateDetails}>
-          {daily
-            .filter((day) => day.date === expandedDate)
-            .map((day) => {
-              const assignmentBySlot = new Map(
-                day.assignments.map((assignment) => [
-                  assignment.slotId,
-                  assignment,
-                ]),
-              );
-              return <div key={day.date}>
-                <h3>{formatDate(day.date)} lineup details</h3>
-                <p>
-                  {day.startableGames} of {day.scheduledGames} games start; {day.benchGames} land on the bench.
-                </p>
-                <div className={styles.detailColumns}>
-                  <div>
-                    <h4>Active slots</h4>
-                    <ul>
-                      {activeSlots.map((slot) => {
-                        const assignment = assignmentBySlot.get(slot.id);
-                        return (
-                          <li key={slot.id}>
-                            {slot.id}: {assignment
-                              ? playersById.get(assignment.playerId)?.name ??
-                                assignment.playerName ??
-                                assignment.playerId
-                              : "Open"}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                  <div>
-                    <h4>Benched</h4>
-                    {day.benchedPlayerIds.length ? (
-                      <ul>
-                        {day.benchedPlayerIds.map((id) => (
-                          <li key={id}>
-                            {playersById.get(id)?.name ?? id}: no compatible
-                            active slot remained after maximum matching.
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p>None</p>
-                    )}
-                    {day.unresolvedPlayers.length ? (
-                      <>
-                        <h4>Unresolved</h4>
-                        <ul>
-                          {day.unresolvedPlayers.map((player) => (
-                            <li key={player.playerId}>
-                              {playersById.get(player.playerId)?.name ??
-                                player.playerName ??
-                                player.playerId}
-                              : eligibility could not be normalized.
-                            </li>
-                          ))}
-                        </ul>
-                      </>
-                    ) : null}
-                  </div>
-                </div>
-              </div>;
-            })}
-        </div>
-      ) : null}
-    </>
-  );
+function datesBetween(start: string, end: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end) || start > end) return [];
+  const dates: string[] = [];
+  const cursor = new Date(`${start}T12:00:00Z`);
+  for (let i = 0; i < 367 && cursor.toISOString().slice(0, 10) <= end; i++, cursor.setUTCDate(cursor.getUTCDate() + 1)) dates.push(cursor.toISOString().slice(0, 10));
+  return dates;
 }
 
 export default function RosterScheduleOptimizer() {
-  const { user, isLoading: authLoading } = useAuth();
-  const currentSeason = useCurrentSeason();
-  const defaults = useMemo(() => createDefaultUserLeagueSettings(), []);
-  const [leagueSettings, setLeagueSettings] = useState<UserLeagueSettings>(defaults);
-  const [settingsStatus, setSettingsStatus] = useState<"loading" | "ready" | "error">("loading");
-  const [rosterConfig, setRosterConfig] = useState<RosterConfig>(defaults.rosterConfig);
-  const [connectedRoster, setConnectedRoster] = useState<ConnectedRosterState>({
-    status: "idle",
-    teamName: null,
-    players: [],
-    error: null,
-  });
+  const { user } = useAuth();
+  const [workspace, setWorkspace] = useState<PlanningWorkspace>(() => defaultWorkspace());
+  const [hydrated, setHydrated] = useState(false);
+  const [data, setData] = useState<PlanningData | null>(null);
+  const [access, setAccess] = useState<Access | null>(null);
+  const [connected, setConnected] = useState<PlanningSnapshot | null>(null);
+  const [capabilities, setCapabilities] = useState<ProviderCapabilities | null>(null);
+  const [account, setAccount] = useState<AccountRecord | null>(null);
+  const [viewingSaved, setViewingSaved] = useState(false);
+  const [proposal, setProposal] = useState<RevisionProposal | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [loadingData, setLoadingData] = useState(false);
+  const [query, setQuery] = useState("");
+  const [paste, setPaste] = useState("");
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("itinerary");
+  const [showLineup, setShowLineup] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [ownTeams, setOwnTeams] = useState<OwnTeam[]>([]);
+  const history = useRef<PlanningWorkspace[]>([]);
+  const canSync = Boolean(access?.capabilities.includes("rso_sync"));
+  const canAutoUpkeep = Boolean(access?.capabilities.includes("rso_auto_upkeep"));
+  const readOnlySaved = viewingSaved || (workspace.context.provider !== "manual" && !canSync && Boolean(account?.snapshot));
+  const readOnlyInert = readOnlySaved ? { inert: "true" as unknown as boolean } : {};
 
-  const sourcePreferences = useMemo(() => {
-    const sourceDefaults = {
-      skater: createDefaultSourceControls(PROJECTION_SOURCES_CONFIG, "skater"),
-      goalie: createDefaultSourceControls(PROJECTION_SOURCES_CONFIG, "goalie"),
+  useEffect(() => { const saved = readWorkspace(window.localStorage); if (saved) setWorkspace(saved); setHydrated(true); }, []);
+  useEffect(() => { if (hydrated) setNotice(writeWorkspace(window.localStorage, workspace)); }, [hydrated, workspace]);
+  const edit = useCallback((change: (current: PlanningWorkspace) => PlanningWorkspace) => setWorkspace((current) => {
+    if (readOnlySaved) return current;
+    let next = change(current);
+    if (next.context.provider !== current.context.provider || next.context.leagueId !== current.context.leagueId || next.context.teamId !== current.context.teamId || next.context.seasonId !== current.context.seasonId) next = { ...next, managerRuleOverrides: {} };
+    if (next !== current) {
+      history.current = [...history.current.slice(-19), current];
+      if (next.context.provider === "manual") next = { ...next, context: { ...next.context, asOf: new Date().toISOString() } };
+    }
+    return next;
+  }), [readOnlySaved]);
+  const editIntent = useCallback((change: (intent: PlanIntent) => PlanIntent) => edit((current) => ({ ...current, intent: { ...change(current.intent), revision: current.intent.revision + 1 } })), [edit]);
+  const undo = () => { const previous = history.current.pop(); if (previous) setWorkspace(previous); };
+  const contextKey = `${workspace.context.seasonId}:${workspace.context.startDate}:${workspace.context.endDate}:${workspace.context.timeZone}`;
+  const accountKey = `${workspace.context.provider}:${workspace.context.leagueId}:${workspace.context.teamId}:${contextKey}`;
+  useEffect(() => {
+    if (!hydrated) return;
+    const controller = new AbortController(); setLoadingData(true); setData(null);
+    const params = new URLSearchParams({ seasonId: String(workspace.context.seasonId), startDate: workspace.context.startDate, endDate: workspace.context.endDate, timeZone: workspace.context.timeZone });
+    fetch(`/api/v1/roster-schedule-optimizer/data?${params}`, { signal: controller.signal })
+      .then(async (response) => { const body = await response.json(); if (!response.ok || !body.success) throw new Error(body.error ?? "Planning data unavailable."); return body.data as PlanningData; })
+      .then((next) => { if (controller.signal.aborted) return; const asOf = new Date().toISOString(); setData(next); setNotice(null); setLastUpdated(asOf); setWorkspace((current) => current.context.provider === "manual" && !viewingSaved ? { ...current, context: { ...current.context, asOf } } : current); })
+      .catch((error) => { if (!controller.signal.aborted) setNotice(message(error)); })
+      .finally(() => { if (!controller.signal.aborted) setLoadingData(false); });
+    return () => controller.abort();
+  }, [hydrated, contextKey, viewingSaved]);
+  useEffect(() => {
+    const controller = new AbortController();
+    const load = async () => {
+      try {
+        const headers = await authHeaders(); if (controller.signal.aborted) return;
+        const response = await fetch("/api/v1/roster-schedule-optimizer/access", { signal: controller.signal, headers });
+        const body = response.ok ? await response.json() : null;
+        if (!controller.signal.aborted) setAccess((body?.data ?? null) as Access | null);
+      } catch { if (!controller.signal.aborted) setAccess(null); }
     };
-    if (typeof window === "undefined") return { version: 4 as const, ...sourceDefaults };
-    return loadSourceControlPreferences(sourceDefaults);
-  }, []);
-
+    void load();
+    const visible = () => { if (document.visibilityState === "visible") void load(); };
+    document.addEventListener("visibilitychange", visible);
+    const timer = setInterval(() => { if (document.visibilityState === "visible") void load(); }, 5 * 60_000);
+    return () => { controller.abort(); clearInterval(timer); document.removeEventListener("visibilitychange", visible); };
+  }, [user?.id]);
+  useEffect(() => { setConnected(null); setCapabilities(null); setProposal(null); setAccount(null); setViewingSaved(false); }, [user?.id]);
   useEffect(() => {
+    if (!access?.expiresAt) return;
+    const expiresAt = Date.parse(access.expiresAt);
+    const expire = () => setAccess((current) => current ? { ...current, eligible: false, capabilities: [] } : current);
+    let timer: ReturnType<typeof setTimeout>;
+    const schedule = () => { const remaining = expiresAt - Date.now(); if (remaining <= 0) expire(); else timer = setTimeout(schedule, Math.min(remaining, 2_147_483_647)); };
+    schedule();
+    return () => clearTimeout(timer);
+  }, [access?.expiresAt]);
+  useEffect(() => {
+    if (!user?.id) { setOwnTeams([]); return; }
     let active = true;
-    if (authLoading) return () => { active = false; };
-    if (!user?.id) {
-      setLeagueSettings(defaults);
-      setRosterConfig(defaults.rosterConfig);
-      setSettingsStatus("ready");
-      setConnectedRoster({ status: "idle", teamName: null, players: [], error: null });
-      return () => { active = false; };
-    }
-
-    setSettingsStatus("loading");
-    void supabase
-      .from("user_settings")
-      .select("league_type, scoring_categories, goalie_scoring_categories, category_weights, roster_config, team_count, draft_order_type, ui_preferences, active_context")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(async ({ data, error }) => {
-        if (!active) return;
-        if (error) {
-          setSettingsStatus("error");
-          setLeagueSettings(defaults);
-          setRosterConfig(defaults.rosterConfig);
-          return;
-        }
-        const mapped = mapUserSettingsRowToLeagueSettings(data as never);
-        setLeagueSettings(mapped);
-        setRosterConfig(mapped.rosterConfig);
-        setSettingsStatus("ready");
-
-        const context = mapped.activeContext;
-        if (context.provider !== "yahoo" || !context.external_team_id) {
-          setConnectedRoster({ status: "idle", teamName: null, players: [], error: null });
-          return;
-        }
-        setConnectedRoster({ status: "loading", teamName: null, players: [], error: null });
-        const teamResult = await supabase
-          .from("external_teams")
-          .select("id, team_name, roster_snapshot")
-          .eq("id", context.external_team_id)
-          .eq("user_id", user.id)
-          .eq("provider", "yahoo")
-          .maybeSingle();
-        if (!active) return;
-        if (teamResult.error || !teamResult.data) {
-          setConnectedRoster({
-            status: "error",
-            teamName: null,
-            players: [],
-            error: teamResult.error?.message ?? "The active Yahoo team is no longer available.",
-          });
-          return;
-        }
-        setConnectedRoster({
-          status: "ready",
-          teamName: teamResult.data.team_name,
-          players: snapshotPlayers(teamResult.data.roster_snapshot),
-          error: null,
-        });
-      });
+    void supabase.from("external_teams").select("id,external_league_id,team_name,provider,team_metadata").eq("user_id", user.id)
+      .then(({ data }) => { if (active) setOwnTeams((data ?? []).filter((team) => Boolean(team.team_metadata && typeof team.team_metadata === "object" && !Array.isArray(team.team_metadata) && (team.team_metadata as Record<string, unknown>).is_owned === true)) as OwnTeam[]); });
     return () => { active = false; };
-  }, [authLoading, defaults, user?.id]);
-
-  const skaterData = useProcessedProjectionsData({
-    activePlayerType: "skater",
-    sourceControls: sourcePreferences.skater,
-    yahooDraftMode: "ALL",
-    fantasyPointSettings: leagueSettings.scoringCategories,
-    supabaseClient: supabase,
-    currentSeasonId: currentSeason?.seasonId ? String(currentSeason.seasonId) : undefined,
-    styles: EMPTY_STYLES,
-    showPerGameFantasyPoints: false,
-    togglePerGameFantasyPoints: NOOP,
-    teamCountForRoundSummaries: leagueSettings.teamCount,
-  });
-  const goalieData = useProcessedProjectionsData({
-    activePlayerType: "goalie",
-    sourceControls: sourcePreferences.goalie,
-    yahooDraftMode: "ALL",
-    fantasyPointSettings: leagueSettings.goalieScoringCategories,
-    supabaseClient: supabase,
-    currentSeasonId: currentSeason?.seasonId ? String(currentSeason.seasonId) : undefined,
-    styles: EMPTY_STYLES,
-    showPerGameFantasyPoints: false,
-    togglePerGameFantasyPoints: NOOP,
-    teamCountForRoundSummaries: leagueSettings.teamCount,
-  });
-
-  const projectedPlayers = useMemo(
-    () => [...skaterData.processedPlayers, ...goalieData.processedPlayers].filter(isProcessedPlayer),
-    [goalieData.processedPlayers, skaterData.processedPlayers],
-  );
-  const forwardGrouping = useMemo(
-    () =>
-      (rosterConfig.FWD ?? rosterConfig.F ?? 0) > 0 &&
-      !["C", "LW", "RW"].some((position) => (rosterConfig[position] ?? 0) > 0)
-        ? ("fwd" as const)
-        : ("split" as const),
-    [rosterConfig],
-  );
-  const { playerMetrics } = useVORPCalculations({
-    players: projectedPlayers,
-    availablePlayers: projectedPlayers,
-    draftSettings: {
-      teamCount: leagueSettings.teamCount,
-      rosterConfig,
-      leagueType: leagueSettings.leagueType,
-      categoryWeights: leagueSettings.categoryWeights,
-    },
-    picksUntilNext: 0,
-    leagueType: leagueSettings.leagueType,
-    baselineMode: "full",
-    categoryWeights: leagueSettings.categoryWeights,
-    forwardGrouping,
-    fantasyPointSettings: leagueSettings.scoringCategories,
-  });
-  const optimizerPlayers = useMemo(
-    () => projectedPlayers.map((player) => toOptimizerPlayer(player, playerMetrics.get(String(player.playerId))?.value)),
-    [playerMetrics, projectedPlayers],
-  );
-  const playersById = useMemo(() => new Map(optimizerPlayers.map((player) => [player.id, player])), [optimizerPlayers]);
-  const connectedIdentity = useMemo(
-    () => rosterPlayerIdsFromSnapshot(connectedRoster.players, projectedPlayers),
-    [connectedRoster.players, projectedPlayers],
-  );
-  const baselineRosterIds = useMemo(
-    () => connectedRoster.status === "ready" ? connectedIdentity.ids : [],
-    [connectedIdentity.ids, connectedRoster.status],
-  );
-  const baselineSignature = baselineRosterIds.join("|");
-  const [scenarioRosterIds, setScenarioRosterIds] = useState<string[]>([]);
-  const [initializedBaseline, setInitializedBaseline] = useState<string | null>(null);
+  }, [user?.id]);
   useEffect(() => {
-    if (initializedBaseline === baselineSignature) return;
-    setScenarioRosterIds(baselineRosterIds);
-    setInitializedBaseline(baselineSignature);
-  }, [baselineRosterIds, baselineSignature, initializedBaseline]);
-
-  const [gameKey, setGameKey] = useState<string>(DEFAULT_YAHOO_GAME_KEY);
-  const [gameKeyInput, setGameKeyInput] = useState<string>(
-    DEFAULT_YAHOO_GAME_KEY,
-  );
-  const [gameKeyError, setGameKeyError] = useState<string | null>(null);
-  const [schedule, setSchedule] = useState<SchedulePayload | null>(null);
-  const [scheduleStatus, setScheduleStatus] = useState<"loading" | "ready" | "empty" | "error">("loading");
-  const [scheduleError, setScheduleError] = useState<string | null>(null);
-  const loadSchedule = useCallback(async () => {
-    setScheduleStatus("loading");
-    setScheduleError(null);
+    if (!hydrated) return;
+    const controller = new AbortController(); setAccount(null);
+    const { provider, seasonId, leagueId, teamId, startDate, endDate } = workspace.context;
+    const params = new URLSearchParams({ provider, seasonId: String(seasonId), leagueId, teamId, startDate, endDate });
+    authHeaders().then((headers) => { if (controller.signal.aborted) return null; return fetch(`/api/v1/roster-schedule-optimizer/workspace?${params}`, { signal: controller.signal, headers }); })
+      .then(async (response) => response?.ok ? (await response.json()).data as AccountRecord | null : null)
+      .then((saved) => { if (!controller.signal.aborted) setAccount(saved); }).catch(() => undefined);
+    return () => controller.abort();
+  }, [hydrated, accountKey, user?.id]);
+  const providerRef = useRef({ context: workspace.context, intent: workspace.intent, overrides: workspace.managerRuleOverrides });
+  providerRef.current = { context: workspace.context, intent: workspace.intent, overrides: workspace.managerRuleOverrides };
+  const connectedRef = useRef(connected);
+  connectedRef.current = connected;
+  const providerAbort = useRef<AbortController | null>(null);
+  const refreshProvider = useCallback(async (signal?: AbortSignal): Promise<boolean> => {
+    const { context } = providerRef.current;
+    if (context.provider === "manual" || !canSync) return false;
+    if (context.teamId === "manual") { setNotice("Select an owned team before refreshing provider inputs."); return false; }
+    providerAbort.current?.abort();
+    const controller = new AbortController();
+    providerAbort.current = controller;
+    signal?.addEventListener("abort", () => controller.abort(), { once: true });
+    const requestKey = `${context.provider}:${context.teamId}:${context.seasonId}:${context.startDate}:${context.endDate}:${context.timeZone}`;
     try {
-      const query = new URLSearchParams({
-        gameKey,
-        startWeek: String(SCHEDULE_START_WEEK),
-        endWeek: String(SCHEDULE_END_WEEK),
-      });
-      const response = await fetch(`/api/v1/roster-schedule-optimizer/schedule?${query}`);
-      const payload = await response.json();
-      if (!response.ok || payload?.success !== true) {
-        throw new Error(payload?.error?.message ?? "Unable to load the NHL schedule.");
-      }
-      const next = payload.data as SchedulePayload;
-      setSchedule(next);
-      setScheduleStatus(next.games.length ? "ready" : "empty");
-    } catch (error) {
-      setSchedule(null);
-      setScheduleStatus("error");
-      setScheduleError(error instanceof Error ? error.message : "Unable to load the NHL schedule.");
-    }
-  }, [gameKey]);
-  useEffect(() => { void loadSchedule(); }, [loadSchedule]);
-
-  const availableWeeks = useMemo(
-    () => Array.from(new Set((schedule?.games ?? []).map((game) => game.week))).sort((a, b) => a - b),
-    [schedule?.games],
-  );
-  const firstWeek = availableWeeks[0] ?? SCHEDULE_START_WEEK;
-  const lastWeek = availableWeeks.at(-1) ?? SCHEDULE_END_WEEK;
-  const [startWeek, setStartWeek] = useState(SCHEDULE_START_WEEK);
-  const [endWeek, setEndWeek] = useState(SCHEDULE_END_WEEK);
+      const headers = await authHeaders(); if (controller.signal.aborted) return false;
+      const response = await fetch("/api/v1/roster-schedule-optimizer/provider", { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ provider: context.provider, teamId: context.teamId, startDate: context.startDate, endDate: context.endDate, timeZone: context.timeZone }), signal: controller.signal });
+      const body = await response.json(); if (!response.ok || !body.success) throw new Error(body.error ?? "Provider refresh failed.");
+      const current = providerRef.current.context;
+      if (controller.signal.aborted || requestKey !== `${current.provider}:${current.teamId}:${current.seasonId}:${current.startDate}:${current.endDate}:${current.timeZone}`) return false;
+      const next = body.snapshot as PlanningSnapshot;
+      const previous = connectedRef.current;
+      const sameContext = previous && ["provider", "seasonId", "leagueId", "teamId", "startDate", "endDate", "timeZone"].every((key) => previous.context[key as keyof typeof previous.context] === next.context[key as keyof typeof next.context]);
+      const overrides = providerRef.current.overrides ?? {};
+      setConnected(next); connectedRef.current = next; setCapabilities(body.capabilities as ProviderCapabilities); setWorkspace((current) => ({ ...retainProviderInputs(current, next), context: next.context }));
+      setProposal(reconcileIntent(supplementProviderRules(next, overrides).snapshot, providerRef.current.intent, sameContext ? supplementProviderRules(previous, overrides).snapshot : undefined)); setNotice(null); setLastUpdated(new Date().toISOString());
+      return true;
+    } catch (error) { if (!controller.signal.aborted) setNotice(message(error)); return false; }
+  }, [canSync]);
   useEffect(() => {
-    if (!availableWeeks.length) return;
-    setStartWeek((week) => Math.max(firstWeek, Math.min(week, lastWeek)));
-    setEndWeek((week) => Math.max(firstWeek, Math.min(week, lastWeek)));
-  }, [availableWeeks.length, firstWeek, lastWeek]);
-  const selectedWeeks = useMemo(
-    () => availableWeeks.filter((week) => week >= Math.min(startWeek, endWeek) && week <= Math.max(startWeek, endWeek)),
-    [availableWeeks, endWeek, startWeek],
-  );
-  const fullSeason = startWeek === firstWeek && endWeek === lastWeek;
-  const preparedSchedule = useMemo(
-    () => prepareTeamSchedule(scheduleGames(schedule?.games ?? []), {
-      gameKey,
-      selectedWeeks,
-    }),
-    [gameKey, schedule?.games, selectedWeeks],
-  );
-  const activeSlots = useMemo(
-    () => expandActiveSlots(rosterConfig).activeSlots,
-    [rosterConfig],
-  );
-  const baselineRoster = useMemo<OptimizerPlayer[]>(
-    () =>
-      baselineRosterIds
-        .map((id) => {
-          const player = playersById.get(id);
-          return player
-            ? { ...player, status: connectedIdentity.statuses.get(id) }
-            : null;
-        })
-        .filter(
-          (player): player is NonNullable<typeof player> => player !== null,
-        ),
-    [baselineRosterIds, connectedIdentity.statuses, playersById],
-  );
-  const scenarioRoster = useMemo<OptimizerPlayer[]>(
-    () =>
-      scenarioRosterIds
-        .map((id) => {
-          const player = playersById.get(id);
-          return player
-            ? {
-                ...player,
-                status: baselineRosterIds.includes(id)
-                  ? connectedIdentity.statuses.get(id)
-                  : undefined,
-              }
-            : null;
-        })
-        .filter(
-          (player): player is NonNullable<typeof player> => player !== null,
-        ),
-    [baselineRosterIds, connectedIdentity.statuses, playersById, scenarioRosterIds],
-  );
-  const baselineEvaluation = useMemo<RosterEvaluation | null>(() => {
-    if (scheduleStatus !== "ready") return null;
-    return evaluateRosterSchedule({
-      roster: baselineRoster,
-      rosterSlots: rosterConfig,
-      schedule: preparedSchedule,
-    });
-  }, [baselineRoster, preparedSchedule, rosterConfig, scheduleStatus]);
-  const evaluation = useMemo<RosterEvaluation | null>(() => {
-    if (scheduleStatus !== "ready") return null;
-    return evaluateRosterSchedule({ roster: scenarioRoster, rosterSlots: rosterConfig, schedule: preparedSchedule });
-  }, [preparedSchedule, rosterConfig, scenarioRoster, scheduleStatus]);
-
-  const playerDust = useMemo(() => {
-    const dust = new Map<string, CandidateDustEvaluation>();
-    if (scheduleStatus !== "ready") return dust;
-    for (const player of scenarioRoster) {
-      if (!["active", "bench"].includes(player.status ?? "active")) continue;
-      const without = scenarioRoster.filter((entry) => entry.id !== player.id);
-      const input = { roster: without, rosterSlots: rosterConfig, schedule: preparedSchedule };
-      const baseline = evaluateRosterSchedule(input);
-      const result = calculateCandidateDust(input, player, baseline);
-      if (!result.diagnostics.some((item) => item.severity === "error")) {
-        dust.set(player.id, result);
-      }
-    }
-    return dust;
-  }, [preparedSchedule, rosterConfig, scenarioRoster, scheduleStatus]);
-
-  const [playerSearch, setPlayerSearch] = useState("");
-  const availablePlayers = useMemo(() => {
-    const rosterIds = new Set(scenarioRosterIds);
-    const query = playerSearch.trim().toLocaleLowerCase();
-    return optimizerPlayers
-      .filter((player) => !rosterIds.has(player.id) && (!query || (player.name ?? "").toLocaleLowerCase().includes(query) || (player.teamAbbreviation ?? "").toLocaleLowerCase().includes(query)))
-      .sort((left, right) => right.value - left.value || (left.name ?? left.id).localeCompare(right.name ?? right.id))
-      .slice(0, 12);
-  }, [optimizerPlayers, playerSearch, scenarioRosterIds]);
-  const [selectedOutgoingId, setSelectedOutgoingId] = useState<string>("");
+    if (workspace.context.provider === "manual" || !canSync) return;
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let delay = 5 * 60_000;
+    const refresh = async () => {
+      if (controller.signal.aborted || document.visibilityState !== "visible") return;
+      const succeeded = await refreshProvider(controller.signal);
+      if (controller.signal.aborted || !canAutoUpkeep) return;
+      delay = succeeded ? 5 * 60_000 : Math.min(delay * 2, 30 * 60_000);
+      timer = setTimeout(() => void refresh(), delay);
+    };
+    if (workspace.context.teamId !== "manual") void refresh();
+    const visible = () => { if (document.visibilityState !== "visible") return; if (timer) clearTimeout(timer); void refresh(); };
+    document.addEventListener("visibilitychange", visible);
+    return () => { controller.abort(); providerAbort.current?.abort(); if (timer) clearTimeout(timer); document.removeEventListener("visibilitychange", visible); };
+  }, [workspace.context.provider, workspace.context.teamId, contextKey, canSync, canAutoUpkeep, refreshProvider]);
   useEffect(() => {
-    if (selectedOutgoingId && scenarioRosterIds.includes(selectedOutgoingId)) return;
-    setSelectedOutgoingId(playerDust.size ? [...playerDust.entries()].sort((a, b) => b[1].marginalDustGames - a[1].marginalDustGames)[0]?.[0] ?? "" : "");
-  }, [playerDust, scenarioRosterIds, selectedOutgoingId]);
-  const alternatives = useMemo(() => {
-    const outgoing = playersById.get(selectedOutgoingId);
-    if (!outgoing || scheduleStatus !== "ready") return [];
-    const without = scenarioRoster.filter((player) => player.id !== outgoing.id);
-    const input = { roster: without, rosterSlots: rosterConfig, schedule: preparedSchedule };
-    const baseline = evaluateRosterSchedule(input);
-    const outgoingDust = calculateCandidateDust(input, outgoing, baseline);
-    if (outgoingDust.diagnostics.some((item) => item.severity === "error")) {
-      return [];
+    const current = connected?.context;
+    const connectedKey = current ? `${current.provider}:${current.leagueId}:${current.teamId}:${current.seasonId}:${current.startDate}:${current.endDate}:${current.timeZone}` : null;
+    if (connectedKey === accountKey) return;
+    setConnected(null); setCapabilities(null); setProposal(null);
+  }, [accountKey]);
+
+  const connectedInput = connected ?? (workspace.context.provider !== "manual" ? account?.snapshot ?? null : null);
+  const players = useMemo(() => [...new Map([...(data?.players ?? []), ...workspace.manualPlayers, ...(connectedInput?.players ?? []), ...(viewingSaved ? account?.snapshot?.players ?? [] : [])].map((player) => [player.id, player])).values()], [data?.players, workspace.manualPlayers, connectedInput?.players, viewingSaved, account?.snapshot?.players]);
+  const supplemented = useMemo(() => connectedInput ? supplementProviderRules(connectedInput, workspace.managerRuleOverrides ?? {}) : null, [connectedInput, workspace.managerRuleOverrides]);
+  const snapshot = useMemo<PlanningSnapshot | null>(() => {
+    if (viewingSaved) return account?.snapshot ?? null;
+    if (workspace.context.provider !== "manual") return supplemented?.snapshot ?? null;
+    if (!data) return null;
+    return { id: `manual:${fingerprint({ contextKey, roster: workspace.roster, rules: workspace.rules, locks: workspace.lockedAssignments, manualPlayers: workspace.manualPlayers, realized: workspace.realized, opponent: workspace.opponent, asOf: workspace.context.asOf })}`, context: workspace.context, players, roster: workspace.roster, games: data.games, forecasts: data.forecasts, rules: workspace.rules, lockedAssignments: workspace.lockedAssignments ?? [], realized: workspace.realized, opponent: workspace.opponent, evidence: data.evidence };
+  }, [workspace, data, players, supplemented, contextKey, lastUpdated, viewingSaved, account]);
+  const { result: rawResult, error: planningError, loading: planningLoading } = useRosterPlanning(snapshot, workspace.intent);
+  const result = rawResult && rawResult.snapshotId === snapshot?.id && rawResult.intentRevision === workspace.intent.revision ? rawResult : null;
+  const activeProposal = proposal && proposal.snapshotId === snapshot?.id && proposal.intentRevision === workspace.intent.revision ? proposal : null;
+  const sensitivity = useMemo(() => snapshot && result ? comparePlanSensitivity(snapshot, result.baseline, result.selected) : null, [snapshot, result]);
+  const roster = workspace.context.provider !== "manual" && connectedInput ? connectedInput.roster : workspace.roster;
+  const rules = workspace.context.provider !== "manual" && supplemented ? supplemented.snapshot.rules : workspace.rules;
+  const scheduleDateCount = new Set(snapshot?.games.filter((game) => game.status !== "cancelled" && game.status !== "postponed").map((game) => game.date) ?? []).size;
+  const activeSlotCount = expandActiveSlots(rules.rosterSlots).activeSlots.length;
+  const utilizationCapacity = scheduleDateCount * activeSlotCount;
+  const dates = useMemo(() => datesBetween(workspace.context.startDate, workspace.context.endDate), [contextKey]);
+  const rangeTooLong = Date.parse(workspace.context.endDate) - Date.parse(workspace.context.startDate) > 366 * 86_400_000;
+  const focusedDate = selectedDate && dates.includes(selectedDate) ? selectedDate : dates[0];
+  const matches = players.filter((player) => query.trim().length >= 2 && `${player.name} ${player.teamAbbreviation ?? ""}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())).slice(0, 20);
+  const rosterIds = new Set(roster.map((entry) => entry.playerId));
+  const assignments = result?.selected.assignments ?? [];
+  const nameOf = (id: string) => players.find((player) => player.id === id)?.name ?? id;
+  const addRoster = (player: PlanningPlayer) => { if (rosterIds.has(player.id)) return; edit((current) => ({ ...current, roster: [...current.roster, { playerId: player.id, position: "bench" }], manualPlayers: [...current.manualPlayers.filter((row) => row.id !== player.id), player], unresolvedNames: current.unresolvedNames.filter((name) => name.toLowerCase() !== player.name.toLowerCase()) })); setQuery(""); };
+  const importRoster = () => { const resolved = resolveImportedNames(paste, players); edit((current) => ({ ...current, roster: [...current.roster, ...resolved.matched.filter((player) => !current.roster.some((entry) => entry.playerId === player.id)).map((player) => ({ playerId: player.id, position: "bench" as const }))], manualPlayers: [...current.manualPlayers.filter((row) => !resolved.matched.some((player) => player.id === row.id)), ...resolved.matched], unresolvedNames: [...new Set([...current.unresolvedNames, ...resolved.unresolved])] })); setPaste(""); };
+  const chooseCandidate = (player: PlanningPlayer) => {
+    setSelectedPlayer(player.id);
+    if (rosterIds.has(player.id) || !["free_agent", "manager_available", "waivers"].includes(player.availability)) return;
+    const at = new Date(Date.now() + 60_000).toISOString(); editIntent((intent) => ({ ...intent, steps: [...intent.steps, { id: `selected-${Date.now()}`, type: "add", playerId: player.id, at, effectiveAt: at, conditional: true, dependsOn: [] }] }));
+  };
+  const saveAccount = async () => {
+    try {
+      if (snapshot && JSON.stringify(snapshot.context) !== JSON.stringify(workspace.context)) throw new Error("Provider context changed. Refresh this workspace before saving.");
+      const headers = await authHeaders();
+      const response = await fetch("/api/v1/roster-schedule-optimizer/workspace", { method: "PUT", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ workspace, snapshot, expectedVersion: account?.version ?? null }) });
+      const body = await response.json(); if (response.status === 409) throw new Error("Another device saved this workspace. Your local plan is intact; review the other version before saving again.");
+      if (!response.ok) throw new Error(body.error ?? "Account save failed."); setAccount(body.data as AccountRecord); setNotice("Saved to account.");
+    } catch (error) { setNotice(message(error)); }
+  };
+  const updateRules = (change: (rules: LeagueRules) => LeagueRules) => edit((current) => {
+    const base = current.context.provider === "manual" ? current.rules : (connected ? supplementProviderRules(connected, current.managerRuleOverrides ?? {}).snapshot.rules : current.rules);
+    const rules = change(base);
+    const overrides: ManagerRuleOverrides = { ...current.managerRuleOverrides };
+    for (const key of ["lineupMode", "acquisitionTiming", "acquisitionCost", "periods", "lineupPeriods", "waivers"] as const) {
+      if (JSON.stringify(base[key]) !== JSON.stringify(rules[key])) (overrides as Record<string, unknown>)[key] = rules[key];
     }
-    const rosterIds = new Set(scenarioRosterIds);
-    const candidateDust = optimizerPlayers
-      .filter((player) => !rosterIds.has(player.id) && player.teamAbbreviation && player.eligiblePositions)
-      .map((player) => calculateCandidateDust(input, player, baseline))
-      .filter(
-        (candidate) =>
-          !candidate.diagnostics.some((item) => item.severity === "error"),
-      );
-    const ranked = rankAlternativeRecommendations(outgoingDust, candidateDust, rosterConfig);
-    return paretoFront(ranked).slice(0, 8);
-  }, [optimizerPlayers, playersById, preparedSchedule, rosterConfig, scenarioRoster, scenarioRosterIds, scheduleStatus, selectedOutgoingId]);
+    const slots = { ...overrides.rosterSlots };
+    for (const [slot, count] of Object.entries(rules.rosterSlots)) if (base.rosterSlots[slot] !== count) slots[slot] = count;
+    if (Object.keys(slots).length) overrides.rosterSlots = slots;
+    const scoring = { ...overrides.scoring };
+    if (base.scoring.mode !== rules.scoring.mode) scoring.mode = rules.scoring.mode;
+    if (JSON.stringify(base.scoring.weights) !== JSON.stringify(rules.scoring.weights)) scoring.weights = rules.scoring.weights;
+    if (JSON.stringify(base.scoring.categories) !== JSON.stringify(rules.scoring.categories)) scoring.categories = rules.scoring.categories;
+    if (Object.keys(scoring).length) overrides.scoring = scoring;
+    const goalie = { ...overrides.goalieMinimum };
+    for (const key of ["required", "credited", "counts", "penalty", "periodStart", "periodEnd"] as const) if (base.goalieMinimum[key] !== rules.goalieMinimum[key]) (goalie as Record<string, unknown>)[key] = rules.goalieMinimum[key];
+    if (Object.keys(goalie).length) overrides.goalieMinimum = goalie;
+    return { ...current, rules, managerRuleOverrides: overrides };
+  });
 
-  const projectionLoading = skaterData.isLoading || goalieData.isLoading;
-  const projectionError = skaterData.error || goalieData.error;
-  const rosterSourceLabel = connectedRoster.status === "ready"
-    ? `Connected Yahoo roster · ${connectedRoster.teamName ?? "Active team"}`
-    : "Manual scenario · League Defaults";
-  const scheduleStale = isScheduleStale(schedule?.freshness.latestFetchedAt ?? null);
+  return <div className={styles.workspace}>
+    <header className={styles.topbar}><div><span className={styles.eyebrow}>In-season planning</span><h1>Roster Schedule Optimizer</h1><p>Selected moves are a plan. Confirm roster changes with your provider.</p></div><div className={styles.actions}><button onClick={undo} disabled={readOnlySaved || !history.current.length}>Undo</button><button onClick={() => setTab(tab === "matchup" ? "candidates" : "matchup")}>{tab === "matchup" ? "Candidates" : "Matchup"}</button>{account?.snapshot && <button onClick={() => { setWorkspace(account.workspace); setViewingSaved(true); }}>View account save</button>}{access?.capabilities.includes("rso_account_save") && !readOnlySaved && <button onClick={saveAccount}>Save to account</button>}<span>{viewingSaved && snapshot ? `Saved evidence ${actionTime(snapshot.context.asOf, snapshot.context.timeZone)}` : lastUpdated ? `Data checked ${new Date(lastUpdated).toLocaleTimeString()}` : "Data not loaded"}</span></div></header>
+    <fieldset className={styles.controls} aria-label="Planning setup" disabled={readOnlySaved}>
+      <label>Source<select value={workspace.context.provider} onChange={(event) => { edit((current) => ({ ...current, context: { ...current.context, provider: event.target.value as PlanningWorkspace["context"]["provider"] } })); setConnected(null); }}><option value="manual">Manual</option><option value="yahoo">Yahoo{!access?.capabilities.includes("rso_sync") ? " saved view" : ""}</option><option value="fantrax">Fantrax{!access?.capabilities.includes("rso_sync") ? " saved view" : ""}</option></select></label>
+      <label>Season<input type="number" value={workspace.context.seasonId} onChange={(event) => edit((current) => ({ ...current, context: { ...current.context, seasonId: Number(event.target.value) } }))} /></label>
+      <label>From<input type="date" value={workspace.context.startDate} onChange={(event) => edit((current) => ({ ...current, context: { ...current.context, startDate: event.target.value } }))} /></label>
+      <label>Through<input type="date" value={workspace.context.endDate} onChange={(event) => edit((current) => ({ ...current, context: { ...current.context, endDate: event.target.value } }))} /></label>
+      {workspace.context.provider !== "manual" && <>{ownTeams.some((team) => team.provider === workspace.context.provider) ? <label>My team<select value={workspace.context.teamId} onChange={(event) => { const team = ownTeams.find((row) => row.id === event.target.value); if (team) edit((current) => ({ ...current, context: { ...current.context, teamId: team.id, leagueId: team.external_league_id } })); }}><option value="manual">Select an owned team</option>{ownTeams.filter((team) => team.provider === workspace.context.provider).map((team) => <option key={team.id} value={team.id}>{team.team_name}</option>)}</select></label> : <label>Team ID<input value={workspace.context.teamId} onChange={(event) => edit((current) => ({ ...current, context: { ...current.context, teamId: event.target.value } }))} /></label>}<button onClick={() => void refreshProvider()} disabled={!access?.capabilities.includes("rso_sync")}>Refresh provider</button></>}
+      <label>League ID<input value={workspace.context.leagueId} onChange={(event) => edit((current) => ({ ...current, context: { ...current.context, leagueId: event.target.value } }))} /></label>
+      <label>Time zone<input key={workspace.context.timeZone} defaultValue={workspace.context.timeZone} onBlur={(event) => { const zone = event.target.value.trim(); try { new Intl.DateTimeFormat("en-US", { timeZone: zone }).format(); edit((current) => ({ ...current, context: { ...current.context, timeZone: zone } })); } catch { event.target.value = workspace.context.timeZone; setNotice("Enter a valid IANA time zone, such as America/New_York."); } }} /></label>
+      <label>Goalie choice<select value={workspace.intent.goalieCoverage} onChange={(event) => editIntent((intent) => ({ ...intent, goalieCoverage: event.target.value as PlanIntent["goalieCoverage"] }))}><option value="accept_risk">Accept risk</option><option value="cover">Cover minimum</option></select></label>
+      <label>Window<select value={workspace.intent.goalieWindow} onChange={(event) => editIntent((intent) => ({ ...intent, goalieWindow: event.target.value as PlanIntent["goalieWindow"] }))}><option value="any">Any date</option><option value="early">Early</option><option value="late">Late</option></select></label>
+      <label>Split<select value={workspace.intent.goalieSplit} onChange={(event) => editIntent((intent) => ({ ...intent, goalieSplit: event.target.value as PlanIntent["goalieSplit"] }))}><option value="mon_thu">Mon–Thu / Fri–Sun</option><option value="mon_wed">Mon–Wed / Thu–Sun</option></select></label>
+    </fieldset>
+    {rangeTooLong && <div className={styles.notice} role="alert">Planning range must be at most 367 days.</div>}{(notice || planningError) && <div className={styles.notice} role="status">{notice || planningError}</div>}{loadingData && <div className={styles.notice} role="status">Loading schedule and forecasts…</div>}
+    {activeProposal?.issues.length ? <div className={styles.notice} role="status">Provider refresh found {activeProposal.issues.length} item(s) to review. Selected moves were kept. {activeProposal.issues.map((issue, index) => <span key={`${issue.stepId}-${index}`}>{issue.message} </span>)}{activeProposal.suggestedSteps && <button disabled={readOnlySaved} onClick={() => { const steps = activeProposal.suggestedSteps; if (!steps) return; editIntent((intent) => ({ ...intent, steps })); setProposal(null); }}>Accept suggested repair</button>}</div> : null}
+    {capabilities?.limitations.length ? <div className={styles.notice}>{capabilities.limitations.join(" ")}</div> : null}{(viewingSaved || (workspace.context.provider !== "manual" && !canSync)) && <div className={styles.notice}>Saved inputs are read-only and may be stale. <button disabled={!snapshot && !workspace.roster.length} onClick={() => { setViewingSaved(false); setWorkspace((current) => { const recovered = snapshot ? retainProviderInputs(current, snapshot) : current; return { ...recovered, managerRuleOverrides: {}, rules: { ...recovered.rules, periods: recovered.rules.periods.map((period) => period.source === "provider" ? { ...period, remaining: null, source: "unknown" as const } : period), goalieMinimum: { ...recovered.rules.goalieMinimum, credited: null } }, context: { ...recovered.context, provider: "manual", leagueId: "manual", teamId: "manual", asOf: new Date().toISOString() } }; }); }}>Continue manually</button></div>}
+    {supplemented?.conflicts.length ? <div className={styles.notice} role="status">Provider rules changed. Manager inputs were kept for review: {supplemented.conflicts.join(" ")}</div> : null}
+    <section className={styles.metrics} aria-label="Plan summary"><Metric label="Acquisitions" value={String(workspace.intent.steps.filter((step) => step.type === "add").length)} detail={rules.periods.length ? rules.periods.map((period) => `${period.id}: ${period.remaining ?? "?"} left`).join(" · ") : "Allowance unknown"} /><Metric label="Active games" value={number(result?.selected.activeGames)} detail={`No move ${number(result?.baseline.activeGames)} · AGP ${number(result?.noMoveAgp.activeGames)}`} /><Metric label="Bench games" value={number(result?.selected.benchGames)} detail={`Scheduled ${number(result?.selected.scheduledGames)}`} /><Metric label="Projected outcome" value={number(result?.selected.projectedValue)} detail={result?.selected.limitations.length ? "Provisional / incomplete" : "Game forecasts only"} /><Metric label="Goalie minimum" value={result?.selected.goalie.required == null ? "Unknown" : `${result.selected.goalie.credited ?? "?"} / ${result.selected.goalie.required}`} detail={result?.selected.goalie.risk ? "At risk" : "Review starts"} /><Metric label="Team DUST" value={result?.selected.scheduledGames ? `${number(100 * result.selected.benchGames / result.selected.scheduledGames)}%` : "—"} detail={`${number(result?.selected.benchGames)} bench / ${number(result?.selected.scheduledGames)} scheduled`} /><Metric label="Utilization" value={result && utilizationCapacity ? `${number(100 * result.selected.activeGames / utilizationCapacity)}%` : "—"} detail={`${number(result?.selected.activeGames)} active / ${scheduleDateCount} schedule dates × ${activeSlotCount} slots`} /></section>
+    <nav className={styles.mobileTabs} aria-label="Workspace views">{(["itinerary", "roster", "candidates", "matchup"] as Tab[]).map((name) => <button key={name} className={tab === name ? styles.activeTab : ""} onClick={() => setTab(name)} aria-current={tab === name ? "page" : undefined}>{name[0].toUpperCase() + name.slice(1)}</button>)}</nav>
+    <div className={styles.panels}>
+      <section {...readOnlyInert} className={`${styles.panel} ${styles.rosterPanel} ${tab === "roster" ? styles.mobileActive : ""}`} aria-label="Roster and setup"><div className={styles.panelHead}><h2>Roster</h2><span>{roster.length} players</span></div><div className={styles.panelBody}>
+        {workspace.context.provider === "manual" && <><label className={styles.field}>Search canonical player<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name or team" /></label>{query.length >= 2 && <ul className={styles.searchResults}>{matches.map((player) => <li key={player.id}><span>{player.name} · {player.teamAbbreviation ?? "—"} · {player.eligiblePositions.join("/")}</span><button onClick={() => addRoster(player)} disabled={rosterIds.has(player.id)}>Add</button></li>)}</ul>}<label className={styles.field}>Paste roster names<textarea value={paste} onChange={(event) => setPaste(event.target.value)} placeholder="One name per line" /></label><button onClick={importRoster} disabled={!paste.trim()}>Review pasted names</button>{workspace.unresolvedNames.length > 0 && <div className={styles.unresolved}><strong>Unresolved — excluded from analysis</strong>{workspace.unresolvedNames.map((name) => <div key={name}>{name}<button onClick={() => setQuery(name)}>Find match</button><button onClick={() => edit((current) => ({ ...current, unresolvedNames: current.unresolvedNames.filter((item) => item !== name) }))}>Dismiss</button></div>)}</div>}</>}
+        {roster.map((entry) => { const player = players.find((item) => item.id === entry.playerId); if (!player) return <div key={entry.playerId} className={styles.rosterRow}>Unmatched ID {entry.playerId}</div>; const protectedPlayer = workspace.intent.protectedPlayerIds.includes(player.id); return <div key={player.id} className={styles.rosterRow}><button className={styles.playerButton} onClick={() => setSelectedPlayer(player.id)}>{player.name}<small>{player.teamAbbreviation ?? "—"} · {player.eligiblePositions.join("/")}</small></button>{workspace.context.provider === "manual" ? <select aria-label={`${player.name} roster position`} value={entry.position} onChange={(event) => edit((current) => ({ ...current, roster: current.roster.map((row) => row.playerId === player.id ? { ...row, position: event.target.value as typeof entry.position } : row) }))}><option value="active">Active</option><option value="bench">Bench</option><option value="IR">IR</option><option value="IR+">IR+</option><option value="NA">NA</option></select> : <span>{entry.position}</span>}<label className={styles.check}><input type="checkbox" checked={protectedPlayer} onChange={() => editIntent((intent) => ({ ...intent, protectedPlayerIds: protectedPlayer ? intent.protectedPlayerIds.filter((id) => id !== player.id) : [...intent.protectedPlayerIds, player.id] }))} />Protect</label>{workspace.context.provider === "manual" && <button aria-label={`Remove ${player.name}`} onClick={() => edit((current) => ({ ...current, roster: current.roster.filter((row) => row.playerId !== player.id) }))}>×</button>}{workspace.context.provider === "manual" && <ManualPlayerInputs player={player} edit={edit} />}</div>; })}
+        <details className={styles.settings}><summary>League rules and scoring</summary><div className={styles.settingsGrid}><label>Lineup mode<select value={rules.lineupMode} onChange={(event) => updateRules((rules) => ({ ...rules, lineupMode: event.target.value as LeagueRules["lineupMode"] }))}><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="unsupported">Other / unknown</option></select></label><label>Scoring<select value={rules.scoring.mode} onChange={(event) => updateRules((rules) => ({ ...rules, scoring: { ...rules.scoring, mode: event.target.value as LeagueRules["scoring"]["mode"] } }))}><option value="points">Points</option><option value="categories">Categories</option></select></label><label>Acquisition timing<select value={rules.acquisitionTiming} onChange={(event) => updateRules((rules) => ({ ...rules, acquisitionTiming: event.target.value as LeagueRules["acquisitionTiming"] }))}><option value="unknown">Unknown</option><option value="same_day">Same day</option><option value="next_day">Next day</option></select></label><label>Goalie minimum<input type="number" min="0" value={rules.goalieMinimum.required ?? ""} onChange={(event) => updateRules((rules) => ({ ...rules, goalieMinimum: { ...rules.goalieMinimum, required: event.target.value ? Number(event.target.value) : null } }))} /></label><label>Goalie credited<input type="number" min="0" value={rules.goalieMinimum.credited ?? ""} onChange={(event) => updateRules((rules) => ({ ...rules, goalieMinimum: { ...rules.goalieMinimum, credited: event.target.value ? Number(event.target.value) : null } }))} /></label>{Object.entries(rules.rosterSlots).map(([slot, count]) => <label key={slot}>{slot}<input type="number" min="0" value={count} onChange={(event) => updateRules((rules) => ({ ...rules, rosterSlots: { ...rules.rosterSlots, [slot]: Number(event.target.value) } }))} /></label>)}</div></details>{Object.keys(workspace.managerRuleOverrides ?? {}).length > 0 && workspace.context.provider !== "manual" && <p className={styles.evidence}>Manager rule inputs retained for this league: {JSON.stringify(workspace.managerRuleOverrides)}</p>}<ExtraRules rules={rules} startDate={workspace.context.startDate} endDate={workspace.context.endDate} timeZone={workspace.context.timeZone} updateRules={updateRules} />{workspace.context.provider === "manual" && <ManualLocks workspace={workspace} players={players} edit={edit} />}
+      </div></section>
+      <section className={`${styles.panel} ${styles.itineraryPanel} ${tab === "itinerary" ? styles.mobileActive : ""}`} aria-label="Itinerary"><div className={styles.panelHead}><h2>Itinerary</h2><span>{planningLoading ? "Evaluating…" : result ? `Best found · ${result.search.evaluated} evaluated` : "Awaiting inputs"}</span></div><div className={styles.panelBody}><div className={styles.dateStrip} role="group" aria-label="Choose a date">{dates.map((date) => <button key={date} className={focusedDate === date ? styles.selectedDate : ""} onClick={() => setSelectedDate(date)}>{dateLabel(date)}</button>)}</div><div className={styles.dateSummary}><strong>{focusedDate ? dateLabel(focusedDate) : "Choose valid dates"}</strong><span>{assignments.filter((assignment) => assignment.date === focusedDate).length} planned starts · {new Set(snapshot?.games.filter((game) => game.date === focusedDate && game.status !== "cancelled" && game.status !== "postponed").map((game) => game.id) ?? []).size} NHL games</span></div><StreamingGrid dates={dates} assignments={assignments} games={snapshot?.games ?? []} players={players} steps={workspace.intent.steps} timeZone={workspace.context.timeZone} />{showLineup && <div className={styles.gridScroll}><table><thead><tr><th scope="col">Player</th>{dates.map((date) => <th key={date} scope="col">{dateLabel(date)}</th>)}</tr></thead><tbody>{roster.map((entry) => { const player = players.find((row) => row.id === entry.playerId); if (!player) return null; return <tr key={entry.playerId}><th scope="row"><button onClick={() => setSelectedPlayer(player.id)}>{player.name}</button><small>{player.eligiblePositions.join("/")}</small></th>{dates.map((date) => { const game = snapshot?.games.find((item) => item.date === date && item.teamAbbreviation === player.teamAbbreviation); const assignment = assignments.find((item) => item.date === date && item.playerId === player.id); return <td key={date} className={assignment ? styles.startCell : game ? styles.benchCell : ""} title={game ? `${game.home ? "vs" : "@"} ${game.opponent} · ${assignment ? `Start ${assignment.slotId}` : "Bench or unavailable"}` : "No game"}>{game ? <><span>{game.home ? "vs" : "@"}{game.opponent}</span><small>{assignment ? assignment.slotId : "Bench"}</small></> : "·"}</td>; })}</tr>; })}</tbody></table></div>}<div className={styles.itineraryLegs}><h3>Selected steps</h3>{workspace.intent.steps.length ? workspace.intent.steps.map((step) => <SelectedStep key={step.id} step={step} name={nameOf(step.playerId)} timeZone={workspace.context.timeZone} rules={rules} readOnly={readOnlySaved} continuation={result?.noClaimContinuations?.find((row) => row.claimStepId === step.id)?.evaluation.activeGames} update={(patch) => editIntent((intent) => ({ ...intent, steps: intent.steps.map((item) => item.id === step.id ? { ...item, ...patch } : item) }))} remove={() => editIntent((intent) => ({ ...intent, steps: intent.steps.filter((item) => item.id !== step.id) }))} setNotice={setNotice} />) : <p>No acquisition selected. The no-move lineup is the comparison.</p>}</div><button onClick={() => setShowLineup((value) => !value)}>{showLineup ? "Hide" : "Show"} full suggested lineup</button>{showLineup && <div className={styles.lineup}>{dates.map((date) => <div key={date}><h3>{dateLabel(date)}</h3>{assignments.filter((assignment) => assignment.date === date).map((assignment) => <span key={`${assignment.playerId}:${assignment.slotId}`}>{assignment.slotId} · {nameOf(assignment.playerId)}</span>)}</div>)}</div>}{result?.search.limitations.length ? <p className={styles.limitation}>{result.search.limitations.join(" ")}</p> : null}</div></section>
+      <section {...readOnlyInert} className={`${styles.panel} ${styles.candidatePanel} ${tab === "matchup" ? styles.desktopHidden : ""} ${tab === "candidates" ? styles.mobileActive : ""}`} aria-label="Candidates and detail"><div className={styles.panelHead}><h2>Candidates</h2><label>Show<select value={workspace.intent.alternativeCount} onChange={(event) => editIntent((intent) => ({ ...intent, alternativeCount: Number(event.target.value) as PlanIntent["alternativeCount"] }))}><option value="5">5</option><option value="10">10</option><option value="20">20</option></select></label></div><div className={styles.panelBody}>{selectedPlayer && <div className={styles.detail}><strong>{nameOf(selectedPlayer)}</strong><span>{players.find((player) => player.id === selectedPlayer)?.availability.replaceAll("_", " ") ?? "Unknown"}</span><span>Ownership {number(players.find((player) => player.id === selectedPlayer)?.ownership)}%</span>{players.find((player) => player.id === selectedPlayer)?.form && <span className={styles.formChip}>{players.find((player) => player.id === selectedPlayer)!.form!.label} · {players.find((player) => player.id === selectedPlayer)!.form!.points} points / {players.find((player) => player.id === selectedPlayer)!.form!.games} games · forecast inclusion unknown</span>}{opponentDemandHint(snapshot, players.find((player) => player.id === selectedPlayer)) && <span className={styles.demandHint}>{opponentDemandHint(snapshot, players.find((player) => player.id === selectedPlayer))}</span>}</div>}<p className={styles.limitation}>Availability is unknown until verified by a provider or entered by the manager.</p>{result?.alternatives.slice(0, workspace.intent.alternativeCount).map((alternative, index) => { const first = alternative.steps[0]; return <div className={styles.alternative} key={index}><div><strong>{first ? alternative.steps.map((step) => `${step.type.toUpperCase()} ${nameOf(step.playerId)}`).join(" → ") : "Hold roster"}</strong><small>Gross games {grossAcquisitionGames(alternative.steps, snapshot)} · displaced {result?.baseline.assignments.filter((assignment) => !alternative.assignments.some((next) => next.date === assignment.date && next.playerId === assignment.playerId && next.gameId === assignment.gameId)).length ?? 0} · net AGP {alternative.activeGames - (result?.baseline.activeGames ?? 0)} · {alternative.steps.filter((step) => step.type === "add").length} adds</small><small>Contribution {alternative.projectedValue != null && result?.baseline.projectedValue != null ? number(alternative.projectedValue - result.baseline.projectedValue) : "unavailable"} · {alternative.legal ? "Legal" : "Needs review"}</small></div><button disabled={!first || !alternative.legal} onClick={() => editIntent((intent) => ({ ...intent, steps: alternative.steps }))}>Select plan</button></div>; })}{!result?.alternatives.length && <p>Alternatives appear after legal roster and candidate data are available.</p>}<h3>Player search</h3><label className={styles.field}>Find candidate<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} /></label>{matches.filter((player) => !rosterIds.has(player.id)).map((player) => <div key={player.id} className={styles.candidateRow}><button onClick={() => setSelectedPlayer(player.id)}>{player.name}<small>{player.teamAbbreviation ?? "—"} · {player.eligiblePositions.join("/")}</small></button><span>{player.availability.replaceAll("_", " ")}</span>{player.form && <small className={styles.formChip}>{player.form.label} · {player.form.points} points / {player.form.games} games · forecast inclusion unknown</small>}{["free_agent", "manager_available", "waivers"].includes(player.availability) && <button onClick={() => chooseCandidate(player)}>Select add</button>}{workspace.context.provider === "manual" && player.availability === "unknown" && <button onClick={() => edit((current) => ({ ...current, manualPlayers: [...current.manualPlayers.filter((row) => row.id !== player.id), { ...player, availability: "manager_available" }] }))}>Mark available</button>}</div>)}</div></section>
+      <section {...readOnlyInert} className={`${styles.panel} ${styles.matchupPanel} ${tab === "matchup" ? `${styles.desktopMatchup} ${styles.mobileActive}` : ""}`} aria-label="Matchup"><div className={styles.panelHead}><h2>Matchup</h2><span>{rules.scoring.mode}</span></div><div className={styles.panelBody}><p>{snapshot?.opponent ? "Opponent data present. Review category and goalie results below." : "Opponent inputs are missing. Matchup strategy is unavailable; schedule planning remains usable."}</p><div className={styles.compare}><strong>Optimized no move · {result?.baseline.objective === "outcome" ? "Outcome" : "AGP"}</strong><span>{number(result?.baseline.activeGames)} active · {number(result?.baseline.projectedValue)} projected</span><strong>Selected plan</strong><span>{number(result?.selected.activeGames)} active · {number(result?.selected.projectedValue)} projected</span></div>{result?.selected.categoryResults.map((category) => <div key={category.key} className={styles.categoryRow}><strong>{category.key}</strong><span>{number(category.own)} vs {number(category.opponent)}</span><span>{category.result}</span></div>)}<div className={styles.sensitivity}><h3>Plan sensitivity · provisional</h3>{sensitivity?.scenarios.map((scenario) => <div key={scenario.id}><span>{scenario.label}</span><span>{number(scenario.baseline)} → {number(scenario.candidate)} · Δ {number(scenario.difference)}</span></div>)}<p>{sensitivity?.direction === "sensitive" ? "Plan ranking changes across stress scenarios." : sensitivity?.direction === "unavailable" ? "Full comparison unavailable with current forecast or opponent coverage." : "Fixed-lineup stress comparison only."} These are not win probabilities.</p></div><MatchupSetup workspace={workspace} edit={edit} /><h3>Goalie evidence</h3><GoalieEvidence snapshot={snapshot} /><p>Credited: {number(result?.selected.goalie.credited)} · Confirmed upcoming: {number(result?.selected.goalie.confirmed)} · Projected: {number(result?.selected.goalie.projected)}</p>{Object.entries(snapshot?.evidence ?? {}).map(([source, evidence]) => <p key={source} className={styles.evidence}>{source}: {evidence.completeness}{evidence.limitations.length ? ` · ${evidence.limitations.join(" ")}` : ""}</p>)}{result?.selected.limitations.map((limit, index) => <p key={index} className={styles.limitation}>{limit}</p>)}</div></section>
+    </div>
+  </div>;
+}
+function Metric({ label, value, detail }: { label: string; value: string; detail: string }) { return <article><span>{label}</span><strong>{value}</strong><small>{detail}</small></article>; }
+function SelectedStep({ step, name, timeZone, rules, readOnly, continuation, update, remove, setNotice }: { step: PlanStep; name: string; timeZone: string; rules: LeagueRules; readOnly: boolean; continuation?: number; update: (patch: Partial<PlanStep>) => void; remove: () => void; setNotice: (message: string) => void }) {
+  const changeTime = (key: "at" | "effectiveAt", value: string) => { const instant = instantFromLeagueTime(value, timeZone); if (instant) update({ [key]: instant }); else setNotice("Enter a valid time in the league time zone."); };
+  return <div className={styles.selectedStep}><strong>{step.type.toUpperCase()} {name}</strong><span>{actionTime(step.at, timeZone)} · effective {actionTime(step.effectiveAt, timeZone)} · {periodName(step.at, rules)} · {step.conditional ? "Conditional" : "Selected, not executed"}</span><div className={styles.stepControls}><label>Action (league time)<input type="datetime-local" disabled={readOnly} value={leagueDateTime(step.at, timeZone)} onChange={(event) => changeTime("at", event.target.value)} /></label><label>Effective<input type="datetime-local" disabled={readOnly} value={leagueDateTime(step.effectiveAt, timeZone)} onChange={(event) => changeTime("effectiveAt", event.target.value)} /></label>{step.conditional && rules.waivers?.mode === "budget" && <label>Waiver spend (manager input)<input type="number" min="0" disabled={readOnly} value={step.waiverSpend ?? ""} onChange={(event) => update({ waiverSpend: event.target.value === "" ? null : Number(event.target.value) })} /></label>}<button disabled={readOnly} onClick={remove}>Remove</button></div>{continuation !== undefined && <small>If claim fails: {continuation} active games; prior legal steps remain.</small>}</div>;
+}
 
-  const addPlayer = (id: string) => {
-    setScenarioRosterIds((current) => current.includes(id) ? current : [...current, id]);
-    setPlayerSearch("");
-  };
-  const removePlayer = (id: string) => setScenarioRosterIds((current) => current.filter((entry) => entry !== id));
-  const swapPlayer = (outgoingId: string, incomingId: string) => {
-    setScenarioRosterIds((current) => current.map((id) => id === outgoingId ? incomingId : id));
-    setSelectedOutgoingId(incomingId);
-  };
-  const applyGameKey = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const nextGameKey = gameKeyInput.trim();
-    if (!/^[A-Za-z0-9._-]{1,40}$/.test(nextGameKey)) {
-      setGameKeyError(
-        "Yahoo game key must contain 1–40 letters, numbers, dots, underscores, or hyphens.",
-      );
-      return;
+function StreamingGrid({ dates, assignments, games, players, steps, timeZone }: { dates: string[]; assignments: PlanningAssignment[]; games: PlanningGame[]; players: PlanningPlayer[]; steps: PlanStep[]; timeZone: string }) {
+  const slots = [...new Set(assignments.map((assignment) => assignment.slotId))].sort();
+  const orderedSteps = [...steps].sort((a, b) => Date.parse(a.effectiveAt) - Date.parse(b.effectiveAt));
+  if (!slots.length) return <p className={styles.limitation}>No legal active assignments yet. Review roster slots, schedule coverage, and rule limits.</p>;
+  return <div className={styles.streamingGrid}><table><thead><tr><th scope="col">Stream slot</th>{dates.map((date) => <th scope="col" key={date}>{dateLabel(date)}</th>)}</tr></thead><tbody>{slots.map((slot) => <tr key={slot}><th scope="row">{slot}</th>{dates.map((date) => {
+    const assignment = assignments.find((row) => row.slotId === slot && row.date === date);
+    if (!assignment) {
+      const prior = assignments.filter((row) => row.slotId === slot && row.date < date).sort((a, b) => b.date.localeCompare(a.date))[0];
+      let heldId: string | null = prior?.playerId ?? null;
+      let conditional = false;
+      for (const step of orderedSteps) {
+        const effectiveDate = leagueDate(step.effectiveAt, timeZone);
+        if (!prior || effectiveDate <= prior.date || effectiveDate > date) continue;
+        if (step.type === "drop" && step.playerId === heldId) heldId = null;
+        if (step.type === "add" && step.dropPlayerId === heldId) { heldId = step.playerId; conditional = step.conditional; }
+      }
+      const held = players.find((player) => player.id === heldId);
+      return <td key={date} className={styles.emptyStream}>{held ? <><strong>{held.name}</strong><small>{conditional ? "Conditional hold" : "Planned hold"} · no active game</small></> : "Open / bench"}</td>;
     }
-    setGameKeyError(null);
-    setGameKey(nextGameKey);
-  };
+    const player = players.find((row) => row.id === assignment.playerId);
+    const game = games.find((row) => row.id === assignment.gameId && row.teamAbbreviation === player?.teamAbbreviation);
+    const move = steps.find((step) => step.type === "add" && step.playerId === assignment.playerId && leagueDate(step.effectiveAt, timeZone) === date);
+    return <td key={date} className={styles.startCell}><strong>{player?.name ?? assignment.playerId}</strong><small>{move ? `${move.conditional ? "Conditional add" : "Add"} · ` : "Hold · "}{game ? `${game.home ? "vs" : "@"}${game.opponent}` : "game"}</small></td>;
+  })}</tr>)}</tbody></table></div>;
+}
 
-  return (
-    <main className={styles.optimizer}>
-      <header className={styles.hero}>
-        <div>
-          <p className={styles.eyebrow}>Schedule intelligence · Yahoo game {gameKey}</p>
-          <h1>Roster Schedule Optimizer</h1>
-          <p>Model the games your lineup can actually start—not just the games on the schedule.</p>
-        </div>
-        <div className={styles.sourceBadge}>
-          <strong>{rosterSourceLabel}</strong>
-          <span>Scenario changes stay local and never update your connected roster.</span>
-        </div>
-      </header>
-
-      <section className={styles.controlGrid} aria-label="Optimizer controls">
-        <article className={styles.panel}>
-          <div className={styles.panelHeading}>
-            <div><span className={styles.step}>01</span><h2>Lineup capacity</h2></div>
-            <span className={styles.statusText}>{settingsStatus === "ready" ? leagueSettings.leagueType : settingsStatus}</span>
-          </div>
-          <div className={styles.slotGrid}>
-            {SLOT_ORDER.map((slot) => (
-              <label key={slot}>
-                <span>{slot === "utility" ? "UTIL" : slot === "bench" ? "BN" : slot}</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="20"
-                  value={rosterConfig[slot] ?? 0}
-                  onChange={(event) => setRosterConfig((current) => ({ ...current, [slot]: Math.max(0, Number.parseInt(event.target.value || "0", 10) || 0) }))}
-                />
-              </label>
-            ))}
-          </div>
-          <p className={styles.assumption}>
-            Daily lineup changes · {activeSlots.length} active slots ·{" "}
-            {rosterConfig.bench ?? rosterConfig.BN ?? 0} bench spots. Weekly-lock
-            leagues are not yet supported.
-          </p>
-          {settingsStatus === "error" ? <p className={styles.warning}>League settings could not be loaded; current FHFH defaults are in use.</p> : null}
-        </article>
-
-        <article className={styles.panel}>
-          <div className={styles.panelHeading}>
-            <div><span className={styles.step}>02</span><h2>Matchup horizon</h2></div>
-            <span className={styles.statusText}>{fullSeason ? "Full season" : `${selectedWeeks.length} weeks`}</span>
-          </div>
-          <form className={styles.gameKeyControl} onSubmit={applyGameKey}>
-            <label htmlFor="optimizer-game-key">Yahoo game key</label>
-            <input
-              id="optimizer-game-key"
-              value={gameKeyInput}
-              onChange={(event) => setGameKeyInput(event.target.value)}
-              aria-describedby={gameKeyError ? "optimizer-game-key-error" : undefined}
-            />
-            <button type="submit" disabled={gameKeyInput.trim() === gameKey}>
-              Load game
-            </button>
-          </form>
-          {gameKeyError ? (
-            <p id="optimizer-game-key-error" role="alert" className={styles.warning}>
-              {gameKeyError}
-            </p>
-          ) : null}
-          {scheduleStatus === "loading" ? <p role="status">Loading the NHL team-game schedule…</p> : null}
-          {scheduleStatus === "error" ? (
-            <div role="alert" className={styles.errorState}>
-              <p>{scheduleError}</p><button type="button" onClick={() => void loadSchedule()}>Retry schedule</button>
-            </div>
-          ) : null}
-          {scheduleStatus === "empty" ? <p role="status">No schedule rows are available for Yahoo game {gameKey}.</p> : null}
-          {scheduleStatus === "ready" ? (
-            <>
-              <div className={styles.weekControls}>
-                <label>Start week<select value={startWeek} onChange={(event) => setStartWeek(Number(event.target.value))}>{availableWeeks.map((week) => <option key={week} value={week}>Week {week}</option>)}</select></label>
-                <label>End week<select value={endWeek} onChange={(event) => setEndWeek(Number(event.target.value))}>{availableWeeks.map((week) => <option key={week} value={week}>Week {week}</option>)}</select></label>
-                <button type="button" onClick={() => { setStartWeek(firstWeek); setEndWeek(lastWeek); }}>Full season</button>
-              </div>
-              <p className={scheduleStale ? styles.warning : styles.freshness} role={scheduleStale ? "alert" : "status"}>
-                {scheduleStale ? "Schedule cache may be stale" : "Schedule cache is current"} · {schedule?.freshness.latestFetchedAt ? `updated ${new Date(schedule.freshness.latestFetchedAt).toLocaleString()}` : "freshness unavailable"} · {schedule?.freshness.rowCount ?? 0} team-games
-              </p>
-            </>
-          ) : null}
-        </article>
-      </section>
-
-      <section className={styles.panel}>
-        <div className={styles.panelHeading}>
-          <div><span className={styles.step}>03</span><h2>Scenario roster</h2></div>
-          <button className={styles.secondaryButton} type="button" onClick={() => setScenarioRosterIds(baselineRosterIds)}>Reset scenario</button>
-        </div>
-        {connectedRoster.status === "loading" || projectionLoading ? <p role="status">Loading roster identities and projections…</p> : null}
-        {connectedRoster.error ? <p role="alert" className={styles.warning}>{connectedRoster.error} Manual scenario controls remain available.</p> : null}
-        {connectedIdentity.unmatched > 0 ? <p className={styles.warning}>{connectedIdentity.unmatched} connected roster {connectedIdentity.unmatched === 1 ? "player was" : "players were"} not matched by explicit Yahoo/NHL ID and are excluded. Names are never used for identity matching.</p> : null}
-        {projectionError ? <p role="alert" className={styles.warning}>Some projections could not load: {projectionError}</p> : null}
-        <div className={styles.addPlayer}>
-          <label htmlFor="optimizer-player-search">Add a projected player</label>
-          <input id="optimizer-player-search" type="search" value={playerSearch} onChange={(event) => setPlayerSearch(event.target.value)} placeholder="Search player or team" />
-          {playerSearch ? (
-            <ul className={styles.searchResults} aria-label="Projected player search results">
-              {availablePlayers.map((player) => (
-                <li key={player.id}><PlayerName player={player} /><button type="button" onClick={() => addPlayer(player.id)}>Add</button></li>
-              ))}
-              {!availablePlayers.length ? <li>No matching available players.</li> : null}
-            </ul>
-          ) : null}
-        </div>
-
-        {scenarioRoster.length ? (
-          <div className={styles.tableScroll}>
-            <table>
-              <caption>Scenario roster and player-level DUST</caption>
-              <thead><tr><th>Player</th><th>Value</th><th>Scheduled</th><th>Startable</th><th>Bench Games</th><th>DUST</th><th><span className={styles.srOnly}>Actions</span></th></tr></thead>
-              <tbody>
-                {scenarioRoster.map((player) => {
-                  const summary = evaluation?.players.find((entry) => entry.playerId === player.id);
-                  const dust = playerDust.get(player.id);
-                  const risk = dust ? classifyDustRisk(dust.marginalDustGames, dust.candidateScheduledGames) : null;
-                  return (
-                    <tr key={player.id}>
-                      <td><PlayerName player={player} /></td>
-                      <td>{formatValue(player.value)}</td>
-                      <td>{summary?.scheduledGames ?? 0}</td>
-                      <td>{summary?.startableGames ?? 0}</td>
-                      <td>{summary?.benchGames ?? 0}</td>
-                      <td><span className={`${styles.riskBadge} ${risk ? styles[risk.label] : ""}`} aria-label={risk ? `${risk.label} DUST risk` : "DUST pending"}>{dust?.marginalDustGames ?? "—"}</span></td>
-                      <td><button className={styles.textButton} type="button" onClick={() => removePlayer(player.id)} aria-label={`Remove ${player.name ?? player.id} from scenario`}>Remove</button></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : <EmptyPanel>Add players to build a manual scenario, or select a connected Yahoo team in League Defaults.</EmptyPanel>}
-      </section>
-
-      {evaluation ? (
-        <>
-          <section className={styles.summaryGrid} aria-label="Scenario summary">
-            <SummaryCard label="Scheduled" value={String(evaluation.totalScheduledGames)} detail="roster team-games" />
-            <SummaryCard label="Startable" value={String(evaluation.totalStartableGames)} detail="games assigned to active slots" />
-            <SummaryCard label="Bench Games" value={String(evaluation.totalBenchGames)} detail="schedule volume you cannot use" />
-            <SummaryCard label="DUST" value={formatPercent(evaluation.dustRate)} detail="bench games ÷ scheduled games" />
-            <SummaryCard label="Utilization" value={formatPercent(evaluation.activeSlotUtilization)} detail="active-slot capacity used" />
-          </section>
-
-          {baselineEvaluation ? (
-            <section className={styles.comparisonPanel} aria-label="Scenario comparison">
-              <div>
-                <span className={styles.eyebrow}>Scenario vs connected/default baseline</span>
-                <strong>
-                  {formatSignedCount(
-                    evaluation.totalBenchGames -
-                      baselineEvaluation.totalBenchGames,
-                  )}{" "}
-                  Bench Games
-                </strong>
-              </div>
-              <dl>
-                <div>
-                  <dt>Scheduled</dt>
-                  <dd>{formatSignedCount(evaluation.totalScheduledGames - baselineEvaluation.totalScheduledGames)}</dd>
-                </div>
-                <div>
-                  <dt>Startable</dt>
-                  <dd>{formatSignedCount(evaluation.totalStartableGames - baselineEvaluation.totalStartableGames)}</dd>
-                </div>
-                <div>
-                  <dt>DUST rate</dt>
-                  <dd>{formatSignedPercent(evaluation.dustRate - baselineEvaluation.dustRate)}</dd>
-                </div>
-              </dl>
-            </section>
-          ) : null}
-
-          {evaluation.diagnostics.length ? (
-            <section className={styles.diagnostics} aria-label="Optimizer diagnostics">
-              <strong>{evaluation.complete ? "Data notes" : "Incomplete optimization"}</strong>
-              <ul>{evaluation.diagnostics.slice(0, 6).map((item, index) => <li key={`${item.code}-${index}`}>{item.message}</li>)}</ul>
-            </section>
-          ) : null}
-
-          <div className={styles.analysisGrid}>
-            <section className={styles.panel}>
-              <div className={styles.panelHeading}><div><span className={styles.step}>04</span><h2>Weekly conflicts</h2></div></div>
-              <div className={styles.tableScroll}><table><caption>Scheduled, startable, and bench games by Yahoo week</caption><thead><tr><th>Week</th><th>Scheduled</th><th>Startable</th><th>Bench Games</th><th>DUST</th></tr></thead><tbody>{evaluation.weekly.map((week) => <tr key={week.week ?? "unmapped"}><td>{week.week ?? "Unmapped"}</td><td>{week.scheduledGames}</td><td>{week.startableGames}</td><td>{week.benchGames}</td><td>{week.scheduledGames ? formatPercent(week.benchGames / week.scheduledGames) : "0%"}</td></tr>)}</tbody></table></div>
-            </section>
-            <section className={styles.panel}>
-              <div className={styles.panelHeading}><div><span className={styles.step}>05</span><h2>Position congestion</h2></div></div>
-              {evaluation.positions.length ? <div className={styles.positionList}>{evaluation.positions.map((position) => { const rate = position.scheduledGames ? position.benchGames / position.scheduledGames : 0; return <div key={position.position}><span>{position.position}</span><div className={styles.meter}><i style={{ width: `${Math.min(100, rate * 100)}%` }} /></div><strong>{position.benchGames} / {position.scheduledGames}</strong></div>; })}</div> : <EmptyPanel>No position conflicts in this horizon.</EmptyPanel>}
-            </section>
-          </div>
-
-          <section className={styles.panel}>
-            <div className={styles.panelHeading}><div><span className={styles.step}>06</span><h2>Daily heatmap</h2></div><span className={styles.statusText}>Select a date for assignments</span></div>
-            {evaluation.highestConflictDates.length ? (
-              <div className={styles.conflictDates} aria-label="Highest-conflict dates">
-                <strong>Highest conflict:</strong>
-                {evaluation.highestConflictDates.slice(0, 3).map((day) => (
-                  <span key={day.date}>
-                    {formatDate(day.date)} · {day.benchGames} Bench Games
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className={styles.assumption}>No Bench Game conflict dates in this horizon.</p>
-            )}
-            <DailyHeatmap activeSlots={activeSlots} daily={evaluation.daily} playersById={playersById} />
-          </section>
-
-          <section className={styles.panel}>
-            <div className={styles.panelHeading}><div><span className={styles.step}>07</span><h2>Lower-conflict alternatives</h2></div><span className={styles.statusText}>Pareto-efficient DUST / value tradeoffs</span></div>
-            {scenarioRoster.length ? (
-              <label className={styles.outgoingSelect}>Player to replace<select value={selectedOutgoingId} onChange={(event) => setSelectedOutgoingId(event.target.value)}>{scenarioRoster.map((player) => <option key={player.id} value={player.id}>{player.name ?? player.id}</option>)}</select></label>
-            ) : null}
-            {alternatives.length ? (
-              <div className={styles.tableScroll}><table><caption>One-for-one replacements with less DUST and limited projection value loss</caption><thead><tr><th>Alternative</th><th>DUST saved</th><th>Value tradeoff</th><th>Eligible slots</th><th><span className={styles.srOnly}>Actions</span></th></tr></thead><tbody>{alternatives.map((alternative) => <tr key={alternative.player.id}><td><PlayerName player={alternative.player} /></td><td>−{alternative.dustImprovement}</td><td className={alternative.valueDifference >= 0 ? styles.positive : styles.negative}>{alternative.valueDifference >= 0 ? "+" : ""}{formatValue(alternative.valueDifference)}</td><td>{alternative.overlappingSlotTypes.join("/")}</td><td><button type="button" onClick={() => swapPlayer(selectedOutgoingId, alternative.player.id)}>Swap</button></td></tr>)}</tbody></table></div>
-            ) : <EmptyPanel>{scenarioRoster.length ? "No projected one-for-one replacement clears the current DUST and value thresholds." : "Add roster players to calculate alternatives."}</EmptyPanel>}
-          </section>
-        </>
-      ) : null}
-    </main>
-  );
+type EditWorkspace = (change: (workspace: PlanningWorkspace) => PlanningWorkspace) => void;
+function ManualPlayerInputs({ player, edit }: { player: PlanningPlayer; edit: EditWorkspace }) {
+  const update = (patch: Partial<PlanningPlayer>) => edit((current) => ({ ...current, manualPlayers: [...current.manualPlayers.filter((row) => row.id !== player.id), { ...player, ...patch }] }));
+  return <details className={styles.playerEvidence}><summary>Review evidence</summary><label>Droppable<select value={player.canDrop === null ? "unknown" : player.canDrop ? "yes" : "no"} onChange={(event) => update({ canDrop: event.target.value === "unknown" ? null : event.target.value === "yes" })}><option value="unknown">Unknown</option><option value="yes">Manager confirms yes</option><option value="no">No</option></select></label><label>Team<input value={player.teamAbbreviation ?? ""} onChange={(event) => update({ teamAbbreviation: event.target.value.trim().toUpperCase() || null })} /></label><label>Eligible positions<input defaultValue={player.eligiblePositions.join(", ")} onBlur={(event) => update({ eligiblePositions: event.target.value.split(",").map((value) => value.trim().toUpperCase()).filter(Boolean) })} /></label><div className={styles.reserveChoices}>Reserve eligibility{(["IR", "IR+", "NA"] as const).map((position) => <label key={position}><input type="checkbox" checked={player.reserveEligibility.includes(position)} onChange={(event) => update({ reserveEligibility: event.target.checked ? [...player.reserveEligibility, position] : player.reserveEligibility.filter((item) => item !== position) })} />{position}</label>)}</div></details>;
+}
+function ManualLocks({ workspace, players, edit }: { workspace: PlanningWorkspace; players: PlanningPlayer[]; edit: EditWorkspace }) {
+  const locks = workspace.lockedAssignments ?? [];
+  const slots = expandActiveSlots(workspace.rules.rosterSlots).activeSlots;
+  const update = (index: number, patch: Partial<LockedAssignment>) => edit((current) => ({ ...current, lockedAssignments: (current.lockedAssignments ?? []).map((row, i) => i === index ? { ...row, ...patch } : row) }));
+  return <details className={styles.settings}><summary>Locked lineup assignments</summary><p>Enter confirmed locks for games already fixed by the league. Use Bench when a player cannot be started that date.</p>{locks.map((lock, index) => <div className={styles.ruleRow} key={index}><label>Date<input type="date" value={lock.date} onChange={(event) => update(index, { date: event.target.value })} /></label><label>Player<select value={lock.playerId} onChange={(event) => update(index, { playerId: event.target.value })}>{workspace.roster.map((entry) => <option key={entry.playerId} value={entry.playerId}>{players.find((player) => player.id === entry.playerId)?.name ?? entry.playerId}</option>)}</select></label><label>Locked slot<select value={lock.slotId ?? "bench"} onChange={(event) => update(index, { slotId: event.target.value === "bench" ? null : event.target.value })}><option value="bench">Bench</option>{slots.map((slot) => <option key={slot.id} value={slot.id}>{slot.id}</option>)}</select></label><button aria-label={`Remove lock ${index + 1}`} onClick={() => edit((current) => ({ ...current, lockedAssignments: (current.lockedAssignments ?? []).filter((_, i) => i !== index) }))}>×</button></div>)}<button disabled={!workspace.roster.length} onClick={() => edit((current) => ({ ...current, lockedAssignments: [...(current.lockedAssignments ?? []), { date: current.context.startDate, playerId: current.roster[0].playerId, slotId: null }] }))}>Add confirmed lock</button></details>;
+}
+function StatEditor({ label, stats, update }: { label: string; stats: Record<string, number | null>; update: (stats: Record<string, number | null>) => void }) {
+  return <div className={styles.statEditor}><h4>{label}</h4>{Object.entries(stats).map(([key, value]) => <div className={styles.ruleRow} key={key}><label>Statistic<input aria-label={`${label} statistic ${key}`} defaultValue={key} onBlur={(event) => { const renamed = event.target.value.trim(); if (!renamed || renamed === key) return; const next = { ...stats }; delete next[key]; next[renamed] = value; update(next); }} /></label><label>Total<input aria-label={`${label} ${key} total`} type="number" value={value ?? ""} onChange={(event) => update({ ...stats, [key]: event.target.value === "" ? null : Number(event.target.value) })} /></label><button aria-label={`Remove ${label} ${key}`} onClick={() => { const next = { ...stats }; delete next[key]; update(next); }}>×</button></div>)}<button onClick={() => { let key = "STAT"; let i = 2; while (key in stats) key = `STAT${i++}`; update({ ...stats, [key]: 0 }); }}>Add statistic</button></div>;
+}
+function MatchupSetup({ workspace, edit }: { workspace: PlanningWorkspace; edit: EditWorkspace }) {
+  const opponent = workspace.opponent;
+  return <details className={styles.settings}><summary>Manual matchup totals</summary><p>Enter raw components for ratios, such as saves and shots against. Projected totals remain separate from realized totals.</p><StatEditor label="Own realized" stats={workspace.realized} update={(realized) => edit((current) => ({ ...current, realized }))} />{!opponent ? <button onClick={() => edit((current) => ({ ...current, opponent: { roster: [], realized: {}, remaining: {} } }))}>Add opponent totals</button> : <><StatEditor label="Opponent realized" stats={opponent.realized} update={(realized) => edit((current) => ({ ...current, opponent: { ...current.opponent!, realized } }))} /><StatEditor label="Opponent remaining" stats={opponent.remaining ?? {}} update={(remaining) => edit((current) => ({ ...current, opponent: { ...current.opponent!, remaining } }))} /></>}</details>;
+}
+function GoalieEvidence({ snapshot }: { snapshot: PlanningSnapshot | null }) {
+  if (!snapshot) return <p>Goalie evidence is unavailable until schedule data loads.</p>;
+  const pairs: Array<{ team: string; first: PlanningSnapshot["games"][number]; second: PlanningSnapshot["games"][number] }> = [];
+  const teams = [...new Set(snapshot.games.map((game) => game.teamAbbreviation))];
+  for (const team of teams) {
+    const games = snapshot.games.filter((game) => game.teamAbbreviation === team && game.status === "scheduled" && game.startsAt && Date.parse(game.startsAt) > Date.parse(snapshot.context.asOf)).sort((a, b) => a.date.localeCompare(b.date));
+    for (let i = 1; i < games.length; i++) if ((Date.parse(`${games[i].date}T12:00:00Z`) - Date.parse(`${games[i - 1].date}T12:00:00Z`)) / 86_400_000 === 1) pairs.push({ team, first: games[i - 1], second: games[i] });
+  }
+  if (!pairs.length) return <p>No back-to-back team games in this range.</p>;
+  return <div className={styles.b2bList}>{pairs.map(({ team, first, second }) => {
+    const goalies = snapshot.players.filter((player) => player.playerClass === "goalie" && player.teamAbbreviation === team && (snapshot.roster.some((entry) => entry.playerId === player.id) || ["free_agent", "manager_available", "waivers"].includes(player.availability)));
+    const forecasts = snapshot.forecasts.filter((forecast) => goalies.some((goalie) => goalie.id === forecast.playerId) && [first.id, second.id].includes(forecast.gameId));
+    const confirmed = forecasts.filter((forecast) => forecast.confirmedStart).length;
+    const known = [first, second].filter((game) => forecasts.some((forecast) => forecast.gameId === game.id && (forecast.confirmedStart || forecast.startProbability !== null)));
+    const projected = known.reduce((total, game) => total + Math.min(1, forecasts.filter((forecast) => forecast.gameId === game.id).reduce((sum, forecast) => sum + (forecast.confirmedStart ? 1 : forecast.startProbability ?? 0), 0)), 0);
+    return <div className={styles.b2bRow} key={`${team}:${first.id}:${second.id}`}><strong>{team} · {dateLabel(first.date)} {first.home ? "vs" : "@"}{first.opponent} / {dateLabel(second.date)} {second.home ? "vs" : "@"}{second.opponent}</strong><span>{goalies.length} unique available goalies · {confirmed} confirmed starts · {known.length ? `${number(projected)} projected across ${known.length}/2 evidenced games` : "projected starts unknown"}{known.length < 2 ? " · remaining start probabilities unknown" : ""}</span></div>;
+  })}</div>;
+}
+function ExtraRules({ rules, startDate, endDate, timeZone, updateRules }: { rules: LeagueRules; startDate: string; endDate: string; timeZone: string; updateRules: (change: (rules: LeagueRules) => LeagueRules) => void }) {
+  const weights = rules.scoring.weights;
+  const categories = rules.scoring.categories;
+  const periods = rules.periods;
+  const lineupPeriods = rules.lineupPeriods ?? [];
+  return <details className={styles.settings}><summary>Scoring, budgets, and lock windows</summary><div className={styles.ruleFields}>
+    <label>Acquisition cost<input type="number" min="0" value={rules.acquisitionCost ?? ""} onChange={(event) => updateRules((current) => ({ ...current, acquisitionCost: event.target.value ? Number(event.target.value) : null }))} /></label>
+    <label>Waiver mode<select value={rules.waivers?.mode ?? "unknown"} onChange={(event) => updateRules((current) => ({ ...current, waivers: { mode: event.target.value as NonNullable<LeagueRules["waivers"]>["mode"], remainingBudget: current.waivers?.remainingBudget ?? null } }))}><option value="unknown">Unknown</option><option value="priority">Priority</option><option value="budget">Budget</option></select></label>
+    {rules.waivers?.mode === "budget" && <label>Waiver budget remaining<input type="number" min="0" value={rules.waivers.remainingBudget ?? ""} onChange={(event) => updateRules((current) => ({ ...current, waivers: { mode: "budget", remainingBudget: event.target.value === "" ? null : Number(event.target.value) } }))} /></label>}
+    <label>Goalie counting<select value={rules.goalieMinimum.counts} onChange={(event) => updateRules((current) => ({ ...current, goalieMinimum: { ...current.goalieMinimum, counts: event.target.value as LeagueRules["goalieMinimum"]["counts"] } }))}><option value="unknown">Unknown</option><option value="starts">Starts</option><option value="appearances">Appearances</option></select></label>
+    <label>Goalie penalty<select value={rules.goalieMinimum.penalty} onChange={(event) => updateRules((current) => ({ ...current, goalieMinimum: { ...current.goalieMinimum, penalty: event.target.value as LeagueRules["goalieMinimum"]["penalty"] } }))}><option value="unknown">Unknown</option><option value="lose_goalie_categories">Lose goalie categories</option><option value="none">None</option></select></label>
+    <label>Goalie period start<input type="date" value={rules.goalieMinimum.periodStart ?? ""} onChange={(event) => updateRules((current) => ({ ...current, goalieMinimum: { ...current.goalieMinimum, periodStart: event.target.value || null } }))} /></label>
+    <label>Goalie period end<input type="date" value={rules.goalieMinimum.periodEnd ?? ""} onChange={(event) => updateRules((current) => ({ ...current, goalieMinimum: { ...current.goalieMinimum, periodEnd: event.target.value || null } }))} /></label>
+    <h4>Point weights</h4>{Object.entries(weights).map(([stat, weight]) => <div className={styles.ruleRow} key={stat}><label>Statistic<input defaultValue={stat} onBlur={(event) => { const renamed = event.target.value.trim(); if (!renamed || renamed === stat) return; const next = { ...weights }; delete next[stat]; next[renamed] = weight; updateRules((current) => ({ ...current, scoring: { ...current.scoring, weights: next } })); }} /></label><label>Weight<input type="number" step="any" value={weight} onChange={(event) => updateRules((current) => ({ ...current, scoring: { ...current.scoring, weights: { ...current.scoring.weights, [stat]: Number(event.target.value) } } }))} /></label><button aria-label={`Remove ${stat} weight`} onClick={() => { const next = { ...weights }; delete next[stat]; updateRules((current) => ({ ...current, scoring: { ...current.scoring, weights: next } })); }}>×</button></div>)}<button onClick={() => { let stat = "STAT"; let i = 2; while (stat in weights) stat = `STAT${i++}`; updateRules((current) => ({ ...current, scoring: { ...current.scoring, weights: { ...current.scoring.weights, [stat]: 1 } } })); }}>Add point weight</button>
+    <h4>Categories</h4>{categories.map((category, index) => <div className={styles.ruleRow} key={index}><label>Stat<input value={category.key} onChange={(event) => updateRules((current) => ({ ...current, scoring: { ...current.scoring, categories: current.scoring.categories.map((row, i) => i === index ? { ...row, key: event.target.value } : row) } }))} /></label><label>Direction<select value={category.direction} onChange={(event) => updateRules((current) => ({ ...current, scoring: { ...current.scoring, categories: current.scoring.categories.map((row, i) => i === index ? { ...row, direction: event.target.value as "higher" | "lower" } : row) } }))}><option value="higher">Higher</option><option value="lower">Lower</option></select></label><label>Numerator<input value={category.numerator ?? ""} onChange={(event) => updateRules((current) => ({ ...current, scoring: { ...current.scoring, categories: current.scoring.categories.map((row, i) => i === index ? { ...row, numerator: event.target.value || undefined } : row) } }))} /></label><label>Denominator<input value={category.denominator ?? ""} onChange={(event) => updateRules((current) => ({ ...current, scoring: { ...current.scoring, categories: current.scoring.categories.map((row, i) => i === index ? { ...row, denominator: event.target.value || undefined } : row) } }))} /></label><button aria-label={`Remove category ${category.key}`} onClick={() => updateRules((current) => ({ ...current, scoring: { ...current.scoring, categories: current.scoring.categories.filter((_, i) => i !== index) } }))}>×</button></div>)}<button onClick={() => updateRules((current) => ({ ...current, scoring: { ...current.scoring, categories: [...current.scoring.categories, { key: "STAT", direction: "higher" }] } }))}>Add category</button>
+    <h4>Acquisition periods</h4>{periods.map((period, index) => <div className={styles.ruleRow} key={index}><label>Period<input value={period.id} onChange={(event) => updateRules((current) => ({ ...current, periods: current.periods.map((row, i) => i === index ? { ...row, id: event.target.value } : row) }))} /></label><label>Start<input type="date" value={leagueDate(period.start, timeZone)} onChange={(event) => { if (event.target.value) updateRules((current) => ({ ...current, periods: current.periods.map((row, i) => i === index ? { ...row, start: leagueDayBoundary(event.target.value, timeZone) } : row) })); }} /></label><label>End<input type="date" value={leagueDate(new Date(Date.parse(period.end) - 1).toISOString(), timeZone)} onChange={(event) => { if (event.target.value) updateRules((current) => ({ ...current, periods: current.periods.map((row, i) => i === index ? { ...row, end: leagueDayBoundary(event.target.value, timeZone, true) } : row) })); }} /></label><label>Moves left<input type="number" min="0" value={period.remaining ?? ""} onChange={(event) => updateRules((current) => ({ ...current, periods: current.periods.map((row, i) => i === index ? { ...row, remaining: event.target.value === "" ? null : Number(event.target.value), source: "manager" } : row) }))} /></label><button aria-label={`Remove period ${period.id}`} onClick={() => updateRules((current) => ({ ...current, periods: current.periods.filter((_, i) => i !== index) }))}>×</button></div>)}<button disabled={!startDate || !endDate || startDate > endDate} onClick={() => updateRules((current) => ({ ...current, periods: [...current.periods, { id: `Period ${current.periods.length + 1}`, start: leagueDayBoundary(startDate, timeZone), end: leagueDayBoundary(endDate, timeZone, true), remaining: null, source: "manager" }] }))}>Add acquisition period</button>
+    <h4>Weekly lineup windows</h4>{lineupPeriods.map((period, index) => <div className={styles.ruleRow} key={index}><label>Window<input value={period.id} onChange={(event) => updateRules((current) => ({ ...current, lineupPeriods: (current.lineupPeriods ?? []).map((row, i) => i === index ? { ...row, id: event.target.value } : row) }))} /></label><label>Start<input type="date" value={leagueDate(period.start, timeZone)} onChange={(event) => { if (event.target.value) updateRules((current) => ({ ...current, lineupPeriods: (current.lineupPeriods ?? []).map((row, i) => i === index ? { ...row, start: leagueDayBoundary(event.target.value, timeZone) } : row) })); }} /></label><label>End<input type="date" value={leagueDate(new Date(Date.parse(period.end) - 1).toISOString(), timeZone)} onChange={(event) => { if (event.target.value) updateRules((current) => ({ ...current, lineupPeriods: (current.lineupPeriods ?? []).map((row, i) => i === index ? { ...row, end: leagueDayBoundary(event.target.value, timeZone, true) } : row) })); }} /></label><label>Lock at<input type="datetime-local" value={period.lockAt ? leagueDateTime(period.lockAt, timeZone) : ""} onChange={(event) => updateRules((current) => ({ ...current, lineupPeriods: (current.lineupPeriods ?? []).map((row, i) => i === index ? { ...row, lockAt: event.target.value ? instantFromLeagueTime(event.target.value, timeZone) : null } : row) }))} /></label><button aria-label={`Remove window ${period.id}`} onClick={() => updateRules((current) => ({ ...current, lineupPeriods: (current.lineupPeriods ?? []).filter((_, i) => i !== index) }))}>×</button></div>)}<button disabled={!startDate || !endDate || startDate > endDate} onClick={() => updateRules((current) => ({ ...current, lineupPeriods: [...(current.lineupPeriods ?? []), { id: `Window ${(current.lineupPeriods ?? []).length + 1}`, start: leagueDayBoundary(startDate, timeZone), end: leagueDayBoundary(endDate, timeZone, true), lockAt: null }] }))}>Add lineup window</button>
+  </div></details>;
 }

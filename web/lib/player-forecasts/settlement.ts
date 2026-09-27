@@ -9,6 +9,7 @@ type OutputRow = {
   id: string;
   game_id: number;
   player_id: number;
+  population: "forward" | "defense" | "goalie";
   target_key: string;
   conditioning: string;
   point_estimate: number | null;
@@ -29,15 +30,24 @@ const SKATER_COLUMNS: Record<string, string> = {
 };
 
 function numeric(value: unknown): number | null {
-  const result = typeof value === "number" ? value : Number(value);
+  if (typeof value !== "number" && (typeof value !== "string" || value.trim() === "")) return null;
+  const result = Number(value);
   return Number.isFinite(result) ? result : null;
 }
 
 export function parseTimeOnIceSeconds(value: unknown): number | null {
   if (typeof value !== "string") return null;
-  const parts = value.split(":").map(Number);
-  if (parts.length !== 2 || parts.some((part) => !Number.isFinite(part) || part < 0)) return null;
-  return parts[0] * 60 + parts[1];
+  const parts = /^(\d+):([0-5]\d)$/.exec(value);
+  if (!parts) return null;
+  const minutes = Number(parts[1]);
+  return Number.isSafeInteger(minutes) ? minutes * 60 + Number(parts[2]) : null;
+}
+
+function goalieSaveShots(value: unknown): { saves: number; shots: number } | null {
+  const match = typeof value === "string" ? /^(\d+)\/(\d+)$/.exec(value) : null;
+  if (!match) return null;
+  const saves = Number(match[1]), shots = Number(match[2]);
+  return Number.isSafeInteger(saves) && Number.isSafeInteger(shots) && saves <= shots ? { saves, shots } : null;
 }
 
 export function scoreForecast(args: {
@@ -81,7 +91,30 @@ export function scoreForecast(args: {
   return { metrics, baselineMetrics, compositeSkillScore };
 }
 
-function actualForOutput(output: OutputRow, skater: Record<string, unknown> | undefined): Actual | null {
+export function actualForOutput(output: OutputRow, skater: Record<string, unknown> | undefined, goalie?: Record<string, unknown>): Actual | null {
+  if (output.population === "goalie") {
+    const toi = goalie ? parseTimeOnIceSeconds(goalie.toi) : null;
+    if (output.conditioning === "playing_probability" && output.target_key === "plays") {
+      // An absent row may be a partial ingest, not evidence of a non-appearance.
+      if (!goalie || toi === null) return null;
+      return { value: toi > 0 ? 1 : 0, payload: { sourceTable: "goaliesGameStats", rawToi: goalie.toi } };
+    }
+    // A goalie appearance and pregame start observation do not establish who started.
+    if (!goalie || toi === null || (toi <= 0 && output.conditioning !== "unconditional") || !["conditional_playing", "unconditional"].includes(output.conditioning)) return null;
+    const saveShots = goalieSaveShots(goalie.saveShotsAgainst);
+    const goalsAgainst = numeric(goalie.goalsAgainst);
+    if (toi === 0 && ((saveShots?.shots ?? 0) > 0 || (goalsAgainst ?? 0) > 0)) return null;
+    const values: Record<string, number | null> = {
+      saves: saveShots?.saves ?? null,
+      shots_against: saveShots?.shots ?? null,
+      goals_against: goalsAgainst !== null && Number.isInteger(goalsAgainst) && goalsAgainst >= 0 ? goalsAgainst : null,
+      time_on_ice_seconds: toi,
+      save_percentage: saveShots && saveShots.shots > 0 ? saveShots.saves / saveShots.shots : null,
+      goals_against_average: goalsAgainst !== null && goalsAgainst >= 0 && toi !== null && toi > 0 ? goalsAgainst * 3600 / toi : null,
+    };
+    const value = values[output.target_key];
+    return value === null || value === undefined ? null : { value, payload: { sourceTable: "goaliesGameStats", sourceColumns: output.target_key === "time_on_ice_seconds" ? ["toi"] : output.target_key === "goals_against" ? ["goalsAgainst"] : output.target_key === "goals_against_average" ? ["goalsAgainst", "toi"] : ["saveShotsAgainst"] } };
+  }
   if (output.conditioning === "playing_probability" && output.target_key === "plays") {
     return { value: skater ? 1 : 0, payload: { sourceTable: "skatersGameStats" } };
   }
@@ -117,7 +150,7 @@ export async function settlePlayerForecasts(args: {
 
   const { data: outputs, error: outputsError } = await args.supabase
     .from("player_forecast_outputs")
-    .select("id,game_id,player_id,target_key,conditioning,point_estimate,probability,distribution,quantiles")
+    .select("id,game_id,player_id,population,target_key,conditioning,point_estimate,probability,distribution,quantiles")
     .in("game_id", gameIds);
   if (outputsError) throw outputsError;
   const typedOutputs = (outputs ?? []) as OutputRow[];
@@ -134,6 +167,18 @@ export async function settlePlayerForecasts(args: {
   for (const row of skaterRows ?? []) {
     gamesWithSkaterStats.add(Number(row.gameId));
     skaters.set(`${row.gameId}:${row.playerId}`, row);
+  }
+
+  const { data: goalieRows, error: goalieError } = await args.supabase
+    .from("goaliesGameStats")
+    .select("gameId,playerId,saveShotsAgainst,goalsAgainst,toi")
+    .in("gameId", outputGameIds);
+  if (goalieError) throw goalieError;
+  const goalies = new Map<string, Record<string, unknown>>();
+  const gamesWithGoalieStats = new Set<number>();
+  for (const row of goalieRows ?? []) {
+    gamesWithGoalieStats.add(Number(row.gameId));
+    goalies.set(`${row.gameId}:${row.playerId}`, row);
   }
 
   const outcomeKeys = typedOutputs.map((output) => `${output.game_id}:${output.player_id}:${output.target_key}`);
@@ -155,8 +200,8 @@ export async function settlePlayerForecasts(args: {
   let unsupportedOutputs = 0;
   const outcomeByKey = new Map<string, any>();
   for (const output of typedOutputs) {
-    if (!gamesWithSkaterStats.has(output.game_id)) continue;
-    const actual = actualForOutput(output, skaters.get(`${output.game_id}:${output.player_id}`));
+    if (!(output.population === "goalie" ? gamesWithGoalieStats : gamesWithSkaterStats).has(output.game_id)) continue;
+    const actual = actualForOutput(output, skaters.get(`${output.game_id}:${output.player_id}`), goalies.get(`${output.game_id}:${output.player_id}`));
     if (!actual) {
       unsupportedOutputs += 1;
       continue;

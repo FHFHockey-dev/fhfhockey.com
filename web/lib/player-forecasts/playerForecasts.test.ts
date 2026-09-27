@@ -12,7 +12,7 @@ import {
 } from "./runtimeSafety";
 import { buildNextTenGameScopes } from "./schedule";
 import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
-import { parseTimeOnIceSeconds, scoreForecast } from "./settlement";
+import { actualForOutput, parseTimeOnIceSeconds, scoreForecast } from "./settlement";
 import {
   createPlayerForecastServingArtifact,
   ensureValidationFeatureSnapshots,
@@ -306,6 +306,36 @@ describe("forecast settlement scoring", () => {
     expect(score?.metrics.logLoss).toBeCloseTo(-Math.log(0.8));
     expect(parseTimeOnIceSeconds("18:32")).toBe(1112);
     expect(parseTimeOnIceSeconds("invalid")).toBeNull();
+    expect(parseTimeOnIceSeconds("18:60")).toBeNull();
+    expect(parseTimeOnIceSeconds("18:")).toBeNull();
+    expect(scoreForecast({ actual: 1, pointEstimate: null, probability: null, conditioning: "conditional_playing", quantiles: { p10: null, p90: null } })).toBeNull();
+  });
+
+  it("settles supported goalie components and ratios from observed game totals", () => {
+    const goalie = { saveShotsAgainst: "28/30", goalsAgainst: 2, toi: "60:00" };
+    const output = (target_key: string, conditioning = "conditional_playing") => ({ population: "goalie", target_key, conditioning }) as any;
+    expect(actualForOutput(output("saves"), undefined, goalie)?.value).toBe(28);
+    expect(actualForOutput(output("shots_against"), undefined, goalie)?.value).toBe(30);
+    expect(actualForOutput(output("goals_against"), undefined, goalie)?.value).toBe(2);
+    expect(actualForOutput(output("time_on_ice_seconds"), undefined, goalie)?.value).toBe(3600);
+    expect(actualForOutput(output("save_percentage"), undefined, goalie)?.value).toBeCloseTo(28 / 30);
+    expect(actualForOutput(output("goals_against_average"), undefined, goalie)?.value).toBe(2);
+    expect(actualForOutput(output("plays", "playing_probability"), undefined, goalie)?.value).toBe(1);
+    expect(actualForOutput(output("plays", "playing_probability"), undefined, undefined)).toBeNull();
+    expect(actualForOutput(output("plays", "playing_probability"), undefined, { toi: "00:00" })?.value).toBe(0);
+    expect(actualForOutput(output("saves", "unconditional"), undefined, { toi: "00:00", saveShotsAgainst: "0/0" })?.value).toBe(0);
+  });
+
+  it("keeps missing goalie data and unverified start outcomes unavailable", () => {
+    const output = (target_key: string, conditioning = "conditional_playing") => ({ population: "goalie", target_key, conditioning }) as any;
+    expect(actualForOutput(output("saves"), undefined, { saveShotsAgainst: null, toi: "60:00" })).toBeNull();
+    expect(actualForOutput(output("save_percentage"), undefined, { saveShotsAgainst: "0/0", toi: "60:00" })).toBeNull();
+    expect(actualForOutput(output("saves"), undefined, { saveShotsAgainst: "31/30", toi: "60:00" })).toBeNull();
+    expect(actualForOutput(output("goals_against"), undefined, { goalsAgainst: null, toi: "60:00" })).toBeNull();
+    expect(actualForOutput(output("time_on_ice_seconds"), undefined, { toi: "60:60" })).toBeNull();
+    expect(actualForOutput(output("plays", "playing_probability"), undefined, { toi: null })).toBeNull();
+    expect(actualForOutput(output("starts", "start_probability"), undefined, { saveShotsAgainst: "28/30", goalsAgainst: 2, toi: "60:00" })).toBeNull();
+    expect(actualForOutput(output("saves", "conditional_start"), undefined, { saveShotsAgainst: "28/30", toi: "60:00" })).toBeNull();
   });
 });
 

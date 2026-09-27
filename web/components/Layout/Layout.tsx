@@ -16,7 +16,8 @@ function Layout({ children }: LayoutProps) {
     router.pathname.startsWith("/underlying-stats");
   const isHomepage = router.pathname === "/";
   const isWigo = router.pathname === "/wigoCharts";
-  const hideFooter = router.pathname === "/draft-dashboard" || isWigo;
+  const isRosterOptimizer = router.pathname === "/roster-schedule-optimizer";
+  const hideFooter = router.pathname === "/draft-dashboard" || isRosterOptimizer || isWigo;
   const [isFooterVisible, setIsFooterVisible] = useState(false);
   const touchStartYRef = useRef<number | null>(null);
 
@@ -74,7 +75,7 @@ function Layout({ children }: LayoutProps) {
   }, [hideFooter]);
 
   return (
-    <div className={`${styles.container} ${router.pathname === "/draft-dashboard" ? styles.draftLayout : ""} ${isWigo ? styles.wigoLayout : ""}`}>
+    <div className={`${styles.container} ${router.pathname === "/draft-dashboard" ? styles.draftLayout : ""} ${isRosterOptimizer ? styles.rosterOptimizerLayout : ""} ${isWigo ? styles.wigoLayout : ""}`}>
       <Header />
       {children}
       {!hideFooter && (
