@@ -75,6 +75,16 @@ describe("RosterScheduleOptimizer workspace", () => {
     await waitFor(() => expect(authenticatedFetch.mock.calls.some(([url, init]) => url.includes("/workspace?") && (init?.headers as Record<string, string>)?.Authorization === "Bearer token-second")).toBe(true));
   });
 
+  it("explains access-service failures instead of silently disabling provider sync", async () => {
+    authState.user = { id: "manager" };
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: !url.endsWith("/access"), status: url.endsWith("/access") ? 503 : 200, json: async () => url.includes("/data?") ? { success: true, data } : { data: null } })));
+    render(<RosterScheduleOptimizer />);
+    expect((await screen.findByRole("alert")).textContent).toContain("in-season access could not be verified");
+    fireEvent.change(screen.getByLabelText("Source"), { target: { value: "yahoo" } });
+    expect((screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByText("Saved inputs are read-only and may be stale.")).toBeNull();
+  });
+
   it("sends the signed-in token when saving the workspace", async () => {
     authState.user = { id: "manager" };
     const authenticatedFetch = vi.fn((url: string, init?: RequestInit) => Promise.resolve({ ok: true, status: 200, json: async () => url.includes("/data?") ? { success: true, data } : url.endsWith("/access") ? { data: { eligible: true, capabilities: ["rso_account_save"] } } : { data: null }, init }));
