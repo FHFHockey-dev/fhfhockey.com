@@ -1,332 +1,129 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { PlanningData, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
+import { WORKSPACE_KEY, defaultWorkspace } from "lib/rosterScheduleOptimizer/workspace";
 
-const { authState, projectionHook, supabaseFrom, vorpHook } = vi.hoisted(() => ({
-  authState: { user: null as { id: string } | null, isLoading: false },
-  projectionHook: vi.fn(),
-  supabaseFrom: vi.fn(),
-  vorpHook: vi.fn(),
-}));
+const { authState } = vi.hoisted(() => ({ authState: { user: null as { id: string } | null } }));
+vi.mock("contexts/AuthProviderContext", () => ({ useAuth: () => authState }));
+vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession: async () => ({ data: { session: authState.user ? { access_token: `token-${authState.user.id}` } : null } }) }, from: () => ({ select: () => ({ eq: async () => ({ data: [] }) }) }) } }));
+vi.mock("hooks/useRosterPlanning", () => ({ useRosterPlanning: () => ({ result: null, loading: false, error: null }) }));
+import RosterScheduleOptimizer, { grossAcquisitionGames } from "components/RosterScheduleOptimizer/RosterScheduleOptimizer";
 
-vi.mock("contexts/AuthProviderContext", () => ({
-  useAuth: () => authState,
-}));
-vi.mock("hooks/useCurrentSeason", () => ({
-  default: () => ({ seasonId: 20262027 }),
-}));
-vi.mock("hooks/useProcessedProjectionsData", () => ({
-  useProcessedProjectionsData: projectionHook,
-}));
-vi.mock("hooks/useVORPCalculations", () => ({
-  useVORPCalculations: vorpHook,
-}));
-vi.mock("lib/supabase", () => ({
-  default: { from: supabaseFrom },
-}));
+const player = { id: "fhfh:1", nhlId: 1, name: "Alpha Center", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "unknown" as const, ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] };
+const data: PlanningData = { players: [player], games: [], forecasts: [], evidence: {} };
+const fetchMock = vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data }) }));
+afterEach(() => { cleanup(); window.localStorage.clear(); vi.unstubAllGlobals(); fetchMock.mockClear(); authState.user = null; });
 
-import RosterScheduleOptimizer from "components/RosterScheduleOptimizer/RosterScheduleOptimizer";
-
-function processedPlayer(
-  playerId: number,
-  fullName: string,
-  team: string,
-  position: string,
-  yahooPlayerId?: string,
-) {
-  return {
-    playerId,
-    fullName,
-    displayTeam: team,
-    displayPosition: position,
-    eligiblePositions: [position],
-    yahooPlayerId,
-    combinedStats: {},
-    fantasyPoints: {
-      projected: 100 - playerId,
-      actual: null,
-      diffPercentage: null,
-      projectedPerGame: null,
-      actualPerGame: null,
-    },
-  };
-}
-
-function scheduleResponse(
-  games = [
-    {
-      source_game_id: 1,
-      game_date: "2026-10-08",
-      game_status: "FUT",
-      team_abbreviation: "CAR",
-      week: 1,
-    },
-    {
-      source_game_id: 2,
-      game_date: "2026-10-08",
-      game_status: "FUT",
-      team_abbreviation: "NJD",
-      week: 1,
-    },
-  ],
-) {
-  return {
-    ok: true,
-    json: async () => ({
-      success: true,
-      data: {
-        gameKey: "477",
-        startWeek: 1,
-        endWeek: 30,
-        version: "test-v1",
-        freshness: {
-          latestFetchedAt: new Date().toISOString(),
-          oldestFetchedAt: new Date().toISOString(),
-          rowCount: games.length,
-        },
-        games,
-      },
-    }),
-  };
-}
-
-afterEach(() => {
-  cleanup();
-  authState.user = null;
-  authState.isLoading = false;
-  projectionHook.mockReset();
-  vorpHook.mockReset();
-  supabaseFrom.mockReset();
-  vi.unstubAllGlobals();
-  window.localStorage.clear();
-});
-
-describe("RosterScheduleOptimizer", () => {
-  it("loads the bulk schedule once and supports a local manual scenario", async () => {
-    const alpha = processedPlayer(1, "Alpha Center", "CAR", "C", "101");
-    const beta = processedPlayer(2, "Beta Wing", "NJD", "LW", "102");
-    projectionHook.mockImplementation(({ activePlayerType }) => ({
-      processedPlayers: activePlayerType === "skater" ? [alpha, beta] : [],
-      tableColumns: [],
-      isLoading: false,
-      error: null,
-    }));
-    vorpHook.mockReturnValue({
-      playerMetrics: new Map([
-        ["1", { value: 77 }],
-        ["2", { value: 66 }],
-      ]),
-      replacementByPos: {},
-    });
-    const fetchMock = vi.fn().mockResolvedValue(scheduleResponse());
+describe("RosterScheduleOptimizer workspace", () => {
+  it("counts only acquired players' future games before their next drop", () => {
+    const workspace = defaultWorkspace(new Date("2026-09-26T12:00:00Z"));
+    const snapshot: PlanningSnapshot = { id: "gross", context: workspace.context, players: [player], roster: [], games: ["2026-09-27", "2026-09-29", "2026-10-01"].map((date, index) => ({ id: `g${index}`, date, startsAt: `${date}T23:00:00Z`, teamAbbreviation: "CAR", opponent: "NJD", home: true, status: "scheduled" })), forecasts: [], rules: workspace.rules, lockedAssignments: [], realized: {}, opponent: null, evidence: {} };
+    const steps = [
+      { id: "add", type: "add" as const, playerId: player.id, at: "2026-09-28T12:00:00Z", effectiveAt: "2026-09-28T12:00:00Z", conditional: true, dependsOn: [] },
+      { id: "drop", type: "drop" as const, playerId: player.id, at: "2026-09-30T12:00:00Z", effectiveAt: "2026-09-30T12:00:00Z", conditional: false, dependsOn: ["add"] },
+    ];
+    expect(grossAcquisitionGames(steps, snapshot)).toBe(1);
+  });
+  it("keeps exact canonical selections and unresolved pasted names across remount", async () => {
     vi.stubGlobal("fetch", fetchMock);
+    const view = render(<RosterScheduleOptimizer />);
+    await screen.findByRole("searchbox", { name: "Search canonical player" });
+    fireEvent.change(screen.getByRole("textbox", { name: "Paste roster names" }), { target: { value: "Alpha Center\nUnmatched Skater" } });
+    fireEvent.click(screen.getByRole("button", { name: "Review pasted names" }));
+    await waitFor(() => expect(screen.getByText("Unmatched Skater")).toBeTruthy());
+    expect(screen.getByRole("button", { name: "Remove Alpha Center" })).toBeTruthy();
+    const saved = JSON.parse(window.localStorage.getItem(WORKSPACE_KEY) ?? "null");
+    expect(saved.roster).toEqual([{ playerId: "fhfh:1", position: "bench" }]);
+    expect(saved.manualPlayers).toEqual([player]);
+    view.unmount(); render(<RosterScheduleOptimizer />);
+    expect(await screen.findByRole("button", { name: "Remove Alpha Center" })).toBeTruthy();
+    expect(screen.getByText("Unmatched Skater")).toBeTruthy();
+  });
 
+  it("undoes local roster edits without changing the public snapshot", async () => {
+    vi.stubGlobal("fetch", fetchMock);
     render(<RosterScheduleOptimizer />);
-
-    expect(await screen.findByText(/Schedule cache is current/)).toBeTruthy();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock.mock.calls[0][0]).toContain("gameKey=477");
-    expect(screen.getByText("Manual scenario · League Defaults")).toBeTruthy();
-    fireEvent.change(screen.getByRole("textbox", { name: "Yahoo game key" }), {
-      target: { value: "999" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Load game" }));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
-    expect(fetchMock.mock.calls[1][0]).toContain("gameKey=999");
-
-    fireEvent.change(screen.getByRole("searchbox", { name: "Add a projected player" }), {
-      target: { value: "Alpha" },
-    });
+    await screen.findByRole("searchbox", { name: "Search canonical player" });
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search canonical player" }), { target: { value: "Alpha" } });
     fireEvent.click(screen.getByRole("button", { name: "Add" }));
-
-    await waitFor(() => {
-      expect(screen.getAllByText("Alpha Center").length).toBeGreaterThan(0);
-      const summary = screen.getByLabelText("Scenario summary");
-      expect(summary.querySelector("article strong")?.textContent).toBe("1");
-    });
-    expect(screen.getByText("77")).toBeTruthy();
-    expect(vorpHook).toHaveBeenCalledWith(expect.objectContaining({ baselineMode: "full" }));
-    expect(screen.getByRole("button", { name: "Remove Alpha Center from scenario" })).toBeTruthy();
-    expect(screen.getByLabelText("Daily roster congestion heatmap")).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("button", { name: "Reset scenario" }));
-    expect(screen.getByText(/Add players to build a manual scenario/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Remove Alpha Center" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(screen.queryByRole("button", { name: "Remove Alpha Center" })).toBeNull();
+    expect(fetchMock.mock.calls.filter(([url]) => url.includes("/data?")).length).toBe(1);
   });
 
-  it("reports a schedule failure and retries on request", async () => {
-    projectionHook.mockReturnValue({
-      processedPlayers: [],
-      tableColumns: [],
-      isLoading: false,
-      error: null,
-    });
-    vorpHook.mockReturnValue({ playerMetrics: new Map(), replacementByPos: {} });
-    const fetchMock = vi
-      .fn()
-      .mockRejectedValueOnce(new Error("Schedule unavailable"))
-      .mockResolvedValueOnce(scheduleResponse());
+  it("marks a future selected add conditional until the provider confirms it", async () => {
     vi.stubGlobal("fetch", fetchMock);
-
     render(<RosterScheduleOptimizer />);
-
-    expect(await screen.findByText("Schedule unavailable")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Retry schedule" }));
-    expect(await screen.findByText(/Schedule cache is current/)).toBeTruthy();
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    await screen.findByRole("searchbox", { name: "Find candidate" });
+    fireEvent.change(screen.getByRole("searchbox", { name: "Find candidate" }), { target: { value: "Alpha" } });
+    fireEvent.click(screen.getByRole("button", { name: "Mark available" }));
+    fireEvent.click(screen.getByRole("button", { name: "Select add" }));
+    const saved = JSON.parse(window.localStorage.getItem(WORKSPACE_KEY) ?? "null");
+    expect(saved.intent.steps).toMatchObject([{ playerId: "fhfh:1", conditional: true }]);
   });
 
-  it("updates before/after results for add, remove, and a lower-DUST swap", async () => {
-    const anchor = processedPlayer(1, "Anchor Wing", "CAR", "RW", "101");
-    const outgoing = processedPlayer(2, "Conflict Wing", "NJD", "RW", "102");
-    const alternative = processedPlayer(3, "Off-night Wing", "NYR", "RW", "103");
-    projectionHook.mockImplementation(({ activePlayerType }) => ({
-      processedPlayers:
-        activePlayerType === "skater" ? [anchor, outgoing, alternative] : [],
-      tableColumns: [],
-      isLoading: false,
-      error: null,
-    }));
-    vorpHook.mockReturnValue({
-      playerMetrics: new Map([
-        ["1", { value: 110 }],
-        ["2", { value: 100 }],
-        ["3", { value: 98 }],
-      ]),
-      replacementByPos: {},
-    });
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(
-        scheduleResponse([
-          { source_game_id: 1, game_date: "2026-10-08", game_status: "FUT", team_abbreviation: "CAR", week: 1 },
-          { source_game_id: 2, game_date: "2026-10-09", game_status: "FUT", team_abbreviation: "CAR", week: 1 },
-          { source_game_id: 3, game_date: "2026-10-08", game_status: "FUT", team_abbreviation: "NJD", week: 1 },
-          { source_game_id: 4, game_date: "2026-10-09", game_status: "FUT", team_abbreviation: "NJD", week: 1 },
-          { source_game_id: 5, game_date: "2026-10-10", game_status: "FUT", team_abbreviation: "NYR", week: 1 },
-          { source_game_id: 6, game_date: "2026-10-11", game_status: "FUT", team_abbreviation: "NYR", week: 1 },
-        ]),
-      ),
-    );
-
-    render(<RosterScheduleOptimizer />);
-    expect(await screen.findByText(/Schedule cache is current/)).toBeTruthy();
-    fireEvent.change(screen.getByRole("spinbutton", { name: "RW" }), {
-      target: { value: "1" },
-    });
-    fireEvent.change(screen.getByRole("spinbutton", { name: "UTIL" }), {
-      target: { value: "0" },
-    });
-
-    const addBySearch = (name: string) => {
-      fireEvent.change(
-        screen.getByRole("searchbox", { name: "Add a projected player" }),
-        { target: { value: name } },
-      );
-      fireEvent.click(screen.getByRole("button", { name: "Add" }));
-    };
-    addBySearch("Anchor");
-    addBySearch("Conflict");
-
-    await waitFor(() =>
-      expect(
-        screen.getByLabelText("Scenario comparison").textContent,
-      ).toContain("+2 Bench Games"),
-    );
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "Remove Conflict Wing from scenario",
-      }),
-    );
-    expect(
-      screen.getByLabelText("Scenario comparison").textContent,
-    ).toContain("0 Bench Games");
-
-    addBySearch("Conflict");
-    fireEvent.change(screen.getByLabelText("Player to replace"), {
-      target: { value: "2" },
-    });
-    fireEvent.click(await screen.findByRole("button", { name: "Swap" }));
-
-    await waitFor(() => {
-      expect(
-        screen.queryByRole("button", {
-          name: "Remove Conflict Wing from scenario",
-        }),
-      ).toBeNull();
-      expect(
-        screen.getByRole("button", {
-          name: "Remove Off-night Wing from scenario",
-        }),
-      ).toBeTruthy();
-      expect(
-        screen.getByLabelText("Scenario comparison").textContent,
-      ).toContain("0 Bench Games");
-    });
+  it("uses the signed-in session for access and account reads, then refreshes after account switch", async () => {
+    const authenticatedFetch = vi.fn((url: string, init?: RequestInit) => Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data } : url.endsWith("/access") ? { data: { eligible: false, capabilities: [] } } : { data: null }, init }));
+    vi.stubGlobal("fetch", authenticatedFetch);
+    authState.user = { id: "first" };
+    const view = render(<RosterScheduleOptimizer />);
+    await waitFor(() => expect(authenticatedFetch.mock.calls.some(([url, init]) => url.endsWith("/access") && (init?.headers as Record<string, string>)?.Authorization === "Bearer token-first")).toBe(true));
+    await waitFor(() => expect(authenticatedFetch.mock.calls.some(([url, init]) => url.includes("/workspace?") && (init?.headers as Record<string, string>)?.Authorization === "Bearer token-first")).toBe(true));
+    authState.user = { id: "second" }; view.rerender(<RosterScheduleOptimizer />);
+    await waitFor(() => expect(authenticatedFetch.mock.calls.some(([url, init]) => url.endsWith("/access") && (init?.headers as Record<string, string>)?.Authorization === "Bearer token-second")).toBe(true));
+    await waitFor(() => expect(authenticatedFetch.mock.calls.some(([url, init]) => url.includes("/workspace?") && (init?.headers as Record<string, string>)?.Authorization === "Bearer token-second")).toBe(true));
   });
 
-  it("builds a connected Yahoo baseline from explicit IDs and preserves IR status", async () => {
-    authState.user = { id: "user-1" };
-    const player = processedPlayer(999, "Explicit ID Player", "CAR", "C", "123");
-    projectionHook.mockImplementation(({ activePlayerType }) => ({
-      processedPlayers: activePlayerType === "skater" ? [player] : [],
-      tableColumns: [],
-      isLoading: false,
-      error: null,
-    }));
-    vorpHook.mockReturnValue({
-      playerMetrics: new Map([["999", { value: 88 }]]),
-      replacementByPos: {},
-    });
-    supabaseFrom.mockImplementation((table: string) => {
-      const data = table === "user_settings"
-        ? {
-            league_type: "points",
-            scoring_categories: {},
-            goalie_scoring_categories: {},
-            category_weights: {},
-            roster_config: { C: 1, bench: 1, utility: 0 },
-            team_count: 12,
-            draft_order_type: "snake",
-            ui_preferences: {},
-            active_context: {
-              source_type: "external-provider",
-              provider: "yahoo",
-              external_team_id: "team-1",
-            },
-          }
-        : {
-            id: "team-1",
-            team_name: "ID League Team",
-            roster_snapshot: {
-              players: [
-                {
-                  editorial_player_id: "123",
-                  name: { full: "A deliberately different name" },
-                  selected_position: { position: "IR" },
-                },
-              ],
-            },
-          };
-      const query: any = {
-        select: () => query,
-        eq: () => query,
-        maybeSingle: () => Promise.resolve({ data, error: null }),
-      };
-      return query;
-    });
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(scheduleResponse()));
-
+  it("explains access-service failures instead of silently disabling provider sync", async () => {
+    authState.user = { id: "manager" };
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: !url.endsWith("/access"), status: url.endsWith("/access") ? 503 : 200, json: async () => url.includes("/data?") ? { success: true, data } : { data: null } })));
     render(<RosterScheduleOptimizer />);
+    expect((await screen.findByRole("alert")).textContent).toContain("in-season access could not be verified");
+    fireEvent.change(screen.getByLabelText("Source"), { target: { value: "yahoo" } });
+    expect((screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByText("Saved inputs are read-only and may be stale.")).toBeNull();
+  });
 
-    expect(await screen.findByText("Connected Yahoo roster · ID League Team")).toBeTruthy();
-    expect(await screen.findByRole("button", { name: "Remove Explicit ID Player from scenario" })).toBeTruthy();
-    expect(screen.queryByText(/not matched by explicit Yahoo\/NHL ID/)).toBeNull();
-    expect(screen.getByLabelText("Scenario summary").textContent).toContain(
-      "Scheduled0",
-    );
+  it("sends the signed-in token when saving the workspace", async () => {
+    authState.user = { id: "manager" };
+    const authenticatedFetch = vi.fn((url: string, init?: RequestInit) => Promise.resolve({ ok: true, status: 200, json: async () => url.includes("/data?") ? { success: true, data } : url.endsWith("/access") ? { data: { eligible: true, capabilities: ["rso_account_save"] } } : { data: null }, init }));
+    vi.stubGlobal("fetch", authenticatedFetch);
+    render(<RosterScheduleOptimizer />);
+    fireEvent.click(await screen.findByRole("button", { name: "Save to account" }));
+    await waitFor(() => expect(authenticatedFetch.mock.calls.some(([url, init]) => url.endsWith("/workspace") && init?.method === "PUT" && (init.headers as Record<string, string>).Authorization === "Bearer token-manager")).toBe(true));
+  });
 
-    fireEvent.click(screen.getByRole("button", { name: "Remove Explicit ID Player from scenario" }));
-    expect(screen.getByText(/Add players to build a manual scenario/)).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Reset scenario" }));
-    expect(await screen.findByRole("button", { name: "Remove Explicit ID Player from scenario" })).toBeTruthy();
+  it("keeps invalid zone and cleared period dates out of committed rules", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+    render(<RosterScheduleOptimizer />);
+    const zone = await screen.findByLabelText("Time zone") as HTMLInputElement;
+    const original = zone.value;
+    fireEvent.change(zone, { target: { value: "Not/A_Zone" } });
+    fireEvent.blur(zone);
+    expect(screen.getByText(/valid IANA time zone/)).toBeTruthy();
+    expect((screen.getByLabelText("Time zone") as HTMLInputElement).value).toBe(original);
+    fireEvent.click(screen.getByText("Scoring, budgets, and lock windows"));
+    fireEvent.click(screen.getByRole("button", { name: "Add acquisition period" }));
+    const previous = JSON.parse(window.localStorage.getItem(WORKSPACE_KEY) ?? "null").rules.periods[0].start;
+    fireEvent.change(screen.getByLabelText("Start"), { target: { value: "" } });
+    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY) ?? "null").rules.periods[0].start).toBe(previous);
+  });
+
+  it("opens a saved manual snapshot read-only until the manager explicitly forks it", async () => {
+    authState.user = { id: "manager" };
+    const saved = defaultWorkspace();
+    saved.context.asOf = "2026-09-01T12:00:00.000Z";
+    saved.roster = [{ playerId: player.id, position: "bench" }];
+    saved.manualPlayers = [player];
+    const snapshot = { id: "saved-1", context: saved.context, players: [player], roster: saved.roster, games: [], forecasts: [], rules: saved.rules, lockedAssignments: [], realized: {}, opponent: null, evidence: {} };
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data } : url.endsWith("/access") ? { data: { eligible: false, capabilities: [] } } : { data: { workspace: saved, snapshot, version: 1, updatedAt: saved.context.asOf } } })));
+    render(<RosterScheduleOptimizer />);
+    fireEvent.click(await screen.findByRole("button", { name: "View account save" }));
+    expect(screen.getByText(/Saved evidence/)).toBeTruthy();
+    expect((screen.getByLabelText("Planning setup") as HTMLFieldSetElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Continue manually" }));
+    expect((screen.getByLabelText("Planning setup") as HTMLFieldSetElement).disabled).toBe(false);
+    expect(screen.getByRole("button", { name: "Remove Alpha Center" })).toBeTruthy();
   });
 });

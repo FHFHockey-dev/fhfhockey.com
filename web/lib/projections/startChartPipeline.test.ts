@@ -16,6 +16,7 @@ import { claimStarterBoardJobs, computeStarterBoardJob, dispatchStarterBoardJobs
 import { starterBoardCanaryGameIds, starterBoardFlags, starterBoardScopeAllowed } from "./starterBoardFlags";
 import { exportFrozenBoardForecasts, readFrozenBoardSource, type FrozenBoardSource } from "./starterBoardDataset";
 import { optimizeToday, rankTodayStreams, type TodayPlayer, type TodayStream } from "./starterBoardPersonalization";
+import { weightedAssignment } from "./weightedAssignment";
 import * as forgeRunner from "./run-forge-projections";
 import { buildStarterBoardOperationsReport, type BoardOperationalEvent } from "./starterBoardOperations";
 import { boardComponentDecisions, boardReviewSchema, buildBoardValidationDisclosure, normalizeBoardValidationDisclosure,
@@ -290,6 +291,23 @@ describe("today-only eligible lineup assignment", () => {
       };
       expect(optimizeToday({ slots: testSlots, roster }).expectedValue).toBe(enumerate(0, new Set()));
     }
+  });
+  it("matches an exhaustive weighted oracle with negative values and empty slots", () => {
+    const positions = ["C", "LW", "UTIL"];
+    const candidates = [
+      { positions: ["C", "LW"], value: -2 },
+      { positions: ["C"], value: 5 },
+      { positions: ["LW", "UTIL"], value: 4 },
+      { positions: ["UTIL"], value: -1 },
+    ];
+    const weight = (slot: string, candidate: typeof candidates[number]) => candidate.positions.includes(slot) ? candidate.value : null;
+    const chosen = weightedAssignment(positions, candidates, weight);
+    const actual = chosen.reduce((sum, row) => sum + (row.playerIndex === null ? 0 : candidates[row.playerIndex].value), 0);
+    const oracle = (slot: number, used: Set<number>): number => slot === positions.length ? 0 : Math.max(0 + oracle(slot + 1, used),
+      ...candidates.flatMap((candidate, index) => !used.has(index) && candidate.positions.includes(positions[slot])
+        ? [candidate.value + oracle(slot + 1, new Set([...used, index]))] : []));
+    expect(actual).toBe(oracle(0, new Set()));
+    expect(chosen.some(row => row.playerIndex === null)).toBe(true);
   });
 });
 

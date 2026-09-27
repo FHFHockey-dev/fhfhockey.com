@@ -11,7 +11,7 @@ export default function RosterScheduleOptimizerPage() {
         <title>NHL Roster Schedule Optimizer | FHFH</title>
         <meta
           name="description"
-          content="Find startable NHL fantasy games, bench conflicts, DUST, and lower-conflict roster alternatives."
+          content="Plan legal fantasy hockey roster moves across your matchup with a game-level itinerary and lineup comparison."
         />
       </Head>
       <Container contentVariant="full">

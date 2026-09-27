@@ -1,3 +1,5 @@
+import { weightedAssignment } from "./weightedAssignment";
+
 /** Pure, today-only assignment. Provider access and identity resolution stay server-side. */
 export type TodayPlayer = {
   id: string;
@@ -34,37 +36,9 @@ function usable(player: TodayPlayer) {
 
 /** Rectangular Hungarian assignment, with one zero-value empty choice per slot. */
 function assign(slots: TodaySlot[], players: TodayPlayer[]) {
-  const n = slots.length, m = players.length + n;
-  const u = Array(n + 1).fill(0), v = Array(m + 1).fill(0);
-  const p = Array(m + 1).fill(0), way = Array(m + 1).fill(0);
-  const cost = (row: number, col: number) => col > players.length ? 0
-    : eligible(players[col - 1], slots[row - 1].position) ? -players[col - 1].value! : 1e12;
-  for (let row = 1; row <= n; row++) {
-    p[0] = row;
-    let col = 0;
-    const min = Array(m + 1).fill(Infinity), used = Array(m + 1).fill(false);
-    do {
-      used[col] = true;
-      const current = p[col];
-      let delta = Infinity, next = 0;
-      for (let j = 1; j <= m; j++) if (!used[j]) {
-        const reduced = cost(current, j) - u[current] - v[j];
-        if (reduced < min[j]) { min[j] = reduced; way[j] = col; }
-        if (min[j] < delta) { delta = min[j]; next = j; }
-      }
-      for (let j = 0; j <= m; j++) {
-        if (used[j]) { u[p[j]] += delta; v[j] -= delta; }
-        else min[j] -= delta;
-      }
-      col = next;
-    } while (p[col] !== 0);
-    do { const previous = way[col]; p[col] = p[previous]; col = previous; } while (col !== 0);
-  }
-  const result = slots.map((slot) => ({ ...slot, playerId: null as string | null, value: 0 as number | null, preserved: false }));
-  for (let j = 1; j <= players.length; j++) if (p[j] && eligible(players[j - 1], slots[p[j] - 1].position)) {
-    result[p[j] - 1] = { ...result[p[j] - 1], playerId: players[j - 1].id, value: players[j - 1].value, preserved: false };
-  }
-  return result;
+  return weightedAssignment(slots, players, (slot, player) => eligible(player, slot.position) ? player.value : null)
+    .map(({ slotIndex, playerIndex }) => ({ ...slots[slotIndex], playerId: playerIndex === null ? null : players[playerIndex].id,
+      value: playerIndex === null ? 0 : players[playerIndex].value, preserved: false }));
 }
 
 export function optimizeToday(args: { slots: TodaySlot[]; roster: TodayPlayer[]; limitations?: string[] }) {

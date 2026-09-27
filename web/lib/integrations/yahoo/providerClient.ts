@@ -208,6 +208,20 @@ export async function fetchYahooBoardResource(args: Omit<Parameters<typeof fetch
   return fetchYahooJson(args, `${YAHOO_FANTASY_API_BASE_URL}/${path}?format=${format === "json_f" ? "json_f" : "json"}`, format);
 }
 
+/** In-season reads only. Explicit resources prevent arbitrary provider paths or writes. */
+export async function fetchYahooPlanningResource(args: Omit<Parameters<typeof fetchYahooDraftResource>[0], "resource"> & {
+  resource: { type: "league" | "scoreboard" | "transactions" } | { type: "available_page"; start: number };
+}): Promise<YahooProviderJsonResult> {
+  assertYahooLeagueKey(args.leagueKey, args.context);
+  const format = args.format ?? getYahooLiveDraftResponseFormat();
+  let path = `league/${encodeURIComponent(args.leagueKey)}`;
+  if (args.resource.type === "available_page") {
+    if (!Number.isInteger(args.resource.start) || args.resource.start < 0 || args.resource.start > 2000 || args.resource.start % 25 !== 0) throw new Error("Invalid availability page");
+    path += `/players;status=A;sort=OR;start=${args.resource.start};count=25/ownership`;
+  } else if (args.resource.type !== "league") path += `/${args.resource.type}`;
+  return fetchYahooJson(args, `${YAHOO_FANTASY_API_BASE_URL}/${path}?format=${format === "json_f" ? "json_f" : "json"}`, format);
+}
+
 async function fetchYahooJson(args: Omit<Parameters<typeof fetchYahooDraftResource>[0], "resource">,
   url: string, format: YahooLiveDraftResponseFormat): Promise<YahooProviderJsonResult> {
   const fetchImpl = args.fetchImpl ?? fetch;
