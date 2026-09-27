@@ -1,32 +1,32 @@
 @use "styles/vars" as v;
 
-.workspace { width: 100%; min-width: 0; min-height: 0; height: 100%; display: flex; flex-direction: column; gap: v.$space-sm; padding: v.$space-sm; box-sizing: border-box; background: v.$background-dark; color: v.$text-primary; font-family: v.$font-family-primary; }
-.workspace button, .workspace input, .workspace select, .workspace textarea { font: inherit; color: v.$text-primary; background: v.$background-medium; border: v.$border-subtle; border-radius: v.$radius-card; }
+.workspace { width: 100%; min-width: 0; min-height: 0; height: 100%; display: flex; flex-direction: column; gap: v.$space-sm; padding: v.$space-sm; box-sizing: border-box; background: v.$draft-canvas; color: v.$text-primary; font-family: v.$font-family-primary; }
+.workspace button, .workspace input, .workspace select, .workspace textarea { font: inherit; color: v.$text-primary; background: v.$draft-input; border: 1px solid v.$draft-border; border-radius: v.$radius-control; }
 .workspace button { cursor: pointer; padding: v.$space-xs v.$space-sm; min-height: 32px; }
 .workspace button:disabled { opacity: .5; cursor: not-allowed; }
 .workspace button:hover:not(:disabled) { border-color: v.$primary-color; }
 .workspace :is(button, input, select, textarea, summary):focus-visible { outline: 2px solid v.$focus-color; outline-offset: 2px; }
 .workspace input, .workspace select, .workspace textarea { min-height: 32px; padding: v.$space-xs v.$space-sm; box-sizing: border-box; }
 .workspace textarea { min-height: 56px; resize: vertical; }
-.topbar { display: flex; justify-content: space-between; align-items: center; gap: v.$space-md; min-height: 56px; }
-.topbar h1 { margin: 0; color: v.$color-white; font-size: v.$font-size-lg; font-family: v.$font-family-accent; line-height: 1.2; }
-.topbar p { margin: 2px 0 0; color: v.$text-secondary; font-size: v.$font-size-xs; }
-.eyebrow { color: v.$primary-color; font-size: v.$font-size-xs; letter-spacing: .08em; text-transform: uppercase; }
+.topbar { position: relative; flex-shrink: 0; padding: v.$space-sm v.$space-md; border: 1px solid v.$draft-border; border-radius: v.$radius-card; background: v.$draft-surface; display: flex; justify-content: space-between; align-items: center; gap: v.$space-md; min-height: 56px; }
+.topbar h1 { margin: 0; color: v.$color-white; font-size: clamp(v.$font-size-xl, 2vw, v.$font-size-xxl); font-family: v.$font-family-accent; line-height: 1.2; }
+.topbar p { margin: 2px 0 0; color: v.$text-secondary; font-size: v.$font-size-sm; }
+.eyebrow { color: v.$primary-color; font-size: v.$font-size-xs; letter-spacing: .08em; text-transform: uppercase; display: block; margin-bottom: v.$space-xs; }
 .actions { display: flex; align-items: center; gap: v.$space-sm; flex-wrap: wrap; font-size: v.$font-size-xs; color: v.$text-secondary; }
-.controls { display: flex; align-items: flex-end; gap: v.$space-sm; flex-wrap: wrap; padding: v.$space-sm; background: v.$background-medium; border: v.$border-subtle; border-radius: v.$radius-card; }
+.controls { display: flex; align-items: flex-end; gap: v.$space-sm; flex-wrap: wrap; padding: v.$space-sm; background: v.$draft-surface; border: 1px solid v.$draft-border; border-radius: v.$radius-card; margin: 0; min-width: 0; }
 .controls label, .settingsGrid label, .field { display: flex; flex-direction: column; gap: v.$space-xs; color: v.$text-secondary; font-size: v.$font-size-xs; }
 .controls input { max-width: 132px; }
 .controls label:nth-child(2) input { max-width: 105px; }
 .notice { padding: v.$space-sm; max-height: 64px; overflow: auto; flex-shrink: 0; border: v.$border-subtle; border-left: 4px solid v.$warning-color; background: v.$background-medium; font-size: v.$font-size-sm; }
 .metrics { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: v.$space-sm; }
-.metrics article { min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: v.$space-sm; background: v.$background-medium; border: v.$border-subtle; border-radius: v.$radius-card; }
-.metrics span { color: v.$primary-color; text-transform: uppercase; font-size: v.$font-size-xs; }
-.metrics strong { color: v.$color-white; font: 700 v.$font-size-lg v.$font-family-numbers; }
+.metrics article { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: v.$space-sm v.$space-md; background: v.$draft-surface; border: 1px solid v.$draft-border; border-radius: v.$radius-card; }
+.metrics span { color: v.$text-secondary; letter-spacing: .04em; text-transform: uppercase; font-size: v.$font-size-xs; }
+.metrics strong { color: v.$color-white; font: 700 v.$font-size-xl v.$font-family-numbers; }
 .metrics small { color: v.$text-secondary; font-size: v.$font-size-xs; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .panels { min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(225px, 22%) minmax(0, 1fr) minmax(245px, 24%); grid-template-rows: minmax(0, 1fr); gap: v.$space-sm; }
-.panel { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: v.$background-medium; border: v.$border-subtle; border-radius: v.$radius-card; overflow: clip; }
-.panelHead { display: flex; align-items: center; justify-content: space-between; gap: v.$space-sm; flex-shrink: 0; min-height: 42px; padding: v.$space-sm; background: v.$background-header; border-bottom: v.$border-subtle; }
-.panelHead h2 { margin: 0; font-size: v.$font-size-sm; color: v.$primary-color; text-transform: uppercase; letter-spacing: .06em; }
+.panel { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: v.$draft-surface; border: 1px solid v.$draft-border; border-radius: v.$radius-card; overflow: clip; }
+.panelHead { display: flex; align-items: center; justify-content: space-between; gap: v.$space-sm; flex-shrink: 0; min-height: 42px; padding: v.$space-sm; background: v.$draft-surface-raised; border-bottom: 1px solid v.$draft-border; }
+.panelHead h2 { display: flex; align-items: center; gap: v.$space-sm; margin: 0; font-size: v.$font-size-sm; color: v.$text-primary; text-transform: uppercase; letter-spacing: .06em; }
 .panelHead span, .panelHead label { color: v.$text-secondary; font-size: v.$font-size-xs; }
 .panelBody { flex: 1 1 0; min-height: 0; overflow: auto; padding: v.$space-sm; font-size: v.$font-size-sm; }
 .rosterPanel { grid-column: 1; grid-row: 1; }
@@ -41,7 +41,10 @@
 .rosterRow > span, .candidateRow > span { color: v.$text-secondary; font-size: v.$font-size-xs; }
 .playerButton, .candidateRow > button:first-child { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; text-align: left; border: 0 !important; background: transparent !important; }
 .playerButton small, .candidateRow small, .alternative small { color: v.$text-secondary; }
-.rosterRow { flex-wrap: wrap; }
+.rosterRow { flex-wrap: wrap; border-color: v.$draft-border; }
+.rosterRow:nth-child(even) { background: v.$draft-zebra; }
+.rosterRow .playerButton { flex: 1; }
+.rosterRow > span { padding: 2px v.$space-xs; border-radius: v.$radius-xs; background: v.$draft-surface-raised; }
 .playerEvidence { flex: 1 0 100%; }
 .playerEvidence summary { cursor: pointer; color: v.$primary-color; font-size: v.$font-size-xs; }
 .playerEvidence label { display: grid; gap: v.$space-xs; margin-top: v.$space-xs; color: v.$text-secondary; font-size: v.$font-size-xs; }
@@ -60,22 +63,22 @@
 .dateStrip .selectedDate, .mobileTabs .activeTab { background: v.$primary-color; color: v.$background-dark; border-color: v.$primary-color; font-weight: 700; }
 .dateSummary { display: flex; justify-content: space-between; gap: v.$space-sm; padding: v.$space-sm 0; color: v.$text-secondary; }
 .dateSummary strong { color: v.$color-white; }
-.gridScroll { overflow: auto; max-height: 48%; border: v.$border-subtle; }
-.streamingGrid { overflow: auto; max-height: 56%; min-height: 120px; border: v.$border-subtle; }
+.gridScroll { overflow-x: auto; border: 1px solid v.$draft-border; border-radius: v.$radius-control; }
+.streamingGrid { overflow-x: auto; border: 1px solid v.$draft-border; border-radius: v.$radius-control; }
 .streamingGrid table { border-collapse: collapse; min-width: 100%; white-space: nowrap; font-size: v.$font-size-xs; }
 .streamingGrid th, .streamingGrid td { padding: v.$space-sm; border-bottom: v.$border-subtle; border-right: v.$border-subtle; text-align: left; }
-.streamingGrid thead th { position: sticky; top: 0; z-index: 2; background: v.$background-header; color: v.$primary-color; }
+.streamingGrid thead th { position: sticky; top: 0; z-index: 2; background: v.$draft-surface-raised; color: v.$text-secondary; }
 .streamingGrid tbody th { position: sticky; left: 0; z-index: 1; background: v.$background-header; }
 .streamingGrid td strong, .streamingGrid td small { display: block; }
 .streamingGrid td small { color: v.$text-secondary; }
 .emptyStream { color: v.$text-secondary; }
 .gridScroll table { border-collapse: collapse; min-width: 100%; white-space: nowrap; font-size: v.$font-size-xs; }
 .gridScroll th, .gridScroll td { padding: v.$space-xs v.$space-sm; border-bottom: v.$border-subtle; border-right: v.$border-subtle; text-align: center; }
-.gridScroll thead th { position: sticky; top: 0; z-index: 2; background: v.$background-header; color: v.$primary-color; }
+.gridScroll thead th { position: sticky; top: 0; z-index: 2; background: v.$draft-surface-raised; color: v.$text-secondary; }
 .gridScroll tbody th { position: sticky; left: 0; z-index: 1; background: v.$background-header; text-align: left; }
 .gridScroll tbody th button { display: block; border: 0; background: transparent; }
 .gridScroll small, .gridScroll td span { display: block; }
-.startCell { background: rgba(v.$success-color, .1); color: v.$success-color; }
+.startCell { background: rgba(v.$color-teal-500, .1); color: v.$color-teal-500; }
 .benchCell { background: rgba(v.$warning-color, .08); color: v.$warning-color; }
 .itineraryLegs { margin: v.$space-sm 0; }
 .itineraryLegs h3, .panelBody h3 { margin: v.$space-sm 0; color: v.$primary-color; font-size: v.$font-size-sm; text-transform: uppercase; }
@@ -85,7 +88,7 @@
 .stepControls { display: flex; gap: v.$space-xs; flex-wrap: wrap; }
 .stepControls label { display: grid; gap: v.$space-xs; color: v.$text-secondary; font-size: v.$font-size-xs; }
 .lineup { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: v.$space-sm; }
-.lineup > div { padding: v.$space-sm; border: v.$border-subtle; }
+.lineup > div { padding: v.$space-sm; border: 1px solid v.$draft-border; border-radius: v.$radius-control; background: v.$draft-input; }
 .lineup span { display: block; }
 .ruleFields { display: grid; gap: v.$space-sm; padding-top: v.$space-sm; }
 .ruleFields h4, .statEditor h4 { margin: v.$space-sm 0 0; color: v.$primary-color; text-transform: uppercase; }
@@ -104,8 +107,27 @@
 .detail { display: grid; gap: v.$space-xs; padding: v.$space-sm; border-left: 4px solid v.$primary-color; background: v.$background-header; }
 .formChip { color: v.$warning-color; font-size: v.$font-size-xs; }
 .demandHint { color: v.$warning-color; font-size: v.$font-size-xs; }
-.alternative div { display: flex; flex-direction: column; }
+.alternative { align-items: flex-start; padding: v.$space-sm; margin: v.$space-sm 0; border: 1px solid v.$draft-border; border-radius: v.$radius-control; background: v.$draft-surface-raised; }
+.alternative div { min-width: 0; display: flex; flex-direction: column; gap: v.$space-xs; }
+.alternative button { flex-shrink: 0; }
 .compare { display: grid; grid-template-columns: auto 1fr; gap: v.$space-sm; }
+
+.topbar::before, .metrics article::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; border-radius: v.$radius-card 0 0 v.$radius-card; background: v.$primary-color; }
+.metrics article:nth-child(2)::before { background: v.$color-teal-500; }
+.metrics article:nth-child(3)::before, .metrics article:nth-child(5)::before { background: v.$color-gold-400; }
+.metrics article:nth-child(6)::before { background: v.$color-coral-500; }
+.metrics article:nth-child(7)::before { background: v.$color-teal-500; }
+.workspace .primaryAction { background: v.$primary-color; border-color: v.$primary-color; color: v.$color-neutral-950; font-weight: 700; }
+.workspace :is(input, select, textarea) { color-scheme: dark; }
+.workspace input[type="checkbox"] { accent-color: v.$primary-color; }
+.workspace * { scrollbar-width: thin; scrollbar-color: v.$color-neutral-400 v.$draft-surface; }
+.panelHead .panelNumber { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: v.$radius-control; background: v.$draft-input; color: v.$primary-color; font-family: v.$font-family-numbers; font-size: v.$font-size-xs; }
+.dataHealth { flex-shrink: 0; border: 1px solid v.$draft-border; border-radius: v.$radius-control; background: v.$draft-surface; font-size: v.$font-size-xs; }
+.dataHealth summary { cursor: pointer; padding: v.$space-xs v.$space-sm; color: v.$color-gold-400; }
+.dataHealth summary span { margin-left: v.$space-sm; color: v.$text-secondary; }
+.dataHealth ul { margin: 0; padding: v.$space-sm v.$space-lg; max-height: 112px; overflow: auto; color: v.$text-secondary; line-height: 1.5; border-top: 1px solid v.$draft-border; }
+.viewSwitch { display: flex; flex-shrink: 0; gap: v.$space-xs; padding: v.$space-sm; border-bottom: 1px solid v.$draft-border; font-size: v.$font-size-sm; }
+.viewSwitch button[aria-pressed="true"] { background: v.$primary-color; border-color: v.$primary-color; color: v.$color-neutral-950; font-weight: 700; }
 .mobileTabs { display: none; }
 @media (min-width: 1101px) { .workspace { max-height: 100%; overflow: clip; } }
 @media (max-width: 1100px) {
@@ -117,6 +139,6 @@
   .panel { display: none; min-height: 55dvh; }
   .panel.mobileActive { display: flex; }
   .panelBody { flex: none; overflow: visible; }
-  .gridScroll { max-height: 55dvh; }
+  .topbar { padding: v.$space-sm; }
 }
 @media (max-width: 640px) { .controls label { flex: 1 1 40%; } .controls :is(input, select) { width: 100%; max-width: none; } .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } .metrics article:last-child { grid-column: 1 / -1; } .mobileTabs button { padding: v.$space-xs; font-size: v.$font-size-xs; } }
