@@ -23,6 +23,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Typed provider errors contain curated messages, never raw response bodies or credentials.
     const providerError = error instanceof YahooLiveDraftError;
     if (status >= 500) console.error("[rso/provider] snapshot failed", { status, code: providerError ? error.code : "snapshot_unavailable" });
-    return res.status(status).json({ success: false, error: (providerError || status < 500) && error instanceof Error ? error.message : "Provider inputs could not be verified. Your selected plan is preserved.", ...(providerError ? { code: error.code } : {}) });
+    return res.status(status).json({ success: false, error: providerError && error.code === "yahoo_api_timeout" ? "Yahoo roster/settings reads timed out after retrying. Retained roster inputs can still be used for schedule analysis; provider availability is unverified." : (providerError || status < 500) && error instanceof Error ? error.message : "Provider inputs could not be verified. Your selected plan is preserved.", ...(providerError ? { code: error.code } : {}) });
   }
 }

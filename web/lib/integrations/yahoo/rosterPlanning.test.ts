@@ -154,3 +154,15 @@ describe("provider snapshot route", () => {
     expect(mocks.snapshot).not.toHaveBeenCalled();
   });
 });
+
+
+it("retries one timeout for required planning reads but never retries rate limits", async () => {
+  const { readRequiredPlanningResource } = await import("./rosterPlanning");
+  const { YahooLiveDraftError } = await import("./liveDraft");
+  const read = vi.fn().mockRejectedValueOnce(new YahooLiveDraftError("timeout", 502, "yahoo_api_timeout")).mockResolvedValue("roster");
+  expect(await readRequiredPlanningResource(read)).toBe("roster");
+  expect(read).toHaveBeenCalledTimes(2);
+  const limited = vi.fn().mockRejectedValue(new YahooLiveDraftError("limited", 429, "yahoo_rate_limited"));
+  await expect(readRequiredPlanningResource(limited)).rejects.toThrow("limited");
+  expect(limited).toHaveBeenCalledTimes(1);
+});

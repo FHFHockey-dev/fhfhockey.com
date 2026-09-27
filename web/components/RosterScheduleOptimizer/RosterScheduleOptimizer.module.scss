@@ -142,3 +142,10 @@
   .topbar { padding: v.$space-sm; }
 }
 @media (max-width: 640px) { .controls label { flex: 1 1 40%; } .controls :is(input, select) { width: 100%; max-width: none; } .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } .metrics article:last-child { grid-column: 1 / -1; } .mobileTabs button { padding: v.$space-xs; font-size: v.$font-size-xs; } }
+
+.weekNav { display: flex; align-items: flex-end; gap: v.$space-xs; min-width: 0; }
+.weekNav select { max-width: 290px; }
+details.alternative { display: block; }
+details.alternative summary { cursor: pointer; color: v.$text-primary; }
+details.alternative button { display: block; width: 100%; text-align: left; margin-top: v.$space-xs; }
+@media (max-width: 640px) { .weekNav { width: 100%; } .weekNav label { min-width: 0; } .weekNav select { max-width: 100%; } }

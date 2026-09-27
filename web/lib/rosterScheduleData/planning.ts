@@ -109,7 +109,7 @@ async function pages(build: () => any, pageSize = 1000): Promise<Row[]> {
 export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningDataQuery, options: { now?: Date; forecastsEnabled?: boolean } = {}): Promise<PlanningData> {
   const now = options.now ?? new Date();
   const offsetDate = (value: string, days: number) => new Date(Date.parse(`${value}T12:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
-  const [scheduleRows, identities, teams, rosters] = await Promise.all([
+  const [scheduleRows, identities, teams, rosters, weeks] = await Promise.all([
     pages(() => db.from("roster_optimizer_team_games")
       .select("source_game_id,source_season_id,game_type,game_date,start_time,game_status,schedule_status,is_countable,team_abbreviation,opponent_abbreviation,home_away,fetched_at")
       .eq("source_season_id", query.seasonId).gte("game_date", offsetDate(query.startDate, -1)).lte("game_date", offsetDate(query.endDate, 1))
@@ -119,6 +119,7 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
       .eq("verification_status", "verified").eq("lifecycle_status", "active_nhl").is("merged_into_id", null).not("nhl_player_id", "is", null).order("id")),
     db.from("teams").select("id,abbreviation"),
     pages(() => db.from("rosters").select("playerId,teamId,created_at").eq("seasonId", query.seasonId).eq("is_current", true).order("playerId")),
+    db.from("yahoo_matchup_weeks").select("game_key,week,start_date,end_date").eq("season", String(query.seasonId).slice(0, 4)).order("week"),
   ]);
   if (teams.error) throw teams.error;
   const teamNames = new Map((teams.data ?? []).map((row: Row) => [row.id, row.abbreviation as string]));
@@ -218,5 +219,10 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
     }
     sources.form = evidence("Recent regular-season box scores", null, query.seasonId, ["Recent scoring uses available game logs before the previous day; projection incorporation is unknown and no form bonus is added."]);
   } catch { sources.form = evidence("Recent box scores", null, query.seasonId, ["Recent-form evidence could not be loaded."]); }
-  return { players, games, forecasts, evidence: sources };
+  const weekRows = weeks.error ? [] : weeks.data ?? [];
+  const matchupWeeks = new Set(weekRows.map((row: Row) => row.game_key)).size === 1 ? weekRows
+    .filter((row: Row) => Number.isInteger(row.week) && row.week > 0 && /^\d{4}-\d{2}-\d{2}$/.test(row.start_date) && row.start_date <= row.end_date)
+    .map((row: Row) => ({ gameKey: String(row.game_key), week: row.week, startDate: row.start_date, endDate: row.end_date })) : [];
+  sources.matchupWeeks = evidence("Yahoo matchup weeks", null, query.seasonId, matchupWeeks.length ? [] : ["Matchup week presets are unavailable for this season; use custom dates."]);
+  return { players, games, forecasts, evidence: sources, matchupWeeks };
 }
