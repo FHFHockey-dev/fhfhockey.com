@@ -677,7 +677,7 @@ export function yahooDraftKeepers(state: YahooDraftState | null, players: Proces
       warnings.push(`Yahoo assigned pick ${keeper.pickNumber} to another player. Keeper ${player?.fullName || playerId} remains on the roster; assign a different keeper pick.`);
     }
   }
-  if (unknownCosts) warnings.push("Yahoo keepers were added to rosters without reserving draft picks. Yahoo did not supply round costs; enter those manually if your league uses them.");
+  if (unknownCosts) warnings.push("Yahoo listed keeper players but did not supply their pick assignments. They are not confirmed as free keepers; assign their picks in the Draft Graph if your league charges them.");
   return { keepers: [...keepers.values()], warnings };
 }
 

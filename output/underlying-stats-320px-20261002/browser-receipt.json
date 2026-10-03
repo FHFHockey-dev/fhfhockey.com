@@ -1,0 +1,641 @@
+{
+  "startedAt": "2026-10-02T02:33:20.355Z",
+  "cwd": "/Users/tim/Code/fhfhockey.com",
+  "head": "73af9d051ecc755dd3695f5265bf5837bbfc7a4e",
+  "branch": "master",
+  "viewport": {
+    "width": 320,
+    "height": 800
+  },
+  "runtime": {
+    "node": "v22.11.0",
+    "playwright": "1.60.0"
+  },
+  "base": "http://127.0.0.1:3000",
+  "fixture": "buildRating reused from existing focused Vitest; 14 synthetic team rows, mixed ready/pending readiness; all APIs intercepted before page creation",
+  "cases": [
+    {
+      "name": "Team Rankings / Advanced / all-team defaults",
+      "status": "passed",
+      "evidence": {
+        "rowCount": 14,
+        "collapsedWidths": {
+          "viewport": 320,
+          "documentWidth": 320,
+          "bodyWidth": 320,
+          "open": false,
+          "panel": {
+            "left": 8,
+            "right": 158,
+            "width": 150,
+            "clientWidth": 148,
+            "scrollWidth": 199
+          },
+          "overflowElements": [
+            {
+              "tag": "BUTTON",
+              "class": "UnderlyingStatsDashboard_powerLeader__DCyMg  ",
+              "left": 314.59375,
+              "right": 596.1875
+            },
+            {
+              "tag": "SPAN",
+              "class": "UnderlyingStatsDashboard_rankWatermark__TEqRL",
+              "left": 557.421875,
+              "right": 587.1875
+            },
+            {
+              "tag": "SPAN",
+              "class": "UnderlyingStatsDashboard_leaderTopline__VDSlN",
+              "left": 327.59375,
+              "right": 587.1875
+            },
+            {
+              "tag": "SPAN",
+              "class": "UnderlyingStatsDashboard_leaderIdentity__hLqMZ",
+              "left": 327.59375,
+              "right": 459.328125
+            },
+            {
+              "tag": "IMG",
+              "class": "UnderlyingStatsDashboard_teamLogo__Gk5PS",
+              "left": 327.59375,
+              "right": 375.59375
+            },
+            {
+              "tag": "SPAN",
+              "class": "",
+              "left": 391.59375,
+              "right": 459.328125
+            },
+            {
+              "tag": "STRONG",
+              "class": "",
+              "left": 391.59375,
+              "right": 459.328125
+            },
+            {
+              "tag": "SMALL",
+              "class": "",
+              "left": 391.59375,
+              "right": 459.328125
+            },
+            {
+              "tag": "SPAN",
+              "class": "UnderlyingStatsDashboard_leaderPower__kAIGE",
+              "left": 507.96875,
+              "right": 587.1875
+            },
+            {
+              "tag": "SMALL",
+              "class": "",
+              "left": 545.734375,
+              "right": 587.1875
+            },
+            {
+              "tag": "SPAN",
+              "class": "UnderlyingStatsDashboard_leaderCoreMetrics__4eiIT",
+              "left": 327.59375,
+              "right": 587.1875
+            },
+            {
+              "tag": "SPAN",
+              "class": "",
+              "left": 327.59375,
+              "right": 389.59375
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "keyboard reaches disclosure, Enter expands, Space collapses, focus retained",
+      "status": "passed",
+      "evidence": {
+        "focused": true,
+        "focusVisible": true,
+        "outline": "rgb(170, 170, 170) none 3px",
+        "boxShadow": "rgba(20, 162, 210, 0.5) 0px 0px 0px 2px"
+      }
+    },
+    {
+      "name": "expanded readiness fits 320px with no document overflow",
+      "status": "passed",
+      "evidence": {
+        "viewport": 320,
+        "documentWidth": 320,
+        "bodyWidth": 320,
+        "open": true,
+        "panel": {
+          "left": 8,
+          "right": 312,
+          "width": 304,
+          "clientWidth": 302,
+          "scrollWidth": 302
+        },
+        "overflowElements": [
+          {
+            "tag": "BUTTON",
+            "class": "UnderlyingStatsDashboard_powerLeader__DCyMg  ",
+            "left": 314.59375,
+            "right": 596.1875
+          },
+          {
+            "tag": "SPAN",
+            "class": "UnderlyingStatsDashboard_rankWatermark__TEqRL",
+            "left": 557.3125,
+            "right": 587.1875
+          },
+          {
+            "tag": "SPAN",
+            "class": "UnderlyingStatsDashboard_leaderTopline__VDSlN",
+            "left": 327.59375,
+            "right": 587.1875
+          },
+          {
+            "tag": "SPAN",
+            "class": "UnderlyingStatsDashboard_leaderIdentity__hLqMZ",
+            "left": 327.59375,
+            "right": 459.328125
+          },
+          {
+            "tag": "IMG",
+            "class": "UnderlyingStatsDashboard_teamLogo__Gk5PS",
+            "left": 327.59375,
+            "right": 375.59375
+          },
+          {
+            "tag": "SPAN",
+            "class": "",
+            "left": 391.59375,
+            "right": 459.328125
+          },
+          {
+            "tag": "STRONG",
+            "class": "",
+            "left": 391.59375,
+            "right": 459.328125
+          },
+          {
+            "tag": "SMALL",
+            "class": "",
+            "left": 391.59375,
+            "right": 459.328125
+          },
+          {
+            "tag": "SPAN",
+            "class": "UnderlyingStatsDashboard_leaderPower__kAIGE",
+            "left": 507.703125,
+            "right": 587.1875
+          },
+          {
+            "tag": "SMALL",
+            "class": "",
+            "left": 545.734375,
+            "right": 587.1875
+          },
+          {
+            "tag": "SPAN",
+            "class": "UnderlyingStatsDashboard_leaderCoreMetrics__4eiIT",
+            "left": 327.59375,
+            "right": 587.1875
+          },
+          {
+            "tag": "SPAN",
+            "class": "",
+            "left": 327.59375,
+            "right": 389.59375
+          }
+        ]
+      }
+    },
+    {
+      "name": "keyboard Chart switching and focus, Home restores Team Rankings",
+      "status": "passed",
+      "evidence": {
+        "chartWidths": {
+          "viewport": 320,
+          "documentWidth": 320,
+          "bodyWidth": 320,
+          "open": true,
+          "panel": {
+            "left": 8,
+            "right": 312,
+            "width": 304,
+            "clientWidth": 302,
+            "scrollWidth": 302
+          },
+          "overflowElements": [
+            {
+              "tag": "BUTTON",
+              "class": "UnderlyingStatsDashboard_powerLeader__DCyMg  ",
+              "left": 314.59375,
+              "right": 596.1875
+            },
+            {
+              "tag": "SPAN",
+              "class": "UnderlyingStatsDashboard_rankWatermark__TEqRL",
+              "left": 557.3125,
+              "right": 587.1875
+            },
+            {
+              "tag": "SPAN",
+              "class": "UnderlyingStatsDashboard_leaderTopline__VDSlN",
+              "left": 327.59375,
+              "right": 587.1875
+            },
+            {
+              "tag": "SPAN",
+              "class": "UnderlyingStatsDashboard_leaderIdentity__hLqMZ",
+              "left": 327.59375,
+              "right": 459.328125
+            },
+            {
+              "tag": "IMG",
+              "class": "UnderlyingStatsDashboard_teamLogo__Gk5PS",
+              "left": 327.59375,
+              "right": 375.59375
+            },
+            {
+              "tag": "SPAN",
+              "class": "",
+              "left": 391.59375,
+              "right": 459.328125
+            },
+            {
+              "tag": "STRONG",
+              "class": "",
+              "left": 391.59375,
+              "right": 459.328125
+            },
+            {
+              "tag": "SMALL",
+              "class": "",
+              "left": 391.59375,
+              "right": 459.328125
+            },
+            {
+              "tag": "SPAN",
+              "class": "UnderlyingStatsDashboard_leaderPower__kAIGE",
+              "left": 507.703125,
+              "right": 587.1875
+            },
+            {
+              "tag": "SMALL",
+              "class": "",
+              "left": 545.734375,
+              "right": 587.1875
+            },
+            {
+              "tag": "SPAN",
+              "class": "UnderlyingStatsDashboard_leaderCoreMetrics__4eiIT",
+              "left": 327.59375,
+              "right": 587.1875
+            },
+            {
+              "tag": "SPAN",
+              "class": "",
+              "left": 327.59375,
+              "right": 389.59375
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "retained Simple/Advanced, sorting, team pin, top-12/all controls",
+      "status": "passed",
+      "evidence": {
+        "sortReversed": true,
+        "pin": "BOS",
+        "rows": 14
+      }
+    },
+    {
+      "name": "snapshot selection updates URL, shows loading and handles intercepted error/recovery",
+      "status": "passed",
+      "evidence": {
+        "failedDate": "2026-04-03",
+        "recoveredDate": "2026-04-04"
+      }
+    },
+    {
+      "name": "no runtime page errors",
+      "status": "passed",
+      "evidence": {
+        "pageErrors": []
+      }
+    }
+  ],
+  "screenshots": [
+    "/Users/tim/Code/fhfhockey.com/output/underlying-stats-320px-20261002/expanded-readiness.png",
+    "/Users/tim/Code/fhfhockey.com/output/underlying-stats-320px-20261002/chart-320px.png",
+    "/Users/tim/Code/fhfhockey.com/output/underlying-stats-320px-20261002/recovered-rankings-320px.png"
+  ],
+  "blockedRequests": [
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+      "method": "GET"
+    },
+    {
+      "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=DBA507&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+      "method": "GET"
+    },
+    {
+      "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+      "method": "GET"
+    },
+    {
+      "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+      "method": "GET"
+    }
+  ],
+  "mockRequests": [
+    "http://127.0.0.1:3000/api/underlying-stats/landing?date=2026-04-05",
+    "http://127.0.0.1:3000/api/underlying-stats/team-ratings?date=2026-04-03",
+    "http://127.0.0.1:3000/api/underlying-stats/team-ratings?date=2026-04-03",
+    "http://127.0.0.1:3000/api/underlying-stats/team-ratings?date=2026-04-04",
+    "http://127.0.0.1:3000/api/underlying-stats/team-ratings?date=2026-04-04"
+  ],
+  "pageErrors": [],
+  "consoleErrors": [
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+  ],
+  "browserVersion": "148.0.7778.96",
+  "expandedWidths": {
+    "viewport": 320,
+    "documentWidth": 320,
+    "bodyWidth": 320,
+    "open": true,
+    "panel": {
+      "left": 8,
+      "right": 312,
+      "width": 304,
+      "clientWidth": 302,
+      "scrollWidth": 302
+    },
+    "overflowElements": [
+      {
+        "tag": "BUTTON",
+        "class": "UnderlyingStatsDashboard_powerLeader__DCyMg  ",
+        "left": 314.59375,
+        "right": 596.1875
+      },
+      {
+        "tag": "SPAN",
+        "class": "UnderlyingStatsDashboard_rankWatermark__TEqRL",
+        "left": 557.3125,
+        "right": 587.1875
+      },
+      {
+        "tag": "SPAN",
+        "class": "UnderlyingStatsDashboard_leaderTopline__VDSlN",
+        "left": 327.59375,
+        "right": 587.1875
+      },
+      {
+        "tag": "SPAN",
+        "class": "UnderlyingStatsDashboard_leaderIdentity__hLqMZ",
+        "left": 327.59375,
+        "right": 459.328125
+      },
+      {
+        "tag": "IMG",
+        "class": "UnderlyingStatsDashboard_teamLogo__Gk5PS",
+        "left": 327.59375,
+        "right": 375.59375
+      },
+      {
+        "tag": "SPAN",
+        "class": "",
+        "left": 391.59375,
+        "right": 459.328125
+      },
+      {
+        "tag": "STRONG",
+        "class": "",
+        "left": 391.59375,
+        "right": 459.328125
+      },
+      {
+        "tag": "SMALL",
+        "class": "",
+        "left": 391.59375,
+        "right": 459.328125
+      },
+      {
+        "tag": "SPAN",
+        "class": "UnderlyingStatsDashboard_leaderPower__kAIGE",
+        "left": 507.703125,
+        "right": 587.1875
+      },
+      {
+        "tag": "SMALL",
+        "class": "",
+        "left": 545.734375,
+        "right": 587.1875
+      },
+      {
+        "tag": "SPAN",
+        "class": "UnderlyingStatsDashboard_leaderCoreMetrics__4eiIT",
+        "left": 327.59375,
+        "right": 587.1875
+      },
+      {
+        "tag": "SPAN",
+        "class": "",
+        "left": 327.59375,
+        "right": 389.59375
+      }
+    ]
+  },
+  "chartWidths": {
+    "viewport": 320,
+    "documentWidth": 320,
+    "bodyWidth": 320,
+    "open": true,
+    "panel": {
+      "left": 8,
+      "right": 312,
+      "width": 304,
+      "clientWidth": 302,
+      "scrollWidth": 302
+    },
+    "overflowElements": [
+      {
+        "tag": "BUTTON",
+        "class": "UnderlyingStatsDashboard_powerLeader__DCyMg  ",
+        "left": 314.59375,
+        "right": 596.1875
+      },
+      {
+        "tag": "SPAN",
+        "class": "UnderlyingStatsDashboard_rankWatermark__TEqRL",
+        "left": 557.3125,
+        "right": 587.1875
+      },
+      {
+        "tag": "SPAN",
+        "class": "UnderlyingStatsDashboard_leaderTopline__VDSlN",
+        "left": 327.59375,
+        "right": 587.1875
+      },
+      {
+        "tag": "SPAN",
+        "class": "UnderlyingStatsDashboard_leaderIdentity__hLqMZ",
+        "left": 327.59375,
+        "right": 459.328125
+      },
+      {
+        "tag": "IMG",
+        "class": "UnderlyingStatsDashboard_teamLogo__Gk5PS",
+        "left": 327.59375,
+        "right": 375.59375
+      },
+      {
+        "tag": "SPAN",
+        "class": "",
+        "left": 391.59375,
+        "right": 459.328125
+      },
+      {
+        "tag": "STRONG",
+        "class": "",
+        "left": 391.59375,
+        "right": 459.328125
+      },
+      {
+        "tag": "SMALL",
+        "class": "",
+        "left": 391.59375,
+        "right": 459.328125
+      },
+      {
+        "tag": "SPAN",
+        "class": "UnderlyingStatsDashboard_leaderPower__kAIGE",
+        "left": 507.703125,
+        "right": 587.1875
+      },
+      {
+        "tag": "SMALL",
+        "class": "",
+        "left": 545.734375,
+        "right": 587.1875
+      },
+      {
+        "tag": "SPAN",
+        "class": "UnderlyingStatsDashboard_leaderCoreMetrics__4eiIT",
+        "left": 327.59375,
+        "right": 587.1875
+      },
+      {
+        "tag": "SPAN",
+        "class": "",
+        "left": 327.59375,
+        "right": 389.59375
+      }
+    ]
+  },
+  "status": "passed",
+  "finishedAt": "2026-10-02T02:33:37.351Z",
+  "reproduce": "From repository root: node output/underlying-stats-320px-20261002/verify.cjs (supported require_escalated execution; no custom launch flags)",
+  "localQAGateClosed": true,
+  "files": [
+    {
+      "path": "web/components/underlying-stats/UnderlyingStatsDashboard.tsx",
+      "sha256": "0cacdb7fab6cc420251728c54feb134c342e0d33c99ad291f5b81bc1e2ffc1bf"
+    },
+    {
+      "path": "web/components/underlying-stats/UnderlyingStatsDashboard.module.scss",
+      "sha256": "b7cf09143eaefd922f64357f8c152948b88b2841ec31c4578c8bcff47b578b69"
+    },
+    {
+      "path": "web/components/underlying-stats/UlsStatusPanel.tsx",
+      "sha256": "5da11a53e393a812376d891e4b9313c3e43f95d090cc52cee0be1e5f80f61bda"
+    },
+    {
+      "path": "web/pages/underlying-stats/index.tsx",
+      "sha256": "dafd08c58844abbcb32399cf379ac33badd6c69227f7ccf93d692d06c95139f0"
+    },
+    {
+      "path": "web/pages/underlying-stats/indexUS.module.scss",
+      "sha256": "63d86a3562c013108765ce02ba70f6fab98ea7a7d5bc82dda4322724ed7b3dde"
+    },
+    {
+      "path": "web/__tests__/pages/underlying-stats/index.test.tsx",
+      "sha256": "7942c794fca31e4a2a2c31269a13b85105f71e156c7dd92229531e46fb1aa70e"
+    }
+  ],
+  "affectedFilesStatus": "",
+  "execution": {
+    "sandboxPermissions": "require_escalated",
+    "automaticApproval": "allowed",
+    "customBrowserFlags": [],
+    "credentialsOrProfileReused": false,
+    "priorBlocker": "sandbox execution, not reviewer denial",
+    "setupCorrection": "Local TS alias resolution fixed before any browser launch"
+  },
+  "unitTest": {
+    "command": "npm test -- __tests__/pages/underlying-stats/index.test.tsx",
+    "cwd": "/Users/tim/Code/fhfhockey.com/web",
+    "status": "passed",
+    "files": 1,
+    "tests": 10,
+    "duration": "2.13s",
+    "startTime": "22:33:27",
+    "vitest": "3.2.7"
+  },
+  "visualReview": "Expanded readiness screenshot inspected: content wraps within panel. Power Leaders and table use internal horizontal rails; document width remains 320px.",
+  "limitations": [
+    "Local Chromium with synthetic fixtures only; no live-data or production verification",
+    "External fonts, support image, analytics and speed-insights scripts intentionally blocked; production font rendering not verified",
+    "No broad TypeScript/lint/build run; application code unchanged",
+    "Duplicated expanded-readiness details remain an owner decision"
+  ],
+  "weeklyRemainingPercent": 67
+}

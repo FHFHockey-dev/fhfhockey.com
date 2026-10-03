@@ -27,6 +27,7 @@ vi.mock("utils/adminOnlyMiddleware", () => ({
 }));
 
 import handler from "pages/api/v1/db/update-players";
+import { fetchNhlRosterPreview } from "lib/sources/nhlRosterPreview";
 
 function createResponse() {
   const response = {
@@ -73,6 +74,15 @@ describe("/api/v1/db/update-players", () => {
     const response = createResponse();
     await handler({ method: "POST", query: { seasonId: "20262027" } } as never, response as never);
     expect(response.statusCode).toBe(400);
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+  it("compares current roster membership without rediscovering a different season", async () => {
+    mocks.getTeams.mockResolvedValue([{ id: 5, abbreviation: "PIT" }]);
+    mocks.get.mockResolvedValue({ forwards: [{ id: 8471675, firstName: { default: "Sidney" }, lastName: { default: "Crosby" }, positionCode: "C", birthDate: "1987-08-07" }], defensemen: [], goalies: [] });
+    expect(await fetchNhlRosterPreview(20262027, { rosterView: "current" })).toMatchObject([{ id: 8471675, teamId: 5, sweaterNumber: 0 }]);
+    expect(mocks.getTeams).toHaveBeenCalledWith(20262027, { mode: "current-canonical" });
+    expect(mocks.get).toHaveBeenCalledWith("/roster/PIT/current");
+    expect(mocks.getCurrentSeason).not.toHaveBeenCalled();
     expect(mocks.from).not.toHaveBeenCalled();
   });
 });

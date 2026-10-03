@@ -1,0 +1,691 @@
+{
+  "method": "WCAG 2.2 sRGB relative luminance; computed ancestor backgrounds alpha-composited to first opaque layer",
+  "source": "https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html",
+  "samples": [
+    {
+      "width": 1180,
+      "state": "loading",
+      "text": "\u25c9 Loading",
+      "foregroundRgb": [
+        20.0,
+        162.0,
+        210.0
+      ],
+      "backgroundRgb": [
+        19.0,
+        21.0,
+        24.0
+      ],
+      "fontSize": "12px",
+      "fontWeight": "700",
+      "ratio": 6.208714423381233,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 1180,
+      "state": "loading",
+      "text": "Page refresh \u00b7 30 seconds",
+      "foregroundRgb": [
+        170.0,
+        170.0,
+        170.0
+      ],
+      "backgroundRgb": [
+        19.0,
+        21.0,
+        24.0
+      ],
+      "fontSize": "11px",
+      "fontWeight": "400",
+      "ratio": 7.8731819184456056,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 1180,
+      "state": "error",
+      "text": "Starter Board is unavailable.",
+      "foregroundRgb": [
+        204.0,
+        204.0,
+        204.0
+      ],
+      "backgroundRgb": [
+        53.48,
+        37.4,
+        44.879999999999995
+      ],
+      "fontSize": "16px",
+      "fontWeight": "700",
+      "ratio": 8.948371188754303,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 1180,
+      "state": "error",
+      "text": "Fixture source retrieval failed",
+      "foregroundRgb": [
+        170.0,
+        170.0,
+        170.0
+      ],
+      "backgroundRgb": [
+        53.48,
+        37.4,
+        44.879999999999995
+      ],
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "ratio": 6.185830268413436,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 1180,
+      "state": "error",
+      "text": "Retry",
+      "foregroundRgb": [
+        204.0,
+        204.0,
+        204.0
+      ],
+      "backgroundRgb": [
+        53.48,
+        37.4,
+        44.879999999999995
+      ],
+      "fontSize": "13.3333px",
+      "fontWeight": "400",
+      "ratio": 8.948371188754303,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 1180,
+      "state": "error-status",
+      "text": "\u25c9 Unavailable",
+      "foregroundRgb": [
+        20.0,
+        162.0,
+        210.0
+      ],
+      "backgroundRgb": [
+        19.0,
+        21.0,
+        24.0
+      ],
+      "fontSize": "12px",
+      "fontWeight": "700",
+      "ratio": 6.208714423381233,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 1180,
+      "state": "error-status",
+      "text": "Page refresh \u00b7 30 seconds",
+      "foregroundRgb": [
+        170.0,
+        170.0,
+        170.0
+      ],
+      "backgroundRgb": [
+        19.0,
+        21.0,
+        24.0
+      ],
+      "fontSize": "11px",
+      "fontWeight": "400",
+      "ratio": 7.8731819184456056,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 1180,
+      "state": "partial-upcoming",
+      "text": "\u25f7 Upcoming slate",
+      "foregroundRgb": [
+        255.0,
+        204.0,
+        51.0
+      ],
+      "backgroundRgb": [
+        19.0,
+        21.0,
+        24.0
+      ],
+      "fontSize": "12px",
+      "fontWeight": "700",
+      "ratio": 12.13866521723042,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 1180,
+      "state": "partial-upcoming",
+      "text": "Page refresh \u00b7 30 seconds",
+      "foregroundRgb": [
+        170.0,
+        170.0,
+        170.0
+      ],
+      "backgroundRgb": [
+        19.0,
+        21.0,
+        24.0
+      ],
+      "fontSize": "11px",
+      "fontWeight": "400",
+      "ratio": 7.8731819184456056,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 1180,
+      "state": "missing-projections",
+      "text": "No player projections found.",
+      "foregroundRgb": [
+        204.0,
+        204.0,
+        204.0
+      ],
+      "backgroundRgb": [
+        53.48,
+        37.4,
+        44.879999999999995
+      ],
+      "fontSize": "16px",
+      "fontWeight": "700",
+      "ratio": 8.948371188754303,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 1180,
+      "state": "missing-projections",
+      "text": "1 game isscheduled, but canonical projection rows are not ready.",
+      "foregroundRgb": [
+        170.0,
+        170.0,
+        170.0
+      ],
+      "backgroundRgb": [
+        53.48,
+        37.4,
+        44.879999999999995
+      ],
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "ratio": 6.185830268413436,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 1180,
+      "state": "applied-date",
+      "text": "Showing 2026-02-09, not 2026-02-08.",
+      "foregroundRgb": [
+        204.0,
+        204.0,
+        204.0
+      ],
+      "backgroundRgb": [
+        53.48,
+        50.0,
+        35.16
+      ],
+      "fontSize": "12px",
+      "fontWeight": "700",
+      "ratio": 7.999390481621572,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 1180,
+      "state": "applied-date",
+      "text": "No games are scheduled for 2026-02-08. Showing the upcoming slate on 2026-02-09.",
+      "foregroundRgb": [
+        170.0,
+        170.0,
+        170.0
+      ],
+      "backgroundRgb": [
+        53.48,
+        50.0,
+        35.16
+      ],
+      "fontSize": "12px",
+      "fontWeight": "400",
+      "ratio": 5.52981886047147,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 1180,
+      "state": "empty",
+      "text": "\u25c9 No scheduled games",
+      "foregroundRgb": [
+        20.0,
+        162.0,
+        210.0
+      ],
+      "backgroundRgb": [
+        19.0,
+        21.0,
+        24.0
+      ],
+      "fontSize": "12px",
+      "fontWeight": "700",
+      "ratio": 6.208714423381233,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 1180,
+      "state": "empty",
+      "text": "Page refresh \u00b7 30 seconds",
+      "foregroundRgb": [
+        170.0,
+        170.0,
+        170.0
+      ],
+      "backgroundRgb": [
+        19.0,
+        21.0,
+        24.0
+      ],
+      "fontSize": "11px",
+      "fontWeight": "400",
+      "ratio": 7.8731819184456056,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 1180,
+      "state": "empty-message",
+      "text": "No games found.",
+      "foregroundRgb": [
+        204.0,
+        204.0,
+        204.0
+      ],
+      "backgroundRgb": [
+        53.48,
+        37.4,
+        44.879999999999995
+      ],
+      "fontSize": "16px",
+      "fontWeight": "700",
+      "ratio": 8.948371188754303,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 1180,
+      "state": "empty-message",
+      "text": "No current or upcoming scheduled games are available.",
+      "foregroundRgb": [
+        170.0,
+        170.0,
+        170.0
+      ],
+      "backgroundRgb": [
+        53.48,
+        37.4,
+        44.879999999999995
+      ],
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "ratio": 6.185830268413436,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "state": "loading",
+      "text": "\u25c9 Loading",
+      "foregroundRgb": [
+        20.0,
+        162.0,
+        210.0
+      ],
+      "backgroundRgb": [
+        19.0,
+        21.0,
+        24.0
+      ],
+      "fontSize": "11px",
+      "fontWeight": "700",
+      "ratio": 6.208714423381233,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "state": "loading",
+      "text": "Page refresh \u00b7 30 seconds",
+      "foregroundRgb": [
+        170.0,
+        170.0,
+        170.0
+      ],
+      "backgroundRgb": [
+        19.0,
+        21.0,
+        24.0
+      ],
+      "fontSize": "10px",
+      "fontWeight": "400",
+      "ratio": 7.8731819184456056,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "state": "error",
+      "text": "Starter Board is unavailable.",
+      "foregroundRgb": [
+        204.0,
+        204.0,
+        204.0
+      ],
+      "backgroundRgb": [
+        53.48,
+        37.4,
+        44.879999999999995
+      ],
+      "fontSize": "16px",
+      "fontWeight": "700",
+      "ratio": 8.948371188754303,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "state": "error",
+      "text": "Fixture source retrieval failed",
+      "foregroundRgb": [
+        170.0,
+        170.0,
+        170.0
+      ],
+      "backgroundRgb": [
+        53.48,
+        37.4,
+        44.879999999999995
+      ],
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "ratio": 6.185830268413436,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "state": "error",
+      "text": "Retry",
+      "foregroundRgb": [
+        204.0,
+        204.0,
+        204.0
+      ],
+      "backgroundRgb": [
+        53.48,
+        37.4,
+        44.879999999999995
+      ],
+      "fontSize": "13.3333px",
+      "fontWeight": "400",
+      "ratio": 8.948371188754303,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "state": "error-status",
+      "text": "\u25c9 Unavailable",
+      "foregroundRgb": [
+        20.0,
+        162.0,
+        210.0
+      ],
+      "backgroundRgb": [
+        19.0,
+        21.0,
+        24.0
+      ],
+      "fontSize": "11px",
+      "fontWeight": "700",
+      "ratio": 6.208714423381233,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "state": "error-status",
+      "text": "Page refresh \u00b7 30 seconds",
+      "foregroundRgb": [
+        170.0,
+        170.0,
+        170.0
+      ],
+      "backgroundRgb": [
+        19.0,
+        21.0,
+        24.0
+      ],
+      "fontSize": "10px",
+      "fontWeight": "400",
+      "ratio": 7.8731819184456056,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "state": "partial-upcoming",
+      "text": "\u25f7 Upcoming slate",
+      "foregroundRgb": [
+        255.0,
+        204.0,
+        51.0
+      ],
+      "backgroundRgb": [
+        19.0,
+        21.0,
+        24.0
+      ],
+      "fontSize": "11px",
+      "fontWeight": "700",
+      "ratio": 12.13866521723042,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "state": "partial-upcoming",
+      "text": "Page refresh \u00b7 30 seconds",
+      "foregroundRgb": [
+        170.0,
+        170.0,
+        170.0
+      ],
+      "backgroundRgb": [
+        19.0,
+        21.0,
+        24.0
+      ],
+      "fontSize": "10px",
+      "fontWeight": "400",
+      "ratio": 7.8731819184456056,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "state": "missing-projections",
+      "text": "No player projections found.",
+      "foregroundRgb": [
+        204.0,
+        204.0,
+        204.0
+      ],
+      "backgroundRgb": [
+        53.48,
+        37.4,
+        44.879999999999995
+      ],
+      "fontSize": "16px",
+      "fontWeight": "700",
+      "ratio": 8.948371188754303,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "state": "missing-projections",
+      "text": "1 game isscheduled, but canonical projection rows are not ready.",
+      "foregroundRgb": [
+        170.0,
+        170.0,
+        170.0
+      ],
+      "backgroundRgb": [
+        53.48,
+        37.4,
+        44.879999999999995
+      ],
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "ratio": 6.185830268413436,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "state": "applied-date",
+      "text": "Showing 2026-02-09, not 2026-02-08.",
+      "foregroundRgb": [
+        204.0,
+        204.0,
+        204.0
+      ],
+      "backgroundRgb": [
+        53.48,
+        50.0,
+        35.16
+      ],
+      "fontSize": "12px",
+      "fontWeight": "700",
+      "ratio": 7.999390481621572,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "state": "applied-date",
+      "text": "No games are scheduled for 2026-02-08. Showing the upcoming slate on 2026-02-09.",
+      "foregroundRgb": [
+        170.0,
+        170.0,
+        170.0
+      ],
+      "backgroundRgb": [
+        53.48,
+        50.0,
+        35.16
+      ],
+      "fontSize": "12px",
+      "fontWeight": "400",
+      "ratio": 5.52981886047147,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "state": "empty",
+      "text": "\u25c9 No scheduled games",
+      "foregroundRgb": [
+        20.0,
+        162.0,
+        210.0
+      ],
+      "backgroundRgb": [
+        19.0,
+        21.0,
+        24.0
+      ],
+      "fontSize": "11px",
+      "fontWeight": "700",
+      "ratio": 6.208714423381233,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "state": "empty",
+      "text": "Page refresh \u00b7 30 seconds",
+      "foregroundRgb": [
+        170.0,
+        170.0,
+        170.0
+      ],
+      "backgroundRgb": [
+        19.0,
+        21.0,
+        24.0
+      ],
+      "fontSize": "10px",
+      "fontWeight": "400",
+      "ratio": 7.8731819184456056,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "state": "empty-message",
+      "text": "No games found.",
+      "foregroundRgb": [
+        204.0,
+        204.0,
+        204.0
+      ],
+      "backgroundRgb": [
+        53.48,
+        37.4,
+        44.879999999999995
+      ],
+      "fontSize": "16px",
+      "fontWeight": "700",
+      "ratio": 8.948371188754303,
+      "threshold": 4.5,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "state": "empty-message",
+      "text": "No current or upcoming scheduled games are available.",
+      "foregroundRgb": [
+        170.0,
+        170.0,
+        170.0
+      ],
+      "backgroundRgb": [
+        53.48,
+        37.4,
+        44.879999999999995
+      ],
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "ratio": 6.185830268413436,
+      "threshold": 4.5,
+      "passed": true
+    }
+  ],
+  "allPassed": true,
+  "limitations": [
+    "Only captured Starter Board text states at 1180x844 and 390x844 in its rendered dark appearance.",
+    "No other surfaces, light appearance, focus indicators, icons, hover states or screen-reader speech certified."
+  ]
+}

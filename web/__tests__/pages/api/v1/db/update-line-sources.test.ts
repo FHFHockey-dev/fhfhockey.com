@@ -1,9 +1,11 @@
 // @vitest-environment node
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 function paginatedRoster(result: { data: any[]; error: null }) {
   const query: any = {
-    eq: vi.fn(() => query), order: vi.fn(() => query),
+    in: vi.fn(() => query), eq: vi.fn(() => query), order: vi.fn(() => query),
     range: vi.fn((from: number, to: number) => Promise.resolve({ ...result, data: result.data.slice(from, to + 1) })),
   };
   return query;
@@ -58,6 +60,7 @@ vi.mock("lib/player-forecasts/sourceObservations", () => ({
 }));
 
 import handler from "../../../../../pages/api/v1/db/update-line-sources";
+import cccHandler from "../../../../../pages/api/v1/db/update-lines-ccc";
 import releaseHandler from "../../../../../pages/api/v1/db/starter-board-release";
 import { projectionInputHash } from "lib/projections/inputCapture";
 
@@ -462,7 +465,7 @@ describe("private Starter Board release operations", () => {
 });
 
 describe("/api/v1/db/update-line-sources", () => {
-  afterEach(() => vi.unstubAllEnvs());
+  afterEach(() => { vi.unstubAllEnvs(); vi.useRealTimers(); });
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();
@@ -541,6 +544,105 @@ describe("/api/v1/db/update-line-sources", () => {
     await handler(createMockReq(), retry);
     expect(retry.statusCode).toBe(200);
     expect(eventUpdateMock).toHaveBeenCalledWith(expect.objectContaining({ processing_status: "processed" }));
+  });
+
+  it("replays the frozen 11 regression and 24 candidate records equivalently through GDL and CCC with mocked enrichment and storage", async () => {
+    const outcomes = new Map<string, unknown>();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-01T03:59:59Z"));
+    for (const path of ["gdl", "ccc"]) {
+      vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+      vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "true");
+      vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 404 })));
+      const audit = JSON.parse(readFileSync(resolve(process.cwd(), "../tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json"), "utf8"));
+      const frozenGames = JSON.parse(readFileSync(resolve(process.cwd(), "../tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-games.json"), "utf8")).games;
+      const holdout = JSON.parse(readFileSync(resolve(process.cwd(), "../tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-holdout-context.json"), "utf8"));
+      const labels = JSON.parse(readFileSync(resolve(process.cwd(), "../tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json"), "utf8"));
+      audit.snapshots.push(...holdout.snapshots.map((snapshot: any) => ({ tweet_id: snapshot.tweetId, team_id: snapshot.teamId, team_abbreviation: snapshot.teamAbbreviation,
+        metadata: { interpretation: { rosterRevision: snapshot.rosterRevision } } })));
+      audit.events.push(...audit.holdoutCandidates.map((candidate: any) => ({ id: `frozen-${candidate.tweet_id}`, tweet_id: candidate.tweet_id, source_key: candidate.source_key,
+        username: candidate.source_key, text: candidate.raw_text, tweet_created_at: candidate.tweet_posted_at, received_at: candidate.observed_at })));
+      const metrics: Record<string, { posts: number; accepted: number; review: number; emittedEvents: number; confirmedFacts: number }> = {};
+      const teamNames: Record<string, string> = { CBJ: "Columbus Blue Jackets", SJS: "San Jose Sharks", OTT: "Ottawa Senators", NYI: "New York Islanders", WSH: "Washington Capitals", TBL: "Tampa Bay Lightning", NJD: "New Jersey Devils", PHI: "Philadelphia Flyers", STL: "St. Louis Blues", CHI: "Chicago Blackhawks", VGK: "Vegas Golden Knights", FLA: "Florida Panthers", TOR: "Toronto Maple Leafs", LAK: "Los Angeles Kings", COL: "Colorado Avalanche" };
+      const teams = [...new Map(audit.snapshots.filter((snapshot: any) => snapshot.team_id).map((snapshot: any) => [snapshot.team_id,
+        { id: snapshot.team_id, abbreviation: snapshot.team_abbreviation, name: teamNames[snapshot.team_abbreviation] }])).values()];
+      mocks.getTeams.mockResolvedValue(teams);
+      const emptyQuery = () => {
+        const query: any = { eq: () => query, lt: () => query, in: () => query, order: () => query, neq: () => query,
+          range: async () => ({ data: [], error: null }), limit: async () => ({ data: [], error: null }), then: (resolve: any) => Promise.resolve({ error: null }).then(resolve) };
+        return query;
+      };
+      for (const captured of audit.events) {
+        const snapshot = audit.snapshots.find((row: any) => row.tweet_id === captured.tweet_id);
+        const revision = snapshot.metadata.interpretation?.rosterRevision ?? "";
+        const rosterRows = revision.split("|").filter(Boolean).map((entry: string) => {
+          const [playerId, fullName, lastName, teamId, position] = entry.split(":");
+          return { playerId: Number(playerId), teamId: Number(teamId), players: { fullName, lastName, position } };
+        });
+        const event = buildEvent({ id: captured.id, sourceKey: captured.source_key, sourceAccount: captured.username,
+          tweetId: captured.tweet_id, text: captured.text, receivedAt: captured.received_at });
+        event.tweet_created_at = captured.tweet_created_at;
+        const fixtureMocks = createSupabaseMocks([event]);
+        const originalFrom = mocks.from.getMockImplementation()!;
+        const reportUpsert = vi.fn().mockResolvedValue({ error: null });
+        const eventUpsert = vi.fn().mockResolvedValue({ error: null });
+        mocks.rpc.mockResolvedValue({ data: true, error: null });
+        mocks.from.mockImplementation((table: string) => {
+          if (table === "games") return { select: () => ({ eq: (_column: string, date: string) => ({ order: async () => ({ data: frozenGames.filter((game: any) => game.date === date), error: null }) }) }) };
+          if (table === "rosters") return { select: () => paginatedRoster({ data: rosterRows, error: null }) };
+          if (["tweet_player_memberships", "fhfh_player_identities", "fhfh_player_identity_aliases", "player_status_history"].includes(table)) return { select: emptyQuery };
+          if (table === "tweet_pipeline_jobs") return { update: emptyQuery };
+          if (table === "tweet_projection_reports") return { upsert: reportUpsert, select: () => {
+            const filters: Record<string, unknown> = {};
+            const query: any = { eq: (key: string, value: unknown) => { filters[key] = value; return query; }, order: () => query,
+              range: async () => ({ data: getUpsertedRows(reportUpsert).filter((row: any) => Object.entries(filters).every(([key, value]) => row[key] === value)), error: null }) };
+            return query;
+          } };
+          if (table === "tweet_player_events") return { select: emptyQuery, upsert: eventUpsert };
+          if (table === "lines_ccc_ifttt_events") return originalFrom("line_source_ifttt_events");
+          if (table === "lines_ccc") return originalFrom("line_source_snapshots");
+          return originalFrom(table);
+        });
+        const res = createMockRes();
+        const forecastCallStart = mocks.capturePlayerForecastSourceRows.mock.calls.length;
+        await (path === "gdl" ? handler : cccHandler)(createMockReq({ query: { date: new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(captured.tweet_created_at)), limit: "10", tweetId: captured.tweet_id } }), res);
+        expect(res.statusCode, `${path}:${captured.tweet_id}:${JSON.stringify(res.body)}`).toBe(200);
+        const rows = getUpsertedRows(fixtureMocks.lineSourceSnapshotsUpsertMock);
+        expect(rows).toHaveLength(1);
+        const interpretation = rows[0].metadata.interpretation;
+        const split = labels.records.find((label: any) => label.tweetId === captured.tweet_id).split;
+        metrics[split] ??= { posts: 0, accepted: 0, review: 0, emittedEvents: 0, confirmedFacts: 0 };
+        const metric = metrics[split]!;
+        metric.posts++; if (rows[0].nhl_filter_status === "accepted") metric.accepted++; else metric.review++;
+        metric.emittedEvents += interpretation.events.length;
+        metric.confirmedFacts += interpretation.events.filter((event: any) => ["available", "out"].includes(event.availability) || event.kind === "goalie" && event.state === "confirmed").length;
+        const outcome = { classification: rows[0].classification, teamId: rows[0].team_id, filterStatus: rows[0].nhl_filter_status, interpretation,
+          reports: getUpsertedRows(reportUpsert), persistedEvents: getUpsertedRows(eventUpsert),
+          forecasts: mocks.capturePlayerForecastSourceRows.mock.calls.slice(forecastCallStart).flatMap(([call]) => call.rows).map((row: any) => ({ classification: row.classification,
+            gameId: row.game_id, teamId: row.team_id, sourceKey: row.source_key, interpretation: row.metadata?.interpretation })) };
+        if (path === "gdl") outcomes.set(captured.tweet_id, outcome);
+        else expect(outcome, captured.tweet_id).toEqual(outcomes.get(captured.tweet_id));
+        for (const parsedEvent of interpretation.events) {
+          expect(parsedEvent.availability, captured.tweet_id).not.toBe("available");
+          expect(parsedEvent.availability, captured.tweet_id).not.toBe("out");
+        }
+        if (["2105378254983205114", "2105375596687843639", "2105366758089695718"].includes(captured.tweet_id)) {
+          expect(interpretation.units.filter((unit: any) => unit.situation === "pp" && unit.complete)).toHaveLength(2);
+          expect(reportUpsert).toHaveBeenCalled();
+        }
+        if (["2105434836500680857", "2105370362964004937"].includes(captured.tweet_id)) expect(interpretation.events.length).toBeGreaterThan(0);
+        const persistedEvents = getUpsertedRows(eventUpsert);
+        expect(persistedEvents.every((row: any) => !["available", "out"].includes(row.availability))).toBe(true);
+      }
+      console.info(`Frozen ${path} equivalent-route evaluation`, JSON.stringify(metrics));
+      const forecastRows = mocks.capturePlayerForecastSourceRows.mock.calls.flatMap(([call]) => call.rows);
+      expect(forecastRows.filter((row: any) => row.metadata?.interpretation)).toEqual(expect.arrayContaining([expect.objectContaining({ source_group: "tweet_projection", classification: "goalie_start" })]));
+      for (const row of forecastRows) {
+        for (const event of row.metadata?.interpretation?.events ?? []) {
+          expect(event.availability).not.toBe("out"); expect(event.availability).not.toBe("available"); expect(event.state).not.toBe("confirmed");
+        }
+      }
+    }
   });
 
   it("limits automatic retries to receipts on the Eastern slate, including UTC midnight", async () => {

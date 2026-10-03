@@ -371,6 +371,18 @@ export function buildPlayerAggregatedStats({
       L20: normalizeWigoAggregateValue(label, l20Value)
     };
 
+    if (metadata.isPerSixty) {
+      const denominator = /^pp[gap]_per_60$/.test(baseColName ?? "") ? "pptoi" : "atoi";
+      for (const [column, prefix] of [["L5", "l5"], ["L10", "l10"], ["L20", "l20"]] as const) {
+        const toi = getAggregateValue(recentData, `${prefix}_${denominator}`);
+        const gp = getAggregateValue(recentData, `${prefix}_gp`);
+        const sourceRate = getAggregateValue(recentData, `${prefix}_${baseColName}`);
+        if (sourceRate == null || !Number.isFinite(sourceRate) || toi == null || !Number.isFinite(toi) || toi <= 0 || gp == null || !Number.isFinite(gp) || gp <= 0) {
+          normalizedValues[column] = null;
+        }
+      }
+    }
+
     const rowData: TableAggregateData = {
       label,
       GP: shouldAttachGpMetadata(label)

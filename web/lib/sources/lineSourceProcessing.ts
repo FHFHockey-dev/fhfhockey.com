@@ -1,5 +1,7 @@
+import moment from "moment-timezone";
+import { getPrimaryTextForSource, type ParsedLinesCccSource } from "./linesCccIngestion";
 import { fetchRegisteredPlayerIdentities } from "./playerIdentity";
-import { tweetPipelineFlags, type TweetInterpretation } from "./tweetInterpretation";
+import { requiresRelativeGameDateReview, tweetPipelineFlags, type TweetInterpretation } from "./tweetInterpretation";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import type { RosterNameEntry } from "lib/sources/lineupSourceIngestion";
 import {
@@ -339,7 +341,7 @@ export function collectUnresolvedNamesFromLineRows(
       reason: string,
       metadata: Record<string, unknown> = {},
     ) => {
-      if (!isReviewablePlayerName(rawName)) return;
+      if (!isReviewablePlayerName(rawName) && !(metadata.evidence && /^[A-Z]{2,6}$/.test(rawName ?? ""))) return;
       const trimmedName = rawName?.trim();
       if (!trimmedName) return;
       const normalizedName = normalizePlayerNameAlias(trimmedName);
@@ -381,7 +383,7 @@ export function collectUnresolvedNamesFromLineRows(
     const interpretation = row.metadata?.interpretation as TweetInterpretation | undefined;
     if (interpretation) {
       for (const issue of interpretation.unresolved) {
-        addName(issue.text, issue.reason, { evidence: { start: issue.start, end: issue.end }, reviewKind: issue.reason === "ambiguous" ? "ambiguous_identity" : issue.reason === "invalid_extraction" ? "invalid_extraction" : "missing_membership" });
+        addName(issue.text, issue.reason, { evidence: { start: issue.start, end: issue.end }, sourceOrdinal: issue.number ?? null, situation: issue.situation ?? null, candidates: issue.candidates ?? [], reviewKind: issue.reason === "ambiguous" ? "ambiguous_identity" : issue.reason === "invalid_extraction" ? "invalid_extraction" : "missing_membership" });
       }
       continue;
     }
@@ -543,5 +545,60 @@ export async function sendPlayerAliasReviewEmailForQueuedNames(args: {
       status: null,
       message: error instanceof Error ? error.message : String(error),
     };
+  }
+}
+
+/** Both processors must use publication time, never their requested date, as evidence. */
+export function reviewTweetApplicability(candidates: ParsedLinesCccSource[], requestedDate: string) {
+  for (const candidate of candidates) {
+    if (candidate.nhlFilterStatus !== "accepted") continue;
+    const posted = moment(candidate.tweetPostedAt ?? "", moment.ISO_8601, true);
+    const reason = !posted.isValid() ? "unknown_report_date"
+      : posted.tz("America/New_York").format("YYYY-MM-DD") !== requestedDate ? "report_date_mismatch"
+      : requiresRelativeGameDateReview(getPrimaryTextForSource(candidate)) ? "relative_game_date_requires_review" : null;
+    if (reason === "relative_game_date_requires_review") {
+      const interpretation = (candidate.metadata?.temporalReview as { interpretation?: TweetInterpretation } | undefined)?.interpretation
+        ?? candidate.metadata?.interpretation as TweetInterpretation | undefined;
+      const text = getPrimaryTextForSource(candidate);
+      if (interpretation) {
+        const current = (evidence: { start: number; text: string }, structured: boolean) => {
+          if (requiresRelativeGameDateReview(evidence.text)) return false;
+          if (/\b(today|tonight)\b/i.test(evidence.text)) return true;
+          if (!structured) return false;
+          const headings = text.slice(0, evidence.start).split("\n").filter((line) => /\b(today|tonight|tomorrow|yesterday)\b/i.test(line));
+          const heading = headings.at(-1) ?? "";
+          return !requiresRelativeGameDateReview(heading) && /\b(today|tonight)\b/i.test(heading) && /\b(lines?|lineup|units?|pp[12]?|power[ -]?play|pairings?)\b/i.test(heading);
+        };
+        const units = interpretation.units.filter((unit) => unit.evidence.length > 0 && unit.evidence.every((evidence) => current(evidence, true)));
+        const events = (interpretation.events ?? []).filter((event) => current(event.evidence, false));
+        if (units.length || events.length) {
+          candidate.metadata = { ...candidate.metadata,
+            temporalReview: { reason, applicationDate: posted.format("YYYY-MM-DD"), interpretation },
+            interpretation: { ...interpretation, units, events, relationships: [],
+              unresolved: interpretation.unresolved },
+            powerPlayUnits: units.filter((unit) => unit.situation === "pp" && unit.complete).map((unit) => unit.players.map((player) => player.name)),
+            powerPlayUnitLabels: units.filter((unit) => unit.situation === "pp" && unit.complete).map((unit) => unit.number === 1 ? "pp1" : unit.number === 2 ? "pp2" : null),
+          };
+          const names = (situation: string) => units.filter((unit) => unit.situation === situation).map((unit) => unit.players.map((player) => player.name));
+          const orderedNames = (situation: string) => {
+            const rows: string[][] = [];
+            for (const unit of units.filter((unit) => unit.situation === situation)) rows[(unit.number ?? rows.length + 1) - 1] = unit.players.map((player) => player.name);
+            return rows;
+          };
+          candidate.forwards = orderedNames("es_forward");
+          candidate.defensePairs = orderedNames("es_defense");
+          candidate.goalies = names("goalie").flat();
+          candidate.scratches = names("scratch").flat();
+          candidate.injuries = names("injury").flat();
+          candidate.nhlFilterReason = "independent_current_claims_with_temporal_review";
+          continue;
+        }
+      }
+    }
+    if (reason) {
+      candidate.gameId = null;
+      candidate.nhlFilterStatus = "rejected_ambiguous";
+      candidate.nhlFilterReason = reason;
+    }
   }
 }

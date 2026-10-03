@@ -166,6 +166,7 @@ const StatsTable: React.FC<StatsTableProps> = ({
   return (
     <div className={styles.statsTableContainer}>
       <table className={styles.statsTable}>
+        <caption>L5/L10/L20: up to the latest played games across seasons; see GP for actual samples. Aggregate dates and source coverage are unavailable.</caption>
         <thead>
           <tr>
             {/* Stat Header (No Highlight) */}
@@ -232,6 +233,7 @@ const StatsTable: React.FC<StatsTableProps> = ({
                           <button
                             onClick={() => handleExpandClick(statData.label)}
                             className={styles.expandButton}
+                            aria-label={`${expandedStatLabel === statData.label ? "Hide" : "Show"} ${statData.label} game log`}
                             aria-expanded={expandedStatLabel === statData.label}
                             aria-controls={`chart-${statData.label}`}
                           >

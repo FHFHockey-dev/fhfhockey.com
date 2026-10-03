@@ -72,11 +72,12 @@ function setupLabel(args: {
   authenticated: boolean;
   draftProEligible: boolean;
   liveSyncEnabled: boolean;
+  hasLeague: boolean;
   requestState: "idle" | "loading" | "ready" | "error";
 }): string {
   if (!args.authenticated) return "Sign in required";
   if (!args.draftProEligible) return "Draft Pro required";
-  if (args.liveSyncEnabled) return "Ready to connect";
+  if (args.liveSyncEnabled) return args.hasLeague ? "Yahoo linked · Live Sync off" : "Ready to connect";
   if (args.requestState === "idle" || args.requestState === "loading") {
     return "Preparing";
   }
@@ -200,6 +201,7 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
   onApplySettings,
   onStopAndContinueManually,
 }) => {
+  const leagueSelectRef = React.useRef<HTMLSelectElement>(null);
   const liveSyncReady = authenticated && draftProEligible && liveSyncEnabled;
   const activePicks = draftState?.picks.filter((pick) => pick.active) || [];
   const unresolvedCount = reconciliation.unresolved.length;
@@ -219,11 +221,15 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
     : null;
   const scoringIsIncomplete = yahooSettingsRequireScoringConfirmation(draftState);
   const orderSuppliedByYahoo = hasCompleteYahooPickOwnership(draftState);
+  const positionsSuppliedByYahoo = hasCompleteYahooDraftPositions(draftState);
   const draftOrderIsInferred = !orderSuppliedByYahoo && yahooSettingsRequireDraftOrderConfirmation(draftState);
+  const yahooKeeperCount = Array.isArray(draftState?.settings.draftKeepers)
+    ? draftState.settings.draftKeepers.length
+    : 0;
   const settingsWarnings = yahooSettingsWarnings(draftState);
   const informationalNotes = [...new Set([...reconciliation.warnings, ...settingsWarnings])]
     .filter((warning) => !(draftOrderIsInferred || orderSuppliedByYahoo) || !/snake|draft-order mode/i.test(warning))
-    .filter((warning) => !warning.includes("complete, unique draft position") || (!orderSuppliedByYahoo && !hasCompleteYahooDraftPositions(draftState)));
+    .filter((warning) => !warning.includes("complete, unique draft position"));
   const selectedLeague = leagues.find(
     (league) => league.externalLeagueId === selectedLeagueId,
   );
@@ -238,6 +244,27 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
         selectedLeague.session.status,
       ),
   );
+  const sessionStarted = mode === "yahoo" && Boolean(draftState) &&
+    ["predraft", "active", "complete"].includes(draftState?.session.status || "");
+  const canCheckForUpdates = mode === "yahoo" && liveSyncReady && !isPolling && !isLoading;
+  const syncErrorMessage = error || draftState?.session.lastErrorMessage;
+  const setupSteps = [
+    { label: "FHFH account", complete: authenticated, href: "/auth?mode=sign-in", help: "Sign in to FHFH." },
+    { label: "Draft Pro", complete: draftProEligible, href: "/account?section=draft-pro", help: "Activate Draft Pro." },
+    { label: "Yahoo leagues", complete: leagues.length > 0, action: onConnect,
+      available: liveSyncReady && !isLoading, help: "Connect Yahoo and load your leagues. Use Refresh leagues if you already connected." },
+    { label: "Choose league", complete: Boolean(selectedLeague && selectedLeague.supported !== false),
+      action: () => leagueSelectRef.current?.focus(), available: leagues.length > 0 && mode === "manual" && !externalDraftLock && !isLoading,
+      help: "Select the league you are drafting in." },
+    { label: "Start Live Sync", complete: sessionStarted,
+      action: draftState?.session.status === "reauth_required" ? onConnect : mode === "yahoo" ? onRefreshDraft : onStart,
+      available: liveSyncReady && (mode === "yahoo" ? !isPolling && !isLoading : canStart && !isLoading),
+      help: "Start Live Sync, then compare the first picks with Yahoo." },
+    { label: "Apply settings", complete: sessionStarted && !settingsNeedApplying,
+      action: onApplySettings, available: liveSyncReady && sessionStarted && !isLoading,
+      help: "Apply Yahoo settings to import roster and scoring. This replaces manual settings." },
+  ];
+  const nextStep = setupSteps.find((step) => !step.complete);
   const yahooLeagueUrl =
     draftState?.session.yahooLeagueUrl || selectedLeague?.yahooLeagueUrl;
 
@@ -262,12 +289,40 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
                   authenticated,
                   draftProEligible,
                   liveSyncEnabled,
+                  hasLeague: leagues.length > 0,
                   requestState,
                 })}
           </span>
           {isPolling && <span className={styles.syncing}>Requesting update…</span>}
         </div>
       </div>
+
+      <nav className={styles.setupProgress} aria-label="Yahoo Live Sync setup">
+        <strong>Connect your Yahoo draft</strong>
+        <ol className={styles.progressSteps}>
+          {setupSteps.map((step, index) => {
+            const marker = step.complete ? (
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
+            ) : (
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" /><path d="M12 7v5l3 2" /></svg>
+            );
+            const circleClass = `${styles.progressCircle} ${step.complete ? styles.progressComplete : styles.progressPending}`;
+            const circleLabel = `${step.label}: ${step.complete ? "complete" : step.help}`;
+            return (
+              <li key={step.label} className={`${styles.progressStep} ${step.complete && setupSteps[index + 1]?.complete ? styles.progressLineComplete : ""}`}>
+                {step.complete ? <span className={circleClass} role="img" aria-label={circleLabel}>{marker}</span>
+                  : step.href ? <a className={circleClass} href={step.href} aria-label={circleLabel}>{marker}</a>
+                  : <button type="button" className={circleClass} onClick={step.action}
+                      disabled={!step.available} aria-label={circleLabel}>{marker}</button>}
+                <span className={styles.progressLabel}>{step.label}</span>
+              </li>
+            );
+          })}
+        </ol>
+        <p className={styles.progressHint} aria-live="polite">{nextStep
+          ? `Next: ${nextStep.help}`
+          : "Setup complete. Keep Live Sync running and compare incoming picks with Yahoo."}</p>
+      </nav>
 
       {!authenticated && (
         <div className={styles.setupNotice} role="status">
@@ -281,25 +336,11 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
           <a href="/account?section=draft-pro">Explore Draft Pro</a>
         </div>
       )}
-      {authenticated && draftProEligible && !liveSyncEnabled && (
-        <div className={error ? styles.error : styles.setupNotice} role={error ? "alert" : "status"}>
-          {error
-            ? "Yahoo Live Sync is unavailable right now. Try again later."
-            : requestState === "idle" || requestState === "loading"
-              ? "Yahoo Live Sync is preparing for this account while Yahoo access is verified."
-              : "Yahoo Live Sync is unavailable for this account right now."
-          }
-        </div>
-      )}
-
-      {liveSyncReady && mode === "manual" && (
+      {authenticated && draftProEligible && !liveSyncEnabled && !error && (
         <div className={styles.setupNotice} role="status">
-          <strong>Connect your Yahoo draft</strong>
-          <ol>
-            <li>Click <strong>Connect Yahoo</strong>. Sign in on Yahoo and allow FHFH to read your fantasy leagues.</li>
-            <li>Choose your NHL league below. If it is missing, click <strong>Refresh leagues</strong>.</li>
-            <li>Click <strong>Start live sync</strong>. Check the first picks against your Yahoo draft room, then apply Yahoo settings if prompted.</li>
-          </ol>
+          {requestState === "idle" || requestState === "loading"
+            ? "Yahoo Live Sync is preparing for this account while Yahoo access is verified."
+            : "Yahoo Live Sync is unavailable for this account right now."}
         </div>
       )}
 
@@ -307,15 +348,14 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
         <label className={styles.leagueControl}>
           <span>Yahoo league</span>
           <select
+            ref={leagueSelectRef}
             value={selectedLeagueId}
             onChange={(event) => onLeagueChange(event.target.value)}
             disabled={
               mode === "yahoo" || externalDraftLock || isLoading || leagues.length === 0
             }
           >
-            {leagues.length === 0 && (
-              <option value="">Connect or refresh Yahoo</option>
-            )}
+            {!selectedLeagueId && <option value="">{leagues.length ? "Choose your league" : "Connect or refresh Yahoo"}</option>}
             {leagues.map((league) => (
               <option
                 key={league.externalLeagueId}
@@ -396,7 +436,7 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
           <div className={styles.settingsPreview}>
             <strong>Yahoo settings preview:</strong>{" "}
             {yahooConfiguration?.teamCount || "—"} teams ·{" "}
-            {yahooConfiguration?.isSnakeDraft ? "snake" : "straight"} draft ·{" "}
+            {draftOrderIsInferred ? "snake assumed" : yahooConfiguration?.isSnakeDraft ? "snake" : "straight"} draft ·{" "}
             {rosterSpots == null ? "roster unavailable" : `${rosterSpots} roster spots`}
             {scoringIsIncomplete && (
               <span>
@@ -446,7 +486,7 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
         </>
       )}
 
-      {liveSyncReady && draftState?.session.status === "predraft" && !orderSuppliedByYahoo && !hasCompleteYahooDraftPositions(draftState) && (
+      {liveSyncReady && draftState?.session.status === "predraft" && !orderSuppliedByYahoo && !positionsSuppliedByYahoo && (
         <YahooDraftOrderCheck
           identity={`${selectedLeagueId || draftState.session.id}:${selectedLeague?.draftTime || ""}`}
           onRefresh={onRefreshAccount}
@@ -472,33 +512,43 @@ const YahooLiveDraftPanel: React.FC<YahooLiveDraftPanelProps> = ({
         </div>
       )}
 
-      {(draftOrderIsInferred || informationalNotes.length > 0) && (
+      {draftState && (draftOrderIsInferred || !orderSuppliedByYahoo || yahooKeeperCount > 0 || informationalNotes.length > 0) && (
         <div className={styles.infoNotice} role="status">
-          <strong>Draft order &amp; settings notes</strong>
-          {draftOrderIsInferred && <p>Draft format is not confirmed by Yahoo. Check your dashboard’s configured order against your Yahoo draft room; live picks still follow Yahoo’s reported selections.</p>}
-          {informationalNotes.map((warning) => <p key={warning}>{warning.includes("complete, unique draft position")
-              ? "Team draft positions are not fully available yet. Refresh leagues when Yahoo publishes the order; predicted turns may change."
-              : warning}</p>)}
+          <strong>Draft order &amp; keeper status</strong>
+          <p>{orderSuppliedByYahoo
+            ? "Yahoo supplied round-by-round pick ownership. Compare it with your Yahoo draft room before relying on the order."
+            : positionsSuppliedByYahoo
+              ? "Yahoo supplied team positions, but not complete round-by-round pick ownership. Check the order against your Yahoo draft room."
+              : "Draft order unconfirmed: Yahoo has not supplied every team position. FHFH’s predicted turns may change; compare with your Yahoo draft room and refresh leagues when the order is set."}</p>
+          {draftOrderIsInferred && <p>Draft format is not confirmed by Yahoo. Live picks still follow Yahoo’s reported selections.</p>}
+          {yahooKeeperCount > 0 && <p>Yahoo listed {yahooKeeperCount} keeper player{yahooKeeperCount === 1 ? "" : "s"}, but has not confirmed whether the list is final. A keeper without an assigned pick is not confirmed free; check pick costs in your Yahoo draft room.</p>}
+          {informationalNotes.map((warning) => <p key={warning}>{warning}</p>)}
         </div>
       )}
 
       {draftState?.session.stale && (
         <div className={styles.staleWarning} role="alert">
           {draftState.session.staleSeverity === "critical"
-            ? "Yahoo updates are very late. Click Check for updates and compare the picks with your Yahoo draft room. If they still differ, stop sync and continue manually."
-            : "Yahoo updates are delayed. Click Check for updates and compare the next pick with your Yahoo draft room before relying on it."}
+            ? `Yahoo updates are very late. ${canCheckForUpdates ? "Click Check for updates and " : ""}compare the picks with your Yahoo draft room. If they still differ, stop sync and continue manually.`
+            : `Yahoo updates are delayed. ${canCheckForUpdates ? "Click Check for updates and " : ""}compare the next pick with your Yahoo draft room before relying on it.`}
         </div>
       )}
 
       {draftState?.session.status === "reauth_required" && (
         <div className={styles.error} role="alert">
-          Yahoo needs you to sign in again. Click Connect Yahoo, then Check for updates. You can stop sync and continue manually at any time.
+          Yahoo needs you to sign in again. Click Connect Yahoo{canCheckForUpdates ? ", then Check for updates" : ""}. You can stop sync and continue manually at any time.
         </div>
       )}
 
-      {(error || draftState?.session.lastErrorMessage) && (
+      {syncErrorMessage && (
         <div className={styles.error} role="alert">
-          <strong>Yahoo sync needs attention.</strong> Click Check for updates and compare the picks with your Yahoo draft room. If they still differ, stop sync and continue manually. <small>{error || draftState?.session.lastErrorMessage}</small>
+          <strong>Yahoo sync needs attention.</strong>{" "}
+          {syncErrorMessage.includes("YAHOO_REDIRECT_URI")
+            ? "Yahoo sign-in is not configured for this site. Contact FHFH support; retrying will not help until it is fixed."
+            : canCheckForUpdates
+              ? "Click Check for updates and compare the picks with your Yahoo draft room. If they still differ, stop sync and continue manually."
+              : "Yahoo setup could not finish. Review the error below and contact support if it persists."}{" "}
+          <small>{syncErrorMessage}</small>
         </div>
       )}
 

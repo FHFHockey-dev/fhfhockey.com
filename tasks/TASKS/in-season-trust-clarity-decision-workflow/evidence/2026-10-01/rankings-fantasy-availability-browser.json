@@ -1,0 +1,43 @@
+{
+  "snapshotStatus": 200,
+  "comparisonStatus": 200,
+  "matrixStatus": 200,
+  "sortMetricAvailableRowCount": 0,
+  "contextSummary": "No eligible values for MCM Score across all skaters · ALL · Season · Min 1 GP",
+  "snapshotDate": "2026-04-16",
+  "selectedPlayerId": 8471215,
+  "comparisonReadyFromNavigationMs": 18161,
+  "requests": [
+    "/api/v1/contextual-rankings/matrix?entity=skaters&season=20252026&window=season&position=all&deployment=all&strength=all&min_gp=1&min_toi=600&sort_metric=mcm_score&sort_direction=desc&page=1&page_size=10&ranking_source=entity_metric_rankings&selected_player=8471215",
+    "/api/v1/contextual-rankings/snapshot?entity=skaters&season=20252026&window=season&position=all&deployment=all&strength=all&min_gp=1&min_toi=600&sort_metric=mcm_score&goalie_metric=save_percentage&goalie_role=all&team_metric=off_rating&sort_direction=desc&selected_player=8471215",
+    "/api/v1/contextual-rankings/comparison?entity=skaters&season=20252026&window=season&position=all&deployment=all&strength=all&min_gp=1&min_toi=600&sort_metric=mcm_score&sort_direction=desc&player_ids=8471215",
+    "/api/v1/contextual-rankings/trending?entity=skaters&season=20252026&position=all&deployment=all&strength=all&min_gp=1&min_toi=600&sort_direction=desc&limit=25",
+    "/api/v1/contextual-rankings/comparison?entity=skaters&season=20252026&window=season&position=all&deployment=all&strength=all&min_gp=1&min_toi=600&sort_metric=mcm_score&sort_direction=desc&player_ids=8471215%2C8470613%2C8470621%2C8471214%2C8471675%2C8471685"
+  ],
+  "comparisonSubjects": [
+    {
+      "key": "8471215",
+      "status": "available"
+    },
+    {
+      "key": "8470613",
+      "status": "available"
+    },
+    {
+      "key": "8470621",
+      "status": "available"
+    },
+    {
+      "key": "8471214",
+      "status": "available"
+    },
+    {
+      "key": "8471675",
+      "status": "available"
+    },
+    {
+      "key": "8471685",
+      "status": "available"
+    }
+  ]
+}

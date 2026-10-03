@@ -8,9 +8,9 @@ import { interceptProjectionQuery as interceptSharedQuery } from "./queryCapture
 import { fantasySourcePerGame, buildSeasonHistory, blendSeasonBootstrap, bootstrapSkaterLine, bootstrapGoalieLine,
   averageBootstrapStats, type SeasonBootstrap } from "./seasonBootstrap";
 import { capturedGoalieStarts, projectionWritesHash } from "./gameRevisions";
-import { applyDailyBoardEvidence, resolveDailyBoardEvidence, type BoardLineupEvidence } from "./dailyBoardEvidence";
+import { applyDailyBoardEvidence, loadDailyBoardEvidence, resolveDailyBoardEvidence, type BoardLineupEvidence } from "./dailyBoardEvidence";
 import { roleTagFromRosterEvent, allocatePpToiByTeamOpportunity } from "./stages/skater-stage";
-import { attachPreviousBoardForecast, boardGoalieForecast, integrateBoardParticipation, parseBoardScoringRequest, scoreBoardStats, scoreStarterBoardPayload } from "./starterBoardScoring";
+import { attachPreviousBoardForecast, boardGoalieForecast, boardSkaterForecast, integrateBoardParticipation, parseBoardScoringRequest, scoreBoardStats, scoreStarterBoardPayload, skaterParticipationFromEvidence } from "./starterBoardScoring";
 import { normalizeStartChartResponse } from "./startChartContract";
 import { claimStarterBoardJobs, computeStarterBoardJob, dispatchStarterBoardJobs, drainStarterBoardQueue, STARTER_BOARD_LATENCY } from "./starterBoardQueue";
 import { starterBoardCanaryGameIds, starterBoardFlags, starterBoardScopeAllowed } from "./starterBoardFlags";
@@ -490,6 +490,89 @@ const lineup = (overrides: Partial<BoardLineupEvidence> = {}): BoardLineupEviden
 });
 const resolve = (lineups: BoardLineupEvidence[]) => resolveDailyBoardEvidence({ cutoff, lineups, goalies: [], conflicts: [] });
 
+describe("complete daily-board evidence reads", () => {
+  const tables = () => ({
+    player_forecast_lineup_snapshots: [lineup({ created_at: "2026-10-01T11:01:00Z" })],
+    player_forecast_lineup_assignments: ["a", "b"].map((id, index) => ({ id, snapshot_id: "ev", player_id: 7,
+      unit_type: "injury", unit_number: null, assignment_status: index ? "ruled_out" : "confirmed", created_at: "2026-10-01T11:01:00Z" })),
+    player_forecast_goalie_start_observations: [8, 9].map(player => ({ id: `goalie-${player}`, game_id: 1, team_id: 10,
+      player_id: player, source_key: `reporter-${player}`, accepted: true, observation_status: "confirmed",
+      observed_at: "2026-10-01T11:00:00Z", available_at: "2026-10-01T11:01:00Z", created_at: "2026-10-01T11:01:00Z" })),
+    player_forecast_observation_conflicts: ["a", "b"].map((id, index) => ({ id, game_id: 1, team_id: 10,
+      player_id: 7, conflict_key: "injury", conflict_version: index + 1, conflict_type: "lineup",
+      detected_at: "2026-10-01T11:02:00Z", created_at: "2026-10-01T11:02:00Z" })),
+    player_forecast_conflict_resolutions: ["a", "b", "future"].map((id, index) => ({ id, conflict_id: "b",
+      action: index === 1 ? "accept_mixture" : "select_observation", selected_observation_id: "ev",
+      resolved_at: index === 2 ? "2026-10-01T13:00:00Z" : `2026-10-01T11:0${index + 3}:00Z`,
+      created_at: index === 2 ? "2026-10-01T13:00:00Z" : `2026-10-01T11:0${index + 3}:00Z` })),
+  });
+  function database(options: { failure?: string; table?: string } = {}) {
+    const source = tables();
+    const reads: Array<{ table: string; offset: number }> = [];
+    const live = vi.fn((table: keyof typeof source) => {
+      let selected: any[] = source[table], offset = 0;
+      const query: any = {
+        select: (_: string, config: unknown) => { expect(config).toEqual({ count: "exact" }); return query; },
+        in: (key: string, values: unknown[]) => { selected = selected.filter(row => values.includes(row[key])); return query; },
+        eq: (key: string, value: unknown) => { selected = selected.filter(row => row[key] === value); return query; },
+        lte: (key: string, value: string) => { selected = selected.filter(row => Date.parse(row[key]) <= Date.parse(value)); return query; },
+        order: (key: string) => { expect(key).toBe("id"); selected = [...selected].sort((a, b) => a.id.localeCompare(b.id)); return query; },
+        range: (from: number) => { offset = from; return query; },
+        then: (resolve: (value: unknown) => void) => {
+          reads.push({ table, offset });
+          const failure = options.table === table ? options.failure : undefined;
+          const count = failure === "missing_count" ? null : failure === "overflow" ? 20001
+            : selected.length + (failure === "count_drift" && offset ? 1 : 0);
+          resolve({ count, error: failure === "late_error" && offset ? { message: "failed" } : null,
+            data: failure === "null_data" ? null : failure === "no_progress" && offset ? []
+              : selected.slice(failure === "duplicate" ? 0 : offset, (failure === "duplicate" ? 0 : offset) + 1) });
+        },
+      };
+      return query;
+    });
+    const db: any = { from: (table: keyof typeof source) => interceptSharedQuery("from", [table], () => live(table)) ?? live(table) };
+    return { db, reads, live };
+  }
+  it("reads capped parent and child pages without losing opposing evidence and replays exactly", async () => {
+    const { db, reads, live } = database();
+    const work = () => loadDailyBoardEvidence([1, 1], cutoff, db);
+    const captured = await captureProjectionInputs(work);
+    expect(captured.result.assertions).toEqual([]);
+    expect(captured.result.conflicts.map(row => row.dimension).sort()).toEqual(["availability", "goalie"]);
+    for (const table of ["player_forecast_lineup_assignments", "player_forecast_goalie_start_observations",
+      "player_forecast_observation_conflicts", "player_forecast_conflict_resolutions"]) {
+      expect(reads.filter(row => row.table === table).map(row => row.offset)).toEqual([0, 1]);
+    }
+    const calls = live.mock.calls.length;
+    expect((await replayProjectionInputs(captured.reads, work)).result).toEqual(captured.result);
+    expect(live).toHaveBeenCalledTimes(calls);
+  });
+  it.each(["missing_count", "null_data", "count_drift", "late_error", "duplicate", "no_progress", "overflow"])(
+    "rejects %s in either parent or child evidence", async failure => {
+      for (const table of ["player_forecast_goalie_start_observations", "player_forecast_lineup_assignments", "player_forecast_conflict_resolutions"]) {
+        await expect(loadDailyBoardEvidence([1], cutoff, database({ failure, table }).db)).rejects.toThrow(/daily evidence/);
+      }
+    });
+  it("keeps a future conflict resolution out of a controlled replay without live reads", async () => {
+    const controlled = tables();
+    controlled.player_forecast_conflict_resolutions = controlled.player_forecast_conflict_resolutions.filter(row => row.id === "future");
+    const { db, live } = database();
+    const work = () => loadDailyBoardEvidence([1], cutoff, db);
+    const captured = await captureProjectionInputs(work, { suppressWrites: true, controlledNewsReads: controlled });
+    expect(captured.result.assertions).toEqual([]);
+    expect(captured.result.conflicts).toHaveLength(2);
+    expect((await replayProjectionInputs(captured.reads, work)).result).toEqual(captured.result);
+    expect(live).not.toHaveBeenCalled();
+  });
+  it("rejects invalid scope and skips all reads for an empty scope", async () => {
+    const { db, live } = database();
+    await expect(loadDailyBoardEvidence([NaN], cutoff, db)).rejects.toThrow("scope");
+    await expect(loadDailyBoardEvidence([1], "invalid", db)).rejects.toThrow("scope");
+    expect(await loadDailyBoardEvidence([], cutoff, db)).toEqual({ assertions: [], conflicts: [] });
+    expect(live).not.toHaveBeenCalled();
+  });
+});
+
 describe("Starter Board same-day overlay", () => {
   it("excludes future publications, late arrivals, later parsing and expired evidence", () => {
     expect(resolve([
@@ -551,6 +634,35 @@ describe("Starter Board same-day overlay", () => {
 });
 
 describe("Starter Board scoring and probability accounting", () => {
+  it("integrates only confirmed skater appearance evidence exactly once", () => {
+    const assertion = (dimension: "ev" | "pp" | "availability", value: string, confirmed = true) => ({
+      gameId: 1, teamId: 10, playerId: 7, dimension, value, evidenceId: `evidence-${dimension}`,
+      sourceKey: "source", sourceUrl: null, publishedAt: "2026-10-10T12:00:00Z", receivedAt: "2026-10-10T12:01:00Z", confirmed,
+    });
+    const identity = { gameId: 1, teamId: 10, playerId: 7 };
+    const row = { proj_goals: 2, proj_assists: 1, proj_pp_points: 0, proj_shots: 4, proj_hits: 1, proj_blocks: 0, proj_pim: 0, proj_toi_minutes: 18 };
+    const forecast = (participation: ReturnType<typeof skaterParticipationFromEvidence>) => boardSkaterForecast(row, {
+      model: { skater_selection: { production_conditioning: "conditional_playing", participation } },
+    });
+    expect(skaterParticipationFromEvidence({ assertions: [assertion("pp", "PP1")], conflicts: [] }, identity)).toBeNull();
+    expect(skaterParticipationFromEvidence({ assertions: [assertion("ev", "L1", false)], conflicts: [] }, identity)).toBeNull();
+    const playing = skaterParticipationFromEvidence({ assertions: [assertion("ev", "L1")], conflicts: [] }, identity);
+    expect(forecast(playing)).toMatchObject({ conditioning: "unconditional", participationProbability: 1,
+      expected: { GOALS: 2, SHOTS_ON_GOAL: 4 }, conditional: { GOALS: 2 } });
+    const out = skaterParticipationFromEvidence({ assertions: [assertion("availability", "out")], conflicts: [] }, identity);
+    expect(forecast(out)).toMatchObject({ conditioning: "unconditional", participationProbability: 0,
+      expected: { GOALS: 0, SHOTS_ON_GOAL: 0 }, conditional: { GOALS: 2 } });
+    expect(skaterParticipationFromEvidence({ assertions: [assertion("ev", "L1"), assertion("availability", "out")], conflicts: [] }, identity)).toBeNull();
+    expect(skaterParticipationFromEvidence({ assertions: [assertion("ev", "L1")], conflicts: [
+      { gameId: 1, teamId: 10, playerId: 7, dimension: "ev", evidenceIds: ["conflict"] },
+    ] }, identity)).toBeNull();
+    expect(forecast(null).expected).toBeNull();
+    expect(boardSkaterForecast(row, { model: { skater_selection: { production_conditioning: "legacy_availability_adjusted", participation: playing } } }).expected).toBeNull();
+  });
+  it("keeps an explicit exclusion at zero even when the conditional rate is positive", () => {
+    const result = boardSkaterForecast({ proj_goals: 2 }, { model: { skater_selection: { production_conditioning: "explicit_out" } } });
+    expect(result).toMatchObject({ conditioning: "unconditional", participationProbability: 0, expected: { GOALS: 0 } });
+  });
   it("matches hand-calculated default and custom scoring, and propagates missing values", () => {
     const profile = parseBoardScoringRequest({}).profile;
     const stats = { GOALS: 1, ASSISTS: 2, PP_POINTS: 1, SHOTS_ON_GOAL: 5, HITS: 2, BLOCKED_SHOTS: 4 };

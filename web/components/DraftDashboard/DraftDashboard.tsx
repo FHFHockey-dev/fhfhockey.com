@@ -3379,7 +3379,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       if (candidate.cost === "none" && hasOrdinaryManualPick) {
         return {
           ok: false as const,
-          message: "No-pick keepers are locked after the first ordinary pick.",
+          message: "Keepers without assigned picks are locked after the first ordinary pick.",
         };
       }
       const result = validateKeeperCandidate(
@@ -3429,7 +3429,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       ) {
         return {
           ok: false as const,
-          message: "No-pick keepers are locked after the first ordinary pick.",
+          message: "Keepers without assigned picks are locked after the first ordinary pick.",
         };
       }
       const result = validateKeeperBatch(parsed.candidates, {
@@ -3476,7 +3476,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       if (!keeperUsesPick(target) && hasOrdinaryManualPick) {
         return {
           ok: false as const,
-          message: "No-pick keepers are locked after the first ordinary pick.",
+          message: "Keepers without assigned picks are locked after the first ordinary pick.",
         };
       }
       const nextKeepers = keepers.filter(

@@ -1,0 +1,14 @@
+{
+  "retrievedAt": "2026-10-01T15:11:14.271Z",
+  "method": "Connected Vercel get_deployment read-only; project get_project failed due conflicting connector schemas",
+  "deploymentId": "dpl_A37gcG8z62Ef8dSy6MV87KfwWZiJ",
+  "commit": "73af9d051ecc755dd3695f5265bf5837bbfc7a4e",
+  "branch": "master",
+  "createdAt": "2026-09-27T16:11:06.485Z",
+  "readyAt": "2026-09-27T16:14:01.574Z",
+  "target": "production",
+  "flags": "not verified",
+  "model": "not verified",
+  "scheduledCallerParameters": "not verified",
+  "originalSourceEnrichmentCache": "not verified"
+}

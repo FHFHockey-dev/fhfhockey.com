@@ -1,0 +1,964 @@
+{
+  "head": "73af9d051ecc755dd3695f5265bf5837bbfc7a4e",
+  "entrypoints": [
+    "web/pages/db/player-aliases.tsx",
+    "web/pages/_app.tsx"
+  ],
+  "files": [
+    {
+      "path": "web/components/ClientOnly/ClientOnly.module.scss",
+      "headSha256": "c20a3c0371538d37a436d854fdc82e749b1c895de493d137d3b5e39fff60df98",
+      "auditSha256": "c20a3c0371538d37a436d854fdc82e749b1c895de493d137d3b5e39fff60df98",
+      "candidateSha256": "c20a3c0371538d37a436d854fdc82e749b1c895de493d137d3b5e39fff60df98",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/ClientOnly/ClientOnly.tsx",
+      "headSha256": "df5c3b687a15527768b6e3cf24daba4500dcf5d1804f94507bf326d927da6eea",
+      "auditSha256": "df5c3b687a15527768b6e3cf24daba4500dcf5d1804f94507bf326d927da6eea",
+      "candidateSha256": "df5c3b687a15527768b6e3cf24daba4500dcf5d1804f94507bf326d927da6eea",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/ClientOnly/index.ts",
+      "headSha256": "fa26147dd632a0ae64794f74d1fa089df472a6a76c3cebb77105c97f558225fb",
+      "auditSha256": "fa26147dd632a0ae64794f74d1fa089df472a6a76c3cebb77105c97f558225fb",
+      "candidateSha256": "fa26147dd632a0ae64794f74d1fa089df472a6a76c3cebb77105c97f558225fb",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/Layout/Header/Header.module.scss",
+      "headSha256": "45013f24dba3b293b3ce1a9a399c0c7ee0002a801c54008aadefa6beb32cd72f",
+      "auditSha256": "68fea9cc5fff421aee83626d8b1ad521be1e7f1eebce0df3aef983786264199f",
+      "candidateSha256": "68fea9cc5fff421aee83626d8b1ad521be1e7f1eebce0df3aef983786264199f",
+      "auditOverlay": true,
+      "candidateChangesHead": true
+    },
+    {
+      "path": "web/components/Layout/Header/Header.tsx",
+      "headSha256": "0ed6411f806a1e1764a43dc060687e0892539029645832d545ab75dff1c8301d",
+      "auditSha256": "2a44957d59e4e71e0a400f94226678c34a1ae575fcafb82ead70108e1da16b4b",
+      "candidateSha256": "2a44957d59e4e71e0a400f94226678c34a1ae575fcafb82ead70108e1da16b4b",
+      "auditOverlay": true,
+      "candidateChangesHead": true
+    },
+    {
+      "path": "web/components/Layout/Header/index.ts",
+      "headSha256": "5eb6a7b1416f1ec191d24fc297b212296b91ea2275fd184bd4c95c56f4ec66e7",
+      "auditSha256": "5eb6a7b1416f1ec191d24fc297b212296b91ea2275fd184bd4c95c56f4ec66e7",
+      "candidateSha256": "5eb6a7b1416f1ec191d24fc297b212296b91ea2275fd184bd4c95c56f4ec66e7",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/Layout/Layout.module.scss",
+      "headSha256": "002f7bfb3430d491190054ad4ba98c792509ea0afdb5ab5d4e90bce0ee776429",
+      "auditSha256": "027e22cc39bff08b9d09540788b40d613bb34693e892c0c27a34ec3ede67fa2c",
+      "candidateSha256": "027e22cc39bff08b9d09540788b40d613bb34693e892c0c27a34ec3ede67fa2c",
+      "auditOverlay": true,
+      "candidateChangesHead": true
+    },
+    {
+      "path": "web/components/Layout/Layout.tsx",
+      "headSha256": "f9806ecdada7fb62075acb642d5a1edf52d8a71325500230e16824fc6de91dcc",
+      "auditSha256": "55f5e70011f25c80914ed2e1a26850fb082934b0014bd69255d62e805d864d7c",
+      "candidateSha256": "55f5e70011f25c80914ed2e1a26850fb082934b0014bd69255d62e805d864d7c",
+      "auditOverlay": true,
+      "candidateChangesHead": true
+    },
+    {
+      "path": "web/components/Layout/MobileMenu/MobileMenu.module.scss",
+      "headSha256": "aa62af2f008d4d40e1ee7b9b3d8d91178651baf5feaf55b5b7821ee9eec337a6",
+      "auditSha256": "aa62af2f008d4d40e1ee7b9b3d8d91178651baf5feaf55b5b7821ee9eec337a6",
+      "candidateSha256": "aa62af2f008d4d40e1ee7b9b3d8d91178651baf5feaf55b5b7821ee9eec337a6",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/Layout/MobileMenu/MobileMenu.tsx",
+      "headSha256": "2865f82f899f4217983087237da389039abfbf4b0acc4a4541b731ba35ea94e9",
+      "auditSha256": "2865f82f899f4217983087237da389039abfbf4b0acc4a4541b731ba35ea94e9",
+      "candidateSha256": "2865f82f899f4217983087237da389039abfbf4b0acc4a4541b731ba35ea94e9",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/Layout/MobileMenu/index.ts",
+      "headSha256": "013e63a1ec71bcb2688c20c9a584eba180863e1760bb20e2bb3aac0c3f534d70",
+      "auditSha256": "013e63a1ec71bcb2688c20c9a584eba180863e1760bb20e2bb3aac0c3f534d70",
+      "candidateSha256": "013e63a1ec71bcb2688c20c9a584eba180863e1760bb20e2bb3aac0c3f534d70",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/Layout/NavbarItems/NavbarItems.module.scss",
+      "headSha256": "107d4618923f75eee2f282b1b403269d1c26739bb39615950cf10cbaca166ac2",
+      "auditSha256": "07251c55fe425b281f93ae82c60836a4d4621733b8a7731706f291d4866d4af6",
+      "candidateSha256": "07251c55fe425b281f93ae82c60836a4d4621733b8a7731706f291d4866d4af6",
+      "auditOverlay": true,
+      "candidateChangesHead": true
+    },
+    {
+      "path": "web/components/Layout/NavbarItems/NavbarItems.tsx",
+      "headSha256": "7ec94c2a1c8667da42d5a0dae24798990e17fd18deaefa72f7feed009eda9ef7",
+      "auditSha256": "7ec94c2a1c8667da42d5a0dae24798990e17fd18deaefa72f7feed009eda9ef7",
+      "candidateSha256": "7ec94c2a1c8667da42d5a0dae24798990e17fd18deaefa72f7feed009eda9ef7",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/Layout/NavbarItems/NavbarItemsData.ts",
+      "headSha256": "5afbc7fcf3ac231889c018b31271579cecf0d651b378cb3e9bffab119183cec2",
+      "auditSha256": "5afbc7fcf3ac231889c018b31271579cecf0d651b378cb3e9bffab119183cec2",
+      "candidateSha256": "5afbc7fcf3ac231889c018b31271579cecf0d651b378cb3e9bffab119183cec2",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/Layout/NavbarItems/index.ts",
+      "headSha256": "6fadf023f803ab1dfd3aaa8ecde7675631cb6055f4f87fa0c67be6764edcfc42",
+      "auditSha256": "6fadf023f803ab1dfd3aaa8ecde7675631cb6055f4f87fa0c67be6764edcfc42",
+      "candidateSha256": "6fadf023f803ab1dfd3aaa8ecde7675631cb6055f4f87fa0c67be6764edcfc42",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/Layout/NavigationIcon.tsx",
+      "headSha256": "6b0a064c6bd8566ef9ed229c10a8f29d29a598440022da9af0d5bcbb1090609e",
+      "auditSha256": "6b0a064c6bd8566ef9ed229c10a8f29d29a598440022da9af0d5bcbb1090609e",
+      "candidateSha256": "6b0a064c6bd8566ef9ed229c10a8f29d29a598440022da9af0d5bcbb1090609e",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/Layout/index.ts",
+      "headSha256": "a2d82c635147bccec1ef85c08d8726bfd76bf92cc22e1c1a1d70ed466495c322",
+      "auditSha256": "a2d82c635147bccec1ef85c08d8726bfd76bf92cc22e1c1a1d70ed466495c322",
+      "candidateSha256": "a2d82c635147bccec1ef85c08d8726bfd76bf92cc22e1c1a1d70ed466495c322",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/SocialMedias/SocialMedias.module.scss",
+      "headSha256": "bf98199e5386fc5869afb23285351be4c781d52c3bbbf96c4237899d92b34bcc",
+      "auditSha256": "bf98199e5386fc5869afb23285351be4c781d52c3bbbf96c4237899d92b34bcc",
+      "candidateSha256": "bf98199e5386fc5869afb23285351be4c781d52c3bbbf96c4237899d92b34bcc",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/SocialMedias/SocialMedias.tsx",
+      "headSha256": "2f0f0639a8a5ec1b07acd35e4b5fd5b22a4c6f1caa6395fc63dadb4421e97f0c",
+      "auditSha256": "2f0f0639a8a5ec1b07acd35e4b5fd5b22a4c6f1caa6395fc63dadb4421e97f0c",
+      "candidateSha256": "2f0f0639a8a5ec1b07acd35e4b5fd5b22a4c6f1caa6395fc63dadb4421e97f0c",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/SocialMedias/index.ts",
+      "headSha256": "65b74eb7d5c37e7a35f8cf42423e217760a6e621bde73461f753c6716e87b8cf",
+      "auditSha256": "65b74eb7d5c37e7a35f8cf42423e217760a6e621bde73461f753c6716e87b8cf",
+      "candidateSha256": "65b74eb7d5c37e7a35f8cf42423e217760a6e621bde73461f753c6716e87b8cf",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/TeamLandingPage/teamLandingPage.scss",
+      "headSha256": "715c16a13b288507aec503f860f657d18ee6430520f3a1c1df4202c08971657a",
+      "auditSha256": "715c16a13b288507aec503f860f657d18ee6430520f3a1c1df4202c08971657a",
+      "candidateSha256": "715c16a13b288507aec503f860f657d18ee6430520f3a1c1df4202c08971657a",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/auth/AuthForm.module.scss",
+      "headSha256": "443c935c857b3e0f77b55be5eec0901d8f7c85d85f8699ef2ca839783f264917",
+      "auditSha256": "443c935c857b3e0f77b55be5eec0901d8f7c85d85f8699ef2ca839783f264917",
+      "candidateSha256": "443c935c857b3e0f77b55be5eec0901d8f7c85d85f8699ef2ca839783f264917",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/auth/AuthForm.tsx",
+      "headSha256": "931f3af52f439af1f0f0c126a8bb5221216fefea6c1576cfb2a0ebd736b57e7c",
+      "auditSha256": "931f3af52f439af1f0f0c126a8bb5221216fefea6c1576cfb2a0ebd736b57e7c",
+      "candidateSha256": "931f3af52f439af1f0f0c126a8bb5221216fefea6c1576cfb2a0ebd736b57e7c",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/auth/AuthModal.module.scss",
+      "headSha256": "915c1fb4a34c376f9fd1a28c774a85da23e63121c1625e49af6a795dcc6ca13a",
+      "auditSha256": "915c1fb4a34c376f9fd1a28c774a85da23e63121c1625e49af6a795dcc6ca13a",
+      "candidateSha256": "915c1fb4a34c376f9fd1a28c774a85da23e63121c1625e49af6a795dcc6ca13a",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/auth/AuthModal.tsx",
+      "headSha256": "2160d7c5037495714b1ce5dff4279a75aa1915a362c236bfed8138bb502cd6c6",
+      "auditSha256": "2160d7c5037495714b1ce5dff4279a75aa1915a362c236bfed8138bb502cd6c6",
+      "candidateSha256": "2160d7c5037495714b1ce5dff4279a75aa1915a362c236bfed8138bb502cd6c6",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/auth/UserMenu.module.scss",
+      "headSha256": "b76067187e5f8c66e6b29481955c7cf11995aef0121e9ae6227795c0b3a66b56",
+      "auditSha256": "b76067187e5f8c66e6b29481955c7cf11995aef0121e9ae6227795c0b3a66b56",
+      "candidateSha256": "b76067187e5f8c66e6b29481955c7cf11995aef0121e9ae6227795c0b3a66b56",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/components/auth/UserMenu.tsx",
+      "headSha256": "a1612fd68926c007ca63e4bb39973b71b135d96f12b9c39ae649cf61ae88a98a",
+      "auditSha256": "90c0bc399f7e70e553bde42cb94e1efbf600ac9b441c8db9e52ee6fc9503fb23",
+      "candidateSha256": "90c0bc399f7e70e553bde42cb94e1efbf600ac9b441c8db9e52ee6fc9503fb23",
+      "auditOverlay": true,
+      "candidateChangesHead": true
+    },
+    {
+      "path": "web/contexts/AuthProviderContext/index.tsx",
+      "headSha256": "e996085d1a997643f65060c17500f2e887df84a6d11d101fdc8dc96965aef03b",
+      "auditSha256": "e996085d1a997643f65060c17500f2e887df84a6d11d101fdc8dc96965aef03b",
+      "candidateSha256": "e996085d1a997643f65060c17500f2e887df84a6d11d101fdc8dc96965aef03b",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/hooks/useScreenSize.ts",
+      "headSha256": "15c29acd0929ade7a308a7ea7a4e5c7ab22e87a730ed54494b08aebb0ec80275",
+      "auditSha256": "15c29acd0929ade7a308a7ea7a4e5c7ab22e87a730ed54494b08aebb0ec80275",
+      "candidateSha256": "15c29acd0929ade7a308a7ea7a4e5c7ab22e87a730ed54494b08aebb0ec80275",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/apollo-client.js",
+      "headSha256": "396621f023f5842807ad149615fce3ebcbbe0eb07b73f3c202e537886bfc47c2",
+      "auditSha256": "396621f023f5842807ad149615fce3ebcbbe0eb07b73f3c202e537886bfc47c2",
+      "candidateSha256": "396621f023f5842807ad149615fce3ebcbbe0eb07b73f3c202e537886bfc47c2",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/seo.js",
+      "headSha256": "5f159d1b36853ab86d3cb3db5e929b6d094386bc7df9f594605d76ceb9f7e9cc",
+      "auditSha256": "5f159d1b36853ab86d3cb3db5e929b6d094386bc7df9f594605d76ceb9f7e9cc",
+      "candidateSha256": "5f159d1b36853ab86d3cb3db5e929b6d094386bc7df9f594605d76ceb9f7e9cc",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/supabase/auth-callback-location.ts",
+      "headSha256": "d142b4aa8f57a66e17da2fcfadb264cc2a49b0c6d93d44e21c68fdf1925c65d4",
+      "auditSha256": "d142b4aa8f57a66e17da2fcfadb264cc2a49b0c6d93d44e21c68fdf1925c65d4",
+      "candidateSha256": "d142b4aa8f57a66e17da2fcfadb264cc2a49b0c6d93d44e21c68fdf1925c65d4",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/supabase/browser-auth.ts",
+      "headSha256": "7f4cae98be09dd0c77da863264b61d1543f91654da3b58291df9bc016a2daf7a",
+      "auditSha256": "7f4cae98be09dd0c77da863264b61d1543f91654da3b58291df9bc016a2daf7a",
+      "candidateSha256": "7f4cae98be09dd0c77da863264b61d1543f91654da3b58291df9bc016a2daf7a",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/supabase/client.ts",
+      "headSha256": "818aab6190e6a3eed1f8e9b5190ba1da6db6874a05160632c6befa2d5eaf21b2",
+      "auditSha256": "818aab6190e6a3eed1f8e9b5190ba1da6db6874a05160632c6befa2d5eaf21b2",
+      "candidateSha256": "818aab6190e6a3eed1f8e9b5190ba1da6db6874a05160632c6befa2d5eaf21b2",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/supabase/index.ts",
+      "headSha256": "5d9cf84ffefe12c1e5e16bef005ee5c66fdbb06505a1a7d3385edb11b3642fe2",
+      "auditSha256": "5d9cf84ffefe12c1e5e16bef005ee5c66fdbb06505a1a7d3385edb11b3642fe2",
+      "candidateSha256": "5d9cf84ffefe12c1e5e16bef005ee5c66fdbb06505a1a7d3385edb11b3642fe2",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/supabase/public-client.ts",
+      "headSha256": "93e088a695bee6f44d35161ea933b0e3b80bc0433c1a7d9d96fe1f1ab01e0a5e",
+      "auditSha256": "93e088a695bee6f44d35161ea933b0e3b80bc0433c1a7d9d96fe1f1ab01e0a5e",
+      "candidateSha256": "93e088a695bee6f44d35161ea933b0e3b80bc0433c1a7d9d96fe1f1ab01e0a5e",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/user-settings/ensureUserRecords.ts",
+      "headSha256": "2ab6d5d51b7029d33f832f4f2124e4aa83772d7845c04b0ad55d56cd7db1a4f5",
+      "auditSha256": "2ab6d5d51b7029d33f832f4f2124e4aa83772d7845c04b0ad55d56cd7db1a4f5",
+      "candidateSha256": "2ab6d5d51b7029d33f832f4f2124e4aa83772d7845c04b0ad55d56cd7db1a4f5",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/next-seo.config.js",
+      "headSha256": "a0c22045646bc0bb255732a088773fcaf0f1e3606c52de54083f0f0fa4a6725a",
+      "auditSha256": "a0c22045646bc0bb255732a088773fcaf0f1e3606c52de54083f0f0fa4a6725a",
+      "candidateSha256": "a0c22045646bc0bb255732a088773fcaf0f1e3606c52de54083f0f0fa4a6725a",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/pages/_app.tsx",
+      "headSha256": "abfc13451894d44936f73d075b71fdb9a0360ad14375d6b6bc50c3795ce6d341",
+      "auditSha256": "abfc13451894d44936f73d075b71fdb9a0360ad14375d6b6bc50c3795ce6d341",
+      "candidateSha256": "abfc13451894d44936f73d075b71fdb9a0360ad14375d6b6bc50c3795ce6d341",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/pages/db/player-aliases.module.scss",
+      "headSha256": "cca372304551c3dc1ea92a855922e050a08b4f22fdd693610f237fb225c8b90d",
+      "auditSha256": "cca372304551c3dc1ea92a855922e050a08b4f22fdd693610f237fb225c8b90d",
+      "candidateSha256": "cca372304551c3dc1ea92a855922e050a08b4f22fdd693610f237fb225c8b90d",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/pages/db/player-aliases.tsx",
+      "headSha256": "124ec3343aad17cde5f80a6a53a70c2b996032d237c2e26bbeaaf08787edbf40",
+      "auditSha256": "52dcbd1e8b1f0f6833974e9babd8f9ed89a9336d7b61a9e9e53782ed88c5168c",
+      "candidateSha256": "52dcbd1e8b1f0f6833974e9babd8f9ed89a9336d7b61a9e9e53782ed88c5168c",
+      "auditOverlay": true,
+      "candidateChangesHead": true
+    },
+    {
+      "path": "web/public/pictures/FHFHonly.png",
+      "headSha256": "eac8a35f5c9867c8f136f78da5cf3a98b2f85a8ec18427fc3eca76723cf386d2",
+      "auditSha256": "eac8a35f5c9867c8f136f78da5cf3a98b2f85a8ec18427fc3eca76723cf386d2",
+      "candidateSha256": "eac8a35f5c9867c8f136f78da5cf3a98b2f85a8ec18427fc3eca76723cf386d2",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/public/pictures/ULSlogo.png",
+      "headSha256": "5f3a72a232cdb37bbe635e29207f8afd01a650076ab896f5321b59facbf1831b",
+      "auditSha256": "5f3a72a232cdb37bbe635e29207f8afd01a650076ab896f5321b59facbf1831b",
+      "candidateSha256": "5f3a72a232cdb37bbe635e29207f8afd01a650076ab896f5321b59facbf1831b",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/styles/Home.module.scss",
+      "headSha256": "dca9e10fefb41a35db97f4b071a100ce94ecfee91a589094bee5e0a076819eb9",
+      "auditSha256": "dca9e10fefb41a35db97f4b071a100ce94ecfee91a589094bee5e0a076819eb9",
+      "candidateSha256": "dca9e10fefb41a35db97f4b071a100ce94ecfee91a589094bee5e0a076819eb9",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/styles/_panel.scss",
+      "headSha256": "223544173d352cf418b949b581155cf68f59c8eab7deb5bdd3759ebaef6dccd1",
+      "auditSha256": "223544173d352cf418b949b581155cf68f59c8eab7deb5bdd3759ebaef6dccd1",
+      "candidateSha256": "223544173d352cf418b949b581155cf68f59c8eab7deb5bdd3759ebaef6dccd1",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/styles/globals.css",
+      "headSha256": "96fdf5d08ac57bc418d860f56305bebaa1b91d84dc2f9ee411413c4a10c80d99",
+      "auditSha256": "96fdf5d08ac57bc418d860f56305bebaa1b91d84dc2f9ee411413c4a10c80d99",
+      "candidateSha256": "96fdf5d08ac57bc418d860f56305bebaa1b91d84dc2f9ee411413c4a10c80d99",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/styles/vars.scss",
+      "headSha256": "edb491e43103d32cf76b755fd73a80e9e10bc350244c7fedd981a26714a4d4d9",
+      "auditSha256": "edb491e43103d32cf76b755fd73a80e9e10bc350244c7fedd981a26714a4d4d9",
+      "candidateSha256": "edb491e43103d32cf76b755fd73a80e9e10bc350244c7fedd981a26714a4d4d9",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/utils/debounce.ts",
+      "headSha256": "d95c61489d4f59d0a5d456df11de5142c47ef5b91770d03c94d4957d562bb624",
+      "auditSha256": "d95c61489d4f59d0a5d456df11de5142c47ef5b91770d03c94d4957d562bb624",
+      "candidateSha256": "d95c61489d4f59d0a5d456df11de5142c47ef5b91770d03c94d4957d562bb624",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "web/pages/db/player-aliases.tsx",
+      "to": "web/lib/supabase/index.ts",
+      "spec": "lib/supabase",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/pages/db/player-aliases.tsx",
+      "to": "web/pages/db/player-aliases.module.scss",
+      "spec": "./player-aliases.module.scss",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "to": "web/contexts/AuthProviderContext/index.tsx",
+      "spec": "contexts/AuthProviderContext/index",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "to": "web/next-seo.config.js",
+      "spec": "next-seo.config",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "to": "web/lib/seo.js",
+      "spec": "lib/seo",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "to": "web/lib/apollo-client.js",
+      "spec": "../lib/apollo-client",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "to": "web/components/Layout/index.ts",
+      "spec": "../components/Layout",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "to": "web/styles/globals.css",
+      "spec": "../styles/globals.css",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "to": "web/styles/vars.scss",
+      "spec": "../styles/vars.scss",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "to": "web/styles/Home.module.scss",
+      "spec": "../styles/Home.module.scss",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "to": "web/components/TeamLandingPage/teamLandingPage.scss",
+      "spec": "components/TeamLandingPage/teamLandingPage.scss",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/lib/supabase/index.ts",
+      "to": "web/lib/supabase/client.ts",
+      "spec": "./client",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/pages/db/player-aliases.module.scss",
+      "to": "web/styles/_panel.scss",
+      "spec": "styles/panel",
+      "kind": "style"
+    },
+    {
+      "from": "web/pages/db/player-aliases.module.scss",
+      "to": "web/styles/vars.scss",
+      "spec": "styles/vars",
+      "kind": "style"
+    },
+    {
+      "from": "web/contexts/AuthProviderContext/index.tsx",
+      "to": "web/lib/supabase/client.ts",
+      "spec": "lib/supabase/client",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/contexts/AuthProviderContext/index.tsx",
+      "to": "web/lib/supabase/browser-auth.ts",
+      "spec": "lib/supabase/browser-auth",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/contexts/AuthProviderContext/index.tsx",
+      "to": "web/lib/user-settings/ensureUserRecords.ts",
+      "spec": "lib/user-settings/ensureUserRecords",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/next-seo.config.js",
+      "to": "web/lib/seo.js",
+      "spec": "./lib/seo",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/index.ts",
+      "to": "web/components/Layout/Layout.tsx",
+      "spec": "./Layout",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/styles/Home.module.scss",
+      "to": "web/styles/vars.scss",
+      "spec": "styles/vars",
+      "kind": "style"
+    },
+    {
+      "from": "web/styles/Home.module.scss",
+      "to": "web/styles/_panel.scss",
+      "spec": "styles/_panel",
+      "kind": "style"
+    },
+    {
+      "from": "web/styles/_panel.scss",
+      "to": "web/styles/vars.scss",
+      "spec": "styles/vars",
+      "kind": "style"
+    },
+    {
+      "from": "web/lib/user-settings/ensureUserRecords.ts",
+      "to": "web/lib/supabase/client.ts",
+      "spec": "lib/supabase/client",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/Layout.tsx",
+      "to": "web/components/Layout/Header/index.ts",
+      "spec": "./Header",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/Layout.tsx",
+      "to": "web/components/SocialMedias/index.ts",
+      "spec": "components/SocialMedias",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/Layout.tsx",
+      "to": "web/components/Layout/Layout.module.scss",
+      "spec": "./Layout.module.scss",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/Layout.tsx",
+      "to": "web/components/Layout/NavbarItems/NavbarItemsData.ts",
+      "spec": "./NavbarItems/NavbarItemsData",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/Header/index.ts",
+      "to": "web/components/Layout/Header/Header.tsx",
+      "spec": "./Header",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/SocialMedias/index.ts",
+      "to": "web/components/SocialMedias/SocialMedias.tsx",
+      "spec": "./SocialMedias",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/Layout.module.scss",
+      "to": "web/styles/vars.scss",
+      "spec": "styles/vars",
+      "kind": "style"
+    },
+    {
+      "from": "web/components/Layout/Header/Header.tsx",
+      "to": "web/components/Layout/MobileMenu/index.ts",
+      "spec": "components/Layout/MobileMenu",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/Header/Header.tsx",
+      "to": "web/components/Layout/NavbarItems/index.ts",
+      "spec": "components/Layout/NavbarItems",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/Header/Header.tsx",
+      "to": "web/components/Layout/NavbarItems/NavbarItemsData.ts",
+      "spec": "components/Layout/NavbarItems/NavbarItemsData",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/Header/Header.tsx",
+      "to": "web/components/auth/AuthModal.tsx",
+      "spec": "components/auth/AuthModal",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/Header/Header.tsx",
+      "to": "web/components/auth/UserMenu.tsx",
+      "spec": "components/auth/UserMenu",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/Header/Header.tsx",
+      "to": "web/contexts/AuthProviderContext/index.tsx",
+      "spec": "contexts/AuthProviderContext",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/Header/Header.tsx",
+      "to": "web/components/Layout/NavigationIcon.tsx",
+      "spec": "../NavigationIcon",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/Header/Header.tsx",
+      "to": "web/components/Layout/Header/Header.module.scss",
+      "spec": "./Header.module.scss",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/Header/Header.tsx",
+      "to": "web/public/pictures/FHFHonly.png",
+      "spec": "public/pictures/FHFHonly.png",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/Header/Header.tsx",
+      "to": "web/public/pictures/ULSlogo.png",
+      "spec": "public/pictures/ULSlogo.png",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/SocialMedias/SocialMedias.tsx",
+      "to": "web/components/SocialMedias/SocialMedias.module.scss",
+      "spec": "./SocialMedias.module.scss",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/SocialMedias/SocialMedias.tsx",
+      "to": "web/hooks/useScreenSize.ts",
+      "spec": "hooks/useScreenSize",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/SocialMedias/SocialMedias.tsx",
+      "to": "web/components/ClientOnly/index.ts",
+      "spec": "components/ClientOnly",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/MobileMenu/index.ts",
+      "to": "web/components/Layout/MobileMenu/MobileMenu.tsx",
+      "spec": "./MobileMenu",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/NavbarItems/index.ts",
+      "to": "web/components/Layout/NavbarItems/NavbarItems.tsx",
+      "spec": "./NavbarItems",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/auth/AuthModal.tsx",
+      "to": "web/components/auth/AuthForm.tsx",
+      "spec": "./AuthForm",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/auth/AuthModal.tsx",
+      "to": "web/components/auth/AuthModal.module.scss",
+      "spec": "./AuthModal.module.scss",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/auth/UserMenu.tsx",
+      "to": "web/contexts/AuthProviderContext/index.tsx",
+      "spec": "contexts/AuthProviderContext",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/auth/UserMenu.tsx",
+      "to": "web/components/auth/UserMenu.module.scss",
+      "spec": "./UserMenu.module.scss",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/Header/Header.module.scss",
+      "to": "web/styles/vars.scss",
+      "spec": "styles/vars",
+      "kind": "style"
+    },
+    {
+      "from": "web/components/SocialMedias/SocialMedias.module.scss",
+      "to": "web/styles/vars.scss",
+      "spec": "styles/vars",
+      "kind": "style"
+    },
+    {
+      "from": "web/hooks/useScreenSize.ts",
+      "to": "web/utils/debounce.ts",
+      "spec": "utils/debounce",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/ClientOnly/index.ts",
+      "to": "web/components/ClientOnly/ClientOnly.tsx",
+      "spec": "./ClientOnly",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/MobileMenu/MobileMenu.tsx",
+      "to": "web/lib/supabase/public-client.ts",
+      "spec": "lib/supabase/public-client",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/MobileMenu/MobileMenu.tsx",
+      "to": "web/components/SocialMedias/index.ts",
+      "spec": "components/SocialMedias",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/MobileMenu/MobileMenu.tsx",
+      "to": "web/components/Layout/NavbarItems/NavbarItemsData.ts",
+      "spec": "components/Layout/NavbarItems/NavbarItemsData",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/MobileMenu/MobileMenu.tsx",
+      "to": "web/components/Layout/NavigationIcon.tsx",
+      "spec": "../NavigationIcon",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/MobileMenu/MobileMenu.tsx",
+      "to": "web/public/pictures/FHFHonly.png",
+      "spec": "public/pictures/FHFHonly.png",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/MobileMenu/MobileMenu.tsx",
+      "to": "web/components/Layout/MobileMenu/MobileMenu.module.scss",
+      "spec": "./MobileMenu.module.scss",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/NavbarItems/NavbarItems.tsx",
+      "to": "web/components/SocialMedias/index.ts",
+      "spec": "components/SocialMedias",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/NavbarItems/NavbarItems.tsx",
+      "to": "web/components/Layout/NavigationIcon.tsx",
+      "spec": "../NavigationIcon",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/NavbarItems/NavbarItems.tsx",
+      "to": "web/components/Layout/NavbarItems/NavbarItemsData.ts",
+      "spec": "./NavbarItemsData",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/NavbarItems/NavbarItems.tsx",
+      "to": "web/components/Layout/NavbarItems/NavbarItems.module.scss",
+      "spec": "./NavbarItems.module.scss",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/auth/AuthForm.tsx",
+      "to": "web/lib/supabase/client.ts",
+      "spec": "lib/supabase/client",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/auth/AuthForm.tsx",
+      "to": "web/lib/supabase/browser-auth.ts",
+      "spec": "lib/supabase/browser-auth",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/auth/AuthForm.tsx",
+      "to": "web/lib/supabase/auth-callback-location.ts",
+      "spec": "lib/supabase/auth-callback-location",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/auth/AuthForm.tsx",
+      "to": "web/components/auth/AuthForm.module.scss",
+      "spec": "./AuthForm.module.scss",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/auth/AuthModal.module.scss",
+      "to": "web/styles/vars.scss",
+      "spec": "styles/vars",
+      "kind": "style"
+    },
+    {
+      "from": "web/components/auth/AuthModal.module.scss",
+      "to": "web/styles/_panel.scss",
+      "spec": "styles/_panel",
+      "kind": "style"
+    },
+    {
+      "from": "web/components/ClientOnly/ClientOnly.tsx",
+      "to": "web/components/ClientOnly/ClientOnly.module.scss",
+      "spec": "./ClientOnly.module.scss",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/components/Layout/MobileMenu/MobileMenu.module.scss",
+      "to": "web/styles/vars.scss",
+      "spec": "styles/vars",
+      "kind": "style"
+    },
+    {
+      "from": "web/components/Layout/NavbarItems/NavbarItems.module.scss",
+      "to": "web/styles/vars.scss",
+      "spec": "styles/vars",
+      "kind": "style"
+    },
+    {
+      "from": "web/components/auth/AuthForm.module.scss",
+      "to": "web/styles/vars.scss",
+      "spec": "styles/vars",
+      "kind": "style"
+    },
+    {
+      "from": "web/components/ClientOnly/ClientOnly.module.scss",
+      "to": "web/styles/vars.scss",
+      "spec": "styles/vars",
+      "kind": "style"
+    }
+  ],
+  "typeOnlyImports": [
+    {
+      "from": "web/pages/db/player-aliases.tsx",
+      "spec": "next"
+    },
+    {
+      "from": "web/pages/db/player-aliases.tsx",
+      "spec": "lib/sources/nhlProspectIdentity"
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "spec": "next/app"
+    },
+    {
+      "from": "web/lib/supabase/index.ts",
+      "spec": "./database-generated.types"
+    },
+    {
+      "from": "web/contexts/AuthProviderContext/index.tsx",
+      "spec": "@supabase/supabase-js"
+    },
+    {
+      "from": "web/lib/supabase/client.ts",
+      "spec": "./database-generated.types"
+    },
+    {
+      "from": "web/lib/supabase/browser-auth.ts",
+      "spec": "@supabase/supabase-js"
+    },
+    {
+      "from": "web/lib/user-settings/ensureUserRecords.ts",
+      "spec": "@supabase/supabase-js"
+    },
+    {
+      "from": "web/components/Layout/NavbarItems/NavbarItemsData.ts",
+      "spec": "../NavigationIcon"
+    },
+    {
+      "from": "web/components/Layout/NavigationIcon.tsx",
+      "spec": "react"
+    },
+    {
+      "from": "web/components/auth/AuthForm.tsx",
+      "spec": "./AuthModal"
+    },
+    {
+      "from": "web/lib/supabase/public-client.ts",
+      "spec": "./database-generated.types"
+    }
+  ],
+  "externalPackages": [
+    "@apollo/client",
+    "@supabase/supabase-js",
+    "@tanstack/react-query",
+    "@vercel/analytics/react",
+    "@vercel/speed-insights/next",
+    "classnames",
+    "next-seo",
+    "next/head",
+    "next/image",
+    "next/link",
+    "next/router",
+    "notistack",
+    "react"
+  ],
+  "originalOverlayRuntimeIntersection": [
+    {
+      "path": "web/components/Layout/Header/Header.module.scss",
+      "headSha256": "45013f24dba3b293b3ce1a9a399c0c7ee0002a801c54008aadefa6beb32cd72f",
+      "auditSha256": "68fea9cc5fff421aee83626d8b1ad521be1e7f1eebce0df3aef983786264199f",
+      "candidateSha256": "68fea9cc5fff421aee83626d8b1ad521be1e7f1eebce0df3aef983786264199f",
+      "auditOverlay": true,
+      "candidateChangesHead": true
+    },
+    {
+      "path": "web/components/Layout/Header/Header.tsx",
+      "headSha256": "0ed6411f806a1e1764a43dc060687e0892539029645832d545ab75dff1c8301d",
+      "auditSha256": "2a44957d59e4e71e0a400f94226678c34a1ae575fcafb82ead70108e1da16b4b",
+      "candidateSha256": "2a44957d59e4e71e0a400f94226678c34a1ae575fcafb82ead70108e1da16b4b",
+      "auditOverlay": true,
+      "candidateChangesHead": true
+    },
+    {
+      "path": "web/components/Layout/Layout.module.scss",
+      "headSha256": "002f7bfb3430d491190054ad4ba98c792509ea0afdb5ab5d4e90bce0ee776429",
+      "auditSha256": "027e22cc39bff08b9d09540788b40d613bb34693e892c0c27a34ec3ede67fa2c",
+      "candidateSha256": "027e22cc39bff08b9d09540788b40d613bb34693e892c0c27a34ec3ede67fa2c",
+      "auditOverlay": true,
+      "candidateChangesHead": true
+    },
+    {
+      "path": "web/components/Layout/Layout.tsx",
+      "headSha256": "f9806ecdada7fb62075acb642d5a1edf52d8a71325500230e16824fc6de91dcc",
+      "auditSha256": "55f5e70011f25c80914ed2e1a26850fb082934b0014bd69255d62e805d864d7c",
+      "candidateSha256": "55f5e70011f25c80914ed2e1a26850fb082934b0014bd69255d62e805d864d7c",
+      "auditOverlay": true,
+      "candidateChangesHead": true
+    },
+    {
+      "path": "web/components/Layout/NavbarItems/NavbarItems.module.scss",
+      "headSha256": "107d4618923f75eee2f282b1b403269d1c26739bb39615950cf10cbaca166ac2",
+      "auditSha256": "07251c55fe425b281f93ae82c60836a4d4621733b8a7731706f291d4866d4af6",
+      "candidateSha256": "07251c55fe425b281f93ae82c60836a4d4621733b8a7731706f291d4866d4af6",
+      "auditOverlay": true,
+      "candidateChangesHead": true
+    },
+    {
+      "path": "web/components/auth/UserMenu.tsx",
+      "headSha256": "a1612fd68926c007ca63e4bb39973b71b135d96f12b9c39ae649cf61ae88a98a",
+      "auditSha256": "90c0bc399f7e70e553bde42cb94e1efbf600ac9b441c8db9e52ee6fc9503fb23",
+      "candidateSha256": "90c0bc399f7e70e553bde42cb94e1efbf600ac9b441c8db9e52ee6fc9503fb23",
+      "auditOverlay": true,
+      "candidateChangesHead": true
+    },
+    {
+      "path": "web/pages/db/player-aliases.tsx",
+      "headSha256": "124ec3343aad17cde5f80a6a53a70c2b996032d237c2e26bbeaaf08787edbf40",
+      "auditSha256": "52dcbd1e8b1f0f6833974e9babd8f9ed89a9336d7b61a9e9e53782ed88c5168c",
+      "candidateSha256": "52dcbd1e8b1f0f6833974e9babd8f9ed89a9336d7b61a9e9e53782ed88c5168c",
+      "auditOverlay": true,
+      "candidateChangesHead": true
+    }
+  ],
+  "note": "Conservative static runtime/import and Sass closure from the resolver page and shared app shell; type-only imports are recorded separately and not runtime prerequisites. Exact entry module and local assets followed. Real API/save/auth execution remains mocked and is not certified by this graph.",
+  "snapshotRole": "original audited dirty UI runtime"
+}

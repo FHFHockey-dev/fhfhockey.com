@@ -207,7 +207,7 @@ describe("keeper workflow surfaces", () => {
       />,
     );
 
-    expect(screen.getByText("Keepers without draft slots")).toBeTruthy();
+    expect(screen.getByText("Keepers without assigned picks")).toBeTruthy();
     expect(screen.getAllByText("Keeper Player").length).toBeGreaterThan(0);
     const skipped = view.container.querySelector(
       '[data-round="1"][data-pick="1"]',

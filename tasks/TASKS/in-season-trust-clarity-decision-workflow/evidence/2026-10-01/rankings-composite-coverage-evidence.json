@@ -1,0 +1,41 @@
+{
+  "observedOn": "2026-10-01",
+  "access": "read-only Supabase SQL",
+  "scope": "Requested seasons 20252026 and 20262027; season-window composite rows, scheduled games, and the latest observed ALL-strength rolling date",
+  "composites": {
+    "query": "select season_id,strength_state,window_type,window_size,peer_group_type,peer_group_key,max(snapshot_date) as latest_snapshot,count(*) as rows,count(mcm_score) as available_mcm_rows,count(distinct player_id) as players from public.skater_composite_ratings where season_id in (20252026,20262027) and window_type='season' group by season_id,strength_state,window_type,window_size,peer_group_type,peer_group_key order by season_id,strength_state,peer_group_type,peer_group_key",
+    "commonReturnedContext": { "season": 20252026, "strength": "5v5", "window": "season", "windowSize": 0, "latestSnapshot": "2026-04-16" },
+    "groups": [
+      { "type": "all_skaters", "key": "all_skaters", "rows": 776, "nonNullMcmRows": 776, "players": 776 },
+      { "type": "deployment", "key": "L1", "rows": 119, "nonNullMcmRows": 119, "players": 119 },
+      { "type": "deployment", "key": "L2", "rows": 121, "nonNullMcmRows": 121, "players": 121 },
+      { "type": "deployment", "key": "L3", "rows": 120, "nonNullMcmRows": 120, "players": 120 },
+      { "type": "deployment", "key": "L4", "rows": 142, "nonNullMcmRows": 142, "players": 142 },
+      { "type": "deployment", "key": "P1", "rows": 84, "nonNullMcmRows": 84, "players": 84 },
+      { "type": "deployment", "key": "P2", "rows": 87, "nonNullMcmRows": 87, "players": 87 },
+      { "type": "deployment", "key": "P3", "rows": 103, "nonNullMcmRows": 103, "players": 103 }
+    ],
+    "absentRequestedContexts": ["ALL strength for both requested seasons", "season 20262027 at every strength"]
+  },
+  "scheduledGames": {
+    "query": "select \"seasonId\",type,min(date) as first_scheduled_date,max(date) as last_scheduled_date,count(*) as scheduled_games,count(*) filter(where date>'2026-04-16' and \"seasonId\"=20252026) as games_after_ranking_snapshot from public.games where \"seasonId\" in (20252026,20262027) group by \"seasonId\",type order by \"seasonId\",type",
+    "rows": [
+      { "season": 20252026, "type": 1, "firstDate": "2025-09-20", "lastDate": "2025-10-04", "games": 104, "gamesAfterSnapshot": 0 },
+      { "season": 20252026, "type": 2, "firstDate": "2025-10-07", "lastDate": "2026-04-16", "games": 1312, "gamesAfterSnapshot": 0 },
+      { "season": 20252026, "type": 3, "firstDate": "2026-04-18", "lastDate": "2026-06-17", "games": 105, "gamesAfterSnapshot": 105 },
+      { "season": 20262027, "type": 1, "firstDate": "2026-09-19", "lastDate": "2026-09-26", "games": 65, "gamesAfterSnapshot": 0 },
+      { "season": 20262027, "type": 2, "firstDate": "2026-09-29", "lastDate": "2027-04-10", "games": 1344, "gamesAfterSnapshot": 0 }
+    ]
+  },
+  "latestDailyRollingRows": {
+    "query": "select snapshot_date,count(*) as rows,count(distinct game_id) as games,count(distinct player_id) as players,min(game_date) as first_game_date,max(game_date) as last_game_date from (select game_date as snapshot_date,game_date,game_id,player_id from public.rolling_player_game_metrics where season=20252026 and strength_state='all' and game_date='2026-04-16') latest group by snapshot_date",
+    "snapshotDate": "2026-04-16", "rows": 216, "games": 6, "players": 216
+  },
+  "limits": [
+    "Non-null MCM counts do not certify finite values, minimum-sample eligibility, scoring-component coverage or statistical stability.",
+    "Scheduled-game counts do not prove completed-game ingestion or per-player denominator completeness.",
+    "The last daily rolling date is not the all-season player population; the consumer also searches earlier dates.",
+    "The earlier generic entity_metric_rankings receipt does not describe the actual skater_composite_ratings publisher.",
+    "No publisher, migration, recompute, data write or deployment was invoked."
+  ]
+}

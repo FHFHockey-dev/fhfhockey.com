@@ -15,7 +15,7 @@ import type {
   ContextualRankingsDeploymentFilter,
   ContextualRankingsPositionFilter,
 } from "lib/rankings/rankingTypes";
-import type { RankingsFilterState } from "lib/rankings/rankingUrlState";
+import { FANTASY_RANKINGS_PRESET, type RankingsFilterState } from "lib/rankings/rankingUrlState";
 
 import styles from "styles/Rankings.module.scss";
 
@@ -659,7 +659,7 @@ export default function RankingsFilters({
                 >
                   <div className={styles.moreFiltersGrid}>
                     <label className={styles.filterControl}>
-                      <span>Sample</span>
+                      <span>Sample versus minimums</span>
                       <select
                         value={value.sampleConfidence}
                         onChange={(event) =>
@@ -671,8 +671,8 @@ export default function RankingsFilters({
                         }
                       >
                         <option value="all">All Samples</option>
-                        <option value="medium_plus">Medium+</option>
-                        <option value="high">High Only</option>
+                        <option value="medium_plus">Meets minimums</option>
+                        <option value="high">At least 2× minimums</option>
                       </select>
                     </label>
 
@@ -832,6 +832,15 @@ export default function RankingsFilters({
             </div>
           ) : null}
 
+          <button
+            className={styles.resetFiltersButton}
+            type="button"
+            aria-describedby="fantasy-preset-description"
+            onClick={() => onChange(FANTASY_RANKINGS_PRESET)}
+          >
+            Fantasy preset
+          </button>
+
           {onReset ? (
             <button
               className={styles.resetFiltersButton}
@@ -862,6 +871,15 @@ export default function RankingsFilters({
               <dd>{peerGroupLabel(value)}</dd>
             </div>
           </dl>
+          <details>
+            <summary>Fantasy preset basis</summary>
+            <p id="fantasy-preset-description">
+              Skater fantasy categories and MCM, across all strengths for the selected season.
+              Uses existing minimums of {FANTASY_RANKINGS_PRESET.minGp} GP and {FANTASY_RANKINGS_PRESET.minToi} TOI seconds;
+              these are eligibility rules, not reliability guarantees. Historical comparison, not a forecast.
+              Missing components remain unavailable. Expert filters stay editable.
+            </p>
+          </details>
         </aside>
 
         {methodologyControl ? (

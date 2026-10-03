@@ -1,0 +1,53 @@
+
+> web@0.1.0 test
+> vitest --run __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx -t uses the signed-in session for access and account reads
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:1483) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx (19 tests | 1 failed | 18 skipped) 108ms
+   ↓ RosterScheduleOptimizer workspace > shows the actual bench tradeoff and public assumptions within the selected date
+   ↓ RosterScheduleOptimizer workspace > keeps unsupported bench decisions unresolved and separates locks from scoring reasons
+   ↓ RosterScheduleOptimizer workspace > shows category results and projected goalie assumptions without claiming a satisfied minimum
+   ↓ RosterScheduleOptimizer workspace > guides an empty manual workspace to existing inputs without implying acquisition readiness
+   ↓ RosterScheduleOptimizer workspace > requires input review and renews it after rule changes without certifying unknown scoring
+   ↓ RosterScheduleOptimizer workspace > uses eligible full-team evidence for goalie starts without capping conflicts or reviving legacy rows
+   ↓ RosterScheduleOptimizer workspace > labels the selected statistical source and its permitted uses without implying a total
+   ↓ RosterScheduleOptimizer workspace > shows only each target's selected source timestamps across mixed inputs and replay
+   ↓ RosterScheduleOptimizer workspace > labels unverified lineups as schedule capacity
+   ↓ RosterScheduleOptimizer workspace > distinguishes identically named Yahoo teams by league and selects the matching context
+   ↓ RosterScheduleOptimizer workspace > counts only acquired players' future games before their next drop
+   ↓ RosterScheduleOptimizer workspace > keeps exact canonical selections and unresolved pasted names across remount
+   ↓ RosterScheduleOptimizer workspace > undoes local roster edits without changing the public snapshot
+   ↓ RosterScheduleOptimizer workspace > marks a future selected add conditional until the provider confirms it
+   × RosterScheduleOptimizer workspace > uses the signed-in session for access and account reads, then refreshes after account switch 107ms
+     → expected false to be true // Object.is equality
+   ↓ RosterScheduleOptimizer workspace > explains access-service failures instead of silently disabling provider sync
+   ↓ RosterScheduleOptimizer workspace > sends the signed-in token when saving the workspace
+   ↓ RosterScheduleOptimizer workspace > keeps invalid zone and cleared period dates out of committed rules
+   ↓ RosterScheduleOptimizer workspace > opens a saved manual snapshot read-only until the manager explicitly forks it
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > uses the signed-in session for access and account reads, then refreshes after account switch
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx:379:43
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 skipped (19)
+   Start at  23:37:22
+   Duration  1.08s (transform 269ms, setup 3ms, collect 497ms, tests 108ms, environment 254ms, prepare 48ms)
+

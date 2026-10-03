@@ -210,12 +210,17 @@ export async function fetchYahooBoardResource(args: Omit<Parameters<typeof fetch
 
 /** In-season reads only. Explicit resources prevent arbitrary provider paths or writes. */
 export async function fetchYahooPlanningResource(args: Omit<Parameters<typeof fetchYahooDraftResource>[0], "resource"> & {
-  resource: { type: "league" | "scoreboard" | "transactions" } | { type: "available_page"; start: number };
+  resource: { type: "league" | "scoreboard" | "transactions" } | { type: "available_page"; start: number }
+    | { type: "team"; teamKey: string };
 }): Promise<YahooProviderJsonResult> {
   assertYahooLeagueKey(args.leagueKey, args.context);
   const format = args.format ?? getYahooLiveDraftResponseFormat();
   let path = `league/${encodeURIComponent(args.leagueKey)}`;
-  if (args.resource.type === "available_page") {
+  if (args.resource.type === "team") {
+    const { teamKey } = args.resource;
+    if (!/^\d+\.l\.\d+\.t\.\d+$/.test(teamKey) || !teamKey.startsWith(`${args.leagueKey}.t.`)) throw new Error("Invalid Yahoo team scope");
+    path = `team/${encodeURIComponent(teamKey)}`;
+  } else if (args.resource.type === "available_page") {
     if (!Number.isInteger(args.resource.start) || args.resource.start < 0 || args.resource.start > 2000 || args.resource.start % 25 !== 0) throw new Error("Invalid availability page");
     path += `/players;status=A;sort=OR;start=${args.resource.start};count=25/ownership`;
   } else if (args.resource.type !== "league") path += `/${args.resource.type}`;

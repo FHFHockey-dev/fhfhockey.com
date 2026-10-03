@@ -1,5 +1,6 @@
 import { getTeamLogoSvg, fallbackNHLLogo } from "lib/images";
 import { teamsInfo } from "lib/teamsInfo";
+import type { TweetPlayerEvent } from "lib/sources/tweetPlayerEvents";
 
 export type NewsFeedItemPlayer = {
   id: string;
@@ -35,6 +36,40 @@ export type NewsFeedItemRow = {
 export type NewsFeedItem = NewsFeedItemRow & {
   players: NewsFeedItemPlayer[];
 };
+
+export function getPublicNewsClaimPresentation(item: Pick<NewsFeedItem, "headline" | "blurb" | "metadata">) {
+  const interpretation = item.metadata?.interpretation as Record<string, unknown> | undefined;
+  const events = interpretation?.events;
+  const unresolved = interpretation?.unresolved;
+  const sourceText = sanitizePublicNewsText(item.blurb);
+  const claims: TweetPlayerEvent[] = [];
+  if (typeof interpretation?.version === "string" && Array.isArray(events) && events.length > 0 &&
+    Array.isArray(unresolved) && unresolved.length === 0) {
+    for (const candidate of events) {
+      const event = candidate as TweetPlayerEvent | null;
+      const states = event?.kind === "goalie" ? ["projected", "likely", "confirmed", "ruled_out"]
+        : event?.kind === "injury" ? ["new_injury", "ongoing", "setback", "possible_return", "confirmed_return", "unknown"]
+        : event?.kind === "participation" ? ["observed"] : [];
+      if (!event || !Number.isSafeInteger(event.playerId) || event.playerId <= 0 ||
+        typeof event.playerName !== "string" || !sanitizePublicNewsText(event.playerName).trim() || event.reviewReason ||
+        (event.observation != null && !["warmup", "first_off", "practice"].includes(event.observation)) ||
+        !states.includes(event.state) || !["out", "available", "uncertain", "unknown"].includes(event.availability) ||
+        !["tentative", "negated", "affirmative", "observation"].includes(event.modality ?? "") ||
+        typeof event.evidence?.text !== "string" || !sanitizePublicNewsText(event.evidence.text).trim() ||
+        !sourceText.includes(sanitizePublicNewsText(event.evidence.text)) ||
+        !sanitizePublicNewsText(event.evidence.text).includes(sanitizePublicNewsText(event.playerName)) ||
+        (["confirmed", "confirmed_return"].includes(event.state) && event.modality !== "affirmative")) {
+        return { headline: "Source report", claims: [], unresolvedReason: "Subject-to-claim evidence unavailable" };
+      }
+      claims.push({ ...event, playerName: sanitizePublicNewsText(event.playerName) });
+    }
+  }
+  return {
+    headline: claims.length === 1 ? `${claims[0].playerName} source report` : "Source report",
+    claims,
+    unresolvedReason: claims.length ? null : "Subject-to-claim evidence unavailable",
+  };
+}
 
 export type NewsFeedSourceProvenance = {
   source_handle?: string | null;
@@ -215,8 +250,10 @@ function firstOriginalHandle(
   values: Array<string | null | undefined>,
 ): string | null {
   for (const value of values) {
-    const handle = value?.trim().replace(/^@/, "") || null;
-    if (handle && !isNewsRelayAccount(handle) && handle.toLowerCase() !== "i") {
+    const handle = typeof value === "string" ? value.trim().replace(/^@/, "") || null : null;
+    if (handle && /^[A-Za-z0-9_]{1,15}$/.test(handle) &&
+      !/^(?:i|null|undefined|unknown|none|n_?a|source_account)$/i.test(handle) &&
+      !isNewsRelayAccount(handle)) {
       return handle;
     }
   }
@@ -228,14 +265,22 @@ function safeOriginalSourceUrl(
   originalHandle: string | null,
   verifiedOriginal = false,
 ): string | null {
-  if (!value || NEWS_RELAY_MENTION_PATTERN.test(value)) {
+  if (typeof value !== "string" || !value || NEWS_RELAY_MENTION_PATTERN.test(value)) {
     NEWS_RELAY_MENTION_PATTERN.lastIndex = 0;
     return null;
   }
   NEWS_RELAY_MENTION_PATTERN.lastIndex = 0;
 
+  try {
+    const url = new URL(value);
+    if (!["https:", "http:"].includes(url.protocol) || url.username || url.password) return null;
+  } catch {
+    return null;
+  }
+
   const parsed = parseTweetUrl(value);
   if (parsed.handle && isNewsRelayAccount(parsed.handle)) return null;
+  if (parsed.handle && !firstOriginalHandle([parsed.handle])) return null;
   if (!parsed.handle && parsed.tweetId) {
     return verifiedOriginal && originalHandle ? `https://x.com/${originalHandle}/status/${parsed.tweetId}` : null;
   }
@@ -586,7 +631,7 @@ export async function fetchLatestPlayerNewsFlags(args: {
 
   const { data: itemRows, error: itemError } = await args.supabase
     .from("news_feed_items" as any)
-    .select("id, category, subcategory, headline, source_url, published_at, created_at, card_status")
+    .select("id, category, subcategory, headline, blurb, metadata, source_url, published_at, created_at, card_status")
     .in("id", itemIds)
     .eq("card_status", "published");
   if (itemError) throw itemError;
@@ -608,17 +653,17 @@ export async function fetchLatestPlayerNewsFlags(args: {
     if (!row.player_id || flags.has(row.player_id)) continue;
     const item = itemById.get(row.news_item_id);
     if (!item) continue;
+    const presentation = getPublicNewsClaimPresentation(item);
+    const claim = presentation.claims.find(event => event.playerId === row.player_id);
+    if (!claim) continue;
     flags.set(row.player_id, {
-      category: item.category,
-      subcategory: item.subcategory ?? null,
-      label: buildNewsFlagLabel({
-        category: item.category,
-        subcategory: item.subcategory ?? null,
-      }),
-      headline: item.headline,
-      sourceUrl: item.source_url ?? null,
-      publishedAt: item.published_at ?? item.created_at ?? null,
-      tone: getNewsItemTone(item.category),
+      category: claim.kind.toUpperCase(),
+      subcategory: claim.state.toUpperCase(),
+      label: `${formatNewsFeedLabel(claim.state)} report`,
+      headline: presentation.headline,
+      sourceUrl: getPublicNewsSourceAttribution({ item }).url,
+      publishedAt: Number.isFinite(Date.parse(item.published_at ?? "")) ? item.published_at : null,
+      tone: "neutral",
     });
   }
 

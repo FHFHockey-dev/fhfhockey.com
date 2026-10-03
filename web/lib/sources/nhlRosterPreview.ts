@@ -24,12 +24,13 @@ export type Player = {
   teamLogo: string;
 };
 
-export async function fetchNhlRosterPreview(seasonId?: number) {
+export async function fetchNhlRosterPreview(seasonId?: number, options: { rosterView?: "season" | "current" } = {}) {
   const teams = await getTeams(seasonId, { mode: "current-canonical" });
+  const rosterView = options.rosterView === "current" ? "current" : seasonId ?? "current";
   const tasks = teams.map((team) => async () => {
     try {
       const { forwards, defensemen, goalies } = await get(
-        `/roster/${team.abbreviation}/${seasonId ?? "current"}`
+        `/roster/${team.abbreviation}/${rosterView}`
       );
       // add current team id
       const array = [...forwards, ...defensemen, ...goalies].map((item) => ({
@@ -58,7 +59,7 @@ export async function fetchNhlRosterPreview(seasonId?: number) {
       item.lastName?.default ?? item.lastName
     }`, // Handle potential undefineds
     positionCode: item.positionCode,
-    sweaterNumber: item.sweaterNumber,
+    sweaterNumber: item.sweaterNumber ?? 0,
     birthDate: item.birthDate,
     birthCity: item.birthCity?.default ?? item.birthCity, // Handle birthCity safely
     birthCountry: item.birthCountry,

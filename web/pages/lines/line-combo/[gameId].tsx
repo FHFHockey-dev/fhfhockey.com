@@ -8,7 +8,7 @@ export default function Page() {
   const gameId = Number(router.query.gameId);
   if (!Number.isSafeInteger(gameId) || gameId <= 0) return null;
   return <main style={{ padding: 24 }}>
-    <ProjectedLineups gameId={gameId} />
+    <ProjectedLineups gameId={gameId} onGameChange={(id) => { void router.push(`/lines/line-combo/${id}`); }} />
     <section aria-label="Observed shared ice time">
       <h2>Observed shared ice time</h2>
       <LinemateMatrix id={gameId} mode="line-combination" />

@@ -721,6 +721,16 @@
       "migrationClass": "feature",
       "rolloutGate": "Keep rollout flags disabled until feature activation is authorized.",
       "stateEvidence": "Not present in hosted migration history on 2026-09-17; mock draft rollout flags remain disabled."
+    },
+    {
+      "order": 72,
+      "path": "supabase/migrations/20261002021651_forge_local_execution_fence.sql",
+      "sha256": "753c59c1232987796fd56edd86b23d31a8f14f3db3a3765c0ccb8eb955e76341",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "feature",
+      "rolloutGate": "FE-05f local attempt/recovery contract only; hosted apply, horizon generation and serving retain the existing scope, capacity and release gates. No hosted migration command was run.",
+      "stateEvidence": "tasks/tasks-prd-roster-schedule-optimizer.md#shared-forecasting-implementation--full-plan-re-audit-october-1-2026; isolated PostgreSQL 17.11 tests and local CLI tests verify source semantics; no hosted ledger/apply receipt."
     }
   ]
 }

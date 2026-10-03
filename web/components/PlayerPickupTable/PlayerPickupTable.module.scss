@@ -1046,6 +1046,22 @@ $selected-border-width: 2px; // The width of the indicator
   align-items: stretch;
   overflow: hidden;
 
+  .filtersTitle {
+    padding-right: v.$space-sm;
+    .titleWord { white-space: normal; }
+  }
+
+  .filterRowGridTop {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  }
+  .filterRow { min-width: 0; }
+  .filterContainer, .metricFilterContainer, .buttonReset { flex-shrink: 0; }
+  .metricPresetButtons { flex-wrap: wrap; flex-shrink: 1; max-width: 100%; }
+  .skaterGoalieRow { flex-wrap: wrap; }
+  .skaterMetricsColumn, .goalieMetricsColumn { flex-basis: 200px; }
+  .skaterSubGroupsRow, .goalieSubGroupsRow { flex-wrap: wrap; }
+  .metricGroup { flex-basis: 110px; }
+
   > .filters {
     flex: 0 0 var(--bpa-filters-width);
     width: var(--bpa-filters-width);

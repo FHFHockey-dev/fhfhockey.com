@@ -20,8 +20,18 @@ export function formatRank(value: number | null) {
 }
 
 export function formatSampleConfidence(value: string | null | undefined) {
-  if (!value) return "Unknown";
-  return `${value.slice(0, 1).toUpperCase()}${value.slice(1)}`;
+  if (value === "high") return "At least twice selected minimums";
+  if (value === "medium") return "Meets selected minimums";
+  if (value === "low") return "Below selected minimums or sample unavailable";
+  return "Sample unavailable";
+}
+
+export function formatSampleMinimums(
+  sample: Pick<ContextualRankingApiRow["sample"], "gamesPlayed" | "toiSeconds" | "minimumSampleMet">,
+) {
+  if (sample.gamesPlayed == null || sample.toiSeconds == null ||
+    !Number.isFinite(sample.gamesPlayed) || !Number.isFinite(sample.toiSeconds)) return "Sample unavailable";
+  return sample.minimumSampleMet ? "Meets selected minimums" : "Below selected minimums";
 }
 
 export function formatDeploymentLabel(
@@ -60,7 +70,7 @@ export function buildRankingExplanationItems(args: {
   if (!row.sample.minimumSampleMet) {
     items.push("Sample caveat: minimum GP or TOI was not met before ranking.");
   } else if (row.sample.confidence === "low") {
-    items.push("Sample caveat: qualified but still low-confidence for this window.");
+    items.push("Sample caveat: the sample tier is low relative to selected minimums; it does not measure forecast reliability.");
   }
 
   if (row.warnings.includes("small_peer_group")) {

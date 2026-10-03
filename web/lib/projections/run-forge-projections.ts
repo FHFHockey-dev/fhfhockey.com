@@ -357,6 +357,7 @@ export {
   computeSkaterRoleStabilityMultiplier,
   computeTeammateAssistCoupling,
   constrainSkaterIdsToActiveRoster,
+  selectLineCombinationFallback,
   filterActiveSkaterCandidateIds,
   mergeSkaterCandidatePoolForRecovery,
   normalizeWgoToiToSeconds,
@@ -376,12 +377,13 @@ export {
 } from "./calculators/team-context-adjustments";
 
 export { buildSequentialHorizonScalarsFromDates } from "./utils/date-utils";
-import { captureProjectionInputs, replayProjectionInputs, projectionInputHash } from "./inputCapture";
-import { saveForgeInputSnapshot, publishForgeGameRevisions, projectionWritesHash, capturedGoalieStarts, type ForgeInputSnapshot } from "./gameRevisions";
+import { captureProjectionInputs, replayProjectionInputs, projectionInputHash, capturedReadReceipt } from "./inputCapture";
+import { saveForgeInputSnapshot, publishForgeGameRevisions, projectionWritesHash, capturedGoalieStarts, capturedIssuedTargets, type ForgeInputSnapshot } from "./gameRevisions";
+import { captureForgeIssuedContexts, forgeIssuedContextsFingerprint, type ForgeIssuedContextV1 } from "./issuedContext";
 import { applyDailyBoardEvidence } from "./dailyBoardEvidence";
 import { starterBoardFlags, starterBoardScopeAllowed } from "./starterBoardFlags";
 
-const projectionModelEnvironment = () => Object.fromEntries([
+export const projectionModelEnvironment = () => Object.fromEntries([
   "FORGE_SKATER_MODEL_MODE", "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION", "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION",
   "NHL_XG_TEAM_AGGREGATE_WINDOW_GAMES", "NHL_XG_MODEL_VERSION",
   "START_CHART_GAME_REVISIONS", "STARTER_BOARD_COMPUTE_ENABLED", "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED",
@@ -401,20 +403,70 @@ export async function runProjectionV2ForDate(
   // Existing full-slate FORGE jobs retain their legacy outputs and captured inputs,
   // but only explicitly scoped canary runs may publish new Starter Board revisions.
   const compute = computeEnabled && starterBoardScopeAllowed(opts?.gameIds);
+  if (compute && (opts?.gameIds?.length ?? 0) > 16) throw new Error("Issued FORGE run exceeds the 16-game context limit.");
+  const captureIssuedContext = compute && (opts?.horizonGames ?? 1) === 1 && Boolean(opts?.gameIds?.length);
   const seasonBootstrap = compute && !opts?.decisionAsOf && (opts?.horizonGames ?? 1) === 1
     && process.env.STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED === "true"
     && asOfDate >= new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(decisionAsOf));
   const codeVersion = process.env.FORGE_CODE_VERSION ?? process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GIT_SHA;
   if (captureEnabled && !codeVersion) throw new Error("Captured FORGE runs require an immutable FORGE_CODE_VERSION or deployment commit SHA.");
-  const reservation = compute ? await (supabase as any).rpc("begin_forge_game_run", {
+  const verifyExecution = (checkpoint: Parameters<NonNullable<RunProjectionOptions["executionGuard"]>["verify"]>[0]) => {
+    if (!opts?.executionGuard) return;
+    opts.executionGuard.verify(checkpoint);
+    if (codeVersion !== opts.executionGuard.codeVersion || process.env.FORGE_CODE_VERSION !== codeVersion) {
+      throw new Error("Local FORGE execution code version changed.");
+    }
+  };
+  verifyExecution({ phase: "before_run" });
+  if (opts?.issuedContextGuard && !captureIssuedContext) throw new Error("Calendar intent requires captured single-game scope.");
+  if (opts?.localAttempt && (!captureIssuedContext || opts.gameIds?.length !== 1 || opts.boardLease)) {
+    throw new Error("Local FORGE attempts require captured single-game scope without a queue lease.");
+  }
+  const reservation = opts?.localAttempt ? await (supabase as any).rpc("begin_forge_local_run", {
+    p_operation_id: opts.localAttempt.operationId, p_date: asOfDate, p_game_id: opts.gameIds![0],
+    p_code_version: codeVersion, p_expected_revision_id: opts.localAttempt.expectedRevisionId,
+    p_lease_ms: opts.localAttempt.leaseMs,
+  }) : compute ? await (supabase as any).rpc("begin_forge_game_run", {
     p_date: asOfDate, p_game_ids: opts?.gameIds ?? [], p_code_version: codeVersion,
     p_owner: opts?.boardLease?.owner ?? null, p_version: opts?.boardLease?.version ?? null,
   }) : null;
   if (reservation?.error) throw reservation.error;
-  const runId: string = reservation?.data ?? await createRun(asOfDate);
+  const localReceipt = opts?.localAttempt ? reservation?.data : null;
+  if (opts?.localAttempt && (!localReceipt || localReceipt.version !== "forge-local-attempt-v1"
+    || localReceipt.operationId !== opts.localAttempt.operationId || localReceipt.slateDate !== asOfDate
+    || localReceipt.gameId !== opts.gameIds![0] || localReceipt.codeVersion !== codeVersion
+    || localReceipt.expectedRevisionId !== opts.localAttempt.expectedRevisionId
+    || localReceipt.leaseMs !== opts.localAttempt.leaseMs || typeof localReceipt.runId !== "string"
+    || !Number.isFinite(Date.parse(localReceipt.reservedAt)) || !Number.isFinite(Date.parse(localReceipt.leaseExpiresAt)))) {
+    throw new Error("Local FORGE reservation receipt does not match the immutable intent.");
+  }
+  const runId: string = localReceipt?.runId ?? reservation?.data ?? await createRun(asOfDate);
+  if (localReceipt && (localReceipt.reservation !== "new" || localReceipt.state !== "active")) {
+    // Never rerun or finalize an existing attempt after a lost response/restart.
+    verifyExecution({ phase: "reserved", runId });
+    throw new Error("Local FORGE attempt already exists; reconcile its immutable evidence without recomputing.");
+  }
   if (!captureEnabled) return runProjectionCalculations(asOfDate, { ...opts, decisionAsOf }, runId);
   try {
-    const capture = await captureProjectionInputs(() => runProjectionCalculations(asOfDate, { ...opts, decisionAsOf, seasonBootstrap }, runId), { deadlineMs: opts?.deadlineMs });
+    verifyExecution({ phase: "reserved", runId });
+    let issuedContexts: ForgeIssuedContextV1[] | undefined;
+    const capture = await captureProjectionInputs(async () => {
+      const before = captureIssuedContext ? await captureForgeIssuedContexts(asOfDate, opts!.gameIds!) : undefined;
+      if (opts?.issuedContextGuard) {
+        if (!before) throw new Error("Calendar intent requires captured issued context.");
+        opts.issuedContextGuard(before);
+      }
+      const result = await runProjectionCalculations(asOfDate, { ...opts, decisionAsOf, seasonBootstrap }, runId);
+      if (before && !result.timedOut) {
+        const after = await captureForgeIssuedContexts(asOfDate, opts!.gameIds!);
+        opts?.issuedContextGuard?.(after);
+        if (forgeIssuedContextsFingerprint(before) !== forgeIssuedContextsFingerprint(after)) {
+          throw new Error("Issued FORGE schedule or roster context changed during calculation.");
+        }
+        issuedContexts = after;
+      }
+      return result;
+    }, { deadlineMs: opts?.deadlineMs });
     if (capture.result.timedOut) return capture.result;
     const snapshot: ForgeInputSnapshot = {
       version: "forge-inputs-v1", runId, slateDate: asOfDate,
@@ -425,7 +477,8 @@ export async function runProjectionV2ForDate(
       modelMode: resolveSkaterRolloutConfig().mode,
       modelEnvironment: projectionModelEnvironment(),
       seasonBootstrapApplied: seasonBootstrap,
-      inputProvenance: buildForgeInputProvenance(),
+      inputProvenance: { ...buildForgeInputProvenance(), capturedReads: capturedReadReceipt(capture.reads),
+        ...(issuedContexts ? { issuedContexts, issuedTargets: capturedIssuedTargets(issuedContexts, capture.writes) } : {}) },
       dailyBoardEvidence: capture.writes.filter((ops) => ops[0]?.args[0] === "forge_runs")
         .map((ops) => (ops.find((op) => op.method === "update")?.args[0] as any)?.metrics?.daily_board_evidence)
         .find(Boolean) ?? { assertions: [], conflicts: [] },
@@ -439,9 +492,13 @@ export async function runProjectionV2ForDate(
       goalieStarts: capturedGoalieStarts(capture.reads, capture.writes),
       outputHash: projectionWritesHash(capture.writes),
     };
+    verifyExecution({ phase: "before_snapshot", runId });
     const inputSnapshotId = await saveForgeInputSnapshot(snapshot);
-    const publishedGames = compute && snapshot.horizonGames === 1 && snapshot.replayClassification === "captured_live"
-      ? await publishForgeGameRevisions(runId, inputSnapshotId) : 0;
+    let publishedGames = 0;
+    if (compute && snapshot.horizonGames === 1 && snapshot.replayClassification === "captured_live") {
+      verifyExecution({ phase: "before_publish", runId, inputSnapshotId });
+      publishedGames = await publishForgeGameRevisions(runId, inputSnapshotId);
+    }
     return { ...capture.result, inputSnapshotId, publishedGames };
   } catch (error) {
     await finalizeRun(runId, "failed", { error: getErrorMessage(error), publication_failed: true });
@@ -467,9 +524,15 @@ export async function captureForgeReconstruction(args: {
   const capture = await captureProjectionInputs(() => runProjectionCalculations(args.slateDate, {
     gameIds: [args.gameId], horizonGames: 1, decisionAsOf: args.inputCutoff, deadlineMs: args.deadlineMs,
   }, runId), { deadlineMs: args.deadlineMs, suppressWrites: true, controlledNewsReads: args.controlledNews ? {
-    player_forecast_lineup_snapshots: args.controlledNews.lineups ?? [],
-    player_forecast_goalie_start_observations: args.controlledNews.goalies ?? [],
-    player_forecast_observation_conflicts: args.controlledNews.conflicts ?? [],
+    player_forecast_lineup_snapshots: (args.controlledNews.lineups ?? []).map(row => ({ ...row, created_at: row.created_at ?? row.available_at })),
+    player_forecast_goalie_start_observations: (args.controlledNews.goalies ?? []).map(row => ({ ...row, created_at: row.created_at ?? row.available_at })),
+    player_forecast_observation_conflicts: (args.controlledNews.conflicts ?? []).map(row => ({ ...row, created_at: row.created_at ?? row.detected_at })),
+    player_forecast_lineup_assignments: (args.controlledNews.lineups ?? []).flatMap(row => row.player_forecast_lineup_assignments.map((child, index) => ({
+      ...child, id: `controlled:${row.id}:${index}`, snapshot_id: row.id, created_at: child.created_at ?? row.created_at ?? row.available_at,
+    }))),
+    player_forecast_conflict_resolutions: (args.controlledNews.conflicts ?? []).flatMap(row => row.player_forecast_conflict_resolutions.map((child, index) => ({
+      ...child, id: `controlled:${row.id}:${index}`, conflict_id: row.id, created_at: child.created_at ?? child.resolved_at,
+    }))),
   } : undefined });
   const snapshot: ForgeInputSnapshot = {
     version: "forge-inputs-v1", runId, slateDate: args.slateDate,
@@ -499,10 +562,22 @@ export async function replayForgeSnapshot(snapshot: ForgeInputSnapshot, expected
     || (!("STARTER_BOARD_COMPUTE_ENABLED" in snapshot.modelEnvironment) && !starterBoardFlags().compute))) {
     throw new Error("FORGE replay environment mismatch; restore the captured non-secret model configuration.");
   }
-  const replay = await replayProjectionInputs(snapshot.reads, () => runProjectionCalculations(snapshot.slateDate, {
-    decisionAsOf: snapshot.inputCutoff, horizonGames: snapshot.horizonGames, gameIds: snapshot.gameIds,
-    seasonBootstrap: snapshot.seasonBootstrapApplied === true,
-  }, snapshot.runId));
+  const expectedContexts = snapshot.inputProvenance?.issuedContexts;
+  const replay = await replayProjectionInputs(snapshot.reads, async () => {
+    const before = expectedContexts ? await captureForgeIssuedContexts(snapshot.slateDate, snapshot.gameIds) : undefined;
+    const result = await runProjectionCalculations(snapshot.slateDate, {
+      decisionAsOf: snapshot.inputCutoff, horizonGames: snapshot.horizonGames, gameIds: snapshot.gameIds,
+      seasonBootstrap: snapshot.seasonBootstrapApplied === true,
+    }, snapshot.runId);
+    if (before) {
+      const after = await captureForgeIssuedContexts(snapshot.slateDate, snapshot.gameIds);
+      if (forgeIssuedContextsFingerprint(before) !== forgeIssuedContextsFingerprint(after)
+        || forgeIssuedContextsFingerprint(after) !== forgeIssuedContextsFingerprint(expectedContexts!)) {
+        throw new Error("FORGE issued context replay mismatch.");
+      }
+    }
+    return result;
+  });
   const outputHash = projectionWritesHash(replay.writes);
   if (outputHash !== snapshot.outputHash) throw new Error("FORGE replay output mismatch; use the captured code/model version.");
   return { runId: snapshot.runId, outputHash, matched: true };

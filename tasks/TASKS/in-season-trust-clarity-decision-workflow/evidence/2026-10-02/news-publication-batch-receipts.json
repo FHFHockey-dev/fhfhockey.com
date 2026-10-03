@@ -1,0 +1,212 @@
+{
+  "capturedOn": "2026-10-02",
+  "project": "fyhftlxokyjtpndbkfse",
+  "deploymentAttribution": {
+    "method": "Read-only Vercel runtime-log attempts, deployment listing and deployment metadata; project/team IDs grounded in existing .vercel/project.json.",
+    "projectId": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+    "teamId": "team_KVFicHhQJARTbO6wRD2x6jpq",
+    "runtimeLogChecks": [
+      {
+        "since": "2026-09-29T16:59:00Z",
+        "until": "2026-09-29T17:04:00Z",
+        "query": "/api/v1/db/auto-news-feed-items",
+        "groupBy": "deploymentId",
+        "result": "Aggregate query failed: 400 Bad Request"
+      },
+      {
+        "since": "2026-09-29T18:29:00Z",
+        "until": "2026-09-29T18:33:00Z",
+        "query": "/api/v1/db/auto-news-feed-items",
+        "groupBy": "deploymentId",
+        "result": "Aggregate query failed: 400 Bad Request"
+      },
+      {
+        "since": "2026-09-29T16:59:00Z",
+        "until": "2026-09-29T17:04:00Z",
+        "query": "/api/v1/db/auto-news-feed-items",
+        "limit": 5,
+        "result": "Runtime log query failed at page 0: 400 Bad Request",
+        "errorName": "ExceedsBillingLimitError",
+        "interpretation": "Request failed before results; not an empty log set or proof of retention expiry"
+      }
+    ],
+    "deploymentListPage": {
+      "since": "2026-09-27T00:00:00Z",
+      "until": "2026-09-29T18:33:00Z",
+      "returnedDeployments": 13,
+      "paginationNext": 1790506114770,
+      "exhaustive": false
+    },
+    "candidate": {
+      "id": "dpl_A37gcG8z62Ef8dSy6MV87KfwWZiJ",
+      "url": "fhfhockey-5qhxza66r-fhfhockeydevs-projects.vercel.app",
+      "createdAt": 1790525466485,
+      "ready": 1790525641574,
+      "readyState": "READY",
+      "target": "production",
+      "alias": [
+        "fhfhockey.com",
+        "fhfhockey.vercel.app",
+        "www.fhfhockey.com",
+        "fhfhockey-fhfhockeydevs-projects.vercel.app",
+        "fhfhockey-git-master-fhfhockeydevs-projects.vercel.app"
+      ],
+      "gitSha": "73af9d051ecc755dd3695f5265bf5837bbfc7a4e",
+      "gitBranch": "master",
+      "createdAtUtc": "2026-09-27T16:11:06.485Z",
+      "readyAtUtc": "2026-09-27T16:14:01.574Z",
+      "role": "Observed production deployment candidate; request-to-deployment identity not established"
+    },
+    "limitations": [
+      "Current alias metadata and creation/readiness dates do not prove which deployment served either September 29 batch. Promotion, rollback and routing history were not retrieved.",
+      "The available stored database audit fields contain no deployment ID.",
+      "No failed log query was repeated unchanged; the ungrouped fallback revealed the billing-limit error.",
+      "No billing/plan/configuration change, secret read, log-drain change, deployment or writer invocation was attempted."
+    ]
+  },
+  "method": "Read-only bounded September 29 cron_job_audit SELECTs; scalar substring extraction from truncated stored response strings; no API invocation.",
+  "queries": {
+    "news-window-id-search": "SELECT job_name, count(*) AS receipt_count, min(run_time) AS first_run, max(run_time) AS last_run, bool_or(position('cac51da7-3f50-4109-b7b4-3ad80538f07f' in COALESCE(details->>'response','')) > 0) AS barzal_item_referenced, bool_or(position('4795b0c8-d119-4977-9b77-45e040224e25' in COALESCE(details->>'response','')) > 0) AS soucy_item_referenced, bool_or(position('2104976276528542197' in COALESCE(details->>'response','')) > 0) AS barzal_relay_referenced, bool_or(position('2104996083462271476' in COALESCE(details->>'response','')) > 0) AS soucy_relay_referenced FROM public.cron_job_audit WHERE (run_time >= '2026-09-29T16:58:00Z' AND run_time < '2026-09-29T17:05:00Z') OR (run_time >= '2026-09-29T18:28:00Z' AND run_time < '2026-09-29T18:35:00Z') GROUP BY job_name ORDER BY job_name LIMIT 30;",
+    "news-publisher-response-literals": "SELECT job_name, run_time, status, rows_affected, length(details->>'response') AS response_chars, position('\"success\":true' in COALESCE(details->>'response','')) > 0 AS response_success_literal, substring(details->>'response' FROM '\"dryRun\":(true|false)') AS dry_run_literal, substring(details->>'response' FROM '\"rowsLoaded\":([0-9]+)') AS rows_loaded_literal, substring(details->>'response' FROM '\"insertedCount\":([0-9]+)') AS inserted_count_literal, substring(details->>'response' FROM '\"updatedCount\":([0-9]+)') AS updated_count_literal, substring(details->>'response' FROM '\"publishedCount\":([0-9]+)') AS published_count_literal, substring(details->>'response' FROM '\"assignmentsSynced\":([0-9]+)') AS assignments_synced_literal FROM public.cron_job_audit WHERE job_name='/api/v1/db/auto-news-feed-items' AND ((run_time >= '2026-09-29T16:58:00Z' AND run_time < '2026-09-29T17:05:00Z') OR (run_time >= '2026-09-29T18:28:00Z' AND run_time < '2026-09-29T18:35:00Z')) ORDER BY run_time LIMIT 10;",
+    "news-publisher-timing": "SELECT job_name, run_time, details->>'durationMs' AS duration_ms, details->'timing' AS timing, substring(details->>'response' FROM '\"inference\":\\{\"enabled\":(true|false)') AS inference_enabled_literal, substring(details->>'response' FROM '\"model\":\"([^\"]+)\"') AS inference_model_literal, substring(details->>'response' FROM '\"promptVersion\":\"([^\"]+)\"') AS inference_prompt_version_literal FROM public.cron_job_audit WHERE job_name='/api/v1/db/auto-news-feed-items' AND ((run_time >= '2026-09-29T16:58:00Z' AND run_time < '2026-09-29T17:05:00Z') OR (run_time >= '2026-09-29T18:28:00Z' AND run_time < '2026-09-29T18:35:00Z')) ORDER BY run_time LIMIT 10;"
+  },
+  "publicationMatches": [
+    {
+      "itemId": "cac51da7-3f50-4109-b7b4-3ad80538f07f",
+      "sourceTweetId": "2104976276528542197",
+      "capturedPublishedAt": "2026-09-29T17:00:11.412Z",
+      "batchStartedAt": "2026-09-29T17:00:11.412Z",
+      "exactTimestampMatch": true
+    },
+    {
+      "itemId": "4795b0c8-d119-4977-9b77-45e040224e25",
+      "sourceTweetId": "2104996083462271476",
+      "capturedPublishedAt": "2026-09-29T18:30:11.336Z",
+      "batchStartedAt": "2026-09-29T18:30:11.336Z",
+      "exactTimestampMatch": true
+    }
+  ],
+  "batchAudits": [
+    {
+      "job_name": "/api/v1/db/auto-news-feed-items",
+      "run_time": "2026-09-29 17:03:01.836906+00",
+      "status": "success",
+      "rows_affected": null,
+      "response_chars": 4000,
+      "response_success_literal": true,
+      "dry_run_literal": "false",
+      "rows_loaded_literal": "300",
+      "inserted_count_literal": "7",
+      "updated_count_literal": "249",
+      "published_count_literal": "2",
+      "assignments_synced_literal": "5",
+      "duration_ms": "170403",
+      "timing": {
+        "timer": "02:50",
+        "source": "audit",
+        "endedAt": "2026-09-29T17:03:01.815Z",
+        "startedAt": "2026-09-29T17:00:11.412Z",
+        "durationMs": 170403
+      },
+      "inference_enabled_literal": "false",
+      "inference_model_literal": "openai/gpt-5.4-mini",
+      "inference_prompt_version_literal": "2026-09-18.1",
+      "responseFullyParseable": false
+    },
+    {
+      "job_name": "/api/v1/db/auto-news-feed-items",
+      "run_time": "2026-09-29 18:32:15.581875+00",
+      "status": "success",
+      "rows_affected": null,
+      "response_chars": 4000,
+      "response_success_literal": true,
+      "dry_run_literal": "false",
+      "rows_loaded_literal": "300",
+      "inserted_count_literal": "10",
+      "updated_count_literal": "254",
+      "published_count_literal": "5",
+      "assignments_synced_literal": "6",
+      "duration_ms": "124229",
+      "timing": {
+        "timer": "02:04",
+        "source": "audit",
+        "endedAt": "2026-09-29T18:32:15.565Z",
+        "startedAt": "2026-09-29T18:30:11.336Z",
+        "durationMs": 124229
+      },
+      "inference_enabled_literal": "false",
+      "inference_model_literal": "openai/gpt-5.4-mini",
+      "inference_prompt_version_literal": "2026-09-18.1",
+      "responseFullyParseable": false
+    }
+  ],
+  "boundedIdSearch": [
+    {
+      "job_name": "/api/v1/db/auto-news-feed-items",
+      "receipt_count": 2,
+      "first_run": "2026-09-29 17:03:01.836906+00",
+      "last_run": "2026-09-29 18:32:15.581875+00",
+      "barzal_item_referenced": false,
+      "soucy_item_referenced": false,
+      "barzal_relay_referenced": false,
+      "soucy_relay_referenced": false
+    },
+    {
+      "job_name": "/api/v1/db/cron/update-stats-cron",
+      "receipt_count": 1,
+      "first_run": "2026-09-29 17:00:03.708284+00",
+      "last_run": "2026-09-29 17:00:03.708284+00",
+      "barzal_item_referenced": false,
+      "soucy_item_referenced": false,
+      "barzal_relay_referenced": false,
+      "soucy_relay_referenced": false
+    },
+    {
+      "job_name": "/api/v1/db/update-line-combinations",
+      "receipt_count": 1,
+      "first_run": "2026-09-29 17:00:03.142465+00",
+      "last_run": "2026-09-29 17:00:03.142465+00",
+      "barzal_item_referenced": false,
+      "soucy_item_referenced": false,
+      "barzal_relay_referenced": false,
+      "soucy_relay_referenced": false
+    },
+    {
+      "job_name": "/api/v1/db/update-line-sources",
+      "receipt_count": 47,
+      "first_run": "2026-09-29 16:58:10.198918+00",
+      "last_run": "2026-09-29 18:34:10.556469+00",
+      "barzal_item_referenced": false,
+      "soucy_item_referenced": false,
+      "barzal_relay_referenced": false,
+      "soucy_relay_referenced": false
+    },
+    {
+      "job_name": "/api/v1/db/update-lines-ccc",
+      "receipt_count": 14,
+      "first_run": "2026-09-29 16:58:10.190865+00",
+      "last_run": "2026-09-29 18:34:10.219679+00",
+      "barzal_item_referenced": false,
+      "soucy_item_referenced": false,
+      "barzal_relay_referenced": false,
+      "soucy_relay_referenced": false
+    }
+  ],
+  "source": {
+    "writer": "web/pages/api/v1/db/auto-news-feed-items.ts",
+    "audit": "web/lib/cron/withCronJobAudit.ts",
+    "responseCapCharacters": 4000,
+    "publicationBehavior": "Current source retains an existing published_at or stores candidate.publishedAt; invocation nowIso is captured once. Current source is not proof of the September 29 deployed version."
+  },
+  "limitations": [
+    "Initial broad discovery was limited to 40 records and stopped before the second publication window; the recorded grouped exact-ID query covers both separate seven-minute windows without this limitation.",
+    "Exact item and relay tweet IDs were not present in the inspected retained responses. Those responses may omit later samples because they are truncated.",
+    "Scalar fields are regex captures from stored JSON text, not a complete parsed response. Null captures mean unavailable, not false or zero.",
+    "Batch inserted/updated/published/assignment counters do not identify which exact items changed; publishedCount is not proof of that many newly published items.",
+    "Exact timestamp equality supports identifying candidate publisher batches, but is not an explicit item-to-run foreign key, original output replay or immutable source revision.",
+    "The configured model label is not evidence of model use; the captured inference.enabled literal is false.",
+    "The prompt version is not a code commit, deployment ID, full effective configuration manifest or current processor parity receipt.",
+    "Stored audits and the current database item captures are not certified immutable.",
+    "No News acceptance gate or paused upstream classification task was closed; no writer, cron trigger or production change ran."
+  ]
+}

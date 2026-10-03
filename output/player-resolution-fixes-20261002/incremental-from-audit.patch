@@ -1,0 +1,585 @@
+diff --git a/web/pages/db/player-aliases.tsx b/web/pages/db/player-aliases.tsx
+--- a/web/pages/db/player-aliases.tsx
++++ b/web/pages/db/player-aliases.tsx
+@@ -1,4 +1,4 @@
+-import { useEffect, useMemo, useState } from "react";
++import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+ import type { NextPage } from "next";
+ import Head from "next/head";
+ 
+@@ -184,8 +184,38 @@
+   const [alias, setAlias] = useState("");
+   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+   const [isLoading, setIsLoading] = useState(true);
+-
+-  async function loadData() {
++  const [isSaving, setIsSaving] = useState(false);
++  const [needsRefresh, setNeedsRefresh] = useState(false);
++  const [completedNames, setCompletedNames] = useState<UnresolvedName[]>([]);
++  const mounted = useRef(false);
++  const loadRequest = useRef(0);
++  const lookupRequest = useRef(0);
++  const draftVersion = useRef(0);
++  const selectedId = useRef("");
++  const saveInFlight = useRef(false);
++  const savedReview = useRef<{ name: UnresolvedName; status: "resolved" | "ignored"; draftVersion: number } | null>(null);
++
++  const cancelLookup = useCallback(() => {
++    lookupRequest.current += 1;
++    setLookupBusy(false);
++  }, []);
++
++  const selectReviewItem = useCallback((name: UnresolvedName | undefined) => {
++    draftVersion.current += 1;
++    selectedId.current = name?.id ?? "";
++    setSelectedUnresolvedId(selectedId.current);
++    setAlias(name?.raw_name ?? "");
++    setSelectedPlayerId("");
++    setSplitPlayerIds(["", ""]);
++    setMembershipSourceUrl("");
++    setPlayerSearch("");
++    cancelLookup();
++    setLookup(null);
++  }, [cancelLookup]);
++
++  const loadData = useCallback(async (isRetry = false) => {
++    const request = ++loadRequest.current;
++    const resetVersion = savedReview.current?.draftVersion ?? draftVersion.current;
+     setIsLoading(true);
+     const params = new URLSearchParams(window.location.search);
+     const unresolvedId = params.get("unresolvedId");
+@@ -196,34 +226,61 @@
+     });
+     const queryString = query.toString();
+     const endpoint = `/api/v1/db/player-name-aliases${queryString ? `?${queryString}` : ""}`;
+-    const payload = await fetchWithOptionalAuth(endpoint);
+-    setUnresolvedNames(payload.unresolvedNames);
+-    setPlayers(payload.players);
+-    setUnlinkedProspects(payload.unlinkedProspects ?? []);
+-    setLookup(null);
+-    setMembershipReviewEnabled(payload.membershipReviewEnabled ?? false);
+-    setMembershipSourceUrl("");
+-    const first = payload.unresolvedNames.find((name) => name.status === "pending") ?? payload.unresolvedNames[0];
+-    setSelectedUnresolvedId(first?.id ?? "");
+-    setAlias(first?.raw_name ?? "");
+-    setSelectedPlayerId("");
+-    setSplitPlayerIds(["", ""]);
+-    setIsLoading(false);
+-  }
++    try {
++      const payload = await fetchWithOptionalAuth(endpoint);
++      if (!mounted.current || request !== loadRequest.current) return;
++      const pending = payload.unresolvedNames.filter((name) => name.status === "pending");
++      const saved = savedReview.current;
++      if (saved && !pending.some((name) => name.id === saved.name.id)) {
++        setCompletedNames((previous) => [
++          ...previous.filter((name) => name.id !== saved.name.id),
++          { ...saved.name, status: saved.status },
++        ]);
++      }
++      savedReview.current = null;
++      setNeedsRefresh(false);
++      if (isRetry) setStatusMessage("Queue refreshed.");
++      setUnresolvedNames(payload.unresolvedNames);
++      setPlayers(payload.players);
++      setUnlinkedProspects(payload.unlinkedProspects ?? []);
++      setMembershipReviewEnabled(payload.membershipReviewEnabled ?? false);
++      if (draftVersion.current === resetVersion || !pending.some((name) => name.id === selectedId.current)) {
++        selectReviewItem(pending[0]);
++      }
++    } catch (error) {
++      if (mounted.current && request === loadRequest.current) {
++        setNeedsRefresh(true);
++        setStatusMessage(savedReview.current
++          ? `Saved. Queue refresh failed: ${error instanceof Error ? error.message : "Request failed."}`
++          : error instanceof Error ? error.message : "Request failed.");
++      }
++    } finally {
++      if (mounted.current && request === loadRequest.current) setIsLoading(false);
++    }
++  }, [selectReviewItem]);
+ 
+   useEffect(() => {
+-    void loadData().catch((error) => {
+-      setStatusMessage(error.message);
+-      setIsLoading(false);
+-    });
+-  }, []);
++    mounted.current = true;
++    void loadData();
++    return () => {
++      mounted.current = false;
++      loadRequest.current += 1;
++      lookupRequest.current += 1;
++    };
++  }, [loadData]);
+ 
+   const selectedUnresolved = unresolvedNames.find(
+     (name) => name.id === selectedUnresolvedId
+   );
+   const selectedReviewSlot = getReviewSlotLabel(selectedUnresolved?.metadata?.reason);
+   const pendingNames = unresolvedNames.filter((name) => name.status === "pending");
+-  const resolvedNames = unresolvedNames.filter((name) => name.status === "resolved");
++  const reviewedNames = [...completedNames, ...unresolvedNames.filter((name) => name.status !== "pending"
++    && !completedNames.some((completed) => completed.id === name.id))];
++  const resolvedNames = reviewedNames.filter((name) => name.status === "resolved");
++  const ignoredNames = reviewedNames.filter((name) => name.status === "ignored");
++  const mutationDisabled = isSaving || isLoading || needsRefresh || lookupBusy;
++  const splitParts = selectedUnresolved && /^[^-\s]+-[^-\s]+$/.test(selectedUnresolved.raw_name)
++    ? selectedUnresolved.raw_name.split("-") : [];
+   const filteredPlayers = useMemo(() => {
+     const search = playerSearch.trim().toLowerCase();
+     return players.filter((player) => !search || player.fullName.toLowerCase().includes(search) || String(player.id) === search)
+@@ -238,13 +295,17 @@
+   }
+ 
+   async function lookupNhlPlayer() {
++    if (isSaving || isLoading || needsRefresh) return;
++    const request = ++lookupRequest.current;
+     setLookupBusy(true);
+     setLookup(null);
++    setSelectedPlayerId("");
+     try {
+       const params = new URLSearchParams(window.location.search);
+       params.set("nhlId", playerSearch.trim());
+       params.set("unresolvedId", selectedUnresolvedId);
+       const payload = await fetchWithOptionalAuth(`/api/v1/db/player-name-aliases?${params}`);
++      if (!mounted.current || request !== lookupRequest.current) return;
+       if (!payload.lookup?.nhlId) throw new Error("No verified NHL player was found.");
+       setLookup(payload.lookup);
+       setPlayers((previous) => [...previous.filter((player) => player.id !== payload.lookup!.nhlId), {
+@@ -253,43 +314,47 @@
+       }]);
+       setSelectedPlayerId(String(payload.lookup.nhlId));
+       setStatusMessage("NHL identity verified. Review the player below, then save to import and resolve.");
+-    } catch (error) { setStatusMessage(error instanceof Error ? error.message : "NHL lookup failed."); }
+-    finally { setLookupBusy(false); }
++    } catch (error) {
++      if (mounted.current && request === lookupRequest.current) setStatusMessage(error instanceof Error ? error.message : "NHL lookup failed.");
++    } finally {
++      if (mounted.current && request === lookupRequest.current) setLookupBusy(false);
++    }
+   }
+ 
+-  async function resolveName() {
+-    if (!selectedUnresolved || !selectedPlayerId) return;
+-    const reviewToken = new URLSearchParams(window.location.search).get("reviewToken");
+-    const payload = await postWithOptionalAuth("/api/v1/db/player-name-aliases", {
+-      unresolvedId: selectedUnresolved.id,
++  async function saveReview(action: "resolve" | "ignore" | "split") {
++    if (!selectedUnresolved || selectedUnresolved.status !== "pending" || saveInFlight.current || mutationDisabled) return;
++    if (action === "resolve" && !selectedPlayerId) return;
++    if (action === "split" && (splitParts.length !== 2 || splitPlayerIds.some((id) => !id) || splitPlayerIds[0] === splitPlayerIds[1])) return;
++    const name = selectedUnresolved;
++    const version = draftVersion.current;
++    const details = action === "resolve" ? {
+       playerId: Number(selectedPlayerId),
+       importNhlIdentity: lookup?.nhlId === Number(selectedPlayerId),
+       membershipSourceUrl: membershipSourceUrl.trim() || undefined,
+-      alias: alias || selectedUnresolved.raw_name,
+-      ...(reviewToken ? { reviewToken } : {}),
+-    });
+-    setStatusMessage(payload.message ?? "Alias saved.");
+-    await loadData();
+-  }
+-
+-  async function ignoreName() {
+-    if (!selectedUnresolved) return;
++      alias: alias || name.raw_name,
++    } : action === "split" ? {
++      action,
++      parts: splitParts.map((part, index) => ({ alias: part, playerId: Number(splitPlayerIds[index]) })),
++    } : { action };
+     const reviewToken = new URLSearchParams(window.location.search).get("reviewToken");
+-    const payload = await postWithOptionalAuth("/api/v1/db/player-name-aliases", {
+-      unresolvedId: selectedUnresolved.id,
+-      action: "ignore",
+-      ...(reviewToken ? { reviewToken } : {}),
+-    });
+-    setStatusMessage(payload.message ?? "Name ignored.");
+-    await loadData();
+-  }
+-
+-  async function splitName() {
+-    if (!selectedUnresolved || splitPlayerIds.some((id) => !id)) return;
+-    const parts = selectedUnresolved.raw_name.split("-").map((part) => part.trim());
+-    const payload = await postWithOptionalAuth("/api/v1/db/player-name-aliases", { unresolvedId: selectedUnresolved.id, action: "split", parts: parts.map((part, index) => ({ alias: part, playerId: Number(splitPlayerIds[index]) })) });
+-    setStatusMessage(payload.message ?? "Name split and resolved.");
+-    await loadData();
++    saveInFlight.current = true;
++    setIsSaving(true);
++    cancelLookup();
++    try {
++      const payload = await postWithOptionalAuth("/api/v1/db/player-name-aliases", {
++        unresolvedId: name.id, ...details, ...(reviewToken ? { reviewToken } : {}),
++      });
++      if (!mounted.current) return;
++      savedReview.current = { name, status: action === "ignore" ? "ignored" : "resolved", draftVersion: version };
++      setNeedsRefresh(true);
++      setStatusMessage(payload.message ?? (action === "ignore" ? "Name ignored." : "Alias saved."));
++      await loadData();
++    } catch (error) {
++      if (mounted.current) setStatusMessage(error instanceof Error ? error.message : "Request failed.");
++    } finally {
++      saveInFlight.current = false;
++      if (mounted.current) setIsSaving(false);
++    }
+   }
+ 
+   return (
+@@ -310,7 +375,12 @@
+         </header>
+         {statusMessage ? <p className={styles.statusMessage} role="status">{statusMessage}</p> : null}
+         {isLoading ? <p className={styles.emptyState}>Loading...</p> : null}
+-        {!isLoading && unresolvedNames.length === 0 ? (
++        {needsRefresh && !isLoading ? <button className={styles.retryButton} disabled={isSaving} onClick={() => void loadData(true)}>Retry queue refresh</button> : null}
++        {reviewedNames.length ? <details className={styles.reviewHistory}>
++          <summary>{resolvedNames.length} resolved in this queue{ignoredNames.length ? ` · ${ignoredNames.length} ignored` : ""}</summary>
++          <ul>{reviewedNames.map((name) => <li key={name.id}>{name.raw_name} — {name.status}</li>)}</ul>
++        </details> : null}
++        {!isLoading && !needsRefresh && pendingNames.length === 0 ? (
+           <p className={styles.emptyState}>No matching unresolved player name was found.</p>
+         ) : null}
+         {selectedUnresolved ? (
+@@ -320,11 +390,10 @@
+                 <div><p className={styles.eyebrow}>Work queue</p><h2>{pendingNames.length} names to review</h2></div>
+               </div>
+               <ol className={styles.queueList}>
+-                {pendingNames.map((name) => <li key={name.id} className={name.id === selectedUnresolvedId ? styles.current : undefined}><button type="button" onClick={() => { setSelectedUnresolvedId(name.id); setAlias(name.raw_name); setSelectedPlayerId(""); setSplitPlayerIds(["", ""]); setMembershipSourceUrl(""); }}>{name.raw_name}{name.team_abbreviation ? <span>{name.team_abbreviation}</span> : null}</button></li>)}
++                {pendingNames.map((name) => <li key={name.id} className={name.id === selectedUnresolvedId ? styles.current : undefined}><button type="button" onClick={() => selectReviewItem(name)}>{name.raw_name}{name.team_abbreviation ? <span>{name.team_abbreviation}</span> : null}</button></li>)}
+               </ol>
+-              {resolvedNames.length ? <p className={styles.resolvedSummary}>✓ {resolvedNames.length} resolved in this queue</p> : null}
+             </aside>
+-            <div className={styles.reviewPanel}>
++            <div className={styles.reviewPanel} aria-busy={isSaving || isLoading}>
+             {selectedUnresolved.status !== "pending" ? (
+               <p className={styles.resolvedNotice}>✓ This name is already {selectedUnresolved.status}. Select a pending name from the queue to continue.</p>
+             ) : null}
+@@ -334,10 +403,7 @@
+                 value={selectedUnresolvedId}
+                 onChange={(event) => {
+                   const next = unresolvedNames.find((name) => name.id === event.target.value);
+-                  setSelectedUnresolvedId(event.target.value);
+-                  setAlias(next?.raw_name ?? "");
+-                  setSelectedPlayerId(""); setSplitPlayerIds(["", ""]);
+-                  setMembershipSourceUrl("");
++                  selectReviewItem(next);
+                 }}
+               >
+                 {unresolvedNames.map((name) => (
+@@ -352,15 +418,15 @@
+               Alias to save
+               <input
+                 value={alias}
+-                onChange={(event) => setAlias(event.target.value)}
++                onChange={(event) => { draftVersion.current += 1; setAlias(event.target.value); }}
+               />
+             </label>
+ 
+             <label className={styles.field}>
+               Search all players by name or NHL ID
+-              <input value={playerSearch} onChange={(event) => setPlayerSearch(event.target.value)} />
++              <input value={playerSearch} onChange={(event) => { draftVersion.current += 1; cancelLookup(); setPlayerSearch(event.target.value); }} />
+             </label>
+-            {membershipReviewEnabled && <button disabled={lookupBusy || !/^\d{7}$/.test(playerSearch.trim())} onClick={() => void lookupNhlPlayer()}>
++            {membershipReviewEnabled && <button disabled={lookupBusy || isSaving || isLoading || needsRefresh || !/^\d{7}$/.test(playerSearch.trim())} onClick={() => void lookupNhlPlayer()}>
+               {lookupBusy ? "Checking NHL…" : "Look up NHL ID"}
+             </button>}
+             {lookup && <p>{lookup.fullName} · NHL {lookup.nhlId} · <a href={lookup.sourceUrl} target="_blank" rel="noreferrer">Verified NHL profile</a>.
+@@ -377,7 +443,7 @@
+               <select
+                 aria-label="Match player"
+                 value={selectedPlayerId}
+-                onChange={(event) => setSelectedPlayerId(event.target.value)}
++                onChange={(event) => { draftVersion.current += 1; cancelLookup(); setSelectedPlayerId(event.target.value); }}
+               >
+                 <option value="">Choose a player...</option>
+                 {playerOptionsFor(selectedPlayerId).map((player) => (
+@@ -388,34 +454,34 @@
+               </select>
+             </label>
+ 
+-            {membershipReviewEnabled && <label>
++            {membershipReviewEnabled && <label className={styles.field}>
+               Verified NHL camp roster URL (optional)
+-              <input type="url" value={membershipSourceUrl} onChange={(event) => setMembershipSourceUrl(event.target.value)} />
++              <input type="url" value={membershipSourceUrl} onChange={(event) => { draftVersion.current += 1; setMembershipSourceUrl(event.target.value); }} />
+               <span>Supply an NHL.com source only after verifying this player belongs to the reported team’s camp. Saving records camp membership for 30 days and preserves historical rosters.</span>
+             </label>}
+ 
+-            <div style={{ display: "flex", gap: 12 }}>
++            <div className={styles.actions}>
+               <button
+-                disabled={selectedUnresolved.status !== "pending" || !selectedPlayerId}
+-                onClick={() => void resolveName().catch((error) => setStatusMessage(error.message))}
++                disabled={mutationDisabled || selectedUnresolved.status !== "pending" || !selectedPlayerId}
++                onClick={() => void saveReview("resolve")}
+               >
+                 {lookup?.nhlId === Number(selectedPlayerId) ? "Import NHL player and save alias" : membershipSourceUrl.trim() ? "Save alias and camp membership" : "Save alias"}
+               </button>
+               <button
+-                disabled={selectedUnresolved.status !== "pending"}
+-                onClick={() => void ignoreName()}
++                disabled={mutationDisabled || selectedUnresolved.status !== "pending"}
++                onClick={() => void saveReview("ignore")}
+               >
+                 Ignore
+               </button>
+             </div>
+-            {selectedUnresolved.status === "pending" && /^\S+-\S+$/.test(selectedUnresolved.raw_name) ? (
++            {selectedUnresolved.status === "pending" && splitParts.length === 2 ? (
+               <div className={styles.splitPanel}>
+                 <strong>Is this two players?</strong>
+                 <p>Choose one player for each side of the hyphen. A split saves both aliases separately.</p>
+                 <div className={styles.splitGrid}>
+-                  {selectedUnresolved.raw_name.split("-").map((part, index) => <label className={styles.field} key={part}><span>{part.trim()}</span><select value={splitPlayerIds[index]} onChange={(event) => setSplitPlayerIds((previous) => { const next = [...previous] as [string, string]; next[index] = event.target.value; return next; })}><option value="">Choose player…</option>{playerOptionsFor(splitPlayerIds[index] ?? "").map((player) => <option key={player.id} value={player.id}>{player.fullName} · {player.id}</option>)}</select></label>)}
++                  {splitParts.map((part, index) => <label className={styles.field} key={index}><span>{part}</span><select value={splitPlayerIds[index]} onChange={(event) => { draftVersion.current += 1; cancelLookup(); setSplitPlayerIds((previous) => { const next = [...previous] as [string, string]; next[index] = event.target.value; return next; }); }}><option value="">Choose player…</option>{playerOptionsFor(splitPlayerIds[index] ?? "").map((player) => <option key={player.id} value={player.id}>{player.fullName} · {player.id}</option>)}</select></label>)}
+                 </div>
+-                <button type="button" disabled={splitPlayerIds.some((id) => !id)} onClick={() => void splitName().catch((error) => setStatusMessage(error.message))}>Save as two players</button>
++                <button type="button" disabled={mutationDisabled || splitPlayerIds.some((id) => !id) || splitPlayerIds[0] === splitPlayerIds[1]} onClick={() => void saveReview("split")}>Save as two players</button>
+               </div>
+             ) : null}
+ 
+diff --git a/web/pages/db/player-aliases.module.scss b/web/pages/db/player-aliases.module.scss
+--- a/web/pages/db/player-aliases.module.scss
++++ b/web/pages/db/player-aliases.module.scss
+@@ -10,7 +10,7 @@
+ .queueCount strong { color: v.$color-white; font-family: v.$font-family-numbers; font-size: 2rem; }
+ .statusMessage, .resolvedNotice { padding: 12px 16px; border-radius: v.$radius-control; background: rgba(v.$primary-color, .1); border: 1px solid rgba(v.$primary-color, .35); color: v.$text-primary; }
+ .layout { display: grid; grid-template-columns: minmax(220px, .8fr) minmax(0, 2fr); gap: v.$space-lg; margin-top: v.$space-lg; align-items: start; }
+-.queuePanel, .reviewPanel, .context { @include panel.panel-shell($padding: v.$space-lg, $variant: standard); }
++.queuePanel, .reviewPanel, .context { @include panel.panel-shell($padding: v.$space-lg, $variant: standard); min-width: 0; }
+ .panelHeader { padding-bottom: v.$space-md; border-bottom: v.$border-subtle; }
+ .queueList { display: grid; gap: 6px; margin: v.$space-md 0; padding: 0; list-style: none; max-height: 520px; overflow: auto; }
+ .queueList button { display: flex; justify-content: space-between; width: 100%; padding: 10px 12px; border: 1px solid transparent; border-radius: v.$radius-control; background: transparent; color: v.$text-primary; text-align: left; cursor: pointer; font: inherit; }
+@@ -18,16 +18,21 @@
+ .queueList button:hover, .current button { border-color: rgba(v.$primary-color, .6); background: rgba(v.$primary-color, .12); }
+ .resolvedSummary { color: v.$color-teal-500; font-size: .9rem; }
+ .reviewPanel { display: grid; gap: v.$space-md; }
+-.field { display: grid; gap: 6px; color: v.$text-secondary; font-size: .9rem; }
+-.field input, .field select { min-height: 42px; padding: 0 12px; border: 1px solid v.$border-secondary; border-radius: v.$radius-control; background: v.$background-dark; color: v.$text-primary; font: inherit; }
++.field { display: grid; gap: 6px; min-width: 0; color: v.$text-secondary; font-size: .9rem; }
++.field input, .field select { width: 100%; min-width: 0; box-sizing: border-box; min-height: 42px; padding: 0 12px; border: 1px solid v.$border-secondary; border-radius: v.$radius-control; background: v.$background-dark; color: v.$text-primary; font: inherit; }
+ .field input:focus-visible, .field select:focus-visible, .queueList button:focus-visible { outline: 2px solid v.$focus-color; outline-offset: 2px; }
+ .reviewPanel button { min-height: 42px; padding: 0 16px; border: 1px solid v.$primary-color; border-radius: v.$radius-control; background: v.$primary-color; color: v.$color-white; font: inherit; font-weight: 700; cursor: pointer; }
+ .reviewPanel button:disabled { opacity: .45; cursor: not-allowed; }
++.actions { display: flex; flex-wrap: wrap; gap: 12px; }
++.retryButton { min-height: 42px; padding: 0 16px; border: 1px solid v.$primary-color; border-radius: v.$radius-control; background: v.$primary-color; color: v.$color-white; font: inherit; cursor: pointer; }
++.reviewHistory { margin-top: v.$space-md; color: v.$color-teal-500; }
++.reviewHistory summary { cursor: pointer; }
++.reviewHistory li { overflow-wrap: anywhere; }
+ .splitPanel { padding: v.$space-md; border: 1px solid rgba(v.$color-gold-400, .45); border-radius: v.$radius-control; background: rgba(v.$color-gold-400, .06); }
+ .splitPanel p { margin: 6px 0 v.$space-md; color: v.$text-secondary; }
+-.splitGrid { display: grid; grid-template-columns: 1fr 1fr; gap: v.$space-md; margin-bottom: v.$space-md; }
++.splitGrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: v.$space-md; margin-bottom: v.$space-md; }
+ .context { background: v.$background-dark; }
+ .context h2 { margin-top: 0; color: v.$color-white; }
+ .context pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: v.$text-secondary; line-height: 1.55; }
+ .emptyState { color: v.$text-secondary; }
+-@media (max-width: v.$breakpoint-mobile-max) { .page { padding: 16px 12px 32px; } .header { align-items: flex-start; padding: 16px; } .header h1 { font-size: 1.35rem; } .layout { grid-template-columns: 1fr; } .queueList { max-height: 220px; } }
++@media (max-width: v.$breakpoint-mobile-max) { .page { padding: 16px 12px 32px; } .header { align-items: flex-start; padding: 16px; } .header h1 { font-size: 1.35rem; } .layout { grid-template-columns: minmax(0, 1fr); } .queueList { max-height: 220px; } .splitGrid { grid-template-columns: minmax(0, 1fr); } }
+diff --git a/web/__tests__/pages/db/player-aliases.test.tsx b/web/__tests__/pages/db/player-aliases.test.tsx
+--- a/web/__tests__/pages/db/player-aliases.test.tsx
++++ b/web/__tests__/pages/db/player-aliases.test.tsx
+@@ -1,6 +1,6 @@
+ import React from "react";
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
++import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+ 
+ vi.mock("next/head", () => ({ default: () => null }));
+ vi.mock("lib/supabase", () => ({
+@@ -11,6 +11,7 @@
+ 
+ const lomberg = { id: 8479066, fullName: "Ryan Lomberg", lastName: "Lomberg", position: "L", team_id: 29 };
+ const heinen = { id: 8478046, fullName: "Danton Heinen", lastName: "Heinen", position: "L", team_id: 29 };
++const soucy = { id: 8476463, fullName: "Carson Soucy", lastName: "Soucy", position: "D", team_id: 29 };
+ const unresolvedNames = ["Lomberg-Heinen", "Soucy-Andrae"].map((raw_name, index) => ({
+   id: `pending-${index}`, raw_name, normalized_name: raw_name.toLowerCase(),
+   team_id: 29, team_abbreviation: "CBJ", source: "fixture", source_url: null,
+@@ -123,4 +124,185 @@
+     expect((screen.getByLabelText("Heinen") as HTMLSelectElement).value).toBe("");
+     expect(fetchMock.mock.calls.some(([, options]) => options?.method === "POST")).toBe(false);
+   });
++
++  function apiResponse(names = unresolvedNames, extra = {}) {
++    return { ok: true, json: async () => ({ success: true, unresolvedNames: names, players: [lomberg, heinen, soucy], ...extra }) };
++  }
++
++  function deferredResponse() {
++    let resolve!: (value: ReturnType<typeof apiResponse>) => void;
++    const promise = new Promise<ReturnType<typeof apiResponse>>((done) => { resolve = done; });
++    return { promise, resolve };
++  }
++
++  function posts() {
++    return fetchMock.mock.calls.filter(([, options]) => options?.method === "POST");
++  }
++
++  function prepareSave(action: string) {
++    if (action === "split") {
++      selectPlayer("Lomberg", lomberg.id);
++      selectPlayer("Heinen", heinen.id);
++    } else if (action === "resolve") selectPlayer("Match player", lomberg.id);
++    return screen.getByRole("button", { name: action === "split" ? "Save as two players" : action === "ignore" ? "Ignore" : "Save alias" }) as HTMLButtonElement;
++  }
++
++  it.each(["split", "resolve", "ignore"])("blocks duplicate %s clicks while the mutation is in flight", async (action) => {
++    const pending = deferredResponse();
++    fetchMock.mockImplementation((_, options) => options?.method === "POST" ? pending.promise : Promise.resolve(apiResponse()));
++    await openPage();
++    const button = prepareSave(action);
++    fireEvent.click(button);
++    fireEvent.click(button);
++    await waitFor(() => expect(posts()).toHaveLength(1));
++    expect(button.disabled).toBe(true);
++    pending.resolve(apiResponse());
++    await waitFor(() => expect((screen.getByRole("button", { name: "Ignore" }) as HTMLButtonElement).disabled).toBe(false));
++    expect(posts()).toHaveLength(1);
++  });
++
++  it.each(["split", "resolve", "ignore"])("forwards the review token for %s", async (action) => {
++    window.history.replaceState({}, "", "/db/player-aliases?reviewToken=fixture-token");
++    await openPage();
++    fireEvent.click(prepareSave(action));
++    await waitFor(() => expect(posts()).toHaveLength(1));
++    expect(JSON.parse(posts()[0][1].body).reviewToken).toBe("fixture-token");
++    await waitFor(() => expect((screen.getByRole("button", { name: "Ignore" }) as HTMLButtonElement).disabled).toBe(false));
++  });
++
++  it.each(["split", "resolve", "ignore"])("shows a failed %s save, keeps the draft and permits retry", async (action) => {
++    let fail = true;
++    fetchMock.mockImplementation((_, options) => Promise.resolve(options?.method === "POST" && fail
++      ? { ok: false, json: async () => ({ success: false, message: "Mock save failed" }) } : apiResponse()));
++    await openPage();
++    const button = prepareSave(action);
++    fireEvent.click(button);
++    expect(await screen.findByRole("status")).toHaveProperty("textContent", "Mock save failed");
++    await waitFor(() => expect(button.disabled).toBe(false));
++    if (action === "split") expectSelected("Lomberg", lomberg);
++    if (action === "resolve") expectSelected("Match player", lomberg);
++    fail = false;
++    fireEvent.click(button);
++    await waitFor(() => expect(posts()).toHaveLength(2));
++    await waitFor(() => expect((screen.getByRole("button", { name: "Ignore" }) as HTMLButtonElement).disabled).toBe(false));
++  });
++
++  it("keeps a draft on the next row when a delayed save refresh completes", async () => {
++    const pending = deferredResponse();
++    fetchMock.mockImplementation((_, options) => options?.method === "POST" ? pending.promise
++      : Promise.resolve(apiResponse(posts().length ? [unresolvedNames[1]] : unresolvedNames)));
++    await openPage();
++    fireEvent.click(prepareSave("split"));
++    await waitFor(() => expect(posts()).toHaveLength(1));
++    fireEvent.change(screen.getByLabelText("Pending name"), { target: { value: "pending-1" } });
++    searchFor("Soucy");
++    selectPlayer("Soucy", soucy.id);
++    pending.resolve(apiResponse());
++    await waitFor(() => expect((screen.getByRole("button", { name: "Ignore" }) as HTMLButtonElement).disabled).toBe(false));
++    expectSelected("Soucy", soucy);
++    expect((screen.getByLabelText("Pending name") as HTMLSelectElement).value).toBe("pending-1");
++    expect(screen.getByText("1 resolved in this queue")).toBeTruthy();
++  });
++
++  it("retries a failed post-save refresh without posting the completed save again", async () => {
++    let failedRefresh = true;
++    fetchMock.mockImplementation((_, options) => Promise.resolve(options?.method === "POST" ? apiResponse()
++      : posts().length && failedRefresh ? { ok: false, json: async () => ({ success: false, message: "Mock refresh failed" }) }
++      : apiResponse(posts().length ? [unresolvedNames[1]] : unresolvedNames)));
++    await openPage();
++    fireEvent.click(prepareSave("split"));
++    await screen.findByText("Saved. Queue refresh failed: Mock refresh failed");
++    expect(screen.queryByText("Loading...")).toBeNull();
++    expect((screen.getByRole("button", { name: "Ignore" }) as HTMLButtonElement).disabled).toBe(true);
++    failedRefresh = false;
++    fireEvent.click(screen.getByRole("button", { name: "Retry queue refresh" }));
++    await screen.findByLabelText("Soucy");
++    expect(posts()).toHaveLength(1);
++    expect(screen.queryByRole("button", { name: "Retry queue refresh" })).toBeNull();
++    expect(screen.getByText("1 resolved in this queue")).toBeTruthy();
++    expect(screen.getByRole("status").textContent).toBe("Queue refreshed.");
++  });
++
++  it("retries an initial queue failure without a mutation", async () => {
++    fetchMock.mockResolvedValueOnce({ ok: false, json: async () => ({ success: false, message: "Queue unavailable" }) }).mockResolvedValue(apiResponse());
++    render(<PlayerAliasesPage />);
++    await screen.findByText("Queue unavailable");
++    expect(screen.queryByText("Loading...")).toBeNull();
++    fireEvent.click(screen.getByRole("button", { name: "Retry queue refresh" }));
++    await screen.findByLabelText("Lomberg");
++    expect(posts()).toHaveLength(0);
++    expect(screen.getByRole("status").textContent).toBe("Queue refreshed.");
++  });
++
++  it("does not mark a successful identity save resolved when membership keeps it pending", async () => {
++    await openPage();
++    fireEvent.click(prepareSave("resolve"));
++    await waitFor(() => expect(posts()).toHaveLength(1));
++    await waitFor(() => expect((screen.getByRole("button", { name: "Ignore" }) as HTMLButtonElement).disabled).toBe(false));
++    expect(screen.queryByText("1 resolved in this queue")).toBeNull();
++    expect(screen.getByLabelText("2 names remaining")).toBeTruthy();
++  });
++
++  it.each(["queue switch", "changed search"])("discards an NHL lookup after %s", async (change) => {
++    const pending = deferredResponse();
++    fetchMock.mockImplementation((url: string) => url.includes("nhlId=") ? pending.promise : Promise.resolve(apiResponse(unresolvedNames, { membershipReviewEnabled: true })));
++    await openPage();
++    searchFor(String(lomberg.id));
++    fireEvent.click(screen.getByRole("button", { name: "Look up NHL ID" }));
++    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => url.includes("nhlId="))).toBe(true));
++    if (change === "queue switch") fireEvent.change(screen.getByLabelText("Pending name"), { target: { value: "pending-1" } });
++    else searchFor("Heinen");
++    await act(async () => pending.resolve(apiResponse(unresolvedNames, { lookup: { nhlId: lomberg.id, fullName: lomberg.fullName, lastName: lomberg.lastName, position: "L", currentTeamId: 29 } })));
++    await waitFor(() => expect((screen.getByLabelText("Match player") as HTMLSelectElement).value).toBe(""));
++    expect(screen.queryByText(/NHL identity verified/)).toBeNull();
++  });
++
++  it("ignores an older initial queue response after a newer response", async () => {
++    const older = deferredResponse();
++    const newer = deferredResponse();
++    fetchMock.mockReturnValueOnce(older.promise).mockReturnValueOnce(newer.promise);
++    render(<React.StrictMode><PlayerAliasesPage /></React.StrictMode>);
++    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
++    newer.resolve(apiResponse([unresolvedNames[1]]));
++    await screen.findByLabelText("Soucy");
++    await act(async () => older.resolve(apiResponse(unresolvedNames)));
++    await waitFor(() => expect((screen.getByLabelText("Pending name") as HTMLSelectElement).value).toBe("pending-1"));
++    expect(screen.queryByLabelText("Lomberg")).toBeNull();
++  });
++
++  it("does not refresh after a save response arrives following unmount", async () => {
++    const pending = deferredResponse();
++    fetchMock.mockImplementation((_, options) => options?.method === "POST" ? pending.promise : Promise.resolve(apiResponse()));
++    await openPage();
++    fireEvent.click(prepareSave("split"));
++    await waitFor(() => expect(posts()).toHaveLength(1));
++    const callsBeforeUnmount = fetchMock.mock.calls.length;
++    cleanup();
++    await act(async () => pending.resolve(apiResponse()));
++    expect(fetchMock).toHaveBeenCalledTimes(callsBeforeUnmount);
++  });
++
++  it("keeps an item deep link scoped and records completion", async () => {
++    window.history.replaceState({}, "", "/db/player-aliases?unresolvedId=pending-0");
++    fetchMock.mockImplementation((_, options) => Promise.resolve(options?.method === "POST" ? apiResponse()
++      : apiResponse(posts().length ? [{ ...unresolvedNames[0], status: "resolved" }] : [unresolvedNames[0]])));
++    await openPage();
++    fireEvent.click(prepareSave("split"));
++    await screen.findByText("No matching unresolved player name was found.");
++    expect(screen.getByText("1 resolved in this queue")).toBeTruthy();
++    expect(fetchMock.mock.calls.filter(([, options]) => options?.method !== "POST").every(([url]) => url.includes("unresolvedId=pending-0"))).toBe(true);
++  });
++
++  it("rejects multi-hyphen splits and selecting the same player twice", async () => {
++    await openPage();
++    selectPlayer("Lomberg", lomberg.id);
++    selectPlayer("Heinen", lomberg.id);
++    expect((screen.getByRole("button", { name: "Save as two players" }) as HTMLButtonElement).disabled).toBe(true);
++    cleanup();
++    fetchMock.mockResolvedValue(apiResponse([{ ...unresolvedNames[0], raw_name: "Alpha-Beta-Gamma" }]));
++    render(<PlayerAliasesPage />);
++    await screen.findByLabelText("Pending name");
++    expect(screen.queryByRole("button", { name: "Save as two players" })).toBeNull();
++    expect(posts()).toHaveLength(0);
++  });
+ });

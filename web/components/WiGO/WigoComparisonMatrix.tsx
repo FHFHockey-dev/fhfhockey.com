@@ -91,10 +91,11 @@ export default function WigoComparisonMatrix({
             <p>
               DIFF = (left − right) / absolute right × 100. Counting stats use
               per-game rates; rates, times and percentages are compared
-              directly. Both zero gives 0%; missing values or a zero baseline
+              directly. Both zero displays “-”; missing values or a zero baseline
               otherwise give no difference. An increase is not necessarily
               better.
             </p>
+            <p>L5/L10/L20 use up to the latest 5/10/20 played games, including prior seasons. GP shows the actual sample. Aggregate date bounds and metric coverage are unavailable; a numeric value does not establish complete source coverage.</p>
           </details>
           <span role="status">
             {aggDataError ||

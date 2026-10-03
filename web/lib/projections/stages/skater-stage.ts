@@ -1,3 +1,4 @@
+import { skaterParticipationFromEvidence } from "../starterBoardScoring";
 import { starterBoardFlags } from "../starterBoardFlags";
 import { bootstrapSkaterLine, loadSeasonBootstrap, type SeasonBootstrap } from "../seasonBootstrap";
 import supabase from "lib/supabase/server";
@@ -214,8 +215,7 @@ import {
   buildStarterOverrideMetadata,
 } from "../utils/projection-metadata-builders";
 import {
-  fetchLatestSkaterOnIceContextProfiles,
-  fetchLatestSkaterShotQualityProfiles,
+  fetchLatestSkaterContextProfiles,
   fetchLatestSkaterTrendAdjustments,
   fetchLatestWgoSkaterDeploymentProfiles,
   fetchRollingRows,
@@ -445,6 +445,17 @@ async function fetchActiveRosterSkaterIdsForTeamSeason(
         .filter((id) => Number.isFinite(id)),
     ),
   );
+}
+
+/** Current roster membership supplies candidates, never confirmed participation or rates. */
+export function selectLineCombinationFallback(args: {
+  rollingSkaterIds: number[];
+  activeRosterSkaterIds: number[];
+  seasonBootstrap: boolean;
+}): { playerIds: number[]; rosterBootstrap: boolean } {
+  const rosterBootstrap = args.rollingSkaterIds.length === 0 && args.seasonBootstrap;
+  const candidates = rosterBootstrap ? args.activeRosterSkaterIds : args.rollingSkaterIds;
+  return { playerIds: [...new Set(candidates)].filter(id => Number.isSafeInteger(id) && id > 0), rosterBootstrap };
 }
 
 export function constrainSkaterIdsToActiveRoster(args: {
@@ -1388,7 +1399,7 @@ export async function runPerGameSkaterStage(args: {
       activeRosterSkaterIdsByTeamId.get(teamId) ?? [];
 
     let usedLineComboFallback = false;
-    let lineComboFallbackReason: "missing" | "hard_stale" | "empty" | null =
+    let lineComboFallbackReason: "missing" | "hard_stale" | "empty" | "season_bootstrap_roster" | null =
       null;
     let fallbackCandidateCount = 0;
 
@@ -1398,16 +1409,19 @@ export async function runPerGameSkaterStage(args: {
       rawSkaterIds.length === 0
     ) {
       if (lcRecency.isMissing) metrics.data_quality.missing_line_combos += 1;
-      const fallbackSkaterIds = await fetchFallbackSkaterIdsForTeam(
+      const rollingSkaterIds = await fetchFallbackSkaterIdsForTeam(
         teamId,
         currentSeasonId,
         asOfDate,
         18,
       );
+      const { playerIds: fallbackSkaterIds, rosterBootstrap } = selectLineCombinationFallback({
+        rollingSkaterIds, activeRosterSkaterIds, seasonBootstrap: args.seasonBootstrap === true,
+      });
       if (fallbackSkaterIds.length > 0) {
         rawSkaterIds = fallbackSkaterIds;
         usedLineComboFallback = true;
-        lineComboFallbackReason = lcRecency.isMissing
+        lineComboFallbackReason = rosterBootstrap ? "season_bootstrap_roster" : lcRecency.isMissing
           ? "missing"
           : lcRecency.isHardStale
             ? "hard_stale"
@@ -1793,11 +1807,7 @@ export async function runPerGameSkaterStage(args: {
     }
     const deploymentPriorByPlayerId =
       await fetchLatestWgoSkaterDeploymentProfiles(skaterIds, asOfDate);
-    const shotQualityByPlayerId = await fetchLatestSkaterShotQualityProfiles(
-      skaterIds,
-      asOfDate,
-    );
-    const onIceContextByPlayerId = await fetchLatestSkaterOnIceContextProfiles(
+    const { shotQuality: shotQualityByPlayerId, onIceContext: onIceContextByPlayerId } = await fetchLatestSkaterContextProfiles(
       skaterIds,
       asOfDate,
     );
@@ -2754,6 +2764,7 @@ export async function runPerGameSkaterStage(args: {
             season_bootstrap: seasonLine?.disclosure ?? null,
             production_conditioning: starterBoardFlags().compute ? "conditional_playing" : "legacy_availability_adjusted",
             participation_probability: null,
+            participation: starterBoardFlags().compute ? skaterParticipationFromEvidence(args.dailyBoardEvidence, { gameId: game.id, teamId, playerId }) : null,
             same_day_evidence: args.dailyBoardEvidence ? {
               assertions: args.dailyBoardEvidence.assertions.filter((item) => item.gameId === game.id && item.playerId === playerId),
               conflicts: args.dailyBoardEvidence.conflicts.filter((item) => item.gameId === game.id && item.teamId === teamId && (item.playerId == null || item.playerId === playerId)),

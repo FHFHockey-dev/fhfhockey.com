@@ -48,7 +48,8 @@ describe("StatsTable", () => {
       { wrapper: createLogQueryWrapper() }
     );
 
-    fireEvent.click(screen.getAllByRole("button", { name: "+" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Show Goals game log" }));
+    expect(screen.getByRole("button", { name: "Hide Goals game log" }).getAttribute("aria-expanded")).toBe("true");
 
     await waitFor(() => {
       expect(
@@ -56,7 +57,7 @@ describe("StatsTable", () => {
       ).toBeTruthy();
     });
 
-    fireEvent.click(screen.getAllByRole("button", { name: "+" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Show Assists game log" }));
 
     await waitFor(() => {
       expect(screen.queryByText("Failed to load game log for Goals.")).toBeNull();
@@ -96,7 +97,7 @@ function pendingLog() {
 }
 
 function expandStat(label: string) {
-  fireEvent.click(within(screen.getByText(label).closest("tr")!).getByRole("button"));
+  fireEvent.click(within(screen.getByText(label).closest("tr")!).getByRole("button", { name: new RegExp(`^(Show|Hide) ${label} game log$`) }));
 }
 
 describe("standard table log request identity", () => {
@@ -126,14 +127,14 @@ describe("standard table log request identity", () => {
     const player = context === "player" ? 2 : 1;
     const season = context === "season" ? 20262027 : 20252026;
     rerender(logTable(player, season));
-    expect(screen.queryByRole("button", { name: "-" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Hide Goals game log" })).toBeNull();
     expandStat("Goals");
     await screen.findByText("No game log data available for this season.");
     expect(mockFetchPlayerGameLogForStat).toHaveBeenLastCalledWith(player, season, "Goals");
     await act(async () => oldLog.resolve([{ date: "2025-10-01", value: 99 }]));
     expect(screen.getByText("No game log data available for this season.")).toBeTruthy();
     rerender(logTable());
-    expect(screen.queryByRole("button", { name: "-" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Hide Goals game log" })).toBeNull();
   });
 
   it("reuses a fresh log after collapse and reopen", async () => {

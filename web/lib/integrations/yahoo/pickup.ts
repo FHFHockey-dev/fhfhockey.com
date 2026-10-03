@@ -62,6 +62,7 @@ export function parseYahooPickupRosters(payload: unknown, leagueKey: string, tea
 export function isYahooPickupPlayer(playerKey: string | null, context: YahooPickupContext, view: "available" | "roster") {
   if (!playerKey) return false;
   const key = /^\d+$/.test(playerKey) ? `${context.gameKey}.p.${playerKey}` : playerKey;
-  if (!key.startsWith(`${context.gameKey}.p.`)) return false;
+  const match = key.match(/^(\d+)\.p\.\d+$/);
+  if (!match || match[1] !== context.gameKey) return false;
   return view === "roster" ? context.roster.some((player) => player.key === key) : !context.rosteredPlayerKeys.includes(key);
 }

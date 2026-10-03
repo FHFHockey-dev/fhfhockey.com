@@ -23,6 +23,17 @@ const EXCLUDED_SCHEDULE_STATES = new Set([
   "SUSPENDED",
 ]);
 
+/** Unknown states cannot certify a future forecast opportunity. */
+export function planningScheduleStatus(gameStatus: string, scheduleStatus: string):
+  "scheduled" | "live" | "final" | "postponed" | "cancelled" | null {
+  const game = gameStatus.trim().toUpperCase(), schedule = scheduleStatus.trim().toUpperCase();
+  if (/CANCEL|^CNCL$/.test(schedule) || /CANCEL|^CNCL$/.test(game)) return "cancelled";
+  if (/POST|^PPD$|^SUSPENDED$/.test(schedule) || /POST|^PPD$|^SUSPENDED$/.test(game)) return "postponed";
+  if (["OFF", "FINAL", "FINAL_OT", "FINAL_SO", "OVER"].includes(game)) return "final";
+  if (["LIVE", "CRIT"].includes(game)) return "live";
+  return ["FUT", "PRE"].includes(game) && schedule === "OK" ? "scheduled" : null;
+}
+
 function assertExactDate(value: string, field: string): string {
   if (!EXACT_DATE_PATTERN.test(value)) {
     throw new Error(`${field} must use YYYY-MM-DD.`);
@@ -200,4 +211,3 @@ export function normalizeNhlGameToTeamRows(args: {
     },
   ];
 }
-

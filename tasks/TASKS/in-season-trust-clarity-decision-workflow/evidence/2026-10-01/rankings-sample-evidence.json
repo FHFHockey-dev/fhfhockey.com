@@ -1,0 +1,89 @@
+{
+  "capturedOn": "2026-10-01",
+  "method": "Read-only entity_metric_rankings SELECT; latest snapshot per requested season, selected metrics only",
+  "requestedSeasons": [
+    20252026,
+    20262027
+  ],
+  "requestedMetrics": [
+    "points_per_60",
+    "pp_points_per_60",
+    "mcm_score"
+  ],
+  "rows": [
+    {
+      "season_id": 20252026,
+      "snapshot_date": "2026-04-16",
+      "window_type": "last_10",
+      "window_size": 10,
+      "strength_state": "5v5",
+      "metric_key": "points_per_60",
+      "methodology_version": "contextual_rankings_v1",
+      "rows": 776,
+      "players": 776,
+      "qualified_rows": 776,
+      "min_gp": 1,
+      "max_gp": 10,
+      "median_gp": 10,
+      "min_toi": 428,
+      "max_toi": 13773
+    },
+    {
+      "season_id": 20252026,
+      "snapshot_date": "2026-04-16",
+      "window_type": "last_20",
+      "window_size": 20,
+      "strength_state": "5v5",
+      "metric_key": "points_per_60",
+      "methodology_version": "contextual_rankings_v1",
+      "rows": 776,
+      "players": 776,
+      "qualified_rows": 776,
+      "min_gp": 1,
+      "max_gp": 20,
+      "median_gp": 20,
+      "min_toi": 428,
+      "max_toi": 26510
+    },
+    {
+      "season_id": 20252026,
+      "snapshot_date": "2026-04-16",
+      "window_type": "last_5",
+      "window_size": 5,
+      "strength_state": "5v5",
+      "metric_key": "points_per_60",
+      "methodology_version": "contextual_rankings_v1",
+      "rows": 776,
+      "players": 776,
+      "qualified_rows": 776,
+      "min_gp": 1,
+      "max_gp": 5,
+      "median_gp": 5,
+      "min_toi": 428,
+      "max_toi": 6804
+    },
+    {
+      "season_id": 20252026,
+      "snapshot_date": "2026-04-16",
+      "window_type": "season",
+      "window_size": 0,
+      "strength_state": "5v5",
+      "metric_key": "points_per_60",
+      "methodology_version": "contextual_rankings_v1",
+      "rows": 776,
+      "players": 776,
+      "qualified_rows": 776,
+      "min_gp": 1,
+      "max_gp": 81,
+      "median_gp": 66,
+      "min_toi": 428,
+      "max_toi": 97380.999973
+    }
+  ],
+  "limitations": [
+    "No current-season rows returned for these metrics.",
+    "No PP points or MCM rows returned at the latest selected snapshots.",
+    "Sample distributions do not establish predictive stability or forecast calibration.",
+    "Existing minimum_sample_met is not independently certified; all returned rows are marked qualified despite 1-game samples."
+  ]
+}

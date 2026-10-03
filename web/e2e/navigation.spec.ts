@@ -1,5 +1,52 @@
 import { expect, test } from "@playwright/test";
 
+test("homepage update provenance remains reachable with keyboard across viewport sizes", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.route("**/rest/v1/**", route =>
+    ["GET", "HEAD"].includes(route.request().method()) ? route.continue() : route.abort(),
+  );
+  for (const [width, height] of [[1180, 757], [1024, 768], [768, 1024], [390, 844], [320, 844]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto("/");
+    await expect(page.getByText(/Published .*Observed /).first()).toBeVisible();
+    const news = page.locator('section[aria-label="League news and trends"] article').first();
+    if (width <= 768) {
+      const disclosure = news.getByRole("button", { name: /^Expand .* news:/ });
+      const control = news.locator(`button[aria-controls="${await disclosure.getAttribute("aria-controls")}"]`);
+      await control.focus();
+      await page.keyboard.press("Enter");
+      await expect(control).toHaveAttribute("aria-expanded", "true");
+      await expect(control).toHaveAccessibleName(/^Collapse .* news:/);
+      await expect(news).toContainText("Published");
+      await expect(news).toContainText("Observed");
+      const source = news.getByRole("link", { name: /^View original post for/ });
+      await expect(source).toBeVisible();
+      await expect(source).toHaveAttribute("href", /^https:\/\//);
+      await source.focus();
+      await expect(source).toBeFocused();
+      await expect(source).toHaveCSS("outline-style", "solid");
+      await expect(source).toHaveCSS("outline-width", "2px");
+      await control.focus();
+      await page.keyboard.press("Space");
+      await expect(control).toHaveAttribute("aria-expanded", "false");
+      await expect(control).toHaveAccessibleName(/^Expand .* news:/);
+    }
+    const update = page.getByRole("button", { name: /^Expand update for/ }).first();
+    if (await update.isVisible()) {
+      const control = page.locator(`button[aria-controls="${await update.getAttribute("aria-controls")}"]`);
+      await control.focus();
+      await page.keyboard.press("Enter");
+      await expect(control).toHaveAttribute("aria-expanded", "true");
+      await expect(page.getByText(/Published .* · Observed /).first()).toBeVisible();
+      await page.keyboard.press("Space");
+      await expect(control).toHaveAttribute("aria-expanded", "false");
+    } else {
+      expect(width).toBeGreaterThan(768);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  }
+});
+
 // Exercise the shared shell without page-specific hockey data dependencies.
 test.beforeEach(async ({ page }) => {
   await page.goto("/404");
@@ -15,12 +62,31 @@ test("desktop standalone links, dropdowns and keyboard dismissal", async ({
       exact: true,
     });
     for (const name of ["Game Grid", "Blog", "Underlying Stats"]) {
-      const link = nav.getByRole("link", { name, exact: true });
+      const link = nav.getByRole("link", { name: new RegExp(`^${name}$`, "i") });
       await expect(link).toBeVisible();
       const box = await link.boundingBox();
       expect(box!.x).toBeGreaterThanOrEqual(0);
       expect(box!.x + box!.width).toBeLessThanOrEqual(width);
     }
+    const community = nav.getByRole("button", { name: /^community$/i });
+    await expect(community).toHaveCSS("text-transform", "uppercase");
+    await community.hover();
+    const panel = page.locator(`[id="${await community.getAttribute("aria-controls")}"]`);
+    await expect(panel).toBeVisible();
+    const triggerBox = (await community.boundingBox())!;
+    const panelBox = (await panel.boundingBox())!;
+    expect(Math.abs(panelBox.x - triggerBox.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(panelBox.y - triggerBox.y - triggerBox.height)).toBeLessThanOrEqual(1);
+    expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(width);
+    await panel.getByRole("link", { name: /podcast/i }).hover();
+    await expect(panel).toBeVisible();
+    await community.focus();
+    await page.keyboard.press("Escape");
+    await expect(panel).not.toBeVisible();
+    const coffee = page.getByRole("link", { name: "Buy me a coffee", exact: true });
+    await expect(coffee).toBeVisible();
+    await expect(coffee).toHaveAttribute("href", "https://www.buymeacoffee.com/tjsusername");
+    await expect(page.locator("header").first()).toHaveCSS("border-bottom-style", "double");
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -32,10 +98,10 @@ test("desktop standalone links, dropdowns and keyboard dismissal", async ({
     name: "Primary navigation",
     exact: true,
   });
-  const tools = nav.getByRole("button", { name: "Tools", exact: true });
+  const tools = nav.getByRole("button", { name: /^tools$/i });
   await tools.click();
   await expect(tools).toHaveAttribute("aria-expanded", "true");
-  await nav.getByRole("link", { name: /Start Chart/ }).focus();
+  await nav.getByRole("link", { name: /start chart/i }).focus();
   await page.keyboard.press("Escape");
   await expect(tools).toHaveAttribute("aria-expanded", "false");
   await expect(tools).toBeFocused();

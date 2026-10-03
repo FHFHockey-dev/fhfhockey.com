@@ -87,7 +87,7 @@ export function selectProjectedUnitSets(reports: ProjectionReport[]): ProjectedU
         const signatures = new Map<number, Set<string>>();
         for (const unit of [own[0]!, ...contributions.map((entry) => entry.unit)]) {
           const signaturesForNumber = signatures.get(unit.number!) ?? new Set<string>();
-          signaturesForNumber.add(unit.players.map((player) => player.playerId).sort((a, b) => a - b).join(","));
+          signaturesForNumber.add(unit.players.map((player) => player.playerId).join(","));
           signatures.set(unit.number!, signaturesForNumber);
         }
         if ([...signatures.values()].some((values) => values.size > 1)) continue;
@@ -99,15 +99,21 @@ export function selectProjectedUnitSets(reports: ProjectionReport[]): ProjectedU
     }
   }
   const latest = new Map<string, ProjectedUnitSet>();
-  for (const set of sets.sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt) || a.reports[0]!.key.localeCompare(b.reports[0]!.key))) if (!latest.has(set.key)) latest.set(set.key, set);
-  return [...latest.values()];
+  const conflicts = new Set<string>();
+  const signature = (set: ProjectedUnitSet) => set.units.map((unit) => [unit.situation, unit.number, unit.players.map((player) => player.playerId).join(",")].join(":")).sort().join("|");
+  for (const set of sets.sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt) || a.reports[0]!.key.localeCompare(b.reports[0]!.key))) {
+    const previous = latest.get(set.key);
+    if (!previous) latest.set(set.key, set);
+    else if (Date.parse(previous.publishedAt) === Date.parse(set.publishedAt) && signature(previous) !== signature(set)) conflicts.add(set.key);
+  }
+  return [...latest.values()].filter((set) => !conflicts.has(set.key));
 }
 
 export function publicProjectionReport(report: ProjectionReport): ProjectionReport {
   return { ...report, provenance: undefined, text: report.text.split("\n").map((line) => sanitizePublicNewsText(line)).join("\n"), originalUrl: verifiedOriginalTweetUrl(report.originalUrl),
-    interpretation: { ...report.interpretation, rosterRevision: undefined, unresolved: [],
+    interpretation: { ...report.interpretation, rosterRevision: undefined, identityContext: undefined, unresolved: [], relationships: undefined,
       units: report.interpretation.units.map((unit) => ({ ...unit, evidence: [] })),
-      events: report.interpretation.events?.map((event) => ({ ...event, evidence: { ...event.evidence, text: sanitizePublicNewsText(event.evidence.text) } })),
+      events: report.interpretation.events?.map((event) => ({ ...event, evidence: { ...event.evidence, offsetBasis: "unsanitized_source" as const, text: sanitizePublicNewsText(event.evidence.text) } })),
     },
   };
 }

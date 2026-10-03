@@ -1,0 +1,6 @@
+{
+  "web/pages/db/player-aliases.tsx": true,
+  "web/pages/db/player-aliases.module.scss": true,
+  "web/__tests__/pages/db/player-aliases.test.tsx": true,
+  "web/pages/api/v1/db/player-name-aliases.ts": true
+}

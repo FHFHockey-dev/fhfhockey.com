@@ -221,9 +221,34 @@ const buildContextHref = (
   },
 ): string => {
   const url = new URL(href, "https://fhfh.local");
+  const appliedDate = context.resolvedDate ?? context.date;
+  if (url.pathname === "/game-grid/7-Day-Forecast") {
+    url.searchParams.set("startDate", appliedDate);
+    url.searchParams.set("endDate", shiftDate(appliedDate, 6));
+    return `${url.pathname}${url.search}`;
+  }
+  if (url.pathname === "/trends") {
+    url.searchParams.set("date", appliedDate);
+    return `${url.pathname}${url.search}`;
+  }
+  if (url.pathname === "/splits") {
+    if (context.team) url.searchParams.set("team", context.team);
+    return `${url.pathname}${url.search}`;
+  }
+  if (url.pathname === "/lines") {
+    return context.team ? `/lines/${encodeURIComponent(context.team)}` : href;
+  }
+  if (url.pathname === "/variance/goalies") return href;
   url.searchParams.set("date", context.date);
   if (context.resolvedDate) {
     url.searchParams.set("resolvedDate", context.resolvedDate);
+  }
+  if (url.pathname.startsWith("/forge/team/")) {
+    return `${url.pathname}${url.search}`;
+  }
+  if (url.pathname.startsWith("/forge/player/")) {
+    url.searchParams.set("mode", context.mode);
+    return `${url.pathname}${url.search}`;
   }
   url.searchParams.set("position", context.position);
   if (context.team) url.searchParams.set("team", context.team);
@@ -359,12 +384,13 @@ export default function StartChartPage() {
 
   useEffect(() => {
     if (!router.isReady) return;
-    const resolvedDate = isCalendarDate(queryDate) ? queryDate : easternDate();
+    const today = easternDate();
+    const resolvedDate = isCalendarDate(queryDate) && queryDate >= today ? queryDate : today;
     setDate(resolvedDate);
     if (validQueryPosition) setActivePosition(validQueryPosition);
     setSelectedTeam(queryTeam?.toUpperCase() ?? null);
 
-    if (!isCalendarDate(queryDate)) {
+    if (queryDate !== resolvedDate) {
       void router.replace(
         {
           pathname: router.pathname,
@@ -416,7 +442,7 @@ export default function StartChartPage() {
   };
 
   const selectDate = (nextDate: string) => {
-    if (!isCalendarDate(nextDate)) return;
+    if (!isCalendarDate(nextDate) || nextDate < easternDate()) return;
     setDate(nextDate);
     setSelectedGameId(null);
     updateQuery({ date: nextDate, resolvedDate: null });
@@ -507,9 +533,13 @@ export default function StartChartPage() {
       POSITION_ORDER.map((position) => [position, []]),
     );
     for (const player of filteredPlayers) {
+      const score = scoring.mode === "categories" ? player.boardScore?.categoryValue : player.proj_fantasy_points;
+      const rankedPlayer = typeof score === "number" && Number.isFinite(score)
+        ? player
+        : { ...player, position_ranks: {} };
       for (const position of player.positions) {
         if (!POSITION_ORDER.includes(position as StartChartPosition)) continue;
-        result.get(position as StartChartPosition)?.push(player);
+        result.get(position as StartChartPosition)?.push(rankedPlayer);
       }
     }
     for (const position of POSITION_ORDER) {
@@ -523,7 +553,7 @@ export default function StartChartPage() {
       );
     }
     return result;
-  }, [filteredPlayers]);
+  }, [filteredPlayers, scoring.mode]);
 
   useEffect(() => {
     if (validQueryPosition || !data?.players.length) return;
@@ -611,6 +641,15 @@ export default function StartChartPage() {
   const workflowLinks = START_CHART_SURFACE_LINKS.map((link) => ({
     ...link,
     href: buildContextHref(link.href, workflowContext),
+    description: `${link.description} ${link.href === "/forge/command-center"
+      ? "Date, position, team and mode are retained."
+      : link.href === "/game-grid/7-Day-Forecast"
+        ? "Opens seven days from the applied slate; team and position filters reset."
+        : link.href === "/trends"
+          ? "Retains the applied date; other filters reset."
+          : link.href === "/splits" || link.href === "/lines"
+            ? "Retains the selected team; date, position and mode reset."
+            : "Opens the destination's default view."}`,
   }));
   const fantasyScoringDescription = formatStartChartFantasyScoringContract(
     data?.fantasyScoringContract ?? START_CHART_FANTASY_SCORING_CONTRACT,
@@ -620,15 +659,12 @@ export default function StartChartPage() {
   const hasGoalForm = goalForm.some((team) => team.games > 0);
   const { ref: goalChartRef, size: goalChartSize } = useMeasuredChart(hasGoalForm);
   const isFallback = data?.serving?.mode === "fallback" || data?.fallbackApplied;
+  const fallbackStatus = data && data.resolvedDate > data.requestedDate
+    ? "Upcoming slate"
+    : "Adjusted slate";
   const isPartial = data?.serving?.mode === "partial";
   const isDegraded = data?.sourceStatus?.overall === "degraded";
-  const servingMessage = isFallback
-    ? `This is the nearest earlier slate with projections${
-        typeof data?.serving?.ageDays === "number"
-          ? ` (${data.serving.ageDays} day${data.serving.ageDays === 1 ? "" : "s"} old)`
-          : ""
-      }. Use it as historical reference, not today's recommendation.`
-    : data?.serving?.message;
+  const servingMessage = data?.serving?.message;
   const statusMessages = Array.from(
     new Set(
       [
@@ -658,12 +694,12 @@ export default function StartChartPage() {
           </p>
         </div>
         <div className={styles.dateCommand}>
-          <button type="button" aria-label="Previous day" disabled={!date} onClick={() => selectDate(shiftDate(date, -1))}>‹</button>
+          <button type="button" aria-label="Previous day" disabled={!date || date <= easternDate()} onClick={() => selectDate(shiftDate(date, -1))}>‹</button>
           <label htmlFor="start-chart-date" className={styles.dateTile}>
             <span aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M7 3v4M17 3v4M3 10h18" /></svg></span>
             <strong>{date ? new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric", year: "numeric" }).format(new Date(`${date}T12:00:00Z`)) : "Choose date"}</strong>
-            <small>{data ? `${data.games.length} games · ${teamsPlaying.length} teams` : "Slate loading"}</small>
-            <input aria-label="Date" id="start-chart-date" type="date" value={date} onChange={(event) => selectDate(event.target.value)} />
+            <small>{data ? `${data.games.length} games · ${teamsPlaying.length} teams` : error ? "Slate unavailable" : "Slate loading"}</small>
+            <input aria-label="Date" id="start-chart-date" type="date" min={date ? easternDate() : undefined} value={date} onChange={(event) => selectDate(event.target.value)} />
           </label>
           <button type="button" aria-label="Next day" disabled={!date} onClick={() => selectDate(shiftDate(date, 1))}>›</button>
         </div>
@@ -673,8 +709,8 @@ export default function StartChartPage() {
           <div><dt>Run</dt><dd title={data?.projectionRunId ?? undefined}>{publicationTime(data?.sourceStatus.projection.updatedAt)}</dd></div>
           <div><dt>Input</dt><dd title={data?.sourceStatus.projection.inputVersion ?? undefined}>{data?.sourceStatus.projection.inputVersion ?? "Unverified"}</dd></div>
         </dl>
-        <div className={`${styles.headerStatus} ${isFallback || isPartial || isDegraded ? styles.statusAmber : ""}`} role="status">
-          <strong><span aria-hidden="true">{isFallback || isPartial || isDegraded ? "◷" : "◉"}</span> {error ? "Unavailable" : !data ? "Loading" : isFallback ? "Historical fallback" : isPartial || isDegraded || data.newsStatus?.freshnessBreachedGames || data.newsStatus?.unresolvedConflicts ? "Review coverage" : data.newsStatus?.available === false ? "News unavailable" : data.newsStatus?.pendingGames ? "Refreshing" : data.newsStatus?.available && data.serving.mode === "exact" && data.requestedDate === data.resolvedDate && data.resolvedDate === easternDate() && data.sourceStatus.projection.updatedAt ? "Up to date" : "Published slate"}</strong>
+        <div className={`${styles.headerStatus} ${isFallback || isPartial || isDegraded ? styles.statusAmber : ""}`} role="status" aria-label="Starter Board status">
+          <strong><span aria-hidden="true">{isFallback || isPartial || isDegraded ? "◷" : "◉"}</span> {error ? "Unavailable" : !data ? "Loading" : data.serving.mode === "no_games" ? "No scheduled games" : isFallback ? fallbackStatus : isPartial || isDegraded || data.newsStatus?.freshnessBreachedGames || data.newsStatus?.unresolvedConflicts ? "Review coverage" : data.newsStatus?.available === false ? "News unavailable" : data.newsStatus?.pendingGames ? "Refreshing" : data.newsStatus?.available && data.serving.mode === "exact" && data.requestedDate === data.resolvedDate && data.resolvedDate === easternDate() && data.sourceStatus.projection.updatedAt ? "Up to date" : "Published slate"}</strong>
           <span>Page refresh · 30 seconds</span>
         </div>
         <details className={styles.mobileProvenance}>
@@ -692,10 +728,11 @@ export default function StartChartPage() {
       <section id="slate-games" className={styles.gamesPanel} aria-label="Games on this slate">
         <div className={styles.gamesHeading}>
           <div><h2>{data?.resolvedDate === easternDate() ? "Today’s Games" : "Selected Slate Games"}</h2>
-            <p>{data ? `${data.games.length} games · ${teamsPlaying.length} teams · ${data.resolvedDate}` : "Slate loading"}</p></div>
+            <p>{data ? `${data.games.length} games · ${teamsPlaying.length} teams · ${data.resolvedDate}` : error ? "Games unavailable" : "Slate loading"}</p></div>
           <div className={styles.gamesActions}>
             {selectedGameId != null ? <button type="button" onClick={() => setSelectedGameId(null)}>Clear game filter</button> : null}
             <Link href="/game-grid/7-Day-Forecast">View Full Schedule{data?.resolvedDate && data.resolvedDate !== easternDate() ? " · current" : ""}</Link>
+            {data?.resolvedDate && <Link href={`/game-grid/7-Day-Forecast?startDate=${encodeURIComponent(data.resolvedDate)}&endDate=${encodeURIComponent(shiftDate(data.resolvedDate, 6))}`}>7-day schedule from {data.resolvedDate}</Link>}
           </div>
         </div>
         {(data?.games?.length ?? 0) > 0 ? <div className={styles.gameStrip}>
@@ -1034,7 +1071,7 @@ export default function StartChartPage() {
                           <Link
                             href={playerHref}
                             className={styles.name}
-                            title={player.name}
+                            title={`${player.name} research retains the slate date and mode; team and position filters reset.`}
                           >
                             {player.name}
                           </Link>
@@ -1045,13 +1082,13 @@ export default function StartChartPage() {
                           <div className={styles.meta}>
                             <span>
                               {teamHref ? (
-                                <Link href={teamHref}>{player.team_abbrev}</Link>
+                                <Link href={teamHref} title="Team research retains the slate date; mode and position filters reset.">{player.team_abbrev}</Link>
                               ) : (
                                 "Team TBD"
                               )}{" "}
                               vs{" "}
                               {opponentHref ? (
-                                <Link href={opponentHref}>
+                                <Link href={opponentHref} title="Team research retains the slate date; mode and position filters reset.">
                                   {player.opponent_abbrev}
                                 </Link>
                               ) : (
@@ -1360,6 +1397,7 @@ export default function StartChartPage() {
         <details className={styles.sourceDetails}>
           <summary>Source coverage and provenance</summary>
           <p>Requested {data.requestedDate} · Resolved {data.resolvedDate} · Model {data.sourceStatus.projection.modelVersion ?? "Unavailable"} · Run {data.projectionRunId ?? "Unavailable"} · Published {publicationTime(data.sourceStatus.projection.updatedAt)}</p>
+          <p>Polling every 30 seconds does not establish publication freshness. Pending or failed model-run status is unavailable unless supplied by a run receipt.</p>
           <dl>
             <SourceRow
               label="FORGE projections"
@@ -1412,8 +1450,8 @@ export default function StartChartPage() {
 
       <SurfaceWorkflowLinks
         title="Continue in FORGE"
-        description="Carry this date, position, team, and mode into the next decision surface."
-        links={workflowLinks}
+        description="Each link retains the supported context listed below. Player research links retain slate date and mode; team research links retain slate date. Other filters reset. League availability is not transferred."
+        links={date ? workflowLinks : []}
       />
     </div>
   );

@@ -677,9 +677,9 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         <span><i className={styles.keeperLegend} /> Keeper</span>
         <span><i className={styles.tradeLegend} /> Traded</span>
         {noPickKeepers.length > 0 && <details className={styles.noPickKeepers}>
-          <summary><span>{onAssignKeeperPick ? "Assign keeper rounds" : "Keepers without draft slots"}</span> ({noPickKeepers.length})</summary>
+          <summary><span>{onAssignKeeperPick ? "Assign keeper picks" : "Keepers without assigned picks"}</span> ({noPickKeepers.length})</summary>
           <div className={styles.keeperAssignments}>
-            <p>Keeper teams are imported. Assign a pick only if your league charges one; Yahoo may supply the assignment later.</p>
+            <p>These keepers are on rosters, but their pick costs are unconfirmed. If your league charges a pick, assign it here; Yahoo may supply the assignment later.</p>
             <ul>{noPickKeepers.map((keeper) => {
               const name = allPlayersData.get(keeper.playerId)?.fullName || `Player #${keeper.playerId}`;
               return <li key={keeper.playerId}><strong>{name}</strong> · {teamNameById.get(keeper.teamId) || keeper.teamId}

@@ -1,0 +1,238 @@
+diff --git a/web/components/Layout/Header/Header.module.scss b/web/components/Layout/Header/Header.module.scss
+--- a/web/components/Layout/Header/Header.module.scss
++++ b/web/components/Layout/Header/Header.module.scss
+@@ -115,6 +115,23 @@
+     gap: 16px;
+     min-height: 64px;
+     padding: 0 24px;
++    border-bottom: 4px double v.$color-white;
++    background-color: v.$background-header;
++    &::after {
++      content: "";
++      flex: 1;
++      align-self: stretch;
++      opacity: 0.5;
++      background-image: linear-gradient(
++        115deg,
++        transparent 0 35%,
++        v.$primary-color 35% 49%,
++        v.$color-white 49% 55%,
++        v.$secondary-color 55% 65%,
++        v.$color-white 65% 68%,
++        transparent 68%
++      );
++    }
+   }
+   .logo {
+     display: flex;
+@@ -138,11 +155,30 @@
+     align-items: center;
+     gap: 8px;
+     margin-inline-start: auto;
++    order: 1;
+   }
+   .utility {
+     padding: 8px;
+     font-size: 15px;
+     white-space: nowrap;
++    text-transform: uppercase;
++  }
++  .bmcWrap {
++    display: inline-flex;
++    flex-shrink: 0;
++    align-items: center;
++    min-height: 44px;
++    border-radius: 8px;
++    img {
++      display: block;
++      width: 120px;
++      height: 36px;
++      border-radius: 8px;
++      box-shadow: 0 0 0 2px rgba(v.$color-white, 0.12);
++    }
++    &:hover img {
++      box-shadow: 0 0 0 2px v.$primary-color;
++    }
+   }
+   .authCta {
+     border: 1px solid v.$primary-color;
+@@ -155,19 +191,23 @@
+     font-size: 14px;
+     white-space: nowrap;
+     cursor: pointer;
++    text-transform: uppercase;
+   }
+   .authPlaceholder {
+     width: 44px;
+     height: 40px;
+   }
+-  .underlyingStats {
+-    border-bottom-color: v.$color-brand-yellow;
++  .underlyingStats .bmcWrap:hover img {
++    box-shadow: 0 0 0 2px v.$color-brand-yellow;
+   }
+ }
+ @media (min-width: 1100px) and (max-width: 1399px) {
+   .desktopHeader {
+     padding-inline: 12px;
+     gap: 8px;
++    &::after {
++      display: none;
++    }
+   }
+   .utility span {
+     display: none;
+diff --git a/web/components/Layout/Header/Header.tsx b/web/components/Layout/Header/Header.tsx
+--- a/web/components/Layout/Header/Header.tsx
++++ b/web/components/Layout/Header/Header.tsx
+@@ -166,14 +166,21 @@
+             <span>Search players</span>
+           </button>
+           <a
+-            className={styles.utility}
++            className={styles.bmcWrap}
+             href={SUPPORT_URL}
+             target="_blank"
+             rel="noopener noreferrer"
+-            aria-label="Support FHFH"
++            aria-label="Buy me a coffee"
+           >
+-            <NavigationIcon name="heart" />
+-            <span>Support</span>
++            {/* eslint-disable-next-line @next/next/no-img-element */}
++            <img
++              src={`https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=${
++                isUnderlyingStatsRoute ? "DBA507" : "07aae2"
++              }&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00`}
++              alt="Buy me a coffee"
++              width={120}
++              height={36}
++            />
+           </a>
+           {!user && !isLoading ? (
+             <button
+diff --git a/web/components/Layout/Layout.module.scss b/web/components/Layout/Layout.module.scss
+--- a/web/components/Layout/Layout.module.scss
++++ b/web/components/Layout/Layout.module.scss
+@@ -146,3 +146,21 @@
+     flex-shrink: 0;
+   }
+ }
++
++// Only the Shift Chart uses a viewport workspace and compact utility footer.
++@media (min-width: 1200px) {
++  .container.shiftChartLayout {
++    height: 100dvh;
++    min-height: 0;
++    display: grid;
++    grid-template-rows: auto minmax(0, 1fr) auto;
++    .footer { margin: 0; padding: 4px 12px; }
++    .footerInner { max-width: none; gap: 12px; flex-wrap: nowrap; }
++    .footerBrand { display: flex; align-items: center; gap: 10px; }
++    .footerBrand small { font-size: 11px; }
++    .footerBrand a, .footer nav a, .footerCommunity > a { min-height: 28px; font-size: 12px; }
++    .footerBrand svg { width: 64px; height: 20px; }
++    .footerSocials :global(a) { width: 28px; height: 28px; min-height: 28px; }
++    .footerSocials :global(img) { width: 18px; height: 18px; }
++  }
++}
+diff --git a/web/components/Layout/Layout.tsx b/web/components/Layout/Layout.tsx
+--- a/web/components/Layout/Layout.tsx
++++ b/web/components/Layout/Layout.tsx
+@@ -13,11 +13,12 @@
+ 
+ function Layout({ children }: LayoutProps) {
+   const router = useRouter();
++  const isShiftChart = router.pathname === "/shiftChart";
+   const isWigo = router.pathname === "/wigoCharts";
+   const isRosterOptimizer = router.pathname === "/roster-schedule-optimizer";
+   const hideFooter = router.pathname === "/draft-dashboard" || isRosterOptimizer || isWigo;
+   return (
+-    <div className={`${styles.container} ${router.pathname === "/draft-dashboard" ? styles.draftLayout : ""} ${isRosterOptimizer ? styles.rosterOptimizerLayout : ""} ${isWigo ? styles.wigoLayout : ""}`}>
++    <div className={`${styles.container} ${isShiftChart ? styles.shiftChartLayout : ""} ${router.pathname === "/draft-dashboard" ? styles.draftLayout : ""} ${isRosterOptimizer ? styles.rosterOptimizerLayout : ""} ${isWigo ? styles.wigoLayout : ""}`}>
+       <Header />
+       {children}
+       {!hideFooter && <Footer />}
+diff --git a/web/components/Layout/NavbarItems/NavbarItems.module.scss b/web/components/Layout/NavbarItems/NavbarItems.module.scss
+--- a/web/components/Layout/NavbarItems/NavbarItems.module.scss
++++ b/web/components/Layout/NavbarItems/NavbarItems.module.scss
+@@ -41,6 +41,8 @@
+   font-size: 15px;
+   text-decoration: none;
+   white-space: nowrap;
++  text-transform: uppercase;
++  letter-spacing: 0.04em;
+   cursor: pointer;
+   &:hover {
+     background: #20282e;
+@@ -93,6 +95,7 @@
+   font-size: 13px;
+   font-weight: 600;
+   letter-spacing: 0.05em;
++  text-transform: uppercase;
+ }
+ .destination {
+   display: flex;
+@@ -114,6 +117,7 @@
+     display: block;
+     font-size: 16px;
+     font-weight: 600;
++    text-transform: uppercase;
+   }
+   small {
+     display: block;
+@@ -139,9 +143,11 @@
+     grid-template-columns: repeat(3, minmax(0, 1fr));
+   }
+ }
++.category:has(.community) {
++  position: relative;
++}
+ .community {
+-  left: auto;
+-  right: 24px;
++  left: 0;
+   width: 360px;
+   .groups {
+     grid-template-columns: 1fr;
+@@ -159,4 +165,5 @@
+   margin-top: 12px;
+   padding: 12px;
+   border-top: 1px solid #36434c;
++  text-transform: uppercase;
+ }
+diff --git a/web/components/auth/UserMenu.tsx b/web/components/auth/UserMenu.tsx
+--- a/web/components/auth/UserMenu.tsx
++++ b/web/components/auth/UserMenu.tsx
+@@ -22,9 +22,16 @@
+   const [open, setOpen] = useState(false);
+   const [error, setError] = useState("");
+   const [signingOut, setSigningOut] = useState(false);
++  const [failedAvatar, setFailedAvatar] = useState<{ userId: string; url: string } | null>(null);
++  const userId = user?.id;
++  const avatarUrl = user?.avatarUrl;
+   const triggerRef = useRef<HTMLButtonElement>(null);
+   const panelId = useId();
+   const rootRef = useRef<HTMLDivElement | null>(null);
++
++  useEffect(() => {
++    setFailedAvatar(null);
++  }, [userId, avatarUrl]);
+ 
+   useEffect(() => {
+     if (!open) return;
+@@ -77,11 +84,13 @@
+         title={title}
+         onClick={() => setOpen((current) => !current)}
+       >
+-        {user.avatarUrl ? (
++        {user.avatarUrl && !(failedAvatar?.userId === user.id && failedAvatar.url === user.avatarUrl) ? (
+           <img
++            key={JSON.stringify([user.id, user.avatarUrl])}
+             src={user.avatarUrl}
+             alt={title}
+             className={styles.userAvatarImage}
++            onError={() => setFailedAvatar({ userId: user.id, url: user.avatarUrl! })}
+           />
+         ) : (
+           <span className={styles.userAvatarFallback}>

@@ -7,6 +7,19 @@ const workspace = { version: 1, context, rules, managerRuleOverrides: { acquisit
 const snapshot = { id: "snapshot", context, players: [], roster: [], games: [], forecasts: [], rules, lockedAssignments: [], realized: {}, opponent: null, evidence: {} };
 
 describe("saved in-season workspace validation", () => {
+  it("retains acquisition presence, raw values, provider time and date scope through an account snapshot", () => {
+    const acquisitionEvidence = {
+      source: "Yahoo team roster_adds and league current_week", fetchedAt: context.asOf, asOf: context.asOf,
+      counter: { present: true, coverageType: "week", coverageWeek: 1, reportedValue: "0", used: 0 },
+      limit: { present: true, reportedValue: "0", verified: false },
+      period: { week: 1, startDate: "2026-09-29", endDate: "2026-10-04", containsHorizon: false },
+      remaining: null, limitations: ["NHL limit encoding is unverified."],
+    };
+    const parsed = saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot, acquisitionEvidence }, expectedVersion: null });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.snapshot?.acquisitionEvidence).toEqual(acquisitionEvidence);
+    expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot, acquisitionEvidence: { ...acquisitionEvidence, counter: { ...acquisitionEvidence.counter, used: -1 } } }, expectedVersion: null }).success).toBe(false);
+  });
   it("accepts a coherent manual workspace and snapshot", () => {
     const parsed = saveWorkspaceSchema.safeParse({ workspace, snapshot, expectedVersion: null });
     expect(parsed.success).toBe(true);
@@ -17,6 +30,86 @@ describe("saved in-season workspace validation", () => {
       expect(parsed.data.workspace.managerRuleOverrides?.goalieMinimum).toEqual({ credited: 2 });
       expect(parsed.data.snapshot?.rules.goalieMinimum.periodStart).toBe(rules.goalieMinimum.periodStart);
     }
+  });
+  it("round-trips shared forecast lineage while rejecting private payload fields", () => {
+    const calendarPolicy = { version: "forecast-calendar-v1", calendarDays: 21, overlapDays: 7, timeZone: "UTC" };
+    const identity = { seasonId: 20262027, gameId: 31, teamId: 6, scheduledAt: "2026-10-05T23:00:00Z",
+      scheduleRevision: "schedule-a", rosterRevision: "roster-a", playerId: 7, nhlPlayerId: 77 };
+    const source = { kind: "baseline", sourceId: "rate-a", policyVersion: "baseline-v1", released: true,
+      allowedUses: { assignment: true, totals: false, comparison: false, conditionalTieBreak: false },
+      playerId: 7, nhlPlayerId: 77, seasonId: 20262027, teamId: 6, targetKey: "GOALS", unit: "count",
+      basis: "per_appearance", mean: 0.5, participationIntegrated: false,
+      cutoffAt: context.asOf, issuedAt: context.asOf, expiresAt: "2026-10-08T00:00:00Z",
+      sourceWatermark: "projection-a", scheduleRevision: "schedule-a", rosterRevision: "roster-a" };
+    const contribution = { resolverVersion: "contribution-resolver-v1", game: identity, targetKey: "GOALS",
+      inputs: { baseline: source, horizonDays: 21, calendarPolicy, servingEnabled: true,
+        participation: { playerId: identity.playerId, nhlPlayerId: identity.nhlPlayerId, seasonId: identity.seasonId,
+          gameId: identity.gameId, teamId: identity.teamId, scheduleRevision: identity.scheduleRevision,
+          rosterRevision: identity.rosterRevision, basis: "appearance", probability: 0.5, revisionId: "participation",
+          released: true, allowedUses: source.allowedUses, issuedAt: context.asOf, cutoffAt: context.asOf,
+          expiresAt: source.expiresAt } },
+      sourceKind: "baseline", conditionalMean: 0.5, unconditionalMean: null, unit: "count", basis: "per_appearance",
+      allowedUses: { assignment: false, totals: false, comparison: false, conditionalTieBreak: true },
+      sourceIds: ["rate-a"], participationRevisionId: null, blendWeight: null,
+      exclusionReasons: ["missing_participation"], limitations: [] };
+    const enriched = { ...snapshot, players: [{ id: "fhfh:7", nhlId: 77, nhlTeamId: 6, rosterRevision: "roster-a",
+      name: "Test Player", teamAbbreviation: "CAR", eligiblePositions: ["C"], eligibilityVerified: true,
+      playerClass: "skater", availability: "rostered", ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] }],
+      games: [{ id: "31", date: "2026-10-05", startsAt: identity.scheduledAt, scheduleRevision: "schedule-a",
+        teamAbbreviation: "CAR", opponent: "NJD", home: true, status: "scheduled" }],
+      forecasts: [{ playerId: "fhfh:7", gameId: "31", stats: { GOALS: null }, allowedUses: source.allowedUses, assignmentStats: { GOALS: 0.5 }, tieBreakStats: { GOALS: 0.5 },
+        issuedContext: { version: "forge-issued-context-v1", playerId: "fhfh:7", gameId: "31",
+          nhlPlayerId: identity.nhlPlayerId, seasonId: identity.seasonId, teamId: identity.teamId,
+          scheduledAt: identity.scheduledAt, scheduleRevision: "schedule-a", rosterRevision: "roster-a",
+          observedAt: context.asOf, scheduleSourceUpdatedAt: null, scheduleFetchedAt: context.asOf,
+          identityUpdatedAt: context.asOf, membershipCreatedAt: [context.asOf] },
+        conditionalStats: { GOALS: 0.5 }, appearanceProbability: null, contributions: { GOALS: contribution },
+        sourceKind: "baseline", sourceWatermark: "captured-reads", cutoffAt: context.asOf, expiresAt: source.expiresAt,
+        conditioning: "unconditional", startProbability: null, confirmedStart: false, revisionId: "rate-a",
+        issuedAt: context.asOf, modelVersion: "baseline-v1", limitations: [] }],
+      baselineSources: [source], forecastManifest: { version: "planning-forecasts-v1", id: "manifest-a",
+        calendarPolicy, acceptedNewsRevision: "opaque-news-receipts",
+        seasonId: 20262027, asOf: context.asOf, scheduleRevision: "schedule-a", rosterRevision: "roster-a",
+        issuedRevisionIds: [], baselineChecksum: "checksum-a", requiredOpportunities: 1,
+        forecastedOpportunities: 0, exclusionCounts: { missing_participation: 1 },
+        exclusions: [{ gameId: "31", reasons: ["discovery_failed", "game_mismatch", "invalid_cutoff", "no_usable_target", "conflicting_forecast"] }] } };
+    const parsed = saveWorkspaceSchema.safeParse({ workspace, snapshot: enriched, expectedVersion: null });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.snapshot?.baselineSources?.[0].sourceId).toBe("rate-a");
+      expect(parsed.data.snapshot?.forecastManifest?.id).toBe("manifest-a");
+      expect(parsed.data.snapshot?.forecastManifest?.calendarPolicy).toEqual(calendarPolicy);
+      expect(parsed.data.snapshot?.forecastManifest?.acceptedNewsRevision).toBe("opaque-news-receipts");
+      expect(parsed.data.snapshot?.forecastManifest?.exclusions).toEqual(enriched.forecastManifest.exclusions);
+      expect(parsed.data.snapshot?.forecasts[0].allowedUses?.totals).toBe(false);
+      expect(parsed.data.snapshot?.forecasts[0].assignmentStats?.GOALS).toBe(0.5);
+      expect(parsed.data.snapshot?.forecasts[0].issuedContext).toEqual(enriched.forecasts[0].issuedContext);
+      expect(parsed.data.snapshot?.forecasts[0].sourceWatermark).toBe("captured-reads");
+      expect(parsed.data.snapshot?.forecasts[0].contributions?.GOALS.sourceIds).toEqual(["rate-a"]);
+      expect(parsed.data.snapshot?.forecasts[0].contributions?.GOALS.inputs).toEqual(contribution.inputs);
+    }
+    const ratioLimited = { ...contribution,
+      exclusionReasons: ["missing_participation", "incompatible_component_basis"] };
+    expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...enriched,
+      forecasts: [{ ...enriched.forecasts[0], contributions: { GOALS: ratioLimited } }] },
+      expectedVersion: null }).success).toBe(true);
+    expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...enriched,
+      baselineSources: [{ ...source, privatePayload: "secret" }] }, expectedVersion: null }).success).toBe(false);
+    expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...enriched,
+      forecastManifest: { ...enriched.forecastManifest, calendarPolicy: { ...calendarPolicy, version: "unknown" } } },
+      expectedVersion: null }).success).toBe(false);
+    expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...enriched,
+      forecasts: [{ ...enriched.forecasts[0], issuedContext: { ...enriched.forecasts[0].issuedContext, privatePayload: "secret" } }] },
+      expectedVersion: null }).success).toBe(false);
+    expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...enriched,
+      forecasts: [{ ...enriched.forecasts[0], contributions: { GOALS: { ...contribution, privatePayload: "secret" } } }] }, expectedVersion: null }).success).toBe(false);
+    expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...enriched,
+      forecasts: [{ ...enriched.forecasts[0], contributions: { GOALS: { ...contribution,
+        inputs: { ...contribution.inputs, baseline: { ...source, privatePayload: "secret" } } } } }] }, expectedVersion: null }).success).toBe(false);
+    expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...enriched,
+      forecasts: [{ ...enriched.forecasts[0], revisionId: "a".repeat(300) }] }, expectedVersion: null }).success).toBe(true);
+    expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...enriched,
+      forecasts: [{ ...enriched.forecasts[0], revisionId: "a".repeat(4097) }] }, expectedVersion: null }).success).toBe(false);
   });
   it("preserves manager-entered locked assignments", () => {
     const lockedAssignments = [{ date: "2026-10-01", playerId: "p", slotId: "G" }];

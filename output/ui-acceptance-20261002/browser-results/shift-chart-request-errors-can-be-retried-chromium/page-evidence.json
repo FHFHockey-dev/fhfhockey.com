@@ -1,0 +1,12 @@
+{
+  "title": "Shift Chart | Five Hole Fantasy Hockey",
+  "url": "http://127.0.0.1:3198/shiftChart?gameId=2026010054",
+  "errors": [],
+  "dimensions": {
+    "width": 1280,
+    "height": 720,
+    "documentWidth": 1280,
+    "documentHeight": 720
+  },
+  "overlays": 0
+}

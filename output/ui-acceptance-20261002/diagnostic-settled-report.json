@@ -1,0 +1,136 @@
+{
+  "config": {
+    "configFile": "/private/tmp/fhfh-ui-acceptance-20261002/web/diagnostic.config.ts",
+    "rootDir": "/private/tmp/fhfh-ui-acceptance-20261002/web/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/diagnostic-settled-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/private/tmp/fhfh-ui-acceptance-20261002/web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/diagnostic-settled-report.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "shift-fit-diagnostic.spec.ts",
+      "file": "shift-fit-diagnostic.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "diagnose desktop matrix minimum sizes without changing application source",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8402,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "{\"width\":1920,\"height\":1080,\"outside\":0,\"overflow\":0,\"rosters\":[20,20],\"rowsFit\":true,\"squareCells\":true,\"minimumCellWidth\":18.078125,\"minimumCellHeight\":18.078125,\"maximumSquareDifference\":0,\"layout\":\"stacked\",\"documentFits\":true}\n"
+                    },
+                    {
+                      "text": "{\"width\":1728,\"height\":900,\"outside\":0,\"overflow\":0,\"rosters\":[20,20],\"rowsFit\":true,\"squareCells\":true,\"minimumCellWidth\":13.078125,\"minimumCellHeight\":13.078125,\"maximumSquareDifference\":0,\"layout\":\"side-by-side\",\"documentFits\":true}\n"
+                    },
+                    {
+                      "text": "{\"width\":1708,\"height\":864,\"outside\":0,\"overflow\":0,\"rosters\":[20,20],\"rowsFit\":true,\"squareCells\":false,\"minimumCellWidth\":11.96875,\"minimumCellHeight\":11.96875,\"maximumSquareDifference\":0,\"layout\":\"side-by-side\",\"documentFits\":true}\n"
+                    },
+                    {
+                      "text": "{\"width\":1440,\"height\":900,\"outside\":39,\"overflow\":0,\"rosters\":[20,20],\"rowsFit\":true,\"squareCells\":true,\"minimumCellWidth\":13.078125,\"minimumCellHeight\":13.078125,\"maximumSquareDifference\":0,\"layout\":\"side-by-side\",\"documentFits\":false}\n"
+                    }
+                  ],
+                  "stderr": [
+                    {
+                      "text": "(node:49815) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+                    }
+                  ],
+                  "retry": 0,
+                  "startTime": "2026-10-02T19:22:27.474Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/diagnostic-settled-results/shift-fit-diagnostic-diagn-84afb-changing-application-source-chromium/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "863ee68a7805460c88dc-2eea299b2339fad105e3",
+          "file": "shift-fit-diagnostic.spec.ts",
+          "line": 63,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-02T19:22:27.216Z",
+    "duration": 8951.08,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

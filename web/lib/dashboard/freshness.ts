@@ -34,7 +34,8 @@ export type MixedEffectiveDateResult = {
 export type RequestedDateServingStrategy =
   | "requested_date"
   | "latest_available_with_data"
-  | "previous_date_with_games";
+  | "previous_date_with_games"
+  | "next_scheduled_date";
 
 export type RequestedDateServingState = {
   requestedDate: string | null;
@@ -48,7 +49,7 @@ export type RequestedDateServingState = {
 export type ResolvedDataServingContract = RequestedDateServingState & {
   gapDays: number | null;
   severity: "none" | "warn" | "error";
-  status: "requested_date" | "fallback_recent" | "degraded" | "blocked";
+  status: "requested_date" | "upcoming" | "fallback_recent" | "degraded" | "blocked";
   message: string | null;
   requestedScheduledGames: number | null;
   resolvedScheduledGames: number | null;
@@ -194,6 +195,20 @@ export const buildResolvedDataServingContract = (input: {
     requestedScheduledGames == null ? null : requestedScheduledGames > 0;
   const resolvedHadGames =
     resolvedScheduledGames == null ? null : resolvedScheduledGames > 0;
+
+  if (base.strategy === "next_scheduled_date" && base.requestedDate != null && base.resolvedDate != null && base.resolvedDate > base.requestedDate) {
+    return {
+      ...base,
+      gapDays,
+      severity: "none",
+      status: "upcoming",
+      message: `No games are scheduled for ${base.requestedDate}. Showing the upcoming slate on ${base.resolvedDate}.`,
+      requestedScheduledGames,
+      resolvedScheduledGames,
+      requestedHadGames,
+      resolvedHadGames
+    };
+  }
 
   if (!base.fallbackApplied || gapDays == null || gapDays <= 0) {
     return {

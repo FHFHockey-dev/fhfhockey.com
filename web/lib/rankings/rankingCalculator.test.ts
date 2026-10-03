@@ -137,6 +137,8 @@ describe("rankingCalculator", () => {
         candidate({ entityId: 1, rawValue: 10, gamesPlayed: 4, toiSeconds: 800 }),
         candidate({ entityId: 2, rawValue: 6, gamesPlayed: 5, toiSeconds: 500 }),
         candidate({ entityId: 3, rawValue: 4, gamesPlayed: 8, toiSeconds: 900 }),
+        candidate({ entityId: 4, rawValue: 20, gamesPlayed: null, toiSeconds: 900 }),
+        candidate({ entityId: 5, rawValue: 20, gamesPlayed: 8, toiSeconds: null }),
       ],
     });
 
@@ -151,6 +153,10 @@ describe("rankingCalculator", () => {
     expect(leader?.percentile).toBe(100);
     expect(leader?.qualifiedPeerCount).toBe(2);
     expect(rows.find((row) => row.entityId === 3)?.percentile).toBe(0);
+    for (const id of [4, 5]) {
+      expect(rows.find(row => row.entityId === id)?.minimumSampleMet).toBe(false);
+      expect(rows.find(row => row.entityId === id)?.rawRank).toBeNull();
+    }
   });
 
   it("supports position, deployment, and team peer groups", () => {

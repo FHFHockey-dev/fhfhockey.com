@@ -1,0 +1,223 @@
+{
+  "startedAt": "2026-10-02T01:24:15.230Z",
+  "completedAt": "2026-10-02T01:25:13.790Z",
+  "elapsedMs": 58559,
+  "mode": "pure builder; network limited to GET/HEAD; no publisher endpoint or upsert called",
+  "nodeVersion": "v22.11.0",
+  "request": {
+    "season": 20252026,
+    "asOfDate": "2026-04-16",
+    "window": "season",
+    "position": "all",
+    "deployment": "all",
+    "strength": "all",
+    "minGp": 1,
+    "minToiSeconds": 600,
+    "teamId": null,
+    "peerGroupType": "all_skaters",
+    "limit": 1000
+  },
+  "snapshotDate": "2026-04-16",
+  "snapshotUpdatedAt": "2026-04-17T07:47:01.64886+00:00",
+  "generatedRows": 776,
+  "finiteMcmRows": 717,
+  "nullMcmRows": 59,
+  "componentCoverage": {
+    "sog_per_60": {
+      "finitePercentileRows": 717,
+      "missingPercentileRows": 59
+    },
+    "hits_per_60": {
+      "finitePercentileRows": 717,
+      "missingPercentileRows": 59
+    },
+    "blocks_per_60": {
+      "finitePercentileRows": 717,
+      "missingPercentileRows": 59
+    },
+    "goals_per_60": {
+      "finitePercentileRows": 717,
+      "missingPercentileRows": 59
+    },
+    "primary_assists_per_60": {
+      "finitePercentileRows": 717,
+      "missingPercentileRows": 59
+    },
+    "points_per_60": {
+      "finitePercentileRows": 717,
+      "missingPercentileRows": 59
+    },
+    "pp_points_per_60": {
+      "finitePercentileRows": 0,
+      "missingPercentileRows": 776
+    }
+  },
+  "allSevenComponentsRows": 0,
+  "scoreDistribution": {
+    "min": 0,
+    "p25": 33,
+    "median": 47.88,
+    "p75": 67.84,
+    "max": 91.77
+  },
+  "sourceFreshness": [
+    {
+      "metricKey": "goals_per_60",
+      "snapshotDate": "2026-04-16",
+      "snapshotUpdatedAt": "2026-04-17T07:47:01.64886+00:00",
+      "unavailable": false,
+      "reason": null
+    },
+    {
+      "metricKey": "points_per_60",
+      "snapshotDate": "2026-04-16",
+      "snapshotUpdatedAt": "2026-04-17T07:47:01.64886+00:00",
+      "unavailable": false,
+      "reason": null
+    },
+    {
+      "metricKey": "pp_points_per_60",
+      "snapshotDate": "2026-04-16",
+      "snapshotUpdatedAt": "2026-04-17T07:47:01.64886+00:00",
+      "unavailable": true,
+      "reason": "Requested metric has no calculable values for the current filters."
+    },
+    {
+      "metricKey": "ixg_per_60",
+      "snapshotDate": "2026-04-16",
+      "snapshotUpdatedAt": "2026-04-17T07:47:01.64886+00:00",
+      "unavailable": false,
+      "reason": null
+    },
+    {
+      "metricKey": "shot_attempts_per_60",
+      "snapshotDate": "2026-04-16",
+      "snapshotUpdatedAt": "2026-04-17T07:47:01.64886+00:00",
+      "unavailable": false,
+      "reason": null
+    },
+    {
+      "metricKey": "sog_per_60",
+      "snapshotDate": "2026-04-16",
+      "snapshotUpdatedAt": "2026-04-17T07:47:01.64886+00:00",
+      "unavailable": false,
+      "reason": null
+    },
+    {
+      "metricKey": "primary_assists_per_60",
+      "snapshotDate": "2026-04-16",
+      "snapshotUpdatedAt": "2026-04-17T07:47:01.64886+00:00",
+      "unavailable": false,
+      "reason": null
+    },
+    {
+      "metricKey": "assists_per_60",
+      "snapshotDate": "2026-04-16",
+      "snapshotUpdatedAt": "2026-04-17T07:47:01.64886+00:00",
+      "unavailable": false,
+      "reason": null
+    },
+    {
+      "metricKey": "expected_shooting_percentage",
+      "snapshotDate": "2026-04-16",
+      "snapshotUpdatedAt": "2026-04-17T07:47:01.64886+00:00",
+      "unavailable": false,
+      "reason": null
+    },
+    {
+      "metricKey": "sax_percentage",
+      "snapshotDate": "2026-04-16",
+      "snapshotUpdatedAt": "2026-04-17T07:47:01.64886+00:00",
+      "unavailable": false,
+      "reason": null
+    },
+    {
+      "metricKey": "goals_above_expected",
+      "snapshotDate": "2026-04-16",
+      "snapshotUpdatedAt": "2026-04-17T07:47:01.64886+00:00",
+      "unavailable": false,
+      "reason": null
+    },
+    {
+      "metricKey": "xga_per_60",
+      "snapshotDate": "2026-04-16",
+      "snapshotUpdatedAt": "2026-04-17T07:47:01.64886+00:00",
+      "unavailable": false,
+      "reason": null
+    },
+    {
+      "metricKey": "on_ice_xgf_percentage",
+      "snapshotDate": "2026-04-16",
+      "snapshotUpdatedAt": "2026-04-17T07:47:01.64886+00:00",
+      "unavailable": false,
+      "reason": null
+    },
+    {
+      "metricKey": "on_ice_gf_percentage",
+      "snapshotDate": "2026-04-16",
+      "snapshotUpdatedAt": "2026-04-17T07:47:01.64886+00:00",
+      "unavailable": false,
+      "reason": null
+    },
+    {
+      "metricKey": "blocks_per_60",
+      "snapshotDate": "2026-04-16",
+      "snapshotUpdatedAt": "2026-04-17T07:47:01.64886+00:00",
+      "unavailable": false,
+      "reason": null
+    },
+    {
+      "metricKey": "hits_per_60",
+      "snapshotDate": "2026-04-16",
+      "snapshotUpdatedAt": "2026-04-17T07:47:01.64886+00:00",
+      "unavailable": false,
+      "reason": null
+    }
+  ],
+  "unavailableMetrics": [
+    {
+      "metricKey": "pp_points_per_60",
+      "reason": "Requested metric has no calculable values for the current filters."
+    }
+  ],
+  "readRequests": {
+    "GET /rest/v1/rolling_player_game_metrics 200": 342,
+    "GET /rest/v1/games 200": 16,
+    "GET /rest/v1/teams 200": 40,
+    "GET /rest/v1/players 200": 78
+  },
+  "blockedNonReadRequests": 0,
+  "sourceHashes": {
+    "lib/rankings/skaterCompositeWriter.ts": "25c1d10f6fee5dee2e4bf6cafeaec5fdb160dd9fa78ea13df164ebfa1b343146",
+    "lib/supabase/server.ts": "fe4c82f9fd5dc0566eb6a5717c445cbb24f5e5b018061cfb1d1b224b57b4a0bc",
+    "lib/projections/queryCaptureHook.ts": "b89a4181c987473846f9f8241b198c67c96a6c08d4088e47f6ce451f576403b0",
+    "lib/rankings/rankingQueries.ts": "46f24db3baf0c965cf0321e8d6ab7082bd7cdf4ab5dd60c26f3c3d668a03bb57",
+    "lib/rankings/metricDefinitions.ts": "88395d09f1fe56f0f8a51f000d8a1c8bd63943b9f0875a5104348daba4900d77",
+    "lib/rankings/rankingMetadata.ts": "f48abafc7f543457fd79a14a21ffa5af02b7c29d24adbe1b99bc72982ead6009",
+    "lib/rankings/availableFilters.ts": "826770c4ccc42b8b39a227df86ade753d4a7074cdd5da10f45aaf0299b346306",
+    "lib/rankings/goalieMatrix.ts": "fc95ceaf18e846bfce6068746baf6c963b05b60659bd61dc411b56ffbe3c3e0c",
+    "lib/rankings/goalieMethodology.ts": "58bc38e5478869f4c46de445ad9a3f71e0ad6030517af44d88b5a6fec03bf09f",
+    "lib/rankings/rankingCalculator.ts": "631b0cd08f04c958b43285fcb0e0a246ba6b4119d8c9751fa621c7bad9706154",
+    "lib/rankings/rankingTypes.ts": "f5e8601f3d9e4cc6c162c549d8351e19b8ff54cbb1646014400f726d91b8ffe3",
+    "lib/rankings/teamTokenResolver.ts": "0d93f5d60c412d5da1a12bda403d56a1767bb7ba4fec27e30042f2e7ed0635e3",
+    "lib/rankings/matrixMetricRegistry.ts": "e4a00edfc7549b190d9226d7f63230745576b94cc46d54d8fe3eab3acd10c52f",
+    "lib/rankings/skaterCompositeMethodology.ts": "e0f8f1b54ff6a015d5088adc0a16abf25a00de3111ca22c28f4c2c81e784f982",
+    "lib/rankings/defensiveCompositeMethodology.ts": "1114481f9463213d20ee7e52c62e7492f36f3cc3cdfef806205f0a8bbe335f59",
+    "lib/rankings/teamStyleMethodology.ts": "112a202321d3a516d6c49a7764c9676aedfd7c1d9629c527232e0180b21e5991",
+    "lib/rankings/adjustedImpactPromotionContract.ts": "b83c476b4e5ece1499702b89b95a7eeb7407f8b8e772d4489ddb1aca0f327c11",
+    "lib/rankings/entityCoverageContracts.ts": "4930e7afc897ca1fe223e8c7978cfed321847699fe017f98ac3afc89a4be0b92",
+    "lib/rankings/war.ts": "193c79db258cf57e25d92bdaa846c55d96c9cf5dc82dca062de5d3e8671f62de",
+    "lib/rankings/entityMetricRankingReader.ts": "b99196ddef6ddc08f5e3ac26fe61e41e278c20ffcab35322d42ad68af0710f26",
+    "lib/rankings/skaterDeploymentAggregation.ts": "37aae79b797332fd725f9aeb654dedfeac8e6df4f1f869f1874f2f46af21ec01",
+    "lib/supabase/Upserts/rollingPlayerLineContextContract.ts": "b7b95f027ae4be972a5c894d8d561247db1cd5aa91721ee0703004f4c5972379",
+    "lib/rankings/skaterWindowAggregation.ts": "205c0941e98fb2433a90de3699c91344f7bbe99819eb090df62d9b19d5a85a7a",
+    "lib/rankings/rollingRankingSelectFields.ts": "b95e3690bf7368aa0ce3b6178edbc13e33d9567b5103e9d4b933dcfa2fd5f639",
+    "lib/rankings/resultsLuckIndex.ts": "5ec7d240b329299e7fdd106dfdb804503c8686852b66fba388c0aab18b6d7ee9",
+    "lib/rankings/resultsLuckSources.ts": "f84293231aa155f0cc92518e3983be20eb5b532034f000ba2f401aae9c4f8a67"
+  },
+  "limits": [
+    "Scores are unpersisted builder output, not published Rankings availability.",
+    "Partial component sets can yield MCM; finite scores alone do not certify full fantasy coverage.",
+    "No stability, predictive evaluation, early-season reliability or complete-game ingestion is certified."
+  ]
+}

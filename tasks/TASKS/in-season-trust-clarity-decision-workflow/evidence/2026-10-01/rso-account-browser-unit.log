@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:2822) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx (19 tests) 1194ms
+
+ Test Files  1 passed (1)
+      Tests  19 passed (19)
+   Start at  23:51:39
+   Duration  2.10s (transform 283ms, setup 3ms, collect 502ms, tests 1.19s, environment 156ms, prepare 47ms)
+

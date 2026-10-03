@@ -1,0 +1,305 @@
+{
+  "head": "73af9d051ecc755dd3695f5265bf5837bbfc7a4e",
+  "entrypoints": [
+    "web/pages/api/v1/db/player-name-aliases.ts"
+  ],
+  "files": [
+    {
+      "path": "web/lib/projections/queryCaptureHook.ts",
+      "headSha256": "b89a4181c987473846f9f8241b198c67c96a6c08d4088e47f6ce451f576403b0",
+      "auditSha256": "b89a4181c987473846f9f8241b198c67c96a6c08d4088e47f6ce451f576403b0",
+      "candidateSha256": "b89a4181c987473846f9f8241b198c67c96a6c08d4088e47f6ce451f576403b0",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/sources/lineSourceProcessing.ts",
+      "headSha256": "f75fbd46be97d47644a93c3aca92f4fce849a591edc72ede8eee29ffd7c4b2d6",
+      "auditSha256": "89cde6105cc8d5cfd2e4524a63e528c506281ed9061eaa1a45083a3b90d716f3",
+      "candidateSha256": "f75fbd46be97d47644a93c3aca92f4fce849a591edc72ede8eee29ffd7c4b2d6",
+      "auditOverlay": true,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/sources/nhlProspectIdentity.ts",
+      "headSha256": "b77619fcf275a8aa4041b40efca7fc7b0ba16172187af3366fed07f0f4847668",
+      "auditSha256": "0d36fa82faff6efc4d3255641e5be1972716e7cd4eb06f8a1f6010f2c49fbfe2",
+      "candidateSha256": "b77619fcf275a8aa4041b40efca7fc7b0ba16172187af3366fed07f0f4847668",
+      "auditOverlay": true,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/sources/playerAliasReviewToken.ts",
+      "headSha256": "16279e4c019009508bd8e15fa963b7dc4ef83975b790bd560198a95cb150b3fb",
+      "auditSha256": "16279e4c019009508bd8e15fa963b7dc4ef83975b790bd560198a95cb150b3fb",
+      "candidateSha256": "16279e4c019009508bd8e15fa963b7dc4ef83975b790bd560198a95cb150b3fb",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/sources/playerIdentity.ts",
+      "headSha256": "73205daa7a17437f5179bf53d21c8b331710405a369ac4ebb2a61b5c2d1694d0",
+      "auditSha256": "73205daa7a17437f5179bf53d21c8b331710405a369ac4ebb2a61b5c2d1694d0",
+      "candidateSha256": "73205daa7a17437f5179bf53d21c8b331710405a369ac4ebb2a61b5c2d1694d0",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/sources/playerNameAliases.ts",
+      "headSha256": "1fe954374999eccbe7620231134839f0c3a50dd861bf59e6b0d054145d9d4daa",
+      "auditSha256": "1fe954374999eccbe7620231134839f0c3a50dd861bf59e6b0d054145d9d4daa",
+      "candidateSha256": "1fe954374999eccbe7620231134839f0c3a50dd861bf59e6b0d054145d9d4daa",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/sources/tweetInterpretation.ts",
+      "headSha256": "eb8be7f6e109d99c4455491c612c81b3983a4613d7b90b63307c7766835426c9",
+      "auditSha256": "c7d9c157a7d39e47b8e055ee0e0ab4994073095a87c9053f78d31417524352bd",
+      "candidateSha256": "eb8be7f6e109d99c4455491c612c81b3983a4613d7b90b63307c7766835426c9",
+      "auditOverlay": true,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/supabase/client.ts",
+      "headSha256": "818aab6190e6a3eed1f8e9b5190ba1da6db6874a05160632c6befa2d5eaf21b2",
+      "auditSha256": "818aab6190e6a3eed1f8e9b5190ba1da6db6874a05160632c6befa2d5eaf21b2",
+      "candidateSha256": "818aab6190e6a3eed1f8e9b5190ba1da6db6874a05160632c6befa2d5eaf21b2",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/supabase/database-generated.types.ts",
+      "headSha256": null,
+      "auditSha256": "bcd14cc343a0d8cf832bd4472c286e2ba5b74ae26400e89d8cce47dd849b9842",
+      "candidateSha256": "bcd14cc343a0d8cf832bd4472c286e2ba5b74ae26400e89d8cce47dd849b9842",
+      "auditOverlay": false,
+      "candidateChangesHead": true
+    },
+    {
+      "path": "web/lib/supabase/index.ts",
+      "headSha256": "5d9cf84ffefe12c1e5e16bef005ee5c66fdbb06505a1a7d3385edb11b3642fe2",
+      "auditSha256": "5d9cf84ffefe12c1e5e16bef005ee5c66fdbb06505a1a7d3385edb11b3642fe2",
+      "candidateSha256": "5d9cf84ffefe12c1e5e16bef005ee5c66fdbb06505a1a7d3385edb11b3642fe2",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/supabase/pagination.ts",
+      "headSha256": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+      "auditSha256": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+      "candidateSha256": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/supabase/server.ts",
+      "headSha256": "fe4c82f9fd5dc0566eb6a5717c445cbb24f5e5b018061cfb1d1b224b57b4a0bc",
+      "auditSha256": "fe4c82f9fd5dc0566eb6a5717c445cbb24f5e5b018061cfb1d1b224b57b4a0bc",
+      "candidateSha256": "fe4c82f9fd5dc0566eb6a5717c445cbb24f5e5b018061cfb1d1b224b57b4a0bc",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/pages/api/v1/db/player-name-aliases.ts",
+      "headSha256": "8f398eeaae19c53b1181d2de5da951db3d9087f3c39ff0f8a16d659e6998609d",
+      "auditSha256": "8f398eeaae19c53b1181d2de5da951db3d9087f3c39ff0f8a16d659e6998609d",
+      "candidateSha256": "8f398eeaae19c53b1181d2de5da951db3d9087f3c39ff0f8a16d659e6998609d",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/utils/adminOnlyMiddleware.ts",
+      "headSha256": "8e12d24a374fcb2237cc8c4a5c82996dc35efa9c6aeb56f2e7731bd72bdb34c3",
+      "auditSha256": "8e12d24a374fcb2237cc8c4a5c82996dc35efa9c6aeb56f2e7731bd72bdb34c3",
+      "candidateSha256": "8e12d24a374fcb2237cc8c4a5c82996dc35efa9c6aeb56f2e7731bd72bdb34c3",
+      "auditOverlay": false,
+      "candidateChangesHead": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "web/pages/api/v1/db/player-name-aliases.ts",
+      "to": "web/lib/sources/nhlProspectIdentity.ts",
+      "spec": "lib/sources/nhlProspectIdentity",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/pages/api/v1/db/player-name-aliases.ts",
+      "to": "web/lib/sources/playerIdentity.ts",
+      "spec": "lib/sources/playerIdentity",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/pages/api/v1/db/player-name-aliases.ts",
+      "to": "web/lib/sources/lineSourceProcessing.ts",
+      "spec": "lib/sources/lineSourceProcessing",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/pages/api/v1/db/player-name-aliases.ts",
+      "to": "web/lib/sources/tweetInterpretation.ts",
+      "spec": "lib/sources/tweetInterpretation",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/pages/api/v1/db/player-name-aliases.ts",
+      "to": "web/lib/sources/playerNameAliases.ts",
+      "spec": "lib/sources/playerNameAliases",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/pages/api/v1/db/player-name-aliases.ts",
+      "to": "web/lib/sources/playerAliasReviewToken.ts",
+      "spec": "lib/sources/playerAliasReviewToken",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/pages/api/v1/db/player-name-aliases.ts",
+      "to": "web/lib/supabase/server.ts",
+      "spec": "lib/supabase/server",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/pages/api/v1/db/player-name-aliases.ts",
+      "to": "web/utils/adminOnlyMiddleware.ts",
+      "spec": "utils/adminOnlyMiddleware",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/lib/sources/nhlProspectIdentity.ts",
+      "to": "web/lib/sources/playerIdentity.ts",
+      "spec": "./playerIdentity",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/lib/sources/playerIdentity.ts",
+      "to": "web/lib/supabase/pagination.ts",
+      "spec": "lib/supabase/pagination",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/lib/sources/lineSourceProcessing.ts",
+      "to": "web/lib/sources/playerIdentity.ts",
+      "spec": "./playerIdentity",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/lib/sources/lineSourceProcessing.ts",
+      "to": "web/lib/sources/tweetInterpretation.ts",
+      "spec": "./tweetInterpretation",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/lib/sources/lineSourceProcessing.ts",
+      "to": "web/lib/supabase/pagination.ts",
+      "spec": "lib/supabase/pagination",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/lib/sources/lineSourceProcessing.ts",
+      "to": "web/lib/sources/playerNameAliases.ts",
+      "spec": "lib/sources/playerNameAliases",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/lib/sources/tweetInterpretation.ts",
+      "to": "web/lib/sources/playerIdentity.ts",
+      "spec": "./playerIdentity",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/lib/supabase/server.ts",
+      "to": "web/lib/projections/queryCaptureHook.ts",
+      "spec": "lib/projections/queryCaptureHook",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/utils/adminOnlyMiddleware.ts",
+      "to": "web/lib/supabase/index.ts",
+      "spec": "lib/supabase",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/utils/adminOnlyMiddleware.ts",
+      "to": "web/lib/supabase/server.ts",
+      "spec": "lib/supabase/server",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/utils/adminOnlyMiddleware.ts",
+      "to": "web/lib/supabase/database-generated.types.ts",
+      "spec": "lib/supabase/database-generated.types",
+      "kind": "runtime"
+    },
+    {
+      "from": "web/lib/supabase/index.ts",
+      "to": "web/lib/supabase/client.ts",
+      "spec": "./client",
+      "kind": "runtime"
+    }
+  ],
+  "typeOnlyImports": [
+    {
+      "from": "web/pages/api/v1/db/player-name-aliases.ts",
+      "spec": "next"
+    },
+    {
+      "from": "web/lib/sources/lineSourceProcessing.ts",
+      "spec": "lib/sources/lineupSourceIngestion"
+    },
+    {
+      "from": "web/lib/sources/tweetInterpretation.ts",
+      "spec": "./tweetPlayerEvents"
+    },
+    {
+      "from": "web/lib/sources/playerNameAliases.ts",
+      "spec": "lib/sources/lineupSourceIngestion"
+    },
+    {
+      "from": "web/lib/supabase/server.ts",
+      "spec": "./database-generated.types"
+    },
+    {
+      "from": "web/lib/supabase/index.ts",
+      "spec": "./database-generated.types"
+    },
+    {
+      "from": "web/lib/supabase/client.ts",
+      "spec": "./database-generated.types"
+    }
+  ],
+  "externalPackages": [
+    "@supabase/supabase-js",
+    "crypto",
+    "next"
+  ],
+  "originalOverlayRuntimeIntersection": [
+    {
+      "path": "web/lib/sources/lineSourceProcessing.ts",
+      "headSha256": "f75fbd46be97d47644a93c3aca92f4fce849a591edc72ede8eee29ffd7c4b2d6",
+      "auditSha256": "89cde6105cc8d5cfd2e4524a63e528c506281ed9061eaa1a45083a3b90d716f3",
+      "candidateSha256": "f75fbd46be97d47644a93c3aca92f4fce849a591edc72ede8eee29ffd7c4b2d6",
+      "auditOverlay": true,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/sources/nhlProspectIdentity.ts",
+      "headSha256": "b77619fcf275a8aa4041b40efca7fc7b0ba16172187af3366fed07f0f4847668",
+      "auditSha256": "0d36fa82faff6efc4d3255641e5be1972716e7cd4eb06f8a1f6010f2c49fbfe2",
+      "candidateSha256": "b77619fcf275a8aa4041b40efca7fc7b0ba16172187af3366fed07f0f4847668",
+      "auditOverlay": true,
+      "candidateChangesHead": false
+    },
+    {
+      "path": "web/lib/sources/tweetInterpretation.ts",
+      "headSha256": "eb8be7f6e109d99c4455491c612c81b3983a4613d7b90b63307c7766835426c9",
+      "auditSha256": "c7d9c157a7d39e47b8e055ee0e0ab4994073095a87c9053f78d31417524352bd",
+      "candidateSha256": "eb8be7f6e109d99c4455491c612c81b3983a4613d7b90b63307c7766835426c9",
+      "auditOverlay": true,
+      "candidateChangesHead": false
+    }
+  ],
+  "note": "Conservative static runtime/import and Sass closure from the resolver page and shared app shell; type-only imports are recorded separately and not runtime prerequisites. Exact entry module and local assets followed. Real API/save/auth execution remains mocked and is not certified by this graph.",
+  "snapshotRole": "committed clean-base API source contract"
+}

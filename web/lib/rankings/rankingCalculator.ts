@@ -200,8 +200,8 @@ function sampleMeetsMinimums(args: {
   const gp = finiteNumber(args.candidate.gamesPlayed);
   const toi = finiteNumber(args.candidate.toiSeconds);
   return (
-    (gp == null || gp >= args.minGp) &&
-    (toi == null || toi >= args.minToiSeconds)
+    (args.minGp === 0 || (gp != null && gp >= args.minGp)) &&
+    (args.minToiSeconds === 0 || (toi != null && toi >= args.minToiSeconds))
   );
 }
 

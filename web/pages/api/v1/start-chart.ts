@@ -151,16 +151,6 @@ type CtpiRow = {
   publication_status: string | null;
 };
 
-type FallbackRunRow = {
-  run_id: string;
-  as_of_date: string;
-  forge_player_projections?: Array<{
-    as_of_date: string;
-    game_id: number;
-    games?: { date?: string | null } | null;
-  }> | null;
-};
-
 type StartChartRequest = {
   date: string;
   mode: "points";
@@ -968,40 +958,15 @@ async function fetchSlate(
   };
 }
 
-async function fetchFallbackRunWithPlayerData(
-  targetDate: string,
-  seasonStartDate: string,
-): Promise<{ runId: string; asOfDate: string } | null> {
-  // The inner projection/game relationship excludes succeeded runs that cannot
-  // actually serve a one-game slate. This avoids one existence query per run,
-  // which is especially expensive across long no-game/offseason stretches.
-  for (let offset = 0; ; offset += 1) {
-    const { data: candidates, error: candidatesError } = await supabase
-      .from("forge_runs")
-      .select(
-        "run_id,as_of_date,forge_player_projections!inner(as_of_date,game_id,horizon_games,games!inner(date))",
-      )
-      .eq("status", "succeeded")
-      .lte("as_of_date", targetDate)
-      .gte("as_of_date", seasonStartDate)
-      .eq("forge_player_projections.horizon_games", 1)
-      .order("as_of_date", { ascending: false })
-      .order("created_at", { ascending: false })
-      .order("run_id", { ascending: true })
-      .range(offset, offset);
-    if (candidatesError) throw candidatesError;
-    const row = ((candidates ?? []) as unknown as FallbackRunRow[])[0];
-    if (!row) break;
-    const hasMatchingSchedule = (row.forge_player_projections ?? []).some(
-      (projection) =>
-        projection.as_of_date === row.as_of_date &&
-        projection.games?.date === row.as_of_date,
-    );
-    if (hasMatchingSchedule) {
-      return { runId: row.run_id, asOfDate: row.as_of_date };
-    }
-  }
-  return null;
+async function fetchNextSlateDate(targetDate: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("games")
+    .select("date")
+    .gt("date", targetDate)
+    .order("date", { ascending: true })
+    .limit(1);
+  if (error) throw error;
+  return data?.[0]?.date ?? null;
 }
 
 async function fetchCtpiRows(
@@ -1095,7 +1060,8 @@ export default async function handler(
   }
 
   const request = parsedRequest.value;
-  const requestedDate = request.date;
+  const today = easternDate();
+  const requestedDate = request.date < today ? today : request.date;
   const cacheKey = [
     `date:${requestedDate}`,
     `position:${request.position ?? "all"}`,
@@ -1118,65 +1084,32 @@ export default async function handler(
     }
 
     const loadPromise = (async () => {
-      const [season, requestedSlate] = await Promise.all([
-        getLatestStartedSeasonForDate(requestedDate, supabase),
-        fetchSlate(requestedDate),
-      ]);
-      const seasonId = Number(season?.id);
-      if (!Number.isSafeInteger(seasonId) || seasonId <= 0) {
-        throw new Error(
-          `Unable to resolve season for Start Chart date=${requestedDate}`,
-        );
-      }
-      const yahooSeason = Number(String(seasonId).slice(0, 4));
-      const seasonStartDate = String(season?.startDate ?? requestedDate).slice(
-        0,
-        10,
-      );
-
+      const requestedSlate = await fetchSlate(requestedDate);
       let slate = requestedSlate;
       let resolvedDate = requestedDate;
-      let fallbackApplied = false;
-      let fallbackStrategy:
-        | "requested_date"
-        | "previous_date_with_games"
-        | "latest_available_with_data" = "requested_date";
-
       if (requestedSlate.games.length === 0) {
-        // One joined lookup already resolves the latest earlier run that owns
-        // usable one-game rows and a matching schedule. A separate probe of
-        // yesterday duplicated the same work and added two cold network rounds.
-        const fallback = await fetchFallbackRunWithPlayerData(
-          requestedDate,
-          seasonStartDate,
-        );
-        if (fallback) {
-          const fallbackSlate = await fetchSlate(
-            fallback.asOfDate,
-            fallback.runId,
-          );
-          if (
-            fallbackSlate.games.length > 0 &&
-            fallbackSlate.projections.length > 0
-          ) {
-            slate = fallbackSlate;
-            resolvedDate = fallback.asOfDate;
-            fallbackApplied = resolvedDate !== requestedDate;
-            fallbackStrategy =
-              shiftDate(requestedDate, -1) === resolvedDate
-                ? "previous_date_with_games"
-                : "latest_available_with_data";
-          }
+        const nextDate = await fetchNextSlateDate(requestedDate);
+        if (nextDate) {
+          resolvedDate = nextDate;
+          slate = await fetchSlate(nextDate);
         }
       }
+      const fallbackApplied = resolvedDate !== requestedDate;
+      const fallbackStrategy = fallbackApplied ? "next_scheduled_date" : "requested_date";
+      const season = await getLatestStartedSeasonForDate(resolvedDate, supabase);
+      const seasonId = Number(season?.id);
+      if (!Number.isSafeInteger(seasonId) || seasonId <= 0) {
+        throw new Error(`Unable to resolve season for Start Chart date=${resolvedDate}`);
+      }
+      const yahooSeason = Number(String(seasonId).slice(0, 4));
 
       const servingMode =
         slate.games.length === 0
           ? "no_games"
-          : fallbackApplied
-            ? "fallback"
-            : slate.projections.length === 0 || slate.projectionError
-              ? "partial"
+          : slate.projections.length === 0 || slate.projectionError
+            ? "partial"
+            : fallbackApplied
+              ? "fallback"
               : "exact";
       const baseServing = buildResolvedDataServingContract({
         requestedDate,
@@ -1191,7 +1124,7 @@ export default async function handler(
         servingMode === "partial"
           ? "scheduled_games_missing_projections"
           : servingMode === "no_games"
-            ? "no_scheduled_games_or_eligible_fallback"
+            ? "no_current_or_upcoming_scheduled_games"
             : fallbackApplied
               ? fallbackStrategy
               : null;
@@ -1205,7 +1138,7 @@ export default async function handler(
           (servingMode === "partial"
             ? `Games are scheduled for ${resolvedDate}, but canonical one-game skater projections are unavailable.`
             : servingMode === "no_games"
-              ? `No scheduled games or eligible same-season projection fallback is available for ${requestedDate}.`
+              ? `No scheduled games are available on or after ${requestedDate}.`
               : null),
       };
 

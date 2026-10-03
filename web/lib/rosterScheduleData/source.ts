@@ -1,5 +1,6 @@
 import { get } from "lib/NHL/base";
 import { getScheduleDaily } from "lib/NHL/server/scheduleDaily";
+import { MAX_BOUNDED_REFRESH_DAYS } from "./constants";
 
 import type {
   FetchedNhlScheduleGame,
@@ -20,8 +21,15 @@ function dedupeFetchedGames(
   const byId = new Map<number, FetchedNhlScheduleGame>();
   const duplicateGameIds = new Set<number>();
   for (const entry of games) {
-    if (byId.has(entry.game.id)) duplicateGameIds.add(entry.game.id);
-    else byId.set(entry.game.id, entry);
+    const prior = byId.get(entry.game.id);
+    if (prior) {
+      const identity = (game: NhlScheduleGame) => JSON.stringify([game.season, game.gameType, game.gameDate,
+        game.startTimeUTC ? (Number.isFinite(Date.parse(game.startTimeUTC)) ? Date.parse(game.startTimeUTC) : game.startTimeUTC) : null,
+        game.homeTeam.id, game.homeTeam.abbrev, game.awayTeam.id, game.awayTeam.abbrev,
+        game.gameState?.trim().toUpperCase() ?? "UNKNOWN", game.gameScheduleState?.trim().toUpperCase() ?? "UNKNOWN"]);
+      if (identity(prior.game) !== identity(entry.game)) throw new Error("Conflicting NHL source schedule versions.");
+      duplicateGameIds.add(entry.game.id);
+    } else byId.set(entry.game.id, entry);
   }
   return {
     duplicateGameIds: [...duplicateGameIds].sort((a, b) => a - b),
@@ -56,6 +64,7 @@ export async function fetchFullSeasonNhlSchedule(args: {
         const payload = await get<{ games?: NhlScheduleGame[] }>(
           `/club-schedule-season/${team.abbreviation}/${args.seasonId}`,
         );
+        if (!payload || !Array.isArray(payload.games)) throw new Error("NHL club schedule response is incomplete.");
         return {
           team,
           entries: (payload.games ?? []).map((game) => ({ game, sourceUrl })),
@@ -96,22 +105,42 @@ export async function fetchFullSeasonNhlSchedule(args: {
 export async function fetchBoundedNhlSchedule(args: {
   startDate: string;
   endDate: string;
+  signal?: AbortSignal;
 }): Promise<{
   complete: boolean;
   games: FetchedNhlScheduleGame[];
   warnings: string[];
 }> {
+  const validDate = (date: string) => /^\d{4}-\d{2}-\d{2}$/.test(date)
+    && Number.isFinite(Date.parse(`${date}T00:00:00Z`)) && new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) === date;
+  const days = (Date.parse(args.endDate) - Date.parse(args.startDate)) / 86400000 + 1;
+  if (!validDate(args.startDate) || !validDate(args.endDate) || days < 1 || days > MAX_BOUNDED_REFRESH_DAYS) {
+    throw new Error("Invalid bounded NHL schedule range.");
+  }
   const fetched: FetchedNhlScheduleGame[] = [];
   for (let cursor = args.startDate; cursor <= args.endDate; cursor = addUtcDays(cursor, 7)) {
-    const payload = (await getScheduleDaily(cursor)) as unknown as {
-      gameWeek?: Array<{ date?: string; games?: NhlScheduleGame[] }>;
+    if (args.signal?.aborted) throw args.signal.reason ?? new Error("NHL schedule read aborted.");
+    const payload = (await getScheduleDaily(cursor, args.signal)) as unknown as {
+      gameWeek?: Array<{ date?: string; games?: Array<Omit<NhlScheduleGame, "gameDate"> & { gameDate?: string | null }> }>;
     };
+    if (args.signal?.aborted) throw args.signal.reason ?? new Error("NHL schedule read aborted.");
+    if (!payload || !Array.isArray(payload.gameWeek)) throw new Error("NHL daily schedule response is incomplete.");
     const sourceUrl = `https://api-web.nhle.com/v1/schedule/${cursor}`;
-    for (const day of payload.gameWeek ?? []) {
-      if (!day.date || day.date < args.startDate || day.date > args.endDate) {
+    const seenDates = new Set<string>();
+    for (const day of payload.gameWeek) {
+      if (!day.date || !validDate(day.date)) throw new Error("NHL schedule day is invalid.");
+      if (day.date < args.startDate || day.date > args.endDate) {
         continue;
       }
-      for (const game of day.games ?? []) fetched.push({ game, sourceUrl });
+      if (!Array.isArray(day.games)) throw new Error("NHL schedule day is incomplete.");
+      seenDates.add(day.date);
+      for (const game of day.games) {
+        if (game.gameDate != null && game.gameDate !== day.date) throw new Error("NHL game date conflicts with its schedule day.");
+        fetched.push({ game: { ...game, gameDate: day.date }, sourceUrl });
+      }
+    }
+    for (let day = cursor; day <= args.endDate && day < addUtcDays(cursor, 7); day = addUtcDays(day, 1)) {
+      if (!seenDates.has(day)) throw new Error("NHL daily schedule omitted a requested date.");
     }
   }
   const deduped = dedupeFetchedGames(fetched);

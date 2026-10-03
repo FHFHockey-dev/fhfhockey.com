@@ -1,0 +1,84 @@
+{
+  "version": "pk-report-verification-v1",
+  "verifiedAt": "2026-10-02T14:14:05.456448+00:00",
+  "scope": "artifact consistency and proposed arithmetic only; application behavior tests not executed",
+  "checks": [
+    {
+      "check": "22 unique successful SQL receipts",
+      "status": "passed"
+    },
+    {
+      "check": "64 WGO appearances in scoped evidence",
+      "status": "passed"
+    },
+    {
+      "check": "32 absent NST rows on WGO zero exposure",
+      "status": "passed"
+    },
+    {
+      "check": "two observed provider disagreements",
+      "status": "passed"
+    },
+    {
+      "check": "two insertions after historical cutoff",
+      "status": "passed"
+    },
+    {
+      "check": "31 complete NST component sets",
+      "status": "passed"
+    },
+    {
+      "check": "13 materialized player rows",
+      "status": "passed"
+    },
+    {
+      "check": "four materialized player rows have missing PK",
+      "status": "passed"
+    },
+    {
+      "check": "empty current scoped player/team rows",
+      "status": "passed"
+    },
+    {
+      "check": "event 1022 raw code and canonical team confirmed",
+      "status": "passed"
+    },
+    {
+      "check": "fictional prior mass sums to one",
+      "status": "passed"
+    },
+    {
+      "check": "fictional participation applied once",
+      "status": "passed"
+    },
+    {
+      "check": "fictional clock/player budget arithmetic",
+      "status": "passed"
+    },
+    {
+      "check": "all fixture IDs unique",
+      "status": "passed"
+    },
+    {
+      "check": "report links resolve",
+      "status": "passed"
+    }
+  ],
+  "notRun": [
+    "application suites",
+    "model inference",
+    "production changes",
+    "prospective calibration"
+  ],
+  "blocked": [
+    "universal NST taxonomy",
+    "immutable historical NST/WGO values",
+    "current full coverage"
+  ],
+  "artifactSha256": {
+    "evidence.json": "efa0dc3e0a11e916fd57b592afb925f419facccd72c85d1b397be8ec07d94481",
+    "source-manifest.json": "bf47c450e1c275500653e03478f798aec0dacd506dbd88a03ccae4eb9c51a857",
+    "report.md": "8c91f2220a21d1475f463b00a16a78cdfe24597ad437dd237878573378b1368e",
+    "fixture-spec.json": "a6818d0ac78905498015dff413558cf9e5fc8d0010d98fb48c2d8e0ba2fad52d"
+  }
+}

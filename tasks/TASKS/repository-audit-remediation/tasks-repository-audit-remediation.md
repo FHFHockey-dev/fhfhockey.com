@@ -101,7 +101,7 @@ Do not call the RPC, inspect secret values, push a migration, modify the frozen 
   - Validation: from `web/`, `npm test -- lib/supabase/supportedBaselineMigration.test.ts`; static SQL review confirms no function invocation or unrelated DDL.
   - Risks: incorrect signature or ownership assumptions can make the revocation ineffective.
   - Rollback: prepare a separate compensating forward migration restoring only the previously approved privileged ACL; never roll back by editing an applied migration.
-- [ ] AUDIT-TASK-001.4 — Verify source and deployed ACLs after an explicitly authorized rollout.
+- [x] AUDIT-TASK-001.4 — Verify source and deployed ACLs after an explicitly authorized rollout.
   - Paths: the new migration and its operator receipt
   - Depends on: AUDIT-TASK-001.3 and separately authorized deployment
   - Acceptance criteria: source tests pass and a post-rollout catalog-only receipt shows no browser-role execute privilege.
@@ -125,6 +125,18 @@ Highest risk is an unknown operator consumer. Keep the revocation isolated and r
 - After AUDIT-TASK-006 reconciliation, the full migration-authority file passes 17/17. A fresh read-only catalog and deployed-ledger check still shows the browser-role grants and confirms migration `20260820013120` is not applied.
 - The [security RPC rollout runbook](security-rpc-rollout-runbook.md) freezes the exact source hash, catalog-only pre/post query, stop conditions, forward-only rollback rule, and operator receipt. No migration was pushed or applied; AUDIT-TASK-001.4 remains pending explicit authorization naming this migration.
 - A resumed read-only Production check on 2026-08-26 still found `public.execute_sql(sql_statement text)` SECURITY DEFINER with `PUBLIC`, `anon`, and `authenticated` execute privileges, while the Production migration ledger still ended at `20260815023132`. No function was invoked and no migration was applied.
+
+## Production closure — Task #1, 2026-10-02
+
+Task #1 / AUDIT-TASK-001 is complete. After explicit action-time owner approval,
+the parent applied the exact reviewed single DO through the authenticated
+Supabase SQL editor at approximately 12:36:45 UTC. Its 12:36:59 UTC post-check and
+this task's independent 12:44:35 UTC catalog/ledger check confirm browser/PUBLIC
+denial, postgres/service-role retention, unchanged definition/identity/owner/config,
+and exactly one original-version receipt with the exact statements. See the
+[production closure](security-rpc-rollout-runbook.md#production-closure--task-1-complete)
+and [verification receipt](task1-single-statement-verification.json). No helper
+invocation, unrelated migration, or broader remediation closure occurred.
 
 # AUDIT-TASK-002: Remove browser access to the destructive truncation RPC
 

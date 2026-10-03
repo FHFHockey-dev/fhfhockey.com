@@ -97,7 +97,7 @@ const fetcher = async <T,>(url: string) => {
 };
 
 const RANKINGS_SWR_OPTIONS = {
-  keepPreviousData: true,
+  keepPreviousData: false,
   revalidateOnFocus: false,
   dedupingInterval: 30_000,
 };
@@ -681,14 +681,15 @@ function goalieResultSummary(
     (column) => column.metricKey === payload.request.metric,
   );
   const window =
-    filters.window === "season"
+    payload.request.window === "season"
       ? "Season"
-      : filters.window.replace("last", "Last ");
+      : `${payload.request.window.replace("last", "Last ")} games`;
   const role =
     payload.request.role === "all"
       ? "all goalie roles"
       : (payload.rows[0]?.role.deploymentLabel ?? filters.goalieRole);
-  return `Sorted by ${sortMetric?.label ?? payload.request.metric} percentile · ${window} · ${role}`;
+  const season = String(payload.request.season).replace(/^(\d{4})(\d{4})$/, "$1–$2");
+  return `${season} performance · Sorted by ${sortMetric?.label ?? payload.request.metric} percentile · ${window} · ${role} · Min ${payload.request.minStarts} starts · Min ${payload.request.minShots} shots`;
 }
 
 function teamResultSummary(payload: TeamMatrixResponse | undefined) {
@@ -696,7 +697,8 @@ function teamResultSummary(payload: TeamMatrixResponse | undefined) {
   const sortMetric = payload.meta.metricColumns.find(
     (column) => column.metricKey === payload.request.metric,
   );
-  return `Sorted by ${sortMetric?.label ?? payload.request.metric} percentile · raw/contextual team style · ${payload.meta.totalRankedRows} teams`;
+  const season = String(payload.request.season).replace(/^(\d{4})(\d{4})$/, "$1–$2");
+  return `${season} performance · Sorted by ${sortMetric?.label ?? payload.request.metric} percentile · raw/contextual team style · ${payload.meta.totalRankedRows} teams`;
 }
 
 type SnapshotAvailableRow = Extract<
@@ -1217,32 +1219,32 @@ export default function RankingsPage() {
     [router.query],
   );
   const matrixRequestPath =
-    filters.entity === "skaters" && filters.tab === "rankings"
+    router.isReady && filters.entity === "skaters" && filters.tab === "rankings"
       ? buildMatrixRequestPath(filters)
       : null;
   const goalieMatrixRequestPath =
-    filters.entity === "goalies" && filters.tab === "rankings"
+    router.isReady && filters.entity === "goalies" && filters.tab === "rankings"
       ? buildGoalieMatrixRequestPath(filters)
       : null;
   const teamMatrixRequestPath =
-    filters.entity === "teams" && filters.tab === "rankings"
+    router.isReady && filters.entity === "teams" && filters.tab === "rankings"
       ? buildTeamMatrixRequestPath(filters)
       : null;
   const explorerRequestPath =
-    filters.tab === "metric_explorer"
+    router.isReady && filters.tab === "metric_explorer"
       ? buildRankingsRequestPath(filters)
       : null;
   const deploymentTiersRequestPath =
-    filters.tab === "deployment_tiers"
+    router.isReady && filters.tab === "deployment_tiers"
       ? buildDeploymentTiersRequestPath(filters)
       : null;
   const trendingRequestPath =
-    filters.tab === "trending" ? buildTrendingRequestPath(filters) : null;
+    router.isReady && filters.tab === "trending" ? buildTrendingRequestPath(filters) : null;
   const splitsRequestPath =
-    filters.tab === "splits" ? buildSplitsRequestPath(filters) : null;
+    router.isReady && filters.tab === "splits" ? buildSplitsRequestPath(filters) : null;
   const warRequestPath =
-    filters.tab === "war" ? buildWarRequestPath(filters) : null;
-  const snapshotRequestPath = buildSnapshotRequestPath(filters);
+    router.isReady && filters.tab === "war" ? buildWarRequestPath(filters) : null;
+  const snapshotRequestPath = router.isReady ? buildSnapshotRequestPath(filters) : null;
   const metadataRequestPath = "/api/v1/contextual-rankings/metadata";
   const {
     data: matrixData,
@@ -1361,7 +1363,7 @@ export default function RankingsPage() {
     () => applyMatrixDisplayFilters(matrixData, filters),
     [matrixData, filters],
   );
-  const comparisonRequestPath = buildComparisonRequestPath({
+  const comparisonRequestPath = router.isReady ? buildComparisonRequestPath({
     filters,
     selectedPlayerId,
     selectedGoalieId,
@@ -1369,9 +1371,9 @@ export default function RankingsPage() {
     matrixData: displayedMatrixData,
     goalieMatrixData,
     teamMatrixData,
-  });
+  }) : null;
   const comparisonOpportunityRequestPath =
-    filters.entity === "skaters" && filters.tab === "rankings"
+    router.isReady && filters.entity === "skaters" && filters.tab === "rankings"
       ? buildTrendingRequestPath(filters)
       : null;
   const {
@@ -1421,16 +1423,26 @@ export default function RankingsPage() {
       page: "1",
     });
   };
-  const latestSnapshotDate =
-    matrixData?.meta.snapshotDate ??
-    goalieMatrixData?.meta.snapshotDate ??
-    teamMatrixData?.meta.snapshotDate ??
-    explorerData?.meta.snapshotDate ??
-    deploymentTiersData?.meta.latestAvailableSnapshotDate ??
-    trendingData?.meta.latestAvailableSnapshotDate ??
-    splitsData?.meta.latestAvailableSnapshotDate ??
-    warData?.meta.generatedAt?.slice(0, 10) ??
-    null;
+  let latestSnapshotDate: string | null = null;
+  switch (filters.tab) {
+    case "rankings":
+      latestSnapshotDate = (filters.entity === "skaters" ? matrixData?.meta.snapshotDate
+        : filters.entity === "goalies" ? goalieMatrixData?.meta.snapshotDate
+          : teamMatrixData?.meta.snapshotDate) ?? null;
+      break;
+    case "metric_explorer":
+      latestSnapshotDate = explorerData?.meta.snapshotDate ?? null;
+      break;
+    case "deployment_tiers":
+      latestSnapshotDate = deploymentTiersData?.meta.latestAvailableSnapshotDate ?? null;
+      break;
+    case "trending":
+      latestSnapshotDate = trendingData?.meta.latestAvailableSnapshotDate ?? null;
+      break;
+    case "splits":
+      latestSnapshotDate = splitsData?.meta.latestAvailableSnapshotDate ?? null;
+      break;
+  }
 
   return (
     <>
@@ -1450,13 +1462,17 @@ export default function RankingsPage() {
               <h1>
                 <span>{labels.headingLead}</span> {labels.headingRest}
               </h1>
-              <p>{buildRankingsContextSummary(filters)}</p>
+              <p>{filters.tab === "rankings" && filters.entity === "goalies"
+                ? goalieResultSummary(goalieMatrixData, filters)
+                : filters.tab === "rankings" && filters.entity === "teams"
+                  ? teamResultSummary(teamMatrixData)
+                  : buildRankingsContextSummary(filters, matrixData?.meta.sortMetricAvailableRowCount)}</p>
             </div>
             <div className={styles.controlShellHeaderActions}>
               <div className={styles.metaPanel}>
                 <SmallIcon name="calendar" />
                 <div>
-                  <span>Data updated</span>
+                  <span>Dataset snapshot</span>
                   <strong>{formatSnapshotDate(latestSnapshotDate)}</strong>
                 </div>
               </div>

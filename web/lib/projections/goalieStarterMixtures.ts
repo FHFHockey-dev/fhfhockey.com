@@ -119,7 +119,7 @@ export function buildGoalieStarterMixtureRows(args: {
   previousGameStarterByGameTeam?: Map<string, number>;
   backToBackGameTeams?: Set<string>;
 }): GoalieStarterMixtureRow[] {
-  const mixtureVersion = args.mixtureVersion ?? "goalie_starter_mixture_v1";
+  const mixtureVersion = args.mixtureVersion ?? "goalie_starter_mixture_v2";
   const asOfTimestamp = args.asOfTimestamp ?? new Date().toISOString();
   const sourceName = args.sourceName ?? "goalie_start_projections";
   const staleSoftHours = args.staleSoftHours ?? 12;
@@ -140,14 +140,20 @@ export function buildGoalieStarterMixtureRows(args: {
   for (const [key, rows] of byGameTeam) {
     const manualOverrideGoalieId = args.manualOverridesByGameTeam?.get(key) ?? null;
     const confirmedRows = rows.filter((row) => row.confirmed_status === true);
+    const conflictingEvidence = confirmedRows.length > 1 || new Set(rows.map(row => row.player_id)).size !== rows.length
+      || rows.some(row => row.start_probability != null && (!Number.isFinite(row.start_probability)
+        || row.start_probability < 0 || row.start_probability > 1))
+      || rows.reduce((sum, row) => sum + (row.start_probability ?? 0), 0) > 1.000001;
     const previousStarter = args.previousGameStarterByGameTeam?.get(key) ?? null;
     const isBackToBack = args.backToBackGameTeams?.has(key) ?? false;
 
     const adjusted = rows.map((row) => {
-      const raw = clamp(Number(row.start_probability ?? 0), 0, 1);
+      const raw = Number.isFinite(row.start_probability) ? clamp(Number(row.start_probability), 0, 1) : 0;
       let probability = raw;
       if (manualOverrideGoalieId != null) {
         probability = row.player_id === manualOverrideGoalieId ? 1 : 0;
+      } else if (conflictingEvidence) {
+        probability = 0;
       } else if (confirmedRows.length > 0) {
         probability = row.confirmed_status ? 1 / confirmedRows.length : 0;
       } else if (isBackToBack && previousStarter === row.player_id && rows.length > 1) {
@@ -157,7 +163,9 @@ export function buildGoalieStarterMixtureRows(args: {
     });
 
     const mass = adjusted.reduce((sum, row) => sum + Math.max(0, row.adjusted), 0);
-    const denominator = mass > 0 ? mass : adjusted.length || 1;
+    // Missing mass represents an unresolved starter, including after the B2B adjustment.
+    // Do not redistribute it into certainty about the listed candidates.
+    const denominator = Math.max(1, mass);
     const ranked = adjusted
       .map((item) => ({
         ...item,
@@ -173,7 +181,8 @@ export function buildGoalieStarterMixtureRows(args: {
       const staleHours = hoursBetween(asOfTimestamp, item.row.updated_at);
       const isStale = staleHours != null && staleHours >= staleSoftHours;
       const isHardStale = staleHours != null && staleHours >= staleHardHours;
-      const confirmed = item.row.confirmed_status === true;
+      const confirmed = item.row.confirmed_status === true && confirmedRows.length === 1
+        && !conflictingEvidence && (manualOverrideGoalieId == null || manualOverrideGoalieId === item.row.player_id);
       output.push({
         mixture_version: mixtureVersion,
         game_id: item.row.game_id,
@@ -207,6 +216,7 @@ export function buildGoalieStarterMixtureRows(args: {
           mixtureVersion,
           manualOverrideApplied: manualOverrideGoalieId != null,
           confirmedStarterCount: confirmedRows.length,
+          conflictingEvidence,
           staleHours: staleHours == null ? null : roundMetric(staleHours),
           backToBackAdjustmentApplied:
             isBackToBack && previousStarter === item.row.player_id && manualOverrideGoalieId == null,

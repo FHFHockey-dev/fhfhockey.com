@@ -36,6 +36,40 @@ describe("YahooLiveDraftPanel", () => {
     settings: { teamCount: 1, inferredDraftOrder: true }, picks: [],
   };
 
+  it("links the first unmet setup action to Yahoo connection", () => {
+    render(<YahooLiveDraftPanel {...baseProps} authenticated draftProEligible liveSyncEnabled />);
+    fireEvent.click(screen.getByRole("button", { name: /Yahoo leagues: Connect Yahoo and load your leagues/ }));
+    expect(baseProps.onConnect).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(/Next: Connect Yahoo and load your leagues/)).toBeTruthy();
+  });
+
+  it("guides league selection, starts sync from the progress circle, then applies settings", () => {
+    const leagues = [
+      { externalLeagueId: "league-1", name: "First league", supported: true },
+      { externalLeagueId: "league-2", name: "Second league", supported: true },
+    ];
+    const props = { ...baseProps, authenticated: true, draftProEligible: true,
+      liveSyncEnabled: true, leagues };
+    const { rerender } = render(<YahooLiveDraftPanel {...props} />);
+    expect(screen.getByText("Yahoo linked · Live Sync off")).toBeTruthy();
+    const choose = screen.getByRole("button", { name: /Choose league: Select the league/ });
+    fireEvent.click(choose);
+    expect(document.activeElement).toBe(screen.getByRole("combobox", { name: "Yahoo league" }));
+    expect((screen.getByRole("button", { name: /Start Live Sync: Start Live Sync/ }) as HTMLButtonElement).disabled).toBe(true);
+
+    rerender(<YahooLiveDraftPanel {...props} selectedLeagueId="league-2" />);
+    fireEvent.click(screen.getByRole("button", { name: /Start Live Sync: Start Live Sync/ }));
+    expect(props.onStart).toHaveBeenCalledTimes(1);
+
+    rerender(<YahooLiveDraftPanel {...props} selectedLeagueId="league-2" mode="yahoo"
+      draftState={waitingState} settingsNeedApplying />);
+    fireEvent.click(screen.getByRole("button", { name: /Apply settings: Apply Yahoo settings/ }));
+    expect(props.onApplySettings).toHaveBeenCalledTimes(1);
+    rerender(<YahooLiveDraftPanel {...props} selectedLeagueId="league-2" mode="yahoo"
+      draftState={waitingState} settingsNeedApplying={false} />);
+    expect(screen.getByText(/Setup complete. Keep Live Sync running/)).toBeTruthy();
+  });
+
   it("highlights unapplied settings and removes the cue only when the parent reports they match", () => {
     const props = { ...baseProps, mode: "yahoo" as const, authenticated: true, draftProEligible: true,
       liveSyncEnabled: true, draftState: waitingState, settingsNeedApplying: true };
@@ -55,6 +89,25 @@ describe("YahooLiveDraftPanel", () => {
     expect(screen.getAllByText(/Draft format is not confirmed/)).toHaveLength(1);
     expect(screen.queryByText(/did not provide an explicit snake/)).toBeNull();
     expect(screen.getByText("Reconnect failed").closest('[role="alert"]')).toBeTruthy();
+    expect(screen.queryByText(/Click Check for updates/)).toBeNull();
+  });
+
+  it("does not suggest polling or repeated retries for a missing Yahoo callback", () => {
+    render(<YahooLiveDraftPanel {...baseProps} authenticated draftProEligible
+      liveSyncEnabled={false} error="YAHOO_REDIRECT_URI is not configured." />);
+    expect(screen.getByText(/Yahoo sign-in is not configured for this site/)).toBeTruthy();
+    expect(screen.queryByText(/Click Check for updates/)).toBeNull();
+    expect(screen.queryByText(/Try again later/)).toBeNull();
+  });
+
+  it("separates reported keeper identities from unconfirmed pick costs and draft order", () => {
+    render(<YahooLiveDraftPanel {...baseProps} mode="yahoo"
+      draftState={{ ...waitingState, settings: { ...waitingState.settings,
+        draftKeepers: [{ yahooPlayerKey: "player.1", yahooTeamKey: "team.1" }] } }} />);
+    expect(screen.getByText(/Draft order unconfirmed: Yahoo has not supplied every team position/)).toBeTruthy();
+    expect(screen.getByText(/Yahoo listed 1 keeper player, but has not confirmed whether the list is final/)).toBeTruthy();
+    expect(screen.getByText(/A keeper without an assigned pick is not confirmed free/)).toBeTruthy();
+    expect(screen.getByText(/snake assumed draft/)).toBeTruthy();
   });
 
   it("shows a dismissible reminder only inside the pre-draft window and remembers dismissal", () => {
@@ -251,6 +304,7 @@ describe("YahooLiveDraftPanel", () => {
     );
 
     expect(screen.getByText("Live")).toBeTruthy();
+    expect(screen.getByText(/Click Check for updates and compare the next pick/)).toBeTruthy();
     expect(screen.getByText("Pick 2")).toBeTruthy();
     expect(screen.getByText(/predicted/)).toBeTruthy();
     expect(

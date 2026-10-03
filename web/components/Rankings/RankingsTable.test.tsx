@@ -90,7 +90,7 @@ describe("RankingsTable", () => {
 
     expect(screen.getByText("Matt Savoie")).toBeTruthy();
     expect(screen.getByText("L3 / PP2")).toBeTruthy();
-    expect(screen.getByText("Medium sample")).toBeTruthy();
+    expect(screen.getByText("Meets selected minimums")).toBeTruthy();
     expect(screen.getByText("Small peer")).toBeTruthy();
     expect(screen.getByText("Soon")).toBeTruthy();
 
@@ -177,7 +177,7 @@ describe("RankingsTable", () => {
     );
 
     expect(screen.getByText("Matt Savoie")).toBeTruthy();
-    expect(screen.getByText("Low sample")).toBeTruthy();
+    expect(screen.getByText("Below selected minimums")).toBeTruthy();
     expect(screen.getByText("low-sample")).toBeTruthy();
 
     fireEvent.click(screen.getByText("Explain"));

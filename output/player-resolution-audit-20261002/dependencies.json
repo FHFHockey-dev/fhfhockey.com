@@ -1,0 +1,31 @@
+{
+  "node": "22.11.0",
+  "packages": {
+    "next": {
+      "version": "15.5.22",
+      "packageJsonSha256": "af6e184b7961a77050546037a2fd1cdf90860b6d07200a614755ccc08adb961f"
+    },
+    "react": {
+      "version": "18.3.1",
+      "packageJsonSha256": "d4e68a5c96babb20cad1daafea8b78822eae45b341552cf5418d06a5304fa64c"
+    },
+    "react-dom": {
+      "version": "18.3.1",
+      "packageJsonSha256": "d2f29e31bd48b833e48cd7bbf41f192e8ee4ff8da249fdbe10d4ac4114b8b12e"
+    },
+    "@playwright/test": {
+      "version": "1.60.0",
+      "packageJsonSha256": "cf92117ef1d8cbf1e4b2dffb63a0da552c0173bd6052f0f45711c0f00b79dc99"
+    },
+    "vitest": {
+      "version": "3.2.7",
+      "packageJsonSha256": "3f3dc1ef7acc6ffac8d0a7f10c4460f98e36026837b57f774426d962d546d740"
+    },
+    "@supabase/supabase-js": {
+      "version": "2.89.0",
+      "packageJsonSha256": "d28723a902b044dec3ef4bb5c4fb3a80e30f1bc7f25fac899f38fa11204348ed"
+    }
+  },
+  "method": "APFS copy of existing web/node_modules; no install or version changes",
+  "note": "A whole-directory dependency symlink caused duplicate React resolution in the isolated baseline. The independent copy removed that setup failure."
+}

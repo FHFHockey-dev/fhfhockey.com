@@ -1,0 +1,58 @@
+{
+  "01a0f724-cb90-701a-acd9-22277eacf0f4": {
+    "thread": {
+      "id": "01a0f724-cb90-701a-acd9-22277eacf0f4",
+      "kind": "codex",
+      "hostId": "durable",
+      "title": "⠕ Verify player resolution",
+      "preview": "",
+      "status": {
+        "type": "idle"
+      },
+      "cwd": "/Users/tim/Documents/Codex/2026-10-01/task",
+      "createdAt": 1790852780,
+      "updatedAt": 1790908181
+    },
+    "finals": [
+      {
+        "turnId": "01a0fa71-f73d-746e-8a0f-2e0c5b786b61",
+        "text": "Successful route: the installed Playwright package, launched through `exec_command` with **`sandbox_permissions: \"require_escalated\"`**. Automatic approval review allowed the command; no interactive user approval or security-setting changes were needed.\n\n```js\nconst { chromium } = require(\n  \"/Users/tim/Code/fhfhockey.com/web/node_modules/@playwright/test\"\n);\nconst browser = await chromium.launch({ headless: true });\nconst context = await browser.newContext({\n  viewport: { width: 1440, height: 1000 },\n  serviceWorkers: \"block\"\n});\n```\n\nNo custom executable, browser flags, persistent profile, or remote debugging connection. Chromium reported version `148.0.7778.96`. The successful run used the existing server at `http://127.0.0.1:3000`; network interception was installed before page creation.\n\nReusable harness: [verify.cjs](/Users/tim/Documents/Codex/2026-10-01/task/player-resolution-browser-receipts/verify.cjs).\n\nThe MachPort failure may reflect execution without the approved sandbox escalation, but I cannot establish that from the error alone. If escalation is denied or requires unavailable approval, stop and report it. Do not add sandbox-disabling flags or alter macOS security settings."
+      },
+      {
+        "turnId": "01a0fa67-e365-70e8-b951-8f1774817fe5",
+        "text": "Local browser verification passed: **7/7 checks** in isolated Chromium against the existing port-3000 dev server.\n\nVerified both selection orders, no-match searches, independent retained selections, ordinary selector retention, both queue-switch controls, repeated mocked saves, and abandoning unsaved work by clearing or reloading.\n\n[Browser receipt](/Users/tim/Documents/Codex/2026-10-01/task/player-resolution-browser-receipts/receipt.json) · [Screenshot](/Users/tim/Documents/Codex/2026-10-01/task/player-resolution-browser-receipts/Lomberg-first-no-results.png) · [Playwright trace](/Users/tim/Documents/Codex/2026-10-01/task/player-resolution-browser-receipts/trace.zip)\n\nTested `/Users/tim/Code/fhfhockey.com`, HEAD `73af9d051ecc755dd3695f5265bf5837bbfc7a4e`. Resolver and regression-test hashes remained unchanged. No application edits were needed.\n\nNo page exceptions or framework error overlays. Console errors came from deliberately blocked external resources. All resolver requests were mocked; no production writes or administrative endpoints were reached.\n\n**Remaining release gate:** deployment approval and real authentication/API validation remain outstanding. No local blockers. Weekly usage remains **68% available**. Thread renamed as requested."
+      },
+      {
+        "turnId": "01a0f76b-5cbc-701a-813b-53df7e947f9b",
+        "text": "Implemented the approved dropdown fix.\n\n- [player-aliases.tsx](/Users/tim/Code/fhfhockey.com/web/pages/db/player-aliases.tsx:233): keeps each selected player visible across searches in split and ordinary selectors, without duplicate options. Sidebar queue switching now clears split selections.\n- [player-aliases.test.tsx](/Users/tim/Code/fhfhockey.com/web/__tests__/pages/db/player-aliases.test.tsx): adds five regression tests covering both selection orders, no-match searches, displayed values, mocked payloads, individual selection retention, and both queue-switch controls.\n\nChecks passed:\n\n- Targeted Vitest: **5/5 tests**\n- Targeted ESLint\n- `git diff --check`\n- TypeScript: `NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit`\n\nThe first TypeScript attempt exhausted the default heap; the retry passed. No remaining blockers.\n\nLive-browser behavior and production saves remain untested. Unrelated uncommitted work was preserved. No classifier changes, commits, pushes, deployments, or production-data writes occurred."
+      }
+    ],
+    "note": "Retrieved using supported read_thread, three recent turns. Older task history was not needed."
+  },
+  "01a0c426-1906-7ee2-930a-1899f25af115": {
+    "thread": {
+      "id": "01a0c426-1906-7ee2-930a-1899f25af115",
+      "kind": "codex",
+      "hostId": "local",
+      "title": "Player resolution queue and split names",
+      "preview": "[player-aliases.tsx](web/pages/db/player-aliases.tsx)&#x20;\n\nOnce I resolve one name, `This name is already resolved. You can leave this page as-is.` should not be the result. The page should automatically move onto the next name in the list, showing the previously resolved name as resolved, and also showing how many names are in the queue, and a list of those names.&#x20;\n\nPlease also style the page according to [fhfh-styles.md](tasks/TASKS/rules/fhfh-styles.md)and [brand-style-cheat-sheet.md](tasks/TASKS/rules/brand-style-cheat-sheet.md)using [vars.scss](web/styles/vars.scss)and [\\_panel.scss](web/styles/_panel.scss)if needed.",
+      "status": {
+        "type": "notLoaded"
+      },
+      "cwd": "/Users/tim/Code/fhfhockey.com",
+      "createdAt": 1789997226,
+      "updatedAt": 1790004139
+    },
+    "finals": [
+      {
+        "turnId": "01a0c48c-c345-7241-aecb-40e5ae603bf7",
+        "text": "Implemented compact hyphenated-name splitting.\n\nChanges:\n\n- Added “Save as two players” workflow for names like `Johansson-Faulk`.\n- Allows selecting one player for each half.\n- Saves separate aliases for both names.\n- Records both player IDs in the unresolved row metadata.\n- Automatically removes the combined name from the pending queue.\n- Updated parser handling so `word1-word2` is evaluated as two names instead of always being treated as one hyphenated surname.\n- Preserved support for legitimate hyphenated surnames when the combined identity matches.\n\nVerification passed:\n\n- Focused source tests: 8 passed.\n- TypeScript check passed.\n- ESLint passed.\n- `git diff --check` passed."
+      },
+      {
+        "turnId": "01a0c426-1a81-7bf0-8b19-24086ca5aa8c",
+        "text": "Implemented in:\n\n- [player-aliases.tsx](/Users/tim/Code/fhfhockey.com/web/pages/db/player-aliases.tsx)\n- [player-aliases.module.scss](/Users/tim/Code/fhfhockey.com/web/pages/db/player-aliases.module.scss)\n\nChanges include:\n\n- Automatically selects the next pending name after resolving or ignoring one.\n- Displays pending queue count and clickable name list.\n- Shows resolved progress.\n- Adds responsive FHFH styling using existing variables and panel mixins.\n- Adds visible focus states and improved form/button styling.\n\nVerified:\n\n- ESLint passed.\n- TypeScript check passed with increased Node heap.\n- `git diff --check` passed."
+      }
+    ],
+    "note": "Retrieved using supported read_thread, three recent turns. Older task history was not needed."
+  }
+}

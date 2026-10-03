@@ -1,0 +1,77 @@
+{
+  "head": "73af9d051ecc755dd3695f5265bf5837bbfc7a4e",
+  "worktree": "/tmp/fhfh-player-resolution-fixes",
+  "branch": "chef/player-resolution-workflow-fixes",
+  "candidatePatch": "candidate-clean-base.patch",
+  "candidateSha256": "9547b4c4cd0ca7975882ddeba73fa98df021b97e2d7fb6df17dccd7cdb4ea7ca",
+  "reviewedIncrementalSha256": "820305552ae72e865e694e8dc7089fa046fe85ba746972c324fa279ae56fddb5",
+  "prerequisiteSha256": "ada9a0be7e7d466ddfdcd445e36a20e554937365ff42640070ccb2915877c402",
+  "prerequisitePreimages": [
+    {
+      "path": "web/pages/db/player-aliases.tsx",
+      "headSha256": "124ec3343aad17cde5f80a6a53a70c2b996032d237c2e26bbeaaf08787edbf40",
+      "auditedSha256": "52dcbd1e8b1f0f6833974e9babd8f9ed89a9336d7b61a9e9e53782ed88c5168c",
+      "prerequisite": "Previously approved selection-retention helper/sidebar reset and original five regression tests."
+    },
+    {
+      "path": "web/__tests__/pages/db/player-aliases.test.tsx",
+      "headSha256": null,
+      "auditedSha256": "f7a59f02d6ee1ebe6df8d933b09a3e315fd19fc1c356766fb63ad9e33f620d06",
+      "prerequisite": "Previously approved selection-retention helper/sidebar reset and original five regression tests."
+    }
+  ],
+  "candidateFiles": [
+    "web/pages/db/player-aliases.tsx",
+    "web/pages/db/player-aliases.module.scss",
+    "web/__tests__/pages/db/player-aliases.test.tsx"
+  ],
+  "newOwnershipPrerequisites": [],
+  "originalOverlayCount": 233,
+  "originalOverlaysIncludedAsPrerequisites": 2,
+  "originalOverlaysExcluded": 231,
+  "cleanBaseRuntimeClosureFiles": 48,
+  "committedApiClosureFiles": 14,
+  "reusedVerification": {
+    "source": "/Users/tim/Code/fhfhockey.com/output/player-resolution-peer-review-20261002/review.json",
+    "unit": 24,
+    "browser": 35,
+    "typecheck": "passed",
+    "targetedLint": "passed",
+    "condition": "Exact independently reviewed page/style/test hashes unchanged; dependencies unchanged."
+  },
+  "closureVerification": {
+    "browser": 8,
+    "apiUnit": 5,
+    "apiUnitSkipped": 4,
+    "data": "mock fixtures only",
+    "candidateSourceChangedForClosure": false
+  },
+  "readiness": "Ready for future isolated local checkpoint; no additional classifier, Lines, shell, auth-menu, dependency or configuration overlays required. No checkpoint was created.",
+  "limits": [
+    "Live auth/API/DB behavior remains unverified.",
+    "Existing committed API dependencies are retained; dirty classifier/Lines work is not incorporated.",
+    "Use complete candidate OR prerequisite then reviewed incremental, never both."
+  ],
+  "patchComposition": {
+    "directory": "/tmp/player-resolution-clean-base-compose-20261002",
+    "method": "Applied prerequisite then reviewed incremental to a three-file clean-HEAD verification copy outside Git; no stage/commit/merge and no shared/worktree file changes.",
+    "finalMatchesReviewedFiles": {
+      "web/pages/db/player-aliases.tsx": "41fba3b696577d08e43ef6b2ba78677f9eaa9381fcb572d65337c249998d64e5",
+      "web/pages/db/player-aliases.module.scss": "985b52690a682e5f3946c6d06cbf08013cc0955a71567388f58356a7ad0d4b6e",
+      "web/__tests__/pages/db/player-aliases.test.tsx": "f273cd2a22eed63204977157a92f8d97087f5eed5e6afffa0d8e71d2db25428c"
+    }
+  },
+  "dependencyPackageJsonHashMatches": {
+    "next": true,
+    "react": true,
+    "react-dom": true,
+    "@playwright/test": true,
+    "vitest": true,
+    "@supabase/supabase-js": true
+  },
+  "sharedPreimagesStillMatch": {
+    "web/pages/db/player-aliases.tsx": true,
+    "web/pages/db/player-aliases.module.scss": true,
+    "web/__tests__/pages/db/player-aliases.test.tsx": true
+  }
+}

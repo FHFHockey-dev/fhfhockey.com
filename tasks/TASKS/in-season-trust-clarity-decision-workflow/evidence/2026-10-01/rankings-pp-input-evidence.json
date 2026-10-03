@@ -1,0 +1,30 @@
+{
+  "observedOn": "2026-10-01",
+  "access": "read-only Supabase SQL",
+  "latestDailyRows": {
+    "query": "select strength_state,count(*) as rows,count(pp_points_avg_season) as pp_points_present,count(pp_toi_seconds_avg_season) as pp_toi_present,count(*) filter(where pp_toi_seconds_avg_season>0) as positive_pp_toi_rows,min(pp_points_avg_season) as min_pp_points,max(pp_points_avg_season) as max_pp_points,min(pp_toi_seconds_avg_season) as min_pp_toi,max(pp_toi_seconds_avg_season) as max_pp_toi from public.rolling_player_game_metrics where season=20252026 and game_date='2026-04-16' group by strength_state order by strength_state",
+    "rows": [
+      { "strength": "5v5", "rows": 216, "ppPointsPresent": 0, "ppToiPresent": 0, "positivePpToiRows": 0 },
+      { "strength": "all", "rows": 216, "ppPointsPresent": 0, "ppToiPresent": 0, "positivePpToiRows": 0 },
+      { "strength": "ev", "rows": 216, "ppPointsPresent": 0, "ppToiPresent": 0, "positivePpToiRows": 0 },
+      { "strength": "pk", "rows": 216, "ppPointsPresent": 0, "ppToiPresent": 0, "positivePpToiRows": 0 },
+      { "strength": "pp", "rows": 216, "ppPointsPresent": 0, "ppToiPresent": 0, "positivePpToiRows": 0 }
+    ],
+    "note": "All returned PP minima/maxima were null. This daily subset is not the full selected player cohort."
+  },
+  "rollingDateProbe": {
+    "query": "with dates as (select distinct game_date from public.rolling_player_game_metrics where season=20252026 and strength_state='all' and game_date<='2026-04-16' order by game_date desc limit 30), latest as (select distinct on(r.player_id) r.player_id,r.game_date,coalesce(r.season_games_played,r.games_played) as gp,r.toi_seconds_avg_season,r.pp_points_avg_season,r.pp_toi_seconds_avg_season from public.rolling_player_game_metrics r join dates d using(game_date) where r.season=20252026 and r.strength_state='all' order by r.player_id,r.game_date desc,r.updated_at desc nulls last) select count(*) as players,min(game_date) as earliest_latest_player_date,max(game_date) as latest_player_date,count(gp) as known_gp_rows,min(gp) as min_gp,percentile_cont(0.5) within group(order by gp) as median_gp,max(gp) as max_gp,count(*)filter(where gp=1) as one_game_rows,count(*)filter(where gp>=1 and toi_seconds_avg_season*gp>=600) as total_toi_sample_qualified_rows,count(pp_points_avg_season) as pp_points_present,count(pp_toi_seconds_avg_season) as pp_toi_present,count(*)filter(where pp_toi_seconds_avg_season>0) as positive_pp_toi_rows from latest",
+    "result": { "players": 785, "earliestLatestPlayerDate": "2026-03-19", "latestPlayerDate": "2026-04-16", "knownGpRows": 785, "minGp": 1, "medianGp": 2, "maxGp": 3, "oneGameRows": 271, "totalToiSampleQualifiedRows": 721, "ppPointsPresent": 117, "ppToiPresent": 117, "positivePpToiRows": 63 },
+    "note": "This initial 30-rolling-date probe uses a broader date set than the consumer's scheduled-game lookup below. It must not be treated as the 776-row served cohort."
+  },
+  "consumerDateScope": {
+    "query": "with dates as (select distinct date as game_date from (select date from public.games where \"seasonId\"=20252026 and date<='2026-04-16' order by date desc limit 200) recent order by game_date desc limit 30), latest as (select distinct on(r.player_id) r.player_id,r.game_date,coalesce(r.season_games_played,r.games_played) as gp,r.toi_seconds_avg_season,r.pp_points_avg_season,r.pp_toi_seconds_avg_season from public.rolling_player_game_metrics r join dates d using(game_date) where r.season=20252026 and r.strength_state='all' order by r.player_id,r.game_date desc,r.updated_at desc nulls last) select (select count(*)from dates) as selected_dates,(select min(game_date)from dates) as first_selected_date,count(*) as players,count(gp) as known_gp_rows,min(gp) as min_gp,percentile_cont(0.5)within group(order by gp) as median_gp,max(gp) as max_gp,count(*)filter(where gp=1) as one_game_rows,count(*)filter(where gp>=1 and toi_seconds_avg_season*gp>=600) as total_toi_sample_qualified_rows,count(pp_points_avg_season) as pp_points_present,count(pp_toi_seconds_avg_season) as pp_toi_present,count(*)filter(where pp_toi_seconds_avg_season>0) as positive_pp_toi_rows,count(*)filter(where gp>=1 and pp_points_avg_season is not null and pp_toi_seconds_avg_season*gp>=600) as pp_sample_qualified_rows,min(pp_toi_seconds_avg_season*gp)filter(where pp_toi_seconds_avg_season>0) as min_positive_pp_seconds,max(pp_toi_seconds_avg_season*gp)filter(where pp_toi_seconds_avg_season>0) as max_positive_pp_seconds from latest",
+    "result": { "selectedDates": 25, "firstSelectedDate": "2026-03-22", "players": 776, "knownGpRows": 776, "minGp": 1, "medianGp": 2, "maxGp": 3, "oneGameRows": 262, "totalToiSampleQualifiedRows": 717, "ppPointsPresent": 108, "ppToiPresent": 108, "positivePpToiRows": 59, "ppSampleQualifiedRows": 0, "minPositivePpSeconds": 1, "maxPositivePpSeconds": 275 },
+    "note": "GP uses coalesce(season_games_played,games_played), matching the ALL-strength extractor. PP seconds use pp_toi_seconds_avg_season times that GP, matching season extraction. SQL presence/threshold counts do not independently certify input provenance or historical completeness."
+  },
+  "limits": [
+    "No completed-game population comparison, stability analysis or predictive evaluation was performed.",
+    "The earlier published 5v5 GP distribution is a different source and strength from these ALL rolling rows.",
+    "No source writer, recompute, migration, publisher endpoint or production update was invoked."
+  ]
+}

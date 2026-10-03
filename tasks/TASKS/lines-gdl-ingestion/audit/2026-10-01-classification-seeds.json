@@ -1,0 +1,3316 @@
+{
+  "retrievedAt": "2026-10-01T13:02:21.461Z",
+  "method": "Read-only exact-ID SELECT; provider originals, not independently authenticated author originals",
+  "events": [
+    {
+      "id": "f1378b19-1505-46b3-968f-c1118b124600",
+      "tweet_id": "2104668922113052956",
+      "text": "RT @LeggetNHL: Joel Edmundson still day-to-day per Peter Laviolette",
+      "username": "GameDayNewsNHL",
+      "source_key": "gamedaynewsnhl",
+      "link_to_tweet": "https://x.com/GameDayNewsNHL/status/2104668922113052956",
+      "tweet_created_at": "2026-09-28T20:25:00+00:00",
+      "received_at": "2026-09-28T20:33:14.016436+00:00",
+      "processing_status": "rejected"
+    },
+    {
+      "id": "7e3b487e-2cc6-499c-9e81-37266c0ca51d",
+      "tweet_id": "2104672980634886326",
+      "text": "RT @DannyWebster21: Turns out this was, in fact, much ado about nothing. \n\nThis was a 5-on-3 drill. At ease. https://t.co/DxPOBtZekI",
+      "username": "GameDayLines",
+      "source_key": "gamedaylines",
+      "link_to_tweet": "https://x.com/GameDayLines/status/2104672980634886326",
+      "tweet_created_at": "2026-09-28T20:41:00+00:00",
+      "received_at": "2026-09-28T20:50:23.060892+00:00",
+      "processing_status": "rejected"
+    },
+    {
+      "id": "5bdc4a9b-72bd-4069-80fd-6188dc26a397",
+      "tweet_id": "2104977788142850499",
+      "text": "RT @JasonGregor: Podkolzin will take RNH’s spot on the first unit powerplay… via Babcock.",
+      "username": "GameDayLines",
+      "source_key": "gamedaylines",
+      "link_to_tweet": "https://x.com/GameDayLines/status/2104977788142850499",
+      "tweet_created_at": "2026-09-29T16:53:00+00:00",
+      "received_at": "2026-09-29T17:00:52.374726+00:00",
+      "processing_status": "rejected"
+    },
+    {
+      "id": "e041686b-1a89-414d-bef5-9f42a88da356",
+      "tweet_id": "2105000410809512101",
+      "text": "RT @h_kirk6: Carter Hart is the first goaltender off the ice.",
+      "username": "GameDayGoalies",
+      "source_key": "gamedaygoalies",
+      "link_to_tweet": "https://x.com/GameDayGoalies/status/2105000410809512101",
+      "tweet_created_at": "2026-09-29T18:23:00+00:00",
+      "received_at": "2026-09-29T18:27:36.491805+00:00",
+      "processing_status": "rejected"
+    },
+    {
+      "id": "26afec7d-8415-4d33-ad2e-1dd24f27e1ac",
+      "tweet_id": "2105336355915985057",
+      "text": "RT @DylanTyrer: #CBJ lines/pairs today:\n\nKnies-Fantilli-Johnson\nNichushkin-Monahan-Garland\nSillinger-Coyle-Olivier\nLomberg-Heinen/LDBB-Voronkov\n\nWerenski-Mateychuk\nChristiansen-Gudbranson\nSoucy-Andrae",
+      "username": "GameDayLines",
+      "source_key": "gamedaylines",
+      "link_to_tweet": "https://x.com/GameDayLines/status/2105336355915985057",
+      "tweet_created_at": "2026-09-30T16:37:00+00:00",
+      "received_at": "2026-09-30T16:40:51.356377+00:00",
+      "processing_status": "processed"
+    },
+    {
+      "id": "a4b30691-25fc-46e3-bbeb-a454a46f8d4e",
+      "tweet_id": "2105366758089695718",
+      "text": "RT @Sheng_Peng: #SJSharks power play groups same as yesterday, but one wrinkle, see Misa doing some net front, which he did last year...  \n\nPP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg \n\nPP2: Orlov-Misa-Stenberg-Toffoli-Marchment",
+      "username": "GameDayLines",
+      "source_key": "gamedaylines",
+      "link_to_tweet": "https://x.com/GameDayLines/status/2105366758089695718",
+      "tweet_created_at": "2026-09-30T18:38:00+00:00",
+      "received_at": "2026-09-30T18:40:40.937455+00:00",
+      "processing_status": "rejected"
+    },
+    {
+      "id": "1dde8875-4c05-4d16-b912-678652d63117",
+      "tweet_id": "2105370362964004937",
+      "text": "RT @GraemeNichols: Sanderson skated before main practice today but didn't join his teammates. org is hopeful he will play this weekend. Burakovsky isn't close to returning (upper body). Foegele took rushes on the 1st line for second consecutive day. No decision has been made on his availability.",
+      "username": "GameDayNewsNHL",
+      "source_key": "gamedaynewsnhl",
+      "link_to_tweet": "https://x.com/GameDayNewsNHL/status/2105370362964004937",
+      "tweet_created_at": "2026-09-30T18:53:00+00:00",
+      "received_at": "2026-09-30T18:58:37.184924+00:00",
+      "processing_status": "processed"
+    },
+    {
+      "id": "0c6a7d9a-dcfd-4502-96b8-178b8c0e422d",
+      "tweet_id": "2105375596687843639",
+      "text": "RT @AGrossNewsday: Same PP units\n\nSchaefer\nMaccelli-Horvat-Schenn\nPalmieri\n\nDeAngelo\nEklund-Ritchie-Holmstrom\nDuclair",
+      "username": "GameDayLines",
+      "source_key": "gamedaylines",
+      "link_to_tweet": "https://x.com/GameDayLines/status/2105375596687843639",
+      "tweet_created_at": "2026-09-30T19:13:00+00:00",
+      "received_at": "2026-09-30T19:15:37.11452+00:00",
+      "processing_status": "processed"
+    },
+    {
+      "id": "782985ca-7337-4284-9a0f-dcc1feb0c106",
+      "tweet_id": "2105378254983205114",
+      "text": "RT @TomGulittiNHL: Caps PP1: Chychrun, Ovechkin, Wilson, Dubois, Strome\n\nPP2: Hutson, Leonard, Tuch, Kyrou, I. Protas",
+      "username": "GameDayLines",
+      "source_key": "gamedaylines",
+      "link_to_tweet": "https://x.com/GameDayLines/status/2105378254983205114",
+      "tweet_created_at": "2026-09-30T19:24:00+00:00",
+      "received_at": "2026-09-30T19:25:55.887918+00:00",
+      "processing_status": "processed"
+    },
+    {
+      "id": "936c6b3f-b825-4a94-93b4-1fed5d289707",
+      "tweet_id": "2105434836500680857",
+      "text": "RT @ethan_sears: Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena. Anthony Stolarz for the Leafs.",
+      "username": "GameDayGoalies",
+      "source_key": "gamedaygoalies",
+      "link_to_tweet": "https://x.com/GameDayGoalies/status/2105434836500680857",
+      "tweet_created_at": "2026-09-30T23:09:00+00:00",
+      "received_at": "2026-09-30T23:17:40.673936+00:00",
+      "processing_status": "failed"
+    },
+    {
+      "id": "d66bc239-d6c4-45e1-958d-0d60d27e9d96",
+      "tweet_id": "2105466270070264224",
+      "text": "RT @ethan_sears: Looks like Maccelli and Duclair have switched spots",
+      "username": "GameDayLines",
+      "source_key": "gamedaylines",
+      "link_to_tweet": "https://x.com/GameDayLines/status/2105466270070264224",
+      "tweet_created_at": "2026-10-01T01:14:00+00:00",
+      "received_at": "2026-10-01T01:20:44.199416+00:00",
+      "processing_status": "rejected"
+    }
+  ],
+  "snapshots": [
+    {
+      "capture_key": "gamedaynewsnhl:2026-09-28:no-team:no-game:2104668922113052956:no-quoted-tweet:other:rejected_ambiguous",
+      "tweet_id": "2104668922113052956",
+      "raw_text": "RT @LeggetNHL: Joel Edmundson still day-to-day per Peter Laviolette",
+      "enriched_text": "RT @LeggetNHL: Joel Edmundson still day-to-day per Peter Laviolette",
+      "quoted_raw_text": null,
+      "quoted_enriched_text": null,
+      "tweet_posted_at": "2026-09-28T20:25:00+00:00",
+      "observed_at": "2026-09-28T20:33:14.016436+00:00",
+      "source_url": "https://twitter.com/i/web/status/2104668922113052956",
+      "source_handle": "GameDayNewsNHL",
+      "classification": "other",
+      "status": "rejected",
+      "nhl_filter_reason": "no_single_nhl_team_match",
+      "team_id": null,
+      "team_abbreviation": null,
+      "game_id": null,
+      "metadata": {
+        "sourceKey": "gamedaynewsnhl",
+        "iftttSource": "ifttt",
+        "primaryText": "RT @LeggetNHL: Joel Edmundson still day-to-day per Peter Laviolette",
+        "sourceGroup": "gdl_suite",
+        "iftttEventId": "f1378b19-1505-46b3-968f-c1118b124600",
+        "matchedNames": [],
+        "sourceAccount": "GameDayNewsNHL",
+        "interpretation": {
+          "units": [],
+          "events": [],
+          "context": "unknown",
+          "version": "2026-09-18.1",
+          "certainty": "reported",
+          "unresolved": [],
+          "rosterRevision": ""
+        },
+        "powerPlayUnits": [],
+        "unmatchedNames": [],
+        "primarySourceUrl": "https://twitter.com/i/web/status/2104668922113052956",
+        "teamLabelMatches": [],
+        "primaryTextSource": "ifttt_text",
+        "quotedKeywordHits": [],
+        "resolvedTweetUrls": {
+          "sourceUrl": "https://twitter.com/i/web/status/2104668922113052956",
+          "quotedTweetUrl": null,
+          "wrapperTweetUrl": "https://twitter.com/i/web/status/2104668922113052956"
+        },
+        "storedSkaterOrder": [
+          "RW",
+          "C",
+          "LW"
+        ],
+        "wrapperTextSource": "wrapper",
+        "iftttSourceAccount": "GameDayNewsNHL",
+        "nonNhlSourceHandle": null,
+        "primaryKeywordHits": [],
+        "storedDefenseOrder": [
+          "RD",
+          "LD"
+        ],
+        "transactionSignals": [],
+        "wrapperKeywordHits": [],
+        "powerPlayUnitLabels": [],
+        "publicationTimeBasis": "provider_timestamp",
+        "powerPlayUnitPlayerIds": [],
+        "quotedStructureSignals": null,
+        "initialStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "primaryStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "wrapperStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "refreshedFromPrimaryText": true,
+        "refreshedStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        }
+      },
+      "line_1_player_names": null,
+      "line_2_player_names": null,
+      "line_3_player_names": null,
+      "line_4_player_names": null
+    },
+    {
+      "capture_key": "gamedaylines:2026-09-28:no-team:no-game:2104672980634886326:no-quoted-tweet:injury:rejected_ambiguous",
+      "tweet_id": "2104672980634886326",
+      "raw_text": "RT @DannyWebster21: Turns out this was, in fact, much ado about nothing. \n\nThis was a 5-on-3 drill. At ease. https://t.co/DxPOBtZekI",
+      "enriched_text": "RT @DannyWebster21: Turns out this was, in fact, much ado about nothing. \n\nThis was a 5-on-3 drill. At ease. https://t.co/DxPOBtZekI",
+      "quoted_raw_text": null,
+      "quoted_enriched_text": null,
+      "tweet_posted_at": "2026-09-28T20:41:00+00:00",
+      "observed_at": "2026-09-28T20:50:23.060892+00:00",
+      "source_url": "https://twitter.com/i/web/status/2104672980634886326",
+      "source_handle": "GameDayLines",
+      "classification": "injury",
+      "status": "rejected",
+      "nhl_filter_reason": "no_single_nhl_team_match",
+      "team_id": null,
+      "team_abbreviation": null,
+      "game_id": null,
+      "metadata": {
+        "sourceKey": "gamedaylines",
+        "iftttSource": "ifttt",
+        "primaryText": "RT @DannyWebster21: Turns out this was, in fact, much ado about nothing. \n\nThis was a 5-on-3 drill. At ease. https://t.co/DxPOBtZekI",
+        "sourceGroup": "gdl_suite",
+        "iftttEventId": "7e3b487e-2cc6-499c-9e81-37266c0ca51d",
+        "matchedNames": [],
+        "sourceAccount": "SOURCE_ACCOUNT",
+        "interpretation": {
+          "units": [],
+          "events": [],
+          "context": "unknown",
+          "version": "2026-09-18.1",
+          "certainty": "reported",
+          "unresolved": [],
+          "rosterRevision": ""
+        },
+        "powerPlayUnits": [],
+        "unmatchedNames": [],
+        "primarySourceUrl": "https://twitter.com/i/web/status/2104672980634886326",
+        "teamLabelMatches": [],
+        "primaryTextSource": "ifttt_text",
+        "quotedKeywordHits": [],
+        "resolvedTweetUrls": {
+          "sourceUrl": "https://twitter.com/i/web/status/2104672980634886326",
+          "quotedTweetUrl": null,
+          "wrapperTweetUrl": "https://twitter.com/i/web/status/2104672980634886326"
+        },
+        "storedSkaterOrder": [
+          "RW",
+          "C",
+          "LW"
+        ],
+        "wrapperTextSource": "wrapper",
+        "iftttSourceAccount": "SOURCE_ACCOUNT",
+        "nonNhlSourceHandle": null,
+        "primaryKeywordHits": [
+          "out"
+        ],
+        "storedDefenseOrder": [
+          "RD",
+          "LD"
+        ],
+        "transactionSignals": [],
+        "wrapperKeywordHits": [
+          "out"
+        ],
+        "powerPlayUnitLabels": [],
+        "publicationTimeBasis": "provider_timestamp",
+        "powerPlayUnitPlayerIds": [],
+        "quotedStructureSignals": null,
+        "initialStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "primaryStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "wrapperStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "refreshedFromPrimaryText": true,
+        "refreshedStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        }
+      },
+      "line_1_player_names": null,
+      "line_2_player_names": null,
+      "line_3_player_names": null,
+      "line_4_player_names": null
+    },
+    {
+      "capture_key": "gamedaylines:2026-09-29:no-team:no-game:2104977788142850499:no-quoted-tweet:other:rejected_ambiguous",
+      "tweet_id": "2104977788142850499",
+      "raw_text": "RT @JasonGregor: Podkolzin will take RNH’s spot on the first unit powerplay… via Babcock.",
+      "enriched_text": "RT @JasonGregor: Podkolzin will take RNH’s spot on the first unit powerplay… via Babcock.",
+      "quoted_raw_text": null,
+      "quoted_enriched_text": null,
+      "tweet_posted_at": "2026-09-29T16:53:00+00:00",
+      "observed_at": "2026-09-29T17:00:52.374726+00:00",
+      "source_url": "https://twitter.com/i/web/status/2104977788142850499",
+      "source_handle": "GameDayLines",
+      "classification": "other",
+      "status": "rejected",
+      "nhl_filter_reason": "no_single_nhl_team_match",
+      "team_id": null,
+      "team_abbreviation": null,
+      "game_id": null,
+      "metadata": {
+        "sourceKey": "gamedaylines",
+        "iftttSource": "ifttt",
+        "primaryText": "RT @JasonGregor: Podkolzin will take RNH’s spot on the first unit powerplay… via Babcock.",
+        "sourceGroup": "gdl_suite",
+        "iftttEventId": "5bdc4a9b-72bd-4069-80fd-6188dc26a397",
+        "matchedNames": [],
+        "sourceAccount": "SOURCE_ACCOUNT",
+        "interpretation": {
+          "units": [],
+          "events": [],
+          "context": "unknown",
+          "version": "2026-09-18.1",
+          "certainty": "reported",
+          "unresolved": [],
+          "rosterRevision": ""
+        },
+        "powerPlayUnits": [],
+        "unmatchedNames": [],
+        "primarySourceUrl": "https://twitter.com/i/web/status/2104977788142850499",
+        "teamLabelMatches": [],
+        "primaryTextSource": "ifttt_text",
+        "quotedKeywordHits": [],
+        "resolvedTweetUrls": {
+          "sourceUrl": "https://twitter.com/i/web/status/2104977788142850499",
+          "quotedTweetUrl": null,
+          "wrapperTweetUrl": "https://twitter.com/i/web/status/2104977788142850499"
+        },
+        "storedSkaterOrder": [
+          "RW",
+          "C",
+          "LW"
+        ],
+        "wrapperTextSource": "wrapper",
+        "iftttSourceAccount": "SOURCE_ACCOUNT",
+        "nonNhlSourceHandle": null,
+        "primaryKeywordHits": [],
+        "storedDefenseOrder": [
+          "RD",
+          "LD"
+        ],
+        "transactionSignals": [],
+        "wrapperKeywordHits": [],
+        "powerPlayUnitLabels": [],
+        "publicationTimeBasis": "provider_timestamp",
+        "powerPlayUnitPlayerIds": [],
+        "quotedStructureSignals": null,
+        "initialStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "primaryStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "wrapperStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "refreshedFromPrimaryText": true,
+        "refreshedStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        }
+      },
+      "line_1_player_names": null,
+      "line_2_player_names": null,
+      "line_3_player_names": null,
+      "line_4_player_names": null
+    },
+    {
+      "capture_key": "gamedaygoalies:2026-09-29:no-team:no-game:2105000410809512101:no-quoted-tweet:other:rejected_ambiguous",
+      "tweet_id": "2105000410809512101",
+      "raw_text": "RT @h_kirk6: Carter Hart is the first goaltender off the ice.",
+      "enriched_text": "RT @h_kirk6: Carter Hart is the first goaltender off the ice.",
+      "quoted_raw_text": null,
+      "quoted_enriched_text": null,
+      "tweet_posted_at": "2026-09-29T18:23:00+00:00",
+      "observed_at": "2026-09-29T18:27:36.491805+00:00",
+      "source_url": "https://twitter.com/i/web/status/2105000410809512101",
+      "source_handle": "GameDayGoalies",
+      "classification": "other",
+      "status": "rejected",
+      "nhl_filter_reason": "no_single_nhl_team_match",
+      "team_id": null,
+      "team_abbreviation": null,
+      "game_id": null,
+      "metadata": {
+        "sourceKey": "gamedaygoalies",
+        "iftttSource": "ifttt",
+        "primaryText": "RT @h_kirk6: Carter Hart is the first goaltender off the ice.",
+        "sourceGroup": "gdl_suite",
+        "iftttEventId": "e041686b-1a89-414d-bef5-9f42a88da356",
+        "matchedNames": [],
+        "sourceAccount": "GameDayGoalies",
+        "interpretation": {
+          "units": [],
+          "events": [],
+          "context": "unknown",
+          "version": "2026-09-18.1",
+          "certainty": "reported",
+          "unresolved": [],
+          "rosterRevision": ""
+        },
+        "powerPlayUnits": [],
+        "unmatchedNames": [],
+        "primarySourceUrl": "https://twitter.com/i/web/status/2105000410809512101",
+        "teamLabelMatches": [],
+        "primaryTextSource": "ifttt_text",
+        "quotedKeywordHits": [],
+        "resolvedTweetUrls": {
+          "sourceUrl": "https://twitter.com/i/web/status/2105000410809512101",
+          "quotedTweetUrl": null,
+          "wrapperTweetUrl": "https://twitter.com/i/web/status/2105000410809512101"
+        },
+        "storedSkaterOrder": [
+          "RW",
+          "C",
+          "LW"
+        ],
+        "wrapperTextSource": "wrapper",
+        "iftttSourceAccount": "GameDayGoalies",
+        "nonNhlSourceHandle": null,
+        "primaryKeywordHits": [],
+        "storedDefenseOrder": [
+          "RD",
+          "LD"
+        ],
+        "transactionSignals": [],
+        "wrapperKeywordHits": [],
+        "powerPlayUnitLabels": [],
+        "publicationTimeBasis": "provider_timestamp",
+        "powerPlayUnitPlayerIds": [],
+        "quotedStructureSignals": null,
+        "initialStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "primaryStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "wrapperStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "refreshedFromPrimaryText": true,
+        "refreshedStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        }
+      },
+      "line_1_player_names": null,
+      "line_2_player_names": null,
+      "line_3_player_names": null,
+      "line_4_player_names": null
+    },
+    {
+      "capture_key": "gamedaylines:2026-09-30:29:no-game:2105336355915985057:no-quoted-tweet:lineup:accepted",
+      "tweet_id": "2105336355915985057",
+      "raw_text": "RT @DylanTyrer: #CBJ lines/pairs today:\n\nKnies-Fantilli-Johnson\nNichushkin-Monahan-Garland\nSillinger-Coyle-Olivier\nLomberg-Heinen/LDBB-Voronkov\n\nWerenski-Mateychuk\nChristiansen-Gudbranson\nSoucy-Andrae",
+      "enriched_text": "RT @DylanTyrer: #CBJ lines/pairs today:\n\nKnies-Fantilli-Johnson\nNichushkin-Monahan-Garland\nSillinger-Coyle-Olivier\nLomberg-Heinen/LDBB-Voronkov\n\nWerenski-Mateychuk\nChristiansen-Gudbranson\nSoucy-Andrae",
+      "quoted_raw_text": null,
+      "quoted_enriched_text": null,
+      "tweet_posted_at": "2026-09-30T16:37:00+00:00",
+      "observed_at": "2026-09-30T16:40:51.356377+00:00",
+      "source_url": "https://twitter.com/i/web/status/2105336355915985057",
+      "source_handle": "GameDayLines",
+      "classification": "lineup",
+      "status": "observed",
+      "nhl_filter_reason": null,
+      "team_id": 29,
+      "team_abbreviation": "CBJ",
+      "game_id": null,
+      "metadata": {
+        "sourceKey": "gamedaylines",
+        "iftttSource": "ifttt",
+        "primaryText": "RT @DylanTyrer: #CBJ lines/pairs today:\n\nKnies-Fantilli-Johnson\nNichushkin-Monahan-Garland\nSillinger-Coyle-Olivier\nLomberg-Heinen/LDBB-Voronkov\n\nWerenski-Mateychuk\nChristiansen-Gudbranson\nSoucy-Andrae",
+        "sourceGroup": "gdl_suite",
+        "iftttEventId": "26afec7d-8415-4d33-ad2e-1dd24f27e1ac",
+        "matchedNames": [
+          "Adam Fantilli",
+          "Charlie Coyle",
+          "Conor Garland",
+          "Danton Heinen",
+          "Denton Mateychuk",
+          "Dmitri Voronkov",
+          "Erik Gudbranson",
+          "Jake Christiansen",
+          "Kent Johnson",
+          "Mathieu Olivier",
+          "Ryan Lomberg",
+          "Sean Monahan",
+          "Valeri Nichushkin",
+          "Zach Werenski"
+        ],
+        "sourceAccount": "SOURCE_ACCOUNT",
+        "interpretation": {
+          "units": [
+            {
+              "group": null,
+              "number": 1,
+              "players": [
+                {
+                  "name": "Valeri Nichushkin",
+                  "playerId": 8477501
+                },
+                {
+                  "name": "Sean Monahan",
+                  "playerId": 8477497
+                },
+                {
+                  "name": "Conor Garland",
+                  "playerId": 8478856
+                }
+              ],
+              "complete": true,
+              "evidence": [
+                {
+                  "end": 74,
+                  "text": "Nichushkin",
+                  "start": 64
+                },
+                {
+                  "end": 82,
+                  "text": "Monahan",
+                  "start": 75
+                },
+                {
+                  "end": 90,
+                  "text": "Garland",
+                  "start": 83
+                }
+              ],
+              "situation": "es_forward",
+              "explicitNumber": false
+            },
+            {
+              "group": null,
+              "number": 1,
+              "players": [
+                {
+                  "name": "Zach Werenski",
+                  "playerId": 8478460
+                },
+                {
+                  "name": "Denton Mateychuk",
+                  "playerId": 8483485
+                }
+              ],
+              "complete": true,
+              "evidence": [
+                {
+                  "end": 153,
+                  "text": "Werenski",
+                  "start": 145
+                },
+                {
+                  "end": 163,
+                  "text": "Mateychuk",
+                  "start": 154
+                }
+              ],
+              "situation": "es_defense",
+              "explicitNumber": false
+            },
+            {
+              "group": null,
+              "number": 2,
+              "players": [
+                {
+                  "name": "Jake Christiansen",
+                  "playerId": 8481161
+                },
+                {
+                  "name": "Erik Gudbranson",
+                  "playerId": 8475790
+                }
+              ],
+              "complete": true,
+              "evidence": [
+                {
+                  "end": 176,
+                  "text": "Christiansen",
+                  "start": 164
+                },
+                {
+                  "end": 187,
+                  "text": "Gudbranson",
+                  "start": 177
+                }
+              ],
+              "situation": "es_defense",
+              "explicitNumber": false
+            }
+          ],
+          "events": [],
+          "context": "unknown",
+          "version": "2026-09-18.1",
+          "certainty": "reported",
+          "unresolved": [
+            {
+              "end": 63,
+              "text": "Knies-Fantilli-Johnson",
+              "start": 41,
+              "reason": "invalid_extraction"
+            },
+            {
+              "end": 114,
+              "text": "Sillinger-Coyle-Olivier",
+              "start": 91,
+              "reason": "invalid_extraction"
+            },
+            {
+              "end": 129,
+              "text": "Lomberg-Heinen",
+              "start": 115,
+              "reason": "missing_player"
+            },
+            {
+              "end": 143,
+              "text": "LDBB-Voronkov",
+              "start": 130,
+              "reason": "missing_player"
+            },
+            {
+              "end": 193,
+              "text": "Soucy",
+              "start": 188,
+              "reason": "missing_player"
+            },
+            {
+              "end": 200,
+              "text": "Andrae",
+              "start": 194,
+              "reason": "missing_player"
+            }
+          ],
+          "rosterRevision": "8475660:Cam Talbot:Talbot:29:G:Cam Talbot:Cam Talbot|8475745:Charlie Coyle:Coyle:29:C:Charlie Coyle:Charlie Coyle|8475790:Erik Gudbranson:Gudbranson:29:D:Erik Gudbranson:Erik Gudbranson|8476923:Damon Severson:Severson:29:D:Damon Severson:Damon Severson|8477425:Miles Wood:Wood:29:L:Miles Wood:Miles Wood|8477497:Sean Monahan:Monahan:29:C:Sean Monahan:Sean Monahan|8477501:Valeri Nichushkin:Nichushkin:29:R:Valeri Nichushkin:Valeri Nichushkin|8477831:Pheonix Copley:Copley:29:G:Pheonix Copley:Pheonix Copley|8478007:Elvis Merzlikins:Merzlikins:29:G:Elvis Merzlikins:Elvis Merzlikins|8478046:Danton Heinen:Heinen:29:L:Danton Heinen:Danton Heinen|8478460:Zach Werenski:Werenski:29:D:Zach Werenski:Zach Werenski|8478500:Ivan Provorov:Provorov:29:D:Ivan Provorov:Ivan Provorov|8478841:Colton White:White:29:D:Colton White:Colton White|8478856:Conor Garland:Garland:29:R:Conor Garland:Conor Garland|8479066:Ryan Lomberg:Lomberg:29:L:Ryan Lomberg:Ryan Lomberg|8479371:Dante Fabbro:Fabbro:29:D:Dante Fabbro:Dante Fabbro|8479671:Mathieu Olivier:Olivier:29:R:Mathieu Olivier:Mathieu Olivier|8480806:Isac Lundeström:Lundeström:29:C:Isac Lundeström:Isac Lundeström|8480893:Kirill Marchenko:Marchenko:29:R:Kirill Marchenko:Kirill Marchenko|8481161:Jake Christiansen:Christiansen:29:D:Jake Christiansen:Jake Christiansen|8481716:Dmitri Voronkov:Voronkov:29:L:Dmitri Voronkov:Dmitri Voronkov|8482134:Luke Tuch:Tuch:29:L:Luke Tuch:Luke Tuch|8482660:Kent Johnson:Johnson:29:C:Kent Johnson:Kent Johnson|8482678:Corson Ceulemans:Ceulemans:29:D:Corson Ceulemans:Corson Ceulemans|8482692:Guillaume Richard:Richard:29:D:Guillaume Richard:Guillaume Richard|8482705:Cole Sillinger:Sillinger:29:C:Cole Sillinger:Cole Sillinger|8482744:James Malatesta:Malatesta:29:L:James Malatesta:James Malatesta|8482881:Max McCue:McCue:29:C:Max McCue:Max McCue|8482913:Nikolai Makarov:Makarov:29:D:Nikolai Makarov|8482982:Jet Greaves:Greaves:29:G:Jet Greaves:Jet Greaves|8483432:Luca Del Bel Belluz:Del Bel Belluz:29:C:Luca Del Bel Belluz:Luca Del Bel Belluz|8483434:Kirill Dolzhenkov:Dolzhenkov:29:R:Kirill Dolzhenkov|8483485:Denton Mateychuk:Mateychuk:29:D:Denton Mateychuk:Denton Mateychuk|8483538:Owen Sillinger:Sillinger:29:C:Owen Sillinger:Owen Sillinger|8483688:Jordan Dumais:Dumais:29:R:Jordan Dumais:Jordan Dumais|8483715:James Fisher:Fisher:29:R:James Fisher|8483738:Sergei Ivanov:Ivanov:29:G:Sergei Ivanov|8483804:Riley Bezeau:Bezeau:29:R:Riley Bezeau:Riley Bezeau|8483869:Nolan Lalonde:Lalonde:29:G:Nolan Lalonde:Nolan Lalonde|8484166:Adam Fantilli:Fantilli:29:C:Adam Fantilli:Adam Fantilli|8484214:Luca Pinelli:Pinelli:29:C:Luca Pinelli:Luca Pinelli|8484232:Andrew Strathmann:Strathmann:29:D:Andrew Strathmann|8484239:William Whitelaw:Whitelaw:29:R:William Whitelaw|8484441:Melvin Strahl:Strahl:29:G:Melvin Strahl|8484472:Oiva Keskinen:Keskinen:29:C:Oiva Keskinen:Oiva Keskinen|8484777:Luca Marrelli:Marrelli:29:D:Luca Marrelli|8484780:Cayden Lindstrom:Lindstrom:29:C:Cayden Lindstrom|8484808:Charlie Elick:Elick:29:D:Charlie Elick:Charlie Elick|8484866:Tanner Henricks:Henricks:29:D:Tanner Henricks|8484997:Evan Gardner:Gardner:29:G:Evan Gardner:Evan Gardner|8485068:Luke Ashton:Ashton:29:D:Luke Ashton|8485355:Malte Vass:Vass:29:D:Malte Vass|8485361:Jackson Smith:Smith:29:D:Jackson Smith|8485469:Jack Williams:Williams:29:R:Jack Williams:Jack Williams|8485472:Caleb MacDonald:MacDonald:29:D:Caleb MacDonald:Caleb MacDonald|8485560:Pyotr Andreyanov:Andreyanov:29:G:Pyotr Andreyanov|8485630:Owen Griffin:Griffin:29:C:Owen Griffin:Owen Griffin|8485640:Victor Raftheim:Raftheim:29:D:Victor Raftheim|8485667:Jeremy Loranger:Loranger:29:C:Jeremy Loranger|8485746:Jonas Woo:Woo:29:D:Jonas Woo|8486034:Alessandro Di Iorio:Di Iorio:29:C:Alessandro Di Iorio|8486046:Oscar Hemming:Hemming:29:L:Oscar Hemming|8486073:Filip Novak:Novak:29:L:Filip Novak|8486173:Josh Eernisse:Eernisse:29:C|8486177:Boston Buckberger:Buckberger:29:D|8486261:Evan Jardine:Jardine:29:L:Evan Jardine|8486278:Parker Snell:Snell:29:G:Parker Snell|8486310:Anttoni Uronen:Uronen:29:C:Anttoni Uronen"
+        },
+        "powerPlayUnits": [],
+        "unmatchedNames": [
+          "Sillinger"
+        ],
+        "primarySourceUrl": "https://twitter.com/i/web/status/2105336355915985057",
+        "teamLabelMatches": [
+          "CBJ"
+        ],
+        "primaryTextSource": "ifttt_text",
+        "quotedKeywordHits": [],
+        "resolvedTweetUrls": {
+          "sourceUrl": "https://twitter.com/i/web/status/2105336355915985057",
+          "quotedTweetUrl": null,
+          "wrapperTweetUrl": "https://twitter.com/i/web/status/2105336355915985057"
+        },
+        "storedSkaterOrder": [
+          "RW",
+          "C",
+          "LW"
+        ],
+        "wrapperTextSource": "wrapper",
+        "iftttSourceAccount": "SOURCE_ACCOUNT",
+        "nonNhlSourceHandle": null,
+        "primaryKeywordHits": [
+          "lines"
+        ],
+        "storedDefenseOrder": [
+          "RD",
+          "LD"
+        ],
+        "transactionSignals": [],
+        "wrapperKeywordHits": [
+          "lines"
+        ],
+        "powerPlayUnitLabels": [],
+        "publicationTimeBasis": "provider_timestamp",
+        "powerPlayUnitPlayerIds": [],
+        "quotedStructureSignals": null,
+        "initialStructureSignals": {
+          "defensePairCount": 3,
+          "forwardLineCount": 3,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 3,
+          "parsedForwardLines": 3
+        },
+        "primaryStructureSignals": {
+          "defensePairCount": 3,
+          "forwardLineCount": 3,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 3,
+          "parsedForwardLines": 3
+        },
+        "wrapperStructureSignals": {
+          "defensePairCount": 3,
+          "forwardLineCount": 3,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 3,
+          "parsedForwardLines": 3
+        },
+        "refreshedFromPrimaryText": true,
+        "refreshedStructureSignals": {
+          "defensePairCount": 3,
+          "forwardLineCount": 3,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 3,
+          "parsedForwardLines": 3
+        }
+      },
+      "line_1_player_names": [
+        "Conor Garland",
+        "Sean Monahan",
+        "Valeri Nichushkin"
+      ],
+      "line_2_player_names": null,
+      "line_3_player_names": null,
+      "line_4_player_names": null
+    },
+    {
+      "capture_key": "gamedaylines:2026-09-30:28:no-game:2105366758089695718:no-quoted-tweet:power_play:rejected_ambiguous",
+      "tweet_id": "2105366758089695718",
+      "raw_text": "RT @Sheng_Peng: #SJSharks power play groups same as yesterday, but one wrinkle, see Misa doing some net front, which he did last year...  \n\nPP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg \n\nPP2: Orlov-Misa-Stenberg-Toffoli-Marchment",
+      "enriched_text": "RT @Sheng_Peng: #SJSharks power play groups same as yesterday, but one wrinkle, see Misa doing some net front, which he did last year...  \n\nPP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg \n\nPP2: Orlov-Misa-Stenberg-Toffoli-Marchment",
+      "quoted_raw_text": null,
+      "quoted_enriched_text": null,
+      "tweet_posted_at": "2026-09-30T18:38:00+00:00",
+      "observed_at": "2026-09-30T18:40:40.937455+00:00",
+      "source_url": "https://twitter.com/i/web/status/2105366758089695718",
+      "source_handle": "GameDayLines",
+      "classification": "power_play",
+      "status": "rejected",
+      "nhl_filter_reason": "relative_game_date_requires_review",
+      "team_id": 28,
+      "team_abbreviation": "SJS",
+      "game_id": null,
+      "metadata": {
+        "sourceKey": "gamedaylines",
+        "iftttSource": "ifttt",
+        "primaryText": "RT @Sheng_Peng: #SJSharks power play groups same as yesterday, but one wrinkle, see Misa doing some net front, which he did last year...  \n\nPP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg \n\nPP2: Orlov-Misa-Stenberg-Toffoli-Marchment",
+        "sourceGroup": "gdl_suite",
+        "iftttEventId": "a4b30691-25fc-46e3-bbeb-a454a46f8d4e",
+        "matchedNames": [
+          "Alexander Wennberg",
+          "Dmitry Orlov",
+          "Igor Chernyshov",
+          "Ivar Stenberg",
+          "Luca Cagnoni",
+          "Macklin Celebrini",
+          "Mason Marchment",
+          "Michael Misa",
+          "Tyler Toffoli",
+          "Will Smith"
+        ],
+        "sourceAccount": "SOURCE_ACCOUNT",
+        "interpretation": {
+          "units": [
+            {
+              "group": "s",
+              "number": 1,
+              "players": [
+                {
+                  "name": "Luca Cagnoni",
+                  "playerId": 8484152
+                },
+                {
+                  "name": "Macklin Celebrini",
+                  "playerId": 8484801
+                },
+                {
+                  "name": "Will Smith",
+                  "playerId": 8484227
+                },
+                {
+                  "name": "Igor Chernyshov",
+                  "playerId": 8484994
+                },
+                {
+                  "name": "Alexander Wennberg",
+                  "playerId": 8477505
+                }
+              ],
+              "complete": true,
+              "evidence": [
+                {
+                  "end": 152,
+                  "text": "Cagnoni",
+                  "start": 145
+                },
+                {
+                  "end": 162,
+                  "text": "Celebrini",
+                  "start": 153
+                },
+                {
+                  "end": 168,
+                  "text": "Smith",
+                  "start": 163
+                },
+                {
+                  "end": 179,
+                  "text": "Chernyshov",
+                  "start": 169
+                },
+                {
+                  "end": 188,
+                  "text": "Wennberg",
+                  "start": 180
+                }
+              ],
+              "situation": "pp",
+              "explicitNumber": true
+            },
+            {
+              "group": "s",
+              "number": 2,
+              "players": [
+                {
+                  "name": "Dmitry Orlov",
+                  "playerId": 8475200
+                },
+                {
+                  "name": "Michael Misa",
+                  "playerId": 8485402
+                },
+                {
+                  "name": "Ivar Stenberg",
+                  "playerId": 8486103
+                },
+                {
+                  "name": "Tyler Toffoli",
+                  "playerId": 8475726
+                },
+                {
+                  "name": "Mason Marchment",
+                  "playerId": 8478975
+                }
+              ],
+              "complete": true,
+              "evidence": [
+                {
+                  "end": 201,
+                  "text": "Orlov",
+                  "start": 196
+                },
+                {
+                  "end": 206,
+                  "text": "Misa",
+                  "start": 202
+                },
+                {
+                  "end": 215,
+                  "text": "Stenberg",
+                  "start": 207
+                },
+                {
+                  "end": 223,
+                  "text": "Toffoli",
+                  "start": 216
+                },
+                {
+                  "end": 233,
+                  "text": "Marchment",
+                  "start": 224
+                }
+              ],
+              "situation": "pp",
+              "explicitNumber": true
+            }
+          ],
+          "events": [],
+          "context": "unknown",
+          "version": "2026-09-18.1",
+          "certainty": "reported",
+          "unresolved": [],
+          "rosterRevision": "8475200:Dmitry Orlov:Orlov:28:D:Dmitry Orlov:Dmitry Orlov|8475726:Tyler Toffoli:Toffoli:28:C:Tyler Toffoli:Tyler Toffoli|8476624:Barclay Goodrow:Goodrow:28:C:Barclay Goodrow:Barclay Goodrow|8476885:Jacob Trouba:Trouba:28:D:Jacob Trouba:Jacob Trouba|8477480:Eric Comrie:Comrie:28:G:Eric Comrie:Eric Comrie|8477498:Darnell Nurse:Nurse:28:D:Darnell Nurse:Darnell Nurse|8477505:Alexander Wennberg:Wennberg:28:C:Alexander Wennberg:Alexander Wennberg|8477968:Alex Nedeljkovic:Nedeljkovic:28:G:Alex Nedeljkovic:Alex Nedeljkovic|8478492:Ilya Samsonov:Samsonov:28:G:Ilya Samsonov:Ilya Samsonov|8478874:Adam Gaudette:Gaudette:28:R:Adam Gaudette:Adam Gaudette|8478975:Mason Marchment:Marchment:28:L:Mason Marchment:Mason Marchment|8479333:Libor Hajek:Hajek:28:D:Libor Hajek:Libor Hajek|8479718:Alex Barré-Boulet:Barré-Boulet:28:C:Alex Barré-Boulet:Alex Barré-Boulet|8479746:Tye Felhaber:Felhaber:28:L:Tye Felhaber:Tye Felhaber|8480356:Kyle Keyser:Keyser:28:G:Kyle Keyser:Kyle Keyser|8480748:Kiefer Sherwood:Sherwood:28:L:Kiefer Sherwood:Kiefer Sherwood|8480825:Patrick Giles:Giles:28:R:Patrick Giles:Patrick Giles|8480848:Ty Dellandrea:Dellandrea:28:C:Ty Dellandrea:Ty Dellandrea|8480891:Michael Kesselring:Kesselring:28:D:Michael Kesselring:Michael Kesselring|8481228:Jimmy Huntington:Huntington:28:C:Jimmy Huntington:Jimmy Huntington|8481517:Brett Leason:Leason:28:R:Brett Leason:Brett Leason|8482137:Yaroslav Askarov:Askarov:28:G:Yaroslav Askarov:Yaroslav Askarov|8482206:Ethan Cardwell:Cardwell:28:R:Ethan Cardwell:Ethan Cardwell|8482700:Nolan Allan:Allan:28:D:Nolan Allan:Nolan Allan|8482776:Andre Gasseau:Gasseau:28:C:Andre Gasseau|8482859:Zack Ostapchuk:Ostapchuk:28:C:Zack Ostapchuk:Zack Ostapchuk|8483428:Filip Bystedt:Bystedt:28:C:Filip Bystedt:Filip Bystedt|8483443:Michael Fisher:Fisher:28:D:Michael Fisher|8483481:Cam Lund:Lund:28:C:Cam Lund:Cam Lund|8483666:Mattias Havelid:Havelid:28:D:Mattias Havelid|8483702:Reese Laubach:Laubach:28:C:Reese Laubach|8483722:Eli Barnett:Barnett:28:D:Eli Barnett|8483753:Joey Muldowney:Muldowney:28:R:Joey Muldowney|8484152:Luca Cagnoni:Cagnoni:28:D:Luca Cagnoni:Luca Cagnoni|8484200:Quentin Musty:Musty:28:L:Quentin Musty:Quentin Musty|8484227:Will Smith:Smith:28:C:Will Smith:Will Smith|8484413:Axel Landen:Landen:28:D:Axel Landen|8484421:Eric Pohlkamp:Pohlkamp:28:D:Eric Pohlkamp|8484474:David Klee:Klee:28:C:David Klee|8484477:Yegor Rimashevskiy:Rimashevskiy:28:R:Yegor Rimashevskiy|8484599:Nate Misskey:Misskey:28:D:Nate Misskey|8484763:Leo Sahlin Wallenius:Sahlin Wallenius:28:D:Leo Sahlin Wallenius|8484764:Colton Roberts:Roberts:28:D:Colton Roberts|8484801:Macklin Celebrini:Celebrini:28:C:Macklin Celebrini:Macklin Celebrini|8484806:Sam Dickinson:Dickinson:28:D:Sam Dickinson:Sam Dickinson|8484845:Carson Wetsch:Wetsch:28:R:Carson Wetsch:Carson Wetsch|8484911:Collin Graf:Graf:28:R:Collin Graf:Collin Graf|8484994:Igor Chernyshov:Chernyshov:28:L:Igor Chernyshov:Igor Chernyshov|8485018:Christian Kirsch:Kirsch:28:G:Christian Kirsch|8485084:Yaroslav Korostelyov:Korostelyov:28:G:Yaroslav Korostelyov|8485354:Simon (Haoxi) Wang:Wang:28:D:Simon (Haoxi) Wang|8485373:Joshua Ravensbergen:Ravensbergen:28:G:Joshua Ravensbergen|8485402:Michael Misa:Misa:28:C:Michael Misa:Michael Misa|8485407:Cole McKinney:McKinney:28:C:Cole McKinney|8485578:Teddy Mutryn:Mutryn:28:C:Teddy Mutryn|8485595:Ilyas Magomedsultanov:Magomedsultanov:28:D:Ilyas Magomedsultanov|8485620:Max Heise:Heise:28:C:Max Heise|8485676:Richard Gallant:Gallant:28:L:Richard Gallant|8486041:Jake Gustafson:Gustafson:28:C:Jake Gustafson|8486053:Brady Knowling:Knowling:28:G:Brady Knowling|8486062:Ryan Lin:Lin:28:D:Ryan Lin|8486103:Ivar Stenberg:Stenberg:28:L:Ivar Stenberg|8486112:Keaton Verhoeff:Verhoeff:28:D:Keaton Verhoeff|8486205:Phillip Sinn:Sinn:28:D|8486340:Alexander Karmanov:Karmanov:28:D:Alexander Karmanov"
+        },
+        "powerPlayUnits": [
+          [
+            "Luca Cagnoni",
+            "Macklin Celebrini",
+            "Will Smith",
+            "Igor Chernyshov",
+            "Alexander Wennberg"
+          ],
+          [
+            "Dmitry Orlov",
+            "Michael Misa",
+            "Ivar Stenberg",
+            "Tyler Toffoli",
+            "Mason Marchment"
+          ]
+        ],
+        "unmatchedNames": [],
+        "primarySourceUrl": "https://twitter.com/i/web/status/2105366758089695718",
+        "teamLabelMatches": [],
+        "primaryTextSource": "ifttt_text",
+        "quotedKeywordHits": [],
+        "resolvedTweetUrls": {
+          "sourceUrl": "https://twitter.com/i/web/status/2105366758089695718",
+          "quotedTweetUrl": null,
+          "wrapperTweetUrl": "https://twitter.com/i/web/status/2105366758089695718"
+        },
+        "storedSkaterOrder": [
+          "RW",
+          "C",
+          "LW"
+        ],
+        "wrapperTextSource": "wrapper",
+        "iftttSourceAccount": "SOURCE_ACCOUNT",
+        "nonNhlSourceHandle": null,
+        "primaryKeywordHits": [
+          "power play",
+          "pp1",
+          "pp2"
+        ],
+        "storedDefenseOrder": [
+          "RD",
+          "LD"
+        ],
+        "transactionSignals": [],
+        "wrapperKeywordHits": [
+          "power play",
+          "pp1",
+          "pp2"
+        ],
+        "powerPlayUnitLabels": [
+          "pp1",
+          "pp2"
+        ],
+        "publicationTimeBasis": "provider_timestamp",
+        "powerPlayUnitPlayerIds": [
+          [
+            8484152,
+            8484801,
+            8484227,
+            8484994,
+            8477505
+          ],
+          [
+            8475200,
+            8485402,
+            8486103,
+            8475726,
+            8478975
+          ]
+        ],
+        "quotedStructureSignals": null,
+        "initialStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "primaryStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "wrapperStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "refreshedFromPrimaryText": true,
+        "refreshedStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        }
+      },
+      "line_1_player_names": null,
+      "line_2_player_names": null,
+      "line_3_player_names": null,
+      "line_4_player_names": null
+    },
+    {
+      "capture_key": "gamedaynewsnhl:2026-09-30:9:no-game:2105370362964004937:no-quoted-tweet:practice_lines:accepted",
+      "tweet_id": "2105370362964004937",
+      "raw_text": "RT @GraemeNichols: Sanderson skated before main practice today but didn't join his teammates. org is hopeful he will play this weekend. Burakovsky isn't close to returning (upper body). Foegele took rushes on the 1st line for second consecutive day. No decision has been made on his availability.",
+      "enriched_text": "RT @GraemeNichols: Sanderson skated before main practice today but didn't join his teammates. org is hopeful he will play this weekend. Burakovsky isn't close to returning (upper body). Foegele took rushes on the 1st line for second consecutive day. No decision has been made on his availability.",
+      "quoted_raw_text": null,
+      "quoted_enriched_text": null,
+      "tweet_posted_at": "2026-09-30T18:53:00+00:00",
+      "observed_at": "2026-09-30T18:58:37.184924+00:00",
+      "source_url": "https://twitter.com/i/web/status/2105370362964004937",
+      "source_handle": "GameDayNewsNHL",
+      "classification": "practice_lines",
+      "status": "observed",
+      "nhl_filter_reason": null,
+      "team_id": 9,
+      "team_abbreviation": "OTT",
+      "game_id": null,
+      "metadata": {
+        "sourceKey": "gamedaynewsnhl",
+        "iftttSource": "ifttt",
+        "primaryText": "RT @GraemeNichols: Sanderson skated before main practice today but didn't join his teammates. org is hopeful he will play this weekend. Burakovsky isn't close to returning (upper body). Foegele took rushes on the 1st line for second consecutive day. No decision has been made on his availability.",
+        "sourceGroup": "gdl_suite",
+        "iftttEventId": "1dde8875-4c05-4d16-b912-678652d63117",
+        "matchedNames": [
+          "Andre Burakovsky",
+          "Jake Sanderson",
+          "Warren Foegele"
+        ],
+        "sourceAccount": "GameDayNewsNHL",
+        "interpretation": {
+          "units": [],
+          "events": [
+            {
+              "kind": "injury",
+              "state": "confirmed_return",
+              "evidence": {
+                "end": 135,
+                "text": "Sanderson skated before main practice today but didn't join his teammates. org is hopeful he will play this weekend.",
+                "start": 19
+              },
+              "playerId": 8482105,
+              "timeline": {
+                "text": "today",
+                "unit": null,
+                "maximum": null,
+                "minimum": null,
+                "purpose": "unknown",
+                "targetDate": "2026-09-30"
+              },
+              "timelines": [
+                {
+                  "text": "today",
+                  "unit": null,
+                  "maximum": null,
+                  "minimum": null,
+                  "purpose": "unknown",
+                  "targetDate": "2026-09-30"
+                }
+              ],
+              "playerName": "Jake Sanderson",
+              "availability": "available"
+            },
+            {
+              "kind": "injury",
+              "state": "unknown",
+              "evidence": {
+                "end": 185,
+                "text": "Burakovsky isn't close to returning (upper body).",
+                "start": 136
+              },
+              "playerId": 8477444,
+              "timeline": null,
+              "timelines": [],
+              "playerName": "Andre Burakovsky",
+              "availability": "unknown"
+            }
+          ],
+          "context": "practice",
+          "version": "2026-09-18.1",
+          "certainty": "reported",
+          "unresolved": [],
+          "rosterRevision": "8473512:Claude Giroux:Giroux:9:R:Claude Giroux:Claude Giroux|8476393:Nick Cousins:Cousins:9:C:Nick Cousins:Nick Cousins|8476999:Linus Ullmark:Ullmark:9:G:Linus Ullmark:Linus Ullmark|8477073:Kurtis MacDermid:MacDermid:9:L:Kurtis MacDermid:Kurtis MacDermid|8477444:Andre Burakovsky:Burakovsky:9:L:Andre Burakovsky:Andre Burakovsky|8477998:Warren Foegele:Foegele:9:L:Warren Foegele:Warren Foegele|8478020:Michael Amadio:Amadio:9:R:Michael Amadio:Michael Amadio|8478173:Hayden Hodgson:Hodgson:9:R:Hayden Hodgson:Hayden Hodgson|8478469:Thomas Chabot:Chabot:9:D:Thomas Chabot:Thomas Chabot|8480075:Cameron Crotty:Crotty:9:D:Cameron Crotty:Cameron Crotty|8480188:Fabian Zetterlund:Zetterlund:9:L:Fabian Zetterlund:Fabian Zetterlund|8480208:Drake Batherson:Batherson:9:R:Drake Batherson:Drake Batherson|8481035:Samuel Ersson:Ersson:9:G:Samuel Ersson:Samuel Ersson|8481528:Dylan Cozens:Cozens:9:C:Dylan Cozens:Dylan Cozens|8481596:Shane Pinto:Pinto:9:C:Shane Pinto:Shane Pinto|8481606:Jordan Spence:Spence:9:D:Jordan Spence:Jordan Spence|8482092:Ridly Greig:Greig:9:C:Ridly Greig:Ridly Greig|8482095:Tyler Kleven:Kleven:9:D:Tyler Kleven:Tyler Kleven|8482105:Jake Sanderson:Sanderson:9:D:Jake Sanderson:Jake Sanderson|8482116:Tim Stützle:Stützle:9:C:Tim Stützle:Tim Stützle|8482245:Artem Zub:Zub:9:D:Artem Zub:Artem Zub|8482447:Leevi Meriläinen:Meriläinen:9:G:Leevi Meriläinen:Leevi Meriläinen|8482667:William Eklund:Eklund:9:L:William Eklund:William Eklund|8482673:Xavier Bourgault:Bourgault:9:C:Xavier Bourgault:Xavier Bourgault|8482674:Tyler Boucher:Boucher:9:R:Tyler Boucher:Tyler Boucher|8483435:Jorian Donovan:Donovan:9:D:Jorian Donovan:Jorian Donovan|8483470:Christian Kyrou:Kyrou:9:D:Christian Kyrou:Christian Kyrou|8483670:Filip Nordberg:Nordberg:9:D:Filip Nordberg|8483673:Oskar Pettersson:Pettersson:9:R:Oskar Pettersson:Oskar Pettersson|8483676:Stephen Halliday:Halliday:9:C:Stephen Halliday:Stephen Halliday|8483683:Tomas Hamara:Hamara:9:D:Tomas Hamara:Tomas Hamara|8483749:Cameron O'Neill:O'Neill:9:R:Cameron O'Neill|8483757:Theo Wallberg:Wallberg:9:D:Theo Wallberg|8483762:Kevin Reidler:Reidler:9:G:Kevin Reidler|8484176:Kasper Halttunen:Halttunen:9:R:Kasper Halttunen:Kasper Halttunen|8484235:Brandon Svoboda:Svoboda:9:C:Brandon Svoboda|8484321:Nikolas Matinpalo:Matinpalo:9:D:Nikolas Matinpalo:Nikolas Matinpalo|8484409:Hoyt Stanley:Stanley:9:D:Hoyt Stanley|8484429:Matthew Andonovski:Andonovski:9:D:Matthew Andonovski|8484478:Owen Beckner:Beckner:9:C:Owen Beckner|8484485:Nicholas Vantassell:Vantassell:9:R:Nicholas Vantassell|8484489:Vladimir Nikitin:Nikitin:9:G:Vladimir Nikitin|8484759:Carter Yakemchuk:Yakemchuk:9:D:Carter Yakemchuk:Carter Yakemchuk|8484847:Gabriel Eliasson:Eliasson:9:D:Gabriel Eliasson|8484876:Javon Moore:Moore:9:L:Javon Moore|8485006:Lucas Ellinas:Ellinas:9:L:Lucas Ellinas|8485016:Blake Montgomery:Montgomery:9:L:Blake Montgomery|8485032:Eerik Wallenius:Wallenius:9:D:Eerik Wallenius|8485397:Logan Hensler:Hensler:9:D:Logan Hensler|8485579:Blake Vanek:Vanek:9:R:Blake Vanek|8485580:Lucas Beckman:Beckman:9:G:Lucas Beckman|8485621:Dmitri Isayev:Isayev:9:L:Dmitri Isayev|8485647:Bruno Idzan:Idzan:9:L:Bruno Idzan|8485679:Andrei Trofimov:Trofimov:9:G:Andrei Trofimov|8486031:Jaxon Cover:Cover:9:R:Jaxon Cover|8486057:Jonas Lagerberg Hoen:Lagerberg Hoen:9:R:Jonas Lagerberg Hoen|8486071:Adam Nemec:Nemec:9:L:Adam Nemec|8486236:Oscar Holmertz:Holmertz:9:C:Oscar Holmertz|8486240:Louis Felix Bourque:Bourque:9:R:Louis Felix Bourque|8486252:Elliot Lennon:Lennon:9:G:Elliot Lennon|8486286:Harris Pangretitsch:Pangretitsch:9:D:Harris Pangretitsch|8486311:Alexander Grunin:Grunin:9:D:Alexander Grunin"
+        },
+        "powerPlayUnits": [],
+        "unmatchedNames": [],
+        "primarySourceUrl": "https://twitter.com/i/web/status/2105370362964004937",
+        "teamLabelMatches": [],
+        "primaryTextSource": "ifttt_text",
+        "quotedKeywordHits": [],
+        "resolvedTweetUrls": {
+          "sourceUrl": "https://twitter.com/i/web/status/2105370362964004937",
+          "quotedTweetUrl": null,
+          "wrapperTweetUrl": "https://twitter.com/i/web/status/2105370362964004937"
+        },
+        "storedSkaterOrder": [
+          "RW",
+          "C",
+          "LW"
+        ],
+        "wrapperTextSource": "wrapper",
+        "iftttSourceAccount": "GameDayNewsNHL",
+        "nonNhlSourceHandle": null,
+        "primaryKeywordHits": [
+          "rushes",
+          "practice",
+          "returning"
+        ],
+        "storedDefenseOrder": [
+          "RD",
+          "LD"
+        ],
+        "transactionSignals": [
+          {
+            "signal": "return",
+            "playerName": "Andre Burakovsky"
+          }
+        ],
+        "wrapperKeywordHits": [
+          "rushes",
+          "practice",
+          "returning"
+        ],
+        "powerPlayUnitLabels": [],
+        "publicationTimeBasis": "provider_timestamp",
+        "powerPlayUnitPlayerIds": [],
+        "quotedStructureSignals": null,
+        "initialStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "primaryStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "wrapperStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "refreshedFromPrimaryText": true,
+        "refreshedStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        }
+      },
+      "line_1_player_names": null,
+      "line_2_player_names": null,
+      "line_3_player_names": null,
+      "line_4_player_names": null
+    },
+    {
+      "capture_key": "gamedaylines:2026-09-30:2:no-game:2105375596687843639:no-quoted-tweet:power_play:accepted",
+      "tweet_id": "2105375596687843639",
+      "raw_text": "RT @AGrossNewsday: Same PP units\n\nSchaefer\nMaccelli-Horvat-Schenn\nPalmieri\n\nDeAngelo\nEklund-Ritchie-Holmstrom\nDuclair",
+      "enriched_text": "RT @AGrossNewsday: Same PP units\n\nSchaefer\nMaccelli-Horvat-Schenn\nPalmieri\n\nDeAngelo\nEklund-Ritchie-Holmstrom\nDuclair",
+      "quoted_raw_text": null,
+      "quoted_enriched_text": null,
+      "tweet_posted_at": "2026-09-30T19:13:00+00:00",
+      "observed_at": "2026-09-30T19:15:37.11452+00:00",
+      "source_url": "https://twitter.com/i/web/status/2105375596687843639",
+      "source_handle": "GameDayLines",
+      "classification": "power_play",
+      "status": "observed",
+      "nhl_filter_reason": null,
+      "team_id": 2,
+      "team_abbreviation": "NYI",
+      "game_id": null,
+      "metadata": {
+        "sourceKey": "gamedaylines",
+        "iftttSource": "ifttt",
+        "primaryText": "RT @AGrossNewsday: Same PP units\n\nSchaefer\nMaccelli-Horvat-Schenn\nPalmieri\n\nDeAngelo\nEklund-Ritchie-Holmstrom\nDuclair",
+        "sourceGroup": "gdl_suite",
+        "iftttEventId": "0c6a7d9a-dcfd-4502-96b8-178b8c0e422d",
+        "matchedNames": [
+          "Anthony Duclair",
+          "Bo Horvat",
+          "Brayden Schenn",
+          "Calum Ritchie",
+          "Kyle Palmieri",
+          "Matias Maccelli",
+          "Matthew Schaefer",
+          "Simon Holmstrom",
+          "Tony DeAngelo",
+          "Victor Eklund"
+        ],
+        "sourceAccount": "SOURCE_ACCOUNT",
+        "interpretation": {
+          "units": [
+            {
+              "group": null,
+              "number": 1,
+              "players": [
+                {
+                  "name": "Matias Maccelli",
+                  "playerId": 8481711
+                },
+                {
+                  "name": "Bo Horvat",
+                  "playerId": 8477500
+                },
+                {
+                  "name": "Brayden Schenn",
+                  "playerId": 8475170
+                }
+              ],
+              "complete": true,
+              "evidence": [
+                {
+                  "end": 51,
+                  "text": "Maccelli",
+                  "start": 43
+                },
+                {
+                  "end": 58,
+                  "text": "Horvat",
+                  "start": 52
+                },
+                {
+                  "end": 65,
+                  "text": "Schenn",
+                  "start": 59
+                }
+              ],
+              "situation": "es_forward",
+              "explicitNumber": false
+            },
+            {
+              "group": null,
+              "number": 2,
+              "players": [
+                {
+                  "name": "Victor Eklund",
+                  "playerId": 8485388
+                },
+                {
+                  "name": "Calum Ritchie",
+                  "playerId": 8484221
+                },
+                {
+                  "name": "Simon Holmstrom",
+                  "playerId": 8481601
+                }
+              ],
+              "complete": true,
+              "evidence": [
+                {
+                  "end": 91,
+                  "text": "Eklund",
+                  "start": 85
+                },
+                {
+                  "end": 99,
+                  "text": "Ritchie",
+                  "start": 92
+                },
+                {
+                  "end": 109,
+                  "text": "Holmstrom",
+                  "start": 100
+                }
+              ],
+              "situation": "es_forward",
+              "explicitNumber": false
+            }
+          ],
+          "events": [],
+          "context": "unknown",
+          "version": "2026-09-18.1",
+          "certainty": "reported",
+          "unresolved": [],
+          "rosterRevision": "8473575:Semyon Varlamov:Varlamov:2:G:Semyon Varlamov:Semyon Varlamov|8475151:Kyle Palmieri:Palmieri:2:C:Kyle Palmieri:Kyle Palmieri|8475170:Brayden Schenn:Schenn:2:C:Brayden Schenn:Brayden Schenn|8475231:Casey Cizikas:Cizikas:2:C:Casey Cizikas:Casey Cizikas|8476292:Ondrej Palat:Palat:2:L:Ondrej Palat:Ondrej Palat|8476419:Jean-Gabriel Pageau:Pageau:2:C:Jean-Gabriel Pageau:Jean-Gabriel Pageau|8476429:Scott Mayfield:Mayfield:2:D:Scott Mayfield:Scott Mayfield|8476917:Adam Pelech:Pelech:2:D:Adam Pelech:Adam Pelech|8477407:Anthony Duclair:Duclair:2:L:Anthony Duclair:Anthony Duclair|8477500:Bo Horvat:Horvat:2:C:Bo Horvat:Bo Horvat|8477506:Ryan Pulock:Pulock:2:D:Ryan Pulock:Ryan Pulock|8477950:Tony DeAngelo:DeAngelo:2:D:Tony DeAngelo:Tony DeAngelo|8477970:Vitek Vanecek:Vanecek:2:G:Vitek Vanecek:Vitek Vanecek|8478009:Ilya Sorokin:Sorokin:2:G:Ilya Sorokin:Ilya Sorokin|8478115:Pierre Engvall:Engvall:2:L:Pierre Engvall:Pierre Engvall|8478445:Mathew Barzal:Barzal:2:C:Mathew Barzal:Mathew Barzal|8478451:Ethan Bear:Bear:2:D:Ethan Bear:Ethan Bear|8479644:Matt Luff:Luff:2:R:Matt Luff:Matt Luff|8480853:Liam Foudy:Foudy:2:C:Liam Foudy:Liam Foudy|8481014:Alexander Romanov:Romanov:2:D:Alexander Romanov:Alexander Romanov|8481237:Kyle MacLean:MacLean:2:C:Kyle MacLean:Kyle MacLean|8481569:Marshall Warren:Warren:2:D:Marshall Warren:Marshall Warren|8481601:Simon Holmstrom:Holmstrom:2:R:Simon Holmstrom:Simon Holmstrom|8481711:Matias Maccelli:Maccelli:2:L:Matias Maccelli:Matias Maccelli|8482070:Mitchell Chaffee:Chaffee:2:R:Mitchell Chaffee:Mitchell Chaffee|8482154:Alex Jefferies:Jefferies:2:L:Alex Jefferies:Alex Jefferies|8482472:Henrik Tikkanen:Tikkanen:2:G:Henrik Tikkanen:Henrik Tikkanen|8482476:Emil Heineman:Heineman:2:L:Emil Heineman:Emil Heineman|8482516:Matthew Kessel:Kessel:2:D:Matthew Kessel:Matthew Kessel|8482954:Tomas Machu:Machu:2:D:Tomas Machu|8483104:Daylan Kuefler:Kuefler:2:L:Daylan Kuefler:Daylan Kuefler|8483441:Quinn Finley:Finley:2:L:Quinn Finley|8483448:Isaiah George:George:2:D:Isaiah George:Isaiah George|8483498:Calle Odelius:Odelius:2:D:Calle Odelius:Calle Odelius|8483708:Ryan Healey:Healey:2:D:Ryan Healey|8484205:Danny Nelson:Nelson:2:C:Danny Nelson|8484208:Jesse Nurmi:Nurmi:2:L:Jesse Nurmi|8484221:Calum Ritchie:Ritchie:2:C:Calum Ritchie:Calum Ritchie|8484225:Zachary Schulz:Schulz:2:D:Zachary Schulz|8484482:Dennis Good Bogg:Good Bogg:2:D:Dennis Good Bogg|8484766:Jesse Pulkkinen:Pulkkinen:2:D:Jesse Pulkkinen|8484788:Kamil Bednarik:Bednarik:2:C:Kamil Bednarik|8484807:Cole Eiserman:Eiserman:2:L:Cole Eiserman|8485020:Dmitry Gamzin:Gamzin:2:G:Dmitry Gamzin|8485078:Xavier Veilleux:Veilleux:2:D:Xavier Veilleux|8485352:Kashawn Aitcheson:Aitcheson:2:D:Kashawn Aitcheson:Kashawn Aitcheson|8485366:Matthew Schaefer:Schaefer:2:D:Matthew Schaefer:Matthew Schaefer|8485370:Luca Romano:Romano:2:C:Luca Romano:Luca Romano|8485378:Tomas Poletin:Poletin:2:L:Tomas Poletin:Tomas Poletin|8485388:Victor Eklund:Eklund:2:R:Victor Eklund:Victor Eklund|8485440:Sam Laurila:Laurila:2:D:Sam Laurila|8485448:Daniil Prokhorov:Prokhorov:2:R:Daniil Prokhorov|8485462:Gleb Veremyev:Veremyev:2:C:Gleb Veremyev:Gleb Veremyev|8485490:Joey Larson:Larson:2:R:Joey Larson:Joey Larson|8485644:Burke Hood:Hood:2:G:Burke Hood|8485669:Jacob Kvasnicka:Kvasnicka:2:R:Jacob Kvasnicka|8486035:Vladimir Dravecky:Dravecky:2:D:Vladimir Dravecky|8486042:Malte Gustafsson:Gustafsson:2:D:Malte Gustafsson|8486054:Lincoln Kuehne:Kuehne:2:D:Lincoln Kuehne|8486136:Joshua Kotai:Kotai:2:G|8486306:Artyom Matyuk:Matyuk:2:C:Artyom Matyuk|8486329:Robert Cowan:Cowan:2:R:Robert Cowan"
+        },
+        "powerPlayUnits": [],
+        "unmatchedNames": [],
+        "primarySourceUrl": "https://twitter.com/i/web/status/2105375596687843639",
+        "teamLabelMatches": [],
+        "primaryTextSource": "ifttt_text",
+        "quotedKeywordHits": [],
+        "resolvedTweetUrls": {
+          "sourceUrl": "https://twitter.com/i/web/status/2105375596687843639",
+          "quotedTweetUrl": null,
+          "wrapperTweetUrl": "https://twitter.com/i/web/status/2105375596687843639"
+        },
+        "storedSkaterOrder": [
+          "RW",
+          "C",
+          "LW"
+        ],
+        "wrapperTextSource": "wrapper",
+        "iftttSourceAccount": "SOURCE_ACCOUNT",
+        "nonNhlSourceHandle": null,
+        "primaryKeywordHits": [
+          "pp units"
+        ],
+        "storedDefenseOrder": [
+          "RD",
+          "LD"
+        ],
+        "transactionSignals": [],
+        "wrapperKeywordHits": [
+          "pp units"
+        ],
+        "powerPlayUnitLabels": [],
+        "publicationTimeBasis": "provider_timestamp",
+        "powerPlayUnitPlayerIds": [],
+        "quotedStructureSignals": null,
+        "initialStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 2,
+          "parsedGoalieCount": 2,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 2
+        },
+        "primaryStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 2,
+          "parsedGoalieCount": 2,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 2
+        },
+        "wrapperStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 2,
+          "parsedGoalieCount": 2,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 2
+        },
+        "refreshedFromPrimaryText": true,
+        "refreshedStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 2,
+          "parsedGoalieCount": 2,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 2
+        }
+      },
+      "line_1_player_names": [
+        "Brayden Schenn",
+        "Bo Horvat",
+        "Matias Maccelli"
+      ],
+      "line_2_player_names": [
+        "Simon Holmstrom",
+        "Calum Ritchie",
+        "Victor Eklund"
+      ],
+      "line_3_player_names": null,
+      "line_4_player_names": null
+    },
+    {
+      "capture_key": "gamedaylines:2026-09-30:15:no-game:2105378254983205114:no-quoted-tweet:power_play:accepted",
+      "tweet_id": "2105378254983205114",
+      "raw_text": "RT @TomGulittiNHL: Caps PP1: Chychrun, Ovechkin, Wilson, Dubois, Strome\n\nPP2: Hutson, Leonard, Tuch, Kyrou, I. Protas",
+      "enriched_text": "RT @TomGulittiNHL: Caps PP1: Chychrun, Ovechkin, Wilson, Dubois, Strome\n\nPP2: Hutson, Leonard, Tuch, Kyrou, I. Protas",
+      "quoted_raw_text": null,
+      "quoted_enriched_text": null,
+      "tweet_posted_at": "2026-09-30T19:24:00+00:00",
+      "observed_at": "2026-09-30T19:25:55.887918+00:00",
+      "source_url": "https://twitter.com/i/web/status/2105378254983205114",
+      "source_handle": "GameDayLines",
+      "classification": "power_play",
+      "status": "observed",
+      "nhl_filter_reason": null,
+      "team_id": 15,
+      "team_abbreviation": "WSH",
+      "game_id": null,
+      "metadata": {
+        "sourceKey": "gamedaylines",
+        "iftttSource": "ifttt",
+        "primaryText": "RT @TomGulittiNHL: Caps PP1: Chychrun, Ovechkin, Wilson, Dubois, Strome\n\nPP2: Hutson, Leonard, Tuch, Kyrou, I. Protas",
+        "sourceGroup": "gdl_suite",
+        "iftttEventId": "782985ca-7337-4284-9a0f-dcc1feb0c106",
+        "matchedNames": [
+          "Alex Ovechkin",
+          "Alex Tuch",
+          "Cole Hutson",
+          "Dylan Strome",
+          "Ilya Protas",
+          "Jakob Chychrun",
+          "Jordan Kyrou",
+          "Pierre-Luc Dubois",
+          "Ryan Leonard",
+          "Tom Wilson"
+        ],
+        "sourceAccount": "SOURCE_ACCOUNT",
+        "interpretation": {
+          "units": [
+            {
+              "group": null,
+              "number": 2,
+              "players": [
+                {
+                  "name": "Cole Hutson",
+                  "playerId": 8484873
+                },
+                {
+                  "name": "Ryan Leonard",
+                  "playerId": 8484186
+                },
+                {
+                  "name": "Alex Tuch",
+                  "playerId": 8477949
+                },
+                {
+                  "name": "Jordan Kyrou",
+                  "playerId": 8479385
+                },
+                {
+                  "name": "Ilya Protas",
+                  "playerId": 8484999
+                }
+              ],
+              "complete": true,
+              "evidence": [
+                {
+                  "end": 84,
+                  "text": "Hutson",
+                  "start": 78
+                },
+                {
+                  "end": 93,
+                  "text": "Leonard",
+                  "start": 86
+                },
+                {
+                  "end": 99,
+                  "text": "Tuch",
+                  "start": 95
+                },
+                {
+                  "end": 106,
+                  "text": "Kyrou",
+                  "start": 101
+                },
+                {
+                  "end": 117,
+                  "text": "I. Protas",
+                  "start": 108
+                }
+              ],
+              "situation": "pp",
+              "explicitNumber": true
+            }
+          ],
+          "events": [],
+          "context": "unknown",
+          "version": "2026-09-18.1",
+          "certainty": "reported",
+          "unresolved": [],
+          "rosterRevision": "8471214:Alex Ovechkin:Ovechkin:15:L:Alex Ovechkin:Alex Ovechkin|8475795:Dylan McIlrath:McIlrath:15:D:Dylan McIlrath:Dylan McIlrath|8476432:Boone Jenner:Jenner:15:C:Boone Jenner:Boone Jenner|8476880:Tom Wilson:Wilson:15:R:Tom Wilson:Tom Wilson|8477949:Alex Tuch:Tuch:15:R:Alex Tuch:Alex Tuch|8478440:Dylan Strome:Strome:15:C:Dylan Strome:Dylan Strome|8478463:Anthony Beauvillier:Beauvillier:15:R:Anthony Beauvillier:Anthony Beauvillier|8478911:Matt Roy:Roy:15:D:Matt Roy:Matt Roy|8479292:Charlie Lindgren:Lindgren:15:G:Charlie Lindgren:Charlie Lindgren|8479345:Jakob Chychrun:Chychrun:15:D:Jakob Chychrun:Jakob Chychrun|8479385:Jordan Kyrou:Kyrou:15:R:Jordan Kyrou:Jordan Kyrou|8479400:Pierre-Luc Dubois:Dubois:15:C:Pierre-Luc Dubois:Pierre-Luc Dubois|8479576:Vincent Desharnais:Desharnais:15:D:Vincent Desharnais:Vincent Desharnais|8480043:Timothy Liljegren:Liljegren:15:D:Timothy Liljegren:Timothy Liljegren|8480313:Logan Thompson:Thompson:15:G:Logan Thompson:Logan Thompson|8480796:Martin Fehérváry:Fehérváry:15:D:Martin Fehérváry:Martin Fehérváry|8480873:Rasmus Sandin:Sandin:15:D:Rasmus Sandin:Rasmus Sandin|8481656:Aliaksei Protas:Protas:15:L:Aliaksei Protas:Aliaksei Protas|8482088:Justin Sourdif:Sourdif:15:C:Justin Sourdif:Justin Sourdif|8482683:David Gucciardi:Gucciardi:15:D:David Gucciardi:David Gucciardi|8482931:Joaquim Lemay:Lemay:15:D:Joaquim Lemay|8483007:Brett Hyland:Hyland:15:C:Brett Hyland|8483430:Ryan Chesley:Chesley:15:D:Ryan Chesley:Ryan Chesley|8483491:Ivan Miroshnichenko:Miroshnichenko:15:L:Ivan Miroshnichenko:Ivan Miroshnichenko|8483518:Alexander Suzdalev:Suzdalev:15:L:Alexander Suzdalev:Alexander Suzdalev|8483532:Clay Stevenson:Stevenson:15:G:Clay Stevenson:Clay Stevenson|8483573:Ethen Frank:Frank:15:R:Ethen Frank:Ethen Frank|8483681:Ludwig Persson:Persson:15:L:Ludwig Persson:Ludwig Persson|8484140:Cam Allen:Allen:15:D:Cam Allen:Cam Allen|8484159:Andrew Cristall:Cristall:15:L:Andrew Cristall:Andrew Cristall|8484186:Ryan Leonard:Leonard:15:R:Ryan Leonard:Ryan Leonard|8484404:Patrick Thomas:Thomas:15:C:Patrick Thomas:Patrick Thomas|8484480:Antoine Keller:Keller:15:G:Antoine Keller|8484769:Terik Parascak:Parascak:15:R:Terik Parascak:Terik Parascak|8484772:Leon Muggli:Muggli:15:D:Leon Muggli:Leon Muggli|8484775:Eriks Mateiko:Mateiko:15:L:Eriks Mateiko:Eriks Mateiko|8484873:Cole Hutson:Hutson:15:D:Cole Hutson:Cole Hutson|8484999:Ilya Protas:Protas:15:L:Ilya Protas:Ilya Protas|8485023:Nicholas Kempf:Kempf:15:G:Nicholas Kempf|8485080:Petr Sikora:Sikora:15:C:Petr Sikora|8485106:Miroslav Satan:Satan:15:C:Miroslav Satan|8485412:Lynden Lakovic:Lakovic:15:L:Lynden Lakovic:Lynden Lakovic|8485577:Maxim Schafer:Schafer:15:L:Maxim Schafer|8485628:Jackson Crowder:Crowder:15:C:Jackson Crowder|8485648:Aron Dahlqvist:Dahlqvist:15:D:Aron Dahlqvist|8486102:Tyus Sparks:Sparks:15:C:Tyus Sparks|8486104:Oliver Suvanto:Suvanto:15:C:Oliver Suvanto|8486279:Brian McFadden:McFadden:15:D:Brian McFadden|8486331:Logan Stuart:Stuart:15:C:Logan Stuart"
+        },
+        "powerPlayUnits": [
+          [
+            "Cole Hutson",
+            "Ryan Leonard",
+            "Alex Tuch",
+            "Jordan Kyrou",
+            "Ilya Protas"
+          ]
+        ],
+        "unmatchedNames": [],
+        "primarySourceUrl": "https://twitter.com/i/web/status/2105378254983205114",
+        "teamLabelMatches": [],
+        "primaryTextSource": "ifttt_text",
+        "quotedKeywordHits": [],
+        "resolvedTweetUrls": {
+          "sourceUrl": "https://twitter.com/i/web/status/2105378254983205114",
+          "quotedTweetUrl": null,
+          "wrapperTweetUrl": "https://twitter.com/i/web/status/2105378254983205114"
+        },
+        "storedSkaterOrder": [
+          "RW",
+          "C",
+          "LW"
+        ],
+        "wrapperTextSource": "wrapper",
+        "iftttSourceAccount": "SOURCE_ACCOUNT",
+        "nonNhlSourceHandle": null,
+        "primaryKeywordHits": [
+          "pp1",
+          "pp2"
+        ],
+        "storedDefenseOrder": [
+          "RD",
+          "LD"
+        ],
+        "transactionSignals": [],
+        "wrapperKeywordHits": [
+          "pp1",
+          "pp2"
+        ],
+        "powerPlayUnitLabels": [
+          "pp2"
+        ],
+        "publicationTimeBasis": "provider_timestamp",
+        "powerPlayUnitPlayerIds": [
+          [
+            8484873,
+            8484186,
+            8477949,
+            8479385,
+            8484999
+          ]
+        ],
+        "quotedStructureSignals": null,
+        "initialStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "primaryStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "wrapperStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "refreshedFromPrimaryText": true,
+        "refreshedStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        }
+      },
+      "line_1_player_names": null,
+      "line_2_player_names": null,
+      "line_3_player_names": null,
+      "line_4_player_names": null
+    },
+    {
+      "capture_key": "gamedaygoalies:2026-09-30:2:2026020008:2105434836500680857:no-quoted-tweet:goalie_start:accepted",
+      "tweet_id": "2105434836500680857",
+      "raw_text": "RT @ethan_sears: Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena. Anthony Stolarz for the Leafs.",
+      "enriched_text": "RT @ethan_sears: Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena. Anthony Stolarz for the Leafs.",
+      "quoted_raw_text": null,
+      "quoted_enriched_text": null,
+      "tweet_posted_at": "2026-09-30T23:09:00+00:00",
+      "observed_at": "2026-09-30T23:17:40.673936+00:00",
+      "source_url": "https://twitter.com/i/web/status/2105434836500680857",
+      "source_handle": "GameDayGoalies",
+      "classification": "goalie_start",
+      "status": "observed",
+      "nhl_filter_reason": null,
+      "team_id": 2,
+      "team_abbreviation": "NYI",
+      "game_id": 2026020008,
+      "metadata": {
+        "sourceKey": "gamedaygoalies",
+        "iftttSource": "ifttt",
+        "primaryText": "RT @ethan_sears: Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena. Anthony Stolarz for the Leafs.",
+        "sourceGroup": "gdl_suite",
+        "iftttEventId": "936c6b3f-b825-4a94-93b4-1fed5d289707",
+        "matchedNames": [
+          "Ilya Sorokin"
+        ],
+        "sourceAccount": "GameDayGoalies",
+        "interpretation": {
+          "units": [],
+          "events": [
+            {
+              "kind": "injury",
+              "state": "unknown",
+              "evidence": {
+                "end": 117,
+                "text": "Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena. Anthony Stolarz for the Leafs.",
+                "start": 17
+              },
+              "playerId": 8478009,
+              "timeline": null,
+              "timelines": [],
+              "playerName": "Ilya Sorokin",
+              "availability": "out"
+            }
+          ],
+          "context": "game",
+          "version": "2026-09-18.1",
+          "certainty": "reported",
+          "unresolved": [],
+          "rosterRevision": "8473575:Semyon Varlamov:Varlamov:2:G:Semyon Varlamov:Semyon Varlamov|8475151:Kyle Palmieri:Palmieri:2:C:Kyle Palmieri:Kyle Palmieri|8475170:Brayden Schenn:Schenn:2:C:Brayden Schenn:Brayden Schenn|8475231:Casey Cizikas:Cizikas:2:C:Casey Cizikas:Casey Cizikas|8476292:Ondrej Palat:Palat:2:L:Ondrej Palat:Ondrej Palat|8476419:Jean-Gabriel Pageau:Pageau:2:C:Jean-Gabriel Pageau:Jean-Gabriel Pageau|8476429:Scott Mayfield:Mayfield:2:D:Scott Mayfield:Scott Mayfield|8476917:Adam Pelech:Pelech:2:D:Adam Pelech:Adam Pelech|8477407:Anthony Duclair:Duclair:2:L:Anthony Duclair:Anthony Duclair|8477500:Bo Horvat:Horvat:2:C:Bo Horvat:Bo Horvat|8477506:Ryan Pulock:Pulock:2:D:Ryan Pulock:Ryan Pulock|8477950:Tony DeAngelo:DeAngelo:2:D:Tony DeAngelo:Tony DeAngelo|8477970:Vitek Vanecek:Vanecek:2:G:Vitek Vanecek:Vitek Vanecek|8478009:Ilya Sorokin:Sorokin:2:G:Ilya Sorokin:Ilya Sorokin|8478115:Pierre Engvall:Engvall:2:L:Pierre Engvall:Pierre Engvall|8478445:Mathew Barzal:Barzal:2:C:Mathew Barzal:Mathew Barzal|8478451:Ethan Bear:Bear:2:D:Ethan Bear:Ethan Bear|8479644:Matt Luff:Luff:2:R:Matt Luff:Matt Luff|8480853:Liam Foudy:Foudy:2:C:Liam Foudy:Liam Foudy|8481014:Alexander Romanov:Romanov:2:D:Alexander Romanov:Alexander Romanov|8481237:Kyle MacLean:MacLean:2:C:Kyle MacLean:Kyle MacLean|8481569:Marshall Warren:Warren:2:D:Marshall Warren:Marshall Warren|8481601:Simon Holmstrom:Holmstrom:2:R:Simon Holmstrom:Simon Holmstrom|8481711:Matias Maccelli:Maccelli:2:L:Matias Maccelli:Matias Maccelli|8482070:Mitchell Chaffee:Chaffee:2:R:Mitchell Chaffee:Mitchell Chaffee|8482154:Alex Jefferies:Jefferies:2:L:Alex Jefferies:Alex Jefferies|8482472:Henrik Tikkanen:Tikkanen:2:G:Henrik Tikkanen:Henrik Tikkanen|8482476:Emil Heineman:Heineman:2:L:Emil Heineman:Emil Heineman|8482516:Matthew Kessel:Kessel:2:D:Matthew Kessel:Matthew Kessel|8482954:Tomas Machu:Machu:2:D:Tomas Machu|8483104:Daylan Kuefler:Kuefler:2:L:Daylan Kuefler:Daylan Kuefler|8483441:Quinn Finley:Finley:2:L:Quinn Finley|8483448:Isaiah George:George:2:D:Isaiah George:Isaiah George|8483498:Calle Odelius:Odelius:2:D:Calle Odelius:Calle Odelius|8483708:Ryan Healey:Healey:2:D:Ryan Healey|8484205:Danny Nelson:Nelson:2:C:Danny Nelson|8484208:Jesse Nurmi:Nurmi:2:L:Jesse Nurmi|8484221:Calum Ritchie:Ritchie:2:C:Calum Ritchie:Calum Ritchie|8484225:Zachary Schulz:Schulz:2:D:Zachary Schulz|8484482:Dennis Good Bogg:Good Bogg:2:D:Dennis Good Bogg|8484766:Jesse Pulkkinen:Pulkkinen:2:D:Jesse Pulkkinen|8484788:Kamil Bednarik:Bednarik:2:C:Kamil Bednarik|8484807:Cole Eiserman:Eiserman:2:L:Cole Eiserman|8485020:Dmitry Gamzin:Gamzin:2:G:Dmitry Gamzin|8485078:Xavier Veilleux:Veilleux:2:D:Xavier Veilleux|8485352:Kashawn Aitcheson:Aitcheson:2:D:Kashawn Aitcheson:Kashawn Aitcheson|8485366:Matthew Schaefer:Schaefer:2:D:Matthew Schaefer:Matthew Schaefer|8485370:Luca Romano:Romano:2:C:Luca Romano:Luca Romano|8485378:Tomas Poletin:Poletin:2:L:Tomas Poletin:Tomas Poletin|8485388:Victor Eklund:Eklund:2:R:Victor Eklund:Victor Eklund|8485440:Sam Laurila:Laurila:2:D:Sam Laurila|8485448:Daniil Prokhorov:Prokhorov:2:R:Daniil Prokhorov|8485462:Gleb Veremyev:Veremyev:2:C:Gleb Veremyev:Gleb Veremyev|8485490:Joey Larson:Larson:2:R:Joey Larson:Joey Larson|8485644:Burke Hood:Hood:2:G:Burke Hood|8485669:Jacob Kvasnicka:Kvasnicka:2:R:Jacob Kvasnicka|8486035:Vladimir Dravecky:Dravecky:2:D:Vladimir Dravecky|8486042:Malte Gustafsson:Gustafsson:2:D:Malte Gustafsson|8486054:Lincoln Kuehne:Kuehne:2:D:Lincoln Kuehne|8486136:Joshua Kotai:Kotai:2:G|8486306:Artyom Matyuk:Matyuk:2:C:Artyom Matyuk|8486329:Robert Cowan:Cowan:2:R:Robert Cowan"
+        },
+        "powerPlayUnits": [],
+        "unmatchedNames": [],
+        "primarySourceUrl": "https://twitter.com/i/web/status/2105434836500680857",
+        "teamLabelMatches": [
+          "NYI"
+        ],
+        "primaryTextSource": "ifttt_text",
+        "quotedKeywordHits": [],
+        "resolvedTweetUrls": {
+          "sourceUrl": "https://twitter.com/i/web/status/2105434836500680857",
+          "quotedTweetUrl": null,
+          "wrapperTweetUrl": "https://twitter.com/i/web/status/2105434836500680857"
+        },
+        "storedSkaterOrder": [
+          "RW",
+          "C",
+          "LW"
+        ],
+        "wrapperTextSource": "wrapper",
+        "iftttSourceAccount": "GameDayGoalies",
+        "nonNhlSourceHandle": null,
+        "primaryKeywordHits": [
+          "warmups",
+          "leads",
+          "out"
+        ],
+        "storedDefenseOrder": [
+          "RD",
+          "LD"
+        ],
+        "transactionSignals": [],
+        "wrapperKeywordHits": [
+          "warmups",
+          "leads",
+          "out"
+        ],
+        "powerPlayUnitLabels": [],
+        "publicationTimeBasis": "provider_timestamp",
+        "powerPlayUnitPlayerIds": [],
+        "quotedStructureSignals": null,
+        "initialStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "primaryStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "wrapperStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "refreshedFromPrimaryText": true,
+        "refreshedStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        }
+      },
+      "line_1_player_names": null,
+      "line_2_player_names": null,
+      "line_3_player_names": null,
+      "line_4_player_names": null
+    },
+    {
+      "capture_key": "gamedaylines:2026-09-30:no-team:no-game:2105466270070264224:no-quoted-tweet:other:rejected_ambiguous",
+      "tweet_id": "2105466270070264224",
+      "raw_text": "RT @ethan_sears: Looks like Maccelli and Duclair have switched spots",
+      "enriched_text": "RT @ethan_sears: Looks like Maccelli and Duclair have switched spots",
+      "quoted_raw_text": null,
+      "quoted_enriched_text": null,
+      "tweet_posted_at": "2026-10-01T01:14:00+00:00",
+      "observed_at": "2026-10-01T01:20:44.199416+00:00",
+      "source_url": "https://twitter.com/i/web/status/2105466270070264224",
+      "source_handle": "GameDayLines",
+      "classification": "other",
+      "status": "rejected",
+      "nhl_filter_reason": "no_single_nhl_team_match",
+      "team_id": null,
+      "team_abbreviation": null,
+      "game_id": null,
+      "metadata": {
+        "sourceKey": "gamedaylines",
+        "iftttSource": "ifttt",
+        "primaryText": "RT @ethan_sears: Looks like Maccelli and Duclair have switched spots",
+        "sourceGroup": "gdl_suite",
+        "iftttEventId": "d66bc239-d6c4-45e1-958d-0d60d27e9d96",
+        "matchedNames": [],
+        "sourceAccount": "SOURCE_ACCOUNT",
+        "interpretation": {
+          "units": [],
+          "events": [],
+          "context": "unknown",
+          "version": "2026-09-18.1",
+          "certainty": "reported",
+          "unresolved": [],
+          "rosterRevision": ""
+        },
+        "powerPlayUnits": [],
+        "unmatchedNames": [],
+        "primarySourceUrl": "https://twitter.com/i/web/status/2105466270070264224",
+        "teamLabelMatches": [],
+        "primaryTextSource": "ifttt_text",
+        "quotedKeywordHits": [],
+        "resolvedTweetUrls": {
+          "sourceUrl": "https://twitter.com/i/web/status/2105466270070264224",
+          "quotedTweetUrl": null,
+          "wrapperTweetUrl": "https://twitter.com/i/web/status/2105466270070264224"
+        },
+        "storedSkaterOrder": [
+          "RW",
+          "C",
+          "LW"
+        ],
+        "wrapperTextSource": "wrapper",
+        "iftttSourceAccount": "SOURCE_ACCOUNT",
+        "nonNhlSourceHandle": null,
+        "primaryKeywordHits": [],
+        "storedDefenseOrder": [
+          "RD",
+          "LD"
+        ],
+        "transactionSignals": [],
+        "wrapperKeywordHits": [],
+        "powerPlayUnitLabels": [],
+        "publicationTimeBasis": "provider_timestamp",
+        "powerPlayUnitPlayerIds": [],
+        "quotedStructureSignals": null,
+        "initialStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "primaryStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "wrapperStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        },
+        "refreshedFromPrimaryText": true,
+        "refreshedStructureSignals": {
+          "defensePairCount": 0,
+          "forwardLineCount": 0,
+          "parsedGoalieCount": 0,
+          "parsedDefensePairs": 0,
+          "parsedForwardLines": 0
+        }
+      },
+      "line_1_player_names": null,
+      "line_2_player_names": null,
+      "line_3_player_names": null,
+      "line_4_player_names": null
+    }
+  ],
+  "localDiagnosticReplay": [
+    {
+      "tweetId": "2104668922113052956",
+      "classification": "other",
+      "interpretation": {
+        "version": "2026-09-18.1",
+        "rosterRevision": "",
+        "units": [],
+        "unresolved": [],
+        "context": "unknown",
+        "certainty": "reported",
+        "events": []
+      },
+      "scope": "Pure classifier + interpretation + events with stored rosterRevision; excludes gates, enrichment, persistence, live identity reads and historical code"
+    },
+    {
+      "tweetId": "2104672980634886326",
+      "classification": "injury",
+      "interpretation": {
+        "version": "2026-09-18.1",
+        "rosterRevision": "",
+        "units": [],
+        "unresolved": [],
+        "context": "unknown",
+        "certainty": "reported",
+        "events": []
+      },
+      "scope": "Pure classifier + interpretation + events with stored rosterRevision; excludes gates, enrichment, persistence, live identity reads and historical code"
+    },
+    {
+      "tweetId": "2104977788142850499",
+      "classification": "other",
+      "interpretation": {
+        "version": "2026-09-18.1",
+        "rosterRevision": "",
+        "units": [],
+        "unresolved": [],
+        "context": "unknown",
+        "certainty": "reported",
+        "events": []
+      },
+      "scope": "Pure classifier + interpretation + events with stored rosterRevision; excludes gates, enrichment, persistence, live identity reads and historical code"
+    },
+    {
+      "tweetId": "2105000410809512101",
+      "classification": "other",
+      "interpretation": {
+        "version": "2026-09-18.1",
+        "rosterRevision": "",
+        "units": [],
+        "unresolved": [],
+        "context": "unknown",
+        "certainty": "reported",
+        "events": []
+      },
+      "scope": "Pure classifier + interpretation + events with stored rosterRevision; excludes gates, enrichment, persistence, live identity reads and historical code"
+    },
+    {
+      "tweetId": "2105336355915985057",
+      "classification": "lineup",
+      "interpretation": {
+        "version": "2026-09-18.1",
+        "rosterRevision": "8475660:Cam Talbot:Talbot:29:G:Cam Talbot:Cam Talbot|8475745:Charlie Coyle:Coyle:29:C:Charlie Coyle:Charlie Coyle|8475790:Erik Gudbranson:Gudbranson:29:D:Erik Gudbranson:Erik Gudbranson|8476923:Damon Severson:Severson:29:D:Damon Severson:Damon Severson|8477425:Miles Wood:Wood:29:L:Miles Wood:Miles Wood|8477497:Sean Monahan:Monahan:29:C:Sean Monahan:Sean Monahan|8477501:Valeri Nichushkin:Nichushkin:29:R:Valeri Nichushkin:Valeri Nichushkin|8477831:Pheonix Copley:Copley:29:G:Pheonix Copley:Pheonix Copley|8478007:Elvis Merzlikins:Merzlikins:29:G:Elvis Merzlikins:Elvis Merzlikins|8478046:Danton Heinen:Heinen:29:L:Danton Heinen:Danton Heinen|8478460:Zach Werenski:Werenski:29:D:Zach Werenski:Zach Werenski|8478500:Ivan Provorov:Provorov:29:D:Ivan Provorov:Ivan Provorov|8478841:Colton White:White:29:D:Colton White:Colton White|8478856:Conor Garland:Garland:29:R:Conor Garland:Conor Garland|8479066:Ryan Lomberg:Lomberg:29:L:Ryan Lomberg:Ryan Lomberg|8479371:Dante Fabbro:Fabbro:29:D:Dante Fabbro:Dante Fabbro|8479671:Mathieu Olivier:Olivier:29:R:Mathieu Olivier:Mathieu Olivier|8480806:Isac Lundeström:Lundeström:29:C:Isac Lundeström:Isac Lundeström|8480893:Kirill Marchenko:Marchenko:29:R:Kirill Marchenko:Kirill Marchenko|8481161:Jake Christiansen:Christiansen:29:D:Jake Christiansen:Jake Christiansen|8481716:Dmitri Voronkov:Voronkov:29:L:Dmitri Voronkov:Dmitri Voronkov|8482134:Luke Tuch:Tuch:29:L:Luke Tuch:Luke Tuch|8482660:Kent Johnson:Johnson:29:C:Kent Johnson:Kent Johnson|8482678:Corson Ceulemans:Ceulemans:29:D:Corson Ceulemans:Corson Ceulemans|8482692:Guillaume Richard:Richard:29:D:Guillaume Richard:Guillaume Richard|8482705:Cole Sillinger:Sillinger:29:C:Cole Sillinger:Cole Sillinger|8482744:James Malatesta:Malatesta:29:L:James Malatesta:James Malatesta|8482881:Max McCue:McCue:29:C:Max McCue:Max McCue|8482913:Nikolai Makarov:Makarov:29:D:Nikolai Makarov|8482982:Jet Greaves:Greaves:29:G:Jet Greaves:Jet Greaves|8483432:Luca Del Bel Belluz:Del Bel Belluz:29:C:Luca Del Bel Belluz:Luca Del Bel Belluz|8483434:Kirill Dolzhenkov:Dolzhenkov:29:R:Kirill Dolzhenkov|8483485:Denton Mateychuk:Mateychuk:29:D:Denton Mateychuk:Denton Mateychuk|8483538:Owen Sillinger:Sillinger:29:C:Owen Sillinger:Owen Sillinger|8483688:Jordan Dumais:Dumais:29:R:Jordan Dumais:Jordan Dumais|8483715:James Fisher:Fisher:29:R:James Fisher|8483738:Sergei Ivanov:Ivanov:29:G:Sergei Ivanov|8483804:Riley Bezeau:Bezeau:29:R:Riley Bezeau:Riley Bezeau|8483869:Nolan Lalonde:Lalonde:29:G:Nolan Lalonde:Nolan Lalonde|8484166:Adam Fantilli:Fantilli:29:C:Adam Fantilli:Adam Fantilli|8484214:Luca Pinelli:Pinelli:29:C:Luca Pinelli:Luca Pinelli|8484232:Andrew Strathmann:Strathmann:29:D:Andrew Strathmann|8484239:William Whitelaw:Whitelaw:29:R:William Whitelaw|8484441:Melvin Strahl:Strahl:29:G:Melvin Strahl|8484472:Oiva Keskinen:Keskinen:29:C:Oiva Keskinen:Oiva Keskinen|8484777:Luca Marrelli:Marrelli:29:D:Luca Marrelli|8484780:Cayden Lindstrom:Lindstrom:29:C:Cayden Lindstrom|8484808:Charlie Elick:Elick:29:D:Charlie Elick:Charlie Elick|8484866:Tanner Henricks:Henricks:29:D:Tanner Henricks|8484997:Evan Gardner:Gardner:29:G:Evan Gardner:Evan Gardner|8485068:Luke Ashton:Ashton:29:D:Luke Ashton|8485355:Malte Vass:Vass:29:D:Malte Vass|8485361:Jackson Smith:Smith:29:D:Jackson Smith|8485469:Jack Williams:Williams:29:R:Jack Williams:Jack Williams|8485472:Caleb MacDonald:MacDonald:29:D:Caleb MacDonald:Caleb MacDonald|8485560:Pyotr Andreyanov:Andreyanov:29:G:Pyotr Andreyanov|8485630:Owen Griffin:Griffin:29:C:Owen Griffin:Owen Griffin|8485640:Victor Raftheim:Raftheim:29:D:Victor Raftheim|8485667:Jeremy Loranger:Loranger:29:C:Jeremy Loranger|8485746:Jonas Woo:Woo:29:D:Jonas Woo|8486034:Alessandro Di Iorio:Di Iorio:29:C:Alessandro Di Iorio|8486046:Oscar Hemming:Hemming:29:L:Oscar Hemming|8486073:Filip Novak:Novak:29:L:Filip Novak|8486173:Josh Eernisse:Eernisse:29:C|8486177:Boston Buckberger:Buckberger:29:D|8486261:Evan Jardine:Jardine:29:L:Evan Jardine|8486278:Parker Snell:Snell:29:G:Parker Snell|8486310:Anttoni Uronen:Uronen:29:C:Anttoni Uronen",
+        "units": [
+          {
+            "situation": "es_forward",
+            "number": 1,
+            "explicitNumber": false,
+            "players": [
+              {
+                "playerId": 8477501,
+                "name": "Valeri Nichushkin"
+              },
+              {
+                "playerId": 8477497,
+                "name": "Sean Monahan"
+              },
+              {
+                "playerId": 8478856,
+                "name": "Conor Garland"
+              }
+            ],
+            "evidence": [
+              {
+                "start": 64,
+                "end": 74,
+                "text": "Nichushkin"
+              },
+              {
+                "start": 75,
+                "end": 82,
+                "text": "Monahan"
+              },
+              {
+                "start": 83,
+                "end": 90,
+                "text": "Garland"
+              }
+            ],
+            "group": null,
+            "complete": true
+          },
+          {
+            "situation": "es_defense",
+            "number": 1,
+            "explicitNumber": false,
+            "players": [
+              {
+                "playerId": 8478460,
+                "name": "Zach Werenski"
+              },
+              {
+                "playerId": 8483485,
+                "name": "Denton Mateychuk"
+              }
+            ],
+            "evidence": [
+              {
+                "start": 145,
+                "end": 153,
+                "text": "Werenski"
+              },
+              {
+                "start": 154,
+                "end": 163,
+                "text": "Mateychuk"
+              }
+            ],
+            "group": null,
+            "complete": true
+          },
+          {
+            "situation": "es_defense",
+            "number": 2,
+            "explicitNumber": false,
+            "players": [
+              {
+                "playerId": 8481161,
+                "name": "Jake Christiansen"
+              },
+              {
+                "playerId": 8475790,
+                "name": "Erik Gudbranson"
+              }
+            ],
+            "evidence": [
+              {
+                "start": 164,
+                "end": 176,
+                "text": "Christiansen"
+              },
+              {
+                "start": 177,
+                "end": 187,
+                "text": "Gudbranson"
+              }
+            ],
+            "group": null,
+            "complete": true
+          }
+        ],
+        "unresolved": [
+          {
+            "start": 41,
+            "end": 63,
+            "text": "Knies-Fantilli-Johnson",
+            "reason": "invalid_extraction"
+          },
+          {
+            "start": 91,
+            "end": 114,
+            "text": "Sillinger-Coyle-Olivier",
+            "reason": "invalid_extraction"
+          },
+          {
+            "start": 115,
+            "end": 129,
+            "text": "Lomberg-Heinen",
+            "reason": "missing_player"
+          },
+          {
+            "start": 130,
+            "end": 143,
+            "text": "LDBB-Voronkov",
+            "reason": "missing_player"
+          },
+          {
+            "start": 188,
+            "end": 193,
+            "text": "Soucy",
+            "reason": "missing_player"
+          },
+          {
+            "start": 194,
+            "end": 200,
+            "text": "Andrae",
+            "reason": "missing_player"
+          }
+        ],
+        "context": "unknown",
+        "certainty": "reported",
+        "events": []
+      },
+      "scope": "Pure classifier + interpretation + events with stored rosterRevision; excludes gates, enrichment, persistence, live identity reads and historical code"
+    },
+    {
+      "tweetId": "2105366758089695718",
+      "classification": "power_play",
+      "interpretation": {
+        "version": "2026-09-18.1",
+        "rosterRevision": "8475200:Dmitry Orlov:Orlov:28:D:Dmitry Orlov:Dmitry Orlov|8475726:Tyler Toffoli:Toffoli:28:C:Tyler Toffoli:Tyler Toffoli|8476624:Barclay Goodrow:Goodrow:28:C:Barclay Goodrow:Barclay Goodrow|8476885:Jacob Trouba:Trouba:28:D:Jacob Trouba:Jacob Trouba|8477480:Eric Comrie:Comrie:28:G:Eric Comrie:Eric Comrie|8477498:Darnell Nurse:Nurse:28:D:Darnell Nurse:Darnell Nurse|8477505:Alexander Wennberg:Wennberg:28:C:Alexander Wennberg:Alexander Wennberg|8477968:Alex Nedeljkovic:Nedeljkovic:28:G:Alex Nedeljkovic:Alex Nedeljkovic|8478492:Ilya Samsonov:Samsonov:28:G:Ilya Samsonov:Ilya Samsonov|8478874:Adam Gaudette:Gaudette:28:R:Adam Gaudette:Adam Gaudette|8478975:Mason Marchment:Marchment:28:L:Mason Marchment:Mason Marchment|8479333:Libor Hajek:Hajek:28:D:Libor Hajek:Libor Hajek|8479718:Alex Barré-Boulet:Barré-Boulet:28:C:Alex Barré-Boulet:Alex Barré-Boulet|8479746:Tye Felhaber:Felhaber:28:L:Tye Felhaber:Tye Felhaber|8480356:Kyle Keyser:Keyser:28:G:Kyle Keyser:Kyle Keyser|8480748:Kiefer Sherwood:Sherwood:28:L:Kiefer Sherwood:Kiefer Sherwood|8480825:Patrick Giles:Giles:28:R:Patrick Giles:Patrick Giles|8480848:Ty Dellandrea:Dellandrea:28:C:Ty Dellandrea:Ty Dellandrea|8480891:Michael Kesselring:Kesselring:28:D:Michael Kesselring:Michael Kesselring|8481228:Jimmy Huntington:Huntington:28:C:Jimmy Huntington:Jimmy Huntington|8481517:Brett Leason:Leason:28:R:Brett Leason:Brett Leason|8482137:Yaroslav Askarov:Askarov:28:G:Yaroslav Askarov:Yaroslav Askarov|8482206:Ethan Cardwell:Cardwell:28:R:Ethan Cardwell:Ethan Cardwell|8482700:Nolan Allan:Allan:28:D:Nolan Allan:Nolan Allan|8482776:Andre Gasseau:Gasseau:28:C:Andre Gasseau|8482859:Zack Ostapchuk:Ostapchuk:28:C:Zack Ostapchuk:Zack Ostapchuk|8483428:Filip Bystedt:Bystedt:28:C:Filip Bystedt:Filip Bystedt|8483443:Michael Fisher:Fisher:28:D:Michael Fisher|8483481:Cam Lund:Lund:28:C:Cam Lund:Cam Lund|8483666:Mattias Havelid:Havelid:28:D:Mattias Havelid|8483702:Reese Laubach:Laubach:28:C:Reese Laubach|8483722:Eli Barnett:Barnett:28:D:Eli Barnett|8483753:Joey Muldowney:Muldowney:28:R:Joey Muldowney|8484152:Luca Cagnoni:Cagnoni:28:D:Luca Cagnoni:Luca Cagnoni|8484200:Quentin Musty:Musty:28:L:Quentin Musty:Quentin Musty|8484227:Will Smith:Smith:28:C:Will Smith:Will Smith|8484413:Axel Landen:Landen:28:D:Axel Landen|8484421:Eric Pohlkamp:Pohlkamp:28:D:Eric Pohlkamp|8484474:David Klee:Klee:28:C:David Klee|8484477:Yegor Rimashevskiy:Rimashevskiy:28:R:Yegor Rimashevskiy|8484599:Nate Misskey:Misskey:28:D:Nate Misskey|8484763:Leo Sahlin Wallenius:Sahlin Wallenius:28:D:Leo Sahlin Wallenius|8484764:Colton Roberts:Roberts:28:D:Colton Roberts|8484801:Macklin Celebrini:Celebrini:28:C:Macklin Celebrini:Macklin Celebrini|8484806:Sam Dickinson:Dickinson:28:D:Sam Dickinson:Sam Dickinson|8484845:Carson Wetsch:Wetsch:28:R:Carson Wetsch:Carson Wetsch|8484911:Collin Graf:Graf:28:R:Collin Graf:Collin Graf|8484994:Igor Chernyshov:Chernyshov:28:L:Igor Chernyshov:Igor Chernyshov|8485018:Christian Kirsch:Kirsch:28:G:Christian Kirsch|8485084:Yaroslav Korostelyov:Korostelyov:28:G:Yaroslav Korostelyov|8485354:Simon (Haoxi) Wang:Wang:28:D:Simon (Haoxi) Wang|8485373:Joshua Ravensbergen:Ravensbergen:28:G:Joshua Ravensbergen|8485402:Michael Misa:Misa:28:C:Michael Misa:Michael Misa|8485407:Cole McKinney:McKinney:28:C:Cole McKinney|8485578:Teddy Mutryn:Mutryn:28:C:Teddy Mutryn|8485595:Ilyas Magomedsultanov:Magomedsultanov:28:D:Ilyas Magomedsultanov|8485620:Max Heise:Heise:28:C:Max Heise|8485676:Richard Gallant:Gallant:28:L:Richard Gallant|8486041:Jake Gustafson:Gustafson:28:C:Jake Gustafson|8486053:Brady Knowling:Knowling:28:G:Brady Knowling|8486062:Ryan Lin:Lin:28:D:Ryan Lin|8486103:Ivar Stenberg:Stenberg:28:L:Ivar Stenberg|8486112:Keaton Verhoeff:Verhoeff:28:D:Keaton Verhoeff|8486205:Phillip Sinn:Sinn:28:D|8486340:Alexander Karmanov:Karmanov:28:D:Alexander Karmanov",
+        "units": [
+          {
+            "situation": "pp",
+            "number": 1,
+            "explicitNumber": true,
+            "players": [
+              {
+                "playerId": 8484152,
+                "name": "Luca Cagnoni"
+              },
+              {
+                "playerId": 8484801,
+                "name": "Macklin Celebrini"
+              },
+              {
+                "playerId": 8484227,
+                "name": "Will Smith"
+              },
+              {
+                "playerId": 8484994,
+                "name": "Igor Chernyshov"
+              },
+              {
+                "playerId": 8477505,
+                "name": "Alexander Wennberg"
+              }
+            ],
+            "evidence": [
+              {
+                "start": 145,
+                "end": 152,
+                "text": "Cagnoni"
+              },
+              {
+                "start": 153,
+                "end": 162,
+                "text": "Celebrini"
+              },
+              {
+                "start": 163,
+                "end": 168,
+                "text": "Smith"
+              },
+              {
+                "start": 169,
+                "end": 179,
+                "text": "Chernyshov"
+              },
+              {
+                "start": 180,
+                "end": 188,
+                "text": "Wennberg"
+              }
+            ],
+            "group": "s",
+            "complete": true
+          },
+          {
+            "situation": "pp",
+            "number": 2,
+            "explicitNumber": true,
+            "players": [
+              {
+                "playerId": 8475200,
+                "name": "Dmitry Orlov"
+              },
+              {
+                "playerId": 8485402,
+                "name": "Michael Misa"
+              },
+              {
+                "playerId": 8486103,
+                "name": "Ivar Stenberg"
+              },
+              {
+                "playerId": 8475726,
+                "name": "Tyler Toffoli"
+              },
+              {
+                "playerId": 8478975,
+                "name": "Mason Marchment"
+              }
+            ],
+            "evidence": [
+              {
+                "start": 196,
+                "end": 201,
+                "text": "Orlov"
+              },
+              {
+                "start": 202,
+                "end": 206,
+                "text": "Misa"
+              },
+              {
+                "start": 207,
+                "end": 215,
+                "text": "Stenberg"
+              },
+              {
+                "start": 216,
+                "end": 223,
+                "text": "Toffoli"
+              },
+              {
+                "start": 224,
+                "end": 233,
+                "text": "Marchment"
+              }
+            ],
+            "group": "s",
+            "complete": true
+          }
+        ],
+        "unresolved": [],
+        "context": "unknown",
+        "certainty": "reported",
+        "events": []
+      },
+      "scope": "Pure classifier + interpretation + events with stored rosterRevision; excludes gates, enrichment, persistence, live identity reads and historical code"
+    },
+    {
+      "tweetId": "2105370362964004937",
+      "classification": "practice_lines",
+      "interpretation": {
+        "version": "2026-09-18.1",
+        "rosterRevision": "8473512:Claude Giroux:Giroux:9:R:Claude Giroux:Claude Giroux|8476393:Nick Cousins:Cousins:9:C:Nick Cousins:Nick Cousins|8476999:Linus Ullmark:Ullmark:9:G:Linus Ullmark:Linus Ullmark|8477073:Kurtis MacDermid:MacDermid:9:L:Kurtis MacDermid:Kurtis MacDermid|8477444:Andre Burakovsky:Burakovsky:9:L:Andre Burakovsky:Andre Burakovsky|8477998:Warren Foegele:Foegele:9:L:Warren Foegele:Warren Foegele|8478020:Michael Amadio:Amadio:9:R:Michael Amadio:Michael Amadio|8478173:Hayden Hodgson:Hodgson:9:R:Hayden Hodgson:Hayden Hodgson|8478469:Thomas Chabot:Chabot:9:D:Thomas Chabot:Thomas Chabot|8480075:Cameron Crotty:Crotty:9:D:Cameron Crotty:Cameron Crotty|8480188:Fabian Zetterlund:Zetterlund:9:L:Fabian Zetterlund:Fabian Zetterlund|8480208:Drake Batherson:Batherson:9:R:Drake Batherson:Drake Batherson|8481035:Samuel Ersson:Ersson:9:G:Samuel Ersson:Samuel Ersson|8481528:Dylan Cozens:Cozens:9:C:Dylan Cozens:Dylan Cozens|8481596:Shane Pinto:Pinto:9:C:Shane Pinto:Shane Pinto|8481606:Jordan Spence:Spence:9:D:Jordan Spence:Jordan Spence|8482092:Ridly Greig:Greig:9:C:Ridly Greig:Ridly Greig|8482095:Tyler Kleven:Kleven:9:D:Tyler Kleven:Tyler Kleven|8482105:Jake Sanderson:Sanderson:9:D:Jake Sanderson:Jake Sanderson|8482116:Tim Stützle:Stützle:9:C:Tim Stützle:Tim Stützle|8482245:Artem Zub:Zub:9:D:Artem Zub:Artem Zub|8482447:Leevi Meriläinen:Meriläinen:9:G:Leevi Meriläinen:Leevi Meriläinen|8482667:William Eklund:Eklund:9:L:William Eklund:William Eklund|8482673:Xavier Bourgault:Bourgault:9:C:Xavier Bourgault:Xavier Bourgault|8482674:Tyler Boucher:Boucher:9:R:Tyler Boucher:Tyler Boucher|8483435:Jorian Donovan:Donovan:9:D:Jorian Donovan:Jorian Donovan|8483470:Christian Kyrou:Kyrou:9:D:Christian Kyrou:Christian Kyrou|8483670:Filip Nordberg:Nordberg:9:D:Filip Nordberg|8483673:Oskar Pettersson:Pettersson:9:R:Oskar Pettersson:Oskar Pettersson|8483676:Stephen Halliday:Halliday:9:C:Stephen Halliday:Stephen Halliday|8483683:Tomas Hamara:Hamara:9:D:Tomas Hamara:Tomas Hamara|8483749:Cameron O'Neill:O'Neill:9:R:Cameron O'Neill|8483757:Theo Wallberg:Wallberg:9:D:Theo Wallberg|8483762:Kevin Reidler:Reidler:9:G:Kevin Reidler|8484176:Kasper Halttunen:Halttunen:9:R:Kasper Halttunen:Kasper Halttunen|8484235:Brandon Svoboda:Svoboda:9:C:Brandon Svoboda|8484321:Nikolas Matinpalo:Matinpalo:9:D:Nikolas Matinpalo:Nikolas Matinpalo|8484409:Hoyt Stanley:Stanley:9:D:Hoyt Stanley|8484429:Matthew Andonovski:Andonovski:9:D:Matthew Andonovski|8484478:Owen Beckner:Beckner:9:C:Owen Beckner|8484485:Nicholas Vantassell:Vantassell:9:R:Nicholas Vantassell|8484489:Vladimir Nikitin:Nikitin:9:G:Vladimir Nikitin|8484759:Carter Yakemchuk:Yakemchuk:9:D:Carter Yakemchuk:Carter Yakemchuk|8484847:Gabriel Eliasson:Eliasson:9:D:Gabriel Eliasson|8484876:Javon Moore:Moore:9:L:Javon Moore|8485006:Lucas Ellinas:Ellinas:9:L:Lucas Ellinas|8485016:Blake Montgomery:Montgomery:9:L:Blake Montgomery|8485032:Eerik Wallenius:Wallenius:9:D:Eerik Wallenius|8485397:Logan Hensler:Hensler:9:D:Logan Hensler|8485579:Blake Vanek:Vanek:9:R:Blake Vanek|8485580:Lucas Beckman:Beckman:9:G:Lucas Beckman|8485621:Dmitri Isayev:Isayev:9:L:Dmitri Isayev|8485647:Bruno Idzan:Idzan:9:L:Bruno Idzan|8485679:Andrei Trofimov:Trofimov:9:G:Andrei Trofimov|8486031:Jaxon Cover:Cover:9:R:Jaxon Cover|8486057:Jonas Lagerberg Hoen:Lagerberg Hoen:9:R:Jonas Lagerberg Hoen|8486071:Adam Nemec:Nemec:9:L:Adam Nemec|8486236:Oscar Holmertz:Holmertz:9:C:Oscar Holmertz|8486240:Louis Felix Bourque:Bourque:9:R:Louis Felix Bourque|8486252:Elliot Lennon:Lennon:9:G:Elliot Lennon|8486286:Harris Pangretitsch:Pangretitsch:9:D:Harris Pangretitsch|8486311:Alexander Grunin:Grunin:9:D:Alexander Grunin",
+        "units": [],
+        "unresolved": [],
+        "context": "practice",
+        "certainty": "reported",
+        "events": [
+          {
+            "playerId": 8482105,
+            "playerName": "Jake Sanderson",
+            "kind": "injury",
+            "state": "confirmed_return",
+            "evidence": {
+              "start": 19,
+              "end": 135,
+              "text": "Sanderson skated before main practice today but didn't join his teammates. org is hopeful he will play this weekend."
+            },
+            "timeline": {
+              "purpose": "unknown",
+              "minimum": null,
+              "maximum": null,
+              "unit": null,
+              "targetDate": "2026-09-30",
+              "text": "today"
+            },
+            "timelines": [
+              {
+                "purpose": "unknown",
+                "minimum": null,
+                "maximum": null,
+                "unit": null,
+                "targetDate": "2026-09-30",
+                "text": "today"
+              }
+            ],
+            "availability": "available"
+          },
+          {
+            "playerId": 8477444,
+            "playerName": "Andre Burakovsky",
+            "kind": "injury",
+            "state": "unknown",
+            "evidence": {
+              "start": 136,
+              "end": 185,
+              "text": "Burakovsky isn't close to returning (upper body)."
+            },
+            "timeline": null,
+            "timelines": [],
+            "availability": "unknown"
+          }
+        ]
+      },
+      "scope": "Pure classifier + interpretation + events with stored rosterRevision; excludes gates, enrichment, persistence, live identity reads and historical code"
+    },
+    {
+      "tweetId": "2105375596687843639",
+      "classification": "power_play",
+      "interpretation": {
+        "version": "2026-09-18.1",
+        "rosterRevision": "8473575:Semyon Varlamov:Varlamov:2:G:Semyon Varlamov:Semyon Varlamov|8475151:Kyle Palmieri:Palmieri:2:C:Kyle Palmieri:Kyle Palmieri|8475170:Brayden Schenn:Schenn:2:C:Brayden Schenn:Brayden Schenn|8475231:Casey Cizikas:Cizikas:2:C:Casey Cizikas:Casey Cizikas|8476292:Ondrej Palat:Palat:2:L:Ondrej Palat:Ondrej Palat|8476419:Jean-Gabriel Pageau:Pageau:2:C:Jean-Gabriel Pageau:Jean-Gabriel Pageau|8476429:Scott Mayfield:Mayfield:2:D:Scott Mayfield:Scott Mayfield|8476917:Adam Pelech:Pelech:2:D:Adam Pelech:Adam Pelech|8477407:Anthony Duclair:Duclair:2:L:Anthony Duclair:Anthony Duclair|8477500:Bo Horvat:Horvat:2:C:Bo Horvat:Bo Horvat|8477506:Ryan Pulock:Pulock:2:D:Ryan Pulock:Ryan Pulock|8477950:Tony DeAngelo:DeAngelo:2:D:Tony DeAngelo:Tony DeAngelo|8477970:Vitek Vanecek:Vanecek:2:G:Vitek Vanecek:Vitek Vanecek|8478009:Ilya Sorokin:Sorokin:2:G:Ilya Sorokin:Ilya Sorokin|8478115:Pierre Engvall:Engvall:2:L:Pierre Engvall:Pierre Engvall|8478445:Mathew Barzal:Barzal:2:C:Mathew Barzal:Mathew Barzal|8478451:Ethan Bear:Bear:2:D:Ethan Bear:Ethan Bear|8479644:Matt Luff:Luff:2:R:Matt Luff:Matt Luff|8480853:Liam Foudy:Foudy:2:C:Liam Foudy:Liam Foudy|8481014:Alexander Romanov:Romanov:2:D:Alexander Romanov:Alexander Romanov|8481237:Kyle MacLean:MacLean:2:C:Kyle MacLean:Kyle MacLean|8481569:Marshall Warren:Warren:2:D:Marshall Warren:Marshall Warren|8481601:Simon Holmstrom:Holmstrom:2:R:Simon Holmstrom:Simon Holmstrom|8481711:Matias Maccelli:Maccelli:2:L:Matias Maccelli:Matias Maccelli|8482070:Mitchell Chaffee:Chaffee:2:R:Mitchell Chaffee:Mitchell Chaffee|8482154:Alex Jefferies:Jefferies:2:L:Alex Jefferies:Alex Jefferies|8482472:Henrik Tikkanen:Tikkanen:2:G:Henrik Tikkanen:Henrik Tikkanen|8482476:Emil Heineman:Heineman:2:L:Emil Heineman:Emil Heineman|8482516:Matthew Kessel:Kessel:2:D:Matthew Kessel:Matthew Kessel|8482954:Tomas Machu:Machu:2:D:Tomas Machu|8483104:Daylan Kuefler:Kuefler:2:L:Daylan Kuefler:Daylan Kuefler|8483441:Quinn Finley:Finley:2:L:Quinn Finley|8483448:Isaiah George:George:2:D:Isaiah George:Isaiah George|8483498:Calle Odelius:Odelius:2:D:Calle Odelius:Calle Odelius|8483708:Ryan Healey:Healey:2:D:Ryan Healey|8484205:Danny Nelson:Nelson:2:C:Danny Nelson|8484208:Jesse Nurmi:Nurmi:2:L:Jesse Nurmi|8484221:Calum Ritchie:Ritchie:2:C:Calum Ritchie:Calum Ritchie|8484225:Zachary Schulz:Schulz:2:D:Zachary Schulz|8484482:Dennis Good Bogg:Good Bogg:2:D:Dennis Good Bogg|8484766:Jesse Pulkkinen:Pulkkinen:2:D:Jesse Pulkkinen|8484788:Kamil Bednarik:Bednarik:2:C:Kamil Bednarik|8484807:Cole Eiserman:Eiserman:2:L:Cole Eiserman|8485020:Dmitry Gamzin:Gamzin:2:G:Dmitry Gamzin|8485078:Xavier Veilleux:Veilleux:2:D:Xavier Veilleux|8485352:Kashawn Aitcheson:Aitcheson:2:D:Kashawn Aitcheson:Kashawn Aitcheson|8485366:Matthew Schaefer:Schaefer:2:D:Matthew Schaefer:Matthew Schaefer|8485370:Luca Romano:Romano:2:C:Luca Romano:Luca Romano|8485378:Tomas Poletin:Poletin:2:L:Tomas Poletin:Tomas Poletin|8485388:Victor Eklund:Eklund:2:R:Victor Eklund:Victor Eklund|8485440:Sam Laurila:Laurila:2:D:Sam Laurila|8485448:Daniil Prokhorov:Prokhorov:2:R:Daniil Prokhorov|8485462:Gleb Veremyev:Veremyev:2:C:Gleb Veremyev:Gleb Veremyev|8485490:Joey Larson:Larson:2:R:Joey Larson:Joey Larson|8485644:Burke Hood:Hood:2:G:Burke Hood|8485669:Jacob Kvasnicka:Kvasnicka:2:R:Jacob Kvasnicka|8486035:Vladimir Dravecky:Dravecky:2:D:Vladimir Dravecky|8486042:Malte Gustafsson:Gustafsson:2:D:Malte Gustafsson|8486054:Lincoln Kuehne:Kuehne:2:D:Lincoln Kuehne|8486136:Joshua Kotai:Kotai:2:G|8486306:Artyom Matyuk:Matyuk:2:C:Artyom Matyuk|8486329:Robert Cowan:Cowan:2:R:Robert Cowan",
+        "units": [
+          {
+            "situation": "es_forward",
+            "number": 1,
+            "explicitNumber": false,
+            "players": [
+              {
+                "playerId": 8481711,
+                "name": "Matias Maccelli"
+              },
+              {
+                "playerId": 8477500,
+                "name": "Bo Horvat"
+              },
+              {
+                "playerId": 8475170,
+                "name": "Brayden Schenn"
+              }
+            ],
+            "evidence": [
+              {
+                "start": 43,
+                "end": 51,
+                "text": "Maccelli"
+              },
+              {
+                "start": 52,
+                "end": 58,
+                "text": "Horvat"
+              },
+              {
+                "start": 59,
+                "end": 65,
+                "text": "Schenn"
+              }
+            ],
+            "group": null,
+            "complete": true
+          },
+          {
+            "situation": "es_forward",
+            "number": 2,
+            "explicitNumber": false,
+            "players": [
+              {
+                "playerId": 8485388,
+                "name": "Victor Eklund"
+              },
+              {
+                "playerId": 8484221,
+                "name": "Calum Ritchie"
+              },
+              {
+                "playerId": 8481601,
+                "name": "Simon Holmstrom"
+              }
+            ],
+            "evidence": [
+              {
+                "start": 85,
+                "end": 91,
+                "text": "Eklund"
+              },
+              {
+                "start": 92,
+                "end": 99,
+                "text": "Ritchie"
+              },
+              {
+                "start": 100,
+                "end": 109,
+                "text": "Holmstrom"
+              }
+            ],
+            "group": null,
+            "complete": true
+          }
+        ],
+        "unresolved": [],
+        "context": "unknown",
+        "certainty": "reported",
+        "events": []
+      },
+      "scope": "Pure classifier + interpretation + events with stored rosterRevision; excludes gates, enrichment, persistence, live identity reads and historical code"
+    },
+    {
+      "tweetId": "2105378254983205114",
+      "classification": "power_play",
+      "interpretation": {
+        "version": "2026-09-18.1",
+        "rosterRevision": "8471214:Alex Ovechkin:Ovechkin:15:L:Alex Ovechkin:Alex Ovechkin|8475795:Dylan McIlrath:McIlrath:15:D:Dylan McIlrath:Dylan McIlrath|8476432:Boone Jenner:Jenner:15:C:Boone Jenner:Boone Jenner|8476880:Tom Wilson:Wilson:15:R:Tom Wilson:Tom Wilson|8477949:Alex Tuch:Tuch:15:R:Alex Tuch:Alex Tuch|8478440:Dylan Strome:Strome:15:C:Dylan Strome:Dylan Strome|8478463:Anthony Beauvillier:Beauvillier:15:R:Anthony Beauvillier:Anthony Beauvillier|8478911:Matt Roy:Roy:15:D:Matt Roy:Matt Roy|8479292:Charlie Lindgren:Lindgren:15:G:Charlie Lindgren:Charlie Lindgren|8479345:Jakob Chychrun:Chychrun:15:D:Jakob Chychrun:Jakob Chychrun|8479385:Jordan Kyrou:Kyrou:15:R:Jordan Kyrou:Jordan Kyrou|8479400:Pierre-Luc Dubois:Dubois:15:C:Pierre-Luc Dubois:Pierre-Luc Dubois|8479576:Vincent Desharnais:Desharnais:15:D:Vincent Desharnais:Vincent Desharnais|8480043:Timothy Liljegren:Liljegren:15:D:Timothy Liljegren:Timothy Liljegren|8480313:Logan Thompson:Thompson:15:G:Logan Thompson:Logan Thompson|8480796:Martin Fehérváry:Fehérváry:15:D:Martin Fehérváry:Martin Fehérváry|8480873:Rasmus Sandin:Sandin:15:D:Rasmus Sandin:Rasmus Sandin|8481656:Aliaksei Protas:Protas:15:L:Aliaksei Protas:Aliaksei Protas|8482088:Justin Sourdif:Sourdif:15:C:Justin Sourdif:Justin Sourdif|8482683:David Gucciardi:Gucciardi:15:D:David Gucciardi:David Gucciardi|8482931:Joaquim Lemay:Lemay:15:D:Joaquim Lemay|8483007:Brett Hyland:Hyland:15:C:Brett Hyland|8483430:Ryan Chesley:Chesley:15:D:Ryan Chesley:Ryan Chesley|8483491:Ivan Miroshnichenko:Miroshnichenko:15:L:Ivan Miroshnichenko:Ivan Miroshnichenko|8483518:Alexander Suzdalev:Suzdalev:15:L:Alexander Suzdalev:Alexander Suzdalev|8483532:Clay Stevenson:Stevenson:15:G:Clay Stevenson:Clay Stevenson|8483573:Ethen Frank:Frank:15:R:Ethen Frank:Ethen Frank|8483681:Ludwig Persson:Persson:15:L:Ludwig Persson:Ludwig Persson|8484140:Cam Allen:Allen:15:D:Cam Allen:Cam Allen|8484159:Andrew Cristall:Cristall:15:L:Andrew Cristall:Andrew Cristall|8484186:Ryan Leonard:Leonard:15:R:Ryan Leonard:Ryan Leonard|8484404:Patrick Thomas:Thomas:15:C:Patrick Thomas:Patrick Thomas|8484480:Antoine Keller:Keller:15:G:Antoine Keller|8484769:Terik Parascak:Parascak:15:R:Terik Parascak:Terik Parascak|8484772:Leon Muggli:Muggli:15:D:Leon Muggli:Leon Muggli|8484775:Eriks Mateiko:Mateiko:15:L:Eriks Mateiko:Eriks Mateiko|8484873:Cole Hutson:Hutson:15:D:Cole Hutson:Cole Hutson|8484999:Ilya Protas:Protas:15:L:Ilya Protas:Ilya Protas|8485023:Nicholas Kempf:Kempf:15:G:Nicholas Kempf|8485080:Petr Sikora:Sikora:15:C:Petr Sikora|8485106:Miroslav Satan:Satan:15:C:Miroslav Satan|8485412:Lynden Lakovic:Lakovic:15:L:Lynden Lakovic:Lynden Lakovic|8485577:Maxim Schafer:Schafer:15:L:Maxim Schafer|8485628:Jackson Crowder:Crowder:15:C:Jackson Crowder|8485648:Aron Dahlqvist:Dahlqvist:15:D:Aron Dahlqvist|8486102:Tyus Sparks:Sparks:15:C:Tyus Sparks|8486104:Oliver Suvanto:Suvanto:15:C:Oliver Suvanto|8486279:Brian McFadden:McFadden:15:D:Brian McFadden|8486331:Logan Stuart:Stuart:15:C:Logan Stuart",
+        "units": [
+          {
+            "situation": "pp",
+            "number": 2,
+            "explicitNumber": true,
+            "players": [
+              {
+                "playerId": 8484873,
+                "name": "Cole Hutson"
+              },
+              {
+                "playerId": 8484186,
+                "name": "Ryan Leonard"
+              },
+              {
+                "playerId": 8477949,
+                "name": "Alex Tuch"
+              },
+              {
+                "playerId": 8479385,
+                "name": "Jordan Kyrou"
+              },
+              {
+                "playerId": 8484999,
+                "name": "Ilya Protas"
+              }
+            ],
+            "evidence": [
+              {
+                "start": 78,
+                "end": 84,
+                "text": "Hutson"
+              },
+              {
+                "start": 86,
+                "end": 93,
+                "text": "Leonard"
+              },
+              {
+                "start": 95,
+                "end": 99,
+                "text": "Tuch"
+              },
+              {
+                "start": 101,
+                "end": 106,
+                "text": "Kyrou"
+              },
+              {
+                "start": 108,
+                "end": 117,
+                "text": "I. Protas"
+              }
+            ],
+            "group": null,
+            "complete": true
+          }
+        ],
+        "unresolved": [],
+        "context": "unknown",
+        "certainty": "reported",
+        "events": []
+      },
+      "scope": "Pure classifier + interpretation + events with stored rosterRevision; excludes gates, enrichment, persistence, live identity reads and historical code"
+    },
+    {
+      "tweetId": "2105434836500680857",
+      "classification": "goalie_start",
+      "interpretation": {
+        "version": "2026-09-18.1",
+        "rosterRevision": "8473575:Semyon Varlamov:Varlamov:2:G:Semyon Varlamov:Semyon Varlamov|8475151:Kyle Palmieri:Palmieri:2:C:Kyle Palmieri:Kyle Palmieri|8475170:Brayden Schenn:Schenn:2:C:Brayden Schenn:Brayden Schenn|8475231:Casey Cizikas:Cizikas:2:C:Casey Cizikas:Casey Cizikas|8476292:Ondrej Palat:Palat:2:L:Ondrej Palat:Ondrej Palat|8476419:Jean-Gabriel Pageau:Pageau:2:C:Jean-Gabriel Pageau:Jean-Gabriel Pageau|8476429:Scott Mayfield:Mayfield:2:D:Scott Mayfield:Scott Mayfield|8476917:Adam Pelech:Pelech:2:D:Adam Pelech:Adam Pelech|8477407:Anthony Duclair:Duclair:2:L:Anthony Duclair:Anthony Duclair|8477500:Bo Horvat:Horvat:2:C:Bo Horvat:Bo Horvat|8477506:Ryan Pulock:Pulock:2:D:Ryan Pulock:Ryan Pulock|8477950:Tony DeAngelo:DeAngelo:2:D:Tony DeAngelo:Tony DeAngelo|8477970:Vitek Vanecek:Vanecek:2:G:Vitek Vanecek:Vitek Vanecek|8478009:Ilya Sorokin:Sorokin:2:G:Ilya Sorokin:Ilya Sorokin|8478115:Pierre Engvall:Engvall:2:L:Pierre Engvall:Pierre Engvall|8478445:Mathew Barzal:Barzal:2:C:Mathew Barzal:Mathew Barzal|8478451:Ethan Bear:Bear:2:D:Ethan Bear:Ethan Bear|8479644:Matt Luff:Luff:2:R:Matt Luff:Matt Luff|8480853:Liam Foudy:Foudy:2:C:Liam Foudy:Liam Foudy|8481014:Alexander Romanov:Romanov:2:D:Alexander Romanov:Alexander Romanov|8481237:Kyle MacLean:MacLean:2:C:Kyle MacLean:Kyle MacLean|8481569:Marshall Warren:Warren:2:D:Marshall Warren:Marshall Warren|8481601:Simon Holmstrom:Holmstrom:2:R:Simon Holmstrom:Simon Holmstrom|8481711:Matias Maccelli:Maccelli:2:L:Matias Maccelli:Matias Maccelli|8482070:Mitchell Chaffee:Chaffee:2:R:Mitchell Chaffee:Mitchell Chaffee|8482154:Alex Jefferies:Jefferies:2:L:Alex Jefferies:Alex Jefferies|8482472:Henrik Tikkanen:Tikkanen:2:G:Henrik Tikkanen:Henrik Tikkanen|8482476:Emil Heineman:Heineman:2:L:Emil Heineman:Emil Heineman|8482516:Matthew Kessel:Kessel:2:D:Matthew Kessel:Matthew Kessel|8482954:Tomas Machu:Machu:2:D:Tomas Machu|8483104:Daylan Kuefler:Kuefler:2:L:Daylan Kuefler:Daylan Kuefler|8483441:Quinn Finley:Finley:2:L:Quinn Finley|8483448:Isaiah George:George:2:D:Isaiah George:Isaiah George|8483498:Calle Odelius:Odelius:2:D:Calle Odelius:Calle Odelius|8483708:Ryan Healey:Healey:2:D:Ryan Healey|8484205:Danny Nelson:Nelson:2:C:Danny Nelson|8484208:Jesse Nurmi:Nurmi:2:L:Jesse Nurmi|8484221:Calum Ritchie:Ritchie:2:C:Calum Ritchie:Calum Ritchie|8484225:Zachary Schulz:Schulz:2:D:Zachary Schulz|8484482:Dennis Good Bogg:Good Bogg:2:D:Dennis Good Bogg|8484766:Jesse Pulkkinen:Pulkkinen:2:D:Jesse Pulkkinen|8484788:Kamil Bednarik:Bednarik:2:C:Kamil Bednarik|8484807:Cole Eiserman:Eiserman:2:L:Cole Eiserman|8485020:Dmitry Gamzin:Gamzin:2:G:Dmitry Gamzin|8485078:Xavier Veilleux:Veilleux:2:D:Xavier Veilleux|8485352:Kashawn Aitcheson:Aitcheson:2:D:Kashawn Aitcheson:Kashawn Aitcheson|8485366:Matthew Schaefer:Schaefer:2:D:Matthew Schaefer:Matthew Schaefer|8485370:Luca Romano:Romano:2:C:Luca Romano:Luca Romano|8485378:Tomas Poletin:Poletin:2:L:Tomas Poletin:Tomas Poletin|8485388:Victor Eklund:Eklund:2:R:Victor Eklund:Victor Eklund|8485440:Sam Laurila:Laurila:2:D:Sam Laurila|8485448:Daniil Prokhorov:Prokhorov:2:R:Daniil Prokhorov|8485462:Gleb Veremyev:Veremyev:2:C:Gleb Veremyev:Gleb Veremyev|8485490:Joey Larson:Larson:2:R:Joey Larson:Joey Larson|8485644:Burke Hood:Hood:2:G:Burke Hood|8485669:Jacob Kvasnicka:Kvasnicka:2:R:Jacob Kvasnicka|8486035:Vladimir Dravecky:Dravecky:2:D:Vladimir Dravecky|8486042:Malte Gustafsson:Gustafsson:2:D:Malte Gustafsson|8486054:Lincoln Kuehne:Kuehne:2:D:Lincoln Kuehne|8486136:Joshua Kotai:Kotai:2:G|8486306:Artyom Matyuk:Matyuk:2:C:Artyom Matyuk|8486329:Robert Cowan:Cowan:2:R:Robert Cowan",
+        "units": [],
+        "unresolved": [],
+        "context": "game",
+        "certainty": "reported",
+        "events": [
+          {
+            "playerId": 8478009,
+            "playerName": "Ilya Sorokin",
+            "kind": "injury",
+            "state": "unknown",
+            "evidence": {
+              "start": 17,
+              "end": 117,
+              "text": "Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena. Anthony Stolarz for the Leafs."
+            },
+            "timeline": null,
+            "timelines": [],
+            "availability": "out"
+          }
+        ]
+      },
+      "scope": "Pure classifier + interpretation + events with stored rosterRevision; excludes gates, enrichment, persistence, live identity reads and historical code"
+    },
+    {
+      "tweetId": "2105466270070264224",
+      "classification": "other",
+      "interpretation": {
+        "version": "2026-09-18.1",
+        "rosterRevision": "",
+        "units": [],
+        "unresolved": [],
+        "context": "unknown",
+        "certainty": "reported",
+        "events": []
+      },
+      "scope": "Pure classifier + interpretation + events with stored rosterRevision; excludes gates, enrichment, persistence, live identity reads and historical code"
+    }
+  ],
+  "holdoutCandidates": [
+    {
+      "tweet_id": "2105476662435700924",
+      "raw_text": "RT @baileyycurtis: Warm-up lines for the Avs (11-7) ahead of opening night against the LA Kings:\n\nLehkonen - MacKinnon - Necas\nLandeskog - Nelson - Kadri\nSchwartz - Svechkov - Hughes\nKelly - Roy\n\nToews - Makar\nKulak - Malinski\nManson - Burns\nJuulsen\n\nBlackwood (starter)\nWedgewood",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-10-01T01:55:00+00:00",
+      "observed_at": "2026-10-01T02:00:58.064764+00:00",
+      "source_key": "gamedaylines",
+      "source_url": "https://twitter.com/i/web/status/2105476662435700924",
+      "team_abbreviation": "COL",
+      "classification": "lineup",
+      "status": "observed",
+      "nhl_filter_reason": null
+    },
+    {
+      "tweet_id": "2105476593967894778",
+      "raw_text": "RT @DooleyLAK: Tonight's @LAKings Line Rushes -\n\nPanarin - Byfield - Kempe\nZuccarello - Turcotte - Laferriere\nMoore - Laughton - Haula\nLee - Helenius - Armia\n\nDumoulin - Doughty\nEdmundson - Clarke\nAnderson - Ceci\n\nKuemper \nForsberg",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-10-01T01:55:00+00:00",
+      "observed_at": "2026-10-01T02:00:55.154525+00:00",
+      "source_key": "gamedaylines",
+      "source_url": "https://twitter.com/i/web/status/2105476593967894778",
+      "team_abbreviation": "LAK",
+      "classification": "practice_lines",
+      "status": "observed",
+      "nhl_filter_reason": null
+    },
+    {
+      "tweet_id": "2105476883966206037",
+      "raw_text": "RT @DooleyLAK: Darcy Kuemper leads the @LAKings out in Colorado!",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-10-01T01:56:00+00:00",
+      "observed_at": "2026-10-01T01:57:21.695079+00:00",
+      "source_key": "gamedaygoalies",
+      "source_url": "https://twitter.com/i/web/status/2105476883966206037",
+      "team_abbreviation": "LAK",
+      "classification": "goalie_start",
+      "status": "observed",
+      "nhl_filter_reason": null
+    },
+    {
+      "tweet_id": "2105467155412300193",
+      "raw_text": "RT @AGrossNewsday: #Isles PP\nSchaefer\nMaccelli-Horvat-Schenn\nPalmieri",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-10-01T01:17:00+00:00",
+      "observed_at": "2026-10-01T01:20:50.231524+00:00",
+      "source_key": "gamedaylines",
+      "source_url": "https://twitter.com/i/web/status/2105467155412300193",
+      "team_abbreviation": "NYI",
+      "classification": "lineup",
+      "status": "observed",
+      "nhl_filter_reason": null
+    },
+    {
+      "tweet_id": "2105466470578925695",
+      "raw_text": "RT @B_Sommermann: Flyers now running these forward lines...\n\nTippett-Zegras-Konecny\nFoerster-Dvorak-Michkov\nBump-Cates-Acciari\nGrundstrom-Couturier-Martone",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-10-01T01:14:00+00:00",
+      "observed_at": "2026-10-01T01:20:48.780909+00:00",
+      "source_key": "gamedaylines",
+      "source_url": "https://twitter.com/i/web/status/2105466470578925695",
+      "team_abbreviation": "PHI",
+      "classification": "lineup",
+      "status": "observed",
+      "nhl_filter_reason": null
+    },
+    {
+      "tweet_id": "2105437108206985639",
+      "raw_text": "RT @penguins: Tonight's lines 👇 https://t.co/cGvb2nQ4G9",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-09-30T23:18:00+00:00",
+      "observed_at": "2026-09-30T23:20:19.419262+00:00",
+      "source_key": "gamedaylines",
+      "source_url": "https://twitter.com/i/web/status/2105437108206985639",
+      "team_abbreviation": null,
+      "classification": "lineup",
+      "status": "rejected",
+      "nhl_filter_reason": "no_single_nhl_team_match"
+    },
+    {
+      "tweet_id": "2105436120888791288",
+      "raw_text": "RT @DaveAMcCarthy: #Leafs  lines vs #Isles  \n\nMarchenko - Matthews - Roslovic\n\nMcKenna - Tavares - Nylander\n\nCowan - Paul - Sissons\n\nDuhaime - Blueger - Groulx \n—\nRielly - Raddysh\n\nMcCabe - Tanev\n\nEkman-Larsson - Stecher\n\nGOALIES\n\nStolarz\n\nBobrovsky\n\n@NHLMedia",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-09-30T23:14:00+00:00",
+      "observed_at": "2026-09-30T23:15:23.587476+00:00",
+      "source_key": "gamedaylines",
+      "source_url": "https://twitter.com/i/web/status/2105436120888791288",
+      "team_abbreviation": "TOR",
+      "classification": "lineup",
+      "status": "observed",
+      "nhl_filter_reason": null
+    },
+    {
+      "tweet_id": "2105435977238114439",
+      "raw_text": "RT @AGrossNewsday: #Isles in warmups (Game No. 1 at Toronto)\nHolmstrom-Horvat-Palmieri\nMaccelli-Ritchie-Schenn\nHeineman-Pageau-Eklund\nPalat-Cizikas-Duclair\nPelech-Schaefer\nRomanov-Pulock\nStanley-DeAngelo\nSorokin\nVarlamov",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-09-30T23:13:00+00:00",
+      "observed_at": "2026-09-30T23:15:20.654228+00:00",
+      "source_key": "gamedaylines",
+      "source_url": "https://twitter.com/i/web/status/2105435977238114439",
+      "team_abbreviation": "NYI",
+      "classification": "lineup",
+      "status": "observed",
+      "nhl_filter_reason": null
+    },
+    {
+      "tweet_id": "2105434518731767962",
+      "raw_text": "RT @davidalter: Looks like Zack MacEwen will be the player who comes out for Bo Groulx tonight. MacEwen not on the ice for warmups.\n\n@Ozoon_CA",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-09-30T23:08:00+00:00",
+      "observed_at": "2026-09-30T23:08:30.783066+00:00",
+      "source_key": "gamedaynewsnhl",
+      "source_url": "https://twitter.com/i/web/status/2105434518731767962",
+      "team_abbreviation": "TOR",
+      "classification": "injury",
+      "status": "observed",
+      "nhl_filter_reason": null
+    },
+    {
+      "tweet_id": "2105432545181814840",
+      "raw_text": "RT @charlieo_conn: Flyers lines & pairs in warmups (Vladar in net):\n\nTippett - Zegras - Martone\nFoerster - Dvorak - Konecny\nBump - Cates - Michkov\nGrundstrom - Couturier - Acciari\n\nSanheim - Ristolainen\nYork - Drysdale\nSeeler - Benoit",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-09-30T23:00:00+00:00",
+      "observed_at": "2026-09-30T23:00:57.335573+00:00",
+      "source_key": "gamedaylines",
+      "source_url": "https://twitter.com/i/web/status/2105432545181814840",
+      "team_abbreviation": "PHI",
+      "classification": "lineup",
+      "status": "observed",
+      "nhl_filter_reason": null
+    },
+    {
+      "tweet_id": "2105417171430248571",
+      "raw_text": "RT @samnestler: Matt Duchene has been placed on IR, according to the NHL media site. https://t.co/X7KkZKGGT7",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-09-30T21:59:00+00:00",
+      "observed_at": "2026-09-30T22:03:24.264815+00:00",
+      "source_key": "gamedaynewsnhl",
+      "source_url": "https://twitter.com/i/web/status/2105417171430248571",
+      "team_abbreviation": null,
+      "classification": "injury",
+      "status": "rejected",
+      "nhl_filter_reason": "no_single_nhl_team_match"
+    },
+    {
+      "tweet_id": "2105414179339616744",
+      "raw_text": "RT @PuckPedia: The #Leafs have added both Max Domi ($3.75M) & Dakota Joshua ($3.25M) to LTIR, gaining their $7M Cap Hit as additional Cap Space in LTIR.\n\nhttps://t.co/JjnO4TbNe1",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-09-30T21:47:00+00:00",
+      "observed_at": "2026-09-30T21:48:33.253563+00:00",
+      "source_key": "gamedaynewsnhl",
+      "source_url": "https://twitter.com/i/web/status/2105414179339616744",
+      "team_abbreviation": null,
+      "classification": "other",
+      "status": "rejected",
+      "nhl_filter_reason": "no_single_nhl_team_match"
+    },
+    {
+      "tweet_id": "2105400110914134204",
+      "raw_text": "RT @JamesonCoop: Just maintenance for Brady, Forsling and Markstrom.\n\nMarchand “is probably further along than we thought,” but the timeline hasn’t changed yet, per Maurice.",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-09-30T20:51:00+00:00",
+      "observed_at": "2026-09-30T20:58:07.676171+00:00",
+      "source_key": "gamedaynewsnhl",
+      "source_url": "https://twitter.com/i/web/status/2105400110914134204",
+      "team_abbreviation": "FLA",
+      "classification": "other",
+      "status": "observed",
+      "nhl_filter_reason": null
+    },
+    {
+      "tweet_id": "2105399752783470799",
+      "raw_text": "RT @Real_Max_Miller: Schmid first off for the #FlaPanthers today. Optional skate tomorrow so I think Schmid could start against the #SJSharks. Maurice didn’t confirm anything.",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-09-30T20:49:00+00:00",
+      "observed_at": "2026-09-30T20:52:29.266155+00:00",
+      "source_key": "gamedaygoalies",
+      "source_url": "https://twitter.com/i/web/status/2105399752783470799",
+      "team_abbreviation": null,
+      "classification": "goalie_start",
+      "status": "rejected",
+      "nhl_filter_reason": "no_single_nhl_team_match"
+    },
+    {
+      "tweet_id": "2105396005000913228",
+      "raw_text": "RT @MarkLazerus: Andrew Mangiapane flew back to Chicago to be evaluated. No recall coming. Blashill said they'd go 11/7 if something unforeseen like a sickness cropped up.",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-09-30T20:34:00+00:00",
+      "observed_at": "2026-09-30T20:38:26.439398+00:00",
+      "source_key": "gamedaynewsnhl",
+      "source_url": "https://twitter.com/i/web/status/2105396005000913228",
+      "team_abbreviation": "CHI",
+      "classification": "other",
+      "status": "observed",
+      "nhl_filter_reason": null
+    },
+    {
+      "tweet_id": "2105388527014068409",
+      "raw_text": "RT @DannyWebster21: Golden Knights have extended William Karlsson.\n\nTwo years, $6.75 million AAV.",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-09-30T20:05:00+00:00",
+      "observed_at": "2026-09-30T20:08:28.505529+00:00",
+      "source_key": "gamedaynewsnhl",
+      "source_url": "https://twitter.com/i/web/status/2105388527014068409",
+      "team_abbreviation": "VGK",
+      "classification": "other",
+      "status": "observed",
+      "nhl_filter_reason": null
+    },
+    {
+      "tweet_id": "2105380651084190090",
+      "raw_text": "RT @StLouisBlues: Tyler Tucker underwent a successful arthroscopic procedure on his right knee and will be re-evaluated in six weeks. #stlblues\nhttps://t.co/U1T3Ze3E22",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-09-30T19:33:00+00:00",
+      "observed_at": "2026-09-30T19:38:05.08963+00:00",
+      "source_key": "gamedaynewsnhl",
+      "source_url": "https://twitter.com/i/web/status/2105380651084190090",
+      "team_abbreviation": "STL",
+      "classification": "other",
+      "status": "observed",
+      "nhl_filter_reason": null
+    },
+    {
+      "tweet_id": "2105380954126922116",
+      "raw_text": "RT @CHGO_Blackhawks: New Blackhawks lines at practice in Utah, via @BenPopeCST \n\nBertuzzi-Frondell-Kane\nTeräväinen-Kantserov-Lardis\nDonato-Nazar-Moore\nSmith-Greene-Greenway\n\nVlasic-Byram\nKaiser-Levshunov\nCole-Rinzel\nKorchinski-Del Mastro",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-09-30T19:35:00+00:00",
+      "observed_at": "2026-09-30T19:35:33.961462+00:00",
+      "source_key": "gamedaylines",
+      "source_url": "https://twitter.com/i/web/status/2105380954126922116",
+      "team_abbreviation": "CHI",
+      "classification": "practice_lines",
+      "status": "observed",
+      "nhl_filter_reason": null
+    },
+    {
+      "tweet_id": "2105380526026813442",
+      "raw_text": "RT @CurtisPashelka: Ryan Warsofsky said Alex Nedeljkovic is under the weather, but should be available to play tomorrow",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-09-30T19:33:00+00:00",
+      "observed_at": "2026-09-30T19:33:45.045648+00:00",
+      "source_key": "gamedaynewsnhl",
+      "source_url": "https://twitter.com/i/web/status/2105380526026813442",
+      "team_abbreviation": null,
+      "classification": "other",
+      "status": "rejected",
+      "nhl_filter_reason": "no_single_nhl_team_match"
+    },
+    {
+      "tweet_id": "2105379135665414482",
+      "raw_text": "RT @SGNolan: Rick Tocchet said today’s morning skate was optional, which is why no Couturier or Acciari. Denver Barkey and Nikita Grebenkin still day to day, though Tocchet noted Barkey has “improved” and is “probably a little bit ahead” of Grebenkin.",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-09-30T19:27:00+00:00",
+      "observed_at": "2026-09-30T19:28:45.930864+00:00",
+      "source_key": "gamedaynewsnhl",
+      "source_url": "https://twitter.com/i/web/status/2105379135665414482",
+      "team_abbreviation": "PHI",
+      "classification": "injury",
+      "status": "observed",
+      "nhl_filter_reason": null
+    },
+    {
+      "tweet_id": "2105378052834533629",
+      "raw_text": "RT @ethan_sears: Mathieu Darche said the Islanders hope Barzal is back on the ice this weekend or early next week",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-09-30T19:23:00+00:00",
+      "observed_at": "2026-09-30T19:28:43.854509+00:00",
+      "source_key": "gamedaynewsnhl",
+      "source_url": "https://twitter.com/i/web/status/2105378052834533629",
+      "team_abbreviation": "NYI",
+      "classification": "other",
+      "status": "observed",
+      "nhl_filter_reason": null
+    },
+    {
+      "tweet_id": "2105377534095573365",
+      "raw_text": "RT @InStilettos_NHL: 09.30.26 #NJDevils Practice  \nMantha - Hughes - Bratt\nMeier - Hischier - Evangelista \nGritsyuk - Rodrigues - Mercer  \nLombardi - Glass - (Noesen)   \n\nHughes - Pesce  \nSiegenthaler - Hamilton  \nDillon - Chisholm   \n\nAllen | Daws  \n\nNot On The Ice: Brown | Extra: Boqvist",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-09-30T19:21:00+00:00",
+      "observed_at": "2026-09-30T19:25:53.165336+00:00",
+      "source_key": "gamedaylines",
+      "source_url": "https://twitter.com/i/web/status/2105377534095573365",
+      "team_abbreviation": "NJD",
+      "classification": "practice_lines",
+      "status": "observed",
+      "nhl_filter_reason": null
+    },
+    {
+      "tweet_id": "2105377226099417578",
+      "raw_text": "RT @BenjaminJReport: Jon Cooper told us not to read into these line combinations too much. \n\n“That was designed to set up the next drill of the power play. So, it could happen, but it's not happening tomorrow.”\n\n#GoBolts https://t.co/Dph6kyEfYA",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-09-30T19:20:00+00:00",
+      "observed_at": "2026-09-30T19:25:48.428584+00:00",
+      "source_key": "gamedaylines",
+      "source_url": "https://twitter.com/i/web/status/2105377226099417578",
+      "team_abbreviation": "TBL",
+      "classification": "power_play",
+      "status": "rejected",
+      "nhl_filter_reason": "relative_game_date_requires_review"
+    },
+    {
+      "tweet_id": "2105377841726849109",
+      "raw_text": "RT @Aportzline: Don’t see #CBJ D Ivan Provorov on the ice again today.",
+      "quoted_raw_text": null,
+      "tweet_posted_at": "2026-09-30T19:22:00+00:00",
+      "observed_at": "2026-09-30T19:23:19.138156+00:00",
+      "source_key": "gamedaynewsnhl",
+      "source_url": "https://twitter.com/i/web/status/2105377841726849109",
+      "team_abbreviation": "CBJ",
+      "classification": "other",
+      "status": "observed",
+      "nhl_filter_reason": null
+    }
+  ],
+  "holdoutStatus": "Unlabeled candidates; must cluster related sources/retweets and annotate before split freeze or tuning",
+  "persistedEvidence": {
+    "reports": [
+      {
+        "report_key": "1475511cd024bea0f8c09c6f113843373abe634f076481303d4cf4978e220693:29:2026-09-18.1",
+        "team_id": 29,
+        "game_id": null,
+        "report_date": "2026-09-30",
+        "published_at": "2026-09-30T16:37:00+00:00",
+        "received_at": "2026-09-30T16:40:51.356377+00:00",
+        "interpretation_version": "2026-09-18.1",
+        "payload": {
+          "key": "1475511cd024bea0f8c09c6f113843373abe634f076481303d4cf4978e220693:29:2026-09-18.1",
+          "date": "2026-09-30",
+          "text": "RT @DylanTyrer: #CBJ lines/pairs today:\n\nKnies-Fantilli-Johnson\nNichushkin-Monahan-Garland\nSillinger-Coyle-Olivier\nLomberg-Heinen/LDBB-Voronkov\n\nWerenski-Mateychuk\nChristiansen-Gudbranson\nSoucy-Andrae",
+          "gameId": null,
+          "teamId": 29,
+          "session": null,
+          "provenance": {
+            "relayTweetId": "2105336355915985057",
+            "originalTweetId": null,
+            "attributionStatus": "pending"
+          },
+          "receivedAt": "2026-09-30T16:40:51.356377+00:00",
+          "originalUrl": null,
+          "publishedAt": "2026-09-30T16:37:00.000Z",
+          "interpretedAt": "2026-09-30T16:40:52.924Z",
+          "interpretation": {
+            "units": [
+              {
+                "group": null,
+                "number": 1,
+                "players": [
+                  {
+                    "name": "Valeri Nichushkin",
+                    "playerId": 8477501
+                  },
+                  {
+                    "name": "Sean Monahan",
+                    "playerId": 8477497
+                  },
+                  {
+                    "name": "Conor Garland",
+                    "playerId": 8478856
+                  }
+                ],
+                "complete": true,
+                "evidence": [
+                  {
+                    "end": 74,
+                    "text": "Nichushkin",
+                    "start": 64
+                  },
+                  {
+                    "end": 82,
+                    "text": "Monahan",
+                    "start": 75
+                  },
+                  {
+                    "end": 90,
+                    "text": "Garland",
+                    "start": 83
+                  }
+                ],
+                "situation": "es_forward",
+                "explicitNumber": false
+              },
+              {
+                "group": null,
+                "number": 1,
+                "players": [
+                  {
+                    "name": "Zach Werenski",
+                    "playerId": 8478460
+                  },
+                  {
+                    "name": "Denton Mateychuk",
+                    "playerId": 8483485
+                  }
+                ],
+                "complete": true,
+                "evidence": [
+                  {
+                    "end": 153,
+                    "text": "Werenski",
+                    "start": 145
+                  },
+                  {
+                    "end": 163,
+                    "text": "Mateychuk",
+                    "start": 154
+                  }
+                ],
+                "situation": "es_defense",
+                "explicitNumber": false
+              },
+              {
+                "group": null,
+                "number": 2,
+                "players": [
+                  {
+                    "name": "Jake Christiansen",
+                    "playerId": 8481161
+                  },
+                  {
+                    "name": "Erik Gudbranson",
+                    "playerId": 8475790
+                  }
+                ],
+                "complete": true,
+                "evidence": [
+                  {
+                    "end": 176,
+                    "text": "Christiansen",
+                    "start": 164
+                  },
+                  {
+                    "end": 187,
+                    "text": "Gudbranson",
+                    "start": 177
+                  }
+                ],
+                "situation": "es_defense",
+                "explicitNumber": false
+              }
+            ],
+            "events": [],
+            "context": "unknown",
+            "version": "2026-09-18.1",
+            "certainty": "reported",
+            "unresolved": [
+              {
+                "end": 63,
+                "text": "Knies-Fantilli-Johnson",
+                "start": 41,
+                "reason": "invalid_extraction"
+              },
+              {
+                "end": 114,
+                "text": "Sillinger-Coyle-Olivier",
+                "start": 91,
+                "reason": "invalid_extraction"
+              },
+              {
+                "end": 129,
+                "text": "Lomberg-Heinen",
+                "start": 115,
+                "reason": "missing_player"
+              },
+              {
+                "end": 143,
+                "text": "LDBB-Voronkov",
+                "start": 130,
+                "reason": "missing_player"
+              },
+              {
+                "end": 193,
+                "text": "Soucy",
+                "start": 188,
+                "reason": "missing_player"
+              },
+              {
+                "end": 200,
+                "text": "Andrae",
+                "start": 194,
+                "reason": "missing_player"
+              }
+            ],
+            "rosterRevision": "8475660:Cam Talbot:Talbot:29:G:Cam Talbot:Cam Talbot|8475745:Charlie Coyle:Coyle:29:C:Charlie Coyle:Charlie Coyle|8475790:Erik Gudbranson:Gudbranson:29:D:Erik Gudbranson:Erik Gudbranson|8476923:Damon Severson:Severson:29:D:Damon Severson:Damon Severson|8477425:Miles Wood:Wood:29:L:Miles Wood:Miles Wood|8477497:Sean Monahan:Monahan:29:C:Sean Monahan:Sean Monahan|8477501:Valeri Nichushkin:Nichushkin:29:R:Valeri Nichushkin:Valeri Nichushkin|8477831:Pheonix Copley:Copley:29:G:Pheonix Copley:Pheonix Copley|8478007:Elvis Merzlikins:Merzlikins:29:G:Elvis Merzlikins:Elvis Merzlikins|8478046:Danton Heinen:Heinen:29:L:Danton Heinen:Danton Heinen|8478460:Zach Werenski:Werenski:29:D:Zach Werenski:Zach Werenski|8478500:Ivan Provorov:Provorov:29:D:Ivan Provorov:Ivan Provorov|8478841:Colton White:White:29:D:Colton White:Colton White|8478856:Conor Garland:Garland:29:R:Conor Garland:Conor Garland|8479066:Ryan Lomberg:Lomberg:29:L:Ryan Lomberg:Ryan Lomberg|8479371:Dante Fabbro:Fabbro:29:D:Dante Fabbro:Dante Fabbro|8479671:Mathieu Olivier:Olivier:29:R:Mathieu Olivier:Mathieu Olivier|8480806:Isac Lundeström:Lundeström:29:C:Isac Lundeström:Isac Lundeström|8480893:Kirill Marchenko:Marchenko:29:R:Kirill Marchenko:Kirill Marchenko|8481161:Jake Christiansen:Christiansen:29:D:Jake Christiansen:Jake Christiansen|8481716:Dmitri Voronkov:Voronkov:29:L:Dmitri Voronkov:Dmitri Voronkov|8482134:Luke Tuch:Tuch:29:L:Luke Tuch:Luke Tuch|8482660:Kent Johnson:Johnson:29:C:Kent Johnson:Kent Johnson|8482678:Corson Ceulemans:Ceulemans:29:D:Corson Ceulemans:Corson Ceulemans|8482692:Guillaume Richard:Richard:29:D:Guillaume Richard:Guillaume Richard|8482705:Cole Sillinger:Sillinger:29:C:Cole Sillinger:Cole Sillinger|8482744:James Malatesta:Malatesta:29:L:James Malatesta:James Malatesta|8482881:Max McCue:McCue:29:C:Max McCue:Max McCue|8482913:Nikolai Makarov:Makarov:29:D:Nikolai Makarov|8482982:Jet Greaves:Greaves:29:G:Jet Greaves:Jet Greaves|8483432:Luca Del Bel Belluz:Del Bel Belluz:29:C:Luca Del Bel Belluz:Luca Del Bel Belluz|8483434:Kirill Dolzhenkov:Dolzhenkov:29:R:Kirill Dolzhenkov|8483485:Denton Mateychuk:Mateychuk:29:D:Denton Mateychuk:Denton Mateychuk|8483538:Owen Sillinger:Sillinger:29:C:Owen Sillinger:Owen Sillinger|8483688:Jordan Dumais:Dumais:29:R:Jordan Dumais:Jordan Dumais|8483715:James Fisher:Fisher:29:R:James Fisher|8483738:Sergei Ivanov:Ivanov:29:G:Sergei Ivanov|8483804:Riley Bezeau:Bezeau:29:R:Riley Bezeau:Riley Bezeau|8483869:Nolan Lalonde:Lalonde:29:G:Nolan Lalonde:Nolan Lalonde|8484166:Adam Fantilli:Fantilli:29:C:Adam Fantilli:Adam Fantilli|8484214:Luca Pinelli:Pinelli:29:C:Luca Pinelli:Luca Pinelli|8484232:Andrew Strathmann:Strathmann:29:D:Andrew Strathmann|8484239:William Whitelaw:Whitelaw:29:R:William Whitelaw|8484441:Melvin Strahl:Strahl:29:G:Melvin Strahl|8484472:Oiva Keskinen:Keskinen:29:C:Oiva Keskinen:Oiva Keskinen|8484777:Luca Marrelli:Marrelli:29:D:Luca Marrelli|8484780:Cayden Lindstrom:Lindstrom:29:C:Cayden Lindstrom|8484808:Charlie Elick:Elick:29:D:Charlie Elick:Charlie Elick|8484866:Tanner Henricks:Henricks:29:D:Tanner Henricks|8484997:Evan Gardner:Gardner:29:G:Evan Gardner:Evan Gardner|8485068:Luke Ashton:Ashton:29:D:Luke Ashton|8485355:Malte Vass:Vass:29:D:Malte Vass|8485361:Jackson Smith:Smith:29:D:Jackson Smith|8485469:Jack Williams:Williams:29:R:Jack Williams:Jack Williams|8485472:Caleb MacDonald:MacDonald:29:D:Caleb MacDonald:Caleb MacDonald|8485560:Pyotr Andreyanov:Andreyanov:29:G:Pyotr Andreyanov|8485630:Owen Griffin:Griffin:29:C:Owen Griffin:Owen Griffin|8485640:Victor Raftheim:Raftheim:29:D:Victor Raftheim|8485667:Jeremy Loranger:Loranger:29:C:Jeremy Loranger|8485746:Jonas Woo:Woo:29:D:Jonas Woo|8486034:Alessandro Di Iorio:Di Iorio:29:C:Alessandro Di Iorio|8486046:Oscar Hemming:Hemming:29:L:Oscar Hemming|8486073:Filip Novak:Novak:29:L:Filip Novak|8486173:Josh Eernisse:Eernisse:29:C|8486177:Boston Buckberger:Buckberger:29:D|8486261:Evan Jardine:Jardine:29:L:Evan Jardine|8486278:Parker Snell:Snell:29:G:Parker Snell|8486310:Anttoni Uronen:Uronen:29:C:Anttoni Uronen"
+          },
+          "teamAbbreviation": "CBJ",
+          "originalPublishedAt": null
+        }
+      },
+      {
+        "report_key": "02eb8715423dd41ab2ce32b3554620afaaff5df5669d576da3da713720bf2a1f:9:2026-09-18.1",
+        "team_id": 9,
+        "game_id": null,
+        "report_date": "2026-09-30",
+        "published_at": "2026-09-30T18:53:00+00:00",
+        "received_at": "2026-09-30T18:58:37.184924+00:00",
+        "interpretation_version": "2026-09-18.1",
+        "payload": {
+          "key": "02eb8715423dd41ab2ce32b3554620afaaff5df5669d576da3da713720bf2a1f:9:2026-09-18.1",
+          "date": "2026-09-30",
+          "text": "RT @GraemeNichols: Sanderson skated before main practice today but didn't join his teammates. org is hopeful he will play this weekend. Burakovsky isn't close to returning (upper body). Foegele took rushes on the 1st line for second consecutive day. No decision has been made on his availability.",
+          "gameId": null,
+          "teamId": 9,
+          "session": null,
+          "provenance": {
+            "relayTweetId": "2105370362964004937",
+            "originalTweetId": null,
+            "attributionStatus": "pending"
+          },
+          "receivedAt": "2026-09-30T18:58:37.184924+00:00",
+          "originalUrl": null,
+          "publishedAt": "2026-09-30T18:53:00.000Z",
+          "interpretedAt": "2026-09-30T18:58:42.169Z",
+          "interpretation": {
+            "units": [],
+            "events": [
+              {
+                "kind": "injury",
+                "state": "confirmed_return",
+                "evidence": {
+                  "end": 135,
+                  "text": "Sanderson skated before main practice today but didn't join his teammates. org is hopeful he will play this weekend.",
+                  "start": 19
+                },
+                "playerId": 8482105,
+                "timeline": {
+                  "text": "today",
+                  "unit": null,
+                  "maximum": null,
+                  "minimum": null,
+                  "purpose": "unknown",
+                  "targetDate": "2026-09-30"
+                },
+                "timelines": [
+                  {
+                    "text": "today",
+                    "unit": null,
+                    "maximum": null,
+                    "minimum": null,
+                    "purpose": "unknown",
+                    "targetDate": "2026-09-30"
+                  }
+                ],
+                "playerName": "Jake Sanderson",
+                "availability": "available"
+              },
+              {
+                "kind": "injury",
+                "state": "unknown",
+                "evidence": {
+                  "end": 185,
+                  "text": "Burakovsky isn't close to returning (upper body).",
+                  "start": 136
+                },
+                "playerId": 8477444,
+                "timeline": null,
+                "timelines": [],
+                "playerName": "Andre Burakovsky",
+                "availability": "unknown"
+              }
+            ],
+            "context": "practice",
+            "version": "2026-09-18.1",
+            "certainty": "reported",
+            "unresolved": [],
+            "rosterRevision": "8473512:Claude Giroux:Giroux:9:R:Claude Giroux:Claude Giroux|8476393:Nick Cousins:Cousins:9:C:Nick Cousins:Nick Cousins|8476999:Linus Ullmark:Ullmark:9:G:Linus Ullmark:Linus Ullmark|8477073:Kurtis MacDermid:MacDermid:9:L:Kurtis MacDermid:Kurtis MacDermid|8477444:Andre Burakovsky:Burakovsky:9:L:Andre Burakovsky:Andre Burakovsky|8477998:Warren Foegele:Foegele:9:L:Warren Foegele:Warren Foegele|8478020:Michael Amadio:Amadio:9:R:Michael Amadio:Michael Amadio|8478173:Hayden Hodgson:Hodgson:9:R:Hayden Hodgson:Hayden Hodgson|8478469:Thomas Chabot:Chabot:9:D:Thomas Chabot:Thomas Chabot|8480075:Cameron Crotty:Crotty:9:D:Cameron Crotty:Cameron Crotty|8480188:Fabian Zetterlund:Zetterlund:9:L:Fabian Zetterlund:Fabian Zetterlund|8480208:Drake Batherson:Batherson:9:R:Drake Batherson:Drake Batherson|8481035:Samuel Ersson:Ersson:9:G:Samuel Ersson:Samuel Ersson|8481528:Dylan Cozens:Cozens:9:C:Dylan Cozens:Dylan Cozens|8481596:Shane Pinto:Pinto:9:C:Shane Pinto:Shane Pinto|8481606:Jordan Spence:Spence:9:D:Jordan Spence:Jordan Spence|8482092:Ridly Greig:Greig:9:C:Ridly Greig:Ridly Greig|8482095:Tyler Kleven:Kleven:9:D:Tyler Kleven:Tyler Kleven|8482105:Jake Sanderson:Sanderson:9:D:Jake Sanderson:Jake Sanderson|8482116:Tim Stützle:Stützle:9:C:Tim Stützle:Tim Stützle|8482245:Artem Zub:Zub:9:D:Artem Zub:Artem Zub|8482447:Leevi Meriläinen:Meriläinen:9:G:Leevi Meriläinen:Leevi Meriläinen|8482667:William Eklund:Eklund:9:L:William Eklund:William Eklund|8482673:Xavier Bourgault:Bourgault:9:C:Xavier Bourgault:Xavier Bourgault|8482674:Tyler Boucher:Boucher:9:R:Tyler Boucher:Tyler Boucher|8483435:Jorian Donovan:Donovan:9:D:Jorian Donovan:Jorian Donovan|8483470:Christian Kyrou:Kyrou:9:D:Christian Kyrou:Christian Kyrou|8483670:Filip Nordberg:Nordberg:9:D:Filip Nordberg|8483673:Oskar Pettersson:Pettersson:9:R:Oskar Pettersson:Oskar Pettersson|8483676:Stephen Halliday:Halliday:9:C:Stephen Halliday:Stephen Halliday|8483683:Tomas Hamara:Hamara:9:D:Tomas Hamara:Tomas Hamara|8483749:Cameron O'Neill:O'Neill:9:R:Cameron O'Neill|8483757:Theo Wallberg:Wallberg:9:D:Theo Wallberg|8483762:Kevin Reidler:Reidler:9:G:Kevin Reidler|8484176:Kasper Halttunen:Halttunen:9:R:Kasper Halttunen:Kasper Halttunen|8484235:Brandon Svoboda:Svoboda:9:C:Brandon Svoboda|8484321:Nikolas Matinpalo:Matinpalo:9:D:Nikolas Matinpalo:Nikolas Matinpalo|8484409:Hoyt Stanley:Stanley:9:D:Hoyt Stanley|8484429:Matthew Andonovski:Andonovski:9:D:Matthew Andonovski|8484478:Owen Beckner:Beckner:9:C:Owen Beckner|8484485:Nicholas Vantassell:Vantassell:9:R:Nicholas Vantassell|8484489:Vladimir Nikitin:Nikitin:9:G:Vladimir Nikitin|8484759:Carter Yakemchuk:Yakemchuk:9:D:Carter Yakemchuk:Carter Yakemchuk|8484847:Gabriel Eliasson:Eliasson:9:D:Gabriel Eliasson|8484876:Javon Moore:Moore:9:L:Javon Moore|8485006:Lucas Ellinas:Ellinas:9:L:Lucas Ellinas|8485016:Blake Montgomery:Montgomery:9:L:Blake Montgomery|8485032:Eerik Wallenius:Wallenius:9:D:Eerik Wallenius|8485397:Logan Hensler:Hensler:9:D:Logan Hensler|8485579:Blake Vanek:Vanek:9:R:Blake Vanek|8485580:Lucas Beckman:Beckman:9:G:Lucas Beckman|8485621:Dmitri Isayev:Isayev:9:L:Dmitri Isayev|8485647:Bruno Idzan:Idzan:9:L:Bruno Idzan|8485679:Andrei Trofimov:Trofimov:9:G:Andrei Trofimov|8486031:Jaxon Cover:Cover:9:R:Jaxon Cover|8486057:Jonas Lagerberg Hoen:Lagerberg Hoen:9:R:Jonas Lagerberg Hoen|8486071:Adam Nemec:Nemec:9:L:Adam Nemec|8486236:Oscar Holmertz:Holmertz:9:C:Oscar Holmertz|8486240:Louis Felix Bourque:Bourque:9:R:Louis Felix Bourque|8486252:Elliot Lennon:Lennon:9:G:Elliot Lennon|8486286:Harris Pangretitsch:Pangretitsch:9:D:Harris Pangretitsch|8486311:Alexander Grunin:Grunin:9:D:Alexander Grunin"
+          },
+          "teamAbbreviation": "OTT",
+          "originalPublishedAt": null
+        }
+      },
+      {
+        "report_key": "7f0702a2f35cd01c8bf7d31ae90b570b8e9934c2b6770bb3567ff716d01465f6:2:2026-09-18.1",
+        "team_id": 2,
+        "game_id": null,
+        "report_date": "2026-09-30",
+        "published_at": "2026-09-30T19:13:00+00:00",
+        "received_at": "2026-09-30T19:15:37.11452+00:00",
+        "interpretation_version": "2026-09-18.1",
+        "payload": {
+          "key": "7f0702a2f35cd01c8bf7d31ae90b570b8e9934c2b6770bb3567ff716d01465f6:2:2026-09-18.1",
+          "date": "2026-09-30",
+          "text": "RT @AGrossNewsday: Same PP units\n\nSchaefer\nMaccelli-Horvat-Schenn\nPalmieri\n\nDeAngelo\nEklund-Ritchie-Holmstrom\nDuclair",
+          "gameId": null,
+          "teamId": 2,
+          "session": null,
+          "provenance": {
+            "relayTweetId": "2105375596687843639",
+            "originalTweetId": null,
+            "attributionStatus": "pending"
+          },
+          "receivedAt": "2026-09-30T19:15:37.11452+00:00",
+          "originalUrl": null,
+          "publishedAt": "2026-09-30T19:13:00.000Z",
+          "interpretedAt": "2026-09-30T19:15:38.588Z",
+          "interpretation": {
+            "units": [
+              {
+                "group": null,
+                "number": 1,
+                "players": [
+                  {
+                    "name": "Matias Maccelli",
+                    "playerId": 8481711
+                  },
+                  {
+                    "name": "Bo Horvat",
+                    "playerId": 8477500
+                  },
+                  {
+                    "name": "Brayden Schenn",
+                    "playerId": 8475170
+                  }
+                ],
+                "complete": true,
+                "evidence": [
+                  {
+                    "end": 51,
+                    "text": "Maccelli",
+                    "start": 43
+                  },
+                  {
+                    "end": 58,
+                    "text": "Horvat",
+                    "start": 52
+                  },
+                  {
+                    "end": 65,
+                    "text": "Schenn",
+                    "start": 59
+                  }
+                ],
+                "situation": "es_forward",
+                "explicitNumber": false
+              },
+              {
+                "group": null,
+                "number": 2,
+                "players": [
+                  {
+                    "name": "Victor Eklund",
+                    "playerId": 8485388
+                  },
+                  {
+                    "name": "Calum Ritchie",
+                    "playerId": 8484221
+                  },
+                  {
+                    "name": "Simon Holmstrom",
+                    "playerId": 8481601
+                  }
+                ],
+                "complete": true,
+                "evidence": [
+                  {
+                    "end": 91,
+                    "text": "Eklund",
+                    "start": 85
+                  },
+                  {
+                    "end": 99,
+                    "text": "Ritchie",
+                    "start": 92
+                  },
+                  {
+                    "end": 109,
+                    "text": "Holmstrom",
+                    "start": 100
+                  }
+                ],
+                "situation": "es_forward",
+                "explicitNumber": false
+              }
+            ],
+            "events": [],
+            "context": "unknown",
+            "version": "2026-09-18.1",
+            "certainty": "reported",
+            "unresolved": [],
+            "rosterRevision": "8473575:Semyon Varlamov:Varlamov:2:G:Semyon Varlamov:Semyon Varlamov|8475151:Kyle Palmieri:Palmieri:2:C:Kyle Palmieri:Kyle Palmieri|8475170:Brayden Schenn:Schenn:2:C:Brayden Schenn:Brayden Schenn|8475231:Casey Cizikas:Cizikas:2:C:Casey Cizikas:Casey Cizikas|8476292:Ondrej Palat:Palat:2:L:Ondrej Palat:Ondrej Palat|8476419:Jean-Gabriel Pageau:Pageau:2:C:Jean-Gabriel Pageau:Jean-Gabriel Pageau|8476429:Scott Mayfield:Mayfield:2:D:Scott Mayfield:Scott Mayfield|8476917:Adam Pelech:Pelech:2:D:Adam Pelech:Adam Pelech|8477407:Anthony Duclair:Duclair:2:L:Anthony Duclair:Anthony Duclair|8477500:Bo Horvat:Horvat:2:C:Bo Horvat:Bo Horvat|8477506:Ryan Pulock:Pulock:2:D:Ryan Pulock:Ryan Pulock|8477950:Tony DeAngelo:DeAngelo:2:D:Tony DeAngelo:Tony DeAngelo|8477970:Vitek Vanecek:Vanecek:2:G:Vitek Vanecek:Vitek Vanecek|8478009:Ilya Sorokin:Sorokin:2:G:Ilya Sorokin:Ilya Sorokin|8478115:Pierre Engvall:Engvall:2:L:Pierre Engvall:Pierre Engvall|8478445:Mathew Barzal:Barzal:2:C:Mathew Barzal:Mathew Barzal|8478451:Ethan Bear:Bear:2:D:Ethan Bear:Ethan Bear|8479644:Matt Luff:Luff:2:R:Matt Luff:Matt Luff|8480853:Liam Foudy:Foudy:2:C:Liam Foudy:Liam Foudy|8481014:Alexander Romanov:Romanov:2:D:Alexander Romanov:Alexander Romanov|8481237:Kyle MacLean:MacLean:2:C:Kyle MacLean:Kyle MacLean|8481569:Marshall Warren:Warren:2:D:Marshall Warren:Marshall Warren|8481601:Simon Holmstrom:Holmstrom:2:R:Simon Holmstrom:Simon Holmstrom|8481711:Matias Maccelli:Maccelli:2:L:Matias Maccelli:Matias Maccelli|8482070:Mitchell Chaffee:Chaffee:2:R:Mitchell Chaffee:Mitchell Chaffee|8482154:Alex Jefferies:Jefferies:2:L:Alex Jefferies:Alex Jefferies|8482472:Henrik Tikkanen:Tikkanen:2:G:Henrik Tikkanen:Henrik Tikkanen|8482476:Emil Heineman:Heineman:2:L:Emil Heineman:Emil Heineman|8482516:Matthew Kessel:Kessel:2:D:Matthew Kessel:Matthew Kessel|8482954:Tomas Machu:Machu:2:D:Tomas Machu|8483104:Daylan Kuefler:Kuefler:2:L:Daylan Kuefler:Daylan Kuefler|8483441:Quinn Finley:Finley:2:L:Quinn Finley|8483448:Isaiah George:George:2:D:Isaiah George:Isaiah George|8483498:Calle Odelius:Odelius:2:D:Calle Odelius:Calle Odelius|8483708:Ryan Healey:Healey:2:D:Ryan Healey|8484205:Danny Nelson:Nelson:2:C:Danny Nelson|8484208:Jesse Nurmi:Nurmi:2:L:Jesse Nurmi|8484221:Calum Ritchie:Ritchie:2:C:Calum Ritchie:Calum Ritchie|8484225:Zachary Schulz:Schulz:2:D:Zachary Schulz|8484482:Dennis Good Bogg:Good Bogg:2:D:Dennis Good Bogg|8484766:Jesse Pulkkinen:Pulkkinen:2:D:Jesse Pulkkinen|8484788:Kamil Bednarik:Bednarik:2:C:Kamil Bednarik|8484807:Cole Eiserman:Eiserman:2:L:Cole Eiserman|8485020:Dmitry Gamzin:Gamzin:2:G:Dmitry Gamzin|8485078:Xavier Veilleux:Veilleux:2:D:Xavier Veilleux|8485352:Kashawn Aitcheson:Aitcheson:2:D:Kashawn Aitcheson:Kashawn Aitcheson|8485366:Matthew Schaefer:Schaefer:2:D:Matthew Schaefer:Matthew Schaefer|8485370:Luca Romano:Romano:2:C:Luca Romano:Luca Romano|8485378:Tomas Poletin:Poletin:2:L:Tomas Poletin:Tomas Poletin|8485388:Victor Eklund:Eklund:2:R:Victor Eklund:Victor Eklund|8485440:Sam Laurila:Laurila:2:D:Sam Laurila|8485448:Daniil Prokhorov:Prokhorov:2:R:Daniil Prokhorov|8485462:Gleb Veremyev:Veremyev:2:C:Gleb Veremyev:Gleb Veremyev|8485490:Joey Larson:Larson:2:R:Joey Larson:Joey Larson|8485644:Burke Hood:Hood:2:G:Burke Hood|8485669:Jacob Kvasnicka:Kvasnicka:2:R:Jacob Kvasnicka|8486035:Vladimir Dravecky:Dravecky:2:D:Vladimir Dravecky|8486042:Malte Gustafsson:Gustafsson:2:D:Malte Gustafsson|8486054:Lincoln Kuehne:Kuehne:2:D:Lincoln Kuehne|8486136:Joshua Kotai:Kotai:2:G|8486306:Artyom Matyuk:Matyuk:2:C:Artyom Matyuk|8486329:Robert Cowan:Cowan:2:R:Robert Cowan"
+          },
+          "teamAbbreviation": "NYI",
+          "originalPublishedAt": null
+        }
+      },
+      {
+        "report_key": "a2fcc311936af82fb564f6a09d943ac707420c4e4503c6f674cf2be9e932ed3c:15:2026-09-18.1",
+        "team_id": 15,
+        "game_id": null,
+        "report_date": "2026-09-30",
+        "published_at": "2026-09-30T19:24:00+00:00",
+        "received_at": "2026-09-30T19:25:55.887918+00:00",
+        "interpretation_version": "2026-09-18.1",
+        "payload": {
+          "key": "a2fcc311936af82fb564f6a09d943ac707420c4e4503c6f674cf2be9e932ed3c:15:2026-09-18.1",
+          "date": "2026-09-30",
+          "text": "RT @TomGulittiNHL: Caps PP1: Chychrun, Ovechkin, Wilson, Dubois, Strome\n\nPP2: Hutson, Leonard, Tuch, Kyrou, I. Protas",
+          "gameId": null,
+          "teamId": 15,
+          "session": null,
+          "provenance": {
+            "relayTweetId": "2105378254983205114",
+            "originalTweetId": null,
+            "attributionStatus": "pending"
+          },
+          "receivedAt": "2026-09-30T19:25:55.887918+00:00",
+          "originalUrl": null,
+          "publishedAt": "2026-09-30T19:24:00.000Z",
+          "interpretedAt": "2026-09-30T19:25:59.437Z",
+          "interpretation": {
+            "units": [
+              {
+                "group": null,
+                "number": 2,
+                "players": [
+                  {
+                    "name": "Cole Hutson",
+                    "playerId": 8484873
+                  },
+                  {
+                    "name": "Ryan Leonard",
+                    "playerId": 8484186
+                  },
+                  {
+                    "name": "Alex Tuch",
+                    "playerId": 8477949
+                  },
+                  {
+                    "name": "Jordan Kyrou",
+                    "playerId": 8479385
+                  },
+                  {
+                    "name": "Ilya Protas",
+                    "playerId": 8484999
+                  }
+                ],
+                "complete": true,
+                "evidence": [
+                  {
+                    "end": 84,
+                    "text": "Hutson",
+                    "start": 78
+                  },
+                  {
+                    "end": 93,
+                    "text": "Leonard",
+                    "start": 86
+                  },
+                  {
+                    "end": 99,
+                    "text": "Tuch",
+                    "start": 95
+                  },
+                  {
+                    "end": 106,
+                    "text": "Kyrou",
+                    "start": 101
+                  },
+                  {
+                    "end": 117,
+                    "text": "I. Protas",
+                    "start": 108
+                  }
+                ],
+                "situation": "pp",
+                "explicitNumber": true
+              }
+            ],
+            "events": [],
+            "context": "unknown",
+            "version": "2026-09-18.1",
+            "certainty": "reported",
+            "unresolved": [],
+            "rosterRevision": "8471214:Alex Ovechkin:Ovechkin:15:L:Alex Ovechkin:Alex Ovechkin|8475795:Dylan McIlrath:McIlrath:15:D:Dylan McIlrath:Dylan McIlrath|8476432:Boone Jenner:Jenner:15:C:Boone Jenner:Boone Jenner|8476880:Tom Wilson:Wilson:15:R:Tom Wilson:Tom Wilson|8477949:Alex Tuch:Tuch:15:R:Alex Tuch:Alex Tuch|8478440:Dylan Strome:Strome:15:C:Dylan Strome:Dylan Strome|8478463:Anthony Beauvillier:Beauvillier:15:R:Anthony Beauvillier:Anthony Beauvillier|8478911:Matt Roy:Roy:15:D:Matt Roy:Matt Roy|8479292:Charlie Lindgren:Lindgren:15:G:Charlie Lindgren:Charlie Lindgren|8479345:Jakob Chychrun:Chychrun:15:D:Jakob Chychrun:Jakob Chychrun|8479385:Jordan Kyrou:Kyrou:15:R:Jordan Kyrou:Jordan Kyrou|8479400:Pierre-Luc Dubois:Dubois:15:C:Pierre-Luc Dubois:Pierre-Luc Dubois|8479576:Vincent Desharnais:Desharnais:15:D:Vincent Desharnais:Vincent Desharnais|8480043:Timothy Liljegren:Liljegren:15:D:Timothy Liljegren:Timothy Liljegren|8480313:Logan Thompson:Thompson:15:G:Logan Thompson:Logan Thompson|8480796:Martin Fehérváry:Fehérváry:15:D:Martin Fehérváry:Martin Fehérváry|8480873:Rasmus Sandin:Sandin:15:D:Rasmus Sandin:Rasmus Sandin|8481656:Aliaksei Protas:Protas:15:L:Aliaksei Protas:Aliaksei Protas|8482088:Justin Sourdif:Sourdif:15:C:Justin Sourdif:Justin Sourdif|8482683:David Gucciardi:Gucciardi:15:D:David Gucciardi:David Gucciardi|8482931:Joaquim Lemay:Lemay:15:D:Joaquim Lemay|8483007:Brett Hyland:Hyland:15:C:Brett Hyland|8483430:Ryan Chesley:Chesley:15:D:Ryan Chesley:Ryan Chesley|8483491:Ivan Miroshnichenko:Miroshnichenko:15:L:Ivan Miroshnichenko:Ivan Miroshnichenko|8483518:Alexander Suzdalev:Suzdalev:15:L:Alexander Suzdalev:Alexander Suzdalev|8483532:Clay Stevenson:Stevenson:15:G:Clay Stevenson:Clay Stevenson|8483573:Ethen Frank:Frank:15:R:Ethen Frank:Ethen Frank|8483681:Ludwig Persson:Persson:15:L:Ludwig Persson:Ludwig Persson|8484140:Cam Allen:Allen:15:D:Cam Allen:Cam Allen|8484159:Andrew Cristall:Cristall:15:L:Andrew Cristall:Andrew Cristall|8484186:Ryan Leonard:Leonard:15:R:Ryan Leonard:Ryan Leonard|8484404:Patrick Thomas:Thomas:15:C:Patrick Thomas:Patrick Thomas|8484480:Antoine Keller:Keller:15:G:Antoine Keller|8484769:Terik Parascak:Parascak:15:R:Terik Parascak:Terik Parascak|8484772:Leon Muggli:Muggli:15:D:Leon Muggli:Leon Muggli|8484775:Eriks Mateiko:Mateiko:15:L:Eriks Mateiko:Eriks Mateiko|8484873:Cole Hutson:Hutson:15:D:Cole Hutson:Cole Hutson|8484999:Ilya Protas:Protas:15:L:Ilya Protas:Ilya Protas|8485023:Nicholas Kempf:Kempf:15:G:Nicholas Kempf|8485080:Petr Sikora:Sikora:15:C:Petr Sikora|8485106:Miroslav Satan:Satan:15:C:Miroslav Satan|8485412:Lynden Lakovic:Lakovic:15:L:Lynden Lakovic:Lynden Lakovic|8485577:Maxim Schafer:Schafer:15:L:Maxim Schafer|8485628:Jackson Crowder:Crowder:15:C:Jackson Crowder|8485648:Aron Dahlqvist:Dahlqvist:15:D:Aron Dahlqvist|8486102:Tyus Sparks:Sparks:15:C:Tyus Sparks|8486104:Oliver Suvanto:Suvanto:15:C:Oliver Suvanto|8486279:Brian McFadden:McFadden:15:D:Brian McFadden|8486331:Logan Stuart:Stuart:15:C:Logan Stuart"
+          },
+          "teamAbbreviation": "WSH",
+          "originalPublishedAt": null
+        }
+      },
+      {
+        "report_key": "b58916c0167b824f3f6e8cc50b3b070a45b7ccc747d4662b5886bb70d8c993f7:2:2026-09-18.1",
+        "team_id": 2,
+        "game_id": 2026020008,
+        "report_date": "2026-09-30",
+        "published_at": "2026-09-30T23:09:00+00:00",
+        "received_at": "2026-09-30T23:17:40.673936+00:00",
+        "interpretation_version": "2026-09-18.1",
+        "payload": {
+          "key": "b58916c0167b824f3f6e8cc50b3b070a45b7ccc747d4662b5886bb70d8c993f7:2:2026-09-18.1",
+          "date": "2026-09-30",
+          "text": "RT @ethan_sears: Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena. Anthony Stolarz for the Leafs.",
+          "gameId": 2026020008,
+          "teamId": 2,
+          "session": null,
+          "provenance": {
+            "relayTweetId": "2105434836500680857",
+            "originalTweetId": null,
+            "attributionStatus": "pending"
+          },
+          "receivedAt": "2026-09-30T23:17:40.673936+00:00",
+          "originalUrl": null,
+          "publishedAt": "2026-09-30T23:09:00.000Z",
+          "interpretedAt": "2026-09-30T23:17:42.438Z",
+          "interpretation": {
+            "units": [],
+            "events": [
+              {
+                "kind": "injury",
+                "state": "unknown",
+                "evidence": {
+                  "end": 117,
+                  "text": "Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena. Anthony Stolarz for the Leafs.",
+                  "start": 17
+                },
+                "playerId": 8478009,
+                "timeline": null,
+                "timelines": [],
+                "playerName": "Ilya Sorokin",
+                "availability": "out"
+              }
+            ],
+            "context": "game",
+            "version": "2026-09-18.1",
+            "certainty": "reported",
+            "unresolved": [],
+            "rosterRevision": "8473575:Semyon Varlamov:Varlamov:2:G:Semyon Varlamov:Semyon Varlamov|8475151:Kyle Palmieri:Palmieri:2:C:Kyle Palmieri:Kyle Palmieri|8475170:Brayden Schenn:Schenn:2:C:Brayden Schenn:Brayden Schenn|8475231:Casey Cizikas:Cizikas:2:C:Casey Cizikas:Casey Cizikas|8476292:Ondrej Palat:Palat:2:L:Ondrej Palat:Ondrej Palat|8476419:Jean-Gabriel Pageau:Pageau:2:C:Jean-Gabriel Pageau:Jean-Gabriel Pageau|8476429:Scott Mayfield:Mayfield:2:D:Scott Mayfield:Scott Mayfield|8476917:Adam Pelech:Pelech:2:D:Adam Pelech:Adam Pelech|8477407:Anthony Duclair:Duclair:2:L:Anthony Duclair:Anthony Duclair|8477500:Bo Horvat:Horvat:2:C:Bo Horvat:Bo Horvat|8477506:Ryan Pulock:Pulock:2:D:Ryan Pulock:Ryan Pulock|8477950:Tony DeAngelo:DeAngelo:2:D:Tony DeAngelo:Tony DeAngelo|8477970:Vitek Vanecek:Vanecek:2:G:Vitek Vanecek:Vitek Vanecek|8478009:Ilya Sorokin:Sorokin:2:G:Ilya Sorokin:Ilya Sorokin|8478115:Pierre Engvall:Engvall:2:L:Pierre Engvall:Pierre Engvall|8478445:Mathew Barzal:Barzal:2:C:Mathew Barzal:Mathew Barzal|8478451:Ethan Bear:Bear:2:D:Ethan Bear:Ethan Bear|8479644:Matt Luff:Luff:2:R:Matt Luff:Matt Luff|8480853:Liam Foudy:Foudy:2:C:Liam Foudy:Liam Foudy|8481014:Alexander Romanov:Romanov:2:D:Alexander Romanov:Alexander Romanov|8481237:Kyle MacLean:MacLean:2:C:Kyle MacLean:Kyle MacLean|8481569:Marshall Warren:Warren:2:D:Marshall Warren:Marshall Warren|8481601:Simon Holmstrom:Holmstrom:2:R:Simon Holmstrom:Simon Holmstrom|8481711:Matias Maccelli:Maccelli:2:L:Matias Maccelli:Matias Maccelli|8482070:Mitchell Chaffee:Chaffee:2:R:Mitchell Chaffee:Mitchell Chaffee|8482154:Alex Jefferies:Jefferies:2:L:Alex Jefferies:Alex Jefferies|8482472:Henrik Tikkanen:Tikkanen:2:G:Henrik Tikkanen:Henrik Tikkanen|8482476:Emil Heineman:Heineman:2:L:Emil Heineman:Emil Heineman|8482516:Matthew Kessel:Kessel:2:D:Matthew Kessel:Matthew Kessel|8482954:Tomas Machu:Machu:2:D:Tomas Machu|8483104:Daylan Kuefler:Kuefler:2:L:Daylan Kuefler:Daylan Kuefler|8483441:Quinn Finley:Finley:2:L:Quinn Finley|8483448:Isaiah George:George:2:D:Isaiah George:Isaiah George|8483498:Calle Odelius:Odelius:2:D:Calle Odelius:Calle Odelius|8483708:Ryan Healey:Healey:2:D:Ryan Healey|8484205:Danny Nelson:Nelson:2:C:Danny Nelson|8484208:Jesse Nurmi:Nurmi:2:L:Jesse Nurmi|8484221:Calum Ritchie:Ritchie:2:C:Calum Ritchie:Calum Ritchie|8484225:Zachary Schulz:Schulz:2:D:Zachary Schulz|8484482:Dennis Good Bogg:Good Bogg:2:D:Dennis Good Bogg|8484766:Jesse Pulkkinen:Pulkkinen:2:D:Jesse Pulkkinen|8484788:Kamil Bednarik:Bednarik:2:C:Kamil Bednarik|8484807:Cole Eiserman:Eiserman:2:L:Cole Eiserman|8485020:Dmitry Gamzin:Gamzin:2:G:Dmitry Gamzin|8485078:Xavier Veilleux:Veilleux:2:D:Xavier Veilleux|8485352:Kashawn Aitcheson:Aitcheson:2:D:Kashawn Aitcheson:Kashawn Aitcheson|8485366:Matthew Schaefer:Schaefer:2:D:Matthew Schaefer:Matthew Schaefer|8485370:Luca Romano:Romano:2:C:Luca Romano:Luca Romano|8485378:Tomas Poletin:Poletin:2:L:Tomas Poletin:Tomas Poletin|8485388:Victor Eklund:Eklund:2:R:Victor Eklund:Victor Eklund|8485440:Sam Laurila:Laurila:2:D:Sam Laurila|8485448:Daniil Prokhorov:Prokhorov:2:R:Daniil Prokhorov|8485462:Gleb Veremyev:Veremyev:2:C:Gleb Veremyev:Gleb Veremyev|8485490:Joey Larson:Larson:2:R:Joey Larson:Joey Larson|8485644:Burke Hood:Hood:2:G:Burke Hood|8485669:Jacob Kvasnicka:Kvasnicka:2:R:Jacob Kvasnicka|8486035:Vladimir Dravecky:Dravecky:2:D:Vladimir Dravecky|8486042:Malte Gustafsson:Gustafsson:2:D:Malte Gustafsson|8486054:Lincoln Kuehne:Kuehne:2:D:Lincoln Kuehne|8486136:Joshua Kotai:Kotai:2:G|8486306:Artyom Matyuk:Matyuk:2:C:Artyom Matyuk|8486329:Robert Cowan:Cowan:2:R:Robert Cowan"
+          },
+          "teamAbbreviation": "NYI",
+          "originalPublishedAt": null
+        }
+      }
+    ],
+    "playerEvents": [
+      {
+        "event_key": "b58916c0167b824f3f6e8cc50b3b070a45b7ccc747d4662b5886bb70d8c993f7:2:2026-09-18.1:8478009:17",
+        "player_id": 8478009,
+        "published_at": "2026-09-30T23:09:00+00:00",
+        "availability": "out",
+        "payload": {
+          "kind": "injury",
+          "state": "unknown",
+          "evidence": {
+            "end": 117,
+            "text": "Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena. Anthony Stolarz for the Leafs.",
+            "start": 17
+          },
+          "playerId": 8478009,
+          "timeline": null,
+          "timelines": [],
+          "playerName": "Ilya Sorokin",
+          "availability": "out"
+        }
+      },
+      {
+        "event_key": "02eb8715423dd41ab2ce32b3554620afaaff5df5669d576da3da713720bf2a1f:9:2026-09-18.1:8482105:19",
+        "player_id": 8482105,
+        "published_at": "2026-09-30T18:53:00+00:00",
+        "availability": "available",
+        "payload": {
+          "kind": "injury",
+          "state": "confirmed_return",
+          "evidence": {
+            "end": 135,
+            "text": "Sanderson skated before main practice today but didn't join his teammates. org is hopeful he will play this weekend.",
+            "start": 19
+          },
+          "playerId": 8482105,
+          "timeline": {
+            "text": "today",
+            "unit": null,
+            "maximum": null,
+            "minimum": null,
+            "purpose": "unknown",
+            "targetDate": "2026-09-30"
+          },
+          "timelines": [
+            {
+              "text": "today",
+              "unit": null,
+              "maximum": null,
+              "minimum": null,
+              "purpose": "unknown",
+              "targetDate": "2026-09-30"
+            }
+          ],
+          "playerName": "Jake Sanderson",
+          "availability": "available"
+        }
+      }
+    ]
+  }
+}

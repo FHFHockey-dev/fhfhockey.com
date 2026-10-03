@@ -1,6 +1,10 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { interpretTweetUnits, segmentPlayerRow } from "./tweetInterpretation";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { classifyGameDayTweet } from "./lineupSourceIngestion";
+import { interpretTweetUnits, requiresRelativeGameDateReview, segmentPlayerRow } from "./tweetInterpretation";
 import { classifyInjuryEvent, extractInjuryTimeline, extractInjuryTimelines, extractTweetPlayerEvents } from "./tweetPlayerEvents";
 import { assignmentsFor } from "../player-forecasts/sourceObservations";
 import { buildLinesCccSourceFromIftttEvent } from "./linesCccIngestion";
@@ -9,8 +13,151 @@ import { reconcileAlias } from "./tweetAliasReconciliation";
 const names = ["Ryan McLeod", "Josh Norris", "Konsta Helenius", "Zach Aston-Reese", "Pierre Olivier-Joseph", "Noah Dower Nilsson", "Dylan Guenther", "Logan Cooley", "Nick Schmaltz", "Clayton Keller", "Mikhail Sergachev", "Anders Lee", "Vincent Trocheck", "Kailer Yamamoto", "Barrett Hayton", "John Marino"];
 const roster = names.map((fullName, index) => ({ playerId: index + 1, fullName, lastName: fullName.slice(fullName.indexOf(" ") + 1), position: "C" }));
 
+const audited = JSON.parse(readFileSync(resolve(process.cwd(), "../tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json"), "utf8"));
+const seed = (id: string): string => audited.events.find((event: any) => event.tweet_id === id).text;
+const seedRoster = (id: string) => {
+  const revision = audited.snapshots.find((snapshot: any) => snapshot.tweet_id === id).metadata.interpretation?.rosterRevision ?? "";
+  return revision.split("|").filter(Boolean).map((entry: string) => {
+    const [playerId, fullName, lastName, teamId, position, ...aliases] = entry.split(":");
+    return { playerId: Number(playerId), fullName, lastName, teamId: Number(teamId), position, aliases };
+  });
+};
+
 describe("structured tweet interpretation", () => {
   afterEach(() => vi.unstubAllEnvs());
+  it("checks frozen source hashes and reports bounded semantic holdout classifications", () => {
+    const labels = JSON.parse(readFileSync(resolve(process.cwd(), "../tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json"), "utf8"));
+    const counts: Record<string, { truePositive: number; predicted: number; labeled: number }> = {};
+    let matched = 0, denominator = 0;
+    for (const label of labels.records) {
+      const source = audited.events.find((event: any) => event.tweet_id === label.tweetId)?.text ?? audited.holdoutCandidates.find((event: any) => event.tweet_id === label.tweetId)?.raw_text;
+      expect(createHash("sha256").update(source).digest("hex")).toBe(label.sourceSha256);
+      for (const claim of label.claims ?? []) expect(source.slice(claim.start, claim.end)).toBe(claim.text);
+      if (label.split !== "semantic_holdout_candidate") continue;
+      const predicted = classifyGameDayTweet(source), expected = label.expectedClassification;
+      counts[predicted] ??= { truePositive: 0, predicted: 0, labeled: 0 };
+      counts[expected] ??= { truePositive: 0, predicted: 0, labeled: 0 };
+      counts[predicted]!.predicted++; counts[expected]!.labeled++;
+      if (predicted === expected) { matched++; counts[predicted]!.truePositive++; }
+      denominator++;
+    }
+    expect(denominator).toBe(19);
+    console.info("Frozen semantic evaluation (not blind/identity/full-route accuracy)", JSON.stringify({ matched, denominator, counts }));
+  });
+  it("withholds false availability in the exact warmup and hopeful return seeds", () => {
+    for (const id of ["2105434836500680857", "2105370362964004937"]) {
+      const text = seed(id);
+      const events = extractTweetPlayerEvents({ text, players: seedRoster(id), publishedAt: null });
+      expect(events.some((event) => event.availability === "available" || event.availability === "out")).toBe(false);
+      for (const event of events) expect(text.slice(event.evidence.start, event.evidence.end)).toBe(event.evidence.text);
+      if (id === "2105434836500680857") {
+        expect(events).toMatchObject([{ kind: "goalie", observation: "warmup", state: "projected" }]);
+        expect(events[0]!.evidence.text).not.toContain("Stolarz");
+      } else {
+        expect(events.find((event) => event.playerName.includes("Sanderson"))).toMatchObject({ state: "possible_return", availability: "uncertain" });
+        expect(events.find((event) => event.playerName.includes("Burakovsky"))).toMatchObject({ modality: "negated" });
+        expect(events.find((event) => event.playerName.includes("Foegele"))).toMatchObject({ kind: "participation", availability: "uncertain" });
+      }
+    }
+  });
+  it.each(["2105378254983205114", "2105375596687843639", "2105366758089695718"])("retains two PP units and original offsets for %s", (id) => {
+    const text = seed(id), result = interpretTweetUnits(text, seedRoster(id));
+    expect(result.units.map((unit) => [unit.situation, unit.number, unit.players.length, unit.complete])).toEqual([["pp", 1, 5, true], ["pp", 2, 5, true]]);
+    for (const unit of result.units) for (const span of unit.evidence) expect(text.slice(span.start, span.end)).toBe(span.text);
+  });
+  it("preserves CBJ row ordinals and slash uncertainty without combining identities", () => {
+    const result = interpretTweetUnits(seed("2105336355915985057"), seedRoster("2105336355915985057"));
+    expect(result.units.filter((unit) => unit.situation === "es_forward").map((unit) => unit.number)).toEqual([2]);
+    expect(result.unresolved).toEqual(expect.arrayContaining([expect.objectContaining({ text: "Sillinger-Coyle-Olivier" })]));
+    expect(result.relationships).toMatchObject([{ kind: "alternatives", number: 4, reviewReason: "ambiguous_identity" }]);
+    expect(result.relationships![0]!.subjects?.map((subject) => subject.text)).toEqual(["Lomberg", "Heinen", "LDBB", "Voronkov"]);
+    expect(result.units.some((unit) => unit.players.some((player) => player.name.includes("Lomberg-Heinen")))).toBe(false);
+  });
+  it("stores partial relations without inventing complete units or canonical identities", () => {
+    for (const [id, kind] of [["2104977788142850499", "substitution"], ["2105466270070264224", "swap"]]) {
+      const result = interpretTweetUnits(seed(id!), []);
+      expect(result.units).toEqual([]);
+      expect(result.relationships).toMatchObject([{ kind, playerIds: [], reviewReason: "ambiguous_identity" }]);
+      expect(assignmentsFor({ metadata: { interpretation: result } } as any)).toEqual([]);
+    }
+  });
+  it("retains resolved subjects of partial changes without assigning unsupported slots", () => {
+    const players = [{ playerId: 1, fullName: "Matias Maccelli", lastName: "Maccelli" }, { playerId: 2, fullName: "Anthony Duclair", lastName: "Duclair" }];
+    expect(interpretTweetUnits(seed("2105466270070264224"), players)).toMatchObject({ units: [], relationships: [{ kind: "swap", playerIds: [1, 2], certainty: "projected", reviewReason: "unresolved_reference" }] });
+    const ppPlayers = [{ playerId: 3, fullName: "Vasily Podkolzin", lastName: "Podkolzin" }, { playerId: 4, fullName: "Ryan Nugent-Hopkins", lastName: "Nugent-Hopkins", aliases: ["RNH"] }];
+    expect(interpretTweetUnits(seed("2104977788142850499"), ppPlayers)).toMatchObject({ units: [], relationships: [{ kind: "substitution", playerIds: [3, 4], number: 1, reviewReason: "incomplete_replacement" }] });
+  });
+  it("recognizes DTD and first-goaltender-off without confirming absence or a start", () => {
+    const dtd = seed("2104668922113052956"), firstOff = seed("2105000410809512101");
+    expect(classifyGameDayTweet(dtd)).toBe("injury");
+    expect(classifyGameDayTweet(firstOff)).toBe("goalie_start");
+    expect(classifyGameDayTweet(seed("2104672980634886326"))).not.toBe("injury");
+    expect(extractTweetPlayerEvents({ text: dtd, players: [{ playerId: 1, fullName: "Joel Edmundson", lastName: "Edmundson" }], publishedAt: null })).toMatchObject([{ state: "ongoing", availability: "uncertain" }]);
+    expect(extractTweetPlayerEvents({ text: firstOff, players: [{ playerId: 2, fullName: "Carter Hart", lastName: "Hart", position: "G" }], publishedAt: null })).toMatchObject([{ kind: "goalie", state: "projected", observation: "first_off" }]);
+  });
+  it("retains questions without promoting their subjects to confirmed availability or starts", () => {
+    expect(extractTweetPlayerEvents({ text: "Norris will play tonight? McLeod will play tonight.", players: roster, publishedAt: null })).toMatchObject([{ playerId: 2, state: "unknown", availability: "uncertain" }, { playerId: 1, state: "confirmed_return", availability: "available" }]);
+    expect(extractTweetPlayerEvents({ text: "Hart will start tonight?", players: [{ playerId: 100, fullName: "Carter Hart", lastName: "Hart", position: "G" }], publishedAt: null })).toMatchObject([{ playerId: 100, state: "projected" }]);
+    expect(extractTweetPlayerEvents({ text: "The org is hopeful Hart will start tonight.", players: [{ playerId: 100, fullName: "Carter Hart", lastName: "Hart", position: "G" }], publishedAt: null })).toMatchObject([{ playerId: 100, state: "projected" }]);
+    expect(classifyInjuryEvent("Norris will play tonight https://example.com/?source=tweet")).toBe("confirmed_return");
+    expect(classifyInjuryEvent("Norris will return tonight if healthy.")).toBe("possible_return");
+    expect(extractTweetPlayerEvents({ text: 'Speculation: "Hart will start tonight."', players: [{ playerId: 100, fullName: "Carter Hart", lastName: "Hart", position: "G" }], publishedAt: null })).toMatchObject([{ playerId: 100, state: "projected", evidence: { text: 'Speculation: "Hart will start tonight."' } }]);
+    expect(extractTweetPlayerEvents({ text: 'Speculation: "Norris will play tonight."', players: roster, publishedAt: null })).toMatchObject([{ playerId: 2, state: "possible_return", availability: "uncertain" }]);
+  });
+  it("distinguishes historical comparison from historical or future applicability", () => {
+    expect(requiresRelativeGameDateReview(seed("2105366758089695718"))).toBe(false);
+    expect(requiresRelativeGameDateReview("Yesterday's PP1: Keller Cooley Schmaltz")).toBe(true);
+    expect(requiresRelativeGameDateReview("Lines tomorrow: Keller Cooley Schmaltz")).toBe(true);
+  });
+  it("retains opposing same-post claims for review without publishing either availability", () => {
+    const text = "Norris will play tonight. Correction: Norris will not play tonight.";
+    const events = extractTweetPlayerEvents({ text, players: roster, publishedAt: null });
+    expect(events).toHaveLength(2);
+    expect(events.every((event) => event.state === "unknown" && event.availability === "uncertain" && event.reviewReason === "conflicting_claims")).toBe(true);
+    for (const event of events) expect(text.slice(event.evidence.start, event.evidence.end)).toBe(event.evidence.text);
+  });
+  it("keeps opponent events out of the primary team's forecast assignments", () => {
+    const events = extractTweetPlayerEvents({ text: "Sorokin will start tonight. Stolarz will start tonight.", players: [
+      { playerId: 1, fullName: "Ilya Sorokin", lastName: "Sorokin", position: "G", teamId: 2 },
+      { playerId: 2, fullName: "Anthony Stolarz", lastName: "Stolarz", position: "G", teamId: 10 },
+    ], publishedAt: null });
+    const result = assignmentsFor({ team_id: 2, metadata: { interpretation: { units: [], events, unresolved: [], context: "game" } } } as any);
+    expect(events).toHaveLength(2);
+    expect(result.map((entry) => entry.player_id)).toEqual([1]);
+  });
+  it("retains modality before the named subject and abstains on a separate pronoun sentence", () => {
+    const events = extractTweetPlayerEvents({ text: "The org is hopeful Norris will play tonight.", players: roster, publishedAt: null });
+    expect(events).toMatchObject([{ state: "possible_return", availability: "uncertain", evidence: { text: "The org is hopeful Norris will play tonight." } }]);
+    expect(extractTweetPlayerEvents({ text: "Norris remains out. He will return tonight.", players: roster, publishedAt: null })).toMatchObject([{ state: "ongoing", availability: "out" }]);
+  });
+  it("binds a shared predicate to coordinated subjects without borrowing distinct predicates", () => {
+    const text = "Norris and McLeod still day to day.";
+    const events = extractTweetPlayerEvents({ text, players: roster, publishedAt: null });
+    expect(events).toHaveLength(2);
+    expect(events).toEqual(expect.arrayContaining([expect.objectContaining({ playerId: 2, state: "ongoing", availability: "uncertain" }), expect.objectContaining({ playerId: 1, state: "ongoing", availability: "uncertain" })]));
+    for (const event of events) expect(text.slice(event.evidence.start, event.evidence.end)).toBe(text);
+    expect(extractTweetPlayerEvents({ text: "Norris remains out and McLeod will play tonight.", players: roster, publishedAt: null })).toMatchObject([{ playerId: 2, availability: "out" }, { playerId: 1, availability: "available" }]);
+    expect(extractTweetPlayerEvents({ text: "Norris\nMcLeod will play tonight.", players: roster, publishedAt: null })).toMatchObject([{ playerId: 1, availability: "available" }]);
+  });
+  it("does not borrow an unresolved subject's return or resolve unsupported pronouns", () => {
+    expect(extractTweetPlayerEvents({ text: "Norris remains out. Unknown Player will play tonight. He returns tomorrow.", players: roster, publishedAt: null })).toMatchObject([{ playerId: 2, state: "ongoing", availability: "out" }]);
+    expect(extractTweetPlayerEvents({ text: "He will play tonight.", players: roster, publishedAt: null })).toEqual([]);
+    for (const text of ["Norris remains out and Unknown Player will play tonight.", "Norris remains out but he will return tonight.", "Norris remains out; Unknown Player will play tonight.", "Norris remains out, unknown player will play tonight.", "Norris remains out — Unknown Player will play tonight.", "Norris remains out AND Unknown Player will play tonight."]) {
+      expect(extractTweetPlayerEvents({ text, players: roster, publishedAt: null })).toMatchObject([{ playerId: 2, state: "ongoing", availability: "out" }]);
+    }
+    expect(extractTweetPlayerEvents({ text: "Norris and Unknown Player will play tonight.", players: roster, publishedAt: null })).toEqual([]);
+    const ambiguousRoster = [...roster, { playerId: 100, fullName: "Cole Sillinger", lastName: "Sillinger" }, { playerId: 101, fullName: "Owen Sillinger", lastName: "Sillinger" }];
+    expect(extractTweetPlayerEvents({ text: "Norris remains out, Sillinger will play tonight.", players: ambiguousRoster, publishedAt: null })).toMatchObject([{ playerId: 2, state: "ongoing", availability: "out" }]);
+    expect(extractTweetPlayerEvents({ text: "Cole Sillinger will play tonight.", players: ambiguousRoster, publishedAt: null })).toMatchObject([{ playerId: 100, availability: "available" }]);
+    expect(extractTweetPlayerEvents({ text: "Norris could return and McLeod will play tonight.", players: roster, publishedAt: null })).toMatchObject([{ playerId: 2, availability: "uncertain" }, { playerId: 1, availability: "available" }]);
+    expect(extractTweetPlayerEvents({ text: "Norris remains out and unknown player will play tonight.", players: roster, publishedAt: null })).toMatchObject([{ playerId: 2, availability: "out" }]);
+    expect(extractTweetPlayerEvents({ text: "Norris will play tonight, org is hopeful.", players: roster, publishedAt: null })).toMatchObject([{ playerId: 2, availability: "uncertain" }]);
+  });
+  it("retains explicit absence durations without inventing a new injury from healthy scratches", () => {
+    expect(classifyGameDayTweet("Norris is out for two weeks")).toBe("injury");
+    expect(extractTweetPlayerEvents({ text: "Norris is out for two weeks", players: roster, publishedAt: null })).toMatchObject([{ availability: "out" }]);
+    expect(classifyInjuryEvent("Norris out tonight as a healthy scratch", "healthy")).toBe("unknown");
+  });
   it("keeps injury certainty, history and timeframes separate", () => {
     expect(classifyInjuryEvent("will not return to the lineup tonight", "injured")).toBe("ongoing");
     expect(classifyInjuryEvent("could return in 4–6 weeks")).toBe("possible_return");

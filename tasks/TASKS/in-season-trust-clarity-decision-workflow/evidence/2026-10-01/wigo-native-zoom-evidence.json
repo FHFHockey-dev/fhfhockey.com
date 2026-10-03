@@ -1,0 +1,529 @@
+{
+  "baseline": {
+    "documentWidth": 2056,
+    "dpr": 2,
+    "headings": [
+      "NikitaKucherov",
+      "Season production 20262027",
+      "Per-game / 84-game pace",
+      "Player ratings",
+      "TBL Performance Drivers",
+      "Point Consistency",
+      "Category percentiles",
+      "Selected stat game log · SOG/60"
+    ],
+    "height": 1105,
+    "overlay": false,
+    "searchValue": "Nikita Kucherov",
+    "title": "Five Hole Fantasy Hockey | NHL Tools & Analysis",
+    "url": "http://127.0.0.1:3100/wigoCharts?playerId=8476453&tab=comparison",
+    "width": 2056
+  },
+  "nativeZoomControl": "Zoom: 200%",
+  "zoom": {
+    "documentWidth": 1020,
+    "dpr": 4,
+    "height": 524,
+    "overlay": false,
+    "searchValue": "Nikita Kucherov",
+    "unnamedPlusButtons": [
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "ATOI+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "Points+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "Goals+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "Assists+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "SOG+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "S%+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "PPP+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "PPG+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "PPA+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "PPTOI+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "PP%+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "HIT+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "BLK+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "PIM+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "ixG+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "iCF+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "G/60+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "A/60+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "PTS/60+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "SOG/60+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "ixG/60+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "iCF/60+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "PPP/60+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "PPG/60+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "PPA/60+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "iHDCF/60+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "iSCF/60+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "HIT/60+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "BLK/60+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "PIM/60+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "IPP+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "oiSH%+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "OZS%+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "PTS1%+",
+        "text": "+",
+        "title": null
+      },
+      {
+        "ariaLabel": null,
+        "expanded": "false",
+        "parentText": "PTS1/60+",
+        "text": "+",
+        "title": null
+      }
+    ],
+    "url": "http://127.0.0.1:3100/wigoCharts?playerId=8476453&tab=comparison",
+    "width": 1028
+  },
+  "expansion": {
+    "border": "2px solid rgb(13, 108, 140)",
+    "boxShadow": "none",
+    "documentWidth": 1020,
+    "expanded": "true",
+    "focused": "Hide Goals game log",
+    "outline": "rgb(0, 95, 204) auto 1px",
+    "url": "http://127.0.0.1:3100/wigoCharts?playerId=8476453&tab=comparison",
+    "width": 1028
+  },
+  "loadedLog": {
+    "documentWidth": 1020,
+    "expanded": "true",
+    "messages": [
+      "No game log data available for this season."
+    ],
+    "width": 1028
+  },
+  "comparison": {
+    "caption": "L5/L10/L20: up to the latest played games across seasons; see GP for actual samples. Aggregate dates and source coverage are unavailable.",
+    "documentWidth": 1020,
+    "dpr": 4,
+    "focus": {
+      "border": "1px solid rgb(20, 162, 210)",
+      "boxShadow": "rgba(20, 162, 210, 0.3) 0px 0px 0px 2px",
+      "outline": "rgb(204, 204, 204) none 3px"
+    },
+    "height": 524,
+    "timeframes": [
+      {
+        "name": "Select left timeframe for comparison",
+        "value": "L5"
+      },
+      {
+        "name": "Select right timeframe for comparison",
+        "value": "L5"
+      }
+    ],
+    "url": "http://127.0.0.1:3100/wigoCharts?playerId=8476453&tab=comparison",
+    "width": 1028,
+    "zeroRows": [
+      [
+        "PPP+",
+        "37",
+        "37",
+        "33",
+        "45",
+        "0",
+        "2",
+        "8",
+        "-"
+      ],
+      [
+        "PPG+",
+        "-",
+        "8",
+        "9",
+        "10",
+        "0",
+        "1",
+        "2",
+        "-"
+      ],
+      [
+        "PPP/60+",
+        "-",
+        "6.88",
+        "7.94",
+        "8.60",
+        "0.00",
+        "2.96",
+        "6.53",
+        "-"
+      ],
+      [
+        "PPG/60+",
+        "-",
+        "1.49",
+        "2.06",
+        "1.83",
+        "0.00",
+        "1.48",
+        "1.63",
+        "-"
+      ]
+    ]
+  },
+  "namedControls": {
+    "buttons": [
+      {
+        "expanded": "false",
+        "name": "Show ATOI game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show Points game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show Goals game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show Assists game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show SOG game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show S% game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show PPP game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show PPG game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show PPA game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show PPTOI game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show PP% game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show HIT game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show BLK game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show PIM game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show ixG game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show iCF game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show G/60 game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show A/60 game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show PTS/60 game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show SOG/60 game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show ixG/60 game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show iCF/60 game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show PPP/60 game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show PPG/60 game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show PPA/60 game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show iHDCF/60 game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show iSCF/60 game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show HIT/60 game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show BLK/60 game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show PIM/60 game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show IPP game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show oiSH% game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show OZS% game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show PTS1% game log"
+      },
+      {
+        "expanded": "false",
+        "name": "Show PTS1/60 game log"
+      }
+    ],
+    "documentWidth": 1020,
+    "viewport": 1028
+  },
+  "cleanup": {
+    "documentWidth": 2041,
+    "dpr": 2,
+    "timeframes": [
+      {
+        "name": "Select left timeframe for comparison",
+        "value": "L5"
+      },
+      {
+        "name": "Select right timeframe for comparison",
+        "value": "CA"
+      }
+    ],
+    "url": "http://127.0.0.1:3100/wigoCharts?playerId=8476453&tab=comparison",
+    "width": 2056
+  },
+  "errors": []
+}

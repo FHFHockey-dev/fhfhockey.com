@@ -17,7 +17,7 @@ export type BoardGoalieEvidence = TimedEvidence & { player_id: number | null; ob
 export type BoardConflict = {
   conflict_key?: string; conflict_version?: number;
   id: string; game_id: number; team_id: number; player_id: number | null;
-  conflict_type: string; detected_at: string;
+  conflict_type: string; detected_at: string; created_at?: string;
   player_forecast_conflict_resolutions: Array<{
     action: string; selected_observation_id: string | null; resolved_at: string; created_at?: string;
   }>;
@@ -125,22 +125,58 @@ export function resolveDailyBoardEvidence(args: {
   return result;
 }
 
-export async function loadDailyBoardEvidence(gameIds: number[], cutoff: string): Promise<DailyBoardEvidence> {
-  if (!gameIds.length) return { assertions: [], conflicts: [] };
-  const db = supabase as any;
+export async function loadDailyBoardEvidence(gameIds: number[], cutoff: string,
+  db: typeof supabase = supabase): Promise<DailyBoardEvidence> {
+  const ids = [...new Set(gameIds)].sort((a, b) => a - b);
+  if (!Number.isFinite(Date.parse(cutoff)) || ids.length > 500
+    || ids.some(id => !Number.isSafeInteger(id) || id <= 0)) throw new Error("Invalid daily evidence scope");
+  if (!ids.length) return { assertions: [], conflicts: [] };
+  // Child relations are read independently: a parent count cannot establish
+  // completeness of an embedded assignments/resolutions array.
+  const read = async (table: string, key: string, scope: Array<string | number>, maximum: number,
+    filter: (query: any) => any = query => query): Promise<any[]> => {
+    const rows: any[] = [], seen = new Set<string>();
+    for (let start = 0; start < scope.length; start += 100) {
+      const batch = scope.slice(start, start + 100);
+      let offset = 0, count: number | null = null;
+      do {
+        const response = await filter((db as any).from(table).select("*", { count: "exact" })
+          .in(key, batch).lte("created_at", cutoff)).order("id").range(offset, offset + 499);
+        if (response.error || !Array.isArray(response.data) || !Number.isSafeInteger(response.count)
+          || response.count < 0 || rows.length - offset + response.count > maximum
+          || count !== null && response.count !== count || response.data.length > response.count - offset
+          || !response.data.length && response.count > offset) {
+          throw new Error(`Incomplete daily evidence: ${table}`);
+        }
+        count = response.count;
+        for (const row of response.data) {
+          if (typeof row.id !== "string" || !row.id || seen.has(row.id) || !batch.includes(row[key])
+            || !Number.isFinite(Date.parse(row.created_at)) || Date.parse(row.created_at) > Date.parse(cutoff)) {
+            throw new Error(`Invalid daily evidence receipt: ${table}`);
+          }
+          seen.add(row.id);
+          rows.push(row);
+        }
+        offset += response.data.length;
+      } while (offset < count!);
+    }
+    return rows;
+  };
+  const accepted = (query: any) => query.eq("accepted", true).lte("available_at", cutoff);
   const [lineups, goalies, conflicts] = await Promise.all([
-    db.from("player_forecast_lineup_snapshots").select("*,player_forecast_lineup_assignments(*)")
-      .in("game_id", gameIds).eq("accepted", true).lte("available_at", cutoff).lte("created_at", cutoff).limit(2000),
-    db.from("player_forecast_goalie_start_observations").select("*")
-      .in("game_id", gameIds).eq("accepted", true).lte("available_at", cutoff).lte("created_at", cutoff).limit(2000),
-    db.from("player_forecast_observation_conflicts").select("*,player_forecast_conflict_resolutions(*)")
-      .in("game_id", gameIds).lte("detected_at", cutoff).lte("created_at", cutoff).limit(2000),
+    read("player_forecast_lineup_snapshots", "game_id", ids, 2000, accepted),
+    read("player_forecast_goalie_start_observations", "game_id", ids, 2000, accepted),
+    read("player_forecast_observation_conflicts", "game_id", ids, 2000, query => query.lte("detected_at", cutoff)),
   ]);
-  for (const response of [lineups, goalies, conflicts]) {
-    if (response.error) throw response.error;
-    if (response.data?.length >= 2000) throw new Error("Daily evidence limit reached; refusing a truncated overlay.");
-  }
-  return resolveDailyBoardEvidence({ cutoff, lineups: lineups.data ?? [], goalies: goalies.data ?? [], conflicts: conflicts.data ?? [] });
+  const [assignments, resolutions] = await Promise.all([
+    read("player_forecast_lineup_assignments", "snapshot_id", lineups.map(row => row.id), 20000),
+    read("player_forecast_conflict_resolutions", "conflict_id", conflicts.map(row => row.id), 20000,
+      query => query.lte("resolved_at", cutoff)),
+  ]);
+  return resolveDailyBoardEvidence({ cutoff, goalies,
+    lineups: lineups.map(row => ({ ...row, player_forecast_lineup_assignments: assignments.filter(child => child.snapshot_id === row.id) })),
+    conflicts: conflicts.map(row => ({ ...row, player_forecast_conflict_resolutions: resolutions.filter(child => child.conflict_id === row.id) })),
+  });
 }
 
 export function applyDailyBoardEvidence(args: {

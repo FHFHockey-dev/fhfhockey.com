@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx -t uses the signed-in session for access and account reads
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:3543) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx (19 tests | 18 skipped) 195ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 18 skipped (19)
+   Start at  00:03:14
+   Duration  920ms (transform 245ms, setup 3ms, collect 397ms, tests 195ms, environment 133ms, prepare 35ms)
+

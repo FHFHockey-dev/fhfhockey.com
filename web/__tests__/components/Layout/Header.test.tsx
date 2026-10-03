@@ -149,7 +149,9 @@ describe("Header auth entry", () => {
 
   it("preserves the donation destination", () => {
     render(<Header />);
-    expect(screen.getByRole("link", { name: "Support FHFH" }).getAttribute("href")).toBe("https://www.buymeacoffee.com/tjsusername");
+    const coffee = screen.getByRole("link", { name: "Buy me a coffee" });
+    expect(coffee.getAttribute("href")).toBe("https://www.buymeacoffee.com/tjsusername");
+    expect(within(coffee).getByRole("img", { name: "Buy me a coffee" }).getAttribute("src")).toContain("https://img.buymeacoffee.com/button-api/");
   });
 
   it("renders the logged-out CTA and opens the auth modal", () => {

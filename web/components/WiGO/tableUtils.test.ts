@@ -56,7 +56,7 @@ describe("DIFF boundary cases", () => {
       { label: "IPP", STD: null, CA: 40 },
       { label: "S%", STD: Infinity, CA: 10 },
     ];
-    expect(computeDiffColumn(data, "STD", "CA").map(row => row.DIFF)).toEqual([undefined, 0, undefined, -50, undefined, undefined]);
+    expect(computeDiffColumn(data, "STD", "CA").map(row => row.DIFF)).toEqual([undefined, undefined, undefined, -50, undefined, undefined]);
     expect(computeDiffColumn(data, "STD", "STD")[3].DIFF).toBe(0);
     expect(data[3].DIFF).toBeUndefined();
     expect(formatCell({ label: "Goals", STD: 0 }, "STD")).toBe("0");

@@ -1,6 +1,7 @@
 import { DEFAULT_GOALIE_FANTASY_POINTS, DEFAULT_SKATER_FANTASY_POINTS } from "lib/projectionsConfig/fantasyPointsConfig";
 import { addStartChartPositionRanks } from "./startChartFantasyScoring";
 import type { SeasonBootstrapDisclosure } from "./seasonBootstrap";
+import type { DailyBoardEvidence } from "./dailyBoardEvidence";
 
 export type BoardStats = Record<string, number | null>;
 export type BoardScoringProfile = { skater: Record<string, number>; goalie: Record<string, number> };
@@ -62,16 +63,36 @@ export function integrateBoardParticipation(conditional: BoardStats, probability
   return Object.fromEntries(Object.entries(conditional).map(([key, value]) => [key, value == null ? null : value * probability]));
 }
 
+/** A confirmed return/PP role is not a confirmed appearance. Only a confirmed
+ * full-strength lineup or explicit exclusion can establish this evidence branch. */
+export function skaterParticipationFromEvidence(evidence: DailyBoardEvidence | undefined,
+  identity: { gameId: number; teamId: number; playerId: number }) {
+  const relevant = (item: { gameId: number; teamId: number; playerId: number | null }) =>
+    item.gameId === identity.gameId && item.teamId === identity.teamId && (item.playerId === null || item.playerId === identity.playerId);
+  if (!evidence || evidence.conflicts.some(item => relevant(item) && ["ev", "availability"].includes(item.dimension))) return null;
+  const assertions = evidence.assertions.filter(item => relevant(item) && item.confirmed);
+  const out = assertions.filter(item => item.dimension === "availability" && item.value === "out");
+  const playing = assertions.filter(item => item.dimension === "ev");
+  if (out.length && playing.length || !out.length && !playing.length) return null;
+  return { version: "skater-participation-v1", probability: out.length ? 0 : 1,
+    status: "confirmed_evidence", evidenceIds: (out.length ? out : playing).map(item => item.evidenceId).sort() };
+}
+
 export function boardSkaterForecast(row: any, uncertainty: any): BoardForecast {
   const selection = uncertainty?.model?.skater_selection;
   const conditional = selection?.production_conditioning === "conditional_playing";
   const explicitOut = selection?.production_conditioning === "explicit_out";
+  const participation = selection?.participation;
+  const probability = explicitOut ? 0 : conditional && participation?.version === "skater-participation-v1"
+    && participation.status === "confirmed_evidence" && Array.isArray(participation.evidenceIds) && participation.evidenceIds.length
+    && [0, 1].includes(participation.probability) && !(selection?.same_day_evidence?.conflicts?.length)
+    ? participation.probability as number : null;
   const stats = { GOALS: row.proj_goals, ASSISTS: row.proj_assists, PP_POINTS: row.proj_pp_points,
     SHOTS_ON_GOAL: row.proj_shots, HITS: row.proj_hits, BLOCKED_SHOTS: row.proj_blocks,
     PENALTY_MINUTES: row.proj_pim, TIME_ON_ICE_PER_GAME: row.proj_toi_minutes };
   return {
-    conditioning: explicitOut ? "unconditional" : conditional ? "conditional_playing" : "legacy_unclassified",
-    participationProbability: explicitOut ? 0 : null, probabilityStatus: explicitOut ? "confirmed_evidence" : "missing", expected: explicitOut ? stats : null,
+    conditioning: probability !== null ? "unconditional" : conditional ? "conditional_playing" : "legacy_unclassified",
+    participationProbability: probability, probabilityStatus: probability !== null ? "confirmed_evidence" : "missing", expected: probability !== null ? integrateBoardParticipation(stats, probability) : null,
     conditional: conditional ? stats : null, legacy: conditional || explicitOut ? null : stats,
     distributionStatus: "means_only_unvalidated", ppRole: selection?.pp_role ?? null,
     evidence: (selection?.same_day_evidence?.assertions ?? []).map((item: any) => ({
@@ -103,6 +124,16 @@ export function boardSkaterStatsFromProjection(row: any) {
     proj_hits: row.proj_hits ?? null, proj_blocks: row.proj_blocks ?? null, proj_pim: row.proj_pim ?? null,
     proj_toi_minutes: [row.proj_toi_es_seconds, row.proj_toi_pp_seconds, row.proj_toi_pk_seconds].every((value) => typeof value === "number")
       ? (row.proj_toi_es_seconds + row.proj_toi_pp_seconds + row.proj_toi_pk_seconds) / 60 : null };
+}
+
+/** Public full-game targets require all strength components, including PK. */
+export function completeBoardSkaterStatsFromProjection(row: any) {
+  const stats = boardSkaterStatsFromProjection(row);
+  for (const prefix of ["proj_goals", "proj_assists", "proj_shots"] as const) {
+    if (["es", "pp", "pk"].some(strength => typeof row[`${prefix}_${strength}`] !== "number"
+      || !Number.isFinite(row[`${prefix}_${strength}`]))) stats[prefix] = null;
+  }
+  return stats;
 }
 
 export function attachPreviousBoardForecast(current: BoardForecast | null, previous: BoardForecast | null, revisionId: string) {

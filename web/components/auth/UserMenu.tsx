@@ -22,9 +22,16 @@ export default function UserMenu() {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
   const [signingOut, setSigningOut] = useState(false);
+  const [failedAvatar, setFailedAvatar] = useState<{ userId: string; url: string } | null>(null);
+  const userId = user?.id;
+  const avatarUrl = user?.avatarUrl;
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    setFailedAvatar(null);
+  }, [userId, avatarUrl]);
 
   useEffect(() => {
     if (!open) return;
@@ -77,11 +84,13 @@ export default function UserMenu() {
         title={title}
         onClick={() => setOpen((current) => !current)}
       >
-        {user.avatarUrl ? (
+        {user.avatarUrl && !(failedAvatar?.userId === user.id && failedAvatar.url === user.avatarUrl) ? (
           <img
+            key={JSON.stringify([user.id, user.avatarUrl])}
             src={user.avatarUrl}
             alt={title}
             className={styles.userAvatarImage}
+            onError={() => setFailedAvatar({ userId: user.id, url: user.avatarUrl! })}
           />
         ) : (
           <span className={styles.userAvatarFallback}>

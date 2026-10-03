@@ -1,0 +1,70 @@
+
+> web@0.1.0 test
+> vitest --run __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx -t uses the signed-in session for access and account reads
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:3156) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx (19 tests | 1 failed | 18 skipped) 165ms
+   ↓ RosterScheduleOptimizer workspace > shows the actual bench tradeoff and public assumptions within the selected date
+   ↓ RosterScheduleOptimizer workspace > keeps unsupported bench decisions unresolved and separates locks from scoring reasons
+   ↓ RosterScheduleOptimizer workspace > shows category results and projected goalie assumptions without claiming a satisfied minimum
+   ↓ RosterScheduleOptimizer workspace > guides an empty manual workspace to existing inputs without implying acquisition readiness
+   ↓ RosterScheduleOptimizer workspace > requires input review and renews it after rule changes without certifying unknown scoring
+   ↓ RosterScheduleOptimizer workspace > uses eligible full-team evidence for goalie starts without capping conflicts or reviving legacy rows
+   ↓ RosterScheduleOptimizer workspace > labels the selected statistical source and its permitted uses without implying a total
+   ↓ RosterScheduleOptimizer workspace > shows only each target's selected source timestamps across mixed inputs and replay
+   ↓ RosterScheduleOptimizer workspace > labels unverified lineups as schedule capacity
+   ↓ RosterScheduleOptimizer workspace > distinguishes identically named Yahoo teams by league and selects the matching context
+   ↓ RosterScheduleOptimizer workspace > counts only acquired players' future games before their next drop
+   ↓ RosterScheduleOptimizer workspace > keeps exact canonical selections and unresolved pasted names across remount
+   ↓ RosterScheduleOptimizer workspace > undoes local roster edits without changing the public snapshot
+   ↓ RosterScheduleOptimizer workspace > marks a future selected add conditional until the provider confirms it
+   × RosterScheduleOptimizer workspace > uses the signed-in session for access and account reads, then refreshes after account switch 165ms
+     → expected { revision: 1, steps: [], …(6) } to deeply equal { revision: +0, steps: [], …(6) }
+   ↓ RosterScheduleOptimizer workspace > explains access-service failures instead of silently disabling provider sync
+   ↓ RosterScheduleOptimizer workspace > sends the signed-in token when saving the workspace
+   ↓ RosterScheduleOptimizer workspace > keeps invalid zone and cleared period dates out of committed rules
+   ↓ RosterScheduleOptimizer workspace > opens a saved manual snapshot read-only until the manager explicitly forks it
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > uses the signed-in session for access and account reads, then refreshes after account switch
+AssertionError: expected { revision: 1, steps: [], …(6) } to deeply equal { revision: +0, steps: [], …(6) }
+
+- Expected
++ Received
+
+@@ -2,11 +2,9 @@
+    "alternativeCount": 10,
+    "excludedPlayerIds": [],
+    "goalieCoverage": "accept_risk",
+    "goalieSplit": "mon_thu",
+    "goalieWindow": "early",
+-   "protectedPlayerIds": [
+-     "fhfh:1",
+-   ],
+-   "revision": 0,
++   "protectedPlayerIds": [],
++   "revision": 1,
+    "steps": [],
+  }
+
+ ❯ __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx:397:76
+    395|     expect(screen.getByText("Saved inputs are read-only and may be sta…
+    396|     fireEvent.click(screen.getByRole("checkbox", { name: "Protect", ex…
+    397|     expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).int…
+       |                                                                            ^
+    398|     fireEvent.click(screen.getByRole("button", { name: "Continue manua…
+    399|     const forked = JSON.parse(window.localStorage.getItem(WORKSPACE_KE…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 skipped (19)
+   Start at  23:58:08
+   Duration  893ms (transform 245ms, setup 3ms, collect 399ms, tests 165ms, environment 133ms, prepare 32ms)
+

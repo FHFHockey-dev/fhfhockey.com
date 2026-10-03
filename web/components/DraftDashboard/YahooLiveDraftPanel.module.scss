@@ -75,6 +75,87 @@
   box-shadow: 0 0 10px rgba(v.$success-color, 0.8);
 }
 
+.setupProgress {
+  padding: v.$space-sm v.$space-md;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$radius-sm;
+  background: rgba(v.$background-dark, 0.45);
+  font-size: v.$font-size-sm;
+
+  > strong { color: v.$text-primary; }
+}
+
+.progressSteps {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  margin: v.$space-md 0 v.$space-sm;
+  padding: 0;
+  list-style: none;
+}
+
+.progressStep {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$space-xs;
+  min-width: 0;
+  text-align: center;
+
+  &:not(:last-child)::after {
+    position: absolute;
+    top: 19px;
+    left: calc(50% + 20px);
+    width: calc(100% - 40px);
+    height: 3px;
+    background: v.$error-color;
+    content: "";
+  }
+}
+
+.progressLineComplete:not(:last-child)::after { background: v.$success-color; }
+
+.progressCircle {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  appearance: none;
+
+  svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2.5;
+  }
+
+  &:is(a, button):not(:disabled) { cursor: pointer; }
+  &:is(a, button):hover:not(:disabled) { box-shadow: 0 0 0 3px currentColor; }
+  &:is(a, button):focus-visible { outline: 3px solid v.$primary-color; outline-offset: 3px; }
+  &:disabled { cursor: not-allowed; }
+}
+
+.progressComplete {
+  color: v.$success-color;
+  background: rgba(v.$success-color, 0.5);
+}
+
+.progressPending {
+  color: v.$error-color;
+  background: rgba(v.$error-color, 0.5);
+}
+
+.progressLabel { color: v.$text-primary; }
+.progressHint { margin: 0; color: v.$text-secondary; }
+
 .setupNotice {
   padding: v.$space-sm v.$space-md;
   color: v.$text-secondary;
@@ -253,6 +334,14 @@
 }
 
 @media (max-width: v.$breakpoint-tablet) {
+  .progressSteps {
+    grid-auto-flow: column;
+    grid-auto-columns: 112px;
+    grid-template-columns: none;
+    overflow-x: auto;
+    padding-bottom: v.$space-xs;
+  }
+
   .header,
   .controls,
   .footer {

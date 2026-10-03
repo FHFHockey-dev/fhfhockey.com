@@ -107,6 +107,9 @@ export async function collectPlayerForecastReadiness(args: {
     lineupSourceResult,
     outcomeResult,
     outputResult,
+    runResult,
+    forgeRevisionResult,
+    productionRunResult,
   ] =
     await Promise.all([
       tableReadiness(args.supabase),
@@ -150,7 +153,22 @@ export async function collectPlayerForecastReadiness(args: {
         .limit(1),
       args.supabase
         .from("player_forecast_outputs")
+        .select("id,game_id,target_key,conditioning", { count: "exact" })
+        .limit(5_000),
+      args.supabase
+        .from("player_forecast_runs")
+        .select("status,metadata,issued_at", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .limit(5_000),
+      args.supabase
+        .from("forge_game_revisions")
         .select("id", { count: "exact" })
+        .limit(1),
+      args.supabase
+        .from("player_forecast_runs")
+        .select("id", { count: "exact" })
+        .eq("release_channel", "production")
+        .eq("status", "succeeded")
         .limit(1),
     ]);
 
@@ -204,6 +222,22 @@ export async function collectPlayerForecastReadiness(args: {
     worker.reachable &&
     worker.contractMatch &&
     bucketPrivate;
+  const runs = { succeeded: 0, failed: 0, researchBlocked: 0, running: 0, contractOnly: 0, issued: 0 };
+  for (const row of runResult.data ?? []) {
+    if (row.status === "succeeded") runs.succeeded++;
+    if (row.status === "failed") runs.failed++;
+    if (row.status === "research_blocked") runs.researchBlocked++;
+    if (row.status === "running") runs.running++;
+    if (row.metadata?.workerMode === "contract_only") runs.contractOnly++;
+    if (row.issued_at) runs.issued++;
+  }
+  const targetCoverage = new Map<string, Set<number>>();
+  for (const row of outputResult.data ?? []) {
+    const key = `${row.target_key}:${row.conditioning}`;
+    const gameIds = targetCoverage.get(key) ?? new Set<number>();
+    gameIds.add(Number(row.game_id));
+    targetCoverage.set(key, gameIds);
+  }
 
   return {
     success: true as const,
@@ -222,6 +256,20 @@ export async function collectPlayerForecastReadiness(args: {
     },
     worker,
     queue: { ...queue, expiredLeases, queryAvailable: !queueResult.error },
+    productionEvidence: {
+      runs: { ...runs, total: runResult.count ?? null, sampled: runResult.data?.length ?? 0, queryAvailable: !runResult.error },
+      playerOutputRows: outputResult.count ?? null,
+      playerOutputQueryAvailable: !outputResult.error,
+      sampledTargetGameCoverage: Object.fromEntries(
+        [...targetCoverage].sort(([a], [b]) => a.localeCompare(b)).map(([key, gameIds]) => [key, gameIds.size]),
+      ),
+      targetCoverageSampled: (outputResult.count ?? 0) > (outputResult.data?.length ?? 0),
+      forgeIssuedGameRevisions: forgeRevisionResult.count ?? null,
+      forgeRevisionQueryAvailable: !forgeRevisionResult.error,
+      productionSucceededRuns: productionRunResult.count ?? null,
+      productionRunQueryAvailable: !productionRunResult.error,
+      forecastRowsPresent: (outputResult.count ?? 0) > 0 || (forgeRevisionResult.count ?? 0) > 0,
+    },
     sourceFreshness: {
       generic: {
         ...freshness(sourceResult),

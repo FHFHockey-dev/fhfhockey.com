@@ -1,0 +1,128 @@
+{
+  "observedOn": "2026-10-01",
+  "method": "Read-only signed-in Chrome via CUA; rendered article text and time element datetime attribute. These are DOM observations, not X API created_at responses.",
+  "originals": [
+    {
+      "url": "https://x.com/GraemeNichols/status/2105343573784928457",
+      "author": "GraemeNichols",
+      "datetime": "2026-09-30T17:06:38.000Z",
+      "displayTimestamp": "1:06 PM · Sep 30, 2026",
+      "text": "Sanderson skated before main practice today but didn't join his teammates. org is hopeful he will play this weekend. Burakovsky isn't close to returning (upper body). Foegele took rushes on the 1st line for second consecutive day. No decision has been made on his availability.",
+      "visibleReplyIds": [
+        "2105351230562427237",
+        "2105369526288212363"
+      ],
+      "context": "Two visible replies by other authors; neither is an author correction. No attached media or quoted post on the original. Sidebar describes author as covering Ottawa Senators. Surnames alone do not establish canonical IDs or historical membership."
+    },
+    {
+      "url": "https://x.com/ethan_sears/status/2105434001074962845",
+      "author": "ethan_sears",
+      "datetime": "2026-09-30T23:05:57.000Z",
+      "displayTimestamp": "7:05 PM · Sep 30, 2026",
+      "text": "Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena. Anthony Stolarz for the Leafs.",
+      "context": "No attached media or quoted post on the original. Warmup observation does not confirm a game start. Additional rendered article was a separate author recommendation about Matthew Schaefer, not a correction or reply to this claim."
+    }
+  ],
+  "vercel": {
+    "project": "fhfhockey",
+    "productionDeployment": "A37gcG8z62Ef8dSy6MV87KfwWZiJ",
+    "productionCommit": "73af9d051ecc755dd3695f5265bf5837bbfc7a4e",
+    "projectEnvironmentFilter": "TWEET_",
+    "listedProductionVariables": [
+      "TWEET_PIPELINE_PUBLISHING_ENABLED",
+      "TWEET_PIPELINE_INTERPRETATION_ENABLED"
+    ],
+    "valueEvidence": "Both listed as Secret. Publishing detail form explicitly states saved secrets are write-only and cannot be revealed. Values remain unknown; form canceled without editing or saving.",
+    "sharedEnvironmentFilterResult": "No Results Found for TWEET_",
+    "limits": "Current project settings do not establish the immutable environment of the September 27 deployment. No inference flag/model appeared in the filtered project listing; absence is not verified effective runtime configuration."
+  },
+  "reviewerSetup": {
+    "leadSettingsEvidence": "User confirmed GPT-6.1 Sol Light; authorized raising effort if necessary.",
+    "status": "Independent reviewer not dispatched: mise-en-place.md requires lead effort strictly above reviewer; available reviewer controls start at Low. Agent cannot change its own runtime effort. User asked to select Medium or higher."
+  },
+  "limits": [
+    "No proof of absence of corrections, deleted posts, hidden replies, or alternate threads.",
+    "No source-time roster or alias history verified.",
+    "No original-to-relay relationship verified from these observations.",
+    "Frozen labels and fixtures unchanged; this evidence does not make the existing evaluation blind.",
+    "Vercel sign-in completed; effective flag values and deployed caller/model/enrichment remain unverified. No production settings changed."
+  ],
+  "correctionChain": {
+    "relayUrl": "https://x.com/GameDayLines/status/2104672980634886326",
+    "originalUrl": "https://x.com/DannyWebster21/status/2104672698786013556",
+    "originalDatetime": "2026-09-28T20:40:48.000Z",
+    "originalText": "Turns out this was, in fact, much ado about nothing.\n\nThis was a 5-on-3 drill. At ease.",
+    "quotedPredecessorUrl": "https://x.com/DannyWebster21/status/2104644558701351383",
+    "quotedPredecessorDatetime": "2026-09-28T18:48:59.000Z",
+    "quotedPredecessorText": "Might be much ado about nothing, but Olofsson is taking PP1 reps with Marner up top.",
+    "evidence": "Relay URL rendered Game Day Lines reposted, original author and original permalink. Later original visibly quotes the same author predecessor; clicking the quoted card verified predecessor URL and text. Both datetime attributes captured on the later article. This supports a same-author clarification of situation, not a player identity or full unit.",
+    "limits": "No historical repair performed. Does not establish generic correction authority across different authors, hidden/deleted history, canonical player IDs, or deployed parser retrieval of the reference."
+  },
+  "additionalOriginals": [
+    {
+      "relayUrl": "https://x.com/GameDayLines/status/2104977788142850499",
+      "originalUrl": "https://x.com/JasonGregor/status/2104971594632454155",
+      "datetime": "2026-09-29T16:28:31.000Z",
+      "text": "Podkolzin will take RNH’s spot on the first unit powerplay… via Babcock.",
+      "evidence": "Rendered named relay URL displayed repost attribution, matching original text, original permalink and time datetime. No canonical source-time player identity inferred."
+    },
+    {
+      "relayUrl": "https://x.com/GameDayLines/status/2105336355915985057",
+      "originalUrl": "https://x.com/DylanTyrer/status/2105316615466393964",
+      "datetime": "2026-09-30T15:19:30.000Z",
+      "text": "#CBJ lines/pairs today:\n\nKnies-Fantilli-Johnson\nNichushkin-Monahan-Garland\nSillinger-Coyle-Olivier\nLomberg-Heinen/LDBB-Voronkov\n\nWerenski-Mateychuk\nChristiansen-Gudbranson\nSoucy-Andrae",
+      "evidence": "Rendered named relay URL displayed repost attribution, matching original text, original permalink and time datetime. No canonical source-time player identity inferred."
+    },
+    {
+      "relayUrl": "https://x.com/GameDayLines/status/2105366758089695718",
+      "originalUrl": "https://x.com/Sheng_Peng/status/2105364132128240008",
+      "datetime": "2026-09-30T18:28:19.000Z",
+      "text": "#SJSharks power play groups same as yesterday, but one wrinkle, see Misa doing some net front, which he did last year...  \n\nPP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg \n\nPP2: Orlov-Misa-Stenberg-Toffoli-Marchment",
+      "evidence": "Rendered named relay URL displayed repost attribution, matching original text, original permalink and time datetime. No canonical source-time player identity inferred."
+    },
+    {
+      "relayUrl": "https://x.com/GameDayLines/status/2105375596687843639",
+      "originalUrl": "https://x.com/AGrossNewsday/status/2105323604133179601",
+      "datetime": "2026-09-30T15:47:16.000Z",
+      "text": "Same PP units\n\nSchaefer\nMaccelli-Horvat-Schenn\nPalmieri\n\nDeAngelo\nEklund-Ritchie-Holmstrom\nDuclair",
+      "evidence": "Rendered named relay URL displayed repost attribution, matching original text, original permalink and time datetime. No canonical source-time player identity inferred."
+    },
+    {
+      "relayUrl": "https://x.com/GameDayLines/status/2105378254983205114",
+      "originalUrl": "https://x.com/TomGulittiNHL/status/2105316203292209353",
+      "datetime": "2026-09-30T15:17:52.000Z",
+      "text": "Caps PP1: Chychrun, Ovechkin, Wilson, Dubois, Strome\n\nPP2: Hutson, Leonard, Tuch, Kyrou, I. Protas",
+      "evidence": "Rendered named relay URL displayed repost attribution, matching original text, original permalink and time datetime. No canonical source-time player identity inferred.",
+      "parentContext": {
+        "url": "https://x.com/TomGulittiNHL/status/2105315839557718080",
+        "datetime": "2026-09-30T15:16:25.000Z",
+        "text": "No changes at Capitals practice today:\n\nTuch-Dubois-Wilson\nOvechkin-Strome-Leonard\nA.Protas-I.Protas-Kyrou\nJenner-Sourdif-Beauvillier\n\nChychrun-Roy\nHutson-Desharnais\nFeharvery-Liljegren\n\nThompson\nLindgren\n\nExtras: Miroshnichenko, Frank, McIlrath",
+        "evidence": "Rendered parent precedes target PP article in conversation. First article is parent, not target; target identified by matching text and its own permalink."
+      }
+    },
+    {
+      "relayUrl": "https://x.com/GameDayLines/status/2105466270070264224",
+      "originalUrl": "https://x.com/ethan_sears/status/2105466097264656870",
+      "datetime": "2026-10-01T01:13:29.000Z",
+      "text": "Looks like Maccelli and Duclair have switched spots",
+      "evidence": "Rendered named relay URL displayed repost attribution, matching original text, original permalink and time datetime. No canonical source-time player identity inferred."
+    },
+    {
+      "relayUrl": "https://x.com/GameDayGoalies/status/2105000410809512101",
+      "originalUrl": "https://x.com/h_kirk6/status/2105000115090100612",
+      "datetime": "2026-09-29T18:21:51.000Z",
+      "text": "Carter Hart is the first goaltender off the ice.",
+      "evidence": "Rendered named relay URL displayed repost attribution, matching original text, original permalink and time datetime. No canonical source-time player identity inferred."
+    }
+  ],
+  "editedOriginal": {
+    "relayUrl": "https://x.com/GameDayNewsNHL/status/2104668922113052956",
+    "originalUrl": "https://x.com/LeggetNHL/status/2104667165182087487",
+    "displayedDatetime": "2026-09-28T20:18:49.000Z",
+    "text": "Joel Edmundson still day-to-day per Peter Laviolette",
+    "historyUrl": "https://x.com/LeggetNHL/status/2104667165182087487/history",
+    "priorVersionUrl": "https://x.com/LeggetNHL/status/2104666863892611284",
+    "priorText": "Joel Edmundson still day-to-day per Peter Lavioletter",
+    "evidence": "Original displays Last edited. Visible Version history exposes prior spelling Lavioletter, corrected to Laviolette. Displayed datetime is current edited version, not asserted first-publication time. No semantic availability change seen between these two visible versions."
+  }
+}

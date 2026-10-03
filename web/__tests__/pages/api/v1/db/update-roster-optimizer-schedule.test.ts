@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
+  fetchBoundedMock,
   deleteInMock,
   fetchFullSeasonMock,
+  scheduleRead,
   serviceClient,
   tableData,
   upsertMock,
@@ -33,17 +35,31 @@ const {
   };
   const upsertMock = vi.fn().mockResolvedValue({ error: null });
   const deleteInMock = vi.fn().mockResolvedValue({ error: null });
+  const scheduleRead = { cap: 1_000, calls: 0, emptyAt: 0, failAt: 0, missingCount: false };
   const client = {
     from: vi.fn((table: string) => ({
       select: vi.fn(() => {
         const builder: Record<string, unknown> = {};
-        for (const method of ["eq", "gte", "in", "lte", "order"]) {
+        const equalities: Array<[string, unknown]> = [];
+        let afterId = 0;
+        let limit = Number.POSITIVE_INFINITY;
+        for (const method of ["gte", "in", "lte", "order"]) {
           builder[method] = vi.fn(() => builder);
         }
-        builder.then = (resolve: (value: unknown) => unknown) =>
-          Promise.resolve({ data: tableData[table] ?? [], error: null }).then(
-            resolve,
-          );
+        builder.eq = vi.fn((column: string, value: unknown) => { equalities.push([column, value]); return builder; });
+        builder.gt = vi.fn((column: string, value: number) => { if (column === "id") afterId = value; return builder; });
+        builder.limit = vi.fn((value: number) => { limit = value; return builder; });
+        builder.then = (resolve: (value: unknown) => unknown) => {
+          if (table !== "roster_optimizer_team_games") return Promise.resolve({ data: tableData[table] ?? [], error: null }).then(resolve);
+          scheduleRead.calls++;
+          if (scheduleRead.failAt === scheduleRead.calls) return Promise.resolve({ data: null, error: { message: "read failed" } }).then(resolve);
+          const rows = (tableData[table] ?? []).filter((row) => {
+            const record = row as Record<string, unknown>;
+            return equalities.every(([column, value]) => record[column] === value) && Number(record.id) > afterId;
+          }).sort((a, b) => Number((a as { id: number }).id) - Number((b as { id: number }).id));
+          return Promise.resolve({ data: scheduleRead.emptyAt === scheduleRead.calls ? [] : rows.slice(0, Math.min(limit, scheduleRead.cap)), error: null,
+            count: scheduleRead.missingCount ? null : rows.length }).then(resolve);
+        };
         return builder;
       }),
       upsert: upsertMock,
@@ -52,7 +68,9 @@ const {
   };
   return {
     deleteInMock,
+    fetchBoundedMock: vi.fn(),
     fetchFullSeasonMock: vi.fn(),
+    scheduleRead,
     serviceClient: client,
     tableData,
     upsertMock,
@@ -64,7 +82,7 @@ vi.mock("lib/cron/withCronJobAudit", () => ({
   withCronJobAudit: (handler: unknown) => handler,
 }));
 vi.mock("lib/rosterScheduleData/source", () => ({
-  fetchBoundedNhlSchedule: vi.fn(),
+  fetchBoundedNhlSchedule: fetchBoundedMock,
   fetchFullSeasonNhlSchedule: fetchFullSeasonMock,
 }));
 
@@ -92,12 +110,19 @@ function response() {
   };
 }
 
+function existingRow(id: number, overrides: Record<string, unknown> = {}) {
+  return { id, game_key: "477", season: "2026", source_game_id: 2026029000 + id,
+    team_id: 3, game_date: "2026-10-06", week: 1, game_status: "FUT",
+    schedule_status: "OK", mapping_status: "mapped", is_countable: true, ...overrides };
+}
+
 describe("update roster optimizer schedule route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     tableData.roster_optimizer_team_games = [];
+    Object.assign(scheduleRead, { cap: 1_000, calls: 0, emptyAt: 0, failAt: 0, missingCount: false });
     process.env.CRON_SECRET = "schedule-secret";
-    fetchFullSeasonMock.mockResolvedValue({
+    const source = {
       complete: true,
       warnings: [],
       games: [
@@ -116,7 +141,9 @@ describe("update roster optimizer schedule route", () => {
           },
         },
       ],
-    });
+    };
+    fetchFullSeasonMock.mockResolvedValue(source);
+    fetchBoundedMock.mockResolvedValue(source);
   });
 
   afterEach(() => delete process.env.CRON_SECRET);
@@ -209,6 +236,7 @@ describe("update roster optimizer schedule route", () => {
       {
         id: 99,
         game_key: "477",
+        season: "2026",
         source_game_id: 2026029999,
         team_id: 3,
         game_date: "2026-10-06",
@@ -245,6 +273,7 @@ describe("update roster optimizer schedule route", () => {
       {
         id: 99,
         game_key: "477",
+        season: "2026",
         source_game_id: 2026029999,
         team_id: 3,
         game_date: "2026-10-06",
@@ -282,6 +311,72 @@ describe("update roster optimizer schedule route", () => {
         },
       },
     });
+    expect(deleteInMock).not.toHaveBeenCalled();
+  });
+
+  it("reads every page beyond a capped response before full reconciliation", async () => {
+    scheduleRead.cap = 250;
+    tableData.roster_optimizer_team_games = Array.from({ length: 1_100 }, (_, index) => existingRow(index + 1));
+    const res = response();
+    await handler({ method: "POST", headers: { authorization: "Bearer schedule-secret" },
+      query: { mode: "full", gameKey: "477" } } as never, res as never);
+    expect(res.body).toMatchObject({ success: true, data: { rowsDeleted: 1_100,
+      reconciliation: { status: "complete", staleRowsFound: 1_100 } } });
+    expect(scheduleRead.calls).toBe(5);
+    expect(deleteInMock.mock.calls.flatMap(([, ids]) => ids)).toHaveLength(1_100);
+  });
+
+  it("fails before writes if a later page errors, disappears, or exact completeness is unavailable", async () => {
+    tableData.roster_optimizer_team_games = [existingRow(1), existingRow(2), existingRow(3)];
+    scheduleRead.cap = 2;
+    scheduleRead.failAt = 2;
+    const failedPage = response();
+    await handler({ method: "POST", headers: { authorization: "Bearer schedule-secret" },
+      query: { mode: "full", gameKey: "477" } } as never, failedPage as never);
+    expect(failedPage.statusCode).toBe(500);
+    expect(upsertMock).not.toHaveBeenCalled();
+    expect(deleteInMock).not.toHaveBeenCalled();
+
+    scheduleRead.calls = 0;
+    scheduleRead.failAt = 0;
+    scheduleRead.emptyAt = 2;
+    const partialPage = response();
+    await handler({ method: "POST", headers: { authorization: "Bearer schedule-secret" },
+      query: { mode: "full", gameKey: "477" } } as never, partialPage as never);
+    expect(partialPage.body).toMatchObject({ success: false,
+      error: { code: "SCHEDULE_READ_INCOMPLETE" } });
+    expect(upsertMock).not.toHaveBeenCalled();
+    expect(deleteInMock).not.toHaveBeenCalled();
+
+    scheduleRead.calls = 0;
+    scheduleRead.emptyAt = 0;
+    scheduleRead.missingCount = true;
+    const missingCount = response();
+    await handler({ method: "POST", headers: { authorization: "Bearer schedule-secret" },
+      query: { mode: "full", gameKey: "477" } } as never, missingCount as never);
+    expect(missingCount.body).toMatchObject({ success: false,
+      error: { code: "SCHEDULE_READ_INCOMPLETE" } });
+    expect(upsertMock).not.toHaveBeenCalled();
+    expect(deleteInMock).not.toHaveBeenCalled();
+  });
+
+  it("reconciles only the requested game key and season and never deletes in bounded mode", async () => {
+    tableData.roster_optimizer_team_games = [existingRow(10),
+      existingRow(11, { game_key: "other" }), existingRow(12, { season: "2025" })];
+    const full = response();
+    await handler({ method: "POST", headers: { authorization: "Bearer schedule-secret" },
+      query: { mode: "full", gameKey: "477" } } as never, full as never);
+    expect(full.body).toMatchObject({ success: true, data: { rowsDeleted: 1 } });
+    expect(deleteInMock).toHaveBeenCalledWith("id", [10]);
+
+    vi.clearAllMocks();
+    scheduleRead.calls = 0;
+    const bounded = response();
+    await handler({ method: "POST", headers: { authorization: "Bearer schedule-secret" },
+      query: { mode: "bounded", gameKey: "477", startDate: "2026-10-05", endDate: "2026-10-06" } } as never,
+    bounded as never);
+    expect(bounded.body).toMatchObject({ success: true, data: { rowsDeleted: 0,
+      reconciliation: { status: "not_applicable" } } });
     expect(deleteInMock).not.toHaveBeenCalled();
   });
 });

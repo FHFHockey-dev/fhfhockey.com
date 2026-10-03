@@ -1,0 +1,2 @@
+import {defineConfig,devices} from "@playwright/test";
+export default defineConfig({testDir:"./e2e",timeout:60000,expect:{timeout:15000},workers:1,retries:0,outputDir:"/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/geometry-results",reporter:[["list"],["json",{outputFile:"/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/geometry-report.json"}]],use:{...devices["Desktop Chrome"],baseURL:"http://127.0.0.1:3198",trace:"on",screenshot:"only-on-failure",serviceWorkers:"block"},projects:[{name:"chromium"}]});

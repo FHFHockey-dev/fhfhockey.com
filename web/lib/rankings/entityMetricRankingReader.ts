@@ -1,5 +1,6 @@
 import supabase from "lib/supabase/server";
 import type { Database, Json } from "lib/supabase/database-generated.types";
+import { getSampleConfidence } from "./rankingCalculator";
 
 import {
   getContextualRankingMetricDefinition,
@@ -134,9 +135,9 @@ function parseJsonStringArray(value: Json) {
     : [];
 }
 
-function warningsFor(row: EntityMetricRankingRow) {
+function warningsFor(row: EntityMetricRankingRow, minimumSampleMet: boolean) {
   const warnings: ContextualRankingApiRow["warnings"] = [];
-  if (!row.minimum_sample_met) warnings.push("sample_below_minimum");
+  if (!minimumSampleMet) warnings.push("sample_below_minimum");
   if (row.qualified_peer_count === 0) warnings.push("empty_peer_group");
   if (row.qualified_peer_count > 0 && row.qualified_peer_count < 3) {
     warnings.push("small_peer_group");
@@ -365,6 +366,14 @@ function toApiRow(args: {
   team: TeamMeta | null;
 }): ContextualRankingApiRow {
   const metricKey = args.row.metric_key as ContextualRankingMetricKey;
+  const requirements = getContextualRankingMetricDefinition(metricKey)?.sampleRequirements;
+  const minGp = args.request.minGp ?? requirements?.minimumGp ?? 0;
+  const minToiSeconds = args.request.minToiSeconds ?? requirements?.minimumToiSeconds ?? 0;
+  const gamesPlayed = finiteNumber(args.row.games_played);
+  const toiSeconds = finiteNumber(args.row.toi_seconds);
+  const minimumSampleMet =
+    (minGp === 0 || (gamesPlayed != null && gamesPlayed >= minGp)) &&
+    (minToiSeconds === 0 || (toiSeconds != null && toiSeconds >= minToiSeconds));
   return {
     entity: {
       id: args.row.entity_id,
@@ -380,18 +389,18 @@ function toApiRow(args: {
     },
     deployment: deploymentFor(args.request, args.row),
     sample: {
-      gamesPlayed: args.row.games_played,
-      toiSeconds: args.row.toi_seconds,
+      gamesPlayed,
+      toiSeconds,
       toiPerGameSeconds: getWindowToiPerGame(args.row),
-      confidence: args.row.sample_confidence as ContextualRankingApiRow["sample"]["confidence"],
-      minimumSampleMet: args.row.minimum_sample_met,
+      confidence: getSampleConfidence({ gamesPlayed, toiSeconds, minGp, minToiSeconds, minimumSampleMet }),
+      minimumSampleMet,
     },
     metric: {
       key: metricKey,
       value: args.row.raw_value,
       formattedValue: formatMetricValue(metricKey, args.row.raw_value),
-      rawRank: args.row.raw_rank,
-      percentile: args.row.percentile,
+      rawRank: minimumSampleMet ? args.row.raw_rank : null,
+      percentile: minimumSampleMet ? args.row.percentile : null,
       qualifiedPeerCount: args.row.qualified_peer_count,
     },
     peerGroup: {
@@ -399,8 +408,10 @@ function toApiRow(args: {
       key: args.row.peer_group_key,
     },
     tags: parseJsonStringArray(args.row.tags),
-    warnings: warningsFor(args.row),
-    explanationItems: parseJsonStringArray(args.row.explanation_items),
+    warnings: warningsFor(args.row, minimumSampleMet),
+    explanationItems: minimumSampleMet
+      ? parseJsonStringArray(args.row.explanation_items)
+      : ["Sample unavailable or below selected minimums; rank and percentile unavailable."],
   };
 }
 

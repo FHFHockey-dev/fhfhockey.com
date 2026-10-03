@@ -166,14 +166,21 @@ function Header() {
             <span>Search players</span>
           </button>
           <a
-            className={styles.utility}
+            className={styles.bmcWrap}
             href={SUPPORT_URL}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Support FHFH"
+            aria-label="Buy me a coffee"
           >
-            <NavigationIcon name="heart" />
-            <span>Support</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=${
+                isUnderlyingStatsRoute ? "DBA507" : "07aae2"
+              }&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00`}
+              alt="Buy me a coffee"
+              width={120}
+              height={36}
+            />
           </a>
           {!user && !isLoading ? (
             <button

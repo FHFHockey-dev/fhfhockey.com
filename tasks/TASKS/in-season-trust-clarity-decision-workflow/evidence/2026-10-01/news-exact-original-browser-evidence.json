@@ -1,0 +1,74 @@
+{
+  "capturedAt": "2026-10-02T03:10:07.799Z",
+  "source": "Read-only Chrome DOM observations; signed-in session; no post mutations",
+  "records": [
+    {
+      "author": "Andrew Gross",
+      "editedLabel": false,
+      "evidenceScope": "Original text/author/permalink/time displayed through the exact named repost; not original writer or source-time roster proof",
+      "handle": "AGrossNewsday",
+      "itemId": "cac51da7-3f50-4109-b7b4-3ad80538f07f",
+      "originalUrl": "https://x.com/AGrossNewsday/status/2104975130573070778",
+      "relayId": "2104976276528542197",
+      "repostLabel": true,
+      "requestedUrl": "https://x.com/i/web/status/2104976276528542197",
+      "sourceText": "Mathew Barzal is with #Isles on trip, Pete DeBoer said he is attending all the meetings. Not on the ice yet but said to be \"around the corner.\" So he won't play in the season opener tomorrow in Toronto.",
+      "times": [
+        {
+          "datetime": "2026-09-29T16:42:34.000Z",
+          "display": "12:42 PM · Sep 29, 2026",
+          "href": "/AGrossNewsday/status/2104975130573070778"
+        }
+      ],
+      "observedUrl": "https://x.com/AGrossNewsday/status/2104975130573070778",
+      "databaseComparison": {
+        "receipt": "database-evidence.json",
+        "sameRelayId": true,
+        "storedHeadline": "Kevin He injury update",
+        "storedObservedAt": "2026-09-29 16:48:41.796433+00",
+        "storedPublishedAt": "2026-09-29 17:00:11.412+00",
+        "normalizedPassagesMatch": true,
+        "normalization": "Remove leading RT @handle:, decode provider-escaped apostrophe and collapse whitespace only",
+        "normalizedTextSha256": "0aa453d053a5b4cacea1049b893ce98fed7ed683f4bf7ce8c430c45dcd7dd1d2"
+      },
+      "authorPublicationEastern": "2026-09-29T12:42:34-04:00"
+    },
+    {
+      "author": "Mark Scheig",
+      "editedLabel": false,
+      "evidenceScope": "Original text/author/permalink/time displayed through the exact named repost; not original writer or source-time roster proof",
+      "handle": "mark_scheig",
+      "itemId": "4795b0c8-d119-4977-9b77-45e040224e25",
+      "observedUrl": "https://x.com/mark_scheig/status/2104945363517837788",
+      "originalUrl": "https://x.com/mark_scheig/status/2104945363517837788",
+      "relayId": "2104996083462271476",
+      "repostLabel": true,
+      "requestedUrl": "https://x.com/i/web/status/2104996083462271476",
+      "sourceText": "Don Waddell on Carson Soucy: \"Our goal is to get him signed.\"\n\nDW said they need to determine where the cap space will come from. #CBJ",
+      "times": [
+        {
+          "datetime": "2026-09-29T14:44:17.000Z",
+          "display": "10:44 AM · Sep 29, 2026",
+          "href": "/mark_scheig/status/2104945363517837788"
+        }
+      ],
+      "databaseComparison": {
+        "receipt": "database-evidence.json",
+        "sameRelayId": true,
+        "storedHeadline": "Carson Soucy signing",
+        "storedObservedAt": "2026-09-29 18:13:25.579606+00",
+        "storedPublishedAt": "2026-09-29 18:30:11.336+00",
+        "normalizedPassagesMatch": true,
+        "normalization": "Remove leading RT @handle:, decode provider-escaped apostrophe and collapse whitespace only",
+        "normalizedTextSha256": "793fe932f9b8b987c53de8b6681121e7fbd900a46d94a87d5a20597f1c90ea76"
+      },
+      "authorPublicationEastern": "2026-09-29T10:44:17-04:00"
+    }
+  ],
+  "limitations": [
+    "Current browser-rendered author originals and publication times; not immutable original-writer execution receipts",
+    "No source-time canonical ID or historical team membership authentication",
+    "No full correction/deletion/edit-history audit",
+    "No source/database writes, classifier replay or external posting"
+  ]
+}

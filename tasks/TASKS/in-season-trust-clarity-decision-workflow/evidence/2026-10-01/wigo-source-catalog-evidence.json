@@ -1,0 +1,236 @@
+{
+  "projectId": "fyhftlxokyjtpndbkfse",
+  "recordedAt": "2026-10-01 23:26:13 UTC",
+  "scope": "Read-only current catalog and bounded McDavid match observations; no command bodies, credentials, writer invocation or mutations. Record time is not dataset freshness.",
+  "ratesCatalog": [
+    {
+      "evidence": {
+        "cron_installed": true,
+        "rates_triggers": [],
+        "rates_functions": []
+      }
+    }
+  ],
+  "jobCatalog": [
+    {
+      "evidence": {
+        "matching_jobs": [
+          {
+            "jobid": 220,
+            "active": true,
+            "jobname": "update-nst-current-season",
+            "schedule": "45 8 * * *",
+            "command_md5": "aa50c331ba041cf55bdf044a6cd9a09b",
+            "mentions_nst": true,
+            "mentions_rates": false,
+            "mentions_recent_writer": false
+          },
+          {
+            "jobid": 231,
+            "active": true,
+            "jobname": "update-wigo-table-stats",
+            "schedule": "50 8 * * *",
+            "command_md5": "655e17dddd0956a01d5ebc45ff02293a",
+            "mentions_nst": false,
+            "mentions_rates": false,
+            "mentions_recent_writer": true
+          },
+          {
+            "jobid": 271,
+            "active": true,
+            "jobname": "daily-refresh-nstwgo-matview",
+            "schedule": "00 04 * * *",
+            "command_md5": "cc7ffb29c78461cf6c83374ee66cdd02",
+            "mentions_nst": true,
+            "mentions_rates": false,
+            "mentions_recent_writer": false
+          },
+          {
+            "jobid": 328,
+            "active": true,
+            "jobname": "update-nst-team-daily-incremental",
+            "schedule": "55 9 * * *",
+            "command_md5": "b6ded8047de466467b230de1c34b7378",
+            "mentions_nst": true,
+            "mentions_rates": false,
+            "mentions_recent_writer": false
+          },
+          {
+            "jobid": 329,
+            "active": true,
+            "jobname": "update-nst-team-stats-all",
+            "schedule": "55 10 * * *",
+            "command_md5": "98a88c36bfab55d6b494ffbb1a94aa55",
+            "mentions_nst": true,
+            "mentions_rates": false,
+            "mentions_recent_writer": false
+          },
+          {
+            "jobid": 79,
+            "active": true,
+            "jobname": "update-nst-gamelog",
+            "schedule": "25 7 * * *",
+            "command_md5": "2f68accfa22e91fecdb8295a2d04d3c4",
+            "mentions_nst": true,
+            "mentions_rates": false,
+            "mentions_recent_writer": false
+          },
+          {
+            "jobid": 275,
+            "active": false,
+            "jobname": "update-nst-team-daily",
+            "schedule": "55 9 * * *",
+            "command_md5": "a7d1f8c0e1eb93ee46d4f0a9cca47e4d",
+            "mentions_nst": true,
+            "mentions_rates": false,
+            "mentions_recent_writer": false
+          },
+          {
+            "jobid": 17,
+            "active": false,
+            "jobname": "update-nst-tables-all",
+            "schedule": "10 8 * * *",
+            "command_md5": "0d0f905978a67f79ad479bdd22e13190",
+            "mentions_nst": true,
+            "mentions_rates": false,
+            "mentions_recent_writer": false
+          },
+          {
+            "jobid": 99,
+            "active": true,
+            "jobname": "update-nst-goalies",
+            "schedule": "30 8 * * *",
+            "command_md5": "6af85756ea175e7ec11243603b5e3f0b",
+            "mentions_nst": true,
+            "mentions_rates": false,
+            "mentions_recent_writer": false
+          }
+        ],
+        "identity_columns": [
+          {
+            "type": "bigint",
+            "table": "nst_gamelog_as_counts",
+            "column": "id"
+          },
+          {
+            "type": "bigint",
+            "table": "nst_gamelog_as_counts",
+            "column": "player_id"
+          },
+          {
+            "type": "integer",
+            "table": "nst_gamelog_as_counts",
+            "column": "season"
+          },
+          {
+            "type": "date",
+            "table": "nst_gamelog_as_counts",
+            "column": "date_scraped"
+          },
+          {
+            "type": "integer",
+            "table": "nst_gamelog_as_counts_oi",
+            "column": "player_id"
+          },
+          {
+            "type": "date",
+            "table": "nst_gamelog_as_counts_oi",
+            "column": "date_scraped"
+          },
+          {
+            "type": "integer",
+            "table": "nst_gamelog_as_counts_oi",
+            "column": "season"
+          },
+          {
+            "type": "bigint",
+            "table": "nst_gamelog_as_counts_oi",
+            "column": "id"
+          },
+          {
+            "type": "integer",
+            "table": "wgo_skater_stats",
+            "column": "id"
+          },
+          {
+            "type": "integer",
+            "table": "wgo_skater_stats",
+            "column": "player_id"
+          },
+          {
+            "type": "date",
+            "table": "wgo_skater_stats",
+            "column": "date"
+          },
+          {
+            "type": "integer",
+            "table": "wgo_skater_stats",
+            "column": "season_id"
+          },
+          {
+            "type": "bigint",
+            "table": "wgo_skater_stats",
+            "column": "game_id"
+          },
+          {
+            "type": "bigint",
+            "table": "wigo_rates",
+            "column": "player_id"
+          },
+          {
+            "type": "timestamp with time zone",
+            "table": "wigo_rates",
+            "column": "updated_at"
+          }
+        ]
+      }
+    }
+  ],
+  "identityCatalog": [
+    {
+      "evidence": {
+        "cron_timezone": null,
+        "nst_unique_keys": [
+          {
+            "table": "nst_gamelog_as_counts",
+            "constraint": "nst_gamelog_as_counts_pkey",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "table": "nst_gamelog_as_counts",
+            "constraint": "nst_gamelog_as_counts_unique",
+            "definition": "UNIQUE (player_id, date_scraped)"
+          },
+          {
+            "table": "nst_gamelog_as_counts",
+            "constraint": "unique_player_date_as_counts",
+            "definition": "UNIQUE (player_id, date_scraped)"
+          },
+          {
+            "table": "nst_gamelog_as_counts_oi",
+            "constraint": "nst_gamelog_as_counts_oi_pkey",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "table": "nst_gamelog_as_counts_oi",
+            "constraint": "nst_gamelog_as_counts_oi_unique",
+            "definition": "UNIQUE (player_id, date_scraped)"
+          },
+          {
+            "table": "nst_gamelog_as_counts_oi",
+            "constraint": "unique_player_date_as_counts_oi",
+            "definition": "UNIQUE (player_id, date_scraped)"
+          }
+        ],
+        "mcdavid_recent_matches": {
+          "games": 20,
+          "latest_date": "2026-09-29",
+          "missing_nst": 1,
+          "earliest_date": "2026-03-08",
+          "unknown_season": 0,
+          "season_mismatch": 0
+        }
+      }
+    }
+  ]
+}

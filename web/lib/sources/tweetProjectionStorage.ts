@@ -37,19 +37,21 @@ export async function enrichTweetInjuryHistory(supabase: any, sources: ParsedLin
     const interpretation = source.metadata?.interpretation as TweetInterpretation | undefined;
     if (!interpretation?.events?.length || !source.tweetPostedAt || source.nhlFilterStatus !== "accepted") continue;
     for (const event of interpretation.events.filter((event) => event.kind === "injury")) {
-      const { data, error } = await supabase.from("tweet_player_events").select("availability")
+      const { data, error } = await supabase.from("tweet_player_events").select("availability,published_at")
         .eq("player_id", event.playerId).lt("published_at", source.tweetPostedAt)
-        .in("availability", ["out", "available"]).order("published_at", { ascending: false }).limit(1);
+        .in("availability", ["out", "available"]).order("published_at", { ascending: false }).limit(2);
       if (error) throw error;
-      let previous: "injured" | "healthy" | undefined = data?.[0]?.availability === "out" ? "injured" : data?.[0]?.availability === "available" ? "healthy" : undefined;
-      if (!previous) {
+      const conflictingHistory = data?.length > 1 && data[0].published_at === data[1].published_at && data[0].availability !== data[1].availability;
+      if (conflictingHistory && !event.reviewReason) event.reviewReason = "conflicting_history";
+      let previous: "injured" | "healthy" | undefined = conflictingHistory ? undefined : data?.[0]?.availability === "out" ? "injured" : data?.[0]?.availability === "available" ? "healthy" : undefined;
+      if (!previous && !conflictingHistory) {
         const history = await supabase.from("player_status_history").select("status_state,status_expires_at")
           .eq("player_id", event.playerId).lt("observed_at", source.tweetPostedAt).order("observed_at", { ascending: false }).limit(1);
         if (history.error) throw history.error;
         const status = history.data?.[0];
         if (status?.status_state === "injured" && (!status.status_expires_at || Date.parse(status.status_expires_at) > Date.parse(source.tweetPostedAt))) previous = "injured";
       }
-      event.state = classifyInjuryEvent(event.evidence.text, previous);
+      if (event.reviewReason !== "conflicting_claims") event.state = classifyInjuryEvent(event.evidence.text, previous);
     }
   }
 }
@@ -106,7 +108,7 @@ export async function persistTweetProjectionReports(supabase: any, sources: Pars
       const interpretation = source.metadata?.interpretation as TweetInterpretation | undefined;
       if (!interpretation?.events?.length || interpretation.context !== "game") return [];
       return (["goalie", "injury"] as const).flatMap((kind) => {
-        const typedEvents = interpretation.events!.filter((event) => event.kind === kind);
+        const typedEvents = interpretation.events!.filter((event) => event.kind === kind && (event.teamId == null || event.teamId === source.team?.id));
         if (!typedEvents.length) return [];
         const base = toLinesCccRow({ source, rosterEntries: [] });
         const report = projectionReportFromSource(source)!;

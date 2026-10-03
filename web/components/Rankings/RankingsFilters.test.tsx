@@ -79,6 +79,17 @@ function renderFilters(
 }
 
 describe("RankingsFilters", () => {
+  it("applies the fantasy preset while leaving season selection to the existing URL state", () => {
+    const onChange = renderFilters(vi.fn(), { ...DEFAULT_RANKINGS_FILTERS, season: "20262027", minGp: "10" });
+    fireEvent.click(screen.getByRole("button", { name: "Fantasy preset" }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      entity: "skaters", tab: "rankings", strength: "all", window: "season",
+      metric: "mcm_score", matrixSortMetric: "mcm_score", minGp: "1", minToi: "600", page: "1",
+    }));
+    expect(onChange.mock.calls[0][0]).not.toHaveProperty("season");
+    expect(screen.getByText(/eligibility rules, not reliability guarantees/)).toBeTruthy();
+  });
+
   it("opens More Filters and emits advanced filter patches", () => {
     const onChange = renderFilters();
 
@@ -87,7 +98,7 @@ describe("RankingsFilters", () => {
     fireEvent.click(screen.getByRole("button", { name: "More Filters" }));
     const dialog = screen.getByRole("dialog", { name: "More ranking filters" });
 
-    fireEvent.change(within(dialog).getByLabelText("Sample"), {
+    fireEvent.change(within(dialog).getByLabelText("Sample versus minimums"), {
       target: { value: "medium_plus" },
     });
     expect(onChange).toHaveBeenCalledWith({

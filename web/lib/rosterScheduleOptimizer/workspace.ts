@@ -43,6 +43,7 @@ export function writeWorkspace(storage: Pick<Storage, "setItem">, workspace: Pla
 export function retainProviderInputs(workspace: PlanningWorkspace, snapshot: PlanningSnapshot): PlanningWorkspace {
   const referenced = new Set([
     ...snapshot.roster.map((entry) => entry.playerId),
+    ...(workspace.lockedAssignments ?? []).map((entry) => entry.playerId),
     ...workspace.intent.steps.flatMap((step) => [step.playerId, step.dropPlayerId].filter((id): id is string => Boolean(id))),
     ...workspace.intent.protectedPlayerIds,
     ...workspace.intent.excludedPlayerIds,
@@ -50,7 +51,9 @@ export function retainProviderInputs(workspace: PlanningWorkspace, snapshot: Pla
   const players = new Map([...workspace.manualPlayers, ...snapshot.players].filter((player) => referenced.has(player.id)).map((player) => [player.id, player]));
   const manualPlayers: PlanningPlayer[] = [...players.values()].map((player) => ({
     id: player.id, nhlId: player.nhlId, name: player.name, teamAbbreviation: player.teamAbbreviation,
+    nhlTeamId: player.nhlTeamId, rosterRevision: player.rosterRevision,
     eligiblePositions: player.eligiblePositions, playerClass: player.playerClass,
+    eligibilityVerified: workspace.manualPlayers.some(manual => manual.id === player.id && manual.eligibilityVerified === true),
     availability: "unknown", ownership: null, canDrop: null, holdValue: null, reserveEligibility: [],
   }));
   return { ...workspace, context: snapshot.context, rules: snapshot.rules, roster: snapshot.roster, manualPlayers };
@@ -75,10 +78,19 @@ export function resolveImportedNames(names: string, catalog: readonly PlanningPl
 /** Retained roster evidence supports schedule analysis, never fresh availability or transactions. */
 export function retainedScheduleSnapshot(workspace: PlanningWorkspace, data: PlanningData, asOf: string): PlanningSnapshot | null {
   if (!workspace.roster.length) return null;
-  const players = [...new Map([...data.players, ...workspace.manualPlayers].map(player => [player.id, { ...player, availability: "unknown" as const, canDrop: null, reserveEligibility: [] }])).values()];
+  const catalog = new Map(data.players.map(player => [player.id, player]));
+  const players = [...new Map([...data.players, ...workspace.manualPlayers].map((player): [string, PlanningPlayer] => {
+    const current = catalog.get(player.id);
+    const sameIdentity = !!current && current.nhlId === player.nhlId && current.teamAbbreviation === player.teamAbbreviation;
+    return [player.id, { ...player, availability: "unknown" as const, canDrop: null, reserveEligibility: [],
+      nhlTeamId: sameIdentity ? current.nhlTeamId ?? player.nhlTeamId : undefined,
+      rosterRevision: sameIdentity ? current.rosterRevision ?? player.rosterRevision : undefined,
+      eligibilityVerified: sameIdentity ? player.eligibilityVerified ?? current.eligibilityVerified ?? false
+        : !current && player.eligibilityVerified === true } ];
+  })).values()];
   return {
     id: `retained:${workspace.context.teamId}:${workspace.context.startDate}:${workspace.context.endDate}:${asOf}`,
-    context: { ...workspace.context, asOf }, players, roster: workspace.roster, games: data.games, forecasts: data.forecasts,
+    context: { ...workspace.context, asOf }, players, roster: workspace.roster, games: data.games, forecasts: data.forecasts, baselineSources: data.baselineSources, forecastManifest: data.forecastManifest,
     rules: { ...workspace.rules, acquisitionTiming: "unknown", acquisitionCost: null, periods: [], goalieMinimum: { ...workspace.rules.goalieMinimum, credited: null }, unsupported: [...workspace.rules.unsupported, "Retained roster inputs are unverified; this is provisional schedule analysis."] },
     lockedAssignments: workspace.lockedAssignments ?? [], realized: {}, opponent: null,
     evidence: { ...data.evidence, roster: { source: "Retained local roster", asOf: workspace.context.asOf, seasonId: workspace.context.seasonId, completeness: "partial", limitations: ["Yahoo has not verified this roster, its locks or player availability for the current analysis."] } },

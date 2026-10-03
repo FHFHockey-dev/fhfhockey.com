@@ -12,7 +12,9 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
   const queryCalls: QueryState[] = [];
   const scenario = {
     entityRows: [] as Array<Record<string, unknown>>,
+    compositeRows: [] as Array<Record<string, unknown>>,
     paginatedRows: [] as Array<Record<string, unknown>>,
+    rollingFailures: 0,
   };
 
   function buildRollingRow(playerId: number, overrides: Record<string, unknown> = {}) {
@@ -37,6 +39,9 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
   }
 
   function resolveQuery(state: QueryState) {
+    if (state.table === "skater_composite_ratings") {
+      return { data: scenario.compositeRows, error: null };
+    }
     const requestedMetricKeys = Array.isArray(state.filters.metric_key)
       ? state.filters.metric_key
       : state.filters.metric_key == null
@@ -92,6 +97,10 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
     }
 
     if (state.table === "rolling_player_game_metrics") {
+      if (scenario.rollingFailures > 0) {
+        scenario.rollingFailures -= 1;
+        return { data: null, error: { code: "57014", message: "rolling read timed out" } };
+      }
       const dates = requestedDates(state);
       if (
         scenario.paginatedRows.length > 0 &&
@@ -100,7 +109,9 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
         const from = state.rangeFrom ?? 0;
         const to = state.rangeTo ?? scenario.paginatedRows.length - 1;
         return {
-          data: scenario.paginatedRows.slice(from, to + 1),
+          data: scenario.paginatedRows.slice(from, to + 1).map(row =>
+            Object.fromEntries((state.selectFields ?? "").split(",").map(field => [field, row[field]])),
+          ),
           error: null,
         };
       }
@@ -215,15 +226,85 @@ import {
   clearContextualRankingsQueryCachesForTests,
 } from "./rankingQueries";
 import { clearEntityMetricRankingReaderCachesForTests } from "./entityMetricRankingReader";
+import rankingsHandler from "../../pages/api/v1/contextual-rankings";
+import matrixHandler from "../../pages/api/v1/contextual-rankings/matrix";
+import { clearPlayerMatrixSurfaceCachesForTests } from "./playerMatrix";
 
 describe("rankingQueries", () => {
   beforeEach(() => {
     queryCalls.length = 0;
     scenario.entityRows = [];
+    scenario.compositeRows = [];
     scenario.paginatedRows = [];
+    scenario.rollingFailures = 0;
     clearContextualRankingsQueryCachesForTests();
     clearEntityMetricRankingReaderCachesForTests();
+    clearPlayerMatrixSurfaceCachesForTests();
     supabaseMock.from.mockClear();
+  });
+
+  it.each([
+    { gamesPlayed: null, toiSeconds: 600, meets: false },
+    { gamesPlayed: 5, toiSeconds: null, meets: false },
+    { gamesPlayed: 1, toiSeconds: 600, meets: false },
+    { gamesPlayed: 5, toiSeconds: 299, meets: false },
+    { gamesPlayed: 3, toiSeconds: 300, meets: true },
+  ])("validates snapshot sample minimums through the serving route: %j", async ({ gamesPlayed, toiSeconds, meets }) => {
+    scenario.entityRows = [{
+      entity_type: "skater", entity_id: 1, team_id: 10, season_id: 20252026,
+      snapshot_date: "2026-04-16", window_type: "season", window_size: 0,
+      strength_state: "5v5", metric_key: "sog_per_60", peer_group_type: "all_skaters", peer_group_key: "all",
+      raw_value: 9.2, raw_rank: 1, percentile: 100, qualified_peer_count: 10,
+      minimum_sample_met: true, sample_confidence: "high", games_played: gamesPlayed, toi_seconds: toiSeconds,
+      tags: [], explanation_items: ["Rank 1 of 10."], provenance: {},
+    }];
+    const res: any = { statusCode: 200, body: null, status(code: number) { this.statusCode = code; return this; }, json(body: unknown) { this.body = body; return this; } };
+    await rankingsHandler({ method: "GET", query: { season: "20252026", strength: "5v5", metric: "sog_per_60", min_gp: "3", min_toi: "300" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    const row = res.body.rankings[0];
+    expect(row.sample).toMatchObject({ gamesPlayed, toiSeconds, minimumSampleMet: meets, confidence: meets ? "medium" : "low" });
+    expect(row.metric.rawRank).toBe(meets ? 1 : null);
+    expect(row.metric.percentile).toBe(meets ? 100 : null);
+    expect(row.warnings.includes("sample_below_minimum")).toBe(!meets);
+    expect(row.explanationItems).toEqual(meets ? ["Rank 1 of 10."] : ["Sample unavailable or below selected minimums; rank and percentile unavailable."]);
+    const matrixQuery = { season: "20252026", strength: "5v5", sort_metric: "sog_per_60", min_gp: "3", min_toi: "300" };
+    await matrixHandler({ method: "GET", query: matrixQuery } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.rows[0].sample).toMatchObject({ gamesPlayed, toiSeconds, minimumSampleMet: meets });
+    expect(res.body.rows[0].metrics.sog_per_60.rank).toBe(meets ? 1 : null);
+    await matrixHandler({ method: "GET", query: { ...matrixQuery, sample_confidence: "medium_plus" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.rows).toHaveLength(meets ? 1 : 0);
+  });
+
+  it.each([
+    { gamesPlayed: null, toiSeconds: 600, meets: false },
+    { gamesPlayed: 1, toiSeconds: null, meets: false },
+    { gamesPlayed: 1, toiSeconds: 599, meets: false },
+    { gamesPlayed: 1, toiSeconds: 600, meets: true },
+  ])("applies MCM minimums through the matrix serving route: %j", async ({ gamesPlayed, toiSeconds, meets }) => {
+    scenario.entityRows = [{
+      entity_type: "skater", entity_id: 1, team_id: 10, season_id: 20252026,
+      snapshot_date: "2026-04-16", window_type: "season", window_size: 0,
+      strength_state: "all", metric_key: "points_per_60", peer_group_type: "all_skaters", peer_group_key: "all",
+      raw_value: 9.2, raw_rank: 1, percentile: 100, qualified_peer_count: 10,
+      minimum_sample_met: true, sample_confidence: "high", games_played: gamesPlayed, toi_seconds: toiSeconds,
+      tags: [], explanation_items: [], provenance: {},
+    }];
+    scenario.compositeRows = [{
+      player_id: 1, snapshot_date: "2026-04-16", mcm_score: 88.6,
+      methodology_version: "contextual_composites_v1",
+    }];
+    const res: any = { statusCode: 200, body: null, status(code: number) { this.statusCode = code; return this; }, json(body: unknown) { this.body = body; return this; } };
+    const query = { season: "20252026", strength: "all", sort_metric: "mcm_score" };
+    await matrixHandler({ method: "GET", query } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.rows[0].sample).toMatchObject({ gamesPlayed, toiSeconds, minimumSampleMet: meets, confidence: meets ? "medium" : "low" });
+    expect(res.body.rows[0].metrics.mcm_score).toMatchObject({ rawValue: 88.6, percentile: meets ? 88.6 : null, sampleConfidence: meets ? "medium" : "low" });
+    expect(res.body.rows[0].sort).toMatchObject({ rank: meets ? 1 : null, percentile: meets ? 88.6 : null });
+    await matrixHandler({ method: "GET", query: { ...query, sample_confidence: "medium_plus" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.rows).toHaveLength(meets ? 1 : 0);
   });
 
   it("uses entity_metric_rankings for Metric Explorer when durable rows exist", async () => {
@@ -408,7 +489,7 @@ describe("rankingQueries", () => {
   });
 
   it("falls back from a null-only latest snapshot to the latest calculable metric snapshot", async () => {
-    const response = await buildContextualRankingsSurface({
+    const request = {
       entity: "skaters",
       season: 20252026,
       asOfDate: null,
@@ -425,7 +506,21 @@ describe("rankingQueries", () => {
       limit: 100,
       teamId: null,
       entityIds: null,
-    });
+    } as const;
+    scenario.rollingFailures = 1;
+    const failures = await Promise.allSettled([
+      buildContextualRankingsSurface(request),
+      buildContextualRankingsSurface({ ...request, teamId: 999 }),
+    ]);
+    for (const failure of failures) {
+      expect(failure.status).toBe("rejected");
+      if (failure.status === "rejected") expect(failure.reason).toMatchObject({ code: "57014" });
+    }
+    queryCalls.length = 0;
+    const [response, filteredResponse] = await Promise.all([
+      buildContextualRankingsSurface(request),
+      buildContextualRankingsSurface({ ...request, teamId: 999 }),
+    ]);
 
     expect(response.meta.latestAvailableSnapshotDate).toBe("2026-04-16");
     expect(response.meta.snapshotDate).toBe("2026-04-11");
@@ -435,6 +530,7 @@ describe("rankingQueries", () => {
     expect(response.meta.message).toMatch(/latest calculable ixg_per_60/);
     expect(response.rankings).toHaveLength(1);
     expect(response.rankings[0]?.metric.value).toBe(3);
+    expect(filteredResponse.rankings).toHaveLength(0);
     expect(
       queryCalls.filter(
         (call) =>
@@ -442,6 +538,37 @@ describe("rankingQueries", () => {
           call.selectFields !== "game_date",
       ).map((call) => call.filters.game_date),
     ).toEqual(["2026-04-16", "2026-04-11", "2026-04-11"]);
+  });
+
+  it.each(["season", "last5", "last10", "last20"] as const)("reads PP numerator and denominator fields for the %s window", async (window) => {
+    scenario.paginatedRows = [
+      { points: 2, toi: 600 }, { points: 0, toi: 600 },
+      { points: null, toi: 600 }, { points: 2, toi: null },
+      { points: 2, toi: 0 }, { points: 2, toi: 599 },
+    ].map(({ points, toi }, index) => ({
+      player_id: index + 1, season: 20252026, strength_state: "all", team_id: 10,
+      game_date: "2026-04-16", updated_at: "2026-04-16T06:00:00.000Z",
+      games_played: 5, season_games_played: 5, toi_seconds_avg_season: 1000,
+      pp_points_avg_season: points == null ? null : points / 5,
+      pp_toi_seconds_avg_season: toi == null ? null : toi / 5,
+      [`pp_points_total_${window}`]: points, [`pp_toi_seconds_total_${window}`]: toi,
+    }));
+    const response = await buildContextualRankingsSurface({
+      entity: "skaters", season: 20252026, asOfDate: "2026-04-16", window,
+      position: "all", deployment: "all", strength: "all", metric: "pp_points_per_60",
+      minGp: 1, minToiSeconds: 600, peerGroupType: "all_skaters", sort: "percentile",
+      direction: "desc", limit: 100, teamId: null, entityIds: null,
+    });
+    expect(response.meta.unavailable).toBe(false);
+    const rows = new Map(response.rankings.map(row => [row.entity.id, row]));
+    expect(rows.get(1)?.metric.value).toBe(12);
+    expect(rows.get(2)?.metric.value).toBe(0);
+    expect(rows.get(1)?.sample).toMatchObject({ toiSeconds: 600, minimumSampleMet: true });
+    expect(rows.get(2)?.sample.minimumSampleMet).toBe(true);
+    for (const id of [3, 4, 5]) expect(rows.get(id)?.metric.value).toBeNull();
+    expect(rows.get(6)?.metric.value).toBeCloseTo(12.020033, 5);
+    expect(rows.get(6)?.sample).toMatchObject({ toiSeconds: 599, minimumSampleMet: false });
+    expect(rows.get(6)?.metric.percentile).toBeNull();
   });
 
   it("paginates rolling snapshot rows beyond Supabase's single-page limit", async () => {

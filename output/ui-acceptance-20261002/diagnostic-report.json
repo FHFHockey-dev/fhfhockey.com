@@ -1,0 +1,153 @@
+{
+  "config": {
+    "configFile": "/private/tmp/fhfh-ui-acceptance-20261002/web/diagnostic.config.ts",
+    "rootDir": "/private/tmp/fhfh-ui-acceptance-20261002/web/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/diagnostic-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/private/tmp/fhfh-ui-acceptance-20261002/web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/diagnostic-report.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "shift-fit-diagnostic.spec.ts",
+      "file": "shift-fit-diagnostic.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "diagnose desktop matrix minimum sizes without changing application source",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2779,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n    at /private/tmp/fhfh-ui-acceptance-20261002/web/e2e/shift-fit-diagnostic.spec.ts:91:30",
+                    "location": {
+                      "file": "/private/tmp/fhfh-ui-acceptance-20261002/web/e2e/shift-fit-diagnostic.spec.ts",
+                      "column": 30,
+                      "line": 91
+                    },
+                    "snippet": "  89 |     });\n  90 |     const fs = await import(\"node:fs\"); fs.writeFileSync(testInfo.outputPath(`fit-${width}.json`),JSON.stringify({width,height,...fit},null,2));\n> 91 |     expect(fit.documentFits).toBe(true);expect(fit.outside).toBe(0);expect(fit.overflow).toBe(0);expect(fit.rowsFit).toBe(true);\n     |                              ^\n  92 |     await page.screenshot({ path: testInfo.outputPath(`shift-chart-${width}.png`) });\n  93 |   }\n  94 |   await page.getByRole(\"slider\", { name: \"Replay time\", exact: true }).fill(\"3700\");"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/private/tmp/fhfh-ui-acceptance-20261002/web/e2e/shift-fit-diagnostic.spec.ts",
+                        "column": 30,
+                        "line": 91
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  89 |     });\n  90 |     const fs = await import(\"node:fs\"); fs.writeFileSync(testInfo.outputPath(`fit-${width}.json`),JSON.stringify({width,height,...fit},null,2));\n> 91 |     expect(fit.documentFits).toBe(true);expect(fit.outside).toBe(0);expect(fit.overflow).toBe(0);expect(fit.rowsFit).toBe(true);\n     |                              ^\n  92 |     await page.screenshot({ path: testInfo.outputPath(`shift-chart-${width}.png`) });\n  93 |   }\n  94 |   await page.getByRole(\"slider\", { name: \"Replay time\", exact: true }).fill(\"3700\");\n    at /private/tmp/fhfh-ui-acceptance-20261002/web/e2e/shift-fit-diagnostic.spec.ts:91:30"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-02T19:21:38.008Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/diagnostic-results/shift-fit-diagnostic-diagn-84afb-changing-application-source-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/diagnostic-results/shift-fit-diagnostic-diagn-84afb-changing-application-source-chromium/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/diagnostic-results/shift-fit-diagnostic-diagn-84afb-changing-application-source-chromium/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/private/tmp/fhfh-ui-acceptance-20261002/web/e2e/shift-fit-diagnostic.spec.ts",
+                    "column": 30,
+                    "line": 91
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "863ee68a7805460c88dc-2eea299b2339fad105e3",
+          "file": "shift-fit-diagnostic.spec.ts",
+          "line": 63,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-02T19:21:37.716Z",
+    "duration": 3286.571,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

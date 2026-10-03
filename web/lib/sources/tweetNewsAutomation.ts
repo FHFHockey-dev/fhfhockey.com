@@ -342,7 +342,10 @@ function buildRuleAssignment(args: {
     const matchingEvents = events.filter((event) => new RegExp(args.match.regex, "i").test(event.evidence.text) &&
       (args.match.category === "RETURN" ? event.state === "confirmed_return" || event.state === "possible_return" :
         args.match.category === "GOALIE START" ? event.kind === "goalie" && event.state !== "ruled_out" :
-        event.kind === "injury" && event.state !== "confirmed_return" && event.state !== "possible_return"));
+        event.kind === "injury" && event.state !== "confirmed_return" && event.state !== "possible_return") &&
+      (args.match.subcategory !== "OUT" || event.availability === "out") &&
+      (args.match.subcategory !== "FULLY HEALTHY" || event.availability === "available") &&
+      (args.match.subcategory !== "CONFIRMED STARTER" || event.state === "confirmed"));
     assignedPlayers = args.matchedPlayers.filter((player) => matchingEvents.some((event) => event.playerId === player.id));
   }
   const playerNames = assignedPlayers.map((player) => player.fullName);
@@ -358,7 +361,7 @@ function buildRuleAssignment(args: {
     notes: `Matched phrase rule ${args.match.ruleId}.`,
     ruleId: args.match.ruleId,
     confidence: args.match.confidence,
-    autoPublish: args.match.autoPublish,
+    autoPublish: args.match.autoPublish && (!tweetPipelineFlags().interpretation || args.match.subcategory !== "FULLY HEALTHY" || assignedPlayers.length > 0),
     requiredEvidence: args.match.requiredEvidence,
   };
 }

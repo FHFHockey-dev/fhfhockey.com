@@ -1453,7 +1453,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
                               }
                               title={
                                 !keeperUsesPick(k) && structuralSettingsLocked
-                                  ? "No-pick keepers are locked after the first ordinary pick."
+                                  ? "Keepers without assigned picks are locked after the first ordinary pick."
                                   : undefined
                               }
                               onClick={() => {

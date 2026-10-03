@@ -65,9 +65,11 @@ const rollingSnapshotRowsCache = new Map<
   string,
   { expiresAt: number; rows: RollingPlayerGameMetricRow[] }
 >();
+const rollingSnapshotRowsInFlight = new Map<string, Promise<RollingPlayerGameMetricRow[]>>();
 
 export function clearContextualRankingsQueryCachesForTests() {
   rollingSnapshotRowsCache.clear();
+  rollingSnapshotRowsInFlight.clear();
 }
 
 function finiteNumber(value: unknown): number | null {
@@ -292,43 +294,51 @@ async function fetchRollingRowsForSnapshot(
     );
   }
 
-  const rows: RollingPlayerGameMetricRow[] = [];
-
-  for (
-    let index = 0;
-    index < datesToFetch.length;
-    index += ROLLING_DATE_QUERY_CONCURRENCY
-  ) {
-    const dateChunk = datesToFetch.slice(
-      index,
-      index + ROLLING_DATE_QUERY_CONCURRENCY,
-    );
-    const chunkRows = await Promise.all(
-      dateChunk.map((gameDate) =>
-        fetchRollingRowsForGameDate(request, gameDate),
-      ),
-    );
-    rows.push(...chunkRows.flat());
+  let pending = rollingSnapshotRowsInFlight.get(cacheKey);
+  if (!pending) {
+    pending = (async () => {
+      const rows: RollingPlayerGameMetricRow[] = [];
+      for (
+        let index = 0;
+        index < datesToFetch.length;
+        index += ROLLING_DATE_QUERY_CONCURRENCY
+      ) {
+        const dateChunk = datesToFetch.slice(
+          index,
+          index + ROLLING_DATE_QUERY_CONCURRENCY,
+        );
+        const chunkRows = await Promise.all(
+          dateChunk.map((gameDate) => fetchRollingRowsForGameDate(request, gameDate)),
+        );
+        rows.push(...chunkRows.flat());
+      }
+      const latestByPlayerId = new Map<number, RollingPlayerGameMetricRow>();
+      for (const row of rows) {
+        if (typeof row.player_id !== "number") continue;
+        const current = latestByPlayerId.get(row.player_id);
+        if (!current || isNewerRollingRow(row, current)) {
+          latestByPlayerId.set(row.player_id, row);
+        }
+      }
+      const latestRows = Array.from(latestByPlayerId.values());
+      rollingSnapshotRowsCache.set(cacheKey, {
+        expiresAt: Date.now() + ROLLING_SNAPSHOT_CACHE_TTL_MS,
+        rows: latestRows,
+      });
+      return latestRows;
+    })();
+    rollingSnapshotRowsInFlight.set(cacheKey, pending);
   }
-
-  const latestByPlayerId = new Map<number, RollingPlayerGameMetricRow>();
-  for (const row of rows) {
-    if (typeof row.player_id !== "number") continue;
-    const current = latestByPlayerId.get(row.player_id);
-    if (!current || isNewerRollingRow(row, current)) {
-      latestByPlayerId.set(row.player_id, row);
+  try {
+    const latestRows = await pending;
+    return latestRows.filter(
+      (row) => request.teamId == null || row.team_id === request.teamId,
+    );
+  } finally {
+    if (rollingSnapshotRowsInFlight.get(cacheKey) === pending) {
+      rollingSnapshotRowsInFlight.delete(cacheKey);
     }
   }
-
-  const latestRows = Array.from(latestByPlayerId.values());
-  rollingSnapshotRowsCache.set(cacheKey, {
-    expiresAt: now + ROLLING_SNAPSHOT_CACHE_TTL_MS,
-    rows: latestRows,
-  });
-
-  return latestRows.filter(
-    (row) => request.teamId == null || row.team_id === request.teamId,
-  );
 }
 
 async function fetchRollingRowsForGameDate(

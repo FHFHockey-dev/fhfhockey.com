@@ -32,6 +32,7 @@ export type ExistingRosterScheduleRow = Pick<
   | "source_game_id"
   | "team_id"
   | "game_date"
+  | "start_time"
   | "week"
 >;
 
@@ -70,7 +71,9 @@ export function summarizeRosterScheduleChanges(args: {
       newRows += 1;
       continue;
     }
-    if (existing.game_date !== incoming.game_date) {
+    const existingStart = existing.start_time == null ? null : Date.parse(existing.start_time);
+    const incomingStart = incoming.start_time == null ? null : Date.parse(incoming.start_time);
+    if (existing.game_date !== incoming.game_date || existingStart !== incomingStart) {
       rescheduledRows += 1;
       rescheduledSourceGameIds.add(incoming.source_game_id);
       continue;

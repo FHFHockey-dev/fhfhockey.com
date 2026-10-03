@@ -6,6 +6,7 @@ import {
   buildGoalieMatrixRequestPath,
   buildMatrixRequestPath,
   buildRankingsRequestPath,
+  buildRankingsContextSummary,
   buildSnapshotRequestPath,
   buildTeamMatrixRequestPath,
   buildWarRequestPath,
@@ -14,6 +15,24 @@ import {
 } from "./rankingUrlState";
 
 describe("rankingUrlState", () => {
+  it("keeps season and both selected minimums in matrix and explorer summaries", () => {
+    const filters = normalizeRankingsFilters({ season: "20252026", strength: "all", min_gp: "1", min_toi: "600", sort_metric: "mcm_score" });
+    expect(buildRankingsContextSummary(filters, 0)).toBe("2025–2026 performance · No eligible values for MCM Score across all skaters · ALL · Season · Min 1 GP · Min 600s TOI");
+    expect(buildRankingsContextSummary({ ...filters, tab: "metric_explorer", metric: "sog_per_60", window: "last5" })).toContain("2025–2026 performance · SOG/60 explorer across all skaters · ALL · Last 5 games · Min 1 GP · Min 600s TOI");
+    expect(buildRankingsContextSummary({ ...filters, minGp: "0", minToi: "0" })).toContain("Min 0 GP · Min 0s TOI");
+  });
+
+  it("summarizes only the context applied by advanced views", () => {
+    const filters = normalizeRankingsFilters({ window: "last20", deployment: "L1", sample_confidence: "high", source_quality: "clean_only" });
+    expect(buildRankingsContextSummary(filters)).toContain("2× selected minimums · Excludes source caveats");
+    expect(buildRankingsContextSummary({ ...filters, tab: "trending" })).not.toContain("Last 20");
+    expect(buildRankingsContextSummary({ ...filters, tab: "deployment_tiers" })).toContain("Deployment tiers across all skaters");
+    const planned = buildRankingsContextSummary({ ...filters, tab: "war" });
+    expect(planned).toContain("Planned WAR");
+    expect(planned).not.toContain("Min ");
+    expect(planned).not.toContain("explorer");
+  });
+
   const publishedTeamMetricOptions =
     buildContextualRankingsAvailableFilters()
       .entities.find((entity) => entity.value === "teams")

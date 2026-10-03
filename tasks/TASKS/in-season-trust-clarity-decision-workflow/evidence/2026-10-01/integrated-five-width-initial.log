@@ -1,0 +1,50 @@
+
+Running 5 tests using 1 worker
+
+  ✘  1 [chromium] › e2e/start-chart.spec.ts:271:9 › /start-chart › preserves context and saved intent through news, research, slate and schedule at 1180px (17.2s)
+  ✓  2 [chromium] › e2e/start-chart.spec.ts:271:9 › /start-chart › preserves context and saved intent through news, research, slate and schedule at 1024px (5.7s)
+  ✓  3 [chromium] › e2e/start-chart.spec.ts:271:9 › /start-chart › preserves context and saved intent through news, research, slate and schedule at 768px (3.3s)
+  ✓  4 [chromium] › e2e/start-chart.spec.ts:271:9 › /start-chart › preserves context and saved intent through news, research, slate and schedule at 390px (3.2s)
+  ✓  5 [chromium] › e2e/start-chart.spec.ts:271:9 › /start-chart › preserves context and saved intent through news, research, slate and schedule at 320px (3.1s)
+
+
+  1) [chromium] › e2e/start-chart.spec.ts:271:9 › /start-chart › preserves context and saved intent through news, research, slate and schedule at 1180px 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoContainText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: getByRole('table', { name: 'Recent NHL transactions and injury updates', exact: true })
+    Expected substring: [32m"Ongoing report"[39m
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toContainText" with timeout 15000ms[22m
+    [2m  - waiting for getByRole('table', { name: 'Recent NHL transactions and injury updates', exact: true })[22m
+    [2m    - waiting for" http://127.0.0.1:3100/404" navigation to finish...[22m
+    [2m    - navigated to "http://127.0.0.1:3100/"[22m
+    [2m    - waiting for" http://127.0.0.1:3100/404" navigation to finish...[22m
+    [2m    - navigated to "http://127.0.0.1:3100/404"[22m
+
+
+      327 |       await page.getByRole("link", { name: "FHFH home", exact: true }).filter({ visible: true }).first().click();
+      328 |       const injuryTable = page.getByRole("table", { name: "Recent NHL transactions and injury updates", exact: true });
+    > 329 |       await expect(injuryTable).toContainText("Ongoing report");
+          |                                 ^
+      330 |       const research = injuryTable.getByRole("link", { name: "Alpha Center", exact: true });
+      331 |       await expect(research).toHaveAttribute("href", "/stats/player/1");
+      332 |       await research.click({ timeout: 20_000 });
+        at /Users/tim/Code/fhfhockey.com/web/e2e/start-chart.spec.ts:329:33
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/start-chart--start-chart-p-31b54-late-and-schedule-at-1180px-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/start-chart--start-chart-p-31b54-late-and-schedule-at-1180px-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/start-chart--start-chart-p-31b54-late-and-schedule-at-1180px-chromium/error-context.md
+
+  1 failed
+    [chromium] › e2e/start-chart.spec.ts:271:9 › /start-chart › preserves context and saved intent through news, research, slate and schedule at 1180px 
+  4 passed (33.4s)

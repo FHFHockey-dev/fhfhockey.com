@@ -1,0 +1,17 @@
+{
+  "width": 1728,
+  "height": 900,
+  "outside": 0,
+  "overflow": 0,
+  "rosters": [
+    20,
+    20
+  ],
+  "rowsFit": true,
+  "squareCells": true,
+  "minimumCellWidth": 13.078125,
+  "minimumCellHeight": 13.078125,
+  "maximumSquareDifference": 0,
+  "layout": "side-by-side",
+  "documentFits": true
+}

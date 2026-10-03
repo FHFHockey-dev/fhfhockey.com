@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildHomepageModulePresentation,
+  buildResolvedDataServingContract,
   evaluateFreshness,
   evaluateMixedEffectiveDates
 } from "./freshness";
@@ -108,5 +109,16 @@ describe("evaluateMixedEffectiveDates", () => {
       earliestDate: "2026-03-09",
       latestDate: "2026-03-14"
     });
+  });
+});
+
+describe("upcoming slate serving", () => {
+  it("does not describe future schedule selection as stale historical data", () => {
+    expect(buildResolvedDataServingContract({ requestedDate: "2026-02-07", resolvedDate: "2026-02-09",
+      fallbackApplied: true, strategy: "next_scheduled_date", requestedScheduledGames: 0,
+      resolvedScheduledGames: 2, sourceLabel: "Start-chart slate" })).toMatchObject({
+        status: "upcoming", severity: "none", gapDays: 0,
+        message: "No games are scheduled for 2026-02-07. Showing the upcoming slate on 2026-02-09."
+      });
   });
 });

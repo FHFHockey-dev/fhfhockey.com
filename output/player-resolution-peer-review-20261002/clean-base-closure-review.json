@@ -1,0 +1,42 @@
+{
+  "decision": "recommend future isolated local checkpoint",
+  "base": "73af9d051ecc755dd3695f5265bf5837bbfc7a4e",
+  "hashes": {
+    "candidate-clean-base.patch": "9547b4c4cd0ca7975882ddeba73fa98df021b97e2d7fb6df17dccd7cdb4ea7ca",
+    "reviewed-incremental.patch": "820305552ae72e865e694e8dc7089fa046fe85ba746972c324fa279ae56fddb5",
+    "prerequisite-dropdown.patch": "ada9a0be7e7d466ddfdcd445e36a20e554937365ff42640070ccb2915877c402"
+  },
+  "closures": {
+    "runtime-closure.json": {
+      "files": 48,
+      "independentlyHashVerified": true,
+      "onlyChangesToHead": "approved resolver page and stylesheet in runtime closure; zero API closure changes"
+    },
+    "api-contract-closure.json": {
+      "files": 14,
+      "independentlyHashVerified": true,
+      "onlyChangesToHead": "approved resolver page and stylesheet in runtime closure; zero API closure changes"
+    }
+  },
+  "receiptCorrections": [
+    {
+      "graph": "api-contract-closure.json",
+      "path": "web/lib/supabase/database-generated.types.ts",
+      "correctHeadSha256": "bcd14cc343a0d8cf832bd4472c286e2ba5b74ae26400e89d8cce47dd849b9842",
+      "correctCandidateChangesHead": false,
+      "cause": "closure.cjs git-show execFileSync has default 1MB maxBuffer; file is 1812367 bytes"
+    }
+  ],
+  "composition": "Both clean-base candidate and prerequisite/incremental forms independently applied only to disposable artifact copies and match reviewed final hashes.",
+  "prerequisiteScope": "Selected-option retention across searches in ordinary/split dropdowns, sidebar split-state reset, and original five regression tests only; consistent with audited original approval. Stylesheet preimage already equals HEAD.",
+  "excludedOverlays": 231,
+  "sharedPreimages": "all three unchanged",
+  "dependencies": "six recorded package hashes match; package/config files match clean HEAD via worktree status and closure",
+  "apiTests": "Independently reran five selected cases: all passed; four unrelated cases skipped.",
+  "reusedBrowserEvidence": "Owner eight clean-base mocked cases passed; receipts inspected for exceptions and geometry. Prior independent 24-unit/35-browser approval reused for exact same resolver bytes.",
+  "limits": [
+    "Live auth, deployed parity, real API/database saves, backend idempotency and split atomicity remain unverified.",
+    "Static closure is conservative and limited to declared imports/assets; not live network certification.",
+    "No source edits, stage, commit, integration, builds, pushes, migration or production writes performed."
+  ]
+}

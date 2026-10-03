@@ -189,6 +189,31 @@ describe("buildPlayerAggregatedStats", () => {
     expect(rows.find((row) => row.label === "PTS/60")?.STD).toBeCloseTo(2);
   });
 
+  it("does not let a rates override revive recent values with missing denominators", () => {
+    const rows = buildPlayerAggregatedStats({
+      careerData: null,
+      recentData: { player_id: 1, l5_gp: 1, l5_atoi: null, l5_pts: 2, l5_pts_per_60: 6,
+        l5_pptoi: 320, l5_ppp: 1, l5_ppp_per_60: 11.25 } as WigoRecentRow,
+      ratesData: { pts_per_60_l5: 6, ppp_per_60_l5: 11.25 },
+      totalsData: null,
+    });
+    expect(rows.find(row => row.label === "ATOI")?.L5).toBeNull();
+    expect(rows.find(row => row.label === "PTS/60")?.L5).toBeNull();
+    expect(rows.find(row => row.label === "PPP/60")?.L5).toBe(11.25);
+  });
+
+  it.each([null, undefined, NaN, 0, 3])("keeps unavailable recent source rates unavailable despite an override (%s)", (published) => {
+    const rows = buildPlayerAggregatedStats({ careerData: null,
+      recentData: { player_id: 1, l5_gp: 1, l10_gp: 1, l20_gp: 1, l5_atoi: 20, l10_atoi: 20, l20_atoi: 20,
+        l5_pts_per_60: published, l10_pts_per_60: published, l20_pts_per_60: published } as WigoRecentRow,
+      ratesData: { pts_per_60_l5: published === 0 ? 0 : 3, pts_per_60_l10: published === 0 ? 0 : 3,
+        pts_per_60_l20: published === 0 ? 0 : 3 }, totalsData: null });
+    for (const column of ["L5", "L10", "L20"] as const) {
+      expect(rows.find(row => row.label === "PTS/60")?.[column]).toBe(published === 0 || published === 3 ? published : null);
+      expect(rows.find(row => row.label === "ATOI")?.[column]).toBe(1200);
+    }
+  });
+
   it("uses totals fallback for missing standard count values", () => {
     const careerData = {
       player_id: 1,

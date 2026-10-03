@@ -146,3 +146,21 @@
     flex-shrink: 0;
   }
 }
+
+// Only the Shift Chart uses a viewport workspace and compact utility footer.
+@media (min-width: 1200px) {
+  .container.shiftChartLayout {
+    height: 100dvh;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    .footer { margin: 0; padding: 4px 12px; }
+    .footerInner { max-width: none; gap: 12px; flex-wrap: nowrap; }
+    .footerBrand { display: flex; align-items: center; gap: 10px; }
+    .footerBrand small { font-size: 11px; }
+    .footerBrand a, .footer nav a, .footerCommunity > a { min-height: 28px; font-size: 12px; }
+    .footerBrand svg { width: 64px; height: 20px; }
+    .footerSocials :global(a) { width: 28px; height: 28px; min-height: 28px; }
+    .footerSocials :global(img) { width: 18px; height: 18px; }
+  }
+}

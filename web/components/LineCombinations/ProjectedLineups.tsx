@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
 import type { ProjectedUnitSet, ProjectionReport } from "lib/sources/projectedLineups";
 import styles from "./ProjectedLineups.module.scss";
+import GameLineSnapshots, { mergeFrozenEntries } from "./GameLineSnapshots";
+import type { GameLinesResponse } from "lib/lines/types";
 
 type ProjectionResponse = { enabled: boolean; sets: ProjectedUnitSet[]; reports: ProjectionReport[] };
 
@@ -42,14 +44,16 @@ export function ProjectedLineupsContent({ data }: { data: ProjectionResponse }) 
   </section>;
 }
 
-export default function ProjectedLineups({ teamId, gameId }: { teamId?: number; gameId?: number }) {
-  const [data, setData] = useState<ProjectionResponse | null>(null);
+export default function ProjectedLineups({ teamId, gameId, onGameChange }: { teamId?: number; gameId?: number; onGameChange?: (id: number) => void }) {
+  const [data, setData] = useState<ProjectionResponse | GameLinesResponse | null>(null);
+  const [selectedGameId, setSelectedGameId] = useState<number | undefined>(gameId);
   const [failed, setFailed] = useState(false);
+  useEffect(() => setSelectedGameId(gameId), [gameId, teamId]);
   useEffect(() => {
     const controller = new AbortController();
     const params = new URLSearchParams();
     if (teamId) params.set("teamId", String(teamId));
-    if (gameId) params.set("gameId", String(gameId));
+    if (selectedGameId) params.set("gameId", String(selectedGameId));
     setData(null); setFailed(false);
     let refresh: ReturnType<typeof setTimeout> | undefined;
     const load = async () => {
@@ -57,13 +61,18 @@ export default function ProjectedLineups({ teamId, gameId }: { teamId?: number; 
         const response = await fetch(`/api/v1/lines/projected?${params}`, { signal: controller.signal });
         if (!response.ok) throw new Error("unavailable");
         const result = await response.json();
-        if (!controller.signal.aborted) { setData(result); setFailed(false); }
+        if (!controller.signal.aborted) {
+          setData((previous) => result.mode === "snapshots" ? mergeFrozenEntries(previous && "mode" in previous ? previous : null, result) : result);
+          setFailed(false);
+        }
       } catch { if (!controller.signal.aborted) setFailed(true); }
       finally { if (!controller.signal.aborted) refresh = setTimeout(load, 60_000); }
     };
     void load();
     return () => { controller.abort(); clearTimeout(refresh); };
-  }, [teamId, gameId]);
-  if (failed) return <p role="status">Projected lineups are temporarily unavailable.</p>;
-  return data ? <ProjectedLineupsContent data={data} /> : null;
+  }, [teamId, selectedGameId]);
+  if (!data) return <p role="status">{failed ? "Lineups are temporarily unavailable." : "Loading game lineups…"}</p>;
+  if (!data.enabled) return <p role="status">Lineup publishing is disabled.</p>;
+  return <>{failed && <p role="status">Refresh unavailable. Showing the last received lineup and evidence.</p>}
+    {"mode" in data ? <GameLineSnapshots data={data} onGameChange={(id) => { setSelectedGameId(id); onGameChange?.(id); }} /> : <ProjectedLineupsContent data={data} />}</>;
 }

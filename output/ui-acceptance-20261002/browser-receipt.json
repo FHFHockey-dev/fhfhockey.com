@@ -1,0 +1,386 @@
+{
+  "startedAt": "2026-10-02T19:20:16.602Z",
+  "cwd": "/Users/tim/Code/fhfhockey.com",
+  "head": "73af9d051ecc755dd3695f5265bf5837bbfc7a4e",
+  "branch": "master",
+  "viewport": {
+    "width": 320,
+    "height": 800
+  },
+  "runtime": {
+    "node": "v22.11.0",
+    "playwright": "1.60.0"
+  },
+  "base": "http://127.0.0.1:3198",
+  "fixture": "buildRating reused from existing focused Vitest; 14 synthetic team rows, mixed ready/pending readiness; all APIs intercepted before page creation",
+  "cases": [
+    {
+      "name": "Team Rankings / Advanced / all-team defaults",
+      "status": "passed",
+      "evidence": {
+        "rowCount": 14,
+        "collapsedWidths": {
+          "viewport": 320,
+          "documentWidth": 320,
+          "bodyWidth": 320,
+          "open": false,
+          "panel": {
+            "left": 8,
+            "right": 158,
+            "width": 150,
+            "clientWidth": 148,
+            "scrollWidth": 199
+          },
+          "overflowElements": [
+            {
+              "tag": "BUTTON",
+              "class": "UnderlyingStatsDashboard_powerLeader__DCyMg  ",
+              "left": 314.59375,
+              "right": 596.1875
+            },
+            {
+              "tag": "SPAN",
+              "class": "UnderlyingStatsDashboard_rankWatermark__TEqRL",
+              "left": 557.421875,
+              "right": 587.1875
+            },
+            {
+              "tag": "SPAN",
+              "class": "UnderlyingStatsDashboard_leaderTopline__VDSlN",
+              "left": 327.59375,
+              "right": 587.1875
+            },
+            {
+              "tag": "SPAN",
+              "class": "UnderlyingStatsDashboard_leaderIdentity__hLqMZ",
+              "left": 327.59375,
+              "right": 459.328125
+            },
+            {
+              "tag": "IMG",
+              "class": "UnderlyingStatsDashboard_teamLogo__Gk5PS",
+              "left": 327.59375,
+              "right": 375.59375
+            },
+            {
+              "tag": "SPAN",
+              "class": "",
+              "left": 391.59375,
+              "right": 459.328125
+            },
+            {
+              "tag": "STRONG",
+              "class": "",
+              "left": 391.59375,
+              "right": 459.328125
+            },
+            {
+              "tag": "SMALL",
+              "class": "",
+              "left": 391.59375,
+              "right": 459.328125
+            },
+            {
+              "tag": "SPAN",
+              "class": "UnderlyingStatsDashboard_leaderPower__kAIGE",
+              "left": 507.96875,
+              "right": 587.1875
+            },
+            {
+              "tag": "SMALL",
+              "class": "",
+              "left": 545.734375,
+              "right": 587.1875
+            },
+            {
+              "tag": "SPAN",
+              "class": "UnderlyingStatsDashboard_leaderCoreMetrics__4eiIT",
+              "left": 327.59375,
+              "right": 587.1875
+            },
+            {
+              "tag": "SPAN",
+              "class": "",
+              "left": 327.59375,
+              "right": 389.59375
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "keyboard reaches disclosure, Enter expands, Space collapses, focus retained",
+      "status": "passed",
+      "evidence": {
+        "focused": true,
+        "focusVisible": true,
+        "outline": "rgb(170, 170, 170) none 3px",
+        "boxShadow": "rgba(20, 162, 210, 0.5) 0px 0px 0px 2px"
+      }
+    },
+    {
+      "name": "expanded readiness fits 320px with no document overflow",
+      "status": "passed",
+      "evidence": {
+        "viewport": 320,
+        "documentWidth": 320,
+        "bodyWidth": 320,
+        "open": true,
+        "panel": {
+          "left": 8,
+          "right": 312,
+          "width": 304,
+          "clientWidth": 302,
+          "scrollWidth": 302
+        },
+        "overflowElements": [
+          {
+            "tag": "BUTTON",
+            "class": "UnderlyingStatsDashboard_powerLeader__DCyMg  ",
+            "left": 314.59375,
+            "right": 596.1875
+          },
+          {
+            "tag": "SPAN",
+            "class": "UnderlyingStatsDashboard_rankWatermark__TEqRL",
+            "left": 557.3125,
+            "right": 587.1875
+          },
+          {
+            "tag": "SPAN",
+            "class": "UnderlyingStatsDashboard_leaderTopline__VDSlN",
+            "left": 327.59375,
+            "right": 587.1875
+          },
+          {
+            "tag": "SPAN",
+            "class": "UnderlyingStatsDashboard_leaderIdentity__hLqMZ",
+            "left": 327.59375,
+            "right": 459.328125
+          },
+          {
+            "tag": "IMG",
+            "class": "UnderlyingStatsDashboard_teamLogo__Gk5PS",
+            "left": 327.59375,
+            "right": 375.59375
+          },
+          {
+            "tag": "SPAN",
+            "class": "",
+            "left": 391.59375,
+            "right": 459.328125
+          },
+          {
+            "tag": "STRONG",
+            "class": "",
+            "left": 391.59375,
+            "right": 459.328125
+          },
+          {
+            "tag": "SMALL",
+            "class": "",
+            "left": 391.59375,
+            "right": 459.328125
+          },
+          {
+            "tag": "SPAN",
+            "class": "UnderlyingStatsDashboard_leaderPower__kAIGE",
+            "left": 507.703125,
+            "right": 587.1875
+          },
+          {
+            "tag": "SMALL",
+            "class": "",
+            "left": 545.734375,
+            "right": 587.1875
+          },
+          {
+            "tag": "SPAN",
+            "class": "UnderlyingStatsDashboard_leaderCoreMetrics__4eiIT",
+            "left": 327.59375,
+            "right": 587.1875
+          },
+          {
+            "tag": "SPAN",
+            "class": "",
+            "left": 327.59375,
+            "right": 389.59375
+          }
+        ]
+      }
+    },
+    {
+      "name": "no runtime page errors",
+      "status": "passed",
+      "evidence": {
+        "pageErrors": []
+      }
+    }
+  ],
+  "screenshots": [
+    "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/expanded-readiness.png"
+  ],
+  "blockedRequests": [
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+      "method": "GET"
+    },
+    {
+      "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=DBA507&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+      "method": "GET"
+    },
+    {
+      "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+      "method": "GET"
+    },
+    {
+      "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+      "method": "GET"
+    }
+  ],
+  "mockRequests": [
+    "http://127.0.0.1:3198/api/underlying-stats/landing?date=2026-04-05"
+  ],
+  "pageErrors": [],
+  "consoleErrors": [
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+    "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+  ],
+  "browserVersion": "148.0.7778.96",
+  "expandedWidths": {
+    "viewport": 320,
+    "documentWidth": 320,
+    "bodyWidth": 320,
+    "open": true,
+    "panel": {
+      "left": 8,
+      "right": 312,
+      "width": 304,
+      "clientWidth": 302,
+      "scrollWidth": 302
+    },
+    "overflowElements": [
+      {
+        "tag": "BUTTON",
+        "class": "UnderlyingStatsDashboard_powerLeader__DCyMg  ",
+        "left": 314.59375,
+        "right": 596.1875
+      },
+      {
+        "tag": "SPAN",
+        "class": "UnderlyingStatsDashboard_rankWatermark__TEqRL",
+        "left": 557.3125,
+        "right": 587.1875
+      },
+      {
+        "tag": "SPAN",
+        "class": "UnderlyingStatsDashboard_leaderTopline__VDSlN",
+        "left": 327.59375,
+        "right": 587.1875
+      },
+      {
+        "tag": "SPAN",
+        "class": "UnderlyingStatsDashboard_leaderIdentity__hLqMZ",
+        "left": 327.59375,
+        "right": 459.328125
+      },
+      {
+        "tag": "IMG",
+        "class": "UnderlyingStatsDashboard_teamLogo__Gk5PS",
+        "left": 327.59375,
+        "right": 375.59375
+      },
+      {
+        "tag": "SPAN",
+        "class": "",
+        "left": 391.59375,
+        "right": 459.328125
+      },
+      {
+        "tag": "STRONG",
+        "class": "",
+        "left": 391.59375,
+        "right": 459.328125
+      },
+      {
+        "tag": "SMALL",
+        "class": "",
+        "left": 391.59375,
+        "right": 459.328125
+      },
+      {
+        "tag": "SPAN",
+        "class": "UnderlyingStatsDashboard_leaderPower__kAIGE",
+        "left": 507.703125,
+        "right": 587.1875
+      },
+      {
+        "tag": "SMALL",
+        "class": "",
+        "left": 545.734375,
+        "right": 587.1875
+      },
+      {
+        "tag": "SPAN",
+        "class": "UnderlyingStatsDashboard_leaderCoreMetrics__4eiIT",
+        "left": 327.59375,
+        "right": 587.1875
+      },
+      {
+        "tag": "SPAN",
+        "class": "",
+        "left": 327.59375,
+        "right": 389.59375
+      }
+    ]
+  },
+  "metadata": "Snapshot date\nApr 5, 2026\nApr 4, 2026\nApr 3, 2026\nLatest snapshot\nApr 5, 2026\nTeams\n14\nFreshness\nFresh",
+  "expandedReadiness": "Data readiness\n\nTeam snapshot\n\nPower scores and team metrics\n\n14 rows\n\nApr 5, 2026\n\nReady\n\nSkater ratings\n\nIndividual player ratings and roles\n\nNo rows\n\nAwaiting first snapshot\n\nPending\n\nGoalie ratings\n\nGoalie ratings and workload\n\nNo rows\n\nAwaiting first snapshot\n\nPending\n\nModel signals\n\nModel and market context\n\nNo rows\n\nAwaiting first snapshot\n\nPending",
+  "singleAlwaysVisibleSummary": true,
+  "status": "passed",
+  "finishedAt": "2026-10-02T19:20:19.394Z",
+  "reproduce": "From repository root: node output/ui-acceptance-20261002/underlying-verify.cjs (supported require_escalated execution; no custom launch flags)",
+  "localQAGateClosed": true
+}

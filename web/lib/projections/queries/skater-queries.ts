@@ -178,12 +178,17 @@ export async function fetchLatestWgoSkaterDeploymentProfiles(
   return profiles;
 }
 
-export async function fetchLatestSkaterShotQualityProfiles(
+export async function fetchLatestSkaterContextProfiles(
   playerIds: number[],
   cutoffDate: string
-): Promise<Map<number, SkaterShotQualityProfile>> {
+): Promise<{
+  shotQuality: Map<number, SkaterShotQualityProfile>;
+  onIceContext: Map<number, SkaterOnIceContextProfile>;
+}> {
   assertSupabase();
-  if (playerIds.length === 0) return new Map();
+  const shotQuality = new Map<number, SkaterShotQualityProfile>();
+  const onIceContext = new Map<number, SkaterOnIceContextProfile>();
+  if (playerIds.length === 0) return { shotQuality, onIceContext };
 
   const oneYearAgo = new Date(
     new Date(cutoffDate).getTime() - 365 * 24 * 60 * 60 * 1000
@@ -194,7 +199,7 @@ export async function fetchLatestSkaterShotQualityProfiles(
   const { data, error } = await supabase
     .from("player_stats_unified")
     .select(
-      "player_id,date,nst_shots_per_60,nst_ixg_per_60,nst_rush_attempts_per_60,nst_rebounds_created_per_60"
+      "player_id,date,nst_shots_per_60,nst_ixg_per_60,nst_rush_attempts_per_60,nst_rebounds_created_per_60,nst_oi_xgf_per_60,nst_oi_xga_per_60,nst_oi_cf_pct_rates,nst_oi_cf_pct,possession_pct_safe"
     )
     .in("player_id", playerIds)
     .lte("date", cutoffDate)
@@ -210,54 +215,15 @@ export async function fetchLatestSkaterShotQualityProfiles(
     if (!latestByPlayer.has(playerId)) latestByPlayer.set(playerId, row);
   }
 
-  const profiles = new Map<number, SkaterShotQualityProfile>();
   for (const [playerId, row] of latestByPlayer.entries()) {
-    profiles.set(playerId, {
+    shotQuality.set(playerId, {
       sourceDate: typeof row?.date === "string" ? row.date : null,
       nstShotsPer60: finiteOrNull(row?.nst_shots_per_60),
       nstIxgPer60: finiteOrNull(row?.nst_ixg_per_60),
       nstRushAttemptsPer60: finiteOrNull(row?.nst_rush_attempts_per_60),
       nstReboundsCreatedPer60: finiteOrNull(row?.nst_rebounds_created_per_60)
     });
-  }
-  return profiles;
-}
-
-export async function fetchLatestSkaterOnIceContextProfiles(
-  playerIds: number[],
-  cutoffDate: string
-): Promise<Map<number, SkaterOnIceContextProfile>> {
-  assertSupabase();
-  if (playerIds.length === 0) return new Map();
-
-  const oneYearAgo = new Date(
-    new Date(cutoffDate).getTime() - 365 * 24 * 60 * 60 * 1000
-  )
-    .toISOString()
-    .split("T")[0];
-
-  const { data, error } = await supabase
-    .from("player_stats_unified")
-    .select(
-      "player_id,date,nst_oi_xgf_per_60,nst_oi_xga_per_60,nst_oi_cf_pct_rates,nst_oi_cf_pct,possession_pct_safe"
-    )
-    .in("player_id", playerIds)
-    .lte("date", cutoffDate)
-    .gte("date", oneYearAgo)
-    .order("date", { ascending: false })
-    .limit(5000);
-  if (error) throw error;
-
-  const latestByPlayer = new Map<number, any>();
-  for (const row of (data ?? []) as any[]) {
-    const playerId = Number(row?.player_id);
-    if (!Number.isFinite(playerId)) continue;
-    if (!latestByPlayer.has(playerId)) latestByPlayer.set(playerId, row);
-  }
-
-  const profiles = new Map<number, SkaterOnIceContextProfile>();
-  for (const [playerId, row] of latestByPlayer.entries()) {
-    profiles.set(playerId, {
+    onIceContext.set(playerId, {
       sourceDate: typeof row?.date === "string" ? row.date : null,
       nstOiXgfPer60: finiteOrNull(row?.nst_oi_xgf_per_60),
       nstOiXgaPer60: finiteOrNull(row?.nst_oi_xga_per_60),
@@ -266,7 +232,15 @@ export async function fetchLatestSkaterOnIceContextProfiles(
       possessionPctSafe: finiteOrNull(row?.possession_pct_safe)
     });
   }
-  return profiles;
+  return { shotQuality, onIceContext };
+}
+
+export async function fetchLatestSkaterShotQualityProfiles(playerIds: number[], cutoffDate: string) {
+  return (await fetchLatestSkaterContextProfiles(playerIds, cutoffDate)).shotQuality;
+}
+
+export async function fetchLatestSkaterOnIceContextProfiles(playerIds: number[], cutoffDate: string) {
+  return (await fetchLatestSkaterContextProfiles(playerIds, cutoffDate)).onIceContext;
 }
 
 export async function fetchLatestSkaterTrendAdjustments(

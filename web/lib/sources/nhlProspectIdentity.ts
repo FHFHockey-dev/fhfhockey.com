@@ -2,6 +2,7 @@ import { rosterSeasonForDate } from "./playerIdentity";
 
 export type NhlProspectIdentity = {
   nhlId: number | null;
+  nhlActive?: boolean | null;
   lifecycleStatus?: "active_nhl" | "active_prospect" | "inactive" | "review_required";
   firstName: string;
   lastName: string;
@@ -23,7 +24,8 @@ const position = (value: unknown): string | null => ({ LW: "L", RW: "R", L: "L",
 class NhlRateLimitError extends Error {}
 
 async function readNhl(url: string) {
-  const response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+  const response = await fetch(url, { signal: AbortSignal.timeout(10_000),
+    headers: { Accept: "application/json", "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)" } });
   if (response.status === 429) throw new NhlRateLimitError("NHL rate limit reached; resume from the last completed cursor after backoff.");
   if (!response.ok) throw new Error(`NHL identity source returned ${response.status}`);
   return response.json();
@@ -38,10 +40,12 @@ export async function fetchNhlPlayerIdentity(playerId: number, includeDraft = fa
   if (data.playerId !== playerId || !firstName || !lastName || !/^\d{4}-\d{2}-\d{2}$/.test(data.birthDate ?? "") || !position(data.position)) throw new Error("NHL profile did not verify this player identity.");
   const draft = includeDraft && positive(data.draftDetails?.year)
     ? (await fetchNhlDraftClass(data.draftDetails.year)).find((player) => player.nhlId === playerId)?.draft ?? null : null;
-  return { nhlId: playerId, lifecycleStatus: data.isActive === false ? "inactive"
-    : Array.isArray(data.seasonTotals) && data.seasonTotals.some((season: any) => season.leagueAbbrev === "NHL" && season.gamesPlayed > 0) ? "active_nhl" : "active_prospect", firstName, lastName, fullName: `${firstName} ${lastName}`, birthDate: data.birthDate,
+  const nhlActive = typeof data.isActive === "boolean" ? data.isActive : null;
+  return { nhlId: playerId, nhlActive, lifecycleStatus: nhlActive === false ? "inactive"
+    : nhlActive === null ? "review_required"
+      : Array.isArray(data.seasonTotals) && data.seasonTotals.some((season: any) => season.leagueAbbrev === "NHL" && season.gamesPlayed > 0) ? "active_nhl" : "active_prospect", firstName, lastName, fullName: `${firstName} ${lastName}`, birthDate: data.birthDate,
     position: position(data.position), height: positive(data.heightInCentimeters), weight: positive(data.weightInKilograms),
-    country: data.birthCountry ?? null, currentTeamId: data.isActive === true ? positive(data.currentTeamId) : null,
+    country: data.birthCountry ?? null, currentTeamId: nhlActive === true ? positive(data.currentTeamId) : null,
     sourceUrl, checkedAt: new Date().toISOString(), draft };
 }
 

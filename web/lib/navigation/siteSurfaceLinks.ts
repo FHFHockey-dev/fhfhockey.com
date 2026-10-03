@@ -43,23 +43,23 @@ export const TRENDS_SURFACE_LINKS: SiteSurfaceLink[] = [
   {
     href: "/underlying-stats",
     label: "Underlying Stats",
-    description: "Move from movement into the team-quality and process read.",
+    description: "Open the default team-quality view; trend date and player filters reset.",
   },
   {
     href: "/splits",
     label: "Splits",
     description:
-      "Move recent form into player-vs-team and matchup split context.",
+      "Open matchup split context; trend date and player filters reset.",
   },
   {
     href: "/start-chart",
     label: "Starter Board",
-    description: "Carry recent-form context into start or sit decisions.",
+    description: "Open today's or next scheduled slate; trend date and player filters reset.",
   },
   {
     href: GAME_GRID_HREF,
     label: "Game Grid",
-    description: "Match trend movement against schedule density.",
+    description: "Open the default schedule range; trend date and player filters reset.",
   },
   {
     href: "/lines",

@@ -1,0 +1,44 @@
+{
+  "recordedAt": "2026-10-02T04:15:43.902400+00:00",
+  "changes": [
+    "Two Testing Library checkbox queries replace unsupported exact options with anchored Protect name patterns."
+  ],
+  "initialTypecheck": {
+    "exitCode": 2,
+    "errors": [
+      "RosterScheduleOptimizer.test.tsx(399,69) TS2769: exact is not in ByRoleOptions.",
+      "RosterScheduleOptimizer.test.tsx(407,69) TS2769: exact is not in ByRoleOptions."
+    ]
+  },
+  "checks": [
+    {
+      "command": "NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit",
+      "exitCode": 0,
+      "scope": "whole web app"
+    },
+    {
+      "command": "npm test -- --run __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx -t 'uses the signed-in session for access and account reads'",
+      "exitCode": 0,
+      "passed": 1,
+      "skipped": 18,
+      "durationSeconds": 1.01
+    },
+    {
+      "command": "npx eslint __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+      "exitCode": 0
+    }
+  ],
+  "priorExternalTypeBlock": "Calendar runner line 264 now uses new Uint8Array(artifactBytes); that separately owned file was not edited in this chat.",
+  "logs": [
+    "completion-types-initial.log",
+    "completion-types-final.log",
+    "completion-account-test.log",
+    "completion-account-lint.log"
+  ],
+  "completion": "unproven; remaining evidence gates stay open",
+  "limitations": [
+    "Compiler success is not source lineage, production parity, forecast readiness or release approval.",
+    "No browser rerun: only equivalent test name matchers changed, and the affected test ran.",
+    "User evidence locations and human/screen-reader choices are pending."
+  ]
+}

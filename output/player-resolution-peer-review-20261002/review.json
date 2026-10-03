@@ -1,0 +1,3325 @@
+{
+  "decision": "approved for local integration of the exact reviewed patch",
+  "head": "73af9d051ecc755dd3695f5265bf5837bbfc7a4e",
+  "incrementalPatchSha256": "820305552ae72e865e694e8dc7089fa046fe85ba746972c324fa279ae56fddb5",
+  "cumulativePatchSha256": "9547b4c4cd0ca7975882ddeba73fa98df021b97e2d7fb6df17dccd7cdb4ea7ca",
+  "browser": "148.0.7778.96",
+  "passedCases": 35,
+  "caseSources": "31 existing cases from receipt.json; four corrected independent cases from receipt-peer-corrected.json. Two initial peer harness selector timeouts are preserved in receipt.json; these were fixture mistakes, not implementation failures.",
+  "cases": [
+    {
+      "name": "Page loads with current integrated shell",
+      "status": "passed",
+      "posts": [],
+      "gets": [
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n2\nREMAINING\n\nWORK QUEUE\n\n2 names to review\nLomberg-Heinen\nCBJ\nSoucy-Andrae\nCBJ\nPending name\nLomberg-Heinen (CBJ)\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nLomberg\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nHeinen\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nLomberg-Heinen"
+    },
+    {
+      "name": "Retention Lomberg first across search and zero matches",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "action": "split",
+          "parts": [
+            {
+              "alias": "Lomberg",
+              "playerId": 8479066
+            },
+            {
+              "alias": "Heinen",
+              "playerId": 8478046
+            }
+          ]
+        }
+      ],
+      "gets": [
+        "",
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n1\nREMAINING\n\nMock save completed\n\n1 resolved in this queue\n\nWORK QUEUE\n\n1 names to review\nSoucy-Andrae\nCBJ\nPending name\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nSoucy\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nAndrae\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nSoucy-Andrae"
+    },
+    {
+      "name": "Retention Heinen first across search and zero matches",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "action": "split",
+          "parts": [
+            {
+              "alias": "Lomberg",
+              "playerId": 8479066
+            },
+            {
+              "alias": "Heinen",
+              "playerId": 8478046
+            }
+          ]
+        }
+      ],
+      "gets": [
+        "",
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n1\nREMAINING\n\nMock save completed\n\n1 resolved in this queue\n\nWORK QUEUE\n\n1 names to review\nSoucy-Andrae\nCBJ\nPending name\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nSoucy\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nAndrae\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nSoucy-Andrae"
+    },
+    {
+      "name": "Ordinary selection retention and independent split clearing",
+      "status": "passed",
+      "posts": [],
+      "gets": [
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n2\nREMAINING\n\nWORK QUEUE\n\n2 names to review\nLomberg-Heinen\nCBJ\nSoucy-Andrae\nCBJ\nPending name\nLomberg-Heinen (CBJ)\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nLomberg\nChoose player\u2026\nHeinen\nChoose player\u2026\nDanton Heinen \u00b7 8478046\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nLomberg-Heinen"
+    },
+    {
+      "name": "Queue switching cancels selections via sidebar",
+      "status": "passed",
+      "posts": [],
+      "gets": [
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n2\nREMAINING\n\nWORK QUEUE\n\n2 names to review\nLomberg-Heinen\nCBJ\nSoucy-Andrae\nCBJ\nPending name\nLomberg-Heinen (CBJ)\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nLomberg\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nHeinen\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nLomberg-Heinen"
+    },
+    {
+      "name": "Queue switching cancels selections via dropdown",
+      "status": "passed",
+      "posts": [],
+      "gets": [
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n2\nREMAINING\n\nWORK QUEUE\n\n2 names to review\nLomberg-Heinen\nCBJ\nSoucy-Andrae\nCBJ\nPending name\nLomberg-Heinen (CBJ)\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nLomberg\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nHeinen\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nLomberg-Heinen"
+    },
+    {
+      "name": "Abandon reload and retry without unintended save",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "action": "split",
+          "parts": [
+            {
+              "alias": "Lomberg",
+              "playerId": 8479066
+            },
+            {
+              "alias": "Heinen",
+              "playerId": 8478046
+            }
+          ]
+        }
+      ],
+      "gets": [
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n1\nREMAINING\n\nMock save completed\n\n1 resolved in this queue\n\nWORK QUEUE\n\n1 names to review\nSoucy-Andrae\nCBJ\nPending name\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nSoucy\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nAndrae\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nSoucy-Andrae"
+    },
+    {
+      "name": "Pending-only API advances queue and preserves resolved progress",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "action": "split",
+          "parts": [
+            {
+              "alias": "Lomberg",
+              "playerId": 8479066
+            },
+            {
+              "alias": "Heinen",
+              "playerId": 8478046
+            }
+          ]
+        }
+      ],
+      "gets": [
+        "",
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n1\nREMAINING\n\nMock save completed\n\n1 resolved in this queue\n\nWORK QUEUE\n\n1 names to review\nSoucy-Andrae\nCBJ\nPending name\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nSoucy\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nAndrae\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nSoucy-Andrae"
+    },
+    {
+      "name": "Ignore advances queue and final completion",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "action": "ignore"
+        },
+        {
+          "unresolvedId": "fixture-1",
+          "action": "ignore"
+        }
+      ],
+      "gets": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n0\nREMAINING\n\nMock save completed\n\n0 resolved in this queue \u00b7 2 ignored\n\nNo matching unresolved player name was found."
+    },
+    {
+      "name": "Failed split save retains choices and retry succeeds",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "action": "split",
+          "parts": [
+            {
+              "alias": "Lomberg",
+              "playerId": 8479066
+            },
+            {
+              "alias": "Heinen",
+              "playerId": 8478046
+            }
+          ]
+        },
+        {
+          "unresolvedId": "fixture-0",
+          "action": "split",
+          "parts": [
+            {
+              "alias": "Lomberg",
+              "playerId": 8479066
+            },
+            {
+              "alias": "Heinen",
+              "playerId": 8478046
+            }
+          ]
+        }
+      ],
+      "gets": [
+        "",
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n1\nREMAINING\n\nMock save completed\n\n1 resolved in this queue\n\nWORK QUEUE\n\n1 names to review\nSoucy-Andrae\nCBJ\nPending name\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nSoucy\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nAndrae\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nSoucy-Andrae"
+    },
+    {
+      "name": "Failed alias save retains choices and retry succeeds",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "playerId": 8479066,
+          "importNhlIdentity": false,
+          "alias": "Lomberg-Heinen"
+        },
+        {
+          "unresolvedId": "fixture-0",
+          "playerId": 8479066,
+          "importNhlIdentity": false,
+          "alias": "Lomberg-Heinen"
+        }
+      ],
+      "gets": [
+        "",
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n1\nREMAINING\n\nMock save completed\n\n1 resolved in this queue\n\nWORK QUEUE\n\n1 names to review\nSoucy-Andrae\nCBJ\nPending name\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nSoucy\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nAndrae\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nSoucy-Andrae"
+    },
+    {
+      "name": "Failed ignore shows recoverable feedback",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "action": "ignore"
+        }
+      ],
+      "gets": [
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n2\nREMAINING\n\nMock save failed\n\nWORK QUEUE\n\n2 names to review\nLomberg-Heinen\nCBJ\nSoucy-Andrae\nCBJ\nPending name\nLomberg-Heinen (CBJ)\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nLomberg\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nHeinen\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nLomberg-Heinen"
+    },
+    {
+      "name": "Duplicate split click submits only once",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "action": "split",
+          "parts": [
+            {
+              "alias": "Lomberg",
+              "playerId": 8479066
+            },
+            {
+              "alias": "Heinen",
+              "playerId": 8478046
+            }
+          ]
+        }
+      ],
+      "gets": [
+        "",
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n2\nREMAINING\n\nMock save completed\n\nLoading...\n\nWORK QUEUE\n\n2 names to review\nLomberg-Heinen\nCBJ\nSoucy-Andrae\nCBJ\nPending name\nLomberg-Heinen (CBJ)\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nLomberg\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nHeinen\nChoose player\u2026\nDanton Heinen \u00b7 8478046\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nLomberg-Heinen"
+    },
+    {
+      "name": "Duplicate ordinary save click submits only once",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "playerId": 8479066,
+          "importNhlIdentity": false,
+          "alias": "Lomberg-Heinen"
+        }
+      ],
+      "gets": [
+        "",
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n2\nREMAINING\n\nMock save completed\n\nLoading...\n\nWORK QUEUE\n\n2 names to review\nLomberg-Heinen\nCBJ\nSoucy-Andrae\nCBJ\nPending name\nLomberg-Heinen (CBJ)\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nLomberg\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nHeinen\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nLomberg-Heinen"
+    },
+    {
+      "name": "Switch during save preserves next item draft after delayed refresh",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "action": "split",
+          "parts": [
+            {
+              "alias": "Lomberg",
+              "playerId": 8479066
+            },
+            {
+              "alias": "Heinen",
+              "playerId": 8478046
+            }
+          ]
+        }
+      ],
+      "gets": [
+        "",
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n1\nREMAINING\n\nMock save completed\n\n1 resolved in this queue\n\nWORK QUEUE\n\n1 names to review\nSoucy-Andrae\nCBJ\nPending name\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nSoucy\nChoose player\u2026\nCarson Soucy \u00b7 8476463\nAndrae\nChoose player\u2026\nCarson Soucy \u00b7 8476463\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nSoucy-Andrae"
+    },
+    {
+      "name": "Queue refresh serializes mutations and cannot restore ignored item",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "action": "split",
+          "parts": [
+            {
+              "alias": "Lomberg",
+              "playerId": 8479066
+            },
+            {
+              "alias": "Heinen",
+              "playerId": 8478046
+            }
+          ]
+        },
+        {
+          "unresolvedId": "fixture-1",
+          "action": "ignore"
+        }
+      ],
+      "gets": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n0\nREMAINING\n\nMock save completed\n\n1 resolved in this queue \u00b7 1 ignored\n\nNo matching unresolved player name was found."
+    },
+    {
+      "name": "Older initial queue response cannot replace newer response",
+      "status": "passed",
+      "posts": [],
+      "gets": [
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n1\nREMAINING\n\nWORK QUEUE\n\n1 names to review\nSoucy-Andrae\nCBJ\nPending name\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nSoucy\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nAndrae\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nSoucy-Andrae"
+    },
+    {
+      "name": "Duplicate ignore click submits only once",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "action": "ignore"
+        }
+      ],
+      "gets": [
+        "",
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n2\nREMAINING\n\nMock save completed\n\nLoading...\n\nWORK QUEUE\n\n2 names to review\nLomberg-Heinen\nCBJ\nSoucy-Andrae\nCBJ\nPending name\nLomberg-Heinen (CBJ)\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nLomberg\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nHeinen\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nLomberg-Heinen"
+    },
+    {
+      "name": "Review token accompanies alias save",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "playerId": 8479066,
+          "importNhlIdentity": false,
+          "alias": "Lomberg-Heinen",
+          "reviewToken": "fixture-review-token"
+        }
+      ],
+      "gets": [
+        "?reviewToken=fixture-review-token",
+        "?reviewToken=fixture-review-token",
+        "?reviewToken=fixture-review-token"
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n1\nREMAINING\n\nMock save completed\n\n1 resolved in this queue\n\nWORK QUEUE\n\n1 names to review\nSoucy-Andrae\nCBJ\nPending name\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nSoucy\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nAndrae\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nSoucy-Andrae"
+    },
+    {
+      "name": "Review token accompanies ignore save",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "action": "ignore",
+          "reviewToken": "fixture-review-token"
+        }
+      ],
+      "gets": [
+        "?reviewToken=fixture-review-token",
+        "?reviewToken=fixture-review-token",
+        "?reviewToken=fixture-review-token"
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n1\nREMAINING\n\nMock save completed\n\n0 resolved in this queue \u00b7 1 ignored\n\nWORK QUEUE\n\n1 names to review\nSoucy-Andrae\nCBJ\nPending name\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nSoucy\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nAndrae\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nSoucy-Andrae"
+    },
+    {
+      "name": "Save success then refresh failure exits loading and retries read only",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "action": "split",
+          "parts": [
+            {
+              "alias": "Lomberg",
+              "playerId": 8479066
+            },
+            {
+              "alias": "Heinen",
+              "playerId": 8478046
+            }
+          ]
+        }
+      ],
+      "gets": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n1\nREMAINING\n\nQueue refreshed.\n\n1 resolved in this queue\n\nWORK QUEUE\n\n1 names to review\nSoucy-Andrae\nCBJ\nPending name\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nSoucy\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nAndrae\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nSoucy-Andrae"
+    },
+    {
+      "name": "Verified NHL lookup applies to current item and imports only on save",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "playerId": 8479066,
+          "importNhlIdentity": true,
+          "alias": "Lomberg-Heinen"
+        }
+      ],
+      "gets": [
+        "",
+        "",
+        "?nhlId=8479066&unresolvedId=fixture-0",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n1\nREMAINING\n\nMock save completed\n\n1 resolved in this queue\n\nWORK QUEUE\n\n1 names to review\nSoucy-Andrae\nCBJ\nPending name\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\nLook up NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nVerified NHL camp roster URL (optional)\nSupply an NHL.com source only after verifying this player belongs to the reported team\u2019s camp. Saving records camp membership for 30 days and preserves historical rosters.\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nSoucy\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nAndrae\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nSoucy-Andrae"
+    },
+    {
+      "name": "Stale NHL lookup cannot select player for another queue item",
+      "status": "passed",
+      "posts": [],
+      "gets": [
+        "",
+        "",
+        "?nhlId=8479066&unresolvedId=fixture-0"
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n2\nREMAINING\n\nWORK QUEUE\n\n2 names to review\nLomberg-Heinen\nCBJ\nSoucy-Andrae\nCBJ\nPending name\nLomberg-Heinen (CBJ)\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\nLook up NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nVerified NHL camp roster URL (optional)\nSupply an NHL.com source only after verifying this player belongs to the reported team\u2019s camp. Saving records camp membership for 30 days and preserves historical rosters.\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nSoucy\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nAndrae\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nSoucy-Andrae"
+    },
+    {
+      "name": "Changed search invalidates old NHL lookup",
+      "status": "passed",
+      "posts": [],
+      "gets": [
+        "",
+        "",
+        "?nhlId=8479066&unresolvedId=fixture-0"
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n2\nREMAINING\n\nWORK QUEUE\n\n2 names to review\nLomberg-Heinen\nCBJ\nSoucy-Andrae\nCBJ\nPending name\nLomberg-Heinen (CBJ)\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\nLook up NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nVerified NHL camp roster URL (optional)\nSupply an NHL.com source only after verifying this player belongs to the reported team\u2019s camp. Saving records camp membership for 30 days and preserves historical rosters.\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nLomberg\nChoose player\u2026\nDanton Heinen \u00b7 8478046\nHeinen\nChoose player\u2026\nDanton Heinen \u00b7 8478046\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nLomberg-Heinen"
+    },
+    {
+      "name": "Review token accompanies split save",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "action": "split",
+          "parts": [
+            {
+              "alias": "Lomberg",
+              "playerId": 8479066
+            },
+            {
+              "alias": "Heinen",
+              "playerId": 8478046
+            }
+          ],
+          "reviewToken": "fixture-review-token"
+        }
+      ],
+      "gets": [
+        "?reviewToken=fixture-review-token",
+        "?reviewToken=fixture-review-token",
+        "?reviewToken=fixture-review-token"
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n1\nREMAINING\n\nMock save completed\n\n1 resolved in this queue\n\nWORK QUEUE\n\n1 names to review\nSoucy-Andrae\nCBJ\nPending name\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nSoucy\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nAndrae\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nSoucy-Andrae"
+    },
+    {
+      "name": "Deep link completes within the existing item scope",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "action": "split",
+          "parts": [
+            {
+              "alias": "Lomberg",
+              "playerId": 8479066
+            },
+            {
+              "alias": "Heinen",
+              "playerId": 8478046
+            }
+          ]
+        }
+      ],
+      "gets": [
+        "?unresolvedId=fixture-0",
+        "?unresolvedId=fixture-0",
+        "?unresolvedId=fixture-0"
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n0\nREMAINING\n\nMock save completed\n\n1 resolved in this queue\n\nNo matching unresolved player name was found."
+    },
+    {
+      "name": "Three-part hyphen name has no incomplete split form",
+      "status": "passed",
+      "posts": [],
+      "gets": [
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n1\nREMAINING\n\nWORK QUEUE\n\n1 names to review\nAlpha-Beta-Gamma\nCBJ\nPending name\nAlpha-Beta-Gamma (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nLomberg-Heinen"
+    },
+    {
+      "name": "Same player cannot be selected for both split parts",
+      "status": "passed",
+      "posts": [],
+      "gets": [
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n2\nREMAINING\n\nWORK QUEUE\n\n2 names to review\nLomberg-Heinen\nCBJ\nSoucy-Andrae\nCBJ\nPending name\nLomberg-Heinen (CBJ)\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nLomberg\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nHeinen\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nLomberg-Heinen"
+    },
+    {
+      "name": "Responsive keyboard interaction 320px",
+      "status": "passed",
+      "geometry": {
+        "viewport": 320,
+        "scroll": 320,
+        "controls": [
+          {
+            "label": "Lomberg-HeinenCBJ",
+            "left": 37,
+            "right": 283,
+            "width": 246,
+            "height": 40
+          },
+          {
+            "label": "Soucy-AndraeCBJ",
+            "left": 37,
+            "right": 283,
+            "width": 246,
+            "height": 40
+          },
+          {
+            "label": "Lomberg-Heinen (CBJ)Soucy-Andrae (C",
+            "left": 37,
+            "right": 283,
+            "width": 246,
+            "height": 42
+          },
+          {
+            "label": "",
+            "left": 37,
+            "right": 283,
+            "width": 246,
+            "height": 42
+          },
+          {
+            "label": "",
+            "left": 37,
+            "right": 283,
+            "width": 246,
+            "height": 42
+          },
+          {
+            "label": "Match player",
+            "left": 37,
+            "right": 283,
+            "width": 246,
+            "height": 42
+          },
+          {
+            "label": "Save alias",
+            "left": 37,
+            "right": 148.40625,
+            "width": 111.40625,
+            "height": 42
+          },
+          {
+            "label": "Ignore",
+            "left": 160.40625,
+            "right": 243.296875,
+            "width": 82.890625,
+            "height": 42
+          },
+          {
+            "label": "Choose player\u2026Ryan Lomberg \u00b7 847906",
+            "left": 54,
+            "right": 266,
+            "width": 212,
+            "height": 42
+          },
+          {
+            "label": "Choose player\u2026Danton Heinen \u00b7 84780",
+            "left": 54,
+            "right": 266,
+            "width": 212,
+            "height": 42
+          },
+          {
+            "label": "Save as two players",
+            "left": 54,
+            "right": 240.09375,
+            "width": 186.09375,
+            "height": 42
+          }
+        ]
+      },
+      "posts": [],
+      "gets": [
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n2\nREMAINING\n\nWORK QUEUE\n\n2 names to review\nLomberg-Heinen\nCBJ\nSoucy-Andrae\nCBJ\nPending name\nLomberg-Heinen (CBJ)\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nLomberg\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nHeinen\nChoose player\u2026\nDanton Heinen \u00b7 8478046\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nLomberg-Heinen"
+    },
+    {
+      "name": "Responsive keyboard interaction 390px",
+      "status": "passed",
+      "geometry": {
+        "viewport": 390,
+        "scroll": 390,
+        "controls": [
+          {
+            "label": "Lomberg-HeinenCBJ",
+            "left": 37,
+            "right": 353,
+            "width": 316,
+            "height": 40
+          },
+          {
+            "label": "Soucy-AndraeCBJ",
+            "left": 37,
+            "right": 353,
+            "width": 316,
+            "height": 40
+          },
+          {
+            "label": "Lomberg-Heinen (CBJ)Soucy-Andrae (C",
+            "left": 37,
+            "right": 353,
+            "width": 316,
+            "height": 42
+          },
+          {
+            "label": "",
+            "left": 37,
+            "right": 353,
+            "width": 316,
+            "height": 42
+          },
+          {
+            "label": "",
+            "left": 37,
+            "right": 353,
+            "width": 316,
+            "height": 42
+          },
+          {
+            "label": "Match player",
+            "left": 37,
+            "right": 353,
+            "width": 316,
+            "height": 42
+          },
+          {
+            "label": "Save alias",
+            "left": 37,
+            "right": 148.40625,
+            "width": 111.40625,
+            "height": 42
+          },
+          {
+            "label": "Ignore",
+            "left": 160.40625,
+            "right": 243.296875,
+            "width": 82.890625,
+            "height": 42
+          },
+          {
+            "label": "Choose player\u2026Ryan Lomberg \u00b7 847906",
+            "left": 54,
+            "right": 336,
+            "width": 282,
+            "height": 42
+          },
+          {
+            "label": "Choose player\u2026Danton Heinen \u00b7 84780",
+            "left": 54,
+            "right": 336,
+            "width": 282,
+            "height": 42
+          },
+          {
+            "label": "Save as two players",
+            "left": 54,
+            "right": 240.09375,
+            "width": 186.09375,
+            "height": 42
+          }
+        ]
+      },
+      "posts": [],
+      "gets": [
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n2\nREMAINING\n\nWORK QUEUE\n\n2 names to review\nLomberg-Heinen\nCBJ\nSoucy-Andrae\nCBJ\nPending name\nLomberg-Heinen (CBJ)\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nLomberg\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nHeinen\nChoose player\u2026\nDanton Heinen \u00b7 8478046\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nLomberg-Heinen"
+    },
+    {
+      "name": "Responsive keyboard interaction 768px",
+      "status": "passed",
+      "geometry": {
+        "viewport": 768,
+        "scroll": 768,
+        "controls": [
+          {
+            "label": "Lomberg-HeinenCBJ",
+            "left": 49,
+            "right": 219,
+            "width": 170,
+            "height": 40
+          },
+          {
+            "label": "Soucy-AndraeCBJ",
+            "left": 49,
+            "right": 219,
+            "width": 170,
+            "height": 40
+          },
+          {
+            "label": "Lomberg-Heinen (CBJ)Soucy-Andrae (C",
+            "left": 293,
+            "right": 719,
+            "width": 426,
+            "height": 42
+          },
+          {
+            "label": "",
+            "left": 293,
+            "right": 719,
+            "width": 426,
+            "height": 42
+          },
+          {
+            "label": "",
+            "left": 293,
+            "right": 719,
+            "width": 426,
+            "height": 42
+          },
+          {
+            "label": "Match player",
+            "left": 293,
+            "right": 719,
+            "width": 426,
+            "height": 42
+          },
+          {
+            "label": "Save alias",
+            "left": 293,
+            "right": 404.40625,
+            "width": 111.40625,
+            "height": 42
+          },
+          {
+            "label": "Ignore",
+            "left": 416.40625,
+            "right": 499.296875,
+            "width": 82.890625,
+            "height": 42
+          },
+          {
+            "label": "Choose player\u2026Ryan Lomberg \u00b7 847906",
+            "left": 310,
+            "right": 498,
+            "width": 188,
+            "height": 42
+          },
+          {
+            "label": "Choose player\u2026Danton Heinen \u00b7 84780",
+            "left": 514,
+            "right": 702,
+            "width": 188,
+            "height": 42
+          },
+          {
+            "label": "Save as two players",
+            "left": 310,
+            "right": 496.09375,
+            "width": 186.09375,
+            "height": 42
+          }
+        ]
+      },
+      "posts": [],
+      "gets": [
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n2\nREMAINING\n\nWORK QUEUE\n\n2 names to review\nLomberg-Heinen\nCBJ\nSoucy-Andrae\nCBJ\nPending name\nLomberg-Heinen (CBJ)\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nLomberg\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nHeinen\nChoose player\u2026\nDanton Heinen \u00b7 8478046\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nLomberg-Heinen"
+    },
+    {
+      "name": "Peer: delayed refresh retains alias, search and both split fields on next draft",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "action": "split",
+          "parts": [
+            {
+              "alias": "Lomberg",
+              "playerId": 8479066
+            },
+            {
+              "alias": "Heinen",
+              "playerId": 8478046
+            }
+          ]
+        }
+      ],
+      "gets": [
+        "",
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n1\nREMAINING\n\nMock save completed\n\n1 resolved in this queue\n\nWORK QUEUE\n\n1 names to review\nSoucy-Andrae\nCBJ\nPending name\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nSoucy\nChoose player\u2026\nCarson Soucy \u00b7 8476463\nAndrae\nChoose player\u2026\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nSoucy-Andrae"
+    },
+    {
+      "name": "Peer: mixed action synchronous events share one mutation lock",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "action": "split",
+          "parts": [
+            {
+              "alias": "Lomberg",
+              "playerId": 8479066
+            },
+            {
+              "alias": "Heinen",
+              "playerId": 8478046
+            }
+          ]
+        }
+      ],
+      "gets": [
+        "",
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n2\nREMAINING\n\nMock save completed\n\nLoading...\n\nWORK QUEUE\n\n2 names to review\nLomberg-Heinen\nCBJ\nSoucy-Andrae\nCBJ\nPending name\nLomberg-Heinen (CBJ)\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nLomberg\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nHeinen\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nLomberg-Heinen"
+    },
+    {
+      "name": "Peer: failed refresh retry retains next draft and never repeats POST",
+      "status": "passed",
+      "posts": [
+        {
+          "unresolvedId": "fixture-0",
+          "action": "split",
+          "parts": [
+            {
+              "alias": "Lomberg",
+              "playerId": 8479066
+            },
+            {
+              "alias": "Heinen",
+              "playerId": 8478046
+            }
+          ]
+        }
+      ],
+      "gets": [
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n1\nREMAINING\n\nQueue refreshed.\n\n1 resolved in this queue\n\nWORK QUEUE\n\n1 names to review\nSoucy-Andrae\nCBJ\nPending name\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nDanton Heinen \u00b7 8478046 - L \u00b7 team match\nCarson Soucy \u00b7 8476463 - D \u00b7 team match\nEmil Andrae \u00b7 8482001 - D \u00b7 team match\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nSoucy\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nAndrae\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nDanton Heinen \u00b7 8478046\nCarson Soucy \u00b7 8476463\nEmil Andrae \u00b7 8482001\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nSoucy-Andrae"
+    },
+    {
+      "name": "Peer: selection change cancels in-flight NHL lookup",
+      "status": "passed",
+      "posts": [],
+      "gets": [
+        "",
+        "",
+        "?nhlId=8479066&unresolvedId=fixture-0"
+      ],
+      "pageErrors": [],
+      "unhandled": [],
+      "blocked": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Tomorrow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://img.buymeacoffee.com/button-api/?text=Support&emoji=%F0%9F%A5%83&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css?family=Roboto%20Condensed",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap",
+          "method": "GET"
+        },
+        {
+          "url": "https://cdn.vercel-insights.com/v1/script.debug.js",
+          "method": "GET"
+        },
+        {
+          "url": "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+          "method": "GET"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "text": "DATABASE TOOLS\n\nPLAYER ALIAS REVIEW\n2\nREMAINING\n\nWORK QUEUE\n\n2 names to review\nLomberg-Heinen\nCBJ\nSoucy-Andrae\nCBJ\nPending name\nLomberg-Heinen (CBJ)\nSoucy-Andrae (CBJ)\nAlias to save\nSearch all players by name or NHL ID\nLook up NHL ID\n\nTeam matches appear first. Choosing a player from another team saves an identity alias; it does not change roster membership.\n\nMatch player\nChoose a player...\nRyan Lomberg \u00b7 8479066 - L \u00b7 team match\nVerified NHL camp roster URL (optional)\nSupply an NHL.com source only after verifying this player belongs to the reported team\u2019s camp. Saving records camp membership for 30 days and preserves historical rosters.\nSave alias\nIgnore\nIs this two players?\n\nChoose one player for each side of the hyphen. A split saves both aliases separately.\n\nLomberg\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nHeinen\nChoose player\u2026\nRyan Lomberg \u00b7 8479066\nSave as two players\nContext\n\nisolated mock fixture \u00b7 CBJ \u00b7 No tweet id\n\nLomberg-Heinen"
+    }
+  ],
+  "checks": {
+    "unit": "24/24 passed",
+    "typecheck": "npx --no-install tsc --noEmit --incremental false with 8GB heap passed",
+    "targetedEslint": "passed",
+    "diffCheck": "passed",
+    "incrementalApplyCheck": "passed; no application",
+    "cumulativeReverseApplyCheck": "passed; no application",
+    "sourceManifest": "3387 entries checked; only three overlays and existing next-env.d.ts generation exception",
+    "dependencies": "all six audit-recorded package.json hashes match in worktree and integration",
+    "sharedResolverPreimages": "all three still match audit hashes"
+  },
+  "residualGates": [
+    "Parent integration must recheck exact preimages and apply one patch only.",
+    "Live authentication, real API/database behavior, backend idempotency and split transaction atomicity are unverified.",
+    "No deployment/build authorization is implied."
+  ],
+  "settingsEvidence": "Relied on explicit trusted delegation evidence of parent Max admission and this Medium review. No tool independently exposed active model/effort; repository asks runtime verification but specifies no additional independent source. No further delegation performed.",
+  "instructions": "Read repository AGENTS.md and mise-en-place.md. Repository .agents and .codex directories and /Users/tim/.agents/skills do not exist. No nested AGENTS.md in isolated worktree."
+}

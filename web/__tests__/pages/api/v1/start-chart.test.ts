@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { evaluatePayloadBudget } from "lib/dashboard/perfBudget";
 import { addStartChartPositionRanks } from "lib/projections/startChartFantasyScoring";
 import { normalizeStartChartResponse } from "lib/projections/startChartContract";
@@ -9,12 +9,14 @@ const {
   getSeasonForDateMock,
   fetchTeamRatingsAsOfMock,
   eqMock,
+  gtMock,
 } = vi.hoisted(() => ({
   fromMock: vi.fn(),
   rpcMock: vi.fn(),
   getSeasonForDateMock: vi.fn(),
   fetchTeamRatingsAsOfMock: vi.fn(),
   eqMock: vi.fn(),
+  gtMock: vi.fn(),
 }));
 
 vi.mock("lib/supabase/server", () => ({
@@ -48,6 +50,10 @@ function createQueryBuilder(resolver: () => QueryResult) {
     },
     or() { return builder; },
     in() {
+      return builder;
+    },
+    gt(...args: unknown[]) {
+      gtMock(...args);
       return builder;
     },
     gte() {
@@ -395,7 +401,11 @@ describe("/api/v1/start-chart", () => {
     });
   });
 
+  afterEach(() => vi.useRealTimers());
+
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-02-07T17:00:00Z"));
     vi.unstubAllEnvs();
     vi.clearAllMocks();
     rpcMock.mockResolvedValue({
@@ -1051,275 +1061,41 @@ describe("/api/v1/start-chart", () => {
     );
   });
 
-  it("reports previous-date fallback serving state when the requested slate has no games", async () => {
+  it("selects the upcoming schedule without requiring an older projection run", async () => {
     let gamesQueryCount = 0;
-    let forgeRunsQueryCount = 0;
-    fetchTeamRatingsAsOfMock.mockResolvedValue({
-      requestedDate: "2026-02-07",
-      resolvedDate: null,
-      ratings: [],
-    });
-    fromMock.mockImplementation((table: string) => {
-      if (table === "player_projections") {
-        throw new Error("legacy player_projections should not be queried");
-      }
-      if (table === "games") {
-        gamesQueryCount += 1;
-        if (gamesQueryCount === 1) {
-          return createQueryBuilder(() => ({
-            data: [],
-            error: null,
-          }));
-        }
-        return createQueryBuilder(() => ({
-          data: [
-            {
-              id: 1002,
-              date: "2026-02-07",
-              homeTeamId: 10,
-              awayTeamId: 8,
-            },
-          ],
-          error: null,
-        }));
-      }
-      if (table === "forge_runs") {
-        forgeRunsQueryCount += 1;
-        return createQueryBuilder(() => ({
-          data:
-            forgeRunsQueryCount === 1
-              ? []
-              : forgeRunsQueryCount === 2
-                ? [
-                    {
-                      run_id: "run-123",
-                      as_of_date: "2026-02-07",
-                      forge_player_projections: [
-                        {
-                          as_of_date: "2026-02-07",
-                          game_id: 1002,
-                          horizon_games: 1,
-                          games: { date: "2026-02-07" },
-                        },
-                      ],
-                    },
-                  ]
-                : [
-                    {
-                      run_id: "run-123",
-                      as_of_date: "2026-02-07",
-                      created_at: "2026-02-07T12:00:00Z",
-                      updated_at: "2026-02-07T12:05:00Z",
-                      git_sha: null,
-                      metrics: null,
-                      forge_player_projections: [
-                        {
-                          ...defaultProjection,
-                          game_id: 1002,
-                          players: {
-                            fullName: "Nick Suzuki",
-                            position: "C",
-                          },
-                        },
-                      ],
-                    },
-                  ],
-          error: null,
-        }));
-      }
-      if (table === "goalie_start_projections") {
-        return createQueryBuilder(() => ({
-          data: [],
-          error: null,
-        }));
-      }
-      if (table === "yahoo_nhl_player_map_read") {
-        return createQueryBuilder(() => ({
-          data: [{ nhl_player_id: "8478402", yahoo_player_id: "5001" }],
-          error: null,
-        }));
-      }
-      if (table === "yahoo_players") {
-        return createQueryBuilder(() => ({
-          data: [
-            {
-              player_id: "5001",
-              player_key: "449.p.5001",
-              player_name: "Nick Suzuki",
-              full_name: "Nick Suzuki",
-              eligible_positions: ["C"],
-              percent_ownership: 78,
-              ownership_timeline: [],
-            },
-          ],
-          error: null,
-        }));
-      }
-      if (table === "yahoo_player_ownership_history") {
-        return createQueryBuilder(() => ({ data: [], error: null }));
-      }
-      if (table === "team_ctpi_daily") {
-        return createQueryBuilder(() => ({
-          data: [],
-          error: null,
-        }));
-      }
-      return createQueryBuilder(() => ({ data: [], error: null }));
-    });
-
-    vi.resetModules();
-    const handler = (await import("../../../../pages/api/v1/start-chart"))
-      .default;
-    const req: any = {
-      method: "GET",
-      query: {
-        date: "2026-02-08",
-      },
-    };
-    const res = createMockRes();
-
-    await handler(req, res);
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toMatchObject({
-      dateUsed: "2026-02-07",
-      requestedDate: "2026-02-08",
-      fallbackApplied: true,
-      compatibilityInventory: {
-        inventoryVersion: "forge-compatibility-inventory-v2",
-        canonicalSkaterSource: "forge_player_projections",
-        canonicalReadRoute: "/api/v1/start-chart",
-        retiredLegacyMaterializerRoute:
-          "/api/v1/db/update-start-chart-projections",
-        legacyMaterializerRemoved: true,
-        legacyPlayerProjectionsReadDisabled: true,
-        goalieStartTable: {
-          decisionVersion: "goalie-start-ownership-v1",
-          table: "goalie_start_projections",
-          decision: "retain_shared_table_name_for_now",
-          canonicalWriterRoute: "/api/v1/db/update-goalie-projections-v2",
-          canonicalWriterStatus: "single_writer",
-          renameDeferred: true,
-        },
-      },
-      serving: {
-        requestedDate: "2026-02-08",
-        resolvedDate: "2026-02-07",
-        fallbackApplied: true,
-        isSameDay: false,
-        state: "fallback",
-        strategy: "previous_date_with_games",
-        gapDays: 1,
-        severity: "warn",
-        status: "fallback_recent",
-        message:
-          "Start-chart slate is serving the nearest available date (2026-02-07), 1 day behind the requested date.",
-      },
-    });
-  });
-
-  it("resolves an older fallback with one joined run lookup and the exact run id", async () => {
-    let gamesQueryCount = 0;
-    let forgeRunsQueryCount = 0;
-    fetchTeamRatingsAsOfMock.mockResolvedValue({
-      requestedDate: "2026-02-05",
-      resolvedDate: null,
-      ratings: [],
-    });
     fromMock.mockImplementation((table: string) => {
       if (table === "games") {
         gamesQueryCount += 1;
-        return createQueryBuilder(() => ({
-          data:
-            gamesQueryCount <= 1
-              ? []
-              : [
-                  {
-                    id: 1005,
-                    date: "2026-02-05",
-                    homeTeamId: 10,
-                    awayTeamId: 8,
-                  },
-                ],
-          error: null,
-        }));
-      }
-      if (table === "forge_runs") {
-        forgeRunsQueryCount += 1;
-        return createQueryBuilder(() => ({
-          data:
-            forgeRunsQueryCount === 1
-              ? []
-              : forgeRunsQueryCount === 2
-                ? [
-                    {
-                      run_id: "fallback-run",
-                      as_of_date: "2026-02-05",
-                      forge_player_projections: [
-                        {
-                          as_of_date: "2026-02-05",
-                          game_id: 1005,
-                          horizon_games: 1,
-                          games: { date: "2026-02-05" },
-                        },
-                      ],
-                    },
-                  ]
-                : [
-                    {
-                      run_id: "fallback-run",
-                      as_of_date: "2026-02-05",
-                      created_at: "2026-02-05T12:00:00Z",
-                      updated_at: "2026-02-05T12:05:00Z",
-                      git_sha: null,
-                      metrics: null,
-                      forge_player_projections: [
-                        {
-                          ...defaultProjection,
-                          run_id: "fallback-run",
-                          as_of_date: "2026-02-05",
-                          game_id: 1005,
-                          players: {
-                            fullName: "Fallback Skater",
-                            position: "C",
-                          },
-                        },
-                      ],
-                    },
-                  ],
-          error: null,
-        }));
+        return createQueryBuilder(() => ({ data: gamesQueryCount === 1 ? []
+          : gamesQueryCount === 2 ? [{ date: "2026-02-09" }]
+          : [{ id: 1005, date: "2026-02-09", homeTeamId: 10, awayTeamId: 8 }], error: null }));
       }
       return createQueryBuilder(() => ({ data: [], error: null }));
     });
-
     vi.resetModules();
-    const handler = (await import("../../../../pages/api/v1/start-chart"))
-      .default;
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
     const res = createMockRes();
     await handler({ method: "GET", query: { date: "2026-02-08" } } as any, res);
-
     expect(res.statusCode).toBe(200);
-    expect(res.body).toMatchObject({
-      requestedDate: "2026-02-08",
-      resolvedDate: "2026-02-05",
-      projectionRunId: "fallback-run",
-      serving: {
-        mode: "fallback",
-        reason: "latest_available_with_data",
-        ageDays: 3,
-      },
-    });
-    expect(res.body.players[0]).toMatchObject({
-      row_key: "fallback-run:1005:8478402:1",
-      name: "Fallback Skater",
-    });
-    expect(
-      fromMock.mock.calls.filter(
-        ([table]) => table === "forge_player_projections",
-      ),
-    ).toHaveLength(0);
-    expect(forgeRunsQueryCount).toBe(3);
+    expect(res.body).toMatchObject({ requestedDate: "2026-02-08", resolvedDate: "2026-02-09",
+      fallbackApplied: true, projectionRunId: null,
+      serving: { mode: "partial", strategy: "next_scheduled_date", status: "upcoming",
+        reason: "scheduled_games_missing_projections" } });
+    expect(res.body.games).toHaveLength(1);
+    expect(gtMock).toHaveBeenCalledWith("date", "2026-02-08");
+    expect(getSeasonForDateMock).toHaveBeenCalledWith("2026-02-09", expect.anything());
+    expect(fromMock.mock.calls.filter(([table]) => table === "forge_runs")).toHaveLength(2);
+  });
+
+  it("clamps a past date to today's slate", async () => {
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-05" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.requestedDate).toBe("2026-02-07");
+    expect(eqMock).toHaveBeenCalledWith("date", "2026-02-07");
+    expect(eqMock).not.toHaveBeenCalledWith("as_of_date", "2026-02-05");
   });
 
   it("retains an exact scheduled slate as partial when projections are missing", async () => {
@@ -1398,7 +1174,7 @@ describe("/api/v1/start-chart", () => {
       fallbackApplied: false,
       serving: {
         mode: "no_games",
-        reason: "no_scheduled_games_or_eligible_fallback",
+        reason: "no_current_or_upcoming_scheduled_games",
       },
       coverage: { slateGames: 0, slateTeams: 0 },
     });
@@ -1420,7 +1196,7 @@ describe("/api/v1/start-chart", () => {
     route.clearStartChartCache();
 
     const dates = Array.from({ length: 65 }, (_, offset) => {
-      const date = new Date("2026-01-01T00:00:00Z");
+      const date = new Date("2026-02-07T00:00:00Z");
       date.setUTCDate(date.getUTCDate() + offset);
       return date.toISOString().slice(0, 10);
     });

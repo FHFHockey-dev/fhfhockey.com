@@ -85,6 +85,13 @@ function buildNewsUpdateResult(
 }
 
 describe("tweet news inference", () => {
+  it.each(["Nico Hischier remains out. Connor Bedard will play tonight.", "Nico Hischier will return tonight if healthy."])("rejects unsupported confirmed returns in copied evidence: %s", (text) => {
+    const row = buildRow({ review_text: text });
+    const validation = validateTweetNewsInference({ row, sources: buildTweetNewsInferenceSources(row), playerCandidates: players, teams,
+      result: buildNewsUpdateResult({ playerEvents: [{ playerId: 8480002, sourceId: "wrapper", excerpt: text, state: "confirmed_return", timeframe: null }] }) });
+    expect(validation.publish).toBe(false);
+    expect(validation.errors).toContain("event_requires_review");
+  });
   it("publishes schema-valid contract progress with grounded evidence", () => {
     const row = buildRow();
     const sources = buildTweetNewsInferenceSources(row);

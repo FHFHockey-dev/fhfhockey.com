@@ -34,17 +34,19 @@ type SyncRequest = {
   endDate: string;
 };
 type DatabaseError = { code?: string; details?: string; message: string };
-type DatabaseResult<T> = { data: T[] | null; error: DatabaseError | null };
+type DatabaseResult<T> = { data: T[] | null; error: DatabaseError | null; count?: number | null };
 type DatabaseBuilder<T> = PromiseLike<DatabaseResult<T>> & {
   eq(column: string, value: unknown): DatabaseBuilder<T>;
   gte(column: string, value: unknown): DatabaseBuilder<T>;
+  gt(column: string, value: unknown): DatabaseBuilder<T>;
   in(column: string, values: readonly unknown[]): DatabaseBuilder<T>;
+  limit(count: number): DatabaseBuilder<T>;
   lte(column: string, value: unknown): DatabaseBuilder<T>;
   order(column: string, options: { ascending: boolean }): DatabaseBuilder<T>;
 };
 type SyncReadClient = {
   from(table: string): {
-    select<T = Record<string, unknown>>(columns: string): DatabaseBuilder<T>;
+    select<T = Record<string, unknown>>(columns: string, options?: { count: "exact" }): DatabaseBuilder<T>;
   };
 };
 
@@ -274,15 +276,57 @@ async function loadSeasonTeams(args: {
 async function loadExistingScheduleRows(
   client: SyncReadClient,
   gameKey: string,
+  season: string,
 ): Promise<PersistedRosterScheduleRow[]> {
-  const { data, error } = await client
-    .from("roster_optimizer_team_games")
-    .select<PersistedRosterScheduleRow>(
-      "id,game_key,source_game_id,team_id,game_date,week,game_status,schedule_status,mapping_status,is_countable",
-    )
-    .eq("game_key", gameKey);
-  if (error) throw error;
-  return data ?? [];
+  const pageSize = 500;
+  const maxRows = 10_000;
+  const rows: PersistedRosterScheduleRow[] = [];
+  let lastId = 0;
+  let expectedTotal: number | null = null;
+  for (;;) {
+    const { data, error, count } = await client
+      .from("roster_optimizer_team_games")
+      .select<PersistedRosterScheduleRow & { season: string }>(
+        "id,game_key,season,source_game_id,team_id,game_date,start_time,week,game_status,schedule_status,mapping_status,is_countable",
+        { count: "exact" },
+      )
+      .eq("game_key", gameKey)
+      .eq("season", season)
+      .gt("id", lastId)
+      .order("id", { ascending: true })
+      .limit(pageSize);
+    if (error) throw error;
+    if (typeof count !== "number" || !Number.isSafeInteger(count) || count < 0 || count > maxRows - rows.length
+      || expectedTotal !== null && count !== expectedTotal - rows.length
+      || !Array.isArray(data) || data.length > count) {
+      throw new SyncRouteError({
+        code: "SCHEDULE_READ_INCOMPLETE",
+        message: "Existing schedule rows could not be read completely before reconciliation.",
+        status: 409,
+      });
+    }
+    if (expectedTotal === null) expectedTotal = count;
+    if (count === 0) return rows;
+    if (data.length === 0) {
+      throw new SyncRouteError({
+        code: "SCHEDULE_READ_INCOMPLETE",
+        message: "Existing schedule rows could not be read completely before reconciliation.",
+        status: 409,
+      });
+    }
+    for (const row of data) {
+      if (!Number.isSafeInteger(row.id) || row.id <= lastId || row.game_key !== gameKey || row.season !== season) {
+        throw new SyncRouteError({
+          code: "SCHEDULE_READ_INCOMPLETE",
+          message: "Existing schedule rows could not be read completely before reconciliation.",
+          status: 409,
+        });
+      }
+      lastId = row.id;
+      rows.push(row);
+    }
+    if (data.length === count) return rows;
+  }
 }
 
 function buildScheduleRows(args: {
@@ -418,6 +462,7 @@ export async function updateRosterOptimizerScheduleHandler(
     const existingRows = await loadExistingScheduleRows(
       readClient,
       request.gameKey,
+      yahooSeason,
     );
     const changes = summarizeRosterScheduleChanges({
       existing: existingRows,

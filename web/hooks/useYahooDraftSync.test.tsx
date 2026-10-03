@@ -184,6 +184,22 @@ describe("useYahooDraftSync", () => {
     expect(result.current.error).toBeNull();
   });
 
+  it("requires an explicit league choice when Yahoo returns multiple leagues", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => response({
+      enabled: true,
+      leagues: [
+        { externalLeagueId: "league-1", leagueName: "First league" },
+        { externalLeagueId: "league-2", leagueName: "Second league" },
+      ],
+      ranking: null,
+    })));
+    const { result } = renderHook(() => useYahooDraftSync(true));
+    await waitFor(() => expect(result.current.leagues).toHaveLength(2));
+    expect(result.current.selectedLeagueId).toBe("");
+    act(() => result.current.setSelectedLeagueId("league-2"));
+    expect(result.current.selectedLeagueId).toBe("league-2");
+  });
+
   it("falls back to HTTP when the Realtime channel cannot subscribe", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
       if (String(input) === "/api/v1/account/yahoo/draft-sessions") {

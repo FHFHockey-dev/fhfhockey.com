@@ -204,7 +204,7 @@
   color: v.$secondary-color;
 }
 
-@media (min-width: v.$breakpoint-desktop) {
+@media (min-width: v.$breakpoint-tablet) {
   .bottomDrawer {
     display: block;
     position: fixed;
@@ -313,6 +313,12 @@
     height: calc(100% - 64px);
     overflow: auto;
     padding: v.$space-md;
+  }
+}
+
+@media (min-width: v.$breakpoint-tablet) and (max-width: 1099px) {
+  .bottomDrawer {
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
   }
 }
 

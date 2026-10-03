@@ -323,6 +323,8 @@ describe("StartChartPage", () => {
     } finally { vi.unstubAllGlobals(); }
   });
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-02-07T17:00:00Z"));
     deploymentState.data = undefined;
     deploymentState.error = null;
     deploymentState.request.mockClear();
@@ -349,9 +351,22 @@ describe("StartChartPage", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     cleanup();
     swrState.mutate.mockClear();
     routerState.router.replace.mockClear();
+  });
+
+  it("replaces historical URLs with today and prevents past-date selection", () => {
+    routerState.router.query = { date: "2026-02-05", position: "LW" };
+    render(<StartChartPage />);
+    const input = screen.getByLabelText("Date") as HTMLInputElement;
+    expect(input.value).toBe("2026-02-07");
+    expect(input.min).toBe("2026-02-07");
+    expect(routerState.router.query.date).toBe("2026-02-07");
+    expect((screen.getByRole("button", { name: "Previous day" }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(input, { target: { value: "2026-02-06" } });
+    expect(input.value).toBe("2026-02-07");
   });
 
   it("displays the versioned fantasy scoring formula supplied by the API", () => {
@@ -570,6 +585,14 @@ describe("StartChartPage", () => {
     const controls = screen.getByRole("region", { name: "Starter Board controls" });
     expect(games.compareDocumentPosition(controls) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole("link", { name: /View Full Schedule/ }).getAttribute("href")).toBe("/game-grid/7-Day-Forecast");
+    expect(screen.getByRole("link", { name: /^Game Grid Compare/ }).getAttribute("href")).toBe("/game-grid/7-Day-Forecast?startDate=2026-02-07&endDate=2026-02-13");
+    expect(screen.getByRole("link", { name: /^Trends Dashboard Add/ }).getAttribute("href")).toBe("/trends?date=2026-02-07");
+    expect(screen.getByRole("link", { name: /^Goalie View Cross/ }).getAttribute("href")).toBe("/variance/goalies");
+    expect(screen.getByText(/League availability is not transferred/)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Slate team"), { target: { value: "MTL" } });
+    expect(screen.getByRole("link", { name: /^Splits Open/ }).getAttribute("href")).toBe("/splits?team=MTL");
+    expect(screen.getByRole("link", { name: /^Lines Validate/ }).getAttribute("href")).toBe("/lines/MTL");
+    fireEvent.change(screen.getByLabelText("Slate team"), { target: { value: "" } });
     const gameFilter = screen.getByRole("button", {
       name: /MTL at TOR; apply game filter/,
     });
@@ -583,8 +606,8 @@ describe("StartChartPage", () => {
     expect(teamHref).toContain("/forge/team/MTL");
     expect(teamHref).toContain("date=2026-02-07");
     expect(teamHref).toContain("resolvedDate=2026-02-07");
-    expect(teamHref).toContain("position=C");
-    expect(teamHref).toContain("mode=week");
+    expect(teamHref).toBe("/forge/team/MTL?date=2026-02-07&resolvedDate=2026-02-07");
+    expect(screen.getByRole("link", { name: "Nick Suzuki" }).getAttribute("href")).toBe(`/forge/player/${player().player_id}?date=2026-02-07&resolvedDate=2026-02-07&mode=week`);
     expect(screen.getByText("Opp G Home Goalie · projected 72%")).toBeTruthy();
     expect(screen.getAllByText("NHL PTS range 2.10–6.40")).toHaveLength(1);
     expect(screen.getAllByText(/7:00 PM EST/)).toHaveLength(2);
@@ -734,7 +757,7 @@ describe("StartChartPage", () => {
     );
   });
 
-  it("preserves the first visible goalie's probability without redistributing missing mass", () => {
+  it.each([0.1, 1])("preserves projected goalie probability %s without inventing confirmation or redistributing missing mass", (probability) => {
     swrState.data = {
       ...buildApiData(),
       games: [
@@ -749,7 +772,7 @@ describe("StartChartPage", () => {
           homeGoalies: Array.from({ length: 6 }, (_, index) => ({
             player_id: 9001 + index,
             name: index === 0 ? "Goalie One" : `Goalie ${index + 1}`,
-            start_probability: 0.1,
+            start_probability: index === 0 ? probability : probability === 1 ? null : 0.1,
             projected_gsaa_per_60: null,
             confirmed_status: false,
             source_updated_at: "2026-02-07T14:00:00Z",
@@ -774,7 +797,8 @@ describe("StartChartPage", () => {
 
     render(<StartChartPage />);
 
-    expect(screen.getByText("Goalie One · Projected 10%")).toBeTruthy();
+    expect(screen.getByText(`Goalie One · Projected ${probability * 100}%`)).toBeTruthy();
+    expect(screen.queryByText("Goalie One · Confirmed")).toBeNull();
     expect(screen.getByText("Unknown Goalie · Probability unavailable")).toBeTruthy();
   });
 
@@ -876,13 +900,17 @@ describe("StartChartPage", () => {
   it("renders explicit fallback and degraded source messaging", () => {
     swrState.data = {
       ...buildApiData(),
-      requestedDate: "2026-02-08",
-      resolvedDate: "2026-02-07",
+      dateUsed: "2026-02-09",
+      date: "2026-02-09",
+      projections: 1,
+      players: [player()],
+      requestedDate: "2026-02-07",
+      resolvedDate: "2026-02-09",
       fallbackApplied: true,
       serving: {
         mode: "fallback",
-        message: "Serving the nearest available date.",
-        ageDays: 1,
+        message: "No games are scheduled for 2026-02-07. Showing the upcoming slate on 2026-02-09.",
+        ageDays: 0,
       },
       sourceStatus: {
         ...readySourceStatus,
@@ -897,11 +925,17 @@ describe("StartChartPage", () => {
     };
     render(<StartChartPage />);
 
-    expect(screen.getByText("Showing 2026-02-07, not 2026-02-08.")).toBeTruthy();
+    expect(screen.getByText("Showing 2026-02-09, not 2026-02-07.")).toBeTruthy();
+    expect(screen.getByRole("status", { name: "Starter Board status" }).textContent).toContain("Upcoming slate");
+    expect(screen.queryByText("Historical fallback")).toBeNull();
     expect(screen.getByRole("link", { name: "View Full Schedule · current" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "7-day schedule from 2026-02-09" }).getAttribute("href")).toBe("/game-grid/7-Day-Forecast?startDate=2026-02-09&endDate=2026-02-15");
+    expect(screen.getByRole("link", { name: /^Game Grid Compare/ }).getAttribute("href")).toBe("/game-grid/7-Day-Forecast?startDate=2026-02-09&endDate=2026-02-15");
+    expect(screen.getByRole("link", { name: "Nick Suzuki" }).getAttribute("href")).toBe(`/forge/player/${player().player_id}?date=2026-02-07&resolvedDate=2026-02-09&mode=tonight`);
+    expect(screen.getByRole("link", { name: "MTL" }).getAttribute("href")).toBe("/forge/team/MTL?date=2026-02-07&resolvedDate=2026-02-09");
     expect(
       screen.getByText(
-        "This is the nearest earlier slate with projections (1 day old). Use it as historical reference, not today's recommendation. Projection provenance is unverified.",
+        "No games are scheduled for 2026-02-07. Showing the upcoming slate on 2026-02-09. Projection provenance is unverified.",
       ),
     ).toBeTruthy();
   });
@@ -930,6 +964,8 @@ describe("StartChartPage", () => {
     expect(screen.getByText("Weekly volume unavailable")).toBeTruthy();
     expect(screen.getAllByText("—").length).toBeGreaterThan(0);
     expect(screen.queryByText("0 Games Remaining")).toBeNull();
+    const row = screen.getByRole("link", { name: "Nick Suzuki" }).closest("li");
+    expect(row?.querySelector('[class*="playerRank"]')?.textContent).toBe("—");
   });
 
   it("renders loading and fetch-error retry states explicitly", () => {
@@ -938,10 +974,17 @@ describe("StartChartPage", () => {
     const view = render(<StartChartPage />);
 
     expect(screen.getAllByText("Loading projections…")).toHaveLength(5);
+    const status = screen.getByRole("status", { name: "Starter Board status" });
+    expect(status.textContent).toContain("Loading");
 
     swrState.isLoading = false;
     swrState.error = new Error("fixture request failed");
     view.rerender(<StartChartPage />);
+    expect(screen.getByRole("status", { name: "Starter Board status" })).toBe(status);
+    expect(status.textContent).toContain("Unavailable");
+    expect(screen.getByText("Slate unavailable")).toBeTruthy();
+    expect(screen.getByText("Games unavailable", { exact: true })).toBeTruthy();
+    expect(screen.queryAllByText("Slate loading")).toHaveLength(0);
     expect(screen.getByRole("alert").textContent).toContain(
       "Starter Board is unavailable.",
     );
@@ -960,6 +1003,7 @@ describe("StartChartPage", () => {
     const view = render(<StartChartPage />);
 
     expect(screen.getByText("No games found.")).toBeTruthy();
+    expect(screen.getByRole("status", { name: "Starter Board status" }).textContent).toContain("No scheduled games");
     expect(screen.getByText("No eligible same-season slate exists.")).toBeTruthy();
 
     swrState.data = {

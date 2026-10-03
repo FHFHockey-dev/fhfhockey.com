@@ -1,0 +1,37 @@
+{
+  "retrievedAt": "2026-10-01T15:08:02.207Z",
+  "method": "Bounded read-only GETs; known report/raw capture keys and relay IDs only. No corrections or broader historical inventory.",
+  "requests": [
+    {
+      "table": "news_feed_items",
+      "parameters": {
+        "select": "id,original_tweet_id,card_status,source_review_item_id",
+        "original_tweet_id": "in.(2105370362964004937,2105434836500680857)",
+        "limit": "50"
+      },
+      "status": 200,
+      "rows": []
+    },
+    {
+      "table": "player_status_history",
+      "parameters": {
+        "select": "capture_key,player_id,status_state,observed_at,source_name,source_url",
+        "player_id": "in.(8478009,8482105)",
+        "observed_at": "gte.2026-09-30T00:00:00Z",
+        "limit": "50"
+      },
+      "status": 200,
+      "rows": []
+    },
+    {
+      "table": "player_forecast_lineup_snapshots",
+      "parameters": {
+        "select": "id,source_capture_key,game_id,team_id,observed_at",
+        "source_capture_key": "in.(b58916c0167b824f3f6e8cc50b3b070a45b7ccc747d4662b5886bb70d8c993f7:2:2026-09-18.1:injury,02eb8715423dd41ab2ce32b3554620afaaff5df5669d576da3da713720bf2a1f:9:2026-09-18.1:injury,gamedaynewsnhl:2026-09-30:9:no-game:2105370362964004937:no-quoted-tweet:practice_lines:accepted,gamedaygoalies:2026-09-30:2:2026020008:2105434836500680857:no-quoted-tweet:goalie_start:accepted)",
+        "limit": "50"
+      },
+      "status": 200,
+      "rows": []
+    }
+  ]
+}

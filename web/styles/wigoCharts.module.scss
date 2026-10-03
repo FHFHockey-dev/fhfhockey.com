@@ -1561,7 +1561,7 @@
   }
   .wigoDashboardContent {
     grid-template-columns: minmax(0, 708fr) minmax(0, 528fr) minmax(0, 640fr);
-    grid-template-rows: 46px 260px 280px 396px;
+    grid-template-rows: 46px 260px 280px 376px;
     grid-template-areas: "context context context" "summary summary summary" "comparison comparison comparison" "selected trends percentiles";
     gap: 10px;
     padding: 0;

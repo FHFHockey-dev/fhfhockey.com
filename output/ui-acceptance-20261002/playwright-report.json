@@ -1,0 +1,610 @@
+{
+  "config": {
+    "configFile": "/private/tmp/fhfh-ui-acceptance-20261002/web/acceptance.config.ts",
+    "rootDir": "/private/tmp/fhfh-ui-acceptance-20261002/web/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/browser-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/private/tmp/fhfh-ui-acceptance-20261002/web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/playwright-report.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "shift-chart.spec.ts",
+      "file": "shift-chart.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "deep links, cursor stats, active sorting, filters and playback share one data load",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1597,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-02T19:19:48.797Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/browser-results/shift-chart-deep-links-cur-13eb1-layback-share-one-data-load-chromium/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d40e7bb42ac99e0bfd2c-cb5b8f2e7abe49654ec2",
+          "file": "shift-chart.spec.ts",
+          "line": 63,
+          "column": 5
+        },
+        {
+          "title": "request errors can be retried",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1119,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-02T19:19:50.535Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/browser-results/shift-chart-request-errors-can-be-retried-chromium/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d40e7bb42ac99e0bfd2c-90e55e45262d7798bf81",
+          "file": "shift-chart.spec.ts",
+          "line": 126,
+          "column": 5
+        },
+        {
+          "title": "responsive layouts contain chart scrolling and support keyboard seeking with reduced motion",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1380,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-02T19:19:51.691Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/browser-results/shift-chart-responsive-lay-dd29e-seeking-with-reduced-motion-chromium/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d40e7bb42ac99e0bfd2c-d57dbc9ca3af59d2a1be",
+          "file": "shift-chart.spec.ts",
+          "line": 146,
+          "column": 5
+        },
+        {
+          "title": "full rosters and overtime fit every desktop viewport without clipping",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 15594,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[33m@@ -5,7 +5,7 @@\u001b[39m\n\u001b[2m    \"rosters\": Array [\u001b[22m\n\u001b[2m      20,\u001b[22m\n\u001b[2m      20,\u001b[22m\n\u001b[2m    ],\u001b[22m\n\u001b[2m    \"rowsFit\": true,\u001b[22m\n\u001b[32m-   \"squareCells\": true,\u001b[39m\n\u001b[31m+   \"squareCells\": false,\u001b[39m\n\u001b[2m  }\u001b[22m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[33m@@ -5,7 +5,7 @@\u001b[39m\n\u001b[2m    \"rosters\": Array [\u001b[22m\n\u001b[2m      20,\u001b[22m\n\u001b[2m      20,\u001b[22m\n\u001b[2m    ],\u001b[22m\n\u001b[2m    \"rowsFit\": true,\u001b[22m\n\u001b[32m-   \"squareCells\": true,\u001b[39m\n\u001b[31m+   \"squareCells\": false,\u001b[39m\n\u001b[2m  }\u001b[22m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at /private/tmp/fhfh-ui-acceptance-20261002/web/e2e/shift-chart.spec.ts:206:9",
+                    "location": {
+                      "file": "/private/tmp/fhfh-ui-acceptance-20261002/web/e2e/shift-chart.spec.ts",
+                      "column": 9,
+                      "line": 206
+                    },
+                    "snippet": "  204 |       return { outside: outside.length, overflow: overflow.length, rosters, rowsFit, squareCells,\n  205 |         documentFits: document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight };\n> 206 |     })).toEqual({ outside: 0, overflow: 0, rosters: [20, 20], rowsFit: true, squareCells: true, documentFits: true });\n      |         ^\n  207 |     await page.screenshot({ path: testInfo.outputPath(`shift-chart-${width}.png`) });\n  208 |   }\n  209 |   await page.getByRole(\"slider\", { name: \"Replay time\", exact: true }).fill(\"3700\");"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/private/tmp/fhfh-ui-acceptance-20261002/web/e2e/shift-chart.spec.ts",
+                        "column": 9,
+                        "line": 206
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[33m@@ -5,7 +5,7 @@\u001b[39m\n\u001b[2m    \"rosters\": Array [\u001b[22m\n\u001b[2m      20,\u001b[22m\n\u001b[2m      20,\u001b[22m\n\u001b[2m    ],\u001b[22m\n\u001b[2m    \"rowsFit\": true,\u001b[22m\n\u001b[32m-   \"squareCells\": true,\u001b[39m\n\u001b[31m+   \"squareCells\": false,\u001b[39m\n\u001b[2m  }\u001b[22m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  204 |       return { outside: outside.length, overflow: overflow.length, rosters, rowsFit, squareCells,\n  205 |         documentFits: document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight };\n> 206 |     })).toEqual({ outside: 0, overflow: 0, rosters: [20, 20], rowsFit: true, squareCells: true, documentFits: true });\n      |         ^\n  207 |     await page.screenshot({ path: testInfo.outputPath(`shift-chart-${width}.png`) });\n  208 |   }\n  209 |   await page.getByRole(\"slider\", { name: \"Replay time\", exact: true }).fill(\"3700\");\n    at /private/tmp/fhfh-ui-acceptance-20261002/web/e2e/shift-chart.spec.ts:206:9"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-02T19:19:53.109Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/browser-results/shift-chart-full-rosters-a-18c92-p-viewport-without-clipping-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/browser-results/shift-chart-full-rosters-a-18c92-p-viewport-without-clipping-chromium/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/browser-results/shift-chart-full-rosters-a-18c92-p-viewport-without-clipping-chromium/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/private/tmp/fhfh-ui-acceptance-20261002/web/e2e/shift-chart.spec.ts",
+                    "column": 9,
+                    "line": 206
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "d40e7bb42ac99e0bfd2c-e56ba0ce9af2a977dddc",
+          "file": "shift-chart.spec.ts",
+          "line": 181,
+          "column": 5
+        },
+        {
+          "title": "loading and missing shifts stay in the page workspace",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1052,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-02T19:20:09.081Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/browser-results/shift-chart-loading-and-mi-cf27a--stay-in-the-page-workspace-chromium/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d40e7bb42ac99e0bfd2c-2a60e9f7b25c4e15222d",
+          "file": "shift-chart.spec.ts",
+          "line": 234,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "start-chart.spec.ts",
+      "file": "start-chart.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "/start-chart",
+          "file": "start-chart.spec.ts",
+          "line": 251,
+          "column": 6,
+          "specs": [
+            {
+              "title": "recovers from a failed request into partial upcoming coverage at 1180px",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3446,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T19:20:10.274Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/browser-results/start-chart--start-chart-r-28ec0-upcoming-coverage-at-1180px-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "aaee373e02f78fd97968-dd9b156bbe4f93d04ab8",
+              "file": "start-chart.spec.ts",
+              "line": 379,
+              "column": 9
+            },
+            {
+              "title": "recovers from a failed request into partial upcoming coverage at 390px",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1657,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T19:20:13.790Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/browser-results/start-chart--start-chart-r-b6d55--upcoming-coverage-at-390px-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "aaee373e02f78fd97968-5066a7f00b1d9e3af9df",
+              "file": "start-chart.spec.ts",
+              "line": 379,
+              "column": 9
+            },
+            {
+              "title": "renders five-row previews and an interactive goals chart at reference sizes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8028,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T19:20:15.500Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/browser-results/start-chart--start-chart-r-01923-ls-chart-at-reference-sizes-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "aaee373e02f78fd97968-3530ad759c61461ef5b1",
+              "file": "start-chart.spec.ts",
+              "line": 486,
+              "column": 7
+            },
+            {
+              "title": "completes the board workflow at 1440x900",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1865,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T19:20:23.758Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/browser-results/start-chart--start-chart-c-8d668--board-workflow-at-1440x900-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "aaee373e02f78fd97968-5f27cf000baea44f6ad6",
+              "file": "start-chart.spec.ts",
+              "line": 743,
+              "column": 9
+            },
+            {
+              "title": "completes the board workflow at 1024x768",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1928,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T19:20:25.709Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/browser-results/start-chart--start-chart-c-2f6d6--board-workflow-at-1024x768-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "aaee373e02f78fd97968-f6b15867279964091cbe",
+              "file": "start-chart.spec.ts",
+              "line": 743,
+              "column": 9
+            },
+            {
+              "title": "completes the board workflow at 390x844",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1907,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T19:20:27.702Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/browser-results/start-chart--start-chart-c-7a29b-e-board-workflow-at-390x844-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "aaee373e02f78fd97968-1f14d153eaae1ee05001",
+              "file": "start-chart.spec.ts",
+              "line": 743,
+              "column": 9
+            },
+            {
+              "title": "completes the board workflow at 320x568",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1868,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T19:20:29.668Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/tim/Code/fhfhockey.com/output/ui-acceptance-20261002/browser-results/start-chart--start-chart-c-28d01-e-board-workflow-at-320x568-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "aaee373e02f78fd97968-b071df2be83b63a21573",
+              "file": "start-chart.spec.ts",
+              "line": 743,
+              "column": 9
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-02T19:19:48.385Z",
+    "duration": 43249.99,
+    "expected": 11,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

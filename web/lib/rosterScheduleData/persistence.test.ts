@@ -45,6 +45,7 @@ describe("upsertRosterScheduleRows", () => {
     const existing = {
       ...row,
       game_date: "2026-10-05",
+      start_time: "2026-10-05T23:30:00Z",
       game_status: "FUT",
       is_countable: true,
       mapping_status: "mapped",
@@ -79,6 +80,13 @@ describe("upsertRosterScheduleRows", () => {
       statusChangedRows: 0,
       unchangedRows: 0,
     });
+    expect(summarizeRosterScheduleChanges({ existing: [existing], incoming: [{ ...existing,
+      start_time: "2026-10-06T00:00:00Z" }] })).toMatchObject({ rescheduledRows: 1,
+      rescheduledSourceGameIds: [1], unchangedRows: 0 });
+    expect(summarizeRosterScheduleChanges({ existing: [existing], incoming: [{ ...existing,
+      start_time: "2026-10-05T19:30:00-04:00" }] })).toMatchObject({ rescheduledRows: 0, unchangedRows: 1 });
+    expect(summarizeRosterScheduleChanges({ existing: [{ ...existing, start_time: null }],
+      incoming: [existing] })).toMatchObject({ rescheduledRows: 1, unchangedRows: 0 });
   });
 
   it("identifies and deletes only rows absent from a complete full refresh", async () => {

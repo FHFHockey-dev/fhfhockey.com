@@ -41,6 +41,8 @@
   font-size: 15px;
   text-decoration: none;
   white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   cursor: pointer;
   &:hover {
     background: #20282e;
@@ -93,6 +95,7 @@
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 .destination {
   display: flex;
@@ -114,6 +117,7 @@
     display: block;
     font-size: 16px;
     font-weight: 600;
+    text-transform: uppercase;
   }
   small {
     display: block;
@@ -139,9 +143,11 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+.category:has(.community) {
+  position: relative;
+}
 .community {
-  left: auto;
-  right: 24px;
+  left: 0;
   width: 360px;
   .groups {
     grid-template-columns: 1fr;
@@ -159,4 +165,5 @@
   margin-top: 12px;
   padding: 12px;
   border-top: 1px solid #36434c;
+  text-transform: uppercase;
 }

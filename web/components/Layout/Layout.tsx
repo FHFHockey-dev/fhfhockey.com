@@ -13,11 +13,12 @@ type LayoutProps = {
 
 function Layout({ children }: LayoutProps) {
   const router = useRouter();
+  const isShiftChart = router.pathname === "/shiftChart";
   const isWigo = router.pathname === "/wigoCharts";
   const isRosterOptimizer = router.pathname === "/roster-schedule-optimizer";
   const hideFooter = router.pathname === "/draft-dashboard" || isRosterOptimizer || isWigo;
   return (
-    <div className={`${styles.container} ${router.pathname === "/draft-dashboard" ? styles.draftLayout : ""} ${isRosterOptimizer ? styles.rosterOptimizerLayout : ""} ${isWigo ? styles.wigoLayout : ""}`}>
+    <div className={`${styles.container} ${isShiftChart ? styles.shiftChartLayout : ""} ${router.pathname === "/draft-dashboard" ? styles.draftLayout : ""} ${isRosterOptimizer ? styles.rosterOptimizerLayout : ""} ${isWigo ? styles.wigoLayout : ""}`}>
       <Header />
       {children}
       {!hideFooter && <Footer />}

@@ -1,0 +1,46 @@
+{
+  "viewport": {
+    "width": 1180,
+    "height": 757
+  },
+  "accountReads": [
+    "00000000-0000-4000-8000-000000000001",
+    "00000000-0000-4000-8000-000000000002",
+    "00000000-0000-4000-8000-000000000002"
+  ],
+  "providerCanceled": true,
+  "staleSaveHidden": true,
+  "staleProviderHidden": true,
+  "localIntentPreserved": true,
+  "pageErrors": [],
+  "inputs": "Fictional sessions and intercepted provider/workspace/access responses; SDK BroadcastChannel session switch",
+  "liveAccountParity": "not verified",
+  "recordedAt": "2026-10-02T03:53:17.188544+00:00",
+  "authJsVersion": "2.89.0",
+  "checks": [
+    {
+      "command": "PLAYWRIGHT_SKIP_WEB_SERVER=1 npx playwright test e2e/roster-schedule-optimizer.spec.ts --grep 'connected refresh and account save preserve forecast permissions and exclusions'",
+      "exitCode": 0,
+      "passed": 1,
+      "durationSeconds": 3.2
+    },
+    {
+      "command": "npm test -- --run __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+      "exitCode": 0,
+      "passed": 19,
+      "durationSeconds": 2.1
+    },
+    {
+      "command": "npx eslint components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx e2e/roster-schedule-optimizer.spec.ts",
+      "exitCode": 0,
+      "errors": 0,
+      "existingWarnings": 4
+    }
+  ],
+  "earlierFailures": [
+    "Initial browser assertion expected a disabled save control, while the UI correctly hides it when capabilities are absent.",
+    "Corrected browser scenario reproduced the already-visible Saved to account notice surviving an account switch."
+  ],
+  "runtimeChange": "Clear only the existing Saved to account success notice when the authenticated user changes; preserve other local notices and workspace intent.",
+  "typecheck": "Not rerun for the one existing string guard and fixture expansion; last whole-web check failed in separately owned scripts/run-forge-calendar-local.ts(264,35)."
+}

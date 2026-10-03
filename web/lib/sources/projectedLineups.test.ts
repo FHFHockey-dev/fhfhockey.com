@@ -1,8 +1,10 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { selectProjectedUnitSets, verifiedOriginalTweetUrl, type ProjectionReport } from "./projectedLineups";
+import { publicProjectionReport, selectProjectedUnitSets, verifiedOriginalTweetUrl, type ProjectionReport } from "./projectedLineups";
 import type { TweetUnit } from "./tweetInterpretation";
-import { persistTweetProjectionReports, projectedSetsToForecastRows, projectionReportFromSource } from "./tweetProjectionStorage";
+import { enrichTweetInjuryHistory, fetchTweetProjectionReports, persistTweetProjectionReports, projectedSetsToForecastRows, projectionReportFromSource } from "./tweetProjectionStorage";
+import { extractTweetPlayerEvents } from "./tweetPlayerEvents";
+import { interpretTweetUnits } from "./tweetInterpretation";
 import { verifiedRetweetFromPayload } from "./tweetAttribution";
 import { assignmentsFor } from "../player-forecasts/sourceObservations";
 
@@ -44,11 +46,22 @@ describe("projected unit publishing", () => {
     const conflicting = report("c", 1);
     conflicting.interpretation.units[0]!.players[0]!.playerId = 500;
     expect(selectProjectedUnitSets([report("a", 1), report("b", 2), conflicting])).toEqual([]);
+    const reordered = report("reordered", 1, { publishedAt: "2026-09-18T15:30:00Z" });
+    reordered.interpretation.units[0]!.players.reverse();
+    expect(selectProjectedUnitSets([report("a", 1), report("b", 2), reordered])).toEqual([]);
+    expect(selectProjectedUnitSets([reordered, report("b", 2), report("a", 1)])).toEqual([]);
   });
   it("chooses newest complete report, not latest receipt or incomplete first report", () => {
     const older = report("old", 1); older.interpretation.units.push(unit(2));
     const newer = report("new", 1, { publishedAt: "2026-09-18T17:00:00Z" }); newer.interpretation.units.push(unit(2));
     expect(selectProjectedUnitSets([report("partial", 1), newer, older])[0]?.reports[0]?.key).toBe("new");
+  });
+  it("withholds contradictory complete reports tied at the same publication time", () => {
+    const first = report("first", 1, { gameId: 10 }); first.interpretation.units.push(unit(2));
+    const second = report("second", 1, { gameId: 10 }); second.interpretation.units.push(unit(2));
+    second.interpretation.units[0]!.players[0]!.playerId = 500;
+    expect(selectProjectedUnitSets([first, second])).toEqual([]);
+    expect(selectProjectedUnitSets([second, first])).toEqual([]);
   });
   it("never passes relay URLs or guesses an original author from a generic URL", () => {
     expect(verifiedOriginalTweetUrl("https://x.com/GameDayLines/status/123")).toBeNull();
@@ -64,6 +77,74 @@ describe("projected unit publishing", () => {
     expect(assignmentsFor(rows[0]!).map((assignment) => assignment.unit_number)).toEqual([1, 1, 1, 1, 1, 2, 2, 2, 2, 2]);
     first.interpretation.context = second.interpretation.context = "camp";
     expect(projectedSetsToForecastRows(selectProjectedUnitSets([first, second]))).toEqual([]);
+  });
+  it("retains immutable versions, dedupes retries and withholds tentative availability under mocked storage", async () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "true");
+    const tables = new Map<string, Map<string, any>>();
+    const database = { from: (table: string) => ({
+      upsert: async (rows: any[], options: any) => {
+        expect(options.ignoreDuplicates).toBe(true);
+        const stored = tables.get(table) ?? new Map();
+        for (const row of rows) if (!stored.has(row[options.onConflict])) stored.set(row[options.onConflict], structuredClone(row));
+        tables.set(table, stored); return { error: null };
+      },
+      select: () => {
+        const query: any = { eq: () => query, order: () => query, range: async () => ({ data: [...(tables.get(table)?.values() ?? [])], error: null }) };
+        return query;
+      },
+    }) };
+    const text = "Org is hopeful Norris will play this weekend.";
+    const interpretation = interpretTweetUnits(text, [{ playerId: 2, fullName: "Josh Norris", lastName: "Norris" }]);
+    interpretation.events = extractTweetPlayerEvents({ text, players: [{ playerId: 2, fullName: "Josh Norris", lastName: "Norris" }], publishedAt: "2020-01-01T15:00:00Z" });
+    const source = { snapshotDate: "2020-01-01", tweetPostedAt: "2020-01-01T15:00:00Z", team: { id: 9, abbreviation: "OTT" },
+      nhlFilterStatus: "accepted", rawText: text, sourceUrl: "https://x.com/reporter/status/123", metadata: { interpretation } } as any;
+    await persistTweetProjectionReports(database, [source, source]);
+    const first = structuredClone([...tables.get("tweet_projection_reports")!.values()][0]);
+    await persistTweetProjectionReports(database, [{ ...source, observedAt: "2020-01-01T18:00:00Z" }]);
+    expect(tables.get("tweet_projection_reports")!.size).toBe(1);
+    expect(tables.get("tweet_player_events")!.size).toBe(1);
+    await persistTweetProjectionReports(database, [{ ...source, metadata: { interpretation: { ...interpretation, version: "replay-version" } } }]);
+    expect(tables.get("tweet_projection_reports")!.size).toBe(2);
+    expect([...tables.get("tweet_projection_reports")!.values()][0]).toEqual(first);
+    expect([...tables.get("tweet_player_events")!.values()].every((row) => row.availability === "uncertain")).toBe(true);
+    const selected = await fetchTweetProjectionReports(database, { date: "2020-01-01", internal: true });
+    expect(selected).toHaveLength(1);
+    expect(selectProjectedUnitSets(selected)).toEqual([]);
+  });
+  it("abstains on tied conflicting history instead of choosing health by query order", async () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    const queriedTables: string[] = [];
+    const database = { from: (table: string) => {
+      queriedTables.push(table);
+      const query: any = { select: () => query, eq: () => query, lt: () => query, in: () => query, order: () => query,
+        limit: async () => ({ data: [{ availability: "available", published_at: "2020-01-01T12:00:00Z" }, { availability: "out", published_at: "2020-01-01T12:00:00Z" }], error: null }) };
+      return query;
+    } };
+    const interpretation = interpretTweetUnits("Norris injured", []);
+    interpretation.events = extractTweetPlayerEvents({ text: "Norris injured", players: [{ playerId: 2, fullName: "Josh Norris", lastName: "Norris" }], publishedAt: "2020-01-01T15:00:00Z" });
+    await enrichTweetInjuryHistory(database, [{ tweetPostedAt: "2020-01-01T15:00:00Z", nhlFilterStatus: "accepted", metadata: { interpretation } } as any]);
+    expect(interpretation.events).toMatchObject([{ state: "unknown", reviewReason: "conflicting_history" }]);
+    expect(queriedTables).toEqual(["tweet_player_events"]);
+  });
+  it("marks public evidence offsets as belonging to the unsanitized source", () => {
+    const source = report("a", 1);
+    source.interpretation.events = extractTweetPlayerEvents({ text: "RT @reporter: Norris will play tonight.", players: [{ playerId: 2, fullName: "Josh Norris", lastName: "Norris" }], publishedAt: null });
+    expect(publicProjectionReport(source).interpretation.events![0]!.evidence.offsetBasis).toBe("unsanitized_source");
+  });
+  it("does not let a warmup or hopeful return clear prior injury history", async () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    const lessThan = vi.fn();
+    const database = { from: () => { const query: any = { select: () => query, eq: () => query, lt: (...args: any[]) => { lessThan(...args); return query; },
+      in: () => query, order: () => query, limit: async () => ({ data: [{ availability: "out" }], error: null }) }; return query; } };
+    const text = "Norris remains out. Org is hopeful he will play this weekend.";
+    const interpretation = interpretTweetUnits(text, []);
+    interpretation.events = extractTweetPlayerEvents({ text, players: [{ playerId: 2, fullName: "Josh Norris", lastName: "Norris" }], publishedAt: "2020-01-01T15:00:00Z" });
+    const source = { tweetPostedAt: "2020-01-01T15:00:00Z", nhlFilterStatus: "accepted", metadata: { interpretation } } as any;
+    await enrichTweetInjuryHistory(database, [source]);
+    expect(lessThan).toHaveBeenCalledWith("published_at", source.tweetPostedAt);
+    expect(interpretation.events[0]!.availability).not.toBe("available");
+    expect(interpretation.events[0]!.state).not.toBe("confirmed_return");
   });
   it("preserves history without performing forecast writes on historical replay", async () => {
     vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");

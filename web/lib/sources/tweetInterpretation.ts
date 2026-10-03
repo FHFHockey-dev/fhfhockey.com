@@ -1,7 +1,7 @@
 import type { TweetPlayerEvent } from "./tweetPlayerEvents";
 import { normalizeIdentityName, resolvePlayerIdentity, type PlayerIdentity } from "./playerIdentity";
 
-export const TWEET_INTERPRETATION_VERSION = "2026-09-18.1";
+export const TWEET_INTERPRETATION_VERSION = "2026-10-01.1";
 export type EvidenceSpan = { start: number; end: number; text: string };
 export type TweetUnit = {
   situation: "es_forward" | "es_defense" | "pp" | "pk" | "goalie" | "scratch" | "injury";
@@ -15,9 +15,20 @@ export type TweetUnit = {
 export type TweetInterpretation = {
   version: string;
   rosterRevision?: string;
+  identityContext?: { basis: "current_membership"; sourcePublishedAt: string | null; eventRosterRevision: string };
   units: TweetUnit[];
   events?: TweetPlayerEvent[];
-  unresolved: Array<EvidenceSpan & { reason: "missing_player" | "ambiguous" | "invalid_extraction" }>;
+  relationships?: Array<{
+    kind: "substitution" | "swap" | "continuity" | "alternatives";
+    playerIds: number[];
+    subjects?: Array<EvidenceSpan & { playerId: number | null; candidates: number[] }>;
+    situation: "pp" | null;
+    number: number | null;
+    certainty: "reported" | "projected";
+    evidence: EvidenceSpan;
+    reviewReason: "incomplete_replacement" | "unresolved_reference" | "ambiguous_identity";
+  }>;
+  unresolved: Array<EvidenceSpan & { reason: "missing_player" | "ambiguous" | "invalid_extraction"; number?: number | null; situation?: TweetUnit["situation"] | null; candidates?: number[] }>;
   context: "camp" | "practice" | "game" | "unknown";
   certainty: "projected" | "confirmed" | "reported";
 };
@@ -62,13 +73,14 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
     certainty: /\bconfirmed\b/i.test(text) ? "confirmed" : /\b(projected|expected)\b/i.test(text) ? "projected" : "reported",
   };
   const introduction = text.split("\n", 1)[0] ?? "";
-  const initialSituation: TweetUnit["situation"] | null = /\b(power[ -]?play|pp[12])\b/i.test(introduction) ? "pp" : /\b(penalty kill|pk[12])\b/i.test(introduction) ? "pk" : null;
+  const initialSituation: TweetUnit["situation"] | null = /\b(power[ -]?play|pp(?:\s*[12])?)\b/i.test(introduction) ? "pp" : /\b(penalty kill|pk[12])\b/i.test(introduction) ? "pk" : null;
   let situation: TweetUnit["situation"] | null = initialSituation;
   let number: number | null = null;
   let explicitNumber = false;
   let group: string | null = null;
   let pending: TweetUnit | null = null;
   let offset = 0;
+  const ordinals = new Map<string, number>();
   let sawStructure = /\b(lines?|lineup|pairings?|units?|rushes|camp)\b/i.test(text);
   const flush = () => { if (pending) result.units.push(pending); pending = null; };
   for (const rawLine of text.split("\n")) {
@@ -78,6 +90,10 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
     if (!line) { flush(); number = null; explicitNumber = false; continue; }
     const groupMatch = line.match(/\b(?:group|squad)\s*([a-z0-9]+)\b/i);
     if (groupMatch) { flush(); group = groupMatch[1]!.toLowerCase(); number = null; explicitNumber = false; situation = initialSituation; }
+    // Parse the relay body without changing original evidence positions.
+    line = line.replace(/^RT\s+@[^:]+:\s*/i, "");
+    const inlineHeading = line.match(/^(?:[\p{L}#@]+\s+)+(pp\s*[12]\s*:)/iu);
+    if (inlineHeading) line = line.slice(inlineHeading[0].indexOf(inlineHeading[1]!));
     const heading = line.match(/^(?:(pp|power[ -]?play|pk|penalty kill|forwards?|defen[cs]e(?: pairs?)?|goalies?|scratches?|injur(?:ed|ies)|even[ -]strength)\s*([12])?\s*[:–—-]?\s*)/i);
     if (heading) {
       flush(); sawStructure = true;
@@ -89,20 +105,45 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
       if (!line) continue;
     }
     if (/^(?:RT\s+@|#|https?:)/i.test(line)) { flush(); continue; }
-    const hits = segmentPlayerRow(line, roster);
+    const hits = line.includes("/") ? null : segmentPlayerRow(line, roster);
+    const rowKind = situation !== "pp" && situation !== "pk" && sawStructure && /[-–—]/.test(line)
+      ? (hits?.length === 2 ? "es_defense" : hits?.length === 3 ? "es_forward" : line.split(/[-–—]/).length >= 3 ? "es_forward" : "es_defense") : null;
+    if (rowKind) {
+      const key = `${group}:${rowKind}`;
+      ordinals.set(key, (ordinals.get(key) ?? 0) + 1);
+    }
     if (!hits) {
       flush();
+      if (sawStructure && line.includes("/") && line.length < 90) {
+        result.relationships ??= [];
+        result.relationships.push({ kind: "alternatives", playerIds: [], situation: situation === "pp" ? "pp" : null, number: rowKind ? ordinals.get(`${group}:${rowKind}`)! : number,
+          certainty: "projected", evidence: { start: lineStart + rawLine.indexOf(line), end: lineStart + rawLine.indexOf(line) + line.length, text: line }, reviewReason: "ambiguous_identity" });
+      }
       // Unknown names are reviewable only in an established structured block.
       if (sawStructure && !PROSE.test(line) && /^[\p{L}.'’\s–—/-]+$/u.test(line) && line.length < 90 && /[-–—/]/.test(line)) {
         const compactHyphen = line.match(/^([\p{L}.'’]+)-([\p{L}.'’]+)$/u);
-        const tokens = compactHyphen ? [compactHyphen[1]!, compactHyphen[2]!] : line.split(/\s+[-–—]\s+|\s*[/]\s*/);
+        const tokens = line.includes("/") ? line.split(/\s*[/]\s*/).flatMap((alternative) => {
+          const segmented = segmentPlayerRow(alternative, roster);
+          if (segmented) return segmented.map((hit) => hit.text);
+          return alternative.split(/[-–—]/).map((token) => token.trim());
+        }) : compactHyphen ? [compactHyphen[1]!, compactHyphen[2]!] : line.split(/\s+[-–—]\s+/);
         if (tokens.length === 1 && /[-–—]/.test(line)) {
-          result.unresolved.push({ start: lineStart + rawLine.indexOf(line), end: lineStart + rawLine.indexOf(line) + line.length, text: line, reason: "invalid_extraction" });
+          result.unresolved.push({ start: lineStart + rawLine.indexOf(line), end: lineStart + rawLine.indexOf(line) + line.length, text: line, number: rowKind ? ordinals.get(`${group}:${rowKind}`) : number, situation: rowKind ?? situation, reason: "invalid_extraction" });
           continue;
+        }
+        if (line.includes("/")) {
+          const relation = result.relationships!.at(-1)!;
+          relation.subjects = tokens.map((token) => {
+            const resolution = resolvePlayerIdentity(token, roster);
+            return { text: token, start: lineStart + rawLine.indexOf(token), end: lineStart + rawLine.indexOf(token) + token.length,
+              playerId: resolution.status === "matched" ? resolution.player.playerId : null,
+              candidates: resolution.status === "matched" ? [resolution.player.playerId] : resolution.candidates.map((candidate) => candidate.playerId) };
+          });
+          relation.playerIds = relation.subjects.flatMap((subject) => subject.playerId == null ? [] : [subject.playerId]);
         }
         for (const token of tokens) {
           const resolution = resolvePlayerIdentity(token, roster);
-          if (resolution.status !== "matched") result.unresolved.push({ start: lineStart + rawLine.indexOf(token), end: lineStart + rawLine.indexOf(token) + token.length, text: token, reason: resolution.status === "ambiguous" ? "ambiguous" : "missing_player" });
+          if (resolution.status !== "matched") result.unresolved.push({ start: lineStart + rawLine.indexOf(token), end: lineStart + rawLine.indexOf(token) + token.length, text: token, number: rowKind ? ordinals.get(`${group}:${rowKind}`) : number, situation: rowKind ?? situation, candidates: resolution.candidates.map((candidate) => candidate.playerId), reason: resolution.status === "ambiguous" ? "ambiguous" : "missing_player" });
         }
       }
       continue;
@@ -125,10 +166,26 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
     const kind = hits.length === 3 ? "es_forward" : hits.length === 2 ? "es_defense" : hits.length === 1 && hits[0]!.player.position === "G" ? "goalie" : null;
     if (!kind) continue;
     sawStructure = true;
-    result.units.push({ situation: kind, number: result.units.filter((unit) => unit.situation === kind && unit.group === group).length + 1,
+    result.units.push({ situation: kind, number: rowKind === kind ? ordinals.get(`${group}:${kind}`)! : result.units.filter((unit) => unit.situation === kind && unit.group === group).length + 1,
       explicitNumber: false, players, evidence, group, complete: true });
   }
   flush();
+  const relations: Array<{ kind: "substitution" | "swap" | "continuity"; match: RegExpMatchArray | null }> = [
+    { kind: "substitution", match: text.match(/([^.:\n]+) will take ([^.:\n]+?)[’']s spot on the (first|second) unit power[ -]?play[^.\n]*/i) },
+    { kind: "swap", match: text.match(/(?:Looks like )?([^.:\n]+?) and ([^.:\n]+?) have switched spots/i) },
+    { kind: "continuity", match: text.match(/\bSame PP units\b/i) },
+  ];
+  for (const { kind, match } of relations) {
+    if (!match) continue;
+    const names = kind === "continuity" ? [] : [match[1]!.replace(/^.*RT\s+@[^:]+:\s*/i, "").trim().replace(/^Looks like\s+/i, ""), match[2]!.trim()];
+    const resolutions = names.map((name) => resolvePlayerIdentity(name, roster));
+    result.relationships ??= [];
+    result.relationships.push({ kind, playerIds: resolutions.flatMap((resolution) => resolution.status === "matched" ? [resolution.player.playerId] : []),
+      situation: kind === "swap" ? null : "pp", number: kind === "substitution" ? (match[3]!.toLowerCase() === "first" ? 1 : 2) : null,
+      certainty: kind === "swap" ? "projected" : "reported",
+      evidence: { start: match.index!, end: match.index! + match[0].length, text: match[0] },
+      reviewReason: resolutions.some((resolution) => resolution.status !== "matched") ? "ambiguous_identity" : kind === "substitution" ? "incomplete_replacement" : "unresolved_reference" });
+  }
   for (const kind of ["pp", "pk"] as const) {
     for (const groupId of new Set(result.units.map((unit) => unit.group))) {
       const units = result.units.filter((unit) => unit.situation === kind && unit.group === groupId && unit.complete);
@@ -141,4 +198,10 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
 export function identityMentionPresent(text: string, name: string): boolean {
   const needle = normalizeIdentityName(name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(`(?:^|[^\\p{L}])${needle}(?=$|[^\\p{L}])`, "u").test(normalizeIdentityName(text));
+}
+
+/** Historical comparison does not date an independently asserted current unit. */
+export function requiresRelativeGameDateReview(text: string): boolean {
+  const withoutComparison = text.replace(/\b(?:same|unchanged)(?: as)? (?:yesterday|last year)\b/gi, "");
+  return /\b(tomorrow|yesterday)\b/i.test(withoutComparison);
 }

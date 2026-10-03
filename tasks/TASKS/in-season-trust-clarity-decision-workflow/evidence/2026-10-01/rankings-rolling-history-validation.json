@@ -1,0 +1,142 @@
+{
+  "startedAt": "2026-10-02T01:43:40.484Z",
+  "completedAt": "2026-10-02T01:43:44.530Z",
+  "elapsedMs": 4045,
+  "mode": "existing validation helper; GET/HEAD-only network; main/writer endpoints/upserts not invoked",
+  "nodeVersion": "v22.11.0",
+  "request": {
+    "playerId": 8471215,
+    "season": 20252026,
+    "startDate": "2026-04-12",
+    "endDate": "2026-04-12",
+    "strengths": [
+      "all"
+    ],
+    "skipDiagnostics": false
+  },
+  "rows": [
+    {
+      "player_id": 8471215,
+      "game_id": 2025021276,
+      "game_date": "2026-04-12",
+      "season": 20252026,
+      "strength_state": "all",
+      "games_played": 56,
+      "season_games_played": 56,
+      "season_participation_games": null,
+      "season_team_games_available": 88,
+      "toi_seconds_avg_season": 1056.5,
+      "points_avg_season": 1.089286,
+      "pp_points_avg_season": 0.392857,
+      "pp_toi_seconds_avg_season": 181.910714,
+      "goals_per_60_season": 1.156108,
+      "goals_per_60_goals_season": 19,
+      "goals_per_60_toi_seconds_season": 59164
+    }
+  ],
+  "diagnostics": {
+    "coverageWarningCount": 1,
+    "suspiciousOutputCount": 0,
+    "unknownGameIdCount": 0,
+    "freshnessBlockerCount": 0,
+    "sourceTracking": {
+      "missingSources": {
+        "counts": 0,
+        "rates": 0,
+        "countsOi": 0,
+        "pp": 3,
+        "ppUnit": 3,
+        "line": 0,
+        "lineAssignment": 0,
+        "knownGameId": 0
+      },
+      "wgoFallbacks": {
+        "goals": 0,
+        "assists": 0,
+        "primary_assists": 0,
+        "secondary_assists": 0,
+        "shots": 0,
+        "hits": 0,
+        "blocks": 0,
+        "points": 0,
+        "ixg": 0
+      },
+      "rateReconstructions": {
+        "sog_per_60": 0,
+        "ixg_per_60": 0
+      },
+      "ixgPer60Sources": {
+        "counts_raw": 56,
+        "wgo_raw": 0,
+        "rate_reconstruction": 0,
+        "unavailable": 0
+      },
+      "toiSources": {
+        "counts": 56,
+        "counts_oi": 0,
+        "rates": 0,
+        "fallback": 0,
+        "wgo": 0,
+        "none": 0
+      },
+      "toiFallbackSeeds": {
+        "counts": 0,
+        "counts_oi": 0,
+        "wgo": 0,
+        "none": 0
+      },
+      "toiTrustTiers": {
+        "authoritative": 56,
+        "supplementary": 0,
+        "fallback": 0,
+        "none": 0
+      },
+      "toiWgoNormalizations": {
+        "minutes_to_seconds": 0,
+        "already_seconds": 0,
+        "missing": 56,
+        "invalid": 0
+      },
+      "toiSuspiciousReasons": {
+        "non_finite": 0,
+        "non_positive": 0,
+        "above_max_seconds": 0
+      }
+    }
+  },
+  "readRequests": {
+    "GET /rest/v1/games 200": 30,
+    "GET /rest/v1/wgo_skater_stats 200": 1,
+    "GET /rest/v1/powerPlayCombinations 200": 1,
+    "GET /rest/v1/lineCombinations 200": 1,
+    "GET /rest/v1/nst_gamelog_as_rates 200": 1,
+    "GET /rest/v1/nst_gamelog_as_counts 200": 1,
+    "GET /rest/v1/nst_gamelog_as_counts_oi 200": 1
+  },
+  "blockedNonReadRequests": 0,
+  "sourceHashes": {
+    "lib/supabase/Upserts/fetchRollingPlayerAverages.ts": "5d0a0ef3de8020b750d9c5888965edd27ddefe28486ce8e60738e4097f783f56",
+    "lib/teamsInfo.ts": "645f33ed7272e728b6ac1436754a13126ee25eb2eb6bc598fcefed3acc8e1584",
+    "lib/supabase/Upserts/rollingHistoricalAverages.ts": "96da80b3e1ea0f844f6625d8861db49777f29de16dff2abd72fe29ade42580ff",
+    "lib/supabase/Upserts/rollingMetricAggregation.ts": "d920c87aad5ea087c598afacee1673bb46939482fe4f7353cb2f6981a3317d22",
+    "lib/supabase/Upserts/rollingWindowContract.ts": "2623505a61bfa72128b60a61f009d5f7c812fe2f85ded7861eb8a6907855e1e8",
+    "lib/supabase/Upserts/rollingPlayerAvailabilityContract.ts": "5c634b31b807eaa3522d64004095515003628c4596d0b09a99a5c2156519997c",
+    "lib/supabase/Upserts/rollingPlayerMetricMath.ts": "34d03fcce32f266ea44e54cd21e489465d8fbd35744026ad7fd93ea51933c9f0",
+    "lib/supabase/Upserts/rollingPlayerPpShareContract.ts": "8fa7948ec4c06e4986afb2b8389922fec74dddd409cf72d855e412e310b71221",
+    "lib/supabase/Upserts/rollingPlayerPpUnitContract.ts": "753a9c5217302d2ca0480e1361bb4260d2b0d89450453b7aeb0d6541f248db97",
+    "lib/supabase/Upserts/rollingPlayerLineContextContract.ts": "b7b95f027ae4be972a5c894d8d561247db1cd5aa91721ee0703004f4c5972379",
+    "lib/supabase/Upserts/rollingPlayerToiContract.ts": "18b2e45c473a520ad88dcf2d5f8f7a0a47807f77097896bea59bce65fc694f45",
+    "lib/supabase/Upserts/rollingPlayerSourceSelection.ts": "32d90146228cdb3470bfa3d6bd9a2d41406d0109e7b1cbe197dc2d504010368a",
+    "lib/supabase/Upserts/rollingPlayerSupportPayload.ts": "fc482f44aabd37a61a4ba840fc34597e6b0da5a9899c4a3c3181575d2c0a024f",
+    "lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts": "d86d7f5220bd4f123974ff6f9d1aa66bc6d359a46ea14e9f31423ca947cbbfd7",
+    "lib/supabase/Upserts/rollingMetricScaleContract.ts": "822f45fc002b94e3b95b13bbf1021e2c9beee22db1495672f4f519c07fea78e0",
+    "lib/predictions/rollingWindows.ts": "f241f957b11f6fdeab46911d0c8cd1b6b087551de9cb3abdb6c30ffa0c3d2c90",
+    "lib/rankings/rollingRankingSelectFields.ts": "a78b9071745cb96ac1bcbedad19de3169a1704911113587a3ef971a526e41244"
+  },
+  "sourceHashesTiming": "current source file bytes at receipt completion; not immutable loader pins",
+  "limits": [
+    "Current dry-run output is not historical producer attribution or deployed parity.",
+    "The helper loads its full game ledger and prior player history; only one requested player/date/strength can be emitted.",
+    "No publication, stored-row repair, full-population completeness or model evaluation is certified."
+  ]
+}

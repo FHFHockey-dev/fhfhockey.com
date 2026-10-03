@@ -43,6 +43,7 @@ type SelectedNstOnIceCounts = Pick<
 type SelectedWgoGamelog = Pick<
   WgoGamelog,
   | "date"
+  | "season_id"
   | "goals"
   | "assists"
   | "points"
@@ -59,11 +60,11 @@ type SelectedWgoGamelog = Pick<
 >;
 type SelectedNstIndGamelog = Pick<
   NstIndGamelogCounts,
-  "date_scraped" | "toi" | "ixg" | "icf" | "iscfs" | "hdcf" // Note: Using hdcf from gamelog
+  "date_scraped" | "season" | "toi" | "ixg" | "icf" | "iscfs" | "hdcf" // Note: Using hdcf from gamelog
 >;
 type SelectedNstOiGamelog = Pick<
   NstOiGamelogCounts,
-  "date_scraped" | "gf" | "sf" | "off_zone_starts" | "def_zone_starts"
+  "date_scraped" | "season" | "gf" | "sf" | "off_zone_starts" | "def_zone_starts"
 >;
 
 // Aggregated data interfaces for seasonal and game data
@@ -96,17 +97,17 @@ interface AggregatedSeasonData {
 
 interface CombinedGameData {
   date: string;
-  wgo_g: number;
-  wgo_a: number;
-  wgo_pts: number;
-  wgo_a1: number;
-  wgo_sog: number;
-  wgo_ppg: number;
-  wgo_ppa: number;
-  wgo_ppp: number;
-  wgo_hit: number;
-  wgo_blk: number;
-  wgo_pim: number;
+  wgo_g: number | null;
+  wgo_a: number | null;
+  wgo_pts: number | null;
+  wgo_a1: number | null;
+  wgo_sog: number | null;
+  wgo_ppg: number | null;
+  wgo_ppa: number | null;
+  wgo_ppp: number | null;
+  wgo_hit: number | null;
+  wgo_blk: number | null;
+  wgo_pim: number | null;
   wgo_pp_toi_pct: number | null;
   wgo_pp_toi: number | null; // Seconds
   nst_toi_all: number | null; // Seconds in NST game logs
@@ -272,10 +273,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       // --- Fetch Game Log Data (Last 20) ---
       const wgoGamelogSelect =
-        "date, goals, assists, points, total_primary_assists, shots, pp_goals, pp_assists, pp_points, hits, blocked_shots, penalty_minutes, pp_toi_pct_per_game, pp_toi";
-      const nstIndGamelogSelect = "date_scraped, toi, ixg, icf, iscfs, hdcf";
+        "date, season_id, goals, assists, points, total_primary_assists, shots, pp_goals, pp_assists, pp_points, hits, blocked_shots, penalty_minutes, pp_toi_pct_per_game, pp_toi";
+      const nstIndGamelogSelect = "date_scraped, season, toi, ixg, icf, iscfs, hdcf";
       const nstOiGamelogSelect =
-        "date_scraped, gf, sf, off_zone_starts, def_zone_starts";
+        "date_scraped, season, gf, sf, off_zone_starts, def_zone_starts";
       const [wgoGamelogRes, nstIndGamelogRes, nstOiGamelogRes] =
         await Promise.all([
           supabase
@@ -305,27 +306,28 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         []) as SelectedNstIndGamelog[];
       const nstOiLogs = (nstOiGamelogRes.data || []) as SelectedNstOiGamelog[];
       const nstIndMap = new Map(
-        nstIndLogs.map((log) => [log.date_scraped, log])
+        nstIndLogs.filter(log => Number.isInteger(log.season) && log.season > 0).map((log) => [`${log.season}:${log.date_scraped}`, log])
       );
-      const nstOiMap = new Map(nstOiLogs.map((log) => [log.date_scraped, log]));
+      const nstOiMap = new Map(nstOiLogs.filter(log => Number.isInteger(log.season) && log.season > 0).map((log) => [`${log.season}:${log.date_scraped}`, log]));
 
       for (const wgoGame of wgoLogs) {
         const gameDate = wgoGame.date;
-        const nstIndGame = nstIndMap.get(gameDate);
-        const nstOiGame = nstOiMap.get(gameDate);
+        const gameKey = `${wgoGame.season_id}:${gameDate}`;
+        const nstIndGame = nstIndMap.get(gameKey);
+        const nstOiGame = nstOiMap.get(gameKey);
         combinedGames.push({
           date: gameDate,
-          wgo_g: wgoGame.goals ?? 0,
-          wgo_a: wgoGame.assists ?? 0,
-          wgo_pts: wgoGame.points ?? 0,
-          wgo_a1: wgoGame.total_primary_assists ?? 0,
-          wgo_sog: wgoGame.shots ?? 0,
-          wgo_ppg: wgoGame.pp_goals ?? 0,
-          wgo_ppa: wgoGame.pp_assists ?? 0,
-          wgo_ppp: wgoGame.pp_points ?? 0,
-          wgo_hit: wgoGame.hits ?? 0,
-          wgo_blk: wgoGame.blocked_shots ?? 0,
-          wgo_pim: wgoGame.penalty_minutes ?? 0,
+          wgo_g: wgoGame.goals ?? null,
+          wgo_a: wgoGame.assists ?? null,
+          wgo_pts: wgoGame.points ?? null,
+          wgo_a1: wgoGame.total_primary_assists ?? null,
+          wgo_sog: wgoGame.shots ?? null,
+          wgo_ppg: wgoGame.pp_goals ?? null,
+          wgo_ppa: wgoGame.pp_assists ?? null,
+          wgo_ppp: wgoGame.pp_points ?? null,
+          wgo_hit: wgoGame.hits ?? null,
+          wgo_blk: wgoGame.blocked_shots ?? null,
+          wgo_pim: wgoGame.penalty_minutes ?? null,
           wgo_pp_toi_pct: wgoGame.pp_toi_pct_per_game,
           wgo_pp_toi: wgoGame.pp_toi,
           // FIX: Use nullish coalescing operator ??
@@ -935,22 +937,28 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         (recentStats as any)[`${prefix}gp`] = numGames;
 
         if (numGames > 0) {
+          const completeTotalToi = gamesInInterval.every(game =>
+            typeof game.nst_toi_all === "number" && Number.isFinite(game.nst_toi_all) && game.nst_toi_all >= 0
+          );
+          const completePpToi = gamesInInterval.every(game =>
+            typeof game.wgo_pp_toi === "number" && Number.isFinite(game.wgo_pp_toi) && game.wgo_pp_toi >= 0
+          );
           const totals = gamesInInterval.reduce(
             (acc, game) => {
               // nst_toi_all is per-game ice time in seconds
               acc.nst_toi_all += game.nst_toi_all ?? 0;
               acc.gp += 1;
-              acc.wgo_g += game.wgo_g;
-              acc.wgo_a += game.wgo_a;
-              acc.wgo_pts += game.wgo_pts;
-              acc.wgo_a1 += game.wgo_a1;
-              acc.wgo_sog += game.wgo_sog;
-              acc.wgo_ppg += game.wgo_ppg;
-              acc.wgo_ppa += game.wgo_ppa;
-              acc.wgo_ppp += game.wgo_ppp;
-              acc.wgo_hit += game.wgo_hit;
-              acc.wgo_blk += game.wgo_blk;
-              acc.wgo_pim += game.wgo_pim;
+              acc.wgo_g += game.wgo_g ?? 0;
+              acc.wgo_a += game.wgo_a ?? 0;
+              acc.wgo_pts += game.wgo_pts ?? 0;
+              acc.wgo_a1 += game.wgo_a1 ?? 0;
+              acc.wgo_sog += game.wgo_sog ?? 0;
+              acc.wgo_ppg += game.wgo_ppg ?? 0;
+              acc.wgo_ppa += game.wgo_ppa ?? 0;
+              acc.wgo_ppp += game.wgo_ppp ?? 0;
+              acc.wgo_hit += game.wgo_hit ?? 0;
+              acc.wgo_blk += game.wgo_blk ?? 0;
+              acc.wgo_pim += game.wgo_pim ?? 0;
               acc.wgo_pp_toi_pct_values.push(game.wgo_pp_toi_pct);
               acc.wgo_pp_toi += game.wgo_pp_toi ?? 0;
               acc.nst_ixg += game.nst_ixg ?? 0;
@@ -1088,6 +1096,42 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             totals.wgo_pim,
             totals.nst_toi_all
           );
+          if (!completeTotalToi) {
+            for (const metric of ["atoi", "g_per_60", "a_per_60", "pts_per_60", "pts1_per_60", "sog_per_60", "ixg_per_60", "icf_per_60", "ihdcf_per_60", "iscf_per_60", "hit_per_60", "blk_per_60", "pim_per_60"]) {
+              (recentStats as any)[`${prefix}${metric}`] = null;
+            }
+          }
+          if (!completePpToi) {
+            for (const metric of ["pptoi", "ppg_per_60", "ppa_per_60", "ppp_per_60"]) {
+              (recentStats as any)[`${prefix}${metric}`] = null;
+            }
+          }
+          const metricCoverage: Array<{ fields: Array<keyof CombinedGameData>; metrics: string[] }> = [
+            { fields: ["wgo_g"], metrics: ["g", "g_per_60", "pts1_per_60", "pts1_pct", "s_pct"] },
+            { fields: ["wgo_a"], metrics: ["a", "a_per_60"] },
+            { fields: ["wgo_pts"], metrics: ["pts", "pts_per_60", "pts1_pct", "ipp"] },
+            { fields: ["wgo_a1"], metrics: ["pts1_per_60", "pts1_pct"] },
+            { fields: ["wgo_sog"], metrics: ["sog", "sog_per_60", "s_pct"] },
+            { fields: ["wgo_ppg"], metrics: ["ppg", "ppg_per_60"] },
+            { fields: ["wgo_ppa"], metrics: ["ppa", "ppa_per_60"] },
+            { fields: ["wgo_ppp"], metrics: ["ppp", "ppp_per_60"] },
+            { fields: ["wgo_hit"], metrics: ["hit", "hit_per_60"] },
+            { fields: ["wgo_blk"], metrics: ["blk", "blk_per_60"] },
+            { fields: ["wgo_pim"], metrics: ["pim", "pim_per_60"] },
+            { fields: ["wgo_pp_toi_pct"], metrics: ["pp_pct"] },
+            { fields: ["nst_ixg"], metrics: ["ixg", "ixg_per_60"] },
+            { fields: ["nst_icf"], metrics: ["icf", "icf_per_60"] },
+            { fields: ["nst_ihdcf"], metrics: ["ihdcf_per_60"] },
+            { fields: ["nst_iscfs"], metrics: ["iscf_per_60"] },
+            { fields: ["nst_oi_gf"], metrics: ["ipp"] },
+            { fields: ["nst_oi_gf", "nst_oi_sf"], metrics: ["oi_sh_pct"] },
+            { fields: ["nst_oi_off_zs", "nst_oi_def_zs"], metrics: ["ozs_pct"] },
+          ];
+          for (const { fields, metrics } of metricCoverage) {
+            if (!gamesInInterval.every(game => fields.every(field => typeof game[field] === "number" && Number.isFinite(game[field])))) {
+              for (const metric of metrics) (recentStats as any)[`${prefix}${metric}`] = null;
+            }
+          }
         } else {
           // Set all L* fields for this interval to null
           const metricsToNull = [

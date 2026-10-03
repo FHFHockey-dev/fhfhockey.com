@@ -1675,7 +1675,7 @@ function GameGridInternal({
         ]
           .filter(Boolean)
           .join(" ")}
-        aria-label="Best available players"
+        aria-label="Player candidates"
       >
         <button
           type="button"
@@ -1686,9 +1686,9 @@ function GameGridInternal({
         >
           <span className={styles.bottomDrawerTitle}>
             <span className={styles.bottomDrawerBadge} aria-hidden="true">
-              BPA |
+              POOL |
             </span>
-            Best Players Available
+            Player Candidates
           </span>
           <span className={styles.bottomDrawerHint}>
             {isBottomDrawerOpen ? "Close" : "Open"}
