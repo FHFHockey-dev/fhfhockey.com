@@ -586,6 +586,22 @@ describe("/api/v1/db/update-line-sources", () => {
         const originalFrom = mocks.from.getMockImplementation()!;
         const reportUpsert = vi.fn().mockResolvedValue({ error: null });
         const eventUpsert = vi.fn().mockResolvedValue({ error: null });
+        const derivedParents = new Map<string, any>();
+        const derivedUpsert = vi.fn(async (rows: any[]) => {
+          for (const row of rows) if (!derivedParents.has(row.capture_key)) derivedParents.set(row.capture_key, structuredClone(row));
+          return { error: null };
+        });
+        const sourceSelect = (table: string) => {
+          const filters: Array<(row: any) => boolean> = [];
+          const result = () => ({ data: [
+            ...((path === "gdl" && table === "line_source_snapshots" || path === "ccc" && table === "lines_ccc")
+              ? getUpsertedRows(fixtureMocks.lineSourceSnapshotsUpsertMock) : []),
+            ...(table === "line_source_snapshots" ? [...derivedParents.values()] : []),
+          ].filter((row) => filters.every((filter) => filter(row))), error: null });
+          const query: any = { in: (key: string, values: any[]) => { filters.push((row) => values.includes(row[key])); return query; },
+            order: () => query, range: () => query, then: (resolve: any) => Promise.resolve(result()).then(resolve) };
+          return query;
+        };
         mocks.rpc.mockResolvedValue({ data: true, error: null });
         mocks.from.mockImplementation((table: string) => {
           if (table === "games") return { select: () => ({ eq: (_column: string, date: string) => ({ order: async () => ({ data: frozenGames.filter((game: any) => game.date === date), error: null }) }) }) };
@@ -600,7 +616,9 @@ describe("/api/v1/db/update-line-sources", () => {
           } };
           if (table === "tweet_player_events") return { select: emptyQuery, upsert: eventUpsert };
           if (table === "lines_ccc_ifttt_events") return originalFrom("line_source_ifttt_events");
-          if (table === "lines_ccc") return originalFrom("line_source_snapshots");
+          if (table === "line_source_snapshots") return { ...originalFrom(table), select: () => sourceSelect(table),
+            upsert: (rows: any[], options: any) => options?.ignoreDuplicates ? derivedUpsert(rows) : originalFrom(table).upsert(rows, options) };
+          if (table === "lines_ccc") return { ...originalFrom("line_source_snapshots"), select: () => sourceSelect(table) };
           return originalFrom(table);
         });
         const res = createMockRes();
