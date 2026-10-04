@@ -110,6 +110,94 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
     });
   });
 
+  it.each([2026020033, 2026020030, 2026020023, 2026020025, 2026020029])(
+    "retains game %s writer contention without summarizing or warming a failed ingest",
+    async (gameId) => {
+      const message = JSON.stringify({
+        code: "P0001", details: null, hint: null,
+        message: "NHL_NORMALIZATION_WRITER_BUSY",
+      });
+      resolveRequestedGameIdsMock.mockResolvedValue({
+        mode: "game", seasonId: 20262027, gameIds: [gameId],
+      });
+      ingestNhlApiRawGamesBestEffortMock.mockResolvedValue({
+        results: [], failures: [{ gameId, message }],
+      });
+      const { req, res } = createMockApiContext({
+        query: { gameId: String(gameId), warmLandingCache: "true" },
+      });
+
+      await handler(req as never, res as never);
+
+      expect(ingestNhlApiRawGamesBestEffortMock).toHaveBeenCalledWith({}, [gameId]);
+      expect(refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock).not.toHaveBeenCalled();
+      expect(res.statusCode).toBe(502);
+      expect(res.body).toEqual({
+        success: false,
+        error: "Player underlying stats ingest failed for every requested game.",
+        issues: [`${gameId}: ${message}`],
+        failures: [{ gameId, message }],
+      });
+    },
+  );
+
+  it.each([false, true])("preserves capture diagnostics with partial success=%s", async (partialSuccess) => {
+    const failure = {
+      gameId: 2026020030,
+      message: "NHL_NORMALIZATION_WRITER_BUSY",
+      code: "P0001",
+      stage: "capture_raw_sources",
+      endpoint: "shiftcharts",
+      attempts: 2,
+    };
+    const result = {
+      gameId: 2026020031,
+      rosterCount: 40,
+      eventCount: 308,
+      shiftCount: 703,
+      rawEndpointsStored: 4,
+      idempotent: false,
+      rawCaptureBusyRetries: 1,
+    };
+    resolveRequestedGameIdsMock.mockResolvedValue({
+      mode: "game",
+      seasonId: 20262027,
+      gameIds: partialSuccess ? [2026020030, 2026020031] : [2026020030],
+    });
+    ingestNhlApiRawGamesBestEffortMock.mockResolvedValue({
+      results: partialSuccess ? [result] : [],
+      failures: [failure],
+    });
+    const { req, res } = createMockApiContext({
+      query: { gameId: "2026020030", warmLandingCache: "true" },
+    });
+
+    await handler(req as never, res as never);
+
+    expect(res.statusCode).toBe(partialSuccess ? 200 : 502);
+    expect(res.body).toMatchObject({ success: partialSuccess, failures: [failure] });
+    if (partialSuccess) {
+      expect(res.body).toMatchObject({
+        results: [result],
+        failedGameIds: [2026020030],
+        warmedLandingCache: false,
+      });
+      expect(refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock).toHaveBeenCalledWith({
+        gameIds: [2026020031],
+        seasonId: 20262027,
+        requestedGameType: 2,
+        shouldWarmLandingCache: false,
+        shouldMigrateLegacySummaries: false,
+        supabase: {},
+      });
+    } else {
+      expect(res.body).not.toHaveProperty("rawRowsUpserted");
+      expect(res.body).not.toHaveProperty("rowsUpserted");
+      expect(res.body).not.toHaveProperty("results");
+      expect(refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock).not.toHaveBeenCalled();
+    }
+  });
+
   it("refreshes raw gamecenter inputs and per-game player summaries for one game", async () => {
     const { req, res } = createMockApiContext({
       query: {

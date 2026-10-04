@@ -11,6 +11,9 @@ import { summarizeNhlRawGamecenterIngestResults } from "lib/supabase/Upserts/nhl
 import serviceRoleClient from "lib/supabase/server";
 import adminOnly from "utils/adminOnlyMiddleware";
 
+type RawIngestOutcome = Awaited<ReturnType<typeof ingestNhlApiRawGamesBestEffort>>;
+type RawIngestFailure = RawIngestOutcome["failures"][number];
+
 type UpdatePlayerUnderlyingStatsResponse =
   | {
       success: true;
@@ -26,7 +29,7 @@ type UpdatePlayerUnderlyingStatsResponse =
       processedGameCount?: number;
       failedGameCount?: number;
       failedGameIds?: number[];
-      failures?: Array<{ gameId: number; message: string }>;
+      failures?: RawIngestFailure[];
       requestedGameCount: number;
       gameIds: number[];
       rawRowsUpserted: number;
@@ -46,6 +49,7 @@ type UpdatePlayerUnderlyingStatsResponse =
       success: false;
       error: string;
       issues?: string[];
+      failures?: RawIngestFailure[];
     };
 
 type QueryValue = string | string[] | undefined;
@@ -179,7 +183,7 @@ async function handler(
       rawEndpointsStored: number;
       idempotent: boolean;
     }> = [];
-    const failures: Array<{ gameId: number; message: string }> = [];
+    const failures: RawIngestFailure[] = [];
     const processedGameIds: number[] = [];
     let rawRowsUpserted = 0;
     let summaryRowsUpserted = 0;
@@ -222,6 +226,7 @@ async function handler(
         success: false,
         error: "Player underlying stats ingest failed for every requested game.",
         issues: failures.map((failure) => `${failure.gameId}: ${failure.message}`),
+        failures,
       });
     }
 

@@ -7,6 +7,7 @@ import {
   buildRejectedMarketOddsSourceProvenanceRows,
   calculateNoVigMoneylineProbabilities,
   ESPN_MARKET_ODDS_SOURCE_NAME,
+  EspnOddsHttpError,
   ESPN_MARKET_ODDS_REJECTED_SOURCE_NAME,
   HISTORICAL_MARKET_ODDS_IMPORT_REJECTED_SOURCE_NAME,
   HISTORICAL_MARKET_ODDS_IMPORT_SOURCE_NAME,
@@ -110,6 +111,35 @@ describe("ESPN NHL odds", () => {
       away: 0.478261,
       overround: 0.045455,
     });
+  });
+
+  it("retains a denied provider request without retrying or treating it as empty odds", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 403 });
+    vi.stubGlobal("fetch", fetchMock);
+    const client = { from: vi.fn() };
+
+    await expect(ingestEspnNhlOddsSnapshots({
+      client: client as any,
+      dates: ["2026-10-04"],
+      now: new Date("2026-10-04T11:34:01.335Z"),
+    })).rejects.toMatchObject({
+      name: "EspnOddsHttpError",
+      message: "ESPN odds request failed with 403",
+      requestedDate: "2026-10-04",
+      httpStatus: 403,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(client.from).not.toHaveBeenCalled();
+  });
+
+  it("carries the exact scoreboard source URL on HTTP failures", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 403 }));
+
+    const error = await fetchEspnNhlOdds(["2026-10-04"]).catch((error) => error);
+    expect(error).toBeInstanceOf(EspnOddsHttpError);
+    expect(error.sourceUrl).toBe(
+      "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=20261004",
+    );
   });
 
   it("normalizes ESPN odds to the page payload shape", async () => {
