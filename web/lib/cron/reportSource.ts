@@ -40,6 +40,7 @@ export async function readReportSource<T>(
   pageSize = 500,
   maxPages = 40,
   maxMs = 15_000,
+  options: { deadlineAt?: number; requestTimeoutMs?: number } = {},
 ): Promise<ReportSource<T>> {
   const result: ReportSource<T> = {
     rows: [], complete: false, enumerationComplete: false, snapshotConsistent: false,
@@ -47,7 +48,9 @@ export async function readReportSource<T>(
     pages: 0, verificationPages: 0, expectedCount: null, duplicateRows: 0, error: null,
   };
   const fingerprints: string[] = [];
-  const deadline = Date.now() + maxMs;
+  // An absolute deadline lets sequential sources share one handler budget.
+  const deadline = Math.min(Date.now() + maxMs, options.deadlineAt ?? Infinity);
+  const requestTimeoutMs = options.requestTimeoutMs ?? 5_000;
   const deadlineError = "Source query deadline exceeded; totals unknown";
   // Read and then compare all row images under the same total page/time budget.
   // This detects observed mutations, including updates with unchanged counts.
@@ -65,7 +68,7 @@ export async function readReportSource<T>(
         const aborted = new Promise<never>((_resolve, reject) => { rejectAborted = reject; });
         const onAbort = () => rejectAborted(new Error(Date.now() >= deadline ? deadlineError : "Source request timed out"));
         controller.signal.addEventListener("abort", onAbort, { once: true });
-        const timer = setTimeout(() => controller.abort(), Math.min(5_000, remainingMs));
+        const timer = setTimeout(() => controller.abort(), Math.min(requestTimeoutMs, remainingMs));
         try {
           page = await Promise.race([fetchPage(offset, offset + pageSize - 1, controller.signal), aborted]);
         } catch (error) {

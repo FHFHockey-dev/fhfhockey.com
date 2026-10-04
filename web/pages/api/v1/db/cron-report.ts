@@ -34,6 +34,15 @@ const supabase = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
 const REPORT_WINDOW_MS = 24 * 60 * 60 * 1000;
+// Repository policy, not proof of a deployed override. Leave time after reads
+// for assembly/rendering, email acceptance and the outer audit/response.
+// These are reserved headroom, not independently enforced phase timeouts.
+const REPORT_PHASE_RESERVES_MS = {
+  assemblyAndRender: 20_000,
+  emailDelivery: 20_000,
+  auditAndResponse: 20_000,
+};
+const REPORT_REQUEST_TIMEOUT_MS = 15_000;
 const SELF_AUDIT_WRITE_GRACE_MS = 5 * 60 * 1000;
 const MATCH_WINDOW_MS = 30 * 60 * 1000;
 const RECURRING_SLOT_GRACE_MS = 5 * 60 * 1000;
@@ -1421,6 +1430,11 @@ function collectMissingObservationWarnings(job: {
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const now = new Date();
+  const repositoryLimitMs = repositoryExecutionLimitMs("/api/v1/db/cron-report");
+  const sourceBudgetMs = Math.max(0, (repositoryLimitMs ?? 0) -
+    Object.values(REPORT_PHASE_RESERVES_MS).reduce((sum, reserve) => sum + reserve, 0));
+  const sourceDeadlineAt = now.getTime() + sourceBudgetMs;
+  const sourceOptions = { deadlineAt: sourceDeadlineAt, requestTimeoutMs: REPORT_REQUEST_TIMEOUT_MS };
   const sinceDate = new Date(now.getTime() - REPORT_WINDOW_MS);
   const since = sinceDate.toISOString();
   const until = now.toISOString();
@@ -1439,7 +1453,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     .gte("scheduled_time", since).lte("scheduled_time", until)
     .order("scheduled_time", { ascending: true }).order("runid", { ascending: true })
     .range(from, to).abortSignal(signal),
-    (row) => String(row.runid), REPORT_PAGE_SIZE);
+    (row) => String(row.runid), REPORT_PAGE_SIZE, 40, sourceBudgetMs, sourceOptions);
   const auditSource = await readReportSource<any>((from, to, signal) => supabase
     .from("cron_job_audit")
     .select("job_name, run_time, rows_affected, status, details", { count: "exact" })
@@ -1447,7 +1461,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     .order("run_time", { ascending: true }).order("job_name", { ascending: true })
     .order("status", { ascending: true }).order("rows_affected", { ascending: true })
     .order("details", { ascending: true }).range(from, to)
-    .abortSignal(signal), reportRowIdentity, REPORT_PAGE_SIZE);
+    .abortSignal(signal), reportRowIdentity, REPORT_PAGE_SIZE, 40, sourceBudgetMs, sourceOptions);
+  const sourceElapsedMs = Date.now() - now.getTime();
   const runs = runSource.rows;
   const audits = auditSource.rows;
   const runErr = runSource.error;
@@ -2162,6 +2177,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     auditEmailResult,
     jobRunDetailsEmailResult,
     window: { since, until },
+    executionBudget: {
+      repositoryLimitMs,
+      sourceBudgetMs,
+      sourceElapsedMs,
+      sourceDeadlineAt: new Date(sourceDeadlineAt).toISOString(),
+      requestTimeoutMs: REPORT_REQUEST_TIMEOUT_MS,
+      phaseReservesMs: REPORT_PHASE_RESERVES_MS,
+      scope: "Handler entry; deployed override and outer middleware waits unverified",
+    },
     sources: {
       cron: { ...runSource, rows: undefined, error: sanitizeErrorMessage(runSource.error) },
       audit: { ...auditSource, rows: undefined, error: sanitizeErrorMessage(auditSource.error) },

@@ -1322,4 +1322,49 @@ ${JSON.stringify(jobs)}
     expect(row.timingProvenance).toContain("scope unverified");
   });
 
+  it("uses a shared 180-second read allowance and reserves 60 seconds under the 240-second repository limit", async () => {
+    for (const mock of [cronJobReportSelectMock, cronJobAuditSelectMock]) {
+      mock.mockImplementation(async () => {
+        vi.setSystemTime(Date.now() + 8_000);
+        return { data: [], error: null };
+      });
+    }
+    const res = createMockRes();
+    await handler({ method: "GET", query: { preview: "json" } } as any, res);
+    expect(res.body.sources.cron.complete).toBe(true);
+    expect(res.body.sources.audit.complete).toBe(true);
+    expect(res.body.window.until).toBe("2026-03-20T12:10:00.000Z");
+    expect(res.body.executionBudget).toMatchObject({
+      repositoryLimitMs: 240_000, sourceBudgetMs: 180_000, sourceElapsedMs: 32_000,
+      sourceDeadlineAt: "2026-03-20T12:13:00.000Z", requestTimeoutMs: 15_000,
+      phaseReservesMs: { assemblyAndRender: 20_000, emailDelivery: 20_000, auditAndResponse: 20_000 },
+    });
+    expect(resendSendMock).not.toHaveBeenCalled();
+  });
+
+  it("exhausts one overall source deadline and still sends a truthful partial report", async () => {
+    const cron = Array.from({ length: 5000 }, (_, id) => ({
+      runid: id + 1, jobname: "child-sql", scheduled_time: "2026-03-20T12:00:00.000Z",
+      status: "success", sql_text: "SELECT 1;",
+    }));
+    const audits = Array.from({ length: 6184 }, (_, id) => ({
+      job_name: "child-" + id, run_time: "2026-03-20T12:00:00.000Z",
+      status: id < 83 ? "failure" : "success", details: null,
+    }));
+    cronJobReportSelectMock.mockImplementation(async () => {
+      vi.setSystemTime(Date.now() + 12_000); return { data: cron, error: null };
+    });
+    cronJobAuditSelectMock.mockImplementation(async () => {
+      vi.setSystemTime(Date.now() + 5_000); return { data: audits, error: null };
+    });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.body.executionBudget.sourceElapsedMs).toBe(180_000);
+    expect(res.body.sources.cron.complete).toBe(true);
+    expect(res.body.sources.audit).toMatchObject({ complete: false, enumerationComplete: true, pages: 7, verificationPages: 5 });
+    expect(res.body.counts).toMatchObject({ auditRuns: 6184, auditFailures: 83 });
+    expect(res.body.totals.auditFailures).toBeNull();
+    expect(resendSendMock.mock.calls[0][0].subject).toContain("incomplete telemetry");
+  });
+
 });

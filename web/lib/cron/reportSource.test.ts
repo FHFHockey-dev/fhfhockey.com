@@ -193,4 +193,86 @@ describe("bounded cron report source", () => {
     } finally { vi.useRealTimers(); }
   });
 
+  it("allows slower complete reads beyond 15 seconds under the shared 180-second budget", async () => {
+    vi.useFakeTimers(); vi.setSystemTime(0);
+    const fetch = vi.fn(async (from: number, to: number) => {
+      vi.setSystemTime(Date.now() + 4_000);
+      return page(fixture)(from, to);
+    });
+    try {
+      const result = await readReportSource(fetch, (row) => String(row.id), REPORT_PAGE_SIZE, 40, 180_000,
+        { deadlineAt: 180_000, requestTimeoutMs: 15_000 });
+      expect(result).toMatchObject({ complete: true, pages: 7, verificationPages: 7 });
+      expect(Date.now()).toBe(56_000);
+      expect(result.rows.filter((row) => row.status === "failure")).toHaveLength(83);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("does not restart the shared deadline for the second source and retains its original observations", async () => {
+    vi.useFakeTimers(); vi.setSystemTime(0);
+    const options = { deadlineAt: 180_000, requestTimeoutMs: 15_000 };
+    try {
+      const first = await readReportSource(async (from, to) => {
+        vi.setSystemTime(Date.now() + 12_000);
+        return page(fixture.slice(0, 5000))(from, to);
+      }, (row) => String(row.id), REPORT_PAGE_SIZE, 40, 180_000, options);
+      expect(first.complete).toBe(true);
+      expect(Date.now()).toBe(120_000);
+      const second = await readReportSource(async (from, to) => {
+        vi.setSystemTime(Date.now() + 5_000);
+        return page(fixture)(from, to);
+      }, (row) => String(row.id), REPORT_PAGE_SIZE, 40, 180_000, options);
+      expect(second).toMatchObject({ complete: false, enumerationComplete: true, pages: 7, verificationPages: 5 });
+      expect(second.rows).toHaveLength(6184);
+      expect(second.rows.filter((row) => row.status === "failure")).toHaveLength(83);
+      expect(second.error).toContain("deadline");
+      expect(Date.now()).toBe(180_000);
+      const exhausted = vi.fn(page(fixture));
+      expect((await readReportSource(exhausted, undefined, REPORT_PAGE_SIZE, 40, 180_000, options)).complete).toBe(false);
+      expect(exhausted).not.toHaveBeenCalled();
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("still aborts a hanging request after 15 seconds and bounds its one retry", async () => {
+    vi.useFakeTimers(); vi.setSystemTime(0);
+    const signals: AbortSignal[] = [];
+    const fetch = vi.fn((_from: number, _to: number, signal: AbortSignal) => {
+      signals.push(signal);
+      return new Promise<{ data: typeof fixture; count: number; error: null }>(() => {});
+    });
+    try {
+      const pending = readReportSource(fetch, undefined, REPORT_PAGE_SIZE, 40, 180_000,
+        { deadlineAt: 180_000, requestTimeoutMs: 15_000 });
+      await vi.advanceTimersByTimeAsync(30_000);
+      const result = await pending;
+      expect(fetch).toHaveBeenCalledTimes(2);
+      expect(signals.every((signal) => signal.aborted)).toBe(true);
+      expect(result.error).toBe("Source request timed out");
+      expect(result.complete).toBe(false);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("clips a request to the shared remaining budget without spending reserved delivery time", async () => {
+    vi.useFakeTimers(); vi.setSystemTime(175_000);
+    const signals: AbortSignal[] = [];
+    const fetch = vi.fn((_from: number, _to: number, signal: AbortSignal) => {
+      signals.push(signal);
+      return new Promise<{ data: typeof fixture; count: number; error: null }>(() => {});
+    });
+    try {
+      const pending = readReportSource(fetch, undefined, REPORT_PAGE_SIZE, 40, 180_000,
+        { deadlineAt: 180_000, requestTimeoutMs: 15_000 });
+      await vi.advanceTimersByTimeAsync(5_000);
+      const result = await pending;
+      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(signals[0].aborted).toBe(true);
+      expect(result.error).toContain("deadline");
+      expect(result.complete).toBe(false);
+      expect(Date.now()).toBe(180_000);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally { vi.useRealTimers(); }
+  });
+
 });
