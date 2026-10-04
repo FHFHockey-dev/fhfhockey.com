@@ -1,5 +1,5 @@
 import { selectTeamFormGames, type StartChartTeamForm } from "lib/projections/startChartTeamForm";
-import { starterBoardFlags } from "lib/projections/starterBoardFlags";
+import { starterBoardCanaryGameIds, starterBoardFlags } from "lib/projections/starterBoardFlags";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
@@ -904,11 +904,21 @@ async function fetchSlate(
         gameIds.has(row.game_id),
       );
 
-  const revisions = starterBoardFlags().serving && !exactRunId
-    ? await loadForgeGameRevisions(targetDate) : [];
-  const newsResponse = starterBoardFlags().serving && !exactRunId && games.length
+  let revisionGameIds = [...gameIds];
+  if (starterBoardFlags().serving) {
+    try {
+      const canary = starterBoardCanaryGameIds();
+      if (canary !== null) revisionGameIds = revisionGameIds.filter(id => canary.includes(id));
+    } catch {
+      // Invalid rollout scope must not admit retained revisions or legacy rows.
+      revisionGameIds = [];
+    }
+  }
+  const revisions = starterBoardFlags().serving && !exactRunId && revisionGameIds.length
+    ? (await loadForgeGameRevisions(targetDate)).filter(row => revisionGameIds.includes(row.game_id)) : [];
+  const newsResponse = starterBoardFlags().serving && !exactRunId && revisionGameIds.length
     ? await (supabase as any).from("forge_game_update_queue").select("game_id,status,first_accepted_at,last_accepted_at")
-      .in("game_id", [...gameIds]).in("status", ["pending", "running", "failed"])
+      .in("game_id", revisionGameIds).in("status", ["pending", "running", "failed"])
     : { data: [], error: null };
   const pendingNews = newsResponse.data ?? [];
   if (revisions.length) {
@@ -1064,6 +1074,8 @@ export default async function handler(
   const requestedDate = request.date < today ? today : request.date;
   const cacheKey = [
     `date:${requestedDate}`,
+    `revisions:${starterBoardFlags().serving}`,
+    `canary:${starterBoardFlags().serving ? process.env.STARTER_BOARD_CANARY_GAME_IDS ?? "all" : "off"}`,
     `position:${request.position ?? "all"}`,
     `page:${request.paginationRequested ? request.page : "all"}`,
     `pageSize:${request.paginationRequested ? request.pageSize : "all"}`,

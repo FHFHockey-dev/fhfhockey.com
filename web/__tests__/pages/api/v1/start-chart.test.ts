@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { evaluatePayloadBudget } from "lib/dashboard/perfBudget";
 import { addStartChartPositionRanks } from "lib/projections/startChartFantasyScoring";
 import { normalizeStartChartResponse } from "lib/projections/startChartContract";
+import { consumerGameRevisionFixture } from "../../../fixtures/consumerGameRevision";
 
 const {
   fromMock,
@@ -588,6 +589,38 @@ describe("/api/v1/start-chart", () => {
       }
       return createQueryBuilder(() => ({ data: [], error: null }));
     });
+  });
+
+  it.each(["1002", "", "invalid", "1001,1001"])("withholds revisions outside or invalid serving canary %s without legacy fallback", async (canary) => {
+    const fixture = consumerGameRevisionFixture();
+    vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "true");
+    vi.stubEnv("STARTER_BOARD_CANARY_GAME_IDS", canary);
+    rpcMock.mockImplementation(async (name: string) => name === "read_forge_game_revisions"
+      ? { data: [fixture.revision], error: null } : { data: null, error: null });
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: fixture.date } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.contractVersion).toBe(2);
+    expect(res.body.games).toHaveLength(1);
+    expect(res.body.players).toEqual([]);
+    expect(res.body.gameRevisions).toEqual([]);
+    expect(res.body.coverage.projectionRows).toBe(0);
+    expect(res.body.serving.reason).toBe("scheduled_games_missing_projections");
+  });
+
+  it("keeps the serving-off FORGE run reader independent of the revision canary", async () => {
+    vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");
+    vi.stubEnv("STARTER_BOARD_CANARY_GAME_IDS", "invalid");
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.contractVersion).toBe(1);
+    expect(res.body.players.some((row: any) => row.player_id === defaultProjection.player_id)).toBe(true);
+    expect(rpcMock.mock.calls.some(([name]) => name === "read_forge_game_revisions")).toBe(false);
   });
 
   it("serves frozen game revisions and exposes only public provenance", async () => {
