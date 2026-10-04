@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 const {
   cronJobReportSelectMock,
@@ -106,6 +108,24 @@ function createMockRes() {
 }
 
 describe("/api/v1/db/cron-report", () => {
+  it("keeps historical static bottleneck context out of a fresh successful execution explanation", async () => {
+    readFileMock.mockResolvedValue("SELECT cron.schedule('update-season-stats-current-season','0 12 * * *',$$select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-season-stats');$$);");
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{
+      job_name: "update-season-stats-current-season", run_time: "2026-03-20T12:00:02.000Z", status: "success",
+      details: { method: "GET", url: "/api/v1/db/update-season-stats", durationMs: 2000,
+        response: { success: true, failedRows: 0 } },
+    }], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    const row = cronAuditEmailMock.mock.calls.at(-1)?.[0].audits[0];
+    expect(row).toMatchObject({ status: "success", durationMs: 2000, failedRows: 0 });
+    expect(row.reason ?? "").not.toContain("hangs past");
+    expect(row.benchmarkAnnotations[0].note).toContain("180s validation probe");
+    expect(res.body.benchmark.scope).toContain("Historical static");
+    expect(res.body.benchmark.bottleneckJobs[0].notes[0]).toContain("180s validation probe");
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal("AbortSignal", { timeout: vi.fn(() => new AbortController().signal) });
@@ -500,6 +520,52 @@ SELECT cron.schedule(
         ],
       })
     );
+  });
+
+  it.each([
+    { receiptRoute: "/api/v1/db/update-yahoo-players", partial: true, expectedStatus: "unknown", extras: 0 },
+    { receiptRoute: "/api/v1/db/update-yahoo-players", partial: false, expectedStatus: "success", extras: 0 },
+    { receiptRoute: "/api/v1/db/update-yahoo-players?gameId=465", partial: false, expectedStatus: "unknown", extras: 1 },
+  ])("uses the current Yahoo inventory over historical SQL and preserves receipt coverage: $receiptRoute / $partial", async ({ receiptRoute, partial, expectedStatus, extras }) => {
+    vi.setSystemTime(new Date("2026-10-04T15:55:52.509Z"));
+    readFileMock.mockResolvedValue(`\`\`\`json
+${JSON.stringify([{ jobid: 106, jobname: "update-yahoo-players", schedule: "40 8 * * *", active: true, method: "GET", route: "/api/v1/db/update-yahoo-players" }])}
+\`\`\`
+-- SELECT cron.schedule('update-yahoo-players','17 8 * * *',$$select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-yahoo-players?gameId=465');$$);`);
+    cronJobReportSelectMock.mockResolvedValue({ data: [{
+      jobid: 106, runid: 177006, jobname: "update-yahoo-players", scheduled_time: "2026-10-04T08:40:00.146347Z",
+      end_time: "2026-10-04T08:40:00.155255Z", status: "succeeded", return_message: "1 row",
+      sql_text: "select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-yahoo-players');",
+    }], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{
+      job_name: "/api/v1/db/update-yahoo-players", run_time: "2026-10-04T08:40:50.190850Z", status: "success",
+      details: { method: "GET", url: receiptRoute, statusCode: 200, response: JSON.stringify({
+        success: true, status: partial ? "partial" : "success", gameId: 477, season: 2026,
+        sourceRows: 1597, succeeded: 1597, rowsUpserted: 1597, failedRows: 0,
+        ownershipOmitted: partial ? 1041 : 0, ownershipHistoryUpserted: partial ? 556 : 1597,
+        completeSnapshot: !partial, sheetExport: { attempted: !partial, succeeded: !partial, reason: partial ? "incomplete_player_receipt" : null },
+      }) },
+    }], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    const row = cronAuditEmailMock.mock.calls.at(-1)?.[0].audits.find((job: any) => job.jobName === "update-yahoo-players");
+    expect(row).toMatchObject({ status: expectedStatus, route: "/api/v1/db/update-yahoo-players" });
+    expect(res.body.counts).toMatchObject({ jobsMissingLast: 0, unscheduledRuns: extras });
+    if (partial) {
+      expect(row.reason).toContain("1041 ownership rows omitted");
+      expect(row.reason).toContain("556 ownership history rows written");
+      expect(row.reason).toContain("Sheet export was not attempted (incomplete_player_receipt)");
+      expect(row.reason).toContain("1597/1597 player rows succeeded");
+      expect(row).toMatchObject({ rowsUpserted: null, failedRows: 0 });
+      const { CronAuditEmail } = await vi.importActual<typeof import("components/CronReportEmail/CronAuditEmail")>("components/CronReportEmail/CronAuditEmail");
+      const html = renderToStaticMarkup(createElement(CronAuditEmail, cronAuditEmailMock.mock.calls.at(-1)![0]));
+      expect(html).toContain("1041 ownership rows omitted");
+      expect(html).toContain("556 ownership history rows written");
+      expect(html).toContain("Sheet export was not attempted (incomplete_player_receipt)");
+      expect(html).not.toContain("scheduled health remains unknown while telemetry is incomplete");
+    } else if (extras > 0) {
+      expect(row.timingProvenance).toContain("HTTP submission only");
+    }
   });
 
   it("prefers the active JSON schedule inventory over legacy SQL snippets", async () => {

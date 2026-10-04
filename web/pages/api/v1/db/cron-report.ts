@@ -330,6 +330,7 @@ type WarningSummary = {
 };
 
 type BenchmarkSummary = {
+  scope: string;
   annotatedJobCount: number;
   bottleneckJobs: Array<{ displayName: string; notes: string[] }>;
   missingObservationJobs: Array<{ displayName: string; warnings: string[] }>;
@@ -371,8 +372,31 @@ function skippedOperationWarning(row: AuditRow): string | null {
   return null;
 }
 
+function incompleteYahooReceiptWarning(row: AuditRow): string | null {
+  const response = row.parsed.response;
+  if (row.status !== "success" || row.parsed.routePath !== "/api/v1/db/update-yahoo-players" ||
+      !response || typeof response !== "object" || Array.isArray(response)) return null;
+  const receipt = response as Record<string, unknown>;
+  if (receipt.status !== "partial" && receipt.completeSnapshot !== false) return null;
+  const notes = ["Yahoo coverage is partial; complete snapshot unverified."];
+  if (typeof receipt.sourceRows === "number" && typeof receipt.succeeded === "number") {
+    notes.push(`${receipt.succeeded}/${receipt.sourceRows} player rows succeeded.`);
+  }
+  if (typeof receipt.ownershipOmitted === "number") notes.push(`${receipt.ownershipOmitted} ownership rows omitted.`);
+  if (typeof receipt.ownershipHistoryUpserted === "number") notes.push(`${receipt.ownershipHistoryUpserted} ownership history rows written.`);
+  const sheetExport = receipt.sheetExport;
+  if (sheetExport && typeof sheetExport === "object" && !Array.isArray(sheetExport)) {
+    const exportReceipt = sheetExport as Record<string, unknown>;
+    if (exportReceipt.attempted === false) {
+      const reason = typeof exportReceipt.reason === "string" ? sanitizeErrorMessage(exportReceipt.reason, 120) : null;
+      notes.push(`Sheet export was not attempted${reason ? ` (${reason})` : ""}.`);
+    }
+  }
+  return notes.join(" ");
+}
+
 function classifyAuditStatus(row: AuditRow): ReportStatus {
-  if (skippedOperationWarning(row)) return "unknown";
+  if (skippedOperationWarning(row) || incompleteYahooReceiptWarning(row)) return "unknown";
   return row.status === "failure" &&
     row.parsed.statusCode === 410 &&
     isQuarantinedLegacyRoute(row.parsed.routePath)
@@ -967,10 +991,10 @@ async function loadScheduledCronJobs(
         name,
         cronExpression,
         scheduleTimeDisplay: formatScheduleTime(cronExpression),
-        method: definition?.method ?? entryMethod ?? "UNKNOWN",
-        url: definition?.url ?? entryUrl,
-        route: definition?.route ?? entryInvocation.route,
-        routePath: definition?.routePath ?? entryInvocation.routePath,
+        method: entryMethod ?? definition?.method ?? "UNKNOWN",
+        url: entryUrl ?? definition?.url ?? null,
+        route: entryInvocation.route ?? definition?.route ?? null,
+        routePath: entryInvocation.routePath ?? definition?.routePath ?? null,
         sqlText: definition?.sqlText ?? null,
         expectedRunAt: expectedRunAtWithinWindow(cronExpression, since, now),
         sortOrder: index,
@@ -1210,6 +1234,7 @@ function buildRunDigestFromAudit(
       ? ["Observed audit run does not have reliable timing metadata yet."]
       : [];
   if (skippedOperationWarning(row)) missingObservationWarnings.push(skippedOperationWarning(row)!);
+  if (incompleteYahooReceiptWarning(row)) missingObservationWarnings.push(incompleteYahooReceiptWarning(row)!);
 
   return {
     key: row.id,
@@ -1711,6 +1736,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         notes.push(noOutputWarning);
         missingObservationWarnings.push(noOutputWarning);
       }
+      const incompleteYahooWarning = lastAudit ? incompleteYahooReceiptWarning(lastAudit) : null;
+      if (incompleteYahooWarning) {
+        notes.push(incompleteYahooWarning);
+        missingObservationWarnings.push(incompleteYahooWarning);
+      }
       if (lastStatus === "missing") {
         notes.push("No cron or audit entry matched this scheduled slot.");
       }
@@ -1754,14 +1784,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
       if (optimizationDenotation) {
         notes.push(`${optimizationDenotation}: recorded elapsed reached 90% of the repository route limit (${repositoryLimitMs == null ? "unknown" : repositoryLimitMs / 1000 + "s"}); deployed override unverified.`);
-      }
-      if (hasBenchmarkAnnotationKind(benchmarkAnnotations, "bottleneck")) {
-        const firstBottleneckNote = benchmarkAnnotations.find(
-          (annotation) => annotation.kind === "bottleneck"
-        )?.note;
-        if (firstBottleneckNote) {
-          notes.push(`Bottleneck: ${firstBottleneckNote}`);
-        }
       }
       if (
         job.method === "SQL" &&
@@ -1970,6 +1992,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   });
 
   const benchmarkSummary: BenchmarkSummary = {
+    scope: "Historical static annotations; undated and not evidence of this window's execution status",
     annotatedJobCount: jobSummaries.filter(
       (job) => job.benchmarkAnnotations.length > 0
     ).length,

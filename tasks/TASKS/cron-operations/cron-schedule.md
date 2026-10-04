@@ -19,6 +19,11 @@
 -- The JSON inventory below is the current-state source of truth; job 308 is
 -- inactive and distinct horizon-5 job 393 remains active.
 
+-- 2026-10-04 read-only Yahoo reconciliation: active job 106 and run 177006
+-- target update-yahoo-players without a query at 08:40 UTC. Its route receipt
+-- is partial; this inventory correction does not establish complete ownership
+-- coverage or change the live schedule. Older SQL snippets remain historical.
+
 # ALL CRON JOBS:
 ```json
 [
@@ -243,7 +248,7 @@
     "run_time_utc": "08:40 UTC",
     "active": true,
     "method": "GET",
-    "route": "/api/v1/db/update-yahoo-players?gameId=465"
+    "route": "/api/v1/db/update-yahoo-players"
   },
   {
     "jobid": 220,

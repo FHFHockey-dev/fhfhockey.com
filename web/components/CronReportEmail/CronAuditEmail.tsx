@@ -114,7 +114,6 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
           {row.status === "unknown" && row.observedExecutionStatus === "success" ? <div style={muted}>Observed route receipt: success; scheduled health remains unknown while telemetry is incomplete.</div> : null}
           {row.failedOperations != null && row.failedOperations > 0 ? <div style={{ color: "#991B1B", fontSize: 13 }}>{row.failedOperations} failed operations; error-row count unknown.</div> : null}
           {details.map((detail, index) => <div key={index} style={{ fontSize: 13, color: row.status === "failure" ? "#991B1B" : "#4B5563", marginTop: 4 }}>{row.status === "failure" ? clean(detail) : concise(detail)}</div>)}
-          {priority(row) < 4 && (row.benchmarkAnnotations ?? []).length > 0 ? <div style={{ ...muted, marginTop: 4 }}>Benchmark: {concise(row.benchmarkAnnotations![0].note)}</div> : null}
           {row.failedRowSamples.length > 0 ? <div style={{ ...muted, marginTop: 4 }}>Evidence: {row.failedRowSamples.slice(0, 2).map(concise).join("; ")}</div> : null}
           {row.status === "failure" ? <div style={{ ...muted, marginTop: 6 }}><a href="https://vercel.com/fhfhockeydevs-projects/fhfhockey/logs" style={{ color: "#1D4ED8" }}>Inspect execution logs (sign in)</a>{" · Use the route and UTC time above."}</div> : null}
           {row.status === "failure" && row.lastKnownSuccessDisplay ? <div style={muted}>Last recorded success: {row.lastKnownSuccessDisplay}</div> : null}

@@ -6,6 +6,21 @@ import { describe, expect, it } from "vitest";
 import { CronAuditEmail } from "components/CronReportEmail/CronAuditEmail";
 
 describe("CronAuditEmail", () => {
+  it("does not present an undated static benchmark as evidence about a current receipt", () => {
+    const html = renderToStaticMarkup(<CronAuditEmail sinceDate="2026-10-03T15:55:00Z"
+      summary={{ auditRuns: 1, auditSuccesses: 0, auditFailures: 1, auditUnknown: 0, totalRowsUpserted: 0, totalFailedRows: 0 }}
+      audits={[{ key: "season", label: "season", jobName: "update-season-stats-current-season", status: "failure",
+        runTimeDisplay: "2026-10-04T10:20:03Z / 6:20 AM EDT", durationMs: 2000,
+        method: "GET", route: "/api/v1/db/update-season-stats", routePath: "/api/v1/db/update-season-stats",
+        targetTable: null, statusCode: 500, rowsUpserted: null, rowsAffected: null, failedRows: null,
+        reason: "Actual upstream request failed", lastKnownSuccessDisplay: null, failedRowSamples: [],
+        benchmarkAnnotations: [{ kind: "bottleneck", note: "Route still hangs past the 180s validation probe" }] }]} />);
+    expect(html).toContain("Actual upstream request failed");
+    expect(html).toContain("2s");
+    expect(html).not.toContain("hangs past");
+    expect(html).not.toContain("Benchmark:");
+  });
+
   it("orders exceptions first, shows each job once, and emits a source warning once", () => {
     const base = { runTimeDisplay: "EDT", method: "GET", route: "/example", routePath: "/example", targetTable: null,
       statusCode: 200, durationMs: 499, rowsUpserted: null, rowsAffected: 800, failedRows: null,
