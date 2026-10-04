@@ -1,7 +1,7 @@
 import { selectTeamFormGames, type StartChartTeamForm } from "lib/projections/startChartTeamForm";
 import { starterBoardCanaryGameIds, starterBoardFlags } from "lib/projections/starterBoardFlags";
 import { loadPlanningInputs } from "lib/rosterScheduleData/planningInputs";
-import { admitConsumerGameRevisions } from "lib/projections/consumerRevisionAdmission";
+import { admitConsumerGameRevisions, type AdmittedConsumerSource } from "lib/projections/consumerRevisionAdmission";
 import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import type { ForecastDiscoveryExclusion, ForecastExclusionReason, GameForecast } from "lib/rosterScheduleOptimizer/planningTypes";
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -177,6 +177,7 @@ type QueryError = {
 type SlateResult = {
   revisions?: ForgeGameRevision[];
   admittedForecasts?: Map<string, GameForecast>;
+  admittedGoalieCandidates?: Map<string, Record<string, any>>;
   forecastAdmission?: { exclusionCounts: Record<string, number>; exclusions: ForecastDiscoveryExclusion[] };
   newsStatus?: { available: boolean; pendingGames: number; freshnessBreachedGames: number; unresolvedConflicts: number; oldestAcceptedAt: string | null };
   games: GameRow[];
@@ -939,6 +940,8 @@ async function fetchSlate(
     : { data: [], error: null };
   const pendingNews = newsResponse.data ?? [];
   const admittedForecasts = new Map<string, GameForecast>();
+  const admittedGoalieCandidates = new Map<string, Record<string, any>>();
+  let admittedSources: AdmittedConsumerSource[] = [];
   if (starterBoardFlags().serving) {
     const issuedIds = new Set(revisions.map(row => row.game_id));
     for (const id of revisionGameIds) if (!issuedIds.has(id)) recordExclusion(id, "no_issued_revision");
@@ -964,9 +967,11 @@ async function fetchSlate(
         const admitted = await admitConsumerGameRevisions(supabase, matched, inputs.players, inputs.games,
           now, seasons[0]!, exclusionCounts, exclusions, deadline,
           forecastCalendarPolicy(Number(process.env.STARTER_BOARD_CALENDAR_HORIZON_DAYS ?? 14)));
-        for (const forecast of admitted.forecasts) {
-          const player = inputs.players.find(row => row.id === forecast.playerId);
-          if (player?.nhlId) admittedForecasts.set(`${forecast.gameId}:${player.nhlId}`, forecast);
+        admittedSources = admitted.admittedSources;
+        for (const { forecast, source } of admittedSources) {
+          const key = `${forecast.gameId}:${forecast.issuedContext.nhlPlayerId}`;
+          admittedForecasts.set(key, forecast);
+          if (source.kind === "goalie") admittedGoalieCandidates.set(key, source.row);
         }
         revisions = admitted.currentRevisions.filter(row => admitted.forecasts.some(forecast => forecast.revisionId === row.id));
         if (inputs.scheduleProblems.length) for (const id of revisionGameIds) recordExclusion(id, "incomplete_refresh");
@@ -979,15 +984,25 @@ async function fetchSlate(
   if (revisions.length) {
     // Once the revision contract is enabled, only atomically published game
     // payloads are authoritative. Unpublished games remain explicitly missing.
-    projections = revisions.flatMap((revision) => revision.payload.players)
-      .filter((row) => admittedForecasts.has(`${row.game_id}:${row.player_id}`));
-    goalies = revisions.flatMap((revision) => revision.payload.goalieStarts ?? [])
-      .filter((row) => admittedForecasts.has(`${row.game_id}:${row.player_id}`))
-      .map(row => {
-        const forecast = admittedForecasts.get(`${row.game_id}:${row.player_id}`)!;
-        return { ...row, start_probability: forecast.startProbability,
-          confirmed_status: forecast.confirmedStart ? true : null };
-      });
+    projections = admittedSources.filter(item => item.source.kind === "skater").map(({ forecast, revision, source }) => {
+      const context = forecast.issuedContext;
+      const game = games.find(row => String(row.id) === forecast.gameId)!;
+      return { ...source.row, run_id: revision.run_id, as_of_date: targetDate, horizon_games: 1,
+        game_id: game.id, player_id: context.nhlPlayerId, team_id: context.teamId,
+        opponent_team_id: context.teamId === game.homeTeamId ? game.awayTeamId : game.homeTeamId } as ProjectionRow;
+    });
+    goalies = admittedSources.filter(item => item.source.kind === "goalie").map(({ forecast, revision }) => {
+      const context = forecast.issuedContext;
+      const starts = (revision.payload.goalieStarts ?? []).filter(row =>
+        String(row.game_id) === forecast.gameId && row.player_id === context.nhlPlayerId && row.team_id === context.teamId);
+      const supplemental = starts.length === 1 ? starts[0] : null;
+      return { game_id: Number(forecast.gameId), game_date: targetDate, team_id: context.teamId,
+        player_id: context.nhlPlayerId, start_probability: forecast.startProbability,
+        confirmed_status: forecast.confirmedStart ? true : null, updated_at: revision.published_at,
+        projected_gsaa_per_60: supplemental?.projected_gsaa_per_60 ?? null,
+        l10_start_pct: supplemental?.l10_start_pct ?? null, season_start_pct: supplemental?.season_start_pct ?? null,
+        games_played: supplemental?.games_played ?? null };
+    });
   } else if (starterBoardFlags().serving) {
     projections = [];
     goalies = [];
@@ -995,6 +1010,7 @@ async function fetchSlate(
   return {
     revisions,
     admittedForecasts,
+    admittedGoalieCandidates,
     forecastAdmission: starterBoardFlags().serving ? { exclusionCounts, exclusions } : undefined,
     newsStatus: {
       available: !newsResponse.error, pendingGames: pendingNews.length,
@@ -1103,9 +1119,8 @@ export default async function handler(
   const sendPayload = (payload: any) => {
     // Cache the shared hockey forecast only. Account/league weights never enter
     // the shared cache and POST responses cannot be stored by a CDN.
-    const requestedScoring = scoring ?? (payload.contractVersion === 2 ? parseBoardScoringRequest({}) : null);
     res.setHeader("Cache-Control", scoring ? "private, no-store" : "s-maxage=15, stale-while-revalidate=0");
-    return res.status(200).json(requestedScoring ? scoreStarterBoardPayload(payload, requestedScoring) : payload);
+    return res.status(200).json(scoring ? scoreStarterBoardPayload(payload, scoring) : payload);
   };
 
   const parsedRequest = parseStartChartRequest(req.query, easternDate());
@@ -1620,8 +1635,7 @@ export default async function handler(
         if (ambiguousYahooMappings.has(goalie.player_id)) {
           context.flags.push("ambiguous_yahoo_mapping");
         }
-        const candidate = slate.revisions?.find((revision) => revision.game_id === goalie.game_id)?.payload.goalies
-          .flatMap((row) => row.uncertainty?.daily_board_candidates ?? []).find((row: any) => row.playerId === goalie.player_id);
+        const candidate = slate.admittedGoalieCandidates?.get(`${goalie.game_id}:${goalie.player_id}`);
         players.push({
           row_key: buildRowKey(goalie),
           game_id: goalie.game_id,
@@ -1676,14 +1690,16 @@ export default async function handler(
         }
       }
 
-      const rankedPlayers = addStartChartPositionRanks(
-        players.map((player) => ({
-          ...player,
-          games_remaining_week: gamesRemainingError
-            ? null
-            : (gamesRemaining.get(player.team_id) ?? null),
-        })),
-      );
+      const fullSlatePlayers = players.map((player) => ({
+        ...player,
+        games_remaining_week: gamesRemainingError
+          ? null : (gamesRemaining.get(player.team_id) ?? null),
+      }));
+      // Rank the complete admitted slate before filtering and pagination. GET
+      // preserves these ranks; POST rescores only the complete unpaginated slate.
+      const defaultBoard = starterBoardFlags().serving
+        ? scoreStarterBoardPayload({ players: fullSlatePlayers }, parseBoardScoringRequest({})) : null;
+      const rankedPlayers = defaultBoard?.players ?? addStartChartPositionRanks(fullSlatePlayers);
       const eligiblePlayers = rankedPlayers
         .filter(
           (player) =>
@@ -2081,10 +2097,11 @@ export default async function handler(
             }
           : null,
         skaterSource: "forge_player_projections",
-        goalieSource: "goalie_start_projections",
+        goalieSource: starterBoardFlags().serving ? "forge_goalie_projections" : "goalie_start_projections",
         legacyPlayerProjectionsUsed: false,
         fantasyScoringContract: START_CHART_FANTASY_SCORING_CONTRACT,
-        rankingContract: START_CHART_RANKING_CONTRACT,
+        rankingContract: defaultBoard?.rankingContract ?? START_CHART_RANKING_CONTRACT,
+        ...(defaultBoard ? { scoringProfile: defaultBoard.scoringProfile } : {}),
         request: {
           mode: request.mode,
           profile: request.profile,

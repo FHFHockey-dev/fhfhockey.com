@@ -8,6 +8,11 @@ import { withinDeadline } from "lib/rosterScheduleData/planningInputs";
 import type { ForecastDiscoveryExclusion, ForecastExclusionReason, GameForecast, PlanningGame, PlanningIssuedContext, PlanningPlayer, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
 
 type Row = Record<string, any>;
+export type AdmittedConsumerSource = {
+  forecast: GameForecast & { issuedContext: PlanningIssuedContext };
+  revision: ForgeGameRevision;
+  source: { kind: "skater" | "goalie"; row: Row };
+};
 const numberOrNull = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? value : null;
 const validCapturedTime = (value: unknown, observedAt: string) => value === null
   || typeof value === "string" && Number.isFinite(Date.parse(value)) && Date.parse(value) <= Date.parse(observedAt);
@@ -15,7 +20,8 @@ const validCapturedTime = (value: unknown, observedAt: string) => value === null
 /** Whitelist issued, selected FORGE outputs. Research/admin payloads never leave this boundary. */
 export function publicPlanningForecasts(revisions: ForgeGameRevision[], players: PlanningPlayer[], games: PlanningGame[], now: Date,
   exclusions: Record<string, number> = {}, exclusionRows: ForecastDiscoveryExclusion[] = [], expectedSeasonId?: number,
-  calendarPolicy: ForecastCalendarPolicy = forecastCalendarPolicy()): GameForecast[] {
+  calendarPolicy: ForecastCalendarPolicy = forecastCalendarPolicy(),
+  admittedSources: Map<string, AdmittedConsumerSource> = new Map()): GameForecast[] {
   const excluded = (reason: ForecastExclusionReason, gameId: string, playerId?: string, targetKey?: string) => {
     exclusions[reason] = (exclusions[reason] ?? 0) + 1;
     if (exclusionRows.length < 15000) exclusionRows.push({ gameId, ...(playerId ? { playerId } : {}),
@@ -73,7 +79,7 @@ export function publicPlanningForecasts(revisions: ForgeGameRevision[], players:
           team_abbreviation: row.teamAbbreviation, opponent_abbreviation: row.opponentAbbreviation,
           game_status: row.gameStatus, schedule_status: row.scheduleStatus }))
       || new Set(issued.schedule.map(row => row.teamId)).size !== 2) { excluded("identity_conflict", gameId); continue; }
-    const emit = (nhlId: number, teamId: number, rowGameId: number, stats: Record<string, number | null> | null, startProbability: number | null, confirmedStart: boolean, limitations: string[], conditionalStats?: StatLine | null, appearanceProbability?: number | null, missingReason: ForecastExclusionReason = "unsupported_conditioning") => {
+    const emit = (source: AdmittedConsumerSource["source"], nhlId: number, teamId: number, rowGameId: number, stats: Record<string, number | null> | null, startProbability: number | null, confirmedStart: boolean, limitations: string[], conditionalStats?: StatLine | null, appearanceProbability?: number | null, missingReason: ForecastExclusionReason = "unsupported_conditioning") => {
       const player = byNhl.get(nhlId);
       const currentGame = currentGames.find(game => game.teamAbbreviation === player?.teamAbbreviation);
       if (!player || nhlCounts.get(nhlId) !== 1 || player.nhlTeamId !== teamId || String(rowGameId) !== gameId || !currentGame) { excluded("identity_conflict", gameId, player?.id); return; }
@@ -99,7 +105,7 @@ export function publicPlanningForecasts(revisions: ForgeGameRevision[], players:
         observedAt: issued.observedAt, scheduleSourceUpdatedAt: schedule.sourceUpdatedAt,
         scheduleFetchedAt: schedule.fetchedAt, identityUpdatedAt: roster[0].identityUpdatedAt,
         membershipCreatedAt: [...roster[0].membershipCreatedAt] };
-      const output: GameForecast = {
+      const output: AdmittedConsumerSource["forecast"] = {
         sourceKind: "detailed", cutoffAt, expiresAt, sourceWatermark: `forge-captured-reads-v1:${receipt.hash}`,
         issuedContext,
         allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false },
@@ -111,26 +117,52 @@ export function publicPlanningForecasts(revisions: ForgeGameRevision[], players:
         limitations: ["Game forecasts are provisional; joint plan uncertainty is not calibrated.", ...limitations],
       };
       const key = `${player.id}:${gameId}`, previous = forecasts.get(key);
-      if (!previous || previous.issuedAt < output.issuedAt) forecasts.set(key, output);
+      if (!previous || previous.issuedAt < output.issuedAt) {
+        forecasts.set(key, output);
+        admittedSources.set(key, { forecast: output, revision, source });
+      }
     };
-    for (const row of revision.payload.players ?? []) {
+    const skaters = revision.payload.players ?? [];
+    const skaterCounts = new Map<string, number>();
+    for (const row of skaters) {
+      const key = `${row.game_id}:${row.team_id}:${row.player_id}`;
+      skaterCounts.set(key, (skaterCounts.get(key) ?? 0) + 1);
+    }
+    for (const row of skaters) {
+      const schedule = issued.schedule.find(item => item.teamId === row.team_id);
+      if (skaterCounts.get(`${row.game_id}:${row.team_id}:${row.player_id}`)! > 1
+        || row.opponent_team_id != null && row.opponent_team_id !== schedule?.opponentTeamId) {
+        excluded("identity_conflict", gameId, byNhl.get(row.player_id)?.id); continue;
+      }
       const stats = completeBoardSkaterStatsFromProjection(row);
       const prediction = boardSkaterForecast(stats, row.uncertainty);
       // The shared skater model can be conditional-only. Do not assume participation = 1.
-      emit(row.player_id, row.team_id, row.game_id, prediction.expected, null, false, prediction.conflicts,
+      emit({ kind: "skater", row }, row.player_id, row.team_id, row.game_id, prediction.expected, null, false, prediction.conflicts,
         prediction.conditional, prediction.participationProbability,
         prediction.conditioning === "conditional_playing" ? "missing_participation" : "unsupported_conditioning");
     }
+    const goalieGroups = new Map<string, { gameId: number; teamId: number; candidates: Row[] }>();
     for (const row of revision.payload.goalies ?? []) {
-      const candidates = row.uncertainty?.daily_board_candidates ?? [];
-      const probabilities = candidates.map((candidate: Row) => numberOrNull(candidate.startingProbability));
+      const key = `${row.game_id}:${row.team_id}`;
+      const group = goalieGroups.get(key) ?? { gameId: row.game_id, teamId: row.team_id, candidates: [] as Row[] };
+      group.candidates.push(...(row.uncertainty?.daily_board_candidates ?? []));
+      goalieGroups.set(key, group);
+    }
+    for (const group of goalieGroups.values()) {
+      const { candidates } = group;
+      const ids = candidates.map(candidate => candidate.playerId);
+      const probabilities = candidates.map(candidate => numberOrNull(candidate.startingProbability));
       const mass = probabilities.reduce((sum: number, value: number | null) => sum + (value ?? 0), 0);
+      if (new Set(ids).size !== ids.length || ids.some(id => !Number.isSafeInteger(id) || id <= 0)) {
+        excluded("identity_conflict", gameId); continue;
+      }
       if (mass > 1.000001 || probabilities.some((value: number | null) => value === null || value < 0 || value > 1)) {
         excluded("unsupported_conditioning", gameId); continue;
       }
       for (const candidate of candidates) {
         const prediction = boardGoalieForecast(candidate);
-        emit(candidate.playerId, row.team_id, row.game_id, prediction?.expected ?? null, prediction?.participationProbability ?? null,
+        emit({ kind: "goalie", row: candidate }, candidate.playerId, group.teamId, group.gameId,
+          prediction?.expected ?? null, prediction?.participationProbability ?? null,
           prediction?.probabilityStatus === "confirmed_evidence" && prediction.participationProbability === 1,
           ["Goalie start assignments share one team-game; no guaranteed future starts.", "Non-start relief contribution is unavailable."], prediction?.conditional);
       }
@@ -169,6 +201,8 @@ export async function admitConsumerGameRevisions(db: SupabaseClient<any>, revisi
       limitations.push("Accepted evidence freshness could not be verified; issued forecasts are temporarily unavailable.");
     }
   }
-  const forecasts = publicPlanningForecasts(currentRevisions, players, games, now, exclusionCounts, exclusionRows, seasonId, calendarPolicy);
-  return { forecasts, currentRevisions, acceptedNewsRevision, limitations };
+  const admittedSources = new Map<string, AdmittedConsumerSource>();
+  const forecasts = publicPlanningForecasts(currentRevisions, players, games, now, exclusionCounts, exclusionRows,
+    seasonId, calendarPolicy, admittedSources);
+  return { forecasts, currentRevisions, acceptedNewsRevision, limitations, admittedSources: [...admittedSources.values()] };
 }
