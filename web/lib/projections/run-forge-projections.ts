@@ -592,6 +592,10 @@ async function runProjectionCalculations(asOfDate: string, opts: RunProjectionOp
     input_provenance: buildForgeInputProvenance(),
     decision_as_of: opts?.decisionAsOf,
     board_lease: opts?.boardLease ?? null,
+    analytics_sidecar: {
+      version: "forge-analytics-sidecar-scope-v1",
+      status: opts?.localAttempt ? "omitted_fenced_local_attempt" : "enabled",
+    },
     execution_scope: {
       mode: opts?.gameIds?.length ? "selected_games" : "full_slate",
       requested_game_ids: opts?.gameIds ?? [],
@@ -998,15 +1002,19 @@ async function runProjectionCalculations(asOfDate: string, opts: RunProjectionOp
         },
       };
 
-      await persistPerGameAnalyticsOutputs({
-        asOfDate,
-        gameId: game.id,
-        modelName: ANALYTICS_MODEL_NAME,
-        modelVersion: ANALYTICS_MODEL_VERSION,
-        playerPredictionOutputRows,
-        gamePredictionOutput,
-        modelMarketFlagRows,
-      });
+      // Issued revisions use the FORGE rows. The optional analytics replacement
+      // deletes prior sidecar rows, outside the fenced local transport contract.
+      if (!opts?.localAttempt) {
+        await persistPerGameAnalyticsOutputs({
+          asOfDate,
+          gameId: game.id,
+          modelName: ANALYTICS_MODEL_NAME,
+          modelVersion: ANALYTICS_MODEL_VERSION,
+          playerPredictionOutputRows,
+          gamePredictionOutput,
+          modelMarketFlagRows,
+        });
+      }
 
       metrics.games += 1;
     }
