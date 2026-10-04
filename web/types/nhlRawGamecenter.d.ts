@@ -275,6 +275,7 @@ declare module "lib/supabase/Upserts/nhlRawGamecenter.mjs" {
     eventCount: number;
     shiftCount: number;
     rawEndpointsStored: 4;
+    rawCaptureBusyRetries?: number;
     normalizationVersion: number;
     normalizationFingerprint: string;
     sourceFingerprint: string;
@@ -287,6 +288,10 @@ declare module "lib/supabase/Upserts/nhlRawGamecenter.mjs" {
   export interface RawGameIngestFailure {
     gameId: number;
     message: string;
+    code?: "P0001";
+    stage?: "capture_raw_sources";
+    endpoint?: string;
+    attempts?: number;
   }
 
   export function fetchJsonWithRetry<T = Json>(
@@ -351,6 +356,7 @@ declare module "lib/supabase/Upserts/nhlRawGamecenter.mjs" {
   export function ingestNhlApiRawGame(
     supabase: SupabaseClient,
     gameId: number,
+    options?: FetchRetryOptions,
   ): Promise<RawGameIngestResult>;
   export function ingestNhlApiRawGames(
     supabase: SupabaseClient,

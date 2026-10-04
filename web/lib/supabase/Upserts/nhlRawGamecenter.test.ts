@@ -6,6 +6,7 @@ import {
   fetchJsonWithRetry,
   fetchNhlApiRawGamePayloads,
   ingestNhlApiRawGame,
+  ingestNhlApiRawGamesBestEffort,
   insertPayloadSnapshot,
   NORMALIZATION_PARSER_FINGERPRINT,
   persistNormalizedGameScope,
@@ -789,7 +790,32 @@ describe("nhlRawGamecenter", () => {
     }
   });
 
-  it("ingests raw snapshots and publishes normalized rows through one RPC", async () => {
+  it.each([
+    { retries: 0 }, { retries: 1.5 }, { retryDelayMs: -1 }, { retryDelayMs: Infinity },
+  ])("rejects invalid capture bounds before fetching: %j", async (options) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(ingestNhlApiRawGame({} as any, 2025021103, options))
+      .rejects.toThrow("Invalid raw capture retry bounds");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { name: "without contention", rawErrors: [], calls: 4, failure: null, endpoint: null, attempts: 0, rpcError: null },
+    { name: "after one busy statement", rawErrors: ["busy"], calls: 5, failure: null, endpoint: null, attempts: 0, rpcError: null },
+    { name: "after a later busy statement", rawErrors: [null, "busy"], calls: 5, failure: null, endpoint: null, attempts: 0, rpcError: null },
+    { name: "with a capped retry delay", rawErrors: ["busy"], calls: 5, failure: null, endpoint: null, attempts: 0, rpcError: null, options: { retries: 99, retryDelayMs: 999 } },
+    { name: "without an optional retry", rawErrors: ["busy"], calls: 1, failure: "NHL_NORMALIZATION_WRITER_BUSY", endpoint: "play-by-play", attempts: 1, rpcError: null, options: { retries: 1, retryDelayMs: 0 } },
+    { name: "holding repeated contention", rawErrors: ["busy", "busy"], calls: 2, failure: "NHL_NORMALIZATION_WRITER_BUSY", endpoint: "play-by-play", attempts: 2, rpcError: null },
+    { name: "holding contention after shared budget spent", rawErrors: ["busy", null, "busy"], calls: 3, failure: "NHL_NORMALIZATION_WRITER_BUSY", endpoint: "boxscore", attempts: 1, rpcError: null },
+    { name: "holding a permanent SQL error", rawErrors: ["denied"], calls: 1, failure: '{"code":"42501","message":"permission denied"}', endpoint: null, attempts: 0, rpcError: null },
+    { name: "holding a busy-looking unknown SQL error", rawErrors: ["unknown"], calls: 1, failure: '{"code":"57014","message":"NHL_NORMALIZATION_WRITER_BUSY"}', endpoint: null, attempts: 0, rpcError: null },
+    { name: "holding an uncertain transport failure", rawErrors: ["transport"], calls: 1, failure: "connection lost", endpoint: null, attempts: 0, rpcError: null },
+    { name: "holding normalization failure without recapturing", rawErrors: [], calls: 4, failure: "RPC denied", endpoint: null, attempts: 0, rpcError: "RPC denied" },
+  ])("ingests a game once $name", async (scenario) => {
+    const rawErrors: readonly (string | null)[] = scenario.rawErrors;
+    const options = "options" in scenario ? scenario.options : { retries: 99, retryDelayMs: 0 };
+    const timeoutSpy = vi.spyOn(globalThis, "setTimeout");
     const gameId = 2025021103;
     const pbp = {
       id: gameId,
@@ -848,7 +874,13 @@ describe("nhlRawGamecenter", () => {
     });
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
 
-    const rawUpsert = vi.fn().mockResolvedValue({ error: null });
+    const rawUpsert = vi.fn().mockImplementation(async () => {
+      const mode = rawErrors[rawUpsert.mock.calls.length - 1];
+      if (mode === "transport") throw new Error("connection lost");
+      return { error: mode === "busy" ? { code: "P0001", message: "NHL_NORMALIZATION_WRITER_BUSY" }
+        : mode === "unknown" ? { code: "57014", message: "NHL_NORMALIZATION_WRITER_BUSY" }
+        : mode === "denied" ? { code: "42501", message: "permission denied" } : null };
+    });
     const statusChain: any = {
       select: vi.fn(() => statusChain),
       eq: vi.fn(() => statusChain),
@@ -891,21 +923,42 @@ describe("nhlRawGamecenter", () => {
           completed_at: "2026-07-21T20:00:00.000Z",
         },
       ],
-      error: null,
+      error: scenario.rpcError ? { message: scenario.rpcError } : null,
     }));
 
+    if (scenario.failure) {
+      const result = await ingestNhlApiRawGamesBestEffort({ from, rpc } as any, [gameId],
+        options);
+      expect(result.results).toEqual([]);
+      expect(result.failures).toEqual([{ gameId, message: scenario.failure,
+        ...(scenario.endpoint ? { code: "P0001", stage: "capture_raw_sources", endpoint: scenario.endpoint, attempts: scenario.attempts } : {}) }]);
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+      expect(rawUpsert).toHaveBeenCalledTimes(scenario.calls);
+      expect(rpc).toHaveBeenCalledTimes(scenario.rpcError ? 1 : 0);
+      return;
+    }
     await expect(
-      ingestNhlApiRawGame({ from, rpc } as any, gameId),
+      ingestNhlApiRawGame({ from, rpc } as any, gameId, options),
     ).resolves.toMatchObject({
       gameId,
       rosterCount: 1,
       eventCount: 1,
       shiftCount: 1,
       rawEndpointsStored: 4,
+      rawCaptureBusyRetries: rawErrors.includes("busy") ? 1 : 0,
       normalizationVersion: 1,
       idempotent: false,
     });
-    expect(rawUpsert).toHaveBeenCalledTimes(4);
+    expect(rawUpsert).toHaveBeenCalledTimes(scenario.calls);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    if (scenario.name === "with a capped retry delay") {
+      expect(timeoutSpy.mock.calls.filter((call) => call[1] === 500)).toHaveLength(1);
+      expect(timeoutSpy.mock.calls.some((call) => call[1] === 999)).toBe(false);
+    }
+    if (rawErrors.includes("busy")) {
+      const index = rawErrors.indexOf("busy");
+      expect(rawUpsert.mock.calls[index][0]).toBe(rawUpsert.mock.calls[index + 1][0]);
+    }
     expect(rpc).toHaveBeenCalledTimes(1);
     expect(rawUpsert.mock.invocationCallOrder[3]).toBeLessThan(
       statusChain.maybeSingle.mock.invocationCallOrder[0],
