@@ -1,5 +1,9 @@
 import { selectTeamFormGames, type StartChartTeamForm } from "lib/projections/startChartTeamForm";
 import { starterBoardCanaryGameIds, starterBoardFlags } from "lib/projections/starterBoardFlags";
+import { loadPlanningInputs } from "lib/rosterScheduleData/planningInputs";
+import { admitConsumerGameRevisions } from "lib/projections/consumerRevisionAdmission";
+import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
+import type { ForecastDiscoveryExclusion, ForecastExclusionReason, GameForecast } from "lib/rosterScheduleOptimizer/planningTypes";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
@@ -14,7 +18,7 @@ import {
   extractSkaterModelMetadata,
 } from "lib/projections/forgeSkaterContext";
 import { buildGoalieStarterMixtureRows } from "lib/projections/goalieStarterMixtures";
-import { attachPreviousBoardForecast, boardSkaterStatsFromProjection, boardSkaterForecast, boardGoalieForecast, parseBoardScoringRequest, scoreStarterBoardPayload, type BoardScoringRequest } from "lib/projections/starterBoardScoring";
+import { boardSkaterForecast, boardGoalieForecast, parseBoardScoringRequest, scoreStarterBoardPayload, type BoardScoringRequest } from "lib/projections/starterBoardScoring";
 import {
   normalizeStartChartResponse,
   type StartChartPlayerContext,
@@ -78,6 +82,7 @@ type GoalieRow = {
 
 type GameRow = {
   id: number;
+  seasonId?: number;
   date: string;
   startTime: string | null;
   homeTeamId: number;
@@ -171,6 +176,8 @@ type QueryError = {
 
 type SlateResult = {
   revisions?: ForgeGameRevision[];
+  admittedForecasts?: Map<string, GameForecast>;
+  forecastAdmission?: { exclusionCounts: Record<string, number>; exclusions: ForecastDiscoveryExclusion[] };
   newsStatus?: { available: boolean; pendingGames: number; freshnessBreachedGames: number; unresolvedConflicts: number; oldestAcceptedAt: string | null };
   games: GameRow[];
   projections: ProjectionRow[];
@@ -817,7 +824,7 @@ async function fetchSlate(
 ): Promise<SlateResult> {
   const gamesPromise = supabase
     .from("games")
-    .select("id,date,startTime,homeTeamId,awayTeamId")
+    .select("id,date,seasonId,startTime,homeTeamId,awayTeamId")
     .eq("date", targetDate)
     .order("id", { ascending: true });
   const endOfTargetDate = `${targetDate}T23:59:59.999Z`;
@@ -904,54 +911,91 @@ async function fetchSlate(
         gameIds.has(row.game_id),
       );
 
+  const exclusionCounts: Record<string, number> = {};
+  const exclusions: ForecastDiscoveryExclusion[] = [];
+  const recordExclusion = (id: number, reason: ForecastExclusionReason) => {
+    exclusionCounts[reason] = (exclusionCounts[reason] ?? 0) + 1;
+    exclusions.push({ gameId: String(id), reasons: [reason] });
+  };
   let revisionGameIds = [...gameIds];
   if (starterBoardFlags().serving) {
     try {
       const canary = starterBoardCanaryGameIds();
-      if (canary !== null) revisionGameIds = revisionGameIds.filter(id => canary.includes(id));
+      if (canary !== null) {
+        revisionGameIds = revisionGameIds.filter(id => canary.includes(id));
+        for (const id of gameIds) if (!canary.includes(id)) recordExclusion(id, "canary_excluded");
+      }
     } catch {
       // Invalid rollout scope must not admit retained revisions or legacy rows.
       revisionGameIds = [];
+      for (const id of gameIds) recordExclusion(id, "serving_disabled");
     }
   }
-  const revisions = starterBoardFlags().serving && !exactRunId && revisionGameIds.length
+  let revisions = starterBoardFlags().serving && revisionGameIds.length
     ? (await loadForgeGameRevisions(targetDate)).filter(row => revisionGameIds.includes(row.game_id)) : [];
-  const newsResponse = starterBoardFlags().serving && !exactRunId && revisionGameIds.length
+  const newsResponse = starterBoardFlags().serving && revisionGameIds.length
     ? await (supabase as any).from("forge_game_update_queue").select("game_id,status,first_accepted_at,last_accepted_at")
       .in("game_id", revisionGameIds).in("status", ["pending", "running", "failed"])
     : { data: [], error: null };
   const pendingNews = newsResponse.data ?? [];
+  const admittedForecasts = new Map<string, GameForecast>();
+  if (starterBoardFlags().serving) {
+    const issuedIds = new Set(revisions.map(row => row.game_id));
+    for (const id of revisionGameIds) if (!issuedIds.has(id)) recordExclusion(id, "no_issued_revision");
+    if (revisions.length) {
+      try {
+        const now = new Date(), deadline = Date.now() + 8000;
+        const seasons = [...new Set(games.map(game => game.seasonId))];
+        if (seasons.length !== 1 || !Number.isSafeInteger(seasons[0])) throw new Error("Slate season is unavailable");
+        const inputs = await loadPlanningInputs(supabase, {
+          seasonId: seasons[0]!, startDate: targetDate, endDate: targetDate,
+        }, now, deadline);
+        // The canonical slate and authoritative schedule must identify the same games.
+        const matched = revisions.filter(revision => {
+          const game = games.find(row => row.id === revision.game_id);
+          const sides = inputs.games.filter(row => row.id === String(revision.game_id));
+          const valid = game && sides.length === 2 && sides.every(row =>
+            Date.parse(row.startsAt ?? "") === Date.parse(game.startTime ?? "")
+            && row.teamAbbreviation === findAbbrev(row.home ? game.homeTeamId : game.awayTeamId)
+            && row.opponent === findAbbrev(row.home ? game.awayTeamId : game.homeTeamId));
+          if (!valid) recordExclusion(revision.game_id, "game_mismatch");
+          return valid;
+        });
+        const admitted = await admitConsumerGameRevisions(supabase, matched, inputs.players, inputs.games,
+          now, seasons[0]!, exclusionCounts, exclusions, deadline,
+          forecastCalendarPolicy(Number(process.env.STARTER_BOARD_CALENDAR_HORIZON_DAYS ?? 14)));
+        for (const forecast of admitted.forecasts) {
+          const player = inputs.players.find(row => row.id === forecast.playerId);
+          if (player?.nhlId) admittedForecasts.set(`${forecast.gameId}:${player.nhlId}`, forecast);
+        }
+        revisions = admitted.currentRevisions.filter(row => admitted.forecasts.some(forecast => forecast.revisionId === row.id));
+        if (inputs.scheduleProblems.length) for (const id of revisionGameIds) recordExclusion(id, "incomplete_refresh");
+      } catch {
+        for (const id of revisions.map(row => row.game_id)) recordExclusion(id, "incomplete_refresh");
+        revisions = [];
+      }
+    }
+  }
   if (revisions.length) {
     // Once the revision contract is enabled, only atomically published game
     // payloads are authoritative. Unpublished games remain explicitly missing.
     projections = revisions.flatMap((revision) => revision.payload.players)
-      .filter((row) => gameIds.has(row.game_id));
+      .filter((row) => admittedForecasts.has(`${row.game_id}:${row.player_id}`));
     goalies = revisions.flatMap((revision) => revision.payload.goalieStarts ?? [])
-      .filter((row) => gameIds.has(row.game_id));
-    for (const revision of revisions) {
-      for (const assertion of revision.payload.evidence?.assertions ?? []) {
-        if (assertion.dimension !== "availability" || assertion.value !== "out" || !assertion.confirmed
-          || projections.some((row) => row.game_id === revision.game_id && row.player_id === assertion.playerId)) continue;
-        const game = games.find((item) => item.id === revision.game_id);
-        if (!game) continue;
-        projections.push({ run_id: revision.run_id, as_of_date: targetDate, horizon_games: 1,
-          game_id: game.id, player_id: assertion.playerId, team_id: assertion.teamId,
-          opponent_team_id: assertion.teamId === game.homeTeamId ? game.awayTeamId : game.homeTeamId,
-          proj_goals_es: 0, proj_goals_pp: 0, proj_goals_pk: 0,
-          proj_assists_es: 0, proj_assists_pp: 0, proj_assists_pk: 0,
-          proj_shots_es: 0, proj_shots_pp: 0, proj_shots_pk: 0,
-          proj_hits: 0, proj_blocks: 0, proj_pim: 0,
-          proj_toi_es_seconds: 0, proj_toi_pp_seconds: 0, proj_toi_pk_seconds: 0,
-          uncertainty: { model: { skater_selection: { production_conditioning: "explicit_out", same_day_evidence: { assertions: [assertion], conflicts: [] } } } },
-        } as any);
-      }
-    }
-  } else if (starterBoardFlags().serving && !exactRunId) {
+      .filter((row) => admittedForecasts.has(`${row.game_id}:${row.player_id}`))
+      .map(row => {
+        const forecast = admittedForecasts.get(`${row.game_id}:${row.player_id}`)!;
+        return { ...row, start_probability: forecast.startProbability,
+          confirmed_status: forecast.confirmedStart ? true : null };
+      });
+  } else if (starterBoardFlags().serving) {
     projections = [];
     goalies = [];
   }
   return {
     revisions,
+    admittedForecasts,
+    forecastAdmission: starterBoardFlags().serving ? { exclusionCounts, exclusions } : undefined,
     newsStatus: {
       available: !newsResponse.error, pendingGames: pendingNews.length,
       freshnessBreachedGames: pendingNews.filter((row: any) => Date.now() - Date.parse(row.first_accepted_at) > 300_000).length,
@@ -961,8 +1005,9 @@ async function fetchSlate(
     games,
     projections,
     goalies,
-    runId: revisions.length ? (new Set(revisions.map((r) => r.run_id)).size === 1 ? revisions[0].run_id : null) : forgeRun?.run_id ?? null,
-    forgeRun,
+    runId: revisions.length ? (new Set(revisions.map((r) => r.run_id)).size === 1 ? revisions[0].run_id : null)
+      : starterBoardFlags().serving ? null : forgeRun?.run_id ?? null,
+    forgeRun: starterBoardFlags().serving ? null : forgeRun,
     projectionError: Boolean(runResponse.error),
     goalieError: Boolean(goalieResponse.error),
   };
@@ -1540,12 +1585,22 @@ export default async function handler(
           context,
         });
         players[players.length - 1].forecast = boardSkaterForecast(players[players.length - 1], projection.uncertainty);
-        const revision = slate.revisions?.find((item) => item.game_id === projection.game_id);
-        const previous = revision?.payload.previousRevision;
-        if (previous && previous.codeVersion === revision?.payload.codeVersion && previous.modelMode === revision?.payload.modelMode) {
-          const prior = previous.players.find((row: any) => row.player_id === projection.player_id);
-          if (prior) attachPreviousBoardForecast(players[players.length - 1].forecast, boardSkaterForecast(boardSkaterStatsFromProjection(prior), prior.uncertainty), previous.id);
+        const admitted = slate.admittedForecasts?.get(`${projection.game_id}:${projection.player_id}`);
+        if (admitted) {
+          const output = players[players.length - 1];
+          output.forecast!.expected = admitted.stats;
+          output.forecast!.conditional = admitted.conditionalStats ?? null;
+          // Display and scoring use the same admitted expectations, integrated once.
+          output.proj_goals = admitted.stats.GOALS ?? null;
+          output.proj_assists = admitted.stats.ASSISTS ?? null;
+          output.proj_shots = admitted.stats.SHOTS_ON_GOAL ?? null;
+          output.proj_pp_points = admitted.stats.PP_POINTS ?? null;
+          output.proj_hits = admitted.stats.HITS ?? null;
+          output.proj_blocks = admitted.stats.BLOCKED_SHOTS ?? null;
+          output.proj_pim = admitted.stats.PENALTY_MINUTES ?? null;
+          output.proj_toi_minutes = admitted.stats.TIME_ON_ICE_PER_GAME ?? null;
         }
+        // Previous payloads lack full admission proofs; comparison remains unavailable.
       }
 
       for (const goalie of normalizedGoalies) {
@@ -1600,11 +1655,9 @@ export default async function handler(
           forecast: boardGoalieForecast(candidate),
           context,
         });
-        const revision = slate.revisions?.find((item) => item.game_id === goalie.game_id);
-        const previous = revision?.payload.previousRevision;
-        if (previous && previous.codeVersion === revision?.payload.codeVersion && previous.modelMode === revision?.payload.modelMode) {
-          const prior = previous.goalies.flatMap((row: any) => row.uncertainty?.daily_board_candidates ?? []).find((row: any) => row.playerId === goalie.player_id);
-          attachPreviousBoardForecast(players[players.length - 1].forecast, boardGoalieForecast(prior), previous.id);
+        const admitted = slate.admittedForecasts?.get(`${goalie.game_id}:${goalie.player_id}`);
+        if (admitted && players[players.length - 1].forecast) {
+          players[players.length - 1].forecast.expected = admitted.stats;
         }
       }
 
@@ -1780,6 +1833,7 @@ export default async function handler(
       ).size;
 
       const degradedReasons: string[] = [];
+      if (slate.forecastAdmission?.exclusions.length) degradedReasons.push("forecast_admission_incomplete");
       const projectionState = slate.projectionError
         ? "error"
         : slate.projections.length === 0
@@ -1885,7 +1939,7 @@ export default async function handler(
       const sourceStatus: StartChartSourceStatus = {
         overall:
           slate.games.length > 0 &&
-          (projectionState !== "ready" || goalieState !== "ready")
+          (projectionState !== "ready" || goalieState !== "ready" || Boolean(slate.forecastAdmission?.exclusions.length))
             ? "degraded"
             : "ready",
         projection: {
@@ -2013,6 +2067,7 @@ export default async function handler(
           modelMode: revision.payload.modelMode, codeVersion: revision.payload.codeVersion,
         })),
         newsStatus: slate.newsStatus,
+        forecastAdmission: slate.forecastAdmission,
         projectionRun: forgeRun && !(slate.revisions?.length)
           ? {
               runId: forgeRun.run_id,

@@ -40,7 +40,9 @@ export function consumerGameRevisionFixture() {
     team_id: 8, opponent_team_id: 10, proj_goals_es: 0.4, proj_goals_pp: 0.2, proj_goals_pk: 0,
     proj_assists_es: 0.5, proj_assists_pp: 0.1, proj_assists_pk: 0, proj_shots_es: 2.7,
     proj_shots_pp: 0.8, proj_shots_pk: 0, proj_hits: 0.6, proj_blocks: 0.4, proj_pim: 0.1,
-    uncertainty: { model: { skater_selection: { production_conditioning: "unconditional" } } },
+    uncertainty: { model: { skater_selection: { production_conditioning: "conditional_playing",
+      participation: { version: "skater-participation-v1", probability: 1,
+        status: "confirmed_evidence", evidenceIds: ["synthetic-lineup"] } } } },
   };
   const revision: ForgeGameRevision = {
     id: "revision-1", run_id: "published-run", game_id: gameId,
