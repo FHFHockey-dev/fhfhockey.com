@@ -24,7 +24,25 @@ const VERIFIED_TS_ROUTES = new Set([
   ...INPUT_ROUTES, ...RELATIONSHIP_ROUTES,
   "/api/v1/db/run-projection-v2", "/api/v1/db/run-projection-accuracy",
   "/api/v1/db/cron-report", "/api/v1/db/build-projection-derived-v2",
+  "/api/v1/db/run-rolling-forge-pipeline", "/api/v1/db/cron/update-stats-cron",
+  "/api/v1/db/update-teams",
 ]);
+
+export function reportedRuntimeBudgetMs(response: unknown, routePath: string | null): number | null {
+  // This reviewed producer records an operation budget, not a platform limit.
+  if (routePath !== "/api/v1/db/run-rolling-forge-pipeline") return null;
+  let budget = object(object(response).runtimeBudget);
+  if (typeof response === "string") {
+    // The wrapper can truncate a large response after this complete early
+    // member. Recover only that intact JSON object, never partial counters.
+    const member = response.match(/"runtimeBudget"\s*:\s*(\{[^{}]{1,400}\})/);
+    if (member) {
+      try { budget = object(JSON.parse(member[1])); } catch { return null; }
+    }
+  }
+  const value = rowCount(budget.budgetMs);
+  return value != null && value > 0 ? value : null;
+}
 
 export function readReportMetrics(response: unknown, routePath: string | null) {
   const payload = object(response);

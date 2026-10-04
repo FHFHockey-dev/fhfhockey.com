@@ -180,6 +180,7 @@ SELECT cron.schedule(
     await handler({ method: "GET" } as any, res);
     const row = cronAuditEmailMock.mock.calls.at(-1)?.[0].audits[0];
     expect(row).toMatchObject({ status: "unknown", durationMs: null, rowsUpserted: null });
+    expect(row.timingProvenance).toBe("HTTP submission only; route completion unverified");
     expect(res.body.totals).toMatchObject({ rowsUpserted: null, errorRows: null });
   });
 
@@ -996,7 +997,7 @@ ${JSON.stringify(
     const res = createMockRes();
     await handler({ method: "GET", query: { preview: "json" } } as any, res);
     expect(res.body.counts).toMatchObject({ auditRuns: 6184, auditFailures: 83 });
-    expect(res.body.sources.audit).toMatchObject({ complete: true, pages: 13, expectedCount: 6184 });
+    expect(res.body.sources.audit).toMatchObject({ complete: true, pages: 7, expectedCount: 6184 });
     expect(cronJobAuditSelectMock).toHaveBeenCalledWith(expect.any(String), { count: "exact" });
   });
 
@@ -1065,15 +1066,15 @@ ${JSON.stringify(jobs)}
   });
 
   it("preserves partial failure evidence and marks query timeouts as incomplete", async () => {
-    const audits = Array.from({ length: 501 }, (_, index) => ({ job_name: `child-${index}`, run_time: "2026-03-20T01:00:00.000Z", status: index === 0 ? "failure" : "success", details: null }));
+    const audits = Array.from({ length: 1001 }, (_, index) => ({ job_name: `child-${index}`, run_time: "2026-03-20T01:00:00.000Z", status: index === 0 ? "failure" : "success", details: null }));
     cronJobAuditSelectMock.mockResolvedValueOnce({ data: audits, error: null })
       .mockResolvedValue({ data: null, error: { message: "statement timeout" }, count: null });
     const res = createMockRes();
     await handler({ method: "GET" } as any, res);
-    expect(res.body).toMatchObject({ totalsComplete: false, counts: { auditRuns: 500, auditFailures: 1, jobsOkLast: 0 } });
+    expect(res.body).toMatchObject({ totalsComplete: false, counts: { auditRuns: 1000, auditFailures: 1, jobsOkLast: 0 } });
     expect(res.body.sources.audit.error).toContain("statement timeout");
     expect(resendSendMock.mock.calls[0][0].subject).toContain("incomplete telemetry");
-    expect((cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).fetchErrors[0]).toContain("500 observations retained");
+    expect((cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).fetchErrors[0]).toContain("1000 observations retained");
   });
 
   it("keeps no-output serving-gate receipts unknown without inventing failures", async () => {
@@ -1157,6 +1158,7 @@ ${JSON.stringify(jobs)}
     const res=createMockRes();await handler({method:"GET"} as any,res);
     const props=cronAuditEmailMock.mock.calls[0][0]; const subject=resendSendMock.mock.calls[0][0].subject;
     expect(props.audits.some((a:any)=>a.status==="failure")).toBe(true);
+    expect(props.audits.find((a:any)=>a.jobName==="other-sql-job").timingProvenance).toBe("Unknown; no SQL execution timing receipt");
     expect(subject).not.toContain("✅");
   });
   it("actual all-skipped shift response must not be productive success",async()=>{
@@ -1282,6 +1284,42 @@ ${JSON.stringify(jobs)}
     expect(extra[1]).toMatchObject({ status: "unknown", route: `${route}?horizonDays=3`, lastKnownSuccessDisplay: null });
     expect(extra[1].missingObservationWarnings).toContain("Operation was skipped or produced no output; successful HTTP execution does not establish data refresh.");
     expect(res.body.counts).toMatchObject({ auditFailures: 1, auditUnknown: 2, jobsOkLast: 1, omittedFailureObservations: 0 });
+  });
+
+  it("explains truncated producer receipts and retains visible timing provenance and operation budget", async () => {
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{
+      job_name: "run-rolling-forge-pipeline", run_time: "2026-03-20T12:00:01.000Z", status: "failure",
+      details: { method: "GET", url: "/api/v1/db/run-rolling-forge-pipeline", statusCode: 500,
+        timing: { startedAt: "2026-03-20T11:58:18.000Z", endedAt: "2026-03-20T12:00:01.000Z", durationMs: 103000, timer: "01:43", source: "audit" },
+        response: '{"success":false,"runtimeBudget":{"budgetMs":210000},"termination":{"state":"stopped_on_blocking_failure"},"dependencyContract":{"stages":[…' },
+    }], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    const row = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits.find((row: any) => row.jobName === "run-rolling-forge-pipeline");
+    expect(row).toMatchObject({ status: "failure", durationMs: 103000, timingProvenance: "Route audit timing receipt", runtimeBudgetMs: 210000, repositoryLimitMs: 240000 });
+    expect(row.reason).toContain("stopped on blocking failure");
+    expect(row.reason).toContain("root cause unavailable");
+    expect(row.reason).not.toContain('"dependencyContract"');
+  });
+
+  it("prefers a nested failed-stage root cause over generic summary and declaration metadata", async () => {
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: "run-forge-projection-v2", run_time: "2026-03-20T12:00:01.000Z", status: "failure",
+      details: { method: "POST", url: "/api/v1/db/run-projection-v2", response: { success: false, message: "Pipeline failed", pipeline: { stages: [{ message: "declarative contract" }] }, results: [{ status: "success", message: "healthy stage" }, { status: "failed", error: { message: "[NHL] Invalid shift roster for game 2026010001" } }] } } }], error: null });
+    const res = createMockRes(); await handler({ method: "GET" } as any, res);
+    expect((cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits.find((row: any) => row.jobName === "run-forge-projection-v2").reason).toBe("[NHL] Invalid shift roster for game 2026010001");
+  });
+
+  it("labels empty stats attempts as no output and distinguishes observed success from incomplete schedule health", async () => {
+    readFileMock.mockResolvedValue('```json\n' + JSON.stringify([{ jobname: "stats", active: true, method: "GET", schedule: "0 12 * * *", route: "/api/v1/db/cron/update-stats-cron" }]) + '\n```');
+    cronJobReportSelectMock.mockResolvedValue({ data: null, error: { message: "statement timeout" } });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: "stats", run_time: "2026-03-20T12:00:01.000Z", status: "success", details: { method: "GET", url: "/api/v1/db/cron/update-stats-cron", durationMs: 483, response: { success: true, attemptedGameIds: [], updatedGameIds: [] } } }], error: null });
+    const res = createMockRes(); await handler({ method: "GET" } as any, res);
+    const row = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits.find((row: any) => row.jobName === "stats");
+    expect(row.status).toBe("unknown");
+    expect(row.rowsUpserted).toBeNull();
+    expect(row.missingObservationWarnings.join(" ")).toContain("skipped or produced no output");
+    expect(row.timingProvenance).toContain("scope unverified");
   });
 
 });

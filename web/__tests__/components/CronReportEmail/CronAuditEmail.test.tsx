@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { renderAsync } from "@react-email/render";
 import { describe, expect, it } from "vitest";
 
 import { CronAuditEmail } from "components/CronReportEmail/CronAuditEmail";
@@ -131,6 +132,34 @@ describe("CronAuditEmail", () => {
       summary={{ auditRuns: 1, auditSuccesses: 1, auditFailures: 0, cronFailures: 1, auditUnknown: 0, totalRowsUpserted: 1, totalFailedRows: 0 }} />);
     expect(markup).not.toContain("No scheduled audit failures");
     expect(markup).toContain("1 cron execution failure receipts");
+  });
+
+  it("shows every timing limit and provenance, readable plain metrics and unknown overall row totals", async () => {
+    const element = <CronAuditEmail sinceDate="2026-10-03T13:00:48.447Z" totalsComplete={false}
+      summary={{ scheduledJobs: 56, metricRowsKnown: 3, metricErrorsKnown: 7, auditRuns: 6247, auditSuccesses: 6028, auditFailures: 212, auditUnknown: 7, totalRowsUpserted: 741, totalFailedRows: 0 }}
+      audits={[{ key: "teams", label: "teams", jobName: "teams", status: "unknown", observedExecutionStatus: "success", runTimeDisplay: "EDT", method: "GET", route: "/api/v1/db/update-teams", routePath: "/api/v1/db/update-teams", targetTable: "teams", statusCode: 200, durationMs: 351, timingProvenance: "Route audit timing receipt", repositoryLimitMs: 240000, rowsUpserted: null, rowsAffected: null, failedRows: null, reason: null, lastKnownSuccessDisplay: null, failedRowSamples: [] }]} />;
+    const html = renderToStaticMarkup(element);
+    expect(html).toContain("Repo route limit: 4m 0s");
+    expect(html).toContain("Route audit timing receipt");
+    expect(html).toContain("Observed route receipt: success; scheduled health remains unknown");
+    expect(html).toContain("Error rows: total unknown (0 observed in 7/56 applicable job receipts)");
+    expect(html).not.toContain("0 explicitly reported");
+    const text = await renderAsync(element, { plainText: true });
+    expect(text).toContain("Elapsed: <1s");
+    expect(text).toContain("Upserted: Unknown");
+    expect(text).toContain("Error rows: Unknown");
+    expect(text).not.toContain("Execution<1sUpserted");
+  });
+
+  it("retains the full concise cause, provides a diagnostic link, and distinguishes operation budget from repository limit", () => {
+    const cause = "NST prior-season date pages return404. " + "Evidence preserved. ".repeat(10) + "Use a current-season startDate; requested2026-04-03, season starts2026-09-29.";
+    const html = renderToStaticMarkup(<CronAuditEmail sinceDate="2026-10-03T13:00:48.447Z"
+      summary={{ auditRuns: 1, auditSuccesses: 0, auditFailures: 1, auditUnknown: 0, totalRowsUpserted: 0, totalFailedRows: 0 }}
+      audits={[{ key: "pipeline", label: "pipeline", jobName: "pipeline", status: "failure", runTimeDisplay: "UTC / EDT", method: "GET", route: "/pipeline", routePath: "/pipeline", targetTable: null, statusCode: 500, durationMs: 195000, repositoryLimitMs: 240000, runtimeBudgetMs: 210000, timingProvenance: "Route audit timing receipt", rowsUpserted: null, rowsAffected: null, failedRows: null, reason: cause, lastKnownSuccessDisplay: null, failedRowSamples: [] }]} />);
+    expect(html).toContain("season starts2026-09-29");
+    expect(html).toContain("NEAR BUDGET");
+    expect(html).toContain("Reported operation budget: 3m 30s");
+    expect(html).toContain('href="https://vercel.com/fhfhockeydevs-projects/fhfhockey/logs"');
   });
 
 });

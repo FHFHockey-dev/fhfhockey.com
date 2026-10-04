@@ -15,9 +15,9 @@ import {
   type SlowJobWarning,
 } from "lib/cron/cronReportFlags";
 import { type CronJobTimingRecord } from "lib/cron/timingContract";
-import { readReportSource, reportRowIdentity, formatReportTime } from "lib/cron/reportSource";
+import { readReportSource, reportRowIdentity, formatReportTime, REPORT_PAGE_SIZE } from "lib/cron/reportSource";
 import { extractAuditTimingRecord } from "lib/cron/cronReportTiming";
-import { readReportMetrics, repositoryExecutionLimitMs, isNearRepositoryLimit } from "lib/cron/reportMetrics";
+import { readReportMetrics, repositoryExecutionLimitMs, isNearRepositoryLimit, reportedRuntimeBudgetMs } from "lib/cron/reportMetrics";
 import { buildSqlCronTimingObservation } from "lib/cron/sqlTiming";
 import { readCronScheduleMarkdown } from "lib/cron/cronInventory";
 import adminOnly from "utils/adminOnlyMiddleware";
@@ -223,6 +223,7 @@ type JobSummary = {
   jobName: string;
   displayName: string;
   lastStatus: ReportJobStatus;
+  observedExecutionStatus: ReportJobStatus;
   lastStatusSource: "audit" | "cron" | "missing" | "unknown";
   scheduleTimeDisplay: string;
   expectedRunDisplay: string;
@@ -244,6 +245,8 @@ type JobSummary = {
   failedRowsLast: number | null;
   failedOperations: number | null;
   repositoryLimitMs: number | null;
+  timingProvenance: string;
+  runtimeBudgetMs: number | null;
   failedRowSamples: string[];
   lastDurationMs: number | null;
   avgDurationMs: number | null;
@@ -271,7 +274,10 @@ type RunDigest = {
   failedRows: number | null;
   failedOperations: number | null;
   repositoryLimitMs: number | null;
+  timingProvenance: string;
+  runtimeBudgetMs: number | null;
   observationKind?: "scheduled" | "extra";
+  observedExecutionStatus?: ReportJobStatus;
   reason: string | null;
   lastKnownSuccessDisplay: string | null;
   failedRowSamples: string[];
@@ -342,7 +348,9 @@ function skippedOperationWarning(row: AuditRow): string | null {
   if (row.status === "success" && response && typeof response === "object" && !Array.isArray(response)) {
     const receipt = response as Record<string, unknown>;
     const result = receipt.result && typeof receipt.result === "object" ? receipt.result as Record<string, unknown> : receipt;
-    if (receipt.outcome === "skipped" || receipt.skipped === true ||
+    if ((row.parsed.routePath === "/api/v1/db/cron/update-stats-cron" &&
+          Array.isArray(receipt.attemptedGameIds) && receipt.attemptedGameIds.length === 0 &&
+          Array.isArray(receipt.updatedGameIds) && receipt.updatedGameIds.length === 0) || receipt.outcome === "skipped" || receipt.skipped === true ||
         /^skipped|^no[_-]?op/.test(String(receipt.status ?? receipt.outcome ?? "")) ||
         (result.processedGames === 0 && typeof result.skippedGames === "number" && result.skippedGames >= 0) ||
         ((row.parsed.routePath === "/api/v1/db/shift-charts" || row.parsed.routePath === "/api/v1/db/update-shifts") &&
@@ -454,42 +462,46 @@ function parseJsonMaybe(value: unknown): unknown {
   }
 }
 
-function extractPrimaryMessage(value: unknown): string | null {
+function extractPrimaryMessage(value: unknown, depth = 0): string | null {
+  if (depth > 6) return null;
   if (typeof value === "string" && value.trim()) {
-    return sanitizeErrorMessage(value, 240);
+    const raw = value.trim();
+    if (/^\{\s*"/.test(raw) || /^\[\s*(?:\{|"|\[)/.test(raw)) {
+      const parsed = parseJsonMaybe(raw);
+      if (typeof parsed !== "string") return extractPrimaryMessage(parsed, depth + 1);
+      const state = raw.match(/"termination"\s*:\s*\{\s*"state"\s*:\s*"([a-z_]+)"/)?.[1];
+      return `${state ? `Reported termination: ${state.replace(/_/g, " ")}. ` : ""}Audit response is truncated or malformed; root cause unavailable. Inspect execution logs.`;
+    }
+    return sanitizeErrorMessage(raw, 300);
   }
-
   if (Array.isArray(value)) {
-    for (const item of value) {
-      const nested = extractPrimaryMessage(item);
+    for (const item of value.slice(0, 10)) {
+      const nested = extractPrimaryMessage(item, depth + 1);
       if (nested) return nested;
     }
     return null;
   }
-
   if (!value || typeof value !== "object") return null;
   const obj = value as Record<string, unknown>;
-  for (const key of [
-    "message",
-    "error",
-    "err",
-    "reason",
-    "detail",
-    "details",
-    "return_message",
-    "returnMessage",
-    "statusText",
-  ]) {
-    if (typeof obj[key] === "string" && obj[key]?.trim()) {
-      return sanitizeErrorMessage(obj[key], 240);
-    }
-  }
-
-  for (const key of ["errors", "failures", "failedRows", "failed_rows"]) {
-    const nested = extractPrimaryMessage(obj[key]);
+  // Prefer concrete failure containers over generic summaries. Do not scan
+  // declarative pipeline/dependency metadata or successful stage messages.
+  for (const key of ["error", "err", "cause", "errors", "failures", "failedRows", "failed_rows", "blockedReasons"]) {
+    const nested = extractPrimaryMessage(obj[key], depth + 1);
     if (nested) return nested;
   }
-
+  for (const key of ["results", "stages"]) {
+    if (!Array.isArray(obj[key])) continue;
+    for (const stage of obj[key].slice(0, 20)) {
+      if (!stage || typeof stage !== "object") continue;
+      if (stage.success !== false && !["failure", "failed", "blocked"].includes(stage.status) && !stage.error) continue;
+      const nested = extractPrimaryMessage(stage, depth + 1);
+      if (nested) return nested;
+    }
+  }
+  for (const key of ["message", "reason", "detail", "details", "return_message", "returnMessage", "statusText", "response", "result", "preflight"]) {
+    const nested = extractPrimaryMessage(obj[key], depth + 1);
+    if (nested) return nested;
+  }
   return null;
 }
 
@@ -1160,6 +1172,22 @@ function statusSortValue(status: ReportJobStatus): number {
   }
 }
 
+function auditTimingProvenance(parsed: ParsedAuditDetails): string {
+  if (!parsed.timing) return parsed.durationMs == null ? "Unknown; no execution timing receipt" : "Legacy audit duration; measurement scope unverified";
+  switch (parsed.timing.source) {
+    case "response": return "Handler-reported timing receipt";
+    case "audit": return "Route audit timing receipt";
+    case "sql_runner": return "SQL execution timing receipt";
+    case "benchmark_runner": return "Benchmark timing observation";
+    default: return "Timing receipt; measurement scope unverified";
+  }
+}
+
+function cronTimingProvenance(row: RunRow): string {
+  if (row.method === "SQL") return row.timing ? "SQL execution timing receipt" : "Unknown; no SQL execution timing receipt";
+  return row.method === "UNKNOWN" ? "Unknown; invocation measurement scope unverified" : "HTTP submission only; route completion unverified";
+}
+
 function buildRunDigestFromAudit(
   row: AuditRow,
   lastKnownSuccessDisplay: string | null = null
@@ -1192,6 +1220,8 @@ function buildRunDigestFromAudit(
     failedRows: row.parsed.failedRows,
     failedOperations: row.parsed.failedOperations,
     repositoryLimitMs: repositoryExecutionLimitMs(row.parsed.routePath),
+    timingProvenance: auditTimingProvenance(row.parsed),
+    runtimeBudgetMs: reportedRuntimeBudgetMs(row.parsed.response, row.parsed.routePath),
     observationKind: "extra",
     reason:
       row.parsed.error ??
@@ -1237,6 +1267,8 @@ function buildRunDigestFromCron(
     failedRows: null,
     failedOperations: null,
     repositoryLimitMs: repositoryExecutionLimitMs(row.routePath),
+    timingProvenance: cronTimingProvenance(row),
+    runtimeBudgetMs: null,
     observationKind: "extra",
     reason: row.returnMessage
       ? sanitizeErrorMessage(row.returnMessage, 240)
@@ -1407,7 +1439,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     .gte("scheduled_time", since).lte("scheduled_time", until)
     .order("scheduled_time", { ascending: true }).order("runid", { ascending: true })
     .range(from, to).abortSignal(signal),
-    (row) => String(row.runid));
+    (row) => String(row.runid), REPORT_PAGE_SIZE);
   const auditSource = await readReportSource<any>((from, to, signal) => supabase
     .from("cron_job_audit")
     .select("job_name, run_time, rows_affected, status, details", { count: "exact" })
@@ -1415,7 +1447,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     .order("run_time", { ascending: true }).order("job_name", { ascending: true })
     .order("status", { ascending: true }).order("rows_affected", { ascending: true })
     .order("details", { ascending: true }).range(from, to)
-    .abortSignal(signal), reportRowIdentity);
+    .abortSignal(signal), reportRowIdentity, REPORT_PAGE_SIZE);
   const runs = runSource.rows;
   const audits = auditSource.rows;
   const runErr = runSource.error;
@@ -1600,6 +1632,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const failedRowsLast = lastAudit?.parsed.failedRows ?? null;
       const failedOperations = lastAudit?.parsed.failedOperations ?? null;
       const repositoryLimitMs = repositoryExecutionLimitMs(job.routePath);
+      const runtimeBudgetMs = reportedRuntimeBudgetMs(lastAudit?.parsed.response, job.routePath);
+      const timingProvenance = lastAudit ? auditTimingProvenance(lastAudit.parsed)
+        : lastRun ? cronTimingProvenance(lastRun) : "Unknown; no execution timing receipt";
       const failedRowSamples = lastAudit?.parsed.failedRowSamples ?? [];
       const route = job.route ?? job.sqlText;
       const routePath = job.routePath;
@@ -1656,7 +1691,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       if (!job.expectedRunAt && requiredSlot && !lastAudit && !lastRun) {
         notes.push(`Latest required recurring slot ${formatReportTime(requiredSlot)} has no observation after the five-minute completion grace.`);
       }
-      if (lastAudit && skippedOperationWarning(lastAudit)) notes.push(skippedOperationWarning(lastAudit)!);
+      const noOutputWarning = lastAudit ? skippedOperationWarning(lastAudit) : null;
+      if (noOutputWarning) {
+        notes.push(noOutputWarning);
+        missingObservationWarnings.push(noOutputWarning);
+      }
       if (lastStatus === "missing") {
         notes.push("No cron or audit entry matched this scheduled slot.");
       }
@@ -1699,7 +1738,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         notes.push("FORGE projection execution returned zero skater rows.");
       }
       if (optimizationDenotation) {
-        notes.push(`${optimizationDenotation}: last runtime exceeded 4m30s.`);
+        notes.push(`${optimizationDenotation}: recorded elapsed reached 90% of the repository route limit (${repositoryLimitMs == null ? "unknown" : repositoryLimitMs / 1000 + "s"}); deployed override unverified.`);
       }
       if (hasBenchmarkAnnotationKind(benchmarkAnnotations, "bottleneck")) {
         const firstBottleneckNote = benchmarkAnnotations.find(
@@ -1728,6 +1767,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         jobName: job.name,
         displayName: job.displayName,
         lastStatus,
+        observedExecutionStatus: observedStatus,
         lastStatusSource,
         scheduleTimeDisplay: job.scheduleTimeDisplay,
         expectedRunDisplay: requiredSlot
@@ -1754,6 +1794,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         failedRowsLast,
         failedOperations,
         repositoryLimitMs,
+        timingProvenance,
+        runtimeBudgetMs,
         failedRowSamples,
         lastDurationMs,
         avgDurationMs,
@@ -1848,7 +1890,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         failedRows: job.failedRowsLast,
         failedOperations: job.failedOperations,
         repositoryLimitMs: job.repositoryLimitMs,
+        timingProvenance: job.timingProvenance,
+        runtimeBudgetMs: job.runtimeBudgetMs,
         observationKind: "scheduled",
+        observedExecutionStatus: job.observedExecutionStatus,
         reason: job.why ?? job.note,
         lastKnownSuccessDisplay: job.lastKnownSuccessDisplay,
         failedRowSamples: job.failedRowSamples,
@@ -1862,7 +1907,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     .filter((job) => isNearRepositoryLimit(job.lastDurationMs, job.repositoryLimitMs))
     .map((job) =>
       ({ ...buildSlowJobWarning(job.displayName, job.lastDurationMs ?? 0),
-        repositoryLimitMs: job.repositoryLimitMs, thresholdMs: (job.repositoryLimitMs ?? 0) * 0.9 })
+        repositoryLimitMs: job.repositoryLimitMs,
+        timingProvenance: job.timingProvenance,
+        runtimeBudgetMs: job.runtimeBudgetMs, thresholdMs: (job.repositoryLimitMs ?? 0) * 0.9 })
     );
 
   const WARN_PARTIAL_FAILURE = jobSummaries

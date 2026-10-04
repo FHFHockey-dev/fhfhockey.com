@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatExecutionDuration, readReportMetrics, repositoryExecutionLimitMs, isNearRepositoryLimit } from "./reportMetrics";
+import { formatExecutionDuration, readReportMetrics, repositoryExecutionLimitMs, isNearRepositoryLimit, reportedRuntimeBudgetMs } from "./reportMetrics";
 
 describe("report metric evidence", () => {
   it("does not turn attempted, generic or wrapper-inferred counters into writes", () => {
@@ -38,4 +38,14 @@ describe("report metric evidence", () => {
     expect([null, -1, NaN].map(formatExecutionDuration)).toEqual(["Unknown", "Unknown", "Unknown"]);
     expect([0, 1, 499, 999, 1000, 59999, 60000, 239999].map(formatExecutionDuration)).toEqual(["0s", "<1s", "<1s", "<1s", "1s", "59s", "1m 0s", "3m 59s"]);
   });
+  it("recovers only an intact reviewed operation budget from a truncated receipt", () => {
+    const route = "/api/v1/db/run-rolling-forge-pipeline";
+    expect(reportedRuntimeBudgetMs({ runtimeBudget: { budgetMs: 210000 } }, route)).toBe(210000);
+    expect(reportedRuntimeBudgetMs('{"runtimeBudget":{"budgetMs":210000},"dependencyContract":{…', route)).toBe(210000);
+    expect(reportedRuntimeBudgetMs('{"runtimeBudget":{"budgetMs":210…', route)).toBeNull();
+    expect(reportedRuntimeBudgetMs({ runtimeBudget: { budgetMs: 210000 } }, "/api/unknown")).toBeNull();
+    expect(reportedRuntimeBudgetMs({ runtimeBudget: { budgetMs: -1 } }, route)).toBeNull();
+    expect(repositoryExecutionLimitMs(route)).toBe(240000);
+  });
+
 });

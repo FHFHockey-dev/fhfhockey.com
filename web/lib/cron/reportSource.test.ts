@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { formatReportTime, readReportSource, reportRowIdentity } from "./reportSource";
+import { formatReportTime, readReportSource, reportRowIdentity, REPORT_PAGE_SIZE } from "./reportSource";
 
 const fixture = Array.from({ length: 6184 }, (_, id) => ({
   id,
@@ -171,6 +171,25 @@ describe("bounded cron report source", () => {
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(result.complete).toBe(false);
       expect(result.error).toContain("deadline");
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("finishes the delivered 6247-row verification in 14 requests rather than timing out after 20", async () => {
+    vi.useFakeTimers(); vi.setSystemTime(0);
+    const rows = Array.from({ length: 6247 }, (_, id) => ({ id, status: id < 212 ? "failure" : "success" }));
+    const fetch = vi.fn(async (from: number, to: number) => {
+      vi.setSystemTime(Date.now() + 750);
+      return { data: rows.slice(from, to + 1), count: rows.length, error: null };
+    });
+    try {
+      const old = await readReportSource(fetch, (row) => String(row.id));
+      expect(old).toMatchObject({ complete: false, enumerationComplete: true, pages: 13, verificationPages: 7 });
+      expect(old.rows).toHaveLength(6247);
+      vi.setSystemTime(0); fetch.mockClear();
+      const improved = await readReportSource(fetch, (row) => String(row.id), REPORT_PAGE_SIZE);
+      expect(improved).toMatchObject({ complete: true, pages: 7, verificationPages: 7 });
+      expect(fetch).toHaveBeenCalledTimes(14);
+      expect(improved.rows.filter((row) => row.status === "failure")).toHaveLength(212);
     } finally { vi.useRealTimers(); }
   });
 

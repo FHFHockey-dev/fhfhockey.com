@@ -2,6 +2,10 @@ import { createHash } from "node:crypto";
 
 type Page<T> = { data: T[] | null; error: { message: string } | null; count: number | null };
 
+// Stay within the observed REST row cap while reducing repeated count/sort
+// queries. Both passes retain their existing shared deadline and page bound.
+export const REPORT_PAGE_SIZE = 1000;
+
 export type ReportSource<T> = {
   rows: T[];
   complete: boolean;

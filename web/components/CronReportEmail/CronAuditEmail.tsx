@@ -22,6 +22,9 @@ interface AuditEntry {
   failedRows: number | null;
   failedOperations?: number | null;
   repositoryLimitMs?: number | null;
+  runtimeBudgetMs?: number | null;
+  timingProvenance?: string;
+  observedExecutionStatus?: "success" | "failure" | "unknown" | "missing" | "disabled";
   observationKind?: "scheduled" | "extra";
   reason: string | null;
   lastKnownSuccessDisplay: string | null;
@@ -65,7 +68,7 @@ interface CronAuditEmailProps {
 
 const skipped = (row: AuditEntry) => (row.missingObservationWarnings ?? []).some((warning) => warning.includes("Operation was skipped"));
 const missing = (row: AuditEntry) => row.status === "unknown" && (row.missingObservationWarnings ?? []).some((warning) => warning.includes("No cron or audit observation matched"));
-const nearLimit = (row: AuditEntry) => isNearRepositoryLimit(row.durationMs, row.repositoryLimitMs ?? null);
+const nearLimit = (row: AuditEntry) => isNearRepositoryLimit(row.durationMs, row.repositoryLimitMs ?? null) || isNearRepositoryLimit(row.durationMs, row.runtimeBudgetMs ?? null);
 const priority = (row: AuditEntry) => row.status === "failure" ? 0 : nearLimit(row) ? 1 : row.status === "unknown" || skipped(row) || (row.failedRows ?? 0) > 0 ? 2 : row.status === "disabled" ? 3 : 4;
 const clean = (text: string) => text.replace(/\s+/g, " ").trim();
 const concise = (text: string) => clean(text).length > 220 ? `${clean(text).slice(0, 219)}…` : clean(text);
@@ -78,8 +81,12 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
   ]));
   const metricStyle: React.CSSProperties = { display: "inline-block", minWidth: 76, marginRight: 8, marginTop: 6, verticalAlign: "top" };
   const muted: React.CSSProperties = { color: "#4B5563", fontSize: 12 };
-  const metric = (label: string, value: string) => <span style={metricStyle}><span style={{ ...muted, display: "block" }}>{label}</span><strong>{value}</strong></span>;
+  const metric = (label: string, value: string) => <span style={metricStyle}><span style={{ ...muted, display: "block" }}>{label}: </span><strong>{value}</strong>{" · "}</span>;
   const number = (value: number | null) => value == null ? "Unknown" : value.toLocaleString("en-US");
+
+  const metricJobs = summary.scheduledJobs == null ? null : summary.scheduledJobs - audits.filter((row) => row.observationKind !== "extra" && row.routePath === "/api/v1/db/cron-report").length;
+  const errorTotalKnown = totalsComplete && metricJobs != null && summary.metricErrorsKnown != null && summary.metricErrorsKnown >= metricJobs;
+  const writeTotalKnown = totalsComplete && metricJobs != null && summary.metricRowsKnown != null && summary.metricRowsKnown >= metricJobs;
 
   const renderJobs = (group: AuditEntry[], compact: boolean) => <table role="presentation" style={{ borderCollapse: "collapse", width: "100%", tableLayout: "fixed" }}><tbody>
       {group.map((row) => {
@@ -92,19 +99,24 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
         const noWrites = row.routePath === "/api/v1/db/cron-report";
         return <tr key={row.key}><td style={{ padding: "0 0 10px", overflowWrap: "anywhere" }}>
           <div style={{ padding: compact ? "12px 0" : 18, border: compact ? "none" : "1px solid #E1E3E0", borderBottom: compact ? "1px solid #E1E3E0" : "1px solid #E1E3E0", borderRadius: compact ? 0 : 12, backgroundColor: compact ? "transparent" : "#FFFFFF" }}>
-          <div><strong style={{ color, fontSize: 12, marginRight: 8 }}>{label}</strong><strong style={{ fontSize: compact ? 14 : 17 }}>{row.jobName}</strong>{nearLimit(row) ? <strong style={{ color: "#92400E", fontSize: 12 }}> · NEAR LIMIT</strong> : null}</div>
+          <div><strong style={{ color, fontSize: 12, marginRight: 8 }}>{label}</strong>{" "}<strong style={{ fontSize: compact ? 14 : 17 }}>{row.jobName}</strong>{nearLimit(row) ? <strong style={{ color: "#92400E", fontSize: 12 }}> · {isNearRepositoryLimit(row.durationMs, row.repositoryLimitMs ?? null) ? "NEAR LIMIT" : "NEAR BUDGET"}</strong> : null}</div>
           <div style={{ ...muted, marginTop: 4 }}>{row.observationKind === "extra" ? "Extra/child observation · " : ""}{row.runTimeDisplay}</div>
           {row.route && row.route !== row.jobName ? <div style={muted}>{row.method ?? ""} {row.route}</div> : null}
           <div>
-            {metric("Execution", formatExecutionDuration(row.durationMs))}
+            {metric("Elapsed", formatExecutionDuration(row.durationMs))}
             {metric("Upserted", noWrites ? "N/A" : number(row.rowsUpserted))}
             {metric("Error rows", noWrites ? "N/A" : number(row.failedRows))}
           </div>
-          {row.repositoryLimitMs != null && nearLimit(row) ? <div style={muted}>Repo route limit: {row.repositoryLimitMs / 1000}s; deployed override unverified.</div> : null}
+          <div style={{ ...muted, marginTop: 4 }}>Timing: {row.timingProvenance ?? "Unknown; measurement scope unverified"}.</div>
+          <div style={muted}>Repo route limit: {row.repositoryLimitMs == null ? "Unknown" : formatExecutionDuration(row.repositoryLimitMs)}; deployed override unverified.
+            {row.runtimeBudgetMs != null ? ` Reported operation budget: ${formatExecutionDuration(row.runtimeBudgetMs)}.` : ""}
+          </div>
+          {row.status === "unknown" && row.observedExecutionStatus === "success" ? <div style={muted}>Observed route receipt: success; scheduled health remains unknown while telemetry is incomplete.</div> : null}
           {row.failedOperations != null && row.failedOperations > 0 ? <div style={{ color: "#991B1B", fontSize: 13 }}>{row.failedOperations} failed operations; error-row count unknown.</div> : null}
-          {details.map((detail, index) => <div key={index} style={{ fontSize: 13, color: row.status === "failure" ? "#991B1B" : "#4B5563", marginTop: 4 }}>{concise(detail)}</div>)}
+          {details.map((detail, index) => <div key={index} style={{ fontSize: 13, color: row.status === "failure" ? "#991B1B" : "#4B5563", marginTop: 4 }}>{row.status === "failure" ? clean(detail) : concise(detail)}</div>)}
           {priority(row) < 4 && (row.benchmarkAnnotations ?? []).length > 0 ? <div style={{ ...muted, marginTop: 4 }}>Benchmark: {concise(row.benchmarkAnnotations![0].note)}</div> : null}
           {row.failedRowSamples.length > 0 ? <div style={{ ...muted, marginTop: 4 }}>Evidence: {row.failedRowSamples.slice(0, 2).map(concise).join("; ")}</div> : null}
+          {row.status === "failure" ? <div style={{ ...muted, marginTop: 6 }}><a href="https://vercel.com/fhfhockeydevs-projects/fhfhockey/logs" style={{ color: "#1D4ED8" }}>Inspect execution logs (sign in)</a>{" · Use the route and UTC time above."}</div> : null}
           {row.status === "failure" && row.lastKnownSuccessDisplay ? <div style={muted}>Last recorded success: {row.lastKnownSuccessDisplay}</div> : null}
           </div>
         </td></tr>;
@@ -149,9 +161,9 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
         {summary.childObservations != null ? ` · ${summary.childObservations} extra/child observations` : ""}
       </div>
       <div style={{ marginTop: 6 }}>Receipts can overlap; these are not distinct failed jobs.</div>
-      <div style={{ marginTop: 6 }}>Confirmed upserts: {summary.metricRowsKnown === 0 ? "total unknown (0 confirmed observations)" : `${summary.totalRowsUpserted.toLocaleString("en-US")} in latest scheduled receipts`}
+      <div style={{ marginTop: 6 }}>Confirmed upserts: {summary.metricRowsKnown === 0 ? "total unknown (0 confirmed observations)" : `${summary.totalRowsUpserted.toLocaleString("en-US")} observed in latest scheduled receipts${writeTotalKnown ? "" : "; overall total unknown"}`}
         {summary.metricRowsKnown != null ? ` (${summary.metricRowsKnown}/${summary.scheduledJobs ?? 0} jobs report confirmed counts)` : ""}
-        {` · Error rows: ${summary.metricErrorsKnown === 0 ? "total unknown (0 reported observations)" : `${summary.totalFailedRows.toLocaleString("en-US")} explicitly reported`}`}
+        {` · Error rows: ${errorTotalKnown ? `${summary.totalFailedRows.toLocaleString("en-US")} explicitly reported` : `total unknown (${summary.totalFailedRows.toLocaleString("en-US")} observed in ${summary.metricErrorsKnown ?? 0}/${metricJobs ?? "unknown"} applicable job receipts)`}`}
       </div>
       <div style={{ marginTop: 6 }}>Unknown = evidence unavailable; N/A = metric does not apply; 0 = verified zero.</div>
       <div style={{ marginTop: 6 }}>UTC window: {sinceDate}{untilDate ? ` through ${untilDate}` : ""}</div>
