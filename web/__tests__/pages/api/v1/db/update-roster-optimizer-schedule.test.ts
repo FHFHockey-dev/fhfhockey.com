@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
+  auditRecordMock,
   fetchBoundedMock,
   deleteInMock,
   fetchFullSeasonMock,
@@ -67,6 +68,7 @@ const {
     })),
   };
   return {
+    auditRecordMock: vi.fn(),
     deleteInMock,
     fetchBoundedMock: vi.fn(),
     fetchFullSeasonMock: vi.fn(),
@@ -79,7 +81,10 @@ const {
 
 vi.mock("lib/supabase/server", () => ({ default: serviceClient }));
 vi.mock("lib/cron/withCronJobAudit", () => ({
-  withCronJobAudit: (handler: unknown) => handler,
+  withCronJobAudit: (handler: (req: unknown, res: unknown) => unknown) => async (req: unknown, res: unknown) => {
+    await handler(req, res);
+    await auditRecordMock();
+  },
 }));
 vi.mock("lib/rosterScheduleData/source", () => ({
   fetchBoundedNhlSchedule: fetchBoundedMock,
@@ -119,6 +124,7 @@ function existingRow(id: number, overrides: Record<string, unknown> = {}) {
 describe("update roster optimizer schedule route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    upsertMock.mockReset().mockResolvedValue({ error: null });
     tableData.roster_optimizer_team_games = [];
     Object.assign(scheduleRead, { cap: 1_000, calls: 0, emptyAt: 0, failAt: 0, missingCount: false });
     process.env.CRON_SECRET = "schedule-secret";
@@ -146,7 +152,7 @@ describe("update roster optimizer schedule route", () => {
     fetchBoundedMock.mockResolvedValue(source);
   });
 
-  afterEach(() => delete process.env.CRON_SECRET);
+  afterEach(() => { delete process.env.CRON_SECRET; vi.useRealTimers(); });
 
   it("defaults to a bounded refresh with a centralized game key", () => {
     expect(
@@ -379,4 +385,227 @@ describe("update roster optimizer schedule route", () => {
       reconciliation: { status: "not_applicable" } } });
     expect(deleteInMock).not.toHaveBeenCalled();
   });
+
+  const guardedQuery = {
+    mode: "bounded", gameKey: "477", startDate: "2026-10-05", endDate: "2026-10-11",
+    seasonId: "20262027", gameIds: "2026020001", maxSides: "2", dryRun: "true",
+  };
+  async function guardedCall(query: Record<string, string | string[] | undefined> = {}) {
+    const res = response();
+    await handler({ method: "POST", headers: { authorization: "Bearer schedule-secret" },
+      query: { ...guardedQuery, ...query } } as never, res as never);
+    return res;
+  }
+  function scopeHash(res: ReturnType<typeof response>): string {
+    return (res.body as { data: { scope: { scopeHash: string } } }).data.scope.scopeHash;
+  }
+  async function changedSource(overrides: Record<string, unknown> = {}) {
+    const source = await fetchBoundedMock();
+    fetchBoundedMock.mockClear();
+    return { ...source, games: source.games.map((entry: { game: unknown }) =>
+      ({ ...entry, game: { ...(entry.game as object), ...overrides } })) };
+  }
+
+  it("inspects an exact bounded scope without cache, delete or audit writes", async () => {
+    const res = await guardedCall();
+    expect(res.body).toMatchObject({ success: true, data: { dryRun: true, rowsPlanned: 2,
+      rowsUpserted: 0, rowsDeleted: 0, writeOutcome: "not_attempted",
+      scope: { seasonId: 20262027, gameIds: [2026020001], maxSides: 2, sides: 2, nonCountableGameIds: [] } } });
+    expect(scopeHash(res)).toMatch(/^[a-f0-9]{64}$/);
+    expect(upsertMock).not.toHaveBeenCalled();
+    expect(deleteInMock).not.toHaveBeenCalled();
+    expect(auditRecordMock).not.toHaveBeenCalled();
+  });
+
+  it("writes only the refetched approved sides in one upsert and retains the normal audit", async () => {
+    const inspection = await guardedCall();
+    const res = await guardedCall({ dryRun: "false", expectedScopeHash: scopeHash(inspection) });
+    expect(res.body).toMatchObject({ success: true, data: { dryRun: false, rowsUpserted: 2,
+      rowsDeleted: 0, writeOutcome: "acknowledged", scope: { scopeHash: scopeHash(inspection) } } });
+    expect(upsertMock).toHaveBeenCalledTimes(1);
+    expect(upsertMock.mock.calls[0][0]).toHaveLength(2);
+    expect(upsertMock.mock.calls[0][0].map((row: Record<string, unknown>) =>
+      [row.source_game_id, row.team_id, row.game_date, row.source_season_id, row.game_key]))
+      .toEqual([[2026020001, 4, "2026-10-05", 20262027, "477"], [2026020001, 3, "2026-10-05", 20262027, "477"]]);
+    expect(deleteInMock).not.toHaveBeenCalled();
+    expect(auditRecordMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    { gameIds: "" }, { gameIds: "2026020001,2026020001" }, { gameIds: "NaN" },
+    { gameIds: "9007199254740992" }, { seasonId: "20262028" }, { maxSides: "0" },
+    { maxSides: "1001" }, { maxSides: "1.5" }, { maxSides: "1" },
+    { seasonId: ["20262027", "20252026"] }, { startDate: undefined }, { mode: "full" },
+    { dryRun: "maybe" }, { dryRun: "false", expectedScopeHash: undefined },
+    { expectedScopeHash: "bad" }, { gameKey: ["477", "other"] },
+  ])("rejects invalid/overflowing explicit scope before fetching or writing: %j", async query => {
+    const res = await guardedCall(query);
+    expect(res.statusCode).toBeGreaterThanOrEqual(400);
+    expect(fetchBoundedMock).not.toHaveBeenCalled();
+    expect(fetchFullSeasonMock).not.toHaveBeenCalled();
+    expect(upsertMock).not.toHaveBeenCalled();
+    expect(deleteInMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects zero games and a missing approved game instead of certifying a refresh", async () => {
+    const source = await changedSource();
+    fetchBoundedMock.mockResolvedValueOnce({ ...source, games: [] });
+    const empty = await guardedCall();
+    expect(empty.body).toMatchObject({ success: false, writeOutcome: "not_attempted",
+      error: { code: "REFRESH_SCOPE_MISMATCH" } });
+    const missing = await guardedCall({ gameIds: "2026020001,2026020002", maxSides: "4" });
+    expect(missing.body).toMatchObject({ success: false, error: { code: "REFRESH_SCOPE_MISMATCH" } });
+    expect(upsertMock).not.toHaveBeenCalled();
+  });
+
+  it.each(["extra", "overflow", "duplicate"])("rejects %s fetched scope without truncating or writing", async condition => {
+    const source = await changedSource();
+    const second = condition === "duplicate" ? source.games[0] :
+      { ...source.games[0], game: { ...source.games[0].game, id: 2026020002 } };
+    fetchBoundedMock.mockResolvedValue({ ...source, games: [...source.games, second] });
+    const res = await guardedCall({ maxSides: condition === "overflow" ? "2" : "4" });
+    expect(res.body).toMatchObject({ success: false, writeOutcome: "not_attempted",
+      error: { code: condition === "overflow" ? "REFRESH_SCOPE_OVERFLOW" : "REFRESH_SCOPE_MISMATCH" } });
+    expect(upsertMock).not.toHaveBeenCalled();
+    expect(deleteInMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { season: 20252026 }, { homeTeam: { id: 99, abbrev: "ZZZ" } },
+    { gameDate: "2026-10-04" }, { gameDate: "2026-10-12" },
+  ])("rejects a source outside season/team/date bounds before writes: %j", async overrides => {
+    fetchBoundedMock.mockResolvedValue(await changedSource(overrides));
+    const res = await guardedCall();
+    expect(res.body).toMatchObject({ success: false, writeOutcome: "not_attempted",
+      error: { code: "REFRESH_SCOPE_MISMATCH" } });
+    expect(upsertMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects incomplete or failed source reads and incomplete cache reads before writes", async () => {
+    const source = await changedSource();
+    fetchBoundedMock.mockResolvedValueOnce({ ...source, complete: false })
+      .mockRejectedValueOnce(new Error("later weekly source read failed"));
+    expect((await guardedCall()).statusCode).toBe(409);
+    expect((await guardedCall()).body).toMatchObject({ success: false, writeOutcome: "not_attempted" });
+    scheduleRead.missingCount = true;
+    expect((await guardedCall()).body).toMatchObject({ success: false,
+      error: { code: "SCHEDULE_READ_INCOMPLETE" }, writeOutcome: "not_attempted" });
+    expect(upsertMock).not.toHaveBeenCalled();
+    expect(deleteInMock).not.toHaveBeenCalled();
+  });
+
+  it("stops a changed postponement before writes and requires a fresh inspection hash", async () => {
+    const inspection = await guardedCall();
+    fetchBoundedMock.mockResolvedValue(await changedSource({ gameScheduleState: "PPD" }));
+    const stopped = await guardedCall({ dryRun: "false", expectedScopeHash: scopeHash(inspection) });
+    expect(stopped.body).toMatchObject({ success: false, writeOutcome: "not_attempted",
+      error: { code: "REFRESH_SOURCE_CHANGED" } });
+    expect(upsertMock).not.toHaveBeenCalled();
+    const updated = await guardedCall();
+    expect(updated.body).toMatchObject({ success: true, data: { scope: { nonCountableGameIds: [2026020001] } } });
+    const approved = await guardedCall({ dryRun: "false", expectedScopeHash: scopeHash(updated) });
+    expect(approved.statusCode).toBe(200);
+    expect(upsertMock.mock.calls[0][0].every((row: Record<string, unknown>) => row.is_countable === false)).toBe(true);
+  });
+
+  it("uses the NHL scoring date at both boundaries when UTC start is on the next day", async () => {
+    fetchBoundedMock.mockResolvedValue(await changedSource({ startTimeUTC: "2026-10-06T00:30:00Z" }));
+    const inspected = await guardedCall({ endDate: "2026-10-05" });
+    expect(inspected.statusCode).toBe(200);
+    await guardedCall({ endDate: "2026-10-05", dryRun: "false", expectedScopeHash: scopeHash(inspected) });
+    expect(upsertMock.mock.calls[0][0].map((row: Record<string, unknown>) => [row.game_date, row.start_time]))
+      .toEqual([["2026-10-05", "2026-10-06T00:30:00.000Z"], ["2026-10-05", "2026-10-06T00:30:00.000Z"]]);
+  });
+
+  it("does not accept the same source hash for a different key, date window or side ceiling", async () => {
+    const inspection = await guardedCall();
+    for (const query of [{ gameKey: "other" }, { endDate: "2026-10-10" }, { maxSides: "4" }]) {
+      expect((await guardedCall({ ...query, dryRun: "false", expectedScopeHash: scopeHash(inspection) })).body)
+        .toMatchObject({ success: false, writeOutcome: "not_attempted", error: { code: "REFRESH_SOURCE_CHANGED" } });
+    }
+    expect(upsertMock).not.toHaveBeenCalled();
+  });
+
+  function persistIncoming(rows: Array<Record<string, unknown>>) {
+    for (const row of rows) {
+      const existing = tableData.roster_optimizer_team_games.find(item => {
+        const old = item as Record<string, unknown>;
+        return old.game_key === row.game_key && old.source_game_id === row.source_game_id && old.team_id === row.team_id;
+      }) as Record<string, unknown> | undefined;
+      if (existing) Object.assign(existing, row);
+      else tableData.roster_optimizer_team_games.push({ id: tableData.roster_optimizer_team_games.length + 1, ...row });
+    }
+  }
+
+  it("keeps same-identity retries idempotent for content with truthful new fetched_at and no fabricated provider time", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-04T10:00:00Z"));
+    upsertMock.mockImplementation(async rows => { persistIncoming(rows); return { error: null }; });
+    const inspected = await guardedCall();
+    await guardedCall({ dryRun: "false", expectedScopeHash: scopeHash(inspected) });
+    const first = (tableData.roster_optimizer_team_games[0] as Record<string, unknown>).fetched_at;
+    vi.setSystemTime(new Date("2026-10-04T10:05:00Z"));
+    const retry = await guardedCall({ dryRun: "false", expectedScopeHash: scopeHash(inspected) });
+    expect(retry.body).toMatchObject({ success: true, data: { changes: { unchangedRows: 2 } } });
+    expect(tableData.roster_optimizer_team_games).toHaveLength(2);
+    expect((tableData.roster_optimizer_team_games[0] as Record<string, unknown>).fetched_at).not.toBe(first);
+    expect(tableData.roster_optimizer_team_games.map(row => (row as Record<string, unknown>).source_updated_at)).toEqual([null, null]);
+    expect(deleteInMock).not.toHaveBeenCalled();
+  });
+
+  it("reports write failure as uncertain and never proceeds to another chunk or deletion", async () => {
+    const inspected = await guardedCall();
+    upsertMock.mockResolvedValueOnce({ error: { message: "statement failed" } });
+    const failed = await guardedCall({ dryRun: "false", expectedScopeHash: scopeHash(inspected) });
+    expect(failed.body).toMatchObject({ success: false, writeOutcome: "unknown", error: { code: "SCHEDULE_SYNC_FAILED" } });
+    expect(upsertMock).toHaveBeenCalledTimes(1);
+    expect(deleteInMock).not.toHaveBeenCalled();
+    expect(tableData.roster_optimizer_team_games).toHaveLength(0);
+  });
+
+  it("keeps an approved scope larger than the legacy chunk size in one atomic cache statement", async () => {
+    const source = await changedSource();
+    const ids = Array.from({ length: 300 }, (_, index) => 2026020001 + index);
+    fetchBoundedMock.mockResolvedValue({ ...source, games: ids.map(id =>
+      ({ ...source.games[0], game: { ...source.games[0].game, id } })) });
+    const query = { gameIds: ids.join(","), maxSides: "600" };
+    const inspected = await guardedCall(query);
+    const written = await guardedCall({ ...query, dryRun: "false", expectedScopeHash: scopeHash(inspected) });
+    expect(written.body).toMatchObject({ success: true, data: { rowsUpserted: 600 } });
+    expect(upsertMock).toHaveBeenCalledTimes(1);
+    expect(upsertMock.mock.calls[0][0]).toHaveLength(600);
+    expect(deleteInMock).not.toHaveBeenCalled();
+  });
+
+  it("does not claim rollback on lost acknowledgement; readback and same-identity retry can converge", async () => {
+    const inspected = await guardedCall();
+    upsertMock.mockImplementationOnce(async rows => {
+      persistIncoming(rows);
+      throw new Error("connection lost after statement");
+    });
+    const uncertain = await guardedCall({ dryRun: "false", expectedScopeHash: scopeHash(inspected) });
+    expect(uncertain.body).toMatchObject({ success: false, writeOutcome: "unknown" });
+    expect(tableData.roster_optimizer_team_games).toHaveLength(2);
+    upsertMock.mockImplementation(async rows => { persistIncoming(rows); return { error: null }; });
+    const readback = await guardedCall();
+    expect(scopeHash(readback)).toBe(scopeHash(inspected));
+    const retry = await guardedCall({ dryRun: "false", expectedScopeHash: scopeHash(readback) });
+    expect(retry.body).toMatchObject({ success: true, data: { rowsUpserted: 2, changes: { unchangedRows: 2 } } });
+    expect(tableData.roster_optimizer_team_games).toHaveLength(2);
+    expect(deleteInMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects unauthorized or wrong-method inspection without source, schedule or audit writes", async () => {
+    for (const req of [{ method: "POST", headers: {} },
+      { method: "GET", headers: { authorization: "Bearer schedule-secret" } }]) {
+      const res = response();
+      await handler({ ...req, query: guardedQuery } as never, res as never);
+      expect(res.statusCode).toBeGreaterThanOrEqual(400);
+    }
+    expect(fetchBoundedMock).not.toHaveBeenCalled();
+    expect(upsertMock).not.toHaveBeenCalled();
+    expect(auditRecordMock).not.toHaveBeenCalled();
+  });
+
+
 });

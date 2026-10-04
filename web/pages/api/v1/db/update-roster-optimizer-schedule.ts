@@ -25,6 +25,7 @@ import type {
   FetchedNhlScheduleGame,
   RosterOptimizerTeamGameUpsert,
 } from "lib/rosterScheduleData/types";
+import { inspectRefreshScope, parseRefreshGuard, RefreshGuardError } from "lib/rosterScheduleData/refreshGuard";
 
 type SyncMode = "bounded" | "full";
 type SyncRequest = {
@@ -424,8 +425,12 @@ export async function updateRosterOptimizerScheduleHandler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
+  let guardedRequest = false;
+  let writesAttempted = false;
   try {
     const request = parseRosterScheduleSyncRequest(req.query);
+    const { dryRun, guard } = parseRefreshGuard(req.query, request);
+    guardedRequest = guard != null;
     const serviceClient = (req as NextApiRequest & { supabase: unknown })
       .supabase;
     const readClient = serviceClient as SyncReadClient;
@@ -440,6 +445,9 @@ export async function updateRosterOptimizerScheduleHandler(
     }
     const yahooSeason = [...yahooSeasons][0];
     const seasonId = await resolveNhlSeasonId({ client: readClient, weeks });
+    if (guard && seasonId !== guard.seasonId) {
+      throw new RefreshGuardError("REFRESH_SCOPE_MISMATCH", "Resolved NHL season differs from the approved season.");
+    }
     const teams = await loadSeasonTeams({ client: readClient, seasonId });
     const sourceResult =
       request.mode === "full"
@@ -459,6 +467,10 @@ export async function updateRosterOptimizerScheduleHandler(
       weeks,
       yahooSeason,
     });
+    const scope = guard ? inspectRefreshScope({
+      request, guard, seasonId, yahooSeason, complete: sourceResult.complete,
+      ignoredGames: normalized.ignoredGames, unmappedGames: normalized.unmapped.length, rows: normalized.rows,
+    }) : undefined;
     const existingRows = await loadExistingScheduleRows(
       readClient,
       request.gameKey,
@@ -468,12 +480,16 @@ export async function updateRosterOptimizerScheduleHandler(
       existing: existingRows,
       incoming: normalized.rows,
     });
-    const rowsUpserted = await upsertRosterScheduleRows({
+    // Guarded scopes fit one upsert statement (<=1000 sides). The audit remains
+    // separate; a timeout/unknown acknowledgement still requires DB readback.
+    writesAttempted = !dryRun && normalized.rows.length > 0;
+    const rowsUpserted = dryRun ? 0 : await upsertRosterScheduleRows({
       client: serviceClient as ScheduleWriteClient,
       rows: normalized.rows,
+      ...(guard ? { chunkSize: guard.maxSides } : {}),
     });
     const staleRowIds =
-      request.mode === "full" && sourceResult.complete
+      !dryRun && request.mode === "full" && sourceResult.complete
         ? findStaleRosterScheduleRowIds({
             existing: existingRows,
             incoming: normalized.rows,
@@ -532,6 +548,8 @@ export async function updateRosterOptimizerScheduleHandler(
             ? { startDate: request.startDate, endDate: request.endDate }
             : null,
         fetchedAt,
+        ...(scope ? { dryRun, scope, rowsPlanned: normalized.rows.length,
+          writeOutcome: dryRun ? "not_attempted" : "acknowledged" } : {}),
         gamesFetched: sourceResult.games.length,
         mappedGames: normalized.mappedGames,
         unmappedGames: normalized.unmapped.length,
@@ -557,7 +575,7 @@ export async function updateRosterOptimizerScheduleHandler(
     });
   } catch (error: unknown) {
     const routeError =
-      error instanceof SyncRouteError
+      error instanceof SyncRouteError || error instanceof RefreshGuardError
         ? error
         : new SyncRouteError({
             code: "SCHEDULE_SYNC_FAILED",
@@ -573,6 +591,8 @@ export async function updateRosterOptimizerScheduleHandler(
           });
     return res.status(routeError.status).json({
       success: false,
+      ...(guardedRequest || error instanceof RefreshGuardError
+        ? { writeOutcome: writesAttempted ? "unknown" : "not_attempted" } : {}),
       error: {
         code: routeError.code,
         message: routeError.message,
@@ -582,7 +602,7 @@ export async function updateRosterOptimizerScheduleHandler(
   }
 }
 
-export default withOperationalRouteAuth(
+const writeHandler = withOperationalRouteAuth(
   updateRosterOptimizerScheduleHandler,
   {
     methods: ["POST"],
@@ -592,3 +612,13 @@ export default withOperationalRouteAuth(
     },
   },
 );
+
+// Inspection must not even insert cron_job_audit. Authentication and the POST
+// method gate remain identical; malformed inspection queries fail in the handler.
+const inspectionHandler = withOperationalRouteAuth(updateRosterOptimizerScheduleHandler, {
+  methods: ["POST"], audit: false,
+});
+export default function handler(req: Parameters<typeof writeHandler>[0], res: NextApiResponse) {
+  return firstQueryValue(req.query.dryRun) === "true"
+    ? inspectionHandler(req, res) : writeHandler(req, res);
+}
