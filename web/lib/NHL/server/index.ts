@@ -371,12 +371,13 @@ export async function resolveLatestStartedSeasonIdForDate(
 
 export async function getSeasonById(
   seasonId: number,
+  client: SupabaseClient<Database> = supabase,
 ): Promise<SeasonDetails | null> {
   if (!Number.isSafeInteger(seasonId) || seasonId <= 0) {
     throw new Error("A valid season ID is required.");
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from("seasons")
     .select("id,startDate,regularSeasonEndDate,endDate,numberOfGames")
     .eq("id", seasonId)

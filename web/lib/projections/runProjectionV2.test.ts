@@ -329,6 +329,14 @@ describe("issued FORGE context", () => {
     await expect(captureForgeIssuedContexts(game.date, [game.id], client(data(), 1))).rejects.toThrow(/incomplete|truncated/);
   });
 
+  it("does not fabricate a canonical mapping for an unmapped roster member", async () => {
+    const unmapped = data();
+    unmapped.fhfh_player_identities = [];
+    const [context] = await captureForgeIssuedContexts(game.date, [game.id], client(unmapped));
+    expect(context.roster).toEqual([]);
+    expect(unmapped.rosters).toHaveLength(1);
+  });
+
   it("accepts equivalent alternate cache keys and rejects conflicting versions or malformed membership", async () => {
     const equivalent = data();
     equivalent.roster_optimizer_team_games.push({ ...schedule(3, 4), game_key: "alternate",
@@ -1037,6 +1045,12 @@ describe("skater pool recovery safeguards", () => {
     expect(constrained).toEqual([11, 13]);
   });
 
+  it("keeps line skaters beyond the old first24 membership sample", () => {
+    const roster = Array.from({ length: 49 }, (_, index) => index + 1);
+    expect(constrainSkaterIdsToActiveRoster({ candidateSkaterIds: [20, 27, 49], activeRosterSkaterIds: roster }))
+      .toEqual([20, 27, 49]);
+  });
+
   it("lets the gated season bootstrap reach current roster candidates before rolling history exists", () => {
     const args = { rollingSkaterIds: [], activeRosterSkaterIds: [11, 13, 13, NaN], seasonBootstrap: true };
     expect(selectLineCombinationFallback(args)).toEqual({ playerIds: [11, 13], rosterBootstrap: true });
@@ -1338,8 +1352,33 @@ describe("skater scenario metadata", () => {
 });
 
 describe("active skater filtering", () => {
+  const recencySeasons = [
+    { id: 20252026, startDate: "2025-10-07", regularSeasonEndDate: "2026-04-17", endDate: "2026-06-15", numberOfGames: 82 },
+    { id: 20262027, startDate: "2026-09-29", regularSeasonEndDate: "2027-04-10", endDate: "2027-06-10", numberOfGames: 84 },
+  ];
+  const inSeasonEvidence = {
+    currentSeasonId: 20252026, recencySeasons: [recencySeasons[0]],
+    recencyEventByPlayerId: new Map([1, 11, 12, 13, 52].map(id => [id, { date: ({ 1: "2026-02-06", 11: "2026-02-06", 12: "2026-01-10", 13: "2025-11-20", 52: "2026-02-05" } as Record<number, string>)[id], seasonId: 20252026, type: 2 }])),
+  };
+  it("uses continuous in-season age without admitting traded, rookie or missing season evidence", () => {
+    const common = { asOfDate: "2026-10-05", currentSeasonId: 20262027, recencySeasons, teamId: 5,
+      recencyEventByPlayerId: new Map([[1, "2026-04-13"], [2, "2026-04-13"], [4, "2026-02-01"], [5, "2026-05-01"]].map(([id,date]) => [Number(id), { date: String(date), seasonId: 20252026, type: 2 }])),
+      rawSkaterIds: [1, 2, 3, 4, 5], playerMetaById: new Map([
+        [1, { id: 1, team_id: 5, position: "C" }], [2, { id: 2, team_id: 8, position: "C" }],
+        [3, { id: 3, team_id: 5, position: "C" }], [4, { id: 4, team_id: 5, position: "C" }],
+        [5, { id: 5, team_id: 5, position: "C" }]]),
+      latestMetricDateByPlayerId: new Map([[1, "2026-04-13"], [2, "2026-04-13"], [4, "2026-02-01"], [5, "2026-05-01"]]) };
+    const result = filterActiveSkaterCandidateIds(common);
+    expect(result.eligibleSkaterIds).toEqual([1]);
+    expect(result.recencyMultiplierByPlayerId.get(1)).toBe(1);
+    expect(result.excludedSkaterIdsByReason).toEqual({ teamOrPosition: [2], missingRecentMetrics: [3], hardStale: [4], invalidSeasonEvidence: [5] });
+    const missing = filterActiveSkaterCandidateIds({ ...common, recencySeasons: [] });
+    expect(missing.eligibleSkaterIds).toEqual([]);
+    expect(missing.excludedSkaterIdsByReason.invalidSeasonEvidence).toEqual([1, 4, 5]);
+    expect(missing.excludedSkaterIdsByReason.missingRecentMetrics).toEqual([3]);
+  });
   it("retains a verified season-opening prior without weakening team or position filters", () => {
-    const result = filterActiveSkaterCandidateIds({ asOfDate: "2026-10-06", teamId: 5, rawSkaterIds: [1, 2, 3, 4],
+    const result = filterActiveSkaterCandidateIds({ ...inSeasonEvidence, asOfDate: "2026-10-06", teamId: 5, rawSkaterIds: [1, 2, 3, 4],
       playerMetaById: new Map([[1, { id: 1, team_id: 5, position: "C" }], [2, { id: 2, team_id: 5, position: "LW" }],
         [3, { id: 3, team_id: 8, position: "C" }], [4, { id: 4, team_id: 5, position: "G" }]]),
       latestMetricDateByPlayerId: new Map([[1, "2026-04-15"]]), seasonBootstrapPlayerIds: new Set([1, 2, 3, 4]) });
@@ -1347,7 +1386,7 @@ describe("active skater filtering", () => {
     expect(result.recencyMultiplierByPlayerId.get(1)).toBe(1);
   });
   it("filters out non-team and goalie-position candidates", () => {
-    const result = filterActiveSkaterCandidateIds({
+    const result = filterActiveSkaterCandidateIds({ ...inSeasonEvidence,
       asOfDate: "2026-02-07",
       teamId: 5,
       rawSkaterIds: [1, 2, 3],
@@ -1364,7 +1403,7 @@ describe("active skater filtering", () => {
   });
 
   it("hard-filters skaters with stale metrics beyond threshold and soft-penalizes mid-stale skaters", () => {
-    const result = filterActiveSkaterCandidateIds({
+    const result = filterActiveSkaterCandidateIds({ ...inSeasonEvidence,
       asOfDate: "2026-02-07",
       teamId: 5,
       rawSkaterIds: [11, 12, 13],
@@ -1390,7 +1429,7 @@ describe("active skater filtering", () => {
   });
 
   it("treats players with no recent metrics as inactive and excludes them", () => {
-    const result = filterActiveSkaterCandidateIds({
+    const result = filterActiveSkaterCandidateIds({ ...inSeasonEvidence,
       asOfDate: "2026-02-07",
       teamId: 10,
       rawSkaterIds: [51, 52],

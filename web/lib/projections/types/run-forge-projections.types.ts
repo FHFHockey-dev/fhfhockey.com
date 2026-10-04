@@ -19,6 +19,8 @@ export type LineCombinationContext = {
 };
 
 export type RollingRow = {
+  game_id: number;
+  season: number;
   player_id: number;
   strength_state: string;
   game_date: string;

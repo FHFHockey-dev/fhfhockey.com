@@ -50,6 +50,45 @@ grant select,insert on public.forge_player_projections,public.forge_team_project
 -- Exercise the actual existing reservation/publication and news/queue guards.
 \ir ../migrations/20260916012353_starter_board_game_revisions.sql
 \ir ../migrations/20260916014510_starter_board_news_queue.sql
+
+-- Mirror the existing revision reader and timing trigger, with only the reader's
+-- supporting relations. Neither may need a new private-schema grant to fence.
+create table public.forge_final_pregame_revisions(game_id bigint,revision_id uuid);
+create table public.forge_game_selection_events(game_id bigint,revision_id uuid,created_at timestamptz);
+grant select on public.forge_final_pregame_revisions,public.forge_game_selection_events to service_role;
+create function fhfh_internal.current_starter_board_revisions(p_date date)
+returns setof public.forge_game_revisions language sql stable security invoker set search_path='' as $$
+  select chosen.* from (
+    select distinct on(game_id) * from public.forge_game_revisions where slate_date=p_date
+      order by game_id,decision_as_of desc,published_at desc,id desc
+  ) latest
+  left join public.forge_final_pregame_revisions frozen on frozen.game_id=latest.game_id
+  left join lateral(select revision_id from public.forge_game_selection_events where game_id=latest.game_id
+    order by created_at desc,id desc limit 1) selection on true
+  join public.forge_game_revisions chosen on chosen.id=coalesce(frozen.revision_id,selection.revision_id,latest.id);
+$$;
+revoke all on function fhfh_internal.current_starter_board_revisions(date) from public,anon,authenticated;
+grant execute on function fhfh_internal.current_starter_board_revisions(date) to service_role;
+
+create function fhfh_internal.capture_starter_board_revision_timing() returns trigger
+language plpgsql security invoker set search_path='' as $$
+declare metrics jsonb;
+begin
+  select f.metrics into metrics from public.forge_runs f where f.run_id=new.run_id;
+  new.payload:=new.payload||jsonb_build_object('queueLease',metrics->'board_lease',
+    'calculationStartedAt',metrics->>'started_at','calculationCompletedAt',metrics->>'finished_at');
+  return new;
+end $$;
+create trigger starter_board_revision_timing before insert on public.forge_game_revisions
+  for each row execute function fhfh_internal.capture_starter_board_revision_timing();
+revoke all on function fhfh_internal.capture_starter_board_revision_timing() from public,anon,authenticated;
+
+create table public.forge_fence_fixture_acl_baseline as
+select n.nspacl::text schema_acl,
+  (select jsonb_agg(jsonb_build_object('signature',p.oid::regprocedure::text,'acl',p.proacl::text,
+    'owner',p.proowner,'securityDefiner',p.prosecdef,'config',p.proconfig,'body',p.prosrc)
+    order by p.oid::regprocedure::text) from pg_proc p where p.pronamespace=n.oid) functions
+from pg_namespace n where n.nspname='fhfh_internal';
 \ir ../migrations/20261002021651_forge_local_execution_fence.sql
 
 insert into public.games select id,current_date+1,(current_date+1)::timestamptz+interval '12 hours',1,2

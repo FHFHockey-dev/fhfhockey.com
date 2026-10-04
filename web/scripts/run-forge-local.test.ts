@@ -1750,11 +1750,12 @@ describe.runIf(Boolean(process.env.FORGE_POSTGRES_BIN))("local FORGE PostgreSQL 
   let root: string, socket: string, started = false;
   const args = () => ["-h", socket, "-p", "65439", "-U", "forge_test", "-d", "fhfh_forge_fence_fixture", "-v", "ON_ERROR_STOP=1", "-qAt"];
   const sql = async (query: string) => (await exec(join(bin, "psql"), [...args(), "-c", query], { env: fixtureEnv })).stdout.trim();
+  const serviceSql = (query: string) => sql(`set role service_role; ${query}`);
   const begin = (id: string, game: number, lease = 600000, expected: string | null = null, version = code) =>
     `select public.begin_forge_local_run('${id}',current_date+1,${game},'${version}',${expected ? `'${expected}'` : "null"},${lease})`;
-  const inspect = async (id: string) => JSON.parse(await sql(`select public.inspect_forge_local_attempt('${id}')`));
+  const inspect = async (id: string) => JSON.parse(await serviceSql(`select public.inspect_forge_local_attempt('${id}')`));
   const prepare = async (run: string, game: number, version = code) => sql(`select fhfh_internal.fixture_prepare_forge('${run}',${game},'${version}')`);
-  const publish = (run: string, snapshot: string) => sql(`select public.publish_forge_game_revisions('${run}','${snapshot}')`);
+  const publish = (run: string, snapshot: string) => serviceSql(`select public.publish_forge_game_revisions('${run}','${snapshot}')`);
   function transaction(query: string, marker: string) {
     const child = spawn(join(bin, "psql"), args(), { env: fixtureEnv });
     let stdout = "", stderr = "";
@@ -1793,36 +1794,87 @@ describe.runIf(Boolean(process.env.FORGE_POSTGRES_BIN))("local FORGE PostgreSQL 
 
   it("keeps immutable ownership after metrics replacement and rejects legacy overlapping work", async () => {
     const id = randomUUID();
-    const receipt = JSON.parse(await sql(`set role service_role; ${begin(id, 9001)}`));
+    const receipt = JSON.parse(await serviceSql(begin(id, 9001)));
     expect(receipt).toMatchObject({ operationId: id, reservation: "new", state: "active", expectedRevisionId: null });
-    const replay = JSON.parse(await sql(begin(id, 9001)));
+    const replay = JSON.parse(await serviceSql(begin(id, 9001)));
     expect(replay).toMatchObject({ runId: receipt.runId, reservation: "existing" });
     await sql(`update public.forge_runs set status='succeeded',metrics='{}' where run_id='${receipt.runId}'`);
-    await expect(sql(`select public.begin_forge_game_run(current_date+1,array[9001]::bigint[],'legacy')`)).rejects.toThrow("owns this scope");
-    await expect(sql(`insert into public.forge_runs(as_of_date,status) values(current_date+1,'running')`)).rejects.toThrow("owns this scope");
-    expect(await sql(`select public.begin_forge_game_run(current_date+1,array[9002]::bigint[],'legacy')`)).toMatch(/^[a-f0-9-]{36}$/);
-    await expect(sql(begin(id, 9003))).rejects.toThrow("immutable intent");
-    await expect(sql(begin(id, 9001, 600000, null, `local:${"b".repeat(64)}`))).rejects.toThrow("immutable intent");
+    await expect(serviceSql(`select public.begin_forge_game_run(current_date+1,array[9001]::bigint[],'legacy')`)).rejects.toThrow("owns this scope");
+    await expect(serviceSql(`insert into public.forge_runs(as_of_date,status) values(current_date+1,'running')`)).rejects.toThrow("owns this scope");
+    expect(await serviceSql(`select public.begin_forge_game_run(current_date+1,array[9002]::bigint[],'legacy')`)).toMatch(/^[a-f0-9-]{36}$/);
+    await expect(serviceSql(begin(id, 9003))).rejects.toThrow("immutable intent");
+    await expect(serviceSql(begin(id, 9001, 600000, null, `local:${"b".repeat(64)}`))).rejects.toThrow("immutable intent");
     await expect(sql(`update public.player_forecast_source_observations set payload='{}' where id='${id}'`)).rejects.toThrow("IMMUTABLE_RECORD");
     expect(await sql(`select payload_hash=encode(sha256(convert_to(payload::text,'UTF8')),'hex') from public.player_forecast_source_observations where id='${id}'`)).toBe("t");
     expect(await sql("select count(*) from public.forge_game_update_queue")).toBe("0");
-    expect(await sql(`select has_schema_privilege('service_role','fhfh_internal','usage')
-      and not has_schema_privilege('anon','fhfh_internal','usage')
-      and not has_schema_privilege('authenticated','fhfh_internal','usage')`)).toBe("t");
-    expect(await sql(`select bool_and(not has_function_privilege('anon',p.oid,'execute') and not has_function_privilege('authenticated',p.oid,'execute')
-      and has_function_privilege('service_role',p.oid,'execute') and not p.prosecdef and p.proconfig @> array['search_path=""'])
-      from pg_proc p where p.proname in ('begin_forge_local_run','inspect_forge_local_attempt','lock_forge_execution_scope',
-        'active_forge_local_execution','guard_forge_local_reservation','guard_forge_local_publication')`)).toBe("t");
+  });
+
+  it("isolates service-role fencing and preserves existing private ACLs and attached guards", async () => {
+    const schema = JSON.parse(await sql(`select jsonb_build_object(
+      'serviceUsage',has_schema_privilege('service_role','forge_execution_internal','USAGE'),
+      'serviceCreate',has_schema_privilege('service_role','forge_execution_internal','CREATE'),
+      'oldUsage',has_schema_privilege('service_role','fhfh_internal','USAGE'),
+      'anonUsage',has_schema_privilege('anon','forge_execution_internal','USAGE'),
+      'authenticatedUsage',has_schema_privilege('authenticated','forge_execution_internal','USAGE'))`));
+    expect(schema).toEqual({ serviceUsage: true, serviceCreate: false, oldUsage: false,
+      anonUsage: false, authenticatedUsage: false });
+    const matrix = JSON.parse(await sql(`select jsonb_agg(jsonb_build_object(
+      'signature',p.oid::regprocedure::text,'trigger',p.prorettype='trigger'::regtype,
+      'serviceExecute',has_function_privilege('service_role',p.oid,'EXECUTE'),
+      'anonExecute',has_function_privilege('anon',p.oid,'EXECUTE'),
+      'authenticatedExecute',has_function_privilege('authenticated',p.oid,'EXECUTE'),
+      'securityDefiner',p.prosecdef,'config',p.proconfig,
+      'bodySha256',encode(sha256(convert_to(p.prosrc,'UTF8')),'hex')) order by p.oid::regprocedure::text)
+      from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+      where n.nspname='forge_execution_internal' or (n.nspname='public'
+        and p.proname in ('begin_forge_local_run','inspect_forge_local_attempt'))`));
+    expect(matrix).toHaveLength(6);
+    for (const fn of matrix) {
+      expect(fn).toMatchObject({ serviceExecute: !fn.trigger, anonExecute: false,
+        authenticatedExecute: false, securityDefiner: false, config: ['search_path=""'] });
+    }
+    const oldAclUnchanged = await sql(`select b.schema_acl is not distinct from n.nspacl::text
+      and b.functions=(select jsonb_agg(jsonb_build_object('signature',p.oid::regprocedure::text,'acl',p.proacl::text,
+        'owner',p.proowner,'securityDefiner',p.prosecdef,'config',p.proconfig,'body',p.prosrc)
+        order by p.oid::regprocedure::text) from pg_proc p where p.pronamespace=n.oid
+          and p.proname<>'fixture_prepare_forge')
+      from public.forge_fence_fixture_acl_baseline b join pg_namespace n on n.nspname='fhfh_internal'`);
+    expect(oldAclUnchanged).toBe("t");
+    console.info("FORGE_FENCE_PERMISSION_RECEIPT", JSON.stringify({ schema, matrix, oldAclUnchanged: true }));
+
+    for (const query of [
+      "select fhfh_internal.current_starter_board_revisions(current_date+1)",
+      "select fhfh_internal.enqueue_starter_board_game(9010,1,clock_timestamp(),clock_timestamp())",
+    ]) await expect(serviceSql(query)).rejects.toThrow("permission denied for schema fhfh_internal");
+    for (const name of ["guard_forge_local_reservation", "guard_forge_local_publication"]) {
+      await expect(serviceSql(`select forge_execution_internal.${name}()`)).rejects.toThrow("permission denied for function");
+    }
+    const id = randomUUID(), attempt = JSON.parse(await serviceSql(begin(id, 9010)));
+    expect(await inspect(id)).toMatchObject({ state: "active", runId: attempt.runId });
+    expect(await sql("select count(*) from public.forge_game_update_queue where game_id=9010")).toBe("0");
+    for (const role of ["anon", "authenticated"]) {
+      await expect(sql(`set role ${role}; select public.inspect_forge_local_attempt('${id}')`)).rejects.toThrow("permission denied");
+      await expect(sql(`set role ${role}; ${begin(randomUUID(), 9010)}`)).rejects.toThrow("permission denied");
+    }
+    const snapshot = await prepare(attempt.runId, 9010);
+    await sql(`update public.forge_runs set metrics=jsonb_build_object('started_at','fixture-start','finished_at','fixture-finish')
+      where run_id='${attempt.runId}'`);
+    expect(await publish(attempt.runId, snapshot)).toBe("1");
+    expect(JSON.parse(await serviceSql(`select payload from public.forge_game_revisions where run_id='${attempt.runId}'`)))
+      .toMatchObject({ queueLease: null, calculationStartedAt: "fixture-start", calculationCompletedAt: "fixture-finish" });
+    await expect(sql(`update public.forge_game_revisions set payload='{}' where run_id='${attempt.runId}'`))
+      .rejects.toThrow("IMMUTABLE_RECORD");
+    expect(await publish(attempt.runId, snapshot)).toBe("0");
   });
 
   it("rejects expired writers and wrong artifacts while preserving normal publication and replay", async () => {
-    const id = randomUUID(), old = JSON.parse(await sql(begin(id, 9003, 100)));
+    const id = randomUUID(), old = JSON.parse(await serviceSql(begin(id, 9003, 100)));
     const oldSnapshot = await prepare(old.runId, 9003);
     await sql("select pg_sleep(0.15)");
     expect(await inspect(id)).toMatchObject({ state: "expired", revisionId: null });
-    expect(JSON.parse(await sql(begin(id, 9003, 100)))).toMatchObject({ reservation: "existing", state: "expired" });
+    expect(JSON.parse(await serviceSql(begin(id, 9003, 100)))).toMatchObject({ reservation: "existing", state: "expired" });
     await expect(publish(old.runId, oldSnapshot)).rejects.toThrow("Expired or incompatible");
-    const nextId = randomUUID(), next = JSON.parse(await sql(begin(nextId, 9003)));
+    const nextId = randomUUID(), next = JSON.parse(await serviceSql(begin(nextId, 9003)));
     await expect(publish(old.runId, oldSnapshot)).rejects.toThrow("owns publication");
     const snapshot = await prepare(next.runId, 9003);
     expect(await publish(next.runId, snapshot)).toBe("1");
@@ -1830,22 +1882,70 @@ describe.runIf(Boolean(process.env.FORGE_POSTGRES_BIN))("local FORGE PostgreSQL 
     expect(await inspect(nextId)).toMatchObject({ state: "issued", inputSnapshotId: snapshot });
     await sql(`update public.forge_runs set status='failed',metrics='{}' where run_id='${next.runId}'`);
     expect(await inspect(nextId)).toMatchObject({ state: "issued", inputSnapshotId: snapshot, runStatus: "failed" });
-    await expect(sql(begin(randomUUID(), 9003))).rejects.toThrow("prior revision changed");
-    const wrong = JSON.parse(await sql(begin(randomUUID(), 9004)));
+    await expect(serviceSql(begin(randomUUID(), 9003))).rejects.toThrow("prior revision changed");
+    const wrong = JSON.parse(await serviceSql(begin(randomUUID(), 9004)));
     const wrongSnapshot = await prepare(wrong.runId, 9004, `local:${"b".repeat(64)}`);
     await expect(publish(wrong.runId, wrongSnapshot)).rejects.toThrow("incompatible local FORGE");
-    const legacy = await sql(`select public.begin_forge_game_run(current_date+1,array[9005]::bigint[],'legacy')`);
+    const legacy = await serviceSql(`select public.begin_forge_game_run(current_date+1,array[9005]::bigint[],'legacy')`);
     const legacySnapshot = await prepare(legacy, 9005, "legacy");
-    await sql(begin(randomUUID(), 9005));
+    await serviceSql(begin(randomUUID(), 9005));
     await expect(publish(legacy, legacySnapshot)).rejects.toThrow("owns publication");
+  });
+
+  it("normalizes only timing-trigger fields for replay and preserves input, model and lease guards", async () => {
+    const id = randomUUID(), attempt = JSON.parse(await serviceSql(begin(id, 9011, 1200)));
+    const snapshot = await prepare(attempt.runId, 9011);
+    expect(await publish(attempt.runId, snapshot)).toBe("1");
+    const original = await serviceSql(`select payload from public.forge_game_revisions where run_id='${attempt.runId}'`);
+    const replay = (payload: string) => serviceSql(`with inserted as (
+      insert into public.forge_game_revisions(run_id,game_id,slate_date,input_snapshot_id,decision_as_of,payload)
+      select run_id,game_id,slate_date,input_snapshot_id,decision_as_of,${payload}
+        from public.forge_game_revisions r where run_id='${attempt.runId}'
+      on conflict(run_id,game_id) do nothing returning id) select count(*) from inserted`);
+    const forgedTiming = `jsonb_build_object('queueLease',jsonb_build_object('owner','forged','version',999),
+      'calculationStartedAt',jsonb_build_array('forged-start'),'calculationCompletedAt',false)`;
+    expect(await replay(`r.payload || ${forgedTiming}`)).toBe("0");
+    for (const changed of [
+      "jsonb_set(r.payload,'{players,0,player_id}','999'::jsonb)",
+      "r.payload || jsonb_build_object('modelMode','changed-model')",
+      "r.payload || jsonb_build_object('codeVersion','changed-code')",
+      "r.payload || jsonb_build_object('inputProvenance',jsonb_build_object('queueLease','changed-source'))",
+      "r.payload || jsonb_build_object('inputCutoff','changed-cutoff')",
+    ]) await expect(replay(`${changed} || ${forgedTiming}`)).rejects.toThrow(/superseded|incompatible/);
+    await sql(`update public.forge_runs set metrics=jsonb_build_object('started_at','replacement-start','finished_at','replacement-finish')
+      where run_id='${attempt.runId}'`);
+    expect(await publish(attempt.runId, snapshot)).toBe("0");
+    await sql("select pg_sleep(1.25)");
+    expect(await inspect(id)).toMatchObject({ state: "issued" });
+    expect(await publish(attempt.runId, snapshot)).toBe("0");
+    expect(await replay(`r.payload || ${forgedTiming}`)).toBe("0");
+    await expect(replay(`r.payload || jsonb_build_object('modelMode','expired-model') || ${forgedTiming}`))
+      .rejects.toThrow("Expired or incompatible");
+
+    // The queue guard authorizes from run metrics, not the caller's payload copy.
+    await sql(`update public.forge_runs set metrics=jsonb_build_object('board_lease',
+      jsonb_build_object('owner','${randomUUID()}','version',999)) where run_id='${attempt.runId}'`);
+    await expect(replay(`r.payload || ${forgedTiming}`)).rejects.toThrow("Expired worker cannot publish");
+    expect(await serviceSql(`select payload from public.forge_game_revisions where run_id='${attempt.runId}'`)).toBe(original);
+    expect(await serviceSql(`select count(*) from public.forge_game_revisions where run_id='${attempt.runId}'`)).toBe("1");
+
+    // A fresh direct publication cannot persist forged operational fields either.
+    const direct = JSON.parse(await serviceSql(begin(randomUUID(), 9012)));
+    const directSnapshot = await prepare(direct.runId, 9012);
+    await serviceSql(`insert into public.forge_game_revisions(run_id,game_id,slate_date,input_snapshot_id,decision_as_of,payload)
+      values('${direct.runId}',9012,current_date+1,'${directSnapshot}',clock_timestamp(),
+        jsonb_build_object('codeVersion','${code}','modelMode','fixture-direct','inputProvenance','fixture-source') || ${forgedTiming})`);
+    expect(JSON.parse(await serviceSql(`select payload from public.forge_game_revisions where run_id='${direct.runId}'`)))
+      .toEqual({ codeVersion: code, modelMode: "fixture-direct", inputProvenance: "fixture-source",
+        queueLease: null, calculationStartedAt: null, calculationCompletedAt: null });
   });
 
   it("serializes a committed reservation with a lost response by the same operation identity", async () => {
     const id = randomUUID();
-    const first = transaction(`begin; ${begin(id, 9006)}; select 'reservation-open'; select pg_sleep(0.3); commit;`, "reservation-open");
+    const first = transaction(`begin; set local role service_role; ${begin(id, 9006)}; select 'reservation-open'; select pg_sleep(0.3); commit;`, "reservation-open");
     await first.ready;
-    const replay = sql(begin(id, 9006));
-    const competing = sql(begin(randomUUID(), 9006)).then(() => new Error("Unexpected competing reservation"), error => error as Error);
+    const replay = serviceSql(begin(id, 9006));
+    const competing = serviceSql(begin(randomUUID(), 9006)).then(() => new Error("Unexpected competing reservation"), error => error as Error);
     await first.done;
     expect(JSON.parse(await replay)).toMatchObject({ operationId: id, reservation: "existing", state: "active" });
     expect((await competing).message).toContain("owns this scope");
@@ -1854,7 +1954,7 @@ describe.runIf(Boolean(process.env.FORGE_POSTGRES_BIN))("local FORGE PostgreSQL 
   });
 
   it("preserves successful-run, accepted-news and pregame publication gates", async () => {
-    const attempt = JSON.parse(await sql(begin(randomUUID(), 9008)));
+    const attempt = JSON.parse(await serviceSql(begin(randomUUID(), 9008)));
     const snapshot = await prepare(attempt.runId, 9008);
     await sql(`update public.forge_runs set status='failed',metrics='{}' where run_id='${attempt.runId}'`);
     await expect(publish(attempt.runId, snapshot)).rejects.toThrow("Only completed runs");
@@ -1867,12 +1967,12 @@ describe.runIf(Boolean(process.env.FORGE_POSTGRES_BIN))("local FORGE PostgreSQL 
   });
 
   it("keeps negative expired readback unresolved while a publication transaction may still commit", async () => {
-    const id = randomUUID(), attempt = JSON.parse(await sql(begin(id, 9007, 700)));
+    const id = randomUUID(), attempt = JSON.parse(await serviceSql(begin(id, 9007, 700)));
     const snapshot = await prepare(attempt.runId, 9007);
-    const pending = transaction(`begin; select public.publish_forge_game_revisions('${attempt.runId}','${snapshot}');
+    const pending = transaction(`begin; set local role service_role; select public.publish_forge_game_revisions('${attempt.runId}','${snapshot}');
       select 'publication-open'; select pg_sleep(1.5); commit;`, "publication-open");
     await pending.ready;
-    const retry = sql(begin(randomUUID(), 9007)).then(() => new Error("Unexpected successful retry"), error => error as Error);
+    const retry = serviceSql(begin(randomUUID(), 9007)).then(() => new Error("Unexpected successful retry"), error => error as Error);
     await sql("select pg_sleep(0.8)");
     expect(await inspect(id)).toMatchObject({ state: "expired", revisionId: null });
     await pending.done; expect((await retry).message).toContain("prior revision changed");
