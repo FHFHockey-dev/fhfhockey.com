@@ -417,7 +417,7 @@ function assertHistoricalDatedNstRequestAllowed(args: {
   );
 }
 
-function getDatesBetween(start: Date, end: Date): string[] {
+export function getDatesBetween(start: Date, end: Date): string[] {
   const dates: string[] = [];
   let current = toZonedTime(start, "America/New_York");
   const endZoned = toZonedTime(end, "America/New_York"); // Ensure start date is not after end date
@@ -434,8 +434,9 @@ function getDatesBetween(start: Date, end: Date): string[] {
     ) {
       break;
     }
-    current = addDays(current, 1); // Ensure we don't have timezone issues causing infinite loops near DST changes (re-zone after adding day)
-    current = toZonedTime(current, "America/New_York");
+    // Step calendar days in the already-zoned representation. Re-zoning each
+    // step shifts the clock again on UTC hosts, duplicating or omitting dates.
+    current = addDays(current, 1);
   }
   return dates;
 }

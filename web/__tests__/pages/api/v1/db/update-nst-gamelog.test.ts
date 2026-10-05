@@ -89,6 +89,7 @@ vi.mock("@supabase/supabase-js", () => ({
 
 import handler from "../../../../../pages/api/v1/db/update-nst-gamelog";
 import { NstResponseError } from "lib/nst/client";
+import { fromZonedTime } from "date-fns-tz";
 import {
   buildNstGamelogScope,
   NST_GAMELOG_BOOKMARK_TTL_MS,
@@ -101,6 +102,7 @@ import {
   buildNstStatusUrl,
   filterReverseSeasonsForHistoricalDatedNst,
   getPlayerCacheCandidates,
+  getDatesBetween,
   normalizeTargetDates,
   parseDatesParam,
   resolveNstSeasonTypeForGameType,
@@ -431,6 +433,21 @@ describe("update-nst-gamelog automatic season cursor", () => {
     expect(fetchedDates().slice(60)).toEqual(Array(6).fill("2026-09-29"));
   });
 
+  it("plans each current-season date once and resumes beyond the first date on Monday", async () => {
+    vi.setSystemTime(new Date("2026-10-05T07:25:01.388Z"));
+    db.games = Array.from({ length: 7 }, (_, i) => ({
+      date: ["2026-09-29", "2026-09-30", "2026-10-01", "2026-10-02", "2026-10-03", "2026-10-04", "2026-10-05"][i],
+      seasonId: 20262027, type: 2
+    }));
+    for (let i = 0; i < 4; i++) await run();
+    expect(db.audits.every((audit) => audit.details.urlsQueued === 140)).toBe(true);
+    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(24);
+    expect(new Set(fetchNstTextByUrlMock.mock.calls.map(([url]) => url)).size).toBe(24);
+    expect(fetchedDates().slice(0, 20)).toEqual(Array(20).fill("2026-09-29"));
+    expect(fetchedDates().slice(20)).toEqual(Array(4).fill("2026-09-30"));
+    expect(db.audits.at(-1).details.nstProgress.sourceOutcomes.coverage).toBe("not_verified");
+  });
+
   it("resumes the least-current selected dataset rather than skipping its boundary date", async () => {
     for (const table of ["counts", "rates", "counts_oi", "rates_oi"]) {
       db.tables[`nst_gamelog_5v5_${table}`] = [{ date_scraped: table === "rates_oi" ? "2026-10-02" : "2026-10-03" }];
@@ -647,6 +664,40 @@ describe("update-nst-gamelog automatic season cursor", () => {
     expect(first.body.nstProgress.concurrency).toContain("not_exclusive");
     expect(first.body.success).toBe(false);
     expect(second.body.success).toBe(false);
+  });
+});
+
+describe("NST Eastern calendar aperture", () => {
+  const midnight = (date: string) => fromZonedTime(`${date}T00:00:00`, "America/New_York");
+
+  it("includes every Eastern day once through the actual Monday run time", () => {
+    expect(getDatesBetween(midnight("2026-09-29"), new Date("2026-10-05T07:25:01.388Z"))).toEqual([
+      "2026-09-29", "2026-09-30", "2026-10-01", "2026-10-02", "2026-10-03", "2026-10-04", "2026-10-05"
+    ]);
+  });
+
+  it("uses the Eastern end date before UTC midnight rolls into the Eastern day", () => {
+    expect(getDatesBetween(midnight("2026-10-03"), new Date("2026-10-05T01:25:00Z"))).toEqual(["2026-10-03", "2026-10-04"]);
+  });
+
+  it("keeps a single explicit date inclusive", () => {
+    expect(getDatesBetween(midnight("2026-10-03"), midnight("2026-10-03"))).toEqual(["2026-10-03"]);
+  });
+
+  it("keeps a reversed range empty", () => {
+    expect(getDatesBetween(midnight("2026-10-04"), midnight("2026-10-03"))).toEqual([]);
+  });
+
+  it("steps through spring daylight saving without duplicates or missing days", () => {
+    expect(getDatesBetween(midnight("2026-03-06"), midnight("2026-03-10"))).toEqual([
+      "2026-03-06", "2026-03-07", "2026-03-08", "2026-03-09", "2026-03-10"
+    ]);
+  });
+
+  it("steps through fall daylight saving without duplicates or missing days", () => {
+    expect(getDatesBetween(midnight("2026-10-30"), midnight("2026-11-03"))).toEqual([
+      "2026-10-30", "2026-10-31", "2026-11-01", "2026-11-02", "2026-11-03"
+    ]);
   });
 });
 
