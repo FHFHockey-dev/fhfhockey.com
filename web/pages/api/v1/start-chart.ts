@@ -876,6 +876,9 @@ async function fetchSlate(
           `,
     )
     .eq("status", "succeeded")
+    // Fenced local runs are private even after succeeding. Filter before limit
+    // so a private run cannot replace the latest public legacy run.
+    .or("git_sha.is.null,git_sha.not.like.local:*")
     .eq("as_of_date", targetDate)
     .eq("forge_player_projections.as_of_date", targetDate)
     .eq("forge_player_projections.horizon_games", 1);
@@ -896,10 +899,11 @@ async function fetchSlate(
   if (gamesResponse.error) throw gamesResponse.error;
   const games = (gamesResponse.data ?? []) as GameRow[];
   const gameIds = new Set(games.map((game) => game.id));
-  const forgeRun = runResponse.error
+  const selectedRun = runResponse.error
     ? null
     : ((runResponse.data as unknown as ForgeRunWithProjectionsRow | null) ??
       null);
+  const forgeRun = selectedRun?.git_sha?.startsWith("local:") ? null : selectedRun;
   let projections = (forgeRun?.forge_player_projections ?? []).filter(
     (row) =>
       row.as_of_date === targetDate &&

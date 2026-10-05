@@ -616,6 +616,61 @@ describe("/api/v1/start-chart", () => {
     expect(res.body.serving.reason).toBe("scheduled_games_missing_projections");
   });
 
+  it.each([`local:${"a".repeat(64)}`, "local:unreviewed"])(
+    "withholds a returned private succeeded raw run with version %s", async (gitSha) => {
+      vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");
+      const prior = fromMock.getMockImplementation()!;
+      fromMock.mockImplementation((table: string) => table === "forge_runs" ? createQueryBuilder(() => ({
+        // Deliberately ignore query filters to exercise the returned-row guard.
+        data: [{ run_id: "private-success", as_of_date: "2026-02-07", git_sha: gitSha,
+          created_at: "2026-02-07T13:00:00Z", metrics: null, forge_player_projections: [defaultProjection] }], error: null,
+      })) : prior(table));
+      vi.resetModules();
+      const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+      const res = createMockRes();
+      await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+      expect(res.statusCode).toBe(200);
+      expect(res.body.contractVersion).toBe(1);
+      expect(res.body.projectionRunId).toBeNull();
+      expect(res.body.players.filter((row: any) => !row.positions.includes("G"))).toEqual([]);
+      expect(JSON.stringify(res.body)).not.toContain("private-success");
+    },
+  );
+
+  it.each([null, "a".repeat(40)])(
+    "selects the latest normal raw run with version %s before a newer private run can hide it", async (gitSha) => {
+      vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");
+      const { createClient } = await import("@supabase/supabase-js");
+      const requests: URL[] = [];
+      const client = createClient("http://localhost:59999", "synthetic-key", { global: {
+        fetch: async (input) => {
+          const url = new URL(String(input)); requests.push(url);
+          expect(url.searchParams.get("or")).toBe("(git_sha.is.null,git_sha.not.like.local:*)");
+          expect(url.searchParams.get("status")).toBe("eq.succeeded");
+          expect(url.searchParams.get("limit")).toBe("1");
+          const rows = [
+            { run_id: "private-success", git_sha: `local:${"b".repeat(64)}` },
+            { run_id: "normal-success", git_sha: gitSha },
+          ].filter((row) => row.git_sha === null || !row.git_sha.startsWith("local:")).slice(0, 1);
+          return new Response(JSON.stringify({ ...rows[0], as_of_date: "2026-02-07",
+            created_at: "2026-02-07T12:00:00Z", metrics: null, forge_player_projections: [defaultProjection] }),
+            { status: 200, headers: { "Content-Type": "application/json" } });
+        },
+      } });
+      const prior = fromMock.getMockImplementation()!;
+      fromMock.mockImplementation((table: string) => table === "forge_runs" ? client.from(table) : prior(table));
+      vi.resetModules();
+      const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+      const res = createMockRes();
+      await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+      expect(requests).toHaveLength(1);
+      expect(res.statusCode).toBe(200);
+      expect(res.body.projectionRunId).toBe("normal-success");
+      expect(res.body.players.find((row: any) => row.player_id === defaultProjection.player_id).proj_fantasy_points).toBeGreaterThan(0);
+      expect(JSON.stringify(res.body)).not.toContain("private-success");
+    },
+  );
+
   it("keeps the serving-off FORGE run reader independent of the revision canary", async () => {
     vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");
     vi.stubEnv("STARTER_BOARD_CANARY_GAME_IDS", "invalid");
