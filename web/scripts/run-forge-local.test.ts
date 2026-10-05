@@ -1210,6 +1210,9 @@ describe("local FORGE scope and transport", () => {
     expect(() => parseArgs([...scope, "--reconcile", "invalid"])).toThrow();
     expect(() => parseArgs([...scope, "--reconcile", operation, "--write"])).toThrow();
     expect(() => parseArgs([...scope, "--reconcile", operation, "--artifact", "/tmp/pin"])).toThrow();
+    expect(() => parseArgs([...scope, "--reconcile-failed-snapshot"])).toThrow();
+    expect(parseArgs([...scope, "--reconcile", operation, "--reconcile-failed-snapshot"]))
+      .toMatchObject({ reconcile: operation, reconcileFailedSnapshot: true, write: false });
   });
 
   it("rejects off-origin, dispatch and preview writes before transport", async () => {
@@ -1326,7 +1329,7 @@ describe("local FORGE scope and transport", () => {
       async () => new Response("{}", { status: 201 }), counts, { deadlineMs: Date.now() + 1000,
         requestTimeoutMs: 100, maxWrites: 1, beforeWrite, afterWrite })).rejects.toThrow("journal failed");
     expect(counts).toMatchObject({ writes: 1, acknowledgedWrites: 1, rejectedWrites: 0, unknownWrites: 0 });
-    expect(beforeWrite).toHaveBeenCalledWith({ resource: "/rest/v1/forge_runs", index: 1,
+    expect(beforeWrite).toHaveBeenCalledWith({ resource: "/rest/v1/forge_runs", index: 1, method: "POST", payloadBytes: 25,
       payloadHash: expect.stringMatching(/^[a-f0-9]{64}$/) });
     expect(afterWrite).toHaveBeenCalledWith(expect.objectContaining({ outcome: "acknowledged", responseStatus: 201 }));
     expect(JSON.stringify([beforeWrite.mock.calls, afterWrite.mock.calls])).not.toContain("secret-");

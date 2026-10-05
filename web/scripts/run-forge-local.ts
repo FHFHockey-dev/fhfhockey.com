@@ -2,26 +2,28 @@ import { createHash } from "node:crypto";
 import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { relative, resolve, sep } from "node:path";
 import { loadEnvConfig } from "@next/env";
-import { acquireForgeLocalOwnership, ForgeLocalOwnershipError, forgeLocalOwnershipRoot } from "./forge-local-ownership";
+import { acquireForgeLocalOwnership, ForgeLocalOwnershipError, forgeLocalOwnershipRoot, inspectForgeLocalOwnership } from "./forge-local-ownership";
 import { awaitForgeCalendarGrant } from "./forge-calendar-ledger";
 import type { RunProjectionOptions, RunProjectionResult } from "../lib/projections/types/run-forge-projections.types";
 import type { ForgeIssuedContextV1 } from "../lib/projections/issuedContext";
 import type { buildForgeCalendarManifest } from "./run-forge-calendar-local";
 
 // Use the same Node/ts-node entry point for preview and write; see web/README.md.
-const usage = "Usage: run-forge-local.ts --date YYYY-MM-DD --game-id ID --out PRIVATE_NEW_DIRECTORY [--write --artifact REVIEWED_CODE_JSON] [--refresh] [--reconcile OPERATION_UUID] [--operation-id UUID --expected-revision UUID|none] [--max-requests 1..10000] [--max-writes 1..2000] [--runtime-ms 1..600000] [--request-timeout-ms 1..60000]";
+const usage = "Usage: run-forge-local.ts --date YYYY-MM-DD --game-id ID --out PRIVATE_NEW_DIRECTORY [--write --artifact REVIEWED_CODE_JSON] [--refresh] [--reconcile OPERATION_UUID [--reconcile-failed-snapshot]] [--operation-id UUID --expected-revision UUID|none] [--max-requests 1..10000] [--max-writes 1..2000] [--runtime-ms 1..600000] [--request-timeout-ms 1..60000]";
 type Options = { date: string; gameId: number; out: string; write: boolean; refresh: boolean; artifact?: string; calendarScope?: string;
-  reconcile?: string; operationId?: string; expectedRevisionId?: string | null;
+  reconcile?: string; reconcileFailedSnapshot?: boolean; operationId?: string; expectedRevisionId?: string | null;
   maxRequests: number; maxWrites: number; runtimeMs: number; requestTimeoutMs: number };
 
 export function parseArgs(argv: string[]): Options {
   if (argv.includes("--help")) { console.log(usage); process.exit(0); }
   const values = new Map<string, string>();
-  let write = false, refresh = false;
+  let write = false, refresh = false, reconcileFailedSnapshot = false;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg === "--write" || arg === "--refresh") {
-      if (arg === "--write") write = true; else refresh = true;
+    if (arg === "--write" || arg === "--refresh" || arg === "--reconcile-failed-snapshot") {
+      if (arg === "--write") write = true;
+      else if (arg === "--refresh") refresh = true;
+      else reconcileFailedSnapshot = true;
     } else if (["--date", "--game-id", "--out", "--artifact", "--calendar-scope", "--reconcile", "--operation-id", "--expected-revision",
       "--max-requests", "--max-writes", "--runtime-ms", "--request-timeout-ms"].includes(arg) && argv[i + 1] && !argv[i + 1].startsWith("--")) {
       if (values.has(arg)) throw new Error(usage);
@@ -41,7 +43,8 @@ export function parseArgs(argv: string[]): Options {
     || operationId && (!write || !uuid(operationId) || expected === undefined)
     || expected !== undefined && (!operationId || expected !== "none" && !uuid(expected))
     || values.has("--calendar-scope") && (!write || !operationId)
-    || reconcile && (!uuid(reconcile) || write || refresh || operationId || values.has("--artifact"))) {
+    || reconcile && (!uuid(reconcile) || write || refresh || operationId || values.has("--artifact"))
+    || reconcileFailedSnapshot && !reconcile) {
     throw new Error(usage);
   }
   const bound = (key: string, fallback: number, max: number) => {
@@ -51,6 +54,7 @@ export function parseArgs(argv: string[]): Options {
   };
   return { date, gameId: Number(rawId), out: resolve(out), write, refresh,
     ...(reconcile ? { reconcile } : {}),
+    ...(reconcileFailedSnapshot ? { reconcileFailedSnapshot } : {}),
     ...(operationId ? { operationId, expectedRevisionId: expected === "none" ? null : expected } : {}),
     maxRequests: bound("--max-requests", 1000, 10000),
     maxWrites: bound("--max-writes", 100, 2000), runtimeMs: bound("--runtime-ms", 150000, 600000),
@@ -121,9 +125,13 @@ function save(path: string, name: string, value: unknown): void {
 
 export type RequestCounts = { reads: number; writes: number; readMs: number; writeMs: number;
   acknowledgedWrites: number; rejectedWrites: number; unknownWrites: number };
-export type ForgeWriteAttempt = { resource: string; index: number; payloadHash: string | null };
+export type ForgeWriteAttempt = { resource: string; index: number; payloadHash: string | null;
+  method: string; payloadBytes: number | null };
 export type ForgeWriteReceipt = ForgeWriteAttempt & { outcome: "not_attempted" | "acknowledged" | "rejected" | "unknown";
-  responseStatus: number | null; durationMs: number };
+  responseStatus: number | null; durationMs: number;
+  transport?: { effectiveTimeoutMs: number | null; headersMs: number | null; headersStatus: number | null;
+    bodyMs: number | null; responseBytes: number | null; requestId: string | null;
+    failurePhase: "waiting_for_headers" | "reading_body" | null } };
 export type ForgeTransportBounds = { deadlineMs: number; requestTimeoutMs: number; maxWrites: number;
   maxRequests?: number;
   beforeWrite?: (attempt: ForgeWriteAttempt) => void; afterWrite?: (receipt: ForgeWriteReceipt) => void };
@@ -147,7 +155,8 @@ export async function guardedForgeFetch(input: RequestInfo | URL, init: RequestI
     throw new Error("Local FORGE transport budget exhausted.");
   }
   const attempt: ForgeWriteAttempt = { resource: url.pathname, index: requests.writes + 1,
-    payloadHash: typeof init?.body === "string" ? sha256(init.body) : null };
+    payloadHash: typeof init?.body === "string" ? sha256(init.body) : null, method,
+    payloadBytes: typeof init?.body === "string" ? Buffer.byteLength(init.body) : null };
   if (write) bounds?.beforeWrite?.(attempt);
   // A flushed journal can consume the remaining budget. Never send after it expires.
   if (signal?.aborted || bounds && Date.now() >= bounds.deadlineMs) {
@@ -160,26 +169,43 @@ export async function guardedForgeFetch(input: RequestInfo | URL, init: RequestI
   let timer: ReturnType<typeof setTimeout> | undefined;
   let outcome: ForgeWriteReceipt["outcome"] = "unknown";
   let responseStatus: number | null = null;
+  const diagnostics: NonNullable<ForgeWriteReceipt["transport"]> = { effectiveTimeoutMs: null, headersMs: null,
+    headersStatus: null, bodyMs: null, responseBytes: null, requestId: null, failurePhase: "waiting_for_headers" };
+  let completed = false;
   try {
     const interrupted = bounds || signal ? new Promise<never>((_, reject) => {
       abort = () => { controller.abort(); reject(new Error("Local FORGE request cancelled.")); };
       signal?.addEventListener("abort", abort, { once: true });
       if (bounds) timer = setTimeout(() => {
         controller.abort(); reject(new Error("Local FORGE request deadline exceeded."));
-      }, Math.max(0, Math.min(bounds.requestTimeoutMs, bounds.deadlineMs - Date.now())));
+      }, diagnostics.effectiveTimeoutMs = Math.max(0, Math.min(bounds.requestTimeoutMs, bounds.deadlineMs - Date.now())));
     }) : null;
     const work = (async () => {
       const response = await transport(input, { ...init, redirect: "error", signal: controller.signal });
+      // A late response must not mutate diagnostics after the durable receipt was emitted.
+      if (completed) return response;
+      diagnostics.headersMs = Date.now() - started;
+      diagnostics.headersStatus = response.status;
+      const requestId = response.headers.get("sb-request-id") ?? response.headers.get("x-request-id");
+      diagnostics.requestId = requestId && /^[a-zA-Z0-9._:-]{1,128}$/.test(requestId) ? requestId : null;
+      diagnostics.failurePhase = "reading_body";
       // Include body receipt in the budget; returning headers alone leaves SDK parsing unbounded.
       if (!bounds) return response;
+      const bodyStarted = Date.now();
       const body = await response.arrayBuffer();
+      if (!completed) {
+        diagnostics.bodyMs = Date.now() - bodyStarted;
+        diagnostics.responseBytes = body.byteLength;
+      }
       return new Response(body.byteLength ? body : null, { status: response.status, statusText: response.statusText, headers: response.headers });
     })();
     const response = interrupted ? await Promise.race([work, interrupted]) : await work;
     responseStatus = response.status;
     outcome = response.ok ? "acknowledged" : response.status >= 400 && response.status < 500 ? "rejected" : "unknown";
+    diagnostics.failurePhase = null;
     return response;
   } finally {
+    completed = true;
     if (timer) clearTimeout(timer);
     if (abort) signal?.removeEventListener("abort", abort);
     if (write) {
@@ -187,7 +213,8 @@ export async function guardedForgeFetch(input: RequestInfo | URL, init: RequestI
       else if (outcome === "rejected") requests.rejectedWrites++;
       else requests.unknownWrites++;
       requests.writeMs += Date.now() - started;
-      bounds?.afterWrite?.({ ...attempt, outcome, responseStatus, durationMs: Date.now() - started });
+      bounds?.afterWrite?.({ ...attempt, outcome, responseStatus, durationMs: Date.now() - started,
+        transport: { ...diagnostics } });
     }
     else requests.readMs += Date.now() - started;
   }
@@ -278,6 +305,7 @@ async function main() {
       throw new Error("Local FORGE reconciliation does not match the requested immutable scope.");
     }
     let verified = false;
+    let failedSnapshotEvidence: Awaited<ReturnType<typeof import("./forge-local-failure-evidence")["readFailedSnapshotTimeoutEvidence"]>> | undefined;
     if (attempt?.state === "issued") {
       const evidence = await readLocalForgeIssuance(db, { ...scope, codeVersion: attempt.codeVersion,
         runId: attempt.runId, inputSnapshotId: attempt.inputSnapshotId });
@@ -288,8 +316,30 @@ async function main() {
       save(options.out, "issued-revisions.json", evidence.revisions);
       verified = true;
     }
-    const receipt = { version: "forge-local-reconciliation-v1", origin, status: verified ? "verified_issued" : "unresolved", scope, ...execution, requests,
+    if (options.reconcileFailedSnapshot && attempt?.state === "expired" && attempt.runStatus === "failed") {
+      const key = sha256(`${origin}:${options.gameId}`), directory = resolve(ownershipRoot, `${options.gameId}-${key}`);
+      const inspection = inspectForgeLocalOwnership(directory), owner = inspection.owner;
+      if (owner?.operationId === options.reconcile && owner.origin === origin && owner.gameId === options.gameId && !inspection.live) {
+        const { readFailedSnapshotTimeoutEvidence } = await import("./forge-local-failure-evidence");
+        failedSnapshotEvidence = await readFailedSnapshotTimeoutEvidence(db, { ...scope, origin, codeVersion: attempt.codeVersion,
+          expectedRevisionId: attempt.expectedRevisionId, receiptDirectory: owner.receiptDirectory }, attempt);
+      }
+    }
+    const receipt = { version: "forge-local-reconciliation-v1", origin,
+      status: verified ? "verified_issued" : failedSnapshotEvidence ? "verified_failed_snapshot_timeout" : "unresolved", scope, ...execution, requests,
       attempt: attempt ?? null, automaticRetryAllowed: false, durationMs: Date.now() - startedAt };
+    if (failedSnapshotEvidence) {
+      const { verifyFailedSnapshotTimeoutEvidence } = await import("./forge-local-failure-evidence");
+      const directory = resolve(ownershipRoot, `${options.gameId}-${sha256(`${origin}:${options.gameId}`)}`);
+      const owner = inspectForgeLocalOwnership(directory).owner!;
+      failedSnapshotEvidence.receipt = receipt;
+      for (const [name, value] of Object.entries({ "input-observation.json": failedSnapshotEvidence.observation,
+        "issued-revisions.json": failedSnapshotEvidence.revisions, "attempt-observation.json": failedSnapshotEvidence.attemptObservation,
+        "failed-run.json": failedSnapshotEvidence.run, "original-receipt.json": failedSnapshotEvidence.originalReceipt,
+        "original-journal.json": failedSnapshotEvidence.originalJournal, "original-code.json": failedSnapshotEvidence.originalArtifact })) save(options.out, name, value);
+      verifyFailedSnapshotTimeoutEvidence({ ...scope, origin, codeVersion: attempt.codeVersion,
+        expectedRevisionId: attempt.expectedRevisionId, receiptDirectory: owner.receiptDirectory }, failedSnapshotEvidence);
+    }
     save(options.out, "receipt.json", receipt);
     console.log(JSON.stringify({ receipt: resolve(options.out, "receipt.json"), ...receipt }));
     return; // Read-only reconciliation never reclaims ownership or starts calculations.
@@ -423,6 +473,7 @@ if (require.main === module) main().catch((error) => {
       : error instanceof ForgeLocalOwnershipError ? "ownership_unavailable" : "failed_before_run",
       ...(error instanceof ForgeLocalOwnershipError ? { existingOwnership: { directory: error.inspection.directory,
         operationId: error.inspection.owner?.operationId ?? null, state: error.inspection.state, live: error.inspection.live } } : {}),
+      ...(error?.name === "FailedForgeSnapshotEvidenceError" ? { failedSnapshotGate: error.gate } : {}),
       ...setupReceipt, detail: error instanceof LocalForgeArtifactError
         ? "Check the reviewed artifact pin; no automatic retry was started."
         : "Check scope, configuration and Supabase read access; no automatic retry was started." });

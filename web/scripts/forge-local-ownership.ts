@@ -39,9 +39,9 @@ export function forgeLocalOwnershipRoot(root?: string) {
 
 type RecoveryScope = { origin: string; gameId: number; date: string; operationId: string; codeVersion: string;
   expectedRevisionId: string | null; receiptDirectory: string; writer: { pid: number; hostname: string }; evidenceDirectory: string; root?: string;
-  deadlineMs?: number; signal?: AbortSignal };
+  deadlineMs?: number; signal?: AbortSignal; disposition?: "failed_snapshot_timeout" };
 
-/** Filesystem cleanup only after independently retained positive issuance and terminal writer evidence. */
+/** Explicit filesystem archival after positive issuance or a settled snapshot timeout; never retries or writes the DB. */
 export async function recoverForgeLocalOwnership(scope: RecoveryScope) {
   const uuid = (value: unknown): value is string => typeof value === "string"
     && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(value);
@@ -60,29 +60,43 @@ export async function recoverForgeLocalOwnership(scope: RecoveryScope) {
     return JSON.parse(readFileSync(path, "utf8"));
   };
   const receipt = read("receipt.json"), attempt = receipt.attempt;
-  if (new URL(scope.origin).origin !== scope.origin || !uuid(scope.operationId)
-    || !Number.isSafeInteger(scope.gameId) || scope.gameId < 1 || !/^local:[a-f0-9]{64}$/.test(scope.codeVersion)
-    || scope.expectedRevisionId !== null && !uuid(scope.expectedRevisionId)
-    || receipt.version !== "forge-local-reconciliation-v1" || receipt.status !== "verified_issued"
-    || receipt.origin !== scope.origin || receipt.automaticRetryAllowed !== false || receipt.requests?.writes !== 0
-    || receipt.scope?.operationId !== scope.operationId || receipt.scope?.gameId !== scope.gameId || receipt.scope?.date !== scope.date
-    || attempt?.version !== "forge-local-attempt-v1" || attempt.state !== "issued" || attempt.operationId !== scope.operationId
-    || attempt.gameId !== scope.gameId || attempt.slateDate !== scope.date || attempt.codeVersion !== scope.codeVersion
-    || attempt.expectedRevisionId !== scope.expectedRevisionId || ![attempt.runId, attempt.inputSnapshotId, attempt.revisionId].every(uuid)) {
-    throw new Error("Ownership recovery lacks matching positive issuance.");
-  }
+  const failedSnapshot = scope.disposition === "failed_snapshot_timeout";
   const observation = read("input-observation.json"), revisions = read("issued-revisions.json"), captured = observation?.payload;
-  const { projectionInputHash } = await import("../lib/projections/inputCapture");
-  if (observation.id !== attempt.inputSnapshotId || captured?.version !== "forge-inputs-v1" || captured.runId !== attempt.runId
-    || captured.codeVersion !== scope.codeVersion || captured.slateDate !== scope.date || captured.horizonGames !== 1
-    || captured.replayClassification !== "captured_live" || captured.gameIds?.length !== 1 || captured.gameIds[0] !== scope.gameId
-    || !captured.inputProvenance || projectionInputHash(captured) !== observation.payload_hash
-    || !Array.isArray(revisions) || revisions.length !== 1 || revisions[0].id !== attempt.revisionId
-    || revisions[0].run_id !== attempt.runId || revisions[0].input_snapshot_id !== attempt.inputSnapshotId
-    || revisions[0].game_id !== scope.gameId || revisions[0].payload?.codeVersion !== scope.codeVersion
-    || projectionInputHash(revisions[0].payload?.inputProvenance) !== projectionInputHash(captured.inputProvenance)) {
-    throw new Error("Ownership recovery input/revision readback is incompatible.");
+  const evidence = { receipt, observation, revisions, ...(failedSnapshot ? {
+    attemptObservation: read("attempt-observation.json"), run: read("failed-run.json"), originalReceipt: read("original-receipt.json"),
+    originalJournal: read("original-journal.json"), originalArtifact: read("original-code.json"),
+  } : {}) };
+  if (scope.disposition !== undefined && !failedSnapshot || new URL(scope.origin).origin !== scope.origin) {
+    throw new Error("Ownership recovery disposition or origin is invalid.");
   }
+  if (failedSnapshot) {
+    const { verifyFailedSnapshotTimeoutEvidence } = await import("./forge-local-failure-evidence");
+    verifyFailedSnapshotTimeoutEvidence(scope, evidence as Parameters<typeof verifyFailedSnapshotTimeoutEvidence>[1]);
+  } else {
+    if (!uuid(scope.operationId)
+      || !Number.isSafeInteger(scope.gameId) || scope.gameId < 1 || !/^local:[a-f0-9]{64}$/.test(scope.codeVersion)
+      || scope.expectedRevisionId !== null && !uuid(scope.expectedRevisionId)
+      || receipt.version !== "forge-local-reconciliation-v1" || receipt.status !== "verified_issued"
+      || receipt.origin !== scope.origin || receipt.automaticRetryAllowed !== false || receipt.requests?.writes !== 0
+      || receipt.scope?.operationId !== scope.operationId || receipt.scope?.gameId !== scope.gameId || receipt.scope?.date !== scope.date
+      || attempt?.version !== "forge-local-attempt-v1" || attempt.state !== "issued" || attempt.operationId !== scope.operationId
+      || attempt.gameId !== scope.gameId || attempt.slateDate !== scope.date || attempt.codeVersion !== scope.codeVersion
+      || attempt.expectedRevisionId !== scope.expectedRevisionId || ![attempt.runId, attempt.inputSnapshotId, attempt.revisionId].every(uuid)) {
+      throw new Error("Ownership recovery lacks matching positive issuance.");
+    }
+    const { projectionInputHash } = await import("../lib/projections/inputCapture");
+    if (observation.id !== attempt.inputSnapshotId || captured?.version !== "forge-inputs-v1" || captured.runId !== attempt.runId
+      || captured.codeVersion !== scope.codeVersion || captured.slateDate !== scope.date || captured.horizonGames !== 1
+      || captured.replayClassification !== "captured_live" || captured.gameIds?.length !== 1 || captured.gameIds[0] !== scope.gameId
+      || !captured.inputProvenance || projectionInputHash(captured) !== observation.payload_hash
+      || !Array.isArray(revisions) || revisions.length !== 1 || revisions[0].id !== attempt.revisionId
+      || revisions[0].run_id !== attempt.runId || revisions[0].input_snapshot_id !== attempt.inputSnapshotId
+      || revisions[0].game_id !== scope.gameId || revisions[0].payload?.codeVersion !== scope.codeVersion
+      || projectionInputHash(revisions[0].payload?.inputProvenance) !== projectionInputHash(captured.inputProvenance)) {
+      throw new Error("Ownership recovery input/revision readback is incompatible.");
+    }
+  }
+  const { projectionInputHash } = await import("../lib/projections/inputCapture");
   if (!scope.writer || scope.writer.hostname !== hostname() || !Number.isSafeInteger(scope.writer.pid) || scope.writer.pid < 1) {
     throw new Error("Ownership recovery requires the original local writer identity.");
   }
@@ -127,7 +141,7 @@ export async function recoverForgeLocalOwnership(scope: RecoveryScope) {
   type Claim = { version: "forge-local-recovery-claim-v1"; index: number; previous: string | null;
     investigator: { pid: number; hostname: string }; directoryIdentity: { dev: number; ino: number };
     archive: string; proof: { version: "forge-local-recovery-v1"; operationId: string; owner: Owner;
-      evidenceDirectory: string; evidenceHash: string; recoveredAt: string }; checksum: string };
+      evidenceDirectory: string; evidenceHash: string; recoveredAt: string; disposition?: "failed_snapshot_timeout" }; checksum: string };
   const claims = () => {
     assertOwner();
     const names = readdirSync(directory).filter(name => name.startsWith(prefix)).sort();
@@ -143,6 +157,7 @@ export async function recoverForgeLocalOwnership(scope: RecoveryScope) {
         || claim.directoryIdentity?.dev !== identity.dev || claim.directoryIdentity?.ino !== identity.ino
         || claim.investigator?.hostname !== hostname() || !Number.isSafeInteger(claim.investigator.pid) || claim.investigator.pid < 1
         || claim.proof?.version !== "forge-local-recovery-v1" || claim.proof.operationId !== scope.operationId
+        || claim.proof.disposition !== scope.disposition
         || JSON.stringify(claim.proof.owner) !== JSON.stringify(owner) || !Number.isFinite(Date.parse(claim.proof.recoveredAt))
         || !/^[a-f0-9]{64}$/.test(claim.proof.evidenceHash)
         || !claim.archive.startsWith(`${root}${sep}recovered-${scope.operationId}-`)
@@ -151,15 +166,21 @@ export async function recoverForgeLocalOwnership(scope: RecoveryScope) {
       }
       const retained = privateDirectory(claim.proof.evidenceDirectory);
       const retainedEvidence = { receipt: read("receipt.json", retained), observation: read("input-observation.json", retained),
-        revisions: read("issued-revisions.json", retained) }, prior = retainedEvidence.receipt;
+        revisions: read("issued-revisions.json", retained), ...(failedSnapshot ? {
+          attemptObservation: read("attempt-observation.json", retained), run: read("failed-run.json", retained),
+          originalReceipt: read("original-receipt.json", retained), originalJournal: read("original-journal.json", retained),
+          originalArtifact: read("original-code.json", retained),
+        } : {}) }, prior = retainedEvidence.receipt;
       if (projectionInputHash(retainedEvidence) !== claim.proof.evidenceHash
-        || prior.version !== receipt.version || prior.status !== "verified_issued" || prior.origin !== scope.origin
+        || prior.version !== receipt.version || prior.status !== receipt.status || prior.origin !== scope.origin
         || prior.automaticRetryAllowed !== false || prior.requests?.writes !== 0
         || projectionInputHash(prior.scope) !== projectionInputHash(receipt.scope)
         || ["version", "state", "operationId", "gameId", "slateDate", "codeVersion", "expectedRevisionId", "runId", "inputSnapshotId", "revisionId"]
           .some(key => prior.attempt?.[key] !== attempt[key])
         || projectionInputHash(retainedEvidence.observation) !== projectionInputHash(observation)
-        || projectionInputHash(retainedEvidence.revisions) !== projectionInputHash(revisions)) {
+        || projectionInputHash(retainedEvidence.revisions) !== projectionInputHash(revisions)
+        || failedSnapshot && ["attemptObservation", "run", "originalReceipt", "originalJournal", "originalArtifact"]
+          .some(key => projectionInputHash((retainedEvidence as any)[key]) !== projectionInputHash((evidence as any)[key]))) {
         throw new Error("Recovery claim evidence is missing, changed or incompatible with verified issuance.");
       }
       previous = claim;
@@ -181,7 +202,8 @@ export async function recoverForgeLocalOwnership(scope: RecoveryScope) {
   const unsigned: Omit<Claim, "checksum"> = { version: "forge-local-recovery-claim-v1", index, previous: previous?.checksum ?? null,
     investigator: { pid: process.pid, hostname: hostname() }, directoryIdentity: { dev: identity.dev, ino: identity.ino }, archive,
     proof: { version: "forge-local-recovery-v1", operationId: scope.operationId, owner: owner!, evidenceDirectory,
-      evidenceHash: projectionInputHash({ receipt, observation, revisions }), recoveredAt: new Date().toISOString() } };
+      evidenceHash: projectionInputHash(evidence), recoveredAt: new Date().toISOString(),
+      ...(failedSnapshot ? { disposition: scope.disposition } : {}) } };
   const claim: Claim = { ...unsigned, checksum: projectionInputHash(unsigned) };
   const prepared = join(root, `recovery-proof-${randomUUID()}.json`);
   flush(prepared, claim);
