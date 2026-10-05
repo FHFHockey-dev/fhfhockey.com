@@ -19,7 +19,7 @@ const outputTables = ["forge_player_projections", "forge_team_projections", "for
 const analyticsTables = ["player_prediction_outputs", "game_prediction_outputs", "model_market_flags_daily"];
 
 /** Only HTTP is simulated: queries, SDK, capture, stages and persistence are real. */
-function fixture(failPlayerWrite = false) {
+function fixture(failure?: "player" | "snapshot" | "publication") {
   const players = [6, 9].flatMap(team => Array.from({ length: 19 }, (_, index) => ({
     id: team * 100 + index + 1, team_id: team, position: index === 18 ? "G" : index < 12 ? "C" : "D",
   })));
@@ -101,6 +101,7 @@ function fixture(failPlayerWrite = false) {
       return json(runId);
     }
     if (table === "rpc/publish_forge_game_revisions") {
+      if (failure === "publication") return new Response(JSON.stringify({ code: "TEST_PUBLICATION_REJECTED", message: "fixture publication rejected" }), { status: 409 });
       expect(body).toEqual({ p_run_id: runId, p_snapshot_id: snapshotId });
       expect(tables.forge_runs[0].status).toBe("succeeded");
       expect(snapshot).toMatchObject({ runId, gameIds: [gameId], horizonGames: 1, replayClassification: "captured_live" });
@@ -136,7 +137,8 @@ function fixture(failPlayerWrite = false) {
       const single = new Headers(init?.headers).get("accept")?.includes("application/vnd.pgrst.object+json");
       return json(single ? rows[0] ?? null : rows, { "content-range": `${offset}-${Math.max(offset, offset + rows.length - 1)}/${total}` });
     }
-    if (failPlayerWrite && table === "forge_player_projections") return new Response(JSON.stringify({ code: "TEST_WRITE_REJECTED", message: "fixture player write rejected" }), { status: 409 });
+    if (failure === "player" && table === "forge_player_projections") return new Response(JSON.stringify({ code: "TEST_WRITE_REJECTED", message: "fixture player write rejected" }), { status: 409 });
+    if (failure === "snapshot" && table === "player_forecast_source_observations") return new Response(JSON.stringify({ code: "TEST_SNAPSHOT_REJECTED", message: "fixture snapshot rejected" }), { status: 409 });
     if (method === "PATCH") tables[table].forEach(row => Object.assign(row, body));
     else if (method === "DELETE") tables[table] = [];
     else if (method === "POST") {
@@ -205,15 +207,32 @@ describe("actual FORGE producer through fenced local transport", () => {
     await expect(run(false, backend, true)).rejects.toThrow("Local FORGE transport rejected a request");
     expect(backend.calls.some(call => call.method === "DELETE")).toBe(false);
     expect(backend.tables.forge_runs[0].status).toBe("failed");
+    expect(backend.tables.forge_runs[0].metrics.analytics_sidecar.status).toBe("enabled");
     expect(backend.snapshot).toBeNull();
     expect(backend.published).toBe(0);
   });
 
   it("does not capture or publish after actual FORGE persistence fails", async () => {
-    const backend = fixture(true);
+    const backend = fixture("player");
     await expect(run(true, backend)).rejects.toMatchObject({ code: "TEST_WRITE_REJECTED" });
     expect(backend.tables.forge_runs[0].status).toBe("failed");
+    expect(backend.tables.forge_runs[0].metrics.analytics_sidecar.status).toBe("omitted_fenced_local_attempt");
     expect(backend.snapshot).toBeNull();
+    expect(backend.published).toBe(0);
+  });
+
+  it.each(["snapshot", "publication"] as const)("retains the omission diagnostic after real %s rejection", async failure => {
+    const backend = fixture(failure);
+    await expect(run(true, backend)).rejects.toMatchObject({
+      code: failure === "snapshot" ? "TEST_SNAPSHOT_REJECTED" : "TEST_PUBLICATION_REJECTED",
+    });
+    expect(backend.tables.forge_player_projections).toHaveLength(36);
+    expect(backend.tables.forge_runs[0]).toMatchObject({ status: "failed", metrics: {
+      publication_failed: true,
+      analytics_sidecar: { version: "forge-analytics-sidecar-scope-v1", status: "omitted_fenced_local_attempt" },
+    } });
+    expect(backend.calls.filter(call => call.method === "DELETE" || analyticsTables.includes(call.table))).toEqual([]);
+    expect(backend.snapshot === null).toBe(failure === "snapshot");
     expect(backend.published).toBe(0);
   });
 });

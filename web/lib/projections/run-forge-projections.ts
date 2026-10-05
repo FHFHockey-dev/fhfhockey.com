@@ -501,7 +501,13 @@ export async function runProjectionV2ForDate(
     }
     return { ...capture.result, inputSnapshotId, publishedGames };
   } catch (error) {
-    await finalizeRun(runId, "failed", { error: getErrorMessage(error), publication_failed: true });
+    await finalizeRun(runId, "failed", {
+      error: getErrorMessage(error), publication_failed: true,
+      analytics_sidecar: {
+        version: "forge-analytics-sidecar-scope-v1",
+        status: opts?.localAttempt ? "omitted_fenced_local_attempt" : "enabled",
+      },
+    });
     throw error;
   }
 }
