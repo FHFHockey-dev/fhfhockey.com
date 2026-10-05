@@ -166,6 +166,7 @@ const playerNameMapping: Record<string, { fullName: string }> = {
   "Oskar Back": { fullName: "Oskar Bäck" },
   "Cameron Atkinson": { fullName: "Cam Atkinson" },
   "Nicholas Paul": { fullName: "Nick Paul" },
+  "Joseph Veleno": { fullName: "Joe Veleno" },
   "Janis Moser": { fullName: "J.J. Moser" },
   "Nathan Légaré": { fullName: "Nathan Legare" },
   "Mat?j Blümel": { fullName: "Matěj Blümel" },

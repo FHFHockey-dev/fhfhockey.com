@@ -176,6 +176,13 @@ describe("update-nst-gamelog request scoping", () => {
     );
   });
 
+  it("maps only the exact Joseph Veleno alias without changing other Joseph or Joe names", () => {
+    expect(resolveMappedPlayerName("Joseph Veleno")).toBe("Joe Veleno");
+    for (const name of ["Joe Veleno", "Joseph Woll", "Joe Pavelski", "Joseph Example", "Joseph Veleno Jr."]) {
+      expect(resolveMappedPlayerName(name)).toBe(name);
+    }
+  });
+
   it("builds a single authenticated-status diagnostic URL from route params", () => {
     const diagnostic = buildNstStatusUrl({
       date: "2025-10-07",
@@ -661,6 +668,30 @@ describe("update-nst-gamelog automatic season cursor", () => {
     expect(db.audits[0].rows_affected).toBe(5);
     expect(db.audits[0].status).toBe("failure");
     expect(db.audits[0].details.sourceItem.date).toBe("2026-09-29");
+  });
+
+  it("resolves the Monday Joseph Veleno spelling and persists all 180 fixture rows", async () => {
+    // Synthetic rows reproduce the retained 180-to-179 identity failure, not provider HTML.
+    db.tables.players = [
+      { id: 8480813, fullName: "Joe Veleno", position: "C" },
+      ...Array.from({ length: 179 }, (_, i) => ({ id: 9000000 + i, fullName: `Fixture Player ${i}`, position: "C" }))
+    ];
+    fetchNstTextByUrlMock.mockResolvedValue({ response: { status: 200 }, text:
+      `<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>TOI</th></tr></thead><tbody>${
+        db.tables.players.map((player) => `<tr><td>${player.id === 8480813 ? "Joseph Veleno" : player.fullName}</td><td>NYR</td><td>C</td><td>10:00</td></tr>`).join("")
+      }</tbody></table>` });
+    const res = await run({ dates: "2026-09-29", datasetType: "allStrengthsCounts", overwrite: "yes" });
+    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(1);
+    expect(fetchedDates()).toEqual(["2026-09-29"]);
+    const rows = db.tables.nst_gamelog_as_counts;
+    expect(rows).toHaveLength(180);
+    expect(rows.filter((row) => row.player_id === 8480813)).toEqual([
+      expect.objectContaining({ player_id: 8480813, date_scraped: "2026-09-29", season: 20262027 })
+    ]);
+    expect(res.body.success).toBe(true);
+    expect(res.body.nstProgress.sourceOutcomes.counts.rows_persisted).toBe(1);
+    expect(res.body.nstProgress.sourceOutcomes.counts.parse_or_identity_unresolved).toBe(0);
+    expect(db.audits.at(-1).rows_affected).toBe(180);
   });
 
   it("retains unresolved identity evidence even when matched rows can be persisted", async () => {
