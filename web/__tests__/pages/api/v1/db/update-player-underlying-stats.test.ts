@@ -32,7 +32,8 @@ vi.mock("lib/supabase/Upserts/nhlRawGamecenter.mjs", () => ({
   ingestNhlApiRawGamesBestEffort: ingestNhlApiRawGamesBestEffortMock,
 }));
 
-vi.mock("lib/underlying-stats/playerStatsSummaryRefresh", () => ({
+vi.mock("lib/underlying-stats/playerStatsSummaryRefresh", async (importOriginal) => ({
+  ...await importOriginal<typeof import("lib/underlying-stats/playerStatsSummaryRefresh")>(),
   refreshPlayerUnderlyingSummarySnapshotsForGameIds:
     refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock,
 }));
@@ -43,6 +44,7 @@ vi.mock("lib/underlying-stats/playerStatsRefreshWindow", () => ({
 }));
 
 import handler from "../../../../../pages/api/v1/db/update-player-underlying-stats";
+import { PlayerStatsSummaryWriteBusyError } from "lib/underlying-stats/playerStatsSummaryRefresh";
 
 function createMockApiContext(args?: {
   method?: string;
@@ -196,6 +198,41 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
       expect(res.body).not.toHaveProperty("results");
       expect(refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock).not.toHaveBeenCalled();
     }
+  });
+
+  it("reports summary-stage exhaustion without replaying normalization or claiming zero writes", async () => {
+    refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock.mockRejectedValue(
+      new PlayerStatsSummaryWriteBusyError([2026020039], 2),
+    );
+    const { req, res } = createMockApiContext();
+    await handler(req as never, res as never);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({
+      success: false,
+      error: "NHL_NORMALIZATION_WRITER_BUSY",
+      issues: ["NHL_NORMALIZATION_WRITER_BUSY"],
+      summaryFailure: {
+        code: "P0001", stage: "persist_player_summaries", endpoint: "landing",
+        gameIds: [2026020039], attempts: 2,
+      },
+    });
+    expect(ingestNhlApiRawGamesBestEffortMock).toHaveBeenCalledTimes(1);
+    expect(refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("retains a successful summary retry count", async () => {
+    refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock.mockResolvedValue({
+      rowsUpserted: 27, summaryWriteBusyRetries: 1,
+      migratedGameIds: [], rawBuildGameIds: [2025020955],
+    });
+    const { req, res } = createMockApiContext();
+    await handler(req as never, res as never);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true, summaryRowsUpserted: 27, summaryWriteBusyRetries: 1,
+    });
+    expect(ingestNhlApiRawGamesBestEffortMock).toHaveBeenCalledTimes(1);
   });
 
   it("refreshes raw gamecenter inputs and per-game player summaries for one game", async () => {

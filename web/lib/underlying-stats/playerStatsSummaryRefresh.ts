@@ -30,6 +30,17 @@ type SummaryPayloadRow = {
   source_url: string;
 };
 
+export class PlayerStatsSummaryWriteBusyError extends Error {
+  readonly code = "P0001";
+  readonly stage = "persist_player_summaries";
+  readonly endpoint = PLAYER_STATS_SUMMARY_STORAGE_ENDPOINT;
+
+  constructor(readonly gameIds: number[], readonly attempts: number) {
+    super("NHL_NORMALIZATION_WRITER_BUSY");
+    this.name = "PlayerStatsSummaryWriteBusyError";
+  }
+}
+
 async function fetchAllRows<TRow>(
   fetchPage: (from: number, to: number) => PromiseLike<{
     data: unknown[] | null;
@@ -145,24 +156,39 @@ async function upsertSummarySnapshots(args: {
   rows: Awaited<ReturnType<typeof buildPlayerStatsLandingSummarySnapshotsForGameIds>>;
 }) {
   let count = 0;
+  let busyRetries = 0;
 
   for (let index = 0; index < args.rows.length; index += 100) {
     const batch = args.rows.slice(index, index + 100);
-    const { error } = await args.supabase
-      .from("nhl_api_game_payloads_raw")
-      .upsert(batch, {
-        onConflict: "game_id,endpoint,payload_hash",
-        ignoreDuplicates: true,
-      });
+    let attempts = 0;
+    while (true) {
+      attempts += 1;
+      const { error } = await args.supabase
+        .from("nhl_api_game_payloads_raw")
+        .upsert(batch, {
+          onConflict: "game_id,endpoint,payload_hash",
+          ignoreDuplicates: true,
+        });
 
-    if (error) {
-      throw error;
+      if (!error) break;
+      if (error.code !== "P0001" || error.message !== "NHL_NORMALIZATION_WRITER_BUSY") {
+        throw error;
+      }
+      if (busyRetries === 1) {
+        throw new PlayerStatsSummaryWriteBusyError(
+          [...new Set(batch.map((row) => row.game_id))], attempts,
+        );
+      }
+      // The BEFORE-statement guard aborted this write. Retry the same immutable
+      // batch once across this refresh; never rebuild or replay completed batches.
+      busyRetries += 1;
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
     count += batch.length;
   }
 
-  return count;
+  return { count, busyRetries };
 }
 
 export async function fetchSeasonSummaryGameIdSet(args: {
@@ -223,10 +249,11 @@ export async function refreshPlayerUnderlyingSummarySnapshotsForGameIds(args: {
           supabase
         );
   const snapshots = [...migratedSnapshots, ...rawBuiltSnapshots];
-  const rowsUpserted = await upsertSummarySnapshots({
+  const summaryWrite = await upsertSummarySnapshots({
     supabase,
     rows: snapshots,
   });
+  const rowsUpserted = summaryWrite.count;
 
   if (rowsUpserted > 0) {
     invalidatePlayerStatsSeasonAggregateCache();
@@ -242,6 +269,7 @@ export async function refreshPlayerUnderlyingSummarySnapshotsForGameIds(args: {
 
   return {
     rowsUpserted,
+    summaryWriteBusyRetries: summaryWrite.busyRetries,
     migratedGameIds: [...migratedGameIds],
     rawBuildGameIds,
   };
