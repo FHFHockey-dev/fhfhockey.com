@@ -37,7 +37,8 @@ export type RollingPlayerToiCandidateRejection = {
 const MAX_REASONABLE_TOI_SECONDS = 4000;
 
 function inspectToiSeconds(
-  value: number | null | undefined
+  value: number | null | undefined,
+  allowZero = false
 ):
   | { seconds: number; rejection: null }
   | { seconds: null; rejection: RollingPlayerToiSuspiciousReason | null } {
@@ -46,10 +47,13 @@ function inspectToiSeconds(
   }
 
   const num = Number(value);
-  if (!Number.isFinite(num)) {
+  if (
+    !Number.isFinite(num) ||
+    (typeof value === "string" && String(value).trim() === "")
+  ) {
     return { seconds: null, rejection: "non_finite" };
   }
-  if (num <= 0) {
+  if (num < 0 || (num === 0 && !allowZero)) {
     return { seconds: null, rejection: "non_positive" };
   }
   if (num >= MAX_REASONABLE_TOI_SECONDS) {
@@ -61,6 +65,7 @@ function inspectToiSeconds(
 
 export function normalizeWgoToiPerGame(args: {
   toiPerGame: number | null | undefined;
+  strengthSpecific?: boolean;
 }): {
   seconds: number | null;
   normalization: RollingPlayerWgoToiNormalization;
@@ -75,7 +80,10 @@ export function normalizeWgoToiPerGame(args: {
   }
 
   const toiValue = Number(args.toiPerGame);
-  if (!Number.isFinite(toiValue)) {
+  if (
+    !Number.isFinite(toiValue) ||
+    (typeof args.toiPerGame === "string" && String(args.toiPerGame).trim() === "")
+  ) {
     return {
       seconds: null,
       normalization: "invalid",
@@ -83,13 +91,16 @@ export function normalizeWgoToiPerGame(args: {
     };
   }
 
-  const alreadySeconds = toiValue > 200;
-  const seconds = Math.round(alreadySeconds ? toiValue : toiValue * 60);
-  const inspected = inspectToiSeconds(seconds);
+  // NHL strength-specific report fields are seconds, including short/zero usage.
+  const alreadySeconds = args.strengthSpecific || toiValue > 200;
+  const seconds = args.strengthSpecific
+    ? toiValue
+    : Math.round(alreadySeconds ? toiValue : toiValue * 60);
+  const inspected = inspectToiSeconds(seconds, args.strengthSpecific);
 
   return {
     seconds: inspected.seconds,
-    normalization: inspected.seconds
+    normalization: inspected.seconds != null
       ? alreadySeconds
         ? "already_seconds"
         : "minutes_to_seconds"
@@ -102,6 +113,7 @@ export function resolveFallbackToiSeed(args: {
   countsToi: number | null | undefined;
   countsOiToi: number | null | undefined;
   wgoToiPerGame: number | null | undefined;
+  strengthSpecific?: boolean;
 }): {
   fallbackToiSeconds: number | null;
   source: RollingPlayerFallbackToiSource;
@@ -110,7 +122,7 @@ export function resolveFallbackToiSeed(args: {
 } {
   const rejections: RollingPlayerToiCandidateRejection[] = [];
 
-  const counts = inspectToiSeconds(args.countsToi);
+  const counts = inspectToiSeconds(args.countsToi, args.strengthSpecific);
   if (counts.seconds != null) {
     return {
       fallbackToiSeconds: counts.seconds,
@@ -123,7 +135,7 @@ export function resolveFallbackToiSeed(args: {
     rejections.push({ source: "counts", reason: counts.rejection });
   }
 
-  const countsOi = inspectToiSeconds(args.countsOiToi);
+  const countsOi = inspectToiSeconds(args.countsOiToi, args.strengthSpecific);
   if (countsOi.seconds != null) {
     return {
       fallbackToiSeconds: countsOi.seconds,
@@ -136,7 +148,10 @@ export function resolveFallbackToiSeed(args: {
     rejections.push({ source: "counts_oi", reason: countsOi.rejection });
   }
 
-  const wgo = normalizeWgoToiPerGame({ toiPerGame: args.wgoToiPerGame });
+  const wgo = normalizeWgoToiPerGame({
+    toiPerGame: args.wgoToiPerGame,
+    strengthSpecific: args.strengthSpecific
+  });
   if (wgo.seconds != null) {
     return {
       fallbackToiSeconds: wgo.seconds,
@@ -163,6 +178,7 @@ export function resolveRollingPlayerToiContext(args: {
   ratesToiPerGp: number | null | undefined;
   fallbackToiSeconds: number | null | undefined;
   wgoToiPerGame: number | null | undefined;
+  strengthSpecific?: boolean;
 }): {
   seconds: number | null;
   source: RollingPlayerToiSource;
@@ -172,7 +188,7 @@ export function resolveRollingPlayerToiContext(args: {
 } {
   const rejectedCandidates: RollingPlayerToiCandidateRejection[] = [];
 
-  const counts = inspectToiSeconds(args.countsToi);
+  const counts = inspectToiSeconds(args.countsToi, args.strengthSpecific);
   if (counts.seconds != null) {
     return {
       seconds: counts.seconds,
@@ -186,7 +202,7 @@ export function resolveRollingPlayerToiContext(args: {
     rejectedCandidates.push({ source: "counts", reason: counts.rejection });
   }
 
-  const countsOi = inspectToiSeconds(args.countsOiToi);
+  const countsOi = inspectToiSeconds(args.countsOiToi, args.strengthSpecific);
   if (countsOi.seconds != null) {
     return {
       seconds: countsOi.seconds,
@@ -200,7 +216,7 @@ export function resolveRollingPlayerToiContext(args: {
     rejectedCandidates.push({ source: "counts_oi", reason: countsOi.rejection });
   }
 
-  const rates = inspectToiSeconds(args.ratesToiPerGp);
+  const rates = inspectToiSeconds(args.ratesToiPerGp, args.strengthSpecific);
   if (rates.seconds != null) {
     return {
       seconds: rates.seconds,
@@ -214,7 +230,7 @@ export function resolveRollingPlayerToiContext(args: {
     rejectedCandidates.push({ source: "rates", reason: rates.rejection });
   }
 
-  const fallback = inspectToiSeconds(args.fallbackToiSeconds);
+  const fallback = inspectToiSeconds(args.fallbackToiSeconds, args.strengthSpecific);
   if (fallback.seconds != null) {
     return {
       seconds: fallback.seconds,
@@ -223,7 +239,10 @@ export function resolveRollingPlayerToiContext(args: {
       rejectedCandidates,
       wgoNormalization:
         args.fallbackToiSeconds != null && args.wgoToiPerGame != null
-          ? normalizeWgoToiPerGame({ toiPerGame: args.wgoToiPerGame }).normalization
+          ? normalizeWgoToiPerGame({
+              toiPerGame: args.wgoToiPerGame,
+              strengthSpecific: args.strengthSpecific
+            }).normalization
           : "missing"
     };
   }
@@ -231,7 +250,10 @@ export function resolveRollingPlayerToiContext(args: {
     rejectedCandidates.push({ source: "fallback", reason: fallback.rejection });
   }
 
-  const wgo = normalizeWgoToiPerGame({ toiPerGame: args.wgoToiPerGame });
+  const wgo = normalizeWgoToiPerGame({
+    toiPerGame: args.wgoToiPerGame,
+    strengthSpecific: args.strengthSpecific
+  });
   if (wgo.seconds != null) {
     return {
       seconds: wgo.seconds,

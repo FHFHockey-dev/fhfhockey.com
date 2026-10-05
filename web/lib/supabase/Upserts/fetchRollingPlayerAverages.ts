@@ -243,7 +243,7 @@ function normalizeNumericFields<T extends Record<string, any>>(row: T): T {
     const value = row[key];
     if (
       typeof value === "string" &&
-      value !== "" &&
+      value.trim() !== "" &&
       !Number.isNaN(Number(value))
     ) {
       normalized[key] = Number(value);
@@ -783,6 +783,10 @@ export interface WgoSkaterRow {
   pp_toi: number | null;
   pp_toi_pct_per_game: number | null;
   toi_per_game: number | null;
+  es_toi_per_game?: number | null;
+  pp_toi_per_game?: number | null;
+  sh_toi_per_game?: number | null;
+  toi_per_game_5v5?: number | null;
 }
 
 export interface NstCountsRow {
@@ -1698,7 +1702,27 @@ async function executeWithSlowLog<T>(
   }
 }
 
+function getWgoToiForStrength(
+  wgo: WgoSkaterRow | undefined,
+  strength: StrengthState
+): number | null {
+  if (!wgo) return null;
+  switch (strength) {
+    case "all":
+      return wgo.toi_per_game ?? null;
+    case "ev":
+      return wgo.es_toi_per_game ?? null;
+    case "pp":
+      return wgo.pp_toi ?? wgo.pp_toi_per_game ?? null;
+    case "pk":
+      return wgo.sh_toi_per_game ?? null;
+    case "5v5":
+      return wgo.toi_per_game_5v5 ?? null;
+  }
+}
+
 function resolveToiContext(args: {
+  strength: StrengthState;
   counts?: NstCountsRow;
   countsOi?: NstCountsOiRow;
   rates?: NstRatesRow;
@@ -1719,7 +1743,8 @@ function resolveToiContext(args: {
     countsOiToi: args.countsOi?.toi ?? null,
     ratesToiPerGp: args.rates?.toi_per_gp ?? null,
     fallbackToiSeconds: args.fallbackToiSeconds,
-    wgoToiPerGame: args.wgo?.toi_per_game ?? null
+    wgoToiPerGame: getWgoToiForStrength(args.wgo, args.strength),
+    strengthSpecific: args.strength !== "all"
   });
 }
 
@@ -1734,6 +1759,7 @@ function getToiContext(game: PlayerGameData): {
   wgoNormalization: RollingPlayerWgoToiNormalization;
 } {
   return resolveToiContext({
+    strength: game.strength,
     counts: game.counts,
     countsOi: game.countsOi,
     rates: game.rates,
@@ -2851,7 +2877,7 @@ async function fetchWgoRowsForPlayer(
     let query = supabase
       .from("wgo_skater_stats")
       .select(
-        "player_id, game_id, date, season_id, team_abbrev, current_team_abbreviation, goals, assists, total_primary_assists, total_secondary_assists, shots, shooting_percentage, hits, blocked_shots, points, pp_points, pp_goals, pp_toi, pp_toi_pct_per_game, toi_per_game"
+        "player_id, game_id, date, season_id, team_abbrev, current_team_abbreviation, goals, assists, total_primary_assists, total_secondary_assists, shots, shooting_percentage, hits, blocked_shots, points, pp_points, pp_goals, pp_toi, pp_toi_pct_per_game, toi_per_game, es_toi_per_game, pp_toi_per_game, sh_toi_per_game, toi_per_game_5v5"
       )
       .eq("player_id", playerId)
       .order("date", { ascending: true })
@@ -3292,6 +3318,7 @@ function resolveLineCombo(
 
 function resolveFallbackToiContext(
   wgo: WgoSkaterRow,
+  strength: StrengthState,
   counts?: NstCountsRow,
   countsOi?: NstCountsOiRow
 ): {
@@ -3302,7 +3329,8 @@ function resolveFallbackToiContext(
   const seed = resolveFallbackToiSeed({
     countsToi: counts?.toi ?? null,
     countsOiToi: countsOi?.toi ?? null,
-    wgoToiPerGame: wgo.toi_per_game ?? null
+    wgoToiPerGame: getWgoToiForStrength(wgo, strength),
+    strengthSpecific: strength !== "all"
   });
   return {
     fallbackToiSeconds: seed.fallbackToiSeconds,
@@ -3481,8 +3509,9 @@ function buildGameRecords(
       source: fallbackToiSource,
       wgoNormalization: fallbackWgoToiNormalization
     } =
-      resolveFallbackToiContext(wgo, counts, countsOi);
+      resolveFallbackToiContext(wgo, strength, counts, countsOi);
     const toiContext = resolveToiContext({
+      strength,
       counts,
       countsOi,
       rates,
@@ -4574,6 +4603,8 @@ export const __testables = {
   buildRunSummary,
   summarizeSourceTracking,
   getGoalsPer60ToiSeconds,
+  getToiSeconds,
+  normalizeNumericFields,
   didPlayerCountAsAppearance,
   applyGpOutputs,
   getGpOutputCompatibilityMode,
