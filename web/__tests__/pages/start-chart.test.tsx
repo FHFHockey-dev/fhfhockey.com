@@ -357,6 +357,21 @@ describe("StartChartPage", () => {
     routerState.router.replace.mockClear();
   });
 
+  it("discloses disabled serving separately from an empty scheduled slate", () => {
+    swrState.data = { ...buildApiData(), publishedForecastsEnabled: false,
+      games: [{ id: 1001, date: "2026-02-07", homeTeamId: 10, awayTeamId: 8 }],
+      serving: { mode: "partial", message: "Scheduled games are missing projections." } };
+    render(<StartChartPage />);
+    expect(screen.getByText("Published game forecasts are disabled.")).toBeTruthy();
+    expect(screen.getByText("No player projections found.")).toBeTruthy();
+    expect(screen.getByText(/Reloading does not enable forecast serving/)).toBeTruthy();
+  });
+
+  it("does not infer disabled serving from an older payload without explicit state", () => {
+    render(<StartChartPage />);
+    expect(screen.queryByText("Published game forecasts are disabled.")).toBeNull();
+  });
+
   it("replaces historical URLs with today and prevents past-date selection", () => {
     routerState.router.query = { date: "2026-02-05", position: "LW" };
     render(<StartChartPage />);

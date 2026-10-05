@@ -27,6 +27,27 @@ const benchReceipt: NonNullable<BenchDecision["evidence"]> = { startDate: "2026-
 afterEach(() => { cleanup(); window.localStorage.clear(); vi.unstubAllGlobals(); fetchMock.mockClear(); authState.user = null; authState.teams = []; planningState.evaluate = null; });
 
 describe("RosterScheduleOptimizer workspace", () => {
+  it("shows upstream stale and disabled evidence in manual readiness independently of reader time", async () => {
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"),
+      json: async () => ({ success: true, data: { ...data, evidence: {
+        schedule: { source: "schedule-cache", asOf: "2026-10-01T11:28:34Z", seasonId: 20262027,
+          completeness: "partial", limitations: ["Schedule coverage may be stale or incomplete. Reloading does not update the upstream cache."] },
+        forecasts: { source: "published", asOf: null, seasonId: 20262027, completeness: "partial",
+          limitations: ["Shared game-forecast serving is not enabled; schedule planning remains available."] },
+      } } }) })));
+    render(<RosterScheduleOptimizer />);
+    const summary = (await screen.findByText("Shared schedule: partial")).closest("summary")!;
+    expect(summary.textContent).toContain("Oct 1");
+    expect(summary.textContent).toContain("stale or incomplete");
+    expect(summary.textContent).toContain("serving is not enabled");
+    expect(summary.closest("details")!.open).toBe(false);
+    expect(screen.getByText(/Reader checked/)).toBeTruthy();
+    const setup = screen.getByRole("button", { name: /Planning setup/ });
+    expect(setup.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(setup);
+    expect(setup.getAttribute("aria-expanded")).toBe("true");
+    expect(document.getElementById(setup.getAttribute("aria-controls")!)).toBeTruthy();
+  });
   it("shows confirmed Yahoo zero usage independently from unknown allowance and planned adds", () => {
     const evidence: NonNullable<PlanningSnapshot["acquisitionEvidence"]> = {
       source: "Yahoo team roster_adds", fetchedAt: "2026-10-01T12:00:00Z", asOf: "2026-10-01T12:00:00Z",

@@ -631,6 +631,7 @@ describe("/api/v1/start-chart", () => {
       await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
       expect(res.statusCode).toBe(200);
       expect(res.body.contractVersion).toBe(1);
+      expect(res.body.publishedForecastsEnabled).toBe(false);
       expect(res.body.projectionRunId).toBeNull();
       expect(res.body.players.filter((row: any) => !row.positions.includes("G"))).toEqual([]);
       expect(JSON.stringify(res.body)).not.toContain("private-success");

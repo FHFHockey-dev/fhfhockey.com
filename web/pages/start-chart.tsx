@@ -967,6 +967,12 @@ export default function StartChartPage() {
             </button>
           </div>
         ) : null}
+        {!error && data?.publishedForecastsEnabled === false ? (
+          <div className={styles.requestState} role="status">
+            <strong>Published game forecasts are disabled.</strong>
+            <span>Review source coverage before using any projections shown below. Reloading does not enable forecast serving.</span>
+          </div>
+        ) : null}
         {!error && data?.serving?.mode === "no_games" ? (
           <div className={styles.requestState} role="status">
             <strong>No games found.</strong>

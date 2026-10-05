@@ -95,6 +95,7 @@ export default function RosterScheduleOptimizer() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("itinerary");
+  const [setupExpanded, setSetupExpanded] = useState(false);
   const [showLineup, setShowLineup] = useState(false);
   const [reviewedInputs, setReviewedInputs] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -288,6 +289,10 @@ export default function RosterScheduleOptimizer() {
   const scheduleDateCount = new Set(snapshot?.games.filter((game) => game.status !== "cancelled" && game.status !== "postponed").map((game) => game.date) ?? []).size;
   const activeSlotCount = expandActiveSlots(rules.rosterSlots).activeSlots.length;
   const utilizationCapacity = scheduleDateCount * activeSlotCount;
+  const sharedSchedule = data?.evidence.schedule;
+  const sharedForecasts = data?.evidence.forecasts;
+  const sharedScheduleTime = sharedSchedule?.asOf && Number.isFinite(Date.parse(sharedSchedule.asOf))
+    ? actionTime(sharedSchedule.asOf, workspace.context.timeZone) : "unknown";
   const dates = useMemo(() => datesBetween(workspace.context.startDate, workspace.context.endDate), [contextKey]);
   const rangeTooLong = Date.parse(workspace.context.endDate) - Date.parse(workspace.context.startDate) > 366 * 86_400_000;
   const matchupWeeks = data?.matchupWeeks ?? [];
@@ -339,8 +344,9 @@ export default function RosterScheduleOptimizer() {
   });
 
   return <div ref={workspaceElement} className={styles.workspace}>
-    <header className={styles.topbar}><div><span className={styles.eyebrow}>Tools / In-season planning</span><h1>Roster Schedule Optimizer</h1></div><div className={styles.actions}><button onClick={undo} disabled={readOnlySaved || !history.current.length}>Undo</button><button onClick={() => setTab(tab === "matchup" ? "candidates" : "matchup")}>{tab === "matchup" ? "Candidates" : "Matchup"}</button>{account?.snapshot && <button onClick={() => { setWorkspace(account.workspace); setViewingSaved(true); }}>View account save</button>}{access?.capabilities.includes("rso_account_save") && !readOnlySaved && <button className={styles.primaryAction} onClick={saveAccount}>Save to account</button>}<span>{viewingSaved && snapshot ? `Saved evidence ${actionTime(snapshot.context.asOf, snapshot.context.timeZone)}` : lastUpdated ? `Data checked ${new Date(lastUpdated).toLocaleTimeString()}` : "Data not loaded"}</span></div></header>
-    <fieldset className={styles.controls} aria-label="Planning setup" disabled={readOnlySaved}>
+    <header className={styles.topbar}><div><span className={styles.eyebrow}>Tools / In-season planning</span><h1>Roster Schedule Optimizer</h1></div><div className={styles.actions}><button onClick={undo} disabled={readOnlySaved || !history.current.length}>Undo</button><button onClick={() => setTab(tab === "matchup" ? "candidates" : "matchup")}>{tab === "matchup" ? "Candidates" : "Matchup"}</button>{account?.snapshot && <button onClick={() => { setWorkspace(account.workspace); setViewingSaved(true); }}>View account save</button>}{access?.capabilities.includes("rso_account_save") && !readOnlySaved && <button className={styles.primaryAction} onClick={saveAccount}>Save to account</button>}<span>{viewingSaved && snapshot ? `Saved evidence ${actionTime(snapshot.context.asOf, snapshot.context.timeZone)}` : lastUpdated ? `Reader checked ${new Date(lastUpdated).toLocaleTimeString()}` : "Data not loaded"}</span></div></header>
+    <button className={styles.mobileSetupToggle} aria-controls="rso-planning-setup" aria-expanded={setupExpanded} onClick={() => setSetupExpanded(value => !value)}>Planning setup · {dateLabel(workspace.context.startDate)} – {dateLabel(workspace.context.endDate)}</button>
+    <fieldset id="rso-planning-setup" className={`${styles.controls} ${setupExpanded ? styles.controlsExpanded : ""}`} aria-label="Planning setup" disabled={readOnlySaved}>
       <label>Source<select value={workspace.context.provider} onChange={(event) => { edit((current) => ({ ...current, context: { ...current.context, provider: event.target.value as PlanningWorkspace["context"]["provider"] } })); setConnected(null); }}><option value="manual">Manual</option><option value="yahoo">Yahoo{!access?.capabilities.includes("rso_sync") ? " saved view" : ""}</option><option value="fantrax">Fantrax{!access?.capabilities.includes("rso_sync") ? " saved view" : ""}</option></select></label>
       <label>Season<input type="number" value={workspace.context.seasonId} onChange={(event) => edit((current) => ({ ...current, context: { ...current.context, seasonId: Number(event.target.value) } }))} /></label>
       <label>From<input type="date" value={workspace.context.startDate} onChange={(event) => edit((current) => ({ ...current, context: { ...current.context, startDate: event.target.value } }))} /></label>
@@ -353,6 +359,10 @@ export default function RosterScheduleOptimizer() {
       <label>Split<select value={workspace.intent.goalieSplit} onChange={(event) => editIntent((intent) => ({ ...intent, goalieSplit: event.target.value as PlanIntent["goalieSplit"] }))}><option value="mon_thu">Mon–Thu / Fri–Sun</option><option value="mon_wed">Mon–Wed / Thu–Sun</option></select></label>
       <div className={styles.weekNav} role="group" aria-label="Matchup week navigation"><button aria-label="Previous matchup week" disabled={weekIndex <= 0} onClick={() => selectWeek(weekIndex - 1)}>‹</button><label>Matchup week<select value={weekIndex} onChange={event => selectWeek(Number(event.target.value))}><option value={-1}>Custom dates</option>{matchupWeeks.map((week, index) => <option key={`${week.gameKey}:${week.week}`} value={index}>Week {week.week} · {dateLabel(week.startDate)} – {dateLabel(week.endDate)}</option>)}</select></label><button aria-label="Next matchup week" disabled={weekIndex < 0 || weekIndex >= matchupWeeks.length - 1} onClick={() => selectWeek(weekIndex + 1)}>›</button></div>
     </fieldset>
+    {data && (sharedSchedule || sharedForecasts) && <details className={styles.dataHealth}>
+      <summary><strong>Shared schedule: {sharedSchedule?.completeness ?? "unknown"}</strong><span>Source updated {sharedScheduleTime}. {sharedSchedule?.limitations[0]} {sharedForecasts?.limitations[0] ?? `Forecast coverage: ${sharedForecasts?.completeness ?? "unknown"}.`}</span></summary>
+      <ul>{Object.entries(data.evidence).map(([source, evidence]) => <li key={source}>{source}: {evidence.completeness} · Source updated {evidence.asOf ?? "unknown"}{evidence.limitations.length ? ` · ${evidence.limitations.join(" ")}` : ""}</li>)}</ul>
+    </details>}
     <details className={styles.dataHealth}>
       <summary><strong>Planning readiness</strong><span>{roster.length ? `${roster.length} roster players` : "Roster needed"} → Rules → Coverage → Plan</span></summary>
       <ul>

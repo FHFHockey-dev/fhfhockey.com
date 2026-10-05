@@ -2071,6 +2071,7 @@ export default async function handler(
       return {
         dateUsed: resolvedDate,
         contractVersion: starterBoardFlags().serving ? 2 : 1,
+        publishedForecastsEnabled: starterBoardFlags().serving,
         validation,
         date: resolvedDate,
         resolvedDate,

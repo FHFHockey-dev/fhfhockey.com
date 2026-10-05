@@ -154,6 +154,7 @@ export type StartChartResponse = {
   newsStatus?: { available: boolean; pendingGames: number; freshnessBreachedGames: number; unresolvedConflicts: number; oldestAcceptedAt: string | null };
   scoringProfile?: BoardScoringRequest & { id: string };
   contractVersion?: 1 | 2;
+  publishedForecastsEnabled?: boolean;
   gameRevisions?: Array<{
     gameId: number; revisionId: string; runId: string;
     decisionAsOf: string; publishedAt: string;
@@ -402,6 +403,7 @@ export function normalizeStartChartResponse(payload: unknown): StartChartRespons
     validation: normalizeBoardValidationDisclosure(root.validation),
     dateUsed: resolvedDate,
     contractVersion: root.contractVersion === 2 ? 2 : 1,
+    publishedForecastsEnabled: typeof root.publishedForecastsEnabled === "boolean" ? root.publishedForecastsEnabled : undefined,
     newsStatus: root.newsStatus ? { available: root.newsStatus.available === true,
       pendingGames: finiteOrNull(root.newsStatus.pendingGames) ?? 0,
       freshnessBreachedGames: finiteOrNull(root.newsStatus.freshnessBreachedGames) ?? 0,
