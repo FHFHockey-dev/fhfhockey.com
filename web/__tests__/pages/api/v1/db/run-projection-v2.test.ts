@@ -118,6 +118,10 @@ describe("/api/v1/db/run-projection-v2", () => {
     await handler(req, res);
 
     expect(res.statusCode).toBe(500);
+    const auditPrefix = JSON.stringify(res.body).slice(0, 4000);
+    expect(auditPrefix).toContain('"dependencyError"');
+    expect(auditPrefix).toContain('"classification":"html_upstream_response"');
+    expect(Object.keys(res.body).indexOf("error")).toBeLessThan(Object.keys(res.body).indexOf("pipeline"));
     expect(res.body).toMatchObject({
       success: false,
       termination: {
