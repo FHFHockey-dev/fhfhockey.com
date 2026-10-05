@@ -2316,8 +2316,8 @@ async function main(
           continue;
         }
         const dates = getDatesBetween(
-          parseISO(seasonStartStr),
-          parseISO(finalEndStr)
+          parseDateInTimeZone(seasonStartStr, "America/New_York"),
+          parseDateInTimeZone(finalEndStr, "America/New_York")
         ).reverse();
         for (const date of dates) {
           const scheduledInfo = scheduledDateMap.get(date);

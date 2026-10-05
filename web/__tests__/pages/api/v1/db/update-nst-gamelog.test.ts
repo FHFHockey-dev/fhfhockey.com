@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { db, fetchNstTextByUrlMock } = vi.hoisted(() => {
+const { db, fetchNstTextByUrlMock, fetchCurrentSeasonMock } = vi.hoisted(() => {
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
   process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-key";
   return {
@@ -14,12 +14,14 @@ const { db, fetchNstTextByUrlMock } = vi.hoisted(() => {
       auditWriteFailure: "",
       auditWriteCalls: 0
     },
-    fetchNstTextByUrlMock: vi.fn()
+    fetchNstTextByUrlMock: vi.fn(),
+    fetchCurrentSeasonMock: vi.fn()
   };
 });
 
 vi.mock("dotenv", () => ({ default: { config: vi.fn() } }));
 vi.mock("utils/adminOnlyMiddleware", () => ({ default: (handler: unknown) => handler }));
+vi.mock("utils/fetchCurrentSeason", () => ({ fetchCurrentSeason: fetchCurrentSeasonMock }));
 vi.mock("lib/nst/client", async (importOriginal) => ({
   ...await importOriginal<typeof import("lib/nst/client")>(),
   fetchNstTextByUrl: fetchNstTextByUrlMock
@@ -353,6 +355,9 @@ describe("update-nst-gamelog automatic season cursor", () => {
     db.auditReadError = false;
     db.auditWriteFailure = "";
     db.auditWriteCalls = 0;
+    fetchCurrentSeasonMock.mockReset().mockResolvedValue({
+      id: 20262027, startDate: "2026-09-29", regularSeasonEndDate: "2027-04-17", endDate: "2027-06-25"
+    });
     fetchNstTextByUrlMock.mockReset().mockResolvedValue({
       text: "<body>No skaters found</body>", response: { status: 200 }
     });
@@ -595,6 +600,33 @@ describe("update-nst-gamelog automatic season cursor", () => {
       expect(res.body.nstProgress.bookmark).toBeNull();
       expect(db.queries.slice(queryIndex).some((q) => q.table === "cron_job_audit" && q.filters.length > 0)).toBe(false);
     }
+  });
+
+  it("keeps the current Eastern day and season start inclusive in default reverse mode", async () => {
+    vi.setSystemTime(new Date("2026-10-05T07:25:01.388Z"));
+    db.games.push({ date: "2026-10-05", seasonId: 20262027, type: 2 });
+    await run({ runMode: "reverse", datasetType: "fiveOnFiveCounts" });
+    expect(fetchedDates()).toEqual(["2026-10-05", "2026-10-03", "2026-10-02", "2026-09-29"]);
+    expect(db.queries.some((q) => q.table === "cron_job_audit" && q.filters.length > 0)).toBe(false);
+  });
+
+  it("keeps a reverse request clamped to the season's first Eastern date inclusive", async () => {
+    await run({ runMode: "reverse", startDate: "2026-09-29", datasetType: "fiveOnFiveCounts" });
+    expect(fetchedDates()).toEqual(["2026-09-29"]);
+  });
+
+  it.each([
+    { seasonId: "20252026", dates: ["2026-03-07", "2026-03-08", "2026-03-09"], now: "2026-03-10T12:00:00Z" },
+    { seasonId: "20262027", dates: ["2026-10-31", "2026-11-01", "2026-11-02"], now: "2026-11-03T12:00:00Z" }
+  ])("preserves opted-in reverse start/end dates across DST in season $seasonId", async ({ seasonId, dates, now }) => {
+    vi.setSystemTime(new Date(now));
+    db.games = dates.map((date) => ({ date, seasonId: Number(seasonId), type: 2 }));
+    const res = await run({ runMode: "reverse", startDate: dates[2], seasonId,
+      allowHistoricalDatedRequests: "yes", datasetType: "fiveOnFiveCounts" });
+    expect(res.statusCode).toBe(200);
+    expect(fetchedDates()).toEqual([...dates].reverse());
+    expect(fetchNstTextByUrlMock.mock.calls.every(([url]) => new URL(url).searchParams.get("fromseason") === seasonId)).toBe(true);
+    expect(db.queries.some((q) => q.table === "cron_job_audit" && q.filters.length > 0)).toBe(false);
   });
 
   it.each(["error", "transport", "lost_ack", "malformed_ack"])("reports unconfirmed audit persistence for %s without retrying the insert", async (failure) => {
