@@ -378,6 +378,9 @@ type RollingUpsertRow = Record<string, unknown>;
 
 const ROLLING_STORAGE_ALWAYS_KEEP_FIELDS = new Set<string>([
   ...ROLLING_RANKING_SELECT_FIELDS,
+  // The FORGE rolling reader selects these authoritative TOI averages directly.
+  "toi_seconds_avg_last5",
+  "toi_seconds_avg_all",
   "gp_semantic_type",
   "pp_share_of_team",
   "pp_unit_usage_index",

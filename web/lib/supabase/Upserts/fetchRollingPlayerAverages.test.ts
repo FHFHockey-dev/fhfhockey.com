@@ -1468,6 +1468,31 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
 });
 
 describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
+  it.each([900, 0, null])("retains model TOI averages in both storage paths: %s", (seconds) => {
+    const row = {
+      player_id: 8470613,
+      game_date: "2026-10-03",
+      season: 20262027,
+      strength_state: "pp",
+      toi_seconds_avg_last5: seconds,
+      toi_seconds_avg_all: seconds,
+      goals_avg_all: 0.4
+    };
+    const compact = compactRollingUpsertRowForRankingStorage(row);
+    const split = splitRollingUpsertRowForDurableStorage(row);
+
+    expect(compact.toi_seconds_avg_last5).toBe(seconds);
+    expect(compact.toi_seconds_avg_all).toBe(seconds);
+    expect(split.rankingRow.toi_seconds_avg_last5).toBe(seconds);
+    expect(split.rankingRow.toi_seconds_avg_all).toBe(seconds);
+    expect(split.supportRow?.support_payload).toMatchObject({
+      historicalCompatibility: { goals_avg_all: 0.4 },
+      diagnostics: { prunedFieldCount: 1 }
+    });
+    expect(split.supportRow?.support_payload.historicalCompatibility).not.toHaveProperty("toi_seconds_avg_last5");
+    expect(split.supportRow?.support_payload.historicalCompatibility).not.toHaveProperty("toi_seconds_avg_all");
+  });
+
   it("compacts storage-heavy compatibility fields while preserving ranking fields", () => {
     expect(
       compactRollingUpsertRowForRankingStorage({
@@ -1572,6 +1597,8 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
         goals_total_last20: 0,
         toi_seconds_total_last20: 1210,
         pp_share_pct_last20: 0.226,
+        toi_seconds_avg_last5: 0,
+        toi_seconds_avg_all: 605,
         goals_avg_all: 0.3
       }
     ];
@@ -1631,6 +1658,8 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
             goals_total_last20: 0,
             toi_seconds_total_last20: 1210,
             pp_share_pct_last20: 0.226,
+            toi_seconds_avg_last5: 0,
+            toi_seconds_avg_all: 605,
             goals_avg_all: null
           }
         ])
