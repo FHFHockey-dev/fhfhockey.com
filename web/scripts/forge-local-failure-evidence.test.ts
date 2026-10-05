@@ -240,3 +240,53 @@ describe("failed committed snapshot ownership disposition", () => {
     } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
   }, 15000);
 });
+
+describe("failed snapshot archival freshness", () => {
+  async function recoverWithClockChange(f: Awaited<ReturnType<typeof fixture>>, wallMs: number, elapsedMs: number, beforeClaim = false) {
+    const entry = join(f.root, "clock-change.ts"), observed = Date.parse(f.evidence.receipt.attempt.observedAt);
+    writeFileSync(entry, `const fs = require('node:fs');
+      let wall = ${observed}, elapsed = 0n, hooked = false;
+      Date.now = () => wall; process.hrtime.bigint = () => elapsed;
+      const method = ${JSON.stringify(beforeClaim ? "openSync" : "linkSync")}, original = fs[method];
+      fs[method] = (...args) => { const value = original(...args);
+        if (method === 'linkSync' || String(args[0]).includes('recovery-proof-')) {
+          hooked = true; wall = ${observed + wallMs}; elapsed = ${elapsedMs}n * 1000000n;
+        } return value; };
+      require(${JSON.stringify(join(__dirname, "forge-local-ownership"))}).recoverForgeLocalOwnership(${JSON.stringify(f.scope)})
+        .then(value => console.log(JSON.stringify({ value, hooked })))
+        .catch(error => console.log(JSON.stringify({ error: error.message, hooked })));`);
+    const child = await exec(process.execPath, ["-r", "ts-node/register/transpile-only", entry], { cwd: join(__dirname, ".."),
+      env: { ...process.env, NODE_PATH: ".", TS_NODE_COMPILER_OPTIONS: '{"module":"commonjs","moduleResolution":"node","target":"ES2022"}' } });
+    const result = JSON.parse(child.stdout); expect(result.hooked).toBe(true); return result;
+  }
+  it.each([
+    { kind: "wall clock expiry", wallMs: 60001, elapsedMs: 1, released: false },
+    { kind: "elapsed expiry despite wall clock rollback", wallMs: 10, elapsedMs: 60001, released: false },
+    { kind: "wall clock preceding investigation", wallMs: -1, elapsedMs: 1, released: false },
+    { kind: "exact freshness boundary", wallMs: 60000, elapsedMs: 60000, released: true },
+  ])("rechecks $kind after publishing the complete claim", async ({ wallMs, elapsedMs, released }) => {
+    const f = await fixture();
+    const originalOwner = readFileSync(join(f.directory, "owner.json")), originalIntent = readFileSync(join(f.directory, "write-intent.json"));
+    const result = await recoverWithClockChange(f, wallMs, elapsedMs);
+    if (released) {
+      expect(result.value.state).toBe("released"); expect(existsSync(f.directory)).toBe(false);
+    } else {
+      expect(result.error).toContain("fresh failed-attempt evidence");
+      expect(existsSync(f.directory)).toBe(true);
+      expect(readFileSync(join(f.directory, "owner.json"))).toEqual(originalOwner);
+      expect(readFileSync(join(f.directory, "write-intent.json"))).toEqual(originalIntent);
+      const claims = readdirSync(f.directory).filter(name => name.startsWith("verified-recovery-"));
+      expect(claims).toHaveLength(1);
+      expect(JSON.parse(readFileSync(join(f.directory, claims[0]), "utf8")).proof.disposition).toBe("failed_snapshot_timeout");
+      expect(readdirSync(f.scope.root).filter(name => name.startsWith("recovered-") || name.startsWith("recovery-proof-"))).toHaveLength(0);
+    }
+  });
+
+  it("rejects expired evidence before publishing a claim when preparation takes too long", async () => {
+    const f = await fixture(), result = await recoverWithClockChange(f, 60001, 1, true);
+    expect(result.error).toContain("fresh failed-attempt evidence");
+    expect(existsSync(f.directory)).toBe(true);
+    expect(readdirSync(f.directory).filter(name => name.startsWith("verified-recovery-"))).toHaveLength(0);
+    expect(readdirSync(f.scope.root).filter(name => name.startsWith("recovered-") || name.startsWith("recovery-proof-"))).toHaveLength(0);
+  });
+});

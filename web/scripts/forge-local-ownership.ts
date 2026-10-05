@@ -43,6 +43,7 @@ type RecoveryScope = { origin: string; gameId: number; date: string; operationId
 
 /** Explicit filesystem archival after positive issuance or a settled snapshot timeout; never retries or writes the DB. */
 export async function recoverForgeLocalOwnership(scope: RecoveryScope) {
+  const recoveryStartedAt = Date.now(), recoveryStartedMonotonic = process.hrtime.bigint();
   const uuid = (value: unknown): value is string => typeof value === "string"
     && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(value);
   const repo = realpathSync(resolve(__dirname, "../.."));
@@ -96,6 +97,17 @@ export async function recoverForgeLocalOwnership(scope: RecoveryScope) {
       throw new Error("Ownership recovery input/revision readback is incompatible.");
     }
   }
+  const assertEvidenceFresh = () => {
+    if (!failedSnapshot) return;
+    const now = Date.now(), elapsed = Number(process.hrtime.bigint() - recoveryStartedMonotonic) / 1e6;
+    const observed = Date.parse(attempt.observedAt);
+    // Clock rollback cannot extend the server observation's lifetime while this investigation runs.
+    if (!Number.isFinite(now) || now < recoveryStartedAt || !Number.isFinite(elapsed) || elapsed < 0
+      || !Number.isFinite(observed) || observed > now
+      || Math.max(now, recoveryStartedAt + elapsed) - observed > 60000) {
+      throw new Error("Ownership recovery requires fresh failed-attempt evidence immediately before archival.");
+    }
+  };
   const { projectionInputHash } = await import("../lib/projections/inputCapture");
   if (!scope.writer || scope.writer.hostname !== hostname() || !Number.isSafeInteger(scope.writer.pid) || scope.writer.pid < 1) {
     throw new Error("Ownership recovery requires the original local writer identity.");
@@ -209,6 +221,7 @@ export async function recoverForgeLocalOwnership(scope: RecoveryScope) {
   flush(prepared, claim);
   try {
     assertOwner();
+    assertEvidenceFresh();
     // Hard-link a complete fsynced record exclusively: no visible empty-claim or partial-file window.
     linkSync(prepared, join(directory, `${prefix}${String(index).padStart(6, "0")}.json`));
     const scopeFd = openSync(directory, "r");
@@ -216,6 +229,7 @@ export async function recoverForgeLocalOwnership(scope: RecoveryScope) {
     if (claims()?.checksum !== claim.checksum) throw new Error("Recovery claim changed before archival.");
     assertOwner();
     if (existsSync(archive)) throw new Error("Recovery archive already exists.");
+    assertEvidenceFresh();
     renameSync(directory, archive); // Preserve the old ownership/intent; never recursively delete a reusable scope path.
     const fd = openSync(root, "r");
     try { fsyncSync(fd); } finally { closeSync(fd); }
