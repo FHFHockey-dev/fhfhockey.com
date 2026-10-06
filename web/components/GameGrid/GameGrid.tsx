@@ -906,15 +906,27 @@ function GameGridInternal({
             aria-label="Week score formula"
           >
             <p>
-              Week Score = (Adjusted Team Games × 6) + (Weighted Off‑Nights ×
-              4) + (Average Win Odds × 0.15).
+              Week Score = (Adjusted Team Games × 6) + (Off-Night Games × 4)
+              + Matchup Bonus.
             </p>
             <p>
-              Adjusted Team Games = Team Games – League Average Games. Weighted
-              Off‑Nights gives larger credit on lighter NHL nights.
+              GP and off nights take priority. Off-night games occur on days
+              with 8 or fewer NHL regular-season games. Counts and league
+              averages use the included days in the selected period.
             </p>
             <p>
-              A score of -100 indicates no games in the selected period.
+              The matchup bonus is capped from −0.5 to +0.5, using current
+              win odds (0–100%) with the existing back-to-back adjustment.
+              Missing odds contribute a neutral bonus.
+            </p>
+            <p>
+              This is an interim win-odds heuristic, not a calibrated fantasy
+              projection or opponent-only scoring difficulty rating. Higher
+              odds add a small edge when schedules match.
+            </p>
+            <p>
+              Adjusted Team Games = Team Games – League Average Games. Teams
+              with no games in the selected period display a dash.
             </p>
           </div>
         )}
@@ -1665,11 +1677,16 @@ function GameGridInternal({
       )}
 
       <p id="weekScoreDesc" className={styles.srOnly}>
-        Week Score = (Adjusted Team Games × 6) + (Weighted Off‑Nights × 4) +
-        (Average Win Odds × 0.15). Adjusted Team Games = (Team Games – League
-        Average Games). Weighted Off‑Nights gives larger credit on lighter NHL
-        nights (for example, 2‑game nights count more than 7‑game nights). A
-        score of -100 indicates no games this period.
+        Week Score = (Adjusted Team Games × 6) + (Off-Night Games × 4) +
+        Matchup Bonus. Adjusted Team Games = Team Games – League Average Games.
+        GP and off nights take priority; off-night games occur on days with 8
+        or fewer NHL regular-season games. Counts and averages use included
+        days in the selected period. The matchup bonus ranges from −0.5 to
+        +0.5 using current win odds (0–100%) with the existing back-to-back
+        adjustment. Missing odds contribute a neutral bonus.
+        This is an interim heuristic, not a calibrated fantasy projection
+        or opponent-only scoring difficulty rating. Higher odds add a small
+        edge when schedules match. Teams with no games display a dash.
       </p>
       {summaryError && (
         <div className={styles.error}>

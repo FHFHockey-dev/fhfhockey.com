@@ -1,5 +1,5 @@
 import { DAYS, EXTENDED_DAY_ABBREVIATION, WeekData } from "lib/NHL/types";
-import { calcTotalOffNights, calcWeightedOffNights, getTotalGamePlayed } from "./helper";
+import { calcTotalOffNights, getTotalGamePlayed } from "./helper";
 import { convertTeamRowToWinOddsList } from "./calcWinOdds";
 import calcWeekScore from "./calcWeekScore";
 
@@ -25,7 +25,6 @@ export function getTeamScheduleSummary(
 ) {
   const totalGamesPlayed = getTotalGamePlayed(row, excludedDays, days);
   const totalOffNights = calcTotalOffNights(row, regularGamesPerDay, excludedDays, days);
-  const weightedOffNights = calcWeightedOffNights(row, regularGamesPerDay, excludedDays, days);
   const winOdds = convertTeamRowToWinOddsList({ ...row, weekNumber: 1 }, excludedDays, days);
   const totalLeagueGames = days.reduce((sum, day, i) =>
     sum + (excludedDays.includes(day) ? 0 : regularGamesPerDay[i] ?? 0), 0);
@@ -33,6 +32,6 @@ export function getTeamScheduleSummary(
   return {
     totalGamesPlayed,
     totalOffNights,
-    weekScore: calcWeekScore(winOdds, weightedOffNights, totalLeagueGames, totalGamesPlayed)
+    weekScore: calcWeekScore(winOdds, totalOffNights, totalLeagueGames, totalGamesPlayed)
   };
 }

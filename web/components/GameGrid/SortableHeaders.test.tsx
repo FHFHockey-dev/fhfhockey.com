@@ -22,6 +22,7 @@ import Header from "./Header";
 import switchStyles from "./Switch/Switch.module.scss";
 import TransposedGrid from "./TransposedGrid";
 import { OPPONENT_METRIC_COLUMNS } from "./utils/useOpponentMetricsData";
+import calcWeekScore from "./utils/calcWeekScore";
 
 const { dateRangeState } = vi.hoisted(() => ({
   dateRangeState: {
@@ -418,6 +419,32 @@ describe("Game Grid sortable column headers", () => {
     expect(
       screen.getByRole("button", { name: "Expand four-week columns" }),
     ).toBeTruthy();
+  });
+
+  it("sorts the bounded schedule scores in both directions and keeps one-decimal display", () => {
+    vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
+    render(<DesktopMasterTable
+      start="2026-01-05" extended={false}
+      scheduleRows={[
+        { teamId: 3, totalGamesPlayed: 3, totalOffNights: 2, weekScore: calcWeekScore([100, 100, 100], 2, 47, 3) },
+        { teamId: 2, totalGamesPlayed: 4, totalOffNights: 1, weekScore: calcWeekScore([100, 100, 100, 100], 1, 47, 4) },
+        { teamId: 1, totalGamesPlayed: 4, totalOffNights: 3, weekScore: calcWeekScore([0, 0, 0, 0], 3, 47, 4) },
+      ]}
+      gamesPerDay={[4, 9, 3, 10, 4, 14, 3]} excludedDays={[]} setExcludedDays={vi.fn()}
+      opponentMetricsByTeamId={{}} opponentMetricColumns={[]}
+      opponentLeagueAverages={{ avgXgf: null, avgXga: null, avgSf: null, avgSa: null,
+        avgGoalFor: null, avgGoalAgainst: null, avgWinPct: null }}
+      opponentMetricsLoading={false} opponentMetricsError={null}
+      fourWeekSummaryByTeamId={{}} fourWeekAverages={{ gamesPlayed: null, offNights: null,
+        avgOpponentPointPct: null, score: null }}
+    />);
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Score descending" }));
+    const teamOrder = () => screen.getAllByRole("link", { name: "Open Team HQ" })
+      .map((link) => link.getAttribute("href"));
+    expect(teamOrder()).toEqual(["/stats/team/1", "/stats/team/2", "/stats/team/3"]);
+    for (const score of ["17.9", "10.9", "8.9"]) expect(screen.getByText(score)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Sort by Score ascending" }));
+    expect(teamOrder()).toEqual(["/stats/team/3", "/stats/team/2", "/stats/team/1"]);
   });
 
   it("keeps the master row available when opponent metrics fail", () => {

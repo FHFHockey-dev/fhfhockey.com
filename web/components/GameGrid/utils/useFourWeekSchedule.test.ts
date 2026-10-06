@@ -30,7 +30,7 @@ describe("four-week calendar schedule summaries", () => {
     expect(week1.totalGamesPlayed).toBe(extended ? 2 : 1);
     expect(week1.totalOffNights).toBe(extended ? 2 : 1);
     expect(week1.weekScore).toBeCloseTo(6 * ((extended ? 2 : 1) - (extended ? 2 : 1) / 16)
-      + 4 * (extended ? 2 : 1) * (11 / 28) + .15 * 50);
+      + 4 * (extended ? 2 : 1));
     expect(result.current[1].slice(0, extended ? 10 : 7))
       .toEqual(extended ? [1, 0, 0, 0, 0, 0, 0, 1, 0, 0] : [1, 0, 0, 0, 0, 0, 0]);
     expect(result.current[0].filter((row) => row.weekNumber > 1).every((row) => row.totalGamesPlayed === 1)).toBe(true);
