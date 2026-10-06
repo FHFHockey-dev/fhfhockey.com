@@ -1,12 +1,13 @@
 // components/GameGrid/Header.tsx
 
+import { parseISO } from "date-fns";
 import { Dispatch, JSX, SetStateAction, useState, useEffect } from "react";
 import styles from "./GameGrid.module.scss";
 import switchStyles from "./Switch/Switch.module.scss";
 
 import { addDays, formatDate, getDayStr } from "./utils/date-func";
 import Toggle from "./Toggle";
-import { DAY_ABBREVIATION, TeamDataWithTotals } from "lib/NHL/types";
+import { EXTENDED_DAY_ABBREVIATION, TeamDataWithTotals } from "lib/NHL/types";
 
 // Simple hook to detect mobile (<=480px)
 function useIsMobile() {
@@ -32,8 +33,8 @@ type HeaderProps = {
       }[]
     >
   >;
-  excludedDays: DAY_ABBREVIATION[];
-  setExcludedDays: React.Dispatch<React.SetStateAction<DAY_ABBREVIATION[]>>;
+  excludedDays: EXTENDED_DAY_ABBREVIATION[];
+  setExcludedDays: React.Dispatch<React.SetStateAction<EXTENDED_DAY_ABBREVIATION[]>>;
   weekData: TeamDataWithTotals[];
   gamesPerDay: number[];
   hasPreseason?: boolean;
@@ -298,13 +299,13 @@ function Header({
 
 function getDayColumns(
   start: string,
-  excludedDays: DAY_ABBREVIATION[],
-  setExcludedDays: React.Dispatch<React.SetStateAction<DAY_ABBREVIATION[]>>,
+  excludedDays: EXTENDED_DAY_ABBREVIATION[],
+  setExcludedDays: React.Dispatch<React.SetStateAction<EXTENDED_DAY_ABBREVIATION[]>>,
   extended: boolean,
   gamesPerDay: number[],
   isMobile?: boolean,
 ): { label: JSX.Element | string; id: string; intensity?: string }[] {
-  const startDate = new Date(start);
+  const startDate = parseISO(start);
 
   // const days = dateDiffInDays(startDate, endDate);
   const numDays = extended ? 7 + 3 : 7;
@@ -316,7 +317,8 @@ function getDayColumns(
   let current = startDate;
 
   for (let i = 0; i < numDays; i++) {
-    const day = getDayStr(startDate, current) as DAY_ABBREVIATION;
+    const day = getDayStr(startDate, current) as EXTENDED_DAY_ABBREVIATION;
+    const dayLabel = String(day).replace(/^n/, "NEXT ");
     const numGames = gamesPerDay[i] ?? 0;
     const intensity = getIntensity(numGames);
 
@@ -337,20 +339,18 @@ function getDayColumns(
         <div className={styles.dayHeaderLabel}>
           <div className={styles.dayAndDate}>
             <span className={styles.dayAbbreviation}>
-              {isMobile ? MOBILE_DAY_ABBR[day] || day : day}
+              {isMobile ? MOBILE_DAY_ABBR[day] || dayLabel : dayLabel}
             </span>
             <span className={styles.dayDate}>{formatDate(current)}</span>
           </div>
-          {!extended && (
-            <div className={styles.dayToggle}>
-              <Toggle
-                size="small"
-                checked={!excludedDays.includes(day)}
-                aria-label={`Include ${String(day)} games`}
-                onChange={onChange}
-              />
-            </div>
-          )}
+          <div className={styles.dayToggle}>
+            <Toggle
+              size="small"
+              checked={!excludedDays.includes(day)}
+              aria-label={`Include ${dayLabel} games`}
+              onChange={onChange}
+            />
+          </div>
         </div>
       ),
       id: day, // Use day abbreviation as ID

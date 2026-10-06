@@ -4,18 +4,16 @@ import { useEffect, useState } from "react";
 import { getSchedule, getTeams } from "lib/NHL/client";
 import { format, nextMonday, parseISO } from "date-fns";
 import {
+  DAYS,
+  EXTENDED_DAYS,
   WeekData,
   ExtendedWeekData
 } from "lib/NHL/types";
 import {
-  calcTotalOffNights,
-  calcWeightedOffNights,
-  getTotalGamePlayed,
-  createExtendedWeekData // Ensure this is imported
+  createExtendedWeekData, // Ensure this is imported
+  getRegularGamesPerDay
 } from "./helper";
-import { calcTotalGP } from "../TotalGamesPerDayRow";
-import calcWeekScore from "./calcWeekScore";
-import { convertTeamRowToWinOddsList } from "./calcWinOdds";
+import { getTeamScheduleSummary } from "./scheduleSummary";
 
 export type ScheduleArray = ExtendedWeekData[];
 
@@ -87,6 +85,9 @@ export default function useFourWeekSchedule(
             });
           }
 
+          const days = extended && week === 1 ? EXTENDED_DAYS : DAYS;
+          const regularNumGamesPerDay = getRegularGamesPerDay(Object.values(schedule.data), days);
+
           // Ensure all season-active teams are included, even if they have no games this week
           const paddedTeams: Record<number, WeekData> = { ...schedule.data };
           seasonTeams.forEach((team) => {
@@ -101,27 +102,8 @@ export default function useFourWeekSchedule(
           const result = Object.entries(paddedTeams).map(
             ([teamId, weekData]) => {
               // Calculate totalGamesPlayed, totalOffNights, and weekScore for each team
-              const totalGamesPlayed = getTotalGamePlayed(weekData, []);
-              const totalOffNights = calcTotalOffNights(
-                weekData,
-                schedule.numGamesPerDay,
-                []
-              );
-              const weightedOffNights = calcWeightedOffNights(
-                weekData,
-                schedule.numGamesPerDay,
-                []
-              );
-              const winOddsList = convertTeamRowToWinOddsList({
-                ...weekData,
-                teamId: Number(teamId),
-                weekNumber: week
-              });
-              const weekScore = calcWeekScore(
-                winOddsList,
-                weightedOffNights, // use weighted off‑nights for scoring
-                calcTotalGP(schedule.numGamesPerDay, []),
-                totalGamesPlayed
+              const { totalGamesPlayed, totalOffNights, weekScore } = getTeamScheduleSummary(
+                { ...weekData, teamId: Number(teamId) }, regularNumGamesPerDay, [], days
               );
 
               // **Use Helper Function to Create ExtendedWeekData**
@@ -141,7 +123,7 @@ export default function useFourWeekSchedule(
           aggregatedSchedule.push(...result);
           aggregatedNumGamesPerDay = [
             ...aggregatedNumGamesPerDay,
-            ...schedule.numGamesPerDay
+            ...regularNumGamesPerDay
           ];
 
           // Prepare for next week

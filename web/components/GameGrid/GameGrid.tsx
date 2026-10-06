@@ -8,25 +8,16 @@ import { useRouter } from "next/router";
 
 import Header from "./Header";
 import TeamRow from "./TeamRow";
-import TotalGamesPerDayRow, { calcTotalGP } from "./TotalGamesPerDayRow";
+import TotalGamesPerDayRow from "./TotalGamesPerDayRow";
 import FourWeekGrid from "./utils/FourWeekGrid";
 import PlayerPickupTable from "components/PlayerPickupTable/PlayerPickupTable";
 
 import { parseDateStr, startAndEndOfWeek } from "./utils/date-func";
-import {
-  calcTotalOffNights,
-  calcWeightedOffNights,
-  getTotalGamePlayed
-} from "./utils/helper";
+import { getRegularGamesPerDay } from "./utils/helper";
+import { getSelectedOpponentIds, getTeamScheduleSummary } from "./utils/scheduleSummary";
 
 import useSchedule from "./utils/useSchedule";
 import useFourWeekSchedule from "./utils/useFourWeekSchedule"; // New import
-
-import calcWeekScore from "./utils/calcWeekScore";
-import {
-  adjustBackToBackGames,
-  convertTeamRowToWinOddsList
-} from "./utils/calcWinOdds";
 
 import TransposedGrid from "./TransposedGrid";
 import OpponentMetricsTable from "./OpponentMetricsTable";
@@ -46,7 +37,8 @@ import {
 } from "date-fns";
 import {
   DAYS,
-  DAY_ABBREVIATION,
+  EXTENDED_DAYS,
+  EXTENDED_DAY_ABBREVIATION,
   ExtendedWeekData,
   WeekData,
   TeamDataWithTotals,
@@ -71,7 +63,7 @@ type TeamRowProps = {
   totalOffNights: number;
   weekScore: number;
   extended: boolean;
-  excludedDays: DAY_ABBREVIATION[];
+  excludedDays: EXTENDED_DAY_ABBREVIATION[];
   rowHighlightClass?: string;
   games: number[];
   rank: number; // Add rank property here
@@ -158,10 +150,11 @@ function GameGridInternal({
   const teams = useTeamsMap(); // Use the useTeamsMap hook
 
   // Existing useSchedule hook for current week
-  const [currentSchedule, currentNumGamesPerDay, currentLoading] = useSchedule(
+  const [currentSchedule, , currentLoading] = useSchedule(
     format(new Date(dates[0]), "yyyy-MM-dd"),
     mode === "10-Day-Forecast"
   );
+  const scheduleDays = mode === "10-Day-Forecast" ? EXTENDED_DAYS : DAYS;
 
   const season = useCurrentSeason();
   const currentSeasonId = season?.seasonId ?? null;
@@ -196,7 +189,7 @@ function GameGridInternal({
       false // Set to true if you want extended data
     );
 
-  const [excludedDays, setExcludedDays] = useState<DAY_ABBREVIATION[]>([]);
+  const [excludedDays, setExcludedDays] = useState<EXTENDED_DAY_ABBREVIATION[]>([]);
   const [hidePreseason, setHidePreseason] = useState(false);
   const [sortKeys, setSortKeys] = useState<
     {
@@ -214,71 +207,24 @@ function GameGridInternal({
   // Process the current schedule for Game Grid display
   // Compute league-wide per-day counts including ONLY regular-season games for calculations
   const regularNumGamesPerDay = useMemo(() => {
-    const baseDays =
-      mode === "10-Day-Forecast"
-        ? ([...DAYS, "nMON", "nTUE", "nWED"] as const)
-        : DAYS;
-    const idSets: Array<Set<number>> = baseDays.map(() => new Set<number>());
-    currentSchedule.forEach((row) => {
-      baseDays.forEach((d, i) => {
-        const g = (row as any)[d];
-        if (g && g.gameType === 2 && g.id) {
-          idSets[i].add(g.id);
-        }
-      });
-    });
-    return idSets.map((s) => s.size);
-  }, [currentSchedule, mode]);
+    return getRegularGamesPerDay(currentSchedule, scheduleDays);
+  }, [currentSchedule, scheduleDays]);
 
   const filteredColumns = useMemo(() => {
-    const adjustedSchedule = [...currentSchedule];
-    adjustBackToBackGames(adjustedSchedule);
-
     const copy: (WeekData & {
       teamId: number;
       totalGamesPlayed: number;
       totalOffNights: number;
       weekScore: number;
     })[] = [];
-    const totalGP = calcTotalGP(regularNumGamesPerDay, excludedDays);
-
     // Helper to track seen teams and handle duplicates (e.g. UTA)
     // We key by abbreviation to catch cases where different teamIds map to the same team (e.g. moved franchises)
     const seenTeams = new Map<string, (typeof copy)[0]>();
 
-    adjustedSchedule.forEach((row) => {
-      // add Total GP for each team
-      const totalGamesPlayed = getTotalGamePlayed(row, excludedDays);
-
-      // add Total Off-Nights
-      const totalOffNights = calcTotalOffNights(
-        row,
-        regularNumGamesPerDay,
-        excludedDays
-      );
-      const weightedOffNights = calcWeightedOffNights(
-        row,
-        regularNumGamesPerDay,
-        excludedDays
-      );
-
-      // add Week Score
-      const winOddsList = convertTeamRowToWinOddsList({
-        ...row,
-        weekNumber: 1
-      });
-
-      const weekScore = calcWeekScore(
-        winOddsList,
-        weightedOffNights, // use weighted off‑nights for scoring
-        totalGP,
-        totalGamesPlayed
-      );
+    currentSchedule.forEach((row) => {
       const newRow = {
         ...row,
-        totalGamesPlayed,
-        totalOffNights,
-        weekScore
+        ...getTeamScheduleSummary(row, regularNumGamesPerDay, excludedDays, scheduleDays)
       };
 
       const abbr = teams[newRow.teamId]?.abbreviation;
@@ -309,15 +255,16 @@ function GameGridInternal({
     excludedDays,
     currentSchedule,
     regularNumGamesPerDay,
+    scheduleDays,
     teams
   ]);
 
   // Detect if this week contains any preseason games
   const hasPreseason = useMemo(() => {
     return currentSchedule.some((row) =>
-      DAYS.some((d) => (row[d as DAY_ABBREVIATION] as any)?.gameType === 1)
+      scheduleDays.some((d) => row[d]?.gameType === 1)
     );
-  }, [currentSchedule]);
+  }, [currentSchedule, scheduleDays]);
 
   // Sort teams based on sortKeys
   const sortedTeams = useMemo(() => {
@@ -654,30 +601,32 @@ function GameGridInternal({
     });
   }, [teamDataWithTotals, sortedTeams]);
 
-  // Map current weekScore by team abbreviation for quick lookup
-  const weekScoreByAbbreviation = useMemo(() => {
-    const map: Record<string, number> = {};
-    filteredColumns.forEach((row) => {
-      const abbr = teams[row.teamId]?.abbreviation;
-      if (abbr != null) {
-        map[abbr] = row.weekScore;
-      }
-    });
-    return map;
-  }, [filteredColumns, teams]);
+  // Weekly opponent/pickup context follows exactly the selected scoring period.
+  // Four-week calendar totals remain independent of these day switches.
+  const selectedPeriodTeamData = useMemo(() => filteredColumns.map((row) => {
+    const opponents = getSelectedOpponentIds(row, excludedDays, scheduleDays)
+      .map((teamId) => ({ abbreviation: teams[teamId]?.abbreviation ?? String(teamId), teamId }));
+    const pointPcts = opponents.map((opponent) => teamPointPctMap[opponent.teamId])
+      .filter((pct) => pct !== undefined);
+    const totals = { opponents, gamesPlayed: row.totalGamesPlayed, offNights: row.totalOffNights };
+    return {
+      teamId: row.teamId,
+      teamAbbreviation: teams[row.teamId]?.abbreviation ?? String(row.teamId),
+      weeks: [{ weekNumber: 1, ...totals }],
+      totals,
+      avgOpponentPointPct: pointPcts.length
+        ? pointPcts.reduce((a, b) => a + b, 0) / pointPcts.length : 0,
+      weekScore: row.weekScore
+    };
+  }), [filteredColumns, scheduleDays, excludedDays, teams, teamPointPctMap]);
 
-  const playerPickupWeekData = useMemo(() => {
-    return teamDataWithAverages.map((team) => {
-      const week1 = team.weeks.find((w) => w.weekNumber === 1);
-      return {
-        teamAbbreviation: team.teamAbbreviation,
-        gamesPlayed: week1 ? week1.gamesPlayed : team.totals.gamesPlayed,
-        offNights: week1 ? week1.offNights : team.totals.offNights,
-        avgOpponentPointPct: team.avgOpponentPointPct,
-        weekScore: weekScoreByAbbreviation[team.teamAbbreviation] ?? 0
-      };
-    });
-  }, [teamDataWithAverages, weekScoreByAbbreviation]);
+  const playerPickupWeekData = useMemo(() => selectedPeriodTeamData.map((team) => ({
+    teamAbbreviation: team.teamAbbreviation,
+    gamesPlayed: team.totals.gamesPlayed,
+    offNights: team.totals.offNights,
+    avgOpponentPointPct: team.avgOpponentPointPct,
+    weekScore: team.weekScore
+  })), [selectedPeriodTeamData]);
 
   const fourWeekAverages = useMemo(() => {
     if (teamDataWithAverages.length === 0) {
@@ -747,7 +696,7 @@ function GameGridInternal({
     }, {});
   }, [fourWeekAverages, teamDataWithAverages]);
 
-  const opponentMetricsData = useOpponentMetricsData(teamDataWithAverages);
+  const opponentMetricsData = useOpponentMetricsData(selectedPeriodTeamData);
 
   // Debugging: Log teamDataWithAverages
   useEffect(() => {
@@ -905,14 +854,6 @@ function GameGridInternal({
 
   const legendBar = (
     <div className={styles.legendBar}>
-      {currentMatchupWeek != null && (
-        <span
-          className={styles.weekBadge}
-          aria-label={`Yahoo matchup week ${currentMatchupWeek}`}
-        >
-          Week {currentMatchupWeek}
-        </span>
-      )}
       <div className={styles.legendMeta}>
         <ul>
           <li>
@@ -1067,14 +1008,14 @@ function GameGridInternal({
                     excludedDays={excludedDays}
                     setExcludedDays={setExcludedDays}
                     weekData={teamDataWithAverages}
-                    gamesPerDay={currentNumGamesPerDay}
+                    gamesPerDay={regularNumGamesPerDay}
                     hasPreseason={hasPreseason}
                     hidePreseason={hidePreseason}
                     setHidePreseason={setHidePreseason}
                   />
                   <tbody>
                     <TotalGamesPerDayRow
-                      games={currentNumGamesPerDay}
+                      games={regularNumGamesPerDay}
                       excludedDays={excludedDays}
                       extended={mode === "10-Day-Forecast"}
                       weekData={teamDataWithAverages}
@@ -1094,7 +1035,7 @@ function GameGridInternal({
                           extended={mode === "10-Day-Forecast"}
                           excludedDays={excludedDays}
                           rowHighlightClass={highlightClass}
-                          games={currentNumGamesPerDay}
+                          games={regularNumGamesPerDay}
                           hidePreseason={hidePreseason}
                           {...rest}
                         />
@@ -1111,7 +1052,7 @@ function GameGridInternal({
             {/* OpponentMetricsTable section */}
             <div className={styles.opponentMetricsSection}>
               <OpponentMetricsTable
-                teamData={teamDataWithAverages}
+                teamData={selectedPeriodTeamData}
                 metricsData={opponentMetricsData}
               />
             </div>
@@ -1464,6 +1405,14 @@ function GameGridInternal({
           </div>
 
           <div className={styles.badgeAndWeekNav}>
+            {currentMatchupWeek != null && (
+              <span
+                className={styles.weekBadge}
+                aria-label={`Yahoo matchup week ${currentMatchupWeek}`}
+              >
+                Week {currentMatchupWeek}
+              </span>
+            )}
             <div className={styles.dateCluster}>
               <div
                 className={styles.dateNav}
@@ -1509,39 +1458,41 @@ function GameGridInternal({
           </div>
 
           <div className={styles.rightControls}>
-            <div
-              className={styles.modeToggle}
-              role="group"
-              aria-label="Forecast span"
-            >
-              <button
-                type="button"
-                aria-pressed={mode === "7-Day-Forecast"}
-                className={
-                  mode === "7-Day-Forecast"
-                    ? styles.modeButtonActive
-                    : styles.modeButton
-                }
-                onClick={() => setMode("7-Day-Forecast")}
+            <div className={styles.forecastControls}>
+              <div
+                className={styles.modeToggle}
+                role="group"
+                aria-label="Forecast span"
               >
-                7-Day
-              </button>
-              <button
-                type="button"
-                aria-pressed={mode === "10-Day-Forecast"}
-                className={
-                  mode === "10-Day-Forecast"
-                    ? styles.modeButtonActive
-                    : styles.modeButton
-                }
-                onClick={() => setMode("10-Day-Forecast")}
-              >
-                10-Day
-              </button>
+                <button
+                  type="button"
+                  aria-pressed={mode === "7-Day-Forecast"}
+                  className={
+                    mode === "7-Day-Forecast"
+                      ? styles.modeButtonActive
+                      : styles.modeButton
+                  }
+                  onClick={() => setMode("7-Day-Forecast")}
+                >
+                  7-Day
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={mode === "10-Day-Forecast"}
+                  className={
+                    mode === "10-Day-Forecast"
+                      ? styles.modeButtonActive
+                      : styles.modeButton
+                  }
+                  onClick={() => setMode("10-Day-Forecast")}
+                >
+                  10-Day
+                </button>
+              </div>
+              {weekScoreHelp}
             </div>
-            {weekScoreHelp}
+            {legendBar}
           </div>
-          {legendBar}
         </div>
 
         {/* New 3-Column Dashboard Layout */}
@@ -1553,7 +1504,7 @@ function GameGridInternal({
                   start={dates[0]}
                   extended={mode === "10-Day-Forecast"}
                   scheduleRows={filteredColumns}
-                  gamesPerDay={currentNumGamesPerDay}
+                  gamesPerDay={regularNumGamesPerDay}
                   excludedDays={excludedDays}
                   setExcludedDays={setExcludedDays}
                   hidePreseason={hidePreseason}
@@ -1573,7 +1524,7 @@ function GameGridInternal({
               <div className={styles.leftRail}>
                 <div className={styles.opponentMetricsContainer}>
                   <OpponentMetricsTable
-                    teamData={teamDataWithAverages}
+                    teamData={selectedPeriodTeamData}
                     metricsData={opponentMetricsData}
                   />
                 </div>
@@ -1585,7 +1536,7 @@ function GameGridInternal({
                     {orientation === "vertical" ? (
                     <TransposedGrid
                       sortedTeams={sortedTeams}
-                      games={currentNumGamesPerDay}
+                      games={regularNumGamesPerDay}
                       excludedDays={excludedDays}
                       setExcludedDays={setExcludedDays}
                       extended={mode === "10-Day-Forecast"}
@@ -1613,7 +1564,7 @@ function GameGridInternal({
                           excludedDays={excludedDays}
                           setExcludedDays={setExcludedDays}
                           weekData={teamDataWithAverages}
-                          gamesPerDay={currentNumGamesPerDay}
+                          gamesPerDay={regularNumGamesPerDay}
                           hasPreseason={hasPreseason}
                           hidePreseason={hidePreseason}
                           setHidePreseason={setHidePreseason}
@@ -1623,7 +1574,7 @@ function GameGridInternal({
                           className={styles.fadeEnterActive}
                         >
                           <TotalGamesPerDayRow
-                            games={currentNumGamesPerDay}
+                            games={regularNumGamesPerDay}
                             excludedDays={excludedDays}
                             extended={mode === "10-Day-Forecast"}
                             weekData={teamDataWithAverages}
@@ -1642,7 +1593,7 @@ function GameGridInternal({
                                 extended={mode === "10-Day-Forecast"}
                                 excludedDays={excludedDays}
                                 rowHighlightClass={highlightClass}
-                                games={currentNumGamesPerDay}
+                                games={regularNumGamesPerDay}
                                 hidePreseason={hidePreseason}
                                 rank={rank}
                                 {...rest}

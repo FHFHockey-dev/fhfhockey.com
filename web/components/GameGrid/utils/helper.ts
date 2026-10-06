@@ -2,7 +2,7 @@
 
 import {
   DAYS,
-  DAY_ABBREVIATION,
+  EXTENDED_DAY_ABBREVIATION,
   WeekData,
   ExtendedWeekData
 } from "lib/NHL/types";
@@ -19,10 +19,11 @@ function hasMatchUp(matchUp: WeekData["MON"] | undefined) {
 
 export function getTotalGamePlayed(
   matchUps: WeekData,
-  excludedDays: DAY_ABBREVIATION[] = []
+  excludedDays: readonly EXTENDED_DAY_ABBREVIATION[] = [],
+  days: readonly EXTENDED_DAY_ABBREVIATION[] = DAYS
 ) {
   let num = 0;
-  DAYS.forEach((day) => {
+  days.forEach((day) => {
     if (excludedDays.includes(day)) return;
 
     const matchUp = matchUps[day];
@@ -41,10 +42,11 @@ export function getTotalGamePlayed(
 export function calcTotalOffNights(
   matchUps: WeekData,
   numGamesPerDay: number[],
-  excludedDays: DAY_ABBREVIATION[] = []
+  excludedDays: readonly EXTENDED_DAY_ABBREVIATION[] = [],
+  days: readonly EXTENDED_DAY_ABBREVIATION[] = DAYS
 ) {
   let num = 0;
-  DAYS.forEach((day, i) => {
+  days.forEach((day, i) => {
     if (excludedDays.includes(day)) return;
 
     const matchUp = matchUps[day];
@@ -72,7 +74,8 @@ export function calcTotalOffNights(
 export function calcWeightedOffNights(
   matchUps: WeekData,
   numGamesPerDay: number[],
-  excludedDays: DAY_ABBREVIATION[] = []
+  excludedDays: readonly EXTENDED_DAY_ABBREVIATION[] = [],
+  days: readonly EXTENDED_DAY_ABBREVIATION[] = DAYS
 ) {
   // Parameters for the weighting model
   const TOTAL_TEAMS = 32; // NHL total teams
@@ -83,7 +86,7 @@ export function calcWeightedOffNights(
   const BASELINE_WEIGHT_AT_7 = (9 - 7) / 7; // ≈ 0.285714 from previous model
 
   let total = 0;
-  DAYS.forEach((day, i) => {
+  days.forEach((day, i) => {
     if (excludedDays.includes(day)) return;
 
     const matchUp = matchUps[day];
@@ -110,6 +113,21 @@ export function calcWeightedOffNights(
     }
   });
   return total;
+}
+
+/** Count each regular-season game once, using the same days as team summaries. */
+export function getRegularGamesPerDay(
+  rows: readonly WeekData[],
+  days: readonly EXTENDED_DAY_ABBREVIATION[] = DAYS
+) {
+  return days.map((day) => {
+    const ids = new Set<number>();
+    rows.forEach((row) => {
+      const game = row[day];
+      if (game?.gameType === 2 && game.id) ids.add(game.id);
+    });
+    return ids.size;
+  });
 }
 
 /**

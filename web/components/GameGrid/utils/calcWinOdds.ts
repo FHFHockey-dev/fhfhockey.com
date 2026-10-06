@@ -1,6 +1,6 @@
 // components/GameGrid/utils/calcWinOdds.ts
 
-import { DAYS, DAY_ABBREVIATION, WeekData, GameData } from "lib/NHL/types";
+import { DAYS, EXTENDED_DAY_ABBREVIATION, WeekData } from "lib/NHL/types";
 import { ScheduleArray } from "./useSchedule";
 
 export function calculateBlendedWinOdds(
@@ -33,36 +33,31 @@ export function formatWinOdds(winOdds: number): string {
  */
 
 export function convertTeamRowToWinOddsList(
-  row: WeekData & { teamId: number; weekNumber: number }
+  row: WeekData & { teamId: number; weekNumber: number },
+  excludedDays: readonly EXTENDED_DAY_ABBREVIATION[] = [],
+  days: readonly EXTENDED_DAY_ABBREVIATION[] = DAYS
 ) {
-  const winOddsList: (number | null)[] = [];
-
-  DAYS.forEach((day, i) => {
+  const winOddsList = days.map((day) => {
     const game = row[day];
     if (game && game.gameType === 2) {
       const ourTeam =
         row.teamId === game.homeTeam.id ? game.homeTeam : game.awayTeam;
-      const blendedWinOdds = calculateBlendedWinOdds(
+      return calculateBlendedWinOdds(
         ourTeam.winOdds,
         ourTeam.apiWinOdds
       );
 
-      let adjustedWinOdds = blendedWinOdds;
-
-      // Apply back-to-back adjustment
-      if (isBackToBack(winOddsList, i)) {
-        if (adjustedWinOdds !== null) {
-          adjustedWinOdds = adjustedWinOdds * 0.75; // Apply dilution factor
-        }
-      }
-
-      winOddsList[i] = adjustedWinOdds !== null ? adjustedWinOdds : null;
-    } else {
-      winOddsList[i] = null;
     }
+    return null;
   });
-
-  return winOddsList;
+  return winOddsList.map((winOdds, i) => {
+    if (excludedDays.includes(days[i])) return null;
+    // A bench/excluded day still happened on the NHL schedule. Preserve its
+    // existing back-to-back effect, while excluding its odds from the average.
+    return winOdds !== null && isBackToBack(winOddsList, i)
+      ? winOdds * 0.75
+      : winOdds;
+  });
 }
 
 /**

@@ -1,3 +1,4 @@
+import { parseISO } from "date-fns";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,7 +14,7 @@ import {
 import { addDays, formatDate, getDayStr } from "./utils/date-func";
 import styles from "./GameGrid.module.scss";
 
-import { DAYS, DAY_ABBREVIATION, EXTENDED_DAYS, WeekData } from "lib/NHL/types";
+import { DAYS, EXTENDED_DAY_ABBREVIATION, EXTENDED_DAYS, WeekData } from "lib/NHL/types";
 import { useTeamsMap } from "hooks/useTeams";
 import {
   OpponentMetricAverages,
@@ -39,8 +40,8 @@ type DesktopMasterTableProps = {
   extended: boolean;
   scheduleRows: TeamScheduleRow[];
   gamesPerDay: number[];
-  excludedDays: DAY_ABBREVIATION[];
-  setExcludedDays: React.Dispatch<React.SetStateAction<DAY_ABBREVIATION[]>>;
+  excludedDays: EXTENDED_DAY_ABBREVIATION[];
+  setExcludedDays: React.Dispatch<React.SetStateAction<EXTENDED_DAY_ABBREVIATION[]>>;
   hidePreseason?: boolean;
   opponentMetricsByTeamId: Record<number, OpponentMetricAverages>;
   opponentMetricColumns: OpponentMetricColumn[];
@@ -264,7 +265,7 @@ export default function DesktopMasterTable({
   const dayKeys = useMemo(
     () =>
       days.map((_, index) =>
-        getDayStr(new Date(start), addDays(new Date(start), index)),
+        getDayStr(parseISO(start), addDays(parseISO(start), index)),
       ),
     [days, start],
   );
@@ -300,8 +301,8 @@ export default function DesktopMasterTable({
     teamsMap,
   ]);
 
-  const totalLeagueGames = calcTotalGP(gamesPerDay, excludedDays);
-  const totalLeagueOffNights = calcTotalOffNights(gamesPerDay, excludedDays);
+  const totalLeagueGames = calcTotalGP(gamesPerDay, excludedDays, days);
+  const totalLeagueOffNights = calcTotalOffNights(gamesPerDay, excludedDays, days);
 
   const sortedRows = useMemo(() => {
     const copy = [...rows];
@@ -448,9 +449,7 @@ export default function DesktopMasterTable({
     });
   };
 
-  const toggleExcludedDay = (day: DAY_ABBREVIATION) => {
-    if (extended) return;
-
+  const toggleExcludedDay = (day: EXTENDED_DAY_ABBREVIATION) => {
     setExcludedDays((prev) => {
       const set = new Set(prev);
       if (set.has(day)) {
@@ -674,9 +673,9 @@ export default function DesktopMasterTable({
           </div>
         </th>
         {dayKeys.map((day, index) => {
-          const currentDate = addDays(new Date(start), index);
-          const weekDay = day as DAY_ABBREVIATION;
-          const isExcluded = !extended && excludedDays.includes(weekDay);
+          const currentDate = addDays(parseISO(start), index);
+          const weekDay = day as EXTENDED_DAY_ABBREVIATION;
+          const isExcluded = excludedDays.includes(weekDay);
 
           return (
             <th
@@ -688,24 +687,22 @@ export default function DesktopMasterTable({
                 <div className={styles.masterDayHeaderLabel}>
                   <div className={styles.masterDayAndDate}>
                     <span className={styles.masterDayName}>
-                      {String(day).replace("NEXT ", "N")}
+                      {String(day).replace(/^n/, "N")}
                     </span>
                     <span className={styles.masterDayDate}>
                       {formatDate(currentDate)}
                     </span>
                   </div>
-                  {!extended && (
-                    <div
-                      className={clsx(styles.dayToggle, styles.masterDayToggle)}
-                    >
-                      <Toggle
-                        size="small"
-                        checked={!isExcluded}
-                        onChange={() => toggleExcludedDay(weekDay)}
-                        aria-label={`Include ${String(day)} games`}
-                      />
-                    </div>
-                  )}
+                  <div
+                    className={clsx(styles.dayToggle, styles.masterDayToggle)}
+                  >
+                    <Toggle
+                      size="small"
+                      checked={!isExcluded}
+                      onChange={() => toggleExcludedDay(weekDay)}
+                      aria-label={`Include ${String(day).replace(/^n/, "NEXT ")} games`}
+                    />
+                  </div>
                 </div>
               </div>
             </th>
@@ -1161,7 +1158,7 @@ export default function DesktopMasterTable({
                     const matchup = row[day];
                     const isPreseason = !!matchup && matchup.gameType === 1;
                     const excluded = excludedDays.includes(
-                      day as DAY_ABBREVIATION,
+                      day as EXTENDED_DAY_ABBREVIATION,
                     );
                     let dayIntensityClass = "";
 

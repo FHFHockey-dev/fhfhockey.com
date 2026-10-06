@@ -7,7 +7,7 @@ import { formatWeekScore } from "./utils/calcWeekScore";
 import { useTeam } from "./contexts/GameGridContext";
 import {
   DAYS,
-  DAY_ABBREVIATION,
+  EXTENDED_DAY_ABBREVIATION,
   EXTENDED_DAYS,
   GameData,
   WeekData,
@@ -51,7 +51,7 @@ type TeamRowProps = {
   totalOffNights: number;
   weekScore: number;
   extended: boolean;
-  excludedDays: DAY_ABBREVIATION[];
+  excludedDays: EXTENDED_DAY_ABBREVIATION[];
   hidePreseason?: boolean;
   rowHighlightClass?: string;
   games: number[];
@@ -147,7 +147,7 @@ function TeamRow(props: TeamRowProps) {
         const hasMatchUp = matchUp !== undefined;
         const isPreseason = !!matchUp && matchUp.gameType === 1;
         const isPostseason = !!matchUp && matchUp.gameType === 3;
-        const excluded = props.excludedDays.includes(day as DAY_ABBREVIATION);
+        const excluded = props.excludedDays.includes(day as EXTENDED_DAY_ABBREVIATION);
         const numGamesThatDay = props.games[index] || 0;
         // Determine cell classes for inner border styling
         let dayIntensityClass = "";
@@ -185,7 +185,7 @@ function TeamRow(props: TeamRowProps) {
         return (
           <td key={day} className={cellClasses}>
             {/* Excluded Day Overlay */}
-            {!props.extended && excluded && !isMobile && (
+            {excluded && !isMobile && (
               <div className={styles.excludedOverlay}></div>
             )}
 

@@ -8,7 +8,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { DAY_ABBREVIATION } from "lib/NHL/types";
+import { EXTENDED_DAY_ABBREVIATION } from "lib/NHL/types";
 
 import DateRangeTeamGrid from "./DateRangeTeamGrid";
 import DesktopMasterTable, {
@@ -79,7 +79,7 @@ describe("Game Grid sortable column headers", () => {
     const setExcludedDays = vi.fn();
     const setHidePreseason = vi.fn();
 
-    const header = (excludedDays: DAY_ABBREVIATION[]) => (
+    const header = (excludedDays: EXTENDED_DAY_ABBREVIATION[]) => (
       <table>
         <Header
           start="2026-01-02"
@@ -160,7 +160,7 @@ describe("Game Grid sortable column headers", () => {
     const firstDay = firstDaySwitch
       .getAttribute("aria-label")
       ?.replace(/^Include /, "")
-      .replace(/ games$/, "") as DAY_ABBREVIATION;
+      .replace(/ games$/, "") as EXTENDED_DAY_ABBREVIATION;
     expect(firstDaySwitch.getAttribute("aria-checked")).toBe("true");
     fireEvent.click(firstDaySwitch);
     const excludeFirstDay = setExcludedDays.mock.calls[0][0] as (
@@ -252,12 +252,12 @@ describe("Game Grid sortable column headers", () => {
       },
     );
     const setExcludedDays = vi.fn();
-    const table = (excludedDays: DAY_ABBREVIATION[]) => (
+    const table = (excludedDays: EXTENDED_DAY_ABBREVIATION[], extended = false) => (
       <DesktopMasterTable
         start="2026-01-05"
-        extended={false}
+        extended={extended}
         scheduleRows={[]}
-        gamesPerDay={[0, 0, 0, 0, 0, 0, 0]}
+        gamesPerDay={Array(extended ? 10 : 7).fill(0)}
         excludedDays={excludedDays}
         setExcludedDays={setExcludedDays}
         opponentMetricsByTeamId={{}}
@@ -290,12 +290,12 @@ describe("Game Grid sortable column headers", () => {
     const firstDay = firstDaySwitch
       .getAttribute("aria-label")
       ?.replace(/^Include /, "")
-      .replace(/ games$/, "") as DAY_ABBREVIATION;
+      .replace(/ games$/, "") as EXTENDED_DAY_ABBREVIATION;
     expect(firstDaySwitch.getAttribute("aria-checked")).toBe("true");
     fireEvent.click(firstDaySwitch);
     const excludeFirstDay = setExcludedDays.mock.calls[0][0] as (
-      days: DAY_ABBREVIATION[],
-    ) => DAY_ABBREVIATION[];
+      days: EXTENDED_DAY_ABBREVIATION[],
+    ) => EXTENDED_DAY_ABBREVIATION[];
     expect(excludeFirstDay([])).toEqual([firstDay]);
 
     rerender(table([firstDay]));
@@ -304,6 +304,41 @@ describe("Game Grid sortable column headers", () => {
         .getByRole("switch", { name: `Include ${firstDay} games` })
         .getAttribute("aria-checked"),
     ).toBe("false");
+
+    rerender(table(["nMON"], true));
+    expect(screen.getAllByRole("switch", { name: /^Include .+ games$/ })).toHaveLength(10);
+    const nextMonday = screen.getByRole("switch", { name: "Include NEXT MON games" });
+    expect(nextMonday.getAttribute("aria-checked")).toBe("false");
+    fireEvent.click(nextMonday);
+    const includeNextMonday = setExcludedDays.mock.calls.at(-1)![0] as (
+      days: EXTENDED_DAY_ABBREVIATION[],
+    ) => EXTENDED_DAY_ABBREVIATION[];
+    expect(includeNextMonday(["nMON"])).toEqual([]);
+  });
+
+  it("allows next-week day selection in both legacy grid orientations", () => {
+    const setExcludedDays = vi.fn();
+    const { unmount } = render(
+      <table><Header start="2026-01-05" end="2026-01-11" extended
+        setSortKeys={vi.fn()} excludedDays={["nMON"]} setExcludedDays={setExcludedDays}
+        weekData={[]} gamesPerDay={Array(10).fill(0)} /></table>
+    );
+    expect(screen.getAllByRole("switch", { name: /^Include .+ games$/ })).toHaveLength(10);
+    const nextMonday = screen.getByRole("switch", { name: "Include NEXT MON games" });
+    expect(nextMonday.getAttribute("aria-checked")).toBe("false");
+    fireEvent.click(nextMonday);
+    expect(setExcludedDays.mock.calls.at(-1)![0](["nMON"])).toEqual([]);
+    unmount();
+
+    render(<TransposedGrid start="2026-01-05" mode="10-Day-Forecast" extended
+      sortedTeams={[]} games={Array(10).fill(0)} excludedDays={["nWED"]}
+      setExcludedDays={setExcludedDays} />);
+    expect(screen.getAllByRole("switch", { name: /^Include .+ games$/ })).toHaveLength(10);
+    const nextWednesday = screen.getByRole("switch", { name: "Include NEXT WED games" });
+    expect(nextWednesday.getAttribute("aria-checked")).toBe("false");
+    fireEvent.click(nextWednesday);
+    expect(setExcludedDays.mock.calls.at(-1)![0](["nWED"])).toEqual([]);
+    expect(screen.getByRole("columnheader", { name: /NEXT WED 1\/14/ })).toBeTruthy();
   });
 
   it("enforces the approved desktop master order and expanded four-week controls", () => {

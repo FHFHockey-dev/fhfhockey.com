@@ -1,13 +1,12 @@
 import React, { useState } from "react";
-import { addDays, format } from "date-fns";
+import { addDays, format, parseISO } from "date-fns";
 import Image from "next/legacy/image";
 import styles from "./TransposedGrid.module.scss";
-import { DAYS, DAY_ABBREVIATION, EXTENDED_DAYS } from "lib/NHL/types";
+import { DAYS, EXTENDED_DAY_ABBREVIATION, EXTENDED_DAYS } from "lib/NHL/types";
 import { useTeamsMap } from "hooks/useTeams";
 import VerticalMatchupCell from "./VerticalMatchupCell";
 import Toggle from "./Toggle";
-import { startAndEndOfWeek } from "./utils/date-func";
-import useSchedule from "./utils/useSchedule";
+import { calcTotalGP, calcTotalOffNights } from "./TotalGamesPerDayRow";
 
 type TransposedGridProps = {
   sortedTeams: Array<{
@@ -19,8 +18,8 @@ type TransposedGridProps = {
     [day: string]: any;
   }>;
   games: number[];
-  excludedDays: DAY_ABBREVIATION[];
-  setExcludedDays: React.Dispatch<React.SetStateAction<DAY_ABBREVIATION[]>>;
+  excludedDays: EXTENDED_DAY_ABBREVIATION[];
+  setExcludedDays: React.Dispatch<React.SetStateAction<EXTENDED_DAY_ABBREVIATION[]>>;
   extended: boolean;
   start: string;
   mode: "7-Day" | "10-Day-Forecast";
@@ -33,14 +32,8 @@ export default function TransposedGrid({
   setExcludedDays,
   extended,
   start,
-  mode,
 }: TransposedGridProps) {
   const daysToRender = extended ? EXTENDED_DAYS : DAYS;
-  const [dates] = useState<[string, string]>(() => startAndEndOfWeek());
-  const [currentSchedule, currentNumGamesPerDay] = useSchedule(
-    format(new Date(dates[0]), "yyyy-MM-dd"),
-    mode === "10-Day-Forecast",
-  );
   const teamsMap = useTeamsMap();
 
   const [teamSortKey, setTeamSortKey] = useState<
@@ -64,7 +57,7 @@ export default function TransposedGrid({
 
   const sortedDays = daysToRender;
 
-  const toggleDay = (day: DAY_ABBREVIATION) => {
+  const toggleDay = (day: EXTENDED_DAY_ABBREVIATION) => {
     setExcludedDays((prev) => {
       const newSet = new Set(prev);
       newSet.has(day) ? newSet.delete(day) : newSet.add(day);
@@ -89,8 +82,8 @@ export default function TransposedGrid({
     return numGames <= 8 ? styles.greenBorder : styles.redBorder;
   }
 
-  const totalWeekGames = games.reduce((acc, num) => acc + num, 0);
-  const offDayCount = games.filter((num) => num <= 8).length;
+  const totalWeekGames = calcTotalGP(games, excludedDays, daysToRender);
+  const offDayCount = calcTotalOffNights(games, excludedDays, daysToRender);
 
   function getColorMapping(values: number[]): Record<number, string> {
     const unique = Array.from(new Set(values)).sort((a, b) => b - a);
@@ -198,20 +191,18 @@ export default function TransposedGrid({
         </thead>
         <tbody>
           {sortedDays.map((day, dayIndex) => {
-            const cellDate = format(addDays(new Date(start), dayIndex), "M/d");
-            const isDisabled = excludedDays.includes(day as DAY_ABBREVIATION);
+            const cellDate = format(addDays(parseISO(start), dayIndex), "M/d");
+            const isDisabled = excludedDays.includes(day as EXTENDED_DAY_ABBREVIATION);
             return (
               <tr key={day} className={isDisabled ? styles.disabledRow : ""}>
                 <th className={styles.dayHeader}>
                   <div className={styles.cellContent}>
-                    {day} {cellDate}
-                    {!extended && (
-                      <Toggle
-                        checked={!isDisabled}
-                        aria-label={`Include ${String(day)} games`}
-                        onChange={() => toggleDay(day as DAY_ABBREVIATION)}
-                      />
-                    )}
+                    {String(day).replace(/^n/, "NEXT ")} {cellDate}
+                    <Toggle
+                      checked={!isDisabled}
+                      aria-label={`Include ${String(day).replace(/^n/, "NEXT ")} games`}
+                      onChange={() => toggleDay(day as EXTENDED_DAY_ABBREVIATION)}
+                    />
                   </div>
                 </th>
                 <td className={getDailyTotalCellClass(games[dayIndex] || 0)}>
