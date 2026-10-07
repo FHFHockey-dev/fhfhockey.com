@@ -1253,8 +1253,15 @@
   .desktopMasterSection .scheduleGridContainer {
     background: v.$surface-1;
     overflow: visible;
-    border-top-left-radius: 24px;
-    border-top-right-radius: 24px;
+    border-radius: 24px;
+  }
+
+  .desktopMasterSection .masterTable tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 24px;
+  }
+
+  .desktopMasterSection .masterTable tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 24px;
   }
 
   .desktopMasterSection .masterTableShell {
@@ -3071,6 +3078,15 @@
     background-color: transparent;
     border-spacing: 0;
     border-radius: 0 0 18px 18px;
+
+    tbody tr:last-of-type td:first-child {
+      border-bottom-left-radius: v.$border-radius-lg;
+      overflow: visible;
+    }
+
+    tbody tr:last-of-type td:last-child {
+      border-bottom-right-radius: v.$border-radius-lg;
+    }
   }
 
   // --- Modern Table Header (thead) ---

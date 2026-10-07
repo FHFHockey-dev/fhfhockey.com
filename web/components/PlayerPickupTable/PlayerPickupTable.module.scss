@@ -166,10 +166,9 @@ $selected-border-width: 2px; // The width of the indicator
   gap: 8px;
   // Optional inner wrapper if we later group content
   .titleContent {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    align-items: baseline;
+    margin: 0;
+    font: inherit;
+    color: v.$color-white;
   }
 
   .titleWord {

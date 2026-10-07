@@ -723,13 +723,17 @@ const Filters: React.FC<FiltersProps> = ({
         aria-controls={isMobile ? "player-table-content" : undefined}
         data-interactive={isMobile ? true : undefined}
       >
-        <span className={styles.titleContent}>
-          <span className={styles.acronym}>POOL</span>
-          <span>-</span>
+        <h2 className={styles.titleContent} aria-label="Best Players Available">
           <span className={styles.titleWord}>
-            Player candidates
+            <span className={styles.acronym}>B</span>est
+          </span>{" "}
+          <span className={styles.titleWord}>
+            <span className={styles.acronym}>P</span>layers
+          </span>{" "}
+          <span className={styles.titleWord}>
+            <span className={styles.acronym}>A</span>vailable
           </span>
-        </span>
+        </h2>
         {isMobile && (
           <span
             className={clsx(

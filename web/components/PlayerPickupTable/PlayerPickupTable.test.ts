@@ -63,6 +63,8 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 describe("Player pickup interactions", () => {
   it("loads current ownership without history and filters zero-owned players by team", async () => {
     render(React.createElement(PlayerPickupTable));
+    expect(screen.getByRole("heading", { name: /^Best Players Available$/ }).textContent)
+      .toBe("Best Players Available");
     await screen.findByText("F. Agent");
     expect(screen.getAllByText("C, LW").length).toBeGreaterThan(0);
     expect(screen.queryByText(/\[object Object\]/)).toBeNull();

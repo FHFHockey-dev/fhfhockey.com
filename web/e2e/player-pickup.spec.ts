@@ -30,6 +30,8 @@ test("candidate drawer preserves readable provider positions and honest availabi
       const handle = drawer.getByRole("button", { name: /Player Candidates/ });
       if (await handle.getAttribute("aria-expanded") === "false") await handle.click();
     }
+    await expect(page.getByRole("heading", { name: "Best Players Available", exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Best Players Available", exact: true }).first()).toHaveText("Best Players Available");
     await expect(page.getByText("F. Candidate").first()).toBeVisible();
     await expect(page.getByText("C, LW").first()).toBeVisible();
     await expect(page.getByText(/Availability in your league and waiver status are unknown/).first()).toBeVisible();
@@ -66,7 +68,7 @@ test("candidate drawer preserves readable provider positions and honest availabi
       }
     }
     if (width < 768) {
-      const title = page.getByRole("button", { name: /POOL.*Player candidates/i });
+      const title = page.getByRole("button", { name: "Best Players Available", exact: true });
       await title.focus();
       await page.keyboard.press("Enter");
       await expect(title).toHaveAttribute("aria-expanded", "false");
@@ -113,7 +115,7 @@ for (const width of [1180, 390]) {
     await page.goto("/game-grid/7-Day-Forecast?startDate=2026-10-01&endDate=2026-10-07");
     const drawer = page.getByRole("region", { name: "Player candidates", exact: true });
     const handle = await drawer.isVisible() ? drawer.getByRole("button", { name: /Player Candidates/ })
-      : page.getByRole("button", { name: /POOL.*Player candidates/i });
+      : page.getByRole("button", { name: "Best Players Available", exact: true });
     if (await handle.getAttribute("aria-expanded") === "false") await handle.click();
     await expect(page.getByText(/Fixture League · Fixture Team · Synced/)).toBeVisible();
     await expect(page.getByText("I. Candidate").first()).toBeVisible();
