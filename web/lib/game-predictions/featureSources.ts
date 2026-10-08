@@ -8,6 +8,7 @@ export type FeatureSourceUse =
 export type AsOfRule =
   | "identity"
   | "strict_before_game_date"
+  | "verified_completion_and_original_availability_before_prediction_cutoff"
   | "strict_before_start_time"
   | "strict_before_prediction_cutoff_and_start_time"
   | "current_prediction_only"
@@ -24,7 +25,7 @@ export type GamePredictionFeatureSource = {
 };
 
 export const GAME_PREDICTION_FEATURE_SET_VERSION =
-  "game_features_v5_accuracy_candidates";
+  "game_features_v6_verified_team_game_sos100";
 
 export const GAME_PREDICTION_FEATURE_SOURCES: GamePredictionFeatureSource[] = [
   {
@@ -42,8 +43,8 @@ export const GAME_PREDICTION_FEATURE_SOURCES: GamePredictionFeatureSource[] = [
     featureGroup: "team_strength",
     use: "required",
     asOfRule: "strict_before_game_date",
-    fallback: "Use wider lookback or preseason/team prior.",
-    goNoGo: "go_with_caveat",
+    fallback: "Use wider lookback or preseason/team prior. Legacy daily dates do not prove original availability for historical replay. Preserve the stored whole-league rating scale; do not refit or renormalize the requested teams.",
+    goNoGo: "limited",
   },
   {
     id: "schedule_strength",
@@ -52,7 +53,7 @@ export const GAME_PREDICTION_FEATURE_SOURCES: GamePredictionFeatureSource[] = [
     use: "optional",
     asOfRule: "strict_before_game_date",
     fallback:
-      "Omit schedule-strength context when prior opponents or as-of team ratings are unavailable.",
+      "Preserve selected game windows and disclose missing opponent ratings. Historical replay requires verified completion and original rating availability.",
     goNoGo: "go_with_caveat",
   },
   {
@@ -77,9 +78,9 @@ export const GAME_PREDICTION_FEATURE_SOURCES: GamePredictionFeatureSource[] = [
     ],
     featureGroup: "team_underlying",
     use: "optional",
-    asOfRule: "strict_before_game_date",
-    fallback: "Drop stale or missing NST features and rely on team power/WGO.",
-    goNoGo: "go_with_caveat",
+    asOfRule: "verified_completion_and_original_availability_before_prediction_cutoff",
+    fallback: "Exclude rows without unique game identity, verified completion and original pre-cutoff source availability; retain exclusion diagnostics. Legacy rows do not establish historical replay support.",
+    goNoGo: "limited",
   },
   {
     id: "wgo_team_stats",

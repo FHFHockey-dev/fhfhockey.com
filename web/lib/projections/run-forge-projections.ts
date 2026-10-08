@@ -513,20 +513,33 @@ export async function runProjectionV2ForDate(
 }
 
 /** Bounded diagnostic capture: no run reservation, publication or database writes. */
-export async function captureForgeReconstruction(args: {
+type DiagnosticCaptureArgs = {
   slateDate: string; gameId: number; inputCutoff: string; codeVersion: string; deadlineMs: number;
   controlledNews?: { classification: "controlled_news_fixture"; lineups?: import("./dailyBoardEvidence").BoardLineupEvidence[];
     goalies?: import("./dailyBoardEvidence").BoardGoalieEvidence[]; conflicts?: import("./dailyBoardEvidence").BoardConflict[] };
-}) {
+};
+export async function captureForgeReconstruction(args: DiagnosticCaptureArgs) {
+  return captureForgeDiagnosticInputs(args);
+}
+
+/** Local pregame acquisition probe; outputs are drafts until separately issued from frozen inputs. */
+export async function captureForgePregameInputs(args: Omit<DiagnosticCaptureArgs, "controlledNews"> & { runId: string }) {
+  if (!/^[a-f0-9-]{36}$/i.test(args.runId) || Date.parse(args.inputCutoff) <= Date.now()
+    || args.deadlineMs >= Date.parse(args.inputCutoff) || args.deadlineMs > Date.now() + 600_000)
+    throw new Error("Prospective acquisition needs a unique run ID and a deadline before cutoff within ten minutes");
+  return captureForgeDiagnosticInputs(args, args.runId);
+}
+
+async function captureForgeDiagnosticInputs(args: DiagnosticCaptureArgs, prospectiveRunId?: string) {
   if (!starterBoardFlags().compute || !starterBoardFlags().capture) throw new Error("Reconstruction requires the captured Starter Board calculation path");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(args.slateDate) || !Number.isSafeInteger(args.gameId) || args.gameId <= 0
-    || !args.codeVersion || !Number.isFinite(Date.parse(args.inputCutoff)) || Date.parse(args.inputCutoff) > Date.now()
+    || !args.codeVersion || !Number.isFinite(Date.parse(args.inputCutoff)) || (!prospectiveRunId && Date.parse(args.inputCutoff) > Date.now())
     || !Number.isFinite(args.deadlineMs) || args.deadlineMs <= Date.now()) throw new Error("Invalid bounded reconstruction request");
   if (args.slateDate >= "2026-01-03" && args.slateDate <= "2026-04-16") throw new Error("Protected research holdout cannot be reconstructed under this contract");
   if (args.controlledNews && (args.controlledNews.classification !== "controlled_news_fixture"
     || [...args.controlledNews.lineups ?? [], ...args.controlledNews.goalies ?? [], ...args.controlledNews.conflicts ?? []]
       .some((row) => row.game_id !== args.gameId))) throw new Error("Controlled news must identify this game and remain explicitly synthetic");
-  const runId = "00000000-0000-4000-8000-000000000001";
+  const runId = prospectiveRunId ?? "00000000-0000-4000-8000-000000000001";
   const capture = await captureProjectionInputs(() => runProjectionCalculations(args.slateDate, {
     gameIds: [args.gameId], horizonGames: 1, decisionAsOf: args.inputCutoff, deadlineMs: args.deadlineMs,
   }, runId), { deadlineMs: args.deadlineMs, suppressWrites: true, controlledNewsReads: args.controlledNews ? {
@@ -546,15 +559,23 @@ export async function captureForgeReconstruction(args: {
     inputCutoff: args.inputCutoff, capturedAt: new Date().toISOString(), codeVersion: args.codeVersion,
     modelMode: resolveSkaterRolloutConfig().mode, modelEnvironment: projectionModelEnvironment(),
     inputProvenance: buildForgeInputProvenance(), deterministicSeed: 0, horizonGames: 1, gameIds: [args.gameId],
-    replayClassification: "historical_reconstruction", reads: capture.reads,
+    replayClassification: prospectiveRunId ? "prospective_frozen" : "historical_reconstruction", reads: capture.reads,
     ...(args.controlledNews ? { controlledScenario: { classification: "controlled_news_fixture" as const, fixtureHash: projectionInputHash(args.controlledNews) } } : {}),
     outputHash: projectionWritesHash(capture.writes), goalieStarts: capturedGoalieStarts(capture.reads, capture.writes),
   };
+  if (prospectiveRunId && (Date.now() >= args.deadlineMs || capture.reads.some(read => Date.parse(read.receivedAt) >= Date.parse(args.inputCutoff))))
+    throw new Error("Prospective acquisition missed its deadline or cutoff");
   return { result: capture.result, snapshot, writes: capture.writes, snapshotHash: projectionInputHash(snapshot) };
 }
 
 /** Replays recorded reads, suppressing all database writes and network access. */
 export async function replayForgeSnapshot(snapshot: ForgeInputSnapshot, expectedHash: string) {
+  const { runId, outputHash, matched } = await scoreFrozenForgeSnapshot(snapshot, expectedHash);
+  return { runId, outputHash, matched };
+}
+
+/** Private local diagnostics: expose suppressed output rows without publishing them. */
+export async function scoreFrozenForgeSnapshot(snapshot: ForgeInputSnapshot, expectedHash: string) {
   if (!starterBoardFlags().capture) throw new Error("Replay requires Starter Board capture configuration.");
   if (projectionInputHash(snapshot) !== expectedHash || snapshot.version !== "forge-inputs-v1") {
     throw new Error("FORGE snapshot checksum or version mismatch.");
@@ -586,7 +607,7 @@ export async function replayForgeSnapshot(snapshot: ForgeInputSnapshot, expected
   });
   const outputHash = projectionWritesHash(replay.writes);
   if (outputHash !== snapshot.outputHash) throw new Error("FORGE replay output mismatch; use the captured code/model version.");
-  return { runId: snapshot.runId, outputHash, matched: true };
+  return { runId: snapshot.runId, outputHash, matched: true, writes: replay.writes };
 }
 
 async function runProjectionCalculations(asOfDate: string, opts: RunProjectionOptions | undefined, runId: string): Promise<RunProjectionResult> {

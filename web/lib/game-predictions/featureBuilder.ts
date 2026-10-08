@@ -17,6 +17,11 @@ import {
   type RosterPlayerRow,
 } from "./rosterImpact";
 
+import {
+  normalizeTeamGameFacts,
+  type TeamGameNormalizationResult,
+} from "./teamGameNormalization";
+
 type Tables<T extends keyof Database["public"]["Tables"]> =
   Database["public"]["Tables"][T]["Row"];
 
@@ -29,7 +34,7 @@ export type GameRow = Pick<
   | "homeTeamId"
   | "awayTeamId"
   | "type"
->;
+> & { completed_at?: string | null };
 
 export type TeamRow = Pick<Tables<"teams">, "id" | "abbreviation" | "name">;
 
@@ -48,7 +53,7 @@ export type TeamPowerRow = Pick<
   | "ga60"
   | "sf60"
   | "sa60"
->;
+> & { available_at?: string; availability_basis?: "original_source" | "retained_capture" | "unknown" };
 
 export type StandingsRow = Pick<
   Tables<"nhl_standings_details">,
@@ -105,7 +110,16 @@ export type NstTeamGamelogRow = Pick<
   | "cf"
   | "ca"
   | "cf_pct"
->;
+> & {
+  game_id?: number;
+  phase?: number;
+  strength?: string;
+  available_at?: string;
+  availability_basis?: "original_source" | "retained_capture" | "ingestion_only" | "unknown";
+  stat_definition?: string;
+  observation_kind?: "game" | "cumulative";
+  correction_of_available_at?: string;
+};
 
 export type TeamCtpiRow = Pick<
   Tables<"team_ctpi_daily">,
@@ -247,6 +261,7 @@ export type MarketOddsSnapshotRow = Pick<
 
 export type GamePredictionFeatureInputs = {
   game: GameRow;
+  historicalReplay?: boolean;
   sourceAsOfDate: string;
   predictionCutoffAt?: string;
   oddsSourceCutoffAt?: string;
@@ -254,6 +269,7 @@ export type GamePredictionFeatureInputs = {
   awayTeam: TeamRow;
   teamRows?: TeamRow[];
   priorGames: GameRow[];
+  teamGameRecords?: GameRow[];
   teamPowerRows: TeamPowerRow[];
   standingsRows: StandingsRow[];
   wgoTeamRows: WgoTeamRow[];
@@ -297,6 +313,7 @@ export type TeamSideFeatures = {
   standings: StandingsFeatures | null;
   wgoTeam: WgoTeamFeatures | null;
   recentForm: TeamRecentFormFeatures | null;
+  teamGameNormalization: TeamGameNormalizationResult;
   ctpi: TeamCtpiFeatures | null;
   scheduleStrength: TeamScheduleStrengthFeatures | null;
   opponentAdjustedForm: TeamOpponentAdjustedFormFeatures | null;
@@ -347,6 +364,10 @@ export type WgoTeamFeatures = {
 
 export type TeamRecentWindowFeatures = {
   games: number;
+  goalsForGames: number;
+  goalsAgainstGames: number;
+  xgGames: number;
+  shotsGames: number;
   goalDifferentialPerGame: number | null;
   goalsForPerGame: number | null;
   goalsAgainstPerGame: number | null;
@@ -432,6 +453,12 @@ export type TeamCtpiFeatures = {
 export type TeamScheduleStrengthFeatures = {
   sourceMaxDate: string | null;
   pastOpponentGames: number;
+  selectedOpponentGames: number;
+  missingOpponentGames: number;
+  last5SelectedGames: number;
+  last5RatedGames: number;
+  last10SelectedGames: number;
+  last10RatedGames: number;
   pastOpponentAvgOffRating: number | null;
   pastOpponentAvgDefRating: number | null;
   pastOpponentAvgGoalieRating: number | null;
@@ -443,7 +470,7 @@ export type TeamScheduleStrengthFeatures = {
 };
 
 export const SOS_ADJUSTED_FORM_VERSION =
-  "sos_adjusted_form_v1_neutral50_goal_diff_div50_xgf_scale_0_05";
+  "sos_adjusted_form_v2_neutral100_goal_diff_div100_xgf_scale_0_05";
 
 export type TeamOpponentAdjustedFormFeatures = {
   version: typeof SOS_ADJUSTED_FORM_VERSION;
@@ -892,7 +919,12 @@ function shareFromCounts(
 function summarizeRecentTeamRows(
   rows: NstTeamGamelogRow[],
 ): TeamRecentWindowFeatures {
-  const games = sumNumbers(rows, (row) => row.gp) || rows.length;
+  const games = rows.length;
+  const observed = (field: keyof NstTeamGamelogRow) => rows.filter((row) => toNumber(row[field] as number | string | null) != null).length;
+  const goalsForGames = observed("gf");
+  const goalsAgainstGames = observed("ga");
+  const xgGames = rows.filter((row) => toNumber(row.xgf) != null && toNumber(row.xga) != null).length;
+  const shotsGames = rows.filter((row) => toNumber(row.sf) != null && toNumber(row.sa) != null).length;
   const goalsFor = sumNumbers(rows, (row) => row.gf);
   const goalsAgainst = sumNumbers(rows, (row) => row.ga);
   const xgf = sumNumbers(rows, (row) => row.xgf);
@@ -905,32 +937,33 @@ function summarizeRecentTeamRows(
   const corsiAgainst = sumNumbers(rows, (row) => row.ca);
   const toiSeconds = sumNumbers(rows, (row) => row.toi_seconds);
   const points = sumNumbers(rows, (row) => row.points);
-  const hasPoints = rows.some((row) => toNumber(row.points) != null);
-  const xgaPer60Values = rows
-    .map((row) => toNumber(row.xga_per_60))
-    .filter((value): value is number => value != null);
+  const completePoints = rows.every((row) => toNumber(row.points) != null);
+  const completeFenwick = rows.every((row) => toNumber(row.ff) != null && toNumber(row.fa) != null);
+  const completeCorsi = rows.every((row) => toNumber(row.cf) != null && toNumber(row.ca) != null);
+  const completeXgaExposure = rows.every((row) => toNumber(row.xga) != null && (toNumber(row.toi_seconds) ?? 0) > 0);
 
   return {
     games,
-    goalDifferentialPerGame: divideOrNull(goalsFor - goalsAgainst, games),
-    goalsForPerGame: divideOrNull(goalsFor, games),
-    goalsAgainstPerGame: divideOrNull(goalsAgainst, games),
-    xgfPct: shareFromCounts(xgf, xga, rows[0]?.xgf_pct),
-    shotShare: shareFromCounts(shotsFor, shotsAgainst, rows[0]?.sf_pct),
-    fenwickShare: shareFromCounts(fenwickFor, fenwickAgainst, rows[0]?.ff_pct),
-    corsiShare: shareFromCounts(corsiFor, corsiAgainst, rows[0]?.cf_pct),
-    gfPct: shareFromCounts(goalsFor, goalsAgainst, rows[0]?.gf_pct),
+    goalsForGames,
+    goalsAgainstGames,
+    xgGames,
+    shotsGames,
+    goalDifferentialPerGame: goalsForGames === games && goalsAgainstGames === games ? divideOrNull(goalsFor - goalsAgainst, games) : null,
+    goalsForPerGame: divideOrNull(goalsFor, goalsForGames),
+    goalsAgainstPerGame: divideOrNull(goalsAgainst, goalsAgainstGames),
+    xgfPct: xgGames === games ? shareFromCounts(xgf, xga, rows[0]?.xgf_pct) : null,
+    shotShare: shotsGames === games ? shareFromCounts(shotsFor, shotsAgainst, rows[0]?.sf_pct) : null,
+    fenwickShare: completeFenwick ? shareFromCounts(fenwickFor, fenwickAgainst, rows[0]?.ff_pct) : null,
+    corsiShare: completeCorsi ? shareFromCounts(corsiFor, corsiAgainst, rows[0]?.cf_pct) : null,
+    gfPct: goalsForGames === games && goalsAgainstGames === games ? shareFromCounts(goalsFor, goalsAgainst, rows[0]?.gf_pct) : null,
     xgaPer60:
-      toiSeconds > 0
+      completeXgaExposure && toiSeconds > 0
         ? (xga / toiSeconds) * 3600
-        : xgaPer60Values.length > 0
-          ? xgaPer60Values.reduce((sum, value) => sum + value, 0) /
-            xgaPer60Values.length
-          : null,
+        : null,
     pointPct:
-      hasPoints && games > 0
+      completePoints && games > 0
         ? points / (2 * games)
-        : percentishToRate(rows[0]?.point_pct),
+        : null,
   };
 }
 
@@ -1082,20 +1115,24 @@ function buildTeamScheduleStrengthFeatures(args: {
   priorGames: GameRow[];
   teams: TeamRow[];
   teamPowerRows: TeamPowerRow[];
+  cutoffAt: string;
 }): TeamScheduleStrengthFeatures | null {
   const teamAbbreviationById = new Map(
     args.teams.map((team) => [team.id, team.abbreviation]),
   );
-  const opponentRows = args.priorGames
+  const selectedGames = [...new Map(args.priorGames.map((game) => [game.id, game])).values()]
     .filter(
       (game) =>
+        game.completed_at != null && Date.parse(game.completed_at) > Date.parse(game.startTime) &&
+        Date.parse(game.completed_at) < Date.parse(args.cutoffAt) &&
+        game.seasonId === args.game.seasonId && game.type === args.game.type &&
         game.date < args.sourceAsOfDate &&
         game.date < args.game.date &&
         (game.homeTeamId === args.teamId || game.awayTeamId === args.teamId),
     )
     .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 10)
-    .map((game) => {
+    .slice(0, 10);
+  const selectedRatings = selectedGames.map((game) => {
       const opponentId =
         game.homeTeamId === args.teamId ? game.awayTeamId : game.homeTeamId;
       const opponentAbbreviation = teamAbbreviationById.get(opponentId);
@@ -1103,23 +1140,30 @@ function buildTeamScheduleStrengthFeatures(args: {
       return latestBefore(
         args.teamPowerRows,
         game.date,
-        (row) => row.team_abbreviation === opponentAbbreviation,
+        (row) => row.team_abbreviation === opponentAbbreviation &&
+          (!row.available_at || Date.parse(row.available_at) < Date.parse(game.startTime)),
       );
-    })
-    .filter((row): row is TeamPowerRow => row != null);
+    });
+  const opponentRows = selectedRatings.filter((row): row is TeamPowerRow => row != null);
 
-  if (opponentRows.length === 0) return null;
+  if (selectedGames.length === 0) return null;
 
   const last5OpponentCompositeRating = averageNullable(
-    opponentRows.slice(0, 5).map(teamPowerComposite),
+    selectedRatings.slice(0, 5).map((row) => row ? teamPowerComposite(row) : null),
   );
   const last10OpponentCompositeRating = averageNullable(
-    opponentRows.slice(0, 10).map(teamPowerComposite),
+    selectedRatings.slice(0, 10).map((row) => row ? teamPowerComposite(row) : null),
   );
 
   return {
     sourceMaxDate: latestDateOnly(opponentRows.map((row) => row.date)),
     pastOpponentGames: opponentRows.length,
+    selectedOpponentGames: selectedGames.length,
+    missingOpponentGames: selectedGames.length - opponentRows.length,
+    last5SelectedGames: selectedRatings.slice(0, 5).length,
+    last5RatedGames: selectedRatings.slice(0, 5).filter(Boolean).length,
+    last10SelectedGames: selectedRatings.length,
+    last10RatedGames: opponentRows.length,
     pastOpponentAvgOffRating: averageNullable(
       opponentRows.map((row) => toNumber(row.off_rating)),
     ),
@@ -1150,7 +1194,7 @@ function adjustGoalDifferentialForOpponentQuality(
 ): number | null {
   return rawValue == null || opponentCompositeRating == null
     ? null
-    : rawValue + (opponentCompositeRating - 50) / 50;
+    : rawValue + (opponentCompositeRating - 100) / 100;
 }
 
 function adjustXgfPctForOpponentQuality(
@@ -1160,7 +1204,7 @@ function adjustXgfPctForOpponentQuality(
   if (rawValue == null || opponentCompositeRating == null) return null;
   return Math.max(
     0,
-    Math.min(1, rawValue + ((opponentCompositeRating - 50) / 50) * 0.05),
+    Math.min(1, rawValue + ((opponentCompositeRating - 100) / 100) * 0.05),
   );
 }
 
@@ -2012,8 +2056,12 @@ function buildTeamSideFeatures(args: {
     teamId: team.id,
     priorGames: inputs.priorGames,
   });
+  const replayCutoff = earliestIso([inputs.predictionCutoffAt, inputs.game.startTime]) ?? `${inputs.sourceAsOfDate}T00:00:00Z`;
+  const eligibleTeamPowerRows = inputs.teamPowerRows.filter((row) =>
+    (!row.available_at || Date.parse(row.available_at) < Date.parse(replayCutoff)) &&
+    (!inputs.historicalReplay || ((row.availability_basis === "original_source" || row.availability_basis === "retained_capture") && row.available_at != null)));
   const teamPowerRow = latestBefore(
-    inputs.teamPowerRows,
+    eligibleTeamPowerRows,
     inputs.sourceAsOfDate,
     (row) => row.team_abbreviation === team.abbreviation,
   );
@@ -2029,13 +2077,25 @@ function buildTeamSideFeatures(args: {
     inputs.sourceAsOfDate,
     (row) => row.team_id === team.id,
   );
+  const normalization = normalizeTeamGameFacts({
+    rows: inputs.nstTeamGamelogRows.filter((row) => row.team_abbreviation === team.abbreviation),
+    games: inputs.teamGameRecords ?? inputs.priorGames,
+    teams: [inputs.homeTeam, inputs.awayTeam, ...(inputs.teamRows ?? [])],
+    cutoffAt: replayCutoff,
+    phase: inputs.game.type,
+  });
+  if (normalization.exclusions.length > 0) warnings.push({
+    code: "excluded_team_game_facts", source: "nst_team_gamelogs_as_counts",
+    message: `${args.side}: ${normalization.exclusions.length} rows excluded: ${[...new Set(normalization.exclusions.map((row) => row.reason))].join(", ")}. Legacy GP/GF/GA ${JSON.stringify(normalization.legacyTotals)}; corrected ${JSON.stringify(normalization.correctedTotals)}.`,
+  });
   const recentForm = buildTeamRecentFormFeatures(
-    inputs.nstTeamGamelogRows,
+    normalization.facts,
     team.abbreviation,
     inputs.game.seasonId,
     inputs.sourceAsOfDate,
   );
   const trustedCtpiRows = inputs.teamCtpiRows.filter((row) =>
+    row.computed_at != null && Date.parse(row.computed_at) < Date.parse(replayCutoff) &&
     isTrustedRecentTeamFormPayload({
       publicationStatus: row.publication_status,
       formulaVersion: row.formula_version,
@@ -2054,18 +2114,19 @@ function buildTeamSideFeatures(args: {
     sourceAsOfDate: inputs.sourceAsOfDate,
     priorGames: inputs.priorGames,
     teams: [inputs.homeTeam, inputs.awayTeam, ...(inputs.teamRows ?? [])],
-    teamPowerRows: inputs.teamPowerRows,
+    teamPowerRows: eligibleTeamPowerRows,
+    cutoffAt: replayCutoff,
   });
   const opponentAdjustedForm = buildOpponentAdjustedFormFeatures(
     recentForm,
     scheduleStrength,
   );
   const forgeProjection = buildForgeTeamProjectionFeatures(
-    inputs.forgeTeamProjectionRows,
+    inputs.historicalReplay ? [] : inputs.forgeTeamProjectionRows?.filter((row) => row.updated_at != null && Date.parse(row.updated_at) < Date.parse(replayCutoff)),
     inputs.game.id,
     team.id,
   );
-  const latestLineCombination = [...inputs.lineCombinationRows]
+  const latestLineCombination = [...(inputs.historicalReplay ? [] : inputs.lineCombinationRows)]
     .filter((row) => row.teamId === team.id)
     .sort((a, b) => b.gameId - a.gameId)[0];
   const rosterImpact = buildRosterImpactFeatures({
@@ -2077,7 +2138,7 @@ function buildTeamSideFeatures(args: {
           ...((latestLineCombination.defensemen ?? []) as number[]),
         ]
       : [],
-    currentRosterRows: inputs.currentRosterRows ?? [],
+    currentRosterRows: inputs.historicalReplay ? [] : inputs.currentRosterRows ?? [],
     offenseRows: inputs.skaterOffenseRatingRows ?? [],
     defenseRows: inputs.skaterDefenseRatingRows ?? [],
     goalieRows: inputs.goalieRatingRows ?? [],
@@ -2085,7 +2146,9 @@ function buildTeamSideFeatures(args: {
   });
 
   const standings = buildStandingsFeatures(standingsRow);
-  const gamesPlayed = gamesPlayedAsOf({
+  const gamesPlayed = inputs.historicalReplay
+    ? normalization.facts.filter((row) => row.season_id === inputs.game.seasonId).length
+    : gamesPlayedAsOf({
     teamId: team.id,
     standings,
     priorGames: inputs.priorGames,
@@ -2117,6 +2180,7 @@ function buildTeamSideFeatures(args: {
       "nst_team_gamelogs_as_counts",
       recentForm?.sourceMaxDate ?? null,
       inputs.sourceAsOfDate,
+      "verified_completion_and_original_availability_before_prediction_cutoff",
     ),
     collectSourceCutoff(
       sourceCutoffs,
@@ -2238,12 +2302,14 @@ function buildTeamSideFeatures(args: {
     });
   }
 
+  const cutoffAt = replayCutoff;
+  const beforeCutoff = (value: string | null) => !cutoffAt || (value != null && Date.parse(value) < Date.parse(cutoffAt));
   const goalieSelection = buildGoalieBlendFeatures(
-    inputs.goalieStartRows,
+    inputs.goalieStartRows.filter((row) => beforeCutoff(row.created_at) && beforeCutoff(row.updated_at)),
     team.id,
     {
-      linesCccRows: inputs.linesCccRows,
-      lineCombinationRows: inputs.lineCombinationRows,
+      linesCccRows: inputs.linesCccRows.filter((row) => beforeCutoff(row.observed_at) && (!row.tweet_posted_at || beforeCutoff(row.tweet_posted_at))),
+      lineCombinationRows: inputs.historicalReplay ? [] : inputs.lineCombinationRows,
       goaliePerformanceRows: inputs.goaliePerformanceRows,
       priorGames: inputs.priorGames,
       gameId: inputs.game.id,
@@ -2254,7 +2320,7 @@ function buildTeamSideFeatures(args: {
     teamId: team.id,
     gameDate: inputs.game.date,
     sourceAsOfDate: inputs.sourceAsOfDate,
-    forgeGoalieGameRows: inputs.forgeGoalieGameRows,
+    forgeGoalieGameRows: inputs.historicalReplay ? [] : inputs.forgeGoalieGameRows,
     wgoGoalieRows: inputs.wgoGoalieRows,
   });
   const goalie = {
@@ -2366,7 +2432,7 @@ function buildTeamSideFeatures(args: {
   }
 
   const lineup = buildLineupFeatures(
-    inputs.lineCombinationRows,
+    inputs.historicalReplay ? [] : inputs.lineCombinationRows,
     team.id,
     inputs.game.id,
   );
@@ -2399,6 +2465,7 @@ function buildTeamSideFeatures(args: {
     standings,
     wgoTeam: buildWgoTeamFeatures(wgoRow),
     recentForm,
+    teamGameNormalization: normalization,
     ctpi: buildTeamCtpiFeatures(ctpiRow),
     scheduleStrength,
     opponentAdjustedForm,
@@ -2602,6 +2669,38 @@ async function fetchLatestPlayerImpactRows(
   return (data ?? []) as PlayerImpactRatingInput[];
 }
 
+async function fetchRequiredTeamPowerRows(
+  client: SupabaseClient<Database>,
+  game: GameRow,
+  sourceAsOfDate: string,
+  priorGames: GameRow[],
+  teams: TeamRow[],
+): Promise<{ data: TeamPowerRow[]; error: null }> {
+  const requests = new Map<string, { abbreviation: string; date: string }>();
+  const add = (teamId: number, date: string) => {
+    const abbreviation = teams.find((team) => team.id === teamId)?.abbreviation;
+    if (abbreviation) requests.set(`${abbreviation}:${date}`, { abbreviation, date });
+  };
+  for (const teamId of [game.homeTeamId, game.awayTeamId]) {
+    add(teamId, sourceAsOfDate);
+    const selectedGames = [...new Map(priorGames.map((prior) => [prior.id, prior])).values()]
+      .filter((prior) => prior.seasonId === game.seasonId && prior.type === game.type &&
+        prior.date < sourceAsOfDate && prior.date < game.date &&
+        (prior.homeTeamId === teamId || prior.awayTeamId === teamId))
+      .sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10);
+    for (const prior of selectedGames) add(prior.homeTeamId === teamId ? prior.awayTeamId : prior.homeTeamId, prior.date);
+  }
+  const results = await Promise.all([...requests.values()].map(async ({ abbreviation, date }) => {
+    const result = await client.from("team_power_ratings_daily")
+      .select("team_abbreviation,date,off_rating,def_rating,goalie_rating,special_rating,pace_rating,xgf60,xga60,gf60,ga60,sf60,sa60")
+      .eq("team_abbreviation", abbreviation).lt("date", date)
+      .order("date", { ascending: false }).limit(1);
+    if (result.error) throw result.error;
+    return (result.data ?? []) as TeamPowerRow[];
+  }));
+  return { data: [...new Map(results.flat().map((row) => [`${row.team_abbreviation}:${row.date}`, row])).values()], error: null };
+}
+
 export async function fetchGamePredictionFeatureInputs(
   client: SupabaseClient<Database>,
   gameId: number,
@@ -2622,7 +2721,7 @@ export async function fetchGamePredictionFeatureInputs(
   const sourceAsOfDate = options.sourceAsOfDate ?? typedGame.date;
   const sourceAsOfEnd = `${sourceAsOfDate}T23:59:59.999Z`;
   const predictionCutoffAt =
-    options.predictionCutoffAt ?? typedGame.startTime ?? sourceAsOfEnd;
+    earliestIso([options.predictionCutoffAt, typedGame.startTime]) ?? sourceAsOfEnd;
   const oddsSourceCutoffAt =
     earliestIso([predictionCutoffAt, typedGame.startTime]) ??
     predictionCutoffAt;
@@ -2713,14 +2812,7 @@ export async function fetchGamePredictionFeatureInputs(
     skaterDefenseRatingRows,
     goalieRatingRows,
   ] = await Promise.all([
-    client
-      .from("team_power_ratings_daily")
-      .select(
-        "team_abbreviation,date,off_rating,def_rating,goalie_rating,special_rating,pace_rating,xgf60,xga60,gf60,ga60,sf60,sa60",
-      )
-      .lt("date", sourceAsOfDate)
-      .order("date", { ascending: false })
-      .limit(100),
+    fetchRequiredTeamPowerRows(client, typedGame, sourceAsOfDate, priorGames, teamRows),
     client
       .from("nhl_standings_details")
       .select(
@@ -2763,7 +2855,8 @@ export async function fetchGamePredictionFeatureInputs(
         "game_id,team_id,player_id,game_date,start_probability,confirmed_status,projected_gsaa_per_60,created_at,updated_at",
       )
       .eq("game_id", gameId)
-      .lte("created_at", sourceAsOfEnd),
+      .lt("created_at", predictionCutoffAt)
+      .lt("updated_at", predictionCutoffAt),
     lineCombinationQuery,
     client
       .from("lines_ccc")
@@ -2774,7 +2867,7 @@ export async function fetchGamePredictionFeatureInputs(
       .in("team_id", teamIds)
       .eq("status", "observed")
       .eq("nhl_filter_status", "accepted")
-      .lte("observed_at", sourceAsOfEnd),
+      .lt("observed_at", predictionCutoffAt),
     client
       .from("vw_goalie_stats_unified")
       .select(
@@ -2870,6 +2963,7 @@ export async function fetchGamePredictionFeatureInputs(
 
   return {
     game: typedGame,
+    historicalReplay: hasExplicitSourceAsOfDate,
     sourceAsOfDate,
     predictionCutoffAt,
     oddsSourceCutoffAt,

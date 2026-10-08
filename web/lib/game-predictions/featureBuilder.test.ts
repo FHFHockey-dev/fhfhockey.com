@@ -5,10 +5,12 @@ import {
   buildGamePredictionFeatureSnapshotPayload,
   buildGoalieBlendFeatures,
   buildScheduleContextFeatures,
+  fetchGamePredictionFeatureInputs,
   rosterFormBlendWeights,
   type GamePredictionFeatureInputs,
   type NstTeamGamelogRow,
 } from "./featureBuilder";
+import { normalizeTeamGameFacts } from "./teamGameNormalization";
 import { ESPN_MARKET_ODDS_SOURCE_NAME } from "./espnOdds";
 import { getFeatureSourceByTable } from "./featureSources";
 import { buildGamePredictionSourceProvenanceRows } from "lib/predictions/sourceProvenance";
@@ -42,6 +44,10 @@ function createNstTeamGamelogRow(args: {
     season_id: args.seasonId ?? 20252026,
     team_abbreviation: args.teamAbbreviation,
     date: args.date,
+    phase: 2,
+    strength: "all",
+    available_at: `${args.date}T23:50:00Z`,
+    availability_basis: "original_source",
     gp: 1,
     wins: args.points === 2 ? 1 : 0,
     losses: args.points === 0 ? 1 : 0,
@@ -71,7 +77,7 @@ function createNstTeamGamelogRow(args: {
 function createInputs(
   overrides: Partial<GamePredictionFeatureInputs> = {},
 ): GamePredictionFeatureInputs {
-  return {
+  const inputs: GamePredictionFeatureInputs = {
     game: {
       id: 2025020001,
       date: "2026-01-10",
@@ -456,7 +462,88 @@ function createInputs(
     forgeTeamProjectionRows: [],
     ...overrides,
   };
+  inputs.priorGames = inputs.priorGames.map((game) => ({ ...game, completed_at: `${game.date}T23:45:00Z` }));
+  inputs.teamGameRecords ??= inputs.nstTeamGamelogRows.map((row, index) => {
+    const teamId = row.team_abbreviation === "BOS" ? 1 : 2;
+    return { id: index + 1, date: row.date, startTime: `${row.date}T20:00:00Z`,
+      completed_at: `${row.date}T23:00:00Z`, seasonId: row.season_id!,
+      homeTeamId: teamId, awayTeamId: teamId === 1 ? 3 : 4, type: 2 };
+  });
+  return inputs;
 }
+
+describe("canonical team-game facts", () => {
+  const row = (overrides: Partial<NstTeamGamelogRow> = {}) => ({ ...createNstTeamGamelogRow({
+    teamAbbreviation: "BOS", date: "2026-01-09", gf: 4, ga: 2, xgf: 3, xga: 2, sf: 30, sa: 20, points: 2,
+  }), ...overrides });
+  const normalize = (rows: NstTeamGamelogRow[], overrides: Partial<Parameters<typeof normalizeTeamGameFacts>[0]> = {}) => {
+    const inputs = createInputs({ nstTeamGamelogRows: [row()] });
+    return normalizeTeamGameFacts({ rows, games: inputs.teamGameRecords!, teams: [inputs.homeTeam, inputs.awayTeam],
+      cutoffAt: "2026-01-10T18:00:00-05:00", phase: 2, ...overrides });
+  };
+  it("preserves legacy totals and distinct corrected exposures", () => {
+    expect(normalize([row(), row({ gp: 40, gf: 120, ga: 100 })])).toMatchObject({
+      legacyTotals: { gp: 41, gf: 124, ga: 102 }, correctedTotals: { gp: 1, gf: 4, ga: 2 },
+      exclusions: [{ rowIndex: 1, reason: "cumulative_or_invalid_gp" }],
+    });
+  });
+  it.each([
+    [{ phase: 3 }, "unknown_or_mismatched_phase"],
+    [{ strength: "5v5" }, "unknown_or_mismatched_strength"],
+    [{ season_id: 20242025 }, "ambiguous_or_missing_game"],
+    [{ availability_basis: "ingestion_only" }, "unknown_original_availability"],
+    [{ available_at: "2026-01-10T18:00:00-05:00" }, "future_or_invalid_availability"],
+    [{ available_at: "2026-01-11T00:00:00Z" }, "future_or_invalid_availability"],
+    [{ correction_of_available_at: "2026-01-10T00:00:00Z" }, "invalid_correction"],
+    [{ gf: -1 }, "invalid_counts"],
+    [{ available_at: undefined }, "unknown_original_availability"],
+    [{ available_at: "2026-01-09T23:50:00" }, "unknown_original_availability"],
+    [{ phase: undefined }, "unknown_or_mismatched_phase"],
+    [{ strength: undefined }, "unknown_or_mismatched_strength"],
+  ] as Array<[Partial<NstTeamGamelogRow>, string]>)("excludes unsupported metadata %j", (overrides, reason) => {
+    expect(normalize([row(overrides)]).exclusions).toEqual([{ rowIndex: 0, reason }]);
+  });
+  it("deduplicates identical verified revisions and rejects conflicts without doubling exposure", () => {
+    const first = row();
+    const laterReceipt = row({ available_at: "2026-01-10T11:40:00Z", availability_basis: "retained_capture" });
+    const deduplicated = normalize([laterReceipt, first, row()]);
+    expect(deduplicated.facts).toHaveLength(1);
+    expect(deduplicated.facts[0]?.available_at).toBe(first.available_at);
+    expect(deduplicated).toMatchObject({ legacyTotals: { gp: 3, gf: 12, ga: 6 }, correctedTotals: { gp: 1, gf: 4, ga: 2 } });
+    expect(deduplicated.exclusions).toEqual([{ rowIndex: 2, reason: "duplicate_identical_game" }, { rowIndex: 0, reason: "duplicate_identical_game" }]);
+    const conflict = normalize([row(), row({ gf: 5 })]);
+    expect(conflict.facts).toEqual([]);
+    expect(conflict.exclusions.every(exclusion => exclusion.reason === "duplicate_or_conflicting_game")).toBe(true);
+    const inputs = createInputs({ nstTeamGamelogRows: [row()] });
+    const game = inputs.teamGameRecords![0]!;
+    expect(normalize([row()], { games: [game, { ...game, id: 99 }] }).exclusions[0]?.reason).toBe("ambiguous_or_missing_game");
+  });
+  it("requires completed game evidence before original availability", () => {
+    const game = createInputs({ nstTeamGamelogRows: [row()] }).teamGameRecords![0]!;
+    expect(normalize([row()], { games: [{ ...game, completed_at: undefined }] }).facts).toEqual([]);
+    expect(normalize([row()], { games: [{ ...game, completed_at: "2026-01-11T00:00:00Z" }] }).facts).toEqual([]);
+    expect(normalize([row({ available_at: "2026-01-09T18:01:00-05:00" })]).facts).toHaveLength(1);
+  });
+  it("accepts proved retained receipts only at their actual pre-cutoff timestamps", () => {
+    expect(normalize([row({ availability_basis: "retained_capture" })]).facts).toHaveLength(1);
+    expect(normalize([row({ availability_basis: "retained_capture", available_at: "2026-01-11T00:00:00Z" })]).facts).toEqual([]);
+  });
+  it("differences only one verified completed game with matching stat definitions", () => {
+    const previous = row({ date: "2026-01-08", available_at: "2026-01-08T23:50:00Z", gp: 2, gf: 8, ga: 4,
+      observation_kind: "cumulative", stat_definition: "all_v1" });
+    const current = row({ gp: 3, gf: 12, ga: 6, observation_kind: "cumulative", stat_definition: "all_v1" });
+    const result = normalize([previous, current]);
+    expect(result.facts).toMatchObject([{ gp: 1, gf: 4, ga: 2, derivation: "cumulative_difference" }]);
+    expect(normalize([previous, { ...previous }, current]).facts).toMatchObject([{ gp: 1, gf: 4, ga: 2, derivation: "cumulative_difference" }]);
+    expect(normalize([previous, { ...previous, gf: 7 }, current]).facts).toEqual([]);
+    expect(normalize([previous, { ...current, stat_definition: "all_v2" }]).facts).toEqual([]);
+    expect(normalize([previous, { ...current, gp: 4 }]).facts).toEqual([]);
+    expect(normalize([previous, { ...current, gf: 7 }]).facts).toEqual([]);
+    expect(normalize([previous, { ...current, correction_of_available_at: previous.available_at }]).facts).toEqual([]);
+    const game = createInputs({ nstTeamGamelogRows: [row()] }).teamGameRecords![0]!;
+    expect(normalize([previous, current], { games: [game, { ...game, id: 9 }] }).facts).toEqual([]);
+  });
+});
 
 describe("game prediction feature sources", () => {
   it("marks latest-only team display data as excluded", () => {
@@ -468,6 +555,101 @@ describe("game prediction feature sources", () => {
 });
 
 describe("game prediction feature builder", () => {
+  it("keeps neutral 100 SOS unchanged and discloses missing opponent slots", () => {
+    const inputs = createInputs();
+    inputs.teamPowerRows = inputs.teamPowerRows.map((row) => ({ ...row, off_rating: 100, def_rating: 100, goalie_rating: 100, special_rating: 100 }));
+    const neutral = buildGamePredictionFeatureSnapshotPayload(inputs);
+    expect(neutral.home.opponentAdjustedForm?.adjustedLast5GoalDifferentialPerGame).toBe(neutral.home.recentForm?.last5GoalDifferentialPerGame);
+    expect(neutral.home.opponentAdjustedForm?.adjustedLast5XgfPct).toBe(neutral.home.recentForm?.last5XgfPct);
+    inputs.priorGames = Array.from({ length: 6 }, (_, index) => ({ ...inputs.priorGames[0]!, id: index + 10,
+      date: `2026-01-0${9 - index}`, startTime: `2026-01-0${9 - index}T20:00:00Z`, completed_at: `2026-01-0${9 - index}T23:45:00Z`, awayTeamId: index < 5 ? 4 : 3 }));
+    inputs.teamPowerRows = inputs.teamPowerRows.filter((row) => row.team_abbreviation === "TOR").map((row) => ({ ...row, date: "2026-01-01" }));
+    const coverage = buildGamePredictionFeatureSnapshotPayload(inputs).home.scheduleStrength;
+    expect(coverage).toMatchObject({ selectedOpponentGames: 6, missingOpponentGames: 5, last5SelectedGames: 5,
+      last5RatedGames: 0, last10RatedGames: 1, last5OpponentCompositeRating: null });
+  });
+  it("excludes opponent ratings first available after that opponent game", () => {
+    const inputs = createInputs();
+    inputs.teamPowerRows = inputs.teamPowerRows.map((row) => row.team_abbreviation === "TOR"
+      ? { ...row, available_at: "2026-01-10T12:00:00Z", availability_basis: "original_source" } : row);
+    const home = buildGamePredictionFeatureSnapshotPayload(inputs).home;
+    expect(home.scheduleStrength).toMatchObject({ selectedOpponentGames: 1, missingOpponentGames: 1, last5OpponentCompositeRating: null });
+  });
+  it("exposes exclusions when no verified form remains and omits mutable replay joins", () => {
+    const inputs = createInputs({ historicalReplay: true });
+    inputs.nstTeamGamelogRows = inputs.nstTeamGamelogRows.map((row) => ({ ...row, availability_basis: "unknown" }));
+    const payload = buildGamePredictionFeatureSnapshotPayload(inputs);
+    expect(payload.home.recentForm).toBeNull();
+    expect(payload.home.teamGameNormalization.exclusions.length).toBeGreaterThan(0);
+    expect(payload.home.forgeProjection).toBeNull();
+    expect(payload.home.lineup).toBeNull();
+    expect(payload.home.rosterImpact.skaterOffenseImpact).toBeNull();
+  });
+  it("fetches required opponent/date ratings and applies the explicit pregame cutoff", async () => {
+    const inputs = createInputs();
+    const queries: Array<{ table: string; calls: Array<[string, ...unknown[]]> }> = [];
+    const client = { from: (table: string) => {
+      const query = { table, calls: [] as Array<[string, ...unknown[]]> };
+      queries.push(query);
+      const chain: Record<string, unknown> = {};
+      for (const method of ["select", "eq", "in", "lt", "lte", "gte", "or", "order", "limit"]) {
+        chain[method] = (...args: unknown[]) => { query.calls.push([method, ...args]); return chain; };
+      }
+      chain.single = async () => ({ data: inputs.game, error: null });
+      chain.maybeSingle = async () => ({ data: null, error: null });
+      chain.then = (resolve: (value: unknown) => unknown) => resolve({
+        data: table === "games" ? inputs.priorGames : table === "teams" ? inputs.teamRows : [], error: null,
+      });
+      return chain;
+    } } as unknown as Parameters<typeof fetchGamePredictionFeatureInputs>[0];
+    const cutoff = "2026-01-10T18:00:00-05:00";
+    const fetched = await fetchGamePredictionFeatureInputs(client, inputs.game.id, { predictionCutoffAt: cutoff, sourceAsOfDate: "2026-01-10" });
+    expect(fetched.historicalReplay).toBe(true);
+    const power = queries.filter((query) => query.table === "team_power_ratings_daily");
+    expect(power).toHaveLength(4);
+    expect(power.every((query) => query.calls.some((call) => call[0] === "eq" && call[1] === "team_abbreviation") &&
+      query.calls.some((call) => call[0] === "limit" && call[1] === 1))).toBe(true);
+    expect(power.find((query) => query.calls.some((call) => call[2] === "TOR"))?.calls).toContainEqual(["lt", "date", "2026-01-09"]);
+    expect(queries.find((query) => query.table === "goalie_start_projections")?.calls).toEqual(expect.arrayContaining([
+      ["lt", "created_at", cutoff], ["lt", "updated_at", cutoff],
+    ]));
+    expect(queries.find((query) => query.table === "lines_ccc")?.calls).toContainEqual(["lt", "observed_at", cutoff]);
+  });
+  it("retains missing metric exposure without inventing zero goals", () => {
+    const inputs = createInputs();
+    inputs.nstTeamGamelogRows = inputs.nstTeamGamelogRows.map((row, index) => index === 0 ? { ...row, gf: null, xgf: null } : row);
+    const last5 = buildGamePredictionFeatureSnapshotPayload(inputs).home.recentForm?.last5;
+    expect(last5).toMatchObject({ games: 2, goalsForGames: 1, goalsAgainstGames: 2, xgGames: 1,
+      goalDifferentialPerGame: null, xgfPct: null });
+    for (const [field, feature] of [
+      ["ff", "fenwickShare"], ["fa", "fenwickShare"],
+      ["cf", "corsiShare"], ["ca", "corsiShare"],
+      ["xga", "xgaPer60"], ["toi_seconds", "xgaPer60"],
+      ["points", "pointPct"],
+    ] as const) {
+      const incomplete = createInputs();
+      incomplete.nstTeamGamelogRows[0] = { ...incomplete.nstTeamGamelogRows[0]!, [field]: null };
+      const window = buildGamePredictionFeatureSnapshotPayload(incomplete).home.recentForm?.last5;
+      expect(window?.games).toBe(2);
+      expect(window?.[feature]).toBeNull();
+    }
+    const noExposure = createInputs();
+    noExposure.nstTeamGamelogRows[0] = { ...noExposure.nstTeamGamelogRows[0]!, toi_seconds: 0 };
+    expect(buildGamePredictionFeatureSnapshotPayload(noExposure).home.recentForm?.last5.xgaPer60).toBeNull();
+  });
+  it("bounds availability by kickoff even when a later cutoff is requested", () => {
+    const inputs = createInputs({ predictionCutoffAt: "2026-01-11T12:00:00Z" });
+    inputs.nstTeamGamelogRows = inputs.nstTeamGamelogRows.map((row) => ({ ...row, available_at: "2026-01-11T00:00:00Z" }));
+    expect(buildGamePredictionFeatureSnapshotPayload(inputs).home.teamGameNormalization.facts).toEqual([]);
+  });
+  it("does not let future observations affect a pregame snapshot", () => {
+    const inputs = createInputs({ predictionCutoffAt: "2026-01-10T18:00:00-05:00" });
+    inputs.goalieStartRows = inputs.goalieStartRows.map((row) => ({ ...row, created_at: "2026-01-11T00:00:00Z", updated_at: "2026-01-11T00:00:00Z" }));
+    inputs.linesCccRows = inputs.linesCccRows.map((row) => ({ ...row, observed_at: "2026-01-11T00:00:00Z" }));
+    const payload = buildGamePredictionFeatureSnapshotPayload(inputs);
+    expect(payload.home.goalie.source).not.toBe("goalie_start_projections");
+    expect(payload.home.goalie.source).not.toBe("lines_ccc");
+  });
   it("uses a granular games-played curve that retains roster context", () => {
     expect(rosterFormBlendWeights(0)).toMatchObject({
       rosterPriorWeight: 0.8,
@@ -900,19 +1082,19 @@ describe("game prediction feature builder", () => {
     });
     expect(payload.home.opponentAdjustedForm).toMatchObject({
       rawLast10GoalDifferentialPerGame: 1.5,
-      adjustedLast10GoalDifferentialPerGame: 1.65,
+      adjustedLast10GoalDifferentialPerGame: 1.075,
     });
     expect(payload.home.opponentAdjustedForm?.rawLast10XgfPct).toBeCloseTo(
       0.56,
     );
     expect(payload.home.opponentAdjustedForm?.adjustedLast10XgfPct).toBeCloseTo(
-      0.5675,
+      0.53875,
     );
     expect(payload.away.opponentAdjustedForm).toMatchObject({
       rawLast10GoalDifferentialPerGame: -2,
-      adjustedLast10GoalDifferentialPerGame: -2.15,
+      adjustedLast10GoalDifferentialPerGame: -2.575,
       rawLast10XgfPct: 0.4,
-      adjustedLast10XgfPct: 0.3925,
+      adjustedLast10XgfPct: 0.37125,
     });
     expect(payload.matchup.homeMinusAwayCtpi).toBe(16);
     expect(payload.matchup.homeMinusAwayPastOpponentCompositeRating).toBe(15);
@@ -920,9 +1102,9 @@ describe("game prediction feature builder", () => {
     expect(payload.matchup.homeMinusAwayLast10OpponentCompositeRating).toBe(15);
     expect(
       payload.matchup.homeMinusAwayAdjustedRecent10GoalDifferentialPerGame,
-    ).toBeCloseTo(3.8);
+    ).toBeCloseTo(3.65);
     expect(payload.matchup.homeMinusAwayAdjustedRecent10XgfPct).toBeCloseTo(
-      0.175,
+      0.1675,
     );
     expect(payload.matchup.homeMinusAwayForgeProjectedGoals).toBeCloseTo(0.8);
     expect(payload.matchup.homeMinusAwayForgeProjectedShots).toBe(3);
@@ -1252,7 +1434,7 @@ describe("game prediction feature builder", () => {
       snapshot_date: "2026-01-10",
       model_name: "baseline_logistic",
       model_version: "v0",
-      feature_set_version: "game_features_v5_accuracy_candidates",
+      feature_set_version: "game_features_v6_verified_team_game_sos100",
       home_team_id: 1,
       away_team_id: 2,
     });
@@ -1260,7 +1442,7 @@ describe("game prediction feature builder", () => {
       prediction_contract: {
         modelName: "baseline_logistic",
         modelVersion: "v0",
-        featureSetVersion: "game_features_v5_accuracy_candidates",
+        featureSetVersion: "game_features_v6_verified_team_game_sos100",
         asOfDate: "2026-01-10",
         fallbackFlags: {
           away_wgo_team_fallback: true,

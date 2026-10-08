@@ -3,6 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { guardedForgeFetch, type RequestCounts } from "../../scripts/run-forge-local";
 import { projectionWritesHash, type ForgeInputSnapshot } from "./gameRevisions";
 import { projectionInputHash } from "./inputCapture";
+import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 
 const origin = "https://forge-fixture.supabase.invalid";
 const date = "2026-10-05";
@@ -177,6 +180,140 @@ async function run(local: boolean, backend: ReturnType<typeof fixture>, guarded 
 }
 
 describe("actual FORGE producer through fenced local transport", () => {
+  it("captures a prospective private draft and replays the native scorer without RPC, publication or network", async () => {
+    const backend = fixture();
+    vi.stubGlobal("fetch", backend.transport);
+    const { captureForgePregameInputs, scoreFrozenForgeSnapshot } = await import("./run-forge-projections");
+    const exportPath = process.env.FHFH_PREREQUISITE_FIXTURE_EXPORT;
+    const diagnosticCodeVersion = exportPath ? execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim() : "a".repeat(40);
+    const capture = await captureForgePregameInputs({ slateDate: date, gameId, inputCutoff: "2026-10-05T22:30:00.000Z",
+      codeVersion: diagnosticCodeVersion, runId, deadlineMs: Date.now() + 150000 });
+    expect(capture.snapshot.replayClassification).toBe("prospective_frozen");
+    expect(capture.snapshot.runId).toBe(runId);
+    expect(backend.calls.filter(call => !["GET", "HEAD"].includes(call.method) || call.table.startsWith("rpc/"))).toEqual([]);
+    expect(backend.published).toBe(0);
+    expect(backend.tables.forge_player_projections).toHaveLength(0);
+    const callsBefore = backend.calls.length;
+    vi.stubGlobal("fetch", () => { throw new Error("Network disabled"); });
+    const replay = await scoreFrozenForgeSnapshot(capture.snapshot, capture.snapshotHash);
+    expect(replay.outputHash).toBe(capture.snapshot.outputHash);
+    expect(backend.calls).toHaveLength(callsBefore);
+    const projections = replay.writes.filter(ops => ops[0].args[0] === "forge_player_projections");
+    expect(projections.length).toBeGreaterThan(0);
+    const { accountForgeTeamGoals } = await import("../forecast-diagnostics/pairedInputs");
+    const rows = projections.flatMap(ops => ops.find(op => op.method === "upsert")?.args[0] as any[] ?? []);
+    const home = rows.filter(row => row.team_id === 6);
+    const accounting = accountForgeTeamGoals(home, { rosterPlayerIds: home.map(row => row.player_id), residualMean: null,
+      strengthPartition: "unknown", overtime: "unknown", emptyNet: "unknown", proofRevisionIds: [] });
+    expect(accounting.mean).toBeNull();
+    expect(accounting.reasons.some(reason => reason.startsWith("missing_strength_goal:"))).toBe(true);
+    expect(projectionWritesHash(replay.writes)).toBe(projectionWritesHash(capture.writes));
+
+    const { goalHistoryFromOfficialFinal, TEAM_GOALS_VERSION, TEAM_GOALS_FEATURES, TEAM_GOALS_PARAMETERS } = await import("../forecast-diagnostics/pairedInputs");
+    const { computeFrozenPair, verifyPairReplay } = await import("../forecast-diagnostics/frozenPairRunner");
+    const payload = { id: historyId, season: 20262027, gameType: 2, gameState: "OFF", startTimeUTC: "2026-10-03T23:00:00.000Z",
+      periodDescriptor: { periodType: "REG" }, homeTeam: { id: 6, score: 3 }, awayTeam: { id: 9, score: 1 },
+      plays: [6, 6, 9, 6].map((team, index) => ({ eventId: index + 1, typeDescKey: "goal",
+        periodDescriptor: { periodType: "REG" }, details: { eventOwnerTeamId: team } })) };
+    const receipt = { revisionId: "official-fixture:1", payloadHash: projectionInputHash(payload), source: "synthetic official fixture",
+      firstReceivedAt: now, verifiedAt: now, publishedAt: null, availabilityBasis: "retained_capture" as const, correctionOf: null };
+    const teamFreeze = { codeCommit: diagnosticCodeVersion, sourceTreeHash: "b".repeat(64), lockfileHash: "c".repeat(64), nodeVersion: process.version,
+      modelVersion: TEAM_GOALS_VERSION, featureSchemaVersion: TEAM_GOALS_VERSION, featureNames: [...TEAM_GOALS_FEATURES],
+      parameters: TEAM_GOALS_PARAMETERS, parametersHash: projectionInputHash(TEAM_GOALS_PARAMETERS), calibration: { kind: "none" as const } };
+    const forgeFreeze = { ...teamFreeze, modelVersion: "synthetic-native-forge", featureSchemaVersion: "forge-recorded-queries-v1" };
+    const missing = { rosterPlayerIds: [] as number[], residualMean: null, strengthPartition: "unknown" as const,
+      overtime: "unknown" as const, emptyNet: "unknown" as const, proofRevisionIds: [] as string[] };
+    const packet: import("../forecast-diagnostics/frozenPairRunner").FrozenPair = { version: "frozen-pair-v1" as const, evidenceKind: "synthetic_fixture" as const,
+      pairId: snapshotId, forgeRunId: runId, teamRunId: operationId, frozenAt: now,
+      scope: { gameId, seasonId: 20262027, phase: 2 as const, homeTeamId: 6, awayTeamId: 9,
+        gameDate: date, startAt: `${date}T23:30:00.000Z`, cutoffAt: capture.snapshot.inputCutoff, horizonGames: 1 as const },
+      teamFreeze, forgeFreeze, history: goalHistoryFromOfficialFinal(payload, receipt),
+      retainedHistorySources: [{ revisionId: receipt.revisionId, payload, bodyUtf8: JSON.stringify(payload),
+        rawBytesHash: createHash("sha256").update(JSON.stringify(payload)).digest("hex") }],
+      forgeSnapshot: capture.snapshot, forgeSnapshotHash: capture.snapshotHash,
+      forgeReadProvenance: capture.snapshot.reads.map((read, index) => ({ ...receipt, revisionId: `read:${index}`,
+        source: String(read.request[0].args[0]), firstReceivedAt: read.receivedAt, payloadHash: projectionInputHash(read) })),
+      forgeCoverage: { home: missing, away: missing } };
+    const paired = await computeFrozenPair(packet, { team: teamFreeze, forge: forgeFreeze }, { forge: scoreFrozenForgeSnapshot });
+    expect([paired.team.homeMean, paired.team.awayMean]).toEqual([3, 1]);
+    expect(paired.forge.home.mean).toBeNull(); expect(paired.acceptanceEligible).toBe(false);
+    const original = { inputHash: projectionInputHash(packet), forecastHash: projectionInputHash(paired), forecasts: paired };
+    vi.setSystemTime(new Date(Date.parse(now) + 60000));
+    const pairedReplay = await computeFrozenPair(packet, { team: teamFreeze, forge: forgeFreeze }, { forge: scoreFrozenForgeSnapshot });
+    expect(verifyPairReplay(original, packet, pairedReplay).matched).toBe(true);
+    expect(backend.calls).toHaveLength(callsBefore);
+    if (exportPath) {
+      const { executionFreeze, runFrozenPairCommand } = await import("../../scripts/run-frozen-forecast-pair");
+      const pin = executionFreeze(packet);
+      packet.teamFreeze = pin.team; packet.forgeFreeze = pin.forge;
+      writeFileSync(exportPath, JSON.stringify(packet, null, 2), { flag: "wx", mode: 0o600 });
+      const frozenDirectory = `${exportPath}.frozen`, issuedDirectory = `${exportPath}.issued`, replayDirectory = `${exportPath}.replay`;
+      const capturePath = `${exportPath}.capture.json`, historyPath = `${exportPath}.history.json`;
+      const captureBytes = JSON.stringify({ evidenceKind: "synthetic_fixture", ...capture }, null, 2) + "\n";
+      const historyBytes = JSON.stringify({ scope: packet.scope, history: packet.history,
+        retainedHistorySources: packet.retainedHistorySources, capturedAt: now, acceptanceEligible: false }, null, 2) + "\n";
+      writeFileSync(capturePath, captureBytes, { flag: "wx", mode: 0o600 });
+      writeFileSync(historyPath, historyBytes, { flag: "wx", mode: 0o600 });
+      await runFrozenPairCommand(["prepare", capturePath, historyPath, frozenDirectory]);
+      expect(readFileSync(`${frozenDirectory}/capture.json`, "utf8")).toBe(captureBytes);
+      expect(readFileSync(`${frozenDirectory}/history.json`, "utf8")).toBe(historyBytes);
+      const prepared: import("../forecast-diagnostics/frozenPairRunner").FrozenPair = JSON.parse(readFileSync(`${frozenDirectory}/inputs.json`, "utf8"));
+      expect(prepared.forgeRunId).toBe(capture.snapshot.runId);
+      expect(prepared.evidenceKind).toBe("synthetic_fixture");
+      expect(prepared.forgeReadProvenance.every(read => read.verifiedAt === prepared.frozenAt)).toBe(true);
+      expect(JSON.parse(readFileSync(`${frozenDirectory}/manifest.json`, "utf8"))).toMatchObject({ status: "inputs_frozen",
+        captureHash: createHash("sha256").update(captureBytes).digest("hex"), historyHash: createHash("sha256").update(historyBytes).digest("hex") });
+      await expect(runFrozenPairCommand(["prepare", capturePath, historyPath, frozenDirectory])).rejects.toThrow();
+      // The parent test clock and all source events are explicitly synthetic. Child scoring runs with its own real clock offline.
+      vi.setSystemTime(new Date(packet.scope.cutoffAt));
+      await runFrozenPairCommand(["issue", `${frozenDirectory}/inputs.json`, issuedDirectory]);
+      const originalBytes = readFileSync(`${issuedDirectory}/original.json`, "utf8");
+      vi.setSystemTime(new Date(Date.parse(packet.scope.cutoffAt) + 60000));
+      await runFrozenPairCommand(["replay", `${issuedDirectory}/inputs.json`, replayDirectory]);
+      expect(readFileSync(`${issuedDirectory}/original.json`, "utf8")).toBe(originalBytes);
+      const { forecastDiagnosticsMarkdown } = await import("../forecast-diagnostics/contract");
+      for (const directory of [issuedDirectory, replayDirectory]) {
+        const report = JSON.parse(readFileSync(`${directory}/diagnostics.json`, "utf8"));
+        expect(report.evidenceKind).toBe("synthetic_fixture");
+        expect(report.replay.status).toBe("not_verified");
+        expect(readFileSync(`${directory}/diagnostics.md`, "utf8")).toBe(forecastDiagnosticsMarkdown(report));
+      }
+      expect(JSON.parse(readFileSync(`${replayDirectory}/replay.json`, "utf8")).matched).toBe(true);
+      const { loadLocalFrozenPairDiagnostics } = await import("../forecast-diagnostics/loader");
+      const loaded = await loadLocalFrozenPairDiagnostics(issuedDirectory, { gameId, cutoffAt: packet.scope.cutoffAt });
+      expect(loaded).toEqual(JSON.parse(readFileSync(`${issuedDirectory}/diagnostics.json`, "utf8")));
+      await expect(loadLocalFrozenPairDiagnostics(issuedDirectory, { gameId: gameId + 1, cutoffAt: packet.scope.cutoffAt })).rejects.toMatchObject({ status: 404 });
+      for (const [name, initialClock, finalClock, message] of [
+        ["late", Date.parse(packet.scope.startAt) - 1000, Date.parse(packet.scope.startAt), "missed pregame issuance"],
+        ["rollback", Date.parse(packet.scope.cutoffAt), Date.parse(packet.scope.cutoffAt) - 1000, "before the issuance cutoff"],
+      ] as const) {
+        const destination = `${exportPath}.${name}`;
+        vi.setSystemTime(new Date(initialClock));
+        const issuing = runFrozenPairCommand(["issue", `${frozenDirectory}/inputs.json`, destination]);
+        vi.setSystemTime(new Date(finalClock));
+        await expect(issuing).rejects.toThrow(message);
+        expect(existsSync(`${destination}/original.json`)).toBe(false);
+        expect(JSON.parse(readFileSync(`${destination}/failed.json`, "utf8")).status).toBe("failed");
+        await expect(loadLocalFrozenPairDiagnostics(destination, { gameId, cutoffAt: packet.scope.cutoffAt })).rejects.toMatchObject({ status: 503 });
+      }
+      const failedSource = `${exportPath}.failed-source`;
+      mkdirSync(failedSource, { mode: 0o700 });
+      for (const name of ["inputs.json", "original.json"]) writeFileSync(`${failedSource}/${name}`, readFileSync(`${issuedDirectory}/${name}`, "utf8"), { flag: "wx", mode: 0o600 });
+      writeFileSync(`${failedSource}/failed.json`, JSON.stringify({ status: "failed" }), { flag: "wx", mode: 0o600 });
+      await expect(runFrozenPairCommand(["replay", `${failedSource}/inputs.json`, `${exportPath}.failed-source-replay`])).rejects.toThrow("Failed original issuance");
+      expect(JSON.parse(readFileSync(`${exportPath}.failed-source-replay/failed.json`, "utf8")).status).toBe("failed");
+      expect(readFileSync(`${issuedDirectory}/original.json`, "utf8")).toBe(originalBytes);
+    }
+  });
+
+  it("rejects a prospective acquisition deadline reaching the cutoff before any access", async () => {
+    const transport = vi.fn(); vi.stubGlobal("fetch", transport);
+    const { captureForgePregameInputs } = await import("./run-forge-projections");
+    await expect(captureForgePregameInputs({ slateDate: date, gameId, inputCutoff: "2026-10-05T22:30:00.000Z", codeVersion,
+      runId, deadlineMs: Date.parse("2026-10-05T22:30:00.000Z") })).rejects.toThrow("before cutoff");
+    expect(transport).not.toHaveBeenCalled();
+  });
+
   it("publishes both clubs with real persistence and captured output hash while explicitly omitting optional analytics", async () => {
     const backend = fixture();
     const result = await run(true, backend);

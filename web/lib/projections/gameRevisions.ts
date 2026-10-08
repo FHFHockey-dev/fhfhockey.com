@@ -97,7 +97,7 @@ export type ForgeInputSnapshot = {
   dailyBoardEvidence?: import("./dailyBoardEvidence").DailyBoardEvidence;
   horizonGames: number;
   gameIds: number[];
-  replayClassification: "captured_live" | "historical_reconstruction";
+  replayClassification: "captured_live" | "historical_reconstruction" | "prospective_frozen";
   controlledScenario?: { classification: "controlled_news_fixture"; fixtureHash: string };
   reads: ProjectionInputRead[];
   outputHash: string;
@@ -137,7 +137,8 @@ export function capturedGoalieStarts(reads: ProjectionInputRead[], writes: Array
   return [...result.values()];
 }
 
-export function projectionWritesHash(writes: Array<Array<{ method: string; args: unknown[] }>>): string {
+/** Forecast content excludes storage timestamps; retain raw writes separately for execution receipts. */
+export function projectionForecastRows(writes: Array<Array<{ method: string; args: unknown[] }>>) {
   const tables = new Set(["forge_player_projections", "forge_team_projections", "forge_goalie_projections"]);
   const rows = writes.filter((ops) => tables.has(String(ops[0]?.args[0]))).flatMap((ops) => {
     const write = ops.find((op) => op.method === "upsert" || op.method === "insert");
@@ -147,7 +148,11 @@ export function projectionWritesHash(writes: Array<Array<{ method: string; args:
       row: Object.fromEntries(Object.entries(row ?? {}).filter(([key]) => !["updated_at", "created_at"].includes(key))),
     }));
   });
-  return projectionInputHash(rows.sort((a, b) => projectionInputHash(a).localeCompare(projectionInputHash(b))));
+  return rows.sort((a, b) => projectionInputHash(a).localeCompare(projectionInputHash(b)));
+}
+
+export function projectionWritesHash(writes: Array<Array<{ method: string; args: unknown[] }>>): string {
+  return projectionInputHash(projectionForecastRows(writes));
 }
 
 export async function saveForgeInputSnapshot(snapshot: ForgeInputSnapshot): Promise<string> {
