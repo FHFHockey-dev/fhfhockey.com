@@ -1,6 +1,6 @@
-import { skaterParticipationFromEvidence } from "../starterBoardScoring";
 import { starterBoardFlags } from "../starterBoardFlags";
 import { bootstrapSkaterLine, loadSeasonBootstrap, type SeasonBootstrap } from "../seasonBootstrap";
+import { buildNativePlayerGoalAccounting, buildNativeTeamGoalAccounting, buildNativeSkaterParticipationFields, selectConfirmedNativeSkaterCandidates, buildNativeRosterContributorCoverage } from "../nativeGoalAccounting";
 import supabase from "lib/supabase/server";
 import { getSeasonById, type SeasonDetails } from "lib/NHL/server";
 import { loadSkaterRecencySeasons, regularSeasonRecencyDays } from "../utils/season-recency";
@@ -1430,6 +1430,9 @@ export async function runPerGameSkaterStage(args: {
       candidateSkaterIds: rawSkaterIds,
       activeRosterSkaterIds,
     });
+    if (starterBoardFlags().compute) rawSkaterIds = selectConfirmedNativeSkaterCandidates({
+      gameId: game.id, teamId, candidatePlayerIds: rawSkaterIds, currentRosterPlayerIds: activeRosterSkaterIds, evidence: args.dailyBoardEvidence,
+    });
 
     let playerMetaById = await fetchPlayerMetaByIds(rawSkaterIds);
     let skaterRoleTags = buildSkaterRoleTags({
@@ -2772,13 +2775,8 @@ export async function runPerGameSkaterStage(args: {
           },
           skater_selection: {
             season_bootstrap: seasonLine?.disclosure ?? null,
-            production_conditioning: starterBoardFlags().compute ? "conditional_playing" : "legacy_availability_adjusted",
-            participation_probability: null,
-            participation: starterBoardFlags().compute ? skaterParticipationFromEvidence(args.dailyBoardEvidence, { gameId: game.id, teamId, playerId }) : null,
-            same_day_evidence: args.dailyBoardEvidence ? {
-              assertions: args.dailyBoardEvidence.assertions.filter((item) => item.gameId === game.id && item.playerId === playerId),
-              conflicts: args.dailyBoardEvidence.conflicts.filter((item) => item.gameId === game.id && item.teamId === teamId && (item.playerId == null || item.playerId === playerId)),
-            } : null,
+            ...buildNativeSkaterParticipationFields({ gameId: game.id, teamId, playerId,
+              compute: starterBoardFlags().compute, evidence: args.dailyBoardEvidence }),
             pp_role: roleTagFromRosterEvent(args.ppEventByPlayer?.get(playerId) ?? null)?.esRole ?? null,
             source: roleTag?.source ?? null,
             es_role: roleTag?.esRole ?? null,
@@ -3059,7 +3057,7 @@ export async function runPerGameSkaterStage(args: {
         },
       });
 
-      playerUpserts.push({
+      const playerUpsert = {
         run_id: runId,
         as_of_date: asOfDate,
         horizon_games: horizonGames,
@@ -3091,6 +3089,13 @@ export async function runPerGameSkaterStage(args: {
         proj_blocks: Number((projBlocks * teamHorizonTotalScalar).toFixed(3)),
         uncertainty: uncertaintyWithRole,
         updated_at: new Date().toISOString(),
+      };
+      playerUpserts.push({
+        ...playerUpsert,
+        uncertainty: {
+          ...uncertaintyWithRole,
+          native_goal_accounting: buildNativePlayerGoalAccounting(playerUpsert),
+        },
       });
 
       projectedPlayerMarketInputs.set(playerId, {
@@ -3115,6 +3120,28 @@ export async function runPerGameSkaterStage(args: {
       });
     }
 
+    // Reuse the same retained goalie-ID read later used by the goalie stage.
+    // These members are outside the skater estimator, not zero offensive residuals.
+    if (!currentTeamGoalieIdsCache.has(teamDateKey(teamId))) currentTeamGoalieIdsCache.set(
+      teamDateKey(teamId), await fetchCurrentTeamGoalieIds(teamId),
+    );
+    const teamGoalAccounting = buildNativeTeamGoalAccounting({
+      gameId: game.id,
+      teamId,
+      asOfDate,
+      horizonGames,
+      currentRosterPlayerIds: activeRosterSkaterIds,
+      playerRows: playerUpserts,
+    });
+    const nativeRosterCoverage = buildNativeRosterContributorCoverage({
+      gameId: game.id, teamId, currentRosterPlayerIds: activeRosterSkaterIds, projectedPlayerIds: playerUpserts.map(row => row.player_id),
+      selection: {
+        candidatePlayerIds: rawSkaterIds, eligiblePlayerIds: activeSkaterFilter.eligibleSkaterIds,
+        unavailablePlayerIds: unavailableSkaters, knownGoaliePlayerIds: [...currentTeamGoalieIdsCache.get(teamDateKey(teamId))!],
+        playerMetaById, excludedPlayerIds: activeSkaterFilter.excludedSkaterIdsByReason,
+        compute: starterBoardFlags().compute, evidence: args.dailyBoardEvidence,
+      },
+    });
     playerRowsUpserted += await persistForgePlayerProjectionRows(playerUpserts);
 
     for (const [
@@ -3239,25 +3266,25 @@ export async function runPerGameSkaterStage(args: {
         (teamTotals.shotsPp * teamHorizonTotalScalar).toFixed(3),
       ),
       proj_shots_pk: null,
-      proj_goals_es: Number(
-        (teamTotals.goalsEs * teamHorizonTotalScalar).toFixed(3),
-      ),
-      proj_goals_pp: Number(
-        (teamTotals.goalsPp * teamHorizonTotalScalar).toFixed(3),
-      ),
+      proj_goals_es: teamGoalAccounting.reportedComponents.esMean,
+      proj_goals_pp: teamGoalAccounting.reportedComponents.ppMean,
       proj_goals_pk: null,
-      uncertainty: buildTeamUncertainty(
-        {
-          toiEsSeconds: teamTotals.toiEsSeconds,
-          toiPpSeconds: teamTotals.toiPpSeconds,
-          shotsEs: teamTotals.shotsEs,
-          shotsPp: teamTotals.shotsPp,
-          goalsEs: teamTotals.goalsEs,
-          goalsPp: teamTotals.goalsPp,
-        },
-        horizonGames,
-        teamHorizonScalars,
-      ),
+      uncertainty: {
+        ...buildTeamUncertainty(
+          {
+            toiEsSeconds: teamTotals.toiEsSeconds,
+            toiPpSeconds: teamTotals.toiPpSeconds,
+            shotsEs: teamTotals.shotsEs,
+            shotsPp: teamTotals.shotsPp,
+            goalsEs: teamTotals.goalsEs,
+            goalsPp: teamTotals.goalsPp,
+          },
+          horizonGames,
+          teamHorizonScalars,
+        ),
+        native_goal_accounting: teamGoalAccounting,
+        native_roster_contributor_coverage: nativeRosterCoverage,
+      },
       updated_at: new Date().toISOString(),
     };
 
@@ -3269,12 +3296,7 @@ export async function runPerGameSkaterStage(args: {
     });
     teamGoalsByTeamId.set(
       teamId,
-      Number(
-        (
-          (teamTotals.goalsEs + teamTotals.goalsPp) *
-          teamHorizonTotalScalar
-        ).toFixed(3),
-      ),
+      teamGoalAccounting.reportedEsPpMean,
     );
 
     // Goalie: pick the highest probability starter from goalie_start_projections if available.
