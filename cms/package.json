@@ -6,6 +6,9 @@
   "main": "package.json",
   "author": "FHFHockey-dev <fhfhockey@outlook.com>",
   "license": "UNLICENSED",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "start": "sanity start",
     "build": "sanity build",
