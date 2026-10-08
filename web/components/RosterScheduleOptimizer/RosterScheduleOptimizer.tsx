@@ -234,7 +234,8 @@ export default function RosterScheduleOptimizer() {
       const current = providerRef.current.context;
       if (controller.signal.aborted || userId !== providerRef.current.userId || requestKey !== workspaceContextKey(current)) return false;
       const next = body.snapshot as PlanningSnapshot;
-      if (workspaceContextKey(next.context) !== requestKey) throw new Error("Provider inputs do not match the selected league, team or timeframe. Review the context and refresh again.");
+      // The adapter prefers the authoritative league zone; the original-request guard above still includes the client zone.
+      if (workspaceContextKey({ ...next.context, timeZone: context.timeZone }) !== requestKey) throw new Error("Provider inputs do not match the selected league, team or timeframe. Review the context and refresh again.");
       const previous = connectedRef.current;
       const sameContext = previous && ["provider", "seasonId", "leagueId", "teamId", "startDate", "endDate", "timeZone"].every((key) => previous.context[key as keyof typeof previous.context] === next.context[key as keyof typeof next.context]);
       const overrides = providerRef.current.overrides ?? {};

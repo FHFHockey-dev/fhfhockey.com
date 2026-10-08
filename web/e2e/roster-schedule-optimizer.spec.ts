@@ -351,6 +351,49 @@ test("provider refresh proposes repairs while keeping a selected move", async ({
   expect(authenticatedRequests.every((value) => value.startsWith("Bearer "))).toBe(true);
 });
 
+test("provider refresh adopts the authoritative league timezone and keeps the selected horizon and intent on reload", async ({ page }) => {
+  const retained = fixtureWorkspace([player]);
+  retained.context = { ...retained.context, provider: "yahoo", leagueId: "league", teamId: "team" };
+  retained.roster = [{ playerId: player.id, position: "bench" }];
+  retained.intent.protectedPlayerIds = [player.id];
+  retained.intent.excludedPlayerIds = ["fhfh:excluded"];
+  retained.intent.steps = [{ id: "selected-add", type: "add", playerId: player.id,
+    at: `${date(6)}T00:00:00Z`, effectiveAt: `${date(6)}T00:00:00Z`, conditional: true, dependsOn: [] }];
+  await seedWorkspace(page, retained);
+  await installDraftProAuthenticatedFixtures(page, () => ({ access: { eligible: false, grantingSources: [], expiresAt: null, verifiedAt: null, nextVerificationAt: null, reason: "no_active_grant", capabilities: [], providerReadiness: { stripe: false, patreon: false, yahoo: false } } }));
+  await page.route("**/api/v1/roster-schedule-optimizer/workspace**", route => route.fulfill({ json: { data: null } }));
+  await page.route("**/api/v1/roster-schedule-optimizer/access", route => route.fulfill({ json: { data: { eligible: true, capabilities: ["rso_sync"], grantingSources: ["test"], expiresAt: null, reason: null } } }));
+  const context = { ...retained.context, timeZone: "America/New_York" };
+  const snapshot: PlanningSnapshot = { id: "provider-league-zone", context,
+    players: [{ ...player, availability: "rostered" }], roster: [{ playerId: player.id, position: "active" }],
+    games: [], forecasts: [], rules: { ...fixtureRules, rosterSlots: { C: 1, BN: 1 } },
+    lockedAssignments: [], realized: {}, opponent: null, evidence: {} };
+  const requestedZones: string[] = [];
+  const dataZones: string[] = [];
+  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => {
+    dataZones.push(new URL(route.request().url()).searchParams.get("timeZone")!);
+    return route.fulfill({ json: { success: true, data: { players: [player], games: [], forecasts: [], evidence: {} } } });
+  });
+  await page.route("**/api/v1/roster-schedule-optimizer/provider", route => {
+    requestedZones.push(route.request().postDataJSON().timeZone);
+    return route.fulfill({ json: { success: true, snapshot, capabilities: { roster: true, availability: true, rules: true, matchup: false, acquisitions: false, limitations: [] } } });
+  });
+  await page.goto("/roster-schedule-optimizer");
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toMatchObject({
+    context, roster: snapshot.roster, rules: snapshot.rules, intent: retained.intent,
+  });
+  await expect(page.getByLabel("Time zone", { exact: true })).toHaveValue("America/New_York");
+  await expect(page.getByText(/Provider inputs do not match/)).toHaveCount(0);
+  await expect.poll(() => requestedZones).toEqual(["UTC", "America/New_York"]);
+  await expect.poll(() => dataZones).toContain("America/New_York");
+  await page.reload();
+  await expect(page.getByLabel("Time zone", { exact: true })).toHaveValue("America/New_York");
+  await expect(page.getByText("ADD Alpha Center", { exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toMatchObject({
+    context, intent: retained.intent,
+  });
+});
+
 test("shows sequential stream occupants with real games and retains workspace layout when details expand", async ({ page }, testInfo) => {
   await page.route("**/api/v1/roster-schedule-optimizer/data?**", (route) => {
     const start = new URL(route.request().url()).searchParams.get("startDate")!;

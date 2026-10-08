@@ -213,6 +213,13 @@ describe("Yahoo snapshot evidence", () => {
     expect(counted.capabilities.acquisitions).toBe(false);
     expect(mocks.planningResource).toHaveBeenCalledWith(expect.objectContaining({ resource: { type: "team", teamKey: "453.l.1.t.1" } }));
 
+    mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", time_zone: "America/New_York", draft_status: "postdraft" }, transport });
+    const normalized = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a",
+      startDate: "2026-10-01", endDate: "2026-10-03", timeZone: "UTC", now });
+    expect(normalized.snapshot.context.timeZone).toBe("America/New_York");
+    expect(mocks.planningData).toHaveBeenLastCalledWith(db, expect.objectContaining({ timeZone: "America/New_York" }), { now });
+    mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", time_zone: "UTC", draft_status: "postdraft" }, transport });
+
     for (const mode of ["repeated", "oversized", "stale", "wrong-scope", "failed", "deadline", "bounded", "ownership-only"]) {
       const starts: number[] = [];
       const clock = mode === "deadline" ? vi.spyOn(Date, "now").mockReturnValueOnce(0).mockReturnValue(8000) : null;

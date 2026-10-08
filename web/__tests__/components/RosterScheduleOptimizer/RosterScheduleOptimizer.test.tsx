@@ -619,6 +619,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     { label: "League ID", value: "second-league", field: "leagueId" as const },
     { label: "Team ID", value: "second-team", field: "teamId" as const },
     { label: "Through", value: "2026-11-10", field: "endDate" as const },
+    { label: "Time zone", value: "America/Chicago", field: "timeZone" as const },
   ])("refreshes the selected $field and ignores a late response for the previous scope", async ({ label, value, field }) => {
     authState.user = { id: "manager" };
     const workspace = defaultWorkspace();
@@ -634,6 +635,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     render(<RosterScheduleOptimizer />);
     await waitFor(() => expect(pending).toHaveLength(1));
     fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    if (field === "timeZone") fireEvent.blur(screen.getByLabelText(label));
     await waitFor(() => expect(pending).toHaveLength(2));
     expect(pending[0].init?.signal?.aborted).toBe(true);
     expect(saved().context[field]).toBe(value);
@@ -648,6 +650,36 @@ describe("RosterScheduleOptimizer workspace", () => {
     await act(async () => pending[0].resolve(response({ ...workspace.context, asOf: "2026-10-08T12:00:00Z" })));
     expect(saved().context).toEqual(currentContext);
     expect(saved().roster).toEqual(snapshot(currentContext).roster);
+  });
+
+  it("adopts Yahoo's league timezone without losing the selected team, horizon or intent", async () => {
+    authState.user = { id: "manager" };
+    const workspace = defaultWorkspace();
+    workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "league", teamId: "team", timeZone: "UTC" };
+    workspace.roster = [{ playerId: player.id, position: "bench" }];
+    workspace.manualPlayers = [player];
+    workspace.intent.protectedPlayerIds = [player.id];
+    workspace.intent.excludedPlayerIds = ["fhfh:excluded"];
+    const providerPlayer = { ...player, availability: "rostered" as const };
+    const snapshot: PlanningSnapshot = { id: "provider-league-zone", context: { ...workspace.context, timeZone: "America/New_York" },
+      players: [providerPlayer], roster: [{ playerId: player.id, position: "active" }], games: [], forecasts: [],
+      rules: { ...workspace.rules, rosterSlots: { C: 1 } }, lockedAssignments: [], realized: {}, opponent: null, evidence: {} };
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    const requests = vi.fn((url: string, init?: RequestInit) => Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data }
+      : url.endsWith("/access") ? { data: { eligible: true, capabilities: ["rso_sync"] } }
+        : url.endsWith("/provider") ? { success: true, snapshot,
+          capabilities: { roster: true, settings: true, availability: true, waivers: false, acquisitions: false, limitations: [] } } : { data: null } }));
+    vi.stubGlobal("fetch", requests);
+    render(<RosterScheduleOptimizer />);
+    const saved = () => JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
+    await waitFor(() => expect(saved().context).toEqual(snapshot.context));
+    expect(saved()).toMatchObject({ roster: snapshot.roster, rules: snapshot.rules, intent: workspace.intent });
+    expect(screen.queryByText(/Provider inputs do not match/)).toBeNull();
+    await waitFor(() => expect(requests.mock.calls.some(([url, init]) => url.endsWith("/provider")
+      && JSON.parse(init?.body as string).timeZone === "America/New_York")).toBe(true));
+    expect(requests.mock.calls.some(([url, init]) => url.endsWith("/provider")
+      && JSON.parse(init?.body as string).timeZone === "UTC")).toBe(true);
+    expect(requests.mock.calls.some(([url]) => url.includes("/data?") && url.includes("timeZone=America%2FNew_York"))).toBe(true);
   });
 
   it("keeps the selected context when provider evidence belongs to another league", async () => {
