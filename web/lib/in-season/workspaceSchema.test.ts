@@ -117,6 +117,16 @@ describe("saved in-season workspace validation", () => {
     expect(parsed.success).toBe(true);
     if (parsed.success) expect(parsed.data.workspace.lockedAssignments).toEqual(lockedAssignments);
   });
+  it("round-trips lock provenance in saved snapshots while retaining legacy untagged rows", () => {
+    const lockedAssignments = [
+      { date: "2026-10-01", playerId: "provider", slotId: "C#1" },
+      { date: "2026-10-02", playerId: "manager", slotId: null, source: "manager" },
+    ];
+    const parsed = saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot, lockedAssignments }, expectedVersion: null });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.snapshot?.lockedAssignments).toEqual(lockedAssignments);
+    expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot, lockedAssignments: [{ ...lockedAssignments[1], source: "unverified-authority" }] }, expectedVersion: null }).success).toBe(false);
+  });
   it("preserves explicit waiver policy and spend without inventing missing values", () => {
     const waiverRules = { ...rules, waivers: { mode: "budget", remainingBudget: 35 } };
     const waiverStep = { id: "bid", type: "add", playerId: "p", at: context.asOf, effectiveAt: context.asOf, conditional: false, waiverSpend: 7, dependsOn: [] };

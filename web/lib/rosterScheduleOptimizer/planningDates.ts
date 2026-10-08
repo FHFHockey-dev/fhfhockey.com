@@ -1,3 +1,11 @@
+import type { LeagueRules } from "./planningTypes";
+
+/** Resolve the existing independent lineup window in league-local time. */
+export function lineupPeriodAtDate(date: string, periods: LeagueRules["lineupPeriods"], zone: string) {
+  const midnight = Date.parse(zonedMidnight(date, zone));
+  return periods?.find(period => Date.parse(period.start) <= midnight && midnight < Date.parse(period.end));
+}
+
 export function localDate(value: string, zone: string): string {
   const parts = new Intl.DateTimeFormat("en-US", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(value));
   const part = (kind: string) => parts.find(item => item.type === kind)?.value ?? "";

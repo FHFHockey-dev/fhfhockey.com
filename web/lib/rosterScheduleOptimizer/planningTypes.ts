@@ -136,7 +136,11 @@ export type LeagueRules = {
   };
   unsupported: string[];
 };
-export type LockedAssignment = { date: string; playerId: string; slotId: string | null };
+export type LockedAssignment = {
+  date: string; playerId: string; slotId: string | null;
+  /** Untagged provider snapshot rows retain their legacy authority; manager rows are simulation intent. */
+  source?: "provider" | "manager";
+};
 export type AcquisitionEvidence = {
   source: string;
   fetchedAt: string;

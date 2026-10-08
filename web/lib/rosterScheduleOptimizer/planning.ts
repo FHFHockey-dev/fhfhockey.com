@@ -1,7 +1,7 @@
 import { weightedAssignment } from "../projections/weightedAssignment";
 import { resolvePlanningContributions } from "../player-forecasts/planningContributions";
 import { summarizeContributionCoverage, type ResolvedContribution } from "../player-forecasts/contributions";
-import { localDate, zonedMidnight } from "./planningDates";
+import { lineupPeriodAtDate, localDate, zonedMidnight } from "./planningDates";
 import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
 import { expandActiveSlots } from "./slots";
 import { acquisitionEffectiveAt, buildTimeline } from "./planningTimeline";
@@ -485,10 +485,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
   let weeklyEvidenceMissing = false;
   let scheduledGames = 0, forecastedOpportunities = 0;
   const weekly = new Map<string, Map<string, string>>();
-  const lineupPeriodForDate = (date: string) => {
-    const midnight = time(zonedMidnight(date, snapshot.context.timeZone));
-    return snapshot.rules.lineupPeriods?.find(item => time(item.start) <= midnight && midnight < time(item.end));
-  };
+  const lineupPeriodForDate = (date: string) => lineupPeriodAtDate(date, snapshot.rules.lineupPeriods, snapshot.context.timeZone);
   for (const date of dates) {
     const dayGames = games.filter(game => game.date === date);
     const plays: Play[] = [];

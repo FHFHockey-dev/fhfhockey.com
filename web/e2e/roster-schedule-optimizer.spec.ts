@@ -3,7 +3,7 @@ import { writeFile } from "node:fs/promises";
 import { installDraftProAuthenticatedFixtures } from "./draft-pro-fixtures";
 import type { GameForecast, LeagueRules, PlanningPlayer, PlanningSnapshot, PlanningWorkspace } from "../lib/rosterScheduleOptimizer/planningTypes";
 import { resolvePlanningContributions } from "../lib/player-forecasts/planningContributions";
-import { snapshotSchema } from "../lib/in-season/workspaceSchema";
+import { saveWorkspaceSchema, snapshotSchema } from "../lib/in-season/workspaceSchema";
 import { forecastCalendarPolicy } from "../lib/player-forecasts/contributions";
 
 const player = { id: "fhfh:1", nhlId: 1, name: "Alpha Center", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "unknown" as const, ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] };
@@ -349,6 +349,61 @@ test("provider refresh proposes repairs while keeping a selected move", async ({
   expect(reads).toBeGreaterThanOrEqual(2);
   expect(authenticatedRequests.length).toBeGreaterThanOrEqual(3);
   expect(authenticatedRequests.every((value) => value.startsWith("Bearer "))).toBe(true);
+});
+
+test("connected manager bench locks constrain the worker and preserve provider authority through undo and reload", async ({ page }) => {
+  const members = [fixturePlayer(1, "Alpha Center", "CAR"), fixturePlayer(2, "Bravo Center", "NJD")];
+  const workspace = fixtureWorkspace(members, { ...fixtureRules, rosterSlots: { C: 1, BN: 1 } });
+  workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "league", teamId: "team", endDate: date(6) };
+  workspace.roster = members.map(member => ({ playerId: member.id, position: "active" }));
+  workspace.lockedAssignments = [{ date: date(6), playerId: members[0].id, slotId: null }];
+  workspace.intent.protectedPlayerIds = [members[0].id];
+  await seedWorkspace(page, workspace);
+  await installDraftProAuthenticatedFixtures(page, () => ({ access: { eligible: false, grantingSources: [], expiresAt: null, verifiedAt: null, nextVerificationAt: null, reason: "no_active_grant", capabilities: [], providerReadiness: { stripe: false, patreon: false, yahoo: false } } }));
+  await page.route("**/api/v1/roster-schedule-optimizer/access", route => route.fulfill({ json: { data: { eligible: true, capabilities: ["rso_sync", "rso_account_save"], grantingSources: ["test"], expiresAt: null, reason: null } } }));
+  let accountSnapshot: PlanningSnapshot | null = null;
+  await page.route("**/api/v1/roster-schedule-optimizer/workspace**", route => {
+    if (route.request().method() !== "PUT") return route.fulfill({ json: { data: null } });
+    const request = saveWorkspaceSchema.parse(route.request().postDataJSON());
+    accountSnapshot = request.snapshot!;
+    return route.fulfill({ json: { data: { ...request, version: 1, updatedAt: workspace.context.asOf } } });
+  });
+  const games = [5, 6].flatMap(day => members.map(member => fixtureGame(`${member.id}:${day}`, day, member.teamAbbreviation!)));
+  const forecasts = games.map(game => {
+    const member = members.find(member => member.teamAbbreviation === game.teamAbbreviation)!;
+    return fixtureForecast(member, game, member.id === members[0].id ? 4 : 1);
+  });
+  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: { players: members, games, forecasts, evidence: {} } } }));
+  let providerConflict = false;
+  const providerLock = { date: date(6), playerId: members[0].id, slotId: "C#1" };
+  await page.route("**/api/v1/roster-schedule-optimizer/provider", route => route.fulfill({ json: { success: true,
+    snapshot: { id: providerConflict ? "provider-conflict" : "provider-open", context: workspace.context,
+      players: members, roster: workspace.roster, games, forecasts, rules: workspace.rules,
+      lockedAssignments: providerConflict ? [providerLock] : [], realized: {}, opponent: null, evidence: {} },
+    capabilities: { roster: true, availability: true, rules: true, matchup: false, acquisitions: true, limitations: [] } } }));
+  await page.goto("/roster-schedule-optimizer");
+  const outcome = page.getByRole("region", { name: "Plan summary" }).locator("article").filter({ has: page.getByText("Projected outcome", { exact: true }) }).locator("strong");
+  await expect(outcome).toHaveText("5");
+  await page.getByRole("button", { name: "Save to account" }).click();
+  await expect(page.getByText("Saved to account.", { exact: true })).toBeVisible();
+  expect(accountSnapshot!.lockedAssignments).toEqual([{ ...workspace.lockedAssignments[0], source: "manager" }]);
+  await page.getByRole("combobox", { name: "Goalie choice", exact: true }).selectOption("cover");
+  providerConflict = true;
+  await page.getByRole("button", { name: "Refresh provider" }).click();
+  await expect(page.getByText(/provider lock retained and manager choice kept for review/)).toBeVisible();
+  await expect(outcome).toHaveText("8");
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(page.getByRole("combobox", { name: "Goalie choice", exact: true })).toHaveValue("accept_risk");
+  await expect(outcome).toHaveText("8");
+  await page.getByRole("button", { name: "Save to account" }).click();
+  await expect(page.getByText("Saved to account.", { exact: true })).toBeVisible();
+  expect(accountSnapshot!.lockedAssignments).toEqual([providerLock]);
+  await page.reload();
+  await expect(outcome).toHaveText("8");
+  await expect(page.getByText(/provider lock retained and manager choice kept for review/)).toBeVisible();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toMatchObject({
+    lockedAssignments: workspace.lockedAssignments, intent: { protectedPlayerIds: workspace.intent.protectedPlayerIds, goalieCoverage: "accept_risk" },
+  });
 });
 
 test("provider refresh adopts the authoritative league timezone and keeps the selected horizon and intent on reload", async ({ page }) => {
@@ -1155,6 +1210,82 @@ test("projected candidate fit values usable points above schedule quantity", asy
   await expect(browser.getByRole("button", { name: /Three High Value Games/ }).locator("..")).toContainText("Potential active points gain unavailable");
   expect(errors).toEqual([]);
   await expect(page.locator("[data-nextjs-dialog]")).toHaveCount(0);
+});
+
+test("planning worker measures the full typical workload and cancels superseded edits", async ({ page }, testInfo) => {
+  await page.clock.setFixedTime(new Date("2026-10-04T00:00:00Z"));
+  await page.addInitScript(() => {
+    const receipt = (window as any).__planningPerformance = { workers: [] as any[], edits: [] as any[], clearAt: null as number | null, ticks: 0, maxGapMs: 0 };
+    let previous = performance.now();
+    setInterval(() => { const now = performance.now(); receipt.ticks++; receipt.maxGapMs = Math.max(receipt.maxGapMs, now - previous); previous = now; }, 10);
+    const NativeWorker = window.Worker;
+    window.Worker = class extends NativeWorker {
+      record: any;
+      constructor(url: string | URL, options?: WorkerOptions) {
+        super(url, options);
+        this.record = { index: receipt.workers.length, url: String(url) };
+        receipt.workers.push(this.record);
+        this.addEventListener("message", event => {
+          if (!event.data.result) return;
+          this.record.finishedAt = performance.now();
+          this.record.activeGames = event.data.result.selected.activeGames;
+          this.record.dates = [...new Set(event.data.result.selected.assignments.map((row: any) => row.date))];
+          this.record.search = event.data.result.search;
+        });
+      }
+      postMessage(message: any, options?: Transferable[] | StructuredSerializeOptions) {
+        this.record.role = message.players ? "candidates" : "planner";
+        this.record.postedAt = performance.now();
+        this.record.roster = message.snapshot?.roster?.length;
+        this.record.context = message.snapshot?.context;
+        this.record.revision = message.intent?.revision;
+        if (Array.isArray(options)) super.postMessage(message, options); else super.postMessage(message, options);
+      }
+      terminate() { this.record.terminatedAt = performance.now(); super.terminate(); }
+    };
+  });
+  const teams = Array.from({ length: 10 }, (_, index) => `T${index}`);
+  const members = Array.from({ length: 325 }, (_, index) => ({ ...fixturePlayer(index + 1, `Workload Player ${index}`, teams[index % 10]),
+    availability: index < 25 ? "rostered" as const : "manager_available" as const }));
+  const workspace = fixtureWorkspace(members, { ...fixtureRules, rosterSlots: { C: 10, BN: 15 } });
+  workspace.context = { ...workspace.context, endDate: "2026-10-11", asOf: "2026-10-04T00:00:00Z" };
+  workspace.roster = members.slice(0, 25).map(member => ({ playerId: member.id, position: "bench" }));
+  const dates = Array.from({ length: 7 }, (_, index) => new Date(Date.UTC(2026, 9, 5 + index)).toISOString().slice(0, 10));
+  const games = dates.flatMap(date => teams.map(team => ({ ...fixtureGame(`${team}:${date}`, 5, team), date, startsAt: `${date}T20:00:00Z` })));
+  const forecasts = members.flatMap(member => games.filter(game => game.teamAbbreviation === member.teamAbbreviation).map(game => {
+    const forecast = fixtureForecast(member, game, member.availability === "rostered" ? 1 : 5);
+    return { ...forecast, cutoffAt: workspace.context.asOf, issuedAt: workspace.context.asOf, issuedContext: { ...forecast.issuedContext!, observedAt: workspace.context.asOf } };
+  }));
+  await seedWorkspace(page, workspace);
+  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: { players: members, games, forecasts, evidence: {} } } }));
+  await page.goto("/roster-schedule-optimizer");
+  const goalieChoice = page.getByRole("combobox", { name: "Goalie choice", exact: true });
+  await goalieChoice.evaluate(element => element.addEventListener("change", () => (window as any).__planningPerformance.edits.push({ at: performance.now(), value: (element as HTMLSelectElement).value })));
+  const planner = (revision: number) => page.evaluate(revision => (window as any).__planningPerformance.workers.find((row: any) => row.role === "planner" && row.roster === 25 && row.context.endDate === "2026-10-11" && row.revision === revision), revision);
+  await expect.poll(() => planner(1)).toMatchObject({ role: "planner", roster: 25 });
+  await goalieChoice.selectOption("cover");
+  await expect.poll(() => planner(2)).toMatchObject({ activeGames: 70, dates });
+  const outcome = page.getByRole("region", { name: "Plan summary" }).locator("article").filter({ has: page.getByText("Projected outcome", { exact: true }) }).locator("strong");
+  await outcome.evaluate(element => {
+    const observer = new MutationObserver(() => { if (element.textContent === "—") { (window as any).__planningPerformance.clearAt = performance.now(); observer.disconnect(); } });
+    observer.observe(element, { childList: true, characterData: true, subtree: true });
+  });
+  await goalieChoice.selectOption("accept_risk");
+  await expect(outcome).toHaveText("—");
+  await expect.poll(() => planner(3)).toMatchObject({ role: "planner", roster: 25 });
+  await goalieChoice.selectOption("cover");
+  const receipt = await page.evaluate(() => (window as any).__planningPerformance);
+  const first = receipt.workers.find((row: any) => row.role === "planner" && row.roster === 25 && row.revision === 1);
+  const finished = receipt.workers.find((row: any) => row.role === "planner" && row.roster === 25 && row.revision === 2);
+  const canceled = receipt.workers.find((row: any) => row.role === "planner" && row.roster === 25 && row.revision === 3);
+  expect(first.finishedAt).toBeUndefined();
+  expect(canceled.finishedAt).toBeUndefined();
+  expect(first.terminatedAt).toBeGreaterThanOrEqual(receipt.edits[0].at);
+  expect(canceled.terminatedAt).toBeGreaterThanOrEqual(receipt.edits[2].at);
+  await writeFile(testInfo.outputPath("planning-performance.json"), JSON.stringify({ profile: { roster: 25, candidates: 300, days: 7, games: 70, forecasts: forecasts.length, positions: "C only", input: "fictional complete forecasts, default worker search quotas" },
+    fullPlanMs: finished.finishedAt - finished.postedAt, cancellationMs: [first.terminatedAt - receipt.edits[0].at, canceled.terminatedAt - receipt.edits[2].at],
+    editToStaleResultClearMs: receipt.clearAt - receipt.edits[1].at, dates: finished.dates, activeGames: finished.activeGames, search: finished.search,
+    mainThread: { ticks: receipt.ticks, maxGapMs: receipt.maxGapMs }, scope: "Native headless planner workers; event-to-termination and DOM invalidation; development observation, no latency guarantee" }, null, 2));
 });
 
 test("candidate worker ranks the complete population without blocking filters and retains zero AGP", async ({ page }, testInfo) => {
