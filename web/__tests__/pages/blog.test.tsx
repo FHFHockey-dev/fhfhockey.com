@@ -24,7 +24,7 @@ describe("FHFH article library", () => {
     const archive = screen.getByRole("region", { name: /From the archive/i });
     expect(within(archive).queryByText(posts[0].title)).toBeNull();
     expect(within(archive).getAllByRole("heading", { level: 3 })).toHaveLength(2);
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search articles" }), { target: { value: "Strategy" } });
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search archive" }), { target: { value: "Strategy" } });
     expect(within(archive).getAllByRole("heading", { level: 3 })).toHaveLength(1);
     expect(within(archive).getByRole("link", { name: posts[1].title }).getAttribute("href")).toBe("/blog/archive-one");
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "no-match" } });
@@ -33,6 +33,21 @@ describe("FHFH article library", () => {
     expect(within(archive).getAllByRole("heading", { level: 3 })).toHaveLength(2);
     fireEvent.change(screen.getByRole("combobox", { name: "Topic" }), { target: { value: "Goaltending" } });
     expect(within(archive).getByRole("link", { name: posts[2].title }).getAttribute("href")).toBe("/blog/substack/archive-two");
+  });
+
+  it("offers only searchable archive topics while preserving the featured article", () => {
+    render(<Blog posts={[{ ...posts[0], topics: ["Featured only"] }, ...posts.slice(1)]} />);
+    expect(screen.queryByRole("option", { name: "Featured only" })).toBeNull();
+    fireEvent.change(screen.getByRole("combobox", { name: "Topic" }), { target: { value: "Strategy" } });
+    expect(screen.getByRole("region", { name: "Latest article" })).toBeTruthy();
+    const archive = screen.getByRole("region", { name: /From the archive/i });
+    expect(within(archive).getAllByRole("heading", { level: 3 })).toHaveLength(1);
+    expect(within(archive).getByRole("link", { name: posts[1].title }).getAttribute("href")).toBe("/blog/archive-one");
+  });
+
+  it("does not offer a topic filter when only the featured story has topics", () => {
+    render(<Blog posts={[{ ...posts[0], topics: ["Featured only"] }, { ...posts[1], topics: [] }]} />);
+    expect(screen.queryByRole("combobox", { name: "Topic" })).toBeNull();
   });
 
   it("handles an empty publication without placeholder stories or unavailable topic controls", () => {

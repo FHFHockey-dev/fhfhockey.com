@@ -13,6 +13,7 @@
   width: min(1232px, 100%);
   margin: 0 auto;
   padding: 0 v.$space-lg;
+  overflow-wrap: anywhere;
 }
 
 .intro {
@@ -99,6 +100,7 @@
 
 .featuredText {
   order: -1;
+  min-width: 0;
 }
 
 .featured h2 {
@@ -230,6 +232,7 @@
 
 .filters {
   display: flex;
+  flex-wrap: wrap;
   align-items: end;
   gap: v.$space-sm;
   margin: v.$space-md 0;
@@ -238,6 +241,8 @@
 .searchLabel,
 .topicLabel {
   display: grid;
+  min-width: 0;
+  max-width: 100%;
   gap: v.$space-xs;
   color: v.$color-grey-text-sec;
   font-size: 0.75rem;
@@ -245,6 +250,7 @@
 
 .searchLabel {
   flex: 1;
+  min-width: min(100%, 210px);
 }
 
 .searchLabel > span,
@@ -272,6 +278,7 @@
 }
 .page select {
   min-width: 130px;
+  max-width: 100%;
 }
 
 .resetButton,
@@ -419,13 +426,6 @@
   .newsletter {
     width: 100%;
   }
-  .filters {
-    flex-wrap: wrap;
-  }
-  .searchLabel {
-    min-width: min(100%, 210px);
-  }
-
   .archiveRow {
     grid-template-columns: 96px minmax(0, 1fr);
     align-items: start;

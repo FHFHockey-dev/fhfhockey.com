@@ -161,7 +161,7 @@ const Blog: NextPage<{ posts: PostPreviewData[] }> = ({ posts }) => {
   const featured = posts[0];
   const topics = useMemo(
     () =>
-      Array.from(new Set(posts.flatMap((post) => post.topics || []))).sort(),
+      Array.from(new Set(posts.slice(1).flatMap((post) => post.topics || []))).sort(),
     [posts],
   );
   const archive = useMemo(() => {
@@ -265,13 +265,13 @@ const Blog: NextPage<{ posts: PostPreviewData[] }> = ({ posts }) => {
             </div>
             <div className={styles.filters}>
               <label className={styles.searchLabel}>
-                <span>Search articles</span>
+                <span>Search archive</span>
                 <input
                   value={query}
                   onChange={(event: ChangeEvent<HTMLInputElement>) =>
                     setQuery(event.target.value)
                   }
-                  placeholder="Search articles"
+                  placeholder="Search archive"
                   type="search"
                 />
               </label>
