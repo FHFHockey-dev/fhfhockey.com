@@ -395,7 +395,7 @@ describe("Game Grid sortable column headers", () => {
       "Sort by GA",
       "Sort by SF",
       "Sort by SA",
-      "Sort by W%",
+      "Sort by PTS%",
       "Sort by Team",
       "Sort by GP",
       "Sort by OFF",

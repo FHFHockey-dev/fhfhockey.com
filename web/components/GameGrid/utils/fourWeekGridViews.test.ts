@@ -52,7 +52,7 @@ describe("four-week grid alternate view", () => {
     expect(getFourWeekNumbers(teams)).toEqual([1, 2]);
   });
 
-  it("fills missing team weeks explicitly and preserves opponent context", () => {
+  it("keeps absent team weeks unknown and preserves opponent context", () => {
     expect(buildFourWeekDetailCells(teams[1], [1, 2])).toEqual([
       {
         weekNumber: 1,
@@ -62,9 +62,10 @@ describe("four-week grid alternate view", () => {
       },
       {
         weekNumber: 2,
-        gamesPlayed: 0,
-        offNights: 0,
+        gamesPlayed: null,
+        offNights: null,
         opponents: [],
+        coverage: { known: 0, expected: 7 },
       },
     ]);
     expect(buildFourWeekDetailCells(teams[0], [1])[0].opponents).toEqual([
@@ -72,10 +73,16 @@ describe("four-week grid alternate view", () => {
     ]);
   });
 
-  it("calculates per-week league averages without hiding zero-game teams", () => {
+  it("excludes unknown weeks from means and includes covered zero-game weeks", () => {
     expect(buildFourWeekDetailAverages(teams, [1, 2])).toEqual([
       { weekNumber: 1, gamesPlayed: 4, offNights: 2 },
+      { weekNumber: 2, gamesPlayed: 4, offNights: 2 },
+    ]);
+    const bye = team(2, [{ weekNumber: 2, gamesPlayed: 0, offNights: 0, opponents: [], scheduleCoverage: { known: 7, expected: 7 } }]);
+    expect(buildFourWeekDetailCells(bye, [2])[0].gamesPlayed).toBe(0);
+    expect(buildFourWeekDetailAverages([teams[0], bye], [2])).toEqual([
       { weekNumber: 2, gamesPlayed: 2, offNights: 1 },
     ]);
+    expect(buildFourWeekDetailAverages([], [1])[0].gamesPlayed).toBeNull();
   });
 });

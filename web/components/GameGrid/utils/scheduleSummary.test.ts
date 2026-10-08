@@ -3,7 +3,7 @@ import { DAYS, EXTENDED_DAYS, GameData, WeekData } from "lib/NHL/types";
 import { calcTotalGP } from "../TotalGamesPerDayRow";
 import { convertTeamRowToWinOddsList } from "./calcWinOdds";
 import { getRegularGamesPerDay } from "./helper";
-import { getSelectedOpponentIds, getTeamScheduleSummary } from "./scheduleSummary";
+import { getSelectedOpponentIds, getTeamScheduleSummary, getOpponentPointPct, getFourWeekAverages, getFourWeekScore } from "./scheduleSummary";
 
 function game(id: number, winOdds: number | null = 50, gameType = 2, opponent = 2): GameData {
   return { id, season: 20262027, gameType,
@@ -11,6 +11,43 @@ function game(id: number, winOdds: number | null = 50, gameType = 2, opponent = 
 }
 
 describe("selected Game Grid scoring period", () => {
+  it("preserves repeated standings weighting, real zero and unknown coverage", () => {
+    expect(getOpponentPointPct([{ teamId: 2 }, { teamId: 2 }, { teamId: 3 }], { 2: 0, 3: .6 }))
+      .toEqual({ value: .6 / 3, coverage: { known: 3, expected: 3 } });
+    expect(getOpponentPointPct([{ teamId: 2 }, { teamId: 3 }], { 2: .6, 3: NaN }))
+      .toEqual({ value: null, coverage: { known: 1, expected: 2 } });
+  });
+  it("excludes unknown OPP from the league mean and makes its score contribution neutral", () => {
+    const teams = [0.4, 0.8, null].map((avgOpponentPointPct, i) => ({
+      teamId: i, teamAbbreviation: `T${i}`, weeks: [], avgOpponentPointPct,
+      totals: { gamesPlayed: 4, offNights: 2, opponents: [] }
+    }));
+    const averages = getFourWeekAverages(teams);
+    expect(averages.avgOpponentPointPct).toBeCloseTo(.6);
+    expect(getFourWeekScore(teams[0], averages)).toBeCloseTo(.2);
+    expect(getFourWeekScore(teams[2], averages)).toBe(0);
+    const unknown = { ...teams[2], totals: { ...teams[2].totals, scheduleCoverage: { known: 21, expected: 28 } } };
+    expect(getFourWeekScore(unknown, averages)).toBeNull();
+    expect(getFourWeekAverages([unknown]).gamesPlayed).toBeNull();
+  });
+
+  it.each(["PPD", "CNCL", "POSTPONED", "CANCELLED"])("excludes %s from every opportunity and score input", (state) => {
+    for (const field of ["gameScheduleState", "gameState"] as const) {
+      const inactive = { ...game(1), [field]: state };
+      const row = { teamId: 1, weekNumber: 1, MON: inactive, TUE: game(2) };
+      const counts = getRegularGamesPerDay([row]);
+      expect(counts).toEqual([0, 1, 0, 0, 0, 0, 0]);
+      expect(getTeamScheduleSummary(row, counts)).toMatchObject({ totalGamesPlayed: 1, totalOffNights: 1 });
+      expect(getSelectedOpponentIds(row)).toEqual([2]);
+      expect(convertTeamRowToWinOddsList(row)).toEqual([null, 50, null, null, null, null, null]);
+    }
+  });
+
+  it("retains completed games in full-calendar inputs", () => {
+    const row = { teamId: 1, MON: { ...game(1), gameState: "FINAL", gameScheduleState: "OK" } };
+    expect(getTeamScheduleSummary(row, getRegularGamesPerDay([row])).totalGamesPlayed).toBe(1);
+  });
+
   const row: WeekData & { teamId: number; weekNumber: number } = {
     teamId: 1, weekNumber: 1,
     MON: game(1, 20), TUE: game(2, 80), SUN: game(3, 60),
@@ -85,6 +122,21 @@ describe("selected Game Grid scoring period", () => {
     // Keep total league games equal so only off-night density changes.
     expect(getTeamScheduleSummary(row, [1, 15, 1, 15, 0, 0, 0]).weekScore)
       .toBe(getTeamScheduleSummary(row, [8, 8, 8, 8, 0, 0, 0]).weekScore);
+  });
+  it("adds one crowding term from included games only and keeps the exact decomposition", () => {
+    const row = { teamId: 1, MON: game(1), WED: game(2), nMON: game(3) };
+    const counts = [2, 8, 7, 9, 0, 0, 0, 16, 0, 0];
+    const covered = Array(10).fill(true);
+    const week = getTeamScheduleSummary(row, counts, [], DAYS, covered);
+    const extended = getTeamScheduleSummary(row, counts, [], EXTENDED_DAYS, covered);
+    expect(week.crowding.adjustment).toBeCloseTo((13 / 60 + .05) / 2);
+    expect(extended.crowding.adjustment).toBeCloseTo((13 / 60 + .05 - .25) / 3);
+    const excluded = getTeamScheduleSummary(row, counts, ["MON"], EXTENDED_DAYS, covered);
+    expect(excluded.crowding.adjustment).toBeCloseTo((.05 - .25) / 2);
+    expect(getTeamScheduleSummary(row, counts, [], EXTENDED_DAYS, [false, ...covered.slice(1)]).crowding)
+      .toMatchObject({ adjustment: 0, status: "unavailable", knownGames: 2, expectedGames: 3 });
+    const { games, offNights, matchup, crowding } = extended.scoreDecomposition;
+    expect(games + offNights + matchup + crowding).toBe(extended.weekScore);
   });
 
   it("reverses the recorded PIT 4GP/3ON versus CAR 4GP/1ON inversion", () => {

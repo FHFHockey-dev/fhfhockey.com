@@ -57,6 +57,7 @@ const teams: TeamDataWithTotals[] = [
         offNights: 0,
         opponents: [{ abbreviation: "TOR", teamId: 10 }],
       },
+      { weekNumber: 2, gamesPlayed: 0, offNights: 0, opponents: [], scheduleCoverage: { known: 7, expected: 7 } },
     ],
     totals: {
       gamesPlayed: 2,
@@ -68,6 +69,34 @@ const teams: TeamDataWithTotals[] = [
 ];
 
 describe("FourWeekGrid", () => {
+  it("keeps summary totals and the AVG score unavailable for incomplete calendars", () => {
+    const partial = {
+      ...teams[0],
+      totals: { ...teams[0].totals, scheduleCoverage: { known: 21, expected: 28 } },
+      avgOpponentPointPct: null,
+    };
+    render(<FourWeekGrid teamDataArray={[partial]} />);
+    const averages = screen.getByText("AVG:").closest("tr")!;
+    expect(Array.from(averages.cells).slice(1).map((cell) => cell.textContent)).toEqual(["-", "-", "-", "-"]);
+    const row = screen.getByRole("link", { name: "Open Alpha Team HQ" }).closest("tr")!;
+    expect(Array.from(row.cells).slice(1).map((cell) => cell.textContent)).toEqual(["-", "-", "-", "-"]);
+  });
+
+  it("shows uncovered weeks as unavailable and gives unknown standings no favorable score credit", () => {
+    const known = { ...teams[0], avgOpponentPointPct: 0.5 };
+    const unknown = {
+      ...teams[1], totals: known.totals, avgOpponentPointPct: null,
+      weeks: [{ weekNumber: 1, gamesPlayed: 0, offNights: 0, opponents: [], scheduleCoverage: { known: 0, expected: 7 } }]
+    };
+    render(<FourWeekGrid teamDataArray={[known, unknown]} />);
+    const row = screen.getByRole("link", { name: "Open Beta Team HQ" }).closest("tr")!;
+    expect(row.cells[3].textContent).toBe("-");
+    expect(row.cells[4].textContent).toBe("0.00");
+    fireEvent.click(screen.getByRole("tab", { name: "Weekly Detail" }));
+    expect(screen.getAllByText("Schedule unavailable (0/7 days)").length).toBeGreaterThan(0);
+    expect(screen.queryByText("No games")).toBeNull();
+  });
+
   afterEach(cleanup);
 
   beforeEach(() => {

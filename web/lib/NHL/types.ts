@@ -305,6 +305,7 @@ export interface ExtendedWeekData extends WeekData {
   totalGamesPlayed: number;
   totalOffNights: number;
   weekScore: number;
+  scheduleCoverage?: { known: number; expected: number };
 }
 
 export type FourWeekTotals = {
@@ -350,17 +351,20 @@ export type TeamDataWithTotals = {
     opponents: { abbreviation: string; teamId: number }[];
     gamesPlayed: number;
     offNights: number;
+    scheduleCoverage?: { known: number; expected: number };
   }[];
   totals: {
     opponents: { abbreviation: string; teamId: number }[];
     gamesPlayed: number;
     offNights: number;
+    scheduleCoverage?: { known: number; expected: number };
   };
-  avgOpponentPointPct: number;
+  avgOpponentPointPct: number | null;
+  opponentCoverage?: { known: number; expected: number };
 };
 
 export type TeamWithScore = TeamDataWithTotals & {
-  score: number;
+  score: number | null;
 };
 
 ///////////////////////////////

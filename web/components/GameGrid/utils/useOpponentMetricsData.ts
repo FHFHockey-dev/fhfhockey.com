@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import publicSupabase from "lib/supabase/public-client";
 import { TeamDataWithTotals } from "lib/NHL/types";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 
 export interface TeamStats {
   team_abbreviation: string;
@@ -14,7 +15,9 @@ export interface TeamStats {
   xgf: number | null;
   xga: number | null;
   points: number | null;
-  date: string;
+  date?: string;
+  season?: number;
+  situation?: string;
 }
 
 export type OpponentMetricAverages = {
@@ -32,13 +35,19 @@ export type OpponentMetricColumn = {
   key: keyof OpponentMetricAverages;
 };
 
+export type MetricCoverage = { known: number; expected: number };
+export type OpponentMetricCoverage = Record<keyof OpponentMetricAverages, MetricCoverage>;
+
 export type UseOpponentMetricsDataResult = {
-  entries: { team: TeamDataWithTotals; averages: OpponentMetricAverages }[];
+  entries: { team: TeamDataWithTotals; averages: OpponentMetricAverages; coverage: OpponentMetricCoverage }[];
   metricsByTeamId: Record<number, OpponentMetricAverages>;
+  coverageByTeamId: Record<number, OpponentMetricCoverage>;
   leagueAverages: Record<keyof OpponentMetricAverages, number | null>;
+  leagueCoverage: OpponentMetricCoverage;
   metricColumns: OpponentMetricColumn[];
   statsLoading: boolean;
   statsError: string | null;
+  sourceLabel: string;
 };
 
 export const OPPONENT_METRIC_COLUMNS: OpponentMetricColumn[] = [
@@ -48,7 +57,7 @@ export const OPPONENT_METRIC_COLUMNS: OpponentMetricColumn[] = [
   { label: "GA", key: "avgGoalAgainst" },
   { label: "SF", key: "avgSf" },
   { label: "SA", key: "avgSa" },
-  { label: "W%", key: "avgWinPct" }
+  { label: "PTS%", key: "avgWinPct" }
 ];
 
 const EMPTY_AVERAGES: OpponentMetricAverages = {
@@ -61,54 +70,38 @@ const EMPTY_AVERAGES: OpponentMetricAverages = {
   avgWinPct: null
 };
 
-function computeOpponentAverages(
+export function computeOpponentMetrics(
   team: TeamDataWithTotals,
   allTeamStats: Record<string, TeamStats>
-): OpponentMetricAverages {
+): { averages: OpponentMetricAverages; coverage: OpponentMetricCoverage } {
   const week1 = team.weeks.find((w) => w.weekNumber === 1);
-
-  if (!week1 || week1.opponents.length === 0) {
-    return EMPTY_AVERAGES;
-  }
-
-  const count = week1.opponents.length;
-  const totals = week1.opponents.reduce(
-    (acc, opp) => {
-      const key = opp.abbreviation.toUpperCase();
-      const stats = allTeamStats[key];
-
-      if (!stats) {
-        return acc;
-      }
-
-      const gp = stats.gp ?? 0;
-      const denom = gp > 0 ? gp : 0;
-      const perGame = (value: number | null | undefined) =>
-        denom > 0 ? (value ?? 0) / denom : 0;
-
-      acc.xgf += perGame(stats.xgf);
-      acc.xga += perGame(stats.xga);
-      acc.sf += perGame(stats.sf);
-      acc.sa += perGame(stats.sa);
-      acc.gf += perGame(stats.gf);
-      acc.ga += perGame(stats.ga);
-
-      const points = stats.points ?? 0;
-      acc.winPct += denom > 0 ? points / (denom * 2) : 0;
-      return acc;
-    },
-    { xgf: 0, xga: 0, sf: 0, sa: 0, gf: 0, ga: 0, winPct: 0 }
-  );
-
-  return {
-    avgXgf: count > 0 ? totals.xgf / count : null,
-    avgXga: count > 0 ? totals.xga / count : null,
-    avgSf: count > 0 ? totals.sf / count : null,
-    avgSa: count > 0 ? totals.sa / count : null,
-    avgGoalFor: count > 0 ? totals.gf / count : null,
-    avgGoalAgainst: count > 0 ? totals.ga / count : null,
-    avgWinPct: count > 0 ? totals.winPct / count : null
+  const opponents = week1?.opponents ?? [];
+  const averages = { ...EMPTY_AVERAGES };
+  const coverage = {} as OpponentMetricCoverage;
+  const fields: Record<keyof OpponentMetricAverages, keyof TeamStats> = {
+    avgXgf: "xgf", avgXga: "xga", avgSf: "sf", avgSa: "sa",
+    avgGoalFor: "gf", avgGoalAgainst: "ga", avgWinPct: "points"
   };
+
+  OPPONENT_METRIC_COLUMNS.forEach(({ key }) => {
+    let sum = 0;
+    let known = 0;
+    opponents.forEach((opponent) => {
+      const stats = allTeamStats[opponent.abbreviation.toUpperCase()];
+      const gp = stats?.gp;
+      const value = stats?.[fields[key]];
+      if (typeof gp !== "number" || !Number.isFinite(gp) || gp <= 0 ||
+          typeof value !== "number" || !Number.isFinite(value)) return;
+      const perGame = value / (key === "avgWinPct" ? 2 * gp : gp);
+      if (!Number.isFinite(perGame)) return;
+      sum += perGame;
+      known++;
+    });
+    coverage[key] = { known, expected: opponents.length };
+    // A partial observed subtotal must not look like a complete schedule mean.
+    averages[key] = known > 0 && known === opponents.length ? sum / known : null;
+  });
+  return { averages, coverage };
 }
 
 function computeLeagueAverages(
@@ -125,7 +118,7 @@ function computeLeagueAverages(
   entries.forEach(({ averages }) => {
     OPPONENT_METRIC_COLUMNS.forEach(({ key }) => {
       const value = averages[key];
-      if (typeof value === "number") {
+      if (typeof value === "number" && Number.isFinite(value)) {
         sums[key] = (sums[key] ?? 0) + value;
         counts[key] = (counts[key] ?? 0) + 1;
       }
@@ -143,14 +136,48 @@ function computeLeagueAverages(
   return result as Record<keyof OpponentMetricAverages, number | null>;
 }
 
+export async function loadCurrentSeasonStats(seasonId: number): Promise<Record<string, TeamStats>> {
+  let expectedCount: number | null = null;
+  const rows = await fetchAllSupabasePages<TeamStats>(async ({ from, to }) => {
+    const { data, error, count } = await publicSupabase.from("nst_team_stats")
+      .select("team_abbreviation,team_name,gp,sf,sa,gf,ga,xgf,xga,points,season,situation", { count: "exact" })
+      .eq("season", seasonId).eq("situation", "all")
+      .order("team_abbreviation", { ascending: true }).range(from, to);
+    if (!error) {
+      if (count == null || !Number.isFinite(count) || count < 0 ||
+          (expectedCount != null && count !== expectedCount)) {
+        throw new Error("Opponent source completeness changed or is unavailable.");
+      }
+      expectedCount = count;
+    }
+    return { data: data as unknown as TeamStats[] | null, error };
+  }, { pageSize: 500 });
+  if (rows.length !== expectedCount) throw new Error("Opponent source response was incomplete.");
+  const stats: Record<string, TeamStats> = {};
+  rows.forEach((row) => {
+    const abbreviation = row.team_abbreviation?.trim().toUpperCase();
+    if (!abbreviation || row.season !== seasonId || row.situation !== "all" || stats[abbreviation]) {
+      throw new Error("Opponent source row identity was invalid or ambiguous.");
+    }
+    stats[abbreviation] = row;
+  });
+  return stats;
+}
+
 export default function useOpponentMetricsData(
-  teamData: TeamDataWithTotals[]
+  teamData: TeamDataWithTotals[],
+  seasonId: number | null,
+  refreshKey = 0
 ): UseOpponentMetricsDataResult {
   const [allTeamStats, setAllTeamStats] = useState<Record<string, TeamStats>>(
     {}
   );
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
+  const [loadedSourceKey, setLoadedSourceKey] = useState("");
+  const enabled = teamData.length > 0 && seasonId != null && Number.isFinite(seasonId) && seasonId > 0;
+  const sourceKey = `${seasonId}/${refreshKey}`;
+  const sourceReady = loadedSourceKey === sourceKey;
 
   useEffect(() => {
     let ignore = false;
@@ -159,53 +186,20 @@ export default function useOpponentMetricsData(
       setStatsLoading(true);
       setStatsError(null);
 
-      const { data, error } = await publicSupabase
-        .from("nst_team_all")
-        .select(
-          [
-            "team_abbreviation",
-            "team_name",
-            "gp",
-            "sf",
-            "sa",
-            "gf",
-            "ga",
-            "xgf",
-            "xga",
-            "points",
-            "date"
-          ].join(",")
-        )
-        .order("date", { ascending: false });
-
-      if (ignore) {
-        return;
-      }
-
-      if (error) {
-        console.error("Failed to fetch team stats:", error);
+      try {
+        const stats = await loadCurrentSeasonStats(seasonId!);
+        if (ignore) return;
+        setAllTeamStats(stats);
+      } catch {
+        if (ignore) return;
+        setAllTeamStats({});
         setStatsError("Opponent metrics are temporarily unavailable.");
-        setStatsLoading(false);
-        return;
       }
-
-      const rows: TeamStats[] = (data ?? []) as unknown as TeamStats[];
-
-      const statsByAbbr = rows.reduce<Record<string, TeamStats>>((acc, stat) => {
-        const abbr = stat.team_abbreviation?.toUpperCase();
-        if (!abbr || acc[abbr]) {
-          return acc;
-        }
-
-        acc[abbr] = stat;
-        return acc;
-      }, {});
-
-      setAllTeamStats(statsByAbbr);
+      setLoadedSourceKey(sourceKey);
       setStatsLoading(false);
     };
 
-    if (teamData.length > 0) {
+    if (enabled) {
       fetchAndProcessAllStats();
     } else {
       setAllTeamStats({});
@@ -216,15 +210,15 @@ export default function useOpponentMetricsData(
     return () => {
       ignore = true;
     };
-  }, [teamData]);
+  }, [enabled, seasonId, refreshKey, sourceKey]);
 
   const entries = useMemo(
     () =>
       teamData.map((team) => ({
         team,
-        averages: computeOpponentAverages(team, allTeamStats)
+        ...computeOpponentMetrics(team, enabled && sourceReady && !statsLoading && !statsError ? allTeamStats : {})
       })),
-    [teamData, allTeamStats]
+    [teamData, allTeamStats, enabled, sourceReady, statsLoading, statsError]
   );
 
   const metricsByTeamId = useMemo(() => {
@@ -237,17 +231,32 @@ export default function useOpponentMetricsData(
     );
   }, [entries]);
 
+  const coverageByTeamId = useMemo(() => Object.fromEntries(
+    entries.map(({ team, coverage }) => [team.teamId, coverage])
+  ), [entries]);
+
   const leagueAverages = useMemo(
     () => computeLeagueAverages(entries),
     [entries]
   );
 
+  const leagueCoverage = useMemo(() => Object.fromEntries(
+    OPPONENT_METRIC_COLUMNS.map(({ key }) => [key, {
+      known: entries.filter(({ averages }) => averages[key] != null).length,
+      expected: entries.length
+    }])
+  ) as OpponentMetricCoverage, [entries]);
+
   return {
     entries,
     metricsByTeamId,
+    coverageByTeamId,
     leagueAverages,
+    leagueCoverage,
     metricColumns: OPPONENT_METRIC_COLUMNS,
-    statsLoading,
-    statsError
+    statsLoading: enabled && (!sourceReady || statsLoading),
+    statsError: sourceReady ? statsError : null,
+    sourceLabel: seasonId == null ? "Current-season totals unavailable. Snapshot freshness unknown."
+      : `${String(seasonId).slice(0, 4)}–${String(seasonId).slice(-2)} regular-season totals. Snapshot freshness unknown.`
   };
 }

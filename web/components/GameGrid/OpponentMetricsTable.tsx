@@ -7,6 +7,7 @@ import PanelStatus from "components/common/PanelStatus";
 import OptimizedImage from "components/common/OptimizedImage";
 import { getLocalTeamLogoPath } from "lib/images";
 import { useTeamsMap } from "hooks/useTeams";
+import { TeamNumeric, toRankMaps } from "./utils/metricRanks";
 import {
   OpponentMetricAverages,
   UseOpponentMetricsDataResult
@@ -32,21 +33,6 @@ type OpponentMetricsTableProps = {
   metricsData: UseOpponentMetricsDataResult;
 };
 
-type TeamNumeric = { teamId: number; value: number };
-
-function toRankMaps(entries: TeamNumeric[], bestDirection: "asc" | "desc") {
-  const sorted = [...entries].sort((a, b) =>
-    bestDirection === "asc" ? a.value - b.value : b.value - a.value
-  );
-  const best = new Map<number, number>();
-  const worst = new Map<number, number>();
-  sorted.slice(0, 10).forEach((entry, index) => best.set(entry.teamId, index + 1));
-  sorted
-    .slice(Math.max(sorted.length - 10, 0))
-    .forEach((entry, index) => worst.set(entry.teamId, index + 1));
-  return { best, worst };
-}
-
 export default function OpponentMetricsTable({
   teamData,
   metricsData
@@ -62,8 +48,10 @@ export default function OpponentMetricsTable({
     entries: teamsAverages,
     metricColumns,
     leagueAverages,
+    leagueCoverage,
     statsLoading,
-    statsError
+    statsError,
+    sourceLabel
   } = metricsData;
 
   const toggleMobileMinimize = () => {
@@ -152,7 +140,7 @@ export default function OpponentMetricsTable({
       >
     >((acc, { key }) => {
       const entries: TeamNumeric[] = [];
-      sortedTeamsAverages.forEach(({ team, averages }) => {
+      teamsAverages.forEach(({ team, averages }) => {
         const value = averages[key];
         if (typeof value === "number") entries.push({ teamId: team.teamId, value });
       });
@@ -162,7 +150,7 @@ export default function OpponentMetricsTable({
       keyof OpponentMetricAverages,
       { best: Map<number, number>; worst: Map<number, number> }
     >);
-  }, [sortedTeamsAverages, metricColumns]);
+  }, [teamsAverages, metricColumns]);
 
   const getRankClass = (
     key: keyof OpponentMetricAverages,
@@ -212,6 +200,9 @@ export default function OpponentMetricsTable({
         )}
       </div>
       <div id="opponent-metrics-content" className={styles.tableWrapper}>
+        <p className={styles.sourceContext}>
+          {sourceLabel} Metrics per game; PTS% = points / (2 × GP). Coverage counts available scheduled opponents; incomplete means are unavailable.
+        </p>
         {statsLoading ? (
           <PanelStatus state="loading" message="Loading opponent stats..." />
         ) : statsError ? (
@@ -273,17 +264,20 @@ export default function OpponentMetricsTable({
                 {metricColumns.map((metric) => {
                   const value = leagueAverages[metric.key];
                   return (
-                    <td key={metric.key}>
+                    <td key={metric.key} title="Mean of complete displayed team averages">
                       {value != null
                         ? metric.key === "avgWinPct"
                           ? `${(value * 100).toFixed(1)}%`
                           : value.toFixed(2)
                         : "-"}
+                      <small className={styles.coverage}>
+                        {leagueCoverage[metric.key].known}/{leagueCoverage[metric.key].expected} teams
+                      </small>
                     </td>
                   );
                 })}
               </tr>
-              {sortedTeamsAverages.map(({ team, averages }) => (
+              {sortedTeamsAverages.map(({ team, averages, coverage }) => (
                 <tr key={team.teamId}>
                   <td>
                     <div className={styles.teamInfo}>
@@ -302,12 +296,16 @@ export default function OpponentMetricsTable({
                       <td
                         key={metric.key}
                         className={getRankClass(metric.key, team.teamId, value)}
+                        title={`${coverage[metric.key].known}/${coverage[metric.key].expected} scheduled opponents available; incomplete means are unavailable`}
                       >
                         {value != null
                           ? metric.key === "avgWinPct"
                             ? `${(value * 100).toFixed(1)}%`
                             : value.toFixed(1)
                           : "-"}
+                        <small className={styles.coverage}>
+                          {coverage[metric.key].known}/{coverage[metric.key].expected}
+                        </small>
                       </td>
                     );
                   })}

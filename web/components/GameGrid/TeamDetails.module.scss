@@ -1,0 +1,104 @@
+@use "styles/vars" as v;
+
+.details {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 18px;
+  border: 1px solid v.$border-secondary;
+  border-radius: 24px;
+  background: v.$background-dark;
+  color: v.$text-primary;
+  text-align: left;
+  font-family: v.$font-family-primary;
+  font-size: 14px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+
+  h3, h4, h5, p { margin: 0; }
+  h3 { font-size: 18px; }
+  h4 { margin-top: 16px; font-size: 15px; }
+  h5 { font-size: 15px; }
+  p + p { margin-top: 4px; }
+}
+
+.horizon { margin-top: 6px !important; }
+.metadata, .coverage, .limitations { color: v.$text-secondary; font-size: 12px; }
+.categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin: 10px 0 0;
+}
+.category {
+  padding: 10px;
+  border: 1px solid v.$border-secondary;
+  border-radius: 8px;
+  dt { font-weight: 700; }
+  dd { margin: 4px 0 0; }
+}
+.categoryName { display: block; font-size: 12px; font-weight: 400; }
+.previews { list-style: none; margin: 10px 0 0; padding: 0; }
+.preview {
+  padding: 12px 0;
+  border-top: 1px solid v.$border-secondary;
+}
+.limitations { margin-top: 12px !important; }
+
+.teamIdentity {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+  min-width: 44px;
+}
+.teamDisclosure, .teamHqLink, .closeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px;
+  font: inherit;
+  color: v.$text-primary;
+  background: transparent;
+  cursor: pointer;
+  text-decoration: none;
+
+  &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: -2px; }
+}
+
+@media (hover: hover) {
+  .teamDisclosure:hover, .teamHqLink:hover, .closeButton:hover {
+    background: rgba(v.$primary-color, 0.12);
+  }
+}
+.teamDisclosure {
+  gap: 3px;
+  > span { pointer-events: none; }
+}
+.teamDisclosure .rowTeamLogo {
+  position: relative;
+  right: auto;
+  top: auto;
+  transform: none;
+  height: 32px;
+}
+.teamHqLink { font-size: 10px; line-height: 1; }
+.closeButton { border-color: v.$border-secondary; padding: 4px 10px; font-size: 12px; }
+.detailControls { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+.detailRow > td.detailCell {
+  padding: 10px;
+  white-space: normal;
+  background: v.$background-medium;
+}
+.identityCell { overflow: visible !important; }
+
+@media (max-width: v.$breakpoint-mobile-max) {
+  .details { padding: 12px; border-radius: 12px; }
+  .detailRow > td.detailCell { padding: 6px; }
+  .detailRow > td.detailCell > div { width: min(100%, calc(100vw - 48px)); }
+  .categories { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

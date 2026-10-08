@@ -4,17 +4,16 @@ import {
   DAYS,
   EXTENDED_DAY_ABBREVIATION,
   WeekData,
+  GameData,
   ExtendedWeekData
 } from "lib/NHL/types";
 
-/**
- * Test if the match up exist.
- * If a match up does not exist, then its home and away will both be false.
- * @param matchUp A match up.
- * @returns true if the match up exist, otherwise false.
- */
-function hasMatchUp(matchUp: WeekData["MON"] | undefined) {
-  return matchUp !== undefined;
+/** Regular-season opportunities exclude postponed/cancelled games but include finals. */
+export function isRegularScheduleGame(game: GameData | undefined): game is GameData {
+  const inactive = ["PPD", "CNCL", "POSTPONED", "CANCELLED"];
+  return game?.gameType === 2 && Number.isFinite(game.id) && game.id > 0 &&
+    !inactive.includes(game.gameScheduleState?.toUpperCase() ?? "") &&
+    !inactive.includes(game.gameState?.toUpperCase() ?? "");
 }
 
 export function getTotalGamePlayed(
@@ -27,9 +26,7 @@ export function getTotalGamePlayed(
     if (excludedDays.includes(day)) return;
 
     const matchUp = matchUps[day];
-    const hasMatchUp_ = hasMatchUp(matchUp);
-    const isRegularSeason = matchUp?.gameType === 2;
-    if (hasMatchUp_ && isRegularSeason) num++;
+    if (isRegularScheduleGame(matchUp)) num++;
   });
   return num;
 }
@@ -50,7 +47,7 @@ export function calcTotalOffNights(
     if (excludedDays.includes(day)) return;
 
     const matchUp = matchUps[day];
-    const hasMatchUp_ = hasMatchUp(matchUp) && matchUp?.gameType === 2;
+    const hasMatchUp_ = isRegularScheduleGame(matchUp);
     // when a day has <= 8 games, mark that day as off night
     const offNight = numGamesPerDay[i] <= 8;
     if (hasMatchUp_ && offNight) num++;
@@ -90,7 +87,7 @@ export function calcWeightedOffNights(
     if (excludedDays.includes(day)) return;
 
     const matchUp = matchUps[day];
-    const hasMatchUp_ = hasMatchUp(matchUp) && matchUp?.gameType === 2;
+    const hasMatchUp_ = isRegularScheduleGame(matchUp);
     const games = numGamesPerDay[i] ?? 0;
     const isOffNight = games <= OFF_NIGHT_THRESHOLD;
 
@@ -124,7 +121,7 @@ export function getRegularGamesPerDay(
     const ids = new Set<number>();
     rows.forEach((row) => {
       const game = row[day];
-      if (game?.gameType === 2 && game.id) ids.add(game.id);
+      if (isRegularScheduleGame(game)) ids.add(game.id);
     });
     return ids.size;
   });

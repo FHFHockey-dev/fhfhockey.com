@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { addDays, format, parseISO } from "date-fns";
 import Image from "next/legacy/image";
+import Link from "next/link";
 import styles from "./TransposedGrid.module.scss";
+import detailStyles from "./TeamDetails.module.scss";
 import { DAYS, EXTENDED_DAY_ABBREVIATION, EXTENDED_DAYS } from "lib/NHL/types";
 import { useTeamsMap } from "hooks/useTeams";
 import VerticalMatchupCell from "./VerticalMatchupCell";
@@ -23,6 +25,9 @@ type TransposedGridProps = {
   extended: boolean;
   start: string;
   mode: "7-Day" | "10-Day-Forecast";
+  expandedTeamIds?: ReadonlySet<number>;
+  onToggleTeam?: (teamId: number) => void;
+  renderTeamDetails?: (teamId: number) => React.ReactNode;
 };
 
 export default function TransposedGrid({
@@ -32,9 +37,13 @@ export default function TransposedGrid({
   setExcludedDays,
   extended,
   start,
+  expandedTeamIds = new Set<number>(),
+  onToggleTeam,
+  renderTeamDetails,
 }: TransposedGridProps) {
   const daysToRender = extended ? EXTENDED_DAYS : DAYS;
   const teamsMap = useTeamsMap();
+  const triggerRefs = useRef(new Map<number, HTMLButtonElement>());
 
   const [teamSortKey, setTeamSortKey] = useState<
     "alphabetical" | "totalGamesPlayed" | "totalOffNights" | "weekScore"
@@ -153,6 +162,7 @@ export default function TransposedGrid({
 
   return (
     <div className={styles.gridWrapper}>
+      <div className={styles.tableScroller}>
       <table className={styles.transposedGrid}>
         <thead>
           <tr>
@@ -172,7 +182,24 @@ export default function TransposedGrid({
                   onMouseLeave={() => setHoveredColumn(null)}
                 >
                   <div className={styles.cellContent}>
-                    {teamData ? (
+                    {teamData && onToggleTeam ? (
+                      <div className={styles.teamHeaderIdentity}>
+                        <button type="button"
+                          id={`game-grid-transposed-trigger-${team.teamId}`}
+                          ref={(element) => { if (element) triggerRefs.current.set(team.teamId, element); else triggerRefs.current.delete(team.teamId); }}
+                          className={detailStyles.teamDisclosure}
+                          aria-label={`${expandedTeamIds.has(team.teamId) ? "Hide" : "Show"} ${teamData.name} upcoming category forecasts`}
+                          aria-expanded={expandedTeamIds.has(team.teamId)}
+                          aria-controls={`game-grid-team-details-${team.teamId}`}
+                          onClick={() => onToggleTeam(team.teamId)}>
+                          <Image src={teamData.logo} alt="" width={30} height={30} objectFit="contain" />
+                          <span aria-hidden="true">{expandedTeamIds.has(team.teamId) ? "−" : "+"}</span>
+                        </button>
+                        <Link href={`/stats/team/${teamData.abbreviation}`}
+                          aria-label={`Open ${teamData.name} Team HQ`}
+                          className={detailStyles.teamHqLink}>Team HQ</Link>
+                      </div>
+                    ) : teamData ? (
                       <Image
                         src={teamData.logo}
                         alt={teamData.name}
@@ -311,6 +338,19 @@ export default function TransposedGrid({
           </tr>
         </tbody>
       </table>
+      </div>
+      {renderTeamDetails && sortedTeamColumns.filter((team) => expandedTeamIds.has(team.teamId)).map((team) => (
+        <div key={team.teamId} id={`game-grid-team-details-${team.teamId}`} className={styles.teamDetailPanel}>
+          <div className={detailStyles.detailControls}>
+            <button type="button" className={detailStyles.closeButton}
+              aria-label={`Close ${teamsMap[team.teamId]?.name ?? `Team ${team.teamId}`} game previews`}
+              onClick={() => { triggerRefs.current.get(team.teamId)?.focus(); onToggleTeam?.(team.teamId); }}>
+              Close preview
+            </button>
+          </div>
+          {renderTeamDetails(team.teamId)}
+        </div>
+      ))}
     </div>
   );
 }

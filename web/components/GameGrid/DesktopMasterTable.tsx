@@ -1,5 +1,5 @@
 import { parseISO } from "date-fns";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import clsx from "clsx";
@@ -13,12 +13,16 @@ import {
 } from "./TotalGamesPerDayRow";
 import { addDays, formatDate, getDayStr } from "./utils/date-func";
 import styles from "./GameGrid.module.scss";
+import detailStyles from "./TeamDetails.module.scss";
 
 import { DAYS, EXTENDED_DAY_ABBREVIATION, EXTENDED_DAYS, WeekData } from "lib/NHL/types";
 import { useTeamsMap } from "hooks/useTeams";
+import { TeamNumeric, toRankMaps } from "./utils/metricRanks";
+import type { FourWeekCalendar } from "./utils/useFourWeekSchedule";
 import {
   OpponentMetricAverages,
   OpponentMetricColumn,
+  OpponentMetricCoverage,
 } from "./utils/useOpponentMetricsData";
 
 type TeamScheduleRow = WeekData & {
@@ -33,6 +37,8 @@ type FourWeekSummary = {
   offNights: number | null;
   avgOpponentPointPct: number | null;
   score: number | null;
+  opponentCoverage?: { known: number; expected: number };
+  scheduleCoverage?: { known: number; expected: number };
 };
 
 type DesktopMasterTableProps = {
@@ -48,8 +54,15 @@ type DesktopMasterTableProps = {
   opponentLeagueAverages: Record<keyof OpponentMetricAverages, number | null>;
   opponentMetricsLoading: boolean;
   opponentMetricsError: string | null;
+  opponentCoverageByTeamId?: Record<number, OpponentMetricCoverage>;
+  opponentLeagueCoverage?: OpponentMetricCoverage;
+  opponentSourceLabel?: string;
   fourWeekSummaryByTeamId: Record<number, FourWeekSummary>;
   fourWeekAverages: FourWeekSummary;
+  fourWeekCalendar?: FourWeekCalendar;
+  expandedTeamIds?: ReadonlySet<number>;
+  onToggleTeam?: (teamId: number) => void;
+  renderTeamDetails?: (teamId: number) => ReactNode;
 };
 
 type SortKey =
@@ -67,8 +80,6 @@ type SortConfig = {
   key: SortKey;
   direction: "ascending" | "descending";
 };
-
-type TeamNumeric = { teamId: number; value: number };
 
 type MasterRow = TeamScheduleRow & {
   teamName: string;
@@ -179,23 +190,6 @@ function compareValues(
   return direction === "ascending" ? aNum - bNum : bNum - aNum;
 }
 
-function toRankMaps(entries: TeamNumeric[], bestDirection: "asc" | "desc") {
-  const sorted = [...entries].sort((a, b) =>
-    bestDirection === "asc" ? a.value - b.value : b.value - a.value,
-  );
-  const best = new Map<number, number>();
-  const worst = new Map<number, number>();
-
-  sorted
-    .slice(0, 10)
-    .forEach((entry, index) => best.set(entry.teamId, index + 1));
-  sorted
-    .slice(Math.max(sorted.length - 10, 0))
-    .forEach((entry, index) => worst.set(entry.teamId, index + 1));
-
-  return { best, worst };
-}
-
 export function distributeMasterTableWidths(
   baseWidths: number[],
   targetWidth: number,
@@ -240,8 +234,15 @@ export default function DesktopMasterTable({
   opponentLeagueAverages,
   opponentMetricsLoading,
   opponentMetricsError,
+  opponentCoverageByTeamId,
+  opponentLeagueCoverage,
+  opponentSourceLabel,
   fourWeekSummaryByTeamId,
   fourWeekAverages,
+  fourWeekCalendar,
+  expandedTeamIds = new Set(),
+  onToggleTeam,
+  renderTeamDetails,
 }: DesktopMasterTableProps) {
   const teamsMap = useTeamsMap();
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -979,6 +980,16 @@ export default function DesktopMasterTable({
           </div>
         </div>
       )}
+      {opponentSourceLabel && (
+        <p className={styles.masterSourceContext}>
+          Opponent stats: {opponentSourceLabel} Metrics per game; PTS% = points / (2 × GP). Coverage counts available scheduled opponents; incomplete means are unavailable.
+        </p>
+      )}
+      {fourWeekCalendar && (
+        <p className={styles.masterSourceContext}>
+          {fourWeekCalendar.error ?? `Four weeks: ${fourWeekCalendar.start}–${fourWeekCalendar.end}, selected Monday–Sunday week plus three weeks. Schedule coverage ${fourWeekCalendar.knownDays}/${fourWeekCalendar.expectedDays} days.`}
+        </p>
+      )}
       <div ref={scrollRef} className={styles.masterTableScroll}>
         <table
           ref={tableRef}
@@ -1013,6 +1024,11 @@ export default function DesktopMasterTable({
                         column.key,
                         opponentLeagueAverages[column.key],
                       )}
+                  {!opponentMetricsLoading && !opponentMetricsError && opponentLeagueCoverage && (
+                    <small className={styles.masterMetricCoverage} title="Complete displayed team means">
+                      {opponentLeagueCoverage[column.key].known}/{opponentLeagueCoverage[column.key].expected} teams
+                    </small>
+                  )}
                 </td>
               ))}
               <td
@@ -1103,7 +1119,8 @@ export default function DesktopMasterTable({
                   : undefined;
 
               return (
-                <tr key={row.teamId} className={rowHighlightClass}>
+                <Fragment key={row.teamId}>
+                <tr className={rowHighlightClass}>
                   {opponentMetricColumns.map((column, index) => (
                     <td
                       key={`${row.teamId}-${column.key}`}
@@ -1128,6 +1145,11 @@ export default function DesktopMasterTable({
                             column.key,
                             row.opponentMetrics[column.key],
                           )}
+                      {!opponentMetricsLoading && !opponentMetricsError && opponentCoverageByTeamId?.[row.teamId] && (
+                        <small className={styles.masterMetricCoverage} title="Available scheduled opponents; incomplete means are unavailable">
+                          {opponentCoverageByTeamId[row.teamId][column.key].known}/{opponentCoverageByTeamId[row.teamId][column.key].expected}
+                        </small>
+                      )}
                     </td>
                   ))}
                   <td
@@ -1138,7 +1160,19 @@ export default function DesktopMasterTable({
                     )}
                     style={{ left: `${stickyTeamOffset}px` }}
                   >
-                    <Link
+                    {onToggleTeam ? <div className={detailStyles.detailControls}>
+                      <button
+                        id={`game-grid-master-trigger-${row.teamId}`}
+                        type="button"
+                        className={detailStyles.teamDisclosure}
+                        aria-label={`${expandedTeamIds.has(row.teamId) ? "Hide" : "Show"} ${row.teamName} team preview`}
+                        aria-expanded={expandedTeamIds.has(row.teamId)}
+                        aria-controls={`game-grid-team-details-${row.teamId}`}
+                        onClick={() => onToggleTeam(row.teamId)}
+                      >
+                        <Image src={row.logo} alt="" width={34} height={34} className={styles.masterTeamLogo} />
+                      </button>
+                    </div> : <Link
                       href={`/stats/team/${row.teamAbbreviation}`}
                       aria-label={`Open ${row.teamName} Team HQ`}
                       className={styles.masterTeamIdentity}
@@ -1152,7 +1186,7 @@ export default function DesktopMasterTable({
                           className={styles.masterTeamLogo}
                         />
                       </span>
-                    </Link>
+                    </Link>}
                   </td>
                   {dayKeys.map((day, index) => {
                     const matchup = row[day];
@@ -1237,6 +1271,11 @@ export default function DesktopMasterTable({
                           "fourWeekOpponentPointPct",
                           row.fourWeekOpponentPointPct,
                         )}
+                        {fourWeekSummaryByTeamId[row.teamId]?.opponentCoverage && (
+                          <small className={styles.masterMetricCoverage} title="Available scheduled opponents; incomplete means are unavailable">
+                            {fourWeekSummaryByTeamId[row.teamId].opponentCoverage!.known}/{fourWeekSummaryByTeamId[row.teamId].opponentCoverage!.expected}
+                          </small>
+                        )}
                       </td>
                       <td
                         className={clsx(
@@ -1255,6 +1294,23 @@ export default function DesktopMasterTable({
                     <td className={styles.masterCollapseSpacer}></td>
                   )}
                 </tr>
+                {expandedTeamIds.has(row.teamId) && renderTeamDetails && (
+                  <tr className={detailStyles.detailRow}>
+                    <td colSpan={opponentMetricColumns.length + 1 + dayKeys.length + 3 + fourWeekColumnSpan} className={detailStyles.detailCell}>
+                      <div id={`game-grid-team-details-${row.teamId}`}>
+                        <div className={detailStyles.detailControls}>
+                          <Link href={`/stats/team/${row.teamAbbreviation}`} className={detailStyles.teamHqLink}>Team HQ</Link>
+                          <button type="button" className={detailStyles.closeButton} onClick={() => {
+                            document.getElementById(`game-grid-master-trigger-${row.teamId}`)?.focus();
+                            onToggleTeam?.(row.teamId);
+                          }}>Close preview</button>
+                        </div>
+                        {renderTeamDetails(row.teamId)}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               );
             })}
           </tbody>

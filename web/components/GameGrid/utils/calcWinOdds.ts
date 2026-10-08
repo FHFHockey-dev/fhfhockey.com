@@ -2,6 +2,7 @@
 
 import { DAYS, EXTENDED_DAY_ABBREVIATION, WeekData } from "lib/NHL/types";
 import { ScheduleArray } from "./useSchedule";
+import { isRegularScheduleGame } from "./helper";
 
 export function calculateBlendedWinOdds(
   winOdds: number | null | undefined,
@@ -39,7 +40,7 @@ export function convertTeamRowToWinOddsList(
 ) {
   const winOddsList = days.map((day) => {
     const game = row[day];
-    if (game && game.gameType === 2) {
+    if (isRegularScheduleGame(game)) {
       const ourTeam =
         row.teamId === game.homeTeam.id ? game.homeTeam : game.awayTeam;
       return calculateBlendedWinOdds(
