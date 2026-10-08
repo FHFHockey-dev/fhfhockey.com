@@ -15,7 +15,7 @@ export type AdmittedConsumerSource = {
 };
 const numberOrNull = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? value : null;
 const validCapturedTime = (value: unknown, observedAt: string) => value === null
-  || typeof value === "string" && Number.isFinite(Date.parse(value)) && Date.parse(value) <= Date.parse(observedAt);
+  || typeof value === "string" && !acceptedNewsSupersedes(value, observedAt);
 
 /** Whitelist issued, selected FORGE outputs. Research/admin payloads never leave this boundary. */
 export function publicPlanningForecasts(revisions: ForgeGameRevision[], players: PlanningPlayer[], games: PlanningGame[], now: Date,
@@ -33,10 +33,15 @@ export function publicPlanningForecasts(revisions: ForgeGameRevision[], players:
   const gamesById = new Map<string, PlanningGame[]>();
   for (const game of games) gamesById.set(game.id, [...(gamesById.get(game.id) ?? []), game]);
   const forecasts = new Map<string, GameForecast>();
+  const conflictingIssueTimes = new Map<string, string>();
   for (const revision of revisions) {
     const gameId = String(revision.game_id);
+    if (!revision.id || !revision.run_id || !Array.isArray(revision.payload?.players)
+      || !Array.isArray(revision.payload?.goalies) || !Array.isArray(revision.payload?.teams)) {
+      excluded("identity_conflict", gameId); continue;
+    }
     if (!gamesById.has(gameId)) { excluded("game_mismatch", gameId); continue; }
-    if (!Number.isFinite(Date.parse(revision.published_at)) || Date.parse(revision.published_at) > now.getTime()) { excluded("future_input", gameId); continue; }
+    if (acceptedNewsSupersedes(revision.published_at, now.toISOString())) { excluded("future_input", gameId); continue; }
     const cutoffAt = revision.payload.inputCutoff ?? revision.decision_as_of;
     const currentGames = gamesById.get(gameId)!;
     if (new Set(currentGames.map(game => game.startsAt)).size !== 1) { excluded("game_mismatch", gameId); continue; }
@@ -45,15 +50,15 @@ export function publicPlanningForecasts(revisions: ForgeGameRevision[], players:
       excluded("outside_horizon", gameId); continue;
     }
     const expiresAt = new Date(Math.min(Date.parse(revision.published_at) + 36 * 3600000, Date.parse(currentGames[0].startsAt ?? "") || Infinity)).toISOString();
-    if (!Number.isFinite(Date.parse(cutoffAt)) || Date.parse(cutoffAt) > Date.parse(revision.published_at)) { excluded("invalid_cutoff", gameId); continue; }
+    if (acceptedNewsSupersedes(cutoffAt, revision.published_at)) { excluded("invalid_cutoff", gameId); continue; }
     if (Date.parse(expiresAt) <= now.getTime()) { excluded("stale_source", gameId); continue; }
     const provenance = revision.payload.inputProvenance;
     const receipt = provenance?.capturedReads;
     if (!receipt || receipt.version !== "forge-captured-reads-v1" || !/^[a-f0-9]{64}$/.test(receipt.hash)
       || !Number.isSafeInteger(receipt.readCount) || receipt.readCount < 1
       || !Number.isFinite(Date.parse(receipt.firstReceivedAt)) || !Number.isFinite(Date.parse(receipt.lastReceivedAt))
-      || Date.parse(receipt.firstReceivedAt) > Date.parse(receipt.lastReceivedAt)
-      || Date.parse(receipt.lastReceivedAt) > Date.parse(revision.published_at)) {
+      || acceptedNewsSupersedes(receipt.firstReceivedAt, receipt.lastReceivedAt)
+      || acceptedNewsSupersedes(receipt.lastReceivedAt, revision.published_at)) {
       excluded("identity_conflict", gameId); continue;
     }
     const candidates = Array.isArray(provenance?.issuedContexts) ? provenance.issuedContexts.filter((row): row is ForgeIssuedContextV1 =>
@@ -61,7 +66,7 @@ export function publicPlanningForecasts(revisions: ForgeGameRevision[], players:
     if (candidates.length !== 1) { excluded("identity_conflict", gameId); continue; }
     const issued = candidates[0];
     if (!Number.isSafeInteger(issued.game.seasonId) || expectedSeasonId !== undefined && issued.game.seasonId !== expectedSeasonId
-      || !Number.isFinite(Date.parse(issued.observedAt)) || Date.parse(issued.observedAt) > Date.parse(revision.published_at)
+      || acceptedNewsSupersedes(issued.observedAt, revision.published_at)
       || !Number.isFinite(Date.parse(issued.game.startTime))
       || new Date(issued.game.startTime).toISOString() !== currentGames[0].startsAt
       || !Array.isArray(issued.schedule) || issued.schedule.length !== 2
@@ -82,7 +87,8 @@ export function publicPlanningForecasts(revisions: ForgeGameRevision[], players:
     const emit = (source: AdmittedConsumerSource["source"], nhlId: number, teamId: number, rowGameId: number, stats: Record<string, number | null> | null, startProbability: number | null, confirmedStart: boolean, limitations: string[], conditionalStats?: StatLine | null, appearanceProbability?: number | null, missingReason: ForecastExclusionReason = "unsupported_conditioning") => {
       const player = byNhl.get(nhlId);
       const currentGame = currentGames.find(game => game.teamAbbreviation === player?.teamAbbreviation);
-      if (!player || nhlCounts.get(nhlId) !== 1 || player.nhlTeamId !== teamId || String(rowGameId) !== gameId || !currentGame) { excluded("identity_conflict", gameId, player?.id); return; }
+      if (!player || nhlCounts.get(nhlId) !== 1 || player.nhlTeamId !== teamId || String(rowGameId) !== gameId || !currentGame
+        || player.playerClass !== source.kind) { excluded("identity_conflict", gameId, player?.id); return; }
       const schedule = issued.schedule.find(row => row.teamId === teamId);
       const roster = issued.roster?.filter(row => row.nhlId === nhlId);
       if (!schedule || schedule.revision !== currentGame.scheduleRevision
@@ -117,12 +123,32 @@ export function publicPlanningForecasts(revisions: ForgeGameRevision[], players:
         limitations: ["Game forecasts are provisional; joint plan uncertainty is not calibrated.", ...limitations],
       };
       const key = `${player.id}:${gameId}`, previous = forecasts.get(key);
-      if (!previous || previous.issuedAt < output.issuedAt) {
+      const conflictingTime = conflictingIssueTimes.get(key);
+      if (conflictingTime && !acceptedNewsSupersedes(output.issuedAt, conflictingTime)) {
+        excluded("conflicting_forecast", gameId, player.id); return;
+      }
+      const later = previous && acceptedNewsSupersedes(output.issuedAt, previous.issuedAt);
+      const sameTime = previous && !later && !acceptedNewsSupersedes(previous.issuedAt, output.issuedAt);
+      if (previous && sameTime && (previous.revisionId !== output.revisionId
+        || previous.sourceWatermark !== output.sourceWatermark || previous.modelVersion !== output.modelVersion
+        || JSON.stringify(previous.stats) !== JSON.stringify(output.stats))) {
+        forecasts.delete(key); admittedSources.delete(key); conflictingIssueTimes.set(key, output.issuedAt);
+        excluded("conflicting_forecast", gameId, player.id); return;
+      }
+      if (!previous || later) {
         forecasts.set(key, output);
         admittedSources.set(key, { forecast: output, revision, source });
+        conflictingIssueTimes.delete(key);
       }
     };
-    const skaters = revision.payload.players ?? [];
+    const skaters = revision.payload.players.filter(row => {
+      if (!row || typeof row !== "object") { excluded("identity_conflict", gameId); return false; }
+      if (row.horizon_games !== 1) { excluded("outside_horizon", gameId, byNhl.get(row.player_id)?.id); return false; }
+      if (row.as_of_date !== issued.game.date || row.run_id !== revision.run_id) {
+        excluded("identity_conflict", gameId, byNhl.get(row.player_id)?.id); return false;
+      }
+      return true;
+    });
     const skaterCounts = new Map<string, number>();
     for (const row of skaters) {
       const key = `${row.game_id}:${row.team_id}:${row.player_id}`;
@@ -143,6 +169,9 @@ export function publicPlanningForecasts(revisions: ForgeGameRevision[], players:
     }
     const goalieGroups = new Map<string, { gameId: number; teamId: number; candidates: Row[] }>();
     for (const row of revision.payload.goalies ?? []) {
+      if (!row || typeof row !== "object") { excluded("identity_conflict", gameId); continue; }
+      if (row.horizon_games !== 1) { excluded("outside_horizon", gameId); continue; }
+      if (row.as_of_date !== issued.game.date || row.run_id !== revision.run_id) { excluded("identity_conflict", gameId); continue; }
       const key = `${row.game_id}:${row.team_id}`;
       const group = goalieGroups.get(key) ?? { gameId: row.game_id, teamId: row.team_id, candidates: [] as Row[] };
       group.candidates.push(...(row.uncertainty?.daily_board_candidates ?? []));

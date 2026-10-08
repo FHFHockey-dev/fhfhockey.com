@@ -213,6 +213,42 @@ describe("Yahoo snapshot evidence", () => {
     expect(counted.capabilities.acquisitions).toBe(false);
     expect(mocks.planningResource).toHaveBeenCalledWith(expect.objectContaining({ resource: { type: "team", teamKey: "453.l.1.t.1" } }));
 
+    for (const mode of ["repeated", "oversized", "stale", "wrong-scope", "failed", "deadline", "bounded", "ownership-only"]) {
+      const starts: number[] = [];
+      const clock = mode === "deadline" ? vi.spyOn(Date, "now").mockReturnValueOnce(0).mockReturnValue(8000) : null;
+      mocks.planningResource.mockImplementation(async ({ resource }: any) => {
+        if (resource.type !== "available_page" || mode === "failed") throw new Error("Optional availability read failed");
+        starts.push(resource.start);
+        const ids = mode === "bounded" ? Array.from({ length: 25 }, (_, index) => 2002 + resource.start + index)
+          : mode === "repeated" && resource.start === 0 ? [2002, ...Array.from({ length: 24 }, (_, index) => 2100 + index)]
+            : mode === "oversized" ? Array.from({ length: 26 }, (_, index) => 2002 + index) : [2002];
+        const rows = ids.map(id => [{ player_key: `453.p.${id}` },
+          { ownership: mode === "ownership-only" ? { percent_owned: "1" } : { ownership_type: "freeagents" } }]);
+        return { payload: { league_key: mode === "wrong-scope" ? "453.l.other" : "453.l.1",
+          players: { count: rows.length, ...Object.fromEntries(rows.map((row, index) => [index, { player: row }])) } },
+          transport: mode === "stale" ? { ...transport, ageSeconds: 61 } : transport };
+      });
+      try {
+        const partial = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", now });
+        expect(partial.capabilities.availability, mode).toBe(mode === "ownership-only");
+        expect(partial.snapshot.evidence.availability?.completeness, mode).toBe(mode === "ownership-only" ? "complete" : "partial");
+        expect(partial.snapshot.players.find(row => row.id === "candidate")?.availability, mode).toBe(mode === "bounded" ? "free_agent" : "unknown");
+        if (mode === "repeated") {
+          expect(starts).toEqual([0, 25]);
+          expect(partial.capabilities.limitations.join(" ")).toContain("repeated identities remain unknown");
+        }
+        if (mode === "deadline") {
+          expect(starts).toEqual([]);
+          expect(partial.capabilities.limitations.join(" ")).toContain("time budget");
+        }
+        if (mode === "bounded") {
+          expect(starts).toHaveLength(81);
+          expect(starts.at(-1)).toBe(2000);
+          expect(partial.capabilities.limitations.join(" ")).toContain("did not reach the end");
+        }
+      } finally { clock?.mockRestore(); }
+    }
+
   });
 });
 

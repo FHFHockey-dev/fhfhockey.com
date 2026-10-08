@@ -16,6 +16,23 @@ describe("manual workspace", () => {
     expect(readWorkspace({ getItem: (key) => storage.get(key) ?? null })).toEqual(workspace);
     expect(writeWorkspace({ setItem: () => { throw new Error("quota"); } }, workspace)).toMatch(/could not save/);
   });
+  it("retains one working plan per exact context without returning another context's active plan", () => {
+    const values = new Map<string, string>();
+    const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => values.set(key, value) };
+    const first = defaultWorkspace(new Date("2026-10-01T00:00:00Z"));
+    first.context.timeZone = "UTC";
+    first.context.leagueId = "first";
+    first.unresolvedNames = ["First manager input"];
+    const second = { ...first, context: { ...first.context, leagueId: "second" }, unresolvedNames: ["Second manager input"] };
+    writeWorkspace(storage, first); writeWorkspace(storage, second);
+    expect(readWorkspace(storage)).toEqual(second);
+    expect(readWorkspace(storage, { ...first.context, asOf: "2026-10-02T00:00:00Z" })).toEqual(first);
+    expect(readWorkspace(storage, second.context)).toEqual(second);
+    for (const context of [{ ...first.context, teamId: "other" }, { ...first.context, endDate: "2026-10-10" },
+      { ...first.context, provider: "yahoo" as const }, { ...first.context, timeZone: "America/New_York" }]) {
+      expect(readWorkspace(storage, context)).toBeNull();
+    }
+  });
   it("retains only referenced provider inputs as unverified local planning data", () => {
     const workspace = defaultWorkspace(new Date("2026-10-01T00:00:00Z"));
     workspace.intent.steps = [{ id: "add", type: "add", playerId: "candidate", at: "2026-10-02T00:00:00Z", effectiveAt: "2026-10-02T00:00:00Z", conditional: true, dependsOn: [] }];

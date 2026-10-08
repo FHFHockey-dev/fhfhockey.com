@@ -26,7 +26,7 @@ const issuedContext: ForgeIssuedContextV1 = { version: "forge-issued-context-v1"
   ], roster: [{ canonicalId: 7, nhlId: 847001, seasonId: 20262027, teamId: 1,
     membershipCreatedAt, identityUpdatedAt: "2026-09-01T00:00:00Z", revision: rosterRevision }],
   observedAt: "2026-10-10T09:00:00Z" };
-const revision = (candidates: unknown[]): ForgeGameRevision => ({ id: "issued-1", run_id: "run-1", game_id: 2026020001, decision_as_of: "2026-10-10T10:00:00Z", published_at: "2026-10-10T10:00:00Z", payload: { players: [], teams: [], goalies: [{ game_id: 2026020001, team_id: 1, uncertainty: { daily_board_candidates: candidates } }], codeVersion: "v1", inputProvenance: { rolling_player_history_contract: "test-history", private: "never expose", capturedReads: { version: "forge-captured-reads-v1", hash: "a".repeat(64), readCount: 2, firstReceivedAt: "2026-10-10T09:00:00Z", lastReceivedAt: "2026-10-10T09:01:00Z" }, issuedContexts: [issuedContext] } as ForgeGameRevision["payload"]["inputProvenance"] } });
+const revision = (candidates: unknown[]): ForgeGameRevision => ({ id: "issued-1", run_id: "run-1", game_id: 2026020001, decision_as_of: "2026-10-10T10:00:00Z", published_at: "2026-10-10T10:00:00Z", payload: { players: [], teams: [], goalies: [{ game_id: 2026020001, team_id: 1, horizon_games: 1, as_of_date: "2026-10-10", run_id: "run-1", uncertainty: { daily_board_candidates: candidates } }], codeVersion: "v1", inputProvenance: { rolling_player_history_contract: "test-history", private: "never expose", capturedReads: { version: "forge-captured-reads-v1", hash: "a".repeat(64), readCount: 2, firstReceivedAt: "2026-10-10T09:00:00Z", lastReceivedAt: "2026-10-10T09:01:00Z" }, issuedContexts: [issuedContext] } as ForgeGameRevision["payload"]["inputProvenance"] } });
 function rpcResponse(value: unknown): any {
   const promise = Promise.resolve(value);
   return Object.assign(promise, { abortSignal: () => promise });
@@ -385,7 +385,7 @@ describe("public RSO data boundary", () => {
   });
   it("does not turn a conditional skater forecast into a certain appearance", () => {
     const row = revision([]);
-    row.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001, proj_goals_es: 1, uncertainty: { model: { skater_selection: { production_conditioning: "conditional_playing" } } } }];
+    row.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001, horizon_games: 1, as_of_date: "2026-10-10", run_id: "run-1", proj_goals_es: 1, uncertainty: { model: { skater_selection: { production_conditioning: "conditional_playing" } } } }];
     const exclusions: ForecastDiscoveryExclusion[] = [];
     expect(publicPlanningForecasts([row], [{ ...player, playerClass: "skater" }], normalizePlanningGames(rows), new Date("2026-10-10T12:00:00Z"), {}, exclusions)).toEqual([]);
     expect(exclusions).toContainEqual({ gameId: "2026020001", playerId: "7", reasons: ["missing_participation"] });
@@ -394,7 +394,7 @@ describe("public RSO data boundary", () => {
     const skater = { ...player, playerClass: "skater" as const, eligiblePositions: ["LW"] };
     const forecast = (probability: 0 | 1) => {
       const row = revision([]);
-      row.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001, proj_goals_es: 2, proj_goals_pp: 0, proj_goals_pk: 0,
+      row.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001, horizon_games: 1, as_of_date: "2026-10-10", run_id: "run-1", proj_goals_es: 2, proj_goals_pp: 0, proj_goals_pk: 0,
         uncertainty: { model: { skater_selection: { production_conditioning: "conditional_playing",
           participation: { version: "skater-participation-v1", probability, status: "confirmed_evidence", evidenceIds: ["private-source-id"] },
           same_day_evidence: { assertions: [{ privateText: "never expose" }], conflicts: [] },
@@ -408,17 +408,77 @@ describe("public RSO data boundary", () => {
   });
   it("keeps all-strength targets unknown when PK is unsupported", () => {
     const row = revision([]);
-    row.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001,
+    row.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001, horizon_games: 1, as_of_date: "2026-10-10", run_id: "run-1",
       proj_goals_es: 2, proj_goals_pp: 1, proj_goals_pk: null, proj_hits: 3,
       uncertainty: { model: { skater_selection: { production_conditioning: "conditional_playing",
         participation: { version: "skater-participation-v1", probability: 1, status: "confirmed_evidence", evidenceIds: ["e"] } } } } }];
     const result = publicPlanningForecasts([row], [{ ...player, playerClass: "skater" }], normalizePlanningGames(rows), new Date("2026-10-10T12:00:00Z"));
     expect(result[0].stats).toMatchObject({ GOALS: null, HITS: 3 });
   });
+  it.each([
+    ["horizon_games", 5, "outside_horizon"], ["horizon_games", undefined, "outside_horizon"],
+    ["as_of_date", "2026-10-11", "identity_conflict"], ["run_id", "different-run", "identity_conflict"],
+  ].flatMap(fields => ["skater", "goalie"].map(kind => [kind, ...fields])))
+  ("rejects incompatible issued %s scope: %s=%s", (kind, key, value, reason) => {
+    const row = revision([{ playerId: 847001, startingProbability: 1, conditional: { SAVES_GOALIE: 30 } }]);
+    if (kind === "skater") {
+      row.payload.goalies = [];
+      row.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001, horizon_games: 1, as_of_date: "2026-10-10", run_id: "run-1",
+        proj_goals_es: 2, proj_goals_pp: 0, proj_goals_pk: 0, uncertainty: { model: { skater_selection: { production_conditioning: "conditional_playing",
+          participation: { version: "skater-participation-v1", probability: 1, status: "confirmed_evidence", evidenceIds: ["e"] } } } } }];
+    }
+    (kind === "skater" ? row.payload.players : row.payload.goalies)[0][key as string] = value;
+    const exclusions: Record<string, number> = {};
+    const currentPlayer = kind === "skater" ? { ...player, playerClass: "skater" as const } : player;
+    expect(publicPlanningForecasts([row], [currentPlayer], normalizePlanningGames(rows), new Date("2026-10-10T12:00:00Z"), exclusions)).toEqual([]);
+    expect(exclusions[reason as string]).toBe(1);
+  });
+  it("keeps revision identity deterministic across equal issuance times and recovers with a later compatible revision", () => {
+    const first = revision([{ playerId: 847001, startingProbability: 1, conditional: { SAVES_GOALIE: 30 } }]);
+    const second = { ...first, id: "issued-2" }, later = { ...first, id: "issued-3", published_at: "2026-10-10T07:00:00-04:00" };
+    const games = normalizePlanningGames(rows), now = new Date("2026-10-10T12:00:00Z"), exclusions: Record<string, number> = {};
+    expect(publicPlanningForecasts([first, second], [player], games, now, exclusions)).toEqual([]);
+    expect(publicPlanningForecasts([second, first], [player], games, now)).toEqual([]);
+    expect(exclusions.conflicting_forecast).toBe(1);
+    expect(publicPlanningForecasts([first, first], [player], games, now)).toHaveLength(1);
+    expect(publicPlanningForecasts([first, second, later], [player], games, now)[0].revisionId).toBe("issued-3");
+    expect(publicPlanningForecasts([later, first, second], [player], games, now)[0].revisionId).toBe("issued-3");
+  });
+  it("rejects a player/goalie class conflict without substituting team statistics", () => {
+    const row = revision([{ playerId: 847001, startingProbability: 1, conditional: { SAVES_GOALIE: 30 } }]);
+    row.payload.teams = [{ game_id: 2026020001, team_id: 1, proj_goals_es: 5 }];
+    const exclusions: Record<string, number> = {};
+    expect(publicPlanningForecasts([row], [{ ...player, playerClass: "skater" }], normalizePlanningGames(rows),
+      new Date("2026-10-10T12:00:00Z"), exclusions)).toEqual([]);
+    expect(exclusions.identity_conflict).toBe(1);
+  });
+  it("preserves PostgreSQL microsecond revision ordering and rejects a future input cutoff", () => {
+    const first = revision([{ playerId: 847001, startingProbability: 1, conditional: { SAVES_GOALIE: 30 } }]);
+    first.published_at = "2026-10-10T10:00:00.000001Z";
+    const next = { ...first, id: "later-microsecond", published_at: "2026-10-10T06:00:00.000002-04:00" };
+    const games = normalizePlanningGames(rows), now = new Date("2026-10-10T12:00:00Z");
+    expect(publicPlanningForecasts([first, next], [player], games, now)[0].revisionId).toBe(next.id);
+    expect(publicPlanningForecasts([next, first], [player], games, now)[0].revisionId).toBe(next.id);
+    const invalid = { ...first, payload: { ...first.payload, inputCutoff: "2026-10-10T10:00:00.000002Z" } };
+    const exclusions: Record<string, number> = {};
+    expect(publicPlanningForecasts([invalid], [player], games, now, exclusions)).toEqual([]);
+    expect(exclusions.invalid_cutoff).toBe(1);
+  });
+  it.each([
+    ["000001", "000002", "000001"], ["000002", "000001", "000003"],
+  ])("rejects receipt chronology beyond issuance or with reversed microseconds (%s/%s/%s)", (first, last, published) => {
+    const row = revision([{ playerId: 847001, startingProbability: 1, conditional: { SAVES_GOALIE: 30 } }]);
+    row.published_at = `2026-10-10T10:00:00.${published}Z`;
+    row.payload.inputProvenance!.capturedReads!.firstReceivedAt = `2026-10-10T10:00:00.${first}Z`;
+    row.payload.inputProvenance!.capturedReads!.lastReceivedAt = `2026-10-10T10:00:00.${last}Z`;
+    const exclusions: Record<string, number> = {};
+    expect(publicPlanningForecasts([row], [player], normalizePlanningGames(rows), new Date("2026-10-10T12:00:00Z"), exclusions)).toEqual([]);
+    expect(exclusions.identity_conflict).toBe(1);
+  });
   it("rejects unsupported conditioning, invalid issue cutoffs, expiry, and identity conflicts", () => {
     const skater = { ...player, playerClass: "skater" as const, eligiblePositions: ["LW"] };
     const row = revision([]);
-    row.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001, proj_goals_es: 2, proj_goals_pp: 0, proj_goals_pk: 0,
+    row.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001, horizon_games: 1, as_of_date: "2026-10-10", run_id: "run-1", proj_goals_es: 2, proj_goals_pp: 0, proj_goals_pk: 0,
       uncertainty: { model: { skater_selection: { production_conditioning: "legacy_availability_adjusted" } } } }];
     const games = normalizePlanningGames(rows);
     const now = new Date("2026-10-10T12:00:00Z");

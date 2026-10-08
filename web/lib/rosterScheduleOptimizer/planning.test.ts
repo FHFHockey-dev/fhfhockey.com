@@ -4,6 +4,7 @@ import { comparePlanSensitivity } from "../player-forecasts/planComparison";
 import { snapshotSchema } from "../in-season/workspaceSchema";
 import { resolvePlanningContributions } from "../player-forecasts/planningContributions";
 import { explainBenchDecisions } from "./benchDecisions";
+import { acquisitionEffectiveAt } from "./planningTimeline";
 import type { GameForecast, PlanIntent, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
 
 const fixtureId = (value: string) => [...value].reduce((id, char) => (id * 31 + char.charCodeAt(0)) % 100000000, 1) + 1;
@@ -47,6 +48,20 @@ function snapshot(): PlanningSnapshot {
 }
 
 describe("planning engine", () => {
+  it.each([
+    { timing: "same_day" as const, at: "2026-11-01T20:00:00Z", expected: "2026-11-01T20:00:00Z" },
+    { timing: "next_day" as const, at: "2026-11-01T20:00:00Z", expected: "2026-11-02T05:00:00.000Z" },
+    { timing: "next_day" as const, at: "2026-03-08T06:00:00Z", expected: "2026-03-09T04:00:00.000Z" },
+    { timing: "unknown" as const, at: "2026-11-01T20:00:00Z", expected: null },
+  ])("uses league-local $timing effective time across DST at $at", ({ timing, at, expected }) => {
+    const data = snapshot();
+    data.context.timeZone = "America/New_York";
+    data.rules.acquisitionTiming = timing;
+    expect(acquisitionEffectiveAt(data, data.players[2], at)).toBe(expected);
+    for (const waiverClearsAt of [null, "not-a-time"]) {
+      expect(acquisitionEffectiveAt(data, { ...data.players[2], availability: "waivers", waiverClearsAt }, at)).toBeNull();
+    }
+  });
   it("retains computed zero AGP for a quality replacement, without inventing invalid eligibility scores", () => {
     const data = snapshot();
     data.forecasts = data.forecasts.map(row => row.playerId === "c" ? { ...row, stats: { pts: 10 } } : row);

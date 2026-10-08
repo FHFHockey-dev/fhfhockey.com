@@ -43,6 +43,7 @@ async function expectDesktopFrameVisible(page: import("@playwright/test").Page) 
 }
 
 test.beforeEach(async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-09-26T00:00:00Z"));
   await page.route("**/api/v1/roster-schedule-optimizer/data?**", (route) => route.fulfill({ json: { success: true, data: { players: [player], games: [], forecasts: [], evidence: {} } } }));
   await page.route("**/api/v1/roster-schedule-optimizer/access", (route) => route.fulfill({ json: { data: { eligible: false, capabilities: [], grantingSources: [], expiresAt: null, reason: "manual" } } }));
   await page.route("**/api/v1/roster-schedule-optimizer/workspace?**", (route) => route.fulfill({ status: 401, json: { error: "unauthorized" } }));
@@ -118,7 +119,7 @@ test("readiness controls reach existing inputs across the required viewports", a
   await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: {
     success: true, data: { players: [player], games: [fixtureGame("empty-roster-game", 2, "CAR")], forecasts: [], evidence: {} },
   } }));
-  for (const [width, height] of [[1180, 757], [1024, 768], [768, 1024], [390, 844], [320, 844]]) {
+  for (const [width, height] of [[1180, 757], [1024, 768], [768, 1024], [720, 450], [390, 844], [320, 844]]) {
     await page.setViewportSize({ width, height });
     await page.goto("/roster-schedule-optimizer");
     const readiness = page.locator("details").filter({ has: page.getByText("Planning readiness", { exact: true }) });
@@ -153,7 +154,9 @@ test("readiness controls reach existing inputs across the required viewports", a
     await page.getByRole("button", { name: "Add", exact: true }).click();
     await page.getByRole("button", { name: "Review rules", exact: true }).focus();
     await page.keyboard.press("Enter");
+    await expect(page.locator("#rso-rule-settings > summary")).toBeFocused();
     const confirm = page.getByRole("button", { name: "Confirm planning inputs", exact: true });
+    await expect(confirm).toBeVisible();
     await expect(confirm).toBeEnabled();
     await confirm.focus();
     await page.keyboard.press("Space");
@@ -189,9 +192,9 @@ test("streams A to B to C through successive conditional acquisitions and keeps 
   await expect(stream.getByRole("row", { name: /C#1/ }).getByRole("cell").nth(1)).toContainText("Conditional add");
   await expect(stream.getByRole("row", { name: /C#1/ }).getByRole("cell").nth(2)).toContainText("Conditional add");
   await expect(page.getByRole("region", { name: "Plan summary" }).getByText("3", { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("region", { name: "Itinerary" }).getByText("ADD Bravo Center")).toBeVisible();
-  await expect(page.getByRole("region", { name: "Itinerary" }).getByText("ADD Charlie Center")).toBeVisible();
-  await page.getByRole("button", { name: /Show (suggested lineup|schedule-capacity assignment)/ }).click();
+  await expect(page.getByRole("region", { name: "Itinerary" }).getByText("ADD Bravo Center", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Itinerary" }).getByText("ADD Charlie Center", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /Show (lineup analysis|schedule-capacity assignment)/ }).click();
   await page.getByText("League rules and scoring").click();
   await page.getByText("Scoring, budgets, and lock windows", { exact: true }).click();
   for (const [width, height] of [[1440, 900], [1920, 1080]]) {
@@ -215,6 +218,56 @@ test("weekly lock keeps one fixed occupant across a window, including a confirme
   await expect(row.getByRole("cell").nth(0)).toContainText("Alpha Center");
   await expect(row.getByRole("cell").nth(1)).toContainText("Alpha Center");
   await expect(row).not.toContainText("Bravo Center");
+});
+
+test("fixture category gains use only startable post-acquisition games on desktop and mobile", async ({ page }, testInfo) => {
+  await page.clock.setFixedTime(new Date("2026-10-05T00:00:00Z"));
+  const players = [fixturePlayer(1, "Alpha Center", "CAR"), fixturePlayer(2, "Drop Center", "BOS"), fixturePlayer(3, "Candidate Center", "NJD")];
+  const rules: LeagueRules = { ...fixtureRules, rosterSlots: { C: 1, BN: 1 }, acquisitionTiming: "next_day",
+    periods: [{ id: "Before reset", start: `${date(5)}T00:00:00Z`, end: `${date(6)}T00:00:00Z`, remaining: 1, source: "manager" },
+      { id: "After reset", start: `${date(6)}T00:00:00Z`, end: `${date(8)}T00:00:00Z`, remaining: 0, source: "manager" }],
+    scoring: { mode: "categories", weights: {}, categories: [{ key: "GOALS", direction: "higher" }, { key: "SHOTS", direction: "higher" }] } };
+  const workspace = fixtureWorkspace(players, rules);
+  workspace.context.asOf = `${date(5)}T00:00:00Z`;
+  workspace.roster.push({ playerId: players[1].id, position: "bench" });
+  workspace.realized = { GOALS: 0, SHOTS: 0 };
+  workspace.opponent = { roster: [], realized: { GOALS: 2.5, SHOTS: 10 }, remaining: { GOALS: 0, SHOTS: 0 } };
+  workspace.lockedAssignments = [{ date: date(6), playerId: players[0].id, slotId: "C#1" }];
+  workspace.intent.protectedPlayerIds = [players[0].id];
+  workspace.intent.steps = [{ id: "manager-selected", type: "add", playerId: players[2].id, dropPlayerId: players[1].id,
+    at: `${date(5)}T22:00:00Z`, effectiveAt: `${date(6)}T00:00:00Z`, conditional: true, dependsOn: [] }];
+  const games = [fixtureGame("a6", 6, "CAR"), fixtureGame("a7", 7, "CAR"), fixtureGame("c5", 5, "NJD"), fixtureGame("c6", 6, "NJD"), fixtureGame("c7", 7, "NJD")];
+  const forecasts = games.map(game => {
+    const member = players.find(row => row.teamAbbreviation === game.teamAbbreviation)!;
+    return { ...fixtureForecast(member, game, 0), stats: game.teamAbbreviation === "CAR" ? { GOALS: 1, SHOTS: 6 }
+      : game.date === date(5) ? { GOALS: 99, SHOTS: 99 } : { GOALS: 3, SHOTS: 2 } };
+  });
+  await seedWorkspace(page, workspace);
+  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: {
+    success: true, data: { players, games, forecasts, evidence: {} },
+  } }));
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  for (const [width, height] of [[1440, 900], [390, 844], [320, 844]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto("/roster-schedule-optimizer");
+    const itinerary = page.getByRole("region", { name: "Itinerary", exact: true });
+    const gains = itinerary.locator("details").filter({ has: page.getByText("Selected plan · category gains", { exact: true }) });
+    await gains.locator(":scope > summary").focus();
+    await page.keyboard.press("Enter");
+    await expect(gains.getByText("No move 2 → plan 4 · Δ +2")).toBeVisible();
+    await expect(gains.getByText("No move 12 → plan 8 · Δ -4")).toBeVisible();
+    await expect(gains.getByText("Opponent 2.5 · loss → win")).toBeVisible();
+    await expect(gains.getByText("Opponent 10 · win → loss")).toBeVisible();
+    await expect(gains).toContainText("not win probabilities");
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toMatchObject({
+      intent: workspace.intent, lockedAssignments: workspace.lockedAssignments,
+    });
+    if (width >= 1101) await expectDesktopFrameVisible(page);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath(`fixture-category-gains-${width}.png`) });
+  }
+  expect(errors).toEqual([]);
 });
 
 test("provider refresh proposes repairs while keeping a selected move", async ({ page }) => {
@@ -318,7 +371,7 @@ test("shows sequential stream occupants with real games and retains workspace la
   await page.getByLabel("C", { exact: true }).fill("1");
   await expect(page.getByRole("region", { name: "Itinerary" }).getByRole("table").first()).toContainText("Alpha Center");
   await expect(page.getByRole("region", { name: "Itinerary" }).getByRole("table").first()).toContainText("Bravo Center");
-  await page.getByRole("button", { name: /Show (suggested lineup|schedule-capacity assignment)/ }).click();
+  await page.getByRole("button", { name: /Show (lineup analysis|schedule-capacity assignment)/ }).click();
   await page.getByText("Scoring, budgets, and lock windows", { exact: true }).click({ timeout: 10000 });
   await expectDesktopFrameVisible(page);
   await page.screenshot({ path: testInfo.outputPath("roster-optimizer-1440.png"), fullPage: true });
@@ -342,7 +395,7 @@ test("dense roster keeps schedule views and their scrollbars inside the desktop 
     await page.getByRole("button", { name: "Streaming itinerary", exact: true }).click();
     await expectDesktopFrameVisible(page);
     await page.screenshot({ path: testInfo.outputPath(`rso-itinerary-${width}.png`), fullPage: true });
-    await page.getByRole("button", { name: /Show (suggested lineup|schedule-capacity assignment)/ }).click();
+    await page.getByRole("button", { name: /Show (lineup analysis|schedule-capacity assignment)/ }).click();
     await expect(itinerary.getByRole("table")).toHaveCount(1);
     await expect(itinerary.getByRole("columnheader", { name: "Player", exact: true })).toBeVisible();
     const nestedVerticalScrolls = await itinerary.evaluate((panel) => Array.from(panel.querySelectorAll("div")).filter((node) => node.scrollHeight > node.clientHeight + 1 && ["auto", "scroll"].includes(getComputedStyle(node).overflowY)).length);
@@ -351,7 +404,7 @@ test("dense roster keeps schedule views and their scrollbars inside the desktop 
     await page.screenshot({ path: testInfo.outputPath(`rso-lineup-${width}.png`), fullPage: true });
   }
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByRole("button", { name: /Show (suggested lineup|schedule-capacity assignment)/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: /Show (lineup analysis|schedule-capacity assignment)/ })).toHaveAttribute("aria-pressed", "true");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await page.screenshot({ path: testInfo.outputPath("rso-mobile.png"), fullPage: true });
 });

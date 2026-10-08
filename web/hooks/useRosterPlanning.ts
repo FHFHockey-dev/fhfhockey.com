@@ -2,22 +2,17 @@ import { useEffect, useState } from "react";
 import type { PlanIntent, PlanningResult, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 
 export function useRosterPlanning(snapshot: PlanningSnapshot | null, intent: PlanIntent) {
-  const [result, setResult] = useState<PlanningResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [state, setState] = useState<{ snapshot: PlanningSnapshot; intent: PlanIntent;
+    result?: PlanningResult; error?: string } | null>(null);
 
   useEffect(() => {
-    if (!snapshot) { setResult(null); setError(null); setLoading(false); return; }
+    if (!snapshot) return;
     let cancelled = false;
     let worker: Worker | null = null;
-    setLoading(true);
-    setError(null);
-    setResult(null);
     const finish = (message: { result?: PlanningResult; error?: string }) => {
       if (cancelled) return;
-      if (message.error) setError(message.error);
-      else setResult(message.result ?? null);
-      setLoading(false);
+      worker?.terminate(); worker = null;
+      setState({ snapshot, intent, ...message });
     };
     if (typeof Worker !== "undefined") {
       try {
@@ -36,5 +31,7 @@ export function useRosterPlanning(snapshot: PlanningSnapshot | null, intent: Pla
     return () => { cancelled = true; worker?.terminate(); };
   }, [snapshot, intent]);
 
-  return { result, error, loading };
+  // Invalidate during render so old revision/account/range results never flash.
+  const current = state?.snapshot === snapshot && state?.intent === intent ? state : null;
+  return { result: current?.result ?? null, error: current?.error ?? null, loading: Boolean(snapshot && !current) };
 }

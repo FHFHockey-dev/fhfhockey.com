@@ -1,6 +1,6 @@
 import { expandActiveSlots } from "./slots";
 import { localDate, nextLocalMidnight, zonedMidnight } from "./planningDates";
-import type { PlanIntent, PlanStep, PlanningSnapshot, RosterEntry } from "./planningTypes";
+import type { PlanIntent, PlanStep, PlanningPlayer, PlanningSnapshot, RosterEntry } from "./planningTypes";
 
 type Member = RosterEntry & { since: string };
 export type Timeline = { at: (time: string) => Map<string, Member>; acquisitions: Record<string, number>; legal: boolean; budgetVerified: boolean; limitations: string[] };
@@ -8,6 +8,18 @@ const reserves = ["IR", "IR+", "NA"] as const;
 const isReserve = (position: string) => reserves.some(value => value === position);
 const time = (value: string) => Date.parse(value);
 const finiteTime = (value: string) => Number.isFinite(time(value));
+
+/** Earliest verified effective time; unknown acquisition/waiver timing stays unresolved. */
+export function acquisitionEffectiveAt(snapshot: Pick<PlanningSnapshot, "context" | "rules">, player: PlanningPlayer, at: string): string | null {
+  if (!finiteTime(at) || snapshot.rules.acquisitionTiming === "unknown") return null;
+  let effectiveAt = snapshot.rules.acquisitionTiming === "next_day"
+    ? nextLocalMidnight(localDate(at, snapshot.context.timeZone), snapshot.context.timeZone) : at;
+  if (player.availability === "waivers") {
+    if (!player.waiverClearsAt || !finiteTime(player.waiverClearsAt)) return null;
+    if (time(player.waiverClearsAt) > time(effectiveAt)) effectiveAt = player.waiverClearsAt;
+  }
+  return effectiveAt;
+}
 
 /** Applies actions at their effective time while charging acquisition at action time. */
 export function buildTimeline(snapshot: PlanningSnapshot, intent: PlanIntent, steps: PlanStep[]): Timeline {

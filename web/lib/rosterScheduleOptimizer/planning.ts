@@ -4,7 +4,7 @@ import { summarizeContributionCoverage, type ResolvedContribution } from "../pla
 import { localDate, zonedMidnight } from "./planningDates";
 import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
 import { expandActiveSlots } from "./slots";
-import { buildTimeline } from "./planningTimeline";
+import { acquisitionEffectiveAt, buildTimeline } from "./planningTimeline";
 import { deferBenchDecisions, explainBenchDecisions, reserveBenchEvaluation, type BenchEvaluationBudget } from "./benchDecisions";
 import type { ContributionPlanningSnapshot, ForecastExclusionReason, ForecastOpportunityExclusion, GameForecast, PlanEvaluation, PlanIntent, PlanStep, PlanningAssignment, PlanningGame, PlanningObjective, PlanningPlayer, PlanningResult, PlanningSnapshot, ScoringCategory, StatLine } from "./planningTypes";
 
@@ -903,9 +903,9 @@ function* extensions(snapshot: PlanningSnapshot, intent: PlanIntent, prior: Plan
     let at = zonedMidnight(actionDate, snapshot.context.timeZone);
     if (time(at) < time(snapshot.context.asOf)) at = snapshot.context.asOf;
     if (prior.length && time(at) < time(prior[prior.length - 1].effectiveAt)) continue;
-    let effectiveAt = snapshot.rules.acquisitionTiming === "next_day" ? zonedMidnight(date, snapshot.context.timeZone) : at;
     if (snapshot.rules.acquisitionTiming === "next_day" && localDate(at, snapshot.context.timeZone) >= date) continue;
-    if (player.availability === "waivers" && player.waiverClearsAt && time(player.waiverClearsAt) > time(effectiveAt)) effectiveAt = player.waiverClearsAt;
+    const effectiveAt = acquisitionEffectiveAt(snapshot, player, at);
+    if (!effectiveAt) continue;
     const step: PlanStep = { id: `add:${player.id}:${prior.length}:${date}`, type: "add", playerId: player.id, at, effectiveAt,
       conditional: player.availability === "waivers" || time(at) > time(snapshot.context.asOf), dependsOn: prior.length ? [prior[prior.length - 1].id] : [] };
     proposals.push({ player, date, step });

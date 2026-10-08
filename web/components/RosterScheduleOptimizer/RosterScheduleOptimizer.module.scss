@@ -42,6 +42,8 @@
 .candidateRow { flex-wrap: wrap; }
 .candidateRow > button:first-child { flex: 1 1 130px; }
 .candidateMetrics { flex: 1 0 100%; font-variant-numeric: tabular-nums; }
+.categoryGain { display: flex; flex-wrap: wrap; gap: v.$space-xs v.$space-sm; padding: v.$space-xs 0; border-bottom: v.$border-subtle; overflow-wrap: anywhere; }
+.categoryGain strong { flex-basis: 100%; }
 .candidateViews button, .candidateFilters :is(input, select) { min-height: 40px; }
 .matchupPanel { display: none; }
 .desktopMatchup { display: flex; grid-column: 3; grid-row: 1; }

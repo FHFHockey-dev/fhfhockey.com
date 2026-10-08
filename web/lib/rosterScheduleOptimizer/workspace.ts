@@ -3,6 +3,14 @@ import { workspaceSchema } from "lib/in-season/workspaceSchema";
 
 export const WORKSPACE_KEY = "fhfh:rso:workspace:v1";
 
+export function workspaceContextKey(context: PlanningContext): string {
+  return JSON.stringify([context.provider, context.seasonId, context.leagueId, context.teamId, context.startDate, context.endDate, context.timeZone]);
+}
+
+function contextStorageKey(context: PlanningContext): string {
+  return `${WORKSPACE_KEY}:context:${encodeURIComponent(workspaceContextKey(context))}`;
+}
+
 export function defaultContext(now = new Date()): PlanningContext {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   const localDate = (date: Date) => { const parts = new Intl.DateTimeFormat("en-US", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date); const part = (type: string) => parts.find((item) => item.type === type)?.value ?? ""; return `${part("year")}-${part("month")}-${part("day")}`; };
@@ -24,18 +32,23 @@ export function defaultWorkspace(now = new Date()): PlanningWorkspace {
   return { version: 1, context: defaultContext(now), rules: defaultRules(), managerRuleOverrides: {}, roster: [], lockedAssignments: [], intent: defaultIntent(), manualPlayers: [], unresolvedNames: [], realized: {}, opponent: null };
 }
 
-export function readWorkspace(storage: Pick<Storage, "getItem">): PlanningWorkspace | null {
+export function readWorkspace(storage: Pick<Storage, "getItem">, context?: PlanningContext): PlanningWorkspace | null {
   try {
-    const raw = storage.getItem(WORKSPACE_KEY);
+    const raw = (context ? storage.getItem(contextStorageKey(context)) : null) ?? storage.getItem(WORKSPACE_KEY);
     if (!raw) return null;
     const value: unknown = JSON.parse(raw);
     const parsed = workspaceSchema.safeParse(value);
-    return parsed.success ? parsed.data : null;
+    return parsed.success && (!context || workspaceContextKey(parsed.data.context) === workspaceContextKey(context)) ? parsed.data : null;
   } catch { return null; }
 }
 
 export function writeWorkspace(storage: Pick<Storage, "setItem">, workspace: PlanningWorkspace): string | null {
-  try { storage.setItem(WORKSPACE_KEY, JSON.stringify(workspace)); return null; }
+  try {
+    const value = JSON.stringify(workspace);
+    storage.setItem(contextStorageKey(workspace.context), value);
+    storage.setItem(WORKSPACE_KEY, value);
+    return null;
+  }
   catch { return "This browser could not save the workspace. Your current changes remain available until this tab closes."; }
 }
 
