@@ -617,6 +617,7 @@ describe("RosterScheduleOptimizer workspace", () => {
 
   it.each([
     { label: "League ID", value: "second-league", field: "leagueId" as const },
+    { label: "Team ID", value: "second-team", field: "teamId" as const },
     { label: "Through", value: "2026-11-10", field: "endDate" as const },
   ])("refreshes the selected $field and ignores a late response for the previous scope", async ({ label, value, field }) => {
     authState.user = { id: "manager" };
