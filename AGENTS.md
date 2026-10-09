@@ -14,6 +14,8 @@
 
 ## Branch Naming
 
+- Use `octoberBranch` for ongoing implementation. `master` is the release branch: reconcile accepted work into it, then sync `octoberBranch` from the released commit before continuing.
+- Use an isolated `chef/` branch only when concurrent ownership or review requires it. Reconcile accepted changes back into the October workflow and preserve unfinished work before cleanup.
 - Name new agent-created branches `chef/<descriptive-name>`, not `codex/`. Keep `master` and `octoberBranch` as the long-lived branches.
 - Before deleting a branch, check for unmerged commits and unfinished work; preserve unique work before cleanup.
 
