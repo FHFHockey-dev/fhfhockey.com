@@ -126,7 +126,7 @@
 .alternative button { flex-shrink: 0; }
 .compare { display: grid; grid-template-columns: auto 1fr; gap: v.$space-sm; }
 
-.topbar, .metrics article { border-left: 3px solid v.$primary-color; }
+.topbar, .metrics article { border-left: 3px solid v.$primary-color; border-radius: 0 v.$radius-card v.$radius-card 0; }
 .metrics article:nth-child(2) { border-left-color: v.$color-teal-500; }
 .metrics article:nth-child(3), .metrics article:nth-child(5) { border-left-color: v.$color-gold-400; }
 .metrics article:nth-child(6) { border-left-color: v.$color-coral-500; }
@@ -163,7 +163,7 @@
 .compactTable thead th:first-child { text-align: left; padding-left: 10px; }
 .compactTable thead button { width: 100%; min-height: 28px; padding: 2px; border: 0; border-radius: 0; background: transparent; font-size: inherit; white-space: normal; }
 .compactTable thead button:focus-visible { outline-offset: -2px; }
-.positionGroup { display: block; position: relative; border: 1px solid v.$draft-border; border-left: 4px solid var(--position-color); border-radius: 7px; margin: 2px 0; background: v.$draft-surface; --position-color: #{v.$color-neutral-400}; }
+.positionGroup { display: block; position: relative; border: 1px solid v.$draft-border; border-left: 4px solid var(--position-color); border-radius: 0 7px 7px 0; margin: 2px 0; background: v.$draft-surface; --position-color: #{v.$color-neutral-400}; }
 .positionGroup tr[data-compact-row] { height: clamp(26px, calc((100dvh - 400px) / 20), 32px); }
 .positionGroup tr[hidden] { display: none; }
 .positionGroup tr + tr { border-top: 1px solid v.$draft-border; }
