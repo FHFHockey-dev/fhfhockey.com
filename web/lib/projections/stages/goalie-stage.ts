@@ -1,4 +1,6 @@
 import { starterBoardFlags } from "../starterBoardFlags";
+import { goalieConfirmationFromEvidence } from "../starterBoardScoring";
+import type { DailyBoardEvidence } from "../dailyBoardEvidence";
 import { bootstrapGoalieLine, loadSeasonBootstrap, type SeasonBootstrap } from "../seasonBootstrap";
 import { buildGoalieUncertainty } from "../uncertainty";
 import {
@@ -97,6 +99,8 @@ export type SelectedGoalieProjection = {
 
 export async function runPerGameGoalieStage(args: {
   seasonBootstrap?: boolean;
+  dailyBoardEvidence?: DailyBoardEvidence;
+  evidenceCutoffAt?: string | null;
   asOfDate: string;
   runId: string;
   horizonGames: number;
@@ -467,6 +471,13 @@ export async function runPerGameGoalieStage(args: {
     }
 
     if (selectedGoalieId == null) continue;
+    // A probability or legacy boolean is not a source assertion. Reuse the consumer's exact scope/time validator.
+    const confirmationFor = (playerId: number) => horizonGames === 1
+      ? goalieConfirmationFromEvidence(args.dailyBoardEvidence, {
+          gameId: game.id, teamId: c.teamId, playerId, cutoffAt: args.evidenceCutoffAt ?? null,
+        }) : [];
+    const selectedConfirmation = confirmationFor(selectedGoalieId);
+    const confirmedStatus = selectedConfirmation.length > 0;
     if (!goalieEvidenceCache.has(playerDateKey(selectedGoalieId))) {
       goalieEvidenceCache.set(
         playerDateKey(selectedGoalieId),
@@ -575,13 +586,19 @@ export async function runPerGameGoalieStage(args: {
         WINS_GOALIE: scenarioModel.winProbability, SHUTOUTS_GOALIE: scenarioModel.shutoutProbability };
       const seasonPrior = bootstrap.get(scenario.goalieId);
       const seasonForecast = seasonPrior ? bootstrapGoalieLine(organicConditional, seasonPrior) : null;
-      if (starterBoardFlags().compute) dailyBoardCandidates.push({
-        playerId: scenario.goalieId, startingProbability: scenario.rawProbability,
-        probabilityStatus: c.override?.starterProb === 1 ? "confirmed_evidence" : "uncalibrated_model",
-        nonStartAssumption: "zero_relief_minutes",
-        conditional: seasonForecast?.stats ?? organicConditional,
-        seasonBootstrap: seasonForecast?.disclosure ?? null,
-      });
+      if (starterBoardFlags().compute) {
+        const confirmation = confirmationFor(scenario.goalieId);
+        dailyBoardCandidates.push({
+          gameId: game.id, teamId: c.teamId, horizonGames,
+          playerId: scenario.goalieId, startingProbability: scenario.rawProbability,
+          probabilityStatus: confirmation.length ? "confirmed_evidence" : "uncalibrated_model",
+          evidenceCutoffAt: args.evidenceCutoffAt ?? null,
+          confirmationEvidenceIds: confirmation.map(item => item.evidenceId).sort(),
+          nonStartAssumption: "zero_relief_minutes",
+          conditional: seasonForecast?.stats ?? organicConditional,
+          seasonBootstrap: seasonForecast?.disclosure ?? null,
+        });
+      }
       const legacyScenario = topStarterScenarios.find((item) => item.goalieId === scenario.goalieId);
       if (legacyScenario) scenarioProjections.push({
         goalie_id: scenario.goalieId,
@@ -747,9 +764,7 @@ export async function runPerGameGoalieStage(args: {
     selectedGoalieByTeamId.set(c.teamId, {
       goalieId: selectedGoalieId,
       starterProbability: Number(starterProb.toFixed(4)),
-      confirmedStatus:
-        c.override != null ||
-        c.confirmedStarterByGoalieId.get(selectedGoalieId) === true,
+      confirmedStatus,
       saves: Number((saves * goalieHorizonTotalScalar).toFixed(3)),
     });
 
@@ -792,9 +807,9 @@ export async function runPerGameGoalieStage(args: {
             market_inputs: marketSummary,
             projection_inputs: {
               starter_probability: Number(starterProb.toFixed(4)),
-              confirmed_status:
-                c.override != null ||
-                c.confirmedStarterByGoalieId.get(selectedGoalieId) === true,
+              confirmed_status: confirmedStatus,
+              confirmation_evidence_ids: selectedConfirmation.map(item => item.evidenceId).sort(),
+              confirmation_evidence_cutoff_at: args.evidenceCutoffAt ?? null,
             },
           },
           provenance: {

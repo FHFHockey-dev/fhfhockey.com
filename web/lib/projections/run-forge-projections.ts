@@ -856,6 +856,8 @@ async function runProjectionCalculations(asOfDate: string, opts: RunProjectionOp
       // Create goalie projections after both teams are projected so we can use opponent shots.
       const goalieStageResult = await runPerGameGoalieStage({
         seasonBootstrap: opts?.seasonBootstrap,
+        dailyBoardEvidence: preflight.dailyBoardEvidence,
+        evidenceCutoffAt: opts?.decisionAsOf ?? null,
         asOfDate,
         runId,
         horizonGames,
