@@ -953,7 +953,7 @@ All charter questions remain open until source/master synchronization, Wave A/B 
 
 ### Current migration source authority (2026-08-29)
 
-Current canonical migration authority: [`migration-authority.json`](../repository-audit-remediation/migration-authority.json) (71 source-authorized records; 51 applied by exact Production-ledger receipt; 19 deployment state unknown). One mock-draft migration remains pending behind disabled rollout flags (2026-09-17).
+Current canonical migration authority: [`migration-authority.json`](../repository-audit-remediation/migration-authority.json) (72 source-authorized records; 51 applied by exact Production-ledger receipt; 19 deployment state unknown). Two migrations remain pending: mock-draft ADP behind disabled rollout flags (2026-09-17), and the local FORGE execution fence under its existing hosted-apply and forecast-release gates.
 
 That hash-and-order ledger is the sole current authority for active
 `supabase/migrations/*.sql` files. “Source-authorized” means reviewed repository
