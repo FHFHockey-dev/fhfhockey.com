@@ -141,6 +141,9 @@
   justify-content: space-between;
   gap: v.$space-sm;
   width: 100%;
+  max-width: calc(100vw - 11rem);
+  white-space: normal;
+  overflow-wrap: anywhere;
   padding: 0;
   border: 0;
   background: transparent;
@@ -204,6 +207,45 @@
 
 .head .stickyCell {
   z-index: 5;
+}
+
+.viewport:has(.rankHeaderCell) {
+  // Center native keyboard reveal beyond Rank without constraining touch scrolling.
+  scroll-padding-inline: calc(50% + 40px) calc(50% - 40px);
+
+  .headerCell.stickyCell:not(.rankHeaderCell) {
+    left: auto !important;
+    z-index: 3;
+    box-shadow: none;
+  }
+
+  .bodyCell.stickyCell:not(.rankBodyCell) {
+    position: static;
+    box-shadow: none;
+  }
+}
+
+@media (min-width: v.$screen-large-min) {
+  .viewport:has(.rankHeaderCell) {
+    // Wide tables keep Rank and the first identity column; other columns scroll.
+    scroll-padding-inline: calc(50% + 160px) calc(50% - 160px);
+
+    .rankHeaderCell + .headerCell.stickyCell {
+      left: 64px !important;
+      z-index: 5;
+    }
+
+    .rankBodyCell + .bodyCell.stickyCell {
+      position: sticky;
+    }
+
+    .rankHeaderCell + .headerCell.stickyCell,
+    .rankBodyCell + .bodyCell.stickyCell {
+      box-shadow:
+        1px 0 0 rgba(255, 255, 255, 0.08),
+        10px 0 14px -14px rgba(0, 0, 0, 0.85);
+    }
+  }
 }
 
 @media (max-width: v.$screen-small-max) {

@@ -92,44 +92,93 @@ async function expectReachableTable(page: Page, requiresVerticalScroll = true) {
   return viewport;
 }
 
-test("playerStats Tab and Shift+Tab fully reveal sort controls at 390px", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  const fixture = await installFixtures(page, "playerStats");
-  await page.goto("/underlying-stats/playerStats");
-  const viewport = await expectReachableTable(page);
-  const buttons = viewport.locator("thead button");
-  const count = await buttons.count();
-  await buttons.first().focus();
+for (const surface of surfaces) {
+  for (const width of [320, 390, 641, 1023, 1024, 1440]) {
+    test(`${surface} Tab and Shift+Tab fully reveal sort controls at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 844 });
+      const fixture = await installFixtures(page, surface);
+      await page.goto(`/underlying-stats/${surface}`);
+      const viewport = await expectReachableTable(page);
+      const buttons = viewport.locator("thead button");
+      const count = await buttons.count();
+      await buttons.first().focus();
 
-  const expectFocusedControlVisible = async (index: number) => {
-    const button = buttons.nth(index);
-    await expect(button).toBeFocused();
-    await expect.poll(() => button.evaluate((el) => {
-      const view = el.closest('[class*="PlayerStatsTable_viewport"]')!;
-      const bounds = view.getBoundingClientRect();
-      const rank = view.querySelector("thead th")!.getBoundingClientRect();
-      const rect = el.getBoundingClientRect();
-      const hit = (x: number) => el.contains(document.elementFromPoint(x, rect.top + rect.height / 2));
-      return el.matches(":focus-visible") &&
-        rect.left >= rank.right + 4 && rect.right <= bounds.left + view.clientWidth - 4 &&
-        rect.top >= bounds.top + 4 && rect.bottom <= bounds.top + view.clientHeight - 4 &&
-        hit(rect.left + 1) && hit(rect.right - 1);
-    }), { message: `Fully visible keyboard focus for ${await button.getAttribute("aria-label")}` }).toBe(true);
-  };
+      const expectFocusedControlVisible = async (index: number) => {
+        const button = buttons.nth(index);
+        await expect(button).toBeFocused();
+        await expect.poll(() => button.evaluate((el) => {
+          const view = el.closest('[class*="PlayerStatsTable_viewport"]')!;
+          const bounds = view.getBoundingClientRect();
+          const header = el.closest("th")!;
+          const pinnedRight = getComputedStyle(header).left !== "auto" ? bounds.left :
+            Math.max(bounds.left, ...Array.from(view.querySelectorAll("thead th"))
+              .filter((cell) => getComputedStyle(cell).left !== "auto")
+              .map((cell) => cell.getBoundingClientRect().right));
+          const rect = el.getBoundingClientRect();
+          const hit = (x: number) => el.contains(document.elementFromPoint(x, rect.top + rect.height / 2));
+          const label = document.createRange();
+          label.selectNodeContents(el.querySelector("span")!);
+          const labelFits = Array.from(label.getClientRects()).every((line) =>
+            line.left >= rect.left - 1 && line.right <= rect.right + 1);
+          return el.matches(":focus-visible") && labelFits &&
+            rect.left >= pinnedRight + 4 && rect.right <= bounds.left + view.clientWidth - 4 &&
+            rect.top >= bounds.top + 4 && rect.bottom <= bounds.top + view.clientHeight - 4 &&
+            hit(rect.left + 1) && hit(rect.right - 1);
+        }), { message: `Fully visible keyboard focus and label for ${await button.getAttribute("aria-label")}` }).toBe(true);
+      };
 
-  for (let index = 0; index < count; index++) {
-    await expectFocusedControlVisible(index);
-    if (await buttons.nth(index).getAttribute("aria-label") === "Sort by CA") {
-      await page.keyboard.press("Enter");
-      await expect(buttons.nth(index)).toHaveAttribute("aria-pressed", "true");
-      await expect.poll(() => fixture.requests.some((url) => new URL(url, "http://fixture").searchParams.get("sortKey") === "ca")).toBe(true);
-      await expectFocusedControlVisible(index);
-    }
-    if (index < count - 1) await page.keyboard.press("Tab");
+      for (let index = 0; index < count; index++) {
+        await expectFocusedControlVisible(index);
+        if (surface === "playerStats" && await buttons.nth(index).getAttribute("aria-label") === "Sort by CA") {
+          await page.keyboard.press("Enter");
+          await expect(buttons.nth(index)).toHaveAttribute("aria-pressed", "true");
+          await expect.poll(() => fixture.requests.some((url) => new URL(url, "http://fixture").searchParams.get("sortKey") === "ca")).toBe(true);
+          await expectFocusedControlVisible(index);
+        }
+        if (index < count - 1) await page.keyboard.press("Tab");
+      }
+      for (let index = count - 2; index >= 0; index--) {
+        await page.keyboard.press("Shift+Tab");
+        await expectFocusedControlVisible(index);
+      }
+      const pinnedCount = await viewport.locator("thead th").evaluateAll((cells) =>
+        cells.filter((cell) => getComputedStyle(cell).left !== "auto").length);
+      expect(pinnedCount).toBe(width >= 1024 ? 2 : 1);
+      await page.screenshot({ path: test.info().outputPath("keyboard-reveal.png") });
+    });
   }
-  for (let index = count - 2; index >= 0; index--) {
-    await page.keyboard.press("Shift+Tab");
-    await expectFocusedControlVisible(index);
+}
+
+test.describe("Underlying Stats touch scrolling with keyboard focus", () => {
+  test.use({ hasTouch: true });
+  for (const surface of surfaces) {
+    test(`${surface} retains horizontal touch scrolling at 390px`, async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await installFixtures(page, surface);
+      await page.goto(`/underlying-stats/${surface}`);
+      const viewport = await expectReachableTable(page);
+      await viewport.locator("thead button").first().focus();
+      const bounds = (await viewport.boundingBox())!;
+      const session = await page.context().newCDPSession(page);
+      const swipe = async (towardEnd: boolean) => {
+        const start = bounds.x + (towardEnd ? bounds.width - 30 : 30);
+        const end = bounds.x + (towardEnd ? 30 : bounds.width - 30);
+        const y = bounds.y + 80;
+        await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: start, y }] });
+        for (let step = 1; step <= 5; step++) {
+          await session.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: start + (end - start) * step / 5, y }] });
+        }
+        await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+        await page.waitForTimeout(200);
+      };
+      const before = await viewport.evaluate((el) => el.scrollLeft);
+      await swipe(true);
+      const after = await viewport.evaluate((el) => el.scrollLeft);
+      expect(after).toBeGreaterThan(before);
+      await swipe(false);
+      expect(await viewport.evaluate((el) => el.scrollLeft)).toBeLessThan(after);
+      await session.detach();
+    });
   }
 });
 
