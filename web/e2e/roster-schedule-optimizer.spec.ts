@@ -1417,13 +1417,24 @@ for (const count of [19, 20, 25]) test(`compact layout accounts for ${count} pla
     const rows = [...node.querySelectorAll('tr[data-compact-row]:not([hidden])')];
     return { visibleRows: rows.filter(row => { const box = row.getBoundingClientRect(); return box.top >= viewport.top && box.bottom <= viewport.bottom; }).length,
       playerIds: rows.map(row => row.getAttribute("data-player-id")).filter(Boolean),
-      groups: [...node.querySelectorAll("tbody")].map(group => ({ position: group.getAttribute("data-position"), band: getComputedStyle(group, "::before").backgroundColor,
-        width: getComputedStyle(group, "::before").width, height: group.getBoundingClientRect().height, decorationHeight: getComputedStyle(group, "::before").height, rightRadius: getComputedStyle(group, "::before").borderTopRightRadius })) };
+      groups: [...node.querySelectorAll("tbody")].map(group => ({ position: group.getAttribute("data-position"), band: getComputedStyle(group).borderLeftColor,
+        width: getComputedStyle(group).borderLeftWidth, style: getComputedStyle(group).borderLeftStyle, radius: getComputedStyle(group).borderTopLeftRadius,
+        before: getComputedStyle(group, "::before").content, after: getComputedStyle(group, "::after").content,
+        contentInset: Math.min(...[...group.querySelectorAll('th[scope="row"]')].map(cell => cell.getBoundingClientRect().left - group.getBoundingClientRect().left)) })) };
   });
   expect(new Set(metrics.playerIds).size).toBe(count);
   expect(metrics.groups.map(group => group.position)).toEqual(count === 25 ? ["C", "LW", "RW", "D", "UTIL", "G", "BENCH", "IR", "IR+"] : ["C", "LW", "RW", "D", "UTIL", "G", "BENCH"]);
   expect(metrics.groups.find(group => group.position === "RW")?.band).toBe("rgb(167, 139, 250)");
-  for (const group of metrics.groups) { expect(group.width).toBe("4px"); expect(group.rightRadius).toBe("0px"); expect(Math.abs(parseFloat(group.decorationHeight) - group.height)).toBeLessThanOrEqual(2); }
+  for (const group of metrics.groups) {
+    expect(group.width).toBe("4px"); expect(group.style).toBe("solid"); expect(group.radius).toBe("7px");
+    expect(group.before).toBe("none"); expect(group.after).toBe("none"); expect(group.contentInset).toBeGreaterThanOrEqual(4);
+  }
+  const articleBorders = await page.getByRole("region", { name: "Plan summary" }).locator("article").evaluateAll(nodes => nodes.map(node => ({
+    width: getComputedStyle(node).borderLeftWidth, style: getComputedStyle(node).borderLeftStyle,
+    before: getComputedStyle(node, "::before").content, after: getComputedStyle(node, "::after").content,
+  })));
+  expect(articleBorders).toHaveLength(7);
+  for (const border of articleBorders) { expect(border.width).toBe("3px"); expect(border.style).toBe("solid"); expect(border.before).toBe("none"); expect(border.after).toBe("none"); }
   if (count === 20) expect(metrics.visibleRows).toBeGreaterThanOrEqual(20);
   await expectDesktopFrameVisible(page);
   await page.screenshot({ path: testInfo.outputPath(`compact-${count}-1440x900.png`) });
@@ -1470,7 +1481,15 @@ test("compact short desktop and mobile retain rows, day state, reserves and unkn
     await tabs.getByRole("button", { name: "Roster", exact: true }).click();
     await tabs.getByRole("button", { name: "Itinerary", exact: true }).click();
     await expect(page.getByRole("slider", { name: "Selected planning day" })).toHaveAttribute("aria-valuetext", "Wed, Oct 7");
+    const borders = await table.locator("tbody").evaluateAll(nodes => nodes.map(node => ({
+      width: getComputedStyle(node).borderLeftWidth, style: getComputedStyle(node).borderLeftStyle,
+      before: getComputedStyle(node, "::before").content, after: getComputedStyle(node, "::after").content,
+    })));
+    for (const border of borders) { expect(border.width).toBe("4px"); expect(border.style).toBe("solid"); expect(border.before).toBe("none"); expect(border.after).toBe("none"); }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    const rw = table.locator('tbody[data-position="RW"]');
+    await rw.scrollIntoViewIfNeeded();
+    await rw.getByRole("button").first().focus();
     await page.screenshot({ path: testInfo.outputPath(`compact-mobile-${width}.png`) });
   }
 });
