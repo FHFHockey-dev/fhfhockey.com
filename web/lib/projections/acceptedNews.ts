@@ -1,18 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { playerForecastSourcePayloadHash } from "lib/player-forecasts/sourceSnapshot";
-
-/** Preserve PostgreSQL sub-millisecond ordering when comparing issuance cutoffs. */
-function timestampMicros(value: string): bigint | null {
-  const match = typeof value === "string" && value.match(/T\d{2}:\d{2}:\d{2}(?:\.(\d{1,6}))?(?:Z|[+-]\d{2}:\d{2})$/);
-  const milliseconds = Date.parse(value);
-  return match && Number.isFinite(milliseconds)
-    ? BigInt(milliseconds) * BigInt(1000) + BigInt((match[1] ?? "").slice(3).padEnd(3, "0")) : null;
-}
-
-export function acceptedNewsSupersedes(acceptedAt: string, inputCutoff: string): boolean {
-  const accepted = timestampMicros(acceptedAt), cutoff = timestampMicros(inputCutoff);
-  return accepted === null || cutoff === null || accepted > cutoff;
-}
+import { acceptedNewsSupersedes, timestampMicros } from "./evidenceTime";
+export { acceptedNewsSupersedes } from "./evidenceTime";
 
 /** Read immutable accepted-event receipts only; never enqueue or dispatch work. */
 export async function loadAcceptedForecastNews(db: SupabaseClient<any>, gameIds: number[], asOf: string,

@@ -48,13 +48,15 @@ vi.mock("./stages/persistence-stage", () => ({
   persistForgeGoalieProjection: vi.fn(), persistPerGameAnalyticsOutputs: vi.fn(),
 }));
 
+const evidenceCutoffAt = "2026-10-07T18:02:00Z";
+
 // Invented serialized producer rows: mechanics only, never real-game acceptance.
 function player(playerId = 100, overrides: Partial<NativeSkaterGoalRow> = {}): NativeSkaterGoalRow {
   return {
     player_id: playerId, game_id: 900001, team_id: 10, as_of_date: "2026-10-07", horizon_games: 1,
     proj_goals_es: 0.4, proj_goals_pp: 0.1, proj_goals_pk: null,
-    uncertainty: { model: { skater_selection: { production_conditioning: "conditional_playing",
-      participation: { version: "skater-participation-v1", probability: 1, status: "confirmed_evidence", evidenceIds: ["synthetic-lineup"] } } } },
+    uncertainty: { model: { skater_selection: buildNativeSkaterParticipationFields({ gameId: 900001, teamId: 10, playerId, compute: true,
+      evidence: { informationCutoffAt: evidenceCutoffAt, assertions: [assertion({ playerId })], conflicts: [] } }) } },
     ...overrides,
   };
 }
@@ -73,30 +75,30 @@ describe("native participation and fresh candidate mapping", () => {
   const identity = { gameId: 900001, teamId: 10, playerId: 100, compute: true };
   it("exports the supported 0/1 scalar consistently and distinguishes missing inputs from missing evidence", () => {
     expect(buildNativeSkaterParticipationFields(identity)).toMatchObject({ participation_probability: null, participation_reason: "participation_evidence_not_loaded" });
-    expect(buildNativeSkaterParticipationFields({ ...identity, evidence: { assertions: [], conflicts: [] } }))
+    expect(buildNativeSkaterParticipationFields({ ...identity, evidence: { informationCutoffAt: evidenceCutoffAt, assertions: [], conflicts: [] } }))
       .toMatchObject({ participation_probability: null, participation_reason: "missing_same_day_participation_evidence" });
-    expect(buildNativeSkaterParticipationFields({ ...identity, evidence: { assertions: [assertion()], conflicts: [] } }))
+    expect(buildNativeSkaterParticipationFields({ ...identity, evidence: { informationCutoffAt: evidenceCutoffAt, assertions: [assertion()], conflicts: [] } }))
       .toMatchObject({ participation_probability: 1, participation_reason: null });
-    expect(buildNativeSkaterParticipationFields({ ...identity, evidence: { assertions: [assertion({ dimension: "availability", value: "out" })], conflicts: [] } }))
+    expect(buildNativeSkaterParticipationFields({ ...identity, evidence: { informationCutoffAt: evidenceCutoffAt, assertions: [assertion({ dimension: "availability", value: "out" })], conflicts: [] } }))
       .toMatchObject({ participation_probability: 0, participation_reason: null });
-    expect(buildNativeSkaterParticipationFields({ ...identity, compute: false, evidence: { assertions: [assertion()], conflicts: [] } }).participation_probability).toBeNull();
+    expect(buildNativeSkaterParticipationFields({ ...identity, compute: false, evidence: { informationCutoffAt: evidenceCutoffAt, assertions: [assertion()], conflicts: [] } }).participation_probability).toBeNull();
   });
   it("scopes assertions to both game and team, preserving unknowns for historical roster-only candidates", () => {
-    const fields = buildNativeSkaterParticipationFields({ ...identity, evidence: {
+    const fields = buildNativeSkaterParticipationFields({ ...identity, evidence: { informationCutoffAt: evidenceCutoffAt,
       assertions: [assertion({ teamId: 11 }), assertion({ gameId: 900002 })],
       conflicts: [{ gameId: 900001, teamId: 11, playerId: 100, dimension: "ev", evidenceIds: ["synthetic-foreign-conflict"] }] } });
     expect(fields).toMatchObject({ participation_probability: null, same_day_evidence: { assertions: [], conflicts: [] } });
   });
   it("preserves unknowns for contradictory confirmed appearance and exclusion, and team availability conflicts", () => {
-    expect(buildNativeSkaterParticipationFields({ ...identity, evidence: { assertions: [assertion(),
+    expect(buildNativeSkaterParticipationFields({ ...identity, evidence: { informationCutoffAt: evidenceCutoffAt, assertions: [assertion(),
       assertion({ dimension: "availability", value: "out" })], conflicts: [] } }))
       .toMatchObject({ participation_probability: null, participation_reason: "conflicting_participation_assertions" });
-    expect(buildNativeSkaterParticipationFields({ ...identity, evidence: { assertions: [assertion()],
+    expect(buildNativeSkaterParticipationFields({ ...identity, evidence: { informationCutoffAt: evidenceCutoffAt, assertions: [assertion()],
       conflicts: [{ gameId: 900001, teamId: 10, playerId: null, dimension: "availability", evidenceIds: ["synthetic-team-conflict"] }] } }))
       .toMatchObject({ participation_probability: null, participation_reason: "conflicting_participation_evidence" });
   });
   it("keeps PP conflicts visible without invalidating confirmed appearance, but blocks EV/availability conflicts", () => {
-    const evidence: DailyBoardEvidence = { assertions: [assertion()], conflicts: [{ gameId: 900001, teamId: 10, playerId: 100, dimension: "pp", evidenceIds: ["synthetic-pp-conflict"] }] };
+    const evidence: DailyBoardEvidence = { informationCutoffAt: evidenceCutoffAt, assertions: [assertion()], conflicts: [{ gameId: 900001, teamId: 10, playerId: 100, dimension: "pp", evidenceIds: ["synthetic-pp-conflict"] }] };
     const fields = buildNativeSkaterParticipationFields({ ...identity, evidence });
     expect(fields.participation_probability).toBe(1);
     expect(fields.same_day_evidence!.conflicts).toHaveLength(1);
@@ -108,7 +110,7 @@ describe("native participation and fresh candidate mapping", () => {
     expect(buildNativePlayerGoalAccounting(row).expectedEsPpMeanGivenGamePlayed).toBeNull();
   });
   it("preserves team goalie-conflict provenance without suppressing independently confirmed skater appearance", () => {
-    const evidence: DailyBoardEvidence = { assertions: [assertion()], conflicts: [
+    const evidence: DailyBoardEvidence = { informationCutoffAt: evidenceCutoffAt, assertions: [assertion()], conflicts: [
       { gameId: 900001, teamId: 10, playerId: null, dimension: "goalie", evidenceIds: ["synthetic-team-goalie-conflict"] },
     ] };
     const fields = buildNativeSkaterParticipationFields({ ...identity, evidence });
@@ -123,13 +125,13 @@ describe("native participation and fresh candidate mapping", () => {
     expect(JSON.stringify(row.uncertainty)).toBe(originalProvenance);
   });
   it("adds a same-day confirmed current skater omitted from historical lines without treating role/news as appearance", () => {
-    const args = { gameId: 900001, teamId: 10, candidatePlayerIds: [100], currentRosterPlayerIds: [100, 101, 102, 103], evidence: {
+    const args = { gameId: 900001, teamId: 10, candidatePlayerIds: [100], currentRosterPlayerIds: [100, 101, 102, 103], evidence: { informationCutoffAt: evidenceCutoffAt,
       assertions: [assertion({ playerId: 101 }), assertion({ playerId: 102, dimension: "pp", value: "PP1" }),
         assertion({ playerId: 103, dimension: "availability", value: "return" }), assertion({ playerId: 104 })], conflicts: [],
     } };
     expect(selectConfirmedNativeSkaterCandidates(args)).toEqual([100, 101]);
     expect(selectConfirmedNativeSkaterCandidates({ ...args, evidence: undefined })).toEqual([100]);
-    expect(selectConfirmedNativeSkaterCandidates({ ...args, evidence: { assertions: args.evidence.assertions,
+    expect(selectConfirmedNativeSkaterCandidates({ ...args, evidence: { informationCutoffAt: evidenceCutoffAt, assertions: args.evidence.assertions,
       conflicts: [{ gameId: 900001, teamId: 10, playerId: 101, dimension: "ev", evidenceIds: ["synthetic-conflict"] }] } })).toEqual([100]);
   });
 });
@@ -152,7 +154,8 @@ describe("native player goal accounting", () => {
   it("keeps a supported exclusion zero distinct from unknown participation", () => {
     const out = player();
     const selection = out.uncertainty!.model!.skater_selection!;
-    selection.participation = { version: "skater-participation-v1", probability: 0, status: "confirmed_evidence", evidenceIds: ["synthetic-out"] };
+    Object.assign(selection, buildNativeSkaterParticipationFields({ gameId: 900001, teamId: 10, playerId: 100, compute: true,
+      evidence: { informationCutoffAt: evidenceCutoffAt, assertions: [assertion({ dimension: "availability", value: "out" })], conflicts: [] } }));
     expect(buildNativePlayerGoalAccounting(out)).toMatchObject({ conditionalEsPpMean: 0.5, expectedEsPpMeanGivenGamePlayed: 0 });
     selection.participation = null;
     expect(buildNativePlayerGoalAccounting(out)).toMatchObject({ conditionalEsPpMean: 0.5,
@@ -217,7 +220,7 @@ describe("native team contributor reconciliation", () => {
     const rosterSelection: NativeRosterSelection = { candidatePlayerIds: [100, 103, 104], eligiblePlayerIds: [100, 104], unavailablePlayerIds: [],
       knownGoaliePlayerIds: [101], playerMetaById: new Map([100, 103, 104].map(id => [id, { team_id: 10, position: "C" }])),
       excludedPlayerIds: { teamOrPosition: [], missingRecentMetrics: [], hardStale: [103], invalidSeasonEvidence: [] },
-      compute: true, evidence: { assertions: [], conflicts: [] } };
+      compute: true, evidence: { informationCutoffAt: evidenceCutoffAt, assertions: [], conflicts: [] } };
     const accounted = team([player()], [100, 101, 102, 103, 104]);
     const covered = buildNativeRosterContributorCoverage({ gameId: 900001, teamId: 10,
       currentRosterPlayerIds: [100, 101, 102, 103, 104], projectedPlayerIds: [100], selection: rosterSelection });
@@ -236,7 +239,7 @@ describe("native team contributor reconciliation", () => {
       currentRosterPlayerIds: [100], projectedPlayerIds: [100], selection: { ...rosterSelection, knownGoaliePlayerIds: [100] } })).toThrow("identified as a goalie");
     const confirmedOut = buildNativeRosterContributorCoverage({ gameId: 900001, teamId: 10,
       currentRosterPlayerIds: [100, 101, 102, 103, 104], projectedPlayerIds: [100], selection: { ...rosterSelection,
-        evidence: { assertions: [assertion({ playerId: 102, dimension: "availability", value: "out" })], conflicts: [] } } });
+        evidence: { informationCutoffAt: evidenceCutoffAt, assertions: [assertion({ playerId: 102, dimension: "availability", value: "out" })], conflicts: [] } } });
     expect(confirmedOut.contributors.find(row => row.playerId === 102))
       .toMatchObject({ participationProbabilityGivenGamePlayed: 0, goalContributionStatus: "confirmed_out_given_game_played", fullOfficialPlayMean: null });
     expect(confirmedOut.unknownResidualPlayerIds).toEqual([101, 103, 104]);
@@ -256,8 +259,8 @@ describe("native team contributor reconciliation", () => {
 
   it("sums integrated contributor means once and preserves an unknown contributor", () => {
     const out = player(101);
-    out.uncertainty!.model!.skater_selection!.participation = {
-      version: "skater-participation-v1", probability: 0, status: "confirmed_evidence", evidenceIds: ["synthetic-out"] };
+    out.uncertainty!.model!.skater_selection = buildNativeSkaterParticipationFields({ gameId: 900001, teamId: 10, playerId: 101, compute: true,
+      evidence: { informationCutoffAt: evidenceCutoffAt, assertions: [assertion({ playerId: 101, dimension: "availability", value: "out" })], conflicts: [] } });
     expect(team([player(), out])).toMatchObject({ reportedEsPpMean: 1, sumOfPlayerConditionalEsPpMeans: 1,
       expectedListedEsPpMeanGivenGamePlayed: 0.5, residualMean: null, unconditionalMean: null });
     out.uncertainty!.model!.skater_selection!.participation = null;
@@ -306,7 +309,7 @@ describe("native skater-stage accounting integration", () => {
       teamFiveOnFiveProfileCache: cached(null), teamNstExpectedGoalsCache: cached(null), teamLineComboGoaliePriorCache: cached(new Map()),
       currentTeamGoalieIdsCache: cached(new Set()), playerPropContextByGamePlayerKey: new Map(), playerPredictionOutputRows: [], modelMarketFlagRows: [],
       goalieCandidates: [], learningCounters: { players: 0, goalRecent: 0, assistRecent: 0 }, metrics: { data_quality: {}, warnings: [] },
-      dailyBoardEvidence: { assertions: [assertion({ gameId: 2026020002, playerId: 1018, value: "L4" })],
+      dailyBoardEvidence: { informationCutoffAt: evidenceCutoffAt, assertions: [assertion({ gameId: 2026020002, playerId: 1018, value: "L4" })],
         conflicts: [{ gameId: 2026020002, teamId: 10, playerId: 1018, dimension: "pp", evidenceIds: ["synthetic-pp-conflict"] }] },
     });
     expect(result).toEqual({ timedOut: false, playerRowsUpserted: 36, teamRowsUpserted: 2 });

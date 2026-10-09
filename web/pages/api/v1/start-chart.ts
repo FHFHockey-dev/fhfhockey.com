@@ -18,7 +18,7 @@ import {
   extractSkaterModelMetadata,
 } from "lib/projections/forgeSkaterContext";
 import { buildGoalieStarterMixtureRows } from "lib/projections/goalieStarterMixtures";
-import { boardSkaterForecast, boardGoalieForecast, parseBoardScoringRequest, scoreStarterBoardPayload, type BoardScoringRequest } from "lib/projections/starterBoardScoring";
+import { boardSkaterForecast, admittedBoardGoalieForecast, parseBoardScoringRequest, scoreStarterBoardPayload, type BoardScoringRequest } from "lib/projections/starterBoardScoring";
 import {
   normalizeStartChartResponse,
   type StartChartPlayerContext,
@@ -1603,12 +1603,18 @@ export default async function handler(
           confirmed_status: null,
           context,
         });
-        players[players.length - 1].forecast = boardSkaterForecast(players[players.length - 1], projection.uncertainty);
+        players[players.length - 1].forecast = boardSkaterForecast(players[players.length - 1], projection.uncertainty, {
+          gameId: projection.game_id, teamId: projection.team_id, playerId: projection.player_id, horizonGames: projection.horizon_games,
+          cutoffAt: (projection.uncertainty as any)?.model?.skater_selection?.evidence_cutoff_at ?? null, evidence: undefined,
+        });
         const admitted = slate.admittedForecasts?.get(`${projection.game_id}:${projection.player_id}`);
         if (admitted) {
           const output = players[players.length - 1];
           output.forecast!.expected = admitted.stats;
           output.forecast!.conditional = admitted.conditionalStats ?? null;
+          output.forecast!.conditioning = "unconditional";
+          output.forecast!.participationProbability = admitted.appearanceProbability ?? null;
+          output.forecast!.probabilityStatus = admitted.appearanceProbability == null ? "missing" : "confirmed_evidence";
           // Display and scoring use the same admitted expectations, integrated once.
           output.proj_goals = admitted.stats.GOALS ?? null;
           output.proj_assists = admitted.stats.ASSISTS ?? null;
@@ -1640,6 +1646,7 @@ export default async function handler(
           context.flags.push("ambiguous_yahoo_mapping");
         }
         const candidate = slate.admittedGoalieCandidates?.get(`${goalie.game_id}:${goalie.player_id}`);
+        const admitted = slate.admittedForecasts?.get(`${goalie.game_id}:${goalie.player_id}`);
         players.push({
           row_key: buildRowKey(goalie),
           game_id: goalie.game_id,
@@ -1670,13 +1677,9 @@ export default async function handler(
           start_probability: goalie.start_probability,
           projected_gsaa: goalie.projected_gsaa_per_60,
           confirmed_status: goalie.confirmed_status,
-          forecast: boardGoalieForecast(candidate),
+          forecast: admittedBoardGoalieForecast(candidate, admitted),
           context,
         });
-        const admitted = slate.admittedForecasts?.get(`${goalie.game_id}:${goalie.player_id}`);
-        if (admitted && players[players.length - 1].forecast) {
-          players[players.length - 1].forecast.expected = admitted.stats;
-        }
       }
 
       const gamesRemainingError = Boolean(weekGamesResponse.error);

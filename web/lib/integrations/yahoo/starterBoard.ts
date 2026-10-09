@@ -145,10 +145,14 @@ export async function loadYahooStarterBoard(args: { userId: string; teamId?: str
   const forecasts = new Map<number, { forecast: BoardForecast; gameId: number }>();
   for (const revision of revisions) {
     for (const row of revision.payload.players) forecasts.set(row.player_id, {
-      forecast: boardSkaterForecast(boardSkaterStatsFromProjection(row), row.uncertainty), gameId: revision.game_id,
+      forecast: boardSkaterForecast(boardSkaterStatsFromProjection(row), row.uncertainty, { gameId: row.game_id,
+        teamId: row.team_id, playerId: row.player_id, horizonGames: row.horizon_games,
+        cutoffAt: revision.payload.inputCutoff ?? revision.decision_as_of, evidence: revision.payload.evidence }), gameId: revision.game_id,
     });
     for (const row of revision.payload.goalies) for (const candidate of row.uncertainty?.daily_board_candidates ?? []) {
-      const forecast = boardGoalieForecast(candidate);
+      const forecast = boardGoalieForecast(candidate, { gameId: row.game_id, teamId: row.team_id, playerId: candidate.playerId,
+        horizonGames: row.horizon_games, cutoffAt: revision.payload.inputCutoff ?? revision.decision_as_of,
+        evidence: revision.payload.evidence });
       if (forecast) forecasts.set(candidate.playerId, { forecast, gameId: revision.game_id });
     }
   }

@@ -8,7 +8,7 @@ import { interceptProjectionQuery as interceptSharedQuery } from "./queryCapture
 import { fantasySourcePerGame, buildSeasonHistory, blendSeasonBootstrap, bootstrapSkaterLine, bootstrapGoalieLine,
   averageBootstrapStats, type SeasonBootstrap } from "./seasonBootstrap";
 import { capturedGoalieStarts, projectionWritesHash } from "./gameRevisions";
-import { applyDailyBoardEvidence, loadDailyBoardEvidence, resolveDailyBoardEvidence, type BoardLineupEvidence } from "./dailyBoardEvidence";
+import { applyDailyBoardEvidence, loadDailyBoardEvidence, resolveDailyBoardEvidence, type BoardAssertion, type DailyBoardEvidence, type BoardConflict, type BoardLineupEvidence } from "./dailyBoardEvidence";
 import { roleTagFromRosterEvent, allocatePpToiByTeamOpportunity } from "./stages/skater-stage";
 import { attachPreviousBoardForecast, boardGoalieForecast, boardSkaterForecast, integrateBoardParticipation, parseBoardScoringRequest, scoreBoardStats, scoreStarterBoardPayload, skaterParticipationFromEvidence } from "./starterBoardScoring";
 import { normalizeStartChartResponse } from "./startChartContract";
@@ -506,8 +506,11 @@ describe("complete daily-board evidence reads", () => {
       resolved_at: index === 2 ? "2026-10-01T13:00:00Z" : `2026-10-01T11:0${index + 3}:00Z`,
       created_at: index === 2 ? "2026-10-01T13:00:00Z" : `2026-10-01T11:0${index + 3}:00Z` })),
   });
-  function database(options: { failure?: string; table?: string } = {}) {
+  function database(options: { failure?: string; table?: string; createdAt?: string } = {}) {
     const source = tables();
+    if (options.table && options.createdAt !== undefined) {
+      for (const row of source[options.table as keyof typeof source]) row.created_at = options.createdAt;
+    }
     const reads: Array<{ table: string; offset: number }> = [];
     const live = vi.fn((table: keyof typeof source) => {
       let selected: any[] = source[table], offset = 0;
@@ -571,9 +574,95 @@ describe("complete daily-board evidence reads", () => {
     expect(await loadDailyBoardEvidence([], cutoff, db)).toEqual({ assertions: [], conflicts: [] });
     expect(live).not.toHaveBeenCalled();
   });
+  it.each(["player_forecast_lineup_snapshots", "player_forecast_lineup_assignments", "player_forecast_conflict_resolutions"])(
+    "checks microsecond receipt boundaries independently of query filtering for %s", async table => {
+      // The fixture's Date.parse filter deliberately loses sub-millisecond precision.
+      const preciseCutoff = "2026-10-01T12:00:00.000001Z";
+      await expect(loadDailyBoardEvidence([1], preciseCutoff, database({ table, createdAt: preciseCutoff }).db)).resolves.toBeDefined();
+      await expect(loadDailyBoardEvidence([1], preciseCutoff, database({ table, createdAt: "2026-10-01T12:00:00.000002Z" }).db))
+        .rejects.toThrow("Invalid daily evidence receipt");
+    });
 });
 
 describe("Starter Board same-day overlay", () => {
+  const preciseCutoff = "2026-10-01T12:00:00.000001Z";
+  const boundaryCases = [
+    ["before", "2026-10-01T12:00:00.000000Z", true],
+    ["equal", preciseCutoff, true],
+    ["offset equal", "2026-10-01T08:00:00.000001-04:00", true],
+    ["after", "2026-10-01T12:00:00.000002Z", false],
+    ["invalid", "invalid", false],
+  ] as const;
+  const preciseResolve = (lineups: BoardLineupEvidence[], conflicts: BoardConflict[] = []) =>
+    resolveDailyBoardEvidence({ cutoff: preciseCutoff, lineups, goalies: [], conflicts });
+  const conflict = (overrides: Partial<BoardConflict> = {}): BoardConflict => ({
+    id: "conflict", game_id: 1, team_id: 10, player_id: 7, conflict_type: "lineup",
+    detected_at: "2026-10-01T11:30:00Z", player_forecast_conflict_resolutions: [], ...overrides,
+  });
+  it.each(["observed_at", "available_at", "created_at"] as const)("preserves microseconds in %s eligibility", field => {
+    for (const [label, value, allowed] of boundaryCases) {
+      expect(preciseResolve([lineup({ [field]: value })]).assertions, label).toHaveLength(allowed ? 1 : 0);
+    }
+  });
+  it.each(boundaryCases)("expires evidence at the exact cutoff: %s", (_label, value, _allowed) => {
+    expect(preciseResolve([lineup({ expires_at: value })]).assertions).toHaveLength(value === "2026-10-01T12:00:00.000002Z" ? 1 : 0);
+  });
+  it("rejects malformed precision or timezone and preserves absent optional timestamps", () => {
+    for (const value of ["2026-10-01T12:00:00.0000001Z", "2026-10-01T12:00:00", "invalid"]) {
+      expect(() => resolveDailyBoardEvidence({ cutoff: value, lineups: [], goalies: [], conflicts: [] })).toThrow("cutoff");
+    }
+    expect(preciseResolve([lineup()]).assertions).toHaveLength(1);
+    expect(preciseResolve([lineup({ expires_at: "" })]).assertions).toEqual([]);
+  });
+  it.each(boundaryCases)("only cutoff-known child receipts can establish participation: %s", (_label, created_at, allowed) => {
+    const evidence = preciseResolve([lineup({ player_forecast_lineup_assignments: [
+      { player_id: 7, unit_type: "forward_line", unit_number: 1, assignment_status: "confirmed", created_at },
+    ] })]);
+    const participation = skaterParticipationFromEvidence(evidence, { gameId: 1, teamId: 10, playerId: 7 });
+    expect(participation?.probability ?? null).toBe(allowed ? 1 : null);
+  });
+  it("orders reporter corrections within one millisecond before using the identity tie breaker", () => {
+    const older = lineup({ id: "z-older", observed_at: "2026-10-01T11:30:00.000001Z" });
+    const newer = lineup({ id: "a-newer", observed_at: "2026-10-01T11:30:00.000002Z",
+      player_forecast_lineup_assignments: [{ player_id: 7, unit_type: "forward_line", unit_number: 1, assignment_status: "observed" }] });
+    for (const rows of [[older, newer], [newer, older]]) {
+      expect(preciseResolve(rows).assertions[0]).toMatchObject({ evidenceId: "a-newer", value: "L1" });
+    }
+    expect(preciseResolve([older, { ...newer, observed_at: older.observed_at }]).assertions[0].evidenceId).toBe("z-older");
+  });
+  it("orders equally confirmed independent reporters at microsecond precision", () => {
+    const older = lineup({ id: "z-older", observed_at: "2026-10-01T11:30:00.000001Z" });
+    const newer = lineup({ id: "a-newer", source_key: "reporter-b", observed_at: "2026-10-01T11:30:00.000002Z" });
+    for (const rows of [[older, newer], [newer, older]]) expect(preciseResolve(rows).assertions[0].evidenceId).toBe("a-newer");
+  });
+  it.each(["detected_at", "created_at"] as const)("only cutoff-known conflict %s can block an assertion", field => {
+    for (const [label, value, known] of boundaryCases) {
+      const result = preciseResolve([lineup()], [conflict({ [field]: value })]);
+      expect(result.assertions, label).toHaveLength(known ? 0 : 1);
+      expect(result.conflicts, label).toHaveLength(known ? 1 : 0);
+    }
+  });
+  it.each(["resolved_at", "created_at"] as const)("only cutoff-known resolution %s can dismiss a conflict", field => {
+    for (const [label, value, known] of boundaryCases) {
+      const result = preciseResolve([lineup()], [conflict({ player_forecast_conflict_resolutions: [
+        { action: "dismiss", selected_observation_id: null, resolved_at: "2026-10-01T11:45:00Z", [field]: value },
+      ] })]);
+      expect(result.assertions, label).toHaveLength(known ? 1 : 0);
+    }
+  });
+  it("uses the latest known conflict resolution even within the same millisecond", () => {
+    const older = { action: "dismiss", selected_observation_id: null, resolved_at: "2026-10-01T11:45:00.000001Z" };
+    const newer = { action: "accept_mixture", selected_observation_id: null, resolved_at: "2026-10-01T11:45:00.000002Z" };
+    for (const resolutions of [[older, newer], [newer, older]]) {
+      expect(preciseResolve([lineup()], [conflict({ player_forecast_conflict_resolutions: resolutions })]).assertions).toEqual([]);
+    }
+  });
+  it("applies the same precise eligibility and expiry to goalie confirmation", () => {
+    const goalie = { ...lineup({ expires_at: "2026-10-01T12:00:00.000002Z" }), player_id: 9, observation_status: "confirmed" };
+    expect(resolveDailyBoardEvidence({ cutoff: preciseCutoff, lineups: [], goalies: [goalie], conflicts: [] }).assertions[0])
+      .toMatchObject({ playerId: 9, confirmed: true });
+    expect(resolveDailyBoardEvidence({ cutoff: preciseCutoff, lineups: [], goalies: [{ ...goalie, available_at: "2026-10-01T12:00:00.000002Z" }], conflicts: [] }).assertions).toEqual([]);
+  });
   it("excludes future publications, late arrivals, later parsing and expired evidence", () => {
     expect(resolve([
       lineup({ observed_at: "2026-10-01T13:00:00Z" }),
@@ -634,34 +723,82 @@ describe("Starter Board same-day overlay", () => {
 });
 
 describe("Starter Board scoring and probability accounting", () => {
-  it("integrates only confirmed skater appearance evidence exactly once", () => {
-    const assertion = (dimension: "ev" | "pp" | "availability", value: string, confirmed = true) => ({
-      gameId: 1, teamId: 10, playerId: 7, dimension, value, evidenceId: `evidence-${dimension}`,
-      sourceKey: "source", sourceUrl: null, publishedAt: "2026-10-10T12:00:00Z", receivedAt: "2026-10-10T12:01:00Z", confirmed,
-    });
-    const identity = { gameId: 1, teamId: 10, playerId: 7 };
-    const row = { proj_goals: 2, proj_assists: 1, proj_pp_points: 0, proj_shots: 4, proj_hits: 1, proj_blocks: 0, proj_pim: 0, proj_toi_minutes: 18 };
-    const forecast = (participation: ReturnType<typeof skaterParticipationFromEvidence>) => boardSkaterForecast(row, {
-      model: { skater_selection: { production_conditioning: "conditional_playing", participation } },
-    });
-    expect(skaterParticipationFromEvidence({ assertions: [assertion("pp", "PP1")], conflicts: [] }, identity)).toBeNull();
-    expect(skaterParticipationFromEvidence({ assertions: [assertion("ev", "L1", false)], conflicts: [] }, identity)).toBeNull();
-    const playing = skaterParticipationFromEvidence({ assertions: [assertion("ev", "L1")], conflicts: [] }, identity);
-    expect(forecast(playing)).toMatchObject({ conditioning: "unconditional", participationProbability: 1,
-      expected: { GOALS: 2, SHOTS_ON_GOAL: 4 }, conditional: { GOALS: 2 } });
-    const out = skaterParticipationFromEvidence({ assertions: [assertion("availability", "out")], conflicts: [] }, identity);
-    expect(forecast(out)).toMatchObject({ conditioning: "unconditional", participationProbability: 0,
-      expected: { GOALS: 0, SHOTS_ON_GOAL: 0 }, conditional: { GOALS: 2 } });
-    expect(skaterParticipationFromEvidence({ assertions: [assertion("ev", "L1"), assertion("availability", "out")], conflicts: [] }, identity)).toBeNull();
-    expect(skaterParticipationFromEvidence({ assertions: [assertion("ev", "L1")], conflicts: [
-      { gameId: 1, teamId: 10, playerId: 7, dimension: "ev", evidenceIds: ["conflict"] },
-    ] }, identity)).toBeNull();
-    expect(forecast(null).expected).toBeNull();
-    expect(boardSkaterForecast(row, { model: { skater_selection: { production_conditioning: "legacy_availability_adjusted", participation: playing } } }).expected).toBeNull();
+  // Fictional evidence and rates; these exercise binding, not real-game readiness.
+  const identity = { gameId: 1, teamId: 10, playerId: 7, horizonGames: 1, cutoffAt: "2026-10-10T12:02:00Z" };
+  const assertion = (overrides: Partial<BoardAssertion> = {}): BoardAssertion => ({
+    gameId: 1, teamId: 10, playerId: 7, dimension: "ev", value: "L1", evidenceId: "synthetic-lineup",
+    sourceKey: "synthetic-source", sourceUrl: null, publishedAt: "2026-10-10T12:00:00Z", receivedAt: "2026-10-10T12:01:00Z", confirmed: true,
+    ...overrides,
   });
-  it("keeps an explicit exclusion at zero even when the conditional rate is positive", () => {
-    const result = boardSkaterForecast({ proj_goals: 2 }, { model: { skater_selection: { production_conditioning: "explicit_out" } } });
-    expect(result).toMatchObject({ conditioning: "unconditional", participationProbability: 0, expected: { GOALS: 0 } });
+  const evidence = (assertions = [assertion()], conflicts: DailyBoardEvidence["conflicts"] = []): DailyBoardEvidence => ({
+    informationCutoffAt: identity.cutoffAt, assertions, conflicts,
+  });
+  const row = { proj_goals: null, proj_assists: null, proj_pp_points: 0.4, proj_shots: null, proj_hits: 1, proj_blocks: 0, proj_pim: null, proj_toi_minutes: 18 };
+  const selection = (source: DailyBoardEvidence) => ({ production_conditioning: "conditional_playing",
+    evidence_cutoff_at: source.informationCutoffAt, participation: skaterParticipationFromEvidence(source, identity),
+    same_day_evidence: { assertions: source.assertions, conflicts: source.conflicts } });
+  const forecast = (source: DailyBoardEvidence) => boardSkaterForecast(row, { model: { skater_selection: selection(source) } }, { ...identity, evidence: source });
+  it("integrates scoped confirmed appearance once and retains unsupported full-strength heads", () => {
+    expect(forecast(evidence())).toMatchObject({ conditioning: "unconditional", participationProbability: 1,
+      expected: { GOALS: null, ASSISTS: null, SHOTS_ON_GOAL: null, PP_POINTS: 0.4 }, conditional: { PP_POINTS: 0.4 } });
+    const out = evidence([assertion({ dimension: "availability", value: "out" })]);
+    expect(forecast(out)).toMatchObject({ participationProbability: 0, expected: { PP_POINTS: 0, GOALS: null }, conditional: { PP_POINTS: 0.4 } });
+    expect(forecast(evidence([assertion({ dimension: "pp", value: "PP1" })])).expected).toBeNull();
+    expect(forecast(evidence([assertion({ confirmed: false })])).expected).toBeNull();
+    expect(forecast(evidence([assertion(), assertion({ dimension: "availability", value: "out" })])).expected).toBeNull();
+    expect(forecast(evidence([assertion()], [{ ...identity, dimension: "ev", evidenceIds: ["conflict"] }])).expected).toBeNull();
+    expect(forecast(evidence([assertion()], [{ ...identity, dimension: "pp", evidenceIds: ["conflict"] }])).expected?.PP_POINTS).toBe(0.4);
+  });
+  it.each(["player", "team", "game", "horizon", "erased", "scalar", "ids", "cutoff", "publication", "receipt", "source", "conflict", "reverse-chronology", "malformed-conflict", "row-identity"])
+  ("rejects a copied or unsupported participation claim: %s", attack => {
+    const source = evidence();
+    const stored: any = selection(structuredClone(source));
+    const context = { ...identity, evidence: source };
+    if (attack === "player") context.playerId++;
+    if (attack === "team") context.teamId++;
+    if (attack === "game") context.gameId++;
+    if (attack === "horizon") context.horizonGames = 2;
+    if (attack === "erased") stored.same_day_evidence.assertions = [];
+    if (attack === "scalar") stored.participation.probability = 0;
+    if (attack === "ids") stored.participation.evidenceIds = ["different"];
+    if (attack === "cutoff") stored.evidence_cutoff_at = "2026-10-10T12:01:59Z";
+    if (attack === "publication") source.assertions[0].publishedAt = stored.same_day_evidence.assertions[0].publishedAt = "2026-10-10T12:02:00.000001Z";
+    if (attack === "receipt") source.assertions[0].receivedAt = stored.same_day_evidence.assertions[0].receivedAt = "2026-10-10T08:02:00.000001-04:00";
+    if (attack === "source") source.assertions[0].evidenceId = "different-record";
+    if (attack === "conflict") source.conflicts.push({ gameId: 1, teamId: 10, playerId: null, dimension: "availability", evidenceIds: ["conflict"] });
+    if (attack === "reverse-chronology") source.assertions[0].publishedAt = stored.same_day_evidence.assertions[0].publishedAt = "2026-10-10T12:01:30Z";
+    if (attack === "malformed-conflict") (source.conflicts as any[]).push({ ...identity, dimension: "unknown", evidenceIds: ["conflict"] });
+    const inputRow = attack === "row-identity" ? { ...row, player_id: 8 } : row;
+    const actual = boardSkaterForecast(inputRow, { model: { skater_selection: stored } }, context);
+    expect(actual.participationProbability).toBeNull();
+    expect(actual.expected).toBeNull();
+    expect(actual.conditional?.PP_POINTS).toBe(0.4);
+  });
+  it("requires evidence for explicit exclusions and explicit authoritative contexts", () => {
+    expect(boardSkaterForecast(row, { model: { skater_selection: { production_conditioning: "explicit_out" } } }).expected).toBeNull();
+    const source = evidence([assertion({ dimension: "availability", value: "out" })]);
+    const stored = { ...selection(source), production_conditioning: "explicit_out" };
+    expect(boardSkaterForecast(row, { model: { skater_selection: stored } }, { ...identity, evidence: source }).expected?.PP_POINTS).toBe(0);
+    expect(boardSkaterForecast(row, { model: { skater_selection: stored } }, { ...identity, evidence: undefined }).expected).toBeNull();
+    expect(boardSkaterForecast(row, { model: { skater_selection: { ...stored, evidence_cutoff_at: null } } }, identity).expected).toBeNull();
+  });
+  it("binds goalie confirmation independently of the numerical start probability", () => {
+    const source = evidence([assertion({ dimension: "goalie", value: "confirmed" })]);
+    const candidate = { playerId: 7, startingProbability: 0.8, probabilityStatus: "confirmed_evidence", conditional: { SAVES_GOALIE: 30 } };
+    expect(boardGoalieForecast(candidate)).toMatchObject({ probabilityStatus: "uncalibrated_model", expected: { SAVES_GOALIE: 24 } });
+    expect(boardGoalieForecast(candidate, { ...identity, evidence: source })).toMatchObject({ probabilityStatus: "confirmed_evidence", participationProbability: 0.8,
+      expected: { SAVES_GOALIE: 24 } });
+    for (const context of [{ ...identity, playerId: 8, evidence: source }, { ...identity, teamId: 11, evidence: source },
+      { ...identity, gameId: 2, evidence: source }, { ...identity, horizonGames: 2, evidence: source },
+      { ...identity, cutoffAt: "2026-10-10T12:00:00Z", evidence: source }, { ...identity, evidence: undefined },
+      { ...identity, evidence: evidence(source.assertions, [{ gameId: 1, teamId: 10, playerId: null, dimension: "goalie", evidenceIds: ["conflict"] }]) }]) {
+      expect(boardGoalieForecast(candidate, context)?.probabilityStatus).toBe("uncalibrated_model");
+    }
+    expect(boardGoalieForecast(candidate, { ...identity, evidence: evidence([source.assertions[0], assertion({ playerId: 8, dimension: "goalie", value: "confirmed" })]) })?.probabilityStatus).toBe("uncalibrated_model");
+    expect(boardGoalieForecast({ ...candidate, gameId: 2 }, { ...identity, evidence: source })?.probabilityStatus).toBe("uncalibrated_model");
+    expect(boardGoalieForecast({ ...candidate, startingProbability: 1 })?.probabilityStatus).toBe("uncalibrated_model");
+    expect(boardGoalieForecast({ ...candidate, startingProbability: NaN })).toBeNull();
+    expect(boardGoalieForecast(candidate, { ...identity, evidence: { ...source, assertions: [null] } as any })?.probabilityStatus).toBe("uncalibrated_model");
   });
   it("matches hand-calculated default and custom scoring, and propagates missing values", () => {
     const profile = parseBoardScoringRequest({}).profile;

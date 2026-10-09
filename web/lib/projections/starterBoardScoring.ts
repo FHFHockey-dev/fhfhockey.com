@@ -2,6 +2,8 @@ import { DEFAULT_GOALIE_FANTASY_POINTS, DEFAULT_SKATER_FANTASY_POINTS } from "li
 import { addStartChartPositionRanks } from "./startChartFantasyScoring";
 import type { SeasonBootstrapDisclosure } from "./seasonBootstrap";
 import type { DailyBoardEvidence } from "./dailyBoardEvidence";
+import type { GameForecast } from "../rosterScheduleOptimizer/planningTypes";
+import { acceptedNewsSupersedes } from "./evidenceTime";
 
 export type BoardStats = Record<string, number | null>;
 export type BoardScoringProfile = { skater: Record<string, number>; goalie: Record<string, number> };
@@ -63,10 +65,49 @@ export function integrateBoardParticipation(conditional: BoardStats, probability
   return Object.fromEntries(Object.entries(conditional).map(([key, value]) => [key, value == null ? null : value * probability]));
 }
 
+export type BoardEvidenceContext = {
+  gameId: number; teamId: number; playerId: number; horizonGames: number;
+  cutoffAt: string | null;
+  evidence?: DailyBoardEvidence;
+};
+
+/** Resolved evidence still needs exact identity/time binding when decoded from storage. */
+function scopedEvidence(value: DailyBoardEvidence | undefined, identity: {
+  gameId: number; teamId: number; playerId: number; cutoffAt: string | null;
+}): DailyBoardEvidence | null {
+  const cutoff = identity.cutoffAt;
+  if (![identity.gameId, identity.teamId, identity.playerId].every(id => Number.isSafeInteger(id) && id > 0)
+    || !cutoff || acceptedNewsSupersedes(cutoff, cutoff)
+    || !value?.informationCutoffAt || acceptedNewsSupersedes(value.informationCutoffAt, cutoff)
+    || acceptedNewsSupersedes(cutoff, value.informationCutoffAt)
+    || !Array.isArray(value.assertions) || !Array.isArray(value.conflicts)
+    || value.assertions.length > 20000 || value.conflicts.length > 2000
+    || value.assertions.some(item => !item || ![item.gameId, item.teamId, item.playerId].every(id => Number.isSafeInteger(id) && id > 0))
+    || value.conflicts.some(item => !item || ![item.gameId, item.teamId].every(id => Number.isSafeInteger(id) && id > 0)
+      || item.playerId !== null && (!Number.isSafeInteger(item.playerId) || item.playerId <= 0))) return null;
+  const assertions = value.assertions.filter(item => item.gameId === identity.gameId && item.teamId === identity.teamId && item.playerId === identity.playerId);
+  const conflicts = value.conflicts.filter(item => item.gameId === identity.gameId && item.teamId === identity.teamId
+    && (item.playerId === null || item.playerId === identity.playerId));
+  if (assertions.some(item => typeof item.evidenceId !== "string" || !item.evidenceId || typeof item.sourceKey !== "string" || !item.sourceKey
+    || typeof item.value !== "string" || !item.value || typeof item.confirmed !== "boolean"
+    || !["ev", "pp", "availability", "goalie"].includes(item.dimension)
+    || acceptedNewsSupersedes(item.publishedAt, cutoff) || acceptedNewsSupersedes(item.receivedAt, cutoff)
+    || acceptedNewsSupersedes(item.publishedAt, item.receivedAt))
+    || conflicts.some(item => !["ev", "pp", "availability", "goalie"].includes(item.dimension) || !Array.isArray(item.evidenceIds)
+      || item.evidenceIds.some(id => typeof id !== "string" || !id))) return null;
+  return { informationCutoffAt: cutoff, assertions, conflicts };
+}
+
+function assertionKeys(evidence: DailyBoardEvidence): string[] {
+  return evidence.assertions.map(item => JSON.stringify([item.gameId, item.teamId, item.playerId, item.dimension, item.value,
+    item.confirmed, item.evidenceId, item.sourceKey, item.sourceUrl, item.publishedAt, item.receivedAt])).sort();
+}
+
 /** A confirmed return/PP role is not a confirmed appearance. Only a confirmed
  * full-strength lineup or explicit exclusion can establish this evidence branch. */
 export function skaterParticipationFromEvidence(evidence: DailyBoardEvidence | undefined,
   identity: { gameId: number; teamId: number; playerId: number }) {
+  evidence = scopedEvidence(evidence, { ...identity, cutoffAt: evidence?.informationCutoffAt ?? null }) ?? undefined;
   const relevant = (item: { gameId: number; teamId: number; playerId: number | null }) =>
     item.gameId === identity.gameId && item.teamId === identity.teamId && (item.playerId === null || item.playerId === identity.playerId);
   if (!evidence || evidence.conflicts.some(item => relevant(item) && ["ev", "availability"].includes(item.dimension))) return null;
@@ -78,15 +119,31 @@ export function skaterParticipationFromEvidence(evidence: DailyBoardEvidence | u
     status: "confirmed_evidence", evidenceIds: (out.length ? out : playing).map(item => item.evidenceId).sort() };
 }
 
-export function boardSkaterForecast(row: any, uncertainty: any): BoardForecast {
+export function boardSkaterForecast(row: any, uncertainty: any, context?: BoardEvidenceContext): BoardForecast {
   const selection = uncertainty?.model?.skater_selection;
   const conditional = selection?.production_conditioning === "conditional_playing";
   const explicitOut = selection?.production_conditioning === "explicit_out";
   const participation = selection?.participation;
-  const probability = explicitOut ? 0 : conditional && participation?.version === "skater-participation-v1"
-    && participation.status === "confirmed_evidence" && Array.isArray(participation.evidenceIds) && participation.evidenceIds.length
-    && [0, 1].includes(participation.probability) && !(selection?.same_day_evidence?.conflicts?.length)
-    ? participation.probability as number : null;
+  const identity = context ?? { ...row.identity, gameId: row.identity?.gameId ?? row.game_id,
+    teamId: row.identity?.teamId ?? row.team_id, playerId: row.identity?.playerId ?? row.player_id,
+    horizonGames: row.identity?.horizonGames ?? row.horizon_games, cutoffAt: selection?.evidence_cutoff_at ?? null };
+  const rowIdentity = row.identity ?? { gameId: row.game_id, teamId: row.team_id, playerId: row.player_id, horizonGames: row.horizon_games };
+  const identityMatches = (["gameId", "teamId", "playerId", "horizonGames"] as const)
+    .every(key => rowIdentity[key] === undefined || rowIdentity[key] === identity[key]);
+  const stored = identityMatches && identity.horizonGames === 1 ? scopedEvidence({ ...selection?.same_day_evidence,
+    informationCutoffAt: selection?.evidence_cutoff_at }, identity) : null;
+  const source = context && Object.hasOwn(context, "evidence") ? scopedEvidence(context.evidence, identity) : stored;
+  const matchingAssertions = stored && source && JSON.stringify(assertionKeys(stored)) === JSON.stringify(assertionKeys(source));
+  const recomputed = matchingAssertions ? skaterParticipationFromEvidence({ ...source,
+    conflicts: [...source.conflicts, ...stored.conflicts] }, identity) : null;
+  const idsMatch = Array.isArray(participation?.evidenceIds)
+    && participation.evidenceIds.every((id: unknown) => typeof id === "string" && id)
+    && JSON.stringify([...participation.evidenceIds].sort()) === JSON.stringify(recomputed?.evidenceIds);
+  const scalarMatches = participation?.version === "skater-participation-v1" && participation.status === "confirmed_evidence"
+    && participation.probability === recomputed?.probability
+    && (selection.participation_probability === undefined || selection.participation_probability === recomputed?.probability);
+  const probability = recomputed && idsMatch && scalarMatches && (conditional || explicitOut && recomputed.probability === 0)
+    ? recomputed.probability : null;
   const stats = { GOALS: row.proj_goals, ASSISTS: row.proj_assists, PP_POINTS: row.proj_pp_points,
     SHOTS_ON_GOAL: row.proj_shots, HITS: row.proj_hits, BLOCKED_SHOTS: row.proj_blocks,
     PENALTY_MINUTES: row.proj_pim, TIME_ON_ICE_PER_GAME: row.proj_toi_minutes };
@@ -95,23 +152,54 @@ export function boardSkaterForecast(row: any, uncertainty: any): BoardForecast {
     participationProbability: probability, probabilityStatus: probability !== null ? "confirmed_evidence" : "missing", expected: probability !== null ? integrateBoardParticipation(stats, probability) : null,
     conditional: conditional ? stats : null, legacy: conditional || explicitOut ? null : stats,
     distributionStatus: "means_only_unvalidated", ppRole: selection?.pp_role ?? null,
-    evidence: (selection?.same_day_evidence?.assertions ?? []).map((item: any) => ({
+    evidence: (source?.assertions ?? []).map((item: any) => ({
       dimension: String(item.dimension), value: String(item.value), publishedAt: String(item.publishedAt), receivedAt: String(item.receivedAt),
     })),
-    conflicts: (selection?.same_day_evidence?.conflicts ?? []).map((item: any) => String(item.dimension)),
+    conflicts: (source?.conflicts ?? []).map((item: any) => String(item.dimension)),
     seasonBootstrap: selection?.season_bootstrap ?? null,
   };
 }
 
-export function boardGoalieForecast(candidate: any): BoardForecast | null {
-  if (!candidate?.conditional || typeof candidate.startingProbability !== "number") return null;
+export function goalieConfirmationFromEvidence(evidence: DailyBoardEvidence | undefined,
+  identity: { gameId: number; teamId: number; playerId: number; cutoffAt: string | null }) {
+  const scoped = scopedEvidence(evidence, identity);
+  if (!scoped) return [];
+  const otherConfirmed = Array.isArray(evidence?.assertions) && evidence.assertions.some(item => item.gameId === identity.gameId && item.teamId === identity.teamId
+    && item.playerId !== identity.playerId && item.dimension === "goalie" && item.value === "confirmed" && item.confirmed);
+  return !otherConfirmed && !scoped.conflicts.some(item => item.dimension === "goalie")
+    ? scoped.assertions.filter(item => item.dimension === "goalie" && item.value === "confirmed" && item.confirmed) : [];
+}
+
+export function boardGoalieForecast(candidate: any, context?: BoardEvidenceContext): BoardForecast | null {
+  if (!candidate?.conditional || typeof candidate.startingProbability !== "number" || !Number.isFinite(candidate.startingProbability)
+    || candidate.startingProbability < 0 || candidate.startingProbability > 1) return null;
+  const identity = context ?? { gameId: candidate.gameId, teamId: candidate.teamId, playerId: candidate.playerId,
+    horizonGames: candidate.horizonGames, cutoffAt: candidate.evidenceCutoffAt ?? null };
+  const evidence = context && Object.hasOwn(context, "evidence") ? context.evidence
+    : { ...candidate.sameDayEvidence, informationCutoffAt: candidate.evidenceCutoffAt };
+  const identityMatches = (["gameId", "teamId", "playerId", "horizonGames"] as const)
+    .every(key => candidate[key] === undefined || candidate[key] === identity[key]);
+  const confirmation = identityMatches && identity.horizonGames === 1 ? goalieConfirmationFromEvidence(evidence, identity) : [];
   const conditional: BoardStats = Object.fromEntries(BOARD_CATEGORIES.filter((key) => key.endsWith("_GOALIE"))
     .map((key) => [key, typeof candidate.conditional[key] === "number" && Number.isFinite(candidate.conditional[key]) ? candidate.conditional[key] : null]));
   return { conditioning: "unconditional", participationProbability: candidate.startingProbability,
-    probabilityStatus: candidate.probabilityStatus === "confirmed_evidence" ? "confirmed_evidence" : "uncalibrated_model",
+    probabilityStatus: confirmation.length ? "confirmed_evidence" : "uncalibrated_model",
     conditional, expected: integrateBoardParticipation(conditional, candidate.startingProbability),
-    nonStartAssumption: "zero_relief_minutes", distributionStatus: "means_only_unvalidated", evidence: [], conflicts: [],
+    nonStartAssumption: "zero_relief_minutes", distributionStatus: "means_only_unvalidated",
+    evidence: confirmation.map(item => ({ dimension: item.dimension, value: item.value, publishedAt: item.publishedAt, receivedAt: item.receivedAt })), conflicts: [],
     seasonBootstrap: candidate.seasonBootstrap ?? null };
+}
+
+/** Public goalie output uses the shared admitted verdict, never re-decodes candidate confirmation. */
+export function admittedBoardGoalieForecast(candidate: any, admitted: GameForecast | undefined): BoardForecast | null {
+  if (!admitted || admitted.conditioning !== "unconditional" || admitted.startProbability == null
+    || !Number.isFinite(admitted.startProbability) || admitted.startProbability < 0 || admitted.startProbability > 1) return null;
+  return { conditioning: admitted.conditioning, participationProbability: admitted.startProbability,
+    probabilityStatus: admitted.confirmedStart === true ? "confirmed_evidence" : "uncalibrated_model",
+    conditional: admitted.conditionalStats ?? null, expected: admitted.stats,
+    nonStartAssumption: "zero_relief_minutes", distributionStatus: "means_only_unvalidated",
+    // Admission exports its verdict, not private source assertions; do not restore candidate evidence.
+    evidence: [], conflicts: [], seasonBootstrap: candidate?.seasonBootstrap ?? null };
 }
 
 export function boardSkaterStatsFromProjection(row: any) {
@@ -119,7 +207,8 @@ export function boardSkaterStatsFromProjection(row: any) {
     const values = ["es", "pp", "pk"].map((strength) => row[`${prefix}_${strength}`]).filter((value) => typeof value === "number" && Number.isFinite(value));
     return values.length ? values.reduce((a, b) => a + b, 0) : null;
   };
-  return { proj_goals: sum("proj_goals"), proj_assists: sum("proj_assists"), proj_shots: sum("proj_shots"),
+  return { identity: { gameId: row.game_id, teamId: row.team_id, playerId: row.player_id, horizonGames: row.horizon_games },
+    proj_goals: sum("proj_goals"), proj_assists: sum("proj_assists"), proj_shots: sum("proj_shots"),
     proj_pp_points: typeof row.proj_goals_pp === "number" && typeof row.proj_assists_pp === "number" ? row.proj_goals_pp + row.proj_assists_pp : null,
     proj_hits: row.proj_hits ?? null, proj_blocks: row.proj_blocks ?? null, proj_pim: row.proj_pim ?? null,
     proj_toi_minutes: [row.proj_toi_es_seconds, row.proj_toi_pp_seconds, row.proj_toi_pk_seconds].every((value) => typeof value === "number")

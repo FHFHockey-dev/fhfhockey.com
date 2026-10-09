@@ -161,7 +161,8 @@ export function publicPlanningForecasts(revisions: ForgeGameRevision[], players:
         excluded("identity_conflict", gameId, byNhl.get(row.player_id)?.id); continue;
       }
       const stats = completeBoardSkaterStatsFromProjection(row);
-      const prediction = boardSkaterForecast(stats, row.uncertainty);
+      const prediction = boardSkaterForecast(stats, row.uncertainty, { gameId: row.game_id, teamId: row.team_id,
+        playerId: row.player_id, horizonGames: row.horizon_games, cutoffAt, evidence: revision.payload.evidence });
       // The shared skater model can be conditional-only. Do not assume participation = 1.
       emit({ kind: "skater", row }, row.player_id, row.team_id, row.game_id, prediction.expected, null, false, prediction.conflicts,
         prediction.conditional, prediction.participationProbability,
@@ -189,10 +190,11 @@ export function publicPlanningForecasts(revisions: ForgeGameRevision[], players:
         excluded("unsupported_conditioning", gameId); continue;
       }
       for (const candidate of candidates) {
-        const prediction = boardGoalieForecast(candidate);
+        const prediction = boardGoalieForecast(candidate, { gameId: group.gameId, teamId: group.teamId,
+          playerId: candidate.playerId, horizonGames: 1, cutoffAt, evidence: revision.payload.evidence });
         emit({ kind: "goalie", row: candidate }, candidate.playerId, group.teamId, group.gameId,
           prediction?.expected ?? null, prediction?.participationProbability ?? null,
-          prediction?.probabilityStatus === "confirmed_evidence" && prediction.participationProbability === 1,
+          prediction?.probabilityStatus === "confirmed_evidence",
           ["Goalie start assignments share one team-game; no guaranteed future starts.", "Non-start relief contribution is unavailable."], prediction?.conditional);
       }
     }

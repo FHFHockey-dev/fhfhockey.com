@@ -4,6 +4,9 @@ import { loadPlanningData, normalizePlanningGames, parsePlanningDataQuery, publi
 import type { ForecastDiscoveryExclusion, PlanningPlayer } from "lib/rosterScheduleOptimizer/planningTypes";
 import type { ForgeGameRevision } from "lib/projections/gameRevisions";
 import { forgeRosterRevision, forgeScheduleRevision, type ForgeIssuedContextV1 } from "lib/projections/issuedContext";
+import { admittedBoardGoalieForecast } from "lib/projections/starterBoardScoring";
+import { normalizeStartChartResponse } from "lib/projections/startChartContract";
+import { buildNativeSkaterParticipationFields } from "lib/projections/nativeGoalAccounting";
 import { acceptedNewsSupersedes, loadAcceptedForecastNews } from "lib/projections/acceptedNews";
 
 const membershipCreatedAt = ["2026-09-01T00:00:00Z"];
@@ -27,6 +30,17 @@ const issuedContext: ForgeIssuedContextV1 = { version: "forge-issued-context-v1"
     membershipCreatedAt, identityUpdatedAt: "2026-09-01T00:00:00Z", revision: rosterRevision }],
   observedAt: "2026-10-10T09:00:00Z" };
 const revision = (candidates: unknown[]): ForgeGameRevision => ({ id: "issued-1", run_id: "run-1", game_id: 2026020001, decision_as_of: "2026-10-10T10:00:00Z", published_at: "2026-10-10T10:00:00Z", payload: { players: [], teams: [], goalies: [{ game_id: 2026020001, team_id: 1, horizon_games: 1, as_of_date: "2026-10-10", run_id: "run-1", uncertainty: { daily_board_candidates: candidates } }], codeVersion: "v1", inputProvenance: { rolling_player_history_contract: "test-history", private: "never expose", capturedReads: { version: "forge-captured-reads-v1", hash: "a".repeat(64), readCount: 2, firstReceivedAt: "2026-10-10T09:00:00Z", lastReceivedAt: "2026-10-10T09:01:00Z" }, issuedContexts: [issuedContext] } as ForgeGameRevision["payload"]["inputProvenance"] } });
+// Fictional captured evidence; never a provider observation or readiness proof.
+function scopedSkaterSelection(row: ForgeGameRevision, probability: 0 | 1 = 1) {
+  const evidence = { informationCutoffAt: "2026-10-10T10:00:00Z", assertions: [{
+    gameId: 2026020001, teamId: 1, playerId: 847001, dimension: probability ? "ev" as const : "availability" as const,
+    value: probability ? "L1" : "out", evidenceId: "private-source-id", sourceKey: "fictional-source", sourceUrl: null,
+    publishedAt: "2026-10-10T09:00:00Z", receivedAt: "2026-10-10T09:01:00Z", confirmed: true,
+    privateText: "never expose",
+  }], conflicts: [] };
+  row.payload.evidence = evidence;
+  return buildNativeSkaterParticipationFields({ gameId: 2026020001, teamId: 1, playerId: 847001, compute: true, evidence });
+}
 function rpcResponse(value: unknown): any {
   const promise = Promise.resolve(value);
   return Object.assign(promise, { abortSignal: () => promise });
@@ -370,6 +384,49 @@ describe("public RSO data boundary", () => {
     expect(publicPlanningForecasts([row], [player], normalizePlanningGames(rows), new Date("2026-10-10T12:00:00Z"))).toEqual([]);
     expect(publicPlanningForecasts([revision([])], [player], normalizePlanningGames(rows), new Date("2026-10-09"))).toEqual([]);
   });
+  it("binds public goalie confirmation to exact source evidence rather than a certainty flag", () => {
+    const candidate = { playerId: 847001, startingProbability: 0.8, probabilityStatus: "confirmed_evidence", conditional: { SAVES_GOALIE: 30 } };
+    const row = revision([candidate]);
+    const games = normalizePlanningGames(rows), now = new Date("2026-10-10T12:00:00Z");
+    const publicForecast = () => publicPlanningForecasts([row], [player], games, now)[0];
+    expect(publicForecast()).toMatchObject({ confirmedStart: false, startProbability: 0.8, stats: { SAVES_GOALIE: 24 } });
+    const source = scopedSkaterSelection(row).same_day_evidence!;
+    source.assertions[0].dimension = "goalie";
+    source.assertions[0].value = "confirmed";
+    expect(publicForecast()).toMatchObject({ confirmedStart: true, startProbability: 0.8, stats: { SAVES_GOALIE: 24 } });
+    source.assertions[0].playerId = 847002;
+    expect(publicForecast().confirmedStart).toBe(false);
+  });
+  it.each(["missing", "wrong-player", "contradictory", "valid"])
+  ("preserves the admitted goalie confirmation through Start Chart output: %s", scenario => {
+    const source = { informationCutoffAt: "2026-10-10T10:00:00Z", assertions: [{
+      gameId: 2026020001, teamId: 1, playerId: 847001, dimension: "goalie" as const, value: "confirmed", confirmed: true,
+      evidenceId: "synthetic-confirmation", sourceKey: "synthetic-source", sourceUrl: null,
+      publishedAt: "2026-10-10T09:00:00Z", receivedAt: "2026-10-10T09:01:00Z",
+    }], conflicts: [] };
+    const candidate = { gameId: 2026020001, teamId: 1, playerId: 847001, horizonGames: 1,
+      evidenceCutoffAt: source.informationCutoffAt, sameDayEvidence: structuredClone(source),
+      startingProbability: 0.8, probabilityStatus: "confirmed_evidence", conditional: { SAVES_GOALIE: 30 } };
+    const row = revision([candidate]);
+    if (scenario !== "missing") row.payload.evidence = structuredClone(source);
+    if (scenario === "wrong-player") row.payload.evidence!.assertions[0].playerId = 847002;
+    if (scenario === "contradictory") row.payload.evidence!.assertions.push({ ...source.assertions[0], playerId: 847002, evidenceId: "other-confirmation" });
+    const admitted = publicPlanningForecasts([row], [player], normalizePlanningGames(rows), new Date("2026-10-10T12:00:00Z"))[0];
+    expect(admitted.confirmedStart).toBe(scenario === "valid");
+    const rawBefore = JSON.stringify(candidate);
+    const output = admittedBoardGoalieForecast(candidate, admitted);
+    const normalized = normalizeStartChartResponse({ dateUsed: "2026-10-10", players: [{
+      game_id: 2026020001, player_id: 847001, team_id: 1, positions: ["G"], forecast: output,
+      confirmed_status: admitted.confirmedStart ? true : null, start_probability: admitted.startProbability,
+    }] }).players[0];
+    expect(normalized.forecast).toMatchObject({ conditioning: "unconditional", participationProbability: 0.8,
+      probabilityStatus: scenario === "valid" ? "confirmed_evidence" : "uncalibrated_model",
+      conditional: { SAVES_GOALIE: 30 }, expected: { SAVES_GOALIE: 24 }, evidence: [] });
+    expect(normalized.confirmed_status).toBe(scenario === "valid" ? true : null);
+    expect(normalized.start_probability).toBe(0.8);
+    expect(JSON.stringify(candidate)).toBe(rawBefore);
+    expect(admittedBoardGoalieForecast(candidate, undefined)).toBeNull();
+  });
   it("requires a bounded timestamped captured-read receipt instead of inventing a source watermark", () => {
     const row = revision([{ playerId: 847001, startingProbability: 1, conditional: { SAVES_GOALIE: 30 } }]);
     const receipt = row.payload.inputProvenance!.capturedReads!;
@@ -395,10 +452,7 @@ describe("public RSO data boundary", () => {
     const forecast = (probability: 0 | 1) => {
       const row = revision([]);
       row.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001, horizon_games: 1, as_of_date: "2026-10-10", run_id: "run-1", proj_goals_es: 2, proj_goals_pp: 0, proj_goals_pk: 0,
-        uncertainty: { model: { skater_selection: { production_conditioning: "conditional_playing",
-          participation: { version: "skater-participation-v1", probability, status: "confirmed_evidence", evidenceIds: ["private-source-id"] },
-          same_day_evidence: { assertions: [{ privateText: "never expose" }], conflicts: [] },
-        } } } }];
+        uncertainty: { model: { skater_selection: scopedSkaterSelection(row, probability) } } }];
       return publicPlanningForecasts([row], [skater], normalizePlanningGames(rows), new Date("2026-10-10T12:00:00Z"));
     };
     expect(forecast(1)[0]).toMatchObject({ sourceKind: "detailed", stats: { GOALS: 2 }, conditionalStats: { GOALS: 2 },
@@ -406,14 +460,34 @@ describe("public RSO data boundary", () => {
     expect(forecast(0)[0]).toMatchObject({ stats: { GOALS: 0 }, conditionalStats: { GOALS: 2 }, appearanceProbability: 0 });
     expect(JSON.stringify(forecast(1))).not.toMatch(/private-source-id|never expose|privateText|inputProvenance/);
   });
+  it.each(["scalar", "erased", "copied-player", "source", "late-arrival", "missing-source"])
+  ("rejects unbound issued participation without publishing a conditional forecast: %s", attack => {
+    const row = revision([]);
+    const selection = scopedSkaterSelection(row);
+    row.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001, horizon_games: 1, as_of_date: "2026-10-10", run_id: "run-1",
+      proj_goals_es: 2, proj_goals_pp: 1, proj_goals_pk: null, proj_pp_goals: 0.1, proj_assists_pp: 0.3,
+      uncertainty: { model: { skater_selection: structuredClone(selection) } } }];
+    const stored = row.payload.players[0].uncertainty.model.skater_selection;
+    if (attack === "scalar") stored.participation.probability = 0;
+    if (attack === "erased") stored.same_day_evidence.assertions = [];
+    if (attack === "copied-player") stored.same_day_evidence.assertions[0].playerId++;
+    if (attack === "source") row.payload.evidence!.assertions[0].evidenceId = "other-source-record";
+    if (attack === "late-arrival") row.payload.evidence!.assertions[0].receivedAt = "2026-10-10T10:00:00.000001Z";
+    if (attack === "missing-source") delete row.payload.evidence;
+    const exclusions: ForecastDiscoveryExclusion[] = [];
+    expect(publicPlanningForecasts([row], [{ ...player, playerClass: "skater" }], normalizePlanningGames(rows),
+      new Date("2026-10-10T12:00:00Z"), {}, exclusions)).toEqual([]);
+    expect(exclusions).toContainEqual({ gameId: "2026020001", playerId: "7", reasons: ["missing_participation"] });
+  });
   it("keeps all-strength targets unknown when PK is unsupported", () => {
     const row = revision([]);
     row.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001, horizon_games: 1, as_of_date: "2026-10-10", run_id: "run-1",
-      proj_goals_es: 2, proj_goals_pp: 1, proj_goals_pk: null, proj_hits: 3,
-      uncertainty: { model: { skater_selection: { production_conditioning: "conditional_playing",
-        participation: { version: "skater-participation-v1", probability: 1, status: "confirmed_evidence", evidenceIds: ["e"] } } } } }];
+      proj_goals_es: 2, proj_goals_pp: 0.1, proj_goals_pk: null, proj_assists_pp: 0.3, proj_hits: 3,
+      uncertainty: { model: { skater_selection: scopedSkaterSelection(row) } } }];
     const result = publicPlanningForecasts([row], [{ ...player, playerClass: "skater" }], normalizePlanningGames(rows), new Date("2026-10-10T12:00:00Z"));
-    expect(result[0].stats).toMatchObject({ GOALS: null, HITS: 3 });
+    expect(result[0].stats).toMatchObject({ GOALS: null, HITS: 3, PP_POINTS: 0.4 });
+    expect(result[0].conditionalStats?.PP_POINTS).toBe(0.4);
+    expect(result[0].appearanceProbability).toBe(1);
   });
   it.each([
     ["horizon_games", 5, "outside_horizon"], ["horizon_games", undefined, "outside_horizon"],
@@ -488,9 +562,9 @@ describe("public RSO data boundary", () => {
     expect(exclusions.unsupported_conditioning).toBe(1);
     expect(exclusionRows).toEqual([{ gameId: "2026020001", playerId: "7",
       reasons: ["unsupported_conditioning"] }]);
-    row.payload.players[0].uncertainty.model.skater_selection = { production_conditioning: "conditional_playing",
-      participation: { version: "skater-participation-v1", probability: 1, status: "confirmed_evidence", evidenceIds: ["e"] } };
-    expect(publicPlanningForecasts([{ ...row, decision_as_of: "2026-10-10T09:00:00Z" }], [skater], games, now)[0]).toBeDefined();
+    row.payload.players[0].uncertainty.model.skater_selection = scopedSkaterSelection(row);
+    expect(publicPlanningForecasts([row], [skater], games, now)[0]).toBeDefined();
+    expect(publicPlanningForecasts([{ ...row, decision_as_of: "2026-10-10T09:00:00Z" }], [skater], games, now)).toEqual([]);
     expect(publicPlanningForecasts([{ ...row, decision_as_of: "2026-10-10T13:00:00Z" }], [skater], games, now)).toEqual([]);
     expect(publicPlanningForecasts([row], [skater], games, new Date("2026-10-10T23:00:00Z"))).toEqual([]);
     expect(publicPlanningForecasts([row], [{ ...skater, nhlTeamId: 2 }], games, now)).toEqual([]);

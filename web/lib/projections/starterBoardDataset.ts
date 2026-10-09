@@ -105,7 +105,10 @@ export function exportFrozenBoardForecasts(source: FrozenBoardSource) {
   for (const row of revision.payload.players) {
     if (row.run_id !== revision.run_id || row.game_id !== game.id || row.horizon_games !== 1) throw new Error("Player projection does not belong to the frozen run");
     if (!include(row.player_id, row.team_id)) continue;
-    const forecast = boardSkaterForecast(boardSkaterStatsFromProjection(row), row.uncertainty);
+    const forecast = boardSkaterForecast(boardSkaterStatsFromProjection(row), row.uncertainty, {
+      gameId: row.game_id, teamId: row.team_id, playerId: row.player_id, horizonGames: row.horizon_games,
+      cutoffAt: snapshot.inputCutoff, evidence: snapshot.dailyBoardEvidence,
+    });
     const segments = { position: positions.get(row.player_id) ?? "unavailable", uncertain_lineup: forecast.conflicts.length > 0 || forecast.probabilityStatus === "missing" };
     if (forecast.conditioning === "legacy_unclassified") { exclusions.push({ playerId: row.player_id, reason: "unclassified_production_conditioning" }); continue; }
     emitStats(row.player_id, row.team_id, "skater", "conditional_playing", forecast.conditional, segments);
@@ -119,7 +122,8 @@ export function exportFrozenBoardForecasts(source: FrozenBoardSource) {
     if (!Array.isArray(candidates)) { exclusions.push({ playerId: row.goalie_id, reason: "goalie_scenarios_missing" }); continue; }
     for (const candidate of candidates) {
       if (!include(candidate.playerId, row.team_id)) continue;
-      const forecast = boardGoalieForecast(candidate);
+      const forecast = boardGoalieForecast(candidate, { gameId: row.game_id, teamId: row.team_id, playerId: candidate.playerId,
+        horizonGames: row.horizon_games, cutoffAt: snapshot.inputCutoff, evidence: snapshot.dailyBoardEvidence });
       if (!forecast) { exclusions.push({ playerId: candidate.playerId, reason: "goalie_projection_missing" }); continue; }
       const segments = { position: "G", uncertain_lineup: forecast.probabilityStatus !== "confirmed_evidence" };
       emitStats(candidate.playerId, row.team_id, "goalie", "conditional_start", forecast.conditional, segments);

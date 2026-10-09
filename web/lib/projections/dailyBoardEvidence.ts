@@ -1,4 +1,5 @@
 import supabase from "lib/supabase/server";
+import { acceptedNewsSupersedes } from "./acceptedNews";
 import type { RosterEventRow } from "./types/run-forge-projections.types";
 
 type TimedEvidence = {
@@ -29,22 +30,33 @@ export type BoardAssertion = {
   publishedAt: string; receivedAt: string; confirmed: boolean;
 };
 export type DailyBoardEvidence = {
+  informationCutoffAt?: string;
   assertions: BoardAssertion[];
   conflicts: Array<{ gameId: number; teamId: number; playerId: number | null; dimension: string; evidenceIds: string[] }>;
 };
 
-function available(evidence: TimedEvidence, cutoff: number): boolean {
+function knownByCutoff(value: string, cutoff: string): boolean {
+  return !acceptedNewsSupersedes(value, cutoff);
+}
+
+/** Candidates have already passed timestamp validation before sorting. */
+function newestFirst(a: string, b: string): number {
+  return acceptedNewsSupersedes(a, b) ? -1 : acceptedNewsSupersedes(b, a) ? 1 : 0;
+}
+
+function available(evidence: TimedEvidence, cutoff: string): boolean {
   return evidence.accepted && [evidence.observed_at, evidence.available_at, evidence.created_at ?? evidence.available_at]
-    .every((value) => Number.isFinite(Date.parse(value)) && Date.parse(value) <= cutoff)
-    && (!evidence.expires_at || Date.parse(evidence.expires_at) > cutoff);
+    .every((value) => knownByCutoff(value, cutoff))
+    && (evidence.expires_at == null || knownByCutoff(evidence.expires_at, evidence.expires_at)
+      && acceptedNewsSupersedes(evidence.expires_at, cutoff));
 }
 
 /** Partial assertions never imply the absence of an unmentioned player. */
 export function resolveDailyBoardEvidence(args: {
   cutoff: string; lineups: BoardLineupEvidence[]; goalies: BoardGoalieEvidence[]; conflicts: BoardConflict[];
 }): DailyBoardEvidence {
-  const cutoff = Date.parse(args.cutoff);
-  if (!Number.isFinite(cutoff)) throw new Error("Invalid daily evidence cutoff");
+  const cutoff = args.cutoff;
+  if (!knownByCutoff(cutoff, cutoff)) throw new Error("Invalid daily evidence cutoff");
   const candidates: BoardAssertion[] = [];
   const add = (row: TimedEvidence, playerId: number, dimension: BoardAssertion["dimension"], value: string, confirmed: boolean) => {
     candidates.push({ gameId: row.game_id, teamId: row.team_id, playerId, dimension, value,
@@ -53,7 +65,7 @@ export function resolveDailyBoardEvidence(args: {
   };
   for (const row of args.lineups.filter((item) => available(item, cutoff))) {
     for (const assignment of row.player_forecast_lineup_assignments) {
-      if (assignment.player_id == null || (assignment.created_at && Date.parse(assignment.created_at) > cutoff)) continue;
+      if (assignment.player_id == null || (assignment.created_at !== undefined && !knownByCutoff(assignment.created_at, cutoff))) continue;
       const { player_id: playerId, unit_type: unit, unit_number: rank, assignment_status: status } = assignment;
       if ((unit === "forward_line" || unit === "defense_pair") && rank != null) {
         add(row, playerId, "ev", `${unit === "forward_line" ? "L" : "D"}${rank}`, status === "confirmed");
@@ -74,9 +86,10 @@ export function resolveDailyBoardEvidence(args: {
     if (row.player_id != null) add(row, row.player_id, "goalie", row.observation_status, row.observation_status === "confirmed");
   }
 
-  const result: DailyBoardEvidence = { assertions: [], conflicts: [] };
+  const result: DailyBoardEvidence = { informationCutoffAt: cutoff, assertions: [], conflicts: [] };
   const latestConflicts = new Map<string, BoardConflict>();
-  for (const conflict of args.conflicts.filter((item) => Date.parse(item.detected_at) <= cutoff)
+  for (const conflict of args.conflicts.filter((item) => knownByCutoff(item.detected_at, cutoff)
+    && (item.created_at === undefined || knownByCutoff(item.created_at, cutoff)))
     .sort((a, b) => (b.conflict_version ?? 1) - (a.conflict_version ?? 1))) {
     const key = conflict.conflict_key ?? conflict.id;
     if (!latestConflicts.has(key)) latestConflicts.set(key, conflict);
@@ -85,8 +98,8 @@ export function resolveDailyBoardEvidence(args: {
     ...conflict,
     resolution: [...conflict.player_forecast_conflict_resolutions]
       .filter((resolution) => [resolution.resolved_at, resolution.created_at ?? resolution.resolved_at]
-        .every((value) => Number.isFinite(Date.parse(value)) && Date.parse(value) <= cutoff))
-      .sort((a, b) => Date.parse(b.resolved_at) - Date.parse(a.resolved_at))[0],
+        .every((value) => knownByCutoff(value, cutoff)))
+      .sort((a, b) => newestFirst(a.resolved_at, b.resolved_at))[0],
   }));
   const groups = new Map<string, BoardAssertion[]>();
   for (const assertion of candidates) {
@@ -103,11 +116,11 @@ export function resolveDailyBoardEvidence(args: {
     // Latest assertion from each original reporter supersedes its earlier
     // assertions. Arrival order and repost count do not increase credibility.
     const bySource = new Map<string, BoardAssertion>();
-    for (const item of [...group].sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt) || b.evidenceId.localeCompare(a.evidenceId))) {
+    for (const item of [...group].sort((a, b) => newestFirst(a.publishedAt, b.publishedAt) || b.evidenceId.localeCompare(a.evidenceId))) {
       if (!bySource.has(item.sourceKey)) bySource.set(item.sourceKey, item);
     }
     const choices = selectedIds.length ? group.filter((item) => selectedIds.includes(item.evidenceId)) : [...bySource.values()];
-    choices.sort((a, b) => Number(b.confirmed) - Number(a.confirmed) || Date.parse(b.publishedAt) - Date.parse(a.publishedAt));
+    choices.sort((a, b) => Number(b.confirmed) - Number(a.confirmed) || newestFirst(a.publishedAt, b.publishedAt));
     const best = choices[0];
     if (!best) continue;
     const dismissed = matchingReviews.some((review) => ["dismiss", "supersede"].includes(review.resolution?.action ?? ""));
@@ -128,7 +141,7 @@ export function resolveDailyBoardEvidence(args: {
 export async function loadDailyBoardEvidence(gameIds: number[], cutoff: string,
   db: typeof supabase = supabase): Promise<DailyBoardEvidence> {
   const ids = [...new Set(gameIds)].sort((a, b) => a - b);
-  if (!Number.isFinite(Date.parse(cutoff)) || ids.length > 500
+  if (!knownByCutoff(cutoff, cutoff) || ids.length > 500
     || ids.some(id => !Number.isSafeInteger(id) || id <= 0)) throw new Error("Invalid daily evidence scope");
   if (!ids.length) return { assertions: [], conflicts: [] };
   // Child relations are read independently: a parent count cannot establish
@@ -151,7 +164,7 @@ export async function loadDailyBoardEvidence(gameIds: number[], cutoff: string,
         count = response.count;
         for (const row of response.data) {
           if (typeof row.id !== "string" || !row.id || seen.has(row.id) || !batch.includes(row[key])
-            || !Number.isFinite(Date.parse(row.created_at)) || Date.parse(row.created_at) > Date.parse(cutoff)) {
+            || !knownByCutoff(row.created_at, cutoff)) {
             throw new Error(`Invalid daily evidence receipt: ${table}`);
           }
           seen.add(row.id);

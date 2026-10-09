@@ -16,6 +16,7 @@ export type NativeSkaterGoalRow = {
       skater_selection?: {
         production_conditioning?: string;
         participation_reason?: string | null;
+        evidence_cutoff_at?: string | null;
         participation?: unknown;
         same_day_evidence?: unknown;
         season_bootstrap?: { fantasyWeight: number; historyWeight: number } | null;
@@ -41,6 +42,7 @@ export function buildNativeSkaterParticipationFields(args: {
           : !assertions.length ? "missing_same_day_participation_evidence" : "missing_confirmed_participation_evidence";
   return { production_conditioning: args.compute ? "conditional_playing" : "legacy_availability_adjusted",
     participation_probability: participation?.probability ?? null, participation, participation_reason: reason,
+    evidence_cutoff_at: args.evidence?.informationCutoffAt ?? null,
     same_day_evidence: args.evidence ? { assertions, conflicts } : null };
 }
 
@@ -173,7 +175,10 @@ export function buildNativePlayerGoalAccounting(row: NativeSkaterGoalRow) {
   const uncertainty = sameDay ? { ...row.uncertainty, model: { ...row.uncertainty?.model, skater_selection: {
     ...selection, same_day_evidence: { ...sameDay, conflicts: sameDay.conflicts?.filter(item => ["ev", "availability"].includes(item.dimension ?? "")) },
   } } } : row.uncertainty;
-  const forecast = boardSkaterForecast({ proj_goals: reportedEsPpMean }, uncertainty);
+  const forecast = boardSkaterForecast({ proj_goals: reportedEsPpMean }, uncertainty, {
+    gameId: row.game_id, teamId: row.team_id, playerId: row.player_id, horizonGames: row.horizon_games,
+    cutoffAt: selection?.evidence_cutoff_at ?? null,
+  });
   const conditional = selection?.production_conditioning === "conditional_playing";
   const oneGame = row.horizon_games === 1;
   const bootstrap = selection?.season_bootstrap;
