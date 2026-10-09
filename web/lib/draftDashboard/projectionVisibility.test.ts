@@ -4,6 +4,8 @@ import {
   getProjectionDisplayPosition,
   matchesProjectionPosition,
 } from "./projectionVisibility";
+import { applyFantraxPlayerSources } from "./fantraxPlayerSources";
+import type { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 
 const players = [
   {
@@ -36,6 +38,44 @@ describe("projection visibility", () => {
     expect(matchesProjectionPosition(players[2], "SKATER", "split")).toBe(
       false,
     );
+  });
+
+  it("filters exact dual and tri eligible forward combinations", () => {
+    const dual = players[0];
+    const tri = { ...dual, eligiblePositions: ["C", "LW", "RW"] };
+    expect(matchesProjectionPosition(dual, "ELIGIBLE_DUAL", "fwd")).toBe(true);
+    expect(matchesProjectionPosition(dual, "ELIGIBLE_C_LW", "fwd")).toBe(true);
+    expect(matchesProjectionPosition(dual, "ELIGIBLE_C_RW", "fwd")).toBe(false);
+    expect(matchesProjectionPosition(tri, "ELIGIBLE_DUAL", "split")).toBe(false);
+    expect(matchesProjectionPosition(tri, "ELIGIBLE_TRI", "fwd")).toBe(true);
+    expect(matchesProjectionPosition(players[1], "ELIGIBLE_TRI", "split")).toBe(false);
+  });
+
+  it("switches ADP and position sources independently", () => {
+    const player = players[0] as ProcessedPlayer;
+    const fantrax = [{ id: "fx-1", name: "Forward, Multi", team: "CAR", positions: ["RW"], adp: 42 }];
+    const adpOnly = applyFantraxPlayerSources([player], fantrax, "fantrax", "yahoo")[0];
+    expect(adpOnly.yahooAvgPick).toBe(42);
+    expect(adpOnly.eligiblePositions).toEqual(["C", "LW"]);
+    const positionOnly = applyFantraxPlayerSources([player], fantrax, "yahoo", "fantrax")[0];
+    expect(positionOnly.yahooAvgPick).toBeUndefined();
+    expect(positionOnly.eligiblePositions).toEqual(["RW"]);
+    expect(matchesProjectionPosition(positionOnly, "ELIGIBLE_DUAL", "split")).toBe(false);
+    const leagueEligible = applyFantraxPlayerSources([player], [{ ...fantrax[0], positions: ["C", "LW", "RW"] }], "yahoo", "fantrax")[0];
+    expect(matchesProjectionPosition(leagueEligible, "ELIGIBLE_TRI", "split")).toBe(true);
+  });
+
+  it("uses verified Fantrax identities for variant and duplicate names in the projections table", () => {
+    const aho = { ...players[0], playerId: 8478427, fullName: "Sebastian Aho", displayTeam: "CAR" } as ProcessedPlayer;
+    const vladar = { ...players[0], playerId: 8478435, fullName: "Dan Vladar", displayTeam: "PHI" } as ProcessedPlayer;
+    const fantrax = [
+      { id: "03rmx", name: "Aho, Sebastian", team: "CAR", positions: ["C"], adp: 12 },
+      { id: "03el6", name: "Aho, Sebastian", team: "PIT", positions: ["D"], adp: 250 },
+      { id: "03rfo", name: "Vladar, Daniel", team: "PHI", positions: ["G"], adp: 180 },
+    ];
+    const result = applyFantraxPlayerSources([aho, vladar], fantrax, "fantrax", "fantrax");
+    expect(result.map((row) => row.yahooAvgPick)).toEqual([12, 180]);
+    expect(result.map((row) => row.eligiblePositions)).toEqual([["C"], ["G"]]);
   });
 
   it("accounts independently for position, search, drafted, and favorites", () => {

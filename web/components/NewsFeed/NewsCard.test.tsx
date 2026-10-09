@@ -44,6 +44,20 @@ const makeItem = (overrides: Record<string, unknown> = {}) =>
 describe("NewsCard", () => {
   afterEach(cleanup);
 
+  it("keeps observation and publication independent of creation time", () => {
+    render(<NewsCard item={makeItem({ published_at: null, observed_at: "2026-07-14T18:19:20.000Z", source_label: null, source_account: "SOURCE_ACCOUNT", source_url: "not a URL", metadata: null })} />);
+    expect(screen.getAllByText("Published Unavailable")).toHaveLength(2);
+    expect(screen.getByText("Observed Jul 14, 2:19 PM")).toBeTruthy();
+    expect(screen.getByText("Source unavailable")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /View original post/ })).toBeNull();
+  });
+
+  it("does not display malformed timestamps as dates", () => {
+    render(<NewsCard item={makeItem({ published_at: "broken", observed_at: "broken" })} />);
+    expect(screen.getAllByText("Published Unavailable")).toHaveLength(2);
+    expect(screen.getByText("Observed Unavailable")).toBeTruthy();
+  });
+
   it("shows useful details and an accessible original-post icon in rail mode", () => {
     render(
       <NewsCard
@@ -70,14 +84,14 @@ describe("NewsCard", () => {
       ).length,
     ).toBeGreaterThan(0);
     const sourceLink = screen.getByRole("link", {
-      name: "View original post for Pavel Mintyukov news update",
+      name: "View original post for Source report",
     });
     expect(sourceLink.getAttribute("href")).toBe(
       "https://x.com/FriedgeHNIC/status/2073877758803935434",
     );
     expect(sourceLink.getAttribute("target")).toBe("_blank");
     expect(screen.queryByText("Source")).toBeNull();
-    expect(screen.getByText("7/14/2026, 2:19:20 PM")).toBeTruthy();
+    expect(screen.getByText("Published 7/14/2026, 2:19:20 PM")).toBeTruthy();
   });
 
   it("renders team and category once while promoting authoritative detail", () => {
@@ -100,12 +114,10 @@ describe("NewsCard", () => {
       teamsInfo.FLA.primaryColor,
     );
     expect(within(article as HTMLElement).getAllByText("FLA")).toHaveLength(1);
-    expect(
-      within(article as HTMLElement).getAllByText("Signing"),
-    ).toHaveLength(1);
+    expect(within(article as HTMLElement).queryByText("Official Signing")).toBeNull();
     expect(
       screen.getByRole("heading", {
-        name: "Florida and Akira Schmid avoid arbitration; 2 x $2M.",
+        name: "Florida and Akira Schmid reached agreement to avoid arbitration on a two-year, $2 million contract.",
       }),
     ).toBeTruthy();
   });
@@ -209,22 +221,12 @@ describe("NewsCard", () => {
 
     expect(flaButton.getAttribute("aria-expanded")).toBe("false");
     expect(document.getElementById(flaDetailsId ?? "")).toBeTruthy();
-    expect(
-      document
-        .getElementById(flaDetailsId ?? "")
-        ?.querySelector('[class*="railDetails"]')
-        ?.hasAttribute("hidden"),
-    ).toBe(true);
+    expect(document.getElementById(flaDetailsId ?? "")?.querySelector('[class*="railDetails"]')).toBeNull();
 
     fireEvent.click(flaButton);
     expect(flaButton.getAttribute("aria-expanded")).toBe("true");
     expect(flaButton.textContent).toContain("−");
-    expect(
-      document
-        .getElementById(flaDetailsId ?? "")
-        ?.querySelector('[class*="railDetails"]')
-        ?.hasAttribute("hidden"),
-    ).toBe(false);
+
 
     fireEvent.click(cbjButton);
     expect(flaButton.getAttribute("aria-expanded")).toBe("false");
@@ -249,7 +251,7 @@ describe("NewsCard", () => {
 
     fireEvent.click(
       screen.getByRole("link", {
-        name: "View original post for FLA signing",
+        name: "View original post for Source report",
       }),
     );
 
@@ -321,6 +323,17 @@ describe("NewsCard", () => {
     ).toBeNull();
   });
 
+  it("renders the captured Barzal passage without promoting its Kevin He join", () => {
+    const passage = 'RT @AGrossNewsday: Mathew Barzal is with #Isles on trip, Pete DeBoer said he is attending all the meetings. Not on the ice yet but said to be "around the corner." So he won\'t play in the season opener tomorrow in Toronto.';
+    render(<NewsCard item={makeItem({ id: "cac51da7-3f50-4109-b7b4-3ad80538f07f", headline: "Kevin He injury update",
+      blurb: passage, category: "INJURY", metadata: null, players: [{ player_id: 8484864, player_name: "Kevin He" }] })} />);
+    expect(screen.getByRole("heading", { name: "Source report" })).toBeTruthy();
+    expect(screen.queryByText("Kevin He")).toBeNull();
+    expect(screen.queryByText("Kevin He injury update")).toBeNull();
+    expect(screen.getByText(/Mathew Barzal is with/)).toBeTruthy();
+    expect(screen.getByText("Subject-to-claim evidence unavailable")).toBeTruthy();
+  });
+
   it("does not add disclosure controls to unrelated NewsCard variants", () => {
     render(
       <NewsCard
@@ -331,7 +344,7 @@ describe("NewsCard", () => {
 
     expect(screen.queryByRole("button", { name: /expand/i })).toBeNull();
     expect(
-      screen.getByRole("heading", { name: "FLA signing" }),
+      screen.getByRole("heading", { name: "Source report" }),
     ).toBeTruthy();
   });
 });

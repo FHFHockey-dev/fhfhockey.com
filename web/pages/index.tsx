@@ -129,16 +129,8 @@ const Home: NextPage = ({
   return (
     <Container className={styles.homeContainer}>
       <NextSeo
-        title="FHFH | Home"
-        description="Five Hole Fantasy Hockey Podcast Home page."
-        openGraph={{
-          images: [
-            {
-              url: `${process.env.NEXT_PUBLIC_SITE_URL}/pictures/circle.png`,
-              alt: "logo",
-            },
-          ],
-        }}
+        title="Fantasy Hockey Tools, NHL Stats & Podcast | FHFH"
+        description="Plan your fantasy hockey lineup with Game Grid, explore NHL player and team stats, and find analysis from the Five Hole Fantasy Hockey podcast."
       />
       <Head>
         <meta

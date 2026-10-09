@@ -32,6 +32,10 @@ describe("Yahoo pickup rosters", () => {
     expect(isYahooPickupPlayer("465.p.1", context, "roster")).toBe(false);
     expect(isYahooPickupPlayer("465.p.3", context, "available")).toBe(false);
     expect(isYahooPickupPlayer(null, context, "available")).toBe(false);
+    for (const key of ["477.p.unknown", "477.p.", "477.p.3.extra", "477.p.-3"]) {
+      expect(isYahooPickupPlayer(key, context, "available")).toBe(false);
+      expect(isYahooPickupPlayer(key, context, "roster")).toBe(false);
+    }
   });
 });
 

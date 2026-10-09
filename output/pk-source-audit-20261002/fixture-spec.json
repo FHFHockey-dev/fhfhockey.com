@@ -1,0 +1,366 @@
+{
+  "version": "pk-source-fixture-spec-v1",
+  "status": "proposed_not_executed",
+  "basis": "known_audit_examples_and_fictional_engineering_cases",
+  "cases": [
+    {
+      "id": "observed-zero",
+      "input": {
+        "count": 0,
+        "exposureSeconds": 120,
+        "rowPresent": true
+      },
+      "expected": {
+        "state": "observed",
+        "ratePerSecond": 0
+      }
+    },
+    {
+      "id": "verified-no-exposure",
+      "input": {
+        "count": 0,
+        "exposureSeconds": 0,
+        "rowPresent": true,
+        "appearanceCoverageComplete": true
+      },
+      "expected": {
+        "state": "zero_exposure",
+        "ratePerSecond": null,
+        "perAppearanceContribution": 0
+      }
+    },
+    {
+      "id": "missing-row",
+      "input": {
+        "rowPresent": false
+      },
+      "expected": {
+        "state": "missing",
+        "count": null,
+        "exposureSeconds": null
+      }
+    },
+    {
+      "id": "nonzero-event-zero-exposure",
+      "input": {
+        "count": 1,
+        "exposureSeconds": 0
+      },
+      "expected": {
+        "state": "conflict",
+        "ratePerSecond": null
+      }
+    },
+    {
+      "id": "null-target",
+      "input": {
+        "count": null,
+        "exposureSeconds": 120
+      },
+      "expected": {
+        "state": "missing_target",
+        "ratePerSecond": null
+      }
+    },
+    {
+      "id": "tiny-exposure",
+      "input": {
+        "count": 1,
+        "exposureSeconds": 11,
+        "minimumExposureSeconds": 60
+      },
+      "expected": {
+        "state": "insufficient_exposure",
+        "unshrunkPer60": 327.27272727272725,
+        "fullGameUsable": false
+      }
+    },
+    {
+      "id": "provider-conflict-known",
+      "input": {
+        "playerId": 8476453,
+        "date": "2026-03-03",
+        "wgoSeconds": 0,
+        "nstSeconds": 69
+      },
+      "expected": {
+        "state": "source_conflict",
+        "silentlyBlend": false
+      }
+    },
+    {
+      "id": "ev-vs-five-known",
+      "input": {
+        "playerId": 8476453,
+        "date": "2026-04-15",
+        "evSeconds": 952,
+        "fiveSeconds": 879
+      },
+      "expected": {
+        "sameStrength": false
+      }
+    },
+    {
+      "id": "empty-net-known",
+      "input": {
+        "gameId": 2025021076,
+        "rawRowId": 596,
+        "eventId": 1022,
+        "situationCode": "1560",
+        "teamId": 14,
+        "awayTeamId": 14,
+        "homeTeamId": 55
+      },
+      "expected": {
+        "legacyNumericalStrength": "pk",
+        "goaliePulled": true,
+        "penaltyStrength": "requires_independent_evidence",
+        "interchangeableWithWgoSh": false
+      }
+    },
+    {
+      "id": "ordinary-pk-known",
+      "input": {
+        "gameId": 2025021109,
+        "rawRowId": 472,
+        "eventId": 873,
+        "situationCode": "1451",
+        "teamId": 14,
+        "awayTeamId": 14,
+        "homeTeamId": 22
+      },
+      "expected": {
+        "legacyNumericalStrength": "pk",
+        "bothGoaliesPresent": true
+      }
+    },
+    {
+      "id": "equal-configurations",
+      "input": {
+        "situationCodes": [
+          "1331",
+          "1441",
+          "1551"
+        ]
+      },
+      "expected": {
+        "legacyNumericalStrength": [
+          "es",
+          "es",
+          "es"
+        ],
+        "fiveOnFive": [
+          false,
+          false,
+          true
+        ]
+      }
+    },
+    {
+      "id": "team-unit-known",
+      "input": {
+        "teamId": 10,
+        "date": "2026-03-14",
+        "forgePlayerSeconds": 2364,
+        "nstClockSeconds": 450
+      },
+      "expected": {
+        "sameUnit": false,
+        "fixedDivideByFourSufficient": false
+      }
+    },
+    {
+      "id": "manpower-budget-fictional",
+      "input": {
+        "segments": [
+          {
+            "seconds": 60,
+            "pkSkaters": 3
+          },
+          {
+            "seconds": 120,
+            "pkSkaters": 4
+          }
+        ]
+      },
+      "expected": {
+        "clockSeconds": 180,
+        "playerSeconds": 660
+      }
+    },
+    {
+      "id": "historical-late-insert-known",
+      "input": {
+        "date": "2026-04-13",
+        "createdAt": "2026-06-09T21:24:26.010006Z",
+        "cutoffAt": "2026-04-16T00:00:00Z"
+      },
+      "expected": {
+        "eligible": false
+      }
+    },
+    {
+      "id": "raw-late-fetch-known",
+      "input": {
+        "gameId": 2025021076,
+        "fetchedAt": "2026-04-01T22:48:19.977Z",
+        "cutoffAt": "2026-03-18T00:00:00Z"
+      },
+      "expected": {
+        "eligible": false
+      }
+    },
+    {
+      "id": "current-row-correction-fictional",
+      "input": {
+        "createdAt": "2026-03-01T00:00:00Z",
+        "currentCaptureAt": "2026-10-02T14:08:01Z",
+        "cutoffAt": "2026-04-16T00:00:00Z",
+        "immutableValueRevision": null
+      },
+      "expected": {
+        "historicCurrentValueCertified": false
+      }
+    },
+    {
+      "id": "prior-mass-fictional",
+      "input": {
+        "total": 1,
+        "shares": {
+          "ev": 0.75,
+          "pp": 0.2,
+          "pk": 0.03,
+          "other": 0.02
+        }
+      },
+      "expected": {
+        "components": {
+          "ev": 0.75,
+          "pp": 0.2,
+          "pk": 0.03,
+          "other": 0.02
+        },
+        "sum": 1,
+        "legacyPlusPk": 1.03
+      }
+    },
+    {
+      "id": "prior-missing-other-fictional",
+      "input": {
+        "total": 1,
+        "shares": {
+          "ev": 0.75,
+          "pp": 0.2,
+          "pk": 0.03,
+          "other": null
+        }
+      },
+      "expected": {
+        "fullGameUsable": false,
+        "renormalize": false
+      }
+    },
+    {
+      "id": "participation-once-fictional",
+      "input": {
+        "conditionalComponents": {
+          "ev": 0.75,
+          "pp": 0.2,
+          "pk": 0.03,
+          "other": 0.02
+        },
+        "probability": 0.8
+      },
+      "expected": {
+        "unconditionalMean": 0.8,
+        "integratedSourceMultiplier": 1
+      }
+    },
+    {
+      "id": "identity-boundaries",
+      "input": {
+        "cases": [
+          "PHX historical",
+          "ARI historical",
+          "UTA 20242025 local59",
+          "UTA 20252026 local68",
+          "trade within season",
+          "overlapping UTA aliases",
+          "current team differs from game roster"
+        ]
+      },
+      "expected": {
+        "requireExactlyOneGameTeam": true,
+        "preservePlayerIdentity": true,
+        "currentTeamShortcut": false,
+        "conflictingAlias": "reject"
+      }
+    },
+    {
+      "id": "incomplete-component-consumer",
+      "input": {
+        "es": 1,
+        "pp": 0.2,
+        "pk": null,
+        "other": 0
+      },
+      "expected": {
+        "completeFullGame": null
+      }
+    },
+    {
+      "id": "unsupported-event-coverage",
+      "input": {
+        "cases": [
+          "shootout",
+          "penalty-shot classification absent",
+          "invalid situation code",
+          "missing shift interval",
+          "unknown team"
+        ]
+      },
+      "expected": {
+        "silentlyAssignEs": false,
+        "unresolvedMassBlocksCompleteTotals": true
+      }
+    },
+    {
+      "id": "permissions-and-conditioning",
+      "input": {
+        "cases": [
+          "disabled serving",
+          "unreleased source",
+          "unapproved totals",
+          "expired source",
+          "future cutoff",
+          "missing participation",
+          "different schedule revision",
+          "incompatible basis"
+        ]
+      },
+      "expected": {
+        "preserveExistingExclusions": true,
+        "pkCompletionDoesNotBypass": true
+      }
+    },
+    {
+      "id": "replay-invariants",
+      "input": {
+        "cases": [
+          "row order permutation",
+          "duplicate event ID",
+          "unmatched captured query",
+          "payload hash mismatch",
+          "latest revision after cutoff"
+        ]
+      },
+      "expected": {
+        "permutationSameResult": true,
+        "duplicates": "reject",
+        "queryMismatch": "reject",
+        "hashMismatch": "reject",
+        "postCutoff": "exclude"
+      }
+    }
+  ]
+}

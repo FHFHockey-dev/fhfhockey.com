@@ -6,7 +6,7 @@ import {
   type ReactNode
 } from "react";
 import Head from "next/head";
-import type { GetServerSideProps, NextPage } from "next";
+import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { format, parseISO } from "date-fns";
 
@@ -15,16 +15,13 @@ import UnderlyingStatsDashboard from "../../components/underlying-stats/Underlyi
 import OwnershipSparkline from "../../components/TransactionTrends/OwnershipSparkline";
 import { computeTeamPowerScore } from "../../lib/dashboard/teamContext";
 import { getLocalTeamLogoPath } from "../../lib/images";
-import supabaseServer from "../../lib/supabase/server";
 import { type SpecialTeamTier } from "../../lib/teamRatingsService";
 import { teamsInfo } from "../../lib/teamsInfo";
-import { fetchDistinctUnderlyingStatsSnapshotDates } from "../../lib/underlying-stats/availableSnapshotDates";
 import {
-  resolveUnderlyingStatsLandingSnapshot,
   type UnderlyingStatsLandingRating,
   type UnderlyingStatsLandingSnapshot
 } from "../../lib/underlying-stats/teamLandingRatings";
-import { fetchUlsRouteStatus, type UlsRouteStatus } from "../../lib/underlying-stats/ulsRouteStatus";
+import type { UlsRouteStatus } from "../../lib/underlying-stats/ulsRouteStatus";
 import styles from "./indexUS.module.scss";
 
 type PageProps = {
@@ -320,7 +317,7 @@ const MetricPopover = ({
   </details>
 );
 
-const TeamPowerRankingsPage: NextPage<PageProps> = ({
+export const TeamPowerRankingsPage: NextPage<PageProps> = ({
   availableDates,
   initialSnapshot,
   routeStatus
@@ -341,9 +338,9 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
     )
   );
   const [hoveredTeamAbbr, setHoveredTeamAbbr] = useState<string | null>(null);
-  const [showAllTeams, setShowAllTeams] = useState(false);
-  const [viewMode, setViewMode] = useState<TableViewMode>("simple");
-  const [sortState, setSortState] = useState<SortState>(DEFAULT_SORTS.simple);
+  const [showAllTeams, setShowAllTeams] = useState(true);
+  const [viewMode, setViewMode] = useState<TableViewMode>("advanced");
+  const [sortState, setSortState] = useState<SortState>(DEFAULT_SORTS.advanced);
   const ratings = snapshot.ratings;
   const dashboard = snapshot.dashboard;
   const activeTeamAbbr = hoveredTeamAbbr ?? pinnedTeamAbbr;
@@ -351,7 +348,7 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
   useEffect(() => {
     setSnapshot(initialSnapshot);
     setSelectedDate(initialSnapshot.resolvedDate ?? "");
-    setShowAllTeams(false);
+    setShowAllTeams(true);
   }, [initialSnapshot]);
 
   useEffect(() => {
@@ -680,7 +677,7 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
     const value = event.target.value;
     setSelectedDate(value);
     setHoveredTeamAbbr(null);
-    setShowAllTeams(false);
+    setShowAllTeams(true);
     router.replace(
       {
         pathname: router.pathname,
@@ -1032,7 +1029,7 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
         <title>Underlying Stats Dashboard | FHFHockey</title>
         <meta
           name="description"
-          content="League-wide NHL intelligence dashboard with an interactive process map, risers and fallers, sustainability context, schedule texture, market inefficiency signals, and a supporting power table."
+          content="Compare NHL team ratings and explore offensive and defensive process, recent movement, and detailed team metrics."
         />
       </Head>
       <main className={styles.page}>
@@ -1051,7 +1048,7 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
             routeStatus={routeStatus}
             selectedDate={selectedDate}
             topTeams={topTeams}
-          />
+          >
           <section
             className={styles.tableSection}
             aria-labelledby="power-rankings-table-heading"
@@ -1075,8 +1072,8 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
                 </span>
               </h2>
               <p className={styles.sectionDescription}>
-                Compare every team, sort the available metrics, and open the
-                advanced component view when you need more detail.
+                Compare every team, sort the available metrics, and switch to
+                the simple view when you need less detail.
               </p>
               <details className={styles.tableHelp}>
                 <summary className={styles.tableHelpSummary}>
@@ -1650,6 +1647,7 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
             </>
           )}
           </section>
+          </UnderlyingStatsDashboard>
           <footer className={styles.pageFooterMeta}>
             <span>
               Updated for {selectedDate ? formatDateLabel(selectedDate) : "the latest snapshot"}
@@ -1662,63 +1660,107 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
   );
 };
 
-export const getServerSideProps: GetServerSideProps<PageProps> = async (
-  context
-) => {
-  try {
-    const requestedDate =
-      typeof context.query.date === "string" ? context.query.date : undefined;
-    const supabase = supabaseServer;
-    const availableDates = await fetchDistinctUnderlyingStatsSnapshotDates(
-      90,
-      supabase
-    );
-    const [snapshot, routeStatus] = await Promise.all([
-      resolveUnderlyingStatsLandingSnapshot({
-        requestedDate,
-        availableDates
-      }),
-      fetchUlsRouteStatus(supabase)
-    ]);
+const UnderlyingStatsLanding: NextPage = () => {
+  const router = useRouter();
+  const requestedDate =
+    typeof router.query.date === "string" ? router.query.date : null;
+  const [landing, setLanding] = useState<PageProps | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
-    return {
-      props: {
-        availableDates,
-        initialSnapshot: snapshot,
-        routeStatus
-      }
-    };
-  } catch (error) {
-    console.error("Failed to load team power rankings", error);
-    return {
-      props: {
-        availableDates: [],
-        initialSnapshot: {
-          dashboard: {
-            context: [],
-            fallers: [],
-            inefficiency: { overvalued: [], undervalued: [] },
-            quadrant: {
-              averageDefenseProcess: 0,
-              averageOffenseProcess: 0,
-              axisSubtitle: "Offensive process vs defensive process",
-              points: []
-            },
-            risers: [],
-            sustainability: {
-              buyLow: [],
-              heatCheck: [],
-              processBacked: []
-            }
-          },
-          requestedDate: null,
-          resolvedDate: null,
-          ratings: []
-        },
-        routeStatus: null
-      }
-    };
+  useEffect(() => {
+    if (!router.isReady || landing) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const search = requestedDate
+      ? `?date=${encodeURIComponent(requestedDate)}`
+      : "";
+
+    fetch(`/api/underlying-stats/landing${search}`, {
+      signal: controller.signal
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Unable to load Underlying Stats (${response.status})`);
+        }
+        return response.json() as Promise<PageProps>;
+      })
+      .then((payload) => {
+        if (!controller.signal.aborted) {
+          setLanding(payload);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) {
+          setLoadError(
+            error instanceof Error ? error.message : "Unable to load Underlying Stats."
+          );
+        }
+      });
+
+    return () => controller.abort();
+  }, [router.isReady, requestedDate, landing, attempt]);
+
+  if (landing) {
+    return <TeamPowerRankingsPage {...landing} />;
   }
+
+  return (
+    <>
+      <Head>
+        <title>Underlying Stats Dashboard | FHFHockey</title>
+      </Head>
+      <main
+        className={styles.loadingPage}
+        data-state={loadError ? "error" : "loading"}
+        aria-busy={!loadError}
+      >
+        <div className={styles.loadingContent}>
+          <div className={styles.ghostScene} aria-hidden="true">
+            <span className={styles.ghostShadow} />
+            <span className={styles.ghost}>
+              <span className={styles.ghostMask}>
+                <span className={styles.ghostEyes} />
+                <span className={styles.ghostVents} />
+              </span>
+            </span>
+          </div>
+          <p className={styles.loadingEyebrow}>FHFH · Team intelligence</p>
+          <h1 className={styles.loadingTitle}>Underlying Stats Dashboard</h1>
+          {loadError ? (
+            <div role="alert" className={styles.loadingMessage}>
+              <p>{loadError}</p>
+              <button
+                type="button"
+                className={styles.loadingRetry}
+                onClick={() => {
+                  setLoadError(null);
+                  setAttempt((current) => current + 1);
+                }}
+              >
+                Try again
+              </button>
+            </div>
+          ) : (
+            <p role="status" className={styles.loadingMessage}>
+              Loading team rankings and the latest snapshot…
+            </p>
+          )}
+        </div>
+        <div className={styles.loadingPreview} aria-hidden="true">
+          <div className={styles.loadingRail}>
+            <span /><span /><span /><span />
+          </div>
+          <div className={styles.loadingLeaders}>
+            <span /><span /><span />
+          </div>
+          <div className={styles.loadingTable} />
+        </div>
+      </main>
+    </>
+  );
 };
 
-export default TeamPowerRankingsPage;
+export default UnderlyingStatsLanding;

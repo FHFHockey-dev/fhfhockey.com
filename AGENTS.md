@@ -8,6 +8,10 @@
 - Prefer the smallest complete, maintainable diff. Preserve unrelated code, formatting, comments, and user changes already in the working tree.
 - Stop when the requested outcome is complete and proportionate verification has passed. Do not continue with optional cleanup, broader checks, or extra improvements merely for additional confidence.
 
+## Delegation and Review
+
+- For substantial work that can be divided into independent, bounded tasks, follow [mise-en-place.md](mise-en-place.md). The lead agent (Chef) owns scope, staffing, integration, verification, and the final decision to deliver. Verify actual model and reasoning settings before delegation; Chef's reasoning effort must be higher than every worker's. Do not delegate a small or inseparable task merely to create parallel work.
+
 ## Branch Naming
 
 - Name new agent-created branches `chef/<descriptive-name>`, not `codex/`. Keep `master` and `octoberBranch` as the long-lived branches.

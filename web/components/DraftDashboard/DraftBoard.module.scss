@@ -177,6 +177,19 @@
 .intensity0 {
   background: v.$draft-surface-raised;
 }
+.unresolvedCell {
+  border-color: v.$warning-color;
+  background: rgba(v.$warning-color, .18);
+}
+.unresolvedBadge {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: v.$warning-color;
+  font-size: 10px;
+  font-weight: 700;
+}
 // Preserve the existing projected-points thresholds and alpha levels (30/50/70/100%).
 .intensity1 {
   background: rgba(v.$primary-color, 0.3);

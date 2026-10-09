@@ -28,7 +28,10 @@ const { getMock, getCurrentSeasonMock, sharedSupabaseMock } = vi.hoisted(() => (
               { id: 3, abbreviation: "STL" }
             ]
           })
-        }))
+        })),
+        gt: vi.fn(() => ({ order: vi.fn(() => ({ limit: vi.fn().mockResolvedValue({
+          data: [{ id: 20262027 }], error: null
+        }) })) }))
       }))
     }))
   }
@@ -98,6 +101,25 @@ describe("/api/v1/db/update-games", () => {
     sharedSupabaseMock.from.mockClear();
     process.env.SUPABASE_SERVICE_ROLE_KEY = "";
     getCurrentSeasonMock.mockResolvedValue({ seasonId: 20252026 });
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it("refreshes the upcoming preseason schedule after the previous season ends", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-25T12:00:00Z"));
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20252026, seasonEndDate: "2026-06-15" });
+    getMock.mockResolvedValue({ games: [{ id: 2026010001, gameDate: "2026-09-25",
+      startTimeUTC: "2026-09-25T23:00:00Z", gameType: 1,
+      homeTeam: { id: 1 }, awayTeam: { id: 2 } }] });
+    const db = createMockSupabase();
+    const res = createMockRes();
+    await handler({ method: "GET", query: {}, mockSupabase: db } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.message).toContain("20262027");
+    expect(getMock).toHaveBeenCalledWith("/club-schedule-season/ANA/20262027");
+    expect(db.upsert).toHaveBeenCalledWith(expect.arrayContaining([
+      expect.objectContaining({ seasonId: 20262027, type: 1 })
+    ]));
   });
 
   it("continues when one team schedule fetch fails but other teams provide the shared slate", async () => {

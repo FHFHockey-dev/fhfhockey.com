@@ -9,6 +9,7 @@ import { SnackbarProvider } from "notistack";
 import AuthProvider from "contexts/AuthProviderContext/index";
 import { DefaultSeo } from "next-seo";
 import SEO from "next-seo.config";
+import { canonicalUrl, isNoindexPath } from "lib/seo";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import client from "../lib/apollo-client";
 import Layout from "../components/Layout";
@@ -22,6 +23,8 @@ const queryClient = new QueryClient();
 
 function MyApp({ Component, pageProps, router }: AppProps) {
   const hasGql = Boolean(process.env.NEXT_PUBLIC_SANITY_GRAPHQL_URI);
+  const noindex = isNoindexPath(router.pathname);
+  const canonical = noindex ? undefined : canonicalUrl(router.asPath);
 
   const AppContent = (
     <Layout>
@@ -60,10 +63,16 @@ function MyApp({ Component, pageProps, router }: AppProps) {
         <meta name="mobile-web-app-capable" content="yes" />
         <link rel="manifest" href="/site.webmanifest" />
       </Head>
-      <DefaultSeo {...SEO} />
+      <DefaultSeo {...SEO} canonical={canonical} openGraph={{ ...SEO.openGraph, url: canonical }} />
       <QueryClientProvider client={queryClient}>
         <Component {...pageProps} />
       </QueryClientProvider>
+      {noindex && (
+        <Head>
+          <meta name="robots" content="noindex,follow" key="robots" />
+          <meta name="googlebot" content="noindex,follow" key="googlebot" />
+        </Head>
+      )}
     </Layout>
   );
 

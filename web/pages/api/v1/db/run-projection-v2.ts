@@ -1087,6 +1087,9 @@ async function handler(
           return res.status(422).json(
             withTiming({
               success: false,
+              error:
+                "Preflight freshness checks failed for range date. Resolve upstream dependencies or use bypassPreflight=true.",
+              preflight: rangePreflight,
               asOfDate: date,
               startDate: effectiveRangeStart,
               endDate,
@@ -1102,7 +1105,6 @@ async function handler(
               pipeline,
               dependencyContract,
               compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
-              preflight: rangePreflight,
               observability: failedRangePreflightObservability,
               scanSummary: buildProjectionRunScanSummary({
                 status: "blocked",
@@ -1135,8 +1137,6 @@ async function handler(
               timedOut: false,
               maxDurationMs: formatDurationMsToMMSS(budgetMs),
               durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
-              error:
-                "Preflight freshness checks failed for range date. Resolve upstream dependencies or use bypassPreflight=true.",
             }),
           );
         }
@@ -1321,6 +1321,9 @@ async function handler(
       return res.status(422).json(
         withTiming({
           success: false,
+          error:
+            "Preflight freshness checks failed. Resolve upstream dependencies or use bypassPreflight=true to override.",
+          preflight,
           asOfDate,
           startDate,
           endDate,
@@ -1336,7 +1339,6 @@ async function handler(
           pipeline,
           dependencyContract,
           compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
-          preflight,
           observability: failedPreflightObservability,
           scanSummary: buildProjectionRunScanSummary({
             status: "blocked",
@@ -1354,8 +1356,6 @@ async function handler(
           timedOut: false,
           maxDurationMs: formatDurationMsToMMSS(0),
           durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
-          error:
-            "Preflight freshness checks failed. Resolve upstream dependencies or use bypassPreflight=true to override.",
         }),
       );
     }
@@ -1473,6 +1473,9 @@ async function handler(
     return res.status(statusCode).json(
       withTiming({
         success: false,
+        error: dependencyError.message,
+        dependencyError,
+        preflight,
         asOfDate,
         startDate,
         endDate,
@@ -1488,7 +1491,6 @@ async function handler(
         pipeline,
         dependencyContract,
         compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
-        preflight,
         observability: {
           ...baseObservability,
           dataQualityWarnings: [
@@ -1516,8 +1518,6 @@ async function handler(
         timedOut: false,
         maxDurationMs: formatDurationMsToMMSS(budgetMs),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
-        error: dependencyError.message,
-        dependencyError,
       }),
     );
   }

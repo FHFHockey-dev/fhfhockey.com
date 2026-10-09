@@ -90,4 +90,16 @@ describe("Quick Fix", () => {
       }),
     ).toMatchObject({ ok: false });
   });
+
+  it("lets manual continuation resolve a Fantrax placeholder without treating it as verified provider data", () => {
+    const result = replaceManualDraftPick({
+      draftedPlayers: [{ ...picks[0], source: "fantrax" as const, fantraxMappingStatus: "unresolved" as const, fantraxPlayerId: "fx-1" }],
+      currentPick: 2,
+      targetPickNumber: 1,
+      replacementPlayerId: "42",
+      selectablePlayerIds: new Set(["42"]),
+    });
+    expect(result).toMatchObject({ ok: true, players: [{ playerId: "42", source: "manual" }] });
+    if (result.ok) expect(result.players[0].fantraxPlayerId).toBeUndefined();
+  });
 });

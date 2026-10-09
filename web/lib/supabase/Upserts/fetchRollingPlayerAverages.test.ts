@@ -14,6 +14,8 @@ let buildGameRecords: typeof import("./fetchRollingPlayerAverages").__testables.
 let buildRunSummary: typeof import("./fetchRollingPlayerAverages").__testables.buildRunSummary;
 let summarizeSourceTracking: typeof import("./fetchRollingPlayerAverages").__testables.summarizeSourceTracking;
 let getGoalsPer60ToiSeconds: typeof import("./fetchRollingPlayerAverages").__testables.getGoalsPer60ToiSeconds;
+let getToiSeconds: typeof import("./fetchRollingPlayerAverages").__testables.getToiSeconds;
+let normalizeNumericFields: typeof import("./fetchRollingPlayerAverages").__testables.normalizeNumericFields;
 let didPlayerCountAsAppearance: typeof import("./fetchRollingPlayerAverages").__testables.didPlayerCountAsAppearance;
 let applyGpOutputs: typeof import("./fetchRollingPlayerAverages").__testables.applyGpOutputs;
 let getGpOutputCompatibilityMode: typeof import("./fetchRollingPlayerAverages").__testables.getGpOutputCompatibilityMode;
@@ -41,6 +43,8 @@ beforeAll(async () => {
       buildRunSummary,
       summarizeSourceTracking,
       getGoalsPer60ToiSeconds,
+      getToiSeconds,
+      normalizeNumericFields,
       didPlayerCountAsAppearance,
       applyGpOutputs,
       getGpOutputCompatibilityMode,
@@ -67,6 +71,75 @@ afterEach(() => {
 });
 
 describe("fetchRollingPlayerAverages buildGameRecords", () => {
+  it.each([
+    ["ev", { es_toi_per_game: 866 }, 866],
+    ["pp", { pp_toi: 0 }, 0],
+    ["pp", { pp_toi: 207, pp_toi_per_game: 120 }, 207],
+    ["pp", { pp_toi_per_game: 2.6 }, 2.6],
+    ["pk", { sh_toi_per_game: 35 }, 35],
+    ["5v5", { toi_per_game_5v5: 120 }, 120],
+    ["ev", {}, null],
+    ["pp", {}, null],
+    ["pk", {}, null],
+    ["5v5", {}, null],
+    ["pp", { pp_toi: "" }, null],
+    ["pp", { pp_toi: " " }, null],
+    ["pp", { pp_toi: "120" }, 120],
+    ["all", {}, 901]
+  ] as const)("uses matching %s TOI without dropping the WGO appearance", (strength, fields, expected) => {
+    const rows = buildGameRecords([
+      normalizeNumericFields({
+        player_id: 8476374,
+        game_id: 2026020003,
+        date: "2026-09-29",
+        season_id: 20262027,
+        team_abbrev: "BOS",
+        current_team_abbreviation: "BOS",
+        toi_per_game: 901,
+        ...fields
+      }) as any
+    ], {}, {}, {}, [], [], strength, new Set([2026020003]));
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].gameId).toBe(2026020003);
+    expect(rows[0].fallbackToiSeconds).toBe(expected);
+    expect(getToiSeconds(rows[0])).toBe(expected);
+    expect(rows[0].sourceContext.resolvedToiSource).toBe(expected == null ? "none" : "fallback");
+    expect(rows[0].sourceContext.wgoToiNormalization).toBe(
+      expected == null ? ("pp_toi" in fields ? "invalid" : "missing") : "already_seconds"
+    );
+  });
+
+  it("preserves split-strength zero and NST precedence over conflicting fallbacks", () => {
+    const date = "2026-10-03";
+    const [game] = buildGameRecords([
+      { player_id: 8473512, game_id: 2026020023, date, season_id: 20262027,
+        team_abbrev: "OTT", toi_per_game: 1097, es_toi_per_game: 823, pp_toi: 207 } as any
+    ], { [date]: { toi: 0 } as any }, { [date]: { toi_per_gp: 150 } as any },
+    { [date]: { toi: 100 } as any }, [], [], "pp", new Set([2026020023]));
+
+    expect(getToiSeconds(game)).toBe(0);
+    expect(getGoalsPer60ToiSeconds(game)).toBe(0);
+    expect(game.sourceContext.resolvedToiSource).toBe("counts");
+    expect(game.sourceContext.toiTrustTier).toBe("authoritative");
+    expect(didPlayerCountAsAppearance("pp", game)).toBe(false);
+    expect(summarizeSourceTracking([game], "pp").toiSuspiciousReasons.non_positive).toBe(0);
+  });
+
+  it("uses the retained Giroux strength seconds and keeps the dedicated PP builder contract", () => {
+    const wgo = {
+      player_id: 8473512, game_id: 2026020023, date: "2026-10-03", season_id: 20262027,
+      team_abbrev: "OTT", toi_per_game: 1097, es_toi_per_game: 823, pp_toi: 207
+    };
+    const pp = [{ gameId: 2026020023, playerId: 8473512, PPTOI: 207 } as any];
+    for (const [strength, seconds] of [["all", 1097], ["ev", 823], ["pp", 207]] as const) {
+      const [game] = buildGameRecords([wgo as any], {}, {}, {}, [], pp, strength, new Set([2026020023]));
+      expect(getToiSeconds(game)).toBe(seconds);
+      expect(didPlayerCountAsAppearance(strength, game)).toBe(true);
+      if (strength === "pp") expect(getGoalsPer60ToiSeconds(game)).toBe(207);
+    }
+  });
+
   it("preserves the WGO row spine when NST enrichment rows are missing", () => {
     const rows = buildGameRecords(
       [
@@ -1468,6 +1541,31 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
 });
 
 describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
+  it.each([900, 0, null])("retains model TOI averages in both storage paths: %s", (seconds) => {
+    const row = {
+      player_id: 8470613,
+      game_date: "2026-10-03",
+      season: 20262027,
+      strength_state: "pp",
+      toi_seconds_avg_last5: seconds,
+      toi_seconds_avg_all: seconds,
+      goals_avg_all: 0.4
+    };
+    const compact = compactRollingUpsertRowForRankingStorage(row);
+    const split = splitRollingUpsertRowForDurableStorage(row);
+
+    expect(compact.toi_seconds_avg_last5).toBe(seconds);
+    expect(compact.toi_seconds_avg_all).toBe(seconds);
+    expect(split.rankingRow.toi_seconds_avg_last5).toBe(seconds);
+    expect(split.rankingRow.toi_seconds_avg_all).toBe(seconds);
+    expect(split.supportRow?.support_payload).toMatchObject({
+      historicalCompatibility: { goals_avg_all: 0.4 },
+      diagnostics: { prunedFieldCount: 1 }
+    });
+    expect(split.supportRow?.support_payload.historicalCompatibility).not.toHaveProperty("toi_seconds_avg_last5");
+    expect(split.supportRow?.support_payload.historicalCompatibility).not.toHaveProperty("toi_seconds_avg_all");
+  });
+
   it("compacts storage-heavy compatibility fields while preserving ranking fields", () => {
     expect(
       compactRollingUpsertRowForRankingStorage({
@@ -1572,6 +1670,8 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
         goals_total_last20: 0,
         toi_seconds_total_last20: 1210,
         pp_share_pct_last20: 0.226,
+        toi_seconds_avg_last5: 0,
+        toi_seconds_avg_all: 605,
         goals_avg_all: 0.3
       }
     ];
@@ -1631,6 +1731,8 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
             goals_total_last20: 0,
             toi_seconds_total_last20: 1210,
             pp_share_pct_last20: 0.226,
+            toi_seconds_avg_last5: 0,
+            toi_seconds_avg_all: 605,
             goals_avg_all: null
           }
         ])

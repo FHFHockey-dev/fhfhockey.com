@@ -657,4 +657,15 @@ describe("getSeasonById", () => {
     );
     expect(mocks.from).not.toHaveBeenCalled();
   });
+
+  it("uses the supplied server client so FORGE captures the native season read", async () => {
+    const query = { select: vi.fn(), eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) };
+    query.select.mockReturnValue(query);
+    query.eq.mockReturnValue(query);
+    const client = { from: vi.fn().mockReturnValue(query) };
+    await expect(getSeasonById(20262027, client as any)).resolves.toBeNull();
+    expect(client.from).toHaveBeenCalledWith("seasons");
+    expect(query.eq).toHaveBeenCalledWith("id", 20262027);
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
 });

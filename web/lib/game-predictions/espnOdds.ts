@@ -46,6 +46,19 @@ type EspnEvent = Record<string, any>;
 const ESPN_SCOREBOARD_URL =
   "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard";
 export const ESPN_MARKET_ODDS_SOURCE_NAME = "espn_site_api_market_odds";
+export class EspnOddsHttpError extends Error {
+  readonly sourceUrl: string;
+
+  constructor(
+    readonly httpStatus: number,
+    readonly requestedDate: string,
+  ) {
+    super(`ESPN odds request failed with ${httpStatus}`);
+    this.name = "EspnOddsHttpError";
+    this.sourceUrl = espnScoreboardUrlForDate(requestedDate);
+  }
+}
+
 export const ESPN_MARKET_ODDS_REJECTED_SOURCE_NAME =
   "espn_site_api_market_odds_rejected";
 export const HISTORICAL_MARKET_ODDS_IMPORT_SOURCE_NAME =
@@ -584,7 +597,7 @@ export async function fetchEspnNhlOdds(dates: string[]): Promise<EspnGameOdds[]>
         },
       );
       if (!response.ok) {
-        throw new Error(`ESPN odds request failed with ${response.status}`);
+        throw new EspnOddsHttpError(response.status, date);
       }
       const body = await response.json();
       const events = Array.isArray(body.events) ? body.events : [];

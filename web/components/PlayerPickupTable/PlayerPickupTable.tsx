@@ -247,6 +247,22 @@ const defaultPositions: Record<string, boolean> = {
   D: true,
   G: true
 };
+
+export function normalizePickupPositions(value: unknown): string[] {
+  const values = Array.isArray(value) ? value : [value];
+  const positions: string[] = [];
+  for (const entry of values) {
+    const token = typeof entry === "string" ? entry
+      : entry && typeof entry === "object" && "position" in entry
+        ? entry.position : null;
+    if (typeof token !== "string") continue;
+    const position = token.trim().toUpperCase();
+    if (Object.prototype.hasOwnProperty.call(defaultPositions, position) && !positions.includes(position)) {
+      positions.push(position);
+    }
+  }
+  return positions;
+}
 export type TeamWeekData = {
   teamAbbreviation: string;
   gamesPlayed: number;
@@ -695,28 +711,29 @@ const Filters: React.FC<FiltersProps> = ({
       <div
         className={styles.filtersTitle}
         onClick={handleTitleClick}
+        onKeyDown={isMobile ? event => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            toggleMobileMinimize();
+          }
+        } : undefined}
         role={isMobile ? "button" : undefined}
         tabIndex={isMobile ? 0 : undefined}
         aria-expanded={isMobile ? !isMobileMinimized : undefined}
         aria-controls={isMobile ? "player-table-content" : undefined}
         data-interactive={isMobile ? true : undefined}
       >
-        <span className={styles.titleContent}>
-          <span className={styles.acronym}>BPA</span>
-          <span>-</span>
+        <h2 className={styles.titleContent} aria-label="Best Players Available">
           <span className={styles.titleWord}>
-            <span className={styles.acronym}>B</span>
-            <span>est</span>
-          </span>
+            <span className={styles.acronym}>B</span>est
+          </span>{" "}
           <span className={styles.titleWord}>
-            <span className={styles.acronym}>P</span>
-            <span>layer</span>
-          </span>
+            <span className={styles.acronym}>P</span>layers
+          </span>{" "}
           <span className={styles.titleWord}>
-            <span className={styles.acronym}>A</span>
-            <span>vailable</span>
+            <span className={styles.acronym}>A</span>vailable
           </span>
-        </span>
+        </h2>
         {isMobile && (
           <span
             className={clsx(
@@ -1670,6 +1687,10 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   const [playerView, setPlayerView] = useState<"available" | "roster">("available");
   const [retryCount, setRetryCount] = useState(0);
   const leagueContext = pro.status === "ready" && pro.access?.eligible ? yahooContext : null;
+  const yahooSyncDate = leagueContext?.fetchedAt ? new Date(leagueContext.fetchedAt) : null;
+  const yahooSyncLabel = yahooSyncDate && Number.isFinite(yahooSyncDate.getTime())
+    ? `Synced ${yahooSyncDate.toLocaleString()}`
+    : "Sync time unavailable";
 
   useEffect(() => {
     const controller = new AbortController();
@@ -1961,7 +1982,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
               yahoo_player_name: r.yahoo_player_name || null,
               yahoo_team: r.yahoo_team || null,
               percent_ownership: resolvedPercentOwnership,
-              eligible_positions: r.eligible_positions || null,
+              eligible_positions: normalizePickupPositions(r.eligible_positions),
               off_nights: r.off_nights ?? null,
               points:
                 r.points != null
@@ -2818,7 +2839,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           <div className={styles.tableToolbar}>
             <div className={styles.tableToolbarLeft}>
               <span className={styles.tableToolbarTitle}>
-                {leagueContext && playerView === "roster" ? "My Yahoo" : "Best Available"}{" "}
+                {leagueContext && playerView === "roster" ? "My Yahoo" : leagueContext ? "Non-rostered" : "General candidate"}{" "}
                 <span className={styles.tableToolbarAccent}>{leagueContext && playerView === "roster" ? "Roster" : "Players"}</span>
               </span>
               <span className={styles.tableToolbarMeta}>
@@ -2837,19 +2858,20 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           </div>
         )}
 
+        {!leagueContext && <p>General candidates · filtered by global ownership. Availability in your league and waiver status are unknown.</p>}
         {pro.access?.eligible && (
           <div className={styles.yahooContext}>
             <p role="status">
               {yahooStatus === "loading" ? "Syncing Yahoo league rosters…" : leagueContext
-                ? `${leagueContext.leagueName} · ${leagueContext.teamName} · Synced ${new Date(leagueContext.fetchedAt).toLocaleTimeString()}`
+                ? `${leagueContext.leagueName} · ${leagueContext.teamName} · ${yahooSyncLabel}`
                 : yahooError || "Connect Yahoo and select your team in account settings to use your league’s player pool."}
             </p>
             <a href="/account?section=connected-accounts">Yahoo account settings</a>
             <button type="button" onClick={() => setYahooRefresh((value) => value + 1)} disabled={yahooStatus === "loading"}>Refresh Yahoo</button>
             {leagueContext ? <>
-              <button type="button" aria-pressed={playerView === "available"} onClick={() => setPlayerView("available")}>Available in my league</button>
+              <button type="button" aria-pressed={playerView === "available"} onClick={() => setPlayerView("available")}>Non-rostered in my league</button>
               <button type="button" aria-pressed={playerView === "roster"} onClick={() => setPlayerView("roster")}>My roster ({leagueContext.roster.length})</button>
-              <p>Available players are unrostered, including free agents, waivers and undrafted players. Global ownership % is not applied.</p>
+              <p>Players were non-rostered at the displayed sync time. Waiver status and immediate addability are unknown. Global ownership % is not applied.</p>
               <details><summary>Synced roster · {leagueContext.roster.length} players</summary>
                 {leagueContext.roster.length ? <ul>{leagueContext.roster.map((player) => <li key={player.key}>{player.name}{player.position ? ` · ${player.position}` : ""}</li>)}</ul> : <p>Your Yahoo roster is empty.</p>}
                 <p>The scored table includes players with verified NHL mappings; the full Yahoo roster is listed here.</p>

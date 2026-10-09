@@ -13,6 +13,7 @@ import { fetchStatsData } from "lib/NHL/statsPageFetch";
 import PlayerSearchBar from "components/StatsPage/PlayerSearchBar";
 import OptimizedImage from "components/common/OptimizedImage";
 import Link from "next/link";
+import { NextSeo } from "next-seo";
 import supabase from "lib/supabase";
 import { fallbackTeamLogo } from "lib/images";
 import { getCurrentSeason } from "lib/NHL/client";
@@ -282,6 +283,10 @@ export default function StatsPage({
 
   return (
     <div className={styles.container}>
+      <NextSeo
+        title="NHL Player & Team Stats for Fantasy Hockey | FHFH"
+        description="Explore NHL scoring and goalie leaderboards, player game logs, and team statistics to inform your fantasy hockey decisions."
+      />
       {/* Skip link for keyboard users */}
       <a href="#main-content" className={styles.skipLink}>
         Skip to main content

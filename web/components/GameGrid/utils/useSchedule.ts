@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { getSchedule, getTeams } from "lib/NHL/client";
-import { format, nextMonday, parseISO } from "date-fns";
-import { WeekData, GameData, Team, ScheduleData } from "lib/NHL/types";
+import { addDays, format, parseISO } from "date-fns";
+import { DAYS, EXTENDED_DAYS, WeekData, GameData, Team, ScheduleData } from "lib/NHL/types";
+import { isRegularScheduleGame, getRegularGamesPerDay } from "./helper";
 import { shiftScheduleDate } from "lib/draftDashboard/scheduleMetrics";
 
 const rangeWindows = new Map<string, { expires: number; promise: Promise<ScheduleData> }>();
@@ -60,14 +61,24 @@ export function useScheduleRange(start?: string, end?: string) {
 }
 
 export type ScheduleArray = (WeekData & { teamId: number })[];
+export type SelectedScheduleCoverage = {
+  coveredDates: string[];
+  coverage: { known: number; expected: number };
+  error: string | null;
+};
 
 export default function useSchedule(
   start: string,
   extended = false
-): [ScheduleArray, number[], boolean] {
+): [ScheduleArray, number[], boolean, SelectedScheduleCoverage] {
   const [loading, setLoading] = useState(false);
   const [scheduleArray, setScheduleArray] = useState<ScheduleArray>([]);
   const [numGamesPerDay, setNumGamesPerDay] = useState<number[]>([]);
+  const key = `${start}/${extended ? 10 : 7}`;
+  const [loadedKey, setLoadedKey] = useState("");
+  const [calendar, setCalendar] = useState<SelectedScheduleCoverage>({
+    coveredDates: [], coverage: { known: 0, expected: extended ? 10 : 7 }, error: null
+  });
 
   useEffect(() => {
     let ignore = false;
@@ -84,39 +95,53 @@ export default function useSchedule(
         const prev = preferredByAbbr.get(t.abbreviation);
         if (prev === undefined || t.id > prev) preferredByAbbr.set(t.abbreviation, t.id);
       });
-      const nextMon = format(nextMonday(parseISO(start)), "yyyy-MM-dd");
-      const nextWeekSchedule = await getSchedule(nextMon);
+      const nextMon = format(addDays(parseISO(start), 7), "yyyy-MM-dd");
+      const nextWeekSchedule = extended ? await getSchedule(nextMon) : null;
 
       if (!ignore) {
-        if (extended) {
-          schedule.numGamesPerDay = [
-            ...schedule.numGamesPerDay,
-            ...nextWeekSchedule.numGamesPerDay.slice(0, 3)
-          ];
-          Object.entries(nextWeekSchedule.data).forEach(([id, weekData]) => {
-            const playedLastWeek = schedule.data[Number(id)] !== undefined;
-            if (!playedLastWeek) {
-              schedule.data[Number(id)] = {};
-            }
-            schedule.data[Number(id)].nMON = weekData.MON;
-            schedule.data[Number(id)].nTUE = weekData.TUE;
-            schedule.data[Number(id)].nWED = weekData.WED;
-          });
-        }
-
         if (
           !schedule ||
           !schedule.data ||
           !Array.isArray(schedule.numGamesPerDay) ||
-          !nextWeekSchedule ||
-          !nextWeekSchedule.data ||
-          !Array.isArray(nextWeekSchedule.numGamesPerDay)
+          (extended && (!nextWeekSchedule?.data || !Array.isArray(nextWeekSchedule.numGamesPerDay)))
         ) {
           throw new Error("Schedule payload was missing expected shape.");
         }
 
-        // Explicitly type paddedTeams
-        const paddedTeams: Record<number, WeekData> = { ...schedule.data };
+        const days = extended ? EXTENDED_DAYS : DAYS;
+        const dates = days.map((_, i) => format(addDays(parseISO(start), i), "yyyy-MM-dd"));
+        const windows = nextWeekSchedule ? [schedule, nextWeekSchedule] : [schedule];
+        const coveredDates = [...new Set(windows.flatMap((window) => window.coveredDates ?? []))]
+          .filter((date) => dates.includes(date));
+        const uniqueGames = new Map<number, GameData>();
+        windows.forEach((window) => Object.values(window.data).forEach((row) => Object.values(row).forEach((game) => {
+          if (!game) return;
+          if (!Number.isFinite(game.id) || game.id <= 0 || !game.gameDate ||
+              !/^\d{4}-\d{2}-\d{2}$/.test(game.gameDate) || Number.isNaN(parseISO(game.gameDate).getTime()) ||
+              !Number.isFinite(game.homeTeam.id) || !Number.isFinite(game.awayTeam.id) ||
+              game.homeTeam.id <= 0 || game.awayTeam.id <= 0 || game.homeTeam.id === game.awayTeam.id) {
+            throw new Error("Schedule game identity or date is incomplete.");
+          }
+          if (!dates.includes(game.gameDate)) return;
+          const previous = uniqueGames.get(game.id);
+          if (previous && isRegularScheduleGame(previous) && !isRegularScheduleGame(game)) return;
+          if (previous && isRegularScheduleGame(previous) && isRegularScheduleGame(game) &&
+              (previous.gameDate !== game.gameDate || previous.homeTeam.id !== game.homeTeam.id || previous.awayTeam.id !== game.awayTeam.id)) {
+            throw new Error("Schedule game identity had conflicting dates or teams.");
+          }
+          uniqueGames.set(game.id, game);
+        })));
+        const paddedTeams: Record<number, WeekData> = {};
+        uniqueGames.forEach((game) => {
+          const day = days[dates.indexOf(game.gameDate!)];
+          [game.homeTeam.id, game.awayTeam.id].forEach((teamId) => {
+            paddedTeams[teamId] ??= {};
+            if (paddedTeams[teamId][day] && paddedTeams[teamId][day]!.id !== game.id) {
+              throw new Error("Schedule has conflicting games for one team and date.");
+            }
+            paddedTeams[teamId][day] = game;
+          });
+        });
 
         // Add other season-active teams even if they are not playing this week
         // This ensures bye weeks still appear, while excluding defunct teams
@@ -136,7 +161,9 @@ export default function useSchedule(
         );
 
         setScheduleArray(result);
-        setNumGamesPerDay(schedule.numGamesPerDay);
+        setNumGamesPerDay(getRegularGamesPerDay(result, days));
+        setCalendar({ coveredDates, coverage: { known: coveredDates.length, expected: days.length }, error: null });
+        setLoadedKey(key);
         setLoading(false);
       }
     })().catch((error) => {
@@ -144,15 +171,18 @@ export default function useSchedule(
       if (!ignore) {
         setScheduleArray([]);
         setNumGamesPerDay([]);
+        setCalendar({ coveredDates: [], coverage: { known: 0, expected: extended ? 10 : 7 }, error: error instanceof Error ? error.message : "Schedule unavailable." });
+        setLoadedKey(key);
         setLoading(false);
       }
     });
 
     return () => {
       ignore = true;
-      setLoading(false);
     };
-  }, [start, extended]);
+  }, [start, extended, key]);
 
-  return [scheduleArray, numGamesPerDay, loading];
+  const current = loadedKey === key;
+  return [current ? scheduleArray : [], current ? numGamesPerDay : [], !current || loading,
+    current ? calendar : { coveredDates: [], coverage: { known: 0, expected: extended ? 10 : 7 }, error: null }];
 }

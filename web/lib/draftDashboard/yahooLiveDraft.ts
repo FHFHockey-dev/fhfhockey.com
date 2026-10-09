@@ -3,6 +3,7 @@ import { originalPickOwner, type PickTradeEntry } from "./pickTrades";
 import { normalizeDraftOrderPattern } from "./draftOrder";
 
 import type { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
+import { STATS_MASTER_LIST } from "lib/projectionsConfig/statsMasterList";
 
 export const YAHOO_DRAFT_SESSION_STORAGE_KEY =
   "draftDashboard.yahooLiveDraft.v3";
@@ -192,6 +193,7 @@ export interface YahooDraftDashboardConfiguration {
   playoffWeeks?: number[];
   leagueType?: "points" | "categories";
   scoringCategories?: Record<string, number>;
+  goalieScoringCategories?: Record<string, number>;
   categoryWeights?: Record<string, number>;
 }
 
@@ -675,7 +677,7 @@ export function yahooDraftKeepers(state: YahooDraftState | null, players: Proces
       warnings.push(`Yahoo assigned pick ${keeper.pickNumber} to another player. Keeper ${player?.fullName || playerId} remains on the roster; assign a different keeper pick.`);
     }
   }
-  if (unknownCosts) warnings.push("Yahoo keepers were added to rosters without reserving draft picks. Yahoo did not supply round costs; enter those manually if your league uses them.");
+  if (unknownCosts) warnings.push("Yahoo listed keeper players but did not supply their pick assignments. They are not confirmed as free keepers; assign their picks in the Draft Graph if your league charges them.");
   return { keepers: [...keepers.values()], warnings };
 }
 
@@ -881,11 +883,11 @@ export function reconcileYahooDraftState(
   };
 }
 
-function normalizeNumericRecord(value: unknown): Record<string, number> | undefined {
+function normalizeNumericRecord(value: unknown, allowNegative = false): Record<string, number> | undefined {
   if (!isRecord(value)) return undefined;
   const entries = Object.entries(value).flatMap(([key, candidate]) => {
     const parsed = Number(candidate);
-    return Number.isFinite(parsed) && parsed >= 0 ? [[key, parsed] as const] : [];
+    return Number.isFinite(parsed) && (allowNegative || parsed >= 0) ? [[key, parsed] as const] : [];
   });
   return entries.length ? Object.fromEntries(entries) : undefined;
 }
@@ -914,6 +916,13 @@ export function deriveYahooDraftDashboardConfiguration(
     undefined;
   const rawCategoryWeights =
     state.settings.categoryWeights || state.settings.category_weights || undefined;
+  const scoring = normalizeNumericRecord(rawScoring, true);
+  const goalieStatKeys = new Set(STATS_MASTER_LIST
+    .filter((stat) => stat.isGoalieStat && !stat.isSkaterStat)
+    .map((stat) => stat.key));
+  // Yahoo's normalized stat 18 uses this legacy key for goalie starts.
+  goalieStatKeys.add("GAMES_STARTED");
+  const scoringEntries = scoring ? Object.entries(scoring) : undefined;
   const leagueType = readString(
     state.settings,
     "leagueType",
@@ -942,7 +951,8 @@ export function deriveYahooDraftDashboardConfiguration(
       leagueType === "points" || leagueType === "categories"
         ? leagueType
         : undefined,
-    scoringCategories: normalizeNumericRecord(rawScoring),
+    scoringCategories: scoringEntries && Object.fromEntries(scoringEntries.filter(([key]) => !goalieStatKeys.has(key))),
+    goalieScoringCategories: scoringEntries && Object.fromEntries(scoringEntries.filter(([key]) => goalieStatKeys.has(key))),
     categoryWeights: normalizeNumericRecord(rawCategoryWeights),
   };
 }

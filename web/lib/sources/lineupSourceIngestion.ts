@@ -178,6 +178,7 @@ const GDT_PRACTICE_KEYWORDS = ["practice lines", "pairings", "practice", "rushes
 const GDT_POWERPLAY_KEYWORDS = [
   "power play",
   "power-play",
+  "powerplay",
   "power play units",
   "pp1",
   "pp2",
@@ -189,6 +190,9 @@ const GDT_POWERPLAY_KEYWORDS = [
   "avantage numérique"
 ];
 const GDT_GOALIE_KEYWORDS = [
+  "first goaltender off",
+  "first goalie off",
+  "first off",
   "starting goalie",
   "starting",
   "starter",
@@ -207,7 +211,12 @@ const GDT_INJURY_KEYWORDS = [
   "hurt",
   "broke",
   "broken",
-  "out",
+  "day-to-day",
+  "day to day",
+  "ruled out",
+  "remains out",
+  "out tonight",
+  "placed on ir",
   "not a possibility",
   "not doing any drills",
   "not practicing",
@@ -1021,6 +1030,7 @@ export function classifyGameDayTweet(text: string): GameDayTweetsClassification 
   if (GDT_POWERPLAY_KEYWORDS.some((keyword) => normalized.includes(keyword))) {
     return "power_play";
   }
+  if (/\bhave switched spots\b/i.test(text)) return "lineup";
   if (GDT_PRACTICE_KEYWORDS.some((keyword) => normalized.includes(keyword))) {
     return "practice_lines";
   }
@@ -1034,7 +1044,7 @@ export function classifyGameDayTweet(text: string): GameDayTweetsClassification 
     return "goalie_start";
   }
   if (
-    GDT_INJURY_KEYWORDS.some((keyword) => normalized.includes(keyword)) &&
+    (GDT_INJURY_KEYWORDS.some((keyword) => normalized.includes(keyword)) || /\bout for (?:the season|\d+|one|two|three|four|weeks?|months?|tonight|tomorrow)\b/i.test(text)) &&
     !hasLineupBlock
   ) {
     return "injury";

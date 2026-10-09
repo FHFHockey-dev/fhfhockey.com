@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { bookmarkImportError } from "lib/draftDashboard/settingsValidation";
 import type { SessionCsvEntry } from "lib/draftDashboard/csvImportSession";
+import { isValidPositionWeights } from "lib/draftDashboard/positionWeights";
 
 import {
   DRAFT_PRO_MAX_PRIVATE_IMPORT_BYTES,
@@ -15,9 +16,14 @@ import {
  * of being stored as an opaque browser blob. Import rows are intentionally
  * omitted: they are persisted and restored through private-import records.
  */
+const draftSettingsSchema = z.record(z.unknown()).refine(
+  (settings) => settings.positionWeights === undefined || isValidPositionWeights(settings.positionWeights),
+  "Invalid position weights in saved draft.",
+);
+
 const browserSnapshotSchema = z.object({
   v: z.literal(2),
-  draftSettings: z.record(z.unknown()),
+  draftSettings: draftSettingsSchema,
   draftedPlayers: z.array(z.record(z.unknown())).max(500),
   keepers: z.array(z.record(z.unknown())).max(200).default([]),
   pickOwnerOverrides: z.record(z.string()).default({}),
@@ -149,7 +155,7 @@ export function restoreBrowserSnapshot(snapshot: DraftProSnapshot, imports: read
   const importsBySource = new Map(imports.map((entry) => [entry.sourceId, entry]));
   const missing = metadata.filter((entry) => !importsBySource.has(entry.id));
   if (missing.length) throw new Error(`Private import data is missing for ${missing.map((entry) => entry.label).join(", ")}. The draft was not restored.`);
-  const settings = z.object({ draftSettings: z.record(z.unknown()), currentPick: z.number().int().positive(), isSnakeDraft: z.boolean(), configured: z.boolean() }).parse(parsed.settings);
+  const settings = z.object({ draftSettings: draftSettingsSchema, currentPick: z.number().int().positive(), isSnakeDraft: z.boolean(), configured: z.boolean() }).parse(parsed.settings);
   const team = z.object({ myTeamId: z.string(), customTeamNames: z.record(z.string()), positionOverrides: z.record(z.string()) }).parse(parsed.team);
   const weights = z.object({ skater: z.record(z.unknown()), goalie: z.record(z.unknown()), goaliePointValues: z.record(z.number()) }).parse(parsed.sourceWeights);
   const preferences = z.object({ baselineMode: z.enum(["remaining", "full"]), needWeightEnabled: z.boolean(), needAlpha: z.number(), forwardGrouping: z.enum(["split", "fwd"]), personalizeReplacement: z.boolean(), fantraxLeagueOverride: z.unknown().nullable(), espnLeagueOverride: z.unknown().nullable(), preserveExactCategoryWeights: z.boolean() }).parse(parsed.recommendationPreferences);

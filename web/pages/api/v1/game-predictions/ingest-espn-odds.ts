@@ -3,6 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import {
+  EspnOddsHttpError,
+  ESPN_MARKET_ODDS_SOURCE_NAME,
   type EspnOddsWindowIngestionResult,
   ingestEspnNhlOddsSnapshotsForWindow,
   parseRequestedOddsDateBatches,
@@ -84,11 +86,30 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
     toOffsetDays: readInteger(req.query.toOffsetDays),
     maxDates: readInteger(req.query.maxDates),
   });
-  const result = await ingestEspnNhlOddsSnapshotsForWindow({
-    client: req.supabase,
-    dateBatches,
-    dryRun: readSingleQueryValue(req.query.dryRun) === "true",
-  });
+  let result: EspnOddsWindowIngestionResult;
+  try {
+    result = await ingestEspnNhlOddsSnapshotsForWindow({
+      client: req.supabase,
+      dateBatches,
+      dryRun: readSingleQueryValue(req.query.dryRun) === "true",
+    });
+  } catch (error) {
+    if (!(error instanceof EspnOddsHttpError)) throw error;
+    return res.status(502).json({
+      success: false,
+      error: error.message,
+      errorCode:
+        error.httpStatus === 403
+          ? "ESPN_ODDS_ACCESS_DENIED"
+          : "ESPN_ODDS_UPSTREAM_HTTP_ERROR",
+      upstream: {
+        sourceName: ESPN_MARKET_ODDS_SOURCE_NAME,
+        sourceUrl: error.sourceUrl,
+        requestedDate: error.requestedDate,
+        httpStatus: error.httpStatus,
+      },
+    });
+  }
   const dataQualityWarnings = buildIngestionDataQualityWarnings(result);
   const operationStatus =
     dataQualityWarnings.length > 0 ? "warning" : "success";

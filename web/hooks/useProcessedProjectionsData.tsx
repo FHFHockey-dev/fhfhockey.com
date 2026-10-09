@@ -52,7 +52,7 @@ import {
   type ProjectionInclusionDiagnostics,
 } from "lib/draftDashboard/projectionInclusionDiagnostics";
 import { selectProjectionRowForPlayer } from "lib/draftDashboard/projectionRowSelection";
-import { recalculateFantasyPoints } from "lib/draftDashboard/fantasyPointRecalculation";
+import { pointValueForPlayerStat, recalculateFantasyPoints } from "lib/draftDashboard/fantasyPointRecalculation";
 import { deriveShortHandedAssists } from "lib/draftDashboard/derivedProjectionStats";
 import {
   fetchProjectionSourcesSettled,
@@ -113,6 +113,7 @@ export interface ProcessedPlayer {
   yahooAvgPick?: number | null;
   yahooAvgRound?: number | null;
   yahooPctDrafted?: number | null;
+  fantraxMetadataMatched?: boolean;
 
   // Overall Ranks (across skaters & goalies)
   projectedRank?: number | null;
@@ -1399,7 +1400,7 @@ function processRawDataIntoPlayers(
 
     for (const statKey in processedPlayer.combinedStats) {
       const combinedStat = processedPlayer.combinedStats[statKey];
-      const pointValueForStat = fantasyPointSettings[statKey];
+      const pointValueForStat = pointValueForPlayerStat(processedPlayer, statKey, fantasyPointSettings);
 
       if (pointValueForStat !== undefined && pointValueForStat !== 0) {
         if (combinedStat?.projected !== null) {
@@ -2199,6 +2200,7 @@ export const useProcessedProjectionsData = ({
           togglePerGameFantasyPoints,
         );
         setTableColumns(derivedCols);
+        if (runId === fetchRunIdRef.current) setIsLoading(false);
       });
       mark("render:prepareColumns:done");
       if (DEV) {
@@ -2232,7 +2234,6 @@ export const useProcessedProjectionsData = ({
           sourceWarnings: sourceWarningsForRun,
         };
       }
-      if (runId === fetchRunIdRef.current) setIsLoading(false);
     } catch (err: any) {
       console.error(
         `Error processing ${activePlayerType} projections (custom source aware):`,

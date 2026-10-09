@@ -5,7 +5,7 @@ import { groupPlayerEligibility, normalizePlayerEligibility } from "./forwardGro
 import { calculateCategoryScores } from "lib/scoring/categoryScores";
 
 /** Shared league-wide values; no availability or personalized replacement inputs. */
-export function buildPlayerValues({ players, draftSettings, leagueType = "points", categoryWeights = {}, forwardGrouping = "split", prorate84 = false, fantasyPointSettings = {} }: Pick<UseVORPParams, "players" | "draftSettings" | "leagueType" | "categoryWeights" | "forwardGrouping" | "prorate84" | "fantasyPointSettings">) {
+export function buildPlayerValues({ players, draftSettings, leagueType = "points", categoryWeights = {}, forwardGrouping = "split", prorate84 = false, fantasyPointSettings = {}, positionWeightMultipliers }: Pick<UseVORPParams, "players" | "draftSettings" | "leagueType" | "categoryWeights" | "forwardGrouping" | "prorate84" | "fantasyPointSettings" | "positionWeightMultipliers">) {
   // Value per player (points or categories composite)
   const values = new Map<string, number>();
   const eligibility = new Map<string, string[]>();
@@ -86,5 +86,16 @@ export function buildPlayerValues({ players, draftSettings, leagueType = "points
     );
   }
 
-  return { values, eligibility };
+  // Weight only the comparable valuation, after scoring/proration and before
+  // replacement pools and tiers. Never modify projections or scoring settings.
+  const unweightedValues = new Map<string, number>();
+  positionWeightMultipliers?.forEach((multiplier, id) => {
+    const value = values.get(id);
+    if (value !== undefined && Number.isFinite(multiplier) && multiplier >= 0 && multiplier <= 2 && multiplier !== 1) {
+      unweightedValues.set(id, value);
+      values.set(id, value * multiplier);
+    }
+  });
+
+  return { values, eligibility, unweightedValues };
 }

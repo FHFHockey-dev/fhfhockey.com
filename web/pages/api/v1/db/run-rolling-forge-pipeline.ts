@@ -103,6 +103,12 @@ type ResponseBody = {
   compatibilityInventory: typeof FORGE_COMPATIBILITY_INVENTORY;
   scanSummary: EndpointScanSummary;
   stages: StageResult[];
+  failureSummary?: {
+    failedStepCount: number;
+    firstFailure: { stageId: string; stepId: string; route: string; statusCode: number;
+      error: string | null; gameId: number | null; stage: string | null; reportedErrorCount: number;
+      code: string | null; endpoint: string | null; attempts: number | null; classification: string | null } | null;
+  };
 };
 
 type RouteHandler = (req: any, res: any) => Promise<void>;
@@ -764,8 +770,35 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
     success,
     stageResults
   });
+  const failedSteps = stageResults.flatMap(stage => stage.steps
+    .filter(step => step.status === "failed").map(step => ({ stageId: stage.id, step })));
+  const firstFailed = failedSteps[0];
+  const summary = firstFailed?.step.summary && typeof firstFailed.step.summary === "object"
+    ? firstFailed.step.summary as Record<string, unknown> : {};
+  const errors = Array.isArray(summary.errors) ? summary.errors : [];
+  const firstError = errors[0] && typeof errors[0] === "object" ? errors[0] as Record<string, unknown> : {};
+  const dependencyError = summary.dependencyError && typeof summary.dependencyError === "object"
+    ? summary.dependencyError as Record<string, unknown> : {};
+  const message = [firstError.message, summary.error, summary.message, firstFailed?.step.reason]
+    .find(value => typeof value === "string" && value.length > 0);
+  // Put bounded, observed failure facts before verbose graphs for the existing
+  // 4000 character cron audit. Full child receipts remain unchanged in stages below.
+  const failureSummary = {
+    failedStepCount: failedSteps.length,
+    firstFailure: firstFailed ? { stageId: firstFailed.stageId, stepId: firstFailed.step.id,
+      route: firstFailed.step.route, statusCode: firstFailed.step.statusCode,
+      error: typeof message === "string" ? message.slice(0, 512) : null,
+      gameId: typeof firstError.gameId === "number" ? firstError.gameId : null,
+      stage: typeof firstError.stage === "string" ? firstError.stage.slice(0, 128) : null,
+      code: typeof firstError.code === "string" ? firstError.code.slice(0, 128) : null,
+      endpoint: typeof firstError.endpoint === "string" ? firstError.endpoint.slice(0, 128) : null,
+      attempts: Number.isSafeInteger(firstError.attempts) && Number(firstError.attempts) > 0 ? Number(firstError.attempts) : null,
+      classification: typeof dependencyError.classification === "string" ? dependencyError.classification.slice(0, 128) : null,
+      reportedErrorCount: errors.length } : null,
+  };
   return res.status(success ? 200 : 207).json({
     success,
+    failureSummary,
     mode,
     dateWindow: {
       startDate,

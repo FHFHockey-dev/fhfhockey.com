@@ -1,17 +1,31 @@
 import crypto from "crypto";
+import { forecastCalendarPolicy } from "./contributions";
+import { readForecastQuery, readForecastSchedule, readForecastScopeRows } from "./scopeReads";
+import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
+  buildCalendarGameScopes,
   buildNextTenGameScopes,
+  PLAYER_FORECAST_CALENDAR_COMPARISON_DAYS,
+  PLAYER_FORECAST_CALENDAR_HORIZON_DAYS,
   scheduleRevisionHash,
   type PlayerForecastGameScope,
-  type PlayerForecastScheduleGame,
 } from "./schedule";
 import {
   PLAYER_FORECAST_RESEARCH_CONTRACT_SHA256,
   PLAYER_FORECAST_RESEARCH_CONTRACT_VERSION,
 } from "./researchContract";
 import { loadPlayerForecastInferenceInputs } from "./serving";
+import { starterBoardCanaryGameIds, starterBoardFlags } from "../projections/starterBoardFlags";
+import { parseForgeIssuedTargets, type ForgeIssuedTargetManifest } from "../projections/gameRevisions";
+
+export type CalendarForgeScopeReceipts = {
+  gameIds: number[];
+  queue: Array<{ gameId: number; status: string }>;
+  revisions: Array<{ gameId: number; revisionId: string; publishedAt: string | null;
+    targetManifest: ForgeIssuedTargetManifest | null }>;
+};
 
 type QueueRow = {
   id: string;
@@ -78,19 +92,150 @@ function idempotencyKey(job: QueueRow, horizon: number): string {
     .digest("hex");
 }
 
-async function fetchFutureGames(
-  supabase: SupabaseClient<any>,
-  now: Date,
-): Promise<PlayerForecastScheduleGame[]> {
-  const { data, error } = await supabase
-    .from("games")
-    .select("id,seasonId,date,startTime,homeTeamId,awayTeamId,type")
-    .gte("date", now.toISOString().slice(0, 10))
-    .order("date", { ascending: true })
-    .order("startTime", { ascending: true })
-    .limit(500);
+/** Read-only scope planning for a UTC calendar window; no queue or worker action. */
+export async function planPlayerForecastCalendarWork(args: {
+  supabase: SupabaseClient<any>;
+  now?: Date;
+  days?: number;
+}) {
+  const now = args.now ?? new Date();
+  const days = args.days ?? PLAYER_FORECAST_CALENDAR_HORIZON_DAYS;
+  if (!Number.isInteger(days) || days < 1 || days > 21) throw new RangeError("Calendar horizon must be 1–21 days.");
+  const fetchDays = Math.max(days, ...PLAYER_FORECAST_CALENDAR_COMPARISON_DAYS);
+  const lastDate = new Date(Date.parse(`${now.toISOString().slice(0, 10)}T00:00:00Z`) +
+    (fetchDays - 1) * 86_400_000).toISOString().slice(0, 10);
+  const games = await readForecastSchedule({ db: args.supabase, now, throughDate: lastDate });
+  const scopes = buildCalendarGameScopes({ games, now, days });
+  const candidates = new Set(buildCalendarGameScopes({ games: games.map(game => ({ ...game, scheduleEvidence: undefined })),
+    now, days }).map(scope => scope.gameId));
+  const scopedGames = games.filter(game => candidates.has(game.id));
+  const scheduleCoverage = { readStatus: "complete" as const, discoveredGames: scopedGames.length,
+    eligibleGames: new Set(scopes.map(scope => scope.gameId)).size,
+    excludedGames: scopedGames.filter(game => game.scheduleEvidence!.status !== "scheduled")
+      .map(game => ({ gameId: game.id, status: game.scheduleEvidence!.status })),
+    staleGameIds: scopedGames.filter(game => game.scheduleEvidence!.status === "scheduled"
+      && now.getTime() - Date.parse(game.scheduleEvidence!.fetchedAt) > 36 * 3600000).map(game => game.id),
+    sourceWatermark: playerForecastSourcePayloadHash(scopedGames.map(game => ({ id: game.id, startTime: game.startTime,
+      seasonId: game.seasonId, scheduleEvidence: game.scheduleEvidence }))) };
+  const workload = PLAYER_FORECAST_CALENDAR_COMPARISON_DAYS.map((windowDays) => {
+    const windowScopes = buildCalendarGameScopes({ games, now, days: windowDays });
+    return {
+      calendarDays: windowDays,
+      games: new Set(windowScopes.map((scope) => scope.gameId)).size,
+      teamGameScopes: windowScopes.length,
+      queueCompatibleScopes: windowScopes.filter((scope) => scope.queueCompatible).length,
+      queueIncompatibleScopes: windowScopes.filter((scope) => !scope.queueCompatible).length,
+    };
+  });
+  return {
+    calendarDays: days,
+    calendarPolicy: forecastCalendarPolicy(days),
+    scopes,
+    scheduleCoverage,
+    workload,
+    queueCompatibleScopes: scopes.filter((scope) => scope.queueCompatible).length,
+    queueIncompatibleScopes: scopes.filter((scope) => !scope.queueCompatible).length,
+    dryRun: true as const,
+  };
+}
+
+/** Seed newly entering games into FORGE's existing single-game queue. */
+export async function seedCalendarForgeJobs(args: {
+  supabase: SupabaseClient<any>;
+  now?: Date;
+  days?: number;
+  dryRun?: boolean;
+  environment?: Readonly<Record<string, string | undefined>>;
+}) {
+  const environment = args.environment ?? process.env;
+  const configuredPolicy = forecastCalendarPolicy(Number(environment.STARTER_BOARD_CALENDAR_HORIZON_DAYS ?? 14));
+  if (args.dryRun === false && args.days !== undefined && args.days !== configuredPolicy.calendarDays) {
+    throw new Error("Calendar writes must match the configured serving horizon; use dry-run for alternatives.");
+  }
+  const plan = await planPlayerForecastCalendarWork({ ...args, days: args.days ?? configuredPolicy.calendarDays });
+  const canary = starterBoardCanaryGameIds(environment);
+  const eligibleGameIds = [...new Set(plan.scopes.map((scope) => scope.gameId))].sort((a, b) => a - b);
+  const gameIds = canary === null ? eligibleGameIds : eligibleGameIds.filter((id) => canary.includes(id));
+  const excludedByCanary = eligibleGameIds.length - gameIds.length;
+  if (args.dryRun ?? true) return { ...plan, gameIds, excludedByCanary, inserted: 0 };
+  const flags = starterBoardFlags(environment);
+  if (environment.STARTER_BOARD_CALENDAR_SCHEDULER_ENABLED !== "true" ||
+      environment.STARTER_BOARD_CALENDAR_SEED_ENABLED !== "true" ||
+      environment.STARTER_BOARD_CALENDAR_BUDGET_APPROVED !== "true" ||
+      !flags.scheduler || !flags.capture || !flags.compute ||
+      (canary === null && environment.STARTER_BOARD_CALENDAR_FULL_SCOPE_ENABLED !== "true")) {
+    throw new Error("Calendar queue seeding requires budget approval, scheduler, capture, compute, and explicit canary or full-scope authorization.");
+  }
+  if (gameIds.length === 0) return { ...plan, dryRun: false as const, gameIds, excludedByCanary, inserted: 0 };
+  if (plan.scheduleCoverage.staleGameIds.some(id => gameIds.includes(id))) {
+    throw new Error("Calendar generation requires fresh authoritative schedule evidence.");
+  }
+  const observedAt = (args.now ?? new Date()).toISOString();
+  const notBefore = new Date(Date.parse(observedAt) + 30_000).toISOString();
+  const { data, error } = await args.supabase
+    .from("forge_game_update_queue")
+    .upsert(gameIds.map((gameId) => ({
+      game_id: gameId,
+      source_published_at: observedAt,
+      received_at: observedAt,
+      not_before: notBefore,
+    })), { onConflict: "game_id", ignoreDuplicates: true })
+    .select("game_id");
   if (error) throw error;
-  return (data ?? []) as PlayerForecastScheduleGame[];
+  return { ...plan, dryRun: false as const, gameIds, excludedByCanary, inserted: data?.length ?? 0 };
+}
+
+/** Read-only status checks distinguish queue receipts, output rows, and issued game revisions. */
+export async function inspectCalendarForgeCoverage(db: SupabaseClient<any>, gameIds: number[]) {
+  const ids = [...new Set(gameIds)].sort((a, b) => a - b);
+  if (ids.length > 500 || ids.some(id => !Number.isSafeInteger(id) || id <= 0)) throw new Error("Invalid coverage scope");
+  const deadlineMs = Date.now() + 8000;
+  const queue: Array<{ game_id: number; status: string }> = [];
+  const revisions: Array<{ id: string; game_id: number; published_at?: string; issued_targets?: unknown }> = [];
+  let projectionRows = 0, goalieProjectionRows = 0;
+  const outputCount = async (table: string, batch: number[]) => {
+    const response = await readForecastQuery(deadlineMs, signal => db.from(table).select("game_id", { count: "exact", head: true })
+      .in("game_id", batch).eq("horizon_games", 1).abortSignal(signal));
+    if (response.error || !Number.isSafeInteger(response.count) || response.count! < 0) throw new Error("Projection count is unavailable");
+    return response.count!;
+  };
+  for (let start = 0; start < ids.length; start += 100) {
+    const batch = ids.slice(start, start + 100);
+    const [queued, issued, skaterCount, goalieCount] = await Promise.all([
+      readForecastScopeRows<{ game_id: number; status: string }>({ key: "game_id", maximum: batch.length, deadlineMs,
+        build: () => db.from("forge_game_update_queue").select("game_id,status", { count: "exact" })
+          .in("game_id", batch).order("game_id") }),
+      readForecastScopeRows<{ id: string; game_id: number; published_at?: string; issued_targets?: unknown }>({ key: "id", maximum: 5000 - revisions.length, deadlineMs,
+        build: () => db.from("forge_game_revisions")
+          .select("id,game_id,published_at,issued_targets:payload->inputProvenance->issuedTargets", { count: "exact" })
+          .in("game_id", batch).order("id") }),
+      outputCount("forge_player_projections", batch), outputCount("forge_goalie_projections", batch),
+    ]);
+    if ([...queued, ...issued].some(row => !batch.includes(row.game_id))) throw new Error("Coverage rows are outside the requested scope");
+    if (queued.some(row => !["pending", "running", "succeeded", "failed", "cancelled"].includes(row.status))) {
+      throw new Error("Coverage queue status is unavailable");
+    }
+    queue.push(...queued); revisions.push(...issued);
+    projectionRows += skaterCount; goalieProjectionRows += goalieCount;
+  }
+  const issued = new Set(revisions.map(row => row.game_id));
+  const scopeReceipts: CalendarForgeScopeReceipts = { gameIds: ids,
+    queue: queue.map(row => ({ gameId: row.game_id, status: row.status })),
+    revisions: revisions.map(row => ({ gameId: row.game_id, revisionId: row.id,
+      publishedAt: row.published_at ?? null, targetManifest: parseForgeIssuedTargets(row.issued_targets, row.game_id) })) };
+  return { games: ids.length, queuedGames: queue.length, issuedGames: issued.size,
+    unissuedGameIds: ids.filter(id => !issued.has(id)), projectionRows, goalieProjectionRows,
+    issuedRevisions: revisions.length,
+    scopeReceipts,
+    queueStatuses: queue.reduce<Record<string, number>>((counts, row) => {
+      counts[row.status] = (counts[row.status] ?? 0) + 1; return counts;
+    }, {}),
+    // Legacy `complete` is query completeness only. These are independent reads,
+    // not an atomic consumer snapshot or proof of any target's eligibility.
+    complete: true, readStatus: "complete" as const, coverageBasis: "storage_receipts" as const,
+    consumerCoverage: { status: "not_evaluated" as const, requiredPlayerGameTargets: null,
+      eligiblePlayerGameTargets: null, reason: "Requires the shared consumer snapshot and declared target profile." },
+  };
 }
 
 async function insertScheduleRevisions(args: {
@@ -141,7 +286,7 @@ export async function seedCanonicalPlayerForecastJobs(args: {
   const now = args.now ?? new Date();
   const observedAt = now.toISOString();
   const scopes = buildNextTenGameScopes({
-    games: await fetchFutureGames(args.supabase, now),
+    games: await readForecastSchedule({ db: args.supabase, now }),
     now,
   });
   const scheduleRevisions = await insertScheduleRevisions({
@@ -177,7 +322,7 @@ async function resolveHorizon(args: {
 }): Promise<number | null> {
   if (args.job.team_game_horizon != null) return args.job.team_game_horizon;
   const scopes = buildNextTenGameScopes({
-    games: await fetchFutureGames(args.supabase, args.now),
+    games: await readForecastSchedule({ db: args.supabase, now: args.now, teamId: args.job.team_id }),
     now: args.now,
     teamId: args.job.team_id,
   });

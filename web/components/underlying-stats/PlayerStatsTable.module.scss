@@ -206,6 +206,24 @@
   z-index: 5;
 }
 
+@media (max-width: v.$screen-small-max) {
+  .viewport {
+    // Center native keyboard reveal in the scrollable area beyond the 64px Rank column.
+    scroll-padding-inline: calc(50% + 32px) calc(50% - 32px);
+  }
+
+  .headerCell.stickyCell:not(.rankHeaderCell) {
+    left: auto !important;
+    z-index: 3;
+    box-shadow: none;
+  }
+
+  .bodyCell.stickyCell:not(.rankBodyCell) {
+    position: static;
+    box-shadow: none;
+  }
+}
+
 .bodyCell[data-active="true"] {
   background-color: rgba(v.$color-blue-100, 0.12);
 }

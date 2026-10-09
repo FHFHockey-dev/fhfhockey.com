@@ -20,6 +20,8 @@ import { type ForwardGrouping } from "lib/draftDashboard/forwardGrouping";
 import { isGlobalShortcutBlockedTarget } from "lib/draftDashboard/keyboardShortcuts";
 
 export interface SuggestedPicksProps {
+  adpSource?: "Yahoo" | "Fantrax";
+  draftUnavailableReason?: string;
   tierPositions?: PositionTiers[];
   tierError?: string | null;
   tierContextReady?: boolean;
@@ -73,6 +75,8 @@ export interface SuggestedPicksProps {
 const EMPTY_TIERS: PositionTiers[] = [];
 
 const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
+  adpSource = "Yahoo",
+  draftUnavailableReason = "Manual drafting is unavailable",
   tierPositions = EMPTY_TIERS, tierError, tierContextReady = false,
   selectionHorizon = null, availabilitySpread = 12, onClock = false,
   compact = false,
@@ -778,7 +782,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         {tierView && <div ref={tiersRef} className={`${styles.cardsRow} ${styles.tierRow}`} onScroll={updateScrollEdges} role="list" tabIndex={0}>
           {!draftProEligible ? <div className={styles.tierCard}><p>Positional tiers and pick advice require Draft Pro.</p><a href="/account?section=draft-pro">Explore Draft Pro</a></div> : tierError || isLoading || error ? <p className={styles.tierCard} role="status">{tierError || (isLoading ? "Loading positional tiers…" : "Tier analysis is unavailable while projections recover. Ordinary Picks remain available.")}</p> : <>
             <article className={styles.tierCard} role="listitem"><h3>Scoring-based tiers</h3><p>{leagueType === "categories" ? "Weighted category score" : "Custom projected fantasy points"} · {forwardGrouping === "fwd" ? "Combined forwards" : "Split forwards"}</p>
-              <details><summary>How tiers and advice work</summary><p>Automatic value bands use the full projection pool. Bands wider than 5% of the positional value range are split into tighter groups at scoring boundaries. Drafted players keep their tier. A meaningful break exceeds three times the median adjacent gap and one quarter of the positional interquartile range.</p><p>Yahoo ADP estimates use a {availabilitySpread}-pick spread, conditional on availability now. Take now means fewer than 0.5 comparable players estimated to remain before a meaningful drop; Can wait requires at least 1.5, or consecutive picks. These are heuristics, not calibrated probabilities for the whole tier.</p><p>Automatic tiers do not overwrite manual tiers or reorder ordinary Picks.</p></details>
+              <details><summary>How tiers and advice work</summary><p>Automatic value bands use the full projection pool. Bands wider than 5% of the positional value range are split into tighter groups at scoring boundaries. Drafted players keep their tier. A meaningful break exceeds three times the median adjacent gap and one quarter of the positional interquartile range.</p><p>{adpSource} ADP estimates use a {availabilitySpread}-pick spread, conditional on availability now. Take now means fewer than 0.5 comparable players estimated to remain before a meaningful drop; Can wait requires at least 1.5, or consecutive picks. These are heuristics, not calibrated probabilities for the whole tier.</p><p>Automatic tiers do not overwrite manual tiers or reorder ordinary Picks.</p></details>
             </article>
             <TierCards positions={tierPositions} available={availableTierIds} filter={posFilter} selectedPositions={selectedPositions} horizon={selectionHorizon} spread={availabilitySpread} onClock={onClock} contextReady={tierContextReady} rosterProgress={rosterProgress} leagueType={leagueType ?? "points"} onExplore={position => { setSelectedPositions(new Set()); setPosFilter(position); }} onSelect={onCardClick} selectedId={selectedId} onDraft={onDraftPlayer} canDraft={canDraft} />
           </>}
@@ -927,7 +931,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                           title={
                             canDraft
                               ? "Draft this player"
-                              : "Manual drafting is locked while Yahoo sync is authoritative"
+                              : draftUnavailableReason
                           }
                           aria-label={`Draft ${name}`}
                         >

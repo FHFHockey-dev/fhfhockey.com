@@ -1,0 +1,63 @@
+{
+  "viewport": {
+    "width": 1180,
+    "height": 757
+  },
+  "accountReads": [
+    "00000000-0000-4000-8000-000000000001",
+    "00000000-0000-4000-8000-000000000002",
+    "00000000-0000-4000-8000-000000000002"
+  ],
+  "providerCanceled": true,
+  "staleSaveHidden": true,
+  "staleProviderHidden": true,
+  "localIntentPreserved": true,
+  "retainedInputsReadOnly": true,
+  "manualForkPreserved": true,
+  "manualEditingAvailable": true,
+  "pageErrors": [],
+  "inputs": "Fictional sessions and intercepted provider/workspace/access responses; SDK BroadcastChannel session switch",
+  "liveAccountParity": "not verified",
+  "recordedAt": "2026-10-02T04:04:33.867813+00:00",
+  "runtimeChange": "Extend the existing read-only guard to retained provider rosters when synchronization is unavailable, even with no account snapshot.",
+  "regressionBefore": "Protect click changed protectedPlayerIds from [fhfh:1] to [] and revision from 0 to 1 despite the read-only notice.",
+  "componentScope": "Deferred new-account access, late old snapshot, retained roster, nonempty selected add/drop intent, protection and explicit lock; edits blocked until explicit manual fork, then Protect works.",
+  "checks": [
+    {
+      "command": "npm test -- --run __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+      "exitCode": 0,
+      "passed": 19,
+      "durationSeconds": 2.04
+    },
+    {
+      "command": "npm test -- --run __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx -t 'uses the signed-in session for access and account reads'",
+      "exitCode": 0,
+      "passed": 1,
+      "skipped": 18,
+      "durationSeconds": 0.92,
+      "reason": "Expanded this existing fixture with a nonempty selected move after the whole-file run."
+    },
+    {
+      "command": "PLAYWRIGHT_SKIP_WEB_SERVER=1 npx playwright test e2e/roster-schedule-optimizer.spec.ts --grep 'connected refresh and account save preserve forecast permissions and exclusions'",
+      "exitCode": 0,
+      "passed": 1,
+      "durationSeconds": 2.0
+    },
+    {
+      "command": "npx eslint components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx e2e/roster-schedule-optimizer.spec.ts",
+      "exitCode": 0,
+      "errors": 0,
+      "existingWarnings": 4
+    },
+    {
+      "command": "npx eslint e2e/roster-schedule-optimizer.spec.ts",
+      "exitCode": 0
+    },
+    {
+      "command": "npx eslint __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+      "exitCode": 0
+    }
+  ],
+  "browserAssertionCorrection": "The first run found the actual fieldset disabled but Playwright toBeDisabled treated that fieldset as enabled. The final assertions inspect the disabled attribute and actual Source control, and the native roster-panel inert property.",
+  "typecheck": "Not rerun for the single Boolean guard and assertion-only fixture expansion; last whole-web check failed in scripts/run-forge-calendar-local.ts(264,35), owned by ongoing forecasting work."
+}

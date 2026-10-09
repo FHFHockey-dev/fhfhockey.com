@@ -1,0 +1,102 @@
+{
+  "baseline": {
+    "documentWidth": 2056,
+    "dpr": 2,
+    "height": 1105,
+    "roster": "1Roster0 playersFind a playerPaste roster namesReview pasted namesLeague rules and scoringDaily mode and roster slots are proposed defaults for manual planning. Review them against your league. Unknown acquisition, scoring and lock rules keep action and outcome readiness unresolved.Review league rules, scoring, locked assignments and player availability. Confirm again when these inputs change. Confirm planning inputsLineup modeDailyWeeklyOther / unknownScoringPointsCategoriesAcquisition timingUnknownSame dayNext dayGoalie minimumGoalie creditedCLWRWDGUTILBNScoring, budgets, and lock windowsAcquisition costWaiver modeUnknownPriorityBudgetGoalie countingUnknownStartsAppearancesGoalie penaltyUnknownLose goalie categoriesNoneGoalie period startGoalie period endPoint weightsAdd point weightCategoriesAdd categoryAcquisition periodsAdd acquisition periodWeekly lineup windowsAdd lineup windowLocked lineup assignmentsEnter confirmed locks for games already fixed by the league. Use Bench when a player cannot be started that date.Add confirmed lock",
+    "season": "20262027",
+    "width": 2056
+  },
+  "zoom": {
+    "documentHeight": 1153,
+    "documentWidth": 1020,
+    "dpr": 4,
+    "frameworkError": false,
+    "height": 524,
+    "rosterCount": "1Roster0 playersFind a playerPaste roster namesReview pasted namesLeague rules and scoring",
+    "width": 1028
+  },
+  "before": {
+    "documentWidth": 1020,
+    "readiness": "Planning readinessRoster needed → Rules → Coverage → Plan\nRoster: Add your players to begin schedule analysis. Review roster\nRules: Acquisition legality, budget or scoring is unresolved. Review timing, allowances, slots and locks. Review rules\nCoverage: Player-quality assignment evidence available; projected totals have separate coverage requirements. Review coverage\nPlan: Awaiting roster and schedule inputs. View plan",
+    "roster": "1Roster0 playersFind a playerPaste roste",
+    "width": 1028
+  },
+  "rosterFocus": {
+    "bounds": {
+      "height": 32,
+      "width": 986.5,
+      "x": 17,
+      "y": 246.296875
+    },
+    "height": 524,
+    "id": "rso-roster-input",
+    "outline": "rgb(255, 193, 8) solid 2px",
+    "tag": "INPUT",
+    "width": 1028
+  },
+  "rulesFocus": {
+    "assumptions": "League rules and scoring\n\nDaily mode and roster slots are proposed defaults for manual planning. Review them against your league. Unknown acquisition, scoring and lock rules keep action and outcome readiness unresolved.\n\nReview league rules, scoring, locked assignments and player availability. Confirm again when these inputs change. Confirm planning inputs\n\nLineup mode\nDaily\nWeekly\nOther / unknown\nScoring\nPoints\nCategories\nAcquisition timing\nUnknown\nSame day\nNext day\nGoalie minimum\nGoalie credited\nC\nLW\nRW\nD\nG\nUTIL\nBN",
+    "expanded": true,
+    "name": "League rules and scoring",
+    "outline": "rgb(255, 193, 8) solid 2px"
+  },
+  "coverageFocus": {
+    "bounds": {
+      "height": 16.5,
+      "width": 63.10546875,
+      "x": 17,
+      "y": 254.046875
+    },
+    "documentWidth": 1020,
+    "height": 524,
+    "id": "rso-matchup-heading",
+    "name": "Matchup",
+    "width": 1028
+  },
+  "planFocus": {
+    "bounds": {
+      "height": 24,
+      "width": 99.23828125,
+      "x": 17,
+      "y": 250.296875
+    },
+    "documentWidth": 1020,
+    "height": 524,
+    "id": "rso-itinerary-heading",
+    "name": "2Itinerary",
+    "width": 1028
+  },
+  "after": {
+    "documentWidth": 1020,
+    "outline": "rgb(255, 193, 8) solid 2px",
+    "readiness": "Planning readinessRoster needed → Rules → Coverage → Plan\nRoster: Add your players to begin schedule analysis. Review roster\nRules: Acquisition legality, budget or scoring is unresolved. Review timing, allowances, slots and locks. Review rules\nCoverage: Add roster players to assess player-quality coverage. Review coverage\nPlan: Awaiting roster and schedule inputs. View plan",
+    "width": 1028
+  },
+  "manual": {
+    "documentWidth": 1020,
+    "focusedName": "Show schedule-capacity assignment",
+    "itinerary": "2\nITINERARY\nBest found · 3 evaluated\nStreaming itinerary\nSchedule-capacity assignment\nThu, Oct 1\nFri, Oct 2\nSat, Oct 3\nSun, Oct 4\nMon, Oct 5\nTue, Oct 6\nWed, Oct 7\nThu, Oct 8\nFri, Oct 9\nSat, Oct 10\nSun, Oct 11\nMon, Oct 12\nTue, Oct 13\nWed, Oct 14\nThu, Oct 1\n0 planned starts · 8 NHL games\nPlayer\tThu, Oct 1\tFri, Oct 2\tSat, Oct 3\tSun, Oct 4\tMon, Oct 5\tTue, Oct 6\tWed, Oct 7\tThu, Oct 8\tFri, Oct 9\tSat, Oct 10\tSun, Oct 11\tMon, Oct 12\tTue, Oct 13\tWed, Oct 14\n\nNikita Kucherov\nRW\n\t\n@NYR\nBench\n\t·\t\nvsWSH\nRW#1\n\t·\t\nvsPHI\nRW#1\n\t·\t·\t\nvsMIN\nRW#1\n\t·\t\n@NYI\nRW#1\n\t·\t·\t\n@NYR\nRW#1\n\t·\nSELECTED STEPS\n\nNo acquisition selected. The no-move lineup is the comparison.\n\nThis assignment shows legal schedule capacity. Player-quality start/sit decisions are unresolved where forecasts are missing or incomplete.\n\nGoalie games are scheduled opportunities, not confirmed starts or a satisfied minimum. Back-to-back assignments require starter evidence.\n\nTHU, OCT 1\n\n0 active / 13 slots · 13 open\n\nFRI, OCT 2\n\n0 active / 13 slots · 13 open\n\nSAT, OCT 3\n\n1 active / 13 slots · 12 open\n\nRW#1 · Nikita Kucherov\nSUN, OCT 4\n\n0 active / 13 slots · 13 open\n\nMON, OCT 5\n\n1 active / 13 slots · 12 open\n\nRW#1 · Nikita Kucherov\nTUE, OCT 6\n\n0 active / 13 slots · 13 open\n\nWED, OCT 7\n\n0 active / 13 slots · 13 open\n\nTHU, OCT 8\n\n1 active / 13 slots · 12 open\n\nRW#1 · Nikita Kucherov\nFRI, OCT 9\n\n0 active / 13 slots · 13 open\n\nSAT, OCT 10\n\n1 active / 13 slots · 12 open\n\nRW#1 · Nikita Kucherov\nSUN, OCT 11\n\n0 active / 13 slots · 13 open\n\nMON, OCT 12\n\n0 active / 13 slots · 13 open\n\nTUE, OCT 13\n\n1 active / 13 slots · 12 open\n\nRW#1 · Nikita Kucherov\nWED, OCT 14\n\n0 active / 13 slots · 13 open\n\nSchedule-fit analysis reached its work quota; additional team/position targets remain unevaluated. Add/drop plans need acquisition-effective timing. Review League rules and scoring. Add/drop plans need acquisition cost and remaining allowance for every affected period. Review Scoring, budgets, and lock windows. Safe drop recommendations need game-level contribution forecasts. Schedule-fit targets remain available, but are not verified add/drop plans.",
+    "outline": "rgb(255, 193, 8) solid 2px",
+    "readiness": "Planning readiness1 roster players → Rules → Coverage → Plan\nRoster: 1 players; review unresolved names and eligibility. Review roster\nRules: Acquisition legality, budget or scoring is unresolved. Review timing, allowances, slots and locks. Review rules\nCoverage: Schedule-only capacity; player-quality decisions remain unresolved. Review coverage\nPlan: Schedule analysis available. Selected moves remain manager intent; execute changes with your provider. View plan",
+    "summary": "ACQUISITIONS\n0\nAllowance unknown\nACTIVE GAMES\n5\nNo move 5 · Maximum active games 5\nBENCH GAMES\n0\nGames without an active assignment · 5 scheduled\nPROJECTED OUTCOME\n—\nEstimate using league scoring · Forecast evidence unavailable\nGOALIE MINIMUM\nUnknown\nNot yet satisfied by credited results\nTEAM DUST\n0%\nScheduled games left on the bench · 0 / 5\nUTILIZATION\n2.7%\nShare of available starting slots used · 5 / 14 dates × 13 slots",
+    "width": 1028
+  },
+  "restored": {
+    "documentWidth": 1020,
+    "readiness": "Planning readinessRoster needed → Rules → Coverage → Plan\nRoster: Add your players to begin schedule analysis. Review roster\nRules: Acquisition legality, budget or scoring is unresolved. Review timing, allowances, slots and locks. Review rules\nCoverage: Add roster players to assess player-quality coverage. Review coverage\nPlan: Awaiting roster and schedule inputs. View plan",
+    "roster": "1Roster0 playersFind a playerPaste roster namesReview pasted namesLeague rules a",
+    "season": "20262027",
+    "selectedSteps": [
+      "No acquisition selected. The no-move lineup is the comparison."
+    ],
+    "width": 1028
+  },
+  "cleanup": {
+    "documentWidth": 2056,
+    "dpr": 2,
+    "url": "http://127.0.0.1:3100/roster-schedule-optimizer",
+    "width": 2056
+  },
+  "errors": []
+}

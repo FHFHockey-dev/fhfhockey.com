@@ -1,5 +1,5 @@
 import { extractTweetPlayerEvents } from "./tweetPlayerEvents";
-import { interpretTweetUnits, tweetPipelineFlags } from "./tweetInterpretation";
+import { identityMentionPresent, interpretTweetUnits, tweetPipelineFlags } from "./tweetInterpretation";
 import type {
   GameDayTweetsClassification,
   RosterNameEntry,
@@ -1249,6 +1249,7 @@ function buildStructuredContent(args: {
   text: string;
   classification: GameDayTweetsClassification;
   rosterEntries: RosterNameEntry[];
+  eventPlayers?: RosterNameEntry[];
 }): Pick<
   ParsedLinesCccSource,
   | "forwards"
@@ -1380,7 +1381,9 @@ function buildStructuredContent(args: {
   });
 
   const interpretation = tweetPipelineFlags().interpretation ? interpretTweetUnits(args.text, args.rosterEntries) : null;
-  const playerEvents = interpretation ? extractTweetPlayerEvents({ text: args.text, players: args.rosterEntries, publishedAt: args.publishedAt ?? null }) : [];
+  const eventPlayers = interpretation ? (args.eventPlayers ?? args.rosterEntries).filter((player) =>
+    [player.fullName, player.lastName, ...(player.aliases ?? [])].some((name) => identityMentionPresent(args.text, name))) : [];
+  const playerEvents = interpretation ? extractTweetPlayerEvents({ text: args.text, players: eventPlayers, publishedAt: args.publishedAt ?? null }) : [];
   if (interpretation) {
     scratches = interpretation.units.filter((unit) => unit.situation === "scratch").flatMap((unit) => unit.players.map((player) => player.name));
     injuries = playerEvents.filter((event) => event.kind === "injury" && ["new_injury", "ongoing", "setback"].includes(event.state)).flatMap((event) => args.rosterEntries.filter((entry) => entry.playerId === event.playerId).map((entry) => entry.fullName));
@@ -1398,7 +1401,13 @@ function buildStructuredContent(args: {
     scratches,
     injuries,
     metadata: {
-      ...(interpretation ? { interpretation: { ...interpretation, events: playerEvents } } : {}),
+      ...(interpretation ? { interpretation: {
+        ...interpretation, events: playerEvents,
+        identityContext: {
+          basis: "current_membership", sourcePublishedAt: args.publishedAt ?? null,
+          eventRosterRevision: eventPlayers.map((player) => [player.playerId, player.fullName, player.lastName, player.teamId, player.position, ...(player.aliases ?? [])].join(":")).sort().join("|"),
+        },
+      } } : {}),
       powerPlayUnits: powerPlayDetection.units,
       powerPlayUnitLabels: powerPlayDetection.labels,
       transactionSignals,
@@ -1442,6 +1451,7 @@ export function buildLinesCccSourceFromIftttEvent(args: {
     publishedAt: args.event.tweet_created_at,
     classification,
     rosterEntries,
+    eventPlayers: [...args.rosterByTeam.values()].flat(),
   });
   const nhlFilterStatus: LinesCccNhlFilterStatus = !text
     ? "rejected_insufficient_text"
@@ -1565,6 +1575,7 @@ export function refreshLinesCccSourceFromPrimaryText(args: {
     publishedAt: args.source.tweetPostedAt,
     classification,
     rosterEntries,
+    eventPlayers: [...args.rosterByTeam.values()].flat(),
   });
   const goalieName = extractGoalieName(text);
   const nhlFilterStatus: LinesCccNhlFilterStatus = detectedNonNhlLeague

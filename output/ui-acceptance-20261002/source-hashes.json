@@ -1,0 +1,175 @@
+{
+  "recordedAt": "2026-10-02T19:24:40.005418+00:00",
+  "sourceHead": "73af9d051ecc755dd3695f5265bf5837bbfc7a4e",
+  "note": "HEAD alone does not identify the dirty source. These hashes identify the tested snapshot. Complete copied source inventory in source-manifest.json.",
+  "files": [
+    {
+      "path": "web/pages/underlying-stats/index.tsx",
+      "testedSha256": "dafd08c58844abbcb32399cf379ac33badd6c69227f7ccf93d692d06c95139f0",
+      "currentSha256": "dafd08c58844abbcb32399cf379ac33badd6c69227f7ccf93d692d06c95139f0",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/pages/underlying-stats/indexUS.module.scss",
+      "testedSha256": "63d86a3562c013108765ce02ba70f6fab98ea7a7d5bc82dda4322724ed7b3dde",
+      "currentSha256": "63d86a3562c013108765ce02ba70f6fab98ea7a7d5bc82dda4322724ed7b3dde",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/underlying-stats/UnderlyingStatsDashboard.tsx",
+      "testedSha256": "0cacdb7fab6cc420251728c54feb134c342e0d33c99ad291f5b81bc1e2ffc1bf",
+      "currentSha256": "0cacdb7fab6cc420251728c54feb134c342e0d33c99ad291f5b81bc1e2ffc1bf",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/underlying-stats/UnderlyingStatsDashboard.module.scss",
+      "testedSha256": "b7cf09143eaefd922f64357f8c152948b88b2841ec31c4578c8bcff47b578b69",
+      "currentSha256": "b7cf09143eaefd922f64357f8c152948b88b2841ec31c4578c8bcff47b578b69",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/underlying-stats/UlsStatusPanel.tsx",
+      "testedSha256": "5da11a53e393a812376d891e4b9313c3e43f95d090cc52cee0be1e5f80f61bda",
+      "currentSha256": "5da11a53e393a812376d891e4b9313c3e43f95d090cc52cee0be1e5f80f61bda",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/underlying-stats/UlsStatusPanel.module.scss",
+      "testedSha256": "b1b73127cf13905b8bd5c49029e8bc98065bfcc6e052c849950eee17de5c8c09",
+      "currentSha256": "b1b73127cf13905b8bd5c49029e8bc98065bfcc6e052c849950eee17de5c8c09",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/underlying-stats/UnderlyingStatsNavBar.tsx",
+      "testedSha256": "2c56e5bfb65055737860d5d299674081c75f2ea4628852cfca9075a216a4ea98",
+      "currentSha256": "2c56e5bfb65055737860d5d299674081c75f2ea4628852cfca9075a216a4ea98",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/underlying-stats/UnderlyingStatsNavBar.module.scss",
+      "testedSha256": "6d840dbc5736a2f4e44f3ece0fe87a5c82480cd409e3e79be308225e1c4b71b8",
+      "currentSha256": "6d840dbc5736a2f4e44f3ece0fe87a5c82480cd409e3e79be308225e1c4b71b8",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/pages/start-chart.tsx",
+      "testedSha256": "c1f0c326f10449e927603e106574174e4842be9c9160633d10e88a15f024c33d",
+      "currentSha256": "c1f0c326f10449e927603e106574174e4842be9c9160633d10e88a15f024c33d",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/pages/start-chart.module.scss",
+      "testedSha256": "776d9de2ecfcb71a158f915c705be14615c6f1045ef6b348d5dc49df6c7a018f",
+      "currentSha256": "776d9de2ecfcb71a158f915c705be14615c6f1045ef6b348d5dc49df6c7a018f",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/pages/shiftChart.tsx",
+      "testedSha256": "8b698d1cab1273f004a83af918b3543256bb191e6bfbf8d75daf2cb4b0429ca0",
+      "currentSha256": "8b698d1cab1273f004a83af918b3543256bb191e6bfbf8d75daf2cb4b0429ca0",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/styles/ShiftChart.module.scss",
+      "testedSha256": "74d38dd8f555f6684928e89228cae28a386c0b57919b0e274e1eaa3b6b115fb8",
+      "currentSha256": "74d38dd8f555f6684928e89228cae28a386c0b57919b0e274e1eaa3b6b115fb8",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/LinemateMatrix/index.tsx",
+      "testedSha256": "035e0cef12a081f0d84035a9a05ebc577807fec0781b8c479cc244517ed99bb5",
+      "currentSha256": "035e0cef12a081f0d84035a9a05ebc577807fec0781b8c479cc244517ed99bb5",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/LinemateMatrix/index.module.scss",
+      "testedSha256": "cfd88d4cf40c73fed974992b98fb11884f5725f7b4764003b72a31e90c29a42b",
+      "currentSha256": "cfd88d4cf40c73fed974992b98fb11884f5725f7b4764003b72a31e90c29a42b",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/Layout/Layout.tsx",
+      "testedSha256": "55f5e70011f25c80914ed2e1a26850fb082934b0014bd69255d62e805d864d7c",
+      "currentSha256": "55f5e70011f25c80914ed2e1a26850fb082934b0014bd69255d62e805d864d7c",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/Layout/Layout.module.scss",
+      "testedSha256": "027e22cc39bff08b9d09540788b40d613bb34693e892c0c27a34ec3ede67fa2c",
+      "currentSha256": "027e22cc39bff08b9d09540788b40d613bb34693e892c0c27a34ec3ede67fa2c",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/Layout/Header/Header.tsx",
+      "testedSha256": "2a44957d59e4e71e0a400f94226678c34a1ae575fcafb82ead70108e1da16b4b",
+      "currentSha256": "2a44957d59e4e71e0a400f94226678c34a1ae575fcafb82ead70108e1da16b4b",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/Layout/Header/Header.module.scss",
+      "testedSha256": "68fea9cc5fff421aee83626d8b1ad521be1e7f1eebce0df3aef983786264199f",
+      "currentSha256": "68fea9cc5fff421aee83626d8b1ad521be1e7f1eebce0df3aef983786264199f",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/Layout/NavbarItems/NavbarItems.module.scss",
+      "testedSha256": "07251c55fe425b281f93ae82c60836a4d4621733b8a7731706f291d4866d4af6",
+      "currentSha256": "07251c55fe425b281f93ae82c60836a4d4621733b8a7731706f291d4866d4af6",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/hooks/useResizeObserver.ts",
+      "testedSha256": "d20f209cf8dadc5a63032c58a113a881ff79ec4890d136a5c1100da05f0d76fe",
+      "currentSha256": "d20f209cf8dadc5a63032c58a113a881ff79ec4890d136a5c1100da05f0d76fe",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/ShiftChart/data.ts",
+      "testedSha256": "3146cc70c86c66626a8ce626c2088c432641785eea8ec7200884e3443626a490",
+      "currentSha256": "3146cc70c86c66626a8ce626c2088c432641785eea8ec7200884e3443626a490",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/ShiftChart/Replay.tsx",
+      "testedSha256": "dabcefa9940a80c5dbbdf4d2455e0e2830e4ee4c3f84367852d302704d70b27c",
+      "currentSha256": "dabcefa9940a80c5dbbdf4d2455e0e2830e4ee4c3f84367852d302704d70b27c",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/ShiftChart/model.test.ts",
+      "testedSha256": "61caf360bfd84701f9122d9dced98f70280e9b40a58b066609e7bb1ec6aa4158",
+      "currentSha256": "61caf360bfd84701f9122d9dced98f70280e9b40a58b066609e7bb1ec6aa4158",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/ShiftChart/useGameGrid.test.tsx",
+      "testedSha256": "c2441cede925e5f31ae2c78a6bb047f18d6d98248e69e426c57c29dc50f89e75",
+      "currentSha256": "c2441cede925e5f31ae2c78a6bb047f18d6d98248e69e426c57c29dc50f89e75",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/ShiftChart/testFixtures.ts",
+      "testedSha256": "4fa040ece1d4e41de5373088f633eba5128755cea1b2c39cd710244d8b029fa1",
+      "currentSha256": "4fa040ece1d4e41de5373088f633eba5128755cea1b2c39cd710244d8b029fa1",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/ShiftChart/Replay.test.tsx",
+      "testedSha256": "ce77c6671417304af1625841333ba846f90f17488326ae34dea50f12694deb6d",
+      "currentSha256": "ce77c6671417304af1625841333ba846f90f17488326ae34dea50f12694deb6d",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/ShiftChart/model.ts",
+      "testedSha256": "988d5e86d62c91ad0d8683d176b8ef96137db572e84764a665846cde69821211",
+      "currentSha256": "988d5e86d62c91ad0d8683d176b8ef96137db572e84764a665846cde69821211",
+      "matchesCurrentAtReport": true
+    },
+    {
+      "path": "web/components/ShiftChart/useGameGrid.ts",
+      "testedSha256": "ceac33b30d6a9e78a4138b42e252e864aa80556bcae70582d5bb3452584322cc",
+      "currentSha256": "ceac33b30d6a9e78a4138b42e252e864aa80556bcae70582d5bb3452584322cc",
+      "matchesCurrentAtReport": true
+    }
+  ]
+}

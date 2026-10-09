@@ -1,0 +1,227 @@
+{
+  "baseline": {
+    "date": "2026-10-01",
+    "documentWidth": 2041,
+    "dpr": 2,
+    "height": 1105,
+    "status": "◷ Review coveragePage refresh · 30 seconds",
+    "url": "http://127.0.0.1:3100/start-chart?date=2026-10-01",
+    "width": 2056
+  },
+  "zoom": {
+    "date": "2026-10-01",
+    "documentWidth": 1020,
+    "dpr": 4,
+    "height": 524,
+    "status": "◷ Review coveragePage refresh · 30 seconds",
+    "statusLive": null,
+    "statusRole": "status",
+    "url": "http://127.0.0.1:3100/start-chart?date=2026-10-01",
+    "width": 1028
+  },
+  "expandedFilters": {
+    "controls": [
+      {
+        "left": 59.9609375,
+        "name": "start-chart-search",
+        "right": 249.9609375
+      },
+      {
+        "left": 266.9609375,
+        "name": "start-chart-tab-LW",
+        "right": 313.390625
+      },
+      {
+        "left": 317.390625,
+        "name": "start-chart-tab-RW",
+        "right": 363.8203125
+      },
+      {
+        "left": 367.8203125,
+        "name": "start-chart-tab-C",
+        "right": 414.25
+      },
+      {
+        "left": 418.25,
+        "name": "start-chart-tab-D",
+        "right": 464.6796875
+      },
+      {
+        "left": 468.6796875,
+        "name": "start-chart-tab-G",
+        "right": 515.109375
+      },
+      {
+        "left": 584.87109375,
+        "name": "start-chart-mode",
+        "right": 734.12109375
+      },
+      {
+        "left": 23,
+        "name": "More Filters",
+        "right": 997.5
+      },
+      {
+        "left": 56.99609375,
+        "name": "start-chart-team",
+        "right": 181.74609375
+      },
+      {
+        "left": 275.765625,
+        "name": "start-chart-ownership",
+        "right": 404.765625
+      },
+      {
+        "left": 491.484375,
+        "name": "start-chart-goalie-sort",
+        "right": 671.234375
+      },
+      {
+        "left": 23,
+        "name": "Scoring profile · customize points",
+        "right": 997.5
+      },
+      {
+        "left": 23,
+        "name": "Explain metrics",
+        "right": 47
+      }
+    ],
+    "date": "2026-10-02",
+    "documentWidth": 1020,
+    "dpr": 4,
+    "focused": {
+      "outline": "rgb(20, 162, 210) solid 2px",
+      "text": "More Filters"
+    },
+    "height": 524,
+    "status": "◷ Review coveragePage refresh · 30 seconds",
+    "url": "http://127.0.0.1:3100/start-chart?date=2026-10-02",
+    "width": 1028
+  },
+  "scoring": {
+    "documentWidth": 1020,
+    "dpr": 4,
+    "focused": {
+      "id": "",
+      "outline": "rgb(204, 204, 204) none 3px",
+      "tag": "INPUT",
+      "value": "3"
+    },
+    "height": 524,
+    "inputs": [
+      {
+        "id": "",
+        "left": 400.25,
+        "right": 490.25,
+        "value": "3"
+      },
+      {
+        "id": "",
+        "left": 400.25,
+        "right": 490.25,
+        "value": "2"
+      },
+      {
+        "id": "",
+        "left": 400.25,
+        "right": 490.25,
+        "value": "1"
+      },
+      {
+        "id": "",
+        "left": 400.25,
+        "right": 490.25,
+        "value": "0.2"
+      },
+      {
+        "id": "",
+        "left": 400.25,
+        "right": 490.25,
+        "value": "0.2"
+      },
+      {
+        "id": "",
+        "left": 400.25,
+        "right": 490.25,
+        "value": "0.25"
+      },
+      {
+        "id": "",
+        "left": 895.5,
+        "right": 985.5,
+        "value": "-1"
+      },
+      {
+        "id": "",
+        "left": 895.5,
+        "right": 985.5,
+        "value": "0.2"
+      },
+      {
+        "id": "",
+        "left": 895.5,
+        "right": 985.5,
+        "value": "3"
+      },
+      {
+        "id": "",
+        "left": 895.5,
+        "right": 985.5,
+        "value": "4"
+      }
+    ],
+    "overlays": 0,
+    "width": 1028
+  },
+  "scoringFocusBefore": [
+    {
+      "active": true,
+      "background": "rgb(26, 29, 33)",
+      "border": "1px solid rgb(170, 170, 170)",
+      "boxShadow": "none",
+      "className": "",
+      "outline": "rgb(204, 204, 204) none 3px",
+      "parentClass": ""
+    },
+    {
+      "active": false,
+      "background": "rgb(26, 29, 33)",
+      "border": "1px solid rgb(170, 170, 170)",
+      "boxShadow": "none",
+      "className": "",
+      "outline": "rgb(204, 204, 204) none 3px",
+      "parentClass": ""
+    }
+  ],
+  "scoringFocusAfter": {
+    "background": "rgb(26, 29, 33)",
+    "border": "1px solid rgb(170, 170, 170)",
+    "boxShadow": "none",
+    "documentWidth": 1020,
+    "dpr": 4,
+    "focused": "skater.GOALS",
+    "outline": "rgb(20, 162, 210) solid 2px",
+    "width": 1028
+  },
+  "restoredSlate": {
+    "date": "2026-10-01",
+    "overlay": false,
+    "previousDisabled": true,
+    "status": "◷ Review coveragePage refresh · 30 seconds",
+    "url": "http://127.0.0.1:3100/start-chart?date=2026-10-01"
+  },
+  "consoleErrors": [],
+  "restoredZoom": {
+    "documentWidth": 2041,
+    "dpr": 2,
+    "height": 1049,
+    "width": 2056
+  },
+  "notes": [
+    "Live read-only Starter Board, signed out; no intercepted API fixtures in native Chrome.",
+    "Native Chrome AX zoom control reported 200%; default tab-level shortcuts did not alter zoom, so native app shortcuts were used on the selected QA tab.",
+    "Expanded controls exclude closed details descendants from geometry measurements.",
+    "Screen-reader speech, rendered contrast, live-account switching and producer completeness were not verified."
+  ]
+}

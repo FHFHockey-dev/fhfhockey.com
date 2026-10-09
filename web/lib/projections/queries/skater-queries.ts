@@ -27,9 +27,60 @@ function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
 }
 
+/** Complete membership validates candidates; a sample must never exclude line skaters. */
+export async function fetchCurrentRosterPlayerIds(teamId: number, seasonId: number, db = supabase): Promise<number[]> {
+  if (!db || !Number.isSafeInteger(teamId) || teamId <= 0 || !Number.isSafeInteger(seasonId) || seasonId <= 0) {
+    throw new Error("Invalid current roster scope");
+  }
+  const ids: number[] = [];
+  let total: number | null = null;
+  for (;;) {
+    const result = await db.from("rosters").select("playerId,teamId,seasonId", { count: "exact" })
+      .eq("teamId", teamId).eq("seasonId", seasonId).eq("is_current", true)
+      .order("playerId", { ascending: true }).range(ids.length, ids.length + 499);
+    if (result.error) throw result.error;
+    if (!Array.isArray(result.data) || !Number.isSafeInteger(result.count) || result.count! < 0
+      || result.count! > 1200 || total !== null && result.count !== total
+      || result.data.length > result.count! - ids.length) throw new Error("Current roster read was incomplete");
+    if (result.data.length !== Math.min(500, result.count! - ids.length)) {
+      throw new Error("Current roster read was truncated");
+    }
+    total = result.count;
+    for (const row of result.data) {
+      if (!Number.isSafeInteger(row.playerId) || row.playerId <= 0 || row.teamId !== teamId
+        || row.seasonId !== seasonId || row.playerId <= (ids.at(-1) ?? 0)) {
+        throw new Error("Current roster membership was malformed or duplicated");
+      }
+      ids.push(row.playerId);
+    }
+    if (ids.length === total) return ids;
+  }
+}
+
+
+/** Recency requires exact native event identity; rates and historical windows stay unchanged. */
+export async function fetchSkaterRecencyEvents(rows: RollingRow[], db = supabase) {
+  if (!db) throw new Error("Supabase server client not available");
+  const ids = [...new Set(rows.map(row => row.game_id))];
+  if (ids.length > 500 || ids.some(id => !Number.isSafeInteger(id) || id <= 0)) throw new Error("Invalid skater recency source game identity");
+  const events = new Map<number, { date: string; seasonId: number; type: number }>();
+  if (!ids.length) return events;
+  const { data, error } = await db.from("games").select("id,date,seasonId,type").in("id", ids).limit(ids.length);
+  if (error) throw error;
+  if (!Array.isArray(data) || data.length !== ids.length || new Set(data.map(g => g.id)).size !== ids.length
+    || data.some(g => !ids.includes(g.id))) throw new Error("Incomplete skater recency source games");
+  for (const row of rows) {
+    const game = data.find(g => g.id === row.game_id)!;
+    if (game.date === row.game_date && game.seasonId === row.season && typeof game.seasonId === "number" && typeof game.type === "number") events.set(row.player_id, { date: game.date, seasonId: game.seasonId, type: game.type });
+  }
+  return events;
+}
+
 export const ROLLING_ROW_SELECT_CLAUSE =
   [
     "player_id",
+    "game_id",
+    "season",
     "strength_state",
     "game_date",
     "toi_seconds_avg_last5",
@@ -178,12 +229,17 @@ export async function fetchLatestWgoSkaterDeploymentProfiles(
   return profiles;
 }
 
-export async function fetchLatestSkaterShotQualityProfiles(
+export async function fetchLatestSkaterContextProfiles(
   playerIds: number[],
   cutoffDate: string
-): Promise<Map<number, SkaterShotQualityProfile>> {
+): Promise<{
+  shotQuality: Map<number, SkaterShotQualityProfile>;
+  onIceContext: Map<number, SkaterOnIceContextProfile>;
+}> {
   assertSupabase();
-  if (playerIds.length === 0) return new Map();
+  const shotQuality = new Map<number, SkaterShotQualityProfile>();
+  const onIceContext = new Map<number, SkaterOnIceContextProfile>();
+  if (playerIds.length === 0) return { shotQuality, onIceContext };
 
   const oneYearAgo = new Date(
     new Date(cutoffDate).getTime() - 365 * 24 * 60 * 60 * 1000
@@ -194,7 +250,7 @@ export async function fetchLatestSkaterShotQualityProfiles(
   const { data, error } = await supabase
     .from("player_stats_unified")
     .select(
-      "player_id,date,nst_shots_per_60,nst_ixg_per_60,nst_rush_attempts_per_60,nst_rebounds_created_per_60"
+      "player_id,date,nst_shots_per_60,nst_ixg_per_60,nst_rush_attempts_per_60,nst_rebounds_created_per_60,nst_oi_xgf_per_60,nst_oi_xga_per_60,nst_oi_cf_pct_rates,nst_oi_cf_pct,possession_pct_safe"
     )
     .in("player_id", playerIds)
     .lte("date", cutoffDate)
@@ -210,54 +266,15 @@ export async function fetchLatestSkaterShotQualityProfiles(
     if (!latestByPlayer.has(playerId)) latestByPlayer.set(playerId, row);
   }
 
-  const profiles = new Map<number, SkaterShotQualityProfile>();
   for (const [playerId, row] of latestByPlayer.entries()) {
-    profiles.set(playerId, {
+    shotQuality.set(playerId, {
       sourceDate: typeof row?.date === "string" ? row.date : null,
       nstShotsPer60: finiteOrNull(row?.nst_shots_per_60),
       nstIxgPer60: finiteOrNull(row?.nst_ixg_per_60),
       nstRushAttemptsPer60: finiteOrNull(row?.nst_rush_attempts_per_60),
       nstReboundsCreatedPer60: finiteOrNull(row?.nst_rebounds_created_per_60)
     });
-  }
-  return profiles;
-}
-
-export async function fetchLatestSkaterOnIceContextProfiles(
-  playerIds: number[],
-  cutoffDate: string
-): Promise<Map<number, SkaterOnIceContextProfile>> {
-  assertSupabase();
-  if (playerIds.length === 0) return new Map();
-
-  const oneYearAgo = new Date(
-    new Date(cutoffDate).getTime() - 365 * 24 * 60 * 60 * 1000
-  )
-    .toISOString()
-    .split("T")[0];
-
-  const { data, error } = await supabase
-    .from("player_stats_unified")
-    .select(
-      "player_id,date,nst_oi_xgf_per_60,nst_oi_xga_per_60,nst_oi_cf_pct_rates,nst_oi_cf_pct,possession_pct_safe"
-    )
-    .in("player_id", playerIds)
-    .lte("date", cutoffDate)
-    .gte("date", oneYearAgo)
-    .order("date", { ascending: false })
-    .limit(5000);
-  if (error) throw error;
-
-  const latestByPlayer = new Map<number, any>();
-  for (const row of (data ?? []) as any[]) {
-    const playerId = Number(row?.player_id);
-    if (!Number.isFinite(playerId)) continue;
-    if (!latestByPlayer.has(playerId)) latestByPlayer.set(playerId, row);
-  }
-
-  const profiles = new Map<number, SkaterOnIceContextProfile>();
-  for (const [playerId, row] of latestByPlayer.entries()) {
-    profiles.set(playerId, {
+    onIceContext.set(playerId, {
       sourceDate: typeof row?.date === "string" ? row.date : null,
       nstOiXgfPer60: finiteOrNull(row?.nst_oi_xgf_per_60),
       nstOiXgaPer60: finiteOrNull(row?.nst_oi_xga_per_60),
@@ -266,7 +283,15 @@ export async function fetchLatestSkaterOnIceContextProfiles(
       possessionPctSafe: finiteOrNull(row?.possession_pct_safe)
     });
   }
-  return profiles;
+  return { shotQuality, onIceContext };
+}
+
+export async function fetchLatestSkaterShotQualityProfiles(playerIds: number[], cutoffDate: string) {
+  return (await fetchLatestSkaterContextProfiles(playerIds, cutoffDate)).shotQuality;
+}
+
+export async function fetchLatestSkaterOnIceContextProfiles(playerIds: number[], cutoffDate: string) {
+  return (await fetchLatestSkaterContextProfiles(playerIds, cutoffDate)).onIceContext;
 }
 
 export async function fetchLatestSkaterTrendAdjustments(

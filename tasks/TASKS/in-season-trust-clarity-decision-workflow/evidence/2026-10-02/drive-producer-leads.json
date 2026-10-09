@@ -1,0 +1,56 @@
+{
+  "capturedOn": "2026-10-02",
+  "method": "Read-only connected Google Drive search, native spreadsheet metadata and bounded formatted-value reads; repository source inspection. No endpoint execution.",
+  "searches": [
+    { "query": "wigo_rates", "returnedResults": 0 },
+    { "query": "rolling_player_game_metrics", "returnedResults": 0 },
+    { "query": "WiGO", "returnedResults": 4 }
+  ],
+  "sources": [
+    {
+      "title": "FHFHockey.com Database Map",
+      "url": "https://docs.google.com/spreadsheets/d/1CVV1UsI7866XJz9k9bp1AOOm66-TPtmHZXXTWRvSHP4/edit?usp=drivesdk",
+      "modifiedAt": "2025-03-05T16:40:39.916Z",
+      "sheetId": 0,
+      "sheetName": "Sheet1",
+      "readRanges": ["A1:J2", "A3:H100"],
+      "lastReturnedRow": 98,
+      "matchedRows": [
+        { "row": 88, "table": "wgo_career_averages", "scripts": ["pages/api/WGOAverages/calculateAverages.js", "pages/api/WGOAverages/calulateAverages.ts", "utilsfetchWigoPlayerStats.ts"] },
+        { "row": 96, "table": "wgo_three_year_averages", "scripts": ["pages/api/WGOAverages/calculateAverages.js", "pages/api/WGOAverages/calculateAverages.ts", "utils/fetchWigoPlayerStats.ts"] }
+      ],
+      "limitation": "Historical map of legacy tables; the inspected rectangle does not identify wigo_rates or current aggregate provenance. Script spelling is preserved from the sheet."
+    },
+    {
+      "title": "Database Cron List",
+      "url": "https://docs.google.com/spreadsheets/d/1WjIo8ZGZmXBQ89hElWkV_BgdqXdB_tkiKqdwiG6u_NE/edit?usp=drivesdk",
+      "modifiedAt": "2025-12-06T18:16:34.171Z",
+      "sheetId": 381773047,
+      "sheetName": "`/api/v1/db/update-team-power-ratings-new`\n\n`/api...",
+      "readRanges": ["A1:J2", "A3:E80"],
+      "matchedRows": [
+        { "row": 20, "statusLabel": "✅", "jobName": "update-wigo-table-stats", "endpoint": "/api/v1/db/calculate-wigo-stats", "utcTimeLabel": "8:50", "estTimeLabel": "3:50 AM" },
+        { "row": 28, "statusLabel": "🆕", "jobName": "update-goalie-projections-v2", "endpoint": "/api/v1/db/update-goalie-projections-v2", "utcTimeLabel": "9:30", "estTimeLabel": "4:30 AM" }
+      ],
+      "limitation": "Labels are historical documentation, not live cron configuration, execution receipts, deployed versions or current operational health. Spreadsheet timezone is not cron timezone."
+    },
+    {
+      "title": "WiGO Charts - What is Going On",
+      "url": "https://docs.google.com/document/d/11nVaeBQ66F64JeHB0chcX9_QRVIXf5GRuyYMftvHkjY/edit?usp=drivesdk",
+      "modifiedAt": "2025-02-08T16:21:58.962Z",
+      "readableTextCharacters": 7983,
+      "exactReferencesFound": { "wigo_rates": 0, "wigo_recent": 0, "wigo_career": 0, "calculate-wigo-stats": 0 },
+      "limitation": "Historical design notes, including manual NST ingestion and unverified data accuracy; readable-text inspection is not an immutable writer/run receipt or exhaustive review of embedded material."
+    }
+  ],
+  "goalieCandidate": {
+    "file": "web/pages/api/v1/db/update-goalie-projections-v2.ts",
+    "outputTable": "goalie_start_projections",
+    "upsertKey": "game_id, player_id",
+    "window": "Last up to ten unique available team-log game dates on or before the target game date",
+    "probability": "Player gamesStarted sum for that date set / number of dates in the set, or zero when no dates",
+    "storedConfirmedStatus": false,
+    "inference": "This implementation can emit probability 1 with confirmed_status false. The documented 09:30 UTC label is consistent with the six previously captured October 1 rows at 09:30:06Z, but does not prove which execution/version wrote them or the historical screenshot."
+  },
+  "acceptance": "No gate or checkbox closed. Original execution/source lineage, current deployment parity and historical screenshot attribution remain unresolved. No Drive files, repository runtime code or production data changed."
+}

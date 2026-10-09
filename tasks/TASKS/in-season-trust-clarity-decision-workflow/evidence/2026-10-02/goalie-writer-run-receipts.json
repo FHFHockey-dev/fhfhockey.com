@@ -1,0 +1,167 @@
+{
+  "capturedOn": "2026-10-02",
+  "project": "fyhftlxokyjtpndbkfse",
+  "method": "Read-only catalog and bounded September 28–October 2 cron/API audit SELECTs. No cron or API invocation.",
+  "queries": {
+    "jobsAndRuns": "WITH selected_jobs AS (SELECT jobid, jobname, schedule, active, position('update-goalie-projections-v2' in command) > 0 AS references_goalie_v2, md5(command) AS command_hash FROM cron.job WHERE jobname::text ILIKE '%goalie%projection%' OR position('update-goalie-projections-v2' in command) > 0), selected_runs AS (SELECT r.jobid, r.runid, r.status, r.start_time, r.end_time FROM cron.job_run_details r JOIN selected_jobs j USING (jobid) WHERE r.start_time >= '2026-09-28T00:00:00Z' AND r.start_time < '2026-10-03T00:00:00Z' ORDER BY r.start_time DESC LIMIT 20) SELECT jsonb_build_object('jobs', COALESCE((SELECT jsonb_agg(to_jsonb(j)) FROM selected_jobs j), '[]'::jsonb), 'runs', COALESCE((SELECT jsonb_agg(to_jsonb(r)) FROM selected_runs r), '[]'::jsonb)) AS evidence;",
+    "apiAudits": "SELECT job_name, run_time, status, rows_affected, details->>'method' AS method, details->>'statusCode' AS status_code, details->>'durationMs' AS duration_ms, details->>'rowsUpserted' AS audit_rows_upserted, details->>'failedRows' AS audit_failed_rows, jsonb_typeof(details->'response') AS response_type, details->'response' AS response_value, jsonb_typeof(details->'timing') AS timing_type, jsonb_typeof(details->'finalAudit') AS final_audit_type FROM public.cron_job_audit WHERE job_name = '/api/v1/db/update-goalie-projections-v2' AND run_time >= '2026-09-28T00:00:00Z' AND run_time < '2026-10-03T00:00:00Z' ORDER BY run_time DESC LIMIT 20;"
+  },
+  "cron": {
+    "jobs": [
+      {
+        "jobid": 364,
+        "active": true,
+        "jobname": "update-goalie-projections-v2",
+        "schedule": "30 9 * * *",
+        "command_hash": "e03dc6f6550cb268d6a1b77e552b7623",
+        "references_goalie_v2": true
+      }
+    ],
+    "runs": [
+      {
+        "jobid": 364,
+        "runid": 175463,
+        "status": "succeeded",
+        "end_time": "2026-10-01T09:30:00.099488+00:00",
+        "start_time": "2026-10-01T09:30:00.071424+00:00"
+      },
+      {
+        "jobid": 364,
+        "runid": 174952,
+        "status": "succeeded",
+        "end_time": "2026-09-30T09:30:00.177133+00:00",
+        "start_time": "2026-09-30T09:30:00.143318+00:00"
+      },
+      {
+        "jobid": 364,
+        "runid": 174411,
+        "status": "succeeded",
+        "end_time": "2026-09-29T09:30:00.158609+00:00",
+        "start_time": "2026-09-29T09:30:00.137832+00:00"
+      },
+      {
+        "jobid": 364,
+        "runid": 173900,
+        "status": "succeeded",
+        "end_time": "2026-09-28T09:30:00.205965+00:00",
+        "start_time": "2026-09-28T09:30:00.169424+00:00"
+      }
+    ]
+  },
+  "apiAudits": [
+    {
+      "job_name": "/api/v1/db/update-goalie-projections-v2",
+      "run_time": "2026-10-01 09:30:06.132961+00",
+      "status": "success",
+      "rows_affected": null,
+      "method": "POST",
+      "status_code": "200",
+      "duration_ms": "5154",
+      "audit_rows_upserted": null,
+      "audit_failed_rows": "0",
+      "response_type": "string",
+      "timing_type": "object",
+      "final_audit_type": "null",
+      "response_parse": "parsed",
+      "response_success": true,
+      "response_updates": 13,
+      "response_failed_rows": 0,
+      "goalie_rows_processed": 13,
+      "database_write_failures": 0,
+      "ownership_decision": {
+        "decisionVersion": "goalie-start-ownership-v1",
+        "table": "goalie_start_projections",
+        "canonicalWriterRoute": "/api/v1/db/update-goalie-projections-v2",
+        "canonicalWriterStatus": "single_writer"
+      }
+    },
+    {
+      "job_name": "/api/v1/db/update-goalie-projections-v2",
+      "run_time": "2026-09-30 09:30:08.030267+00",
+      "status": "success",
+      "rows_affected": null,
+      "method": "POST",
+      "status_code": "200",
+      "duration_ms": "7280",
+      "audit_rows_upserted": null,
+      "audit_failed_rows": "0",
+      "response_type": "string",
+      "timing_type": "object",
+      "final_audit_type": "null",
+      "response_parse": "parsed",
+      "response_success": true,
+      "response_updates": 11,
+      "response_failed_rows": 0,
+      "goalie_rows_processed": 11,
+      "database_write_failures": 0,
+      "ownership_decision": {
+        "decisionVersion": "goalie-start-ownership-v1",
+        "table": "goalie_start_projections",
+        "canonicalWriterRoute": "/api/v1/db/update-goalie-projections-v2",
+        "canonicalWriterStatus": "single_writer"
+      }
+    },
+    {
+      "job_name": "/api/v1/db/update-goalie-projections-v2",
+      "run_time": "2026-09-29 09:30:07.936918+00",
+      "status": "success",
+      "rows_affected": null,
+      "method": "POST",
+      "status_code": "200",
+      "duration_ms": "7128",
+      "audit_rows_upserted": null,
+      "audit_failed_rows": "0",
+      "response_type": "string",
+      "timing_type": "object",
+      "final_audit_type": "null",
+      "response_parse": "parsed",
+      "response_success": true,
+      "response_updates": 0,
+      "response_failed_rows": 0,
+      "goalie_rows_processed": 0,
+      "database_write_failures": 0,
+      "ownership_decision": {
+        "decisionVersion": "goalie-start-ownership-v1",
+        "table": "goalie_start_projections",
+        "canonicalWriterRoute": "/api/v1/db/update-goalie-projections-v2",
+        "canonicalWriterStatus": "single_writer"
+      }
+    },
+    {
+      "job_name": "/api/v1/db/update-goalie-projections-v2",
+      "run_time": "2026-09-28 09:30:08.713493+00",
+      "status": "success",
+      "rows_affected": null,
+      "method": "POST",
+      "status_code": "200",
+      "duration_ms": "7367",
+      "audit_rows_upserted": null,
+      "audit_failed_rows": "0",
+      "response_type": "string",
+      "timing_type": "object",
+      "final_audit_type": "null",
+      "response_parse": "parsed",
+      "response_success": true,
+      "response_updates": 0,
+      "response_failed_rows": 0,
+      "goalie_rows_processed": 0,
+      "database_write_failures": 0,
+      "ownership_decision": {
+        "decisionVersion": "goalie-start-ownership-v1",
+        "table": "goalie_start_projections",
+        "canonicalWriterRoute": "/api/v1/db/update-goalie-projections-v2",
+        "canonicalWriterStatus": "single_writer"
+      }
+    }
+  ],
+  "limitations": [
+    "Stored audit captures are not certified immutable; no historical code commit, deployment version, input revision or per-goalie run link is present in the inspected fields.",
+    "Cron SQL completion precedes the API receipt by seconds; succeeded means the scheduled command completed, not that downstream goalie writes succeeded.",
+    "API rows_affected and rowsUpserted are null. Recorded numeric counts come from parsed stored response.updates and response.observability.goalieRowsProcessed.",
+    "The same-minute October 1 API receipt and six captured goalie row timestamps are consistent, but not a proven row-to-run join or historical screenshot attribution.",
+    "The ownership decision version identifies a table ownership contract, not the deployed model or code version.",
+    "No October 2 run was returned by this bounded query. This observation does not establish a failed or pending run.",
+    "Initial selected-key discovery failed on JSON null finalAudit being a scalar; the successful query inspects types and parses the response string locally.",
+    "No task acceptance gate is closed by these receipts alone."
+  ]
+}

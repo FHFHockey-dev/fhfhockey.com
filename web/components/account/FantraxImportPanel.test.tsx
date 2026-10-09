@@ -183,6 +183,11 @@ describe("FantraxImportPanel", () => {
 
     render(<FantraxImportPanel />);
     await screen.findByText("Add Fantrax account");
+    expect(screen.getByText("Connect Fantrax in three steps")).toBeTruthy();
+    expect(screen.getByText("Settings → Profile → Information")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /open your Fantrax profile/ }).getAttribute("href"))
+      .toBe("https://www.fantrax.com/user/profile");
+    expect(screen.getByText(/We find the league ID for you/)).toBeTruthy();
     fireEvent.change(screen.getByLabelText(/Fantrax Secret ID/), {
       target: { value: "secret-id" },
     });

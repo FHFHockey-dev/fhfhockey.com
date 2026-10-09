@@ -33,6 +33,7 @@ interface MyRosterProps {
   onSelectedTeamChange?: (teamId: string) => void;
   viewRequest?: { teamId: string };
   schedulePeriod?: string;
+  draftUnavailableReason?: string;
   nextPickByTeam: Record<string, number>;
   scheduleState: RosterScheduleOptimizerState;
   myTeamId: string;
@@ -65,7 +66,8 @@ interface MyRosterProps {
 const MyRoster: React.FC<MyRosterProps> = ({
   onSelectedTeamChange,
   viewRequest,
-  schedulePeriod = "Full season baseline · Yahoo 477",
+  schedulePeriod = "Full season baseline",
+  draftUnavailableReason = "Manual drafting is unavailable",
   myTeamId,
   nextPickByTeam,
   scheduleState,
@@ -416,7 +418,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
           title={
             canDraft
               ? undefined
-              : "Manual drafting is locked while Yahoo sync is authoritative"
+              : draftUnavailableReason
           }
         >
           Add Player to {currentTurn.teamId}
@@ -514,7 +516,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
                         title={
                           canDraft
                             ? undefined
-                            : "Roster moves are locked while Yahoo sync is authoritative"
+                            : draftUnavailableReason
                         }
                       >
                         <span className={styles.rowPosition}>{pos === "UTILITY" ? "UTIL" : pos}</span>

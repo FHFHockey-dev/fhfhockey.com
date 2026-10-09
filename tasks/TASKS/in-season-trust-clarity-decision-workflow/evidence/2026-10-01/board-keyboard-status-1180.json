@@ -1,0 +1,20 @@
+{
+  "width": 1180,
+  "tabSteps": 23,
+  "focusIndicator": {
+    "outlineStyle": "auto",
+    "outlineWidth": "1px",
+    "outlineColor": "rgb(0, 95, 204)",
+    "boxShadow": "none"
+  },
+  "statusNodeRetained": true,
+  "recoveryStatus": "Upcoming slate",
+  "pageErrors": [],
+  "loadingAccessibility": "- status \"Starter Board status\":\n  - strong: Loading\n  - text: Page refresh · 30 seconds",
+  "errorAccessibility": "- alert:\n  - strong: Starter Board is unavailable.\n  - text: Fixture source retrieval failed\n  - button \"Retry\"",
+  "upcomingAccessibility": "- status \"Starter Board status\":\n  - strong: Upcoming slate\n  - text: Page refresh · 30 seconds",
+  "emptyAccessibility": "- status \"Starter Board status\":\n  - strong: No scheduled games\n  - text: Page refresh · 30 seconds",
+  "noHorizontalOverflow": true,
+  "screenReaderSpeech": "not verified",
+  "inputs": "fictional API responses"
+}

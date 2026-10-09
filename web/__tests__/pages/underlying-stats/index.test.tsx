@@ -11,6 +11,7 @@ import type { UlsRouteStatus } from "../../../lib/underlying-stats/ulsRouteStatu
 import { buildUnderlyingStatsLandingDashboard } from "../../../lib/underlying-stats/teamLandingDashboard";
 
 const routerState = vi.hoisted(() => ({
+  isReady: true,
   pathname: "/underlying-stats",
   query: { date: "2026-04-05" },
   replace: vi.fn()
@@ -43,7 +44,9 @@ vi.mock("next/router", () => ({
   useRouter: () => routerState
 }));
 
-import TeamPowerRankingsPage from "../../../pages/underlying-stats";
+import UnderlyingStatsLanding, {
+  TeamPowerRankingsPage
+} from "../../../pages/underlying-stats";
 
 const buildRating = (
   teamAbbr: string,
@@ -151,7 +154,50 @@ describe("/underlying-stats landing page", () => {
     cleanup();
   });
 
-  it("renders the dashboard modules plus the simple-mode table values", () => {
+  it("serves the ghost first, then replaces it with the requested snapshot", async () => {
+    const payload = {
+      availableDates: ["2026-04-05"],
+      initialSnapshot: buildSnapshot([buildRating("TOR")]),
+      routeStatus
+    };
+    const fetchMock = vi.fn(async () => jsonResponse(payload));
+    vi.stubGlobal("fetch", fetchMock);
+
+    expect(renderToString(<UnderlyingStatsLanding />)).toContain(
+      "Loading team rankings and the latest snapshot"
+    );
+
+    render(<UnderlyingStatsLanding />);
+    expect(screen.getByRole("status").textContent).toContain("Loading team rankings");
+    expect(screen.queryByRole("table", { name: "Detailed team table" })).toBeNull();
+    expect(await screen.findByRole("table", { name: "Detailed team table" })).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/underlying-stats/landing?date=2026-04-05",
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    );
+  });
+
+  it("offers retry when the initial snapshot fails", async () => {
+    const payload = {
+      availableDates: ["2026-04-05"],
+      initialSnapshot: buildSnapshot([buildRating("TOR")]),
+      routeStatus
+    };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({}, false, 503))
+      .mockResolvedValueOnce(jsonResponse(payload));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<UnderlyingStatsLanding />);
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "Unable to load Underlying Stats (503)"
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(await screen.findByRole("table", { name: "Detailed team table" })).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows the four-link rail, Power Leaders, advanced rankings, and readiness", () => {
     render(
       <TeamPowerRankingsPage
         availableDates={["2026-04-05", "2026-04-04", "2026-04-03"]}
@@ -183,11 +229,25 @@ describe("/underlying-stats landing page", () => {
 
     const select = screen.getByLabelText("Snapshot date");
     expect(within(select).getAllByRole("option")).toHaveLength(3);
-    expect(screen.getByText("Process quadrant")).toBeTruthy();
-    expect(screen.getByText("Team movers")).toBeTruthy();
-    expect(screen.getByText("What looks real?")).toBeTruthy();
-    expect(screen.getByText("Schedule texture")).toBeTruthy();
-    expect(screen.getByText("Under the radar")).toBeTruthy();
+    const links = within(screen.getByRole("navigation", { name: "Underlying Stats Hub Navigation" })).getAllByRole("link");
+    expect(links.map((link) => link.textContent)).toEqual([
+      "Team Explorer", "Skater Stats", "Goalie Stats", "xG Lab"
+    ]);
+    expect(links.map((link) => new URL(link.getAttribute("href")!, "http://localhost").pathname)).toEqual([
+      "/underlying-stats/teamStats",
+      "/underlying-stats/playerStats",
+      "/underlying-stats/goalieStats",
+      "/underlying-stats/xg"
+    ]);
+    expect(screen.getByRole("region", { name: "Power leaders" })).toBeTruthy();
+    expect(links[0]!.compareDocumentPosition(screen.getByRole("region", { name: "Power leaders" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Team Rankings" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.queryByRole("region", { name: "Process quadrant" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Team movers" })).toBeNull();
+    expect(screen.queryByText("What looks real?")).toBeNull();
+    expect(screen.queryByText("Schedule texture")).toBeNull();
+    expect(screen.queryByText("Under the radar")).toBeNull();
+    fireEvent.click(screen.getByText("Data readiness"));
     expect(
       screen.getByText("Team snapshot").closest("article")?.textContent
     ).toContain("Apr 5, 2026");
@@ -197,18 +257,14 @@ describe("/underlying-stats landing page", () => {
       within(table).getByRole("columnheader", { name: /SoS Future/ })
     ).toBeTruthy();
     expect(
-      within(table).getByRole("columnheader", { name: "Why moving" })
+      within(table).getByRole("columnheader", { name: /SoS Past/ })
     ).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Advanced" }).getAttribute("aria-selected")).toBe("true");
 
     const bodyRows = within(table).getAllByRole("row").slice(1);
     expect(within(bodyRows[0]!).getByText("TOR")).toBeTruthy();
     expect(within(bodyRows[0]!).getByText("55.8%")).toBeTruthy();
     expect(within(bodyRows[0]!).getByText("+2.3")).toBeTruthy();
-    expect(
-      within(bodyRows[0]!).getByText(
-        "5v5 offense is rising as expected goals and shot volume improve."
-      )
-    ).toBeTruthy();
   });
 
   it("keeps the populated quadrant map out of server markup before mounting it on the client", async () => {
@@ -222,6 +278,15 @@ describe("/underlying-stats landing page", () => {
     expect(serverMarkup).not.toContain("Smothering");
 
     render(<TeamPowerRankingsPage {...pageProps} />);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Chart" }));
+    expect(screen.getByRole("tab", { name: "Chart" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("region", { name: "Process quadrant" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Team movers" })).toBeTruthy();
+    expect(screen.queryByRole("table", { name: "Detailed team table" })).toBeNull();
+    fireEvent.keyDown(screen.getByRole("tab", { name: "Chart" }), { key: "Home" });
+    expect(screen.getByRole("tab", { name: "Team Rankings" }).getAttribute("aria-selected")).toBe("true");
+    fireEvent.keyDown(screen.getByRole("tab", { name: "Team Rankings" }), { key: "ArrowRight" });
 
     await waitFor(() => {
       expect(screen.getByText("Smothering")).toBeTruthy();
@@ -325,7 +390,7 @@ describe("/underlying-stats landing page", () => {
     ).toBeNull();
   });
 
-  it("switches to advanced mode and reveals the component columns", () => {
+  it("switches to simple mode and hides the advanced component columns", () => {
     render(
       <TeamPowerRankingsPage
         availableDates={["2026-04-05"]}
@@ -334,12 +399,11 @@ describe("/underlying-stats landing page", () => {
       />
     );
 
-    fireEvent.click(screen.getByRole("tab", { name: "Advanced" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Simple" }));
 
     const table = screen.getByRole("table", { name: "Detailed team table" });
-    expect(within(table).getByRole("columnheader", { name: /SoS Past/ })).toBeTruthy();
-    expect(within(table).getByRole("columnheader", { name: /Pace/ })).toBeTruthy();
-    expect(within(table).queryByRole("columnheader", { name: /Why moving/ })).toBeNull();
+    expect(within(table).queryByRole("columnheader", { name: /SoS Past/ })).toBeNull();
+    expect(within(table).getByRole("columnheader", { name: /Why moving/ })).toBeTruthy();
   });
 
   it("sorts simple mode rows by trend when the trend header is clicked", () => {
@@ -354,6 +418,7 @@ describe("/underlying-stats landing page", () => {
       />
     );
 
+    fireEvent.click(screen.getByRole("tab", { name: "Simple" }));
     fireEvent.click(screen.getByRole("button", { name: /Trend/ }));
 
     const table = screen.getByRole("table", { name: "Detailed team table" });
@@ -361,7 +426,7 @@ describe("/underlying-stats landing page", () => {
     expect(within(bodyRows[0]!).getByText("VAN")).toBeTruthy();
   });
 
-  it("pins a chart team by keyboard across dashboard modules and explorer links", async () => {
+  it("pins a chart team by keyboard across dashboard modules and the link rail", async () => {
     render(
       <TeamPowerRankingsPage
         availableDates={["2026-04-05"]}
@@ -378,6 +443,7 @@ describe("/underlying-stats landing page", () => {
       />
     );
 
+    fireEvent.click(screen.getByRole("tab", { name: "Chart" }));
     const quadrant = screen.getByRole("region", { name: "Process quadrant" });
     fireEvent.keyDown(
       await within(quadrant).findByRole("button", {
@@ -386,6 +452,7 @@ describe("/underlying-stats landing page", () => {
       { key: "Enter", code: "Enter" }
     );
 
+    fireEvent.click(screen.getByRole("tab", { name: "Team Rankings" }));
     const table = screen.getByRole("table", { name: "Detailed team table" });
     expect(
       within(table)
@@ -393,19 +460,21 @@ describe("/underlying-stats landing page", () => {
         .getAttribute("aria-pressed")
     ).toBe("true");
 
-    const explorers = screen.getByRole("region", { name: "Explorer paths" });
+    const explorers = screen.getByRole("navigation", { name: "Underlying Stats Hub Navigation" });
     expect(
       within(explorers)
         .getByRole("link", { name: /Team Explorer/ })
         .getAttribute("href")
     ).toContain("teamId=23");
 
-    const torontoMarker = within(quadrant).getByRole("button", {
+    fireEvent.click(screen.getByRole("tab", { name: "Chart" }));
+    const activeQuadrant = screen.getByRole("region", { name: "Process quadrant" });
+    const torontoMarker = within(activeQuadrant).getByRole("button", {
       name: "Pin Toronto Maple Leafs"
     });
     fireEvent.focus(torontoMarker);
     expect(
-      within(quadrant).getByLabelText(
+      within(activeQuadrant).getByLabelText(
         "Toronto Maple Leafs selected-team context"
       )
     ).toBeTruthy();
@@ -415,17 +484,17 @@ describe("/underlying-stats landing page", () => {
         .getAttribute("href")
     ).toContain("teamId=23");
 
-    const chart = quadrant.querySelector(".recharts-wrapper");
+    const chart = activeQuadrant.querySelector(".recharts-wrapper");
     expect(chart).toBeTruthy();
     fireEvent.mouseLeave(chart as Element);
     expect(
-      within(quadrant).getByLabelText(
+      within(activeQuadrant).getByLabelText(
         "Vancouver Canucks selected-team context"
       )
     ).toBeTruthy();
   });
 
-  it("previews 12 table rows and expands to every available team", () => {
+  it("shows every available team by default and can collapse to 12", () => {
     const teamAbbreviations = [
       "ANA",
       "BOS",
@@ -456,15 +525,15 @@ describe("/underlying-stats landing page", () => {
     );
 
     const table = screen.getByRole("table", { name: "Detailed team table" });
-    expect(within(table).getAllByRole("row").slice(1)).toHaveLength(12);
+    expect(within(table).getAllByRole("row").slice(1)).toHaveLength(14);
 
     fireEvent.click(
-      screen.getByRole("button", { name: "View all 14 teams" })
+      screen.getByRole("button", { name: "Show top 12 teams" })
     );
 
-    expect(within(table).getAllByRole("row").slice(1)).toHaveLength(14);
+    expect(within(table).getAllByRole("row").slice(1)).toHaveLength(12);
     expect(
-      screen.getByRole("button", { name: "Show top 12 teams" })
+      screen.getByRole("button", { name: "View all 14 teams" })
     ).toBeTruthy();
   });
 });

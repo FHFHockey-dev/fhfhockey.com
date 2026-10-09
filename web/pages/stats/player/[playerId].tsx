@@ -817,36 +817,12 @@ async function fetchMissedGames(
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const { playerId, season } = context.query;
-  if (!playerId || Array.isArray(playerId)) {
-    return {
-      props: {
-        player: null,
-        seasonTotals: [],
-        isGoalie: false,
-        gameLog: [],
-        playoffGameLog: [],
-        mostRecentSeason: null,
-        usedGameLogFallback: false,
-        availableSeasons: []
-      }
-    };
+  if (typeof playerId !== "string" || !/^[1-9]\d*$/.test(playerId)) {
+    return { notFound: true };
   }
-  // Convert playerId to number for Supabase query
   const playerIdNum = Number(playerId);
-  if (isNaN(playerIdNum)) {
-    return {
-      props: {
-        player: null,
-        seasonTotals: [],
-        isGoalie: false,
-        gameLog: [],
-        playoffGameLog: [],
-        mostRecentSeason: null,
-        usedGameLogFallback: false,
-        availableSeasons: []
-      }
-    };
-  }
+  if (!Number.isSafeInteger(playerIdNum)) return { notFound: true };
+
   // Fetch player info
   const { data: player, error: playerError } = await supabase
     .from("players")
@@ -854,22 +830,10 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       `id, fullName, image_url, team_id, sweater_number, position, birthDate, birthCity, birthCountry, heightInCentimeters, weightInKilograms`
     )
     .eq("id", playerIdNum)
-    .single();
+    .maybeSingle();
 
-  if (playerError || !player) {
-    return {
-      props: {
-        player: null,
-        seasonTotals: [],
-        isGoalie: false,
-        gameLog: [],
-        playoffGameLog: [],
-        mostRecentSeason: null,
-        usedGameLogFallback: false,
-        availableSeasons: []
-      }
-    };
-  }
+  if (playerError) throw playerError;
+  if (!player) return { notFound: true };
 
   // Determine if player is a goalie
   const isGoalie =

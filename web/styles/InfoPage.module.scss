@@ -1,0 +1,104 @@
+@use "styles/vars" as v;
+@use "styles/panel" as panel;
+
+.page {
+  max-width: 960px;
+  margin: v.$space-lg auto;
+  color: v.$text-primary;
+  font-family: v.$font-family-primary;
+  line-height: 1.6;
+
+  h1, h2 {
+    color: v.$color-white;
+    font-family: v.$font-family-accent;
+    text-transform: uppercase;
+    line-height: 1.35;
+  }
+
+  h1 {
+    margin: v.$space-sm 0;
+    font-size: clamp(1.5rem, 4vw, 2.25rem);
+  }
+
+  h2 {
+    margin: 0 0 v.$space-sm;
+    font-size: 1.1rem;
+  }
+
+  p {
+    margin: v.$space-sm 0;
+  }
+
+  a:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
+}
+
+.eyebrow {
+  color: v.$secondary-color;
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-sm;
+  margin: v.$space-lg 0;
+}
+
+.action {
+  @include v.button-ghost;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: v.$touch-target-min;
+  text-decoration: none;
+  font-size: v.$font-size-sm;
+}
+
+.panel {
+  @include panel.panel-shell($padding: v.$space-lg, $variant: soft, $overflow: visible);
+  margin: v.$space-md 0;
+
+  > p a {
+    color: v.$secondary-color;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+.destinations {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: v.$space-md;
+
+  a {
+    display: flex;
+    flex-direction: column;
+    gap: v.$space-xs;
+    padding: v.$space-sm 0;
+    color: v.$text-primary;
+
+    strong {
+      color: v.$secondary-color;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    span {
+      color: v.$text-secondary;
+    }
+  }
+}
+
+@media (max-width: v.$screen-small-max) {
+  .panel {
+    padding: v.$space-md;
+  }
+
+  .destinations {
+    grid-template-columns: 1fr;
+    gap: v.$space-xs;
+  }
+}

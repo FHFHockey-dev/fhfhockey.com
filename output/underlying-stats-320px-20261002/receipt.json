@@ -1,0 +1,73 @@
+{
+  "recordedAt": "2026-10-02T02:24:07.782Z",
+  "cwd": "/Users/tim/Code/fhfhockey.com",
+  "branch": "master",
+  "head": "73af9d051ecc755dd3695f5265bf5837bbfc7a4e",
+  "sourceThread": "01a0f71e-6ff9-7681-9b6f-829b18f170d5",
+  "priorVerifier": {
+    "id": "01a0dbb1-88a5-7fb2-bc9e-a8ace8f87194",
+    "confirmedStatus": "notLoaded"
+  },
+  "affectedFilesStatus": "",
+  "files": [
+    {
+      "path": "web/components/underlying-stats/UnderlyingStatsDashboard.tsx",
+      "sha256": "0cacdb7fab6cc420251728c54feb134c342e0d33c99ad291f5b81bc1e2ffc1bf"
+    },
+    {
+      "path": "web/components/underlying-stats/UnderlyingStatsDashboard.module.scss",
+      "sha256": "b7cf09143eaefd922f64357f8c152948b88b2841ec31c4578c8bcff47b578b69"
+    },
+    {
+      "path": "web/components/underlying-stats/UlsStatusPanel.tsx",
+      "sha256": "5da11a53e393a812376d891e4b9313c3e43f95d090cc52cee0be1e5f80f61bda"
+    },
+    {
+      "path": "web/pages/underlying-stats/index.tsx",
+      "sha256": "dafd08c58844abbcb32399cf379ac33badd6c69227f7ccf93d692d06c95139f0"
+    },
+    {
+      "path": "web/pages/underlying-stats/indexUS.module.scss",
+      "sha256": "63d86a3562c013108765ce02ba70f6fab98ea7a7d5bc82dda4322724ed7b3dde"
+    },
+    {
+      "path": "web/__tests__/pages/underlying-stats/index.test.tsx",
+      "sha256": "7942c794fca31e4a2a2c31269a13b85105f71e156c7dd92229531e46fb1aa70e"
+    }
+  ],
+  "runtime": {
+    "node": "v22.11.0",
+    "playwright": "1.60.0"
+  },
+  "attempt": {
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "launch": "chromium.launch({headless:true})",
+    "status": "blocked",
+    "log": "browser-launch.json",
+    "reproduce": "From repository root: node -e 'require(\"./web/node_modules/playwright\").chromium.launch({headless:true}).then(b=>b.close()).catch(e=>{console.error(e);process.exitCode=1})'",
+    "blocker": "Chromium macOS MachPortRendezvousServer bootstrap_check_in Permission denied (1100); browser exited SIGTRAP before page creation"
+  },
+  "checks": {
+    "checkoutIdentity": "passed",
+    "affectedFilesClean": "passed",
+    "priorVerifierInactive": "passed",
+    "browserLaunch": "blocked",
+    "expandedReadinessWidthAndDocumentOverflow": "not run",
+    "keyboardExpandCollapseAndFocus": "not run",
+    "teamRankingsChartSwitching": "not run",
+    "retainedControls": "not run",
+    "focusedVitest": "not run in this attempt; prior verifier reported 8 passed"
+  },
+  "screenshots": "None: no browser page created",
+  "localQAGateClosed": false,
+  "applicationDefectsReproduced": [],
+  "applicationCodeChanged": false,
+  "ownerDecision": "Expanded readiness detail duplication left untouched",
+  "stoppedAfterFirstBlocker": true,
+  "weeklyRemainingPercent": 68,
+  "supersededBy": "browser-receipt.json",
+  "currentLocal320pxGateClosed": true
+}

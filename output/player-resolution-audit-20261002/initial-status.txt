@@ -1,0 +1,250 @@
+ M tasks/TASKS/repository-audit-remediation/migration-authority.json
+ M tasks/TASKS/repository-audit-remediation/security-rpc-rollout-runbook.md
+ M tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md
+ M tasks/prd-roster-schedule-optimizer.md
+ M tasks/tasks-README.md
+ M tasks/tasks-prd-roster-schedule-optimizer.md
+ M web/README.md
+ M web/__tests__/components/DraftDashboard/DraftSummaryModal.test.tsx
+ M web/__tests__/components/DraftDashboard/KeeperWorkflow.test.tsx
+ M web/__tests__/components/DraftDashboard/YahooLiveDraftPanel.test.tsx
+ M web/__tests__/components/Layout/Header.test.tsx
+ M web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx
+ M web/__tests__/components/auth/UserMenu.test.tsx
+ M web/__tests__/pages/api/v1/db/calculate-wigo-stats.test.ts
+ M web/__tests__/pages/api/v1/db/update-line-sources.test.ts
+ M web/__tests__/pages/api/v1/db/update-players.test.ts
+ M web/__tests__/pages/api/v1/db/update-roster-optimizer-schedule.test.ts
+ M web/__tests__/pages/api/v1/start-chart.test.ts
+ M web/__tests__/pages/rankings.test.tsx
+ M web/__tests__/pages/start-chart.test.tsx
+ M web/components/DraftDashboard/DraftBoard.tsx
+ M web/components/DraftDashboard/DraftDashboard.tsx
+ M web/components/DraftDashboard/DraftSettings.tsx
+ M web/components/DraftDashboard/DraftSummaryModal.tsx
+ M web/components/DraftDashboard/YahooLiveDraftPanel.module.scss
+ M web/components/DraftDashboard/YahooLiveDraftPanel.tsx
+ M web/components/GameGrid/GameGrid.module.scss
+ M web/components/GameGrid/GameGrid.tsx
+ M web/components/HomePage/HomepageStandingsInjuriesSection.test.tsx
+ M web/components/HomePage/HomepageStandingsInjuriesSection.tsx
+ M web/components/Layout/Header/Header.module.scss
+ M web/components/Layout/Header/Header.tsx
+ M web/components/Layout/Layout.module.scss
+ M web/components/Layout/Layout.tsx
+ M web/components/Layout/NavbarItems/NavbarItems.module.scss
+ M web/components/LineCombinations/ProjectedLineups.module.scss
+ M web/components/LineCombinations/ProjectedLineups.tsx
+ M web/components/LinemateMatrix/index.module.scss
+ M web/components/LinemateMatrix/index.test.tsx
+ M web/components/LinemateMatrix/index.tsx
+ M web/components/NewsFeed/NewsCard.test.tsx
+ M web/components/NewsFeed/NewsCard.tsx
+ M web/components/PlayerPickupTable/PlayerPickupTable.module.scss
+ M web/components/PlayerPickupTable/PlayerPickupTable.test.ts
+ M web/components/PlayerPickupTable/PlayerPickupTable.tsx
+ M web/components/Rankings/ComparisonSummaryPanel.tsx
+ M web/components/Rankings/PlayerMatrixTable.tsx
+ M web/components/Rankings/PlayerSnapshotPanel.test.tsx
+ M web/components/Rankings/PlayerSnapshotPanel.tsx
+ M web/components/Rankings/RankingsFilters.test.tsx
+ M web/components/Rankings/RankingsFilters.tsx
+ M web/components/Rankings/RankingsTable.test.tsx
+ M web/components/Rankings/RankingsTable.tsx
+ M web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+ M web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+ M web/components/WiGO/RateStatPercentiles.tsx
+ M web/components/WiGO/StatsTable.test.tsx
+ M web/components/WiGO/StatsTable.tsx
+ M web/components/WiGO/WigoComparisonMatrix.tsx
+ M web/components/WiGO/tableUtils.test.ts
+ M web/components/WiGO/tableUtils.ts
+ M web/components/auth/UserMenu.tsx
+ M web/e2e/navigation.spec.ts
+ M web/e2e/rankings.spec.ts
+ M web/e2e/roster-schedule-optimizer.spec.ts
+ M web/e2e/start-chart.spec.ts
+ M web/e2e/wigo-single-viewport.spec.ts
+ M web/hooks/useResizeObserver.ts
+ M web/hooks/useYahooDraftSync.test.tsx
+ M web/hooks/useYahooDraftSync.ts
+ M web/lib/dashboard/freshness.test.ts
+ M web/lib/dashboard/freshness.ts
+ M web/lib/draftDashboard/yahooLiveDraft.ts
+ M web/lib/in-season/workspaceSchema.test.ts
+ M web/lib/in-season/workspaceSchema.ts
+ M web/lib/integrations/yahoo/liveDraftServer.test.ts
+ M web/lib/integrations/yahoo/pickup.test.ts
+ M web/lib/integrations/yahoo/pickup.ts
+ M web/lib/integrations/yahoo/providerClient.ts
+ M web/lib/integrations/yahoo/rosterPlanning.test.ts
+ M web/lib/integrations/yahoo/rosterPlanning.ts
+ M web/lib/navigation/siteSurfaceLinks.ts
+ M web/lib/newsFeed.test.ts
+ M web/lib/newsFeed.ts
+ M web/lib/player-forecasts/orchestration.ts
+ M web/lib/player-forecasts/planComparison.test.ts
+ M web/lib/player-forecasts/planComparison.ts
+ M web/lib/player-forecasts/playerForecasts.test.ts
+ M web/lib/player-forecasts/readiness.ts
+ M web/lib/player-forecasts/schedule.ts
+ M web/lib/player-forecasts/settlement.ts
+ M web/lib/player-forecasts/sourceObservations.ts
+ M web/lib/projections/dailyBoardEvidence.ts
+ M web/lib/projections/gameRevisions.ts
+ M web/lib/projections/goalieStarterMixtures.test.ts
+ M web/lib/projections/goalieStarterMixtures.ts
+ M web/lib/projections/inputCapture.ts
+ M web/lib/projections/queries/skater-queries.test.ts
+ M web/lib/projections/queries/skater-queries.ts
+ M web/lib/projections/run-forge-projections.ts
+ M web/lib/projections/runProjectionV2.test.ts
+ M web/lib/projections/stages/skater-stage.ts
+ M web/lib/projections/startChartPipeline.test.ts
+ M web/lib/projections/starterBoardScoring.ts
+ M web/lib/projections/types/run-forge-projections.types.ts
+ M web/lib/rankings/entityMetricRankingReader.ts
+ M web/lib/rankings/playerMatrix.test.ts
+ M web/lib/rankings/playerMatrix.ts
+ M web/lib/rankings/rankingCalculator.test.ts
+ M web/lib/rankings/rankingCalculator.ts
+ M web/lib/rankings/rankingFormatters.test.ts
+ M web/lib/rankings/rankingFormatters.ts
+ M web/lib/rankings/rankingQueries.test.ts
+ M web/lib/rankings/rankingQueries.ts
+ M web/lib/rankings/rankingUrlState.test.ts
+ M web/lib/rankings/rankingUrlState.ts
+ M web/lib/rankings/rollingRankingSelectFields.ts
+ M web/lib/rosterScheduleData/normalize.ts
+ M web/lib/rosterScheduleData/persistence.test.ts
+ M web/lib/rosterScheduleData/persistence.ts
+ M web/lib/rosterScheduleData/planning.test.ts
+ M web/lib/rosterScheduleData/planning.ts
+ M web/lib/rosterScheduleData/source.test.ts
+ M web/lib/rosterScheduleData/source.ts
+ M web/lib/rosterScheduleOptimizer/planning.test.ts
+ M web/lib/rosterScheduleOptimizer/planning.ts
+ M web/lib/rosterScheduleOptimizer/planningTypes.ts
+ M web/lib/rosterScheduleOptimizer/workspace.test.ts
+ M web/lib/rosterScheduleOptimizer/workspace.ts
+ M web/lib/sources/lineSourceProcessing.test.ts
+ M web/lib/sources/lineSourceProcessing.ts
+ M web/lib/sources/linesCccIngestion.ts
+ M web/lib/sources/lineupSourceIngestion.ts
+ M web/lib/sources/nhlProspectIdentity.test.ts
+ M web/lib/sources/nhlProspectIdentity.ts
+ M web/lib/sources/nhlRosterPreview.ts
+ M web/lib/sources/projectedLineups.test.ts
+ M web/lib/sources/projectedLineups.ts
+ M web/lib/sources/tweetInterpretation.test.ts
+ M web/lib/sources/tweetInterpretation.ts
+ M web/lib/sources/tweetNewsAutomation.test.ts
+ M web/lib/sources/tweetNewsAutomation.ts
+ M web/lib/sources/tweetNewsInference.test.ts
+ M web/lib/sources/tweetNewsInference.ts
+ M web/lib/sources/tweetPlayerEvents.ts
+ M web/lib/sources/tweetProjectionStorage.ts
+ M web/lib/supabase/supportedBaselineMigration.test.ts
+ M web/pages/api/v1/db/calculate-wigo-stats.ts
+ M web/pages/api/v1/db/update-line-sources.ts
+ M web/pages/api/v1/db/update-lines-ccc.ts
+ M web/pages/api/v1/db/update-roster-optimizer-schedule.ts
+ M web/pages/api/v1/lines/projected.ts
+ M web/pages/api/v1/start-chart.ts
+ M web/pages/db/player-aliases.tsx
+ M web/pages/lines/[abbreviation].tsx
+ M web/pages/lines/line-combo/[gameId].tsx
+ M web/pages/rankings.tsx
+ D web/pages/shiftChart.js
+ M web/pages/start-chart.module.scss
+ M web/pages/start-chart.tsx
+ M web/styles/Rankings.module.scss
+ M web/styles/ShiftChart.module.scss
+ M web/styles/wigoCharts.module.scss
+ M web/utils/fetchWigoPlayerStats.test.ts
+ M web/utils/fetchWigoPlayerStats.ts
+?? output/pk-source-audit-20261002/
+?? output/ui-acceptance-20261002/
+?? output/underlying-stats-320px-20261002/
+?? supabase/migrations/20261002021651_forge_local_execution_fence.sql
+?? supabase/migrations/20261002134400_game_line_snapshots.sql
+?? supabase/migrations/20261002140500_resolve_goalie_unified_game_team.sql
+?? supabase/tests/execute_sql_acl.sql
+?? supabase/tests/forge_local_execution.sql
+?? supabase/tests/game_line_snapshots.sql
+?? supabase/tests/goalie_team_resolution.sql
+?? supabase/tests/goalie_team_resolution_runbook.md
+?? supabase/tests/goalie_unified_prior_view.sql
+?? supabase/tests/run_goalie_team_resolution.py
+?? tasks/TASKS/in-season-trust-clarity-decision-workflow/
+?? tasks/TASKS/lines-gdl-ingestion/audit/
+?? tasks/TASKS/lines-gdl-ingestion/game-line-snapshots-local-handoff.md
+?? tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md
+?? tasks/TASKS/repository-audit-remediation/task1-execute-sql-approved-apply.psql
+?? tasks/TASKS/repository-audit-remediation/task1-execute-sql-single-statement.sql
+?? tasks/TASKS/repository-audit-remediation/task1-execute-sql-transport-adapter.sql
+?? tasks/TASKS/repository-audit-remediation/task1-local-verification.json
+?? tasks/TASKS/repository-audit-remediation/task1-single-statement-verification.json
+?? tasks/TASKS/repository-audit-remediation/task1-transport-adapter-verification.json
+?? tasks/prd-game-grid-refactor.md
+?? tasks/prd-in-season-trust-clarity-decision-workflow.md
+?? tasks/tasks-prd-game-grid-refactor.md
+?? tasks/tasks-prd-game-line-snapshots.md
+?? tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md
+?? web/__tests__/pages/api/v1/lines/
+?? web/__tests__/pages/db/
+?? web/components/LineCombinations/GameLineSnapshots.test.tsx
+?? web/components/LineCombinations/GameLineSnapshots.tsx
+?? web/components/RosterScheduleOptimizer/BenchDecisions.tsx
+?? web/components/RosterScheduleOptimizer/CandidateBrowser.tsx
+?? web/components/RosterScheduleOptimizer/ForecastEvidence.tsx
+?? web/components/ShiftChart/Replay.test.tsx
+?? web/components/ShiftChart/Replay.tsx
+?? web/components/ShiftChart/data.ts
+?? web/components/ShiftChart/model.test.ts
+?? web/components/ShiftChart/model.ts
+?? web/components/ShiftChart/testFixtures.ts
+?? web/components/ShiftChart/useGameGrid.test.tsx
+?? web/components/ShiftChart/useGameGrid.ts
+?? web/e2e/game-lines.spec.ts
+?? web/e2e/player-pickup.spec.ts
+?? web/e2e/shift-chart.spec.ts
+?? web/hooks/candidateMetrics.worker.ts
+?? web/hooks/useCandidateMetrics.test.tsx
+?? web/hooks/useCandidateMetrics.ts
+?? web/lib/lines/
+?? web/lib/player-forecasts/baselineGeneration.ts
+?? web/lib/player-forecasts/baselineInputCapture.ts
+?? web/lib/player-forecasts/baselinePolicy.ts
+?? web/lib/player-forecasts/baselineRates.ts
+?? web/lib/player-forecasts/baselineSourceLineage.ts
+?? web/lib/player-forecasts/calendarCoverage.ts
+?? web/lib/player-forecasts/contributionStore.test.ts
+?? web/lib/player-forecasts/contributionStore.ts
+?? web/lib/player-forecasts/contributions.test.ts
+?? web/lib/player-forecasts/contributions.ts
+?? web/lib/player-forecasts/evaluation.test.ts
+?? web/lib/player-forecasts/evaluation.ts
+?? web/lib/player-forecasts/goalieBaseline.test.ts
+?? web/lib/player-forecasts/goalieBaselineInputCapture.ts
+?? web/lib/player-forecasts/goalieBaselineRates.ts
+?? web/lib/player-forecasts/planningContributions.test.ts
+?? web/lib/player-forecasts/planningContributions.ts
+?? web/lib/player-forecasts/populationAudit.ts
+?? web/lib/player-forecasts/resolvedPlanningForecast.ts
+?? web/lib/player-forecasts/scopeReads.ts
+?? web/lib/projections/acceptedNews.ts
+?? web/lib/projections/issuedContext.ts
+?? web/lib/rosterScheduleOptimizer/benchDecisions.ts
+?? web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts
+?? web/pages/api/internal/forecast-calendar.test.ts
+?? web/pages/api/internal/forecast-calendar.ts
+?? web/pages/shiftChart.tsx
+?? web/scripts/audit-forecast-population-local.ts
+?? web/scripts/forge-calendar-execution.ts
+?? web/scripts/forge-calendar-ledger.ts
+?? web/scripts/forge-local-ownership.ts
+?? web/scripts/forge-process-guardian.ts
+?? web/scripts/run-forge-calendar-local.ts
+?? web/scripts/run-forge-local.test.ts
+?? web/scripts/run-forge-local.ts

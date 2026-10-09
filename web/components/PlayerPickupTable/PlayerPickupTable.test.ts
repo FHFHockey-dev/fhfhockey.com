@@ -6,6 +6,7 @@ import PlayerPickupTable from "./PlayerPickupTable";
 import {
   getNhlSeasonIdFromYahooSeasonYear,
   getYahooSeasonStartYear,
+  normalizePickupPositions,
 } from "./PlayerPickupTable";
 
 describe("Player Pickup season identity", () => {
@@ -22,6 +23,19 @@ describe("Player Pickup season identity", () => {
   });
 });
 
+describe("pickup eligibility normalization", () => {
+  it.each([
+    [" c ", ["C"]],
+    [["C", "LW", "C"], ["C", "LW"]],
+    [[{ position: "C" }, { position: "LW" }], ["C", "LW"]],
+    [{ position: "G" }, ["G"]],
+    [null, []],
+    [[{}, 42, { position: {} }, "unknown", "BN"], []],
+  ])("validates eligibility %j", (input, expected) => {
+    expect(normalizePickupPositions(input)).toEqual(expected);
+  });
+});
+
 
 const state = vi.hoisted(() => ({ pro: false, fail: false, from: vi.fn(), access: { eligible: true } }));
 vi.mock("hooks/useCurrentSeason", () => ({ useCurrentSeasonQuery: () => ({ data: { seasonId: 20262027 }, isLoading: false, isError: false, refetch: vi.fn() }) }));
@@ -29,7 +43,7 @@ vi.mock("hooks/useDraftProAccess", () => ({ useDraftProAccess: () => ({ status: 
 vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession: async () => ({ data: { session: { access_token: "test" } } }) } } }));
 vi.mock("lib/supabase/public-client", () => ({ default: { from: state.from } }));
 const rows = [
-  { nhl_player_id: "1", nhl_player_name: "Free Agent", yahoo_player_id: "477.p.1", yahoo_team: "BOS", percent_ownership: 0, eligible_positions: ["C"] },
+  { nhl_player_id: "1", nhl_player_name: "Free Agent", yahoo_player_id: "477.p.1", yahoo_team: "BOS", percent_ownership: 0, eligible_positions: [{ position: "C" }, { position: "LW" }] },
   { nhl_player_id: "2", nhl_player_name: "My Player", yahoo_player_id: "477.p.2", yahoo_team: "TOR", percent_ownership: 95, eligible_positions: ["C"] },
   { nhl_player_id: "3", nhl_player_name: "Other Player", yahoo_player_id: "477.p.3", yahoo_team: "BOS", percent_ownership: 10, eligible_positions: ["C"] },
 ];
@@ -49,7 +63,12 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 describe("Player pickup interactions", () => {
   it("loads current ownership without history and filters zero-owned players by team", async () => {
     render(React.createElement(PlayerPickupTable));
+    expect(screen.getByRole("heading", { name: /^Best Players Available$/ }).textContent)
+      .toBe("Best Players Available");
     await screen.findByText("F. Agent");
+    expect(screen.getAllByText("C, LW").length).toBeGreaterThan(0);
+    expect(screen.queryByText(/\[object Object\]/)).toBeNull();
+    expect(screen.getByText(/Availability in your league and waiver status are unknown/)).toBeTruthy();
     expect(state.from).toHaveBeenCalledWith("yahoo_players");
     expect(state.from).not.toHaveBeenCalledWith("yahoo_players_with_normalized_history");
     fireEvent.change(screen.getByLabelText("Team:"), { target: { value: "TOR" } });
@@ -64,18 +83,43 @@ describe("Player pickup interactions", () => {
     state.fail = false; fireEvent.click(retry);
     expect(await screen.findByText("F. Agent")).toBeTruthy();
   });
-  it("uses Yahoo league availability and includes highly owned players in My roster", async () => {
+  it.each(["2026-09-17T12:00:00Z", "", "not-a-date"])("uses Yahoo non-rostered status with sync timestamp %s", async (fetchedAt) => {
     state.pro = true;
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: {
-      leagueName: "Test league", teamName: "My team", gameKey: "477", season: 2026, fetchedAt: "2026-09-17T12:00:00Z",
+      leagueName: "Test league", teamName: "My team", gameKey: "477", season: 2026, fetchedAt,
       rosteredPlayerKeys: ["477.p.2", "477.p.3"], roster: [{ key: "477.p.2", name: "My Player", position: "C" }],
     } }) }));
     render(React.createElement(PlayerPickupTable));
     await screen.findByRole("button", { name: "My roster (1)" });
+    if (fetchedAt === "2026-09-17T12:00:00Z") {
+      expect(screen.getByText(`Test league · My team · Synced ${new Date(fetchedAt).toLocaleString()}`)).toBeTruthy();
+    } else {
+      expect(screen.getByText("Test league · My team · Sync time unavailable")).toBeTruthy();
+      expect(screen.queryByText(/Invalid Date/)).toBeNull();
+    }
+    expect(screen.getByRole("button", { name: "Non-rostered in my league" })).toBeTruthy();
+    expect(screen.getByText(/Waiver status and immediate addability are unknown/)).toBeTruthy();
     await waitFor(() => expect(screen.getByText("F. Agent")).toBeTruthy());
     expect(screen.queryByText("O. Player")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "My roster (1)" }));
     expect(await screen.findByText("M. Player")).toBeTruthy();
     expect(screen.queryByText("F. Agent")).toBeNull();
+  });
+  it("discloses the general pool after Yahoo failure and allows refresh", async () => {
+    state.pro = true;
+    const fetchMock = vi.fn().mockResolvedValueOnce({ ok: false, json: async () => ({ error: "Yahoo sync is unavailable." }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: {
+        leagueName: "Test league", teamName: "My team", gameKey: "477", season: 2026, fetchedAt: "2026-09-17T12:00:00Z",
+        rosteredPlayerKeys: ["477.p.2", "477.p.3"], roster: [],
+      } }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(React.createElement(PlayerPickupTable));
+    await screen.findByText("Yahoo sync is unavailable.");
+    expect(screen.getByText("Showing the general player pool; Yahoo league availability is not applied.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Non-rostered in my league" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Refresh Yahoo" }));
+    await screen.findByRole("button", { name: "Non-rostered in my league" });
+    expect(screen.queryByText("Yahoo sync is unavailable.")).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

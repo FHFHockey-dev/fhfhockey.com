@@ -1,0 +1,2453 @@
+{
+  "width": 1180,
+  "tabSteps": 23,
+  "focusIndicator": {
+    "outlineStyle": "auto",
+    "outlineWidth": "1px",
+    "outlineColor": "rgb(0, 95, 204)",
+    "boxShadow": "none"
+  },
+  "contrastSamples": [
+    {
+      "state": "loading",
+      "text": "◉ Loading",
+      "foreground": "rgb(20, 162, 210)",
+      "fontSize": "12px",
+      "fontWeight": "700",
+      "backgrounds": [
+        {
+          "tag": "STRONG",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HEADER",
+          "color": "rgb(19, 21, 24)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgb(26, 29, 33)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "BODY",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HTML",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        }
+      ]
+    },
+    {
+      "state": "loading",
+      "text": "Page refresh · 30 seconds",
+      "foreground": "rgb(170, 170, 170)",
+      "fontSize": "11px",
+      "fontWeight": "400",
+      "backgrounds": [
+        {
+          "tag": "SPAN",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HEADER",
+          "color": "rgb(19, 21, 24)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgb(26, 29, 33)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "BODY",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HTML",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        }
+      ]
+    },
+    {
+      "state": "error",
+      "text": "Starter Board is unavailable.",
+      "foreground": "rgb(204, 204, 204)",
+      "fontSize": "16px",
+      "fontWeight": "700",
+      "backgrounds": [
+        {
+          "tag": "STRONG",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(255, 99, 132, 0.12)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "SECTION",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgb(26, 29, 33)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "BODY",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HTML",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        }
+      ]
+    },
+    {
+      "state": "error",
+      "text": "Fixture source retrieval failed",
+      "foreground": "rgb(170, 170, 170)",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "backgrounds": [
+        {
+          "tag": "SPAN",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(255, 99, 132, 0.12)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "SECTION",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgb(26, 29, 33)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "BODY",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HTML",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        }
+      ]
+    },
+    {
+      "state": "error",
+      "text": "Retry",
+      "foreground": "rgb(204, 204, 204)",
+      "fontSize": "13.3333px",
+      "fontWeight": "400",
+      "backgrounds": [
+        {
+          "tag": "BUTTON",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(255, 99, 132, 0.12)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "SECTION",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgb(26, 29, 33)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "BODY",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HTML",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        }
+      ]
+    },
+    {
+      "state": "error-status",
+      "text": "◉ Unavailable",
+      "foreground": "rgb(20, 162, 210)",
+      "fontSize": "12px",
+      "fontWeight": "700",
+      "backgrounds": [
+        {
+          "tag": "STRONG",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HEADER",
+          "color": "rgb(19, 21, 24)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgb(26, 29, 33)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "BODY",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HTML",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        }
+      ]
+    },
+    {
+      "state": "error-status",
+      "text": "Page refresh · 30 seconds",
+      "foreground": "rgb(170, 170, 170)",
+      "fontSize": "11px",
+      "fontWeight": "400",
+      "backgrounds": [
+        {
+          "tag": "SPAN",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HEADER",
+          "color": "rgb(19, 21, 24)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgb(26, 29, 33)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "BODY",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HTML",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        }
+      ]
+    },
+    {
+      "state": "partial-upcoming",
+      "text": "◷ Upcoming slate",
+      "foreground": "rgb(255, 204, 51)",
+      "fontSize": "12px",
+      "fontWeight": "700",
+      "backgrounds": [
+        {
+          "tag": "STRONG",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HEADER",
+          "color": "rgb(19, 21, 24)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgb(26, 29, 33)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "BODY",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HTML",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        }
+      ]
+    },
+    {
+      "state": "partial-upcoming",
+      "text": "Page refresh · 30 seconds",
+      "foreground": "rgb(170, 170, 170)",
+      "fontSize": "11px",
+      "fontWeight": "400",
+      "backgrounds": [
+        {
+          "tag": "SPAN",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HEADER",
+          "color": "rgb(19, 21, 24)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgb(26, 29, 33)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "BODY",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HTML",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        }
+      ]
+    },
+    {
+      "state": "missing-projections",
+      "text": "No player projections found.",
+      "foreground": "rgb(204, 204, 204)",
+      "fontSize": "16px",
+      "fontWeight": "700",
+      "backgrounds": [
+        {
+          "tag": "STRONG",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(255, 99, 132, 0.12)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "SECTION",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgb(26, 29, 33)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "BODY",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HTML",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        }
+      ]
+    },
+    {
+      "state": "missing-projections",
+      "text": "1 game isscheduled, but canonical projection rows are not ready.",
+      "foreground": "rgb(170, 170, 170)",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "backgrounds": [
+        {
+          "tag": "SPAN",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(255, 99, 132, 0.12)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "SECTION",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgb(26, 29, 33)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "BODY",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HTML",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        }
+      ]
+    },
+    {
+      "state": "applied-date",
+      "text": "Showing 2026-02-09, not 2026-02-08.",
+      "foreground": "rgb(204, 204, 204)",
+      "fontSize": "12px",
+      "fontWeight": "700",
+      "backgrounds": [
+        {
+          "tag": "STRONG",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "SECTION",
+          "color": "rgba(255, 204, 51, 0.12)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgb(26, 29, 33)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "BODY",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HTML",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        }
+      ]
+    },
+    {
+      "state": "applied-date",
+      "text": "No games are scheduled for 2026-02-08. Showing the upcoming slate on 2026-02-09.",
+      "foreground": "rgb(170, 170, 170)",
+      "fontSize": "12px",
+      "fontWeight": "400",
+      "backgrounds": [
+        {
+          "tag": "SPAN",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "SECTION",
+          "color": "rgba(255, 204, 51, 0.12)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgb(26, 29, 33)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "BODY",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HTML",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        }
+      ]
+    },
+    {
+      "state": "empty",
+      "text": "◉ No scheduled games",
+      "foreground": "rgb(20, 162, 210)",
+      "fontSize": "12px",
+      "fontWeight": "700",
+      "backgrounds": [
+        {
+          "tag": "STRONG",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HEADER",
+          "color": "rgb(19, 21, 24)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgb(26, 29, 33)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "BODY",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HTML",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        }
+      ]
+    },
+    {
+      "state": "empty",
+      "text": "Page refresh · 30 seconds",
+      "foreground": "rgb(170, 170, 170)",
+      "fontSize": "11px",
+      "fontWeight": "400",
+      "backgrounds": [
+        {
+          "tag": "SPAN",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HEADER",
+          "color": "rgb(19, 21, 24)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgb(26, 29, 33)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "BODY",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HTML",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        }
+      ]
+    },
+    {
+      "state": "empty-message",
+      "text": "No games found.",
+      "foreground": "rgb(204, 204, 204)",
+      "fontSize": "16px",
+      "fontWeight": "700",
+      "backgrounds": [
+        {
+          "tag": "STRONG",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(255, 99, 132, 0.12)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "SECTION",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgb(26, 29, 33)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "BODY",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HTML",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        }
+      ]
+    },
+    {
+      "state": "empty-message",
+      "text": "No current or upcoming scheduled games are available.",
+      "foreground": "rgb(170, 170, 170)",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "backgrounds": [
+        {
+          "tag": "SPAN",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(255, 99, 132, 0.12)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "SECTION",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgb(26, 29, 33)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "DIV",
+          "color": "rgba(0, 0, 0, 0)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "BODY",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        },
+        {
+          "tag": "HTML",
+          "color": "rgb(32, 32, 32)",
+          "image": "none",
+          "opacity": "1",
+          "filter": "none",
+          "backdropFilter": "none",
+          "blendMode": "normal",
+          "before": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          },
+          "after": {
+            "content": "none",
+            "background": "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box"
+          }
+        }
+      ]
+    }
+  ],
+  "statusNodeRetained": true,
+  "recoveryStatus": "Upcoming slate",
+  "pageErrors": [],
+  "loadingAccessibility": "- status \"Starter Board status\":\n  - strong: Loading\n  - text: Page refresh · 30 seconds",
+  "errorAccessibility": "- alert:\n  - strong: Starter Board is unavailable.\n  - text: Fixture source retrieval failed\n  - button \"Retry\"",
+  "upcomingAccessibility": "- status \"Starter Board status\":\n  - strong: Upcoming slate\n  - text: Page refresh · 30 seconds",
+  "emptyAccessibility": "- status \"Starter Board status\":\n  - strong: No scheduled games\n  - text: Page refresh · 30 seconds",
+  "noHorizontalOverflow": true,
+  "screenReaderSpeech": "not verified",
+  "inputs": "fictional API responses"
+}

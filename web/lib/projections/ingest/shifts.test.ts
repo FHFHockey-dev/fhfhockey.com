@@ -168,7 +168,7 @@ describe("projection shift strength ownership", () => {
     expect(nhleFetchJsonMock.mock.calls[1][0]).toContain("start=1000");
   });
 
-  it("rejects premature short pages, total drift, and duplicate source rows", async () => {
+  it("rejects premature short pages and total drift, while counting duplicate intervals once", async () => {
     nhleFetchJsonMock.mockResolvedValueOnce({
       total: 2,
       data: [shift()],
@@ -196,9 +196,9 @@ describe("projection shift strength ownership", () => {
       total: 2,
       data: [shift(), shift()],
     });
-    await expect(fetchAllNhleShiftChartsForGame(GAME_ID)).rejects.toThrow(
-      "Duplicate NHL shift source row",
-    );
+    const snapshot = await fetchAllNhleShiftChartsSnapshotForGame(GAME_ID);
+    expect(snapshot.rows).toHaveLength(1);
+    expect(snapshot.rawPayload.data).toHaveLength(2);
   });
 
   it("uses only interval rows and assigns every interval second to ES/PP/PK", () => {

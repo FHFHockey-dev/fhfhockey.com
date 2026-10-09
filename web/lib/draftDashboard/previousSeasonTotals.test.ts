@@ -4,8 +4,8 @@ import { selectLatestSeasonRows } from "./previousSeasonTotals";
 
 describe("previous season totals", () => {
   it("excludes the active season from previous-season details", () => {
-    const latest = selectLatestSeasonRows([{ id: 1, season: 20252026 }, { id: 1, season: 20242025 }], "id", "season", 20252026);
-    expect(latest.get("1")?.season).toBe(20242025);
+    const latest = selectLatestSeasonRows([{ id: 1, season: 20252026 }, { id: 1, season: 20242025 }], "id", "season", 20262027);
+    expect(latest.get("1")?.season).toBe(20252026);
   });
   it("selects one deterministic latest row per player across unordered pages", () => {
     const latest = selectLatestSeasonRows(

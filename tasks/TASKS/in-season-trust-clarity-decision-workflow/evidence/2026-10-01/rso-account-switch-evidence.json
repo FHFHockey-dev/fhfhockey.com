@@ -1,0 +1,56 @@
+{
+  "recordedAt": "2026-10-02T03:43:18.464144+00:00",
+  "runtimeChanges": [
+    "Clear previous access/error and owned-team state when the authenticated user changes.",
+    "Abort the previous account provider request and validate user identity before sending or applying provider responses.",
+    "Reject outdated save callbacks before dispatch, success, conflict or error presentation.",
+    "Preserve local workspace roster and intent; no automatic account migration."
+  ],
+  "regressions": [
+    {
+      "name": "uses the signed-in session for access and account reads, then refreshes after account switch",
+      "before": "Failed because the previous provider request was not aborted.",
+      "after": "Passes with new-account access pending; provider disabled, old request aborted, late old snapshot ignored, local intent/roster/manualPlayers preserved."
+    },
+    {
+      "name": "sends the signed-in token when saving the workspace",
+      "before": "Failed because old account save displayed Saved to account after switching users.",
+      "after": "Passes with correct initiating token and no old-account save success in the new account."
+    }
+  ],
+  "checks": [
+    {
+      "command": "npm test -- --run __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+      "exitCode": 0,
+      "passed": 19,
+      "durationSeconds": 2.21
+    },
+    {
+      "command": "npx eslint components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+      "exitCode": 0,
+      "errors": 0,
+      "existingWarnings": 4
+    },
+    {
+      "command": "NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit",
+      "exitCode": 2,
+      "limitation": "scripts/run-forge-calendar-local.ts(264,35) TS2345 Buffer vs string | ArrayBufferView; outside the touched RSO files."
+    },
+    {
+      "command": "git diff --check -- web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+      "exitCode": 0
+    }
+  ],
+  "logs": [
+    "rso-account-switch-provider-red.log",
+    "rso-account-switch-save-red.log",
+    "rso-account-switch-tests.log",
+    "rso-account-switch-lint.log",
+    "rso-account-switch-types.log"
+  ],
+  "limitations": [
+    "Mocked component/session/provider/save responses; no real-account parity or browser session switch certified.",
+    "No external request, provider mutation, database operation, deployment, migration, recompute or forecast release.",
+    "Shared FE source/producer/release and human acceptance gates remain open."
+  ]
+}

@@ -1,0 +1,152 @@
+{
+  "version": "pk-source-manifest-v1",
+  "recordedAt": "2026-10-02T14:14:05.267913+00:00",
+  "head": "73af9d051ecc755dd3695f5265bf5837bbfc7a4e",
+  "basis": "current_dirty_workspace_not_committed_baseline",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "e533357edb71645727c08752dfa67e19b1fad4847ea61c5e183b805c28faf35c",
+      "bytes": 10539,
+      "gitStatus": ""
+    },
+    {
+      "path": "mise-en-place.md",
+      "sha256": "d27d251366dbd5b36659ccc9e4c9210ce0a009dbb1a71d1d8a5c2c9ea385becd",
+      "bytes": 7140,
+      "gitStatus": ""
+    },
+    {
+      "path": "web/lib/projections/queries/skater-queries.ts",
+      "sha256": "a3bc533f532d146c9cc6ef02601417a9cecd7fef509127c0ab6c3cd3d36c5b8a",
+      "bytes": 11379,
+      "gitStatus": "M web/lib/projections/queries/skater-queries.ts"
+    },
+    {
+      "path": "web/lib/projections/queries/team-context-queries.ts",
+      "sha256": "e2b50cf8765801fe865f467b09627335ceae21dfc36498720ffd166ef4061dba",
+      "bytes": 13339,
+      "gitStatus": ""
+    },
+    {
+      "path": "web/lib/projections/stages/skater-stage.ts",
+      "sha256": "dcde3272d5a4cf2c3ad167512af1df2729b932b414f4772cb722a46b24bc0739",
+      "bytes": 124921,
+      "gitStatus": "M web/lib/projections/stages/skater-stage.ts"
+    },
+    {
+      "path": "web/lib/projections/seasonBootstrap.ts",
+      "sha256": "3ff0c0f3bb7c2af79ce0419575349d46c1d87a5c113d25e82a7976c0630638db",
+      "bytes": 14295,
+      "gitStatus": ""
+    },
+    {
+      "path": "web/lib/projections/derived/situation.ts",
+      "sha256": "98ef81ad1c3d855ff9da8cd9debce9d957934da52940617d40c3ecc1fbe6ee26",
+      "bytes": 1361,
+      "gitStatus": ""
+    },
+    {
+      "path": "web/lib/projections/ingest/shifts.ts",
+      "sha256": "4542e5751182aea05112769efa1257b571d52ed11e0c843cde27a69deb896c71",
+      "bytes": 23168,
+      "gitStatus": ""
+    },
+    {
+      "path": "web/lib/projections/derived/buildStrengthTablesV2.ts",
+      "sha256": "6dfb3b212c57ee86f7fcf1f662dcc478bb522b14661b8b7d5c8ead93f65c845e",
+      "bytes": 12788,
+      "gitStatus": ""
+    },
+    {
+      "path": "web/lib/projections/starterBoardScoring.ts",
+      "sha256": "735fe0cc2f700588cca50aba03c13d2b4aa01037a4daea276dcfec68aa08d18c",
+      "bytes": 12766,
+      "gitStatus": "M web/lib/projections/starterBoardScoring.ts"
+    },
+    {
+      "path": "web/lib/projections/inputCapture.ts",
+      "sha256": "4cb26580342c6cd95c83f167210e66d49cba85f2de43c139f370bd1bad99c32c",
+      "bytes": 8159,
+      "gitStatus": "M web/lib/projections/inputCapture.ts"
+    },
+    {
+      "path": "web/lib/projections/issuedContext.ts",
+      "sha256": "0b08c3cefd89818109763a10a62c326067c0c428de6b67f412524291834500bc",
+      "bytes": 11463,
+      "gitStatus": "?? web/lib/projections/issuedContext.ts"
+    },
+    {
+      "path": "web/lib/player-forecasts/baselineInputCapture.ts",
+      "sha256": "6d7d22aae7d17e2e6db4045b69758d4523d4c3c17e5e28bd94442ba04402b2a4",
+      "bytes": 26673,
+      "gitStatus": "?? web/lib/player-forecasts/baselineInputCapture.ts"
+    },
+    {
+      "path": "web/lib/player-forecasts/baselineRates.ts",
+      "sha256": "f7e41d99c6b73730ddb058ed0983eed1218561d6d5005fce8e72e7cf4d0c3e7e",
+      "bytes": 9320,
+      "gitStatus": "?? web/lib/player-forecasts/baselineRates.ts"
+    },
+    {
+      "path": "web/lib/player-forecasts/baselinePolicy.ts",
+      "sha256": "70c9a3af0e224a5aa88afe263ed7061a79f2f15704cdafefa8d5e9e589a16412",
+      "bytes": 6409,
+      "gitStatus": "?? web/lib/player-forecasts/baselinePolicy.ts"
+    },
+    {
+      "path": "web/lib/player-forecasts/contributions.ts",
+      "sha256": "491db8c3d3d8cb774f9a985584a74036be2713f0bcff5e13b2a5d3a35295f7c5",
+      "bytes": 15371,
+      "gitStatus": "?? web/lib/player-forecasts/contributions.ts"
+    },
+    {
+      "path": "web/lib/player-forecasts/planningContributions.ts",
+      "sha256": "9cb7fe7734f47fc10800f6df9136d5b9d30b8877df6168456d6649ab950a6a04",
+      "bytes": 16589,
+      "gitStatus": "?? web/lib/player-forecasts/planningContributions.ts"
+    },
+    {
+      "path": "web/lib/player-forecasts/evaluation.ts",
+      "sha256": "a38c679034bad475ff6cc70ec6122e6d82a1bbbeda1dfcfba12991e1ba389f15",
+      "bytes": 27952,
+      "gitStatus": "?? web/lib/player-forecasts/evaluation.ts"
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planning.ts",
+      "sha256": "65bd3b3b26d2f7b1c00de067f8b0286592cf2435975b370477dc1a48800169ab",
+      "bytes": 36221,
+      "gitStatus": "M web/lib/rosterScheduleData/planning.ts"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "sha256": "5d0a0ef3de8020b750d9c5888965edd27ddefe28486ce8e60738e4097f783f56",
+      "bytes": 140353,
+      "gitStatus": ""
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingPlayerSourceSelection.ts",
+      "sha256": "32d90146228cdb3470bfa3d6bd9a2d41406d0109e7b1cbe197dc2d504010368a",
+      "bytes": 4061,
+      "gitStatus": ""
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingPlayerToiContract.ts",
+      "sha256": "18b2e45c473a520ad88dcf2d5f8f7a0a47807f77097896bea59bce65fc694f45",
+      "bytes": 6631,
+      "gitStatus": ""
+    },
+    {
+      "path": "functions/api/fetch_team_table.py",
+      "sha256": "600ba674e1f2820f7209d295cfe03d71b661469c120c20ac2ce380a64500b16e",
+      "bytes": 11397,
+      "gitStatus": ""
+    },
+    {
+      "path": "supabase/migrations/20260720105524_add_projection_materialization_transactions.sql",
+      "sha256": "04806d4ba5c2d2a832081c41ae599bd0e8617cf22167a4719e4be7878267ffe2",
+      "bytes": 135986,
+      "gitStatus": ""
+    }
+  ]
+}

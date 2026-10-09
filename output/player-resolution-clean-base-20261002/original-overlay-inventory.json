@@ -1,0 +1,1325 @@
+[
+  {
+    "path": "web/__tests__/pages/api/v1/lines/projected.test.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/__tests__/pages/db/player-aliases.test.tsx",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "included-existing-approved-resolver-prerequisite"
+  },
+  {
+    "path": "web/components/LineCombinations/GameLineSnapshots.test.tsx",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/LineCombinations/GameLineSnapshots.tsx",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/BenchDecisions.tsx",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/ForecastEvidence.tsx",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/ShiftChart/Replay.test.tsx",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/ShiftChart/Replay.tsx",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/ShiftChart/data.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/ShiftChart/model.test.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/ShiftChart/model.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/ShiftChart/testFixtures.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/ShiftChart/useGameGrid.test.tsx",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/ShiftChart/useGameGrid.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/e2e/game-lines.spec.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/e2e/player-pickup.spec.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/e2e/shift-chart.spec.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/hooks/candidateMetrics.worker.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/hooks/useCandidateMetrics.test.tsx",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/hooks/useCandidateMetrics.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/lines/binding.test.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/lines/binding.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/lines/gameState.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/lines/identity.test.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/lines/identity.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/lines/processor.test.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/lines/processor.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/lines/reconcile.test.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/lines/reconcile.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/lines/screenshotFixtures.test.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/lines/service.test.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/lines/service.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/lines/sourceClaims.test.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/lines/sourceClaims.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/lines/storage.test.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/lines/storage.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/lines/testDatabase.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/lines/testFixtures.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/lines/types.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/baselineGeneration.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/baselineInputCapture.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/baselinePolicy.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/baselineRates.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/baselineSourceLineage.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/calendarCoverage.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/contributionStore.test.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/contributionStore.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/contributions.test.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/contributions.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/evaluation.test.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/evaluation.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/goalieBaseline.test.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/goalieBaselineInputCapture.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/goalieBaselineRates.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/planningContributions.test.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/planningContributions.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/populationAudit.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/resolvedPlanningForecast.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/scopeReads.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/projections/acceptedNews.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/projections/issuedContext.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/benchDecisions.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/pages/api/internal/forecast-calendar.test.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/pages/api/internal/forecast-calendar.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/pages/shiftChart.tsx",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/scripts/audit-forecast-population-local.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/scripts/forge-calendar-execution.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/scripts/forge-calendar-ledger.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/scripts/forge-local-ownership.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/scripts/forge-process-guardian.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/scripts/run-forge-calendar-local.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/scripts/run-forge-local.test.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/scripts/run-forge-local.ts",
+    "kind": "untracked-at-audit",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/README.md",
+    "kind": "dirty-at-audit",
+    "headBlob": "dd876f82ccf91c27c7b08d149329c413cf408390",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/__tests__/components/DraftDashboard/DraftSummaryModal.test.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "e172d3be9eba8d2f9e47e152f522569c2f339de9",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/__tests__/components/DraftDashboard/KeeperWorkflow.test.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "731e5b7b6ba7969cdf992ee7ca804e6d017c0d83",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/__tests__/components/DraftDashboard/YahooLiveDraftPanel.test.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "d5bb1a39cc756ae55842e3b306f70dce67498b6a",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/__tests__/components/Layout/Header.test.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "4666e8931eda307b1da63ccec629e7518f6540ce",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "c8ff62bac0dcdd141c8f0df81e9b3467cfe11884",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/__tests__/components/auth/UserMenu.test.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "3dcd0db55d7116a2f0783d876cf822d47c2a7c92",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/__tests__/pages/api/v1/db/calculate-wigo-stats.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "e95d795b9ff8a88cf57b520d74a28e9d22542822",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/__tests__/pages/api/v1/db/update-line-sources.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "503f27c2100b83ba7d0396cdf2f142c65a7b6bb9",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/__tests__/pages/api/v1/db/update-players.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "f6ae472130ba61f9dd373ab5167df584a8558a78",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/__tests__/pages/api/v1/db/update-roster-optimizer-schedule.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "e8915d5227015b999ca7106c875068e5b9113db0",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/__tests__/pages/api/v1/start-chart.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "5d55c3e969ba9f905fd8e9d70e850dce465d4abf",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/__tests__/pages/rankings.test.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "c323218a693a540c247b3cdb8f2aee5f72680280",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/__tests__/pages/start-chart.test.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "4a08de6e136e5ca654e9e4c6cea38d0ea5513d50",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/DraftDashboard/DraftBoard.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "3da06ca443c575dbb0c38309e8fa5f40ee043c0d",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/DraftDashboard/DraftDashboard.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "6810565bedf26a5e9d12f4ecd5b5a39c82424251",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/DraftDashboard/DraftSettings.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "b9acb496ed4765c963b8ce68d4594bb0d8812ee0",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/DraftDashboard/DraftSummaryModal.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "8ec850a48742c8bb5aa8914d82754fdb309450fe",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/DraftDashboard/YahooLiveDraftPanel.module.scss",
+    "kind": "dirty-at-audit",
+    "headBlob": "7b2683996a523306fde6e2ac5c91cf1b564ee89d",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/DraftDashboard/YahooLiveDraftPanel.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "0012b1ec0a4aab1660203f72e7e785e46874ffe4",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/GameGrid/GameGrid.module.scss",
+    "kind": "dirty-at-audit",
+    "headBlob": "67a8b1b9fd3518b943403c998757bf456cb8a900",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/GameGrid/GameGrid.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "05e60c96bed4631056962529621551a053447ad2",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/HomePage/HomepageStandingsInjuriesSection.test.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "a186ee792b151a8911a93c8ab7b14939ec536479",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/HomePage/HomepageStandingsInjuriesSection.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "03f7b30fdbae897f03eb98faa0dd6cfec3b1f7ce",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/Layout/Header/Header.module.scss",
+    "kind": "dirty-at-audit",
+    "headBlob": "2ffd22ad0e848496edce4cf8033bc02f9f6c2c64",
+    "candidateDisposition": "excluded-dirty-shell-overlay-use-committed-version"
+  },
+  {
+    "path": "web/components/Layout/Header/Header.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "92230d76ff9c9beddad94b9fe84f4ac69867a158",
+    "candidateDisposition": "excluded-dirty-shell-overlay-use-committed-version"
+  },
+  {
+    "path": "web/components/Layout/Layout.module.scss",
+    "kind": "dirty-at-audit",
+    "headBlob": "d7a5f828391fb33cbf5896fd29531d11ebdfb2a3",
+    "candidateDisposition": "excluded-dirty-shell-overlay-use-committed-version"
+  },
+  {
+    "path": "web/components/Layout/Layout.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "875e5de844853c636c2d9c407b454c85934dec89",
+    "candidateDisposition": "excluded-dirty-shell-overlay-use-committed-version"
+  },
+  {
+    "path": "web/components/Layout/NavbarItems/NavbarItems.module.scss",
+    "kind": "dirty-at-audit",
+    "headBlob": "3bac528e51bede7ea83f101f05b3ed7c0ff7dd84",
+    "candidateDisposition": "excluded-dirty-shell-overlay-use-committed-version"
+  },
+  {
+    "path": "web/components/LineCombinations/ProjectedLineups.module.scss",
+    "kind": "dirty-at-audit",
+    "headBlob": "f5e58002395f1f8d8b095e229ec3886ab7f01df5",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/LineCombinations/ProjectedLineups.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "fb821f9f12929b191ac2e42c4e5ba548f8bae942",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/LinemateMatrix/index.module.scss",
+    "kind": "dirty-at-audit",
+    "headBlob": "71d5a60a7b3284b2f5209a85311abbbe47155713",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/LinemateMatrix/index.test.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "a73227b143600c865f6949da509239556a1f50f8",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/LinemateMatrix/index.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "bbf45e7138dd14ecf9e7ecee459f7f4bc559667d",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/NewsFeed/NewsCard.test.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "56669b47ba91d2dec65ed4a81d8c643801f15d4e",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/NewsFeed/NewsCard.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "48772e5da653440accaf65c6839214a4ff7c8526",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/PlayerPickupTable/PlayerPickupTable.module.scss",
+    "kind": "dirty-at-audit",
+    "headBlob": "f46eab3fe9a9b4866d5f9cc6760a65af1b3bcdbb",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/PlayerPickupTable/PlayerPickupTable.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "89db30018c2f6b6fffb77a5b8c0c56cd429ec01a",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/PlayerPickupTable/PlayerPickupTable.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "e2c1799568a4a7f7d57d504537d71c25e1dc8bca",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/Rankings/ComparisonSummaryPanel.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "7a4296f6aee059fd766034756ba7dd0ebbefe286",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/Rankings/PlayerMatrixTable.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "e0ff3ff60e92e3e0acf0d87200650cfd3848c403",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/Rankings/PlayerSnapshotPanel.test.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "e9bdada85d2dab6b6f6a0a09623ee70eb394926c",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/Rankings/PlayerSnapshotPanel.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "fb770a138aea9993e268612f3a50cb7f30ba056a",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/Rankings/RankingsFilters.test.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "bfb7aa97c6e20f2210d1f74933da662035ca34b7",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/Rankings/RankingsFilters.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "eb2d54d71a744d93eefdc730710e9627174e6c46",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/Rankings/RankingsTable.test.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "2d38366f9e4a30e33e0d5e9f5f7d527128020aed",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/Rankings/RankingsTable.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "db0561c8791ae1ae16642958703779c3685ddc43",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss",
+    "kind": "dirty-at-audit",
+    "headBlob": "83b31f7b0da9d249ae216776c30846c4993fbd0e",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "57a1067b7fbb73709b41ddfe4f363aedbf5406c0",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/WiGO/RateStatPercentiles.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "caf8a849fe70649241367b7b3d9a9dec428ec945",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/WiGO/StatsTable.test.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "a67e65d3db592d819494c44fb58f20b11338a1c6",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/WiGO/StatsTable.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "c82d9c8ca021d471093d3a7e691af81faa72abe0",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/WiGO/WigoComparisonMatrix.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "6352122e1dcf3f2867356ba4c7371b5de51862cd",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/WiGO/tableUtils.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "9489c1f78d00454a520c0f4a33aa04ae8038c0ae",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/WiGO/tableUtils.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "0741f3c52fa0e66ade46c41f5d7fff15e0fa2606",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/components/auth/UserMenu.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "63a7d15739e0261d44cc61e526ebc53c4d44b134",
+    "candidateDisposition": "excluded-dirty-shell-overlay-use-committed-version"
+  },
+  {
+    "path": "web/e2e/navigation.spec.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "f9087c92989386540653f548deb6482fa92c7c68",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/e2e/rankings.spec.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "167ec7edd1accce57b630da1aaaef4d92f26c11d",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/e2e/roster-schedule-optimizer.spec.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "7de22d1cb8191b259e316d8d745509a004ac57c4",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/e2e/start-chart.spec.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "bac866b1bb10add8ec9aee45143ac58c5cc52475",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/e2e/wigo-single-viewport.spec.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "2aadc3d83cc149d5cff568b2362ba764d33fa674",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/hooks/useResizeObserver.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "2452c4ba363bec298cce778aea4c55ff2fdd7008",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/hooks/useYahooDraftSync.test.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "bedebf515142a1cd74e1af01cc22250d0f2abf37",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/hooks/useYahooDraftSync.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "9db155e6bd1a40bfb6c4d416c4ca98863cba41de",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/dashboard/freshness.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "7f270aa360f1f54644a6089e97216580a4dcb8db",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/dashboard/freshness.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "955e4d362d6b8c8e65c2d71c4cf89570c10a5cdb",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/draftDashboard/yahooLiveDraft.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "0e3593e2361c5988a5deef9ffb5ff9c8e389c784",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/in-season/workspaceSchema.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "a7309d5c18c85ef896b44dd41413332d73eee1c2",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/in-season/workspaceSchema.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "3021070ac4d9b78b39a843eaa08a9af93744b5a7",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/liveDraftServer.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "f151c16943e918f5f3031abd09b8a4c07b30b6eb",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/pickup.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "b7d5865539408000efdbb1e1bfa2ad4dca7d20ad",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/pickup.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "b9ac00470c2e3a4a3b2426d8924172d549d3cfac",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/providerClient.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "7e47e352adbf6d5a12225a3a0f9409a4c8df404c",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "957f64dfaf980c651a255d9ed10bfd28c6820498",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "ceb46a123ba2b362cfee8062e0406d58fa841133",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/navigation/siteSurfaceLinks.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "35fca30171f98edef371ce97ec3fbe9786104bfa",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/newsFeed.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "ad7d2f1be5ae32388ccdadd64152f84a622e48ef",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/newsFeed.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "e0fcc5df216e8723267061c39d23e178bf64c227",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/orchestration.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "cf81147d28cb9c7f4eac21e3ec6bfcca5766fb95",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/planComparison.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "55989536e6e5d464cfa219b0d69c589f2f3acb58",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/planComparison.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "7f3980f7e47c27da3592d25b35977189ba21eee4",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/playerForecasts.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "12da0cae16b157b81c351bfee612586e6c81ba56",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/readiness.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "e3aa7eddd1ca17416eeec5ca7d9d29e431ad6f66",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/schedule.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "42bd3b833329da528b14c26207955204844f714b",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/settlement.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "4fd4edbad706d31db0e0bda7cab82a38998016c6",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/player-forecasts/sourceObservations.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "0b2b5c90c31db2e7af43b6b6ef93d74cd9e43491",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/projections/dailyBoardEvidence.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "57c6af458c76bb6d847e3c52fa7ce8bee01eff69",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/projections/gameRevisions.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "90110f7839b4a069915e535672af63549bc2d792",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/projections/goalieStarterMixtures.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "0b302279a58d158cf24b825759e81ff6b8112afb",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/projections/goalieStarterMixtures.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "87aa42521c52da11a626c4f2dceb3ba2725e6df8",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/projections/inputCapture.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "01b3d0832201f00c8eb2167eb7ec15dbe3924e3e",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/projections/queries/skater-queries.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "32551543da40843800f12f4078ac42ee1e6e17d9",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/projections/queries/skater-queries.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "5da197bf09f24b9d2c39e131566aff078972a61a",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/projections/run-forge-projections.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "fec4fa93659eee62f69ef29d16dc0ca4d06ba091",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/projections/runProjectionV2.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "3b84ff79c60c0512b71afdd01712064b98362fde",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/projections/stages/skater-stage.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "9b6c7cf250f2704403b74409fdfc62330b48185b",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/projections/startChartPipeline.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "bbff966c9cd49976d59c01d57a1c1b1c5220a838",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/projections/starterBoardScoring.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "9036b26ea6344685a4bac2b22825169fd5a41d66",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/projections/types/run-forge-projections.types.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "1d466ec84c660dd3ac4c7c55eb814cac0172058e",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rankings/entityMetricRankingReader.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "6334de46f8c1ab91e65854abdd24b4d115926533",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rankings/playerMatrix.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "3c16731ddedfe6b8f84e1410183490dd145ba24a",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rankings/playerMatrix.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "57a7535fb3229736ae629fdaf4d7a3354d16a85c",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rankings/rankingCalculator.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "b372e1c15cb9111e58cf96955821b391f7684cd1",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rankings/rankingCalculator.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "f518b34abbc8cc1942e5e63697de887cad8e8bb5",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rankings/rankingFormatters.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "bb92108ad541aef67f6616fcbc6888acf4ff3069",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rankings/rankingFormatters.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "1ba83a3c7c54e73cb3ce348aeae2c28cac248535",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rankings/rankingQueries.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "bf89b203c78e4aaa1c29113dee247ce7ec23f26b",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rankings/rankingQueries.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "84ebadc020110d88fda719ccba19d400735f7ef8",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rankings/rankingUrlState.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "de926979f9d81f56752c7cccff1459c9a890b869",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rankings/rankingUrlState.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "06ba967c4fbed33dbc211d5aab4d373e4c7c833c",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rankings/rollingRankingSelectFields.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "787970d53d9fceba962cd6cc76cfa31f5ef5ed69",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/normalize.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "0a09d7c6ac19c6215c137f4dcf97ed475add27ab",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/persistence.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "17b47d3f7dda35666f101a8cee04223a68672c56",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/persistence.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "2097e25f4a7ec4944ed28a7947f996fe595af559",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/planning.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "2c57be348ce0c348913be790d44fe67d3e95fde7",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/planning.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "dc2d57bdec565406b0599a3774457f8c8c5903d9",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/source.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "2f5319f41dc3dcaa258e37a701adb131ca5939aa",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/source.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "28612c248985c5b182888e77e460a9d11a854007",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/planning.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "fad2c550c9277a62af279196f4d61ae8a91d42db",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "0e46399a082f1995dab40231112307d24df81a2e",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/planningTypes.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "d0f7b3db3927f0b7f8ad98b735ca356340c50828",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/workspace.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "002fdb24965e8d5bf8d7fd871cbd9f5e5ac36ce8",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/workspace.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "c65d9ebef660687e956750d1f19b44db8d24afd7",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/sources/lineSourceProcessing.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "3e2f02dbaf65ce1a96bfac54943d59617902e909",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/sources/lineSourceProcessing.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "e64a29a9695cb2d9b08c948b90b3e2fc5c36b7a5",
+    "candidateDisposition": "excluded-dirty-backend-overlay-use-committed-version"
+  },
+  {
+    "path": "web/lib/sources/linesCccIngestion.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "2201cf448940a963db494e7a11bcbe63d2b35c58",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/sources/lineupSourceIngestion.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "a9409e9f97366dc84dd200051597b89f9a64bef4",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/sources/nhlProspectIdentity.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "2f52c33b1005386996f1c7ece8f18f3a216a447f",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/sources/nhlProspectIdentity.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "a14b5cfebc6347607e8ae9c7832f50349919d1e5",
+    "candidateDisposition": "excluded-dirty-backend-overlay-use-committed-version"
+  },
+  {
+    "path": "web/lib/sources/nhlRosterPreview.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "7beb691ece9f37ebe616a74fcbe72bfaf5aa48a9",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/sources/projectedLineups.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "d5d765cc941cbc0353d0cdd269fff7c08aa03c84",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/sources/projectedLineups.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "3aca7ab8739d9e72aa29d9cb798e7569749102e2",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/sources/tweetInterpretation.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "bb9776a3429c633c6695b43ad10d97ad33d4c657",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/sources/tweetInterpretation.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "79265fc99b54c10e7782f5db5c4883d58d4d7972",
+    "candidateDisposition": "excluded-dirty-backend-overlay-use-committed-version"
+  },
+  {
+    "path": "web/lib/sources/tweetNewsAutomation.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "759ad8a8ff8bfdd68cfaa76884af2ac03ef87a59",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/sources/tweetNewsAutomation.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "ce4fe880de35d50502ddad978f853ebd273432c0",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/sources/tweetNewsInference.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "1117a127cb62b01f781b38cc5f7635f61485bfa7",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/sources/tweetNewsInference.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "01f60a49d5b26afeb260941aae7d57a2b41d1cc7",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/sources/tweetPlayerEvents.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "b5103dcea50036fe66d9242a2a88ce4403599f4b",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/sources/tweetProjectionStorage.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "6766ac2021b8b956132ab752df57d9f7355c6132",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/lib/supabase/supportedBaselineMigration.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "01d0630dad0ea76176e315ef0c26fece10411995",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/pages/api/v1/db/calculate-wigo-stats.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "b57a434d46976313289caf570dca38fbd7d5f674",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/pages/api/v1/db/update-line-sources.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "7adcbf21403df22585597244dd0ae108959ecbcd",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/pages/api/v1/db/update-lines-ccc.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "ccfef18b851b84a5f0c74423248df7769093ddff",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/pages/api/v1/db/update-roster-optimizer-schedule.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "344ece5d0e652ea9638bf0acf3a35efcf82fef8e",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/pages/api/v1/lines/projected.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "7e500257eebe669e30e60664c2738c03783ad81d",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/pages/api/v1/start-chart.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "cbf937a44c1c90ad591d3b88ffa1e6d6b240a2e3",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/pages/db/player-aliases.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "6630bbb83c23096582eb24d36baf16d36d3360fb",
+    "candidateDisposition": "included-existing-approved-resolver-prerequisite"
+  },
+  {
+    "path": "web/pages/lines/[abbreviation].tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "8374ba7a81f45f30613016c01bce18c7cba51408",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/pages/lines/line-combo/[gameId].tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "ca451922e14a0c828b2a55f541d1f847d67101bb",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/pages/rankings.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "d23de14c333aed70c665b32d5df683549d0998c7",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/pages/start-chart.module.scss",
+    "kind": "dirty-at-audit",
+    "headBlob": "bfff74531c9d23dcfc8b82b360960874ad415bb0",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/pages/start-chart.tsx",
+    "kind": "dirty-at-audit",
+    "headBlob": "9cd6535a91eb678540de53722c4e56aeef57bcfb",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/styles/Rankings.module.scss",
+    "kind": "dirty-at-audit",
+    "headBlob": "53b4509c7bc501dbd504a13662cf076dd6f27e51",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/styles/ShiftChart.module.scss",
+    "kind": "dirty-at-audit",
+    "headBlob": "2f6fa550b36ce81b8af61ecfc08555e4bb83ebcd",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/styles/wigoCharts.module.scss",
+    "kind": "dirty-at-audit",
+    "headBlob": "c3592cbecb99bf9801125b7ba1c714e2a161e94a",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/utils/fetchWigoPlayerStats.test.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "430d493d2b7be74cc436196496c62df45ef57fb7",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  },
+  {
+    "path": "web/utils/fetchWigoPlayerStats.ts",
+    "kind": "dirty-at-audit",
+    "headBlob": "5d37a801db8edc130097a3c2e3eccd1ba9cf05c0",
+    "candidateDisposition": "excluded-unrelated-overlay"
+  }
+]

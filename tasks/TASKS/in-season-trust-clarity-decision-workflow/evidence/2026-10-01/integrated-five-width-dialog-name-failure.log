@@ -1,0 +1,41 @@
+
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › e2e/start-chart.spec.ts:271:9 › /start-chart › preserves context and saved intent through news, research, slate and schedule at 1180px (16.1s)
+
+
+  1) [chromium] › e2e/start-chart.spec.ts:271:9 › /start-chart › preserves context and saved intent through news, research, slate and schedule at 1180px 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('dialog', { name: 'Site menu' })
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for getByRole('dialog', { name: 'Site menu' })[22m
+
+
+      326 |       await page.goto("/404");
+      327 |       await page.getByRole("button", { name: "Find a player", exact: true }).click();
+    > 328 |       await expect(page.getByRole("dialog", { name: "Site menu" })).toBeVisible();
+          |                                                                     ^
+      329 |       await page.keyboard.press("Escape");
+      330 |       await expect(page.getByRole("dialog", { name: "Site menu" })).not.toBeVisible();
+      331 |       await page.getByRole("link", { name: "FHFH home", exact: true }).filter({ visible: true }).first().click();
+        at /Users/tim/Code/fhfhockey.com/web/e2e/start-chart.spec.ts:328:69
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/start-chart--start-chart-p-31b54-late-and-schedule-at-1180px-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/start-chart--start-chart-p-31b54-late-and-schedule-at-1180px-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/start-chart--start-chart-p-31b54-late-and-schedule-at-1180px-chromium/error-context.md
+
+  1 failed
+    [chromium] › e2e/start-chart.spec.ts:271:9 › /start-chart › preserves context and saved intent through news, research, slate and schedule at 1180px 

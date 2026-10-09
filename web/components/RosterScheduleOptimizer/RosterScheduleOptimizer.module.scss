@@ -23,6 +23,7 @@
 .metrics span { color: v.$text-secondary; letter-spacing: .04em; text-transform: uppercase; font-size: v.$font-size-xs; }
 .metrics strong { color: v.$color-white; font: 700 v.$font-size-xl v.$font-family-numbers; }
 .metrics small { color: v.$text-secondary; font-size: v.$font-size-xs; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.metrics article:first-child small { white-space: normal; overflow: visible; }
 .panels { min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(225px, 22%) minmax(0, 1fr) minmax(245px, 24%); grid-template-rows: minmax(0, 1fr); gap: v.$space-sm; }
 .panel { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: v.$draft-surface; border: 1px solid v.$draft-border; border-radius: v.$radius-card; overflow: clip; }
 .panelHead { display: flex; align-items: center; justify-content: space-between; gap: v.$space-sm; flex-shrink: 0; min-height: 42px; padding: v.$space-sm; background: v.$draft-surface-raised; border-bottom: 1px solid v.$draft-border; }
@@ -32,6 +33,18 @@
 .rosterPanel { grid-column: 1; grid-row: 1; }
 .itineraryPanel { grid-column: 2; grid-row: 1; }
 .candidatePanel { grid-column: 3; grid-row: 1; }
+.candidateViews, .candidateFilters { display: flex; flex-wrap: wrap; gap: v.$space-xs; }
+.candidateViews { margin-bottom: v.$space-sm; }
+.candidateViews button[aria-pressed="true"] { background: v.$primary-color; color: v.$background-dark; font-weight: 700; }
+.candidateFilters .field { flex: 1 1 90px; min-width: 0; }
+.candidateFilters .field:first-child { flex-basis: 100%; }
+.candidateFilters :is(input, select) { width: 100%; }
+.candidateRow { flex-wrap: wrap; }
+.candidateRow > button:first-child { flex: 1 1 130px; }
+.candidateMetrics { flex: 1 0 100%; font-variant-numeric: tabular-nums; }
+.categoryGain { display: flex; flex-wrap: wrap; gap: v.$space-xs v.$space-sm; padding: v.$space-xs 0; border-bottom: v.$border-subtle; overflow-wrap: anywhere; }
+.categoryGain strong { flex-basis: 100%; }
+.candidateViews button, .candidateFilters :is(input, select) { min-height: 40px; }
 .matchupPanel { display: none; }
 .desktopMatchup { display: flex; grid-column: 3; grid-row: 1; }
 .desktopHidden { display: none; }
@@ -129,12 +142,18 @@
 .viewSwitch { display: flex; flex-shrink: 0; gap: v.$space-xs; padding: v.$space-sm; border-bottom: 1px solid v.$draft-border; font-size: v.$font-size-sm; }
 .viewSwitch button[aria-pressed="true"] { background: v.$primary-color; border-color: v.$primary-color; color: v.$color-neutral-950; font-weight: 700; }
 .mobileTabs { display: none; }
+.mobileSetupToggle { display: none; }
 @media (min-width: 1101px) { .workspace { max-height: 100%; overflow: clip; } }
 @media (max-width: 1100px) {
   .workspace { min-height: calc(100dvh - 76px); height: auto; padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
   .topbar { align-items: start; flex-direction: column; }
-  .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mobileSetupToggle { display: block; text-align: left; min-height: 44px !important; }
+  .controls { display: none; }
+  .controlsExpanded { display: flex; }
+  .metrics { display: flex; overflow-x: auto; scroll-snap-type: x proximity; }
+  .metrics article { flex: 0 0 150px; scroll-snap-align: start; }
   .mobileTabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: v.$space-xs; position: sticky; top: 0; z-index: 5; padding: v.$space-xs 0; background: v.$background-dark; }
+  .mobileTabs button { min-height: 44px; }
   .panels { display: block; flex: none; }
   .panel { display: none; min-height: 55dvh; }
   .panel.mobileActive { display: flex; }
@@ -148,4 +167,7 @@
 details.alternative { display: block; }
 details.alternative summary { cursor: pointer; color: v.$text-primary; }
 details.alternative button { display: block; width: 100%; text-align: left; margin-top: v.$space-xs; }
+details.alternative .candidateRow { flex-direction: row; }
+details.alternative .candidateRow button { width: auto; }
+@media (max-width: 640px) { .candidateViews button, .candidateFilters :is(input, select), .candidateRow button { min-height: 44px; } }
 @media (max-width: 640px) { .weekNav { width: 100%; } .weekNav label { min-width: 0; } .weekNav select { max-width: 100%; } }

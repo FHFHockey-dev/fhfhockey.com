@@ -1,0 +1,9 @@
+
+/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+  135:6    warning  React Hook useEffect has missing dependencies: 'workspace.context.endDate', 'workspace.context.seasonId', 'workspace.context.startDate', and 'workspace.context.timeZone'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  183:6    warning  React Hook useEffect has a missing dependency: 'workspace.context'. Either include it or remove the dependency array                                                                                                           react-hooks/exhaustive-deps
+  234:6    warning  React Hook useEffect has a missing dependency: 'connected?.context'. Either include it or remove the dependency array                                                                                                          react-hooks/exhaustive-deps
+  279:101  warning  React Hook useMemo has missing dependencies: 'workspace.context.endDate' and 'workspace.context.startDate'. Either include them or remove the dependency array                                                                 react-hooks/exhaustive-deps
+
+✖ 4 problems (0 errors, 4 warnings)
+

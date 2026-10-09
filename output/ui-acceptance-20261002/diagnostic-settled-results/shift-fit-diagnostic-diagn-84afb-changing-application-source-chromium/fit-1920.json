@@ -1,0 +1,17 @@
+{
+  "width": 1920,
+  "height": 1080,
+  "outside": 0,
+  "overflow": 0,
+  "rosters": [
+    20,
+    20
+  ],
+  "rowsFit": true,
+  "squareCells": true,
+  "minimumCellWidth": 18.078125,
+  "minimumCellHeight": 18.078125,
+  "maximumSquareDifference": 0,
+  "layout": "stacked",
+  "documentFits": true
+}

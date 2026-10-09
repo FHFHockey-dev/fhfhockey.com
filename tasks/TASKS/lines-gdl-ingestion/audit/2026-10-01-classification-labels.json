@@ -1,0 +1,494 @@
+{
+  "version": "2026-10-01.1",
+  "reviewer": "Chef; independent reviewer unavailable under runtime-settings fallback",
+  "freezeOrder": "Provider source pool predates implementation; semantic labels and conservative families frozen after initial safety changes. Not a blind pre-tuning holdout.",
+  "publicationTime": "Provider relay timestamps verified in export; author-original time and timezone not authenticated",
+  "canonicalAccuracyDenominator": 0,
+  "records": [
+    {
+      "tweetId": "2104668922113052956",
+      "split": "development_regression",
+      "sourceSha256": "84de75792192b88411c1a212b4505f7fd0798758110a6a03023849f1110e293c",
+      "claims": [
+        {
+          "kind": "injury",
+          "modality": "continuing_uncertain",
+          "start": 15,
+          "end": 46,
+          "text": "Joel Edmundson still day-to-day"
+        }
+      ],
+      "identityEvidence": "stored_snapshot_rosterRevision_only",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2104672980634886326",
+      "split": "development_regression",
+      "sourceSha256": "c27580d973d59a1a285c32607be03680feb87d1ab1dde334cc100da3efa7f7a7",
+      "claims": [
+        {
+          "kind": "correction",
+          "modality": "unresolved_reference",
+          "start": 20,
+          "end": 72,
+          "text": "Turns out this was, in fact, much ado about nothing."
+        },
+        {
+          "kind": "practice",
+          "modality": "observed",
+          "start": 75,
+          "end": 99,
+          "text": "This was a 5-on-3 drill."
+        }
+      ],
+      "identityEvidence": "stored_snapshot_rosterRevision_only",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2104977788142850499",
+      "split": "development_regression",
+      "sourceSha256": "d6015719ba33197a6cede614be26d16dcc4d6bd7771ad562aadaf8d97903e2af",
+      "claims": [
+        {
+          "kind": "substitution",
+          "modality": "reported_partial",
+          "start": 17,
+          "end": 75,
+          "text": "Podkolzin will take RNH’s spot on the first unit powerplay"
+        }
+      ],
+      "identityEvidence": "stored_snapshot_rosterRevision_only",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105000410809512101",
+      "split": "development_regression",
+      "sourceSha256": "09d063975853512b88ac987661ae9f640e770d346bac19d9dfa0ac7bc5b35179",
+      "claims": [
+        {
+          "kind": "goalie",
+          "modality": "observation_only",
+          "start": 13,
+          "end": 61,
+          "text": "Carter Hart is the first goaltender off the ice."
+        }
+      ],
+      "identityEvidence": "stored_snapshot_rosterRevision_only",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105336355915985057",
+      "split": "development_regression",
+      "sourceSha256": "cf6b574e27f0f004f725c8c88ea91169ff8cb98be0d1cdd00d30d73a9eaab350",
+      "claims": [
+        {
+          "kind": "lineup",
+          "modality": "unresolved_row_1",
+          "start": 41,
+          "end": 63,
+          "text": "Knies-Fantilli-Johnson"
+        },
+        {
+          "kind": "lineup",
+          "modality": "row_2",
+          "start": 64,
+          "end": 90,
+          "text": "Nichushkin-Monahan-Garland"
+        },
+        {
+          "kind": "lineup",
+          "modality": "ambiguous_sillinger_row_3",
+          "start": 91,
+          "end": 114,
+          "text": "Sillinger-Coyle-Olivier"
+        },
+        {
+          "kind": "alternatives",
+          "modality": "unresolved_row_4",
+          "start": 115,
+          "end": 143,
+          "text": "Lomberg-Heinen/LDBB-Voronkov"
+        }
+      ],
+      "identityEvidence": "stored_snapshot_rosterRevision_only",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105366758089695718",
+      "split": "development_regression",
+      "sourceSha256": "81093458a8cc5d77167d452cae4690aa3bf5ea10770e5901ae9cb3c6953bc48f",
+      "claims": [
+        {
+          "kind": "continuity",
+          "modality": "current_assertion_historical_reference",
+          "start": 26,
+          "end": 61,
+          "text": "power play groups same as yesterday"
+        },
+        {
+          "kind": "power_play",
+          "modality": "reported",
+          "start": 140,
+          "end": 188,
+          "text": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg"
+        },
+        {
+          "kind": "power_play",
+          "modality": "reported",
+          "start": 191,
+          "end": 233,
+          "text": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment"
+        }
+      ],
+      "identityEvidence": "stored_snapshot_rosterRevision_only",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105370362964004937",
+      "split": "development_regression",
+      "sourceSha256": "77cc9b402115bb907a593853f49db6cd83a77713a995eb1066e2b3971c3926ee",
+      "claims": [
+        {
+          "kind": "injury",
+          "modality": "possible_return",
+          "start": 19,
+          "end": 135,
+          "text": "Sanderson skated before main practice today but didn't join his teammates. org is hopeful he will play this weekend."
+        },
+        {
+          "kind": "injury",
+          "modality": "negative_return",
+          "start": 136,
+          "end": 185,
+          "text": "Burakovsky isn't close to returning (upper body)."
+        },
+        {
+          "kind": "participation",
+          "modality": "observed",
+          "start": 186,
+          "end": 249,
+          "text": "Foegele took rushes on the 1st line for second consecutive day."
+        },
+        {
+          "kind": "availability",
+          "modality": "uncertain_reference_foegele",
+          "start": 250,
+          "end": 296,
+          "text": "No decision has been made on his availability."
+        }
+      ],
+      "identityEvidence": "stored_snapshot_rosterRevision_only",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105375596687843639",
+      "split": "development_regression",
+      "sourceSha256": "eaf91ec9e2b954473fb09dd7bcd38c28816ba10f577e28dca6ff1ab24f60d25f",
+      "claims": [
+        {
+          "kind": "continuity",
+          "modality": "reported_unresolved_reference",
+          "start": 19,
+          "end": 32,
+          "text": "Same PP units"
+        },
+        {
+          "kind": "power_play",
+          "modality": "reported",
+          "start": 34,
+          "end": 74,
+          "text": "Schaefer\nMaccelli-Horvat-Schenn\nPalmieri"
+        },
+        {
+          "kind": "power_play",
+          "modality": "reported",
+          "start": 76,
+          "end": 117,
+          "text": "DeAngelo\nEklund-Ritchie-Holmstrom\nDuclair"
+        }
+      ],
+      "identityEvidence": "stored_snapshot_rosterRevision_only",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105378254983205114",
+      "split": "development_regression",
+      "sourceSha256": "17f39d549d6878dd9565d242300184b5dc93452628cfab7a2c38142cd0efab2d",
+      "claims": [
+        {
+          "kind": "power_play",
+          "modality": "reported",
+          "start": 19,
+          "end": 71,
+          "text": "Caps PP1: Chychrun, Ovechkin, Wilson, Dubois, Strome"
+        },
+        {
+          "kind": "power_play",
+          "modality": "reported",
+          "start": 73,
+          "end": 117,
+          "text": "PP2: Hutson, Leonard, Tuch, Kyrou, I. Protas"
+        }
+      ],
+      "identityEvidence": "stored_snapshot_rosterRevision_only",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105434836500680857",
+      "split": "development_regression",
+      "sourceSha256": "ed66c0f36996bff3b7edacfc691393e820ea8bda3db39725173621de6b01cd6c",
+      "claims": [
+        {
+          "kind": "goalie",
+          "modality": "warmup_observation",
+          "start": 17,
+          "end": 86,
+          "text": "Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena."
+        },
+        {
+          "kind": "goalie",
+          "modality": "opponent_context_no_confirmed_start",
+          "start": 87,
+          "end": 117,
+          "text": "Anthony Stolarz for the Leafs."
+        }
+      ],
+      "identityEvidence": "stored_snapshot_rosterRevision_only",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105466270070264224",
+      "split": "development_regression",
+      "sourceSha256": "08a6da470957ccb619755a7e2f0106ab8eb47fedc5d32b08e7787ac701735084",
+      "claims": [
+        {
+          "kind": "swap",
+          "modality": "tentative_unresolved_slots",
+          "start": 17,
+          "end": 68,
+          "text": "Looks like Maccelli and Duclair have switched spots"
+        }
+      ],
+      "identityEvidence": "stored_snapshot_rosterRevision_only",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105476662435700924",
+      "split": "semantic_holdout_candidate",
+      "family": "la_colorado_opening",
+      "sourceSha256": "56b9d3711579f07bf35f243b71feb0ef3ed8b62eba5b2deb7b8e50b320c57726",
+      "expectedClassification": "lineup",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105476593967894778",
+      "split": "semantic_holdout_candidate",
+      "family": "la_colorado_opening",
+      "sourceSha256": "bc21f8ebe57af101d682eb50fac78b90a4541357c66a96fb3fbd6ffef273ceb4",
+      "expectedClassification": "lineup",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105476883966206037",
+      "split": "semantic_holdout_candidate",
+      "family": "la_colorado_opening",
+      "sourceSha256": "791103bf82eeab05096e2c23bc5df7f0b1003680e38df368873ccf4cc095323d",
+      "expectedClassification": "goalie_start",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105467155412300193",
+      "split": "quarantined_related",
+      "family": "islanders_leafs_sep30",
+      "sourceSha256": "eab3ef18baf59c5628662e6a625c8c9846a2e9c721517fa01a907baf076dfc04",
+      "expectedClassification": "power_play",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105466470578925695",
+      "split": "semantic_holdout_candidate",
+      "family": "author:b_sommermann:2026-10-01",
+      "sourceSha256": "0b5b8dfc0a6e0f3f29dfe9eca8149e70e8ca89ee5e58acb333844178b0c621bf",
+      "expectedClassification": "lineup",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105437108206985639",
+      "split": "semantic_holdout_candidate",
+      "family": "author:penguins:2026-09-30",
+      "sourceSha256": "348453343fd096c795023e60f6480729c61788f1e385a3800374a50be595caef",
+      "expectedClassification": "lineup",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105436120888791288",
+      "split": "quarantined_related",
+      "family": "islanders_leafs_sep30",
+      "sourceSha256": "1769838ff684e7bb02512262377b41f2355c8d5de881bfc16296af69790fdcbe",
+      "expectedClassification": "lineup",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105435977238114439",
+      "split": "quarantined_related",
+      "family": "islanders_leafs_sep30",
+      "sourceSha256": "756fc256d3b7493276294477c3277ffd40a6e65970337c8c2b5b27ee78f456ea",
+      "expectedClassification": "lineup",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105434518731767962",
+      "split": "semantic_holdout_candidate",
+      "family": "author:davidalter:2026-09-30",
+      "sourceSha256": "2e0ae94188ce05c47f097206f436edbdea699282fb399d0bb60f83db71719493",
+      "expectedClassification": "lineup",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105432545181814840",
+      "split": "semantic_holdout_candidate",
+      "family": "author:charlieo_conn:2026-09-30",
+      "sourceSha256": "ac709d04c4961f1df72ca149e340a71b0a1ceeddba96608267d638756923a753",
+      "expectedClassification": "lineup",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105417171430248571",
+      "split": "semantic_holdout_candidate",
+      "family": "author:samnestler:2026-09-30",
+      "sourceSha256": "98292027a4e00313806529074c37ed604425267423f64e2bd9454b837f3d81b4",
+      "expectedClassification": "injury",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105414179339616744",
+      "split": "quarantined_related",
+      "family": "islanders_leafs_sep30",
+      "sourceSha256": "57bb5f40b2cd86d27ec3466ad58367d1e73bd29898e8c22764de44edcb5cdf7d",
+      "expectedClassification": "injury",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105400110914134204",
+      "split": "semantic_holdout_candidate",
+      "family": "author:jamesoncoop:2026-09-30",
+      "sourceSha256": "43d0c8c748f10c7a3c961679bad9f385243280d4a01ef87b41e5c5c9ff9f9d23",
+      "expectedClassification": "other",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105399752783470799",
+      "split": "semantic_holdout_candidate",
+      "family": "author:real_max_miller:2026-09-30",
+      "sourceSha256": "56cb4328a1fadecb67669e392343daf78ec098bff6ca277e9b1fdab1b383aeb2",
+      "expectedClassification": "goalie_start",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105396005000913228",
+      "split": "semantic_holdout_candidate",
+      "family": "author:marklazerus:2026-09-30",
+      "sourceSha256": "abae41c327e9ad02e0626ecad2c7cd2371825dc3c0176c3397e5216febd08957",
+      "expectedClassification": "injury",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105388527014068409",
+      "split": "semantic_holdout_candidate",
+      "family": "author:dannywebster21:2026-09-30",
+      "sourceSha256": "74349a4ed0a1791999bf8c5680208ef647b139396b16ef099eb8da880dbcc577",
+      "expectedClassification": "other",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105380651084190090",
+      "split": "semantic_holdout_candidate",
+      "family": "author:stlouisblues:2026-09-30",
+      "sourceSha256": "1721a31e2aae01b27588ae96622e7dee8baa9d3a61dd947e5cdf83b045be9ff1",
+      "expectedClassification": "injury",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105380954126922116",
+      "split": "semantic_holdout_candidate",
+      "family": "author:chgo_blackhawks:2026-09-30",
+      "sourceSha256": "6dc0b4584bf1b6890ab86224545a73511f60db1acdb7c65ac3f485c64ebbe211",
+      "expectedClassification": "practice_lines",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105380526026813442",
+      "split": "semantic_holdout_candidate",
+      "family": "author:curtispashelka:2026-09-30",
+      "sourceSha256": "b184538ed9ab48e62653ffe421debfda80ec217a4a1a4587a4e302097d73c446",
+      "expectedClassification": "injury",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105379135665414482",
+      "split": "semantic_holdout_candidate",
+      "family": "author:sgnolan:2026-09-30",
+      "sourceSha256": "96b6061ce4017d844b7c833eb3b36b0445743e26a1b40be1f8f1a1caa429eacd",
+      "expectedClassification": "injury",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105378052834533629",
+      "split": "quarantined_related",
+      "family": "islanders_leafs_sep30",
+      "sourceSha256": "83eab7d7f5999683a5a35d626c8c6b5f386c35e0d09d77738d3a4d83a647bd73",
+      "expectedClassification": "injury",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105377534095573365",
+      "split": "semantic_holdout_candidate",
+      "family": "author:instilettos_nhl:2026-09-30",
+      "sourceSha256": "568e3df66cc09ac723481512651eef9c05f723bda062933b02ab38f88e827865",
+      "expectedClassification": "practice_lines",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105377226099417578",
+      "split": "semantic_holdout_candidate",
+      "family": "author:benjaminjreport:2026-09-30",
+      "sourceSha256": "e79592008a11916c18660e2aa7713950d34fd188f69ed3a56cf4490081cd93b4",
+      "expectedClassification": "other",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified"
+    },
+    {
+      "tweetId": "2105377841726849109",
+      "split": "semantic_holdout_candidate",
+      "family": "author:aportzline:2026-09-30",
+      "sourceSha256": "17a962fdab1dfdc433f1d0ca3ed4ba0a0570d23b4733533a3bfbca9d6b516189",
+      "expectedClassification": "other",
+      "identityEvidence": "unavailable_no_frozen_directory",
+      "originalContext": "unavailable_unverified",
+      "reviewNote": "Absence from ice does not establish injury; reason is not supplied."
+    }
+  ],
+  "labelReviewLimitation": "Chef-only semantic review; Provorov label corrected from injury to other after first diagnostic classification because no injury evidence is supplied. This set is not a blind accuracy benchmark."
+}

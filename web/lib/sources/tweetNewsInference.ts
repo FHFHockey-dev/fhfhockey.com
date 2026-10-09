@@ -1,6 +1,6 @@
 import { identityMentionPresent, tweetPipelineFlags, TWEET_INTERPRETATION_VERSION } from "./tweetInterpretation";
 import { resolvePlayerIdentity } from "./playerIdentity";
-import { classifyInjuryEvent, extractInjuryTimeline } from "./tweetPlayerEvents";
+import { classifyInjuryEvent, extractInjuryTimeline, extractTweetPlayerEvents } from "./tweetPlayerEvents";
 import { createHash } from "node:crypto";
 
 import { z } from "zod";
@@ -16,7 +16,7 @@ import type {
 } from "lib/sources/tweetNewsAutomation";
 import { getTweetNewsCandidateSource } from "lib/sources/tweetNewsAutomation";
 
-export const TWEET_NEWS_INFERENCE_PROMPT_VERSION = "2026-09-18.1";
+export const TWEET_NEWS_INFERENCE_PROMPT_VERSION = "2026-10-01.1";
 export const DEFAULT_TWEET_NEWS_INFERENCE_MODEL = "openai/gpt-5.4-mini";
 
 const CATEGORY_OPTIONS = [
@@ -349,7 +349,17 @@ export function validateTweetNewsInference(args: {
     const source = sourceById.get(event.sourceId);
     if (!player || !source || !supportedSubject(event.excerpt, player) || !containsEvidence(source.text, event.excerpt)) errors.push("unsupported_player_event");
     if (event.timeframe && !containsEvidence(event.excerpt, event.timeframe)) errors.push("unsupported_timeframe");
-    if (classifyInjuryEvent(event.excerpt) !== event.state && event.state !== "unknown") errors.push("event_requires_review");
+    const supportedEvents = source ? extractTweetPlayerEvents({ text: source.text,
+      players: args.playerCandidates.map((candidate) => ({ playerId: candidate.id, fullName: candidate.fullName,
+        lastName: candidate.lastName ?? candidate.fullName.split(" ").slice(1).join(" "), position: candidate.position, aliases: candidate.aliases })), publishedAt: args.row.source_created_at }) : [];
+    if (event.state !== "unknown" && (classifyInjuryEvent(event.excerpt) !== event.state || !supportedEvents.some((supported) => supported.playerId === event.playerId && supported.kind === "injury" && supported.state === event.state))) errors.push("event_requires_review");
+  }
+
+  if (args.result.subcategory === "CONFIRMED STARTER" || args.result.category === "INJURY" && args.result.subcategory === "OUT") {
+    const supported = args.sources.flatMap((source) => extractTweetPlayerEvents({ text: source.text,
+      players: args.playerCandidates.map((player) => ({ playerId: player.id, fullName: player.fullName, lastName: player.lastName ?? player.fullName.split(" ").slice(1).join(" "), position: player.position, aliases: player.aliases })), publishedAt: args.row.source_created_at }));
+    if (!args.result.subjects.length || args.result.subjects.some((subject) => !supported.some((event) => event.playerId === subject.playerId &&
+      (args.result.subcategory === "CONFIRMED STARTER" ? event.kind === "goalie" && event.state === "confirmed" : event.kind === "injury" && event.availability === "out")))) errors.push("unsupported_confirmed_claim");
   }
 
   const selectedTeam = args.result.teamAbbreviation

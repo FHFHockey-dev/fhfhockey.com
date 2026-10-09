@@ -1,0 +1,574 @@
+{
+  "task": "Task #1 single-statement adapter verification",
+  "recorded_at_utc": "2026-10-02T12:05:47.069951+00:00",
+  "adapter_sha256": "f358159118b11739da576fde18215d74c93615924ff5acefc1d7f144a4c56607",
+  "migration_sha256": "fb2d6df0e1ea360bb49cc27db443f5924d18654698a25c0f712016703ac4415b",
+  "statement_shape": "One DO statement, no internal transaction control or exception suppression",
+  "local_results": {
+    "wrapper_success": {
+      "passed": true,
+      "before": {
+        "definition": "CREATE OR REPLACE FUNCTION public.execute_sql(sql_statement text)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'public', 'extensions', 'pg_temp'\nAS $function$begin raise exception 'Test routine must never be invoked';end;$function$\n",
+        "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "anon": true,
+        "authenticated": true,
+        "service": true,
+        "owner": true,
+        "public": true,
+        "ledger": []
+      },
+      "after": {
+        "definition": "CREATE OR REPLACE FUNCTION public.execute_sql(sql_statement text)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'public', 'extensions', 'pg_temp'\nAS $function$begin raise exception 'Test routine must never be invoked';end;$function$\n",
+        "acl": "{postgres=X/postgres,service_role=X/postgres}",
+        "anon": false,
+        "authenticated": false,
+        "service": true,
+        "owner": true,
+        "public": false,
+        "ledger": [
+          {
+            "version": "20260820013120",
+            "name": "revoke_execute_sql_browser_roles",
+            "statements": [
+              "revoke execute on function public.execute_sql(text)\nfrom public, anon, authenticated;",
+              "grant execute on function public.execute_sql(text)\nto service_role;"
+            ]
+          }
+        ]
+      }
+    },
+    "wrapper_repeat": "passed: rejected existing receipt, unchanged ACL/definition/ledger",
+    "validation_rollback": {
+      "passed": true,
+      "snapshot_unchanged": true,
+      "ledger_rows": 0
+    },
+    "ledger_rollback": {
+      "passed": true,
+      "snapshot_unchanged": true,
+      "ledger_rows": 0
+    }
+  },
+  "local_commands_and_cleanup": [
+    {
+      "command": [
+        "inspect",
+        "--format",
+        "{{index .Config.Labels \"fhfh.task\"}}",
+        "task1-single-statement-verification"
+      ],
+      "exit_code": 0,
+      "stdout": "task1-acl-verification\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "-i",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "postgres",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-At"
+      ],
+      "exit_code": 0,
+      "stdout": "CREATE ROLE\nCREATE ROLE\nCREATE ROLE\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "-i",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "postgres",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-At"
+      ],
+      "exit_code": 0,
+      "stdout": "CREATE DATABASE\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "-i",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_wrapper_success",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-At"
+      ],
+      "exit_code": 0,
+      "stdout": "CREATE SCHEMA\nCREATE TABLE\nCREATE FUNCTION\nGRANT\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "-i",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "postgres",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-At"
+      ],
+      "exit_code": 0,
+      "stdout": "CREATE DATABASE\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "-i",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_wrapper_validation_failure",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-At"
+      ],
+      "exit_code": 0,
+      "stdout": "CREATE SCHEMA\nCREATE TABLE\nCREATE FUNCTION\nGRANT\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "-i",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "postgres",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-At"
+      ],
+      "exit_code": 0,
+      "stdout": "CREATE DATABASE\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "-i",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_wrapper_ledger_failure",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-At"
+      ],
+      "exit_code": 0,
+      "stdout": "CREATE SCHEMA\nCREATE TABLE\nCREATE FUNCTION\nGRANT\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "-i",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_wrapper_success",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-At"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"definition\" : \"CREATE OR REPLACE FUNCTION public.execute_sql(sql_statement text)\\n RETURNS void\\n LANGUAGE plpgsql\\n SECURITY DEFINER\\n SET search_path TO 'pg_catalog', 'public', 'extensions', 'pg_temp'\\nAS $function$begin raise exception 'Test routine must never be invoked';end;$function$\\n\", \"acl\" : \"{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}\", \"anon\" : true, \"authenticated\" : true, \"service\" : true, \"owner\" : true, \"public\" : true, \"ledger\" : []}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_wrapper_success",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-c",
+        "-- PREPARED ONLY: single-statement adapter; requires transport review before use.\n-- No internal COMMIT, exception suppression, helper invocation or other migration.\ndo $task1_acl$\ndeclare target oid;\nbegin\n  set local lock_timeout = '5s';\n  lock table supabase_migrations.schema_migrations in share row exclusive mode;\n  if exists (select 1 from supabase_migrations.schema_migrations\n             where version = '20260820013120') then\n    raise exception 'Task #1 migration already recorded; stop and inspect ACL';\n  end if;\n\n  revoke execute on function public.execute_sql(text)\n  from public, anon, authenticated;\n\n  grant execute on function public.execute_sql(text)\n  to service_role;\n\n  target := 'public.execute_sql(text)'::regprocedure;\n  if has_function_privilege('anon', target, 'EXECUTE')\n     or has_function_privilege('authenticated', target, 'EXECUTE')\n     or not has_function_privilege('service_role', target, 'EXECUTE')\n     or not has_function_privilege('postgres', target, 'EXECUTE')\n     or exists (\n       select 1 from pg_proc p,\n         lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a\n       where p.oid = target and a.grantee = 0 and a.privilege_type = 'EXECUTE'\n     ) then\n    raise exception 'Task #1 privilege postcondition failed; rollback required';\n  end if;\n\n  insert into supabase_migrations.schema_migrations(version, name, statements)\n  values (\n    '20260820013120',\n    'revoke_execute_sql_browser_roles',\n    array[\n      E'revoke execute on function public.execute_sql(text)\\nfrom public, anon, authenticated;',\n      E'grant execute on function public.execute_sql(text)\\nto service_role;'\n    ]\n  );\nend;\n$task1_acl$;\n"
+      ],
+      "exit_code": 0,
+      "stdout": "DO\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "-i",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_wrapper_success",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-At"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"definition\" : \"CREATE OR REPLACE FUNCTION public.execute_sql(sql_statement text)\\n RETURNS void\\n LANGUAGE plpgsql\\n SECURITY DEFINER\\n SET search_path TO 'pg_catalog', 'public', 'extensions', 'pg_temp'\\nAS $function$begin raise exception 'Test routine must never be invoked';end;$function$\\n\", \"acl\" : \"{postgres=X/postgres,service_role=X/postgres}\", \"anon\" : false, \"authenticated\" : false, \"service\" : true, \"owner\" : true, \"public\" : false, \"ledger\" : [{\"version\":\"20260820013120\",\"name\":\"revoke_execute_sql_browser_roles\",\"statements\":[\"revoke execute on function public.execute_sql(text)\\nfrom public, anon, authenticated;\",\"grant execute on function public.execute_sql(text)\\nto service_role;\"]}]}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_wrapper_success",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-c",
+        "-- PREPARED ONLY: single-statement adapter; requires transport review before use.\n-- No internal COMMIT, exception suppression, helper invocation or other migration.\ndo $task1_acl$\ndeclare target oid;\nbegin\n  set local lock_timeout = '5s';\n  lock table supabase_migrations.schema_migrations in share row exclusive mode;\n  if exists (select 1 from supabase_migrations.schema_migrations\n             where version = '20260820013120') then\n    raise exception 'Task #1 migration already recorded; stop and inspect ACL';\n  end if;\n\n  revoke execute on function public.execute_sql(text)\n  from public, anon, authenticated;\n\n  grant execute on function public.execute_sql(text)\n  to service_role;\n\n  target := 'public.execute_sql(text)'::regprocedure;\n  if has_function_privilege('anon', target, 'EXECUTE')\n     or has_function_privilege('authenticated', target, 'EXECUTE')\n     or not has_function_privilege('service_role', target, 'EXECUTE')\n     or not has_function_privilege('postgres', target, 'EXECUTE')\n     or exists (\n       select 1 from pg_proc p,\n         lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a\n       where p.oid = target and a.grantee = 0 and a.privilege_type = 'EXECUTE'\n     ) then\n    raise exception 'Task #1 privilege postcondition failed; rollback required';\n  end if;\n\n  insert into supabase_migrations.schema_migrations(version, name, statements)\n  values (\n    '20260820013120',\n    'revoke_execute_sql_browser_roles',\n    array[\n      E'revoke execute on function public.execute_sql(text)\\nfrom public, anon, authenticated;',\n      E'grant execute on function public.execute_sql(text)\\nto service_role;'\n    ]\n  );\nend;\n$task1_acl$;\n"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ERROR:  Task #1 migration already recorded; stop and inspect ACL\nCONTEXT:  PL/pgSQL function inline_code_block line 8 at RAISE\n"
+    },
+    {
+      "command": [
+        "exec",
+        "-i",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_wrapper_success",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-At"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"definition\" : \"CREATE OR REPLACE FUNCTION public.execute_sql(sql_statement text)\\n RETURNS void\\n LANGUAGE plpgsql\\n SECURITY DEFINER\\n SET search_path TO 'pg_catalog', 'public', 'extensions', 'pg_temp'\\nAS $function$begin raise exception 'Test routine must never be invoked';end;$function$\\n\", \"acl\" : \"{postgres=X/postgres,service_role=X/postgres}\", \"anon\" : false, \"authenticated\" : false, \"service\" : true, \"owner\" : true, \"public\" : false, \"ledger\" : [{\"version\":\"20260820013120\",\"name\":\"revoke_execute_sql_browser_roles\",\"statements\":[\"revoke execute on function public.execute_sql(text)\\nfrom public, anon, authenticated;\",\"grant execute on function public.execute_sql(text)\\nto service_role;\"]}]}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "-i",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "postgres",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-At"
+      ],
+      "exit_code": 0,
+      "stdout": "GRANT ROLE\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "-i",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_wrapper_validation_failure",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-At"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"definition\" : \"CREATE OR REPLACE FUNCTION public.execute_sql(sql_statement text)\\n RETURNS void\\n LANGUAGE plpgsql\\n SECURITY DEFINER\\n SET search_path TO 'pg_catalog', 'public', 'extensions', 'pg_temp'\\nAS $function$begin raise exception 'Test routine must never be invoked';end;$function$\\n\", \"acl\" : \"{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}\", \"anon\" : true, \"authenticated\" : true, \"service\" : true, \"owner\" : true, \"public\" : true, \"ledger\" : []}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_wrapper_validation_failure",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-c",
+        "-- PREPARED ONLY: single-statement adapter; requires transport review before use.\n-- No internal COMMIT, exception suppression, helper invocation or other migration.\ndo $task1_acl$\ndeclare target oid;\nbegin\n  set local lock_timeout = '5s';\n  lock table supabase_migrations.schema_migrations in share row exclusive mode;\n  if exists (select 1 from supabase_migrations.schema_migrations\n             where version = '20260820013120') then\n    raise exception 'Task #1 migration already recorded; stop and inspect ACL';\n  end if;\n\n  revoke execute on function public.execute_sql(text)\n  from public, anon, authenticated;\n\n  grant execute on function public.execute_sql(text)\n  to service_role;\n\n  target := 'public.execute_sql(text)'::regprocedure;\n  if has_function_privilege('anon', target, 'EXECUTE')\n     or has_function_privilege('authenticated', target, 'EXECUTE')\n     or not has_function_privilege('service_role', target, 'EXECUTE')\n     or not has_function_privilege('postgres', target, 'EXECUTE')\n     or exists (\n       select 1 from pg_proc p,\n         lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a\n       where p.oid = target and a.grantee = 0 and a.privilege_type = 'EXECUTE'\n     ) then\n    raise exception 'Task #1 privilege postcondition failed; rollback required';\n  end if;\n\n  insert into supabase_migrations.schema_migrations(version, name, statements)\n  values (\n    '20260820013120',\n    'revoke_execute_sql_browser_roles',\n    array[\n      E'revoke execute on function public.execute_sql(text)\\nfrom public, anon, authenticated;',\n      E'grant execute on function public.execute_sql(text)\\nto service_role;'\n    ]\n  );\nend;\n$task1_acl$;\n"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ERROR:  Task #1 privilege postcondition failed; rollback required\nCONTEXT:  PL/pgSQL function inline_code_block line 27 at RAISE\n"
+    },
+    {
+      "command": [
+        "exec",
+        "-i",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_wrapper_validation_failure",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-At"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"definition\" : \"CREATE OR REPLACE FUNCTION public.execute_sql(sql_statement text)\\n RETURNS void\\n LANGUAGE plpgsql\\n SECURITY DEFINER\\n SET search_path TO 'pg_catalog', 'public', 'extensions', 'pg_temp'\\nAS $function$begin raise exception 'Test routine must never be invoked';end;$function$\\n\", \"acl\" : \"{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}\", \"anon\" : true, \"authenticated\" : true, \"service\" : true, \"owner\" : true, \"public\" : true, \"ledger\" : []}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "-i",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "postgres",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-At"
+      ],
+      "exit_code": 0,
+      "stdout": "REVOKE ROLE\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "-i",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_wrapper_ledger_failure",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-At"
+      ],
+      "exit_code": 0,
+      "stdout": "ALTER TABLE\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "-i",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_wrapper_ledger_failure",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-At"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"definition\" : \"CREATE OR REPLACE FUNCTION public.execute_sql(sql_statement text)\\n RETURNS void\\n LANGUAGE plpgsql\\n SECURITY DEFINER\\n SET search_path TO 'pg_catalog', 'public', 'extensions', 'pg_temp'\\nAS $function$begin raise exception 'Test routine must never be invoked';end;$function$\\n\", \"acl\" : \"{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}\", \"anon\" : true, \"authenticated\" : true, \"service\" : true, \"owner\" : true, \"public\" : true, \"ledger\" : []}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_wrapper_ledger_failure",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-c",
+        "-- PREPARED ONLY: single-statement adapter; requires transport review before use.\n-- No internal COMMIT, exception suppression, helper invocation or other migration.\ndo $task1_acl$\ndeclare target oid;\nbegin\n  set local lock_timeout = '5s';\n  lock table supabase_migrations.schema_migrations in share row exclusive mode;\n  if exists (select 1 from supabase_migrations.schema_migrations\n             where version = '20260820013120') then\n    raise exception 'Task #1 migration already recorded; stop and inspect ACL';\n  end if;\n\n  revoke execute on function public.execute_sql(text)\n  from public, anon, authenticated;\n\n  grant execute on function public.execute_sql(text)\n  to service_role;\n\n  target := 'public.execute_sql(text)'::regprocedure;\n  if has_function_privilege('anon', target, 'EXECUTE')\n     or has_function_privilege('authenticated', target, 'EXECUTE')\n     or not has_function_privilege('service_role', target, 'EXECUTE')\n     or not has_function_privilege('postgres', target, 'EXECUTE')\n     or exists (\n       select 1 from pg_proc p,\n         lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a\n       where p.oid = target and a.grantee = 0 and a.privilege_type = 'EXECUTE'\n     ) then\n    raise exception 'Task #1 privilege postcondition failed; rollback required';\n  end if;\n\n  insert into supabase_migrations.schema_migrations(version, name, statements)\n  values (\n    '20260820013120',\n    'revoke_execute_sql_browser_roles',\n    array[\n      E'revoke execute on function public.execute_sql(text)\\nfrom public, anon, authenticated;',\n      E'grant execute on function public.execute_sql(text)\\nto service_role;'\n    ]\n  );\nend;\n$task1_acl$;\n"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ERROR:  new row for relation \"schema_migrations\" violates check constraint \"forced_safe_ledger_failure\"\nDETAIL:  Failing row contains (20260820013120, revoke_execute_sql_browser_roles, {\"revoke execute on function public.execute_sql(text)\nfrom publi...).\nCONTEXT:  SQL statement \"insert into supabase_migrations.schema_migrations(version, name, statements)\n  values (\n    '20260820013120',\n    'revoke_execute_sql_browser_roles',\n    array[\n      E'revoke execute on function public.execute_sql(text)\\nfrom public, anon, authenticated;',\n      E'grant execute on function public.execute_sql(text)\\nto service_role;'\n    ]\n  )\"\nPL/pgSQL function inline_code_block line 30 at SQL statement\n"
+    },
+    {
+      "command": [
+        "exec",
+        "-i",
+        "task1-single-statement-verification",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_wrapper_ledger_failure",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-At"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"definition\" : \"CREATE OR REPLACE FUNCTION public.execute_sql(sql_statement text)\\n RETURNS void\\n LANGUAGE plpgsql\\n SECURITY DEFINER\\n SET search_path TO 'pg_catalog', 'public', 'extensions', 'pg_temp'\\nAS $function$begin raise exception 'Test routine must never be invoked';end;$function$\\n\", \"acl\" : \"{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}\", \"anon\" : true, \"authenticated\" : true, \"service\" : true, \"owner\" : true, \"public\" : true, \"ledger\" : []}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "rm",
+        "--force",
+        "--volumes",
+        "task1-single-statement-verification"
+      ],
+      "exit_code": 0,
+      "stdout": "task1-single-statement-verification\n",
+      "stderr": ""
+    }
+  ],
+  "management_api_readonly_probe": {
+    "query": "do $task1_readonly_probe$ begin if current_user not in ('postgres', 'supabase_admin') then raise exception 'Unexpected management execution role'; end if; end; $task1_readonly_probe$;",
+    "result": [],
+    "isError": false,
+    "role_query": {
+      "execution_role": "postgres",
+      "session_role": "postgres"
+    }
+  },
+  "production_privilege_changes": false,
+  "helper_invocations": false,
+  "route_gate": "Raw connector DDL guidance routes to apply_migration, which cannot select original version. Use approved psql or reviewed SQL-editor execution instead; no privilege-changing connector call is authorized by this receipt.",
+  "production_closure": {
+    "status": "completed",
+    "project_id": "fyhftlxokyjtpndbkfse",
+    "migration_version": "20260820013120",
+    "migration_sha256": "fb2d6df0e1ea360bb49cc27db443f5924d18654698a25c0f712016703ac4415b",
+    "single_statement_sha256": "f358159118b11739da576fde18215d74c93615924ff5acefc1d7f144a4c56607",
+    "approval": "Owner explicit action-time approval recorded in parent delegation",
+    "apply_actor": "Parent thread 01a0f71e-6ff9-7681-9b6f-829b18f170d5",
+    "apply_route": "Authenticated Supabase SQL-editor UI, one reviewed DO statement",
+    "parent_reported_apply_time_utc": "2026-10-02T12:36:45Z (approximate)",
+    "parent_reported_postcheck_utc": "2026-10-02T12:36:59.425888Z",
+    "parent_reported_ui_checks": "Success and 7/7 checks true",
+    "parent_retry_detail": "Initial exact Run locator matched no button; parent inspected unchanged catalog/absent version before clicking fresh Run selected; no blind mutation retry.",
+    "independent_readonly_check_utc": "2026-10-02T12:44:35.992233Z",
+    "post_state": {
+      "function_count": 1,
+      "identity": "public.execute_sql(text)",
+      "arguments": "sql_statement text",
+      "returns": "void",
+      "owner": "postgres",
+      "security_definer": true,
+      "configuration": [
+        "search_path=pg_catalog, public, extensions, pg_temp"
+      ],
+      "definition_fingerprint": "56aee99ea2e334a51b76ab93729d5cce",
+      "raw_acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "anon_execute": false,
+      "authenticated_execute": false,
+      "public_execute": false,
+      "service_role_execute": true,
+      "postgres_execute": true,
+      "ledger_rows": 1,
+      "ledger_name": "revoke_execute_sql_browser_roles",
+      "exact_statements": true
+    },
+    "unchanged_identity_definition_owner_configuration": true,
+    "helper_invocations": false,
+    "other_production_changes": false,
+    "parent_provided_library_evidence": {
+      "screenshot": "libfile_29d07bd519308191b1e61cc9c47e304d",
+      "json_receipt": "libfile_4ae4e2fc64e081919754578c3a740522"
+    },
+    "broader_remediation_closed": false,
+    "rollback": "Not needed; retain browser denial; any new operator grant needs separate review/approval."
+  }
+}

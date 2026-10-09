@@ -90,6 +90,35 @@ export const DEFAULT_RANKINGS_FILTERS: RankingsFilterState = {
   selectedTeam: "",
 };
 
+const fantasyMetric = getContextualRankingMetricDefinition("mcm_score")!;
+
+export const FANTASY_RANKINGS_PRESET: Partial<RankingsFilterState> = {
+  entity: "skaters",
+  tab: "rankings",
+  window: "season",
+  position: "all",
+  deployment: "all",
+  strength: fantasyMetric.defaultStrengthState,
+  metric: "mcm_score",
+  matrixSortMetric: "mcm_score",
+  matrixSortDirection: "desc",
+  sort: "percentile",
+  direction: "desc",
+  minGp: String(fantasyMetric.minimumGp),
+  minToi: String(fantasyMetric.minimumToiSeconds),
+  team: "",
+  search: "",
+  sampleConfidence: "all",
+  sourceQuality: "all",
+  displayMode: "both",
+  metricGroups: "",
+  metricColumns: "mcm_score,goals_per_60,assists_per_60,points_per_60,pp_points_per_60,sog_per_60,hits_per_60,blocks_per_60",
+  selectedPlayerId: "",
+  selectedGoalieId: "",
+  selectedTeam: "",
+  page: "1",
+};
+
 type QueryValue = string | string[] | undefined;
 type RankingsQuery = Record<string, QueryValue>;
 const MATRIX_PAGE_SIZE_OPTIONS = ["10", "25", "50"] as const;
@@ -290,6 +319,7 @@ export function normalizeRankingsFilters(query: RankingsQuery) {
     deployment,
     strength:
       queryValue(query.strength) === "5v5" ||
+      queryValue(query.strength) === "all" ||
       queryValue(query.strength) === "ev" ||
       queryValue(query.strength) === "pp" ||
       queryValue(query.strength) === "pk"
@@ -332,31 +362,66 @@ export function normalizeRankingsFilters(query: RankingsQuery) {
   return next;
 }
 
-export function buildRankingsContextSummary(filters: RankingsFilterState) {
+export function buildRankingsContextSummary(
+  filters: RankingsFilterState,
+  sortMetricAvailableRowCount?: number,
+) {
   const metric = getContextualRankingMetricDefinition(filters.metric);
   const matrixMetric = getMatrixMetricColumn(filters.matrixSortMetric);
+  const season = filters.season.replace(/^(\d{4})(\d{4})$/, "$1–$2");
+  if (filters.entity !== "skaters" && filters.tab !== "war") {
+    const label = filters.tab.replaceAll("_", " ");
+    return `${season} performance · ${label} for ${filters.entity} · Source pending`;
+  }
   const peer =
     filters.team !== ""
       ? `team ${filters.team}`
-      : filters.deployment !== "all"
+      : filters.deployment !== "all" && filters.tab !== "deployment_tiers"
         ? filters.deployment
         : filters.position !== "all"
           ? filters.position === "F"
             ? "forwards"
             : "defensemen"
-          : "all skaters";
+          : `all ${filters.entity}`;
   const window =
     filters.window === "season"
       ? "Season"
       : `${filters.window.replace("last", "Last ")} games`;
   const strength = filters.strength.toUpperCase();
-  const minGp = Number(filters.minGp) || null;
+  const context = [
+    strength,
+    ...(filters.tab === "trending" ? [] : [window]),
+  ];
+  if (filters.tab !== "war") {
+    const minGp = Number(filters.minGp);
+    const minToi = Number(filters.minToi);
+    if (Number.isFinite(minGp) && minGp >= 0) context.push(`Min ${minGp} GP`);
+    if (Number.isFinite(minToi) && minToi >= 0) context.push(`Min ${minToi}s TOI`);
+  }
+  let description: string;
 
   if (filters.tab === "rankings") {
-    return `Sorted by ${matrixMetric?.fullLabel ?? filters.matrixSortMetric} percentile across ${peer} · ${strength} · ${window}${minGp == null ? "" : ` · Min ${minGp} GP`}`;
+    const metricLabel = matrixMetric?.fullLabel ?? filters.matrixSortMetric;
+    description = sortMetricAvailableRowCount === 0
+      ? `No eligible values for ${metricLabel}`
+      : `Sorted by ${metricLabel} percentile`;
+    if (filters.sampleConfidence === "medium_plus") context.push("Meets selected minimums");
+    if (filters.sampleConfidence === "high") context.push("2× selected minimums");
+    if (filters.sourceQuality === "clean_only") context.push("Excludes source caveats");
+    if (filters.sourceQuality === "caveats_only") context.push("Source caveats only");
+  } else if (filters.tab === "deployment_tiers") {
+    description = "Deployment tiers";
+  } else if (filters.tab === "trending") {
+    description = "Opportunity changes";
+  } else if (filters.tab === "splits") {
+    description = `${metric?.displayName ?? filters.metric} splits`;
+  } else if (filters.tab === "war") {
+    description = "Planned WAR";
+  } else {
+    description = `${metric?.displayName ?? filters.metric} explorer`;
   }
 
-  return `${metric?.displayName ?? filters.metric} explorer across ${peer} · ${strength} · ${window}${minGp == null ? "" : ` · Min ${minGp} GP`}`;
+  return `${season} performance · ${description} across ${peer} · ${context.join(" · ")}`;
 }
 
 export function deriveRankingsPeerGroupType(

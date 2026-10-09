@@ -119,6 +119,8 @@ interface DraftSettingsProps {
     teamId?: number;
   }>;
   draftLocked?: boolean;
+  draftProEligible?: boolean;
+  fantraxLeagueEligibilityAvailable?: boolean;
   draftLockReason?: string;
   structuralSettingsLocked?: boolean;
 }
@@ -182,6 +184,8 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
   onBookmarkImport,
   playersForKeeperAutocomplete,
   draftLocked = false,
+  draftProEligible = false,
+  fantraxLeagueEligibilityAvailable = false,
   draftLockReason = "Yahoo live sync is authoritative.",
   structuralSettingsLocked = false,
 }, ref) => {
@@ -1449,7 +1453,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
                               }
                               title={
                                 !keeperUsesPick(k) && structuralSettingsLocked
-                                  ? "No-pick keepers are locked after the first ordinary pick."
+                                  ? "Keepers without assigned picks are locked after the first ordinary pick."
                                   : undefined
                               }
                               onClick={() => {
@@ -1584,14 +1588,27 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
             </div>)}
             <div className={styles.rosterSummary}><h4>Roster Summary <span>{totalRosterSpots} total spots</span></h4><p>{["C", "LW", "RW", "FWD"].reduce((sum, pos) => sum + (displayedRosterConfig[pos] || 0), 0)} forwards · {displayedRosterConfig.D || 0} defense · {displayedRosterConfig.G || 0} goalies · {displayedRosterConfig.utility || 0} utility · {displayedRosterConfig.bench || 0} bench</p></div>
           </fieldset>
-          <fieldset data-settings-domain="scoring" hidden={variant === "inline" && activeSection !== "scoring"} role={variant === "inline" ? "tabpanel" : undefined} aria-labelledby={variant === "inline" ? "draft-tab-scoring" : undefined} id="draft-domain-scoring" tabIndex={-1} className={`${styles.fieldset} ${styles.settingsGroupScoring}`} disabled={draftLocked}>
+          <fieldset data-settings-domain="scoring" hidden={variant === "inline" && activeSection !== "scoring"} role={variant === "inline" ? "tabpanel" : undefined} aria-labelledby={variant === "inline" ? "draft-tab-scoring" : undefined} id="draft-domain-scoring" tabIndex={-1} className={`${styles.fieldset} ${styles.settingsGroupScoring}`}>
             <legend className={styles.legend}>Scoring Configuration</legend>
             {domainIssues("scoring")}
-            <DraftScoringSettings settings={settings} onSettingsChange={onSettingsChange} goalieScoring={goalieScoringCategories} onGoalieScoringChange={onGoalieScoringChange} availableSkaterStats={availableSkaterStatKeys} availableGoalieStats={availableGoalieStatKeys} hasPicks={draftedPlayers.length > 0} />
+            <DraftScoringSettings settings={settings} onSettingsChange={onSettingsChange} goalieScoring={goalieScoringCategories} onGoalieScoringChange={onGoalieScoringChange} availableSkaterStats={availableSkaterStatKeys} availableGoalieStats={availableGoalieStatKeys} hasPicks={draftedPlayers.length > 0} draftProEligible={draftProEligible} rawSettingsLocked={draftLocked} />
           </fieldset>
           <fieldset data-settings-domain="projections" hidden={variant === "inline" && activeSection !== "projections"} role={variant === "inline" ? "tabpanel" : undefined} aria-labelledby={variant === "inline" ? "draft-tab-projections" : undefined} id="draft-domain-projections" tabIndex={-1} className={styles.fieldset}>
             <legend className={styles.legend}>Projection Sources</legend>
             {domainIssues("projections")}
+            <div className={styles.settingRow}>
+              <label className={styles.label} htmlFor="draft-adp-source">ADP source {draftProEligible ? "· Pro" : "· Draft Pro"}</label>
+              <select id="draft-adp-source" className={styles.select} value={draftProEligible ? settings.adpSource ?? "yahoo" : "yahoo"} disabled={!draftProEligible} onChange={(event) => onSettingsChange({ adpSource: event.target.value as "yahoo" | "fantrax" })}>
+                <option value="yahoo">Yahoo</option><option value="fantrax">Fantrax</option>
+              </select>
+            </div>
+            <div className={styles.settingRow}>
+              <label className={styles.label} htmlFor="draft-position-source">Position source {draftProEligible ? "· Pro" : "· Draft Pro"}</label>
+              <select id="draft-position-source" className={styles.select} value={draftProEligible ? settings.positionSource ?? "yahoo" : "yahoo"} disabled={!draftProEligible} onChange={(event) => onSettingsChange({ positionSource: event.target.value as "yahoo" | "fantrax" })}>
+                <option value="yahoo">Yahoo</option><option value="fantrax">Fantrax</option>
+              </select>
+            </div>
+            {draftProEligible && settings.positionSource === "fantrax" && !fantraxLeagueEligibilityAvailable && <small>Full Fantrax eligibility loads from a connected league. Public player data supplies primary positions only.</small>}
             <ProjectionSourceSettings skaters={sourceControls} goalies={goalieSourceControls} onSkatersChange={onSourceControlsChange} onGoaliesChange={onGoalieSourceControlsChange} customSources={customSourceMetadata} onRemoveCustomSource={onRemoveCustomSource} hasPicks={draftedPlayers.length > 0} />
           </fieldset>
           {/* Quick Actions fieldset removed; actions moved under League Setup */}

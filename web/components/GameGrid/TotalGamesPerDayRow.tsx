@@ -1,12 +1,12 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\GameGrid\TotalGamesPerDayRow.tsx
 
-import { DAYS, DAY_ABBREVIATION, TeamDataWithTotals } from "lib/NHL/types";
+import { DAYS, EXTENDED_DAYS, EXTENDED_DAY_ABBREVIATION, TeamDataWithTotals } from "lib/NHL/types";
 import styles from "./GameGrid.module.scss";
 import clsx from "clsx";
 
 type TotalGamesPerDayRowProps = {
   games: number[];
-  excludedDays: DAY_ABBREVIATION[];
+  excludedDays: EXTENDED_DAY_ABBREVIATION[];
   extended: boolean;
   weekData: TeamDataWithTotals[];
 };
@@ -26,7 +26,7 @@ function TotalGamesPerDayRow({
   weekData
 }: TotalGamesPerDayRowProps) {
   const excludedDaysIdx = excludedDays.map((dayAbbreviation) =>
-    DAYS.findIndex((item) => item === dayAbbreviation)
+    EXTENDED_DAYS.findIndex((item) => item === dayAbbreviation)
   );
 
   const opponentsSummary = weekData.map((team: TeamDataWithTotals) => {
@@ -56,7 +56,7 @@ function TotalGamesPerDayRow({
       {/* Day cells */}
       {games.map((numGames, i) => {
         const intensity = getGamesPerDayIntensity(numGames);
-        const isExcluded = !extended && excludedDaysIdx.includes(i);
+        const isExcluded = excludedDaysIdx.includes(i);
         return (
           <td key={i} data-intensity={intensity}>
             {/* gray overlay for excluded days */}
@@ -87,12 +87,15 @@ function TotalGamesPerDayRow({
  * @param excludedDays The days to be ignored.
  * @returns The number of games played in the week.
  */
-export function calcTotalGP(games: number[], excludedDays: DAY_ABBREVIATION[]) {
+export function calcTotalGP(
+  games: number[],
+  excludedDays: readonly EXTENDED_DAY_ABBREVIATION[],
+  days: readonly EXTENDED_DAY_ABBREVIATION[] = games.length > 7 ? EXTENDED_DAYS : DAYS
+) {
   let total = 0;
   // ["Fri","Tue"] => [4, 1]
-  const excludedDaysIdx = excludedDays.map((day) => DAYS.indexOf(day));
-  games.forEach((gamesPlayed, i) => {
-    const excluded = excludedDaysIdx.includes(i);
+  games.slice(0, days.length).forEach((gamesPlayed, i) => {
+    const excluded = excludedDays.includes(days[i]);
     if (!excluded) {
       total += gamesPlayed;
     }
@@ -108,13 +111,13 @@ export function calcTotalGP(games: number[], excludedDays: DAY_ABBREVIATION[]) {
  */
 export function calcTotalOffNights(
   games: number[],
-  excludedDays: DAY_ABBREVIATION[]
+  excludedDays: readonly EXTENDED_DAY_ABBREVIATION[],
+  days: readonly EXTENDED_DAY_ABBREVIATION[] = games.length > 7 ? EXTENDED_DAYS : DAYS
 ) {
   let total = 0;
   // ["Fri","Tue"] => [4, 1]
-  const excludedDaysIdx = excludedDays.map((day) => DAYS.indexOf(day));
-  games.forEach((gamesPlayed, i) => {
-    const excluded = excludedDaysIdx.includes(i);
+  games.slice(0, days.length).forEach((gamesPlayed, i) => {
+    const excluded = excludedDays.includes(days[i]);
     if (!excluded && gamesPlayed <= 8) {
       total++;
     }

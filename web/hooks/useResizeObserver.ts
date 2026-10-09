@@ -5,7 +5,7 @@ export default function useResizeObserver(ref: React.RefObject<HTMLElement>) {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
-    if (!ref.current) return;
+    if (!ref.current || typeof ResizeObserver === "undefined") return;
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (let entry of entries) {

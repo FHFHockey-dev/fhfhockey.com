@@ -1,0 +1,2161 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: shift-chart.spec.ts >> full rosters and overtime fit every desktop viewport without clipping
+- Location: e2e/shift-chart.spec.ts:181:5
+
+# Error details
+
+```
+Error: expect(received).toEqual(expected) // deep equality
+
+- Expected  - 1
++ Received  + 1
+
+@@ -5,7 +5,7 @@
+    "rosters": Array [
+      20,
+      20,
+    ],
+    "rowsFit": true,
+-   "squareCells": true,
++   "squareCells": false,
+  }
+
+Call Log:
+- Timeout 15000ms exceeded while waiting on the predicate
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - link "FHFH home" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "FHFH" [ref=e6]
+        - generic [ref=e7]: Hockey Analytics
+      - navigation "Primary navigation" [ref=e8]:
+        - list [ref=e9]:
+          - listitem [ref=e10]:
+            - link "Home" [ref=e11] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e12]:
+            - link "Game Grid" [ref=e13] [cursor=pointer]:
+              - /url: /game-grid
+          - listitem [ref=e14]:
+            - link "Underlying Stats" [ref=e15] [cursor=pointer]:
+              - /url: /underlying-stats
+          - listitem [ref=e16]:
+            - button "Analytics" [ref=e17] [cursor=pointer]:
+              - text: Analytics
+              - img [ref=e18]
+          - listitem [ref=e20]:
+            - button "Tools" [ref=e21] [cursor=pointer]:
+              - text: Tools
+              - img [ref=e22]
+          - listitem [ref=e24]:
+            - link "Blog" [ref=e25] [cursor=pointer]:
+              - /url: /blog
+          - listitem [ref=e26]:
+            - button "Community" [ref=e27] [cursor=pointer]:
+              - text: Community
+              - img [ref=e28]
+      - generic [ref=e30]:
+        - button "Search players" [ref=e31] [cursor=pointer]:
+          - img [ref=e32]
+          - generic [ref=e34]: Search players
+        - link "Buy me a coffee" [ref=e35] [cursor=pointer]:
+          - /url: https://www.buymeacoffee.com/tjsusername
+          - img "Buy me a coffee" [ref=e36]
+        - button "Sign In / Sign Up" [ref=e37] [cursor=pointer]
+    - main "Shift Chart" [ref=e38]:
+      - generic [ref=e39]:
+        - generic [ref=e40]:
+          - generic [ref=e41]:
+            - generic [ref=e42]:
+              - heading "Shift Chart" [level=1] [ref=e43]
+              - region "Choose a game" [ref=e44]:
+                - generic [ref=e45]: Select date
+                - textbox "Select date" [ref=e46]: 2026-09-26
+                - generic [ref=e47]: Select game
+                - combobox "Select game" [ref=e48]:
+                  - option "Select a game"
+                  - option "UTA vs COL" [selected]
+                  - option "UTA vs COL"
+            - region "Replay scoreboard" [ref=e49]:
+              - generic [ref=e50]:
+                - generic [ref=e51]:
+                  - img "Utah Mammoth logo" [ref=e52]
+                  - strong [ref=e53]: UTA
+                  - generic [ref=e54]: "0"
+                  - generic [ref=e55]: SOG 0
+                - generic [ref=e56]:
+                  - img "Colorado Avalanche logo" [ref=e57]
+                  - strong [ref=e58]: COL
+                  - generic [ref=e59]: "0"
+                  - generic [ref=e60]: SOG 0
+                - generic [ref=e61]:
+                  - generic [ref=e62]: 1st Period
+                  - strong [ref=e63]: 20:00
+                  - generic [ref=e64]: Replay
+              - generic [ref=e65]:
+                - button "Skip back 30 seconds" [disabled] [ref=e66]:
+                  - text: ↶
+                  - generic [ref=e67]: "30"
+                - button "Play replay" [ref=e68] [cursor=pointer]:
+                  - img [ref=e69]
+                - button "Skip forward 30 seconds" [ref=e71] [cursor=pointer]:
+                  - text: ↷
+                  - generic [ref=e72]: "30"
+                - generic [ref=e73]: Playback speed
+                - combobox "Playback speed" [ref=e74]:
+                  - option "1x" [selected]
+                  - option "2x"
+                  - option "4x"
+                  - option "8x"
+            - region "Active players on ice" [ref=e75]:
+              - heading "Active players on ice" [level=2] [ref=e76]
+              - generic [ref=e77]:
+                - group "UTA (5 skaters)" [ref=e78]:
+                  - generic [ref=e79]:
+                    - text: UTA
+                    - generic [ref=e80]: (5 skaters)
+                  - generic [ref=e81]:
+                    - generic [ref=e82]: F
+                    - generic [ref=e83]:
+                      - generic "Test Player 1" [ref=e84]: T. Player 1
+                      - generic "Test Player 5" [ref=e85]: T. Player 5
+                      - generic "Test Player 9" [ref=e86]: T. Player 9
+                  - generic [ref=e87]:
+                    - generic [ref=e88]: D
+                    - generic [ref=e89]:
+                      - generic "Test Player 13" [ref=e90]: T. Player 13
+                      - generic "Test Player 17" [ref=e91]: T. Player 17
+                  - generic [ref=e92]:
+                    - generic [ref=e93]: G
+                    - generic "Test Player 19" [ref=e95]: T. Player 19
+                - group "COL (5 skaters)" [ref=e96]:
+                  - generic [ref=e97]:
+                    - text: COL
+                    - generic [ref=e98]: (5 skaters)
+                  - generic [ref=e99]:
+                    - generic [ref=e100]: F
+                    - generic [ref=e101]:
+                      - generic "Test Player 1" [ref=e102]: T. Player 1
+                      - generic "Test Player 5" [ref=e103]: T. Player 5
+                      - generic "Test Player 9" [ref=e104]: T. Player 9
+                  - generic [ref=e105]:
+                    - generic [ref=e106]: D
+                    - generic [ref=e107]:
+                      - generic "Test Player 13" [ref=e108]: T. Player 13
+                      - generic "Test Player 17" [ref=e109]: T. Player 17
+                  - generic [ref=e110]:
+                    - generic [ref=e111]: G
+                    - generic "Test Player 19" [ref=e113]: T. Player 19
+          - region "Shift timeline" [ref=e114]:
+            - generic [ref=e115]:
+              - heading "Shift timeline" [level=2] [ref=e116]
+              - generic "Timeline legend" [ref=e117]:
+                - generic [ref=e118]: Forward
+                - generic [ref=e120]: Defense
+                - generic [ref=e122]: Goalie
+                - generic [ref=e124]: Power play
+                - generic [ref=e126]: Penalty kill
+                - generic [ref=e128]: Goal
+                - generic [ref=e130]: UTA home
+                - generic [ref=e131]: COL away
+              - generic [ref=e132]:
+                - text: View
+                - combobox "Timeline players" [ref=e133]:
+                  - option "All players" [selected]
+                  - option "On ice"
+                  - option "Forwards"
+                  - option "Defense"
+                  - option "Goalies"
+            - region "Scrollable shift chart" [ref=e134]:
+              - table "Player shifts and statistics at the selected replay time" [ref=e135]:
+                - caption [ref=e136]: Player shifts and statistics at the selected replay time
+                - rowgroup [ref=e144]:
+                  - 'row "Player # Pos TOI S 1st Period 2nd Period 3rd Period OT 0 5 10 15 20 25 30 35 40 45 50 55 60 UTA goal · Test Player 1 · 0:20 elapsed UTA goal · Test Player 1 · 63:00 elapsed 1st Period, 0:00 elapsed" [ref=e145]':
+                    - columnheader "Player" [ref=e146]
+                    - columnheader "#" [ref=e147]
+                    - columnheader "Pos" [ref=e148]
+                    - columnheader "TOI" [ref=e149]
+                    - columnheader "S" [ref=e150]
+                    - columnheader "1st Period 2nd Period 3rd Period OT 0 5 10 15 20 25 30 35 40 45 50 55 60 UTA goal · Test Player 1 · 0:20 elapsed UTA goal · Test Player 1 · 63:00 elapsed 1st Period, 0:00 elapsed" [ref=e151]:
+                      - generic [ref=e152]:
+                        - generic "1st Period" [ref=e153]
+                        - generic "2nd Period" [ref=e154]
+                        - generic "3rd Period" [ref=e155]
+                        - generic "Overtime" [ref=e156]: OT
+                      - generic [ref=e157]:
+                        - generic [ref=e158]: "0"
+                        - generic [ref=e159]: "5"
+                        - generic [ref=e160]: "10"
+                        - generic [ref=e161]: "15"
+                        - generic [ref=e162]: "20"
+                        - generic [ref=e163]: "25"
+                        - generic [ref=e164]: "30"
+                        - generic [ref=e165]: "35"
+                        - generic [ref=e166]: "40"
+                        - generic [ref=e167]: "45"
+                        - generic [ref=e168]: "50"
+                        - generic [ref=e169]: "55"
+                        - generic [ref=e170]: "60"
+                        - button "UTA goal · Test Player 1 · 0:20 elapsed" [ref=e171] [cursor=pointer]
+                        - button "UTA goal · Test Player 1 · 63:00 elapsed" [ref=e172] [cursor=pointer]
+                      - slider "Replay time" [ref=e173] [cursor=pointer]: "0"
+                - rowgroup "UTA shifts" [ref=e174]:
+                  - row "UTA Utah Mammoth" [ref=e175]:
+                    - rowheader "UTA Utah Mammoth" [ref=e176]
+                    - cell [ref=e177]
+                  - row "On ice T. Player 1 1 C 0:00 0 Test Player 1 · 0:00–0:45 · 0:45 TOI Test Player 1 · 4:00–4:45 · 0:45 TOI Test Player 1 · 8:00–8:45 · 0:45 TOI Test Player 1 · 12:00–12:45 · 0:45 TOI Test Player 1 · 16:00–16:45 · 0:45 TOI Test Player 1 · 20:00–20:45 · 0:45 TOI Test Player 1 · 24:00–24:45 · 0:45 TOI Test Player 1 · 28:00–28:45 · 0:45 TOI Test Player 1 · 32:00–32:45 · 0:45 TOI Test Player 1 · 36:00–36:45 · 0:45 TOI Test Player 1 · 40:00–40:45 · 0:45 TOI Test Player 1 · 44:00–44:45 · 0:45 TOI Test Player 1 · 48:00–48:45 · 0:45 TOI Test Player 1 · 52:00–52:45 · 0:45 TOI Test Player 1 · 56:00–56:45 · 0:45 TOI Test Player 1 · 60:00–60:45 · 0:45 TOI T. Player 1 goal at 0:20 T. Player 1 goal at 63:00" [ref=e178]:
+                    - rowheader "On ice T. Player 1" [ref=e179]:
+                      - generic "On ice" [ref=e180]
+                      - text: T. Player 1
+                    - cell "1" [ref=e181]
+                    - cell "C" [ref=e182]
+                    - cell "0:00" [ref=e183]
+                    - cell "0" [ref=e184]
+                    - cell "Test Player 1 · 0:00–0:45 · 0:45 TOI Test Player 1 · 4:00–4:45 · 0:45 TOI Test Player 1 · 8:00–8:45 · 0:45 TOI Test Player 1 · 12:00–12:45 · 0:45 TOI Test Player 1 · 16:00–16:45 · 0:45 TOI Test Player 1 · 20:00–20:45 · 0:45 TOI Test Player 1 · 24:00–24:45 · 0:45 TOI Test Player 1 · 28:00–28:45 · 0:45 TOI Test Player 1 · 32:00–32:45 · 0:45 TOI Test Player 1 · 36:00–36:45 · 0:45 TOI Test Player 1 · 40:00–40:45 · 0:45 TOI Test Player 1 · 44:00–44:45 · 0:45 TOI Test Player 1 · 48:00–48:45 · 0:45 TOI Test Player 1 · 52:00–52:45 · 0:45 TOI Test Player 1 · 56:00–56:45 · 0:45 TOI Test Player 1 · 60:00–60:45 · 0:45 TOI T. Player 1 goal at 0:20 T. Player 1 goal at 63:00" [ref=e185]:
+                      - generic [ref=e186]:
+                        - generic "Test Player 1 · 0:00–0:45 · 0:45 TOI" [ref=e187]
+                        - generic "Test Player 1 · 4:00–4:45 · 0:45 TOI" [ref=e188]
+                        - generic "Test Player 1 · 8:00–8:45 · 0:45 TOI" [ref=e189]
+                        - generic "Test Player 1 · 12:00–12:45 · 0:45 TOI" [ref=e190]
+                        - generic "Test Player 1 · 16:00–16:45 · 0:45 TOI" [ref=e191]
+                        - generic "Test Player 1 · 20:00–20:45 · 0:45 TOI" [ref=e192]
+                        - generic "Test Player 1 · 24:00–24:45 · 0:45 TOI" [ref=e193]
+                        - generic "Test Player 1 · 28:00–28:45 · 0:45 TOI" [ref=e194]
+                        - generic "Test Player 1 · 32:00–32:45 · 0:45 TOI" [ref=e195]
+                        - generic "Test Player 1 · 36:00–36:45 · 0:45 TOI" [ref=e196]
+                        - generic "Test Player 1 · 40:00–40:45 · 0:45 TOI" [ref=e197]
+                        - generic "Test Player 1 · 44:00–44:45 · 0:45 TOI" [ref=e198]
+                        - generic "Test Player 1 · 48:00–48:45 · 0:45 TOI" [ref=e199]
+                        - generic "Test Player 1 · 52:00–52:45 · 0:45 TOI" [ref=e200]
+                        - generic "Test Player 1 · 56:00–56:45 · 0:45 TOI" [ref=e201]
+                        - generic "Test Player 1 · 60:00–60:45 · 0:45 TOI" [ref=e202]
+                        - generic "T. Player 1 goal at 0:20" [ref=e203]
+                        - generic "T. Player 1 goal at 63:00" [ref=e204]
+                  - row "On ice T. Player 5 5 L 0:00 0 Test Player 5 · 0:00–0:45 · 0:45 TOI Test Player 5 · 4:00–4:45 · 0:45 TOI Test Player 5 · 8:00–8:45 · 0:45 TOI Test Player 5 · 12:00–12:45 · 0:45 TOI Test Player 5 · 16:00–16:45 · 0:45 TOI Test Player 5 · 20:00–20:45 · 0:45 TOI Test Player 5 · 24:00–24:45 · 0:45 TOI Test Player 5 · 28:00–28:45 · 0:45 TOI Test Player 5 · 32:00–32:45 · 0:45 TOI Test Player 5 · 36:00–36:45 · 0:45 TOI Test Player 5 · 40:00–40:45 · 0:45 TOI Test Player 5 · 44:00–44:45 · 0:45 TOI Test Player 5 · 48:00–48:45 · 0:45 TOI Test Player 5 · 52:00–52:45 · 0:45 TOI Test Player 5 · 56:00–56:45 · 0:45 TOI Test Player 5 · 60:00–60:45 · 0:45 TOI" [ref=e205]:
+                    - rowheader "On ice T. Player 5" [ref=e206]:
+                      - generic "On ice" [ref=e207]
+                      - text: T. Player 5
+                    - cell "5" [ref=e208]
+                    - cell "L" [ref=e209]
+                    - cell "0:00" [ref=e210]
+                    - cell "0" [ref=e211]
+                    - cell "Test Player 5 · 0:00–0:45 · 0:45 TOI Test Player 5 · 4:00–4:45 · 0:45 TOI Test Player 5 · 8:00–8:45 · 0:45 TOI Test Player 5 · 12:00–12:45 · 0:45 TOI Test Player 5 · 16:00–16:45 · 0:45 TOI Test Player 5 · 20:00–20:45 · 0:45 TOI Test Player 5 · 24:00–24:45 · 0:45 TOI Test Player 5 · 28:00–28:45 · 0:45 TOI Test Player 5 · 32:00–32:45 · 0:45 TOI Test Player 5 · 36:00–36:45 · 0:45 TOI Test Player 5 · 40:00–40:45 · 0:45 TOI Test Player 5 · 44:00–44:45 · 0:45 TOI Test Player 5 · 48:00–48:45 · 0:45 TOI Test Player 5 · 52:00–52:45 · 0:45 TOI Test Player 5 · 56:00–56:45 · 0:45 TOI Test Player 5 · 60:00–60:45 · 0:45 TOI" [ref=e212]:
+                      - generic [ref=e213]:
+                        - generic "Test Player 5 · 0:00–0:45 · 0:45 TOI" [ref=e214]
+                        - generic "Test Player 5 · 4:00–4:45 · 0:45 TOI" [ref=e215]
+                        - generic "Test Player 5 · 8:00–8:45 · 0:45 TOI" [ref=e216]
+                        - generic "Test Player 5 · 12:00–12:45 · 0:45 TOI" [ref=e217]
+                        - generic "Test Player 5 · 16:00–16:45 · 0:45 TOI" [ref=e218]
+                        - generic "Test Player 5 · 20:00–20:45 · 0:45 TOI" [ref=e219]
+                        - generic "Test Player 5 · 24:00–24:45 · 0:45 TOI" [ref=e220]
+                        - generic "Test Player 5 · 28:00–28:45 · 0:45 TOI" [ref=e221]
+                        - generic "Test Player 5 · 32:00–32:45 · 0:45 TOI" [ref=e222]
+                        - generic "Test Player 5 · 36:00–36:45 · 0:45 TOI" [ref=e223]
+                        - generic "Test Player 5 · 40:00–40:45 · 0:45 TOI" [ref=e224]
+                        - generic "Test Player 5 · 44:00–44:45 · 0:45 TOI" [ref=e225]
+                        - generic "Test Player 5 · 48:00–48:45 · 0:45 TOI" [ref=e226]
+                        - generic "Test Player 5 · 52:00–52:45 · 0:45 TOI" [ref=e227]
+                        - generic "Test Player 5 · 56:00–56:45 · 0:45 TOI" [ref=e228]
+                        - generic "Test Player 5 · 60:00–60:45 · 0:45 TOI" [ref=e229]
+                  - row "On ice T. Player 9 9 R 0:00 0 Test Player 9 · 0:00–0:45 · 0:45 TOI Test Player 9 · 4:00–4:45 · 0:45 TOI Test Player 9 · 8:00–8:45 · 0:45 TOI Test Player 9 · 12:00–12:45 · 0:45 TOI Test Player 9 · 16:00–16:45 · 0:45 TOI Test Player 9 · 20:00–20:45 · 0:45 TOI Test Player 9 · 24:00–24:45 · 0:45 TOI Test Player 9 · 28:00–28:45 · 0:45 TOI Test Player 9 · 32:00–32:45 · 0:45 TOI Test Player 9 · 36:00–36:45 · 0:45 TOI Test Player 9 · 40:00–40:45 · 0:45 TOI Test Player 9 · 44:00–44:45 · 0:45 TOI Test Player 9 · 48:00–48:45 · 0:45 TOI Test Player 9 · 52:00–52:45 · 0:45 TOI Test Player 9 · 56:00–56:45 · 0:45 TOI Test Player 9 · 60:00–60:45 · 0:45 TOI" [ref=e230]:
+                    - rowheader "On ice T. Player 9" [ref=e231]:
+                      - generic "On ice" [ref=e232]
+                      - text: T. Player 9
+                    - cell "9" [ref=e233]
+                    - cell "R" [ref=e234]
+                    - cell "0:00" [ref=e235]
+                    - cell "0" [ref=e236]
+                    - cell "Test Player 9 · 0:00–0:45 · 0:45 TOI Test Player 9 · 4:00–4:45 · 0:45 TOI Test Player 9 · 8:00–8:45 · 0:45 TOI Test Player 9 · 12:00–12:45 · 0:45 TOI Test Player 9 · 16:00–16:45 · 0:45 TOI Test Player 9 · 20:00–20:45 · 0:45 TOI Test Player 9 · 24:00–24:45 · 0:45 TOI Test Player 9 · 28:00–28:45 · 0:45 TOI Test Player 9 · 32:00–32:45 · 0:45 TOI Test Player 9 · 36:00–36:45 · 0:45 TOI Test Player 9 · 40:00–40:45 · 0:45 TOI Test Player 9 · 44:00–44:45 · 0:45 TOI Test Player 9 · 48:00–48:45 · 0:45 TOI Test Player 9 · 52:00–52:45 · 0:45 TOI Test Player 9 · 56:00–56:45 · 0:45 TOI Test Player 9 · 60:00–60:45 · 0:45 TOI" [ref=e237]:
+                      - generic [ref=e238]:
+                        - generic "Test Player 9 · 0:00–0:45 · 0:45 TOI" [ref=e239]
+                        - generic "Test Player 9 · 4:00–4:45 · 0:45 TOI" [ref=e240]
+                        - generic "Test Player 9 · 8:00–8:45 · 0:45 TOI" [ref=e241]
+                        - generic "Test Player 9 · 12:00–12:45 · 0:45 TOI" [ref=e242]
+                        - generic "Test Player 9 · 16:00–16:45 · 0:45 TOI" [ref=e243]
+                        - generic "Test Player 9 · 20:00–20:45 · 0:45 TOI" [ref=e244]
+                        - generic "Test Player 9 · 24:00–24:45 · 0:45 TOI" [ref=e245]
+                        - generic "Test Player 9 · 28:00–28:45 · 0:45 TOI" [ref=e246]
+                        - generic "Test Player 9 · 32:00–32:45 · 0:45 TOI" [ref=e247]
+                        - generic "Test Player 9 · 36:00–36:45 · 0:45 TOI" [ref=e248]
+                        - generic "Test Player 9 · 40:00–40:45 · 0:45 TOI" [ref=e249]
+                        - generic "Test Player 9 · 44:00–44:45 · 0:45 TOI" [ref=e250]
+                        - generic "Test Player 9 · 48:00–48:45 · 0:45 TOI" [ref=e251]
+                        - generic "Test Player 9 · 52:00–52:45 · 0:45 TOI" [ref=e252]
+                        - generic "Test Player 9 · 56:00–56:45 · 0:45 TOI" [ref=e253]
+                        - generic "Test Player 9 · 60:00–60:45 · 0:45 TOI" [ref=e254]
+                  - row "On ice T. Player 13 13 D 0:00 0 Test Player 13 · 0:00–0:45 · 0:45 TOI Test Player 13 · 4:00–4:45 · 0:45 TOI Test Player 13 · 8:00–8:45 · 0:45 TOI Test Player 13 · 12:00–12:45 · 0:45 TOI Test Player 13 · 16:00–16:45 · 0:45 TOI Test Player 13 · 20:00–20:45 · 0:45 TOI Test Player 13 · 24:00–24:45 · 0:45 TOI Test Player 13 · 28:00–28:45 · 0:45 TOI Test Player 13 · 32:00–32:45 · 0:45 TOI Test Player 13 · 36:00–36:45 · 0:45 TOI Test Player 13 · 40:00–40:45 · 0:45 TOI Test Player 13 · 44:00–44:45 · 0:45 TOI Test Player 13 · 48:00–48:45 · 0:45 TOI Test Player 13 · 52:00–52:45 · 0:45 TOI Test Player 13 · 56:00–56:45 · 0:45 TOI Test Player 13 · 60:00–60:45 · 0:45 TOI" [ref=e255]:
+                    - rowheader "On ice T. Player 13" [ref=e256]:
+                      - generic "On ice" [ref=e257]
+                      - text: T. Player 13
+                    - cell "13" [ref=e258]
+                    - cell "D" [ref=e259]
+                    - cell "0:00" [ref=e260]
+                    - cell "0" [ref=e261]
+                    - cell "Test Player 13 · 0:00–0:45 · 0:45 TOI Test Player 13 · 4:00–4:45 · 0:45 TOI Test Player 13 · 8:00–8:45 · 0:45 TOI Test Player 13 · 12:00–12:45 · 0:45 TOI Test Player 13 · 16:00–16:45 · 0:45 TOI Test Player 13 · 20:00–20:45 · 0:45 TOI Test Player 13 · 24:00–24:45 · 0:45 TOI Test Player 13 · 28:00–28:45 · 0:45 TOI Test Player 13 · 32:00–32:45 · 0:45 TOI Test Player 13 · 36:00–36:45 · 0:45 TOI Test Player 13 · 40:00–40:45 · 0:45 TOI Test Player 13 · 44:00–44:45 · 0:45 TOI Test Player 13 · 48:00–48:45 · 0:45 TOI Test Player 13 · 52:00–52:45 · 0:45 TOI Test Player 13 · 56:00–56:45 · 0:45 TOI Test Player 13 · 60:00–60:45 · 0:45 TOI" [ref=e262]:
+                      - generic [ref=e263]:
+                        - generic "Test Player 13 · 0:00–0:45 · 0:45 TOI" [ref=e264]
+                        - generic "Test Player 13 · 4:00–4:45 · 0:45 TOI" [ref=e265]
+                        - generic "Test Player 13 · 8:00–8:45 · 0:45 TOI" [ref=e266]
+                        - generic "Test Player 13 · 12:00–12:45 · 0:45 TOI" [ref=e267]
+                        - generic "Test Player 13 · 16:00–16:45 · 0:45 TOI" [ref=e268]
+                        - generic "Test Player 13 · 20:00–20:45 · 0:45 TOI" [ref=e269]
+                        - generic "Test Player 13 · 24:00–24:45 · 0:45 TOI" [ref=e270]
+                        - generic "Test Player 13 · 28:00–28:45 · 0:45 TOI" [ref=e271]
+                        - generic "Test Player 13 · 32:00–32:45 · 0:45 TOI" [ref=e272]
+                        - generic "Test Player 13 · 36:00–36:45 · 0:45 TOI" [ref=e273]
+                        - generic "Test Player 13 · 40:00–40:45 · 0:45 TOI" [ref=e274]
+                        - generic "Test Player 13 · 44:00–44:45 · 0:45 TOI" [ref=e275]
+                        - generic "Test Player 13 · 48:00–48:45 · 0:45 TOI" [ref=e276]
+                        - generic "Test Player 13 · 52:00–52:45 · 0:45 TOI" [ref=e277]
+                        - generic "Test Player 13 · 56:00–56:45 · 0:45 TOI" [ref=e278]
+                        - generic "Test Player 13 · 60:00–60:45 · 0:45 TOI" [ref=e279]
+                  - row "On ice T. Player 17 17 D 0:00 0 Test Player 17 · 0:00–0:45 · 0:45 TOI Test Player 17 · 4:00–4:45 · 0:45 TOI Test Player 17 · 8:00–8:45 · 0:45 TOI Test Player 17 · 12:00–12:45 · 0:45 TOI Test Player 17 · 16:00–16:45 · 0:45 TOI Test Player 17 · 20:00–20:45 · 0:45 TOI Test Player 17 · 24:00–24:45 · 0:45 TOI Test Player 17 · 28:00–28:45 · 0:45 TOI Test Player 17 · 32:00–32:45 · 0:45 TOI Test Player 17 · 36:00–36:45 · 0:45 TOI Test Player 17 · 40:00–40:45 · 0:45 TOI Test Player 17 · 44:00–44:45 · 0:45 TOI Test Player 17 · 48:00–48:45 · 0:45 TOI Test Player 17 · 52:00–52:45 · 0:45 TOI Test Player 17 · 56:00–56:45 · 0:45 TOI Test Player 17 · 60:00–60:45 · 0:45 TOI" [ref=e280]:
+                    - rowheader "On ice T. Player 17" [ref=e281]:
+                      - generic "On ice" [ref=e282]
+                      - text: T. Player 17
+                    - cell "17" [ref=e283]
+                    - cell "D" [ref=e284]
+                    - cell "0:00" [ref=e285]
+                    - cell "0" [ref=e286]
+                    - cell "Test Player 17 · 0:00–0:45 · 0:45 TOI Test Player 17 · 4:00–4:45 · 0:45 TOI Test Player 17 · 8:00–8:45 · 0:45 TOI Test Player 17 · 12:00–12:45 · 0:45 TOI Test Player 17 · 16:00–16:45 · 0:45 TOI Test Player 17 · 20:00–20:45 · 0:45 TOI Test Player 17 · 24:00–24:45 · 0:45 TOI Test Player 17 · 28:00–28:45 · 0:45 TOI Test Player 17 · 32:00–32:45 · 0:45 TOI Test Player 17 · 36:00–36:45 · 0:45 TOI Test Player 17 · 40:00–40:45 · 0:45 TOI Test Player 17 · 44:00–44:45 · 0:45 TOI Test Player 17 · 48:00–48:45 · 0:45 TOI Test Player 17 · 52:00–52:45 · 0:45 TOI Test Player 17 · 56:00–56:45 · 0:45 TOI Test Player 17 · 60:00–60:45 · 0:45 TOI" [ref=e287]:
+                      - generic [ref=e288]:
+                        - generic "Test Player 17 · 0:00–0:45 · 0:45 TOI" [ref=e289]
+                        - generic "Test Player 17 · 4:00–4:45 · 0:45 TOI" [ref=e290]
+                        - generic "Test Player 17 · 8:00–8:45 · 0:45 TOI" [ref=e291]
+                        - generic "Test Player 17 · 12:00–12:45 · 0:45 TOI" [ref=e292]
+                        - generic "Test Player 17 · 16:00–16:45 · 0:45 TOI" [ref=e293]
+                        - generic "Test Player 17 · 20:00–20:45 · 0:45 TOI" [ref=e294]
+                        - generic "Test Player 17 · 24:00–24:45 · 0:45 TOI" [ref=e295]
+                        - generic "Test Player 17 · 28:00–28:45 · 0:45 TOI" [ref=e296]
+                        - generic "Test Player 17 · 32:00–32:45 · 0:45 TOI" [ref=e297]
+                        - generic "Test Player 17 · 36:00–36:45 · 0:45 TOI" [ref=e298]
+                        - generic "Test Player 17 · 40:00–40:45 · 0:45 TOI" [ref=e299]
+                        - generic "Test Player 17 · 44:00–44:45 · 0:45 TOI" [ref=e300]
+                        - generic "Test Player 17 · 48:00–48:45 · 0:45 TOI" [ref=e301]
+                        - generic "Test Player 17 · 52:00–52:45 · 0:45 TOI" [ref=e302]
+                        - generic "Test Player 17 · 56:00–56:45 · 0:45 TOI" [ref=e303]
+                        - generic "Test Player 17 · 60:00–60:45 · 0:45 TOI" [ref=e304]
+                  - row "On ice T. Player 19 19 G 0:00 0 Test Player 19 · 0:00–63:00 · 63:00 TOI" [ref=e305]:
+                    - rowheader "On ice T. Player 19" [ref=e306]:
+                      - generic "On ice" [ref=e307]
+                      - text: T. Player 19
+                    - cell "19" [ref=e308]
+                    - cell "G" [ref=e309]
+                    - cell "0:00" [ref=e310]
+                    - cell "0" [ref=e311]
+                    - cell "Test Player 19 · 0:00–63:00 · 63:00 TOI" [ref=e312]:
+                      - generic "Test Player 19 · 0:00–63:00 · 63:00 TOI" [ref=e314]
+                  - row "T. Player 2 2 L 0:00 0 Test Player 2 · 1:00–1:45 · 0:45 TOI Test Player 2 · 5:00–5:45 · 0:45 TOI Test Player 2 · 9:00–9:45 · 0:45 TOI Test Player 2 · 13:00–13:45 · 0:45 TOI Test Player 2 · 17:00–17:45 · 0:45 TOI Test Player 2 · 21:00–21:45 · 0:45 TOI Test Player 2 · 25:00–25:45 · 0:45 TOI Test Player 2 · 29:00–29:45 · 0:45 TOI Test Player 2 · 33:00–33:45 · 0:45 TOI Test Player 2 · 37:00–37:45 · 0:45 TOI Test Player 2 · 41:00–41:45 · 0:45 TOI Test Player 2 · 45:00–45:45 · 0:45 TOI Test Player 2 · 49:00–49:45 · 0:45 TOI Test Player 2 · 53:00–53:45 · 0:45 TOI Test Player 2 · 57:00–57:45 · 0:45 TOI Test Player 2 · 61:00–61:45 · 0:45 TOI" [ref=e315]:
+                    - rowheader "T. Player 2" [ref=e316]
+                    - cell "2" [ref=e317]
+                    - cell "L" [ref=e318]
+                    - cell "0:00" [ref=e319]
+                    - cell "0" [ref=e320]
+                    - cell "Test Player 2 · 1:00–1:45 · 0:45 TOI Test Player 2 · 5:00–5:45 · 0:45 TOI Test Player 2 · 9:00–9:45 · 0:45 TOI Test Player 2 · 13:00–13:45 · 0:45 TOI Test Player 2 · 17:00–17:45 · 0:45 TOI Test Player 2 · 21:00–21:45 · 0:45 TOI Test Player 2 · 25:00–25:45 · 0:45 TOI Test Player 2 · 29:00–29:45 · 0:45 TOI Test Player 2 · 33:00–33:45 · 0:45 TOI Test Player 2 · 37:00–37:45 · 0:45 TOI Test Player 2 · 41:00–41:45 · 0:45 TOI Test Player 2 · 45:00–45:45 · 0:45 TOI Test Player 2 · 49:00–49:45 · 0:45 TOI Test Player 2 · 53:00–53:45 · 0:45 TOI Test Player 2 · 57:00–57:45 · 0:45 TOI Test Player 2 · 61:00–61:45 · 0:45 TOI" [ref=e321]:
+                      - generic [ref=e322]:
+                        - generic "Test Player 2 · 1:00–1:45 · 0:45 TOI" [ref=e323]
+                        - generic "Test Player 2 · 5:00–5:45 · 0:45 TOI" [ref=e324]
+                        - generic "Test Player 2 · 9:00–9:45 · 0:45 TOI" [ref=e325]
+                        - generic "Test Player 2 · 13:00–13:45 · 0:45 TOI" [ref=e326]
+                        - generic "Test Player 2 · 17:00–17:45 · 0:45 TOI" [ref=e327]
+                        - generic "Test Player 2 · 21:00–21:45 · 0:45 TOI" [ref=e328]
+                        - generic "Test Player 2 · 25:00–25:45 · 0:45 TOI" [ref=e329]
+                        - generic "Test Player 2 · 29:00–29:45 · 0:45 TOI" [ref=e330]
+                        - generic "Test Player 2 · 33:00–33:45 · 0:45 TOI" [ref=e331]
+                        - generic "Test Player 2 · 37:00–37:45 · 0:45 TOI" [ref=e332]
+                        - generic "Test Player 2 · 41:00–41:45 · 0:45 TOI" [ref=e333]
+                        - generic "Test Player 2 · 45:00–45:45 · 0:45 TOI" [ref=e334]
+                        - generic "Test Player 2 · 49:00–49:45 · 0:45 TOI" [ref=e335]
+                        - generic "Test Player 2 · 53:00–53:45 · 0:45 TOI" [ref=e336]
+                        - generic "Test Player 2 · 57:00–57:45 · 0:45 TOI" [ref=e337]
+                        - generic "Test Player 2 · 61:00–61:45 · 0:45 TOI" [ref=e338]
+                  - row "T. Player 3 3 R 0:00 0 Test Player 3 · 2:00–2:45 · 0:45 TOI Test Player 3 · 6:00–6:45 · 0:45 TOI Test Player 3 · 10:00–10:45 · 0:45 TOI Test Player 3 · 14:00–14:45 · 0:45 TOI Test Player 3 · 18:00–18:45 · 0:45 TOI Test Player 3 · 22:00–22:45 · 0:45 TOI Test Player 3 · 26:00–26:45 · 0:45 TOI Test Player 3 · 30:00–30:45 · 0:45 TOI Test Player 3 · 34:00–34:45 · 0:45 TOI Test Player 3 · 38:00–38:45 · 0:45 TOI Test Player 3 · 42:00–42:45 · 0:45 TOI Test Player 3 · 46:00–46:45 · 0:45 TOI Test Player 3 · 50:00–50:45 · 0:45 TOI Test Player 3 · 54:00–54:45 · 0:45 TOI Test Player 3 · 58:00–58:45 · 0:45 TOI Test Player 3 · 62:00–62:45 · 0:45 TOI" [ref=e339]:
+                    - rowheader "T. Player 3" [ref=e340]
+                    - cell "3" [ref=e341]
+                    - cell "R" [ref=e342]
+                    - cell "0:00" [ref=e343]
+                    - cell "0" [ref=e344]
+                    - cell "Test Player 3 · 2:00–2:45 · 0:45 TOI Test Player 3 · 6:00–6:45 · 0:45 TOI Test Player 3 · 10:00–10:45 · 0:45 TOI Test Player 3 · 14:00–14:45 · 0:45 TOI Test Player 3 · 18:00–18:45 · 0:45 TOI Test Player 3 · 22:00–22:45 · 0:45 TOI Test Player 3 · 26:00–26:45 · 0:45 TOI Test Player 3 · 30:00–30:45 · 0:45 TOI Test Player 3 · 34:00–34:45 · 0:45 TOI Test Player 3 · 38:00–38:45 · 0:45 TOI Test Player 3 · 42:00–42:45 · 0:45 TOI Test Player 3 · 46:00–46:45 · 0:45 TOI Test Player 3 · 50:00–50:45 · 0:45 TOI Test Player 3 · 54:00–54:45 · 0:45 TOI Test Player 3 · 58:00–58:45 · 0:45 TOI Test Player 3 · 62:00–62:45 · 0:45 TOI" [ref=e345]:
+                      - generic [ref=e346]:
+                        - generic "Test Player 3 · 2:00–2:45 · 0:45 TOI" [ref=e347]
+                        - generic "Test Player 3 · 6:00–6:45 · 0:45 TOI" [ref=e348]
+                        - generic "Test Player 3 · 10:00–10:45 · 0:45 TOI" [ref=e349]
+                        - generic "Test Player 3 · 14:00–14:45 · 0:45 TOI" [ref=e350]
+                        - generic "Test Player 3 · 18:00–18:45 · 0:45 TOI" [ref=e351]
+                        - generic "Test Player 3 · 22:00–22:45 · 0:45 TOI" [ref=e352]
+                        - generic "Test Player 3 · 26:00–26:45 · 0:45 TOI" [ref=e353]
+                        - generic "Test Player 3 · 30:00–30:45 · 0:45 TOI" [ref=e354]
+                        - generic "Test Player 3 · 34:00–34:45 · 0:45 TOI" [ref=e355]
+                        - generic "Test Player 3 · 38:00–38:45 · 0:45 TOI" [ref=e356]
+                        - generic "Test Player 3 · 42:00–42:45 · 0:45 TOI" [ref=e357]
+                        - generic "Test Player 3 · 46:00–46:45 · 0:45 TOI" [ref=e358]
+                        - generic "Test Player 3 · 50:00–50:45 · 0:45 TOI" [ref=e359]
+                        - generic "Test Player 3 · 54:00–54:45 · 0:45 TOI" [ref=e360]
+                        - generic "Test Player 3 · 58:00–58:45 · 0:45 TOI" [ref=e361]
+                        - generic "Test Player 3 · 62:00–62:45 · 0:45 TOI" [ref=e362]
+                  - row "T. Player 4 4 C 0:00 0 Test Player 4 · 3:00–3:45 · 0:45 TOI Test Player 4 · 7:00–7:45 · 0:45 TOI Test Player 4 · 11:00–11:45 · 0:45 TOI Test Player 4 · 15:00–15:45 · 0:45 TOI Test Player 4 · 19:00–19:45 · 0:45 TOI Test Player 4 · 23:00–23:45 · 0:45 TOI Test Player 4 · 27:00–27:45 · 0:45 TOI Test Player 4 · 31:00–31:45 · 0:45 TOI Test Player 4 · 35:00–35:45 · 0:45 TOI Test Player 4 · 39:00–39:45 · 0:45 TOI Test Player 4 · 43:00–43:45 · 0:45 TOI Test Player 4 · 47:00–47:45 · 0:45 TOI Test Player 4 · 51:00–51:45 · 0:45 TOI Test Player 4 · 55:00–55:45 · 0:45 TOI Test Player 4 · 59:00–59:45 · 0:45 TOI" [ref=e363]:
+                    - rowheader "T. Player 4" [ref=e364]
+                    - cell "4" [ref=e365]
+                    - cell "C" [ref=e366]
+                    - cell "0:00" [ref=e367]
+                    - cell "0" [ref=e368]
+                    - cell "Test Player 4 · 3:00–3:45 · 0:45 TOI Test Player 4 · 7:00–7:45 · 0:45 TOI Test Player 4 · 11:00–11:45 · 0:45 TOI Test Player 4 · 15:00–15:45 · 0:45 TOI Test Player 4 · 19:00–19:45 · 0:45 TOI Test Player 4 · 23:00–23:45 · 0:45 TOI Test Player 4 · 27:00–27:45 · 0:45 TOI Test Player 4 · 31:00–31:45 · 0:45 TOI Test Player 4 · 35:00–35:45 · 0:45 TOI Test Player 4 · 39:00–39:45 · 0:45 TOI Test Player 4 · 43:00–43:45 · 0:45 TOI Test Player 4 · 47:00–47:45 · 0:45 TOI Test Player 4 · 51:00–51:45 · 0:45 TOI Test Player 4 · 55:00–55:45 · 0:45 TOI Test Player 4 · 59:00–59:45 · 0:45 TOI" [ref=e369]:
+                      - generic [ref=e370]:
+                        - generic "Test Player 4 · 3:00–3:45 · 0:45 TOI" [ref=e371]
+                        - generic "Test Player 4 · 7:00–7:45 · 0:45 TOI" [ref=e372]
+                        - generic "Test Player 4 · 11:00–11:45 · 0:45 TOI" [ref=e373]
+                        - generic "Test Player 4 · 15:00–15:45 · 0:45 TOI" [ref=e374]
+                        - generic "Test Player 4 · 19:00–19:45 · 0:45 TOI" [ref=e375]
+                        - generic "Test Player 4 · 23:00–23:45 · 0:45 TOI" [ref=e376]
+                        - generic "Test Player 4 · 27:00–27:45 · 0:45 TOI" [ref=e377]
+                        - generic "Test Player 4 · 31:00–31:45 · 0:45 TOI" [ref=e378]
+                        - generic "Test Player 4 · 35:00–35:45 · 0:45 TOI" [ref=e379]
+                        - generic "Test Player 4 · 39:00–39:45 · 0:45 TOI" [ref=e380]
+                        - generic "Test Player 4 · 43:00–43:45 · 0:45 TOI" [ref=e381]
+                        - generic "Test Player 4 · 47:00–47:45 · 0:45 TOI" [ref=e382]
+                        - generic "Test Player 4 · 51:00–51:45 · 0:45 TOI" [ref=e383]
+                        - generic "Test Player 4 · 55:00–55:45 · 0:45 TOI" [ref=e384]
+                        - generic "Test Player 4 · 59:00–59:45 · 0:45 TOI" [ref=e385]
+                  - row "T. Player 6 6 R 0:00 0 Test Player 6 · 1:00–1:45 · 0:45 TOI Test Player 6 · 5:00–5:45 · 0:45 TOI Test Player 6 · 9:00–9:45 · 0:45 TOI Test Player 6 · 13:00–13:45 · 0:45 TOI Test Player 6 · 17:00–17:45 · 0:45 TOI Test Player 6 · 21:00–21:45 · 0:45 TOI Test Player 6 · 25:00–25:45 · 0:45 TOI Test Player 6 · 29:00–29:45 · 0:45 TOI Test Player 6 · 33:00–33:45 · 0:45 TOI Test Player 6 · 37:00–37:45 · 0:45 TOI Test Player 6 · 41:00–41:45 · 0:45 TOI Test Player 6 · 45:00–45:45 · 0:45 TOI Test Player 6 · 49:00–49:45 · 0:45 TOI Test Player 6 · 53:00–53:45 · 0:45 TOI Test Player 6 · 57:00–57:45 · 0:45 TOI Test Player 6 · 61:00–61:45 · 0:45 TOI" [ref=e386]:
+                    - rowheader "T. Player 6" [ref=e387]
+                    - cell "6" [ref=e388]
+                    - cell "R" [ref=e389]
+                    - cell "0:00" [ref=e390]
+                    - cell "0" [ref=e391]
+                    - cell "Test Player 6 · 1:00–1:45 · 0:45 TOI Test Player 6 · 5:00–5:45 · 0:45 TOI Test Player 6 · 9:00–9:45 · 0:45 TOI Test Player 6 · 13:00–13:45 · 0:45 TOI Test Player 6 · 17:00–17:45 · 0:45 TOI Test Player 6 · 21:00–21:45 · 0:45 TOI Test Player 6 · 25:00–25:45 · 0:45 TOI Test Player 6 · 29:00–29:45 · 0:45 TOI Test Player 6 · 33:00–33:45 · 0:45 TOI Test Player 6 · 37:00–37:45 · 0:45 TOI Test Player 6 · 41:00–41:45 · 0:45 TOI Test Player 6 · 45:00–45:45 · 0:45 TOI Test Player 6 · 49:00–49:45 · 0:45 TOI Test Player 6 · 53:00–53:45 · 0:45 TOI Test Player 6 · 57:00–57:45 · 0:45 TOI Test Player 6 · 61:00–61:45 · 0:45 TOI" [ref=e392]:
+                      - generic [ref=e393]:
+                        - generic "Test Player 6 · 1:00–1:45 · 0:45 TOI" [ref=e394]
+                        - generic "Test Player 6 · 5:00–5:45 · 0:45 TOI" [ref=e395]
+                        - generic "Test Player 6 · 9:00–9:45 · 0:45 TOI" [ref=e396]
+                        - generic "Test Player 6 · 13:00–13:45 · 0:45 TOI" [ref=e397]
+                        - generic "Test Player 6 · 17:00–17:45 · 0:45 TOI" [ref=e398]
+                        - generic "Test Player 6 · 21:00–21:45 · 0:45 TOI" [ref=e399]
+                        - generic "Test Player 6 · 25:00–25:45 · 0:45 TOI" [ref=e400]
+                        - generic "Test Player 6 · 29:00–29:45 · 0:45 TOI" [ref=e401]
+                        - generic "Test Player 6 · 33:00–33:45 · 0:45 TOI" [ref=e402]
+                        - generic "Test Player 6 · 37:00–37:45 · 0:45 TOI" [ref=e403]
+                        - generic "Test Player 6 · 41:00–41:45 · 0:45 TOI" [ref=e404]
+                        - generic "Test Player 6 · 45:00–45:45 · 0:45 TOI" [ref=e405]
+                        - generic "Test Player 6 · 49:00–49:45 · 0:45 TOI" [ref=e406]
+                        - generic "Test Player 6 · 53:00–53:45 · 0:45 TOI" [ref=e407]
+                        - generic "Test Player 6 · 57:00–57:45 · 0:45 TOI" [ref=e408]
+                        - generic "Test Player 6 · 61:00–61:45 · 0:45 TOI" [ref=e409]
+                  - row "T. Player 7 7 C 0:00 0 Test Player 7 · 2:00–2:45 · 0:45 TOI Test Player 7 · 6:00–6:45 · 0:45 TOI Test Player 7 · 10:00–10:45 · 0:45 TOI Test Player 7 · 14:00–14:45 · 0:45 TOI Test Player 7 · 18:00–18:45 · 0:45 TOI Test Player 7 · 22:00–22:45 · 0:45 TOI Test Player 7 · 26:00–26:45 · 0:45 TOI Test Player 7 · 30:00–30:45 · 0:45 TOI Test Player 7 · 34:00–34:45 · 0:45 TOI Test Player 7 · 38:00–38:45 · 0:45 TOI Test Player 7 · 42:00–42:45 · 0:45 TOI Test Player 7 · 46:00–46:45 · 0:45 TOI Test Player 7 · 50:00–50:45 · 0:45 TOI Test Player 7 · 54:00–54:45 · 0:45 TOI Test Player 7 · 58:00–58:45 · 0:45 TOI Test Player 7 · 62:00–62:45 · 0:45 TOI" [ref=e410]:
+                    - rowheader "T. Player 7" [ref=e411]
+                    - cell "7" [ref=e412]
+                    - cell "C" [ref=e413]
+                    - cell "0:00" [ref=e414]
+                    - cell "0" [ref=e415]
+                    - cell "Test Player 7 · 2:00–2:45 · 0:45 TOI Test Player 7 · 6:00–6:45 · 0:45 TOI Test Player 7 · 10:00–10:45 · 0:45 TOI Test Player 7 · 14:00–14:45 · 0:45 TOI Test Player 7 · 18:00–18:45 · 0:45 TOI Test Player 7 · 22:00–22:45 · 0:45 TOI Test Player 7 · 26:00–26:45 · 0:45 TOI Test Player 7 · 30:00–30:45 · 0:45 TOI Test Player 7 · 34:00–34:45 · 0:45 TOI Test Player 7 · 38:00–38:45 · 0:45 TOI Test Player 7 · 42:00–42:45 · 0:45 TOI Test Player 7 · 46:00–46:45 · 0:45 TOI Test Player 7 · 50:00–50:45 · 0:45 TOI Test Player 7 · 54:00–54:45 · 0:45 TOI Test Player 7 · 58:00–58:45 · 0:45 TOI Test Player 7 · 62:00–62:45 · 0:45 TOI" [ref=e416]:
+                      - generic [ref=e417]:
+                        - generic "Test Player 7 · 2:00–2:45 · 0:45 TOI" [ref=e418]
+                        - generic "Test Player 7 · 6:00–6:45 · 0:45 TOI" [ref=e419]
+                        - generic "Test Player 7 · 10:00–10:45 · 0:45 TOI" [ref=e420]
+                        - generic "Test Player 7 · 14:00–14:45 · 0:45 TOI" [ref=e421]
+                        - generic "Test Player 7 · 18:00–18:45 · 0:45 TOI" [ref=e422]
+                        - generic "Test Player 7 · 22:00–22:45 · 0:45 TOI" [ref=e423]
+                        - generic "Test Player 7 · 26:00–26:45 · 0:45 TOI" [ref=e424]
+                        - generic "Test Player 7 · 30:00–30:45 · 0:45 TOI" [ref=e425]
+                        - generic "Test Player 7 · 34:00–34:45 · 0:45 TOI" [ref=e426]
+                        - generic "Test Player 7 · 38:00–38:45 · 0:45 TOI" [ref=e427]
+                        - generic "Test Player 7 · 42:00–42:45 · 0:45 TOI" [ref=e428]
+                        - generic "Test Player 7 · 46:00–46:45 · 0:45 TOI" [ref=e429]
+                        - generic "Test Player 7 · 50:00–50:45 · 0:45 TOI" [ref=e430]
+                        - generic "Test Player 7 · 54:00–54:45 · 0:45 TOI" [ref=e431]
+                        - generic "Test Player 7 · 58:00–58:45 · 0:45 TOI" [ref=e432]
+                        - generic "Test Player 7 · 62:00–62:45 · 0:45 TOI" [ref=e433]
+                  - row "T. Player 8 8 L 0:00 0 Test Player 8 · 3:00–3:45 · 0:45 TOI Test Player 8 · 7:00–7:45 · 0:45 TOI Test Player 8 · 11:00–11:45 · 0:45 TOI Test Player 8 · 15:00–15:45 · 0:45 TOI Test Player 8 · 19:00–19:45 · 0:45 TOI Test Player 8 · 23:00–23:45 · 0:45 TOI Test Player 8 · 27:00–27:45 · 0:45 TOI Test Player 8 · 31:00–31:45 · 0:45 TOI Test Player 8 · 35:00–35:45 · 0:45 TOI Test Player 8 · 39:00–39:45 · 0:45 TOI Test Player 8 · 43:00–43:45 · 0:45 TOI Test Player 8 · 47:00–47:45 · 0:45 TOI Test Player 8 · 51:00–51:45 · 0:45 TOI Test Player 8 · 55:00–55:45 · 0:45 TOI Test Player 8 · 59:00–59:45 · 0:45 TOI" [ref=e434]:
+                    - rowheader "T. Player 8" [ref=e435]
+                    - cell "8" [ref=e436]
+                    - cell "L" [ref=e437]
+                    - cell "0:00" [ref=e438]
+                    - cell "0" [ref=e439]
+                    - cell "Test Player 8 · 3:00–3:45 · 0:45 TOI Test Player 8 · 7:00–7:45 · 0:45 TOI Test Player 8 · 11:00–11:45 · 0:45 TOI Test Player 8 · 15:00–15:45 · 0:45 TOI Test Player 8 · 19:00–19:45 · 0:45 TOI Test Player 8 · 23:00–23:45 · 0:45 TOI Test Player 8 · 27:00–27:45 · 0:45 TOI Test Player 8 · 31:00–31:45 · 0:45 TOI Test Player 8 · 35:00–35:45 · 0:45 TOI Test Player 8 · 39:00–39:45 · 0:45 TOI Test Player 8 · 43:00–43:45 · 0:45 TOI Test Player 8 · 47:00–47:45 · 0:45 TOI Test Player 8 · 51:00–51:45 · 0:45 TOI Test Player 8 · 55:00–55:45 · 0:45 TOI Test Player 8 · 59:00–59:45 · 0:45 TOI" [ref=e440]:
+                      - generic [ref=e441]:
+                        - generic "Test Player 8 · 3:00–3:45 · 0:45 TOI" [ref=e442]
+                        - generic "Test Player 8 · 7:00–7:45 · 0:45 TOI" [ref=e443]
+                        - generic "Test Player 8 · 11:00–11:45 · 0:45 TOI" [ref=e444]
+                        - generic "Test Player 8 · 15:00–15:45 · 0:45 TOI" [ref=e445]
+                        - generic "Test Player 8 · 19:00–19:45 · 0:45 TOI" [ref=e446]
+                        - generic "Test Player 8 · 23:00–23:45 · 0:45 TOI" [ref=e447]
+                        - generic "Test Player 8 · 27:00–27:45 · 0:45 TOI" [ref=e448]
+                        - generic "Test Player 8 · 31:00–31:45 · 0:45 TOI" [ref=e449]
+                        - generic "Test Player 8 · 35:00–35:45 · 0:45 TOI" [ref=e450]
+                        - generic "Test Player 8 · 39:00–39:45 · 0:45 TOI" [ref=e451]
+                        - generic "Test Player 8 · 43:00–43:45 · 0:45 TOI" [ref=e452]
+                        - generic "Test Player 8 · 47:00–47:45 · 0:45 TOI" [ref=e453]
+                        - generic "Test Player 8 · 51:00–51:45 · 0:45 TOI" [ref=e454]
+                        - generic "Test Player 8 · 55:00–55:45 · 0:45 TOI" [ref=e455]
+                        - generic "Test Player 8 · 59:00–59:45 · 0:45 TOI" [ref=e456]
+                  - row "T. Player 10 10 C 0:00 0 Test Player 10 · 1:00–1:45 · 0:45 TOI Test Player 10 · 5:00–5:45 · 0:45 TOI Test Player 10 · 9:00–9:45 · 0:45 TOI Test Player 10 · 13:00–13:45 · 0:45 TOI Test Player 10 · 17:00–17:45 · 0:45 TOI Test Player 10 · 21:00–21:45 · 0:45 TOI Test Player 10 · 25:00–25:45 · 0:45 TOI Test Player 10 · 29:00–29:45 · 0:45 TOI Test Player 10 · 33:00–33:45 · 0:45 TOI Test Player 10 · 37:00–37:45 · 0:45 TOI Test Player 10 · 41:00–41:45 · 0:45 TOI Test Player 10 · 45:00–45:45 · 0:45 TOI Test Player 10 · 49:00–49:45 · 0:45 TOI Test Player 10 · 53:00–53:45 · 0:45 TOI Test Player 10 · 57:00–57:45 · 0:45 TOI Test Player 10 · 61:00–61:45 · 0:45 TOI" [ref=e457]:
+                    - rowheader "T. Player 10" [ref=e458]
+                    - cell "10" [ref=e459]
+                    - cell "C" [ref=e460]
+                    - cell "0:00" [ref=e461]
+                    - cell "0" [ref=e462]
+                    - cell "Test Player 10 · 1:00–1:45 · 0:45 TOI Test Player 10 · 5:00–5:45 · 0:45 TOI Test Player 10 · 9:00–9:45 · 0:45 TOI Test Player 10 · 13:00–13:45 · 0:45 TOI Test Player 10 · 17:00–17:45 · 0:45 TOI Test Player 10 · 21:00–21:45 · 0:45 TOI Test Player 10 · 25:00–25:45 · 0:45 TOI Test Player 10 · 29:00–29:45 · 0:45 TOI Test Player 10 · 33:00–33:45 · 0:45 TOI Test Player 10 · 37:00–37:45 · 0:45 TOI Test Player 10 · 41:00–41:45 · 0:45 TOI Test Player 10 · 45:00–45:45 · 0:45 TOI Test Player 10 · 49:00–49:45 · 0:45 TOI Test Player 10 · 53:00–53:45 · 0:45 TOI Test Player 10 · 57:00–57:45 · 0:45 TOI Test Player 10 · 61:00–61:45 · 0:45 TOI" [ref=e463]:
+                      - generic [ref=e464]:
+                        - generic "Test Player 10 · 1:00–1:45 · 0:45 TOI" [ref=e465]
+                        - generic "Test Player 10 · 5:00–5:45 · 0:45 TOI" [ref=e466]
+                        - generic "Test Player 10 · 9:00–9:45 · 0:45 TOI" [ref=e467]
+                        - generic "Test Player 10 · 13:00–13:45 · 0:45 TOI" [ref=e468]
+                        - generic "Test Player 10 · 17:00–17:45 · 0:45 TOI" [ref=e469]
+                        - generic "Test Player 10 · 21:00–21:45 · 0:45 TOI" [ref=e470]
+                        - generic "Test Player 10 · 25:00–25:45 · 0:45 TOI" [ref=e471]
+                        - generic "Test Player 10 · 29:00–29:45 · 0:45 TOI" [ref=e472]
+                        - generic "Test Player 10 · 33:00–33:45 · 0:45 TOI" [ref=e473]
+                        - generic "Test Player 10 · 37:00–37:45 · 0:45 TOI" [ref=e474]
+                        - generic "Test Player 10 · 41:00–41:45 · 0:45 TOI" [ref=e475]
+                        - generic "Test Player 10 · 45:00–45:45 · 0:45 TOI" [ref=e476]
+                        - generic "Test Player 10 · 49:00–49:45 · 0:45 TOI" [ref=e477]
+                        - generic "Test Player 10 · 53:00–53:45 · 0:45 TOI" [ref=e478]
+                        - generic "Test Player 10 · 57:00–57:45 · 0:45 TOI" [ref=e479]
+                        - generic "Test Player 10 · 61:00–61:45 · 0:45 TOI" [ref=e480]
+                  - row "T. Player 11 11 L 0:00 0 Test Player 11 · 2:00–2:45 · 0:45 TOI Test Player 11 · 6:00–6:45 · 0:45 TOI Test Player 11 · 10:00–10:45 · 0:45 TOI Test Player 11 · 14:00–14:45 · 0:45 TOI Test Player 11 · 18:00–18:45 · 0:45 TOI Test Player 11 · 22:00–22:45 · 0:45 TOI Test Player 11 · 26:00–26:45 · 0:45 TOI Test Player 11 · 30:00–30:45 · 0:45 TOI Test Player 11 · 34:00–34:45 · 0:45 TOI Test Player 11 · 38:00–38:45 · 0:45 TOI Test Player 11 · 42:00–42:45 · 0:45 TOI Test Player 11 · 46:00–46:45 · 0:45 TOI Test Player 11 · 50:00–50:45 · 0:45 TOI Test Player 11 · 54:00–54:45 · 0:45 TOI Test Player 11 · 58:00–58:45 · 0:45 TOI Test Player 11 · 62:00–62:45 · 0:45 TOI" [ref=e481]:
+                    - rowheader "T. Player 11" [ref=e482]
+                    - cell "11" [ref=e483]
+                    - cell "L" [ref=e484]
+                    - cell "0:00" [ref=e485]
+                    - cell "0" [ref=e486]
+                    - cell "Test Player 11 · 2:00–2:45 · 0:45 TOI Test Player 11 · 6:00–6:45 · 0:45 TOI Test Player 11 · 10:00–10:45 · 0:45 TOI Test Player 11 · 14:00–14:45 · 0:45 TOI Test Player 11 · 18:00–18:45 · 0:45 TOI Test Player 11 · 22:00–22:45 · 0:45 TOI Test Player 11 · 26:00–26:45 · 0:45 TOI Test Player 11 · 30:00–30:45 · 0:45 TOI Test Player 11 · 34:00–34:45 · 0:45 TOI Test Player 11 · 38:00–38:45 · 0:45 TOI Test Player 11 · 42:00–42:45 · 0:45 TOI Test Player 11 · 46:00–46:45 · 0:45 TOI Test Player 11 · 50:00–50:45 · 0:45 TOI Test Player 11 · 54:00–54:45 · 0:45 TOI Test Player 11 · 58:00–58:45 · 0:45 TOI Test Player 11 · 62:00–62:45 · 0:45 TOI" [ref=e487]:
+                      - generic [ref=e488]:
+                        - generic "Test Player 11 · 2:00–2:45 · 0:45 TOI" [ref=e489]
+                        - generic "Test Player 11 · 6:00–6:45 · 0:45 TOI" [ref=e490]
+                        - generic "Test Player 11 · 10:00–10:45 · 0:45 TOI" [ref=e491]
+                        - generic "Test Player 11 · 14:00–14:45 · 0:45 TOI" [ref=e492]
+                        - generic "Test Player 11 · 18:00–18:45 · 0:45 TOI" [ref=e493]
+                        - generic "Test Player 11 · 22:00–22:45 · 0:45 TOI" [ref=e494]
+                        - generic "Test Player 11 · 26:00–26:45 · 0:45 TOI" [ref=e495]
+                        - generic "Test Player 11 · 30:00–30:45 · 0:45 TOI" [ref=e496]
+                        - generic "Test Player 11 · 34:00–34:45 · 0:45 TOI" [ref=e497]
+                        - generic "Test Player 11 · 38:00–38:45 · 0:45 TOI" [ref=e498]
+                        - generic "Test Player 11 · 42:00–42:45 · 0:45 TOI" [ref=e499]
+                        - generic "Test Player 11 · 46:00–46:45 · 0:45 TOI" [ref=e500]
+                        - generic "Test Player 11 · 50:00–50:45 · 0:45 TOI" [ref=e501]
+                        - generic "Test Player 11 · 54:00–54:45 · 0:45 TOI" [ref=e502]
+                        - generic "Test Player 11 · 58:00–58:45 · 0:45 TOI" [ref=e503]
+                        - generic "Test Player 11 · 62:00–62:45 · 0:45 TOI" [ref=e504]
+                  - row "T. Player 12 12 R 0:00 0 Test Player 12 · 3:00–3:45 · 0:45 TOI Test Player 12 · 7:00–7:45 · 0:45 TOI Test Player 12 · 11:00–11:45 · 0:45 TOI Test Player 12 · 15:00–15:45 · 0:45 TOI Test Player 12 · 19:00–19:45 · 0:45 TOI Test Player 12 · 23:00–23:45 · 0:45 TOI Test Player 12 · 27:00–27:45 · 0:45 TOI Test Player 12 · 31:00–31:45 · 0:45 TOI Test Player 12 · 35:00–35:45 · 0:45 TOI Test Player 12 · 39:00–39:45 · 0:45 TOI Test Player 12 · 43:00–43:45 · 0:45 TOI Test Player 12 · 47:00–47:45 · 0:45 TOI Test Player 12 · 51:00–51:45 · 0:45 TOI Test Player 12 · 55:00–55:45 · 0:45 TOI Test Player 12 · 59:00–59:45 · 0:45 TOI" [ref=e505]:
+                    - rowheader "T. Player 12" [ref=e506]
+                    - cell "12" [ref=e507]
+                    - cell "R" [ref=e508]
+                    - cell "0:00" [ref=e509]
+                    - cell "0" [ref=e510]
+                    - cell "Test Player 12 · 3:00–3:45 · 0:45 TOI Test Player 12 · 7:00–7:45 · 0:45 TOI Test Player 12 · 11:00–11:45 · 0:45 TOI Test Player 12 · 15:00–15:45 · 0:45 TOI Test Player 12 · 19:00–19:45 · 0:45 TOI Test Player 12 · 23:00–23:45 · 0:45 TOI Test Player 12 · 27:00–27:45 · 0:45 TOI Test Player 12 · 31:00–31:45 · 0:45 TOI Test Player 12 · 35:00–35:45 · 0:45 TOI Test Player 12 · 39:00–39:45 · 0:45 TOI Test Player 12 · 43:00–43:45 · 0:45 TOI Test Player 12 · 47:00–47:45 · 0:45 TOI Test Player 12 · 51:00–51:45 · 0:45 TOI Test Player 12 · 55:00–55:45 · 0:45 TOI Test Player 12 · 59:00–59:45 · 0:45 TOI" [ref=e511]:
+                      - generic [ref=e512]:
+                        - generic "Test Player 12 · 3:00–3:45 · 0:45 TOI" [ref=e513]
+                        - generic "Test Player 12 · 7:00–7:45 · 0:45 TOI" [ref=e514]
+                        - generic "Test Player 12 · 11:00–11:45 · 0:45 TOI" [ref=e515]
+                        - generic "Test Player 12 · 15:00–15:45 · 0:45 TOI" [ref=e516]
+                        - generic "Test Player 12 · 19:00–19:45 · 0:45 TOI" [ref=e517]
+                        - generic "Test Player 12 · 23:00–23:45 · 0:45 TOI" [ref=e518]
+                        - generic "Test Player 12 · 27:00–27:45 · 0:45 TOI" [ref=e519]
+                        - generic "Test Player 12 · 31:00–31:45 · 0:45 TOI" [ref=e520]
+                        - generic "Test Player 12 · 35:00–35:45 · 0:45 TOI" [ref=e521]
+                        - generic "Test Player 12 · 39:00–39:45 · 0:45 TOI" [ref=e522]
+                        - generic "Test Player 12 · 43:00–43:45 · 0:45 TOI" [ref=e523]
+                        - generic "Test Player 12 · 47:00–47:45 · 0:45 TOI" [ref=e524]
+                        - generic "Test Player 12 · 51:00–51:45 · 0:45 TOI" [ref=e525]
+                        - generic "Test Player 12 · 55:00–55:45 · 0:45 TOI" [ref=e526]
+                        - generic "Test Player 12 · 59:00–59:45 · 0:45 TOI" [ref=e527]
+                  - row "T. Player 14 14 D 0:00 0 Test Player 14 · 1:00–1:45 · 0:45 TOI Test Player 14 · 5:00–5:45 · 0:45 TOI Test Player 14 · 9:00–9:45 · 0:45 TOI Test Player 14 · 13:00–13:45 · 0:45 TOI Test Player 14 · 17:00–17:45 · 0:45 TOI Test Player 14 · 21:00–21:45 · 0:45 TOI Test Player 14 · 25:00–25:45 · 0:45 TOI Test Player 14 · 29:00–29:45 · 0:45 TOI Test Player 14 · 33:00–33:45 · 0:45 TOI Test Player 14 · 37:00–37:45 · 0:45 TOI Test Player 14 · 41:00–41:45 · 0:45 TOI Test Player 14 · 45:00–45:45 · 0:45 TOI Test Player 14 · 49:00–49:45 · 0:45 TOI Test Player 14 · 53:00–53:45 · 0:45 TOI Test Player 14 · 57:00–57:45 · 0:45 TOI Test Player 14 · 61:00–61:45 · 0:45 TOI" [ref=e528]:
+                    - rowheader "T. Player 14" [ref=e529]
+                    - cell "14" [ref=e530]
+                    - cell "D" [ref=e531]
+                    - cell "0:00" [ref=e532]
+                    - cell "0" [ref=e533]
+                    - cell "Test Player 14 · 1:00–1:45 · 0:45 TOI Test Player 14 · 5:00–5:45 · 0:45 TOI Test Player 14 · 9:00–9:45 · 0:45 TOI Test Player 14 · 13:00–13:45 · 0:45 TOI Test Player 14 · 17:00–17:45 · 0:45 TOI Test Player 14 · 21:00–21:45 · 0:45 TOI Test Player 14 · 25:00–25:45 · 0:45 TOI Test Player 14 · 29:00–29:45 · 0:45 TOI Test Player 14 · 33:00–33:45 · 0:45 TOI Test Player 14 · 37:00–37:45 · 0:45 TOI Test Player 14 · 41:00–41:45 · 0:45 TOI Test Player 14 · 45:00–45:45 · 0:45 TOI Test Player 14 · 49:00–49:45 · 0:45 TOI Test Player 14 · 53:00–53:45 · 0:45 TOI Test Player 14 · 57:00–57:45 · 0:45 TOI Test Player 14 · 61:00–61:45 · 0:45 TOI" [ref=e534]:
+                      - generic [ref=e535]:
+                        - generic "Test Player 14 · 1:00–1:45 · 0:45 TOI" [ref=e536]
+                        - generic "Test Player 14 · 5:00–5:45 · 0:45 TOI" [ref=e537]
+                        - generic "Test Player 14 · 9:00–9:45 · 0:45 TOI" [ref=e538]
+                        - generic "Test Player 14 · 13:00–13:45 · 0:45 TOI" [ref=e539]
+                        - generic "Test Player 14 · 17:00–17:45 · 0:45 TOI" [ref=e540]
+                        - generic "Test Player 14 · 21:00–21:45 · 0:45 TOI" [ref=e541]
+                        - generic "Test Player 14 · 25:00–25:45 · 0:45 TOI" [ref=e542]
+                        - generic "Test Player 14 · 29:00–29:45 · 0:45 TOI" [ref=e543]
+                        - generic "Test Player 14 · 33:00–33:45 · 0:45 TOI" [ref=e544]
+                        - generic "Test Player 14 · 37:00–37:45 · 0:45 TOI" [ref=e545]
+                        - generic "Test Player 14 · 41:00–41:45 · 0:45 TOI" [ref=e546]
+                        - generic "Test Player 14 · 45:00–45:45 · 0:45 TOI" [ref=e547]
+                        - generic "Test Player 14 · 49:00–49:45 · 0:45 TOI" [ref=e548]
+                        - generic "Test Player 14 · 53:00–53:45 · 0:45 TOI" [ref=e549]
+                        - generic "Test Player 14 · 57:00–57:45 · 0:45 TOI" [ref=e550]
+                        - generic "Test Player 14 · 61:00–61:45 · 0:45 TOI" [ref=e551]
+                  - row "T. Player 15 15 D 0:00 0 Test Player 15 · 2:00–2:45 · 0:45 TOI Test Player 15 · 6:00–6:45 · 0:45 TOI Test Player 15 · 10:00–10:45 · 0:45 TOI Test Player 15 · 14:00–14:45 · 0:45 TOI Test Player 15 · 18:00–18:45 · 0:45 TOI Test Player 15 · 22:00–22:45 · 0:45 TOI Test Player 15 · 26:00–26:45 · 0:45 TOI Test Player 15 · 30:00–30:45 · 0:45 TOI Test Player 15 · 34:00–34:45 · 0:45 TOI Test Player 15 · 38:00–38:45 · 0:45 TOI Test Player 15 · 42:00–42:45 · 0:45 TOI Test Player 15 · 46:00–46:45 · 0:45 TOI Test Player 15 · 50:00–50:45 · 0:45 TOI Test Player 15 · 54:00–54:45 · 0:45 TOI Test Player 15 · 58:00–58:45 · 0:45 TOI Test Player 15 · 62:00–62:45 · 0:45 TOI" [ref=e552]:
+                    - rowheader "T. Player 15" [ref=e553]
+                    - cell "15" [ref=e554]
+                    - cell "D" [ref=e555]
+                    - cell "0:00" [ref=e556]
+                    - cell "0" [ref=e557]
+                    - cell "Test Player 15 · 2:00–2:45 · 0:45 TOI Test Player 15 · 6:00–6:45 · 0:45 TOI Test Player 15 · 10:00–10:45 · 0:45 TOI Test Player 15 · 14:00–14:45 · 0:45 TOI Test Player 15 · 18:00–18:45 · 0:45 TOI Test Player 15 · 22:00–22:45 · 0:45 TOI Test Player 15 · 26:00–26:45 · 0:45 TOI Test Player 15 · 30:00–30:45 · 0:45 TOI Test Player 15 · 34:00–34:45 · 0:45 TOI Test Player 15 · 38:00–38:45 · 0:45 TOI Test Player 15 · 42:00–42:45 · 0:45 TOI Test Player 15 · 46:00–46:45 · 0:45 TOI Test Player 15 · 50:00–50:45 · 0:45 TOI Test Player 15 · 54:00–54:45 · 0:45 TOI Test Player 15 · 58:00–58:45 · 0:45 TOI Test Player 15 · 62:00–62:45 · 0:45 TOI" [ref=e558]:
+                      - generic [ref=e559]:
+                        - generic "Test Player 15 · 2:00–2:45 · 0:45 TOI" [ref=e560]
+                        - generic "Test Player 15 · 6:00–6:45 · 0:45 TOI" [ref=e561]
+                        - generic "Test Player 15 · 10:00–10:45 · 0:45 TOI" [ref=e562]
+                        - generic "Test Player 15 · 14:00–14:45 · 0:45 TOI" [ref=e563]
+                        - generic "Test Player 15 · 18:00–18:45 · 0:45 TOI" [ref=e564]
+                        - generic "Test Player 15 · 22:00–22:45 · 0:45 TOI" [ref=e565]
+                        - generic "Test Player 15 · 26:00–26:45 · 0:45 TOI" [ref=e566]
+                        - generic "Test Player 15 · 30:00–30:45 · 0:45 TOI" [ref=e567]
+                        - generic "Test Player 15 · 34:00–34:45 · 0:45 TOI" [ref=e568]
+                        - generic "Test Player 15 · 38:00–38:45 · 0:45 TOI" [ref=e569]
+                        - generic "Test Player 15 · 42:00–42:45 · 0:45 TOI" [ref=e570]
+                        - generic "Test Player 15 · 46:00–46:45 · 0:45 TOI" [ref=e571]
+                        - generic "Test Player 15 · 50:00–50:45 · 0:45 TOI" [ref=e572]
+                        - generic "Test Player 15 · 54:00–54:45 · 0:45 TOI" [ref=e573]
+                        - generic "Test Player 15 · 58:00–58:45 · 0:45 TOI" [ref=e574]
+                        - generic "Test Player 15 · 62:00–62:45 · 0:45 TOI" [ref=e575]
+                  - row "T. Player 16 16 D 0:00 0 Test Player 16 · 3:00–3:45 · 0:45 TOI Test Player 16 · 7:00–7:45 · 0:45 TOI Test Player 16 · 11:00–11:45 · 0:45 TOI Test Player 16 · 15:00–15:45 · 0:45 TOI Test Player 16 · 19:00–19:45 · 0:45 TOI Test Player 16 · 23:00–23:45 · 0:45 TOI Test Player 16 · 27:00–27:45 · 0:45 TOI Test Player 16 · 31:00–31:45 · 0:45 TOI Test Player 16 · 35:00–35:45 · 0:45 TOI Test Player 16 · 39:00–39:45 · 0:45 TOI Test Player 16 · 43:00–43:45 · 0:45 TOI Test Player 16 · 47:00–47:45 · 0:45 TOI Test Player 16 · 51:00–51:45 · 0:45 TOI Test Player 16 · 55:00–55:45 · 0:45 TOI Test Player 16 · 59:00–59:45 · 0:45 TOI" [ref=e576]:
+                    - rowheader "T. Player 16" [ref=e577]
+                    - cell "16" [ref=e578]
+                    - cell "D" [ref=e579]
+                    - cell "0:00" [ref=e580]
+                    - cell "0" [ref=e581]
+                    - cell "Test Player 16 · 3:00–3:45 · 0:45 TOI Test Player 16 · 7:00–7:45 · 0:45 TOI Test Player 16 · 11:00–11:45 · 0:45 TOI Test Player 16 · 15:00–15:45 · 0:45 TOI Test Player 16 · 19:00–19:45 · 0:45 TOI Test Player 16 · 23:00–23:45 · 0:45 TOI Test Player 16 · 27:00–27:45 · 0:45 TOI Test Player 16 · 31:00–31:45 · 0:45 TOI Test Player 16 · 35:00–35:45 · 0:45 TOI Test Player 16 · 39:00–39:45 · 0:45 TOI Test Player 16 · 43:00–43:45 · 0:45 TOI Test Player 16 · 47:00–47:45 · 0:45 TOI Test Player 16 · 51:00–51:45 · 0:45 TOI Test Player 16 · 55:00–55:45 · 0:45 TOI Test Player 16 · 59:00–59:45 · 0:45 TOI" [ref=e582]:
+                      - generic [ref=e583]:
+                        - generic "Test Player 16 · 3:00–3:45 · 0:45 TOI" [ref=e584]
+                        - generic "Test Player 16 · 7:00–7:45 · 0:45 TOI" [ref=e585]
+                        - generic "Test Player 16 · 11:00–11:45 · 0:45 TOI" [ref=e586]
+                        - generic "Test Player 16 · 15:00–15:45 · 0:45 TOI" [ref=e587]
+                        - generic "Test Player 16 · 19:00–19:45 · 0:45 TOI" [ref=e588]
+                        - generic "Test Player 16 · 23:00–23:45 · 0:45 TOI" [ref=e589]
+                        - generic "Test Player 16 · 27:00–27:45 · 0:45 TOI" [ref=e590]
+                        - generic "Test Player 16 · 31:00–31:45 · 0:45 TOI" [ref=e591]
+                        - generic "Test Player 16 · 35:00–35:45 · 0:45 TOI" [ref=e592]
+                        - generic "Test Player 16 · 39:00–39:45 · 0:45 TOI" [ref=e593]
+                        - generic "Test Player 16 · 43:00–43:45 · 0:45 TOI" [ref=e594]
+                        - generic "Test Player 16 · 47:00–47:45 · 0:45 TOI" [ref=e595]
+                        - generic "Test Player 16 · 51:00–51:45 · 0:45 TOI" [ref=e596]
+                        - generic "Test Player 16 · 55:00–55:45 · 0:45 TOI" [ref=e597]
+                        - generic "Test Player 16 · 59:00–59:45 · 0:45 TOI" [ref=e598]
+                  - row "T. Player 18 18 D 0:00 0 Test Player 18 · 1:00–1:45 · 0:45 TOI Test Player 18 · 5:00–5:45 · 0:45 TOI Test Player 18 · 9:00–9:45 · 0:45 TOI Test Player 18 · 13:00–13:45 · 0:45 TOI Test Player 18 · 17:00–17:45 · 0:45 TOI Test Player 18 · 21:00–21:45 · 0:45 TOI Test Player 18 · 25:00–25:45 · 0:45 TOI Test Player 18 · 29:00–29:45 · 0:45 TOI Test Player 18 · 33:00–33:45 · 0:45 TOI Test Player 18 · 37:00–37:45 · 0:45 TOI Test Player 18 · 41:00–41:45 · 0:45 TOI Test Player 18 · 45:00–45:45 · 0:45 TOI Test Player 18 · 49:00–49:45 · 0:45 TOI Test Player 18 · 53:00–53:45 · 0:45 TOI Test Player 18 · 57:00–57:45 · 0:45 TOI Test Player 18 · 61:00–61:45 · 0:45 TOI" [ref=e599]:
+                    - rowheader "T. Player 18" [ref=e600]
+                    - cell "18" [ref=e601]
+                    - cell "D" [ref=e602]
+                    - cell "0:00" [ref=e603]
+                    - cell "0" [ref=e604]
+                    - cell "Test Player 18 · 1:00–1:45 · 0:45 TOI Test Player 18 · 5:00–5:45 · 0:45 TOI Test Player 18 · 9:00–9:45 · 0:45 TOI Test Player 18 · 13:00–13:45 · 0:45 TOI Test Player 18 · 17:00–17:45 · 0:45 TOI Test Player 18 · 21:00–21:45 · 0:45 TOI Test Player 18 · 25:00–25:45 · 0:45 TOI Test Player 18 · 29:00–29:45 · 0:45 TOI Test Player 18 · 33:00–33:45 · 0:45 TOI Test Player 18 · 37:00–37:45 · 0:45 TOI Test Player 18 · 41:00–41:45 · 0:45 TOI Test Player 18 · 45:00–45:45 · 0:45 TOI Test Player 18 · 49:00–49:45 · 0:45 TOI Test Player 18 · 53:00–53:45 · 0:45 TOI Test Player 18 · 57:00–57:45 · 0:45 TOI Test Player 18 · 61:00–61:45 · 0:45 TOI" [ref=e605]:
+                      - generic [ref=e606]:
+                        - generic "Test Player 18 · 1:00–1:45 · 0:45 TOI" [ref=e607]
+                        - generic "Test Player 18 · 5:00–5:45 · 0:45 TOI" [ref=e608]
+                        - generic "Test Player 18 · 9:00–9:45 · 0:45 TOI" [ref=e609]
+                        - generic "Test Player 18 · 13:00–13:45 · 0:45 TOI" [ref=e610]
+                        - generic "Test Player 18 · 17:00–17:45 · 0:45 TOI" [ref=e611]
+                        - generic "Test Player 18 · 21:00–21:45 · 0:45 TOI" [ref=e612]
+                        - generic "Test Player 18 · 25:00–25:45 · 0:45 TOI" [ref=e613]
+                        - generic "Test Player 18 · 29:00–29:45 · 0:45 TOI" [ref=e614]
+                        - generic "Test Player 18 · 33:00–33:45 · 0:45 TOI" [ref=e615]
+                        - generic "Test Player 18 · 37:00–37:45 · 0:45 TOI" [ref=e616]
+                        - generic "Test Player 18 · 41:00–41:45 · 0:45 TOI" [ref=e617]
+                        - generic "Test Player 18 · 45:00–45:45 · 0:45 TOI" [ref=e618]
+                        - generic "Test Player 18 · 49:00–49:45 · 0:45 TOI" [ref=e619]
+                        - generic "Test Player 18 · 53:00–53:45 · 0:45 TOI" [ref=e620]
+                        - generic "Test Player 18 · 57:00–57:45 · 0:45 TOI" [ref=e621]
+                        - generic "Test Player 18 · 61:00–61:45 · 0:45 TOI" [ref=e622]
+                  - row "T. Player 20 20 G 0:00 0" [ref=e623]:
+                    - rowheader "T. Player 20" [ref=e624]
+                    - cell "20" [ref=e625]
+                    - cell "G" [ref=e626]
+                    - cell "0:00" [ref=e627]
+                    - cell "0" [ref=e628]
+                    - cell [ref=e629]
+              - table "Player shifts and statistics at the selected replay time" [ref=e631]:
+                - caption [ref=e632]: Player shifts and statistics at the selected replay time
+                - rowgroup [ref=e640]:
+                  - 'row "Player # Pos TOI S 1st Period 2nd Period 3rd Period OT 0 5 10 15 20 25 30 35 40 45 50 55 60 UTA goal · Test Player 1 · 0:20 elapsed UTA goal · Test Player 1 · 63:00 elapsed 1st Period, 0:00 elapsed" [ref=e641]':
+                    - columnheader "Player" [ref=e642]
+                    - columnheader "#" [ref=e643]
+                    - columnheader "Pos" [ref=e644]
+                    - columnheader "TOI" [ref=e645]
+                    - columnheader "S" [ref=e646]
+                    - columnheader "1st Period 2nd Period 3rd Period OT 0 5 10 15 20 25 30 35 40 45 50 55 60 UTA goal · Test Player 1 · 0:20 elapsed UTA goal · Test Player 1 · 63:00 elapsed 1st Period, 0:00 elapsed" [ref=e647]:
+                      - generic [ref=e648]:
+                        - generic "1st Period" [ref=e649]
+                        - generic "2nd Period" [ref=e650]
+                        - generic "3rd Period" [ref=e651]
+                        - generic "Overtime" [ref=e652]: OT
+                      - generic [ref=e653]:
+                        - generic [ref=e654]: "0"
+                        - generic [ref=e655]: "5"
+                        - generic [ref=e656]: "10"
+                        - generic [ref=e657]: "15"
+                        - generic [ref=e658]: "20"
+                        - generic [ref=e659]: "25"
+                        - generic [ref=e660]: "30"
+                        - generic [ref=e661]: "35"
+                        - generic [ref=e662]: "40"
+                        - generic [ref=e663]: "45"
+                        - generic [ref=e664]: "50"
+                        - generic [ref=e665]: "55"
+                        - generic [ref=e666]: "60"
+                        - button "UTA goal · Test Player 1 · 0:20 elapsed" [ref=e667] [cursor=pointer]
+                        - button "UTA goal · Test Player 1 · 63:00 elapsed" [ref=e668] [cursor=pointer]
+                      - slider "Replay time for COL" [ref=e669] [cursor=pointer]: "0"
+                - rowgroup "COL shifts" [ref=e670]:
+                  - row "COL Colorado Avalanche" [ref=e671]:
+                    - rowheader "COL Colorado Avalanche" [ref=e672]
+                    - cell [ref=e673]
+                  - row "On ice T. Player 1 1 C 0:00 0 Test Player 1 · 0:00–0:45 · 0:45 TOI Test Player 1 · 4:00–4:45 · 0:45 TOI Test Player 1 · 8:00–8:45 · 0:45 TOI Test Player 1 · 12:00–12:45 · 0:45 TOI Test Player 1 · 16:00–16:45 · 0:45 TOI Test Player 1 · 20:00–20:45 · 0:45 TOI Test Player 1 · 24:00–24:45 · 0:45 TOI Test Player 1 · 28:00–28:45 · 0:45 TOI Test Player 1 · 32:00–32:45 · 0:45 TOI Test Player 1 · 36:00–36:45 · 0:45 TOI Test Player 1 · 40:00–40:45 · 0:45 TOI Test Player 1 · 44:00–44:45 · 0:45 TOI Test Player 1 · 48:00–48:45 · 0:45 TOI Test Player 1 · 52:00–52:45 · 0:45 TOI Test Player 1 · 56:00–56:45 · 0:45 TOI Test Player 1 · 60:00–60:45 · 0:45 TOI" [ref=e674]:
+                    - rowheader "On ice T. Player 1" [ref=e675]:
+                      - generic "On ice" [ref=e676]
+                      - text: T. Player 1
+                    - cell "1" [ref=e677]
+                    - cell "C" [ref=e678]
+                    - cell "0:00" [ref=e679]
+                    - cell "0" [ref=e680]
+                    - cell "Test Player 1 · 0:00–0:45 · 0:45 TOI Test Player 1 · 4:00–4:45 · 0:45 TOI Test Player 1 · 8:00–8:45 · 0:45 TOI Test Player 1 · 12:00–12:45 · 0:45 TOI Test Player 1 · 16:00–16:45 · 0:45 TOI Test Player 1 · 20:00–20:45 · 0:45 TOI Test Player 1 · 24:00–24:45 · 0:45 TOI Test Player 1 · 28:00–28:45 · 0:45 TOI Test Player 1 · 32:00–32:45 · 0:45 TOI Test Player 1 · 36:00–36:45 · 0:45 TOI Test Player 1 · 40:00–40:45 · 0:45 TOI Test Player 1 · 44:00–44:45 · 0:45 TOI Test Player 1 · 48:00–48:45 · 0:45 TOI Test Player 1 · 52:00–52:45 · 0:45 TOI Test Player 1 · 56:00–56:45 · 0:45 TOI Test Player 1 · 60:00–60:45 · 0:45 TOI" [ref=e681]:
+                      - generic [ref=e682]:
+                        - generic "Test Player 1 · 0:00–0:45 · 0:45 TOI" [ref=e683]
+                        - generic "Test Player 1 · 4:00–4:45 · 0:45 TOI" [ref=e684]
+                        - generic "Test Player 1 · 8:00–8:45 · 0:45 TOI" [ref=e685]
+                        - generic "Test Player 1 · 12:00–12:45 · 0:45 TOI" [ref=e686]
+                        - generic "Test Player 1 · 16:00–16:45 · 0:45 TOI" [ref=e687]
+                        - generic "Test Player 1 · 20:00–20:45 · 0:45 TOI" [ref=e688]
+                        - generic "Test Player 1 · 24:00–24:45 · 0:45 TOI" [ref=e689]
+                        - generic "Test Player 1 · 28:00–28:45 · 0:45 TOI" [ref=e690]
+                        - generic "Test Player 1 · 32:00–32:45 · 0:45 TOI" [ref=e691]
+                        - generic "Test Player 1 · 36:00–36:45 · 0:45 TOI" [ref=e692]
+                        - generic "Test Player 1 · 40:00–40:45 · 0:45 TOI" [ref=e693]
+                        - generic "Test Player 1 · 44:00–44:45 · 0:45 TOI" [ref=e694]
+                        - generic "Test Player 1 · 48:00–48:45 · 0:45 TOI" [ref=e695]
+                        - generic "Test Player 1 · 52:00–52:45 · 0:45 TOI" [ref=e696]
+                        - generic "Test Player 1 · 56:00–56:45 · 0:45 TOI" [ref=e697]
+                        - generic "Test Player 1 · 60:00–60:45 · 0:45 TOI" [ref=e698]
+                  - row "On ice T. Player 5 5 L 0:00 0 Test Player 5 · 0:00–0:45 · 0:45 TOI Test Player 5 · 4:00–4:45 · 0:45 TOI Test Player 5 · 8:00–8:45 · 0:45 TOI Test Player 5 · 12:00–12:45 · 0:45 TOI Test Player 5 · 16:00–16:45 · 0:45 TOI Test Player 5 · 20:00–20:45 · 0:45 TOI Test Player 5 · 24:00–24:45 · 0:45 TOI Test Player 5 · 28:00–28:45 · 0:45 TOI Test Player 5 · 32:00–32:45 · 0:45 TOI Test Player 5 · 36:00–36:45 · 0:45 TOI Test Player 5 · 40:00–40:45 · 0:45 TOI Test Player 5 · 44:00–44:45 · 0:45 TOI Test Player 5 · 48:00–48:45 · 0:45 TOI Test Player 5 · 52:00–52:45 · 0:45 TOI Test Player 5 · 56:00–56:45 · 0:45 TOI Test Player 5 · 60:00–60:45 · 0:45 TOI" [ref=e699]:
+                    - rowheader "On ice T. Player 5" [ref=e700]:
+                      - generic "On ice" [ref=e701]
+                      - text: T. Player 5
+                    - cell "5" [ref=e702]
+                    - cell "L" [ref=e703]
+                    - cell "0:00" [ref=e704]
+                    - cell "0" [ref=e705]
+                    - cell "Test Player 5 · 0:00–0:45 · 0:45 TOI Test Player 5 · 4:00–4:45 · 0:45 TOI Test Player 5 · 8:00–8:45 · 0:45 TOI Test Player 5 · 12:00–12:45 · 0:45 TOI Test Player 5 · 16:00–16:45 · 0:45 TOI Test Player 5 · 20:00–20:45 · 0:45 TOI Test Player 5 · 24:00–24:45 · 0:45 TOI Test Player 5 · 28:00–28:45 · 0:45 TOI Test Player 5 · 32:00–32:45 · 0:45 TOI Test Player 5 · 36:00–36:45 · 0:45 TOI Test Player 5 · 40:00–40:45 · 0:45 TOI Test Player 5 · 44:00–44:45 · 0:45 TOI Test Player 5 · 48:00–48:45 · 0:45 TOI Test Player 5 · 52:00–52:45 · 0:45 TOI Test Player 5 · 56:00–56:45 · 0:45 TOI Test Player 5 · 60:00–60:45 · 0:45 TOI" [ref=e706]:
+                      - generic [ref=e707]:
+                        - generic "Test Player 5 · 0:00–0:45 · 0:45 TOI" [ref=e708]
+                        - generic "Test Player 5 · 4:00–4:45 · 0:45 TOI" [ref=e709]
+                        - generic "Test Player 5 · 8:00–8:45 · 0:45 TOI" [ref=e710]
+                        - generic "Test Player 5 · 12:00–12:45 · 0:45 TOI" [ref=e711]
+                        - generic "Test Player 5 · 16:00–16:45 · 0:45 TOI" [ref=e712]
+                        - generic "Test Player 5 · 20:00–20:45 · 0:45 TOI" [ref=e713]
+                        - generic "Test Player 5 · 24:00–24:45 · 0:45 TOI" [ref=e714]
+                        - generic "Test Player 5 · 28:00–28:45 · 0:45 TOI" [ref=e715]
+                        - generic "Test Player 5 · 32:00–32:45 · 0:45 TOI" [ref=e716]
+                        - generic "Test Player 5 · 36:00–36:45 · 0:45 TOI" [ref=e717]
+                        - generic "Test Player 5 · 40:00–40:45 · 0:45 TOI" [ref=e718]
+                        - generic "Test Player 5 · 44:00–44:45 · 0:45 TOI" [ref=e719]
+                        - generic "Test Player 5 · 48:00–48:45 · 0:45 TOI" [ref=e720]
+                        - generic "Test Player 5 · 52:00–52:45 · 0:45 TOI" [ref=e721]
+                        - generic "Test Player 5 · 56:00–56:45 · 0:45 TOI" [ref=e722]
+                        - generic "Test Player 5 · 60:00–60:45 · 0:45 TOI" [ref=e723]
+                  - row "On ice T. Player 9 9 R 0:00 0 Test Player 9 · 0:00–0:45 · 0:45 TOI Test Player 9 · 4:00–4:45 · 0:45 TOI Test Player 9 · 8:00–8:45 · 0:45 TOI Test Player 9 · 12:00–12:45 · 0:45 TOI Test Player 9 · 16:00–16:45 · 0:45 TOI Test Player 9 · 20:00–20:45 · 0:45 TOI Test Player 9 · 24:00–24:45 · 0:45 TOI Test Player 9 · 28:00–28:45 · 0:45 TOI Test Player 9 · 32:00–32:45 · 0:45 TOI Test Player 9 · 36:00–36:45 · 0:45 TOI Test Player 9 · 40:00–40:45 · 0:45 TOI Test Player 9 · 44:00–44:45 · 0:45 TOI Test Player 9 · 48:00–48:45 · 0:45 TOI Test Player 9 · 52:00–52:45 · 0:45 TOI Test Player 9 · 56:00–56:45 · 0:45 TOI Test Player 9 · 60:00–60:45 · 0:45 TOI" [ref=e724]:
+                    - rowheader "On ice T. Player 9" [ref=e725]:
+                      - generic "On ice" [ref=e726]
+                      - text: T. Player 9
+                    - cell "9" [ref=e727]
+                    - cell "R" [ref=e728]
+                    - cell "0:00" [ref=e729]
+                    - cell "0" [ref=e730]
+                    - cell "Test Player 9 · 0:00–0:45 · 0:45 TOI Test Player 9 · 4:00–4:45 · 0:45 TOI Test Player 9 · 8:00–8:45 · 0:45 TOI Test Player 9 · 12:00–12:45 · 0:45 TOI Test Player 9 · 16:00–16:45 · 0:45 TOI Test Player 9 · 20:00–20:45 · 0:45 TOI Test Player 9 · 24:00–24:45 · 0:45 TOI Test Player 9 · 28:00–28:45 · 0:45 TOI Test Player 9 · 32:00–32:45 · 0:45 TOI Test Player 9 · 36:00–36:45 · 0:45 TOI Test Player 9 · 40:00–40:45 · 0:45 TOI Test Player 9 · 44:00–44:45 · 0:45 TOI Test Player 9 · 48:00–48:45 · 0:45 TOI Test Player 9 · 52:00–52:45 · 0:45 TOI Test Player 9 · 56:00–56:45 · 0:45 TOI Test Player 9 · 60:00–60:45 · 0:45 TOI" [ref=e731]:
+                      - generic [ref=e732]:
+                        - generic "Test Player 9 · 0:00–0:45 · 0:45 TOI" [ref=e733]
+                        - generic "Test Player 9 · 4:00–4:45 · 0:45 TOI" [ref=e734]
+                        - generic "Test Player 9 · 8:00–8:45 · 0:45 TOI" [ref=e735]
+                        - generic "Test Player 9 · 12:00–12:45 · 0:45 TOI" [ref=e736]
+                        - generic "Test Player 9 · 16:00–16:45 · 0:45 TOI" [ref=e737]
+                        - generic "Test Player 9 · 20:00–20:45 · 0:45 TOI" [ref=e738]
+                        - generic "Test Player 9 · 24:00–24:45 · 0:45 TOI" [ref=e739]
+                        - generic "Test Player 9 · 28:00–28:45 · 0:45 TOI" [ref=e740]
+                        - generic "Test Player 9 · 32:00–32:45 · 0:45 TOI" [ref=e741]
+                        - generic "Test Player 9 · 36:00–36:45 · 0:45 TOI" [ref=e742]
+                        - generic "Test Player 9 · 40:00–40:45 · 0:45 TOI" [ref=e743]
+                        - generic "Test Player 9 · 44:00–44:45 · 0:45 TOI" [ref=e744]
+                        - generic "Test Player 9 · 48:00–48:45 · 0:45 TOI" [ref=e745]
+                        - generic "Test Player 9 · 52:00–52:45 · 0:45 TOI" [ref=e746]
+                        - generic "Test Player 9 · 56:00–56:45 · 0:45 TOI" [ref=e747]
+                        - generic "Test Player 9 · 60:00–60:45 · 0:45 TOI" [ref=e748]
+                  - row "On ice T. Player 13 13 D 0:00 0 Test Player 13 · 0:00–0:45 · 0:45 TOI Test Player 13 · 4:00–4:45 · 0:45 TOI Test Player 13 · 8:00–8:45 · 0:45 TOI Test Player 13 · 12:00–12:45 · 0:45 TOI Test Player 13 · 16:00–16:45 · 0:45 TOI Test Player 13 · 20:00–20:45 · 0:45 TOI Test Player 13 · 24:00–24:45 · 0:45 TOI Test Player 13 · 28:00–28:45 · 0:45 TOI Test Player 13 · 32:00–32:45 · 0:45 TOI Test Player 13 · 36:00–36:45 · 0:45 TOI Test Player 13 · 40:00–40:45 · 0:45 TOI Test Player 13 · 44:00–44:45 · 0:45 TOI Test Player 13 · 48:00–48:45 · 0:45 TOI Test Player 13 · 52:00–52:45 · 0:45 TOI Test Player 13 · 56:00–56:45 · 0:45 TOI Test Player 13 · 60:00–60:45 · 0:45 TOI" [ref=e749]:
+                    - rowheader "On ice T. Player 13" [ref=e750]:
+                      - generic "On ice" [ref=e751]
+                      - text: T. Player 13
+                    - cell "13" [ref=e752]
+                    - cell "D" [ref=e753]
+                    - cell "0:00" [ref=e754]
+                    - cell "0" [ref=e755]
+                    - cell "Test Player 13 · 0:00–0:45 · 0:45 TOI Test Player 13 · 4:00–4:45 · 0:45 TOI Test Player 13 · 8:00–8:45 · 0:45 TOI Test Player 13 · 12:00–12:45 · 0:45 TOI Test Player 13 · 16:00–16:45 · 0:45 TOI Test Player 13 · 20:00–20:45 · 0:45 TOI Test Player 13 · 24:00–24:45 · 0:45 TOI Test Player 13 · 28:00–28:45 · 0:45 TOI Test Player 13 · 32:00–32:45 · 0:45 TOI Test Player 13 · 36:00–36:45 · 0:45 TOI Test Player 13 · 40:00–40:45 · 0:45 TOI Test Player 13 · 44:00–44:45 · 0:45 TOI Test Player 13 · 48:00–48:45 · 0:45 TOI Test Player 13 · 52:00–52:45 · 0:45 TOI Test Player 13 · 56:00–56:45 · 0:45 TOI Test Player 13 · 60:00–60:45 · 0:45 TOI" [ref=e756]:
+                      - generic [ref=e757]:
+                        - generic "Test Player 13 · 0:00–0:45 · 0:45 TOI" [ref=e758]
+                        - generic "Test Player 13 · 4:00–4:45 · 0:45 TOI" [ref=e759]
+                        - generic "Test Player 13 · 8:00–8:45 · 0:45 TOI" [ref=e760]
+                        - generic "Test Player 13 · 12:00–12:45 · 0:45 TOI" [ref=e761]
+                        - generic "Test Player 13 · 16:00–16:45 · 0:45 TOI" [ref=e762]
+                        - generic "Test Player 13 · 20:00–20:45 · 0:45 TOI" [ref=e763]
+                        - generic "Test Player 13 · 24:00–24:45 · 0:45 TOI" [ref=e764]
+                        - generic "Test Player 13 · 28:00–28:45 · 0:45 TOI" [ref=e765]
+                        - generic "Test Player 13 · 32:00–32:45 · 0:45 TOI" [ref=e766]
+                        - generic "Test Player 13 · 36:00–36:45 · 0:45 TOI" [ref=e767]
+                        - generic "Test Player 13 · 40:00–40:45 · 0:45 TOI" [ref=e768]
+                        - generic "Test Player 13 · 44:00–44:45 · 0:45 TOI" [ref=e769]
+                        - generic "Test Player 13 · 48:00–48:45 · 0:45 TOI" [ref=e770]
+                        - generic "Test Player 13 · 52:00–52:45 · 0:45 TOI" [ref=e771]
+                        - generic "Test Player 13 · 56:00–56:45 · 0:45 TOI" [ref=e772]
+                        - generic "Test Player 13 · 60:00–60:45 · 0:45 TOI" [ref=e773]
+                  - row "On ice T. Player 17 17 D 0:00 0 Test Player 17 · 0:00–0:45 · 0:45 TOI Test Player 17 · 4:00–4:45 · 0:45 TOI Test Player 17 · 8:00–8:45 · 0:45 TOI Test Player 17 · 12:00–12:45 · 0:45 TOI Test Player 17 · 16:00–16:45 · 0:45 TOI Test Player 17 · 20:00–20:45 · 0:45 TOI Test Player 17 · 24:00–24:45 · 0:45 TOI Test Player 17 · 28:00–28:45 · 0:45 TOI Test Player 17 · 32:00–32:45 · 0:45 TOI Test Player 17 · 36:00–36:45 · 0:45 TOI Test Player 17 · 40:00–40:45 · 0:45 TOI Test Player 17 · 44:00–44:45 · 0:45 TOI Test Player 17 · 48:00–48:45 · 0:45 TOI Test Player 17 · 52:00–52:45 · 0:45 TOI Test Player 17 · 56:00–56:45 · 0:45 TOI Test Player 17 · 60:00–60:45 · 0:45 TOI" [ref=e774]:
+                    - rowheader "On ice T. Player 17" [ref=e775]:
+                      - generic "On ice" [ref=e776]
+                      - text: T. Player 17
+                    - cell "17" [ref=e777]
+                    - cell "D" [ref=e778]
+                    - cell "0:00" [ref=e779]
+                    - cell "0" [ref=e780]
+                    - cell "Test Player 17 · 0:00–0:45 · 0:45 TOI Test Player 17 · 4:00–4:45 · 0:45 TOI Test Player 17 · 8:00–8:45 · 0:45 TOI Test Player 17 · 12:00–12:45 · 0:45 TOI Test Player 17 · 16:00–16:45 · 0:45 TOI Test Player 17 · 20:00–20:45 · 0:45 TOI Test Player 17 · 24:00–24:45 · 0:45 TOI Test Player 17 · 28:00–28:45 · 0:45 TOI Test Player 17 · 32:00–32:45 · 0:45 TOI Test Player 17 · 36:00–36:45 · 0:45 TOI Test Player 17 · 40:00–40:45 · 0:45 TOI Test Player 17 · 44:00–44:45 · 0:45 TOI Test Player 17 · 48:00–48:45 · 0:45 TOI Test Player 17 · 52:00–52:45 · 0:45 TOI Test Player 17 · 56:00–56:45 · 0:45 TOI Test Player 17 · 60:00–60:45 · 0:45 TOI" [ref=e781]:
+                      - generic [ref=e782]:
+                        - generic "Test Player 17 · 0:00–0:45 · 0:45 TOI" [ref=e783]
+                        - generic "Test Player 17 · 4:00–4:45 · 0:45 TOI" [ref=e784]
+                        - generic "Test Player 17 · 8:00–8:45 · 0:45 TOI" [ref=e785]
+                        - generic "Test Player 17 · 12:00–12:45 · 0:45 TOI" [ref=e786]
+                        - generic "Test Player 17 · 16:00–16:45 · 0:45 TOI" [ref=e787]
+                        - generic "Test Player 17 · 20:00–20:45 · 0:45 TOI" [ref=e788]
+                        - generic "Test Player 17 · 24:00–24:45 · 0:45 TOI" [ref=e789]
+                        - generic "Test Player 17 · 28:00–28:45 · 0:45 TOI" [ref=e790]
+                        - generic "Test Player 17 · 32:00–32:45 · 0:45 TOI" [ref=e791]
+                        - generic "Test Player 17 · 36:00–36:45 · 0:45 TOI" [ref=e792]
+                        - generic "Test Player 17 · 40:00–40:45 · 0:45 TOI" [ref=e793]
+                        - generic "Test Player 17 · 44:00–44:45 · 0:45 TOI" [ref=e794]
+                        - generic "Test Player 17 · 48:00–48:45 · 0:45 TOI" [ref=e795]
+                        - generic "Test Player 17 · 52:00–52:45 · 0:45 TOI" [ref=e796]
+                        - generic "Test Player 17 · 56:00–56:45 · 0:45 TOI" [ref=e797]
+                        - generic "Test Player 17 · 60:00–60:45 · 0:45 TOI" [ref=e798]
+                  - row "On ice T. Player 19 19 G 0:00 0 Test Player 19 · 0:00–63:00 · 63:00 TOI" [ref=e799]:
+                    - rowheader "On ice T. Player 19" [ref=e800]:
+                      - generic "On ice" [ref=e801]
+                      - text: T. Player 19
+                    - cell "19" [ref=e802]
+                    - cell "G" [ref=e803]
+                    - cell "0:00" [ref=e804]
+                    - cell "0" [ref=e805]
+                    - cell "Test Player 19 · 0:00–63:00 · 63:00 TOI" [ref=e806]:
+                      - generic "Test Player 19 · 0:00–63:00 · 63:00 TOI" [ref=e808]
+                  - row "T. Player 2 2 L 0:00 0 Test Player 2 · 1:00–1:45 · 0:45 TOI Test Player 2 · 5:00–5:45 · 0:45 TOI Test Player 2 · 9:00–9:45 · 0:45 TOI Test Player 2 · 13:00–13:45 · 0:45 TOI Test Player 2 · 17:00–17:45 · 0:45 TOI Test Player 2 · 21:00–21:45 · 0:45 TOI Test Player 2 · 25:00–25:45 · 0:45 TOI Test Player 2 · 29:00–29:45 · 0:45 TOI Test Player 2 · 33:00–33:45 · 0:45 TOI Test Player 2 · 37:00–37:45 · 0:45 TOI Test Player 2 · 41:00–41:45 · 0:45 TOI Test Player 2 · 45:00–45:45 · 0:45 TOI Test Player 2 · 49:00–49:45 · 0:45 TOI Test Player 2 · 53:00–53:45 · 0:45 TOI Test Player 2 · 57:00–57:45 · 0:45 TOI Test Player 2 · 61:00–61:45 · 0:45 TOI" [ref=e809]:
+                    - rowheader "T. Player 2" [ref=e810]
+                    - cell "2" [ref=e811]
+                    - cell "L" [ref=e812]
+                    - cell "0:00" [ref=e813]
+                    - cell "0" [ref=e814]
+                    - cell "Test Player 2 · 1:00–1:45 · 0:45 TOI Test Player 2 · 5:00–5:45 · 0:45 TOI Test Player 2 · 9:00–9:45 · 0:45 TOI Test Player 2 · 13:00–13:45 · 0:45 TOI Test Player 2 · 17:00–17:45 · 0:45 TOI Test Player 2 · 21:00–21:45 · 0:45 TOI Test Player 2 · 25:00–25:45 · 0:45 TOI Test Player 2 · 29:00–29:45 · 0:45 TOI Test Player 2 · 33:00–33:45 · 0:45 TOI Test Player 2 · 37:00–37:45 · 0:45 TOI Test Player 2 · 41:00–41:45 · 0:45 TOI Test Player 2 · 45:00–45:45 · 0:45 TOI Test Player 2 · 49:00–49:45 · 0:45 TOI Test Player 2 · 53:00–53:45 · 0:45 TOI Test Player 2 · 57:00–57:45 · 0:45 TOI Test Player 2 · 61:00–61:45 · 0:45 TOI" [ref=e815]:
+                      - generic [ref=e816]:
+                        - generic "Test Player 2 · 1:00–1:45 · 0:45 TOI" [ref=e817]
+                        - generic "Test Player 2 · 5:00–5:45 · 0:45 TOI" [ref=e818]
+                        - generic "Test Player 2 · 9:00–9:45 · 0:45 TOI" [ref=e819]
+                        - generic "Test Player 2 · 13:00–13:45 · 0:45 TOI" [ref=e820]
+                        - generic "Test Player 2 · 17:00–17:45 · 0:45 TOI" [ref=e821]
+                        - generic "Test Player 2 · 21:00–21:45 · 0:45 TOI" [ref=e822]
+                        - generic "Test Player 2 · 25:00–25:45 · 0:45 TOI" [ref=e823]
+                        - generic "Test Player 2 · 29:00–29:45 · 0:45 TOI" [ref=e824]
+                        - generic "Test Player 2 · 33:00–33:45 · 0:45 TOI" [ref=e825]
+                        - generic "Test Player 2 · 37:00–37:45 · 0:45 TOI" [ref=e826]
+                        - generic "Test Player 2 · 41:00–41:45 · 0:45 TOI" [ref=e827]
+                        - generic "Test Player 2 · 45:00–45:45 · 0:45 TOI" [ref=e828]
+                        - generic "Test Player 2 · 49:00–49:45 · 0:45 TOI" [ref=e829]
+                        - generic "Test Player 2 · 53:00–53:45 · 0:45 TOI" [ref=e830]
+                        - generic "Test Player 2 · 57:00–57:45 · 0:45 TOI" [ref=e831]
+                        - generic "Test Player 2 · 61:00–61:45 · 0:45 TOI" [ref=e832]
+                  - row "T. Player 3 3 R 0:00 0 Test Player 3 · 2:00–2:45 · 0:45 TOI Test Player 3 · 6:00–6:45 · 0:45 TOI Test Player 3 · 10:00–10:45 · 0:45 TOI Test Player 3 · 14:00–14:45 · 0:45 TOI Test Player 3 · 18:00–18:45 · 0:45 TOI Test Player 3 · 22:00–22:45 · 0:45 TOI Test Player 3 · 26:00–26:45 · 0:45 TOI Test Player 3 · 30:00–30:45 · 0:45 TOI Test Player 3 · 34:00–34:45 · 0:45 TOI Test Player 3 · 38:00–38:45 · 0:45 TOI Test Player 3 · 42:00–42:45 · 0:45 TOI Test Player 3 · 46:00–46:45 · 0:45 TOI Test Player 3 · 50:00–50:45 · 0:45 TOI Test Player 3 · 54:00–54:45 · 0:45 TOI Test Player 3 · 58:00–58:45 · 0:45 TOI Test Player 3 · 62:00–62:45 · 0:45 TOI" [ref=e833]:
+                    - rowheader "T. Player 3" [ref=e834]
+                    - cell "3" [ref=e835]
+                    - cell "R" [ref=e836]
+                    - cell "0:00" [ref=e837]
+                    - cell "0" [ref=e838]
+                    - cell "Test Player 3 · 2:00–2:45 · 0:45 TOI Test Player 3 · 6:00–6:45 · 0:45 TOI Test Player 3 · 10:00–10:45 · 0:45 TOI Test Player 3 · 14:00–14:45 · 0:45 TOI Test Player 3 · 18:00–18:45 · 0:45 TOI Test Player 3 · 22:00–22:45 · 0:45 TOI Test Player 3 · 26:00–26:45 · 0:45 TOI Test Player 3 · 30:00–30:45 · 0:45 TOI Test Player 3 · 34:00–34:45 · 0:45 TOI Test Player 3 · 38:00–38:45 · 0:45 TOI Test Player 3 · 42:00–42:45 · 0:45 TOI Test Player 3 · 46:00–46:45 · 0:45 TOI Test Player 3 · 50:00–50:45 · 0:45 TOI Test Player 3 · 54:00–54:45 · 0:45 TOI Test Player 3 · 58:00–58:45 · 0:45 TOI Test Player 3 · 62:00–62:45 · 0:45 TOI" [ref=e839]:
+                      - generic [ref=e840]:
+                        - generic "Test Player 3 · 2:00–2:45 · 0:45 TOI" [ref=e841]
+                        - generic "Test Player 3 · 6:00–6:45 · 0:45 TOI" [ref=e842]
+                        - generic "Test Player 3 · 10:00–10:45 · 0:45 TOI" [ref=e843]
+                        - generic "Test Player 3 · 14:00–14:45 · 0:45 TOI" [ref=e844]
+                        - generic "Test Player 3 · 18:00–18:45 · 0:45 TOI" [ref=e845]
+                        - generic "Test Player 3 · 22:00–22:45 · 0:45 TOI" [ref=e846]
+                        - generic "Test Player 3 · 26:00–26:45 · 0:45 TOI" [ref=e847]
+                        - generic "Test Player 3 · 30:00–30:45 · 0:45 TOI" [ref=e848]
+                        - generic "Test Player 3 · 34:00–34:45 · 0:45 TOI" [ref=e849]
+                        - generic "Test Player 3 · 38:00–38:45 · 0:45 TOI" [ref=e850]
+                        - generic "Test Player 3 · 42:00–42:45 · 0:45 TOI" [ref=e851]
+                        - generic "Test Player 3 · 46:00–46:45 · 0:45 TOI" [ref=e852]
+                        - generic "Test Player 3 · 50:00–50:45 · 0:45 TOI" [ref=e853]
+                        - generic "Test Player 3 · 54:00–54:45 · 0:45 TOI" [ref=e854]
+                        - generic "Test Player 3 · 58:00–58:45 · 0:45 TOI" [ref=e855]
+                        - generic "Test Player 3 · 62:00–62:45 · 0:45 TOI" [ref=e856]
+                  - row "T. Player 4 4 C 0:00 0 Test Player 4 · 3:00–3:45 · 0:45 TOI Test Player 4 · 7:00–7:45 · 0:45 TOI Test Player 4 · 11:00–11:45 · 0:45 TOI Test Player 4 · 15:00–15:45 · 0:45 TOI Test Player 4 · 19:00–19:45 · 0:45 TOI Test Player 4 · 23:00–23:45 · 0:45 TOI Test Player 4 · 27:00–27:45 · 0:45 TOI Test Player 4 · 31:00–31:45 · 0:45 TOI Test Player 4 · 35:00–35:45 · 0:45 TOI Test Player 4 · 39:00–39:45 · 0:45 TOI Test Player 4 · 43:00–43:45 · 0:45 TOI Test Player 4 · 47:00–47:45 · 0:45 TOI Test Player 4 · 51:00–51:45 · 0:45 TOI Test Player 4 · 55:00–55:45 · 0:45 TOI Test Player 4 · 59:00–59:45 · 0:45 TOI" [ref=e857]:
+                    - rowheader "T. Player 4" [ref=e858]
+                    - cell "4" [ref=e859]
+                    - cell "C" [ref=e860]
+                    - cell "0:00" [ref=e861]
+                    - cell "0" [ref=e862]
+                    - cell "Test Player 4 · 3:00–3:45 · 0:45 TOI Test Player 4 · 7:00–7:45 · 0:45 TOI Test Player 4 · 11:00–11:45 · 0:45 TOI Test Player 4 · 15:00–15:45 · 0:45 TOI Test Player 4 · 19:00–19:45 · 0:45 TOI Test Player 4 · 23:00–23:45 · 0:45 TOI Test Player 4 · 27:00–27:45 · 0:45 TOI Test Player 4 · 31:00–31:45 · 0:45 TOI Test Player 4 · 35:00–35:45 · 0:45 TOI Test Player 4 · 39:00–39:45 · 0:45 TOI Test Player 4 · 43:00–43:45 · 0:45 TOI Test Player 4 · 47:00–47:45 · 0:45 TOI Test Player 4 · 51:00–51:45 · 0:45 TOI Test Player 4 · 55:00–55:45 · 0:45 TOI Test Player 4 · 59:00–59:45 · 0:45 TOI" [ref=e863]:
+                      - generic [ref=e864]:
+                        - generic "Test Player 4 · 3:00–3:45 · 0:45 TOI" [ref=e865]
+                        - generic "Test Player 4 · 7:00–7:45 · 0:45 TOI" [ref=e866]
+                        - generic "Test Player 4 · 11:00–11:45 · 0:45 TOI" [ref=e867]
+                        - generic "Test Player 4 · 15:00–15:45 · 0:45 TOI" [ref=e868]
+                        - generic "Test Player 4 · 19:00–19:45 · 0:45 TOI" [ref=e869]
+                        - generic "Test Player 4 · 23:00–23:45 · 0:45 TOI" [ref=e870]
+                        - generic "Test Player 4 · 27:00–27:45 · 0:45 TOI" [ref=e871]
+                        - generic "Test Player 4 · 31:00–31:45 · 0:45 TOI" [ref=e872]
+                        - generic "Test Player 4 · 35:00–35:45 · 0:45 TOI" [ref=e873]
+                        - generic "Test Player 4 · 39:00–39:45 · 0:45 TOI" [ref=e874]
+                        - generic "Test Player 4 · 43:00–43:45 · 0:45 TOI" [ref=e875]
+                        - generic "Test Player 4 · 47:00–47:45 · 0:45 TOI" [ref=e876]
+                        - generic "Test Player 4 · 51:00–51:45 · 0:45 TOI" [ref=e877]
+                        - generic "Test Player 4 · 55:00–55:45 · 0:45 TOI" [ref=e878]
+                        - generic "Test Player 4 · 59:00–59:45 · 0:45 TOI" [ref=e879]
+                  - row "T. Player 6 6 R 0:00 0 Test Player 6 · 1:00–1:45 · 0:45 TOI Test Player 6 · 5:00–5:45 · 0:45 TOI Test Player 6 · 9:00–9:45 · 0:45 TOI Test Player 6 · 13:00–13:45 · 0:45 TOI Test Player 6 · 17:00–17:45 · 0:45 TOI Test Player 6 · 21:00–21:45 · 0:45 TOI Test Player 6 · 25:00–25:45 · 0:45 TOI Test Player 6 · 29:00–29:45 · 0:45 TOI Test Player 6 · 33:00–33:45 · 0:45 TOI Test Player 6 · 37:00–37:45 · 0:45 TOI Test Player 6 · 41:00–41:45 · 0:45 TOI Test Player 6 · 45:00–45:45 · 0:45 TOI Test Player 6 · 49:00–49:45 · 0:45 TOI Test Player 6 · 53:00–53:45 · 0:45 TOI Test Player 6 · 57:00–57:45 · 0:45 TOI Test Player 6 · 61:00–61:45 · 0:45 TOI" [ref=e880]:
+                    - rowheader "T. Player 6" [ref=e881]
+                    - cell "6" [ref=e882]
+                    - cell "R" [ref=e883]
+                    - cell "0:00" [ref=e884]
+                    - cell "0" [ref=e885]
+                    - cell "Test Player 6 · 1:00–1:45 · 0:45 TOI Test Player 6 · 5:00–5:45 · 0:45 TOI Test Player 6 · 9:00–9:45 · 0:45 TOI Test Player 6 · 13:00–13:45 · 0:45 TOI Test Player 6 · 17:00–17:45 · 0:45 TOI Test Player 6 · 21:00–21:45 · 0:45 TOI Test Player 6 · 25:00–25:45 · 0:45 TOI Test Player 6 · 29:00–29:45 · 0:45 TOI Test Player 6 · 33:00–33:45 · 0:45 TOI Test Player 6 · 37:00–37:45 · 0:45 TOI Test Player 6 · 41:00–41:45 · 0:45 TOI Test Player 6 · 45:00–45:45 · 0:45 TOI Test Player 6 · 49:00–49:45 · 0:45 TOI Test Player 6 · 53:00–53:45 · 0:45 TOI Test Player 6 · 57:00–57:45 · 0:45 TOI Test Player 6 · 61:00–61:45 · 0:45 TOI" [ref=e886]:
+                      - generic [ref=e887]:
+                        - generic "Test Player 6 · 1:00–1:45 · 0:45 TOI" [ref=e888]
+                        - generic "Test Player 6 · 5:00–5:45 · 0:45 TOI" [ref=e889]
+                        - generic "Test Player 6 · 9:00–9:45 · 0:45 TOI" [ref=e890]
+                        - generic "Test Player 6 · 13:00–13:45 · 0:45 TOI" [ref=e891]
+                        - generic "Test Player 6 · 17:00–17:45 · 0:45 TOI" [ref=e892]
+                        - generic "Test Player 6 · 21:00–21:45 · 0:45 TOI" [ref=e893]
+                        - generic "Test Player 6 · 25:00–25:45 · 0:45 TOI" [ref=e894]
+                        - generic "Test Player 6 · 29:00–29:45 · 0:45 TOI" [ref=e895]
+                        - generic "Test Player 6 · 33:00–33:45 · 0:45 TOI" [ref=e896]
+                        - generic "Test Player 6 · 37:00–37:45 · 0:45 TOI" [ref=e897]
+                        - generic "Test Player 6 · 41:00–41:45 · 0:45 TOI" [ref=e898]
+                        - generic "Test Player 6 · 45:00–45:45 · 0:45 TOI" [ref=e899]
+                        - generic "Test Player 6 · 49:00–49:45 · 0:45 TOI" [ref=e900]
+                        - generic "Test Player 6 · 53:00–53:45 · 0:45 TOI" [ref=e901]
+                        - generic "Test Player 6 · 57:00–57:45 · 0:45 TOI" [ref=e902]
+                        - generic "Test Player 6 · 61:00–61:45 · 0:45 TOI" [ref=e903]
+                  - row "T. Player 7 7 C 0:00 0 Test Player 7 · 2:00–2:45 · 0:45 TOI Test Player 7 · 6:00–6:45 · 0:45 TOI Test Player 7 · 10:00–10:45 · 0:45 TOI Test Player 7 · 14:00–14:45 · 0:45 TOI Test Player 7 · 18:00–18:45 · 0:45 TOI Test Player 7 · 22:00–22:45 · 0:45 TOI Test Player 7 · 26:00–26:45 · 0:45 TOI Test Player 7 · 30:00–30:45 · 0:45 TOI Test Player 7 · 34:00–34:45 · 0:45 TOI Test Player 7 · 38:00–38:45 · 0:45 TOI Test Player 7 · 42:00–42:45 · 0:45 TOI Test Player 7 · 46:00–46:45 · 0:45 TOI Test Player 7 · 50:00–50:45 · 0:45 TOI Test Player 7 · 54:00–54:45 · 0:45 TOI Test Player 7 · 58:00–58:45 · 0:45 TOI Test Player 7 · 62:00–62:45 · 0:45 TOI" [ref=e904]:
+                    - rowheader "T. Player 7" [ref=e905]
+                    - cell "7" [ref=e906]
+                    - cell "C" [ref=e907]
+                    - cell "0:00" [ref=e908]
+                    - cell "0" [ref=e909]
+                    - cell "Test Player 7 · 2:00–2:45 · 0:45 TOI Test Player 7 · 6:00–6:45 · 0:45 TOI Test Player 7 · 10:00–10:45 · 0:45 TOI Test Player 7 · 14:00–14:45 · 0:45 TOI Test Player 7 · 18:00–18:45 · 0:45 TOI Test Player 7 · 22:00–22:45 · 0:45 TOI Test Player 7 · 26:00–26:45 · 0:45 TOI Test Player 7 · 30:00–30:45 · 0:45 TOI Test Player 7 · 34:00–34:45 · 0:45 TOI Test Player 7 · 38:00–38:45 · 0:45 TOI Test Player 7 · 42:00–42:45 · 0:45 TOI Test Player 7 · 46:00–46:45 · 0:45 TOI Test Player 7 · 50:00–50:45 · 0:45 TOI Test Player 7 · 54:00–54:45 · 0:45 TOI Test Player 7 · 58:00–58:45 · 0:45 TOI Test Player 7 · 62:00–62:45 · 0:45 TOI" [ref=e910]:
+                      - generic [ref=e911]:
+                        - generic "Test Player 7 · 2:00–2:45 · 0:45 TOI" [ref=e912]
+                        - generic "Test Player 7 · 6:00–6:45 · 0:45 TOI" [ref=e913]
+                        - generic "Test Player 7 · 10:00–10:45 · 0:45 TOI" [ref=e914]
+                        - generic "Test Player 7 · 14:00–14:45 · 0:45 TOI" [ref=e915]
+                        - generic "Test Player 7 · 18:00–18:45 · 0:45 TOI" [ref=e916]
+                        - generic "Test Player 7 · 22:00–22:45 · 0:45 TOI" [ref=e917]
+                        - generic "Test Player 7 · 26:00–26:45 · 0:45 TOI" [ref=e918]
+                        - generic "Test Player 7 · 30:00–30:45 · 0:45 TOI" [ref=e919]
+                        - generic "Test Player 7 · 34:00–34:45 · 0:45 TOI" [ref=e920]
+                        - generic "Test Player 7 · 38:00–38:45 · 0:45 TOI" [ref=e921]
+                        - generic "Test Player 7 · 42:00–42:45 · 0:45 TOI" [ref=e922]
+                        - generic "Test Player 7 · 46:00–46:45 · 0:45 TOI" [ref=e923]
+                        - generic "Test Player 7 · 50:00–50:45 · 0:45 TOI" [ref=e924]
+                        - generic "Test Player 7 · 54:00–54:45 · 0:45 TOI" [ref=e925]
+                        - generic "Test Player 7 · 58:00–58:45 · 0:45 TOI" [ref=e926]
+                        - generic "Test Player 7 · 62:00–62:45 · 0:45 TOI" [ref=e927]
+                  - row "T. Player 8 8 L 0:00 0 Test Player 8 · 3:00–3:45 · 0:45 TOI Test Player 8 · 7:00–7:45 · 0:45 TOI Test Player 8 · 11:00–11:45 · 0:45 TOI Test Player 8 · 15:00–15:45 · 0:45 TOI Test Player 8 · 19:00–19:45 · 0:45 TOI Test Player 8 · 23:00–23:45 · 0:45 TOI Test Player 8 · 27:00–27:45 · 0:45 TOI Test Player 8 · 31:00–31:45 · 0:45 TOI Test Player 8 · 35:00–35:45 · 0:45 TOI Test Player 8 · 39:00–39:45 · 0:45 TOI Test Player 8 · 43:00–43:45 · 0:45 TOI Test Player 8 · 47:00–47:45 · 0:45 TOI Test Player 8 · 51:00–51:45 · 0:45 TOI Test Player 8 · 55:00–55:45 · 0:45 TOI Test Player 8 · 59:00–59:45 · 0:45 TOI" [ref=e928]:
+                    - rowheader "T. Player 8" [ref=e929]
+                    - cell "8" [ref=e930]
+                    - cell "L" [ref=e931]
+                    - cell "0:00" [ref=e932]
+                    - cell "0" [ref=e933]
+                    - cell "Test Player 8 · 3:00–3:45 · 0:45 TOI Test Player 8 · 7:00–7:45 · 0:45 TOI Test Player 8 · 11:00–11:45 · 0:45 TOI Test Player 8 · 15:00–15:45 · 0:45 TOI Test Player 8 · 19:00–19:45 · 0:45 TOI Test Player 8 · 23:00–23:45 · 0:45 TOI Test Player 8 · 27:00–27:45 · 0:45 TOI Test Player 8 · 31:00–31:45 · 0:45 TOI Test Player 8 · 35:00–35:45 · 0:45 TOI Test Player 8 · 39:00–39:45 · 0:45 TOI Test Player 8 · 43:00–43:45 · 0:45 TOI Test Player 8 · 47:00–47:45 · 0:45 TOI Test Player 8 · 51:00–51:45 · 0:45 TOI Test Player 8 · 55:00–55:45 · 0:45 TOI Test Player 8 · 59:00–59:45 · 0:45 TOI" [ref=e934]:
+                      - generic [ref=e935]:
+                        - generic "Test Player 8 · 3:00–3:45 · 0:45 TOI" [ref=e936]
+                        - generic "Test Player 8 · 7:00–7:45 · 0:45 TOI" [ref=e937]
+                        - generic "Test Player 8 · 11:00–11:45 · 0:45 TOI" [ref=e938]
+                        - generic "Test Player 8 · 15:00–15:45 · 0:45 TOI" [ref=e939]
+                        - generic "Test Player 8 · 19:00–19:45 · 0:45 TOI" [ref=e940]
+                        - generic "Test Player 8 · 23:00–23:45 · 0:45 TOI" [ref=e941]
+                        - generic "Test Player 8 · 27:00–27:45 · 0:45 TOI" [ref=e942]
+                        - generic "Test Player 8 · 31:00–31:45 · 0:45 TOI" [ref=e943]
+                        - generic "Test Player 8 · 35:00–35:45 · 0:45 TOI" [ref=e944]
+                        - generic "Test Player 8 · 39:00–39:45 · 0:45 TOI" [ref=e945]
+                        - generic "Test Player 8 · 43:00–43:45 · 0:45 TOI" [ref=e946]
+                        - generic "Test Player 8 · 47:00–47:45 · 0:45 TOI" [ref=e947]
+                        - generic "Test Player 8 · 51:00–51:45 · 0:45 TOI" [ref=e948]
+                        - generic "Test Player 8 · 55:00–55:45 · 0:45 TOI" [ref=e949]
+                        - generic "Test Player 8 · 59:00–59:45 · 0:45 TOI" [ref=e950]
+                  - row "T. Player 10 10 C 0:00 0 Test Player 10 · 1:00–1:45 · 0:45 TOI Test Player 10 · 5:00–5:45 · 0:45 TOI Test Player 10 · 9:00–9:45 · 0:45 TOI Test Player 10 · 13:00–13:45 · 0:45 TOI Test Player 10 · 17:00–17:45 · 0:45 TOI Test Player 10 · 21:00–21:45 · 0:45 TOI Test Player 10 · 25:00–25:45 · 0:45 TOI Test Player 10 · 29:00–29:45 · 0:45 TOI Test Player 10 · 33:00–33:45 · 0:45 TOI Test Player 10 · 37:00–37:45 · 0:45 TOI Test Player 10 · 41:00–41:45 · 0:45 TOI Test Player 10 · 45:00–45:45 · 0:45 TOI Test Player 10 · 49:00–49:45 · 0:45 TOI Test Player 10 · 53:00–53:45 · 0:45 TOI Test Player 10 · 57:00–57:45 · 0:45 TOI Test Player 10 · 61:00–61:45 · 0:45 TOI" [ref=e951]:
+                    - rowheader "T. Player 10" [ref=e952]
+                    - cell "10" [ref=e953]
+                    - cell "C" [ref=e954]
+                    - cell "0:00" [ref=e955]
+                    - cell "0" [ref=e956]
+                    - cell "Test Player 10 · 1:00–1:45 · 0:45 TOI Test Player 10 · 5:00–5:45 · 0:45 TOI Test Player 10 · 9:00–9:45 · 0:45 TOI Test Player 10 · 13:00–13:45 · 0:45 TOI Test Player 10 · 17:00–17:45 · 0:45 TOI Test Player 10 · 21:00–21:45 · 0:45 TOI Test Player 10 · 25:00–25:45 · 0:45 TOI Test Player 10 · 29:00–29:45 · 0:45 TOI Test Player 10 · 33:00–33:45 · 0:45 TOI Test Player 10 · 37:00–37:45 · 0:45 TOI Test Player 10 · 41:00–41:45 · 0:45 TOI Test Player 10 · 45:00–45:45 · 0:45 TOI Test Player 10 · 49:00–49:45 · 0:45 TOI Test Player 10 · 53:00–53:45 · 0:45 TOI Test Player 10 · 57:00–57:45 · 0:45 TOI Test Player 10 · 61:00–61:45 · 0:45 TOI" [ref=e957]:
+                      - generic [ref=e958]:
+                        - generic "Test Player 10 · 1:00–1:45 · 0:45 TOI" [ref=e959]
+                        - generic "Test Player 10 · 5:00–5:45 · 0:45 TOI" [ref=e960]
+                        - generic "Test Player 10 · 9:00–9:45 · 0:45 TOI" [ref=e961]
+                        - generic "Test Player 10 · 13:00–13:45 · 0:45 TOI" [ref=e962]
+                        - generic "Test Player 10 · 17:00–17:45 · 0:45 TOI" [ref=e963]
+                        - generic "Test Player 10 · 21:00–21:45 · 0:45 TOI" [ref=e964]
+                        - generic "Test Player 10 · 25:00–25:45 · 0:45 TOI" [ref=e965]
+                        - generic "Test Player 10 · 29:00–29:45 · 0:45 TOI" [ref=e966]
+                        - generic "Test Player 10 · 33:00–33:45 · 0:45 TOI" [ref=e967]
+                        - generic "Test Player 10 · 37:00–37:45 · 0:45 TOI" [ref=e968]
+                        - generic "Test Player 10 · 41:00–41:45 · 0:45 TOI" [ref=e969]
+                        - generic "Test Player 10 · 45:00–45:45 · 0:45 TOI" [ref=e970]
+                        - generic "Test Player 10 · 49:00–49:45 · 0:45 TOI" [ref=e971]
+                        - generic "Test Player 10 · 53:00–53:45 · 0:45 TOI" [ref=e972]
+                        - generic "Test Player 10 · 57:00–57:45 · 0:45 TOI" [ref=e973]
+                        - generic "Test Player 10 · 61:00–61:45 · 0:45 TOI" [ref=e974]
+                  - row "T. Player 11 11 L 0:00 0 Test Player 11 · 2:00–2:45 · 0:45 TOI Test Player 11 · 6:00–6:45 · 0:45 TOI Test Player 11 · 10:00–10:45 · 0:45 TOI Test Player 11 · 14:00–14:45 · 0:45 TOI Test Player 11 · 18:00–18:45 · 0:45 TOI Test Player 11 · 22:00–22:45 · 0:45 TOI Test Player 11 · 26:00–26:45 · 0:45 TOI Test Player 11 · 30:00–30:45 · 0:45 TOI Test Player 11 · 34:00–34:45 · 0:45 TOI Test Player 11 · 38:00–38:45 · 0:45 TOI Test Player 11 · 42:00–42:45 · 0:45 TOI Test Player 11 · 46:00–46:45 · 0:45 TOI Test Player 11 · 50:00–50:45 · 0:45 TOI Test Player 11 · 54:00–54:45 · 0:45 TOI Test Player 11 · 58:00–58:45 · 0:45 TOI Test Player 11 · 62:00–62:45 · 0:45 TOI" [ref=e975]:
+                    - rowheader "T. Player 11" [ref=e976]
+                    - cell "11" [ref=e977]
+                    - cell "L" [ref=e978]
+                    - cell "0:00" [ref=e979]
+                    - cell "0" [ref=e980]
+                    - cell "Test Player 11 · 2:00–2:45 · 0:45 TOI Test Player 11 · 6:00–6:45 · 0:45 TOI Test Player 11 · 10:00–10:45 · 0:45 TOI Test Player 11 · 14:00–14:45 · 0:45 TOI Test Player 11 · 18:00–18:45 · 0:45 TOI Test Player 11 · 22:00–22:45 · 0:45 TOI Test Player 11 · 26:00–26:45 · 0:45 TOI Test Player 11 · 30:00–30:45 · 0:45 TOI Test Player 11 · 34:00–34:45 · 0:45 TOI Test Player 11 · 38:00–38:45 · 0:45 TOI Test Player 11 · 42:00–42:45 · 0:45 TOI Test Player 11 · 46:00–46:45 · 0:45 TOI Test Player 11 · 50:00–50:45 · 0:45 TOI Test Player 11 · 54:00–54:45 · 0:45 TOI Test Player 11 · 58:00–58:45 · 0:45 TOI Test Player 11 · 62:00–62:45 · 0:45 TOI" [ref=e981]:
+                      - generic [ref=e982]:
+                        - generic "Test Player 11 · 2:00–2:45 · 0:45 TOI" [ref=e983]
+                        - generic "Test Player 11 · 6:00–6:45 · 0:45 TOI" [ref=e984]
+                        - generic "Test Player 11 · 10:00–10:45 · 0:45 TOI" [ref=e985]
+                        - generic "Test Player 11 · 14:00–14:45 · 0:45 TOI" [ref=e986]
+                        - generic "Test Player 11 · 18:00–18:45 · 0:45 TOI" [ref=e987]
+                        - generic "Test Player 11 · 22:00–22:45 · 0:45 TOI" [ref=e988]
+                        - generic "Test Player 11 · 26:00–26:45 · 0:45 TOI" [ref=e989]
+                        - generic "Test Player 11 · 30:00–30:45 · 0:45 TOI" [ref=e990]
+                        - generic "Test Player 11 · 34:00–34:45 · 0:45 TOI" [ref=e991]
+                        - generic "Test Player 11 · 38:00–38:45 · 0:45 TOI" [ref=e992]
+                        - generic "Test Player 11 · 42:00–42:45 · 0:45 TOI" [ref=e993]
+                        - generic "Test Player 11 · 46:00–46:45 · 0:45 TOI" [ref=e994]
+                        - generic "Test Player 11 · 50:00–50:45 · 0:45 TOI" [ref=e995]
+                        - generic "Test Player 11 · 54:00–54:45 · 0:45 TOI" [ref=e996]
+                        - generic "Test Player 11 · 58:00–58:45 · 0:45 TOI" [ref=e997]
+                        - generic "Test Player 11 · 62:00–62:45 · 0:45 TOI" [ref=e998]
+                  - row "T. Player 12 12 R 0:00 0 Test Player 12 · 3:00–3:45 · 0:45 TOI Test Player 12 · 7:00–7:45 · 0:45 TOI Test Player 12 · 11:00–11:45 · 0:45 TOI Test Player 12 · 15:00–15:45 · 0:45 TOI Test Player 12 · 19:00–19:45 · 0:45 TOI Test Player 12 · 23:00–23:45 · 0:45 TOI Test Player 12 · 27:00–27:45 · 0:45 TOI Test Player 12 · 31:00–31:45 · 0:45 TOI Test Player 12 · 35:00–35:45 · 0:45 TOI Test Player 12 · 39:00–39:45 · 0:45 TOI Test Player 12 · 43:00–43:45 · 0:45 TOI Test Player 12 · 47:00–47:45 · 0:45 TOI Test Player 12 · 51:00–51:45 · 0:45 TOI Test Player 12 · 55:00–55:45 · 0:45 TOI Test Player 12 · 59:00–59:45 · 0:45 TOI" [ref=e999]:
+                    - rowheader "T. Player 12" [ref=e1000]
+                    - cell "12" [ref=e1001]
+                    - cell "R" [ref=e1002]
+                    - cell "0:00" [ref=e1003]
+                    - cell "0" [ref=e1004]
+                    - cell "Test Player 12 · 3:00–3:45 · 0:45 TOI Test Player 12 · 7:00–7:45 · 0:45 TOI Test Player 12 · 11:00–11:45 · 0:45 TOI Test Player 12 · 15:00–15:45 · 0:45 TOI Test Player 12 · 19:00–19:45 · 0:45 TOI Test Player 12 · 23:00–23:45 · 0:45 TOI Test Player 12 · 27:00–27:45 · 0:45 TOI Test Player 12 · 31:00–31:45 · 0:45 TOI Test Player 12 · 35:00–35:45 · 0:45 TOI Test Player 12 · 39:00–39:45 · 0:45 TOI Test Player 12 · 43:00–43:45 · 0:45 TOI Test Player 12 · 47:00–47:45 · 0:45 TOI Test Player 12 · 51:00–51:45 · 0:45 TOI Test Player 12 · 55:00–55:45 · 0:45 TOI Test Player 12 · 59:00–59:45 · 0:45 TOI" [ref=e1005]:
+                      - generic [ref=e1006]:
+                        - generic "Test Player 12 · 3:00–3:45 · 0:45 TOI" [ref=e1007]
+                        - generic "Test Player 12 · 7:00–7:45 · 0:45 TOI" [ref=e1008]
+                        - generic "Test Player 12 · 11:00–11:45 · 0:45 TOI" [ref=e1009]
+                        - generic "Test Player 12 · 15:00–15:45 · 0:45 TOI" [ref=e1010]
+                        - generic "Test Player 12 · 19:00–19:45 · 0:45 TOI" [ref=e1011]
+                        - generic "Test Player 12 · 23:00–23:45 · 0:45 TOI" [ref=e1012]
+                        - generic "Test Player 12 · 27:00–27:45 · 0:45 TOI" [ref=e1013]
+                        - generic "Test Player 12 · 31:00–31:45 · 0:45 TOI" [ref=e1014]
+                        - generic "Test Player 12 · 35:00–35:45 · 0:45 TOI" [ref=e1015]
+                        - generic "Test Player 12 · 39:00–39:45 · 0:45 TOI" [ref=e1016]
+                        - generic "Test Player 12 · 43:00–43:45 · 0:45 TOI" [ref=e1017]
+                        - generic "Test Player 12 · 47:00–47:45 · 0:45 TOI" [ref=e1018]
+                        - generic "Test Player 12 · 51:00–51:45 · 0:45 TOI" [ref=e1019]
+                        - generic "Test Player 12 · 55:00–55:45 · 0:45 TOI" [ref=e1020]
+                        - generic "Test Player 12 · 59:00–59:45 · 0:45 TOI" [ref=e1021]
+                  - row "T. Player 14 14 D 0:00 0 Test Player 14 · 1:00–1:45 · 0:45 TOI Test Player 14 · 5:00–5:45 · 0:45 TOI Test Player 14 · 9:00–9:45 · 0:45 TOI Test Player 14 · 13:00–13:45 · 0:45 TOI Test Player 14 · 17:00–17:45 · 0:45 TOI Test Player 14 · 21:00–21:45 · 0:45 TOI Test Player 14 · 25:00–25:45 · 0:45 TOI Test Player 14 · 29:00–29:45 · 0:45 TOI Test Player 14 · 33:00–33:45 · 0:45 TOI Test Player 14 · 37:00–37:45 · 0:45 TOI Test Player 14 · 41:00–41:45 · 0:45 TOI Test Player 14 · 45:00–45:45 · 0:45 TOI Test Player 14 · 49:00–49:45 · 0:45 TOI Test Player 14 · 53:00–53:45 · 0:45 TOI Test Player 14 · 57:00–57:45 · 0:45 TOI Test Player 14 · 61:00–61:45 · 0:45 TOI" [ref=e1022]:
+                    - rowheader "T. Player 14" [ref=e1023]
+                    - cell "14" [ref=e1024]
+                    - cell "D" [ref=e1025]
+                    - cell "0:00" [ref=e1026]
+                    - cell "0" [ref=e1027]
+                    - cell "Test Player 14 · 1:00–1:45 · 0:45 TOI Test Player 14 · 5:00–5:45 · 0:45 TOI Test Player 14 · 9:00–9:45 · 0:45 TOI Test Player 14 · 13:00–13:45 · 0:45 TOI Test Player 14 · 17:00–17:45 · 0:45 TOI Test Player 14 · 21:00–21:45 · 0:45 TOI Test Player 14 · 25:00–25:45 · 0:45 TOI Test Player 14 · 29:00–29:45 · 0:45 TOI Test Player 14 · 33:00–33:45 · 0:45 TOI Test Player 14 · 37:00–37:45 · 0:45 TOI Test Player 14 · 41:00–41:45 · 0:45 TOI Test Player 14 · 45:00–45:45 · 0:45 TOI Test Player 14 · 49:00–49:45 · 0:45 TOI Test Player 14 · 53:00–53:45 · 0:45 TOI Test Player 14 · 57:00–57:45 · 0:45 TOI Test Player 14 · 61:00–61:45 · 0:45 TOI" [ref=e1028]:
+                      - generic [ref=e1029]:
+                        - generic "Test Player 14 · 1:00–1:45 · 0:45 TOI" [ref=e1030]
+                        - generic "Test Player 14 · 5:00–5:45 · 0:45 TOI" [ref=e1031]
+                        - generic "Test Player 14 · 9:00–9:45 · 0:45 TOI" [ref=e1032]
+                        - generic "Test Player 14 · 13:00–13:45 · 0:45 TOI" [ref=e1033]
+                        - generic "Test Player 14 · 17:00–17:45 · 0:45 TOI" [ref=e1034]
+                        - generic "Test Player 14 · 21:00–21:45 · 0:45 TOI" [ref=e1035]
+                        - generic "Test Player 14 · 25:00–25:45 · 0:45 TOI" [ref=e1036]
+                        - generic "Test Player 14 · 29:00–29:45 · 0:45 TOI" [ref=e1037]
+                        - generic "Test Player 14 · 33:00–33:45 · 0:45 TOI" [ref=e1038]
+                        - generic "Test Player 14 · 37:00–37:45 · 0:45 TOI" [ref=e1039]
+                        - generic "Test Player 14 · 41:00–41:45 · 0:45 TOI" [ref=e1040]
+                        - generic "Test Player 14 · 45:00–45:45 · 0:45 TOI" [ref=e1041]
+                        - generic "Test Player 14 · 49:00–49:45 · 0:45 TOI" [ref=e1042]
+                        - generic "Test Player 14 · 53:00–53:45 · 0:45 TOI" [ref=e1043]
+                        - generic "Test Player 14 · 57:00–57:45 · 0:45 TOI" [ref=e1044]
+                        - generic "Test Player 14 · 61:00–61:45 · 0:45 TOI" [ref=e1045]
+                  - row "T. Player 15 15 D 0:00 0 Test Player 15 · 2:00–2:45 · 0:45 TOI Test Player 15 · 6:00–6:45 · 0:45 TOI Test Player 15 · 10:00–10:45 · 0:45 TOI Test Player 15 · 14:00–14:45 · 0:45 TOI Test Player 15 · 18:00–18:45 · 0:45 TOI Test Player 15 · 22:00–22:45 · 0:45 TOI Test Player 15 · 26:00–26:45 · 0:45 TOI Test Player 15 · 30:00–30:45 · 0:45 TOI Test Player 15 · 34:00–34:45 · 0:45 TOI Test Player 15 · 38:00–38:45 · 0:45 TOI Test Player 15 · 42:00–42:45 · 0:45 TOI Test Player 15 · 46:00–46:45 · 0:45 TOI Test Player 15 · 50:00–50:45 · 0:45 TOI Test Player 15 · 54:00–54:45 · 0:45 TOI Test Player 15 · 58:00–58:45 · 0:45 TOI Test Player 15 · 62:00–62:45 · 0:45 TOI" [ref=e1046]:
+                    - rowheader "T. Player 15" [ref=e1047]
+                    - cell "15" [ref=e1048]
+                    - cell "D" [ref=e1049]
+                    - cell "0:00" [ref=e1050]
+                    - cell "0" [ref=e1051]
+                    - cell "Test Player 15 · 2:00–2:45 · 0:45 TOI Test Player 15 · 6:00–6:45 · 0:45 TOI Test Player 15 · 10:00–10:45 · 0:45 TOI Test Player 15 · 14:00–14:45 · 0:45 TOI Test Player 15 · 18:00–18:45 · 0:45 TOI Test Player 15 · 22:00–22:45 · 0:45 TOI Test Player 15 · 26:00–26:45 · 0:45 TOI Test Player 15 · 30:00–30:45 · 0:45 TOI Test Player 15 · 34:00–34:45 · 0:45 TOI Test Player 15 · 38:00–38:45 · 0:45 TOI Test Player 15 · 42:00–42:45 · 0:45 TOI Test Player 15 · 46:00–46:45 · 0:45 TOI Test Player 15 · 50:00–50:45 · 0:45 TOI Test Player 15 · 54:00–54:45 · 0:45 TOI Test Player 15 · 58:00–58:45 · 0:45 TOI Test Player 15 · 62:00–62:45 · 0:45 TOI" [ref=e1052]:
+                      - generic [ref=e1053]:
+                        - generic "Test Player 15 · 2:00–2:45 · 0:45 TOI" [ref=e1054]
+                        - generic "Test Player 15 · 6:00–6:45 · 0:45 TOI" [ref=e1055]
+                        - generic "Test Player 15 · 10:00–10:45 · 0:45 TOI" [ref=e1056]
+                        - generic "Test Player 15 · 14:00–14:45 · 0:45 TOI" [ref=e1057]
+                        - generic "Test Player 15 · 18:00–18:45 · 0:45 TOI" [ref=e1058]
+                        - generic "Test Player 15 · 22:00–22:45 · 0:45 TOI" [ref=e1059]
+                        - generic "Test Player 15 · 26:00–26:45 · 0:45 TOI" [ref=e1060]
+                        - generic "Test Player 15 · 30:00–30:45 · 0:45 TOI" [ref=e1061]
+                        - generic "Test Player 15 · 34:00–34:45 · 0:45 TOI" [ref=e1062]
+                        - generic "Test Player 15 · 38:00–38:45 · 0:45 TOI" [ref=e1063]
+                        - generic "Test Player 15 · 42:00–42:45 · 0:45 TOI" [ref=e1064]
+                        - generic "Test Player 15 · 46:00–46:45 · 0:45 TOI" [ref=e1065]
+                        - generic "Test Player 15 · 50:00–50:45 · 0:45 TOI" [ref=e1066]
+                        - generic "Test Player 15 · 54:00–54:45 · 0:45 TOI" [ref=e1067]
+                        - generic "Test Player 15 · 58:00–58:45 · 0:45 TOI" [ref=e1068]
+                        - generic "Test Player 15 · 62:00–62:45 · 0:45 TOI" [ref=e1069]
+                  - row "T. Player 16 16 D 0:00 0 Test Player 16 · 3:00–3:45 · 0:45 TOI Test Player 16 · 7:00–7:45 · 0:45 TOI Test Player 16 · 11:00–11:45 · 0:45 TOI Test Player 16 · 15:00–15:45 · 0:45 TOI Test Player 16 · 19:00–19:45 · 0:45 TOI Test Player 16 · 23:00–23:45 · 0:45 TOI Test Player 16 · 27:00–27:45 · 0:45 TOI Test Player 16 · 31:00–31:45 · 0:45 TOI Test Player 16 · 35:00–35:45 · 0:45 TOI Test Player 16 · 39:00–39:45 · 0:45 TOI Test Player 16 · 43:00–43:45 · 0:45 TOI Test Player 16 · 47:00–47:45 · 0:45 TOI Test Player 16 · 51:00–51:45 · 0:45 TOI Test Player 16 · 55:00–55:45 · 0:45 TOI Test Player 16 · 59:00–59:45 · 0:45 TOI" [ref=e1070]:
+                    - rowheader "T. Player 16" [ref=e1071]
+                    - cell "16" [ref=e1072]
+                    - cell "D" [ref=e1073]
+                    - cell "0:00" [ref=e1074]
+                    - cell "0" [ref=e1075]
+                    - cell "Test Player 16 · 3:00–3:45 · 0:45 TOI Test Player 16 · 7:00–7:45 · 0:45 TOI Test Player 16 · 11:00–11:45 · 0:45 TOI Test Player 16 · 15:00–15:45 · 0:45 TOI Test Player 16 · 19:00–19:45 · 0:45 TOI Test Player 16 · 23:00–23:45 · 0:45 TOI Test Player 16 · 27:00–27:45 · 0:45 TOI Test Player 16 · 31:00–31:45 · 0:45 TOI Test Player 16 · 35:00–35:45 · 0:45 TOI Test Player 16 · 39:00–39:45 · 0:45 TOI Test Player 16 · 43:00–43:45 · 0:45 TOI Test Player 16 · 47:00–47:45 · 0:45 TOI Test Player 16 · 51:00–51:45 · 0:45 TOI Test Player 16 · 55:00–55:45 · 0:45 TOI Test Player 16 · 59:00–59:45 · 0:45 TOI" [ref=e1076]:
+                      - generic [ref=e1077]:
+                        - generic "Test Player 16 · 3:00–3:45 · 0:45 TOI" [ref=e1078]
+                        - generic "Test Player 16 · 7:00–7:45 · 0:45 TOI" [ref=e1079]
+                        - generic "Test Player 16 · 11:00–11:45 · 0:45 TOI" [ref=e1080]
+                        - generic "Test Player 16 · 15:00–15:45 · 0:45 TOI" [ref=e1081]
+                        - generic "Test Player 16 · 19:00–19:45 · 0:45 TOI" [ref=e1082]
+                        - generic "Test Player 16 · 23:00–23:45 · 0:45 TOI" [ref=e1083]
+                        - generic "Test Player 16 · 27:00–27:45 · 0:45 TOI" [ref=e1084]
+                        - generic "Test Player 16 · 31:00–31:45 · 0:45 TOI" [ref=e1085]
+                        - generic "Test Player 16 · 35:00–35:45 · 0:45 TOI" [ref=e1086]
+                        - generic "Test Player 16 · 39:00–39:45 · 0:45 TOI" [ref=e1087]
+                        - generic "Test Player 16 · 43:00–43:45 · 0:45 TOI" [ref=e1088]
+                        - generic "Test Player 16 · 47:00–47:45 · 0:45 TOI" [ref=e1089]
+                        - generic "Test Player 16 · 51:00–51:45 · 0:45 TOI" [ref=e1090]
+                        - generic "Test Player 16 · 55:00–55:45 · 0:45 TOI" [ref=e1091]
+                        - generic "Test Player 16 · 59:00–59:45 · 0:45 TOI" [ref=e1092]
+                  - row "T. Player 18 18 D 0:00 0 Test Player 18 · 1:00–1:45 · 0:45 TOI Test Player 18 · 5:00–5:45 · 0:45 TOI Test Player 18 · 9:00–9:45 · 0:45 TOI Test Player 18 · 13:00–13:45 · 0:45 TOI Test Player 18 · 17:00–17:45 · 0:45 TOI Test Player 18 · 21:00–21:45 · 0:45 TOI Test Player 18 · 25:00–25:45 · 0:45 TOI Test Player 18 · 29:00–29:45 · 0:45 TOI Test Player 18 · 33:00–33:45 · 0:45 TOI Test Player 18 · 37:00–37:45 · 0:45 TOI Test Player 18 · 41:00–41:45 · 0:45 TOI Test Player 18 · 45:00–45:45 · 0:45 TOI Test Player 18 · 49:00–49:45 · 0:45 TOI Test Player 18 · 53:00–53:45 · 0:45 TOI Test Player 18 · 57:00–57:45 · 0:45 TOI Test Player 18 · 61:00–61:45 · 0:45 TOI" [ref=e1093]:
+                    - rowheader "T. Player 18" [ref=e1094]
+                    - cell "18" [ref=e1095]
+                    - cell "D" [ref=e1096]
+                    - cell "0:00" [ref=e1097]
+                    - cell "0" [ref=e1098]
+                    - cell "Test Player 18 · 1:00–1:45 · 0:45 TOI Test Player 18 · 5:00–5:45 · 0:45 TOI Test Player 18 · 9:00–9:45 · 0:45 TOI Test Player 18 · 13:00–13:45 · 0:45 TOI Test Player 18 · 17:00–17:45 · 0:45 TOI Test Player 18 · 21:00–21:45 · 0:45 TOI Test Player 18 · 25:00–25:45 · 0:45 TOI Test Player 18 · 29:00–29:45 · 0:45 TOI Test Player 18 · 33:00–33:45 · 0:45 TOI Test Player 18 · 37:00–37:45 · 0:45 TOI Test Player 18 · 41:00–41:45 · 0:45 TOI Test Player 18 · 45:00–45:45 · 0:45 TOI Test Player 18 · 49:00–49:45 · 0:45 TOI Test Player 18 · 53:00–53:45 · 0:45 TOI Test Player 18 · 57:00–57:45 · 0:45 TOI Test Player 18 · 61:00–61:45 · 0:45 TOI" [ref=e1099]:
+                      - generic [ref=e1100]:
+                        - generic "Test Player 18 · 1:00–1:45 · 0:45 TOI" [ref=e1101]
+                        - generic "Test Player 18 · 5:00–5:45 · 0:45 TOI" [ref=e1102]
+                        - generic "Test Player 18 · 9:00–9:45 · 0:45 TOI" [ref=e1103]
+                        - generic "Test Player 18 · 13:00–13:45 · 0:45 TOI" [ref=e1104]
+                        - generic "Test Player 18 · 17:00–17:45 · 0:45 TOI" [ref=e1105]
+                        - generic "Test Player 18 · 21:00–21:45 · 0:45 TOI" [ref=e1106]
+                        - generic "Test Player 18 · 25:00–25:45 · 0:45 TOI" [ref=e1107]
+                        - generic "Test Player 18 · 29:00–29:45 · 0:45 TOI" [ref=e1108]
+                        - generic "Test Player 18 · 33:00–33:45 · 0:45 TOI" [ref=e1109]
+                        - generic "Test Player 18 · 37:00–37:45 · 0:45 TOI" [ref=e1110]
+                        - generic "Test Player 18 · 41:00–41:45 · 0:45 TOI" [ref=e1111]
+                        - generic "Test Player 18 · 45:00–45:45 · 0:45 TOI" [ref=e1112]
+                        - generic "Test Player 18 · 49:00–49:45 · 0:45 TOI" [ref=e1113]
+                        - generic "Test Player 18 · 53:00–53:45 · 0:45 TOI" [ref=e1114]
+                        - generic "Test Player 18 · 57:00–57:45 · 0:45 TOI" [ref=e1115]
+                        - generic "Test Player 18 · 61:00–61:45 · 0:45 TOI" [ref=e1116]
+                  - row "T. Player 20 20 G 0:00 0" [ref=e1117]:
+                    - rowheader "T. Player 20" [ref=e1118]
+                    - cell "20" [ref=e1119]
+                    - cell "G" [ref=e1120]
+                    - cell "0:00" [ref=e1121]
+                    - cell "0" [ref=e1122]
+                    - cell [ref=e1123]
+        - complementary "Linemate matrices" [ref=e1125]:
+          - generic [ref=e1126]:
+            - combobox "Linemate matrix mode" [ref=e1129] [cursor=pointer]:
+              - option "Line Combination" [selected]
+              - option "Power Play TOI"
+              - option "Total TOI"
+              - option "Sweater Number"
+            - paragraph [ref=e1130]: Full-game shared ice time · brighter = more TOI
+            - generic [ref=e1131]:
+              - generic [ref=e1132]:
+                - generic [ref=e1133]:
+                  - heading "Utah Mammoth" [level=4] [ref=e1134]
+                  - group "Utah Mammoth positions" [ref=e1135]:
+                    - button "All skaters" [pressed] [ref=e1136] [cursor=pointer]: All
+                    - button "Forwards" [ref=e1137] [cursor=pointer]: F
+                    - button "Defense" [ref=e1138] [cursor=pointer]: D
+                - generic [ref=e1140]:
+                  - generic "Test Player 1" [ref=e1142]:
+                    - generic [ref=e1143]: T. Player 1
+                  - generic "Test Player 5" [ref=e1144]:
+                    - generic [ref=e1145]: T. Player 5
+                  - generic "Test Player 9" [ref=e1146]:
+                    - generic [ref=e1147]: T. Player 9
+                  - generic "Test Player 2" [ref=e1148]:
+                    - generic [ref=e1149]: T. Player 2
+                  - generic "Test Player 6" [ref=e1150]:
+                    - generic [ref=e1151]: T. Player 6
+                  - generic "Test Player 10" [ref=e1152]:
+                    - generic [ref=e1153]: T. Player 10
+                  - generic "Test Player 3" [ref=e1154]:
+                    - generic [ref=e1155]: T. Player 3
+                  - generic "Test Player 7" [ref=e1156]:
+                    - generic [ref=e1157]: T. Player 7
+                  - generic "Test Player 11" [ref=e1158]:
+                    - generic [ref=e1159]: T. Player 11
+                  - generic "Test Player 4" [ref=e1160]:
+                    - generic [ref=e1161]: T. Player 4
+                  - generic "Test Player 8" [ref=e1162]:
+                    - generic [ref=e1163]: T. Player 8
+                  - generic "Test Player 12" [ref=e1164]:
+                    - generic [ref=e1165]: T. Player 12
+                  - generic "Test Player 13" [ref=e1166]:
+                    - generic [ref=e1167]: T. Player 13
+                  - generic "Test Player 17" [ref=e1168]:
+                    - generic [ref=e1169]: T. Player 17
+                  - generic "Test Player 14" [ref=e1170]:
+                    - generic [ref=e1171]: T. Player 14
+                  - generic "Test Player 18" [ref=e1172]:
+                    - generic [ref=e1173]: T. Player 18
+                  - generic "Test Player 15" [ref=e1174]:
+                    - generic [ref=e1175]: T. Player 15
+                  - generic "Test Player 16" [ref=e1176]:
+                    - generic [ref=e1177]: T. Player 16
+                  - generic "Test Player 1" [ref=e1178]: T. Player 1
+                  - 'generic "Test Player 1 × Test Player 1: 12:00 shared TOI" [ref=e1179]'
+                  - 'generic "Test Player 5 × Test Player 1: 12:00 shared TOI" [ref=e1181]'
+                  - 'generic "Test Player 9 × Test Player 1: 12:00 shared TOI" [ref=e1183]'
+                  - 'generic "Test Player 2 × Test Player 1: 00:00 shared TOI" [ref=e1185]'
+                  - 'generic "Test Player 6 × Test Player 1: 00:00 shared TOI" [ref=e1187]'
+                  - 'generic "Test Player 10 × Test Player 1: 00:00 shared TOI" [ref=e1189]'
+                  - 'generic "Test Player 3 × Test Player 1: 00:00 shared TOI" [ref=e1191]'
+                  - 'generic "Test Player 7 × Test Player 1: 00:00 shared TOI" [ref=e1193]'
+                  - 'generic "Test Player 11 × Test Player 1: 00:00 shared TOI" [ref=e1195]'
+                  - 'generic "Test Player 4 × Test Player 1: 00:00 shared TOI" [ref=e1197]'
+                  - 'generic "Test Player 8 × Test Player 1: 00:00 shared TOI" [ref=e1199]'
+                  - 'generic "Test Player 12 × Test Player 1: 00:00 shared TOI" [ref=e1201]'
+                  - 'generic "Test Player 13 × Test Player 1: 12:00 shared TOI" [ref=e1203]'
+                  - 'generic "Test Player 17 × Test Player 1: 12:00 shared TOI" [ref=e1205]'
+                  - 'generic "Test Player 14 × Test Player 1: 00:00 shared TOI" [ref=e1207]'
+                  - 'generic "Test Player 18 × Test Player 1: 00:00 shared TOI" [ref=e1209]'
+                  - 'generic "Test Player 15 × Test Player 1: 00:00 shared TOI" [ref=e1211]'
+                  - 'generic "Test Player 16 × Test Player 1: 00:00 shared TOI" [ref=e1213]'
+                  - generic "Test Player 5" [ref=e1215]: T. Player 5
+                  - 'generic "Test Player 1 × Test Player 5: 12:00 shared TOI" [ref=e1216]'
+                  - 'generic "Test Player 5 × Test Player 5: 12:00 shared TOI" [ref=e1218]'
+                  - 'generic "Test Player 9 × Test Player 5: 12:00 shared TOI" [ref=e1220]'
+                  - 'generic "Test Player 2 × Test Player 5: 00:00 shared TOI" [ref=e1222]'
+                  - 'generic "Test Player 6 × Test Player 5: 00:00 shared TOI" [ref=e1224]'
+                  - 'generic "Test Player 10 × Test Player 5: 00:00 shared TOI" [ref=e1226]'
+                  - 'generic "Test Player 3 × Test Player 5: 00:00 shared TOI" [ref=e1228]'
+                  - 'generic "Test Player 7 × Test Player 5: 00:00 shared TOI" [ref=e1230]'
+                  - 'generic "Test Player 11 × Test Player 5: 00:00 shared TOI" [ref=e1232]'
+                  - 'generic "Test Player 4 × Test Player 5: 00:00 shared TOI" [ref=e1234]'
+                  - 'generic "Test Player 8 × Test Player 5: 00:00 shared TOI" [ref=e1236]'
+                  - 'generic "Test Player 12 × Test Player 5: 00:00 shared TOI" [ref=e1238]'
+                  - 'generic "Test Player 13 × Test Player 5: 12:00 shared TOI" [ref=e1240]'
+                  - 'generic "Test Player 17 × Test Player 5: 12:00 shared TOI" [ref=e1242]'
+                  - 'generic "Test Player 14 × Test Player 5: 00:00 shared TOI" [ref=e1244]'
+                  - 'generic "Test Player 18 × Test Player 5: 00:00 shared TOI" [ref=e1246]'
+                  - 'generic "Test Player 15 × Test Player 5: 00:00 shared TOI" [ref=e1248]'
+                  - 'generic "Test Player 16 × Test Player 5: 00:00 shared TOI" [ref=e1250]'
+                  - generic "Test Player 9" [ref=e1252]: T. Player 9
+                  - 'generic "Test Player 1 × Test Player 9: 12:00 shared TOI" [ref=e1253]'
+                  - 'generic "Test Player 5 × Test Player 9: 12:00 shared TOI" [ref=e1255]'
+                  - 'generic "Test Player 9 × Test Player 9: 12:00 shared TOI" [ref=e1257]'
+                  - 'generic "Test Player 2 × Test Player 9: 00:00 shared TOI" [ref=e1259]'
+                  - 'generic "Test Player 6 × Test Player 9: 00:00 shared TOI" [ref=e1261]'
+                  - 'generic "Test Player 10 × Test Player 9: 00:00 shared TOI" [ref=e1263]'
+                  - 'generic "Test Player 3 × Test Player 9: 00:00 shared TOI" [ref=e1265]'
+                  - 'generic "Test Player 7 × Test Player 9: 00:00 shared TOI" [ref=e1267]'
+                  - 'generic "Test Player 11 × Test Player 9: 00:00 shared TOI" [ref=e1269]'
+                  - 'generic "Test Player 4 × Test Player 9: 00:00 shared TOI" [ref=e1271]'
+                  - 'generic "Test Player 8 × Test Player 9: 00:00 shared TOI" [ref=e1273]'
+                  - 'generic "Test Player 12 × Test Player 9: 00:00 shared TOI" [ref=e1275]'
+                  - 'generic "Test Player 13 × Test Player 9: 12:00 shared TOI" [ref=e1277]'
+                  - 'generic "Test Player 17 × Test Player 9: 12:00 shared TOI" [ref=e1279]'
+                  - 'generic "Test Player 14 × Test Player 9: 00:00 shared TOI" [ref=e1281]'
+                  - 'generic "Test Player 18 × Test Player 9: 00:00 shared TOI" [ref=e1283]'
+                  - 'generic "Test Player 15 × Test Player 9: 00:00 shared TOI" [ref=e1285]'
+                  - 'generic "Test Player 16 × Test Player 9: 00:00 shared TOI" [ref=e1287]'
+                  - generic "Test Player 2" [ref=e1289]: T. Player 2
+                  - 'generic "Test Player 1 × Test Player 2: 00:00 shared TOI" [ref=e1290]'
+                  - 'generic "Test Player 5 × Test Player 2: 00:00 shared TOI" [ref=e1292]'
+                  - 'generic "Test Player 9 × Test Player 2: 00:00 shared TOI" [ref=e1294]'
+                  - 'generic "Test Player 2 × Test Player 2: 12:00 shared TOI" [ref=e1296]'
+                  - 'generic "Test Player 6 × Test Player 2: 12:00 shared TOI" [ref=e1298]'
+                  - 'generic "Test Player 10 × Test Player 2: 12:00 shared TOI" [ref=e1300]'
+                  - 'generic "Test Player 3 × Test Player 2: 00:00 shared TOI" [ref=e1302]'
+                  - 'generic "Test Player 7 × Test Player 2: 00:00 shared TOI" [ref=e1304]'
+                  - 'generic "Test Player 11 × Test Player 2: 00:00 shared TOI" [ref=e1306]'
+                  - 'generic "Test Player 4 × Test Player 2: 00:00 shared TOI" [ref=e1308]'
+                  - 'generic "Test Player 8 × Test Player 2: 00:00 shared TOI" [ref=e1310]'
+                  - 'generic "Test Player 12 × Test Player 2: 00:00 shared TOI" [ref=e1312]'
+                  - 'generic "Test Player 13 × Test Player 2: 00:00 shared TOI" [ref=e1314]'
+                  - 'generic "Test Player 17 × Test Player 2: 00:00 shared TOI" [ref=e1316]'
+                  - 'generic "Test Player 14 × Test Player 2: 12:00 shared TOI" [ref=e1318]'
+                  - 'generic "Test Player 18 × Test Player 2: 12:00 shared TOI" [ref=e1320]'
+                  - 'generic "Test Player 15 × Test Player 2: 00:00 shared TOI" [ref=e1322]'
+                  - 'generic "Test Player 16 × Test Player 2: 00:00 shared TOI" [ref=e1324]'
+                  - generic "Test Player 6" [ref=e1326]: T. Player 6
+                  - 'generic "Test Player 1 × Test Player 6: 00:00 shared TOI" [ref=e1327]'
+                  - 'generic "Test Player 5 × Test Player 6: 00:00 shared TOI" [ref=e1329]'
+                  - 'generic "Test Player 9 × Test Player 6: 00:00 shared TOI" [ref=e1331]'
+                  - 'generic "Test Player 2 × Test Player 6: 12:00 shared TOI" [ref=e1333]'
+                  - 'generic "Test Player 6 × Test Player 6: 12:00 shared TOI" [ref=e1335]'
+                  - 'generic "Test Player 10 × Test Player 6: 12:00 shared TOI" [ref=e1337]'
+                  - 'generic "Test Player 3 × Test Player 6: 00:00 shared TOI" [ref=e1339]'
+                  - 'generic "Test Player 7 × Test Player 6: 00:00 shared TOI" [ref=e1341]'
+                  - 'generic "Test Player 11 × Test Player 6: 00:00 shared TOI" [ref=e1343]'
+                  - 'generic "Test Player 4 × Test Player 6: 00:00 shared TOI" [ref=e1345]'
+                  - 'generic "Test Player 8 × Test Player 6: 00:00 shared TOI" [ref=e1347]'
+                  - 'generic "Test Player 12 × Test Player 6: 00:00 shared TOI" [ref=e1349]'
+                  - 'generic "Test Player 13 × Test Player 6: 00:00 shared TOI" [ref=e1351]'
+                  - 'generic "Test Player 17 × Test Player 6: 00:00 shared TOI" [ref=e1353]'
+                  - 'generic "Test Player 14 × Test Player 6: 12:00 shared TOI" [ref=e1355]'
+                  - 'generic "Test Player 18 × Test Player 6: 12:00 shared TOI" [ref=e1357]'
+                  - 'generic "Test Player 15 × Test Player 6: 00:00 shared TOI" [ref=e1359]'
+                  - 'generic "Test Player 16 × Test Player 6: 00:00 shared TOI" [ref=e1361]'
+                  - generic "Test Player 10" [ref=e1363]: T. Player 10
+                  - 'generic "Test Player 1 × Test Player 10: 00:00 shared TOI" [ref=e1364]'
+                  - 'generic "Test Player 5 × Test Player 10: 00:00 shared TOI" [ref=e1366]'
+                  - 'generic "Test Player 9 × Test Player 10: 00:00 shared TOI" [ref=e1368]'
+                  - 'generic "Test Player 2 × Test Player 10: 12:00 shared TOI" [ref=e1370]'
+                  - 'generic "Test Player 6 × Test Player 10: 12:00 shared TOI" [ref=e1372]'
+                  - 'generic "Test Player 10 × Test Player 10: 12:00 shared TOI" [ref=e1374]'
+                  - 'generic "Test Player 3 × Test Player 10: 00:00 shared TOI" [ref=e1376]'
+                  - 'generic "Test Player 7 × Test Player 10: 00:00 shared TOI" [ref=e1378]'
+                  - 'generic "Test Player 11 × Test Player 10: 00:00 shared TOI" [ref=e1380]'
+                  - 'generic "Test Player 4 × Test Player 10: 00:00 shared TOI" [ref=e1382]'
+                  - 'generic "Test Player 8 × Test Player 10: 00:00 shared TOI" [ref=e1384]'
+                  - 'generic "Test Player 12 × Test Player 10: 00:00 shared TOI" [ref=e1386]'
+                  - 'generic "Test Player 13 × Test Player 10: 00:00 shared TOI" [ref=e1388]'
+                  - 'generic "Test Player 17 × Test Player 10: 00:00 shared TOI" [ref=e1390]'
+                  - 'generic "Test Player 14 × Test Player 10: 12:00 shared TOI" [ref=e1392]'
+                  - 'generic "Test Player 18 × Test Player 10: 12:00 shared TOI" [ref=e1394]'
+                  - 'generic "Test Player 15 × Test Player 10: 00:00 shared TOI" [ref=e1396]'
+                  - 'generic "Test Player 16 × Test Player 10: 00:00 shared TOI" [ref=e1398]'
+                  - generic "Test Player 3" [ref=e1400]: T. Player 3
+                  - 'generic "Test Player 1 × Test Player 3: 00:00 shared TOI" [ref=e1401]'
+                  - 'generic "Test Player 5 × Test Player 3: 00:00 shared TOI" [ref=e1403]'
+                  - 'generic "Test Player 9 × Test Player 3: 00:00 shared TOI" [ref=e1405]'
+                  - 'generic "Test Player 2 × Test Player 3: 00:00 shared TOI" [ref=e1407]'
+                  - 'generic "Test Player 6 × Test Player 3: 00:00 shared TOI" [ref=e1409]'
+                  - 'generic "Test Player 10 × Test Player 3: 00:00 shared TOI" [ref=e1411]'
+                  - 'generic "Test Player 3 × Test Player 3: 12:00 shared TOI" [ref=e1413]'
+                  - 'generic "Test Player 7 × Test Player 3: 12:00 shared TOI" [ref=e1415]'
+                  - 'generic "Test Player 11 × Test Player 3: 12:00 shared TOI" [ref=e1417]'
+                  - 'generic "Test Player 4 × Test Player 3: 00:00 shared TOI" [ref=e1419]'
+                  - 'generic "Test Player 8 × Test Player 3: 00:00 shared TOI" [ref=e1421]'
+                  - 'generic "Test Player 12 × Test Player 3: 00:00 shared TOI" [ref=e1423]'
+                  - 'generic "Test Player 13 × Test Player 3: 00:00 shared TOI" [ref=e1425]'
+                  - 'generic "Test Player 17 × Test Player 3: 00:00 shared TOI" [ref=e1427]'
+                  - 'generic "Test Player 14 × Test Player 3: 00:00 shared TOI" [ref=e1429]'
+                  - 'generic "Test Player 18 × Test Player 3: 00:00 shared TOI" [ref=e1431]'
+                  - 'generic "Test Player 15 × Test Player 3: 12:00 shared TOI" [ref=e1433]'
+                  - 'generic "Test Player 16 × Test Player 3: 00:00 shared TOI" [ref=e1435]'
+                  - generic "Test Player 7" [ref=e1437]: T. Player 7
+                  - 'generic "Test Player 1 × Test Player 7: 00:00 shared TOI" [ref=e1438]'
+                  - 'generic "Test Player 5 × Test Player 7: 00:00 shared TOI" [ref=e1440]'
+                  - 'generic "Test Player 9 × Test Player 7: 00:00 shared TOI" [ref=e1442]'
+                  - 'generic "Test Player 2 × Test Player 7: 00:00 shared TOI" [ref=e1444]'
+                  - 'generic "Test Player 6 × Test Player 7: 00:00 shared TOI" [ref=e1446]'
+                  - 'generic "Test Player 10 × Test Player 7: 00:00 shared TOI" [ref=e1448]'
+                  - 'generic "Test Player 3 × Test Player 7: 12:00 shared TOI" [ref=e1450]'
+                  - 'generic "Test Player 7 × Test Player 7: 12:00 shared TOI" [ref=e1452]'
+                  - 'generic "Test Player 11 × Test Player 7: 12:00 shared TOI" [ref=e1454]'
+                  - 'generic "Test Player 4 × Test Player 7: 00:00 shared TOI" [ref=e1456]'
+                  - 'generic "Test Player 8 × Test Player 7: 00:00 shared TOI" [ref=e1458]'
+                  - 'generic "Test Player 12 × Test Player 7: 00:00 shared TOI" [ref=e1460]'
+                  - 'generic "Test Player 13 × Test Player 7: 00:00 shared TOI" [ref=e1462]'
+                  - 'generic "Test Player 17 × Test Player 7: 00:00 shared TOI" [ref=e1464]'
+                  - 'generic "Test Player 14 × Test Player 7: 00:00 shared TOI" [ref=e1466]'
+                  - 'generic "Test Player 18 × Test Player 7: 00:00 shared TOI" [ref=e1468]'
+                  - 'generic "Test Player 15 × Test Player 7: 12:00 shared TOI" [ref=e1470]'
+                  - 'generic "Test Player 16 × Test Player 7: 00:00 shared TOI" [ref=e1472]'
+                  - generic "Test Player 11" [ref=e1474]: T. Player 11
+                  - 'generic "Test Player 1 × Test Player 11: 00:00 shared TOI" [ref=e1475]'
+                  - 'generic "Test Player 5 × Test Player 11: 00:00 shared TOI" [ref=e1477]'
+                  - 'generic "Test Player 9 × Test Player 11: 00:00 shared TOI" [ref=e1479]'
+                  - 'generic "Test Player 2 × Test Player 11: 00:00 shared TOI" [ref=e1481]'
+                  - 'generic "Test Player 6 × Test Player 11: 00:00 shared TOI" [ref=e1483]'
+                  - 'generic "Test Player 10 × Test Player 11: 00:00 shared TOI" [ref=e1485]'
+                  - 'generic "Test Player 3 × Test Player 11: 12:00 shared TOI" [ref=e1487]'
+                  - 'generic "Test Player 7 × Test Player 11: 12:00 shared TOI" [ref=e1489]'
+                  - 'generic "Test Player 11 × Test Player 11: 12:00 shared TOI" [ref=e1491]'
+                  - 'generic "Test Player 4 × Test Player 11: 00:00 shared TOI" [ref=e1493]'
+                  - 'generic "Test Player 8 × Test Player 11: 00:00 shared TOI" [ref=e1495]'
+                  - 'generic "Test Player 12 × Test Player 11: 00:00 shared TOI" [ref=e1497]'
+                  - 'generic "Test Player 13 × Test Player 11: 00:00 shared TOI" [ref=e1499]'
+                  - 'generic "Test Player 17 × Test Player 11: 00:00 shared TOI" [ref=e1501]'
+                  - 'generic "Test Player 14 × Test Player 11: 00:00 shared TOI" [ref=e1503]'
+                  - 'generic "Test Player 18 × Test Player 11: 00:00 shared TOI" [ref=e1505]'
+                  - 'generic "Test Player 15 × Test Player 11: 12:00 shared TOI" [ref=e1507]'
+                  - 'generic "Test Player 16 × Test Player 11: 00:00 shared TOI" [ref=e1509]'
+                  - generic "Test Player 4" [ref=e1511]: T. Player 4
+                  - 'generic "Test Player 1 × Test Player 4: 00:00 shared TOI" [ref=e1512]'
+                  - 'generic "Test Player 5 × Test Player 4: 00:00 shared TOI" [ref=e1514]'
+                  - 'generic "Test Player 9 × Test Player 4: 00:00 shared TOI" [ref=e1516]'
+                  - 'generic "Test Player 2 × Test Player 4: 00:00 shared TOI" [ref=e1518]'
+                  - 'generic "Test Player 6 × Test Player 4: 00:00 shared TOI" [ref=e1520]'
+                  - 'generic "Test Player 10 × Test Player 4: 00:00 shared TOI" [ref=e1522]'
+                  - 'generic "Test Player 3 × Test Player 4: 00:00 shared TOI" [ref=e1524]'
+                  - 'generic "Test Player 7 × Test Player 4: 00:00 shared TOI" [ref=e1526]'
+                  - 'generic "Test Player 11 × Test Player 4: 00:00 shared TOI" [ref=e1528]'
+                  - 'generic "Test Player 4 × Test Player 4: 11:15 shared TOI" [ref=e1530]'
+                  - 'generic "Test Player 8 × Test Player 4: 11:15 shared TOI" [ref=e1532]'
+                  - 'generic "Test Player 12 × Test Player 4: 11:15 shared TOI" [ref=e1534]'
+                  - 'generic "Test Player 13 × Test Player 4: 00:00 shared TOI" [ref=e1536]'
+                  - 'generic "Test Player 17 × Test Player 4: 00:00 shared TOI" [ref=e1538]'
+                  - 'generic "Test Player 14 × Test Player 4: 00:00 shared TOI" [ref=e1540]'
+                  - 'generic "Test Player 18 × Test Player 4: 00:00 shared TOI" [ref=e1542]'
+                  - 'generic "Test Player 15 × Test Player 4: 00:00 shared TOI" [ref=e1544]'
+                  - 'generic "Test Player 16 × Test Player 4: 11:15 shared TOI" [ref=e1546]'
+                  - generic "Test Player 8" [ref=e1548]: T. Player 8
+                  - 'generic "Test Player 1 × Test Player 8: 00:00 shared TOI" [ref=e1549]'
+                  - 'generic "Test Player 5 × Test Player 8: 00:00 shared TOI" [ref=e1551]'
+                  - 'generic "Test Player 9 × Test Player 8: 00:00 shared TOI" [ref=e1553]'
+                  - 'generic "Test Player 2 × Test Player 8: 00:00 shared TOI" [ref=e1555]'
+                  - 'generic "Test Player 6 × Test Player 8: 00:00 shared TOI" [ref=e1557]'
+                  - 'generic "Test Player 10 × Test Player 8: 00:00 shared TOI" [ref=e1559]'
+                  - 'generic "Test Player 3 × Test Player 8: 00:00 shared TOI" [ref=e1561]'
+                  - 'generic "Test Player 7 × Test Player 8: 00:00 shared TOI" [ref=e1563]'
+                  - 'generic "Test Player 11 × Test Player 8: 00:00 shared TOI" [ref=e1565]'
+                  - 'generic "Test Player 4 × Test Player 8: 11:15 shared TOI" [ref=e1567]'
+                  - 'generic "Test Player 8 × Test Player 8: 11:15 shared TOI" [ref=e1569]'
+                  - 'generic "Test Player 12 × Test Player 8: 11:15 shared TOI" [ref=e1571]'
+                  - 'generic "Test Player 13 × Test Player 8: 00:00 shared TOI" [ref=e1573]'
+                  - 'generic "Test Player 17 × Test Player 8: 00:00 shared TOI" [ref=e1575]'
+                  - 'generic "Test Player 14 × Test Player 8: 00:00 shared TOI" [ref=e1577]'
+                  - 'generic "Test Player 18 × Test Player 8: 00:00 shared TOI" [ref=e1579]'
+                  - 'generic "Test Player 15 × Test Player 8: 00:00 shared TOI" [ref=e1581]'
+                  - 'generic "Test Player 16 × Test Player 8: 11:15 shared TOI" [ref=e1583]'
+                  - generic "Test Player 12" [ref=e1585]: T. Player 12
+                  - 'generic "Test Player 1 × Test Player 12: 00:00 shared TOI" [ref=e1586]'
+                  - 'generic "Test Player 5 × Test Player 12: 00:00 shared TOI" [ref=e1588]'
+                  - 'generic "Test Player 9 × Test Player 12: 00:00 shared TOI" [ref=e1590]'
+                  - 'generic "Test Player 2 × Test Player 12: 00:00 shared TOI" [ref=e1592]'
+                  - 'generic "Test Player 6 × Test Player 12: 00:00 shared TOI" [ref=e1594]'
+                  - 'generic "Test Player 10 × Test Player 12: 00:00 shared TOI" [ref=e1596]'
+                  - 'generic "Test Player 3 × Test Player 12: 00:00 shared TOI" [ref=e1598]'
+                  - 'generic "Test Player 7 × Test Player 12: 00:00 shared TOI" [ref=e1600]'
+                  - 'generic "Test Player 11 × Test Player 12: 00:00 shared TOI" [ref=e1602]'
+                  - 'generic "Test Player 4 × Test Player 12: 11:15 shared TOI" [ref=e1604]'
+                  - 'generic "Test Player 8 × Test Player 12: 11:15 shared TOI" [ref=e1606]'
+                  - 'generic "Test Player 12 × Test Player 12: 11:15 shared TOI" [ref=e1608]'
+                  - 'generic "Test Player 13 × Test Player 12: 00:00 shared TOI" [ref=e1610]'
+                  - 'generic "Test Player 17 × Test Player 12: 00:00 shared TOI" [ref=e1612]'
+                  - 'generic "Test Player 14 × Test Player 12: 00:00 shared TOI" [ref=e1614]'
+                  - 'generic "Test Player 18 × Test Player 12: 00:00 shared TOI" [ref=e1616]'
+                  - 'generic "Test Player 15 × Test Player 12: 00:00 shared TOI" [ref=e1618]'
+                  - 'generic "Test Player 16 × Test Player 12: 11:15 shared TOI" [ref=e1620]'
+                  - generic "Test Player 13" [ref=e1622]: T. Player 13
+                  - 'generic "Test Player 1 × Test Player 13: 12:00 shared TOI" [ref=e1623]'
+                  - 'generic "Test Player 5 × Test Player 13: 12:00 shared TOI" [ref=e1625]'
+                  - 'generic "Test Player 9 × Test Player 13: 12:00 shared TOI" [ref=e1627]'
+                  - 'generic "Test Player 2 × Test Player 13: 00:00 shared TOI" [ref=e1629]'
+                  - 'generic "Test Player 6 × Test Player 13: 00:00 shared TOI" [ref=e1631]'
+                  - 'generic "Test Player 10 × Test Player 13: 00:00 shared TOI" [ref=e1633]'
+                  - 'generic "Test Player 3 × Test Player 13: 00:00 shared TOI" [ref=e1635]'
+                  - 'generic "Test Player 7 × Test Player 13: 00:00 shared TOI" [ref=e1637]'
+                  - 'generic "Test Player 11 × Test Player 13: 00:00 shared TOI" [ref=e1639]'
+                  - 'generic "Test Player 4 × Test Player 13: 00:00 shared TOI" [ref=e1641]'
+                  - 'generic "Test Player 8 × Test Player 13: 00:00 shared TOI" [ref=e1643]'
+                  - 'generic "Test Player 12 × Test Player 13: 00:00 shared TOI" [ref=e1645]'
+                  - 'generic "Test Player 13 × Test Player 13: 12:00 shared TOI" [ref=e1647]'
+                  - 'generic "Test Player 17 × Test Player 13: 12:00 shared TOI" [ref=e1649]'
+                  - 'generic "Test Player 14 × Test Player 13: 00:00 shared TOI" [ref=e1651]'
+                  - 'generic "Test Player 18 × Test Player 13: 00:00 shared TOI" [ref=e1653]'
+                  - 'generic "Test Player 15 × Test Player 13: 00:00 shared TOI" [ref=e1655]'
+                  - 'generic "Test Player 16 × Test Player 13: 00:00 shared TOI" [ref=e1657]'
+                  - generic "Test Player 17" [ref=e1659]: T. Player 17
+                  - 'generic "Test Player 1 × Test Player 17: 12:00 shared TOI" [ref=e1660]'
+                  - 'generic "Test Player 5 × Test Player 17: 12:00 shared TOI" [ref=e1662]'
+                  - 'generic "Test Player 9 × Test Player 17: 12:00 shared TOI" [ref=e1664]'
+                  - 'generic "Test Player 2 × Test Player 17: 00:00 shared TOI" [ref=e1666]'
+                  - 'generic "Test Player 6 × Test Player 17: 00:00 shared TOI" [ref=e1668]'
+                  - 'generic "Test Player 10 × Test Player 17: 00:00 shared TOI" [ref=e1670]'
+                  - 'generic "Test Player 3 × Test Player 17: 00:00 shared TOI" [ref=e1672]'
+                  - 'generic "Test Player 7 × Test Player 17: 00:00 shared TOI" [ref=e1674]'
+                  - 'generic "Test Player 11 × Test Player 17: 00:00 shared TOI" [ref=e1676]'
+                  - 'generic "Test Player 4 × Test Player 17: 00:00 shared TOI" [ref=e1678]'
+                  - 'generic "Test Player 8 × Test Player 17: 00:00 shared TOI" [ref=e1680]'
+                  - 'generic "Test Player 12 × Test Player 17: 00:00 shared TOI" [ref=e1682]'
+                  - 'generic "Test Player 13 × Test Player 17: 12:00 shared TOI" [ref=e1684]'
+                  - 'generic "Test Player 17 × Test Player 17: 12:00 shared TOI" [ref=e1686]'
+                  - 'generic "Test Player 14 × Test Player 17: 00:00 shared TOI" [ref=e1688]'
+                  - 'generic "Test Player 18 × Test Player 17: 00:00 shared TOI" [ref=e1690]'
+                  - 'generic "Test Player 15 × Test Player 17: 00:00 shared TOI" [ref=e1692]'
+                  - 'generic "Test Player 16 × Test Player 17: 00:00 shared TOI" [ref=e1694]'
+                  - generic "Test Player 14" [ref=e1696]: T. Player 14
+                  - 'generic "Test Player 1 × Test Player 14: 00:00 shared TOI" [ref=e1697]'
+                  - 'generic "Test Player 5 × Test Player 14: 00:00 shared TOI" [ref=e1699]'
+                  - 'generic "Test Player 9 × Test Player 14: 00:00 shared TOI" [ref=e1701]'
+                  - 'generic "Test Player 2 × Test Player 14: 12:00 shared TOI" [ref=e1703]'
+                  - 'generic "Test Player 6 × Test Player 14: 12:00 shared TOI" [ref=e1705]'
+                  - 'generic "Test Player 10 × Test Player 14: 12:00 shared TOI" [ref=e1707]'
+                  - 'generic "Test Player 3 × Test Player 14: 00:00 shared TOI" [ref=e1709]'
+                  - 'generic "Test Player 7 × Test Player 14: 00:00 shared TOI" [ref=e1711]'
+                  - 'generic "Test Player 11 × Test Player 14: 00:00 shared TOI" [ref=e1713]'
+                  - 'generic "Test Player 4 × Test Player 14: 00:00 shared TOI" [ref=e1715]'
+                  - 'generic "Test Player 8 × Test Player 14: 00:00 shared TOI" [ref=e1717]'
+                  - 'generic "Test Player 12 × Test Player 14: 00:00 shared TOI" [ref=e1719]'
+                  - 'generic "Test Player 13 × Test Player 14: 00:00 shared TOI" [ref=e1721]'
+                  - 'generic "Test Player 17 × Test Player 14: 00:00 shared TOI" [ref=e1723]'
+                  - 'generic "Test Player 14 × Test Player 14: 12:00 shared TOI" [ref=e1725]'
+                  - 'generic "Test Player 18 × Test Player 14: 12:00 shared TOI" [ref=e1727]'
+                  - 'generic "Test Player 15 × Test Player 14: 00:00 shared TOI" [ref=e1729]'
+                  - 'generic "Test Player 16 × Test Player 14: 00:00 shared TOI" [ref=e1731]'
+                  - generic "Test Player 18" [ref=e1733]: T. Player 18
+                  - 'generic "Test Player 1 × Test Player 18: 00:00 shared TOI" [ref=e1734]'
+                  - 'generic "Test Player 5 × Test Player 18: 00:00 shared TOI" [ref=e1736]'
+                  - 'generic "Test Player 9 × Test Player 18: 00:00 shared TOI" [ref=e1738]'
+                  - 'generic "Test Player 2 × Test Player 18: 12:00 shared TOI" [ref=e1740]'
+                  - 'generic "Test Player 6 × Test Player 18: 12:00 shared TOI" [ref=e1742]'
+                  - 'generic "Test Player 10 × Test Player 18: 12:00 shared TOI" [ref=e1744]'
+                  - 'generic "Test Player 3 × Test Player 18: 00:00 shared TOI" [ref=e1746]'
+                  - 'generic "Test Player 7 × Test Player 18: 00:00 shared TOI" [ref=e1748]'
+                  - 'generic "Test Player 11 × Test Player 18: 00:00 shared TOI" [ref=e1750]'
+                  - 'generic "Test Player 4 × Test Player 18: 00:00 shared TOI" [ref=e1752]'
+                  - 'generic "Test Player 8 × Test Player 18: 00:00 shared TOI" [ref=e1754]'
+                  - 'generic "Test Player 12 × Test Player 18: 00:00 shared TOI" [ref=e1756]'
+                  - 'generic "Test Player 13 × Test Player 18: 00:00 shared TOI" [ref=e1758]'
+                  - 'generic "Test Player 17 × Test Player 18: 00:00 shared TOI" [ref=e1760]'
+                  - 'generic "Test Player 14 × Test Player 18: 12:00 shared TOI" [ref=e1762]'
+                  - 'generic "Test Player 18 × Test Player 18: 12:00 shared TOI" [ref=e1764]'
+                  - 'generic "Test Player 15 × Test Player 18: 00:00 shared TOI" [ref=e1766]'
+                  - 'generic "Test Player 16 × Test Player 18: 00:00 shared TOI" [ref=e1768]'
+                  - generic "Test Player 15" [ref=e1770]: T. Player 15
+                  - 'generic "Test Player 1 × Test Player 15: 00:00 shared TOI" [ref=e1771]'
+                  - 'generic "Test Player 5 × Test Player 15: 00:00 shared TOI" [ref=e1773]'
+                  - 'generic "Test Player 9 × Test Player 15: 00:00 shared TOI" [ref=e1775]'
+                  - 'generic "Test Player 2 × Test Player 15: 00:00 shared TOI" [ref=e1777]'
+                  - 'generic "Test Player 6 × Test Player 15: 00:00 shared TOI" [ref=e1779]'
+                  - 'generic "Test Player 10 × Test Player 15: 00:00 shared TOI" [ref=e1781]'
+                  - 'generic "Test Player 3 × Test Player 15: 12:00 shared TOI" [ref=e1783]'
+                  - 'generic "Test Player 7 × Test Player 15: 12:00 shared TOI" [ref=e1785]'
+                  - 'generic "Test Player 11 × Test Player 15: 12:00 shared TOI" [ref=e1787]'
+                  - 'generic "Test Player 4 × Test Player 15: 00:00 shared TOI" [ref=e1789]'
+                  - 'generic "Test Player 8 × Test Player 15: 00:00 shared TOI" [ref=e1791]'
+                  - 'generic "Test Player 12 × Test Player 15: 00:00 shared TOI" [ref=e1793]'
+                  - 'generic "Test Player 13 × Test Player 15: 00:00 shared TOI" [ref=e1795]'
+                  - 'generic "Test Player 17 × Test Player 15: 00:00 shared TOI" [ref=e1797]'
+                  - 'generic "Test Player 14 × Test Player 15: 00:00 shared TOI" [ref=e1799]'
+                  - 'generic "Test Player 18 × Test Player 15: 00:00 shared TOI" [ref=e1801]'
+                  - 'generic "Test Player 15 × Test Player 15: 12:00 shared TOI" [ref=e1803]'
+                  - 'generic "Test Player 16 × Test Player 15: 00:00 shared TOI" [ref=e1805]'
+                  - generic "Test Player 16" [ref=e1807]: T. Player 16
+                  - 'generic "Test Player 1 × Test Player 16: 00:00 shared TOI" [ref=e1808]'
+                  - 'generic "Test Player 5 × Test Player 16: 00:00 shared TOI" [ref=e1810]'
+                  - 'generic "Test Player 9 × Test Player 16: 00:00 shared TOI" [ref=e1812]'
+                  - 'generic "Test Player 2 × Test Player 16: 00:00 shared TOI" [ref=e1814]'
+                  - 'generic "Test Player 6 × Test Player 16: 00:00 shared TOI" [ref=e1816]'
+                  - 'generic "Test Player 10 × Test Player 16: 00:00 shared TOI" [ref=e1818]'
+                  - 'generic "Test Player 3 × Test Player 16: 00:00 shared TOI" [ref=e1820]'
+                  - 'generic "Test Player 7 × Test Player 16: 00:00 shared TOI" [ref=e1822]'
+                  - 'generic "Test Player 11 × Test Player 16: 00:00 shared TOI" [ref=e1824]'
+                  - 'generic "Test Player 4 × Test Player 16: 11:15 shared TOI" [ref=e1826]'
+                  - 'generic "Test Player 8 × Test Player 16: 11:15 shared TOI" [ref=e1828]'
+                  - 'generic "Test Player 12 × Test Player 16: 11:15 shared TOI" [ref=e1830]'
+                  - 'generic "Test Player 13 × Test Player 16: 00:00 shared TOI" [ref=e1832]'
+                  - 'generic "Test Player 17 × Test Player 16: 00:00 shared TOI" [ref=e1834]'
+                  - 'generic "Test Player 14 × Test Player 16: 00:00 shared TOI" [ref=e1836]'
+                  - 'generic "Test Player 18 × Test Player 16: 00:00 shared TOI" [ref=e1838]'
+                  - 'generic "Test Player 15 × Test Player 16: 00:00 shared TOI" [ref=e1840]'
+                  - 'generic "Test Player 16 × Test Player 16: 11:15 shared TOI" [ref=e1842]'
+              - generic [ref=e1844]:
+                - generic [ref=e1845]:
+                  - heading "Colorado Avalanche" [level=4] [ref=e1846]
+                  - group "Colorado Avalanche positions" [ref=e1847]:
+                    - button "All skaters" [pressed] [ref=e1848] [cursor=pointer]: All
+                    - button "Forwards" [ref=e1849] [cursor=pointer]: F
+                    - button "Defense" [ref=e1850] [cursor=pointer]: D
+                - generic [ref=e1852]:
+                  - generic "Test Player 1" [ref=e1854]:
+                    - generic [ref=e1855]: T. Player 1
+                  - generic "Test Player 5" [ref=e1856]:
+                    - generic [ref=e1857]: T. Player 5
+                  - generic "Test Player 9" [ref=e1858]:
+                    - generic [ref=e1859]: T. Player 9
+                  - generic "Test Player 2" [ref=e1860]:
+                    - generic [ref=e1861]: T. Player 2
+                  - generic "Test Player 6" [ref=e1862]:
+                    - generic [ref=e1863]: T. Player 6
+                  - generic "Test Player 10" [ref=e1864]:
+                    - generic [ref=e1865]: T. Player 10
+                  - generic "Test Player 3" [ref=e1866]:
+                    - generic [ref=e1867]: T. Player 3
+                  - generic "Test Player 7" [ref=e1868]:
+                    - generic [ref=e1869]: T. Player 7
+                  - generic "Test Player 11" [ref=e1870]:
+                    - generic [ref=e1871]: T. Player 11
+                  - generic "Test Player 4" [ref=e1872]:
+                    - generic [ref=e1873]: T. Player 4
+                  - generic "Test Player 8" [ref=e1874]:
+                    - generic [ref=e1875]: T. Player 8
+                  - generic "Test Player 12" [ref=e1876]:
+                    - generic [ref=e1877]: T. Player 12
+                  - generic "Test Player 13" [ref=e1878]:
+                    - generic [ref=e1879]: T. Player 13
+                  - generic "Test Player 17" [ref=e1880]:
+                    - generic [ref=e1881]: T. Player 17
+                  - generic "Test Player 14" [ref=e1882]:
+                    - generic [ref=e1883]: T. Player 14
+                  - generic "Test Player 18" [ref=e1884]:
+                    - generic [ref=e1885]: T. Player 18
+                  - generic "Test Player 15" [ref=e1886]:
+                    - generic [ref=e1887]: T. Player 15
+                  - generic "Test Player 16" [ref=e1888]:
+                    - generic [ref=e1889]: T. Player 16
+                  - generic "Test Player 1" [ref=e1890]: T. Player 1
+                  - 'generic "Test Player 1 × Test Player 1: 12:00 shared TOI" [ref=e1891]'
+                  - 'generic "Test Player 5 × Test Player 1: 12:00 shared TOI" [ref=e1893]'
+                  - 'generic "Test Player 9 × Test Player 1: 12:00 shared TOI" [ref=e1895]'
+                  - 'generic "Test Player 2 × Test Player 1: 00:00 shared TOI" [ref=e1897]'
+                  - 'generic "Test Player 6 × Test Player 1: 00:00 shared TOI" [ref=e1899]'
+                  - 'generic "Test Player 10 × Test Player 1: 00:00 shared TOI" [ref=e1901]'
+                  - 'generic "Test Player 3 × Test Player 1: 00:00 shared TOI" [ref=e1903]'
+                  - 'generic "Test Player 7 × Test Player 1: 00:00 shared TOI" [ref=e1905]'
+                  - 'generic "Test Player 11 × Test Player 1: 00:00 shared TOI" [ref=e1907]'
+                  - 'generic "Test Player 4 × Test Player 1: 00:00 shared TOI" [ref=e1909]'
+                  - 'generic "Test Player 8 × Test Player 1: 00:00 shared TOI" [ref=e1911]'
+                  - 'generic "Test Player 12 × Test Player 1: 00:00 shared TOI" [ref=e1913]'
+                  - 'generic "Test Player 13 × Test Player 1: 12:00 shared TOI" [ref=e1915]'
+                  - 'generic "Test Player 17 × Test Player 1: 12:00 shared TOI" [ref=e1917]'
+                  - 'generic "Test Player 14 × Test Player 1: 00:00 shared TOI" [ref=e1919]'
+                  - 'generic "Test Player 18 × Test Player 1: 00:00 shared TOI" [ref=e1921]'
+                  - 'generic "Test Player 15 × Test Player 1: 00:00 shared TOI" [ref=e1923]'
+                  - 'generic "Test Player 16 × Test Player 1: 00:00 shared TOI" [ref=e1925]'
+                  - generic "Test Player 5" [ref=e1927]: T. Player 5
+                  - 'generic "Test Player 1 × Test Player 5: 12:00 shared TOI" [ref=e1928]'
+                  - 'generic "Test Player 5 × Test Player 5: 12:00 shared TOI" [ref=e1930]'
+                  - 'generic "Test Player 9 × Test Player 5: 12:00 shared TOI" [ref=e1932]'
+                  - 'generic "Test Player 2 × Test Player 5: 00:00 shared TOI" [ref=e1934]'
+                  - 'generic "Test Player 6 × Test Player 5: 00:00 shared TOI" [ref=e1936]'
+                  - 'generic "Test Player 10 × Test Player 5: 00:00 shared TOI" [ref=e1938]'
+                  - 'generic "Test Player 3 × Test Player 5: 00:00 shared TOI" [ref=e1940]'
+                  - 'generic "Test Player 7 × Test Player 5: 00:00 shared TOI" [ref=e1942]'
+                  - 'generic "Test Player 11 × Test Player 5: 00:00 shared TOI" [ref=e1944]'
+                  - 'generic "Test Player 4 × Test Player 5: 00:00 shared TOI" [ref=e1946]'
+                  - 'generic "Test Player 8 × Test Player 5: 00:00 shared TOI" [ref=e1948]'
+                  - 'generic "Test Player 12 × Test Player 5: 00:00 shared TOI" [ref=e1950]'
+                  - 'generic "Test Player 13 × Test Player 5: 12:00 shared TOI" [ref=e1952]'
+                  - 'generic "Test Player 17 × Test Player 5: 12:00 shared TOI" [ref=e1954]'
+                  - 'generic "Test Player 14 × Test Player 5: 00:00 shared TOI" [ref=e1956]'
+                  - 'generic "Test Player 18 × Test Player 5: 00:00 shared TOI" [ref=e1958]'
+                  - 'generic "Test Player 15 × Test Player 5: 00:00 shared TOI" [ref=e1960]'
+                  - 'generic "Test Player 16 × Test Player 5: 00:00 shared TOI" [ref=e1962]'
+                  - generic "Test Player 9" [ref=e1964]: T. Player 9
+                  - 'generic "Test Player 1 × Test Player 9: 12:00 shared TOI" [ref=e1965]'
+                  - 'generic "Test Player 5 × Test Player 9: 12:00 shared TOI" [ref=e1967]'
+                  - 'generic "Test Player 9 × Test Player 9: 12:00 shared TOI" [ref=e1969]'
+                  - 'generic "Test Player 2 × Test Player 9: 00:00 shared TOI" [ref=e1971]'
+                  - 'generic "Test Player 6 × Test Player 9: 00:00 shared TOI" [ref=e1973]'
+                  - 'generic "Test Player 10 × Test Player 9: 00:00 shared TOI" [ref=e1975]'
+                  - 'generic "Test Player 3 × Test Player 9: 00:00 shared TOI" [ref=e1977]'
+                  - 'generic "Test Player 7 × Test Player 9: 00:00 shared TOI" [ref=e1979]'
+                  - 'generic "Test Player 11 × Test Player 9: 00:00 shared TOI" [ref=e1981]'
+                  - 'generic "Test Player 4 × Test Player 9: 00:00 shared TOI" [ref=e1983]'
+                  - 'generic "Test Player 8 × Test Player 9: 00:00 shared TOI" [ref=e1985]'
+                  - 'generic "Test Player 12 × Test Player 9: 00:00 shared TOI" [ref=e1987]'
+                  - 'generic "Test Player 13 × Test Player 9: 12:00 shared TOI" [ref=e1989]'
+                  - 'generic "Test Player 17 × Test Player 9: 12:00 shared TOI" [ref=e1991]'
+                  - 'generic "Test Player 14 × Test Player 9: 00:00 shared TOI" [ref=e1993]'
+                  - 'generic "Test Player 18 × Test Player 9: 00:00 shared TOI" [ref=e1995]'
+                  - 'generic "Test Player 15 × Test Player 9: 00:00 shared TOI" [ref=e1997]'
+                  - 'generic "Test Player 16 × Test Player 9: 00:00 shared TOI" [ref=e1999]'
+                  - generic "Test Player 2" [ref=e2001]: T. Player 2
+                  - 'generic "Test Player 1 × Test Player 2: 00:00 shared TOI" [ref=e2002]'
+                  - 'generic "Test Player 5 × Test Player 2: 00:00 shared TOI" [ref=e2004]'
+                  - 'generic "Test Player 9 × Test Player 2: 00:00 shared TOI" [ref=e2006]'
+                  - 'generic "Test Player 2 × Test Player 2: 12:00 shared TOI" [ref=e2008]'
+                  - 'generic "Test Player 6 × Test Player 2: 12:00 shared TOI" [ref=e2010]'
+                  - 'generic "Test Player 10 × Test Player 2: 12:00 shared TOI" [ref=e2012]'
+                  - 'generic "Test Player 3 × Test Player 2: 00:00 shared TOI" [ref=e2014]'
+                  - 'generic "Test Player 7 × Test Player 2: 00:00 shared TOI" [ref=e2016]'
+                  - 'generic "Test Player 11 × Test Player 2: 00:00 shared TOI" [ref=e2018]'
+                  - 'generic "Test Player 4 × Test Player 2: 00:00 shared TOI" [ref=e2020]'
+                  - 'generic "Test Player 8 × Test Player 2: 00:00 shared TOI" [ref=e2022]'
+                  - 'generic "Test Player 12 × Test Player 2: 00:00 shared TOI" [ref=e2024]'
+                  - 'generic "Test Player 13 × Test Player 2: 00:00 shared TOI" [ref=e2026]'
+                  - 'generic "Test Player 17 × Test Player 2: 00:00 shared TOI" [ref=e2028]'
+                  - 'generic "Test Player 14 × Test Player 2: 12:00 shared TOI" [ref=e2030]'
+                  - 'generic "Test Player 18 × Test Player 2: 12:00 shared TOI" [ref=e2032]'
+                  - 'generic "Test Player 15 × Test Player 2: 00:00 shared TOI" [ref=e2034]'
+                  - 'generic "Test Player 16 × Test Player 2: 00:00 shared TOI" [ref=e2036]'
+                  - generic "Test Player 6" [ref=e2038]: T. Player 6
+                  - 'generic "Test Player 1 × Test Player 6: 00:00 shared TOI" [ref=e2039]'
+                  - 'generic "Test Player 5 × Test Player 6: 00:00 shared TOI" [ref=e2041]'
+                  - 'generic "Test Player 9 × Test Player 6: 00:00 shared TOI" [ref=e2043]'
+                  - 'generic "Test Player 2 × Test Player 6: 12:00 shared TOI" [ref=e2045]'
+                  - 'generic "Test Player 6 × Test Player 6: 12:00 shared TOI" [ref=e2047]'
+                  - 'generic "Test Player 10 × Test Player 6: 12:00 shared TOI" [ref=e2049]'
+                  - 'generic "Test Player 3 × Test Player 6: 00:00 shared TOI" [ref=e2051]'
+                  - 'generic "Test Player 7 × Test Player 6: 00:00 shared TOI" [ref=e2053]'
+                  - 'generic "Test Player 11 × Test Player 6: 00:00 shared TOI" [ref=e2055]'
+                  - 'generic "Test Player 4 × Test Player 6: 00:00 shared TOI" [ref=e2057]'
+                  - 'generic "Test Player 8 × Test Player 6: 00:00 shared TOI" [ref=e2059]'
+                  - 'generic "Test Player 12 × Test Player 6: 00:00 shared TOI" [ref=e2061]'
+                  - 'generic "Test Player 13 × Test Player 6: 00:00 shared TOI" [ref=e2063]'
+                  - 'generic "Test Player 17 × Test Player 6: 00:00 shared TOI" [ref=e2065]'
+                  - 'generic "Test Player 14 × Test Player 6: 12:00 shared TOI" [ref=e2067]'
+                  - 'generic "Test Player 18 × Test Player 6: 12:00 shared TOI" [ref=e2069]'
+                  - 'generic "Test Player 15 × Test Player 6: 00:00 shared TOI" [ref=e2071]'
+                  - 'generic "Test Player 16 × Test Player 6: 00:00 shared TOI" [ref=e2073]'
+                  - generic "Test Player 10" [ref=e2075]: T. Player 10
+                  - 'generic "Test Player 1 × Test Player 10: 00:00 shared TOI" [ref=e2076]'
+                  - 'generic "Test Player 5 × Test Player 10: 00:00 shared TOI" [ref=e2078]'
+                  - 'generic "Test Player 9 × Test Player 10: 00:00 shared TOI" [ref=e2080]'
+                  - 'generic "Test Player 2 × Test Player 10: 12:00 shared TOI" [ref=e2082]'
+                  - 'generic "Test Player 6 × Test Player 10: 12:00 shared TOI" [ref=e2084]'
+                  - 'generic "Test Player 10 × Test Player 10: 12:00 shared TOI" [ref=e2086]'
+                  - 'generic "Test Player 3 × Test Player 10: 00:00 shared TOI" [ref=e2088]'
+                  - 'generic "Test Player 7 × Test Player 10: 00:00 shared TOI" [ref=e2090]'
+                  - 'generic "Test Player 11 × Test Player 10: 00:00 shared TOI" [ref=e2092]'
+                  - 'generic "Test Player 4 × Test Player 10: 00:00 shared TOI" [ref=e2094]'
+                  - 'generic "Test Player 8 × Test Player 10: 00:00 shared TOI" [ref=e2096]'
+                  - 'generic "Test Player 12 × Test Player 10: 00:00 shared TOI" [ref=e2098]'
+                  - 'generic "Test Player 13 × Test Player 10: 00:00 shared TOI" [ref=e2100]'
+                  - 'generic "Test Player 17 × Test Player 10: 00:00 shared TOI" [ref=e2102]'
+                  - 'generic "Test Player 14 × Test Player 10: 12:00 shared TOI" [ref=e2104]'
+                  - 'generic "Test Player 18 × Test Player 10: 12:00 shared TOI" [ref=e2106]'
+                  - 'generic "Test Player 15 × Test Player 10: 00:00 shared TOI" [ref=e2108]'
+                  - 'generic "Test Player 16 × Test Player 10: 00:00 shared TOI" [ref=e2110]'
+                  - generic "Test Player 3" [ref=e2112]: T. Player 3
+                  - 'generic "Test Player 1 × Test Player 3: 00:00 shared TOI" [ref=e2113]'
+                  - 'generic "Test Player 5 × Test Player 3: 00:00 shared TOI" [ref=e2115]'
+                  - 'generic "Test Player 9 × Test Player 3: 00:00 shared TOI" [ref=e2117]'
+                  - 'generic "Test Player 2 × Test Player 3: 00:00 shared TOI" [ref=e2119]'
+                  - 'generic "Test Player 6 × Test Player 3: 00:00 shared TOI" [ref=e2121]'
+                  - 'generic "Test Player 10 × Test Player 3: 00:00 shared TOI" [ref=e2123]'
+                  - 'generic "Test Player 3 × Test Player 3: 12:00 shared TOI" [ref=e2125]'
+                  - 'generic "Test Player 7 × Test Player 3: 12:00 shared TOI" [ref=e2127]'
+                  - 'generic "Test Player 11 × Test Player 3: 12:00 shared TOI" [ref=e2129]'
+                  - 'generic "Test Player 4 × Test Player 3: 00:00 shared TOI" [ref=e2131]'
+                  - 'generic "Test Player 8 × Test Player 3: 00:00 shared TOI" [ref=e2133]'
+                  - 'generic "Test Player 12 × Test Player 3: 00:00 shared TOI" [ref=e2135]'
+                  - 'generic "Test Player 13 × Test Player 3: 00:00 shared TOI" [ref=e2137]'
+                  - 'generic "Test Player 17 × Test Player 3: 00:00 shared TOI" [ref=e2139]'
+                  - 'generic "Test Player 14 × Test Player 3: 00:00 shared TOI" [ref=e2141]'
+                  - 'generic "Test Player 18 × Test Player 3: 00:00 shared TOI" [ref=e2143]'
+                  - 'generic "Test Player 15 × Test Player 3: 12:00 shared TOI" [ref=e2145]'
+                  - 'generic "Test Player 16 × Test Player 3: 00:00 shared TOI" [ref=e2147]'
+                  - generic "Test Player 7" [ref=e2149]: T. Player 7
+                  - 'generic "Test Player 1 × Test Player 7: 00:00 shared TOI" [ref=e2150]'
+                  - 'generic "Test Player 5 × Test Player 7: 00:00 shared TOI" [ref=e2152]'
+                  - 'generic "Test Player 9 × Test Player 7: 00:00 shared TOI" [ref=e2154]'
+                  - 'generic "Test Player 2 × Test Player 7: 00:00 shared TOI" [ref=e2156]'
+                  - 'generic "Test Player 6 × Test Player 7: 00:00 shared TOI" [ref=e2158]'
+                  - 'generic "Test Player 10 × Test Player 7: 00:00 shared TOI" [ref=e2160]'
+                  - 'generic "Test Player 3 × Test Player 7: 12:00 shared TOI" [ref=e2162]'
+                  - 'generic "Test Player 7 × Test Player 7: 12:00 shared TOI" [ref=e2164]'
+                  - 'generic "Test Player 11 × Test Player 7: 12:00 shared TOI" [ref=e2166]'
+                  - 'generic "Test Player 4 × Test Player 7: 00:00 shared TOI" [ref=e2168]'
+                  - 'generic "Test Player 8 × Test Player 7: 00:00 shared TOI" [ref=e2170]'
+                  - 'generic "Test Player 12 × Test Player 7: 00:00 shared TOI" [ref=e2172]'
+                  - 'generic "Test Player 13 × Test Player 7: 00:00 shared TOI" [ref=e2174]'
+                  - 'generic "Test Player 17 × Test Player 7: 00:00 shared TOI" [ref=e2176]'
+                  - 'generic "Test Player 14 × Test Player 7: 00:00 shared TOI" [ref=e2178]'
+                  - 'generic "Test Player 18 × Test Player 7: 00:00 shared TOI" [ref=e2180]'
+                  - 'generic "Test Player 15 × Test Player 7: 12:00 shared TOI" [ref=e2182]'
+                  - 'generic "Test Player 16 × Test Player 7: 00:00 shared TOI" [ref=e2184]'
+                  - generic "Test Player 11" [ref=e2186]: T. Player 11
+                  - 'generic "Test Player 1 × Test Player 11: 00:00 shared TOI" [ref=e2187]'
+                  - 'generic "Test Player 5 × Test Player 11: 00:00 shared TOI" [ref=e2189]'
+                  - 'generic "Test Player 9 × Test Player 11: 00:00 shared TOI" [ref=e2191]'
+                  - 'generic "Test Player 2 × Test Player 11: 00:00 shared TOI" [ref=e2193]'
+                  - 'generic "Test Player 6 × Test Player 11: 00:00 shared TOI" [ref=e2195]'
+                  - 'generic "Test Player 10 × Test Player 11: 00:00 shared TOI" [ref=e2197]'
+                  - 'generic "Test Player 3 × Test Player 11: 12:00 shared TOI" [ref=e2199]'
+                  - 'generic "Test Player 7 × Test Player 11: 12:00 shared TOI" [ref=e2201]'
+                  - 'generic "Test Player 11 × Test Player 11: 12:00 shared TOI" [ref=e2203]'
+                  - 'generic "Test Player 4 × Test Player 11: 00:00 shared TOI" [ref=e2205]'
+                  - 'generic "Test Player 8 × Test Player 11: 00:00 shared TOI" [ref=e2207]'
+                  - 'generic "Test Player 12 × Test Player 11: 00:00 shared TOI" [ref=e2209]'
+                  - 'generic "Test Player 13 × Test Player 11: 00:00 shared TOI" [ref=e2211]'
+                  - 'generic "Test Player 17 × Test Player 11: 00:00 shared TOI" [ref=e2213]'
+                  - 'generic "Test Player 14 × Test Player 11: 00:00 shared TOI" [ref=e2215]'
+                  - 'generic "Test Player 18 × Test Player 11: 00:00 shared TOI" [ref=e2217]'
+                  - 'generic "Test Player 15 × Test Player 11: 12:00 shared TOI" [ref=e2219]'
+                  - 'generic "Test Player 16 × Test Player 11: 00:00 shared TOI" [ref=e2221]'
+                  - generic "Test Player 4" [ref=e2223]: T. Player 4
+                  - 'generic "Test Player 1 × Test Player 4: 00:00 shared TOI" [ref=e2224]'
+                  - 'generic "Test Player 5 × Test Player 4: 00:00 shared TOI" [ref=e2226]'
+                  - 'generic "Test Player 9 × Test Player 4: 00:00 shared TOI" [ref=e2228]'
+                  - 'generic "Test Player 2 × Test Player 4: 00:00 shared TOI" [ref=e2230]'
+                  - 'generic "Test Player 6 × Test Player 4: 00:00 shared TOI" [ref=e2232]'
+                  - 'generic "Test Player 10 × Test Player 4: 00:00 shared TOI" [ref=e2234]'
+                  - 'generic "Test Player 3 × Test Player 4: 00:00 shared TOI" [ref=e2236]'
+                  - 'generic "Test Player 7 × Test Player 4: 00:00 shared TOI" [ref=e2238]'
+                  - 'generic "Test Player 11 × Test Player 4: 00:00 shared TOI" [ref=e2240]'
+                  - 'generic "Test Player 4 × Test Player 4: 11:15 shared TOI" [ref=e2242]'
+                  - 'generic "Test Player 8 × Test Player 4: 11:15 shared TOI" [ref=e2244]'
+                  - 'generic "Test Player 12 × Test Player 4: 11:15 shared TOI" [ref=e2246]'
+                  - 'generic "Test Player 13 × Test Player 4: 00:00 shared TOI" [ref=e2248]'
+                  - 'generic "Test Player 17 × Test Player 4: 00:00 shared TOI" [ref=e2250]'
+                  - 'generic "Test Player 14 × Test Player 4: 00:00 shared TOI" [ref=e2252]'
+                  - 'generic "Test Player 18 × Test Player 4: 00:00 shared TOI" [ref=e2254]'
+                  - 'generic "Test Player 15 × Test Player 4: 00:00 shared TOI" [ref=e2256]'
+                  - 'generic "Test Player 16 × Test Player 4: 11:15 shared TOI" [ref=e2258]'
+                  - generic "Test Player 8" [ref=e2260]: T. Player 8
+                  - 'generic "Test Player 1 × Test Player 8: 00:00 shared TOI" [ref=e2261]'
+                  - 'generic "Test Player 5 × Test Player 8: 00:00 shared TOI" [ref=e2263]'
+                  - 'generic "Test Player 9 × Test Player 8: 00:00 shared TOI" [ref=e2265]'
+                  - 'generic "Test Player 2 × Test Player 8: 00:00 shared TOI" [ref=e2267]'
+                  - 'generic "Test Player 6 × Test Player 8: 00:00 shared TOI" [ref=e2269]'
+                  - 'generic "Test Player 10 × Test Player 8: 00:00 shared TOI" [ref=e2271]'
+                  - 'generic "Test Player 3 × Test Player 8: 00:00 shared TOI" [ref=e2273]'
+                  - 'generic "Test Player 7 × Test Player 8: 00:00 shared TOI" [ref=e2275]'
+                  - 'generic "Test Player 11 × Test Player 8: 00:00 shared TOI" [ref=e2277]'
+                  - 'generic "Test Player 4 × Test Player 8: 11:15 shared TOI" [ref=e2279]'
+                  - 'generic "Test Player 8 × Test Player 8: 11:15 shared TOI" [ref=e2281]'
+                  - 'generic "Test Player 12 × Test Player 8: 11:15 shared TOI" [ref=e2283]'
+                  - 'generic "Test Player 13 × Test Player 8: 00:00 shared TOI" [ref=e2285]'
+                  - 'generic "Test Player 17 × Test Player 8: 00:00 shared TOI" [ref=e2287]'
+                  - 'generic "Test Player 14 × Test Player 8: 00:00 shared TOI" [ref=e2289]'
+                  - 'generic "Test Player 18 × Test Player 8: 00:00 shared TOI" [ref=e2291]'
+                  - 'generic "Test Player 15 × Test Player 8: 00:00 shared TOI" [ref=e2293]'
+                  - 'generic "Test Player 16 × Test Player 8: 11:15 shared TOI" [ref=e2295]'
+                  - generic "Test Player 12" [ref=e2297]: T. Player 12
+                  - 'generic "Test Player 1 × Test Player 12: 00:00 shared TOI" [ref=e2298]'
+                  - 'generic "Test Player 5 × Test Player 12: 00:00 shared TOI" [ref=e2300]'
+                  - 'generic "Test Player 9 × Test Player 12: 00:00 shared TOI" [ref=e2302]'
+                  - 'generic "Test Player 2 × Test Player 12: 00:00 shared TOI" [ref=e2304]'
+                  - 'generic "Test Player 6 × Test Player 12: 00:00 shared TOI" [ref=e2306]'
+                  - 'generic "Test Player 10 × Test Player 12: 00:00 shared TOI" [ref=e2308]'
+                  - 'generic "Test Player 3 × Test Player 12: 00:00 shared TOI" [ref=e2310]'
+                  - 'generic "Test Player 7 × Test Player 12: 00:00 shared TOI" [ref=e2312]'
+                  - 'generic "Test Player 11 × Test Player 12: 00:00 shared TOI" [ref=e2314]'
+                  - 'generic "Test Player 4 × Test Player 12: 11:15 shared TOI" [ref=e2316]'
+                  - 'generic "Test Player 8 × Test Player 12: 11:15 shared TOI" [ref=e2318]'
+                  - 'generic "Test Player 12 × Test Player 12: 11:15 shared TOI" [ref=e2320]'
+                  - 'generic "Test Player 13 × Test Player 12: 00:00 shared TOI" [ref=e2322]'
+                  - 'generic "Test Player 17 × Test Player 12: 00:00 shared TOI" [ref=e2324]'
+                  - 'generic "Test Player 14 × Test Player 12: 00:00 shared TOI" [ref=e2326]'
+                  - 'generic "Test Player 18 × Test Player 12: 00:00 shared TOI" [ref=e2328]'
+                  - 'generic "Test Player 15 × Test Player 12: 00:00 shared TOI" [ref=e2330]'
+                  - 'generic "Test Player 16 × Test Player 12: 11:15 shared TOI" [ref=e2332]'
+                  - generic "Test Player 13" [ref=e2334]: T. Player 13
+                  - 'generic "Test Player 1 × Test Player 13: 12:00 shared TOI" [ref=e2335]'
+                  - 'generic "Test Player 5 × Test Player 13: 12:00 shared TOI" [ref=e2337]'
+                  - 'generic "Test Player 9 × Test Player 13: 12:00 shared TOI" [ref=e2339]'
+                  - 'generic "Test Player 2 × Test Player 13: 00:00 shared TOI" [ref=e2341]'
+                  - 'generic "Test Player 6 × Test Player 13: 00:00 shared TOI" [ref=e2343]'
+                  - 'generic "Test Player 10 × Test Player 13: 00:00 shared TOI" [ref=e2345]'
+                  - 'generic "Test Player 3 × Test Player 13: 00:00 shared TOI" [ref=e2347]'
+                  - 'generic "Test Player 7 × Test Player 13: 00:00 shared TOI" [ref=e2349]'
+                  - 'generic "Test Player 11 × Test Player 13: 00:00 shared TOI" [ref=e2351]'
+                  - 'generic "Test Player 4 × Test Player 13: 00:00 shared TOI" [ref=e2353]'
+                  - 'generic "Test Player 8 × Test Player 13: 00:00 shared TOI" [ref=e2355]'
+                  - 'generic "Test Player 12 × Test Player 13: 00:00 shared TOI" [ref=e2357]'
+                  - 'generic "Test Player 13 × Test Player 13: 12:00 shared TOI" [ref=e2359]'
+                  - 'generic "Test Player 17 × Test Player 13: 12:00 shared TOI" [ref=e2361]'
+                  - 'generic "Test Player 14 × Test Player 13: 00:00 shared TOI" [ref=e2363]'
+                  - 'generic "Test Player 18 × Test Player 13: 00:00 shared TOI" [ref=e2365]'
+                  - 'generic "Test Player 15 × Test Player 13: 00:00 shared TOI" [ref=e2367]'
+                  - 'generic "Test Player 16 × Test Player 13: 00:00 shared TOI" [ref=e2369]'
+                  - generic "Test Player 17" [ref=e2371]: T. Player 17
+                  - 'generic "Test Player 1 × Test Player 17: 12:00 shared TOI" [ref=e2372]'
+                  - 'generic "Test Player 5 × Test Player 17: 12:00 shared TOI" [ref=e2374]'
+                  - 'generic "Test Player 9 × Test Player 17: 12:00 shared TOI" [ref=e2376]'
+                  - 'generic "Test Player 2 × Test Player 17: 00:00 shared TOI" [ref=e2378]'
+                  - 'generic "Test Player 6 × Test Player 17: 00:00 shared TOI" [ref=e2380]'
+                  - 'generic "Test Player 10 × Test Player 17: 00:00 shared TOI" [ref=e2382]'
+                  - 'generic "Test Player 3 × Test Player 17: 00:00 shared TOI" [ref=e2384]'
+                  - 'generic "Test Player 7 × Test Player 17: 00:00 shared TOI" [ref=e2386]'
+                  - 'generic "Test Player 11 × Test Player 17: 00:00 shared TOI" [ref=e2388]'
+                  - 'generic "Test Player 4 × Test Player 17: 00:00 shared TOI" [ref=e2390]'
+                  - 'generic "Test Player 8 × Test Player 17: 00:00 shared TOI" [ref=e2392]'
+                  - 'generic "Test Player 12 × Test Player 17: 00:00 shared TOI" [ref=e2394]'
+                  - 'generic "Test Player 13 × Test Player 17: 12:00 shared TOI" [ref=e2396]'
+                  - 'generic "Test Player 17 × Test Player 17: 12:00 shared TOI" [ref=e2398]'
+                  - 'generic "Test Player 14 × Test Player 17: 00:00 shared TOI" [ref=e2400]'
+                  - 'generic "Test Player 18 × Test Player 17: 00:00 shared TOI" [ref=e2402]'
+                  - 'generic "Test Player 15 × Test Player 17: 00:00 shared TOI" [ref=e2404]'
+                  - 'generic "Test Player 16 × Test Player 17: 00:00 shared TOI" [ref=e2406]'
+                  - generic "Test Player 14" [ref=e2408]: T. Player 14
+                  - 'generic "Test Player 1 × Test Player 14: 00:00 shared TOI" [ref=e2409]'
+                  - 'generic "Test Player 5 × Test Player 14: 00:00 shared TOI" [ref=e2411]'
+                  - 'generic "Test Player 9 × Test Player 14: 00:00 shared TOI" [ref=e2413]'
+                  - 'generic "Test Player 2 × Test Player 14: 12:00 shared TOI" [ref=e2415]'
+                  - 'generic "Test Player 6 × Test Player 14: 12:00 shared TOI" [ref=e2417]'
+                  - 'generic "Test Player 10 × Test Player 14: 12:00 shared TOI" [ref=e2419]'
+                  - 'generic "Test Player 3 × Test Player 14: 00:00 shared TOI" [ref=e2421]'
+                  - 'generic "Test Player 7 × Test Player 14: 00:00 shared TOI" [ref=e2423]'
+                  - 'generic "Test Player 11 × Test Player 14: 00:00 shared TOI" [ref=e2425]'
+                  - 'generic "Test Player 4 × Test Player 14: 00:00 shared TOI" [ref=e2427]'
+                  - 'generic "Test Player 8 × Test Player 14: 00:00 shared TOI" [ref=e2429]'
+                  - 'generic "Test Player 12 × Test Player 14: 00:00 shared TOI" [ref=e2431]'
+                  - 'generic "Test Player 13 × Test Player 14: 00:00 shared TOI" [ref=e2433]'
+                  - 'generic "Test Player 17 × Test Player 14: 00:00 shared TOI" [ref=e2435]'
+                  - 'generic "Test Player 14 × Test Player 14: 12:00 shared TOI" [ref=e2437]'
+                  - 'generic "Test Player 18 × Test Player 14: 12:00 shared TOI" [ref=e2439]'
+                  - 'generic "Test Player 15 × Test Player 14: 00:00 shared TOI" [ref=e2441]'
+                  - 'generic "Test Player 16 × Test Player 14: 00:00 shared TOI" [ref=e2443]'
+                  - generic "Test Player 18" [ref=e2445]: T. Player 18
+                  - 'generic "Test Player 1 × Test Player 18: 00:00 shared TOI" [ref=e2446]'
+                  - 'generic "Test Player 5 × Test Player 18: 00:00 shared TOI" [ref=e2448]'
+                  - 'generic "Test Player 9 × Test Player 18: 00:00 shared TOI" [ref=e2450]'
+                  - 'generic "Test Player 2 × Test Player 18: 12:00 shared TOI" [ref=e2452]'
+                  - 'generic "Test Player 6 × Test Player 18: 12:00 shared TOI" [ref=e2454]'
+                  - 'generic "Test Player 10 × Test Player 18: 12:00 shared TOI" [ref=e2456]'
+                  - 'generic "Test Player 3 × Test Player 18: 00:00 shared TOI" [ref=e2458]'
+                  - 'generic "Test Player 7 × Test Player 18: 00:00 shared TOI" [ref=e2460]'
+                  - 'generic "Test Player 11 × Test Player 18: 00:00 shared TOI" [ref=e2462]'
+                  - 'generic "Test Player 4 × Test Player 18: 00:00 shared TOI" [ref=e2464]'
+                  - 'generic "Test Player 8 × Test Player 18: 00:00 shared TOI" [ref=e2466]'
+                  - 'generic "Test Player 12 × Test Player 18: 00:00 shared TOI" [ref=e2468]'
+                  - 'generic "Test Player 13 × Test Player 18: 00:00 shared TOI" [ref=e2470]'
+                  - 'generic "Test Player 17 × Test Player 18: 00:00 shared TOI" [ref=e2472]'
+                  - 'generic "Test Player 14 × Test Player 18: 12:00 shared TOI" [ref=e2474]'
+                  - 'generic "Test Player 18 × Test Player 18: 12:00 shared TOI" [ref=e2476]'
+                  - 'generic "Test Player 15 × Test Player 18: 00:00 shared TOI" [ref=e2478]'
+                  - 'generic "Test Player 16 × Test Player 18: 00:00 shared TOI" [ref=e2480]'
+                  - generic "Test Player 15" [ref=e2482]: T. Player 15
+                  - 'generic "Test Player 1 × Test Player 15: 00:00 shared TOI" [ref=e2483]'
+                  - 'generic "Test Player 5 × Test Player 15: 00:00 shared TOI" [ref=e2485]'
+                  - 'generic "Test Player 9 × Test Player 15: 00:00 shared TOI" [ref=e2487]'
+                  - 'generic "Test Player 2 × Test Player 15: 00:00 shared TOI" [ref=e2489]'
+                  - 'generic "Test Player 6 × Test Player 15: 00:00 shared TOI" [ref=e2491]'
+                  - 'generic "Test Player 10 × Test Player 15: 00:00 shared TOI" [ref=e2493]'
+                  - 'generic "Test Player 3 × Test Player 15: 12:00 shared TOI" [ref=e2495]'
+                  - 'generic "Test Player 7 × Test Player 15: 12:00 shared TOI" [ref=e2497]'
+                  - 'generic "Test Player 11 × Test Player 15: 12:00 shared TOI" [ref=e2499]'
+                  - 'generic "Test Player 4 × Test Player 15: 00:00 shared TOI" [ref=e2501]'
+                  - 'generic "Test Player 8 × Test Player 15: 00:00 shared TOI" [ref=e2503]'
+                  - 'generic "Test Player 12 × Test Player 15: 00:00 shared TOI" [ref=e2505]'
+                  - 'generic "Test Player 13 × Test Player 15: 00:00 shared TOI" [ref=e2507]'
+                  - 'generic "Test Player 17 × Test Player 15: 00:00 shared TOI" [ref=e2509]'
+                  - 'generic "Test Player 14 × Test Player 15: 00:00 shared TOI" [ref=e2511]'
+                  - 'generic "Test Player 18 × Test Player 15: 00:00 shared TOI" [ref=e2513]'
+                  - 'generic "Test Player 15 × Test Player 15: 12:00 shared TOI" [ref=e2515]'
+                  - 'generic "Test Player 16 × Test Player 15: 00:00 shared TOI" [ref=e2517]'
+                  - generic "Test Player 16" [ref=e2519]: T. Player 16
+                  - 'generic "Test Player 1 × Test Player 16: 00:00 shared TOI" [ref=e2520]'
+                  - 'generic "Test Player 5 × Test Player 16: 00:00 shared TOI" [ref=e2522]'
+                  - 'generic "Test Player 9 × Test Player 16: 00:00 shared TOI" [ref=e2524]'
+                  - 'generic "Test Player 2 × Test Player 16: 00:00 shared TOI" [ref=e2526]'
+                  - 'generic "Test Player 6 × Test Player 16: 00:00 shared TOI" [ref=e2528]'
+                  - 'generic "Test Player 10 × Test Player 16: 00:00 shared TOI" [ref=e2530]'
+                  - 'generic "Test Player 3 × Test Player 16: 00:00 shared TOI" [ref=e2532]'
+                  - 'generic "Test Player 7 × Test Player 16: 00:00 shared TOI" [ref=e2534]'
+                  - 'generic "Test Player 11 × Test Player 16: 00:00 shared TOI" [ref=e2536]'
+                  - 'generic "Test Player 4 × Test Player 16: 11:15 shared TOI" [ref=e2538]'
+                  - 'generic "Test Player 8 × Test Player 16: 11:15 shared TOI" [ref=e2540]'
+                  - 'generic "Test Player 12 × Test Player 16: 11:15 shared TOI" [ref=e2542]'
+                  - 'generic "Test Player 13 × Test Player 16: 00:00 shared TOI" [ref=e2544]'
+                  - 'generic "Test Player 17 × Test Player 16: 00:00 shared TOI" [ref=e2546]'
+                  - 'generic "Test Player 14 × Test Player 16: 00:00 shared TOI" [ref=e2548]'
+                  - 'generic "Test Player 18 × Test Player 16: 00:00 shared TOI" [ref=e2550]'
+                  - 'generic "Test Player 15 × Test Player 16: 00:00 shared TOI" [ref=e2552]'
+                  - 'generic "Test Player 16 × Test Player 16: 11:15 shared TOI" [ref=e2554]'
+    - contentinfo [ref=e2556]:
+      - generic [ref=e2557]:
+        - generic [ref=e2558]:
+          - link "FHFH home" [ref=e2559] [cursor=pointer]:
+            - /url: /
+            - img [ref=e2560]
+          - generic [ref=e2566]: Five Hole Fantasy Hockey
+          - generic [ref=e2567]: © 2026 FHFHockey
+        - navigation "Footer navigation" [ref=e2568]:
+          - link "Underlying Stats" [ref=e2569] [cursor=pointer]:
+            - /url: /underlying-stats
+          - link "Game Grid" [ref=e2570] [cursor=pointer]:
+            - /url: /game-grid
+          - link "Stats" [ref=e2571] [cursor=pointer]:
+            - /url: /stats
+          - link "Blog" [ref=e2572] [cursor=pointer]:
+            - /url: /blog
+          - link "Podcast" [ref=e2573] [cursor=pointer]:
+            - /url: /podfeed
+          - link "Privacy" [ref=e2574] [cursor=pointer]:
+            - /url: /privacy
+        - generic [ref=e2575]:
+          - link "Support FHFH" [ref=e2576] [cursor=pointer]:
+            - /url: https://www.buymeacoffee.com/tjsusername
+          - generic [ref=e2577]:
+            - link "Twitter" [ref=e2578] [cursor=pointer]:
+              - /url: https://www.twitter.com/fhfhockey
+              - img "Twitter" [ref=e2579]
+            - link "Discord" [ref=e2580] [cursor=pointer]:
+              - /url: https://discord.gg/kfnyrn7
+              - img "Discord" [ref=e2581]
+            - link "Patreon" [ref=e2582] [cursor=pointer]:
+              - /url: https://www.patreon.com/FHFHRadio
+              - img "Patreon" [ref=e2583]
+            - link "Youtube" [ref=e2584] [cursor=pointer]:
+              - /url: https://www.youtube.com/fiveholefantasyhockey
+              - img "Youtube" [ref=e2585]
+            - link "Spotify" [ref=e2586] [cursor=pointer]:
+              - /url: https://open.spotify.com/show/0tcyfS62ZHdLYA3Xf3QgSQ?si=HtfgMe8_QD6KfwiOw2fC1g
+              - img "Spotify" [ref=e2587]
+  - alert [ref=e2588]
+```
+
+# Test source
+
+```ts
+  106 | }) => {
+  107 |   await fixtures(page);
+  108 |   await openGame(page);
+  109 |   await page.getByRole("slider", { name: "Replay time", exact: true }).fill("120");
+  110 |   await page.getByLabel("Select game").selectOption("2026010055");
+  111 |   await expect(page).toHaveURL(/gameId=2026010055/);
+  112 |   await expect(
+  113 |     page.getByRole("group", { name: "Boston Bruins positions" }),
+  114 |   ).toBeVisible();
+  115 |   await expect(page.getByRole("slider", { name: "Replay time", exact: true })).toHaveValue(
+  116 |     "0",
+  117 |   );
+  118 |   await page.getByLabel("Select date").fill("2026-09-25");
+  119 |   await expect(page.getByText("No games on this date.")).toBeVisible();
+  120 |   await expect(page.getByRole("slider", { name: "Replay time", exact: true })).toHaveCount(
+  121 |     0,
+  122 |   );
+  123 |   await expect(page).not.toHaveURL(/gameId=/);
+  124 | });
+  125 | 
+  126 | test("request errors can be retried", async ({ page }) => {
+  127 |   await fixtures(page, { fail: true });
+  128 |   await page.goto("/shiftChart?gameId=2026010054");
+  129 |   await expect(
+  130 |     page.getByRole("heading", { name: "Unable to load game" }),
+  131 |   ).toBeVisible();
+  132 |   await page.getByRole("button", { name: "Retry", exact: true }).click();
+  133 |   await expect(page.getByRole("slider", { name: "Replay time", exact: true })).toBeVisible();
+  134 | });
+  135 | 
+  136 | test("unfinished games explain replay availability", async ({ page }) => {
+  137 |   await fixtures(page, { live: true });
+  138 |   await page.goto("/shiftChart?gameId=2026010054");
+  139 |   await expect(page.getByText(/Game status: LIVE/)).toBeVisible();
+  140 |   await expect(page.getByLabel("Select date")).toHaveValue("2026-09-26");
+  141 |   await expect(page.getByRole("slider", { name: "Replay time", exact: true })).toHaveCount(
+  142 |     0,
+  143 |   );
+  144 | });
+  145 | 
+  146 | test("responsive layouts contain chart scrolling and support keyboard seeking with reduced motion", async ({
+  147 |   page,
+  148 | }) => {
+  149 |   await fixtures(page);
+  150 |   await page.emulateMedia({ reducedMotion: "reduce" });
+  151 |   await openGame(page);
+  152 |   for (const width of [1664, 1024, 768, 390]) {
+  153 |     await page.setViewportSize({ width, height: 1000 });
+  154 |     await expect(page).toHaveTitle("Shift Chart | Five Hole Fantasy Hockey");
+  155 |     await expect(page.getByRole("main", { name: "Shift Chart" })).toBeVisible();
+  156 |     await expect(page.getByRole("heading", { name: "Shift Chart", exact: true })).toBeVisible();
+  157 |     await expect(page.locator('[class*="pageHeading"], [class*="timelineHint"]')).toHaveCount(0);
+  158 |     await expect(page.getByLabel("Timeline players")).toHaveCSS("height", width >= 1200 ? "28px" : "32px");
+  159 |     await expect(page.getByLabel("Select date")).toBeVisible();
+  160 |     expect(
+  161 |       await page.evaluate(
+  162 |         () => document.documentElement.scrollWidth <= window.innerWidth,
+  163 |       ),
+  164 |     ).toBe(true);
+  165 |     await page.screenshot({
+  166 |       path: `/tmp/game-grid-fixture-${width}.png`,
+  167 |       fullPage: true,
+  168 |     });
+  169 |   }
+  170 |   const slider = page.getByRole("slider", { name: "Replay time", exact: true });
+  171 |   await slider.focus();
+  172 |   await page.keyboard.press("End");
+  173 |   await expect(slider).toHaveValue("3600");
+  174 |   await expect(page.locator('[aria-label="Scrollable shift chart"]')).toHaveCSS(
+  175 |     "overflow-x",
+  176 |     "auto",
+  177 |   );
+  178 | });
+  179 | 
+  180 | 
+  181 | test("full rosters and overtime fit every desktop viewport without clipping", async ({ page }, testInfo) => {
+  182 |   const requests = await fixtures(page, { full: true, overtime: true });
+  183 |   await openGame(page);
+  184 |   for (const [width, height] of [[1920, 1080], [1728, 900], [1708, 864], [1440, 900]]) {
+  185 |     await page.setViewportSize({ width, height });
+  186 |     await expect(page.locator("tr[data-player-id]")).toHaveCount(40);
+  187 |     await expect(page.locator("[data-matrix-size='18']")).toHaveCount(2);
+  188 |     await expect(page.locator("[data-matrix-cell]")).toHaveCount(648);
+  189 |     // Wait for container observers, then inspect drawing bounds as well as scroll sizes.
+  190 |     await expect.poll(() => page.evaluate(() => {
+  191 |       const chart = document.querySelector<HTMLElement>("[data-layout]")!;
+  192 |       const elements = [...document.querySelectorAll<HTMLElement>("tr[data-player-id], [data-matrix-cell], [class*='leftPlayerName'], [class*='topPlayerName'] > div, [class*='periodLabels'], [class*='teamHeading'], footer")];
+  193 |       const outside = elements.filter(el => {
+  194 |         const rect = el.getBoundingClientRect();
+  195 |         return rect.top < 0 || rect.left < 0 || rect.right > innerWidth + 1 || rect.bottom > innerHeight + 1;
+  196 |       });
+  197 |       const panels = [chart, ...document.querySelectorAll<HTMLElement>("[class*='matrixViewport'], [data-matrix-size]")];
+  198 |       const overflow = panels.filter(el => el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1);
+  199 |       const rosters = [...document.querySelectorAll("tbody")].map(el => el.querySelectorAll("tr[data-player-id]").length);
+  200 |       const rowsFit = [...document.querySelectorAll("tr[data-player-id]")].every(el => el.getBoundingClientRect().height >= 15 && el.getBoundingClientRect().bottom <= chart.getBoundingClientRect().bottom + 1);
+  201 |       const squareCells = [...document.querySelectorAll("[data-matrix-cell]")].every(el => {
+  202 |         const r = el.getBoundingClientRect(); return Math.abs(r.width - r.height) < 1 && r.height >= 12;
+  203 |       });
+  204 |       return { outside: outside.length, overflow: overflow.length, rosters, rowsFit, squareCells,
+  205 |         documentFits: document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight };
+> 206 |     })).toEqual({ outside: 0, overflow: 0, rosters: [20, 20], rowsFit: true, squareCells: true, documentFits: true });
+      |         ^ Error: expect(received).toEqual(expected) // deep equality
+  207 |     await page.screenshot({ path: testInfo.outputPath(`shift-chart-${width}.png`) });
+  208 |   }
+  209 |   await page.getByRole("slider", { name: "Replay time", exact: true }).fill("3700");
+  210 |   await expect(page.getByLabel("Replay scoreboard")).toContainText("Overtime");
+  211 |   for (const slider of await page.getByRole("slider").all()) await expect(slider).toHaveValue("3700");
+  212 |   await page.getByRole("button", { name: "Skip back 30 seconds" }).click();
+  213 |   await expect(page.getByRole("slider", { name: "Replay time", exact: true })).toHaveValue("3670");
+  214 |   await page.getByLabel("Playback speed").selectOption("8");
+  215 |   for (const mode of ["number", "total-toi", "pp-toi", "line-combination"]) await page.getByLabel("Linemate matrix mode").selectOption(mode);
+  216 |   await expect(page.locator("[data-matrix-size='18']")).toHaveCount(2);
+  217 |   const cell = page.locator("[data-matrix-cell]").last();
+  218 |   await cell.hover();
+  219 |   await expect(page.getByRole("tooltip")).toContainText("shared TOI");
+  220 |   const bounds = await page.getByRole("tooltip").boundingBox();
+  221 |   expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(1440);
+  222 |   await page.locator("[data-matrix-cell]").first().focus();
+  223 |   await page.keyboard.press("ArrowRight");
+  224 |   await expect(page.locator("[data-matrix-cell]").nth(1)).toBeFocused();
+  225 |   await page.keyboard.press("Escape");
+  226 |   await expect(page.getByRole("tooltip")).toHaveCount(0);
+  227 |   expect(requests.filter(url => !url.includes("/schedule/"))).toHaveLength(3);
+  228 |   await page.setViewportSize({ width: 390, height: 844 });
+  229 |   await expect(page.locator("tr[data-player-id]")).toHaveCount(40);
+  230 |   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  231 |   await page.screenshot({ path: testInfo.outputPath("shift-chart-mobile.png") });
+  232 | });
+  233 | 
+  234 | test("loading and missing shifts stay in the page workspace", async ({ page }) => {
+  235 |   let release!: () => void;
+  236 |   const wait = new Promise<void>(resolve => { release = resolve; });
+  237 |   await fixtures(page, { wait, missing: true });
+  238 |   await page.goto("/shiftChart?gameId=2026010054");
+  239 |   await expect(page.getByText(/Loading game/)).toBeVisible();
+  240 |   await expect(page.locator("tr[data-player-id]")).toHaveCount(0);
+  241 |   release();
+  242 |   await expect(page.getByText(/Shift data is not available/)).toBeVisible();
+  243 |   await expect(page.locator("[data-matrix-cell]")).toHaveCount(0);
+  244 | });
+  245 | 
+  246 | 
+  247 | test("goal seeking and animated active rows preserve the dashboard", async ({ page }) => {
+  248 |   await fixtures(page, { full: true });
+  249 |   await page.setViewportSize({ width: 1920, height: 1080 });
+  250 |   await openGame(page);
+  251 |   await expect(page.getByRole("heading", { name: "Shift Chart", exact: true })).toBeVisible();
+  252 |   await expect(page.locator("[data-goal-id]")).toHaveCount(1);
+  253 |   await page.locator("[data-goal-id]").click();
+  254 |   const slider = page.getByRole("slider", { name: "Replay time", exact: true });
+  255 |   await expect(slider).toHaveValue("20");
+  256 |   await page.evaluate(() => {
+  257 |     const slider = document.querySelector<HTMLInputElement>('input[aria-label="Replay time"]')!;
+  258 |     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+  259 |     setter.call(slider, "65");
+  260 |     slider.dispatchEvent(new Event("input", { bubbles: true }));
+  261 |   });
+  262 |   await expect.poll(() => page.locator("tr[data-player-id]").evaluateAll(rows => rows.some(row => row.getAnimations().length > 0))).toBe(true);
+  263 |   await expect.poll(() => page.locator("tr[data-player-id]").evaluateAll(rows => rows.every(row => row.getAnimations().length === 0))).toBe(true);
+  264 |   await page.emulateMedia({ reducedMotion: "reduce" });
+  265 |   await slider.fill("0");
+  266 |   expect(await page.locator("tr[data-player-id]").evaluateAll(rows => rows.flatMap(row => row.getAnimations()).length)).toBe(0);
+  267 |   const homeColor = await page.locator('[data-team-side="home"] [class*="shift"][title]').first().evaluate(e => getComputedStyle(e).backgroundColor);
+  268 |   const awayColor = await page.locator('[data-team-side="away"] [class*="shift"][title]').first().evaluate(e => getComputedStyle(e).backgroundColor);
+  269 |   expect(homeColor).not.toBe(awayColor);
+  270 | });
+  271 | 
+```

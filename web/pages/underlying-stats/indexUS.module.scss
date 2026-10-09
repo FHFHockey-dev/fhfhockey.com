@@ -13,6 +13,236 @@
   font-family: v.$font-family-primary, sans-serif;
 }
 
+.loadingPage {
+  min-height: 100vh;
+  padding: clamp(2rem, 7vh, 5rem) clamp(1rem, 3vw, 2rem);
+  background: v.$background-dark;
+  color: v.$text-primary;
+  font-family: v.$font-family-primary, sans-serif;
+}
+
+.loadingContent {
+  display: grid;
+  justify-items: center;
+  gap: v.$space-sm;
+  max-width: 720px;
+  margin: 0 auto v.$space-xl;
+  text-align: center;
+}
+
+.ghostScene {
+  position: relative;
+  width: 110px;
+  height: 120px;
+  margin-bottom: v.$space-sm;
+}
+
+.ghost {
+  position: absolute;
+  inset: 0 14px 18px;
+  border-radius: 45% 45% 12% 12%;
+  background: linear-gradient(145deg, #fff 25%, #dbe5ef 100%);
+  clip-path: polygon(0 25%, 8% 10%, 24% 2%, 50% 0, 76% 2%, 92% 10%, 100% 25%, 100% 86%, 82% 100%, 65% 88%, 50% 100%, 35% 88%, 18% 100%, 0 86%);
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.28));
+  animation: ghostFloat 2.4s ease-in-out infinite;
+}
+
+.ghostMask {
+  position: absolute;
+  top: 22%;
+  left: 50%;
+  width: 58px;
+  height: 56px;
+  border: 2px solid #8398ab;
+  border-radius: 42% 42% 46% 46%;
+  background: rgba(235, 244, 251, 0.65);
+  transform: translateX(-50%);
+
+  &::before,
+  &::after {
+    position: absolute;
+    top: 13px;
+    width: 3px;
+    height: 16px;
+    border-radius: 2px;
+    background: #cf5a63;
+    content: "";
+  }
+
+  &::before {
+    left: 6px;
+    transform: rotate(-18deg);
+  }
+
+  &::after {
+    right: 6px;
+    transform: rotate(18deg);
+  }
+}
+
+.ghostEyes {
+  position: absolute;
+  top: 25%;
+  left: 50%;
+  display: flex;
+  gap: 18px;
+  transform: translateX(-50%);
+
+  &::before,
+  &::after {
+    width: 8px;
+    height: 12px;
+    border-radius: 50%;
+    background: v.$background-dark;
+    content: "";
+  }
+}
+
+.ghostVents {
+  position: absolute;
+  top: 66%;
+  left: 50%;
+  width: 28px;
+  height: 9px;
+  background: radial-gradient(circle, #8398ab 2px, transparent 2.5px) 0 0 / 9px 9px;
+  transform: translateX(-50%);
+}
+
+.ghostShadow {
+  position: absolute;
+  right: 18px;
+  bottom: 2px;
+  left: 18px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  filter: blur(4px);
+  animation: ghostShadow 2.4s ease-in-out infinite;
+}
+
+.loadingEyebrow {
+  margin: 0;
+  color: v.$primary-color;
+  font-size: v.$font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.loadingTitle {
+  margin: 0;
+  color: v.$color-white;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: clamp(1.5rem, 5vw, 2.25rem);
+  line-height: 1.2;
+  text-wrap: balance;
+  text-transform: uppercase;
+}
+
+.loadingMessage {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  line-height: 1.5;
+}
+
+.loadingMessage p {
+  margin: 0 0 v.$space-md;
+}
+
+.loadingRetry {
+  min-height: v.$touch-target-min;
+  padding: 0 v.$space-lg;
+  border: 1px solid v.$primary-color;
+  border-radius: v.$radius-control;
+  background: transparent;
+  color: v.$primary-color;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
+}
+
+.loadingPreview {
+  display: grid;
+  gap: v.$space-md;
+  width: min(100%, 1100px);
+  margin: 0 auto;
+  opacity: 0.45;
+}
+
+.loadingRail,
+.loadingLeaders {
+  display: grid;
+  gap: v.$space-sm;
+}
+
+.loadingRail {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.loadingLeaders {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.loadingRail span,
+.loadingLeaders span,
+.loadingTable {
+  border: 1px solid v.$border-soft;
+  border-radius: v.$radius-panel;
+  background: v.$background-header;
+}
+
+.loadingRail span {
+  height: 44px;
+}
+
+.loadingLeaders span {
+  height: 130px;
+}
+
+.loadingTable {
+  height: 170px;
+}
+
+.loadingPage[data-state="error"] .ghost,
+.loadingPage[data-state="error"] .ghostShadow {
+  animation: none;
+}
+
+@keyframes ghostFloat {
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes ghostShadow {
+  50% { transform: scale(0.8); opacity: 0.55; }
+}
+
+@media (max-width: 600px) {
+  .loadingRail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .loadingLeaders {
+    grid-template-columns: 1fr;
+  }
+
+  .loadingLeaders span:not(:first-child) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ghost,
+  .ghostShadow {
+    animation: none;
+  }
+}
+
 .utilityRow,
 .headerPanel,
 .dashboardHero,

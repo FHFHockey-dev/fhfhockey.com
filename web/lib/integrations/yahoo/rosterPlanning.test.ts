@@ -1,4 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { evaluatePlan } from "lib/rosterScheduleOptimizer/planning";
+import { supplementProviderRules } from "lib/rosterScheduleOptimizer/providerRules";
+import { defaultIntent } from "lib/rosterScheduleOptimizer/workspace";
 
 const mocks = vi.hoisted(() => ({ user: { id: "owner-a" }, allowed: false, requireUser: vi.fn(), access: vi.fn(), snapshot: vi.fn(), planningData: vi.fn(), settings: vi.fn(), draftResource: vi.fn(), boardResource: vi.fn(), planningResource: vi.fn() }));
 vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: mocks.requireUser }));
@@ -18,7 +21,8 @@ vi.mock("lib/integrations/yahoo/rosterPlanning", async (original) => ({
   loadYahooPlanningSnapshot: mocks.snapshot,
 }));
 
-import { yahooPlanningCategories, yahooPlanningEditable, yahooPlanningPlayers, yahooPlanningStats, yahooPlanningTeams } from "./rosterPlanning";
+import { yahooPlanningAcquisitions, yahooPlanningCategories, yahooPlanningEditable, yahooPlanningPlayers, yahooPlanningStats, yahooPlanningTeams } from "./rosterPlanning";
+import type { YahooProviderJsonResult } from "./providerClient";
 import { YahooLiveDraftError } from "./liveDraft";
 import providerHandler from "../../../pages/api/v1/roster-schedule-optimizer/provider";
 
@@ -34,6 +38,70 @@ beforeEach(() => {
 });
 
 describe("Yahoo planning parsers", () => {
+  function acquisitionInputs() {
+    const now = new Date("2026-10-01T12:00:00Z");
+    const response = (payload: unknown): YahooProviderJsonResult => ({ payload, transport: {
+      responseDate: now.toISOString(), ageSeconds: 0, cacheControl: null, contentType: "application/json", etagPresent: false,
+      httpStatus: 200, lastModifiedPresent: false, refreshRate: null, requestDurationMs: 1, requestId: null,
+      responseFormat: "standard_json", retryAfterSeconds: null, tokenRefreshAttempted: false, tokenRefreshOutcome: "not_needed",
+    } });
+    return { now, response, settings: response({ settings: { max_weekly_adds: "5" } }),
+      league: response({ league: [{ league_key: "453.l.1" }, { current_week: "1" }] }),
+      team: response({ team: [{ team_key: "453.l.1.t.1" }, { is_owned_by_current_login: "1" }, { number_of_moves: 999 },
+        { roster_adds: [{ coverage_type: "week" }, { coverage_value: "1" }, { value: "3" }] }] }),
+      weeks: [{ gameKey: "453", week: 1, startDate: "2026-09-29", endDate: "2026-10-04" }],
+      gameKey: "453", leagueKey: "453.l.1", teamKey: "453.l.1.t.1", startDate: "2026-10-01", endDate: "2026-10-03" };
+  }
+  it("retains scoped weekly usage, source and dates separately from unverified NHL limits", () => {
+    const args = acquisitionInputs(), evidence = yahooPlanningAcquisitions(args);
+    expect(evidence.counter).toEqual({ present: true, coverageType: "week", coverageWeek: 1, reportedValue: "3", used: 3 });
+    expect(evidence.period).toEqual({ week: 1, startDate: "2026-09-29", endDate: "2026-10-04", containsHorizon: true });
+    expect(evidence.limit).toEqual({ present: true, reportedValue: "5", verified: false });
+    expect(evidence.remaining).toBeNull();
+    expect(evidence.asOf).toBe(args.now.toISOString());
+    expect(evidence.fetchedAt).toBe(args.now.toISOString());
+    expect(evidence.source).toContain("roster_adds");
+  });
+  it.each([0, "0", null, undefined, false, "", "-", -1, 1.5])("preserves zero and rejects malformed counter value %s", value => {
+    const args = acquisitionInputs();
+    args.team = args.response({ team: [{ team_key: args.teamKey }, { is_owned_by_current_login: 1 }, { number_of_moves: 999 },
+      { roster_adds: { coverage_type: "week", coverage_value: 1, value } }] });
+    expect(yahooPlanningAcquisitions(args).counter.used).toBe(value === 0 || value === "0" ? 0 : null);
+  });
+  it.each([undefined, null, 0, "0", -1, "-1", "unlimited", ""])("keeps unverified limit encoding %s unknown", value => {
+    const args = acquisitionInputs();
+    args.settings = args.response({ settings: value === undefined ? {} : { max_weekly_adds: value } });
+    const evidence = yahooPlanningAcquisitions(args);
+    expect(evidence.limit).toEqual({ present: value !== undefined, reportedValue: value ?? null, verified: false });
+    expect(evidence.remaining).toBeNull();
+    expect(evidence.counter.used).toBe(3);
+  });
+  it("rejects stale, absent, wrong-scope and non-week counters without using season moves", () => {
+    const args = acquisitionInputs();
+    for (const team of [null, args.response({ team: [{ team_key: args.teamKey }, { is_owned_by_current_login: 1 }, { number_of_moves: 999 }] }),
+      { ...args.team, transport: { ...args.team.transport, ageSeconds: 61 } },
+      { ...args.team, transport: { ...args.team.transport, ageSeconds: -1 } },
+      { ...args.team, transport: { ...args.team.transport, responseDate: "2026-09-30T00:00:00Z" } },
+      args.response({ team: [{ team_key: "453.l.2.t.1" }, { is_owned_by_current_login: 1 }, { roster_adds: { coverage_type: "week", coverage_value: 1, value: 3 } }] }),
+      args.response({ team: [{ team_key: args.teamKey }, { is_owned_by_current_login: 0 }, { roster_adds: { coverage_type: "week", coverage_value: 1, value: 3 } }] }),
+      args.response({ team: [{ team_key: args.teamKey }, { is_owned_by_current_login: 1 }, { roster_adds: { coverage_type: "season", coverage_value: 1, value: 3 } }] }),
+    ]) expect(yahooPlanningAcquisitions({ ...args, team }).counter.used).toBeNull();
+    expect(yahooPlanningAcquisitions({ ...args, league: null }).counter.used).toBeNull();
+  });
+  it("requires current-week coverage and contained custom dates, not a historical scoreboard week", () => {
+    const args = acquisitionInputs();
+    expect(yahooPlanningAcquisitions({ ...args, endDate: "2026-10-05" }).counter.used).toBeNull();
+    expect(yahooPlanningAcquisitions({ ...args, weeks: [] }).counter.used).toBeNull();
+    expect(yahooPlanningAcquisitions({ ...args, weeks: [...args.weeks, ...args.weeks] }).counter.used).toBeNull();
+    args.now.setTime(Date.parse("2027-01-20T12:00:00Z"));
+    args.league = args.response({ league: [{ league_key: args.leagueKey }, { current_week: 17 }] });
+    args.team = args.response({ team: [{ team_key: args.teamKey }, { is_owned_by_current_login: 1 }, { roster_adds: { coverage_type: "week", coverage_value: 17, value: 3 } }] });
+    args.weeks.push({ gameKey: "453", week: 17, startDate: "2027-01-18", endDate: "2027-01-24" });
+    expect(yahooPlanningAcquisitions(args).counter.used).toBeNull();
+    expect(yahooPlanningAcquisitions({ ...args, startDate: "2027-01-20", endDate: "2027-01-22" }).counter.used).toBe(3);
+    args.team = args.response({ team: [{ team_key: args.teamKey }, { is_owned_by_current_login: 1 }, { roster_adds: { coverage_type: "week", coverage_value: 1, value: 3 } }] });
+    expect(yahooPlanningAcquisitions({ ...args, startDate: "2027-01-20", endDate: "2027-01-22" }).counter.used).toBeNull();
+  });
   it("validates nested standard-JSON collections and Yahoo's empty-array representation", () => {
     const player = { player: [[{ player_key: "453.p.2001" }], { selected_position: [{ position: "C" }] }] };
     expect(yahooPlanningPlayers({ roster: { 0: { players: { count: 1, 0: player } } } })).toHaveLength(1);
@@ -83,6 +151,7 @@ describe("Yahoo snapshot evidence", () => {
           expect(table).toBe("yahoo_nhl_player_map_read"); mappingRanges.push([start, end]);
           return { data: start === 0 ? Array.from({ length: 1000 }, (_, index) => ({ nhl_player_id: index + 1, yahoo_player_id: index + 1 })) : [
             { nhl_player_id: "2001", yahoo_player_id: "453.p.2001" },
+            { nhl_player_id: "2002", yahoo_player_id: "453.p.2002" },
             { nhl_player_id: "2001", yahoo_player_id: "465.p.9999" },
             { nhl_player_id: "9999", yahoo_player_id: "465.p.2001" },
           ], error: null };
@@ -92,7 +161,10 @@ describe("Yahoo snapshot evidence", () => {
     } };
     const now = new Date("2026-10-01T12:00:00Z");
     const transport = { responseDate: now.toISOString(), ageSeconds: 0 };
-    mocks.planningData.mockResolvedValue({ players: [{ id: "canonical", nhlId: 2001, providerId: null, name: "Mapped Player", teamAbbreviation: "TOR", eligiblePositions: ["C"], playerClass: "skater", availability: "unknown", ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] }], games: [], forecasts: [], evidence: {} });
+    mocks.planningData.mockResolvedValue({ players: [
+      { id: "canonical", nhlId: 2001, providerId: null, name: "Mapped Player", teamAbbreviation: "TOR", eligiblePositions: ["C"], eligibilityVerified: false, playerClass: "skater", availability: "unknown", ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] },
+      { id: "candidate", nhlId: 2002, providerId: null, name: "Available Player", teamAbbreviation: "OTT", eligiblePositions: ["C"], eligibilityVerified: false, playerClass: "skater", availability: "unknown", ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] },
+    ], games: [], forecasts: [], baselineSources: [{ sourceId: "shared-rate" }], forecastManifest: { id: "shared-manifest" }, evidence: {} });
     mocks.settings.mockReturnValue({ rosterType: "date", weeklyDeadline: "intraday", rosterConfig: { C: 1 }, scoringTypeRecognized: true, unsupportedStatIds: [], unsupportedRosterSlots: [], leagueType: "points", scoringCategories: {}, categoryWeights: {}, minimumGoalieStarts: null });
     mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", time_zone: "UTC", draft_status: empty ? "predraft" : "postdraft" }, transport });
     mocks.boardResource.mockImplementation(async ({ resource }: any) => {
@@ -101,7 +173,7 @@ describe("Yahoo snapshot evidence", () => {
     });
     mocks.planningResource.mockImplementation(async ({ resource }: any) => {
       if (resource.type !== "available_page") throw new Error("Optional scoreboard read unavailable");
-      return { payload: { league_key: "453.l.1", players: [] }, transport };
+      return { payload: { league_key: "453.l.1", players: { count: 1, 0: { player: [{ player_key: "453.p.2002" }, { ownership: { ownership_type: "freeagents" } }] } } }, transport };
     });
     const actual = await vi.importActual<typeof import("./rosterPlanning")>("./rosterPlanning");
     if (empty) {
@@ -112,9 +184,118 @@ describe("Yahoo snapshot evidence", () => {
     const result = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-07", now });
     expect(mappingRanges).toEqual([[0, 999], [1000, 1999]]);
     expect(result.snapshot.roster).toEqual([{ playerId: "canonical", position: "active" }]);
+    expect(result.snapshot.players[0].eligibilityVerified).toBe(false);
+    expect(result.snapshot.players[1].eligibilityVerified).toBe(false);
+    expect(result.snapshot.baselineSources).toEqual([{ sourceId: "shared-rate" }]);
+    expect(result.snapshot.forecastManifest).toEqual({ id: "shared-manifest" });
     expect(result.snapshot.rules.acquisitionTiming).toBe("unknown");
     expect(result.snapshot.lockedAssignments).toEqual([{ date: "2026-10-01", playerId: "canonical", slotId: "C#1" }]);
     expect(result.capabilities.availability).toBe(true);
+    mocks.boardResource.mockImplementation(async ({ resource }: any) => {
+      if (resource.type !== "roster") throw new Error("Optional league roster read unavailable");
+      return { payload: { team_key: "453.l.1.t.1", is_owned_by_current_login: "1", roster: { date: "2026-10-01", coverage_type: "date", is_editable: "1",
+        0: { players: { count: 1, 0: { player: [{ player_key: "453.p.2001" }, { selected_position: [{ position: "C" }] }, { eligible_positions: { position: "C" } }] } } } } }, transport };
+    });
+    mocks.planningResource.mockImplementation(async ({ resource }: any) => {
+      if (resource.type !== "available_page") throw new Error("Optional scoreboard read unavailable");
+      return { payload: { league_key: "453.l.1", players: { count: 1, 0: { player: [{ player_key: "453.p.2002" }, { ownership: { ownership_type: "freeagents" } }, { eligible_positions: { position: "C" } }] } } }, transport };
+    });
+    const verified = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-07", now });
+    expect(verified.snapshot.players[0].eligibilityVerified).toBe(true);
+    expect(verified.snapshot.players[1].eligibilityVerified).toBe(true);
+    const availabilityRead = mocks.planningResource.getMockImplementation()!;
+    mocks.planningResource.mockImplementation(async (args: any) => args.resource.type === "league"
+      ? { payload: { league: [{ league_key: "453.l.1" }, { current_week: "1" }] }, transport }
+      : args.resource.type === "team" ? { payload: { team: [{ team_key: "453.l.1.t.1" }, { is_owned_by_current_login: "1" },
+        { roster_adds: { coverage_type: "week", coverage_value: "1", value: "0" } }] }, transport } : availabilityRead(args));
+    mocks.planningData.mockResolvedValue({ ...await mocks.planningData(), matchupWeeks: [{ gameKey: "453", week: 1, startDate: "2026-09-29", endDate: "2026-10-04" }] });
+    const counted = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", now });
+    expect(counted.snapshot.acquisitionEvidence?.counter.used).toBe(0);
+    expect(counted.snapshot.acquisitionEvidence?.remaining).toBeNull();
+    expect(counted.snapshot.rules.periods).toEqual([]);
+    expect(counted.capabilities.acquisitions).toBe(false);
+    expect(mocks.planningResource).toHaveBeenCalledWith(expect.objectContaining({ resource: { type: "team", teamKey: "453.l.1.t.1" } }));
+
+    mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", time_zone: "America/New_York", draft_status: "postdraft" }, transport });
+    const normalized = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a",
+      startDate: "2026-10-01", endDate: "2026-10-03", timeZone: "UTC", now });
+    expect(normalized.snapshot.context.timeZone).toBe("America/New_York");
+    expect(mocks.planningData).toHaveBeenLastCalledWith(db, expect.objectContaining({ timeZone: "America/New_York" }), { now });
+    mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", time_zone: "UTC", draft_status: "postdraft" }, transport });
+
+    for (const mode of ["repeated", "oversized", "stale", "wrong-scope", "failed", "deadline", "bounded", "ownership-only"]) {
+      const starts: number[] = [];
+      const clock = mode === "deadline" ? vi.spyOn(Date, "now").mockReturnValueOnce(0).mockReturnValue(8000) : null;
+      mocks.planningResource.mockImplementation(async ({ resource }: any) => {
+        if (resource.type !== "available_page" || mode === "failed") throw new Error("Optional availability read failed");
+        starts.push(resource.start);
+        const ids = mode === "bounded" ? Array.from({ length: 25 }, (_, index) => 2002 + resource.start + index)
+          : mode === "repeated" && resource.start === 0 ? [2002, ...Array.from({ length: 24 }, (_, index) => 2100 + index)]
+            : mode === "oversized" ? Array.from({ length: 26 }, (_, index) => 2002 + index) : [2002];
+        const rows = ids.map(id => [{ player_key: `453.p.${id}` },
+          { ownership: mode === "ownership-only" ? { percent_owned: "1" } : { ownership_type: "freeagents" } }]);
+        return { payload: { league_key: mode === "wrong-scope" ? "453.l.other" : "453.l.1",
+          players: { count: rows.length, ...Object.fromEntries(rows.map((row, index) => [index, { player: row }])) } },
+          transport: mode === "stale" ? { ...transport, ageSeconds: 61 } : transport };
+      });
+      try {
+        const partial = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", now });
+        expect(partial.capabilities.availability, mode).toBe(mode === "ownership-only");
+        expect(partial.snapshot.evidence.availability?.completeness, mode).toBe(mode === "ownership-only" ? "complete" : "partial");
+        expect(partial.snapshot.players.find(row => row.id === "candidate")?.availability, mode).toBe(mode === "bounded" ? "free_agent" : "unknown");
+        if (mode === "repeated") {
+          expect(starts).toEqual([0, 25]);
+          expect(partial.capabilities.limitations.join(" ")).toContain("repeated identities remain unknown");
+        }
+        if (mode === "deadline") {
+          expect(starts).toEqual([]);
+          expect(partial.capabilities.limitations.join(" ")).toContain("time budget");
+        }
+        if (mode === "bounded") {
+          expect(starts).toHaveLength(81);
+          expect(starts.at(-1)).toBe(2000);
+          expect(partial.capabilities.limitations.join(" ")).toContain("did not reach the end");
+        }
+      } finally { clock?.mockRestore(); }
+    }
+
+    mocks.settings.mockReturnValue({ ...mocks.settings(), excludedInjurySlots: { "IR-LT": 1 } });
+    const activeOnly = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", now });
+    expect(activeOnly.snapshot.rules.rosterSlots).not.toHaveProperty("IR-LT");
+    const activeHold = evaluatePlan(activeOnly.snapshot, defaultIntent(), "agp");
+    expect(activeHold.legal, activeHold.limitations.join(" ")).toBe(true);
+
+    mocks.settings.mockReturnValue({ ...mocks.settings(), excludedInjurySlots: { "IR+": 2, IR: 1, NA: 1, "IR-LT": 1 } });
+    mocks.planningData.mockResolvedValue({ ...await mocks.planningData(), games: [
+      { id: "reserved-game", date: "2026-10-02", startsAt: "2026-10-02T23:00:00Z", teamAbbreviation: "TOR", opponent: "OTT", home: true, status: "scheduled" },
+    ] });
+    mocks.boardResource.mockImplementation(async ({ resource }: any) => {
+      if (resource.type !== "roster") throw new Error("Optional league roster read unavailable");
+      return { payload: { team_key: "453.l.1.t.1", is_owned_by_current_login: "1", roster: { date: "2026-10-01", coverage_type: "date", is_editable: "1",
+        0: { players: { count: 2, ...Object.fromEntries([2001, 2002].map((id, index) => [index, { player: [
+          { player_key: `453.p.${id}` }, { selected_position: [{ position: "IR+" }] }, { eligible_positions: [{ position: "C" }, { position: "IR+" }] },
+        ] }])) } } } }, transport };
+    });
+    mocks.planningResource.mockRejectedValue(new Error("Optional planning read unavailable"));
+    const reserved = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", now });
+    expect(reserved.snapshot.rules.rosterSlots).toMatchObject({ "IR+": 2, IR: 1, NA: 1 });
+    expect(reserved.snapshot.rules.rosterSlots).not.toHaveProperty("IR-LT");
+    expect(reserved.snapshot.roster).toEqual([{ playerId: "canonical", position: "IR+" }, { playerId: "candidate", position: "IR+" }]);
+    const hold = evaluatePlan(reserved.snapshot, defaultIntent(), "agp");
+    expect(hold.legal, hold.limitations.join(" ")).toBe(true);
+    expect(hold.activeGames).toBe(0);
+    expect(hold.assignments).toEqual([]);
+    expect(reserved.snapshot.rules.periods).toEqual([]);
+    expect(reserved.snapshot.acquisitionEvidence?.remaining).toBeNull();
+    expect(reserved.capabilities.acquisitions).toBe(false);
+    const supplemented = supplementProviderRules(reserved.snapshot, { rosterSlots: { "IR+": 1 }, goalieMinimum: { required: 3, counts: "appearances" } });
+    expect(supplemented.snapshot.rules.rosterSlots["IR+"]).toBe(2);
+    expect(supplemented.conflicts).toContain("IR+ roster slots differs from the manager input; provider setting retained.");
+    expect(supplemented.snapshot.evidence.managerRules?.source).toBe("manager-supplied");
+    expect(supplemented.snapshot.rules.goalieMinimum).toMatchObject({ required: 3, counts: "appearances", credited: null });
+    expect(supplemented.snapshot.rules.periods).toEqual([]);
+    expect(supplemented.snapshot.acquisitionEvidence?.remaining).toBeNull();
+    expect(evaluatePlan(supplemented.snapshot, defaultIntent(), "agp").goalie.minimumSatisfied).toBe(false);
   });
 });
 

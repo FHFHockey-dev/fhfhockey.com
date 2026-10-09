@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 
 import { useAuth } from "contexts/AuthProviderContext";
@@ -20,7 +20,18 @@ function getUserInitials(label?: string | null) {
 export default function UserMenu() {
   const { user, signOut } = useAuth();
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState("");
+  const [signingOut, setSigningOut] = useState(false);
+  const [failedAvatar, setFailedAvatar] = useState<{ userId: string; url: string } | null>(null);
+  const userId = user?.id;
+  const avatarUrl = user?.avatarUrl;
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    setFailedAvatar(null);
+  }, [userId, avatarUrl]);
 
   useEffect(() => {
     if (!open) return;
@@ -34,6 +45,7 @@ export default function UserMenu() {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setOpen(false);
+        triggerRef.current?.focus();
       }
     }
 
@@ -53,26 +65,32 @@ export default function UserMenu() {
   const title = user.displayName || user.email || "Account";
 
   async function handleSignOut() {
-    setOpen(false);
-    await signOut();
+    setSigningOut(true);
+    setError("");
+    try { await signOut(); setOpen(false); }
+    catch { setError("Unable to sign out. Please try again."); }
+    finally { setSigningOut(false); }
   }
 
   return (
-    <div ref={rootRef} className={styles.userMenu}>
+    <div ref={rootRef} className={styles.userMenu} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false); }}>
       <button
+        ref={triggerRef}
         type="button"
         className={styles.userTrigger}
         aria-label="Open account menu"
         aria-expanded={open}
-        aria-haspopup="menu"
+        aria-controls={panelId}
         title={title}
         onClick={() => setOpen((current) => !current)}
       >
-        {user.avatarUrl ? (
+        {user.avatarUrl && !(failedAvatar?.userId === user.id && failedAvatar.url === user.avatarUrl) ? (
           <img
+            key={JSON.stringify([user.id, user.avatarUrl])}
             src={user.avatarUrl}
             alt={title}
             className={styles.userAvatarImage}
+            onError={() => setFailedAvatar({ userId: user.id, url: user.avatarUrl! })}
           />
         ) : (
           <span className={styles.userAvatarFallback}>
@@ -82,7 +100,7 @@ export default function UserMenu() {
       </button>
 
       {open ? (
-        <div className={styles.menuPanel} role="menu" aria-label="Account menu">
+        <div id={panelId} className={styles.menuPanel}>
           <div className={styles.menuHeader}>
             <div className={styles.menuName}>{title}</div>
             {user.email ? <div className={styles.menuEmail}>{user.email}</div> : null}
@@ -92,7 +110,6 @@ export default function UserMenu() {
             <Link
               href="/account"
               className={styles.menuLink}
-              role="menuitem"
               onClick={() => setOpen(false)}
             >
               Account Settings
@@ -100,7 +117,6 @@ export default function UserMenu() {
             <Link
               href="/account?section=league-settings"
               className={styles.menuLink}
-              role="menuitem"
               onClick={() => setOpen(false)}
             >
               League Settings
@@ -108,11 +124,12 @@ export default function UserMenu() {
             <button
               type="button"
               className={`${styles.menuButton} ${styles.menuButtonDanger}`}
-              role="menuitem"
+              disabled={signingOut}
               onClick={() => void handleSignOut()}
             >
-              Sign Out
+              {signingOut ? "Signing out…" : "Sign Out"}
             </button>
+            {error && <p role="alert">{error}</p>}
           </div>
         </div>
       ) : null}

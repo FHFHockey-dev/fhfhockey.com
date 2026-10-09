@@ -9,7 +9,6 @@ import {
   formatDeploymentLabel,
   formatPercentile,
   formatRank,
-  formatSampleConfidence,
   formatToiClock,
 } from "lib/rankings/rankingFormatters";
 
@@ -128,6 +127,7 @@ export default function RankingsTable({
 
   return (
     <>
+      <p className={styles.inlineNotice}>Sample labels compare games and ice time with your selected minimums; they do not establish forecast reliability.</p>
       {hasSmallPeerGroup ? (
         <div className={styles.inlineNotice}>
           Small peer group: percentile values can move sharply when the filter is
@@ -203,7 +203,7 @@ export default function RankingsTable({
                     <td>
                       <div className={styles.tags}>
                         <Badge
-                          label={`${formatSampleConfidence(row.sample.confidence)} sample`}
+                          label={row.sample.gamesPlayed == null || row.sample.toiSeconds == null ? "Sample unavailable" : belowMinimum ? "Below selected minimums" : "Meets selected minimums"}
                           tone={belowMinimum ? "warning" : undefined}
                         />
                         {row.tags.map((tag) => (

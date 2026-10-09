@@ -7,6 +7,7 @@ import styles from "./NewsCard.module.scss";
 import {
   formatNewsFeedLabel,
   getPublicNewsItemDetails,
+  getPublicNewsClaimPresentation,
   getPublicNewsSourceAttribution,
   getNewsItemTeamColors,
   normalizeNewsCategory,
@@ -35,7 +36,7 @@ type NewsCardProps = {
     | "card_status"
     | "metadata"
     | "players"
-  > & { tweet_url?: string | null };
+  > & { tweet_url?: string | null; observed_at?: string | null };
   compact?: boolean;
   rail?: boolean;
   expanded?: boolean;
@@ -63,16 +64,16 @@ const RAIL_TIMESTAMP_FORMATTER = new Intl.DateTimeFormat("en-US", {
 });
 
 function formatDate(value: string | null | undefined): string {
-  if (!value) return "Draft";
+  if (!value) return "Unavailable";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  if (Number.isNaN(date.getTime())) return "Unavailable";
   return NEWS_TIMESTAMP_FORMATTER.format(date);
 }
 
 function formatRailDate(value: string | null | undefined): string {
-  if (!value) return "Draft";
+  if (!value) return "Unavailable";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  if (Number.isNaN(date.getTime())) return "Unavailable";
   return RAIL_TIMESTAMP_FORMATTER.format(date);
 }
 
@@ -308,7 +309,7 @@ export default function NewsCard({
 }: NewsCardProps) {
   const generatedDetailsId = useId().replace(/:/g, "");
   const team = getNewsItemTeamColors(item.team_abbreviation);
-  const publishedAt = item.published_at ?? item.created_at ?? null;
+  const publishedAt = item.published_at;
   const publicSource = getPublicNewsSourceAttribution({
     item: { ...item, tweet_url: item.tweet_url ?? null },
   });
@@ -317,18 +318,17 @@ export default function NewsCard({
     publicSource.account,
     sanitizePublicNewsText(sourceDisplayNameOverride),
   );
-  const categoryLabel = formatNewsFeedLabel(item.category);
-  const subcategoryLabel = item.subcategory
-    ? formatNewsFeedLabel(item.subcategory)
-    : null;
   const lineup = isLineupNewsCategory(item.category, item.subcategory)
     ? readLineupCardFromMetadata(item.metadata)
     : null;
-  const details = getPublicNewsItemDetails(item);
-  const originalHeadline = sanitizePublicNewsText(item.headline);
+  const presentation = getPublicNewsClaimPresentation(item);
+  const categoryLabel = lineup ? formatNewsFeedLabel(item.category) : "Source report";
+  const subcategoryLabel = lineup && item.subcategory ? formatNewsFeedLabel(item.subcategory) : null;
+  const details = getPublicNewsItemDetails(lineup ? item : { ...item, metadata: null, headline: "Source passage unavailable" });
+  const originalHeadline = lineup ? sanitizePublicNewsText(item.headline) : presentation.headline;
   const teamLabel = item.team_abbreviation ?? "NHL";
   const railHeadline = details || originalHeadline || "News update";
-  const railDetail =
+  const railDetail = lineup ?
     [
       readAutomationSummary(item.metadata),
       sanitizeRailText(item.blurb),
@@ -343,7 +343,7 @@ export default function NewsCard({
           subcategory: item.subcategory ?? "",
         }) &&
         newsTextAddsDetail(railHeadline, candidate),
-    ) ?? null;
+    ) ?? null : null;
   const detailsId = `news-details-${generatedDetailsId}`;
   const hasDisclosure = Boolean(rail && onExpandedChange);
 
@@ -409,20 +409,21 @@ export default function NewsCard({
           />
         ) : null}
 
-        {!lineup && item.players.length > 0 ? (
+        {!lineup && presentation.claims.length > 0 ? (
           <div className={styles.playerRow}>
-            {item.players.map((player) => (
+            {presentation.claims.map((claim, index) => (
               <span
-                key={`${item.headline}-${player.player_name}`}
+                key={`${claim.playerId}-${index}`}
                 className={styles.playerChip}
               >
-                {player.player_name}
+                {claim.playerName} · {formatNewsFeedLabel(claim.state)} report{claim.observation ? ` · ${claim.observation}` : ""}
               </span>
             ))}
           </div>
         ) : null}
 
         {!lineup ? <p className={styles.blurb}>{details}</p> : null}
+        {!lineup && presentation.unresolvedReason ? <p>{presentation.unresolvedReason}</p> : null}
 
         {hasDisclosure ? (
           railDetail ? (
@@ -434,17 +435,18 @@ export default function NewsCard({
 
         <div className={styles.footer}>
           <span className={styles.desktopTimestamp}>
-            {formatDate(publishedAt)}
+            Published {formatDate(publishedAt)}
           </span>
           <span className={styles.mobileTimestamp}>
-            {formatRailDate(publishedAt)}
+            Published {formatRailDate(publishedAt)}
           </span>
-          {sourceAttribution ? <span>{sourceAttribution}</span> : null}
+          <span>Observed {formatRailDate(item.observed_at)}</span>
+          <span>{sourceAttribution || "Source unavailable"}</span>
           {publicSource.url ? (
             <ExternalNewsLink
               className={styles.sourceLink}
               href={publicSource.url}
-              label={`View original post for ${sanitizePublicNewsText(item.headline)}`}
+              label={`View original post for ${originalHeadline}`}
             />
           ) : null}
         </div>

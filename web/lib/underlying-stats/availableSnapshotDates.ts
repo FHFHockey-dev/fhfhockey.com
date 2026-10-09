@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import supabaseServer from "../supabase/server";
 
 const DEFAULT_DISTINCT_DATE_LIMIT = 90;
-const SNAPSHOT_DATE_PAGE_SIZE = 128;
+const SNAPSHOT_DATE_PAGE_SIZE = 1000;
 
 type SnapshotDateRow = {
   date: string | null;

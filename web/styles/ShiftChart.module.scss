@@ -1,885 +1,774 @@
-// styles/ShiftChart.module.scss
-@use "styles/vars" as v; // Use the alias
-@use "sass:color";
-@use "sass:math";
+@use "styles/vars" as v;
+@use "styles/panel" as panel;
 
-/* Main container for the shift chart page */
-.shiftChartPageContainer {
-  // Renamed for clarity
-  width: 95%; // Use consistent width like other pages
-  max-width: 1800px; // Allow slightly wider for this chart potentially
-  margin: v.$space-xl auto;
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-xl; // Consistent gap between sections
-}
-
-/* Container for the top controls (dropdowns) */
-.controlsContainer {
-  @include v.component-wrapper;
-  padding: v.$space-lg;
-  display: flex;
-  flex-direction: column; // Always stack vertically
-  gap: v.$space-lg;
-  align-items: center; // Center items
-}
-
-/* Style for individual dropdown groups */
-.shiftChartDropdown {
-  display: flex;
-  flex-direction: column; // Stack label above select
-  align-items: flex-start; // Align label left
-  gap: v.$space-xs;
-  width: 100%; // Full width on mobile
-  max-width: 250px; // Max width for dropdowns
-
-  @media (min-width: v.$breakpoint-tablet) {
-    width: auto; // Allow natural width on larger screens
-    align-items: center; // Center label/select group horizontally
+.page {
+  --border: #{v.$border-secondary};
+  --muted: #{v.$text-secondary};
+  --cyan: #{v.$primary-color};
+  color: v.$text-primary;
+  width: min(1800px, 100%);
+  margin: 0 auto;
+  padding: v.$space-sm v.$space-md;
+  font-variant-numeric: tabular-nums;
+  font-family: v.$font-family-primary;
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
   }
-
-  label {
-    font-family: v.$font-family-primary;
-    font-size: v.$font-size-small;
-    color: v.$text-color-secondary;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding-left: v.$space-xs; // Slight indent for label
+  h1,
+  h2,
+  p {
+    margin: 0;
   }
-
+  h2 {
+    font-size: 0.8rem;
+    font-weight: 650;
+    letter-spacing: 0.02em;
+  }
+  button,
+  input,
+  select {
+    font: inherit;
+  }
+  button,
   select,
   input[type="date"] {
-    // Modern input/select styling
-    appearance: none;
-    background-color: v.$background-light;
-    border: 1px solid v.$border-color-secondary;
-    border-radius: v.$border-radius-sm;
-    padding: v.$space-sm v.$space-md; // Consistent padding
-    font-size: v.$font-size-small;
-    color: v.$text-color-primary;
+    min-height: 40px;
+    color: v.$color-white;
+    border: v.$border-subtle;
+    border-radius: v.$radius-control;
+    background: v.$background-dark;
+  }
+  button {
     cursor: pointer;
-    width: 100%; // Full width within its group
-    font-family: v.$font-family-primary;
-
-    &:focus {
-      outline: none;
-      border-color: v.$primary-color;
-      box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.3);
-    }
+    padding: 8px 12px;
   }
-
-  select {
-    // Add dropdown arrow
-    background-image:
-      linear-gradient(45deg, transparent 50%, v.$text-color-secondary 50%),
-      linear-gradient(135deg, v.$text-color-secondary 50%, transparent 50%);
-    background-position:
-      calc(100% - #{v.$space-lg}) center,
-      calc(100% - #{v.$space-md}) center;
-    background-size:
-      5px 5px,
-      5px 5px;
-    background-repeat: no-repeat;
-    padding-right: v.$space-xl * 1.5; // Ensure space for arrow
+  select,
+  input[type="date"] {
+    padding: 6px 10px;
+    color-scheme: dark;
+  }
+  button:hover:not(:disabled) {
+    background: v.$surface-2;
+  }
+  button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  :is(button, input, select, [tabindex]):focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 3px;
+    box-shadow: v.$focus-ring;
   }
 }
-
-/* Container specifically for the table and its related elements */
-.shiftChartTableContainer {
-  background: v.$background-medium;
-  padding: v.$space-sm;
-  width: 100%;
-  height: 100%;
-  min-height: 900px;
-  max-height: 900px;
-  display: flex; // Use flex to manage internal structure
-  flex-direction: column; // Stack header and scrolling table area
-  // height: 70vh; // Example: Set a max height for vertical scrolling if needed
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-  overflow-x: auto;
-}
-
-.tableScrollWrapper {
-  border: 2px solid v.$border-color-primary;
-  border-radius: v.$border-radius-md;
-  width: 100%;
-  overflow-x: auto;
-  flex-grow: 1;
-  position: relative;
-  // Hide scrollbar visually
-  &::-webkit-scrollbar {
-    display: none;
-  }
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.shiftChartTable {
-  border-collapse: collapse;
-  color: v.$text-color-primary;
-  font-family: v.$font-family-primary;
-  width: 100%;
-  height: 100%;
-  min-width: 1200px;
-  min-height: 880px;
-  table-layout: fixed;
-  overflow: hidden;
-  border-spacing: 0;
-}
-
-/* --- Table Header --- */
-.shiftChartTable thead {
-  position: sticky;
-  // top: 0; // Stick to the top of .tableScrollWrapper
-  border-top-left-radius: v.$border-radius-md;
-  border-top-right-radius: v.$border-radius-md;
-}
-
-.shiftChartTable th {
-  background-color: v.$background-dark; // Consistent header background
-  color: v.$text-color-secondary;
-  font-weight: 600;
-  font-size: 10px; // Smaller header font
-  padding: v.$space-sm v.$space-xs; // Adjust padding
-  text-align: center;
-  border-bottom: 2px solid v.$secondary-color; // Consistent separator
-  border-right: v.$border-subtle;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-  vertical-align: middle; // Center content vertically
-
-  &:last-child {
-    border-right: none;
-  }
-}
-
-// Header: Game Info (Player/Pos) Column
-.gameInfoHeader {
-  width: 15%; // Allocate width for Player + Pos
-  min-width: 180px; // Ensure enough space
-  text-align: left !important; // Override general center align
-  position: sticky;
-  left: 0; // Stick to the left
-  background-color: v.$background-dark; // Ensure background for sticky
-  border-right: v.$border-separator; // Prominent separator
-}
-
-// Header: Period/OT Columns
-.timestampPeriod,
-.timestampOvertime {
-  position: relative; // Needed for absolute positioning of labels inside later
-  text-align: center !important;
-}
-// --- Column Width Calculation ---
-// Total time units: (3 periods * 20 mins) + (1 OT * 5 mins) = 65 units for relative width
-// If NOT overtime, total is 60 units. We'll use CSS variables set by JS later if possible,
-// but for now, use percentages based on a common case (OT).
-$total-time-units-ot: 65;
-$total-time-units-reg: 60;
-$period-units: 20;
-$ot-units: 5;
-
-.timestampPeriod {
-  width: calc(
-    100% * #{$period-units} / #{$total-time-units-ot}
-  ); // Approx 30.7%
-  min-width: 250px; // Ensure minimum width per period
-}
-.timestampOvertime {
-  width: calc(100% * #{$ot-units} / #{$total-time-units-ot}); // Approx 7.7%
-  min-width: 80px;
-}
-
-/* --- Table Body --- */
-.shiftChartTable tbody {
-  font-size: 11px; // Smaller font for body
-  text-transform: uppercase;
-}
-
-.playerRow {
-  transition:
-    filter v.$transition-duration v.$transition-easing,
-    background-color v.$transition-duration v.$transition-easing; // Add filter to transition
-  border-bottom: v.$border-subtle; // Row separator
-  color: var(--player-color, inherit);
-  background: var(--player-bg, inherit);
-  font-weight: var(--player-weight, 400);
-  font-stretch: var(--player-stretch, normal);
-  letter-spacing: var(--player-spacing, normal);
-
-  &:last-child {
-    border-bottom: none;
-  }
-  // Base alternating backgrounds (examples, use your actual colors)
-  &:nth-child(even) {
-    // background-color: v.$background-light;
-  }
-  &:nth-child(odd) {
-    // background-color: v.$background-dark;
-  }
-
-  &:hover {
-    // Keep hover effect as is, it should work fine over the filtered cells
-    td {
-      background-color: color.scale(
-        v.$primary-color,
-        $lightness: -20%,
-        $alpha: -80%
-      ) !important;
-      &:first-child,
-      &:nth-child(2) {
-        background-color: inherit !important;
-      }
-    }
-  }
-
-  // --- >>> NEW STYLES FOR INACTIVE ROWS (Filter Approach) <<< ---
-  &.inactivePlayer {
-    // Apply a brightness filter to the entire row to dim it
-    filter: brightness(
-      50%
-    ); // Adjust percentage (e.g., 70% = darker, 100% = normal)
-
-    // Optional: Slightly desaturate inactive rows as well for clearer distinction
-    // filter: brightness(70%) saturate(80%);
-
-    // Ensure text contrast remains acceptable - you might need to adjust text color slightly if filter makes it too hard to read
-    // For example:
-    // td { // Target all cells in inactive row
-    //   color: color.adjust(v.$text-color-primary, $lightness: 10%) !important; // Slightly lighten text to compensate (use !important cautiously)
-    // }
-  }
-  // --- >>> END OF NEW STYLES <<< ---
-}
-
-.shiftChartTable td {
-  table-layout: fixed;
-  width: 100%;
-  padding: v.$space-xxs v.$space-xxs * 0.5;
-  vertical-align: middle;
-  border-right: v.$border-subtle;
-  height: 16px;
-  &:last-child {
-    border-right: none;
-  }
-}
-
-// Player Name & Position Cells (Sticky)
-.playerNameCell,
-.playerPositionCell {
-  position: sticky;
-  left: 0;
-  padding: v.$space-xxs v.$space-xs;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  background-color: inherit;
-  color: var(--player-color, inherit);
-  background: var(--player-bg, inherit);
-}
-
-.playerNameCell {
-  width: 100%;
-  min-width: 120px;
-  border-right: v.$border-subtle;
-  font-weight: 500;
-  text-align: left;
-}
-
-.playerPositionCell {
-  width: 5%;
-  min-width: 60px;
-  text-align: center;
-  font-weight: 300;
-  color: v.$text-color-secondary;
-  left: 120px;
-  border-right: v.$border-separator;
-  background: var(--player-position-bg, inherit);
-}
-
-.playerNameText {
-  transition: opacity v.$transition-duration v.$transition-easing;
-  padding-left: 10px;
-}
-.inactivePlayerText {
-  opacity: 0.6; // Style for inactive player names
-}
-
-// Shift Blocks Cell
-.shiftBlocksCell {
-  padding: 1px 0;
-  position: relative;
-  background: var(--shift-block-bg, inherit);
-
-  // Central white line (visual guide)
-  &::before {
-    content: "";
-    position: absolute;
-    left: 0; // Stretch across cell
-    right: 0;
-    height: 1px;
-    background-color: rgba(v.$text-color-primary, 0.45); // Faint white line
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 0; // Behind shift blocks
-  }
-}
-.overtimeCell {
-  border-right: none; // No line after OT
-}
-
-.shiftBlock {
-  position: absolute;
-  background: var(--shift-bg, #000);
-  width: var(--shift-width, 0);
-  left: var(--shift-left, 0);
-  border: var(--shift-border, none);
-  border-radius: 0px;
-  top: 1px;
-  bottom: 1px;
-  height: auto;
-  min-width: 1px;
-  z-index: 1;
-  cursor: help;
-  box-shadow: inset 0 0 1px rgba(0, 0, 0, 0.5);
-}
-
-/* --- Timestamp Bar / Game Score --- */
-.timeStampRow {
-  // New class for the timestamp row specifically
-  height: 40px; // Give timestamp row more height
-}
-
-.gameScoreCell {
-  text-align: center;
-  font-weight: bold;
-  font-size: v.$font-size-base;
-  position: sticky;
-  left: 0; // Stick score cell
-  background-color: v.$background-dark; // Match header background
-  border-right: v.$border-separator; // Match player name border
-  padding: v.$space-sm;
-}
-
-.timestampsBar {
-  cursor: pointer;
-  background-color: v.$background-medium; // Background for the bar
-  position: relative; // Context for labels, line, indicators
-  border-right: v.$border-subtle;
-  &:last-child {
-    border-right: none;
-  }
-
-  // Brighter background overlay indicating selected time
-  &::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: var(--bright-width, 0%); // Controlled by JS
-    height: 100%;
-    background: rgba(v.$text-color-primary, 0.1); // Faint overlay
-    transition: width 0.1s linear; // Faster, linear transition
-    pointer-events: none; // Don't interfere with clicks
-    z-index: 1;
-  }
-}
-
-.timestampLabel {
-  position: absolute;
-  left: var(--left, 0);
-  bottom: 2px;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  font-size: 9px;
-  color: v.$text-color-secondary;
-  z-index: 2;
-}
-
-.yellowLine {
-  position: absolute;
-  left: var(--left, 0);
-  top: 0;
-  bottom: 0;
-  background-color: v.$focus-color;
-  width: 2px;
-  height: 100%;
-  pointer-events: none;
-  z-index: 3;
-  box-shadow: 0 0 3px v.$focus-color;
-}
-
-// --- Team Header Rows ---
-.teamHeaderRowHome,
-.teamHeaderRowAway {
-  position: sticky;
-  left: 0; // Stick the entire row conceptually
-  z-index: 1; // Below player name/pos sticky but above regular cells
-  background: var(--team-header-bg, inherit);
-  color: var(--team-header-text, inherit);
-  border-color: var(--team-header-border, inherit);
-}
-
-.teamHeaderCellHome,
-.teamHeaderCellAway {
-  background: var(--team-header-cell-bg, inherit);
-  border-right: var(--team-header-cell-border, none);
-  color: var(--team-header-text-color);
-  font-family: v.$font-family-accent;
-  font-weight: 900;
-  font-size: 1rem; // Slightly smaller than before
-  text-align: left;
-  padding: v.$space-xxs v.$space-lg !important; // Consistent padding
-  // Remove borders set inline, use classes or td borders
-  border-top: none;
-  border-bottom: 1px solid v.$border-color-primary; // Bottom separator
-  left: 0;
-}
-
-/* Remove double borders from pseudo-elements if not needed */
-// .teamHeaderCellAway::before, .teamHeaderCellHome::before { display: none; }
-
-// Linemate Matrix container styling
-.linemateMatrixContainer {
-  // Add a class to the div wrapping LinemateMatrix
-  @include v.component-wrapper;
-  margin-top: v.$space-xl; // Add space above matrix
-}
-
-// --- Mobile Overrides ---
-@media (max-width: #{v.$breakpoint-tablet - 1px}) {
-  .shiftChartPageContainer {
-    width: 100%;
-    margin: v.$space-md 0; // Less margin on mobile
-    gap: v.$space-lg;
-  }
-  .controlsContainer {
-    padding: v.$space-md;
-    gap: v.$space-md;
-  }
-  .shiftChartDropdown {
-    max-width: none;
-  } // Allow full width on mobile
-
-  .gameInfoHeader {
-    width: 35%;
-    min-width: 130px;
-  } // Adjust sticky header width
-  .playerNameCell {
-    width: 25%;
-    min-width: 90px;
-  }
-  .playerPositionCell {
-    width: 10%;
-    min-width: 40px;
-    left: 90px;
-  } // Adjust position sticky offset
-
-  .shiftChartTable {
-    width: 400%;
-    min-width: 800px;
-  } // Increase width more for mobile scroll
-
-  .shiftChartTable th {
-    font-size: 9px;
-    padding: v.$space-xs;
-  }
-  .shiftChartTable tbody {
-    font-size: 10px;
-  }
-  .shiftChartTable td {
-    height: 24px;
-  } // Shorter rows on mobile
-
-  .pagination button {
-    min-width: 80px;
-    padding: v.$space-xs v.$space-sm;
-  }
-}
-
-.shiftChartPageOuterGrid {
+.pageGrid {
   display: grid;
-  grid-template-columns: 11fr 4fr;
-  gap: v.$space-xl;
-  width: 95vw;
-  margin: 0 auto;
-  margin-top: v.$space-xl;
-  margin-bottom: v.$space-xl;
-  min-height: 100vh;
-  // background: v.$background-dark;
-  @media only screen and (max-width: v.$screen-medium-max) {
-    grid-template-columns: 1fr;
-  }
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 16px;
+  align-items: start;
 }
-
-.shiftChartMainColumn {
-  border: 5px solid v.$border-color-primary;
-  border-radius: v.$border-radius * 2;
-  outline: 5px solid color.adjust(v.$background-dark, $lightness: -2%);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  min-height: 1232px;
-  max-height: 1232px;
-}
-
-.controlsContainerModernCard {
-  background: v.$background-medium;
-  border-radius: v.$border-radius;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
-  padding: v.$space-xl;
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-lg;
-  border-bottom-right-radius: 0;
-  border-bottom-left-radius: 0;
-}
-
-.activePlayersListCard {
-  border: 5px solid v.$border-color-primary;
-  border-radius: v.$border-radius * 2;
-  outline: 5px solid color.adjust(v.$background-dark, $lightness: 0%);
-  overflow: hidden;
-  background: v.$background-dark;
-  border-radius: v.$border-radius-md;
-  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
-  padding: v.$space-lg;
-
-  h4 {
-    margin-bottom: v.$space-xs;
-    margin-top: 0;
-  }
-}
-
-.activePlayersListGrid {
-  display: flex;
-  flex-direction: row;
-  gap: v.$space-lg;
-  width: 100%;
-}
-
-.activePlayersTeamBorderedRow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  margin-bottom: 0.5em;
-  position: relative;
-  height: 1.6em; // match header height
-}
-.teamBorderLine {
-  flex: 1;
-  height: 1.2px;
-  background: linear-gradient(
-    90deg,
-    transparent 10%,
-    v.$primary-color 50%,
-    transparent 90%
-  );
-  opacity: 0.5;
-  margin: 0 0.5em;
-  position: relative;
-  top: 0;
-}
-.activePlayersTeamHeader {
-  font-size: 1.1rem;
-  font-weight: 700;
-  background: v.$background-dark;
-  padding: 0 0.75em;
-  z-index: 2;
-  position: relative;
-  text-align: center;
-  letter-spacing: 0.1em;
-  line-height: 1.2;
-  display: flex;
-  align-items: center;
-  height: 1.6em;
-  margin: 0;
-}
-
-.activePlayersList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  font-size: 1rem;
-}
-
-.linemateMatrixSidebarColumn {
-  border: 5px solid v.$border-color-primary;
-  border-radius: v.$border-radius * 2;
-  outline: 5px solid color.adjust(v.$background-dark, $lightness: -2%);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
+.mainColumn {
   min-width: 0;
 }
-
-.linemateMatrixSidebarCard {
-  background: v.$background-medium;
-  border-radius: v.$border-radius;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
-  padding: v.$space-sm;
+.topPanels {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.7fr) minmax(260px, 1fr) minmax(
+      300px,
+      1.3fr
+    );
+  gap: 12px;
+  margin-bottom: v.$space-sm;
+}
+.selection,
+.scoreboard,
+.onIce,
+.timelinePanel,
+.matrixSidebar,
+.emptyState {
+  @include panel.panel-shell($overflow: visible);
+}
+.selection {
   display: flex;
   flex-direction: column;
-  gap: v.$space-lg;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  min-width: 0;
+  label {
+    font-size: 0.65rem;
+    font-weight: 650;
+    text-transform: uppercase;
+  }
+  label:not(:first-child) {
+    margin-top: 5px;
+  }
+  input,
+  select {
+    width: 100%;
+    min-width: 0;
+    font-size: 0.8rem;
+  }
+  p {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
 }
-
-.linemateMatrixStacked {
+.scoreboard {
+  padding: 14px 12px;
   display: flex;
   flex-direction: column;
-  gap: v.$space-lg;
-}
-
-.controlsRow {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  gap: v.$space-xl;
-  width: 100%;
-  min-height: 260px;
-  max-height: 260px;
-}
-
-.centerControlsColumn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  min-width: 220px;
-  flex: 1 1 0;
+  justify-content: center;
   gap: 12px;
 }
-
-.dropdownGroup {
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-lg;
-}
-
-// Colgroup column widths for Shift Chart Table
-.colPlayerName {
-  width: 110px;
-  height: 100%;
-  min-width: 110px;
-  max-width: 120px;
-}
-.colPlayerPosition {
-  width: 40px;
-  height: 100%;
-  min-width: 40px;
-  max-width: 60px;
-}
-.colPeriod1,
-.colPeriod2,
-.colPeriod3 {
-  width: 250px;
-  height: 100%;
-  min-width: 120px;
-}
-.colOvertime {
-  width: 80px;
-  height: 100%;
-  min-width: 80px;
-}
-
-.playPauseButton {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: v.$background-dark;
-  border: 2px solid v.$primary-color;
-  display: flex;
+.scoreLine {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr 1fr;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  transition:
-    background 0.2s,
-    border-color 0.2s,
-    box-shadow 0.2s;
-  cursor: pointer;
-  margin: 0 24px;
-  padding: 0;
-  &:hover,
-  &:focus {
-    background: v.$primary-color;
-    border-color: v.$secondary-color;
-    box-shadow: 0 4px 16px rgba(7, 170, 226, 0.18);
-    outline: none;
-    svg rect,
-    svg polygon {
-      filter: brightness(1.2);
-    }
-  }
-  svg {
-    display: block;
-  }
 }
-
-.playbackControls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: none;
-  border-radius: 24px;
-  padding: 4px 12px;
-  box-shadow: none;
-}
-
-.skipButton {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: v.$background-dark;
-  border: 2px solid v.$primary-color;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition:
-    background 0.2s,
-    border-color 0.2s,
-    box-shadow 0.2s;
-  cursor: pointer;
-  margin: 0 4px;
-  padding: 0;
-  &:hover,
-  &:focus {
-    background: v.$primary-color;
-    border-color: v.$secondary-color;
-    box-shadow: 0 4px 16px rgba(7, 170, 226, 0.14);
-    outline: none;
-    svg polygon,
-    svg rect {
-      filter: brightness(1.2);
-    }
-  }
-  svg {
-    display: block;
-  }
-}
-
-.speedLabel {
-  margin-left: 16px;
-  margin-right: 4px;
-  color: #aaa;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.speedSelect {
-  font-weight: 600;
-  font-size: 14px;
-  border-radius: 4px;
-  padding: 2px 8px;
-  border: 1px solid #07aae2;
-  background: #181818;
-  color: #07aae2;
-}
-
-.activePlayersFormation {
+.scoreTeam {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25em;
-  margin-top: 0.5em;
+  gap: 2px;
+  grid-row: 1;
+  img {
+    width: 44px;
+    height: 40px;
+    object-fit: contain;
+  }
+  strong {
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+  }
 }
-
-.formationRow {
-  display: flex;
-  justify-content: center;
-  gap: 1em;
-  margin-bottom: 0.1em;
+.score {
+  font-size: 1.8rem;
+  line-height: 1.1;
+  font-weight: 750;
 }
-
-.fwdRow {
-  font-weight: 700;
-  font-size: 1.2em;
-  font-variant: all-small-caps;
+.sog {
+  font-size: 0.65rem;
+  color: var(--muted);
 }
-.dRow {
-  font-weight: 600;
-  font-size: 1.2em;
-  font-variant: all-small-caps;
-  margin-top: 0.1em;
-}
-.gRow {
-  font-weight: 500;
-  font-size: 1.2em;
-  font-variant: all-small-caps;
-  margin-top: 0.1em;
-}
-
-.activePlayersTeamSection {
-  border: none;
-  padding: 0;
-  margin-bottom: 1.2em;
-  background: none;
+.clock {
+  grid-column: 2;
+  grid-row: 1;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  flex: 1 1 0;
-  width: 50%;
-  min-width: 0;
-  max-width: 50%;
-  box-shadow: none;
-  position: relative;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  > span:first-child {
+    font-size: 0.7rem;
+  }
+  strong {
+    font-size: 1.65rem;
+    line-height: 1;
+  }
 }
-
-.activePlayersTeamFieldset {
-  border: 2.5px solid v.$primary-color;
-  border-radius: 18px;
-  padding: 1em 1em 1em 1em;
-  margin: 0;
-  background: v.$background-dark;
-  min-width: 220px;
-  max-width: 340px;
-  position: relative;
-}
-
-.activePlayersTeamLegend {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: v.$text-color-secondary;
+.replayBadge {
+  padding: 3px 8px;
+  font-size: 0.6rem;
+  font-weight: 650;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  opacity: 0.7;
-  padding: 0 0.8em;
-  margin-left: 0.5em;
-  background: v.$background-dark;
-  line-height: 1.1;
+  color: #78d9fb;
+  background: #093748;
+  border-radius: 4px;
 }
-
-// .activePlayersTeamBorderedRow, .teamBorderLine { display: none; }
-
-.scoreAtTime {
-  position: absolute;
-  top: 2px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 1.1em;
-  font-weight: bold;
-  color: #ffe066;
-  z-index: 10;
-  background: rgba(0, 0, 0, 0.7);
-  padding: 2px 12px;
-  border-radius: 8px;
-  pointer-events: none;
-}
-
-.scoreAtTimeAboveControls {
+.playback {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 1.3em;
-  font-weight: bold;
-  color: #ffe066;
-  background: rgba(0, 0, 0, 0.7);
-  padding: 6px 18px;
-  border-radius: 10px;
-  margin-bottom: 12px;
-  margin-top: 4px;
+  gap: 10px;
+  button {
+    border-color: #167799;
+    border-radius: 50%;
+    color: var(--cyan);
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    position: relative;
+    font-size: 1.5rem;
+    display: grid;
+    place-items: center;
+    span {
+      position: absolute;
+      font-size: 0.5rem;
+      top: 16px;
+    }
+  }
+  .playButton {
+    background: #073244;
+  }
+  select {
+    font-size: 0.75rem;
+    width: 60px;
+  }
+}
+.resultNote {
+  font-size: 0.65rem;
+  text-align: center;
+  color: var(--muted);
+}
+.onIce {
+  padding: 14px 12px;
+  min-width: 0;
+  h2 {
+    margin-bottom: 10px;
+  }
+}
+.formations {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.formation {
+  min-width: 0;
+  margin: 0;
+  padding: 8px;
+  border: 1px solid #167799;
+  border-radius: 7px;
+  &:nth-child(2) {
+    border-color: #78536e;
+    legend {
+      color: #efa4cd;
+    }
+  }
+  legend {
+    padding: 0 5px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--cyan);
+    span {
+      color: #eef6f9;
+      font-size: 0.7rem;
+    }
+  }
+}
+.formationRow {
+  text-align: center;
+  margin-bottom: 5px;
+  > div {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 3px;
+    > span {
+      font-size: 0.6rem;
+      border: 1px solid #364851;
+      border-radius: 3px;
+      background: #1a2830;
+      padding: 3px 4px;
+      white-space: nowrap;
+    }
+  }
+}
+.positionLabel {
+  display: block;
+  font-size: 0.55rem;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.noActive {
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+.timelinePanel {
+  overflow: hidden;
+}
+.timelineToolbar {
+  @include panel.panel-header(
+    $padding-y: v.$space-xs,
+    $padding-x: v.$space-sm,
+    $justify: flex-start
+  );
+  flex-wrap: wrap;
+  h2 {
+    font-family: v.$font-family-accent;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+  }
+  > label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-inline-start: auto;
+    font-size: 0.7rem;
+  }
+  // More specific than the page-wide form-control sizing, including on mobile.
+  select[aria-label="Timeline players"] {
+    min-height: v.$control-height-sm;
+    height: v.$control-height-sm;
+    padding: v.$space-xxs v.$space-sm;
+    font-size: 0.7rem;
+  }
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.6rem;
+  color: #c7d9e1;
+  span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  i {
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    border: 1px solid #ffffff40;
+    border-radius: 2px;
+  }
+  .goalDot {
+    border-radius: 50%;
+    background: #bbecff;
+    width: 7px;
+    height: 7px;
+  }
+}
+.forward {
+  background: #19a8df;
+}
+.defense {
+  background: #e97831;
+}
+.goalie {
+  background: #b1a1e9;
+}
+.powerPlay {
+  background: #c4d3dd66;
+}
+.penaltyKill {
+  background: repeating-linear-gradient(
+    135deg,
+    #61778588 0 2px,
+    transparent 2px 4px
+  );
+}
+.tableScroll {
+  overflow: auto;
+  padding-bottom: 8px;
+  scrollbar-color: #415560 #101b23;
+  scrollbar-width: thin;
+}
+.timelineTable {
+  width: 100%;
+  min-width: 810px;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  text-align: left;
+  font-size: 0.75rem;
+  .playerCol {
+    width: 136px;
+  }
+  .numberCol {
+    width: 28px;
+  }
+  .positionCol {
+    width: 30px;
+  }
+  .toiCol {
+    width: 44px;
+  }
+  .shotsCol {
+    width: 28px;
+  }
+  th,
+  td {
+    height: 23px;
+    padding: 3px 5px;
+    border-bottom: 1px solid #22333d;
+    font-weight: 400;
+  }
+  thead th {
+    color: #a8bec8;
+    font-size: 0.6rem;
+    background: #111e26;
+  }
+  th:first-child,
+  td:nth-child(2),
+  td:nth-child(3),
+  td:nth-child(4),
+  td:nth-child(5),
+  thead th:nth-child(-n + 5) {
+    position: sticky;
+    z-index: 4;
+    background: #111e26;
+  }
+  th:first-child {
+    left: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  :is(td, th):nth-child(2) {
+    left: 136px;
+  }
+  :is(td, th):nth-child(3) {
+    left: 164px;
+  }
+  :is(td, th):nth-child(4) {
+    left: 194px;
+  }
+  :is(td, th):nth-child(5) {
+    left: 238px;
+    border-inline-end: 1px solid #415560;
+  }
+  tbody tr:nth-child(odd) > :is(td, th):nth-child(-n + 5) {
+    background: #16232c;
+  }
+  .activeRow > :is(td, th):nth-child(-n + 5) {
+    color: #fff;
+    background: #1c3542;
+  }
+  .axisCell {
+    padding: 0;
+    position: relative;
+    height: 84px;
+  }
+  .trackCell {
+    position: relative;
+    padding: 0;
+    background: #0c151c;
+  }
+  .teamRow th {
+    text-transform: uppercase;
+    font-size: 0.65rem;
+    font-weight: 650;
+    background: #143c4f !important;
+    padding: 7px 5px;
+  }
+  .teamRow th span {
+    margin-inline-end: 8px;
+    color: #7edcfa;
+  }
+  tbody:nth-of-type(2) .teamRow th {
+    background: #422b40 !important;
+  }
+  tbody:nth-of-type(2) .teamRow th span {
+    color: #efa4cd;
+  }
+}
+.periodLabels {
+  display: flex;
+  height: 25px;
+  border-bottom: 1px solid #415560;
+  span {
+    text-align: center;
+    border-inline-start: 1px solid #5d4655;
+    padding-top: 5px;
+    color: #cfdee4;
+  }
+}
+.ruler {
+  height: 33px;
+  position: relative;
+  cursor: crosshair;
+  span {
+    position: absolute;
+    top: 8px;
+    padding-inline-start: 3px;
+    font-size: 0.55rem;
+    border-inline-start: 1px solid #415560;
+  }
+}
+.axisCell input[type="range"] {
+  display: block;
+  height: 28px;
+  margin: 0;
+  accent-color: #23bcef;
+  cursor: pointer;
+}
+.track {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to right, #30434e66 1px, transparent 1px);
+  background-size: 8.333% 100%;
+}
+.shift {
+  position: absolute;
+  top: 5px;
+  height: 12px;
+  border: 1px solid #ffffff38;
+  border-radius: 1px;
+  z-index: 2;
+  min-width: 1px;
+}
+.ppBand,
+.pkBand {
+  position: absolute;
+  inset-block: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.ppBand {
+  background: #c4d3dd33;
+  border-inline: 1px solid #c4d3dd44;
+}
+.pkBand {
+  background: repeating-linear-gradient(
+    135deg,
+    #61778533 0 2px,
+    transparent 2px 5px
+  );
+  border-inline: 1px solid #c4d3dd33;
+}
+.periodDivider {
+  position: absolute;
+  inset-block: 0;
+  border-inline-start: 1px solid #b44a6d88;
+  z-index: 3;
+  pointer-events: none;
+}
+.cursor {
+  position: absolute;
+  inset-block: 0;
+  border-inline-start: 1px solid #f4efbe;
+  z-index: 3;
+  pointer-events: none;
+}
+.goalMarker {
+  position: absolute;
+  top: 7px;
+  width: 8px;
+  height: 8px;
+  background: #e6faff;
+  border-radius: 50%;
+  box-shadow: 0 0 5px #53d6ff;
+  z-index: 3;
+  transform: translateX(-50%);
+}
+.activeDot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin-inline-end: 4px;
+  vertical-align: middle;
+  border-radius: 50%;
+  background: #65dcff;
+}
+.matrixSidebar {
+  min-width: 0;
+  padding: 12px;
+}
+.emptyLayout {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 16px;
+}
+.emptyState {
+  padding: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 16px;
+  min-height: 240px;
+  h2 {
+    font-size: 1.2rem;
+  }
+  p {
+    color: var(--muted);
+    font-size: 0.85rem;
+    max-width: 600px;
+    line-height: 1.6;
+  }
+}
+.inlineError {
+  color: #ffb6b6;
+  font-size: 0.7rem;
+  button {
+    margin-top: 6px;
+  }
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 1350px) {
+  .pageGrid {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+  .topPanels {
+    grid-template-columns: minmax(160px, 0.7fr) minmax(260px, 1fr);
+  }
+  .onIce {
+    grid-column: 1 / -1;
+  }
+  .formationRow > div > span {
+    font-size: 0.7rem;
+  }
+}
+@media (max-width: 1100px) {
+  .pageGrid {
+    grid-template-columns: 1fr;
+  }
+  .topPanels {
+    grid-template-columns: 180px minmax(250px, 1fr) minmax(300px, 1.3fr);
+  }
+  .onIce {
+    grid-column: auto;
+  }
+  .matrixSidebar {
+    max-width: 620px;
+    width: 100%;
+    justify-self: center;
+  }
+}
+@media (max-width: 850px) {
+  .topPanels {
+    grid-template-columns: minmax(150px, 0.7fr) minmax(250px, 1fr);
+  }
+  .onIce {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 520px) {
+  .page {
+    padding: v.$space-sm;
+    button,
+    select,
+    input[type="date"] {
+      min-height: 44px;
+    }
+  }
+  .topPanels,
+  .emptyLayout {
+    grid-template-columns: 1fr;
+  }
+  .selection {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr);
+    align-items: center;
+    label:not(:first-child) {
+      margin: 0;
+    }
+  }
+  .scoreLine {
+    max-width: 300px;
+    width: 100%;
+    margin: auto;
+  }
+  .timelineToolbar > label {
+    margin-inline-start: 0;
+  }
+  .emptyState {
+    padding: 24px;
+  }
+  .matrixSidebar {
+    padding: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page *,
+  .page *::before,
+  .page *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+// Desktop dimensions are owned by the application shell, not by chart content.
+@media (min-width: 1200px) {
+  .page { container-type: size; width: 100%; min-height: 0; padding: 8px 10px; background: v.$background-dark; }
+  .pageGrid { height: 100%; min-height: 0; grid-template-columns: minmax(0, 1fr) clamp(328px, calc(50cqh - 44px), 26%); gap: 10px; align-items: stretch; }
+  .mainColumn { min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 8px; }
+  .topPanels { grid-template-columns: minmax(150px, .65fr) minmax(245px, 1fr) minmax(350px, 1.55fr); gap: 8px; margin: 0; }
+  .selection, .scoreboard, .onIce, .timelinePanel, .matrixSidebar { border-radius: 5px; box-shadow: none; }
+  .selection { padding: 8px; gap: 3px; }
+  .selection label { font-size: 11px; }
+  .selection label:not(:first-child) { margin-top: 2px; }
+  .page select, .page input[type="date"] { min-height: 30px; height: 30px; padding: 3px 7px; font-size: 13px; }
+  .scoreboard { padding: 6px 8px; gap: 5px; }
+  .scoreTeam { display: grid; grid-template-columns: 36px 1fr; gap: 1px 5px; text-align: center; }
+  .scoreTeam img { width: 36px; height: 36px; grid-row: 1 / 3; }
+  .scoreTeam .score { font-size: 24px; }
+  .scoreTeam .sog { grid-column: 1 / -1; font-size: 11px; }
+  .clock { gap: 3px; }
+  .clock strong { font-size: 24px; }
+  .clock > span:first-child { font-size: 12px; }
+  .replayBadge { padding: 1px 6px; font-size: 10px; }
+  .playback { gap: 8px; }
+  .playback button { width: 30px; min-height: 30px; height: 30px; font-size: 22px; }
+  .playback button span { top: 12px; }
+  .playback svg { width: 14px; height: 14px; }
+  .onIce { grid-column: auto; padding: 6px 8px; }
+  .onIce h2 { margin-bottom: 3px; font-size: 12px; }
+  .formations { gap: 6px; }
+  .formation { border: 0; border-top: 1px solid #365463; border-radius: 0; padding: 2px 0 0; }
+  .formation legend { font-size: 12px; padding: 0 4px; }
+  .formation legend span { font-size: 10px; }
+  .formationRow { display: flex; align-items: baseline; gap: 4px; margin-bottom: 5px; text-align: left; }
+  .positionLabel { flex: 0 0 9px; font-size: 10px; margin: 0; }
+  .formationRow > div { justify-content: flex-start; gap: 4px; }
+  .formationRow > div > span { font-size: 12px; line-height: 15px; border: 1px solid #364851; background: #1a2830; padding: 3px 5px; border-radius: 3px; }
+  .timelinePanel { min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: visible; }
+  .timelineToolbar { min-height: 0; gap: 8px; padding: 2px 6px; }
+  .timelineToolbar h2 { font: 600 12px v.$font-family-primary; }
+  .timelineToolbar select[aria-label="Timeline players"] { height: 28px; min-height: 28px; font-size: 12px; }
+  .legend { font-size: 11px; gap: 8px; }
+  .tableScroll { min-height: 0; padding: 0; overflow: visible; }
+  .timelineTable { min-width: 0; }
+  .timelineTable th, .timelineTable td { padding: 0 4px; height: var(--row-height); line-height: 14px; }
+  .timelineTable .axisCell, .timelineTable thead th { height: 64px; font-size: 11px; }
+  .timelineTable .teamRow th, .timelineTable .teamRow td { height: 22px; padding: 0 4px; font-size: 11px; }
+  .periodLabels { height: 20px; }
+  .periodLabels span { padding-top: 2px; }
+  .ruler { height: 26px; }
+  .ruler span { top: 2px; font-size: 10px; }
+  .axisCell input[type="range"] { height: 18px; }
+  .shift { top: 20%; height: 60%; }
+  .goalMarker { top: calc(50% - 4px); }
+  .splitTimelines { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-items: start; }
+  .splitTimelines .playerCol { width: 102px; }
+  .splitTimelines .numberCol { width: 23px; }
+  .splitTimelines .positionCol { width: 25px; }
+  .splitTimelines .toiCol { width: 37px; }
+  .splitTimelines .shotsCol { width: 20px; }
+  .splitTimelines .timelineTable :is(th, td):nth-child(n) { position: static; left: auto; }
+  .splitTimelines .timelineTable :is(.trackCell, .axisCell):nth-child(n) { position: relative; }
+  .splitTimelines table:nth-child(2) .teamRow th { background: #422b40 !important; }
+  .matrixSidebar { min-height: 0; padding: 6px; }
+}
+
+.selectionColumn { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.selectionColumn .selection { flex: 1; }
+.page .pageTitle {
+  font: 400 24px/1.2 v.$font-family-accent;
+  text-transform: uppercase; white-space: nowrap;
+  span { color: var(--cyan); }
+}
+.homeKey { color: #63d6f5; }
+.awayKey { color: #a3b9ff; }
+.timelineTable [data-team-side="away"] {
+  .forward { background: #618bf0; }
+  .defense { background: #e9635a; }
+  .goalie { background: #c887ba; }
+}
+.ruler .rulerGoal {
+  position: absolute; top: 25px; z-index: 5;
+  width: 8px; height: 8px; min-height: 8px; padding: 0;
+  transform: translateX(-50%); border: 1px solid #e7f5ff; border-radius: 50%;
+  &.homeGoal { background: #19a8df; }
+  &.awayGoal { background: #618bf0; }
+}
+@media (min-width: 1200px) {
+  .onIce { padding: 10px; }
+  .onIce h2 { margin-bottom: 8px; }
+  .scoreboard { gap: 12px; }
+  .ruler .rulerGoal { top: 18px; }
 }

@@ -1,0 +1,10 @@
+{
+  "head": "73af9d051ecc755dd3695f5265bf5837bbfc7a4e",
+  "branch": "chef/player-resolution-workflow-fixes",
+  "worktree": "/tmp/fhfh-player-resolution-fixes",
+  "importedAuditFiles": {
+    "web/pages/db/player-aliases.tsx": "52dcbd1e8b1f0f6833974e9babd8f9ed89a9336d7b61a9e9e53782ed88c5168c",
+    "web/pages/db/player-aliases.module.scss": "cca372304551c3dc1ea92a855922e050a08b4f22fdd693610f237fb225c8b90d",
+    "web/__tests__/pages/db/player-aliases.test.tsx": "f7a59f02d6ee1ebe6df8d933b09a3e315fd19fc1c356766fb63ad9e33f620d06"
+  }
+}

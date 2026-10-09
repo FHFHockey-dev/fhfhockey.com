@@ -7,7 +7,7 @@ import { formatWeekScore } from "./utils/calcWeekScore";
 import { useTeam } from "./contexts/GameGridContext";
 import {
   DAYS,
-  DAY_ABBREVIATION,
+  EXTENDED_DAY_ABBREVIATION,
   EXTENDED_DAYS,
   GameData,
   WeekData,
@@ -15,8 +15,9 @@ import {
 import Tooltip from "./PDHC/Tooltip";
 import PoissonHeatmap from "./PDHC/PoissonHeatMap";
 import styles from "./GameGrid.module.scss";
+import detailStyles from "./TeamDetails.module.scss";
 import clsx from "clsx";
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { teamsInfo } from "lib/teamsInfo";
 
 export type MatchUpCellData = {
@@ -51,11 +52,14 @@ type TeamRowProps = {
   totalOffNights: number;
   weekScore: number;
   extended: boolean;
-  excludedDays: DAY_ABBREVIATION[];
+  excludedDays: EXTENDED_DAY_ABBREVIATION[];
   hidePreseason?: boolean;
   rowHighlightClass?: string;
   games: number[];
   rank: number;
+  expanded?: boolean;
+  onToggle?: () => void;
+  details?: ReactNode;
 } & WeekData;
 
 function getGamesPlayedIntensity(totalGamesPlayed: number): string {
@@ -88,6 +92,8 @@ function TeamRow(props: TeamRowProps) {
   const team = useTeam(props.teamId);
   const days = props.extended ? EXTENDED_DAYS : DAYS;
   const isMobile = useIsMobile();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const detailId = `game-grid-team-details-${props.teamId}`;
 
   // Handle cases where team data might not be loaded yet
   if (!team) {
@@ -96,15 +102,8 @@ function TeamRow(props: TeamRowProps) {
     );
   }
 
-  return (
-    <tr className={clsx(styles.teamRow, props.rowHighlightClass)}>
-      {/* First column: show abbreviation on desktop, logo on mobile */}
-      <td className={styles.firstColumnContent}>
-        <Link
-          href={`/stats/team/${team.abbreviation}`}
-          aria-label={`Open ${team.name} Team HQ`}
-          className={styles.teamSurfaceLink}
-        >
+  const identity = (
+    <>
           <span
             className={styles.desktopTeamAbbreviation}
             style={
@@ -126,10 +125,10 @@ function TeamRow(props: TeamRowProps) {
           >
             {team.abbreviation}
           </span>
-          <span className={styles.mobileTeamLogo}>
+          <span className={clsx(styles.mobileTeamLogo, props.onToggle && detailStyles.rowTeamLogo)}>
             <span className={styles.firstColumnLogo}>
               <Image
-                alt={`${team.name} logo`}
+                alt=""
                 src={team.logo}
                 title={team.name}
                 fill
@@ -139,7 +138,38 @@ function TeamRow(props: TeamRowProps) {
               />
             </span>
           </span>
-        </Link>
+    </>
+  );
+
+  return (
+    <>
+    <tr className={clsx(styles.teamRow, props.rowHighlightClass)}>
+      {/* First column: show abbreviation on desktop, logo on mobile */}
+      <td className={clsx(styles.firstColumnContent, props.onToggle && detailStyles.identityCell)}>
+        <div className={props.onToggle ? detailStyles.teamIdentity : undefined}>
+          {props.onToggle && (
+            <button
+              type="button"
+              ref={triggerRef}
+              id={`game-grid-team-trigger-${props.teamId}`}
+              className={detailStyles.teamDisclosure}
+              aria-label={`${props.expanded ? "Hide" : "Show"} ${team.name} upcoming category forecasts`}
+              aria-expanded={props.expanded ?? false}
+              aria-controls={detailId}
+              onClick={props.onToggle}
+            >
+              {identity}
+              <span aria-hidden="true">{props.expanded ? "−" : "+"}</span>
+            </button>
+          )}
+          <Link
+            href={`/stats/team/${team.abbreviation}`}
+            aria-label={`Open ${team.name} Team HQ`}
+            className={props.onToggle ? detailStyles.teamHqLink : styles.teamSurfaceLink}
+          >
+            {props.onToggle ? "HQ" : identity}
+          </Link>
+        </div>
       </td>
       {/* Days */}
       {days.map((day, index) => {
@@ -147,7 +177,7 @@ function TeamRow(props: TeamRowProps) {
         const hasMatchUp = matchUp !== undefined;
         const isPreseason = !!matchUp && matchUp.gameType === 1;
         const isPostseason = !!matchUp && matchUp.gameType === 3;
-        const excluded = props.excludedDays.includes(day as DAY_ABBREVIATION);
+        const excluded = props.excludedDays.includes(day as EXTENDED_DAY_ABBREVIATION);
         const numGamesThatDay = props.games[index] || 0;
         // Determine cell classes for inner border styling
         let dayIntensityClass = "";
@@ -185,7 +215,7 @@ function TeamRow(props: TeamRowProps) {
         return (
           <td key={day} className={cellClasses}>
             {/* Excluded Day Overlay */}
-            {!props.extended && excluded && !isMobile && (
+            {excluded && !isMobile && (
               <div className={styles.excludedOverlay}></div>
             )}
 
@@ -229,6 +259,23 @@ function TeamRow(props: TeamRowProps) {
         </>
       )}
     </tr>
+    {props.expanded && props.details && (
+      <tr className={detailStyles.detailRow}>
+        <td className={detailStyles.detailCell} colSpan={days.length + (props.extended ? 1 : 4)}>
+          <div id={detailId}>
+            <div className={detailStyles.detailControls}>
+              <button type="button" className={detailStyles.closeButton}
+                aria-label={`Close ${team.name} game previews`}
+                onClick={() => { triggerRef.current?.focus(); props.onToggle?.(); }}>
+                Close preview
+              </button>
+            </div>
+            {props.details}
+          </div>
+        </td>
+      </tr>
+    )}
+    </>
   );
 }
 

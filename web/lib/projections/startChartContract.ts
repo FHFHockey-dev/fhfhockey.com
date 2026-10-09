@@ -1,3 +1,4 @@
+import type { StartChartTeamForm } from "./startChartTeamForm";
 import type { TeamPowerSnapshotLike } from "lib/dashboard/teamContext";
 import { normalizeBoardValidationDisclosure, type BoardValidationDisclosure } from "./starterBoardValidation";
 import type { ResolvedDataServingContract } from "lib/dashboard/freshness";
@@ -148,10 +149,12 @@ export type StartChartServing = ResolvedDataServingContract & {
 };
 
 export type StartChartResponse = {
+  recentGoals?: StartChartTeamForm;
   validation?: BoardValidationDisclosure;
   newsStatus?: { available: boolean; pendingGames: number; freshnessBreachedGames: number; unresolvedConflicts: number; oldestAcceptedAt: string | null };
   scoringProfile?: BoardScoringRequest & { id: string };
   contractVersion?: 1 | 2;
+  publishedForecastsEnabled?: boolean;
   gameRevisions?: Array<{
     gameId: number; revisionId: string; runId: string;
     decisionAsOf: string; publishedAt: string;
@@ -400,6 +403,7 @@ export function normalizeStartChartResponse(payload: unknown): StartChartRespons
     validation: normalizeBoardValidationDisclosure(root.validation),
     dateUsed: resolvedDate,
     contractVersion: root.contractVersion === 2 ? 2 : 1,
+    publishedForecastsEnabled: typeof root.publishedForecastsEnabled === "boolean" ? root.publishedForecastsEnabled : undefined,
     newsStatus: root.newsStatus ? { available: root.newsStatus.available === true,
       pendingGames: finiteOrNull(root.newsStatus.pendingGames) ?? 0,
       freshnessBreachedGames: finiteOrNull(root.newsStatus.freshnessBreachedGames) ?? 0,
@@ -454,6 +458,11 @@ export function normalizeStartChartResponse(payload: unknown): StartChartRespons
     projectionRunId: stringOrNull(root.projectionRunId),
     projections: finiteOrNull(root.projections) ?? players.length,
     players,
+    recentGoals: root.recentGoals?.source === "nhl_final_scores" && root.recentGoals.beforeDate === resolvedDate && Number.isSafeInteger(root.recentGoals.seasonId) && Array.isArray(root.recentGoals.teams)
+      ? { seasonId: root.recentGoals.seasonId, beforeDate: resolvedDate, source: "nhl_final_scores",
+          teams: root.recentGoals.teams.flatMap((row: any) => typeof row.team === "string" && Array.isArray(row.games) ? [{ team: row.team,
+            games: row.games.filter((game: any) => typeof game.date === "string" && game.date < resolvedDate && Number.isInteger(game.goalsFor) && game.goalsFor >= 0 && Number.isInteger(game.goalsAgainst) && game.goalsAgainst >= 0).slice(0, 10) }] : []) }
+      : undefined,
     ctpi: Array.isArray(root.ctpi) ? root.ctpi : [],
     games,
     sourceStatus: {

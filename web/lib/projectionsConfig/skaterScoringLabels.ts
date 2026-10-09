@@ -5,7 +5,9 @@ export const SKATER_LABELS: Record<string, string> = {
   PP_POINTS: "PPP",
   SHOTS_ON_GOAL: "SOG",
   HITS: "HIT",
+  HITS_D: "HIT (D)",
   BLOCKED_SHOTS: "BLK",
+  BLOCKED_SHOTS_D: "BLK (D)",
   FACEOFFS_LOST: "FOL",
   FACEOFFS_WON: "FOW",
   GAMES_PLAYED: "GP",
@@ -20,4 +22,3 @@ export const SKATER_LABELS: Record<string, string> = {
   TIME_ON_ICE: "TOI",
   TIME_ON_ICE_PER_GAME: "ATOI"
 };
-

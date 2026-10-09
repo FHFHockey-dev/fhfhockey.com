@@ -88,7 +88,7 @@ function metricCellTitle(
     rank.percentile == null
       ? null
       : `${rankScopeLabel(rankMode)} Percentile ${rank.percentile.toFixed(1)}%`,
-    cell.sampleConfidence === "low" ? "Low sample" : null,
+    cell.sampleConfidence === "low" ? "Below selected sample minimums or sample unavailable" : null,
     !rank.qualifiedPeerCount ? "No qualified peer sample" : null,
     rank.peerGroupKey ? `Peer group ${rank.peerGroupKey}` : null,
     staleSource
@@ -551,7 +551,7 @@ export default function PlayerMatrixTable({
               Lower-is-better metrics still use better-is-greener percentile
               coloring
             </span>
-            <span className={styles.legendPill}>Low sample = caution</span>
+            <span className={styles.legendPill}>Sample labels reflect selected minimums, not forecast reliability</span>
             <span className={styles.legendPill}>
               Planned/N/A = not live or not enough source data
             </span>

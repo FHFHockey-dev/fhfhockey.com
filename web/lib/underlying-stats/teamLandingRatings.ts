@@ -220,18 +220,27 @@ export const fetchUnderlyingStatsLandingRatings = async (
     return [];
   }
 
-  const [baseRatings, formContextByTeam, specialTeamsByTeam] =
-    await Promise.all([
-      fetchTeamRatings(date),
-      deriveTeamFormContextForDate(date),
-      fetchUnderlyingStatsTeamSpecialTeamsContext(date)
-    ]);
-  const ratingHistoryByTeam = await fetchTeamRatingHistoryForNarratives(
-    date,
-    baseRatings.map((rating) => rating.teamAbbr)
-  );
-  const scheduleStrengthByTeam =
-    await fetchUnderlyingStatsTeamScheduleStrengthForRatings(date, baseRatings);
+  const baseRatingsPromise = fetchTeamRatings(date);
+  const [
+    baseRatings,
+    formContextByTeam,
+    specialTeamsByTeam,
+    ratingHistoryByTeam,
+    scheduleStrengthByTeam
+  ] = await Promise.all([
+    baseRatingsPromise,
+    deriveTeamFormContextForDate(date),
+    fetchUnderlyingStatsTeamSpecialTeamsContext(date),
+    baseRatingsPromise.then((ratings) =>
+      fetchTeamRatingHistoryForNarratives(
+        date,
+        ratings.map((rating) => rating.teamAbbr)
+      )
+    ),
+    baseRatingsPromise.then((ratings) =>
+      fetchUnderlyingStatsTeamScheduleStrengthForRatings(date, ratings)
+    )
+  ]);
 
   const trendOverrides = new Map(
     Array.from(formContextByTeam.entries()).map(([teamAbbr, context]) => [

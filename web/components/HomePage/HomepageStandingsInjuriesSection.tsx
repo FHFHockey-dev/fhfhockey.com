@@ -10,8 +10,8 @@ import { fallbackNHLLogo, getTeamLogoSvg } from "lib/images";
 import {
   formatNewsFeedLabel,
   getPublicNewsItemDetails,
-  normalizeNewsCategory,
-  sanitizePublicNewsText,
+  getPublicNewsClaimPresentation,
+  sanitizePublicNewsFeedItem,
   type NewsFeedItem,
 } from "lib/newsFeed";
 import styles from "styles/Home.module.scss";
@@ -47,174 +47,36 @@ function formatHomepageTimestamp(value: string | null | undefined): string {
     .format(hasTime ? "MMM D, h:mm A" : "MMM D, YYYY");
 }
 
-function abbreviatePlayerName(value: string): string {
-  const parts = value.trim().split(/\s+/).filter(Boolean);
-  if (parts.length < 2) return parts[0] ?? "";
-  return `${parts[0].charAt(0)}. ${parts.slice(1).join(" ")}`;
-}
-
-function getPlayerNameFromHeadline(value: string): string | null {
-  const headline = sanitizePublicNewsText(value);
-  const nameToken = String.raw`[\p{Lu}][\p{L}’'.-]+`;
-  const patterns = [
-    new RegExp(
-      String.raw`\b(?:have|has)\s+signed\s+(${nameToken}\s+${nameToken})(?=\s+(?:to|with|for|on|and|$))`,
-      "u",
-    ),
-    new RegExp(
-      String.raw`\band\s+(${nameToken}\s+${nameToken})\s+(?:avoid|avoids|has|have|signed|agreed)\b`,
-      "u",
-    ),
-    new RegExp(
-      String.raw`(?:^|:\s*)(${nameToken}\s+${nameToken})\s+has\s+signed\b`,
-      "u",
-    ),
-  ];
-
-  for (const pattern of patterns) {
-    const match = headline.match(pattern);
-    if (match?.[1]) return match[1];
-  }
-
-  return null;
-}
-
-function getHomepageTransactionAction(
-  transaction: any,
-  details: string,
-): string {
-  const category = normalizeNewsCategory(transaction.category);
-  const searchableText = sanitizePublicNewsText(
-    [
-      transaction.headline,
-      transaction.blurb,
-      details,
-      transaction.subcategory,
-    ]
-      .filter(Boolean)
-      .join(" "),
-  ).toLowerCase();
-
-  if (searchableText.includes("arbitration")) return "arbitration";
-  if (searchableText.includes("extension")) return "extension";
-  if (searchableText.includes("retire")) return "retirement";
-  if (searchableText.includes("waiver")) return "waivers";
-  if (searchableText.includes("recall")) return "recall";
-  if (searchableText.includes("contract negotiation")) {
-    return "contract negotiation";
-  }
-
-  switch (category) {
-    case "TRADE":
-      return "trade";
-    case "SIGNING":
-      return "signing";
-    case "RETIREMENT":
-      return "retirement";
-    case "WAIVER":
-    case "WAIVERS":
-      return "waivers";
-    case "ROSTER MOVE":
-      return "roster move";
-    case "NEWS UPDATE":
-      return "update";
-    case "TRANSACTION":
-      return "transaction";
-    default:
-      return formatNewsFeedLabel(category || "transaction").toLowerCase();
-  }
-}
-
-function isGenericHomepageTransactionTitle(
-  value: string,
-  teamAbbreviation: string,
-  category: string,
-): boolean {
-  const normalized = sanitizePublicNewsText(value)
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
-  const team = teamAbbreviation.toLowerCase();
-  const action = formatNewsFeedLabel(category).toLowerCase();
-
-  return new Set([
-    "",
-    action,
-    `${team} ${action}`,
-    `${team} transaction`,
-    `${team} signing`,
-    "official signing",
-    "news update",
-    "transaction",
-  ]).has(normalized);
-}
-
-export function buildHomepageTransactionTitle(transaction: any): string {
-  const teamAbbreviation = transaction.team_abbreviation ?? "NHL";
-  const category = normalizeNewsCategory(transaction.category);
-  const details = getPublicNewsItemDetails(transaction);
-  const playerName =
-    (Array.isArray(transaction.players)
-      ? transaction.players.find((player: any) => player?.player_name)
-          ?.player_name
-      : null) ?? getPlayerNameFromHeadline(transaction.headline);
-
-  if (playerName) {
-    return `${abbreviatePlayerName(playerName)} ${getHomepageTransactionAction(
-      transaction,
-      details,
-    )}`;
-  }
-
-  const headline = sanitizePublicNewsText(transaction.headline);
-  if (
-    headline &&
-    !isGenericHomepageTransactionTitle(
-      headline,
-      teamAbbreviation,
-      category,
-    )
-  ) {
-    return headline;
-  }
-
-  if (
-    details &&
-    !isGenericHomepageTransactionTitle(
-      details,
-      teamAbbreviation,
-      category,
-    )
-  ) {
-    return details;
-  }
-
-  return headline || `${teamAbbreviation} ${formatNewsFeedLabel(category)}`;
+export function buildHomepageTransactionTitle(_transaction: any): string {
+  // The upstream event contract does not yet bind transaction completion.
+  return "Transaction source report";
 }
 
 function newsItemToHomepageInjury(item: NewsFeedItem) {
-  const playerNames = item.players
-    .map((player) => player.player_name)
-    .filter(Boolean);
-  const onlyPlayer = item.players.length === 1 ? item.players[0] : null;
-  const category = normalizeNewsCategory(item.category);
+  item = sanitizePublicNewsFeedItem(item);
+  const presentation = getPublicNewsClaimPresentation(item);
+  const playerNames = [...new Set(presentation.claims.map(claim => claim.playerName))];
+  const onlyClaim = presentation.claims.length === 1 ? presentation.claims[0] : null;
 
   return {
     key: `news-${item.id}`,
-    date: item.published_at ?? item.created_at,
+    date: item.published_at,
+    observedAt: item.observed_at,
+    newsTimestamp: true,
     team: item.team_abbreviation ?? "NHL",
     player: {
-      id: onlyPlayer?.player_id ?? null,
-      displayName: playerNames.join(", ") || item.headline,
+      id: onlyClaim?.playerId ?? null,
+      displayName: playerNames.join(", ") || "Source report",
     },
-    status: formatNewsFeedLabel(item.subcategory ?? item.category),
-    description: getPublicNewsItemDetails(item),
+    status: presentation.claims.length ? presentation.claims.map(claim =>
+      `${formatNewsFeedLabel(claim.kind)} ${formatNewsFeedLabel(claim.state)} report${claim.observation ? ` · ${claim.observation}` : ""}`).join("; ") : "Claim unavailable",
+    description: getPublicNewsItemDetails({ ...item, metadata: null, headline: "Source passage unavailable" }),
     sourceUrl: item.source_url,
     sourceAttribution: item.source_account ?? item.source_label,
     statusState:
-      category === "RETURN" || category === "RETURNING"
+      onlyClaim?.kind === "injury" && onlyClaim.state === "confirmed_return" && onlyClaim.availability === "available"
         ? "returning"
-        : "injured",
+        : onlyClaim?.kind === "injury" && onlyClaim.availability === "out" ? "injured" : "unknown",
   };
 }
 
@@ -294,15 +156,17 @@ export default function HomepageStandingsInjuriesSection({
         statusState: injury.statusState ??
           (/return|healthy/i.test(injury.status ?? "") ? "returning" : "injured"),
       }))),
-      ...(activeUpdatesTab === "injuries" ? [] : recentTransactions.map((transaction) => ({
+      ...(activeUpdatesTab === "injuries" ? [] : recentTransactions.map(transaction => sanitizePublicNewsFeedItem(transaction)).map((transaction) => ({
         key: `transaction-${transaction.id}`,
         kind: "transaction",
-        date: transaction.published_at ?? transaction.created_at,
+        date: transaction.published_at,
+        observedAt: transaction.observed_at,
+        newsTimestamp: true,
         team: transaction.team_abbreviation,
         player: { displayName: buildHomepageTransactionTitle(transaction) },
-        status: normalizeNewsCategory(transaction.category),
+        status: "Source report",
         statusState: "transaction",
-        description: getPublicNewsItemDetails(transaction),
+        description: getPublicNewsItemDetails({ ...transaction, metadata: null, headline: "Source passage unavailable" }),
         sourceUrl: transaction.source_url,
         sourceAttribution: transaction.source_account ?? transaction.source_label,
       }))),
@@ -328,9 +192,10 @@ export default function HomepageStandingsInjuriesSection({
       const chromeHeight = Array.from(updatesPanel.children).reduce((sum, child) =>
         child.classList.contains(styles.tableWrapper) ? sum : sum + child.getBoundingClientRect().height,
       0);
-      setPanelHeight(sideBySide && height > 0 ? height : null);
+      const usableHeight = Math.max(height, chromeHeight + 26 + 48);
+      setPanelHeight(sideBySide && height > 0 ? usableHeight : null);
       setPageSize(sideBySide && height > 0
-        ? Math.max(1, Math.floor((height - chromeHeight - 26) / 48))
+        ? Math.max(1, Math.floor((usableHeight - chromeHeight - 26) / 48))
         : HOMEPAGE_UPDATES_PER_PAGE);
     };
     const observer = new ResizeObserver(measure);
@@ -626,10 +491,10 @@ export default function HomepageStandingsInjuriesSection({
                         <td colSpan={5} className={styles.expandedUpdateCell}>
                           <span>{injury.description ?? "N/A"}</span>
                           <span className={styles.expandedUpdateMeta}>
-                            {formatHomepageTimestamp(injury.date)}
+                            {injury.newsTimestamp ? `Published ${formatHomepageTimestamp(injury.date) || "unavailable"} · Observed ${formatHomepageTimestamp(injury.observedAt) || "unavailable"}` : formatHomepageTimestamp(injury.date)}
                             {injury.sourceAttribution
                               ? ` · ${injury.sourceAttribution}`
-                              : ""}
+                              : " · Source unavailable"}
                           </span>
                         </td>
                       </tr>

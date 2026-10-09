@@ -1,0 +1,43 @@
+
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › e2e/roster-schedule-optimizer.spec.ts:577:5 › connected refresh and account save preserve forecast permissions and exclusions (16.7s)
+
+
+  1) [chromium] › e2e/roster-schedule-optimizer.spec.ts:577:5 › connected refresh and account save preserve forecast permissions and exclusions 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveCount[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator:  getByText('Saved to account.')
+    Expected: [32m0[39m
+    Received: [31m1[39m
+    Timeout:  15000ms
+
+    Call log:
+    [2m  - Expect "toHaveCount" with timeout 15000ms[22m
+    [2m  - waiting for getByText('Saved to account.')[22m
+    [2m    34 × locator resolved to 1 element[22m
+    [2m       - unexpected value "1"[22m
+
+
+      672 |   await (await completedSave).finished();
+      673 |   await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+    > 674 |   await expect(page.getByText("Saved to account.")).toHaveCount(0);
+          |                                                     ^
+      675 |   await expect(page.getByText(/Late First Account/)).toHaveCount(0);
+      676 |   await expect.poll(async () => page.evaluate(() => {
+      677 |     const value = JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!);
+        at /Users/tim/Code/fhfhockey.com/web/e2e/roster-schedule-optimizer.spec.ts:674:53
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/error-context.md
+
+  1 failed
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:577:5 › connected refresh and account save preserve forecast permissions and exclusions 

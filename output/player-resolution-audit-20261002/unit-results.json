@@ -1,0 +1,25 @@
+{
+  "results": [
+    {
+      "command": "npm test -- __tests__/pages/db/player-aliases.test.tsx",
+      "passed": 5,
+      "failed": 0,
+      "duration": "962ms",
+      "environment": "jsdom; mocked fetch and Supabase session"
+    },
+    {
+      "command": "npm test -- __tests__/pages/api/v1/db/player-name-aliases.test.ts -t 'saves identity|resolves a supported|looks up a missing|revalidates and imports|returns an actionable'",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 4,
+      "duration": "262ms",
+      "environment": "node; mock query methods and identity providers; dummy local Supabase keys"
+    }
+  ],
+  "notRun": [
+    "production API/authentication",
+    "build",
+    "full suite",
+    "lint/typecheck (no application edits)"
+  ]
+}

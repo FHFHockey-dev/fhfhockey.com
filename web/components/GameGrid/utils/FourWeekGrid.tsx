@@ -7,6 +7,9 @@ import Link from "next/link";
 import { TeamDataWithTotals, TeamWithScore } from "lib/NHL/types"; // Consolidate type imports
 import { useTeamsMap } from "hooks/useTeams";
 import clsx from "clsx";
+import { TeamNumeric, toRankMaps } from "./metricRanks";
+import { getFourWeekAverages, getFourWeekScore } from "./scheduleSummary";
+import type { FourWeekCalendar } from "./useFourWeekSchedule";
 import {
   buildFourWeekDetailAverages,
   buildFourWeekDetailCells,
@@ -32,6 +35,7 @@ function useIsMobile() {
 // --- Component Props and Types ---
 type FourWeekGridProps = {
   teamDataArray: TeamDataWithTotals[];
+  calendar?: FourWeekCalendar;
 };
 type SortConfig = {
   key:
@@ -42,32 +46,7 @@ type SortConfig = {
     | "teamName"; // Added teamName
   direction: "ascending" | "descending";
 };
-type Averages = {
-  gamesPlayed: number;
-  offNights: number;
-  avgOpponentPointPct: number;
-};
-
-type TeamNumeric = { teamId: number; value: number };
-
-function toRankMaps(entries: TeamNumeric[], bestDirection: "asc" | "desc") {
-  const sorted = [...entries].sort((a, b) =>
-    bestDirection === "asc" ? a.value - b.value : b.value - a.value,
-  );
-  const best = new Map<number, number>();
-  const worst = new Map<number, number>();
-
-  sorted
-    .slice(0, 10)
-    .forEach((entry, index) => best.set(entry.teamId, index + 1));
-  sorted
-    .slice(Math.max(sorted.length - 10, 0))
-    .forEach((entry, index) => worst.set(entry.teamId, index + 1));
-
-  return { best, worst };
-}
-
-const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
+const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray, calendar }) => {
   const teamsMap = useTeamsMap();
   const isMobile = useIsMobile();
   const [isMobileMinimized, setIsMobileMinimized] = useState(false);
@@ -100,56 +79,25 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
   };
 
   // --- Memoized Calculations ---
-  const averages = useMemo((): Averages => {
-    if (!teamDataArray || teamDataArray.length === 0) {
-      return { gamesPlayed: 0, offNights: 0, avgOpponentPointPct: 0 };
-    }
-    const totalTeams = teamDataArray.length;
-    const totalGP = teamDataArray.reduce(
-      (acc, team) => acc + (team.totals?.gamesPlayed ?? 0),
-      0,
-    );
-    const totalOFF = teamDataArray.reduce(
-      (acc, team) => acc + (team.totals?.offNights ?? 0),
-      0,
-    );
-    const totalOPP = teamDataArray.reduce(
-      (acc, team) => acc + (team.avgOpponentPointPct ?? 0),
-      0,
-    );
-    return {
-      gamesPlayed: totalTeams > 0 ? totalGP / totalTeams : 0,
-      offNights: totalTeams > 0 ? totalOFF / totalTeams : 0,
-      avgOpponentPointPct: totalTeams > 0 ? totalOPP / totalTeams : 0,
-    };
-  }, [teamDataArray]);
+  const averages = useMemo(() => getFourWeekAverages(teamDataArray), [teamDataArray]);
 
   const roundedAvgGP = useMemo(
-    () => Math.round(averages.gamesPlayed),
+    () => Math.round(averages.gamesPlayed ?? 0),
     [averages.gamesPlayed],
   );
   const roundedAvgOFF = useMemo(
-    () => Math.round(averages.offNights),
+    () => Math.round(averages.offNights ?? 0),
     [averages.offNights],
   );
 
   const teamsWithScore: TeamWithScore[] = useMemo(() => {
     if (!teamDataArray) return [];
-    return teamDataArray.map((team) => {
-      const gp = team.totals?.gamesPlayed ?? averages.gamesPlayed; // Use average if null
-      const offNights = team.totals?.offNights ?? averages.offNights; // Use average if null
-      const avgOppPct =
-        team.avgOpponentPointPct ?? averages.avgOpponentPointPct; // Use average if null
-
-      // Calculate score relative to averages
-      const score =
-        gp -
-        averages.gamesPlayed +
-        (offNights - averages.offNights) +
-        (averages.avgOpponentPointPct - avgOppPct); // Higher OPP% is bad, so subtract from average
-
-      return { ...team, score };
-    });
+    return teamDataArray.map((team) => ({
+      ...team,
+      avgOpponentPointPct: team.totals.scheduleCoverage && team.totals.scheduleCoverage.known < team.totals.scheduleCoverage.expected
+        ? null : team.avgOpponentPointPct,
+      score: getFourWeekScore(team, averages)
+    }));
   }, [teamDataArray, averages]);
 
   const sortedTeams = useMemo(() => {
@@ -158,26 +106,28 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
     const currentDirection = sortConfig?.direction;
 
     sortableTeams.sort((a, b) => {
-      let aValue: number | string;
-      let bValue: number | string;
+      let aValue: number | string | null;
+      let bValue: number | string | null;
+      const aComplete = !a.totals.scheduleCoverage || a.totals.scheduleCoverage.known === a.totals.scheduleCoverage.expected;
+      const bComplete = !b.totals.scheduleCoverage || b.totals.scheduleCoverage.known === b.totals.scheduleCoverage.expected;
 
       // Get values based on sort key
       switch (currentSortKey) {
         case "gamesPlayed":
-          aValue = a.totals?.gamesPlayed ?? -Infinity; // Push nulls down
-          bValue = b.totals?.gamesPlayed ?? -Infinity;
+          aValue = aComplete ? a.totals.gamesPlayed : null;
+          bValue = bComplete ? b.totals.gamesPlayed : null;
           break;
         case "offNights":
-          aValue = a.totals?.offNights ?? -Infinity;
-          bValue = b.totals?.offNights ?? -Infinity;
+          aValue = aComplete ? a.totals.offNights : null;
+          bValue = bComplete ? b.totals.offNights : null;
           break;
         case "avgOpponentPointPct":
-          aValue = a.avgOpponentPointPct ?? Infinity; // Push nulls down (higher % is worse)
-          bValue = b.avgOpponentPointPct ?? Infinity;
+          aValue = a.avgOpponentPointPct;
+          bValue = b.avgOpponentPointPct;
           break;
         case "score":
-          aValue = a.score ?? -Infinity;
-          bValue = b.score ?? -Infinity;
+          aValue = a.score;
+          bValue = b.score;
           break;
         case "teamName":
           aValue = teamsMap[a.teamId]?.name.toLowerCase() || "";
@@ -193,6 +143,8 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
       }
 
       // Comparison logic
+      if (aValue == null) return bValue == null ? 0 : 1;
+      if (bValue == null) return -1;
       if (aValue < bValue) return currentDirection === "ascending" ? -1 : 1;
       if (aValue > bValue) return currentDirection === "ascending" ? 1 : -1;
       return 0;
@@ -208,8 +160,9 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
     const scoreEntries: TeamNumeric[] = [];
 
     teamsWithScore.forEach((t) => {
-      const gp = t.totals?.gamesPlayed;
-      const off = t.totals?.offNights;
+      const complete = !t.totals.scheduleCoverage || t.totals.scheduleCoverage.known === t.totals.scheduleCoverage.expected;
+      const gp = complete ? t.totals.gamesPlayed : null;
+      const off = complete ? t.totals.offNights : null;
       const opp = t.avgOpponentPointPct;
       const score = t.score;
 
@@ -293,6 +246,11 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
 
       {/* Collapsible Content Wrapper */}
       <div id="four-week-grid-content" className={styles.tableWrapper}>
+        {calendar && (
+          <p className={styles.calendarContext}>
+            {calendar.error ?? `${calendar.start}–${calendar.end}: selected Monday–Sunday week plus three weeks. Schedule coverage ${calendar.knownDays}/${calendar.expectedDays} days.`}
+          </p>
+        )}
         {isLoading ? (
           <div className={styles.message}>Loading schedule data...</div>
         ) : !hasData ? (
@@ -426,10 +384,10 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
                   {/* AVG Row */}
                   <tr className={styles.averagesRow}>
                     <td>AVG:</td>
-                    <td>{averages.gamesPlayed.toFixed(2)}</td>
-                    <td>{averages.offNights.toFixed(2)}</td>
-                    <td>{(averages.avgOpponentPointPct * 100).toFixed(1)}%</td>
-                    <td>0.00</td>
+                    <td>{averages.gamesPlayed?.toFixed(2) ?? "-"}</td>
+                    <td>{averages.offNights?.toFixed(2) ?? "-"}</td>
+                    <td>{averages.avgOpponentPointPct == null ? "-" : `${(averages.avgOpponentPointPct * 100).toFixed(1)}%`}</td>
+                    <td>{averages.score?.toFixed(2) ?? "-"}</td>
                   </tr>
 
                   {/* Data Rows */}
@@ -437,8 +395,9 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
                     const teamInfo = teamsMap[team.teamId];
                     if (!teamInfo) return null; // Skip if no team info found
 
-                    const gp = team.totals?.gamesPlayed ?? "-"; // Use '-' if null
-                    const off = team.totals?.offNights ?? "-";
+                    const complete = !team.totals.scheduleCoverage || team.totals.scheduleCoverage.known === team.totals.scheduleCoverage.expected;
+                    const gp = complete ? team.totals.gamesPlayed : "-";
+                    const off = complete ? team.totals.offNights : "-";
                     const oppPct = team.avgOpponentPointPct;
                     const score = team.score;
 
@@ -475,8 +434,13 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
                           {typeof oppPct === "number"
                             ? `${(oppPct * 100).toFixed(1)}%`
                             : "-"}
+                          {team.opponentCoverage && (
+                            <small className={styles.coverage} title="Available scheduled opponents; incomplete means are unavailable">
+                              {team.opponentCoverage.known}/{team.opponentCoverage.expected}
+                            </small>
+                          )}
                         </td>
-                        <td className={scoreClass}>{score.toFixed(2)}</td>
+                        <td className={scoreClass}>{score?.toFixed(2) ?? "-"}</td>
                       </tr>
                     );
                   })}
@@ -497,8 +461,8 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
                     <td>AVG:</td>
                     {weeklyAverages.map((week) => (
                       <td key={week.weekNumber}>
-                        {week.gamesPlayed.toFixed(1)}G /{" "}
-                        {week.offNights.toFixed(1)}O
+                        {week.gamesPlayed?.toFixed(1) ?? "-"}G /{" "}
+                        {week.offNights?.toFixed(1) ?? "-"}O
                       </td>
                     ))}
                   </tr>
@@ -527,12 +491,14 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
                           (week) => (
                             <td key={week.weekNumber}>
                               <strong>
-                                {week.gamesPlayed}G / {week.offNights}O
+                                {week.gamesPlayed == null
+                                  ? `Schedule ${week.coverage?.known ? "partial" : "unavailable"} (${week.coverage?.known ?? 0}/${week.coverage?.expected ?? 7} days)`
+                                  : `${week.gamesPlayed}G / ${week.offNights}O`}
                               </strong>
                               <span className={styles.opponentList}>
                                 {week.opponents.length
                                   ? week.opponents.join(" · ")
-                                  : "No games"}
+                                  : week.gamesPlayed == null ? "" : "No games"}
                               </span>
                             </td>
                           ),

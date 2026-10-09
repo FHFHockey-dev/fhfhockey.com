@@ -1,10 +1,12 @@
 import React from "react";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { SWRConfig } from "swr";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ContextualRankingComparisonResponse } from "lib/rankings/comparison";
 import type { DeploymentTiersResponse } from "lib/rankings/deploymentTiers";
 import type { GoalieMatrixResponse } from "lib/rankings/goalieMatrix";
+import { FANTASY_RANKINGS_PRESET, normalizeRankingsFilters, buildMatrixRequestPath } from "lib/rankings/rankingUrlState";
 import type { PlayerMatrixResponse } from "lib/rankings/playerMatrix";
 import type { RankingsSplitsResponse } from "lib/rankings/splits";
 import type { TeamMatrixResponse } from "lib/rankings/teamMatrix";
@@ -20,13 +22,15 @@ import type {
   ContextualRankingsResponse,
 } from "lib/rankings/rankingTypes";
 
-const { replaceMock, routerState, swrMock } = vi.hoisted(() => ({
+const { replaceMock, routerState, swrMock, swrMode } = vi.hoisted(() => ({
   replaceMock: vi.fn(),
   routerState: {
     pathname: "/rankings",
     query: {} as Record<string, string>,
+    isReady: true,
   },
   swrMock: vi.fn(),
+  swrMode: { actual: false },
 }));
 
 vi.mock("next/head", () => ({
@@ -37,13 +41,19 @@ vi.mock("next/router", () => ({
   useRouter: () => ({
     pathname: routerState.pathname,
     query: routerState.query,
+    isReady: routerState.isReady,
     replace: replaceMock,
   }),
 }));
 
-vi.mock("swr", () => ({
-  default: (key: string | null) => swrMock(key),
-}));
+vi.mock("swr", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("swr")>();
+  return {
+    ...actual,
+    default: (...args: Parameters<typeof actual.default>) =>
+      swrMode.actual ? actual.default(...args) : swrMock(args[0]),
+  };
+});
 
 import RankingsPage from "../../pages/rankings";
 
@@ -1593,13 +1603,122 @@ function setupSWR() {
 
 describe("RankingsPage interactions", () => {
   beforeEach(() => {
+    swrMode.actual = false;
     routerState.query = {};
+    routerState.isReady = true;
     replaceMock.mockReset();
     setupSWR();
   });
 
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("waits for URL readiness before fetching the selected ranking context", async () => {
+    swrMode.actual = true;
+    routerState.isReady = false;
+    const fetchMock = vi.fn((url: string) => Promise.resolve({
+      ok: true, json: async () => swrMock(url).data,
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    const cache = new Map();
+    const view = () => (
+      <SWRConfig value={{ provider: () => cache, shouldRetryOnError: false }}>
+        <RankingsPage />
+      </SWRConfig>
+    );
+    const { rerender } = render(view());
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(["/api/v1/contextual-rankings/metadata"]);
+    routerState.query = { season: "20252026", strength: "all", window: "last5",
+      min_gp: "1", min_toi: "600", sort_metric: "mcm_score", selected_player: "1" };
+    routerState.isReady = true;
+    rerender(view());
+    await waitFor(() => expect(screen.getAllByText("Matt Savoie").length).toBeGreaterThan(1));
+    const contextUrls = fetchMock.mock.calls.map(([url]) => new URL(url, "https://fhfh.test"))
+      .filter((url) => url.pathname !== "/api/v1/contextual-rankings/metadata");
+    expect(contextUrls.some((url) => url.pathname.endsWith("/matrix"))).toBe(true);
+    expect(contextUrls.some((url) => url.pathname.endsWith("/snapshot"))).toBe(true);
+    expect(contextUrls.some((url) => url.pathname.endsWith("/comparison"))).toBe(true);
+    for (const url of contextUrls) {
+      expect(url.searchParams.get("season")).toBe("20252026");
+      expect(url.searchParams.get("strength")).toBe("all");
+      expect(url.searchParams.get("min_toi")).toBe("600");
+    }
+    expect(screen.getByRole("combobox", { name: "Window" })).toHaveProperty("value", "last5");
+  });
+
+  it("clears results from the previous window while new requests load or fail", async () => {
+    swrMode.actual = true;
+    routerState.query = { season: "20252026", window: "season", selected_player: "1" };
+    const pending: Array<() => void> = [];
+    vi.stubGlobal("fetch", vi.fn((url: string) => {
+      if (new URL(url, "https://fhfh.test").searchParams.get("window") === "last5") {
+        return new Promise((resolve) => pending.push(() => resolve({
+          ok: false,
+          json: async () => ({ success: false, error: "Current window unavailable" }),
+        })));
+      }
+      return Promise.resolve({ ok: true, json: async () => swrMock(url).data });
+    }));
+    const cache = new Map();
+    const view = () => (
+      <SWRConfig value={{ provider: () => cache, shouldRetryOnError: false }}>
+        <RankingsPage />
+      </SWRConfig>
+    );
+    const { rerender } = render(view());
+    await waitFor(() => expect(screen.getAllByText("Matt Savoie").length).toBeGreaterThan(1));
+    await waitFor(() => expect(within(screen.getByRole("complementary", { name: "Comparison context" })).getByText("Matt Savoie")).toBeTruthy());
+
+    routerState.query = { ...routerState.query, window: "last5" };
+    rerender(view());
+    await waitFor(() => expect(pending.length).toBeGreaterThanOrEqual(3));
+    expect(screen.queryAllByText("Matt Savoie")).toHaveLength(0);
+    expect(screen.getByText("Loading comparison...")).toBeTruthy();
+    await act(async () => pending.forEach((finish) => finish()));
+    await waitFor(() => expect(screen.getAllByText("Current window unavailable").length).toBeGreaterThan(0));
+    expect(screen.queryAllByText("Matt Savoie")).toHaveLength(0);
+    expect(screen.getByRole("combobox", { name: "Window" })).toHaveProperty("value", "last5");
+  });
+
+  it("persists and restores the fantasy preset with its selected season and sample limits", () => {
+    routerState.query = { season: "20262027", tab: "explorer", team: "BOS", page: "3" };
+    render(<RankingsPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Fantasy preset" }));
+    const location = replaceMock.mock.calls.at(-1)![0];
+    expect(location.query).toMatchObject({ season: "20262027", entity: "skaters", tab: "rankings",
+      window: "season", strength: "all", metric: "mcm_score", sort_metric: "mcm_score",
+      sort_direction: "desc", min_gp: "1", min_toi: "600", page: "1",
+      columns: FANTASY_RANKINGS_PRESET.metricColumns });
+    expect(location.query).not.toHaveProperty("team");
+    const restored = normalizeRankingsFilters(location.query);
+    expect(restored).toMatchObject(FANTASY_RANKINGS_PRESET);
+    expect(buildMatrixRequestPath(restored)).toContain("min_toi=600");
+  });
+
+  it.each([0, 2])("reports fantasy score availability across the filtered cohort (%i available)", (availableRows) => {
+    routerState.query = { season: "20252026", strength: "all", sort_metric: "mcm_score",
+      metric: "mcm_score", min_gp: "1", min_toi: "600" };
+    const defaultResponse = swrMock.getMockImplementation()!;
+    swrMock.mockImplementation((key: string | null) => {
+      if (key?.startsWith("/api/v1/contextual-rankings/matrix")) {
+        return { data: { ...matrixPayload, meta: { ...matrixPayload.meta,
+          sortMetric: "mcm_score", sortMetricAvailableRowCount: availableRows } }, error: null, isLoading: false };
+      }
+      return defaultResponse(key);
+    });
+    render(<RankingsPage />);
+    const summary = screen.getByText(availableRows === 0
+      ? "2025–2026 performance · No eligible values for MCM Score across all skaters · ALL · Season · Min 1 GP · Min 600s TOI"
+      : "2025–2026 performance · Sorted by MCM Score percentile across all skaters · ALL · Season · Min 1 GP · Min 600s TOI");
+    expect(summary).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: "Strength" })).toHaveProperty("value", "all");
+    fireEvent.click(screen.getByRole("button", { name: "Hide controls" }));
+    expect(summary.isConnected).toBe(true);
+    expect(screen.queryByRole("combobox", { name: "Strength" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Show controls" })).toBeTruthy();
   });
 
   it("wires matrix sorting, pagination, page size, and row selection into URL state", () => {
@@ -1623,6 +1742,8 @@ describe("RankingsPage interactions", () => {
     expect(screen.getAllByText("Matt Savoie").length).toBeGreaterThan(0);
     expect(screen.getByRole("complementary", { name: "Comparison context" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Comparison Context" })).toBeTruthy();
+    expect(screen.queryByText(/\d+ GP.*(?:low|medium|high) confidence/)).toBeNull();
+    expect(within(screen.getByRole("complementary", { name: "Comparison context" })).getAllByText(/GP.*Meets selected minimums/).length).toBeGreaterThan(0);
     expect(screen.getByText("TOI Up: TOI/G up +50s from last 20 to last 5.")).toBeTruthy();
     expect(swrMock).toHaveBeenCalledWith(
       expect.stringMatching(
@@ -1835,6 +1956,7 @@ describe("RankingsPage interactions", () => {
     rerender(<RankingsPage />);
 
     expect(screen.getByRole("heading", { name: "Goalie Rankings" })).toBeTruthy();
+    expect(screen.getByText("2025–2026 performance · Sorted by SV% percentile · Season · all goalie roles · Min 3 starts · Min 100 shots")).toBeTruthy();
     expect(document.title).toBe("Goalie Rankings | FHFHockey");
     expect(
       within(screen.getByLabelText("Ranking quick info")).getByText(
@@ -1938,6 +2060,7 @@ describe("RankingsPage interactions", () => {
     rerender(<RankingsPage />);
 
     expect(screen.getByRole("heading", { name: "Team Rankings" })).toBeTruthy();
+    expect(screen.getByText("2025–2026 performance · Sorted by Off Rating percentile · raw/contextual team style · 32 teams")).toBeTruthy();
     expect(document.title).toBe("Team Rankings | FHFHockey");
     expect(
       within(screen.getByLabelText("Ranking quick info")).getByText(

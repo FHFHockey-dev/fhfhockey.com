@@ -345,6 +345,7 @@ export async function fetchAllNhleShiftChartsSnapshotForGame(
     throw new Error(`Incomplete NHL shift pagination for game ${gameId}`);
   }
   const identities = new Set<string>();
+  const uniqueRows: NhleShiftRow[] = [];
   for (const row of rows) {
     if (
       row.gameId !== gameId ||
@@ -371,10 +372,11 @@ export async function fetchAllNhleShiftChartsSnapshotForGame(
       row.duration ?? "",
       row.typeCode,
     ].join(":");
-    if (identities.has(identity)) {
-      throw new Error(`Duplicate NHL shift source row for game ${gameId}`);
-    }
+    // NHL can publish the same interval twice under different source row IDs.
+    // Preserve both in the raw snapshot, but count the interval only once.
+    if (identities.has(identity)) continue;
     identities.add(identity);
+    uniqueRows.push(row);
   }
 
   const rawPayload: NhleShiftChartsRawPayload = {
@@ -382,7 +384,7 @@ export async function fetchAllNhleShiftChartsSnapshotForGame(
     data: rows,
     source: "json-api",
   };
-  const normalizedRows = [...rows].sort(
+  const normalizedRows = uniqueRows.sort(
     (left, right) =>
       left.typeCode - right.typeCode ||
       left.playerId - right.playerId ||

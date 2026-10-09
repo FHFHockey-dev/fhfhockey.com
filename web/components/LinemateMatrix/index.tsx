@@ -1,6 +1,8 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\LinemateMatrix\index.tsx
 
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
+import useResizeObserver from "hooks/useResizeObserver";
 import classNames from "classnames";
 import Fetch from "lib/cors-fetch";
 import { Shift, getAvg, getPairwiseTOI } from "./utilities";
@@ -13,7 +15,7 @@ import groupBy from "utils/groupBy";
 import styles from "./index.module.scss";
 import Tooltip from "components/Tooltip";
 import Select from "components/Select";
-import { isGameFinished } from "pages/api/v1/db/update-stats/[gameId]";
+import Image from "next/image";
 import { setDifference } from "utils/setDifference";
 
 // C:\Users\timbr\Desktop\FHF\fhfhockey.com-3\web\components\LinemateMatrix\index.tsx
@@ -22,14 +24,8 @@ export async function fetchGamecenterJson<T>(
   gameId: number,
   resource: "boxscore" | "play-by-play"
 ): Promise<T> {
-  const response = await fetch(
-    `https://api-web.nhle.com/v1/gamecenter/${gameId}/${resource}`,
-    {
-      headers: {
-        Accept: "application/json",
-        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)"
-      }
-    }
+  const response = await Fetch(
+    `https://api-web.nhle.com/v1/gamecenter/${gameId}/${resource}`
   );
 
   const contentType = response.headers.get("content-type") ?? "";
@@ -72,7 +68,7 @@ async function getRostersMap(gameId: number, _teamId?: number) {
   }
 
   // Existing gameState check
-  if (!isGameFinished(boxscore.gameState)) {
+  if (!["OFF", "FINAL"].includes(boxscore.gameState)) {
     throw new Error(
       `The gameState for the game ${gameId} is ` + boxscore.gameState
     );
@@ -165,6 +161,7 @@ export type PlayerData = {
   position: string;
   sweaterNumber: number;
   name: string;
+  fullName?: string;
 };
 
 export type TOIData = {
@@ -344,7 +341,7 @@ function useTOI(id: number, mode: Mode) {
   return [toi, rosters, teams, loading, error] as const;
 }
 
-type Team = { id: number; name: string };
+type Team = { id: number; name: string; logo?: string };
 type Props = {
   id: number;
   mode: Mode;
@@ -381,6 +378,26 @@ export default function LinemateMatrix({
     onModeChanged(newMode);
   };
 
+  return <LinemateMatrixView toiData={toiData} rosters={rosters} gameInfo={gameInfo}
+    loading={loading} error={error} mode={activeMode} onModeChanged={handleModeChange} />;
+}
+
+type MatrixViewProps = {
+  toiData: Record<number, TOIData[]>;
+  rosters: Record<number, PlayerData[]>;
+  gameInfo: readonly Team[] | null;
+  loading?: boolean;
+  error?: string | null;
+  mode: Mode;
+  onModeChanged: (mode: Mode) => void;
+  compact?: boolean;
+};
+
+export const LinemateMatrixView = memo(function LinemateMatrixView({
+  toiData, rosters, gameInfo, loading = false, error = null,
+  mode: activeMode, onModeChanged: handleModeChange, compact = false
+}: MatrixViewProps) {
+
   if (!gameInfo) {
     return (
       <div className={styles.shell}>
@@ -400,7 +417,7 @@ export default function LinemateMatrix({
   }
   const [homeTeam, awayTeam] = gameInfo;
   return (
-    <div className={styles.shell}>
+    <div className={classNames(styles.shell, { [styles.compact]: compact })}>
       <div className={styles.selectWrapper}>
         <Select
           ariaLabel="Linemate matrix mode"
@@ -409,6 +426,7 @@ export default function LinemateMatrix({
           onOptionChange={handleModeChange}
         />
       </div>
+      {compact && <p className={styles.fullGameLabel}>Full-game shared ice time · brighter = more TOI</p>}
       {loading && (
         <div className={styles.status} role="status">
           Updating linemate matrix...
@@ -421,24 +439,30 @@ export default function LinemateMatrix({
       )}
       <div className={styles.gridWrapper}>
         <LinemateMatrixInternal
+          key={homeTeam.id}
           teamId={homeTeam.id}
           teamName={homeTeam.name}
           roster={rosters[homeTeam.id]}
           toiData={toiData[homeTeam.id]}
           mode={activeMode}
+          compact={compact}
+          logo={homeTeam.logo}
         />
 
         <LinemateMatrixInternal
+          key={awayTeam.id}
           teamId={awayTeam.id}
           teamName={awayTeam.name}
           roster={rosters[awayTeam.id]}
           toiData={toiData[awayTeam.id]}
           mode={activeMode}
+          compact={compact}
+          logo={awayTeam.logo}
         />
       </div>
     </div>
   );
-}
+});
 
 type PlayerType = "forwards" | "defensemen";
 export const NUM_PLAYERS_PER_LINE = {
@@ -540,13 +564,15 @@ export function sortByPPTOI(data: Record<string, TOIData>): PlayerData[] {
     .filter((player): player is PlayerData => player != null);
 }
 
-type Mode = "number" | "total-toi" | "pp-toi" | "line-combination";
+export type Mode = "number" | "total-toi" | "pp-toi" | "line-combination";
 type LinemateMatrixInternalProps = {
   teamId: number;
   teamName: string;
   toiData: TOIData[];
   roster: PlayerData[];
   mode: Mode;
+  compact?: boolean;
+  logo?: string;
 };
 
 export const getKey = (p1: number, p2: number) => `${[p1, p2].sort()}`;
@@ -555,9 +581,14 @@ export function LinemateMatrixInternal({
   teamName,
   roster = [],
   toiData = [],
-  mode
+  mode,
+  compact = false,
+  logo
 }: LinemateMatrixInternalProps) {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const viewport = useResizeObserver(viewportRef);
   const [selectedCell, setSelectedCell] = useState({ row: -1, col: -1 });
+  const [positionFilter, setPositionFilter] = useState<"All" | "F" | "D">("All");
   const table = useMemo(() => {
     const table: Record<string, TOIData> = {};
     toiData.forEach((item) => {
@@ -568,7 +599,7 @@ export function LinemateMatrixInternal({
     return table;
   }, [toiData]);
 
-  const sortedRoster = useMemo(() => {
+  const orderedRoster = useMemo(() => {
     if (mode === "number") {
       const rosterSortedByNumber = [...roster].sort(
         (a, b) => a.sweaterNumber - b.sweaterNumber
@@ -588,6 +619,10 @@ export function LinemateMatrixInternal({
       return [];
     }
   }, [table, mode, roster]);
+  const sortedRoster = useMemo(() => orderedRoster.filter(player =>
+    !compact || positionFilter === "All" ||
+    (positionFilter === "F" ? isForward(player.position) : isDefense(player.position))
+  ), [orderedRoster, positionFilter, compact]);
   const avgSharedToi = useMemo(() => {
     if (sortedRoster.length === 0) return 0;
     let sum = 0;
@@ -599,16 +634,38 @@ export function LinemateMatrixInternal({
 
   return (
     <section id={`linemate-matrix-${teamId}`} className={styles.container}>
-      <h4>{teamName}</h4>
+      {compact ? <div className={styles.teamHeading}>
+        {logo && <Image src={logo} alt="" width={40} height={40} unoptimized />}
+        <h4>{teamName}</h4>
+        {compact && <div className={styles.positionFilters} role="group" aria-label={`${teamName} positions`}>
+          {(["All", "F", "D"] as const).map(filter => <button key={filter} type="button"
+            aria-pressed={positionFilter === filter}
+            aria-label={filter === "F" ? "Forwards" : filter === "D" ? "Defense" : "All skaters"}
+            onClick={() => { setPositionFilter(filter); setSelectedCell({ row: -1, col: -1 }); }}>{filter}</button>)}
+        </div>}
+      </div> : <h4>{teamName}</h4>}
       {sortedRoster.length === 0 ? (
         <div className={styles.emptyState}>No skater TOI available.</div>
       ) : null}
+      <div ref={viewportRef} className={styles.matrixViewport}>
       <div
+        data-matrix-size={sortedRoster.length}
+        onKeyDown={compact ? (event) => {
+          const cells = Array.from(event.currentTarget.querySelectorAll<HTMLElement>("[data-matrix-cell]"));
+          const index = cells.indexOf(document.activeElement as HTMLElement);
+          const delta = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: sortedRoster.length, ArrowUp: -sortedRoster.length }[event.key];
+          if (index >= 0 && delta !== undefined) {
+            event.preventDefault();
+            cells[Math.max(0, Math.min(cells.length - 1, index + delta))]?.focus();
+          }
+        } : undefined}
         className={classNames(styles.grid, "content")}
         style={{
           gridTemplateRows: `var(--player-info-size) repeat( ${sortedRoster.length}, 1fr)`,
-          gridTemplateColumns: `var(--player-info-size) repeat(${sortedRoster.length}, 1fr)`
-        }}
+          gridTemplateColumns: `var(--player-info-size) repeat(${sortedRoster.length}, 1fr)`,
+          "--players": sortedRoster.length,
+          "--cell-size": `${Math.floor(Math.max(1, Math.min((viewport.width - 88) / Math.max(1, sortedRoster.length), (viewport.height - 76) / Math.max(1, sortedRoster.length))) * 64) / 64}px`
+        } as CSSProperties}
       >
         {sortedRoster.length > 0 &&
           new Array(sortedRoster.length + 1).fill(0).map((_, row) => {
@@ -619,6 +676,7 @@ export function LinemateMatrixInternal({
                 ...sortedRoster.map((player, col) => (
                   <div
                     key={player.id}
+                    title={player.fullName ?? player.name}
                     className={classNames(styles.topPlayerName, {
                       [styles.active]: col === selectedCell.col - 1
                     })}
@@ -643,6 +701,7 @@ export function LinemateMatrixInternal({
                     return (
                       <div
                         key={p2.id}
+                        title={p2.fullName ?? p2.name}
                         className={classNames(styles.leftPlayerName, {
                           [styles.active]: selectedCell.row === row
                         })}
@@ -662,6 +721,8 @@ export function LinemateMatrixInternal({
                       return (
                         <Cell
                           key={`${p1.id}-${p2.id}`}
+                          compact={compact}
+                          focusable={row === 1 && col === 1}
                           teamAvgToi={avgSharedToi}
                           sharedToi={table[getKey(p1.id, p2.id)]?.toi ?? 0}
                           p1={p1}
@@ -680,6 +741,8 @@ export function LinemateMatrixInternal({
           })}
       </div>
 
+      </div>
+
       {/* PPTOI mode only */}
       {mode === "pp-toi" && (
         <div className={styles.comparisonBar}>
@@ -694,6 +757,8 @@ export function LinemateMatrixInternal({
 }
 
 type CellProps = {
+  compact?: boolean;
+  focusable?: boolean;
   teamAvgToi: number;
   sharedToi: number;
 
@@ -728,7 +793,7 @@ function isMixing(p1Pos: string, p2Pos: string) {
 }
 
 /**
- * Blue is defensemen, red is forwards, purple is forwards mixing with defensemen
+ * Forward pairs are blue, defense pairs orange, and mixed pairs gold.
  */
 function getColor(p1Pos: string, p2Pos: string) {
   if (isForward(p1Pos) && isForward(p2Pos)) return BLUE;
@@ -738,6 +803,8 @@ function getColor(p1Pos: string, p2Pos: string) {
 }
 
 function Cell({
+  compact = false,
+  focusable = false,
   teamAvgToi,
   sharedToi,
   p1,
@@ -746,12 +813,38 @@ function Cell({
   onPointerEnter = () => {},
   onPointerLeave = () => {}
 }: CellProps) {
+  const [point, setPoint] = useState<{ left: number; top: number } | null>(null);
+  useEffect(() => {
+    if (!point) return;
+    const dismiss = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPoint(null);
+    };
+    window.addEventListener("keydown", dismiss);
+    return () => window.removeEventListener("keydown", dismiss);
+  }, [point]);
+  const label = `${p1.fullName ?? p1.name} × ${p2.fullName ?? p2.name}: ${formatTime(sharedToi)} shared TOI`;
   const opacity =
     teamAvgToi > 0 && Number.isFinite(teamAvgToi)
       ? Math.max(0, Math.min(1, sharedToi / teamAvgToi))
       : 0;
   const color = getColor(p1.position, p2.position);
 
+  if (compact) {
+    const show = (element: HTMLElement) => {
+      const rect = element.getBoundingClientRect();
+      setPoint({ left: Math.max(8, Math.min(window.innerWidth - 268, rect.left - 120)), top: Math.max(8, rect.top - 66) });
+      onPointerEnter();
+    };
+    const hide = () => { setPoint(null); onPointerLeave(); };
+    return <div data-matrix-cell={`${p1.id}-${p2.id}`} tabIndex={focusable ? 0 : -1}
+      aria-label={label} className={classNames(styles.cell, { [styles.highlight]: highlight })}
+      onPointerEnter={e => show(e.currentTarget)} onPointerLeave={hide}
+      onFocus={e => show(e.currentTarget)} onBlur={hide}
+      onKeyDown={e => { if (e.key === "Escape") hide(); }}>
+      <div className={styles.content} style={{ opacity, backgroundColor: color }} />
+      {point && createPortal(<div role="tooltip" className={styles.matrixTooltip} style={point}>{label}</div>, document.body)}
+    </div>;
+  }
   return (
     <div
       className={classNames(styles.cell, { [styles.highlight]: highlight })}

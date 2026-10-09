@@ -7,8 +7,8 @@ type SnapshotDateRow = {
 
 const createSupabaseClient = (pages: SnapshotDateRow[][]) => {
   const rangeMock = vi.fn((from: number, to: number) => {
-    const pageIndex = Math.floor(from / 128);
-    expect(to - from + 1).toBe(128);
+    const pageIndex = Math.floor(from / 1000);
+    expect(to - from + 1).toBe(1000);
     return Promise.resolve({
       data: pages[pageIndex] ?? [],
       error: null
@@ -36,11 +36,11 @@ const createSupabaseClient = (pages: SnapshotDateRow[][]) => {
 
 describe("fetchDistinctUnderlyingStatsSnapshotDates", () => {
   it("keeps paging until it has enough unique snapshot dates", async () => {
-    const firstPage = Array.from({ length: 128 }, (_, index) => ({
-      date: index < 64 ? "2026-04-05" : "2026-04-04"
+    const firstPage = Array.from({ length: 1000 }, (_, index) => ({
+      date: index < 500 ? "2026-04-05" : "2026-04-04"
     }));
-    const secondPage = Array.from({ length: 128 }, (_, index) => ({
-      date: index < 64 ? "2026-04-03" : "2026-04-02"
+    const secondPage = Array.from({ length: 1000 }, (_, index) => ({
+      date: index < 500 ? "2026-04-03" : "2026-04-02"
     }));
     const thirdPage = [{ date: "2026-04-01" }];
     const supabase = createSupabaseClient([firstPage, secondPage, thirdPage]);

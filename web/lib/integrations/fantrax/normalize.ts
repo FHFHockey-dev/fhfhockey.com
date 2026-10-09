@@ -46,11 +46,16 @@ const SKATER_STAT_ALIASES: Record<string, string> = {
   POINTS: "POINTS",
   INDIVIDUALPOINTS: "POINTS",
   PLUSMINUS: "PLUS_MINUS",
+  INDIVIDUALPLUSMINUS: "PLUS_MINUS",
+  INDIVIDUALTIMEONICESKATERSPERGAME: "TIME_ON_ICE_PER_GAME",
   SHOTSONGOAL: "SHOTS_ON_GOAL",
+  INDIVIDUALSHOTSONGOAL: "SHOTS_ON_GOAL",
   SHOTS: "SHOTS_ON_GOAL",
   SOG: "SHOTS_ON_GOAL",
   HITS: "HITS",
+  INDIVIDUALHITS: "HITS",
   BLOCKEDSHOTS: "BLOCKED_SHOTS",
+  INDIVIDUALBLOCKS: "BLOCKED_SHOTS",
   BLOCKS: "BLOCKED_SHOTS",
   BLK: "BLOCKED_SHOTS",
   PENALTYMINUTES: "PENALTY_MINUTES",
@@ -60,7 +65,9 @@ const SKATER_STAT_ALIASES: Record<string, string> = {
   POWERPLAYASSISTS: "PP_ASSISTS",
   PPA: "PP_ASSISTS",
   POWERPLAYPOINTS: "PP_POINTS",
+  INDIVIDUALPOWERPLAYPOINTS: "PP_POINTS",
   PPP: "PP_POINTS",
+  INDIVIDUALSPECIALTEAMSPOINTS: "SPECIAL_TEAMS_POINTS",
   SHORTHANDEDGOALS: "SH_GOALS",
   SHG: "SH_GOALS",
   SHORTHANDEDASSISTS: "SH_ASSISTS",
@@ -145,19 +152,26 @@ const GOALIE_STAT_ALIASES: Record<string, string> = {
   OVERTIMELOSSES: "OTL_GOALIE",
   OTL: "OTL_GOALIE",
   SHOTSAGAINST: "SHOTS_AGAINST_GOALIE",
+  INDIVIDUALSHOTSONGOALAGAINST: "SHOTS_AGAINST_GOALIE",
   SA: "SHOTS_AGAINST_GOALIE",
   SAVES: "SAVES_GOALIE",
+  INDIVIDUALSAVES: "SAVES_GOALIE",
   SV: "SAVES_GOALIE",
   GOALSAGAINST: "GOALS_AGAINST_GOALIE",
+  INDIVIDUALGOALSAGAINST: "GOALS_AGAINST_GOALIE",
   GA: "GOALS_AGAINST_GOALIE",
   SHUTOUTS: "SHUTOUTS_GOALIE",
+  INDIVIDUALSHUTOUTS: "SHUTOUTS_GOALIE",
+  INDIVIDUALGOALIEWINS: "WINS_GOALIE",
   SO: "SHUTOUTS_GOALIE",
   SAVEPERCENTAGE: "SAVE_PERCENTAGE",
+  INDIVIDUALSAVEPERCENTAGE: "SAVE_PERCENTAGE",
   SAVEPCT: "SAVE_PERCENTAGE",
   SVPCT: "SAVE_PERCENTAGE",
   SVPERCENTAGE: "SAVE_PERCENTAGE",
   SVPERCENT: "SAVE_PERCENTAGE",
   GOALSAGAINSTAVERAGE: "GOALS_AGAINST_AVERAGE",
+  INDIVIDUALGOALSAGAINSTAVERAGE: "GOALS_AGAINST_AVERAGE",
   GAA: "GOALS_AGAINST_AVERAGE",
   QUALITYSTARTS: "QUALITY_STARTS_GOALIE",
   QUALITYSTART: "QUALITY_STARTS_GOALIE",
@@ -204,6 +218,7 @@ const ROSTER_POSITION_ALIASES: Record<string, string> = {
   BENCH: "bench",
   UTIL: "utility",
   UTILITY: "utility",
+  SKT: "utility",
 };
 
 function record(value: unknown): UnknownRecord {
@@ -325,16 +340,9 @@ export function normalizeFantraxDiscovery(payload: unknown): FantraxDiscoveredLe
 
 function leagueType(value: unknown): FantraxLeagueType | null {
   const normalized = token(value);
-  if (normalized.includes("POINT")) return "points";
-  if (
-    normalized.includes("ROTISSERIE") ||
-    normalized.includes("ROTO") ||
-    normalized.includes("CATEGORY") ||
-    normalized.includes("CATEGORIES")
-  ) {
-    return "categories";
-  }
-  return null;
+  if (["POINTSBASED", "HEADTOHEADPOINTSBASED", "HEADTOHEADPOINTS"].includes(normalized)) return "points";
+  if (["ROTISSERIE", "HEADTOHEADROTISINGLEWIN", "HEADTOHEADROTIMULTIWIN", "CATEGORIES"].includes(normalized)) return "categories";
+  return null; // BRACKET and unrecognized types have no safe FHFH scoring equivalent.
 }
 
 function draftOrderType(info: UnknownRecord): FantraxDraftOrderType {
@@ -482,6 +490,8 @@ function normalizeScoring(scoringSystem: UnknownRecord) {
   const skaterSources: Record<string, { code: string; label: string }> = {};
   const goalieSources: Record<string, { code: string; label: string }> = {};
   const categorySources: Record<string, { code: string; label: string }> = {};
+  let specialTeamsPoints: number | null = null;
+  let conflictingSpecialTeamsPoints = false;
 
   for (const settingRaw of array(scoringSystem.scoringCategorySettings)) {
     const setting = record(settingRaw);
@@ -514,7 +524,12 @@ function normalizeScoring(scoringSystem: UnknownRecord) {
         });
         continue;
       }
-      const statKey = mappedStatKey(config, role);
+      const mappedKey = mappedStatKey(config, role);
+      const position = token(firstText(record(config.position), ["code", "name", "shortName"]) ?? config.position);
+      const defenseOnly = role === "skater" && ["D", "DEFENSE", "DEFENCE", "DEFENSEMAN", "DEFENCEMAN"].includes(position);
+      const statKey = defenseOnly && (mappedKey === "HITS" || mappedKey === "BLOCKED_SHOTS")
+        ? `${mappedKey}_D`
+        : mappedKey;
       if (!statKey) {
         addUnsupported(unsupported, {
           kind: "scoring",
@@ -542,6 +557,26 @@ function normalizeScoring(scoringSystem: UnknownRecord) {
             label: category.label,
             reason: "Fantrax did not provide a finite point value.",
           });
+          continue;
+        }
+        if (statKey === "SPECIAL_TEAMS_POINTS") {
+          if (position && position !== "DEFAULT") {
+            addUnsupported(unsupported, {
+              kind: "scoring", code: category.code, label: category.label,
+              reason: "Position-specific special teams points require manual setup.",
+            });
+          } else if (conflictingSpecialTeamsPoints) {
+            continue;
+          } else if (specialTeamsPoints != null && specialTeamsPoints !== points) {
+            addUnsupported(unsupported, {
+              kind: "scoring", code: category.code, label: category.label,
+              reason: "Conflicting special teams point rules require manual setup.",
+            });
+            specialTeamsPoints = null;
+            conflictingSpecialTeamsPoints = true;
+          } else {
+            specialTeamsPoints = points;
+          }
           continue;
         }
         const target = role === "goalie" ? goalieScoringCategories : skaterScoringCategories;
@@ -573,6 +608,13 @@ function normalizeScoring(scoringSystem: UnknownRecord) {
         target[statKey] = points;
         sources[statKey] = category;
       } else if (type === "categories") {
+        if (statKey === "SPECIAL_TEAMS_POINTS") {
+          addUnsupported(unsupported, {
+            kind: "scoring", code: category.code, label: category.label,
+            reason: "Special teams points cannot be mapped exactly as a category.",
+          });
+          continue;
+        }
         if (conflictingCategoryKeys.has(statKey)) continue;
         const weight = finiteNumber(config.weight ?? setting.weight) ?? 1;
         if (categoryWeights[statKey] != null && categoryWeights[statKey] !== weight) {
@@ -602,7 +644,18 @@ function normalizeScoring(scoringSystem: UnknownRecord) {
     }
   }
 
-  if (!type) warnings.push("Fantrax returned an unrecognized scoring-system type.");
+  if (specialTeamsPoints != null) {
+    for (const key of ["PP_POINTS", "SH_POINTS"]) {
+      if (!conflictingSkaterKeys.has(key)) {
+        skaterScoringCategories[key] = (skaterScoringCategories[key] ?? 0) + specialTeamsPoints;
+      }
+    }
+  }
+
+  if (!type) {
+    const rawType = text(scoringSystem.type ?? scoringSystem.scoringType)?.slice(0, 80) ?? "unknown";
+    warnings.push(`Fantrax scoring type ${rawType} cannot be applied automatically. Keep your manual scoring settings and share the league ID with support.`);
+  }
   if (
     type === "points" &&
     !Object.keys(skaterScoringCategories).length &&

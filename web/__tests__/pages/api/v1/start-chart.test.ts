@@ -1,7 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+// @vitest-environment node
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { evaluatePayloadBudget } from "lib/dashboard/perfBudget";
 import { addStartChartPositionRanks } from "lib/projections/startChartFantasyScoring";
 import { normalizeStartChartResponse } from "lib/projections/startChartContract";
+import { consumerGameRevisionFixture, setConsumerSkaterEvidence } from "../../../fixtures/consumerGameRevision";
+import { normalizePlanningGames, publicPlanningForecasts } from "lib/rosterScheduleData/planning";
 
 const {
   fromMock,
@@ -9,12 +12,14 @@ const {
   getSeasonForDateMock,
   fetchTeamRatingsAsOfMock,
   eqMock,
+  gtMock,
 } = vi.hoisted(() => ({
   fromMock: vi.fn(),
   rpcMock: vi.fn(),
   getSeasonForDateMock: vi.fn(),
   fetchTeamRatingsAsOfMock: vi.fn(),
   eqMock: vi.fn(),
+  gtMock: vi.fn(),
 }));
 
 vi.mock("lib/supabase/server", () => ({
@@ -35,6 +40,7 @@ vi.mock("lib/teamRatingsService", () => ({
 type QueryResult = {
   data?: any;
   error: { message?: string } | null;
+  count?: number;
 };
 
 function createQueryBuilder(resolver: () => QueryResult) {
@@ -42,11 +48,19 @@ function createQueryBuilder(resolver: () => QueryResult) {
     select() {
       return builder;
     },
+    is() { return builder; },
+    not() { return builder; },
+    abortSignal() { return builder; },
     eq(...args: unknown[]) {
       eqMock(...args);
       return builder;
     },
+    or() { return builder; },
     in() {
+      return builder;
+    },
+    gt(...args: unknown[]) {
+      gtMock(...args);
       return builder;
     },
     gte() {
@@ -74,7 +88,7 @@ function createQueryBuilder(resolver: () => QueryResult) {
     then(resolve: (value: any) => any) {
       const out = resolver();
       return Promise.resolve(
-        resolve({ data: out.data ?? [], error: out.error }),
+        resolve({ data: out.data ?? [], error: out.error, count: out.count }),
       );
     },
   };
@@ -280,16 +294,28 @@ describe("/api/v1/start-chart", () => {
           nhl_player_id: "2",
           yahoo_player_id: "20",
         },
+        {
+          nhl_player_id: "3",
+          yahoo_player_id: "465.p.6743",
+          yahoo_team: "EDM",
+        },
+        {
+          nhl_player_id: "3",
+          yahoo_player_id: "477.p.6743",
+          yahoo_team: "EDM",
+        },
       ],
       new Map([
         [8478427, "CAR"],
         [1, null],
         [2, "MTL"],
+        [3, "EDM"],
       ]),
     );
 
     expect(mapped.get(8478427)).toBe(6777);
     expect(mapped.get(2)).toBe(20);
+    expect(mapped.get(3)).toBe(6743);
     expect(mapped.has(1)).toBe(false);
     expect(ambiguousPlayerIds).toEqual(new Set([1]));
   });
@@ -382,7 +408,11 @@ describe("/api/v1/start-chart", () => {
     });
   });
 
+  afterEach(() => vi.useRealTimers());
+
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-02-07T17:00:00Z"));
     vi.unstubAllEnvs();
     vi.clearAllMocks();
     rpcMock.mockResolvedValue({
@@ -567,18 +597,505 @@ describe("/api/v1/start-chart", () => {
     });
   });
 
+  it.each(["1002", "", "invalid", "1001,1001"])("withholds revisions outside or invalid serving canary %s without legacy fallback", async (canary) => {
+    const fixture = consumerGameRevisionFixture();
+    vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "true");
+    vi.stubEnv("STARTER_BOARD_CANARY_GAME_IDS", canary);
+    rpcMock.mockImplementation(async (name: string) => name === "read_forge_game_revisions"
+      ? { data: [fixture.revision], error: null } : { data: null, error: null });
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: fixture.date } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.contractVersion).toBe(2);
+    expect(res.body.games).toHaveLength(1);
+    expect(res.body.players).toEqual([]);
+    expect(res.body.gameRevisions).toEqual([]);
+    expect(res.body.coverage.projectionRows).toBe(0);
+    expect(res.body.serving.reason).toBe("scheduled_games_missing_projections");
+  });
+
+  it.each([`local:${"a".repeat(64)}`, "local:unreviewed"])(
+    "withholds a returned private succeeded raw run with version %s", async (gitSha) => {
+      vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");
+      const prior = fromMock.getMockImplementation()!;
+      fromMock.mockImplementation((table: string) => table === "forge_runs" ? createQueryBuilder(() => ({
+        // Deliberately ignore query filters to exercise the returned-row guard.
+        data: [{ run_id: "private-success", as_of_date: "2026-02-07", git_sha: gitSha,
+          created_at: "2026-02-07T13:00:00Z", metrics: null, forge_player_projections: [defaultProjection] }], error: null,
+      })) : prior(table));
+      vi.resetModules();
+      const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+      const res = createMockRes();
+      await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+      expect(res.statusCode).toBe(200);
+      expect(res.body.contractVersion).toBe(1);
+      expect(res.body.publishedForecastsEnabled).toBe(false);
+      expect(res.body.projectionRunId).toBeNull();
+      expect(res.body.players.filter((row: any) => !row.positions.includes("G"))).toEqual([]);
+      expect(JSON.stringify(res.body)).not.toContain("private-success");
+    },
+  );
+
+  it.each([null, "a".repeat(40)])(
+    "selects the latest normal raw run with version %s before a newer private run can hide it", async (gitSha) => {
+      vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");
+      const { createClient } = await import("@supabase/supabase-js");
+      const requests: URL[] = [];
+      const client = createClient("http://localhost:59999", "synthetic-key", { global: {
+        fetch: async (input) => {
+          const url = new URL(String(input)); requests.push(url);
+          expect(url.searchParams.get("or")).toBe("(git_sha.is.null,git_sha.not.like.local:*)");
+          expect(url.searchParams.get("status")).toBe("eq.succeeded");
+          expect(url.searchParams.get("limit")).toBe("1");
+          const rows = [
+            { run_id: "private-success", git_sha: `local:${"b".repeat(64)}` },
+            { run_id: "normal-success", git_sha: gitSha },
+          ].filter((row) => row.git_sha === null || !row.git_sha.startsWith("local:")).slice(0, 1);
+          return new Response(JSON.stringify({ ...rows[0], as_of_date: "2026-02-07",
+            created_at: "2026-02-07T12:00:00Z", metrics: null, forge_player_projections: [defaultProjection] }),
+            { status: 200, headers: { "Content-Type": "application/json" } });
+        },
+      } });
+      const prior = fromMock.getMockImplementation()!;
+      fromMock.mockImplementation((table: string) => table === "forge_runs" ? client.from(table) : prior(table));
+      vi.resetModules();
+      const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+      const res = createMockRes();
+      await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+      expect(requests).toHaveLength(1);
+      expect(res.statusCode).toBe(200);
+      expect(res.body.projectionRunId).toBe("normal-success");
+      expect(res.body.players.find((row: any) => row.player_id === defaultProjection.player_id).proj_fantasy_points).toBeGreaterThan(0);
+      expect(JSON.stringify(res.body)).not.toContain("private-success");
+    },
+  );
+
+  it("keeps the serving-off FORGE run reader independent of the revision canary", async () => {
+    vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");
+    vi.stubEnv("STARTER_BOARD_CANARY_GAME_IDS", "invalid");
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.contractVersion).toBe(1);
+    expect(res.body.players.some((row: any) => row.player_id === defaultProjection.player_id)).toBe(true);
+    expect(rpcMock.mock.calls.some(([name]) => name === "read_forge_game_revisions")).toBe(false);
+  });
+
+  function sharedAdmissionInputs(fixture: ReturnType<typeof consumerGameRevisionFixture>, newsFailure = false) {
+    const previous = fromMock.getMockImplementation()!;
+    const tables: Record<string, any[]> = {
+      roster_optimizer_team_games: fixture.scheduleRows,
+      fhfh_player_identities: fixture.players.map(row => ({
+        id: Number(row.id), nhl_player_id: row.nhlId, canonical_name: row.name,
+        canonical_position: row.playerClass === "goalie" ? "G" : "C",
+      })),
+      rosters: fixture.issued.roster.map(row => ({ playerId: row.nhlId, teamId: row.teamId,
+        seasonId: row.seasonId, created_at: row.membershipCreatedAt[0] })),
+      teams: [{ id: 8, abbreviation: "MTL" }, { id: 10, abbreviation: "TOR" }],
+      forge_board_news_events: [],
+    };
+    fromMock.mockImplementation((table: string) => {
+      if (table === "games") return createQueryBuilder(() => ({ data: [fixture.game], error: null }));
+      if (table in tables) return createQueryBuilder(() => ({
+        data: tables[table], count: tables[table].length,
+        error: table === "forge_board_news_events" && newsFailure ? { message: "private-news-failure" } : null,
+      }));
+      return previous(table);
+    });
+    return tables;
+  }
+
+  it.each(["missing receipt", "malformed receipt", "missing context", "duplicate context", "expired",
+    "future cutoff", "changed roster", "changed schedule", "missing participation"])(
+    "matches RSO admission for %s without falling back to legacy rows", async (problem) => {
+      const fixture = consumerGameRevisionFixture();
+      const row = fixture.revision, provenance = row.payload.inputProvenance!;
+      if (problem === "missing receipt") delete provenance.capturedReads;
+      if (problem === "malformed receipt") provenance.capturedReads!.hash = "invalid";
+      if (problem === "missing context") provenance.issuedContexts = [];
+      if (problem === "duplicate context") provenance.issuedContexts!.push(fixture.issued);
+      if (problem === "expired") {
+        row.published_at = "2026-02-05T12:00:00Z";
+        row.payload.inputCutoff = "2026-02-05T11:59:00Z";
+      }
+      if (problem === "future cutoff") row.payload.inputCutoff = "2026-02-07T18:00:00Z";
+      if (problem === "changed roster") fixture.players[0].rosterRevision = "changed";
+      if (problem === "changed schedule") fixture.scheduleRows[0].schedule_status = "PPD";
+      if (problem === "missing participation") delete row.payload.players[0].uncertainty.model.skater_selection.participation;
+      const tables = sharedAdmissionInputs(fixture);
+      if (problem === "changed roster") tables.rosters[0].created_at = "2026-02-07T14:00:00Z";
+      expect(publicPlanningForecasts([row], fixture.players, normalizePlanningGames(fixture.scheduleRows),
+        fixture.now, {}, [], fixture.seasonId)).toEqual([]);
+      vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "true");
+      rpcMock.mockImplementation(async (name: string) => name === "read_forge_game_revisions"
+        ? { data: [row], error: null } : { data: null, error: null });
+      vi.resetModules();
+      const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+      const res = createMockRes();
+      await handler({ method: "GET", query: { date: fixture.date } } as any, res);
+      expect(res.statusCode).toBe(200);
+      expect(res.body.players).toEqual([]);
+      expect(res.body.gameRevisions).toEqual([]);
+      expect(res.body.sourceStatus.projection.state).toBe("missing");
+      const reason = problem === "expired" ? "stale_source" : problem === "future cutoff" ? "invalid_cutoff"
+        : problem === "missing participation" ? "missing_participation" : "identity_conflict";
+      expect(res.body.forecastAdmission.exclusionCounts[reason]).toBeGreaterThan(0);
+    });
+
+  it("withholds revision forecasts when accepted-news freshness cannot be read", async () => {
+    const fixture = consumerGameRevisionFixture();
+    sharedAdmissionInputs(fixture, true);
+    vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "true");
+    rpcMock.mockImplementation(async (name: string) => name === "read_forge_game_revisions"
+      ? { data: [fixture.revision], error: null } : { data: null, error: null });
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: fixture.date } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.players).toEqual([]);
+    expect(JSON.stringify(res.body)).not.toContain("private-news-failure");
+    expect(res.body.forecastAdmission.exclusionCounts.incomplete_refresh).toBe(1);
+  });
+
+  async function serveAdmissionFixture(fixture: ReturnType<typeof consumerGameRevisionFixture>) {
+    vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "true");
+    rpcMock.mockImplementation(async (name: string) => name === "read_forge_game_revisions"
+      ? { data: [fixture.revision], error: null } : { data: null, error: null });
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: fixture.date } } as any, res);
+    expect(res.statusCode).toBe(200);
+    return res.body;
+  }
+
+  it("independent: rejected duplicate must not reenter through admitted key", async () => {
+    const f = consumerGameRevisionFixture();
+    const bad = structuredClone(f.revision.payload.players[0]);
+    bad.team_id = 10; bad.opponent_team_id = 8;
+    bad.uncertainty.model.skater_selection.pp_role = "REJECTED_SENTINEL";
+    f.revision.payload.players.push(bad);
+    sharedAdmissionInputs(f);
+    const admitted = publicPlanningForecasts([f.revision], f.players, normalizePlanningGames(f.scheduleRows), f.now);
+    expect(admitted).toHaveLength(1);
+    const body = await serveAdmissionFixture(f);
+    console.log("REJECTED_DUPLICATE", JSON.stringify(body.players.map((r: any) => ({ player: r.player_id, team: r.team_id, role: r.forecast.ppRole, score: r.proj_fantasy_points }))));
+    expect(body.players).toHaveLength(1);
+    expect(JSON.stringify(body)).not.toContain("REJECTED_SENTINEL");
+  });
+
+  it("independent: conflicting goalie starter identity cannot override admitted team", async () => {
+    const f = consumerGameRevisionFixture();
+    f.revision.payload.goalies = [{ game_id: f.gameId, team_id: 8,
+      run_id: f.revision.run_id, as_of_date: f.date, horizon_games: 1,
+      uncertainty: { daily_board_candidates: [{ playerId: 8478403, startingProbability: 0.5,
+        conditional: { SAVES_GOALIE: 30 } }] } }];
+    f.revision.payload.goalieStarts = [{ game_id: f.gameId, team_id: 10, player_id: 8478403,
+      start_probability: 0.9, confirmed_status: true }];
+    sharedAdmissionInputs(f); const body = await serveAdmissionFixture(f);
+    const goalie = body.players.find((r: any) => r.player_id === 8478403);
+    console.log("WRONG_STARTER_TEAM", JSON.stringify({ team: goalie.team_id, probability: goalie.start_probability, saves: goalie.forecast.expected.SAVES_GOALIE }));
+    expect(goalie.team_id).toBe(8);
+  });
+
+  it("independent: goalie competing mass must cover all rows for a team-game", async () => {
+    const f = consumerGameRevisionFixture();
+    f.revision.payload.players = [];
+    f.players.forEach(p => { p.playerClass = "goalie"; p.eligiblePositions = ["G"]; });
+    f.revision.payload.goalies = [8478402, 8478403].map(playerId => ({ game_id: f.gameId, team_id: 8,
+      run_id: f.revision.run_id, as_of_date: f.date, horizon_games: 1,
+      uncertainty: { daily_board_candidates: [{ playerId, startingProbability: 0.8,
+        conditional: { SAVES_GOALIE: 30 } }] } }));
+    const admitted = publicPlanningForecasts([f.revision], f.players, normalizePlanningGames(f.scheduleRows), f.now);
+    console.log("TEAM_MASS", JSON.stringify(admitted.filter(row => row.startProbability !== null).map(r => ({ player: r.playerId, probability: r.startProbability, saves: r.stats.SAVES_GOALIE }))));
+    expect(admitted.filter(row => row.startProbability !== null)).toEqual([]);
+  });
+
+  it("independent: missing goalie starter row does not hide admitted goalie opportunity", async () => {
+    const f = consumerGameRevisionFixture();
+    f.revision.payload.goalies = [{ game_id: f.gameId, team_id: 8,
+      run_id: f.revision.run_id, as_of_date: f.date, horizon_games: 1,
+      uncertainty: { daily_board_candidates: [{ playerId: 8478403, startingProbability: 0.5,
+        conditional: { SAVES_GOALIE: 30 } }] } }];
+    sharedAdmissionInputs(f);
+    expect(publicPlanningForecasts([f.revision], f.players, normalizePlanningGames(f.scheduleRows), f.now)).toHaveLength(2);
+    const body = await serveAdmissionFixture(f);
+    expect(body.players.map((row: any) => row.player_id)).toContain(8478403);
+  });
+
+  it("independent: expected score drives filtered pagination", async () => {
+    const f = consumerGameRevisionFixture();
+    const second = structuredClone(f.revision.payload.players[0]);
+    second.player_id = 8478403; second.proj_goals_es = 100;
+    second.players = { id: 8478403, fullName: "Second", position: "C" };
+    setConsumerSkaterEvidence(f.revision, second, 0);
+    f.revision.payload.players[0].players = { id: 8478402, fullName: "First", position: "C" };
+    f.revision.payload.players.push(second); f.players[1].playerClass = "skater";
+    sharedAdmissionInputs(f); vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "true");
+    rpcMock.mockImplementation(async (name: string) => name === "read_forge_game_revisions"
+      ? { data: [f.revision], error: null } : { data: null, error: null });
+    vi.resetModules(); const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: f.date, position: "C", page: "1", page_size: "1" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    console.log("PAGINATION", JSON.stringify(res.body.players.map((r: any) => ({ player: r.player_id, probability: r.forecast.participationProbability, score: r.proj_fantasy_points, rank: r.position_ranks }))));
+    expect(res.body.players[0].player_id).toBe(8478402);
+  });
+
+  it.each(["NaN", "0", "-1", "abc"])("independent: malformed horizon %s withholds forecasts", async horizon => {
+    const f = consumerGameRevisionFixture(); sharedAdmissionInputs(f);
+    vi.stubEnv("STARTER_BOARD_CALENDAR_HORIZON_DAYS", horizon);
+    const body = await serveAdmissionFixture(f); expect(body.players).toEqual([]);
+  });
+
+  it.each(["missing_count", "duplicate", "no_progress"])("independent: partial planning read %s withholds forecasts", async failure => {
+    const f = consumerGameRevisionFixture(); sharedAdmissionInputs(f);
+    const prior = fromMock.getMockImplementation()!;
+    fromMock.mockImplementation((table: string) => table === "rosters" ? createQueryBuilder(() => ({
+      data: failure === "no_progress" ? [] : failure === "duplicate" ? [f.issued.roster[0], f.issued.roster[0]].map(r => ({ playerId: r.nhlId, teamId: r.teamId, created_at: r.membershipCreatedAt[0] })) : [],
+      count: failure === "missing_count" ? undefined : 2, error: null,
+    })) : prior(table));
+    const body = await serveAdmissionFixture(f); expect(body.players).toEqual([]);
+    expect(body.forecastAdmission.exclusionCounts.incomplete_refresh).toBeGreaterThan(0);
+  });
+
+  it("independent: stale unchanged schedule stays visible with explicit exclusion", async () => {
+    const f = consumerGameRevisionFixture();
+    f.scheduleRows.forEach(row => row.fetched_at = "2026-02-01T11:00:00Z");
+    sharedAdmissionInputs(f);
+    const body = await serveAdmissionFixture(f);
+    expect(body.players).toHaveLength(1);
+    expect(body.forecastAdmission.exclusionCounts.incomplete_refresh).toBe(1);
+    expect(body.sourceStatus.overall).toBe("degraded");
+  });
+
+  it("independent: mixed canary scope preserves excluded scheduled games and coverage", async () => {
+    const f = consumerGameRevisionFixture(); sharedAdmissionInputs(f);
+    const prior = fromMock.getMockImplementation()!;
+    fromMock.mockImplementation((table: string) => table === "games" ? createQueryBuilder(() => ({
+      data: [f.game, { ...f.game, id: 1002 }], error: null,
+    })) : prior(table));
+    vi.stubEnv("STARTER_BOARD_CANARY_GAME_IDS", "1001");
+    const body = await serveAdmissionFixture(f);
+    expect(body.games).toHaveLength(2); expect(body.coverage.slateGames).toBe(2);
+    expect(body.players).toHaveLength(1);
+    expect(body.forecastAdmission.exclusions).toContainEqual({ gameId: "1002", reasons: ["canary_excluded"] });
+    expect(body.sourceStatus.overall).toBe("degraded");
+  });
+
+  it.each(["zero appearance", "partial target"])("parity: preserves full-slate ranks across pages for %s", async problem => {
+    const f = consumerGameRevisionFixture();
+    const second = structuredClone(f.revision.payload.players[0]);
+    second.player_id = 8478403; second.proj_goals_es = 100;
+    second.players = { fullName: "Second", position: "C" };
+    f.revision.payload.players[0].players = { fullName: "First", position: "C" };
+    setConsumerSkaterEvidence(f.revision, second, problem === "zero appearance" ? 0 : 1);
+    if (problem === "partial target") second.proj_goals_pk = null;
+    f.revision.payload.players.push(second); f.players[1].playerClass = "skater";
+    sharedAdmissionInputs(f);
+    await serveAdmissionFixture(f);
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const page = async (value: string) => {
+      const res = createMockRes();
+      await handler({ method: "GET", query: { date: f.date, position: "C", page: value, page_size: "1" } } as any, res);
+      expect(res.statusCode).toBe(200);
+      return res.body;
+    };
+    const first = await page("1"), secondPage = await page("2"), cached = await page("2");
+    expect(first.players[0].player_id).toBe(8478402);
+    expect(first.players[0].position_ranks.C).toBe(1);
+    expect(secondPage.players[0].player_id).toBe(8478403);
+    expect(secondPage.players[0].position_ranks.C).toBe(problem === "zero appearance" ? 2 : undefined);
+    expect(secondPage.players[0].proj_fantasy_points).toBe(problem === "zero appearance" ? 0 : null);
+    expect(cached.players).toEqual(secondPage.players);
+  });
+
+  it.each(["duplicate", "wrong opponent"])("parity: withholds ambiguous skater source %s", async problem => {
+    const f = consumerGameRevisionFixture();
+    if (problem === "duplicate") f.revision.payload.players.push(structuredClone(f.revision.payload.players[0]));
+    else f.revision.payload.players[0].opponent_team_id = 8;
+    sharedAdmissionInputs(f);
+    const counts: Record<string, number> = {};
+    expect(publicPlanningForecasts([f.revision], f.players, normalizePlanningGames(f.scheduleRows), f.now, counts)).toEqual([]);
+    expect(counts.identity_conflict).toBeGreaterThan(0);
+    const body = await serveAdmissionFixture(f);
+    expect(body.players).toEqual([]);
+    expect(body.projectionRunId).toBeNull();
+    expect(body.forecastAdmission.exclusionCounts.identity_conflict).toBeGreaterThan(0);
+  });
+
+  it.each(["valid partial mass", "duplicate candidate", "missing probability"])("parity: shares complete goalie candidate-set admission for %s", async problem => {
+    const f = consumerGameRevisionFixture();
+    f.revision.payload.players = [];
+    f.players.forEach(player => { player.playerClass = "goalie"; player.eligiblePositions = ["G"]; });
+    const ids = problem === "duplicate candidate" ? [8478402, 8478402] : [8478402, 8478403];
+    f.revision.payload.goalies = ids.map((playerId, index) => ({ game_id: f.gameId, team_id: 8,
+      run_id: f.revision.run_id, as_of_date: f.date, horizon_games: 1,
+      uncertainty: { daily_board_candidates: [{ playerId,
+        startingProbability: problem === "missing probability" && index === 1 ? null : index === 0 ? 0.3 : 0.6,
+        conditional: { SAVES_GOALIE: 30 } }] } }));
+    sharedAdmissionInputs(f);
+    const expected = publicPlanningForecasts([f.revision], f.players, normalizePlanningGames(f.scheduleRows), f.now);
+    const body = await serveAdmissionFixture(f);
+    if (problem === "valid partial mass") {
+      expect(expected.map(row => row.startProbability)).toEqual([0.3, 0.6]);
+      expect(body.goalieSource).toBe("forge_goalie_projections");
+      expect(body.players.map((row: any) => row.start_probability)).toEqual([0.3, 0.6]);
+      expect(body.players.map((row: any) => row.forecast.expected.SAVES_GOALIE)).toEqual([9, 18]);
+      expect(body.players.every((row: any) => row.team_id === 8 && row.projected_gsaa === null)).toBe(true);
+    } else {
+      expect(expected).toEqual([]);
+      expect(body.players).toEqual([]);
+      expect(body.forecastAdmission.exclusionCounts[problem === "duplicate candidate" ? "identity_conflict" : "unsupported_conditioning"]).toBe(1);
+    }
+  });
+
+  it("parity: renders only the selected revision source and keeps private custom scores out of GET cache", async () => {
+    const f = consumerGameRevisionFixture();
+    const old = structuredClone(f.revision);
+    old.payload.players[0].uncertainty.model.skater_selection.pp_role = "OLD_SOURCE_SENTINEL";
+    const second = structuredClone(f.revision.payload.players[0]);
+    second.player_id = 8478403; second.proj_goals_es = 3; second.proj_shots_es = 0.2;
+    setConsumerSkaterEvidence(f.revision, second);
+    second.players = { fullName: "Second", position: "C" };
+    f.revision.payload.players[0].players = { fullName: "First", position: "C" };
+    f.revision.payload.players.push(second); f.players[1].playerClass = "skater";
+    f.revision.id = "selected-revision"; f.revision.published_at = "2026-02-07T12:05:00Z";
+    sharedAdmissionInputs(f);
+    vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "true");
+    rpcMock.mockImplementation(async (name: string) => name === "read_forge_game_revisions"
+      ? { data: [old, f.revision], error: null } : { data: null, error: null });
+    vi.resetModules(); const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const before = createMockRes();
+    await handler({ method: "GET", query: { date: f.date } } as any, before);
+    expect(before.body.players).toHaveLength(2);
+    expect(before.body.gameRevisions.map((row: any) => row.revisionId)).toEqual(["selected-revision"]);
+    expect(JSON.stringify(before.body)).not.toContain("OLD_SOURCE_SENTINEL");
+    const custom = createMockRes();
+    await handler({ method: "POST", query: { date: f.date }, body: { profile: { skater: { SHOTS_ON_GOAL: 10 } } } } as any, custom);
+    expect(custom.statusCode).toBe(200);
+    expect(custom.headers["Cache-Control"]).toBe("private, no-store");
+    expect(custom.body.players.find((row: any) => row.player_id === 8478402).position_ranks.C).toBe(1);
+    const after = createMockRes();
+    await handler({ method: "GET", query: { date: f.date } } as any, after);
+    expect(after.body.players).toEqual(before.body.players);
+    expect(after.body.scoringProfile).toEqual(before.body.scoringProfile);
+    expect(after.body.players.find((row: any) => row.player_id === 8478403).position_ranks.C).toBe(1);
+  });
+
+  it("rejects newer accepted news and restores only a revision with a newer cutoff", async () => {
+    const fixture = consumerGameRevisionFixture();
+    const tables = sharedAdmissionInputs(fixture);
+    tables.forge_board_news_events.push({ id: "synthetic-event", game_id: fixture.gameId,
+      queue_version: 1, accepted_at: "2026-02-07T12:02:00Z" });
+    const stale = await serveAdmissionFixture(fixture);
+    expect(stale.players).toEqual([]);
+    expect(stale.forecastAdmission.exclusionCounts.stale_source).toBe(1);
+    fixture.revision.payload.inputCutoff = "2026-02-07T12:03:00Z";
+    fixture.revision.published_at = "2026-02-07T12:04:00Z";
+    setConsumerSkaterEvidence(fixture.revision, fixture.revision.payload.players[0]);
+    const refreshed = await serveAdmissionFixture(fixture);
+    expect(refreshed.players).toHaveLength(1);
+    expect(JSON.stringify(refreshed)).not.toContain("synthetic-event");
+  });
+
+  it.each([0 as const, 1 as const])("matches admitted skater expectations with appearance probability %s", async (probability) => {
+    const fixture = consumerGameRevisionFixture();
+    setConsumerSkaterEvidence(fixture.revision, fixture.revision.payload.players[0], probability);
+    sharedAdmissionInputs(fixture);
+    const expected = publicPlanningForecasts([fixture.revision], fixture.players,
+      normalizePlanningGames(fixture.scheduleRows), fixture.now, {}, [], fixture.seasonId)[0];
+    const body = await serveAdmissionFixture(fixture);
+    expect(body.players).toHaveLength(1);
+    expect(body.players[0].forecast.expected).toEqual(expected.stats);
+    expect(body.players[0].forecast.conditional).toEqual(expected.conditionalStats);
+    expect(body.players[0].proj_goals).toBeCloseTo(0.6 * probability);
+    expect(body.players[0].boardScore.basis).toBe("unconditional");
+  });
+
+  it.each(["scalar mismatch", "missing authoritative evidence"])("withholds skater output for %s", async problem => {
+    const fixture = consumerGameRevisionFixture();
+    if (problem === "scalar mismatch") fixture.revision.payload.players[0].uncertainty.model.skater_selection.participation.probability = 0;
+    else delete fixture.revision.payload.evidence;
+    sharedAdmissionInputs(fixture);
+    expect(publicPlanningForecasts([fixture.revision], fixture.players,
+      normalizePlanningGames(fixture.scheduleRows), fixture.now, {}, [], fixture.seasonId)).toEqual([]);
+    const body = await serveAdmissionFixture(fixture);
+    expect(body.players).toEqual([]);
+    expect(body.forecastAdmission.exclusionCounts.missing_participation).toBe(1);
+  });
+
+  it("preserves usable targets while withholding incomplete totals and unadmitted players", async () => {
+    const fixture = consumerGameRevisionFixture();
+    (fixture.revision.payload.players[0] as any).proj_goals_pk = null;
+    fixture.revision.payload.players.push({ ...fixture.revision.payload.players[0], player_id: 9999999 });
+    sharedAdmissionInputs(fixture);
+    const body = await serveAdmissionFixture(fixture);
+    expect(body.players).toHaveLength(1);
+    const row = body.players[0];
+    expect(row.forecast.expected.GOALS).toBeNull();
+    expect(row.forecast.conditional.GOALS).toBeNull();
+    expect(row.proj_goals).toBeNull();
+    expect(row.proj_fantasy_points).toBeNull();
+    expect(row.forecast.expected.SHOTS_ON_GOAL).toBe(3.5);
+    expect(body.forecastAdmission.exclusions).toContainEqual(expect.objectContaining({
+      playerId: "7", targetKey: "GOALS", reasons: ["missing_target"],
+    }));
+    expect(body.gameRevisions).toHaveLength(1);
+  });
+
+  it.each([0.5, 1.1])("uses goalie expectations once and rejects invalid probability mass %s", async (probability) => {
+    const fixture = consumerGameRevisionFixture();
+    fixture.revision.payload.goalies = [{ game_id: fixture.gameId, team_id: 8,
+      run_id: fixture.revision.run_id, as_of_date: fixture.date, horizon_games: 1,
+      uncertainty: { daily_board_candidates: [{ playerId: 8478403, startingProbability: probability,
+        probabilityStatus: "uncalibrated_model", conditional: { SAVES_GOALIE: 30 } }] } }];
+    fixture.revision.payload.goalieStarts = [{ game_id: fixture.gameId, team_id: 8, player_id: 8478403,
+      start_probability: 0.9, projected_gsaa_per_60: null, confirmed_status: true }];
+    sharedAdmissionInputs(fixture);
+    const expected = publicPlanningForecasts([fixture.revision], fixture.players,
+      normalizePlanningGames(fixture.scheduleRows), fixture.now, {}, [], fixture.seasonId).find(row => row.playerId === "8");
+    const body = await serveAdmissionFixture(fixture);
+    const goalie = body.players.find((row: any) => row.player_id === 8478403);
+    if (probability > 1) {
+      expect(goalie).toBeUndefined();
+      expect(expected).toBeUndefined();
+      expect(body.forecastAdmission.exclusionCounts.unsupported_conditioning).toBe(1);
+    } else {
+      expect(goalie.forecast.expected).toEqual(expected!.stats);
+      expect(goalie.forecast.expected.SAVES_GOALIE).toBe(15);
+      expect(goalie.start_probability).toBe(0.5);
+      expect(goalie.confirmed_status).toBeNull();
+      expect(goalie.forecast.conditional.SAVES_GOALIE).toBe(30);
+    }
+  });
+
+  it("does not expose an unproved previous revision as a comparable forecast", async () => {
+    const fixture = consumerGameRevisionFixture();
+    fixture.revision.payload.previousRevision = { id: "unproved-previous", codeVersion: "commit-123",
+      modelMode: "baseline", players: [{ ...fixture.revision.payload.players[0], proj_goals_es: 999 }], goalies: [] };
+    sharedAdmissionInputs(fixture);
+    const body = await serveAdmissionFixture(fixture);
+    expect(body.players).toHaveLength(1);
+    expect(body.players[0].forecast.previous).toBeUndefined();
+    expect(body.players[0].boardScore.change).toBeNull();
+    expect(JSON.stringify(body)).not.toContain("unproved-previous");
+  });
+
   it("serves frozen game revisions and exposes only public provenance", async () => {
     vi.stubEnv("START_CHART_GAME_REVISIONS", "true");
+    const fixture = consumerGameRevisionFixture();
+    fixture.revision.payload.players[0].proj_goals_es = 2;
+    sharedAdmissionInputs(fixture);
     rpcMock.mockImplementation(async (name: string) => name === "read_forge_game_revisions" ? {
       error: null,
-      data: [{
-        id: "revision-1", game_id: 1001, run_id: "published-run",
-        decision_as_of: "2026-02-07T12:00:00Z", published_at: "2026-02-07T12:01:00Z",
-        input_snapshot_id: "private-evidence-id",
-        payload: { players: [{ ...defaultProjection, run_id: "published-run", proj_goals_es: 2 }],
-          inputCutoff: "2026-02-07T11:59:00Z", calculatedAt: "2026-02-07T12:00:30Z",
-          teams: [], goalies: [], goalieStarts: [], codeVersion: "commit-123", modelMode: "baseline", privateEvidence: "secret" },
-      }],
+      data: [{ ...fixture.revision, input_snapshot_id: "private-evidence-id",
+        payload: { ...fixture.revision.payload, privateEvidence: "secret" } }],
     } : { data: null, error: { code: "PGRST202", message: "function is not installed" } });
     vi.resetModules();
     const handler = (await import("../../../../pages/api/v1/start-chart")).default;
@@ -637,6 +1154,26 @@ describe("/api/v1/start-chart", () => {
     const invalid = createMockRes();
     await handler({ method: "POST", query: {}, body: { profile: { skater: { FACEOFFS_WON: 1 } } } } as any, invalid);
     expect(invalid.statusCode).toBe(422);
+  });
+
+  it.each([false, true])("uses completed games and ignores unplayed playoff schedule rows (missing=%s)", async (missing) => {
+    const original = fromMock.getMockImplementation()!;
+    fromMock.mockImplementation((table: string) => {
+      if (table === "pbp_games") return createQueryBuilder(() => ({ error: null, data: [...(missing ? [] : [{
+        id: 999, season: "20252026", type: 2, date: "2026-02-06",
+        hometeamid: 10, awayteamid: 8, hometeamscore: 4, awayteamscore: 2,
+      }]), { id: 998, season: "20252026", type: 2, date: "2026-02-05",
+        hometeamid: 10, awayteamid: 8, hometeamscore: 0, awayteamscore: 0 }] }));
+      return original(table);
+    });
+    vi.resetModules();
+    const { default: handler } = await import("../../../../pages/api/v1/start-chart");
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.recentGoals.source).toBe("nhl_final_scores");
+    expect(res.body.recentGoals.teams.find((team: any) => team.team === "MTL").games).toEqual(missing ? [] : [{ date: "2026-02-06", goalsFor: 2, goalsAgainst: 4 }]);
+    expect(eqMock).toHaveBeenCalledWith("season", "20252026");
   });
 
   it("reads skaters through the exact FORGE run and exposes canonical-source metadata", async () => {
@@ -1018,275 +1555,41 @@ describe("/api/v1/start-chart", () => {
     );
   });
 
-  it("reports previous-date fallback serving state when the requested slate has no games", async () => {
+  it("selects the upcoming schedule without requiring an older projection run", async () => {
     let gamesQueryCount = 0;
-    let forgeRunsQueryCount = 0;
-    fetchTeamRatingsAsOfMock.mockResolvedValue({
-      requestedDate: "2026-02-07",
-      resolvedDate: null,
-      ratings: [],
-    });
-    fromMock.mockImplementation((table: string) => {
-      if (table === "player_projections") {
-        throw new Error("legacy player_projections should not be queried");
-      }
-      if (table === "games") {
-        gamesQueryCount += 1;
-        if (gamesQueryCount === 1) {
-          return createQueryBuilder(() => ({
-            data: [],
-            error: null,
-          }));
-        }
-        return createQueryBuilder(() => ({
-          data: [
-            {
-              id: 1002,
-              date: "2026-02-07",
-              homeTeamId: 10,
-              awayTeamId: 8,
-            },
-          ],
-          error: null,
-        }));
-      }
-      if (table === "forge_runs") {
-        forgeRunsQueryCount += 1;
-        return createQueryBuilder(() => ({
-          data:
-            forgeRunsQueryCount === 1
-              ? []
-              : forgeRunsQueryCount === 2
-                ? [
-                    {
-                      run_id: "run-123",
-                      as_of_date: "2026-02-07",
-                      forge_player_projections: [
-                        {
-                          as_of_date: "2026-02-07",
-                          game_id: 1002,
-                          horizon_games: 1,
-                          games: { date: "2026-02-07" },
-                        },
-                      ],
-                    },
-                  ]
-                : [
-                    {
-                      run_id: "run-123",
-                      as_of_date: "2026-02-07",
-                      created_at: "2026-02-07T12:00:00Z",
-                      updated_at: "2026-02-07T12:05:00Z",
-                      git_sha: null,
-                      metrics: null,
-                      forge_player_projections: [
-                        {
-                          ...defaultProjection,
-                          game_id: 1002,
-                          players: {
-                            fullName: "Nick Suzuki",
-                            position: "C",
-                          },
-                        },
-                      ],
-                    },
-                  ],
-          error: null,
-        }));
-      }
-      if (table === "goalie_start_projections") {
-        return createQueryBuilder(() => ({
-          data: [],
-          error: null,
-        }));
-      }
-      if (table === "yahoo_nhl_player_map_read") {
-        return createQueryBuilder(() => ({
-          data: [{ nhl_player_id: "8478402", yahoo_player_id: "5001" }],
-          error: null,
-        }));
-      }
-      if (table === "yahoo_players") {
-        return createQueryBuilder(() => ({
-          data: [
-            {
-              player_id: "5001",
-              player_key: "449.p.5001",
-              player_name: "Nick Suzuki",
-              full_name: "Nick Suzuki",
-              eligible_positions: ["C"],
-              percent_ownership: 78,
-              ownership_timeline: [],
-            },
-          ],
-          error: null,
-        }));
-      }
-      if (table === "yahoo_player_ownership_history") {
-        return createQueryBuilder(() => ({ data: [], error: null }));
-      }
-      if (table === "team_ctpi_daily") {
-        return createQueryBuilder(() => ({
-          data: [],
-          error: null,
-        }));
-      }
-      return createQueryBuilder(() => ({ data: [], error: null }));
-    });
-
-    vi.resetModules();
-    const handler = (await import("../../../../pages/api/v1/start-chart"))
-      .default;
-    const req: any = {
-      method: "GET",
-      query: {
-        date: "2026-02-08",
-      },
-    };
-    const res = createMockRes();
-
-    await handler(req, res);
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toMatchObject({
-      dateUsed: "2026-02-07",
-      requestedDate: "2026-02-08",
-      fallbackApplied: true,
-      compatibilityInventory: {
-        inventoryVersion: "forge-compatibility-inventory-v2",
-        canonicalSkaterSource: "forge_player_projections",
-        canonicalReadRoute: "/api/v1/start-chart",
-        retiredLegacyMaterializerRoute:
-          "/api/v1/db/update-start-chart-projections",
-        legacyMaterializerRemoved: true,
-        legacyPlayerProjectionsReadDisabled: true,
-        goalieStartTable: {
-          decisionVersion: "goalie-start-ownership-v1",
-          table: "goalie_start_projections",
-          decision: "retain_shared_table_name_for_now",
-          canonicalWriterRoute: "/api/v1/db/update-goalie-projections-v2",
-          canonicalWriterStatus: "single_writer",
-          renameDeferred: true,
-        },
-      },
-      serving: {
-        requestedDate: "2026-02-08",
-        resolvedDate: "2026-02-07",
-        fallbackApplied: true,
-        isSameDay: false,
-        state: "fallback",
-        strategy: "previous_date_with_games",
-        gapDays: 1,
-        severity: "warn",
-        status: "fallback_recent",
-        message:
-          "Start-chart slate is serving the nearest available date (2026-02-07), 1 day behind the requested date.",
-      },
-    });
-  });
-
-  it("resolves an older fallback with one joined run lookup and the exact run id", async () => {
-    let gamesQueryCount = 0;
-    let forgeRunsQueryCount = 0;
-    fetchTeamRatingsAsOfMock.mockResolvedValue({
-      requestedDate: "2026-02-05",
-      resolvedDate: null,
-      ratings: [],
-    });
     fromMock.mockImplementation((table: string) => {
       if (table === "games") {
         gamesQueryCount += 1;
-        return createQueryBuilder(() => ({
-          data:
-            gamesQueryCount <= 1
-              ? []
-              : [
-                  {
-                    id: 1005,
-                    date: "2026-02-05",
-                    homeTeamId: 10,
-                    awayTeamId: 8,
-                  },
-                ],
-          error: null,
-        }));
-      }
-      if (table === "forge_runs") {
-        forgeRunsQueryCount += 1;
-        return createQueryBuilder(() => ({
-          data:
-            forgeRunsQueryCount === 1
-              ? []
-              : forgeRunsQueryCount === 2
-                ? [
-                    {
-                      run_id: "fallback-run",
-                      as_of_date: "2026-02-05",
-                      forge_player_projections: [
-                        {
-                          as_of_date: "2026-02-05",
-                          game_id: 1005,
-                          horizon_games: 1,
-                          games: { date: "2026-02-05" },
-                        },
-                      ],
-                    },
-                  ]
-                : [
-                    {
-                      run_id: "fallback-run",
-                      as_of_date: "2026-02-05",
-                      created_at: "2026-02-05T12:00:00Z",
-                      updated_at: "2026-02-05T12:05:00Z",
-                      git_sha: null,
-                      metrics: null,
-                      forge_player_projections: [
-                        {
-                          ...defaultProjection,
-                          run_id: "fallback-run",
-                          as_of_date: "2026-02-05",
-                          game_id: 1005,
-                          players: {
-                            fullName: "Fallback Skater",
-                            position: "C",
-                          },
-                        },
-                      ],
-                    },
-                  ],
-          error: null,
-        }));
+        return createQueryBuilder(() => ({ data: gamesQueryCount === 1 ? []
+          : gamesQueryCount === 2 ? [{ date: "2026-02-09" }]
+          : [{ id: 1005, date: "2026-02-09", homeTeamId: 10, awayTeamId: 8 }], error: null }));
       }
       return createQueryBuilder(() => ({ data: [], error: null }));
     });
-
     vi.resetModules();
-    const handler = (await import("../../../../pages/api/v1/start-chart"))
-      .default;
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
     const res = createMockRes();
     await handler({ method: "GET", query: { date: "2026-02-08" } } as any, res);
-
     expect(res.statusCode).toBe(200);
-    expect(res.body).toMatchObject({
-      requestedDate: "2026-02-08",
-      resolvedDate: "2026-02-05",
-      projectionRunId: "fallback-run",
-      serving: {
-        mode: "fallback",
-        reason: "latest_available_with_data",
-        ageDays: 3,
-      },
-    });
-    expect(res.body.players[0]).toMatchObject({
-      row_key: "fallback-run:1005:8478402:1",
-      name: "Fallback Skater",
-    });
-    expect(
-      fromMock.mock.calls.filter(
-        ([table]) => table === "forge_player_projections",
-      ),
-    ).toHaveLength(0);
-    expect(forgeRunsQueryCount).toBe(3);
+    expect(res.body).toMatchObject({ requestedDate: "2026-02-08", resolvedDate: "2026-02-09",
+      fallbackApplied: true, projectionRunId: null,
+      serving: { mode: "partial", strategy: "next_scheduled_date", status: "upcoming",
+        reason: "scheduled_games_missing_projections" } });
+    expect(res.body.games).toHaveLength(1);
+    expect(gtMock).toHaveBeenCalledWith("date", "2026-02-08");
+    expect(getSeasonForDateMock).toHaveBeenCalledWith("2026-02-09", expect.anything());
+    expect(fromMock.mock.calls.filter(([table]) => table === "forge_runs")).toHaveLength(2);
+  });
+
+  it("clamps a past date to today's slate", async () => {
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-05" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.requestedDate).toBe("2026-02-07");
+    expect(eqMock).toHaveBeenCalledWith("date", "2026-02-07");
+    expect(eqMock).not.toHaveBeenCalledWith("as_of_date", "2026-02-05");
   });
 
   it("retains an exact scheduled slate as partial when projections are missing", async () => {
@@ -1365,7 +1668,7 @@ describe("/api/v1/start-chart", () => {
       fallbackApplied: false,
       serving: {
         mode: "no_games",
-        reason: "no_scheduled_games_or_eligible_fallback",
+        reason: "no_current_or_upcoming_scheduled_games",
       },
       coverage: { slateGames: 0, slateTeams: 0 },
     });
@@ -1387,7 +1690,7 @@ describe("/api/v1/start-chart", () => {
     route.clearStartChartCache();
 
     const dates = Array.from({ length: 65 }, (_, offset) => {
-      const date = new Date("2026-01-01T00:00:00Z");
+      const date = new Date("2026-02-07T00:00:00Z");
       date.setUTCDate(date.getUTCDate() + offset);
       return date.toISOString().slice(0, 10);
     });

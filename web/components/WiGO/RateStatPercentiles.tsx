@@ -385,11 +385,6 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
       {!isLoading && !error && !seasonId && playerId && (
         <div className={styles.loadingMessage}>Loading season info...</div>
       )}
-      {!isLoading && !error && seasonId && allPlayersStats.length === 0 && (
-        <div className={styles.noDataMessage}>
-          No player data available for {selectedStrength.toUpperCase()}.
-        </div>
-      )}
       {!isLoading && !error && !playerId && (
         <div className={styles.noPlayerMessage}>Please select a player.</div>
       )}
@@ -453,6 +448,11 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
 
             <div className={styles.percentileContext}>Player GP: {selectedPlayerGp ?? "—"} · Requested {seasonId} · Applied {percentileCohort?.appliedSeasonId ?? seasonId}</div>
             <div className={styles.thresholdMessagesContainer}>
+              {allPlayersStats.length === 0 && (
+                <div className={styles.thresholdMessage}>
+                  No player data available for {selectedStrength.toUpperCase()}.
+                </div>
+              )}
               {calculatedPercentiles !== null &&
                 percentileCohort?.fallbackReason && (
                   <div className={styles.thresholdMessage}>

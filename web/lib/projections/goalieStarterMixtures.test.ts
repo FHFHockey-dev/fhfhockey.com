@@ -104,7 +104,24 @@ describe("goalieStarterMixtures", () => {
       adjusted_start_probability: 0.455,
     });
     expect(rows[0]!.normalized_start_probability).toBeLessThan(0.7);
-    expect(rows[1]!.normalized_start_probability).toBeGreaterThan(0.3);
+    expect(rows[1]!.normalized_start_probability).toBe(0.3);
+    expect(rows[0].residual_probability_mass).toBe(0.245);
+  });
+
+  it("retains unresolved mass and rejects conflicting starter evidence", () => {
+    const build = (projections: GoalieStarterProjectionInput[]) => buildGoalieStarterMixtureRows({
+      asOfTimestamp: "2026-05-27T13:00:00.000Z", projections });
+    const partial = build([projection({ player_id: 1, start_probability: 0.4 })]);
+    expect(partial[0]).toMatchObject({ normalized_start_probability: 0.4, residual_probability_mass: 0.6,
+      confirmed_status: false, mixture_version: "goalie_starter_mixture_v2" });
+    for (const inputs of [
+      [projection({ player_id: 1, start_probability: 0.8 }), projection({ player_id: 2, start_probability: 0.8 })],
+      [projection({ player_id: 1, confirmed_status: true }), projection({ player_id: 2, confirmed_status: true })],
+      [projection({ start_probability: NaN })],
+    ]) {
+      expect(build(inputs).every(row => row.normalized_start_probability === 0
+        && row.residual_probability_mass === 1 && !row.confirmed_status)).toBe(true);
+    }
   });
 
   it("honors manual overrides over source probabilities", () => {

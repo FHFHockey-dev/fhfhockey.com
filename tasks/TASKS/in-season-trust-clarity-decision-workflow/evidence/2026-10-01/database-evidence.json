@@ -1,0 +1,312 @@
+{
+  "capturedOn": "2026-10-01",
+  "method": "Read-only Supabase SELECT; current mutable database snapshots, not immutable ingestion receipts",
+  "project": "fyhftlxokyjtpndbkfse",
+  "news": [
+    {
+      "id": "4795b0c8-d119-4977-9b77-45e040224e25",
+      "headline": "Carson Soucy signing",
+      "blurb": "RT @mark_scheig: Don Waddell on Carson Soucy: \"Our goal is to get him signed.\" DW said they need to determine where the cap space will come from. #CBJ",
+      "category": "SIGNING",
+      "source_tweet_id": "2104996083462271476",
+      "source_review_item_id": "b5ecae82-3557-47ba-8c7f-bdd5c6491209",
+      "source_url": "https://twitter.com/i/web/status/2104996083462271476",
+      "published_at": "2026-09-29 18:30:11.336+00",
+      "observed_at": "2026-09-29 18:13:25.579606+00",
+      "metadata": {
+        "automation": {
+          "source": "tweet_news_phrase_dictionary",
+          "evidence": {
+            "team": true,
+            "goalie": false,
+            "player": true,
+            "lineupStructure": false
+          },
+          "autoPublish": false,
+          "generatedAt": "2026-10-01T20:00:11.135Z",
+          "phraseMatches": [
+            {
+              "regex": "\\b(?:re-?signed|signed)\\b",
+              "phrase": "signed",
+              "ruleId": "signing-official",
+              "category": "SIGNING",
+              "confidence": "auto",
+              "autoPublish": true,
+              "subcategory": "OFFICIAL SIGNING",
+              "requiredEvidence": []
+            }
+          ],
+          "primaryRuleId": "manual-review"
+        },
+        "quotedTweetId": null,
+        "quotedTweetUrl": null,
+        "sourceRowStatus": "observed",
+        "quotedAuthorName": null,
+        "tweetPostedLabel": "September 29, 2026 at 02:05PM",
+        "primaryTextSource": "ifttt_text",
+        "wrapperAuthorName": "GameDayNewsNHL",
+        "quotedAuthorHandle": null,
+        "wrapperAuthorHandle": "i",
+        "originalPrimaryTextSource": "ifttt_text",
+        "preferredQuotedAttribution": false
+      }
+    },
+    {
+      "id": "cac51da7-3f50-4109-b7b4-3ad80538f07f",
+      "headline": "Kevin He injury update",
+      "blurb": "RT @AGrossNewsday: Mathew Barzal is with #Isles on trip, Pete DeBoer said he is attending all the meetings. Not on the ice yet but said to be \"around the corner.\" So he won't play in the season opener tomorrow in Toronto.",
+      "category": "INJURY",
+      "source_tweet_id": "2104976276528542197",
+      "source_review_item_id": "1e6b3258-e764-4b18-82b0-51295fbdb057",
+      "source_url": "https://twitter.com/i/web/status/2104976276528542197",
+      "published_at": "2026-09-29 17:00:11.412+00",
+      "observed_at": "2026-09-29 16:48:41.796433+00",
+      "metadata": {
+        "automation": {
+          "source": "tweet_news_phrase_dictionary",
+          "evidence": {
+            "team": false,
+            "goalie": false,
+            "player": true,
+            "lineupStructure": false
+          },
+          "autoPublish": false,
+          "generatedAt": "2026-10-01T20:00:11.135Z",
+          "phraseMatches": [
+            {
+              "regex": "\\b(?:will not|won't|does not|doesn't) play\\b",
+              "phrase": "will not play",
+              "ruleId": "injury-out",
+              "category": "INJURY",
+              "confidence": "auto",
+              "autoPublish": true,
+              "subcategory": "OUT",
+              "requiredEvidence": [
+                "player"
+              ]
+            },
+            {
+              "regex": "\\bnot on the ice\\b",
+              "phrase": "not on the ice",
+              "ruleId": "injury-questionable-practice",
+              "category": "INJURY",
+              "confidence": "review",
+              "autoPublish": false,
+              "subcategory": "QUESTIONABLE",
+              "requiredEvidence": [
+                "player"
+              ]
+            }
+          ],
+          "primaryRuleId": "manual-review"
+        },
+        "quotedTweetId": null,
+        "quotedTweetUrl": null,
+        "sourceRowStatus": "rejected",
+        "quotedAuthorName": null,
+        "tweetPostedLabel": "September 29, 2026 at 12:47PM",
+        "primaryTextSource": "ifttt_text",
+        "wrapperAuthorName": "GameDayNewsNHL",
+        "quotedAuthorHandle": null,
+        "wrapperAuthorHandle": "i",
+        "originalPrimaryTextSource": "ifttt_text",
+        "preferredQuotedAttribution": false
+      }
+    }
+  ],
+  "mcdavid": [
+    {
+      "evidence": {
+        "recent": [
+          {
+            "player_id": 8478402,
+            "last_updated": "2026-10-01T08:53:14.14+00:00",
+            "l5_gp": 5,
+            "l5_atoi": 18.8366666666667,
+            "l5_pptoi": 205.4,
+            "l10_gp": 10,
+            "l10_atoi": 20.4333333333333,
+            "l10_pptoi": 226.5,
+            "l20_gp": 20,
+            "l20_atoi": 15.8141666666667,
+            "l20_pptoi": 227.65
+          }
+        ],
+        "nhl_games": [
+          {
+            "date": "2026-09-29",
+            "game_id": 2026020004,
+            "season_id": 20262027,
+            "toi_per_game": 1371,
+            "pp_toi": 320
+          },
+          {
+            "date": "2026-04-16",
+            "game_id": 2025021311,
+            "season_id": 20252026,
+            "toi_per_game": 1096,
+            "pp_toi": 116
+          },
+          {
+            "date": "2026-04-13",
+            "game_id": 2025021289,
+            "season_id": 20252026,
+            "toi_per_game": 1675,
+            "pp_toi": 269
+          },
+          {
+            "date": "2026-04-11",
+            "game_id": 2025021264,
+            "season_id": 20252026,
+            "toi_per_game": 1610,
+            "pp_toi": 117
+          },
+          {
+            "date": "2026-04-08",
+            "game_id": 2025021246,
+            "season_id": 20252026,
+            "toi_per_game": 1270,
+            "pp_toi": 205
+          }
+        ],
+        "nst_games": [
+          {
+            "date_scraped": "2026-04-30",
+            "gp": 1,
+            "toi": 1489
+          },
+          {
+            "date_scraped": "2026-04-28",
+            "gp": 1,
+            "toi": 1449
+          },
+          {
+            "date_scraped": "2026-04-26",
+            "gp": 1,
+            "toi": 1172
+          },
+          {
+            "date_scraped": "2026-04-24",
+            "gp": 1,
+            "toi": 1430
+          },
+          {
+            "date_scraped": "2026-04-22",
+            "gp": 1,
+            "toi": 1447
+          }
+        ]
+      }
+    }
+  ],
+  "additional": [
+    {
+      "evidence": {
+        "news_subjects": [
+          {
+            "news_item_id": "4795b0c8-d119-4977-9b77-45e040224e25",
+            "player_id": 8477369,
+            "player_name": "Carson Soucy",
+            "team_id": 29,
+            "role": "subject",
+            "created_at": "2026-10-01T20:00:11.135+00:00",
+            "updated_at": "2026-10-01T20:00:11.135+00:00"
+          },
+          {
+            "news_item_id": "cac51da7-3f50-4109-b7b4-3ad80538f07f",
+            "player_id": 8484864,
+            "player_name": "Kevin He",
+            "team_id": null,
+            "role": "subject",
+            "created_at": "2026-10-01T20:00:11.135+00:00",
+            "updated_at": "2026-10-01T20:00:11.135+00:00"
+          }
+        ],
+        "unconfirmed_100_percent": [
+          {
+            "game_id": 2026020010,
+            "team_id": 3,
+            "player_id": 8478048,
+            "game_date": "2026-10-01",
+            "start_probability": 1,
+            "confirmed_status": false,
+            "created_at": "2026-10-01T09:30:06.056162+00:00",
+            "updated_at": "2026-10-01T09:30:06.056162+00:00"
+          },
+          {
+            "game_id": 2026020009,
+            "team_id": 4,
+            "player_id": 8478435,
+            "game_date": "2026-10-01",
+            "start_probability": 1,
+            "confirmed_status": false,
+            "created_at": "2026-10-01T09:30:06.056162+00:00",
+            "updated_at": "2026-10-01T09:30:06.056162+00:00"
+          },
+          {
+            "game_id": 2026020016,
+            "team_id": 13,
+            "player_id": 8474593,
+            "game_date": "2026-10-01",
+            "start_probability": 1,
+            "confirmed_status": false,
+            "created_at": "2026-10-01T09:30:06.056162+00:00",
+            "updated_at": "2026-10-01T09:30:06.056162+00:00"
+          },
+          {
+            "game_id": 2026020013,
+            "team_id": 16,
+            "player_id": 8481519,
+            "game_date": "2026-10-01",
+            "start_probability": 1,
+            "confirmed_status": false,
+            "created_at": "2026-10-01T09:30:06.056162+00:00",
+            "updated_at": "2026-10-01T09:30:06.056162+00:00"
+          },
+          {
+            "game_id": 2026020015,
+            "team_id": 22,
+            "player_id": 8477465,
+            "game_date": "2026-10-01",
+            "start_probability": 1,
+            "confirmed_status": false,
+            "created_at": "2026-10-01T09:30:06.056162+00:00",
+            "updated_at": "2026-10-01T09:30:06.056162+00:00"
+          },
+          {
+            "game_id": 2026020015,
+            "team_id": 23,
+            "player_id": 8480947,
+            "game_date": "2026-10-01",
+            "start_probability": 1,
+            "confirmed_status": false,
+            "created_at": "2026-10-01T09:30:06.056162+00:00",
+            "updated_at": "2026-10-01T09:30:06.056162+00:00"
+          }
+        ],
+        "mcdavid_matching_nst": [
+          {
+            "date_scraped": "2026-04-16",
+            "gp": 1,
+            "toi": 1096
+          },
+          {
+            "date_scraped": "2026-04-13",
+            "gp": 1,
+            "toi": 1675
+          },
+          {
+            "date_scraped": "2026-04-11",
+            "gp": 1,
+            "toi": 1610
+          },
+          {
+            "date_scraped": "2026-04-08",
+            "gp": 1,
+            "toi": 1270
+          }
+        ]
+      }
+    }
+  ]
+}

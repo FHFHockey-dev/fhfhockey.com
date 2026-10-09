@@ -1,13 +1,14 @@
-import React, { useState } from "react";
-import { addDays, format } from "date-fns";
+import React, { useRef, useState } from "react";
+import { addDays, format, parseISO } from "date-fns";
 import Image from "next/legacy/image";
+import Link from "next/link";
 import styles from "./TransposedGrid.module.scss";
-import { DAYS, DAY_ABBREVIATION, EXTENDED_DAYS } from "lib/NHL/types";
+import detailStyles from "./TeamDetails.module.scss";
+import { DAYS, EXTENDED_DAY_ABBREVIATION, EXTENDED_DAYS } from "lib/NHL/types";
 import { useTeamsMap } from "hooks/useTeams";
 import VerticalMatchupCell from "./VerticalMatchupCell";
 import Toggle from "./Toggle";
-import { startAndEndOfWeek } from "./utils/date-func";
-import useSchedule from "./utils/useSchedule";
+import { calcTotalGP, calcTotalOffNights } from "./TotalGamesPerDayRow";
 
 type TransposedGridProps = {
   sortedTeams: Array<{
@@ -19,11 +20,14 @@ type TransposedGridProps = {
     [day: string]: any;
   }>;
   games: number[];
-  excludedDays: DAY_ABBREVIATION[];
-  setExcludedDays: React.Dispatch<React.SetStateAction<DAY_ABBREVIATION[]>>;
+  excludedDays: EXTENDED_DAY_ABBREVIATION[];
+  setExcludedDays: React.Dispatch<React.SetStateAction<EXTENDED_DAY_ABBREVIATION[]>>;
   extended: boolean;
   start: string;
   mode: "7-Day" | "10-Day-Forecast";
+  expandedTeamIds?: ReadonlySet<number>;
+  onToggleTeam?: (teamId: number) => void;
+  renderTeamDetails?: (teamId: number) => React.ReactNode;
 };
 
 export default function TransposedGrid({
@@ -33,15 +37,13 @@ export default function TransposedGrid({
   setExcludedDays,
   extended,
   start,
-  mode,
+  expandedTeamIds = new Set<number>(),
+  onToggleTeam,
+  renderTeamDetails,
 }: TransposedGridProps) {
   const daysToRender = extended ? EXTENDED_DAYS : DAYS;
-  const [dates] = useState<[string, string]>(() => startAndEndOfWeek());
-  const [currentSchedule, currentNumGamesPerDay] = useSchedule(
-    format(new Date(dates[0]), "yyyy-MM-dd"),
-    mode === "10-Day-Forecast",
-  );
   const teamsMap = useTeamsMap();
+  const triggerRefs = useRef(new Map<number, HTMLButtonElement>());
 
   const [teamSortKey, setTeamSortKey] = useState<
     "alphabetical" | "totalGamesPlayed" | "totalOffNights" | "weekScore"
@@ -64,7 +66,7 @@ export default function TransposedGrid({
 
   const sortedDays = daysToRender;
 
-  const toggleDay = (day: DAY_ABBREVIATION) => {
+  const toggleDay = (day: EXTENDED_DAY_ABBREVIATION) => {
     setExcludedDays((prev) => {
       const newSet = new Set(prev);
       newSet.has(day) ? newSet.delete(day) : newSet.add(day);
@@ -89,8 +91,8 @@ export default function TransposedGrid({
     return numGames <= 8 ? styles.greenBorder : styles.redBorder;
   }
 
-  const totalWeekGames = games.reduce((acc, num) => acc + num, 0);
-  const offDayCount = games.filter((num) => num <= 8).length;
+  const totalWeekGames = calcTotalGP(games, excludedDays, daysToRender);
+  const offDayCount = calcTotalOffNights(games, excludedDays, daysToRender);
 
   function getColorMapping(values: number[]): Record<number, string> {
     const unique = Array.from(new Set(values)).sort((a, b) => b - a);
@@ -160,6 +162,7 @@ export default function TransposedGrid({
 
   return (
     <div className={styles.gridWrapper}>
+      <div className={styles.tableScroller}>
       <table className={styles.transposedGrid}>
         <thead>
           <tr>
@@ -179,7 +182,24 @@ export default function TransposedGrid({
                   onMouseLeave={() => setHoveredColumn(null)}
                 >
                   <div className={styles.cellContent}>
-                    {teamData ? (
+                    {teamData && onToggleTeam ? (
+                      <div className={styles.teamHeaderIdentity}>
+                        <button type="button"
+                          id={`game-grid-transposed-trigger-${team.teamId}`}
+                          ref={(element) => { if (element) triggerRefs.current.set(team.teamId, element); else triggerRefs.current.delete(team.teamId); }}
+                          className={detailStyles.teamDisclosure}
+                          aria-label={`${expandedTeamIds.has(team.teamId) ? "Hide" : "Show"} ${teamData.name} upcoming category forecasts`}
+                          aria-expanded={expandedTeamIds.has(team.teamId)}
+                          aria-controls={`game-grid-team-details-${team.teamId}`}
+                          onClick={() => onToggleTeam(team.teamId)}>
+                          <Image src={teamData.logo} alt="" width={30} height={30} objectFit="contain" />
+                          <span aria-hidden="true">{expandedTeamIds.has(team.teamId) ? "−" : "+"}</span>
+                        </button>
+                        <Link href={`/stats/team/${teamData.abbreviation}`}
+                          aria-label={`Open ${teamData.name} Team HQ`}
+                          className={detailStyles.teamHqLink}>Team HQ</Link>
+                      </div>
+                    ) : teamData ? (
                       <Image
                         src={teamData.logo}
                         alt={teamData.name}
@@ -198,20 +218,18 @@ export default function TransposedGrid({
         </thead>
         <tbody>
           {sortedDays.map((day, dayIndex) => {
-            const cellDate = format(addDays(new Date(start), dayIndex), "M/d");
-            const isDisabled = excludedDays.includes(day as DAY_ABBREVIATION);
+            const cellDate = format(addDays(parseISO(start), dayIndex), "M/d");
+            const isDisabled = excludedDays.includes(day as EXTENDED_DAY_ABBREVIATION);
             return (
               <tr key={day} className={isDisabled ? styles.disabledRow : ""}>
                 <th className={styles.dayHeader}>
                   <div className={styles.cellContent}>
-                    {day} {cellDate}
-                    {!extended && (
-                      <Toggle
-                        checked={!isDisabled}
-                        aria-label={`Include ${String(day)} games`}
-                        onChange={() => toggleDay(day as DAY_ABBREVIATION)}
-                      />
-                    )}
+                    {String(day).replace(/^n/, "NEXT ")} {cellDate}
+                    <Toggle
+                      checked={!isDisabled}
+                      aria-label={`Include ${String(day).replace(/^n/, "NEXT ")} games`}
+                      onChange={() => toggleDay(day as EXTENDED_DAY_ABBREVIATION)}
+                    />
                   </div>
                 </th>
                 <td className={getDailyTotalCellClass(games[dayIndex] || 0)}>
@@ -320,6 +338,19 @@ export default function TransposedGrid({
           </tr>
         </tbody>
       </table>
+      </div>
+      {renderTeamDetails && sortedTeamColumns.filter((team) => expandedTeamIds.has(team.teamId)).map((team) => (
+        <div key={team.teamId} id={`game-grid-team-details-${team.teamId}`} className={styles.teamDetailPanel}>
+          <div className={detailStyles.detailControls}>
+            <button type="button" className={detailStyles.closeButton}
+              aria-label={`Close ${teamsMap[team.teamId]?.name ?? `Team ${team.teamId}`} game previews`}
+              onClick={() => { triggerRefs.current.get(team.teamId)?.focus(); onToggleTeam?.(team.teamId); }}>
+              Close preview
+            </button>
+          </div>
+          {renderTeamDetails(team.teamId)}
+        </div>
+      ))}
     </div>
   );
 }

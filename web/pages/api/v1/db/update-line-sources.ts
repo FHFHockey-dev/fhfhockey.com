@@ -1,5 +1,6 @@
 import { claimTweetEvents, finishTweetEvents, failTweetEvents } from "lib/sources/tweetProcessingJobs";
 import { persistTweetProjectionReports, enrichTweetInjuryHistory } from "lib/sources/tweetProjectionStorage";
+import { processLineSnapshotEvidence } from "lib/lines/processor";
 import { rosterSeasonForDate } from "lib/sources/playerIdentity";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import moment from "moment-timezone";
@@ -7,6 +8,7 @@ import { starterBoardFlags } from "lib/projections/starterBoardFlags";
 import { getCurrentSeason, getTeams } from "lib/NHL/server";
 import { buildTeamDirectory } from "lib/sources/lineupSourceIngestion";
 import {
+  reviewTweetApplicability,
   applyPlayerNameAliasesToRosterMap,
   extractTweetId,
   fetchPlayerNameAliases,
@@ -630,20 +632,7 @@ export default withCronJobAudit(
 
     // A requested processing date is not evidence that an older report applies
     // to that game's lineup. Keep the raw report and an explicit review reason.
-    for (const candidate of parsedCandidates) {
-      if (candidate.nhlFilterStatus !== "accepted") continue;
-      const timestamp = candidate.tweetPostedAt;
-      const posted = moment(timestamp ?? "", moment.ISO_8601, true);
-      const text = getPrimaryTextForSource(candidate);
-      const reason = !posted.isValid() ? "unknown_report_date"
-        : posted.tz("America/New_York").format("YYYY-MM-DD") !== requestedDate ? "report_date_mismatch"
-        : /\b(tomorrow|yesterday)\b/i.test(text) ? "relative_game_date_requires_review" : null;
-      if (reason) {
-        candidate.gameId = null;
-        candidate.nhlFilterStatus = "rejected_ambiguous";
-        candidate.nhlFilterReason = reason;
-      }
-    }
+    reviewTweetApplicability(parsedCandidates, requestedDate);
 
     processingStage = "injury_history";
     await enrichTweetInjuryHistory(req.supabase, parsedCandidates);
@@ -844,6 +833,7 @@ export default withCronJobAudit(
     }
     processingStage = "projection_storage";
     await persistTweetProjectionReports(req.supabase, parsedCandidates);
+    await processLineSnapshotEvidence(req.supabase, parsedCandidates, scheduledTeamIds);
     processingStage = "review_queue";
     const unresolvedNamesQueued = await persistUnresolvedPlayerNames({
       supabase: req.supabase,

@@ -6,7 +6,7 @@ import { getRosterPositions } from "./forwardGrouping";
 import { buildPlayerValues } from "./playerValues";
 import { buildPositionTiers, type TierPlayer } from "./positionalTiers";
 
-type Input = Pick<UseVORPParams, "players" | "draftSettings" | "leagueType" | "categoryWeights" | "forwardGrouping" | "prorate84" | "fantasyPointSettings"> & { goaliePointValues: Record<string, number> };
+type Input = Pick<UseVORPParams, "players" | "draftSettings" | "leagueType" | "categoryWeights" | "forwardGrouping" | "prorate84" | "fantasyPointSettings" | "positionWeightMultipliers"> & { goaliePointValues: Record<string, number> };
 
 export function buildDashboardTiers(input: Input) {
   const { values, eligibility } = buildPlayerValues(input);

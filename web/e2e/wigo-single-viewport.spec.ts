@@ -1,9 +1,37 @@
 import { expect, test, Page } from "@playwright/test";
-import { writeFile } from "node:fs/promises";
 import { WIGO_STAT_ORDER } from "../components/WiGO/statMetadata";
 
 const evidenceDirectory = "../tasks/TASKS/wigo-single-viewport/evidence";
 const periods = ["STD", "LY", "CA", "3YA", "L5", "L10", "L20"];
+
+test("recent-window disclosure and focusable timeframe controls remain visible across viewport sizes", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.route("**/rest/v1/**", route =>
+    ["GET", "HEAD"].includes(route.request().method()) || new URL(route.request().url()).pathname.includes("/rpc/")
+      ? route.continue()
+      : route.abort(),
+  );
+  for (const [width, height] of [[1180, 757], [1024, 768], [768, 1024], [390, 844], [320, 844]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto("/wigoCharts?playerId=8476453&tab=comparison");
+    const caption = page.locator("caption").filter({ hasText: "Aggregate dates and source coverage are unavailable" });
+    await expect(caption).toBeVisible({ timeout: 60_000 });
+    await expect(caption).toContainText("see GP for actual samples");
+    const timeframe = page.getByLabel("Select left timeframe for comparison");
+    await timeframe.focus();
+    await expect(timeframe).toBeFocused();
+    await timeframe.selectOption("LY");
+    await expect(timeframe).toHaveValue("LY");
+    await expect(caption).toBeVisible();
+    const showGoals = page.getByRole("button", { name: "Show Goals game log", exact: true });
+    await showGoals.focus();
+    await page.keyboard.press("Enter");
+    const hideGoals = page.getByRole("button", { name: "Hide Goals game log", exact: true });
+    await expect(hideGoals).toHaveAttribute("aria-expanded", "true");
+    await page.keyboard.press("Enter");
+    await expect(showGoals).toHaveAttribute("aria-expanded", "false");
+  }
+});
 
 test("radar distinguishes a timeout from missing data and supports retry", async ({ page }) => {
   let attempts = 0;
@@ -116,7 +144,7 @@ async function assertViewport(page: Page) {
       ),
     };
   });
-  expect(measurements.document).toEqual([1920, 1080]);
+  expect(measurements.document, JSON.stringify(measurements)).toEqual([1920, 1080]);
   expect(measurements.outside).toEqual([]);
   expect(measurements.overflowing).toEqual([]);
   expect(measurements.smallText).toEqual([]);
@@ -179,8 +207,33 @@ test("complete desktop matrix, reserved log, filters and chart controls", async 
       ? route.abort()
       : route.continue(),
   );
-  // The live radar RPC can time out. This explicit cohort fixture verifies
-  // rendering and labels; the separate live screenshot retains real data.
+  // Fictional cohorts and game logs keep this populated-state check independent
+  // of current-season ingestion. They do not establish live/historical acceptance.
+  await page.route("**/rest/v1/nst_percentile_*", route => {
+    const query = new URL(route.request().url()).searchParams;
+    const season = Number(query.get("season")?.replace("eq.", ""));
+    const columns = query.get("select")!.split(",").map(column => column.trim());
+    const rows = [8476453, 8478402, 8478483].map((playerId, index) => ({
+      ...Object.fromEntries(columns.map(column => [column, column.endsWith("_pct") ? 0.4 + index * 0.1 : index + 1])),
+      player_id: playerId, season, gp: 20, toi_seconds: 24_000,
+    }));
+    return route.fulfill({ json: rows });
+  });
+  const gameLogs = Array.from({ length: 20 }, (_, index) => ({
+    game_id: 2026020001 + index,
+    date: `2026-10-${String(index + 1).padStart(2, "0")}`,
+    points: index % 4, goals: index % 2, shots: 2 + index % 5,
+    hits: index % 3, blocked_shots: index % 2,
+    toi_per_game: 1200 + index * 10, pp_toi_per_game: 240 + index * 5,
+    pp_toi_pct_per_game: 0.2,
+  }));
+  await page.route("**/rest/v1/wgo_skater_stats?*", route => route.fulfill({ json: gameLogs }));
+  await page.route("**/rest/v1/nst_gamelog_as_rates?*", route => route.fulfill({ json: gameLogs.map(game => ({
+    date_scraped: game.date, shots_per_60: game.shots * 3600 / game.toi_per_game,
+  })) }));
+  await page.route("**/rest/v1/rpc/get_skater_game_scores_for_season*", route => route.fulfill({ json: gameLogs.map((game, index) => ({
+    game_date: game.date, game_score: (index % 7) * 0.5,
+  })) }));
   await page.route("**/rest/v1/rpc/get_skaters_avg_stats", (route) =>
     route.fulfill({
       json: [0, 1, 2].map((value) => ({
@@ -360,14 +413,13 @@ test("complete desktop matrix, reserved log, filters and chart controls", async 
   expect(smallCanvasLabels).toEqual([]);
   const measurements = await assertViewport(page);
   await page.screenshot({
-    path: `${evidenceDirectory}/desktop-radar-fixture-1920x1080.png`,
+    path: test.info().outputPath("desktop-populated-fixture-1920x1080.png"),
     fullPage: false,
   });
   await test.info().attach("viewport-measurements", {
     body: JSON.stringify(measurements, null, 2),
     contentType: "application/json",
   });
-  await writeFile(`${evidenceDirectory}/viewport-measurements.json`, JSON.stringify(measurements, null, 2));
   await page
     .locator("#wigo-selected-stat .recharts-wrapper")
     .hover({ position: { x: 350, y: 100 } });
@@ -519,6 +571,24 @@ test("source failure and missing history remain explicit within their reserved r
   page,
 }) => {
   test.setTimeout(120_000);
+  await page.route("**/rest/v1/wigo_recent?*", async route => {
+    const response = await route.fetch();
+    const data = await response.json();
+    for (const row of Array.isArray(data) ? data : data ? [data] : []) {
+      // Fictional source gaps and independent PP coverage; these are consumer fixtures.
+      for (const prefix of ["l5", "l10", "l20"]) Object.assign(row, {
+        [`${prefix}_gp`]: 1, [`${prefix}_atoi`]: 20, [`${prefix}_g`]: 0, [`${prefix}_g_per_60`]: 0,
+        [`${prefix}_pts`]: null, [`${prefix}_pts_per_60`]: null,
+        [`${prefix}_pptoi`]: 320, [`${prefix}_ppp`]: 1, [`${prefix}_ppp_per_60`]: 11.25,
+      });
+    }
+    await route.fulfill({ response, json: data });
+  });
+  await page.route("**/rest/v1/wigo_rates?*", route => route.fulfill({ json: {
+    player_id: 8476453, pts_per_60_l5: 999, pts_per_60_l10: 999, pts_per_60_l20: 999,
+    g_per_60_l5: 0, g_per_60_l10: 0, g_per_60_l20: 0,
+    ppp_per_60_l5: 11.25, ppp_per_60_l10: 11.25, ppp_per_60_l20: 11.25,
+  } }));
   await page.route("**/rest/v1/wgo_skater_stats?*", (route) => {
     const select = new URL(route.request().url()).searchParams
       .get("select")
@@ -544,7 +614,7 @@ test("source failure and missing history remain explicit within their reserved r
       json: { message: "Test source unavailable" },
     }),
   );
-  for (const table of ["wigo_career", "wigo_rates"]) {
+  for (const table of ["wigo_career"]) {
     await page.route(`**/rest/v1/${table}?*`, async (route) => {
       const response = await route.fetch();
       const data = await response.json();
@@ -566,6 +636,13 @@ test("source failure and missing history remain explicit within their reserved r
   await expect(matrix.locator("tbody tr").nth(1).locator("td")).toHaveText(
     Array(36).fill("-"),
   );
+  for (const period of ["L5", "L10", "L20"]) {
+    const row = matrix.locator("tbody tr").nth(periods.indexOf(period));
+    await expect(row.locator("td").nth(WIGO_STAT_ORDER.indexOf("PTS/60"))).toHaveText("-");
+    await expect(row.locator("td").nth(WIGO_STAT_ORDER.indexOf("Goals"))).toHaveText("0");
+    await expect(row.locator("td").nth(WIGO_STAT_ORDER.indexOf("ATOI"))).toHaveText("20:00");
+    await expect(row.locator("td").nth(WIGO_STAT_ORDER.indexOf("PPP/60"))).toHaveText("11.25");
+  }
   await expect(
     page.getByRole("button", { name: /^Toggle .* reference$/ }),
   ).toHaveCount(7);
@@ -573,4 +650,14 @@ test("source failure and missing history remain explicit within their reserved r
     timeout: 60_000,
   });
   await assertViewport(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "Comparison", exact: true }).click();
+  const comparison = page.locator("table").filter({ has: page.getByRole("columnheader", { name: "STD", exact: true }) });
+  const points = comparison.getByRole("row", { name: /PTS\/60/ });
+  const goals = comparison.getByRole("row", { name: /^Goals/ });
+  for (const period of ["L5", "L10", "L20"]) {
+    await expect(points.locator("td").nth(periods.indexOf(period) + 1)).toHaveText("-");
+    await expect(goals.locator("td").nth(periods.indexOf(period) + 1)).toHaveText("0");
+  }
+  await expect(points.locator("td").last()).toHaveText("-");
 });

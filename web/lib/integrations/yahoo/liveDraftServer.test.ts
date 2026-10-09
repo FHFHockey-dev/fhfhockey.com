@@ -11,7 +11,7 @@ import {
   snapshotRequiresCorrectionConfirmation,
   stopYahooDraftSession,
 } from "./liveDraftServer";
-import { fetchYahooBoardResource, fetchYahooDraftResource } from "./providerClient";
+import { fetchYahooBoardResource, fetchYahooDraftResource, fetchYahooPlanningResource } from "./providerClient";
 
 const GAME_CONTEXT = {
   gameCode: "nhl" as const,
@@ -64,10 +64,19 @@ describe("Yahoo live draft ownership", () => {
     await expect(fetchYahooBoardResource({ ...args, resource: { type: "available_players", start: 100 } })).rejects.toThrow("scope");
     await expect(fetchYahooBoardResource({ ...args, resource: { type: "available_players", start: -1 } })).rejects.toThrow("scope");
     await expect(fetchYahooBoardResource({ ...args, resource: { type: "keepers", start: -25 } })).rejects.toThrow("scope");
+    await expect(fetchYahooPlanningResource({ ...args, resource: { type: "team", teamKey: "477.l.2.t.1" } })).rejects.toThrow("scope");
+    await expect(fetchYahooPlanningResource({ ...args, resource: { type: "team", teamKey: "465.l.1.t.1" } })).rejects.toThrow("scope");
     expect(rpc).not.toHaveBeenCalled();
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
+  it("reads only the explicitly authorized team summary for roster_adds", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: { access_token: "fixture-access", refresh_token: "fixture-refresh", expires_at: null }, error: null });
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ team: { roster_adds: { coverage_type: "week", coverage_value: 1, value: 0 } } }), { status: 200 }));
+    await fetchYahooPlanningResource({ client: { rpc } as any, connectedAccountId: "account", userId: "user", context: GAME_CONTEXT,
+      leagueKey: "477.l.1", fetchImpl, format: "standard_json", resource: { type: "team", teamKey: "477.l.1.t.1" } });
+    expect(fetchImpl).toHaveBeenCalledWith("https://fantasysports.yahooapis.com/fantasy/v2/team/477.l.1.t.1?format=json", expect.objectContaining({ method: "GET" }));
+  });
   it("requests the league-scoped keeper filter with ownership and pagination", async () => {
     const rpc = vi.fn().mockResolvedValue({ data: { access_token: "fixture-access", refresh_token: "fixture-refresh", expires_at: null }, error: null });
     const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ players: { count: 0 } }), { status: 200 }));

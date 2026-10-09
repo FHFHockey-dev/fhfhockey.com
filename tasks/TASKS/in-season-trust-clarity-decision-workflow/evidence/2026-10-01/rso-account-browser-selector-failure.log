@@ -1,0 +1,41 @@
+
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › e2e/roster-schedule-optimizer.spec.ts:577:5 › connected refresh and account save preserve forecast permissions and exclusions (18.2s)
+
+
+  1) [chromium] › e2e/roster-schedule-optimizer.spec.ts:577:5 › connected refresh and account save preserve forecast permissions and exclusions 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeDisabled[2m([22m[2m)[22m failed
+
+    Locator: getByRole('button', { name: 'Save to account' })
+    Expected: disabled
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeDisabled" with timeout 15000ms[22m
+    [2m  - waiting for getByRole('button', { name: 'Save to account' })[22m
+
+
+      666 |   await expect.poll(() => accountReads.includes(secondUser)).toBe(true);
+      667 |   await expect(page.getByRole("button", { name: "Refresh provider" })).toBeDisabled();
+    > 668 |   await expect(page.getByRole("button", { name: "Save to account" })).toBeDisabled();
+          |                                                                       ^
+      669 |   expect((await canceledProvider).failure()?.errorText).toContain("ERR_ABORTED");
+      670 |   const completedSave = page.waitForResponse(response => response.request() === pendingSaveRequest);
+      671 |   releaseProvider(); releaseSave();
+        at /Users/tim/Code/fhfhockey.com/web/e2e/roster-schedule-optimizer.spec.ts:668:71
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/error-context.md
+
+  1 failed
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:577:5 › connected refresh and account save preserve forecast permissions and exclusions 

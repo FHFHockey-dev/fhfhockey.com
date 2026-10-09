@@ -530,9 +530,10 @@ export default function DraftSummaryModal({
             <div
               className={styles.noPickKeeperSummary}
               role="region"
-              aria-label="No-pick keepers"
+              aria-label="Keepers without assigned picks"
             >
-              <strong>No-pick keepers</strong>
+              <strong>Keepers without assigned picks</strong>
+              <p>A missing assignment does not confirm that a keeper costs no pick. Assign any pick costs before relying on this summary.</p>
               <ul>
                 {noPickKeepers.map((keeper) => (
                   <li key={keeper.playerId}>

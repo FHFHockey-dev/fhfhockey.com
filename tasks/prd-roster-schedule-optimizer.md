@@ -2,6 +2,11 @@
 
 This document preserves the approved requirements and planning baseline. Implementation status and executed verification are recorded in [Prep List](tasks-prd-roster-schedule-optimizer.md).
 
+Approved forecasting extension (September 28, 2026): keep detailed calendar-day coverage separate from next-N-team-games scopes. The initial comparison is 7/14/21 UTC calendar days, with 14 as a candidate, not a validated horizon. Baseline v1 uses an equal-source approved public projection consensus, 60/40 projection/history prior (available-source renormalization), up to 82 previous-season appearances, and up to 20 current-season appearances weighted by 0.9^age with a 20-appearance prior weight. Unknown observations are omitted, ratios are not averaged, and no extra role/opponent/form multiplier is added. This candidate remains unvalidated.
+
+FE acceptance requires competitor-aware target coverage, joint position/UTIL assignments, explicit conditional/unconditional lineage with participation applied once, immutable source/input identifiers, and credited goalie minimum progress separate from forecasts. Missing or incompatible competitor evidence produces “Schedule-capacity assignment,” unavailable quality comparisons and explicit exclusion reasons. No name-based player rules are permitted. Public baseline release requires explicit owner-approved evaluation/review evidence and allowlisting; code readiness and passing fixtures do not constitute accuracy validation or activation. Shared manual and connected analysis retain the same forecast boundary.
+
+
 ## 1. Summary and current evidence
 
 Build RSO as an in-season planning workspace centered on a streaming itinerary inside a game grid. Free/manual and premium/connected users will use the same engine. Premium adds supported synchronization, account persistence, and automatic upkeep.
@@ -140,7 +145,7 @@ Reuse shared goalie forecasts and starter evidence; add the missing league-aware
 
 Use the shared FORGE/Player Forecasts infrastructure, including issued revision IDs, input capture, settlement, and existing validation policies.
 
-The initial RSO reader should consume validated issued FORGE game revisions where supported. Player Forecast outputs can supplement or replace targets only when their serving/readiness gates permit it. Do not substitute season projections for missing per-game forecasts.
+The initial RSO reader should consume validated issued FORGE game revisions where supported. Player Forecast outputs can supplement or replace targets only when their serving/readiness gates permit it. Do not silently substitute season totals for missing per-game forecasts. The approved FE-01–FE-11 extension permits separately versioned, labeled, release-gated contribution-rate baselines applied lazily to actual games. Conditional rates without compatible participation may only break comparable schedule-capacity ties; they cannot establish unconditional totals or quality-based acquisition comparisons.
 
 For custom horizons beyond available forecasts, retain schedule planning for the entire selected range. Mark uncovered games and suppress full-horizon outcome claims rather than extrapolating silently.
 

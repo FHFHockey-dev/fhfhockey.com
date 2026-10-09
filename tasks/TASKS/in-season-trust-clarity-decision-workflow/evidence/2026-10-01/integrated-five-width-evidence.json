@@ -1,0 +1,73 @@
+{
+  "recordedAt": "2026-10-02T03:24:49.047874+00:00",
+  "spec": "web/e2e/start-chart.spec.ts",
+  "scenario": "preserves context and saved intent through news, research, slate and schedule",
+  "viewports": [
+    {
+      "width": 1180,
+      "height": 757,
+      "result": "passed"
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "result": "passed"
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "result": "passed"
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "result": "passed"
+    },
+    {
+      "width": 320,
+      "height": 844,
+      "result": "passed"
+    }
+  ],
+  "browserCommand": "PLAYWRIGHT_SKIP_WEB_SERVER=1 npx playwright test e2e/start-chart.spec.ts --grep 'preserves context and saved intent through news'",
+  "result": {
+    "exitCode": 0,
+    "passed": 5,
+    "durationSeconds": 16.8
+  },
+  "lint": {
+    "command": "npx eslint e2e/start-chart.spec.ts",
+    "exitCode": 0
+  },
+  "fixtureDate": "2026-02-07",
+  "requestedDate": "2026-02-08",
+  "appliedSlateDate": "2026-02-09",
+  "checks": [
+    "News report to canonical fixture player research",
+    "desktop/mobile tool navigation",
+    "applied upcoming slate to Game Grid",
+    "back/forward date restoration",
+    "saved RSO roster/rules/intent/protected-player/date preservation",
+    "empty captured page errors"
+  ],
+  "earlierFailures": [
+    "First desktop run navigated back to /404 before the News fixture appeared; four sizes passed.",
+    "First readiness retry incorrectly expected Site menu rather than Player search."
+  ],
+  "startingPageReadiness": "Open and close the existing Player search dialog before following the home link.",
+  "serverCleanup": {
+    "interruptedExitCode": 130,
+    "port3100Listener": "none"
+  },
+  "logs": [
+    "integrated-five-width-initial.log",
+    "integrated-five-width-dialog-name-failure.log",
+    "integrated-five-width-final.log",
+    "integrated-five-width-lint.log"
+  ],
+  "limitations": [
+    "Fictional News/player/slate/workspace inputs; not historical or production source evidence.",
+    "No real Yahoo account switching, screen-reader speech, contrast measurement or human first-use measurement.",
+    "No production writes, deployment, recompute or migration."
+  ]
+}

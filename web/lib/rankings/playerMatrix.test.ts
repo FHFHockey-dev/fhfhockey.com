@@ -91,6 +91,7 @@ function mockCompositeRows(rows: Array<Record<string, unknown>> = []) {
     in: vi.fn(() => query),
     order: vi.fn(() => query),
     range: vi.fn(() => Promise.resolve({ data: rows, error: null })),
+    limit: vi.fn(() => Promise.resolve({ data: rows, error: null })),
   };
   supabaseFromMock.mockReturnValue(query);
   return query;
@@ -146,6 +147,42 @@ describe("playerMatrix", () => {
   });
 
   it("requests the full internal ranking set before paginating matrix rows", async () => {
+    const compositeQuery = mockCompositeRows();
+    const rollingQueries: Array<{ limit: ReturnType<typeof vi.fn>; range: ReturnType<typeof vi.fn> }> = [];
+    const history = [
+      { player_id: 26, game_date: "2026-04-16", updated_at: "2026-04-16T12:00:00Z", season_games_played: 10, toi_seconds_total_last5: 6000 },
+      { player_id: 26, game_date: "2026-04-16", updated_at: "2026-04-16T13:00:00Z", season_games_played: 10, toi_seconds_total_last5: 7000 },
+      { player_id: 26, game_date: "2026-04-15", updated_at: "2026-04-17T13:00:00Z", season_games_played: 10, toi_seconds_total_last5: 5000 },
+      { player_id: 26, game_date: "2026-04-17", updated_at: "2026-04-17T13:00:00Z", season_games_played: 10, toi_seconds_total_last5: 9000 },
+      { player_id: 27, game_date: "2026-04-16", updated_at: null, season_games_played: 2, toi_seconds_total_last5: 1200 },
+      { player_id: 28, game_date: "2026-04-16", updated_at: null, season_games_played: 10, toi_seconds_total_last5: null },
+      { player_id: 28, game_date: "2026-04-15", updated_at: null, season_games_played: 10, toi_seconds_total_last5: 5000 },
+    ];
+    supabaseFromMock.mockImplementation((table: string) => {
+      if (table !== "rolling_player_game_metrics") return compositeQuery;
+      let rows = [...history];
+      const orders: Array<keyof typeof history[number]> = [];
+      const query = {
+        select: vi.fn(() => query),
+        eq: vi.fn((key: string, value: unknown) => {
+          if (key === "player_id") rows = rows.filter((row) => row.player_id === value);
+          return query;
+        }),
+        lte: vi.fn((_key: string, value: string) => { rows = rows.filter((row) => row.game_date <= value); return query; }),
+        in: vi.fn(() => query),
+        order: vi.fn((key: keyof typeof history[number]) => { orders.push(key); return query; }),
+        range: vi.fn(async () => ({ data: null, error: { code: "57014", message: "history scan timed out" } })),
+        limit: vi.fn(async (count: number) => ({ data: [...rows].sort((left, right) => {
+          for (const key of orders) {
+            const comparison = String(right[key] ?? "").localeCompare(String(left[key] ?? ""));
+            if (comparison !== 0) return comparison;
+          }
+          return 0;
+        }).slice(0, count), error: null })),
+      };
+      rollingQueries.push(query);
+      return query;
+    });
     buildContextualRankingsSurfacesMock.mockImplementation(
       async (request: ContextualRankingsRequest, metricKeys: string[]) => {
         const surfaces = new Map();
@@ -229,9 +266,19 @@ describe("playerMatrix", () => {
       entityIds: Array.from({ length: 25 }, (_, index) => index + 26),
     });
     expect(response.meta.totalRankedRows).toBe(250);
+    expect(response.meta.sortMetricAvailableRowCount).toBe(250);
     expect(response.meta.pageCount).toBe(10);
     expect(response.meta.rowCount).toBe(25);
     expect(response.rows[0]?.entity.id).toBe(26);
+    expect(response.rows[0]?.sample.allStrengthsToiPerGameSeconds).toBe(1400);
+    expect(response.rows[1]?.sample.allStrengthsToiPerGameSeconds).toBe(600);
+    expect(response.rows[2]?.sample.allStrengthsToiPerGameSeconds).toBeNull();
+    expect(response.rows[3]?.sample.allStrengthsToiPerGameSeconds).toBeNull();
+    expect(rollingQueries).toHaveLength(25);
+    for (const query of rollingQueries) {
+      expect(query.limit).toHaveBeenCalledWith(1);
+      expect(query.range).not.toHaveBeenCalled();
+    }
     expect(
       response.rows[0]?.metrics.points_per_60.rankScopes?.overall?.rank,
     ).toBe(26);
@@ -481,7 +528,15 @@ describe("playerMatrix", () => {
     });
   });
 
-  it("overlays published composite rows for live Offense, Defense, MCM, and BEAST columns", async () => {
+  it.each([
+    { gp: 10, toi: 6000, minGp: null, minToi: null, confidence: "high", qualified: true },
+    { gp: null, toi: 6000, minGp: null, minToi: null, confidence: "low", qualified: false },
+    { gp: 10, toi: null, minGp: null, minToi: null, confidence: "low", qualified: false },
+    { gp: 1, toi: 599, minGp: null, minToi: null, confidence: "low", qualified: false },
+    { gp: 1, toi: 600, minGp: null, minToi: null, confidence: "medium", qualified: true },
+    { gp: 2, toi: 1200, minGp: null, minToi: null, confidence: "high", qualified: true },
+    { gp: 2, toi: 1200, minGp: 3, minToi: 1800, confidence: "low", qualified: false },
+  ])("qualifies published composite cells and sorting against their sample minimums: %j", async ({ gp, toi, minGp, minToi, confidence, qualified }) => {
     buildContextualRankingsSurfacesMock.mockImplementation(
       async (request: ContextualRankingsRequest, metricKeys: string[]) => {
         const surfaces = new Map();
@@ -490,7 +545,14 @@ describe("playerMatrix", () => {
           surfaces.set(metricKey, {
             success: true,
             request: metricRequest,
-            rankings: [1].map((id) => rankingRow(id, metricRequest)),
+            rankings: [1].map((id) => ({
+              ...rankingRow(id, metricRequest),
+              sample: {
+                ...rankingRow(id, metricRequest).sample,
+                gamesPlayed: gp,
+                toiSeconds: toi,
+              },
+            })),
             meta: {
               generatedAt: "2026-06-08T00:00:00.000Z",
               snapshotDate: "2026-04-16",
@@ -547,6 +609,9 @@ describe("playerMatrix", () => {
         season: "20252026",
         strength: "5v5",
         window: "season",
+        sort_metric: "mcm_score",
+        ...(minGp == null ? {} : { min_gp: String(minGp) }),
+        ...(minToi == null ? {} : { min_toi_seconds: String(minToi) }),
         ranking_source: "fallback",
       }),
     );
@@ -559,30 +624,65 @@ describe("playerMatrix", () => {
     });
     expect(response.rows[0]?.metrics.offense_rating).toMatchObject({
       formattedValue: "91.2",
-      percentile: 91.2,
+      percentile: qualified ? 91.2 : null,
+      sampleConfidence: confidence,
       availabilityState: "available",
     });
     expect(response.rows[0]?.metrics.defense_rating).toMatchObject({
       formattedValue: "72.4",
-      percentile: 72.4,
+      percentile: qualified ? 72.4 : null,
+      sampleConfidence: confidence,
       availabilityState: "available",
     });
     expect(response.rows[0]?.metrics.mcm_score).toMatchObject({
       formattedValue: "88.6",
-      percentile: 88.6,
+      percentile: qualified ? 88.6 : null,
+      sampleConfidence: confidence,
       availabilityState: "available",
     });
     expect(response.rows[0]?.metrics.beast_tier).toMatchObject({
       formattedValue: "BEAST+",
-      percentile: 88.6,
+      percentile: qualified ? 88.6 : null,
+      sampleConfidence: confidence,
       availabilityState: "available",
     });
+    expect(response.rows[0]?.sample).toMatchObject({
+      gamesPlayed: gp,
+      toiSeconds: toi,
+      confidence,
+      minimumSampleMet: qualified,
+    });
+    expect(response.rows[0]?.sort).toMatchObject({
+      rank: qualified ? 1 : null,
+      percentile: qualified ? 88.6 : null,
+      rankScopes: { overall: { rank: qualified ? 1 : null, percentile: qualified ? 88.6 : null, qualifiedPeerCount: qualified ? 1 : 0 } },
+    });
+    expect(response.meta.sortMetricAvailableRowCount).toBe(qualified ? 1 : 0);
     expect(response.meta).toMatchObject({
       rankingSource: "fallback_rolling_player_game_metrics",
       compositeSourceTable: "skater_composite_ratings",
       sourceTables: ["rolling_player_game_metrics", "skater_composite_ratings"],
     });
     expect(query.range).toHaveBeenCalledWith(0, 999);
+    const filtered = await buildPlayerMatrixSurface(parsePlayerMatrixRequest({
+      season: "20252026", strength: "5v5", window: "season",
+      sort_metric: "mcm_score", sample_confidence: "medium_plus",
+      ...(minGp == null ? {} : { min_gp: String(minGp) }),
+      ...(minToi == null ? {} : { min_toi_seconds: String(minToi) }),
+      ranking_source: "fallback",
+    }));
+    expect(filtered.rows).toHaveLength(qualified ? 1 : 0);
+
+    const metricSorted = await buildPlayerMatrixSurface(parsePlayerMatrixRequest({
+      season: "20252026", strength: "5v5", window: "season",
+      sort_metric: "points_per_60", ranking_source: "fallback",
+      ...(minGp == null ? {} : { min_gp: String(minGp) }),
+      ...(minToi == null ? {} : { min_toi_seconds: String(minToi) }),
+    }));
+    expect(metricSorted.rows[0]?.metrics.mcm_score).toMatchObject({
+      sampleConfidence: confidence,
+      percentile: qualified ? 88.6 : null,
+    });
   });
 
   it("sorts by published Offense Rating and leaves missing composite rows unavailable", async () => {
@@ -667,6 +767,7 @@ describe("playerMatrix", () => {
     );
 
     expect(response.meta.sortMetric).toBe("offense_rating");
+    expect(response.meta.sortMetricAvailableRowCount).toBe(2);
     expect(response.rows.map((row) => row.entity.id)).toEqual([1, 3, 2]);
     expect(response.rows[0]?.sort).toMatchObject({
       rank: 1,
@@ -690,6 +791,21 @@ describe("playerMatrix", () => {
       availabilityReason:
         "Composite metric is not available for this player/context.",
     });
+
+    mockCompositeRows([]);
+    clearPlayerMatrixSurfaceCachesForTests();
+    const unpublished = await buildPlayerMatrixSurface(
+      parsePlayerMatrixRequest({
+        season: "20252026",
+        strength: "all",
+        window: "season",
+        sort_metric: "mcm_score",
+        ranking_source: "fallback",
+      }),
+    );
+    expect(unpublished.meta.sortMetricAvailableRowCount).toBe(0);
+    expect(unpublished.rows).toHaveLength(3);
+    expect(unpublished.rows.every((row) => row.sort.percentile === null)).toBe(true);
   });
 
   it("sorts composite rows by Results Luck instead of MCM when requested", async () => {

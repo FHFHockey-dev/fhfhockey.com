@@ -109,10 +109,11 @@ describe("DraftSummaryModal configuration evidence", () => {
     );
 
     const keeperList = screen.getByRole("region", {
-      name: "No-pick keepers",
+      name: "Keepers without assigned picks",
     });
     expect(keeperList.textContent).toContain("No Cost Keeper");
     expect(keeperList.textContent).toContain("Keepers United");
+    expect(keeperList.textContent).toContain("does not confirm that a keeper costs no pick");
   });
 
   it("renders source weights and privacy-safe custom metadata", () => {

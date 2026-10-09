@@ -97,7 +97,11 @@
 
 @media (max-width: v.$breakpoint-tablet) {
   .navBar {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .navButton {
+    min-height: v.$touch-target-min;
   }
 
   .connected {

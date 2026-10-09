@@ -7,7 +7,7 @@
  * --- Query Parameters ---
  *
  * 1. `runMode` (optional): Specifies the operation mode for the data fetch.
- *    - `incremental` (default): Fetches data from the last successfully scraped date up to the current date.
+ *    - `incremental` (default): Rotates current-season attempts using an audit bookmark, skipping stored complete data.
  *      This is the most common mode for daily updates.
  *      Example: /api/v1/db/update-nst-gamelog
  *      Example: /api/v1/db/update-nst-gamelog?runMode=incremental
@@ -88,6 +88,20 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import { randomUUID } from "node:crypto";
+import {
+  buildNstGamelogScope,
+  NST_GAMELOG_BOOKMARK_TTL_MS,
+  NST_GAMELOG_PROGRESS_VERSION,
+  nstGamelogItemIdentity,
+  nstGamelogItemKey,
+  resolveNstGamelogBookmark,
+  rotateNstGamelogQueue,
+  summarizeNstGamelogOutcomes,
+  type NstGamelogAuditRow,
+  type NstGamelogItem,
+  type NstGamelogOutcome
+} from "lib/nst/gamelogProgress";
 import {
   fetchNstTextByUrl,
   isNstAuthError,
@@ -152,6 +166,7 @@ const playerNameMapping: Record<string, { fullName: string }> = {
   "Oskar Back": { fullName: "Oskar Bäck" },
   "Cameron Atkinson": { fullName: "Cam Atkinson" },
   "Nicholas Paul": { fullName: "Nick Paul" },
+  "Joseph Veleno": { fullName: "Joe Veleno" },
   "Janis Moser": { fullName: "J.J. Moser" },
   "Nathan Légaré": { fullName: "Nathan Legare" },
   "Mat?j Blümel": { fullName: "Matěj Blümel" },
@@ -403,7 +418,7 @@ function assertHistoricalDatedNstRequestAllowed(args: {
   );
 }
 
-function getDatesBetween(start: Date, end: Date): string[] {
+export function getDatesBetween(start: Date, end: Date): string[] {
   const dates: string[] = [];
   let current = toZonedTime(start, "America/New_York");
   const endZoned = toZonedTime(end, "America/New_York"); // Ensure start date is not after end date
@@ -420,8 +435,9 @@ function getDatesBetween(start: Date, end: Date): string[] {
     ) {
       break;
     }
-    current = addDays(current, 1); // Ensure we don't have timezone issues causing infinite loops near DST changes (re-zone after adding day)
-    current = toZonedTime(current, "America/New_York");
+    // Step calendar days in the already-zoned representation. Re-zoning each
+    // step shifts the clock again on UTC hosts, duplicating or omitting dates.
+    current = addDays(current, 1);
   }
   return dates;
 }
@@ -767,13 +783,19 @@ function getTableName(datasetType: string): string {
 
 // --- Database Interaction Functions ---
 
-async function getLatestDateSupabase(): Promise<string | null> {
+async function getLatestDateSupabase(args: {
+  startDate: string;
+  endDate: string;
+  tables: readonly string[];
+}): Promise<string | null> {
   let latestDate: string | null = null;
   console.log("Querying Supabase for the latest scraped date...");
-  for (const table of NST_TABLE_NAMES) {
+  for (const table of args.tables) {
     const { data, error } = await supabase
       .from(table)
       .select("date_scraped")
+      .gte("date_scraped", args.startDate)
+      .lte("date_scraped", args.endDate)
       .order("date_scraped", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -1197,7 +1219,7 @@ async function fetchAndParseData(
   seasonId: string,
   retries: number = 2,
   options?: { bypassRateLimit?: boolean; minIntervalMs?: number }
-): Promise<{ success: boolean; data: any[] }> {
+): Promise<{ success: boolean; data: any[]; outcome: NstGamelogOutcome }> {
   const dateFromUrl = getDateFromUrl(url);
   const effectiveDate = dateFromUrl || date;
 
@@ -1218,7 +1240,7 @@ async function fetchAndParseData(
         console.warn(
           `No data received from URL: ${url} on attempt ${attempt}.`
         );
-        if (attempt === retries) return { success: false, data: [] };
+        if (attempt === retries) return { success: false, data: [], outcome: "parse_or_identity_unresolved" };
         continue;
       }
 
@@ -1229,10 +1251,10 @@ async function fetchAndParseData(
           `No table found in response from URL: ${url} on attempt ${attempt}.`
         );
         if ($("body").text().includes("No skaters found")) {
-          console.log(`Confirmed no skater data for ${date} at ${url}.`);
-          return { success: true, data: [] };
+          console.log(`NST reports no skaters for ${date}; source completeness is unverified.`);
+          return { success: true, data: [], outcome: "empty_unverified" };
         }
-        if (attempt === retries) return { success: false, data: [] };
+        if (attempt === retries) return { success: false, data: [], outcome: "parse_or_identity_unresolved" };
         continue;
       }
 
@@ -1269,7 +1291,7 @@ async function fetchAndParseData(
         console.warn(
           `Table found, but missing expected 'Player' header at ${url}. Attempt ${attempt}.`
         );
-        if (attempt === retries) return { success: false, data: [] };
+        if (attempt === retries) return { success: false, data: [], outcome: "parse_or_identity_unresolved" };
         continue;
       }
 
@@ -1431,16 +1453,21 @@ async function fetchAndParseData(
       console.log(
         `Successfully parsed and found IDs for ${dataRowsWithPlayerIds.length} rows for datasetType "${datasetType}" date ${date}.`
       );
-      return { success: true, data: dataRowsWithPlayerIds };
+      return {
+        success: dataRowsWithPlayerIds.length > 0,
+        data: dataRowsWithPlayerIds,
+        outcome: dataRowsWithPlayerIds.length > 0 && dataRowsWithPlayerIds.length === table.find("tbody tr").length
+          ? "rows_persisted" : "parse_or_identity_unresolved"
+      };
     } catch (error: any) {
-      if (isNstAuthError(error) || isNstRateLimitError(error)) {
+      if (isNstAuthError(error) || isNstRateLimitError(error) || isNstConfigError(error)) {
         throw error;
       }
       if (isNstNotFoundError(error)) {
         console.warn(
           `NST returned 404 for ${datasetType} ${effectiveDate}; treating this query as unavailable/no upstream page.`
         );
-        return { success: true, data: [] };
+        return { success: true, data: [], outcome: "unavailable" };
       }
       console.error(
         `Attempt ${attempt}/${retries} - Error fetching/parsing ${url}:`,
@@ -1457,14 +1484,14 @@ async function fetchAndParseData(
         console.error(
           `Failed to fetch/parse data from ${url} after ${retries} attempts.`
         );
-        return { success: false, data: [] };
+        return { success: false, data: [], outcome: "fetch_or_write_failed" };
       }
       // rely on global NST limiter for spacing between attempts
     }
   }
 
   console.error(`Exited fetchAndParseData loop unexpectedly for ${url}.`);
-  return { success: false, data: [] };
+  return { success: false, data: [], outcome: "fetch_or_write_failed" };
 }
 
 // --- URL Construction ---
@@ -1661,6 +1688,8 @@ async function processUrls(
   totalRowsProcessed: number;
   requestsAttempted: number;
   stoppedEarly: boolean;
+  nextItem: UrlQueueItem | null;
+  outcomes: Map<string, { item: NstGamelogItem; outcome: NstGamelogOutcome }>;
 }> {
   banner(
     `Starting processing | URLs: ${urlsQueue.length} | Full Refresh: ${isFullRefresh}`
@@ -1669,6 +1698,8 @@ async function processUrls(
   let totalRowsProcessed = 0;
   let requestsAttempted = 0;
   let stoppedEarly = false;
+  let nextItem: UrlQueueItem | null = urlsQueue[0] ?? null;
+  const outcomes = new Map<string, { item: NstGamelogItem; outcome: NstGamelogOutcome }>();
 
   for (let i = 0; i < urlsQueue.length; i++) {
     const item = urlsQueue[i];
@@ -1717,6 +1748,7 @@ async function processUrls(
     let parseResult: any[] = [];
     let upsertSuccess = false;
     let upsertedCount = 0;
+    let outcome: NstGamelogOutcome = "already_present";
 
     if (shouldFetch) {
       if (
@@ -1724,20 +1756,28 @@ async function processUrls(
         requestsAttempted >= options.maxRequests
       ) {
         stoppedEarly = true;
+        nextItem = item;
         break;
       }
       requestsAttempted += 1;
       console.log("\nFetching NST data from URL\n");
-      const fetchParseResponse = await fetchAndParseData(
-        url,
-        datasetType,
-        date,
-        seasonId,
-        options?.bypassRateLimit ? 1 : 2,
-        options
-      );
+      let fetchParseResponse;
+      try {
+        fetchParseResponse = await fetchAndParseData(
+          url, datasetType, date, seasonId,
+          options?.bypassRateLimit ? 1 : 2, options
+        );
+      } catch (error) {
+        // Preserve confirmed writes before a fatal auth/rate/config stop.
+        Object.assign(error as object, {
+          nstPartialRowsAffected: totalRowsProcessed,
+          nstSourceItem: nstGamelogItemIdentity(item)
+        });
+        throw error;
+      }
       fetchSuccess = fetchParseResponse.success;
       parseResult = fetchParseResponse.data;
+      outcome = fetchParseResponse.outcome;
 
       if (fetchSuccess && parseResult.length > 0) {
         parseResult.forEach(
@@ -1751,6 +1791,7 @@ async function processUrls(
 
         if (!upsertSuccess) {
           fetchSuccess = false;
+          outcome = "fetch_or_write_failed";
         }
       } else if (!fetchSuccess) {
         console.error(`Fetch/Parse failed for ${url}.`);
@@ -1767,6 +1808,7 @@ async function processUrls(
     }
 
     totalRowsProcessed += upsertedCount;
+    outcomes.set(nstGamelogItemKey(item), { item: nstGamelogItemIdentity(item), outcome });
 
     totalProcessed++;
     printInfoBlock({
@@ -1792,7 +1834,7 @@ async function processUrls(
     `\n--- Initial URL processing complete. ${failedUrls.length} failures recorded. ---`
   );
 
-  return { totalRowsProcessed, requestsAttempted, stoppedEarly };
+  return { totalRowsProcessed, requestsAttempted, stoppedEarly, nextItem, outcomes };
 }
 
 // --- NHL API Cross-Referencing ---
@@ -2090,6 +2132,27 @@ async function main(
 
   let totalRowsAffected = 0;
   let failedUrlCountAfterRetry = 0;
+  const progressRunId = randomUUID();
+  let progressScope: string | undefined;
+  let bookmarkState = "explicit_scope";
+  let basedOnRunId: string | null = null;
+  let auditWriteStarted = false;
+  let auditPersistence = "not_attempted";
+  // A failed or lost acknowledgement can still follow a committed insert.
+  // Never retry that insert or claim the bookmark was durably saved.
+  const writeAudit = async (row: Record<string, unknown>) => {
+    auditWriteStarted = true;
+    try {
+      const result = await supabase.from("cron_job_audit").insert([row]);
+      if (!result || result.error !== null) throw new Error("Audit insert was not acknowledged.");
+      auditPersistence = "confirmed";
+    } catch {
+      auditPersistence = "not_confirmed";
+      const error = new Error("NST audit persistence is unconfirmed; writes may have committed. Do not automatically rerun.");
+      Object.assign(error, { auditPersistence: "not_confirmed" });
+      throw error;
+    }
+  };
 
   try {
 
@@ -2254,8 +2317,8 @@ async function main(
           continue;
         }
         const dates = getDatesBetween(
-          parseISO(seasonStartStr),
-          parseISO(finalEndStr)
+          parseDateInTimeZone(seasonStartStr, "America/New_York"),
+          parseDateInTimeZone(finalEndStr, "America/New_York")
         ).reverse();
         for (const date of dates) {
           const scheduledInfo = scheduledDateMap.get(date);
@@ -2357,6 +2420,12 @@ async function main(
     };
 
     const todayEST = toZonedTime(new Date(), timeZone);
+    const today = tzFormat(todayEST, "yyyy-MM-dd", { timeZone });
+    const currentDatedSeason = allSeasons.find((season) => {
+      const start = String(season.startDate).slice(0, 10);
+      const end = String(season.endDate).slice(0, 10);
+      return today >= start && today <= end;
+    });
     let startDate: Date;
 
     if (targetDates) {
@@ -2407,27 +2476,38 @@ async function main(
           );
         }
       } else {
-        // If no start date is provided, fall back to default incremental logic
-        const latestDateStr = await getLatestDateSupabase();
-        if (latestDateStr) {
-          startDate = addDays(parseDateInTimeZone(latestDateStr, timeZone), 1);
-          console.log(
-            `Incremental Update: Latest date is ${latestDateStr}. Starting from ${tzFormat(
-              startDate,
-              "yyyy-MM-dd"
-            )}.`
-          );
-        } else {
-          startDate = parseDateInTimeZone(
-            String(allSeasons[0].startDate).slice(0, 10),
-            timeZone
-          );
-          console.log(
-            `Incremental Update: No existing data. Starting from first season start date ${tzFormat(
-              startDate,
-              "yyyy-MM-dd"
-            )}.`
-          );
+        // Automatic daily runs must not inherit a previous season's cursor.
+        const cursorSeason = currentDatedSeason ?? [...allSeasons].reverse().find(
+          (season) => String(season.startDate).slice(0, 10) <= today
+        );
+        if (!cursorSeason) {
+          throw new Error("No started season found for the incremental NST cursor.");
+        }
+        const seasonStartDate = String(cursorSeason.startDate).slice(0, 10);
+        const seasonEndDate = String(cursorSeason.endDate).slice(0, 10);
+        const automaticScope = !options?.endDate && !targetSeasonId && !allowHistoricalDatedRequests;
+        const latestDateStr = automaticScope ? null : await getLatestDateSupabase({
+          startDate: seasonStartDate,
+          endDate: seasonEndDate < today ? seasonEndDate : today,
+          tables: targetDatasetSet
+            ? Array.from(targetDatasetSet, getTableName)
+            : NST_TABLE_NAMES
+        });
+        // Revisit the cursor date so partial writes/retries can finish it.
+        // processUrls skips complete data when overwrite is false.
+        startDate = parseDateInTimeZone(latestDateStr ?? seasonStartDate, timeZone);
+        console.log(
+          `Incremental Update: Season ${cursorSeason.id}, resuming ${latestDateStr ?? seasonStartDate}.`
+        );
+        if (automaticScope) {
+          progressScope = buildNstGamelogScope({
+            seasonId: String(cursorSeason.id), seasonStartDate,
+            datasets: targetDatasetSet ? [...targetDatasetSet] : Object.keys(constructUrlsForDate(seasonStartDate, String(cursorSeason.id))),
+            overwrite: fullRefreshFlag("incremental")
+          });
+          // Max row dates cannot certify earlier empty/partial dates. Retention
+          // loss must therefore replay the season aperture, not drop those dates.
+          startDate = parseDateInTimeZone(seasonStartDate, timeZone);
         }
       }
     }
@@ -2471,12 +2551,6 @@ async function main(
       return;
     }
 
-    const currentDatedSeason = allSeasons.find((season) => {
-      const start = String(season.startDate).slice(0, 10);
-      const end = String(season.endDate).slice(0, 10);
-      const today = tzFormat(todayEST, "yyyy-MM-dd", { timeZone });
-      return today >= start && today <= end;
-    });
     assertHistoricalDatedNstRequestAllowed({
       requestedStartDate: allDatesToScrape[0],
       currentSeasonStartDate: currentDatedSeason
@@ -2500,7 +2574,7 @@ async function main(
       `Loaded ${scheduledDateMap.size} scheduled NHL game dates for NST aperture.`
     );
 
-    const initialUrlsQueue: UrlQueueItem[] = [];
+    let initialUrlsQueue: UrlQueueItem[] = [];
     for (const date of allDatesToScrape) {
       const scheduledInfo = scheduledDateMap.get(date);
 
@@ -2530,6 +2604,28 @@ async function main(
     console.log(
       `Generated ${initialUrlsQueue.length} initial URLs to process.`
     );
+    if (progressScope) {
+      let rows: NstGamelogAuditRow[] = [];
+      let readFailed = false;
+      try {
+        const result = await supabase.from("cron_job_audit")
+          .select("run_time, details")
+          .eq("job_name", "update-nst-gamelog")
+          .eq("details->nstProgress->>scope", progressScope)
+          .gte("run_time", new Date(startTime - NST_GAMELOG_BOOKMARK_TTL_MS).toISOString())
+          .order("run_time", { ascending: false }).limit(2);
+        if (result.error || !Array.isArray(result.data)) readFailed = true;
+        else rows = result.data as NstGamelogAuditRow[];
+      } catch {
+        readFailed = true;
+      }
+      const resolved = resolveNstGamelogBookmark({ rows, scope: progressScope, now: startTime, readFailed });
+      bookmarkState = resolved.state;
+      basedOnRunId = resolved.bookmark?.runId ?? null;
+      const rotated = rotateNstGamelogQueue(initialUrlsQueue, resolved.bookmark);
+      initialUrlsQueue = rotated.queue;
+      if (resolved.bookmark && !rotated.matched) bookmarkState = "queue_changed";
+    }
 
     const processedPlayerIds = new Set<number>();
     const failedUrls: UrlQueueItem[] = [];
@@ -2555,6 +2651,7 @@ async function main(
 
     totalRowsAffected += initialProcessResult.totalRowsProcessed || 0;
     failedUrlCountAfterRetry = failedUrls.length;
+    const finalOutcomes = new Map(initialProcessResult.outcomes);
 
     if (failedUrls.length > 0) {
       console.log(`\n--- Retrying ${failedUrls.length} failed URLs ---`);
@@ -2584,6 +2681,7 @@ async function main(
 
       totalRowsAffected += retryResult.totalRowsProcessed || 0;
       failedUrlCountAfterRetry = retryFailedUrls.length;
+      for (const [key, outcome] of retryResult.outcomes) finalOutcomes.set(key, outcome);
 
       if (retryFailedUrls.length > 0) {
         console.error(
@@ -2607,11 +2705,30 @@ async function main(
 
     const endTime = Date.now();
     const duration = ((endTime - startTime) / 1000 / 60).toFixed(2);
+    const sourceOutcomes = summarizeNstGamelogOutcomes(finalOutcomes);
+    const success = failedUrlCountAfterRetry === 0 && !initialProcessResult.stoppedEarly &&
+      sourceOutcomes.unresolvedCount === 0 && initialUrlsQueue.length > 0;
+    const progress = {
+      version: NST_GAMELOG_PROGRESS_VERSION,
+      scope: progressScope,
+      runId: progressRunId,
+      basedOnRunId,
+      bookmarkRead: bookmarkState,
+      concurrency: "not_exclusive; overlapping runs may replay attempts",
+      sourceOutcomes,
+      stoppedEarly: initialProcessResult.stoppedEarly,
+      deferredUrls: initialUrlsQueue.length - finalOutcomes.size,
+      state: initialUrlsQueue.length === 0 ? "no_scheduled_games_unverified"
+        : success ? "attempts_finished_coverage_unverified" : "incomplete",
+      bookmark: progressScope && initialProcessResult.nextItem ? {
+        version: NST_GAMELOG_PROGRESS_VERSION, scope: progressScope,
+        runId: progressRunId, next: nstGamelogItemIdentity(initialProcessResult.nextItem)
+      } : null
+    };
 
-    await supabase.from("cron_job_audit").insert([
-      {
+    await writeAudit({
         job_name: "update-nst-gamelog",
-        status: "success",
+        status: success ? "success" : "failure",
         rows_affected: totalRowsAffected,
         details: {
           timing: { ...buildCronJobTiming(startTime, endTime), source: "audit" },
@@ -2622,9 +2739,9 @@ async function main(
           playersProcessed: processedPlayerIds.size,
           troublesomePlayersCount: troublesomePlayers.length,
           isForwardFull: isForwardFull,
+          nstProgress: progress,
         }
-      }
-    ]);
+    });
 
     console.log(`\n--- Script execution finished in ${duration} minutes. ---`);
     console.log(`Total rows affected: ${totalRowsAffected}`);
@@ -2635,20 +2752,31 @@ async function main(
         )}`
       );
     }
+    return { success, nstProgress: { ...progress, auditPersistence: "confirmed" } };
   } catch (error: any) {
+    totalRowsAffected += error.nstPartialRowsAffected ?? 0;
+    Object.assign(error, { confirmedRowsAffected: totalRowsAffected });
     console.error("Unexpected error in main orchestration:", error.message);
-    await supabase.from("cron_job_audit").insert([
-      {
-        job_name: "update-nst-gamelog",
-        status: "failure",
-        rows_affected: totalRowsAffected,
-        details: {
-          error: error.message,
-          failedRows: failedUrlCountAfterRetry,
-          timing: { ...buildCronJobTiming(startTime), source: "audit" }
-        }
+    if (!auditWriteStarted) {
+      try {
+        await writeAudit({
+          job_name: "update-nst-gamelog",
+          status: "failure",
+          rows_affected: totalRowsAffected,
+          details: {
+            error: error.message,
+            failedRows: failedUrlCountAfterRetry,
+            sourceItem: error.nstSourceItem,
+            coverage: "not_verified",
+            timing: { ...buildCronJobTiming(startTime), source: "audit" }
+          }
+        });
+      } catch (auditError: any) {
+        Object.assign(error, { auditPersistence: "not_confirmed" });
+        error.message += ` ${auditError.message}`;
       }
-    ]);
+    }
+    Object.assign(error, { auditPersistence });
     throw error;
   } finally {
     console.log(`--- Script execution block completed. ---`);
@@ -2807,7 +2935,7 @@ async function handler(
     } | seasonId=${seasonId || "auto"} | allowHistoricalDatedRequests=${allowHistoricalDatedRequests}`
   );
   try {
-    await main(runMode, {
+    const outcome = await main(runMode, {
       startDate,
       endDate,
       dates,
@@ -2820,7 +2948,7 @@ async function handler(
     return res
       .status(200)
       .json({
-        message: "Done",
+        message: outcome?.success === false ? "Incomplete NST work; inspect source outcomes and deferred URLs." : "Done",
         runMode,
         startDate,
         endDate,
@@ -2829,11 +2957,15 @@ async function handler(
         datasetType,
         datasetGroup,
         seasonId,
-        allowHistoricalDatedRequests
+        allowHistoricalDatedRequests,
+        ...outcome
       });
   } catch (err: any) {
     console.error(err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({
+      success: false, error: err.message, auditPersistence: err.auditPersistence ?? "not_attempted",
+      sourceItem: err.nstSourceItem, confirmedRowsAffected: err.confirmedRowsAffected
+    });
   }
 }
 

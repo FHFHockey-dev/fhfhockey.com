@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   buildTweetNewsAmbiguousCandidate,
@@ -57,6 +57,13 @@ function buildRow(
 }
 
 describe("tweet news automation", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it.each(["Andrei Vasilevskiy will start if healthy.", "Andrei Vasilevskiy first off, but not confirmed.", "Victor Hedman has not been ruled out tonight.", "Andrei Vasilevskiy will start tonight?", "Connor Bedard could return fully healthy and ready for training camp.", "Connor Bedard is not fully healthy and ready for training camp."])("keeps uncertain claims out of confirmed automated news: %s", (text) => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "true");
+    const candidate = buildTweetNewsAutomationCandidate({ row: buildRow({ review_text: text }), players });
+    if (candidate?.subcategory === "CONFIRMED STARTER" || candidate?.subcategory === "OUT" || candidate?.subcategory === "FULLY HEALTHY") expect(candidate.cardStatus).not.toBe("published");
+  });
   it("publishes high-confidence injury cards with player evidence", () => {
     const candidate = buildTweetNewsAutomationCandidate({
       row: buildRow(),
@@ -74,6 +81,12 @@ describe("tweet news automation", () => {
       sourceUrl: "https://twitter.com/BeatWriter/status/100",
       playerAssignments: [{ playerId: 2, playerName: "Victor Hedman" }],
     });
+  });
+  it("retains affirmative fully healthy publication with interpreted subject evidence", () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "true");
+    const candidate = buildTweetNewsAutomationCandidate({ row: buildRow({ team_id: 16, team_abbreviation: "CHI", review_text: "Connor Bedard is fully healthy and ready for training camp." }), players });
+    expect(candidate).toMatchObject({ category: "RETURN", subcategory: "FULLY HEALTHY", cardStatus: "published" });
   });
 
   it("keeps review-gated expected goalie starts as drafts", () => {

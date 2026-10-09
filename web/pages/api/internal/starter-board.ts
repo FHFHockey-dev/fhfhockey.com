@@ -35,6 +35,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })(),
     ]);
     if (capture.status === "rejected" || dispatch.status === "rejected") throw new Error("Scheduled work failed");
-    return res.status(capture.value.failed || dispatch.value.failed ? 503 : 200).json({ ...dispatch.value, capture: capture.value });
+    return res.status(capture.value.failed || dispatch.value.failed ? 503 : 200).json({
+      mode: flags.compute ? "compute" : flags.capture ? "capture-only" : "idle",
+      ...dispatch.value,
+      capture: capture.value,
+    });
   } catch { return res.status(503).json({ error: "Starter Board dispatch unavailable" }); }
 }

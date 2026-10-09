@@ -3,6 +3,14 @@ import { workspaceSchema } from "lib/in-season/workspaceSchema";
 
 export const WORKSPACE_KEY = "fhfh:rso:workspace:v1";
 
+export function workspaceContextKey(context: PlanningContext): string {
+  return JSON.stringify([context.provider, context.seasonId, context.leagueId, context.teamId, context.startDate, context.endDate, context.timeZone]);
+}
+
+function contextStorageKey(context: PlanningContext): string {
+  return `${WORKSPACE_KEY}:context:${encodeURIComponent(workspaceContextKey(context))}`;
+}
+
 export function defaultContext(now = new Date()): PlanningContext {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   const localDate = (date: Date) => { const parts = new Intl.DateTimeFormat("en-US", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date); const part = (type: string) => parts.find((item) => item.type === type)?.value ?? ""; return `${part("year")}-${part("month")}-${part("day")}`; };
@@ -24,18 +32,23 @@ export function defaultWorkspace(now = new Date()): PlanningWorkspace {
   return { version: 1, context: defaultContext(now), rules: defaultRules(), managerRuleOverrides: {}, roster: [], lockedAssignments: [], intent: defaultIntent(), manualPlayers: [], unresolvedNames: [], realized: {}, opponent: null };
 }
 
-export function readWorkspace(storage: Pick<Storage, "getItem">): PlanningWorkspace | null {
+export function readWorkspace(storage: Pick<Storage, "getItem">, context?: PlanningContext): PlanningWorkspace | null {
   try {
-    const raw = storage.getItem(WORKSPACE_KEY);
+    const raw = (context ? storage.getItem(contextStorageKey(context)) : null) ?? storage.getItem(WORKSPACE_KEY);
     if (!raw) return null;
     const value: unknown = JSON.parse(raw);
     const parsed = workspaceSchema.safeParse(value);
-    return parsed.success ? parsed.data : null;
+    return parsed.success && (!context || workspaceContextKey(parsed.data.context) === workspaceContextKey(context)) ? parsed.data : null;
   } catch { return null; }
 }
 
 export function writeWorkspace(storage: Pick<Storage, "setItem">, workspace: PlanningWorkspace): string | null {
-  try { storage.setItem(WORKSPACE_KEY, JSON.stringify(workspace)); return null; }
+  try {
+    const value = JSON.stringify(workspace);
+    storage.setItem(contextStorageKey(workspace.context), value);
+    storage.setItem(WORKSPACE_KEY, value);
+    return null;
+  }
   catch { return "This browser could not save the workspace. Your current changes remain available until this tab closes."; }
 }
 
@@ -43,6 +56,7 @@ export function writeWorkspace(storage: Pick<Storage, "setItem">, workspace: Pla
 export function retainProviderInputs(workspace: PlanningWorkspace, snapshot: PlanningSnapshot): PlanningWorkspace {
   const referenced = new Set([
     ...snapshot.roster.map((entry) => entry.playerId),
+    ...(workspace.lockedAssignments ?? []).map((entry) => entry.playerId),
     ...workspace.intent.steps.flatMap((step) => [step.playerId, step.dropPlayerId].filter((id): id is string => Boolean(id))),
     ...workspace.intent.protectedPlayerIds,
     ...workspace.intent.excludedPlayerIds,
@@ -50,7 +64,9 @@ export function retainProviderInputs(workspace: PlanningWorkspace, snapshot: Pla
   const players = new Map([...workspace.manualPlayers, ...snapshot.players].filter((player) => referenced.has(player.id)).map((player) => [player.id, player]));
   const manualPlayers: PlanningPlayer[] = [...players.values()].map((player) => ({
     id: player.id, nhlId: player.nhlId, name: player.name, teamAbbreviation: player.teamAbbreviation,
+    nhlTeamId: player.nhlTeamId, rosterRevision: player.rosterRevision,
     eligiblePositions: player.eligiblePositions, playerClass: player.playerClass,
+    eligibilityVerified: workspace.manualPlayers.some(manual => manual.id === player.id && manual.eligibilityVerified === true),
     availability: "unknown", ownership: null, canDrop: null, holdValue: null, reserveEligibility: [],
   }));
   return { ...workspace, context: snapshot.context, rules: snapshot.rules, roster: snapshot.roster, manualPlayers };
@@ -75,10 +91,19 @@ export function resolveImportedNames(names: string, catalog: readonly PlanningPl
 /** Retained roster evidence supports schedule analysis, never fresh availability or transactions. */
 export function retainedScheduleSnapshot(workspace: PlanningWorkspace, data: PlanningData, asOf: string): PlanningSnapshot | null {
   if (!workspace.roster.length) return null;
-  const players = [...new Map([...data.players, ...workspace.manualPlayers].map(player => [player.id, { ...player, availability: "unknown" as const, canDrop: null, reserveEligibility: [] }])).values()];
+  const catalog = new Map(data.players.map(player => [player.id, player]));
+  const players = [...new Map([...data.players, ...workspace.manualPlayers].map((player): [string, PlanningPlayer] => {
+    const current = catalog.get(player.id);
+    const sameIdentity = !!current && current.nhlId === player.nhlId && current.teamAbbreviation === player.teamAbbreviation;
+    return [player.id, { ...player, availability: "unknown" as const, canDrop: null, reserveEligibility: [],
+      nhlTeamId: sameIdentity ? current.nhlTeamId ?? player.nhlTeamId : undefined,
+      rosterRevision: sameIdentity ? current.rosterRevision ?? player.rosterRevision : undefined,
+      eligibilityVerified: sameIdentity ? player.eligibilityVerified ?? current.eligibilityVerified ?? false
+        : !current && player.eligibilityVerified === true } ];
+  })).values()];
   return {
     id: `retained:${workspace.context.teamId}:${workspace.context.startDate}:${workspace.context.endDate}:${asOf}`,
-    context: { ...workspace.context, asOf }, players, roster: workspace.roster, games: data.games, forecasts: data.forecasts,
+    context: { ...workspace.context, asOf }, players, roster: workspace.roster, games: data.games, forecasts: data.forecasts, baselineSources: data.baselineSources, forecastManifest: data.forecastManifest,
     rules: { ...workspace.rules, acquisitionTiming: "unknown", acquisitionCost: null, periods: [], goalieMinimum: { ...workspace.rules.goalieMinimum, credited: null }, unsupported: [...workspace.rules.unsupported, "Retained roster inputs are unverified; this is provisional schedule analysis."] },
     lockedAssignments: workspace.lockedAssignments ?? [], realized: {}, opponent: null,
     evidence: { ...data.evidence, roster: { source: "Retained local roster", asOf: workspace.context.asOf, seasonId: workspace.context.seasonId, completeness: "partial", limitations: ["Yahoo has not verified this roster, its locks or player availability for the current analysis."] } },

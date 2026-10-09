@@ -1,6 +1,6 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\GameGrid\utils\date-func.tsx
 
-import { endOfISOWeek, getWeek, startOfISOWeek } from "date-fns";
+import { endOfISOWeek, startOfISOWeek } from "date-fns";
 import { DAY_ABBREVIATION, EXTENDED_DAY_ABBREVIATION } from "lib/NHL/types";
 
 function getDayStrInternal(date: Date) {
@@ -9,8 +9,6 @@ function getDayStrInternal(date: Date) {
     .toUpperCase() as DAY_ABBREVIATION;
 }
 
-const GET_WEEK_OPTIONS = { weekStartsOn: 1 } as const;
-
 /**
  *
  * @param start start date
@@ -18,12 +16,10 @@ const GET_WEEK_OPTIONS = { weekStartsOn: 1 } as const;
  * @returns MON, TUE, nMON
  */
 export function getDayStr(start: Date, date: Date): EXTENDED_DAY_ABBREVIATION {
-  const startWeek = getWeek(start, GET_WEEK_OPTIONS);
-  const currentWeek = getWeek(date, GET_WEEK_OPTIONS);
-
   const dayStr = getDayStrInternal(date);
-  // @ts-expect-error
-  return startWeek === currentWeek ? dayStr : `NEXT ${dayStr}`;
+  return dateDiffInDays(start, date) < 7
+    ? dayStr
+    : `n${dayStr}` as EXTENDED_DAY_ABBREVIATION;
 }
 
 export function addDays(date: Date, days: number) {

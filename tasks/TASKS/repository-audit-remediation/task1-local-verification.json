@@ -1,0 +1,189 @@
+{
+  "task": "Task #1 database permission hardening",
+  "recorded_at_utc": "2026-10-02T00:55:24.479750+00:00",
+  "environment": "Disposable network-disabled local container; no published ports; cached image public.ecr.aws/supabase/postgres:15.8.1.085 (af083ef64d04)",
+  "migration_sha256": "fb2d6df0e1ea360bb49cc27db443f5924d18654698a25c0f712016703ac4415b",
+  "results": {
+    "acl_fixture": "passed",
+    "fixture_cleanup": "passed: all roles and routines rolled back",
+    "wrapper_success": {
+      "passed": true,
+      "before": {
+        "definition": "CREATE OR REPLACE FUNCTION public.execute_sql(sql_statement text)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'public', 'extensions', 'pg_temp'\nAS $function$begin raise exception 'Test routine must never be invoked';end;$function$\n",
+        "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "anon": true,
+        "authenticated": true,
+        "service": true,
+        "owner": true,
+        "public": true,
+        "ledger": []
+      },
+      "after": {
+        "definition": "CREATE OR REPLACE FUNCTION public.execute_sql(sql_statement text)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'public', 'extensions', 'pg_temp'\nAS $function$begin raise exception 'Test routine must never be invoked';end;$function$\n",
+        "acl": "{postgres=X/postgres,service_role=X/postgres}",
+        "anon": false,
+        "authenticated": false,
+        "service": true,
+        "owner": true,
+        "public": false,
+        "ledger": [
+          {
+            "version": "20260820013120",
+            "name": "revoke_execute_sql_browser_roles",
+            "statements": [
+              "revoke execute on function public.execute_sql(text)\nfrom public, anon, authenticated;",
+              "grant execute on function public.execute_sql(text)\nto service_role;"
+            ]
+          }
+        ]
+      }
+    },
+    "wrapper_repeat": "passed: rejected existing receipt, unchanged ACL/definition/ledger",
+    "validation_rollback": {
+      "passed": true,
+      "snapshot_unchanged": true,
+      "ledger_rows": 0
+    },
+    "ledger_rollback": {
+      "passed": true,
+      "snapshot_unchanged": true,
+      "ledger_rows": 0
+    }
+  },
+  "psql_execution_outputs": [
+    {
+      "command": [
+        "exec",
+        "task1-acl-verification-20261002",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_execute_sql_acl_test",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-f",
+        "/tmp/task1/supabase/tests/execute_sql_acl.sql"
+      ],
+      "exit_code": 0,
+      "stdout": "BEGIN\nDO\nCREATE ROLE\nCREATE ROLE\nCREATE ROLE\nCREATE ROLE\nCREATE FUNCTION\nALTER FUNCTION\nGRANT\nCREATE FUNCTION\nSELECT 2\nREVOKE\nGRANT\nREVOKE\nGRANT\nDO\nROLLBACK\nTask #1 ACL fixture passed; all fixtures rolled back; no RPC invoked.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "task1-acl-verification-20261002",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_wrapper_success",
+        "--single-transaction",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-f",
+        "/tmp/task1/tasks/TASKS/repository-audit-remediation/task1-execute-sql-approved-apply.psql"
+      ],
+      "exit_code": 0,
+      "stdout": "SET\nLOCK TABLE\nDO\nREVOKE\nGRANT\nDO\nINSERT 0 1\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "exec",
+        "task1-acl-verification-20261002",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_wrapper_success",
+        "--single-transaction",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-f",
+        "/tmp/task1/tasks/TASKS/repository-audit-remediation/task1-execute-sql-approved-apply.psql"
+      ],
+      "exit_code": 3,
+      "stdout": "SET\nLOCK TABLE\n",
+      "stderr": "psql:/tmp/task1/tasks/TASKS/repository-audit-remediation/task1-execute-sql-approved-apply.psql:16: ERROR:  Task #1 migration already recorded; stop and inspect ACL\nCONTEXT:  PL/pgSQL function inline_code_block line 5 at RAISE\n"
+    },
+    {
+      "command": [
+        "exec",
+        "task1-acl-verification-20261002",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_wrapper_validation_failure",
+        "--single-transaction",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-f",
+        "/tmp/task1/tasks/TASKS/repository-audit-remediation/task1-execute-sql-approved-apply.psql"
+      ],
+      "exit_code": 3,
+      "stdout": "SET\nLOCK TABLE\nDO\nREVOKE\nGRANT\n",
+      "stderr": "psql:/tmp/task1/tasks/TASKS/repository-audit-remediation/task1-execute-sql-approved-apply.psql:35: ERROR:  Task #1 privilege postcondition failed; rollback required\nCONTEXT:  PL/pgSQL function inline_code_block line 13 at RAISE\n"
+    },
+    {
+      "command": [
+        "exec",
+        "task1-acl-verification-20261002",
+        "psql",
+        "-X",
+        "-h",
+        "/tmp",
+        "-U",
+        "postgres",
+        "-d",
+        "task1_wrapper_ledger_failure",
+        "--single-transaction",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-f",
+        "/tmp/task1/tasks/TASKS/repository-audit-remediation/task1-execute-sql-approved-apply.psql"
+      ],
+      "exit_code": 3,
+      "stdout": "SET\nLOCK TABLE\nDO\nREVOKE\nGRANT\nDO\n",
+      "stderr": "psql:/tmp/task1/tasks/TASKS/repository-audit-remediation/task1-execute-sql-approved-apply.psql:45: ERROR:  new row for relation \"schema_migrations\" violates check constraint \"forced_safe_ledger_failure\"\nDETAIL:  Failing row contains (20260820013120, revoke_execute_sql_browser_roles, {\"revoke execute on function public.execute_sql(text)\nfrom publi...).\n"
+    }
+  ],
+  "cleanup": {
+    "removed_disposable_container": "task1-acl-verification-20261002",
+    "remaining_running_containers": [
+      "supabase_db_fhfhockey-super-goal-baseline",
+      "supabase_studio_fhfhockey-super-goal-baseline",
+      "supabase_pg_meta_fhfhockey-super-goal-baseline",
+      "supabase_storage_fhfhockey-super-goal-baseline",
+      "supabase_rest_fhfhockey-super-goal-baseline",
+      "supabase_realtime_fhfhockey-super-goal-baseline",
+      "supabase_inbucket_fhfhockey-super-goal-baseline",
+      "supabase_auth_fhfhockey-super-goal-baseline",
+      "supabase_kong_fhfhockey-super-goal-baseline",
+      "supabase_vector_fhfhockey-super-goal-baseline",
+      "supabase_analytics_fhfhockey-super-goal-baseline"
+    ],
+    "colima_left_running_reason": "Unrelated Supabase workloads are running; do not stop them.",
+    "original_default_docker_context_restored": true
+  },
+  "constraints": {
+    "production_calls": false,
+    "routine_invocations": false,
+    "image_downloads": false,
+    "unrelated_containers_modified": false
+  },
+  "raw_command_log": "/tmp/task1-acl-verification/commands.json"
+}

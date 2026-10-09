@@ -113,6 +113,25 @@ describe("Draft Dashboard Fantrax settings picker", () => {
     });
   });
 
+  it("shows Fantrax player-data warnings and unmatched names inside Integrations", async () => {
+    useFantraxConnections.mockReturnValue(hookData());
+    render(<FantraxLeagueSettingsPanel enabled disabled={false} onApply={vi.fn()} playerData={{
+      error: null, isLoading: false, eligibilityLoaded: false,
+      unmatchedPlayers: [
+        { playerId: 8475763, fullName: "Kevin Hayes" },
+        { playerId: 8475906, fullName: "John Klingberg" },
+        { playerId: 8478971, fullName: "Connor Ingram" },
+      ],
+    }} />);
+    expect(await screen.findByText("Fantrax player data for this draft")).toBeTruthy();
+    expect(screen.getByText(/Fantrax league eligibility is unavailable/)).toBeTruthy();
+    expect(screen.getByText(/3 players still lack a safe Fantrax match/)).toBeTruthy();
+    expect((screen.getByText("Unmatched players").closest("details") as HTMLDetailsElement).open).toBe(true);
+    expect(screen.getByText("Kevin Hayes")).toBeTruthy();
+    expect(screen.getByText("John Klingberg")).toBeTruthy();
+    expect(screen.getByText("Connor Ingram")).toBeTruthy();
+  });
+
   it("requires partial-warning confirmation and disables application in Yahoo mode", async () => {
     const partialLeague = {
       ...league,
@@ -150,11 +169,55 @@ describe("Draft Dashboard Fantrax settings picker", () => {
     rerender(
       <FantraxLeagueSettingsPanel enabled disabled onApply={onApply} />,
     );
-    expect(screen.getByText(/Yahoo live draft sync is authoritative/)).toBeTruthy();
+    expect(screen.getByText(/cannot be applied while live sync or manual draft work is active/)).toBeTruthy();
     expect(
       (screen.getByRole("button", {
         name: "Apply to this draft",
       }) as HTMLButtonElement).disabled,
     ).toBe(true);
+  });
+
+  it("keeps settings apply available when live sync is rolled off", async () => {
+    useFantraxConnections.mockReturnValue(hookData());
+    const onApply = vi.fn();
+    render(<FantraxLeagueSettingsPanel enabled disabled={false} onApply={onApply} liveSync={{
+      enabled: false, eligible: false, state: null, error: null, isLoading: false,
+      isPolling: false, blocked: false, onStart: vi.fn(), onStop: vi.fn(), onPoll: vi.fn(),
+    }} />);
+    await screen.findByText(/points · 2 scoring mappings/);
+    fireEvent.click(screen.getByRole("button", { name: "Apply to this draft" }));
+    expect(onApply).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("button", { name: "Start live sync" })).toBeNull();
+  });
+
+  it("explains a Yahoo conflict without hiding the linked Fantrax league", async () => {
+    useFantraxConnections.mockReturnValue(hookData());
+    const onStart = vi.fn();
+    render(<FantraxLeagueSettingsPanel enabled disabled lockReason="yahoo" onApply={vi.fn()} liveSync={{
+      enabled: true, eligible: true, state: null, error: null, isLoading: false,
+      isPolling: false, blocked: true, onStart, onStop: vi.fn(), onPoll: vi.fn(),
+    }} />);
+    expect(await screen.findByText(/Fantrax is connected. This dashboard is using Yahoo live sync/)).toBeTruthy();
+    expect(screen.getByText(/export a bookmark in Draft Settings/i)).toBeTruthy();
+    expect((screen.getByLabelText("League") as HTMLSelectElement).disabled).toBe(false);
+    expect((screen.getByRole("button", { name: "Apply to this draft" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Start live sync" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(onStart).not.toHaveBeenCalled();
+  });
+
+  it("offers stop and manual continuation from the last snapshot", async () => {
+    useFantraxConnections.mockReturnValue(hookData());
+    const onStop = vi.fn();
+    render(<FantraxLeagueSettingsPanel enabled disabled onApply={vi.fn()} liveSync={{
+      enabled: true, eligible: true,
+      state: {
+        session: { id: "session", status: "active", providerStatus: "inProgress", externalLeagueId: "league-row-1", externalTeamId: "team-row-1", lastPolledAt: null, nextPollAt: "", lastErrorCode: null },
+        draftOrder: ["team-key-1"], slots: [], picks: [], warning: null, pollIntervalMs: 30000,
+      },
+      error: null, isLoading: false, isPolling: false, blocked: true,
+      onStart: vi.fn(), onStop, onPoll: vi.fn(),
+    }} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Stop & continue manually" }));
+    expect(onStop).toHaveBeenCalledTimes(1);
   });
 });

@@ -207,7 +207,9 @@ export function useYahooDraftSync(
       setSelectedLeagueId((current) =>
         normalized.leagues.some((league) => league.externalLeagueId === current)
           ? current
-          : normalized.leagues[0]?.externalLeagueId || "",
+          : normalized.leagues.length === 1
+            ? normalized.leagues[0].externalLeagueId
+            : "",
       );
       setError(null);
       setRequestState("ready");

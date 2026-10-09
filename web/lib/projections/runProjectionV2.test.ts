@@ -1,4 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { playerForecastSourcePayloadHash } from "lib/player-forecasts/sourceSnapshot";
+import { captureForgeIssuedContexts, forgeIssuedContextsFingerprint } from "./issuedContext";
+import { capturedReadReceipt, captureProjectionInputs, interceptProjectionQuery, replayProjectionInputs } from "./inputCapture";
+import { capturedIssuedTargets, parseForgeIssuedTargets } from "./gameRevisions";
+import type { ForgeIssuedContextV1 } from "./issuedContext";
+
 
 import {
   buildSequentialHorizonScalarsFromDates,
@@ -24,6 +30,7 @@ import {
   applyRoleSpecificUsageBounds,
   mergeSkaterCandidatePoolForRecovery,
   constrainSkaterIdsToActiveRoster,
+  selectLineCombinationFallback,
   computeSkaterTeamToiTargetWithPoolGuard,
   validateReconciledPlayerDistribution,
   buildSkaterRoleScenarios,
@@ -52,6 +59,39 @@ function buildContext(
     ...overrides
   };
 }
+
+describe("immutable issued target receipts", () => {
+  it("binds final written targets to captured identities and keeps unsupported components missing", () => {
+    const contexts = [{ game: { id: 30 }, roster: [7, 8, 9].map(playerId => ({ canonicalId: playerId,
+      nhlId: playerId * 11, teamId: 1, seasonId: 20262027 })) }] as ForgeIssuedContextV1[];
+    const skater = { game_id: 30, team_id: 1, horizon_games: 1, player_id: 77,
+      proj_goals_es: 1, proj_goals_pp: 0, proj_goals_pk: null, proj_hits: 2,
+      uncertainty: { model: { skater_selection: { production_conditioning: "conditional_playing" } } } };
+    const write = (table: string, row: unknown) => [{ method: "from", args: [table] }, { method: "upsert", args: [row] }];
+    const writes = [write("forge_player_projections", [skater, { ...skater, player_id: 999 }]),
+      write("forge_player_projections", { ...skater, proj_hits: null, proj_goals_pk: 0 }),
+      write("forge_player_projections", { ...skater, player_id: 88, horizon_games: 5 }),
+      write("forge_goalie_projections", { game_id: 30, team_id: 1, horizon_games: 1, goalie_id: 99,
+        uncertainty: { daily_board_candidates: [{ playerId: 99,
+          conditional: { SAVES_GOALIE: 0, WINS_GOALIE: 0.5, GOALIE_MINUTES: null } }] } })];
+    const receipt = capturedIssuedTargets(contexts, writes);
+    expect(receipt).toMatchObject({ version: "forge-issued-targets-v1", outputHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+      unmappedOutputs: 1, opportunities: [
+        { playerId: 7, nhlPlayerId: 77, gameId: 30, teamId: 1, seasonId: 20262027,
+          conditioning: "conditional_playing", population: "skater", targetKeys: ["GOALS"] },
+        { playerId: 9, conditioning: "conditional_start", population: "goalie", targetKeys: ["SAVES_GOALIE", "WINS_GOALIE"] } ] });
+    expect(capturedIssuedTargets(contexts, [writes[0]]).opportunities[0].targetKeys).toEqual(["HITS"]);
+    expect(parseForgeIssuedTargets({ ...receipt, privateInput: "must stay private",
+      opportunities: receipt.opportunities.map(row => ({ ...row, privatePayload: "secret" })) }, 30)).toEqual(receipt);
+    expect(parseForgeIssuedTargets(receipt, 31)?.opportunities).toEqual([]);
+    for (const invalid of [null, { ...receipt, version: "legacy" }, { ...receipt, outputHash: "missing" },
+      { ...receipt, opportunities: [...receipt.opportunities, receipt.opportunities[0]] },
+      { ...receipt, opportunities: [{ ...receipt.opportunities[0], playerId: -1 }] },
+      { ...receipt, opportunities: [{ ...receipt.opportunities[0], targetKeys: ["SAVES_GOALIE"] }] }]) {
+      expect(parseForgeIssuedTargets(invalid, 30)).toBeNull();
+    }
+  });
+});
 
 describe("starter probability heuristics", () => {
   it("suppresses the previous-game starter on game 2 of a back-to-back", () => {
@@ -218,6 +258,153 @@ describe("starter probability heuristics", () => {
     expect((withQualityPriors.get(goalieA) ?? 0)).toBeGreaterThan(
       base.get(goalieA) ?? 0
     );
+  });
+});
+
+describe("issued FORGE context", () => {
+  const game = { id: 2026020001, date: "2026-09-29", seasonId: 20262027,
+    startTime: "2026-09-29T21:00:00Z", homeTeamId: 3, awayTeamId: 4 };
+  const schedule = (teamId: number, opponentTeamId: number) => ({ game_key: "477", season: "2026",
+    source_season_id: 20262027, source_game_id: game.id, team_id: teamId,
+    opponent_team_id: opponentTeamId, team_abbreviation: teamId === 3 ? "NYR" : "PHI",
+    opponent_abbreviation: opponentTeamId === 3 ? "NYR" : "PHI", start_time: game.startTime,
+    game_status: "FUT", schedule_status: "OK", source_updated_at: null,
+    fetched_at: "2026-09-28T12:00:00Z" });
+  const data = () => ({ games: [game], roster_optimizer_team_games: [schedule(3, 4), schedule(4, 3)],
+    rosters: [{ playerId: 100, teamId: 3, seasonId: 20262027, is_current: true,
+      created_at: "2026-09-01T00:00:00Z" }],
+    fhfh_player_identities: [{ id: 7, nhl_player_id: 100, current_nhl_team_id: 3,
+      verification_status: "verified", lifecycle_status: "active_nhl", updated_at: "2026-09-27T00:00:00Z" }] });
+  function client(tables: ReturnType<typeof data>, reportedExtra = 0) {
+    const reads: Array<{ table: string; filters: Array<[string, string, unknown]> }> = [];
+    return { reads, from(table: keyof ReturnType<typeof data>) {
+      const filters: Array<(row: Record<string, unknown>) => boolean> = [];
+      const filterArgs: Array<[string, string, unknown]> = [];
+      const query: Record<string, any> = {};
+      query.select = () => query;
+      query.eq = (column: string, value: unknown) => { filterArgs.push(["eq", column, value]); filters.push((row) => row[column] === value); return query; };
+      query.in = (column: string, values: unknown[]) => { filterArgs.push(["in", column, values]); filters.push((row) => values.includes(row[column])); return query; };
+      query.is = () => query;
+      query.not = () => query;
+      query.order = () => query;
+      query.range = async (start: number, end: number) => {
+        reads.push({ table, filters: filterArgs });
+        const rows = tables[table].filter((row) => filters.every((filter) => filter(row)));
+        return { data: rows.slice(start, end + 1), count: rows.length + reportedExtra, error: null };
+      };
+      return query;
+    } };
+  }
+
+  it("retains game, schedule and unique canonical roster fingerprints from bounded reads", async () => {
+    const db = client(data());
+    const [context] = await captureForgeIssuedContexts(game.date, [game.id], db);
+    expect(context.game).toEqual(game);
+    expect(context.schedule).toHaveLength(2);
+    expect(context.schedule[0]).toMatchObject({ teamId: 3, opponentTeamId: 4,
+      sourceUpdatedAt: null, fetchedAt: "2026-09-28T12:00:00Z",
+      revision: playerForecastSourcePayloadHash({ id: String(game.id), start: game.startTime,
+        team: "NYR", opponent: "PHI", status: "FUT", schedule: "OK" }) });
+    expect(context.roster).toEqual([{ canonicalId: 7, nhlId: 100, seasonId: 20262027, teamId: 3,
+      membershipCreatedAt: ["2026-09-01T00:00:00Z"], identityUpdatedAt: "2026-09-27T00:00:00Z",
+      revision: playerForecastSourcePayloadHash({ playerId: 7, nhlId: 100, seasonId: 20262027,
+        teamId: 3, membership: ["2026-09-01T00:00:00Z"] }) }]);
+    expect(forgeIssuedContextsFingerprint([context])).toBe(forgeIssuedContextsFingerprint([
+      { ...context, observedAt: "2026-10-01T00:00:00Z" }]));
+    expect(forgeIssuedContextsFingerprint([context])).not.toBe(forgeIssuedContextsFingerprint([
+      { ...context, schedule: [{ ...context.schedule[0], scheduleStatus: "PPD" }, context.schedule[1]] }]));
+    expect(db.reads.find((read) => read.table === "rosters" && read.filters.some(([method, column]) => method === "in" && column === "teamId"))?.filters)
+      .toContainEqual(["in", "teamId", [3, 4]]);
+    expect(db.reads.find((read) => read.table === "rosters" && read.filters.some(([method, column]) => method === "in" && column === "playerId"))?.filters)
+      .toContainEqual(["in", "playerId", [100]]);
+  });
+
+  it("rejects ambiguous identity and incomplete bounded context reads", async () => {
+    const ambiguous = data();
+    ambiguous.fhfh_player_identities.push({ ...ambiguous.fhfh_player_identities[0], id: 8 });
+    await expect(captureForgeIssuedContexts(game.date, [game.id], client(ambiguous))).rejects.toThrow("ambiguous");
+    const twoTeams = data();
+    twoTeams.rosters.push({ ...twoTeams.rosters[0], teamId: 99 });
+    await expect(captureForgeIssuedContexts(game.date, [game.id], client(twoTeams))).rejects.toThrow("ambiguous");
+    await expect(captureForgeIssuedContexts(game.date, [game.id], client(data(), 1))).rejects.toThrow(/incomplete|truncated/);
+  });
+
+  it("does not fabricate a canonical mapping for an unmapped roster member", async () => {
+    const unmapped = data();
+    unmapped.fhfh_player_identities = [];
+    const [context] = await captureForgeIssuedContexts(game.date, [game.id], client(unmapped));
+    expect(context.roster).toEqual([]);
+    expect(unmapped.rosters).toHaveLength(1);
+  });
+
+  it("accepts equivalent alternate cache keys and rejects conflicting versions or malformed membership", async () => {
+    const equivalent = data();
+    equivalent.roster_optimizer_team_games.push({ ...schedule(3, 4), game_key: "alternate",
+      fetched_at: "2026-09-28T13:00:00Z" });
+    const [context] = await captureForgeIssuedContexts(game.date, [game.id], client(equivalent));
+    expect(context.schedule).toHaveLength(2);
+    expect(context.schedule[0]).toMatchObject({ gameKey: "alternate", fetchedAt: "2026-09-28T13:00:00Z" });
+    const alternateOnly = data();
+    alternateOnly.roster_optimizer_team_games = alternateOnly.roster_optimizer_team_games.map((row) =>
+      ({ ...row, game_key: "alternate" }));
+    expect((await captureForgeIssuedContexts(game.date, [game.id], client(alternateOnly)))[0].schedule)
+      .toEqual(expect.arrayContaining([expect.objectContaining({ gameKey: "alternate" })]));
+
+    const conflicting = data();
+    conflicting.roster_optimizer_team_games.push({ ...schedule(3, 4), game_key: "alternate", schedule_status: "PPD" });
+    await expect(captureForgeIssuedContexts(game.date, [game.id], client(conflicting))).rejects.toThrow("conflicting");
+    const malformed = data();
+    malformed.rosters[0].created_at = "invalid";
+    await expect(captureForgeIssuedContexts(game.date, [game.id], client(malformed))).rejects.toThrow("malformed");
+    const malformedId = data();
+    malformedId.rosters[0].playerId = 0;
+    await expect(captureForgeIssuedContexts(game.date, [game.id], client(malformedId))).rejects.toThrow("malformed");
+  });
+
+  it("retains a distinct context for each explicitly scoped game", async () => {
+    const two = data();
+    const second = { ...game, id: 2026020002 };
+    two.games.push(second);
+    two.roster_optimizer_team_games.push({ ...schedule(3, 4), source_game_id: second.id },
+      { ...schedule(4, 3), source_game_id: second.id });
+    const contexts = await captureForgeIssuedContexts(game.date, [second.id, game.id], client(two));
+    expect(contexts.map((context) => context.game.id)).toEqual([game.id, second.id]);
+    expect(contexts.every((context) => context.schedule.length === 2)).toBe(true);
+  });
+
+  it("consumes both context read sets during offline replay", async () => {
+    const raw = client(data());
+    const db = { from(table: keyof ReturnType<typeof data>) {
+      return interceptProjectionQuery("from", [table], () => raw.from(table)) ?? raw.from(table);
+    } };
+    const captured = await captureProjectionInputs(async () => {
+      const before = await captureForgeIssuedContexts(game.date, [game.id], db);
+      const after = await captureForgeIssuedContexts(game.date, [game.id], db);
+      return { before, after };
+    });
+    const liveReads = raw.reads.length;
+    expect(captured.reads.length).toBe(liveReads);
+    const receipt = capturedReadReceipt(captured.reads);
+    expect(receipt).toMatchObject({ version: "forge-captured-reads-v1", readCount: liveReads });
+    expect(receipt.hash).toBe(playerForecastSourcePayloadHash(captured.reads));
+    const reorderedKeys = JSON.parse(JSON.stringify(captured.reads), (_key, value) =>
+      value && typeof value === "object" && !Array.isArray(value)
+        ? Object.fromEntries(Object.entries(value).reverse()) : value);
+    expect(capturedReadReceipt(reorderedKeys)).toEqual(receipt);
+    expect(capturedReadReceipt([{ ...captured.reads[0], result: { data: [] } }, ...captured.reads.slice(1)]).hash)
+      .not.toBe(receipt.hash);
+    expect(() => capturedReadReceipt([])).toThrow("timestamped reads");
+    expect(() => capturedReadReceipt([{ ...captured.reads[0], receivedAt: "invalid" }])).toThrow("timestamped reads");
+    const replayed = await replayProjectionInputs(captured.reads, async () => {
+      const before = await captureForgeIssuedContexts(game.date, [game.id], db);
+      const after = await captureForgeIssuedContexts(game.date, [game.id], db);
+      return { before, after };
+    });
+    expect(raw.reads).toHaveLength(liveReads);
+    expect(forgeIssuedContextsFingerprint(replayed.result.before))
+      .toBe(forgeIssuedContextsFingerprint(captured.result.before));
+    expect(forgeIssuedContextsFingerprint(replayed.result.after))
+      .toBe(forgeIssuedContextsFingerprint(captured.result.after));
   });
 });
 
@@ -858,6 +1045,21 @@ describe("skater pool recovery safeguards", () => {
     expect(constrained).toEqual([11, 13]);
   });
 
+  it("keeps line skaters beyond the old first24 membership sample", () => {
+    const roster = Array.from({ length: 49 }, (_, index) => index + 1);
+    expect(constrainSkaterIdsToActiveRoster({ candidateSkaterIds: [20, 27, 49], activeRosterSkaterIds: roster }))
+      .toEqual([20, 27, 49]);
+  });
+
+  it("lets the gated season bootstrap reach current roster candidates before rolling history exists", () => {
+    const args = { rollingSkaterIds: [], activeRosterSkaterIds: [11, 13, 13, NaN], seasonBootstrap: true };
+    expect(selectLineCombinationFallback(args)).toEqual({ playerIds: [11, 13], rosterBootstrap: true });
+    expect(selectLineCombinationFallback({ ...args, seasonBootstrap: false }).playerIds).toEqual([]);
+    expect(selectLineCombinationFallback({ ...args, activeRosterSkaterIds: [] }).playerIds).toEqual([]);
+    expect(selectLineCombinationFallback({ ...args, rollingSkaterIds: [17, 19] }))
+      .toEqual({ playerIds: [17, 19], rosterBootstrap: false });
+  });
+
   it("fails open when active roster skaters are unavailable", () => {
     const constrained = constrainSkaterIdsToActiveRoster({
       candidateSkaterIds: [20, 21, 22, 22],
@@ -1150,8 +1352,33 @@ describe("skater scenario metadata", () => {
 });
 
 describe("active skater filtering", () => {
+  const recencySeasons = [
+    { id: 20252026, startDate: "2025-10-07", regularSeasonEndDate: "2026-04-17", endDate: "2026-06-15", numberOfGames: 82 },
+    { id: 20262027, startDate: "2026-09-29", regularSeasonEndDate: "2027-04-10", endDate: "2027-06-10", numberOfGames: 84 },
+  ];
+  const inSeasonEvidence = {
+    currentSeasonId: 20252026, recencySeasons: [recencySeasons[0]],
+    recencyEventByPlayerId: new Map([1, 11, 12, 13, 52].map(id => [id, { date: ({ 1: "2026-02-06", 11: "2026-02-06", 12: "2026-01-10", 13: "2025-11-20", 52: "2026-02-05" } as Record<number, string>)[id], seasonId: 20252026, type: 2 }])),
+  };
+  it("uses continuous in-season age without admitting traded, rookie or missing season evidence", () => {
+    const common = { asOfDate: "2026-10-05", currentSeasonId: 20262027, recencySeasons, teamId: 5,
+      recencyEventByPlayerId: new Map([[1, "2026-04-13"], [2, "2026-04-13"], [4, "2026-02-01"], [5, "2026-05-01"]].map(([id,date]) => [Number(id), { date: String(date), seasonId: 20252026, type: 2 }])),
+      rawSkaterIds: [1, 2, 3, 4, 5], playerMetaById: new Map([
+        [1, { id: 1, team_id: 5, position: "C" }], [2, { id: 2, team_id: 8, position: "C" }],
+        [3, { id: 3, team_id: 5, position: "C" }], [4, { id: 4, team_id: 5, position: "C" }],
+        [5, { id: 5, team_id: 5, position: "C" }]]),
+      latestMetricDateByPlayerId: new Map([[1, "2026-04-13"], [2, "2026-04-13"], [4, "2026-02-01"], [5, "2026-05-01"]]) };
+    const result = filterActiveSkaterCandidateIds(common);
+    expect(result.eligibleSkaterIds).toEqual([1]);
+    expect(result.recencyMultiplierByPlayerId.get(1)).toBe(1);
+    expect(result.excludedSkaterIdsByReason).toEqual({ teamOrPosition: [2], missingRecentMetrics: [3], hardStale: [4], invalidSeasonEvidence: [5] });
+    const missing = filterActiveSkaterCandidateIds({ ...common, recencySeasons: [] });
+    expect(missing.eligibleSkaterIds).toEqual([]);
+    expect(missing.excludedSkaterIdsByReason.invalidSeasonEvidence).toEqual([1, 4, 5]);
+    expect(missing.excludedSkaterIdsByReason.missingRecentMetrics).toEqual([3]);
+  });
   it("retains a verified season-opening prior without weakening team or position filters", () => {
-    const result = filterActiveSkaterCandidateIds({ asOfDate: "2026-10-06", teamId: 5, rawSkaterIds: [1, 2, 3, 4],
+    const result = filterActiveSkaterCandidateIds({ ...inSeasonEvidence, asOfDate: "2026-10-06", teamId: 5, rawSkaterIds: [1, 2, 3, 4],
       playerMetaById: new Map([[1, { id: 1, team_id: 5, position: "C" }], [2, { id: 2, team_id: 5, position: "LW" }],
         [3, { id: 3, team_id: 8, position: "C" }], [4, { id: 4, team_id: 5, position: "G" }]]),
       latestMetricDateByPlayerId: new Map([[1, "2026-04-15"]]), seasonBootstrapPlayerIds: new Set([1, 2, 3, 4]) });
@@ -1159,7 +1386,7 @@ describe("active skater filtering", () => {
     expect(result.recencyMultiplierByPlayerId.get(1)).toBe(1);
   });
   it("filters out non-team and goalie-position candidates", () => {
-    const result = filterActiveSkaterCandidateIds({
+    const result = filterActiveSkaterCandidateIds({ ...inSeasonEvidence,
       asOfDate: "2026-02-07",
       teamId: 5,
       rawSkaterIds: [1, 2, 3],
@@ -1176,7 +1403,7 @@ describe("active skater filtering", () => {
   });
 
   it("hard-filters skaters with stale metrics beyond threshold and soft-penalizes mid-stale skaters", () => {
-    const result = filterActiveSkaterCandidateIds({
+    const result = filterActiveSkaterCandidateIds({ ...inSeasonEvidence,
       asOfDate: "2026-02-07",
       teamId: 5,
       rawSkaterIds: [11, 12, 13],
@@ -1202,7 +1429,7 @@ describe("active skater filtering", () => {
   });
 
   it("treats players with no recent metrics as inactive and excludes them", () => {
-    const result = filterActiveSkaterCandidateIds({
+    const result = filterActiveSkaterCandidateIds({ ...inSeasonEvidence,
       asOfDate: "2026-02-07",
       teamId: 10,
       rawSkaterIds: [51, 52],

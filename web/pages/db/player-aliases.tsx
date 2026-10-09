@@ -230,6 +230,13 @@ const PlayerAliasesPage: NextPage = () => {
       .sort((a, b) => Number(b.team_id === selectedUnresolved?.team_id) - Number(a.team_id === selectedUnresolved?.team_id));
   }, [players, playerSearch, selectedUnresolved?.team_id]);
 
+  function playerOptionsFor(selectedId: string): PlayerOption[] {
+    const selected = players.find((player) => String(player.id) === selectedId);
+    return selected && !filteredPlayers.some((player) => player.id === selected.id)
+      ? [selected, ...filteredPlayers]
+      : filteredPlayers;
+  }
+
   async function lookupNhlPlayer() {
     setLookupBusy(true);
     setLookup(null);
@@ -313,7 +320,7 @@ const PlayerAliasesPage: NextPage = () => {
                 <div><p className={styles.eyebrow}>Work queue</p><h2>{pendingNames.length} names to review</h2></div>
               </div>
               <ol className={styles.queueList}>
-                {pendingNames.map((name) => <li key={name.id} className={name.id === selectedUnresolvedId ? styles.current : undefined}><button type="button" onClick={() => { setSelectedUnresolvedId(name.id); setAlias(name.raw_name); setSelectedPlayerId(""); setMembershipSourceUrl(""); }}>{name.raw_name}{name.team_abbreviation ? <span>{name.team_abbreviation}</span> : null}</button></li>)}
+                {pendingNames.map((name) => <li key={name.id} className={name.id === selectedUnresolvedId ? styles.current : undefined}><button type="button" onClick={() => { setSelectedUnresolvedId(name.id); setAlias(name.raw_name); setSelectedPlayerId(""); setSplitPlayerIds(["", ""]); setMembershipSourceUrl(""); }}>{name.raw_name}{name.team_abbreviation ? <span>{name.team_abbreviation}</span> : null}</button></li>)}
               </ol>
               {resolvedNames.length ? <p className={styles.resolvedSummary}>✓ {resolvedNames.length} resolved in this queue</p> : null}
             </aside>
@@ -373,7 +380,7 @@ const PlayerAliasesPage: NextPage = () => {
                 onChange={(event) => setSelectedPlayerId(event.target.value)}
               >
                 <option value="">Choose a player...</option>
-                {filteredPlayers.map((player) => (
+                {playerOptionsFor(selectedPlayerId).map((player) => (
                   <option key={player.id} value={player.id}>
                     {player.fullName} · {player.id} {player.position ? `- ${player.position}` : ""} {player.team_id === selectedUnresolved.team_id ? "· team match" : "· verify membership"}
                   </option>
@@ -406,7 +413,7 @@ const PlayerAliasesPage: NextPage = () => {
                 <strong>Is this two players?</strong>
                 <p>Choose one player for each side of the hyphen. A split saves both aliases separately.</p>
                 <div className={styles.splitGrid}>
-                  {selectedUnresolved.raw_name.split("-").map((part, index) => <label className={styles.field} key={part}><span>{part.trim()}</span><select value={splitPlayerIds[index]} onChange={(event) => setSplitPlayerIds((previous) => { const next = [...previous] as [string, string]; next[index] = event.target.value; return next; })}><option value="">Choose player…</option>{filteredPlayers.map((player) => <option key={player.id} value={player.id}>{player.fullName} · {player.id}</option>)}</select></label>)}
+                  {selectedUnresolved.raw_name.split("-").map((part, index) => <label className={styles.field} key={part}><span>{part.trim()}</span><select value={splitPlayerIds[index]} onChange={(event) => setSplitPlayerIds((previous) => { const next = [...previous] as [string, string]; next[index] = event.target.value; return next; })}><option value="">Choose player…</option>{playerOptionsFor(splitPlayerIds[index] ?? "").map((player) => <option key={player.id} value={player.id}>{player.fullName} · {player.id}</option>)}</select></label>)}
                 </div>
                 <button type="button" disabled={splitPlayerIds.some((id) => !id)} onClick={() => void splitName().catch((error) => setStatusMessage(error.message))}>Save as two players</button>
               </div>

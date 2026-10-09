@@ -65,8 +65,8 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     ).toEqual(activeMigrationNames);
 
     expect(migrationAuthority.schemaVersion).toBe(1);
-    expect(migrationAuthorityRows).toHaveLength(71);
-    expect(new Set(activeMigrationNames)).toHaveLength(71);
+    expect(migrationAuthorityRows).toHaveLength(72);
+    expect(new Set(activeMigrationNames)).toHaveLength(72);
     expect(
       migrationAuthorityRows.map((row) => row.order),
     ).toEqual(migrationAuthorityRows.map((_row, index) => index + 1));
@@ -85,7 +85,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       migrationAuthorityRows.filter(
         (row) => row.deploymentState === "pending",
       ),
-    ).toHaveLength(1);
+    ).toHaveLength(2);
 
     for (const row of migrationAuthorityRows) {
       expect(row.path).toBe(
@@ -181,6 +181,17 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     expect(arbitrarySqlRevocation).not.toMatch(
       /\b(?:select|call)\s+public\.execute_sql\b/i,
     );
+    // Freeze the entire ACL-only scope, including fail-closed signature lookup.
+    expect(
+      arbitrarySqlRevocation
+        .replace(/--[^\n]*/g, "")
+        .split(";")
+        .map((statement) => statement.trim().replace(/\s+/g, " "))
+        .filter(Boolean),
+    ).toEqual([
+      "revoke execute on function public.execute_sql(text) from public, anon, authenticated",
+      "grant execute on function public.execute_sql(text) to service_role",
+    ]);
 
     expect(truncateRevocation).toContain(
       "revoke execute on function public.truncate_rolling_player_game_metrics()\nfrom public, anon, authenticated;",

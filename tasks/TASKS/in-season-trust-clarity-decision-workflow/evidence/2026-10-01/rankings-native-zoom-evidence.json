@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-02T00:14:11.122Z",
+  "surface": "Local Rankings in Chrome, signed out, read-only live data",
+  "nativeZoom": "200%",
+  "nativeZoomControlEvidence": [
+    "+\t\t\t\t\t1684 button Zoom: 200%",
+    "+\t\t\t\t\t1717 container Zoom: 200%"
+  ],
+  "baselineDevicePixelRatio": 2,
+  "after": {
+    "devicePixelRatio": 4,
+    "documentWidth": 1020,
+    "errorOverlay": false,
+    "sampleClaims": [],
+    "selectedSnapshot": "Evgeni MalkinC \u00b7 Pittsburgh PenguinsDeploymentL2 / PP1GP1TOI/G18:22SampleMeets selected minimumsProfile ReadBest live signal is Shots/60 (69.0% overall); weakest visible area is Goals/60 (0.0% overall).Live StrengthsShots/60: 69.0% overall percentile, rank 221 of 717 \u00b7 peer group all \u00b7 value 6.53 \u00b7 Meets selected minimums \u00b7 source available (production).Goals Above Expected: 52.8% overall percentile, rank 113 of 717 \u00b7 peer gro",
+    "viewport": [
+      1028,
+      524
+    ]
+  },
+  "presetUrl": "http://127.0.0.1:3100/rankings?entity=skaters&tab=rankings&season=20252026&window=season&position=all&deployment=all&strength=all&metric=mcm_score&min_gp=1&min_toi=600&search=&display=both&sort=percentile&direction=desc&sort_metric=mcm_score&goalie_metric=save_percentage&goalie_role=all&team_metric=off_rating&sort_direction=desc&page=1&page_size=10&columns=mcm_score%2Cgoals_per_60%2Cassists_per_60%2Cpoints_per_60%2Cpp_points_per_60%2Csog_per_60%2Chits_per_60%2Cblocks_per_60&selected_player=8471215",
+  "keyboardActions": [
+    "Enter on Fantasy preset",
+    "Enter on Fantasy preset basis",
+    "Enter on Select Evgeni Malkin"
+  ],
+  "focusEvidence": {
+    "boxShadow": "none",
+    "outline": "rgb(0, 95, 204) auto 1px",
+    "tag": "SUMMARY",
+    "text": "Fantasy preset basis"
+  },
+  "controlsOutsideWidth": [],
+  "screenshots": [
+    "rankings-native-zoom-200.png",
+    "rankings-native-zoom-sample-200.png"
+  ],
+  "limits": [
+    "One Rankings workflow; other surfaces not checked at native 200%",
+    "No screen-reader, contrast, real-account switch, human timing or historical replay acceptance"
+  ],
+  "liveRequestLimitation": {
+    "endpoints": [
+      "/api/v1/contextual-rankings/snapshot",
+      "/api/v1/contextual-rankings/comparison"
+    ],
+    "status": 500,
+    "context": "historical 20252026, all strength, mcm_score, min_gp=1, min_toi=600",
+    "source": "local dev-server request log",
+    "reason": "Response error body not captured",
+    "acceptance": "Rendered labels/controls only; fresh-data completion and recovery unverified"
+  },
+  "cleanup": {
+    "nativeZoomRestored": "100%",
+    "devicePixelRatio": 2,
+    "qaTabClosed": true,
+    "qaDevServerStopped": true
+  }
+}

@@ -235,6 +235,23 @@ $mobile-fixed-width: 35px;
   margin: 0 auto;
 }
 
+.tableScroller {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.teamHeaderIdentity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.teamDetailPanel {
+  margin-bottom: 14px;
+  min-width: 0;
+}
+
 @media (max-width: v.$breakpoint-mobile-max) {
   .transposedGrid {
     display: block; // Ensures block-level container behavior

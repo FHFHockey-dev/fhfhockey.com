@@ -233,6 +233,19 @@ describe("PlayerSnapshotPanel", () => {
     ).toBeTruthy();
   });
 
+  it.each([
+    { gp: 1, toi: 600, met: true, label: "Meets selected minimums" },
+    { gp: 1, toi: 599, met: false, label: "Below selected minimums" },
+    { gp: null, toi: 600, met: false, label: "Sample unavailable" },
+    { gp: 1, toi: null, met: false, label: "Sample unavailable" },
+  ])("discloses sample minimum status in the player snapshot: %j", ({ gp, toi, met, label }) => {
+    render(<PlayerSnapshotPanel payload={{ ...payload, rows: [{
+      ...payload.rows[0], sample: { ...payload.rows[0].sample, gamesPlayed: gp, toiSeconds: toi, minimumSampleMet: met },
+    }] }} selectedPlayerId={1} />);
+    expect(screen.getByText(label)).toBeTruthy();
+    expect(screen.queryByText("high")).toBeNull();
+  });
+
   it("switches snapshot explanations to deployment rank scope", () => {
     render(
       <PlayerSnapshotPanel

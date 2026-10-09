@@ -5,6 +5,7 @@ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { getCurrentSeason, getTeams } from "lib/NHL/server";
 import { buildTeamDirectory } from "lib/sources/lineupSourceIngestion";
 import {
+  reviewTweetApplicability,
   applyPlayerNameAliasesToRosterMap,
   extractTweetId,
   fetchPlayerNameAliases,
@@ -490,6 +491,8 @@ export default withCronJobAudit(
         });
       }
     }
+
+    reviewTweetApplicability(parsedCandidates, requestedDate);
 
     processingStage = "injury_history";
     await enrichTweetInjuryHistory(req.supabase, parsedCandidates);

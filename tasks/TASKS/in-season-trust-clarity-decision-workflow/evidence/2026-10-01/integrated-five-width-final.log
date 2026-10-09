@@ -1,0 +1,10 @@
+
+Running 5 tests using 1 worker
+
+  ✓  1 [chromium] › e2e/start-chart.spec.ts:271:9 › /start-chart › preserves context and saved intent through news, research, slate and schedule at 1180px (3.2s)
+  ✓  2 [chromium] › e2e/start-chart.spec.ts:271:9 › /start-chart › preserves context and saved intent through news, research, slate and schedule at 1024px (3.3s)
+  ✓  3 [chromium] › e2e/start-chart.spec.ts:271:9 › /start-chart › preserves context and saved intent through news, research, slate and schedule at 768px (3.3s)
+  ✓  4 [chromium] › e2e/start-chart.spec.ts:271:9 › /start-chart › preserves context and saved intent through news, research, slate and schedule at 390px (3.3s)
+  ✓  5 [chromium] › e2e/start-chart.spec.ts:271:9 › /start-chart › preserves context and saved intent through news, research, slate and schedule at 320px (3.3s)
+
+  5 passed (16.8s)

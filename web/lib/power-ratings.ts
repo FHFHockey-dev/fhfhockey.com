@@ -134,7 +134,7 @@ export async function fetchGameLogs(
   endDate: string,
 ): Promise<GameLog[]> {
   // Fetch nst_team_gamelogs_as_rates (situation = 'all')
-  const allData = await fetchPaginatedRows<any>(
+  const allDataPromise = fetchPaginatedRows<any>(
     () =>
       supabase
         .from("nst_team_gamelogs_as_rates")
@@ -146,7 +146,7 @@ export async function fetchGameLogs(
   );
 
   // Fetch nst_team_5v5 (situation = 'all')
-  const f5v5Data = await fetchPaginatedRows<any>(
+  const f5v5DataPromise = fetchPaginatedRows<any>(
     () =>
       supabase
         .from("nst_team_5v5")
@@ -158,7 +158,7 @@ export async function fetchGameLogs(
   );
 
   // Fetch PP Rates
-  const ppData = await fetchPaginatedRows<any>(
+  const ppDataPromise = fetchPaginatedRows<any>(
     () =>
       supabase
         .from("nst_team_gamelogs_pp_rates")
@@ -170,7 +170,7 @@ export async function fetchGameLogs(
   );
 
   // Fetch PK Rates
-  const pkData = await fetchPaginatedRows<any>(
+  const pkDataPromise = fetchPaginatedRows<any>(
     () =>
       supabase
         .from("nst_team_gamelogs_pk_rates")
@@ -182,7 +182,7 @@ export async function fetchGameLogs(
   );
 
   // Fetch WGO Stats (for discipline)
-  const wgoData = await fetchPaginatedRows<any>(
+  const wgoDataPromise = fetchPaginatedRows<any>(
     () =>
       supabase
         .from("wgo_team_stats")
@@ -195,9 +195,18 @@ export async function fetchGameLogs(
   );
 
   // Helper to map WGO team_id/name to abbreviation
-  const { data: teamsData } = await supabase
+  const teamsDataPromise = supabase
     .from("teams")
     .select("id, abbreviation, name");
+  const [allData, f5v5Data, ppData, pkData, wgoData, { data: teamsData }] =
+    await Promise.all([
+      allDataPromise,
+      f5v5DataPromise,
+      ppDataPromise,
+      pkDataPromise,
+      wgoDataPromise,
+      teamsDataPromise,
+    ]);
   const idMap = new Map<number, string>();
   const nameMap = new Map<string, string>();
   teamsData?.forEach((t: any) => {

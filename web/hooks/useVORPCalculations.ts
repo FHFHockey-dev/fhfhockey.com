@@ -20,6 +20,7 @@ export interface DraftSettings {
 
 export interface PlayerVorpMetrics {
   value: number; // comparable single value (fp for points; Z-sum for categories)
+  unweightedValue?: number; // preserves projection sorting when position weights apply
   vorp: number;
   vols: number;
   vona: number;
@@ -45,6 +46,8 @@ export interface UseVORPParams {
   prorate84?: boolean;
   // Optional fantasy scoring overrides (will merge with defaults inside helper)
   fantasyPointSettings?: Record<string, number>;
+  // Draft Pro multipliers resolved from the selected position source, not roster slots.
+  positionWeightMultipliers?: ReadonlyMap<string, number>;
 }
 
 export interface UseVORPResult {
@@ -73,9 +76,10 @@ export function useVORPCalculations({
   personalizeReplacement = false,
   prorate84 = false,
   fantasyPointSettings = EMPTY_NUMERIC_RECORD,
+  positionWeightMultipliers,
 }: UseVORPParams): UseVORPResult {
   return useMemo(() => {
-    const { values, eligibility } = buildPlayerValues({ players, draftSettings, leagueType, categoryWeights, forwardGrouping, prorate84, fantasyPointSettings });
+    const { values, eligibility, unweightedValues } = buildPlayerValues({ players, draftSettings, leagueType, categoryWeights, forwardGrouping, prorate84, fantasyPointSettings, positionWeightMultipliers });
 
     const T = draftSettings.teamCount;
     const starters = getEffectiveRosterConfig(
@@ -182,10 +186,12 @@ export function useVORPCalculations({
       const id = String(p.playerId);
       const val = values.get(id) || 0;
       const elig = eligibility.get(id) || [];
+      const unweightedValue = unweightedValues.has(id) ? { unweightedValue: unweightedValues.get(id)! } : {};
 
       if (elig.length === 0) {
         playerMetrics.set(id, {
           value: val,
+          ...unweightedValue,
           vorp: 0,
           vols: 0,
           vona: 0,
@@ -247,6 +253,7 @@ export function useVORPCalculations({
 
       playerMetrics.set(id, {
         value: val,
+        ...unweightedValue,
         vorp: bestVorp,
         vols: bestVols,
         vona: bestVona,
@@ -275,5 +282,6 @@ export function useVORPCalculations({
     myFilledSlots,
     prorate84,
     fantasyPointSettings,
+    positionWeightMultipliers,
   ]);
 }

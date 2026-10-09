@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   fetchNewsFeedItems,
+  fetchLatestPlayerNewsFlags,
+  getPublicNewsClaimPresentation,
   getPublicNewsItemDetails,
   getPublicNewsSourceAttribution,
   sanitizePublicNewsFeedItem,
@@ -64,6 +66,14 @@ function buildItem(overrides: Partial<NewsFeedItem> = {}): NewsFeedItem {
 }
 
 describe("public NewsFeed source attribution", () => {
+  it.each(["SOURCE_ACCOUNT", "@null", "undefined", "unknown", "N/A", "bad handle", "bad/handle", "<author>"])("rejects placeholder or malformed account %s", (account) => {
+    expect(getPublicNewsSourceAttribution({ item: buildItem({ metadata: null, source_account: account, source_url: null, tweet_url: null }) }).account).toBeNull();
+  });
+
+  it.each(["javascript:alert(1)", "not a URL", "https://x.com/null/status/200"])("rejects unsafe or unverified attribution URL %s", (url) => {
+    expect(getPublicNewsSourceAttribution({ item: buildItem({ metadata: null, source_account: null, source_url: url, tweet_url: null }) }).url).toBeNull();
+  });
+
   it("prefers an AI summary and falls back to original post text", () => {
     expect(
       getPublicNewsItemDetails(
@@ -191,4 +201,47 @@ describe("public NewsFeed source attribution", () => {
 
     expect(item.blurb).toBe("Connor Bedard remains out tonight.");
   });
+});
+
+
+describe("public subject-to-claim presentation", () => {
+  const barzalText = 'RT @AGrossNewsday: Mathew Barzal is with #Isles on trip, Pete DeBoer said he is attending all the meetings. Not on the ice yet but said to be "around the corner." So he won\'t play in the season opener tomorrow in Toronto.';
+  it("does not turn the captured Kevin He or tentative Soucy headline into a supported claim", () => {
+    for (const item of [
+      { headline: "Kevin He injury update", blurb: barzalText, metadata: { automation: { primaryRuleId: "manual-review" } } },
+      { headline: "Carson Soucy signing", blurb: 'RT @mark_scheig: Don Waddell on Carson Soucy: "Our goal is to get him signed." DW said they need to determine where the cap space will come from. #CBJ', metadata: null },
+    ]) expect(getPublicNewsClaimPresentation(item)).toMatchObject({ headline: "Source report", claims: [], unresolvedReason: "Subject-to-claim evidence unavailable" });
+  });
+  it("retains a supported upstream claim and rejects mismatched, tentative-confirmed and unresolved payloads", () => {
+    const event = { playerId: 8478445, playerName: "Mathew Barzal", kind: "injury", state: "ongoing",
+      modality: "affirmative", availability: "out", evidence: { start: 0, end: barzalText.length, text: barzalText } };
+    const makeItem = (events: unknown[], unresolved: unknown[] = []) => ({ headline: "Kevin He injury update", blurb: barzalText,
+      metadata: { interpretation: { version: "2026-10-01.1", events, unresolved } } });
+    expect(getPublicNewsClaimPresentation(makeItem([event]))).toMatchObject({ headline: "Mathew Barzal source report", claims: [event], unresolvedReason: null });
+    for (const item of [makeItem([{ ...event, playerName: "Kevin He" }]),
+      makeItem([{ ...event, state: "confirmed_return", modality: "tentative" }]),
+      makeItem([event], [{ reason: "ambiguous" }]), makeItem([{ ...event, reviewReason: "conflicting_claims" }]),
+      makeItem([{ ...event, evidence: { text: "Mathew Barzal has returned" } }]), makeItem([null])]) {
+      expect(getPublicNewsClaimPresentation(item).claims).toEqual([]);
+    }
+  });
+});
+
+
+it("only emits player flags for bound claims and never borrows creation time for publication", async () => {
+  const event = { playerId: 123, playerName: "Fixture Player", kind: "injury", state: "ongoing", modality: "affirmative",
+    availability: "out", evidence: { start: 0, end: 21, text: "Fixture Player is out" } };
+  const item = { id: "bound-item", headline: "Wrong Player injury update", blurb: "Fixture Player is out", category: "INJURY",
+    metadata: { interpretation: { version: "2026-10-01.1", events: [event], unresolved: [] } },
+    published_at: null, created_at: "2026-10-01T12:00:00Z", source_url: "https://x.com/Reporter/status/1" };
+  const supabase = { from: (table: string) => {
+    const query: any = { select: () => query, in: () => query, eq: () => query,
+      then: (resolve: (value: unknown) => unknown) => resolve({ data: table === "news_feed_item_players"
+        ? [{ news_item_id: "bound-item", player_id: 123 }, { news_item_id: "bound-item", player_id: 456 }]
+        : [item], error: null }) };
+    return query;
+  } };
+  const flags = await fetchLatestPlayerNewsFlags({ supabase, playerIds: [123, 456] });
+  expect(flags.has(456)).toBe(false);
+  expect(flags.get(123)).toMatchObject({ headline: "Fixture Player source report", label: "Ongoing report", publishedAt: null, tone: "neutral" });
 });

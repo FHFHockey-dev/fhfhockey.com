@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import {
+  PlayerStatsSummaryWriteBusyError,
   refreshPlayerUnderlyingSummarySnapshotsForGameIds,
 } from "lib/underlying-stats/playerStatsSummaryRefresh";
 import { resolvePlayerStatsIncrementalSelection } from "lib/underlying-stats/playerStatsRefreshWindow";
@@ -10,6 +11,9 @@ import { ingestNhlApiRawGamesBestEffort } from "lib/supabase/Upserts/nhlRawGamec
 import { summarizeNhlRawGamecenterIngestResults } from "lib/supabase/Upserts/nhlRawGamecenterTelemetry";
 import serviceRoleClient from "lib/supabase/server";
 import adminOnly from "utils/adminOnlyMiddleware";
+
+type RawIngestOutcome = Awaited<ReturnType<typeof ingestNhlApiRawGamesBestEffort>>;
+type RawIngestFailure = RawIngestOutcome["failures"][number];
 
 type UpdatePlayerUnderlyingStatsResponse =
   | {
@@ -26,11 +30,12 @@ type UpdatePlayerUnderlyingStatsResponse =
       processedGameCount?: number;
       failedGameCount?: number;
       failedGameIds?: number[];
-      failures?: Array<{ gameId: number; message: string }>;
+      failures?: RawIngestFailure[];
       requestedGameCount: number;
       gameIds: number[];
       rawRowsUpserted: number;
       summaryRowsUpserted: number;
+      summaryWriteBusyRetries?: number;
       rowsUpserted: number;
       warmedLandingCache: boolean;
       results: Array<{
@@ -46,6 +51,14 @@ type UpdatePlayerUnderlyingStatsResponse =
       success: false;
       error: string;
       issues?: string[];
+      failures?: RawIngestFailure[];
+      summaryFailure?: {
+        code: string;
+        stage: string;
+        endpoint: string;
+        gameIds: number[];
+        attempts: number;
+      };
     };
 
 type QueryValue = string | string[] | undefined;
@@ -179,10 +192,11 @@ async function handler(
       rawEndpointsStored: number;
       idempotent: boolean;
     }> = [];
-    const failures: Array<{ gameId: number; message: string }> = [];
+    const failures: RawIngestFailure[] = [];
     const processedGameIds: number[] = [];
     let rawRowsUpserted = 0;
     let summaryRowsUpserted = 0;
+    let summaryWriteBusyRetries = 0;
 
     for (let batchIndex = 0; batchIndex < gameIdBatches.length; batchIndex += 1) {
       const batchGameIds = gameIdBatches[batchIndex] ?? [];
@@ -215,6 +229,7 @@ async function handler(
       });
 
       summaryRowsUpserted += summaryRefresh.rowsUpserted;
+      summaryWriteBusyRetries += summaryRefresh.summaryWriteBusyRetries ?? 0;
     }
 
     if (processedGameIds.length === 0 && failures.length > 0) {
@@ -222,6 +237,7 @@ async function handler(
         success: false,
         error: "Player underlying stats ingest failed for every requested game.",
         issues: failures.map((failure) => `${failure.gameId}: ${failure.message}`),
+        failures,
       });
     }
 
@@ -256,6 +272,7 @@ async function handler(
       gameIds: selection.gameIds,
       rawRowsUpserted,
       summaryRowsUpserted,
+      ...(summaryWriteBusyRetries > 0 ? { summaryWriteBusyRetries } : {}),
       rowsUpserted: rawRowsUpserted + summaryRowsUpserted,
       warmedLandingCache: shouldWarmLandingCache && failures.length === 0,
       results: aggregatedResults,
@@ -265,6 +282,20 @@ async function handler(
           : "Player underlying stats ingest completed with partial failures. Successful games were refreshed and summarized; failed games can be retried with the same URL.",
     });
   } catch (error) {
+    if (error instanceof PlayerStatsSummaryWriteBusyError) {
+      return res.status(500).json({
+        success: false,
+        error: error.message,
+        issues: [error.message],
+        summaryFailure: {
+          code: error.code,
+          stage: error.stage,
+          endpoint: error.endpoint,
+          gameIds: error.gameIds,
+          attempts: error.attempts,
+        },
+      });
+    }
     const message = (() => {
       if (error instanceof Error) {
         return error.message;

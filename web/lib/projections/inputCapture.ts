@@ -4,7 +4,8 @@ import { installProjectionQueryInterceptor } from "./queryCaptureHook";
 
 type Operation = { method: string; args: unknown[] };
 installProjectionQueryInterceptor(interceptProjectionQuery);
-type ControlledNewsReads = Partial<Record<"player_forecast_lineup_snapshots" | "player_forecast_goalie_start_observations" | "player_forecast_observation_conflicts", unknown>>;
+type ControlledNewsReads = Partial<Record<"player_forecast_lineup_snapshots" | "player_forecast_goalie_start_observations" | "player_forecast_observation_conflicts"
+  | "player_forecast_lineup_assignments" | "player_forecast_conflict_resolutions", unknown>>;
 export type ProjectionInputRead = {
   request: Operation[];
   result: unknown;
@@ -33,6 +34,24 @@ function canonical(value: unknown): unknown {
 }
 export function projectionInputHash(value: unknown): string {
   return createHash("sha256").update(JSON.stringify(canonical(value))).digest("hex");
+}
+
+export type ForgeCapturedReadReceipt = {
+  version: "forge-captured-reads-v1";
+  hash: string;
+  readCount: number;
+  firstReceivedAt: string;
+  lastReceivedAt: string;
+};
+
+/** Binds issued provenance to the actual retained query/results, without exposing them publicly. */
+export function capturedReadReceipt(reads: ProjectionInputRead[]): ForgeCapturedReadReceipt {
+  if (!reads.length || reads.some(read => !Number.isFinite(Date.parse(read.receivedAt)))) {
+    throw new Error("Captured input receipt requires timestamped reads.");
+  }
+  const times = reads.map(read => Date.parse(read.receivedAt)).sort((a, b) => a - b);
+  return { version: "forge-captured-reads-v1", hash: projectionInputHash(reads), readCount: reads.length,
+    firstReceivedAt: new Date(times[0]).toISOString(), lastReceivedAt: new Date(times[times.length - 1]).toISOString() };
 }
 
 export async function captureProjectionInputs<T>(work: () => Promise<T>, options?: { deadlineMs?: number; suppressWrites?: boolean; controlledNewsReads?: ControlledNewsReads }) {
@@ -72,7 +91,23 @@ export function interceptProjectionQuery(
       if (mutation) return { data: null, error: null };
       const table = String(args[0]) as keyof ControlledNewsReads;
       if (Object.prototype.hasOwnProperty.call(context.controlledNewsReads ?? {}, table)) {
-        const result = { data: clone(context.controlledNewsReads![table]), error: null };
+        let data = clone(context.controlledNewsReads![table]) as Array<Record<string, any>>;
+        if (!Array.isArray(data)) throw new Error("Controlled news must contain rows");
+        let range: unknown[] | undefined, counted = false;
+        for (const operation of operations.slice(1)) {
+          const [column, value] = operation.args as [string, any];
+          if (operation.method === "select") counted = value?.count === "exact";
+          else if (operation.method === "in") data = data.filter(row => value.includes(row[column]));
+          else if (operation.method === "eq") data = data.filter(row => row[column] === value);
+          else if (operation.method === "lte") data = data.filter(row => column.endsWith("_at")
+            ? Date.parse(row[column]) <= Date.parse(value) : row[column] <= value);
+          else if (operation.method === "order" && column === "id") data.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+          else if (operation.method === "range") range = operation.args;
+          else throw new Error(`Unsupported controlled news query: ${operation.method}`);
+        }
+        const count = data.length;
+        if (range) data = data.slice(Number(range[0]), Number(range[1]) + 1);
+        const result = { data, error: null, ...(counted ? { count } : {}) };
         context.reads.push({ request, result: clone(result), receivedAt: new Date().toISOString() });
         return result;
       }

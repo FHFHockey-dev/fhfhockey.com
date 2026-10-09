@@ -1,14 +1,17 @@
+import { SITE_URL } from './lib/seo';
+
 const SEO = {
+    defaultTitle: 'Five Hole Fantasy Hockey | NHL Tools & Analysis',
+    description: 'Fantasy hockey tools, NHL player statistics, schedule planning, articles, and the Five Hole Fantasy Hockey podcast.',
     openGraph: {
         type: 'website',
-        locale: 'en_us',
-        // url: process.env.NEXT_PUBLIC_SITE_URL || 'https://fhfhockey.com',
+        locale: 'en_US',
         site_name: 'Five Hole Fantasy Hockey',
         // default og image
         images: [
             {
-                url: `${process.env.NEXT_PUBLIC_SITE_URL}/pictures/circle.png`,
-                alt: "logo",
+                url: `${SITE_URL}/pictures/circle.png`,
+                alt: "Five Hole Fantasy Hockey",
             },
         ],
     },

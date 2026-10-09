@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData/planning";
 import { expandActiveSlots } from "lib/rosterScheduleOptimizer/slots";
-import type { LeagueRules, PlanningSnapshot, ProviderCapabilities, RosterEntry, ScoringCategory, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
+import type { AcquisitionEvidence, LeagueRules, PlanningData, PlanningSnapshot, ProviderCapabilities, RosterEntry, ScoringCategory, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
 import { assertYahooLeagueGameContext, resolveYahooGameContext } from "./gameContext";
 import { parseYahooBoardSettings, YAHOO_STAT_KEY_BY_ID, YahooLiveDraftError } from "./liveDraft";
 import { fetchYahooBoardResource, fetchYahooDraftResource, fetchYahooPlanningResource, type YahooProviderJsonResult } from "./providerClient";
@@ -75,7 +75,53 @@ export function yahooPlanningTeams(payload: unknown): Row[] {
 function providerFresh(result: YahooProviderJsonResult, now: Date) {
   const at = Date.parse(result.transport.responseDate ?? "");
   return Number.isFinite(at) && Math.abs(now.getTime() - at) <= 120000
-    && (result.transport.ageSeconds === null || result.transport.ageSeconds <= 60);
+    && (result.transport.ageSeconds === null || result.transport.ageSeconds >= 0 && result.transport.ageSeconds <= 60);
+}
+
+/** Official team.roster_adds is a weekly counter, separate from season moves.
+ * NHL max_weekly_adds encoding is not verified: retain presence/value, not a limit. */
+export function yahooPlanningAcquisitions(args: {
+  settings: YahooProviderJsonResult; league: YahooProviderJsonResult | null; team: YahooProviderJsonResult | null;
+  weeks: PlanningData["matchupWeeks"]; gameKey: string; leagueKey: string; teamKey: string;
+  startDate: string; endDate: string; now: Date;
+}): AcquisitionEvidence {
+  const league = yahooFields(yahooValue(args.league?.payload, "league") ?? args.league?.payload);
+  const teams = args.team ? yahooPlanningTeams(args.team.payload) : [];
+  const team = teams.length === 1 ? teams[0] : {};
+  const counter = yahooFields(team.roster_adds);
+  const settings = yahooFields(yahooValue(args.settings.payload, "settings") ?? args.settings.payload);
+  const integer = (value: unknown): number | null => (typeof value === "number" || typeof value === "string" && /^\d+$/.test(value.trim()))
+    && Number.isSafeInteger(Number(value)) && Number(value) >= 0 ? Number(value) : null;
+  const scalar = (value: unknown): string | number | boolean | null => typeof value === "string" ? value.slice(0, 100)
+    : typeof value === "number" && Number.isFinite(value) || typeof value === "boolean" ? value as number | boolean : null;
+  const positive = (value: unknown) => { const number = integer(value); return number !== null && number > 0 ? number : null; };
+  const week = positive(league.current_week);
+  const coverageWeek = positive(counter.coverage_value);
+  const calendar = (args.weeks ?? []).filter(row => row.gameKey === args.gameKey && row.week === week);
+  const period = calendar.length === 1 ? calendar[0] : null;
+  const validDate = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(`${value}T12:00:00Z`))
+    && new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;
+  const datesValid = period && validDate(period.startDate) && validDate(period.endDate) && period.startDate <= period.endDate;
+  const containsHorizon = Boolean(datesValid && args.startDate >= period!.startDate && args.endDate <= period!.endDate
+    && args.startDate <= args.endDate && validDate(args.startDate) && validDate(args.endDate));
+  const limitations: string[] = [];
+  const fresh = args.league && args.team && providerFresh(args.league, args.now) && providerFresh(args.team, args.now);
+  const scope = league.league_key === args.leagueKey && team.team_key === args.teamKey && yes(team.is_owned_by_current_login);
+  const counterValid = fresh && scope && counter.coverage_type === "week" && week !== null && week === coverageWeek && containsHorizon;
+  const used = counterValid ? integer(counter.value) : null;
+  if (!fresh) limitations.push("Yahoo weekly acquisition counter or league freshness is unverified.");
+  if (!scope) limitations.push("Yahoo weekly acquisition counter ownership or league scope is unverified.");
+  if (counter.coverage_type !== "week" || week === null || week !== coverageWeek) limitations.push("Yahoo acquisition counter does not match the league's current week.");
+  if (!containsHorizon) limitations.push("Selected dates are not contained in one verified current Yahoo game week; its counter cannot describe this horizon.");
+  if (used === null) limitations.push("Weekly acquisitions used are unknown; season moves and transaction logs are not substitutes.");
+  limitations.push("Yahoo NHL weekly-limit encoding and exact reset time are unverified. Remaining allowance is unknown; zero is not assumed to mean unlimited.");
+  return { source: "Yahoo team roster_adds and league current_week", fetchedAt: args.now.toISOString(),
+    asOf: args.team?.transport.responseDate ?? null,
+    counter: { present: Object.prototype.hasOwnProperty.call(team, "roster_adds"), coverageType: text(counter.coverage_type),
+      coverageWeek, reportedValue: scalar(counter.value), used },
+    limit: { present: Object.prototype.hasOwnProperty.call(settings, "max_weekly_adds"), reportedValue: scalar(settings.max_weekly_adds), verified: false },
+    period: { week, startDate: datesValid ? period!.startDate : null, endDate: datesValid ? period!.endDate : null, containsHorizon },
+    remaining: null, limitations };
 }
 
 /** Retry one timed-out required read; rate limits and access errors are never retried. */
@@ -108,12 +154,17 @@ export async function loadYahooPlanningSnapshot(args: {
   const timeZone = providerTimeZone ?? args.timeZone ?? "UTC";
   try { new Intl.DateTimeFormat("en", { timeZone }).format(now); } catch { throw new YahooLiveDraftError("Choose a valid league time zone.", 400, "invalid_time_zone"); }
   const today = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
-  const [data, rosterResponse, scoreboardResult, leagueRosterResult] = await Promise.all([
+  const [data, rosterResponse, scoreboardResult, leagueRosterResult, leagueResult, teamResult] = await Promise.all([
     loadPlanningData(db, { ...query, timeZone }, { now }),
     readRequiredPlanningResource(() => fetchYahooBoardResource({ ...provider, resource: { type: "roster", teamKey: team.external_team_key, date: today } })),
     fetchYahooPlanningResource({ ...provider, resource: { type: "scoreboard" } }).then(value => value, () => null),
     fetchYahooBoardResource({ ...provider, resource: { type: "league_rosters" } }).then(value => value, () => null),
+    fetchYahooPlanningResource({ ...provider, resource: { type: "league" } }).then(value => value, () => null),
+    fetchYahooPlanningResource({ ...provider, resource: { type: "team", teamKey: team.external_team_key } }).then(value => value, () => null),
   ]);
+  const acquisitionEvidence = yahooPlanningAcquisitions({ settings: settingsResponse, league: leagueResult, team: teamResult,
+    weeks: data.matchupWeeks, gameKey: gameContext.gameKey, leagueKey: league.external_league_key, teamKey: team.external_team_key,
+    startDate: query.startDate, endDate: query.endDate, now });
   const rosterPayload = yahooFields(yahooValue(rosterResponse.payload, "roster"));
   if (text(yahooValue(rosterResponse.payload, "team_key")) !== team.external_team_key
     || text(rosterPayload.date) !== today || text(rosterPayload.coverage_type) !== "date"
@@ -127,6 +178,7 @@ export async function loadYahooPlanningSnapshot(args: {
   );
   const fresh = providerFresh(settingsResponse, now) && providerFresh(rosterResponse, now);
   const limitations: string[] = [];
+  limitations.push(...acquisitionEvidence.limitations);
   if (!fresh) limitations.push("Yahoo roster/settings freshness could not be verified; affected lock and availability claims remain unknown.");
   if (!providerTimeZone) limitations.push(args.timeZone ? "League time zone supplied by the manager; Yahoo did not verify it." : "League time zone is unknown; UTC is a display fallback and timing requires verification.");
   const mapping: Row[] = [];
@@ -171,6 +223,7 @@ export async function loadYahooPlanningSnapshot(args: {
     const reportedEligibility = eligibility(row.eligible_positions);
     const explicitPositions = reportedEligibility.filter(value => !["BN", "IR", "IR+", "NA"].includes(value));
     if (explicitPositions.length) player.eligiblePositions = [...new Set(explicitPositions)];
+    player.eligibilityVerified = fresh && explicitPositions.length > 0;
     player.providerId = String(row.player_key);
     player.canDrop = fresh && no(row.is_undroppable) ? true : yes(row.is_undroppable) ? false : null;
     // Use explicit league eligibility, never infer it from injury status text.
@@ -186,8 +239,11 @@ export async function loadYahooPlanningSnapshot(args: {
   if (mode === "weekly") unsupported.push("Supply verified weekly lineup windows; the roster response alone does not establish their exact locks.");
   if (ownRows.length !== roster.length) unsupported.push("Resolve missing roster identities before accepting a complete plan.");
   if (!roster.length) unsupported.push("The connected roster is empty; review the team selection or import the roster manually.");
+  const reserveSlots = Object.fromEntries(Object.entries(settings.excludedInjurySlots ?? {})
+    .filter(([slot]) => ["IR", "IR+", "NA"].includes(slot.trim().toUpperCase())));
   const rules: LeagueRules = {
-    lineupMode: mode, rosterSlots: settings.rosterConfig,
+    // Restore supported reserve capacities that the draft parser excludes.
+    lineupMode: mode, rosterSlots: { ...settings.rosterConfig, ...reserveSlots },
     // A lineup deadline does not establish when a transaction becomes effective.
     acquisitionTiming: "unknown",
     acquisitionCost: null, periods: [], scoring: { mode: settings.leagueType, weights: { ...settings.scoringCategories }, categories: yahooPlanningCategories(Object.keys(settings.categoryWeights)) },
@@ -237,6 +293,7 @@ export async function loadYahooPlanningSnapshot(args: {
     player.providerId = String(row.player_key);
     const positions = eligibility(row.eligible_positions).filter(value => !["BN", "IR", "IR+", "NA"].includes(value));
     if (positions.length) player.eligiblePositions = [...new Set(positions)];
+    player.eligibilityVerified = positions.length > 0;
   }
   for (const player of data.players) if (unavailableIds.has(player.id)) player.availability = "rostered";
   let realized: StatLine = {}, opponent: PlanningSnapshot["opponent"] = null;
@@ -263,7 +320,7 @@ export async function loadYahooPlanningSnapshot(args: {
   const observedAt = rosterResponse.transport.responseDate;
   const snapshot: PlanningSnapshot = {
     id: `yahoo:${team.id}:${now.toISOString()}`, context: { provider: "yahoo", seasonId: query.seasonId, leagueId: league.id, teamId: team.id, startDate: query.startDate, endDate: query.endDate, timeZone, asOf: now.toISOString() },
-    ...data, roster, rules, lockedAssignments, realized, opponent,
+    ...data, roster, rules, lockedAssignments, realized, opponent, acquisitionEvidence,
     evidence: { ...data.evidence,
       roster: { source: "Yahoo authorized current roster", asOf: observedAt, seasonId: query.seasonId, completeness: fresh && roster.length === ownRows.length && roster.length > 0 ? "complete" : "partial", limitations },
       availability: { source: `Yahoo league ownership (${pagesChecked} pages)`, asOf: now.toISOString(), seasonId: query.seasonId, completeness: availabilityComplete ? "complete" : "partial", limitations: availabilityComplete ? [] : ["Only individually verified availability may be actionable."] },

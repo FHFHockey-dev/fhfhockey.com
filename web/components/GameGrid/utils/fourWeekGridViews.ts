@@ -4,9 +4,10 @@ export type FourWeekGridView = "summary" | "weekly";
 
 export interface FourWeekDetailCell {
   weekNumber: number;
-  gamesPlayed: number;
-  offNights: number;
+  gamesPlayed: number | null;
+  offNights: number | null;
   opponents: string[];
+  coverage?: { known: number; expected: number };
 }
 
 export const getFourWeekNumbers = (teams: TeamDataWithTotals[]): number[] =>
@@ -28,10 +29,12 @@ export const buildFourWeekDetailCells = (
 
   return weekNumbers.map((weekNumber) => {
     const week = byWeek.get(weekNumber);
+    const complete = !!week && (!week.scheduleCoverage || week.scheduleCoverage.known === week.scheduleCoverage.expected);
     return {
       weekNumber,
-      gamesPlayed: week?.gamesPlayed ?? 0,
-      offNights: week?.offNights ?? 0,
+      gamesPlayed: complete ? week.gamesPlayed : null,
+      offNights: complete ? week.offNights : null,
+      coverage: week?.scheduleCoverage ?? (week ? undefined : { known: 0, expected: 7 }),
       opponents: (week?.opponents ?? []).map(
         (opponent) => opponent.abbreviation,
       ),
@@ -42,8 +45,7 @@ export const buildFourWeekDetailCells = (
 export const buildFourWeekDetailAverages = (
   teams: TeamDataWithTotals[],
   weekNumbers: number[],
-): Array<{ weekNumber: number; gamesPlayed: number; offNights: number }> => {
-  const divisor = teams.length || 1;
+): Array<{ weekNumber: number; gamesPlayed: number | null; offNights: number | null }> => {
 
   return weekNumbers.map((weekNumber) => {
     const totals = teams.reduce(
@@ -51,17 +53,20 @@ export const buildFourWeekDetailAverages = (
         const week = team.weeks.find(
           (candidate) => candidate.weekNumber === weekNumber,
         );
-        acc.gamesPlayed += week?.gamesPlayed ?? 0;
-        acc.offNights += week?.offNights ?? 0;
+        if (week && (!week.scheduleCoverage || week.scheduleCoverage.known === week.scheduleCoverage.expected)) {
+          acc.gamesPlayed += week.gamesPlayed;
+          acc.offNights += week.offNights;
+          acc.known++;
+        }
         return acc;
       },
-      { gamesPlayed: 0, offNights: 0 },
+      { gamesPlayed: 0, offNights: 0, known: 0 },
     );
 
     return {
       weekNumber,
-      gamesPlayed: totals.gamesPlayed / divisor,
-      offNights: totals.offNights / divisor,
+      gamesPlayed: totals.known ? totals.gamesPlayed / totals.known : null,
+      offNights: totals.known ? totals.offNights / totals.known : null,
     };
   });
 };

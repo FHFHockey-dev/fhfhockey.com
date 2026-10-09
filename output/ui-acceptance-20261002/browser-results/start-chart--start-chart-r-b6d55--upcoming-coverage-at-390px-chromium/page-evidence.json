@@ -1,0 +1,12 @@
+{
+  "title": "Starter Board | FHFH",
+  "url": "http://127.0.0.1:3198/start-chart?date=2026-02-10",
+  "errors": [],
+  "dimensions": {
+    "width": 390,
+    "height": 844,
+    "documentWidth": 390,
+    "documentHeight": 2112
+  },
+  "overlays": 0
+}

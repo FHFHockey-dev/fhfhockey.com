@@ -1,0 +1,58 @@
+{
+  "observedOn": "2026-10-01",
+  "access": "read-only Supabase SQL",
+  "malkinStoredSeries": {
+    "query": "select player_id,strength_state,game_date,updated_at,season_games_played,games_played,toi_seconds_avg_season,pp_points_avg_season,pp_toi_seconds_avg_season from public.rolling_player_game_metrics where season=20252026 and strength_state='all' and player_id in(8478402,8471215,8477934) and game_date<='2026-04-16' order by player_id,game_date desc limit 12",
+    "note": "The initial shared limit returned only player 8471215. The per-player comparison below independently covers all three requested IDs. This series projection retains date, update time and stored GP from the returned rows.",
+    "playerId": 8471215,
+    "rows": [
+      { "date": "2026-04-12", "updatedAt": "2026-04-13 07:45:04.605953+00", "gp": 1 },
+      { "date": "2026-04-09", "updatedAt": "2026-04-10 07:45:06.078716+00", "gp": 1 },
+      { "date": "2026-04-05", "updatedAt": "2026-04-06 07:45:06.849424+00", "gp": 1 },
+      { "date": "2026-04-04", "updatedAt": "2026-04-05 07:45:04.680326+00", "gp": 1 },
+      { "date": "2026-04-02", "updatedAt": "2026-04-03 07:45:05.568896+00", "gp": 1 },
+      { "date": "2026-03-31", "updatedAt": "2026-04-01 07:45:06.888693+00", "gp": 1 },
+      { "date": "2026-03-22", "updatedAt": "2026-03-23 07:45:04.622568+00", "gp": 1 },
+      { "date": "2026-03-21", "updatedAt": "2026-03-23 07:45:04.622568+00", "gp": 1 },
+      { "date": "2026-03-18", "updatedAt": "2026-03-20 13:14:49.419659+00", "gp": 1 },
+      { "date": "2026-03-16", "updatedAt": "2026-03-20 13:14:49.419659+00", "gp": 1 },
+      { "date": "2026-03-05", "updatedAt": "2026-03-11 17:06:58.470084+00", "gp": 45 },
+      { "date": "2026-03-03", "updatedAt": "2026-03-11 17:06:58.470084+00", "gp": 44 }
+    ]
+  },
+  "malkinSourceCutoffs": {
+    "query": "with cutoffs(cutoff)as(values('2026-03-05'::date),('2026-03-16'::date),('2026-04-12'::date)) select c.cutoff,count(w.*)as source_rows,count(distinct w.game_id) as source_game_ids,min(w.date) as first_source_date,max(w.date) as last_source_date,count(*) filter(where w.toi_per_game>0)as positive_toi_rows,sum(w.pp_points)as pp_points_sum,sum(w.pp_toi)as pp_seconds_sum from cutoffs c left join public.wgo_skater_stats w on w.player_id=8471215 and w.season_id=20252026 and w.date<=c.cutoff group by c.cutoff order by c.cutoff",
+    "rows": [
+      { "cutoff": "2026-03-05", "sourceRows": 46, "distinctGameIds": 46, "firstDate": "2025-10-07", "lastDate": "2026-03-05", "positiveToiRows": 46, "ppPoints": 17, "ppSeconds": 8464 },
+      { "cutoff": "2026-03-16", "sourceRows": 47, "distinctGameIds": 47, "firstDate": "2025-10-07", "lastDate": "2026-03-16", "positiveToiRows": 47, "ppPoints": 18, "ppSeconds": 8655 },
+      { "cutoff": "2026-04-12", "sourceRows": 56, "distinctGameIds": 56, "firstDate": "2025-10-07", "lastDate": "2026-04-12", "positiveToiRows": 56, "ppPoints": 22, "ppSeconds": 10606 }
+    ]
+  },
+  "storedVersusCurrentSources": {
+    "query": "with requested(player_id)as(values(8471215),(8478402),(8477934)) select r.player_id,p.\"fullName\" as player_name,r.game_date,r.updated_at,r.games_played,r.season_games_played,r.toi_seconds_avg_season,r.pp_points_avg_season,r.pp_toi_seconds_avg_season,s.source_rows,s.source_game_ids,s.first_source_date,s.positive_toi_rows,s.pp_points_present,s.pp_toi_present,s.pp_points_sum,s.pp_seconds_sum from requested q join lateral(select player_id,game_date,updated_at,games_played,season_games_played,toi_seconds_avg_season,pp_points_avg_season,pp_toi_seconds_avg_season from public.rolling_player_game_metrics where player_id=q.player_id and season=20252026 and strength_state='all' and game_date<='2026-04-16' order by game_date desc limit 1)r on true left join public.players p on p.id=r.player_id join lateral(select count(*) as source_rows,count(distinct game_id) as source_game_ids,min(date) as first_source_date,count(*)filter(where toi_per_game>0)as positive_toi_rows,count(pp_points)as pp_points_present,count(pp_toi)as pp_toi_present,sum(pp_points)as pp_points_sum,sum(pp_toi)as pp_seconds_sum from public.wgo_skater_stats where player_id=r.player_id and season_id=20252026 and date<=r.game_date)s on true order by r.player_id",
+    "rows": [
+      { "playerId": 8471215, "name": "Evgeni Malkin", "date": "2026-04-12", "updatedAt": "2026-04-13 07:45:04.605953+00", "storedGp": 1, "storedToiAverage": 1102, "storedPpPointsAverage": null, "storedPpToiAverage": null, "sourceRows": 56, "distinctSourceGameIds": 56, "firstSourceDate": "2025-10-07", "positiveToiRows": 56, "knownPpPointsRows": 56, "knownPpToiRows": 56, "wgoPpPointsSum": 22, "wgoPpSecondsSum": 10606 },
+      { "playerId": 8477934, "name": "Leon Draisaitl", "date": "2026-03-15", "updatedAt": "2026-03-20 13:15:26.830313+00", "storedGp": 1, "storedToiAverage": 192, "storedPpPointsAverage": 1, "storedPpToiAverage": 49, "sourceRows": 65, "distinctSourceGameIds": 65, "firstSourceDate": "2025-10-08", "positiveToiRows": 65, "knownPpPointsRows": 65, "knownPpToiRows": 65, "wgoPpPointsSum": 42, "wgoPpSecondsSum": 14014 },
+      { "playerId": 8478402, "name": "Connor McDavid", "date": "2026-04-16", "updatedAt": "2026-04-17 07:45:45.373578+00", "storedGp": 2, "storedToiAverage": 1385.5, "storedPpPointsAverage": null, "storedPpToiAverage": null, "sourceRows": 82, "distinctSourceGameIds": 82, "firstSourceDate": "2025-10-08", "positiveToiRows": 82, "knownPpPointsRows": 82, "knownPpToiRows": 82, "wgoPpPointsSum": 54, "wgoPpSecondsSum": 17751 }
+    ]
+  },
+  "malkinPpSourcePriority": {
+    "query": "select count(*)as joined_rows,count(distinct w.game_id)as source_game_ids,count(p.\"PPTOI\")as builder_pp_toi_present,count(*)filter(where p.\"PPTOI\" is null and w.pp_toi is not null)as wgo_fallback_rows,sum(w.pp_toi)as wgo_pp_seconds_sum,sum(coalesce(p.\"PPTOI\",w.pp_toi))as selected_pp_seconds_sum from public.wgo_skater_stats w left join public.\"powerPlayCombinations\" p on p.\"playerId\"=w.player_id and p.\"gameId\"=w.game_id where w.player_id=8471215 and w.season_id=20252026 and w.date<='2026-04-12'",
+    "result": { "joinedRows": 56, "distinctSourceGameIds": 56, "builderPpToiPresent": 50, "wgoFallbackRows": 6, "wgoPpSecondsSum": 10606, "selectedPpSecondsSum": 10187 },
+    "note": "The current writer prefers powerPlayCombinations.PPTOI and falls back to WGO pp_toi, so its PP denominator is not the WGO-only sum. The dry-run average 181.910714 times GP 56 reproduces 10,187 seconds within rounding precision."
+  },
+  "pittsburghStoredSchedule": {
+    "query": "select g.type,count(*) as stored_scheduled_games,min(g.date)as first_date,max(g.date)as last_date from public.games g join public.teams t on t.id=g.\"homeTeamId\" or t.id=g.\"awayTeamId\" where t.abbreviation='PIT' and g.\"seasonId\"=20252026 and g.date<='2026-04-12' group by g.type order by g.type",
+    "rows": [
+      { "type": 1, "scheduledGames": 7, "firstDate": "2025-09-22", "lastDate": "2025-10-03" },
+      { "type": 2, "scheduledGames": 81, "firstDate": "2025-10-07", "lastDate": "2026-04-12" }
+    ],
+    "note": "These sum to the dry-run team denominator 88. The inspected ledger does not filter game type. Schedule counts do not certify completed-game or player-appearance coverage."
+  },
+  "limits": [
+    "All database snapshots are current and mutable; updated_at is not an immutable writer execution/version receipt.",
+    "Three player comparisons do not certify the full population or the original displayed McDavid aggregate.",
+    "The projected before values are not a complete rollback backup or approved repair package.",
+    "No recompute writer, publisher endpoint, database mutation or deployment was invoked."
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "unit": {
+    "command": "npm test -- __tests__/pages/db/player-aliases.test.tsx",
+    "passed": 24,
+    "failed": 0,
+    "durationMs": 1790
+  },
+  "typescript": {
+    "command": "NODE_OPTIONS=--max-old-space-size=8192 npx --no-install tsc --noEmit",
+    "exitCode": 0
+  },
+  "lint": {
+    "command": "npx --no-install eslint pages/db/player-aliases.tsx __tests__/pages/db/player-aliases.test.tsx",
+    "exitCode": 0,
+    "warnings": 0
+  },
+  "browser": {
+    "passed": 31,
+    "failed": 0,
+    "version": "148.0.7778.96",
+    "origin": "http://127.0.0.1:3218",
+    "data": "intercepted mock fixtures only"
+  },
+  "diffCheck": {
+    "command": "git diff --check",
+    "exitCode": 0
+  },
+  "review": {
+    "selfReview": "completed",
+    "independentReview": "pending",
+    "gate": "AGENTS.md/mise-en-place.md require verified actual lead effort strictly above reviewer. Supported read_thread exposes no model/effort and runtime CODEX_MODEL/CODEX_REASONING_EFFORT are unavailable. No worker was created. Blanket Max was later superseded by economical High/Medium guidance."
+  }
+}

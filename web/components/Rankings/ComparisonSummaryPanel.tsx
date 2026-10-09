@@ -1,5 +1,5 @@
 import type { ContextualRankingComparisonResponse } from "lib/rankings/comparison";
-import { formatPercentile, formatToiClock } from "lib/rankings/rankingFormatters";
+import { formatPercentile, formatSampleConfidence, formatSampleMinimums, formatToiClock } from "lib/rankings/rankingFormatters";
 import type { TrendingResponse } from "lib/rankings/trending";
 
 import styles from "styles/Rankings.module.scss";
@@ -54,7 +54,8 @@ function sampleLabel(row: ComparisonRow | null) {
         : sample.gamesPlayed > 0
           ? Math.round(sample.toiSeconds / sample.gamesPlayed)
           : null;
-    return `${sample.gamesPlayed} GP${starts}${shots}, ${formatToiClock(toiPerGameSeconds)} TOI/G, ${sample.confidence} confidence`;
+    const status = "role" in row ? `${sample.confidence} confidence` : formatSampleMinimums(sample);
+    return `${sample.gamesPlayed ?? "-"} GP${starts}${shots}, ${formatToiClock(toiPerGameSeconds)} TOI/G, ${status}`;
   }
 
   return `${row.context.games} game-context games, style sample ${row.record.styleGames} games`;
@@ -84,10 +85,10 @@ function metricLabel(cell: ComparisonMetricCell | undefined) {
   return `${value} - ${percentile}, ${rank}`;
 }
 
-function sourceLabel(cell: ComparisonMetricCell | undefined) {
+function sourceLabel(cell: ComparisonMetricCell | undefined, isSkater: boolean) {
   if (!cell) return "Source pending or not in visible metric contract";
   const flags = cell.sourceQualityFlags ?? [];
-  const confidence = cell.sampleConfidence ? `${cell.sampleConfidence} sample` : "sample tracked";
+  const confidence = isSkater ? formatSampleConfidence(cell.sampleConfidence) : cell.sampleConfidence ? `${cell.sampleConfidence} sample` : "sample tracked";
   if (flags.length === 0) return `${confidence}, no metric source flags`;
   return `${confidence}, ${flags.slice(0, 2).join("; ")}`;
 }
@@ -170,7 +171,7 @@ export default function ComparisonSummaryPanel({
                     </div>
                     <div>
                       <dt>Source Quality</dt>
-                      <dd>{sourceLabel(cell)}</dd>
+                      <dd>{sourceLabel(cell, payload.request.entity === "skaters")}</dd>
                     </div>
                     <div>
                       <dt>Opportunity Evidence</dt>

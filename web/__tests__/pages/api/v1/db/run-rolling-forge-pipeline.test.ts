@@ -400,10 +400,17 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
     ).toMatchObject({ status: "skipped" });
   });
 
-  it("stops after a blocking stage failure and skips the remaining stages", async () => {
+  it.each(["legacy", "busy", "dependency", "malformed"])("stops after a blocking failure and retains bounded audit context: %s", async (kind) => {
+    const firstError = { gameId: 2026010056, stage: "capture_raw_sources", message: "INVALID_PROJECTION_RAW_SHIFT_ROWS",
+      ...(kind === "busy" ? { message: "NHL_NORMALIZATION_WRITER_BUSY", code: "P0001", endpoint: "shiftcharts", attempts: 2 } : {}),
+      ...(kind === "malformed" ? { code: 1, endpoint: {}, attempts: -1 } : {}) };
+    const childReceipt = { success: false, pipeline: { verbose: "x".repeat(6000) },
+      errors: [firstError, { gameId: 2026010057, stage: "persist_inputs", message: "second failure" }],
+      ...(kind === "dependency" ? { dependencyError: { classification: "html_upstream_response", detail: "original detail" } } : {}),
+      message: "rolling failed" };
     updateRollingPlayerAveragesMock.mockImplementationOnce(
       async (_req: any, res: any) => {
-        res.status(500).json({ success: false, message: "rolling failed" });
+        res.status(500).json(childReceipt);
       }
     );
 
@@ -420,6 +427,21 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
     await handler(req, res);
 
     expect(res.statusCode).toBe(207);
+    expect(res.body.failureSummary).toMatchObject({ failedStepCount: 1,
+      firstFailure: { gameId: 2026010056, stage: "capture_raw_sources",
+        error: firstError.message, reportedErrorCount: 2, statusCode: 500,
+        code: kind === "busy" ? "P0001" : null, endpoint: kind === "busy" ? "shiftcharts" : null,
+        attempts: kind === "busy" ? 2 : null, classification: kind === "dependency" ? "html_upstream_response" : null } });
+    const auditPrefix = JSON.stringify(res.body).slice(0, 4000);
+    expect(auditPrefix).toContain(firstError.message);
+    expect(auditPrefix).toContain("2026010056");
+    if (kind === "busy") {
+      expect(auditPrefix).toContain('"code":"P0001"');
+      expect(auditPrefix).toContain('"endpoint":"shiftcharts"');
+      expect(auditPrefix).toContain('"attempts":2');
+    }
+    if (kind === "dependency") expect(auditPrefix).toContain('"classification":"html_upstream_response"');
+    expect(res.body.stages.find((stage: any) => stage.id === "rolling_player_recompute").steps[0].summary).toEqual(childReceipt);
     expect(runProjectionV2Mock).not.toHaveBeenCalled();
     expect(res.body.success).toBe(false);
     expect(

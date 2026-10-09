@@ -2,33 +2,31 @@
 
 import {
   DAYS,
-  DAY_ABBREVIATION,
+  EXTENDED_DAY_ABBREVIATION,
   WeekData,
+  GameData,
   ExtendedWeekData
 } from "lib/NHL/types";
 
-/**
- * Test if the match up exist.
- * If a match up does not exist, then its home and away will both be false.
- * @param matchUp A match up.
- * @returns true if the match up exist, otherwise false.
- */
-function hasMatchUp(matchUp: WeekData["MON"] | undefined) {
-  return matchUp !== undefined;
+/** Regular-season opportunities exclude postponed/cancelled games but include finals. */
+export function isRegularScheduleGame(game: GameData | undefined): game is GameData {
+  const inactive = ["PPD", "CNCL", "POSTPONED", "CANCELLED"];
+  return game?.gameType === 2 && Number.isFinite(game.id) && game.id > 0 &&
+    !inactive.includes(game.gameScheduleState?.toUpperCase() ?? "") &&
+    !inactive.includes(game.gameState?.toUpperCase() ?? "");
 }
 
 export function getTotalGamePlayed(
   matchUps: WeekData,
-  excludedDays: DAY_ABBREVIATION[] = []
+  excludedDays: readonly EXTENDED_DAY_ABBREVIATION[] = [],
+  days: readonly EXTENDED_DAY_ABBREVIATION[] = DAYS
 ) {
   let num = 0;
-  DAYS.forEach((day) => {
+  days.forEach((day) => {
     if (excludedDays.includes(day)) return;
 
     const matchUp = matchUps[day];
-    const hasMatchUp_ = hasMatchUp(matchUp);
-    const isRegularSeason = matchUp?.gameType === 2;
-    if (hasMatchUp_ && isRegularSeason) num++;
+    if (isRegularScheduleGame(matchUp)) num++;
   });
   return num;
 }
@@ -41,14 +39,15 @@ export function getTotalGamePlayed(
 export function calcTotalOffNights(
   matchUps: WeekData,
   numGamesPerDay: number[],
-  excludedDays: DAY_ABBREVIATION[] = []
+  excludedDays: readonly EXTENDED_DAY_ABBREVIATION[] = [],
+  days: readonly EXTENDED_DAY_ABBREVIATION[] = DAYS
 ) {
   let num = 0;
-  DAYS.forEach((day, i) => {
+  days.forEach((day, i) => {
     if (excludedDays.includes(day)) return;
 
     const matchUp = matchUps[day];
-    const hasMatchUp_ = hasMatchUp(matchUp) && matchUp?.gameType === 2;
+    const hasMatchUp_ = isRegularScheduleGame(matchUp);
     // when a day has <= 8 games, mark that day as off night
     const offNight = numGamesPerDay[i] <= 8;
     if (hasMatchUp_ && offNight) num++;
@@ -72,7 +71,8 @@ export function calcTotalOffNights(
 export function calcWeightedOffNights(
   matchUps: WeekData,
   numGamesPerDay: number[],
-  excludedDays: DAY_ABBREVIATION[] = []
+  excludedDays: readonly EXTENDED_DAY_ABBREVIATION[] = [],
+  days: readonly EXTENDED_DAY_ABBREVIATION[] = DAYS
 ) {
   // Parameters for the weighting model
   const TOTAL_TEAMS = 32; // NHL total teams
@@ -83,11 +83,11 @@ export function calcWeightedOffNights(
   const BASELINE_WEIGHT_AT_7 = (9 - 7) / 7; // ≈ 0.285714 from previous model
 
   let total = 0;
-  DAYS.forEach((day, i) => {
+  days.forEach((day, i) => {
     if (excludedDays.includes(day)) return;
 
     const matchUp = matchUps[day];
-    const hasMatchUp_ = hasMatchUp(matchUp) && matchUp?.gameType === 2;
+    const hasMatchUp_ = isRegularScheduleGame(matchUp);
     const games = numGamesPerDay[i] ?? 0;
     const isOffNight = games <= OFF_NIGHT_THRESHOLD;
 
@@ -110,6 +110,21 @@ export function calcWeightedOffNights(
     }
   });
   return total;
+}
+
+/** Count each regular-season game once, using the same days as team summaries. */
+export function getRegularGamesPerDay(
+  rows: readonly WeekData[],
+  days: readonly EXTENDED_DAY_ABBREVIATION[] = DAYS
+) {
+  return days.map((day) => {
+    const ids = new Set<number>();
+    rows.forEach((row) => {
+      const game = row[day];
+      if (isRegularScheduleGame(game)) ids.add(game.id);
+    });
+    return ids.size;
+  });
 }
 
 /**

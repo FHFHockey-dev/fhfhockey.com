@@ -8,6 +8,8 @@ import type {
 import {
   formatDeploymentLabel,
   formatPercentile,
+  formatSampleConfidence,
+  formatSampleMinimums,
   formatToiClock,
 } from "lib/rankings/rankingFormatters";
 import {
@@ -184,7 +186,7 @@ function metricBullet(
       : `rank ${scope.rank} of ${scope.qualifiedPeerCount || "unknown"}`;
   const raw = cell.formattedValue == null ? "" : ` · value ${cell.formattedValue}`;
   const peer = scope.peerGroupKey ? ` · peer group ${scope.peerGroupKey}` : "";
-  const sample = ` · sample ${cell.sampleConfidence}`;
+  const sample = ` · ${formatSampleConfidence(cell.sampleConfidence)}`;
   const source = ` · source ${sourceState(cell)}`;
   const qualifier = cell.lowerIsBetter
     ? mode === "strength"
@@ -359,7 +361,7 @@ export default function PlayerSnapshotPanel({
         </div>
         <div>
           <dt>Sample</dt>
-          <dd>{row.sample.confidence}</dd>
+          <dd>{formatSampleMinimums(row.sample)}</dd>
         </div>
       </dl>
 

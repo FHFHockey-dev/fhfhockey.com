@@ -16,13 +16,15 @@ vi.mock("utils/adminOnlyMiddleware", () => ({
   default: (handler: any) => handler,
 }));
 
-vi.mock("lib/game-predictions/espnOdds", () => ({
+vi.mock("lib/game-predictions/espnOdds", async (importOriginal) => ({
+  ...await importOriginal<typeof import("lib/game-predictions/espnOdds")>(),
   ingestEspnNhlOddsSnapshotsForWindow:
     ingestEspnNhlOddsSnapshotsForWindowMock,
   parseRequestedOddsDateBatches: parseRequestedOddsDateBatchesMock,
 }));
 
 import handler from "../../../../../pages/api/v1/game-predictions/ingest-espn-odds";
+import { EspnOddsHttpError } from "lib/game-predictions/espnOdds";
 
 function createMockApiContext(args?: {
   method?: string;
@@ -82,6 +84,39 @@ describe("/api/v1/game-predictions/ingest-espn-odds", () => {
       batchCount: 2,
       batches: [],
     });
+  });
+
+  it.each([403, 503])("reports upstream HTTP %s as a failed ingest with exact source scope", async (httpStatus) => {
+    ingestEspnNhlOddsSnapshotsForWindowMock.mockRejectedValue(
+      new EspnOddsHttpError(httpStatus, "2026-10-04"),
+    );
+    const { req, res, supabase } = createMockApiContext();
+
+    await handler(req as never, res as never);
+
+    expect(res.statusCode).toBe(502);
+    expect(res.body).toEqual({
+      success: false,
+      error: `ESPN odds request failed with ${httpStatus}`,
+      errorCode: httpStatus === 403 ? "ESPN_ODDS_ACCESS_DENIED" : "ESPN_ODDS_UPSTREAM_HTTP_ERROR",
+      upstream: {
+        sourceName: "espn_site_api_market_odds",
+        sourceUrl: "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=20261004",
+        requestedDate: "2026-10-04",
+        httpStatus,
+      },
+    });
+    expect(ingestEspnNhlOddsSnapshotsForWindowMock).toHaveBeenCalledTimes(1);
+    expect(supabase.from).not.toHaveBeenCalled();
+  });
+
+  it("preserves non-provider failures for the audit wrapper", async () => {
+    const error = new Error("snapshot insert failed");
+    ingestEspnNhlOddsSnapshotsForWindowMock.mockRejectedValue(error);
+    const { req, res } = createMockApiContext();
+
+    await expect(handler(req as never, res as never)).rejects.toBe(error);
+    expect(res.json).not.toHaveBeenCalled();
   });
 
   it("ingests a bounded date window in ESPN-safe batches", async () => {

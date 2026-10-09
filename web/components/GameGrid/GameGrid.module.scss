@@ -204,7 +204,7 @@
   color: v.$secondary-color;
 }
 
-@media (min-width: v.$breakpoint-desktop) {
+@media (min-width: v.$breakpoint-tablet) {
   .bottomDrawer {
     display: block;
     position: fixed;
@@ -313,6 +313,12 @@
     height: calc(100% - 64px);
     overflow: auto;
     padding: v.$space-md;
+  }
+}
+
+@media (min-width: v.$breakpoint-tablet) and (max-width: 1099px) {
+  .bottomDrawer {
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -727,12 +733,12 @@
 
 .controlsBar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
+  grid-template-columns: minmax(40px, 1fr) minmax(0, auto) minmax(0, 1fr);
+  align-items: start;
   gap: v.$space-sm;
   width: 95%;
   margin: -18px auto;
-  padding: 12px clamp(14px, 1.8vw, 24px) 36px;
+  padding: 12px clamp(14px, 1.8vw, 24px);
   background: v.$surface-1;
   border: 1px solid rgba(v.$color-white, 0.08);
   box-shadow: 0 18px 36px rgba(v.$color-black, 0.28), inset 0 1px 0 rgba(v.$color-white, 0.04);
@@ -757,13 +763,15 @@
     .weekRange { padding-inline: 4px; font-size: 0.75rem; }
     .dateNav { gap: 4px; }
     .dateButtonPrev, .dateButtonNext { padding-inline: 6px; }
-    .rightControls { gap: 4px; }
+    .forecastControls { gap: 4px; }
     .modeButton, .modeButtonActive { padding-inline: 6px; font-size: 0.7rem; }
   }
 
-  @media (max-width: 700px) {
-    padding-bottom: 58px;
-    .rightControls { flex-direction: column; }
+  @media (max-width: 900px) {
+    grid-template-columns: 40px minmax(0, 1fr);
+    row-gap: v.$space-md;
+    .badgeAndWeekNav { grid-column: 2; }
+    .rightControls { grid-column: 1 / -1; }
   }
 }
 
@@ -777,8 +785,19 @@
 
 .rightControls {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-end;
   justify-self: end;
+  min-width: 0;
+  width: 100%;
+  gap: v.$space-sm;
+}
+
+.forecastControls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: v.$space-sm;
 }
 
@@ -974,10 +993,11 @@
 
 .badgeAndWeekNav {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
   gap: v.$space-sm;
-  flex-wrap: wrap;
   width: 100%;
+  max-width: 24rem;
   min-width: 0;
   justify-self: stretch;
   justify-content: center;
@@ -1108,13 +1128,10 @@
 
 // Legend bar
 .legendBar {
-  position: absolute;
-  bottom: 4px;
-  left: 0;
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 12px;
   font-size: 0.65rem;
   letter-spacing: 0.05em;
@@ -1122,14 +1139,14 @@
 
 .legendMeta {
   min-width: 0;
-  width: auto;
+  width: 100%;
 
   ul {
     list-style: none;
     display: flex;
     width: 100%;
     align-items: flex-start;
-    justify-content: center;
+    justify-content: flex-end;
     flex-wrap: wrap;
     gap: 6px 16px;
     padding: 0;
@@ -1236,8 +1253,15 @@
   .desktopMasterSection .scheduleGridContainer {
     background: v.$surface-1;
     overflow: visible;
-    border-top-left-radius: 24px;
-    border-top-right-radius: 24px;
+    border-radius: 24px;
+  }
+
+  .desktopMasterSection .masterTable tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 24px;
+  }
+
+  .desktopMasterSection .masterTable tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 24px;
   }
 
   .desktopMasterSection .masterTableShell {
@@ -1534,6 +1558,19 @@
   color: v.$secondary-color;
 }
 
+.masterMetricCoverage {
+  display: block;
+  font-size: 10px;
+  line-height: 1.3;
+  font-weight: normal;
+}
+
+.masterSourceContext {
+  font-size: 11px;
+  line-height: 1.4;
+  margin: 8px 0;
+}
+
 .masterMetricCell {
   color: v.$text-primary;
   min-width: 0 !important;
@@ -1629,6 +1666,11 @@
   align-items: stretch;
   justify-content: center;
   min-height: 56px;
+}
+
+.sourceStatus {
+  padding: 12px;
+  color: v.$text-secondary;
 }
 
 .masterTeamCell {
@@ -2454,19 +2496,22 @@
   position: static;
   display: inline-flex;
   align-items: center;
-  justify-content: flex-start;
-  min-height: 32px;
-  line-height: 100%;
+  justify-content: center;
+  min-height: 24px;
+  line-height: 1.2;
   width: auto;
+  max-width: 100%;
   padding: 0;
   border: 0;
   background: transparent;
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
-  font-size: 1.8rem;
+  font-size: 1.25rem;
   font-weight: 800;
-  letter-spacing: 0.45em;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
   color: #0fc0f6;
   text-shadow:
     0 0 10px rgba(v.$secondary-color, 0.18),
@@ -3051,6 +3096,15 @@
     background-color: transparent;
     border-spacing: 0;
     border-radius: 0 0 18px 18px;
+
+    tbody tr:last-of-type td:first-child {
+      border-bottom-left-radius: v.$border-radius-lg;
+      overflow: visible;
+    }
+
+    tbody tr:last-of-type td:last-child {
+      border-bottom-right-radius: v.$border-radius-lg;
+    }
   }
 
   // --- Modern Table Header (thead) ---
@@ -3824,6 +3878,21 @@
 // Total units = 10*1 + 1.5 = 11.5.
 .gridColFirst {
   width: 13.0434783%;
+}
+.teamPreviewGrid {
+  min-width: 550px !important;
+
+  col:first-child { width: 104px; }
+  th:first-child { min-width: 104px; max-width: none !important; }
+  td.firstColumnContent:first-child {
+    display: table-cell !important;
+    min-width: 104px !important;
+    width: 104px !important;
+    max-width: none !important;
+    vertical-align: middle;
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
 }
 .gridColOther {
   width: 8.6956522%;

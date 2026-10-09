@@ -1,4 +1,5 @@
 import React from "react";
+import { selectTeamFormGames, summarizeTeamForm } from "lib/projections/startChartTeamForm";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildBoardValidationDisclosure } from "lib/projections/starterBoardValidation";
@@ -201,6 +202,10 @@ vi.mock("swr", () => ({
 }));
 
 vi.mock("recharts", () => ({
+  BarChart: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  Bar: () => null,
+  CartesianGrid: () => null,
+  Legend: () => null,
   LineChart: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   Line: () => null,
   ReferenceLine: () => null,
@@ -318,6 +323,8 @@ describe("StartChartPage", () => {
     } finally { vi.unstubAllGlobals(); }
   });
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-02-07T17:00:00Z"));
     deploymentState.data = undefined;
     deploymentState.error = null;
     deploymentState.request.mockClear();
@@ -344,9 +351,37 @@ describe("StartChartPage", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     cleanup();
     swrState.mutate.mockClear();
     routerState.router.replace.mockClear();
+  });
+
+  it("discloses disabled serving separately from an empty scheduled slate", () => {
+    swrState.data = { ...buildApiData(), publishedForecastsEnabled: false,
+      games: [{ id: 1001, date: "2026-02-07", homeTeamId: 10, awayTeamId: 8 }],
+      serving: { mode: "partial", message: "Scheduled games are missing projections." } };
+    render(<StartChartPage />);
+    expect(screen.getByText("Published game forecasts are disabled.")).toBeTruthy();
+    expect(screen.getByText("No player projections found.")).toBeTruthy();
+    expect(screen.getByText(/Reloading does not enable forecast serving/)).toBeTruthy();
+  });
+
+  it("does not infer disabled serving from an older payload without explicit state", () => {
+    render(<StartChartPage />);
+    expect(screen.queryByText("Published game forecasts are disabled.")).toBeNull();
+  });
+
+  it("replaces historical URLs with today and prevents past-date selection", () => {
+    routerState.router.query = { date: "2026-02-05", position: "LW" };
+    render(<StartChartPage />);
+    const input = screen.getByLabelText("Date") as HTMLInputElement;
+    expect(input.value).toBe("2026-02-07");
+    expect(input.min).toBe("2026-02-07");
+    expect(routerState.router.query.date).toBe("2026-02-07");
+    expect((screen.getByRole("button", { name: "Previous day" }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(input, { target: { value: "2026-02-06" } });
+    expect(input.value).toBe("2026-02-07");
   });
 
   it("displays the versioned fantasy scoring formula supplied by the API", () => {
@@ -389,6 +424,44 @@ describe("StartChartPage", () => {
     expect(screen.getByText(/Brier score: 0.120 \(1240 forecasts; lower is better\)/)).toBeTruthy();
     expect(screen.getByText(/candidate meets comparison gates; serving component remains in place/)).toBeTruthy();
     expect(screen.getByText(/Uncertainty ranges remain withheld until evaluated/)).toBeTruthy();
+  });
+
+  it("uses official images with stable placeholder and logo fallbacks", () => {
+    swrState.data = { ...buildApiData(), players: [player()] };
+    render(<StartChartPage />);
+    const headshot = screen.getByRole("img", { name: "Nick Suzuki headshot" });
+    expect(headshot.getAttribute("src")).toContain("assets.nhle.com/mugs/nhl/latest/");
+    fireEvent.error(headshot);
+    expect(headshot.getAttribute("src")).toContain("cms.nhl.bamgrid.com");
+    fireEvent.error(headshot);
+    expect(headshot.getAttribute("src")).toBe("/pictures/player-placeholder.jpg");
+    const logo = screen.getByRole("img", { name: "MTL logo" });
+    fireEvent.error(logo);
+    expect(logo.getAttribute("src")).toBe("/teamLogos/FHFH.png");
+    fireEvent.error(headshot);
+    expect(screen.getByRole("img", { name: "Nick Suzuki headshot unavailable" })).toBeTruthy();
+  });
+
+  it("shows the publication time rather than a run UUID and opens real mobile settings", () => {
+    swrState.data = buildApiData();
+    render(<StartChartPage />);
+    expect(screen.getByText("Feb 7, 7:00 AM EST")).toBeTruthy();
+    expect(screen.queryByText("Up to date")).toBeNull();
+    Element.prototype.scrollIntoView = vi.fn();
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(document.getElementById("board-settings")?.hasAttribute("open")).toBe(true);
+  });
+
+  it("changes the goals calculation with the selected window and reports missing teams", () => {
+    swrState.data = { ...buildApiData(), recentGoals: { seasonId: 20252026, beforeDate: "2026-02-07", source: "nhl_final_scores", teams: [
+      { team: "MTL", games: Array.from({ length: 10 }, (_, i) => ({ date: `2026-01-${20 - i}`, goalsFor: i < 5 ? 4 : 2, goalsAgainst: 1 })) },
+      { team: "TOR", games: [] },
+    ] } };
+    render(<StartChartPage />);
+    expect(screen.getByRole("img", { name: /Goals per game: MTL, 10 games, GF 3.00/ })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Team form window"), { target: { value: "5" } });
+    expect(screen.getByRole("img", { name: /Goals per game: MTL, 5 games, GF 4.00/ })).toBeTruthy();
+    expect(screen.getByText(/TOR: unavailable/)).toBeTruthy();
   });
 
   it("rebrands CTPI as plain-language recent team form", () => {
@@ -521,18 +594,35 @@ describe("StartChartPage", () => {
 
     render(<StartChartPage />);
 
-    expect(screen.getByText("#1 Nick Suzuki")).toBeTruthy();
+    expect(screen.getAllByRole("link", { name: "Nick Suzuki" })[0]).toBeTruthy();
+    expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["LW0", "RW0", "C2", "D0", "G0"]);
+    const games = screen.getByRole("region", { name: "Games on this slate" });
+    const controls = screen.getByRole("region", { name: "Starter Board controls" });
+    expect(games.compareDocumentPosition(controls) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("link", { name: /View Full Schedule/ }).getAttribute("href")).toBe("/game-grid/7-Day-Forecast");
+    expect(screen.getByRole("link", { name: /^Game Grid Compare/ }).getAttribute("href")).toBe("/game-grid/7-Day-Forecast?startDate=2026-02-07&endDate=2026-02-13");
+    expect(screen.getByRole("link", { name: /^Trends Dashboard Add/ }).getAttribute("href")).toBe("/trends?date=2026-02-07");
+    expect(screen.getByRole("link", { name: /^Goalie View Cross/ }).getAttribute("href")).toBe("/variance/goalies");
+    expect(screen.getByText(/League availability is not transferred/)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Slate team"), { target: { value: "MTL" } });
+    expect(screen.getByRole("link", { name: /^Splits Open/ }).getAttribute("href")).toBe("/splits?team=MTL");
+    expect(screen.getByRole("link", { name: /^Lines Validate/ }).getAttribute("href")).toBe("/lines/MTL");
+    fireEvent.change(screen.getByLabelText("Slate team"), { target: { value: "" } });
     const gameFilter = screen.getByRole("button", {
       name: /MTL at TOR; apply game filter/,
     });
     fireEvent.click(gameFilter);
-    expect(screen.queryByText("WPG vs COL")).toBeNull();
+    expect(gameFilter.textContent).toContain("Selected");
+    expect(screen.getAllByRole("link", { name: "Nick Suzuki" })).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Clear game filter" }));
+    expect(screen.getAllByRole("link", { name: "Nick Suzuki" })).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: /MTL at TOR; apply game filter/ }));
     const teamHref = screen.getByRole("link", { name: "MTL" }).getAttribute("href");
     expect(teamHref).toContain("/forge/team/MTL");
     expect(teamHref).toContain("date=2026-02-07");
     expect(teamHref).toContain("resolvedDate=2026-02-07");
-    expect(teamHref).toContain("position=C");
-    expect(teamHref).toContain("mode=week");
+    expect(teamHref).toBe("/forge/team/MTL?date=2026-02-07&resolvedDate=2026-02-07");
+    expect(screen.getByRole("link", { name: "Nick Suzuki" }).getAttribute("href")).toBe(`/forge/player/${player().player_id}?date=2026-02-07&resolvedDate=2026-02-07&mode=week`);
     expect(screen.getByText("Opp G Home Goalie · projected 72%")).toBeTruthy();
     expect(screen.getAllByText("NHL PTS range 2.10–6.40")).toHaveLength(1);
     expect(screen.getAllByText(/7:00 PM EST/)).toHaveLength(2);
@@ -542,7 +632,7 @@ describe("StartChartPage", () => {
     });
     expect(routerState.router.replace).toHaveBeenCalledWith(
       expect.objectContaining({
-        query: expect.objectContaining({ position: "LW" }),
+        query: expect.objectContaining({ position: "D" }),
       }),
       undefined,
       { shallow: true },
@@ -560,13 +650,17 @@ describe("StartChartPage", () => {
         { shallow: true },
       ),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Previous day" }));
+    expect((screen.getByLabelText("Date") as HTMLInputElement).value).toBe("2026-02-07");
+    fireEvent.click(screen.getByRole("button", { name: "Next day" }));
+    expect((screen.getByLabelText("Date") as HTMLInputElement).value).toBe("2026-02-08");
 
     const href = screen
       .getByRole("link", { name: /FORGE Command Center/ })
       .getAttribute("href");
     expect(href).toContain("date=2026-02-08");
     expect(href).toContain("resolvedDate=2026-02-07");
-    expect(href).toContain("position=LW");
+    expect(href).toContain("position=D");
     expect(href).toContain("mode=week");
     expect(
       screen.getByRole("img", { name: /Recent team form/ }),
@@ -678,7 +772,7 @@ describe("StartChartPage", () => {
     );
   });
 
-  it("preserves the first visible goalie's probability without redistributing missing mass", () => {
+  it.each([0.1, 1])("preserves projected goalie probability %s without inventing confirmation or redistributing missing mass", (probability) => {
     swrState.data = {
       ...buildApiData(),
       games: [
@@ -693,7 +787,7 @@ describe("StartChartPage", () => {
           homeGoalies: Array.from({ length: 6 }, (_, index) => ({
             player_id: 9001 + index,
             name: index === 0 ? "Goalie One" : `Goalie ${index + 1}`,
-            start_probability: 0.1,
+            start_probability: index === 0 ? probability : probability === 1 ? null : 0.1,
             projected_gsaa_per_60: null,
             confirmed_status: false,
             source_updated_at: "2026-02-07T14:00:00Z",
@@ -718,8 +812,9 @@ describe("StartChartPage", () => {
 
     render(<StartChartPage />);
 
-    expect(screen.getByText("One 10%")).toBeTruthy();
-    expect(screen.getByText("Goalie TBD")).toBeTruthy();
+    expect(screen.getByText(`Goalie One · Projected ${probability * 100}%`)).toBeTruthy();
+    expect(screen.queryByText("Goalie One · Confirmed")).toBeNull();
+    expect(screen.getByText("Unknown Goalie · Probability unavailable")).toBeTruthy();
   });
 
   it("never treats unknown ownership as zero when a numeric filter is active", () => {
@@ -805,6 +900,7 @@ describe("StartChartPage", () => {
     };
     render(<StartChartPage />);
 
+    fireEvent.click(screen.getByText("More Filters"));
     fireEvent.change(screen.getByLabelText("Team"), {
       target: { value: "MTL" },
     });
@@ -819,13 +915,17 @@ describe("StartChartPage", () => {
   it("renders explicit fallback and degraded source messaging", () => {
     swrState.data = {
       ...buildApiData(),
-      requestedDate: "2026-02-08",
-      resolvedDate: "2026-02-07",
+      dateUsed: "2026-02-09",
+      date: "2026-02-09",
+      projections: 1,
+      players: [player()],
+      requestedDate: "2026-02-07",
+      resolvedDate: "2026-02-09",
       fallbackApplied: true,
       serving: {
         mode: "fallback",
-        message: "Serving the nearest available date.",
-        ageDays: 1,
+        message: "No games are scheduled for 2026-02-07. Showing the upcoming slate on 2026-02-09.",
+        ageDays: 0,
       },
       sourceStatus: {
         ...readySourceStatus,
@@ -840,10 +940,17 @@ describe("StartChartPage", () => {
     };
     render(<StartChartPage />);
 
-    expect(screen.getByText("Showing 2026-02-07, not 2026-02-08.")).toBeTruthy();
+    expect(screen.getByText("Showing 2026-02-09, not 2026-02-07.")).toBeTruthy();
+    expect(screen.getByRole("status", { name: "Starter Board status" }).textContent).toContain("Upcoming slate");
+    expect(screen.queryByText("Historical fallback")).toBeNull();
+    expect(screen.getByRole("link", { name: "View Full Schedule · current" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "7-day schedule from 2026-02-09" }).getAttribute("href")).toBe("/game-grid/7-Day-Forecast?startDate=2026-02-09&endDate=2026-02-15");
+    expect(screen.getByRole("link", { name: /^Game Grid Compare/ }).getAttribute("href")).toBe("/game-grid/7-Day-Forecast?startDate=2026-02-09&endDate=2026-02-15");
+    expect(screen.getByRole("link", { name: "Nick Suzuki" }).getAttribute("href")).toBe(`/forge/player/${player().player_id}?date=2026-02-07&resolvedDate=2026-02-09&mode=tonight`);
+    expect(screen.getByRole("link", { name: "MTL" }).getAttribute("href")).toBe("/forge/team/MTL?date=2026-02-07&resolvedDate=2026-02-09");
     expect(
       screen.getByText(
-        "This is the nearest earlier slate with projections (1 day old). Use it as historical reference, not today's recommendation. Projection provenance is unverified.",
+        "No games are scheduled for 2026-02-07. Showing the upcoming slate on 2026-02-09. Projection provenance is unverified.",
       ),
     ).toBeTruthy();
   });
@@ -872,6 +979,8 @@ describe("StartChartPage", () => {
     expect(screen.getByText("Weekly volume unavailable")).toBeTruthy();
     expect(screen.getAllByText("—").length).toBeGreaterThan(0);
     expect(screen.queryByText("0 Games Remaining")).toBeNull();
+    const row = screen.getByRole("link", { name: "Nick Suzuki" }).closest("li");
+    expect(row?.querySelector('[class*="playerRank"]')?.textContent).toBe("—");
   });
 
   it("renders loading and fetch-error retry states explicitly", () => {
@@ -880,10 +989,17 @@ describe("StartChartPage", () => {
     const view = render(<StartChartPage />);
 
     expect(screen.getAllByText("Loading projections…")).toHaveLength(5);
+    const status = screen.getByRole("status", { name: "Starter Board status" });
+    expect(status.textContent).toContain("Loading");
 
     swrState.isLoading = false;
     swrState.error = new Error("fixture request failed");
     view.rerender(<StartChartPage />);
+    expect(screen.getByRole("status", { name: "Starter Board status" })).toBe(status);
+    expect(status.textContent).toContain("Unavailable");
+    expect(screen.getByText("Slate unavailable")).toBeTruthy();
+    expect(screen.getByText("Games unavailable", { exact: true })).toBeTruthy();
+    expect(screen.queryAllByText("Slate loading")).toHaveLength(0);
     expect(screen.getByRole("alert").textContent).toContain(
       "Starter Board is unavailable.",
     );
@@ -902,6 +1018,7 @@ describe("StartChartPage", () => {
     const view = render(<StartChartPage />);
 
     expect(screen.getByText("No games found.")).toBeTruthy();
+    expect(screen.getByRole("status", { name: "Starter Board status" }).textContent).toContain("No scheduled games");
     expect(screen.getByText("No eligible same-season slate exists.")).toBeTruthy();
 
     swrState.data = {
@@ -933,7 +1050,7 @@ describe("StartChartPage", () => {
     expect(screen.getAllByText("Goalie TBD")).toHaveLength(2);
   });
 
-  it("loads 25 more rows and resets the position limit when filters change", () => {
+  it("reveals all ranked rows and resets the position limit when filters change", () => {
     swrState.data = {
       ...buildApiData(),
       projections: 30,
@@ -949,9 +1066,9 @@ describe("StartChartPage", () => {
     };
     render(<StartChartPage />);
 
-    expect(screen.queryByText("#30 C Player 30")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Load 25 more C" }));
-    expect(screen.getByText("#30 C Player 30")).toBeTruthy();
+    expect(screen.queryByText("C Player 30")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "View all C (30)" }));
+    expect(screen.getByText("C Player 30")).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText("Player"), {
       target: { value: "no match" },
@@ -959,7 +1076,28 @@ describe("StartChartPage", () => {
     fireEvent.change(screen.getByLabelText("Player"), {
       target: { value: "" },
     });
-    expect(screen.queryByText("#30 C Player 30")).toBeNull();
-    expect(screen.getByRole("button", { name: "Load 25 more C" })).toBeTruthy();
+    expect(screen.queryByText("C Player 30")).toBeNull();
+    expect(screen.getByRole("button", { name: "View all C (30)" })).toBeTruthy();
+  });
+});
+
+
+describe("Start Chart historical goals", () => {
+  it("excludes slate-day, future, prior-season, unfinished and invalid games", () => {
+    const base = { season_id: 20252026, home_team_id: 8, away_team_id: 10, game_type: 2, game_state: "OFF", home_team_score: 3, away_team_score: 2, game_id: 100 };
+    const rows = Array.from({ length: 12 }, (_, i) => ({ ...base, game_id: i + 1, game_date: `2026-01-${String(i + 1).padStart(2, "0")}` }));
+    const games = selectTeamFormGames([...rows, rows[0],
+      { ...base, game_date: "2026-02-07" }, { ...base, game_date: "2026-02-08" },
+      { ...base, game_date: "2026-02-06", season_id: 20242025 },
+      { ...base, game_date: "2026-02-05", game_state: "LIVE" }, { ...base, game_date: "2026-02-04", home_team_score: null },
+      { ...base, game_date: "2026-02-03", home_team_id: 7 },
+      { ...base, game_date: "2026-02-02", game_type: 1 },
+    ], 20252026, "2026-02-07", 8);
+    expect(games).toHaveLength(10);
+    expect(games[0].date).toBe("2026-01-12");
+    expect(games.at(-1)?.date).toBe("2026-01-03");
+    const form = { seasonId: 20252026, beforeDate: "2026-02-07", source: "nhl_final_scores" as const, teams: [{ team: "MTL", games: [{ date: "2026-02-06", goalsFor: 8, goalsAgainst: 0 }, ...games] }] };
+    expect(summarizeTeamForm(form, 5)[0]).toMatchObject({ games: 5, goalsFor: 4, goalsAgainst: 1.6 });
+    expect(summarizeTeamForm(form, 10)[0].goalsFor).toBe(3.5);
   });
 });

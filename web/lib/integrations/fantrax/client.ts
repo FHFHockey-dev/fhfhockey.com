@@ -32,7 +32,28 @@ const leagueInfoResponseSchema = z
   })
   .passthrough();
 
-export type FantraxEndpoint = "getLeagues" | "getLeagueInfo";
+const draftResultsResponseSchema = z.object({
+  draftState: z.string(),
+  draftType: z.string(),
+  draftOrder: z.array(z.string()),
+  draftPicks: z.array(z.unknown()),
+}).passthrough();
+
+const playerIdsResponseSchema = z.record(z.object({
+  name: z.string(),
+  fantraxId: z.string(),
+  team: z.string().optional(),
+  position: z.string(),
+}).passthrough());
+
+const adpResponseSchema = z.array(z.object({
+  id: z.string(), name: z.string(), pos: z.string(), ADP: z.number().finite(),
+}).passthrough());
+
+export type FantraxPlayerInfo = z.infer<typeof playerIdsResponseSchema>[string];
+export type FantraxAdpRow = z.infer<typeof adpResponseSchema>[number];
+
+export type FantraxEndpoint = "getLeagues" | "getLeagueInfo" | "getDraftResults" | "getPlayerIds" | "getAdp";
 
 export class FantraxApiError extends Error {
   constructor(
@@ -80,7 +101,13 @@ function parseResponse(endpoint: FantraxEndpoint, payload: unknown): unknown {
   const parsed =
     endpoint === "getLeagues"
       ? leaguesResponseSchema.safeParse(payload)
-      : leagueInfoResponseSchema.safeParse(payload);
+      : endpoint === "getLeagueInfo"
+        ? leagueInfoResponseSchema.safeParse(payload)
+        : endpoint === "getDraftResults"
+          ? draftResultsResponseSchema.safeParse(payload)
+          : endpoint === "getAdp"
+            ? adpResponseSchema.safeParse(payload)
+            : playerIdsResponseSchema.safeParse(payload);
   if (!parsed.success) {
     throw new FantraxApiError(
       "Fantrax returned an unsupported response shape.",
@@ -242,4 +269,19 @@ export function getFantraxLeagueInfo(
   options?: Parameters<typeof fantraxGet>[2],
 ) {
   return fantraxGet("getLeagueInfo", { leagueId }, options);
+}
+
+export function getFantraxDraftResults(
+  leagueId: string,
+  options?: Parameters<typeof fantraxGet>[2],
+) {
+  return fantraxGet("getDraftResults", { leagueId }, options);
+}
+
+export function getFantraxPlayerIds(options?: Parameters<typeof fantraxGet>[2]): Promise<Record<string, FantraxPlayerInfo>> {
+  return fantraxGet("getPlayerIds", { sport: "NHL" }, options) as Promise<Record<string, FantraxPlayerInfo>>;
+}
+
+export function getFantraxAdp(options?: Parameters<typeof fantraxGet>[2]): Promise<FantraxAdpRow[]> {
+  return fantraxGet("getAdp", { sport: "NHL", limit: "1000" }, options) as Promise<FantraxAdpRow[]>;
 }

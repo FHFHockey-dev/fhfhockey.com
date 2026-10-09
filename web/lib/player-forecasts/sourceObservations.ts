@@ -1,9 +1,11 @@
+import { injuryAvailability } from "../sources/tweetPlayerEvents";
 import { tweetPipelineFlags, type TweetInterpretation } from "lib/sources/tweetInterpretation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { starterBoardFlags } from "lib/projections/starterBoardFlags";
 
 import { PLAYER_FORECAST_DEBOUNCE_MS } from "./contracts";
-import { buildNextTenGameScopes, type PlayerForecastScheduleGame } from "./schedule";
+import { buildNextTenGameScopes } from "./schedule";
+import { readForecastSchedule } from "./scopeReads";
 
 export type ForecastLineSourceRow = {
   capture_key: string;
@@ -93,6 +95,7 @@ export function goalieObservationStatus(
   text: string | null | undefined,
 ): "confirmed" | "likely" | "projected" | "unconfirmed" | "ruled_out" {
   const normalized = String(text ?? "").toLowerCase();
+  if (/\b(could|might|may|if|not confirmed|didn.t confirm|not ruled out)\b/.test(normalized)) return "projected";
   if (/\b(ruled out|will not start|not starting)\b/.test(normalized)) return "ruled_out";
   if (/\b(confirmed|will start|gets the start|starting tonight|starts tonight)\b/.test(normalized)) {
     return "confirmed";
@@ -103,11 +106,8 @@ export function goalieObservationStatus(
 }
 
 export function injuryObservationStatus(text: string | null | undefined): "observed" | "confirmed" | "ruled_out" {
-  const value = String(text ?? "").toLowerCase();
-  if (/\b(not (?:yet )?ruled out|hasn't been ruled out|not out tonight|not cleared|could|might|may|if)\b/.test(value)) return "observed";
-  if (/\b(ruled out|will not play|won't play|will not return|won't return|out tonight|out for tonight|placed on (?:injured reserve|ir|ltir))\b/.test(value)) return "ruled_out";
-  if (/\b(will play|will return|returns tonight|cleared to play)\b/.test(value)) return "confirmed";
-  return "observed";
+  const availability = injuryAvailability(String(text ?? ""));
+  return availability === "out" ? "ruled_out" : availability === "available" ? "confirmed" : "observed";
 }
 
 export function assignmentsFor(row: ForecastLineSourceRow) {
@@ -158,6 +158,7 @@ export function assignmentsFor(row: ForecastLineSourceRow) {
       }
     }
     for (const event of interpretation.events ?? []) {
+      if (event.teamId != null && event.teamId !== row.team_id) continue;
       if (event.kind === "injury" && event.availability !== "available") addGroup([event.playerId], [event.playerName], "injury", null, event.availability === "out" ? "ruled_out" : "observed");
       if (event.kind === "goalie" && event.state !== "ruled_out") addGroup([event.playerId], [event.playerName], "goalie_order", null, event.state === "confirmed" ? "confirmed" : "observed");
     }
@@ -312,16 +313,9 @@ async function enqueueTeamHorizon(args: {
   watermark: string;
 }): Promise<number> {
   const now = new Date(args.watermark);
-  const { data, error } = await args.supabase
-    .from("games")
-    .select("id,seasonId,date,startTime,homeTeamId,awayTeamId,type")
-    .gte("date", now.toISOString().slice(0, 10))
-    .order("date", { ascending: true })
-    .order("startTime", { ascending: true })
-    .limit(100);
-  if (error) throw error;
+  const games = await readForecastSchedule({ db: args.supabase, now, teamId: args.row.team_id! });
   const scopes = buildNextTenGameScopes({
-    games: (data ?? []) as PlayerForecastScheduleGame[],
+    games,
     now,
     teamId: args.row.team_id!,
   });

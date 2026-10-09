@@ -1,0 +1,39 @@
+{
+  "head": "73af9d051ecc755dd3695f5265bf5837bbfc7a4e",
+  "branch": "chef/player-resolution-workflow-fixes",
+  "worktree": "/tmp/fhfh-player-resolution-fixes",
+  "browserBaseline": "/tmp/player-resolution-fixes-20261002/integration/web",
+  "overlay": {
+    "web/pages/db/player-aliases.tsx": {
+      "auditSha256": "52dcbd1e8b1f0f6833974e9babd8f9ed89a9336d7b61a9e9e53782ed88c5168c",
+      "patchSha256": "41fba3b696577d08e43ef6b2ba78677f9eaa9381fcb572d65337c249998d64e5",
+      "integrationSha256": "41fba3b696577d08e43ef6b2ba78677f9eaa9381fcb572d65337c249998d64e5",
+      "sharedStillMatchesAudit": true
+    },
+    "web/pages/db/player-aliases.module.scss": {
+      "auditSha256": "cca372304551c3dc1ea92a855922e050a08b4f22fdd693610f237fb225c8b90d",
+      "patchSha256": "985b52690a682e5f3946c6d06cbf08013cc0955a71567388f58356a7ad0d4b6e",
+      "integrationSha256": "985b52690a682e5f3946c6d06cbf08013cc0955a71567388f58356a7ad0d4b6e",
+      "sharedStillMatchesAudit": true
+    },
+    "web/__tests__/pages/db/player-aliases.test.tsx": {
+      "auditSha256": "f7a59f02d6ee1ebe6df8d933b09a3e315fd19fc1c356766fb63ad9e33f620d06",
+      "patchSha256": "f273cd2a22eed63204977157a92f8d97087f5eed5e6afffa0d8e71d2db25428c",
+      "integrationSha256": "f273cd2a22eed63204977157a92f8d97087f5eed5e6afffa0d8e71d2db25428c",
+      "sharedStillMatchesAudit": true
+    }
+  },
+  "untouchedAuditManifest": "/Users/tim/Code/fhfhockey.com/output/player-resolution-audit-20261002/source-manifest.json",
+  "constraints": "No application edits in shared checkout, no API/classifier/Lines/avatar edits, real saves, builds, commits, pushes, migrations or deploys.",
+  "integrationSourceIntegrity": {
+    "checkedFiles": 3387,
+    "declaredOverlays": 3,
+    "generatedDeclarationChanges": [
+      {
+        "path": "web/next-env.d.ts",
+        "reason": "Next dev regenerated next-env.d.ts in the verification-only integration copy; outside the worktree patch."
+      }
+    ],
+    "unexpectedDifferences": []
+  }
+}

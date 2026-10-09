@@ -965,10 +965,46 @@ export async function persistNormalizedGameScope(
   return parseNormalizationReceipt(result.data, scope, expectedCurrentManifest);
 }
 
-export async function ingestNhlApiRawGame(supabase, gameId) {
+async function captureRawSnapshotWithBusyRetry(supabase, row, budget) {
+  let attempts = 0;
+  while (true) {
+    attempts += 1;
+    try {
+      await insertPayloadSnapshot(supabase, row);
+      return;
+    } catch (error) {
+      const busy = isRecord(error) && error.code === "P0001" &&
+        error.message === "NHL_NORMALIZATION_WRITER_BUSY";
+      // Only this BEFORE-statement rejection establishes that the statement did
+      // not commit. Never replay transport failures or unrelated SQL errors.
+      if (!busy) throw error;
+      if (budget.remaining === 0) {
+        const held = new Error(error.message);
+        Object.assign(held, { code: error.code, gameId: row.game_id,
+          stage: "capture_raw_sources", endpoint: row.endpoint, attempts });
+        throw held;
+      }
+      budget.remaining -= 1;
+      budget.used += 1;
+      await sleep(budget.delayMs);
+    }
+  }
+}
+
+export async function ingestNhlApiRawGame(supabase, gameId, options = {}) {
+  const retries = options.retries ?? DEFAULT_GAME_INGEST_RETRIES;
+  const delayMs = options.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS;
+  if (!Number.isSafeInteger(retries) || retries < 1 ||
+    !Number.isFinite(delayMs) || delayMs < 0) {
+    throw new Error("Invalid raw capture retry bounds");
+  }
+  // One shared retry across all four idempotent captures, at most 500ms extra.
+  // Provider fetching and completed captures are never replayed as a game retry.
+  const budget = { remaining: Math.min(retries, 2) - 1, used: 0,
+    delayMs: Math.min(delayMs, DEFAULT_RETRY_DELAY_MS) };
   const fetched = await fetchNhlApiRawGamePayloads(gameId);
 
-  await insertPayloadSnapshot(supabase, {
+  await captureRawSnapshotWithBusyRetry(supabase, {
     game_id: gameId,
     endpoint: "play-by-play",
     season_id: fetched.seasonId,
@@ -977,9 +1013,9 @@ export async function ingestNhlApiRawGame(supabase, gameId) {
     payload_hash: fetched.hashes.playByPlay,
     payload: fetched.payloads.playByPlay,
     fetched_at: fetched.fetchedAt,
-  });
+  }, budget);
 
-  await insertPayloadSnapshot(supabase, {
+  await captureRawSnapshotWithBusyRetry(supabase, {
     game_id: gameId,
     endpoint: "boxscore",
     season_id: fetched.seasonId,
@@ -988,9 +1024,9 @@ export async function ingestNhlApiRawGame(supabase, gameId) {
     payload_hash: fetched.hashes.boxscore,
     payload: fetched.payloads.boxscore,
     fetched_at: fetched.fetchedAt,
-  });
+  }, budget);
 
-  await insertPayloadSnapshot(supabase, {
+  await captureRawSnapshotWithBusyRetry(supabase, {
     game_id: gameId,
     endpoint: "landing",
     season_id: fetched.seasonId,
@@ -999,9 +1035,9 @@ export async function ingestNhlApiRawGame(supabase, gameId) {
     payload_hash: fetched.hashes.landing,
     payload: fetched.payloads.landing,
     fetched_at: fetched.fetchedAt,
-  });
+  }, budget);
 
-  await insertPayloadSnapshot(supabase, {
+  await captureRawSnapshotWithBusyRetry(supabase, {
     game_id: gameId,
     endpoint: "shiftcharts",
     season_id: fetched.seasonId,
@@ -1010,7 +1046,7 @@ export async function ingestNhlApiRawGame(supabase, gameId) {
     payload_hash: fetched.hashes.shiftcharts,
     payload: fetched.payloads.shiftcharts,
     fetched_at: fetched.fetchedAt,
-  });
+  }, budget);
 
   const rosterRows = normalizeRosterSpots(
     fetched.payloads.playByPlay,
@@ -1052,6 +1088,7 @@ export async function ingestNhlApiRawGame(supabase, gameId) {
     eventCount: normalizationReceipt.eventCount,
     shiftCount: normalizationReceipt.shiftCount,
     rawEndpointsStored: 4,
+    rawCaptureBusyRetries: budget.used,
     normalizationVersion: normalizationReceipt.normalizationVersion,
     normalizationFingerprint: normalizationReceipt.normalizationFingerprint,
     sourceFingerprint: normalizationReceipt.sourceFingerprint,
@@ -1070,28 +1107,6 @@ export async function ingestNhlApiRawGames(supabase, gameIds) {
   return results;
 }
 
-async function ingestNhlApiRawGameWithRetry(supabase, gameId, options = {}) {
-  const retries = options.retries ?? DEFAULT_GAME_INGEST_RETRIES;
-  const retryDelayMs = options.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS;
-  let lastError = null;
-
-  for (let attempt = 1; attempt <= retries; attempt += 1) {
-    try {
-      return await ingestNhlApiRawGame(supabase, gameId);
-    } catch (error) {
-      lastError = error;
-      if (attempt === retries) {
-        throw error;
-      }
-      await sleep(retryDelayMs * attempt);
-    }
-  }
-
-  throw lastError instanceof Error
-    ? lastError
-    : new Error(`Failed to ingest raw NHL game ${gameId}`);
-}
-
 export async function ingestNhlApiRawGamesBestEffort(
   supabase,
   gameIds,
@@ -1103,12 +1118,15 @@ export async function ingestNhlApiRawGamesBestEffort(
   for (const gameId of gameIds) {
     try {
       results.push(
-        await ingestNhlApiRawGameWithRetry(supabase, gameId, options),
+        await ingestNhlApiRawGame(supabase, gameId, options),
       );
     } catch (error) {
       failures.push({
         gameId,
         message: stringifyError(error),
+        ...(error?.stage === "capture_raw_sources" && error?.code === "P0001"
+          ? { code: error.code, stage: error.stage, endpoint: error.endpoint, attempts: error.attempts }
+          : {}),
       });
     }
   }

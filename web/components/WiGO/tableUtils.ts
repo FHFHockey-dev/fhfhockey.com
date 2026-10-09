@@ -71,8 +71,8 @@ export function computeDiffColumn(
           // Assign if the result is a finite number
           row.DIFF = isFinite(diff) ? diff : undefined;
         } else {
-          // Handle right value being 0
-          row.DIFF = diffBaseLeft !== 0 ? undefined : 0; // If left is non-zero -> infinite change (undefined), if left is 0 -> 0% change
+          // A zero baseline has no defined percentage change, including 0/0.
+          row.DIFF = undefined;
         }
       } else {
         // If base values couldn't be determined (e.g., invalid GP)

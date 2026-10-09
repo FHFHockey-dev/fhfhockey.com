@@ -8,6 +8,7 @@ import { allocateGroupedRosterSlots } from "./forwardGrouping";
 import { validateKeeperBatch, type KeeperEntry } from "./keepers";
 import { validatePickTradeBatch, type PickTradeEntry } from "./pickTrades";
 import { normalizeDraftOrderPattern } from "./draftOrder";
+import { isValidPositionWeights } from "./positionWeights";
 import { PROJECTION_SOURCES_CONFIG } from "lib/projectionsConfig/projectionSourcesConfig";
 
 export type SettingsDomain = "league" | "roster" | "scoring" | "projections";
@@ -191,6 +192,15 @@ export function validateDraftSettings({
       "Scoring weights must be finite numbers; category weights cannot be negative.",
     );
   if (
+    settings.positionWeights !== undefined &&
+    !isValidPositionWeights(settings.positionWeights)
+  )
+    add(
+      "scoring",
+      "position-weights",
+      "Position weights must be between 0% and 200% for C, LW, RW, D, or G.",
+    );
+  if (
     settings.leagueType !== "categories" &&
     (settings.rosterConfig.G || 0) > 0 &&
     !Object.values(goalieScoring).some((v) => v !== 0)
@@ -278,6 +288,7 @@ export function bookmarkImportError(
     !Number.isFinite(s.rosterConfig.bench) ||
     !Number.isFinite(s.rosterConfig.utility) ||
     !numbers(s.scoringCategories) ||
+    (s.positionWeights !== undefined && !isValidPositionWeights(s.positionWeights)) ||
     !Array.isArray(s.draftOrder) ||
     !s.draftOrder.every((id: unknown) => typeof id === "string") ||
     (s.categoryWeights && !numbers(s.categoryWeights)) ||

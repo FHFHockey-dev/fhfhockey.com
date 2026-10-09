@@ -1,7 +1,11 @@
 import { starterBoardFlags } from "../starterBoardFlags";
 import { bootstrapSkaterLine, loadSeasonBootstrap, type SeasonBootstrap } from "../seasonBootstrap";
+import { buildNativePlayerGoalAccounting, buildNativeTeamGoalAccounting, buildNativeSkaterParticipationFields, selectConfirmedNativeSkaterCandidates, buildNativeRosterContributorCoverage } from "../nativeGoalAccounting";
 import supabase from "lib/supabase/server";
+import { getSeasonById, type SeasonDetails } from "lib/NHL/server";
+import { loadSkaterRecencySeasons, regularSeasonRecencyDays } from "../utils/season-recency";
 import { resolveNullableCompatibilityValue } from "lib/rollingPlayerMetricCompatibility";
+import { fetchCurrentRosterPlayerIds, fetchSkaterRecencyEvents } from "../queries/skater-queries";
 import { fetchRecentTeamLineCombinations } from "lib/projections/queries/line-combo-queries";
 import { hasCompleteStoredPbpGame } from "lib/projections/pbpCompletenessServer";
 import { classifyStoredShiftChartStrengthGame } from "lib/projections/shiftChartCompletenessServer";
@@ -39,7 +43,6 @@ import type {
   ReconciledSkaterVector,
   ReconciliationDistributionValidation,
   RollingSkaterMetricRow,
-  RosterPlayerIdRow,
   RollingRow,
   RosterEventRow,
   RunProjectionOptions,
@@ -214,8 +217,7 @@ import {
   buildStarterOverrideMetadata,
 } from "../utils/projection-metadata-builders";
 import {
-  fetchLatestSkaterOnIceContextProfiles,
-  fetchLatestSkaterShotQualityProfiles,
+  fetchLatestSkaterContextProfiles,
   fetchLatestSkaterTrendAdjustments,
   fetchLatestWgoSkaterDeploymentProfiles,
   fetchRollingRows,
@@ -422,29 +424,15 @@ async function fetchFallbackSkaterIdsForTeam(
     .map(([playerId]) => playerId);
 }
 
-async function fetchActiveRosterSkaterIdsForTeamSeason(
-  teamId: number,
-  seasonId: number,
-  maxPlayers = SKATER_POOL_SUPPLEMENTAL_FETCH_COUNT,
-): Promise<number[]> {
-  assertSupabase();
-  const { data, error } = await supabase
-    .from("rosters")
-    .select("playerId")
-    .eq("teamId", teamId)
-    .eq("seasonId", seasonId)
-    .eq("is_current", true)
-    .order("playerId", { ascending: true })
-    .limit(Math.max(1, Math.floor(maxPlayers)));
-  if (error) throw error;
-
-  return Array.from(
-    new Set(
-      (data ?? [])
-        .map((row: RosterPlayerIdRow) => Number(row.playerId))
-        .filter((id) => Number.isFinite(id)),
-    ),
-  );
+/** Current roster membership supplies candidates, never confirmed participation or rates. */
+export function selectLineCombinationFallback(args: {
+  rollingSkaterIds: number[];
+  activeRosterSkaterIds: number[];
+  seasonBootstrap: boolean;
+}): { playerIds: number[]; rosterBootstrap: boolean } {
+  const rosterBootstrap = args.rollingSkaterIds.length === 0 && args.seasonBootstrap;
+  const candidates = rosterBootstrap ? args.activeRosterSkaterIds : args.rollingSkaterIds;
+  return { playerIds: [...new Set(candidates)].filter(id => Number.isSafeInteger(id) && id > 0), rosterBootstrap };
 }
 
 export function constrainSkaterIdsToActiveRoster(args: {
@@ -511,12 +499,14 @@ type ActiveSkaterFilterResult = {
     filteredByTeamOrPosition: number;
     filteredMissingRecentMetrics: number;
     filteredHardStale: number;
+    filteredInvalidSeasonEvidence: number;
     softStalePenalized: number;
   };
   excludedSkaterIdsByReason: {
     teamOrPosition: number[];
     missingRecentMetrics: number[];
     hardStale: number[];
+    invalidSeasonEvidence: number[];
   };
 };
 
@@ -894,6 +884,9 @@ export function filterActiveSkaterCandidateIds(args: {
   rawSkaterIds: number[];
   playerMetaById: Map<number, PlayerTeamPositionRow>;
   latestMetricDateByPlayerId: Map<number, string>;
+  currentSeasonId: number;
+  recencySeasons: readonly SeasonDetails[];
+  recencyEventByPlayerId: ReadonlyMap<number, { date: string; seasonId: number; type: number }>;
   seasonBootstrapPlayerIds?: ReadonlySet<number>;
 }): ActiveSkaterFilterResult {
   const uniqueRaw = Array.from(new Set(args.rawSkaterIds)).filter((id) =>
@@ -905,12 +898,14 @@ export function filterActiveSkaterCandidateIds(args: {
     filteredByTeamOrPosition: 0,
     filteredMissingRecentMetrics: 0,
     filteredHardStale: 0,
+    filteredInvalidSeasonEvidence: 0,
     softStalePenalized: 0,
   };
   const excludedSkaterIdsByReason = {
     teamOrPosition: [] as number[],
     missingRecentMetrics: [] as number[],
     hardStale: [] as number[],
+    invalidSeasonEvidence: [] as number[],
   };
 
   for (const playerId of uniqueRaw) {
@@ -940,10 +935,17 @@ export function filterActiveSkaterCandidateIds(args: {
       continue;
     }
 
-    const daysSinceLastMetric = Math.max(
-      0,
-      daysBetweenDates(args.asOfDate, latestMetricDate),
-    );
+    const event = args.recencyEventByPlayerId.get(playerId);
+    const daysSinceLastMetric = event?.date !== latestMetricDate ? null : regularSeasonRecencyDays({
+      eventDate: latestMetricDate, asOfDate: args.asOfDate,
+      eventSeasonId: event.seasonId, eventGameType: event.type,
+      currentSeasonId: args.currentSeasonId, seasons: args.recencySeasons,
+    });
+    if (daysSinceLastMetric === null) {
+      stats.filteredInvalidSeasonEvidence += 1;
+      excludedSkaterIdsByReason.invalidSeasonEvidence.push(playerId);
+      continue;
+    }
     const recencyMultiplier =
       computeSkaterRecencyMultiplier(daysSinceLastMetric);
     if (recencyMultiplier <= 0) {
@@ -1377,18 +1379,14 @@ export async function runPerGameSkaterStage(args: {
     if (!activeRosterSkaterIdsByTeamId.has(teamId)) {
       activeRosterSkaterIdsByTeamId.set(
         teamId,
-        await fetchActiveRosterSkaterIdsForTeamSeason(
-          teamId,
-          currentSeasonId,
-          SKATER_POOL_SUPPLEMENTAL_FETCH_COUNT,
-        ),
+        await fetchCurrentRosterPlayerIds(teamId, currentSeasonId),
       );
     }
     const activeRosterSkaterIds =
       activeRosterSkaterIdsByTeamId.get(teamId) ?? [];
 
     let usedLineComboFallback = false;
-    let lineComboFallbackReason: "missing" | "hard_stale" | "empty" | null =
+    let lineComboFallbackReason: "missing" | "hard_stale" | "empty" | "season_bootstrap_roster" | null =
       null;
     let fallbackCandidateCount = 0;
 
@@ -1398,16 +1396,19 @@ export async function runPerGameSkaterStage(args: {
       rawSkaterIds.length === 0
     ) {
       if (lcRecency.isMissing) metrics.data_quality.missing_line_combos += 1;
-      const fallbackSkaterIds = await fetchFallbackSkaterIdsForTeam(
+      const rollingSkaterIds = await fetchFallbackSkaterIdsForTeam(
         teamId,
         currentSeasonId,
         asOfDate,
         18,
       );
+      const { playerIds: fallbackSkaterIds, rosterBootstrap } = selectLineCombinationFallback({
+        rollingSkaterIds, activeRosterSkaterIds, seasonBootstrap: args.seasonBootstrap === true,
+      });
       if (fallbackSkaterIds.length > 0) {
         rawSkaterIds = fallbackSkaterIds;
         usedLineComboFallback = true;
-        lineComboFallbackReason = lcRecency.isMissing
+        lineComboFallbackReason = rosterBootstrap ? "season_bootstrap_roster" : lcRecency.isMissing
           ? "missing"
           : lcRecency.isHardStale
             ? "hard_stale"
@@ -1428,6 +1429,9 @@ export async function runPerGameSkaterStage(args: {
     rawSkaterIds = constrainSkaterIdsToActiveRoster({
       candidateSkaterIds: rawSkaterIds,
       activeRosterSkaterIds,
+    });
+    if (starterBoardFlags().compute) rawSkaterIds = selectConfirmedNativeSkaterCandidates({
+      gameId: game.id, teamId, candidatePlayerIds: rawSkaterIds, currentRosterPlayerIds: activeRosterSkaterIds, evidence: args.dailyBoardEvidence,
     });
 
     let playerMetaById = await fetchPlayerMetaByIds(rawSkaterIds);
@@ -1478,7 +1482,24 @@ export async function runPerGameSkaterStage(args: {
       if (latestDate) latestMetricDateByPlayerId.set(playerId, latestDate);
     }
 
+    const recencySeasonCache = new Map<number, SeasonDetails | null>();
+    const loadRecencySeasons = (dates: Map<number, string>) => loadSkaterRecencySeasons({
+      currentSeasonId, latestEventDates: [...dates.values()], readSeason: async id => {
+        if (!recencySeasonCache.has(id)) recencySeasonCache.set(id, await getSeasonById(id, supabase));
+        return recencySeasonCache.get(id)!;
+      },
+    });
+    let recencySeasons = await loadRecencySeasons(latestMetricDateByPlayerId);
+    const loadRecencyEvents = async () => {
+      const rows = teamPositionFilteredSkaterIds.map(id => {
+        const ev = evLatest.get(id), pp = ppLatest.get(id);
+        return ev && pp ? ev.game_date > pp.game_date ? ev : pp : ev ?? pp;
+      }).filter((row): row is RollingRow => row != null);
+      return fetchSkaterRecencyEvents(rows);
+    };
+    let recencyEventByPlayerId = await loadRecencyEvents();
     let activeSkaterFilter = filterActiveSkaterCandidateIds({
+      currentSeasonId, recencySeasons, recencyEventByPlayerId,
       asOfDate,
       teamId,
       rawSkaterIds,
@@ -1589,7 +1610,10 @@ export async function runPerGameSkaterStage(args: {
               : (evDate ?? ppDate);
           if (latestDate) latestMetricDateByPlayerId.set(playerId, latestDate);
         }
+        recencySeasons = await loadRecencySeasons(latestMetricDateByPlayerId);
+        recencyEventByPlayerId = await loadRecencyEvents();
         activeSkaterFilter = filterActiveSkaterCandidateIds({
+          currentSeasonId, recencySeasons, recencyEventByPlayerId,
           asOfDate,
           teamId,
           rawSkaterIds,
@@ -1666,6 +1690,9 @@ export async function runPerGameSkaterStage(args: {
       activeSkaterFilter.stats.filteredMissingRecentMetrics;
     metrics.data_quality.filtered_skater_hard_stale +=
       activeSkaterFilter.stats.filteredHardStale;
+    if (activeSkaterFilter.stats.filteredInvalidSeasonEvidence > 0) {
+      metrics.warnings.push(`invalid regular-season recency evidence for game=${game.id} team=${teamId}; held_player_ids=${activeSkaterFilter.excludedSkaterIdsByReason.invalidSeasonEvidence.join(",")}`);
+    }
     metrics.data_quality.soft_stale_skater_penalties +=
       activeSkaterFilter.stats.softStalePenalized;
     metrics.data_quality.skater_unavailable_filtered +=
@@ -1793,11 +1820,7 @@ export async function runPerGameSkaterStage(args: {
     }
     const deploymentPriorByPlayerId =
       await fetchLatestWgoSkaterDeploymentProfiles(skaterIds, asOfDate);
-    const shotQualityByPlayerId = await fetchLatestSkaterShotQualityProfiles(
-      skaterIds,
-      asOfDate,
-    );
-    const onIceContextByPlayerId = await fetchLatestSkaterOnIceContextProfiles(
+    const { shotQuality: shotQualityByPlayerId, onIceContext: onIceContextByPlayerId } = await fetchLatestSkaterContextProfiles(
       skaterIds,
       asOfDate,
     );
@@ -2752,12 +2775,8 @@ export async function runPerGameSkaterStage(args: {
           },
           skater_selection: {
             season_bootstrap: seasonLine?.disclosure ?? null,
-            production_conditioning: starterBoardFlags().compute ? "conditional_playing" : "legacy_availability_adjusted",
-            participation_probability: null,
-            same_day_evidence: args.dailyBoardEvidence ? {
-              assertions: args.dailyBoardEvidence.assertions.filter((item) => item.gameId === game.id && item.playerId === playerId),
-              conflicts: args.dailyBoardEvidence.conflicts.filter((item) => item.gameId === game.id && item.teamId === teamId && (item.playerId == null || item.playerId === playerId)),
-            } : null,
+            ...buildNativeSkaterParticipationFields({ gameId: game.id, teamId, playerId,
+              compute: starterBoardFlags().compute, evidence: args.dailyBoardEvidence }),
             pp_role: roleTagFromRosterEvent(args.ppEventByPlayer?.get(playerId) ?? null)?.esRole ?? null,
             source: roleTag?.source ?? null,
             es_role: roleTag?.esRole ?? null,
@@ -3038,7 +3057,7 @@ export async function runPerGameSkaterStage(args: {
         },
       });
 
-      playerUpserts.push({
+      const playerUpsert = {
         run_id: runId,
         as_of_date: asOfDate,
         horizon_games: horizonGames,
@@ -3070,6 +3089,13 @@ export async function runPerGameSkaterStage(args: {
         proj_blocks: Number((projBlocks * teamHorizonTotalScalar).toFixed(3)),
         uncertainty: uncertaintyWithRole,
         updated_at: new Date().toISOString(),
+      };
+      playerUpserts.push({
+        ...playerUpsert,
+        uncertainty: {
+          ...uncertaintyWithRole,
+          native_goal_accounting: buildNativePlayerGoalAccounting(playerUpsert),
+        },
       });
 
       projectedPlayerMarketInputs.set(playerId, {
@@ -3094,6 +3120,28 @@ export async function runPerGameSkaterStage(args: {
       });
     }
 
+    // Reuse the same retained goalie-ID read later used by the goalie stage.
+    // These members are outside the skater estimator, not zero offensive residuals.
+    if (!currentTeamGoalieIdsCache.has(teamDateKey(teamId))) currentTeamGoalieIdsCache.set(
+      teamDateKey(teamId), await fetchCurrentTeamGoalieIds(teamId),
+    );
+    const teamGoalAccounting = buildNativeTeamGoalAccounting({
+      gameId: game.id,
+      teamId,
+      asOfDate,
+      horizonGames,
+      currentRosterPlayerIds: activeRosterSkaterIds,
+      playerRows: playerUpserts,
+    });
+    const nativeRosterCoverage = buildNativeRosterContributorCoverage({
+      gameId: game.id, teamId, currentRosterPlayerIds: activeRosterSkaterIds, projectedPlayerIds: playerUpserts.map(row => row.player_id),
+      selection: {
+        candidatePlayerIds: rawSkaterIds, eligiblePlayerIds: activeSkaterFilter.eligibleSkaterIds,
+        unavailablePlayerIds: unavailableSkaters, knownGoaliePlayerIds: [...currentTeamGoalieIdsCache.get(teamDateKey(teamId))!],
+        playerMetaById, excludedPlayerIds: activeSkaterFilter.excludedSkaterIdsByReason,
+        compute: starterBoardFlags().compute, evidence: args.dailyBoardEvidence,
+      },
+    });
     playerRowsUpserted += await persistForgePlayerProjectionRows(playerUpserts);
 
     for (const [
@@ -3218,25 +3266,25 @@ export async function runPerGameSkaterStage(args: {
         (teamTotals.shotsPp * teamHorizonTotalScalar).toFixed(3),
       ),
       proj_shots_pk: null,
-      proj_goals_es: Number(
-        (teamTotals.goalsEs * teamHorizonTotalScalar).toFixed(3),
-      ),
-      proj_goals_pp: Number(
-        (teamTotals.goalsPp * teamHorizonTotalScalar).toFixed(3),
-      ),
+      proj_goals_es: teamGoalAccounting.reportedComponents.esMean,
+      proj_goals_pp: teamGoalAccounting.reportedComponents.ppMean,
       proj_goals_pk: null,
-      uncertainty: buildTeamUncertainty(
-        {
-          toiEsSeconds: teamTotals.toiEsSeconds,
-          toiPpSeconds: teamTotals.toiPpSeconds,
-          shotsEs: teamTotals.shotsEs,
-          shotsPp: teamTotals.shotsPp,
-          goalsEs: teamTotals.goalsEs,
-          goalsPp: teamTotals.goalsPp,
-        },
-        horizonGames,
-        teamHorizonScalars,
-      ),
+      uncertainty: {
+        ...buildTeamUncertainty(
+          {
+            toiEsSeconds: teamTotals.toiEsSeconds,
+            toiPpSeconds: teamTotals.toiPpSeconds,
+            shotsEs: teamTotals.shotsEs,
+            shotsPp: teamTotals.shotsPp,
+            goalsEs: teamTotals.goalsEs,
+            goalsPp: teamTotals.goalsPp,
+          },
+          horizonGames,
+          teamHorizonScalars,
+        ),
+        native_goal_accounting: teamGoalAccounting,
+        native_roster_contributor_coverage: nativeRosterCoverage,
+      },
       updated_at: new Date().toISOString(),
     };
 
@@ -3248,12 +3296,7 @@ export async function runPerGameSkaterStage(args: {
     });
     teamGoalsByTeamId.set(
       teamId,
-      Number(
-        (
-          (teamTotals.goalsEs + teamTotals.goalsPp) *
-          teamHorizonTotalScalar
-        ).toFixed(3),
-      ),
+      teamGoalAccounting.reportedEsPpMean,
     );
 
     // Goalie: pick the highest probability starter from goalie_start_projections if available.

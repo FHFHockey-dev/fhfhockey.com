@@ -101,6 +101,7 @@ export default function TeamLC({
     const mappedNewAbbreviation = mapTeamAbbreviation(newAbbreviation);
     router.push(`/lines/${mappedNewAbbreviation}`);
   };
+  const onGameChange = (gameId: number) => { void router.push({ pathname: router.pathname, query: { abbreviation, gameId } }, undefined, { shallow: true }); };
 
   // download the line combo
   const size = useScreenSize();
@@ -127,7 +128,7 @@ export default function TeamLC({
   if (!teams || !sourceTeamMeta) return <Custom404 />;
   if (!lineCombinations) return <Container className={styles.container}>
     <h1>{teamName} line combinations</h1>
-    <ProjectedLineups teamId={sourceTeamMeta.id} />
+    <ProjectedLineups teamId={sourceTeamMeta.id} onGameChange={onGameChange} gameId={typeof router.query.gameId === "string" && /^[1-9]\d*$/.test(router.query.gameId) ? Number(router.query.gameId) : undefined} />
     <section aria-label="Observed shared ice time"><h2>Observed shared ice time</h2><p>No observed lineup data is available yet.</p></section>
   </Container>;
 
@@ -161,7 +162,7 @@ export default function TeamLC({
           />
         </div>
 
-        <ProjectedLineups teamId={sourceTeamMeta?.id} />
+        <ProjectedLineups teamId={sourceTeamMeta?.id} onGameChange={onGameChange} gameId={typeof router.query.gameId === "string" && /^[1-9]\d*$/.test(router.query.gameId) ? Number(router.query.gameId) : undefined} />
         <section aria-label="Observed shared ice time">
           <h2>Observed shared ice time</h2>
           <ObservedLinemateMatrix id={lineCombinations.game.id} mode="line-combination" />

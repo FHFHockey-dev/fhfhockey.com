@@ -9,6 +9,7 @@ import {
   formatDeploymentLabel,
   formatPercentile,
   formatSampleConfidence,
+  formatSampleMinimums,
   formatToiClock,
 } from "./rankingFormatters";
 
@@ -80,8 +81,26 @@ describe("rankingFormatters", () => {
     expect(formatToiClock(null)).toBe("-");
     expect(formatPercentile(81.25)).toBe("81.3%");
     expect(formatPercentile(null)).toBe("-");
-    expect(formatSampleConfidence("medium")).toBe("Medium");
+    expect(formatSampleConfidence("medium")).toBe("Meets selected minimums");
     expect(formatDeploymentLabel(baseRow.deployment)).toBe("L3 / PP2");
+  });
+
+  it.each([
+    { gp: 1, toi: 600, met: true, label: "Meets selected minimums" },
+    { gp: 1, toi: 599, met: false, label: "Below selected minimums" },
+    { gp: null, toi: 600, met: true, label: "Sample unavailable" },
+    { gp: 1, toi: null, met: true, label: "Sample unavailable" },
+    { gp: NaN, toi: 600, met: true, label: "Sample unavailable" },
+    { gp: 1, toi: Infinity, met: true, label: "Sample unavailable" },
+  ])("formats sample minimum status without a reliability claim: %j", ({ gp, toi, met, label }) => {
+    expect(formatSampleMinimums({ gamesPlayed: gp, toiSeconds: toi, minimumSampleMet: met })).toBe(label);
+  });
+
+  it("explains metric sample tiers through their minimum-relative contract", () => {
+    expect(formatSampleConfidence("high")).toBe("At least twice selected minimums");
+    expect(formatSampleConfidence("medium")).toBe("Meets selected minimums");
+    expect(formatSampleConfidence("low")).toBe("Below selected minimums or sample unavailable");
+    expect(formatSampleConfidence(undefined)).toBe("Sample unavailable");
   });
 
   it("builds explanation text from response fields and request context", () => {

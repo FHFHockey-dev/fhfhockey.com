@@ -19,6 +19,8 @@ export type LineCombinationContext = {
 };
 
 export type RollingRow = {
+  game_id: number;
+  season: number;
   player_id: number;
   strength_state: string;
   game_date: string;
@@ -335,8 +337,18 @@ export type RunProjectionOptions = {
   decisionAsOf?: string;
   deadlineMs?: number;
   boardLease?: { owner: string; version: number };
+  /** Private local attempt identity; requires captured, explicitly scoped one-game issuance. */
+  localAttempt?: { operationId: string; expectedRevisionId: string | null; leaseMs: number };
+  /** Local calendar intent must match captured context before and after calculation. */
+  issuedContextGuard?: (contexts: import("../issuedContext").ForgeIssuedContextV1[]) => void;
   horizonGames?: number;
   gameIds?: number[];
+  /** Local execution pins are checked before reservation, snapshot storage and issuance. */
+  executionGuard?: {
+    codeVersion: string;
+    verify: (checkpoint: { phase: "before_run" | "reserved" | "before_snapshot" | "before_publish";
+      runId?: string; inputSnapshotId?: string }) => void;
+  };
 };
 
 export type RunProjectionResult = {

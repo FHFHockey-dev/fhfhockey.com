@@ -4,10 +4,19 @@ import { PLAYER_FORECAST_SCORING_VERSION } from "./researchContract";
 
 const PROVISIONAL_DELAY_MS = 8 * 60 * 60 * 1000;
 const CORRECTION_WINDOW_MS = 48 * 60 * 60 * 1000;
+const DEFAULT_SETTLEMENT_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000;
+const MAX_SETTLEMENT_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+const SETTLEMENT_PAGE_SIZE = 500;
+const SETTLEMENT_GAME_BATCH = 50;
+const OUTCOME_TARGET_VERSION = "research-contract-v1";
+const OUTCOME_COLUMNS = "id,game_id,player_id,target_key,target_version,outcome_value,available_at,finality,source_revision_key";
+const SETTLEMENT_LIMITS = { games: 200, outputs: 50_000,
+  boxscores: 20_000, outcomes: 100_000 } as const;
 
 type OutputRow = {
   id: string;
   game_id: number;
+  team_id: number;
   player_id: number;
   population: "forward" | "defense" | "goalie";
   target_key: string;
@@ -19,6 +28,7 @@ type OutputRow = {
 };
 
 type Actual = { value: number; payload: Record<string, unknown> };
+type BoxscoreEvidence = { payload: Record<string, unknown>; payloadHash: string; fetchedAt: string; seasonId: number | null };
 
 const SKATER_COLUMNS: Record<string, string> = {
   goals: "goals",
@@ -48,6 +58,87 @@ function goalieSaveShots(value: unknown): { saves: number; shots: number } | nul
   if (!match) return null;
   const saves = Number(match[1]), shots = Number(match[2]);
   return Number.isSafeInteger(saves) && Number.isSafeInteger(shots) && saves <= shots ? { saves, shots } : null;
+}
+
+function record(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+}
+
+/** An explicit zero-TOI row in a complete final boxscore is evidence; a missing row is not. */
+function skaterZeroToiFromBoxscore(output: OutputRow, source: BoxscoreEvidence | undefined): Actual | null {
+  if (!source || !["FINAL", "OFF"].includes(String(source.payload.gameState))
+    || Number(source.payload.id) !== output.game_id || Number(source.payload.season) !== source.seasonId
+    || !Number.isSafeInteger(output.team_id) || !/^[a-f0-9]{64}$/i.test(source.payloadHash)
+    || !Number.isFinite(Date.parse(source.fetchedAt))) return null;
+  const home = record(source.payload.homeTeam), away = record(source.payload.awayTeam);
+  const stats = record(source.payload.playerByGameStats);
+  if (!home || !away || Number(home.id) === Number(away.id)
+    || ![Number(home.id), Number(away.id)].includes(output.team_id) || !stats) return null;
+  const players: Record<string, unknown>[] = [];
+  for (const side of ["homeTeam", "awayTeam"] as const) {
+    const team = record(stats[side]);
+    const forwards = team?.forwards, defense = team?.defense, goalies = team?.goalies;
+    if (!Array.isArray(forwards) || !Array.isArray(defense) || !Array.isArray(goalies)
+      || !goalies.length || !forwards.length && !defense.length) return null;
+    for (const row of [...forwards, ...defense, ...goalies]) {
+      const player = record(row);
+      if (!player) return null;
+      players.push(player);
+    }
+  }
+  const ids = players.map((player) => Number(player.playerId));
+  if (ids.some((id) => !Number.isSafeInteger(id) || id <= 0)
+    || new Set(ids).size !== ids.length) return null;
+  const side = Number(home.id) === output.team_id ? "homeTeam" : "awayTeam";
+  const team = record(stats[side])!;
+  const player = [...(team.forwards as unknown[]), ...(team.defense as unknown[])].map(record)
+    .find((row) => Number(row?.playerId) === output.player_id);
+  if (!player || parseTimeOnIceSeconds(player.toi) !== 0) return null;
+  const fields: Record<string, string> = { goals: "goals", assists: "assists", shots_on_goal: "shots",
+    blocked_shots: "blockedShots", hits: "hits", penalty_minutes: "pim" };
+  if (Object.values(fields).some((column) => numeric(player[column]) !== 0)) return null;
+  const field = fields[output.target_key];
+  if (output.target_key !== "plays" && output.target_key !== "time_on_ice_seconds"
+    && (!field || numeric(player[field]) !== 0)) return null;
+  return { value: 0, payload: { sourceTable: "nhl_api_game_payloads_raw", endpoint: "boxscore",
+    payloadHash: source.payloadHash, sourceFetchedAt: source.fetchedAt,
+    sourceField: field ? `playerByGameStats.${side}.${field}` : "playerByGameStats.toi" } };
+}
+
+/** The NHL final boxscore supplies actual starter and win-decision labels. It has no shutout award field. */
+export function goalieActualFromBoxscore(output: OutputRow, source: BoxscoreEvidence | undefined): Actual | null {
+  if (!source || output.population !== "goalie" || !["OFF", "FINAL"].includes(String(source.payload.gameState))
+    || Number(source.payload.id) !== output.game_id || !Number.isSafeInteger(output.team_id)
+    || source.seasonId !== null && Number(source.payload.season) !== source.seasonId) return null;
+  const home = record(source.payload.homeTeam), away = record(source.payload.awayTeam);
+  const stats = record(source.payload.playerByGameStats);
+  const homeRows = record(stats?.homeTeam)?.goalies, awayRows = record(stats?.awayTeam)?.goalies;
+  if (!home || !away || !Array.isArray(homeRows) || !Array.isArray(awayRows)) return null;
+  const ownRows = Number(home.id) === output.team_id ? homeRows : Number(away.id) === output.team_id ? awayRows : null;
+  if (!ownRows) return null;
+  const goalies = [...homeRows, ...awayRows].map(record);
+  if (goalies.some(row => !row || !Number.isSafeInteger(Number(row.playerId)))) return null;
+  const own = ownRows.map(record);
+  const player = own.find(row => Number(row?.playerId) === output.player_id);
+  if (!player) return null;
+  const provenance = { sourceTable: "nhl_api_game_payloads_raw", endpoint: "boxscore", payloadHash: source.payloadHash,
+    sourceFetchedAt: source.fetchedAt };
+  if (output.conditioning === "start_probability" && output.target_key === "starts") {
+    if (goalies.some(row => typeof row!.starter !== "boolean")
+      || homeRows.filter(row => record(row)?.starter === true).length !== 1
+      || awayRows.filter(row => record(row)?.starter === true).length !== 1) return null;
+    return { value: player?.starter === true ? 1 : 0, payload: { ...provenance, sourceField: "playerByGameStats.goalies.starter" } };
+  }
+  if (output.target_key === "wins" && ["unconditional", "conditional_start", "conditional_playing"].includes(output.conditioning)) {
+    if (goalies.filter(row => row!.decision === "W").length !== 1) return null;
+    if (output.conditioning === "conditional_start" && player?.starter !== true) return null;
+    if (output.conditioning === "conditional_playing") {
+      const toi = parseTimeOnIceSeconds(player?.toi);
+      if (toi === null || toi <= 0) return null;
+    }
+    return { value: player?.decision === "W" ? 1 : 0, payload: { ...provenance, sourceField: "playerByGameStats.goalies.decision" } };
+  }
+  return null;
 }
 
 export function scoreForecast(args: {
@@ -91,8 +182,10 @@ export function scoreForecast(args: {
   return { metrics, baselineMetrics, compositeSkillScore };
 }
 
-export function actualForOutput(output: OutputRow, skater: Record<string, unknown> | undefined, goalie?: Record<string, unknown>): Actual | null {
+export function actualForOutput(output: OutputRow, skater: Record<string, unknown> | undefined, goalie?: Record<string, unknown>,
+  boxscore?: BoxscoreEvidence): Actual | null {
   if (output.population === "goalie") {
+    if (output.target_key === "starts" || output.target_key === "wins") return goalieActualFromBoxscore(output, boxscore);
     const toi = goalie ? parseTimeOnIceSeconds(goalie.toi) : null;
     if (output.conditioning === "playing_probability" && output.target_key === "plays") {
       // An absent row may be a partial ingest, not evidence of a non-appearance.
@@ -116,9 +209,19 @@ export function actualForOutput(output: OutputRow, skater: Record<string, unknow
     return value === null || value === undefined ? null : { value, payload: { sourceTable: "goaliesGameStats", sourceColumns: output.target_key === "time_on_ice_seconds" ? ["toi"] : output.target_key === "goals_against" ? ["goalsAgainst"] : output.target_key === "goals_against_average" ? ["goalsAgainst", "toi"] : ["saveShotsAgainst"] } };
   }
   if (output.conditioning === "playing_probability" && output.target_key === "plays") {
-    return { value: skater ? 1 : 0, payload: { sourceTable: "skatersGameStats" } };
+    if (!skater) return skaterZeroToiFromBoxscore(output, boxscore);
+    const toi = skater ? parseTimeOnIceSeconds(skater.toi) : null;
+    return toi === null ? null : { value: toi > 0 ? 1 : 0, payload: { sourceTable: "skatersGameStats", rawToi: skater!.toi } };
   }
-  if (!skater || output.conditioning !== "conditional_playing") return null;
+  if (!skater && output.conditioning === "unconditional"
+    && (output.target_key === "time_on_ice_seconds" || SKATER_COLUMNS[output.target_key])) {
+    return skaterZeroToiFromBoxscore(output, boxscore);
+  }
+  if (!skater || !["conditional_playing", "unconditional"].includes(output.conditioning)) return null;
+  if (output.conditioning === "conditional_playing") {
+    const toi = parseTimeOnIceSeconds(skater.toi);
+    if (toi === null || toi <= 0) return null;
+  }
   if (output.target_key === "time_on_ice_seconds") {
     const value = parseTimeOnIceSeconds(skater.toi);
     return value === null ? null : { value, payload: { sourceTable: "skatersGameStats", rawToi: skater.toi } };
@@ -133,66 +236,153 @@ function revisionKey(actual: Actual, finality: string): string {
   return crypto.createHash("sha256").update(JSON.stringify({ value: actual.value, payload: actual.payload, finality })).digest("hex");
 }
 
+async function readCompleteRows(build: () => any, table: string, cap: number): Promise<any[]> {
+  const rows: any[] = [];
+  let expectedCount: number | null = null;
+  while (rows.length <= cap) {
+    const offset = rows.length;
+    const size = Math.min(SETTLEMENT_PAGE_SIZE, cap + 1 - offset);
+    const { data, count, error } = await build().range(offset, offset + size - 1);
+    if (error || !Array.isArray(data) || !Number.isSafeInteger(count) || count < 0
+      || expectedCount !== null && count !== expectedCount || data.length > size)
+      throw new Error(`Settlement ${table} read failed or changed during pagination.`);
+    expectedCount = count;
+    if (count > cap) throw new Error(`Settlement ${table} exceeded ${cap} rows.`);
+    if (!data.length && offset < count || offset + data.length > count)
+      throw new Error(`Settlement ${table} read was incomplete.`);
+    rows.push(...data);
+    if (rows.length === count) return rows;
+  }
+  throw new Error(`Settlement ${table} exceeded ${cap} rows.`);
+}
+
+async function readCompleteGameRows(gameIds: number[], table: string, cap: number,
+  build: (batch: number[]) => any): Promise<any[]> {
+  const rows: any[] = [];
+  for (let index = 0; index < gameIds.length; index += SETTLEMENT_GAME_BATCH) {
+    rows.push(...await readCompleteRows(() => build(gameIds.slice(index, index + SETTLEMENT_GAME_BATCH)),
+      table, cap - rows.length));
+  }
+  return rows;
+}
+
+export function finalBoxscoreForGame(row: any, game: any): BoxscoreEvidence | null {
+  const payload = record(row.payload);
+  const home = record(payload?.homeTeam), away = record(payload?.awayTeam);
+  const stats = record(payload?.playerByGameStats);
+  if (!payload || !home || !away || !stats || !["FINAL", "OFF"].includes(String(payload.gameState))
+    || Number(row.game_id) !== Number(game.id) || Number(row.season_id) !== Number(game.seasonId)
+    || Number(payload.id) !== Number(game.id) || Number(payload.season) !== Number(game.seasonId)
+    || Number(home.id) !== Number(game.homeTeamId) || Number(away.id) !== Number(game.awayTeamId)
+    || !/^[a-f0-9]{64}$/i.test(String(row.payload_hash))
+    || !Number.isFinite(Date.parse(row.fetched_at))
+    || Date.parse(row.fetched_at) < Date.parse(game.startTime)) return null;
+  for (const side of ["homeTeam", "awayTeam"] as const) {
+    const team = record(stats[side]);
+    if (!team || !Array.isArray(team.forwards) || !Array.isArray(team.defense)
+      || !Array.isArray(team.goalies) || !team.goalies.length
+      || !team.forwards.length && !team.defense.length) return null;
+  }
+  return { payload, payloadHash: String(row.payload_hash), fetchedAt: String(row.fetched_at),
+    seasonId: Number(game.seasonId) };
+}
+
+export function rawPlayerForOutput(output: Pick<OutputRow, "team_id" | "player_id">, source: BoxscoreEvidence): {
+  skater?: Record<string, unknown>; goalie?: Record<string, unknown>; side: "homeTeam" | "awayTeam";
+} | null {
+  const home = record(source.payload.homeTeam), away = record(source.payload.awayTeam);
+  const stats = record(source.payload.playerByGameStats);
+  const side = Number(home?.id) === output.team_id ? "homeTeam"
+    : Number(away?.id) === output.team_id ? "awayTeam" : null;
+  if (!side || !stats) return null;
+  const players = new Set<number>();
+  let selectedSkater: Record<string, unknown> | undefined;
+  let selectedGoalie: Record<string, unknown> | undefined;
+  for (const teamSide of ["homeTeam", "awayTeam"] as const) {
+    const team = record(stats[teamSide]);
+    if (!team) return null;
+    for (const group of ["forwards", "defense", "goalies"] as const) {
+      const rows = team[group];
+      if (!Array.isArray(rows)) return null;
+      for (const value of rows) {
+        const player = record(value), playerId = Number(player?.playerId);
+        if (!player || !Number.isSafeInteger(playerId) || playerId <= 0 || players.has(playerId)) return null;
+        players.add(playerId);
+        if (teamSide === side && playerId === output.player_id) {
+          if (group === "goalies") selectedGoalie = player;
+          else selectedSkater = player;
+        }
+      }
+    }
+  }
+  return { skater: selectedSkater, goalie: selectedGoalie, side };
+}
+
+/** Hourly callers use the last seven days; explicit scopes may cover at most 30 days or 200 games. */
 export async function settlePlayerForecasts(args: {
   supabase: SupabaseClient<any>;
   now?: Date;
+  startAt?: string;
+  endAt?: string;
+  seasonId?: number;
+  gameIds?: number[];
 }) {
   const now = args.now ?? new Date();
-  const cutoff = new Date(now.getTime() - PROVISIONAL_DELAY_MS).toISOString();
-  const { data: games, error: gamesError } = await args.supabase
-    .from("games")
-    .select("id,startTime,date")
-    .lte("startTime", cutoff);
-  if (gamesError) throw gamesError;
-  const gameMap = new Map((games ?? []).map((game: any) => [Number(game.id), game]));
+  const cutoffMs = now.getTime() - PROVISIONAL_DELAY_MS;
+  const startMs = args.startAt ? Date.parse(args.startAt) : now.getTime() - DEFAULT_SETTLEMENT_LOOKBACK_MS;
+  const endMs = args.endAt ? Date.parse(args.endAt) : cutoffMs;
+  if (!Number.isFinite(now.getTime()) || !Number.isFinite(startMs) || !Number.isFinite(endMs)
+    || startMs > endMs || endMs > cutoffMs || endMs - startMs > MAX_SETTLEMENT_WINDOW_MS
+    || args.seasonId !== undefined && (!Number.isSafeInteger(args.seasonId) || args.seasonId <= 0)
+    || args.gameIds !== undefined && (!args.gameIds.length || args.gameIds.length > SETTLEMENT_LIMITS.games
+      || new Set(args.gameIds).size !== args.gameIds.length
+      || args.gameIds.some((id) => !Number.isSafeInteger(id) || id <= 0))) {
+    throw new Error("Invalid or unbounded settlement scope.");
+  }
+  const games = await readCompleteRows(() => {
+    let query = args.supabase.from("games")
+      .select("id,seasonId,startTime,date,homeTeamId,awayTeamId", { count: "exact" })
+      .gte("startTime", new Date(startMs).toISOString()).lte("startTime", new Date(endMs).toISOString());
+    if (args.seasonId !== undefined) query = query.eq("seasonId", args.seasonId);
+    if (args.gameIds) query = query.in("id", args.gameIds);
+    return query.order("id");
+  }, "games", SETTLEMENT_LIMITS.games);
+  const gameMap = new Map(games.map((game: any) => [Number(game.id), game]));
   const gameIds = [...gameMap.keys()];
   if (gameIds.length === 0) return { eligibleOutputs: 0, outcomesAppended: 0, evaluationsAppended: 0, unsupportedOutputs: 0 };
 
-  const { data: outputs, error: outputsError } = await args.supabase
-    .from("player_forecast_outputs")
-    .select("id,game_id,player_id,population,target_key,conditioning,point_estimate,probability,distribution,quantiles")
-    .in("game_id", gameIds);
-  if (outputsError) throw outputsError;
-  const typedOutputs = (outputs ?? []) as OutputRow[];
+  const typedOutputs = await readCompleteGameRows(gameIds, "outputs", SETTLEMENT_LIMITS.outputs,
+    (batch) => args.supabase.from("player_forecast_outputs")
+      .select("id,game_id,team_id,player_id,population,target_key,conditioning,point_estimate,probability,distribution,quantiles", { count: "exact" })
+      .in("game_id", batch).order("id")) as OutputRow[];
   if (typedOutputs.length === 0) return { eligibleOutputs: 0, outcomesAppended: 0, evaluationsAppended: 0, unsupportedOutputs: 0 };
 
   const outputGameIds = [...new Set(typedOutputs.map((output) => output.game_id))];
-  const { data: skaterRows, error: skaterError } = await args.supabase
-    .from("skatersGameStats")
-    .select("gameId,playerId,goals,assists,shots,blockedShots,hits,pim,toi")
-    .in("gameId", outputGameIds);
-  if (skaterError) throw skaterError;
-  const skaters = new Map<string, Record<string, unknown>>();
-  const gamesWithSkaterStats = new Set<number>();
-  for (const row of skaterRows ?? []) {
-    gamesWithSkaterStats.add(Number(row.gameId));
-    skaters.set(`${row.gameId}:${row.playerId}`, row);
+  const rawBoxscores = await readCompleteGameRows(outputGameIds, "boxscores", SETTLEMENT_LIMITS.boxscores,
+    (batch) => args.supabase.from("nhl_api_game_payloads_raw")
+      .select("id,game_id,season_id,payload_hash,payload,fetched_at", { count: "exact" })
+      .in("game_id", batch).eq("endpoint", "boxscore").lte("fetched_at", now.toISOString())
+      .order("fetched_at", { ascending: false }).order("id", { ascending: false }));
+  const boxscores = new Map<number, BoxscoreEvidence>();
+  const seenBoxscoreGames = new Set<number>();
+  for (const row of rawBoxscores) {
+    const gameId = Number(row.game_id), game = gameMap.get(gameId);
+    if (seenBoxscoreGames.has(gameId) || !game) continue;
+    seenBoxscoreGames.add(gameId);
+    const verified = finalBoxscoreForGame(row, game);
+    if (verified) boxscores.set(gameId, verified);
   }
 
-  const { data: goalieRows, error: goalieError } = await args.supabase
-    .from("goaliesGameStats")
-    .select("gameId,playerId,saveShotsAgainst,goalsAgainst,toi")
-    .in("gameId", outputGameIds);
-  if (goalieError) throw goalieError;
-  const goalies = new Map<string, Record<string, unknown>>();
-  const gamesWithGoalieStats = new Set<number>();
-  for (const row of goalieRows ?? []) {
-    gamesWithGoalieStats.add(Number(row.gameId));
-    goalies.set(`${row.gameId}:${row.playerId}`, row);
-  }
-
-  const outcomeKeys = typedOutputs.map((output) => `${output.game_id}:${output.player_id}:${output.target_key}`);
-  const { data: existingOutcomes, error: outcomeError } = await args.supabase
-    .from("player_forecast_outcome_revisions")
-    .select("id,game_id,player_id,target_key,outcome_value,available_at,finality")
-    .in("game_id", outputGameIds)
-    .lte("available_at", now.toISOString())
-    .order("available_at", { ascending: false });
-  if (outcomeError) throw outcomeError;
+  const outcomeKeys = new Set(typedOutputs.map((output) => `${output.game_id}:${output.player_id}:${output.target_key}`));
+  const existingOutcomes = await readCompleteGameRows(outputGameIds, "outcomes", SETTLEMENT_LIMITS.outcomes,
+    (batch) => args.supabase.from("player_forecast_outcome_revisions")
+      .select(OUTCOME_COLUMNS, { count: "exact" })
+      .in("game_id", batch).eq("target_version", OUTCOME_TARGET_VERSION).lte("available_at", now.toISOString())
+      .order("available_at", { ascending: false }).order("id", { ascending: false }));
   const latestOutcomes = new Map<string, any>();
-  for (const row of existingOutcomes ?? []) {
+  for (const row of existingOutcomes) {
     const key = `${row.game_id}:${row.player_id}:${row.target_key}`;
-    if (outcomeKeys.includes(key) && !latestOutcomes.has(key)) latestOutcomes.set(key, row);
+    if (outcomeKeys.has(key) && !latestOutcomes.has(key)) latestOutcomes.set(key, row);
   }
 
   let outcomesAppended = 0;
@@ -200,12 +390,27 @@ export async function settlePlayerForecasts(args: {
   let unsupportedOutputs = 0;
   const outcomeByKey = new Map<string, any>();
   for (const output of typedOutputs) {
-    if (!(output.population === "goalie" ? gamesWithGoalieStats : gamesWithSkaterStats).has(output.game_id)) continue;
-    const actual = actualForOutput(output, skaters.get(`${output.game_id}:${output.player_id}`), goalies.get(`${output.game_id}:${output.player_id}`));
-    if (!actual) {
+    const boxscore = boxscores.get(output.game_id);
+    if (!boxscore) { unsupportedOutputs += 1; continue; }
+    const player = rawPlayerForOutput(output, boxscore);
+    if (!player) { unsupportedOutputs += 1; continue; }
+    const observed = actualForOutput(output, player.skater, player.goalie, boxscore);
+    if (!observed) {
       unsupportedOutputs += 1;
       continue;
     }
+    const group = output.population === "goalie" ? "goalies"
+      : output.population === "defense" ? "defense" : "forwards";
+    const columns = typeof observed.payload.sourceColumn === "string" ? [observed.payload.sourceColumn]
+      : Array.isArray(observed.payload.sourceColumns) ? observed.payload.sourceColumns
+        : observed.payload.rawToi !== undefined ? ["toi"] : [];
+    const actual = { ...observed, payload: {
+      ...observed.payload, sourceTable: "nhl_api_game_payloads_raw", endpoint: "boxscore",
+      payloadHash: boxscore.payloadHash, sourceFetchedAt: boxscore.fetchedAt,
+      sourceField: observed.payload.sourceField ?? columns.map((column) =>
+        `playerByGameStats.${player.side}.${group}.${column}`),
+      gameId: output.game_id, seasonId: boxscore.seasonId, gameState: boxscore.payload.gameState,
+    } };
     const key = `${output.game_id}:${output.player_id}:${output.target_key}`;
     if (!outcomeByKey.has(key)) {
       const latest = latestOutcomes.get(key);
@@ -219,18 +424,19 @@ export async function settlePlayerForecasts(args: {
           : now.getTime() >= startMs + CORRECTION_WINDOW_MS
             ? "final"
             : "provisional";
-      if (sameValue && latest.finality === finality) {
+      const sourceRevisionKey = revisionKey(actual, finality);
+      if (sameValue && latest.finality === finality && latest.source_revision_key === sourceRevisionKey) {
         outcomeByKey.set(key, latest);
       } else {
         const row = {
           game_id: output.game_id,
           player_id: output.player_id,
           target_key: output.target_key,
-          target_version: "research-contract-v1",
+          target_version: OUTCOME_TARGET_VERSION,
           outcome_value: actual.value,
           outcome_payload: actual.payload,
-          source: "nhl_game_stats",
-          source_revision_key: revisionKey(actual, finality),
+          source: actual.payload.sourceTable === "nhl_api_game_payloads_raw" ? "nhl_raw_boxscore" : "nhl_game_stats",
+          source_revision_key: sourceRevisionKey,
           observed_at: now.toISOString(),
           available_at: now.toISOString(),
           finality,
@@ -242,11 +448,27 @@ export async function settlePlayerForecasts(args: {
             onConflict: "game_id,player_id,target_key,target_version,source_revision_key",
             ignoreDuplicates: true,
           })
-          .select("id,game_id,player_id,target_key,outcome_value,available_at,finality")
+          .select(OUTCOME_COLUMNS)
           .maybeSingle();
         if (error) throw error;
-        const stored = data ?? latest;
-        if (!stored) throw new Error("Outcome revision could not be resolved after insert.");
+        // An ignored insert means another writer owns this exact immutable
+        // revision. The previously read latest row can describe a different actual.
+        let stored = data;
+        if (!stored) {
+          const winner = await args.supabase.from("player_forecast_outcome_revisions")
+            .select(OUTCOME_COLUMNS).eq("game_id", output.game_id).eq("player_id", output.player_id)
+            .eq("target_key", output.target_key).eq("target_version", OUTCOME_TARGET_VERSION)
+            .eq("source_revision_key", sourceRevisionKey).maybeSingle();
+          if (winner.error) throw winner.error;
+          stored = winner.data;
+        }
+        if (!stored?.id || stored.game_id !== output.game_id || stored.player_id !== output.player_id
+          || stored.target_key !== output.target_key || stored.target_version !== OUTCOME_TARGET_VERSION
+          || stored.source_revision_key !== sourceRevisionKey || numeric(stored.outcome_value) !== actual.value
+          || stored.finality !== finality || !Number.isFinite(Date.parse(stored.available_at))
+          || Date.parse(stored.available_at) > now.getTime()) {
+          throw new Error("Outcome revision could not be resolved consistently after insert.");
+        }
         outcomeByKey.set(key, stored);
         if (data) outcomesAppended += 1;
       }

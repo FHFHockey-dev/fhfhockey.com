@@ -1,0 +1,18 @@
+scripts/run-forge-calendar-local.ts(186,36): error TS2345: Argument of type 'Buffer' is not assignable to parameter of type 'string | ArrayBufferView'.
+  Type 'Buffer' is not assignable to type 'Uint8Array<ArrayBufferLike> | DataView<ArrayBufferLike>'.
+    Type 'Buffer' is not assignable to type 'Uint8Array<ArrayBufferLike>'.
+      The types of 'slice(...).buffer' are incompatible between these types.
+        Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
+          Type 'SharedArrayBuffer' is missing the following properties from type 'ArrayBuffer': resizable, resize, detached, transfer, transferToFixedLength
+scripts/run-forge-calendar-local.ts(234,20): error TS2589: Type instantiation is excessively deep and possibly infinite.
+scripts/run-forge-calendar-local.ts(234,28): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "seasons" | "fhfh_player_identities" | "draft_ranker_pair_comparisons" | "draft_ranker_community_snapshots" | "draft_ranker_community_refresh_runs" | "draft_ranker_discovery_refresh_runs" | ... 311 more ... | "yahoo_positions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"forge_game_revisions"' is not assignable to parameter of type '"seasons" | "fhfh_player_identities" | "draft_ranker_pair_comparisons" | "draft_ranker_community_snapshots" | "draft_ranker_community_refresh_runs" | "draft_ranker_discovery_refresh_runs" | ... 311 more ... | "yahoo_positions"'.
+  Overload 2 of 2, '(relation: "combined_sos" | "power_rankings" | "admin__column_catalog" | "admin__table_profile" | "admin__table_summary" | "cron_job_report" | "gameOutcomes" | "goalie_stats_unified" | ... 77 more ... | "yahoo_players_with_normalized_history"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"forge_game_revisions"' is not assignable to parameter of type '"combined_sos" | "power_rankings" | "admin__column_catalog" | "admin__table_profile" | "admin__table_summary" | "cron_job_report" | "gameOutcomes" | "goalie_stats_unified" | ... 77 more ... | "yahoo_players_with_normalized_history"'.
+scripts/run-forge-calendar-local.ts(264,35): error TS2345: Argument of type 'Buffer' is not assignable to parameter of type 'string | ArrayBufferView'.
+  Type 'Buffer' is not assignable to type 'Uint8Array<ArrayBufferLike> | DataView<ArrayBufferLike>'.
+    Type 'Buffer' is not assignable to type 'Uint8Array<ArrayBufferLike>'.
+      The types of 'slice(...).buffer' are incompatible between these types.
+        Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
+          Type 'SharedArrayBuffer' is missing the following properties from type 'ArrayBuffer': resizable, resize, detached, transfer, transferToFixedLength
