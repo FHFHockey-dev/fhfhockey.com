@@ -2,6 +2,28 @@ import type { ForgeGameRevision } from "lib/projections/gameRevisions";
 import { forgeRosterRevision, forgeScheduleRevision, type ForgeIssuedContextV1 } from "lib/projections/issuedContext";
 import type { PlanningPlayer } from "lib/rosterScheduleOptimizer/planningTypes";
 
+/** Bind fictional participation to the same scope and cutoff as its issued row. */
+export function setConsumerSkaterEvidence(revision: ForgeGameRevision,
+  row: ForgeGameRevision["payload"]["players"][number], probability: 0 | 1 = 1) {
+  const cutoff = revision.payload.inputCutoff ?? revision.decision_as_of;
+  const evidenceId = `synthetic-${row.player_id}-${probability ? "lineup" : "out"}`;
+  const assertion = {
+    gameId: row.game_id, teamId: row.team_id, playerId: row.player_id,
+    dimension: probability ? "ev" as const : "availability" as const, value: probability ? "L1" : "out",
+    evidenceId, sourceKey: "synthetic-lineup", sourceUrl: null,
+    publishedAt: "2026-02-07T11:30:00Z", receivedAt: "2026-02-07T11:31:00Z", confirmed: true,
+  };
+  const previous = revision.payload.evidence;
+  revision.payload.evidence = { informationCutoffAt: cutoff,
+    assertions: [...(previous?.assertions ?? []).filter(item => item.gameId !== row.game_id
+      || item.teamId !== row.team_id || item.playerId !== row.player_id), { ...assertion }],
+    conflicts: previous?.conflicts ?? [] };
+  row.uncertainty.model.skater_selection = { ...row.uncertainty.model.skater_selection,
+    participation: { version: "skater-participation-v1", probability,
+      status: "confirmed_evidence", evidenceIds: [evidenceId] }, participation_probability: probability,
+    evidence_cutoff_at: cutoff, same_day_evidence: { assertions: [{ ...assertion }], conflicts: [] } };
+}
+
 /** Synthetic shared consumer scope; no account or hosted source data. */
 export function consumerGameRevisionFixture() {
   const date = "2026-02-07", seasonId = 20252026, gameId = 1001;
@@ -58,5 +80,6 @@ export function consumerGameRevisionFixture() {
       },
     },
   };
+  setConsumerSkaterEvidence(revision, projection);
   return { date, seasonId, gameId, now, game, players, scheduleRows, issued, revision };
 }

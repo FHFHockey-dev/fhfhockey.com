@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { evaluatePayloadBudget } from "lib/dashboard/perfBudget";
 import { addStartChartPositionRanks } from "lib/projections/startChartFantasyScoring";
 import { normalizeStartChartResponse } from "lib/projections/startChartContract";
-import { consumerGameRevisionFixture } from "../../../fixtures/consumerGameRevision";
+import { consumerGameRevisionFixture, setConsumerSkaterEvidence } from "../../../fixtures/consumerGameRevision";
 import { normalizePlanningGames, publicPlanningForecasts } from "lib/rosterScheduleData/planning";
 
 const {
@@ -792,6 +792,7 @@ describe("/api/v1/start-chart", () => {
   it("independent: conflicting goalie starter identity cannot override admitted team", async () => {
     const f = consumerGameRevisionFixture();
     f.revision.payload.goalies = [{ game_id: f.gameId, team_id: 8,
+      run_id: f.revision.run_id, as_of_date: f.date, horizon_games: 1,
       uncertainty: { daily_board_candidates: [{ playerId: 8478403, startingProbability: 0.5,
         conditional: { SAVES_GOALIE: 30 } }] } }];
     f.revision.payload.goalieStarts = [{ game_id: f.gameId, team_id: 10, player_id: 8478403,
@@ -807,6 +808,7 @@ describe("/api/v1/start-chart", () => {
     f.revision.payload.players = [];
     f.players.forEach(p => { p.playerClass = "goalie"; p.eligiblePositions = ["G"]; });
     f.revision.payload.goalies = [8478402, 8478403].map(playerId => ({ game_id: f.gameId, team_id: 8,
+      run_id: f.revision.run_id, as_of_date: f.date, horizon_games: 1,
       uncertainty: { daily_board_candidates: [{ playerId, startingProbability: 0.8,
         conditional: { SAVES_GOALIE: 30 } }] } }));
     const admitted = publicPlanningForecasts([f.revision], f.players, normalizePlanningGames(f.scheduleRows), f.now);
@@ -817,6 +819,7 @@ describe("/api/v1/start-chart", () => {
   it("independent: missing goalie starter row does not hide admitted goalie opportunity", async () => {
     const f = consumerGameRevisionFixture();
     f.revision.payload.goalies = [{ game_id: f.gameId, team_id: 8,
+      run_id: f.revision.run_id, as_of_date: f.date, horizon_games: 1,
       uncertainty: { daily_board_candidates: [{ playerId: 8478403, startingProbability: 0.5,
         conditional: { SAVES_GOALIE: 30 } }] } }];
     sharedAdmissionInputs(f);
@@ -830,7 +833,7 @@ describe("/api/v1/start-chart", () => {
     const second = structuredClone(f.revision.payload.players[0]);
     second.player_id = 8478403; second.proj_goals_es = 100;
     second.players = { id: 8478403, fullName: "Second", position: "C" };
-    second.uncertainty.model.skater_selection.participation.probability = 0;
+    setConsumerSkaterEvidence(f.revision, second, 0);
     f.revision.payload.players[0].players = { id: 8478402, fullName: "First", position: "C" };
     f.revision.payload.players.push(second); f.players[1].playerClass = "skater";
     sharedAdmissionInputs(f); vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "true");
@@ -891,8 +894,8 @@ describe("/api/v1/start-chart", () => {
     second.player_id = 8478403; second.proj_goals_es = 100;
     second.players = { fullName: "Second", position: "C" };
     f.revision.payload.players[0].players = { fullName: "First", position: "C" };
-    if (problem === "zero appearance") second.uncertainty.model.skater_selection.participation.probability = 0;
-    else second.proj_goals_pk = null;
+    setConsumerSkaterEvidence(f.revision, second, problem === "zero appearance" ? 0 : 1);
+    if (problem === "partial target") second.proj_goals_pk = null;
     f.revision.payload.players.push(second); f.players[1].playerClass = "skater";
     sharedAdmissionInputs(f);
     await serveAdmissionFixture(f);
@@ -932,6 +935,7 @@ describe("/api/v1/start-chart", () => {
     f.players.forEach(player => { player.playerClass = "goalie"; player.eligiblePositions = ["G"]; });
     const ids = problem === "duplicate candidate" ? [8478402, 8478402] : [8478402, 8478403];
     f.revision.payload.goalies = ids.map((playerId, index) => ({ game_id: f.gameId, team_id: 8,
+      run_id: f.revision.run_id, as_of_date: f.date, horizon_games: 1,
       uncertainty: { daily_board_candidates: [{ playerId,
         startingProbability: problem === "missing probability" && index === 1 ? null : index === 0 ? 0.3 : 0.6,
         conditional: { SAVES_GOALIE: 30 } }] } }));
@@ -957,6 +961,7 @@ describe("/api/v1/start-chart", () => {
     old.payload.players[0].uncertainty.model.skater_selection.pp_role = "OLD_SOURCE_SENTINEL";
     const second = structuredClone(f.revision.payload.players[0]);
     second.player_id = 8478403; second.proj_goals_es = 3; second.proj_shots_es = 0.2;
+    setConsumerSkaterEvidence(f.revision, second);
     second.players = { fullName: "Second", position: "C" };
     f.revision.payload.players[0].players = { fullName: "First", position: "C" };
     f.revision.payload.players.push(second); f.players[1].playerClass = "skater";
@@ -993,14 +998,15 @@ describe("/api/v1/start-chart", () => {
     expect(stale.forecastAdmission.exclusionCounts.stale_source).toBe(1);
     fixture.revision.payload.inputCutoff = "2026-02-07T12:03:00Z";
     fixture.revision.published_at = "2026-02-07T12:04:00Z";
+    setConsumerSkaterEvidence(fixture.revision, fixture.revision.payload.players[0]);
     const refreshed = await serveAdmissionFixture(fixture);
     expect(refreshed.players).toHaveLength(1);
     expect(JSON.stringify(refreshed)).not.toContain("synthetic-event");
   });
 
-  it.each([0, 1])("matches admitted skater expectations with appearance probability %s", async (probability) => {
+  it.each([0 as const, 1 as const])("matches admitted skater expectations with appearance probability %s", async (probability) => {
     const fixture = consumerGameRevisionFixture();
-    fixture.revision.payload.players[0].uncertainty.model.skater_selection.participation.probability = probability;
+    setConsumerSkaterEvidence(fixture.revision, fixture.revision.payload.players[0], probability);
     sharedAdmissionInputs(fixture);
     const expected = publicPlanningForecasts([fixture.revision], fixture.players,
       normalizePlanningGames(fixture.scheduleRows), fixture.now, {}, [], fixture.seasonId)[0];
@@ -1010,6 +1016,18 @@ describe("/api/v1/start-chart", () => {
     expect(body.players[0].forecast.conditional).toEqual(expected.conditionalStats);
     expect(body.players[0].proj_goals).toBeCloseTo(0.6 * probability);
     expect(body.players[0].boardScore.basis).toBe("unconditional");
+  });
+
+  it.each(["scalar mismatch", "missing authoritative evidence"])("withholds skater output for %s", async problem => {
+    const fixture = consumerGameRevisionFixture();
+    if (problem === "scalar mismatch") fixture.revision.payload.players[0].uncertainty.model.skater_selection.participation.probability = 0;
+    else delete fixture.revision.payload.evidence;
+    sharedAdmissionInputs(fixture);
+    expect(publicPlanningForecasts([fixture.revision], fixture.players,
+      normalizePlanningGames(fixture.scheduleRows), fixture.now, {}, [], fixture.seasonId)).toEqual([]);
+    const body = await serveAdmissionFixture(fixture);
+    expect(body.players).toEqual([]);
+    expect(body.forecastAdmission.exclusionCounts.missing_participation).toBe(1);
   });
 
   it("preserves usable targets while withholding incomplete totals and unadmitted players", async () => {
@@ -1034,6 +1052,7 @@ describe("/api/v1/start-chart", () => {
   it.each([0.5, 1.1])("uses goalie expectations once and rejects invalid probability mass %s", async (probability) => {
     const fixture = consumerGameRevisionFixture();
     fixture.revision.payload.goalies = [{ game_id: fixture.gameId, team_id: 8,
+      run_id: fixture.revision.run_id, as_of_date: fixture.date, horizon_games: 1,
       uncertainty: { daily_board_candidates: [{ playerId: 8478403, startingProbability: probability,
         probabilityStatus: "uncalibrated_model", conditional: { SAVES_GOALIE: 30 } }] } }];
     fixture.revision.payload.goalieStarts = [{ game_id: fixture.gameId, team_id: 8, player_id: 8478403,
