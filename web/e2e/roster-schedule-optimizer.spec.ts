@@ -1420,6 +1420,8 @@ for (const count of [19, 20, 25]) test(`compact layout accounts for ${count} pla
       groups: [...node.querySelectorAll("tbody")].map(group => ({ position: group.getAttribute("data-position"), band: getComputedStyle(group).borderLeftColor,
         width: getComputedStyle(group).borderLeftWidth, style: getComputedStyle(group).borderLeftStyle,
         topLeftRadius: getComputedStyle(group).borderTopLeftRadius, bottomLeftRadius: getComputedStyle(group).borderBottomLeftRadius, rightRadius: getComputedStyle(group).borderTopRightRadius,
+        outlineColors: [getComputedStyle(group).borderTopColor, getComputedStyle(group).borderRightColor, getComputedStyle(group).borderBottomColor],
+        outlineWidths: [getComputedStyle(group).borderTopWidth, getComputedStyle(group).borderRightWidth, getComputedStyle(group).borderBottomWidth],
         before: getComputedStyle(group, "::before").content, after: getComputedStyle(group, "::after").content,
         contentInset: Math.min(...[...group.querySelectorAll('th[scope="row"]')].map(cell => cell.getBoundingClientRect().left - group.getBoundingClientRect().left)) })) };
   });
@@ -1427,18 +1429,22 @@ for (const count of [19, 20, 25]) test(`compact layout accounts for ${count} pla
   expect(metrics.groups.map(group => group.position)).toEqual(count === 25 ? ["C", "LW", "RW", "D", "UTIL", "G", "BENCH", "IR", "IR+"] : ["C", "LW", "RW", "D", "UTIL", "G", "BENCH"]);
   expect(metrics.groups.find(group => group.position === "RW")?.band).toBe("rgb(167, 139, 250)");
   for (const group of metrics.groups) {
-    expect(group.width).toBe("4px"); expect(group.style).toBe("solid");
-    expect(group.topLeftRadius).toBe("0px"); expect(group.bottomLeftRadius).toBe("0px"); expect(group.rightRadius).toBe("7px");
-    expect(group.before).toBe("none"); expect(group.after).toBe("none"); expect(group.contentInset).toBeGreaterThanOrEqual(4);
+    expect(group.width).toBe("10px"); expect(group.style).toBe("solid");
+    expect(group.topLeftRadius).toBe("10px"); expect(group.bottomLeftRadius).toBe("10px"); expect(group.rightRadius).toBe("10px");
+    expect(group.outlineColors).toEqual([group.band, group.band, group.band]); expect(group.outlineWidths).toEqual(["1px", "1px", "1px"]);
+    expect(group.before).toBe("none"); expect(group.after).toBe("none"); expect(group.contentInset).toBeGreaterThanOrEqual(10);
   }
   const articleBorders = await page.getByRole("region", { name: "Plan summary" }).locator("article").evaluateAll(nodes => nodes.map(node => ({
     width: getComputedStyle(node).borderLeftWidth, style: getComputedStyle(node).borderLeftStyle,
     topLeftRadius: getComputedStyle(node).borderTopLeftRadius, bottomLeftRadius: getComputedStyle(node).borderBottomLeftRadius,
+    band: getComputedStyle(node).borderLeftColor, outlineColors: [getComputedStyle(node).borderTopColor, getComputedStyle(node).borderRightColor, getComputedStyle(node).borderBottomColor],
+    outlineWidths: [getComputedStyle(node).borderTopWidth, getComputedStyle(node).borderRightWidth, getComputedStyle(node).borderBottomWidth],
     before: getComputedStyle(node, "::before").content, after: getComputedStyle(node, "::after").content,
   })));
   expect(articleBorders).toHaveLength(7);
   for (const border of articleBorders) {
-    expect(border.width).toBe("3px"); expect(border.style).toBe("solid"); expect(border.topLeftRadius).toBe("0px"); expect(border.bottomLeftRadius).toBe("0px");
+    expect(border.width).toBe("10px"); expect(border.style).toBe("solid"); expect(border.topLeftRadius).toBe("10px"); expect(border.bottomLeftRadius).toBe("10px");
+    expect(border.outlineColors).toEqual([border.band, border.band, border.band]); expect(border.outlineWidths).toEqual(["1px", "1px", "1px"]);
     expect(border.before).toBe("none"); expect(border.after).toBe("none");
   }
   if (count === 20) expect(metrics.visibleRows).toBeGreaterThanOrEqual(20);
@@ -1492,10 +1498,12 @@ test("compact short desktop and mobile retain rows, day state, reserves and unkn
     const borders = await table.locator("tbody").evaluateAll(nodes => nodes.map(node => ({
       width: getComputedStyle(node).borderLeftWidth, style: getComputedStyle(node).borderLeftStyle,
       topLeftRadius: getComputedStyle(node).borderTopLeftRadius, bottomLeftRadius: getComputedStyle(node).borderBottomLeftRadius,
+      band: getComputedStyle(node).borderLeftColor, outlineColors: [getComputedStyle(node).borderTopColor, getComputedStyle(node).borderRightColor, getComputedStyle(node).borderBottomColor],
       before: getComputedStyle(node, "::before").content, after: getComputedStyle(node, "::after").content,
     })));
     for (const border of borders) {
-      expect(border.width).toBe("4px"); expect(border.style).toBe("solid"); expect(border.topLeftRadius).toBe("0px"); expect(border.bottomLeftRadius).toBe("0px");
+      expect(border.width).toBe("10px"); expect(border.style).toBe("solid"); expect(border.topLeftRadius).toBe("10px"); expect(border.bottomLeftRadius).toBe("10px");
+      expect(border.outlineColors).toEqual([border.band, border.band, border.band]);
       expect(border.before).toBe("none"); expect(border.after).toBe("none");
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);

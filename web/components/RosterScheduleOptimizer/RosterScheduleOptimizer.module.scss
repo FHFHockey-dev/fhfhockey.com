@@ -126,11 +126,11 @@
 .alternative button { flex-shrink: 0; }
 .compare { display: grid; grid-template-columns: auto 1fr; gap: v.$space-sm; }
 
-.topbar, .metrics article { border-left: 3px solid v.$primary-color; border-radius: 0 v.$radius-card v.$radius-card 0; }
-.metrics article:nth-child(2) { border-left-color: v.$color-teal-500; }
-.metrics article:nth-child(3), .metrics article:nth-child(5) { border-left-color: v.$color-gold-400; }
-.metrics article:nth-child(6) { border-left-color: v.$color-coral-500; }
-.metrics article:nth-child(7) { border-left-color: v.$color-teal-500; }
+.topbar, .metrics article { --position-color: #{v.$primary-color}; border: 1px solid var(--position-color, #{v.$primary-color}); border-left-width: 10px; border-radius: v.$radius-md; }
+.metrics article:nth-child(2) { --position-color: #{v.$color-teal-500}; }
+.metrics article:nth-child(3), .metrics article:nth-child(5) { --position-color: #{v.$color-gold-400}; }
+.metrics article:nth-child(6) { --position-color: #{v.$color-coral-500}; }
+.metrics article:nth-child(7) { --position-color: #{v.$color-teal-500}; }
 .workspace .primaryAction { background: v.$primary-color; border-color: v.$primary-color; color: v.$color-neutral-950; font-weight: 700; }
 .workspace :is(input, select, textarea) { color-scheme: dark; }
 .workspace input[type="checkbox"] { accent-color: v.$primary-color; }
@@ -163,11 +163,11 @@
 .compactTable thead th:first-child { text-align: left; padding-left: 10px; }
 .compactTable thead button { width: 100%; min-height: 28px; padding: 2px; border: 0; border-radius: 0; background: transparent; font-size: inherit; white-space: normal; }
 .compactTable thead button:focus-visible { outline-offset: -2px; }
-.positionGroup { display: block; position: relative; border: 1px solid v.$draft-border; border-left: 4px solid var(--position-color); border-radius: 0 7px 7px 0; margin: 2px 0; background: v.$draft-surface; --position-color: #{v.$color-neutral-400}; }
+.positionGroup { display: block; position: relative; border: 1px solid var(--position-color, #{v.$primary-color}); border-left-width: 10px; border-radius: v.$radius-md; margin: 2px 0; background: v.$draft-surface; --position-color: #{v.$color-neutral-400}; }
 .positionGroup tr[data-compact-row] { height: clamp(26px, calc((100dvh - 400px) / 20), 32px); }
 .positionGroup tr[hidden] { display: none; }
 .positionGroup tr + tr { border-top: 1px solid v.$draft-border; }
-.positionGroup th[scope="row"] { display: flex; align-items: center; gap: 4px; height: 100%; padding-left: 7px; position: sticky; left: 0; z-index: 1; background: v.$draft-surface; border-radius: inherit; font-weight: 400; }
+.positionGroup th[scope="row"] { display: flex; align-items: center; gap: 4px; height: 100%; padding-left: 1px; position: sticky; left: 0; z-index: 1; background: v.$draft-surface; border-radius: inherit; font-weight: 400; }
 .slotLabel { font-size: 10px; flex: 0 0 33px; color: var(--position-color); text-align: left; }
 .schedulePlayer { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; height: 100%; min-height: 0 !important; border: 0 !important; background: transparent !important; padding: 0 2px !important; text-align: left; }
 .schedulePlayer img { flex-shrink: 0; object-fit: contain; }
@@ -180,7 +180,7 @@
 .elapsedDay { color: v.$text-secondary; }
 .fantasyAssigned { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .benchHeading { display: block !important; }
-.benchHeading th { display: block; text-align: left; padding-left: 7px; }
+.benchHeading th { display: block; text-align: left; padding-left: 1px; }
 .benchHeading button { min-height: 26px; padding: 0 4px; border: 0; background: transparent; font-size: 11px; }
 .countChip { display: inline-block; min-width: 18px; border-radius: 8px; padding: 0 4px; background: v.$draft-input; font-variant-numeric: tabular-nums; }
 .planDetails { flex-shrink: 0; font-size: 11px; }
