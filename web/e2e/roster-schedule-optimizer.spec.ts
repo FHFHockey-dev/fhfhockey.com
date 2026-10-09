@@ -26,11 +26,20 @@ function fixtureWorkspace(players: PlanningPlayer[], rules: LeagueRules = fixtur
 async function seedWorkspace(page: import("@playwright/test").Page, workspace: PlanningWorkspace) {
   await page.addInitScript((value) => { if (!localStorage.getItem("fhfh:rso:workspace:v1")) localStorage.setItem("fhfh:rso:workspace:v1", JSON.stringify(value)); }, workspace);
 }
+async function openPlanDetails(page: import("@playwright/test").Page) {
+  const details = page.locator("#rso-plan-details");
+  if (!await details.evaluate(node => (node as HTMLDetailsElement).open)) await details.locator(":scope > summary").click();
+}
+async function openPlanningSetup(page: import("@playwright/test").Page) {
+  const toggle = page.getByRole("button", { name: /Planning setup ·/ });
+  if (await toggle.getAttribute("aria-expanded") === "false") await toggle.click();
+}
 async function expectDesktopFrameVisible(page: import("@playwright/test").Page) {
   const frame = await page.evaluate(() => {
     const banner = document.querySelector("header")?.getBoundingClientRect();
     const title = document.querySelector("h1")?.getBoundingClientRect();
-    const setup = document.querySelector('[aria-label="Planning setup"]')?.getBoundingClientRect();
+    const setupElement = document.querySelector('[aria-label="Planning setup"]');
+    const setup = (setupElement?.getBoundingClientRect().height ? setupElement : document.querySelector('[aria-controls="rso-planning-setup"]'))?.getBoundingClientRect();
     const summary = document.querySelector('[aria-label="Plan summary"]')?.getBoundingClientRect();
     return { scrollY: window.scrollY, htmlScroll: document.documentElement.scrollHeight, bodyScroll: document.body.scrollHeight, height: window.innerHeight, bannerBottom: banner?.bottom ?? 0, titleTop: title?.top ?? -1, setupTop: setup?.top ?? -1, summaryTop: summary?.top ?? -1 };
   });
@@ -43,6 +52,10 @@ async function expectDesktopFrameVisible(page: import("@playwright/test").Page) 
 }
 
 test.beforeEach(async ({ page }) => {
+  await page.route("**/*", route => {
+    const host = new URL(route.request().url()).hostname;
+    return ["127.0.0.1", "localhost"].includes(host) ? route.fallback() : route.abort();
+  });
   await page.clock.setFixedTime(new Date("2026-09-26T00:00:00Z"));
   await page.route("**/api/v1/roster-schedule-optimizer/data?**", (route) => route.fulfill({ json: { success: true, data: { players: [player], games: [], forecasts: [], evidence: {} } } }));
   await page.route("**/api/v1/roster-schedule-optimizer/access", (route) => route.fulfill({ json: { data: { eligible: false, capabilities: [], grantingSources: [], expiresAt: null, reason: "manual" } } }));
@@ -184,6 +197,7 @@ test("streams A to B to C through successive conditional acquisitions and keeps 
   await page.route("**/api/v1/roster-schedule-optimizer/data?**", (route) => route.fulfill({ json: { success: true, data: { players, games, forecasts, evidence: {} } } }));
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/roster-schedule-optimizer");
+  await page.getByRole("button", { name: "Streaming itinerary", exact: true }).click();
   const stream = page.getByRole("region", { name: "Itinerary" }).getByRole("table").first();
   await expect(stream).toContainText("Alpha Center");
   await expect(stream).toContainText("Bravo Center");
@@ -214,6 +228,7 @@ test("weekly lock keeps one fixed occupant across a window, including a confirme
   const forecasts = games.map((game) => fixtureForecast(game.teamAbbreviation === "CAR" ? players[0] : players[1], game, game.teamAbbreviation === "CAR" ? 1 : 10));
   await page.route("**/api/v1/roster-schedule-optimizer/data?**", (route) => route.fulfill({ json: { success: true, data: { players, games, forecasts, evidence: {} } } }));
   await page.goto("/roster-schedule-optimizer");
+  await page.getByRole("button", { name: "Streaming itinerary", exact: true }).click();
   const row = page.getByRole("region", { name: "Itinerary" }).getByRole("table").first().getByRole("row", { name: /C#1/ });
   await expect(row.getByRole("cell").nth(0)).toContainText("Alpha Center");
   await expect(row.getByRole("cell").nth(1)).toContainText("Alpha Center");
@@ -251,8 +266,9 @@ test("fixture category gains use only startable post-acquisition games on deskto
   for (const [width, height] of [[1440, 900], [390, 844], [320, 844]]) {
     await page.setViewportSize({ width, height });
     await page.goto("/roster-schedule-optimizer");
+    await openPlanDetails(page);
     const itinerary = page.getByRole("region", { name: "Itinerary", exact: true });
-    const gains = itinerary.locator("details").filter({ has: page.getByText("Selected plan · category gains", { exact: true }) });
+    const gains = page.getByText("Selected plan · category gains", { exact: true }).locator("..");
     await gains.locator(":scope > summary").focus();
     await page.keyboard.press("Enter");
     await expect(gains.getByText("No move 2 → plan 4 · Δ +2")).toBeVisible();
@@ -308,6 +324,7 @@ test("provider refresh proposes repairs while keeping a selected move", async ({
     await route.fulfill({ json: { success: true, snapshot, capabilities: { roster: true, availability: true, rules: true, matchup: false, acquisitions: false, limitations: ["League time zone supplied by the manager; Yahoo did not verify it.", "Available-player discovery did not reach the end of the provider list."] } } });
   });
   await page.goto("/roster-schedule-optimizer");
+  await openPlanDetails(page);
   const health = page.locator("details").filter({ has: page.getByText("Data health", { exact: true }) });
   await expect(health.locator("summary")).toContainText("2 items to review");
   await expect(health.getByRole("list")).toBeHidden();
@@ -326,6 +343,7 @@ test("provider refresh proposes repairs while keeping a selected move", async ({
   await page.getByRole("button", { name: "Select add" }).click();
   await expect(page.getByText("ADD Alpha Center")).toBeVisible();
   const selected = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).intent);
+  await openPlanningSetup(page);
   await page.getByRole("button", { name: "Refresh provider" }).click();
   await expect(page.getByText(/appears on the actual roster; review whether this selected add is complete/)).toBeVisible();
   await expect(page.getByText("ADD Alpha Center")).toBeVisible();
@@ -387,8 +405,10 @@ test("connected manager bench locks constrain the worker and preserve provider a
   await page.getByRole("button", { name: "Save to account" }).click();
   await expect(page.getByText("Saved to account.", { exact: true })).toBeVisible();
   expect(accountSnapshot!.lockedAssignments).toEqual([{ ...workspace.lockedAssignments[0], source: "manager" }]);
+  await openPlanningSetup(page);
   await page.getByRole("combobox", { name: "Goalie choice", exact: true }).selectOption("cover");
   providerConflict = true;
+  await openPlanningSetup(page);
   await page.getByRole("button", { name: "Refresh provider" }).click();
   await expect(page.getByText(/provider lock retained and manager choice kept for review/)).toBeVisible();
   await expect(outcome).toHaveText("8");
@@ -434,6 +454,7 @@ test("provider refresh adopts the authoritative league timezone and keeps the se
     return route.fulfill({ json: { success: true, snapshot, capabilities: { roster: true, availability: true, rules: true, matchup: false, acquisitions: false, limitations: [] } } });
   });
   await page.goto("/roster-schedule-optimizer");
+  await openPlanDetails(page);
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toMatchObject({
     context, roster: snapshot.roster, rules: snapshot.rules, intent: retained.intent,
   });
@@ -442,6 +463,7 @@ test("provider refresh adopts the authoritative league timezone and keeps the se
   await expect.poll(() => requestedZones).toEqual(["UTC", "America/New_York"]);
   await expect.poll(() => dataZones).toContain("America/New_York");
   await page.reload();
+  await openPlanDetails(page);
   await expect(page.getByLabel("Time zone", { exact: true })).toHaveValue("America/New_York");
   await expect(page.getByText("ADD Alpha Center", { exact: true })).toBeVisible();
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toMatchObject({
@@ -495,9 +517,10 @@ test("dense roster keeps schedule views and their scrollbars inside the desktop 
     await page.screenshot({ path: testInfo.outputPath(`rso-itinerary-${width}.png`), fullPage: true });
     await page.getByRole("button", { name: /Show (lineup analysis|schedule-capacity assignment)/ }).click();
     await expect(itinerary.getByRole("table")).toHaveCount(1);
-    await expect(itinerary.getByRole("columnheader", { name: "Player", exact: true })).toBeVisible();
+    await expect(itinerary.getByRole("columnheader", { name: "Slot / player", exact: true })).toBeVisible();
     const nestedVerticalScrolls = await itinerary.evaluate((panel) => Array.from(panel.querySelectorAll("div")).filter((node) => node.scrollHeight > node.clientHeight + 1 && ["auto", "scroll"].includes(getComputedStyle(node).overflowY)).length);
-    expect(nestedVerticalScrolls).toBe(1);
+    expect(nestedVerticalScrolls).toBeLessThanOrEqual(1);
+    await expect(page.getByRole("region", { name: "Player weekly schedule scroll area" })).toHaveCSS("overflow-y", "auto");
     await expectDesktopFrameVisible(page);
     await page.screenshot({ path: testInfo.outputPath(`rso-lineup-${width}.png`), fullPage: true });
   }
@@ -525,12 +548,14 @@ test("Yahoo timeout retains schedule analysis and matchup-week navigation withou
   });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/roster-schedule-optimizer");
+  await openPlanDetails(page);
   await expect(page.getByText("Yahoo roster/settings reads timed out after retrying.")).toBeVisible();
   await expect(page.getByText(/Using retained roster inputs/)).toBeVisible();
   await expect(page.getByRole("region", { name: "Itinerary", exact: true }).getByRole("table")).toContainText("Alpha Center");
   await page.getByRole("button", { name: "All players", exact: true }).click();
   await expect(page.getByRole("region", { name: "Candidate browser" })).toContainText("+AGP 1");
   await expect(page.getByText(/Add\/drop plans need acquisition-effective timing/).first()).toBeVisible();
+  await openPlanningSetup(page);
   await page.getByRole("button", { name: "Previous matchup week" }).click();
   await expect(page.getByLabel("From", { exact: true })).toHaveValue("2026-09-29");
   await expect(page.getByLabel("Through", { exact: true })).toHaveValue("2026-10-04");
@@ -562,15 +587,19 @@ test("mixed Kaprizov coverage stays unresolved until complete evidence supports 
     data: { players, games, forecasts: fullCoverage ? players.map((player, index) => fixtureForecast(player, games[index], [9, 4, 5][index]))
       : [fixtureForecast(players[1], games[1], 2), fixtureForecast(players[2], games[2], 3)], evidence: {} } } }));
   await page.goto("/roster-schedule-optimizer");
+  await openPlanDetails(page);
   await expect(page.getByRole("button", { name: "Show schedule-capacity assignment" })).toBeVisible();
   await page.getByRole("button", { name: "Show schedule-capacity assignment" }).click();
+  await openPlanDetails(page);
   await expect(page.getByRole("status").filter({ hasText: "This assignment shows legal schedule capacity" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Show lineup analysis" })).toHaveCount(0);
   fullCoverage = true;
   for (const [width, height] of [[1180, 757], [1024, 768], [768, 1024], [390, 844], [320, 844]]) {
     await page.setViewportSize({ width, height });
     await page.reload();
+    await openPlanDetails(page);
     await page.getByRole("button", { name: "Show lineup analysis" }).click();
+    await openPlanDetails(page);
     await expect(page.getByRole("status").filter({ hasText: "Lineup analysis uses proposed or saved inputs" })).toBeVisible();
     await expect(page.getByText(/Suggested assignment uses reviewed inputs/)).toHaveCount(0);
     const readiness = page.locator("details").filter({ has: page.getByText("Planning readiness", { exact: true }) });
@@ -591,7 +620,6 @@ test("mixed Kaprizov coverage stays unresolved until complete evidence supports 
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   }
 });
-
 
 test("weekly LW/RW and UTIL bench explanations preserve midpoint locks through worker reload", async ({ page }) => {
   await page.route("**/*", route => ["127.0.0.1", "localhost"].includes(new URL(route.request().url()).hostname)
@@ -619,8 +647,10 @@ test("weekly LW/RW and UTIL bench explanations preserve midpoint locks through w
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
   await page.goto("/roster-schedule-optimizer");
+  await openPlanDetails(page);
   for (let pass = 0; pass < 2; pass++) {
     await page.getByRole("button", { name: "Show lineup analysis" }).click();
+    await openPlanDetails(page);
     await page.getByText("Why players are outside this assignment", { exact: true }).click();
     const bench = page.getByRole("article", { name: "Drake Batherson bench decision" });
     await expect(bench).toContainText("Weekly placement window: Oct 5–Oct 6");
@@ -631,10 +661,10 @@ test("weekly LW/RW and UTIL bench explanations preserve midpoint locks through w
     const center = page.getByRole("region", { name: "Itinerary" }).getByRole("row").filter({ hasText: "Locked Center" });
     await expect(center).toContainText("UTIL#1");
     if (pass === 0) await page.reload();
+    await openPlanDetails(page);
   }
   expect(errors).toEqual([]);
 });
-
 test("manual league eligibility must be confirmed and survives a reload", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
@@ -787,8 +817,10 @@ test("connected refresh and account save preserve forecast permissions and exclu
       capabilities: { roster: true, availability: true, rules: true, matchup: false, acquisitions: true, limitations: [] } } });
   });
   await page.goto("/roster-schedule-optimizer");
+  await openPlanDetails(page);
   await expect(page.getByRole("button", { name: "Show lineup analysis" })).toBeVisible();
   refreshed = true;
+  await openPlanningSetup(page);
   await page.getByRole("button", { name: "Refresh provider" }).click();
   await expect(page.getByRole("button", { name: "Show schedule-capacity assignment" })).toBeVisible();
   await page.getByRole("button", { name: "Save to account" }).click();
@@ -800,6 +832,7 @@ test("connected refresh and account save preserve forecast permissions and exclu
   const beforeSwitch = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!));
   switching = true;
   const providerRequest = page.waitForRequest("**/api/v1/roster-schedule-optimizer/provider");
+  await openPlanningSetup(page);
   await page.getByRole("button", { name: "Refresh provider" }).click();
   const pendingProviderRequest = await providerRequest;
   const saveRequest = page.waitForRequest(request => request.url().endsWith("/workspace") && request.method() === "PUT");
@@ -832,7 +865,7 @@ test("connected refresh and account save preserve forecast permissions and exclu
     return { intent: value.intent, roster: value.roster, lockedAssignments: value.lockedAssignments };
   })).toEqual({ intent: beforeSwitch.intent, roster: beforeSwitch.roster, lockedAssignments: beforeSwitch.lockedAssignments });
   const setup = page.locator('fieldset[aria-label="Planning setup"]');
-  const rosterPanel = page.locator('section[aria-label="Roster and setup"]');
+  const rosterPanel = page.locator("#rso-roster-edit");
   await expect(setup).toHaveAttribute("disabled", "");
   await expect(setup.getByRole("combobox", { name: "Source", exact: true })).toBeDisabled();
   await expect.poll(() => rosterPanel.evaluate(panel => (panel as HTMLElement).inert)).toBe(true);
@@ -855,7 +888,6 @@ test("connected refresh and account save preserve forecast permissions and exclu
     retainedInputsReadOnly: true, manualForkPreserved: true, manualEditingAvailable: true,
     pageErrors, inputs: "Fictional sessions and intercepted provider/workspace/access responses; SDK BroadcastChannel session switch", liveAccountParity: "not verified" }, null, 2));
 });
-
 test("conflicting forecasts keep capacity planning and show the affected target", async ({ page }, testInfo) => {
   const players = [fixturePlayer(1, "Alpha Center", "CAR"), fixturePlayer(2, "Bravo Center", "NJD")];
   const workspace = fixtureWorkspace(players, { ...fixtureRules, rosterSlots: { C: 1, BN: 1 } });
@@ -899,13 +931,15 @@ test("points goalie coverage survives worker reload and benches harmful starts o
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
   await page.goto("/roster-schedule-optimizer");
+  await openPlanDetails(page);
   const itinerary = page.getByRole("region", { name: "Itinerary" });
   const minimum = page.getByRole("region", { name: "Plan summary" }).getByRole("article").filter({
     has: page.getByText("Goalie minimum", { exact: true }) });
   const expectCoverage = async () => {
     await page.getByRole("button", { name: "Show lineup analysis" }).click();
+    await openPlanDetails(page);
     await expect(itinerary).toContainText("G#1 · Coverage Goalie");
-    const explanation = itinerary.locator("details").filter({ has: page.getByText("Why players are outside this assignment", { exact: true }) });
+    const explanation = page.getByText("Why players are outside this assignment", { exact: true }).locator("..");
     if (!await explanation.evaluate(node => (node as HTMLDetailsElement).open)) await explanation.locator("summary").click();
     const bench = explanation.getByRole("article", { name: "Lower Penalty Goalie bench decision" });
     await expect(bench).toContainText("favors projected goalie coverage");
@@ -917,6 +951,7 @@ test("points goalie coverage survives worker reload and benches harmful starts o
   };
   await expectCoverage();
   await page.reload();
+  await openPlanDetails(page);
   await expectCoverage();
   await page.getByText("League rules and scoring", { exact: true }).click();
   await page.getByLabel("Goalie credited", { exact: true }).fill("1");
@@ -992,6 +1027,7 @@ test(`retained blended inputs survive worker reload and expire borrowed particip
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
   await page.goto("/roster-schedule-optimizer");
+  await openPlanDetails(page);
   const projected = page.getByRole("region", { name: "Plan summary" }).getByRole("article").filter({
     has: page.getByText("Projected outcome", { exact: true }) });
   await expect(page.getByRole("button", { name: "Show lineup analysis" })).toBeVisible();
@@ -999,8 +1035,8 @@ test(`retained blended inputs survive worker reload and expire borrowed particip
   await expect(projected).toContainText("Includes baseline estimates");
   const expectBenchExplanation = async () => {
     await page.getByRole("button", { name: "Show lineup analysis" }).click();
-    const explanation = page.getByRole("region", { name: "Itinerary" }).locator("details").filter({
-      has: page.getByText("Why players are outside this assignment", { exact: true }) });
+    await openPlanDetails(page);
+    const explanation = page.getByText("Why players are outside this assignment", { exact: true }).locator("..");
     if (!await explanation.evaluate(node => (node as HTMLDetailsElement).open)) await explanation.locator("summary").click();
     const bench = explanation.getByRole("article", { name: "Bravo Center bench decision" });
     await expect(bench).toContainText("Complete-plan start/sit score: selected 3.143; with Bravo Center 1");
@@ -1022,6 +1058,7 @@ test(`retained blended inputs survive worker reload and expire borrowed particip
 
   await expect(page.getByRole("region", { name: "Itinerary" }).getByRole("table").first()).toContainText("Alpha Center");
   await page.reload();
+  await openPlanDetails(page);
   await expect(page.getByRole("button", { name: "Show lineup analysis" })).toBeVisible();
   await expect(projected).toContainText("3.1");
   await expectBenchExplanation();
@@ -1059,6 +1096,7 @@ test(`retained blended inputs survive worker reload and expire borrowed particip
   await page.getByLabel("Statistic", { exact: true }).nth(1).fill("ASSISTS");
   await page.getByLabel("Statistic", { exact: true }).nth(1).press("Tab");
   await page.reload();
+  await openPlanDetails(page);
   await expect(page.getByRole("button", { name: "Show lineup analysis" })).toBeVisible();
   await expect(projected).toContainText("4.1");
   await page.getByRole("button", { name: "Matchup", exact: true }).click();
@@ -1080,6 +1118,7 @@ test(`retained blended inputs survive worker reload and expire borrowed particip
   }
   forecastManifest = { ...forecastManifest, id: "policy-21", calendarPolicy: forecastCalendarPolicy(21) };
   await page.reload();
+  await openPlanDetails(page);
   await expect(projected.locator("strong")).toHaveText("5");
   await page.getByRole("button", { name: "Matchup", exact: true }).click();
   await sources.locator("summary").click();
@@ -1089,6 +1128,7 @@ test(`retained blended inputs survive worker reload and expire borrowed particip
   forecastManifest = { ...forecastManifest, id: "news-refresh", acceptedNewsRevision: "opaque-news-receipts",
     issuedRevisionIds: ["detail-2"] };
   await page.reload();
+  await openPlanDetails(page);
   await expect(page.getByRole("button", { name: "Show schedule-capacity assignment" })).toBeVisible();
   await expect(projected).toContainText("—");
   if (mode === "connected") {
@@ -1101,6 +1141,7 @@ test(`retained blended inputs survive worker reload and expire borrowed particip
   responseAsOf = "2026-10-01T00:00:00Z";
   await page.clock.setFixedTime(responseAsOf);
   await page.reload();
+  await openPlanDetails(page);
   await expect(page.getByRole("button", { name: "Show schedule-capacity assignment" })).toBeVisible();
   await expect(projected).toContainText("—");
   await page.getByRole("button", { name: "Matchup", exact: true }).click();
@@ -1109,7 +1150,6 @@ test(`retained blended inputs survive worker reload and expire borrowed particip
   expect(errors).toEqual([]);
 });
 }
-
 test("candidate feedback views preserve eligibility, availability and planned-add semantics", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.route("**/*", route => ["127.0.0.1", "localhost"].includes(new URL(route.request().url()).hostname)
@@ -1259,6 +1299,7 @@ test("planning worker measures the full typical workload and cancels superseded 
   await seedWorkspace(page, workspace);
   await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: { players: members, games, forecasts, evidence: {} } } }));
   await page.goto("/roster-schedule-optimizer");
+  await openPlanningSetup(page);
   const goalieChoice = page.getByRole("combobox", { name: "Goalie choice", exact: true });
   await goalieChoice.evaluate(element => element.addEventListener("change", () => (window as any).__planningPerformance.edits.push({ at: performance.now(), value: (element as HTMLSelectElement).value })));
   const planner = (revision: number) => page.evaluate(revision => (window as any).__planningPerformance.workers.find((row: any) => row.role === "planner" && row.roster === 25 && row.context.endDate === "2026-10-11" && row.revision === revision), revision);
@@ -1334,4 +1375,135 @@ test("candidate worker ranks the complete population without blocking filters an
   await writeFile(testInfo.outputPath("candidate-performance.json"), JSON.stringify(metrics, null, 2));
   await browser.getByRole("searchbox", { name: "Find candidate" }).fill("");
   await page.screenshot({ path: testInfo.outputPath("rso-worker-zero-agp.png"), fullPage: true });
+});
+
+function compactWorkspace(count: number) {
+  const positions = ["C", "C", "LW", "LW", "RW", "RW", "D", "D", "D", "D", "C", "LW", "G", "G"];
+  const players = Array.from({ length: count === 19 ? 20 : count }, (_, index) => ({ ...fixturePlayer(index + 1, `Compact Surname${index + 1}`, "CAR"),
+    eligiblePositions: index === 0 ? ["C", "LW"] : [positions[index] ?? "C"], playerClass: positions[index] === "G" ? "goalie" as const : "skater" as const,
+    reserveEligibility: ["IR", "IR+"] as Array<"IR" | "IR+"> }));
+  const workspace = fixtureWorkspace(players, { ...fixtureRules, rosterSlots: { C: 2, LW: 2, RW: 2, D: 4, UTIL: 2, G: 2, BN: count === 25 ? 9 : 6, IR: 1, "IR+": 1 } });
+  workspace.context.endDate = "2026-10-11";
+  workspace.roster = players.filter((_, index) => count !== 19 || index !== 9).map(player => { const index = players.indexOf(player); return { playerId: player.id,
+    position: count === 25 && index >= 23 ? index === 23 ? "IR" : "IR+" : index < 14 ? "active" : "bench" }; });
+  workspace.intent.protectedPlayerIds = [players[0].id];
+  workspace.lockedAssignments = [{ date: "2026-10-07", playerId: players[0].id, slotId: "C#1" }, ...workspace.roster.filter(row => row.position === "bench").map(row => ({ date: "2026-10-07", playerId: row.playerId, slotId: null }))];
+  const games = Array.from({ length: 7 }, (_, index) => ({ ...fixtureGame(`compact-${index}`, 5, "CAR"), date: `2026-10-${String(index + 5).padStart(2, "0")}`, startsAt: `2026-10-${String(index + 5).padStart(2, "0")}T23:00:00Z` }));
+  return { workspace, players, games };
+}
+async function installCompactFixture(page: import("@playwright/test").Page, count: number) {
+  const fixture = compactWorkspace(count);
+  await page.clock.setFixedTime(new Date("2026-10-07T12:00:00Z"));
+  await seedWorkspace(page, fixture.workspace);
+  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: { players: fixture.players, games: fixture.games, forecasts: [], evidence: {
+    schedule: { source: "fictional compact fixture", asOf: "2026-10-07T12:00:00Z", seasonId: 20262027, completeness: "complete", limitations: [] },
+  } } } }));
+  await page.goto("/roster-schedule-optimizer");
+  await expect(page.getByRole("slider", { name: "Selected planning day" })).toHaveAttribute("aria-valuetext", "Wed, Oct 7");
+  await expect(page.getByText(/Local planning lineup · GP/)).toBeVisible();
+  return fixture;
+}
+
+for (const count of [19, 20, 25]) test(`compact layout accounts for ${count} players with fixed slots and continuous bands`, async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installCompactFixture(page, count);
+  const table = page.getByRole("table", { name: "Individual player weekly schedule" });
+  await expect(table.locator('tr[data-player-id]')).toHaveCount(count);
+  await expect(page.getByRole("heading", { name: "Current Roster" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Available Players" })).toBeVisible();
+  if (count === 19) await expect(table.getByRole("rowheader", { name: /Open D/ })).toBeVisible();
+  const metrics = await table.evaluate(node => {
+    const viewport = node.parentElement!.getBoundingClientRect();
+    const rows = [...node.querySelectorAll('tr[data-compact-row]:not([hidden])')];
+    return { visibleRows: rows.filter(row => { const box = row.getBoundingClientRect(); return box.top >= viewport.top && box.bottom <= viewport.bottom; }).length,
+      playerIds: rows.map(row => row.getAttribute("data-player-id")).filter(Boolean),
+      groups: [...node.querySelectorAll("tbody")].map(group => ({ position: group.getAttribute("data-position"), band: getComputedStyle(group, "::before").backgroundColor,
+        width: getComputedStyle(group, "::before").width, height: group.getBoundingClientRect().height, decorationHeight: getComputedStyle(group, "::before").height, rightRadius: getComputedStyle(group, "::before").borderTopRightRadius })) };
+  });
+  expect(new Set(metrics.playerIds).size).toBe(count);
+  expect(metrics.groups.map(group => group.position)).toEqual(count === 25 ? ["C", "LW", "RW", "D", "UTIL", "G", "BENCH", "IR", "IR+"] : ["C", "LW", "RW", "D", "UTIL", "G", "BENCH"]);
+  expect(metrics.groups.find(group => group.position === "RW")?.band).toBe("rgb(167, 139, 250)");
+  for (const group of metrics.groups) { expect(group.width).toBe("4px"); expect(group.rightRadius).toBe("0px"); expect(Math.abs(parseFloat(group.decorationHeight) - group.height)).toBeLessThanOrEqual(2); }
+  if (count === 20) expect(metrics.visibleRows).toBeGreaterThanOrEqual(20);
+  await expectDesktopFrameVisible(page);
+  await page.screenshot({ path: testInfo.outputPath(`compact-${count}-1440x900.png`) });
+  await writeFile(testInfo.outputPath(`compact-${count}-metrics.json`), JSON.stringify(metrics, null, 2));
+});
+
+test("compact day and bench controls preserve saved intent and keyboard selection", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installCompactFixture(page, 20);
+  const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
+  const calls: string[] = [];
+  page.on("request", request => { if (request.url().includes("/roster-schedule-optimizer/") && request.method() !== "GET") calls.push(request.method() + " " + request.url()); });
+  const slider = page.getByRole("slider", { name: "Selected planning day" });
+  await slider.focus(); await page.keyboard.press("End");
+  await expect(slider).toHaveAttribute("aria-valuetext", "Sun, Oct 11");
+  const monday = page.getByRole("button", { name: "Select Mon, Oct 5" });
+  await monday.focus(); await page.keyboard.press("Enter");
+  await expect(slider).toHaveAttribute("aria-valuetext", "Mon, Oct 5");
+  await expect(page.getByText(/Past lineup unverified · GP/)).toBeVisible();
+  await expect(page.getByRole("table", { name: "Individual player weekly schedule" }).getByRole("rowheader", { name: /Pending C/ }).first()).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("compact-date-focus.png") });
+  const bench = page.getByRole("button", { name: /Bench \d+/ });
+  await bench.focus(); await page.keyboard.press("Space");
+  await expect(bench).toHaveAttribute("aria-expanded", "false");
+  await expect(bench).toBeFocused();
+  await page.keyboard.press("Enter"); await expect(bench).toHaveAttribute("aria-expanded", "true");
+  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
+  expect(calls).toEqual([]);
+  await page.screenshot({ path: testInfo.outputPath("compact-keyboard-focus.png") });
+});
+
+test("compact short desktop and mobile retain rows, day state, reserves and unknown goalie status", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 720 });
+  await installCompactFixture(page, 25);
+  const table = page.getByRole("table", { name: "Individual player weekly schedule" });
+  await expect(table.getByRole("cell", { name: /Starter unknown/ }).first()).toBeVisible();
+  const scroll = page.getByRole("region", { name: "Player weekly schedule scroll area" });
+  await scroll.evaluate(node => { node.scrollTop = node.scrollHeight; });
+  await expect(table.locator('[data-player-id="fhfh:25"]')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("compact-short-desktop.png") });
+  for (const width of [390, 320, 720]) {
+    await page.setViewportSize({ width, height: width === 720 ? 450 : 844 });
+    const tabs = page.getByRole("navigation", { name: "Workspace views" });
+    await tabs.getByRole("button", { name: "Roster", exact: true }).click();
+    await tabs.getByRole("button", { name: "Itinerary", exact: true }).click();
+    await expect(page.getByRole("slider", { name: "Selected planning day" })).toHaveAttribute("aria-valuetext", "Wed, Oct 7");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath(`compact-mobile-${width}.png`) });
+  }
+});
+
+test("compact future and partial weeks use league dates and retain the full horizon without saving", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const fixture = compactWorkspace(20);
+  fixture.workspace.context.endDate = "2026-10-18";
+  fixture.workspace.context.timeZone = "America/Los_Angeles";
+  await seedWorkspace(page, fixture.workspace);
+  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: {
+    players: fixture.players, games: fixture.games, forecasts: [], evidence: {},
+  } } }));
+  await page.goto("/roster-schedule-optimizer");
+  const slider = page.getByRole("slider", { name: "Selected planning day" });
+  await expect(slider).toHaveAttribute("aria-valuetext", "Mon, Oct 5");
+  await page.clock.setFixedTime(new Date("2026-10-07T01:00:00Z"));
+  await page.reload();
+  await expect(slider).toHaveAttribute("aria-valuetext", "Tue, Oct 6");
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).context.asOf)).toBe("2026-10-07T01:00:00.000Z");
+  const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
+  await page.getByRole("button", { name: "Next schedule week" }).click();
+  await expect(slider).toHaveAttribute("aria-valuetext", "Mon, Oct 12");
+  await page.getByRole("button", { name: "Previous schedule week" }).click();
+  await expect(slider).toHaveAttribute("aria-valuetext", "Tue, Oct 6");
+  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
+  await page.evaluate(() => {
+    const workspace = JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!);
+    workspace.context.startDate = "2026-10-07"; workspace.context.endDate = "2026-10-11";
+    localStorage.setItem("fhfh:rso:workspace:v1", JSON.stringify(workspace));
+  });
+  await page.reload();
+  await expect(slider).toHaveAttribute("aria-valuetext", "Wed, Oct 7");
+  await expect(page.getByRole("button", { name: "Select Mon, Oct 5" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Select Tue, Oct 6" })).toBeDisabled();
 });

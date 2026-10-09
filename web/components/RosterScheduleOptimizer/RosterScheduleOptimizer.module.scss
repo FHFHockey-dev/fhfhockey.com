@@ -1,6 +1,7 @@
 @use "styles/vars" as v;
 
 .workspace { width: 100%; min-width: 0; min-height: 0; height: 100%; display: flex; flex-direction: column; gap: v.$space-sm; padding: v.$space-sm; box-sizing: border-box; background: v.$draft-canvas; color: v.$text-primary; font-family: v.$font-family-primary; }
+.workspace { @include v.draft-position-colors; }
 .workspace button, .workspace input, .workspace select, .workspace textarea { font: inherit; color: v.$text-primary; background: v.$draft-input; border: 1px solid v.$draft-border; border-radius: v.$radius-control; }
 .workspace button { cursor: pointer; padding: v.$space-xs v.$space-sm; min-height: 32px; }
 .workspace button:disabled { opacity: .5; cursor: not-allowed; }
@@ -56,7 +57,7 @@
 .playerButton small, .candidateRow small, .alternative small { color: v.$text-secondary; }
 .rosterRow { flex-wrap: wrap; border-color: v.$draft-border; }
 .rosterRow:nth-child(even) { background: v.$draft-zebra; }
-.rosterRow .playerButton { flex: 1; }
+.rosterRow .playerButton { flex: 1 0 100%; }
 .rosterRow > span { padding: 2px v.$space-xs; border-radius: v.$radius-xs; background: v.$draft-surface-raised; }
 .playerEvidence { flex: 1 0 100%; }
 .playerEvidence summary { cursor: pointer; color: v.$primary-color; font-size: v.$font-size-xs; }
@@ -143,6 +144,81 @@
 .viewSwitch button[aria-pressed="true"] { background: v.$primary-color; border-color: v.$primary-color; color: v.$color-neutral-950; font-weight: 700; }
 .mobileTabs { display: none; }
 .mobileSetupToggle { display: none; }
+// The schedule owns its scroll area; the decorative band never clips row content.
+.healthStrip { display: flex; flex-direction: column; gap: v.$space-xs; flex-shrink: 0; }
+.healthStrip > details { flex: 1; min-width: 0; }
+.lineupBody { display: flex; flex-direction: column; overflow: hidden; padding: 4px; }
+.compactSchedule { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.dayControls { display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding: 0 3px; font-size: 12px; }
+.dayControls label { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+.dayControls input { flex: 1; min-width: 40px; padding: 0; accent-color: v.$primary-color; }
+.dayControls output { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.scheduleLegend { color: v.$text-secondary; font-size: 11px; padding: 2px 5px; flex-shrink: 0; }
+.compactScroll { flex: 1; min-height: 0; overflow: auto; padding: 3px; scroll-padding: 40px 4px; }
+.compactTable { width: 100%; min-width: 610px; display: block; font-size: 12px; font-variant-numeric: tabular-nums; }
+.compactTable thead { display: block; position: sticky; top: -3px; z-index: 4; background: v.$draft-surface; }
+.compactTable tr { display: grid; grid-template-columns: minmax(165px, 2.4fr) repeat(7, minmax(45px, 1fr)) 28px; align-items: center; }
+.compactTable th, .compactTable td { min-width: 0; text-align: center; padding: 0 2px; }
+.compactTable thead th { font-weight: 500; font-size: 10px; }
+.compactTable thead th:first-child { text-align: left; padding-left: 10px; }
+.compactTable thead button { width: 100%; min-height: 28px; padding: 2px; border: 0; border-radius: 0; background: transparent; font-size: inherit; white-space: normal; }
+.compactTable thead button:focus-visible { outline-offset: -2px; }
+.positionGroup { display: block; position: relative; border: 1px solid v.$draft-border; border-radius: 7px; margin: 2px 0; background: v.$draft-surface; --position-color: #{v.$color-neutral-400}; }
+.positionGroup::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; border-radius: 6px 0 0 6px; background: var(--position-color); pointer-events: none; z-index: 2; }
+.positionGroup tr[data-compact-row] { height: clamp(26px, calc((100dvh - 400px) / 20), 32px); }
+.positionGroup tr[hidden] { display: none; }
+.positionGroup tr + tr { border-top: 1px solid v.$draft-border; }
+.positionGroup th[scope="row"] { display: flex; align-items: center; gap: 4px; height: 100%; padding-left: 10px; position: sticky; left: 0; z-index: 1; background: v.$draft-surface; border-radius: inherit; font-weight: 400; }
+.slotLabel { font-size: 10px; flex: 0 0 33px; color: var(--position-color); text-align: left; }
+.schedulePlayer { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; height: 100%; min-height: 0 !important; border: 0 !important; background: transparent !important; padding: 0 2px !important; text-align: left; }
+.schedulePlayer img { flex-shrink: 0; object-fit: contain; }
+.schedulePlayer > span:not(.scheduleSrOnly) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scheduleSrOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.rowStatus { color: v.$text-secondary; font-size: 9px; }
+.plannedChange { color: v.$text-secondary; font-size: 9px; }
+.positionGroup td { line-height: 18px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.chosenDay { background: rgba(v.$primary-color, .12) !important; box-shadow: inset 0 0 0 1px rgba(v.$primary-color, .4); }
+.elapsedDay { color: v.$text-secondary; }
+.fantasyAssigned { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.benchHeading { display: block !important; }
+.benchHeading th { display: block; text-align: left; padding-left: 10px; }
+.benchHeading button { min-height: 26px; padding: 0 4px; border: 0; background: transparent; font-size: 11px; }
+.countChip { display: inline-block; min-width: 18px; border-radius: 8px; padding: 0 4px; background: v.$draft-input; font-variant-numeric: tabular-nums; }
+.planDetails { flex-shrink: 0; font-size: 11px; }
+.planDetails > summary { min-height: 26px; padding: 4px; cursor: pointer; color: v.$text-secondary; }
+.planDetails[open] { overflow: auto; max-height: 50%; }
+@media (min-width: 1101px) {
+  .workspace { gap: 4px; padding: 4px; }
+  .topbar { min-height: 38px; padding: 3px 8px; }
+  .eyebrow { display: none; }
+  .topbar h1 { font-size: 20px; }
+  .mobileSetupToggle { display: block; min-height: 32px !important; font-size: 11px !important; }
+  .controls { display: none; }
+  .controls.controlsExpanded { display: flex; }
+  .metrics article { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0; padding: 3px 7px; }
+  .metrics span { font-size: 10px; }
+  .metrics strong { font-size: 18px; }
+  .metrics small { grid-column: 1 / -1; font-size: 10px; line-height: 12px; }
+  .metrics article:first-child small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .panelHead { min-height: 32px; padding: 4px 8px; }
+  .viewSwitch { padding: 3px 5px; font-size: 11px; }
+  .viewSwitch button { min-height: 28px; padding: 2px 6px; }
+  .itineraryPanel .panelHead > span { display: none; }
+  .itineraryPanel .viewSwitch { border: 0; padding: 0; margin-left: auto; }
+  .panels { grid-template-columns: minmax(215px, 19%) minmax(0, 1fr) minmax(245px, 22%); }
+}
+@media (max-width: 1100px) {
+  .healthStrip { flex-direction: column; }
+  .itineraryPanel .panelHead { flex-wrap: wrap; }
+  .itineraryPanel .viewSwitch { width: 100%; }
+  .lineupBody { overflow: visible; }
+  .compactSchedule { min-height: 55dvh; }
+  .compactScroll { max-height: 65dvh; }
+  .compactTable { min-width: 670px; }
+  .compactTable thead button, .dayControls button, .benchHeading button { min-height: 44px; }
+  .positionGroup tr[data-compact-row] { height: 44px; }
+  .planDetails[open] { max-height: none; }
+}
 @media (min-width: 1101px) { .workspace { max-height: 100%; overflow: clip; } }
 @media (max-width: 1100px) {
   .workspace { min-height: calc(100dvh - 76px); height: auto; padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
