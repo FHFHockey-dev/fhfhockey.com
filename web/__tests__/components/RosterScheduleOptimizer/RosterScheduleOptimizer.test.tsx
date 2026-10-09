@@ -1054,6 +1054,33 @@ describe("compact RSO schedule", () => {
     expect(rows.find(row => row.playerId === "new")?.change).toMatch(/Planned addition · effective .*UTC/);
     expect(rows.find(row => row.playerId === "p19")?.status).toContain("Planned drop");
   });
+  it.each([null, ""])("keeps missing team %s schedules unknown despite complete shared coverage", team => {
+    const input = displayFixture();
+    input.snapshot.games = [];
+    input.assignments = [];
+    input.players[0].teamAbbreviation = team;
+    input.players[14].teamAbbreviation = team;
+    input.snapshot.lockedAssignments = [{ date: input.date, playerId: "p0", slotId: "C#1" }];
+    const before = JSON.stringify(input);
+    const rows = compactGroups(input).flatMap(group => group.rows);
+    expect(rows.find(row => row.id === "C#1")).toMatchObject({ playerId: "p0", status: "Team unknown", assigned: false });
+    expect(rows.find(row => row.playerId === "p14")).toMatchObject({ status: "Team unknown", assigned: false });
+    const props = { ...input, dates: scheduleWeek(input.date), today: input.date, selectDate: vi.fn(), selectPlayer: vi.fn() };
+    const view = render(<CompactSchedule {...props} />);
+    for (const index of [0, 14]) {
+      const row = screen.getByRole("button", { name: new RegExp(`Schedule details for Player Surname${index},`) }).closest("tr")!;
+      expect(within(row).getAllByRole("cell", { name: /Team unknown/ })).toHaveLength(7);
+      expect(within(row).queryByRole("cell", { name: /No game/ })).toBeNull();
+      expect(within(row).getAllByRole("cell").map(cell => cell.textContent)).toEqual(Array(8).fill("?"));
+    }
+    const known = screen.getByRole("button", { name: /Schedule details for Player Surname1,/ }).closest("tr")!;
+    expect(within(known).getAllByRole("cell", { name: /No game/ })).toHaveLength(7);
+    expect(within(known).getAllByRole("cell").at(-1)?.textContent).toBe("0");
+    view.rerender(<CompactSchedule {...props} dates={props.dates.slice(0, 2)} />);
+    const locked = screen.getByRole("button", { name: /Schedule details for Player Surname0,/ }).closest("tr")!;
+    expect(within(locked).getAllByRole("cell", { name: /Outside selected range/ })).toHaveLength(5);
+    expect(JSON.stringify(input)).toBe(before);
+  });
   it("defaults schedule-week navigation to today in its week and Monday in a future week", () => {
     const input = displayFixture();
     const selectDate = vi.fn();

@@ -56,12 +56,12 @@ export function compactGroups({ snapshot, roster, rules, players, assignments, i
       || Boolean(claims.length && assignment && assignment.playerId !== playerId)
       || Boolean(playerId && locks.some(lock => lock.playerId === playerId && lock.slotId !== slot.id))
       || Boolean(playerId && !members.has(playerId) && !dayAssignments.some(row => row.playerId === playerId)) || !supported;
-    const assigned = Boolean(windowVerified && player?.eligibilityVerified === true && playerId && dayAssignments.some(row => row.slotId === slot.id && row.playerId === playerId) && !conflict);
+    const assigned = Boolean(windowVerified && player?.teamAbbreviation && player.eligibilityVerified === true && playerId && dayAssignments.some(row => row.slotId === slot.id && row.playerId === playerId) && !conflict);
     if (playerId && !used.has(playerId) && (members.has(playerId) || dayAssignments.some(row => row.playerId === playerId))) {
       used.add(playerId);
       add(slot.type, { id: slot.id, slot: slot.id, playerId, player, assigned,
         status: conflict ? "Assignment conflict" : !windowVerified ? "Weekly window unverified" : !player || player.eligibilityVerified !== true ? "Eligibility unverified"
-          : assigned ? "Fantasy assigned" : "Held · no active game" });
+          : !player.teamAbbreviation ? "Team unknown" : assigned ? "Fantasy assigned" : "Held · no active game" });
     } else add(slot.type, { id: slot.id, slot: slot.id, assigned: false,
       status: conflict || playerId ? `Review ${slot.type}` : ready && windowVerified && actionableDate ? `Open ${slot.type}` : `Pending ${slot.type}` });
   }
@@ -79,7 +79,7 @@ export function compactGroups({ snapshot, roster, rules, players, assignments, i
         : [...members.values()].filter(member => member.position === entry.position).length > rules.rosterSlots[entry.position] ? "Reserve capacity conflict" : "Reserve"
         : locks.some(lock => lock.playerId === playerId && lock.slotId === null) ? "Bench locked"
         : !ready ? "Assignment pending" : player.eligibilityVerified !== true ? "Eligibility unverified" : !actionableDate ? "Past assignment unverified"
-        : hasGame ? "Unassigned · review bench evidence" : snapshot?.evidence.schedule?.completeness === "complete" ? "No game" : "Schedule unknown" });
+        : !player.teamAbbreviation ? "Team unknown" : hasGame ? "Unassigned · review bench evidence" : snapshot?.evidence.schedule?.completeness === "complete" ? "No game" : "Schedule unknown" });
   }
   for (const entry of roster) {
     if (used.has(entry.playerId)) continue;
@@ -116,6 +116,7 @@ export default function CompactSchedule({ snapshot, roster, rules, players, assi
   const completeSchedule = snapshot?.evidence.schedule?.completeness === "complete";
   const gameLabel = (player: PlanningPlayer, day: string): { text: string; detail: string; assigned: boolean; goalie?: string } => {
     if (!dates.includes(day)) return { text: "—", detail: "Outside selected range", assigned: false };
+    if (!player.teamAbbreviation) return { text: "?", detail: "Team unknown; schedule unresolved", assigned: false };
     const game = snapshot?.games.find(game => game.date === day && game.teamAbbreviation === player.teamAbbreviation);
     const assigned = ready && assignedByDay.get(day)?.has(player.id) === true;
     if (!game) return { text: completeSchedule ? "—" : "?", detail: completeSchedule ? "No game" : "Schedule unknown", assigned: false };
@@ -160,7 +161,7 @@ export default function CompactSchedule({ snapshot, roster, rules, players, assi
             </th>
             {week.map(day => { const cell = row.player ? gameLabel(row.player, day) : null; return <td key={day} title={`${dateLabel(day)} · ${cell?.detail ?? row.status}`} aria-label={`${dateLabel(day)} · ${cell?.detail ?? row.status}`}
               className={`${day === date ? styles.chosenDay : ""} ${day < today ? styles.elapsedDay : ""} ${cell?.assigned ? styles.fantasyAssigned : ""}`}>{cell?.text ?? "—"}{cell?.goalie && <sup aria-hidden="true">{cell.goalie}</sup>}</td>; })}
-            <td>{row.player ? (() => { const count = snapshot?.games.filter(game => week.includes(game.date) && dates.includes(game.date) && game.teamAbbreviation === row.player?.teamAbbreviation && !["cancelled", "postponed"].includes(game.status)).length ?? 0; return completeSchedule ? count : count ? `${count}?` : "?"; })() : "—"}</td>
+            <td>{row.player ? (() => { if (!row.player.teamAbbreviation) return "?"; const count = snapshot?.games.filter(game => week.includes(game.date) && dates.includes(game.date) && game.teamAbbreviation === row.player?.teamAbbreviation && !["cancelled", "postponed"].includes(game.status)).length ?? 0; return completeSchedule ? count : count ? `${count}?` : "?"; })() : "—"}</td>
           </tr>)}
         </tbody>)}
       </table>
