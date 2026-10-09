@@ -1,16 +1,16 @@
 # RSO compact layout — design amendment
 
-Date: October 9, 2026. Status: documentation complete; implementation proposed and unstarted.
+Date: October 9, 2026. Status: implemented and verified locally for the standard-slot fixtures. Section 9 records the later authorized implementation; sections 1 and 8 retain the original documentation handoff.
 
 This amendment supplements the [audited RSO PRD](prd-rso.md), [existing task history](../tasks-prd-rso.md), and [local implementation evidence](rso-implementation-2026-10-08.md). Its [companion task list](../tasks-rso-compact-layout-2026-10-09.md) is a separate extension, not a replacement or reset of that history. The accepted layout and day-selection requirements below refine PRD requirement 23 and acceptance AC-08 while preserving requirements 1, 8–9, 13–14, and 17–20 and all release gates.
 
-## 1. Scope and authority
+## 1. Original documentation scope and authority
 
 The original RSO goal `01a11d48-c845-7454-90da-8784ecd1201b` is **hard-stopped and must remain stopped**. This document neither resumes it nor dispatches its owner. Release integration is independently active in `01a1195f-d79e-71f4-ab3d-723b8676d00e`; its files and worktree are outside this amendment's ownership.
 
-Only this file and `tasks/tasks-rso-compact-layout-2026-10-09.md` are owned by this documentation task. Later implementation requires a separately authorized scope and clean base coordinated with the release owner. No application changes, push, remote build, deployment, provider refresh, transaction, or desktop mouse/keyboard use is authorized or performed here.
+At the original documentation handoff, this task owned only this file and `tasks/tasks-rso-compact-layout-2026-10-09.md`; no application changes were then authorized or performed. Later implementation required separate authorization and a clean base coordinated with the release owner, recorded in section 9. Push, remote build, deployment, live provider refresh, transaction, and desktop mouse/keyboard use remain outside this task.
 
-Latest branch direction: the user requests RSO work on, or merged into and continued on, **`octoberBranch`** so it is visible in the expected checkout. That is the requested later implementation destination; its verified base commit is pending integration owner `01a1195f-d79e-71f4-ab3d-723b8676d00e`. The parent reports that owner is reconciling the branch after independent review of `ec212566113385e1d183666c482f3c8cddda6ab5`; this task did not inspect that candidate or the release worktree. The two new documents currently reside as untracked files in the shared `master` documentation checkout. Their branch placement belongs to the integration handoff; this task does not switch or merge branches, and no layout implementation is claimed.
+At documentation delivery, the user requested later RSO work on **`octoberBranch`**, pending the integration owner's verified base. The parent reported review of `ec212566113385e1d183666c482f3c8cddda6ab5` before branch reconciliation; that candidate/worktree was not inspected by the documentation task. The two documents were then untracked in the preserved `master` checkout. Their later placement and the separate implementation authorization are recorded in section 9; these historical statements do not describe the current implementation status.
 
 The supplied accepted decisions provide the needed product clarification. This follows the repository's [create-prd](rules/create-prd.mdc) and [generate-tasks](rules/generate-tasks.mdc) rules without repeating answered questions. The requested amendment filenames take precedence over their generic naming templates. The repository `.agents/skills` location is absent; the two applicable planning rule sheets were found at the linked paths and read. No workers were requested or created.
 
@@ -18,7 +18,7 @@ The supplied accepted decisions provide the needed product clarification. This f
 
 The existing task list contains **23 checked and 18 unchecked items**. Parent tasks 1–3 are checked; parents 4–9 remain open. Tasks 4.1–4.3, 5.1, and 6.1–6.6 retain their local completion; 4.4, 5.2–5.4, and the provider/forecast/freshness/release/weekly/commercial dependencies remain open. Neither old checkbox states nor source documents were edited.
 
-Historical completion of task 6.4/AC-08 describes the prior interface. It does not verify this amendment's new player grid, twenty-row density, group bands, or day slider. All new implementation tasks and acceptance cases remain unverified. The settled **A — Wait for both** daily-beta decision, actual weekly qualification, and separate release authorization remain binding.
+Historical completion of task 6.4/AC-08 describes the prior interface. It does not verify this amendment's new player grid, twenty-row density, group bands, or day slider. New local acceptance is recorded separately in section 9. The settled **A — Wait for both** daily-beta decision, actual weekly qualification, and separate release authorization remain binding.
 
 ## 2. Overview, goals, and user stories
 
@@ -97,7 +97,7 @@ These are reversible implementation defaults, not mandatory user approvals. The 
 
 ## 6. Inspected algorithm dependencies and unresolved decisions
 
-These are source observations, not newly executed runtime tests.
+These are observations of the original inspected source revisions in section 8, before the implementation. Section 9 records the resulting display safeguards and runtime evidence; inherited engine/profile dependencies remain qualified there.
 
 | Dependency | Observed source and required later action |
 | --- | --- |
@@ -114,7 +114,7 @@ These are source observations, not newly executed runtime tests.
 
 ## 7. Concise acceptance matrix for later implementation
 
-All cases below are **not run for the amendment**. Use synthetic fixture data without provider refreshes or writes. UI cases extend old AC-08; assignment and continuity cases also preserve AC-02/03/05/06/10/11.
+These cases were unrun at specification delivery. Section 9 records their later scoped local evidence and limitations. Use synthetic fixture data without live provider refreshes or writes. UI cases extend old AC-08; assignment and continuity cases also preserve AC-02/03/05/06/10/11.
 
 | ID | Fixture / action | Observable pass condition | Dependency |
 | --- | --- | --- | --- |
@@ -148,4 +148,61 @@ The current [Library skill](skill://plugin_connector_1p_1b8ff8edfc1481918b252c82
 
 Application/provider/browser tests were not run for this documentation-only amendment. Existing test/performance receipts remain attributed to their recorded revisions.
 
-Documentation checks passed: local Markdown links resolve, code fences/whitespace and requirement/acceptance IDs are consistent, all proposed implementation tasks are open, and SHA-256 comparison confirms the three source documents and the pre-existing `web/next-env.d.ts` change are byte-identical to the initial read. Final scope inspection shows only the two owned documents added by this task; the checkout remains `master`. The requested `octoberBranch` placement and verified base remain an integration-owner handoff.
+Original documentation checks passed: local Markdown links, fences, whitespace and IDs were consistent; proposed tasks were open; source documents and the pre-existing `web/next-env.d.ts` change remained byte-identical. Only the two owned documents were added in `master`. This is the historical documentation receipt; later execution follows below.
+
+## 9. Authorized local implementation and acceptance receipt
+
+Later user authorization, forwarded by the parent, allowed implementation on the release owner's verified clean handoff. Base: **`057390bd8024794e1534b4efed03a84527723091`**; application commit: **`9b0fee693799586aa3d57b0070077aa7f22e0b0e`** on **`octoberBranch`**, in `/tmp/fhf-october-reconciliation-20261009`. The original `master` checkout and hard-stopped goal were preserved. One owner changed five application/test files; these two documents record completion. No workers, live provider reads/writes, push, remote build or deployment were used.
+
+The new `CompactSchedule.tsx` displays the current evaluation with complete roster/slot accounting, local day selection and shared group bands. The existing component/scoped SCSS provide the compact desktop default, retained mobile workspaces, accessible disclosures and read-only edit area. Existing component tests and the RSO E2E spec were extended. No planner, provider, storage, forecast-admission, global-palette, manifest or lockfile changes were required.
+
+Actual reversible defaults: **1440×900 CSS px**, including navigation, with setup/advanced details collapsed and bench expanded; **26–32 px desktop rows**, **12 px table text**, **18 px logos**, **4 px bands**, **7 px group radius**, **44 px mobile rows/controls**. These supersede the suggested starting measurements for this candidate only. GP counts known non-cancelled/non-postponed schedule opportunities inside the displayed week and retained horizon, including known completed games; partial/unknown evidence is labelled. Current/future weeks use league-local today/Monday; partial weeks use the first included date. Bench visibility resets on context replacement and survives workspace switches.
+
+Past assignment data is not reconstructed by the existing forward evaluator: show **Past lineup unverified**, Pending/Review rows and retained explicit locks, rather than fabricate historical vacancies or starters. Unassigned active players stay in Review, not an invented BN placement. Known held locks precede conflicting engine output; conflicts suppress dependent fantasy-assigned labels. Missing weekly windows, eligibility, reserve support/capacity and goalie evidence stay unresolved. Planned additions carry the timeline's effective time; planned drops remain accounted for with a timing-review pointer to Plan details. These are display safeguards, not a claim that all inherited engine/provider profiles are qualified.
+
+### Acceptance at the application commit
+
+| Cases | Local evidence / limit |
+| --- | --- |
+| CL-A1–A3 | 19/20/25-player browser fixtures account for every player once; genuine D vacancy retained. **20 complete rows measured at 1440×900**. The 25-player and 1440×720 cases reach final reserve rows through internal scrolling. |
+| CL-A4–A5 | Component fixtures cover dual eligibility, lock conflicts, unknown eligibility, held/no-game slots, reserve capacity and complete accounting. Browser bench count/collapse and retained keyboard focus pass. Existing objective/protection/provider regressions pass. |
+| CL-A6 | Slider, keyboard date headings, selected state, future Monday, league-local today across UTC midnight, week navigation and disabled partial-week dates pass. The full horizon is retained. |
+| CL-A7 | Manual selected-day/bench gestures preserve stored workspace bytes and issue no mutation requests. Existing fictional connected save, refresh, undo, account-switch and reload regressions pass separately; no live connected-account qualification is claimed. |
+| CL-A8 | Browser unknown/conflicting goalie coverage and unit confirmed/projected full-team evidence pass. Game presence, fantasy assignment and confirmed start remain independent. |
+| CL-A9–A10 | Standard IR/IR+ fixtures pass; unsupported reserve and capacity conflicts are covered in component fixtures. Existing weekly midpoint/bench-lock browser regressions and compact held/window tests pass. F/W/NA/alias profile ordering and actual provider weekly qualification remain outside this accepted cohort. |
+| CL-A11–A12 | Computed styles and actual desktop/mobile/focus screenshots were inspected. RW uses the accepted violet token; each group has one full flat band. Keyboard focus is visible; mobile 320/390 and 720×450 reflow retain workspaces/day state without page overflow. This is fixture/reflow acceptance, not a device or real browser-zoom claim. |
+
+### Commands and retained evidence
+
+All application commands ran from the worktree's `web/` with Node 22.11.0/npm and existing dependencies. Evidence directory: `/tmp/fhf-rso-compact-evidence-20261009`.
+
+| Check | Actual outcome / receipt |
+| --- | --- |
+| Affected unit pack | Initial **135/135** passed: component 56, planner 72, provider rules 7. The final component-only suite passed **60/60** after extending display cases (`unit-delivery.log`); unchanged planner/provider results are reused. |
+| TypeScript | `NODE_OPTIONS=--max-old-space-size=8192 npx --no-install tsc --noEmit --pretty false` **passed, exit 0**; `typescript-delivery.log` has no diagnostics. |
+| Scoped lint | `npx --no-install eslint components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx components/RosterScheduleOptimizer/CompactSchedule.tsx __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx e2e/roster-schedule-optimizer.spec.ts` **passed: zero errors, four inherited hook warnings** (`lint-delivery.log`). |
+| RSO browser regression | `NEXT_PUBLIC_SUPABASE_URL=https://local-integration.invalid PLAYWRIGHT_BASE_URL=http://127.0.0.1:3141 PLAYWRIGHT_SKIP_WEB_SERVER=1 npm run test:e2e -- e2e/roster-schedule-optimizer.spec.ts --project=chromium` produced **34 passes / one fixture failure** (`browser-verified.log`): all 29 original cases and five compact cases passed. The new week fixture captured stored bytes before reopen settled its existing `asOf` update. |
+| Final compact browser acceptance | The same browser command with `--grep 'compact '` and output `browser-delivery` **passed 6/6** after awaiting the correct pre-interaction persistence baseline. Thus all **35 unique cases** have retained passing evidence across those runs; no single 35/35 run is claimed. |
+| Documentation/scope | Local links, fences, IDs, task states and final diff are checked. Original PRD/task/implementation fingerprints below are unchanged; their 23 checked / 18 open historical states remain intact. No build was run. |
+
+Earlier density checks measured 16 then 19 full rows before compact chrome/header corrections; those failures are retained. Original regression failures from hidden disclosures, nested details selectors and mismatched fictional auth storage were corrected through explicit user-path fixture actions and matching the preview's fake URL. Read-only checks now verify the inert edit body while readiness remains usable. None of these failed/interrupted checks is counted as a passing run.
+
+Final screenshot/measurement files under `browser-delivery/`:
+
+- `roster-schedule-optimizer--06637--slots-and-continuous-bands-chromium/compact-20-1440x900.png` and `compact-20-metrics.json`.
+- `roster-schedule-optimizer--46fdc-tent-and-keyboard-selection-chromium/compact-date-focus.png` and `compact-keyboard-focus.png`.
+- `roster-schedule-optimizer--efc74-s-and-unknown-goalie-status-chromium/compact-short-desktop.png`, `compact-mobile-320.png`, `compact-mobile-390.png` and `compact-mobile-720.png`.
+
+The original references remain attributed to parent pixel review; this candidate's screenshots were inspected locally. The interface/React review retained native controls, semantic table labels, stable player/slot identity and existing calculation boundaries. Desktop compact hit areas are a deliberate density choice; mobile controls retain 44 px. A global palette cleanup and a second assignment optimizer were considered unnecessary and excluded.
+
+The executor disconnected after verification, before receipt/commit. After it reconnected, the unchanged staged five-file scope was reviewed and committed locally. The isolated preview was restarted using the existing provider-blocking wrapper with fictional credentials on `127.0.0.1:3141`; it is a local preview, not a deployment or live-data receipt. Preview availability can lapse with executor termination.
+
+Original working-copy SHA-256 fingerprints retained unchanged:
+
+| Source | SHA-256 |
+| --- | --- |
+| `prd-rso.md` | `f8f3cfc3724cf18ee82c4eb88446dd626e42328cfb5420df213b214dc644cd3f` |
+| `../tasks-prd-rso.md` | `7191ef3a8867e9049ea53c4b246baf85e429716d633d9ddfcf8ef0f15f86aacc` |
+| `rso-implementation-2026-10-08.md` | `2c168201cff10b74dc9fadf70c2732c316995b3d71e9dc5bdb10b801f696de70` |
+
+Remaining gates are unchanged: actual Yahoo/manual/weekly profile qualification, positive compatible native forecasts/readbacks, freshness/revocation policy and evidence, commercial decisions, and separate release authorization. No source-image download was retried after its bounded failure, and no live provider transaction, credential operation, forecast issuance, push or deployment follows from this local receipt.
