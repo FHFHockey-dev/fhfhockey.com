@@ -5,9 +5,7 @@
 $page-max-width: 1600px;
 
 .page {
-  height: 100vh;
   min-height: 100vh;
-  overflow: hidden;
   padding: v.$space-md clamp(1rem, 3vw, 2rem) v.$space-md;
   background: v.$background-dark;
   color: v.$text-primary;
@@ -19,11 +17,10 @@ $page-max-width: 1600px;
 
 .pageInner {
   width: min(100%, $page-max-width);
-  height: 100%;
   min-height: 0;
   margin: 0 auto;
   display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto auto;
   gap: v.$space-md;
 }
 
@@ -226,7 +223,8 @@ $page-max-width: 1600px;
 }
 
 .tableShell {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
+  height: clamp(20rem, 60vh, 42rem);
   width: 100%;
   min-width: 0;
   min-height: 0;
