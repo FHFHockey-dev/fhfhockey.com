@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BenchDecision, GameForecast, PlanIntent, PlanningData, PlanningResult, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
+import type { BenchDecision, GameForecast, PlanIntent, PlanningData, PlanningPlayer, PlanningResult, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import { WORKSPACE_KEY, defaultWorkspace } from "lib/rosterScheduleOptimizer/workspace";
 import { planRoster } from "lib/rosterScheduleOptimizer/planning";
 import { resolveContribution } from "lib/player-forecasts/contributions";
@@ -15,6 +15,7 @@ import RosterScheduleOptimizer, { GoalieEvidence, grossAcquisitionGames, request
 import ForecastEvidence, { forecastSummary } from "components/RosterScheduleOptimizer/ForecastEvidence";
 import BenchDecisions from "components/RosterScheduleOptimizer/BenchDecisions";
 import CandidateBrowser, { compareCandidateFits } from "components/RosterScheduleOptimizer/CandidateBrowser";
+import CompactSchedule, { compactGroups, scheduleWeek } from "components/RosterScheduleOptimizer/CompactSchedule";
 
 const player = { id: "fhfh:1", nhlId: 1, name: "Alpha Center", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "unknown" as const, ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] };
 const data: PlanningData = { players: [player], games: [], forecasts: [], evidence: {} };
@@ -411,7 +412,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     const button = await screen.findByRole("button", { name: "Show schedule-capacity assignment" });
     expect(button.textContent).toBe("Schedule-capacity assignment");
     fireEvent.click(button);
-    expect(screen.getByRole("status").textContent).toContain("Player-quality start/sit decisions are unresolved");
+    expect(screen.getByText(/This assignment shows legal schedule capacity/).textContent).toContain("Player-quality start/sit decisions are unresolved");
     expect(screen.queryByRole("button", { name: /suggested lineup/i })).toBeNull();
   });
   it("distinguishes identically named Yahoo teams by league and selects the matching context", async () => {
@@ -950,5 +951,138 @@ describe("RosterScheduleOptimizer workspace", () => {
     await waitFor(() => expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!)).toMatchObject({
       intent: saved.intent, lockedAssignments: saved.lockedAssignments, roster: saved.roster,
     }));
+  });
+});
+
+describe("compact RSO schedule", () => {
+  const displayFixture = (count = 20) => {
+    const workspace = defaultWorkspace();
+    workspace.context = { ...workspace.context, startDate: "2026-10-05", endDate: "2026-10-11", asOf: "2026-10-05T00:00:00Z", timeZone: "UTC" };
+    workspace.rules = { ...workspace.rules, rosterSlots: { C: 2, LW: 2, RW: 2, D: 4, UTIL: 2, G: 2, BN: count === 25 ? 9 : 6, IR: 1, "IR+": 1 } };
+    const positions = ["C", "C", "LW", "LW", "RW", "RW", "D", "D", "D", "D", "C", "LW", "G", "G"];
+    const players: PlanningPlayer[] = Array.from({ length: count === 19 ? 20 : count }, (_, index) => ({ ...player, id: `p${index}`, name: `Player Surname${index}`, eligibilityVerified: true,
+      eligiblePositions: index === 0 ? ["C", "LW"] : [positions[index] ?? "C"], playerClass: positions[index] === "G" ? "goalie" as const : "skater" as const,
+      reserveEligibility: ["IR", "IR+"] as Array<"IR" | "IR+"> }));
+    workspace.roster = players.map((member, index) => ({ playerId: member.id, position: count === 25 && index >= 23 ? index === 23 ? "IR" : "IR+" : index < 14 ? "active" : "bench" }));
+    if (count === 19) workspace.roster = workspace.roster.filter(row => row.playerId !== "p9");
+    const snapshot: PlanningSnapshot = { id: "compact", context: workspace.context, rules: workspace.rules, players, roster: workspace.roster,
+      games: [{ id: "game", date: "2026-10-05", startsAt: "2026-10-05T23:00:00Z", teamAbbreviation: "CAR", opponent: "NYR", home: true, status: "scheduled" }],
+      forecasts: [], lockedAssignments: [], realized: {}, opponent: null, evidence: { schedule: { source: "fixture", asOf: workspace.context.asOf, seasonId: workspace.context.seasonId, completeness: "complete", limitations: [] } } };
+    const slots = ["C#1", "C#2", "LW#1", "LW#2", "RW#1", "RW#2", "D#1", "D#2", "D#3", "D#4", "UTIL#1", "UTIL#2", "G#1", "G#2"];
+    const assignments = slots.map((slotId, index) => ({ date: "2026-10-05", playerId: `p${index}`, gameId: "game", slotId, locked: false }))
+      .filter(row => workspace.roster.some(member => member.playerId === row.playerId));
+    return { snapshot, roster: workspace.roster, rules: workspace.rules, players, assignments, intent: workspace.intent, date: "2026-10-05", ready: true };
+  };
+  it.each([19, 20, 25])("accounts for %i players without duplicating dual eligibility and preserves configured vacancies", count => {
+    const input = displayFixture(count);
+    const before = JSON.stringify(input);
+    const groups = compactGroups(input);
+    expect(groups.map(group => group.position)).toEqual(count === 25 ? ["C", "LW", "RW", "D", "UTIL", "G", "BN", "IR", "IR+"] : ["C", "LW", "RW", "D", "UTIL", "G", "BN"]);
+    const rows = groups.flatMap(group => group.rows);
+    expect(rows.filter(row => row.playerId)).toHaveLength(count);
+    expect(new Set(rows.flatMap(row => row.playerId ? [row.playerId] : [])).size).toBe(count);
+    expect(rows.find(row => row.id === "C#1")?.player?.eligiblePositions).toEqual(["C", "LW"]);
+    if (count === 19) expect(rows.find(row => row.id === "D#4")?.status).toBe("Open D");
+    expect(JSON.stringify(input)).toBe(before);
+  });
+  it("retains a non-playing lock and weekly window occupant instead of inventing an open slot", () => {
+    const input = displayFixture();
+    input.snapshot.games = [];
+    input.snapshot.lockedAssignments = [{ date: input.date, playerId: "p0", slotId: "C#1" }];
+    input.assignments = [];
+    let row = compactGroups(input).flatMap(group => group.rows).find(row => row.id === "C#1")!;
+    expect(row.playerId).toBe("p0"); expect(row.status).toBe("Held · no active game"); expect(row.assigned).toBe(false);
+    expect(compactGroups(input).find(group => group.position === "Review")?.rows.some(row => row.playerId === "p1")).toBe(true);
+    input.rules.lineupMode = "weekly";
+    input.rules.lineupPeriods = [{ id: "week", start: "2026-10-05T00:00:00Z", end: "2026-10-12T00:00:00Z", lockAt: "2026-10-05T00:00:00Z" }];
+    input.date = "2026-10-07";
+    row = compactGroups(input).flatMap(group => group.rows).find(row => row.id === "C#1")!;
+    expect(row.playerId).toBe("p0"); expect(row.status).not.toContain("Open");
+  });
+  it("keeps unknown eligibility, unsupported reserves and conflicting locks honest", () => {
+    const input = displayFixture(25);
+    input.players[0].eligibilityVerified = false;
+    input.snapshot.lockedAssignments = [{ date: input.date, playerId: "p0", slotId: "C#1" }, { date: input.date, playerId: "p1", slotId: "C#1" }];
+    delete input.rules.rosterSlots["IR+"];
+    const rows = compactGroups(input).flatMap(group => group.rows);
+    expect(rows.find(row => row.id === "C#1")?.status).toBe("Assignment conflict");
+    expect(rows.find(row => row.playerId === "p24")).toMatchObject({ slot: "Review", status: "Reserve unverified" });
+    expect(new Set(rows.flatMap(row => row.playerId ? [row.playerId] : [])).size).toBe(25);
+  });
+  it("changes view state and bench visibility without editing intent, and distinguishes unknown goalie starts", () => {
+    const input = displayFixture();
+    const before = JSON.stringify(input.intent);
+    const selectDate = vi.fn();
+    render(<CompactSchedule {...input} dates={scheduleWeek(input.date)} today={input.date} selectDate={selectDate} selectPlayer={vi.fn()} />);
+    expect(screen.getAllByRole("cell", { name: /Starter unknown/ })).toHaveLength(2);
+    fireEvent.change(screen.getByRole("slider", { name: "Selected planning day" }), { target: { value: "2" } });
+    expect(selectDate).toHaveBeenLastCalledWith("2026-10-07");
+    fireEvent.click(screen.getByRole("button", { name: /Select Sun/ }));
+    expect(selectDate).toHaveBeenLastCalledWith("2026-10-11");
+    const bench = screen.getByRole("button", { name: /Bench 6/ });
+    expect(bench.getAttribute("aria-expanded")).toBe("true");
+    fireEvent.click(bench);
+    expect(bench.getAttribute("aria-expanded")).toBe("false");
+    expect(document.querySelectorAll('tr[data-compact-row][hidden]')).toHaveLength(6);
+    expect(JSON.stringify(input.intent)).toBe(before);
+  });
+  it("marks an engine assignment conflicting with a held slot and an unknown weekly window as unresolved", () => {
+    const input = displayFixture();
+    input.snapshot.lockedAssignments = [{ date: input.date, playerId: "p0", slotId: "C#1" }];
+    input.assignments = [{ ...input.assignments[0], playerId: "p1" }];
+    expect(compactGroups(input).flatMap(group => group.rows).find(row => row.id === "C#1")).toMatchObject({ playerId: "p0", status: "Assignment conflict", assigned: false });
+    input.rules.lineupMode = "weekly";
+    input.rules.lineupPeriods = [];
+    input.assignments = [];
+    const rows = compactGroups(input).flatMap(group => group.rows);
+    expect(rows.find(row => row.id === "C#1")?.status).toBe("Weekly window unverified");
+    expect(rows.some(row => row.assigned || row.status.startsWith("Open"))).toBe(false);
+  });
+  it("labels effective planned additions and reserve capacity conflicts without losing current roster players", () => {
+    const input = displayFixture(25);
+    input.rules.rosterSlots.IR = 0;
+    const reserve = input.roster.find(row => row.position === "IR+")!;
+    input.roster.find(row => row.position === "IR")!.position = "IR+";
+    expect(compactGroups(input).flatMap(group => group.rows).find(row => row.playerId === reserve.playerId)?.status).toBe("Reserve capacity conflict");
+    input.rules.acquisitionTiming = "same_day";
+    input.rules.acquisitionCost = 0;
+    input.rules.periods = [{ id: "week", start: "2026-10-05T00:00:00Z", end: "2026-10-12T00:00:00Z", remaining: 1, source: "manager" }];
+    input.players[19].canDrop = true;
+    input.players.push({ ...input.players[19], id: "new", name: "Planned Addition", availability: "manager_available" });
+    input.intent.steps = [{ id: "add", type: "add", playerId: "new", dropPlayerId: "p19", at: "2026-10-05T00:00:00Z", effectiveAt: "2026-10-05T00:00:00Z", conditional: false, dependsOn: [] }];
+    const rows = compactGroups(input).flatMap(group => group.rows);
+    expect(rows.find(row => row.playerId === "new")?.change).toMatch(/Planned addition · effective .*UTC/);
+    expect(rows.find(row => row.playerId === "p19")?.status).toContain("Planned drop");
+  });
+  it("defaults schedule-week navigation to today in its week and Monday in a future week", () => {
+    const input = displayFixture();
+    const selectDate = vi.fn();
+    const dates = [...scheduleWeek(input.date), ...scheduleWeek("2026-10-12")];
+    const props = { ...input, dates, today: "2026-10-07", selectDate, selectPlayer: vi.fn() };
+    const view = render(<CompactSchedule {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: "Next schedule week" }));
+    expect(selectDate).toHaveBeenLastCalledWith("2026-10-12");
+    view.rerender(<CompactSchedule {...props} date="2026-10-12" />);
+    fireEvent.click(screen.getByRole("button", { name: "Previous schedule week" }));
+    expect(selectDate).toHaveBeenLastCalledWith("2026-10-07");
+  });
+  it("labels a confirmed goalie only when eligible full-team evidence supports it", () => {
+    const input = displayFixture();
+    const game = input.snapshot.games[0];
+    input.players[12].nhlTeamId = 12; input.players[13].nhlTeamId = 12;
+    input.players[12].nhlId = 12; input.players[13].nhlId = 13;
+    input.players[12].rosterRevision = "roster"; input.players[13].rosterRevision = "roster";
+    input.snapshot.forecasts = input.players.slice(12, 14).map((goalie, index) => ({ playerId: goalie.id, gameId: game.id,
+      sourceKind: "detailed", sourceWatermark: "inputs", stats: { SAVES_GOALIE: 20 }, conditioning: "unconditional",
+      startProbability: index === 0 ? 1 : 0, confirmedStart: index === 0, revisionId: "revision", modelVersion: "fixture", limitations: [],
+      cutoffAt: input.snapshot.context.asOf, issuedAt: input.snapshot.context.asOf, expiresAt: game.startsAt!,
+      allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false },
+      issuedContext: { version: "forge-issued-context-v1", playerId: goalie.id, gameId: game.id, nhlPlayerId: goalie.nhlId!,
+        seasonId: input.snapshot.context.seasonId, teamId: 12, scheduledAt: game.startsAt!, scheduleRevision: "schedule", rosterRevision: "roster",
+        observedAt: input.snapshot.context.asOf, scheduleSourceUpdatedAt: null, scheduleFetchedAt: null, identityUpdatedAt: null, membershipCreatedAt: [] } }));
+    game.scheduleRevision = "schedule";
+    render(<CompactSchedule {...input} dates={scheduleWeek(input.date)} today={input.date} selectDate={vi.fn()} selectPlayer={vi.fn()} />);
+    expect(screen.getAllByRole("cell", { name: /Confirmed goalie starter/ })).toHaveLength(1);
+    expect(screen.getAllByRole("cell", { name: /Projected goalie starter/ })).toHaveLength(1);
   });
 });
