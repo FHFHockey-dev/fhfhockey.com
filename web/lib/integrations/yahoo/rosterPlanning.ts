@@ -240,7 +240,8 @@ export async function loadYahooPlanningSnapshot(args: {
   if (ownRows.length !== roster.length) unsupported.push("Resolve missing roster identities before accepting a complete plan.");
   if (!roster.length) unsupported.push("The connected roster is empty; review the team selection or import the roster manually.");
   const rules: LeagueRules = {
-    lineupMode: mode, rosterSlots: settings.rosterConfig,
+    // Injury slots are excluded from draft capacity, but still constrain in-season rosters.
+    lineupMode: mode, rosterSlots: { ...settings.rosterConfig, ...settings.excludedInjurySlots },
     // A lineup deadline does not establish when a transaction becomes effective.
     acquisitionTiming: "unknown",
     acquisitionCost: null, periods: [], scoring: { mode: settings.leagueType, weights: { ...settings.scoringCategories }, categories: yahooPlanningCategories(Object.keys(settings.categoryWeights)) },

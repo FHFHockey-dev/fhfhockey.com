@@ -1,4 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { evaluatePlan } from "lib/rosterScheduleOptimizer/planning";
+import { supplementProviderRules } from "lib/rosterScheduleOptimizer/providerRules";
+import { defaultIntent } from "lib/rosterScheduleOptimizer/workspace";
 
 const mocks = vi.hoisted(() => ({ user: { id: "owner-a" }, allowed: false, requireUser: vi.fn(), access: vi.fn(), snapshot: vi.fn(), planningData: vi.fn(), settings: vi.fn(), draftResource: vi.fn(), boardResource: vi.fn(), planningResource: vi.fn() }));
 vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: mocks.requireUser }));
@@ -256,6 +259,36 @@ describe("Yahoo snapshot evidence", () => {
       } finally { clock?.mockRestore(); }
     }
 
+    mocks.settings.mockReturnValue({ ...mocks.settings(), excludedInjurySlots: { "IR+": 2, IR: 1, NA: 1 } });
+    mocks.planningData.mockResolvedValue({ ...await mocks.planningData(), games: [
+      { id: "reserved-game", date: "2026-10-02", startsAt: "2026-10-02T23:00:00Z", teamAbbreviation: "TOR", opponent: "OTT", home: true, status: "scheduled" },
+    ] });
+    mocks.boardResource.mockImplementation(async ({ resource }: any) => {
+      if (resource.type !== "roster") throw new Error("Optional league roster read unavailable");
+      return { payload: { team_key: "453.l.1.t.1", is_owned_by_current_login: "1", roster: { date: "2026-10-01", coverage_type: "date", is_editable: "1",
+        0: { players: { count: 2, ...Object.fromEntries([2001, 2002].map((id, index) => [index, { player: [
+          { player_key: `453.p.${id}` }, { selected_position: [{ position: "IR+" }] }, { eligible_positions: [{ position: "C" }, { position: "IR+" }] },
+        ] }])) } } } }, transport };
+    });
+    mocks.planningResource.mockRejectedValue(new Error("Optional planning read unavailable"));
+    const reserved = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", now });
+    expect(reserved.snapshot.rules.rosterSlots).toMatchObject({ "IR+": 2, IR: 1, NA: 1 });
+    expect(reserved.snapshot.roster).toEqual([{ playerId: "canonical", position: "IR+" }, { playerId: "candidate", position: "IR+" }]);
+    const hold = evaluatePlan(reserved.snapshot, defaultIntent(), "agp");
+    expect(hold.legal, hold.limitations.join(" ")).toBe(true);
+    expect(hold.activeGames).toBe(0);
+    expect(hold.assignments).toEqual([]);
+    expect(reserved.snapshot.rules.periods).toEqual([]);
+    expect(reserved.snapshot.acquisitionEvidence?.remaining).toBeNull();
+    expect(reserved.capabilities.acquisitions).toBe(false);
+    const supplemented = supplementProviderRules(reserved.snapshot, { rosterSlots: { "IR+": 1 }, goalieMinimum: { required: 3, counts: "appearances" } });
+    expect(supplemented.snapshot.rules.rosterSlots["IR+"]).toBe(2);
+    expect(supplemented.conflicts).toContain("IR+ roster slots differs from the manager input; provider setting retained.");
+    expect(supplemented.snapshot.evidence.managerRules?.source).toBe("manager-supplied");
+    expect(supplemented.snapshot.rules.goalieMinimum).toMatchObject({ required: 3, counts: "appearances", credited: null });
+    expect(supplemented.snapshot.rules.periods).toEqual([]);
+    expect(supplemented.snapshot.acquisitionEvidence?.remaining).toBeNull();
+    expect(evaluatePlan(supplemented.snapshot, defaultIntent(), "agp").goalie.minimumSatisfied).toBe(false);
   });
 });
 
