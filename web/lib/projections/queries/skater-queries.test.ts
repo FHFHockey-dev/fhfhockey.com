@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
-const dbState = vi.hoisted(() => ({ rows: [] as Record<string, unknown>[], calls: [] as Array<[string, unknown[]]> }));
+const dbState = vi.hoisted(() => ({ rows: [] as Record<string, unknown>[], calls: [] as Array<[string, unknown[]]>,
+  rollingFrom: null as null | ((table: string) => unknown) }));
 vi.mock("lib/supabase/server", () => ({ default: {
   from(table: string) {
+    if (table === "rolling_player_game_metrics" && dbState.rollingFrom) return dbState.rollingFrom(table);
     dbState.calls.push(["from", [table]]);
     const query: Record<string, unknown> = { then(resolve: (value: unknown) => void) {
       resolve({ data: dbState.rows, error: null });
@@ -14,7 +16,7 @@ vi.mock("lib/supabase/server", () => ({ default: {
   },
 } }));
 
-import { ROLLING_ROW_SELECT_CLAUSE, fetchCurrentRosterPlayerIds, fetchSkaterRecencyEvents, fetchLatestSkaterContextProfiles } from "./skater-queries";
+import { ROLLING_ROW_SELECT_CLAUSE, fetchRollingRows, fetchCurrentRosterPlayerIds, fetchSkaterRecencyEvents, fetchLatestSkaterContextProfiles } from "./skater-queries";
 
 describe("native skater recency event identity", () => {
   const rows = [{ player_id: 7, game_id: 2026020025, season: 20262027, game_date: "2026-10-03" }] as any;
@@ -142,6 +144,159 @@ describe("fetchRollingRows compatibility select clause", () => {
     expect(ROLLING_ROW_SELECT_CLAUSE).toContain("goals_total_last5");
     expect(ROLLING_ROW_SELECT_CLAUSE).toContain("shots_total_last5");
     expect(ROLLING_ROW_SELECT_CLAUSE).toContain("assists_total_last5");
+  });
+});
+
+// Fictional ordered rows test read mechanics, not NHL appearances or model support.
+describe("counted rolling skater history", () => {
+  const rows = (count: number) => Array.from({ length: count }, (_, index) => ({
+    player_id: 7, game_id: 2026000000 + count - index, season: 20262027,
+    strength_state: "ev", game_date: "2026-10-06", sog_per_60_all: index % 2 ? null : 6.25,
+    sog_per_60_avg_all: 7.5, goals_total_all: 0, toi_seconds_avg_all: 900,
+  }));
+  type Reply = { data?: unknown; count?: unknown; error?: unknown; thrown?: Error };
+  function fixture(source = rows(501), replies: Reply[] = []) {
+    const reads: number[][] = [];
+    const queries: Array<Record<string, any>> = [];
+    const from = vi.fn((table: string) => {
+      expect(table).toBe("rolling_player_game_metrics");
+      const query: Record<string, any> = {};
+      for (const name of ["select", "in", "eq", "lt", "gt", "order", "limit"]) query[name] = vi.fn(() => query);
+      query.range = vi.fn(async (start: number, end: number) => {
+        const reply = replies[reads.length] ?? {};
+        reads.push([start, end]);
+        if (reply.thrown) throw reply.thrown;
+        return { data: source.slice(start, end + 1), count: source.length, error: null, ...reply };
+      });
+      // Reproduce the old limit(5000) expression against a server returning at most 1000 rows.
+      query.then = (resolve: (value: unknown) => unknown) => Promise.resolve({
+        data: source.slice(0, 1000), count: null, error: null, ...replies[0],
+      }).then(resolve);
+      queries.push(query);
+      return query;
+    });
+    dbState.rollingFrom = from;
+    return { reads, queries, from };
+  }
+  const fetch = (ids = [7]) => fetchRollingRows(ids, "ev", "2026-10-07");
+
+  it.each([0, 1, 499, 500, 501, 1000, 1001, 5000])("completes the exact bounded scope at %s rows", async count => {
+    const source = rows(count), db = fixture(source);
+    const actual = await fetch();
+    expect(actual).toHaveLength(source.length);
+    expect(actual).toEqual(source);
+    expect(db.reads).toEqual(Array.from({ length: Math.max(1, Math.ceil(count / 500)) }, (_, page) => [page * 500, page * 500 + 499]));
+    for (const query of db.queries) {
+      expect(query.select).toHaveBeenCalledWith(ROLLING_ROW_SELECT_CLAUSE, { count: "exact" });
+      expect(query.eq).toHaveBeenCalledWith("strength_state", "ev");
+      expect(query.lt).toHaveBeenCalledWith("game_date", "2026-10-07");
+      expect(query.gt).toHaveBeenCalledWith("game_date", "2025-10-07");
+      expect(query.limit).not.toHaveBeenCalled();
+    }
+  });
+  it("crosses the retained 1000-row cap shape rather than returning the old-expression prefix", async () => {
+    const source = rows(1501), db = fixture(source);
+    const actual = await fetch();
+    expect(actual).toHaveLength(source.length);
+    expect(actual).toEqual(source);
+    expect(db.reads).toEqual([[0, 499], [500, 999], [1000, 1499], [1500, 1999]]);
+  });
+  it("does not treat a count-less retained read shape as complete", async () => {
+    const db = fixture(rows(1501), [{ data: rows(1000), count: null }]);
+    await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "invalid_count" });
+    expect(db.reads).toEqual([[0, 499]]);
+  });
+  it("deduplicates requested IDs and orders date/player/game ties deterministically", async () => {
+    const source = [rows(2)[0], rows(2)[1], { ...rows(1)[0], player_id: 8 }];
+    const db = fixture(source);
+    expect(await fetch([8, 7, 8])).toEqual(source);
+    expect(db.queries[0].in).toHaveBeenCalledWith("player_id", [7, 8]);
+    expect(db.queries[0].order.mock.calls).toEqual([["game_date", { ascending: false }],
+      ["player_id", { ascending: true }], ["game_id", { ascending: false }]]);
+    expect(await fetch([])).toEqual([]);
+    expect(db.from).toHaveBeenCalledTimes(1);
+  });
+  it("retains the requested PP scope and existing row values", async () => {
+    const source = rows(1).map(row => ({ ...row, strength_state: "pp" }));
+    const db = fixture(source);
+    expect(await fetchRollingRows([7], "pp", "2026-10-07")).toEqual(source);
+    expect(db.queries[0].eq).toHaveBeenCalledWith("strength_state", "pp");
+  });
+  it.each([null, undefined, -1, 1.5, NaN, "1"])("rejects unproved exact count %s", async count => {
+    fixture(rows(1), [{ count }]);
+    await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "invalid_count" });
+  });
+  it("rejects history exceeding the old 5000-row bound before returning a capped prefix", async () => {
+    const db = fixture(rows(5001));
+    await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "row_limit_exceeded" });
+    expect(db.reads).toEqual([[0, 499]]);
+  });
+  it.each([500, 502])("rejects count drift to %s after the first page", async count => {
+    const db = fixture(rows(501), [{ count: 501 }, { count }]);
+    await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "count_drift" });
+    expect(db.reads).toHaveLength(2);
+  });
+  it.each([null, {}, [], rows(499), rows(501)].map(data => ({ data })))("rejects a malformed, short or overfull first page", async ({ data }) => {
+    fixture(rows(501), [{ data, count: 501 }]);
+    await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "invalid_page" });
+  });
+  it("rejects a missing terminal row and a duplicate across the page boundary", async () => {
+    fixture(rows(501), [{}, { data: [] }]);
+    await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "invalid_page" });
+    fixture(rows(501), [{}, { data: [rows(501)[0]] }]);
+    await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "duplicate_row" });
+  });
+  it("rejects an unproved zero count and a malformed row", async () => {
+    fixture(rows(1), [{ count: 0 }]);
+    await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "invalid_page" });
+    fixture(rows(1), [{ data: [null] }]);
+    await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "invalid_row" });
+  });
+  it("rejects identical or conflicting duplicate identities within a page", async () => {
+    for (const second of [rows(1)[0], { ...rows(1)[0], sog_per_60_all: 99 }]) {
+      fixture([rows(1)[0], second]);
+      await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "duplicate_row" });
+    }
+  });
+  it("rejects unstable ordering within and across pages", async () => {
+    fixture(rows(2).reverse());
+    await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "unstable_order" });
+    fixture([{ ...rows(2)[0], player_id: 8 }, rows(2)[1]]);
+    await expect(fetch([7, 8])).rejects.toMatchObject({ status: "incomplete", reason: "unstable_order" });
+    fixture([{ ...rows(2)[0], game_date: "2026-10-05" }, rows(2)[1]]);
+    await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "unstable_order" });
+    fixture(rows(501), [{}, { data: [{ ...rows(501)[500], game_id: 2026001000 }] }]);
+    await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "unstable_order" });
+  });
+  it.each([
+    { player_id: 8 }, { game_id: null }, { game_id: -1 }, { season: null }, { strength_state: "pk" },
+    { game_date: "2026-10-07" }, { game_date: "2025-10-07" }, { game_date: "2025-10-06" }, { game_date: "2026-02-30" },
+  ])("rejects substituted or malformed row scope %j", async changed => {
+    fixture([{ ...rows(1)[0], ...changed } as any]);
+    await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "invalid_row" });
+  });
+  it("rejects provider errors and transport failures after a successful page without returning partial rows", async () => {
+    const providerError = { message: "synthetic permission denied", code: "42501" };
+    fixture(rows(501), [{}, { error: providerError, data: null, count: null }]);
+    await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "read_failed", cause: providerError });
+    const transportError = new Error("synthetic interrupted read");
+    fixture(rows(501), [{}, { thrown: transportError }]);
+    await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "read_failed", cause: transportError });
+  });
+  it.each([[0], [-7], [NaN], [1.5], Array.from({ length: 501 }, (_, index) => index + 1)].map(ids => ({ ids })))("rejects invalid or unbounded requested IDs", async ({ ids }) => {
+    const db = fixture();
+    await expect(fetch(ids)).rejects.toMatchObject({ status: "incomplete", reason: "invalid_scope" });
+    expect(db.from).not.toHaveBeenCalled();
+  });
+  it("rejects an unsupported strength scope before reading", async () => {
+    const db = fixture();
+    await expect(fetchRollingRows([7], "pk" as any, "2026-10-07")).rejects.toMatchObject({ status: "incomplete", reason: "invalid_scope" });
+    expect(db.from).not.toHaveBeenCalled();
+  });
+  it.each(["2026-02-30", "not-a-date", "2026-10-07T00:00:00Z"])("rejects invalid date scope %s before reading", async date => {
+    const db = fixture();
+    await expect(fetchRollingRows([7], "ev", date)).rejects.toMatchObject({ status: "incomplete", reason: "invalid_scope" });
+    expect(db.from).not.toHaveBeenCalled();
   });
 });
 

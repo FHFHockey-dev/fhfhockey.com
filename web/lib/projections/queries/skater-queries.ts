@@ -149,6 +149,20 @@ export type SkaterTrendAdjustmentFetchResult = {
   diagnostics: SkaterTrendAdjustmentFetchDiagnostics;
 };
 
+export class SkaterRollingReadIncompleteError extends Error {
+  readonly status = "incomplete";
+
+  constructor(
+    readonly reason: "invalid_scope" | "read_failed" | "invalid_count" | "count_drift"
+      | "row_limit_exceeded" | "invalid_page" | "invalid_row" | "duplicate_row" | "unstable_order",
+    cause?: unknown
+  ) {
+    super(`Rolling skater history read incomplete: ${reason}`, { cause });
+    this.name = "SkaterRollingReadIncompleteError";
+  }
+}
+
+/** Return the complete bounded history or reject; never expose a capped/partial prefix. */
 export async function fetchRollingRows(
   playerIds: number[],
   strengthState: "ev" | "pp",
@@ -157,23 +171,73 @@ export async function fetchRollingRows(
   assertSupabase();
   if (playerIds.length === 0) return [];
 
+  const validDate = (value: unknown): value is string => typeof value === "string"
+    && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value))
+    && new Date(value).toISOString().slice(0, 10) === value;
+  const ids = [...new Set(playerIds)].sort((a, b) => a - b);
+  if (ids.length > 500 || ids.some(id => !Number.isSafeInteger(id) || id <= 0)
+    || (strengthState !== "ev" && strengthState !== "pp") || !validDate(cutoffDate)) {
+    throw new SkaterRollingReadIncompleteError("invalid_scope");
+  }
   const oneYearAgo = new Date(
     new Date(cutoffDate).getTime() - 365 * 24 * 60 * 60 * 1000
-  )
-    .toISOString()
-    .split("T")[0];
+  ).toISOString().split("T")[0];
+  const requestedIds = new Set(ids);
+  const rows: RollingRow[] = [];
+  const seen = new Set<string>();
+  let total: number | null = null;
 
-  const { data, error } = await supabase
-    .from("rolling_player_game_metrics")
-    .select(ROLLING_ROW_SELECT_CLAUSE)
-    .in("player_id", playerIds)
-    .eq("strength_state", strengthState)
-    .lt("game_date", cutoffDate)
-    .gt("game_date", oneYearAgo)
-    .order("game_date", { ascending: false })
-    .limit(5000);
-  if (error) throw error;
-  return ((data ?? []) as unknown) as RollingRow[];
+  // Keep the previous 5000-row bound, but prove coverage with exact counts and 500-row pages.
+  for (;;) {
+    let result: { data: unknown; count: number | null; error: unknown };
+    try {
+      result = await supabase
+        .from("rolling_player_game_metrics")
+        .select(ROLLING_ROW_SELECT_CLAUSE, { count: "exact" })
+        .in("player_id", ids)
+        .eq("strength_state", strengthState)
+        .lt("game_date", cutoffDate)
+        .gt("game_date", oneYearAgo)
+        .order("game_date", { ascending: false })
+        .order("player_id", { ascending: true })
+        .order("game_id", { ascending: false })
+        .range(rows.length, rows.length + 499);
+    } catch (cause) {
+      throw new SkaterRollingReadIncompleteError("read_failed", cause);
+    }
+    if (result.error) throw new SkaterRollingReadIncompleteError("read_failed", result.error);
+    const count = result.count;
+    if (typeof count !== "number" || !Number.isSafeInteger(count) || count < 0) {
+      throw new SkaterRollingReadIncompleteError("invalid_count");
+    }
+    if (count > 5000) throw new SkaterRollingReadIncompleteError("row_limit_exceeded");
+    if (total !== null && count !== total) throw new SkaterRollingReadIncompleteError("count_drift");
+    total = count;
+    if (!Array.isArray(result.data) || result.data.length !== Math.min(500, total - rows.length)) {
+      throw new SkaterRollingReadIncompleteError("invalid_page");
+    }
+    for (const value of result.data) {
+      const row = value as RollingRow;
+      if (!row || typeof row !== "object" || !Number.isSafeInteger(row.player_id)
+        || !requestedIds.has(row.player_id) || !Number.isSafeInteger(row.game_id) || row.game_id <= 0
+        || !Number.isSafeInteger(row.season) || row.season <= 0 || row.strength_state !== strengthState
+        || !validDate(row.game_date) || row.game_date >= cutoffDate || row.game_date <= oneYearAgo) {
+        throw new SkaterRollingReadIncompleteError("invalid_row");
+      }
+      const key = `${row.player_id}:${row.game_id}:${row.strength_state}`;
+      // Even identical repeats invalidate counted coverage; dropping them would hide a missing row.
+      if (seen.has(key)) throw new SkaterRollingReadIncompleteError("duplicate_row");
+      const previous = rows.at(-1);
+      if (previous && (row.game_date > previous.game_date
+        || row.game_date === previous.game_date && (row.player_id < previous.player_id
+          || row.player_id === previous.player_id && row.game_id > previous.game_id))) {
+        throw new SkaterRollingReadIncompleteError("unstable_order");
+      }
+      seen.add(key);
+      rows.push(row);
+    }
+    if (rows.length === total) return rows;
+  }
 }
 
 export async function fetchLatestWgoSkaterDeploymentProfiles(
