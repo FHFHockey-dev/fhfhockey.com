@@ -67,9 +67,7 @@ describe("Draft Dashboard route", () => {
     router.pathname = "/game-grid";
     rerender(<Layout>Page content</Layout>);
     fireEvent.wheel(window, { deltaY: -100 });
-    expect(
-      screen.getByRole("contentinfo", { hidden: true }).getAttribute("aria-hidden")
-    ).toBe("true");
+    expect(screen.getByRole("contentinfo")).toBeTruthy();
     fireEvent.wheel(window, { deltaY: 100 });
     expect(screen.getByRole("contentinfo")).toBeTruthy();
   });

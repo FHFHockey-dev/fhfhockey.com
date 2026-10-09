@@ -217,10 +217,12 @@ describe("forecast evaluation boundaries", () => {
     } };
     const window = { startDate: "2026-10-10", endDate: "2026-10-11", asOf: "2026-10-12T00:00:00Z" };
     const result = await runForgeProspectiveEvaluation(db as any, window);
+    // A stored participation scalar does not establish the scoped evidence needed
+    // for an unconditional forecast or a participation score.
     expect(result.metrics.points.filter(row => row.target === "GOALS").map(row => row.conditioning).sort())
-      .toEqual(["conditional_playing", "unconditional"]);
+      .toEqual(["conditional_playing"]);
     expect(result.metrics.points.filter(row => row.target === "GOALS").every(row => row.teamGameOrdinal === null)).toBe(true);
-    expect(result.metrics.participation[0]).toMatchObject({ target: "participation", brier: 0 });
+    expect(result.metrics.participation).toHaveLength(0);
     expect(result.progress).toMatchObject({ producer: "FORGE", settledGames: 1, releaseDecision: "not_assessed" });
     tables.player_forecast_source_observations = [{ ...observation, payload_hash: "tampered" }];
     const invalid = await runForgeProspectiveEvaluation(db as any, window);
@@ -231,6 +233,6 @@ describe("forecast evaluation boundaries", () => {
       players: [{ ...revision.payload.players[0], proj_goals_pk: null }] } }];
     const incomplete = await runForgeProspectiveEvaluation(db as any, window);
     expect(incomplete.metrics.points.some(row => row.target === "GOALS")).toBe(false);
-    expect(incomplete.excluded.all_strength_source_incomplete).toBe(2);
+    expect(incomplete.excluded.all_strength_source_incomplete).toBe(1);
   });
 });

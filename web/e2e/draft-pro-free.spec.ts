@@ -279,11 +279,11 @@ test("free source weights change a blend without changing drafted picks", async 
   await page.getByLabel("Position filter").selectOption("C");
   const remainingPlayer = players.locator('tr[data-player-id="1002"]');
   const beforeProjection = await remainingPlayer.innerText();
-  expect(beforeProjection).toContain("207.0");
+  expect(beforeProjection).toContain("210.0");
   await players.locator("tbody tr").first().getByRole("button", { name: "Draft", exact: true }).click();
   const draftedBefore = await page.evaluate(() => JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").draftedPlayers);
-  await page.getByRole("button", { name: "Setup", exact: true }).click();
-  await page.getByRole("button", { name: "Projections", exact: true }).click();
+  await page.getByRole("button", { name: "Open full draft settings", exact: true }).click();
+  await page.getByRole("tab", { name: "Projections", exact: true }).click();
   await page.getByRole("button", { name: "Edit Weights", exact: true }).click();
   const skaterSources = page.getByRole("region", { name: "Skaters projection sources" });
   const weights = skaterSources.getByRole("spinbutton");
@@ -308,8 +308,9 @@ test("free CSV source blends and restores after autosave", async ({ page }) => {
   await players.locator("tbody tr").first().getByRole("button", { name: "Draft", exact: true }).click();
   const draftedBefore = await page.evaluate(() => JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").draftedPlayers);
 
-  await page.getByRole("button", { name: "Setup", exact: true }).click();
-  await page.getByRole("button", { name: "Projections", exact: true }).click();
+  await page.getByRole("button", { name: "Open full draft settings", exact: true }).click();
+  await page.getByRole("tab", { name: "League & Draft", exact: true }).click();
+  await page.getByRole("button", { name: "Management", exact: true }).click();
   await page.getByRole("button", { name: "Import CSV", exact: true }).click();
   const csv = page.getByRole("dialog", { name: "Import Projections (CSV)" });
   await csv.getByLabel("CSV File Input").setInputFiles({
@@ -319,6 +320,8 @@ test("free CSV source blends and restores after autosave", async ({ page }) => {
   });
   await csv.getByLabel("Projection Source Name:").fill("Fixture CSV");
   await csv.getByRole("button", { name: "Confirm Import", exact: true }).click();
+  await page.getByRole("button", { name: "Open full draft settings", exact: true }).click();
+  await page.getByRole("tab", { name: "Projections", exact: true }).click();
   const skaterSources = page.getByRole("region", { name: "Skaters projection sources" });
   await page.getByRole("button", { name: "Edit Weights", exact: true }).click();
   const weights = skaterSources.getByRole("spinbutton");
@@ -334,7 +337,6 @@ test("free CSV source blends and restores after autosave", async ({ page }) => {
     ag_skaters: { isSelected: true, weight: 0 },
     cullen_skaters: { isSelected: true, weight: 0 },
     dtz_skaters: { isSelected: true, weight: 0 },
-    lineupexperts_skaters: { isSelected: true, weight: 0 },
     "5v5_skaters": { isSelected: true, weight: 0 },
     custom_csv_1: { isSelected: true, weight: 1 },
   });
@@ -349,8 +351,8 @@ test("free CSV source blends and restores after autosave", async ({ page }) => {
     JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").draftedPlayers,
   )).toEqual(draftedBefore);
   await expect(players.locator('tr[data-player-id="1001"]')).toHaveCount(0);
-  await page.getByRole("button", { name: "Setup", exact: true }).click();
-  await page.getByRole("button", { name: "Projections", exact: true }).click();
+  await page.getByRole("button", { name: "Open full draft settings", exact: true }).click();
+  await page.getByRole("tab", { name: "Projections", exact: true }).click();
   await expect(skaterSources.getByText("Fixture CSV", { exact: true })).toBeVisible();
   await expect(skaterSources.getByLabel("Toggle source Fixture CSV")).toBeChecked();
   await page.getByRole("button", { name: "Edit Weights", exact: true }).click();
@@ -384,8 +386,9 @@ test("free export denial stays local and does not request the premium export API
   page.once("dialog", (dialog) => dialog.accept());
   await page.goto("/draft-dashboard");
   await expect(page.locator("#mobile-draft-panel-players tbody tr").first()).toBeVisible({ timeout: 60_000 });
-  await page.getByRole("button", { name: "Setup", exact: true }).click();
-  await page.getByRole("button", { name: "Projections", exact: true }).click();
+  await page.getByRole("button", { name: "Open full draft settings", exact: true }).click();
+  await page.getByRole("tab", { name: "League & Draft", exact: true }).click();
+  await page.getByRole("button", { name: "Management", exact: true }).click();
   await page.getByTestId("export-settings-btn").click();
   await expect(page.getByRole("alert").filter({ hasText: "Sign in to export blended projections." })).toBeVisible();
   expect(exportRequests).toBe(0);

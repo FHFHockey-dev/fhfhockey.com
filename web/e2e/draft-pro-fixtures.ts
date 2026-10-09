@@ -53,6 +53,18 @@ export async function installDraftProFreeFixtures(page: Page, { seedSnapshot = t
   await page.route("**/api/v1/player**", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
   );
+  await page.route("**/api/v1/season", (route) =>
+    route.fulfill({ json: { seasonId: 20262027 } }),
+  );
+  await page.route("**/api/v1/schedule/**", (route) =>
+    route.fulfill({ json: { gameWeek: [] } }),
+  );
+  await page.route("**/api/v1/roster-schedule-optimizer/schedule**", (route) =>
+    route.fulfill({ json: { success: true, data: {
+      gameKey: "477", startWeek: 1, endWeek: 27, games: [], version: "draft-fixture",
+      freshness: { latestFetchedAt: "2026-10-02T00:00:00Z", oldestFetchedAt: "2026-10-02T00:00:00Z", rowCount: 0 },
+    } } }),
+  );
   await page.route("**://*.stripe.com/**", (route) => route.abort());
   await page.route("**://*.patreon.com/**", (route) => route.abort());
   if (seedSnapshot) await page.addInitScript(() => {

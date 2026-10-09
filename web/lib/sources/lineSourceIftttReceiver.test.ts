@@ -131,10 +131,10 @@ describe("createLineSourceIftttReceiver", () => {
     const res = createMockRes();
     const pending = scheduler(createMockReq({ method: "GET", headers: { authorization: "Bearer scheduler-test" } }), res);
     await vi.waitFor(() => {
-      expect(request).toHaveBeenCalledTimes(3);
+      expect(request).toHaveBeenCalledTimes(4);
       if (compute) expect(dispatchMock).toHaveBeenCalledOnce();
     });
-    // Accepted work dispatches while all three source calls are still pending.
+    // Accepted work dispatches while all four source calls are still pending.
     if (!compute) { expect(dispatchMock).not.toHaveBeenCalled(); expect(rpcMock).not.toHaveBeenCalled(); }
     for (const [url] of request.mock.calls as unknown as Array<[URL]>) {
       expect(url.searchParams.get("currentDayOnly")).toBe("true");
@@ -144,7 +144,7 @@ describe("createLineSourceIftttReceiver", () => {
     releases.forEach((release) => release());
     await pending;
     expect(res.statusCode).toBe(200);
-    expect(res.body).toMatchObject({ dispatched: compute ? 16 : 0, capture: { attempted: 3, failed: 0 } });
+    expect(res.body).toMatchObject({ dispatched: compute ? 16 : 0, capture: { attempted: 4, failed: 0 } });
   });
 
   it("routes a GameDayGoalies event into the generic queue with source metadata", async () => {
@@ -183,6 +183,7 @@ describe("createLineSourceIftttReceiver", () => {
       }),
       {
         onConflict: "source_key,tweet_id",
+        ignoreDuplicates: true,
       },
     );
   });
@@ -228,9 +229,11 @@ describe("createLineSourceIftttReceiver", () => {
     });
     expect(upsertMock.mock.calls[0][1]).toEqual({
       onConflict: "source_key,tweet_id",
+      ignoreDuplicates: true,
     });
     expect(upsertMock.mock.calls[1][1]).toEqual({
       onConflict: "source_key,tweet_id",
+      ignoreDuplicates: true,
     });
   });
 
