@@ -50,6 +50,22 @@ Current production mobile skater and goalie rows exist in the DOM but both table
 
 Route-status snapshots: team ratings latest 2026-10-09; skater offense/defense and goalie ratings latest 2026-03-08; game predictions latest 2026-09-29; player predictions and market flags pending. Current-season team data coverage and stale rating dates are live limits for the ingestion owners, not page repairs in this candidate. No source correctness or forecast qualification claim is made.
 
+## Keyboard focus follow-up after executor recovery
+
+Recovery verified file access, a clean working tree, the existing branch, and HEAD `8374c5627644457c526ee9187ba2db9bddf8346d`. The independent review in `/tmp/uls-independent-review-summary.md` accepted the layout candidate but found CA, SCA, HDCA, HDGA, MDCA and MDGA partially clipped during native Tab traversal at 390px. No earlier follow-up edits or tests were present.
+
+This follow-up changes only `web/components/underlying-stats/PlayerStatsTable.module.scss`, `web/e2e/underlying-stats.spec.ts` and this receipt. At the existing 640px handset boundary, scroll padding centers native keyboard reveal in the area beyond the 64px Rank column. Table dimensions, sticky positions and overflow behavior are preserved. The committed regression traverses every skater sort control with Tab and Shift+Tab, checks the full button and focus-outline clearance against the viewport and pinned Rank, hit-tests both button edges, and activates CA with Enter, verifying pressed state and the `sortKey=ca` request. The regression failed on the recovered candidate before the CSS fix.
+
+Follow-up verification actually run:
+
+- **Passed:** `PLAYWRIGHT_BROWSERS_PATH=/Users/tim/Code/fhfhockey.com/web/.ms-playwright PLAYWRIGHT_BASE_URL=http://127.0.0.1:3114 PLAYWRIGHT_SKIP_WEB_SERVER=1 npx playwright test e2e/underlying-stats.spec.ts --workers=1 --output=/tmp/uls-keyboard-final-results`, 41/41 in 46.0s. This includes the new keyboard regression and all 40 existing layout, scrolling, loading, error, empty, Load more, trend and detail checks. Log: `/tmp/uls-keyboard-final.log`.
+- **Passed:** `npx vitest run --configLoader runner --no-cache components/underlying-stats/PlayerStatsTable.test.tsx`, 15/15 tests. The default config loader first hit EPERM writing a temporary bundle through the shared dependency symlink; the runner loader and disabled cache avoided that write. Log: `/tmp/uls-keyboard-unit.log`.
+- **Passed:** `npx eslint e2e/underlying-stats.spec.ts` and `NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit`, both exit 0. Logs: `/tmp/uls-keyboard-lint.log`, `/tmp/uls-keyboard-typecheck.log`.
+- **Passed:** captured-response skater replay against the final local CSS at 390px: 38 forward and 37 backward focus stops, all fully exposed with keyboard focus, and an Enter-triggered CA request. Headless emulated touch swipes with retained keyboard focus moved horizontal scroll from 0 to 593px and back to 75px. Evidence: `/tmp/uls-keyboard-captured-final-results.json`, `/tmp/uls-keyboard-captured-final.log`, `/tmp/uls-keyboard-captured-ca.png`. The replay checks the outgoing sort request because the stored response retains its original sort state; the committed fixture regression also checks the updated pressed state.
+- **Passed:** `git diff --check` and review of the three-file follow-up scope. Node 22.11.0, existing dependencies and cached Chromium were reused. Local loopback binding and headless Chromium required sandbox exceptions; no desktop UI/cursor, shared-master edit, dependency installation, network writes, push or deployment occurred.
+
+An expanded keyboard probe passed team traversal but found the goalie label “Rebound Attempts Against” too wide to fit beside Rank at 390px. Resizing or wrapping oversized goalie headers is outside this six-label skater fix; the existing goalie browser checks passed. Real screen readers, WebKit, mobile hardware and actual browser zoom were not newly verified. The follow-up is ready for the same independent reviewer; the production gates below remain open.
+
 ## Remaining limits and decision
 
 **Approve the scoped local layout candidate.** Production acceptance remains open: release is not authorized here, production still exhibits the mobile defect, current-season team data is empty, and rating snapshots include stale/pending products.

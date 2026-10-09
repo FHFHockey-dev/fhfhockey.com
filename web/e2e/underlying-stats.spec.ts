@@ -92,6 +92,47 @@ async function expectReachableTable(page: Page, requiresVerticalScroll = true) {
   return viewport;
 }
 
+test("playerStats Tab and Shift+Tab fully reveal sort controls at 390px", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const fixture = await installFixtures(page, "playerStats");
+  await page.goto("/underlying-stats/playerStats");
+  const viewport = await expectReachableTable(page);
+  const buttons = viewport.locator("thead button");
+  const count = await buttons.count();
+  await buttons.first().focus();
+
+  const expectFocusedControlVisible = async (index: number) => {
+    const button = buttons.nth(index);
+    await expect(button).toBeFocused();
+    await expect.poll(() => button.evaluate((el) => {
+      const view = el.closest('[class*="PlayerStatsTable_viewport"]')!;
+      const bounds = view.getBoundingClientRect();
+      const rank = view.querySelector("thead th")!.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
+      const hit = (x: number) => el.contains(document.elementFromPoint(x, rect.top + rect.height / 2));
+      return el.matches(":focus-visible") &&
+        rect.left >= rank.right + 4 && rect.right <= bounds.left + view.clientWidth - 4 &&
+        rect.top >= bounds.top + 4 && rect.bottom <= bounds.top + view.clientHeight - 4 &&
+        hit(rect.left + 1) && hit(rect.right - 1);
+    }), { message: `Fully visible keyboard focus for ${await button.getAttribute("aria-label")}` }).toBe(true);
+  };
+
+  for (let index = 0; index < count; index++) {
+    await expectFocusedControlVisible(index);
+    if (await buttons.nth(index).getAttribute("aria-label") === "Sort by CA") {
+      await page.keyboard.press("Enter");
+      await expect(buttons.nth(index)).toHaveAttribute("aria-pressed", "true");
+      await expect.poll(() => fixture.requests.some((url) => new URL(url, "http://fixture").searchParams.get("sortKey") === "ca")).toBe(true);
+      await expectFocusedControlVisible(index);
+    }
+    if (index < count - 1) await page.keyboard.press("Tab");
+  }
+  for (let index = count - 2; index >= 0; index--) {
+    await page.keyboard.press("Shift+Tab");
+    await expectFocusedControlVisible(index);
+  }
+});
+
 for (const surface of surfaces) {
   for (const viewportSize of viewportSizes) {
     test(`${surface} data, alignment and two-axis scrolling at ${viewportSize.width}x${viewportSize.height}`, async ({ page }) => {

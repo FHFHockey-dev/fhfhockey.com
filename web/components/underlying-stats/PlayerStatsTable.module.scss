@@ -207,6 +207,11 @@
 }
 
 @media (max-width: v.$screen-small-max) {
+  .viewport {
+    // Center native keyboard reveal in the scrollable area beyond the 64px Rank column.
+    scroll-padding-inline: calc(50% + 32px) calc(50% - 32px);
+  }
+
   .headerCell.stickyCell:not(.rankHeaderCell) {
     left: auto !important;
     z-index: 3;
