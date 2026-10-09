@@ -1,7 +1,7 @@
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 import type {
   UnderlyingStatsLandingRating,
@@ -13,7 +13,7 @@ import { buildUnderlyingStatsLandingDashboard } from "../../../lib/underlying-st
 const routerState = vi.hoisted(() => ({
   isReady: true,
   pathname: "/underlying-stats",
-  query: { date: "2026-04-05" },
+  query: { date: "2026-04-05" } as Record<string, string>,
   replace: vi.fn()
 }));
 
@@ -195,6 +195,67 @@ describe("/underlying-stats landing page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByRole("table", { name: "Detailed team table" })).toBeTruthy();
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("restores the URL snapshot after history changes and rejects a late response", async () => {
+    let resolveOlder!: (response: Response) => void;
+    const older = new Promise<Response>((resolve) => { resolveOlder = resolve; });
+    const initialSnapshot = buildSnapshot([buildRating("TOR")]);
+    const fetchMock = vi.fn((input: RequestInfo | URL, _init?: RequestInit) => {
+      if (String(input).includes("/landing")) return Promise.resolve(jsonResponse({
+        availableDates: ["2026-04-05", "2026-04-04", "2026-04-03"], initialSnapshot, routeStatus
+      }));
+      if (String(input).includes("2026-04-04")) return older;
+      return Promise.resolve(jsonResponse(buildSnapshot([buildRating("VAN")], "2026-04-03")));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const { rerender } = render(<UnderlyingStatsLanding />);
+    await screen.findByRole("table", { name: "Detailed team table" });
+
+    routerState.query = { date: "2026-04-04" };
+    rerender(<UnderlyingStatsLanding />);
+    await waitFor(() => expect((screen.getByLabelText("Snapshot date") as HTMLSelectElement).value).toBe("2026-04-04"));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
+      "/api/underlying-stats/team-ratings?date=2026-04-04", expect.objectContaining({ signal: expect.any(AbortSignal) })
+    ));
+    const pendingSignal = fetchMock.mock.calls.find(([url]) => String(url).includes("team-ratings?date=2026-04-04"))![1] as RequestInit;
+
+    routerState.query = { date: "2026-04-03" };
+    rerender(<UnderlyingStatsLanding />);
+    await waitFor(() => expect(within(screen.getByRole("table", { name: "Detailed team table" })).getByText("VAN")).toBeTruthy());
+    expect(pendingSignal.signal?.aborted).toBe(true);
+    await act(async () => resolveOlder(jsonResponse(buildSnapshot([buildRating("BOS")], "2026-04-04"))));
+    expect((screen.getByLabelText("Snapshot date") as HTMLSelectElement).value).toBe("2026-04-03");
+    expect(within(screen.getByRole("table", { name: "Detailed team table" })).queryByText("BOS")).toBeNull();
+  });
+
+  it("hides the previous snapshot while loading and restores it after a failed date request", async () => {
+    let failRequest!: (response: Response) => void;
+    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>((resolve) => { failRequest = resolve; })));
+    render(<TeamPowerRankingsPage availableDates={["2026-04-05", "2026-04-04"]}
+      initialSnapshot={buildSnapshot([buildRating("TOR")])} routeStatus={routeStatus} />);
+    const select = screen.getByLabelText("Snapshot date");
+    fireEvent.change(select, { target: { value: "2026-04-04" } });
+    expect(within(screen.getByRole("table", { name: "Detailed team table" })).queryByText("TOR")).toBeNull();
+    await act(async () => failRequest(jsonResponse({}, false, 503)));
+    expect(screen.getAllByText("Unable to load ratings (503)").length).toBeGreaterThan(0);
+    fireEvent.change(select, { target: { value: "2026-04-05" } });
+    await waitFor(() => expect(within(screen.getByRole("table", { name: "Detailed team table" })).getByText("TOR")).toBeTruthy());
+    expect(screen.queryByText("Unable to load ratings (503)")).toBeNull();
+  });
+
+  it("opens the latest snapshot when navigation removes an initial historical date", async () => {
+    routerState.query = { date: "2026-04-04" };
+    const fetchMock = vi.fn(async () => jsonResponse(buildSnapshot([buildRating("TOR")])));
+    vi.stubGlobal("fetch", fetchMock);
+    const props = { availableDates: ["2026-04-05", "2026-04-04"], routeStatus,
+      initialSnapshot: buildSnapshot([buildRating("VAN")], "2026-04-04") };
+    const { rerender } = render(<TeamPowerRankingsPage {...props} />);
+    expect((screen.getByLabelText("Snapshot date") as HTMLSelectElement).value).toBe("2026-04-04");
+    routerState.query = {};
+    rerender(<TeamPowerRankingsPage {...props} />);
+    await waitFor(() => expect((screen.getByLabelText("Snapshot date") as HTMLSelectElement).value).toBe("2026-04-05"));
+    await waitFor(() => expect(within(screen.getByRole("table", { name: "Detailed team table" })).getByText("TOR")).toBeTruthy());
   });
 
   it("shows the four-link rail, Power Leaders, advanced rankings, and readiness", () => {

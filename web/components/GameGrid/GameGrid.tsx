@@ -5,6 +5,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
+import Link from "next/link";
 
 import Header from "./Header";
 import TeamRow from "./TeamRow";
@@ -13,7 +14,7 @@ import TotalGamesPerDayRow from "./TotalGamesPerDayRow";
 import FourWeekGrid from "./utils/FourWeekGrid";
 import PlayerPickupTable from "components/PlayerPickupTable/PlayerPickupTable";
 
-import { parseDateStr, startAndEndOfWeek } from "./utils/date-func";
+import { parseGameGridDateRange, startAndEndOfWeek } from "./utils/date-func";
 import { getRegularGamesPerDay } from "./utils/helper";
 import { getSelectedOpponentIds, getTeamScheduleSummary, getOpponentPointPct, getFourWeekAverages, getFourWeekScore } from "./utils/scheduleSummary";
 
@@ -447,26 +448,13 @@ function GameGridInternal({
 
   // Sync dates with URL search params
   useEffect(() => {
-    let ignore = false;
-    let start = router.query.startDate as string;
-    let end = router.query.endDate as string;
-
-    if (start && end) {
-      if (!ignore) {
-        // search params only contain yyyy-MM-dd
-        const startObj = parseDateStr(start);
-        const endObj = endOfDay(parseDateStr(end));
-
-        start = startObj.toISOString();
-        end = endObj.toISOString();
-
-        setDates([start, end]);
-      }
+    if (!router.isReady) return;
+    const range = parseGameGridDateRange(router.query.startDate, router.query.endDate);
+    if (range) setDates(range);
+    else if (router.query.startDate === undefined && router.query.endDate === undefined) {
+      setDates(startAndEndOfWeek());
     }
-    return () => {
-      ignore = true;
-    };
-  }, [router.query]);
+  }, [router.isReady, router.query.startDate, router.query.endDate]);
 
   // Toggle days off depending on what day of the week the grid is accessed
   useEffect(() => {
@@ -1826,9 +1814,18 @@ function getDaysBeforeToday() {
 }
 
 export default function GameGrid({ mode, setMode }: GameGridProps) {
+  const router = useRouter();
   const [orientation, setOrientation] = useState<"horizontal" | "vertical">(
     "horizontal"
   );
+
+  if (router.isReady && (router.query.startDate !== undefined || router.query.endDate !== undefined) &&
+      !parseGameGridDateRange(router.query.startDate, router.query.endDate)) {
+    return <section aria-label="Game Grid date recovery" style={{ padding: 24 }}>
+      <p role="alert">Invalid date range in URL. Choose valid start and end dates in order.</p>
+      <Link href={`/game-grid/${mode}`}>Back to Game Grid</Link>
+    </section>;
+  }
 
   return (
     <GameGridContext>

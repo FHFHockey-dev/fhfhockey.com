@@ -1,6 +1,6 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\GameGrid\utils\date-func.tsx
 
-import { endOfISOWeek, startOfISOWeek } from "date-fns";
+import { endOfDay, endOfISOWeek, format, startOfISOWeek } from "date-fns";
 import { DAY_ABBREVIATION, EXTENDED_DAY_ABBREVIATION } from "lib/NHL/types";
 
 function getDayStrInternal(date: Date) {
@@ -72,4 +72,18 @@ export function startAndEndOfWeek(date?: Date): [string, string] {
 export function parseDateStr(dateStr: string) {
   const [year, month, day] = dateStr.split("-");
   return new Date(Number(year), Number(month) - 1, Number(day));
+}
+
+export function parseGameGridDateRange(
+  start: string | string[] | undefined,
+  end: string | string[] | undefined
+): [string, string] | null {
+  if (typeof start !== "string" || typeof end !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) return null;
+  const startDate = parseDateStr(start);
+  const endDate = parseDateStr(end);
+  if (!Number.isFinite(startDate.getTime()) || !Number.isFinite(endDate.getTime()) ||
+      format(startDate, "yyyy-MM-dd") !== start || format(endDate, "yyyy-MM-dd") !== end ||
+      startDate > endDate) return null;
+  return [startDate.toISOString(), endOfDay(endDate).toISOString()];
 }

@@ -20,6 +20,7 @@ function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
   );
 
   useEffect(() => {
+    if (Router.query.mode === mode) return;
     Router.replace({
       query: {
         ...Router.query,

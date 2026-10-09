@@ -22,6 +22,7 @@ import {
   type UnderlyingStatsLandingSnapshot
 } from "../../lib/underlying-stats/teamLandingRatings";
 import type { UlsRouteStatus } from "../../lib/underlying-stats/ulsRouteStatus";
+import { buildUnderlyingStatsLandingDashboard } from "../../lib/underlying-stats/teamLandingDashboard";
 import styles from "./indexUS.module.scss";
 
 type PageProps = {
@@ -341,9 +342,17 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
   const [showAllTeams, setShowAllTeams] = useState(true);
   const [viewMode, setViewMode] = useState<TableViewMode>("advanced");
   const [sortState, setSortState] = useState<SortState>(DEFAULT_SORTS.advanced);
-  const ratings = snapshot.ratings;
-  const dashboard = snapshot.dashboard;
+  const hasSelectedSnapshot = selectedDate === snapshot.resolvedDate && !error;
+  const ratings = useMemo(
+    () => hasSelectedSnapshot ? snapshot.ratings : [],
+    [hasSelectedSnapshot, snapshot.ratings]
+  );
+  const dashboard = useMemo(
+    () => hasSelectedSnapshot ? snapshot.dashboard : buildUnderlyingStatsLandingDashboard([]),
+    [hasSelectedSnapshot, snapshot.dashboard]
+  );
   const activeTeamAbbr = hoveredTeamAbbr ?? pinnedTeamAbbr;
+  const defaultDate = availableDates[0] ?? initialSnapshot.resolvedDate ?? "";
 
   useEffect(() => {
     setSnapshot(initialSnapshot);
@@ -352,15 +361,25 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
   }, [initialSnapshot]);
 
   useEffect(() => {
+    if (!router.isReady) return;
+    setSelectedDate(typeof router.query.date === "string"
+      ? router.query.date || defaultDate
+      : defaultDate);
+  }, [router.isReady, router.query.date, defaultDate, initialSnapshot.resolvedDate]);
+
+  useEffect(() => {
+    setError(null);
     if (!selectedDate || selectedDate === snapshot.resolvedDate) {
+      setIsLoading(false);
       return;
     }
 
-    let isMounted = true;
+    const controller = new AbortController();
     setIsLoading(true);
-    setError(null);
 
-    fetch(`/api/underlying-stats/team-ratings?date=${selectedDate}`)
+    fetch(`/api/underlying-stats/team-ratings?date=${encodeURIComponent(selectedDate)}`, {
+      signal: controller.signal
+    })
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Unable to load ratings (${response.status})`);
@@ -369,7 +388,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
         return response.json() as Promise<UnderlyingStatsLandingSnapshot>;
       })
       .then((data) => {
-        if (!isMounted) {
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -387,7 +406,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
         }
       })
       .catch((fetchError: unknown) => {
-        if (!isMounted) {
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -396,38 +415,14 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
             ? fetchError.message
             : "Something went wrong while loading ratings.";
         setError(message);
-        setSnapshot((current) => ({
-          ...current,
-          dashboard: {
-            ...current.dashboard,
-            context: [],
-            fallers: [],
-            inefficiency: { overvalued: [], undervalued: [] },
-            quadrant: {
-              averageDefenseProcess: 0,
-              averageOffenseProcess: 0,
-              axisSubtitle: current.dashboard.quadrant.axisSubtitle,
-              points: []
-            },
-            risers: [],
-            sustainability: {
-              buyLow: [],
-              heatCheck: [],
-              processBacked: []
-            }
-          },
-          ratings: []
-        }));
       })
       .finally(() => {
-        if (isMounted) {
+        if (!controller.signal.aborted) {
           setIsLoading(false);
         }
       });
 
-    return () => {
-      isMounted = false;
-    };
+    return () => controller.abort();
   }, [selectedDate, snapshot.resolvedDate, router]);
 
   const dateOptions = useMemo(() => {
