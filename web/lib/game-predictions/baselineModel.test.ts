@@ -11,6 +11,7 @@ import {
   buildGamePredictionHistoryInsert,
   buildGamePredictionOutputUpsert,
   getRecentTeamFormFeatureEligibility,
+  explainBaselineModelPrediction,
   predictGameWithExtraTreesModel,
   predictGameWithBaselineModel,
   trainGamePredictionExtraTreesModel,
@@ -206,6 +207,35 @@ describe("game prediction baseline model", () => {
     expect(valueFor("homeMinusAwayRecent20ShotShare")).toBe(0);
     expect(valueFor("homeMinusAwayRecent40ShotShare")).toBe(0);
     expect(valueFor("homeMinusAwayWeightedGoalieGsaaPer60")).toBe(0.4);
+  });
+
+  it("explains present zero-weight, masked, missing, rejected and genuine zero inputs using the supplied artifact", () => {
+    const payload = createPayload();
+    payload.matchup.homeMinusAwayOffRating = 0;
+    payload.matchup.homeMinusAwayDefRating = null;
+    payload.matchup.homeMinusAwayRosterOffImpact = 1.2;
+    payload.matchup.homeMinusAwayCtpi = 16;
+    const model = { featureCount: BASELINE_FEATURE_KEYS.length, weights: BASELINE_FEATURE_KEYS.map(() => 0), bias: 0.25,
+      featureNormalization: { means: BASELINE_FEATURE_KEYS.map(() => 1), scales: BASELINE_FEATURE_KEYS.map(() => 2) } };
+    model.weights[BASELINE_FEATURE_KEYS.indexOf("homeMinusAwayRosterOffImpact")] = 2;
+    const args = { payload, model, predictionCutoffAt: payload.predictionCutoffAt! };
+    const explanation = explainBaselineModelPrediction(args);
+    const feature = (key: string) => explanation.features.find(row => row.featureKey === key)!;
+    expect(feature("homeMinusAwayOffRating")).toMatchObject({ inputPresent: true, rawValue: 0, fallback: null, coefficient: 0, scoreContribution: 0 });
+    expect(feature("homeMinusAwayDefRating")).toMatchObject({ inputPresent: false, fallback: "missing_to_zero" });
+    expect(feature("homeMinusAwayCtpi")).toMatchObject({ inputPresent: true, featureEligibility: "rejected", fallback: "rejected_to_zero", transformedValue: 0 });
+    expect(feature("homeMinusAwayRosterOffImpact")).toMatchObject({ inputPresent: true, policyActive: false, transformedValue: 0, normalizedValue: -0.5, coefficient: 2, scoreContribution: -1 });
+    const prediction = predictGameWithBaselineModel(args);
+    expect(explanation.rawHomeWinProbability).toBe(prediction.components.raw_home_win_probability);
+    expect(explanation.adjustments.homeWinProbability).toBe(prediction.homeWinProbability);
+    expect(explanation.adjustments.dataQualityPenalties).toEqual(prediction.components.data_quality_penalties);
+    expect(explanation.score).toBe(-0.75);
+  });
+
+  it("keeps unused trailing features separate and rejects incomplete influence artifacts", () => {
+    const args = { payload: createPayload(), predictionCutoffAt: "2026-01-10T11:45:00Z", model: { featureCount: 1, weights: [0.1], bias: 0 } };
+    expect(explainBaselineModelPrediction(args).features[1]).toMatchObject({ selectedByModel: false, coefficient: null, normalizedValue: null, scoreContribution: 0 });
+    expect(() => explainBaselineModelPrediction({ ...args, model: { ...args.model, weights: [] } })).toThrow("selected logistic artifact");
   });
 
   it("keeps roster/form candidates excluded by default and opt-in for ablations", () => {

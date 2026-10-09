@@ -794,6 +794,71 @@ export function buildBaselineFeatureVector(
   );
 }
 
+export type BaselineFeatureExplanation = {
+  featureKey: BaselineFeatureKey;
+  inputPresent: boolean;
+  rawValue: number | null;
+  featureEligibility: "present" | "missing" | "rejected";
+  eligibilityReason: string | null;
+  policyActive: boolean;
+  selectedByModel: boolean;
+  fallback: "missing_to_zero" | "rejected_to_zero" | null;
+  transformedValue: number;
+  normalizedValue: number | null;
+  coefficient: number | null;
+  scoreContribution: number;
+};
+
+/** Pure explanation of the supplied artifact. Presence is not proof of historical availability. */
+export function explainBaselineModelPrediction(
+  args: Parameters<typeof predictGameWithBaselineModel>[0],
+) {
+  if (!Number.isInteger(args.model.featureCount) || args.model.featureCount < 1
+    || args.model.featureCount > BASELINE_FEATURE_KEYS.length
+    || args.model.weights.length !== args.model.featureCount
+    || ![args.model.bias, ...args.model.weights].every(Number.isFinite)) {
+    throw new Error("A complete finite selected logistic artifact is required for influence diagnostics.");
+  }
+  const features = buildBaselineFeatureVector(args.payload, args.featureVectorOptions);
+  const normalized = normalizeFeatureVector(features.slice(0, args.model.featureCount),
+    (args.model as GamePredictionBaselineModel).featureNormalization);
+  if (!normalized.every(Number.isFinite)) throw new Error("Invalid selected feature normalization.");
+  const excluded = getExcludedFeatureKeys(args.featureVectorOptions);
+  const recentForm = getRecentTeamFormFeatureEligibility(args.payload);
+  const explanation: BaselineFeatureExplanation[] = BASELINE_FEATURE_KEYS.map((featureKey, index) => {
+    const value = featureKey === "homeMarketNoVigProbability"
+      ? args.payload.market?.homeNoVigProbability : args.payload.matchup[featureKey];
+    const rawValue = typeof value === "number" && Number.isFinite(value) ? value : null;
+    const rejected = featureKey === "homeMinusAwayCtpi" && !recentForm.eligible;
+    const selectedByModel = index < args.model.featureCount;
+    return { featureKey, inputPresent: rawValue !== null, rawValue,
+      featureEligibility: rejected ? "rejected" : rawValue === null ? "missing" : "present",
+      eligibilityReason: rejected ? recentForm.reason : null,
+      policyActive: !excluded.includes(featureKey), selectedByModel,
+      fallback: rejected ? "rejected_to_zero" : rawValue === null ? "missing_to_zero" : null,
+      transformedValue: features[index], normalizedValue: selectedByModel ? normalized[index] : null,
+      coefficient: selectedByModel ? args.model.weights[index] : null,
+      // A masked zero can still have a constant contribution after standardization.
+      scoreContribution: selectedByModel ? normalized[index] * args.model.weights[index] || 0 : 0 };
+  });
+  const raw = predictBaselineModelRawHomeWinProbability(args.model, features);
+  const calibrated = args.calibrator ? args.calibrator.predict(raw) : raw;
+  const quality = args.disableDataQualityDampening ? { multiplier: 1, penalties: {} } : buildDataQualityMultiplier(args.payload);
+  const adjusted = dampenTowardCoinFlip(calibrated, quality.multiplier);
+  const probability = roundProbability(applyProbabilityFloor(adjusted, args.model));
+  return { features: explanation, bias: args.model.bias,
+    score: args.model.bias + explanation.reduce((sum, row) => sum + row.scoreContribution, 0),
+    rawHomeWinProbability: raw,
+    adjustments: { calibrationMethod: args.calibrator?.method ?? "raw",
+      calibratedHomeWinProbability: calibrated, qualityAdjustedHomeWinProbability: adjusted,
+      dataQualityMultiplier: quality.multiplier, dataQualityPenalties: quality.penalties,
+      probabilityFloor: (args.model as GamePredictionBaselineModel).probabilityFloor ?? BASELINE_PROBABILITY_FLOOR,
+      homeWinProbability: probability, confidenceLabel: getConfidenceLabel(probability) },
+    sourceRead: (args.payload as GamePredictionFeatureSnapshotPayload & { sourceRead?: unknown }).sourceRead ?? null,
+    sourceCutoffs: args.payload.sourceCutoffs, missingFeatures: args.payload.missingFeatures,
+    fallbackFlags: args.payload.fallbackFlags };
+}
+
 export function buildBaselineTrainingDataset(
   snapshots: Array<{
     featureSnapshotId: string;
