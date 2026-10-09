@@ -88,6 +88,18 @@ describe("grouped forward contract", () => {
     });
   });
 
+  it("reserves explicit utility and position choices before automatic placement", () => {
+    const input = {
+      players: [{ id: "auto", eligibility: ["C", "LW"] }, { id: "pinned", eligibility: ["C", "LW"] }],
+      rosterConfig: { C: 1, LW: 1, G: 0, utility: 1, bench: 0 },
+      grouping: "split" as const,
+    };
+    expect(allocateGroupedRosterSlots({ ...input, overrides: { pinned: "UTILITY" } }).assignments).toEqual({ pinned: "UTILITY", auto: "C" });
+    expect(allocateGroupedRosterSlots({ ...input, overrides: { pinned: "C" } }).assignments).toEqual({ pinned: "C", auto: "LW" });
+    const goalie = allocateGroupedRosterSlots({ ...input, players: [{ id: "g", eligibility: ["G"] }], rosterConfig: { G: 1, utility: 1 }, overrides: { g: "UTILITY" } });
+    expect(goalie.assignments.g).toBe("G");
+  });
+
   it("supports an exact generic-forward flex alongside split forward slots", () => {
     const rosterConfig = {
       C: 1,

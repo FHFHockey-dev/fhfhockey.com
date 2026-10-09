@@ -43,6 +43,7 @@ import {
 } from "lib/draftDashboard/yahooMapping";
 import {
   buildActiveProjectionSources,
+  buildCustomProjectionSourcesFingerprint,
   buildProjectionInputCacheKey,
   type CustomAdditionalProjectionSource,
 } from "lib/draftDashboard/customProjectionSources";
@@ -1609,24 +1610,10 @@ export const useProcessedProjectionsData = ({
   );
 
   const stableCustomAdditionalSourcesString = useMemo(() => {
-    if (customAdditionalSources && customAdditionalSources.length) {
-      const payload = customAdditionalSources.map((s) => ({
-        id: s.id,
-        playerType: s.playerType,
-        rowsLen: s.rows?.length || 0,
-        lastUpdated: s.resolution?.lastUpdated || 0,
-      }));
-      return JSON.stringify(payload);
-    }
-    if (customAdditionalSource) {
-      return JSON.stringify({
-        id: customAdditionalSource.id,
-        playerType: customAdditionalSource.playerType,
-        rowsLen: customAdditionalSource.rows?.length || 0,
-        lastUpdated: customAdditionalSource.resolution?.lastUpdated || 0,
-      });
-    }
-    return "none";
+    const sources = customAdditionalSources?.length
+      ? customAdditionalSources
+      : customAdditionalSource ? [customAdditionalSource] : [];
+    return sources.length ? buildCustomProjectionSourcesFingerprint(sources) : "none";
   }, [customAdditionalSources, customAdditionalSource]);
 
   // Composite keys (lightweight) for detecting FP-only updates (must come after stableCustomAdditionalSourcesString)

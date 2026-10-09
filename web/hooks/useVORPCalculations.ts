@@ -1,3 +1,4 @@
+import { DEFAULT_SKATER_FANTASY_POINTS } from "lib/projectionsConfig/fantasyPointsConfig";
 // hooks/useVORPCalculations.ts
 import { useMemo } from "react";
 import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
@@ -75,7 +76,7 @@ export function useVORPCalculations({
   myFilledSlots = EMPTY_NUMERIC_RECORD,
   personalizeReplacement = false,
   prorate84 = false,
-  fantasyPointSettings = EMPTY_NUMERIC_RECORD,
+  fantasyPointSettings = DEFAULT_SKATER_FANTASY_POINTS,
   positionWeightMultipliers,
 }: UseVORPParams): UseVORPResult {
   return useMemo(() => {

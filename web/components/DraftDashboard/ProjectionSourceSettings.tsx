@@ -18,6 +18,7 @@ interface Props {
   onGoaliesChange?: (controls: ProjectionSourceControls) => void;
   customSources: DraftCustomSourceMetadata[];
   onRemoveCustomSource?: (id: string) => void;
+  onReimportCustomSource?: (id: string) => void;
   hasPicks: boolean;
 }
 
@@ -30,6 +31,7 @@ export default function ProjectionSourceSettings({
   onGoaliesChange,
   customSources,
   onRemoveCustomSource,
+  onReimportCustomSource,
   hasPicks,
 }: Props) {
   const [mode, setMode] = useState<"weights" | "multipliers">("weights");
@@ -128,9 +130,10 @@ export default function ProjectionSourceSettings({
               </span>
             </h4>
             {Object.entries(controls)
-              .filter(([, control]) => control.isSelected || showDisabled)
+              .filter(([id, control]) => control.isSelected || showDisabled || customSources.some((source) => source.id === id && source.missing))
               .sort((a, b) => Number(b[1].isSelected) - Number(a[1].isSelected))
               .map(([id, control]) => {
+                const missing = customSources.some((source) => source.id === id && source.missing);
                 const label =
                   PROJECTION_SOURCES_CONFIG.find((source) => source.id === id)
                     ?.displayName ||
@@ -142,6 +145,7 @@ export default function ProjectionSourceSettings({
                     className={styles.sourceRow}
                     key={id}
                     data-disabled={!control.isSelected}
+                    data-missing={missing}
                   >
                     <label title={label}>
                       {!compact &&
@@ -227,7 +231,12 @@ export default function ProjectionSourceSettings({
                           : `${control.weight.toFixed(2)}×`}
                       </strong>
                     )}
-                    {editing &&
+                    {!compact && missing && <div className={styles.sourceRecovery}>
+                      <span>Rows unavailable</span>
+                      {onReimportCustomSource && <button type="button" aria-label={`Reimport ${label}`} onClick={() => onReimportCustomSource(id)}>Reimport</button>}
+                      {onRemoveCustomSource && <button type="button" aria-label={`Remove ${label}`} onClick={() => { if (window.confirm(`Remove ${label}? This removes its imported projections, preserving all picks.`)) onRemoveCustomSource(id); }}>Remove</button>}
+                    </div>}
+                    {editing && !missing &&
                       id.startsWith("custom_csv") &&
                       onRemoveCustomSource && (
                         <button

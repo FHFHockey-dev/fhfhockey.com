@@ -31,12 +31,14 @@ type AuthContextValue = {
   isLoading: boolean;
   user: User;
   signOut: () => Promise<void>;
+  refreshProfileAvatar: (userId: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue>({
   isLoading: true,
   user: null,
-  signOut: async () => undefined
+  signOut: async () => undefined,
+  refreshProfileAvatar: async () => undefined
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -50,8 +52,39 @@ export default function AuthProvider({ children }: Props) {
   const [user, setUser] = useState<User>(null);
   const [isLoading, setIsLoading] = useState(true);
   const ensuredUserIdsRef = useRef<Set<string>>(new Set());
+  const avatarUserRef = useRef<{ id: string; metadataUrl: string | null } | null>(null);
+  const avatarRequestRef = useRef(0);
+  const sessionRevisionRef = useRef(0);
+
+  const refreshProfileAvatar = useCallback(async (userId: string) => {
+    const avatarUser = avatarUserRef.current;
+    if (!avatarUser || avatarUser.id !== userId) return;
+    const requestId = ++avatarRequestRef.current;
+
+    try {
+      const { data, error } = await supabase
+        .from("user_profiles")
+        .select("avatar_url")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (error || avatarUserRef.current !== avatarUser || avatarRequestRef.current !== requestId) return;
+
+      const avatarUrl = data?.avatar_url?.trim() || avatarUser.metadataUrl;
+      setUser((currentUser) =>
+        currentUser?.id === userId && currentUser.avatarUrl !== avatarUrl
+          ? { ...currentUser, avatarUrl }
+          : currentUser
+      );
+    } catch {
+      // Keep the displayed avatar when the profile read is unavailable.
+    }
+  }, []);
 
   const signOut = useCallback(async () => {
+    sessionRevisionRef.current++;
+    avatarUserRef.current = null;
+    avatarRequestRef.current++;
     // Fail closed in the rendered shell before touching a remote/expired session.
     setUser(null);
     setIsLoading(false);
@@ -63,6 +96,8 @@ export default function AuthProvider({ children }: Props) {
 
     async function syncUserFromSession(session: Session | null) {
       if (!isMounted) return;
+      avatarRequestRef.current++;
+      avatarUserRef.current = null;
 
       if (!session) {
         setUser(null);
@@ -70,8 +105,15 @@ export default function AuthProvider({ children }: Props) {
         return;
       }
 
-      setUser(mapUser(session.user, { role: null }));
+      const mappedUser = mapUser(session.user, { role: null });
+      avatarUserRef.current = { id: session.user.id, metadataUrl: mappedUser?.avatarUrl ?? null };
+      setUser((currentUser) =>
+        currentUser && mappedUser && currentUser.id === mappedUser.id
+          ? { ...mappedUser, avatarUrl: currentUser.avatarUrl }
+          : mappedUser
+      );
       setIsLoading(false);
+      void refreshProfileAvatar(session.user.id);
 
       if (!ensuredUserIdsRef.current.has(session.user.id)) {
         ensuredUserIdsRef.current.add(session.user.id);
@@ -108,29 +150,36 @@ export default function AuthProvider({ children }: Props) {
         });
     }
 
+    const initialSessionRevision = sessionRevisionRef.current;
     void supabase.auth
       .getSession()
-      .then(({ data }) => syncUserFromSession(data.session))
+      .then(({ data }) => {
+        if (!isMounted || sessionRevisionRef.current !== initialSessionRevision) return;
+        return syncUserFromSession(data.session);
+      })
       .catch(() => {
-        if (!isMounted) return;
+        if (!isMounted || sessionRevisionRef.current !== initialSessionRevision) return;
         setUser(null);
         setIsLoading(false);
       });
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        if (!isMounted) return;
+        sessionRevisionRef.current++;
         await syncUserFromSession(session);
       }
     );
 
     return () => {
       isMounted = false;
+      avatarUserRef.current = null;
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [refreshProfileAvatar]);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, signOut }}>
+    <AuthContext.Provider value={{ user, isLoading, signOut, refreshProfileAvatar }}>
       {children}
     </AuthContext.Provider>
   );

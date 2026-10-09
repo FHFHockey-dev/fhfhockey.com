@@ -1,3 +1,4 @@
+import { DEFAULT_SKATER_FANTASY_POINTS } from "lib/projectionsConfig/fantasyPointsConfig";
 import { computeProratedFantasyPoints } from "lib/projectionsConfig/proration";
 import type { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import type { UseVORPParams } from "hooks/useVORPCalculations";
@@ -5,7 +6,7 @@ import { groupPlayerEligibility, normalizePlayerEligibility } from "./forwardGro
 import { calculateCategoryScores } from "lib/scoring/categoryScores";
 
 /** Shared league-wide values; no availability or personalized replacement inputs. */
-export function buildPlayerValues({ players, draftSettings, leagueType = "points", categoryWeights = {}, forwardGrouping = "split", prorate84 = false, fantasyPointSettings = {}, positionWeightMultipliers }: Pick<UseVORPParams, "players" | "draftSettings" | "leagueType" | "categoryWeights" | "forwardGrouping" | "prorate84" | "fantasyPointSettings" | "positionWeightMultipliers">) {
+export function buildPlayerValues({ players, draftSettings, leagueType = "points", categoryWeights = {}, forwardGrouping = "split", prorate84 = false, fantasyPointSettings = DEFAULT_SKATER_FANTASY_POINTS, positionWeightMultipliers }: Pick<UseVORPParams, "players" | "draftSettings" | "leagueType" | "categoryWeights" | "forwardGrouping" | "prorate84" | "fantasyPointSettings" | "positionWeightMultipliers">) {
   // Value per player (points or categories composite)
   const values = new Map<string, number>();
   const eligibility = new Map<string, string[]>();
@@ -34,7 +35,7 @@ export function buildPlayerValues({ players, draftSettings, leagueType = "points
       const id = String(p.playerId);
       let val = p.fantasyPoints?.projected ?? 0;
       if (prorate84 && !eligibility.get(id)?.includes("G")) {
-        const fp = computeProratedFantasyPoints(p, true, fantasyPointSettings);
+        const fp = computeProratedFantasyPoints(p, true, fantasyPointSettings, { mergeWithDefaults: false });
         if (fp != null && Number.isFinite(fp)) val = fp;
       }
       values.set(id, Number.isFinite(val) ? val : 0);

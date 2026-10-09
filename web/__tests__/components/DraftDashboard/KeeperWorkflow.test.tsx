@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import DraftBoard from "../../../components/DraftDashboard/DraftBoard";
@@ -290,5 +290,69 @@ describe("keeper workflow surfaces", () => {
     expect(onExportCsv).toHaveBeenCalledOnce();
     expect(screen.getByRole("alert").textContent).toContain("Blended projections export is available");
     expect(screen.getByRole("link", { name: "Manage Draft Pro access" }).getAttribute("href")).toBe("/account?section=draft-pro");
+  });
+});
+
+const portableBookmark = () => ({ v: 3, settings: { ...settings, isKeeper: false, scoringCategories: { GOALS: 3 } }, draftedPlayers: [], currentPick: 1, myTeamId: "Team 1", sourceControls: { dtz_skaters: { isSelected: true, weight: 1 } }, goalieSourceControls: { dtz_goalies: { isSelected: true, weight: 1 } } });
+function recoverySettings(onBookmarkImport: any, extra: Record<string, unknown> = {}) {
+  return <DraftSettings settings={settings} onSettingsChange={vi.fn()} myTeamId="Team 1" onMyTeamIdChange={vi.fn()} undoLastPick={vi.fn()} resetDraft={vi.fn()} draftHistory={[]} draftedPlayers={[]} currentPick={1} onBookmarkImport={onBookmarkImport} {...extra} />;
+}
+function pasteRecoveryBookmark() {
+  fireEvent.click(screen.getByRole("button", { name: "Import" }));
+  fireEvent.change(screen.getByLabelText("Import draft bookmark"), { target: { value: JSON.stringify(portableBookmark()) } });
+}
+
+describe("portable draft recovery feedback", () => {
+  it("ignores a file read completed after the import was abandoned", async () => {
+    let finishRead!: (value: string) => void;
+    const file = new File(["pending"], "draft.json", { type: "application/json" });
+    Object.defineProperty(file, "text", { value: () => new Promise<string>((resolve) => { finishRead = resolve; }) });
+    const apply = vi.fn();
+    render(recoverySettings(apply));
+    fireEvent.click(screen.getByRole("button", { name: "Import" }));
+    fireEvent.change(screen.getByLabelText("Read draft bookmark file"), { target: { files: [file] } });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel Import" }));
+    fireEvent.click(screen.getByRole("button", { name: "Import" }));
+    await act(async () => { finishRead(JSON.stringify(portableBookmark())); });
+    expect((screen.getByLabelText("Import draft bookmark") as HTMLTextAreaElement).value).toBe("");
+    expect(apply).not.toHaveBeenCalled();
+  });
+
+  it("leaves a failed import open for retry and never reports unconditional success", () => {
+    const apply = vi.fn().mockReturnValueOnce({ status: "failed", message: "Storage is full. Retry." }).mockReturnValue({ status: "accepted", message: "Imported on retry." });
+    render(recoverySettings(apply));
+    pasteRecoveryBookmark();
+    fireEvent.click(screen.getByRole("button", { name: "Import Bookmark" }));
+    expect(screen.getByRole("alert").textContent).toContain("Storage is full");
+    expect(screen.getByLabelText("Import draft bookmark")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Import Bookmark" }));
+    expect(screen.queryByLabelText("Import draft bookmark")).toBeNull();
+    expect(screen.getByRole("status").textContent).toContain("Imported on retry");
+    expect(apply).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps missing-resource feedback visible after an accepted replacement", () => {
+    render(recoverySettings(vi.fn(() => ({ status: "missing_resources", message: "Reimport missing rankings." }))));
+    pasteRecoveryBookmark();
+    fireEvent.click(screen.getByRole("button", { name: "Import Bookmark" }));
+    expect(screen.queryByLabelText("Import draft bookmark")).toBeNull();
+    expect(screen.getByRole("alert").textContent).toContain("Reimport missing rankings");
+  });
+
+  it("ignores duplicate confirmation clicks after an import succeeds", () => {
+    const apply = vi.fn(() => ({ status: "accepted", message: "Imported." }));
+    render(recoverySettings(apply));
+    pasteRecoveryBookmark();
+    const confirm = screen.getByRole("button", { name: "Import Bookmark" });
+    fireEvent.click(confirm); fireEvent.click(confirm);
+    expect(apply).toHaveBeenCalledTimes(1);
+  });
+
+  it("disables recovery actions while live sync owns the draft", () => {
+    const apply = vi.fn();
+    render(recoverySettings(apply, { draftLocked: true, startNewDraft: vi.fn() }));
+    expect((screen.getByRole("button", { name: "Import" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Start New Draft" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(apply).not.toHaveBeenCalled();
   });
 });

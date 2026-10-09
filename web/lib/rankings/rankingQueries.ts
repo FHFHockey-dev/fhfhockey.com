@@ -354,6 +354,8 @@ async function fetchRollingRowsForGameDate(
       .eq("season", request.season)
       .eq("strength_state", request.strength)
       .eq("game_date", gameDate)
+      .order("player_id", { ascending: true })
+      .order("game_id", { ascending: true })
       .range(from, from + ROLLING_QUERY_PAGE_SIZE - 1);
     if (error) throw error;
 
@@ -649,7 +651,8 @@ async function resolveRankedSnapshotsForMetrics(
 
   for (const metricKey of uniqueMetricKeys) {
     const metricDefinition = getContextualRankingMetricDefinition(metricKey);
-    if (!metricDefinition || metricDefinition.availabilityStatus !== "available") {
+    if (!metricDefinition || metricDefinition.availabilityStatus !== "available" ||
+        (metricDefinition.defaultStrengthState === "5v5" && request.strength !== "5v5")) {
       unavailableMetricKeys.push(metricKey);
       continue;
     }
@@ -926,7 +929,7 @@ export async function buildContextualRankingSnapshotRowsByMetric(
     const metricRequest = { ...request, metric: metricKey };
     const metricDefinition = getContextualRankingMetricDefinition(metricKey);
 
-    if (!metricDefinition || metricDefinition.availabilityStatus !== "available") {
+    if (!metricDefinition || resolution.unavailableMetricKeys.includes(metricKey)) {
       snapshots.set(metricKey, {
         request: metricRequest,
         metricKey,

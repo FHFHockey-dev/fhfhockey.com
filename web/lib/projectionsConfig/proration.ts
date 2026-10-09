@@ -83,20 +83,22 @@ export function getProratedStat(
 export function computeProratedFantasyPoints(
   player: ProcessedPlayer,
   enable: boolean,
-  customScoring?: Record<string, number>
+  customScoring?: Record<string, number>,
+  options: { mergeWithDefaults?: boolean } = {},
 ): number | null {
   // If not enabled just return existing projected FP to avoid tiny rounding drift.
   if (!enable) return player.fantasyPoints.projected ?? null;
   const isGoalie = isGoaliePlayer(player);
-  // Merge default configs (custom overrides > defaults)
+  // League maps can be authoritative: omitted categories then contribute zero.
   const scoring: Record<string, number> = {
-    ...(isGoalie
+    ...(options.mergeWithDefaults === false ? {} : isGoalie
       ? DEFAULT_GOALIE_FANTASY_POINTS
       : DEFAULT_SKATER_FANTASY_POINTS),
     ...(customScoring || {})
   };
   let total = 0;
   let used = false;
+  let hasWeightedCategory = false;
   const statKeys = new Set(Object.keys(scoring).filter((key) => !key.endsWith("_D")));
   for (const key of ["HITS", "BLOCKED_SHOTS"]) {
     if (`${key}_D` in scoring) statKeys.add(key);
@@ -104,11 +106,12 @@ export function computeProratedFantasyPoints(
   for (const statKey of statKeys) {
     const weight = pointValueForPlayerStat(player, statKey, scoring);
     if (!weight) continue;
+    hasWeightedCategory = true;
     const val = getProratedStat(player, statKey, enable);
     if (val != null && Number.isFinite(val)) {
       total += val * weight;
       used = true;
     }
   }
-  return used ? total : null;
+  return used || (options.mergeWithDefaults === false && !hasWeightedCategory) ? total : null;
 }

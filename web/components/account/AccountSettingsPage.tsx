@@ -585,12 +585,13 @@ function getSettingLabel(key: string) {
 
 export default function AccountSettingsPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, refreshProfileAvatar } = useAuth();
   const { access: draftProAccess } = useDraftProAccess();
   const draftProEligible = Boolean(draftProAccess?.eligible);
   const userId = user?.id ?? null;
   const userDisplayName = user?.displayName ?? "";
   const userAvatarUrl = user?.avatarUrl ?? "";
+  const profileUserIdRef = useRef(userId);
   const [leagueForm, setLeagueForm] = useState<UserLeagueSettings>(
     createDefaultUserLeagueSettings(),
   );
@@ -801,17 +802,22 @@ export default function AccountSettingsPage() {
 
   useEffect(() => {
     if (!userId) {
+      profileUserIdRef.current = null;
       setIsProfileLoading(false);
       setProfileRecordState("missing");
       return;
     }
 
     const currentUserId = userId;
+    const profileUserChanged = profileUserIdRef.current !== currentUserId;
+    profileUserIdRef.current = currentUserId;
     let isMounted = true;
 
     async function loadProfile() {
       setIsProfileLoading(true);
-      setProfileFeedback(null);
+      setProfileFeedback((feedback) =>
+        !profileUserChanged && feedback?.tone === "success" ? feedback : null,
+      );
 
       const { data, error } = await supabase
         .from("user_profiles")
@@ -1181,6 +1187,7 @@ export default function AccountSettingsPage() {
     });
     setProfileRecordState("present");
     setIsProfileSaving(false);
+    void refreshProfileAvatar(user.id);
   }
 
   function updateLeagueType(value: LeagueType) {

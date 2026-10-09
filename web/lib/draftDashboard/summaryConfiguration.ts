@@ -23,6 +23,7 @@ export type DraftCustomSourceMetadata = {
   label: string;
   totalRows?: number;
   coverage?: number;
+  missing?: boolean;
 };
 
 export type DraftConfigurationSummary = {
@@ -43,6 +44,7 @@ export function toCustomSourceMetadata(
     label: entry.label,
     totalRows: entry.resolution?.totalRows,
     coverage: entry.resolution?.coverage,
+    ...(!entry.rows?.length ? { missing: true } : {}),
   }));
 }
 

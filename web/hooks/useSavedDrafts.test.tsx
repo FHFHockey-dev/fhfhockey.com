@@ -100,6 +100,19 @@ describe("useSavedDrafts", () => {
     await act(async () => { await result.current.open("other"); }); resolveSave(json({ data: { id: "draft", name: "Draft", status: "active", lockVersion: 1, updatedAt: "now" } }, true, 201)); await saving;
     expect(result.current.opened?.id).toBe("other");
   });
+  it.each(["switch", "refresh"])("ignores a delayed initial session after a newer account event: %s", async (event) => {
+    let resolveInitial!: (value: unknown) => void;
+    getSession.mockResolvedValueOnce({ data: { session: { access_token: "token", user: { id: "user-1" } } } });
+    getSession.mockImplementationOnce(() => new Promise((resolve) => { resolveInitial = resolve; }));
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(json({ data: url.endsWith("/draft") ? { ...detail, privateImports: [] } : [] }))));
+    const { result } = renderHook(() => useSavedDrafts());
+    const auth = onAuthStateChange.mock.calls[0][0] as (event: string, session: unknown) => void;
+    await act(async () => { auth("SIGNED_IN", { user: { id: "user-2" } }); });
+    await act(async () => { resolveInitial({ data: { session: { access_token: "old-token", user: { id: "user-1" } } } }); });
+    await act(async () => { await result.current.open("draft"); });
+    await act(async () => { auth(event === "switch" ? "SIGNED_IN" : "TOKEN_REFRESHED", { user: { id: event === "switch" ? "user-1" : "user-2" } }); });
+    expect(result.current.opened?.id ?? null).toBe(event === "switch" ? null : "draft");
+  });
   it("keeps the opened draft through a same-account token refresh", async () => {
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(json({ data: url.endsWith("/draft") ? { ...detail, privateImports: [] } : [] }))));
     const { result } = renderHook(() => useSavedDrafts()); await act(async () => { await result.current.open("draft"); });

@@ -216,15 +216,12 @@ export function getSampleConfidence(args: {
 
   const gp = finiteNumber(args.gamesPlayed);
   const toi = finiteNumber(args.toiSeconds);
-  const gpMultiple =
-    args.minGp > 0 && gp != null ? gp / args.minGp : gp == null ? 1 : 0;
-  const toiMultiple =
-    args.minToiSeconds > 0 && toi != null
-      ? toi / args.minToiSeconds
-      : toi == null
-        ? 1
-        : 0;
-  const sampleMultiple = Math.min(gpMultiple, toiMultiple);
+  const multiples = [
+    ...(args.minGp > 0 ? [(gp ?? 0) / args.minGp] : []),
+    ...(args.minToiSeconds > 0 ? [(toi ?? 0) / args.minToiSeconds] : []),
+  ];
+  if (multiples.length === 0) return "low";
+  const sampleMultiple = Math.min(...multiples);
 
   if (sampleMultiple >= 2) return "high";
   if (sampleMultiple >= 1) return "medium";

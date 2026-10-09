@@ -1,6 +1,6 @@
 import supabase from "lib/supabase/server";
 import type { Database, Json } from "lib/supabase/database-generated.types";
-import { getSampleConfidence } from "./rankingCalculator";
+import { buildContextualRankingRows, type ContextualRankingRow } from "./rankingCalculator";
 
 import {
   getContextualRankingMetricDefinition,
@@ -135,16 +135,6 @@ function parseJsonStringArray(value: Json) {
     : [];
 }
 
-function warningsFor(row: EntityMetricRankingRow, minimumSampleMet: boolean) {
-  const warnings: ContextualRankingApiRow["warnings"] = [];
-  if (!minimumSampleMet) warnings.push("sample_below_minimum");
-  if (row.qualified_peer_count === 0) warnings.push("empty_peer_group");
-  if (row.qualified_peer_count > 0 && row.qualified_peer_count < 3) {
-    warnings.push("small_peer_group");
-  }
-  return warnings;
-}
-
 function deploymentFor(
   request: ContextualRankingsRequest,
   row: EntityMetricRankingRow,
@@ -192,9 +182,13 @@ function sortRows(
 }
 
 async function fetchLatestSnapshotDate(request: ContextualRankingsRequest) {
+  const definition = getContextualRankingMetricDefinition(request.metric);
+  if (definition?.availabilityStatus !== "available" ||
+      (definition.defaultStrengthState === "5v5" && request.strength !== "5v5")) return null;
+  const cutoff = request.asOfDate ?? new Date().toISOString().slice(0, 10);
   const cacheKey = [
     request.season,
-    request.asOfDate ?? "",
+    cutoff,
     windowType(request.window),
     windowSize(request.window),
     request.strength,
@@ -217,9 +211,7 @@ async function fetchLatestSnapshotDate(request: ContextualRankingsRequest) {
     .eq("metric_key", request.metric)
     .eq("peer_group_type", request.peerGroupType)
     .eq("peer_group_key", requestPeerGroupKey(request));
-  if (request.asOfDate != null) {
-    query = query.lte("snapshot_date", request.asOfDate);
-  }
+  query = query.lte("snapshot_date", cutoff);
   query = query.order("snapshot_date", { ascending: false });
   const { data, error } = await query.limit(1);
   if (error) throw error;
@@ -239,14 +231,8 @@ async function fetchEntityMetricRows(
 ) {
   const rows: EntityMetricRankingRow[] = [];
   const uniqueMetricKeys = Array.from(new Set(metricKeys));
-  const canApplyDatabaseLimit =
-    uniqueMetricKeys.length === 1 &&
-    request.limit != null &&
-    request.entityIds == null &&
-    request.sort !== "toi_per_game";
-
   for (let from = 0; ; from += ENTITY_RANKING_QUERY_PAGE_SIZE) {
-    let query = supabase
+    const query = supabase
       .from("entity_metric_rankings")
       .select(ENTITY_RANKING_SELECT_FIELDS)
       .eq("entity_type", "skater")
@@ -257,38 +243,15 @@ async function fetchEntityMetricRows(
       .eq("strength_state", request.strength)
       .in("metric_key", uniqueMetricKeys)
       .eq("peer_group_type", request.peerGroupType)
-      .eq("peer_group_key", requestPeerGroupKey(request));
-    if (request.entityIds != null) {
-      query = query.in("entity_id", request.entityIds);
-    }
-    if (canApplyDatabaseLimit) {
-      const ascending = request.direction === "asc";
-      if (request.sort === "raw_rank") {
-        query = query
-          .order("raw_rank", { ascending, nullsFirst: false })
-          .order("entity_id", { ascending: true });
-      } else if (request.sort === "metric_value") {
-        query = query
-          .order("raw_value", { ascending, nullsFirst: false })
-          .order("entity_id", { ascending: true });
-      } else if (request.sort === "gp") {
-        query = query
-          .order("games_played", { ascending, nullsFirst: false })
-          .order("entity_id", { ascending: true });
-      } else {
-        query = query
-          .order("percentile", { ascending, nullsFirst: false })
-          .order("entity_id", { ascending: true });
-      }
-    }
-    const { data, error } = canApplyDatabaseLimit
-      ? await query.limit(request.limit ?? ENTITY_RANKING_QUERY_PAGE_SIZE)
-      : await query.range(from, from + ENTITY_RANKING_QUERY_PAGE_SIZE - 1);
+      .eq("peer_group_key", requestPeerGroupKey(request))
+      .order("metric_key", { ascending: true })
+      .order("entity_id", { ascending: true });
+    const { data, error } = await query.range(from, from + ENTITY_RANKING_QUERY_PAGE_SIZE - 1);
     if (error) throw error;
 
     const page = (data ?? []) as unknown as EntityMetricRankingRow[];
     rows.push(...page);
-    if (canApplyDatabaseLimit || page.length < ENTITY_RANKING_QUERY_PAGE_SIZE) {
+    if (page.length < ENTITY_RANKING_QUERY_PAGE_SIZE) {
       break;
     }
   }
@@ -362,18 +325,15 @@ function latestTimestamp(rows: EntityMetricRankingRow[]) {
 function toApiRow(args: {
   request: ContextualRankingsRequest;
   row: EntityMetricRankingRow;
+  ranking: ContextualRankingRow;
   player: PlayerMeta | null;
   team: TeamMeta | null;
 }): ContextualRankingApiRow {
   const metricKey = args.row.metric_key as ContextualRankingMetricKey;
-  const requirements = getContextualRankingMetricDefinition(metricKey)?.sampleRequirements;
-  const minGp = args.request.minGp ?? requirements?.minimumGp ?? 0;
-  const minToiSeconds = args.request.minToiSeconds ?? requirements?.minimumToiSeconds ?? 0;
-  const gamesPlayed = finiteNumber(args.row.games_played);
-  const toiSeconds = finiteNumber(args.row.toi_seconds);
-  const minimumSampleMet =
-    (minGp === 0 || (gamesPlayed != null && gamesPlayed >= minGp)) &&
-    (minToiSeconds === 0 || (toiSeconds != null && toiSeconds >= minToiSeconds));
+  const { ranking } = args;
+  const gamesPlayed = finiteNumber(ranking.gamesPlayed);
+  const toiSeconds = finiteNumber(ranking.toiSeconds);
+  const minimumSampleMet = ranking.minimumSampleMet;
   return {
     entity: {
       id: args.row.entity_id,
@@ -392,26 +352,34 @@ function toApiRow(args: {
       gamesPlayed,
       toiSeconds,
       toiPerGameSeconds: getWindowToiPerGame(args.row),
-      confidence: getSampleConfidence({ gamesPlayed, toiSeconds, minGp, minToiSeconds, minimumSampleMet }),
+      confidence: ranking.sampleConfidence,
       minimumSampleMet,
     },
     metric: {
       key: metricKey,
-      value: args.row.raw_value,
-      formattedValue: formatMetricValue(metricKey, args.row.raw_value),
-      rawRank: minimumSampleMet ? args.row.raw_rank : null,
-      percentile: minimumSampleMet ? args.row.percentile : null,
-      qualifiedPeerCount: args.row.qualified_peer_count,
+      value: ranking.calculatedRawValue,
+      formattedValue: formatMetricValue(metricKey, ranking.calculatedRawValue),
+      rawRank: ranking.rawRank,
+      percentile: ranking.percentile,
+      qualifiedPeerCount: ranking.qualifiedPeerCount,
     },
     peerGroup: {
       type: args.row.peer_group_type as ContextualRankingApiRow["peerGroup"]["type"],
       key: args.row.peer_group_key,
     },
-    tags: parseJsonStringArray(args.row.tags),
-    warnings: warningsFor(args.row, minimumSampleMet),
-    explanationItems: minimumSampleMet
-      ? parseJsonStringArray(args.row.explanation_items)
-      : ["Sample unavailable or below selected minimums; rank and percentile unavailable."],
+    tags: [
+      ...parseJsonStringArray(args.row.tags).filter(tag => tag !== "low-sample"),
+      ...(minimumSampleMet ? [] : ["low-sample"]),
+    ],
+    warnings: ranking.warnings,
+    explanationItems: ranking.rawRank == null
+      ? [minimumSampleMet
+        ? "Metric unavailable; rank and percentile unavailable."
+        : "Sample unavailable or below selected minimums; rank and percentile unavailable."]
+      : [
+        `Rank ${ranking.rawRank} of ${ranking.qualifiedPeerCount} in ${ranking.peerGroupType}:${ranking.peerGroupKey}.`,
+        `Better than ${ranking.percentile?.toFixed(1)}% of other qualified peers after metric directionality is applied.`,
+      ],
   };
 }
 
@@ -424,6 +392,8 @@ function buildEntityMetricRankingSurfaceFromRows(args: {
   snapshotDate: string | null;
 }): ContextualRankingsResponse {
   const definition = getContextualRankingMetricDefinition(args.request.metric);
+  const metricSupported = definition?.availabilityStatus === "available" &&
+    (definition.defaultStrengthState !== "5v5" || args.request.strength === "5v5");
   if (args.snapshotDate == null) {
     return {
       success: true,
@@ -434,7 +404,7 @@ function buildEntityMetricRankingSurfaceFromRows(args: {
         snapshotDate: null,
         snapshotUpdatedAt: null,
         latestAvailableSnapshotDate: null,
-        snapshotSelectionReason: "no_snapshot",
+        snapshotSelectionReason: metricSupported ? "no_snapshot" : "metric_unavailable",
       sourceTable: "entity_metric_rankings",
       metric: metricResponseMetadata(definition, args.request.metric),
       unavailable: true,
@@ -446,23 +416,46 @@ function buildEntityMetricRankingSurfaceFromRows(args: {
         : null,
       sourceQualityFlags: [...(definition?.sourceQualityFlags ?? [])],
       sourceWarnings: [],
-      message: "No entity_metric_rankings snapshot rows matched the request.",
+      message: metricSupported
+        ? "No entity_metric_rankings snapshot rows matched the request."
+        : "Requested metric is not available at the selected strength.",
     },
   };
   }
 
   const entityIdFilter =
     args.request.entityIds == null ? null : new Set(args.request.entityIds);
+  // Stored ranks belong to the publishing minimums. Rank the full snapshot
+  // under this request's minimums before restricting displayed entities/rows.
+  const rankedById = new Map(buildContextualRankingRows({
+    metricKey: args.request.metric,
+    peerGroupType: args.request.peerGroupType,
+    minGp: args.request.minGp ?? undefined,
+    minToiSeconds: args.request.minToiSeconds ?? undefined,
+    candidates: args.rows.map(row => ({
+      entityId: row.entity_id,
+      teamId: row.team_id,
+      metricKey: args.request.metric,
+      rawValue: finiteNumber(row.raw_value),
+      gamesPlayed: finiteNumber(row.games_played),
+      toiSeconds: finiteNumber(row.toi_seconds),
+      positionGroup: row.position_group as ContextualRankingRow["positionGroup"],
+      deploymentBucket: row.deployment_bucket,
+    })),
+  }).map(row => [row.entityId, row]));
   const sortedApiRows = sortRows(
-    args.rows.map((row) =>
-      toApiRow({
+    args.rows.flatMap((row) => {
+      const ranking = rankedById.get(row.entity_id);
+      if (!ranking) return [];
+      return [toApiRow({
         request: args.request,
         row,
+        ranking,
         player: args.playersById.get(row.entity_id) ?? null,
         team:
           row.team_id == null ? null : args.teamsById.get(row.team_id) ?? null,
-      }),
-    ).filter(
+      })];
+    }).filter(
       (row) => entityIdFilter == null || entityIdFilter.has(row.entity.id),
     ),
     args.request,
@@ -511,33 +504,13 @@ export async function buildEntityMetricRankingSurfaces(
   const hydrateMetadata = options.hydrateMetadata ?? true;
   const uniqueMetricKeys = Array.from(new Set(metricKeys));
   const generatedAt = new Date().toISOString();
-  const snapshotEntries =
-    uniqueMetricKeys.length <= 1
-      ? await Promise.all(
-          uniqueMetricKeys.map(async (metricKey) => {
-            const snapshotDate = await fetchLatestSnapshotDate({
-              ...request,
-              metric: metricKey,
-            });
-            return [metricKey, snapshotDate] as const;
-          }),
-        )
-      : uniqueMetricKeys.map((metricKey) => [
-          metricKey,
-          null,
-        ] as const);
+  const snapshotEntries = await Promise.all(
+    uniqueMetricKeys.map(async (metricKey) => {
+      const snapshotDate = await fetchLatestSnapshotDate({ ...request, metric: metricKey });
+      return [metricKey, snapshotDate] as const;
+    }),
+  );
   const snapshotDateByMetric = new Map(snapshotEntries);
-  if (uniqueMetricKeys.length > 1) {
-    const batchSnapshotDate = await fetchLatestSnapshotDate({
-      ...request,
-      metric: uniqueMetricKeys.includes(request.metric)
-        ? request.metric
-        : uniqueMetricKeys[0],
-    });
-    for (const metricKey of uniqueMetricKeys) {
-      snapshotDateByMetric.set(metricKey, batchSnapshotDate);
-    }
-  }
   const metricKeysBySnapshotDate = new Map<string, ContextualRankingMetricKey[]>();
 
   for (const [metricKey, snapshotDate] of snapshotDateByMetric) {

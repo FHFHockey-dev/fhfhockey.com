@@ -1,6 +1,7 @@
 // components/DraftDashboard/DraftSettings.tsx
 import React from "react";
 import type { SessionCsvEntry } from "lib/draftDashboard/csvImportSession";
+import type { BookmarkImportResult } from "lib/draftDashboard/recovery";
 import type { DashboardMatchupWeek } from "lib/draftDashboard/scheduleMetrics";
 import {
   decompressFromEncodedURIComponent,
@@ -55,6 +56,7 @@ interface DraftSettingsProps {
   onMyTeamIdChange: (teamId: string) => void;
   undoLastPick: () => void;
   resetDraft: () => void;
+  startNewDraft?: () => void;
   draftHistory: any[];
   draftedPlayers: DraftedPlayer[];
   currentPick: number;
@@ -81,6 +83,8 @@ interface DraftSettingsProps {
   customSourceLabel?: string;
   customCsvEntries?: SessionCsvEntry[];
   customSourceMetadata?: DraftCustomSourceMetadata[];
+  positionOverrides?: Record<string, string>;
+  onReimportCustomSource?: (id: string) => void;
   availableSkaterStatKeys?: string[];
   availableGoalieStatKeys?: string[];
   onExportCsv?: () => void;
@@ -111,7 +115,7 @@ interface DraftSettingsProps {
     replacementPlayerId: string,
   ) => { ok: boolean; message: string };
   onBookmarkCreate?: (key: string) => void;
-  onBookmarkImport?: (data: any) => void;
+  onBookmarkImport?: (data: any) => BookmarkImportResult;
   playersForKeeperAutocomplete?: Array<{
     id: number;
     fullName: string;
@@ -143,6 +147,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
   onMyTeamIdChange,
   undoLastPick,
   resetDraft,
+  startNewDraft,
   draftHistory,
   draftedPlayers,
   currentPick,
@@ -161,6 +166,8 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
   customSourceLabel,
   customSourceMetadata = [],
   customCsvEntries = [],
+  positionOverrides = {},
+  onReimportCustomSource,
   availableSkaterStatKeys = [],
   availableGoalieStatKeys = [],
   onExportCsv,
@@ -357,8 +364,20 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
     totalRosterSpots > 22 ? styles.rosterTotalWarning : "";
 
   const [confirmReset, setConfirmReset] = React.useState(false);
+  const [confirmNewDraft, setConfirmNewDraft] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
   const [importText, setImportText] = React.useState("");
+  const [readingBookmark, setReadingBookmark] = React.useState(false);
+  const [includeImportedProjections, setIncludeImportedProjections] = React.useState(false);
+  const fileReadGenerationRef = React.useRef(0);
+  const importAppliedRef = React.useRef(false);
+  React.useEffect(() => () => { fileReadGenerationRef.current += 1; }, []);
+  React.useEffect(() => {
+    if (!draftLocked) return;
+    fileReadGenerationRef.current += 1;
+    setReadingBookmark(false);
+    setConfirmNewDraft(false);
+  }, [draftLocked]);
   const [leagueView, setLeagueView] = React.useState<
     "format" | "schedule" | "management"
   >("format");
@@ -410,7 +429,10 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
       pickOwnerOverrides,
       pickTrades,
       customSourceMetadata,
-      customCsvList: customCsvEntries,
+      customCsvList: includeImportedProjections ? customCsvEntries.filter((entry) => entry.rows?.length) : undefined,
+      positionOverrides,
+      prorate84: ls("projections.prorate84") === "true",
+      riskSd: Number(ls("projections.riskSd", "12")),
     };
   }, [
     settings,
@@ -428,6 +450,8 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
     pickTrades,
     customSourceMetadata,
     customCsvEntries,
+    includeImportedProjections,
+    positionOverrides,
   ]);
 
   const deserializeBookmark = (key: string): any | null => {
@@ -459,18 +483,29 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
-  const handleImportBookmark = () => setImportOpen(true);
+  const handleImportBookmark = () => {
+    if (draftLocked) return;
+    fileReadGenerationRef.current += 1;
+    importAppliedRef.current = false;
+    setImportText("");
+    setReadingBookmark(false);
+    setImportOpen(true);
+  };
   React.useImperativeHandle(ref, () => ({ openPickCorrection: () => { if (!draftLocked) setQuickFixOpen(true); }, importBookmark: handleImportBookmark, exportBookmark: handleCreateBookmark }));
   const applyBookmark = () => {
+    if (draftLocked || readingBookmark || importAppliedRef.current) return;
     const data = deserializeBookmark(importText.trim());
-    const message = bookmarkImportError(data, customSourceMetadata.map(source => source.id));
+    const message = bookmarkImportError(data);
     if (message) { setTradeFeedback({ ok: false, message }); return; }
     if ((draftedPlayers.length || keepers.length || pickTrades.length) && !window.confirm("Replace the current draft with this bookmark? Current picks, keepers, trades, and settings will be replaced. Export a bookmark first to keep a copy.")) return;
     if (!onBookmarkImport) { setTradeFeedback({ ok: false, message: "Draft import is unavailable." }); return; }
-    onBookmarkImport(data);
+    const result = onBookmarkImport(data);
+    if (!result || result.status === "failed") { setTradeFeedback({ ok: false, message: result?.message ?? "Draft import did not finish. The current draft has not changed." }); return; }
+    importAppliedRef.current = true;
+    fileReadGenerationRef.current += 1;
     setImportOpen(false);
     setImportText("");
-    setTradeFeedback({ ok: true, message: "Draft bookmark imported." });
+    setTradeFeedback({ ok: result.status === "accepted", message: result.message });
   };
 
   const domainIssues = (domain: SettingsDomain) => <div id={`draft-issues-${domain}`} className={styles.domainIssues}>{validation?.issues.filter(issue => issue.domain === domain).map(issue => <p key={issue.message}>{issue.message}</p>)}</div>;
@@ -483,6 +518,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
         <button type="button" onClick={handleCreateBookmark}>Export</button>
       </div>}
       {tradeFeedback && <div className={styles.lockNotice} role={tradeFeedback.ok ? "status" : "alert"}>{tradeFeedback.message}<button type="button" aria-label="Dismiss settings message" onClick={() => setTradeFeedback(null)}>×</button></div>}
+      {customCsvEntries.some((entry) => entry.rows?.length) && <label><input type="checkbox" checked={includeImportedProjections} onChange={(event) => setIncludeImportedProjections(event.target.checked)} /> Include imported projections in export</label>}
       {exportCsvMessage && <div className={styles.lockNotice} role="alert">{exportCsvMessage}{exportCsvUpgradeHref ? <> <a href={exportCsvUpgradeHref}>Manage Draft Pro access</a></> : null}</div>}
       {draftLocked && (
         <div className={styles.lockNotice} role="status">
@@ -502,10 +538,23 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
             </div>}
             {importOpen && <div className={styles.importPanel}>
               <label htmlFor="draft-bookmark">Import draft bookmark</label>
-              <textarea id="draft-bookmark" value={importText} onChange={event => setImportText(event.target.value)} placeholder="Paste a bookmark key or exported JSON" rows={3} />
-              <input type="file" accept=".json,.txt" aria-label="Read draft bookmark file" onChange={async event => { const file = event.target.files?.[0]; if (file) setImportText(await file.text()); }} />
-              <button type="button" disabled={!importText.trim() || draftLocked} onClick={applyBookmark}>Import Bookmark</button>
-              <button type="button" onClick={() => setImportOpen(false)}>Cancel Import</button>
+              <textarea id="draft-bookmark" value={importText} onChange={event => { fileReadGenerationRef.current += 1; setReadingBookmark(false); setImportText(event.target.value); }} placeholder="Paste a bookmark key or exported JSON" rows={3} />
+              <input type="file" accept=".json,.txt" aria-label="Read draft bookmark file" disabled={draftLocked} onChange={async event => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                const generation = ++fileReadGenerationRef.current;
+                setReadingBookmark(true);
+                try {
+                  const text = await file.text();
+                  if (generation === fileReadGenerationRef.current) setImportText(text);
+                } catch {
+                  if (generation === fileReadGenerationRef.current) setTradeFeedback({ ok: false, message: "Could not read this bookmark file. Choose it again or paste the bookmark." });
+                } finally {
+                  if (generation === fileReadGenerationRef.current) setReadingBookmark(false);
+                }
+              }} />
+              <button type="button" disabled={!importText.trim() || readingBookmark || draftLocked} onClick={applyBookmark}>{readingBookmark ? "Reading bookmark…" : "Import Bookmark"}</button>
+              <button type="button" onClick={() => { fileReadGenerationRef.current += 1; setReadingBookmark(false); setImportText(""); setImportOpen(false); }}>Cancel Import</button>
             </div>}
 
             <div className={styles.playoffWeeks} hidden={useLeagueViews && leagueView !== "schedule"}>
@@ -773,6 +822,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
               This will clear all picks. Action cannot be undone.
             </div>
             {confirmReset && <div className={styles.lockNotice} role="alert">Clear all picks, keepers, trades, and pick history? Your settings stay in place.<button type="button" onClick={() => setConfirmReset(false)}>Cancel Reset</button></div>}
+            {confirmNewDraft && <div className={styles.lockNotice} role="alert">Start a new draft with default settings? Picks, keepers, trades, history, and imported projections will be cleared.<button type="button" onClick={() => setConfirmNewDraft(false)}>Cancel New Draft</button></div>}
             <div className={styles.actionButtons}>
               <button
                 className={`${styles.actionButton} ${styles.actionButtonDanger}`}
@@ -812,6 +862,13 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
               >
                 {confirmReset ? "Confirm Reset Entire Draft" : "Reset Entire Draft"}
               </button>
+              {startNewDraft && <button type="button" className={`${styles.actionButton} ${styles.actionButtonDanger}`} disabled={draftLocked} onClick={() => {
+                if (!confirmNewDraft) { setConfirmNewDraft(true); return; }
+                startNewDraft();
+                setConfirmNewDraft(false);
+                setConfirmReset(false);
+                setLeagueView("format");
+              }}>{confirmNewDraft ? "Confirm Start New Draft" : "Start New Draft"}</button>}
               <button
                 className={styles.actionButton}
                 onClick={() => onOpenImportCsv && onOpenImportCsv()}
@@ -1609,7 +1666,7 @@ const DraftSettings = React.forwardRef<DraftSettingsHandle, DraftSettingsProps>(
               </select>
             </div>
             {draftProEligible && settings.positionSource === "fantrax" && !fantraxLeagueEligibilityAvailable && <small>Full Fantrax eligibility loads from a connected league. Public player data supplies primary positions only.</small>}
-            <ProjectionSourceSettings skaters={sourceControls} goalies={goalieSourceControls} onSkatersChange={onSourceControlsChange} onGoaliesChange={onGoalieSourceControlsChange} customSources={customSourceMetadata} onRemoveCustomSource={onRemoveCustomSource} hasPicks={draftedPlayers.length > 0} />
+            <ProjectionSourceSettings skaters={sourceControls} goalies={goalieSourceControls} onSkatersChange={onSourceControlsChange} onGoaliesChange={onGoalieSourceControlsChange} customSources={customSourceMetadata} onRemoveCustomSource={onRemoveCustomSource} onReimportCustomSource={onReimportCustomSource} hasPicks={draftedPlayers.length > 0} />
           </fieldset>
           {/* Quick Actions fieldset removed; actions moved under League Setup */}
 

@@ -30,6 +30,42 @@ export interface CustomAdditionalProjectionSource {
   };
 }
 
+function stableSerialize(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableSerialize).join(",")}]`;
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableSerialize(record[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+/**
+ * Captures every input that changes how an in-memory projection source is
+ * processed. Row contents are included so same-length edits cannot reuse a
+ * stale source-input cache.
+ */
+export function buildCustomProjectionSourcesFingerprint(
+  sources: CustomAdditionalProjectionSource[]
+): string {
+  return stableSerialize(
+    sources.map((source) => ({
+      id: source.id,
+      displayName: source.displayName,
+      playerType: source.playerType,
+      rows: source.rows,
+      primaryPlayerIdKey: source.primaryPlayerIdKey,
+      originalPlayerNameKey: source.originalPlayerNameKey,
+      teamKey: source.teamKey,
+      positionKey: source.positionKey,
+      statMappings: source.statMappings,
+      resolution: source.resolution
+    }))
+  );
+}
+
 export function buildCustomProjectionSources(
   entries: readonly SessionCsvEntry[],
   playerType: "skater" | "goalie",

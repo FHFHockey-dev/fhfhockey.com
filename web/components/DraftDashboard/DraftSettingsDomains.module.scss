@@ -253,6 +253,20 @@
   }
 }
 
+.sourceRow[data-missing="true"] {
+  flex-wrap: wrap;
+}
+.sourceRecovery {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  > span {
+    flex: 1;
+    color: v.$warning-color;
+  }
+}
+
 :global([data-variant="inline"]) .scoring {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

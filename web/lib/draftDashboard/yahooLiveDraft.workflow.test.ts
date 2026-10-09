@@ -40,7 +40,8 @@ describe("Yahoo/manual draft workflow", () => {
     const result = yahooDraftKeepers(imported, players, [keeper]);
     expect(result.keepers).toEqual([keeper, benchKeeper]);
     expect(result.warnings.join(" ")).toContain("Unmapped");
-    expect(result.warnings.join(" ")).toContain("round costs");
+    expect(result.warnings.join(" ")).toContain("did not supply their pick assignments");
+    expect(result.warnings.join(" ")).toContain("not confirmed as free keepers");
     const automatic = yahooDraftKeepers(imported, players, []);
     expect(automatic.keepers.every((entry) => entry.cost === "none")).toBe(true);
     expect(reconcileYahooDraftState(imported, players, { ...setup, keepers: [] }).currentPick).toBe(1);

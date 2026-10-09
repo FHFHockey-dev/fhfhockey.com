@@ -1,0 +1,30 @@
+{
+  "version": "rankings-trust-fictional-v1",
+  "kind": "fictional frozen window inputs; known evaluation fixture, not a blind holdout",
+  "cutoff": "2026-04-16",
+  "rows": [
+    { "id": 1, "gp": 1, "toi": 300, "points": 1, "penalties": 0, "reason": "one game, exactly default minimum" },
+    { "id": 2, "gp": 5, "toi": 1800, "points": 2, "penalties": 1, "reason": "qualified tie" },
+    { "id": 3, "gp": 5, "toi": 1800, "points": 2, "penalties": 1, "reason": "qualified tie" },
+    { "id": 4, "gp": 5, "toi": 1800, "points": 0, "penalties": 2, "reason": "valid zero numerator" },
+    { "id": 5, "gp": 0, "toi": 300, "points": 1, "penalties": 1, "reason": "insufficient GP" },
+    { "id": 6, "gp": 5, "toi": 299, "points": 1, "penalties": 1, "reason": "insufficient TOI" },
+    { "id": 7, "gp": 5, "toi": 1800, "points": null, "penalties": null, "reason": "missing numerator" },
+    { "id": 8, "gp": null, "toi": 1800, "points": 2, "penalties": 1, "reason": "missing GP" },
+    { "id": 9, "gp": 5, "toi": 0, "points": 1, "penalties": 1, "reason": "zero exposure" },
+    { "id": 10, "gp": 5, "toi": null, "points": 1, "penalties": 1, "reason": "missing exposure" }
+  ],
+  "cases": [
+    { "name": "default-boundary-points", "metric": "points_per_60", "minGp": 1, "minToi": 300, "expected": [ [1,12,1,100], [2,4,2,33.333], [3,4,2,33.333], [4,0,3,0] ] },
+    { "name": "five-game-points", "metric": "points_per_60", "minGp": 5, "minToi": 300, "expected": [ [2,4,1,50], [3,4,1,50], [4,0,2,0] ] },
+    { "name": "fantasy-exposure-points-component", "metric": "points_per_60", "minGp": 1, "minToi": 600, "expected": [ [2,4,1,50], [3,4,1,50], [4,0,2,0] ] },
+    { "name": "lower-is-better-penalties", "metric": "penalties_taken_per_60", "minGp": 1, "minToi": 300, "expected": [ [1,0,1,100], [2,2,2,33.333], [3,2,2,33.333], [4,4,3,0] ] },
+    { "name": "empty-cohort", "metric": "points_per_60", "minGp": 6, "minToi": 300, "expected": [] },
+    { "name": "default-explorer-goals", "metric": "goals_per_60", "minGp": 1, "minToi": 300, "expected": [ [1,12,1,100], [2,4,2,33.333], [3,4,2,33.333], [4,0,3,0] ] }
+  ],
+  "limits": [
+    "Rows represent one selected window, not immutable real NHL game histories; the fictional scoring fixtures assign all points to goals.",
+    "Window/season/strength parameterization checks consumer contracts, not producer reconciliation.",
+    "No game deletion sensitivity or forecast accuracy can be certified from these window totals."
+  ]
+}

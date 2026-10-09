@@ -29,6 +29,7 @@ export interface SettingsValidationInput {
   trades?: PickTradeEntry[];
   playerEligibility?: ReadonlyMap<string, string[]>;
   forwardGrouping?: "split" | "fwd";
+  unavailableCustomSources?: readonly { id: string; label: string }[];
 }
 
 export function validateDraftSettings({
@@ -42,6 +43,7 @@ export function validateDraftSettings({
   trades = [],
   playerEligibility,
   forwardGrouping = "split",
+  unavailableCustomSources = [],
 }: SettingsValidationInput) {
   const issues: SettingsIssue[] = [];
   const add = (
@@ -237,6 +239,9 @@ export function validateDraftSettings({
       ) * 100,
     );
   });
+  for (const source of unavailableCustomSources) {
+    add("projections", "sources-skater", `Imported projection CSV rows are unavailable for ${source.label}. Reimport or remove this source before drafting.`);
+  }
   const errors = issues.filter((issue) => issue.severity === "error");
   return {
     valid: errors.length === 0,

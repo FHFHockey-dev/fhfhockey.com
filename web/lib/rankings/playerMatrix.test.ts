@@ -806,6 +806,23 @@ describe("playerMatrix", () => {
     expect(unpublished.meta.sortMetricAvailableRowCount).toBe(0);
     expect(unpublished.rows).toHaveLength(3);
     expect(unpublished.rows.every((row) => row.sort.percentile === null)).toBe(true);
+
+    mockCompositeRows([
+      { player_id: 1, snapshot_date: "2026-04-16", mcm_score: 0, methodology_version: "contextual_composites_v1" },
+      { player_id: 3, snapshot_date: "2026-04-16", mcm_score: null, methodology_version: "contextual_composites_v1" },
+    ]);
+    clearPlayerMatrixSurfaceCachesForTests();
+    const zeroAndMissing = await buildPlayerMatrixSurface(parsePlayerMatrixRequest({
+      season: "20252026", strength: "all", window: "season", sort_metric: "mcm_score", ranking_source: "fallback",
+    }));
+    expect(zeroAndMissing.meta.sortMetricAvailableRowCount).toBe(1);
+    expect(zeroAndMissing.rows[0]).toMatchObject({ entity: { id: 1 }, sort: { rank: 1, percentile: 0, rankScopes: { overall: { qualifiedPeerCount: 1 } } } });
+    expect(zeroAndMissing.rows[0]?.metrics.mcm_score).toMatchObject({ rawValue: 0, availabilityState: "available" });
+    for (const id of [2, 3]) {
+      const row = zeroAndMissing.rows.find(item => item.entity.id === id)!;
+      expect(row.sort.percentile).toBeNull();
+      expect(row.metrics.mcm_score).toMatchObject({ rawValue: null, availabilityState: "unavailable" });
+    }
   });
 
   it("sorts composite rows by Results Luck instead of MCM when requested", async () => {

@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { persistRecoveredDraft, recoverCustomCsvEntries } from "lib/draftDashboard/recovery";
 
 import {
   adaptSavedDraftRows,
@@ -16,6 +17,44 @@ const csv = {
 };
 
 describe("Saved Drafts dashboard restore boundary", () => {
+  it("retains missing source names and recovers only referenced tab rows", () => {
+    const rows = recoverCustomCsvEntries({
+      customSourceMetadata: [{ id: "custom_csv_absent", label: "Missing rankings" }],
+      sourceControls: { custom_csv_absent: { isSelected: true, weight: 0.7 }, custom_csv_1: { isSelected: false, weight: 0.3 } },
+    }, [csv, { ...csv, id: "custom_csv_stale" }]);
+    expect(rows).toEqual([csv, { id: "custom_csv_absent", label: "Missing rankings", playerType: "skater", rows: [] }]);
+  });
+
+  it("does not write unchanged CSV rows merely to resume", () => {
+    const storage = { getItem: vi.fn(() => JSON.stringify([csv])), setItem: vi.fn(() => { throw new Error("quota"); }), removeItem: vi.fn() };
+    expect(persistRecoveredDraft([csv], undefined, storage)).toBe(true);
+    expect(storage.setItem).not.toHaveBeenCalled();
+  });
+
+  it("preserves the saved snapshot if replacement CSV storage fails, then permits retry", () => {
+    const values = new Map([["draft.snapshot.v2", "old draft"]]);
+    const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: vi.fn((key: string, value: string) => { values.set(key, value); }), removeItem: (key: string) => { values.delete(key); } };
+    storage.setItem.mockImplementationOnce(() => { throw new Error("quota"); });
+    expect(persistRecoveredDraft([csv], "new draft", storage)).toBe(false);
+    expect(values.get("draft.snapshot.v2")).toBe("old draft");
+    expect(persistRecoveredDraft([csv], "new draft", storage)).toBe(true);
+    expect(values.get("draft.snapshot.v2")).toBe("new draft");
+    expect(storage.setItem.mock.calls.slice(-2).map(([key]) => key)).toEqual(["draft.customCsvList.v3", "draft.snapshot.v2"]);
+  });
+
+  it("rolls back replacement CSV rows when the snapshot cannot persist", () => {
+    const previous = JSON.stringify([csv]);
+    const values = new Map([["draft.customCsvList.v3", previous], ["draft.snapshot.v2", "old draft"]]);
+    const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { if (key === "draft.snapshot.v2") throw new Error("quota"); values.set(key, value); }, removeItem: (key: string) => { values.delete(key); } };
+    expect(persistRecoveredDraft([{ ...csv, label: "Replacement" }], "new draft", storage)).toBe(false);
+    expect(values.get("draft.customCsvList.v3")).toBe(previous);
+    expect(values.get("draft.snapshot.v2")).toBe("old draft");
+  });
+
+  it("reports blocked storage reads as a failed recovery", () => {
+    expect(persistRecoveredDraft([], undefined, { getItem: () => { throw new Error("blocked"); }, setItem: vi.fn(), removeItem: vi.fn() })).toBe(false);
+  });
+
   it("does not overwrite a resolved local order while applying Yahoo roster and scoring", () => {
     const current: DraftSettings = { teamCount: 2, draftOrder: ["team.2", "team.1"],
       draftOrderMode: "custom", reversedRounds: [2], rosterConfig: { C: 1, bench: 0, utility: 0 }, scoringCategories: {} };

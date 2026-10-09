@@ -221,6 +221,7 @@ vi.mock("lib/supabase/server", () => ({
 }));
 
 import {
+  buildContextualRankingSnapshotRowsByMetric,
   buildContextualRankingsSurface,
   buildSnapshotFirstContextualRankingsSurface,
   clearContextualRankingsQueryCachesForTests,
@@ -241,6 +242,79 @@ describe("rankingQueries", () => {
     clearEntityMetricRankingReaderCachesForTests();
     clearPlayerMatrixSurfaceCachesForTests();
     supabaseMock.from.mockClear();
+  });
+
+  it.each(
+    (["all", "ev", "pp", "pk"] as const).flatMap(strength =>
+      [false, true].map(mixed => ({ strength, mixed })),
+    ),
+  )("marks unsupported snapshot metrics unavailable at $strength strength (mixed=$mixed)", async ({ strength, mixed }) => {
+    scenario.paginatedRows = [{
+      player_id: 1, season: 20252026, strength_state: strength, team_id: 10,
+      game_date: "2026-04-16", updated_at: "2026-04-16T06:00:00.000Z",
+      games_played: 5, toi_seconds_total_last5: 1800,
+      points_total_last5: 2, oi_xga_total_last5: 1, oi_xgf_total_last5: 3,
+    }];
+    const request = {
+      entity: "skaters", season: 20252026, asOfDate: "2026-04-16", window: "last5",
+      position: "all", deployment: "all", strength, metric: "points_per_60",
+      minGp: 1, minToiSeconds: 300, teamId: null, peerGroupType: "all_skaters",
+      sort: "percentile", direction: "desc", limit: null, entityIds: null,
+    } as const;
+    const snapshots = await buildContextualRankingSnapshotRowsByMetric(request, mixed
+      ? ["points_per_60", "xga_per_60", "on_ice_xgf_percentage", "rel_5v5_gf_percentage"]
+      : ["xga_per_60"]);
+    for (const metricKey of mixed
+      ? ["xga_per_60", "on_ice_xgf_percentage", "rel_5v5_gf_percentage"] as const
+      : ["xga_per_60"] as const) {
+      expect(snapshots.get(metricKey)).toMatchObject({
+        metricKey, request: { ...request, metric: metricKey }, rankedRows: [],
+        snapshotDate: null, snapshotUpdatedAt: null, latestAvailableSnapshotDate: null,
+        snapshotSelectionReason: "metric_unavailable", unavailable: true,
+        message: "Requested metric is not available from current verified data.",
+      });
+    }
+    if (mixed) {
+      const points = snapshots.get("points_per_60")!;
+      expect(points).toMatchObject({
+        unavailable: false, snapshotDate: "2026-04-16",
+        snapshotUpdatedAt: "2026-04-16T06:00:00.000Z",
+        latestAvailableSnapshotDate: "2026-04-16", snapshotSelectionReason: "latest_available",
+        message: null,
+      });
+      expect(points.rankedRows).toHaveLength(1);
+      expect(points.rankedRows[0]).toMatchObject({ calculatedRawValue: 4, rawRank: 1, percentile: 100, qualifiedPeerCount: 1 });
+    } else {
+      expect(queryCalls).toHaveLength(0);
+    }
+  });
+
+  it("preserves supported 5v5 snapshot metrics in a mixed batch with a planned metric", async () => {
+    scenario.paginatedRows = [{
+      player_id: 1, season: 20252026, strength_state: "5v5", team_id: 10,
+      game_date: "2026-04-16", updated_at: "2026-04-16T06:00:00.000Z",
+      games_played: 5, toi_seconds_total_last5: 1800,
+      points_total_last5: 2, oi_xga_total_last5: 1, oi_xgf_total_last5: 3,
+    }];
+    const snapshots = await buildContextualRankingSnapshotRowsByMetric({
+      entity: "skaters", season: 20252026, asOfDate: "2026-04-16", window: "last5",
+      position: "all", deployment: "all", strength: "5v5", metric: "points_per_60",
+      minGp: 1, minToiSeconds: 300, teamId: null, peerGroupType: "all_skaters",
+      sort: "percentile", direction: "desc", limit: null, entityIds: null,
+    }, ["points_per_60", "xga_per_60", "on_ice_xgf_percentage", "rel_5v5_gf_percentage"]);
+    for (const [metricKey, value] of [["points_per_60", 4], ["xga_per_60", 2], ["on_ice_xgf_percentage", 75]] as const) {
+      const snapshot = snapshots.get(metricKey)!;
+      expect(snapshot).toMatchObject({
+        unavailable: false, snapshotDate: "2026-04-16",
+        snapshotSelectionReason: "latest_available", message: null,
+      });
+      expect(snapshot.rankedRows).toHaveLength(1);
+      expect(snapshot.rankedRows[0]).toMatchObject({ calculatedRawValue: value, rawRank: 1, percentile: 100, qualifiedPeerCount: 1 });
+    }
+    expect(snapshots.get("rel_5v5_gf_percentage")).toMatchObject({
+      unavailable: true, snapshotDate: null, snapshotUpdatedAt: null,
+      latestAvailableSnapshotDate: null, snapshotSelectionReason: "metric_unavailable", rankedRows: [],
+    });
   });
 
   it.each([
@@ -266,7 +340,10 @@ describe("rankingQueries", () => {
     expect(row.metric.rawRank).toBe(meets ? 1 : null);
     expect(row.metric.percentile).toBe(meets ? 100 : null);
     expect(row.warnings.includes("sample_below_minimum")).toBe(!meets);
-    expect(row.explanationItems).toEqual(meets ? ["Rank 1 of 10."] : ["Sample unavailable or below selected minimums; rank and percentile unavailable."]);
+    expect(row.explanationItems).toEqual(meets ? [
+      "Rank 1 of 1 in all_skaters:all.",
+      "Better than 100.0% of other qualified peers after metric directionality is applied.",
+    ] : ["Sample unavailable or below selected minimums; rank and percentile unavailable."]);
     const matrixQuery = { season: "20252026", strength: "5v5", sort_metric: "sog_per_60", min_gp: "3", min_toi: "300" };
     await matrixHandler({ method: "GET", query: matrixQuery } as any, res);
     expect(res.statusCode).toBe(200);
@@ -451,8 +528,9 @@ describe("rankingQueries", () => {
     expect(response.rankings[0]?.metric).toMatchObject({
       key: "points_per_60",
       value: 3.1,
-      rawRank: 2,
-      percentile: 96,
+      rawRank: 1,
+      percentile: 100,
+      qualifiedPeerCount: 1,
     });
   });
 

@@ -19,6 +19,7 @@ const accountState = vi.hoisted(() => ({
   } as any,
   profileMaybeSingle: vi.fn(),
   profileUpsert: vi.fn(),
+  refreshProfileAvatar: vi.fn(),
   settingsMaybeSingle: vi.fn(),
   settingsUpsert: vi.fn(),
   connectedAccountMaybeSingle: vi.fn(),
@@ -35,6 +36,7 @@ const accountState = vi.hoisted(() => ({
   savedTeamsUpdate: vi.fn(),
   savedTeamsDelete: vi.fn(),
   authGetSession: vi.fn(),
+  draftProEligible: true,
 }));
 
 vi.mock("next/router", () => ({
@@ -47,7 +49,12 @@ vi.mock("next/router", () => ({
 vi.mock("contexts/AuthProviderContext", () => ({
   useAuth: () => ({
     user: accountState.authUser,
+    refreshProfileAvatar: accountState.refreshProfileAvatar,
   }),
+}));
+
+vi.mock("hooks/useDraftProAccess", () => ({
+  useDraftProAccess: () => ({ access: { eligible: accountState.draftProEligible } }),
 }));
 
 vi.mock("lib/supabase/client", () => ({
@@ -215,6 +222,7 @@ import AccountSettingsPage from "components/account/AccountSettingsPage";
 describe("AccountSettingsPage profile section", () => {
   beforeEach(() => {
     accountState.routerQuery = {};
+    accountState.draftProEligible = true;
     accountState.authUser = {
       id: "user-1",
       email: "tim@example.com",
@@ -225,6 +233,7 @@ describe("AccountSettingsPage profile section", () => {
     accountState.replace.mockReset();
     accountState.profileMaybeSingle.mockReset();
     accountState.profileUpsert.mockReset();
+    accountState.refreshProfileAvatar.mockReset().mockResolvedValue(undefined);
     accountState.settingsMaybeSingle.mockReset();
     accountState.settingsUpsert.mockReset();
     accountState.connectedAccountMaybeSingle.mockReset();
@@ -304,6 +313,17 @@ describe("AccountSettingsPage profile section", () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+  });
+
+  it("does not load Yahoo league data without Draft Pro access", async () => {
+    accountState.draftProEligible = false;
+    accountState.profileMaybeSingle.mockResolvedValue({ data: null, error: null });
+    render(<AccountSettingsPage />);
+    await screen.findByDisplayValue("Tim Tester");
+    fireEvent.click(screen.getByRole("tab", { name: "Connected Accounts" }));
+    expect(accountState.externalLeaguesOrder).not.toHaveBeenCalled();
+    expect(accountState.externalTeamsOrder).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText("Active Yahoo League")).toBeNull();
   });
 
   it("loads persisted profile fields into the editor", async () => {
@@ -444,6 +464,9 @@ describe("AccountSettingsPage profile section", () => {
     fireEvent.change(screen.getByLabelText("Timezone"), {
       target: { value: "America/Chicago" },
     });
+    fireEvent.change(screen.getByLabelText("Avatar URL"), {
+      target: { value: "https://fixture.test/updated.png" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Save Profile" }));
 
     await waitFor(() => {
@@ -451,7 +474,7 @@ describe("AccountSettingsPage profile section", () => {
         {
           user_id: "user-1",
           display_name: "Tim The Commissioner",
-          avatar_url: null,
+          avatar_url: "https://fixture.test/updated.png",
           timezone: "America/Chicago",
         },
         {
@@ -461,6 +484,44 @@ describe("AccountSettingsPage profile section", () => {
     });
 
     expect(await screen.findByText("Profile settings saved.")).toBeTruthy();
+    expect(accountState.refreshProfileAvatar).toHaveBeenCalledWith("user-1");
+  });
+
+  it("does not refresh the shared avatar when profile saving fails", async () => {
+    accountState.profileMaybeSingle.mockResolvedValue({ data: null, error: null });
+    accountState.profileUpsert.mockResolvedValue({ error: { message: "Profile save failed" } });
+    render(<AccountSettingsPage />);
+    await screen.findByDisplayValue("Tim Tester");
+    fireEvent.click(screen.getByRole("button", { name: "Save Profile" }));
+    expect(await screen.findByText("Profile save failed")).toBeTruthy();
+    expect(accountState.refreshProfileAvatar).not.toHaveBeenCalled();
+  });
+
+  it("keeps save feedback when the shared avatar refresh reloads the same profile", async () => {
+    accountState.profileMaybeSingle.mockResolvedValue({ data: null, error: null });
+    accountState.profileUpsert.mockResolvedValue({ error: null });
+    const { rerender } = render(<AccountSettingsPage />);
+    await screen.findByDisplayValue("Tim Tester");
+    fireEvent.click(screen.getByRole("button", { name: "Save Profile" }));
+    await screen.findByText("Profile settings saved.");
+    accountState.authUser = { ...accountState.authUser, avatarUrl: "https://fixture.test/saved.png" };
+    rerender(<AccountSettingsPage />);
+    await screen.findByDisplayValue("https://fixture.test/saved.png");
+    expect(screen.getByText("Profile settings saved.")).toBeTruthy();
+  });
+
+  it("scopes a late successful save refresh to the original account", async () => {
+    accountState.profileMaybeSingle.mockResolvedValue({ data: null, error: null });
+    let resolve!: (result: { error: null }) => void;
+    accountState.profileUpsert.mockReturnValue(new Promise(res => { resolve = res; }));
+    const { rerender } = render(<AccountSettingsPage />);
+    await screen.findByDisplayValue("Tim Tester");
+    fireEvent.click(screen.getByRole("button", { name: "Save Profile" }));
+    accountState.authUser = { ...accountState.authUser, id: "user-2", displayName: "Morgan Example" };
+    rerender(<AccountSettingsPage />);
+    resolve({ error: null });
+    await waitFor(() => expect(accountState.refreshProfileAvatar).toHaveBeenCalledWith("user-1"));
+    expect(accountState.refreshProfileAvatar).not.toHaveBeenCalledWith("user-2");
   });
 
   it("disables the profile save action while a save is in progress", async () => {

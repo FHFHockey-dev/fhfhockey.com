@@ -80,7 +80,7 @@ export default function LeagueStandings({
           ? (scheduleTotals.get(team.teamId)?.[sort.key] ?? null)
         : sort.key === "vorp"
           ? (team.teamVorp ?? 0)
-          : (team.categoryTotals[sort.key] ?? 0);
+          : (team.categoryTotals[sort.key] ?? null);
     const av = value(a), bv = value(b);
     if (av == null) return bv == null ? 0 : 1;
     if (bv == null) return -1;
@@ -211,17 +211,20 @@ export default function LeagueStandings({
                   const definition = STATS_MASTER_LIST.find(
                     (stat) => stat.key === key,
                   );
+                  const value = team.categoryTotals[key] ?? (rank == null ? null : 0);
+                  const estimated = team.categoryAggregateQuality?.[key] === "estimated";
                   return (
                     <td
                       key={key}
                       data-category={key}
                       data-rank={rank}
-                      data-band={categoryRankBand(rank, teams.length)}
-                      title={`${definition?.displayName || key}: rank ${rank} of ${teams.length}`}
+                      data-band={rank == null ? undefined : categoryRankBand(rank, teams.length)}
+                      title={`${definition?.displayName || key}: ${rank == null ? "unranked" : `rank ${rank} of ${teams.length}`}${estimated ? " · Estimated" : ""}`}
                     >
-                      {(team.categoryTotals[key] ?? 0).toFixed(
-                        definition?.decimalPlaces ?? 0,
-                      )}
+                      {value == null ? <span aria-label="Unavailable team rate">N/A</span> : <>
+                        {value.toFixed(definition?.decimalPlaces ?? 0)}
+                        {estimated && <sup aria-label="Estimated team rate based on projected workload" title="Estimated from projected workload">≈</sup>}
+                      </>}
                     </td>
                   );
                 })}

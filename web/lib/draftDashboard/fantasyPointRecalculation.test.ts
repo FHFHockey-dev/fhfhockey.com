@@ -53,6 +53,15 @@ describe("cached fantasy-point recalculation", () => {
     expect(second.fantasyPoints.projected).toBe(12);
   });
 
+  it("distinguishes authoritative zero weights from unavailable active stats and omitted scoring", () => {
+    const current = { ...player, fantasyPoints: { ...player.fantasyPoints, projected: 450 } };
+    expect(computeProratedFantasyPoints(current, true, { GOALS: 0 }, { mergeWithDefaults: false })).toBe(0);
+    expect(computeProratedFantasyPoints(current, true, { HITS_D: 0.5 }, { mergeWithDefaults: false })).toBe(0);
+    expect(computeProratedFantasyPoints(current, true, { HITS: 1 }, { mergeWithDefaults: false })).toBeNull();
+    expect(computeProratedFantasyPoints(current, true)).toBeCloseTo((4 * 3 + 6 * 2) * 84 / 10);
+    expect(current.fantasyPoints.projected).toBe(450);
+  });
+
   it("uses defense-only hits and blocks as overrides without double counting", () => {
     const scoring = { HITS: 0.3, HITS_D: 0.32, BLOCKED_SHOTS: 0.3, BLOCKED_SHOTS_D: 0.32, PP_POINTS: 1, SH_POINTS: 1 };
     const combinedStats = {

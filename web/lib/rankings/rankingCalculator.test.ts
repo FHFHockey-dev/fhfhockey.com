@@ -255,4 +255,11 @@ describe("rankingCalculator", () => {
       }),
     ).toBe("high");
   });
+
+  it.each([
+    { minGp: 0, minToiSeconds: 300, gamesPlayed: 1, toiSeconds: 600 },
+    { minGp: 1, minToiSeconds: 0, gamesPlayed: 2, toiSeconds: 600 },
+  ])("ignores disabled minimums when determining the sample tier: %j", (sample) => {
+    expect(getSampleConfidence({ ...sample, minimumSampleMet: true })).toBe("high");
+  });
 });
