@@ -3110,8 +3110,9 @@ export async function runPerGameSkaterStage(args: {
         assists: Number(
           ((assistsEs + assistsPp) * teamHorizonTotalScalar).toFixed(3),
         ),
+        // Match the PP heads consumed by the board; rounding raw totals again can disagree.
         powerPlayPoints: Number(
-          ((goalsPp + assistsPp) * teamHorizonTotalScalar).toFixed(3),
+          (playerUpsert.proj_goals_pp + playerUpsert.proj_assists_pp).toFixed(3),
         ),
         blockedShots: Number((projBlocks * teamHorizonTotalScalar).toFixed(3)),
         lineupSourceGameDate: lcContext.sourceGameDate,

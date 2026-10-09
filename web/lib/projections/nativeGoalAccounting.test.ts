@@ -5,9 +5,11 @@ import type { BoardAssertion, DailyBoardEvidence } from "./dailyBoardEvidence";
 import { computeShotsFromRate } from "./utils/number-utils";
 import { runPerGameSkaterStage } from "./stages/skater-stage";
 import { resolveSkaterRolloutConfig } from "./skaterRollout";
+import { completeBoardSkaterStatsFromProjection } from "./starterBoardScoring";
 
 const producer = vi.hoisted(() => ({
   roster: (teamId: number) => Array.from({ length: 18 }, (_, index) => teamId * 100 + index + 1),
+  ppLine: { goalsPp: 0.1114, assistsPp: 0.2 },
   playerWrites: vi.fn(async (rows: unknown[]) => rows.length),
   teamWrites: vi.fn(async (_row: unknown) => 1),
 }));
@@ -40,7 +42,7 @@ vi.mock("./seasonBootstrap", async importOriginal => ({
   ...await importOriginal<typeof import("./seasonBootstrap")>(),
   loadSeasonBootstrap: async (ids: number[]) => new Map(ids.map(id => [id, { previous: { PP_TOI: 2 }, fantasy: {},
     currentSeasonGames: 0, historyGames: 1, sourceIds: [], sourceRowIds: [], limitations: ["Synthetic mechanics fixture"] }])),
-  bootstrapSkaterLine: () => ({ goalsEs: 0.3334, goalsPp: 0.1114, assistsEs: 0.5, assistsPp: 0.2,
+  bootstrapSkaterLine: () => ({ goalsEs: 0.3334, ...producer.ppLine, assistsEs: 0.5,
     shotsEs: 2, shotsPp: 1, hits: 1, blocks: 1, disclosure: { fantasyWeight: 0.6, historyWeight: 0.4 } }),
 }));
 vi.mock("./stages/persistence-stage", () => ({
@@ -289,10 +291,26 @@ describe("native team contributor reconciliation", () => {
 });
 
 describe("native skater-stage accounting integration", () => {
-  it("writes reconciled serialized goal components and keeps the synthetic full-team endpoint ineligible", async () => {
+  it.each([
+    { label: "heads rounding down", goalsPp: 0.1114, assistsPp: 0.2004, ppHead: 0.111, assistHead: 0.2,
+      expectedPpp: 0.311, rawRoundedPpp: 0.312, teamPp: 1.998, teamGoals: 7.992, playerGoals: 0.444 },
+    { label: "heads rounding up", goalsPp: 0.1116, assistsPp: 0.2006, ppHead: 0.112, assistHead: 0.201,
+      expectedPpp: 0.313, rawRoundedPpp: 0.312, teamPp: 2.016, teamGoals: 8.01, playerGoals: 0.445 },
+    { label: "genuine zero PP heads", goalsPp: 0, assistsPp: 0, ppHead: 0, assistHead: 0,
+      expectedPpp: 0, rawRoundedPpp: 0, teamPp: 0, teamGoals: 5.994, playerGoals: 0.333 },
+  ])("writes reconciled serialized goals and PPP for $label without qualifying full-game means", async fixture => {
+    producer.playerWrites.mockClear();
+    producer.teamWrites.mockClear();
+    producer.ppLine = { goalsPp: fixture.goalsPp, assistsPp: fixture.assistsPp };
     const asOfDate = "2026-10-07";
     const cached = <T>(value: T) => new Map([10, 11].map(teamId => [`${teamId}:${asOfDate}`, value]));
     const teamGoalsByTeamId = new Map<number, number>();
+    const playerPredictionOutputRows: Array<Record<string, unknown>> = [];
+    const marketType = "player_power_play_points";
+    const marketSummary = { marketType, sourceRank: 1, sourceNames: ["synthetic-market"], sportsbookKeys: [],
+      observedAt: evidenceCutoffAt, freshnessExpiresAt: null, outcomes: [] };
+    const playerPropContextByGamePlayerKey = new Map([10, 11].flatMap(teamId => producer.roster(teamId)
+      .map(playerId => [`2026020002:${playerId}`, { [marketType]: marketSummary }] as const)));
     const result = await runPerGameSkaterStage({
       seasonBootstrap: true, asOfDate, runId: "synthetic-native-goal-accounting", horizonGames: 1,
       game: { id: 2026020002, date: asOfDate, homeTeamId: 10, awayTeamId: 11 },
@@ -307,7 +325,7 @@ describe("native skater-stage accounting integration", () => {
       teamDefensiveEnvironmentCache: new Map(), teamOffenseEnvironmentCache: new Map(), teamRestDaysCache: cached(null),
       teamStrengthPriorCache: cached(null), teamStrengthCache: cached({ toiEsSecondsAvg: 15000, toiPpSecondsAvg: 3000, shotsEsAvg: 36, shotsPpAvg: 18 }),
       teamFiveOnFiveProfileCache: cached(null), teamNstExpectedGoalsCache: cached(null), teamLineComboGoaliePriorCache: cached(new Map()),
-      currentTeamGoalieIdsCache: cached(new Set()), playerPropContextByGamePlayerKey: new Map(), playerPredictionOutputRows: [], modelMarketFlagRows: [],
+      currentTeamGoalieIdsCache: cached(new Set()), playerPropContextByGamePlayerKey, playerPredictionOutputRows, modelMarketFlagRows: [],
       goalieCandidates: [], learningCounters: { players: 0, goalRecent: 0, assistRecent: 0 }, metrics: { data_quality: {}, warnings: [] },
       dailyBoardEvidence: { informationCutoffAt: evidenceCutoffAt, assertions: [assertion({ gameId: 2026020002, playerId: 1018, value: "L4" })],
         conflicts: [{ gameId: 2026020002, teamId: 10, playerId: 1018, dimension: "pp", evidenceIds: ["synthetic-pp-conflict"] }] },
@@ -316,25 +334,39 @@ describe("native skater-stage accounting integration", () => {
     expect(producer.playerWrites).toHaveBeenCalledTimes(2);
     const added = producer.playerWrites.mock.calls[0][0].find((row: any) => row.player_id === 1018) as any;
     expect(added.uncertainty.model.skater_selection).toMatchObject({ participation_probability: 1, participation_reason: null });
-    expect(added.uncertainty.native_goal_accounting).toMatchObject({ participationProbabilityGivenGamePlayed: 1, expectedEsPpMeanGivenGamePlayed: 0.444 });
+    expect(added.uncertainty.native_goal_accounting).toMatchObject({ participationProbabilityGivenGamePlayed: 1, expectedEsPpMeanGivenGamePlayed: fixture.playerGoals });
     for (let index = 0; index < 2; index++) {
       const rows = producer.playerWrites.mock.calls[index][0] as Array<NativeSkaterGoalRow & { uncertainty: { native_goal_accounting: unknown } }>;
       const written = producer.teamWrites.mock.calls[index][0] as Record<string, any>;
-      expect(written).toMatchObject({ proj_goals_es: 5.994, proj_goals_pp: 1.998, proj_goals_pk: null });
+      expect(written).toMatchObject({ proj_goals_es: 5.994, proj_goals_pp: fixture.teamPp, proj_goals_pk: null });
       expect(written.proj_goals_es).toBe(Number(rows.reduce((sum, row) => sum + row.proj_goals_es, 0).toFixed(3)));
       expect(written.proj_goals_es).not.toBe(Number((18 * 0.3334).toFixed(3)));
-      expect(teamGoalsByTeamId.get(written.team_id)).toBe(7.992);
+      expect(teamGoalsByTeamId.get(written.team_id)).toBe(fixture.teamGoals);
       expect(teamGoalsByTeamId.get(written.team_id)).toBe(written.uncertainty.native_goal_accounting.reportedEsPpMean);
       expect(teamGoalsByTeamId.get(written.team_id)).toBe(Number((written.proj_goals_es + written.proj_goals_pp).toFixed(3)));
-      expect(teamGoalsByTeamId.get(written.team_id)).not.toBe(Number((18 * (0.3334 + 0.1114)).toFixed(3)));
+      const rawTeamGoals = Number((18 * (0.3334 + fixture.goalsPp)).toFixed(3));
+      if (rawTeamGoals !== fixture.teamGoals) expect(teamGoalsByTeamId.get(written.team_id)).not.toBe(rawTeamGoals);
       expect(written.uncertainty.native_goal_accounting).toMatchObject({ fullGameEligible: false, fullOfficialPlayMean: null,
         expectedListedEsPpMeanGivenGamePlayed: null, residualMean: null });
       expect(written.uncertainty.native_roster_contributor_coverage).toMatchObject({
         version: "native-roster-contributor-coverage-v1", eligibleUnprojectedSkaterPlayerIds: [], residualMean: null,
       });
       expect(written.uncertainty.native_roster_contributor_coverage.contributors).toHaveLength(18);
-      expect(rows[0].uncertainty.native_goal_accounting).toMatchObject({ reportedComponents: { esMean: 0.333, ppMean: 0.111, pkMean: null },
+      expect(rows[0].uncertainty.native_goal_accounting).toMatchObject({ reportedComponents: { esMean: 0.333, ppMean: fixture.ppHead, pkMean: null },
         esBucketDefinition: "bootstrap_all_strength_minus_pp_blend", expectedEsPpMeanGivenGamePlayed: null, fullGameEligible: false });
+      for (const row of rows) {
+        const prediction = playerPredictionOutputRows.filter(output => output.player_id === row.player_id);
+        expect(prediction).toHaveLength(1);
+        expect(prediction[0]).toMatchObject({ metric_key: marketType, player_id: row.player_id, team_id: row.team_id,
+          game_id: row.game_id, expected_value: fixture.expectedPpp, metadata: { horizon_games: 1, run_id: "synthetic-native-goal-accounting" } });
+        expect(row).toMatchObject({ proj_goals_pp: fixture.ppHead, proj_assists_pp: fixture.assistHead,
+          proj_goals_pk: null, proj_assists_pk: null, proj_shots_pk: null });
+        const boardStats = completeBoardSkaterStatsFromProjection(row);
+        expect(boardStats.proj_pp_points).toBeCloseTo(fixture.expectedPpp, 12);
+        expect(boardStats).toMatchObject({ proj_goals: null, proj_assists: null, proj_shots: null, proj_pim: null, proj_toi_minutes: null });
+        if (fixture.expectedPpp !== fixture.rawRoundedPpp) expect(prediction[0].expected_value).not.toBe(fixture.rawRoundedPpp);
+      }
     }
+    expect(playerPredictionOutputRows).toHaveLength(36);
   });
 });
