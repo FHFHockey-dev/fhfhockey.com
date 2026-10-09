@@ -239,9 +239,11 @@ export async function loadYahooPlanningSnapshot(args: {
   if (mode === "weekly") unsupported.push("Supply verified weekly lineup windows; the roster response alone does not establish their exact locks.");
   if (ownRows.length !== roster.length) unsupported.push("Resolve missing roster identities before accepting a complete plan.");
   if (!roster.length) unsupported.push("The connected roster is empty; review the team selection or import the roster manually.");
+  const reserveSlots = Object.fromEntries(Object.entries(settings.excludedInjurySlots ?? {})
+    .filter(([slot]) => ["IR", "IR+", "NA"].includes(slot.trim().toUpperCase())));
   const rules: LeagueRules = {
-    // Injury slots are excluded from draft capacity, but still constrain in-season rosters.
-    lineupMode: mode, rosterSlots: { ...settings.rosterConfig, ...settings.excludedInjurySlots },
+    // Restore supported reserve capacities that the draft parser excludes.
+    lineupMode: mode, rosterSlots: { ...settings.rosterConfig, ...reserveSlots },
     // A lineup deadline does not establish when a transaction becomes effective.
     acquisitionTiming: "unknown",
     acquisitionCost: null, periods: [], scoring: { mode: settings.leagueType, weights: { ...settings.scoringCategories }, categories: yahooPlanningCategories(Object.keys(settings.categoryWeights)) },

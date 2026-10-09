@@ -259,7 +259,13 @@ describe("Yahoo snapshot evidence", () => {
       } finally { clock?.mockRestore(); }
     }
 
-    mocks.settings.mockReturnValue({ ...mocks.settings(), excludedInjurySlots: { "IR+": 2, IR: 1, NA: 1 } });
+    mocks.settings.mockReturnValue({ ...mocks.settings(), excludedInjurySlots: { "IR-LT": 1 } });
+    const activeOnly = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", now });
+    expect(activeOnly.snapshot.rules.rosterSlots).not.toHaveProperty("IR-LT");
+    const activeHold = evaluatePlan(activeOnly.snapshot, defaultIntent(), "agp");
+    expect(activeHold.legal, activeHold.limitations.join(" ")).toBe(true);
+
+    mocks.settings.mockReturnValue({ ...mocks.settings(), excludedInjurySlots: { "IR+": 2, IR: 1, NA: 1, "IR-LT": 1 } });
     mocks.planningData.mockResolvedValue({ ...await mocks.planningData(), games: [
       { id: "reserved-game", date: "2026-10-02", startsAt: "2026-10-02T23:00:00Z", teamAbbreviation: "TOR", opponent: "OTT", home: true, status: "scheduled" },
     ] });
@@ -273,6 +279,7 @@ describe("Yahoo snapshot evidence", () => {
     mocks.planningResource.mockRejectedValue(new Error("Optional planning read unavailable"));
     const reserved = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", now });
     expect(reserved.snapshot.rules.rosterSlots).toMatchObject({ "IR+": 2, IR: 1, NA: 1 });
+    expect(reserved.snapshot.rules.rosterSlots).not.toHaveProperty("IR-LT");
     expect(reserved.snapshot.roster).toEqual([{ playerId: "canonical", position: "IR+" }, { playerId: "candidate", position: "IR+" }]);
     const hold = evaluatePlan(reserved.snapshot, defaultIntent(), "agp");
     expect(hold.legal, hold.limitations.join(" ")).toBe(true);
