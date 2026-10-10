@@ -1391,8 +1391,9 @@ function compactWorkspace(count: number) {
   const games = Array.from({ length: 7 }, (_, index) => ({ ...fixtureGame(`compact-${index}`, 5, "CAR"), date: `2026-10-${String(index + 5).padStart(2, "0")}`, startsAt: `2026-10-${String(index + 5).padStart(2, "0")}T23:00:00Z` }));
   return { workspace, players, games };
 }
-async function installCompactFixture(page: import("@playwright/test").Page, count: number) {
+async function installCompactFixture(page: import("@playwright/test").Page, count: number, customize?: (fixture: ReturnType<typeof compactWorkspace>) => void) {
   const fixture = compactWorkspace(count);
+  customize?.(fixture);
   await page.clock.setFixedTime(new Date("2026-10-07T12:00:00Z"));
   await seedWorkspace(page, fixture.workspace);
   await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: { players: fixture.players, games: fixture.games, forecasts: [], evidence: {
@@ -1403,10 +1404,24 @@ async function installCompactFixture(page: import("@playwright/test").Page, coun
   await expect(page.getByText(/Local planning lineup · GP/)).toBeVisible();
   return fixture;
 }
+async function expectDaySliderAligned(page: import("@playwright/test").Page) {
+  const slider = page.getByRole("slider", { name: "Selected planning day" });
+  const thumbCenter = await slider.evaluate(node => {
+    const input = node as HTMLInputElement, box = input.getBoundingClientRect();
+    const min = Number(input.min), max = Number(input.max);
+    return box.left + 8 + (box.width - 16) * (max === min ? 0 : (Number(input.value) - min) / (max - min));
+  });
+  const date = await slider.getAttribute("aria-valuetext");
+  const headerCenter = await page.getByRole("button", { name: `Select ${date}`, exact: true }).evaluate(node => {
+    const box = node.closest("th")!.getBoundingClientRect(); return box.left + box.width / 2;
+  });
+  expect(Math.abs(thumbCenter - headerCenter)).toBeLessThanOrEqual(1);
+}
 
 for (const count of [19, 20, 25]) test(`compact layout accounts for ${count} players with fixed slots and continuous bands`, async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await installCompactFixture(page, count);
+  await expectDaySliderAligned(page);
   const table = page.getByRole("table", { name: "Individual player weekly schedule" });
   await expect(table.locator('tr[data-player-id]')).toHaveCount(count);
   await expect(page.getByRole("heading", { name: "Current Roster" })).toBeVisible();
@@ -1416,12 +1431,26 @@ for (const count of [19, 20, 25]) test(`compact layout accounts for ${count} pla
     const viewport = node.parentElement!.getBoundingClientRect();
     const rows = [...node.querySelectorAll('tr[data-compact-row]:not([hidden])')];
     return { visibleRows: rows.filter(row => { const box = row.getBoundingClientRect(); return box.top >= viewport.top && box.bottom <= viewport.bottom; }).length,
+      visiblePlayers: rows.filter(row => { const box = row.getBoundingClientRect(); return row.hasAttribute("data-player-id") && box.top >= viewport.top && box.bottom <= viewport.bottom && box.left >= viewport.left && box.right <= viewport.right; }).length,
+      rowHeights: rows.map(row => row.getBoundingClientRect().height),
+      scrollHeight: node.parentElement!.scrollHeight, clientHeight: node.parentElement!.clientHeight,
+      firstRowTop: rows[0]?.getBoundingClientRect().top, lastRowBottom: rows.at(-1)?.getBoundingClientRect().bottom, viewportTop: viewport.top, viewportBottom: viewport.bottom,
       playerIds: rows.map(row => row.getAttribute("data-player-id")).filter(Boolean),
       groups: [...node.querySelectorAll("tbody")].map(group => ({ position: group.getAttribute("data-position"), band: getComputedStyle(group).borderLeftColor,
         width: getComputedStyle(group).borderLeftWidth, style: getComputedStyle(group).borderLeftStyle,
         topLeftRadius: getComputedStyle(group).borderTopLeftRadius, bottomLeftRadius: getComputedStyle(group).borderBottomLeftRadius, rightRadius: getComputedStyle(group).borderTopRightRadius,
         outlineColors: [getComputedStyle(group).borderTopColor, getComputedStyle(group).borderRightColor, getComputedStyle(group).borderBottomColor],
         outlineWidths: [getComputedStyle(group).borderTopWidth, getComputedStyle(group).borderRightWidth, getComputedStyle(group).borderBottomWidth],
+        label: group.getAttribute("data-label"), labelColor: getComputedStyle(group, "::before").color, background: getComputedStyle(group).backgroundColor,
+        labelTop: parseFloat(getComputedStyle(group, "::before").top), groupHeight: group.clientHeight,
+        labelTransform: getComputedStyle(group, "::before").transform,
+        benchLabel: (() => {
+          const label = group.querySelector('tr[data-bench-heading] button > span');
+          if (!label) return null;
+          const box = label.getBoundingClientRect(), band = group.getBoundingClientRect();
+          return { width: box.width, height: box.height, color: getComputedStyle(label).color, transform: getComputedStyle(label).transform,
+            centerX: box.left + box.width / 2 - band.left, centerY: box.top + box.height / 2 - band.top, groupHeight: band.height };
+        })(),
         before: getComputedStyle(group, "::before").content, after: getComputedStyle(group, "::after").content,
         contentInset: Math.min(...[...group.querySelectorAll('th[scope="row"]')].map(cell => cell.getBoundingClientRect().left - group.getBoundingClientRect().left)) })) };
   });
@@ -1429,10 +1458,23 @@ for (const count of [19, 20, 25]) test(`compact layout accounts for ${count} pla
   expect(metrics.groups.map(group => group.position)).toEqual(count === 25 ? ["C", "LW", "RW", "D", "UTIL", "G", "BENCH", "IR", "IR+"] : ["C", "LW", "RW", "D", "UTIL", "G", "BENCH"]);
   expect(metrics.groups.find(group => group.position === "RW")?.band).toBe("rgb(167, 139, 250)");
   for (const group of metrics.groups) {
-    expect(group.width).toBe("10px"); expect(group.style).toBe("solid");
+    expect(group.width).toBe("18px"); expect(group.style).toBe("solid");
     expect(group.topLeftRadius).toBe("10px"); expect(group.bottomLeftRadius).toBe("10px"); expect(group.rightRadius).toBe("10px");
     expect(group.outlineColors).toEqual([group.band, group.band, group.band]); expect(group.outlineWidths).toEqual(["1px", "1px", "1px"]);
-    expect(group.before).toBe("none"); expect(group.after).toBe("none"); expect(group.contentInset).toBeGreaterThanOrEqual(10);
+    expect(group.label).toBe(group.position === "BENCH" ? "Bench" : group.position);
+    expect(group.before).toBe(group.position === "BENCH" ? "none" : JSON.stringify(group.label));
+    if (group.position !== "BENCH") {
+      expect(group.labelColor).toBe(group.background);
+      expect(group.labelTop).toBeCloseTo(group.groupHeight / 2, 0);
+      if (group.position === "UTIL") expect(group.labelTransform).toMatch(/^matrix\(0, -1, 1, 0,/);
+    } else {
+      expect(group.benchLabel?.width).toBeGreaterThan(0); expect(group.benchLabel?.height).toBeGreaterThan(20);
+      expect(group.benchLabel?.color).toBe(group.background);
+      expect(group.benchLabel?.transform).toMatch(/^matrix\(0, -1, 1, 0,/);
+      expect(group.benchLabel?.centerX).toBeCloseTo(9, 0);
+      expect(group.benchLabel?.centerY).toBeCloseTo(group.benchLabel!.groupHeight / 2, 0);
+    }
+    expect(group.after).toBe("none"); expect(group.contentInset).toBeGreaterThanOrEqual(18);
   }
   const articleBorders = await page.getByRole("region", { name: "Plan summary" }).locator("article").evaluateAll(nodes => nodes.map(node => ({
     width: getComputedStyle(node).borderLeftWidth, style: getComputedStyle(node).borderLeftStyle,
@@ -1447,12 +1489,42 @@ for (const count of [19, 20, 25]) test(`compact layout accounts for ${count} pla
     expect(border.outlineColors).toEqual([border.band, border.band, border.band]); expect(border.outlineWidths).toEqual(["1px", "1px", "1px"]);
     expect(border.before).toBe("none"); expect(border.after).toBe("none");
   }
-  if (count === 20) expect(metrics.visibleRows).toBeGreaterThanOrEqual(20);
+  await writeFile(testInfo.outputPath(`compact-${count}-metrics.json`), JSON.stringify(metrics, null, 2));
+  for (const height of metrics.rowHeights) { expect(height).toBeGreaterThanOrEqual(24); expect(height).toBeLessThanOrEqual(32); }
+  if (count <= 20) expect(metrics.visiblePlayers).toBe(count);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(1442);
   await expectDesktopFrameVisible(page);
   await page.screenshot({ path: testInfo.outputPath(`compact-${count}-1440x900.png`) });
   await table.locator('tbody[data-position="RW"]').screenshot({ path: testInfo.outputPath("compact-rw-border.png") });
   await page.getByRole("region", { name: "Plan summary" }).locator("article").first().screenshot({ path: testInfo.outputPath("compact-article-border.png") });
-  await writeFile(testInfo.outputPath(`compact-${count}-metrics.json`), JSON.stringify(metrics, null, 2));
+  if (count === 25) {
+    const scroll = page.getByRole("region", { name: "Player weekly schedule scroll area" });
+    await scroll.evaluate(node => { node.scrollTop = node.scrollHeight; });
+    const end = await table.evaluate(node => {
+      const viewport = node.parentElement!.getBoundingClientRect();
+      const header = node.querySelector("thead")!.getBoundingClientRect();
+      const last = node.querySelector('[data-player-id="fhfh:25"]')!.getBoundingClientRect();
+      return { top: viewport.top, bottom: viewport.bottom, headerTop: header.top, headerBottom: header.bottom, lastTop: last.top, lastBottom: last.bottom };
+    });
+    expect(end.headerTop).toBeGreaterThanOrEqual(end.top - 1);
+    expect(end.headerBottom).toBeLessThan(end.bottom);
+    expect(end.lastTop).toBeGreaterThanOrEqual(end.headerBottom);
+    expect(end.lastBottom).toBeLessThanOrEqual(end.bottom);
+    await expectDesktopFrameVisible(page);
+    await page.screenshot({ path: testInfo.outputPath("compact-25-scrolled-1440x900.png") });
+  }
+  if (count === 20) {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await expectDesktopFrameVisible(page);
+    expect(await table.locator('[data-player-id]').evaluateAll(rows => rows.every(row => {
+      const box = row.getBoundingClientRect(), parent = row.closest("table")!.parentElement!.getBoundingClientRect();
+      return box.top >= parent.top && box.bottom <= parent.bottom;
+    }))).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath("compact-20-1920x1080.png") });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(table).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath("compact-20-390x844.png") });
+  }
 });
 
 test("compact day and bench controls preserve saved intent and keyboard selection", async ({ page }, testInfo) => {
@@ -1460,20 +1532,50 @@ test("compact day and bench controls preserve saved intent and keyboard selectio
   await installCompactFixture(page, 20);
   const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
   const calls: string[] = [];
-  page.on("request", request => { if (request.url().includes("/roster-schedule-optimizer/") && request.method() !== "GET") calls.push(request.method() + " " + request.url()); });
+  page.on("request", request => { if (request.url().includes("/api/") && ["POST", "PUT", "PATCH", "DELETE"].includes(request.method())) calls.push(request.method() + " " + request.url()); });
   const slider = page.getByRole("slider", { name: "Selected planning day" });
+  const dates = ["Mon, Oct 5", "Tue, Oct 6", "Wed, Oct 7", "Thu, Oct 8", "Fri, Oct 9", "Sat, Oct 10", "Sun, Oct 11"];
+  for (const label of dates) {
+    const header = page.getByRole("button", { name: `Select ${label}` });
+    await header.focus(); await page.keyboard.press("Enter");
+    await expect(slider).toHaveAttribute("aria-valuetext", label);
+    await expect(header).toHaveAttribute("aria-pressed", "true");
+    await expect(header).toBeFocused();
+    await expectDaySliderAligned(page);
+    const summary = page.getByRole("region", { name: "Selected-day lineup summary" });
+    await expect(summary.getByText("Roster games").locator("..")).toHaveText("Roster games20");
+    await expect(summary.getByText("NHL games").locator("..")).toHaveText("NHL games1");
+    const ids = await page.getByRole("table", { name: "Individual player weekly schedule" }).locator('[data-player-id]').evaluateAll(rows => rows.map(row => row.getAttribute("data-player-id")));
+    expect(ids).toHaveLength(20); expect(new Set(ids).size).toBe(20);
+  }
+  await slider.focus(); await page.keyboard.press("Home");
+  await expect(slider).toHaveAttribute("aria-valuetext", dates[0]);
+  await page.keyboard.press("ArrowLeft"); await expect(slider).toHaveAttribute("aria-valuetext", dates[0]);
+  await page.keyboard.press("ArrowRight"); await expect(slider).toHaveAttribute("aria-valuetext", dates[1]);
+  await page.keyboard.press("ArrowLeft"); await expect(slider).toHaveAttribute("aria-valuetext", dates[0]);
   await slider.focus(); await page.keyboard.press("End");
   await expect(slider).toHaveAttribute("aria-valuetext", "Sun, Oct 11");
+  await page.keyboard.press("ArrowRight"); await expect(slider).toHaveAttribute("aria-valuetext", dates[6]);
   const monday = page.getByRole("button", { name: "Select Mon, Oct 5" });
   await monday.focus(); await page.keyboard.press("Enter");
   await expect(slider).toHaveAttribute("aria-valuetext", "Mon, Oct 5");
   await expect(page.getByText(/Past lineup unverified · GP/)).toBeVisible();
   await expect(page.getByRole("table", { name: "Individual player weekly schedule" }).getByRole("rowheader", { name: /Pending C/ }).first()).toBeVisible();
+  await page.keyboard.press("ArrowRight"); await expect(slider).toHaveAttribute("aria-valuetext", dates[0]);
   await page.screenshot({ path: testInfo.outputPath("compact-date-focus.png") });
+  await page.getByRole("button", { name: `Select ${dates[2]}` }).click();
   const bench = page.getByRole("button", { name: /Bench \d+/ });
   await bench.focus(); await page.keyboard.press("Space");
   await expect(bench).toHaveAttribute("aria-expanded", "false");
   await expect(bench).toBeFocused();
+  await expect(page.getByRole("region", { name: "Selected-day lineup summary" }).getByText("Active slots").locator("..")).toHaveText("Active slots14/14");
+  await expect(page.getByRole("region", { name: "Selected-day lineup summary" }).getByText("Open slots").locator("..")).toHaveText("Open slots0");
+  await page.screenshot({ path: testInfo.outputPath("compact-bench-collapsed-1440x900.png") });
+  await page.getByRole("button", { name: "Streaming itinerary", exact: true }).click();
+  await page.getByRole("button", { name: "Show schedule-capacity assignment", exact: true }).click();
+  await expect(bench).toHaveAttribute("aria-expanded", "false");
+  await expect(slider).toHaveAttribute("aria-valuetext", dates[2]);
+  await bench.focus();
   await page.keyboard.press("Enter"); await expect(bench).toHaveAttribute("aria-expanded", "true");
   expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
   expect(calls).toEqual([]);
@@ -1489,22 +1591,31 @@ test("compact short desktop and mobile retain rows, day state, reserves and unkn
   await scroll.evaluate(node => { node.scrollTop = node.scrollHeight; });
   await expect(table.locator('[data-player-id="fhfh:25"]')).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("compact-short-desktop.png") });
-  for (const width of [390, 320, 720]) {
-    await page.setViewportSize({ width, height: width === 720 ? 450 : 844 });
+  for (const [width, height] of [[375, 812], [390, 844], [1024, 768], [320, 844], [720, 450]]) {
+    await page.setViewportSize({ width, height });
     const tabs = page.getByRole("navigation", { name: "Workspace views" });
-    await tabs.getByRole("button", { name: "Roster", exact: true }).click();
-    await tabs.getByRole("button", { name: "Itinerary", exact: true }).click();
+    for (const [name, region] of [["Roster", "Roster and setup"], ["Candidates", "Candidates and detail"], ["Matchup", "Matchup"], ["Itinerary", "Itinerary"]]) {
+      await tabs.getByRole("button", { name, exact: true }).click();
+      for (const label of ["Roster and setup", "Candidates and detail", "Matchup", "Itinerary"]) {
+        expect(await page.getByRole("region", { name: label, exact: true }).isVisible()).toBe(label === region);
+      }
+    }
     await expect(page.getByRole("slider", { name: "Selected planning day" })).toHaveAttribute("aria-valuetext", "Wed, Oct 7");
+    await expectDaySliderAligned(page);
+    await scroll.evaluate(node => { node.scrollLeft = 120; });
+    await expectDaySliderAligned(page);
+    await scroll.evaluate(node => { node.scrollLeft = 0; });
     const borders = await table.locator("tbody").evaluateAll(nodes => nodes.map(node => ({
+      position: node.getAttribute("data-position"), label: node.getAttribute("data-label"),
       width: getComputedStyle(node).borderLeftWidth, style: getComputedStyle(node).borderLeftStyle,
       topLeftRadius: getComputedStyle(node).borderTopLeftRadius, bottomLeftRadius: getComputedStyle(node).borderBottomLeftRadius,
       band: getComputedStyle(node).borderLeftColor, outlineColors: [getComputedStyle(node).borderTopColor, getComputedStyle(node).borderRightColor, getComputedStyle(node).borderBottomColor],
       before: getComputedStyle(node, "::before").content, after: getComputedStyle(node, "::after").content,
     })));
     for (const border of borders) {
-      expect(border.width).toBe("10px"); expect(border.style).toBe("solid"); expect(border.topLeftRadius).toBe("10px"); expect(border.bottomLeftRadius).toBe("10px");
+      expect(border.width).toBe("18px"); expect(border.style).toBe("solid"); expect(border.topLeftRadius).toBe("10px"); expect(border.bottomLeftRadius).toBe("10px");
       expect(border.outlineColors).toEqual([border.band, border.band, border.band]);
-      expect(border.before).toBe("none"); expect(border.after).toBe("none");
+      expect(border.before).toBe(border.position === "BENCH" ? "none" : JSON.stringify(border.label)); expect(border.after).toBe("none");
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     const rw = table.locator('tbody[data-position="RW"]');
@@ -1519,6 +1630,7 @@ test("compact future and partial weeks use league dates and retain the full hori
   const fixture = compactWorkspace(20);
   fixture.workspace.context.endDate = "2026-10-18";
   fixture.workspace.context.timeZone = "America/Los_Angeles";
+  await page.clock.setFixedTime(new Date("2026-10-05T12:00:00Z"));
   await seedWorkspace(page, fixture.workspace);
   await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: {
     players: fixture.players, games: fixture.games, forecasts: [], evidence: {},
@@ -1532,7 +1644,8 @@ test("compact future and partial weeks use league dates and retain the full hori
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).context.asOf)).toBe("2026-10-07T01:00:00.000Z");
   const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
   await page.getByRole("button", { name: "Next schedule week" }).click();
-  await expect(slider).toHaveAttribute("aria-valuetext", "Mon, Oct 12");
+  await expect(slider).toHaveAttribute("aria-valuetext", "Tue, Oct 13");
+  await expectDaySliderAligned(page);
   await page.getByRole("button", { name: "Previous schedule week" }).click();
   await expect(slider).toHaveAttribute("aria-valuetext", "Tue, Oct 6");
   expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
@@ -1543,6 +1656,94 @@ test("compact future and partial weeks use league dates and retain the full hori
   });
   await page.reload();
   await expect(slider).toHaveAttribute("aria-valuetext", "Wed, Oct 7");
+  await expectDaySliderAligned(page);
   await expect(page.getByRole("button", { name: "Select Mon, Oct 5" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Select Tue, Oct 6" })).toBeDisabled();
+});
+
+test("compact initial future week defaults to today's weekday with seven discrete dates", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const fixture = compactWorkspace(20);
+  fixture.workspace.context.startDate = "2026-10-12";
+  fixture.workspace.context.endDate = "2026-10-18";
+  await page.clock.setFixedTime(new Date("2026-10-07T12:00:00Z"));
+  await seedWorkspace(page, fixture.workspace);
+  await page.goto("/roster-schedule-optimizer");
+  const slider = page.getByRole("slider", { name: "Selected planning day" });
+  await expect(slider).toHaveAttribute("aria-valuetext", "Wed, Oct 14");
+  await expect(slider).toHaveAttribute("min", "0");
+  await expect(slider).toHaveAttribute("max", "6");
+  await expect(page.getByRole("button", { name: /^Select (Mon|Tue|Wed|Thu|Fri|Sat|Sun), Oct/ })).toHaveCount(7);
+  await expectDaySliderAligned(page);
+});
+
+test("compact vacancies and non-playing holds survive day changes and Bench collapse", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installCompactFixture(page, 20, fixture => {
+    const absent = new Set([fixture.players[8].id, fixture.players[9].id]);
+    fixture.workspace.roster = fixture.workspace.roster.filter(row => !absent.has(row.playerId));
+    fixture.players[13].teamAbbreviation = "BOS";
+    fixture.workspace.lockedAssignments!.push(...["2026-10-07", "2026-10-08"].map(date => ({ date, playerId: fixture.players[13].id, slotId: "G#2" })),
+      { date: "2026-10-08", playerId: fixture.players[0].id, slotId: "C#1" },
+      ...fixture.workspace.roster.filter(row => row.position === "bench").map(row => ({ date: "2026-10-08", playerId: row.playerId, slotId: null })));
+  });
+  const table = page.getByRole("table", { name: "Individual player weekly schedule" });
+  const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
+  for (const date of ["Wed, Oct 7", "Thu, Oct 8", "Wed, Oct 7"]) {
+    await page.getByRole("button", { name: `Select ${date}` }).click();
+    await expect(table.locator('[data-player-id]')).toHaveCount(18);
+    expect(await table.locator('[data-player-id]').evaluateAll(rows => new Set(rows.map(row => row.getAttribute("data-player-id"))).size)).toBe(18);
+    await expect(table.getByRole("rowheader", { name: /Open D/ })).toHaveCount(2);
+    await expect(table.locator('[data-player-id="fhfh:1"]')).not.toContainText("C#1");
+    await expect(table.locator('[data-player-id="fhfh:1"]').getByRole("button")).toHaveAttribute("aria-label", /C#1/);
+    await expect(table.locator('[data-player-id="fhfh:14"]')).not.toContainText("G#2");
+    await expect(table.locator('[data-player-id="fhfh:14"]').getByRole("button")).toHaveAttribute("aria-label", /G#2/);
+    await expect(table.locator('[data-player-id="fhfh:14"]').getByRole("button", { name: /Held · no active game/ })).toBeVisible();
+    const summary = page.getByRole("region", { name: "Selected-day lineup summary" });
+    await expect(summary.getByText("Active slots").locator("..")).toHaveText("Active slots12/14");
+    await expect(summary.getByText("Open slots").locator("..")).toHaveText("Open slots2");
+    await page.getByRole("button", { name: /Bench 6/ }).click();
+    await expect(table.getByRole("rowheader", { name: /Open D/ })).toHaveCount(2);
+    await page.getByRole("button", { name: /Bench 6/ }).click();
+  }
+  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
+  await page.screenshot({ path: testInfo.outputPath("compact-two-vacancies-held-player.png") });
+});
+
+test("compact partial and unavailable evidence retain players and explicit unresolved states", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const fixture = compactWorkspace(20);
+  fixture.players[0].teamAbbreviation = null;
+  fixture.players[0].eligibilityVerified = false;
+  await page.clock.setFixedTime(new Date("2026-10-07T12:00:00Z"));
+  await seedWorkspace(page, fixture.workspace);
+  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: {
+    players: fixture.players, games: fixture.games, forecasts: [], evidence: {
+      schedule: { source: "fictional partial fixture", asOf: "2026-10-07T12:00:00Z", seasonId: 20262027, completeness: "partial", limitations: ["Schedule coverage is incomplete; retry the missing team dates."] },
+      forecasts: { source: "fictional unavailable fixture", asOf: null, seasonId: 20262027, completeness: "unavailable", limitations: ["Forecasts unavailable. Schedule planning remains usable; player-quality decisions need verification."] },
+    },
+  } } }));
+  await page.goto("/roster-schedule-optimizer");
+  const table = page.getByRole("table", { name: "Individual player weekly schedule" });
+  const summary = page.getByRole("region", { name: "Selected-day lineup summary" });
+  await expect(table.locator('[data-player-id]')).toHaveCount(20);
+  await expect(page.getByText("Shared schedule: partial", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Forecasts unavailable. Schedule planning remains usable/).first()).toBeVisible();
+  await expect(summary.getByText("Roster games").locator("..")).toHaveText("Roster games19 known");
+  await expect(summary.getByText("NHL games").locator("..")).toHaveText("NHL games1 known");
+  await expect(summary.getByText("Open slots").locator("..")).toContainText("unresolved");
+  await expect(table.getByRole("rowheader", { name: /Open (C|LW|RW|D|UTIL|G)/ })).toHaveCount(0);
+  await expectDesktopFrameVisible(page);
+  await page.screenshot({ path: testInfo.outputPath("compact-partial-1440x900.png") });
+  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ status: 503, json: { error: {
+    code: "planning_unavailable", message: "Planning data is temporarily unavailable. Your saved manual workspace is preserved. Retry the schedule read.",
+  } } }));
+  await page.reload();
+  await expect(page.getByText(/Planning data is temporarily unavailable. Your saved manual workspace is preserved/)).toBeVisible();
+  await expect(table.locator('[data-player-id]')).toHaveCount(20);
+  await expect(summary.getByText("Roster games").locator("..")).toHaveText("Roster gamesUnknown");
+  await expect(summary.getByText("NHL games").locator("..")).toHaveText("NHL gamesUnknown");
+  await expect(summary.getByText("Open slots").locator("..")).toContainText("unresolved");
+  await expectDesktopFrameVisible(page);
+  await page.screenshot({ path: testInfo.outputPath("compact-unavailable-1440x900.png") });
 });

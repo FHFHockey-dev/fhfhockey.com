@@ -15,7 +15,7 @@ import RosterScheduleOptimizer, { GoalieEvidence, grossAcquisitionGames, request
 import ForecastEvidence, { forecastSummary } from "components/RosterScheduleOptimizer/ForecastEvidence";
 import BenchDecisions from "components/RosterScheduleOptimizer/BenchDecisions";
 import CandidateBrowser, { compareCandidateFits } from "components/RosterScheduleOptimizer/CandidateBrowser";
-import CompactSchedule, { compactGroups, scheduleWeek } from "components/RosterScheduleOptimizer/CompactSchedule";
+import CompactSchedule, { compactGroups, scheduleWeek, summarizeCompactDay } from "components/RosterScheduleOptimizer/CompactSchedule";
 
 const player = { id: "fhfh:1", nhlId: 1, name: "Alpha Center", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "unknown" as const, ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] };
 const data: PlanningData = { players: [player], games: [], forecasts: [], evidence: {} };
@@ -984,6 +984,12 @@ describe("compact RSO schedule", () => {
     expect(rows.find(row => row.id === "C#1")?.player?.eligiblePositions).toEqual(["C", "LW"]);
     if (count === 19) expect(rows.find(row => row.id === "D#4")?.status).toBe("Open D");
     expect(JSON.stringify(input)).toBe(before);
+    if (count === 20) {
+      const { BN, ...rosterSlots } = input.rules.rosterSlots;
+      input.rules.rosterSlots = { ...rosterSlots, bench: BN };
+      expect(compactGroups(input).find(group => group.position === "BN")?.rows.map(row => row.playerId))
+        .toEqual(groups.find(group => group.position === "BN")?.rows.map(row => row.playerId));
+    }
   });
   it("retains a non-playing lock and weekly window occupant instead of inventing an open slot", () => {
     const input = displayFixture();
@@ -998,6 +1004,39 @@ describe("compact RSO schedule", () => {
     input.date = "2026-10-07";
     row = compactGroups(input).flatMap(group => group.rows).find(row => row.id === "C#1")!;
     expect(row.playerId).toBe("p0"); expect(row.status).not.toContain("Open");
+  });
+  it("keeps unclaimed slots pending when active membership or schedule coverage is unresolved", () => {
+    const input = displayFixture();
+    input.assignments = input.assignments.filter(row => row.playerId !== "p1");
+    let groups = compactGroups(input);
+    expect(groups.flatMap(group => group.rows).find(row => row.id === "C#2")?.status).toBe("Pending C");
+    expect(groups.find(group => group.position === "Review")?.rows.some(row => row.playerId === "p1")).toBe(true);
+    const vacancy = displayFixture(19);
+    vacancy.snapshot.evidence.schedule!.completeness = "partial";
+    groups = compactGroups(vacancy);
+    expect(groups.flatMap(group => group.rows).find(row => row.id === "D#4")?.status).toBe("Pending D");
+    vacancy.snapshot.evidence.schedule!.completeness = "complete";
+    expect(compactGroups(vacancy).flatMap(group => group.rows).find(row => row.id === "D#4")?.status).toBe("Open D");
+  });
+  it("counts verified active capacity and distinct roster and NHL games for the selected day", () => {
+    const input = displayFixture(19);
+    const game = input.snapshot.games[0];
+    input.snapshot.games.push({ ...game, teamAbbreviation: "NYR", opponent: "CAR", home: false },
+      { ...game, id: "cancelled", status: "cancelled" }, { ...game, id: "postponed", status: "postponed" },
+      { ...game, id: "later", date: "2026-10-06" });
+    expect(summarizeCompactDay(compactGroups(input), input.snapshot, input.date)).toMatchObject({
+      capacity: 14, occupied: 13, open: 1, unresolved: 0, rosterGames: 19, nhlGames: 1, scheduleComplete: true,
+    });
+    input.snapshot.lockedAssignments = [{ date: input.date, playerId: "p0", slotId: "C#1" }];
+    input.assignments = input.assignments.filter(row => row.playerId !== "p0");
+    input.players[0].teamAbbreviation = "BOS";
+    expect(compactGroups(input).flatMap(group => group.rows).find(row => row.id === "C#1")?.status).toBe("Held · no active game");
+    expect(summarizeCompactDay(compactGroups(input), input.snapshot, input.date)).toMatchObject({
+      occupied: 13, open: 1, unresolved: 0, rosterGames: 18, nhlGames: 1,
+    });
+    input.players[0].eligibilityVerified = false;
+    expect(summarizeCompactDay(compactGroups(input), input.snapshot, input.date).occupied).toBe(12);
+    expect(summarizeCompactDay(compactGroups(input), input.snapshot, input.date).unresolved).toBeGreaterThan(0);
   });
   it("keeps unknown eligibility, unsupported reserves and conflicting locks honest", () => {
     const input = displayFixture(25);
@@ -1014,6 +1053,11 @@ describe("compact RSO schedule", () => {
     const before = JSON.stringify(input.intent);
     const selectDate = vi.fn();
     render(<CompactSchedule {...input} dates={scheduleWeek(input.date)} today={input.date} selectDate={selectDate} selectPlayer={vi.fn()} />);
+    const playerButton = screen.getByRole("button", { name: /Schedule details for Player Surname0/ });
+    expect(playerButton.getAttribute("aria-label")).toContain("C#1");
+    expect(playerButton.closest("th")?.textContent).not.toContain("C#1");
+    expect(playerButton.closest("th")?.getAttribute("title")).toContain("League positions: C/LW");
+    expect(document.querySelector('tbody[data-position="LW"]')?.getAttribute("data-label")).toBe("LW");
     expect(screen.getAllByRole("cell", { name: /Starter unknown/ })).toHaveLength(2);
     fireEvent.change(screen.getByRole("slider", { name: "Selected planning day" }), { target: { value: "2" } });
     expect(selectDate).toHaveBeenLastCalledWith("2026-10-07");
@@ -1025,6 +1069,57 @@ describe("compact RSO schedule", () => {
     expect(bench.getAttribute("aria-expanded")).toBe("false");
     expect(document.querySelectorAll('tr[data-compact-row][hidden]')).toHaveLength(6);
     expect(JSON.stringify(input.intent)).toBe(before);
+  });
+  it("bounds range keyboard navigation and synchronizes the selected header and day label", () => {
+    const input = displayFixture();
+    const selectDate = vi.fn();
+    const props = { ...input, dates: scheduleWeek(input.date).slice(1, 4), date: "2026-10-06", today: input.date, selectDate, selectPlayer: vi.fn() };
+    const view = render(<CompactSchedule {...props} />);
+    const slider = screen.getByRole("slider", { name: "Selected planning day" });
+    fireEvent.keyDown(slider, { key: "ArrowLeft" });
+    expect(selectDate).not.toHaveBeenCalledWith("2026-10-05");
+    fireEvent.keyDown(slider, { key: "ArrowRight" });
+    expect(selectDate).toHaveBeenLastCalledWith("2026-10-07");
+    view.rerender(<CompactSchedule {...props} date="2026-10-07" />);
+    expect(slider.getAttribute("aria-valuetext")).toBe("Wed, Oct 7");
+    expect(screen.getByRole("button", { name: "Select Wed, Oct 7" }).getAttribute("aria-pressed")).toBe("true");
+    fireEvent.keyDown(slider, { key: "End" });
+    expect(selectDate).toHaveBeenLastCalledWith("2026-10-08");
+    view.rerender(<CompactSchedule {...props} date="2026-10-08" />);
+    fireEvent.keyDown(slider, { key: "ArrowRight" });
+    expect(selectDate).not.toHaveBeenCalledWith("2026-10-09");
+    fireEvent.keyDown(slider, { key: "Home" });
+    expect(selectDate).toHaveBeenLastCalledWith("2026-10-06");
+  });
+  it("preserves collapsed Bench membership as the selected day changes and honors controlled visibility", () => {
+    const input = displayFixture();
+    const onBenchChange = vi.fn();
+    const props = { ...input, dates: scheduleWeek(input.date), today: input.date, selectDate: vi.fn(), selectPlayer: vi.fn(), benchOpen: false, onBenchChange };
+    const view = render(<CompactSchedule {...props} />);
+    const hiddenIds = () => Array.from(document.querySelectorAll('tbody[data-position="BENCH"] tr[data-compact-row][hidden]')).map(row => row.getAttribute("data-player-id"));
+    expect(hiddenIds()).toEqual(["p14", "p15", "p16", "p17", "p18", "p19"]);
+    view.rerender(<CompactSchedule {...props} date="2026-10-06" />);
+    expect(hiddenIds()).toEqual(["p14", "p15", "p16", "p17", "p18", "p19"]);
+    const bench = screen.getByRole("button", { name: /Bench 6/ });
+    expect(bench.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(bench);
+    expect(onBenchChange).toHaveBeenLastCalledWith(true);
+    view.rerender(<CompactSchedule {...props} date="2026-10-06" benchOpen={true} />);
+    expect(hiddenIds()).toEqual([]);
+    expect(bench.getAttribute("aria-expanded")).toBe("true");
+  });
+  it("labels partial positive game evidence as known and missing partial evidence as unknown", () => {
+    const input = displayFixture();
+    input.snapshot.evidence.schedule!.completeness = "partial";
+    const props = { ...input, dates: scheduleWeek(input.date), today: input.date, selectDate: vi.fn(), selectPlayer: vi.fn() };
+    const view = render(<CompactSchedule {...props} />);
+    let summary = screen.getByRole("region", { name: "Selected-day lineup summary" });
+    expect(within(summary).getByText("Roster games").parentElement?.textContent).toContain("20 known");
+    expect(within(summary).getByText("NHL games").parentElement?.textContent).toContain("1 known");
+    view.rerender(<CompactSchedule {...props} date="2026-10-06" />);
+    summary = screen.getByRole("region", { name: "Selected-day lineup summary" });
+    expect(within(summary).getByText("Roster games").parentElement?.textContent).toContain("Unknown");
+    expect(within(summary).getByText("NHL games").parentElement?.textContent).toContain("Unknown");
   });
   it("marks an engine assignment conflicting with a held slot and an unknown weekly window as unresolved", () => {
     const input = displayFixture();
@@ -1065,8 +1160,14 @@ describe("compact RSO schedule", () => {
     const rows = compactGroups(input).flatMap(group => group.rows);
     expect(rows.find(row => row.id === "C#1")).toMatchObject({ playerId: "p0", status: "Team unknown", assigned: false });
     expect(rows.find(row => row.playerId === "p14")).toMatchObject({ status: "Team unknown", assigned: false });
+    expect(summarizeCompactDay(compactGroups(input), input.snapshot, input.date)).toMatchObject({
+      rosterGames: 0, rosterComplete: false, nhlGames: 0, scheduleComplete: true,
+    });
     const props = { ...input, dates: scheduleWeek(input.date), today: input.date, selectDate: vi.fn(), selectPlayer: vi.fn() };
     const view = render(<CompactSchedule {...props} />);
+    const summary = screen.getByRole("region", { name: "Selected-day lineup summary" });
+    expect(within(summary).getByText("Roster games").parentElement?.textContent).toContain("Unknown");
+    expect(within(summary).getByText("NHL games").parentElement?.textContent).toContain("0");
     for (const index of [0, 14]) {
       const row = screen.getByRole("button", { name: new RegExp(`Schedule details for Player Surname${index},`) }).closest("tr")!;
       expect(within(row).getAllByRole("cell", { name: /Team unknown/ })).toHaveLength(7);
@@ -1081,17 +1182,20 @@ describe("compact RSO schedule", () => {
     expect(within(locked).getAllByRole("cell", { name: /Outside selected range/ })).toHaveLength(5);
     expect(JSON.stringify(input)).toBe(before);
   });
-  it("defaults schedule-week navigation to today in its week and Monday in a future week", () => {
+  it("defaults schedule-week navigation to today's weekday in the displayed week", () => {
     const input = displayFixture();
     const selectDate = vi.fn();
     const dates = [...scheduleWeek(input.date), ...scheduleWeek("2026-10-12")];
     const props = { ...input, dates, today: "2026-10-07", selectDate, selectPlayer: vi.fn() };
     const view = render(<CompactSchedule {...props} />);
     fireEvent.click(screen.getByRole("button", { name: "Next schedule week" }));
-    expect(selectDate).toHaveBeenLastCalledWith("2026-10-12");
-    view.rerender(<CompactSchedule {...props} date="2026-10-12" />);
+    expect(selectDate).toHaveBeenLastCalledWith("2026-10-14");
+    view.rerender(<CompactSchedule {...props} date="2026-10-14" />);
     fireEvent.click(screen.getByRole("button", { name: "Previous schedule week" }));
     expect(selectDate).toHaveBeenLastCalledWith("2026-10-07");
+    view.rerender(<CompactSchedule {...props} today="2026-10-09" />);
+    fireEvent.click(screen.getByRole("button", { name: "Next schedule week" }));
+    expect(selectDate).toHaveBeenLastCalledWith("2026-10-16");
   });
   it("labels a confirmed goalie only when eligible full-team evidence supports it", () => {
     const input = displayFixture();

@@ -18,7 +18,7 @@
 .controls label, .settingsGrid label, .field { display: flex; flex-direction: column; gap: v.$space-xs; color: v.$text-secondary; font-size: v.$font-size-xs; }
 .controls input { max-width: 132px; }
 .controls label:nth-child(2) input { max-width: 105px; }
-.notice { padding: v.$space-sm; max-height: 64px; overflow: auto; flex-shrink: 0; border: v.$border-subtle; border-left: 4px solid v.$warning-color; background: v.$background-medium; font-size: v.$font-size-sm; }
+.notice { padding: 5px 8px; max-height: 64px; overflow: auto; flex-shrink: 0; border: v.$border-subtle; border-left: 4px solid v.$warning-color; border-radius: v.$radius-control; background: v.$draft-surface; font-size: 12px; line-height: 1.4; }
 .metrics { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: v.$space-sm; }
 .metrics article { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: v.$space-sm v.$space-md; background: v.$draft-surface; border: 1px solid v.$draft-border; border-radius: v.$radius-card; }
 .metrics span { color: v.$text-secondary; letter-spacing: .04em; text-transform: uppercase; font-size: v.$font-size-xs; }
@@ -144,31 +144,47 @@
 .viewSwitch button[aria-pressed="true"] { background: v.$primary-color; border-color: v.$primary-color; color: v.$color-neutral-950; font-weight: 700; }
 .mobileTabs { display: none; }
 .mobileSetupToggle { display: none; }
-// The schedule owns its scroll area; the decorative band never clips row content.
+// Native borders use the shared width/radius so the content-facing edge stays straight.
 .healthStrip { display: flex; flex-direction: column; gap: v.$space-xs; flex-shrink: 0; }
 .healthStrip > details { flex: 1; min-width: 0; }
 .lineupBody { display: flex; flex-direction: column; overflow: hidden; padding: 4px; }
-.compactSchedule { display: flex; flex: 1; flex-direction: column; min-height: 0; }
-.dayControls { display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding: 0 3px; font-size: 12px; }
-.dayControls label { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
-.dayControls input { flex: 1; min-width: 40px; padding: 0; accent-color: v.$primary-color; }
+.compactSchedule { --schedule-columns: minmax(165px, 2.4fr) repeat(7, minmax(45px, 1fr)) 28px; --day-control-height: 32px; display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.dayControls { display: grid; grid-template-columns: var(--schedule-columns); align-items: center; min-width: 610px; height: var(--day-control-height); position: sticky; top: -3px; z-index: 5; background: v.$draft-surface; font-size: 12px; }
+.dayNavigation { display: flex; align-items: center; justify-content: space-between; gap: 4px; min-width: 0; }
+.dayNavigation button { padding-inline: 4px; }
 .dayControls output { white-space: nowrap; font-variant-numeric: tabular-nums; }
-.scheduleLegend { color: v.$text-secondary; font-size: 11px; padding: 2px 5px; flex-shrink: 0; }
+.daySlider { padding-inline: calc(100% / (var(--slider-day-count) * 2) - 8px); }
+.daySlider input { appearance: none; display: block; width: 100%; height: var(--day-control-height); min-width: 0; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; accent-color: v.$primary-color; }
+.daySlider input::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: v.$draft-border; }
+.daySlider input::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: v.$primary-color; }
+.daySlider input::-moz-range-track { height: 4px; border: 0; border-radius: 2px; background: v.$draft-border; }
+.daySlider input::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: v.$primary-color; }
+.daySummary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 3px 6px; flex-shrink: 0; border-block: 1px solid v.$draft-border; margin: 2px 3px 1px; font-size: 11px; font-variant-numeric: tabular-nums; }
+.daySummary > div { display: flex; align-items: baseline; gap: 5px; }
+.daySummary span { color: v.$text-secondary; }
+.daySummary strong { font-weight: 600; }
+.scheduleLegend { color: v.$text-secondary; font-size: 11px; padding: 1px 5px; flex-shrink: 0; }
 .compactScroll { flex: 1; min-height: 0; overflow: auto; padding: 3px; scroll-padding: 40px 4px; }
 .compactTable { width: 100%; min-width: 610px; display: block; font-size: 12px; font-variant-numeric: tabular-nums; }
-.compactTable thead { display: block; position: sticky; top: -3px; z-index: 4; background: v.$draft-surface; }
-.compactTable tr { display: grid; grid-template-columns: minmax(165px, 2.4fr) repeat(7, minmax(45px, 1fr)) 28px; align-items: center; }
+.compactTable thead { display: block; position: sticky; top: calc(var(--day-control-height) - 3px); z-index: 4; background: v.$draft-surface; }
+.compactTable tr { display: grid; grid-template-columns: var(--schedule-columns); align-items: center; }
 .compactTable th, .compactTable td { min-width: 0; text-align: center; padding: 0 2px; }
 .compactTable thead th { font-weight: 500; font-size: 10px; }
 .compactTable thead th:first-child { text-align: left; padding-left: 10px; }
-.compactTable thead button { width: 100%; min-height: 28px; padding: 2px; border: 0; border-radius: 0; background: transparent; font-size: inherit; white-space: normal; }
+.compactTable thead button { width: 100%; min-height: 40px; padding: 2px; border: 0; border-radius: 0; background: transparent; font-size: inherit; white-space: normal; line-height: 12px; }
+.compactTable thead button > span, .compactTable thead button > small { display: block; }
+.compactTable thead button > span:first-child { text-transform: uppercase; font-weight: 600; }
+.compactTable thead button > small { color: v.$text-secondary; font-size: 9px; }
 .compactTable thead button:focus-visible { outline-offset: -2px; }
-.positionGroup { display: block; position: relative; border: 1px solid var(--position-color, #{v.$primary-color}); border-left-width: 10px; border-radius: v.$radius-md; margin: 2px 0; background: v.$draft-surface; --position-color: #{v.$color-neutral-400}; }
-.positionGroup tr[data-compact-row] { height: clamp(26px, calc((100dvh - 400px) / 20), 32px); }
+.positionGroup { --position-color: #{v.$color-neutral-400}; --position-band-width: 18px; --position-surface: color-mix(in srgb, var(--position-color) 7%, #{v.$draft-surface}); display: block; position: relative; border: 1px solid var(--position-color, #{v.$primary-color}); border-left-width: var(--position-band-width); border-radius: v.$radius-md; margin: 2px 0; background: var(--position-surface); }
+.positionGroup::before { content: attr(data-label); position: absolute; left: calc(-1 * var(--position-band-width)); top: 50%; width: var(--position-band-width); transform: translateY(-50%); color: var(--position-surface); font-size: 12px; font-weight: 700; line-height: 1; letter-spacing: .02em; text-align: center; pointer-events: none; }
+.positionGroup[data-rotated-label="true"]::before { left: calc(-.5 * var(--position-band-width)); width: max-content; transform: translate(-50%, -50%) rotate(-90deg); text-transform: uppercase; }
+.positionGroup[data-position="BENCH"]::before { content: none; }
+.positionGroup[data-position="BENCH"][data-bench-open="false"] { min-height: 44px; }
+.positionGroup tr[data-compact-row] { height: clamp(24px, var(--schedule-row-height, 26px), 32px); }
 .positionGroup tr[hidden] { display: none; }
-.positionGroup tr + tr { border-top: 1px solid v.$draft-border; }
-.positionGroup th[scope="row"] { display: flex; align-items: center; gap: 4px; height: 100%; padding-left: 1px; position: sticky; left: 0; z-index: 1; background: v.$draft-surface; border-radius: inherit; font-weight: 400; }
-.slotLabel { font-size: 10px; flex: 0 0 33px; color: var(--position-color); text-align: left; }
+.positionGroup tr[data-compact-row] + tr[data-compact-row] { border-top: 1px solid v.$draft-border; }
+.positionGroup th[scope="row"] { display: flex; align-items: center; gap: 4px; height: 100%; padding-left: 5px; position: sticky; left: 0; z-index: 1; background: var(--position-surface); font-weight: 400; }
 .schedulePlayer { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; height: 100%; min-height: 0 !important; border: 0 !important; background: transparent !important; padding: 0 2px !important; text-align: left; }
 .schedulePlayer img { flex-shrink: 0; object-fit: contain; }
 .schedulePlayer > span:not(.scheduleSrOnly) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -178,10 +194,13 @@
 .positionGroup td { line-height: 18px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .chosenDay { background: rgba(v.$primary-color, .12) !important; box-shadow: inset 0 0 0 1px rgba(v.$primary-color, .4); }
 .elapsedDay { color: v.$text-secondary; }
+.compactTable thead .elapsedDay button { color: v.$text-secondary; }
 .fantasyAssigned { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
-.benchHeading { display: block !important; }
-.benchHeading th { display: block; text-align: left; padding-left: 1px; }
-.benchHeading button { min-height: 26px; padding: 0 4px; border: 0; background: transparent; font-size: 11px; }
+.benchHeading { display: block !important; height: 0; }
+.benchHeading th { padding: 0; }
+.benchHeading button { display: grid; place-items: center; position: absolute; left: calc(-1 * var(--position-band-width)); top: 0; bottom: 0; width: var(--position-band-width); min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--position-surface); font-size: 12px; font-weight: 700; line-height: 1; }
+.benchHeading button > span { position: absolute; left: 50%; top: 50%; width: max-content; transform: translate(-50%, -50%) rotate(-90deg); text-transform: uppercase; letter-spacing: .02em; }
+.benchHeading button:focus-visible { outline: 2px solid v.$text-primary; outline-offset: -2px; }
 .countChip { display: inline-block; min-width: 18px; border-radius: 8px; padding: 0 4px; background: v.$draft-input; font-variant-numeric: tabular-nums; }
 .planDetails { flex-shrink: 0; font-size: 11px; }
 .planDetails > summary { min-height: 26px; padding: 4px; cursor: pointer; color: v.$text-secondary; }
@@ -190,13 +209,13 @@
   .workspace { gap: 4px; padding: 4px; }
   .topbar { min-height: 38px; padding: 3px 8px; }
   .eyebrow { display: none; }
-  .topbar h1 { font-size: 20px; }
+  .topbar h1 { font: 700 21px/1.2 v.$font-family-primary; letter-spacing: .02em; text-transform: uppercase; }
   .mobileSetupToggle { display: block; min-height: 32px !important; font-size: 11px !important; }
   .controls { display: none; }
   .controls.controlsExpanded { display: flex; }
   .metrics article { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0; padding: 3px 7px; }
   .metrics span { font-size: 10px; }
-  .metrics strong { font-size: 18px; }
+  .metrics strong { font: 700 19px/1.15 v.$font-family-primary; font-variant-numeric: tabular-nums; }
   .metrics small { grid-column: 1 / -1; font-size: 10px; line-height: 12px; }
   .metrics article:first-child small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .panelHead { min-height: 32px; padding: 4px 8px; }
@@ -205,28 +224,45 @@
   .itineraryPanel .panelHead > span { display: none; }
   .itineraryPanel .viewSwitch { border: 0; padding: 0; margin-left: auto; }
   .panels { grid-template-columns: minmax(215px, 19%) minmax(0, 1fr) minmax(245px, 22%); }
+  .panelHead h2 { letter-spacing: .035em; }
+  .rosterRow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto 26px; padding-block: 5px; }
+  .rosterRow .playerButton, .rosterRow .playerEvidence { grid-column: 1 / -1; }
+  .rosterRow .playerButton { padding: 2px 0; min-height: 30px; }
+  .rosterRow select { width: 100%; min-width: 0; padding-inline: 3px; }
+  .rosterRow .currentSlot { font-size: 11px; }
+  .rosterRow > button[aria-label] { padding-inline: 0; }
+  .rosterRow .check { gap: 2px; }
+  .playerEvidence { padding-top: 1px; }
 }
 @media (max-width: 1100px) {
   .healthStrip { flex-direction: column; }
   .itineraryPanel .panelHead { flex-wrap: wrap; }
   .itineraryPanel .viewSwitch { width: 100%; }
   .lineupBody { overflow: visible; }
-  .compactSchedule { min-height: 55dvh; }
+  .compactSchedule { --day-control-height: 44px; min-height: 55dvh; }
   .compactScroll { max-height: 65dvh; }
-  .compactTable { min-width: 670px; }
+  .compactTable, .dayControls { min-width: 670px; }
   .compactTable thead button, .dayControls button, .benchHeading button { min-height: 44px; }
+  .daySummary { gap: 5px 12px; padding-block: 6px; }
   .positionGroup tr[data-compact-row] { height: 44px; }
   .planDetails[open] { max-height: none; }
 }
-@media (min-width: 1101px) { .workspace { max-height: 100%; overflow: clip; } }
+@media (min-width: 1101px) { .workspace { max-height: 100%; } }
 @media (max-width: 1100px) {
   .workspace { min-height: calc(100dvh - 76px); height: auto; padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
   .topbar { align-items: start; flex-direction: column; }
+  .topbar h1 { font: 700 23px/1.15 v.$font-family-primary; letter-spacing: .02em; }
+  .topbar { gap: 8px; }
+  .actions { gap: 6px; }
   .mobileSetupToggle { display: block; text-align: left; min-height: 44px !important; }
   .controls { display: none; }
   .controlsExpanded { display: flex; }
   .metrics { display: flex; overflow-x: auto; scroll-snap-type: x proximity; }
-  .metrics article { flex: 0 0 150px; scroll-snap-align: start; }
+  .metrics article { flex: 0 0 150px; scroll-snap-align: start; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding: 5px 8px; }
+  .metrics span { font-size: 10px; }
+  .metrics strong { font: 700 18px/1.2 v.$font-family-primary; font-variant-numeric: tabular-nums; }
+  .metrics small { grid-column: 1 / -1; font-size: 10px; line-height: 13px; }
+  .dataHealth summary { line-height: 14px; }
   .mobileTabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: v.$space-xs; position: sticky; top: 0; z-index: 5; padding: v.$space-xs 0; background: v.$background-dark; }
   .mobileTabs button { min-height: 44px; }
   .panels { display: block; flex: none; }
