@@ -2,6 +2,7 @@ import type { LeagueRules, PlanIntent, PlanningContext, PlanningData, PlanningPl
 import { workspaceSchema } from "lib/in-season/workspaceSchema";
 
 export const WORKSPACE_KEY = "fhfh:rso:workspace:v1";
+export const WORKSPACE_HISTORY_LIMIT = 20;
 
 export function workspaceContextKey(context: PlanningContext): string {
   return JSON.stringify([context.provider, context.seasonId, context.leagueId, context.teamId, context.startDate, context.endDate, context.timeZone]);
@@ -42,11 +43,32 @@ export function readWorkspace(storage: Pick<Storage, "getItem">, context?: Plann
   } catch { return null; }
 }
 
-export function writeWorkspace(storage: Pick<Storage, "setItem">, workspace: PlanningWorkspace): string | null {
+export function readWorkspaceHistory(storage: Pick<Storage, "getItem">, workspace: PlanningWorkspace): PlanningWorkspace[] {
+  try {
+    const raw = storage.getItem(`${contextStorageKey(workspace.context)}:undo`);
+    if (!raw) return [];
+    const saved = JSON.parse(raw);
+    if (saved.version !== 1 || !Array.isArray(saved.entries) || saved.entries.length > WORKSPACE_HISTORY_LIMIT) return [];
+    const current = workspaceSchema.safeParse(saved.current);
+    const requested = workspaceSchema.safeParse(workspace);
+    if (!current.success || !requested.success || JSON.stringify(current.data) !== JSON.stringify(requested.data)) return [];
+    const entries: PlanningWorkspace[] = [];
+    for (const entry of saved.entries) {
+      const parsed = workspaceSchema.safeParse(entry);
+      if (!parsed.success || workspaceContextKey(parsed.data.context) !== workspaceContextKey(workspace.context)) return [];
+      entries.push(parsed.data);
+    }
+    return entries;
+  } catch { return []; }
+}
+
+export function writeWorkspace(storage: Pick<Storage, "setItem">, workspace: PlanningWorkspace, history: readonly PlanningWorkspace[] = []): string | null {
   try {
     const value = JSON.stringify(workspace);
     storage.setItem(contextStorageKey(workspace.context), value);
     storage.setItem(WORKSPACE_KEY, value);
+    storage.setItem(`${contextStorageKey(workspace.context)}:undo`, JSON.stringify({ version: 1, current: workspace,
+      entries: history.filter(entry => workspaceContextKey(entry.context) === workspaceContextKey(workspace.context)).slice(-WORKSPACE_HISTORY_LIMIT) }));
     return null;
   }
   catch { return "This browser could not save the workspace. Your current changes remain available until this tab closes."; }

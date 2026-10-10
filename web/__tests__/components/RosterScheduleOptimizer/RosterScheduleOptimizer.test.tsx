@@ -466,6 +466,20 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(fetchMock.mock.calls.filter(([url]) => url.includes("/data?")).length).toBe(1);
   });
 
+  it("retains local undo when the workspace is reopened", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+    const view = render(<RosterScheduleOptimizer />);
+    fireEvent.change(await screen.findByRole("searchbox", { name: "Find a player" }), { target: { value: "Alpha" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+    view.unmount();
+    render(<RosterScheduleOptimizer />);
+    await screen.findByRole("button", { name: "Remove Alpha Center" });
+    expect((screen.getByRole("button", { name: "Undo" }) as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(screen.queryByRole("button", { name: "Remove Alpha Center" })).toBeNull();
+    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).roster).toEqual([]);
+  });
+
   it("resumes each league's local working plan when switching contexts and reopening", async () => {
     const workspace = defaultWorkspace();
     workspace.context.leagueId = "first";
@@ -486,6 +500,9 @@ describe("RosterScheduleOptimizer workspace", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "League ID" }), { target: { value: "second" } });
     expect(saved().roster).toEqual([]);
     expect(screen.queryByRole("button", { name: "Remove Alpha Center" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(saved().context.leagueId).toBe("second");
+    expect(saved().roster).toEqual(workspace.roster);
   });
 
   it("marks a future selected add conditional until the provider confirms it", async () => {
@@ -686,6 +703,10 @@ describe("RosterScheduleOptimizer workspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "Refresh provider" }));
     expect(await screen.findByText("Provider temporarily unavailable.")).toBeTruthy();
     expect(saved()).toEqual(beforeFailure);
+    view.unmount();
+    const reopened = render(<RosterScheduleOptimizer />);
+    await waitFor(() => expect(providerReads).toBe(4));
+    await screen.findByText("Bravo Center is no longer verified as available.");
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(screen.getByText("Bravo Center is no longer verified as available.")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Accept suggested repair" })).toBeTruthy();
@@ -693,7 +714,7 @@ describe("RosterScheduleOptimizer workspace", () => {
       lockedAssignments: workspace.lockedAssignments, intent: { goalieCoverage: "accept_risk", steps: workspace.intent.steps,
         protectedPlayerIds: workspace.intent.protectedPlayerIds, excludedPlayerIds: workspace.intent.excludedPlayerIds } });
     expect(saved().manualPlayers.some((row: { id: string }) => row.id === newRosterPlayer.id)).toBe(true);
-    view.unmount(); render(<RosterScheduleOptimizer />);
+    reopened.unmount(); render(<RosterScheduleOptimizer />);
     await waitFor(() => expect(saved().context.asOf).toBe(refreshed.context.asOf));
     expect(saved().rules.periods[0].remaining).toBe(1);
     expect(saved().roster).toEqual(refreshed.roster);

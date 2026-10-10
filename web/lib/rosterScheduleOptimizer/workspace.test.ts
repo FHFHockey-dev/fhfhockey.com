@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultWorkspace, readWorkspace, resolveImportedNames, retainedScheduleSnapshot, retainProviderInputs, writeWorkspace } from "./workspace";
+import { defaultWorkspace, readWorkspace, readWorkspaceHistory, resolveImportedNames, retainedScheduleSnapshot, retainProviderInputs, writeWorkspace, WORKSPACE_HISTORY_LIMIT } from "./workspace";
 
 const player = { id: "fhfh:1", nhlId: 1, name: "Alpha Center", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "unknown" as const, ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] };
 describe("manual workspace", () => {
@@ -32,6 +32,36 @@ describe("manual workspace", () => {
       { ...first.context, provider: "yahoo" as const }, { ...first.context, timeZone: "America/New_York" }]) {
       expect(readWorkspace(storage, context)).toBeNull();
     }
+  });
+  it("retains bounded validated undo history only for the matching saved workspace", () => {
+    const values = new Map<string, string>();
+    const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => values.set(key, value) };
+    const workspace = defaultWorkspace(new Date("2026-10-01T00:00:00Z"));
+    const entries = Array.from({ length: WORKSPACE_HISTORY_LIMIT + 5 }, (_, revision) => ({ ...workspace, intent: { ...workspace.intent, revision } }));
+    const other = { ...workspace, context: { ...workspace.context, leagueId: "other" } };
+    writeWorkspace(storage, workspace, [...entries, other]);
+    expect(readWorkspaceHistory(storage, readWorkspace(storage)!)).toEqual(entries.slice(-WORKSPACE_HISTORY_LIMIT));
+    expect(readWorkspaceHistory(storage, other)).toEqual([]);
+    expect(readWorkspaceHistory(storage, { ...workspace, unresolvedNames: ["Newer input"] })).toEqual([]);
+    const historyKey = [...values.keys()].find(key => key.endsWith(":undo"))!;
+    for (const invalid of [null, { version: 2 }, { version: 1, current: workspace, entries: [other] },
+      { version: 1, current: workspace, entries: [{ ...workspace, version: 99 }] },
+      { version: 1, current: workspace, entries: Array(WORKSPACE_HISTORY_LIMIT + 1).fill(workspace) }]) {
+      values.set(historyKey, JSON.stringify(invalid));
+      expect(readWorkspaceHistory(storage, workspace)).toEqual([]);
+    }
+    values.set(historyKey, "{broken");
+    expect(readWorkspaceHistory(storage, workspace)).toEqual([]);
+  });
+  it("rejects stale undo when storage fails after saving the current workspace", () => {
+    const values = new Map<string, string>();
+    const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => values.set(key, value) };
+    const original = defaultWorkspace(new Date("2026-10-01T00:00:00Z"));
+    writeWorkspace(storage, original, [original]);
+    const next = { ...original, unresolvedNames: ["New input"] };
+    expect(writeWorkspace({ setItem: (key, value) => { if (key.endsWith(":undo")) throw new Error("quota"); values.set(key, value); } }, next, [original])).toMatch(/could not save/);
+    expect(readWorkspace(storage)).toEqual(next);
+    expect(readWorkspaceHistory(storage, next)).toEqual([]);
   });
   it("retains only referenced provider inputs as unverified local planning data", () => {
     const workspace = defaultWorkspace(new Date("2026-10-01T00:00:00Z"));
