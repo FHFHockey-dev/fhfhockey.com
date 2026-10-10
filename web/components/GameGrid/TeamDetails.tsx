@@ -17,6 +17,7 @@ export type TeamDetailsProps = {
   scheduleObservedAt?: string | null;
   scheduleRetrievedAtByDate?: Readonly<Record<string, string>>;
   forecastReadStatus?: string;
+  forecastReadPending?: boolean;
   onRetryForecasts?: () => void;
   /** The forecast eligibility check time, never a source freshness timestamp. */
   asOf?: string;
@@ -60,7 +61,7 @@ function gameStateLabel(game: PreviewGame) {
 export default function TeamDetails({
   teamId, schedule, startDate, excludedDays = [], extended = false,
   leagueSlateCounts = [], coveredDates, scheduleCoverage, scheduleObservedAt,
-  scheduleRetrievedAtByDate, forecastReadStatus, onRetryForecasts,
+  scheduleRetrievedAtByDate, forecastReadStatus, forecastReadPending = false, onRetryForecasts,
   asOf = new Date().toISOString(), forecastRecords, forecastContext,
 }: TeamDetailsProps) {
   const team = useTeam(teamId);
@@ -169,7 +170,9 @@ export default function TeamDetails({
         {sourceDate && isValid(sourceDate) ? `Schedule source observed: ${scheduleObservedAt}.` : "Schedule source freshness unavailable."}
       </p>
       {forecastReadStatus && <p className={styles.metadata} role="status">{forecastReadStatus}</p>}
-      {onRetryForecasts && <button type="button" className={styles.closeButton} onClick={onRetryForecasts}>Retry team forecasts</button>}
+      {onRetryForecasts && <button type="button" className={styles.closeButton}
+        aria-disabled={forecastReadPending || undefined} aria-busy={forecastReadPending || undefined}
+        onClick={() => { if (!forecastReadPending) onRetryForecasts(); }}>Refresh team forecasts</button>}
       <h3>Remaining-week category forecasts</h3>
       <p className={styles.metadata}>
         {gameIds.length} confirmed upcoming regular-season {gameIds.length === 1 ? "game" : "games"} in the included dates.

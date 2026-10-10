@@ -67,6 +67,27 @@ describe("Game Grid team previews", () => {
     expect(screen.queryByText("No remaining games")).toBeNull();
   });
 
+  it("retains the refresh control and focus through loading, success and repeated failure", () => {
+    const retry = vi.fn();
+    const { rerender } = render(<TeamDetails {...defaults} onRetryForecasts={retry} forecastReadStatus="Reader unavailable." />);
+    const button = screen.getByRole("button", { name: "Refresh team forecasts" });
+    button.focus(); fireEvent.click(button);
+    expect(retry).toHaveBeenCalledTimes(1);
+    rerender(<TeamDetails {...defaults} onRetryForecasts={retry} forecastReadPending forecastReadStatus="Reading forecasts…" />);
+    expect(document.activeElement).toBe(button);
+    expect(button.getAttribute("aria-disabled")).toBe("true");
+    expect(button.getAttribute("aria-busy")).toBe("true");
+    fireEvent.click(button);
+    expect(retry).toHaveBeenCalledTimes(1);
+    rerender(<TeamDetails {...defaults} onRetryForecasts={retry} forecastReadStatus="Reader complete." />);
+    expect(document.activeElement).toBe(button);
+    expect(button.getAttribute("aria-disabled")).toBeNull();
+    rerender(<TeamDetails {...defaults} onRetryForecasts={retry} forecastReadStatus="Reader unavailable." />);
+    expect(document.activeElement).toBe(button);
+    fireEvent.click(button);
+    expect(retry).toHaveBeenCalledTimes(2);
+  });
+
   it("keeps selected game previews chronological and remaining totals within Sunday", () => {
     const schedule: WeekData = {
       MON: game(1, dates[0], "OFF"), WED: game(2, dates[2], "LIVE"),

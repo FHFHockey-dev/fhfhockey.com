@@ -212,11 +212,11 @@ test('real reader reaches expandable rows: qualified, partial, stale, legacy, er
   await expect(panel(page).getByText(/1 lack the required category admission contract/)).toBeVisible();
   await expect(weekly.getByText('Unavailable', { exact: true })).toHaveCount(7);
   await refresh('error');
-  await expect(panel(page).getByRole('button', { name: 'Retry team forecasts' })).toBeVisible();
+  await expect(panel(page).getByRole('button', { name: 'Refresh team forecasts' })).toBeVisible();
   await expect(panel(page).getByRole('heading', { name: 'Selected game previews' })).toBeVisible();
   mode = 'qualified';
-  await panel(page).getByRole('button', { name: 'Retry team forecasts' }).focus();
-  await panel(page).getByRole('button', { name: 'Retry team forecasts' }).press('Enter');
+  await panel(page).getByRole('button', { name: 'Refresh team forecasts' }).focus();
+  await panel(page).getByRole('button', { name: 'Refresh team forecasts' }).press('Enter');
   await expect(weekly.getByText('3.6', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Refresh schedule fixture' }).click();
   await expect(weekly.getByText('1.2', { exact: true })).toBeVisible();
@@ -230,5 +230,60 @@ test('real reader reaches expandable rows: qualified, partial, stale, legacy, er
   expect(results.violations.map(({ id, nodes }) => ({ id, targets: nodes.map(({ target }) => target) }))).toEqual([]);
   await writeFile(testInfo.outputPath('reader-accessibility.json'), JSON.stringify({ violations: results.violations,
     passedRules: results.passes.map(({ id }) => id), incompleteRules: results.incomplete.map(({ id }) => id),
-    incompleteNodes: results.incomplete.map(({ id, nodes }) => ({ id, nodes: nodes.map(({ target, summary }) => ({ target, summary })) })), reads }, null, 2));
+    incompleteNodes: results.incomplete.map(({ id, nodes }) => ({ id, nodes: nodes.map(({ target }) => ({ target })) })), reads }, null, 2));
+});
+
+test('keyboard refresh keeps focus in the open preview during delayed loading, success and failure', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.clock.install({ time: new Date('2026-10-07T16:00:00Z') });
+  await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.fallback() : route.abort());
+  let mode = 'error'; let hold = false; let reads = 0; let release: (() => void) | undefined;
+  const context = { seasonId: 20262027, scheduleRevision: 'focus-schedule', rosterRevision: 'focus-roster', rosterScope: 'skaters',
+    games: [{ gameId: 103, startsAt: '2026-10-08T23:00:00Z', state: 'scheduled' }] };
+  const record = { teamId: 1, gameId: 103, seasonId: context.seasonId, category: 'G', mean: 3,
+    unit: 'count', scope: 'full_game_regulation_overtime', conditioning: 'unconditional', creditDefinition: 'individual_goals_excluding_shootout',
+    rosterScope: 'skaters', rosterRevision: context.rosterRevision, scheduleRevision: context.scheduleRevision, startsAt: context.games[0].startsAt,
+    status: 'qualified', allowedUses: { totals: true, comparison: false }, revisionId: 'focus-output', modelVersion: 'focus-model',
+    comparisonLineageId: 'focus-run', sourceWatermark: 'focus-source', sourceAvailableAt: '2026-10-07T13:00:00Z', cutoffAt: '2026-10-07T14:00:00Z',
+    issuedAt: '2026-10-07T14:30:00Z', availableAt: '2026-10-07T14:31:00Z', expiresAt: '2026-10-07T22:00:00Z' };
+  await page.route('**/api/v1/projections/teams?*', async route => {
+    reads++;
+    if (hold) await new Promise<void>(resolve => { release = resolve; });
+    if (mode === 'error') return route.fulfill({ status: 503, json: { error: 'Unavailable fixture' } });
+    await route.fulfill({ json: { asOfDate: '2026-10-07', horizonGames: 1, runId: 'focus-run', data: [record], context } });
+  });
+  await page.goto('/');
+  const initialUrl = page.url();
+  await trigger(page).focus(); await trigger(page).press('Enter');
+  await expect(panel(page).getByText(/Team forecast reader unavailable/)).toBeVisible();
+  const button = panel(page).getByRole('button', { name: 'Refresh team forecasts' });
+  await button.focus();
+  mode = 'qualified'; hold = true;
+  await button.press('Enter');
+  await expect(button).toBeFocused();
+  await expect(button).toHaveAttribute('aria-busy', 'true');
+  await expect.poll(() => release !== undefined).toBe(true);
+  const pendingReads = reads;
+  await button.press('Enter');
+  expect(reads).toBe(pendingReads);
+  release!(); release = undefined;
+  await expect(panel(page).getByLabel('Remaining-week category forecasts').getByText('3.0', { exact: true })).toBeVisible();
+  await expect(button).toBeFocused();
+  await expect(button).not.toHaveAttribute('aria-disabled', 'true');
+  mode = 'error';
+  await button.press('Enter');
+  await expect(button).toHaveAttribute('aria-busy', 'true');
+  await expect(button).toBeFocused();
+  await expect.poll(() => release !== undefined).toBe(true);
+  release!();
+  await expect(panel(page).getByText(/Team forecast reader unavailable/)).toBeVisible();
+  await expect(button).toBeFocused();
+  await expect(button).not.toHaveAttribute('aria-disabled', 'true');
+  expect(page.url()).toBe(initialUrl);
+  await expect(trigger(page)).toHaveAttribute('aria-expanded', 'true');
+  await button.press('Shift+Tab');
+  await expect(panel(page).getByRole('button', { name: /Close preview|Close Fixture Team 01 game previews/ })).toBeFocused();
+  await page.locator(':focus').press('Enter');
+  await expect(trigger(page)).toBeFocused();
+  await expect(trigger(page)).toHaveAttribute('aria-expanded', 'false');
 });

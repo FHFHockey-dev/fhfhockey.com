@@ -296,7 +296,8 @@ function GameGridInternal({
       forecastReadStatus={teamForecasts.status === "loading" ? "Reading team forecasts…"
         : teamForecasts.status === "error" ? "Team forecast reader unavailable. Schedule details remain available."
         : `Team forecast reader inspected ${teamForecasts.inspected} records; ${teamForecasts.rejected} lack the required category admission contract.${teamForecasts.contexts[teamId] ? "" : " Schedule and roster admission context unavailable."}`}
-      onRetryForecasts={teamForecasts.status === "error" ? teamForecasts.retry : undefined}
+      forecastReadPending={teamForecasts.status === "loading"}
+      onRetryForecasts={teamForecasts.retry}
       scheduleCoverage={{ known: selectedCalendar.coveredDates.filter((date) =>
         date >= format(new Date(dates[0]), "yyyy-MM-dd") && date <= format(new Date(dates[1]), "yyyy-MM-dd")).length, expected: 7 }}
     />
