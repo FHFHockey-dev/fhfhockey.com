@@ -15,9 +15,12 @@ export type TeamDetailsProps = {
   coveredDates?: readonly string[];
   scheduleCoverage?: { known: number; expected: number };
   scheduleObservedAt?: string | null;
+  scheduleRetrievedAtByDate?: Readonly<Record<string, string>>;
+  forecastReadStatus?: string;
+  onRetryForecasts?: () => void;
   /** The forecast eligibility check time, never a source freshness timestamp. */
   asOf?: string;
-  /** Already admitted reader payloads only; opening a preview never fetches or generates forecasts. */
+  /** Reader records still require admission checks; opening a preview never fetches or generates forecasts. */
   forecastRecords?: readonly TeamForecastRecord[];
   forecastContext?: TeamForecastContext;
 };
@@ -57,6 +60,7 @@ function gameStateLabel(game: PreviewGame) {
 export default function TeamDetails({
   teamId, schedule, startDate, excludedDays = [], extended = false,
   leagueSlateCounts = [], coveredDates, scheduleCoverage, scheduleObservedAt,
+  scheduleRetrievedAtByDate, forecastReadStatus, onRetryForecasts,
   asOf = new Date().toISOString(), forecastRecords, forecastContext,
 }: TeamDetailsProps) {
   const team = useTeam(teamId);
@@ -151,7 +155,7 @@ export default function TeamDetails({
 
   return (
     <section className={styles.details} aria-labelledby={headingId}>
-      <h3 id={headingId}>{team?.name ?? `Team ${teamId}`} game previews</h3>
+      <h2 id={headingId}>{team?.name ?? `Team ${teamId}`} game previews</h2>
       <p className={styles.horizon}>
         Remaining calendar week: {startDate} through {weekEnd} (Sunday), Eastern time.
         {historical && " Historical selection — no live remaining forecasts."}
@@ -164,7 +168,9 @@ export default function TeamDetails({
         {scheduleCoverage ? `Schedule coverage: ${scheduleCoverage.known} of ${scheduleCoverage.expected} calendar dates. ` : "Schedule coverage unavailable. "}
         {sourceDate && isValid(sourceDate) ? `Schedule source observed: ${scheduleObservedAt}.` : "Schedule source freshness unavailable."}
       </p>
-      <h4>Remaining-week category forecasts</h4>
+      {forecastReadStatus && <p className={styles.metadata} role="status">{forecastReadStatus}</p>}
+      {onRetryForecasts && <button type="button" className={styles.closeButton} onClick={onRetryForecasts}>Retry team forecasts</button>}
+      <h3>Remaining-week category forecasts</h3>
       <p className={styles.metadata}>
         {gameIds.length} confirmed upcoming regular-season {gameIds.length === 1 ? "game" : "games"} in the included dates.
         {uncertainRemaining && " Remaining eligibility is unavailable for games without a current state, actual date or start time."}
@@ -192,7 +198,7 @@ export default function TeamDetails({
           );
         })}
       </dl>
-      <h4>{extended ? "Selected 10-day game previews" : "Selected game previews"}</h4>
+      <h3>{extended ? "Selected 10-day game previews" : "Selected game previews"}</h3>
       {previews.length === 0 ? (
         <p>{coverageComplete ? "No upcoming games in this selection." : "Schedule unavailable for this selection. Retry the schedule read."}</p>
       ) : (
@@ -223,6 +229,9 @@ export default function TeamDetails({
                   {!covered ? "Schedule coverage unavailable for this date. " : ""}
                 </p>
                 <p className={styles.metadata}>Full-game pregame category means (regulation and overtime).</p>
+                {scheduleRetrievedAtByDate?.[date] && <p className={styles.metadata}>
+                  Schedule retrieved: {scheduleRetrievedAtByDate[date]}. Provider source freshness unavailable.
+                </p>}
                 <dl className={styles.gameCategories} aria-label={`Game ${game.id} category forecasts`}>
                   {TEAM_FORECAST_CATEGORIES.map((category) => {
                     const summary = forecastsByGame.get(game.id)!.categories[category];
@@ -260,5 +269,5 @@ export default function TeamDetails({
 
 function TeamGameHeading({ opponentId, home }: { opponentId: number; home: boolean }) {
   const opponent = useTeam(opponentId);
-  return <h5>{home ? "vs" : "at"} {opponent?.name ?? `Team ${opponentId}`}</h5>;
+  return <h4>{home ? "vs" : "at"} {opponent?.name ?? `Team ${opponentId}`}</h4>;
 }

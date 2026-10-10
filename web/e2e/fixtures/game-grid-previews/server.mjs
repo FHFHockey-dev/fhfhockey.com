@@ -31,6 +31,14 @@ const server = await createServer({
       if (seam) return '\0fixture:' + seam;
       if (source.endsWith('/PoissonHeatMap') || source === 'components/PlayerPickupTable/PlayerPickupTable') return '\0fixture:empty';
     },
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (!req.url?.startsWith('/api/v1/projections/teams?')) return next();
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ runId: 'legacy-fixture-run', asOfDate: '2026-10-07', horizonGames: 1,
+          data: [{ run_id: 'legacy-fixture-run', game_id: 103, team_id: 1, proj_goals_es: 2, proj_goals_pp: 1, proj_goals_pk: null }] }));
+      });
+    },
     load(id) {
       if (!id.startsWith('\0fixture:')) return;
       const name = id.slice('\0fixture:'.length);

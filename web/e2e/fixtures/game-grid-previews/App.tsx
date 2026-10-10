@@ -28,7 +28,7 @@ function App() {
   const [previewState, setPreviewState] = useState('qualified');
   const details = new URLSearchParams(location.search).has('details');
   return <main>
-    <p>Isolated synthetic fixtures. No production data or reader is connected.</p>
+    <p>Isolated synthetic fixtures. The real public-reader consumer uses isolated local HTTP fixtures. No production data is connected.</p>
     {details ? <>
       <h1>Game Grid preview fixture</h1><h2>Upcoming team forecasts</h2>
       <label>Preview fixture <select value={previewState} onChange={(event) => setPreviewState(event.target.value)}>

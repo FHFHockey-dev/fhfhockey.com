@@ -362,6 +362,8 @@ describe("getSchedule", () => {
             {
               id: 2025020601,
               season: 20252026,
+              startTimeUTC: "2026-01-06T00:00:00Z",
+              venue: { default: "Fixture Arena" },
               awayTeam: { id: 53, abbrev: "ARI", score: 2 },
               homeTeam: { id: 68, abbrev: "UTA", score: 3 },
             },
@@ -377,10 +379,14 @@ describe("getSchedule", () => {
     expect(result.numGamesPerDay).toEqual([1, 0, 0, 0, 0, 0, 0]);
     expect(result.data[53].MON).toMatchObject({
       id: 2025020601,
+      startTimeUTC: "2026-01-06T00:00:00Z",
+      venue: { default: "Fixture Arena" },
       homeTeam: { id: 68, score: 3 },
       awayTeam: { id: 53, score: 2 },
     });
     expect(result.data[68].MON).toEqual(result.data[53].MON);
+    expect(Number.isFinite(Date.parse(result.retrievedAt))).toBe(true);
+    expect(result).not.toHaveProperty("sourceObservedAt");
   });
 
   it("keeps the default expected-goals source call and odds mapping", async () => {

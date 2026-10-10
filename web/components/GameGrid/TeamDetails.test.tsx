@@ -58,6 +58,8 @@ describe("Game Grid team previews", () => {
   it("distinguishes a covered bye from unavailable schedule data", () => {
     const { rerender } = render(<TeamDetails {...defaults} />);
     expect(screen.getByText("No upcoming games in this selection.")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Carolina Hurricanes game previews", level: 2 })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Remaining-week category forecasts", level: 3 })).toBeTruthy();
     expect(screen.getAllByText("No remaining games")).toHaveLength(7);
     rerender(<TeamDetails {...defaults} scheduleCoverage={undefined} coveredDates={undefined} />);
     expect(screen.getByText("Schedule unavailable for this selection. Retry the schedule read.")).toBeTruthy();
@@ -306,8 +308,8 @@ describe("Game Grid team disclosures", () => {
     const florida = screen.getByRole("button", { name: "Show Florida Panthers upcoming category forecasts" });
     fireEvent.click(carolina);
     fireEvent.click(florida);
-    expect(document.getElementById("game-grid-team-details-12")?.querySelector("h3")?.textContent).toBe("Carolina Hurricanes game previews");
-    expect(document.getElementById("game-grid-team-details-13")?.querySelector("h3")?.textContent).toBe("Florida Panthers game previews");
+    expect(document.getElementById("game-grid-team-details-12")?.querySelector("h2")?.textContent).toBe("Carolina Hurricanes game previews");
+    expect(document.getElementById("game-grid-team-details-13")?.querySelector("h2")?.textContent).toBe("Florida Panthers game previews");
     expect(document.getElementById("game-grid-team-details-12")?.closest("table")).toBeNull();
     fireEvent.click(screen.getAllByRole("columnheader").find((cell) => cell.textContent === "Total GP" && cell.getAttribute("style"))!);
     expect(carolina.getAttribute("aria-expanded")).toBe("true");

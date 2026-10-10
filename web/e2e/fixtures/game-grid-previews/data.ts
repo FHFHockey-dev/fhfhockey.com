@@ -41,7 +41,7 @@ export function useSchedule(start: string, extended: boolean) {
       return { teamId: team.id, ...(status === 'empty' ? {} : { THU: game(3), SUN: game(6), ...(team.id > 12 ? { SAT: game(5) } : {}), ...(extended ? { nMON: game(7) } : {}) }) };
     });
     const coveredDates = status === 'partial' ? dates.slice(0, 6) : dates;
-    snapshots.set(key, [rows, DAYS.map(() => 0), false, { coveredDates, coverage: { known: coveredDates.length, expected: dates.length }, error: null }]);
+    snapshots.set(key, [rows, DAYS.map(() => 0), false, { coveredDates, coverage: { known: coveredDates.length, expected: dates.length }, error: null, retrievedAtByDate: Object.fromEntries(dates.map(date => [date, '2026-10-07T15:59:00Z'])) }]);
   }
   return snapshots.get(key);
 }

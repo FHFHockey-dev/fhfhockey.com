@@ -14,10 +14,10 @@
   line-height: 1.45;
   overflow-wrap: anywhere;
 
-  h3, h4, h5, p { margin: 0; }
-  h3 { font-size: 18px; }
-  h4 { margin-top: 16px; font-size: 15px; }
-  h5 { font-size: 15px; }
+  h2, h3, h4, p { margin: 0; }
+  h2 { font-size: 18px; }
+  h3 { margin-top: 16px; font-size: 15px; }
+  h4 { font-size: 15px; }
   p + p { margin-top: 4px; }
 }
 

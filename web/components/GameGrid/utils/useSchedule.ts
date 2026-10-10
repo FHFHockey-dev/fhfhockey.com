@@ -64,6 +64,7 @@ export type ScheduleArray = (WeekData & { teamId: number })[];
 export type SelectedScheduleCoverage = {
   coveredDates: string[];
   coverage: { known: number; expected: number };
+  retrievedAtByDate?: Record<string, string>;
   error: string | null;
 };
 
@@ -113,6 +114,13 @@ export default function useSchedule(
         const windows = nextWeekSchedule ? [schedule, nextWeekSchedule] : [schedule];
         const coveredDates = [...new Set(windows.flatMap((window) => window.coveredDates ?? []))]
           .filter((date) => dates.includes(date));
+        const retrievedAtByDate: Record<string, string> = {};
+        windows.forEach((window) => {
+          if (!window.retrievedAt || !Number.isFinite(Date.parse(window.retrievedAt))) return;
+          (window.coveredDates ?? []).filter((date) => dates.includes(date)).forEach((date) => {
+            retrievedAtByDate[date] = window.retrievedAt!;
+          });
+        });
         const uniqueGames = new Map<number, GameData>();
         windows.forEach((window) => Object.values(window.data).forEach((row) => Object.values(row).forEach((game) => {
           if (!game) return;
@@ -162,7 +170,7 @@ export default function useSchedule(
 
         setScheduleArray(result);
         setNumGamesPerDay(getRegularGamesPerDay(result, days));
-        setCalendar({ coveredDates, coverage: { known: coveredDates.length, expected: days.length }, error: null });
+        setCalendar({ coveredDates, retrievedAtByDate, coverage: { known: coveredDates.length, expected: days.length }, error: null });
         setLoadedKey(key);
         setLoading(false);
       }
