@@ -1402,10 +1402,10 @@ function compactWorkspace(count: number) {
   const players = Array.from({ length: count === 19 ? 20 : count }, (_, index) => ({ ...fixturePlayer(index + 1, `Compact Surname${index + 1}`, "CAR"),
     eligiblePositions: index === 0 ? ["C", "LW"] : [positions[index] ?? "C"], playerClass: positions[index] === "G" ? "goalie" as const : "skater" as const,
     reserveEligibility: ["IR", "IR+"] as Array<"IR" | "IR+"> }));
-  const workspace = fixtureWorkspace(players, { ...fixtureRules, rosterSlots: { C: 2, LW: 2, RW: 2, D: 4, UTIL: 2, G: 2, BN: count === 25 ? 9 : 6, IR: 1, "IR+": 1 } });
+  const workspace = fixtureWorkspace(players, { ...fixtureRules, rosterSlots: { C: 2, LW: 2, RW: 2, D: count === 19 ? 3 : 4, UTIL: 2, G: 2, BN: count >= 25 ? count - 16 : 6, IR: 1, "IR+": 1 } });
   workspace.context.endDate = "2026-10-11";
   workspace.roster = players.filter((_, index) => count !== 19 || index !== 9).map(player => { const index = players.indexOf(player); return { playerId: player.id,
-    position: count === 25 && index >= 23 ? index === 23 ? "IR" : "IR+" : index < 14 ? "active" : "bench" }; });
+    position: count >= 25 && index >= count - 2 ? index === count - 2 ? "IR" : "IR+" : index < 14 ? "active" : "bench" }; });
   workspace.intent.protectedPlayerIds = [players[0].id];
   workspace.lockedAssignments = [{ date: "2026-10-07", playerId: players[0].id, slotId: "C#1" }, ...workspace.roster.filter(row => row.position === "bench").map(row => ({ date: "2026-10-07", playerId: row.playerId, slotId: null }))];
   const games = Array.from({ length: 7 }, (_, index) => ({ ...fixtureGame(`compact-${index}`, 5, "CAR"), date: `2026-10-${String(index + 5).padStart(2, "0")}`, startsAt: `2026-10-${String(index + 5).padStart(2, "0")}T23:00:00Z` }));
@@ -1438,20 +1438,21 @@ async function expectDaySliderAligned(page: import("@playwright/test").Page) {
   expect(Math.abs(thumbCenter - headerCenter)).toBeLessThanOrEqual(1);
 }
 
-for (const count of [19, 20, 25]) test(`compact layout accounts for ${count} players with fixed slots and continuous bands`, async ({ page }, testInfo) => {
+for (const count of [19, 20, 29]) test(`compact layout accounts for ${count} slots with a maximum of 20 slot rows and internal labels`, async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await installCompactFixture(page, count);
   await expectDaySliderAligned(page);
   const table = page.getByRole("table", { name: "Individual player weekly schedule" });
   await expect(table.locator('tr[data-player-id]')).toHaveCount(count);
+  await expect(table.locator('tr[data-compact-row]')).toHaveCount(count);
   await expect(page.getByRole("heading", { name: "Current Roster" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Available Players" })).toBeVisible();
-  if (count === 19) await expect(table.getByRole("rowheader", { name: /Open D/ })).toBeVisible();
   const metrics = await table.evaluate(node => {
     const viewport = node.parentElement!.getBoundingClientRect();
+    const bodyTop = Math.max(viewport.top, node.querySelector("thead")!.getBoundingClientRect().bottom);
     const rows = [...node.querySelectorAll('tr[data-compact-row]:not([hidden])')];
-    return { visibleRows: rows.filter(row => { const box = row.getBoundingClientRect(); return box.top >= viewport.top && box.bottom <= viewport.bottom; }).length,
-      visiblePlayers: rows.filter(row => { const box = row.getBoundingClientRect(); return row.hasAttribute("data-player-id") && box.top >= viewport.top && box.bottom <= viewport.bottom && box.left >= viewport.left && box.right <= viewport.right; }).length,
+    return { visibleRows: rows.filter(row => { const box = row.getBoundingClientRect(); return box.top >= bodyTop && box.bottom <= viewport.bottom; }).length,
+      visiblePlayers: rows.filter(row => { const box = row.getBoundingClientRect(); return row.hasAttribute("data-player-id") && box.top >= bodyTop && box.bottom <= viewport.bottom && box.left >= viewport.left && box.right <= viewport.right; }).length,
       rowHeights: rows.map(row => row.getBoundingClientRect().height),
       scrollHeight: node.parentElement!.scrollHeight, clientHeight: node.parentElement!.clientHeight,
       firstRowTop: rows[0]?.getBoundingClientRect().top, lastRowBottom: rows.at(-1)?.getBoundingClientRect().bottom, viewportTop: viewport.top, viewportBottom: viewport.bottom,
@@ -1462,35 +1463,43 @@ for (const count of [19, 20, 25]) test(`compact layout accounts for ${count} pla
         outlineColors: [getComputedStyle(group).borderTopColor, getComputedStyle(group).borderRightColor, getComputedStyle(group).borderBottomColor],
         outlineWidths: [getComputedStyle(group).borderTopWidth, getComputedStyle(group).borderRightWidth, getComputedStyle(group).borderBottomWidth],
         label: group.getAttribute("data-label"), renderedLabel: (() => {
-          const label = group.querySelector('[data-position-label]') ?? group.querySelector('tr[data-bench-heading] button > span');
+          const label = group.querySelector('[data-position-label] > span');
           const cell = group.querySelector('tr[data-compact-row] th[scope="row"]');
           if (!label || !cell) return null;
           const box = label.getBoundingClientRect(), container = cell.getBoundingClientRect();
+          const band = group.getBoundingClientRect();
           const control = group.querySelector('tr[data-bench-heading] button')?.getBoundingClientRect();
           const player = cell.querySelector('button')?.getBoundingClientRect();
           return { text: label.textContent?.trim(), width: box.width, height: box.height, fontSize: getComputedStyle(label).fontSize,
-            left: box.left, right: box.right, cellLeft: container.left, cellRight: container.right, transform: getComputedStyle(label).transform,
+            left: box.left, right: box.right, top: box.top, bottom: box.bottom,
+            bandLeft: band.left, bandRight: band.left + parseFloat(getComputedStyle(group).borderLeftWidth), bandTop: band.top, bandBottom: band.bottom,
+            color: getComputedStyle(label).color, panelColor: getComputedStyle(node.closest("section")!).backgroundColor,
+            cellLeft: container.left, cellRight: container.right, transform: getComputedStyle(label).transform,
             controlRight: control?.right, playerLeft: player?.left };
         })(),
         before: getComputedStyle(group, "::before").content, after: getComputedStyle(group, "::after").content,
         contentInset: Math.min(...[...group.querySelectorAll('th[scope="row"]')].map(cell => cell.getBoundingClientRect().left - group.getBoundingClientRect().left)) })) };
   });
   expect(new Set(metrics.playerIds).size).toBe(count);
-  expect(metrics.groups.map(group => group.position)).toEqual(count === 25 ? ["C", "LW", "RW", "D", "UTIL", "G", "BENCH", "IR", "IR+"] : ["C", "LW", "RW", "D", "UTIL", "G", "BENCH"]);
+  expect(metrics.groups.map(group => group.position)).toEqual(count >= 25 ? ["C", "LW", "RW", "D", "UTIL", "G", "BENCH", "IR", "IR+"] : ["C", "LW", "RW", "D", "UTIL", "G", "BENCH"]);
   expect(metrics.groups.find(group => group.position === "RW")?.band).toBe("rgb(167, 139, 250)");
   for (const group of metrics.groups) {
-    expect(group.width).toBe("10px"); expect(group.style).toBe("solid");
+    expect(group.width).toBe("28px"); expect(group.style).toBe("solid");
     expect(group.topLeftRadius).toBe("10px"); expect(group.bottomLeftRadius).toBe("10px"); expect(group.rightRadius).toBe("10px");
     expect(group.outlineColors).toEqual([group.band, group.band, group.band]); expect(group.outlineWidths).toEqual(["1px", "1px", "1px"]);
-    expect(group.label).toBe(group.position === "BENCH" ? "Bench" : group.position);
+    expect(group.label).toBe(group.position);
     expect(group.before).toBe("none"); expect(group.after).toBe("none");
     expect(group.renderedLabel?.text).toContain(group.label);
     expect(group.renderedLabel?.width).toBeGreaterThan(0); expect(group.renderedLabel?.height).toBeGreaterThanOrEqual(11);
-    expect(group.renderedLabel?.fontSize).toBe("11px"); expect(group.renderedLabel?.transform).toBe("none");
-    expect(group.renderedLabel!.left).toBeGreaterThanOrEqual(group.renderedLabel!.cellLeft);
-    expect(group.renderedLabel!.right).toBeLessThanOrEqual(group.renderedLabel!.cellRight);
+    expect(group.renderedLabel?.fontSize).toBe("12px");
+    expect(group.renderedLabel?.transform).toBe(["UTIL", "BENCH"].includes(group.position!) ? "matrix(0, -1, 1, 0, 0, 0)" : "none");
+    expect(group.renderedLabel!.color).toBe(group.renderedLabel!.panelColor);
+    expect(group.renderedLabel!.left).toBeGreaterThanOrEqual(group.renderedLabel!.bandLeft);
+    expect(group.renderedLabel!.right).toBeLessThanOrEqual(group.renderedLabel!.bandRight);
+    expect(group.renderedLabel!.top).toBeGreaterThanOrEqual(group.renderedLabel!.bandTop);
+    expect(group.renderedLabel!.bottom).toBeLessThanOrEqual(group.renderedLabel!.bandBottom);
     if (group.position === "BENCH") expect(group.renderedLabel!.controlRight).toBeLessThanOrEqual(group.renderedLabel!.playerLeft!);
-    expect(group.contentInset).toBeGreaterThanOrEqual(10);
+    expect(group.contentInset).toBeGreaterThanOrEqual(28);
   }
   const articleBorders = await page.getByRole("region", { name: "Plan summary" }).locator("article").evaluateAll(nodes => nodes.map(node => ({
     width: getComputedStyle(node).borderLeftWidth, style: getComputedStyle(node).borderLeftStyle,
@@ -1506,28 +1515,59 @@ for (const count of [19, 20, 25]) test(`compact layout accounts for ${count} pla
     expect(border.before).toBe("none"); expect(border.after).toBe("none");
   }
   await writeFile(testInfo.outputPath(`compact-${count}-metrics.json`), JSON.stringify(metrics, null, 2));
-  for (const height of metrics.rowHeights) { expect(height).toBeGreaterThanOrEqual(24); expect(height).toBeLessThanOrEqual(32); }
-  if (count <= 20) expect(metrics.visiblePlayers).toBe(count);
+  for (const height of metrics.rowHeights) { expect(height).toBeGreaterThanOrEqual(28); expect(height).toBeLessThanOrEqual(48); }
+  expect(metrics.visibleRows).toBeLessThanOrEqual(20);
+  expect(metrics.visibleRows).toBeGreaterThan(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(1442);
   await expectDesktopFrameVisible(page);
   await page.screenshot({ path: testInfo.outputPath(`compact-${count}-1440x900.png`) });
   await table.locator('tbody[data-position="RW"]').screenshot({ path: testInfo.outputPath("compact-rw-border.png") });
   await page.getByRole("region", { name: "Plan summary" }).locator("article").first().screenshot({ path: testInfo.outputPath("compact-article-border.png") });
-  if (count === 25) {
+  if (count >= 25) {
     const scroll = page.getByRole("region", { name: "Player weekly schedule scroll area" });
-    await scroll.evaluate(node => { node.scrollTop = node.scrollHeight; });
+    expect(metrics.scrollHeight).toBeGreaterThan(metrics.clientHeight);
+    await scroll.focus(); await page.keyboard.press("End");
+    await expect.poll(() => scroll.evaluate(node => node.scrollTop)).toBeGreaterThan(0);
+    const lastPlayer = table.getByRole("button", { name: new RegExp(`Schedule details for Compact Surname${count},`) });
+    await lastPlayer.focus(); await expect(lastPlayer).toBeFocused();
     const end = await table.evaluate(node => {
       const viewport = node.parentElement!.getBoundingClientRect();
       const header = node.querySelector("thead")!.getBoundingClientRect();
-      const last = node.querySelector('[data-player-id="fhfh:25"]')!.getBoundingClientRect();
-      return { top: viewport.top, bottom: viewport.bottom, headerTop: header.top, headerBottom: header.bottom, lastTop: last.top, lastBottom: last.bottom };
+      const last = [...node.querySelectorAll('tr[data-player-id]')].at(-1)!.getBoundingClientRect();
+      const visibleRows = [...node.querySelectorAll('tr[data-compact-row]:not([hidden])')].filter(row => {
+        const box = row.getBoundingClientRect(); return box.top >= header.bottom && box.bottom <= viewport.bottom;
+      }).length;
+      return { top: viewport.top, bottom: viewport.bottom, headerTop: header.top, headerBottom: header.bottom, lastTop: last.top, lastBottom: last.bottom, visibleRows };
     });
     expect(end.headerTop).toBeGreaterThanOrEqual(end.top - 1);
     expect(end.headerBottom).toBeLessThan(end.bottom);
     expect(end.lastTop).toBeGreaterThanOrEqual(end.headerBottom);
     expect(end.lastBottom).toBeLessThanOrEqual(end.bottom);
+    expect(end.visibleRows).toBeLessThanOrEqual(20);
     await expectDesktopFrameVisible(page);
-    await page.screenshot({ path: testInfo.outputPath("compact-25-scrolled-1440x900.png") });
+    await page.screenshot({ path: testInfo.outputPath(`compact-${count}-scrolled-1440x900.png`) });
+    for (const [width, height] of [[1920, 1080], [1440, 720], [390, 844], [1000, 1600]]) {
+      await page.setViewportSize({ width, height });
+      await scroll.evaluate(node => { node.scrollTop = 0; });
+      const density = await table.evaluate(node => {
+        const viewport = node.parentElement!.getBoundingClientRect();
+        const header = node.querySelector("thead")!.getBoundingClientRect();
+        const rows = [...node.querySelectorAll('tr[data-compact-row]:not([hidden])')];
+        return { total: rows.length, visible: rows.filter(row => {
+          const box = row.getBoundingClientRect(); return box.top >= header.bottom && box.bottom <= viewport.bottom;
+        }).length, heights: rows.map(row => row.getBoundingClientRect().height) };
+      });
+      expect(density.total).toBe(count); expect(density.visible).toBeLessThanOrEqual(20);
+      expect(density.visible).toBeGreaterThan(0);
+      expect(density.heights.every(height => height >= 28 && height <= 48)).toBe(true);
+      if (width > 1100) await expectDesktopFrameVisible(page);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+      await writeFile(testInfo.outputPath(`compact-${count}-${width}x${height}-density.json`), JSON.stringify(density, null, 2));
+      await page.screenshot({ path: testInfo.outputPath(`compact-${count}-${width}x${height}.png`) });
+      await scroll.focus();
+      await lastPlayer.focus(); await expect(lastPlayer).toBeFocused();
+      await expect.poll(() => scroll.evaluate(node => node.scrollTop)).toBeGreaterThan(0);
+    }
   }
   if (count === 20) {
     await page.setViewportSize({ width: 1920, height: 1080 });
@@ -1541,6 +1581,25 @@ for (const count of [19, 20, 25]) test(`compact layout accounts for ${count} pla
     await expect(table).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("compact-20-390x844.png") });
   }
+  const scroll = page.getByRole("region", { name: "Player weekly schedule scroll area" });
+  await scroll.focus();
+  const focusedStates = [];
+  for (const button of await table.getByRole("button", { name: /Schedule details for Compact/ }).all()) {
+    await button.focus(); await expect(button).toBeFocused();
+    const state = await button.evaluate(node => {
+      const box = node.getBoundingClientRect(), table = node.closest("table")!;
+      const area = table.parentElement!.getBoundingClientRect(), header = table.querySelector("thead")!.getBoundingClientRect();
+      const visible = [...table.querySelectorAll('tr[data-compact-row]:not([hidden])')].filter(row => {
+        const bounds = row.getBoundingClientRect(); return bounds.top >= header.bottom && bounds.bottom <= area.bottom;
+      }).length;
+      return { playerId: node.closest("tr")!.getAttribute("data-player-id"), scrollTop: table.parentElement!.scrollTop,
+        visible, top: box.top, bottom: box.bottom, headerBottom: header.bottom, areaBottom: area.bottom };
+    });
+    expect(state.top).toBeGreaterThanOrEqual(state.headerBottom); expect(state.bottom).toBeLessThanOrEqual(state.areaBottom);
+    expect(state.visible).toBeLessThanOrEqual(20);
+    focusedStates.push(state);
+  }
+  await writeFile(testInfo.outputPath(`compact-${count}-focused-states.json`), JSON.stringify(focusedStates, null, 2));
 });
 
 test("compact day and bench controls preserve saved intent and keyboard selection", async ({ page }, testInfo) => {
@@ -1643,7 +1702,7 @@ test.extend({ hasTouch: true })("compact short desktop and mobile retain rows, d
       before: getComputedStyle(node, "::before").content, after: getComputedStyle(node, "::after").content,
     })));
     for (const border of borders) {
-      expect(border.width).toBe("10px"); expect(border.style).toBe("solid"); expect(border.topLeftRadius).toBe("10px"); expect(border.bottomLeftRadius).toBe("10px");
+      expect(border.width).toBe("28px"); expect(border.style).toBe("solid"); expect(border.topLeftRadius).toBe("10px"); expect(border.bottomLeftRadius).toBe("10px");
       expect(border.outlineColors).toEqual([border.band, border.band, border.band]);
       expect(border.before).toBe("none"); expect(border.after).toBe("none");
     }
@@ -1774,6 +1833,7 @@ test("compact vacancies and non-playing holds survive day changes and Bench coll
     await expect(table.locator('[data-player-id]')).toHaveCount(18);
     expect(await table.locator('[data-player-id]').evaluateAll(rows => new Set(rows.map(row => row.getAttribute("data-player-id"))).size)).toBe(18);
     await expect(table.getByRole("rowheader", { name: /Open D/ })).toHaveCount(2);
+    await expect(table.locator('tr[data-compact-row]:not([hidden])')).toHaveCount(20);
     await expect(table.locator('[data-player-id="fhfh:1"]')).not.toContainText("C#1");
     await expect(table.locator('[data-player-id="fhfh:1"]').getByRole("button")).toHaveAttribute("aria-label", /C#1/);
     await expect(table.locator('[data-player-id="fhfh:14"]')).not.toContainText("G#2");

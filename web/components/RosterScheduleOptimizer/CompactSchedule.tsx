@@ -152,19 +152,33 @@ export default function CompactSchedule({ snapshot, roster, rules, players, assi
     const scroll = scrollElement.current;
     if (!scroll) return;
     const measure = () => {
+      const mobile = window.innerWidth <= 1100;
       const css = getComputedStyle(scroll);
       const table = scroll.querySelector("table");
-      const rowSpace = [...scroll.querySelectorAll('tr[data-compact-row]:not([hidden])')]
-        .reduce((total, row) => total + row.getBoundingClientRect().height, 0);
+      const rows = [...scroll.querySelectorAll('tr[data-compact-row]:not([hidden])')];
+      const rowSpace = rows.reduce((total, row) => total + row.getBoundingClientRect().height, 0);
+      const controlsHeight = scroll.querySelector(`.${styles.dayControls}`)?.getBoundingClientRect().height ?? 0;
       const extraSpace = (table?.getBoundingClientRect().height ?? 0)
-        + (scroll.querySelector(`.${styles.dayControls}`)?.getBoundingClientRect().height ?? 0) - rowSpace;
-      const available = scroll.clientHeight - parseFloat(css.paddingTop) - parseFloat(css.paddingBottom) - extraSpace - 1;
-      const rowHeight = Math.max(24, Math.min(32, Math.floor(available / Math.max(1, displayedRows))));
-      scroll.style.setProperty("--schedule-row-height", `${rowHeight}px`);
+        + controlsHeight - rowSpace;
+      const panelSpace = scroll.parentElement!.getBoundingClientRect().bottom - scroll.getBoundingClientRect().top;
+      const padding = parseFloat(css.paddingTop) + parseFloat(css.paddingBottom);
+      const available = panelSpace - padding - extraSpace - 1;
+      if (!mobile) {
+        const rowHeight = Math.max(28, Math.min(48, Math.floor(available / Math.max(1, Math.min(20, displayedRows)))));
+        scroll.style.setProperty("--schedule-row-height", `${rowHeight}px`);
+      }
+      if (rows.length > 20 && table) {
+        const minimumRowHeight = Math.min(...rows.map(row => row.getBoundingClientRect().height));
+        const headerHeight = table.querySelector("thead")?.getBoundingClientRect().height ?? 0;
+        // Exclude group gaps so a later, denser stretch cannot show more than 20 rows.
+        const cappedHeight = minimumRowHeight * 20 + headerHeight + controlsHeight + padding;
+        scroll.style.maxHeight = mobile ? `min(65dvh, ${Math.ceil(cappedHeight)}px)` : `${Math.ceil(cappedHeight)}px`;
+      } else scroll.style.removeProperty("max-height");
     };
     measure();
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
     observer?.observe(scroll);
+    observer?.observe(scroll.parentElement!);
     return () => observer?.disconnect();
   }, [displayedRows, groups, benchOpen]);
   const assignedByDay = new Map(week.map(day => [day, new Set((day === date ? groups : compactGroups({ snapshot, roster, rules, players, assignments, intent, date: day, ready }))
@@ -238,12 +252,15 @@ export default function CompactSchedule({ snapshot, roster, rules, players, assi
           </button>
         </th>)}<th scope="col" title="Known scheduled games in displayed week; not fantasy or confirmed goalie starts">GP</th></tr></thead>
         {groups.map(group => <tbody key={group.position} className={styles.positionGroup} data-position={group.position === "BN" ? "BENCH" : group.position === "F" ? "FWD" : group.position}
-          data-label={group.position === "BN" ? "Bench" : group.position}
+          data-label={group.position === "BN" ? "BENCH" : group.position}
           data-bench-open={group.position === "BN" ? benchOpen : undefined} aria-label={`${group.position} group`}>
-          {group.position === "BN" && <tr data-bench-heading="" className={styles.benchHeading}><th colSpan={9}><button aria-label={`Bench ${group.rows.length}, ${benchOpen ? "collapse" : "expand"}`} aria-expanded={benchOpen} aria-controls={group.rows.map((_, index) => `rso-bench-${index}`).join(" ")} onClick={toggleBench}><span aria-hidden="true">{benchOpen ? "▾" : "▸"} Bench {group.rows.length}</span></button></th></tr>}
+          {group.position === "BN" && <tr data-bench-heading="" className={styles.benchHeading}>
+            <td className={styles.positionLabel} data-position-label="" rowSpan={group.rows.length + 1} aria-hidden="true"><span>BENCH</span></td>
+            <th colSpan={9}><button aria-label={`Bench ${group.rows.length}, ${benchOpen ? "collapse" : "expand"}`} aria-expanded={benchOpen} aria-controls={group.rows.map((_, index) => `rso-bench-${index}`).join(" ")} onClick={toggleBench}><span aria-hidden="true">{benchOpen ? "▾" : "▸"} Bench</span><span className={styles.countChip} aria-hidden="true">{group.rows.length}</span></button></th>
+          </tr>}
           {group.rows.map((row, index) => <tr key={row.playerId ?? row.id} data-compact-row="" data-player-id={row.playerId} hidden={group.position === "BN" && !benchOpen} id={group.position === "BN" ? `rso-bench-${index}` : undefined}>
+            {index === 0 && group.position !== "BN" && <td className={styles.positionLabel} data-position-label="" rowSpan={group.rows.length} aria-hidden="true"><span>{group.position}</span></td>}
             <th scope="row" title={`${row.slot} · ${row.player?.name ?? row.status} · ${row.status}${row.change ? ` · ${row.change}` : ""}${row.player ? ` · ${row.player.eligibilityVerified === true ? "League positions" : "Positions on file (unconfirmed)"}: ${row.player.eligiblePositions.join("/") || "unknown"}` : ""}`}>
-              {index === 0 && group.position !== "BN" && <span className={styles.positionLabel} data-position-label="" aria-hidden="true">{group.position}</span>}
               {row.player ? <button className={styles.schedulePlayer} onClick={() => selectPlayer(row.playerId!)} aria-label={`Schedule details for ${row.player.name}, ${row.slot}, ${row.player.eligibilityVerified === true ? "league positions" : "unconfirmed positions"} ${row.player.eligiblePositions.join("/") || "unknown"}, ${row.status}`}>
                 <ScheduleIdentity player={row.player} /><span className={styles.scheduleSrOnly}>{row.player.name} · {row.player.teamAbbreviation ?? "Team unknown"}</span>
               </button> : <span>{row.playerId ?? row.status}</span>}{row.change && <small className={styles.plannedChange} title={row.change} aria-label={row.change}>Planned</small>}

@@ -42,7 +42,7 @@ All recommendations are advisory. Yahoo integration is read-only; the manager pe
 3. Keep every actionable plan within verified eligibility, capacity, locks, transaction timing, acquisition periods, waivers, reserve rules and goalie requirements.
 4. Preserve unknown categories, participation, availability and rules explicitly in every declared acceptance case.
 5. Give free and premium managers equal planning outputs for equal canonical inputs; premium pays for connected upkeep and account-backed continuity.
-6. Fit the desktop workspace, including navigation, in one viewport and show at least 20 readable schedule rows at 1440×900. Verify 19-, 20- and 25-player cases and usable mobile workspaces.
+6. Fit the desktop workspace, including navigation, in one viewport and show a maximum of 20 readable roster-slot rows in the schedule viewport. Verify 19-, 20- and 29-slot cases, including 1440×900, with overflow reachable by internal scrolling and usable mobile workspaces.
 7. Clear beta and full-launch gates with genuine consumer, rule, continuity and UX evidence. Retain quality, uncertainty and performance measurements against predeclared evaluation protocols; distinguish controlled beta acceptance from broader performance claims.
 
 ## 3. User stories
@@ -190,7 +190,7 @@ Fit a compact dashboard in one viewport including site navigation. Place **Curre
 
 Schedule rows must represent individual roster players. Show fantasy slot, team logo and surname, Monday–Sunday date columns and GP. Order configured slot groups **C, LW, RW, D, UTIL, G, BN, then supported IR/IR+**. Respect actual league slots and visibly preserve vacancies. Playing-today ordering must not replace fixed slot order.
 
-Show at least 20 readable rows at **1440×900**, using bounded dynamic row heights and internal scrolling when necessary. Cover 19-, 20- and 25-player rosters. A collapsed bench shows a player-count chip; membership remains accounted for.
+Show a **maximum of 20 visible roster-slot rows** in the schedule viewport, including vacancies and expanded Bench/reserve slots. Use the available height for readable bounded rows; all additional rows remain reachable by internal vertical scrolling. Cover 19-, 20- and 29-slot examples at **1440×900**. Smaller viewports may show fewer rows. A collapsed bench shows a player-count chip; membership remains accounted for. This confirmed correction supersedes the earlier at-least-20 density requirement.
 
 Provide a Monday–Sunday snapping slider, clickable dates and keyboard controls. Select today when it falls in the viewed week, or Monday for a future week. Show that day's legal local lineup, retaining vacancies, locks and manager choices. Mute elapsed dates without hiding them.
 
@@ -198,7 +198,7 @@ Date headers show compact dates/slate counts and actual active/open lineup-slot 
 
 ### Styling and accessibility
 
-Reuse the actual Draft Dashboard `SuggestedPicks.tsx` card styles and position-color mapping; they control where Start Chart shades differ. Preserve the accepted **10 px native solid left border, straight inner edge, 10 px rounded outer corners and matching 1 px colored outline**, consistently across positional groups and relevant summary cards. Avoid overlay accents, beveled tips and fragmentary borders.
+Reuse the actual Draft Dashboard `SuggestedPicks.tsx` position-color mapping. Place schedule position labels **inside the genuine continuous colored left group border**, with font color matching the panel background for a cut-out effect. Keep C/LW/RW/D/G readable across the rail and rotate UTIL/BENCH vertically. Preserve a straight inner edge, rounded outer left corners and a thin matching group outline; rail width/radius may increase for readable internal labels. The earlier literal 10 px rail/outside-label direction is superseded. Preserve relevant summary-card geometry. Avoid pseudo-border overlays, beveled tips and fragmentary borders.
 
 Retain the dark, dense FHFH analytics style, restrained cyan accents, readable condensed labels, aligned numbers and current tokens. Preserve text/logos, sticky headings, visible keyboard focus and meaning beyond color. Historical mockups must not override the confirmed layout and border decisions.
 
@@ -218,7 +218,7 @@ The supplied source names `octoberBranch` in `/Users/tim/Code/fhfhockey-october`
 | --- | --- | --- |
 | Core engine, continuity and rules | Reviewed timing, baseline, sequence and category fixes in production; historical 264-test/five-browser receipt | Actual startable gains, live connected rules and native consumer readbacks |
 | Reserve handling | Released IR/IR+/NA capacity correction | IR-LT unsupported; actual provider acceptance open |
-| Compact schedule and borders | Released native border/schedule work; 19/20/25-player browser evidence | Broader workspace, mobile and product acceptance |
+| Compact schedule and borders | Local internal-label/max-20-slot engineering and 19/20/29-slot desktop/mobile fixture evidence; independent written-requirement review complete | Original-reference fidelity remains unverified; broader product acceptance |
 | Selected October 12–18 schedule | Approved refresh at October 9 15:44:31.111 UTC; independently checked 100 team-game sides / 50 games, zero deletions and unchanged neighboring rows | Freshness bound and other horizons are separate |
 | Production release | Reported verified `ca81578afdae9b85643aee2c4d87d3ded3099c75`, production/October preview READY, four CI checks and 278 focused tests; includes schedule truth, PPP accounting and goalie labels | Native forecasts, beta acceptance and two inherited database-audit failures remain open |
 | Local audit | `e5d967dba4f757b51ad1c90bb82b139fb21863ca`: no committed post-production RSO-scope difference; uncommitted presentation/tests present | Uncommitted work is not established as accepted or deployed |
@@ -257,7 +257,7 @@ All of the following must pass. P1's provisional ages are warning thresholds, an
 | Legal connected and manual plans | Selected Yahoo case and a manual/free case handle eligibility, allowance/reset periods, timing, locks, waivers, minimums, vacancies, protection and supported reserves | Actual provider evidence plus deterministic edge cases, including Sunday-to-Monday timing and independent lock/reset periods |
 | Honest marginal objectives | Maximum-starts and projected-outcome alternatives use the same optimized no-acquisition baseline and league scoring; no GP-only inflation or invented category blend | Reconciled baseline/alternative starts and contributions, displaced value, costs, uncertainty, missing data and no-beneficial-move cases |
 | Continuity and tier behavior | Refresh → undo → reopen and context/account switching preserve intent and current authority; free/manual and premium/connected behavior matches FR12–FR13/FR17 | Both-tier workflows, owner isolation, conflicting saves, late-response suppression and equal-input output comparisons |
-| Workspace usability and performance | Desktop 19/20/25-player cases fit the specified frame; keyboard/touch and mobile workspaces function; unknown/partial/empty/error states remain honest | Browser evidence and measured real workloads, with search limits and owner-reviewed targets disclosed |
+| Workspace usability and performance | Desktop 19/20/29-slot cases fit the specified frame with at most 20 visible slot rows and reachable overflow; keyboard/touch and mobile workspaces function; unknown/partial/empty/error states remain honest | Browser evidence and measured real workloads, with search limits and owner-reviewed targets disclosed |
 | Release acceptance | Exact scope, deployment and live readbacks independently checked; both tiers covered; unsupported weekly-lock leagues clearly labelled | Release evidence, remaining limitations and an explicit owner beta decision |
 
 ### Full-launch additions

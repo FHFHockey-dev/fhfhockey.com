@@ -148,8 +148,8 @@
 .healthStrip { display: flex; flex-direction: column; gap: v.$space-xs; flex-shrink: 0; }
 .healthStrip > details { flex: 1; min-width: 0; }
 .lineupBody { display: flex; flex-direction: column; overflow: hidden; padding: 4px; }
-.compactSchedule { --schedule-columns: minmax(165px, 2.4fr) repeat(7, minmax(45px, 1fr)) 28px; --day-control-height: 32px; display: flex; flex: 1; flex-direction: column; min-height: 0; }
-.dayControls { display: grid; grid-template-columns: var(--schedule-columns); align-items: center; min-width: 610px; height: var(--day-control-height); position: sticky; top: -3px; z-index: 5; background: v.$draft-surface; font-size: 12px; }
+.compactSchedule { --schedule-columns: minmax(165px, 2.4fr) repeat(7, minmax(45px, 1fr)) 28px; --day-control-height: 32px; --position-band-width: 28px; display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.dayControls { display: grid; grid-template-columns: var(--schedule-columns); align-items: center; min-width: 610px; height: var(--day-control-height); position: sticky; top: -3px; z-index: 5; padding-inline: var(--position-band-width) 1px; box-sizing: border-box; background: v.$draft-surface; font-size: 12px; }
 .dayNavigation { display: flex; align-items: center; justify-content: space-between; gap: 4px; min-width: 0; }
 .dayNavigation button { padding-inline: 4px; }
 .dayControls output { white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -164,10 +164,11 @@
 .daySummary span { color: v.$text-secondary; }
 .daySummary strong { font-weight: 600; }
 .scheduleLegend { color: v.$text-secondary; font-size: 11px; padding: 1px 5px; flex-shrink: 0; }
-.compactScroll { flex: 1; min-height: 0; overflow: auto; padding: 3px; scroll-padding: 40px 4px; }
+.compactScroll { flex: 1; min-height: 0; overflow: auto; padding: 3px; scroll-padding: calc(var(--day-control-height) + 40px) 4px; }
 .compactTable { width: 100%; min-width: 610px; display: block; font-size: 12px; font-variant-numeric: tabular-nums; }
 .compactTable thead { display: block; position: sticky; top: calc(var(--day-control-height) - 3px); z-index: 4; background: v.$draft-surface; }
 .compactTable tr { display: grid; grid-template-columns: var(--schedule-columns); align-items: center; }
+.compactTable thead tr { padding-inline: var(--position-band-width) 1px; box-sizing: border-box; }
 .compactTable th, .compactTable td { min-width: 0; text-align: center; padding: 0 2px; }
 .compactTable thead th { font-weight: 500; font-size: 10px; }
 .compactTable thead th:first-child { text-align: left; padding-left: 10px; }
@@ -176,10 +177,11 @@
 .compactTable thead button > span:first-child { text-transform: uppercase; font-weight: 600; }
 .compactTable thead button > small { color: v.$text-secondary; font-size: 9px; }
 .compactTable thead button:focus-visible { outline-offset: -2px; }
-.positionGroup { --position-color: #{v.$color-neutral-400}; --position-band-width: 10px; --bench-control-width: 76px; --position-surface: color-mix(in srgb, var(--position-color) 7%, #{v.$draft-surface}); display: block; position: relative; border: 1px solid var(--position-color, #{v.$primary-color}); border-left-width: var(--position-band-width); border-radius: v.$radius-md; margin: 2px 0; background: var(--position-surface); }
-.positionLabel { flex-shrink: 0; color: var(--position-color); font-size: 11px; font-weight: 700; line-height: 14px; white-space: nowrap; }
+.positionGroup { --position-color: #{v.$color-neutral-400}; --bench-control-width: 76px; --position-surface: color-mix(in srgb, var(--position-color) 7%, #{v.$draft-surface}); display: block; position: relative; border: 1px solid var(--position-color, #{v.$primary-color}); border-left-width: var(--position-band-width); border-radius: v.$radius-md; margin: 2px 0; background: var(--position-surface); }
+.compactTable .positionLabel { position: absolute; inset-block: 0; left: calc(-1 * var(--position-band-width)); width: var(--position-band-width); padding: 0; display: flex; align-items: center; justify-content: center; color: v.$draft-surface; font-size: 12px; font-weight: 700; line-height: 14px; white-space: nowrap; }
+.positionGroup:is([data-position="UTIL"], [data-position="BENCH"]) .positionLabel > span { transform: rotate(-90deg); }
 .positionGroup[data-position="BENCH"][data-bench-open="false"] { min-height: 44px; }
-.positionGroup tr[data-compact-row] { height: clamp(24px, var(--schedule-row-height, 26px), 32px); }
+.positionGroup tr[data-compact-row] { height: clamp(28px, var(--schedule-row-height, 32px), 48px); }
 .positionGroup tr[hidden] { display: none; }
 .positionGroup tr[data-compact-row] + tr[data-compact-row] { border-top: 1px solid v.$draft-border; }
 .positionGroup th[scope="row"] { display: flex; align-items: center; gap: 4px; height: 100%; padding-left: 5px; position: sticky; left: 0; z-index: 1; background: var(--position-surface); font-weight: 400; }
@@ -196,7 +198,7 @@
 .fantasyAssigned { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .benchHeading { display: block !important; height: 0; }
 .benchHeading th { display: block; position: sticky; left: 5px; z-index: 2; width: var(--bench-control-width); height: 0; padding: 0; }
-.benchHeading button { display: flex; align-items: center; justify-content: center; height: clamp(24px, var(--schedule-row-height, 26px), 32px); width: var(--bench-control-width); min-height: 0; padding: 0 4px; border: 1px solid v.$draft-border; border-radius: 4px; background: var(--position-surface); color: v.$text-primary; font-size: 11px; font-weight: 700; line-height: 14px; }
+.benchHeading button { display: flex; align-items: center; justify-content: center; gap: 4px; height: clamp(28px, var(--schedule-row-height, 32px), 48px); width: var(--bench-control-width); min-height: 0; padding: 0 4px; border: 1px solid v.$draft-border; border-radius: 4px; background: var(--position-surface); color: v.$text-primary; font-size: 11px; font-weight: 700; line-height: 14px; }
 .benchHeading button > span { white-space: nowrap; }
 .benchHeading + tr th[scope="row"] { padding-inline-start: calc(var(--bench-control-width) + 5px); }
 .positionGroup[data-bench-open="false"] .benchHeading button { height: 44px; }
