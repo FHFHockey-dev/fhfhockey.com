@@ -21,7 +21,10 @@ function App() {
     const offNights = equal ? 5 : 8 - Math.floor(rank / 2);
     const missing = team.id === 32;
     return { teamId: team.id, teamAbbreviation: team.abbreviation,
-      weeks: [{ weekNumber: 1, gamesPlayed: 3, offNights: 1, opponents: [{ teamId: 2, abbreviation: "F2" }] }],
+      weeks: [
+        { weekNumber: 1, gamesPlayed: 3, offNights: 1, opponents: [{ teamId: 2, abbreviation: "F2" }], scheduleCoverage: { known: missing ? 0 : 7, expected: 7 } },
+        { weekNumber: 2, gamesPlayed: 3, offNights: 1, opponents: [{ teamId: 2, abbreviation: "F2" }], scheduleCoverage: { known: missing ? 3 : 7, expected: 7 } },
+      ],
       totals: { gamesPlayed, offNights, opponents: [], scheduleCoverage: { known: missing ? 21 : 28, expected: 28 } },
       avgOpponentPointPct: missing ? null : equal ? .5 : .3 + rank / 64,
       opponentCoverage: { known: missing ? 0 : 12, expected: 12 },

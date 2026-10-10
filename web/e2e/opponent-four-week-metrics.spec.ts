@@ -52,4 +52,9 @@ for (const width of [1920, 390]) test(`production palette, compact rows, ties an
   expect(allEqual.every((band) => band === "middle")).toBe(true);
   await master.screenshot({ path: testInfo.outputPath(`master-${width}-all-equal.png`) });
   await expect(page.locator("tbody small")).toHaveCount(0);
+  await fourWeek.getByRole("tab", { name: "Weekly Detail" }).click();
+  await expect(fourWeek.getByText("Schedule unavailable", { exact: true })).toBeVisible();
+  await expect(fourWeek.getByText("Schedule partial", { exact: true })).toBeVisible();
+  await expect(fourWeek.getByText(/\d+\s*\/\s*\d+\s+days/)).toHaveCount(0);
+  await fourWeek.screenshot({ path: testInfo.outputPath(`four-week-${width}-weekly-detail.png`) });
 });

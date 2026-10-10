@@ -448,7 +448,7 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray, calendar }) 
                             <td key={week.weekNumber}>
                               <strong>
                                 {week.gamesPlayed == null
-                                  ? `Schedule ${week.coverage?.known ? "partial" : "unavailable"} (${week.coverage?.known ?? 0}/${week.coverage?.expected ?? 7} days)`
+                                  ? `Schedule ${week.coverage?.known ? "partial" : "unavailable"}`
                                   : `${week.gamesPlayed}G / ${week.offNights}O`}
                               </strong>
                               <span className={styles.opponentList}>

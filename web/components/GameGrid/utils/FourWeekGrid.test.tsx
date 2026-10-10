@@ -98,14 +98,20 @@ describe("FourWeekGrid", () => {
     const known = { ...teams[0], avgOpponentPointPct: 0.5 };
     const unknown = {
       ...teams[1], totals: known.totals, avgOpponentPointPct: null,
-      weeks: [{ weekNumber: 1, gamesPlayed: 0, offNights: 0, opponents: [], scheduleCoverage: { known: 0, expected: 7 } }]
+      weeks: [
+        { weekNumber: 1, gamesPlayed: 0, offNights: 0, opponents: [], scheduleCoverage: { known: 0, expected: 7 } },
+        { weekNumber: 2, gamesPlayed: 1, offNights: 0, opponents: [{ abbreviation: "TOR", teamId: 10 }], scheduleCoverage: { known: 3, expected: 7 } },
+      ]
     };
     render(<FourWeekGrid teamDataArray={[known, unknown]} />);
     const row = screen.getByRole("link", { name: "Open Beta Team HQ" }).closest("tr")!;
     expect(row.cells[3].textContent).toBe("-");
     expect(row.cells[4].textContent).toBe("0.00");
     fireEvent.click(screen.getByRole("tab", { name: "Weekly Detail" }));
-    expect(screen.getAllByText("Schedule unavailable (0/7 days)").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Schedule unavailable").length).toBeGreaterThan(0);
+    expect(screen.getByText("Schedule partial")).toBeTruthy();
+    expect(screen.queryByText(/\d+\s*\/\s*\d+\s+days/)).toBeNull();
+    expect(screen.getByText("TOR")).toBeTruthy();
     expect(screen.queryByText("No games")).toBeNull();
   });
 
