@@ -10,6 +10,115 @@ import { assignmentsFor } from "../player-forecasts/sourceObservations";
 import { buildLinesCccSourceFromIftttEvent } from "./linesCccIngestion";
 import { reconcileAlias } from "./tweetAliasReconciliation";
 
+describe("BOS standard lineup identity regression", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  // Identities/positions retained with the Oct. 8 source; the bare alias caused the error.
+  const bruins = [
+    [8479987, "Morgan Geekie", "Geekie", "C"], [8478401, "Pavel Zacha", "Zacha", "C"],
+    [8477956, "David Pastrnak", "Pastrnak", "R"], [8482177, "Marat Khusnutdinov", "Khusnutdinov", "C"],
+    [8483489, "Fraser Minten", "Minten", "C"], [8482175, "JJ Peterka", "Peterka", "R"],
+    [8485395, "James Hagens", "Hagens", "C"], [8477496, "Elias Lindholm", "Lindholm", "C"],
+    [8479999, "Casey Mittelstadt", "Mittelstadt", "C"], [8479661, "Tanner Jeannot", "Jeannot", "L"],
+    [8483505, "Matthew Poitras", "Poitras", "C"], [8480355, "Mark Kastelic", "Kastelic", "C"],
+    [8476374, "Sean Kuraly", "Kuraly", "C"], [8476867, "Brendan Gaunce", "Gaunce", "C"],
+    [8479591, "Michael Eyssimont", "Eyssimont", "C"], [8476854, "Hampus Lindholm", "Lindholm", "D"],
+    [8478840, "Will Borgen", "Borgen", "D"], [8477507, "Nikita Zadorov", "Zadorov", "D"],
+    [8477365, "Connor Clifton", "Clifton", "D"], [8483017, "Frederic Brunet", "Brunet", "D"],
+    [8482511, "Mason Lohrei", "Lohrei", "D"], [8481219, "Jonathan Aspirot", "Aspirot", "D"],
+    [8479325, "Charlie McAvoy", "McAvoy", "D"], [8480280, "Jeremy Swayman", "Swayman", "G"],
+    [8480022, "Michael DiPietro", "DiPietro", "G"],
+  ].map(([playerId, fullName, lastName, position]) => ({
+    playerId: Number(playerId), fullName: String(fullName), lastName: String(lastName),
+    position: String(position), teamId: 6,
+    aliases: playerId === 8476854 ? ["Hampus Lindholm", "HLindholm", "Lindholm"] : [],
+  }));
+  const priorText = "RT @smclaughlin9: Bruins lines in warmups:\n\nGeekie-Zacha-Pastrnak\nKhusnutdinov-Minten-Peterka\nMittelstadt-Lindholm-Hagens\nJeannot-Poitras-Kastelic\n\nLindholm-Borgen\nZadorov-Clifton\nBrunet-Lohrei\n\nSwayman";
+  const practiceText = "Bruins practice lines:\nGeekie-Zacha-Pastrnak\nKhusnutdinov-Minten-Peterka\nHagens-E. Lindholm-Mittelstadt\nJeannot-Poitras-Kastelic\nKuraly\n\nH. Lindholm-Borgen\nZadorov-Clifton\nBrunet-Lohrei\nAspirot-McAvoy\n\nSwayman\nDiPietro";
+  const spansMatch = (text: string, units: ReturnType<typeof interpretTweetUnits>["units"]) => {
+    for (const unit of units) for (const span of unit.evidence) expect(text.slice(span.start, span.end)).toBe(span.text);
+  };
+
+  it("resolves the actual Oct. 8 forward Lindholm as Elias, retaining the raw source identity", () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    const tweetId = "2108326534352429473";
+    const source = buildLinesCccSourceFromIftttEvent({
+      event: { id: "fd3e6f2d-a469-4a60-94a9-b37f89ac28ea", source: "ifttt",
+        source_account: "GameDayLines", username: "GameDayLines", text: priorText,
+        link_to_tweet: `https://x.com/GameDayLines/status/${tweetId}`, tweet_id: tweetId,
+        tweet_created_at: "2026-10-08T22:39:00Z", created_at_label: null,
+        raw_payload: { text: priorText }, received_at: "2026-10-08T22:45:45.080289Z" },
+      snapshotDate: "2026-10-08",
+      teams: [{ id: 6, abbreviation: "BOS", name: "Boston Bruins", shortName: "Bruins",
+        location: "Boston", slug: "boston-bruins", logo: "/teamLogos/BOS.png", hashtags: ["NHLBruins"] }],
+      rosterByTeam: new Map([[6, bruins]]), gameIdByTeamId: new Map([[6, 2026020056]]),
+    });
+    expect(source.forwards![2]).toEqual(["Casey Mittelstadt", "Elias Lindholm", "James Hagens"]);
+    expect(source.defensePairs![0]).toEqual(["Hampus Lindholm", "Will Borgen"]);
+    expect(source).toMatchObject({ tweetId, rawText: priorText, team: { id: 6 }, gameId: 2026020056 });
+    expect(source).toMatchObject({ rawPayload: { text: priorText }, observedAt: "2026-10-08T22:45:45.080289Z", tweetPostedAt: "2026-10-08T22:39:00.000Z" });
+    const interpretation = source.metadata!.interpretation as ReturnType<typeof interpretTweetUnits>;
+    spansMatch(priorText, interpretation.units);
+  });
+
+  it("keeps four forward triplets, three defense pairs and ordered goalies while preserving excluded evidence", () => {
+    const result = interpretTweetUnits(practiceText, bruins);
+    expect(result.context).toBe("practice");
+    expect(result.units.filter((u) => u.situation === "es_forward")).toHaveLength(4);
+    expect(result.units.filter((u) => u.situation === "es_defense")).toHaveLength(3);
+    expect(result.units.filter((u) => u.situation === "goalie").flatMap((u) => u.players.map((p) => p.playerId))).toEqual([8480280, 8480022]);
+    expect(result.units.flatMap((u) => u.players.map((p) => p.playerId)).filter((id) => [8476374, 8481219, 8479325].includes(id))).toEqual([]);
+    expect(result.excludedUnits).toMatchObject([{ situation: "es_defense", number: 4,
+      players: [{ playerId: 8481219 }, { playerId: 8479325 }] }]);
+    spansMatch(practiceText, [...result.units, ...(result.excludedUnits ?? [])]);
+  });
+
+  it("excludes a fifth standard forward triplet without renumbering or discarding its spans", () => {
+    const text = practiceText.replace("\nKuraly\n", "\nKuraly-Gaunce-Eyssimont\n");
+    const result = interpretTweetUnits(text, bruins);
+    expect(result.units.filter((u) => u.situation === "es_forward").map((u) => u.number)).toEqual([1, 2, 3, 4]);
+    expect(result.excludedUnits).toEqual(expect.arrayContaining([expect.objectContaining({ situation: "es_forward", number: 5 })]));
+    spansMatch(text, [...result.units, ...(result.excludedUnits ?? [])]);
+  });
+
+  it.each(["11F/7D", "11 forwards and 7 defensemen", "Defense rotation", "Correction to the lines", "Contradictory lineup reports"])(
+    "retains explicit %s evidence instead of silently capping it", (note) => {
+      const result = interpretTweetUnits(`${note}\n${practiceText}`, bruins);
+      expect(result.units.filter((u) => u.situation === "es_defense")).toHaveLength(4);
+      expect(result.excludedUnits).toBeUndefined();
+    });
+
+  it("keeps scratches separate from the active standard lineup and leaves camp groups uncapped", () => {
+    const text = `${practiceText}\nScratches: Kuraly`;
+    const result = interpretTweetUnits(text, bruins);
+    expect(result.units.filter((u) => u.situation === "scratch")).toMatchObject([{ players: [{ playerId: 8476374 }] }]);
+    expect(result.units.filter((u) => u.situation === "es_defense")).toHaveLength(3);
+    expect(interpretTweetUnits(`Camp group A\n${practiceText}`, bruins).units.filter((u) => u.situation === "es_defense")).toHaveLength(4);
+  });
+
+  it.each(["unknown positions", "unknown team", "conflicting teams", "two forwards"])(
+    "preserves surname ambiguity with %s", (missing) => {
+      const players = bruins.map((p) => p.lastName !== "Lindholm" ? p : {
+        ...p, position: missing === "unknown positions" ? null : missing === "two forwards" ? "C" : p.position,
+        teamId: missing === "unknown team" ? null : missing === "conflicting teams" && p.playerId === 8476854 ? 8 : p.teamId,
+      });
+      const result = interpretTweetUnits(priorText, players);
+      expect(result.units.filter((u) => u.situation === "es_forward").some((u) => u.players.some((p) => p.playerId === 8476854 || p.playerId === 8477496))).toBe(false);
+      expect(result.unresolved).toEqual(expect.arrayContaining([expect.objectContaining({ text: "Lindholm", reason: "ambiguous", candidates: expect.arrayContaining([8476854, 8477496]) })]));
+    });
+  it("retains conflicting scratch and duplicate-player rows instead of applying the standard cap", () => {
+    for (const text of [`${practiceText}\nScratches: McAvoy`, `${practiceText}\nLindholm-Borgen`]) {
+      const result = interpretTweetUnits(text, bruins);
+      expect(result.units.filter((u) => u.situation === "es_defense").length).toBeGreaterThan(3);
+      expect(result.excludedUnits).toBeUndefined();
+      spansMatch(text, result.units);
+    }
+  });
+  it("preserves an explicitly named player instead of replacing him using row position", () => {
+    const result = interpretTweetUnits("Bruins lines:\nMittelstadt-Hampus Lindholm-Hagens", bruins);
+    expect(result.units[0]?.players.map((p) => p.playerId)).toEqual([8479999, 8476854, 8485395]);
+  });
+});
+
 const names = ["Ryan McLeod", "Josh Norris", "Konsta Helenius", "Zach Aston-Reese", "Pierre Olivier-Joseph", "Noah Dower Nilsson", "Dylan Guenther", "Logan Cooley", "Nick Schmaltz", "Clayton Keller", "Mikhail Sergachev", "Anders Lee", "Vincent Trocheck", "Kailer Yamamoto", "Barrett Hayton", "John Marino"];
 const roster = names.map((fullName, index) => ({ playerId: index + 1, fullName, lastName: fullName.slice(fullName.indexOf(" ") + 1), position: "C" }));
 

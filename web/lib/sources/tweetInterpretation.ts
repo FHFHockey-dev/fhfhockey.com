@@ -1,7 +1,7 @@
 import type { TweetPlayerEvent } from "./tweetPlayerEvents";
 import { normalizeIdentityName, resolvePlayerIdentity, type PlayerIdentity } from "./playerIdentity";
 
-export const TWEET_INTERPRETATION_VERSION = "2026-10-01.1";
+export const TWEET_INTERPRETATION_VERSION = "2026-10-10.1";
 export type EvidenceSpan = { start: number; end: number; text: string };
 export type TweetUnit = {
   situation: "es_forward" | "es_defense" | "pp" | "pk" | "goalie" | "scratch" | "injury";
@@ -17,6 +17,7 @@ export type TweetInterpretation = {
   rosterRevision?: string;
   identityContext?: { basis: "current_membership"; sourcePublishedAt: string | null; eventRosterRevision: string };
   units: TweetUnit[];
+  excludedUnits?: TweetUnit[];
   events?: TweetPlayerEvent[];
   relationships?: Array<{
     kind: "substitution" | "swap" | "continuity" | "alternatives";
@@ -42,8 +43,30 @@ export function tweetPipelineFlags() {
 
 const PROSE = /\b(?:news|gm|president|montreal|montréal|nashville|edmonton|colorado|los angeles|utah|vegas|toronto|islanders|all|star|so not|babes)\b/i;
 
+type EvenStrengthRow = "es_forward" | "es_defense";
+
+function resolveRowIdentity(rawName: string, roster: PlayerIdentity[], row?: EvenStrengthRow | null): ReturnType<typeof resolvePlayerIdentity> {
+  const key = normalizeIdentityName(rawName);
+  const surnames = [...new Map(roster.filter((player) => normalizeIdentityName(player.lastName) === key)
+    .map((player) => [player.playerId, player])).values()];
+  if (surnames.length > 1) {
+    // A bare surname alias must not outrank another player's surname. Row position
+    // disambiguates only when every candidate has known, matching team membership.
+    const forwards = ["C", "L", "R", "LW", "RW", "F"];
+    const knownPositions = [...forwards, "D", "G"];
+    if (row && surnames.every((player) => player.teamId != null && player.teamId === surnames[0]!.teamId
+      && knownPositions.includes(player.position?.toUpperCase() ?? ""))) {
+      const eligible = surnames.filter((player) => row === "es_forward"
+        ? forwards.includes(player.position!.toUpperCase()) : player.position!.toUpperCase() === "D");
+      if (eligible.length === 1) return resolvePlayerIdentity(rawName, eligible);
+    }
+    return { status: "ambiguous", candidates: surnames };
+  }
+  return resolvePlayerIdentity(rawName, roster);
+}
+
 /** Find a unique complete segmentation, retaining original offsets and compound names. */
-export function segmentPlayerRow(text: string, roster: PlayerIdentity[]): Array<EvidenceSpan & { player: PlayerIdentity }> | null {
+export function segmentPlayerRow(text: string, roster: PlayerIdentity[], row?: EvenStrengthRow | null): Array<EvidenceSpan & { player: PlayerIdentity }> | null {
   const solutions: Array<Array<EvidenceSpan & { player: PlayerIdentity }>> = [];
   const visit = (offset: number, hits: Array<EvidenceSpan & { player: PlayerIdentity }>) => {
     if (solutions.length > 1 || hits.length > 6) return;
@@ -54,7 +77,7 @@ export function segmentPlayerRow(text: string, roster: PlayerIdentity[]): Array<
       if (end < text.length && !/[\s,;/\\•–—−-]/u.test(text[end]!)) continue;
       const raw = text.slice(start, end).trimEnd();
       if (!raw || raw.length > 70) continue;
-      const result = resolvePlayerIdentity(raw, roster);
+      const result = resolveRowIdentity(raw, roster, row);
       if (result.status !== "matched" || hits.some((hit) => hit.player.playerId === result.player.playerId)) continue;
       visit(start + raw.length, [...hits, { start, end: start + raw.length, text: raw, player: result.player }]);
     }
@@ -105,9 +128,11 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
       if (!line) continue;
     }
     if (/^(?:RT\s+@|#|https?:)/i.test(line)) { flush(); continue; }
-    const hits = line.includes("/") ? null : segmentPlayerRow(line, roster);
+    let hits = line.includes("/") ? null : segmentPlayerRow(line, roster);
     const rowKind = situation !== "pp" && situation !== "pk" && sawStructure && /[-–—]/.test(line)
       ? (hits?.length === 2 ? "es_defense" : hits?.length === 3 ? "es_forward" : line.split(/[-–—]/).length >= 3 ? "es_forward" : "es_defense") : null;
+    const identityRow = rowKind ?? (situation === "es_forward" || situation === "es_defense" ? situation : null);
+    if (identityRow && !line.includes("/")) hits = segmentPlayerRow(line, roster, identityRow);
     if (rowKind) {
       const key = `${group}:${rowKind}`;
       ordinals.set(key, (ordinals.get(key) ?? 0) + 1);
@@ -128,6 +153,14 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
           return alternative.split(/[-–—]/).map((token) => token.trim());
         }) : compactHyphen ? [compactHyphen[1]!, compactHyphen[2]!] : line.split(/\s+[-–—]\s+/);
         if (tokens.length === 1 && /[-–—]/.test(line)) {
+          const ambiguous = line.split(/[-–—]/).map((token) => token.trim()).flatMap((token) => {
+            const resolution = resolveRowIdentity(token, roster, identityRow);
+            return resolution.status === "ambiguous" ? [{ token, candidates: resolution.candidates.map((candidate) => candidate.playerId) }] : [];
+          });
+          if (ambiguous.length) for (const { token, candidates } of ambiguous) {
+            const start = lineStart + rawLine.indexOf(line) + line.indexOf(token);
+            result.unresolved.push({ start, end: start + token.length, text: token, candidates, number: rowKind ? ordinals.get(`${group}:${rowKind}`) : number, situation: rowKind ?? situation, reason: "ambiguous" });
+          }
           result.unresolved.push({ start: lineStart + rawLine.indexOf(line), end: lineStart + rawLine.indexOf(line) + line.length, text: line, number: rowKind ? ordinals.get(`${group}:${rowKind}`) : number, situation: rowKind ?? situation, reason: "invalid_extraction" });
           continue;
         }
@@ -191,6 +224,22 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
       const units = result.units.filter((unit) => unit.situation === kind && unit.group === groupId && unit.complete);
       if (units.length === 2 && units.every((unit) => unit.number == null)) units.forEach((unit, index) => { unit.number = index + 1; });
     }
+  }
+  // Standard projected lineups use four forward triplets and three defense pairs.
+  // Explicit nonstandard or conflicting evidence remains available for review.
+  const es = result.units.filter((unit) => unit.situation === "es_forward" || unit.situation === "es_defense");
+  const esIds = es.flatMap((unit) => unit.players.map((player) => player.playerId));
+  const scratched = new Set(result.units.filter((unit) => unit.situation === "scratch").flatMap((unit) => unit.players.map((player) => player.playerId)));
+  const exception = /\b(?:11\s*f\b|11\s*forwards?\b|7\s*d\b|7\s*defen[cs]emen\b|rotat(?:ion|ing|e|es)|correct(?:ion|ed)|contradict(?:ory|ing)|alternat(?:es?|ing))\b/i.test(text)
+    || new Set(esIds).size !== esIds.length || esIds.some((id) => scratched.has(id))
+    || result.relationships?.some((relation) => relation.situation === null);
+  if (result.context !== "camp" && !exception) {
+    result.units = result.units.filter((unit) => {
+      const limit = unit.situation === "es_forward" ? 4 : unit.situation === "es_defense" ? 3 : null;
+      if (unit.group != null || limit == null || (unit.number ?? 0) <= limit) return true;
+      (result.excludedUnits ??= []).push(unit);
+      return false;
+    });
   }
   return result;
 }
