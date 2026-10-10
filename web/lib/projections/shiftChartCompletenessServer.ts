@@ -28,10 +28,10 @@ function isPositiveSafeInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
 }
 
-export function buildNhlApiShiftPlayerManifest(
+function classifyNhlApiShiftPlayerManifest(
   gameIds: Iterable<number>,
   rows: readonly NhlApiShiftRow[],
-): Map<number, number[]> {
+): { manifest: Map<number, number[]>; incompleteGameIds: number[] } {
   const requestedGameIds = Array.from(new Set(gameIds));
   if (requestedGameIds.some((gameId) => !isPositiveSafeInteger(gameId))) {
     throw new Error("Invalid NHL API shift manifest game identity");
@@ -59,6 +59,7 @@ export function buildNhlApiShiftPlayerManifest(
   }
 
   const manifest = new Map<number, number[]>();
+  const incompleteGameIds: number[] = [];
   for (const gameId of requestedGameIds) {
     const playerTeams = playerTeamsByGame.get(gameId)!;
     const playersByTeam = new Map<number, number>();
@@ -71,21 +72,32 @@ export function buildNhlApiShiftPlayerManifest(
         (count) => count < MIN_COMPLETED_GAME_PLAYERS_PER_TEAM,
       )
     ) {
-      throw new Error(
-        `Incomplete NHL API shift player manifest for game ${gameId}`,
-      );
+      incompleteGameIds.push(gameId);
+      continue;
     }
     manifest.set(
       gameId,
       Array.from(playerTeams.keys()).sort((a, b) => a - b),
     );
   }
+  return { manifest, incompleteGameIds };
+}
+
+/** Strict consumers still require a complete two-team raw manifest. */
+export function buildNhlApiShiftPlayerManifest(
+  gameIds: Iterable<number>,
+  rows: readonly NhlApiShiftRow[],
+): Map<number, number[]> {
+  const { manifest, incompleteGameIds } = classifyNhlApiShiftPlayerManifest(gameIds, rows);
+  if (incompleteGameIds.length) {
+    throw new Error(`Incomplete NHL API shift player manifest for game ${incompleteGameIds[0]}`);
+  }
   return manifest;
 }
 
-export async function fetchNhlApiShiftPlayerManifest(
+async function fetchNhlApiShiftPlayerRows(
   gameIds: Iterable<number>,
-): Promise<Map<number, number[]>> {
+): Promise<NhlApiShiftRow[]> {
   const uniqueGameIds = Array.from(new Set(gameIds));
   const rows = await fetchAllSupabaseFilterChunks<NhlApiShiftRow, number>(
     uniqueGameIds,
@@ -98,7 +110,14 @@ export async function fetchNhlApiShiftPlayerManifest(
         .order("shift_id", { ascending: true })
         .range(from, to),
   );
-  return buildNhlApiShiftPlayerManifest(uniqueGameIds, rows);
+  return rows;
+}
+
+export async function fetchNhlApiShiftPlayerManifest(
+  gameIds: Iterable<number>,
+): Promise<Map<number, number[]>> {
+  const uniqueGameIds = Array.from(new Set(gameIds));
+  return buildNhlApiShiftPlayerManifest(uniqueGameIds, await fetchNhlApiShiftPlayerRows(uniqueGameIds));
 }
 
 export async function fetchShiftChartStrengthRowsForGame(
@@ -167,10 +186,18 @@ export async function classifyStoredShiftChartStrengthGamesAgainstRawSource(
   gameIds: Iterable<number>,
 ): Promise<Map<number, ShiftChartStrengthGameClassification>> {
   const uniqueGameIds = Array.from(new Set(gameIds));
-  const expectedPlayerIdsByGame =
-    await fetchNhlApiShiftPlayerManifest(uniqueGameIds);
-  return classifyStoredShiftChartStrengthGames(
-    uniqueGameIds,
-    expectedPlayerIdsByGame,
+  const { manifest, incompleteGameIds } = classifyNhlApiShiftPlayerManifest(
+    uniqueGameIds, await fetchNhlApiShiftPlayerRows(uniqueGameIds),
   );
+  const classifications = await classifyStoredShiftChartStrengthGames(uniqueGameIds, manifest);
+  for (const gameId of incompleteGameIds) {
+    const classification = classifications.get(gameId)!;
+    classifications.set(gameId, {
+      ...classification,
+      status: classification.status === "invalid" ? "invalid" : "partial",
+      expectedPlayerCount: null,
+      reasons: [...new Set([...classification.reasons, "missing:raw_shift_player_manifest"])],
+    });
+  }
+  return classifications;
 }
