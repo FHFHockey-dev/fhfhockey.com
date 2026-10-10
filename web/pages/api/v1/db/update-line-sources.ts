@@ -34,6 +34,7 @@ import {
   buildLinesCccWrapperOEmbedFailureState,
   buildLinesCccWrapperOEmbedSuccessState,
   buildLinesCccSourceFromIftttEvent,
+  expandLinesCccGoalieClaims,
   fetchLinesCccTweetOEmbedAttempt,
   getPrimaryTextForSource,
   readLinesCccWrapperOEmbedBackfillState,
@@ -235,9 +236,10 @@ async function persistLineSourceSnapshotRow(args: {
   supabase: any;
   row: ReturnType<typeof toLineSourceSnapshotRow>;
 }) {
+  const claimTeamIds = (args.row.metadata as Record<string, unknown>)?.claimTeamIds;
   if (
     args.row.status === "observed" &&
-    args.row.nhl_filter_status === "accepted" &&
+    args.row.nhl_filter_status === "accepted" && !(Array.isArray(claimTeamIds) && claimTeamIds.length > 1) &&
     args.row.tweet_id &&
     args.row.team_id
   ) {
@@ -632,6 +634,11 @@ export default withCronJobAudit(
 
     // A requested processing date is not evidence that an older report applies
     // to that game's lineup. Keep the raw report and an explicit review reason.
+    const claimSources = parsedCandidates.flatMap((source, index) => expandLinesCccGoalieClaims({ source, teams: teamDirectory, gameIdByTeamId })
+      .map((candidate) => ({ candidate, event: parsedEvents[index]! })));
+    parsedCandidates.splice(0, parsedCandidates.length, ...claimSources.map(({ candidate }) => candidate));
+    parsedEvents.splice(0, parsedEvents.length, ...claimSources.map(({ event }) => event));
+
     reviewTweetApplicability(parsedCandidates, requestedDate);
 
     processingStage = "injury_history";
@@ -855,6 +862,10 @@ export default withCronJobAudit(
           lineSourceProcessing: {
             processedAt: new Date().toISOString(),
             captureKey: rowsToUpsert[index]?.capture_key ?? null,
+            teamCaptures: parsedCandidates.flatMap((claim, claimIndex) => parsedEvents[claimIndex]?.id === event.id ? [{
+              captureKey: rowsToUpsert[claimIndex]?.capture_key ?? null, teamId: claim.team?.id ?? null,
+              nhlFilterStatus: claim.nhlFilterStatus,
+            }] : []),
             sourceGroup: event.source_group,
             sourceKey: event.source_key,
             classification: candidate.classification,
@@ -872,7 +883,7 @@ export default withCronJobAudit(
         },
         updated_at: nowIso,
       };
-    });
+    }).filter((_update, index) => parsedEvents.findIndex((event) => event.id === parsedEvents[index]!.id) === index);
 
     for (const update of [...deferredEventUpdates, ...processedEventUpdates]) {
       const { error } = await req.supabase

@@ -3,6 +3,7 @@ import path from "path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { buildAccountabilityCandles, buildPlayerForecastCandles } from "./accountability";
+import { extractTweetPlayerEvents } from "../sources/tweetPlayerEvents";
 import { assignmentsFor, capturePlayerForecastSourceRows, goalieObservationStatus, injuryObservationStatus, type ForecastLineSourceRow } from "./sourceObservations";
 import { createPlayerForecastReviewToken, verifyPlayerForecastReviewToken } from "./reviewToken";
 import { probePlayerForecastTable } from "./readiness";
@@ -508,6 +509,21 @@ describe("source semantics", () => {
     const rpc = vi.fn().mockResolvedValue({ data: { insertedObservations: 2, insertedConflicts: 0 }, error: null });
     await capturePlayerForecastSourceRows({ supabase: { rpc } as any, rows: [{ ...goalieRow, goalie_2_player_id: 2, goalie_2_name: "Other goalie" }] });
     expect(rpc.mock.calls[0][1].p_observations.map((row: any) => row.observation_status)).toEqual(["unconfirmed", "unconfirmed"]);
+  });
+  it("captures an explicit starter without confirming the explicitly named backup as a starter", async () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "true");
+    const events = extractTweetPlayerEvents({ text: "Vladar in goal, Woll backs him up", publishedAt: goalieRow.tweet_posted_at, players: [
+      { playerId: 1, fullName: "Dan Vladar", lastName: "Vladar", position: "G", teamId: goalieRow.team_id! },
+      { playerId: 2, fullName: "Joseph Woll", lastName: "Woll", position: "G", teamId: goalieRow.team_id! },
+    ] });
+    const interpretation = { version: "test", context: "game", certainty: "reported", units: [], unresolved: [], events };
+    const row = { ...goalieRow, goalie_1_player_id: 1, goalie_1_name: "Dan Vladar", goalie_2_player_id: 2, goalie_2_name: "Joseph Woll", metadata: { interpretation } } as ForecastLineSourceRow;
+    const rpc = vi.fn().mockResolvedValue({ data: { insertedObservations: 1, insertedConflicts: 0 }, error: null });
+    await capturePlayerForecastSourceRows({ supabase: { rpc } as any, rows: [row] });
+    expect(rpc.mock.calls[0][1].p_observations).toMatchObject([{ player_id: 1, observation_status: "confirmed" }]);
+    expect(rpc.mock.calls[0][1].p_observations).toHaveLength(1);
+    expect(assignmentsFor(row).map((entry) => [entry.player_id, entry.slot_number])).toEqual([[1, 1], [2, 2]]);
   });
   it("does not equate an injury mention with being out, and keeps PP separate from EV", () => {
     expect(injuryObservationStatus("Player is day-to-day with an injury")).toBe("observed");

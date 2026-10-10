@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { classifyGameDayTweet } from "./lineupSourceIngestion";
-import { interpretTweetUnits, requiresRelativeGameDateReview, segmentPlayerRow } from "./tweetInterpretation";
+import { completeEvenStrengthUnits, interpretTweetUnits, requiresRelativeGameDateReview, segmentPlayerRow } from "./tweetInterpretation";
 import { classifyInjuryEvent, extractInjuryTimeline, extractInjuryTimelines, extractTweetPlayerEvents } from "./tweetPlayerEvents";
 import { assignmentsFor } from "../player-forecasts/sourceObservations";
 import { buildLinesCccSourceFromIftttEvent } from "./linesCccIngestion";
@@ -341,5 +341,271 @@ describe("structured tweet interpretation", () => {
     expect(source.metadata?.interpretation).toMatchObject({ units: [{ situation: "pp", complete: true }, { situation: "pp", complete: true }] });
     expect(source.defensePairs).toEqual([]);
     expect(source.goalies).toEqual([]);
+  });
+});
+
+// Exact retained public receipt bodies; identities are only those present in the
+// receipt's retained roster context. No membership is invented for missing names.
+const auditReceipts = {
+  "2108961243746771167": {
+    text: "RT @wmjsports: #Flyers lines & pairs in warmups @ Bruins 10/10: \n\nZegras-Dvorak-Foerster\nTippett-Couturier-Michkov\nBarkey-Cates-Martone\nWilson-Acciari-Bunting\n\nSanheim-Drysdale\nSeeler-Jiricek\nGrans-Benoit\n\nVladar in goal, Woll backs him up https://t.co/5HwH1dB0Av",
+    publishedAt: "2026-10-10 16:41:00+00",
+    players: [
+
+    ],
+    eventPlayers: [
+      {"playerId": 8475253,"fullName": "Garrett Wilson","lastName": "Wilson","teamId": 4,"position": "L","aliases": ["Garrett Wilson"]},
+      {"playerId": 8476372,"fullName": "Nick Seeler","lastName": "Seeler","teamId": 4,"position": "D","aliases": ["Nick Seeler"]},
+      {"playerId": 8476461,"fullName": "Sean Couturier","lastName": "Couturier","teamId": 4,"position": "C","aliases": ["Sean Couturier"]},
+      {"playerId": 8477948,"fullName": "Travis Sanheim","lastName": "Sanheim","teamId": 4,"position": "D","aliases": ["Travis Sanheim"]},
+      {"playerId": 8477989,"fullName": "Christian Dvorak","lastName": "Dvorak","teamId": 4,"position": "C","aliases": ["Christian Dvorak"]},
+      {"playerId": 8478435,"fullName": "Dan Vladar","lastName": "Vladar","teamId": 4,"position": "G","aliases": ["Dan Vladar"]},
+      {"playerId": 8478569,"fullName": "Noel Acciari","lastName": "Acciari","teamId": 4,"position": "C","aliases": ["Noel Acciari"]},
+      {"playerId": 8479361,"fullName": "Joseph Woll","lastName": "Woll","teamId": 4,"position": "G","aliases": ["Joseph Woll"]},
+      {"playerId": 8480015,"fullName": "Owen Tippett","lastName": "Tippett","teamId": 4,"position": "R","aliases": ["Owen Tippett"]},
+      {"playerId": 8480220,"fullName": "Noah Cates","lastName": "Cates","teamId": 4,"position": "L","aliases": ["Noah Cates"]},
+      {"playerId": 8481122,"fullName": "Simon Benoit","lastName": "Benoit","teamId": 4,"position": "D","aliases": ["Simon Benoit"]},
+      {"playerId": 8481533,"fullName": "Trevor Zegras","lastName": "Zegras","teamId": 4,"position": "C","aliases": ["Trevor Zegras"]},
+      {"playerId": 8482142,"fullName": "Jamie Drysdale","lastName": "Drysdale","teamId": 4,"position": "D","aliases": ["Jamie Drysdale"]},
+      {"playerId": 8482159,"fullName": "Tyson Foerster","lastName": "Foerster","teamId": 4,"position": "R","aliases": ["Tyson Foerster"]},
+      {"playerId": 8482169,"fullName": "Helge Grans","lastName": "Grans","teamId": 4,"position": "D","aliases": ["Helge Grans"]},
+      {"playerId": 8482728,"fullName": "Nate Benoit","lastName": "Benoit","teamId": 30,"position": "D","aliases": ["Nate Benoit"]},
+      {"playerId": 8483460,"fullName": "David Jiricek","lastName": "Jiricek","teamId": 4,"position": "D","aliases": ["David Jiricek"]},
+      {"playerId": 8484142,"fullName": "Denver Barkey","lastName": "Barkey","teamId": 4,"position": "C","aliases": ["Denver Barkey"]},
+      {"playerId": 8484163,"fullName": "Jakub Dvorak","lastName": "Dvorak","teamId": 26,"position": "D","aliases": ["Jakub Dvorak"]},
+      {"playerId": 8484387,"fullName": "Matvei Michkov","lastName": "Michkov","teamId": 4,"position": "R","aliases": ["Matvei Michkov"]},
+      {"playerId": 8484790,"fullName": "Adam Jiricek","lastName": "Jiricek","teamId": 19,"position": "D","aliases": ["Adam Jiricek"]},
+      {"playerId": 8485406,"fullName": "Porter Martone","lastName": "Martone","teamId": 4,"position": "R","aliases": ["Porter Martone"]}
+    ],
+  },
+  "2108961062892568787": {
+    text: "RT @NHLFlyers: Injury updates:\n\n• Travis Konecny (lower-body) and Cam York (upper-body) are day-to-day.\n• Rasmus Ristolainen has been placed on IR (upper-body) retroactive to Oct. 3.\n• Helge Grans has been activated from Injured, Non-Roster.\n• Nikita Grebenkin underwent successful back surgery and will be out a minimum of four months. https://t.co/mYCalD0677",
+    publishedAt: "2026-10-10 16:41:00+00",
+    players: [
+
+    ],
+    eventPlayers: [
+      {"playerId": 8477499,"fullName": "Rasmus Ristolainen","lastName": "Ristolainen","teamId": 4,"position": "D","aliases": ["Rasmus Ristolainen"]},
+      {"playerId": 8478439,"fullName": "Travis Konecny","lastName": "Konecny","teamId": 4,"position": "R","aliases": ["Travis Konecny"]},
+      {"playerId": 8480840,"fullName": "Oskar Bäck","lastName": "Bäck","teamId": 25,"position": "C","aliases": ["Oskar Bäck"]},
+      {"playerId": 8481546,"fullName": "Cam York","lastName": "York","teamId": 4,"position": "D","aliases": ["Cam York"]},
+      {"playerId": 8482169,"fullName": "Helge Grans","lastName": "Grans","teamId": 4,"position": "D","aliases": ["Helge Grans"]},
+      {"playerId": 8483733,"fullName": "Nikita Grebenkin","lastName": "Grebenkin","teamId": 4,"position": "R","aliases": ["Nikita Grebenkin"]},
+      {"playerId": 8484455,"fullName": "Nathaniel Day","lastName": "Day","teamId": 22,"position": "G","aliases": ["Nathaniel Day"]}
+    ],
+  },
+  "2108946348364153181": {
+    text: "Flyers Starting Goalie: Dan Vladar\nVs\nBruins Starting Goalie: Jeremy Swayman\nPer @NHLFlyers & @JoeyMacHockey",
+    publishedAt: "2026-10-10 15:42:00+00",
+    players: [
+
+    ],
+    eventPlayers: [
+      {"playerId": 8478435,"fullName": "Dan Vladar","lastName": "Vladar","teamId": 4,"position": "G","aliases": ["Dan Vladar"]},
+      {"playerId": 8480280,"fullName": "Jeremy Swayman","lastName": "Swayman","teamId": 6,"position": "G","aliases": ["Jeremy Swayman"]}
+    ],
+  },
+  "2108958735309865096": {
+    text: "Confirmed Bruins Starting Goalie: Jeremy Swayman \nConfirmed Flyers Starting Goalie: Dan Vladar https://t.co/4hXg9xv9LV",
+    publishedAt: "2026-10-10 16:31:00+00",
+    players: [
+
+    ],
+    eventPlayers: [
+      {"playerId": 8478435,"fullName": "Dan Vladar","lastName": "Vladar","teamId": 4,"position": "G","aliases": ["Dan Vladar"]},
+      {"playerId": 8480280,"fullName": "Jeremy Swayman","lastName": "Swayman","teamId": 6,"position": "G","aliases": ["Jeremy Swayman"]}
+    ],
+  },
+  "2108968319835603270": {
+    text: "RT @mark_scheig: Good morning from St. Louis. First road game and first back-to-back for #CBJ this season.\n\nJet Greaves in net per Rick Bowness. \nThey have some gametime decisions and will skate all 22 skaters in warmups. https://t.co/ukvRZRu3pL",
+    publishedAt: "2026-10-10 17:10:00+00",
+    players: [
+
+    ],
+    eventPlayers: [
+      {"playerId": 8480840,"fullName": "Oskar Bäck","lastName": "Bäck","teamId": 25,"position": "C","aliases": ["Oskar Bäck"]},
+      {"playerId": 8482982,"fullName": "Jet Greaves","lastName": "Greaves","teamId": 29,"position": "G","aliases": ["Jet Greaves"]}
+    ],
+  },
+  "2108974712621805603": {
+    text: "RT @Real_Max_Miller: Celebrini will take warmups but still considered a GTD. #SJSharks\n\nSherwood will do the same. \n\nAskarov starts",
+    publishedAt: "2026-10-10 17:35:00+00",
+    players: [
+
+    ],
+    eventPlayers: [
+      {"playerId": 8480748,"fullName": "Kiefer Sherwood","lastName": "Sherwood","teamId": 28,"position": "L","aliases": ["Kiefer Sherwood"]},
+      {"playerId": 8480817,"fullName": "K'Andre Miller","lastName": "Miller","teamId": 12,"position": "D","aliases": ["K'Andre Miller"]},
+      {"playerId": 8482137,"fullName": "Yaroslav Askarov","lastName": "Askarov","teamId": 28,"position": "G","aliases": ["Yaroslav Askarov"]},
+      {"playerId": 8484388,"fullName": "Daniil But","lastName": "But","teamId": 68,"position": "L","aliases": ["Daniil But"]},
+      {"playerId": 8484416,"fullName": "Quentin Miller","lastName": "Miller","teamId": 8,"position": "G","aliases": ["Quentin Miller"]},
+      {"playerId": 8484449,"fullName": "Aiden Celebrini","lastName": "Celebrini","teamId": 23,"position": "D","aliases": ["Aiden Celebrini"]},
+      {"playerId": 8484801,"fullName": "Macklin Celebrini","lastName": "Celebrini","teamId": 28,"position": "C","aliases": ["Macklin Celebrini"]},
+      {"playerId": 8485608,"fullName": "Ryan Miller","lastName": "Miller","teamId": 5,"position": "C","aliases": ["Ryan Miller"]}
+    ],
+  },
+  "2101333176509686110": {
+    text: "RT @RyanHenkel_: Power play groupings \n\nPP1: Gostisbehere, Aho, Ehlers, Svechnikov, Blake\n\nPP2: Miller, Walker, Hall, Jankowski, Stankoven\n\n*Jarvis sitting with the powe play guys, just not participating in run throughs",
+    publishedAt: "2026-09-19 15:30:00+00",
+    players: [
+      {"playerId": 8475791,"fullName": "Taylor Hall","lastName": "Hall","teamId": 12,"position": "L","aliases": ["Taylor Hall"]},
+      {"playerId": 8476873,"fullName": "Mark Jankowski","lastName": "Jankowski","teamId": 12,"position": "L","aliases": ["Mark Jankowski"]},
+      {"playerId": 8476906,"fullName": "Shayne Gostisbehere","lastName": "Gostisbehere","teamId": 12,"position": "D","aliases": ["Shayne Gostisbehere"]},
+      {"playerId": 8477940,"fullName": "Nikolaj Ehlers","lastName": "Ehlers","teamId": 12,"position": "L","aliases": ["Nikolaj Ehlers"]},
+      {"playerId": 8478427,"fullName": "Sebastian Aho","lastName": "Aho","teamId": 12,"position": "C","aliases": ["Sebastian Aho"]},
+      {"playerId": 8480336,"fullName": "Sean Walker","lastName": "Walker","teamId": 12,"position": "D","aliases": ["Sean Walker"]},
+      {"playerId": 8480817,"fullName": "K'Andre Miller","lastName": "Miller","teamId": 12,"position": "D","aliases": ["K'Andre Miller"]},
+      {"playerId": 8480830,"fullName": "Andrei Svechnikov","lastName": "Svechnikov","teamId": 12,"position": "R","aliases": ["Andrei Svechnikov"]},
+      {"playerId": 8482093,"fullName": "Seth Jarvis","lastName": "Jarvis","teamId": 12,"position": "R","aliases": ["Seth Jarvis"]},
+      {"playerId": 8482702,"fullName": "Logan Stankoven","lastName": "Stankoven","teamId": 12,"position": "C","aliases": ["Logan Stankoven"]},
+      {"playerId": 8482809,"fullName": "Jackson Blake","lastName": "Blake","teamId": 12,"position": "R","aliases": ["Jackson Blake"]}
+    ],
+    eventPlayers: [
+
+    ],
+  },
+  "2106513524029821025": {
+    text: "RT @Gabby_Shirley_: a look at the #Bolts lines and D pairings from warmups … they will be going with 11 forwards and 7 defensemen: \n\nGoncalves - Point - Kucherov\nHagel - Cirelli - Guentzel\nMikheyev - Girgensons - Holmberg\nViel - Geekie \n\nMoser - Carlson\nMcDonagh - Cernak\nHedman - Lilleberg \nD’Astous \n\n🥅 Vasilevskiy \nHildeby",
+    publishedAt: "2026-10-03 22:35:00+00",
+    players: [
+      {"playerId": 8474151,"fullName": "Ryan McDonagh","lastName": "McDonagh","teamId": 14,"position": "D","aliases": ["Ryan McDonagh","McDonagh"]},
+      {"playerId": 8474590,"fullName": "John Carlson","lastName": "Carlson","teamId": 14,"position": "D","aliases": ["John Carlson"]},
+      {"playerId": 8475167,"fullName": "Victor Hedman","lastName": "Hedman","teamId": 14,"position": "D","aliases": ["Victor Hedman"]},
+      {"playerId": 8476453,"fullName": "Nikita Kucherov","lastName": "Kucherov","teamId": 14,"position": "R","aliases": ["Nikita Kucherov","Kucherov"]},
+      {"playerId": 8476878,"fullName": "Zemgus Girgensons","lastName": "Girgensons","teamId": 14,"position": "C","aliases": ["Zemgus Girgensons","Girgensons"]},
+      {"playerId": 8476883,"fullName": "Andrei Vasilevskiy","lastName": "Vasilevskiy","teamId": 14,"position": "G","aliases": ["Andrei Vasilevskiy","Vasilevskiy"]},
+      {"playerId": 8477404,"fullName": "Jake Guentzel","lastName": "Guentzel","teamId": 14,"position": "C","aliases": ["Jake Guentzel","Guentzel"]},
+      {"playerId": 8478010,"fullName": "Brayden Point","lastName": "Point","teamId": 14,"position": "C","aliases": ["Brayden Point","Point"]},
+      {"playerId": 8478416,"fullName": "Erik Cernak","lastName": "Cernak","teamId": 14,"position": "D","aliases": ["Erik Cernak","Cernak"]},
+      {"playerId": 8478519,"fullName": "Anthony Cirelli","lastName": "Cirelli","teamId": 14,"position": "C","aliases": ["Anthony Cirelli","Cirelli"]},
+      {"playerId": 8479542,"fullName": "Brandon Hagel","lastName": "Hagel","teamId": 14,"position": "L","aliases": ["Brandon Hagel","Hagel"]},
+      {"playerId": 8479705,"fullName": "Jeffrey Viel","lastName": "Viel","teamId": 14,"position": "L","aliases": ["Jeffrey Viel"]},
+      {"playerId": 8480426,"fullName": "Charle-Edouard D'Astous","lastName": "D'Astous","teamId": 14,"position": "D","aliases": ["Charle-Edouard D'Astous"]},
+      {"playerId": 8480995,"fullName": "Pontus Holmberg","lastName": "Holmberg","teamId": 14,"position": "R","aliases": ["Pontus Holmberg"]},
+      {"playerId": 8481624,"fullName": "Ilya Mikheyev","lastName": "Mikheyev","teamId": 14,"position": "R","aliases": ["Ilya Mikheyev"]},
+      {"playerId": 8482201,"fullName": "Gage Goncalves","lastName": "Goncalves","teamId": 14,"position": "C","aliases": ["Gage Goncalves","Goncalves"]},
+      {"playerId": 8482655,"fullName": "J.J. Moser","lastName": "Moser","teamId": 14,"position": "D","aliases": ["J.J. Moser","Moser"]},
+      {"playerId": 8482929,"fullName": "Emil Lilleberg","lastName": "Lilleberg","teamId": 14,"position": "D","aliases": ["Emil Lilleberg","Lilleberg"]},
+      {"playerId": 8483447,"fullName": "Conor Geekie","lastName": "Geekie","teamId": 14,"position": "C","aliases": ["Conor Geekie"]},
+      {"playerId": 8483710,"fullName": "Dennis Hildeby","lastName": "Hildeby","teamId": 14,"position": "G","aliases": ["Dennis Hildeby"]}
+    ],
+    eventPlayers: [
+      {"playerId": 8474151,"fullName": "Ryan McDonagh","lastName": "McDonagh","teamId": 14,"position": "D","aliases": ["Ryan McDonagh","McDonagh"]},
+      {"playerId": 8474590,"fullName": "John Carlson","lastName": "Carlson","teamId": 14,"position": "D","aliases": ["John Carlson"]},
+      {"playerId": 8475167,"fullName": "Victor Hedman","lastName": "Hedman","teamId": 14,"position": "D","aliases": ["Victor Hedman"]},
+      {"playerId": 8476453,"fullName": "Nikita Kucherov","lastName": "Kucherov","teamId": 14,"position": "R","aliases": ["Nikita Kucherov","Kucherov"]},
+      {"playerId": 8476878,"fullName": "Zemgus Girgensons","lastName": "Girgensons","teamId": 14,"position": "C","aliases": ["Zemgus Girgensons","Girgensons"]},
+      {"playerId": 8476883,"fullName": "Andrei Vasilevskiy","lastName": "Vasilevskiy","teamId": 14,"position": "G","aliases": ["Andrei Vasilevskiy","Vasilevskiy"]},
+      {"playerId": 8477404,"fullName": "Jake Guentzel","lastName": "Guentzel","teamId": 14,"position": "C","aliases": ["Jake Guentzel","Guentzel"]},
+      {"playerId": 8478010,"fullName": "Brayden Point","lastName": "Point","teamId": 14,"position": "C","aliases": ["Brayden Point","Point"]},
+      {"playerId": 8478416,"fullName": "Erik Cernak","lastName": "Cernak","teamId": 14,"position": "D","aliases": ["Erik Cernak","Cernak"]},
+      {"playerId": 8478519,"fullName": "Anthony Cirelli","lastName": "Cirelli","teamId": 14,"position": "C","aliases": ["Anthony Cirelli","Cirelli"]},
+      {"playerId": 8479542,"fullName": "Brandon Hagel","lastName": "Hagel","teamId": 14,"position": "L","aliases": ["Brandon Hagel","Hagel"]},
+      {"playerId": 8479705,"fullName": "Jeffrey Viel","lastName": "Viel","teamId": 14,"position": "L","aliases": ["Jeffrey Viel"]},
+      {"playerId": 8479987,"fullName": "Morgan Geekie","lastName": "Geekie","teamId": 6,"position": "C","aliases": ["Morgan Geekie"]},
+      {"playerId": 8480426,"fullName": "Charle-Edouard D'Astous","lastName": "D'Astous","teamId": 14,"position": "D","aliases": ["Charle-Edouard D'Astous"]},
+      {"playerId": 8480995,"fullName": "Pontus Holmberg","lastName": "Holmberg","teamId": 14,"position": "R","aliases": ["Pontus Holmberg"]},
+      {"playerId": 8481624,"fullName": "Ilya Mikheyev","lastName": "Mikheyev","teamId": 14,"position": "R","aliases": ["Ilya Mikheyev"]},
+      {"playerId": 8482201,"fullName": "Gage Goncalves","lastName": "Goncalves","teamId": 14,"position": "C","aliases": ["Gage Goncalves","Goncalves"]},
+      {"playerId": 8482655,"fullName": "J.J. Moser","lastName": "Moser","teamId": 14,"position": "D","aliases": ["J.J. Moser","Moser"]},
+      {"playerId": 8482929,"fullName": "Emil Lilleberg","lastName": "Lilleberg","teamId": 14,"position": "D","aliases": ["Emil Lilleberg","Lilleberg"]},
+      {"playerId": 8483447,"fullName": "Conor Geekie","lastName": "Geekie","teamId": 14,"position": "C","aliases": ["Conor Geekie"]},
+      {"playerId": 8483710,"fullName": "Dennis Hildeby","lastName": "Hildeby","teamId": 14,"position": "G","aliases": ["Dennis Hildeby"]}
+    ],
+  }
+};
+
+describe("retained audit claim regressions", () => {
+  const events = (id: keyof typeof auditReceipts) => {
+    const fixture = auditReceipts[id];
+    return extractTweetPlayerEvents({ text: fixture.text, players: fixture.eventPlayers, publishedAt: fixture.publishedAt });
+  };
+  it("binds coordinated DTD and surgery to full subjects, preserving IR and minimum duration", () => {
+    const claims = events("2108961062892568787");
+    expect(claims.map((event) => event.playerId)).not.toContain(8480840);
+    expect(claims).toEqual(expect.arrayContaining([
+      expect.objectContaining({ playerId: 8478439, availability: "uncertain" }),
+      expect.objectContaining({ playerId: 8481546, availability: "uncertain" }),
+      expect.objectContaining({ playerId: 8477499, availability: "out", effectiveDate: "2026-10-03" }),
+      expect.objectContaining({ playerId: 8483733, availability: "out", timeline: expect.objectContaining({ minimum: 4, maximum: null, unit: "months" }) }),
+    ]));
+    expect(claims.find((event) => event.playerId === 8482169)?.availability).not.toBe("available");
+    const text = auditReceipts["2108961062892568787"].text;
+    for (const claim of claims) expect(text.slice(claim.evidence.start, claim.evidence.end)).toBe(claim.evidence.text);
+  });
+  it("keeps distinct parenthetical availability predicates with their own subjects", () => {
+    const text = "Konecny (will play tonight) and Couturier (ruled out tonight)";
+    const players = [auditReceipts["2108961062892568787"].eventPlayers.find((player) => player.playerId === 8478439)!,
+      auditReceipts["2108961243746771167"].eventPlayers.find((player) => player.playerId === 8476461)!];
+    const claims = extractTweetPlayerEvents({ text, players, publishedAt: null });
+    expect(claims).toMatchObject([
+      { playerId: 8478439, availability: "available" },
+      { playerId: 8476461, availability: "out" },
+    ]);
+    expect(claims[0]!.evidence.text).not.toContain("Couturier");
+    for (const claim of claims) expect(text.slice(claim.evidence.start, claim.evidence.end)).toBe(claim.evidence.text);
+  });
+  it("keeps distinct parenthetical starter and backup roles with their own subjects", () => {
+    const text = "Vladar (confirmed starter) and Woll (backup)";
+    const claims = extractTweetPlayerEvents({ text, players: auditReceipts["2108961243746771167"].eventPlayers, publishedAt: null });
+    expect(claims).toMatchObject([
+      { playerId: 8478435, kind: "goalie", state: "confirmed", goalieRole: "starter" },
+      { playerId: 8479361, kind: "goalie", state: "confirmed", goalieRole: "backup" },
+    ]);
+    expect(claims[0]!.evidence.text).not.toContain("Woll");
+    for (const claim of claims) expect(text.slice(claim.evidence.start, claim.evidence.end)).toBe(claim.evidence.text);
+  });
+  it("preserves explicit starter versus backup roles", () => {
+    expect(events("2108961243746771167").filter((event) => event.kind === "goalie")).toMatchObject([
+      { playerName: "Dan Vladar", state: "confirmed", goalieRole: "starter" },
+      { playerName: "Joseph Woll", state: "confirmed", goalieRole: "backup" },
+    ]);
+  });
+  it.each(["2108946348364153181", "2108958735309865096"] as const)("keeps both CCC starting-goalie subjects in %s", (id) => {
+    const claims = events(id);
+    expect(claims.filter((event) => event.kind === "goalie")).toHaveLength(2);
+    expect(new Set(claims.map((event) => event.teamId))).toEqual(new Set([4, 6]));
+    expect(claims.every((event) => event.state === "confirmed" && event.goalieRole === "starter")).toBe(true);
+  });
+  it.each(["2108968319835603270", "2108974712621805603"] as const)("confirms affirmative goalie prose in %s", (id) => {
+    expect(events(id).filter((event) => event.kind === "goalie")).toMatchObject([{ state: "confirmed", goalieRole: "starter" }]);
+  });
+  it("does not derive a camp group from power play groupings", () => {
+    const f = auditReceipts["2101333176509686110"];
+    const parsed = interpretTweetUnits(f.text, f.players);
+    expect(parsed.units).toHaveLength(2);
+    expect(parsed.units.every((unit) => unit.group == null && unit.situation === "pp" && unit.complete)).toBe(true);
+  });
+  it("parses all eleven forwards, seven defensemen and ordered goalies in the declared Tampa formation", () => {
+    const f = auditReceipts["2106513524029821025"];
+    const parsed = interpretTweetUnits(f.text, f.players);
+    expect(parsed.formation).toEqual({ forwards: 11, defense: 7 });
+    expect(parsed.units.filter((unit) => unit.situation === "es_forward").map((unit) => unit.players.length)).toEqual([3, 3, 3, 2]);
+    expect(parsed.units.filter((unit) => unit.situation === "es_defense").map((unit) => unit.players.length)).toEqual([2, 2, 2, 1]);
+    expect(parsed.units.filter((unit) => unit.situation === "goalie").flatMap((unit) => unit.players.map((player) => player.name))).toEqual(["Andrei Vasilevskiy", "Dennis Hildeby"]);
+    expect(completeEvenStrengthUnits(parsed)).toHaveLength(8);
+    expect(assignmentsFor({ team_id: 14, metadata: { interpretation: parsed } } as any).filter((assignment) => ["forward_line", "defense_pair"].includes(assignment.unit_type))).toHaveLength(18);
+    expect(completeEvenStrengthUnits({ ...parsed, formation: undefined })).toEqual([]);
+    expect(completeEvenStrengthUnits({ ...parsed, units: parsed.units.slice(1) })).toEqual([]);
+    for (const unit of parsed.units) for (const span of unit.evidence) expect(f.text.slice(span.start, span.end)).toBe(span.text);
+  });
+  it.each(["Hart is expected in goal", "The coach would expect Hart to start", "Coach did not confirm Hart will start", "Hart starts if healthy", "Hart is not the starter", "Hart is first goalie off", "Hart has made two starts this season.", "Hart is in the starter net at practice.", "Hart did not start yesterday."])("preserves uncertainty or negation in %s", (text) => {
+    const claims = extractTweetPlayerEvents({ text, players: [{ playerId: 100, fullName: "Carter Hart", lastName: "Hart", position: "G" }], publishedAt: null });
+    expect(claims).toHaveLength(1);
+    expect(claims[0]!.state).not.toBe("confirmed");
+  });
+  it("keeps genuine full-name Bäck claims while abstaining on ordinary lower-case nouns", () => {
+    const players = [{ playerId: 8480840, fullName: "Oskar Bäck", lastName: "Bäck", position: "C" }];
+    expect(extractTweetPlayerEvents({ text: "Oskar Bäck suffered an injury", players, publishedAt: null })).toMatchObject([{ playerId: 8480840, kind: "injury" }]);
+    expect(extractTweetPlayerEvents({ text: "successful back surgery with no named subject", players, publishedAt: null })).toEqual([]);
+  });
+  it("keeps game absence scoped to the game and does not infer season absence", () => {
+    const text = "Josh Morrissey will not return to tonight’s game due to an upper body injury.";
+    expect(extractTweetPlayerEvents({ text, players: [{ playerId: 8477504, fullName: "Josh Morrissey", lastName: "Morrissey", position: "D" }], publishedAt: null }))
+      .toMatchObject([{ availability: "out", availabilityScope: "game" }]);
+  });
+  it("does not turn a skater pair or an undeclared short forward row into defense", () => {
+    expect(interpretTweetUnits("Warmup lines:\nNorris-McLeod", roster).units.every((unit) => !unit.complete)).toBe(true);
+    expect(interpretTweetUnits("Lines:\nNorris-McLeod-Hart", [...roster, { playerId: 100, fullName: "Carter Hart", lastName: "Hart", position: "G" }]).units.every((unit) => !unit.complete)).toBe(true);
   });
 });

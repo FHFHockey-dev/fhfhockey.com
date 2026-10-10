@@ -26,6 +26,7 @@ import {
   buildLinesCccWrapperOEmbedFailureState,
   buildLinesCccWrapperOEmbedSuccessState,
   buildLinesCccSourceFromIftttEvent,
+  expandLinesCccGoalieClaims,
   fetchLinesCccTweetOEmbedAttempt,
   readLinesCccWrapperOEmbedBackfillState,
   refreshLinesCccSourceFromPrimaryText,
@@ -122,7 +123,7 @@ async function persistLinesCccRow(args: {
 }): Promise<void> {
   if (
     args.row.status === "observed" &&
-    args.row.nhl_filter_status === "accepted" &&
+    args.row.nhl_filter_status === "accepted" && !(Array.isArray(args.row.metadata?.claimTeamIds) && args.row.metadata.claimTeamIds.length > 1) &&
     args.row.tweet_id &&
     args.row.team_id
   ) {
@@ -492,6 +493,11 @@ export default withCronJobAudit(
       }
     }
 
+    const claimSources = parsedCandidates.flatMap((source, index) => expandLinesCccGoalieClaims({ source, teams: teamDirectory, gameIdByTeamId })
+      .map((candidate) => ({ candidate, event: parsedEvents[index]! })));
+    parsedCandidates.splice(0, parsedCandidates.length, ...claimSources.map(({ candidate }) => candidate));
+    parsedEvents.splice(0, parsedEvents.length, ...claimSources.map(({ event }) => event));
+
     reviewTweetApplicability(parsedCandidates, requestedDate);
 
     processingStage = "injury_history";
@@ -570,6 +576,10 @@ export default withCronJobAudit(
           linesCccProcessing: {
             processedAt: new Date().toISOString(),
             captureKey: rowsToUpsert[index]?.capture_key ?? null,
+            teamCaptures: parsedCandidates.flatMap((claim, claimIndex) => parsedEvents[claimIndex]?.id === event.id ? [{
+              captureKey: rowsToUpsert[claimIndex]?.capture_key ?? null, teamId: claim.team?.id ?? null,
+              nhlFilterStatus: claim.nhlFilterStatus,
+            }] : []),
             classification: candidate.classification,
             primaryTextSource: candidate.primaryTextSource ?? null,
             detectedLeague: candidate.detectedLeague,
@@ -593,7 +603,7 @@ export default withCronJobAudit(
         },
         updated_at: nowIso,
       };
-    });
+    }).filter((_update, index) => parsedEvents.findIndex((event) => event.id === parsedEvents[index]!.id) === index);
 
     for (const update of [...deferredEventUpdates, ...processedEventUpdates]) {
       const { error } = await req.supabase

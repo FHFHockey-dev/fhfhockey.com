@@ -19,7 +19,7 @@ export function projectedSetsToForecastRows(sets: ProjectedUnitSet[]): ForecastL
     const reports = [...new Map(values.flatMap((set) => set.reports).map((report) => [report.key, report])).values()];
     reports.sort((a, b) => Date.parse(b.publishedAt!) - Date.parse(a.publishedAt!));
     const latest = reports[0]!;
-    const interpretation: TweetInterpretation = { ...latest.interpretation, units: values.flatMap((set) => set.units), events: [], unresolved: [] };
+    const interpretation: TweetInterpretation = { ...latest.interpretation, formation: values.find((set) => set.situation === "es")?.reports[0]?.interpretation.formation, units: values.flatMap((set) => set.units), events: [], unresolved: [] };
     const base = toLinesCccRow({ source: { snapshotDate: latest.date, team: { id: latest.teamId, abbreviation: latest.teamAbbreviation } as any,
       gameId: latest.gameId, nhlFilterStatus: "accepted", classification: "lineup", rawText: latest.text, tweetPostedAt: latest.publishedAt,
       observedAt: reports.map((report) => report.receivedAt).sort().at(-1), metadata: { interpretation } }, rosterEntries: [] });
@@ -160,7 +160,8 @@ export async function enrichTweetInjuryHistory(supabase: any, sources: ParsedLin
     for (const event of interpretation.events.filter((event) => event.kind === "injury")) {
       const { data, error } = await supabase.from("tweet_player_events").select("availability,published_at")
         .eq("player_id", event.playerId).lt("published_at", source.tweetPostedAt)
-        .in("availability", ["out", "available"]).order("published_at", { ascending: false }).limit(2);
+        .in("availability", ["out", "available"])
+        .or("payload->>availabilityScope.is.null,payload->>availabilityScope.neq.game").order("published_at", { ascending: false }).limit(2);
       if (error) throw error;
       const conflictingHistory = data?.length > 1 && data[0].published_at === data[1].published_at && data[0].availability !== data[1].availability;
       if (conflictingHistory && !event.reviewReason) event.reviewReason = "conflicting_history";
@@ -258,11 +259,15 @@ export async function fetchTweetProjectionReports(supabase: any, args: { teamId?
     if (args.teamId) query = query.eq("team_id", args.teamId);
     if (args.gameId) query = query.eq("game_id", args.gameId);
     return query.order("report_key", { ascending: true }).range(from, to);
-  }, { limit: 1000 });
+  }, { limit: args.internal ? null : 1000 });
+  const reports = rows.map(({ payload }) => payload).sort((a, b) => Date.parse(b.interpretedAt ?? b.receivedAt) - Date.parse(a.interpretedAt ?? a.receivedAt)
+    || a.key.localeCompare(b.key));
+  // Publication must read the requested exact key and its own retained lineage.
+  if (args.internal) return reports;
   const unique = new Map<string, ProjectionReport>();
-  for (const { payload: report } of rows.sort((a, b) => Date.parse(b.payload.interpretedAt ?? b.payload.receivedAt) - Date.parse(a.payload.interpretedAt ?? a.payload.receivedAt))) {
+  for (const report of reports) {
     const identity = `${report.teamId}:${report.originalUrl ?? report.text}`;
     if (!unique.has(identity)) unique.set(identity, report);
   }
-  return args.internal ? [...unique.values()] : [...unique.values()].map(publicProjectionReport);
+  return [...unique.values()].map(publicProjectionReport);
 }

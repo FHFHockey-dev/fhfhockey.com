@@ -379,6 +379,7 @@ function createSupabaseMocks(eventRows: LineSourceEventFixture[]) {
     eventUpdateMock,
     eventUpdateEqMock,
     lineSourceSnapshotsUpsertMock,
+    staleRowUpdateMock,
     unresolvedNamesUpsertMock,
   };
 }
@@ -568,7 +569,7 @@ describe("/api/v1/db/update-line-sources", () => {
         { id: snapshot.team_id, abbreviation: snapshot.team_abbreviation, name: teamNames[snapshot.team_abbreviation] }])).values()];
       mocks.getTeams.mockResolvedValue(teams);
       const emptyQuery = () => {
-        const query: any = { eq: () => query, lt: () => query, in: () => query, order: () => query, neq: () => query,
+        const query: any = { eq: () => query, lt: () => query, in: () => query, or: () => query, order: () => query, neq: () => query,
           range: async () => ({ data: [], error: null }), limit: async () => ({ data: [], error: null }), then: (resolve: any) => Promise.resolve({ error: null }).then(resolve) };
         return query;
       };
@@ -661,6 +662,49 @@ describe("/api/v1/db/update-line-sources", () => {
         }
       }
     }
+  });
+
+  it.each(["gdl", "ccc"])("retains both validated goalie teams and finalizes one raw receipt through %s", async (path) => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "false");
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 404 })));
+    mocks.getTeams.mockResolvedValue([
+      { id: 6, name: "Boston Bruins", abbreviation: "BOS", logo: "/teamLogos/BOS.png" },
+      { id: 4, name: "Philadelphia Flyers", abbreviation: "PHI", logo: "/teamLogos/PHI.png" },
+    ]);
+    const text = "Confirmed Bruins Starting Goalie: Jeremy Swayman\nConfirmed Flyers Starting Goalie: Dan Vladar https://t.co/4hXg9xv9LV";
+    const event = buildEvent({ id: "dual-team", sourceKey: "gamedaygoalies", sourceAccount: "CcCMiddleton", tweetId: "2108958735309865096", text, receivedAt: "2026-10-10T16:39:40Z" });
+    event.tweet_created_at = "2026-10-10T16:31:00Z";
+    const fixture = createSupabaseMocks([event]);
+    mocks.rpc.mockResolvedValue({ data: true, error: null });
+    const originalFrom = mocks.from.getMockImplementation()!;
+    const emptyQuery = () => { const query: any = { eq: () => query, in: () => query, order: () => query, range: async () => ({ data: [], error: null }), then: (resolve: any) => Promise.resolve({ error: null }).then(resolve) }; return query; };
+    mocks.from.mockImplementation((table: string) => {
+      if (table === "games") return { select: () => ({ eq: () => ({ order: async () => ({ data: [{ id: 2026020070, date: "2026-10-10", homeTeamId: 6, awayTeamId: 4 }], error: null }) }) }) };
+      if (table === "rosters") return { select: () => paginatedRoster({ data: [
+        { teamId: 6, playerId: 8480280, players: { fullName: "Jeremy Swayman", lastName: "Swayman", position: "G" } },
+        { teamId: 4, playerId: 8478435, players: { fullName: "Dan Vladar", lastName: "Vladar", position: "G" } },
+      ], error: null }) };
+      if (["tweet_player_memberships", "fhfh_player_identities", "fhfh_player_identity_aliases"].includes(table)) return { select: emptyQuery };
+      if (table === "tweet_pipeline_jobs") return { update: emptyQuery };
+      if (table === "lines_ccc_ifttt_events") return originalFrom("line_source_ifttt_events");
+      if (table === "lines_ccc") return originalFrom("line_source_snapshots");
+      return originalFrom(table);
+    });
+    const res = createMockRes();
+    await (path === "gdl" ? handler : cccHandler)(createMockReq({ query: { date: "2026-10-10", tweetId: event.tweet_id, limit: "10" } }), res);
+    expect(res.statusCode, JSON.stringify(res.body)).toBe(200);
+    const rows = getUpsertedRows(fixture.lineSourceSnapshotsUpsertMock);
+    expect(rows).toHaveLength(2);
+    expect(rows.map((row: any) => row.team_id)).toEqual([6, 4]);
+    for (const row of rows) expect(row).toMatchObject({ tweet_id: event.tweet_id, raw_text: text, tweet_posted_at: new Date(event.tweet_created_at!).toISOString(),
+      observed_at: event.received_at, game_id: 2026020070, classification: "goalie_start", nhl_filter_status: "accepted" });
+    expect(fixture.eventUpdateMock).toHaveBeenCalledTimes(1);
+    const update = fixture.eventUpdateMock.mock.calls[0]![0] as any;
+    expect(update.processing_status).toBe("processed");
+    const processing = update.raw_payload[path === "gdl" ? "lineSourceProcessing" : "linesCccProcessing"];
+    expect(processing.teamCaptures.map((capture: any) => capture.captureKey)).toEqual(rows.map((row: any) => row.capture_key));
+    expect(fixture.staleRowUpdateMock).not.toHaveBeenCalled();
   });
 
   it("limits automatic retries to receipts on the Eastern slate, including UTC midnight", async () => {

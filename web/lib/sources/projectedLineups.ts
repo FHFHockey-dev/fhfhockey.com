@@ -1,5 +1,5 @@
 import { isNewsRelayAccount, sanitizePublicNewsText } from "lib/newsFeed";
-import type { TweetInterpretation, TweetUnit } from "./tweetInterpretation";
+import { completeEvenStrengthUnits, type TweetInterpretation, type TweetUnit } from "./tweetInterpretation";
 
 export type ProjectionReport = {
   key: string;
@@ -65,10 +65,8 @@ export function selectProjectedUnitSets(reports: ProjectionReport[]): ProjectedU
   for (const report of usable) {
     for (const group of new Set(report.interpretation.units.map((unit) => unit.group))) {
       const units = report.interpretation.units.filter((unit) => unit.group === group && validUnit(unit));
-      const forwards = units.filter((unit) => unit.situation === "es_forward");
-      const defense = units.filter((unit) => unit.situation === "es_defense");
-      const es = [...forwards, ...defense];
-      if (forwards.length === 4 && defense.length === 3 && new Set(es.flatMap((unit) => unit.players.map((player) => player.playerId))).size === 18) {
+      const es = completeEvenStrengthUnits(report.interpretation, group);
+      if (es.length) {
         sets.push({ key: `${scope(report, group)}:es`, situation: "es", group, units: es, reports: [report], publishedAt: report.publishedAt! });
       }
       for (const situation of ["pp", "pk"] as const) {

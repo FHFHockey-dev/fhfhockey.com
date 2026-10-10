@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { publicProjectionReport, selectProjectedUnitSets, verifiedOriginalTweetUrl, type ProjectionReport } from "./projectedLineups";
-import type { TweetUnit } from "./tweetInterpretation";
+import type { TweetInterpretation, TweetUnit } from "./tweetInterpretation";
 import { enrichTweetInjuryHistory, fetchTweetProjectionReports, persistTweetProjectionReports, projectedSetsToForecastRows, projectionReportFromSource } from "./tweetProjectionStorage";
 import { extractTweetPlayerEvents } from "./tweetPlayerEvents";
 import { interpretTweetUnits } from "./tweetInterpretation";
@@ -296,6 +296,66 @@ describe("projected unit publishing", () => {
     first.interpretation.context = second.interpretation.context = "camp";
     expect(projectedSetsToForecastRows(selectProjectedUnitSets([first, second]))).toEqual([]);
   });
+  it("publishes both exact same-text relay reports internally without replacing their lineage", async () => {
+    enableLivePublishing();
+    const fixtures = [liveProjectionFixture("goalie", 1), liveProjectionFixture("goalie", 2)];
+    for (const [index, fixture] of fixtures.entries()) {
+      const account = index === 0 ? "GameDayGoalies" : "GameDayNewsNHL";
+      const url = `https://x.com/${account}/status/${fixture.source.tweetId}`;
+      fixture.source.sourceUrl = url;
+      fixture.source.metadata.interpretation.rosterRevision = `retained-${account}`;
+      Object.assign(fixture.snapshot, { source_url: url, tweet_url: url, source_key: account.toLowerCase() });
+    }
+    expect(fixtures[0]!.source.rawText).toBe(fixtures[1]!.source.rawText);
+    const reports = fixtures.map(({ source }, index) => ({ ...projectionReportFromSource(source)!,
+      interpretedAt: `2026-10-04T15:0${index + 6}:00Z` }));
+    expect(new Set(reports.map((candidate) => candidate.key)).size).toBe(2);
+    expect(reports.every((candidate) => candidate.originalUrl === null)).toBe(true);
+    const database = projectionDatabase(fixtures);
+    database.tables.set("tweet_projection_reports", new Map(reports.map((candidate) => [candidate.key, {
+      report_key: candidate.key, report_date: candidate.date, team_id: candidate.teamId, game_id: candidate.gameId, payload: candidate,
+    }])));
+    for (const { source } of fixtures) await persistTweetProjectionReports(database.db, [source]);
+    const internal = await fetchTweetProjectionReports(database.db, { gameId: 2026020040, date: "2026-10-04", internal: true });
+    expect(internal).toEqual([reports[1], reports[0]]);
+    for (const [index, candidate] of reports.entries()) {
+      const parent = database.tables.get("line_source_snapshots")!.get(`${candidate.key}:goalie`);
+      expect(parent.raw_payload.reports).toEqual([candidate]);
+      expect(parent.raw_payload.sources[0].snapshot.tweet_id).toBe(fixtures[index]!.source.tweetId);
+      expect(parent.observed_at).toBe(candidate.receivedAt);
+      expect(parent.tweet_posted_at).toBe(candidate.publishedAt);
+    }
+    expect(database.children.size).toBe(2);
+    const publicReports = await fetchTweetProjectionReports(database.db, { gameId: 2026020040, date: "2026-10-04" });
+    expect(publicReports).toEqual([publicProjectionReport(reports[1]!)]);
+    expect(publicReports[0]!.provenance).toBeUndefined();
+  });
+  it("orders exact retained keys deterministically while preserving public text and original-URL deduplication", async () => {
+    enableLivePublishing();
+    const shared = { originalUrl: null, text: "Same relay text", interpretedAt: "2026-10-04T15:00:00Z" };
+    const reports = [report("b", 1, shared), report("a", 1, shared),
+      report("c", 1, { ...shared, text: "Different text", originalUrl: "https://x.com/reporter/status/1" }),
+      report("d", 1, { ...shared, text: "Updated text", originalUrl: "https://x.com/reporter/status/1" })];
+    const database = projectionDatabase([]);
+    for (const ordered of [reports, [...reports].reverse()]) {
+      database.tables.set("tweet_projection_reports", new Map(ordered.map((candidate) => [candidate.key,
+        { report_key: candidate.key, report_date: candidate.date, payload: candidate }])));
+      expect((await fetchTweetProjectionReports(database.db, { date: "2026-09-18", internal: true })).map((candidate) => candidate.key)).toEqual(["a", "b", "c", "d"]);
+      expect((await fetchTweetProjectionReports(database.db, { date: "2026-09-18" })).map((candidate) => candidate.key)).toEqual(["a", "c"]);
+    }
+  });
+  it("retains internal exact keys beyond the public 1000-report read bound", async () => {
+    enableLivePublishing();
+    const rows = Array.from({ length: 1001 }, (_, index) => ({ payload: report(String(index).padStart(4, "0"), 1,
+      { text: `Report ${index}`, originalUrl: null, interpretedAt: "2026-10-04T15:00:00Z" }) }));
+    const query: any = { select: () => query, eq: () => query, order: () => query,
+      range: async (from: number, to: number) => ({ data: rows.slice(from, to + 1), error: null }) };
+    const database = { from: () => query };
+    const internal = await fetchTweetProjectionReports(database, { date: "2026-09-18", internal: true });
+    expect(internal).toHaveLength(1001);
+    expect(internal.find((candidate) => candidate.key === "1000")).toEqual(rows[1000]!.payload);
+    expect(await fetchTweetProjectionReports(database, { date: "2026-09-18" })).toHaveLength(1000);
+  });
   it("retains immutable versions, dedupes retries and withholds tentative availability under mocked storage", async () => {
     vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
     vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "true");
@@ -327,7 +387,8 @@ describe("projected unit publishing", () => {
     expect([...tables.get("tweet_projection_reports")!.values()][0]).toEqual(first);
     expect([...tables.get("tweet_player_events")!.values()].every((row) => row.availability === "uncertain")).toBe(true);
     const selected = await fetchTweetProjectionReports(database, { date: "2020-01-01", internal: true });
-    expect(selected).toHaveLength(1);
+    expect(selected).toHaveLength(2);
+    expect(await fetchTweetProjectionReports(database, { date: "2020-01-01" })).toHaveLength(1);
     expect(selectProjectedUnitSets(selected)).toEqual([]);
   });
   it("abstains on tied conflicting history instead of choosing health by query order", async () => {
@@ -335,7 +396,7 @@ describe("projected unit publishing", () => {
     const queriedTables: string[] = [];
     const database = { from: (table: string) => {
       queriedTables.push(table);
-      const query: any = { select: () => query, eq: () => query, lt: () => query, in: () => query, order: () => query,
+      const query: any = { select: () => query, eq: () => query, lt: () => query, in: () => query, or: () => query, order: () => query,
         limit: async () => ({ data: [{ availability: "available", published_at: "2020-01-01T12:00:00Z" }, { availability: "out", published_at: "2020-01-01T12:00:00Z" }], error: null }) };
       return query;
     } };
@@ -344,6 +405,30 @@ describe("projected unit publishing", () => {
     await enrichTweetInjuryHistory(database, [{ tweetPostedAt: "2020-01-01T15:00:00Z", nhlFilterStatus: "accepted", metadata: { interpretation } } as any]);
     expect(interpretation.events).toMatchObject([{ state: "unknown", reviewReason: "conflicting_history" }]);
     expect(queriedTables).toEqual(["tweet_player_events"]);
+  });
+  it.each([undefined, null, { availabilityScope: "unspecified" }])("filters game-only history before limiting and retains older ongoing history with payload %j", async (payload) => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    const rows = [
+      { availability: "out", published_at: "2020-01-01T14:00:00Z", payload: { availabilityScope: "game" } },
+      { availability: "out", published_at: "2020-01-01T13:00:00Z", payload: { availabilityScope: "game" } },
+      { availability: "out", published_at: "2020-01-01T12:00:00Z", payload },
+      { availability: "available", published_at: "2020-01-01T11:00:00Z", payload: null },
+    ];
+    let retained = rows;
+    const scopeFilter = vi.fn((filter: string) => {
+      expect(filter).toBe("payload->>availabilityScope.is.null,payload->>availabilityScope.neq.game");
+      retained = rows.filter((row) => row.payload?.availabilityScope !== "game");
+      return query;
+    });
+    const query: any = { select: () => query, eq: () => query, lt: () => query, in: () => query, order: () => query, or: scopeFilter,
+      limit: async (count: number) => ({ data: retained.slice(0, count), error: null }) };
+    const database = { from: (table: string) => { expect(table).toBe("tweet_player_events"); return query; } };
+    const text = "Norris injured";
+    const interpretation = interpretTweetUnits(text, []);
+    interpretation.events = extractTweetPlayerEvents({ text, players: [{ playerId: 2, fullName: "Josh Norris", lastName: "Norris" }], publishedAt: "2020-01-01T15:00:00Z" });
+    await enrichTweetInjuryHistory(database, [{ tweetPostedAt: "2020-01-01T15:00:00Z", nhlFilterStatus: "accepted", metadata: { interpretation } } as any]);
+    expect(scopeFilter).toHaveBeenCalledOnce();
+    expect(interpretation.events).toMatchObject([{ state: "ongoing" }]);
   });
   it("marks public evidence offsets as belonging to the unsanitized source", () => {
     const source = report("a", 1);
@@ -354,7 +439,7 @@ describe("projected unit publishing", () => {
     vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
     const lessThan = vi.fn();
     const database = { from: () => { const query: any = { select: () => query, eq: () => query, lt: (...args: any[]) => { lessThan(...args); return query; },
-      in: () => query, order: () => query, limit: async () => ({ data: [{ availability: "out" }], error: null }) }; return query; } };
+      in: () => query, or: () => query, order: () => query, limit: async () => ({ data: [{ availability: "out" }], error: null }) }; return query; } };
     const text = "Norris remains out. Org is hopeful he will play this weekend.";
     const interpretation = interpretTweetUnits(text, []);
     interpretation.events = extractTweetPlayerEvents({ text, players: [{ playerId: 2, fullName: "Josh Norris", lastName: "Norris" }], publishedAt: "2020-01-01T15:00:00Z" });
@@ -392,5 +477,35 @@ describe("projected unit publishing", () => {
     expect(verifiedRetweetFromPayload(payload, candidate)).toMatchObject({ url: "https://x.com/reporter/status/456", publishedAt: "2026-09-18T14:00:00Z" });
     payload.data.referenced_tweets[0]!.type = "quoted";
     expect(verifiedRetweetFromPayload(payload, candidate)).toBeNull();
+  });
+});
+
+describe("declared formation publishing", () => {
+  it("publishes a complete 11F/7D set and retains its two-player line and standalone defender", () => {
+    let id = 1;
+    const make = (situation: TweetUnit["situation"], number: number, count: number): TweetUnit => ({
+      situation, number, explicitNumber: false, complete: true, group: null, evidence: [],
+      players: Array.from({ length: count }, () => ({ playerId: id++, name: `Player ${id - 1}` })),
+    });
+    const units = [...[3, 3, 3, 2].map((count, index) => make("es_forward", index + 1, count)),
+      ...[2, 2, 2, 1].map((count, index) => make("es_defense", index + 1, count))];
+    const source = report("declared", 1, { gameId: 1 });
+    source.interpretation = { ...source.interpretation, context: "game", formation: { forwards: 11, defense: 7 }, units };
+    const sets = selectProjectedUnitSets([source]);
+    expect(sets).toHaveLength(1);
+    expect(sets[0]!.units).toEqual(units);
+    expect(assignmentsFor({ team_id: source.teamId, metadata: { interpretation: source.interpretation } } as any)).toHaveLength(18);
+    expect(selectProjectedUnitSets([{ ...source, interpretation: { ...source.interpretation, formation: undefined } }])).toEqual([]);
+    expect(selectProjectedUnitSets([{ ...source, interpretation: { ...source.interpretation, units: units.slice(1) } }])).toEqual([]);
+    const newerPowerPlay = { ...source, key: "newer-pp", publishedAt: "2026-09-18T18:00:00Z",
+      interpretation: { ...source.interpretation, formation: undefined, units: [unit(1), unit(2)] } };
+    const mergedRows = projectedSetsToForecastRows(selectProjectedUnitSets([source, newerPowerPlay]));
+    expect(mergedRows).toHaveLength(1);
+    expect((mergedRows[0]!.metadata!.interpretation as TweetInterpretation).formation).toEqual(source.interpretation.formation);
+    expect(assignmentsFor(mergedRows[0]!).filter((assignment) => ["forward_line", "defense_pair"].includes(assignment.unit_type))).toHaveLength(18);
+    expect(mergedRows[0]!.metadata!.projectionReports).toEqual(expect.arrayContaining([source, newerPowerPlay]));
+    const duplicated = structuredClone(units);
+    duplicated[7]!.players[0] = duplicated[0]!.players[0]!;
+    expect(selectProjectedUnitSets([{ ...source, interpretation: { ...source.interpretation, units: duplicated } }])).toEqual([]);
   });
 });

@@ -7,6 +7,7 @@ import {
   applyQuotedTweetPreference,
   buildLinesCccWrapperOEmbedDeferredState,
   buildLinesCccSourceFromIftttEvent,
+  expandLinesCccGoalieClaims,
   buildLinesCccWrapperOEmbedSuccessState,
   fetchLinesCccTweetApiData,
   fetchLinesCccTweetOEmbedData,
@@ -1363,5 +1364,50 @@ describe("tweet publication timing", () => {
     expect(source.primaryTextSource).toBe("quoted_oembed");
     expect(source.tweetPostedAt).toBeNull();
     expect(source.metadata?.wrapperPostedAt).toBe("2026-04-25T19:00:00.000Z");
+  });
+});
+
+describe("subject-specific goalie claim admission", () => {
+  it("resolves surname-only affirmed starts and preserves both teams without weakening non-NHL rejection", () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    try {
+      const teams = buildTeamDirectory([
+        { id: 4, name: "Philadelphia Flyers", abbreviation: "PHI", logo: "/teamLogos/PHI.png" },
+        { id: 6, name: "Boston Bruins", abbreviation: "BOS", logo: "/teamLogos/BOS.png" },
+      ]);
+      const rosterByTeam = new Map([
+        [4, [{ playerId: 8478435, fullName: "Dan Vladar", lastName: "Vladar", position: "G", teamId: 4 },
+          { playerId: 8478439, fullName: "Travis Konecny", lastName: "Konecny", position: "R", teamId: 4 }]],
+        [6, [{ playerId: 8480280, fullName: "Jeremy Swayman", lastName: "Swayman", position: "G", teamId: 6 }]],
+      ]);
+      const gameIdByTeamId = new Map([[4, 2026020070], [6, 2026020070]]);
+      const build = (text: string) => buildLinesCccSourceFromIftttEvent({ snapshotDate: "2026-10-10", teams, rosterByTeam, gameIdByTeamId,
+        event: { id: "retained", source: "ifttt", source_account: "CcCMiddleton", username: "CcCMiddleton", text,
+          tweet_id: "2108958735309865096", link_to_tweet: "https://x.com/CcCMiddleton/status/2108958735309865096",
+          tweet_created_at: "2026-10-10T16:31:00Z", received_at: "2026-10-10T16:39:40Z", created_at_label: null, raw_payload: { text } } });
+      const single = build("RT @smclaughlin9: Sturm: Same lineup, Swayman in net.");
+      expect(single).toMatchObject({ team: { id: 6 }, gameId: 2026020070, nhlFilterStatus: "accepted" });
+      const text = "Confirmed Bruins Starting Goalie: Jeremy Swayman\nConfirmed Flyers Starting Goalie: Dan Vladar https://t.co/4hXg9xv9LV";
+      const source = build(text);
+      const claims = expandLinesCccGoalieClaims({ source, teams, gameIdByTeamId });
+      expect(claims.map((claim) => claim.team!.id)).toEqual([6, 4]);
+      expect(claims.map((claim) => claim.goalies)).toEqual([["Jeremy Swayman"], ["Dan Vladar"]]);
+      expect(new Set(claims.map((claim) => toLinesCccRow({ source: claim, rosterEntries: rosterByTeam.get(claim.team!.id)! }).capture_key)).size).toBe(2);
+      for (const claim of claims) expect(claim).toMatchObject({ rawText: text, tweetId: source.tweetId, observedAt: source.observedAt,
+        tweetPostedAt: source.tweetPostedAt, gameId: 2026020070, classification: "goalie_start", metadata: { claimTeamIds: [6, 4] } });
+      const rejected = { ...source, nhlFilterStatus: "rejected_non_nhl" as const };
+      expect(expandLinesCccGoalieClaims({ source: rejected, teams, gameIdByTeamId })).toEqual([rejected]);
+      expect(expandLinesCccGoalieClaims({ source: build("https://t.co/4hXg9xv9LV"), teams, gameIdByTeamId })).toHaveLength(1);
+      const practice = build("At practice: Swayman is expected to start.");
+      expect(expandLinesCccGoalieClaims({ source: practice, teams, gameIdByTeamId })[0]!.gameId).toBeNull();
+      const mixed = expandLinesCccGoalieClaims({ source: build("Dan Vladar starts tonight. Travis Konecny is day-to-day."), teams, gameIdByTeamId })[0]!;
+      expect((mixed.metadata!.interpretation as any).events).toEqual(expect.arrayContaining([
+        expect.objectContaining({ playerId: 8478435, kind: "goalie", goalieRole: "starter" }),
+        expect.objectContaining({ playerId: 8478439, kind: "injury", availability: "uncertain" }),
+      ]));
+      expect(mixed.goalies).toEqual(["Dan Vladar"]);
+      const conflict = build("Confirmed Flyers Starting Goalie: Jeremy Swayman");
+      expect(expandLinesCccGoalieClaims({ source: conflict, teams, gameIdByTeamId })).toEqual([conflict]);
+    } finally { vi.unstubAllEnvs(); }
   });
 });

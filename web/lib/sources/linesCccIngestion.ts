@@ -1,5 +1,5 @@
 import { extractTweetPlayerEvents } from "./tweetPlayerEvents";
-import { identityMentionPresent, interpretTweetUnits, tweetPipelineFlags } from "./tweetInterpretation";
+import { identityMentionPresent, interpretTweetUnits, tweetPipelineFlags, type TweetInterpretation } from "./tweetInterpretation";
 import type {
   GameDayTweetsClassification,
   RosterNameEntry,
@@ -856,6 +856,15 @@ export function resolveLinesCccTeam(args: {
     }
   }
 
+  if (tweetPipelineFlags().interpretation && args.rosterByTeam) {
+    const claims = extractTweetPlayerEvents({ text: args.text, players: [...args.rosterByTeam.values()].flat(), publishedAt: null });
+    const goalieTeams = [...new Set(claims.filter((event) => event.kind === "goalie" && event.teamId != null).map((event) => event.teamId))];
+    if (goalieTeams.length === 1) {
+      const claimedTeam = args.teams.find((team) => team.id === goalieTeams[0]);
+      if (claimedTeam && (!labelMatches.length || labelMatches.some((team) => team.id === claimedTeam.id))) return claimedTeam;
+    }
+  }
+
   if (
     textHintTeam &&
     labelMatches.length === 1 &&
@@ -1386,11 +1395,11 @@ function buildStructuredContent(args: {
   const playerEvents = interpretation ? extractTweetPlayerEvents({ text: args.text, players: eventPlayers, publishedAt: args.publishedAt ?? null }) : [];
   if (interpretation) {
     scratches = interpretation.units.filter((unit) => unit.situation === "scratch").flatMap((unit) => unit.players.map((player) => player.name));
-    injuries = playerEvents.filter((event) => event.kind === "injury" && ["new_injury", "ongoing", "setback"].includes(event.state)).flatMap((event) => args.rosterEntries.filter((entry) => entry.playerId === event.playerId).map((entry) => entry.fullName));
+    injuries = playerEvents.filter((event) => event.kind === "injury" && (event.availability === "out" || ["new_injury", "ongoing", "setback"].includes(event.state))).flatMap((event) => args.rosterEntries.filter((entry) => entry.playerId === event.playerId).map((entry) => entry.fullName));
     forwards = interpretation.units.filter((unit) => unit.situation === "es_forward").map((unit) => unit.players.map((player) => player.name));
     defensePairs = interpretation.units.filter((unit) => unit.situation === "es_defense").map((unit) => unit.players.map((player) => player.name));
     goalies = interpretation.units.filter((unit) => unit.situation === "goalie").flatMap((unit) => unit.players.map((player) => player.name));
-    goalies = dedupeOrderedNames([...goalies, ...playerEvents.filter((event) => event.kind === "goalie").flatMap((event) => args.rosterEntries.filter((entry) => entry.playerId === event.playerId && entry.position === "G").map((entry) => entry.fullName))]);
+    goalies = dedupeOrderedNames([...playerEvents.filter((event) => event.kind === "goalie" && event.goalieRole !== "backup").flatMap((event) => args.rosterEntries.filter((entry) => entry.playerId === event.playerId && entry.position === "G").map((entry) => entry.fullName)), ...goalies, ...playerEvents.filter((event) => event.kind === "goalie" && event.goalieRole === "backup").flatMap((event) => args.rosterEntries.filter((entry) => entry.playerId === event.playerId && entry.position === "G").map((entry) => entry.fullName))]);
     powerPlayDetection.units = interpretation.units.filter((unit) => unit.situation === "pp" && unit.complete).map((unit) => unit.players.map((player) => player.name));
     powerPlayDetection.labels = interpretation.units.filter((unit) => unit.situation === "pp" && unit.complete).map((unit) => unit.number === 1 ? "pp1" : unit.number === 2 ? "pp2" : null);
   }
@@ -1639,6 +1648,38 @@ export function refreshLinesCccSourceFromPrimaryText(args: {
       ...buildPrimaryTextMetadata(refreshedSource),
     },
   };
+}
+
+/** One retained receipt may assert starters for both teams. Validate each
+ * named claim independently while preserving the complete raw evidence. */
+export function expandLinesCccGoalieClaims(args: {
+  source: ParsedLinesCccSource;
+  teams: TeamDirectoryEntry[];
+  gameIdByTeamId?: Map<number, number>;
+}): ParsedLinesCccSource[] {
+  const source = args.source;
+  const interpretation = source.metadata?.interpretation as TweetInterpretation | undefined;
+  if (!interpretation || source.nhlFilterStatus === "rejected_non_nhl" || source.nhlFilterStatus === "rejected_insufficient_text"
+    || interpretation.units.some((unit) => unit.situation === "es_forward" || unit.situation === "es_defense")) return [source];
+  const claims = (interpretation.events ?? []).filter((event) => event.kind === "goalie" && event.teamId != null);
+  const teamIds = [...new Set(claims.map((event) => event.teamId!))];
+  if (!teamIds.length || teamIds.some((id) => !args.teams.some((team) => team.id === id))) return [source];
+  if (claims.some((event) => {
+    const labels = findLabelMatchedTeams(event.evidence.text, args.teams);
+    return labels.length === 1 && labels[0]!.id !== event.teamId;
+  })) return [source];
+  return teamIds.map((teamId) => {
+    const team = args.teams.find((entry) => entry.id === teamId)!;
+    const events = (interpretation.events ?? []).filter((event) => event.teamId === teamId);
+    const teamGoalies = events.filter((event) => event.kind === "goalie");
+    const ordered = [...teamGoalies.filter((event) => event.goalieRole !== "backup"), ...teamGoalies.filter((event) => event.goalieRole === "backup")];
+    return { ...source, team, gameId: interpretation.context === "game" ? args.gameIdByTeamId?.get(teamId) ?? null : null,
+      classification: "goalie_start", sourceLabel: "goalie_start", detectedLeague: "NHL", nhlFilterStatus: "accepted", nhlFilterReason: null,
+      goalies: dedupeOrderedNames(ordered.map((event) => event.playerName)), forwards: [], defensePairs: [],
+      matchedPlayerIds: [...new Set(events.map((event) => event.playerId))], matchedNames: dedupeOrderedNames(events.map((event) => event.playerName)),
+      metadata: { ...source.metadata, claimTeamIds: teamIds, interpretation: { ...interpretation, events } },
+    };
+  });
 }
 
 function mapNamesToPlayerIdsOrdered(

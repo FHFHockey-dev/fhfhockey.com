@@ -1,5 +1,5 @@
 import { injuryAvailability } from "../sources/tweetPlayerEvents";
-import { tweetPipelineFlags, type TweetInterpretation } from "lib/sources/tweetInterpretation";
+import { completeEvenStrengthUnits, tweetPipelineFlags, type TweetInterpretation } from "lib/sources/tweetInterpretation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { starterBoardFlags } from "lib/projections/starterBoardFlags";
 
@@ -146,10 +146,9 @@ export function assignmentsFor(row: ForecastLineSourceRow) {
   if (interpretation) {
     if (interpretation.context !== "game") return result;
     const complete = interpretation.units.filter((unit) => unit.complete && !unit.group);
-    const forwards = complete.filter((unit) => unit.situation === "es_forward");
-    const defense = complete.filter((unit) => unit.situation === "es_defense");
-    if (forwards.length === 4 && defense.length === 3 && new Set([...forwards, ...defense].flatMap((unit) => unit.players.map((player) => player.playerId))).size === 18) {
-      for (const unit of [...forwards, ...defense]) addGroup(unit.players.map((player) => player.playerId), unit.players.map((player) => player.name), unit.situation === "es_forward" ? "forward_line" : "defense_pair", unit.number);
+    const es = completeEvenStrengthUnits(interpretation);
+    if (es.length) {
+      for (const unit of es) addGroup(unit.players.map((player) => player.playerId), unit.players.map((player) => player.name), unit.situation === "es_forward" ? "forward_line" : "defense_pair", unit.number);
     }
     for (const situation of ["pp", "pk"] as const) {
       const units = complete.filter((unit) => unit.situation === situation);
@@ -160,7 +159,10 @@ export function assignmentsFor(row: ForecastLineSourceRow) {
     for (const event of interpretation.events ?? []) {
       if (event.teamId != null && event.teamId !== row.team_id) continue;
       if (event.kind === "injury" && event.availability !== "available") addGroup([event.playerId], [event.playerName], "injury", null, event.availability === "out" ? "ruled_out" : "observed");
-      if (event.kind === "goalie" && event.state !== "ruled_out") addGroup([event.playerId], [event.playerName], "goalie_order", null, event.state === "confirmed" ? "confirmed" : "observed");
+      if (event.kind === "goalie" && event.state !== "ruled_out") {
+        addGroup([event.playerId], [event.playerName], "goalie_order", null, event.state === "confirmed" ? "confirmed" : "observed");
+        result[result.length - 1]!.slot_number = event.goalieRole === "backup" ? 2 : 1;
+      }
     }
     return result;
   }
@@ -377,7 +379,7 @@ export async function capturePlayerForecastSourceRows(args: {
       const goalies = [
         { playerId: row.goalie_1_player_id, name: row.goalie_1_name },
         { playerId: row.goalie_2_player_id, name: row.goalie_2_name },
-      ].filter((goalie) => goalie.playerId != null || goalie.name);
+      ].filter((goalie) => (goalie.playerId != null || goalie.name) && !interpretation?.events?.some((event) => event.kind === "goalie" && event.playerId === goalie.playerId && event.goalieRole === "backup"));
       // A sentence about one starter must not confirm every mentioned goalie.
       const status = goalies.length === 1 ? parsedStatus : "unconfirmed";
       const observations = goalies.map((goalie) => ({

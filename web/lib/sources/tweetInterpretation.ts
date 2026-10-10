@@ -1,7 +1,7 @@
 import type { TweetPlayerEvent } from "./tweetPlayerEvents";
 import { normalizeIdentityName, resolvePlayerIdentity, type PlayerIdentity } from "./playerIdentity";
 
-export const TWEET_INTERPRETATION_VERSION = "2026-10-10.1";
+export const TWEET_INTERPRETATION_VERSION = "2026-10-10.2";
 export type EvidenceSpan = { start: number; end: number; text: string };
 export type TweetUnit = {
   situation: "es_forward" | "es_defense" | "pp" | "pk" | "goalie" | "scratch" | "injury";
@@ -16,6 +16,7 @@ export type TweetInterpretation = {
   version: string;
   rosterRevision?: string;
   identityContext?: { basis: "current_membership"; sourcePublishedAt: string | null; eventRosterRevision: string };
+  formation?: { forwards: 11; defense: 7 };
   units: TweetUnit[];
   excludedUnits?: TweetUnit[];
   events?: TweetPlayerEvent[];
@@ -92,9 +93,10 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
     version: TWEET_INTERPRETATION_VERSION,
     rosterRevision: roster.map((player) => [player.playerId, player.fullName, player.lastName, player.teamId, player.position, ...(player.aliases ?? [])].join(":")).sort().join("|"),
     units: [], unresolved: [],
-    context: /\b(camp|practice groups?|split squad)\b/i.test(text) ? "camp" : /\b(practice|morning skate)\b/i.test(text) ? "practice" : /\b(tonight|vs\.?|against|warmups?)\b/i.test(text) ? "game" : "unknown",
+    context: /\b(camp|practice groups?|split squad)\b/i.test(text) ? "camp" : /\b(practice|morning skate)\b/i.test(text) ? "practice" : /\b(tonight|today|this afternoon|vs\.?|against|warmups?|starting goal(?:ie|tender)|in (?:net|goal)|gets the start|starts)\b/i.test(text) ? "game" : "unknown",
     certainty: /\bconfirmed\b/i.test(text) ? "confirmed" : /\b(projected|expected)\b/i.test(text) ? "projected" : "reported",
   };
+  if (/\b11\s*(?:f\b|forwards?\b)[^\n]{0,30}7\s*(?:d\b|defen[cs]emen\b)/i.test(text)) result.formation = { forwards: 11, defense: 7 };
   const introduction = text.split("\n", 1)[0] ?? "";
   const initialSituation: TweetUnit["situation"] | null = /\b(power[ -]?play|pp(?:\s*[12])?)\b/i.test(introduction) ? "pp" : /\b(penalty kill|pk[12])\b/i.test(introduction) ? "pk" : null;
   let situation: TweetUnit["situation"] | null = initialSituation;
@@ -111,7 +113,7 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
     offset += rawLine.length + 1;
     let line = rawLine.trim();
     if (!line) { flush(); number = null; explicitNumber = false; continue; }
-    const groupMatch = line.match(/\b(?:group|squad)\s*([a-z0-9]+)\b/i);
+    const groupMatch = line.match(/\b(?:group|squad)\b\s+([a-z0-9]+)\b/i);
     if (groupMatch) { flush(); group = groupMatch[1]!.toLowerCase(); number = null; explicitNumber = false; situation = initialSituation; }
     // Parse the relay body without changing original evidence positions.
     line = line.replace(/^RT\s+@[^:]+:\s*/i, "");
@@ -127,10 +129,13 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
       line = line.slice(heading[0].length).trim();
       if (!line) continue;
     }
+    line = line.replace(/^🥅\s*/u, "");
     if (/^(?:RT\s+@|#|https?:)/i.test(line)) { flush(); continue; }
     let hits = line.includes("/") ? null : segmentPlayerRow(line, roster);
-    const rowKind = situation !== "pp" && situation !== "pk" && sawStructure && /[-–—]/.test(line)
+    let rowKind: EvenStrengthRow | null = situation !== "pp" && situation !== "pk" && sawStructure && /[-–—]/.test(line)
       ? (hits?.length === 2 ? "es_defense" : hits?.length === 3 ? "es_forward" : line.split(/[-–—]/).length >= 3 ? "es_forward" : "es_defense") : null;
+    if (result.formation && hits?.every((hit) => ["C", "L", "R", "LW", "RW", "F"].includes(hit.player.position?.toUpperCase() ?? "")) && hits.length === 2) rowKind = "es_forward";
+    if (result.formation && hits?.length === 1 && hits[0]!.player.position === "D") rowKind = "es_defense";
     const identityRow = rowKind ?? (situation === "es_forward" || situation === "es_defense" ? situation : null);
     if (identityRow && !line.includes("/")) hits = segmentPlayerRow(line, roster, identityRow);
     if (rowKind) {
@@ -196,7 +201,14 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
       result.units.push({ situation, number: null, explicitNumber: false, players, evidence, group, complete: true });
       continue;
     }
-    const kind = hits.length === 3 ? "es_forward" : hits.length === 2 ? "es_defense" : hits.length === 1 && hits[0]!.player.position === "G" ? "goalie" : null;
+    const kind = hits.length === 1 && hits[0]!.player.position === "G" ? "goalie"
+      : result.formation && rowKind ? rowKind : hits.length === 3 ? "es_forward" : hits.length === 2 ? "es_defense" : null;
+    if (kind && (kind === "es_forward" || kind === "es_defense") && hits.some((hit) => hit.player.position &&
+      (kind === "es_defense" ? hit.player.position.toUpperCase() !== "D" : !["C", "L", "R", "LW", "RW", "F"].includes(hit.player.position.toUpperCase())))) {
+      result.unresolved.push({ start: lineStart + rawLine.indexOf(line), end: lineStart + rawLine.indexOf(line) + line.length, text: line, situation: kind, number: null, reason: "invalid_extraction" });
+      result.units.push({ situation: kind, number: rowKind === kind ? ordinals.get(`${group}:${kind}`)! : null, explicitNumber: false, players, evidence, group, complete: false });
+      continue;
+    }
     if (!kind) continue;
     sawStructure = true;
     result.units.push({ situation: kind, number: rowKind === kind ? ordinals.get(`${group}:${kind}`)! : result.units.filter((unit) => unit.situation === kind && unit.group === group).length + 1,
@@ -242,6 +254,24 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
     });
   }
   return result;
+}
+
+/** Accept a whole declared formation, never a cardinality-only approximation. */
+export function completeEvenStrengthUnits(interpretation: TweetInterpretation, group: string | null = null): TweetUnit[] {
+  const units = interpretation.units.filter((unit) => unit.group === group && (unit.situation === "es_forward" || unit.situation === "es_defense"));
+  const forwards = units.filter((unit) => unit.situation === "es_forward");
+  const defense = units.filter((unit) => unit.situation === "es_defense");
+  if (interpretation.formation && (interpretation.formation.forwards !== 11 || interpretation.formation.defense !== 7)) return [];
+  const expectedF = interpretation.formation ? [3, 3, 3, 2] : [3, 3, 3, 3];
+  const expectedD = interpretation.formation ? [2, 2, 2, 1] : [2, 2, 2];
+  const matches = (rows: TweetUnit[], expected: number[]) => rows.length === expected.length && expected.every((size, index) => {
+    const row = rows.find((unit) => unit.number === index + 1);
+    return row?.complete && row.players.length === size && row.players.every((player) => Number.isSafeInteger(player.playerId) && player.playerId > 0);
+  });
+  if (!matches(forwards, expectedF) || !matches(defense, expectedD)) return [];
+  const ids = units.flatMap((unit) => unit.players.map((player) => player.playerId));
+  const scratched = interpretation.units.filter((unit) => unit.situation === "scratch").flatMap((unit) => unit.players.map((player) => player.playerId));
+  return new Set(ids).size === 18 && !ids.some((id) => scratched.includes(id)) ? [...forwards, ...defense] : [];
 }
 
 export function identityMentionPresent(text: string, name: string): boolean {
