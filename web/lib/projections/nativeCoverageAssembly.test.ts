@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assembleNativeCoverageProof, assembleNativeHitHistory, nativeAssemblyClockSeconds,
-  readNativeToiReport, readNativeScratchRecord, type NativeCoverageAssemblyPlan } from "./nativeCoverageAssembly";
+  readNativeToiReport, readNativeScratchRecord, type NativeCoverageAssemblyPlan, type NativeCoverageDiagnosticUseExpectation } from "./nativeCoverageAssembly";
 import { NATIVE_PLAYER_COVERAGE_DOMAIN_HASH, nativeCoverageTextHash, checkNativeCoverageProof,
   type NativeCoverageRawObservation, type NativeCoverageSourceLocation } from "./nativePlayerCoverage";
 import * as kernel from "./nativePlayerCoverageKernel";
@@ -33,6 +33,28 @@ function fixture() {
       upperEvidence: { kind: "final_body_receipt" as const, proofId: source.proofId, bodyHash: source.bodyHash },
       finalEvidence: { proofId: source.proofId, bodyHash: source.bodyHash, historicalGameId: box.id, seasonId: box.season, teamId: 1 } } } };
   return { box, source, plan, game };
+}
+function diagnosticFixture() {
+  const f = fixture(), purpose = "local_private_unpublished_research_transform" as const;
+  f.source.rights = "unknown"; f.plan.expectedContributors[0].rights = "unknown";
+  const tuple = { proofId: f.source.proofId, origin: f.source.origin,
+    body: { sha256: f.source.bodyHash, bytes: Buffer.byteLength(f.source.bodyUtf8, "utf8") } };
+  const record = { version: "native-private-diagnostic-task-authorization-v1", purpose: String(purpose),
+    decision: "authorized_under_existing_user_task", authorityKind: "first_party_task_authorization_only",
+    permittedOperations: ["local_retention_of_exact_retained_bodies", "local_private_parse_and_normalization",
+      "source_hash_and_span_binding", "serialization_of_unpublished_source_proof_proposals", "private_mechanics_diagnostics"],
+    limits: { newNetworkCollection: false, newDBReadOrWrite: false, publicDisplay: false, redistribution: false,
+      commercialServing: false, forecastIssuance: false, productionServing: false, modelCalculation: false, modelFitting: false,
+      modelDefaultsOrWeights: false, scientificQualification: false, automaticProofAdmission: false, publicationDeploymentOrPush: false },
+    thirdPartyRights: { retentionTransformationLicense: "unknown", redistribution: "unknown", publicDisplay: "unknown",
+      commercialUse: "unknown", serving: "unknown", noThirdPartyLicenseAssertion: true },
+    retainedSources: [tuple, { ...tuple, proofId: "separate-authorized-source", origin: "https://example.invalid/separate" }] };
+  const trusted = (): NativeCoverageDiagnosticUseExpectation => {
+    const approvedRecordUtf8 = JSON.stringify(record);
+    return { purpose, expectedApprovalHash: nativeCoverageTextHash(approvedRecordUtf8), approvedRecordUtf8 };
+  };
+  const plan = { ...f.plan, diagnosticUse: { purpose }, identity, games: [f.game] };
+  return { f, record, trusted, plan, assemble: (expected = trusted()) => assembleNativeHitHistory(plan, [f.source], expected) };
 }
 function span(body: string, fragment: string): Extract<NativeCoverageSourceLocation, { kind: "utf8_byte_span" }> {
   const start = body.indexOf(fragment); if (start < 0) throw new Error("missing fixture fragment");
@@ -159,6 +181,90 @@ describe("source-only offline assembly", () => {
     expect(findings).toEqual(["duplicate_derived_link"]);
     const distinct = [...proof.links, { ...proof.links[0], derivedPointer: "/identity/nhlPlayerId" }];
     expect(assembleNativeCoverageProof(f.plan, [f.source], JSON.parse(proof.bodyUtf8), distinct).status).toBe("proposed_for_independent_review");
+  });
+});
+describe("separate private diagnostic task authorization", () => {
+  it("binds an authorized subset without changing rights, scientific findings or inputs", () => {
+    const x = diagnosticFixture(), calculate = vi.spyOn(kernel, "calculateNativePlayerCoverageKernel"), before = JSON.stringify(x);
+    const original = assembleNativeHitHistory({ ...x.f.plan, identity, games: [x.f.game] }, [x.f.source]);
+    const result = x.assemble(), { diagnosticUse, ...scientific } = result;
+    expect(diagnosticUse).toEqual({ status: "authorized_by_existing_user_task", purpose: x.plan.diagnosticUse.purpose,
+      approvalHash: x.trusted().expectedApprovalHash, thirdPartyRights: "unknown", scientificAdmission: "withheld", findings: [] });
+    expect(JSON.stringify(scientific)).toBe(JSON.stringify(original));
+    expect(result).toMatchObject({ status: "blocked", qualificationEligible: false, sourceSemanticsApproval: "not_established", modelInputs: "withheld" });
+    expect(result.proof!.contributors[0].rights).toBe("unknown"); expect(result.findings.some(f => f.code === "unverified_access_or_rights")).toBe(true);
+    expect(calculate).not.toHaveBeenCalled(); expect(JSON.stringify(x)).toBe(before);
+  });
+  it("does not infer census completeness from authorized source coverage", () => {
+    const x = diagnosticFixture(); x.plan.censusComplete = null;
+    expect(x.assemble()).toMatchObject({ status: "blocked", diagnosticUse: { status: "authorized_by_existing_user_task" } });
+    expect(x.assemble().findings.some(f => f.code === "independent_census_required")).toBe(true);
+  });
+  it("preserves legacy bytes and omits the new field when the request is omitted", () => {
+    const x = diagnosticFixture(), plan = { ...x.f.plan, identity, games: [x.f.game] };
+    const original = assembleNativeHitHistory(plan, [x.f.source]), withUnusedExpectation = assembleNativeHitHistory(plan, [x.f.source], x.trusted());
+    expect(original).not.toHaveProperty("diagnosticUse"); expect(withUnusedExpectation).not.toHaveProperty("diagnosticUse");
+    expect(JSON.stringify(withUnusedExpectation)).toBe(JSON.stringify(original));
+  });
+  it.each(["absent", "missing_record", "missing_expected_hash"])("keeps %s trusted approval evidence unknown", change => {
+    const x = diagnosticFixture(), expected = x.trusted();
+    if (change === "missing_record") expected.approvedRecordUtf8 = null;
+    if (change === "missing_expected_hash") delete (expected as Partial<NativeCoverageDiagnosticUseExpectation>).expectedApprovalHash;
+    const result = assembleNativeHitHistory(x.plan, [x.f.source], change === "absent" ? undefined : expected);
+    expect(result.diagnosticUse).toMatchObject({ status: "unknown", approvalHash: null, findings: [{ code: "unknown_diagnostic_approval" }] });
+  });
+  it.each(["plan", "source", "record"])("ignores %s self-authorization without a trusted caller expectation", where => {
+    const x = diagnosticFixture(), expected = x.trusted();
+    if (where === "plan") Object.assign(x.plan.diagnosticUse, expected);
+    if (where === "source") x.f.source.bodyUtf8 = JSON.stringify({ ...x.f.box, diagnosticAuthorization: expected });
+    if (where === "record") Object.assign(x.plan, { diagnosticApprovalRecord: expected.approvedRecordUtf8 });
+    expect(assembleNativeHitHistory(x.plan, [x.f.source]).diagnosticUse).toMatchObject({ status: "unknown", approvalHash: null });
+  });
+  it.each(["wrong_hash", "changed_bytes", "wrong_version", "wrong_purpose", "wrong_authority", "publication_scope", "model_scope",
+    "extra_operation", "third_party_grant", "source_id", "source_hash", "source_origin", "source_length"])("rejects %s approval binding", change => {
+    const x = diagnosticFixture();
+    if (change === "wrong_version") x.record.version = "other";
+    if (change === "wrong_purpose") x.record.purpose = "public_commercial_serving";
+    if (change === "wrong_authority") x.record.authorityKind = "third_party_license";
+    if (change === "publication_scope") x.record.limits.publicDisplay = true;
+    if (change === "model_scope") x.record.limits.modelCalculation = true;
+    if (change === "extra_operation") x.record.permittedOperations.push("model_execution");
+    if (change === "third_party_grant") x.record.thirdPartyRights.commercialUse = "verified";
+    if (change === "source_id") x.record.retainedSources[0].proofId = "different";
+    if (change === "source_hash") x.record.retainedSources[0].body.sha256 = "a".repeat(64);
+    if (change === "source_origin") x.record.retainedSources[0].origin = "https://example.invalid/different";
+    if (change === "source_length") x.record.retainedSources[0].body.bytes++;
+    const expected = x.trusted();
+    if (change === "wrong_hash") expected.expectedApprovalHash = "a".repeat(64);
+    if (change === "changed_bytes") expected.approvedRecordUtf8 += "\n";
+    const result = x.assemble(expected);
+    expect(result.diagnosticUse).toMatchObject({ status: "invalid", approvalHash: null });
+    expect(result.proof!.contributors[0].rights).toBe("unknown"); expect(result.qualificationEligible).toBe(false);
+  });
+  it("rejects conflicting approved tuples while allowing identical repeated tuples", () => {
+    const x = diagnosticFixture(), duplicate = structuredClone(x.record.retainedSources[0]);
+    x.record.retainedSources.push(duplicate); expect(x.assemble().diagnosticUse!.status).toBe("authorized_by_existing_user_task");
+    duplicate.origin = "https://example.invalid/conflict";
+    expect(x.assemble().diagnosticUse).toMatchObject({ status: "invalid", findings: [{ code: "diagnostic_contributor_conflict" }] });
+  });
+  it("rejects conflicting actual contributor tuples and changed bytes hidden behind a declared hash", () => {
+    const x = diagnosticFixture(), original = x.assemble().proof!, other = { ...x.f.source, origin: "https://example.invalid/conflict" };
+    const result = assembleNativeCoverageProof(x.plan, [x.f.source, other], JSON.parse(original.bodyUtf8), original.links, x.trusted());
+    expect(result.diagnosticUse).toMatchObject({ status: "invalid", findings: [{ code: "diagnostic_contributor_conflict" }] });
+    x.f.source.bodyUtf8 += " ";
+    expect(x.assemble().diagnosticUse).toMatchObject({ status: "invalid", findings: [{ code: "diagnostic_contributor_binding" }] });
+  });
+  it("retains diagnostic bookkeeping on an invalid HIT scientific observation", () => {
+    const x = diagnosticFixture(); x.plan.games[0].playerPointer = "/missing";
+    expect(x.assemble()).toMatchObject({ status: "blocked", proof: null, diagnosticUse: { status: "authorized_by_existing_user_task" },
+      qualificationEligible: false, findings: [{ code: "hit_player_game_identity" }] });
+  });
+  it("rejects a changed requested or trusted purpose and keeps an empty source set unknown", () => {
+    const x = diagnosticFixture(); Object.assign(x.plan.diagnosticUse, { purpose: "public_serving" });
+    expect(x.assemble().diagnosticUse!.status).toBe("invalid");
+    const y = diagnosticFixture(), expected = y.trusted(); Object.assign(expected, { purpose: "model_use" });
+    expect(y.assemble(expected).diagnosticUse!.status).toBe("invalid");
+    expect(assembleNativeHitHistory(y.plan, [], y.trusted()).diagnosticUse).toMatchObject({ status: "unknown", findings: [{ code: "unknown_diagnostic_contributors" }] });
   });
 });
 describe("strict reported HTML evidence", () => {

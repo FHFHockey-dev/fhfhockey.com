@@ -1,4 +1,5 @@
 import { parse as parseHtml, HTMLElement } from "node-html-parser";
+import { z } from "zod";
 import { NATIVE_COVERAGE_PROOF_VERSION, NATIVE_COVERAGE_SPAN_PROOF_VERSION, NATIVE_PLAYER_COVERAGE_DOMAIN_HASH,
   nativeCoverageTextHash, nativeCoverageLocationValue, nativeCoverageRawObservationSchema,
   nativeCoverageProofSchema, nativeCoverageHistoryBodySchema, checkNativeCoverageProof, checkNativeCoverageHistory,
@@ -13,18 +14,82 @@ type HtmlField = { location: Span; expectedText: string };
 type Link = NativeCoverageSpanProof["links"][number];
 type Finding = { kind: "invalid" | "unknown"; code: string; path: string };
 type SourceExpectation = Omit<NativeCoverageRawObservation, "bodyUtf8">;
+const diagnosticPurpose = "local_private_unpublished_research_transform" as const;
+/** The caller supplies this from an independently approved record, never from the plan or source. */
+export type NativeCoverageDiagnosticUseExpectation = {
+  purpose: typeof diagnosticPurpose; expectedApprovalHash: string; approvedRecordUtf8: string | null;
+};
+type DiagnosticUse = {
+  status: "authorized_by_existing_user_task" | "unknown" | "invalid"; purpose: typeof diagnosticPurpose;
+  approvalHash: string | null; thirdPartyRights: "unknown"; scientificAdmission: "withheld"; findings: Finding[];
+};
+const diagnosticOperations = ["local_retention_of_exact_retained_bodies", "local_private_parse_and_normalization",
+  "source_hash_and_span_binding", "serialization_of_unpublished_source_proof_proposals", "private_mechanics_diagnostics"] as const;
+const diagnosticRecord = z.object({ version: z.literal("native-private-diagnostic-task-authorization-v1"),
+  purpose: z.literal(diagnosticPurpose), decision: z.literal("authorized_under_existing_user_task"),
+  authorityKind: z.literal("first_party_task_authorization_only"),
+  permittedOperations: z.array(z.enum(diagnosticOperations)).min(1).max(5).refine(value => new Set(value).size === value.length
+    && diagnosticOperations.slice(1, 4).every(operation => value.includes(operation))),
+  limits: z.object({ newNetworkCollection: z.literal(false), newDBReadOrWrite: z.literal(false), publicDisplay: z.literal(false),
+    redistribution: z.literal(false), commercialServing: z.literal(false), forecastIssuance: z.literal(false), productionServing: z.literal(false),
+    modelCalculation: z.literal(false), modelFitting: z.literal(false), modelDefaultsOrWeights: z.literal(false), scientificQualification: z.literal(false),
+    automaticProofAdmission: z.literal(false), publicationDeploymentOrPush: z.literal(false) }).strict(),
+  thirdPartyRights: z.object({ retentionTransformationLicense: z.literal("unknown"), redistribution: z.literal("unknown"),
+    publicDisplay: z.literal("unknown"), commercialUse: z.literal("unknown"), serving: z.literal("unknown"),
+    noThirdPartyLicenseAssertion: z.literal(true) }).passthrough(),
+  retainedSources: z.array(z.object({ proofId: z.string().min(1).max(256), origin: z.string().url().max(2000),
+    body: z.object({ sha256: z.string().regex(/^[a-f0-9]{64}$/), bytes: z.number().int().positive().safe() }).passthrough() }).passthrough()).min(1).max(1000),
+}).passthrough();
 export type NativeCoverageAssemblyPlan = {
   proofId: string; targetGameId: number; teamId: number; cutoffAt: string; transformation: NativeCoverageSpanProof["transformation"];
   expectedContributors: SourceExpectation[];
   // An independent observation/population plan, never an estimator approval or inferred census.
   expectedRowIds: string[] | null; censusComplete: boolean | null;
+  // A request alone cannot authorize use; the trusted expectation is a separate function argument.
+  diagnosticUse?: { purpose: typeof diagnosticPurpose };
 };
 export type NativeCoverageAssemblyResult = {
   version: typeof NATIVE_COVERAGE_ASSEMBLY_VERSION; status: "blocked" | "proposed_for_independent_review";
   proof: NativeCoverageSpanProof | null; findings: Finding[]; qualificationEligible: false;
   independentOutputContractRequired: true; sourceSemanticsApproval: "not_established"; modelInputs: "withheld";
+  diagnosticUse?: DiagnosticUse;
 };
 const normalText = (value: string) => value.replace(/\s+/g, " ").trim();
+
+function checkDiagnosticUse(request: NativeCoverageAssemblyPlan["diagnosticUse"], contributors: NativeCoverageRawObservation[],
+  trusted: NativeCoverageDiagnosticUseExpectation | undefined): DiagnosticUse | undefined {
+  if (request === undefined) return;
+  const result = (status: DiagnosticUse["status"], code?: string): DiagnosticUse => ({ status, purpose: diagnosticPurpose,
+    approvalHash: status === "authorized_by_existing_user_task" ? trusted!.expectedApprovalHash : null,
+    thirdPartyRights: "unknown", scientificAdmission: "withheld", findings: code ? [{ kind: status === "invalid" ? "invalid" : "unknown", code, path: "diagnosticUse" }] : [] });
+  if (request?.purpose !== diagnosticPurpose || trusted && trusted.purpose !== diagnosticPurpose)
+    return result("invalid", "diagnostic_use_purpose");
+  if (!trusted || trusted.expectedApprovalHash == null || trusted.approvedRecordUtf8 == null)
+    return result("unknown", "unknown_diagnostic_approval");
+  if (typeof trusted.expectedApprovalHash !== "string" || !/^[a-f0-9]{64}$/.test(trusted.expectedApprovalHash)
+    || typeof trusted.approvedRecordUtf8 !== "string" || Buffer.byteLength(trusted.approvedRecordUtf8, "utf8") > 2000000
+    || nativeCoverageTextHash(trusted.approvedRecordUtf8) !== trusted.expectedApprovalHash)
+    return result("invalid", "diagnostic_approval_hash");
+  try {
+    // Hash binding does not establish authenticity: the trusted caller approved this exact record independently.
+    const record = diagnosticRecord.parse(JSON.parse(trusted.approvedRecordUtf8)), allowed = new Map<string, string>(), actual = new Map<string, string>();
+    const tuple = (origin: string, bodyHash: string, bytes: number) => JSON.stringify([origin, bodyHash, bytes]);
+    for (const source of record.retainedSources) {
+      const value = tuple(source.origin, source.body.sha256, source.body.bytes);
+      if (allowed.has(source.proofId) && allowed.get(source.proofId) !== value) return result("invalid", "diagnostic_contributor_conflict");
+      allowed.set(source.proofId, value);
+    }
+    if (!contributors.length) return result("unknown", "unknown_diagnostic_contributors");
+    for (const source of contributors) {
+      const raw = nativeCoverageRawObservationSchema.parse(source), value = tuple(raw.origin, raw.bodyHash, Buffer.byteLength(raw.bodyUtf8, "utf8"));
+      if (actual.has(raw.proofId) && actual.get(raw.proofId) !== value) return result("invalid", "diagnostic_contributor_conflict");
+      actual.set(raw.proofId, value);
+      if (nativeCoverageTextHash(raw.bodyUtf8) !== raw.bodyHash || allowed.get(raw.proofId) !== value)
+        return result("invalid", "diagnostic_contributor_binding");
+    }
+    return result("authorized_by_existing_user_task");
+  } catch { return result("invalid", "diagnostic_approval_record"); }
+}
 
 /** Matches the existing literal clock grammar without importing its capture-runtime dependencies. */
 export function nativeAssemblyClockSeconds(value: unknown): number | null {
@@ -198,7 +263,9 @@ function sourceOnlyBody(body: NativeCoverageHistoryBody | NativeCoverageKernelSo
 }
 /** Serialize independently bound source observations; this does not certify their transformation semantics. */
 export function assembleNativeCoverageProof(plan: NativeCoverageAssemblyPlan, contributors: NativeCoverageRawObservation[],
-  observationBody: NativeCoverageHistoryBody | NativeCoverageKernelSourceBody, links: Link[]): NativeCoverageAssemblyResult {
+  observationBody: NativeCoverageHistoryBody | NativeCoverageKernelSourceBody, links: Link[],
+  trustedDiagnosticExpectation?: NativeCoverageDiagnosticUseExpectation): NativeCoverageAssemblyResult {
+  const diagnosticUse = checkDiagnosticUse(plan.diagnosticUse, contributors, trustedDiagnosticExpectation);
   const findings: Finding[] = [];
   const add = (kind: Finding["kind"], code: string, path: string) => {
     if (!findings.some(value => value.kind === kind && value.code === code && value.path === path)) findings.push({ kind, code, path });
@@ -206,7 +273,7 @@ export function assembleNativeCoverageProof(plan: NativeCoverageAssemblyPlan, co
   const result = (proof: NativeCoverageSpanProof | null): NativeCoverageAssemblyResult => ({
     version: NATIVE_COVERAGE_ASSEMBLY_VERSION, status: findings.length ? "blocked" : "proposed_for_independent_review",
     proof, findings, qualificationEligible: false, independentOutputContractRequired: true,
-    sourceSemanticsApproval: "not_established", modelInputs: "withheld" });
+    sourceSemanticsApproval: "not_established", modelInputs: "withheld", ...(diagnosticUse === undefined ? {} : { diagnosticUse }) });
   try {
     const raws = contributors.map(value => nativeCoverageRawObservationSchema.parse(value));
     if (new Set(raws.map(value => value.proofId)).size !== raws.length
@@ -267,7 +334,7 @@ export function assembleNativeHitHistory(plan: NativeCoverageAssemblyPlan & {
   games: Array<{ rowId: string; historicalGameId: number; historicalTeamId: number; sourceProofId: string;
     playerPointer: string; statisticalCredit: boolean | null;
     history: Pick<Extract<NativeCoverageKernelSourceBody, { kind: "hit_history" }>["rows"][number], "completedAt" | "completion"> }>;
-}, contributors: NativeCoverageRawObservation[]): NativeCoverageAssemblyResult {
+}, contributors: NativeCoverageRawObservation[], trustedDiagnosticExpectation?: NativeCoverageDiagnosticUseExpectation): NativeCoverageAssemblyResult {
   const rows: Extract<NativeCoverageKernelSourceBody, { kind: "hit_history" }>["rows"] = [], links: Link[] = [];
   try {
     for (const game of plan.games) {
@@ -297,7 +364,7 @@ export function assembleNativeHitHistory(plan: NativeCoverageAssemblyPlan & {
     const complete = plan.censusComplete === true;
     const result = assembleNativeCoverageProof(plan, contributors, { kind: "hit_history", domainHash: NATIVE_PLAYER_COVERAGE_DOMAIN_HASH,
       identity: plan.identity, rows, unclassifiedHits: complete && rows.every(row => row.hits !== null) ? 0 : null,
-      unclassifiedSeconds: complete && rows.every(row => row.seconds !== null) ? 0 : null }, links);
+      unclassifiedSeconds: complete && rows.every(row => row.seconds !== null) ? 0 : null }, links, trustedDiagnosticExpectation);
     rows.forEach(row => {
       if (row.hits === null || row.seconds === null || row.statisticalCredit === null)
         result.findings.push({ kind: "unknown", code: "unknown_hit_observation", path: row.rowId });
@@ -307,6 +374,7 @@ export function assembleNativeHitHistory(plan: NativeCoverageAssemblyPlan & {
   } catch (error) {
     return { version: NATIVE_COVERAGE_ASSEMBLY_VERSION, status: "blocked", proof: null,
       findings: [{ kind: "invalid", code: error instanceof Error ? error.message : "malformed_hit_assembly", path: "games" }],
-      qualificationEligible: false, independentOutputContractRequired: true, sourceSemanticsApproval: "not_established", modelInputs: "withheld" };
+      qualificationEligible: false, independentOutputContractRequired: true, sourceSemanticsApproval: "not_established", modelInputs: "withheld",
+      ...(plan.diagnosticUse === undefined ? {} : { diagnosticUse: checkDiagnosticUse(plan.diagnosticUse, contributors, trustedDiagnosticExpectation) }) };
   }
 }
