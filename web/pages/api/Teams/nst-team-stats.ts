@@ -741,18 +741,6 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
             ? addDays(parseISO(validDates.reduce((a, b) => (a < b ? a : b))), 1)
             : parseISO(regularSeasonStartDate);
 
-        if (format(resumeFromDate, "yyyy-MM-dd") > currentProcessingEndDate) {
-          return res.status(200).json({
-            message: "All date-based team statistics are up to date.",
-            success: true,
-            complete: true,
-            processedDates: [],
-            remainingDates: [],
-            nextStartDate: null,
-            nextEndDate: null,
-          });
-        }
-
         targetDateObjects = buildDateRange(
           resumeFromDate,
           parseISO(currentProcessingEndDate)
@@ -807,15 +795,17 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
     }
 
     remainingDates = remainingTargets.map((target) => target.date);
-    const shouldRunSeasonTables =
-      !isManualStartDateMode &&
-      !isBackwardRangeMode &&
-      remainingDates.length === 0 &&
-      hasBudgetForRequests(scriptStartTime, 2);
+    const seasonConfigsForRun =
+      isManualStartDateMode || isBackwardRangeMode
+        ? []
+        : seasonBasedConfigs.filter(
+            ([key]) => key === "seasonStats" || remainingDates.length === 0
+          );
+    const reservedSeasonRequests = seasonConfigsForRun.length > 0 ? 1 : 0;
     const nstRequestPlan = resolveNstTeamStatsRequestPlan({
       queuedDates: totalDateCount,
       dateRequestCount: totalDateCount * dateBasedConfigs.length,
-      seasonRequestCount: shouldRunSeasonTables ? seasonBasedConfigs.length : 0,
+      seasonRequestCount: seasonConfigsForRun.length,
     });
     currentNstRequestIntervalMs = nstRequestPlan.requestIntervalMs;
 
@@ -833,9 +823,14 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
 
     for (const [dateIndex, target] of targetDateObjects.entries()) {
       const formattedDate = target.date;
-      if (!hasBudgetForRequests(scriptStartTime, 4)) {
+      if (
+        !hasBudgetForRequests(
+          scriptStartTime,
+          dateBasedConfigs.length + reservedSeasonRequests
+        )
+      ) {
         logNst(
-          `Stopping before date ${formattedDate} | insufficient runtime budget for 4 date-based requests`
+          `Stopping before date ${formattedDate} | insufficient runtime budget for ${dateBasedConfigs.length} date-based requests and ${reservedSeasonRequests} reserved season request(s)`
         );
         remainingTargets = [target, ...remainingTargets];
         remainingDates = remainingTargets.map(
@@ -951,12 +946,22 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
       processedDates.push(formattedDate);
     }
 
-    if (shouldRunSeasonTables) {
-      logNst("Date backlog is clear; starting season-based refresh.");
+    if (!fatalNstConfigurationFailure && seasonConfigsForRun.length > 0) {
+      logNst("Checking eligible season-based refreshes.");
       for (const [
         seasonIndex,
         [key, { situation, rate, table }],
-      ] of seasonBasedConfigs.entries()) {
+      ] of seasonConfigsForRun.entries()) {
+        if (key === "lastSeasonStats" && remainingDates.length > 0) {
+          continue;
+        }
+        if (!hasBudgetForRequests(scriptStartTime, 1)) {
+          logNst(
+            `Skipping ${table} season refresh | insufficient remaining runtime budget`
+          );
+          break;
+        }
+        ranSeasonTables = true;
         const season = key === "seasonStats" ? seasonId : lastSeasonId;
         const queryParams = new URLSearchParams({
           sit: situation,
@@ -969,7 +974,7 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
           loc: "B",
           gpf: "410",
         });
-        const runLabel = `Season ${season} | table ${key} ${seasonIndex + 1}/${seasonBasedConfigs.length}`;
+        const runLabel = `Season ${season} | table ${key} ${seasonIndex + 1}/${seasonConfigsForRun.length}`;
 
         try {
           const scriptOutput = await fetchTeamTable(queryParams, {
@@ -1041,15 +1046,13 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
           }
         }
       }
-
-      ranSeasonTables = true;
     } else if (isManualStartDateMode || isBackwardRangeMode) {
       logNst(
         "Skipping season-based refresh because manual date-range backfill mode is date-only."
       );
-    } else if (remainingDates.length > 0) {
+    } else if (fatalNstConfigurationFailure) {
       logNst(
-        `Skipping season-based refresh because ${remainingDates.length} date(s) remain in the backlog.`
+        "Skipping season-based refresh after a fatal NST configuration failure."
       );
     } else {
       logNst(
