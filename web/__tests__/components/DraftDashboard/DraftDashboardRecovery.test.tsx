@@ -5,7 +5,10 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const noop = vi.fn();
 const external = vi.hoisted(() => ({
   user: null as { id: string } | null,
-  espnActive: false,
+  espnState: null as any,
+  showRoster: false,
+  players: null as any[] | null,
+  filledSlots: {} as Record<string, number>,
   loadSettings: vi.fn(async () => ({ data: null as any, error: null })),
 }));
 const player = {
@@ -27,17 +30,28 @@ const keeperPlayer = {
   combinedStats: {},
 };
 
+const recoveryPlayers = [player, keeperPlayer];
+const noGoalies: typeof player[] = [];
+
 vi.mock("contexts/AuthProviderContext", () => ({ useAuth: () => ({ user: external.user, isLoading: false }) }));
 vi.mock("lib/supabase", () => ({ default: { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: () => external.loadSettings() }) }) }) } }));
 vi.mock("hooks/useCurrentSeason", () => ({ useCurrentSeasonQuery: () => ({ data: null, isLoading: false }) }));
 vi.mock("hooks/useDraftRanking", () => ({ useDraftRanking: () => ({ entries: { data: { entries: [] } }, bootstrap: { data: null } }) }));
 vi.mock("hooks/useYahooDraftSync", () => ({ useYahooDraftSync: () => ({ enabled: false, selectedLeagueId: null, sessionId: null, requestState: null, terminalSessionMissing: false, resumeSession: noop, clearSession: noop, start: noop, stop: noop, connect: noop, draftState: null, error: null, isPolling: false, leagues: [], ranking: null, refreshAccount: noop, refreshDraft: noop, setSelectedLeagueId: noop }) }));
-vi.mock("hooks/useEspnDraftSync", () => ({ useEspnDraftSync: () => ({ enabled: false, draftState: external.espnActive ? { session: { status: "active" }, picks: [], teams: [] } : null, error: null, isLoading: false, isPolling: false, leagues: [], selectedLeagueId: null, setSelectedLeagueId: noop, start: noop, stop: noop, clear: noop, refresh: noop, reload: noop }) }));
-vi.mock("hooks/useProcessedProjectionsData", () => ({ useProcessedProjectionsData: ({ activePlayerType }: { activePlayerType: string }) => ({ processedPlayers: activePlayerType === "goalie" ? [] : [player, keeperPlayer], isLoading: false, error: null, customSourceResolutions: {}, customFallbackUsage: { total: 0 }, sourceWarnings: [], yahooMappingDiagnostics: null, inclusionDiagnostics: null }) }));
-vi.mock("hooks/useVORPCalculations", () => ({ useVORPCalculations: () => ({ playerMetrics: new Map(), replacementByPos: {}, expectedTakenByPos: {}, expectedN: 0 }) }));
+vi.mock("hooks/useEspnDraftSync", () => ({ useEspnDraftSync: () => ({ enabled: false, draftState: external.espnState, error: null, isLoading: false, isPolling: false, leagues: [], selectedLeagueId: null, setSelectedLeagueId: noop, start: noop, stop: noop, clear: noop, refresh: noop, reload: noop }) }));
+vi.mock("hooks/useProcessedProjectionsData", () => ({ useProcessedProjectionsData: ({ activePlayerType }: { activePlayerType: string }) => ({ processedPlayers: activePlayerType === "goalie" ? noGoalies : external.players ?? recoveryPlayers, isLoading: false, error: null, customSourceResolutions: {}, customFallbackUsage: { total: 0 }, sourceWarnings: [], yahooMappingDiagnostics: null, inclusionDiagnostics: null }) }));
+vi.mock("hooks/useVORPCalculations", () => ({ useVORPCalculations: ({ myFilledSlots }: { myFilledSlots: Record<string, number> }) => {
+  external.filledSlots = myFilledSlots;
+  return { playerMetrics: new Map(), replacementByPos: {}, expectedTakenByPos: {}, expectedN: 0 };
+} }));
 vi.mock("hooks/useRosterScheduleOptimizer", () => ({ useRosterScheduleOptimizer: () => ({ status: "idle" }) }));
 vi.mock("components/PlayerAutocomplete", () => ({ default: () => null }));
-vi.mock("components/DraftDashboard/MyRoster", () => ({ default: ({ onDraftPlayer, canDraft }: any) => <button disabled={!canDraft} onClick={() => onDraftPlayer("2")}>Draft recovery player</button> }));
+vi.mock("components/DraftDashboard/MyRoster", async () => {
+  const { default: MyRoster } = await vi.importActual<typeof import("../../../components/DraftDashboard/MyRoster")>("components/DraftDashboard/MyRoster");
+  return { default: (props: React.ComponentProps<typeof MyRoster>) => external.showRoster
+    ? <MyRoster {...props} />
+    : <button disabled={!props.canDraft} onClick={() => props.onDraftPlayer("2")}>Draft recovery player</button> };
+});
 vi.mock("components/DraftDashboard/DraftBoard", () => ({ default: () => null }));
 vi.mock("components/DraftDashboard/LeagueStandings", () => ({ default: () => null }));
 vi.mock("components/DraftDashboard/DraftSummaryModal", () => ({ default: () => null }));
@@ -98,7 +112,8 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup(); sessionStorage.clear(); localStorage.clear(); vi.restoreAllMocks(); vi.unstubAllGlobals();
-  external.user = null; external.espnActive = false; external.loadSettings.mockReset(); external.loadSettings.mockResolvedValue({ data: null, error: null });
+  external.showRoster = false; external.players = null; external.filledSlots = {};
+  external.user = null; external.espnState = null; external.loadSettings.mockReset(); external.loadSettings.mockResolvedValue({ data: null, error: null });
 });
 
 it.each(["draft.snapshot.v2", "draftDashboard.session.v1"])("declining %s starts clean and preserves unrelated storage under StrictMode", async (key) => {
@@ -288,4 +303,113 @@ it.each([
   fireEvent.click(within(dialog()).getByRole("button", { name: "Done" }));
   expect(sessionStorage.getItem("draft.snapshot.v2")).toBe(raw);
   expect(screen.getByRole("button", { name: "Draft recovery player" }).hasAttribute("disabled")).toBe(true);
+});
+
+
+it.each([
+  ["2", "9", "3"],
+  ["9", "3", "2"],
+])("renders the same filled slots used for replacement after drafting %s, %s, %s", async (...order) => {
+  external.showRoster = true;
+  external.players = [
+    { ...player, displayPosition: "C,RW", eligiblePositions: ["C", "RW"] },
+    keeperPlayer,
+    { ...player, playerId: 3, fullName: "Second Center" },
+  ];
+  const draftedPlayers = order.map((playerId, index) => ({ playerId, teamId: "Team 1", pickNumber: index * 2 + 1, round: index + 1, pickInRound: 1 }));
+  sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({
+    ...snapshot(),
+    draftSettings: { ...settings, draftOrderMode: "standard", rosterConfig: { ...settings.rosterConfig, C: 2, RW: 1 } },
+    draftedPlayers, currentPick: 6, keepers: [], positionOverrides: {}, draftHistory: [],
+    forwardGrouping: "split", customCsvList: [], sourceControls: { dtz_skaters: { isSelected: true, weight: 1 } },
+  }));
+  render(<DraftDashboard />);
+  await waitFor(() => expect(saved().draftedPlayers).toEqual(draftedPlayers));
+  expect(screen.getByRole("button", { name: "RW 1: Recovery Player" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: /C [12]: Root Keeper/ })).toBeTruthy();
+  expect(screen.getByRole("button", { name: /C [12]: Second Center/ })).toBeTruthy();
+  expect(external.filledSlots).toMatchObject({ C: 2, RW: 1, BENCH: 0 });
+});
+
+it("renders and restores a saved Utility reservation with matching replacement occupancy", async () => {
+  external.showRoster = true;
+  sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({
+    ...snapshot(),
+    draftSettings: { ...settings, rosterConfig: { ...settings.rosterConfig, utility: 1, bench: 0 } },
+    draftedPlayers: [{ playerId: "2", teamId: "Team 1", pickNumber: 1, round: 1, pickInRound: 1 }],
+    keepers: [], positionOverrides: {}, draftHistory: [], forwardGrouping: "split",
+    customCsvList: [], sourceControls: { dtz_skaters: { isSelected: true, weight: 1 } },
+  }));
+  const view = render(<DraftDashboard />);
+  await waitFor(() => expect(screen.getByRole("button", { name: "C 1: Recovery Player" })).toBeTruthy());
+  fireEvent.click(screen.getByRole("button", { name: "C 1: Recovery Player" }));
+  fireEvent.click(screen.getByRole("button", { name: "UTILITY 1: Open" }));
+  await waitFor(() => expect(saved().positionOverrides).toEqual({ "2": "UTILITY" }));
+  expect(screen.getByRole("button", { name: "UTILITY 1: Recovery Player" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "C 1: Open" })).toBeTruthy();
+  expect(external.filledSlots).toMatchObject({ C: 0, UTILITY: 1, BENCH: 0 });
+  const beforeReload = saved();
+  view.unmount();
+  render(<DraftDashboard />);
+  await waitFor(() => expect(screen.getByRole("button", { name: "UTILITY 1: Recovery Player" })).toBeTruthy());
+  expect(saved().positionOverrides).toEqual(beforeReload.positionOverrides);
+  expect(saved().draftedPlayers).toEqual(beforeReload.draftedPlayers);
+  expect(screen.getByRole("button", { name: "C 1: Open" })).toBeTruthy();
+  expect(external.filledSlots).toMatchObject({ C: 0, UTILITY: 1, BENCH: 0 });
+});
+
+
+it("keeps reserved no-pick keepers and unmapped picks in the rendered roster", async () => {
+  external.showRoster = true;
+  const draftedPlayers = [
+    { playerId: "2", teamId: "Team 1", pickNumber: 1, round: 1, pickInRound: 1 },
+    { playerId: "999", teamId: "Team 1", pickNumber: 3, round: 2, pickInRound: 1 },
+  ];
+  sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({
+    ...snapshot(),
+    draftSettings: { ...settings, isKeeper: true, rosterConfig: { ...settings.rosterConfig, utility: 1 } },
+    draftedPlayers, currentPick: 4,
+    keepers: [{ playerId: "9", teamId: "Team 1", cost: "none" }],
+    positionOverrides: { "9": "UTILITY", "999": "RW" }, draftHistory: [], forwardGrouping: "split",
+    customCsvList: [], sourceControls: { dtz_skaters: { isSelected: true, weight: 1 } },
+  }));
+  render(<DraftDashboard />);
+  await waitFor(() => expect(screen.getByRole("button", { name: "UTILITY 1: Root Keeper" })).toBeTruthy());
+  expect(screen.getByRole("button", { name: "C 1: Recovery Player" })).toBeTruthy();
+  expect(within(document.querySelector('[data-position="BENCH"]') as HTMLElement).getByText("999")).toBeTruthy();
+  expect(external.filledSlots).toMatchObject({ C: 1, UTILITY: 1, BENCH: 1 });
+  expect(saved().draftedPlayers).toEqual(draftedPlayers);
+  expect(saved().keepers).toMatchObject([{ playerId: "9", teamId: "Team 1", cost: "none" }]);
+  expect(saved().positionOverrides).toEqual({ "9": "UTILITY", "999": "RW" });
+});
+
+it("keeps roster moves locked while a provider controls drafting", async () => {
+  external.showRoster = true;
+  external.espnState = {
+    session: { id: "locked-fixture", status: "active" },
+    league: { id: "locked-league", settings: {
+      draftOrder: settings.draftOrder, teamCount: 2, teams: [], sourceHash: "locked-fixture",
+      rosterConfig: { ...settings.rosterConfig, utility: 1, bench: 0 },
+      leagueType: "points", skaterScoringCategories: settings.scoringCategories,
+      goalieScoringCategories: { WINS_GOALIE: 4 },
+    } },
+    picks: [{ nhlPlayerId: 2, mappingStatus: "mapped", externalPlayerId: "fixture-2", playerName: player.fullName,
+      externalTeamKey: "Team 1", pickNumber: 1, roundNumber: 1, pickInRound: 1 }],
+  };
+  sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({
+    ...snapshot(),
+    draftSettings: { ...settings, rosterConfig: { ...settings.rosterConfig, utility: 1, bench: 0 } },
+    draftedPlayers: [{ playerId: "2", teamId: "Team 1", pickNumber: 1, round: 1, pickInRound: 1 }],
+    keepers: [], positionOverrides: {}, draftHistory: [], forwardGrouping: "split",
+    customCsvList: [], sourceControls: { dtz_skaters: { isSelected: true, weight: 1 } },
+  }));
+  render(<DraftDashboard />);
+  await waitFor(() => expect(screen.getByRole("button", { name: "C 1: Recovery Player" })).toBeTruthy());
+  const current = screen.getByRole("button", { name: "C 1: Recovery Player" });
+  expect(current.getAttribute("aria-disabled")).toBe("true");
+  fireEvent.click(current);
+  fireEvent.click(screen.getByRole("button", { name: "UTILITY 1: Open" }));
+  expect(screen.getByRole("button", { name: "C 1: Recovery Player" })).toBeTruthy();
+  expect(saved().positionOverrides).toEqual({});
+  expect(external.filledSlots).toMatchObject({ C: 1, UTILITY: 0, BENCH: 0 });
 });

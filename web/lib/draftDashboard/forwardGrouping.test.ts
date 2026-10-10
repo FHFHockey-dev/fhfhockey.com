@@ -88,6 +88,52 @@ describe("grouped forward contract", () => {
     });
   });
 
+  it.each([
+    ["dual", "center1", "center2"],
+    ["dual", "center2", "center1"],
+    ["center1", "dual", "center2"],
+    ["center2", "dual", "center1"],
+    ["center1", "center2", "dual"],
+    ["center2", "center1", "dual"],
+  ])("fills all starters for draft order %s, %s, %s", (...order) => {
+    const allocation = allocateGroupedRosterSlots({
+      players: order.map((id) => ({ id, eligibility: id === "dual" ? ["C", "RW"] : ["C"] })),
+      rosterConfig: { C: 2, RW: 1, utility: 0, bench: 1 },
+      grouping: "split",
+    });
+    expect(allocation.assignments).toEqual({ dual: "RW", center1: "C", center2: "C" });
+    expect(allocation.counts).toMatchObject({ C: 2, RW: 1, BENCH: 0 });
+  });
+
+  it("preserves an explicit reservation while relocating automatic assignments", () => {
+    const allocation = allocateGroupedRosterSlots({
+      players: [
+        { id: "dual", eligibility: ["C", "RW"] },
+        { id: "center1", eligibility: ["C"] },
+        { id: "center2", eligibility: ["C"] },
+      ],
+      rosterConfig: { C: 2, RW: 1, utility: 0, bench: 1 },
+      grouping: "split",
+      overrides: { center1: "C" },
+    });
+    expect(allocation.assignments).toEqual({ dual: "RW", center1: "C", center2: "C" });
+  });
+
+  it("follows a relocation chain through every movable occupant", () => {
+    const allocation = allocateGroupedRosterSlots({
+      players: [
+        { id: "dual", eligibility: ["C", "RW"] },
+        { id: "center1", eligibility: ["C"] },
+        { id: "wing", eligibility: ["RW", "LW"] },
+        { id: "center2", eligibility: ["C"] },
+      ],
+      rosterConfig: { C: 2, RW: 1, LW: 1, utility: 0, bench: 0 },
+      grouping: "split",
+    });
+    expect(allocation.assignments).toEqual({ dual: "RW", center1: "C", wing: "LW", center2: "C" });
+    expect(allocation.counts.BENCH).toBe(0);
+  });
+
   it("reserves explicit utility and position choices before automatic placement", () => {
     const input = {
       players: [{ id: "auto", eligibility: ["C", "LW"] }, { id: "pinned", eligibility: ["C", "LW"] }],

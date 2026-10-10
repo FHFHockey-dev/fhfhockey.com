@@ -2265,35 +2265,39 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     teamRosterCounts,
   ]);
 
-  const myFilledSlotsForVorp = useMemo(() => {
-    const rosterPlayers = rosterAssignments
-      .filter((assignment) => assignment.teamId === myTeamId)
-      .map((assignment) => {
-        const player = allPlayers.find(
-          (candidate) => String(candidate.playerId) === assignment.playerId,
-        );
-        return {
-          id: assignment.playerId,
-          eligibility: normalizePlayerEligibility(
-            player?.displayPosition,
-            player?.eligiblePositions,
-          ),
-        };
-      });
-    return allocateGroupedRosterSlots({
-      players: rosterPlayers,
-      rosterConfig: draftSettings.rosterConfig,
-      grouping: forwardGrouping,
-      overrides: positionOverrides,
-    }).counts;
-  }, [
+  const teamRosterAllocations = useMemo(() => Object.fromEntries(
+    [...new Set([...draftSettings.draftOrder, myTeamId])].map((teamId) => [
+      teamId,
+      allocateGroupedRosterSlots({
+        players: rosterAssignments
+          .filter((assignment) => assignment.teamId === teamId)
+          .map((assignment) => {
+            const player = allPlayers.find(
+              (candidate) => String(candidate.playerId) === assignment.playerId,
+            );
+            return {
+              id: assignment.playerId,
+              eligibility: normalizePlayerEligibility(
+                player?.displayPosition,
+                player?.eligiblePositions,
+              ),
+            };
+          }),
+        rosterConfig: draftSettings.rosterConfig,
+        grouping: forwardGrouping,
+        overrides: positionOverrides,
+      }),
+    ]),
+  ), [
     allPlayers,
+    draftSettings.draftOrder,
     draftSettings.rosterConfig,
     rosterAssignments,
     forwardGrouping,
     myTeamId,
     positionOverrides,
   ]);
+  const myFilledSlotsForVorp = teamRosterAllocations[myTeamId].counts;
 
   useEffect(() => {
     try {
@@ -2473,144 +2477,10 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
         }
       });
 
-      const assignmentOrder = [...teamPlayers].sort((left, right) => {
-        const leftPlayer = allPlayers.find((player) => String(player.playerId) === left.playerId);
-        const rightPlayer = allPlayers.find((player) => String(player.playerId) === right.playerId);
-        const leftEligibility = groupPlayerEligibility(
-          normalizePlayerEligibility(leftPlayer?.displayPosition, leftPlayer?.eligiblePositions),
-          forwardGrouping,
-        ).length;
-        const rightEligibility = groupPlayerEligibility(
-          normalizePlayerEligibility(rightPlayer?.displayPosition, rightPlayer?.eligiblePositions),
-          forwardGrouping,
-        ).length;
-        return leftEligibility - rightEligibility;
-      });
-
-      assignmentOrder.forEach((draftedPlayer) => {
-        const player = allPlayers.find(
-          (p) => String(p.playerId) === draftedPlayer.playerId,
-        );
-
-        if (player) {
-          const displayPos =
-            player.displayPosition?.split(",")[0]?.trim()?.toUpperCase() ||
-            "UTIL";
-          const isGoalie = displayPos === "G";
-          const elig = Array.isArray((player as any).eligiblePositions)
-            ? ((player as any).eligiblePositions as string[])
-            : (player.displayPosition || "")
-                .split(",")
-                .map((s) => s.trim().toUpperCase())
-                .filter(Boolean);
-
-          // Apply override if valid and capacity exists
-          const overridePos = (positionOverrides as any)[
-            draftedPlayer.playerId
-          ];
-          if (
-            overridePos &&
-            rosterSlots[overridePos] &&
-            rosterSlots[overridePos].length <
-              (effectiveRosterConfig as any)[overridePos] &&
-            (overridePos === "FWD"
-              ? !elig.includes("G") && !elig.includes("D")
-              : elig.includes(overridePos))
-          ) {
-            rosterSlots[overridePos].push(draftedPlayer);
-            return;
-          }
-
-          const hasFwdSlots = Boolean((effectiveRosterConfig as any)["FWD"]);
-          const isSkater =
-            displayPos === "F" ||
-            elig.some((p) => p === "C" || p === "LW" || p === "RW");
-          const canFillPrimary =
-            rosterSlots[displayPos] &&
-            rosterSlots[displayPos].length <
-              (effectiveRosterConfig as any)[displayPos];
-
-          if (isGoalie) {
-            // Goalies fill G slots first, never UTIL
-            if (
-              rosterSlots["G"] &&
-              rosterSlots["G"].length < (effectiveRosterConfig as any)["G"]
-            ) {
-              rosterSlots["G"].push(draftedPlayer);
-            } else {
-              rosterSlots["BENCH"] ||= [];
-              rosterSlots["BENCH"].push(draftedPlayer);
-            }
-          } else if (hasFwdSlots && isSkater) {
-            if (canFillPrimary) {
-              rosterSlots[displayPos].push(draftedPlayer);
-            } else if (
-              rosterSlots["FWD"] &&
-              rosterSlots["FWD"].length < (effectiveRosterConfig as any)["FWD"]
-            ) {
-              rosterSlots["FWD"].push(draftedPlayer);
-            } else if (elig && elig.length) {
-              // Try alternate eligible positions before UTIL/bench
-              const alt = elig.find((p) => {
-                if (p === displayPos) return false;
-                return (
-                  rosterSlots[p] &&
-                  rosterSlots[p].length < (effectiveRosterConfig as any)[p]
-                );
-              });
-              if (alt) {
-                rosterSlots[alt].push(draftedPlayer);
-              } else if (
-                rosterSlots["UTILITY"] &&
-                rosterSlots["UTILITY"].length < effectiveRosterConfig.utility
-              ) {
-                rosterSlots["UTILITY"].push(draftedPlayer);
-              } else {
-                rosterSlots["BENCH"] ||= [];
-                rosterSlots["BENCH"].push(draftedPlayer);
-              }
-            } else if (
-              rosterSlots["UTILITY"] &&
-              rosterSlots["UTILITY"].length < effectiveRosterConfig.utility
-            ) {
-              rosterSlots["UTILITY"].push(draftedPlayer);
-            } else {
-              rosterSlots["BENCH"] ||= [];
-              rosterSlots["BENCH"].push(draftedPlayer);
-            }
-          } else if (canFillPrimary) {
-            rosterSlots[displayPos].push(draftedPlayer);
-          } else if (elig && elig.length) {
-            // Split mode (no FWD): try alternate eligible slots before UTIL
-            const alt = elig.find((p) => {
-              if (p === displayPos) return false;
-              return (
-                rosterSlots[p] &&
-                rosterSlots[p].length < (effectiveRosterConfig as any)[p]
-              );
-            });
-            if (alt) {
-              rosterSlots[alt].push(draftedPlayer);
-            } else if (
-              rosterSlots["UTILITY"] &&
-              rosterSlots["UTILITY"].length < effectiveRosterConfig.utility
-            ) {
-              rosterSlots["UTILITY"].push(draftedPlayer);
-            } else {
-              rosterSlots["BENCH"] ||= [];
-              rosterSlots["BENCH"].push(draftedPlayer);
-            }
-          } else if (
-            rosterSlots["UTILITY"] &&
-            rosterSlots["UTILITY"].length < effectiveRosterConfig.utility
-          ) {
-            rosterSlots["UTILITY"].push(draftedPlayer);
-          } else {
-            // Bench fallback
-            rosterSlots["BENCH"] ||= [];
-            rosterSlots["BENCH"].push(draftedPlayer);
-          }
-        }
+      const allocation = teamRosterAllocations[teamId];
+      teamPlayers.forEach((draftedPlayer) => {
+        const position = allocation.assignments[draftedPlayer.playerId] ?? "BENCH";
+        (rosterSlots[position] ||= []).push(draftedPlayer);
       });
 
       const bench = rosterSlots["BENCH"] || [];
@@ -2648,7 +2518,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     customTeamNames,
     vorpMetrics,
     effectiveRosterConfig,
-    positionOverrides,
+    teamRosterAllocations,
     activeScoringCategories,
   ]);
 

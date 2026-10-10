@@ -219,23 +219,25 @@ export function allocateGroupedRosterSlots({
     }
     for (const position of candidates) {
       if (blocked.has(position)) continue;
-      const currentOccupant = occupants[position]?.[occupants[position].length - 1];
-      if (!currentOccupant || reserved.has(currentOccupant) || blocked.has(currentOccupant)) continue;
-      const occupiedPosition = assignments[currentOccupant];
-      const occupiedPlayer = players.find((candidate) => candidate.id === currentOccupant);
-      if (!occupiedPlayer || !occupiedPosition) continue;
-      occupants[position].pop();
-      counts[position] -= 1;
-      delete assignments[currentOccupant];
-      if (place(occupiedPlayer, new Set([...blocked, position]), true)) {
+      for (const currentOccupant of [...(occupants[position] ?? [])].reverse()) {
+        if (reserved.has(currentOccupant)) continue;
+        const occupiedPosition = assignments[currentOccupant];
+        const occupiedPlayer = players.find((candidate) => candidate.id === currentOccupant);
+        if (!occupiedPlayer || !occupiedPosition) continue;
+        const occupantIndex = occupants[position].indexOf(currentOccupant);
+        occupants[position].splice(occupantIndex, 1);
+        counts[position] -= 1;
+        delete assignments[currentOccupant];
+        if (place(occupiedPlayer, new Set([...blocked, position]), true)) {
+          counts[position] += 1;
+          occupants[position].push(player.id);
+          assignments[player.id] = position;
+          return true;
+        }
         counts[position] += 1;
-        occupants[position].push(player.id);
-        assignments[player.id] = position;
-        return true;
+        occupants[position].splice(occupantIndex, 0, currentOccupant);
+        assignments[currentOccupant] = occupiedPosition;
       }
-      counts[position] += 1;
-      occupants[position].push(currentOccupant);
-      assignments[currentOccupant] = occupiedPosition;
     }
     if (relocating) return false;
     if (!eligible.includes("G") && counts.UTILITY < Math.max(0, Number(effective.utility) || 0) && !blocked.has("UTILITY")) {
