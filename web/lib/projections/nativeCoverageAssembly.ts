@@ -74,8 +74,39 @@ export function readNativeToiReport(source: NativeCoverageRawObservation, plan: 
     || sectionHeadings.length !== 1 || normalText(sectionHeadings[0].text) !== normalText(plan.playerHeading.expectedText)
     || plan.playerHeading.location.startByte < plan.section.startByte
     || plan.playerHeading.location.endByteExclusive > plan.section.endByteExclusive) throw new Error("ambiguous_toi_player_section");
-  // Numeric shift rows must all be represented, including unsupported rows that must fail explicitly.
-  const tableRows = root.querySelectorAll("tr").filter(row => /^\d+$/.test(normalText(row.querySelector("td")?.text ?? "")));
+  // Bind the shift header in this player's table. Period summaries belong to a nested table.
+  const closest = player.closest("table"), table = closest instanceof HTMLElement ? closest : null;
+  const headingsInTable = table?.querySelectorAll('[class~="playerHeading"]') ?? [];
+  const nextHeading = headingsInTable.filter(node => node.range[0] > player.range[0]).sort((a, b) => a.range[0] - b.range[0])[0];
+  const playerEnd = nextHeading?.range[0] ?? table?.range[1];
+  const sectionEnd = Buffer.from(source.bodyUtf8, "utf8").toString("utf8", 0, plan.section.endByteExclusive).length;
+  if (playerEnd === undefined || sectionEnd < playerEnd) throw new Error("incomplete_toi_player_section");
+  const directRows = table?.querySelectorAll("tr").filter(row => row.closest("table") === table
+    && row.range[0] >= player.range[1] && row.range[1] <= playerEnd) ?? [];
+  const headers = directRows.filter(row => {
+    const cells = childElements(row).filter(node => node.tagName === "TD").map(node => normalText(node.text));
+    return cells.length === 6 && cells[0] === "Shift #" && cells[1] === "Per"
+      && cells[2].startsWith("Start of Shift") && cells[3].startsWith("End of Shift")
+      && cells[4] === "Duration" && cells[5].startsWith("Event");
+  });
+  if (!table || headers.length !== 1
+    || headers[0].range[0] < player.range[1]) throw new Error("toi_shift_table_binding");
+  // Exclude only an empty spacer or a positively recognized nested period-summary table.
+  const tableRows = directRows.filter(row => row.range[0] >= headers[0].range[1]).filter(row => {
+    const cells = childElements(row);
+    if (cells.length !== 1 || cells[0].tagName !== "TD") return true;
+    const cell = cells[0], contents = childElements(cell);
+    if (hasClass(cell, "spacer") && contents.length === 0 && normalText(cell.text) === "") return false;
+    if (contents.length !== 1 || contents[0].tagName !== "TABLE"
+      || cell.childNodes.some(node => !(node instanceof HTMLElement) && normalText(node.text) !== "")) return true;
+    const summary = contents[0], summaryRows = summary.querySelectorAll("tr").filter(item => item.closest("table") === summary);
+    const values = summaryRows.map(item => childElements(item).map(node => node.tagName === "TD" ? normalText(node.text) : null));
+    return values.length < 2 || JSON.stringify(values[0]) !== JSON.stringify(["Per", "SHF", "AVG", "TOI", "EV TOT", "PP TOT", "SH TOT"])
+      || values.slice(1).some(value => value.length !== 7 || !/^(?:[1-3]|OT|TOT)$/.test(value[0] ?? "")
+        || !/^\d+$/.test(value[1] ?? "") || value.slice(2).some(clock => nativeAssemblyClockSeconds(clock) === null));
+  });
+  if (tableRows.some(row => { const cells = childElements(row); return cells.length !== 6 || cells.some(cell => cell.tagName !== "TD"); }))
+    throw new Error("unsupported_toi_columns");
   if (tableRows.length !== plan.shiftRows.length) throw new Error("incomplete_toi_row_descriptors");
   let previousEnd = plan.playerHeading.location.endByteExclusive;
   const ids = new Set<number>();
@@ -84,7 +115,7 @@ export function readNativeToiReport(source: NativeCoverageRawObservation, plan: 
       throw new Error("toi_row_order_or_section");
     previousEnd = location.endByteExclusive;
     const actualRow = fieldElement(source, bodyRoot, { location, expectedText: parseHtml(originalSpan(source, location)).text });
-    if (actualRow.tagName !== "TR" || actualRow.closest("table") !== player.closest("table"))
+    if (actualRow.tagName !== "TR" || actualRow.closest("table") !== table || actualRow.range[0] < headers[0].range[1])
       throw new Error("toi_player_row_binding");
     const cells = toiCells(originalSpan(source, location));
     if (JSON.stringify(cells) !== JSON.stringify(tableRows[index].querySelectorAll("td").map(cell => normalText(cell.text))))

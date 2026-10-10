@@ -48,12 +48,16 @@ function toiFixture() {
     ["4", "3", "18:22 / 1:38", "20:00 / 0:00", "01:38", ""],
     ["5", "OT", "0:00 / 5:00", "3:21 / 1:39", "03:21", "G"]];
   const fragments = values.map(cells => `<tr>${cells.map(value => `<td>${value}</td>`).join("")}</tr>`);
-  const section = `<table><tr>${heading}</tr>${fragments.join("")}<tr><td>TOT</td><td>5</td></tr></table>`;
+  const header = "<tr><td>Shift #</td><td>Per</td><td>Start of Shift<br>Elapsed / Game</td>"
+    + "<td>End of Shift<br>Elapsed / Game</td><td>Duration</td><td>Event<br>G=Goal<br>P=Penalty</td></tr>";
+  const summaryHeader = `<tr>${["Per", "SHF", "AVG", "TOI", "EV TOT", "PP TOT", "SH TOT"].map(value => `<td>${value}</td>`).join("")}</tr>`;
+  const summaryTotal = `<tr>${["TOT", "5", "12:29", "62:25", "54:09", "04:00", "04:16"].map(value => `<td>${value}</td>`).join("")}</tr>`;
+  const section = `<table><tr>${heading}</tr>${header}${fragments.join("")}<tr><td class="spacer">&nbsp;</td></tr><tr><td><table>${summaryHeader}${summaryTotal}</table></td></tr></table>`;
   const body = `<html>é🦉${report}${team}${section}</html>`, source = raw(body, "synthetic-html");
   const plan = { section: span(body, section), playerHeading: { location: span(body, heading), expectedText: "1 FAKE, GOALIE" },
     reportHeading: { location: span(body, report), expectedText: "Time On Ice Report Away Team" },
     teamHeading: { location: span(body, team), expectedText: "SYNTHETIC CLUB" }, shiftRows: fragments.map(value => span(body, value)) };
-  return { source, plan, fragments, section };
+  return { source, plan, fragments, section, header, summaryHeader };
 }
 function scratchFixture(layout: "sequential" | "columns" = "sequential", change = "valid") {
   const report = "<h1>Official Playing Roster</h1>", name = "FAKE PLAYER",
@@ -166,6 +170,52 @@ describe("strict reported HTML evidence", () => {
     expect(rows[2].eventMarkersAsReported).toBe("P"); expect(rows[2]).not.toHaveProperty("goaliePulled");
     expect(rows[0].derivedRowId).toMatch(/^derived-toi:/); expect(rows[0].source.location.startByte).toBeGreaterThan(f.source.bodyUtf8.indexOf(f.fragments[0]));
   });
+  it("excludes the genuine report's nested seven-column numeric period summaries", () => {
+    const f = toiFixture(), summary = [1, 2, 3].map(n => `<tr>${[n, 1, "20:00", "20:00", "18:00", "00:00", "02:00"].map(v => `<td>${v}</td>`).join("")}</tr>`).join("");
+    const section = f.section.replace(f.summaryHeader, f.summaryHeader + summary), body = f.source.bodyUtf8.replace(f.section, section);
+    const plan = { ...f.plan, section: span(body, section), playerHeading: { ...f.plan.playerHeading,
+      location: span(body, '<td class="playerHeading">1 FAKE, GOALIE</td>') }, shiftRows: f.fragments.map(row => span(body, row)) };
+    expect(readNativeToiReport(raw(body), plan)).toHaveLength(5);
+    expect(() => readNativeToiReport(raw(body), { ...plan, shiftRows: plan.shiftRows.slice(0, 4) })).toThrow("incomplete_toi_row_descriptors");
+  });
+  it("binds the player section when multiple player headings share the report table", () => {
+    const f = toiFixture(), heading = '<td class="playerHeading">1 FAKE, GOALIE</td>', next = '<td class="playerHeading">2 OTHER, GOALIE</td>';
+    const section = f.section.replace("</table></td></tr></table>", `</table></td></tr><tr>${next}</tr>${f.header}<tr><td>1</td><td>1</td><td>00:00</td><td>00:01</td><td>00:01</td><td></td></tr></table>`);
+    const body = f.source.bodyUtf8.replace(f.section, section), fragment = body.slice(body.indexOf(heading), body.indexOf(next));
+    const plan = { ...f.plan, section: span(body, fragment), playerHeading: { location: span(body, heading), expectedText: "1 FAKE, GOALIE" }, shiftRows: f.fragments.map(row => span(body, row)) };
+    expect(readNativeToiReport(raw(body), plan)).toHaveLength(5);
+    expect(() => readNativeToiReport(raw(body), { ...plan, section: span(body, body.slice(body.indexOf(heading), body.indexOf(f.fragments[4]))) })).toThrow("incomplete_toi_player_section");
+  });
+  it.each(["missing_header", "duplicate_header", "wrong_header", "unsupported_shift"])("rejects %s without dropping shift records", change => {
+    const f = toiFixture();
+    const extra = "<tr><td>X</td><td>1</td><td>00:00</td><td>00:01</td><td>00:01</td><td></td><td>unknown</td></tr>";
+    const section = change === "missing_header" ? f.section.replace(f.header, "") : change === "duplicate_header" ? f.section.replace(f.header, f.header + f.header)
+      : change === "wrong_header" ? f.section.replace("Shift #", "Summary #") : f.section.replace(f.header, f.header + extra);
+    const body = f.source.bodyUtf8.replace(f.section, section), plan = { ...f.plan, section: span(body, section),
+      playerHeading: { ...f.plan.playerHeading, location: span(body, '<td class="playerHeading">1 FAKE, GOALIE</td>') }, shiftRows: f.fragments.map(row => span(body, row)) };
+    expect(() => readNativeToiReport(raw(body), plan)).toThrow(change === "unsupported_shift" ? "unsupported_toi_columns" : "toi_shift_table_binding");
+  });
+  it.each([
+    ["one-TD", "<tr><td>3</td></tr>"],
+    ["six-TH", "<tr><th>3</th><th>3</th><th>00:00</th><th>17:26</th><th>17:26</th><th>P</th></tr>"],
+  ])("rejects a malformed %s shift with either omitted or supplied descriptors", (_kind, malformed) => {
+    const f = toiFixture(), section = f.section.replace(f.fragments[2], malformed);
+    const body = f.source.bodyUtf8.replace(f.section, section), plan = { ...f.plan, section: span(body, section),
+      playerHeading: { ...f.plan.playerHeading, location: span(body, '<td class="playerHeading">1 FAKE, GOALIE</td>') },
+      shiftRows: f.fragments.filter((_, index) => index !== 2).map(row => span(body, row)) };
+    expect(() => readNativeToiReport(raw(body), plan)).toThrow("unsupported_toi_columns");
+    plan.shiftRows.splice(2, 0, span(body, malformed));
+    expect(() => readNativeToiReport(raw(body), plan)).toThrow("unsupported_toi_columns");
+  });
+  it("rejects unrecognized nested tables and numeric rows labelled as spacers", () => {
+    const f = toiFixture();
+    for (const section of [f.section.replace("EV TOT", "UNKNOWN"), f.section.replace(f.fragments[2], '<tr><td class="spacer">3</td></tr>')]) {
+      const body = f.source.bodyUtf8.replace(f.section, section), plan = { ...f.plan, section: span(body, section),
+        playerHeading: { ...f.plan.playerHeading, location: span(body, '<td class="playerHeading">1 FAKE, GOALIE</td>') },
+        shiftRows: f.fragments.filter(fragment => body.includes(fragment)).map(row => span(body, row)) };
+      expect(() => readNativeToiReport(raw(body), plan)).toThrow("unsupported_toi_columns");
+    }
+  });
   it.each(["omitted_row", "wrong_hash", "wrong_heading", "wrong_team", "out_of_section", "reordered"])("rejects %s", change => {
     const f = toiFixture();
     if (change === "omitted_row") f.plan.shiftRows.pop();
@@ -192,7 +242,7 @@ describe("strict reported HTML evidence", () => {
       section = `<div><table><tr>${heading}</tr></table><table>${f.fragments.join("")}</table></div>`,
       body = f.source.bodyUtf8.replace(f.section, section);
     expect(() => readNativeToiReport(raw(body), { ...f.plan, section: span(body, section),
-      playerHeading: { location: span(body, heading), expectedText: "1 FAKE, GOALIE" }, shiftRows: f.fragments.map(row => span(body, row)) })).toThrow("toi_player_row_binding");
+      playerHeading: { location: span(body, heading), expectedText: "1 FAKE, GOALIE" }, shiftRows: f.fragments.map(row => span(body, row)) })).toThrow("toi_shift_table_binding");
   });
   it("preserves scratch evidence without HIT0, GP inference or NHL ID fabrication", () => {
     const report = "<h1>Official Playing Roster</h1>", team = "<h2>SYNTHETIC CLUB</h2>", heading = "<h3>Scratches</h3>",
