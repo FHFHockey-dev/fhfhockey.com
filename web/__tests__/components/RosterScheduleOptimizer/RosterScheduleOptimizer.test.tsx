@@ -1589,19 +1589,106 @@ describe("compact RSO schedule", () => {
     input.assignments = [];
     let row = compactGroups(input).flatMap(group => group.rows).find(row => row.id === "C#1")!;
     expect(row.playerId).toBe("p0"); expect(row.status).toBe("Held · no active game"); expect(row.assigned).toBe(false);
-    expect(compactGroups(input).find(group => group.position === "Review")?.rows.some(row => row.playerId === "p1")).toBe(true);
+    expect(compactGroups(input).find(group => group.position === "BN")?.rows.some(row => row.playerId === "p1")).toBe(true);
     input.rules.lineupMode = "weekly";
     input.rules.lineupPeriods = [{ id: "week", start: "2026-10-05T00:00:00Z", end: "2026-10-12T00:00:00Z", lockAt: "2026-10-05T00:00:00Z" }];
     input.date = "2026-10-07";
     row = compactGroups(input).flatMap(group => group.rows).find(row => row.id === "C#1")!;
     expect(row.playerId).toBe("p0"); expect(row.status).not.toContain("Open");
   });
+  it("places all unstarted McDavid, Panarin and Batherson in local Bench after 13 filled slots", () => {
+    const input = displayFixture();
+    input.rules.rosterSlots.UTIL = 1;
+    input.rules.rosterSlots.BN = 2;
+    input.assignments = input.assignments.filter(row => row.slotId !== "UTIL#2");
+    input.roster = input.roster.filter(row => !["p11", "p17", "p18", "p19"].includes(row.playerId));
+    input.snapshot.roster = input.roster;
+    for (const [index, name, positions] of [[14, "McDavid", ["C", "UTIL"]], [15, "Panarin", ["LW", "UTIL"]], [16, "Batherson", ["LW", "RW", "UTIL"]]] as const) {
+      input.players[index].name = name;
+      input.players[index].eligiblePositions = [...positions];
+      input.roster.find(row => row.playerId === `p${index}`)!.position = "active";
+    }
+    const before = JSON.stringify(input);
+    const groups = compactGroups(input);
+    const rows = groups.flatMap(group => group.rows);
+    expect(groups.some(group => ["Review", "UN"].includes(group.position))).toBe(false);
+    expect(groups.find(group => group.position === "BN")?.rows.map(row => row.player?.name)).toEqual(["McDavid", "Panarin", "Batherson"]);
+    expect(summarizeCompactDay(groups, input.snapshot, input.date)).toMatchObject({ capacity: 13, occupied: 13, unresolved: 0 });
+    expect(new Set(rows.flatMap(row => row.playerId ? [row.playerId] : [])).size).toBe(16);
+    render(<CompactSchedule {...input} dates={scheduleWeek(input.date)} today={input.date} selectDate={vi.fn()} selectPlayer={vi.fn()} />);
+    const bench = screen.getByRole("button", { name: "Bench 3, collapse" });
+    expect(document.getElementById(bench.getAttribute("aria-describedby")!)?.textContent).toContain("Local simulated Bench, not Yahoo placement. 3 players / 2 configured places · 1 over capacity; all retained.");
+    for (const name of ["McDavid", "Panarin", "Batherson"]) {
+      const row = screen.getByRole("button", { name: new RegExp(`Schedule details for ${name}, BN,`) }).closest("tr")!;
+      expect(row.closest("tbody")?.getAttribute("data-position")).toBe("BENCH");
+      expect(within(row).getByRole("cell", { name: /Has game · Not fantasy assigned/ })).toBeTruthy();
+    }
+    fireEvent.click(bench);
+    expect(document.querySelectorAll('tr[data-compact-row][hidden]')).toHaveLength(3);
+    fireEvent.click(bench);
+    expect(screen.getByRole("button", { name: /Schedule details for Batherson,/ })).toBeTruthy();
+    expect(JSON.stringify(input)).toBe(before);
+  });
+  it("keeps eligibility, team and source warnings on unstarted Bench rows", () => {
+    const input = displayFixture();
+    input.assignments = [];
+    input.players[0].eligibilityVerified = false;
+    input.players[0].teamAbbreviation = null;
+    input.snapshot.evidence.schedule!.completeness = "partial";
+    const groups = compactGroups(input);
+    const row = groups.find(group => group.position === "BN")?.rows.find(row => row.playerId === "p0")!;
+    expect(row.assigned).toBe(false);
+    for (const warning of ["Eligibility unverified", "Team unknown", "Schedule unknown"]) expect(row.status).toContain(warning);
+    expect(groups.find(group => group.position === "BN")?.rows).toHaveLength(20);
+    render(<CompactSchedule {...input} dates={scheduleWeek(input.date)} today={input.date} selectDate={vi.fn()} selectPlayer={vi.fn()} />);
+    expect(screen.getByRole("button", { name: /Schedule details for Player Surname0, BN,/ }).getAttribute("aria-label")).toContain(row.status);
+    const unavailable = compactGroups({ ...input, snapshot: null, ready: false }).find(group => group.position === "BN")!.rows;
+    expect(unavailable).toHaveLength(20);
+    expect(unavailable.every(row => !row.assigned && row.status.includes("Source unavailable"))).toBe(true);
+  });
+  it("preserves active and Bench locks while warning on unsupported and conflicting slot claims", () => {
+    const input = displayFixture();
+    input.snapshot.lockedAssignments = [{ date: input.date, playerId: "p0", slotId: null },
+      { date: input.date, playerId: "p1", slotId: "C#2" }, { date: input.date, playerId: "p2", slotId: "X#1" },
+      { date: input.date, playerId: "p3", slotId: "LW#2" }, { date: input.date, playerId: "p4", slotId: "LW#2" }];
+    input.assignments = input.assignments.filter(row => !["p1", "p2", "p3", "p4"].includes(row.playerId));
+    const before = JSON.stringify(input);
+    const groups = compactGroups(input);
+    const rows = groups.flatMap(group => group.rows);
+    expect(rows.find(row => row.id === "C#2")).toMatchObject({ playerId: "p1", status: "Held · no active game", assigned: false });
+    const bench = groups.find(group => group.position === "BN")!.rows;
+    expect(bench.find(row => row.playerId === "p0")?.status).toContain("Bench locked");
+    expect(bench.find(row => row.playerId === "p0")?.status).toContain("Assignment conflict");
+    expect(bench.find(row => row.playerId === "p2")?.status).toContain("Unsupported active slot (X#1)");
+    for (const id of ["p3", "p4"]) expect(bench.find(row => row.playerId === id)).toMatchObject({ assigned: false, status: expect.stringContaining("Assignment conflict") });
+    expect(rows.find(row => row.id === "LW#2")?.playerId).toBeUndefined();
+    expect(rows.filter(row => row.playerId)).toHaveLength(20);
+    expect(new Set(rows.flatMap(row => row.playerId ? [row.playerId] : [])).size).toBe(20);
+    expect(JSON.stringify(input)).toBe(before);
+  });
+  it.each([0, undefined, -1])("retains local Bench membership and collapse counts with configured capacity %s", capacity => {
+    const input = displayFixture();
+    input.roster.forEach(row => { row.position = "active"; });
+    if (capacity === undefined) delete input.rules.rosterSlots.BN;
+    else input.rules.rosterSlots.BN = capacity;
+    const groups = compactGroups(input);
+    expect(groups.find(group => group.position === "BN")?.rows).toHaveLength(6);
+    expect(groups.some(group => group.position === "Review")).toBe(false);
+    render(<CompactSchedule {...input} dates={scheduleWeek(input.date)} today={input.date} selectDate={vi.fn()} selectPlayer={vi.fn()} />);
+    const bench = screen.getByRole("button", { name: "Bench 6, collapse" });
+    const reason = document.getElementById(bench.getAttribute("aria-describedby")!)?.textContent;
+    expect(reason).toContain(capacity === 0 ? "6 players / 0 configured places · 6 over capacity; all retained." : "Configured Bench capacity unknown; all unstarted players retained.");
+    expect(document.querySelectorAll('tr[data-player-id]')).toHaveLength(20);
+    fireEvent.click(bench);
+    expect(document.querySelectorAll('tr[data-compact-row][hidden]')).toHaveLength(6);
+    expect(screen.getByRole("button", { name: "Bench 6, expand" }).getAttribute("aria-expanded")).toBe("false");
+  });
   it("keeps unclaimed slots pending when active membership or schedule coverage is unresolved", () => {
     const input = displayFixture();
     input.assignments = input.assignments.filter(row => row.playerId !== "p1");
     let groups = compactGroups(input);
     expect(groups.flatMap(group => group.rows).find(row => row.id === "C#2")?.status).toBe("Pending C");
-    expect(groups.find(group => group.position === "Review")?.rows.some(row => row.playerId === "p1")).toBe(true);
+    expect(groups.find(group => group.position === "BN")?.rows.some(row => row.playerId === "p1")).toBe(true);
     const vacancy = displayFixture(19);
     vacancy.snapshot.evidence.schedule!.completeness = "partial";
     groups = compactGroups(vacancy);
@@ -1636,7 +1723,8 @@ describe("compact RSO schedule", () => {
     delete input.rules.rosterSlots["IR+"];
     const rows = compactGroups(input).flatMap(group => group.rows);
     expect(rows.find(row => row.id === "C#1")?.status).toBe("Assignment conflict");
-    expect(rows.find(row => row.playerId === "p24")).toMatchObject({ slot: "Review", status: "Reserve unverified" });
+    expect(rows.find(row => row.playerId === "p24")).toMatchObject({ slot: "BN", status: "Reserve unverified (IR+)" });
+    for (const id of ["p0", "p1"]) expect(rows.find(row => row.playerId === id)).toMatchObject({ slot: "BN", assigned: false, status: expect.stringContaining("Assignment conflict") });
     expect(new Set(rows.flatMap(row => row.playerId ? [row.playerId] : [])).size).toBe(25);
   });
   it("changes view state and bench visibility without editing intent, and distinguishes unknown goalie starts", () => {
@@ -1696,8 +1784,8 @@ describe("compact RSO schedule", () => {
     const hiddenIds = () => Array.from(document.querySelectorAll('tbody[data-position="BENCH"] tr[data-compact-row][hidden]')).map(row => row.getAttribute("data-player-id"));
     expect(hiddenIds()).toEqual(["p14", "p15", "p16", "p17", "p18", "p19"]);
     view.rerender(<CompactSchedule {...props} date="2026-10-06" />);
-    expect(hiddenIds()).toEqual(["p14", "p15", "p16", "p17", "p18", "p19"]);
-    const bench = screen.getByRole("button", { name: /Bench 6/ });
+    expect(hiddenIds()).toEqual(input.roster.map(row => row.playerId));
+    const bench = screen.getByRole("button", { name: /Bench 20/ });
     expect(bench.getAttribute("aria-expanded")).toBe("false");
     fireEvent.click(bench);
     expect(onBenchChange).toHaveBeenLastCalledWith(true);
@@ -1722,7 +1810,10 @@ describe("compact RSO schedule", () => {
     const input = displayFixture();
     input.snapshot.lockedAssignments = [{ date: input.date, playerId: "p0", slotId: "C#1" }];
     input.assignments = [{ ...input.assignments[0], playerId: "p1" }];
-    expect(compactGroups(input).flatMap(group => group.rows).find(row => row.id === "C#1")).toMatchObject({ playerId: "p0", status: "Assignment conflict", assigned: false });
+    const groups = compactGroups(input);
+    expect(groups.flatMap(group => group.rows).find(row => row.id === "C#1")).toMatchObject({ status: "Assignment conflict", assigned: false });
+    expect(groups.flatMap(group => group.rows).find(row => row.id === "C#1")?.playerId).toBeUndefined();
+    for (const id of ["p0", "p1"]) expect(groups.find(group => group.position === "BN")?.rows.find(row => row.playerId === id)?.status).toContain("Assignment conflict");
     input.rules.lineupMode = "weekly";
     input.rules.lineupPeriods = [];
     input.assignments = [];
@@ -1755,7 +1846,9 @@ describe("compact RSO schedule", () => {
     input.snapshot.lockedAssignments = [{ date: input.date, playerId: "p0", slotId: "C#1" }];
     const before = JSON.stringify(input);
     const rows = compactGroups(input).flatMap(group => group.rows);
-    expect(rows.find(row => row.id === "C#1")).toMatchObject({ playerId: "p0", status: "Team unknown", assigned: false });
+    expect(rows.find(row => row.id === "C#1")).toMatchObject({ status: "Team unknown", assigned: false });
+    expect(rows.find(row => row.id === "C#1")?.playerId).toBeUndefined();
+    expect(rows.find(row => row.playerId === "p0")).toMatchObject({ slot: "BN", status: expect.stringContaining("Team unknown"), assigned: false });
     expect(rows.find(row => row.playerId === "p14")).toMatchObject({ status: "Team unknown", assigned: false });
     expect(summarizeCompactDay(compactGroups(input), input.snapshot, input.date)).toMatchObject({
       rosterGames: 0, rosterComplete: false, nhlGames: 0, scheduleComplete: true,

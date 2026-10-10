@@ -11,7 +11,7 @@ import type { LeagueRules, PlanIntent, PlanningAssignment, PlanningPlayer, Plann
 import styles from "./RosterScheduleOptimizer.module.scss";
 
 const activePositions = ["C", "LW", "RW", "D", "UTIL", "G", "F", "W"];
-const order = [...activePositions, "BN", "IR", "IR+", "NA", "Review", "Plan changes"];
+const order = [...activePositions, "BN", "IR", "IR+", "NA", "Plan changes"];
 const dateLabel = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 const offsetDate = (date: string, days: number) => new Date(Date.parse(`${date}T12:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
 export function scheduleWeek(date: string): string[] {
@@ -58,6 +58,7 @@ export function compactGroups({ snapshot, roster, rules, players, assignments, i
     });
   const used = new Set<string>();
   const groups = new Map<string, CompactRow[]>();
+  const claimWarnings = new Map<string, Set<string>>();
   const add = (position: string, row: CompactRow) => {
     if (row.playerId && !roster.some(entry => entry.playerId === row.playerId)) {
       const member = members.get(row.playerId);
@@ -68,22 +69,31 @@ export function compactGroups({ snapshot, roster, rules, players, assignments, i
   for (const slot of slots.activeSlots) {
     const claims = locks.filter(lock => lock.slotId === slot.id);
     const claimIds = new Set(claims.map(lock => lock.playerId));
-    const assignment = windowAssignments.find(row => row.slotId === slot.id);
+    const slotAssignments = windowAssignments.filter(row => row.slotId === slot.id);
+    const assignment = slotAssignments[0];
     const playerId = claims[0]?.playerId ?? assignment?.playerId;
     const player = players.find(row => row.id === playerId);
     const supported = !player || canEligibilityOccupySlot(normalizeEligibility(player.eligiblePositions), slot.type);
-    const conflict = claimIds.size > 1 || Boolean(playerId && used.has(playerId))
+    const conflict = claimIds.size > 1 || new Set(slotAssignments.map(row => row.playerId)).size > 1 || Boolean(playerId && used.has(playerId))
       || Boolean(claims.length && assignment && assignment.playerId !== playerId)
       || Boolean(playerId && locks.some(lock => lock.playerId === playerId && lock.slotId !== slot.id))
-      || Boolean(playerId && !members.has(playerId) && !dayAssignments.some(row => row.playerId === playerId)) || !supported;
+      || Boolean(playerId && windowAssignments.some(row => row.playerId === playerId && row.slotId !== slot.id))
+      || Boolean(playerId && ["IR", "IR+", "NA"].includes(members.get(playerId)?.position ?? ""))
+      || Boolean(playerId && !members.has(playerId)) || !supported;
     const assigned = Boolean(windowVerified && player?.teamAbbreviation && player.eligibilityVerified === true && playerId && dayAssignments.some(row => row.slotId === slot.id && row.playerId === playerId) && !conflict);
-    if (playerId && !used.has(playerId) && (members.has(playerId) || dayAssignments.some(row => row.playerId === playerId))) {
+    const status = conflict ? "Assignment conflict" : !windowVerified ? "Weekly window unverified" : !player || player.eligibilityVerified !== true ? "Eligibility unverified"
+      : !player.teamAbbreviation ? "Team unknown" : assigned ? "Fantasy assigned" : "Held · no active game";
+    if (playerId && !used.has(playerId) && members.has(playerId) && (status === "Fantasy assigned" || status === "Held · no active game")) {
       used.add(playerId);
-      add(slot.type, { id: slot.id, slot: slot.id, playerId, player, assigned,
-        status: conflict ? "Assignment conflict" : !windowVerified ? "Weekly window unverified" : !player || player.eligibilityVerified !== true ? "Eligibility unverified"
-          : !player.teamAbbreviation ? "Team unknown" : assigned ? "Fantasy assigned" : "Held · no active game" });
-    } else add(slot.type, { id: slot.id, slot: slot.id, assigned: false,
-      status: conflict || playerId ? `Review ${slot.type}` : vacanciesVerified ? `Open ${slot.type}` : `Pending ${slot.type}` });
+      add(slot.type, { id: slot.id, slot: slot.id, playerId, player, assigned, status });
+    } else {
+      for (const id of new Set([...claimIds, ...slotAssignments.map(row => row.playerId)])) {
+        const warnings = claimWarnings.get(id) ?? new Set<string>();
+        warnings.add(`${status} (${slot.id})`); claimWarnings.set(id, warnings);
+      }
+      add(slot.type, { id: slot.id, slot: slot.id, assigned: false,
+        status: conflict || playerId ? status : vacanciesVerified ? `Open ${slot.type}` : `Pending ${slot.type}` });
+    }
   }
   for (const [playerId, entry] of members) {
     if (used.has(playerId)) continue;
@@ -91,15 +101,28 @@ export function compactGroups({ snapshot, roster, rules, players, assignments, i
     const player = players.find(row => row.id === playerId);
     const reserve = ["IR", "IR+", "NA"].includes(entry.position);
     const reserveSupported = reserve && (rules.rosterSlots[entry.position] ?? 0) > 0;
-    const bench = entry.position === "bench" || locks.some(lock => lock.playerId === playerId && lock.slotId === null);
-    const position = reserve ? reserveSupported ? entry.position : "Review" : bench && slots.benchCapacity > 0 ? "BN" : "Review";
+    const reserveEligible = Boolean(player?.reserveEligibility.includes(entry.position as "IR" | "IR+" | "NA"));
+    const benchLocked = locks.some(lock => lock.playerId === playerId && lock.slotId === null);
+    const position = reserveSupported && reserveEligible ? entry.position : "BN";
     const hasGame = snapshot?.games.some(game => game.date === date && game.teamAbbreviation === player?.teamAbbreviation && ["scheduled", "live", "final"].includes(game.status));
+    const warnings = [...(claimWarnings.get(playerId) ?? [])];
+    if (!player) warnings.push("Unmatched player");
+    if (reserve && (!reserveSupported || !reserveEligible)) warnings.push(`Reserve unverified (${entry.position})`);
+    else if (reserve && [...members.values()].filter(member => member.position === entry.position).length > rules.rosterSlots[entry.position]) warnings.push("Reserve capacity conflict");
+    if (reserve && benchLocked) warnings.push("Bench lock conflicts with reserve placement");
+    if (!ready) warnings.push("Assignment pending");
+    if (!windowVerified) warnings.push("Weekly window unverified");
+    if (player && player.eligibilityVerified !== true) warnings.push("Eligibility unverified");
+    if (player && !reserve && !slots.activeSlots.some(slot => canEligibilityOccupySlot(normalizeEligibility(player.eligiblePositions), slot.type))) warnings.push("No compatible configured active slot");
+    if (!actionableDate) warnings.push("Past assignment unverified");
+    if (player && !player.teamAbbreviation) warnings.push("Team unknown");
+    if (!snapshot) warnings.push("Source unavailable");
+    else if (snapshot.evidence.schedule?.completeness !== "complete") warnings.push(hasGame ? "Schedule partial/unknown" : "Schedule unknown");
+    for (const claim of [...locks.filter(lock => lock.playerId === playerId && lock.slotId !== null), ...windowAssignments.filter(row => row.playerId === playerId)]) {
+      if (!slots.activeSlots.some(slot => slot.id === claim.slotId)) warnings.push(`Unsupported active slot (${claim.slotId})`);
+    }
     add(position, { id: `player:${playerId}`, slot: position, playerId, player, assigned: false,
-      status: !player ? "Unmatched player" : reserve ? !reserveSupported || !player.reserveEligibility.includes(entry.position as "IR" | "IR+" | "NA") ? "Reserve unverified"
-        : [...members.values()].filter(member => member.position === entry.position).length > rules.rosterSlots[entry.position] ? "Reserve capacity conflict" : "Reserve"
-        : locks.some(lock => lock.playerId === playerId && lock.slotId === null) ? "Bench locked"
-        : !ready ? "Assignment pending" : player.eligibilityVerified !== true ? "Eligibility unverified" : !actionableDate ? "Past assignment unverified"
-        : !player.teamAbbreviation ? "Team unknown" : hasGame ? "Unassigned · review bench evidence" : snapshot?.evidence.schedule?.completeness === "complete" ? "No game" : "Schedule unknown" });
+      status: [benchLocked ? "Bench locked" : null, ...new Set(warnings)].filter(Boolean).join(" · ") || (position !== "BN" ? "Reserve" : hasGame ? "Local Bench · not fantasy assigned" : "No game") });
   }
   for (const entry of roster) {
     if (used.has(entry.playerId)) continue;
@@ -149,6 +172,11 @@ export default function CompactSchedule({ snapshot, roster, rules, players, assi
   const previousWeekDisabled = !dates.some(day => day < week[0]);
   const nextWeekDisabled = !dates.some(day => day > week[6]);
   const groups = useMemo(() => compactGroups({ snapshot, roster, rules, players, assignments, intent, date, ready }), [snapshot, roster, rules, players, assignments, intent, date, ready]);
+  const benchSlots = Object.entries(rules.rosterSlots).filter(([position]) => ["BN", "BENCH", "BE"].includes(position.trim().toUpperCase()));
+  const benchCapacity = benchSlots.length && benchSlots.every(([, count]) => Number.isSafeInteger(count) && count >= 0) ? expandActiveSlots(rules.rosterSlots).benchCapacity : null;
+  const benchCount = groups.find(group => group.position === "BN")?.rows.length ?? 0;
+  const benchCapacityNote = benchCapacity === null ? "Configured Bench capacity unknown; all unstarted players retained."
+    : `${benchCount} players / ${benchCapacity} configured places${benchCount > benchCapacity ? ` · ${benchCount - benchCapacity} over capacity; all retained` : ""}.`;
   const daySummary = summarizeCompactDay(groups, snapshot, date);
   const displayedRows = groups.reduce((count, group) => count + (group.position === "BN" && !benchOpen ? 0 : group.rows.length), 0);
   useEffect(() => {
@@ -229,6 +257,7 @@ export default function CompactSchedule({ snapshot, roster, rules, players, assi
       {previousWeekDisabled && <span id={`${navigationReasonId}-previous`}> · No earlier week in selected range.</span>}
       {nextWeekDisabled && <span id={`${navigationReasonId}-next`}> · No later week in selected range.</span>}
       {week.some(day => !dates.includes(day)) && <span id={`${navigationReasonId}-dates`}> · Disabled dates are outside selected range.</span>}
+      {benchCount > 0 && <span id={`${navigationReasonId}-bench-capacity`}> · Local simulated Bench, not Yahoo placement. {benchCapacityNote}</span>}
     </div>
     <div ref={scrollElement} className={styles.compactScroll} tabIndex={0} role="region" aria-label="Player weekly schedule scroll area">
       <div className={styles.dayControls}>
@@ -263,7 +292,7 @@ export default function CompactSchedule({ snapshot, roster, rules, players, assi
           data-bench-open={group.position === "BN" ? benchOpen : undefined} aria-label={`${group.position} group`}>
           {group.position === "BN" && <tr data-bench-heading="" className={styles.benchHeading}>
             <td className={styles.positionLabel} data-position-label="" rowSpan={group.rows.length + 1} aria-hidden="true"><span>BENCH</span></td>
-            <th colSpan={9}><button aria-label={`Bench ${group.rows.length}, ${benchOpen ? "collapse" : "expand"}`} aria-expanded={benchOpen} aria-controls={group.rows.map((_, index) => `rso-bench-${index}`).join(" ")} onClick={toggleBench}><span aria-hidden="true">{benchOpen ? "▾" : "▸"} Bench</span><span className={styles.countChip} aria-hidden="true">{group.rows.length}</span></button></th>
+            <th colSpan={9}><button aria-label={`Bench ${group.rows.length}, ${benchOpen ? "collapse" : "expand"}`} aria-describedby={`${navigationReasonId}-bench-capacity`} aria-expanded={benchOpen} aria-controls={group.rows.map((_, index) => `rso-bench-${index}`).join(" ")} onClick={toggleBench}><span aria-hidden="true">{benchOpen ? "▾" : "▸"} Bench</span><span className={styles.countChip} aria-hidden="true">{group.rows.length}</span></button></th>
           </tr>}
           {group.rows.map((row, index) => <tr key={row.playerId ?? row.id} data-compact-row="" data-player-id={row.playerId} hidden={group.position === "BN" && !benchOpen} id={group.position === "BN" ? `rso-bench-${index}` : undefined}>
             {index === 0 && group.position !== "BN" && <td className={styles.positionLabel} data-position-label="" rowSpan={group.rows.length} aria-hidden="true"><span>{group.position}</span></td>}
@@ -271,7 +300,7 @@ export default function CompactSchedule({ snapshot, roster, rules, players, assi
               {row.player ? <button className={styles.schedulePlayer} onClick={() => selectPlayer(row.playerId!)} aria-label={`Schedule details for ${row.player.name}, ${row.slot}, ${row.player.eligibilityVerified === true ? "league positions" : "unconfirmed positions"} ${row.player.eligiblePositions.join("/") || "unknown"}, ${row.status}`}>
                 <ScheduleIdentity player={row.player} /><span className={styles.scheduleSrOnly}>{row.player.name} · {row.player.teamAbbreviation ?? "Team unknown"}</span>
               </button> : <span>{row.playerId ?? row.status}</span>}{row.change && <small className={styles.plannedChange} title={row.change} aria-label={row.change}>Planned</small>}
-              <span className={styles.rowStatus} aria-label={row.status}>{row.assigned ? "●" : row.status.startsWith("Open") ? "Open" : /conflict|Review/.test(row.status) ? "!" : /unverified|pending|unknown/i.test(row.status) ? "?" : /Held|locked/.test(row.status) ? "L" : "·"}</span>
+              <span className={styles.rowStatus} aria-label={row.status}>{row.assigned ? "●" : row.status.startsWith("Open") ? "Open" : /conflict|unsupported|unmatched|No compatible/i.test(row.status) ? "!" : /unverified|pending|unknown|unavailable/i.test(row.status) ? "?" : /Held|locked/.test(row.status) ? "L" : "·"}</span>
             </th>
             {week.map(day => { const cell = row.player ? gameLabel(row.player, day) : null; return <td key={day} title={`${dateLabel(day)} · ${cell?.detail ?? row.status}`} aria-label={`${dateLabel(day)} · ${cell?.detail ?? row.status}`}
               className={`${day === date ? styles.chosenDay : ""} ${day < today ? styles.elapsedDay : ""} ${cell?.assigned ? styles.fantasyAssigned : ""}`}>{cell?.text ?? "—"}{cell?.goalie && <sup aria-hidden="true">{cell.goalie}</sup>}</td>; })}

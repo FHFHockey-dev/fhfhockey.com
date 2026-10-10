@@ -1683,12 +1683,18 @@ for (const count of [19, 20, 29]) test(`compact layout accounts for ${count} slo
 
 test("compact day and bench controls preserve saved intent and keyboard selection", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await installCompactFixture(page, 20);
+  await installCompactFixture(page, 20, ({ workspace }) => {
+    workspace.rules.rosterSlots.BN = 0;
+    workspace.roster = workspace.roster.map(member => ({ ...member, position: "active" }));
+    workspace.lockedAssignments = workspace.lockedAssignments.filter(lock => lock.slotId !== null);
+  });
+  const table = page.getByRole("table", { name: "Individual player weekly schedule" });
   const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
   const calls: string[] = [];
   page.on("request", request => { if (request.url().includes("/api/") && ["POST", "PUT", "PATCH", "DELETE"].includes(request.method())) calls.push(request.method() + " " + request.url()); });
   const slider = page.getByRole("slider", { name: "Selected planning day" });
   const dates = ["Mon, Oct 5", "Tue, Oct 6", "Wed, Oct 7", "Thu, Oct 8", "Fri, Oct 9", "Sat, Oct 10", "Sun, Oct 11"];
+  const viewportMetrics: Array<{ date: string; totalRows: number; visibleRows: number; clientHeight: number; scrollHeight: number }> = [];
   for (const label of dates) {
     const header = page.getByRole("button", { name: `Select ${label}` });
     await header.focus(); await page.keyboard.press("Enter");
@@ -1701,6 +1707,20 @@ test("compact day and bench controls preserve saved intent and keyboard selectio
     await expect(summary.getByText("NHL games").locator("..")).toHaveText("NHL games1");
     const ids = await page.getByRole("table", { name: "Individual player weekly schedule" }).locator('[data-player-id]').evaluateAll(rows => rows.map(row => row.getAttribute("data-player-id")));
     expect(ids).toHaveLength(20); expect(new Set(ids).size).toBe(20);
+    await expect(table.locator('tbody[data-position="Review"]')).toHaveCount(0);
+    const metrics = await table.evaluate(node => {
+      const scroll = node.parentElement!;
+      const viewport = scroll.getBoundingClientRect();
+      const header = node.querySelector("thead")!.getBoundingClientRect();
+      const rows = [...node.querySelectorAll('tr[data-compact-row]:not([hidden])')];
+      return { totalRows: rows.length, visibleRows: rows.filter(row => {
+        const box = row.getBoundingClientRect();
+        return box.top >= Math.max(viewport.top, header.bottom) - 0.5 && box.bottom <= viewport.bottom + 0.5;
+      }).length, clientHeight: scroll.clientHeight, scrollHeight: scroll.scrollHeight };
+    });
+    expect(metrics.visibleRows).toBeGreaterThan(0);
+    expect(metrics.visibleRows).toBeLessThanOrEqual(20);
+    viewportMetrics.push({ date: label, ...metrics });
   }
   await slider.focus(); await page.keyboard.press("Home");
   await expect(slider).toHaveAttribute("aria-valuetext", dates[0]);
@@ -1718,10 +1738,23 @@ test("compact day and bench controls preserve saved intent and keyboard selectio
   await page.keyboard.press("ArrowRight"); await expect(slider).toHaveAttribute("aria-valuetext", dates[0]);
   await page.screenshot({ path: testInfo.outputPath("compact-date-focus.png") });
   await page.getByRole("button", { name: `Select ${dates[2]}` }).click();
+  await expect(table.locator('tbody[data-position="BENCH"] tr[data-player-id]')).toHaveCount(6);
+  await expect(table.locator('tbody[data-position="Review"]')).toHaveCount(0);
   const bench = page.getByRole("button", { name: /Bench \d+/ });
+  const capacityDisclosure = page.getByText("· Local simulated Bench, not Yahoo placement. 6 players / 0 configured places · 6 over capacity; all retained.", { exact: true });
+  const expectCapacityAboveSchedule = async () => {
+    const note = (await capacityDisclosure.boundingBox())!;
+    const scroll = (await page.getByRole("region", { name: "Player weekly schedule scroll area" }).boundingBox())!;
+    expect(note.y + note.height).toBeLessThanOrEqual(scroll.y + 0.5);
+    expect(note.x + note.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  };
+  await expect(capacityDisclosure).toBeVisible();
+  await expect(bench).toHaveAccessibleDescription(await capacityDisclosure.innerText());
+  await expectCapacityAboveSchedule();
   await bench.focus(); await page.keyboard.press("Space");
   await expect(bench).toHaveAttribute("aria-expanded", "false");
   await expect(bench).toBeFocused();
+  await expect(table.locator('tbody[data-position="BENCH"] tr[data-player-id]:visible')).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Selected-day lineup summary" }).getByText("Active slots").locator("..")).toHaveText("Active slots14/14");
   await expect(page.getByRole("region", { name: "Selected-day lineup summary" }).getByText("Open slots").locator("..")).toHaveText("Open slots0");
   await page.screenshot({ path: testInfo.outputPath("compact-bench-collapsed-1440x900.png") });
@@ -1731,9 +1764,21 @@ test("compact day and bench controls preserve saved intent and keyboard selectio
   await expect(slider).toHaveAttribute("aria-valuetext", dates[2]);
   await bench.focus();
   await page.keyboard.press("Enter"); await expect(bench).toHaveAttribute("aria-expanded", "true");
+  await expect(table.locator('tbody[data-position="BENCH"] tr[data-player-id]:visible')).toHaveCount(6);
   expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
   expect(calls).toEqual([]);
+  await writeFile(testInfo.outputPath("compact-bench-viewport-metrics.json"), JSON.stringify(viewportMetrics, null, 2));
   await page.screenshot({ path: testInfo.outputPath("compact-keyboard-focus.png") });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("navigation", { name: "Workspace views" }).getByRole("button", { name: "Itinerary", exact: true }).click();
+  await page.getByRole("region", { name: "Player weekly schedule scroll area" }).evaluate(node => { node.scrollTop = node.scrollHeight; });
+  await expect(table.locator('tbody[data-position="BENCH"] tr[data-player-id]').last()).toBeVisible();
+  await expect(capacityDisclosure).toBeVisible();
+  await expectCapacityAboveSchedule();
+  await bench.focus(); await page.keyboard.press("Enter");
+  await expect(bench).toHaveAttribute("aria-expanded", "false");
+  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
+  await page.screenshot({ path: testInfo.outputPath("compact-bench-zero-capacity-mobile.png") });
 });
 
 test.extend({ hasTouch: true })("compact short desktop and mobile retain rows, day state, reserves and unknown goalie status", async ({ page }, testInfo) => {
