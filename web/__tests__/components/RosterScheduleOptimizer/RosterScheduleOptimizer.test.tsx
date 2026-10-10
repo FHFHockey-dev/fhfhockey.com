@@ -15,7 +15,7 @@ import RosterScheduleOptimizer, { GoalieEvidence, grossAcquisitionGames, request
 import ForecastEvidence, { forecastSummary } from "components/RosterScheduleOptimizer/ForecastEvidence";
 import BenchDecisions from "components/RosterScheduleOptimizer/BenchDecisions";
 import CandidateBrowser, { compareCandidateFits } from "components/RosterScheduleOptimizer/CandidateBrowser";
-import CompactSchedule, { compactGroups, scheduleWeek, summarizeCompactDay } from "components/RosterScheduleOptimizer/CompactSchedule";
+import CompactSchedule, { compactGroups, defaultScheduleDate, scheduleWeek, summarizeCompactDay } from "components/RosterScheduleOptimizer/CompactSchedule";
 import CategoryGains from "components/RosterScheduleOptimizer/CategoryGains";
 
 const player = { id: "fhfh:1", nhlId: 1, name: "Alpha Center", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "unknown" as const, ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] };
@@ -62,6 +62,84 @@ describe("provisional similar projected points display", () => {
 });
 
 describe("RosterScheduleOptimizer workspace", () => {
+  const seedFutureDisplayWorkspace = () => {
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("innerWidth", 1440);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-07T12:00:00Z"));
+    authState.user = { id: "display-owner-a" };
+    planningState.evaluate = planRoster;
+    const workspace = defaultWorkspace();
+    workspace.context = { ...workspace.context, leagueId: "display-league-a", teamId: "display-team-a", timeZone: "UTC", startDate: "2026-10-12", endDate: "2026-10-18" };
+    workspace.manualPlayers = [{ ...player, eligibilityVerified: true }];
+    workspace.roster = [{ playerId: player.id, position: "active" }];
+    workspace.intent.protectedPlayerIds = [player.id];
+    workspace.lockedAssignments = [{ date: "2026-10-15", playerId: player.id, slotId: "C#1" }];
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    return workspace;
+  };
+  it.each(["owner", "league", "team", "horizon", "timezone"] as const)("resumes a display day without aliasing a different %s or rewriting the plan", async scope => {
+    const workspace = seedFutureDisplayWorkspace();
+    let view = render(<RosterScheduleOptimizer />);
+    const slider = () => screen.getByRole("slider", { name: "Selected planning day" });
+    await waitFor(() => expect(slider().getAttribute("aria-valuetext")).toBe("Mon, Oct 12"));
+    const storedPlan = window.localStorage.getItem(WORKSPACE_KEY);
+    fireEvent.click(screen.getByRole("button", { name: "Select Thu, Oct 15" }));
+    expect(slider().getAttribute("aria-valuetext")).toBe("Thu, Oct 15");
+    expect(window.localStorage.getItem(WORKSPACE_KEY)).toBe(storedPlan);
+    view.unmount();
+    view = render(<RosterScheduleOptimizer />);
+    await waitFor(() => expect(slider().getAttribute("aria-valuetext")).toBe("Thu, Oct 15"));
+    expect(window.localStorage.getItem(WORKSPACE_KEY)).toBe(storedPlan);
+    view.unmount();
+    const other = structuredClone(workspace);
+    if (scope === "owner") authState.user = { id: "display-owner-b" };
+    if (scope === "league") other.context.leagueId = "display-league-b";
+    if (scope === "team") other.context.teamId = "display-team-b";
+    if (scope === "horizon") other.context.endDate = "2026-10-25";
+    if (scope === "timezone") other.context.timeZone = "America/Los_Angeles";
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(other));
+    view = render(<RosterScheduleOptimizer />);
+    await waitFor(() => expect(slider().getAttribute("aria-valuetext")).toBe("Mon, Oct 12"));
+    fireEvent.click(screen.getByRole("button", { name: "Select Fri, Oct 16" }));
+    view.unmount();
+    authState.user = { id: "display-owner-a" };
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    render(<RosterScheduleOptimizer />);
+    await waitFor(() => expect(slider().getAttribute("aria-valuetext")).toBe("Thu, Oct 15"));
+  });
+  it.each(["corrupt", "out-of-horizon", "read-failure", "write-failure"] as const)("keeps display-preference %s separate from the working plan", async failure => {
+    seedFutureDisplayWorkspace();
+    const view = render(<RosterScheduleOptimizer />);
+    const slider = () => screen.getByRole("slider", { name: "Selected planning day" });
+    await waitFor(() => expect(slider().getAttribute("aria-valuetext")).toBe("Mon, Oct 12"));
+    const storedPlan = window.localStorage.getItem(WORKSPACE_KEY);
+    fireEvent.click(screen.getByRole("button", { name: "Select Thu, Oct 15" }));
+    const key = Object.keys(window.localStorage).find(key => key.startsWith("fhfh:rso:view-date:v1:"))!;
+    if (failure === "corrupt") window.localStorage.setItem(key, "not-a-date");
+    if (failure === "out-of-horizon") window.localStorage.setItem(key, "2026-10-19");
+    if (failure === "read-failure") {
+      const getItem = Storage.prototype.getItem;
+      vi.spyOn(Storage.prototype, "getItem").mockImplementation(name => {
+        if (name === key) throw new Error("Preference unavailable");
+        return getItem.call(window.localStorage, name);
+      });
+    }
+    if (failure === "write-failure") {
+      const setItem = Storage.prototype.setItem;
+      vi.spyOn(Storage.prototype, "setItem").mockImplementation((name, value) => {
+        if (name === key) throw new Error("Preference unavailable");
+        setItem.call(window.localStorage, name, value);
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Select Fri, Oct 16" }));
+      expect(slider().getAttribute("aria-valuetext")).toBe("Fri, Oct 16");
+    }
+    expect(window.localStorage.getItem(WORKSPACE_KEY)).toBe(storedPlan);
+    view.unmount();
+    render(<RosterScheduleOptimizer />);
+    await waitFor(() => expect(slider().getAttribute("aria-valuetext")).toBe(failure === "write-failure" ? "Thu, Oct 15" : "Mon, Oct 12"));
+    expect(window.localStorage.getItem(WORKSPACE_KEY)).toBe(storedPlan);
+  });
   it("shows upstream stale and disabled evidence in manual readiness independently of reader time", async () => {
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"),
       json: async () => ({ success: true, data: { ...data, evidence: {
@@ -1088,6 +1166,16 @@ describe("RosterScheduleOptimizer workspace", () => {
 });
 
 describe("compact RSO schedule", () => {
+  it("defaults future horizons to their first valid day while retaining today and past-week behavior", () => {
+    const week = scheduleWeek("2026-10-12");
+    expect(defaultScheduleDate(week, "2026-10-07")).toBe("2026-10-12");
+    expect(defaultScheduleDate(week, "2026-10-14")).toBe("2026-10-14");
+    expect(defaultScheduleDate(week.slice(2), "2026-10-07")).toBe("2026-10-14");
+    expect(defaultScheduleDate([...scheduleWeek("2026-10-05").slice(4), ...week], "2026-10-07")).toBe("2026-10-09");
+    expect(defaultScheduleDate(scheduleWeek("2026-09-28"), "2026-10-07")).toBe("2026-09-30");
+    expect(defaultScheduleDate(scheduleWeek("2026-09-28").slice(1, 4), "2026-10-07")).toBe("2026-09-29");
+    expect(defaultScheduleDate(scheduleWeek("2026-09-28").slice(0, 5), "2026-10-07")).toBe("2026-09-28");
+  });
   const displayFixture = (count = 20) => {
     const workspace = defaultWorkspace();
     workspace.context = { ...workspace.context, startDate: "2026-10-05", endDate: "2026-10-11", asOf: "2026-10-05T00:00:00Z", timeZone: "UTC" };
@@ -1315,20 +1403,27 @@ describe("compact RSO schedule", () => {
     expect(within(locked).getAllByRole("cell", { name: /Outside selected range/ })).toHaveLength(5);
     expect(JSON.stringify(input)).toBe(before);
   });
-  it("defaults schedule-week navigation to today's weekday in the displayed week", () => {
+  it("preserves the selected weekday during week navigation and falls back inside clipped weeks", () => {
     const input = displayFixture();
     const selectDate = vi.fn();
     const dates = [...scheduleWeek(input.date), ...scheduleWeek("2026-10-12")];
-    const props = { ...input, dates, today: "2026-10-07", selectDate, selectPlayer: vi.fn() };
+    const props = { ...input, date: "2026-10-08", dates, today: "2026-10-07", selectDate, selectPlayer: vi.fn() };
     const view = render(<CompactSchedule {...props} />);
     fireEvent.click(screen.getByRole("button", { name: "Next schedule week" }));
-    expect(selectDate).toHaveBeenLastCalledWith("2026-10-14");
-    view.rerender(<CompactSchedule {...props} date="2026-10-14" />);
+    expect(selectDate).toHaveBeenLastCalledWith("2026-10-15");
+    view.rerender(<CompactSchedule {...props} date="2026-10-15" />);
     fireEvent.click(screen.getByRole("button", { name: "Previous schedule week" }));
-    expect(selectDate).toHaveBeenLastCalledWith("2026-10-07");
+    expect(selectDate).toHaveBeenLastCalledWith("2026-10-08");
     view.rerender(<CompactSchedule {...props} today="2026-10-09" />);
     fireEvent.click(screen.getByRole("button", { name: "Next schedule week" }));
-    expect(selectDate).toHaveBeenLastCalledWith("2026-10-16");
+    expect(selectDate).toHaveBeenLastCalledWith("2026-10-15");
+    const clipped = [...scheduleWeek(input.date).slice(2), ...scheduleWeek("2026-10-12").slice(0, 2)];
+    view.rerender(<CompactSchedule {...props} dates={clipped} />);
+    fireEvent.click(screen.getByRole("button", { name: "Next schedule week" }));
+    expect(selectDate).toHaveBeenLastCalledWith("2026-10-12");
+    view.rerender(<CompactSchedule {...props} dates={clipped} date="2026-10-12" />);
+    fireEvent.click(screen.getByRole("button", { name: "Previous schedule week" }));
+    expect(selectDate).toHaveBeenLastCalledWith("2026-10-07");
   });
   it("labels a confirmed goalie only when eligible full-team evidence supports it", () => {
     const input = displayFixture();

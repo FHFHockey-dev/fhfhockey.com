@@ -21,6 +21,10 @@ export function scheduleWeek(date: string): string[] {
 }
 export function defaultScheduleDate(dates: string[], today: string): string | undefined {
   if (dates.includes(today)) return today;
+  const first = dates[0];
+  const fullWeeks = new Date(`${first}T12:00:00Z`).getUTCDay() === 1
+    && new Date(`${dates.at(-1)}T12:00:00Z`).getUTCDay() === 0;
+  if (first > today || !fullWeeks) return first;
   const weekday = new Date(`${today}T12:00:00Z`).getUTCDay();
   return dates.find(day => new Date(`${day}T12:00:00Z`).getUTCDay() === weekday) ?? dates[0];
 }
@@ -193,7 +197,8 @@ export default function CompactSchedule({ snapshot, roster, rules, players, assi
   };
   const moveWeek = (offset: number) => {
     const next = scheduleWeek(offsetDate(week[0], offset)).filter(day => dates.includes(day));
-    const nextDate = defaultScheduleDate(next, today);
+    const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
+    const nextDate = next.find(day => new Date(`${day}T12:00:00Z`).getUTCDay() === weekday) ?? next[0];
     if (nextDate) selectDate(nextDate);
   };
   return <div className={styles.compactSchedule}>

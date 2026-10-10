@@ -1655,7 +1655,7 @@ test.extend({ hasTouch: true })("compact short desktop and mobile retain rows, d
   }
 });
 
-test("compact future and partial weeks use league dates and retain the full horizon without saving", async ({ page }) => {
+test.extend({ timezoneId: "Pacific/Kiritimati" })("compact future and partial weeks use league dates and retain the full horizon without saving", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const fixture = compactWorkspace(20);
   fixture.workspace.context.endDate = "2026-10-18";
@@ -1671,13 +1671,18 @@ test("compact future and partial weeks use league dates and retain the full hori
   await page.clock.setFixedTime(new Date("2026-10-07T01:00:00Z"));
   await page.reload();
   await expect(slider).toHaveAttribute("aria-valuetext", "Tue, Oct 6");
+  await expect(page.getByRole("button", { name: "Select Mon, Oct 5" }).locator("..")).toHaveClass(/elapsedDay/);
+  await expect(page.getByRole("button", { name: "Select Tue, Oct 6" }).locator("..")).not.toHaveClass(/elapsedDay/);
+  await expect(page.getByRole("button", { name: "Select Wed, Oct 7" }).locator("..")).not.toHaveClass(/elapsedDay/);
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).context.asOf)).toBe("2026-10-07T01:00:00.000Z");
+  await page.getByRole("button", { name: "Select Thu, Oct 8" }).click();
+  await expect(slider).toHaveAttribute("aria-valuetext", "Thu, Oct 8");
   const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
   await page.getByRole("button", { name: "Next schedule week" }).click();
-  await expect(slider).toHaveAttribute("aria-valuetext", "Tue, Oct 13");
+  await expect(slider).toHaveAttribute("aria-valuetext", "Thu, Oct 15");
   await expectDaySliderAligned(page);
   await page.getByRole("button", { name: "Previous schedule week" }).click();
-  await expect(slider).toHaveAttribute("aria-valuetext", "Tue, Oct 6");
+  await expect(slider).toHaveAttribute("aria-valuetext", "Thu, Oct 8");
   expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
   await page.evaluate(() => {
     const workspace = JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!);
@@ -1691,7 +1696,7 @@ test("compact future and partial weeks use league dates and retain the full hori
   await expect(page.getByRole("button", { name: "Select Tue, Oct 6" })).toBeDisabled();
 });
 
-test("compact initial future week defaults to today's weekday with seven discrete dates", async ({ page }) => {
+test("compact initial future week defaults to Monday and preserves clipped horizons", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const fixture = compactWorkspace(20);
   fixture.workspace.context.startDate = "2026-10-12";
@@ -1700,11 +1705,56 @@ test("compact initial future week defaults to today's weekday with seven discret
   await seedWorkspace(page, fixture.workspace);
   await page.goto("/roster-schedule-optimizer");
   const slider = page.getByRole("slider", { name: "Selected planning day" });
-  await expect(slider).toHaveAttribute("aria-valuetext", "Wed, Oct 14");
+  await expect(slider).toHaveAttribute("aria-valuetext", "Mon, Oct 12");
   await expect(slider).toHaveAttribute("min", "0");
   await expect(slider).toHaveAttribute("max", "6");
   await expect(page.getByRole("button", { name: /^Select (Mon|Tue|Wed|Thu|Fri|Sat|Sun), Oct/ })).toHaveCount(7);
   await expectDaySliderAligned(page);
+  await page.screenshot({ path: testInfo.outputPath("future-initial-monday.png") });
+  await page.evaluate(() => {
+    const workspace = JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!);
+    workspace.context.startDate = "2026-10-14";
+    workspace.context.endDate = "2026-10-20";
+    localStorage.setItem("fhfh:rso:workspace:v1", JSON.stringify(workspace));
+  });
+  await page.reload();
+  await expect(slider).toHaveAttribute("aria-valuetext", "Wed, Oct 14");
+  await expect(page.getByRole("button", { name: "Select Mon, Oct 12" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Select Tue, Oct 13" })).toBeDisabled();
+  const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
+  await page.getByRole("button", { name: "Next schedule week" }).click();
+  await expect(slider).toHaveAttribute("aria-valuetext", "Mon, Oct 19");
+  await page.getByRole("button", { name: "Previous schedule week" }).click();
+  await expect(slider).toHaveAttribute("aria-valuetext", "Wed, Oct 14");
+  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
+  await page.getByRole("button", { name: "Select Sun, Oct 18" }).click();
+  await page.reload();
+  await expect(slider).toHaveAttribute("aria-valuetext", "Sun, Oct 18");
+  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
+  await page.screenshot({ path: testInfo.outputPath("partial-future-resumed-sunday.png") });
+  const preferenceKey = await page.evaluate(() => Object.keys(localStorage).find(key => key.startsWith("fhfh:rso:view-date:v1:") && localStorage.getItem(key) === "2026-10-18")!);
+  const switchFixtureWorkspace = async (value: string, marker: string) => {
+    await page.addInitScript(({ value, marker }) => {
+      if (sessionStorage.getItem(marker)) return;
+      localStorage.setItem("fhfh:rso:workspace:v1", value);
+      sessionStorage.setItem(marker, "applied");
+    }, { value, marker });
+    await page.reload();
+  };
+  const other = JSON.parse(stored!);
+  other.context.teamId = "other-manual-team";
+  await switchFixtureWorkspace(JSON.stringify(other), "fixture-date-context-b");
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).context.teamId)).toBe("other-manual-team");
+  await expect(slider).toHaveAttribute("aria-valuetext", "Wed, Oct 14");
+  await switchFixtureWorkspace(stored!, "fixture-date-context-a");
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).context)).toEqual(JSON.parse(stored!).context);
+  await expect(slider).toHaveAttribute("aria-valuetext", "Sun, Oct 18");
+  for (const value of ["not-a-date", "2026-10-21"]) {
+    await page.evaluate(({ key, value }) => localStorage.setItem(key, value), { key: preferenceKey, value });
+    await page.reload();
+    await expect(slider).toHaveAttribute("aria-valuetext", "Wed, Oct 14");
+    expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
+  }
 });
 
 test("compact vacancies and non-playing holds survive day changes and Bench collapse", async ({ page }, testInfo) => {

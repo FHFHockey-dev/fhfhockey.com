@@ -340,8 +340,20 @@ export default function RosterScheduleOptimizer() {
   const weekIndex = matchupWeeks.findIndex(week => week.startDate === workspace.context.startDate && week.endDate === workspace.context.endDate);
   const selectWeek = (index: number) => { const week = matchupWeeks[index]; if (week) edit(current => ({ ...current, context: { ...current.context, startDate: week.startDate, endDate: week.endDate } })); };
   const today = leagueDate(new Date().toISOString(), workspace.context.timeZone);
-  const focusedDate = selectedDate?.context === contextKey && dates.includes(selectedDate.date) ? selectedDate.date : defaultScheduleDate(dates, today);
-  const focusDate = (date: string) => setSelectedDate({ context: contextKey, date });
+  const displayContextKey = JSON.stringify([user?.id ?? null, workspaceContextKey(workspace.context)]);
+  const displayDateStorageKey = `fhfh:rso:view-date:v1:${encodeURIComponent(displayContextKey)}`;
+  useEffect(() => {
+    let storedDate: string | null = null;
+    try { storedDate = localStorage.getItem(displayDateStorageKey); } catch { /* View preferences must not block planning. */ }
+    setSelectedDate(current => current?.context === displayContextKey && dates.includes(current.date) ? current
+      : storedDate && dates.includes(storedDate) ? { context: displayContextKey, date: storedDate } : null);
+  }, [displayContextKey, displayDateStorageKey, dates]);
+  const focusedDate = selectedDate?.context === displayContextKey && dates.includes(selectedDate.date) ? selectedDate.date : defaultScheduleDate(dates, today);
+  const focusDate = (date: string) => {
+    if (!dates.includes(date)) return;
+    setSelectedDate({ context: displayContextKey, date });
+    try { localStorage.setItem(displayDateStorageKey, date); } catch { /* Keep the active selection when persistence is unavailable. */ }
+  };
   const matches = players.filter((player) => query.trim().length >= 2 && `${player.name} ${player.teamAbbreviation ?? ""}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())).slice(0, 20);
   const rosterIds = useMemo(() => new Set(roster.map((entry) => entry.playerId)), [roster]);
   const assignments = result?.selected.assignments ?? [];
