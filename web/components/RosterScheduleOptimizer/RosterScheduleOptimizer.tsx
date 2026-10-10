@@ -387,7 +387,8 @@ export default function RosterScheduleOptimizer() {
   const sharedForecasts = data?.evidence.forecasts;
   const sharedScheduleTime = sharedSchedule?.asOf && Number.isFinite(Date.parse(sharedSchedule.asOf))
     ? actionTime(sharedSchedule.asOf, workspace.context.timeZone) : "unknown";
-  const scheduleWarning = scheduleFreshnessWarning(sharedSchedule, data?.games ?? [], { ...workspace.context, asOf: lastUpdated ?? workspace.context.asOf });
+  // Cache age advances on render; reader time and saved planning cutoffs retain their own meanings.
+  const scheduleWarning = scheduleFreshnessWarning(sharedSchedule, data?.games ?? [], { ...workspace.context, asOf: new Date().toISOString() });
   const scheduleTimeLabel = sharedSchedule?.source === "roster_optimizer_team_games" ? "Cache received" : "Evidence timestamp";
   const dates = useMemo(() => datesBetween(workspace.context.startDate, workspace.context.endDate), [contextKey]);
   const rangeTooLong = Date.parse(workspace.context.endDate) - Date.parse(workspace.context.startDate) > 366 * 86_400_000;

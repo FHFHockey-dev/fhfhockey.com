@@ -212,6 +212,39 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(summary.closest("details")!.open).toBe(false);
     await waitFor(() => expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent).toEqual(workspace.intent));
   });
+  it.each([
+    { hours: 2, now: "2026-10-10T15:00:00Z", startsAt: "2026-10-10T16:00:00Z" },
+    { hours: 6, now: "2026-10-10T19:00:00Z", startsAt: "2026-10-10T23:00:00Z" },
+  ])("updates the provisional schedule $hours-hour warning after an edit without a new read", async ({ hours, now, startsAt }) => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-10T13:00:00Z"));
+    const workspace = defaultWorkspace();
+    workspace.context = { ...workspace.context, startDate: "2026-10-10", endDate: "2026-10-10" };
+    workspace.roster = [{ playerId: player.id, position: "active" }];
+    workspace.intent.protectedPlayerIds = [player.id];
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    const currentData: PlanningData = { ...data,
+      games: [{ id: "aging-game", date: "2026-10-10", startsAt, teamAbbreviation: "CAR", opponent: "NJD", home: true, status: "scheduled" }],
+      evidence: { schedule: { source: "roster_optimizer_team_games", asOf: "2026-10-10T12:00:00Z", seasonId: 20262027, completeness: "complete", limitations: [] } },
+    };
+    const read = vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data: currentData }) }));
+    vi.stubGlobal("fetch", read);
+    render(<RosterScheduleOptimizer />);
+    const summary = (await screen.findByText("Shared schedule: complete")).closest("summary")!;
+    const readerTime = screen.getByText(/Reader checked/).textContent;
+    const calls = read.mock.calls.length;
+    expect(summary.textContent).not.toContain("schedule warning");
+    vi.setSystemTime(new Date(now));
+    fireEvent.change(screen.getByLabelText("Alpha Center roster position"), { target: { value: "bench" } });
+    expect(summary.textContent).toContain(`Provisional ${hours}-hour schedule warning.`);
+    expect(screen.getByText(/Reader checked/).textContent).toBe(readerTime);
+    expect(read.mock.calls).toHaveLength(calls);
+    expect(currentData.evidence.schedule.asOf).toBe("2026-10-10T12:00:00Z");
+    expect(currentData.evidence.schedule.completeness).toBe("complete");
+    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!)).toMatchObject({
+      context: { asOf: new Date(now).toISOString() }, intent: workspace.intent,
+    });
+  });
   it("shows confirmed Yahoo zero usage independently from unknown allowance and planned adds", () => {
     const evidence: NonNullable<PlanningSnapshot["acquisitionEvidence"]> = {
       source: "Yahoo team roster_adds", fetchedAt: "2026-10-01T12:00:00Z", asOf: "2026-10-01T12:00:00Z",
@@ -1554,6 +1587,8 @@ describe("RosterScheduleOptimizer workspace", () => {
   });
 
   it("opens a saved manual snapshot read-only until the manager explicitly forks it", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-10T13:00:00Z"));
     authState.user = { id: "manager" };
     const saved = defaultWorkspace();
     saved.context.asOf = "2026-09-01T12:00:00.000Z";
@@ -1566,7 +1601,11 @@ describe("RosterScheduleOptimizer workspace", () => {
       effectiveAt: `${saved.context.startDate}T12:00:00Z`, conditional: true, dependsOn: [],
     }] };
     const snapshot = { id: "saved-1", context: saved.context, players: saved.manualPlayers, roster: saved.roster, games: [], forecasts: [], rules: saved.rules, lockedAssignments: saved.lockedAssignments, realized: {}, opponent: null, evidence: {} };
-    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data } : url.endsWith("/access") ? { data: { eligible: false, capabilities: [] } } : { data: { workspace: saved, snapshot, version: 1, updatedAt: saved.context.asOf } } })));
+    const currentData: PlanningData = { ...data,
+      games: [{ id: "current-game", date: "2026-10-10", startsAt: "2026-10-10T16:00:00Z", teamAbbreviation: "CAR", opponent: "NJD", home: true, status: "scheduled" }],
+      evidence: { schedule: { source: "roster_optimizer_team_games", asOf: "2026-10-10T12:00:00Z", seasonId: 20262027, completeness: "complete", limitations: [] } },
+    };
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data: currentData } : url.endsWith("/access") ? { data: { eligible: false, capabilities: [] } } : { data: { workspace: saved, snapshot, version: 1, updatedAt: saved.context.asOf } } })));
     render(<RosterScheduleOptimizer />);
     fireEvent.click(await screen.findByRole("button", { name: "View account save" }));
     expect(screen.getByText(/Saved evidence/)).toBeTruthy();
@@ -1575,6 +1614,14 @@ describe("RosterScheduleOptimizer workspace", () => {
     await waitFor(() => expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!)).toMatchObject({
       intent: saved.intent, lockedAssignments: saved.lockedAssignments,
     }));
+    const summary = (await screen.findByText("Shared schedule: complete")).closest("summary")!;
+    const savedTime = screen.getByText(/Saved evidence/).textContent;
+    expect(summary.textContent).not.toContain("schedule warning");
+    vi.setSystemTime(new Date("2026-10-10T15:00:00Z"));
+    fireEvent.click(screen.getByRole("button", { name: /^Candidates$/ }));
+    expect(summary.textContent).toContain("Provisional 2-hour schedule warning.");
+    expect(screen.getByText(/Saved evidence/).textContent).toBe(savedTime);
+    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).context.asOf).toBe(saved.context.asOf);
     fireEvent.click(screen.getByRole("button", { name: "Continue manually" }));
     expect((screen.getByLabelText("Planning setup") as HTMLFieldSetElement).disabled).toBe(false);
     await waitFor(() => expect(screen.getByText("Confirm planning inputs", { selector: "button" }).hasAttribute("disabled")).toBe(false));
