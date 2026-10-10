@@ -2314,7 +2314,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     if (!canUseProRecommendations) return { positions: [], error: null };
     try {
       return { positions: buildDashboardTiers({
-        players: allPlayers, draftSettings,
+        players: tableAllPlayers, draftSettings,
         leagueType: draftSettings.leagueType || "points", categoryWeights: effectiveCategoryWeights,
         forwardGrouping, prorate84, fantasyPointSettings: effectiveSkaterPointValues, goaliePointValues: effectiveGoaliePointValues,
         positionWeightMultipliers,
@@ -2322,7 +2322,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     } catch {
       return { positions: [], error: "Tier analysis is unavailable. Ordinary Picks remain available." };
     }
-  }, [canUseProRecommendations, allPlayers, draftSettings, effectiveCategoryWeights, effectiveSkaterPointValues, effectiveGoaliePointValues, forwardGrouping, prorate84, positionWeightMultipliers]);
+  }, [canUseProRecommendations, tableAllPlayers, draftSettings, effectiveCategoryWeights, effectiveSkaterPointValues, effectiveGoaliePointValues, forwardGrouping, prorate84, positionWeightMultipliers]);
 
   // NEW: VORP metrics computed on full player pool (not just available)
   const {

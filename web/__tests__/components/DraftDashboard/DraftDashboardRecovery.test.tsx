@@ -9,6 +9,11 @@ const external = vi.hoisted(() => ({
   showRoster: false,
   players: null as any[] | null,
   filledSlots: {} as Record<string, number>,
+  proEnabled: false,
+  fantraxPlayers: [] as import("../../../lib/draftDashboard/fantraxPlayerSources").FantraxPlayerRow[],
+  tablePlayers: [] as any[],
+  tierPositions: [] as import("../../../lib/draftDashboard/positionalTiers").PositionTiers[],
+  tierAdpSource: "",
   loadSettings: vi.fn(async () => ({ data: null as any, error: null })),
 }));
 const player = {
@@ -76,12 +81,20 @@ vi.mock("components/integrations/EspnLeagueSettingsPanel", () => ({ default: () 
 
 import DraftDashboard from "../../../components/DraftDashboard/DraftDashboard";
 
+vi.mock("hooks/useFantraxConnections", () => ({ fantraxAccountRequest: vi.fn(async () => ({ players: external.fantraxPlayers, hasLeagueEligibility: true })) }));
 vi.mock("hooks/useFantraxDraftSync", () => ({ useFantraxDraftSync: () => ({ eligible: false, enabled: false, draftState: null }) }));
-vi.mock("hooks/useDraftProAccess", () => ({ useDraftProAccess: () => ({ access: null }) }));
+vi.mock("hooks/useDraftProAccess", () => ({ useDraftProAccess: () => ({ access: external.proEnabled ? { eligible: true, capabilities: ["recommendations"] } : null }) }));
 vi.mock("hooks/useDraftProDust", () => ({ useDraftProDust: () => ({ data: null, error: null, isLoading: false }) }));
 vi.mock("hooks/useDraftSchedule", () => ({ useDraftSchedule: () => ({ playerMetrics: new Map(), weeks: [], selectedWeeks: [], weeksError: null, periodLabel: "Season" }) }));
-vi.mock("components/DraftDashboard/ProjectionsTable", () => ({ default: () => null }));
-vi.mock("components/DraftDashboard/SuggestedPicks", () => ({ default: () => null }));
+vi.mock("components/DraftDashboard/ProjectionsTable", () => ({ default: ({ allPlayers }: any) => {
+  external.tablePlayers = allPlayers;
+  return null;
+} }));
+vi.mock("components/DraftDashboard/SuggestedPicks", () => ({ default: ({ tierPositions, adpSource }: any) => {
+  external.tierPositions = tierPositions;
+  external.tierAdpSource = adpSource;
+  return null;
+} }));
 vi.mock("components/DraftDashboard/GodView", () => ({ default: () => null }));
 vi.mock("components/DraftDashboard/DustMatrix", () => ({ default: () => null }));
 
@@ -113,6 +126,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup(); sessionStorage.clear(); localStorage.clear(); vi.restoreAllMocks(); vi.unstubAllGlobals();
   external.showRoster = false; external.players = null; external.filledSlots = {};
+  external.proEnabled = false; external.fantraxPlayers = []; external.tablePlayers = []; external.tierPositions = []; external.tierAdpSource = "";
   external.user = null; external.espnState = null; external.loadSettings.mockReset(); external.loadSettings.mockResolvedValue({ data: null, error: null });
 });
 
@@ -412,4 +426,32 @@ it("keeps roster moves locked while a provider controls drafting", async () => {
   expect(screen.getByRole("button", { name: "C 1: Recovery Player" })).toBeTruthy();
   expect(saved().positionOverrides).toEqual({});
   expect(external.filledSlots).toMatchObject({ C: 1, UTILITY: 0, BENCH: 0 });
+});
+
+
+it.each([
+  ["yahoo", "yahoo", 8, "C"],
+  ["fantrax", "yahoo", 70, "C"],
+  ["yahoo", "fantrax", 8, "RW"],
+  ["fantrax", "fantrax", 70, "RW"],
+] as const)("uses selected %s ADP and %s eligibility for positional tier advice", async (adpSource, positionSource, adp, position) => {
+  external.proEnabled = true;
+  external.players = [{ ...player, combinedStats: {
+    GOALS: { projected: 10 }, ASSISTS: { projected: 0 }, PP_POINTS: { projected: 0 },
+    SHOTS_ON_GOAL: { projected: 0 }, HITS: { projected: 0 }, BLOCKED_SHOTS: { projected: 0 },
+    GAMES_PLAYED: { projected: 82 },
+  } }];
+  external.fantraxPlayers = [{ id: "fixture-2", name: "Recovery Player", team: null, positions: ["RW"], adp: 70 }];
+  sessionStorage.setItem("draft.snapshot.v2", JSON.stringify({
+    ...snapshot(),
+    draftSettings: { ...settings, adpSource, positionSource, rosterConfig: { ...settings.rosterConfig, RW: 1 } },
+    draftedPlayers: [], currentPick: 1, keepers: [], positionOverrides: {}, draftHistory: [],
+    forwardGrouping: "split", prorate84: false, customCsvList: [],
+    sourceControls: { dtz_skaters: { isSelected: true, weight: 1 } },
+  }));
+  render(<DraftDashboard />);
+  await waitFor(() => expect(external.tablePlayers.find(row => row.playerId === 2)).toMatchObject({ yahooAvgPick: adp, eligiblePositions: [position] }));
+  const tiers = external.tierPositions.find(row => row.position === position);
+  expect(tiers?.bands.flatMap(band => band.players)).toMatchObject([{ id: "2", adp }]);
+  expect(external.tierAdpSource).toBe(adpSource === "fantrax" ? "Fantrax" : "Yahoo");
 });
