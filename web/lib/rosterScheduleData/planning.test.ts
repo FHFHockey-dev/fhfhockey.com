@@ -9,6 +9,7 @@ import { admittedBoardGoalieForecast } from "lib/projections/starterBoardScoring
 import { normalizeStartChartResponse } from "lib/projections/startChartContract";
 import { buildNativeSkaterParticipationFields } from "lib/projections/nativeGoalAccounting";
 import { acceptedNewsSupersedes, loadAcceptedForecastNews } from "lib/projections/acceptedNews";
+import { timestampMicros } from "lib/projections/evidenceTime";
 
 const membershipCreatedAt = ["2026-09-01T00:00:00Z"];
 const rosterRevision = forgeRosterRevision({ canonicalId: 7, nhlId: 847001, seasonId: 20262027, teamId: 1, membershipCreatedAt });
@@ -320,6 +321,33 @@ describe("public RSO data boundary", () => {
     expect(acceptedNewsSupersedes("2026-10-10T10:00:00.000001+00:00", "2026-10-10T06:00:00.000001-04:00")).toBe(false);
     expect(acceptedNewsSupersedes("2026-10-10T10:00:00.000001Z", "2026-10-10T10:00:00.000002Z")).toBe(false);
     expect(acceptedNewsSupersedes("invalid", "2026-10-10T10:00:00Z")).toBe(true);
+  });
+  it.each([
+    "2026-02-30T12:00:00.123456Z", "2026-02-29T12:00:00Z",
+    "2024-02-30T12:00:00Z", "1900-02-29T12:00:00Z", "2100-02-29T12:00:00Z",
+    "2026-04-31T12:00:00-04:00", "2026-02-30T00:00:00+14:00",
+    "2026-00-15T12:00:00Z", "2026-13-15T12:00:00Z", "2026-02-00T12:00:00Z",
+  ])("rejects impossible evidence dates and fails closed: %s", invalid => {
+    expect(timestampMicros(invalid)).toBeNull();
+    const valid = "2026-03-10T12:00:00Z";
+    expect(acceptedNewsSupersedes(invalid, valid)).toBe(true);
+    expect(acceptedNewsSupersedes(valid, invalid)).toBe(true);
+    expect(acceptedNewsSupersedes(invalid, invalid)).toBe(true);
+  });
+  it.each([
+    "2024-02-29T12:00:00.123456Z", "2024-02-29T17:45:00.123456+05:45",
+    "2024-02-29T08:00:00.123456-04:00", "2024-03-01T02:00:00.123456+14:00",
+  ])("preserves leap-day offset equivalence and microseconds: %s", value => {
+    expect(timestampMicros(value)).toBe(BigInt("1709208000123456"));
+    expect(acceptedNewsSupersedes(value, "2024-02-29T12:00:00.123455Z")).toBe(true);
+    expect(acceptedNewsSupersedes(value, "2024-02-29T12:00:00.123456Z")).toBe(false);
+    expect(acceptedNewsSupersedes(value, "2024-02-29T12:00:00.123457Z")).toBe(false);
+  });
+  it("validates the source calendar date before timezone conversion", () => {
+    expect(timestampMicros("2024-02-29T23:00:00.000001-03:30"))
+      .toBe(timestampMicros("2024-03-01T02:30:00.000001Z"));
+    expect(timestampMicros("2000-02-29T12:00:00Z")).not.toBeNull();
+    expect(timestampMicros("+010000-02-29T12:00:00Z")).not.toBeNull();
   });
   it("validates actual dates, season shape and bounded custom ranges", () => {
     expect(parsePlanningDataQuery({ seasonId: "20262027", startDate: "2026-10-10", endDate: "2026-11-05" }).seasonId).toBe(20262027);
