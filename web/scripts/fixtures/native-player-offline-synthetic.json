@@ -1,0 +1,403 @@
+{
+  "version": "native-player-offline-inputs-v1",
+  "classification": "synthetic_fixture",
+  "slateDate": "2026-10-12",
+  "gameId": 2026020998,
+  "targets": [
+    {
+      "canonicalId": 10601,
+      "nhlId": 601,
+      "teamId": 6,
+      "playerClass": "skater"
+    },
+    {
+      "canonicalId": 10619,
+      "nhlId": 619,
+      "teamId": 6,
+      "playerClass": "goalie"
+    }
+  ],
+  "tables": {
+    "games": {
+      "rows": [
+        {"id":2026020998,"date":"2026-10-12","seasonId":20262027,"type":2,"startTime":"2026-10-12T23:00:00.000Z","homeTeamId":6,"awayTeamId":9},
+        {"id":2026020031,"date":"2026-10-08","seasonId":20262027,"type":2,"homeTeamId":6,"awayTeamId":9,"startTime":null}
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:games","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; games","complete":true,"rowCount":2,"rowsHash":"02c80fe2f01a0fe6beaa1d435d6d56678c5a6d7b158ca6166f35e9ae72a7fe11"}
+    },
+    "seasons": {
+      "rows": [
+        {"id":20262027,"startDate":"2026-10-01","regularSeasonEndDate":"2027-04-15","endDate":"2027-06-30","numberOfGames":82}
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:seasons","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; seasons","complete":true,"rowCount":1,"rowsHash":"2bd47075421eba29977a00b5891b8efea25511bb01c7d986982e30efa107af41"}
+    },
+    "teams": {
+      "rows": [
+        {"id":6,"abbreviation":"BOS"},
+        {"id":9,"abbreviation":"OTT"}
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:teams","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; teams","complete":true,"rowCount":2,"rowsHash":"ab35bfb404f5559a25ad45af7587009b51a0b9ddafe480e3ce27b8c8bb958d99"}
+    },
+    "players": {
+      "rows": [
+        {"id":601,"team_id":6,"position":"C"},
+        {"id":602,"team_id":6,"position":"C"},
+        {"id":603,"team_id":6,"position":"C"},
+        {"id":604,"team_id":6,"position":"C"},
+        {"id":605,"team_id":6,"position":"C"},
+        {"id":606,"team_id":6,"position":"C"},
+        {"id":607,"team_id":6,"position":"C"},
+        {"id":608,"team_id":6,"position":"C"},
+        {"id":609,"team_id":6,"position":"C"},
+        {"id":610,"team_id":6,"position":"C"},
+        {"id":611,"team_id":6,"position":"C"},
+        {"id":612,"team_id":6,"position":"C"},
+        {"id":613,"team_id":6,"position":"D"},
+        {"id":614,"team_id":6,"position":"D"},
+        {"id":615,"team_id":6,"position":"D"},
+        {"id":616,"team_id":6,"position":"D"},
+        {"id":617,"team_id":6,"position":"D"},
+        {"id":618,"team_id":6,"position":"D"},
+        {"id":619,"team_id":6,"position":"G"},
+        {"id":901,"team_id":9,"position":"C"},
+        {"id":902,"team_id":9,"position":"C"},
+        {"id":903,"team_id":9,"position":"C"},
+        {"id":904,"team_id":9,"position":"C"},
+        {"id":905,"team_id":9,"position":"C"},
+        {"id":906,"team_id":9,"position":"C"},
+        {"id":907,"team_id":9,"position":"C"},
+        {"id":908,"team_id":9,"position":"C"},
+        {"id":909,"team_id":9,"position":"C"},
+        {"id":910,"team_id":9,"position":"C"},
+        {"id":911,"team_id":9,"position":"C"},
+        {"id":912,"team_id":9,"position":"C"},
+        {"id":913,"team_id":9,"position":"D"},
+        {"id":914,"team_id":9,"position":"D"},
+        {"id":915,"team_id":9,"position":"D"},
+        {"id":916,"team_id":9,"position":"D"},
+        {"id":917,"team_id":9,"position":"D"},
+        {"id":918,"team_id":9,"position":"D"},
+        {"id":919,"team_id":9,"position":"G"}
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:players","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; players","complete":true,"rowCount":38,"rowsHash":"f849df7449429c5bde490d6e1a260ad58bcbd7fbcda2ac6de0db5fc10b7fe12b"}
+    },
+    "rosters": {
+      "rows": [
+        {"playerId":601,"teamId":6,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":602,"teamId":6,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":603,"teamId":6,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":604,"teamId":6,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":605,"teamId":6,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":606,"teamId":6,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":607,"teamId":6,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":608,"teamId":6,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":609,"teamId":6,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":610,"teamId":6,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":611,"teamId":6,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":612,"teamId":6,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":613,"teamId":6,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":614,"teamId":6,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":615,"teamId":6,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":616,"teamId":6,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":617,"teamId":6,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":618,"teamId":6,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":619,"teamId":6,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":901,"teamId":9,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":902,"teamId":9,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":903,"teamId":9,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":904,"teamId":9,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":905,"teamId":9,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":906,"teamId":9,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":907,"teamId":9,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":908,"teamId":9,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":909,"teamId":9,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":910,"teamId":9,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":911,"teamId":9,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":912,"teamId":9,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":913,"teamId":9,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":914,"teamId":9,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":915,"teamId":9,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":916,"teamId":9,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":917,"teamId":9,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":918,"teamId":9,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"},
+        {"playerId":919,"teamId":9,"seasonId":20262027,"is_current":true,"created_at":"2026-10-09T12:00:00.000Z"}
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:rosters","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; rosters","complete":true,"rowCount":38,"rowsHash":"2a2af661c30090ba9530dc4dff51c7deee7cc2b2010487026f9fdcf632868051"}
+    },
+    "fhfh_player_identities": {
+      "rows": [
+        {"id":10601,"nhl_player_id":601,"current_nhl_team_id":6,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10602,"nhl_player_id":602,"current_nhl_team_id":6,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10603,"nhl_player_id":603,"current_nhl_team_id":6,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10604,"nhl_player_id":604,"current_nhl_team_id":6,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10605,"nhl_player_id":605,"current_nhl_team_id":6,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10606,"nhl_player_id":606,"current_nhl_team_id":6,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10607,"nhl_player_id":607,"current_nhl_team_id":6,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10608,"nhl_player_id":608,"current_nhl_team_id":6,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10609,"nhl_player_id":609,"current_nhl_team_id":6,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10610,"nhl_player_id":610,"current_nhl_team_id":6,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10611,"nhl_player_id":611,"current_nhl_team_id":6,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10612,"nhl_player_id":612,"current_nhl_team_id":6,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10613,"nhl_player_id":613,"current_nhl_team_id":6,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10614,"nhl_player_id":614,"current_nhl_team_id":6,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10615,"nhl_player_id":615,"current_nhl_team_id":6,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10616,"nhl_player_id":616,"current_nhl_team_id":6,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10617,"nhl_player_id":617,"current_nhl_team_id":6,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10618,"nhl_player_id":618,"current_nhl_team_id":6,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10619,"nhl_player_id":619,"current_nhl_team_id":6,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10901,"nhl_player_id":901,"current_nhl_team_id":9,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10902,"nhl_player_id":902,"current_nhl_team_id":9,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10903,"nhl_player_id":903,"current_nhl_team_id":9,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10904,"nhl_player_id":904,"current_nhl_team_id":9,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10905,"nhl_player_id":905,"current_nhl_team_id":9,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10906,"nhl_player_id":906,"current_nhl_team_id":9,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10907,"nhl_player_id":907,"current_nhl_team_id":9,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10908,"nhl_player_id":908,"current_nhl_team_id":9,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10909,"nhl_player_id":909,"current_nhl_team_id":9,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10910,"nhl_player_id":910,"current_nhl_team_id":9,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10911,"nhl_player_id":911,"current_nhl_team_id":9,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10912,"nhl_player_id":912,"current_nhl_team_id":9,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10913,"nhl_player_id":913,"current_nhl_team_id":9,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10914,"nhl_player_id":914,"current_nhl_team_id":9,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10915,"nhl_player_id":915,"current_nhl_team_id":9,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10916,"nhl_player_id":916,"current_nhl_team_id":9,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10917,"nhl_player_id":917,"current_nhl_team_id":9,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10918,"nhl_player_id":918,"current_nhl_team_id":9,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"},
+        {"id":10919,"nhl_player_id":919,"current_nhl_team_id":9,"verification_status":"verified","lifecycle_status":"active_nhl","merged_into_id":null,"updated_at":"2026-10-09T12:00:00.000Z"}
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:fhfh_player_identities","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; fhfh_player_identities","complete":true,"rowCount":38,"rowsHash":"18fd91056cc00e536116caba8de6b72cb9a08ce269483dbcc981d9592a1788ea"}
+    },
+    "roster_optimizer_team_games": {
+      "rows": [
+        {"game_key":"synthetic-6","season":"2026","source_season_id":20262027,"source_game_id":2026020998,"team_id":6,"opponent_team_id":9,"team_abbreviation":"BOS","opponent_abbreviation":"OTT","start_time":"2026-10-12T23:00:00.000Z","game_status":"FUT","schedule_status":"OK","fetched_at":"2026-10-09T12:00:00.000Z","source_updated_at":"2026-10-09T12:00:00.000Z"},
+        {"game_key":"synthetic-9","season":"2026","source_season_id":20262027,"source_game_id":2026020998,"team_id":9,"opponent_team_id":6,"team_abbreviation":"OTT","opponent_abbreviation":"BOS","start_time":"2026-10-12T23:00:00.000Z","game_status":"FUT","schedule_status":"OK","fetched_at":"2026-10-09T12:00:00.000Z","source_updated_at":"2026-10-09T12:00:00.000Z"}
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:roster_optimizer_team_games","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; roster_optimizer_team_games","complete":true,"rowCount":2,"rowsHash":"61571f0bcd739847be0c59ad0ee5ab0a84ceb5521cedd0fca56f5ff66d3d21b7"}
+    },
+    "lineCombinations": {
+      "rows": [
+        {"gameId":2026020031,"teamId":6,"forwards":[601,602,603,604,605,606,607,608,609,610,611,612],"defensemen":[613,614,615,616,617,618],"goalies":[619]},
+        {"gameId":2026020031,"teamId":9,"forwards":[901,902,903,904,905,906,907,908,909,910,911,912],"defensemen":[913,914,915,916,917,918],"goalies":[919]}
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:lineCombinations","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; lineCombinations","complete":true,"rowCount":2,"rowsHash":"270a8298596436e5f656e42e1c550c25c3870b1645af18491cb65205d3835da0"}
+    },
+    "rolling_player_game_metrics": {
+      "rows": [
+        {"player_id":601,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":601,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":602,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":602,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":603,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":603,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":604,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":604,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":605,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":605,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":606,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":606,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":607,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":607,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":608,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":608,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":609,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":609,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":610,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":610,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":611,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":611,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":612,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":612,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":613,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":613,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":614,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":614,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":615,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":615,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":616,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":616,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":617,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":617,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":618,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":618,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":901,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":901,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":902,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":902,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":903,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":903,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":904,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":904,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":905,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":905,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":906,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":906,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":907,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":907,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":908,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":908,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":909,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":909,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":910,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":910,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":911,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":911,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":912,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":912,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":913,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":913,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":914,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":914,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":915,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":915,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":916,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":916,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":917,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":917,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":918,"game_id":2026020031,"season":20262027,"strength_state":"ev","game_date":"2026-10-08","toi_seconds_avg_last5":800,"toi_seconds_avg_all":800,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null},
+        {"player_id":918,"game_id":2026020031,"season":20262027,"strength_state":"pp","game_date":"2026-10-08","toi_seconds_avg_last5":100,"toi_seconds_avg_all":100,"sog_per_60_last5":7,"sog_per_60_all":7,"hits_per_60_last5":4,"hits_per_60_all":4,"blocks_per_60_last5":3,"blocks_per_60_all":3,"goals_total_last5":2,"shots_total_last5":20,"assists_total_last5":3,"goals_total_all":4,"shots_total_all":40,"assists_total_all":6,"sog_per_60_avg_last5":null,"sog_per_60_avg_all":null,"hits_per_60_avg_last5":null,"hits_per_60_avg_all":null,"blocks_per_60_avg_last5":null,"blocks_per_60_avg_all":null}
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:rolling_player_game_metrics","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; rolling_player_game_metrics","complete":true,"rowCount":72,"rowsHash":"6ee83d59f8dfbc4761a1d6b1f6b10c7e0c73b3a8977847807a944ee4df71b002"}
+    },
+    "forge_team_game_strength": {
+      "rows": [
+        {"team_id":6,"game_id":2026020031,"game_date":"2026-10-08","toi_es_seconds":15000,"toi_pp_seconds":1500,"shots_es":25,"shots_pp":5,"goals_es":2,"goals_pp":1},
+        {"team_id":9,"game_id":2026020031,"game_date":"2026-10-08","toi_es_seconds":15000,"toi_pp_seconds":1500,"shots_es":25,"shots_pp":5,"goals_es":2,"goals_pp":1}
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:forge_team_game_strength","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; forge_team_game_strength","complete":true,"rowCount":2,"rowsHash":"b5bb55a07c2ded83b87cecb298e824c698a98652a3b06dff652cc90dc05dd45d"}
+    },
+    "forge_goalie_game": {
+      "rows": [
+        {"team_id":6,"goalie_id":619,"game_id":2026020031,"game_date":"2026-10-08","toi_seconds":3600,"shots_against":30,"goals_allowed":3,"saves":27},
+        {"team_id":9,"goalie_id":919,"game_id":2026020031,"game_date":"2026-10-08","toi_seconds":3600,"shots_against":30,"goals_allowed":3,"saves":27}
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:forge_goalie_game","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; forge_goalie_game","complete":true,"rowCount":2,"rowsHash":"43e73ccf62ba3770d71b3fd94c8f7d3776343142cda36d71fdd62de2b540982a"}
+    },
+    "player_forecast_lineup_snapshots": {
+      "rows": [
+        {"id":"synthetic-lineup","game_id":2026020998,"team_id":6,"observed_at":"2026-10-09T12:00:00.000Z","available_at":"2026-10-09T12:00:00.000Z","created_at":"2026-10-09T12:00:00.000Z","accepted":true,"source_key":"synthetic-only","source_url":"https://fixture.invalid/lineup","parser_version":"line-source-v2"}
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:player_forecast_lineup_snapshots","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; player_forecast_lineup_snapshots","complete":true,"rowCount":1,"rowsHash":"084b5fc2b4ed9d04d6557f8d79d903f84ba6d50c98f8bcf27b1e4c766c9534d2"}
+    },
+    "player_forecast_lineup_assignments": {
+      "rows": [
+        {"id":"synthetic-ev","snapshot_id":"synthetic-lineup","player_id":601,"unit_type":"forward_line","unit_number":1,"assignment_status":"confirmed","created_at":"2026-10-09T12:00:00.000Z"},
+        {"id":"synthetic-pp","snapshot_id":"synthetic-lineup","player_id":601,"unit_type":"power_play","unit_number":1,"assignment_status":"confirmed","created_at":"2026-10-09T12:00:00.000Z"}
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:player_forecast_lineup_assignments","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; player_forecast_lineup_assignments","complete":true,"rowCount":2,"rowsHash":"c126c86b505d0edba41191b1992b7d83049f1f3ae7af91363291893d3f389fa5"}
+    },
+    "player_forecast_goalie_start_observations": {
+      "rows": [
+        {"id":"synthetic-goalie","game_id":2026020998,"team_id":6,"player_id":619,"observed_at":"2026-10-09T12:00:00.000Z","available_at":"2026-10-09T12:00:00.000Z","created_at":"2026-10-09T12:00:00.000Z","accepted":true,"source_key":"synthetic-only","source_url":"https://fixture.invalid/goalie","observation_status":"confirmed"}
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:player_forecast_goalie_start_observations","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; player_forecast_goalie_start_observations","complete":true,"rowCount":1,"rowsHash":"23e5cc598d495d6b8753e956b9931c5d3b520507105f60760780022c5463f3e0"}
+    },
+    "market_prices_daily": {
+      "rows": [
+
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:market_prices_daily","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; market_prices_daily","complete":true,"rowCount":0,"rowsHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
+    },
+    "prop_market_prices_daily": {
+      "rows": [
+
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:prop_market_prices_daily","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; prop_market_prices_daily","complete":true,"rowCount":0,"rowsHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
+    },
+    "forge_roster_events": {
+      "rows": [
+
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:forge_roster_events","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; forge_roster_events","complete":true,"rowCount":0,"rowsHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
+    },
+    "pbp_games": {
+      "rows": [
+
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:pbp_games","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; pbp_games","complete":true,"rowCount":0,"rowsHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
+    },
+    "pbp_plays": {
+      "rows": [
+
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:pbp_plays","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; pbp_plays","complete":true,"rowCount":0,"rowsHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
+    },
+    "player_forecast_observation_conflicts": {
+      "rows": [
+
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:player_forecast_observation_conflicts","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; player_forecast_observation_conflicts","complete":true,"rowCount":0,"rowsHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
+    },
+    "player_forecast_conflict_resolutions": {
+      "rows": [
+
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:player_forecast_conflict_resolutions","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; player_forecast_conflict_resolutions","complete":true,"rowCount":0,"rowsHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
+    },
+    "wgo_skater_stats": {
+      "rows": [
+
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:wgo_skater_stats","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; wgo_skater_stats","complete":true,"rowCount":0,"rowsHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
+    },
+    "player_stats_unified": {
+      "rows": [
+
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:player_stats_unified","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; player_stats_unified","complete":true,"rowCount":0,"rowsHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
+    },
+    "sustainability_trend_bands": {
+      "rows": [
+
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:sustainability_trend_bands","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; sustainability_trend_bands","complete":true,"rowCount":0,"rowsHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
+    },
+    "nhl_xg_team_rolling_aggregates": {
+      "rows": [
+
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:nhl_xg_team_rolling_aggregates","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; nhl_xg_team_rolling_aggregates","complete":true,"rowCount":0,"rowsHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
+    },
+    "nhl_team_data": {
+      "rows": [
+
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:nhl_team_data","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; nhl_team_data","complete":true,"rowCount":0,"rowsHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
+    },
+    "wgo_team_stats": {
+      "rows": [
+
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:wgo_team_stats","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; wgo_team_stats","complete":true,"rowCount":0,"rowsHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
+    },
+    "nst_team_all": {
+      "rows": [
+
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:nst_team_all","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; nst_team_all","complete":true,"rowCount":0,"rowsHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
+    },
+    "nst_team_stats": {
+      "rows": [
+
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:nst_team_stats","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; nst_team_stats","complete":true,"rowCount":0,"rowsHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
+    },
+    "wgo_goalie_stats": {
+      "rows": [
+
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:wgo_goalie_stats","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; wgo_goalie_stats","complete":true,"rowCount":0,"rowsHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
+    },
+    "goalie_start_projections": {
+      "rows": [
+
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:goalie_start_projections","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; goalie_start_projections","complete":true,"rowCount":0,"rowsHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
+    },
+    "forge_board_news_events": {
+      "rows": [
+
+      ],
+      "receipt": {"source":"Fictional mechanics fixture; no captured NHL/provider evidence","revision":"synthetic-v1:forge_board_news_events","publishedAt":"2026-10-09T12:00:00.000Z","receivedAt":"2026-10-09T12:00:00.000Z","verifiedAt":"2026-10-09T12:00:00.000Z","scope":"Synthetic BOS-OTT roster/history, NOT real game 2026020998; forge_board_news_events","complete":true,"rowCount":0,"rowsHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}
+    }
+  }
+}
