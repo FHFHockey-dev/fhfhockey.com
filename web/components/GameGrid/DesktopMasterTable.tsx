@@ -14,6 +14,7 @@ import {
 import { addDays, formatDate, getDayStr } from "./utils/date-func";
 import styles from "./GameGrid.module.scss";
 import detailStyles from "./TeamDetails.module.scss";
+import MetricInfoDisclosure from "./MetricInfoDisclosure";
 
 import { DAYS, EXTENDED_DAY_ABBREVIATION, EXTENDED_DAYS, WeekData } from "lib/NHL/types";
 import { useTeamsMap } from "hooks/useTeams";
@@ -236,6 +237,7 @@ export default function DesktopMasterTable({
   opponentLeagueAverages,
   opponentMetricsLoading,
   opponentMetricsError,
+  opponentCoverageByTeamId,
   opponentSourceLabel,
   fourWeekSummaryByTeamId,
   fourWeekAverages,
@@ -954,12 +956,6 @@ export default function DesktopMasterTable({
 
   return (
     <div className={styles.masterTableShell}>
-      {opponentMetricsError && (
-        <div className={styles.masterMetricsUnavailable} role="status">
-          Opponent metrics unavailable. Schedule and four-week data remain
-          available.
-        </div>
-      )}
       {stickyHeader.active && (
         <div
           className={styles.masterStickyHeaderOverlay}
@@ -987,17 +983,23 @@ export default function DesktopMasterTable({
           </div>
         </div>
       )}
-      {opponentSourceLabel && (
-        <p className={styles.masterSourceContext}>
-          Opponent stats: {opponentSourceLabel} Metrics per game; PTS% = points / (2 × GP). Missing or incomplete opponent averages show “-”.
-        </p>
-      )}
-      {fourWeekCalendar && (
-        <p className={styles.masterSourceContext}>
-          {fourWeekCalendar.error ?? `Four weeks: ${fourWeekCalendar.start}–${fourWeekCalendar.end}, selected Monday–Sunday week plus three weeks. ${fourWeekCalendar.knownDays === fourWeekCalendar.expectedDays ? "Schedule complete." : "Schedule incomplete; affected totals are unavailable."}`}
-        </p>
-      )}
-      <p className={styles.masterSourceContext}>{FOUR_WEEK_COLOR_LEGEND}</p>
+      <MetricInfoDisclosure label="Game Grid metrics" warnings={[
+        ...(opponentMetricsError ? ["Opponent stats unavailable. Reload to retry."]
+          : !opponentMetricsLoading && Object.values(opponentCoverageByTeamId ?? {}).some((coverage) => Object.values(coverage).some(({ known, expected }) => known < expected))
+            ? ["Some opponent averages are unavailable. Check back after the next stats update."] : []),
+        ...(fourWeekCalendar?.error ? ["Schedule unavailable. Reload to retry."]
+          : (fourWeekCalendar && fourWeekCalendar.knownDays < fourWeekCalendar.expectedDays) || Object.values(fourWeekSummaryByTeamId).some((summary) => summary.scheduleCoverage && summary.scheduleCoverage.known < summary.scheduleCoverage.expected)
+            ? ["Schedule incomplete. Affected totals are unavailable; check back after schedule updates."]
+            : Object.values(fourWeekSummaryByTeamId).some((summary) => summary.opponentCoverage && summary.opponentCoverage.known < summary.opponentCoverage.expected)
+              ? ["Some opponent strength values are unavailable. Check back after standings update."] : []),
+      ]}>
+        {opponentSourceLabel && <p>Opponent stats (Natural Stat Trick): {opponentSourceLabel}</p>}
+        <p>Metrics per game; PTS% = points / (2 × GP). Missing or incomplete opponent averages show “-”.</p>
+        <p>xG = expected goals; GF/GA = goals for/against; SF/SA = shots for/against. Lower xGF, GF, SF and PTS% are favorable; higher xGA, GA and SA are favorable.</p>
+        {fourWeekCalendar && <p>Four weeks: {fourWeekCalendar.start}–{fourWeekCalendar.end}, selected Monday–Sunday week plus three weeks. {fourWeekCalendar.error ?? (fourWeekCalendar.knownDays === fourWeekCalendar.expectedDays ? "Schedule complete." : "Schedule incomplete; affected totals are unavailable.")}</p>}
+        <p>GP = games played; OFF = games on nights with eight or fewer NHL games. OPP% uses current-season NHL regular-season team points percentages.</p>
+        <p>{FOUR_WEEK_COLOR_LEGEND}</p>
+      </MetricInfoDisclosure>
       <div ref={scrollRef} className={styles.masterTableScroll}>
         <table
           ref={tableRef}

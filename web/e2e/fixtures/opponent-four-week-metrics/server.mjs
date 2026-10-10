@@ -1,6 +1,6 @@
 import { build, preview } from "vite";
 import react from "@vitejs/plugin-react";
-import { mkdtemp } from "node:fs/promises";
+import { cp, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -28,6 +28,7 @@ const config = { configFile: false, root, envDir: cache, cacheDir: cache, mode: 
   preview: { host: "127.0.0.1", port: 3114, strictPort: true },
 };
 await build(config);
+await cp(path.join(web, "public/teamLogos"), path.join(cache, "dist/teamLogos"), { recursive: true });
 const server = await preview(config);
 server.printUrls();
 for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => server.httpServer.close(() => process.exit(0)));

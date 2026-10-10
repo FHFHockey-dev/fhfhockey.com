@@ -503,7 +503,7 @@ describe("Game Grid sortable column headers", () => {
     );
 
     expect(screen.getByRole("status").textContent).toContain(
-      "Opponent metrics unavailable",
+      "Opponent stats unavailable. Reload to retry.",
     );
     expect(screen.queryByText("provider detail must not render")).toBeNull();
     expect(screen.getByRole("link", { name: "Open Team HQ" })).toBeTruthy();
@@ -533,6 +533,8 @@ describe("public opponent and four-week cells", () => {
       opponentLeagueAverages={empty} opponentMetricsLoading={false} opponentMetricsError={null}
       opponentCoverageByTeamId={{ 1: coverage }} opponentLeagueCoverage={coverage}
       fourWeekSummaryByTeamId={summaries} fourWeekAverages={summaries[3]}
+      opponentSourceLabel="2026–27 regular-season totals. Snapshot freshness unknown."
+      fourWeekCalendar={{ start: "2026-10-05", end: "2026-11-01", knownDays: 28, expectedDays: 28, error: null }}
     />);
     expect(container.querySelectorAll("tbody small")).toHaveLength(0);
     const row = (id: number) => container.querySelector(`a[href="/stats/team/${id}"]`)!.closest("tr")!;
@@ -546,6 +548,12 @@ describe("public opponent and four-week cells", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sort by 4WK Score descending" }));
     fireEvent.click(screen.getByRole("button", { name: "Sort by 4WK Score ascending" }));
     expect(cells(1).map((cell) => cell.getAttribute("data-favorability"))).toEqual(["high", "high", "high", "high"]);
-    expect(screen.getByText(/Lower OPP%/)).toBeTruthy();
+    const info = container.querySelector("details")!;
+    expect(info).toBeTruthy();
+    expect(info.hasAttribute("open")).toBe(false);
+    expect(info.querySelector("summary")?.getAttribute("aria-label")).toBe("Info about Game Grid metrics");
+    expect(info.textContent).toContain("Lower OPP%");
+    expect(info.textContent).toContain("Snapshot freshness unknown");
+    expect(Array.from(container.querySelectorAll("p")).filter((p) => !p.closest("details"))).toHaveLength(0);
   });
 });

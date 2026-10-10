@@ -18,6 +18,7 @@ export interface TeamStats {
   date?: string;
   season?: number;
   situation?: string;
+  updated_at?: string | null;
 }
 
 export type OpponentMetricAverages = {
@@ -140,7 +141,7 @@ export async function loadCurrentSeasonStats(seasonId: number): Promise<Record<s
   let expectedCount: number | null = null;
   const rows = await fetchAllSupabasePages<TeamStats>(async ({ from, to }) => {
     const { data, error, count } = await publicSupabase.from("nst_team_stats")
-      .select("team_abbreviation,team_name,gp,sf,sa,gf,ga,xgf,xga,points,season,situation", { count: "exact" })
+      .select("team_abbreviation,team_name,gp,sf,sa,gf,ga,xgf,xga,points,season,situation,updated_at", { count: "exact" })
       .eq("season", seasonId).eq("situation", "all")
       .order("team_abbreviation", { ascending: true }).range(from, to);
     if (!error) {
@@ -247,6 +248,15 @@ export default function useOpponentMetricsData(
     }])
   ) as OpponentMetricCoverage, [entries]);
 
+  const snapshotRows = sourceReady && !statsLoading && !statsError ? Object.values(allTeamStats) : [];
+  const updateTimes = snapshotRows.map((row) => typeof row.updated_at === "string" ? Date.parse(row.updated_at) : NaN);
+  const snapshotUpdate = updateTimes.length > 0 && updateTimes.every(Number.isFinite)
+    ? new Date(Math.min(...updateTimes)).toISOString().slice(0, 19).replace("T", " ")
+    : null;
+  const freshnessLabel = snapshotUpdate
+    ? `Database snapshot updated ${snapshotUpdate} UTC (oldest team row). Source observation freshness unknown.`
+    : "Snapshot freshness unknown.";
+
   return {
     entries,
     metricsByTeamId,
@@ -259,6 +269,6 @@ export default function useOpponentMetricsData(
     sourceLabel: seasonId == null ? "Current-season totals unavailable. Snapshot freshness unknown."
       : sourceReady && !statsLoading && !statsError && Object.keys(allTeamStats).length === 0
         ? `No ${String(seasonId).slice(0, 4)}–${String(seasonId).slice(-2)} regular-season team totals are available. Snapshot freshness unknown.`
-        : `${String(seasonId).slice(0, 4)}–${String(seasonId).slice(-2)} regular-season totals. Snapshot freshness unknown.`
+        : `${String(seasonId).slice(0, 4)}–${String(seasonId).slice(-2)} regular-season totals. ${freshnessLabel}`
   };
 }

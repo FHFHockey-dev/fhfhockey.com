@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState, useEffect } from "react"; // Added useEffect
 import styles from "./FourWeekGrid.module.scss";
+import MetricInfoDisclosure from "../MetricInfoDisclosure";
 import Image from "next/image"; // Use next/image instead of legacy
 import Link from "next/link";
 import { TeamDataWithTotals, TeamWithScore } from "lib/NHL/types"; // Consolidate type imports
@@ -214,12 +215,16 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray, calendar }) 
 
       {/* Collapsible Content Wrapper */}
       <div id="four-week-grid-content" className={styles.tableWrapper}>
-        {calendar && (
-          <p className={styles.calendarContext}>
-            {calendar.error ?? `${calendar.start}–${calendar.end}: selected Monday–Sunday week plus three weeks. ${calendar.knownDays === calendar.expectedDays ? "Schedule complete." : "Schedule incomplete; affected totals are unavailable."}`}
-          </p>
-        )}
-        <p className={styles.calendarContext}>{FOUR_WEEK_COLOR_LEGEND}</p>
+        <MetricInfoDisclosure label="four-week forecast" warnings={calendar?.error
+          ? ["Schedule unavailable. Reload to retry."]
+          : (calendar && calendar.knownDays < calendar.expectedDays) || teamDataArray.some((team) => team.totals.scheduleCoverage && team.totals.scheduleCoverage.known < team.totals.scheduleCoverage.expected)
+            ? ["Schedule incomplete. Affected totals are unavailable; check back after schedule updates."]
+            : teamDataArray.some((team) => team.opponentCoverage && team.opponentCoverage.known < team.opponentCoverage.expected)
+              ? ["Some opponent strength values are unavailable. Check back after standings update."] : []}>
+          {calendar && <p>{calendar.start}–{calendar.end}: selected Monday–Sunday week plus three weeks. {calendar.error ?? (calendar.knownDays === calendar.expectedDays ? "Schedule complete." : "Schedule incomplete; affected totals are unavailable.")}</p>}
+          <p>GP = games played; OFF = games on nights with eight or fewer NHL games. OPP% uses current-season NHL regular-season team points percentages.</p>
+          <p>{FOUR_WEEK_COLOR_LEGEND}</p>
+        </MetricInfoDisclosure>
         {isLoading ? (
           <div className={styles.message}>Loading schedule data...</div>
         ) : !hasData ? (

@@ -69,6 +69,19 @@ const teams: TeamDataWithTotals[] = [
 ];
 
 describe("FourWeekGrid", () => {
+  it("keeps scope and color definitions in a closed native info disclosure, with concise partial-data warnings", () => {
+    const partial = { ...teams[0], totals: { ...teams[0].totals, scheduleCoverage: { known: 21, expected: 28 } } };
+    const { container } = render(<FourWeekGrid teamDataArray={[partial]} calendar={{ start: "2026-10-05", end: "2026-11-01", knownDays: 21, expectedDays: 28, error: null }} />);
+    const info = container.querySelector("details")!;
+    expect(info).toBeTruthy();
+    expect(info.hasAttribute("open")).toBe(false);
+    expect(info.querySelector("summary")?.getAttribute("aria-label")).toBe("Info about four-week forecast");
+    expect(info.textContent).toContain("2026-10-05–2026-11-01");
+    expect(info.textContent).toContain("Lower OPP% is favorable");
+    expect(screen.getByRole("status").textContent).toContain("Schedule incomplete");
+    expect(Array.from(container.querySelectorAll("p")).filter((p) => !p.closest("details"))).toHaveLength(0);
+    expect(container.textContent).not.toMatch(/\d+\s*\/\s*\d+\s+days/);
+  });
   it("keeps production summary cells on one line with no diagnostic counters", () => {
     vi.stubEnv("NODE_ENV", "production");
     const data = teams.map((team) => ({ ...team, opponentCoverage: { known: 1, expected: 2 } }));
