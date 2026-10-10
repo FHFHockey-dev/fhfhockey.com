@@ -1686,7 +1686,7 @@ test("compact day and bench controls preserve saved intent and keyboard selectio
   await installCompactFixture(page, 20, ({ workspace }) => {
     workspace.rules.rosterSlots.BN = 0;
     workspace.roster = workspace.roster.map(member => ({ ...member, position: "active" }));
-    workspace.lockedAssignments = workspace.lockedAssignments.filter(lock => lock.slotId !== null);
+    workspace.lockedAssignments = (workspace.lockedAssignments ?? []).filter(lock => lock.slotId !== null);
   });
   const table = page.getByRole("table", { name: "Individual player weekly schedule" });
   const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
