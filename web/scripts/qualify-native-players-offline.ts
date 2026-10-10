@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { resolve, relative, sep } from "node:path";
+import { existsSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
+import { resolve, relative, sep, dirname } from "node:path";
 import { execFileSync } from "node:child_process";
-import { acceptedNewsSupersedes } from "../lib/projections/evidenceTime";
+import { acceptedNewsSupersedes, timestampMicros } from "../lib/projections/evidenceTime";
 import { capturedReadReceipt, projectionInputHash, interceptProjectionQuery as capturedQuery } from "../lib/projections/inputCapture";
 import { installProjectionQueryInterceptor } from "../lib/projections/queryCaptureHook";
 import type { PlanningPlayer, PlanningGame, ForecastDiscoveryExclusion } from "../lib/rosterScheduleOptimizer/planningTypes";
@@ -25,7 +25,7 @@ const TARGETS = { G: "GOALS", A: "ASSISTS", PPP: "PP_POINTS", SOG: "SHOTS_ON_GOA
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 const digest = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex");
 const validTime = (value: unknown): value is string => typeof value === "string"
-  && /T.*(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value));
+  && /T.*(?:Z|[+-]\d{2}:\d{2})$/.test(value) && timestampMicros(value) !== null;
 
 /** No default empty tables, guessed predicates, joins, writes or RPC implementations. */
 export function offlineTableAdapter(inputs: OfflinePlayerInputs) {
@@ -38,14 +38,21 @@ export function offlineTableAdapter(inputs: OfflinePlayerInputs) {
       if (!Object.hasOwn(inputs.tables, table)) return fail(`missing_table:${table}`);
       reads.push(clone(operations));
       let rows = clone(inputs.tables[table].rows);
-      let selected = "*", counted = false, offset = 0, limit = Infinity, single = false, strictSingle = false;
+      let selected = "*", counted = false, head = false, offset = 0, limit = Infinity, single = false, strictSingle = false;
       const order: Array<[string, boolean]> = [];
-      const field = (row: Row, key: string) => key.split(".").reduce((value, part) => {
+      const field = (row: Row, key: string): any => key.split(".").reduce((value, part) => {
         if (!value || !Object.hasOwn(value, part)) return fail(`missing_export_column:${table}.${key}`);
         return value[part];
       }, row);
       const predicate = (row: Row, key: string, operator: string, value: any): boolean => {
-        const actual = field(row, key);
+        let actual = field(row, key);
+        if (actual != null && operator !== "is") {
+          const values = operator === "in" ? value : [value];
+          if (values.some((item: unknown) => typeof item !== typeof actual)) return fail(`unsupported_predicate_type:${table}.${key}`);
+          if (operator !== "in" && validTime(actual) && validTime(value)) {
+            actual = timestampMicros(actual); value = timestampMicros(value);
+          }
+        }
         switch (operator) {
           case "eq": return actual === value;
           case "neq": return actual != null && actual !== value;
@@ -58,26 +65,49 @@ export function offlineTableAdapter(inputs: OfflinePlayerInputs) {
           default: return fail(`unsupported_predicate:${operator}`);
         }
       };
+      const column = (value: unknown): value is string => typeof value === "string" && /^[A-Za-z_][A-Za-z_0-9]*(?:\.[A-Za-z_][A-Za-z_0-9]*)*$/.test(value);
+      const scalar = (value: unknown) => ["string", "number", "boolean"].includes(typeof value)
+        && (typeof value !== "number" || Number.isFinite(value));
+      const options = (value: unknown, allowed: Record<string, (value: unknown) => boolean>) => value === undefined
+        || Boolean(value && typeof value === "object" && !Array.isArray(value)
+          && [Object.prototype, null].includes(Object.getPrototypeOf(value)) && Object.entries(value).every(([key, item]) => Object.hasOwn(allowed, key) && allowed[key](item)));
+      const shape = (valid: boolean, method: string) => { if (!valid) fail(`unsupported_query_shape:${method}`); };
       for (const { method, args } of operations.slice(1)) {
         if (method === "select") {
-          selected = args[0]; counted = args[1]?.count === "exact";
-          if (typeof selected !== "string" || /[():!]/.test(selected)) return fail(`unsupported_select:${table}`);
+          shape(args.length >= 1 && args.length <= 2 && typeof args[0] === "string"
+            && (args[0] === "*" || args[0].split(",").map((value: string) => value.trim()).every(column))
+            && options(args[1], { count: value => value === "exact", head: value => typeof value === "boolean" })
+            && (!args[1]?.head || args[1]?.count === "exact"), method);
+          selected = args[0].split(",").map((value: string) => value.trim()).join(","); counted = args[1]?.count === "exact"; head = args[1]?.head === true;
         } else if (["eq", "neq", "is", "in", "lt", "lte", "gt", "gte"].includes(method)) {
+          shape(args.length === 2 && column(args[0]) && (method === "in" ? Array.isArray(args[1]) && args[1].every(scalar)
+            : method === "is" ? args[1] === null || typeof args[1] === "boolean" : scalar(args[1])), method);
           rows = rows.filter(row => predicate(row, args[0], method, args[1]));
         } else if (method === "or") {
-          const predicates = String(args[0]).split(",").map(part => {
+          shape(args.length === 1 && typeof args[0] === "string", method);
+          const predicates = args[0].split(",").map((part: string) => {
             const match = /^([A-Za-z_][A-Za-z_0-9]*)\.(eq|is)\.(.+)$/.exec(part);
-            if (!match) return fail(`unsupported_or:${table}`);
-            return [match[1], match[2], match[3] === "null" ? null : match[3]];
+            if (!match || match[2] === "is" && !["null", "true", "false"].includes(match[3])
+              || match[2] === "eq" && match[3] === "null") return fail(`unsupported_or:${table}`);
+            const value = match[3] === "null" ? null : match[3] === "true" ? true : match[3] === "false" ? false
+              : /^-?\d+$/.test(match[3]) && Number.isSafeInteger(Number(match[3])) ? Number(match[3]) : match[3];
+            return { key: match[1], op: match[2], value };
           });
-          rows = rows.filter(row => predicates.some(([key, op, value]) => op === "is"
-            ? predicate(row, key!, op, value) : String(field(row, key!)) === value));
-        } else if (method === "order") order.push([args[0], args[1]?.ascending !== false]);
-        else if (method === "limit") limit = args[0];
-        else if (method === "range") { offset = args[0]; limit = args[1] - args[0] + 1; }
-        else if (method === "single" || method === "maybeSingle") { single = true; strictSingle = method === "single"; }
-        else if (method === "abortSignal") { if (args[0]?.aborted) return fail("offline_read_aborted"); }
-        else return fail(`unsupported_query:${method}`);
+          rows = rows.filter(row => predicates.some(({ key, op, value }: { key: string; op: string; value: any }) => predicate(row, key, op, value)));
+        } else if (method === "order") {
+          shape(args.length >= 1 && args.length <= 2 && column(args[0]) && options(args[1], { ascending: value => typeof value === "boolean" }), method);
+          order.push([args[0], args[1]?.ascending !== false]);
+        } else if (method === "limit") {
+          shape(args.length === 1 && Number.isSafeInteger(args[0]) && args[0] >= 0, method); limit = args[0];
+        } else if (method === "range") {
+          shape(args.length === 2 && args.every(value => Number.isSafeInteger(value) && value >= 0) && args[1] >= args[0], method);
+          offset = args[0]; limit = args[1] - args[0] + 1;
+        } else if (method === "single" || method === "maybeSingle") {
+          shape(args.length === 0, method); single = true; strictSingle = method === "single";
+        } else if (method === "abortSignal") {
+          shape(args.length === 1 && args[0] instanceof AbortSignal, method);
+          if (args[0].aborted) return fail("offline_read_aborted");
+        } else return fail(`unsupported_query:${method}`);
       }
       const count = rows.length;
       rows.sort((left, right) => {
@@ -91,7 +121,7 @@ export function offlineTableAdapter(inputs: OfflinePlayerInputs) {
       rows = rows.slice(offset, offset + limit);
       if (selected !== "*") rows = rows.map(row => Object.fromEntries(selected.split(",").map(key => [key, field(row, key) ?? null])));
       if (single && (rows.length > 1 || strictSingle && rows.length !== 1)) return fail(`invalid_single:${table}`);
-      return { data: single ? rows[0] ?? null : rows, error: null, ...(counted ? { count } : {}) };
+      return { data: head ? null : single ? rows[0] ?? null : rows, error: null, ...(counted ? { count } : {}) };
     });
     const proxy: any = new Proxy({}, { get(_target, property) {
       if (property === "then") return (accept: any, reject: any) => execute().then(accept, reject);
@@ -105,7 +135,10 @@ export function offlineTableAdapter(inputs: OfflinePlayerInputs) {
     } });
     return proxy;
   }
-  return { from: builder, rpc: () => fail("rpc_forbidden"), reads, violations };
+  return { from: (...args: any[]) => {
+    if (args.length !== 1 || typeof args[0] !== "string" || !/^[A-Za-z_][A-Za-z_0-9]*$/.test(args[0])) return fail("unsupported_query_shape:from");
+    return builder(args[0]);
+  }, rpc: () => fail("rpc_forbidden"), reads, violations };
 }
 
 /** Independent fence installed before the native runner is imported. Restore every patched entry point. */
@@ -125,20 +158,75 @@ export function installOfflineFence(queryClient?: { from: (table: string) => any
     for (const key of keys) patch(transportModule, key, `${name}.${key}`);
   }
   patch(require("node:net").Socket.prototype, "connect", "Socket.connect");
-  // NHL/server imports public/browser clients which eagerly initialize the SDK.
-  // They are unused by this calculation; reject them before any configuration is read.
+  patch(require("node:net").Server.prototype, "listen", "Server.listen");
+  for (const key of ["send", "bind", "connect"]) patch(require("node:dgram").Socket.prototype, key, `DatagramSocket.${key}`);
+  patch(require("node:child_process").ChildProcess.prototype, "spawn", "ChildProcess.spawn");
+  // Resolve before loading: aliases, relative/absolute paths and symlinks share one boundary.
   const moduleLoader = require("node:module"), originalLoad = moduleLoader._load;
-  const publicClients = new Set(["lib/supabase/public-client", "lib/supabase/client", "lib/supabase"]);
-  const rejectingClient = { __esModule: true, default: new Proxy({}, { get(_target, key) {
-    attempts.push(`public_client.${String(key)}`); throw new Error("offline_public_client_forbidden");
-  } }) };
+  const webRoot = resolve(__dirname, "..");
+  const identity = (path: string) => realpathSync(path);
+  const serverIdentity = identity(resolve(webRoot, "lib/supabase/server.ts"));
+  const publicIdentities = new Set(["index.ts", "client.ts", "public-client.ts", "serverReadonly.ts"]
+    .map(file => identity(resolve(webRoot, "lib/supabase", file))));
+  const supabaseRoot = identity(resolve(webRoot, "lib/supabase"));
+  const sdkRoots = new Set<string>();
+  // Resolve SDK roots without loading their code or examining client configuration.
+  for (const name of ["@supabase/supabase-js", "@supabase/postgrest-js", "@supabase/gotrue-js", "@supabase/auth-js", "@supabase/functions-js", "@supabase/realtime-js", "@supabase/storage-js"]) {
+    try {
+      let directory = dirname(identity(require.resolve(name)));
+      while (!existsSync(resolve(directory, "package.json")) && directory !== dirname(directory)) directory = dirname(directory);
+      sdkRoots.add(directory);
+    } catch { /* Optional packages absent from this installation need no adapter. */ }
+  }
+  const deny = (label: string): never => { attempts.push(label); throw new Error(`offline_side_effect_forbidden:${label}`); };
+  const client = new Proxy(queryClient ?? {}, { get(target, key) {
+    if (["from", "rpc"].includes(String(key)) && queryClient) return Reflect.get(target, key);
+    return deny(`client.${String(key)}`);
+  } });
+  const blockedExports = (label: string) => new Proxy({ __esModule: true, default: new Proxy({}, { get(_target, key) {
+    return deny(`${label}.${String(key)}`);
+  } }) }, { get(target, key) {
+    if (Object.hasOwn(target, key)) return Reflect.get(target, key);
+    return deny(`${label}.${String(key)}`);
+  } });
+  const serverExports = { __esModule: true, default: client, getServiceRoleClient: () => deny("getServiceRoleClient") };
+  const publicExports = blockedExports("public_client"), sdkExports = blockedExports("SDK");
   moduleLoader._load = function(request: string, parent: unknown, isMain: boolean) {
-    if (publicClients.has(request)) return rejectingClient;
-    if (request === "lib/supabase/server") return queryClient ? { __esModule: true, default: queryClient } : rejectingClient;
+    const resolved = moduleLoader._resolveFilename(request, parent, isMain);
+    const filename = typeof resolved === "string" && existsSync(resolved) ? identity(resolved) : resolved;
+    if (filename === serverIdentity) return serverExports;
+    if (publicIdentities.has(filename)) return publicExports;
+    if ([...sdkRoots].some(root => filename === root || filename.startsWith(`${root}${sep}`))) return sdkExports;
+    // Other repository Supabase utilities may read configuration at module scope.
+    if (filename.startsWith(`${supabaseRoot}${sep}`) && /\.[cm]?[jt]s$/.test(filename)) return blockedExports("supabase_module");
     return originalLoad.call(this, request, parent, isMain);
   };
   restore.push(() => { moduleLoader._load = originalLoad; });
+  // Keep builtin ESM bindings behind the same socket/process fence as CommonJS.
+  moduleLoader.syncBuiltinESMExports();
+  restore.unshift(() => moduleLoader.syncBuiltinESMExports());
+
   return { attempts, restore: () => restore.reverse().forEach(action => action()) };
+}
+
+function inputProvenance(inputs: OfflinePlayerInputs) {
+  const fixturePath = resolve(__dirname, "fixtures/native-player-offline-synthetic.json");
+  const fixtureBytes = readFileSync(fixturePath);
+  if (digest(new Uint8Array(fixtureBytes)) !== "244bd60b4f9aca636273826f6cf585c175c3c53452a0f8ff5898b5d7c9f70f54") {
+    throw new Error("Known immutable synthetic fixture checksum changed");
+  }
+  const fixture = JSON.parse(fixtureBytes.toString("utf8")) as OfflinePlayerInputs;
+  const signals: string[] = [];
+  if (inputs.classification === "synthetic_fixture") signals.push("declared_synthetic_fixture");
+  for (const [table, entry] of Object.entries(inputs.tables ?? {})) {
+    const receipt = entry?.receipt;
+    if ([receipt?.source, receipt?.revision, receipt?.scope].some(value => typeof value === "string"
+      && /\b(?:fictional|synthetic|fixture)\b|fixture\.invalid/i.test(value))) signals.push(`fictional_source_provenance:${table}`);
+    if (entry?.rows?.length && fixture.tables[table]?.rows.length
+      && projectionInputHash(entry.rows) === fixture.tables[table].receipt.rowsHash) signals.push(`known_synthetic_rows:${table}`);
+  }
+  return { fictional: signals.length > 0, signals, fixturePath,
+    contradiction: inputs.classification === "retained_exports" && signals.length > 0 };
 }
 
 function validateEvidence(inputs: OfflinePlayerInputs, asOf: string) {
@@ -151,13 +239,36 @@ function validateEvidence(inputs: OfflinePlayerInputs, asOf: string) {
   if (inputs.targets.some(target => ![target.canonicalId, target.nhlId, target.teamId].every(id => Number.isSafeInteger(id) && id > 0)
     || !["skater", "goalie"].includes(target.playerClass))) throw new Error("Invalid offline target identity");
   if (new Set(inputs.targets.map(target => target.nhlId)).size !== inputs.targets.length) throw new Error("Duplicate offline target identity");
-  const knownTimes = new Set(["created_at", "updated_at", "observed_at", "available_at", "fetched_at", "source_updated_at",
-    "published_at", "received_at", "verified_at", "accepted_at", "detected_at", "resolved_at"]);
-  const inspectTimes = (value: any, path: string) => {
+  const historyFamilies = new Set(["rolling_player_game_metrics", "forge_team_game_strength", "forge_goalie_game", "lineCombinations",
+    "skatersGameStats", "goaliesGameStats", "pbp_plays", "pbp_games", "wgo_skater_stats", "wgo_goalie_stats", "wgo_team_stats",
+    "player_stats_unified", "sustainability_trend_bands", "nhl_xg_team_rolling_aggregates", "nhl_team_data", "nst_team_all", "nst_team_stats"]);
+  const rawGames = Array.isArray(inputs.tables.games?.rows) ? inputs.tables.games.rows : [];
+  const historyIds = new Set<number>();
+  for (const table of historyFamilies) for (const row of Array.isArray(inputs.tables[table]?.rows) ? inputs.tables[table].rows : []) {
+    for (const key of ["game_id", "gameId", "gameid"]) if (Number.isSafeInteger(row?.[key])) historyIds.add(row[key]);
+    if (table === "pbp_games" && Number.isSafeInteger(row?.id)) historyIds.add(row.id);
+  }
+  const normalized = (key: string) => key.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
+  const dateOnly = (value: unknown): value is string => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
+    && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
+  const historyDate = (value: unknown, path: string, completedAt?: unknown, cutoff = asOf) => {
+    // A date alone cannot locate a completed outcome within the cutoff's day.
+    const end = dateOnly(value) ? `${value}T23:59:59.999999Z` : value;
+    const bounded = validTime(completedAt) && !acceptedNewsSupersedes(completedAt, cutoff)
+      && dateOnly(value) && completedAt.slice(0, 10) === value ? completedAt : end;
+    if (!validTime(bounded) || acceptedNewsSupersedes(bounded, cutoff)) reasons.push(`late_or_ambiguous_history:${path}`);
+  };
+  const inspectTimes = (value: any, path: string, historical: boolean, completedAt?: unknown, cutoff = asOf) => {
     if (!value || typeof value !== "object") return;
     for (const [key, nested] of Object.entries(value)) {
-      if (knownTimes.has(key) && nested != null && (!validTime(nested) || acceptedNewsSupersedes(nested, asOf))) reasons.push(`late_or_invalid_row_evidence:${path}.${key}`);
-      else if (nested && typeof nested === "object") inspectTimes(nested, `${path}.${key}`);
+      const name = normalized(key);
+      if (/(?:^|_)(?:created|updated|observed|published|received|verified|available|accepted|detected|resolved|completed|ended|captured|computed|calculated)_at$/.test(name)
+        || ["timestamp", "event_time", "event_at", "source_timestamp", "as_of", "input_cutoff"].includes(name)) {
+        if (nested != null && (!validTime(nested) || acceptedNewsSupersedes(nested, asOf))) reasons.push(`late_or_invalid_row_evidence:${path}.${key}`);
+      } else if (historical && ["date", "game_date", "snapshot_date", "as_of_date", "as_of_game_date"].includes(name)) {
+        historyDate(nested, `${path}.${key}`, value.completed_at ?? value.completedAt ?? completedAt, cutoff);
+      }
+      if (nested && typeof nested === "object") inspectTimes(nested, `${path}.${key}`, historical, completedAt, cutoff);
     }
   };
   for (const [table, entry] of Object.entries(inputs.tables)) {
@@ -171,7 +282,32 @@ function validateEvidence(inputs: OfflinePlayerInputs, asOf: string) {
     else if (acceptedNewsSupersedes(receipt.publishedAt, receipt.receivedAt)
       || acceptedNewsSupersedes(receipt.receivedAt, receipt.verifiedAt)
       || acceptedNewsSupersedes(receipt.verifiedAt, asOf)) reasons.push(`late_or_unordered_source_evidence:${table}`);
-    inspectTimes(entry.rows, table);
+    const historical = historyFamilies.has(table);
+    inspectTimes(entry.rows, table, false);
+    // Evaluate historical dates per row with the retained game's explicit completion time when available.
+    if (historical) for (const [index, row] of entry.rows.entries()) {
+      const keys = Object.keys(row).map(normalized);
+      const gameId = row.game_id ?? row.gameId ?? row.gameid ?? (table === "pbp_games" ? row.id : undefined);
+      const game = rawGames.find(item => item.id === gameId);
+      const completedAt = row.completed_at ?? row.completedAt ?? game?.completed_at ?? game?.completedAt;
+      inspectTimes(row, `${table}.${index}`, true, completedAt);
+      if (validTime(receipt.publishedAt)) inspectTimes(row, `${table}.${index}.source_publication`, true, completedAt, receipt.publishedAt);
+      if (validTime(completedAt) && validTime(receipt.publishedAt) && acceptedNewsSupersedes(completedAt, receipt.publishedAt)) {
+        reasons.push(`history_after_source_publication:${table}.${index}`);
+      }
+      const hasDate = keys.some(key => ["date", "game_date", "snapshot_date", "as_of_date", "as_of_game_date"].includes(key));
+      if (!hasDate && !game && !validTime(row.completed_at ?? row.completedAt ?? row.as_of)) reasons.push(`missing_historical_event_time:${table}.${index}`);
+      if (game) {
+        historyDate(game.date, `${table}.${index}.referenced_game_date`, completedAt, validTime(receipt.publishedAt) ? receipt.publishedAt : asOf);
+        if (game.startTime != null && (!validTime(game.startTime) || acceptedNewsSupersedes(game.startTime, asOf))) reasons.push(`historical_game_not_started_by_cutoff:${table}.${index}`);
+      }
+      if (game && row.game_date != null && game.date !== row.game_date) reasons.push(`history_game_date_conflict:${table}.${index}`);
+    }
+  }
+  for (const [index, game] of rawGames.entries()) {
+    if (historyIds.has(game.id) || ["FINAL", "OFF"].includes(String(game.status ?? game.gameState).toUpperCase())) {
+      historyDate(game.date, `games.${index}.date`, game.completed_at ?? game.completedAt);
+    }
   }
   return reasons;
 }
@@ -181,6 +317,8 @@ export async function qualifyNativePlayersOffline(inputs: OfflinePlayerInputs, a
   if (!validTime(asOf) || Date.parse(asOf) > Date.now()) throw new Error("Supply an explicit --as-of timestamp no later than now");
   const inputHash = projectionInputHash(inputs);
   const blockers = validateEvidence(inputs, asOf);
+  const provenance = inputProvenance(inputs);
+  if (provenance.contradiction) blockers.push("contradictory_fictional_provenance");
   const adapter = offlineTableAdapter(inputs);
   const fence = installOfflineFence({
     from: table => capturedQuery("from", [table], () => adapter.from(table)) ?? adapter.from(table),
@@ -202,7 +340,7 @@ export async function qualifyNativePlayersOffline(inputs: OfflinePlayerInputs, a
       const { captureForgeIssuedContexts } = await import("../lib/projections/issuedContext");
       const { admitConsumerGameRevisions } = await import("../lib/projections/consumerRevisionAdmission");
       const root = resolve(__dirname, "../..");
-      const required = [__filename, resolve(root, "web/lib/projections/run-forge-projections.ts"),
+      const required = [__filename, provenance.fixturePath, resolve(root, "web/lib/projections/run-forge-projections.ts"),
         resolve(root, "web/lib/projections/consumerRevisionAdmission.ts"), resolve(root, "web/lib/projections/inputCapture.ts")];
       codeFiles = [...new Set([...required, ...Object.keys(require.cache).filter(path => path.startsWith(`${root}${sep}`)
         && !path.includes(`${sep}node_modules${sep}`))])].sort().map(path => ({ path: relative(root, path), sha256: digest(new Uint8Array(readFileSync(path))) }));
@@ -285,10 +423,18 @@ export async function qualifyNativePlayersOffline(inputs: OfflinePlayerInputs, a
           if (!applicable.includes(category)) return { category, key, status: "not_applicable" };
           const modeled = forecast?.conditional?.[key] ?? forecast?.legacy?.[key] ?? null;
           const value = admitted?.stats[key] ?? null;
-          const reasons = [...blockers];
+          const reasons = [...blockers, ...adapter.violations, ...fence.attempts];
           if (!row) reasons.push("missing_native_output");
           if (modeled === null) reasons.push("missing_native_target");
           if (["G", "A", "SOG"].includes(category)) reasons.push("missing_pk_heads_and_fullgame_bridge");
+          if (category === "PPP") {
+            const ppRows = history.filter(item => item.strength_state === "pp");
+            if (!ppRows.length) reasons.push("missing_retained_pp_history");
+            else if (ppRows.some(item => ![item.toi_seconds_avg_last5, item.toi_seconds_avg_all].every(value => typeof value === "number" && Number.isFinite(value) && value > 0)
+              || ![item.goals_total_all, item.assists_total_all, item.shots_total_all].every(value => typeof value === "number" && Number.isFinite(value) && value >= 0))) reasons.push("missing_pp_counts_or_exposure_denominators");
+            // Rolling aggregates and a producer mean cannot certify complete PP events/exposure.
+            reasons.push("pp_event_exposure_coverage_unproven");
+          }
           if (["HIT", "BLK"].includes(category)) reasons.push("full_strength_exposure_unproven");
           if (["W", "GA", "SV", "SO"].includes(category)) reasons.push("opponent_fullgame_shots_and_goalie_spell_coverage_unproven");
           if (category === "W") reasons.push("fullgame_team_goals_driver_unproven");
@@ -296,14 +442,14 @@ export async function qualifyNativePlayersOffline(inputs: OfflinePlayerInputs, a
           if (!forecast || forecast.probabilityStatus !== "confirmed_evidence") reasons.push("missing_confirmed_participation");
           if (!admitted) reasons.push("consumer_admission_failed");
           if (value === null) reasons.push("missing_admitted_target");
-          if (inputs.classification === "synthetic_fixture") reasons.push("synthetic_fixture_is_not_forecast_evidence");
-          return { category, key, modeledStatus: modeled === null ? "missing" : "supported_conditional_count",
+          if (provenance.fictional) reasons.push("synthetic_fixture_is_not_forecast_evidence");
+          return { category, key, modeledStatus: modeled === null ? "missing" : "present_native_diagnostic",
             modeledValue: modeled, admittedDiagnosticValue: value, status: reasons.length ? "blocked" : "supported",
             reasons: [...new Set(reasons)] };
         }) };
     });
-    const result = { version: "native-player-offline-qualification-v1", classification: inputs.classification,
-      purpose: "diagnostic_only_not_issued_or_selected", asOf, inputHash, modelEnvironment, modelMode,
+    const result = { version: "native-player-offline-qualification-v1", classification: provenance.fictional ? "synthetic_fixture" : inputs.classification, declaredClassification: inputs.classification,
+      provenance: { fictional: provenance.fictional, signals: provenance.signals }, purpose: "diagnostic_only_not_issued_or_selected", asOf, inputHash, modelEnvironment, modelMode,
       calculationQueryHash: projectionInputHash(adapter.reads.filter(request => request[0]?.args[0] !== "forge_board_news_events")),
       outputHash: projectionWritesHash(writes), qualificationEligible: false,
       blockers: [...new Set([...blockers, ...adapter.violations, ...fence.attempts])],

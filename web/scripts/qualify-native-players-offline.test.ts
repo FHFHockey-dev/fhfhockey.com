@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -10,7 +11,7 @@ import { installOfflineFence, offlineTableAdapter, qualifyNativePlayersOffline, 
 
 const asOf = "2026-10-09T18:00:00.000Z";
 const backend = vi.hoisted(() => ({ createClient: vi.fn(() => { throw new Error("Live DB client forbidden"); }) }));
-vi.mock("@supabase/supabase-js", async importOriginal => ({ ...await importOriginal<any>(), createClient: backend.createClient }));
+vi.mock("@supabase/supabase-js", () => ({ createClient: backend.createClient }));
 // The native runner's NHL import also imports these unused eager public clients.
 vi.mock("lib/supabase/public-client", () => ({ default: {} }));
 vi.mock("lib/supabase/client", () => ({ default: {} }));
@@ -47,7 +48,7 @@ describe("offline current native player qualification", () => {
     expect(skater.admission.acceptedByUnchangedConsumer).toBe(true);
     for (const key of ["G", "A", "SOG"]) expect(skater.categories.find(row => row.category === key)).toMatchObject({
       modeledStatus: "missing", status: "blocked", reasons: expect.arrayContaining(["missing_pk_heads_and_fullgame_bridge"]) });
-    expect(skater.categories.find(row => row.category === "PPP")).toMatchObject({ modeledStatus: "supported_conditional_count", status: "blocked",
+    expect(skater.categories.find(row => row.category === "PPP")).toMatchObject({ modeledStatus: "present_native_diagnostic", status: "blocked",
       reasons: expect.arrayContaining(["synthetic_fixture_is_not_forecast_evidence"]) });
     expect(skater.categories.find(row => row.category === "HIT")?.reasons).toContain("full_strength_exposure_unproven");
     expect(goalie.categories.find(row => row.category === "SO")?.reasons).toContain("official_individual_shutout_credit_unproven");
@@ -144,6 +145,167 @@ describe("offline current native player qualification", () => {
     await expect(adapter.from("absent").select("*")).rejects.toThrow("missing_table");
     await expect(adapter.from("players").select("unprovided_column")).rejects.toThrow("missing_export_column");
     await expect(adapter.from("players").select("*").ilike("id", "*")).rejects.toThrow("unsupported_query");
+  });
+
+  it.each([
+    ["limit", [1, { referencedTable: "unexported_relation" }]],
+    ["limit", [1, { foreignTable: "unexported_relation" }]],
+    ["select", ["id", { count: "estimated" }]],
+    ["order", ["id", { ascending: true, nullsFirst: true }]],
+    ["order", ["id", { ascending: "true" }]],
+    ["range", [0, 1, { referencedTable: "relation" }]],
+    ["eq", ["id", 601, { ignored: true }]],
+    ["or", ["id.eq.601", { referencedTable: "relation" }]],
+    ["maybeSingle", [{ ignored: true }]],
+    ["abortSignal", [{}]],
+  ])("rejects unsupported argument/options shape for %s", async (method, args) => {
+    const adapter = offlineTableAdapter(input());
+    await expect(adapter.from("players")[method as string](...(args as any[]))).rejects.toThrow(`unsupported_query_shape:${method}`);
+    expect(adapter.violations).toContain(`unsupported_query_shape:${method}`);
+  });
+
+  it("rejects implicit predicate type coercion and compares zoned timestamp filters exactly", async () => {
+    const inputs = input();
+    const adapter = offlineTableAdapter(inputs);
+    await expect(adapter.from("players").select("id").eq("id", "601")).rejects.toThrow("unsupported_predicate_type");
+    updateRows(inputs, "forge_board_news_events", [{ id: "early", accepted_at: "2026-10-09T18:00:00+01:00" },
+      { id: "late", accepted_at: "2026-10-09T18:00:00.000001Z" }]);
+    const result = await adapter.from("forge_board_news_events").select("id").lte("accepted_at", asOf);
+    expect(result.data).toEqual([{ id: "early" }]);
+  });
+
+  it("implements native exact-count HEAD without returning rows", async () => {
+    const adapter = offlineTableAdapter(input());
+    expect(await adapter.from("players").select("id", { head: true, count: "exact" })).toEqual({ data: null, count: 38, error: null });
+    expect(adapter.violations).toEqual([]);
+  });
+
+  it("blocks equivalent client paths and SDK entry points before inert config/sentinel access in a fresh process", () => {
+    const webRoot = resolve(__dirname, "..");
+    const script = `
+      const root = ${JSON.stringify(webRoot)};
+      require(root + '/node_modules/ts-node/register/transpile-only');
+      const { installOfflineFence, offlineTableAdapter } = require(root + '/scripts/qualify-native-players-offline.ts');
+      const inputs = require(root + '/scripts/fixtures/native-player-offline-synthetic.json');
+      const Module = require('node:module'), originalLoad = Module._load;
+      const env = process.env, events = [], rejections = [];
+      Module._load = function(request, parent, isMain) {
+        if (request.includes('@supabase/')) { events.push('SDK_load_reached'); throw new Error('Inert SDK sentinel reached'); }
+        return originalLoad.call(this, request, parent, isMain);
+      };
+      process.env = new Proxy({ NEXT_PUBLIC_SUPABASE_URL: 'https://fixture.invalid', SUPABASE_SERVICE_ROLE_KEY: 'synthetic-only' }, {
+        get(target, key) { if (String(key).includes('SUPABASE')) events.push('configuration_read:' + String(key)); return target[key]; }
+      });
+      const adapter = offlineTableAdapter(inputs), fence = installOfflineFence(adapter);
+      const blocked = action => { try { action(); } catch (error) { rejections.push(error.message); } };
+      try {
+        for (const path of ['lib/supabase/server', root + '/lib/supabase/server.ts', './lib/supabase/server']) {
+          const server = require(path);
+          blocked(() => server.getServiceRoleClient());
+          blocked(() => server.default.rpc('inert'));
+          blocked(() => server.default.from('players').upsert({id:1}));
+          blocked(() => server.default.auth);
+        }
+        for (const name of ['client', 'public-client', 'serverReadonly', 'index']) {
+          blocked(() => require(root + '/lib/supabase/' + name + '.ts').default.auth);
+        }
+        for (const path of ['@supabase/supabase-js', require.resolve('@supabase/supabase-js')]) {
+          blocked(() => require(path).createClient('https://fixture.invalid','synthetic-only'));
+          blocked(() => new (require(path).SupabaseClient)());
+        }
+        const { createRequire } = require('node:module');
+        blocked(() => createRequire(root + '/lib/NHL/server/index.ts')('../../supabase/server').getServiceRoleClient());
+        console.log(JSON.stringify({ events, rejections, fenceAttempts: fence.attempts, adapterViolations: adapter.violations }));
+      } finally { fence.restore(); Module._load = originalLoad; process.env = env; }
+    `;
+    const result = JSON.parse(execFileSync(process.execPath, ["-e", script], { cwd: webRoot, encoding: "utf8",
+      env: { NODE_ENV: "test", PATH: process.env.PATH, NODE_PATH: webRoot, TS_NODE_COMPILER_OPTIONS: '{"module":"commonjs","moduleResolution":"node"}' } }));
+    expect(result.events).toEqual([]);
+    expect(result.rejections).toHaveLength(21);
+    expect(result.fenceAttempts).toContain("getServiceRoleClient");
+    expect(result.fenceAttempts).toContain("SDK.createClient");
+    expect(result.adapterViolations).toContain("rpc_forbidden");
+    expect(result.adapterViolations).toContain("database_write_forbidden:upsert");
+  });
+
+  it("rejects future outcomes in rolling/team/goalie history and their referenced game", async () => {
+    const inputs = input();
+    for (const table of ["rolling_player_game_metrics", "forge_team_game_strength", "forge_goalie_game"]) {
+      updateRows(inputs, table, inputs.tables[table].rows.map(row => ({ ...row, game_date: "2026-10-11" })));
+    }
+    inputs.tables.games.rows[1].date = "2026-10-11";
+    updateRows(inputs, "games", inputs.tables.games.rows);
+    const result = (await qualifyNativePlayersOffline(inputs, asOf)).result;
+    expect(result.blockers.some(reason => reason.startsWith("late_or_ambiguous_history:rolling_player_game_metrics"))).toBe(true);
+    expect(result.blockers).toContain("late_or_ambiguous_history:games.1.date");
+    expect(result.calculation).toBeNull(); expect(result.boundary.inMemoryReads).toBe(0);
+    expect(result.categoryCoverage.every(target => !target.admission.acceptedByUnchangedConsumer)).toBe(true);
+  });
+
+  it("checks aggregate and camel-case event times while allowing future schedule/expiry", async () => {
+    const inputs = input();
+    const row = { player_id: 601, date: "2026-10-11", sourceEvidence: { eventTime: "2026-10-11T12:00:00Z" } };
+    updateRows(inputs, "player_stats_unified", [row]);
+    const result = (await qualifyNativePlayersOffline(inputs, asOf)).result;
+    expect(result.blockers).toContain("late_or_ambiguous_history:player_stats_unified.0.date");
+    expect(result.blockers).toContain("late_or_invalid_row_evidence:player_stats_unified.0.sourceEvidence.eventTime");
+    expect(result.blockers.some(reason => reason.includes("games.0"))).toBe(false);
+  });
+
+  it("requires exact completion for cutoff-day history, and completion before the original publication", async () => {
+    const inputs = input();
+    for (const table of ["rolling_player_game_metrics", "forge_team_game_strength", "forge_goalie_game"]) {
+      updateRows(inputs, table, inputs.tables[table].rows.map(row => ({ ...row, game_date: "2026-10-09" })));
+    }
+    inputs.tables.games.rows[1].date = "2026-10-09";
+    updateRows(inputs, "games", inputs.tables.games.rows);
+    expect((await qualifyNativePlayersOffline(inputs, asOf)).result.blockers).toContain("late_or_ambiguous_history:games.1.date");
+    inputs.tables.games.rows[1].completedAt = "2026-10-09T10:00:00.000Z";
+    updateRows(inputs, "games", inputs.tables.games.rows);
+    expect((await qualifyNativePlayersOffline(inputs, asOf)).result.blockers).toEqual([]);
+    inputs.tables.games.rows[1].completedAt = "2026-10-09T13:00:00.000Z";
+    updateRows(inputs, "games", inputs.tables.games.rows);
+    expect((await qualifyNativePlayersOffline(inputs, asOf)).result.blockers.some(reason => reason.includes("source_publication"))).toBe(true);
+  });
+
+  it("rejects historical statistics whose referenced puck drop is still in the future", async () => {
+    const inputs = input(); inputs.tables.games.rows[1].startTime = "2026-10-09T23:00:00Z";
+    updateRows(inputs, "games", inputs.tables.games.rows);
+    expect((await qualifyNativePlayersOffline(inputs, asOf)).result.blockers.some(reason => reason.startsWith("historical_game_not_started_by_cutoff:"))).toBe(true);
+  });
+
+  it("cannot certify PPP from missing or zero PP exposure denominators", async () => {
+    const inputs = input();
+    updateRows(inputs, "rolling_player_game_metrics", inputs.tables.rolling_player_game_metrics.rows.map(row => row.player_id === 601 && row.strength_state === "pp"
+      ? { ...row, toi_seconds_avg_all: 0, toi_seconds_avg_last5: null } : row));
+    const ppp = (await qualifyNativePlayersOffline(inputs, asOf)).result.categoryCoverage[0].categories.find(row => row.category === "PPP");
+    expect(ppp?.status).toBe("blocked"); expect(ppp?.reasons).toContain("missing_pp_counts_or_exposure_denominators");
+  });
+
+  it("retains a native PPP diagnostic but blocks source support when PP rows are absent", async () => {
+    const inputs = input();
+    updateRows(inputs, "rolling_player_game_metrics", inputs.tables.rolling_player_game_metrics.rows.filter(row => row.strength_state !== "pp"));
+    const result = (await qualifyNativePlayersOffline(inputs, asOf)).result;
+    expect(result.blockers).toEqual([]);
+    const target = result.categoryCoverage[0], ppp = target.categories.find(row => row.category === "PPP");
+    expect(target.inputCoverage.retainedRollingRowsByStrength.pp).toBe(0);
+    expect(ppp).toMatchObject({ modeledStatus: "present_native_diagnostic", status: "blocked" });
+    expect(ppp?.modeledValue).toBeGreaterThan(0);
+    expect(ppp?.reasons).toContain("missing_retained_pp_history");
+    expect(ppp?.reasons).toContain("pp_event_exposure_coverage_unproven");
+  });
+
+  it.each([false, true])("cannot relabel the immutable fictional artifact as retained exports (replace strings=%s)", async replaceStrings => {
+    const inputs = input(); inputs.classification = "retained_exports";
+    if (replaceStrings) for (const entry of Object.values(inputs.tables)) {
+      Object.assign(entry.receipt, { source: "operator export", revision: "revision-1", scope: "supplied rows" });
+    }
+    const result = (await qualifyNativePlayersOffline(inputs, asOf)).result;
+    expect(result.classification).toBe("synthetic_fixture");
+    expect(result.declaredClassification).toBe("retained_exports");
+    expect(result.blockers).toContain("contradictory_fictional_provenance");
+    expect(result.calculation).toBeNull();
+    expect(result.categoryCoverage[0].categories.find(row => row.category === "PPP")?.status).toBe("blocked");
   });
 
   it("blocks network primitives and process escapes before dispatch and restores them", async () => {
