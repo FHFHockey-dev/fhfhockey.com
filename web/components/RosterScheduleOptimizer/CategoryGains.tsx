@@ -10,12 +10,34 @@ type Props = {
 };
 const finite = (value: number | null | undefined): value is number => typeof value === "number" && Number.isFinite(value);
 const format = (value: number) => new Intl.NumberFormat("en-US", { maximumSignificantDigits: 5 }).format(value);
+const formatPoints = (value: number) => new Intl.NumberFormat("en-US", { maximumSignificantDigits: 5,
+  notation: value !== 0 && (Math.abs(value) < 0.001 || Math.abs(value) >= 1e6) ? "scientific" : "standard" }).format(value);
 
 export default function CategoryGains({ baseline, plan, scoring, label, reviewed }: Props) {
-  if (scoring.mode !== "categories") return null;
   const comparable = baseline?.legal && plan?.legal && baseline.budgetVerified && plan.budgetVerified
     && baseline.comparisonEligible === true && plan.comparisonEligible === true
     && !!baseline.forecastManifestId && baseline.forecastManifestId === plan.forecastManifestId;
+  if (scoring.mode === "points") {
+    const before = baseline?.projectedValue, after = plan?.projectedValue;
+    const known = comparable && finite(before) && finite(after);
+    const denominator = known ? Math.max(Math.abs(before), Math.abs(after)) : 0;
+    // Normalize before comparing. Subtract the threshold from the larger
+    // normalized operand so the exact 95/100 display boundary stays inclusive.
+    const similar = known && (denominator === 0
+      || Math.min(before / denominator, after / denominator) >= Math.max(before / denominator, after / denominator) - 0.05);
+    const absoluteDifference = known ? Math.abs(after - before) : null;
+    return <details className={styles.settings}>
+      <summary>{label} · projected points comparison</summary>
+      <p>Actual startable plan totals over this date range, including displaced roster contributions and league scoring.</p>
+      {known ? <>
+        <p>No move {formatPoints(before)} → plan {formatPoints(after)}</p>
+        <p>{finite(absoluteDifference) ? `Absolute point difference ${formatPoints(absoluteDifference)}`
+          : "Absolute point difference exceeds the numeric display range."}</p>
+        {similar && <p>Similar projected points · provisional 5% display rule</p>}
+        <p>Five percent uses the larger absolute plan total; two supported zero totals are equal. This is not a confidence interval or an automatic decision.{!reviewed && " Review planning inputs before acting."}</p>
+      </> : <p>Projected points comparison unavailable. Review forecast coverage, scope, acquisition rules and goalie minimums.</p>}
+    </details>;
+  }
   return <details className={styles.settings}>
     <summary>{label} · category gains</summary>
     <p>Change from the optimized no-move lineup, using starting assignments after acquisition timing, locks and eligibility checks. Displaced roster contributions are included. Ratios use each full lineup&apos;s numerator and denominator.</p>

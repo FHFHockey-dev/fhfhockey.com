@@ -1,14 +1,14 @@
 # RSO goal handoff
 
-Updated: 2026-10-10 03:36 UTC. Goal remains active; local implementation continues.
+Updated: 2026-10-10 03:42 UTC. Goal remains active; local implementation continues.
 
 ## Checkout and coordination
 
 - Goal: `01a12382-025a-7cb3-a01e-5b9445de662d`.
 - Working checkout: `/Users/tim/.codex/worktrees/rso-consolidated-execution/fhfhockey.com`.
-- Branch: `chef/rso-consolidated-20261009`; base: `d75f8f916f8d7485433217cbad51cdb30c75070d`; committed HEAD: `c39c9ca29`.
+- Branch: `chef/rso-consolidated-20261009`; base: `d75f8f916f8d7485433217cbad51cdb30c75070d`; committed HEAD: `950cb611a`.
 - This checkout stays intact. Scout owns safe reconciliation with `octoberBranch`; coordinate before any overlapping edits or integration.
-- Goal owns this handoff and the consolidated checklist/PRD. Scout owns `tasks/rso-goal-decisions.md` in this checkout. Read Scout's 03:33:16 UTC D1–D6 replies at this checkpoint; recheck at subsequent checkpoints and before pausing.
+- Goal owns this handoff and the consolidated checklist/PRD. Scout owns `tasks/rso-goal-decisions.md` in this checkout. Read D1–D6 and the 03:37:49 UTC D7 reply at this checkpoint; recheck at subsequent checkpoints and before pausing.
 - Human authorization permits Scout to coordinate routine engineering decisions/blocker fixes. New pricing, commercial commitments, destructive actions, provider writes, production changes and unapproved releases remain pending.
 
 ## Latest retained checkpoints
@@ -18,13 +18,14 @@ Updated: 2026-10-10 03:36 UTC. Goal remains active; local implementation continu
 - Existing native cutoff repair independently verified: offline harness tests 56/56. This establishes mechanics, not genuine predictive quality.
 - `c39c9ca29`: goalie repair retained; contribution/adapter tests 124/124, planner goalie cases 7/7, focused lint passed without warnings. Full TypeScript check reported only the inherited Game Grid diagnostic below. Task 12 local repairs are complete; genuine/live acceptance is still open.
 - Minimal upstream diagnostic reconciliation: full TypeScript now passed (exit 0) and focused lint passed without warnings. This checkpoint includes only the one-line diagnostic correction plus goal documents, with no claim about Game Grid browser behavior or integrated October acceptance.
+- Provisional similar-points display is locally verified: fifteen red regressions now pass, full component file 86/86, full TypeScript and focused lint passed. It uses evaluated startable totals and matched scope, displays absolute differences including tiny/signed/zero cases, withholds unsupported comparisons and never changes ranking. Numerical equivalence remains pending.
 
 ## Current ownership and unfinished change
 
 The goal remains the sole application writer here. Previous worker audits were read-only; actual worker runtime settings were not independently exposed, so additional staffing requires the repository's verification/coordination requirements.
 
-- Latest completed local tasks: **12.4**, evidence-confirmed goalie consumption, and **15**, minimal inherited TypeScript correction from the reviewed upstream source. Next independent work: accepted provisional similar-points display and planner policy checks under **14.2/5.2**.
-- Owned for this checkpoint: `web/lib/player-forecasts/planningContributions.ts`, its existing test file, `web/lib/player-forecasts/resolvedPlanningForecast.ts`, and the existing `web/lib/rosterScheduleData/planning.test.ts` regression surface. Producer/Start Chart files remain outside this repair.
+- Latest completed local tasks: **12.4**, evidence-confirmed goalie consumption, and **15**, minimal inherited TypeScript correction. The display portion of **14.2** is verified; its equivalence-policy portion remains open. Next independent work: **16/5.2**, demonstrated category-utility mismatch under D7.
+- Owned for this display checkpoint: `web/components/RosterScheduleOptimizer/CategoryGains.tsx`, the existing `web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx`, this handoff and the checklist. Previously retained goalie/diagnostic paths are not being edited. Producer/Start Chart files remain outside this repair.
 - Both meaningful regressions failed before repair: a confirmed goalie with model probability `0.8` and already-weighted saves `16` was rejected as false/null/null, with and without baseline sources. Both now pass, including replay and stale evidence checks.
 - Repair validates raw probabilities and full team-game starter mass, retains admitted confirmation independently of model probability, preserves the issued probability and applies participation exactly once. Invalid-probability, conflicting-starter, permission, cutoff, expiry and replay protections remain covered.
 - Goal also owns the existing RSO component, workspace/access files and shared RSO/Start Chart E2E edits for later checklist work. Scout should announce any additional writer and exact paths before dispatching overlapping work.
@@ -36,6 +37,7 @@ The goal remains the sole application writer here. Previous worker audits were r
 3. **Routine proposals P6–P8:** Scout D3 permits provisional 19/20/25-player, 7/14-day, four-acquisition, up-to-250-candidate and 390×844 measurement cases, with real/fictional evidence labels. Report p50/p95, failures, explored work, cancellation and completion; proposed latency/search numbers are observational references, not gates or production caps. D4 preserves current cadence pending evidence. P9–P12 stay pending.
 4. **Planner equivalence:** user permits fewer acquisitions only for otherwise equivalent actual startable outcomes under a declared numerical tolerance. Scout D5 leaves the native-unit roundoff proposal pending; do not broaden the automatic tie rule or introduce category weights/a blend. Verify the accepted provisional similar-points display independently.
 5. **Dependent live acceptance:** actual Yahoo profile, account saves, entitlement lifecycle, browser/layout/performance and weekly locks remain unverified at this revision. Continue independent engineering; do not mark dependent acceptance complete from unit receipts.
+6. **Category decision scope:** D7 permits removing arbitrary category utility constants and preserving separate manager coverage/risk choices. Inspection also found raw cross-category summation in `playValue`, a `1e5` category goalie bonus in initial assignment, descriptive win/loss totals used by `compareEvaluations`/`safeAlternative`, and quality certification coupled to comparison eligibility. A safe repair must cover these paths together; otherwise the hidden blend persists. Proposal for Scout review: neutral schedule-capacity seed, componentwise category improvement, no global category rank, and separate data-comparison eligibility from unapproved automatic start/sit tradeoffs. Preserve per-category/ratio outputs, manager moves/locks and point-league behavior. No engine edit has started yet.
 
 ## Accepted policy boundaries
 

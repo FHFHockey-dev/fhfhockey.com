@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BenchDecision, GameForecast, PlanIntent, PlanningData, PlanningPlayer, PlanningResult, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
+import type { BenchDecision, GameForecast, PlanEvaluation, PlanIntent, PlanningData, PlanningPlayer, PlanningResult, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import { WORKSPACE_KEY, defaultWorkspace } from "lib/rosterScheduleOptimizer/workspace";
 import { planRoster } from "lib/rosterScheduleOptimizer/planning";
 import { resolveContribution } from "lib/player-forecasts/contributions";
@@ -16,6 +16,7 @@ import ForecastEvidence, { forecastSummary } from "components/RosterScheduleOpti
 import BenchDecisions from "components/RosterScheduleOptimizer/BenchDecisions";
 import CandidateBrowser, { compareCandidateFits } from "components/RosterScheduleOptimizer/CandidateBrowser";
 import CompactSchedule, { compactGroups, scheduleWeek, summarizeCompactDay } from "components/RosterScheduleOptimizer/CompactSchedule";
+import CategoryGains from "components/RosterScheduleOptimizer/CategoryGains";
 
 const player = { id: "fhfh:1", nhlId: 1, name: "Alpha Center", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "unknown" as const, ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] };
 const data: PlanningData = { players: [player], games: [], forecasts: [], evidence: {} };
@@ -27,6 +28,38 @@ const benchReceipt: NonNullable<BenchDecision["evidence"]> = { startDate: "2026-
   sources: [{ playerId: "batherson", kinds: ["blended"], revisionIds: ["private-revision-id"],
     participation: [{ gameId: "game", basis: "appearance", probability: 0.5, confirmed: false }] }] };
 afterEach(() => { cleanup(); window.localStorage.clear(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); fetchMock.mockClear(); authState.user = null; authState.teams = []; planningState.evaluate = null; });
+
+describe("provisional similar projected points display", () => {
+  const scoring = { mode: "points" as const, weights: { GOALS: 1 }, categories: [] };
+  const evaluated = (value: number | null, overrides: Partial<PlanEvaluation> = {}) => ({
+    legal: true, budgetVerified: true, comparisonEligible: true, forecastManifestId: "same-horizon",
+    projectedValue: value, projectedStats: { GOALS: 9999 }, ...overrides,
+  } as PlanEvaluation);
+  it.each([
+    [95, 100, true], [94, 100, false], [0, 0, true], [0, 1, false],
+    [-100, -95, true], [-100, 100, false],
+    [1e-300, 0.96e-300, true], [1e-300, 0.5e-300, false],
+    [Number.MAX_VALUE, Number.MAX_VALUE * 0.97, true], [Number.MAX_VALUE, -Number.MAX_VALUE, false],
+  ])("compares startable plan totals %s and %s safely", (before, after, similar) => {
+    render(<CategoryGains baseline={evaluated(before as number)} plan={evaluated(after as number)}
+      scoring={scoring} label="Selected plan" reviewed />);
+    expect(Boolean(screen.queryByText(/Similar projected points · provisional 5% display rule/))).toBe(similar);
+    expect(screen.getByText(/Absolute point difference/)).toBeTruthy();
+    expect(screen.getByText(/larger absolute plan total/)).toBeTruthy();
+    expect(screen.getByText(/not a confidence interval or an automatic decision/)).toBeTruthy();
+    expect(screen.queryByText(/Infinity|NaN|9,999/)).toBeNull();
+    if (before === 1e-300) expect(screen.getByText(/Absolute point difference/).textContent).toMatch(/E-30[12]/);
+  });
+  it.each([
+    [null, 0, {}], [NaN, 0, {}], [Infinity, 0, {}],
+    [95, 100, { comparisonEligible: false }], [95, 100, { forecastManifestId: "different-horizon" }],
+  ])("withholds unsupported or mismatched comparison %s / %s", (before, after, overrides) => {
+    render(<CategoryGains baseline={evaluated(before as number | null)}
+      plan={evaluated(after as number, overrides as Partial<PlanEvaluation>)} scoring={scoring} label="Selected plan" reviewed />);
+    expect(screen.getByText(/Projected points comparison unavailable/)).toBeTruthy();
+    expect(screen.queryByText(/Similar projected points|Absolute point difference/)).toBeNull();
+  });
+});
 
 describe("RosterScheduleOptimizer workspace", () => {
   it("shows upstream stale and disabled evidence in manual readiness independently of reader time", async () => {
