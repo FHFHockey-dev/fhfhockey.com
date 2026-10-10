@@ -90,6 +90,12 @@ export default function ArticleReader(props: Props) {
     children,
     interactions
   } = props;
+  const navigableHeadings = headings.filter(
+    ({ text }) => !/^[\s_\-\u2010-\u2015]*$/u.test(text),
+  );
+  const contentsHeadings = navigableHeadings.some((heading) => heading.level === 2)
+    ? navigableHeadings.filter((heading) => heading.level === 2)
+    : navigableHeadings;
   const contentsRef = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1024px)");
@@ -99,7 +105,7 @@ export default function ArticleReader(props: Props) {
     update();
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
-  }, [headings.length]);
+  }, [contentsHeadings.length]);
   const date =
     publishedAt && Number.isFinite(Date.parse(publishedAt))
       ? new Date(publishedAt).toLocaleDateString("en-US", {
@@ -160,12 +166,12 @@ export default function ArticleReader(props: Props) {
               />
             </figure>
           )}
-          {headings.length > 0 && (
+          {contentsHeadings.length > 0 && (
             <details ref={contentsRef} className={styles.contents}>
               <summary>In this article</summary>
               <nav aria-label="In this article">
                 <ul>
-                  {(headings.some((heading) => heading.level === 2) ? headings.filter((heading) => heading.level === 2) : headings).map((heading) => (
+                  {contentsHeadings.map((heading) => (
                     <li key={heading.id} data-level={heading.level}>
                       <a href={`#${encodeURIComponent(heading.id)}`}>
                         {heading.text}
