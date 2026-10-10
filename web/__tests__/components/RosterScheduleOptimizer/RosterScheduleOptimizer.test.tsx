@@ -471,6 +471,8 @@ describe("RosterScheduleOptimizer workspace", () => {
     fireEvent.click(button);
     expect(screen.getByText(/Category alternatives ·/)).toBeTruthy();
     expect(screen.queryByText(/Best found ·/)).toBeNull();
+    expect(screen.getAllByText(/No-move category lineup/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Optimized no(?: |-)?move/)).toBeNull();
     expect(screen.getByText(/Descriptive projected wins minus losses · No overall ranking/)).toBeTruthy();
     if (comparisonEligible) {
       expect(screen.getByText(/Supported category values describe this lineup/)).toBeTruthy();
