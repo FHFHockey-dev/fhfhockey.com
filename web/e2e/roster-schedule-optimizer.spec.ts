@@ -113,7 +113,7 @@ test("manual workspace retains reviewed intent, protections and locks through re
   }
 });
 
-test("mobile tabs keep selection and expose the matchup", async ({ page }) => {
+test("mobile tabs keep selection and expose the matchup and player details", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/roster-schedule-optimizer");
   await expect(page.getByRole("region", { name: "Itinerary" })).toBeVisible();
@@ -124,6 +124,31 @@ test("mobile tabs keep selection and expose the matchup", async ({ page }) => {
   await expect(page.getByText(/Opponent inputs are missing/)).toBeVisible();
   await page.getByRole("navigation", { name: "Workspace views" }).getByRole("button", { name: "Roster" }).click();
   await expect(page.getByRole("button", { name: "Remove Alpha Center" })).toBeVisible();
+  await page.getByRole("textbox", { name: "Paste roster names" }).fill("Alpha Center");
+  await page.getByRole("button", { name: "Review pasted names" }).click();
+  await expect(page.locator("#rso-action-status")).toHaveText("Roster review complete: 0 added, 1 already rostered, 0 unresolved. No new roster players were added.");
+  const retained = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
+  const detail = page.getByRole("region", { name: "Player details for Alpha Center", exact: true });
+  await page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: /^Alpha Center/ }).click();
+  await expect(page.getByRole("region", { name: "Candidates and detail" })).toBeVisible();
+  await expect(detail).toBeVisible();
+  await expect(detail).toBeFocused();
+  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(retained);
+  await page.screenshot({ path: testInfo.outputPath("player-detail-mobile.png") });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.getByRole("button", { name: "Matchup", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Candidates and detail" })).toBeHidden();
+  await page.getByRole("button", { name: /Show (lineup analysis|schedule-capacity assignment)/ }).click();
+  await expect(page.getByRole("table", { name: "Individual player weekly schedule" })).toBeVisible();
+  const schedulePlayer = page.getByRole("button", { name: /^Schedule details for Alpha Center,/ });
+  if (!(await schedulePlayer.isVisible())) await page.getByRole("button", { name: /^Bench \d+, expand/ }).click();
+  await schedulePlayer.click();
+  await expect(page.getByRole("region", { name: "Candidates and detail" })).toBeVisible();
+  await expect(detail).toBeVisible();
+  await expect(detail).toBeFocused();
+  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(retained);
+  await expectDesktopFrameVisible(page);
+  await page.screenshot({ path: testInfo.outputPath("player-detail-desktop.png") });
 });
 
 test("readiness controls reach existing inputs across the required viewports", async ({ page }, testInfo) => {
@@ -306,8 +331,13 @@ for (const { candidateShots, candidateLock, label } of [
   expect(errors).toEqual([]);
 });
 
-test("provider refresh proposes repairs while keeping a selected move", async ({ page }) => {
+test("provider refresh proposes repairs while keeping a selected move", async ({ page }, testInfo) => {
   let reads = 0;
+  let holdRefresh = false, failRefresh = false;
+  let releaseRefresh!: () => void, releaseSave!: () => void;
+  const pendingRefresh = new Promise<void>(resolve => { releaseRefresh = resolve; });
+  const pendingSave = new Promise<void>(resolve => { releaseSave = resolve; });
+  let saves = 0;
   const authenticatedRequests: string[] = [];
   const lockedPlayer = { ...player, id: "fhfh:locked", nhlId: 3, name: "Locked Player" };
   const retained = fixtureWorkspace([player, lockedPlayer]);
@@ -319,8 +349,9 @@ test("provider refresh proposes repairs while keeping a selected move", async ({
   const storageKey = `sb-${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fyhftlxokyjtpndbkfse.supabase.co").hostname.split(".")[0]}-auth-token`;
   await page.addInitScript((key) => { const session = localStorage.getItem("sb-127-auth-token"); if (session) localStorage.setItem(key, session); }, storageKey);
   await page.route("**/rest/v1/**", (route) => route.fulfill({ json: [] }));
-  await page.route("**/api/v1/roster-schedule-optimizer/workspace**", (route) => {
+  await page.route("**/api/v1/roster-schedule-optimizer/workspace**", async (route) => {
     authenticatedRequests.push(route.request().headers().authorization ?? "");
+    if (route.request().method() === "PUT") { saves += 1; await pendingSave; }
     return route.request().method() === "PUT"
       ? route.fulfill({ json: { data: { workspace: route.request().postDataJSON().workspace, snapshot: route.request().postDataJSON().snapshot, version: 1, updatedAt: new Date().toISOString() } } })
       : route.fulfill({ json: { data: null } });
@@ -332,6 +363,11 @@ test("provider refresh proposes repairs while keeping a selected move", async ({
   await page.route("**/api/v1/roster-schedule-optimizer/provider", async (route) => {
     authenticatedRequests.push(route.request().headers().authorization ?? "");
     reads += 1;
+    if (holdRefresh) await pendingRefresh;
+    if (failRefresh) {
+      failRefresh = false;
+      return route.fulfill({ status: 503, json: { success: false, error: { message: "Provider temporarily unavailable." } } });
+    }
     const request = route.request().postDataJSON() as { startDate: string; endDate: string; timeZone: string };
     const snapshot = {
       id: `provider-${reads}`,
@@ -364,17 +400,42 @@ test("provider refresh proposes repairs while keeping a selected move", async ({
   await expect(page.getByText("ADD Alpha Center")).toBeVisible();
   const selected = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).intent);
   await openPlanningSetup(page);
+  holdRefresh = true;
   await page.getByRole("button", { name: "Refresh provider" }).click();
+  await expect(page.getByRole("button", { name: "Refresh provider" })).toBeDisabled();
+  await expect(page.locator("#rso-provider-refresh-status")).toHaveText("Refreshing provider inputs…");
+  await expect.poll(() => reads).toBe(2);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).intent)).toEqual(selected);
+  await expectDesktopFrameVisible(page);
+  await page.screenshot({ path: testInfo.outputPath("provider-refresh-pending-desktop.png"), fullPage: true });
+  holdRefresh = false; releaseRefresh();
   await expect(page.getByText(/appears on the actual roster; review whether this selected add is complete/)).toBeVisible();
+  await expect(page.locator("#rso-provider-refresh-status")).toHaveText("Provider inputs refreshed. Selected moves were kept.");
   await expect(page.getByText("ADD Alpha Center")).toBeVisible();
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toMatchObject({
     intent: selected, lockedAssignments: retained.lockedAssignments,
     manualPlayers: expect.arrayContaining([expect.objectContaining({ id: lockedPlayer.id, name: "Locked Player", availability: "unknown" })]),
   });
+  await page.getByRole("button", { name: "Refresh provider" }).click();
+  await expect(page.locator("#rso-provider-refresh-status")).toHaveText("Provider refresh completed. Inputs are unchanged; selected moves were kept.");
+  const beforeFailure = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!));
+  failRefresh = true;
+  await page.getByRole("button", { name: "Refresh provider" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "Provider temporarily unavailable." })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Refresh provider" })).toBeEnabled();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toEqual(beforeFailure);
+  await page.getByRole("button", { name: "Refresh provider" }).click();
+  await expect(page.locator("#rso-provider-refresh-status")).toHaveText("Provider refresh completed. Inputs are unchanged; selected moves were kept.");
+  expect(reads).toBe(5);
   await page.getByText("League rules and scoring", { exact: true }).click();
   await expect(confirm).toBeEnabled();
   await confirm.click();
   await page.getByRole("button", { name: "Save to account" }).click();
+  await expect(page.getByRole("button", { name: /Save to account|Saving/ })).toBeDisabled();
+  await expect(page.getByRole("status").filter({ hasText: /Saving/ })).toBeVisible();
+  await expect.poll(() => saves).toBe(1);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).intent)).toEqual(selected);
+  releaseSave();
   await expect(page.getByText("Saved to account.")).toBeVisible();
   await page.getByRole("button", { name: "View account save" }).click();
   await expect(confirm).toBeDisabled();
@@ -1786,6 +1847,13 @@ test("compact initial future week defaults to Monday and preserves clipped horiz
   await expect(slider).toHaveAttribute("min", "0");
   await expect(slider).toHaveAttribute("max", "6");
   await expect(page.getByRole("button", { name: /^Select (Mon|Tue|Wed|Thu|Fri|Sat|Sun), Oct/ })).toHaveCount(7);
+  await expect(page.getByRole("button", { name: "Previous schedule week" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Previous schedule week" })).toHaveAccessibleDescription(/No earlier week in selected range/);
+  await expect(page.getByRole("button", { name: "Next schedule week" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Next schedule week" })).toHaveAccessibleDescription(/No later week in selected range/);
+  await expect(page.getByText(/No earlier week in selected range\./)).toBeVisible();
+  await expect(page.getByText(/No later week in selected range\./)).toBeVisible();
+  await expectDesktopFrameVisible(page);
   await expectDaySliderAligned(page);
   await page.screenshot({ path: testInfo.outputPath("future-initial-monday.png") });
   await page.evaluate(() => {
@@ -1798,9 +1866,16 @@ test("compact initial future week defaults to Monday and preserves clipped horiz
   await expect(slider).toHaveAttribute("aria-valuetext", "Wed, Oct 14");
   await expect(page.getByRole("button", { name: "Select Mon, Oct 12" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Select Tue, Oct 13" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Select Mon, Oct 12" })).toHaveAccessibleDescription(/Disabled dates are outside selected range/);
+  await expect(page.getByRole("button", { name: "Select Tue, Oct 13" })).toHaveAccessibleDescription(/Disabled dates are outside selected range/);
+  await expect(page.getByText(/Disabled dates are outside selected range\./)).toBeVisible();
+  await expectDesktopFrameVisible(page);
   const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
   await page.getByRole("button", { name: "Next schedule week" }).click();
   await expect(slider).toHaveAttribute("aria-valuetext", "Mon, Oct 19");
+  await expect(page.getByRole("button", { name: "Next schedule week" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Next schedule week" })).toHaveAccessibleDescription(/No later week in selected range/);
+  await expect(page.getByText(/Disabled dates are outside selected range\./)).toBeVisible();
   await page.getByRole("button", { name: "Previous schedule week" }).click();
   await expect(slider).toHaveAttribute("aria-valuetext", "Wed, Oct 14");
   expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);

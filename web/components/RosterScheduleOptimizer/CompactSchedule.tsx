@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import { getLocalTeamLogoPath, fallbackTeamLogo } from "lib/images";
 import { expandActiveSlots } from "lib/rosterScheduleOptimizer/slots";
@@ -143,8 +143,11 @@ export default function CompactSchedule({ snapshot, roster, rules, players, assi
   const benchOpen = controlledBenchOpen ?? localBenchOpen;
   const toggleBench = () => { setLocalBenchOpen(!benchOpen); onBenchChange?.(!benchOpen); };
   const scrollElement = useRef<HTMLDivElement>(null);
+  const navigationReasonId = useId();
   const week = scheduleWeek(date);
   const included = week.map((day, index) => dates.includes(day) ? index : -1).filter(index => index >= 0);
+  const previousWeekDisabled = !dates.some(day => day < week[0]);
+  const nextWeekDisabled = !dates.some(day => day > week[6]);
   const groups = useMemo(() => compactGroups({ snapshot, roster, rules, players, assignments, intent, date, ready }), [snapshot, roster, rules, players, assignments, intent, date, ready]);
   const daySummary = summarizeCompactDay(groups, snapshot, date);
   const displayedRows = groups.reduce((count, group) => count + (group.position === "BN" && !benchOpen ? 0 : group.rows.length), 0);
@@ -222,13 +225,17 @@ export default function CompactSchedule({ snapshot, roster, rules, players, assi
       <div title="Individual players in the local planning roster with a scheduled, live or completed NHL game on this date; not fantasy starts"><span>Roster games</span><strong>{knownCount(daySummary.rosterGames, daySummary.scheduleComplete && daySummary.rosterComplete)}</strong></div>
       <div title="Distinct league-wide NHL games on this date; not roster-player games or goalie starts"><span>NHL games</span><strong>{knownCount(daySummary.nhlGames, daySummary.scheduleComplete)}</strong></div>
     </section>
-    <div className={styles.scheduleLegend}>{!ready ? "Assignments pending / unverified" : snapshot && date < localDate(snapshot.context.asOf, snapshot.context.timeZone) ? "Past lineup unverified" : "Local planning lineup"} · GP: scheduled games{!completeSchedule && " · partial/unknown schedule"} · G: ? unknown, ~ projected, ✓ confirmed, ! conflict</div>
+    <div className={styles.scheduleLegend}>{!ready ? "Assignments pending / unverified" : snapshot && date < localDate(snapshot.context.asOf, snapshot.context.timeZone) ? "Past lineup unverified" : "Local planning lineup"} · GP: scheduled games{!completeSchedule && " · partial/unknown schedule"} · G: ? unknown, ~ projected, ✓ confirmed, ! conflict
+      {previousWeekDisabled && <span id={`${navigationReasonId}-previous`}> · No earlier week in selected range.</span>}
+      {nextWeekDisabled && <span id={`${navigationReasonId}-next`}> · No later week in selected range.</span>}
+      {week.some(day => !dates.includes(day)) && <span id={`${navigationReasonId}-dates`}> · Disabled dates are outside selected range.</span>}
+    </div>
     <div ref={scrollElement} className={styles.compactScroll} tabIndex={0} role="region" aria-label="Player weekly schedule scroll area">
       <div className={styles.dayControls}>
         <div className={styles.dayNavigation}>
-          <button aria-label="Previous schedule week" disabled={!dates.some(day => day < week[0])} onClick={() => moveWeek(-7)}>‹</button>
+          <button aria-label="Previous schedule week" aria-describedby={previousWeekDisabled ? `${navigationReasonId}-previous` : undefined} disabled={previousWeekDisabled} onClick={() => moveWeek(-7)}>‹</button>
           <output aria-live="polite">{dateLabel(date)}</output>
-          <button aria-label="Next schedule week" disabled={!dates.some(day => day > week[6])} onClick={() => moveWeek(7)}>›</button>
+          <button aria-label="Next schedule week" aria-describedby={nextWeekDisabled ? `${navigationReasonId}-next` : undefined} disabled={nextWeekDisabled} onClick={() => moveWeek(7)}>›</button>
         </div>
         <div className={styles.daySlider} style={{ gridColumn: `${(included[0] ?? 0) + 2} / ${(included.at(-1) ?? 6) + 3}`,
           "--slider-day-count": (included.at(-1) ?? 6) - (included[0] ?? 0) + 1 } as CSSProperties}>
@@ -246,7 +253,7 @@ export default function CompactSchedule({ snapshot, roster, rules, players, assi
       </div>
       <table className={styles.compactTable} aria-label="Individual player weekly schedule">
         <thead><tr><th scope="col">Slot / player</th>{week.map(day => <th scope="col" key={day} className={`${day === date ? styles.chosenDay : ""} ${day < today ? styles.elapsedDay : ""}`}>
-          <button aria-label={`Select ${dateLabel(day)}`} aria-pressed={day === date} disabled={!dates.includes(day)} onClick={() => selectDate(day)}>
+          <button aria-label={`Select ${dateLabel(day)}`} aria-pressed={day === date} aria-describedby={!dates.includes(day) ? `${navigationReasonId}-dates` : undefined} disabled={!dates.includes(day)} onClick={() => selectDate(day)}>
             <span>{dateLabel(day).split(", ")[0]}</span><span>{dateLabel(day).split(", ")[1]}</span>
             {dates.includes(day) && <small>{knownCount(new Set(snapshot?.games.filter(game => game.date === day && ["scheduled", "live", "final"].includes(game.status)).map(game => game.id)).size, completeSchedule)} NHL</small>}
           </button>

@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BenchDecision, GameForecast, PlanEvaluation, PlanIntent, PlanningData, PlanningPlayer, PlanningResult, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
+import type { BenchDecision, GameForecast, PlanEvaluation, PlanIntent, PlanStep, PlanningData, PlanningPlayer, PlanningResult, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import { WORKSPACE_KEY, defaultWorkspace } from "lib/rosterScheduleOptimizer/workspace";
 import { planRoster } from "lib/rosterScheduleOptimizer/planning";
 import { resolveContribution } from "lib/player-forecasts/contributions";
@@ -642,6 +642,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     await screen.findByRole("searchbox", { name: "Find a player" });
     fireEvent.change(screen.getByRole("textbox", { name: "Paste roster names" }), { target: { value: "Alpha Center\nUnmatched Skater" } });
     fireEvent.click(screen.getByRole("button", { name: "Review pasted names" }));
+    expect(screen.getByText("Roster review complete: 1 added, 0 already rostered, 1 unresolved. Review player evidence before planning moves.").getAttribute("role")).toBe("status");
     await waitFor(() => expect(screen.getByText("Unmatched Skater")).toBeTruthy());
     expect(screen.getByRole("button", { name: "Remove Alpha Center" })).toBeTruthy();
     const saved = JSON.parse(window.localStorage.getItem(WORKSPACE_KEY) ?? "null");
@@ -653,6 +654,63 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(await screen.findByRole("button", { name: "Remove Alpha Center" })).toBeTruthy();
     expect((screen.getByLabelText("Manager confirms league positions") as HTMLInputElement).checked).toBe(true);
     expect(screen.getByText("Unmatched Skater")).toBeTruthy();
+  });
+
+  it("reports already-rostered pasted names without changing selected moves or unresolved names", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+    const workspace = defaultWorkspace();
+    workspace.roster = [{ playerId: player.id, position: "bench" }];
+    workspace.manualPlayers = [player];
+    workspace.unresolvedNames = ["Unmatched Skater"];
+    workspace.intent.protectedPlayerIds = [player.id];
+    workspace.intent.steps = [{ id: "retained-add", type: "add", playerId: "fhfh:2", at: `${workspace.context.endDate}T12:00:00Z`, effectiveAt: `${workspace.context.endDate}T12:00:00Z`, conditional: true, dependsOn: [] }];
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    render(<RosterScheduleOptimizer />);
+    await screen.findByRole("button", { name: "Remove Alpha Center" });
+    fireEvent.change(screen.getByRole("textbox", { name: "Paste roster names" }), { target: { value: "Alpha Center" } });
+    fireEvent.click(screen.getByRole("button", { name: "Review pasted names" }));
+    expect(screen.getByText("Roster review complete: 0 added, 1 already rostered, 0 unresolved. No new roster players were added.").getAttribute("role")).toBe("status");
+    const saved = JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
+    expect(saved).toMatchObject({ roster: workspace.roster, intent: workspace.intent, unresolvedNames: workspace.unresolvedNames });
+    expect(screen.getByRole("textbox", { name: "Paste roster names" })).toHaveProperty("value", "");
+  });
+
+  it.each([
+    { source: "roster", width: 390 },
+    { source: "compact", width: 1440 },
+    { source: "candidate", width: 1440 },
+  ])("reveals and focuses existing player detail from $source at $width without editing the plan", async ({ source, width }) => {
+    vi.stubGlobal("innerWidth", width);
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { frames.push(callback); return frames.length; });
+    const candidate = { ...player, id: "fhfh:2", nhlId: 2, name: "Bravo Center" };
+    const workspace = defaultWorkspace();
+    workspace.manualPlayers = [player, candidate];
+    workspace.roster = [{ playerId: player.id, position: "bench" }];
+    workspace.intent.protectedPlayerIds = [player.id];
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data: { ...data, players: [player, candidate] } }) })));
+    render(<RosterScheduleOptimizer />);
+    await screen.findByRole("button", { name: "Remove Alpha Center" });
+    const stored = window.localStorage.getItem(WORKSPACE_KEY);
+    if (source === "roster") {
+      fireEvent.click(screen.getByRole("button", { name: "Roster" }));
+      fireEvent.click(screen.getByRole("button", { name: /^Alpha Center/ }));
+    } else if (source === "compact") {
+      fireEvent.click(within(screen.getByRole("banner")).getByRole("button", { name: "Matchup" }));
+      fireEvent.click(screen.getByRole("button", { name: /^Schedule details for Alpha Center/ }));
+    } else {
+      fireEvent.click(screen.getByRole("button", { name: "All players" }));
+      fireEvent.click(screen.getByRole("button", { name: /^Bravo Center/ }));
+    }
+    const detail = screen.getByRole("region", { name: `Player details for ${source === "candidate" ? candidate.name : player.name}` });
+    const scroll = vi.fn(); detail.scrollIntoView = scroll;
+    act(() => frames.splice(0).forEach(frame => frame(0)));
+    expect(document.activeElement).toBe(detail);
+    expect(scroll).toHaveBeenCalledWith({ block: "nearest" });
+    expect(screen.getByRole("region", { name: "Candidates and detail" }).className).toContain("mobileActive");
+    expect(screen.getByRole("region", { name: "Candidates and detail" }).className).not.toContain("desktopHidden");
+    expect(window.localStorage.getItem(WORKSPACE_KEY)).toBe(stored);
   });
 
   it("undoes local roster edits without changing the public snapshot", async () => {
@@ -861,6 +919,102 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(screen.getByText(warning)).toBeTruthy();
   });
 
+  it("shows provider refresh feedback immediately, prevents duplicate requests and reports unchanged inputs", async () => {
+    authState.user = { id: "manager" };
+    const workspace = defaultWorkspace();
+    workspace.context = { ...workspace.context, provider: "yahoo", teamId: "team", leagueId: "league" };
+    workspace.roster = [{ playerId: player.id, position: "bench" }];
+    workspace.manualPlayers = [player];
+    workspace.intent.protectedPlayerIds = [player.id];
+    const initial: PlanningSnapshot = { id: "provider-initial", context: { ...workspace.context, asOf: "2026-10-08T12:00:00Z" },
+      players: [player], roster: workspace.roster, rules: workspace.rules, lockedAssignments: [],
+      games: [], forecasts: [], realized: {}, opponent: null, evidence: {} };
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    let release!: (response: unknown) => void;
+    let requestSignal: AbortSignal | null | undefined;
+    let reads = 0;
+    const timers = vi.spyOn(globalThis, "setTimeout");
+    const response = (snapshot: PlanningSnapshot) => ({ ok: true, json: async () => ({ success: true, snapshot,
+      capabilities: { roster: true, availability: false, rules: true, matchup: false, acquisitions: false, limitations: [] } }) });
+    vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => {
+      if (url.endsWith("/provider")) {
+        if (++reads === 1) return Promise.resolve(response(initial));
+        requestSignal = init?.signal;
+        return new Promise(resolve => { release = resolve; });
+      }
+      return Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data }
+        : url.endsWith("/access") ? { data: { eligible: true, capabilities: ["rso_sync", "rso_auto_upkeep"] } } : { data: null } });
+    }));
+    const saved = () => JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
+    render(<RosterScheduleOptimizer />);
+    await waitFor(() => expect(saved().context.asOf).toBe(initial.context.asOf));
+    const scheduledChecks = () => timers.mock.calls.filter(([, delay]) => delay === 5 * 60_000).length;
+    expect(scheduledChecks()).toBe(1);
+    const refresh = screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement;
+    fireEvent.click(refresh);
+    expect(refresh.getAttribute("aria-busy")).toBe("true");
+    expect(refresh.disabled).toBe(true);
+    expect(screen.getByText("Refreshing provider inputs…").getAttribute("role")).toBe("status");
+    expect(saved().intent).toEqual(workspace.intent);
+    await waitFor(() => expect(reads).toBe(2));
+    fireEvent.click(refresh);
+    vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+    fireEvent(document, new Event("visibilitychange"));
+    fireEvent(document, new Event("visibilitychange"));
+    await act(async () => {});
+    expect(reads).toBe(2);
+    expect(requestSignal?.aborted).toBe(false);
+    const unchanged = { ...initial, id: "provider-checked", context: { ...initial.context, asOf: "2026-10-08T13:00:00Z" } };
+    await act(async () => release(response(unchanged)));
+    expect(screen.getByText("Provider refresh completed. Inputs are unchanged; selected moves were kept.").getAttribute("role")).toBe("status");
+    expect(refresh.disabled).toBe(false);
+    expect(refresh.getAttribute("aria-busy")).toBe("false");
+    expect(scheduledChecks()).toBe(2);
+    expect(saved()).toMatchObject({ context: unchanged.context, roster: workspace.roster, intent: workspace.intent });
+  });
+
+  it.each([
+    { user: null, sync: false, teamId: "team", reason: "Sign in to check access for provider synchronization." },
+    { user: { id: "manager" }, sync: false, teamId: "team", reason: "Provider synchronization requires active in-season access. Your account connection is unchanged." },
+    { user: { id: "manager" }, sync: true, teamId: "manual", reason: "Select an owned team before refreshing provider inputs." },
+    { user: { id: "manager" }, sync: true, teamId: " ", reason: "Select an owned team before refreshing provider inputs." },
+  ])("explains unavailable provider refresh for user $user, sync $sync and team '$teamId'", async ({ user, sync, teamId, reason }) => {
+    authState.user = user;
+    const workspace = defaultWorkspace();
+    workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "league", teamId: teamId.trim() ? teamId : "manual" };
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    const requests = vi.fn((url: string) => Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data }
+      : url.endsWith("/access") ? { data: { eligible: sync, capabilities: sync ? ["rso_sync"] : [] } } : { data: null } }));
+    vi.stubGlobal("fetch", requests);
+    render(<RosterScheduleOptimizer />);
+    if (teamId !== workspace.context.teamId) fireEvent.change(screen.getByLabelText("Team ID"), { target: { value: teamId } });
+    const refresh = screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement;
+    await waitFor(() => expect(document.getElementById(refresh.getAttribute("aria-describedby")!)?.textContent).toBe(reason));
+    expect(refresh.disabled).toBe(true);
+    fireEvent.click(refresh);
+    await act(async () => {});
+    expect(requests.mock.calls.some(([url]) => url.endsWith("/provider"))).toBe(false);
+    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!)).toEqual({ ...workspace, context: { ...workspace.context, teamId } });
+  });
+
+  it.each([
+    { ok: false, body: { success: false, error: "Connected refresh is unavailable for this provider. Use manual inputs." }, reason: "Connected refresh is unavailable for this provider. Use manual inputs." },
+    { ok: true, body: { success: true }, reason: "Provider refresh returned no inputs. Try again or continue manually." },
+  ])("explains unavailable provider inputs without reporting success or replacing saved inputs: $reason", async ({ ok, body, reason }) => {
+    authState.user = { id: "manager" };
+    const workspace = defaultWorkspace();
+    workspace.context = { ...workspace.context, provider: "fantrax", leagueId: "league", teamId: "team" };
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.endsWith("/provider") ? ok : true, json: async () => url.includes("/data?") ? { success: true, data }
+      : url.endsWith("/access") ? { data: { eligible: true, capabilities: ["rso_sync"] } }
+        : url.endsWith("/provider") ? body : { data: null } })));
+    render(<RosterScheduleOptimizer />);
+    expect((await screen.findByRole("alert")).textContent).toContain(reason);
+    expect(screen.queryByText(/Provider inputs refreshed|Provider refresh completed/)).toBeNull();
+    expect((screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement).disabled).toBe(false);
+    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!)).toEqual(workspace);
+  });
+
   it("keeps refreshed provider authority through undo and reopen without replacing selected moves", async () => {
     authState.user = { id: "manager" };
     const workspace = defaultWorkspace();
@@ -900,13 +1054,20 @@ describe("RosterScheduleOptimizer workspace", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Goalie choice" }), { target: { value: "cover" } });
     fireEvent.click(screen.getByRole("button", { name: "Refresh provider" }));
     await waitFor(() => expect(saved().context.asOf).toBe(refreshed.context.asOf));
+    expect(screen.getByText("Provider inputs refreshed. Selected moves were kept.").getAttribute("role")).toBe("status");
     const beforeFailure = saved();
     fireEvent.click(screen.getByRole("button", { name: "Refresh provider" }));
     expect(await screen.findByText("Provider temporarily unavailable.")).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toContain("Try Refresh provider again.");
+    expect((screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement).disabled).toBe(false);
+    expect(saved()).toEqual(beforeFailure);
+    fireEvent.click(screen.getByRole("button", { name: "Refresh provider" }));
+    expect(await screen.findByText("Provider refresh completed. Inputs are unchanged; selected moves were kept.")).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
     expect(saved()).toEqual(beforeFailure);
     view.unmount();
     const reopened = render(<RosterScheduleOptimizer />);
-    await waitFor(() => expect(providerReads).toBe(4));
+    await waitFor(() => expect(providerReads).toBe(5));
     await screen.findByText("Bravo Center is no longer verified as available.");
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(screen.getByText("Bravo Center is no longer verified as available.")).toBeTruthy();
@@ -942,6 +1103,8 @@ describe("RosterScheduleOptimizer workspace", () => {
     const saved = () => JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
     render(<RosterScheduleOptimizer />);
     await waitFor(() => expect(pending).toHaveLength(1));
+    expect(pending[0].init?.signal?.aborted).toBe(false);
+    expect(await screen.findByText("Refreshing provider inputs…")).toBeTruthy();
     fireEvent.change(screen.getByLabelText(label), { target: { value } });
     if (field === "timeZone") fireEvent.blur(screen.getByLabelText(label));
     await waitFor(() => expect(pending).toHaveLength(2));
@@ -955,9 +1118,12 @@ describe("RosterScheduleOptimizer workspace", () => {
     const currentContext = { ...saved().context, asOf: "2026-10-08T13:00:00Z" };
     await act(async () => pending[1].resolve(response(currentContext)));
     expect(saved().context).toEqual(currentContext);
+    expect(screen.getByText("Provider inputs refreshed. Selected moves were kept.")).toBeTruthy();
     await act(async () => pending[0].resolve(response({ ...workspace.context, asOf: "2026-10-08T12:00:00Z" })));
     expect(saved().context).toEqual(currentContext);
     expect(saved().roster).toEqual(snapshot(currentContext).roster);
+    expect(screen.getByText("Provider inputs refreshed. Selected moves were kept.")).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it("adopts Yahoo's league timezone without losing the selected team, horizon or intent", async () => {
@@ -1044,6 +1210,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     await waitFor(() => expect(authenticatedFetch.mock.calls.some(([url, init]) => url.includes("/workspace?") && (init?.headers as Record<string, string>)?.Authorization === "Bearer token-second")).toBe(true));
     expect(firstRequest?.signal?.aborted).toBe(true);
     expect((screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByText("Refreshing provider inputs…")).toBeNull();
     await act(async () => { releaseProvider({ ok: true, json: async () => ({ success: true, snapshot: {
       id: "late-first-account", context: workspace.context, players: [{ ...player, name: "First Account Player" }],
       roster: [{ playerId: player.id, position: "active" }], games: [], forecasts: [], rules: workspace.rules,
@@ -1110,6 +1277,163 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(screen.queryByText("Saved inputs are read-only and may be stale.")).toBeNull();
   });
 
+  it("reports account-save failure, allows retry and preserves the submitted snapshot while local edits continue", async () => {
+    authState.user = { id: "manager" };
+    let release!: (response: unknown) => void;
+    const saves: RequestInit[] = [];
+    vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => {
+      if (url.endsWith("/workspace") && init?.method === "PUT") {
+        saves.push(init);
+        return saves.length === 1 ? Promise.resolve({ ok: false, json: async () => ({ error: "Account save temporarily unavailable." }) })
+          : new Promise(resolve => { release = resolve; });
+      }
+      return Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data }
+        : url.endsWith("/access") ? { data: { eligible: true, capabilities: ["rso_account_save"] } } : { data: null } });
+    }));
+    render(<RosterScheduleOptimizer />);
+    fireEvent.click(await screen.findByRole("button", { name: "Save to account" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("Account save temporarily unavailable.");
+    expect(screen.getByRole("alert").textContent).toContain("try Save to account again");
+    const retry = screen.getByRole("button", { name: "Save to account" }) as HTMLButtonElement;
+    expect(retry.disabled).toBe(false);
+    const submitted = JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
+    fireEvent.click(retry);
+    expect(retry.disabled).toBe(true);
+    await waitFor(() => expect(saves).toHaveLength(2));
+    fireEvent.click(retry);
+    fireEvent.change(screen.getByRole("combobox", { name: "Goalie choice" }), { target: { value: "cover" } });
+    const payload = JSON.parse(saves[1].body as string);
+    expect(payload.workspace).toEqual(submitted);
+    expect(payload.snapshot.context).toEqual(submitted.context);
+    expect(payload.snapshot.roster).toEqual(submitted.roster);
+    expect(payload.expectedVersion).toBeNull();
+    await act(async () => release({ ok: true, json: async () => ({ data: { version: 4 } }) }));
+    expect(screen.getByText("Submitted inputs saved to account. Newer local changes still need saving.").getAttribute("role")).toBe("status");
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(retry.disabled).toBe(false);
+    expect(saves).toHaveLength(2);
+    expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent.goalieCoverage).toBe("cover");
+  });
+
+  it("reports checking access before explaining a missing provider team", async () => {
+    authState.user = { id: "manager" };
+    const workspace = defaultWorkspace(); workspace.context.provider = "yahoo";
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    let release!: (response: unknown) => void;
+    vi.stubGlobal("fetch", vi.fn((url: string) => url.endsWith("/access") ? new Promise(resolve => { release = resolve; })
+      : Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data } : { data: null } })));
+    render(<RosterScheduleOptimizer />);
+    expect(document.getElementById("rso-provider-refresh-status")?.textContent).toBe("Checking access for provider synchronization…");
+    await waitFor(() => expect(release).toBeTypeOf("function"));
+    await act(async () => release({ ok: true, json: async () => ({ data: { eligible: true, capabilities: ["rso_sync"] } }) }));
+    expect(document.getElementById("rso-provider-refresh-status")?.textContent).toBe("Select an owned team before refreshing provider inputs.");
+    expect((screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("explains disabled manual controls and invalid rule-window dates using visible descriptions", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+    render(<RosterScheduleOptimizer />);
+    await screen.findByRole("searchbox", { name: "Find a player" });
+    fireEvent.click(screen.getByRole("button", { name: "Roster" }));
+    const reason = (name: string, text: string) => {
+      const control = screen.getByRole("button", { name }) as HTMLButtonElement;
+      expect(control.disabled).toBe(true);
+      const description = document.getElementById(control.getAttribute("aria-describedby")!);
+      expect(description?.textContent).toContain(text);
+      expect(description?.hidden).toBe(false);
+    };
+    reason("Undo", "No edits to undo.");
+    reason("Review pasted names", "Paste at least one roster name to review.");
+    fireEvent.click(screen.getByText("League rules and scoring", { selector: "summary" }));
+    await waitFor(() => reason("Confirm planning inputs", "Add roster players before confirming inputs."));
+    fireEvent.click(screen.getByText("Locked lineup assignments", { selector: "summary" }));
+    reason("Add confirmed lock", "Add a roster player before entering a confirmed lock.");
+    reason("Previous matchup week", "No matchup weeks are available");
+    reason("Next matchup week", "No matchup weeks are available");
+    fireEvent.change(screen.getByRole("searchbox", { name: "Find a player" }), { target: { value: "Alpha" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+    fireEvent.change(screen.getByRole("searchbox", { name: "Find a player" }), { target: { value: "Alpha" } });
+    reason("Add", "Already in your roster.");
+    fireEvent.click(screen.getByRole("button", { name: "Confirm planning inputs" }));
+    reason("Confirm planning inputs", "Inputs are already confirmed for this session.");
+    fireEvent.click(screen.getByText("Scoring, budgets, and lock windows", { selector: "summary" }));
+    fireEvent.change(screen.getByLabelText("Through"), { target: { value: "2026-01-01" } });
+    reason("Add acquisition period", "Start date must be on or before end date.");
+    reason("Add lineup window", "Start date must be on or before end date.");
+    fireEvent.change(screen.getByLabelText("From"), { target: { value: "" } });
+    reason("Add acquisition period", "Select start and end dates");
+    reason("Add lineup window", "Select start and end dates");
+  });
+
+  it("explains empty manual continuation without enabling an unavailable action", async () => {
+    const workspace = defaultWorkspace(); workspace.context.provider = "yahoo";
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ ok: true, json: async () => ({ success: true, data: null }) })));
+    render(<RosterScheduleOptimizer />);
+    const continuation = screen.getByRole("button", { name: "Continue manually" }) as HTMLButtonElement;
+    expect(continuation.disabled).toBe(true);
+    expect(document.getElementById(continuation.getAttribute("aria-describedby")!)?.textContent).toContain("No snapshot or roster inputs to continue from. Select Manual to start a plan.");
+  });
+
+  it("explains first, last and custom matchup-week navigation boundaries", async () => {
+    const workspace = defaultWorkspace();
+    const weeks = [{ gameKey: "season", week: 1, startDate: workspace.context.startDate, endDate: workspace.context.endDate },
+      { gameKey: "season", week: 2, startDate: "2026-11-01", endDate: "2026-11-07" }];
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data: { ...data, matchupWeeks: weeks } }) })));
+    render(<RosterScheduleOptimizer />);
+    await screen.findByText("First matchup week; no previous week is available.");
+    const previous = screen.getByRole("button", { name: "Previous matchup week" }) as HTMLButtonElement;
+    const next = screen.getByRole("button", { name: "Next matchup week" }) as HTMLButtonElement;
+    expect(previous.disabled).toBe(true); expect(next.disabled).toBe(false);
+    fireEvent.click(next);
+    expect(await screen.findByText("Last matchup week; no next week is available.")).toBeTruthy();
+    expect(previous.disabled).toBe(false); expect(next.disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText("Through"), { target: { value: "2026-11-08" } });
+    expect(await screen.findByText("Select a listed matchup week to navigate.")).toBeTruthy();
+    expect(previous.disabled).toBe(true); expect(next.disabled).toBe(true);
+  });
+
+  it.each([
+    { gate: "input", reason: "Review and confirm planning inputs before selecting this plan." },
+    { gate: "scoring", reason: "Enter league scoring before selecting this plan." },
+    { gate: "legal", reason: "Plan rule checks failed. Selected player is protected." },
+    { gate: "budget", reason: "Acquisition budget is unverified. Review acquisition periods and remaining moves." },
+    { gate: "hold", reason: "This plan keeps the roster unchanged; there are no moves to select." },
+    { gate: "ready", reason: null },
+  ])("explains the $gate Select plan gate and acknowledges selection when summaries match", async ({ gate, reason }) => {
+    vi.stubGlobal("fetch", fetchMock);
+    const workspace = defaultWorkspace();
+    workspace.roster = [{ playerId: player.id, position: "bench" }]; workspace.manualPlayers = [player];
+    workspace.rules.scoring.weights = gate === "scoring" ? {} : { GOALS: 1 };
+    const step: PlanStep = { id: "old-step", type: "drop", playerId: player.id, at: `${workspace.context.endDate}T12:00:00Z`, effectiveAt: `${workspace.context.endDate}T12:00:00Z`, conditional: false, dependsOn: [] };
+    workspace.intent.steps = [step];
+    const alternativeSteps = gate === "hold" ? [] : [{ ...step, id: "alternative-step" }];
+    planningState.evaluate = (snapshot, intent) => {
+      const result = planRoster(snapshot, intent);
+      return { ...result, alternatives: [{ ...result.selected, steps: alternativeSteps, legal: gate !== "legal", budgetVerified: gate !== "budget", limitations: gate === "legal" ? ["Selected player is protected."] : [] }] };
+    };
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    render(<RosterScheduleOptimizer />);
+    const select = await screen.findByRole("button", { name: "Select plan" }) as HTMLButtonElement;
+    fireEvent.click(screen.getByText("League rules and scoring", { selector: "summary" }));
+    if (gate !== "input") fireEvent.click(screen.getByRole("button", { name: "Confirm planning inputs" }));
+    if (reason) {
+      expect(select.disabled).toBe(true);
+      expect(document.getElementById(select.getAttribute("aria-describedby")!)?.textContent).toBe(reason);
+      fireEvent.click(select);
+      expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent).toEqual(workspace.intent);
+    } else {
+      expect(select.disabled).toBe(false);
+      const summary = screen.getByRole("region", { name: "Plan summary" }).textContent;
+      fireEvent.click(select);
+      await act(async () => {});
+      expect(screen.getByText("Alternative 1 selected. Confirm roster changes with your provider.").getAttribute("role")).toBe("status");
+      expect(screen.getByRole("region", { name: "Plan summary" }).textContent).toBe(summary);
+      expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent.steps).toEqual(alternativeSteps);
+    }
+  });
+
   it("keeps the local plan on a stale-version save and ignores a late save after account switching", async () => {
     authState.user = { id: "manager" };
     let releaseSave!: (response: unknown) => void;
@@ -1128,6 +1452,9 @@ describe("RosterScheduleOptimizer workspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save to account" }));
     expect(await screen.findByText("Another device saved this workspace. Your local plan is intact; review the other version before saving again.")).toBeTruthy();
     expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!)).toEqual(localPlan);
+    fireEvent.click(screen.getByRole("button", { name: "Save to account" }));
+    expect(screen.getByRole("button", { name: "Save to account" }).getAttribute("aria-busy")).toBe("true");
+    expect(screen.getByText("Saving to account…").getAttribute("role")).toBe("status");
     fireEvent.click(screen.getByRole("button", { name: "Save to account" }));
     await waitFor(() => expect(saveCount).toBe(3));
     await waitFor(() => expect(authenticatedFetch.mock.calls.some(([url, init]) => url.endsWith("/workspace") && init?.method === "PUT" && (init.headers as Record<string, string>).Authorization === "Bearer token-manager")).toBe(true));
@@ -1339,6 +1666,12 @@ describe("compact RSO schedule", () => {
     const selectDate = vi.fn();
     const props = { ...input, dates: scheduleWeek(input.date).slice(1, 4), date: "2026-10-06", today: input.date, selectDate, selectPlayer: vi.fn() };
     const view = render(<CompactSchedule {...props} />);
+    expect((screen.getByRole("button", { name: "Previous schedule week", description: /No earlier week in selected range/ }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Next schedule week", description: /No later week in selected range/ }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Select Mon, Oct 5", description: /Disabled dates are outside selected range/ }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText(/No earlier week in selected range\./)).toBeTruthy();
+    expect(screen.getByText(/No later week in selected range\./)).toBeTruthy();
+    expect(screen.getByText(/Disabled dates are outside selected range\./)).toBeTruthy();
     const slider = screen.getByRole("slider", { name: "Selected planning day" });
     fireEvent.keyDown(slider, { key: "ArrowLeft" });
     expect(selectDate).not.toHaveBeenCalledWith("2026-10-05");
