@@ -50,6 +50,7 @@ export default function CandidateBrowser({ players, rosterIds, snapshot, intent,
   const row = ({ player, activeGames, points, activePoints }: Candidate) => <div key={player.id} className={styles.candidateRow}>
     <button onClick={() => select(player.id)}>{player.name}<small>{player.teamAbbreviation ?? "—"} · {player.eligiblePositions.join("/") || "Eligibility unknown"}</small></button>
     <span>{player.availability.replaceAll("_", " ")}</span>
+    {intent.excludedPlayerIds.includes(player.id) && <small className={styles.candidateMetrics}>Excluded from suggestions</small>}
     <small className={styles.candidateMetrics}>+AGP {metric(activeGames)}{!categories && ` · Horizon points ${metric(points)}`}</small>
     {view === "all" && !categories && <small className={styles.candidateMetrics}>Potential active points gain {metric(activePoints)}</small>}
     {player.form && <small className={styles.formChip}>{player.form.label} · {player.form.points} points / {player.form.games} games · forecast inclusion unknown</small>}

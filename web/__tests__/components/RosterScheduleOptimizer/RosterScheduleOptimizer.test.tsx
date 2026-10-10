@@ -260,10 +260,15 @@ describe("RosterScheduleOptimizer workspace", () => {
     workspace.roster = [{ playerId: player.id, position: "bench" }];
     workspace.manualPlayers = [{ ...player, eligibilityVerified: true }];
     workspace.intent.protectedPlayerIds = [player.id];
+    workspace.intent.excludedPlayerIds = [other.id];
     window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data: { ...data, players: [player, candidate, other] } }) })));
     render(<RosterScheduleOptimizer />);
     fireEvent.click(await screen.findByRole("button", { name: "All players" }));
+    const excludedRow = (await screen.findByRole("button", { name: /Other Wing.*LW/ })).parentElement!;
+    expect(within(excludedRow).getByText("Excluded from suggestions")).toBeTruthy();
+    expect(within(excludedRow).getByText("unknown")).toBeTruthy();
+    expect(within(excludedRow).getByRole("button", { name: "Mark available" })).toBeTruthy();
     const candidateButton = await screen.findByRole("button", { name: /David Pastrnak.*RW/ });
     fireEvent.click(within(candidateButton.parentElement!).getByRole("button", { name: "Mark available" }));
     const stored = () => JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!);
@@ -272,6 +277,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     await waitFor(() => expect(stored().intent.steps).toHaveLength(1));
     const selectedIntent = structuredClone(stored().intent);
     const panel = screen.getByRole("region", { name: "Candidates and detail" });
+    expect(within(panel).getAllByText("Excluded from suggestions")).toHaveLength(1);
     fireEvent.click(within(panel).getByText("Review evidence", { exact: true }));
     fireEvent.click(within(panel).getByRole("checkbox", { name: "Manager confirms league positions" }));
     await waitFor(() => expect(stored().manualPlayers.find((row: PlanningPlayer) => row.id === candidate.id)).toMatchObject({ eligiblePositions: ["RW"], eligibilityVerified: true, ownership: null, canDrop: null }));
@@ -280,6 +286,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     fireEvent.blur(within(panel).getByLabelText("Eligible positions"));
     await waitFor(() => expect(stored().manualPlayers.find((row: PlanningPlayer) => row.id === candidate.id).eligiblePositions).toEqual(["RW", "LW"]));
     fireEvent.click(screen.getByRole("button", { name: /Other Wing.*LW/ }));
+    expect(within(panel).getAllByText("Excluded from suggestions")).toHaveLength(2);
     fireEvent.click(within(panel).getByText("Review evidence", { exact: true }));
     expect((within(panel).getByLabelText("Eligible positions") as HTMLInputElement).value).toBe("LW");
     expect((within(panel).getByRole("checkbox", { name: "Manager confirms league positions" }) as HTMLInputElement).checked).toBe(false);
