@@ -71,12 +71,80 @@ describe("offline current native player qualification", () => {
     expect(receipt.result.categoryCoverage[1].participation.status).toBe("uncalibrated_model");
   });
 
-  it.each(["publishedAt", "receivedAt", "verifiedAt"] as const)("rejects late %s before calculation", async key => {
-    const inputs = input(); inputs.tables.rolling_player_game_metrics.receipt[key] = "2026-10-10T12:00:00.000Z";
-    const receipt = await qualifyNativePlayersOffline(inputs, asOf);
-    expect(receipt.result.calculation).toBeNull();
-    expect(receipt.result.blockers).toContain("late_or_unordered_source_evidence:rolling_player_game_metrics");
-    expect(receipt.result.boundary.inMemoryReads).toBe(0);
+  it.each(["publishedAt", "receivedAt", "verifiedAt"] as const)("bounds original %s before/equal/one microsecond after cutoff", async key => {
+    for (const time of ["2026-10-09T17:59:59.999999Z", asOf, "2026-10-09T18:00:00.000001Z"]) {
+      const inputs = input(), source = inputs.tables.players.receipt;
+      const early = "2026-10-09T17:59:59.999998Z";
+      Object.assign(source, { publishedAt: early, receivedAt: key === "publishedAt" ? asOf : early,
+        verifiedAt: key === "verifiedAt" ? early : asOf });
+      source[key] = time;
+      const receipt = await qualifyNativePlayersOffline(inputs, asOf);
+      if (time.endsWith("000001Z")) {
+        expect(receipt.result.calculation).toBeNull();
+        expect(receipt.result.blockers).toContain("late_or_unordered_source_evidence:players");
+        expect(receipt.result.boundary.inMemoryReads).toBe(0);
+      } else {
+        expect(receipt.result.blockers).toEqual([]);
+        expect(receipt.result.calculation?.gamesProcessed).toBe(1);
+      }
+    }
+  });
+
+  it.each([
+    ["roster_optimizer_team_games", "fetched_at"], ["roster_optimizer_team_games", "fetchedAt"],
+    ["roster_optimizer_team_games", "source_updated_at"], ["roster_optimizer_team_games", "sourceUpdatedAt"],
+    ["rosters", "created_at"], ["fhfh_player_identities", "updated_at"],
+    ["player_forecast_lineup_snapshots", "observed_at"], ["player_forecast_lineup_snapshots", "available_at"],
+    ["player_forecast_lineup_snapshots", "created_at"], ["player_forecast_lineup_assignments", "created_at"],
+    ["player_forecast_goalie_start_observations", "observed_at"], ["player_forecast_goalie_start_observations", "available_at"],
+    ["player_forecast_goalie_start_observations", "created_at"], ["player_forecast_observation_conflicts", "detected_at"],
+    ["player_forecast_observation_conflicts", "created_at"], ["player_forecast_conflict_resolutions", "resolved_at"],
+    ["player_forecast_conflict_resolutions", "created_at"], ["forge_board_news_events", "accepted_at"],
+    ["market_prices_daily", "source_observed_at"],
+  ])("bounds retained %s.%s before/equal/one microsecond after cutoff", async (table, key) => {
+    for (const time of ["2026-10-09T17:59:59.999999Z", asOf, "2026-10-09T18:00:00.000001Z"]) {
+      const inputs = input(), early = "2026-10-09T12:00:00.000Z";
+      const conflict = { id: "synthetic-cutoff-conflict", game_id: inputs.gameId, team_id: 6, player_id: 601,
+        conflict_type: "lineup", detected_at: early, created_at: early };
+      const examples: Record<string, any> = {
+        player_forecast_observation_conflicts: conflict,
+        player_forecast_conflict_resolutions: { id: "synthetic-cutoff-resolution", conflict_id: conflict.id,
+          action: "select_observation", selected_observation_id: "synthetic-lineup", resolved_at: early, created_at: early },
+        forge_board_news_events: { id: "synthetic-cutoff-news", game_id: inputs.gameId, queue_version: 1, accepted_at: early },
+        market_prices_daily: { snapshot_date: inputs.slateDate, game_id: inputs.gameId, market_type: "moneyline",
+          sportsbook_key: "synthetic-only", outcome_key: "BOS", line_value: null, price_american: -110,
+          implied_probability: 0.52, source_rank: 1, source_observed_at: early, freshness_expires_at: "2026-10-13T00:00:00Z",
+          provenance: { provider: "synthetic-only" }, metadata: {} },
+      };
+      if (table === "player_forecast_conflict_resolutions") updateRows(inputs, "player_forecast_observation_conflicts", [conflict]);
+      const rows = inputs.tables[table].rows.length ? inputs.tables[table].rows : [examples[table]];
+      rows[0][key] = time; updateRows(inputs, table, rows);
+      const receipt = await qualifyNativePlayersOffline(inputs, asOf);
+      if (time.endsWith("000001Z")) {
+        expect(receipt.result.blockers).toContain(`late_or_invalid_row_evidence:${table}.0.${key}`);
+        expect(receipt.result.calculation).toBeNull();
+        expect(receipt.result.boundary.inMemoryReads).toBe(0);
+        expect(receipt.result.categoryCoverage.every(target => !target.admission.acceptedByUnchangedConsumer)).toBe(true);
+      } else {
+        expect(receipt.result.blockers).toEqual([]);
+        expect(receipt.result.calculation?.gamesProcessed).toBe(1);
+        if (table === "roster_optimizer_team_games") expect(receipt.result.categoryCoverage.every(target => target.admission.acceptedByUnchangedConsumer)).toBe(true);
+      }
+    }
+  });
+
+  it("allows future schedule/expiry/effective metadata and later local artifact creation without moving source cutoff", async () => {
+    const inputs = input(), later = "2026-10-13T00:00:00.000Z";
+    updateRows(inputs, "roster_optimizer_team_games", inputs.tables.roster_optimizer_team_games.rows.map(row => ({ ...row, fetched_at: asOf })));
+    updateRows(inputs, "player_forecast_lineup_snapshots", inputs.tables.player_forecast_lineup_snapshots.rows.map(row => ({ ...row, expires_at: later })));
+    updateRows(inputs, "forge_roster_events", [{ event_id: 1, team_id: 6, player_id: 601, event_type: "LINE_CHANGE",
+      confidence: 1, payload: {}, created_at: "2026-10-09T12:00:00.000Z", effective_from: "2026-10-11T00:00:00Z", effective_to: later }]);
+    const original = projectionInputHash(inputs), receipt = await qualifyNativePlayersOffline(inputs, asOf);
+    expect(receipt.result.blockers).toEqual([]);
+    expect(receipt.result.categoryCoverage.every(target => target.admission.acceptedByUnchangedConsumer)).toBe(true);
+    expect(receipt.result.asOf).toBe(asOf);
+    expect(Date.parse(receipt.createdAt)).toBeGreaterThan(Date.parse(asOf));
+    expect(projectionInputHash(inputs)).toBe(original);
   });
 
   it("rejects source evidence even one microsecond beyond the supplied cutoff", async () => {

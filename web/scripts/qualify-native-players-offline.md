@@ -27,6 +27,24 @@ Use a new `native-player-offline-inputs-v1` JSON manifest following the example 
 - Preserve every queried column explicitly, including genuine nullable values. An omitted column is rejected; the adapter never replaces it with null or zero. The synthetic example explicitly declares its fictional null fields.
 - Supply current game/schedule/roster/identity exports, eligible rolling EV/PP histories and team/goalie inputs, plus the exact accepted lineup/goalie/conflict/accepted-news receipts needed for participation and freshness. Roster membership and PP role alone do not establish an appearance or start.
 
+### Retained timestamp inventory
+
+This inventory follows the current native input readers (`issuedContext.ts`, `dailyBoardEvidence.ts`, `acceptedNews.ts`, market queries and preflight), including tables empty in the fictional example. Snake/camel spellings and prefixed forms use the same cutoff check.
+
+| Retained source | Cutoff-bound input times | Other time meaning |
+| --- | --- | --- |
+| Every table's original receipt | `publishedAt`, `receivedAt`, `verifiedAt`, in that order | Original evidence times, never replacement exporter times |
+| `roster_optimizer_team_games` | `fetched_at`, `source_updated_at` | `start_time` is a scheduled future event |
+| `rosters`, `fhfh_player_identities` | Membership `created_at`, identity `updated_at` | Identity does not establish participation |
+| Lineup snapshots / goalie observations / assignments | `observed_at`, `available_at`, `created_at` (assignments use `created_at`) | `expires_at` is future validity metadata |
+| Observation conflicts / resolutions | `detected_at`, `resolved_at`, `created_at` | Conflict policy stays in the unchanged reader |
+| `forge_board_news_events` | `accepted_at` | Admission also checks the retained accepted-news revision |
+| Game / prop market inputs | `source_observed_at` | `freshness_expires_at` is future validity; `snapshot_date` selects the target slate |
+| `forge_roster_events` | `created_at` | `effective_from` / `effective_to` describe applicability; native queries select the eligible window |
+| Completed-stat / aggregate / referenced-game history | Historical dates, completion and source/event evidence times | Existing history rules also bound dates by original publication |
+
+Only retained input rows and original receipts are checked against the supplied information cutoff. The current local reconstruction creates new context `observedAt`, captured-read `receivedAt`, snapshot `capturedAt`, calculation metadata and receipt `createdAt` at actual execution time. Those artifact generation times can be later than the historical cutoff; they neither replace original acquisition times nor make late-fetched inputs available earlier. The harness leaves future scheduled/expiry/effective metadata to its existing meaning and the unchanged native readers/admission.
+
 The completeness declaration is supplied evidence, not independent validation of an upstream export's population. `inputCoverage` reports each target's retained EV/PP/PK and goalie history row counts, roster binding and native output presence. These counts do not certify full exposure, all eligible history, or empty-history zeroes. No new probability, weight, prior, mean or native model is introduced.
 
 ## Read the receipt

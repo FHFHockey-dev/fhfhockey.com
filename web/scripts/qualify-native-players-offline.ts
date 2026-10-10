@@ -262,7 +262,9 @@ function validateEvidence(inputs: OfflinePlayerInputs, asOf: string) {
     if (!value || typeof value !== "object") return;
     for (const [key, nested] of Object.entries(value)) {
       const name = normalized(key);
-      if (/(?:^|_)(?:created|updated|observed|published|received|verified|available|accepted|detected|resolved|completed|ended|captured|computed|calculated)_at$/.test(name)
+      // Retained acquisition/evidence times (see the reader inventory in the tooling guide).
+      // Local reconstruction/context/receipt generation is later and is outside these input rows.
+      if (/(?:^|_)(?:created|updated|fetched|observed|published|received|verified|available|accepted|detected|resolved|completed|ended|captured|computed|calculated)_at$/.test(name)
         || ["timestamp", "event_time", "event_at", "source_timestamp", "as_of", "input_cutoff"].includes(name)) {
         if (nested != null && (!validTime(nested) || acceptedNewsSupersedes(nested, asOf))) reasons.push(`late_or_invalid_row_evidence:${path}.${key}`);
       } else if (historical && ["date", "game_date", "snapshot_date", "as_of_date", "as_of_game_date"].includes(name)) {
