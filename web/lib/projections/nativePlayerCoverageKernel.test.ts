@@ -316,6 +316,65 @@ function prospectiveKernelFixture() {
   }
   bind(); return { f, raw, rows, proof, bind };
 }
+function c2KernelFixture(historicalTeamId = 1) {
+  const x = prospectiveKernelFixture(), rawBody = JSON.parse(x.raw.bodyUtf8);
+  rawBody.games.forEach((game: { teamId: number; gameDate?: string; declaredStartUTC?: string }, i: number) => {
+    game.teamId = i === 1 ? historicalTeamId : 1; game.gameDate = "2026-10-07"; game.declaredStartUTC = `2026-10-07T10:00:0${i}Z`;
+  });
+  x.raw.bodyUtf8 = JSON.stringify(rawBody); x.raw.bodyHash = nativeCoverageTextHash(x.raw.bodyUtf8);
+  x.proof.links.forEach(link => { link.bodyHash = x.raw.bodyHash; });
+  x.raw.finalGames.forEach((game, i) => { game.teamId = rawBody.games[i].teamId; });
+  x.raw.completionFacts.forEach(fact => { fact.teamId = rawBody.games.find((game: { gameId: number }) => game.gameId === fact.historicalGameId).teamId; });
+  x.rows.forEach((row, i) => {
+    row.completion.finalEvidence.bodyHash = row.completion.upperEvidence.bodyHash = x.raw.bodyHash;
+    row.completion.finalEvidence.teamId = rawBody.games[i].teamId;
+    Object.assign(row.completion, { completedNoEarlierThan: null, lowerEvidence: null });
+  });
+  const box = { ...structuredClone(x.raw), proofId: "c2-box" }, pbp = { ...structuredClone(x.raw), proofId: "c2-pbp" };
+  x.proof.contributors.push(box, pbp);
+  x.proof.links.push(...[box, pbp].map(raw => ({ proofId: raw.proofId, bodyHash: raw.bodyHash, pointer: "/games/0", derivedPointer: "/rows/0" })));
+  const selection = { version: "native-coverage-selection-c2-v1" as const, chronology: "declared_fixture_date_start_id_desc" as const,
+    researchDispositionHash: nativeCoverageTextHash("synthetic-research"), censusDispositionHash: nativeCoverageTextHash("synthetic-census"),
+    population: { kind: "credited_skater_games" as const, identity: { ...skater } }, windowStartInclusive: "2025-10-09T18:00:00Z",
+    windowEndExclusive: x.f.scope.modelCutoffAt, latestCount: 2, censusComplete: true as boolean | null,
+    census: x.rows.map((row, i) => ({ historicalGameId: row.historicalGameId, completedAt: row.completedAt, completion: structuredClone(row.completion),
+      seasonId: 20262027, historicalTeamId: rawBody.games[i].teamId, gameDate: rawBody.games[i].gameDate,
+      declaredStartUTC: rawBody.games[i].declaredStartUTC, revision: { kind: "as_declared_snapshot" as const },
+      keyEvidence: x.proof.contributors.map((raw, index) => ({ sourceKind: ["fixture", "box", "pbp"][index] as "fixture" | "box" | "pbp",
+        finalEvidence: { ...row.completion.finalEvidence, proofId: raw.proofId, bodyHash: raw.bodyHash },
+        gameDatePointer: `/games/${i}/gameDate`, declaredStartPointer: `/games/${i}/declaredStartUTC` })) })) };
+  Object.assign(x.f.scope.sources.find(source => source.proofId === "hits")!, { selection }); x.bind();
+  return { ...x, selection };
+}
+describe("kernel opt-in C2 admission plumbing", () => {
+  it("preserves synthetic arithmetic after independent fixture/final-known-by admission", () => {
+    const x = c2KernelFixture(3);
+    expect(run(x.f)).toMatchObject({ findings: [], bundle: run(fixture()).bundle, qualificationEligible: false });
+  });
+  it.each(["wrong_population", "wrong_observed_identity", "incomplete_census", "borrowed_pointer", "missing_keys"])("withholds all means and never falls back to current-team history for %s", failure => {
+    const x = c2KernelFixture(3);
+    if (failure === "wrong_population") x.selection.population.identity.nhlPlayerId++;
+    if (failure === "wrong_observed_identity") x.f.hitBody.identity.nhlPlayerId++;
+    if (failure === "incomplete_census") x.selection.censusComplete = null;
+    if (failure === "borrowed_pointer") x.selection.census[1].keyEvidence[0].gameDatePointer = "/games/0/gameDate";
+    if (failure === "missing_keys") x.selection.census[1].keyEvidence.pop();
+    x.bind(); const result = run(x.f);
+    expect(result.bundle).toBeNull(); expect(result.findings.map(item => item.code)).toContain("unadmitted_c2_history_team");
+  });
+  it("binds every C2 population and chronology change into the independently approved source set", () => {
+    const x = c2KernelFixture(), before = x.f.approvals[0].sourceSetHash;
+    x.selection.censusDispositionHash = nativeCoverageTextHash("different-census"); x.bind();
+    expect(nativeCoverageKernelSourceSetHash(x.f.scope.sources)).not.toBe(before);
+    x.f.approvals[0].sourceSetHash = before; reject(x.f, "unapproved_specification");
+  });
+  it("rejects goalie appearance population and a wrong defending-team binding", () => {
+    const x = c2KernelFixture(); Object.assign(x.selection, { population: { kind: "defending_team_games", teamId: 1 } });
+    x.bind(); reject(x.f, "selection_population_binding");
+    const y = c2KernelFixture(); Object.assign(y.f.scope.sources.find(source => source.proofId === "scenarios")!, {
+      selection: { ...y.selection, population: { kind: "defending_team_games", teamId: 3 } } });
+    y.bind(); reject(y.f, "selection_population_binding");
+  });
+});
 describe("kernel observation contracts preserve arithmetic and withholding", () => {
   it("admits truthful derivative timing with null completion/publication while preserving exact-mode means", () => {
     const x = prospectiveKernelFixture(), expected = run(fixture()).bundle, before = JSON.stringify(x.f);

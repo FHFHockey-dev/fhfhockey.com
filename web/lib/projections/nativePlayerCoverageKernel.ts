@@ -145,6 +145,7 @@ export function calculateNativePlayerCoverageKernel(packet: unknown, expectedSco
   if (time(c.modelCutoffAt) > time(c.featureCutoffAt) || time(c.featureCutoffAt) > time(c.asOf)
     || time(c.asOf) > time(c.assessedAt) || time(c.asOf) >= time(c.scheduledAt)) add("invalid", "cutoff_order", "scope");
   const bodies = new Map<string, z.infer<typeof sourceBody>>(), envelopes = new Map<string, z.infer<typeof input>["sources"][number]>();
+  const c2Teams = new Map<string, Map<number, number> | undefined>();
   const keys = (values: { proofId: string }[]) => values.map(value => value.proofId).sort();
   if (new Set(keys(c.sources)).size !== c.sources.length || new Set(keys(p.data.sources)).size !== p.data.sources.length
     || JSON.stringify(keys(c.sources)) !== JSON.stringify(keys(p.data.sources))) add("invalid", "source_population", "sources");
@@ -162,14 +163,22 @@ export function calculateNativePlayerCoverageKernel(packet: unknown, expectedSco
     if (!b.success) { add("invalid", "malformed_source_body", proof.proofId); continue; }
     if (b.data.domainHash !== q.domainHash) add("invalid", "source_domain", proof.proofId);
     bodies.set(proof.proofId, b.data); envelopes.set(proof.proofId, proof);
-    if (b.data.kind !== "save_conversion") checkNativeCoverageSelection(expected?.selection, b.data.rows, proof, c.gameId,
-      b.data.kind === "hit_history" ? c.skater.teamId : c.goalie.teamId, c.modelCutoffAt,
-      (kind, code) => add(kind, code, proof.proofId));
+    if (b.data.kind !== "save_conversion") {
+      const teams = checkNativeCoverageSelection(expected?.selection, b.data.rows, proof, c.gameId,
+        b.data.kind === "hit_history" ? c.skater.teamId : c.goalie.teamId, c.modelCutoffAt,
+        (kind, code) => add(kind, code, proof.proofId), { contract: expected?.contract,
+          population: b.data.kind === "hit_history" ? { kind: "credited_skater_games", identity: c.skater }
+            : { kind: "defending_team_games", teamId: c.goalie.teamId },
+          observedPopulation: b.data.kind === "hit_history" ? { kind: "credited_skater_games", identity: b.data.identity }
+            : { kind: "defending_team_games", teamId: b.data.teamId } });
+      if (expected?.selection && "version" in expected.selection) c2Teams.set(proof.proofId, teams);
+    }
   }
   function historyTime(value: z.infer<typeof history>, proofId: string) {
     const proof = envelopes.get(proofId)!;
+    if (c2Teams.has(proofId) && !c2Teams.get(proofId)?.has(value.historicalGameId)) { add("unknown", "unadmitted_c2_history_team", value.rowId); return; }
     checkNativeCoverageHistory(value, proof, c.gameId,
-      bodies.get(proofId)?.kind === "hit_history" ? c.skater.teamId : c.goalie.teamId, c.modelCutoffAt,
+      c2Teams.get(proofId)?.get(value.historicalGameId) ?? (bodies.get(proofId)?.kind === "hit_history" ? c.skater.teamId : c.goalie.teamId), c.modelCutoffAt,
       (kind, code) => add(kind, code, value.rowId));
   }
   function membership(kind: "hit_history" | "goalie_scenarios", members: z.infer<typeof member>[]) {

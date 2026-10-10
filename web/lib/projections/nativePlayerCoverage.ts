@@ -99,8 +99,29 @@ const completion = z.union([
 ]);
 export const nativeCoverageHistoryFields = { completedAt: timestamp.nullable(), completion: completion.optional() };
 const historyEvidence = z.object({ historicalGameId: id, ...nativeCoverageHistoryFields }).strict();
-export const nativeCoverageSelectionSchema = z.object({ windowStartInclusive: timestamp, windowEndExclusive: timestamp,
+const completionSelection = z.object({ windowStartInclusive: timestamp, windowEndExclusive: timestamp,
   latestCount: id, censusComplete: z.boolean().nullable(), census: z.array(historyEvidence).max(20000).nullable() }).strict();
+const selectionPopulation = z.union([
+  z.object({ kind: z.literal("credited_skater_games"), identity }).strict(),
+  z.object({ kind: z.literal("defending_team_games"), teamId: id }).strict(),
+]);
+const fixtureKeyEvidence = z.object({ sourceKind: z.enum(["fixture", "box", "pbp"]), finalEvidence: finalReference,
+  gameDatePointer: pointer, declaredStartPointer: pointer }).strict();
+const fixtureRevision = z.union([
+  z.object({ kind: z.literal("as_declared_snapshot") }).strict(),
+  z.object({ kind: z.literal("reviewed_reschedule"), dispositionHash: hash,
+    originalKeys: z.array(fixtureKeyEvidence).min(1).max(20) }).strict(),
+  z.object({ kind: z.literal("unresolved_exception") }).strict(),
+]);
+const fixtureSelectionRow = historyEvidence.extend({ seasonId: id, historicalTeamId: id,
+  gameDate: z.string().max(10).nullable(), declaredStartUTC: timestamp.nullable(),
+  keyEvidence: z.array(fixtureKeyEvidence).min(1).max(20).nullable(), revision: fixtureRevision }).strict();
+const fixtureSelection = z.object({ version: z.literal("native-coverage-selection-c2-v1"),
+  chronology: z.literal("declared_fixture_date_start_id_desc"), researchDispositionHash: hash, censusDispositionHash: hash,
+  population: selectionPopulation, windowStartInclusive: timestamp, windowEndExclusive: timestamp,
+  latestCount: id, censusComplete: z.boolean().nullable(), census: z.array(fixtureSelectionRow).max(20000).nullable() }).strict();
+export const nativeCoverageSelectionSchema = z.union([completionSelection, fixtureSelection]);
+export type NativeCoverageSelectionPopulation = z.infer<typeof selectionPopulation>;
 type CoverageProof = z.infer<typeof nativeCoverageProofSchema>;
 type CoverageExpectation = z.infer<typeof nativeCoverageProofExpectationSchema>;
 type HistoryEvidence = z.infer<typeof historyEvidence>;
@@ -246,8 +267,11 @@ export function checkNativeCoverageHistory(row: HistoryEvidence, value: Coverage
 }
 /** Optional explicit selection contract, never a default window/count or receipt-based ordering. */
 export function checkNativeCoverageSelection(selection: z.infer<typeof nativeCoverageSelectionSchema> | undefined,
-  rows: HistoryEvidence[], value: CoverageProof, targetGameId: number, teamId: number, cutoff: string, add: ProofFinding): void {
+  rows: HistoryEvidence[], value: CoverageProof, targetGameId: number, teamId: number, cutoff: string, add: ProofFinding,
+  context?: { population: NativeCoverageSelectionPopulation; observedPopulation: NativeCoverageSelectionPopulation;
+    contract?: CoverageExpectation }): Map<number, number> | undefined {
   if (!selection) return;
+  if ("version" in selection) return checkFixtureSelection(selection, rows, value, targetGameId, cutoff, add, context);
   const start = time(selection.windowStartInclusive), end = time(selection.windowEndExclusive);
   if (start >= end || end > time(cutoff)) add("invalid", "selection_window");
   if (selection.censusComplete !== true || selection.census === null) { add("unknown", "unknown_selection_census"); return; }
@@ -271,6 +295,91 @@ export function checkNativeCoverageSelection(selection: z.infer<typeof nativeCov
     if (chosen.upper < other.lower) add("invalid", "not_latest_selection");
     else if (chosen.lower <= other.upper) add("unknown", "unknown_selection_order");
   }
+}
+
+/** Opt-in research chronology. A failed admission never supplies historical-team authority. */
+function checkFixtureSelection(selection: z.infer<typeof fixtureSelection>, rows: HistoryEvidence[], value: CoverageProof,
+  targetGameId: number, cutoff: string, add: ProofFinding,
+  context: { population: NativeCoverageSelectionPopulation; observedPopulation: NativeCoverageSelectionPopulation;
+    contract?: CoverageExpectation } | undefined): Map<number, number> | undefined {
+  let admitted = true;
+  const fail: ProofFinding = (kind, code) => { admitted = false; add(kind, code); };
+  if (!context || metadata(context.population) !== metadata(selection.population)
+    || metadata(context.observedPopulation) !== metadata(selection.population)) fail("invalid", "selection_population_binding");
+  if (!prospective(value)) { fail("invalid", "c2_prospective_evidence_required"); return; }
+  checkNativeCoverageProof(value, context?.contract, cutoff, fail);
+  const start = time(selection.windowStartInclusive), end = time(selection.windowEndExclusive);
+  if (start >= end || end > time(cutoff)) fail("invalid", "selection_window");
+  if (selection.censusComplete !== true || selection.census === null) { fail("unknown", "unknown_selection_census"); return; }
+  const census = selection.census, selected = new Set(rows.map(row => row.historicalGameId));
+  if (new Set(census.map(row => row.historicalGameId)).size !== census.length
+    || [...selected].some(gameId => !census.some(row => row.historicalGameId === gameId))) fail("invalid", "selection_census_binding");
+  const raws = rawSources(value), teams = new Map<number, number>();
+  const inside: { gameId: number; date: string; declaredStart: bigint }[] = [];
+  const validDate = (date: string) => /^\d{4}-\d{2}-\d{2}$/.test(date)
+    && Number.isFinite(Date.parse(`${date}T00:00:00Z`)) && new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) === date;
+  const boundKey = (ref: z.infer<typeof fixtureKeyEvidence>, row: z.infer<typeof fixtureSelectionRow>) => {
+    const final = ref.finalEvidence, raw = raws.find(item => item.proofId === final.proofId && item.bodyHash === final.bodyHash);
+    const game = raw?.finalGames.find(item => item.historicalGameId === row.historicalGameId
+      && item.seasonId === row.seasonId && item.teamId === row.historicalTeamId);
+    const parent = game?.gameIdPointer.slice(0, game.gameIdPointer.lastIndexOf("/"));
+    if (!raw || !game || final.historicalGameId !== row.historicalGameId || final.seasonId !== row.seasonId
+      || final.teamId !== row.historicalTeamId || game.seasonIdPointer.slice(0, game.seasonIdPointer.lastIndexOf("/")) !== parent
+      || game.finalStatePointer.slice(0, game.finalStatePointer.lastIndexOf("/")) !== parent || !game.teamIdPointer.startsWith(`${parent}/`)
+      || ref.gameDatePointer.slice(0, ref.gameDatePointer.lastIndexOf("/")) !== parent
+      || ref.declaredStartPointer.slice(0, ref.declaredStartPointer.lastIndexOf("/")) !== parent) {
+      fail("invalid", "fixture_key_identity_binding"); return null;
+    }
+    const date = jsonValue(raw.bodyUtf8, ref.gameDatePointer), declaredStart = jsonValue(raw.bodyUtf8, ref.declaredStartPointer);
+    if (typeof date !== "string" || !validDate(date) || typeof declaredStart !== "string" || !timestamp.safeParse(declaredStart).success) {
+      fail("invalid", "fixture_source_key"); return null;
+    }
+    return { date, declaredStart: time(declaredStart) };
+  };
+  for (const row of census) {
+    if (selection.population.kind === "defending_team_games" && row.historicalTeamId !== selection.population.teamId)
+      fail("invalid", "selection_historical_team_binding");
+    if (row.completion && row.completion.finalEvidence.seasonId !== row.seasonId) fail("invalid", "completion_final_binding");
+    checkNativeCoverageHistory(row, value, targetGameId, row.historicalTeamId, cutoff, fail);
+    for (const actual of rows.filter(item => item.historicalGameId === row.historicalGameId))
+      if (metadata({ completedAt: actual.completedAt, completion: actual.completion }) !== metadata({ completedAt: row.completedAt, completion: row.completion }))
+        fail("invalid", "selection_completion_binding");
+    if (row.revision.kind === "unresolved_exception") fail("unknown", "unresolved_fixture_revision");
+    if (row.keyEvidence === null || row.declaredStartUTC === null) { fail("unknown", "unknown_fixture_key"); continue; }
+    const keys = row.keyEvidence.map(ref => boundKey(ref, row));
+    if (!row.keyEvidence.some(ref => ref.sourceKind === "fixture")) fail("invalid", "fixture_key_source_required");
+    if (keys.some(key => key && key.declaredStart !== time(row.declaredStartUTC!))) fail("invalid", "fixture_key_conflict");
+    if (row.revision.kind === "reviewed_reschedule") {
+      const originals = row.revision.originalKeys.map(ref => boundKey(ref, row));
+      if (!row.revision.originalKeys.some(ref => ref.sourceKind === "fixture") || originals.some(key => !key)
+        || originals.some(key => key && originals[0] && (key.date !== originals[0].date || key.declaredStart !== originals[0].declaredStart)))
+        fail("invalid", "fixture_original_revision_binding");
+    }
+    if (row.gameDate !== null) {
+      if (!validDate(row.gameDate)) fail("invalid", "fixture_date");
+      if (keys.some(key => key && key.date !== row.gameDate)) fail("invalid", "fixture_key_conflict");
+    }
+    const declaredStart = time(row.declaredStartUTC);
+    if (declaredStart < start || declaredStart >= end) {
+      if (selected.has(row.historicalGameId)) fail("invalid", "selected_outside_window");
+      continue;
+    }
+    if (row.gameDate === null) { fail("unknown", "unknown_fixture_key"); continue; }
+    if (selected.has(row.historicalGameId) && !["fixture", "box", "pbp"].every(kind => row.keyEvidence!.some(ref => ref.sourceKind === kind)))
+      fail("unknown", "selected_fixture_key_sources_required");
+    if (selected.has(row.historicalGameId) && row.keyEvidence.some(ref => row.keyEvidence!.some(other =>
+      other.sourceKind !== ref.sourceKind && other.finalEvidence.proofId === ref.finalEvidence.proofId)))
+      fail("invalid", "fixture_key_source_alias");
+    inside.push({ gameId: row.historicalGameId, date: row.gameDate, declaredStart });
+    teams.set(row.historicalGameId, row.historicalTeamId);
+  }
+  inside.sort((a, b) => a.date !== b.date ? a.date > b.date ? -1 : 1
+    : a.declaredStart !== b.declaredStart ? a.declaredStart > b.declaredStart ? -1 : 1 : b.gameId - a.gameId);
+  if (inside.length < selection.latestCount || selected.size < selection.latestCount) fail("unknown", "insufficient_selection_census");
+  if (selected.size > selection.latestCount) fail("invalid", "selection_count");
+  if (metadata([...selected].sort((a, b) => a - b)) !== metadata(inside.slice(0, selection.latestCount).map(row => row.gameId).sort((a, b) => a - b)))
+    fail("invalid", "not_latest_selection");
+  return admitted ? teams : undefined;
 }
 
 const scope = z.object({ gameId: id, seasonId: id, teamIds: z.tuple([id, id]), scheduledAt: timestamp,
@@ -421,9 +530,17 @@ export function validateNativePlayerCoverage(input: unknown, expectedScope: unkn
       || new Set(b.rows.map(item => `${item.historicalGameId}:${item.periodNumber}`)).size !== b.rows.length)
       add("invalid", "duplicate_history_row", `${population}.coverage`, targets);
     if (b.unclassifiedEvents !== 0 || b.unclassifiedSeconds !== 0) add("unknown", "unclassified_event_or_exposure", `${population}.coverage`, targets);
+    const c2 = expected?.selection && "version" in expected.selection;
+    const historicalTeams = c2 ? checkNativeCoverageSelection(expected.selection, b.rows, value, s.gameId, actor.teamId, s.modelCutoffAt,
+      (kind, code) => add(kind, code, `${population}.coverage`, targets), { contract: expected.contract,
+        population: population === "skater" ? { kind: "credited_skater_games", identity: actor }
+          : { kind: "defending_team_games", teamId: actor.teamId },
+        observedPopulation: population === "skater" ? { kind: "credited_skater_games", identity: b.identity }
+          : { kind: "defending_team_games", teamId: b.identity.teamId } }) : undefined;
     let exposure = 0;
     for (const r of b.rows) {
-      checkNativeCoverageHistory(r, value, s.gameId, actor.teamId, s.modelCutoffAt,
+      if (c2 && !historicalTeams?.has(r.historicalGameId)) add("unknown", "unadmitted_c2_history_team", `${population}.coverage`, targets);
+      else checkNativeCoverageHistory(r, value, s.gameId, historicalTeams?.get(r.historicalGameId) ?? actor.teamId, s.modelCutoffAt,
         (kind, code) => add(kind, code, `${population}.coverage`, targets));
       if (r.periodType === "SO") { add("invalid", "shootout_in_official_play", `${population}.coverage`, targets); continue; }
       if (r.periodType === "REG" && r.periodNumber > 3 || r.periodType === "OT" && r.periodNumber !== 4)
@@ -443,7 +560,7 @@ export function validateNativePlayerCoverage(input: unknown, expectedScope: unkn
           add("unknown", "unproved_guarded_exposure", `${population}.coverage`, targets);
       }
     }
-    checkNativeCoverageSelection(expected?.selection, b.rows, value, s.gameId, actor.teamId, s.modelCutoffAt,
+    if (!c2) checkNativeCoverageSelection(expected?.selection, b.rows, value, s.gameId, actor.teamId, s.modelCutoffAt,
       (kind, code) => add(kind, code, `${population}.coverage`, targets));
     if (exposure === 0) add("unknown", "zero_exposure_denominator", `${population}.coverage`, targets);
   }
