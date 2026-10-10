@@ -66,8 +66,11 @@ function classifyNhlApiShiftPlayerManifest(
     for (const teamId of playerTeams.values()) {
       playersByTeam.set(teamId, (playersByTeam.get(teamId) ?? 0) + 1);
     }
+    if (playersByTeam.size > 2) {
+      throw new Error(`Invalid NHL API shift team cardinality for game ${gameId}`);
+    }
     if (
-      playersByTeam.size !== 2 ||
+      playersByTeam.size < 2 ||
       Array.from(playersByTeam.values()).some(
         (count) => count < MIN_COMPLETED_GAME_PLAYERS_PER_TEAM,
       )

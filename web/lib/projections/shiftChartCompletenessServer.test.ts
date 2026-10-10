@@ -167,6 +167,32 @@ describe("raw-manifest preflight classification", () => {
     await expect(classifyStoredShiftChartStrengthGamesAgainstRawSource([rows[0].game_id])).rejects.toThrow("database unavailable");
   });
 
+  it.each([
+    { name: "three teams", data: [...completeRawRows, { shift_id: 9999, game_id: rows[0].game_id, player_id: 9999, team_id: 3 }], error: "Invalid NHL API shift team cardinality" },
+    { name: "thin three-team evidence", data: [...completeRawRows.slice(0, 2), { shift_id: 9999, game_id: rows[0].game_id, player_id: 9999, team_id: 3 }], error: "Invalid NHL API shift team cardinality" },
+    { name: "four teams", data: [1, 2, 3, 4].map(team_id => ({ shift_id: team_id, game_id: rows[0].game_id, player_id: team_id, team_id })), error: "Invalid NHL API shift team cardinality" },
+    { name: "malformed extra team identity", data: [...completeRawRows, { shift_id: 9999, game_id: rows[0].game_id, player_id: 9999, team_id: 0 }], error: "Invalid NHL API shift manifest row" },
+  ])("rejects $name as corruption before reading strength rows", async ({ data, error }) => {
+    const gameId = rows[0].game_id;
+    rawRangeMock.mockResolvedValueOnce({ data, error: null });
+    await expect(classifyStoredShiftChartStrengthGamesAgainstRawSource([gameId])).rejects.toThrow(error);
+    expect(rangeMock).not.toHaveBeenCalled();
+    expect(() => buildNhlApiShiftPlayerManifest([gameId], data)).toThrow(error);
+  });
+
+  it.each([
+    { name: "one team", data: completeRawRows.filter(row => row.team_id === 1) },
+    { name: "thin two-team evidence", data: completeRawRows.slice(0, 4) },
+  ])("retains $name as partial with unknown expected coverage", async ({ data }) => {
+    const gameId = rows[0].game_id;
+    rawRangeMock.mockResolvedValueOnce({ data, error: null });
+    rangeMock.mockResolvedValueOnce({ data: completeRows, error: null });
+    const classifications = await classifyStoredShiftChartStrengthGamesAgainstRawSource([gameId]);
+    expect(classifications.get(gameId)).toMatchObject({ status: "partial", rowCount: 10,
+      expectedPlayerCount: null, reasons: ["missing:raw_shift_player_manifest"] });
+    expect(() => buildNhlApiShiftPlayerManifest([gameId], data)).toThrow("Incomplete NHL API shift player manifest");
+  });
+
   it("keeps invalid persisted strength rows invalid when the raw manifest is missing", async () => {
     rawRangeMock.mockResolvedValueOnce({ data: [], error: null });
     rangeMock.mockResolvedValueOnce({ data: [{ ...completeRows[0], total_es_toi: "bad-clock" }], error: null });
