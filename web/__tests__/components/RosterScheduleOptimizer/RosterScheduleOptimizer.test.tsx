@@ -11,7 +11,7 @@ const { authState, planningState } = vi.hoisted(() => ({ authState: { user: null
 vi.mock("contexts/AuthProviderContext", () => ({ useAuth: () => authState }));
 vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession: async () => ({ data: { session: authState.user ? { access_token: `token-${authState.user.id}` } : null } }) }, from: () => ({ select: () => ({ eq: async () => ({ data: authState.teams }) }) }) } }));
 vi.mock("hooks/useRosterPlanning", () => ({ useRosterPlanning: (snapshot: PlanningSnapshot | null, intent: PlanIntent) => ({ result: snapshot && planningState.evaluate ? planningState.evaluate(snapshot, intent) : null, loading: false, error: null }) }));
-import RosterScheduleOptimizer, { GoalieEvidence, grossAcquisitionGames, requestErrorMessage, acquisitionDetail } from "components/RosterScheduleOptimizer/RosterScheduleOptimizer";
+import RosterScheduleOptimizer, { GoalieEvidence, grossAcquisitionGames, requestErrorMessage, acquisitionDetail, scheduleFreshnessWarning } from "components/RosterScheduleOptimizer/RosterScheduleOptimizer";
 import ForecastEvidence, { forecastSummary } from "components/RosterScheduleOptimizer/ForecastEvidence";
 import BenchDecisions from "components/RosterScheduleOptimizer/BenchDecisions";
 import CandidateBrowser, { compareCandidateFits } from "components/RosterScheduleOptimizer/CandidateBrowser";
@@ -28,6 +28,36 @@ const benchReceipt: NonNullable<BenchDecision["evidence"]> = { startDate: "2026-
   sources: [{ playerId: "batherson", kinds: ["blended"], revisionIds: ["private-revision-id"],
     participation: [{ gameId: "game", basis: "appearance", probability: 0.5, confirmed: false }] }] };
 afterEach(() => { cleanup(); window.localStorage.clear(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); fetchMock.mockClear(); authState.user = null; authState.teams = []; planningState.evaluate = null; });
+
+describe("provisional schedule freshness warnings", () => {
+  const context = { ...defaultWorkspace().context, startDate: "2026-10-10", endDate: "2026-10-10", asOf: "2026-10-10T15:00:00Z" };
+  const evidence = (asOf: string | null) => ({ source: "roster_optimizer_team_games", asOf, seasonId: 20262027, completeness: "complete" as const, limitations: [] });
+  const game = (startsAt: string, overrides: Partial<PlanningData["games"][number]> = {}) => ({ id: "freshness-game", date: "2026-10-10", startsAt, teamAbbreviation: "CAR", opponent: "NJD", home: true, status: "scheduled" as const, ...overrides });
+  it.each([
+    ["2026-10-10T09:00:00Z", [], null],
+    ["2026-10-10T08:59:59Z", [], "Provisional 6-hour schedule warning."],
+    ["2026-10-10T13:00:00Z", [game("2026-10-10T17:00:00Z")], null],
+    ["2026-10-10T12:59:59Z", [game("2026-10-10T17:00:00Z")], "Provisional 2-hour schedule warning."],
+    ["2026-10-10T12:59:59Z", [game("2026-10-10T15:00:00Z")], "Provisional 2-hour schedule warning."],
+    ["2026-10-10T12:59:59Z", [game("2026-10-10T17:00:01Z")], null],
+    ["2026-10-10T12:59:59Z", [game("2026-10-10T14:59:59Z")], null],
+    ["2026-10-10T12:59:59Z", [game("2026-10-10T16:00:00Z", { status: "postponed" })], null],
+    ["2026-10-10T12:59:59Z", [game("2026-10-10T16:00:00Z", { date: "2026-10-11" })], null],
+    [null, [], "Schedule cache receipt age unknown."],
+    ["invalid", [], "Schedule cache receipt age unknown."],
+    ["2026-10-10T15:00:01Z", [], "Schedule cache receipt age unknown."],
+  ])("keeps input-age and near-game boundaries explicit: %s", (asOf, games, warning) => {
+    const input = evidence(asOf as string | null);
+    expect(scheduleFreshnessWarning(input, games as PlanningData["games"], context)).toBe(warning);
+    expect(input.completeness).toBe("complete");
+    expect(input.limitations).toEqual([]);
+  });
+  it("does not infer receipt age from a different source or invalid evaluation time", () => {
+    expect(scheduleFreshnessWarning({ ...evidence("2026-10-01T00:00:00Z"), source: "other-source" }, [], context)).toBeNull();
+    expect(scheduleFreshnessWarning(undefined, [], context)).toBeNull();
+    expect(scheduleFreshnessWarning(evidence("2026-10-10T12:00:00Z"), [], { ...context, asOf: "invalid" })).toBe("Schedule cache receipt age unknown.");
+  });
+});
 
 describe("provisional similar projected points display", () => {
   const scoring = { mode: "points" as const, weights: { GOALS: 1 }, categories: [] };
@@ -160,6 +190,27 @@ describe("RosterScheduleOptimizer workspace", () => {
     fireEvent.click(setup);
     expect(setup.getAttribute("aria-expanded")).toBe("true");
     expect(document.getElementById(setup.getAttribute("aria-controls")!)).toBeTruthy();
+  });
+  it("shows a provisional schedule warning without changing complete coverage or manager intent", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-10T15:00:00Z"));
+    const workspace = defaultWorkspace();
+    workspace.context = { ...workspace.context, startDate: "2026-10-10", endDate: "2026-10-10" };
+    workspace.intent.protectedPlayerIds = [player.id];
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data: {
+      ...data, games: [{ id: "near-game", date: "2026-10-10", startsAt: "2026-10-10T16:00:00Z", teamAbbreviation: "CAR", opponent: "NJD", home: true, status: "scheduled" }],
+      evidence: { schedule: { source: "roster_optimizer_team_games", asOf: "2026-10-10T12:00:00Z", seasonId: 20262027, completeness: "complete", limitations: [] } },
+    } }) })));
+    render(<RosterScheduleOptimizer />);
+    const summary = (await screen.findByText("Shared schedule: complete")).closest("summary")!;
+    expect(summary.textContent).toContain("Cache received");
+    expect(summary.textContent).toContain("Provisional 2-hour schedule warning.");
+    expect(summary.textContent).not.toContain("Source updated");
+    expect(screen.getByText(/provisional warning thresholds, not forecast rejection limits/).textContent).toContain("0–120 minutes");
+    expect(screen.getByText(/Schedule cache receipt time is separate/).textContent).toContain("model-fit time");
+    expect(summary.closest("details")!.open).toBe(false);
+    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent).toEqual(workspace.intent));
   });
   it("shows confirmed Yahoo zero usage independently from unknown allowance and planned adds", () => {
     const evidence: NonNullable<PlanningSnapshot["acquisitionEvidence"]> = {

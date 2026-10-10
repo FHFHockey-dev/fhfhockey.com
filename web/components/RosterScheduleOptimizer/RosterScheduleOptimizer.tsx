@@ -54,6 +54,20 @@ function opponentDemandHint(snapshot: PlanningSnapshot | null, player: PlanningP
 function instantFromLeagueTime(value: string, timeZone: string) { try { return fromZonedTime(value, timeZone).toISOString(); } catch { return null; } }
 function leagueDayBoundary(date: string, timeZone: string, end = false) { const value = new Date(`${date}T12:00:00Z`); if (end) value.setUTCDate(value.getUTCDate() + 1); return fromZonedTime(`${value.toISOString().slice(0, 10)}T00:00:00`, timeZone).toISOString(); }
 const number = (value: number | null | undefined) => value == null ? "—" : Number.isInteger(value) ? String(value) : value.toFixed(1);
+export function scheduleFreshnessWarning(evidence: PlanningData["evidence"][string] | undefined,
+  games: PlanningGame[], context: PlanningWorkspace["context"]): string | null {
+  if (evidence?.source !== "roster_optimizer_team_games") return null;
+  const evaluatedAt = Date.parse(context.asOf);
+  const receivedAt = evidence.asOf ? Date.parse(evidence.asOf) : NaN;
+  if (!Number.isFinite(evaluatedAt) || !Number.isFinite(receivedAt) || receivedAt > evaluatedAt) return "Schedule cache receipt age unknown.";
+  const nearPuckDrop = games.some(game => {
+    const untilStart = Date.parse(game.startsAt ?? "") - evaluatedAt;
+    return game.status === "scheduled" && game.date >= context.startDate && game.date <= context.endDate
+      && untilStart >= 0 && untilStart <= 120 * 60000;
+  });
+  const thresholdHours = nearPuckDrop ? 2 : 6;
+  return evaluatedAt - receivedAt > thresholdHours * 3600000 ? `Provisional ${thresholdHours}-hour schedule warning.` : null;
+}
 export function acquisitionDetail(rules: LeagueRules, evidence?: PlanningSnapshot["acquisitionEvidence"]): string {
   const allowance = rules.periods.length ? rules.periods.map(period => `${period.id}: ${period.source === "unknown" || period.remaining === null ? "Allowance unknown" : `${period.remaining} remaining (${period.source})`}`).join(" · ") : "Allowance unknown";
   return evidence?.counter.used != null && evidence.period.containsHorizon
@@ -373,6 +387,8 @@ export default function RosterScheduleOptimizer() {
   const sharedForecasts = data?.evidence.forecasts;
   const sharedScheduleTime = sharedSchedule?.asOf && Number.isFinite(Date.parse(sharedSchedule.asOf))
     ? actionTime(sharedSchedule.asOf, workspace.context.timeZone) : "unknown";
+  const scheduleWarning = scheduleFreshnessWarning(sharedSchedule, data?.games ?? [], { ...workspace.context, asOf: lastUpdated ?? workspace.context.asOf });
+  const scheduleTimeLabel = sharedSchedule?.source === "roster_optimizer_team_games" ? "Cache received" : "Evidence timestamp";
   const dates = useMemo(() => datesBetween(workspace.context.startDate, workspace.context.endDate), [contextKey]);
   const rangeTooLong = Date.parse(workspace.context.endDate) - Date.parse(workspace.context.startDate) > 366 * 86_400_000;
   const matchupWeeks = data?.matchupWeeks ?? [];
@@ -471,8 +487,8 @@ export default function RosterScheduleOptimizer() {
   });
 
   const healthStrip = <div className={styles.healthStrip}>{data && (sharedSchedule || sharedForecasts) && <details className={styles.dataHealth}>
-      <summary><strong>Shared schedule: {sharedSchedule?.completeness ?? "unknown"}</strong><span>Source updated {sharedScheduleTime}. {sharedSchedule?.limitations[0]} {sharedForecasts?.limitations[0] ?? `Forecast coverage: ${sharedForecasts?.completeness ?? "unknown"}.`}</span></summary>
-      <ul>{Object.entries(data.evidence).map(([source, evidence]) => <li key={source}>{source}: {evidence.completeness} · Source updated {evidence.asOf ?? "unknown"}{evidence.limitations.length ? ` · ${evidence.limitations.join(" ")}` : ""}</li>)}</ul>
+      <summary><strong>Shared schedule: {sharedSchedule?.completeness ?? "unknown"}</strong><span>{scheduleTimeLabel} {sharedScheduleTime}. {scheduleWarning} {sharedSchedule?.limitations[0]} {sharedForecasts?.limitations[0] ?? `Forecast coverage: ${sharedForecasts?.completeness ?? "unknown"}.`}</span></summary>
+      <ul>{Object.entries(data.evidence).map(([source, evidence]) => <li key={source}>{source}: {evidence.completeness} · {source === "schedule" && evidence.source === "roster_optimizer_team_games" ? "Cache received" : "Evidence timestamp"} {evidence.asOf ?? "unknown"}{evidence.limitations.length ? ` · ${evidence.limitations.join(" ")}` : ""}</li>)}{scheduleWarning && <li>Schedule cache receipt time is separate from upstream publication and model-fit time. Six hours, or two hours within 0–120 minutes before a covered scheduled game, are provisional warning thresholds, not forecast rejection limits. Recheck material news and game status before issuing a forecast.</li>}</ul>
     </details>}
     <details className={styles.dataHealth}>
       <summary><strong>Planning readiness</strong><span>{roster.length ? `${roster.length} roster players` : "Roster needed"} → Rules → Coverage → Plan</span></summary>
