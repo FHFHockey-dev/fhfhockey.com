@@ -3,6 +3,8 @@ import {
   NATIVE_PLAYER_COVERAGE_DOMAIN, NATIVE_PLAYER_COVERAGE_DOMAIN_HASH, NATIVE_PLAYER_COVERAGE_VERSION,
   nativeCoverageAssumptionsHash, nativeCoverageBasisHash, nativeCoverageTextHash, validateNativePlayerCoverage,
   NATIVE_COVERAGE_PROOF_VERSION, checkNativeCoverageProof, checkNativeCoverageHistory, checkNativeCoverageSelection,
+  NATIVE_COVERAGE_SPAN_PROOF_VERSION, nativeCoverageProofSchema, nativeCoverageLocationValue,
+  type NativeCoverageSpanProof,
   type NativeCoverageEstimatorApproval, type NativePlayerCoveragePacket, type NativePlayerCoverageScope,
 } from "./nativePlayerCoverage";
 
@@ -326,6 +328,73 @@ function observationIssues(x: ReturnType<typeof observationFixture>) {
   checkNativeCoverageHistory(x.rows[0], x.proof, x.f.scope.gameId, 1, x.f.scope.modelCutoffAt, add);
   return findings;
 }
+// The HTML fixture adds original-byte provenance only, never a source-semantic approval.
+function spanObservationFixture() {
+  const x = observationFixture(), fragment = "<td>0</td>", html = `é🦉${fragment}`;
+  const raw = { ...x.raw, proofId: "raw-html", bodyUtf8: html, bodyHash: nativeCoverageTextHash(html),
+    finalGames: [], completionFacts: [] };
+  const proof = nativeCoverageProofSchema.parse({ ...x.proof, version: NATIVE_COVERAGE_SPAN_PROOF_VERSION,
+    contributors: [x.raw, raw], links: [...x.proof.links.map(({ pointer, ...link }) => ({ ...link,
+      location: { kind: "json_pointer", pointer } })), { proofId: raw.proofId, bodyHash: raw.bodyHash,
+      location: { kind: "utf8_byte_span", startByte: Buffer.byteLength("é🦉"), endByteExclusive: Buffer.byteLength(html),
+        spanHash: nativeCoverageTextHash(fragment) }, derivedPointer: "/rows/0/counts/HITS" }] }) as NativeCoverageSpanProof;
+  function bind() {
+    x.f.packet.skater.coverage = proof;
+    Object.assign(x.f.scope.proofs[0], { bodyHash: proof.bodyHash,
+      contract: JSON.parse(JSON.stringify({ ...proof, bodyUtf8: undefined,
+        contributors: proof.contributors.map(item => ({ ...item, bodyUtf8: undefined })) })) });
+  }
+  bind();
+  return { x, proof, fragment, html, bind };
+}
+describe("opt-in original UTF-8 span proof version", () => {
+  it("accepts mixed JSON/HTML provenance with independent expectations while qualification stays false", () => {
+    const f = spanObservationFixture(), before = JSON.stringify(f.x.f);
+    expect(validate(f.x.f)).toMatchObject({ mechanicalVerdict: "passed", qualificationEligible: false,
+      sourceAuthenticity: "not_established" });
+    expect(JSON.stringify(f.x.f)).toBe(before);
+    expect(nativeCoverageLocationValue(f.html, f.proof.links.at(-1)!.location)).toBe(f.fragment);
+  });
+  it("keeps v2 shape and byte hash unchanged and rejects span links under its old tag", () => {
+    const x = observationFixture(), before = JSON.stringify(x.proof), digest = nativeCoverageTextHash(before);
+    expect(validate(x.f).mechanicalVerdict).toBe("passed");
+    expect(JSON.stringify(x.proof)).toBe(before); expect(nativeCoverageTextHash(JSON.stringify(x.proof))).toBe(digest);
+    const f = spanObservationFixture();
+    expect(nativeCoverageProofSchema.safeParse({ ...f.proof, version: NATIVE_COVERAGE_PROOF_VERSION }).success).toBe(false);
+  });
+  it.each(["hash", "past_end", "reversed", "partial_astral"])("rejects %s byte-span corruption", change => {
+    const f = spanObservationFixture(), location = f.proof.links.at(-1)!.location;
+    if (location.kind !== "utf8_byte_span") throw new Error("Expected span fixture");
+    if (change === "hash") location.spanHash = "a".repeat(64);
+    if (change === "past_end") location.endByteExclusive++;
+    if (change === "reversed") location.startByte = location.endByteExclusive;
+    if (change === "partial_astral") location.startByte = 3;
+    f.bind(); expect(nativeCoverageLocationValue(f.html, location)).toBeUndefined();
+    expect(codes(f.x.f)).toContain("derived_pointer_binding");
+  });
+  it("requires independently bound raw bytes and output expectations", () => {
+    const f = spanObservationFixture(); f.proof.contributors[1].bodyUtf8 += "altered";
+    expect(codes(f.x.f)).toContain("raw_body_binding");
+    const missing = spanObservationFixture(); delete (missing.x.f.scope.proofs[0] as { contract?: unknown }).contract;
+    expect(codes(missing.x.f)).toContain("proof_contract_binding");
+    const mismatch = spanObservationFixture(); mismatch.proof.contributors[1].revision = "unaccepted-revision";
+    expect(codes(mismatch.x.f)).toContain("proof_contract_binding");
+  });
+  it("rejects canonical repeated v3 link identities and preserves v2 duplicate behavior", () => {
+    const f = spanObservationFixture(), first = f.proof.links[0];
+    f.proof.links.push({ derivedPointer: first.derivedPointer, location: structuredClone(first.location),
+      bodyHash: first.bodyHash, proofId: first.proofId });
+    f.bind(); expect(codes(f.x.f)).toContain("duplicate_derived_link");
+    const v2 = observationFixture(); v2.proof.links.push(structuredClone(v2.proof.links[0]));
+    v2.contract.links.push(structuredClone(v2.contract.links[0])); expect(validate(v2.f).mechanicalVerdict).toBe("passed");
+  });
+  it("retains row/contributor linkage gates and rejects non-round-tripping UTF-8 strings", () => {
+    const f = spanObservationFixture(); f.proof.links = f.proof.links.filter(link => link.derivedPointer.startsWith("/rows/0/"));
+    f.bind(); expect(codes(f.x.f)).toContain("unlinked_derived_row"); expect(codes(f.x.f)).toContain("unlinked_contributor");
+    expect(nativeCoverageLocationValue("\ud800", { kind: "utf8_byte_span", startByte: 0, endByteExclusive: 3,
+      spanHash: nativeCoverageTextHash("\ud800") })).toBeUndefined();
+  });
+});
 describe("versioned observations, completion bounds and derivation provenance", () => {
   it("accepts independently bound raw/derived mechanics with unknown publication and null exact completion", () => {
     const x = observationFixture(null), before = JSON.stringify(x.f);

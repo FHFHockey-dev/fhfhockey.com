@@ -63,6 +63,8 @@ const sourceBody = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("goalie_scenarios"), domainHash: hash, teamId: id, rows: z.array(scenario).max(10000) }).strict(),
   z.object({ kind: z.literal("save_conversion"), domainHash: hash, identity, conversion: probability }).strict(),
 ]);
+export const nativeCoverageKernelSourceBodySchema = sourceBody;
+export type NativeCoverageKernelSourceBody = z.infer<typeof sourceBody>;
 type Finding = { kind: "invalid" | "unknown" | "approval"; code: string; path: string };
 type GoalieMean = { seconds: number; shotsAgainst: number; saves: number; goalsAgainst: number; nonShotGoalsAgainst: number };
 type TeamMean = { seconds: number; guardedSeconds: number; emptyNetSeconds: number; guardedShotsAgainst: number;

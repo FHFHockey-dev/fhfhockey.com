@@ -56,6 +56,8 @@ const rawObservation = z.object({ proofId: text, bodyUtf8: z.string().min(1).max
   httpStatus: z.literal(200), requestedAt: timestamp, firstReceivedAt: timestamp, verifiedAt: timestamp,
   publishedAt: timestamp.nullable(), access: z.enum(["available", "restricted", "unknown"]),
   rights: z.enum(["verified_for_intended_use", "restricted", "unknown"]), finalGames: z.array(finalGame).max(20000), completionFacts: z.array(completionFact).max(20000) }).strict();
+export const nativeCoverageRawObservationSchema = rawObservation;
+export type NativeCoverageRawObservation = z.infer<typeof rawObservation>;
 const observationTag = { version: z.literal(NATIVE_COVERAGE_PROOF_VERSION), mode: z.literal("prospective_public_observation") };
 const rawProof = rawObservation.extend({ ...observationTag, evidenceType: z.literal("raw_official") }).strict();
 const transformation = z.object({ version: text, codeHash: hash, configHash: hash, semanticHash: hash }).strict();
@@ -65,11 +67,24 @@ const derivedProof = z.object({ ...observationTag, evidenceType: z.literal("deri
   // A local derivative has no upstream publication or HTTP receipt of its own.
   publishedAt: z.null(), firstReceivedAt: z.null(), transformation,
   contributors: z.array(rawObservation).min(1).max(1000), links: z.array(link).min(1).max(20000) }).strict();
+export const NATIVE_COVERAGE_SPAN_PROOF_VERSION = "native-coverage-proof-v3";
+export const nativeCoverageSourceLocationSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("json_pointer"), pointer }).strict(),
+  z.object({ kind: z.literal("utf8_byte_span"), startByte: z.number().int().nonnegative().safe(),
+    endByteExclusive: z.number().int().positive().safe(), spanHash: hash }).strict(),
+]);
+export type NativeCoverageSourceLocation = z.infer<typeof nativeCoverageSourceLocationSchema>;
+const spanLink = z.object({ proofId: text, bodyHash: hash, location: nativeCoverageSourceLocationSchema,
+  derivedPointer: pointer }).strict();
+const spanDerivedProof = derivedProof.extend({ version: z.literal(NATIVE_COVERAGE_SPAN_PROOF_VERSION),
+  links: z.array(spanLink).min(1).max(20000) }).strict();
+export type NativeCoverageSpanProof = z.infer<typeof spanDerivedProof>;
 const archivalProof = proof.extend({ version: z.literal(NATIVE_COVERAGE_PROOF_VERSION), mode: z.literal("archival_exact") }).strict();
-export const nativeCoverageProofSchema = z.union([proof, archivalProof, rawProof, derivedProof]);
+export const nativeCoverageProofSchema = z.union([proof, archivalProof, rawProof, derivedProof, spanDerivedProof]);
 export const nativeCoverageProofExpectationSchema = z.union([
   archivalProof.omit({ bodyUtf8: true }), rawProof.omit({ bodyUtf8: true }),
   derivedProof.omit({ bodyUtf8: true }).extend({ contributors: z.array(rawObservation.omit({ bodyUtf8: true })).min(1).max(1000) }).strict(),
+  spanDerivedProof.omit({ bodyUtf8: true }).extend({ contributors: z.array(rawObservation.omit({ bodyUtf8: true })).min(1).max(1000) }).strict(),
 ]);
 const finalReference = z.object({ proofId: text, bodyHash: hash, historicalGameId: id, seasonId: id, teamId: id }).strict();
 const boundEvidence = z.union([
@@ -90,7 +105,7 @@ type CoverageProof = z.infer<typeof nativeCoverageProofSchema>;
 type CoverageExpectation = z.infer<typeof nativeCoverageProofExpectationSchema>;
 type HistoryEvidence = z.infer<typeof historyEvidence>;
 type ProofFinding = (kind: "invalid" | "unknown", code: string) => void;
-const prospective = (value: CoverageProof): value is z.infer<typeof rawProof> | z.infer<typeof derivedProof> =>
+const prospective = (value: CoverageProof): value is z.infer<typeof rawProof> | z.infer<typeof derivedProof> | NativeCoverageSpanProof =>
   "mode" in value && value.mode === "prospective_public_observation";
 const rawSources = (value: CoverageProof): z.infer<typeof rawObservation>[] => !prospective(value) ? []
   : value.evidenceType === "raw_official" ? [value] : value.contributors;
@@ -103,6 +118,17 @@ function jsonValue(bodyUtf8: string, path: string): unknown {
     }
     return value;
   } catch { return undefined; }
+}
+/** Locations prove original-byte integrity, never the meaning of an HTML field. */
+export function nativeCoverageLocationValue(bodyUtf8: string, location: NativeCoverageSourceLocation): unknown {
+  if (!nativeCoverageSourceLocationSchema.safeParse(location).success) return undefined;
+  if (location.kind === "json_pointer") return jsonValue(bodyUtf8, location.pointer);
+  const bytes = Buffer.from(bodyUtf8, "utf8");
+  if (bytes.toString("utf8") !== bodyUtf8 || location.startByte >= location.endByteExclusive
+    || location.endByteExclusive > bytes.length) return undefined;
+  const span = bytes.subarray(location.startByte, location.endByteExclusive), decoded = span.toString("utf8");
+  if (!Buffer.from(decoded, "utf8").equals(Uint8Array.from(span)) || nativeCoverageTextHash(decoded) !== location.spanHash) return undefined;
+  return decoded;
 }
 // Canonical metadata comparison ignores object key ordering, never byte hashes or array ordering.
 function metadata(value: unknown): string {
@@ -156,6 +182,8 @@ export function checkNativeCoverageProof(value: CoverageProof, expected: Coverag
     }
   }
   if (value.evidenceType === "derived_normalized") {
+    if (value.version === NATIVE_COVERAGE_SPAN_PROOF_VERSION
+      && new Set(value.links.map(metadata)).size !== value.links.length) add("invalid", "duplicate_derived_link");
     if (raws.some(raw => raw.proofId === value.proofId || raw.bodyHash === value.bodyHash)) add("invalid", "derived_self_link");
     if (time(value.createdAt) > time(value.verifiedAt) || time(value.verifiedAt) > time(cutoff)
       || raws.some(raw => time(raw.firstReceivedAt) > time(value.createdAt) || time(raw.verifiedAt) > time(value.verifiedAt)))
@@ -165,7 +193,8 @@ export function checkNativeCoverageProof(value: CoverageProof, expected: Coverag
       ref.derivedPointer === `/rows/${i}` || ref.derivedPointer.startsWith(`/rows/${i}/`)))) add("invalid", "unlinked_derived_row");
     for (const ref of value.links) {
       const raw = raws.find(item => item.proofId === ref.proofId && item.bodyHash === ref.bodyHash);
-      if (!raw || jsonValue(raw.bodyUtf8, ref.pointer) === undefined || jsonValue(value.bodyUtf8, ref.derivedPointer) === undefined)
+      const sourceValue = raw && ("location" in ref ? nativeCoverageLocationValue(raw.bodyUtf8, ref.location) : jsonValue(raw.bodyUtf8, ref.pointer));
+      if (!raw || sourceValue === undefined || jsonValue(value.bodyUtf8, ref.derivedPointer) === undefined)
         add("invalid", "derived_pointer_binding");
     }
     if (raws.some(raw => !value.links.some(ref => ref.proofId === raw.proofId && ref.bodyHash === raw.bodyHash)))
@@ -256,6 +285,8 @@ const row = rowKey.extend({ ...nativeCoverageHistoryFields, exposureSeconds: cou
   counts }).strict();
 const body = z.object({ gameId: id, seasonId: id, identity, domain,
   rows: z.array(row).max(20000), unclassifiedEvents: count.nullable(), unclassifiedSeconds: count.nullable() }).strict();
+export const nativeCoverageHistoryBodySchema = body;
+export type NativeCoverageHistoryBody = z.infer<typeof body>;
 const goalieStats = z.object({ SHOTS_AGAINST_GOALIE: count.nullable(), SAVES_GOALIE: count.nullable(),
   GOALS_AGAINST_GOALIE: count.nullable(), nonShotGoalsAgainst: count.nullable(), seconds: count.max(3900).nullable() }).strict();
 const skater = z.object({ identity, model, coverage: nativeCoverageProofSchema.nullable(), pCreditGivenPlayed: probability,
