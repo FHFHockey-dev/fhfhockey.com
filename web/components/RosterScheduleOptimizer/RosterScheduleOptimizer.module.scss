@@ -176,10 +176,8 @@
 .compactTable thead button > span:first-child { text-transform: uppercase; font-weight: 600; }
 .compactTable thead button > small { color: v.$text-secondary; font-size: 9px; }
 .compactTable thead button:focus-visible { outline-offset: -2px; }
-.positionGroup { --position-color: #{v.$color-neutral-400}; --position-band-width: 18px; --position-surface: color-mix(in srgb, var(--position-color) 7%, #{v.$draft-surface}); display: block; position: relative; border: 1px solid var(--position-color, #{v.$primary-color}); border-left-width: var(--position-band-width); border-radius: v.$radius-md; margin: 2px 0; background: var(--position-surface); }
-.positionGroup::before { content: attr(data-label); position: absolute; left: calc(-1 * var(--position-band-width)); top: 50%; width: var(--position-band-width); transform: translateY(-50%); color: var(--position-surface); font-size: 12px; font-weight: 700; line-height: 1; letter-spacing: .02em; text-align: center; pointer-events: none; }
-.positionGroup[data-rotated-label="true"]::before { left: calc(-.5 * var(--position-band-width)); width: max-content; transform: translate(-50%, -50%) rotate(-90deg); text-transform: uppercase; }
-.positionGroup[data-position="BENCH"]::before { content: none; }
+.positionGroup { --position-color: #{v.$color-neutral-400}; --position-band-width: 10px; --bench-control-width: 76px; --position-surface: color-mix(in srgb, var(--position-color) 7%, #{v.$draft-surface}); display: block; position: relative; border: 1px solid var(--position-color, #{v.$primary-color}); border-left-width: var(--position-band-width); border-radius: v.$radius-md; margin: 2px 0; background: var(--position-surface); }
+.positionLabel { flex-shrink: 0; color: var(--position-color); font-size: 11px; font-weight: 700; line-height: 14px; white-space: nowrap; }
 .positionGroup[data-position="BENCH"][data-bench-open="false"] { min-height: 44px; }
 .positionGroup tr[data-compact-row] { height: clamp(24px, var(--schedule-row-height, 26px), 32px); }
 .positionGroup tr[hidden] { display: none; }
@@ -197,9 +195,11 @@
 .compactTable thead .elapsedDay button { color: v.$text-secondary; }
 .fantasyAssigned { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .benchHeading { display: block !important; height: 0; }
-.benchHeading th { padding: 0; }
-.benchHeading button { display: grid; place-items: center; position: absolute; left: calc(-1 * var(--position-band-width)); top: 0; bottom: 0; width: var(--position-band-width); min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--position-surface); font-size: 12px; font-weight: 700; line-height: 1; }
-.benchHeading button > span { position: absolute; left: 50%; top: 50%; width: max-content; transform: translate(-50%, -50%) rotate(-90deg); text-transform: uppercase; letter-spacing: .02em; }
+.benchHeading th { display: block; position: sticky; left: 5px; z-index: 2; width: var(--bench-control-width); height: 0; padding: 0; }
+.benchHeading button { display: flex; align-items: center; justify-content: center; height: clamp(24px, var(--schedule-row-height, 26px), 32px); width: var(--bench-control-width); min-height: 0; padding: 0 4px; border: 1px solid v.$draft-border; border-radius: 4px; background: var(--position-surface); color: v.$text-primary; font-size: 11px; font-weight: 700; line-height: 14px; }
+.benchHeading button > span { white-space: nowrap; }
+.benchHeading + tr th[scope="row"] { padding-inline-start: calc(var(--bench-control-width) + 5px); }
+.positionGroup[data-bench-open="false"] .benchHeading button { height: 44px; }
 .benchHeading button:focus-visible { outline: 2px solid v.$text-primary; outline-offset: -2px; }
 .countChip { display: inline-block; min-width: 18px; border-radius: 8px; padding: 0 4px; background: v.$draft-input; font-variant-numeric: tabular-nums; }
 .planDetails { flex-shrink: 0; font-size: 11px; }

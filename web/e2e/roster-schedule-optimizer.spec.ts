@@ -1461,15 +1461,16 @@ for (const count of [19, 20, 25]) test(`compact layout accounts for ${count} pla
         topLeftRadius: getComputedStyle(group).borderTopLeftRadius, bottomLeftRadius: getComputedStyle(group).borderBottomLeftRadius, rightRadius: getComputedStyle(group).borderTopRightRadius,
         outlineColors: [getComputedStyle(group).borderTopColor, getComputedStyle(group).borderRightColor, getComputedStyle(group).borderBottomColor],
         outlineWidths: [getComputedStyle(group).borderTopWidth, getComputedStyle(group).borderRightWidth, getComputedStyle(group).borderBottomWidth],
-        label: group.getAttribute("data-label"), labelColor: getComputedStyle(group, "::before").color, background: getComputedStyle(group).backgroundColor,
-        labelTop: parseFloat(getComputedStyle(group, "::before").top), groupHeight: group.clientHeight,
-        labelTransform: getComputedStyle(group, "::before").transform,
-        benchLabel: (() => {
-          const label = group.querySelector('tr[data-bench-heading] button > span');
-          if (!label) return null;
-          const box = label.getBoundingClientRect(), band = group.getBoundingClientRect();
-          return { width: box.width, height: box.height, color: getComputedStyle(label).color, transform: getComputedStyle(label).transform,
-            centerX: box.left + box.width / 2 - band.left, centerY: box.top + box.height / 2 - band.top, groupHeight: band.height };
+        label: group.getAttribute("data-label"), renderedLabel: (() => {
+          const label = group.querySelector('[data-position-label]') ?? group.querySelector('tr[data-bench-heading] button > span');
+          const cell = group.querySelector('tr[data-compact-row] th[scope="row"]');
+          if (!label || !cell) return null;
+          const box = label.getBoundingClientRect(), container = cell.getBoundingClientRect();
+          const control = group.querySelector('tr[data-bench-heading] button')?.getBoundingClientRect();
+          const player = cell.querySelector('button')?.getBoundingClientRect();
+          return { text: label.textContent?.trim(), width: box.width, height: box.height, fontSize: getComputedStyle(label).fontSize,
+            left: box.left, right: box.right, cellLeft: container.left, cellRight: container.right, transform: getComputedStyle(label).transform,
+            controlRight: control?.right, playerLeft: player?.left };
         })(),
         before: getComputedStyle(group, "::before").content, after: getComputedStyle(group, "::after").content,
         contentInset: Math.min(...[...group.querySelectorAll('th[scope="row"]')].map(cell => cell.getBoundingClientRect().left - group.getBoundingClientRect().left)) })) };
@@ -1478,23 +1479,18 @@ for (const count of [19, 20, 25]) test(`compact layout accounts for ${count} pla
   expect(metrics.groups.map(group => group.position)).toEqual(count === 25 ? ["C", "LW", "RW", "D", "UTIL", "G", "BENCH", "IR", "IR+"] : ["C", "LW", "RW", "D", "UTIL", "G", "BENCH"]);
   expect(metrics.groups.find(group => group.position === "RW")?.band).toBe("rgb(167, 139, 250)");
   for (const group of metrics.groups) {
-    expect(group.width).toBe("18px"); expect(group.style).toBe("solid");
+    expect(group.width).toBe("10px"); expect(group.style).toBe("solid");
     expect(group.topLeftRadius).toBe("10px"); expect(group.bottomLeftRadius).toBe("10px"); expect(group.rightRadius).toBe("10px");
     expect(group.outlineColors).toEqual([group.band, group.band, group.band]); expect(group.outlineWidths).toEqual(["1px", "1px", "1px"]);
     expect(group.label).toBe(group.position === "BENCH" ? "Bench" : group.position);
-    expect(group.before).toBe(group.position === "BENCH" ? "none" : JSON.stringify(group.label));
-    if (group.position !== "BENCH") {
-      expect(group.labelColor).toBe(group.background);
-      expect(group.labelTop).toBeCloseTo(group.groupHeight / 2, 0);
-      if (group.position === "UTIL") expect(group.labelTransform).toMatch(/^matrix\(0, -1, 1, 0,/);
-    } else {
-      expect(group.benchLabel?.width).toBeGreaterThan(0); expect(group.benchLabel?.height).toBeGreaterThan(20);
-      expect(group.benchLabel?.color).toBe(group.background);
-      expect(group.benchLabel?.transform).toMatch(/^matrix\(0, -1, 1, 0,/);
-      expect(group.benchLabel?.centerX).toBeCloseTo(9, 0);
-      expect(group.benchLabel?.centerY).toBeCloseTo(group.benchLabel!.groupHeight / 2, 0);
-    }
-    expect(group.after).toBe("none"); expect(group.contentInset).toBeGreaterThanOrEqual(18);
+    expect(group.before).toBe("none"); expect(group.after).toBe("none");
+    expect(group.renderedLabel?.text).toContain(group.label);
+    expect(group.renderedLabel?.width).toBeGreaterThan(0); expect(group.renderedLabel?.height).toBeGreaterThanOrEqual(11);
+    expect(group.renderedLabel?.fontSize).toBe("11px"); expect(group.renderedLabel?.transform).toBe("none");
+    expect(group.renderedLabel!.left).toBeGreaterThanOrEqual(group.renderedLabel!.cellLeft);
+    expect(group.renderedLabel!.right).toBeLessThanOrEqual(group.renderedLabel!.cellRight);
+    if (group.position === "BENCH") expect(group.renderedLabel!.controlRight).toBeLessThanOrEqual(group.renderedLabel!.playerLeft!);
+    expect(group.contentInset).toBeGreaterThanOrEqual(10);
   }
   const articleBorders = await page.getByRole("region", { name: "Plan summary" }).locator("article").evaluateAll(nodes => nodes.map(node => ({
     width: getComputedStyle(node).borderLeftWidth, style: getComputedStyle(node).borderLeftStyle,
@@ -1602,7 +1598,7 @@ test("compact day and bench controls preserve saved intent and keyboard selectio
   await page.screenshot({ path: testInfo.outputPath("compact-keyboard-focus.png") });
 });
 
-test("compact short desktop and mobile retain rows, day state, reserves and unknown goalie status", async ({ page }, testInfo) => {
+test.extend({ hasTouch: true })("compact short desktop and mobile retain rows, day state, reserves and unknown goalie status", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 720 });
   await installCompactFixture(page, 25);
   const table = page.getByRole("table", { name: "Individual player weekly schedule" });
@@ -1624,6 +1620,20 @@ test("compact short desktop and mobile retain rows, day state, reserves and unkn
     await expectDaySliderAligned(page);
     await scroll.evaluate(node => { node.scrollLeft = 120; });
     await expectDaySliderAligned(page);
+    const bench = page.getByRole("button", { name: /^Bench \d+,/ });
+    await bench.tap();
+    await expect(bench).toHaveAttribute("aria-expanded", "false");
+    await expect(table.locator('tbody[data-position="BENCH"] tr[data-player-id]:visible')).toHaveCount(0);
+    if ([390, 320].includes(width)) await page.screenshot({ path: testInfo.outputPath(`compact-bench-collapsed-${width}.png`) });
+    await bench.tap();
+    await expect(bench).toHaveAttribute("aria-expanded", "true");
+    await bench.focus();
+    await page.keyboard.press("Enter");
+    await expect(bench).toHaveAttribute("aria-expanded", "false");
+    await expect(bench).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(bench).toHaveAttribute("aria-expanded", "true");
+    if ([390, 320].includes(width)) await page.screenshot({ path: testInfo.outputPath(`compact-bench-expanded-${width}.png`) });
     await scroll.evaluate(node => { node.scrollLeft = 0; });
     const borders = await table.locator("tbody").evaluateAll(nodes => nodes.map(node => ({
       position: node.getAttribute("data-position"), label: node.getAttribute("data-label"),
@@ -1633,9 +1643,9 @@ test("compact short desktop and mobile retain rows, day state, reserves and unkn
       before: getComputedStyle(node, "::before").content, after: getComputedStyle(node, "::after").content,
     })));
     for (const border of borders) {
-      expect(border.width).toBe("18px"); expect(border.style).toBe("solid"); expect(border.topLeftRadius).toBe("10px"); expect(border.bottomLeftRadius).toBe("10px");
+      expect(border.width).toBe("10px"); expect(border.style).toBe("solid"); expect(border.topLeftRadius).toBe("10px"); expect(border.bottomLeftRadius).toBe("10px");
       expect(border.outlineColors).toEqual([border.band, border.band, border.band]);
-      expect(border.before).toBe(border.position === "BENCH" ? "none" : JSON.stringify(border.label)); expect(border.after).toBe("none");
+      expect(border.before).toBe("none"); expect(border.after).toBe("none");
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     const rw = table.locator('tbody[data-position="RW"]');
@@ -1730,7 +1740,7 @@ test("compact vacancies and non-playing holds survive day changes and Bench coll
   await page.screenshot({ path: testInfo.outputPath("compact-two-vacancies-held-player.png") });
 });
 
-test("compact partial and unavailable evidence retain players and explicit unresolved states", async ({ page }, testInfo) => {
+test.extend({ hasTouch: true })("compact partial and unavailable evidence retain players and explicit unresolved states on desktop and mobile", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const fixture = compactWorkspace(20);
   fixture.players[0].teamAbbreviation = null;
@@ -1746,6 +1756,34 @@ test("compact partial and unavailable evidence retain players and explicit unres
   await page.goto("/roster-schedule-optimizer");
   const table = page.getByRole("table", { name: "Individual player weekly schedule" });
   const summary = page.getByRole("region", { name: "Selected-day lineup summary" });
+  const verifyMobileWorkspaces = async (state: "partial" | "unavailable") => {
+    const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
+    for (const width of [390, 320]) {
+      await page.setViewportSize({ width, height: 844 });
+      const tabs = page.getByRole("navigation", { name: "Workspace views" });
+      await expect(page.getByRole("region", { name: "Itinerary", exact: true })).toBeVisible();
+      for (const [name, region] of [["Roster", "Roster and setup"], ["Candidates", "Candidates and detail"], ["Matchup", "Matchup"], ["Itinerary", "Itinerary"]]) {
+        await tabs.getByRole("button", { name, exact: true }).tap();
+        for (const label of ["Roster and setup", "Candidates and detail", "Matchup", "Itinerary"]) {
+          expect(await page.getByRole("region", { name: label, exact: true }).isVisible()).toBe(label === region);
+        }
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+      }
+      await expect(table).toBeVisible();
+      await expect(table.locator('[data-player-id]')).toHaveCount(20);
+      await expect(summary.getByText("Open slots").locator("..")).toContainText("unresolved");
+      if (state === "partial") {
+        await expect(page.getByText("Shared schedule: partial", { exact: true })).toBeVisible();
+        await expect(summary.getByText("Roster games").locator("..")).toHaveText("Roster games19 known");
+      } else {
+        await expect(page.getByText(/Planning data is temporarily unavailable. Your saved manual workspace is preserved/)).toBeVisible();
+        await expect(summary.getByText("Roster games").locator("..")).toHaveText("Roster gamesUnknown");
+      }
+      await page.screenshot({ path: testInfo.outputPath(`compact-${state}-${width}.png`) });
+    }
+    expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
+    await page.setViewportSize({ width: 1440, height: 900 });
+  };
   await expect(table.locator('[data-player-id]')).toHaveCount(20);
   await expect(page.getByText("Shared schedule: partial", { exact: true })).toBeVisible();
   await expect(page.getByText(/Forecasts unavailable. Schedule planning remains usable/).first()).toBeVisible();
@@ -1755,6 +1793,7 @@ test("compact partial and unavailable evidence retain players and explicit unres
   await expect(table.getByRole("rowheader", { name: /Open (C|LW|RW|D|UTIL|G)/ })).toHaveCount(0);
   await expectDesktopFrameVisible(page);
   await page.screenshot({ path: testInfo.outputPath("compact-partial-1440x900.png") });
+  await verifyMobileWorkspaces("partial");
   await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ status: 503, json: { error: {
     code: "planning_unavailable", message: "Planning data is temporarily unavailable. Your saved manual workspace is preserved. Retry the schedule read.",
   } } }));
@@ -1766,4 +1805,5 @@ test("compact partial and unavailable evidence retain players and explicit unres
   await expect(summary.getByText("Open slots").locator("..")).toContainText("unresolved");
   await expectDesktopFrameVisible(page);
   await page.screenshot({ path: testInfo.outputPath("compact-unavailable-1440x900.png") });
+  await verifyMobileWorkspaces("unavailable");
 });
