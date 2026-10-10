@@ -679,7 +679,7 @@ test("weekly LW/RW and UTIL bench explanations preserve midpoint locks through w
     await expect(bench).toContainText("RW#1: Matthew Knies → Drake Batherson");
     await expect(bench.getByRole("list", { name: "Changed assignments" })).not.toContainText("UTIL#1");
     const center = page.getByRole("region", { name: "Itinerary" }).getByRole("row").filter({ hasText: "Locked Center" });
-    await expect(center).toContainText("UTIL#1");
+    await expect(center.getByRole("button", { name: "Schedule details for Locked Center, UTIL#1, league positions C, Fantasy assigned", exact: true })).toBeVisible();
     if (pass === 0) await page.reload();
     await openPlanDetails(page);
   }
