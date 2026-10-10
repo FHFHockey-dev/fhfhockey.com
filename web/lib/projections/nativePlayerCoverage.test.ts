@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   NATIVE_PLAYER_COVERAGE_DOMAIN, NATIVE_PLAYER_COVERAGE_DOMAIN_HASH, NATIVE_PLAYER_COVERAGE_VERSION,
   nativeCoverageAssumptionsHash, nativeCoverageBasisHash, nativeCoverageTextHash, validateNativePlayerCoverage,
+  NATIVE_COVERAGE_PROOF_VERSION, checkNativeCoverageProof, checkNativeCoverageHistory, checkNativeCoverageSelection,
   type NativeCoverageEstimatorApproval, type NativePlayerCoveragePacket, type NativePlayerCoverageScope,
 } from "./nativePlayerCoverage";
 
@@ -217,7 +218,7 @@ describe("scope, history and information boundaries", () => {
     expect(codes(x)).toContain("unknown_guarded_counts");
   });
   it("preserves unknown source publication/access/rights and rejects malformed JSON without throwing", () => {
-    const f = fixture(); f.packet.skater.coverage!.publishedAt = null; f.packet.skater.coverage!.rights = "unknown";
+    const f = fixture(); f.packet.skater.coverage!.publishedAt = null; Object.assign(f.packet.skater.coverage!, { rights: "unknown" });
     expect(codes(f)).toEqual(expect.arrayContaining(["unknown_publication_time", "unverified_access_or_rights"]));
     f.packet.skater.coverage!.bodyUtf8 = "{"; expect(codes(f)).toContain("malformed_proof_json");
   });
@@ -277,5 +278,177 @@ describe("occurrence, credit, relief and guarded-net arithmetic", () => {
     const x = fixture(); x.packet.skater.pPositiveMinutesGivenPlayed = 0;
     x.packet.skater.conditionalSeconds = 0; x.packet.skater.unconditionalSeconds = 0;
     expect(codes(x)).toContain("unproved_hit_exposure"); expect(validate(x).status).toBe("blocked");
+  });
+});
+
+// Synthetic v2 provenance mechanics; these contracts are not real source-semantic approvals.
+function observationFixture(lower: string | null = "2026-10-08T00:00:00Z",
+  secondLower = "2026-10-07T01:00:00Z", secondUpper = "2026-10-07T02:00:00Z") {
+  const f = fixture(), normalized = historicalBody("skater");
+  const rawBody = { games: [{ gameId: 2026020001, seasonId: 20262027, teamId: 1, state: "OFF", lower,
+    upper: "2026-10-08T03:00:00Z" }, { gameId: 2026020002, seasonId: 20262027, teamId: 1, state: "OFF",
+    lower: secondLower, upper: secondUpper }], rows: normalized.rows };
+  const raw = { proofId: "raw", bodyUtf8: JSON.stringify(rawBody), bodyHash: nativeCoverageTextHash(JSON.stringify(rawBody)),
+    sourceSemanticVersion: "synthetic-final-v1", sourceSemanticHash: nativeCoverageTextHash("synthetic-final-semantics"),
+    origin: "https://example.test/official", revision: "synthetic-revision", httpStatus: 200 as const,
+    requestedAt: "2026-10-08T02:59:00Z", firstReceivedAt: "2026-10-08T03:00:00Z", verifiedAt: "2026-10-08T03:01:00Z",
+    publishedAt: null, access: "available" as const, rights: "verified_for_intended_use" as const,
+    finalGames: rawBody.games.map((game, i) => ({ historicalGameId: game.gameId, seasonId: game.seasonId, teamId: game.teamId,
+      gameIdPointer: `/games/${i}/gameId`, seasonIdPointer: `/games/${i}/seasonId`, teamIdPointer: `/games/${i}/teamId`,
+      finalStatePointer: `/games/${i}/state`, finalStateValue: "OFF" as const })),
+    completionFacts: rawBody.games.flatMap((game, i) => [
+      ...(game.lower === null ? [] : [{ historicalGameId: game.gameId, seasonId: game.seasonId, teamId: game.teamId,
+        pointer: `/games/${i}/lower`, kind: "completion_lower" as const, at: game.lower }]),
+      { historicalGameId: game.gameId, seasonId: game.seasonId, teamId: game.teamId,
+        pointer: `/games/${i}/upper`, kind: "completion_upper" as const, at: game.upper },
+    ]) };
+  const completion = { kind: "supported_bounds" as const, completedAt: null,
+    completedNoEarlierThan: lower, lowerEvidence: lower === null ? null : { proofId: raw.proofId, bodyHash: raw.bodyHash, pointer: "/games/0/lower" },
+    completedNoLaterThan: raw.firstReceivedAt, upperEvidence: { kind: "final_body_receipt" as const, proofId: raw.proofId, bodyHash: raw.bodyHash },
+    finalEvidence: { proofId: raw.proofId, bodyHash: raw.bodyHash, historicalGameId: 2026020001, seasonId: 20262027, teamId: 1 } };
+  const rows = normalized.rows.map(row => ({ ...row, completedAt: null, completion }));
+  const proof = { version: NATIVE_COVERAGE_PROOF_VERSION as typeof NATIVE_COVERAGE_PROOF_VERSION, mode: "prospective_public_observation" as const,
+    evidenceType: "derived_normalized" as const, proofId: "skater-proof", bodyUtf8: JSON.stringify({ ...normalized, rows }), bodyHash: "",
+    createdAt: "2026-10-08T03:02:00Z", verifiedAt: "2026-10-08T03:03:00Z", publishedAt: null, firstReceivedAt: null,
+    transformation: { version: "synthetic-transform-v1", codeHash: nativeCoverageTextHash("code"), configHash: nativeCoverageTextHash("config"), semanticHash: nativeCoverageTextHash("meaning") },
+    contributors: [raw], links: rows.map((_, i) => ({ proofId: raw.proofId, bodyHash: raw.bodyHash, pointer: `/rows/${i}`, derivedPointer: `/rows/${i}` })) };
+  proof.bodyHash = nativeCoverageTextHash(proof.bodyUtf8);
+  f.packet.skater.coverage = proof;
+  const expected = { ...proof, bodyUtf8: undefined, contributors: proof.contributors.map(item => ({ ...item, bodyUtf8: undefined })) };
+  // Remove rather than serialize undefined keys: expectation schemas are strict.
+  const contract = JSON.parse(JSON.stringify(expected));
+  Object.assign(f.scope.proofs[0], { bodyHash: proof.bodyHash, contract });
+  return { f, raw, rawBody, proof, contract, rows, completion };
+}
+function observationIssues(x: ReturnType<typeof observationFixture>) {
+  const findings: string[] = [], add = (_kind: "invalid" | "unknown", code: string) => findings.push(code);
+  checkNativeCoverageProof(x.proof, x.contract, x.f.scope.modelCutoffAt, add);
+  checkNativeCoverageHistory(x.rows[0], x.proof, x.f.scope.gameId, 1, x.f.scope.modelCutoffAt, add);
+  return findings;
+}
+describe("versioned observations, completion bounds and derivation provenance", () => {
+  it("accepts independently bound raw/derived mechanics with unknown publication and null exact completion", () => {
+    const x = observationFixture(null), before = JSON.stringify(x.f);
+    expect(validate(x.f)).toMatchObject({ mechanicalVerdict: "passed", qualificationEligible: false, sourceAuthenticity: "not_established" });
+    expect(observationIssues(x)).toEqual([]); expect(JSON.stringify(x.f)).toBe(before);
+    const raw = { ...x.raw, version: NATIVE_COVERAGE_PROOF_VERSION as typeof NATIVE_COVERAGE_PROOF_VERSION, mode: "prospective_public_observation" as const, evidenceType: "raw_official" as const };
+    const { bodyUtf8: _bytes, ...expected } = raw;
+    const found: string[] = [];
+    checkNativeCoverageProof(raw, expected, x.f.scope.modelCutoffAt, (_kind, code) => found.push(code));
+    checkNativeCoverageHistory(x.rows[0], raw, x.f.scope.gameId, 1, x.f.scope.modelCutoffAt, (_kind, code) => found.push(code));
+    expect(found).toEqual([]);
+    delete (x.f.scope.proofs[0] as { contract?: unknown }).contract;
+    expect(codes(x.f)).toContain("proof_contract_binding");
+  });
+  it("accepts explicitly bound archival-v2 evidence and preserves unknown-publication blocking", () => {
+    const f = fixture(), old = f.packet.skater.coverage!;
+    if ("version" in old) throw new Error("Expected frozen archival-v1 fixture");
+    const archival = { ...old, version: NATIVE_COVERAGE_PROOF_VERSION as typeof NATIVE_COVERAGE_PROOF_VERSION, mode: "archival_exact" as const };
+    const { bodyUtf8: _bytes, ...contract } = archival;
+    f.packet.skater.coverage = archival; Object.assign(f.scope.proofs[0], { contract });
+    expect(validate(f).mechanicalVerdict).toBe("passed");
+    archival.publishedAt = null; contract.publishedAt = null;
+    expect(codes(f)).toContain("unknown_publication_time");
+  });
+  it("allows verification at the cutoff, while receipt-bound completion stays strictly earlier", () => {
+    const x = observationFixture(); x.raw.verifiedAt = x.f.scope.modelCutoffAt;
+    x.proof.createdAt = x.proof.verifiedAt = x.f.scope.modelCutoffAt;
+    Object.assign(x.contract, JSON.parse(JSON.stringify({ ...x.proof, bodyUtf8: undefined,
+      contributors: x.proof.contributors.map(raw => ({ ...raw, bodyUtf8: undefined })) })));
+    expect(validate(x.f).mechanicalVerdict).toBe("passed");
+    x.proof.verifiedAt = "2026-10-09T18:00:00.000000001Z";
+    expect(observationIssues(x)).toContain("derived_chronology");
+  });
+  it("requires completion fields to be independently bound to this game and bound kind", () => {
+    const x = observationFixture(); x.completion.lowerEvidence!.pointer = "/games/1/lower";
+    x.completion.completedNoEarlierThan = x.rawBody.games[1].lower;
+    expect(observationIssues(x)).toContain("unsupported_completion_lower");
+    const y = observationFixture(); Object.assign(y.raw.completionFacts[0], { kind: "completion_upper" });
+    expect(observationIssues(y)).toContain("unsupported_completion_lower");
+  });
+  it("keeps archival unknown-publication and exact-completion requirements", () => {
+    const f = fixture(); f.packet.skater.coverage!.publishedAt = null;
+    expect(codes(f)).toContain("unknown_publication_time");
+    rewriteProof(f, "skater", b => Object.assign(b.rows[0], { completedAt: null }));
+    expect(codes(f)).toContain("archival_completion_required");
+  });
+  it.each(["mode", "sourceSemanticHash", "revision", "bodyHash", "requestedAt"])("rejects independently unbound %s", field => {
+    const x = observationFixture();
+    if (field === "mode") Object.assign(x.proof, { mode: "archival_exact" });
+    else Object.assign(x.raw, { [field]: field === "requestedAt" ? "2026-10-08T02:58:00Z" : "b".repeat(64) });
+    expect(validate(x.f).mechanicalVerdict).toBe("failed");
+  });
+  it.each(["requestedAt", "firstReceivedAt", "verifiedAt"])("rejects reversal or +1ns late %s", field => {
+    const x = observationFixture();
+    x.raw[field as "requestedAt" | "firstReceivedAt" | "verifiedAt"] = field === "requestedAt" ? "2026-10-08T03:00:00.000000001Z" : "2026-10-09T18:00:00.000000001Z";
+    expect(observationIssues(x)).toContain("observation_chronology");
+  });
+  it.each(["state", "gameId", "seasonId", "teamId"])("rejects a nonfinal or mismatched raw %s field", field => {
+    const x = observationFixture(); Object.assign(x.rawBody.games[0], { [field]: field === "state" ? "LIVE" : 999 });
+    x.raw.bodyUtf8 = JSON.stringify(x.rawBody);
+    expect(observationIssues(x)).toContain("final_body_identity");
+    expect(observationIssues(x)).toContain("raw_body_binding");
+  });
+  it("rejects unsupported earlier upper/lower, reversed bounds, exact invention and cutoff equality", () => {
+    const x = observationFixture(); x.completion.completedNoLaterThan = "2026-10-08T02:00:00Z";
+    expect(observationIssues(x)).toContain("unsupported_completion_upper");
+    x.completion.completedNoEarlierThan = "2026-10-08T04:00:00Z";
+    expect(observationIssues(x)).toContain("unsupported_completion_lower"); expect(observationIssues(x)).toContain("reversed_completion_bounds");
+    Object.assign(x.rows[0], { completedAt: "2026-10-08T01:00:00Z" });
+    expect(observationIssues(x)).toContain("bounds_exact_completion_not_null");
+    x.completion.completedNoLaterThan = x.f.scope.modelCutoffAt;
+    expect(observationIssues(x)).toContain("future_history");
+  });
+  it.each(["created_early", "verified_late", "raw_verify_late", "pointer_missing", "hash_substitution", "copied_receipt", "copied_publication"])("rejects invalid derived lineage %s", example => {
+    const x = observationFixture();
+    if (example === "created_early") x.proof.createdAt = "2026-10-08T02:59:59Z";
+    if (example === "verified_late") x.proof.verifiedAt = "2026-10-09T18:00:00.000000001Z";
+    if (example === "raw_verify_late") x.raw.verifiedAt = "2026-10-08T03:03:00.000000001Z";
+    if (example === "pointer_missing") x.proof.links[0].pointer = "/absent";
+    if (example === "hash_substitution") x.proof.links[0].bodyHash = "b".repeat(64);
+    if (example === "copied_receipt") Object.assign(x.proof, { firstReceivedAt: x.raw.firstReceivedAt });
+    if (example === "copied_publication") Object.assign(x.proof, { publishedAt: "2026-10-08T02:00:00Z" });
+    expect(validate(x.f).mechanicalVerdict).toBe("failed");
+    if (["created_early", "verified_late", "raw_verify_late"].includes(example)) expect(observationIssues(x)).toContain("derived_chronology");
+  });
+  it("does not make unknown rights, credit or estimator approval eligible", () => {
+    const x = observationFixture(); Object.assign(x.raw, { rights: "unknown" });
+    expect(observationIssues(x)).toContain("unverified_access_or_rights");
+    x.f.packet.skater.pCreditGivenPlayed = null;
+    expect(codes(x.f)).toContain("unknown_skater_participation");
+    expect(validateNativePlayerCoverage(x.f.packet, x.f.scope, []).qualificationEligible).toBe(false);
+  });
+});
+
+describe("explicit completion-based window and latest-count gates", () => {
+  function selection(x: ReturnType<typeof observationFixture>) {
+    const second = { historicalGameId: 2026020002, completedAt: null,
+      completion: { ...x.completion, completedNoEarlierThan: x.rawBody.games[1].lower,
+        lowerEvidence: { proofId: x.raw.proofId, bodyHash: x.raw.bodyHash, pointer: "/games/1/lower" },
+        completedNoLaterThan: x.rawBody.games[1].upper,
+        upperEvidence: { kind: "timestamp_field" as const, proofId: x.raw.proofId, bodyHash: x.raw.bodyHash, pointer: "/games/1/upper" },
+        finalEvidence: { ...x.completion.finalEvidence, historicalGameId: 2026020002 } } };
+    return { windowStartInclusive: "2026-10-06T00:00:00Z", windowEndExclusive: "2026-10-09T00:00:00Z",
+      latestCount: 1, censusComplete: true as boolean | null, census: [{ historicalGameId: x.rows[0].historicalGameId, completedAt: x.rows[0].completedAt, completion: x.rows[0].completion }, second] };
+  }
+  function check(x: ReturnType<typeof observationFixture>, s: ReturnType<typeof selection>) {
+    const found: string[] = [];
+    checkNativeCoverageSelection(s, x.rows, x.proof, x.f.scope.gameId, 1, x.f.scope.modelCutoffAt, (_kind, code) => found.push(code));
+    return found;
+  }
+  it("accepts a supported interval in the window with a complete separately supplied census", () => {
+    const x = observationFixture(); expect(check(x, selection(x))).toEqual([]);
+    Object.assign(x.f.scope.proofs[0], { selection: selection(x) }); expect(validate(x.f).mechanicalVerdict).toBe("passed");
+  });
+  it.each([null, "2026-10-05T23:59:59Z"])("keeps null/crossing lower membership unknown: %j", lower => {
+    const x = observationFixture(lower); expect(check(x, selection(x))).toContain("unknown_window_membership");
+  });
+  it("keeps incomplete/insufficient census and overlapping selection order unresolved", () => {
+    const x = observationFixture(), s = selection(x); s.censusComplete = null;
+    expect(check(x, s)).toContain("unknown_selection_census"); s.censusComplete = true; s.latestCount = 3;
+    expect(check(x, s)).toContain("insufficient_selection_census"); s.latestCount = 1;
+    const overlapping = observationFixture("2026-10-08T00:00:00Z", "2026-10-08T01:00:00Z", "2026-10-08T02:00:00Z");
+    expect(check(overlapping, selection(overlapping))).toEqual(["unknown_selection_order"]);
+    expect(validateNativePlayerCoverage(x.f.packet, { ...x.f.scope, gameDayChronology: "approved-by-packet" }, x.f.approvals).mechanicalVerdict).toBe("failed");
   });
 });

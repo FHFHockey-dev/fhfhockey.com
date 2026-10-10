@@ -1,5 +1,7 @@
 import { z } from "zod";
-import { NATIVE_PLAYER_COVERAGE_DOMAIN_HASH, nativeCoverageTextHash } from "./nativePlayerCoverage";
+import { NATIVE_PLAYER_COVERAGE_DOMAIN_HASH, nativeCoverageTextHash, nativeCoverageProofSchema,
+  nativeCoverageProofExpectationSchema, nativeCoverageHistoryFields, nativeCoverageSelectionSchema,
+  checkNativeCoverageProof, checkNativeCoverageHistory, checkNativeCoverageSelection, nativeCoverageProofBindingHash } from "./nativePlayerCoverage";
 
 /** Disconnected arithmetic only; no population selection, fitting, sampling or issuance. */
 export const NATIVE_COVERAGE_KERNEL_VERSION = "native-player-coverage-arithmetic-v1";
@@ -31,7 +33,8 @@ const specification = z.object({ version: z.literal(NATIVE_COVERAGE_KERNEL_VERSI
 export type NativeCoverageKernelSpecification = z.infer<typeof specification>;
 const scope = z.object({ gameId: id, seasonId: id, teamIds: z.tuple([id, id]), skater: identity, goalie: identity,
   scheduledAt: timestamp, asOf: timestamp, assessedAt: timestamp, modelCutoffAt: timestamp, featureCutoffAt: timestamp,
-  specificationHash: hash, sources: z.array(z.object({ proofId: text, bodyHash: hash }).strict()).min(1).max(1000) }).strict();
+  specificationHash: hash, sources: z.array(z.object({ proofId: text, bodyHash: hash,
+    contract: nativeCoverageProofExpectationSchema.optional(), selection: nativeCoverageSelectionSchema.optional() }).strict()).min(1).max(1000) }).strict();
 export type NativeCoverageKernelScope = z.infer<typeof scope>;
 const approval = z.object({ specificationHash: hash, algorithmHash: hash, domainHash: hash, sourceSetHash: hash,
   permittedUse: z.literal("offline_arithmetic_review"), approvedAt: timestamp }).strict();
@@ -41,9 +44,9 @@ const source = z.object({ proofId: text, bodyUtf8: z.string().min(1).max(4000000
   publishedAt: timestamp.nullable(), firstReceivedAt: timestamp, verifiedAt: timestamp,
   access: z.enum(["available", "unknown", "restricted"]), rights: z.enum(["verified_for_intended_use", "unknown", "restricted"]) }).strict();
 const input = z.object({ declaredClassification: z.enum(["synthetic", "retained_exports"]), specificationUtf8: z.string().min(1).max(4000000),
-  sources: z.array(source).min(1).max(1000) }).strict();
+  sources: z.array(z.union([source, nativeCoverageProofSchema])).min(1).max(1000) }).strict();
 export type NativeCoverageKernelInput = z.infer<typeof input>;
-const history = z.object({ rowId: text, historicalGameId: id, completedAt: timestamp });
+const history = z.object({ rowId: text, historicalGameId: id, ...nativeCoverageHistoryFields });
 const hitRow = history.extend({ statisticalCredit: z.boolean().nullable(), hits: integer.nullable(), seconds: integer.max(3900).nullable() }).strict();
 const observed = z.object({ shotsAgainst: integer.nullable(), saves: integer.nullable(), goalsAgainst: integer.nullable(), nonShotGoalsAgainst: integer.nullable() }).strict();
 const interval = z.object({ intervalId: text, startSecond: integer, endSecond: integer,
@@ -88,7 +91,8 @@ function time(value: string): bigint {
   return BigInt(Date.parse(value)) * BigInt(1000000) + BigInt(fraction.slice(3));
 }
 export function nativeCoverageKernelSourceSetHash(sources: NativeCoverageKernelScope["sources"]): string {
-  return nativeCoverageTextHash(JSON.stringify(sources.map(item => [item.proofId, item.bodyHash])
+  return nativeCoverageTextHash(JSON.stringify(sources.map(item => item.contract || item.selection
+    ? [item.proofId, item.bodyHash, item.contract ? nativeCoverageProofBindingHash(item.contract) : null, item.selection ? nativeCoverageProofBindingHash(item.selection) : null] as const : [item.proofId, item.bodyHash] as const)
     .sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)));
 }
 const zeroGoalie = (): GoalieMean => ({ seconds: 0, shotsAgainst: 0, saves: 0, goalsAgainst: 0, nonShotGoalsAgainst: 0 });
@@ -138,29 +142,33 @@ export function calculateNativePlayerCoverageKernel(packet: unknown, expectedSco
     || !c.teamIds.includes(c.skater.teamId) || !c.teamIds.includes(c.goalie.teamId)) add("invalid", "scope_identity", "scope");
   if (time(c.modelCutoffAt) > time(c.featureCutoffAt) || time(c.featureCutoffAt) > time(c.asOf)
     || time(c.asOf) > time(c.assessedAt) || time(c.asOf) >= time(c.scheduledAt)) add("invalid", "cutoff_order", "scope");
-  const bodies = new Map<string, z.infer<typeof sourceBody>>(), envelopes = new Map<string, z.infer<typeof source>>();
+  const bodies = new Map<string, z.infer<typeof sourceBody>>(), envelopes = new Map<string, z.infer<typeof input>["sources"][number]>();
   const keys = (values: { proofId: string }[]) => values.map(value => value.proofId).sort();
   if (new Set(keys(c.sources)).size !== c.sources.length || new Set(keys(p.data.sources)).size !== p.data.sources.length
     || JSON.stringify(keys(c.sources)) !== JSON.stringify(keys(p.data.sources))) add("invalid", "source_population", "sources");
   for (const proof of p.data.sources) {
     const expected = c.sources.find(value => value.proofId === proof.proofId);
     if (!expected || proof.bodyHash !== expected.bodyHash || nativeCoverageTextHash(proof.bodyUtf8) !== proof.bodyHash) add("invalid", "source_binding", proof.proofId);
-    if (proof.publishedAt === null) add("unknown", "unknown_publication", proof.proofId);
-    else if (time(proof.publishedAt) > time(proof.firstReceivedAt)) add("invalid", "source_chronology", proof.proofId);
-    if (time(proof.firstReceivedAt) > time(proof.verifiedAt) || time(proof.verifiedAt) > time(c.modelCutoffAt)) add("invalid", "source_cutoff", proof.proofId);
-    if (proof.access !== "available" || proof.rights !== "verified_for_intended_use") add("unknown", "source_access_or_rights", proof.proofId);
+    checkNativeCoverageProof(proof, expected?.contract, c.modelCutoffAt, (kind, code) => {
+      const legacyCodes: Record<string, string> = { unknown_publication_time: "unknown_publication",
+        future_or_reversed_information: "source_cutoff", unverified_access_or_rights: "source_access_or_rights" };
+      add(kind, legacyCodes[code] ?? code, proof.proofId);
+    });
     let value: unknown;
     try { value = JSON.parse(proof.bodyUtf8); } catch { add("invalid", "malformed_source_json", proof.proofId); continue; }
     const b = sourceBody.safeParse(value);
     if (!b.success) { add("invalid", "malformed_source_body", proof.proofId); continue; }
     if (b.data.domainHash !== q.domainHash) add("invalid", "source_domain", proof.proofId);
     bodies.set(proof.proofId, b.data); envelopes.set(proof.proofId, proof);
+    if (b.data.kind !== "save_conversion") checkNativeCoverageSelection(expected?.selection, b.data.rows, proof, c.gameId,
+      b.data.kind === "hit_history" ? c.skater.teamId : c.goalie.teamId, c.modelCutoffAt,
+      (kind, code) => add(kind, code, proof.proofId));
   }
   function historyTime(value: z.infer<typeof history>, proofId: string) {
     const proof = envelopes.get(proofId)!;
-    if (value.historicalGameId === c.gameId || time(value.completedAt) >= time(c.modelCutoffAt)) add("invalid", "future_history", value.rowId);
-    if (time(value.completedAt) > time(proof.firstReceivedAt)
-      || proof.publishedAt !== null && time(value.completedAt) > time(proof.publishedAt)) add("invalid", "completed_history_unavailable", value.rowId);
+    checkNativeCoverageHistory(value, proof, c.gameId,
+      bodies.get(proofId)?.kind === "hit_history" ? c.skater.teamId : c.goalie.teamId, c.modelCutoffAt,
+      (kind, code) => add(kind, code, value.rowId));
   }
   function membership(kind: "hit_history" | "goalie_scenarios", members: z.infer<typeof member>[]) {
     const key = (proofId: string, rowId: string) => JSON.stringify([proofId, rowId]);

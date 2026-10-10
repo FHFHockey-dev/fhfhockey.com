@@ -36,30 +36,233 @@ const approval = model.omit({ assumptions: true }).extend({ categories: z.array(
   permittedUse: z.literal("offline_support_review"), approvedAt: timestamp }).strict();
 export type NativeCoverageEstimatorApproval = z.infer<typeof approval>;
 const rowKey = z.object({ rowId: text, historicalGameId: id, periodNumber: id, periodType: z.enum(["REG", "OT", "SO"]) }).strict();
+const counts = z.object({ HITS: count.nullable(), SHOTS_AGAINST_GOALIE: count.nullable(), SAVES_GOALIE: count.nullable(),
+  GOALS_AGAINST_GOALIE: count.nullable(), nonShotGoalsAgainst: count.nullable() }).strict();
+const proof = z.object({ proofId: text, bodyUtf8: z.string().min(1).max(2000000), bodyHash: hash,
+  // Publication and receipt refer to this exact completed-game body revision.
+  publishedAt: timestamp.nullable(), firstReceivedAt: timestamp, verifiedAt: timestamp,
+  access: z.enum(["available", "restricted", "unknown"]), rights: z.enum(["verified_for_intended_use", "restricted", "unknown"]) }).strict();
+/** v2 admits independently bound observations; omitted contract preserves frozen v1 archival semantics. */
+export const NATIVE_COVERAGE_PROOF_VERSION = "native-coverage-proof-v2";
+const pointer = z.string().min(1).max(2000).regex(/^\//);
+const reference = z.object({ proofId: text, bodyHash: hash, pointer }).strict();
+const finalGame = z.object({ historicalGameId: id, seasonId: id, teamId: id,
+  gameIdPointer: pointer, seasonIdPointer: pointer, teamIdPointer: pointer,
+  finalStatePointer: pointer, finalStateValue: z.enum(["FINAL", "OFF", "final"]) }).strict();
+const completionFact = z.object({ historicalGameId: id, seasonId: id, teamId: id, pointer,
+  kind: z.enum(["completion_lower", "completion_upper", "completion_exact"]), at: timestamp }).strict();
+const rawObservation = z.object({ proofId: text, bodyUtf8: z.string().min(1).max(4000000), bodyHash: hash,
+  sourceSemanticVersion: text, sourceSemanticHash: hash, origin: z.string().url().max(2000), revision: text,
+  httpStatus: z.literal(200), requestedAt: timestamp, firstReceivedAt: timestamp, verifiedAt: timestamp,
+  publishedAt: timestamp.nullable(), access: z.enum(["available", "restricted", "unknown"]),
+  rights: z.enum(["verified_for_intended_use", "restricted", "unknown"]), finalGames: z.array(finalGame).max(20000), completionFacts: z.array(completionFact).max(20000) }).strict();
+const observationTag = { version: z.literal(NATIVE_COVERAGE_PROOF_VERSION), mode: z.literal("prospective_public_observation") };
+const rawProof = rawObservation.extend({ ...observationTag, evidenceType: z.literal("raw_official") }).strict();
+const transformation = z.object({ version: text, codeHash: hash, configHash: hash, semanticHash: hash }).strict();
+const link = reference.extend({ derivedPointer: pointer }).strict();
+const derivedProof = z.object({ ...observationTag, evidenceType: z.literal("derived_normalized"), proofId: text,
+  bodyUtf8: z.string().min(1).max(4000000), bodyHash: hash, createdAt: timestamp, verifiedAt: timestamp,
+  // A local derivative has no upstream publication or HTTP receipt of its own.
+  publishedAt: z.null(), firstReceivedAt: z.null(), transformation,
+  contributors: z.array(rawObservation).min(1).max(1000), links: z.array(link).min(1).max(20000) }).strict();
+const archivalProof = proof.extend({ version: z.literal(NATIVE_COVERAGE_PROOF_VERSION), mode: z.literal("archival_exact") }).strict();
+export const nativeCoverageProofSchema = z.union([proof, archivalProof, rawProof, derivedProof]);
+export const nativeCoverageProofExpectationSchema = z.union([
+  archivalProof.omit({ bodyUtf8: true }), rawProof.omit({ bodyUtf8: true }),
+  derivedProof.omit({ bodyUtf8: true }).extend({ contributors: z.array(rawObservation.omit({ bodyUtf8: true })).min(1).max(1000) }).strict(),
+]);
+const finalReference = z.object({ proofId: text, bodyHash: hash, historicalGameId: id, seasonId: id, teamId: id }).strict();
+const boundEvidence = z.union([
+  z.object({ kind: z.literal("final_body_receipt"), proofId: text, bodyHash: hash }).strict(),
+  reference.extend({ kind: z.literal("timestamp_field") }).strict(),
+]);
+const completion = z.union([
+  z.object({ kind: z.literal("exact_instant"), completedAt: timestamp, evidence: reference, finalEvidence: finalReference }).strict(),
+  z.object({ kind: z.literal("supported_bounds"), completedAt: z.null(), completedNoEarlierThan: timestamp.nullable(),
+    lowerEvidence: reference.nullable(), completedNoLaterThan: timestamp, upperEvidence: boundEvidence,
+    finalEvidence: finalReference }).strict(),
+]);
+export const nativeCoverageHistoryFields = { completedAt: timestamp.nullable(), completion: completion.optional() };
+const historyEvidence = z.object({ historicalGameId: id, ...nativeCoverageHistoryFields }).strict();
+export const nativeCoverageSelectionSchema = z.object({ windowStartInclusive: timestamp, windowEndExclusive: timestamp,
+  latestCount: id, censusComplete: z.boolean().nullable(), census: z.array(historyEvidence).max(20000).nullable() }).strict();
+type CoverageProof = z.infer<typeof nativeCoverageProofSchema>;
+type CoverageExpectation = z.infer<typeof nativeCoverageProofExpectationSchema>;
+type HistoryEvidence = z.infer<typeof historyEvidence>;
+type ProofFinding = (kind: "invalid" | "unknown", code: string) => void;
+const prospective = (value: CoverageProof): value is z.infer<typeof rawProof> | z.infer<typeof derivedProof> =>
+  "mode" in value && value.mode === "prospective_public_observation";
+const rawSources = (value: CoverageProof): z.infer<typeof rawObservation>[] => !prospective(value) ? []
+  : value.evidenceType === "raw_official" ? [value] : value.contributors;
+function jsonValue(bodyUtf8: string, path: string): unknown {
+  try {
+    let value: unknown = JSON.parse(bodyUtf8);
+    for (const key of path.slice(1).split("/").map(value => value.replace(/~1/g, "/").replace(/~0/g, "~"))) {
+      if (!value || typeof value !== "object" || !Object.prototype.hasOwnProperty.call(value, key)) return undefined;
+      value = (value as Record<string, unknown>)[key];
+    }
+    return value;
+  } catch { return undefined; }
+}
+// Canonical metadata comparison ignores object key ordering, never byte hashes or array ordering.
+function metadata(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(metadata).join(",")}]`;
+  if (value !== null && typeof value === "object") return `{${Object.entries(value).sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, item]) => `${JSON.stringify(key)}:${metadata(item)}`).join(",")}}`;
+  return JSON.stringify(value) ?? "undefined";
+}
+export function nativeCoverageProofBindingHash(value: unknown): string {
+  return nativeCoverageTextHash(metadata(value));
+}
+function withoutBytes(value: CoverageProof): unknown {
+  const { bodyUtf8: _bytes, ...rest } = value;
+  return prospective(value) && value.evidenceType === "derived_normalized"
+    ? { ...rest, contributors: value.contributors.map(({ bodyUtf8: _rawBytes, ...item }) => item) } : rest;
+}
+/** Shared only by the disconnected checker and kernel. The caller controls the expectation independently. */
+export function checkNativeCoverageProof(value: CoverageProof, expected: CoverageExpectation | undefined,
+  cutoff: string, add: ProofFinding): void {
+  if (("version" in value) !== (expected !== undefined) || expected && metadata(withoutBytes(value)) !== metadata(expected))
+    add("invalid", "proof_contract_binding");
+  if (!prospective(value)) {
+    if (value.publishedAt === null) add("unknown", "unknown_publication_time");
+    else if (time(value.publishedAt) > time(value.firstReceivedAt)) add("invalid", "source_chronology");
+    if (time(value.firstReceivedAt) > time(value.verifiedAt) || time(value.verifiedAt) > time(cutoff)) add("invalid", "future_or_reversed_information");
+    if (value.access !== "available" || value.rights !== "verified_for_intended_use") add("unknown", "unverified_access_or_rights");
+    return;
+  }
+  const raws = rawSources(value);
+  if (nativeCoverageTextHash(value.bodyUtf8) !== value.bodyHash) add("invalid", "proof_body_binding");
+  if (new Set(raws.map(item => item.proofId)).size !== raws.length) add("invalid", "duplicate_raw_observation");
+  for (const raw of raws) {
+    if (nativeCoverageTextHash(raw.bodyUtf8) !== raw.bodyHash) add("invalid", "raw_body_binding");
+    if (time(raw.requestedAt) > time(raw.firstReceivedAt) || time(raw.firstReceivedAt) > time(raw.verifiedAt)
+      || time(raw.verifiedAt) > time(cutoff)) add("invalid", "observation_chronology");
+    if (raw.publishedAt !== null && time(raw.publishedAt) > time(raw.firstReceivedAt)) add("invalid", "source_chronology");
+    if (raw.access !== "available" || raw.rights !== "verified_for_intended_use") add("unknown", "unverified_access_or_rights");
+    if (new Set(raw.finalGames.map(item => `${item.historicalGameId}:${item.teamId}`)).size !== raw.finalGames.length)
+      add("invalid", "duplicate_final_game");
+    for (const fact of raw.completionFacts) {
+      const field = jsonValue(raw.bodyUtf8, fact.pointer);
+      if (typeof field !== "string" || !timestamp.safeParse(field).success || time(field) !== time(fact.at)
+        || !raw.finalGames.some(game => game.historicalGameId === fact.historicalGameId && game.seasonId === fact.seasonId && game.teamId === fact.teamId))
+        add("invalid", "completion_fact_binding");
+    }
+    for (const game of raw.finalGames) {
+      if (jsonValue(raw.bodyUtf8, game.gameIdPointer) !== game.historicalGameId
+        || jsonValue(raw.bodyUtf8, game.seasonIdPointer) !== game.seasonId
+        || jsonValue(raw.bodyUtf8, game.teamIdPointer) !== game.teamId
+        || jsonValue(raw.bodyUtf8, game.finalStatePointer) !== game.finalStateValue) add("invalid", "final_body_identity");
+    }
+  }
+  if (value.evidenceType === "derived_normalized") {
+    if (raws.some(raw => raw.proofId === value.proofId || raw.bodyHash === value.bodyHash)) add("invalid", "derived_self_link");
+    if (time(value.createdAt) > time(value.verifiedAt) || time(value.verifiedAt) > time(cutoff)
+      || raws.some(raw => time(raw.firstReceivedAt) > time(value.createdAt) || time(raw.verifiedAt) > time(value.verifiedAt)))
+      add("invalid", "derived_chronology");
+    const normalizedRows = jsonValue(value.bodyUtf8, "/rows");
+    if (Array.isArray(normalizedRows) && normalizedRows.some((_, i) => !value.links.some(ref =>
+      ref.derivedPointer === `/rows/${i}` || ref.derivedPointer.startsWith(`/rows/${i}/`)))) add("invalid", "unlinked_derived_row");
+    for (const ref of value.links) {
+      const raw = raws.find(item => item.proofId === ref.proofId && item.bodyHash === ref.bodyHash);
+      if (!raw || jsonValue(raw.bodyUtf8, ref.pointer) === undefined || jsonValue(value.bodyUtf8, ref.derivedPointer) === undefined)
+        add("invalid", "derived_pointer_binding");
+    }
+    if (raws.some(raw => !value.links.some(ref => ref.proofId === raw.proofId && ref.bodyHash === raw.bodyHash)))
+      add("invalid", "unlinked_contributor");
+  }
+}
+export function checkNativeCoverageHistory(row: HistoryEvidence, value: CoverageProof, targetGameId: number,
+  teamId: number, cutoff: string, add: ProofFinding): { lower: bigint | null; upper: bigint } | null {
+  if (!prospective(value)) {
+    if (row.completedAt === null || row.completion) { add("invalid", "archival_completion_required"); return null; }
+    if (row.historicalGameId === targetGameId || time(row.completedAt) >= time(cutoff)) add("invalid", "future_history");
+    if (time(row.completedAt) > time(value.firstReceivedAt)
+      || value.publishedAt !== null && time(row.completedAt) > time(value.publishedAt)) add("invalid", "completed_history_unavailable");
+    return { lower: time(row.completedAt), upper: time(row.completedAt) };
+  }
+  const c = row.completion;
+  if (!c) { add("unknown", "unknown_completion_evidence"); return null; }
+  const raws = rawSources(value), final = c.finalEvidence;
+  const raw = raws.find(item => item.proofId === final.proofId && item.bodyHash === final.bodyHash);
+  if (row.historicalGameId !== final.historicalGameId || final.teamId !== teamId
+    || !raw?.finalGames.some(item => item.historicalGameId === final.historicalGameId && item.seasonId === final.seasonId && item.teamId === teamId))
+    add("invalid", "completion_final_binding");
+  const fieldTime = (ref: z.infer<typeof reference>, instant: string, kind: z.infer<typeof completionFact>["kind"]) => {
+    const source = raws.find(item => item.proofId === ref.proofId && item.bodyHash === ref.bodyHash);
+    const field = source && jsonValue(source.bodyUtf8, ref.pointer);
+    return typeof field === "string" && timestamp.safeParse(field).success && time(field) === time(instant)
+      && !!source?.completionFacts.some(fact => fact.pointer === ref.pointer && fact.kind === kind && time(fact.at) === time(instant)
+        && fact.historicalGameId === final.historicalGameId && fact.seasonId === final.seasonId && fact.teamId === final.teamId);
+  };
+  let lower: bigint | null, upper: bigint;
+  if (c.kind === "exact_instant") {
+    if (row.completedAt === null || time(row.completedAt) !== time(c.completedAt) || !fieldTime(c.evidence, c.completedAt, "completion_exact"))
+      add("invalid", "unsupported_exact_completion");
+    lower = upper = time(c.completedAt);
+  } else {
+    if (row.completedAt !== null) add("invalid", "bounds_exact_completion_not_null");
+    lower = c.completedNoEarlierThan === null ? null : time(c.completedNoEarlierThan); upper = time(c.completedNoLaterThan);
+    if ((c.completedNoEarlierThan === null) !== (c.lowerEvidence === null)
+      || c.completedNoEarlierThan !== null && c.lowerEvidence !== null && !fieldTime(c.lowerEvidence, c.completedNoEarlierThan, "completion_lower")) add("invalid", "unsupported_completion_lower");
+    const e = c.upperEvidence;
+    if (e.kind === "final_body_receipt" ? !raw || e.proofId !== final.proofId || e.bodyHash !== final.bodyHash
+      || time(raw.firstReceivedAt) !== upper : !fieldTime(e, c.completedNoLaterThan, "completion_upper")) add("invalid", "unsupported_completion_upper");
+    if (lower !== null && lower > upper) add("invalid", "reversed_completion_bounds");
+  }
+  if (row.historicalGameId === targetGameId || upper >= time(cutoff)) add("invalid", "future_history");
+  if (raw && (upper > time(raw.firstReceivedAt) || raw.publishedAt !== null && lower !== null && lower > time(raw.publishedAt)))
+    add("invalid", "completed_history_unavailable");
+  return { lower, upper };
+}
+/** Optional explicit selection contract, never a default window/count or receipt-based ordering. */
+export function checkNativeCoverageSelection(selection: z.infer<typeof nativeCoverageSelectionSchema> | undefined,
+  rows: HistoryEvidence[], value: CoverageProof, targetGameId: number, teamId: number, cutoff: string, add: ProofFinding): void {
+  if (!selection) return;
+  const start = time(selection.windowStartInclusive), end = time(selection.windowEndExclusive);
+  if (start >= end || end > time(cutoff)) add("invalid", "selection_window");
+  if (selection.censusComplete !== true || selection.census === null) { add("unknown", "unknown_selection_census"); return; }
+  const selected = new Set(rows.map(row => row.historicalGameId)), censusIds = selection.census.map(row => row.historicalGameId);
+  if (new Set(censusIds).size !== censusIds.length || [...selected].some(gameId => !censusIds.includes(gameId))) add("invalid", "selection_census_binding");
+  const inside: { gameId: number; lower: bigint; upper: bigint }[] = [];
+  for (const row of selection.census) {
+    const interval = checkNativeCoverageHistory(row, value, targetGameId, teamId, cutoff, add);
+    if (!interval) continue;
+    for (const actual of rows.filter(item => item.historicalGameId === row.historicalGameId))
+      if (metadata({ completedAt: actual.completedAt, completion: actual.completion }) !== metadata({ completedAt: row.completedAt, completion: row.completion }))
+        add("invalid", "selection_completion_binding");
+    if (interval.upper < start || interval.lower !== null && interval.lower >= end) {
+      if (selected.has(row.historicalGameId)) add("invalid", "selected_outside_window");
+    } else if (interval.lower === null || interval.lower < start || interval.upper >= end) add("unknown", "unknown_window_membership");
+    else inside.push({ gameId: row.historicalGameId, lower: interval.lower, upper: interval.upper });
+  }
+  if (inside.length < selection.latestCount || selected.size < selection.latestCount) add("unknown", "insufficient_selection_census");
+  if (selected.size > selection.latestCount) add("invalid", "selection_count");
+  for (const chosen of inside.filter(item => selected.has(item.gameId))) for (const other of inside.filter(item => !selected.has(item.gameId))) {
+    if (chosen.upper < other.lower) add("invalid", "not_latest_selection");
+    else if (chosen.lower <= other.upper) add("unknown", "unknown_selection_order");
+  }
+}
+
 const scope = z.object({ gameId: id, seasonId: id, teamIds: z.tuple([id, id]), scheduledAt: timestamp,
   asOf: timestamp, assessedAt: timestamp, modelCutoffAt: timestamp, featureCutoffAt: timestamp,
   skater: identity, goalie: identity,
   proofs: z.array(z.object({ proofId: text, bodyHash: hash,
     // Supplied separately by the caller, never inferred from the evidence packet's rows.
-    expectedRows: z.array(rowKey).max(20000).nullable() }).strict()).max(2) }).strict();
+    expectedRows: z.array(rowKey).max(20000).nullable(), contract: nativeCoverageProofExpectationSchema.optional(),
+    selection: nativeCoverageSelectionSchema.optional() }).strict()).max(2) }).strict();
 export type NativePlayerCoverageScope = z.infer<typeof scope>;
-const counts = z.object({ HITS: count.nullable(), SHOTS_AGAINST_GOALIE: count.nullable(), SAVES_GOALIE: count.nullable(),
-  GOALS_AGAINST_GOALIE: count.nullable(), nonShotGoalsAgainst: count.nullable() }).strict();
-const row = rowKey.extend({ completedAt: timestamp, exposureSeconds: count.max(3900).nullable(),
+const row = rowKey.extend({ ...nativeCoverageHistoryFields, exposureSeconds: count.max(3900).nullable(),
   counts }).strict();
 const body = z.object({ gameId: id, seasonId: id, identity, domain,
   rows: z.array(row).max(20000), unclassifiedEvents: count.nullable(), unclassifiedSeconds: count.nullable() }).strict();
-const proof = z.object({ proofId: text, bodyUtf8: z.string().min(1).max(2000000), bodyHash: hash,
-  // Publication and receipt refer to this exact completed-game body revision.
-  publishedAt: timestamp.nullable(), firstReceivedAt: timestamp, verifiedAt: timestamp,
-  access: z.enum(["available", "restricted", "unknown"]), rights: z.enum(["verified_for_intended_use", "restricted", "unknown"]) }).strict();
 const goalieStats = z.object({ SHOTS_AGAINST_GOALIE: count.nullable(), SAVES_GOALIE: count.nullable(),
   GOALS_AGAINST_GOALIE: count.nullable(), nonShotGoalsAgainst: count.nullable(), seconds: count.max(3900).nullable() }).strict();
-const skater = z.object({ identity, model, coverage: proof.nullable(), pCreditGivenPlayed: probability,
+const skater = z.object({ identity, model, coverage: nativeCoverageProofSchema.nullable(), pCreditGivenPlayed: probability,
   pDressGivenPlayed: probability, pPositiveMinutesGivenPlayed: probability,
   conditionalBasis: z.literal(bases.skater), conditionalHits: count.nullable(), unconditionalHits: count.nullable(),
   conditionalSeconds: count.max(3900).nullable(), unconditionalSeconds: count.max(3900).nullable() }).strict();
-const goalie = z.object({ identity, model, coverage: proof.nullable(), pStartGivenPlayed: probability,
+const goalie = z.object({ identity, model, coverage: nativeCoverageProofSchema.nullable(), pStartGivenPlayed: probability,
   pReliefOnlyGivenPlayed: probability, pNoAppearanceGivenPlayed: probability,
   conditionalBasis: z.literal(bases.goalie), givenStart: goalieStats.nullable(), givenReliefOnly: goalieStats.nullable(),
   unconditional: goalieStats }).strict();
@@ -159,18 +362,15 @@ export function validateNativePlayerCoverage(input: unknown, expectedScope: unkn
       ? BigInt(sa!) !== BigInt(sv!) + BigInt(ga!) - BigInt(nonShot!)
       : !equal(sa!, sv! + ga! - nonShot!)))) add("invalid", "guarded_shot_identity", path, targets);
   }
-  function checkProof(value: z.infer<typeof proof> | null, actor: z.infer<typeof identity>, population: keyof typeof bases, targets: Category[]) {
+  function checkProof(value: z.infer<typeof nativeCoverageProofSchema> | null, actor: z.infer<typeof identity>, population: keyof typeof bases, targets: Category[]) {
     if (!value) { add("unknown", population === "skater" ? "missing_whole_play_hit_coverage" : "missing_guarded_shot_spell_coverage", `${population}.coverage`, targets); return; }
     if (usedProofs.has(value.proofId)) add("invalid", "duplicate_proof", `${population}.coverage`, targets);
     usedProofs.add(value.proofId);
     const expected = s.proofs.find(item => item.proofId === value.proofId);
     if (!expected || expected.bodyHash !== value.bodyHash || nativeCoverageTextHash(value.bodyUtf8) !== value.bodyHash)
       add("invalid", "proof_hash_or_scope_mismatch", `${population}.coverage`, targets);
-    if (value.publishedAt === null) add("unknown", "unknown_publication_time", `${population}.coverage`, targets);
-    else if (time(value.publishedAt) > time(value.firstReceivedAt)) add("invalid", "source_chronology", `${population}.coverage`, targets);
-    if (time(value.firstReceivedAt) > time(value.verifiedAt) || time(value.verifiedAt) > time(s.modelCutoffAt))
-      add("invalid", "future_or_reversed_information", `${population}.coverage`, targets);
-    if (value.access !== "available" || value.rights !== "verified_for_intended_use") add("unknown", "unverified_access_or_rights", `${population}.coverage`, targets);
+    checkNativeCoverageProof(value, expected?.contract, s.modelCutoffAt,
+      (kind, code) => add(kind, code, `${population}.coverage`, targets));
     let raw: unknown;
     try { raw = JSON.parse(value.bodyUtf8); } catch { add("invalid", "malformed_proof_json", `${population}.coverage`, targets); return; }
     const parsed = body.safeParse(raw);
@@ -192,10 +392,8 @@ export function validateNativePlayerCoverage(input: unknown, expectedScope: unkn
     if (b.unclassifiedEvents !== 0 || b.unclassifiedSeconds !== 0) add("unknown", "unclassified_event_or_exposure", `${population}.coverage`, targets);
     let exposure = 0;
     for (const r of b.rows) {
-      if (r.historicalGameId === s.gameId || time(r.completedAt) >= time(s.modelCutoffAt)) add("invalid", "future_history", `${population}.coverage`, targets);
-      if (time(r.completedAt) > time(value.firstReceivedAt)
-        || value.publishedAt !== null && time(r.completedAt) > time(value.publishedAt))
-        add("invalid", "completed_history_unavailable", `${population}.coverage`, targets);
+      checkNativeCoverageHistory(r, value, s.gameId, actor.teamId, s.modelCutoffAt,
+        (kind, code) => add(kind, code, `${population}.coverage`, targets));
       if (r.periodType === "SO") { add("invalid", "shootout_in_official_play", `${population}.coverage`, targets); continue; }
       if (r.periodType === "REG" && r.periodNumber > 3 || r.periodType === "OT" && r.periodNumber !== 4)
         add("invalid", "period_boundary_mismatch", `${population}.coverage`, targets);
@@ -214,6 +412,8 @@ export function validateNativePlayerCoverage(input: unknown, expectedScope: unkn
           add("unknown", "unproved_guarded_exposure", `${population}.coverage`, targets);
       }
     }
+    checkNativeCoverageSelection(expected?.selection, b.rows, value, s.gameId, actor.teamId, s.modelCutoffAt,
+      (kind, code) => add(kind, code, `${population}.coverage`, targets));
     if (exposure === 0) add("unknown", "zero_exposure_denominator", `${population}.coverage`, targets);
   }
   checkProof(p.skater.coverage, s.skater, "skater", ["HITS"]);

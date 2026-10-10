@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NATIVE_PLAYER_COVERAGE_DOMAIN_HASH, nativeCoverageTextHash } from "./nativePlayerCoverage";
+import { NATIVE_PLAYER_COVERAGE_DOMAIN_HASH, nativeCoverageTextHash, NATIVE_COVERAGE_PROOF_VERSION } from "./nativePlayerCoverage";
 import { calculateNativePlayerCoverageKernel, NATIVE_COVERAGE_KERNEL_VERSION, NATIVE_COVERAGE_KERNEL_ALGORITHM_HASH,
   nativeCoverageKernelSourceSetHash, type NativeCoverageKernelSpecification, type NativeCoverageKernelScope,
   type NativeCoverageKernelApproval, type NativeCoverageKernelInput } from "./nativePlayerCoverageKernel";
@@ -166,7 +166,7 @@ describe("required choices and independently bound specification/source receipts
   it("preserves chronology at nanosecond precision, publication unknown and access restrictions", () => {
     const f = fixture(); f.hitBody.rows[0].completedAt = "2026-10-08T02:01:00.000000001Z"; refresh(f); reject(f, "completed_history_unavailable");
     const x = fixture(); x.packet.sources[0].verifiedAt = "2026-10-09T18:00:00.000000001Z"; reject(x, "source_cutoff");
-    const y = fixture(); y.packet.sources[0].publishedAt = null; y.packet.sources[0].rights = "unknown";
+    const y = fixture(); y.packet.sources[0].publishedAt = null; Object.assign(y.packet.sources[0], { rights: "unknown" });
     reject(y, "unknown_publication"); reject(y, "source_access_or_rights");
     const z = fixture(); z.scope.asOf = z.scope.scheduledAt; reject(z, "cutoff_order");
   });
@@ -279,5 +279,81 @@ describe("joint spell and guarded/empty-net opportunity conservation", () => {
     const f = fixture(); const p = f.scenarioBody.rows[0].periods[0];
     p.intervals.forEach(i => { i.modeledShotsAgainst = Number.MAX_VALUE; }); p.teamShotsAgainst = Number.MAX_VALUE;
     refresh(f); reject(f, "nonfinite_arithmetic");
+  });
+});
+
+function prospectiveKernelFixture() {
+  const f = fixture(), old = f.packet.sources.find(item => item.proofId === "hits")!;
+  const rawBody = { rows: f.hitBody.rows, games: f.hitBody.rows.map(row => ({ gameId: row.historicalGameId,
+    seasonId: 20262027, teamId: 1, state: "OFF", lower: "2026-10-08T00:00:00Z" })) };
+  const raw = { proofId: "raw-hits", bodyUtf8: JSON.stringify(rawBody), bodyHash: nativeCoverageTextHash(JSON.stringify(rawBody)),
+    sourceSemanticVersion: "synthetic-final-v1", sourceSemanticHash: nativeCoverageTextHash("source-meaning"),
+    origin: "https://example.test/official-hits", revision: "synthetic-revision", httpStatus: 200 as const,
+    requestedAt: "2026-10-08T02:59:00Z", firstReceivedAt: "2026-10-08T03:00:00Z", verifiedAt: "2026-10-08T03:01:00Z",
+    publishedAt: null, access: "available" as const, rights: "verified_for_intended_use" as const,
+    finalGames: rawBody.games.map((g, i) => ({ historicalGameId: g.gameId, seasonId: g.seasonId, teamId: g.teamId,
+      gameIdPointer: `/games/${i}/gameId`, seasonIdPointer: `/games/${i}/seasonId`, teamIdPointer: `/games/${i}/teamId`,
+      finalStatePointer: `/games/${i}/state`, finalStateValue: "OFF" as const })),
+    completionFacts: rawBody.games.map((g, i) => ({ historicalGameId: g.gameId, seasonId: g.seasonId, teamId: g.teamId,
+      pointer: `/games/${i}/lower`, kind: "completion_lower" as const, at: g.lower })) };
+  const rows = f.hitBody.rows.map((row, i) => ({ ...row, completedAt: null, completion: {
+    kind: "supported_bounds" as const, completedAt: null, completedNoEarlierThan: "2026-10-08T00:00:00Z" as string | null,
+    lowerEvidence: { proofId: raw.proofId, bodyHash: raw.bodyHash, pointer: `/games/${i}/lower` },
+    completedNoLaterThan: raw.firstReceivedAt, upperEvidence: { kind: "final_body_receipt" as const, proofId: raw.proofId, bodyHash: raw.bodyHash },
+    finalEvidence: { proofId: raw.proofId, bodyHash: raw.bodyHash, historicalGameId: row.historicalGameId, seasonId: 20262027, teamId: 1 } } }));
+  const proof = { version: NATIVE_COVERAGE_PROOF_VERSION as typeof NATIVE_COVERAGE_PROOF_VERSION, mode: "prospective_public_observation" as const,
+    evidenceType: "derived_normalized" as const, proofId: "hits", bodyUtf8: JSON.stringify({ ...f.hitBody, rows }), bodyHash: "",
+    createdAt: "2026-10-08T03:02:00Z", verifiedAt: "2026-10-08T03:03:00Z", firstReceivedAt: null, publishedAt: null,
+    transformation: { version: "synthetic-v1", codeHash: nativeCoverageTextHash("code"), configHash: nativeCoverageTextHash("config"), semanticHash: nativeCoverageTextHash("semantics") },
+    contributors: [raw], links: rows.map((_, i) => ({ proofId: raw.proofId, bodyHash: raw.bodyHash, pointer: `/rows/${i}`, derivedPointer: `/rows/${i}` })) };
+  proof.bodyHash = nativeCoverageTextHash(proof.bodyUtf8); f.packet.sources[f.packet.sources.indexOf(old)] = proof;
+  function bind() {
+    proof.bodyUtf8 = JSON.stringify({ ...f.hitBody, rows }); proof.bodyHash = nativeCoverageTextHash(proof.bodyUtf8);
+    const expected = JSON.parse(JSON.stringify({ ...proof, bodyUtf8: undefined,
+      contributors: proof.contributors.map(item => ({ ...item, bodyUtf8: undefined })) }));
+    Object.assign(f.scope.sources.find(item => item.proofId === "hits")!, { bodyHash: proof.bodyHash, contract: expected });
+    f.approvals[0].sourceSetHash = nativeCoverageKernelSourceSetHash(f.scope.sources);
+  }
+  bind(); return { f, raw, rows, proof, bind };
+}
+describe("kernel observation contracts preserve arithmetic and withholding", () => {
+  it("admits truthful derivative timing with null completion/publication while preserving exact-mode means", () => {
+    const x = prospectiveKernelFixture(), expected = run(fixture()).bundle, before = JSON.stringify(x.f);
+    expect(run(x.f)).toMatchObject({ findings: [], bundle: expected, qualificationEligible: false, estimatorApproval: "not_established" });
+    expect(JSON.stringify(x.f)).toBe(before);
+  });
+  it("binds observation mode/semantics into the independently approved source set", () => {
+    const x = prospectiveKernelFixture(); x.raw.sourceSemanticHash = "b".repeat(64);
+    reject(x.f, "proof_contract_binding");
+    const oldHash = x.f.approvals[0].sourceSetHash; x.bind(); x.f.approvals[0].sourceSetHash = oldHash;
+    reject(x.f, "unapproved_specification");
+  });
+  it.each(["raw_late", "derived_late", "created_early", "missing_link", "wrong_final_game"])("withholds the numerical bundle for %s", example => {
+    const x = prospectiveKernelFixture();
+    if (example === "raw_late") x.raw.firstReceivedAt = "2026-10-09T18:00:00.000000001Z";
+    if (example === "derived_late") x.proof.verifiedAt = "2026-10-09T18:00:00.000000001Z";
+    if (example === "created_early") x.proof.createdAt = "2026-10-08T02:59:00Z";
+    if (example === "missing_link") x.proof.links[0].pointer = "/missing";
+    if (example === "wrong_final_game") { x.rows[0].completion.finalEvidence.historicalGameId++; x.bind(); }
+    expect(run(x.f)).toMatchObject({ status: "blocked", bundle: null, qualificationEligible: false });
+  });
+  it("keeps null window membership blocking with a separately supplied selection", () => {
+    const x = prospectiveKernelFixture(); x.rows[0].completion.completedNoEarlierThan = null;
+    Object.assign(x.rows[0].completion, { lowerEvidence: null }); x.bind();
+    Object.assign(x.f.scope.sources.find(item => item.proofId === "hits")!, { selection: {
+      windowStartInclusive: "2025-10-09T18:00:00Z", windowEndExclusive: x.f.scope.modelCutoffAt,
+      latestCount: 2, censusComplete: true, census: x.rows.map(({ historicalGameId, completedAt, completion }) => ({ historicalGameId, completedAt, completion })) } });
+    x.f.approvals[0].sourceSetHash = nativeCoverageKernelSourceSetHash(x.f.scope.sources);
+    reject(x.f, "unknown_window_membership");
+  });
+  it("retains exact integer observation identity despite prospective source admission", () => {
+    const x = prospectiveKernelFixture();
+    x.f.scenarioBody.rows[0].periods[0].intervals[0].observedCounts = { shotsAgainst: 1e9, saves: 1e9, goalsAgainst: 1, nonShotGoalsAgainst: 0 };
+    // Only this untouched archival scenario body is refreshed; v2 proof/approval are separately retained.
+    const scenarioSource = x.f.packet.sources.find(item => item.proofId === "scenarios")!;
+    scenarioSource.bodyUtf8 = JSON.stringify(x.f.scenarioBody); scenarioSource.bodyHash = nativeCoverageTextHash(scenarioSource.bodyUtf8);
+    x.f.scope.sources.find(item => item.proofId === "scenarios")!.bodyHash = scenarioSource.bodyHash;
+    x.f.approvals[0].sourceSetHash = nativeCoverageKernelSourceSetHash(x.f.scope.sources);
+    reject(x.f, "observed_guarded_identity");
   });
 });
