@@ -801,7 +801,6 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
         : seasonBasedConfigs.filter(
             ([key]) => key === "seasonStats" || remainingDates.length === 0
           );
-    const reservedSeasonRequests = seasonConfigsForRun.length > 0 ? 1 : 0;
     const nstRequestPlan = resolveNstTeamStatsRequestPlan({
       queuedDates: totalDateCount,
       dateRequestCount: totalDateCount * dateBasedConfigs.length,
@@ -821,16 +820,119 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
       } | requested date=${date} | startDate=${startDateParam ?? "n/a"} | endDate=${endDateParam ?? "n/a"} | dates this run=${targetDateObjects.length}/${totalDateCount} | remaining after slice=${remainingDates.length}`
     );
 
+    const refreshSeasonTable = async (
+      [key, { situation, rate, table }]: (typeof seasonBasedConfigs)[number],
+      seasonIndex: number
+    ) => {
+      if (!hasBudgetForRequests(scriptStartTime, 1)) {
+        logNst(
+          `Skipping ${table} season refresh | insufficient remaining runtime budget`
+        );
+        return;
+      }
+      ranSeasonTables = true;
+      const season = key === "seasonStats" ? seasonId : lastSeasonId;
+      const queryParams = new URLSearchParams({
+        sit: situation,
+        rate,
+        from_season: season.toString(),
+        thru_season: season.toString(),
+        stype: "2",
+        score: "all",
+        team: "all",
+        loc: "B",
+        gpf: "410",
+      });
+      const runLabel = `Season ${season} | table ${key} ${seasonIndex + 1}/${seasonConfigsForRun.length}`;
+
+      try {
+        const scriptOutput = await fetchTeamTable(queryParams, {
+          label: runLabel,
+          table,
+          situation,
+        });
+        if (!scriptOutput.data || scriptOutput.data.length === 0) {
+          logNst(
+            `${runLabel} | request ${scriptOutput.requestSequence} | table=${table} | situation=${situation} | raw rows=0 | skipping upsert`
+          );
+          skippedRequests.push({
+            scope: "season",
+            table,
+            season,
+            reason: "empty_source",
+          });
+          return;
+        }
+
+        const upsertData = scriptOutput.data
+          .map((stat) => mapStatToRow(stat, { season: season.toString() }))
+          .filter(
+            (entry): entry is NonNullable<typeof entry> => entry !== null
+          );
+
+        if (upsertData.length === 0) {
+          logNst(
+            `${runLabel} | request ${scriptOutput.requestSequence} | table=${table} | situation=${situation} | raw rows=${scriptOutput.data.length} | mapped rows=0 | skipping upsert`
+          );
+          fetchIssues.push(
+            `Transform produced no rows for ${table} in season ${season} from ${scriptOutput.data.length} source rows.`
+          );
+          return;
+        }
+
+        const upsertStartedAt = Date.now();
+        logNst(
+          `${runLabel} | request ${scriptOutput.requestSequence} | table=${table} | situation=${situation} | raw rows=${scriptOutput.data.length} | mapped rows=${upsertData.length} | upserting=${upsertData.length}`
+        );
+        const { error } = await supabase.from(table).upsert(upsertData, {
+          onConflict: "team_abbreviation,season",
+        });
+
+        if (error) {
+          throw new Error(
+            `Supabase upsert error for ${table}: ${error.message}`
+          );
+        }
+
+        logNst(
+          `${runLabel} | request ${scriptOutput.requestSequence} | table=${table} | situation=${situation} | upsert complete in ${formatDuration(
+            Date.now() - upsertStartedAt
+          )} | request cycle=${formatDuration(
+            scriptOutput.waitMs +
+              scriptOutput.fetchDurationMs +
+              (Date.now() - upsertStartedAt)
+          )}`
+        );
+        processedTables.push(`${table}:${season}`);
+      } catch (error: any) {
+        const failureReason = error?.message ?? String(error);
+        const message = `Failed for ${table}: ${failureReason}`;
+        console.error(message);
+        fetchIssues.push(message);
+        if (isNstConfigurationFailure(failureReason)) {
+          fatalNstConfigurationFailure = true;
+        }
+      }
+    };
+
+    // Refresh current totals first, then budget daily work using actual elapsed time.
+    const currentSeasonConfig = seasonConfigsForRun.find(
+      ([key]) => key === "seasonStats"
+    );
+    if (currentSeasonConfig) {
+      await refreshSeasonTable(currentSeasonConfig, 0);
+    }
+
     for (const [dateIndex, target] of targetDateObjects.entries()) {
       const formattedDate = target.date;
       if (
-        !hasBudgetForRequests(
-          scriptStartTime,
-          dateBasedConfigs.length + reservedSeasonRequests
-        )
+        fatalNstConfigurationFailure ||
+        !hasBudgetForRequests(scriptStartTime, dateBasedConfigs.length)
       ) {
         logNst(
-          `Stopping before date ${formattedDate} | insufficient runtime budget for ${dateBasedConfigs.length} date-based requests and ${reservedSeasonRequests} reserved season request(s)`
+          fatalNstConfigurationFailure
+            ? `Stopping before date ${formattedDate} | fatal NST configuration failure`
+            : `Stopping before date ${formattedDate} | insufficient runtime budget for ${dateBasedConfigs.length} date-based requests`
         );
         remainingTargets = [target, ...remainingTargets];
         remainingDates = remainingTargets.map(
@@ -946,117 +1048,22 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
       processedDates.push(formattedDate);
     }
 
-    if (!fatalNstConfigurationFailure && seasonConfigsForRun.length > 0) {
-      logNst("Checking eligible season-based refreshes.");
-      for (const [
-        seasonIndex,
-        [key, { situation, rate, table }],
-      ] of seasonConfigsForRun.entries()) {
-        if (key === "lastSeasonStats" && remainingDates.length > 0) {
-          continue;
-        }
-        if (!hasBudgetForRequests(scriptStartTime, 1)) {
-          logNst(
-            `Skipping ${table} season refresh | insufficient remaining runtime budget`
-          );
-          break;
-        }
-        ranSeasonTables = true;
-        const season = key === "seasonStats" ? seasonId : lastSeasonId;
-        const queryParams = new URLSearchParams({
-          sit: situation,
-          rate,
-          from_season: season.toString(),
-          thru_season: season.toString(),
-          stype: "2",
-          score: "all",
-          team: "all",
-          loc: "B",
-          gpf: "410",
-        });
-        const runLabel = `Season ${season} | table ${key} ${seasonIndex + 1}/${seasonConfigsForRun.length}`;
-
-        try {
-          const scriptOutput = await fetchTeamTable(queryParams, {
-            label: runLabel,
-            table,
-            situation,
-          });
-          if (!scriptOutput.data || scriptOutput.data.length === 0) {
-            logNst(
-              `${runLabel} | request ${scriptOutput.requestSequence} | table=${table} | situation=${situation} | raw rows=0 | skipping upsert`
-            );
-            skippedRequests.push({
-              scope: "season",
-              table,
-              season,
-              reason: "empty_source",
-            });
-            continue;
-          }
-
-          const upsertData = scriptOutput.data
-            .map((stat) => mapStatToRow(stat, { season: season.toString() }))
-            .filter(
-              (entry): entry is NonNullable<typeof entry> => entry !== null
-            );
-
-          if (upsertData.length === 0) {
-            logNst(
-              `${runLabel} | request ${scriptOutput.requestSequence} | table=${table} | situation=${situation} | raw rows=${scriptOutput.data.length} | mapped rows=0 | skipping upsert`
-            );
-            fetchIssues.push(
-              `Transform produced no rows for ${table} in season ${season} from ${scriptOutput.data.length} source rows.`
-            );
-            continue;
-          }
-
-          const upsertStartedAt = Date.now();
-          logNst(
-            `${runLabel} | request ${scriptOutput.requestSequence} | table=${table} | situation=${situation} | raw rows=${scriptOutput.data.length} | mapped rows=${upsertData.length} | upserting=${upsertData.length}`
-          );
-          const { error } = await supabase.from(table).upsert(upsertData, {
-            onConflict: "team_abbreviation,season",
-          });
-
-          if (error) {
-            throw new Error(
-              `Supabase upsert error for ${table}: ${error.message}`
-            );
-          }
-
-          logNst(
-            `${runLabel} | request ${scriptOutput.requestSequence} | table=${table} | situation=${situation} | upsert complete in ${formatDuration(
-              Date.now() - upsertStartedAt
-            )} | request cycle=${formatDuration(
-              scriptOutput.waitMs +
-                scriptOutput.fetchDurationMs +
-                (Date.now() - upsertStartedAt)
-            )}`
-          );
-          processedTables.push(`${table}:${season}`);
-        } catch (error: any) {
-          const failureReason = error?.message ?? String(error);
-          const message = `Failed for ${table}: ${failureReason}`;
-          console.error(message);
-          fetchIssues.push(message);
-          if (isNstConfigurationFailure(failureReason)) {
-            fatalNstConfigurationFailure = true;
-            break;
-          }
-        }
-      }
+    const lastSeasonConfig = seasonConfigsForRun.find(
+      ([key]) => key === "lastSeasonStats"
+    );
+    if (
+      !fatalNstConfigurationFailure &&
+      lastSeasonConfig &&
+      remainingDates.length === 0
+    ) {
+      await refreshSeasonTable(lastSeasonConfig, 1);
     } else if (isManualStartDateMode || isBackwardRangeMode) {
       logNst(
         "Skipping season-based refresh because manual date-range backfill mode is date-only."
       );
     } else if (fatalNstConfigurationFailure) {
       logNst(
-        "Skipping season-based refresh after a fatal NST configuration failure."
-      );
-    } else {
-      logNst(
-        "Skipping season-based refresh because runtime budget is too low."
+        "Skipping remaining requests after a fatal NST configuration failure."
       );
     }
 

@@ -4,6 +4,9 @@ const { state, getCurrentSeasonMock, fetchMock } = vi.hoisted(() => ({
   state: {
     latestDate: "2026-10-07",
     setupMs: 0,
+    fetchMs: 0,
+    requestStarts: [] as number[],
+    failureCode: "missing_key",
     upsertMs: {} as Record<string, number>,
     emptyCurrent: false,
     failureScope: "" as "" | "date" | "current",
@@ -92,6 +95,9 @@ beforeEach(() => {
   vi.setSystemTime(NOW);
   state.latestDate = "2026-10-07";
   state.setupMs = 0;
+  state.fetchMs = 0;
+  state.requestStarts = [];
+  state.failureCode = "missing_key";
   state.upsertMs = {};
   state.emptyCurrent = false;
   state.failureScope = "";
@@ -105,13 +111,15 @@ beforeEach(() => {
     return season;
   });
   fetchMock.mockImplementation(async (value: string) => {
+    state.requestStarts.push(Date.now() - NOW);
+    vi.setSystemTime(Date.now() + state.fetchMs);
     const params = new URL(value).searchParams;
     const current = !params.has("fd") && params.get("from_season") === "20262027";
     const failed = state.failureScope === "date" ? params.has("fd") : state.failureScope === "current" && current;
     return {
       ok: !failed,
       status: failed ? 503 : 200,
-      text: async () => JSON.stringify(failed ? { error: { code: "missing_key" } } : {
+      text: async () => JSON.stringify(failed ? { error: { code: state.failureCode } } : {
         data: state.emptyCurrent && current ? [] : [{ ...sourceRow, situation: params.get("sit") }],
       }),
     };
@@ -127,8 +135,8 @@ describe("NST team stats current-season refresh", () => {
     expect(res.body).toMatchObject({ processedDates: ["2026-10-08"], remainingDates: ["2026-10-09"], ranSeasonTables: true, failedRequests: 0 });
     expect(currentRequests()).toHaveLength(1);
     expect(lastRequests()).toHaveLength(0);
-    expect(state.upserts.map(({ table }) => table)).toEqual([...DAILY, "nst_team_stats"]);
-    expect(state.upserts.at(-1)).toMatchObject({ conflict: "team_abbreviation,season", rows: [{ team_abbreviation: "UTA", season: "20262027", situation: "all", gp: 2, points: 2, xgf: 5.5, xga: 4.2, toi: 7200 }] });
+    expect(state.upserts.map(({ table }) => table)).toEqual(["nst_team_stats", ...DAILY]);
+    expect(state.upserts[0]).toMatchObject({ conflict: "team_abbreviation,season", rows: [{ team_abbreviation: "UTA", season: "20262027", situation: "all", gp: 2, points: 2, xgf: 5.5, xga: 4.2, toi: 7200 }] });
     expect(res.body?.nstRequestPlan).toMatchObject({ seasonRequestCount: 1 });
     expect(Object.fromEntries(currentRequests()[0].searchParams)).toEqual({ sit: "all", rate: "n", from_season: "20262027", thru_season: "20262027", stype: "2", score: "all", team: "all", loc: "B", gpf: "410" });
   });
@@ -141,6 +149,29 @@ describe("NST team stats current-season refresh", () => {
     expect(currentRequests()).toHaveLength(1);
     expect(lastRequests()).toHaveLength(0);
     expect(res.body?.nstRequestPlan).toMatchObject({ seasonRequestCount: 1, burstAllowed: false, requestIntervalMs: 21_000 });
+  });
+
+  it("refreshes current totals and advances daily backlog on three runs with steady 16-second setup", async () => {
+    state.latestDate = "2026-10-05";
+    state.setupMs = 16_000;
+    const responses = [];
+    for (let invocation = 0; invocation < 3; invocation += 1) {
+      vi.setSystemTime(NOW);
+      const res = await run();
+      responses.push(res);
+      const completedDates = res.body?.processedDates as string[];
+      state.latestDate = completedDates.at(-1) ?? state.latestDate;
+    }
+
+    expect(responses.map(({ body }) => body?.processedDates)).toEqual([
+      ["2026-10-06"], ["2026-10-07"], ["2026-10-08"],
+    ]);
+    expect(responses.map(({ body }) => body?.remainingDatesCount)).toEqual([3, 2, 1]);
+    expect(responses.every(({ statusCode, body }) => statusCode === 200 && body?.ranSeasonTables)).toBe(true);
+    expect(currentRequests()).toHaveLength(3);
+    expect(requests().filter((url) => url.searchParams.has("fd"))).toHaveLength(12);
+    expect(state.upserts.filter(({ table }) => table === "nst_team_stats")).toHaveLength(3);
+    expect(lastRequests()).toHaveLength(0);
   });
 
   it("reaches the existing season configurations when all daily dates are already current", async () => {
@@ -165,14 +196,14 @@ describe("NST team stats current-season refresh", () => {
   it("preserves a single-date run's current and last-season source parameters and conflict keys", async () => {
     const res = await run({ date: "2026-10-08" });
     expect(res.body).toMatchObject({ processedDates: ["2026-10-08"], remainingDates: [], ranSeasonTables: true });
-    expect(state.upserts.map(({ table }) => table)).toEqual([...DAILY, "nst_team_stats", "nst_team_stats_ly"]);
+    expect(state.upserts.map(({ table }) => table)).toEqual(["nst_team_stats", ...DAILY, "nst_team_stats_ly"]);
     expect(lastRequests()[0].searchParams.get("thru_season")).toBe("20252026");
-    expect(state.upserts.slice(0, 4).every(({ conflict }) => conflict === "team_abbreviation,date")).toBe(true);
-    expect(state.upserts.slice(4).every(({ conflict }) => conflict === "team_abbreviation,season")).toBe(true);
+    expect(state.upserts.filter(({ table }) => DAILY.includes(table)).every(({ conflict }) => conflict === "team_abbreviation,date")).toBe(true);
+    expect(state.upserts.filter(({ table }) => !DAILY.includes(table)).every(({ conflict }) => conflict === "team_abbreviation,season")).toBe(true);
   });
 
-  it("reserves current-season budget by deferring the daily batch without expanding last-season eligibility", async () => {
-    state.setupMs = 16_000;
+  it("defers daily work when the actual four-request budget is exhausted without expanding last-season eligibility", async () => {
+    state.setupMs = 66_000;
     const res = await run({ date: "2026-10-08" });
     expect(res.body).toMatchObject({ processedDates: [], remainingDates: ["2026-10-08"], ranSeasonTables: true });
     expect(state.upserts.map(({ table }) => table)).toEqual(["nst_team_stats"]);
@@ -180,12 +211,12 @@ describe("NST team stats current-season refresh", () => {
     expect(lastRequests()).toHaveLength(0);
   });
 
-  it("rechecks the remaining budget after daily work instead of using the initial season decision", async () => {
+  it("rechecks the remaining last-season budget after daily work", async () => {
     state.upsertMs = Object.fromEntries(DAILY.map((table) => [table, 60_000]));
     const res = await run({ date: "2026-10-08" });
-    expect(res.body?.ranSeasonTables).toBe(false);
-    expect(state.upserts.map(({ table }) => table)).toEqual(DAILY);
-    expect(currentRequests()).toHaveLength(0);
+    expect(res.body?.ranSeasonTables).toBe(true);
+    expect(state.upserts.map(({ table }) => table)).toEqual(["nst_team_stats", ...DAILY]);
+    expect(currentRequests()).toHaveLength(1);
     expect(lastRequests()).toHaveLength(0);
   });
 
@@ -207,23 +238,93 @@ describe("NST team stats current-season refresh", () => {
     expect(state.upserts).toEqual([]);
   });
 
-  it("stops after a fatal daily configuration failure without trying either season", async () => {
+  it("stops after a fatal daily configuration failure without trying remaining daily or last-season requests", async () => {
     state.failureScope = "date";
     const res = await run({ date: "2026-10-08" });
     expect(res.statusCode).toBe(503);
-    expect(res.body).toMatchObject({ remainingDates: ["2026-10-08"], ranSeasonTables: false, failedRequests: 1 });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(state.upserts).toEqual([]);
+    expect(res.body).toMatchObject({ remainingDates: ["2026-10-08"], ranSeasonTables: true, failedRequests: 1 });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(state.upserts.map(({ table }) => table)).toEqual(["nst_team_stats"]);
+    expect(lastRequests()).toHaveLength(0);
   });
 
-  it("stops after a fatal current-season configuration failure without trying last season", async () => {
-    state.latestDate = "2026-10-09";
+  it("stops after a fatal current-season configuration failure without trying any daily or last-season requests", async () => {
     state.failureScope = "current";
     const res = await run();
     expect(res.statusCode).toBe(503);
+    expect(res.body).toMatchObject({ processedDates: [], remainingDates: ["2026-10-08", "2026-10-09"], failedRequests: 1 });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(lastRequests()).toHaveLength(0);
     expect(state.upserts).toEqual([]);
+  });
+
+  it.each([
+    [49_000, true],
+    [49_001, false],
+  ])("reassesses daily budget after %ims of current refresh work (daily allowed: %s)", async (refreshMs, dailyAllowed) => {
+    state.setupMs = 16_000;
+    state.fetchMs = 20_000;
+    state.upsertMs.nst_team_stats = refreshMs - state.fetchMs;
+    const res = await run();
+    expect(res.body).toMatchObject({
+      processedDates: dailyAllowed ? ["2026-10-08"] : [],
+      remainingDates: dailyAllowed ? ["2026-10-09"] : ["2026-10-08", "2026-10-09"],
+      ranSeasonTables: true,
+    });
+    expect(currentRequests()).toHaveLength(1);
+    expect(requests()[0].searchParams.has("fd")).toBe(false);
+    expect(requests().filter((url) => url.searchParams.has("fd"))).toHaveLength(dailyAllowed ? 4 : 0);
+    expect(lastRequests()).toHaveLength(0);
+  });
+
+  it.each([
+    [230_000, true],
+    [230_001, false],
+  ])("preserves the one-request current-season boundary at %ims setup (allowed: %s)", async (setupMs, allowed) => {
+    state.setupMs = setupMs;
+    const res = await run();
+    expect(res.body).toMatchObject({ processedDates: [], remainingDates: ["2026-10-08", "2026-10-09"], ranSeasonTables: allowed });
+    expect(currentRequests()).toHaveLength(allowed ? 1 : 0);
+    expect(requests().filter((url) => url.searchParams.has("fd"))).toHaveLength(0);
+    expect(lastRequests()).toHaveLength(0);
+  });
+
+  it.each([
+    [{ startDate: "2026-10-08" }, 65_000, true],
+    [{ startDate: "2026-10-08" }, 65_001, false],
+    [{ startDate: "2026-10-07", endDate: "2026-10-08" }, 65_000, true],
+    [{ startDate: "2026-10-07", endDate: "2026-10-08" }, 65_001, false],
+  ])("preserves manual mode %j four-request boundary at %ims setup (allowed: %s)", async (query, setupMs, allowed) => {
+    state.setupMs = setupMs;
+    const res = await run(query);
+    expect(res.body?.processedDates).toEqual(allowed ? ["2026-10-08"] : []);
+    expect(res.body?.ranSeasonTables).toBe(false);
+    expect(requests()).toHaveLength(allowed ? 4 : 0);
+    expect(state.upserts.map(({ table }) => table)).toEqual(allowed ? DAILY : []);
+  });
+
+  it("preserves safe post-completion spacing with slow requests after current-season priority", async () => {
+    state.latestDate = "2026-09-28";
+    state.setupMs = 16_000;
+    state.fetchMs = 19_999;
+    const res = await run();
+    expect(res.body).toMatchObject({ processedDates: ["2026-09-29"], remainingDatesCount: 10, ranSeasonTables: true });
+    expect(res.body?.nstRequestPlan).toMatchObject({ burstAllowed: false, requestIntervalMs: 21_000 });
+    expect(state.requestStarts).toEqual([16_000, 56_999, 97_998, 138_997, 179_996]);
+    expect(Date.now() - NOW).toBe(199_995);
+    expect(state.upserts.map(({ table }) => table)).toEqual(["nst_team_stats", ...DAILY]);
+  });
+
+  it.each(["date", "current"] as const)("continues eligible work after a nonfatal %s source failure", async (scope) => {
+    state.failureScope = scope;
+    state.failureCode = "provider_failure";
+    const res = await run();
+    expect(res.statusCode).toBe(207);
+    expect(res.body).toMatchObject({ processedDates: ["2026-10-08"], remainingDates: ["2026-10-09"], ranSeasonTables: true, failedRequests: scope === "date" ? 4 : 1 });
+    expect(currentRequests()).toHaveLength(1);
+    expect(requests().filter((url) => url.searchParams.has("fd"))).toHaveLength(4);
+    expect(state.upserts.map(({ table }) => table)).toEqual(scope === "date" ? ["nst_team_stats"] : DAILY);
+    expect(lastRequests()).toHaveLength(0);
   });
 
   it("keeps an empty current-season source as a truthful skip without replacing stored totals", async () => {
