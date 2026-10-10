@@ -122,16 +122,29 @@ export default function TeamDetails({
     return [game.id, { categories, sources }] as const;
   }));
   const remainingSummaries = Object.fromEntries(TEAM_FORECAST_CATEGORIES.map((category) => {
-    const known = gameIds.map((id) => forecastsByGame.get(id)!.categories[category])
-      .filter((summary) => summary.status === "available");
+    const known = gameIds.map((id) => {
+      const forecast = forecastsByGame.get(id)!;
+      return { summary: forecast.categories[category], source: forecast.sources[category] };
+    }).filter(({ summary }) => summary.status === "available");
+    const basis = known[0]?.source;
+    // One aggregate requires a shared decision vintage, model/run and immutable input
+    // snapshot. Per-game output revisions and emission times may legitimately differ.
+    const sharedBasis = known.every(({ source }) => source && basis &&
+      Date.parse(source.cutoffAt) === Date.parse(basis.cutoffAt) &&
+      source.modelVersion === basis.modelVersion && source.comparisonLineageId === basis.comparisonLineageId &&
+      source.sourceWatermark === basis.sourceWatermark && source.scope === basis.scope &&
+      source.conditioning === basis.conditioning && source.unit === basis.unit && source.creditDefinition === basis.creditDefinition);
     // Sum the values shown in the game cards so rounded rows and totals reconcile.
-    const mean = known.length ? known.reduce((total, summary) => total + Number(summary.mean!.toFixed(1)), 0) : null;
+    const mean = sharedBasis && known.length
+      ? known.reduce((total, { summary }) => total + Number(summary.mean!.toFixed(1)), 0) : null;
     const scheduleKnown = coverageComplete && !uncertainRemaining && checkValid;
     const status: CategorySummary["status"] = !gameIds.length && scheduleKnown ? "no_games"
-      : !known.length || !Number.isFinite(mean) ? "unavailable"
+      : !sharedBasis || !known.length || !Number.isFinite(mean) ? "unavailable"
       : known.length === gameIds.length && scheduleKnown ? "available" : "partial";
     return [category, { status, mean, knownGames: known.length, expectedGames: gameIds.length,
-      limitations: status === "unavailable" ? ["Qualified team category forecast unavailable."] : [],
+      limitations: !sharedBasis
+        ? ["Mixed forecast vintages — weekly total unavailable. Game forecasts must share a cutoff, model, run and source snapshot; per-game values remain visible."]
+        : status === "unavailable" ? ["Qualified team category forecast unavailable."] : [],
     }];
   })) as Record<TeamForecastCategory, CategorySummary>;
   const headingId = `game-grid-team-heading-${teamId}`;
@@ -171,7 +184,7 @@ export default function TeamDetails({
               <dt><span>{category}</span><span className={styles.categoryName}>{CATEGORY_NAMES[category]}</span></dt>
               <dd>{hasMean ? summary.mean!.toFixed(1) : summary.status === "no_games" ? "No remaining games" : "Unavailable"}</dd>
               <dd className={styles.coverage}>
-                {knownSubtotal ? "Known subtotal, " : "Coverage: "}
+                {knownSubtotal ? "Known subtotal, " : summary.status === "unavailable" && summary.knownGames > 0 ? "Per-game coverage: " : "Coverage: "}
                 {summary.knownGames} of {summary.expectedGames} games
               </dd>
               {summary.limitations.length > 0 && <dd className={styles.coverage}>{summary.limitations.join(" ")}</dd>}

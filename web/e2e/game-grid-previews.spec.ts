@@ -98,6 +98,16 @@ test('qualifying fixture payloads reconcile, preserve zero, and disclose partial
   await expect(weekly.getByText('Unavailable', { exact: true })).toHaveCount(5);
   await expect(page.getByText(/Model: fixture-model-v1. Cutoff:/)).toHaveCount(4);
   await page.screenshot({ path: testInfo.outputPath('qualified-payload-desktop.png'), fullPage: true });
+  await page.getByLabel('Preview fixture').selectOption('mixed');
+  await expect(weekly.getByText('3.6', { exact: true })).toHaveCount(0);
+  await expect(weekly.getByText('Unavailable', { exact: true })).toHaveCount(6);
+  await expect(weekly.getByText(/Mixed forecast vintages — weekly total unavailable/)).toBeVisible();
+  await expect(weekly.getByText('Per-game coverage: 2 of 2 games')).toBeVisible();
+  await expect(weekly.getByText('0.0', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Game 103 category forecasts').getByText('2.4', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Game 106 category forecasts').getByText('1.2', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Game 106 category forecasts').getByText(/Model: different-model. Cutoff: 2026-10-07T13:30:00Z/)).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('mixed-vintage-desktop.png'), fullPage: true });
   await page.getByLabel('Preview fixture').selectOption('partial');
   await expect(weekly.getByText('Known subtotal, 1 of 2 games')).toBeVisible();
   await expect(weekly.getByText('2.4', { exact: true })).toBeVisible();
@@ -116,6 +126,10 @@ test('qualifying fixture payloads reconcile, preserve zero, and disclose partial
   await page.setViewportSize({ width: 320, height: 844 });
   await fits(page.getByRole('region', { name: 'Fixture Team 01 game previews' }), 320);
   await page.screenshot({ path: testInfo.outputPath('qualified-payload-320.png'), fullPage: true });
+  await page.getByLabel('Preview fixture').selectOption('mixed');
+  await expect(weekly.getByText(/Mixed forecast vintages — weekly total unavailable/)).toBeVisible();
+  await fits(page.getByRole('region', { name: 'Fixture Team 01 game previews' }), 320);
+  await page.screenshot({ path: testInfo.outputPath('mixed-vintage-320.png'), fullPage: true });
   await page.addScriptTag({ content: axe.source });
   const results = await page.evaluate(async () => (window as unknown as { axe: { run: () => Promise<AxeResults> } }).axe.run());
   expect(results.violations.map(({ id, nodes }) => ({ id, targets: nodes.map(({ target }) => target) }))).toEqual([]);

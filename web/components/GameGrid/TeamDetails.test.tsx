@@ -164,6 +164,39 @@ describe("Game Grid team previews", () => {
   });
 
   it.each([
+    ["run", { comparisonLineageId: "fixture-run-r2" }],
+    ["cutoff", { cutoffAt: "2026-10-07T13:30:00Z" }],
+    ["model", { modelVersion: "fixture-model-v2" }],
+    ["source snapshot", { sourceWatermark: "fixture-input-r2" }],
+    ["review reproduction", { cutoffAt: "2026-10-07T13:30:00Z", modelVersion: "different-model", comparisonLineageId: "different-run", sourceWatermark: "different-source" }],
+  ] as Array<[string, Partial<TeamForecastRecord>]>)("withholds mixed %s weekly totals while retaining per-game values and provenance", (_, overrides) => {
+    const records = [forecast({ mean: 2 }), forecast({ gameId: 2, startsAt: forecastContext.games[1].startsAt, mean: 5, ...overrides })];
+    render(<TeamDetails {...defaults} schedule={forecastSchedule} forecastRecords={records} forecastContext={forecastContext} />);
+    const card = categoryCard("Remaining-week category forecasts");
+    expect(within(card).getByText("Unavailable")).toBeTruthy();
+    expect(within(card).queryByText("7.0")).toBeNull();
+    expect(within(card).getByText("Per-game coverage: 2 of 2 games")).toBeTruthy();
+    expect(within(card).getByText(/Mixed forecast vintages — weekly total unavailable/)).toBeTruthy();
+    expect(within(screen.getByLabelText("Game 1 category forecasts")).getByText("2.0")).toBeTruthy();
+    expect(within(screen.getByLabelText("Game 2 category forecasts")).getByText("5.0")).toBeTruthy();
+    expect(within(screen.getByLabelText("Game 2 category forecasts")).getByText(new RegExp(`Model: ${records[1].modelVersion}\\. Cutoff:`))).toBeTruthy();
+  });
+
+  it("combines a shared vintage with distinct game revisions and equivalent cutoff timestamps", () => {
+    const records = [forecast({ mean: 0, revisionId: "game-1-output" }), forecast({ gameId: 2,
+      startsAt: forecastContext.games[1].startsAt, mean: 0, revisionId: "game-2-output",
+      cutoffAt: "2026-10-07T10:00:00-04:00", issuedAt: "2026-10-07T14:30:30Z", availableAt: "2026-10-07T14:31:30Z" })];
+    const { rerender } = render(<TeamDetails {...defaults} schedule={forecastSchedule} forecastRecords={records} forecastContext={forecastContext} />);
+    expect(weekly().getByText("0.0")).toBeTruthy();
+    expect(weekly().getByText("Coverage: 2 of 2 games")).toBeTruthy();
+    expect(weekly().queryByText(/Mixed forecast vintages/)).toBeNull();
+    rerender(<TeamDetails {...defaults} schedule={forecastSchedule} forecastRecords={records.map((record, index) =>
+      index ? { ...record, comparisonLineageId: "different-run" } : record)} forecastContext={forecastContext} />);
+    expect(weekly().queryByText("0.0")).toBeNull();
+    expect(weekly().getByText(/Mixed forecast vintages — weekly total unavailable/)).toBeTruthy();
+  });
+
+  it.each([
     ["stale", { expiresAt: defaults.asOf }], ["conditional", { conditioning: "conditional_playing" }],
     ["goals used as PPP", { category: "PPP", creditDefinition: "team_power_play_goals" }],
     ["another season", { seasonId: 20252026 }], ["another team", { teamId: 13 }],

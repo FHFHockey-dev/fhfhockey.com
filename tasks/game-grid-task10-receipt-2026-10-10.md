@@ -52,3 +52,25 @@ Reproducible fixtures are committed with the UI. The Vite fixture replaces produ
 Screenshots and logs are saved outside the checkout at `/Users/tim/Documents/Codex/2026-10-09/task-4/game-grid-task10/`: `desktop-24-team-expanded.png`, `narrow-390-expanded.png`, `narrow-320-expanded.png`, `qualified-payload-desktop.png`, `qualified-payload-320.png`, `accessibility-audit.json`, four check logs and `evidence-sha256.json`.
 
 Production `GameGrid` currently supplies schedule data without an admitted category record payload; its expanded categories truthfully remain unavailable. Real category totals and team/player reconciliation require the producer owner to qualify and supply compatible per-game records/context. No serving flag or provider fetching contract was changed, and no production lineage was inferred from schedule data. This dependency does not block the completed presentation feature.
+
+## Independent review correction: aggregate forecast vintage
+
+The independent review of `4dacc46721735aa7549a6b035069f29a3e0c4731` blocked acceptance on P2: individually admitted game records with different cutoffs/models/runs were summed as a complete weekly total. The fix below addresses that finding locally; independent re-review remains the coordinating owner's decision. Correction baseline was canonical `octoberBranch` at `ec950e7604ae471ae6fa8037d8dc51a86496b0a5`. Concurrent optimizer work and the shared goal-objective task list were preserved.
+
+**Aggregate policy:** for each category, all known eligible game records must share the same decision cutoff instant, model version, qualified shared run/input manifest (`comparisonLineageId`), immutable source snapshot (`sourceWatermark`), full-game scope, conditioning, units and event-credit definition. Individual admission already requires the same supplied season/schedule/roster context and safe source/issuance/availability/expiry timestamps. Timestamp equivalence is compared as an instant, so ISO strings with different timezone offsets can match.
+
+Game IDs, start times, per-game output `revisionId`s, issuance/reader-availability times and expiries need not be identical; each must still pass its own existing admission checks. The shared run manifest is generation evidence for this stricter total policy, not a claim of permission to serve or reconcile team/player forecasts. No producer contract, API, allowed-use flag or scoring formula changed.
+
+Matching source watermarks is deliberately conservative: the current contract supplies no rule for proving different input snapshots compatible. If any known records lack a common aggregate basis, the weekly mean stays null/unavailable and the card says “Mixed forecast vintages — weekly total unavailable.” Its count is labeled “Per-game coverage,” and the individual values and source provenance remain visible. No compatible subset is selected to conceal a conflicting known record. A missing record still yields an honest known subtotal over the compatible records that are present. Zero values are subject to the same compatibility check; mixed zeroes do not become a confident total.
+
+Correction edit ownership is limited to `TeamDetails.tsx`, `TeamDetails.test.tsx`, the preview `App.tsx`, the existing payload browser spec, and this receipt. No layout/disclosure/eligibility or source-reader rewrites were made.
+
+Correction verification, from `web/` with Node 22.11.0:
+
+- **Failed before the fix as intended:** six focused new regression cases reproduced mixed run/cutoff/model/source totals and mixed-zero totals.
+- **Passed after the fix:** `npm test -- --run components/GameGrid/TeamDetails.test.tsx components/GameGrid/utils/teamForecasts.test.ts` — 82 tests / 2 files (34 details, 48 unchanged contract). Distinct output revisions and equivalent cutoff timestamps qualify; existing partial, actual-zero, elapsed-game and missing-data regressions remain passing.
+- **Passed:** `npx playwright test -c e2e/game-grid-previews.config.ts --grep qualifying` — the affected actual Chromium payload journey, including compatible totals, retained mixed per-game values/provenance, category-specific warning, unaffected compatible zeroes and 320px warning reflow. This targeted rerun does not re-claim the unrelated keyboard/sorting/layout checks; their unchanged prior owner and independent-review evidence remains available.
+- **Passed:** scoped ESLint for the four changed source/test/fixture files; repository `NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit`; owned diff/whitespace inspection.
+- **Passed:** axe on the mixed-vintage fixture at 320px, zero violations, 30 passed rules and no incomplete rules.
+
+Correction logs, the pre-fix failing receipt, mixed-vintage desktop/320px screenshots and audit are saved at `/Users/tim/Documents/Codex/2026-10-09/task-4/game-grid-task10-vintage-fix/`. Synthetic presentation evidence does not qualify a live producer. Production category payloads remain unavailable, and no live validation, deployment or data write occurred.

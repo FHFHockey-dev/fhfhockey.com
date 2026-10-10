@@ -32,13 +32,13 @@ function App() {
     {details ? <>
       <h1>Game Grid preview fixture</h1><h2>Upcoming team forecasts</h2>
       <label>Preview fixture <select value={previewState} onChange={(event) => setPreviewState(event.target.value)}>
-        {['qualified', 'partial', 'missing', 'bye', 'unknown', 'stale', 'started'].map((state) => <option key={state}>{state}</option>)}
+        {['qualified', 'partial', 'missing', 'bye', 'unknown', 'stale', 'started', 'mixed'].map((state) => <option key={state}>{state}</option>)}
       </select></label>
       <GameGridContext><TeamDetails teamId={1} startDate={dates[0]} asOf="2026-10-07T16:00:00Z"
         schedule={['bye', 'unknown'].includes(previewState) ? {} : previewState === 'started' ? { ...schedule, THU: { ...schedule.THU, gameState: 'LIVE' } } : schedule}
         scheduleCoverage={previewState === 'unknown' ? undefined : { known: 7, expected: 7 }} coveredDates={dates}
         forecastContext={context} forecastRecords={previewState === 'missing' ? undefined : [
-          ...(previewState === 'partial' ? records.slice(0, 1) : previewState === 'stale' ? records.map((record) => ({ ...record, expiresAt: '2026-10-07T16:00:00Z' })) : records), ...zeroAssists]} />
+          ...(previewState === 'mixed' ? records.map((record, index) => index ? { ...record, cutoffAt: '2026-10-07T13:30:00Z', modelVersion: 'different-model', comparisonLineageId: 'different-run', sourceWatermark: 'different-source' } : record) : previewState === 'partial' ? records.slice(0, 1) : previewState === 'stale' ? records.map((record) => ({ ...record, expiresAt: '2026-10-07T16:00:00Z' })) : records), ...zeroAssists]} />
       </GameGridContext>
     </> : <>
       <button onClick={() => setFixtureState('refreshed')}>Refresh schedule fixture</button>
