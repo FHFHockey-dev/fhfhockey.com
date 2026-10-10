@@ -7,6 +7,18 @@ import { IN_SEASON_CAPABILITIES, resolveInSeasonAccess, type InSeasonAccess, typ
 const metadataString = (metadata: Json, key: string) => metadata && typeof metadata === "object" && !Array.isArray(metadata) && typeof metadata[key] === "string" ? metadata[key] as string : null;
 const metadataBoolean = (metadata: Json, key: string) => metadata && typeof metadata === "object" && !Array.isArray(metadata) && metadata[key] === true;
 
+async function readAccessRows<T>(readPage: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>): Promise<T[]> {
+  const rows: T[] = [];
+  const pageSize = 500;
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await readPage(from, from + pageSize - 1);
+    if (error) throw error;
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < pageSize) return rows;
+  }
+}
+
 export async function loadInSeasonAccess(userId: string, options: { now?: Date; client?: typeof serviceRoleClient } = {}): Promise<InSeasonAccess> {
   const now = options.now ?? new Date();
   const client = options.client ?? serviceRoleClient;
@@ -18,13 +30,10 @@ export async function loadInSeasonAccess(userId: string, options: { now?: Date; 
   }
   // The generated DB type is updated only after the local migration is applied.
   const grantsClient = client as any;
-  const [grantResult, patreonResult] = await Promise.all([
-    grantsClient.from("in_season_grants").select("source,source_reference,status,effective_from,effective_to").eq("user_id", userId),
-    client.from("user_entitlements").select("source_provider,entitlement_key,entitlement_status,source_account_id,source_reference,effective_from,effective_to,metadata").eq("user_id", userId).eq("source_provider", "patreon").eq("entitlement_key", "patreon_supporter"),
-  ]);
-  if (grantResult.error) throw grantResult.error;
-  if (patreonResult.error) throw patreonResult.error;
-  let patreonRows = patreonResult.data ?? [];
+  const readGrants = () => readAccessRows<any>((from, to) => grantsClient.from("in_season_grants").select("source,source_reference,status,effective_from,effective_to").eq("user_id", userId).order("id").range(from, to));
+  const readPatreon = () => readAccessRows((from, to) => client.from("user_entitlements").select("source_provider,entitlement_key,entitlement_status,source_account_id,source_reference,effective_from,effective_to,metadata").eq("user_id", userId).eq("source_provider", "patreon").eq("entitlement_key", "patreon_supporter").order("id").range(from, to));
+  const [grantResult, patreonResult] = await Promise.allSettled([readGrants(), readPatreon()]);
+  let patreonRows = patreonResult.status === "fulfilled" ? patreonResult.value : [];
   const stale = patreonRows.some((row) => {
     if (row.entitlement_status !== "active") return false;
     const verified = Date.parse(metadataString(row.metadata, "verified_at") ?? "");
@@ -33,19 +42,23 @@ export async function loadInSeasonAccess(userId: string, options: { now?: Date; 
   if (stale) {
     try {
       await refreshPatreonAccount({ userId, client, triggerSource: "access_reverify" });
-      const refreshed = await client.from("user_entitlements").select("source_provider,entitlement_key,entitlement_status,source_account_id,source_reference,effective_from,effective_to,metadata").eq("user_id", userId).eq("source_provider", "patreon").eq("entitlement_key", "patreon_supporter");
-      if (refreshed.error) throw refreshed.error;
-      patreonRows = refreshed.data ?? [];
+      patreonRows = await readPatreon();
     } catch {
       patreonRows = [];
     }
   }
-  const grants: InSeasonGrant[] = (grantResult.data ?? []).map((row: any) => ({ source: row.source, reference: row.source_reference, status: row.status, effectiveFrom: row.effective_from, effectiveTo: row.effective_to }));
+  const grants: InSeasonGrant[] = (grantResult.status === "fulfilled" ? grantResult.value : []).map((row: any) => ({ source: row.source, reference: row.source_reference, status: row.status, effectiveFrom: row.effective_from, effectiveTo: row.effective_to }));
   for (const row of patreonRows) {
     if (!row.source_account_id || !row.source_reference || metadataString(row.metadata, "connected_account_id") !== row.source_account_id || !metadataBoolean(row.metadata, "draft_pro_eligible")) continue;
     grants.push({ source: "patreon", reference: row.source_reference, status: row.entitlement_status, effectiveFrom: row.effective_from, effectiveTo: row.effective_to, verifiedAt: metadataString(row.metadata, "verified_at") });
   }
-  return resolveInSeasonAccess(grants, now);
+  const access = resolveInSeasonAccess(grants, now);
+  // An unavailable source contributes no authority, but cannot revoke another verified grant.
+  if (!access.eligible) {
+    if (grantResult.status === "rejected") throw grantResult.reason;
+    if (patreonResult.status === "rejected") throw patreonResult.reason;
+  }
+  return access;
 }
 
 export function requireInSeasonCapability(access: Awaited<ReturnType<typeof loadInSeasonAccess>>, capability: InSeasonCapability) {

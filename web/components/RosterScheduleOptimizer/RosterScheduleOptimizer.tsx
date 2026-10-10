@@ -176,17 +176,20 @@ export default function RosterScheduleOptimizer() {
   }, [hydrated, contextKey, viewingSaved]);
   useEffect(() => {
     const controller = new AbortController();
+    let requestGeneration = 0;
     setAccess(null); setAccessError(null);
     const load = async () => {
+      const generation = ++requestGeneration;
+      const current = () => !controller.signal.aborted && generation === requestGeneration;
       try {
-        const headers = await authHeaders(); if (controller.signal.aborted) return;
+        const headers = await authHeaders(); if (!current()) return;
         const response = await fetch("/api/v1/roster-schedule-optimizer/access", { signal: controller.signal, headers });
         const body = response.ok ? await response.json() : null;
-        if (!controller.signal.aborted) {
+        if (current()) {
           setAccess((body?.data ?? null) as Access | null);
           setAccessError(!response.ok && user?.id ? "Provider synchronization is unavailable because in-season access could not be verified. Your account connection is unchanged; try again shortly." : null);
         }
-      } catch { if (!controller.signal.aborted) { setAccess(null); setAccessError(user?.id ? "Provider synchronization is unavailable because access could not be checked. Your account connection is unchanged; try again shortly." : null); } }
+      } catch { if (current()) { setAccess(null); setAccessError(user?.id ? "Provider synchronization is unavailable because access could not be checked. Your account connection is unchanged; try again shortly." : null); } }
     };
     void load();
     const visible = () => { if (document.visibilityState === "visible") void load(); };

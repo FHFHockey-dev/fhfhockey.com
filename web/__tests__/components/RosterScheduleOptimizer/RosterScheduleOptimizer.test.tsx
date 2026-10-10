@@ -26,7 +26,7 @@ const benchReceipt: NonNullable<BenchDecision["evidence"]> = { startDate: "2026-
     { date: "2026-10-05", slotId: "UTIL#1", selectedPlayerId: "center", withPlayerId: "kaprizov" }], categories: [],
   sources: [{ playerId: "batherson", kinds: ["blended"], revisionIds: ["private-revision-id"],
     participation: [{ gameId: "game", basis: "appearance", probability: 0.5, confirmed: false }] }] };
-afterEach(() => { cleanup(); window.localStorage.clear(); vi.useRealTimers(); vi.unstubAllGlobals(); fetchMock.mockClear(); authState.user = null; authState.teams = []; planningState.evaluate = null; });
+afterEach(() => { cleanup(); window.localStorage.clear(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); fetchMock.mockClear(); authState.user = null; authState.teams = []; planningState.evaluate = null; });
 
 describe("RosterScheduleOptimizer workspace", () => {
   it("shows upstream stale and disabled evidence in manual readiness independently of reader time", async () => {
@@ -844,6 +844,38 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(forked.lockedAssignments).toEqual(workspace.lockedAssignments);
     fireEvent.click(screen.getByRole("checkbox", { name: /^Protect$/ }));
     expect(JSON.parse(window.localStorage.getItem(WORKSPACE_KEY)!).intent.protectedPlayerIds).toEqual([]);
+  });
+
+  it.each([
+    { name: "eligible", older: "eligible", newer: "revoked" },
+    { name: "failed", older: "failed", newer: "eligible" },
+    { name: "eligible after failed revalidation", older: "eligible", newer: "failed" },
+  ])("ignores an older same-account $name access response after a newer refresh", async ({ older, newer }) => {
+    authState.user = { id: "manager" };
+    const workspace = defaultWorkspace();
+    workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "league", teamId: "team" };
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    const pending: Array<{ resolve: (value: unknown) => void; reject: (reason: unknown) => void }> = [];
+    vi.stubGlobal("fetch", vi.fn((url: string) => {
+      if (url.endsWith("/access")) return new Promise((resolve, reject) => pending.push({ resolve, reject }));
+      return Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data } : { data: null } });
+    }));
+    vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+    render(<RosterScheduleOptimizer />);
+    await waitFor(() => expect(pending).toHaveLength(1));
+    fireEvent(document, new Event("visibilitychange"));
+    await waitFor(() => expect(pending).toHaveLength(2));
+    const settle = async (index: number, state: string) => act(async () => {
+      if (state === "failed") pending[index].reject(new Error("Access unavailable"));
+      else pending[index].resolve({ ok: true, json: async () => ({ data: { eligible: state === "eligible", capabilities: state === "eligible" ? ["rso_sync"] : [] } }) });
+    });
+    await settle(1, newer);
+    const refresh = screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement;
+    expect(refresh.disabled).toBe(newer !== "eligible");
+    expect(Boolean(screen.queryByText(/access could not be checked/))).toBe(newer === "failed");
+    await settle(0, older);
+    expect(refresh.disabled).toBe(newer !== "eligible");
+    expect(Boolean(screen.queryByText(/access could not be checked/))).toBe(newer === "failed");
   });
 
   it("explains access-service failures instead of silently disabling provider sync", async () => {
