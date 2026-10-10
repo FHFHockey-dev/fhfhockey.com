@@ -1,14 +1,14 @@
 # RSO goal handoff
 
-Updated: 2026-10-10 03:33 UTC. Goal remains active; local implementation continues.
+Updated: 2026-10-10 03:36 UTC. Goal remains active; local implementation continues.
 
 ## Checkout and coordination
 
 - Goal: `01a12382-025a-7cb3-a01e-5b9445de662d`.
 - Working checkout: `/Users/tim/.codex/worktrees/rso-consolidated-execution/fhfhockey.com`.
-- Branch: `chef/rso-consolidated-20261009`; base: `d75f8f916f8d7485433217cbad51cdb30c75070d`; committed HEAD: `ddab56c8a`.
+- Branch: `chef/rso-consolidated-20261009`; base: `d75f8f916f8d7485433217cbad51cdb30c75070d`; committed HEAD: `c39c9ca29`.
 - This checkout stays intact. Scout owns safe reconciliation with `octoberBranch`; coordinate before any overlapping edits or integration.
-- Goal owns this handoff and the consolidated checklist/PRD. Scout owns `tasks/rso-goal-decisions.md` in this checkout. The decision file was absent at this checkpoint. Read it at subsequent checkpoints and before pausing.
+- Goal owns this handoff and the consolidated checklist/PRD. Scout owns `tasks/rso-goal-decisions.md` in this checkout. Read Scout's 03:33:16 UTC D1–D6 replies at this checkpoint; recheck at subsequent checkpoints and before pausing.
 - Human authorization permits Scout to coordinate routine engineering decisions/blocker fixes. New pricing, commercial commitments, destructive actions, provider writes, production changes and unapproved releases remain pending.
 
 ## Latest retained checkpoints
@@ -16,13 +16,14 @@ Updated: 2026-10-10 03:33 UTC. Goal remains active; local implementation continu
 - `ef2bd08ab`: independent access grants survive another source's failure; source reads are paginated and fail closed on incomplete evidence; same-account refresh generation guards suppress stale results. Access tests: 19/19; component tests: 70/70. Focused lint passed with four inherited hook dependency warnings.
 - `ddab56c8a`: undo persists across reopening, stays scoped to the matching league/context and restores manager intent against current provider inputs. Workspace/component tests: 79/79; provider-refresh/reopen/undo regression: 1/1; final reopen/context/manual-fork checks: 3/3. Focused lint passed with the same inherited warnings.
 - Existing native cutoff repair independently verified: offline harness tests 56/56. This establishes mechanics, not genuine predictive quality.
-- Goalie repair is locally verified and being committed: contribution/adapter tests 124/124, planner goalie cases 7/7, focused lint passed without warnings. Full TypeScript check reports only the inherited Game Grid diagnostic below. Task 12 local repairs are complete; genuine/live acceptance is still open.
+- `c39c9ca29`: goalie repair retained; contribution/adapter tests 124/124, planner goalie cases 7/7, focused lint passed without warnings. Full TypeScript check reported only the inherited Game Grid diagnostic below. Task 12 local repairs are complete; genuine/live acceptance is still open.
+- Minimal upstream diagnostic reconciliation: full TypeScript now passed (exit 0) and focused lint passed without warnings. This checkpoint includes only the one-line diagnostic correction plus goal documents, with no claim about Game Grid browser behavior or integrated October acceptance.
 
 ## Current ownership and unfinished change
 
 The goal remains the sole application writer here. Previous worker audits were read-only; actual worker runtime settings were not independently exposed, so additional staffing requires the repository's verification/coordination requirements.
 
-- Latest completed local task: **12.4**, evidence-confirmed goalie consumption. Next checkpoint: **15**, minimal inherited TypeScript correction from the reviewed upstream source.
+- Latest completed local tasks: **12.4**, evidence-confirmed goalie consumption, and **15**, minimal inherited TypeScript correction from the reviewed upstream source. Next independent work: accepted provisional similar-points display and planner policy checks under **14.2/5.2**.
 - Owned for this checkpoint: `web/lib/player-forecasts/planningContributions.ts`, its existing test file, `web/lib/player-forecasts/resolvedPlanningForecast.ts`, and the existing `web/lib/rosterScheduleData/planning.test.ts` regression surface. Producer/Start Chart files remain outside this repair.
 - Both meaningful regressions failed before repair: a confirmed goalie with model probability `0.8` and already-weighted saves `16` was rejected as false/null/null, with and without baseline sources. Both now pass, including replay and stale evidence checks.
 - Repair validates raw probabilities and full team-game starter mass, retains admitted confirmation independently of model probability, preserves the issued probability and applies participation exactly once. Invalid-probability, conflicting-starter, permission, cutoff, expiry and replay protections remain covered.
@@ -30,10 +31,10 @@ The goal remains the sole application writer here. Previous worker audits were r
 
 ## Exact blockers and questions
 
-1. **Inherited TypeScript diagnostic:** this checkout still reports only `web/e2e/game-grid-previews.spec.ts:233:99`, `NodeResult.summary` (`TS2339`). Scout verified upstream correction `5b7bbe35b`. After retaining the goalie checkpoint, inspect that commit and coordinate a minimal source reconciliation without moving or discarding this checkout or advancing October HEAD. No duplicate patch worker is needed.
-2. **Genuine forecast acceptance:** tasks 2.2–3.4 still require a lawful genuine player/goalie input path, real issued evidence and positive compatible consumption in both RSO and Start Chart. Fixtures and team-goal research cannot close these tasks. Question for Scout: identify the current forecast producer owner, exact evidence artifact/path and authorized read-only verification route, with no serving activation or production write implied.
-3. **Routine proposals P6–P8:** measurement workloads, numerical latency/search limits and connected-refresh targets are not accepted. Question for Scout: review these as engineering proposals and record permitted measurement defaults separately from release/SLA claims; leave commercial P9–P12 pending.
-4. **Planner equivalence:** user permits fewer acquisitions only for otherwise equivalent actual startable outcomes under a declared numerical tolerance. The tolerance remains open. Question for Scout: propose an explicit, unit-aware tolerance for review without introducing category weights, a category blend or a decision rule based on the provisional 5% label.
+1. **Inherited TypeScript diagnostic resolved locally:** upstream `5b7bbe35b` supplied the exact one-line target-only diagnostic correction. Full TypeScript and focused lint now pass in this checkout. Other upstream changes were not imported; October HEAD and this checkout's placement are unchanged.
+2. **Genuine forecast acceptance:** tasks 2.2–3.4 still require a lawful genuine player/goalie input path, real issued evidence and positive compatible consumption in both RSO and Start Chart. Fixtures and team-goal research cannot close these tasks. Scout D2 verifies no authorized producer/qualifying artifact yet and is escalating that dependency. Existing fitting prohibitions remain in force; continue independent engineering without weight changes or fabricated inputs.
+3. **Routine proposals P6–P8:** Scout D3 permits provisional 19/20/25-player, 7/14-day, four-acquisition, up-to-250-candidate and 390×844 measurement cases, with real/fictional evidence labels. Report p50/p95, failures, explored work, cancellation and completion; proposed latency/search numbers are observational references, not gates or production caps. D4 preserves current cadence pending evidence. P9–P12 stay pending.
+4. **Planner equivalence:** user permits fewer acquisitions only for otherwise equivalent actual startable outcomes under a declared numerical tolerance. Scout D5 leaves the native-unit roundoff proposal pending; do not broaden the automatic tie rule or introduce category weights/a blend. Verify the accepted provisional similar-points display independently.
 5. **Dependent live acceptance:** actual Yahoo profile, account saves, entitlement lifecycle, browser/layout/performance and weekly locks remain unverified at this revision. Continue independent engineering; do not mark dependent acceptance complete from unit receipts.
 
 ## Accepted policy boundaries
