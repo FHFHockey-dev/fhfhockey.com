@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { loadPlanningData, normalizePlanningGames, parsePlanningDataQuery, publicPlanningForecasts } from "./planning";
-import type { ForecastDiscoveryExclusion, PlanningPlayer } from "lib/rosterScheduleOptimizer/planningTypes";
+import type { ContributionPlanningSnapshot, ForecastDiscoveryExclusion, PlanningPlayer } from "lib/rosterScheduleOptimizer/planningTypes";
+import { resolvePlanningContributions } from "lib/player-forecasts/planningContributions";
 import type { ForgeGameRevision } from "lib/projections/gameRevisions";
 import { forgeRosterRevision, forgeScheduleRevision, type ForgeIssuedContextV1 } from "lib/projections/issuedContext";
 import { admittedBoardGoalieForecast } from "lib/projections/starterBoardScoring";
@@ -398,7 +399,7 @@ describe("public RSO data boundary", () => {
     expect(publicForecast().confirmedStart).toBe(false);
   });
   it.each(["missing", "wrong-player", "contradictory", "valid"])
-  ("preserves the admitted goalie confirmation through Start Chart output: %s", scenario => {
+  ("preserves the admitted goalie confirmation through RSO and Start Chart output: %s", scenario => {
     const source = { informationCutoffAt: "2026-10-10T10:00:00Z", assertions: [{
       gameId: 2026020001, teamId: 1, playerId: 847001, dimension: "goalie" as const, value: "confirmed", confirmed: true,
       evidenceId: "synthetic-confirmation", sourceKey: "synthetic-source", sourceUrl: null,
@@ -413,6 +414,14 @@ describe("public RSO data boundary", () => {
     if (scenario === "contradictory") row.payload.evidence!.assertions.push({ ...source.assertions[0], playerId: 847002, evidenceId: "other-confirmation" });
     const admitted = publicPlanningForecasts([row], [player], normalizePlanningGames(rows), new Date("2026-10-10T12:00:00Z"))[0];
     expect(admitted.confirmedStart).toBe(scenario === "valid");
+    const snapshot: ContributionPlanningSnapshot = {
+      context: { seasonId: 20262027, asOf: "2026-10-10T12:00:00Z", startDate: "2026-10-10", endDate: "2026-10-10" },
+      players: [player], games: normalizePlanningGames(rows), forecasts: [admitted],
+    };
+    const resolved = resolvePlanningContributions(snapshot);
+    expect(resolved.forecasts[0]).toMatchObject({ confirmedStart: scenario === "valid",
+      startProbability: 0.8, stats: { SAVES_GOALIE: 24 }, revisionId: admitted.revisionId });
+    expect(resolved.forecastInputExclusions).toEqual([]);
     const rawBefore = JSON.stringify(candidate);
     const output = admittedBoardGoalieForecast(candidate, admitted);
     const normalized = normalizeStartChartResponse({ dateUsed: "2026-10-10", players: [{

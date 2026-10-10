@@ -65,7 +65,9 @@ export function forecastFromContributions(original: GameForecast, contributions:
     conditionalStats: undefined,
     startProbability: start?.probability ?? (detailUsed ? original.startProbability : null),
     appearanceProbability: appearance?.probability ?? null,
-    confirmedStart: original.confirmedStart && (start?.probability === 1 || detailUsed && original.startProbability === 1),
+    // Preserve admitted confirmation independently of the issued model weight.
+    // Rejected or expired source/participation inputs cannot retain that claim.
+    confirmedStart: original.confirmedStart && (detailUsed || start !== undefined),
     modelVersion: sources.find(source => source.kind === "detailed")?.policyVersion ?? sources[0]?.policyVersion ?? original.modelVersion,
     limitations: [...new Set([...original.limitations, ...Object.values(contributions).flatMap(row => row.limitations)])] };
 }

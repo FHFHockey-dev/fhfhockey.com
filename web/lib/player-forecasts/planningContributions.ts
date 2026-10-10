@@ -86,9 +86,9 @@ export function resolvePlanningContributions(snapshot: ContributionPlanningSnaps
     const player = playerById.get(forecast.playerId);
     if (player?.playerClass !== "goalie" || !player.nhlTeamId) continue;
     const key = `${forecast.gameId}:${player.nhlTeamId}`;
+    const modelProbability = forecast.startProbability;
     const probability = forecast.confirmedStart ? 1 : forecast.startProbability;
-    if (probability != null && (!Number.isFinite(probability) || probability < 0 || probability > 1)
-      || forecast.confirmedStart && forecast.startProbability !== null && forecast.startProbability !== 1) {
+    if (modelProbability != null && (!Number.isFinite(modelProbability) || modelProbability < 0 || modelProbability > 1)) {
       invalidGoalieGroups.add(key);
     } else if (probability != null) goalieMass.set(key, (goalieMass.get(key) ?? 0) + probability);
   }
@@ -155,7 +155,9 @@ export function resolvePlanningContributions(snapshot: ContributionPlanningSnaps
         && Date.parse(original.expiresAt) > Date.parse(snapshot.context.asOf)
         && Date.parse(original.cutoffAt) <= Date.parse(original.issuedAt)
         && Date.parse(original.issuedAt) <= Date.parse(snapshot.context.asOf);
-      const effectiveStartProbability = original?.confirmedStart ? 1 : original?.startProbability;
+      // Confirmation constrains the physical start event; it does not rewrite
+      // the issued model probability or reweight its expected contribution.
+      const effectiveStartProbability = original?.startProbability;
       const goalieStartUsable = player.playerClass === "goalie" && originalFresh
         && effectiveStartProbability != null && Number.isFinite(effectiveStartProbability)
         && effectiveStartProbability >= 0 && effectiveStartProbability <= 1

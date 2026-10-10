@@ -426,6 +426,27 @@ describe("planning contribution adapter", () => {
     expect(resolvePlanningContributions(snapshot).forecasts).toEqual([]);
   });
 
+  it.each([false, true])("preserves an evidence-confirmed goalie's model probability and already-weighted contribution with baselines=%s", (withBaselines) => {
+    const data = fixture(withBaselines ? [{ ...rate, targetKey: "SAVES_GOALIE", basis: "per_start" }] : [],
+      [detailed({ stats: { SAVES_GOALIE: 16 }, conditionalStats: { SAVES_GOALIE: 20 },
+        startProbability: 0.8, appearanceProbability: null, confirmedStart: true })]);
+    data.context.asOf = "2026-10-08T12:00:00Z";
+    data.players[0].playerClass = "goalie";
+    const resolved = resolvePlanningContributions(data);
+    expect(resolved.forecasts[0]).toMatchObject({ confirmedStart: true, startProbability: 0.8, stats: { SAVES_GOALIE: 16 } });
+    expect(resolved.forecastInputExclusions).toEqual([]);
+    expect(resolvePlanningContributions(JSON.parse(JSON.stringify(resolved))).forecasts[0])
+      .toMatchObject({ confirmedStart: true, startProbability: 0.8, stats: { SAVES_GOALIE: 16 } });
+    if (withBaselines) {
+      const expired = JSON.parse(JSON.stringify(resolved));
+      for (const row of Object.values(expired.forecasts[0].contributions) as any[]) {
+        row.inputs.detailed.expiresAt = "2026-10-08T11:00:00Z";
+        row.inputs.participation.expiresAt = "2026-10-08T11:00:00Z";
+      }
+      expect(resolvePlanningContributions(expired).forecasts[0].confirmedStart).toBe(false);
+    }
+  });
+
   it.each([false, true])("validates the entire goalie cohort before requested scope with baselines=%s", (withBaselines) => {
     const make = (probabilities: number[], confirmed = false) => {
       const data = fixture([], probabilities.map((probability, index) => detailed({ playerId: String(7 + index),
@@ -439,7 +460,7 @@ describe("planning contribution adapter", () => {
       return data;
     };
     for (const [probabilities, confirmed] of [[[0.8, 0.8], false], [[1, 1], true], [[-0.1, 0.4], false],
-      [[1.1, 0], false], [[0.4, 0.4], true]] as const) {
+      [[1.1, 0], false], [[-0.1, 0], true], [[1.1, 0], true], [[NaN, 0], true], [[0.4, 0.4], true]] as const) {
       const data = make([...probabilities], confirmed);
       for (const forecasts of [data.forecasts, [...data.forecasts].reverse()]) {
         const result = resolvePlanningContributions({ ...data, forecasts }, { playerIds: new Set(["7"]) });
