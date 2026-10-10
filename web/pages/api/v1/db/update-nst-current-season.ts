@@ -371,7 +371,7 @@ async function fetchAndParseAllPlayersData(
       lastNstRequestCompletedAt = Date.now();
       if (!text) {
         console.warn(`Attempt ${attempt}: No data received from URL: ${url}`);
-        if (attempt === retries) return [];
+        if (attempt === retries) throw new Error("NST returned no response body.");
         await delay(2000 * (attempt + 1));
         continue;
       }
@@ -408,7 +408,7 @@ async function fetchAndParseAllPlayersData(
           console.error(
             `Attempt ${attempt}: Could not find any data table with tbody at URL: ${url}`
           );
-          if (attempt === retries) return [];
+          if (attempt === retries) throw new Error("NST response has no data table.");
           await delay(2000 * (attempt + 1));
           continue;
         }
@@ -526,18 +526,18 @@ async function fetchAndParseAllPlayersData(
         console.error(
           `Failed to process ${ReportType[reportType]} from ${url} after ${retries} attempts.`
         );
-        return [];
+        throw error;
       }
       await delay(2000 * (attempt + 1));
     }
   }
-  return [];
+  throw new Error("NST report attempts exhausted.");
 }
 
 /**
  * Upserts parsed data into the appropriate Supabase table.
  */
-async function upsertData(tableName: string, dataRows: any[]): Promise<number> {
+async function upsertData(tableName: string, dataRows: any[]): Promise<number | null> {
   if (!dataRows || dataRows.length === 0) {
     return 0;
   }
@@ -560,7 +560,7 @@ async function upsertData(tableName: string, dataRows: any[]): Promise<number> {
     return 0;
   }
   const BATCH_SIZE = 500;
-  let totalUpsertedCount = 0;
+  let totalUpsertedCount: number | null = 0;
   for (let i = 0; i < validRows.length; i += BATCH_SIZE) {
     const batch = validRows.slice(i, i + BATCH_SIZE);
     console.log(
@@ -585,8 +585,10 @@ async function upsertData(tableName: string, dataRows: any[]): Promise<number> {
         `Failed to upsert batch to ${tableName}. See logs for details.`
       );
     } else {
-      const currentBatchCount = count ?? batch.length;
-      totalUpsertedCount += currentBatchCount;
+      const currentBatchCount = count ?? null;
+      totalUpsertedCount = totalUpsertedCount !== null && currentBatchCount !== null
+        ? totalUpsertedCount + currentBatchCount
+        : null;
       console.log(
         `Successfully upserted batch to ${tableName}. Batch count: ${currentBatchCount}. Total so far: ${totalUpsertedCount}.`
       );
@@ -599,10 +601,18 @@ async function upsertData(tableName: string, dataRows: any[]): Promise<number> {
 }
 
 // --- Main Execution Function ---
-async function main() {
+type IngestionOutcome = {
+  outcome: "writes_confirmed" | "empty_or_unresolved" | "failed";
+  reportsWritten: number;
+  emptyOrUnresolvedReports: number;
+  rowsUpserted: number | null;
+  sourceCoverage: "not_verified";
+  failedStage: string | null;
+};
+
+async function main(outcome: IngestionOutcome) {
   console.log("Starting NST All Players Seasonal Update Script...");
   const startTime = Date.now(); // Timer start
-  let grandTotalRowsUpserted = 0;
   lastNstRequestCompletedAt = 0;
   try {
     // 1. Get Current Season ID (Unchanged)
@@ -632,9 +642,11 @@ async function main() {
     console.log(`Targeting current season: ${currentSeasonId}`);
 
     // 2. Fetch Player Name -> ID Map (Unchanged)
+    outcome.failedStage = "player_map";
     const playerMap = await fetchPlayerNameIdMap();
     if (playerMap.size === 0) {
       console.error("Player Name -> ID map is empty. Cannot proceed.");
+      outcome.outcome = "empty_or_unresolved";
       return;
     }
 
@@ -670,6 +682,7 @@ async function main() {
         );
 
         // Fetch and Parse Data
+        outcome.failedStage = `${targetTable}:fetch_parse`;
         const parsedData = await fetchAndParseAllPlayersData(
           url,
           reportType,
@@ -680,10 +693,20 @@ async function main() {
 
         // Upsert Data
         if (parsedData.length > 0) {
+          outcome.failedStage = `${targetTable}:upsert`;
           const upsertedCount = await upsertData(targetTable, parsedData);
-          grandTotalRowsUpserted += upsertedCount;
+          outcome.rowsUpserted = outcome.rowsUpserted !== null && upsertedCount !== null
+            ? outcome.rowsUpserted + upsertedCount
+            : null;
+          if (upsertedCount === 0) {
+            outcome.emptyOrUnresolvedReports += 1;
+          } else {
+            outcome.reportsWritten += 1;
+          }
           console.log(`Finished Upsert for ${ReportType[reportType]}.`);
         } else {
+          // Empty source tables and unmatched identities are not qualified here.
+          outcome.emptyOrUnresolvedReports += 1;
           console.log(
             `No valid data parsed for ${ReportType[reportType]} / ${strength}. Skipping upsert.`
           );
@@ -696,11 +719,15 @@ async function main() {
     } // End strength loop (1 iteration)
 
     const endTime = Date.now(); // Timer end
+    outcome.outcome = outcome.emptyOrUnresolvedReports > 0
+      ? "empty_or_unresolved"
+      : "writes_confirmed";
+    outcome.failedStage = null;
     const durationSeconds = (endTime - startTime) / 1000;
     console.log("\n--- SCRIPT FINISHED ---");
     console.log(`Total execution time: ${durationSeconds.toFixed(2)} seconds`);
     console.log(
-      `Grand total rows successfully upserted (all strengths): ${grandTotalRowsUpserted}`
+      `Grand total rows successfully upserted (all strengths): ${outcome.rowsUpserted}`
     );
   } catch (error: any) {
     console.error("\n--- SCRIPT FAILED ---");
@@ -708,6 +735,9 @@ async function main() {
     if (error.stack) {
       console.error(error.stack);
     }
+    // A failed batch may have committed earlier writes; its total is unknown.
+    outcome.rowsUpserted = null;
+    throw error;
   }
 }
 
@@ -716,12 +746,25 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     res.status(405).json({ message: "Method Not Allowed" });
     return;
   }
+  const outcome: IngestionOutcome = {
+    outcome: "failed",
+    reportsWritten: 0,
+    emptyOrUnresolvedReports: 0,
+    rowsUpserted: 0,
+    sourceCoverage: "not_verified",
+    failedStage: "initialization",
+  };
   try {
-    await main();
-    res.status(200).json({ message: "Data fetching and upsertion initiated." });
+    await main(outcome);
+    const success = outcome.outcome === "writes_confirmed";
+    res.status(success ? 200 : 422).json({
+      message: success ? "NST seasonal writes completed." : "NST seasonal writes are empty or unresolved.",
+      success,
+      ...outcome,
+    });
   } catch (error: any) {
     console.error("Error in API handler:", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ message: "Internal Server Error", success: false, ...outcome });
   }
 }
 
