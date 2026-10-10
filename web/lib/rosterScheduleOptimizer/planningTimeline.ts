@@ -25,7 +25,7 @@ export function acquisitionEffectiveAt(snapshot: Pick<PlanningSnapshot, "context
 export function buildTimeline(snapshot: PlanningSnapshot, intent: PlanIntent, steps: PlanStep[]): Timeline {
   const issues = new Set<string>();
   const warnings = new Set<string>();
-  const roster = new Map<string, Member>();
+  let roster = new Map<string, Member>();
   for (const entry of snapshot.roster) {
     if (roster.has(entry.playerId)) issues.add(`Duplicate roster player ${entry.playerId}.`);
     const player = snapshot.players.find(candidate => candidate.id === entry.playerId);
@@ -33,11 +33,13 @@ export function buildTimeline(snapshot: PlanningSnapshot, intent: PlanIntent, st
     else if (isReserve(entry.position) && !player.reserveEligibility.includes(entry.position as typeof reserves[number])) issues.add(`Initial reserve placement for ${entry.playerId} is unverified.`);
     roster.set(entry.playerId, { ...entry, since: "0000-01-01T00:00:00Z" });
   }
-  const capacity = () => {
+  const capacity = (candidate = roster) => {
     const expanded = expandActiveSlots(snapshot.rules.rosterSlots);
-    for (const diagnostic of expanded.diagnostics) if (diagnostic.severity === "error") issues.add(diagnostic.message);
-    if ([...roster.values()].filter(member => !isReserve(member.position)).length > expanded.activeSlots.length + expanded.benchCapacity) issues.add("Roster exceeds active and bench capacity.");
-    for (const position of reserves) if ([...roster.values()].filter(member => member.position === position).length > (snapshot.rules.rosterSlots[position] ?? 0)) issues.add(`${position} capacity exceeded.`);
+    const errors = expanded.diagnostics.filter(diagnostic => diagnostic.severity === "error").map(diagnostic => diagnostic.message);
+    if ([...candidate.values()].filter(member => !isReserve(member.position)).length > expanded.activeSlots.length + expanded.benchCapacity) errors.push("Roster exceeds active and bench capacity.");
+    for (const position of reserves) if ([...candidate.values()].filter(member => member.position === position).length > (snapshot.rules.rosterSlots[position] ?? 0)) errors.push(`${position} capacity exceeded.`);
+    for (const error of errors) issues.add(error);
+    return errors.length === 0;
   };
   capacity();
   const applied = new Set<string>();
@@ -77,14 +79,18 @@ export function buildTimeline(snapshot: PlanningSnapshot, intent: PlanIntent, st
     if (!player) { issues.add(`Unknown player ${step.playerId}.`); return; }
     if (!finiteTime(step.at) || !finiteTime(step.effectiveAt) || time(step.at) < time(snapshot.context.asOf) || time(step.effectiveAt) < time(step.at)) { issues.add(`Invalid action time for ${step.id}.`); return; }
     if (step.dependsOn.some(id => !applied.has(id) || !stepById.has(id) || time(stepById.get(id)!.at) > time(step.at) || time(stepById.get(id)!.effectiveAt) > time(step.at))) { issues.add(`Unmet or mistimed dependency for ${step.id}.`); return; }
+    // Keep rejected steps from changing the last valid roster, budgets or prerequisites.
+    const nextRoster = new Map(roster);
+    const nextAcquisitions = { ...acquisitions };
+    let nextWaiverSpent = waiverSpent, nextWaiverBudgetVerified = waiverBudgetVerified;
     if (step.type === "reserve") {
       if (!roster.has(player.id) || !step.reservePosition || !player.reserveEligibility.includes(step.reservePosition)) { issues.add(`Invalid reserve move for ${player.id}.`); return; }
       if (lockedAt(player.id, step)) { issues.add(`Reserve move conflicts with locked assignment for ${player.id}.`); return; }
-      roster.set(player.id, { playerId: player.id, position: step.reservePosition, since: step.effectiveAt });
+      nextRoster.set(player.id, { playerId: player.id, position: step.reservePosition, since: step.effectiveAt });
     } else if (step.type === "drop") {
       if (!roster.has(player.id) || player.canDrop !== true || intent.protectedPlayerIds.includes(player.id)) { issues.add(`Player ${player.id} cannot be dropped.`); return; }
       if (lockedAt(player.id, step)) { issues.add(`Drop conflicts with locked assignment for ${player.id}.`); return; }
-      roster.delete(player.id);
+      nextRoster.delete(player.id);
     } else {
       if (roster.has(player.id) || intent.excludedPlayerIds.includes(player.id) || !["free_agent", "manager_available", "waivers"].includes(player.availability)) { issues.add(`Player ${player.id} is not verified available.`); return; }
       if (time(step.at) > time(snapshot.context.asOf)) {
@@ -98,15 +104,15 @@ export function buildTimeline(snapshot: PlanningSnapshot, intent: PlanIntent, st
         if (step.waiverSpend !== null && step.waiverSpend !== undefined && (!Number.isFinite(step.waiverSpend) || step.waiverSpend < 0)) { issues.add(`Invalid waiver spend for ${step.id}.`); return; }
         const waiverRules = snapshot.rules.waivers;
         if (!waiverRules || waiverRules.mode === "unknown") {
-          waiverBudgetVerified = false;
+          nextWaiverBudgetVerified = false;
           warnings.add(`Waiver policy for ${step.id} is unverified.`);
         } else if (waiverRules.mode === "budget") {
           if (step.waiverSpend === null || step.waiverSpend === undefined || waiverRules.remainingBudget === null) {
-            waiverBudgetVerified = false;
+            nextWaiverBudgetVerified = false;
             warnings.add(`Waiver spend or remaining budget for ${step.id} is unverified.`);
           } else {
-            waiverSpent += step.waiverSpend;
-            if (waiverSpent > waiverRules.remainingBudget) { issues.add("Waiver budget exceeded."); return; }
+            nextWaiverSpent += step.waiverSpend;
+            if (nextWaiverSpent > waiverRules.remainingBudget) { issues.add("Waiver budget exceeded."); return; }
           }
         } else if (step.waiverSpend !== null && step.waiverSpend !== undefined && step.waiverSpend !== 0) {
           issues.add(`Priority waiver claim ${step.id} cannot carry budget spend.`); return;
@@ -119,16 +125,20 @@ export function buildTimeline(snapshot: PlanningSnapshot, intent: PlanIntent, st
         const dropped = snapshot.players.find(candidate => candidate.id === step.dropPlayerId);
         if (!dropped || !roster.has(dropped.id) || dropped.canDrop !== true || intent.protectedPlayerIds.includes(dropped.id)) { issues.add(`Invalid drop prerequisite for ${step.id}.`); return; }
         if (lockedAt(dropped.id, step)) { issues.add(`Drop conflicts with locked assignment for ${dropped.id}.`); return; }
-        roster.delete(dropped.id);
+        nextRoster.delete(dropped.id);
       }
-      roster.set(player.id, { playerId: player.id, position: "bench", since: step.effectiveAt });
+      nextRoster.set(player.id, { playerId: player.id, position: "bench", since: step.effectiveAt });
       const period = snapshot.rules.periods.find(item => time(item.start) <= time(step.at) && time(step.at) < time(item.end));
       if (!period) { issues.add(`No acquisition period covers ${step.at}.`); return; }
-      acquisitions[period.id] = (acquisitions[period.id] ?? 0) + (snapshot.rules.acquisitionCost ?? 1);
+      nextAcquisitions[period.id] = (acquisitions[period.id] ?? 0) + (snapshot.rules.acquisitionCost ?? 1);
       if (period.remaining === null || period.source === "unknown" || snapshot.rules.acquisitionCost === null) warnings.add(`Acquisition allowance or counting cost for ${period.id} is unverified.`);
-      else if (acquisitions[period.id] > period.remaining) issues.add(`Acquisition allowance exceeded for ${period.id}.`);
+      else if (nextAcquisitions[period.id] > period.remaining) { issues.add(`Acquisition allowance exceeded for ${period.id}.`); return; }
     }
-    capacity();
+    if (!capacity(nextRoster)) return;
+    roster = nextRoster;
+    Object.assign(acquisitions, nextAcquisitions);
+    waiverSpent = nextWaiverSpent;
+    waiverBudgetVerified = nextWaiverBudgetVerified;
     applied.add(step.id);
   };
   return {

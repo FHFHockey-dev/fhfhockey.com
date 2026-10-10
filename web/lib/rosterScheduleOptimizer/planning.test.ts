@@ -4,7 +4,7 @@ import { comparePlanSensitivity } from "../player-forecasts/planComparison";
 import { snapshotSchema } from "../in-season/workspaceSchema";
 import { resolvePlanningContributions } from "../player-forecasts/planningContributions";
 import { explainBenchDecisions } from "./benchDecisions";
-import { acquisitionEffectiveAt } from "./planningTimeline";
+import { acquisitionEffectiveAt, buildTimeline } from "./planningTimeline";
 import type { GameForecast, PlanIntent, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
 
 const fixtureId = (value: string) => [...value].reduce((id, char) => (id * 31 + char.charCodeAt(0)) % 100000000, 1) + 1;
@@ -850,6 +850,57 @@ describe("planning engine", () => {
     const second = { id: "second", type: "add" as const, playerId: "d", dropPlayerId: "c", at: "2026-10-06T00:00:00Z", effectiveAt: "2026-10-06T00:00:00Z", conditional: true, dependsOn: [first.id] };
     const result = planRoster(data, { ...intent, steps: [first, second] }, { maxSteps: 0 });
     expect(result.noClaimContinuations?.find(item => item.claimStepId === "second")?.evaluation.steps).toEqual([first]);
+  });
+  it.each(["missing-period", "exhausted-budget", "roster-capacity"] as const)("retains the roster prefix when a conditional suffix fails %s validation", failure => {
+    const data = snapshot();
+    data.players.push(player("d", "D", "free_agent"));
+    data.games.push({ ...data.games[0], id: "D1", date: "2026-10-06", startsAt: "2026-10-06T20:00:00Z", teamAbbreviation: "D" });
+    data.forecasts.push(issuedForecast(data, "d", "D1", { stats: { pts: 10 } }));
+    const first = { id: "first", type: "add" as const, playerId: "c", dropPlayerId: "b", at: "2026-10-05T00:00:00Z", effectiveAt: "2026-10-05T00:00:00Z", conditional: true, dependsOn: [] };
+    const second = { id: "second", type: "add" as const, playerId: "d", dropPlayerId: failure === "roster-capacity" ? undefined : "c", at: "2026-10-06T00:00:00Z", effectiveAt: "2026-10-06T00:00:00Z", conditional: true, dependsOn: [first.id] };
+    if (failure === "missing-period") data.rules.periods[0].end = second.at;
+    if (failure === "exhausted-budget") data.rules.periods[0].remaining = 1;
+    const selected = { ...intent, steps: [first, second] };
+    const before = JSON.stringify({ data, selected });
+    const timeline = buildTimeline(data, selected, selected.steps);
+    expect([...timeline.at(first.effectiveAt).keys()]).toEqual(["a", "c"]);
+    expect([...timeline.at(second.effectiveAt).keys()]).toEqual(["a", "c"]);
+    expect(timeline.legal).toBe(false);
+    expect(timeline.acquisitions).toEqual({ p: 1 });
+    const evaluation = evaluatePlan(data, selected, "outcome");
+    expect(evaluation.assignments.map(row => row.playerId)).toEqual(["c", "c"]);
+    expect(evaluation.legal).toBe(false);
+    expect(evaluation.recommendation?.eligible).toBe(false);
+    expect(JSON.stringify({ data, selected })).toBe(before);
+  });
+  it("does not let a rejected reserve prerequisite create capacity for its dependent add", () => {
+    const data = snapshot();
+    data.players[1].reserveEligibility = ["IR"];
+    data.rules.rosterSlots.IR = 0;
+    const reserve = { id: "reserve", type: "reserve" as const, playerId: "b", reservePosition: "IR" as const, at: "2026-10-05T00:00:00Z", effectiveAt: "2026-10-05T00:00:00Z", conditional: false, dependsOn: [] };
+    const add = { id: "add", type: "add" as const, playerId: "c", at: reserve.at, effectiveAt: reserve.effectiveAt, conditional: true, dependsOn: [reserve.id] };
+    const timeline = buildTimeline(data, intent, [reserve, add]);
+    const roster = timeline.at(add.effectiveAt);
+    expect([...roster.keys()]).toEqual(["a", "b"]);
+    expect(roster.get("b")?.position).toBe("bench");
+    expect(timeline.acquisitions).toEqual({});
+    expect(timeline.legal).toBe(false);
+    expect(timeline.limitations).toContain("IR capacity exceeded.");
+    expect(timeline.limitations).toContain("Unmet or mistimed dependency for add.");
+  });
+  it("does not spend waiver budget for a rejected move before evaluating an independent claim", () => {
+    const data = snapshot();
+    data.rules.waivers = { mode: "budget", remainingBudget: 5 };
+    data.players.push(...["d", "e"].map(id => ({ ...player(id, id.toUpperCase(), "waivers"), waiverClearsAt: "2026-10-06T00:00:00Z" })));
+    const rejected = { id: "first", type: "add" as const, playerId: "d", dropPlayerId: "b", at: "2026-10-05T00:00:00Z", effectiveAt: "2026-10-06T00:00:00Z", waiverSpend: 3, conditional: true, dependsOn: [] };
+    const independent = { ...rejected, id: "second", playerId: "e", dropPlayerId: "a" };
+    const timeline = buildTimeline(data, { ...intent, protectedPlayerIds: ["b"] }, [rejected, independent]);
+    expect([...timeline.at(independent.effectiveAt).keys()]).toEqual(["b", "e"]);
+    expect(timeline.acquisitions).toEqual({ p: 1 });
+    expect(timeline.legal).toBe(false);
+    expect(timeline.budgetVerified).toBe(true);
+    expect(timeline.limitations).toContain("Invalid drop prerequisite for first.");
+    expect(timeline.limitations).not.toContain("Waiver budget exceeded.");
   });
   it("rejects invalid timestamps and locked bench occupancy changes", () => {
     const data = snapshot();
