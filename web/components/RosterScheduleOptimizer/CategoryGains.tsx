@@ -40,8 +40,12 @@ export default function CategoryGains({ baseline, plan, scoring, label, reviewed
   }
   return <details className={styles.settings}>
     <summary>{label} · category gains</summary>
-    <p>Change from the optimized no-move lineup, using starting assignments after acquisition timing, locks and eligibility checks. Displaced roster contributions are included. Ratios use each full lineup&apos;s numerator and denominator.</p>
-    {!comparable && <p>Category gains unavailable. Review forecast coverage, opponent inputs, acquisition rules and goalie minimums.</p>}
+    <p>Change from the no-move lineup, using starting assignments after acquisition timing, locks and eligibility checks. Displaced roster contributions are included. Ratios use each full lineup&apos;s numerator and denominator.</p>
+    {!comparable && <p>{baseline?.legal === false
+      ? baseline.limitations.some(text => text.startsWith("Locked assignment for"))
+        ? "Category gains unavailable: the no-move lineup cannot satisfy the current lineup locks."
+        : "Category gains unavailable: the no-move plan fails current league or roster rules."
+      : "Category gains unavailable. Review forecast coverage, opponent inputs, acquisition rules and goalie minimums."}</p>}
     {scoring.categories.map(category => {
       const before = baseline?.categoryResults.find(row => row.key === category.key);
       const after = plan?.categoryResults.find(row => row.key === category.key);

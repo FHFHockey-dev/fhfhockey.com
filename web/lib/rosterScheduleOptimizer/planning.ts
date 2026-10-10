@@ -62,6 +62,18 @@ function categoryValue(stats: StatLine, category: ScoringCategory): number | nul
   const denominator = stats[category.denominator];
   return finite(denominator) && denominator > 0 ? numerator / denominator * (category.multiplier ?? 1) : null;
 }
+/** A native-unit partial order, never a cross-category utility or global rank. */
+function categoryRelation(a: Array<number | null>, b: Array<number | null>, categories: ScoringCategory[]) {
+  if (!categories.length || a.length !== categories.length || b.length !== categories.length
+    || !a.every(finite) || !b.every(finite)) return "unknown";
+  let better = false, worse = false;
+  categories.forEach((category, index) => {
+    if (a[index] === b[index]) return;
+    if (category.direction === "higher" ? a[index]! > b[index]! : a[index]! < b[index]!) better = true;
+    else worse = true;
+  });
+  return better && worse ? "tradeoff" : better ? "better" : worse ? "worse" : "equal";
+}
 function opponentStats(snapshot: PlanningSnapshot): StatLine | null {
   if (!snapshot.opponent || snapshot.opponent.remaining === null) return null;
   const stats: StatLine = { ...snapshot.opponent.realized };
@@ -148,7 +160,6 @@ function playValue(play: Play, snapshot: PlanningSnapshot, opponent: StatLine | 
     return weights.reduce((sum, [key, weight]) => sum + stats[key]! * weight, 0);
   }
   if (!opponent) return null;
-  let value = 0;
   for (const category of snapshot.rules.scoring.categories) {
     if (!applies(category.numerator ?? category.key, play.player.playerClass, applicability)) continue;
     const target = categoryValue(opponent, category);
@@ -157,10 +168,10 @@ function playValue(play: Play, snapshot: PlanningSnapshot, opponent: StatLine | 
     if (!forecastAllows(play.forecast, category.numerator ?? category.key, "assignment")
       || category.denominator && !forecastAllows(play.forecast, category.denominator, "assignment")
       || !finite(target) || !finite(numerator) || !finite(denominator)) return null;
-    // Ratio contribution is measured against the opponent's current ratio.
-    value += (numerator - (category.denominator ? target / (category.multiplier ?? 1) * denominator : 0)) * (category.direction === "higher" ? 1 : -1);
   }
-  return value;
+  // Category forecasts establish supported inputs, not an additive utility.
+  // Assignment starts from neutral capacity; complete lineups compare below.
+  return 0;
 }
 function scoringTargets(snapshot: PlanningSnapshot, play: Play, applicability: Applicability): string[] {
   const keys = snapshot.rules.scoring.mode === "points"
@@ -239,7 +250,7 @@ function competitorCoverage(snapshot: PlanningSnapshot, playsByDate: Map<string,
   }
   return { requiredCount, assignmentEligibleCount, totalsEligibleCount, comparisonEligibleCount, exclusions };
 }
-function assign(snapshot: PlanningSnapshot, intent: PlanIntent, objective: PlanningObjective, plays: Play[], date: string, locked: Array<{ playerId: string; slotId: string | null }>, limitations: Set<string>, applicability: Applicability, goalieNeeded: boolean, unresolved: CoverageIssue[], allowNoGameLocks = false, forcePlayerId?: string): PlanningAssignment[] {
+function assign(snapshot: PlanningSnapshot, intent: PlanIntent, objective: PlanningObjective, plays: Play[], date: string, locked: Array<{ playerId: string; slotId: string | null }>, limitations: Set<string>, applicability: Applicability, unresolved: CoverageIssue[], allowNoGameLocks = false, forcePlayerId?: string): PlanningAssignment[] {
   const expanded = expandActiveSlots(snapshot.rules.rosterSlots).activeSlots;
   const slots = [...expanded];
   const output: PlanningAssignment[] = [];
@@ -312,8 +323,8 @@ function assign(snapshot: PlanningSnapshot, intent: PlanIntent, objective: Plann
   for (const row of weightedAssignment(slots, candidate, (slot, play) => {
     if (!canEligibilityOccupySlot(normalizeEligibility(play.player.eligiblePositions), slot.type)) return null;
     const value = unknown.has(play) ? (play.gamesCount ?? 1) * agpBonus + (conditionalTies.get(play) ?? 0)
-      : objective === "agp" ? (play.gamesCount ?? 1) * agpBonus + (values.get(play) ?? 0)
-        : values.get(play) === null ? null : values.get(play)! + (snapshot.rules.scoring.mode === "categories" && goalieNeeded && play.player.playerClass === "goalie" ? 1e5 : 0);
+      : objective === "agp" || snapshot.rules.scoring.mode === "categories" ? (play.gamesCount ?? 1) * agpBonus + (values.get(play) ?? 0)
+        : values.get(play) === null ? null : values.get(play)!;
     return value === null ? null : value + (play.player.id === forcePlayerId ? agpBonus : 0);
   })) {
     if (row.playerIndex === null) continue;
@@ -336,20 +347,27 @@ function pointsGoalieCoverageTarget(snapshot: PlanningSnapshot, intent: PlanInte
     && minimum.counts === "starts" && finite(minimum.required) && finite(minimum.credited)
     && minimum.credited < minimum.required && goalieMinimumWindowVerified(snapshot) ? minimum.required : null;
 }
+function categoryGoalieCoverageTarget(snapshot: PlanningSnapshot, intent: PlanIntent): number | null {
+  const minimum = snapshot.rules.goalieMinimum;
+  return snapshot.rules.scoring.mode === "categories" && intent.goalieCoverage === "cover"
+    && minimum.counts === "starts" && finite(minimum.required) && finite(minimum.credited)
+    && minimum.credited < minimum.required && goalieMinimumWindowVerified(snapshot) ? minimum.required : null;
+}
 
 /** Compare complete category or points-goalie lineups; local moves remain bounded. */
 function refineOutcomeLineup(
   snapshot: PlanningSnapshot, intent: PlanIntent, seed: PlanningAssignment[],
   playsByDate: Map<string, Play[]>, windowByDate: Map<string, string>, weeklyCandidates: Map<string, Play[]>,
   forecasts: Map<string, GameForecast>, opponent: StatLine | null, applicability: Applicability, limitations: Set<string>,
-  pointsCoverageTarget: number | null,
+  pointsCoverageTarget: number | null, objective: PlanningObjective,
 ): PlanningAssignment[] {
   const points = snapshot.rules.scoring.mode === "points";
   const slots = expandActiveSlots(snapshot.rules.rosterSlots).activeSlots.filter(slot => !points || slot.type === "G");
   const playByKey = new Map([...playsByDate.values()].flat().map(play => [`${play.player.id}:${play.game.id}`, play]));
   const needed = new Set(points ? Object.entries(snapshot.rules.scoring.weights).filter(([, weight]) => weight !== 0).map(([key]) => key)
     : snapshot.rules.scoring.categories.flatMap(category => [category.numerator ?? category.key, ...(category.denominator ? [category.denominator] : [])]));
-  const invalid = { value: -Infinity, coverage: -Infinity };
+  const categoryCoverageTarget = categoryGoalieCoverageTarget(snapshot, intent);
+  const invalid = { value: -Infinity, coverage: -Infinity, capacity: -Infinity, categories: null as Array<number | null> | null };
   const score = (rows: PlanningAssignment[]) => {
     const stats: StatLine = { ...snapshot.realized };
     const goalieGroups = new Map<string, number>();
@@ -363,34 +381,31 @@ function refineOutcomeLineup(
         if (!forecastAllows(forecast, key, "assignment") || !finite(value)) return invalid;
         stats[key] = (stats[key] ?? 0)! + value;
       }
-      if (play.player.playerClass === "goalie" && snapshot.rules.goalieMinimum.required !== null && snapshot.rules.goalieMinimum.counts === "starts") {
+      if (play.player.playerClass === "goalie" && (points ? pointsCoverageTarget : categoryCoverageTarget) !== null) {
         const probability = forecast.confirmedStart ? 1 : forecast.startProbability;
         if (!finite(probability)) return invalid;
         const key = `${play.game.id}:${play.player.teamAbbreviation}`;
         goalieGroups.set(key, Math.min(1, (goalieGroups.get(key) ?? 0) + probability));
       }
     }
+    const credited = snapshot.rules.goalieMinimum.credited;
+    const projected = finite(credited) ? credited + [...goalieGroups.values()].reduce((sum, value) => sum + value, 0) : null;
     if (points) return { value: [...needed].reduce((sum, key) => sum + (stats[key] ?? 0)! * snapshot.rules.scoring.weights[key], 0),
-      coverage: Math.min(pointsCoverageTarget!, snapshot.rules.goalieMinimum.credited! + [...goalieGroups.values()].reduce((sum, value) => sum + value, 0)) };
-    let total = 0;
-    for (const category of snapshot.rules.scoring.categories) {
-      const own = categoryValue(stats, category), other = categoryValue(opponent!, category);
-      if (!finite(own) || !finite(other)) return invalid;
-      const difference = (own - other) * (category.direction === "higher" ? 1 : -1);
-      total += Math.sign(difference) + Math.tanh(difference / Math.max(1, Math.abs(other))) * 0.01;
-    }
-    const minimum = snapshot.rules.goalieMinimum;
-    if (minimum.required !== null && minimum.counts === "starts" && finite(minimum.credited)) {
-      const projected = minimum.credited + [...goalieGroups.values()].reduce((sum, value) => sum + value, 0);
-      if (projected < minimum.required) {
-        if (minimum.penalty === "lose_goalie_categories") total -= 100;
-        if (intent.goalieCoverage === "cover") total -= 10;
-      }
-    }
-    return { value: total, coverage: 0 };
+      coverage: Math.min(pointsCoverageTarget!, projected!), capacity: rows.length, categories: null };
+    const categories = snapshot.rules.scoring.categories.map(category => categoryValue(stats, category));
+    if (!categories.length || !categories.every(finite)
+      || snapshot.rules.scoring.categories.some(category => !finite(categoryValue(opponent!, category)))) return invalid;
+    return { value: 0, coverage: categoryCoverageTarget === null ? 0 : Math.min(categoryCoverageTarget, projected!),
+      capacity: rows.length, categories };
   };
-  const compare = (a: ReturnType<typeof score>, b: ReturnType<typeof score>) =>
-    a.coverage !== b.coverage ? a.coverage > b.coverage ? 1 : -1 : a.value === b.value ? 0 : a.value > b.value ? 1 : -1;
+  const compare = (a: ReturnType<typeof score>, b: ReturnType<typeof score>) => {
+    if (points) return a.coverage !== b.coverage ? a.coverage > b.coverage ? 1 : -1 : a.value === b.value ? 0 : a.value > b.value ? 1 : -1;
+    if (!a.categories || !b.categories) return 0;
+    if (a.coverage !== b.coverage) return a.coverage > b.coverage ? 1 : -1;
+    if (objective === "agp" && a.capacity !== b.capacity) return a.capacity > b.capacity ? 1 : -1;
+    const relation = categoryRelation(a.categories, b.categories, snapshot.rules.scoring.categories);
+    return relation === "better" ? 1 : relation === "worse" ? -1 : 0;
+  };
   const key = (rows: PlanningAssignment[]) => rows.map(row => `${row.date}:${row.slotId}:${row.playerId}`).sort().join("|");
   function* neighbors(rows: PlanningAssignment[]): Generator<PlanningAssignment[]> {
     if (snapshot.rules.lineupMode === "weekly") {
@@ -439,18 +454,21 @@ function refineOutcomeLineup(
         seen.add(identity);
         const value = score(candidate);
         evaluated++;
-        if (compare(value, bestScore) > 0 && (value.coverage !== bestScore.coverage || value.value > bestScore.value + 1e-8)) { best = candidate; bestScore = value; }
+        if (compare(value, bestScore) > 0 && (!points || value.coverage !== bestScore.coverage || value.value > bestScore.value + 1e-8)) { best = candidate; bestScore = value; }
         if (Number.isFinite(value.value)) next.push({ rows: candidate, value });
         if (evaluated >= 100) break;
       }
     }
     if (!next.length) break;
-    next.sort((a, b) => compare(b.value, a.value));
-    frontier = next.slice(0, 6).map(item => item.rows);
+    if (points) next.sort((a, b) => compare(b.value, a.value));
+    const retained = points ? next : next.filter(candidate => !next.some(other => compare(other.value, candidate.value) > 0))
+      .sort((a, b) => key(a.rows).localeCompare(key(b.rows)));
+    frontier = retained.slice(0, 6).map(item => item.rows);
   }
   if (seen.size > 1) limitations.add(points
     ? "Projected goalie coverage uses expected starts and bounded lineup alternatives; it is not a satisfied minimum or proven optimum."
-    : "Category lineup alternatives were bounded; the selected lineup is best found, not proven optimal.");
+    : "Category lineup analysis is bounded and incomplete; incomparable tradeoffs are not globally ranked.");
+  if (!points && categoryCoverageTarget !== null) limitations.add("Cover choice prioritizes supported projected goalie starts before category outcomes; it is a coverage preference, not category dominance or credited progress.");
   return best;
 }
 
@@ -500,14 +518,6 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     if (dayGames.some(game => !game.startsAt)) limitations.add("Some game start times are unknown; same-day acquisitions cannot claim those starts.");
     playsByDate.set(date, plays);
     scheduledGames += plays.length;
-    const creditedExpected = new Map<string, number>();
-    for (const play of chosen.values()) if (play.player.playerClass === "goalie") {
-      const key = `${play.game.id}:${play.player.teamAbbreviation}`;
-      const value = play.forecast?.confirmedStart ? 1 : play.forecast?.startProbability ?? 0;
-      creditedExpected.set(key, Math.min(1, (creditedExpected.get(key) ?? 0) + value));
-    }
-    const goalieNeeded = intent.goalieCoverage === "cover" && snapshot.rules.goalieMinimum.required !== null &&
-      (snapshot.rules.goalieMinimum.credited ?? 0) + [...creditedExpected.values()].reduce((sum, value) => sum + value, 0) < snapshot.rules.goalieMinimum.required;
     let rows: PlanningAssignment[];
     if (snapshot.rules.lineupMode === "weekly") {
       const period = lineupPeriodForDate(date);
@@ -558,7 +568,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
           invalidLocks = true;
         }
         weeklyCandidates.set(window, aggregate);
-        const seed = assign(snapshot, intent, objective, aggregate, date, uniqueLocks, limitations, applicability, goalieNeeded, unresolved, true);
+        const seed = assign(snapshot, intent, objective, aggregate, date, uniqueLocks, limitations, applicability, unresolved, true);
         locked = new Map(seed.map(row => [row.slotId, row.playerId]));
         for (const lock of uniqueLocks) if (lock.slotId !== null) locked.set(lock.slotId, lock.playerId);
         weekly.set(window, locked);
@@ -577,7 +587,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
         if (lock.slotId === null ? rows.some(row => row.playerId === lock.playerId) : !inactiveLock && !rows.some(row => row.playerId === lock.playerId && row.slotId === lock.slotId))
           limitations.add(`Locked assignment for ${lock.playerId} on ${date} conflicts with weekly lineup.`);
       }
-    } else rows = assign(snapshot, intent, objective, plays, date, snapshot.lockedAssignments.filter(item => item.date === date), limitations, applicability, goalieNeeded, unresolved);
+    } else rows = assign(snapshot, intent, objective, plays, date, snapshot.lockedAssignments.filter(item => item.date === date), limitations, applicability, unresolved);
     for (const lock of snapshot.lockedAssignments.filter(item => item.date === date)) {
       const inactiveLock = snapshot.rules.lineupMode === "weekly" && lock.slotId !== null && !plays.some(play => play.player.id === lock.playerId) && weekly.get(windowByDate.get(date) ?? "")?.get(lock.slotId) === lock.playerId;
       if (lock.slotId === null ? rows.some(row => row.playerId === lock.playerId) : !inactiveLock && !rows.some(row => row.playerId === lock.playerId && row.slotId === lock.slotId)) invalidLocks = true;
@@ -595,20 +605,26 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
         ? lineupPeriodForDate(lock.date)?.id === window : lock.date === date) };
   };
   const pointsCoverageTarget = pointsGoalieCoverageTarget(snapshot, intent);
+  const categoryCoverageTarget = categoryGoalieCoverageTarget(snapshot, intent);
+  const coverageTarget = snapshot.rules.scoring.mode === "categories" ? categoryCoverageTarget : pointsCoverageTarget;
+  const requestedMinimum = snapshot.rules.goalieMinimum;
+  const categoryCoverageRequested = snapshot.rules.scoring.mode === "categories" && intent.goalieCoverage === "cover"
+    && requestedMinimum.required !== null && !(finite(requestedMinimum.credited) && requestedMinimum.credited >= requestedMinimum.required);
+  const categoryCoverageSupported = !categoryCoverageRequested || categoryCoverageTarget !== null;
   const goalieSlots = expandActiveSlots(snapshot.rules.rosterSlots).activeSlots.filter(slot => slot.type === "G");
-  const coverageKnown = pointsCoverageTarget === null || [...playsByDate].flatMap(([date, plays]) => {
+  const coverageKnown = categoryCoverageSupported && (coverageTarget === null || [...playsByDate].flatMap(([date, plays]) => {
     const { locks } = scopeForDate(date);
     return plays.filter(play => play.player.playerClass === "goalie" && !locks.some(lock => lock.playerId === play.player.id && lock.slotId === null)
       && goalieSlots.some(slot => canEligibilityOccupySlot(normalizeEligibility(play.player.eligiblePositions), slot.type)
         && !locks.some(lock => lock.slotId === slot.id && lock.playerId !== play.player.id)));
   })
-    .every(play => play.forecast?.confirmedStart || finite(play.forecast?.startProbability));
+    .every(play => play.forecast?.confirmedStart || finite(play.forecast?.startProbability)));
   if (!coverageKnown) limitations.add("Missing starter probabilities leave requested projected goalie coverage unresolved.");
-  if (!unresolved.length && objective === "outcome" && (snapshot.rules.scoring.mode === "categories" || pointsCoverageTarget !== null && coverageKnown)) {
+  if (!unresolved.length && coverageKnown && (snapshot.rules.scoring.mode === "categories" || objective === "outcome" && pointsCoverageTarget !== null)) {
     const opponent = opponentStats(snapshot);
     if (opponent || snapshot.rules.scoring.mode === "points") {
       const refined = refineOutcomeLineup(snapshot, intent, assignments, playsByDate, windowByDate, weeklyCandidates, forecasts,
-        opponent, applicability, limitations, pointsCoverageTarget);
+        opponent, applicability, limitations, pointsCoverageTarget, objective);
       assignments.splice(0, assignments.length, ...refined);
       chosen.clear();
       for (const row of assignments) {
@@ -685,7 +701,8 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
   }
   if (minimum.counts === "appearances" && minimum.required !== null) {
     if (!minimumAlreadyMet) { projected = null; limitations.add("Appearance probabilities are unavailable; starter probabilities cannot verify this goalie minimum."); }
-  } else if (finite(projected)) projected += [...goalieByTeamGame.values()].reduce((sum, value) => sum + value, 0);
+  } else if (minimum.required !== null && minimum.counts === "unknown" && !minimumAlreadyMet) projected = null;
+  else if (finite(projected)) projected += [...goalieByTeamGame.values()].reduce((sum, value) => sum + value, 0);
   if (!minimumWindowVerified && minimum.required !== null) projected = null;
   const risk = minimum.required !== null && (projected === null || projected < minimum.required);
   if (risk && intent.goalieCoverage === "cover") limitations.add("Goalie minimum coverage is not verified.");
@@ -704,7 +721,12 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
   if (conflictingTargets.size) projectedValue = null;
   const assignmentValue = unresolved.length || (scheduledGames > 0 && forecastedOpportunities === 0) ? null
     : [...chosen.values()].reduce<number | null>((sum, play) => { const value = playValue(play, snapshot, opponent, applicability); return sum === null || value === null ? null : sum + value; }, 0);
-  const recommendationEligible = legal && !unresolved.length && coverageKnown && assignmentValue !== null && !invalidLocks && !weeklyEvidenceMissing && !snapshot.rules.unsupported.length;
+  const inputEligible = legal && !unresolved.length && coverageKnown && assignmentValue !== null && !invalidLocks && !weeklyEvidenceMissing && !snapshot.rules.unsupported.length;
+  const categoryMode = snapshot.rules.scoring.mode === "categories";
+  if (categoryMode) limitations.add("Category assignments use schedule capacity and supported componentwise changes. Incomparable tradeoffs have no approved overall utility; start/sit and acquisition recommendations need manager choice.");
+  // Complete per-category facts remain comparable without certifying a scalar
+  // winner. This also bypasses scalar category bench-counterfactual certification.
+  const recommendationEligible = inputEligible && !categoryMode;
   const unresolvedWithReasons = [...new Map(unresolved.map(issue => [`${issue.date}:${issue.playerId}:${issue.gameId}`, issue])).values()]
     .map(issue => ({ ...issue, reasons: [...new Set(coverage.exclusions.filter(row => row.playerId === issue.playerId
       && row.gameId === issue.gameId && (!issue.missingTargets.length || issue.missingTargets.includes(row.targetKey)))
@@ -725,7 +747,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
               : value !== null && value < 0 && competing.length < eligibleSlots.length ? "negative_value" : "whole_lineup_scoring";
     return { date, playerId: play.player.id, gameId: play.game.id, reason, value, competingPlayerIds: competing.map(row => row.playerId) };
   }));
-  const comparisonEligible = recommendationEligible && projectedValue !== null && [...playsByDate.values()].flat()
+  const comparisonEligible = inputEligible && projectedValue !== null && [...playsByDate.values()].flat()
     .filter(play => !snapshot.lockedAssignments.some(lock => lock.date === play.game.date && lock.playerId === play.player.id && lock.slotId === null))
     .every(play => scoringTargets(snapshot, play, applicability).every(key => forecastAllows(play.forecast, key, "comparison")));
   const evaluation: PlanEvaluation = { assignmentValue, comparisonEligible,
@@ -757,7 +779,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
       const scope = scopeForDate(lock.date), window = windowByDate.get(lock.date);
       const candidates = snapshot.rules.lineupMode === "weekly" ? weeklyCandidates.get(window!) ?? [] : playsByDate.get(lock.date) ?? [];
       const placed = assign(snapshot, intent, objective, candidates, lock.date, scope.locks,
-        new Set<string>(), applicability, false, [], snapshot.rules.lineupMode === "weekly", lock.playerId)
+        new Set<string>(), applicability, [], snapshot.rules.lineupMode === "weekly", lock.playerId)
         .filter(row => snapshot.players.find(item => item.id === row.playerId)?.playerClass === "skater");
       const replacement = scope.dates.flatMap(date => placed.flatMap(row => {
         const play = playsByDate.get(date)?.find(item => item.player.id === row.playerId);
@@ -777,8 +799,62 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     } });
 }
 
-function compareEvaluations(a: PlanEvaluation, b: PlanEvaluation, intent: PlanIntent, preferred: PlanningObjective, pointsCoverageTarget: number | null): number {
+function compareCategoryEvaluations(snapshot: PlanningSnapshot, a: PlanEvaluation, b: PlanEvaluation, target: number | null) {
+  if (!a.comparisonEligible || !b.comparisonEligible || !a.legal || !b.legal || !a.budgetVerified || !b.budgetVerified
+    || !a.forecastManifestId || a.forecastManifestId !== b.forecastManifestId) return "unknown";
+  const categories = snapshot.rules.scoring.categories;
+  const rows = categories.map(category => [a.categoryResults.find(row => row.key === category.key), b.categoryResults.find(row => row.key === category.key)]);
+  if (rows.some(([left, right]) => !left || !right || !finite(left.opponent) || left.opponent !== right.opponent)) return "unknown";
+  let relation = categoryRelation(rows.map(([left]) => left?.own ?? null), rows.map(([, right]) => right?.own ?? null), categories);
+  if (relation === "unknown") return relation;
+  let coveragePreferred = false;
+  if (target !== null) {
+    if (!finite(a.goalie.projected) || !finite(b.goalie.projected)) return "unknown";
+    const left = Math.min(target, a.goalie.projected), right = Math.min(target, b.goalie.projected);
+    if (left !== right) {
+      relation = left > right ? "better" : "worse";
+      coveragePreferred = true;
+    }
+  } else if (a.goalie.required !== null && !a.goalie.minimumSatisfied
+    && (a.goalie.projected !== b.goalie.projected || a.goalie.risk !== b.goalie.risk)) {
+    // Accepting risk does not assign a utility to different coverage scenarios.
+    return "tradeoff";
+  }
+  if (a.objective === b.objective && a.objective === "agp" && a.activeGames !== b.activeGames && !coveragePreferred) relation = a.activeGames > b.activeGames ? "better" : "worse";
+  let lowerCost = false, higherCost = false;
+  for (const period of new Set([...Object.keys(a.acquisitions), ...Object.keys(b.acquisitions)])) {
+    const left = a.acquisitions[period] ?? 0, right = b.acquisitions[period] ?? 0;
+    if (!finite(left) || !finite(right)) return "unknown";
+    lowerCost ||= left < right;
+    higherCost ||= left > right;
+  }
+  const adds = (plan: PlanEvaluation) => plan.steps.filter(step => step.type === "add").length;
+  lowerCost ||= adds(a) < adds(b);
+  higherCost ||= adds(a) > adds(b);
+  if (lowerCost && higherCost || relation === "better" && higherCost || relation === "worse" && lowerCost) return "tradeoff";
+  if (relation === "equal" && (lowerCost || higherCost)) {
+    // Equality is exact in retained native-unit values (zero computational
+    // tolerance), including relevant minimum/coverage facts. No significance
+    // floor, category weighting or five-percent tie rule is applied.
+    if (a.goalie.required !== b.goalie.required || a.goalie.credited !== b.goalie.credited
+      || a.goalie.confirmed !== b.goalie.confirmed || a.goalie.projected !== b.goalie.projected
+      || a.goalie.risk !== b.goalie.risk || a.goalie.minimumSatisfied !== b.goalie.minimumSatisfied) return "tradeoff";
+    return lowerCost ? "better" : "worse";
+  }
+  return relation;
+}
+function compareEvaluations(a: PlanEvaluation, b: PlanEvaluation, intent: PlanIntent, preferred: PlanningObjective, pointsCoverageTarget: number | null, categoryMode: boolean): number {
   if (a.objective !== b.objective) return a.objective === preferred ? -1 : 1;
+  // Category presentation orders only the declared starts objective. Partial
+  // dominance is handled by frontier filtering, never used as a global sort.
+  if (categoryMode) {
+    if (pointsCoverageTarget !== null && a.comparisonEligible && b.comparisonEligible
+      && a.forecastManifestId === b.forecastManifestId && finite(a.goalie.projected) && finite(b.goalie.projected)) {
+      const difference = Math.min(pointsCoverageTarget, b.goalie.projected) - Math.min(pointsCoverageTarget, a.goalie.projected);
+      if (difference) return difference;
+    }
+    return a.objective === "agp" ? b.activeGames - a.activeGames : 0;
+  }
   if (intent.goalieCoverage === "cover" && a.goalie.risk !== b.goalie.risk) return a.goalie.risk ? 1 : -1;
   if (a.objective === "outcome" && pointsCoverageTarget !== null && finite(a.goalie.projected) && finite(b.goalie.projected)) {
     const difference = Math.min(pointsCoverageTarget, b.goalie.projected) - Math.min(pointsCoverageTarget, a.goalie.projected);
@@ -795,6 +871,10 @@ function compareEvaluations(a: PlanEvaluation, b: PlanEvaluation, intent: PlanIn
 }
 function safeAlternative(snapshot: PlanningSnapshot, baseline: PlanEvaluation, evaluation: PlanEvaluation,
   pointsCoverageTarget: number | null): boolean {
+  if (snapshot.rules.scoring.mode === "categories") {
+    const relation = compareCategoryEvaluations(snapshot, evaluation, baseline, pointsCoverageTarget);
+    return relation === "better" || relation === "tradeoff";
+  }
   const hasDrop = evaluation.steps.some(step => !!step.dropPlayerId || step.type === "drop");
   if (!hasDrop && evaluation.objective === "agp" && evaluation.activeGames > baseline.activeGames &&
     (baseline.projectedValue === null || evaluation.projectedValue === null || evaluation.projectedValue >= baseline.projectedValue)) return true;
@@ -945,6 +1025,8 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   };
   const noMoveAgp = evaluatePlan(snapshot, intent, "agp", [], false);
   const pointsCoverageTarget = pointsGoalieCoverageTarget(snapshot, intent);
+  const categoryMode = snapshot.rules.scoring.mode === "categories";
+  const coverageTarget = categoryMode ? categoryGoalieCoverageTarget(snapshot, intent) : pointsCoverageTarget;
   const noMoveOutcome = evaluatePlan(snapshot, intent, "outcome", [], false);
   const objective: PlanningObjective = noMoveOutcome.recommendation?.eligible === true ? "outcome" : "agp";
   const baseline = objective === "outcome" ? noMoveOutcome : noMoveAgp;
@@ -1009,11 +1091,15 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
         if (!complete || phaseEvaluated >= phaseBudget) break;
       }
       if (!complete) break;
-      next.sort((a, b) => compareEvaluations(a.evaluation, b.evaluation, intent, searchObjective, pointsCoverageTarget) || a.steps.length - b.steps.length ||
+      // Different acquisition prefixes may have different future extensions.
+      // Keep them until the existing disclosed beam bound; current category
+      // dominance alone cannot prove their extension paths interchangeable.
+      const retained = next;
+      retained.sort((a, b) => compareEvaluations(a.evaluation, b.evaluation, intent, searchObjective, coverageTarget, categoryMode) || (categoryMode ? 0 : a.steps.length - b.steps.length) ||
         a.steps.map(step => step.id).join("|").localeCompare(b.steps.map(step => step.id).join("|")));
-      if (next.length) anyNext = true;
-      if (next.length > beamWidth - 1) beamPruned = true;
-      frontiers[searchObjective] = [noMoves[searchObjective], ...next.slice(0, beamWidth - 1)];
+      if (retained.length) anyNext = true;
+      if (retained.length > beamWidth - 1) beamPruned = true;
+      frontiers[searchObjective] = [noMoves[searchObjective], ...retained.slice(0, beamWidth - 1)];
     }
     if (!complete || !anyNext) break;
   }
@@ -1024,10 +1110,15 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   if (beamPruned) limitations.add("Beam width pruned feasible plans; search is incomplete.");
   const depthPruned = maxSteps === 0 ? candidates.length > 0 : (["agp", "outcome"] as const).some(searchObjective => frontiers[searchObjective].slice(1).some(state => !extensions(snapshot, intent, state.steps, candidates).next().done));
   if (depthPruned) limitations.add("Acquisition depth limit left additional sequences unexplored.");
-  if (snapshot.rules.scoring.mode === "categories") limitations.add("Category alternatives use projected means without calibrated joint scenarios.");
-  all.sort((a, b) => compareEvaluations(a.evaluation, b.evaluation, intent, objective, pointsCoverageTarget) || a.steps.length - b.steps.length ||
+  if (categoryMode) limitations.add("Category alternatives use projected means without calibrated joint scenarios and are not globally ranked. Presentation order is deterministic; incomparable supported tradeoffs remain available within search bounds.");
+  all.sort((a, b) => compareEvaluations(a.evaluation, b.evaluation, intent, objective, coverageTarget, categoryMode) || (categoryMode ? 0 : a.steps.length - b.steps.length) ||
     a.steps.map(step => step.id).join("|").localeCompare(b.steps.map(step => step.id).join("|")));
-  const alternatives = [baseline, ...all.filter(state => state.steps.length && safeAlternative(snapshot, state.evaluation.objective === "agp" ? noMoveAgp : noMoveOutcome, state.evaluation, pointsCoverageTarget)).map(state => state.evaluation)].slice(0, intent.alternativeCount);
+  const supported = all.filter(state => state.steps.length && safeAlternative(snapshot, state.evaluation.objective === "agp" ? noMoveAgp : noMoveOutcome, state.evaluation, coverageTarget));
+  const retained = categoryMode ? supported.filter(candidate => !supported.some(other => other.evaluation.objective === candidate.evaluation.objective
+    && compareCategoryEvaluations(snapshot, other.evaluation, candidate.evaluation, coverageTarget) === "better")) : supported;
+  const alternatives = [baseline, ...retained.map(state => state.evaluation)].slice(0, intent.alternativeCount);
+  const categoryLineupBounded = categoryMode && [noMoveAgp, noMoveOutcome, selected, ...alternatives]
+    .some(plan => plan.limitations.some(text => text.startsWith("Category lineup analysis is bounded and incomplete")));
   // Only returned plans receive bench evidence. Counterfactuals never recursively
   // explain themselves, and identical objective/intent inputs reuse one result.
   const explained = new Map<string, PlanEvaluation>();
@@ -1055,7 +1146,7 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
     noMoveAgp: noMoveAgpExplained, noMoveOutcome: noMoveOutcomeExplained, selected: selectedExplained,
     alternatives: alternativesExplained, noClaimContinuations: continuationsExplained, scheduleFits: fitResult.fits,
     search: { policyVersion: "rso-search-v3", evaluated, candidates: generated, maxDepthReached,
-      complete: complete && fitResult.complete && !phasePruned && coverageComplete && !beamPruned && !depthPruned && benchComplete,
+      complete: complete && fitResult.complete && !phasePruned && coverageComplete && !beamPruned && !depthPruned && benchComplete && !categoryLineupBounded,
       elapsedMs: Date.now() - start, limitations: [...limitations], benchEvidence: { policyVersion: "rso-bench-v1",
         evaluated: benchBudget.evaluated, maxEvaluations: benchBudget.maxEvaluations, complete: benchComplete,
         workQuotaReached: benchBudget.workQuotaReached, timeLimitReached: benchBudget.timeLimitReached } } };

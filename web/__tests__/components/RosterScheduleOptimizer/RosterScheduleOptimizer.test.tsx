@@ -448,6 +448,51 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(screen.getByText(/This assignment shows legal schedule capacity/).textContent).toContain("Player-quality start/sit decisions are unresolved");
     expect(screen.queryByRole("button", { name: /suggested lineup/i })).toBeNull();
   });
+  it.each([true, false])("distinguishes category comparison availability (%s) from a recommended winner", async (comparisonEligible) => {
+    const workspace = defaultWorkspace();
+    workspace.manualPlayers = [player];
+    workspace.roster = [{ playerId: player.id, position: "active" }];
+    workspace.rules.scoring = { mode: "categories", weights: {}, categories: [{ key: "GOALS", direction: "higher" }] };
+    workspace.realized = { GOALS: 0 };
+    workspace.opponent = { roster: [], realized: { GOALS: 1 }, remaining: { GOALS: 0 } };
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    // Exercise the comparison/certification presentation contract separately from forecast admission.
+    planningState.evaluate = (snapshot, intent) => {
+      const result = planRoster(snapshot, intent, { maxSteps: 0 });
+      return { ...result, selected: { ...result.selected, comparisonEligible } };
+    };
+    const games: PlanningData["games"] = [{ id: "category-game", date: workspace.context.startDate,
+      startsAt: `${workspace.context.startDate}T23:00:00Z`, teamAbbreviation: "CAR", opponent: "NYR", home: true, status: "scheduled" }];
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"),
+      json: async () => ({ success: true, data: { ...data, games } }) })));
+    render(<RosterScheduleOptimizer />);
+    const button = await screen.findByRole("button", { name: comparisonEligible ? "Show category lineup comparison" : "Show schedule-capacity assignment" });
+    await screen.findByText("Category outcomes");
+    fireEvent.click(button);
+    expect(screen.getByText(/Category alternatives ·/)).toBeTruthy();
+    expect(screen.queryByText(/Best found ·/)).toBeNull();
+    expect(screen.getByText(/Descriptive projected wins minus losses · No overall ranking/)).toBeTruthy();
+    if (comparisonEligible) {
+      expect(screen.getByText(/Supported category values describe this lineup/)).toBeTruthy();
+      expect(screen.getByText(/Overall category sensitivity is withheld; category tradeoffs need your choice/)).toBeTruthy();
+      expect(screen.queryByText(/Incomplete forecast, matchup or coverage evidence/)).toBeNull();
+      fireEvent.click(screen.getByText("Planning readiness"));
+      expect(screen.getByText(/Supported category comparisons available; tradeoffs need your choice/)).toBeTruthy();
+    } else expect(screen.getByText(/Incomplete forecast, matchup or coverage evidence leaves category comparisons unresolved/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Show lineup analysis" })).toBeNull();
+  });
+  it("withholds category gains when the no-move lineup cannot satisfy a selected-player lock", () => {
+    const baseline = { legal: false, budgetVerified: true, comparisonEligible: false, forecastManifestId: "same",
+      limitations: ["Locked assignment for candidate on 2026-10-07 cannot be verified."],
+      categoryResults: [{ key: "GOALS", own: 2, opponent: 2.5, result: "loss" }] } as PlanEvaluation;
+    const selected = { ...baseline, legal: true, comparisonEligible: true, limitations: [],
+      categoryResults: [{ key: "GOALS", own: 4, opponent: 2.5, result: "win" }] } as PlanEvaluation;
+    render(<CategoryGains baseline={baseline} plan={selected} label="Selected plan" reviewed
+      scoring={{ mode: "categories", weights: {}, categories: [{ key: "GOALS", direction: "higher" }] }} />);
+    expect(screen.getByText(/no-move lineup cannot satisfy the current lineup locks/)).toBeTruthy();
+    expect(screen.getByText("Change unavailable")).toBeTruthy();
+    expect(screen.queryByText(/No move 2 → plan 4/)).toBeNull();
+  });
   it("distinguishes identically named Yahoo teams by league and selects the matching context", async () => {
     authState.user = { id: "owner" };
     authState.teams = ["Dummy League", "Drafted League"].map((league, index) => ({ id: `team-${index}`, external_league_id: `league-${index}`, team_name: "Same team", provider: "yahoo", team_metadata: { is_owned: true }, external_leagues: { league_name: league } }));

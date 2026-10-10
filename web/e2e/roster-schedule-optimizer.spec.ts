@@ -235,7 +235,11 @@ test("weekly lock keeps one fixed occupant across a window, including a confirme
   await expect(row).not.toContainText("Bravo Center");
 });
 
-test("fixture category gains use only startable post-acquisition games on desktop and mobile", async ({ page }, testInfo) => {
+for (const { candidateShots, candidateLock, label } of [
+  { candidateShots: 2, candidateLock: false, label: "tradeoffs" },
+  { candidateShots: 7, candidateLock: false, label: "gains" },
+  { candidateShots: 2, candidateLock: true, label: "unavailable baseline" },
+]) test(`fixture category ${label} use only startable post-acquisition games on desktop and mobile`, async ({ page }, testInfo) => {
   await page.clock.setFixedTime(new Date("2026-10-05T00:00:00Z"));
   const players = [fixturePlayer(1, "Alpha Center", "CAR"), fixturePlayer(2, "Drop Center", "BOS"), fixturePlayer(3, "Candidate Center", "NJD")];
   const rules: LeagueRules = { ...fixtureRules, rosterSlots: { C: 1, BN: 1 }, acquisitionTiming: "next_day",
@@ -248,6 +252,7 @@ test("fixture category gains use only startable post-acquisition games on deskto
   workspace.realized = { GOALS: 0, SHOTS: 0 };
   workspace.opponent = { roster: [], realized: { GOALS: 2.5, SHOTS: 10 }, remaining: { GOALS: 0, SHOTS: 0 } };
   workspace.lockedAssignments = [{ date: date(6), playerId: players[0].id, slotId: "C#1" }];
+  if (candidateLock) workspace.lockedAssignments.push({ date: date(7), playerId: players[2].id, slotId: "C#1" });
   workspace.intent.protectedPlayerIds = [players[0].id];
   workspace.intent.steps = [{ id: "manager-selected", type: "add", playerId: players[2].id, dropPlayerId: players[1].id,
     at: `${date(5)}T22:00:00Z`, effectiveAt: `${date(6)}T00:00:00Z`, conditional: true, dependsOn: [] }];
@@ -255,7 +260,7 @@ test("fixture category gains use only startable post-acquisition games on deskto
   const forecasts = games.map(game => {
     const member = players.find(row => row.teamAbbreviation === game.teamAbbreviation)!;
     return { ...fixtureForecast(member, game, 0), stats: game.teamAbbreviation === "CAR" ? { GOALS: 1, SHOTS: 6 }
-      : game.date === date(5) ? { GOALS: 99, SHOTS: 99 } : { GOALS: 3, SHOTS: 2 } };
+      : game.date === date(5) ? { GOALS: 99, SHOTS: 99 } : { GOALS: 3, SHOTS: candidateShots } };
   });
   await seedWorkspace(page, workspace);
   await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: {
@@ -271,11 +276,26 @@ test("fixture category gains use only startable post-acquisition games on deskto
     const gains = page.getByText("Selected plan · category gains", { exact: true }).locator("..");
     await gains.locator(":scope > summary").focus();
     await page.keyboard.press("Enter");
-    await expect(gains.getByText("No move 2 → plan 4 · Δ +2")).toBeVisible();
-    await expect(gains.getByText("No move 12 → plan 8 · Δ -4")).toBeVisible();
-    await expect(gains.getByText("Opponent 2.5 · loss → win")).toBeVisible();
-    await expect(gains.getByText("Opponent 10 · win → loss")).toBeVisible();
+    if (candidateLock) {
+      // The selected acquisition owns Candidate; the no-acquisition baseline cannot satisfy that lock.
+      await expect(gains.getByText(/no-move lineup cannot satisfy the current lineup locks/)).toBeVisible();
+      await expect(gains.getByText("Change unavailable", { exact: true })).toHaveCount(2);
+      await expect(gains.getByText(/No move \d+ → plan/)).toHaveCount(0);
+    } else {
+      // Opposed gains retain the neutral assignment; componentwise gains can improve it.
+      await expect(gains.getByText(candidateShots === 2 ? "No move 2 → plan 2 · Δ 0" : "No move 2 → plan 4 · Δ +2")).toBeVisible();
+      await expect(gains.getByText(candidateShots === 2 ? "No move 12 → plan 12 · Δ 0" : "No move 12 → plan 13 · Δ +1")).toBeVisible();
+      await expect(gains.getByText(candidateShots === 2 ? "Opponent 2.5 · loss → loss" : "Opponent 2.5 · loss → win")).toBeVisible();
+      await expect(gains.getByText("Opponent 10 · win → win")).toBeVisible();
+    }
     await expect(gains).toContainText("not win probabilities");
+    await expect(itinerary.getByText(/Category alternatives ·/)).toHaveText(/Category alternatives ·/);
+    if (width < 1101) await expect(itinerary.getByText(/Category alternatives ·/)).toBeVisible();
+    await expect(itinerary.getByText(/Best found ·/)).toHaveCount(0);
+    await itinerary.getByRole("button", { name: "Show category lineup comparison" }).click();
+    await openPlanDetails(page);
+    await expect(itinerary.getByText(/Supported category values describe this lineup/)).toBeVisible();
+    await expect(itinerary.getByText(/Incomplete forecast, matchup or coverage evidence/)).toHaveCount(0);
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toMatchObject({
       intent: workspace.intent, lockedAssignments: workspace.lockedAssignments,
     });

@@ -48,6 +48,126 @@ function snapshot(): PlanningSnapshot {
 }
 
 describe("planning engine", () => {
+  describe("unranked category decision policy", () => {
+    function categoryData(values = { a: { g: 103, h: 11 }, b: { g: 102, h: 12 }, c: { g: 102, h: 12 } }) {
+      const data = snapshot();
+      data.context.endDate = data.context.startDate;
+      data.games = data.games.filter(game => game.date === data.context.startDate);
+      data.rules.scoring = { mode: "categories", weights: {}, categories: [
+        { key: "g", direction: "higher" }, { key: "h", direction: "higher" },
+      ] };
+      data.realized = { g: 0, h: 0 };
+      data.opponent = { roster: [], realized: { g: 100, h: 10 }, remaining: { g: 0, h: 0 } };
+      data.forecasts = data.games.flatMap(game => data.players.filter(member => member.teamAbbreviation === game.teamAbbreviation)
+        .map(member => issuedForecast(data, member.id, game.id, { stats: values[member.id as keyof typeof values] })));
+      return data;
+    }
+    it("does not use a margin-only tradeoff or descriptive win count to displace the capacity seed", () => {
+      const data = categoryData();
+      const seed = evaluatePlan(data, intent, "agp"), outcome = evaluatePlan(data, intent, "outcome");
+      expect(outcome.assignments).toEqual(seed.assignments);
+      expect(outcome.categoryResults.map(row => row.own)).toEqual([103, 11]);
+      expect(outcome.comparisonEligible).toBe(true);
+      expect(outcome.recommendation?.eligible).toBe(false);
+      expect(outcome.recommendation?.exclusions?.every(row => !row.evidence && row.reason !== "category_tradeoff")).toBe(true);
+      expect(planRoster(data, intent, { maxSteps: 0 }).search.benchEvidence?.evaluated).toBe(0);
+    });
+    it("keeps the neutral seed invariant to unlike category-unit magnitudes", () => {
+      const selections = [1, 1000].map(scale => {
+        const data = categoryData({ a: { g: 10, h: 0 }, b: { g: 9, h: 0.1 * scale }, c: { g: 0, h: 0 } });
+        return evaluatePlan(data, intent, "outcome").assignments.map(row => row.playerId);
+      });
+      expect(selections).toEqual([["a"], ["a"]]);
+    });
+    it("accepts a supported componentwise improvement without certifying a global scalar winner", () => {
+      const data = categoryData({ a: { g: 100, h: 10 }, b: { g: 101, h: 11 }, c: { g: 0, h: 0 } });
+      const result = evaluatePlan(data, intent, "outcome");
+      expect(result.assignments.map(row => row.playerId)).toEqual(["b"]);
+      expect(result.categoryResults.map(row => row.own)).toEqual([101, 11]);
+      expect(result.comparisonEligible).toBe(true);
+      expect(result.recommendation?.eligible).toBe(false);
+    });
+    it("retains supported incomparable acquisitions and preserves manager-selected moves", () => {
+      const data = categoryData();
+      data.players = data.players.filter(member => member.id !== "b");
+      data.roster = [{ playerId: "a", position: "active" }];
+      data.rules.rosterSlots = { C: 1 };
+      data.forecasts = data.forecasts.filter(row => row.playerId !== "b");
+      const result = planRoster(data, intent, { maxSteps: 1, maxCandidates: 1, maxEvaluations: 40 });
+      const alternative = result.alternatives.find(plan => plan.steps.some(step => step.playerId === "c"));
+      expect(alternative).toMatchObject({ comparisonEligible: true, projectedStats: { g: 102, h: 12 } });
+      expect(alternative?.steps[0].dropPlayerId).toBe("a");
+      const selectedIntent = { ...intent, steps: alternative!.steps };
+      expect(planRoster(data, selectedIntent, { maxSteps: 1 }).selected.steps).toEqual(selectedIntent.steps);
+      expect(result.search.limitations.some(text => /not globally ranked/.test(text))).toBe(true);
+    });
+    it("keeps exact-equivalent outcomes on the no-acquisition plan without a significance margin", () => {
+      const data = categoryData({ a: { g: 103, h: 11 }, b: { g: 0, h: 0 }, c: { g: 103, h: 11 } });
+      data.roster = [{ playerId: "a", position: "active" }];
+      data.rules.rosterSlots = { C: 1 };
+      const result = planRoster(data, intent, { maxSteps: 1 });
+      expect(result.alternatives.every(plan => !plan.steps.length)).toBe(true);
+      expect(result.selected.steps).toEqual([]);
+    });
+    it("retains a cheaper category improvement when a stronger plan spends an additional acquisition", () => {
+      const data = categoryData();
+      data.context.endDate = "2026-10-06";
+      data.players = [data.players[0], data.players[2], player("d", "D", "free_agent")];
+      data.roster = [{ playerId: "a", position: "active" }];
+      data.rules.rosterSlots = { C: 1 };
+      data.games = ["A", "C"].flatMap(team => [5, 6].map(day => ({ ...data.games[0], id: `${team}${day}`,
+        teamAbbreviation: team, date: `2026-10-0${day}`, startsAt: `2026-10-0${day}T20:00:00Z`, scheduleRevision: `${team}${day}` })));
+      data.games.push({ ...data.games[0], id: "D6", teamAbbreviation: "D", date: "2026-10-06", startsAt: "2026-10-06T20:00:00Z", scheduleRevision: "D6" });
+      data.forecasts = data.games.flatMap(game => data.players.filter(member => member.teamAbbreviation === game.teamAbbreviation)
+        .map(member => issuedForecast(data, member.id, game.id, { stats: { g: member.id === "a" ? 1 : member.id === "c" ? 2 : 3,
+          h: member.id === "a" ? 1 : member.id === "c" ? 2 : 3 } })));
+      const result = planRoster(data, { ...intent, alternativeCount: 20 }, { maxSteps: 2, maxCandidates: 2, maxEvaluations: 300, beamWidth: 32 });
+      expect(result.alternatives.some(plan => plan.steps.filter(step => step.type === "add").length === 1 && plan.projectedStats.g === 4)).toBe(true);
+      expect(result.alternatives.some(plan => plan.steps.filter(step => step.type === "add").length === 2 && plan.projectedStats.g === 5)).toBe(true);
+      expect(result.search.complete).toBe(false);
+    });
+    it("withholds missing category and zero-exposure comparisons without treating them as dominant zeros", () => {
+      const data = categoryData();
+      data.forecasts[0].stats.h = null;
+      expect(evaluatePlan(data, intent, "outcome")).toMatchObject({ projectedValue: null, comparisonEligible: false,
+        recommendation: { eligible: false } });
+      data.rules.scoring.categories = [{ key: "ratio", direction: "higher", numerator: "g", denominator: "h" }];
+      data.forecasts = data.forecasts.map(row => ({ ...row, stats: { g: 0, h: 0 } }));
+      data.realized = { g: 0, h: 0 };
+      expect(evaluatePlan(data, intent, "outcome")).toMatchObject({ projectedValue: null, comparisonEligible: false,
+        categoryResults: [{ own: null, result: "unknown" }] });
+    });
+    it.each(["none", "lose_goalie_categories"] as const)("respects explicit goalie coverage separately from category utility with penalty=%s", penalty => {
+      const data = categoryData();
+      data.players = data.players.filter(member => member.id !== "c").map(member => ({ ...member, eligiblePositions: ["G"], playerClass: "goalie" }));
+      data.rules.rosterSlots = { G: 1, BN: 1 };
+      data.rules.scoring.categories = [{ key: "GOALS_AGAINST_GOALIE", direction: "lower" }];
+      data.rules.goalieMinimum = { required: 1, credited: 0, counts: "starts", penalty,
+        periodStart: "2026-10-05T00:00:00Z", periodEnd: "2026-10-06T00:00:00Z" };
+      data.realized = { GOALS_AGAINST_GOALIE: 0 };
+      data.opponent = { roster: [], realized: { GOALS_AGAINST_GOALIE: 1.5 }, remaining: { GOALS_AGAINST_GOALIE: 0 } };
+      data.forecasts = data.games.flatMap(game => data.players.filter(member => member.teamAbbreviation === game.teamAbbreviation)
+        .map(member => issuedForecast(data, member.id, game.id, { stats: { GOALS_AGAINST_GOALIE: member.id === "a" ? 1 : 2 }, startProbability: member.id === "a" ? 0.2 : 0.8 })));
+      const accepted = evaluatePlan(data, intent, "outcome"), covered = evaluatePlan(data, { ...intent, goalieCoverage: "cover" }, "outcome");
+      expect(accepted.assignments).toEqual([]);
+      expect(covered.assignments.map(row => row.playerId)).toEqual(["b"]);
+      expect(covered.categoryResults[0].own).toBeGreaterThan(accepted.categoryResults[0].own!);
+      expect(covered.limitations.some(text => /coverage preference, not category dominance/.test(text))).toBe(true);
+      expect(covered.goalie).toMatchObject({ credited: 0, confirmed: 0, projected: 0.8, risk: true, minimumSatisfied: false });
+      data.rules.goalieMinimum.credited = 1;
+      expect(evaluatePlan(data, { ...intent, goalieCoverage: "cover" }, "outcome").assignments).toEqual([]);
+      data.rules.goalieMinimum.credited = null;
+      expect(evaluatePlan(data, { ...intent, goalieCoverage: "cover" }, "outcome")).toMatchObject({ goalie: { projected: null, risk: true } });
+      data.rules.goalieMinimum.credited = 0;
+      data.rules.goalieMinimum.counts = "unknown";
+      expect(evaluatePlan(data, { ...intent, goalieCoverage: "cover" }, "outcome")).toMatchObject({ goalie: { projected: null, risk: true } });
+      data.rules.goalieMinimum.counts = "starts";
+      data.forecasts = data.forecasts.map(row => ({ ...row, startProbability: null }));
+      expect(evaluatePlan(data, { ...intent, goalieCoverage: "cover" }, "outcome")).toMatchObject({ comparisonEligible: false,
+        goalie: { projected: null, risk: true } });
+    });
+  });
+
   it.each([
     { timing: "same_day" as const, at: "2026-11-01T20:00:00Z", expected: "2026-11-01T20:00:00Z" },
     { timing: "next_day" as const, at: "2026-11-01T20:00:00Z", expected: "2026-11-02T05:00:00.000Z" },
@@ -730,7 +850,7 @@ describe("planning engine", () => {
     const add = { id: "add", type: "add" as const, playerId: "c", dropPlayerId: "b", at: "2026-10-05T00:00:00Z", effectiveAt: "2026-10-05T00:00:00Z", conditional: true, dependsOn: [] };
     expect(evaluatePlan(data, intent, "agp", [add]).legal).toBe(false);
   });
-  it("uses complete category wins instead of overvaluing an already won category", () => {
+  it("keeps surplus-goal versus hit gains descriptive without a category-win utility", () => {
     const data = snapshot();
     data.games = data.games.filter(game => game.date === "2026-10-05" && game.teamAbbreviation !== "C");
     data.forecasts = [
@@ -742,12 +862,11 @@ describe("planning engine", () => {
     data.realized = { g: 100, h: 0 };
     data.opponent = { roster: [], realized: { g: 0, h: 1 }, remaining: { g: 0, h: 0 } };
     const result = evaluatePlan(data, intent, "outcome");
-    expect(result.assignments.map(row => row.playerId)).toEqual(["b"]);
-    expect(result.categoryResults.map(row => row.result)).toEqual(["win", "win"]);
-    expect(result.recommendation?.exclusions?.[0]).toMatchObject({ playerId: "a", reason: "category_tradeoff",
-      evidence: { scoreBasis: "category_outcomes", selectedScore: 2, withPlayerScore: 0,
-        categories: [{ key: "g", selected: 100, withPlayer: 200, selectedResult: "win", withPlayerResult: "win" },
-          { key: "h", selected: 2, withPlayer: 0, selectedResult: "win", withPlayerResult: "loss" }] } });
+    expect(result.assignments.map(row => row.playerId)).toEqual(["a"]);
+    expect(result.categoryResults).toMatchObject([{ key: "g", own: 200, result: "win" }, { key: "h", own: 0, result: "loss" }]);
+    expect(result.recommendation?.eligible).toBe(false);
+    expect(result.recommendation?.exclusions?.[0]).toMatchObject({ playerId: "b", reason: "unresolved_quality" });
+    expect(result.recommendation?.exclusions?.[0].evidence).toBeUndefined();
   });
   it("sits a ratio appearance that gains surplus saves but loses a second category", () => {
     const data = snapshot();
@@ -766,13 +885,12 @@ describe("planning engine", () => {
     const result = evaluatePlan(data, intent, "outcome");
     expect(result.activeGames).toBe(0);
     expect(result.categoryResults.map(row => row.result)).toEqual(["win", "win"]);
-    expect(result.recommendation?.exclusions?.[0]).toMatchObject({ reason: "category_tradeoff",
-      evidence: { selectedScore: 2, withPlayerScore: 0,
-        categories: [{ key: "savePct", selected: 0.9, selectedResult: "win", withPlayerResult: "win" },
-          { key: "goalsAgainst", selected: 0, withPlayer: 2, selectedResult: "win", withPlayerResult: "loss" }],
-        sources: [{ playerId: "g", participation: [{ gameId: "G0", basis: "start", probability: 0.8, confirmed: false }] }] } });
+    expect(result.categoryResults.map(row => row.own)).toEqual([0.9, 0]);
+    expect(result.recommendation?.eligible).toBe(false);
+    expect(result.recommendation?.exclusions?.[0]).toMatchObject({ reason: "unresolved_quality" });
+    expect(result.recommendation?.exclusions?.[0].evidence).toBeUndefined();
   });
-  it("keeps a refined weekly replacement fixed for every day in its lock window", () => {
+  it("keeps a neutral weekly category occupant fixed when alternatives trade category gains", () => {
     const data = snapshot();
     data.rules.lineupMode = "weekly";
     data.rules.lineupPeriods = [{ id: "w", start: "2026-10-05T00:00:00Z", end: "2026-10-12T00:00:00Z", lockAt: "2026-10-05T00:00:00Z" }];
@@ -781,7 +899,9 @@ describe("planning engine", () => {
     data.realized = { g: 100, h: 0 };
     data.opponent = { roster: [], realized: { g: 0, h: 1 }, remaining: { g: 0, h: 0 } };
     const result = evaluatePlan(data, intent, "outcome");
-    expect(result.assignments.map(row => row.playerId)).toEqual(["b", "b"]);
+    expect(result.assignments.map(row => row.playerId)).toEqual(["a", "a"]);
+    const locked = evaluatePlan({ ...data, lockedAssignments: [{ date: "2026-10-06", playerId: "b", slotId: "C#1" }] }, intent, "outcome");
+    expect(locked.assignments.map(row => row.playerId)).toEqual(["b", "b"]);
   });
   it("does not recommend a costed tie move", () => {
     const data = snapshot();
@@ -1034,11 +1154,11 @@ describe("planning engine", () => {
     data.opponent = { roster: [], realized: { GOALS_AGAINST_GOALIE: 10 }, remaining: {} };
     const category = evaluatePlan(data, cover, "outcome");
     expect(category.assignments.map(row => row.playerId)).toEqual(["a"]);
-    expect(category.recommendation?.eligible).toBe(true);
+    expect(category.recommendation?.eligible).toBe(false);
     expect(category.goalie.minimumSatisfied).toBe(false);
-    expect(category.recommendation?.exclusions?.[0]).toMatchObject({ reason: "minimum_priority",
-      evidence: { selectedScore: 1, withPlayerScore: 1,
-        goalie: { credited: 0, required: 1, selectedProjected: 1, withPlayerProjected: 0.25 } } });
+    expect(category.goalie).toMatchObject({ credited: 0, projected: 1, confirmed: 1 });
+    expect(category.recommendation?.exclusions?.[0]).toMatchObject({ reason: "unresolved_quality" });
+    expect(category.recommendation?.exclusions?.[0].evidence).toBeUndefined();
   });
   it("sits harmful goalie points and ratio starts after the minimum is credited", () => {
     const data = snapshot();
