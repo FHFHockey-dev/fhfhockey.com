@@ -1,0 +1,32 @@
+@use "styles/vars" as v;
+
+// Reuse each existing OMT view’s high, middle and low colors and opacity.
+@mixin four-week-bands($standalone: false) {
+  $high-alpha: 0.16;
+  $middle-color: #f2cf63;
+  $middle-alpha: 0.15;
+  $low-color: #ff8f8f;
+  $low-alpha: 0.15;
+  @if $standalone {
+    $high-alpha: 0.2;
+    $middle-color: v.$color-gold-400;
+    $middle-alpha: 0.18;
+    $low-color: v.$color-coral-500;
+    $low-alpha: 0.2;
+  }
+  &[data-favorability="high"] {
+    color: v.$color-mint-300;
+    background: rgba(v.$schedule-green, $high-alpha) !important;
+    font-weight: 700;
+  }
+  &[data-favorability="middle"] {
+    color: $middle-color;
+    background: rgba(v.$schedule-yellow, $middle-alpha) !important;
+    font-weight: 700;
+  }
+  &[data-favorability="low"] {
+    color: $low-color;
+    background: rgba(v.$schedule-red, $low-alpha) !important;
+    font-weight: 700;
+  }
+}

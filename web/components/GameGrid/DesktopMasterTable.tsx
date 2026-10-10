@@ -14,10 +14,12 @@ import {
 import { addDays, formatDate, getDayStr } from "./utils/date-func";
 import styles from "./GameGrid.module.scss";
 import detailStyles from "./TeamDetails.module.scss";
+import MetricInfoDisclosure from "./MetricInfoDisclosure";
 
 import { DAYS, EXTENDED_DAY_ABBREVIATION, EXTENDED_DAYS, WeekData } from "lib/NHL/types";
 import { useTeamsMap } from "hooks/useTeams";
 import { TeamNumeric, toRankMaps } from "./utils/metricRanks";
+import { FOUR_WEEK_COLOR_LEGEND, toFourWeekMetricBands } from "./utils/fourWeekMetricBands";
 import type { FourWeekCalendar } from "./utils/useFourWeekSchedule";
 import {
   OpponentMetricAverages,
@@ -145,8 +147,9 @@ function getDefaultDirection(key: SortKey): SortConfig["direction"] {
 function formatMetricValue(
   key: SortKey,
   value: number | null | undefined,
+  average = false,
 ): string {
-  if (typeof value !== "number") {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
     return "-";
   }
 
@@ -164,7 +167,7 @@ function formatMetricValue(
     key === "fourWeekGamesPlayed" ||
     key === "fourWeekOffNights"
   ) {
-    return `${value}`;
+    return average ? value.toFixed(1) : `${value}`;
   }
 
   return value.toFixed(1);
@@ -235,7 +238,6 @@ export default function DesktopMasterTable({
   opponentMetricsLoading,
   opponentMetricsError,
   opponentCoverageByTeamId,
-  opponentLeagueCoverage,
   opponentSourceLabel,
   fourWeekSummaryByTeamId,
   fourWeekAverages,
@@ -408,6 +410,13 @@ export default function DesktopMasterTable({
       >,
     );
   }, [opponentMetricColumns, rows]);
+
+  const fourWeekBands = useMemo(() => ({
+    gamesPlayed: toFourWeekMetricBands(rows.map((row) => ({ teamId: row.teamId, value: row.fourWeekGamesPlayed })), "desc"),
+    offNights: toFourWeekMetricBands(rows.map((row) => ({ teamId: row.teamId, value: row.fourWeekOffNights })), "desc"),
+    opponentPointPct: toFourWeekMetricBands(rows.map((row) => ({ teamId: row.teamId, value: row.fourWeekOpponentPointPct })), "asc"),
+    score: toFourWeekMetricBands(rows.map((row) => ({ teamId: row.teamId, value: row.fourWeekScore })), "desc"),
+  }), [rows]);
 
   const getOpponentMetricStateClass = (
     key: keyof OpponentMetricAverages,
@@ -947,12 +956,6 @@ export default function DesktopMasterTable({
 
   return (
     <div className={styles.masterTableShell}>
-      {opponentMetricsError && (
-        <div className={styles.masterMetricsUnavailable} role="status">
-          Opponent metrics unavailable. Schedule and four-week data remain
-          available.
-        </div>
-      )}
       {stickyHeader.active && (
         <div
           className={styles.masterStickyHeaderOverlay}
@@ -980,16 +983,23 @@ export default function DesktopMasterTable({
           </div>
         </div>
       )}
-      {opponentSourceLabel && (
-        <p className={styles.masterSourceContext}>
-          Opponent stats: {opponentSourceLabel} Metrics per game; PTS% = points / (2 × GP). Coverage counts available scheduled opponents; incomplete means are unavailable.
-        </p>
-      )}
-      {fourWeekCalendar && (
-        <p className={styles.masterSourceContext}>
-          {fourWeekCalendar.error ?? `Four weeks: ${fourWeekCalendar.start}–${fourWeekCalendar.end}, selected Monday–Sunday week plus three weeks. Schedule coverage ${fourWeekCalendar.knownDays}/${fourWeekCalendar.expectedDays} days.`}
-        </p>
-      )}
+      <MetricInfoDisclosure label="Game Grid metrics" warnings={[
+        ...(opponentMetricsError ? ["Opponent stats unavailable. Reload to retry."]
+          : !opponentMetricsLoading && Object.values(opponentCoverageByTeamId ?? {}).some((coverage) => Object.values(coverage).some(({ known, expected }) => known < expected))
+            ? ["Some opponent averages are unavailable. Check back after the next stats update."] : []),
+        ...(fourWeekCalendar?.error ? ["Schedule unavailable. Reload to retry."]
+          : (fourWeekCalendar && fourWeekCalendar.knownDays < fourWeekCalendar.expectedDays) || Object.values(fourWeekSummaryByTeamId).some((summary) => summary.scheduleCoverage && summary.scheduleCoverage.known < summary.scheduleCoverage.expected)
+            ? ["Schedule incomplete. Affected totals are unavailable; check back after schedule updates."]
+            : Object.values(fourWeekSummaryByTeamId).some((summary) => summary.opponentCoverage && summary.opponentCoverage.known < summary.opponentCoverage.expected)
+              ? ["Some opponent strength values are unavailable. Check back after standings update."] : []),
+      ]}>
+        {opponentSourceLabel && <p>Opponent stats (Natural Stat Trick): {opponentSourceLabel}</p>}
+        <p>Metrics per game; PTS% = points / (2 × GP). Missing or incomplete opponent averages show “-”.</p>
+        <p>xG = expected goals; GF/GA = goals for/against; SF/SA = shots for/against. Lower xGF, GF, SF and PTS% are favorable; higher xGA, GA and SA are favorable.</p>
+        {fourWeekCalendar && <p>Four weeks: {fourWeekCalendar.start}–{fourWeekCalendar.end}, selected Monday–Sunday week plus three weeks. {fourWeekCalendar.error ?? (fourWeekCalendar.knownDays === fourWeekCalendar.expectedDays ? "Schedule complete." : "Schedule incomplete; affected totals are unavailable.")}</p>}
+        <p>GP = games played; OFF = games on nights with eight or fewer NHL games. OPP% uses current-season NHL regular-season team points percentages.</p>
+        <p>{FOUR_WEEK_COLOR_LEGEND}</p>
+      </MetricInfoDisclosure>
       <div ref={scrollRef} className={styles.masterTableScroll}>
         <table
           ref={tableRef}
@@ -1024,11 +1034,6 @@ export default function DesktopMasterTable({
                         column.key,
                         opponentLeagueAverages[column.key],
                       )}
-                  {!opponentMetricsLoading && !opponentMetricsError && opponentLeagueCoverage && (
-                    <small className={styles.masterMetricCoverage} title="Complete displayed team means">
-                      {opponentLeagueCoverage[column.key].known}/{opponentLeagueCoverage[column.key].expected} teams
-                    </small>
-                  )}
                 </td>
               ))}
               <td
@@ -1078,12 +1083,14 @@ export default function DesktopMasterTable({
                     {formatMetricValue(
                       "fourWeekGamesPlayed",
                       fourWeekAverages.gamesPlayed,
+                      true,
                     )}
                   </td>
                   <td className={styles.masterFourWeekCell}>
                     {formatMetricValue(
                       "fourWeekOffNights",
                       fourWeekAverages.offNights,
+                      true,
                     )}
                   </td>
                   <td className={styles.masterFourWeekCell}>
@@ -1145,11 +1152,6 @@ export default function DesktopMasterTable({
                             column.key,
                             row.opponentMetrics[column.key],
                           )}
-                      {!opponentMetricsLoading && !opponentMetricsError && opponentCoverageByTeamId?.[row.teamId] && (
-                        <small className={styles.masterMetricCoverage} title="Available scheduled opponents; incomplete means are unavailable">
-                          {opponentCoverageByTeamId[row.teamId][column.key].known}/{opponentCoverageByTeamId[row.teamId][column.key].expected}
-                        </small>
-                      )}
                     </td>
                   ))}
                   <td
@@ -1160,7 +1162,7 @@ export default function DesktopMasterTable({
                     )}
                     style={{ left: `${stickyTeamOffset}px` }}
                   >
-                    {onToggleTeam ? <div className={detailStyles.detailControls}>
+                    {onToggleTeam ? <div className={clsx(detailStyles.detailControls, styles.masterRowControls)}>
                       <button
                         id={`game-grid-master-trigger-${row.teamId}`}
                         type="button"
@@ -1254,27 +1256,22 @@ export default function DesktopMasterTable({
                   </td>
                   {!isFourWeekCollapsed && (
                     <>
-                      <td className={styles.masterFourWeekLeadCell}>
+                      <td className={styles.masterFourWeekLeadCell} data-favorability={fourWeekBands.gamesPlayed.get(row.teamId)}>
                         {formatMetricValue(
                           "fourWeekGamesPlayed",
                           row.fourWeekGamesPlayed,
                         )}
                       </td>
-                      <td className={styles.masterFourWeekCell}>
+                      <td className={styles.masterFourWeekCell} data-favorability={fourWeekBands.offNights.get(row.teamId)}>
                         {formatMetricValue(
                           "fourWeekOffNights",
                           row.fourWeekOffNights,
                         )}
                       </td>
-                      <td className={styles.masterFourWeekCell}>
+                      <td className={styles.masterFourWeekCell} data-favorability={fourWeekBands.opponentPointPct.get(row.teamId)}>
                         {formatMetricValue(
                           "fourWeekOpponentPointPct",
                           row.fourWeekOpponentPointPct,
-                        )}
-                        {fourWeekSummaryByTeamId[row.teamId]?.opponentCoverage && (
-                          <small className={styles.masterMetricCoverage} title="Available scheduled opponents; incomplete means are unavailable">
-                            {fourWeekSummaryByTeamId[row.teamId].opponentCoverage!.known}/{fourWeekSummaryByTeamId[row.teamId].opponentCoverage!.expected}
-                          </small>
                         )}
                       </td>
                       <td
@@ -1282,6 +1279,7 @@ export default function DesktopMasterTable({
                           styles.masterFourWeekCell,
                           styles.masterGroupEdge,
                         )}
+                        data-favorability={fourWeekBands.score.get(row.teamId)}
                       >
                         {formatMetricValue(
                           "fourWeekScore",

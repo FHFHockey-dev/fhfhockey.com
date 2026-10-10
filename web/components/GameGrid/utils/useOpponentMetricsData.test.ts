@@ -37,6 +37,30 @@ const stats = (overrides: Partial<TeamStats> = {}): TeamStats => ({
 });
 
 describe("current-season source identity and completeness", () => {
+  it("reports the oldest database update without claiming provider observation freshness", async () => {
+    sourceRows = [stats({ updated_at: "2026-10-10T01:31:00Z" }), stats({ team_abbreviation: "C", updated_at: "2026-10-10T01:30:08Z" })];
+    const { result } = renderHook(() => useOpponentMetricsData([team(["B"])], 20262027));
+    await waitFor(() => expect(result.current.statsLoading).toBe(false));
+    expect(result.current.sourceLabel).toContain("Database snapshot updated 2026-10-10 01:30:08 UTC");
+    expect(result.current.sourceLabel).toContain("Source observation freshness unknown");
+    expect(source.from.mock.results[0].value.select.mock.calls[0][0]).toContain("updated_at");
+  });
+  it.each([null, "invalid"])("keeps freshness unknown when a team timestamp is %s", async (updated_at) => {
+    sourceRows = [stats({ updated_at: "2026-10-10T01:30:08Z" }), stats({ team_abbreviation: "C", updated_at })];
+    const { result } = renderHook(() => useOpponentMetricsData([team(["B"])], 20262027));
+    await waitFor(() => expect(result.current.statsLoading).toBe(false));
+    expect(result.current.sourceLabel).toContain("Snapshot freshness unknown");
+    expect(result.current.sourceLabel).not.toContain("Database snapshot updated");
+  });
+  it("explains an empty current-season source without borrowing prior-season totals", async () => {
+    sourceRows = [stats({ season: 20252026 })];
+    const { result } = renderHook(() => useOpponentMetricsData([team(["B"])], 20262027));
+    await waitFor(() => expect(result.current.statsLoading).toBe(false));
+    expect(result.current.sourceLabel).toContain("No 2026–27 regular-season team totals are available");
+    expect(result.current.entries[0].averages.avgXgf).toBeNull();
+    expect(result.current.entries[0].coverage.avgXgf).toEqual({ known: 0, expected: 1 });
+    expect(source.filters.filter(([field]) => field === "season")).toEqual([["season", 20262027]]);
+  });
   it("reads cumulative season counts rather than the last daily game and re-averages new schedules locally", async () => {
     const initial = { teams: [team(["B"])], season: 20262027, refresh: 0 };
     const { result, rerender } = renderHook(({ teams, season, refresh }) => useOpponentMetricsData(teams, season, refresh), { initialProps: initial });

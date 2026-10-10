@@ -2,12 +2,13 @@
 
 import React, { useMemo, useState, useEffect } from "react"; // Added useEffect
 import styles from "./FourWeekGrid.module.scss";
+import MetricInfoDisclosure from "../MetricInfoDisclosure";
 import Image from "next/image"; // Use next/image instead of legacy
 import Link from "next/link";
 import { TeamDataWithTotals, TeamWithScore } from "lib/NHL/types"; // Consolidate type imports
 import { useTeamsMap } from "hooks/useTeams";
 import clsx from "clsx";
-import { TeamNumeric, toRankMaps } from "./metricRanks";
+import { FOUR_WEEK_COLOR_LEGEND, toFourWeekMetricBands } from "./fourWeekMetricBands";
 import { getFourWeekAverages, getFourWeekScore } from "./scheduleSummary";
 import type { FourWeekCalendar } from "./useFourWeekSchedule";
 import {
@@ -153,34 +154,13 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray, calendar }) 
     return sortableTeams;
   }, [teamsWithScore, sortConfig, teamsMap]);
 
-  const rankMaps = useMemo(() => {
-    const gpEntries: TeamNumeric[] = [];
-    const offEntries: TeamNumeric[] = [];
-    const oppEntries: TeamNumeric[] = [];
-    const scoreEntries: TeamNumeric[] = [];
-
-    teamsWithScore.forEach((t) => {
-      const complete = !t.totals.scheduleCoverage || t.totals.scheduleCoverage.known === t.totals.scheduleCoverage.expected;
-      const gp = complete ? t.totals.gamesPlayed : null;
-      const off = complete ? t.totals.offNights : null;
-      const opp = t.avgOpponentPointPct;
-      const score = t.score;
-
-      if (typeof gp === "number")
-        gpEntries.push({ teamId: t.teamId, value: gp });
-      if (typeof off === "number")
-        offEntries.push({ teamId: t.teamId, value: off });
-      if (typeof opp === "number")
-        oppEntries.push({ teamId: t.teamId, value: opp });
-      if (typeof score === "number")
-        scoreEntries.push({ teamId: t.teamId, value: score });
-    });
-
+  const metricBands = useMemo(() => {
+    const complete = (team: TeamWithScore) => !team.totals.scheduleCoverage || team.totals.scheduleCoverage.known === team.totals.scheduleCoverage.expected;
     return {
-      gamesPlayed: toRankMaps(gpEntries, "desc"),
-      offNights: toRankMaps(offEntries, "desc"),
-      avgOpponentPointPct: toRankMaps(oppEntries, "asc"),
-      score: toRankMaps(scoreEntries, "desc"),
+      gamesPlayed: toFourWeekMetricBands(teamsWithScore.map((team) => ({ teamId: team.teamId, value: complete(team) ? team.totals.gamesPlayed : null })), "desc"),
+      offNights: toFourWeekMetricBands(teamsWithScore.map((team) => ({ teamId: team.teamId, value: complete(team) ? team.totals.offNights : null })), "desc"),
+      avgOpponentPointPct: toFourWeekMetricBands(teamsWithScore.map((team) => ({ teamId: team.teamId, value: team.avgOpponentPointPct })), "asc"),
+      score: toFourWeekMetricBands(teamsWithScore.map((team) => ({ teamId: team.teamId, value: team.score })), "desc"),
     };
   }, [teamsWithScore]);
 
@@ -192,17 +172,6 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray, calendar }) 
     () => buildFourWeekDetailAverages(teamDataArray ?? [], weekNumbers),
     [teamDataArray, weekNumbers],
   );
-
-  const getRankClass = (
-    key: keyof typeof rankMaps,
-    teamId: number,
-  ): string | undefined => {
-    const rank = rankMaps[key].best.get(teamId);
-    if (rank != null) return (styles as any)[`rankGood${rank}`];
-    const worstRank = rankMaps[key].worst.get(teamId);
-    if (worstRank != null) return (styles as any)[`rankBad${worstRank}`];
-    return undefined;
-  };
 
   // --- Render ---
   const handleTitleClick = isMobile ? toggleMobileMinimize : undefined;
@@ -246,11 +215,16 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray, calendar }) 
 
       {/* Collapsible Content Wrapper */}
       <div id="four-week-grid-content" className={styles.tableWrapper}>
-        {calendar && (
-          <p className={styles.calendarContext}>
-            {calendar.error ?? `${calendar.start}–${calendar.end}: selected Monday–Sunday week plus three weeks. Schedule coverage ${calendar.knownDays}/${calendar.expectedDays} days.`}
-          </p>
-        )}
+        <MetricInfoDisclosure label="four-week forecast" warnings={calendar?.error
+          ? ["Schedule unavailable. Reload to retry."]
+          : (calendar && calendar.knownDays < calendar.expectedDays) || teamDataArray.some((team) => team.totals.scheduleCoverage && team.totals.scheduleCoverage.known < team.totals.scheduleCoverage.expected)
+            ? ["Schedule incomplete. Affected totals are unavailable; check back after schedule updates."]
+            : teamDataArray.some((team) => team.opponentCoverage && team.opponentCoverage.known < team.opponentCoverage.expected)
+              ? ["Some opponent strength values are unavailable. Check back after standings update."] : []}>
+          {calendar && <p>{calendar.start}–{calendar.end}: selected Monday–Sunday week plus three weeks. {calendar.error ?? (calendar.knownDays === calendar.expectedDays ? "Schedule complete." : "Schedule incomplete; affected totals are unavailable.")}</p>}
+          <p>GP = games played; OFF = games on nights with eight or fewer NHL games. OPP% uses current-season NHL regular-season team points percentages.</p>
+          <p>{FOUR_WEEK_COLOR_LEGEND}</p>
+        </MetricInfoDisclosure>
         {isLoading ? (
           <div className={styles.message}>Loading schedule data...</div>
         ) : !hasData ? (
@@ -401,14 +375,6 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray, calendar }) 
                     const oppPct = team.avgOpponentPointPct;
                     const score = team.score;
 
-                    const gpClass = getRankClass("gamesPlayed", team.teamId);
-                    const offClass = getRankClass("offNights", team.teamId);
-                    const oppClass = getRankClass(
-                      "avgOpponentPointPct",
-                      team.teamId,
-                    );
-                    const scoreClass = getRankClass("score", team.teamId);
-
                     return (
                       <tr key={team.teamId}>
                         <td className={styles.teamCell}>
@@ -428,19 +394,14 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray, calendar }) 
                             {/* <span className={styles.teamNameText}>{teamInfo.abbreviation}</span> */}
                           </Link>
                         </td>
-                        <td className={gpClass}>{gp}</td>
-                        <td className={offClass}>{off}</td>
-                        <td className={oppClass}>
+                        <td data-favorability={metricBands.gamesPlayed.get(team.teamId)}>{gp}</td>
+                        <td data-favorability={metricBands.offNights.get(team.teamId)}>{off}</td>
+                        <td data-favorability={metricBands.avgOpponentPointPct.get(team.teamId)}>
                           {typeof oppPct === "number"
                             ? `${(oppPct * 100).toFixed(1)}%`
                             : "-"}
-                          {team.opponentCoverage && (
-                            <small className={styles.coverage} title="Available scheduled opponents; incomplete means are unavailable">
-                              {team.opponentCoverage.known}/{team.opponentCoverage.expected}
-                            </small>
-                          )}
                         </td>
-                        <td className={scoreClass}>{score?.toFixed(2) ?? "-"}</td>
+                        <td data-favorability={metricBands.score.get(team.teamId)}>{score?.toFixed(2) ?? "-"}</td>
                       </tr>
                     );
                   })}
@@ -492,7 +453,7 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray, calendar }) 
                             <td key={week.weekNumber}>
                               <strong>
                                 {week.gamesPlayed == null
-                                  ? `Schedule ${week.coverage?.known ? "partial" : "unavailable"} (${week.coverage?.known ?? 0}/${week.coverage?.expected ?? 7} days)`
+                                  ? `Schedule ${week.coverage?.known ? "partial" : "unavailable"}`
                                   : `${week.gamesPlayed}G / ${week.offNights}O`}
                               </strong>
                               <span className={styles.opponentList}>

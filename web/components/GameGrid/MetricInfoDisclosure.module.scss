@@ -1,0 +1,50 @@
+@use "styles/vars" as v;
+
+.wrapper { min-width: 0; }
+.warning {
+  font-size: 12px;
+  line-height: 1.4;
+  color: v.$text-primary;
+  &:not(:empty) {
+    margin: 4px 8px;
+    padding: 6px 8px;
+    border-left: 2px solid v.$schedule-yellow;
+    background: rgba(v.$schedule-yellow, 0.08);
+  }
+}
+.info {
+  margin: 0 8px;
+  summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    width: fit-content;
+    min-width: 44px;
+    min-height: 44px;
+    margin-left: auto;
+    padding: 0 6px;
+    box-sizing: border-box;
+    list-style: none;
+    cursor: pointer;
+    color: v.$text-primary;
+    font-size: 12px;
+    border-radius: 6px;
+    &::-webkit-details-marker { display: none; }
+    &:focus-visible { outline: 2px solid v.$secondary-color; outline-offset: -2px; }
+  }
+}
+.content {
+  padding: 8px;
+  margin-bottom: 8px;
+  border: 1px solid v.$border-secondary;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: v.$text-secondary;
+  p { margin: 0; }
+  p + p { margin-top: 6px; }
+}
+@media (hover: hover) {
+  .info summary:hover { background: rgba(v.$secondary-color, 0.1); }
+}

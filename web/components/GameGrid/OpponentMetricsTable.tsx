@@ -4,6 +4,7 @@ import { TeamDataWithTotals } from "lib/NHL/types";
 import styles from "./OpponentMetricsTable.module.scss";
 import clsx from "clsx";
 import PanelStatus from "components/common/PanelStatus";
+import MetricInfoDisclosure from "./MetricInfoDisclosure";
 import OptimizedImage from "components/common/OptimizedImage";
 import { getLocalTeamLogoPath } from "lib/images";
 import { useTeamsMap } from "hooks/useTeams";
@@ -48,7 +49,6 @@ export default function OpponentMetricsTable({
     entries: teamsAverages,
     metricColumns,
     leagueAverages,
-    leagueCoverage,
     statsLoading,
     statsError,
     sourceLabel
@@ -200,13 +200,16 @@ export default function OpponentMetricsTable({
         )}
       </div>
       <div id="opponent-metrics-content" className={styles.tableWrapper}>
-        <p className={styles.sourceContext}>
-          {sourceLabel} Metrics per game; PTS% = points / (2 × GP). Coverage counts available scheduled opponents; incomplete means are unavailable.
-        </p>
+        <MetricInfoDisclosure label="opponent metrics" warnings={!statsLoading && !statsError && teamsAverages.some(({ coverage }) => Object.values(coverage).some(({ known, expected }) => known < expected))
+          ? ["Some opponent averages are unavailable. Check back after the next stats update."] : []}>
+          <p>Opponent stats (Natural Stat Trick): {sourceLabel}</p>
+          <p>Metrics per game; PTS% = points / (2 × GP). Missing or incomplete opponent averages show “-”.</p>
+          <p>xG = expected goals; GF/GA = goals for/against; SF/SA = shots for/against. Lower xGF, GF, SF and PTS% are favorable; higher xGA, GA and SA are favorable.</p>
+        </MetricInfoDisclosure>
         {statsLoading ? (
           <PanelStatus state="loading" message="Loading opponent stats..." />
         ) : statsError ? (
-          <PanelStatus state="error" message={statsError} />
+          <PanelStatus state="error" message="Opponent stats could not load. Reload to retry." />
         ) : !hasData ? (
           <PanelStatus
             state="empty"
@@ -270,14 +273,11 @@ export default function OpponentMetricsTable({
                           ? `${(value * 100).toFixed(1)}%`
                           : value.toFixed(2)
                         : "-"}
-                      <small className={styles.coverage}>
-                        {leagueCoverage[metric.key].known}/{leagueCoverage[metric.key].expected} teams
-                      </small>
                     </td>
                   );
                 })}
               </tr>
-              {sortedTeamsAverages.map(({ team, averages, coverage }) => (
+              {sortedTeamsAverages.map(({ team, averages }) => (
                 <tr key={team.teamId}>
                   <td>
                     <div className={styles.teamInfo}>
@@ -296,16 +296,12 @@ export default function OpponentMetricsTable({
                       <td
                         key={metric.key}
                         className={getRankClass(metric.key, team.teamId, value)}
-                        title={`${coverage[metric.key].known}/${coverage[metric.key].expected} scheduled opponents available; incomplete means are unavailable`}
                       >
                         {value != null
                           ? metric.key === "avgWinPct"
                             ? `${(value * 100).toFixed(1)}%`
                             : value.toFixed(1)
                           : "-"}
-                        <small className={styles.coverage}>
-                          {coverage[metric.key].known}/{coverage[metric.key].expected}
-                        </small>
                       </td>
                     );
                   })}
