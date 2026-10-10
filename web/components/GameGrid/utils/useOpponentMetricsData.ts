@@ -257,6 +257,8 @@ export default function useOpponentMetricsData(
     statsLoading: enabled && (!sourceReady || statsLoading),
     statsError: sourceReady ? statsError : null,
     sourceLabel: seasonId == null ? "Current-season totals unavailable. Snapshot freshness unknown."
-      : `${String(seasonId).slice(0, 4)}–${String(seasonId).slice(-2)} regular-season totals. Snapshot freshness unknown.`
+      : sourceReady && !statsLoading && !statsError && Object.keys(allTeamStats).length === 0
+        ? `No ${String(seasonId).slice(0, 4)}–${String(seasonId).slice(-2)} regular-season team totals are available. Snapshot freshness unknown.`
+        : `${String(seasonId).slice(0, 4)}–${String(seasonId).slice(-2)} regular-season totals. Snapshot freshness unknown.`
   };
 }

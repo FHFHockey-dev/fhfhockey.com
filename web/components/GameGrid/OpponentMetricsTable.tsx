@@ -48,7 +48,6 @@ export default function OpponentMetricsTable({
     entries: teamsAverages,
     metricColumns,
     leagueAverages,
-    leagueCoverage,
     statsLoading,
     statsError,
     sourceLabel
@@ -201,7 +200,7 @@ export default function OpponentMetricsTable({
       </div>
       <div id="opponent-metrics-content" className={styles.tableWrapper}>
         <p className={styles.sourceContext}>
-          {sourceLabel} Metrics per game; PTS% = points / (2 × GP). Coverage counts available scheduled opponents; incomplete means are unavailable.
+          {sourceLabel} Metrics per game; PTS% = points / (2 × GP). Missing or incomplete opponent averages show “-”.
         </p>
         {statsLoading ? (
           <PanelStatus state="loading" message="Loading opponent stats..." />
@@ -270,14 +269,11 @@ export default function OpponentMetricsTable({
                           ? `${(value * 100).toFixed(1)}%`
                           : value.toFixed(2)
                         : "-"}
-                      <small className={styles.coverage}>
-                        {leagueCoverage[metric.key].known}/{leagueCoverage[metric.key].expected} teams
-                      </small>
                     </td>
                   );
                 })}
               </tr>
-              {sortedTeamsAverages.map(({ team, averages, coverage }) => (
+              {sortedTeamsAverages.map(({ team, averages }) => (
                 <tr key={team.teamId}>
                   <td>
                     <div className={styles.teamInfo}>
@@ -296,16 +292,12 @@ export default function OpponentMetricsTable({
                       <td
                         key={metric.key}
                         className={getRankClass(metric.key, team.teamId, value)}
-                        title={`${coverage[metric.key].known}/${coverage[metric.key].expected} scheduled opponents available; incomplete means are unavailable`}
                       >
                         {value != null
                           ? metric.key === "avgWinPct"
                             ? `${(value * 100).toFixed(1)}%`
                             : value.toFixed(1)
                           : "-"}
-                        <small className={styles.coverage}>
-                          {coverage[metric.key].known}/{coverage[metric.key].expected}
-                        </small>
                       </td>
                     );
                   })}

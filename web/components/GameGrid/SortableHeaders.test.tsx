@@ -55,6 +55,7 @@ vi.mock("./utils/useSchedule", () => ({
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe("Game Grid sortable column headers", () => {
@@ -507,5 +508,44 @@ describe("Game Grid sortable column headers", () => {
     expect(screen.queryByText("provider detail must not render")).toBeNull();
     expect(screen.getByRole("link", { name: "Open Team HQ" })).toBeTruthy();
     expect(screen.getByRole("button", { name: /^Sort by 4WK Score/ })).toBeTruthy();
+  });
+});
+
+
+describe("public opponent and four-week cells", () => {
+  it("removes diagnostics in production and shades ties by favorable direction through sorting", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
+    const empty = Object.fromEntries(OPPONENT_METRIC_COLUMNS.map(({ key }) => [key, null])) as never;
+    const coverage = Object.fromEntries(OPPONENT_METRIC_COLUMNS.map(({ key }) => [key, { known: 0, expected: 2 }])) as never;
+    const summaries = {
+      1: { gamesPlayed: 14, offNights: 7, avgOpponentPointPct: .4, score: 2 },
+      2: { gamesPlayed: 14, offNights: 7, avgOpponentPointPct: .4, score: 2 },
+      3: { gamesPlayed: 12, offNights: 5, avgOpponentPointPct: .5, score: 0 },
+      4: { gamesPlayed: 10, offNights: 3, avgOpponentPointPct: .6, score: -2 },
+      5: { gamesPlayed: null, offNights: null, avgOpponentPointPct: null, score: null },
+    };
+    const { container } = render(<DesktopMasterTable
+      start="2026-10-05" extended={false}
+      scheduleRows={Object.keys(summaries).map((id) => ({ teamId: Number(id), totalGamesPlayed: 2, totalOffNights: 0, weekScore: 1 }))}
+      gamesPerDay={[0, 0, 0, 0, 0, 0, 0]} excludedDays={[]} setExcludedDays={vi.fn()}
+      opponentMetricsByTeamId={{}} opponentMetricColumns={OPPONENT_METRIC_COLUMNS}
+      opponentLeagueAverages={empty} opponentMetricsLoading={false} opponentMetricsError={null}
+      opponentCoverageByTeamId={{ 1: coverage }} opponentLeagueCoverage={coverage}
+      fourWeekSummaryByTeamId={summaries} fourWeekAverages={summaries[3]}
+    />);
+    expect(container.querySelectorAll("tbody small")).toHaveLength(0);
+    const row = (id: number) => container.querySelector(`a[href="/stats/team/${id}"]`)!.closest("tr")!;
+    const cells = (id: number) => Array.from(row(id).cells).slice(-4);
+    expect(cells(1).map((cell) => cell.getAttribute("data-favorability"))).toEqual(["high", "high", "high", "high"]);
+    expect(cells(2).map((cell) => cell.className)).toEqual(cells(1).map((cell) => cell.className));
+    expect(cells(3).map((cell) => cell.getAttribute("data-favorability"))).toEqual(["middle", "middle", "middle", "middle"]);
+    expect(cells(4).map((cell) => cell.getAttribute("data-favorability"))).toEqual(["low", "low", "low", "low"]);
+    expect(cells(5).map((cell) => cell.getAttribute("data-favorability"))).toEqual([null, null, null, null]);
+    expect(cells(5).map((cell) => cell.textContent)).toEqual(["-", "-", "-", "-"]);
+    fireEvent.click(screen.getByRole("button", { name: "Sort by 4WK Score descending" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sort by 4WK Score ascending" }));
+    expect(cells(1).map((cell) => cell.getAttribute("data-favorability"))).toEqual(["high", "high", "high", "high"]);
+    expect(screen.getByText(/Lower OPP%/)).toBeTruthy();
   });
 });

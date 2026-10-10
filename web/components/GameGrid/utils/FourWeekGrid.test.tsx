@@ -69,6 +69,18 @@ const teams: TeamDataWithTotals[] = [
 ];
 
 describe("FourWeekGrid", () => {
+  it("keeps production summary cells on one line with no diagnostic counters", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const data = teams.map((team) => ({ ...team, opponentCoverage: { known: 1, expected: 2 } }));
+    const { container } = render(<FourWeekGrid teamDataArray={data} />);
+    expect(container.querySelectorAll("tbody small")).toHaveLength(0);
+    const alpha = screen.getByRole("link", { name: "Open Alpha Team HQ" }).closest("tr")!;
+    const beta = screen.getByRole("link", { name: "Open Beta Team HQ" }).closest("tr")!;
+    expect(alpha.cells[1].getAttribute("data-favorability")).toBe("high");
+    expect(beta.cells[3].getAttribute("data-favorability")).toBe("high");
+    fireEvent.click(screen.getByRole("button", { name: /Sort by Games Played descending/ }));
+    expect(alpha.cells[1].getAttribute("data-favorability")).toBe("high");
+  });
   it("keeps summary totals and the AVG score unavailable for incomplete calendars", () => {
     const partial = {
       ...teams[0],
@@ -97,7 +109,7 @@ describe("FourWeekGrid", () => {
     expect(screen.queryByText("No games")).toBeNull();
   });
 
-  afterEach(cleanup);
+  afterEach(() => { cleanup(); vi.unstubAllEnvs(); });
 
   beforeEach(() => {
     Object.defineProperty(window, "innerWidth", {
