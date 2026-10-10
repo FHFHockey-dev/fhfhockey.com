@@ -717,6 +717,20 @@ describe("planning engine", () => {
     expect(result.assignments.every(row => row.date !== "2026-10-05")).toBe(true);
     expect(result.activeGames).toBe(1);
   });
+  it.each([
+    { startDate: "2026-10-05", asOf: "2026-10-05T21:00:00Z" },
+    { startDate: "2026-10-06", asOf: "2026-10-04T00:00:00Z" },
+  ])("preserves the custom $startDate horizon while including its last actionable day", ({ startDate, asOf }) => {
+    const data = snapshot();
+    data.context = { ...data.context, startDate, asOf };
+    data.games.push({ ...data.games[0], id: "outside-horizon", date: "2026-10-07", startsAt: "2026-10-07T20:00:00Z" });
+    const context = { ...data.context };
+    const result = evaluatePlan(data, intent, "agp");
+    expect(result.legal).toBe(true);
+    expect(result.activeGames).toBe(1);
+    expect(result.assignments.map(row => row.date)).toEqual(["2026-10-06"]);
+    expect(data.context).toEqual(context);
+  });
   it("maximizes weekly games rather than a player's single-game score", () => {
     const data = snapshot();
     data.rules.lineupMode = "weekly";
@@ -952,11 +966,31 @@ describe("planning engine", () => {
   it("plans a Sunday action for a Monday next-day acquisition", () => {
     const data = snapshot();
     data.rules.acquisitionTiming = "next_day";
+    data.rules.periods = [
+      { id: "submission-week", start: "2026-09-28T00:00:00Z", end: "2026-10-05T00:00:00Z", remaining: 1, source: "manager" },
+      { id: "effective-week", start: "2026-10-05T00:00:00Z", end: "2026-10-12T00:00:00Z", remaining: 0, source: "manager" },
+    ];
     data.forecasts = data.forecasts.map(item => item.playerId === "c" ? { ...item, stats: { pts: 3 } } : item);
     const result = planRoster(data, intent, { maxEvaluations: 100, maxCandidates: 1, maxSteps: 1 });
     const add = result.alternatives.flatMap(item => item.steps).find(step => step.type === "add" && step.playerId === "c");
     expect(add?.at.slice(0, 10)).toBe("2026-10-04");
     expect(add?.effectiveAt.slice(0, 10)).toBe("2026-10-05");
+    const selected = evaluatePlan(data, intent, "agp", [add!]);
+    expect(selected.legal).toBe(true);
+    expect(selected.budgetVerified).toBe(true);
+    expect(selected.acquisitions).toEqual({ "submission-week": 1 });
+    data.rules.periods[0].remaining = 0;
+    data.rules.periods[1].remaining = 1;
+    expect(evaluatePlan(data, intent, "agp", [add!]).legal).toBe(false);
+    data.rules.periods[0].remaining = null;
+    const unknown = evaluatePlan(data, intent, "agp", [add!]);
+    expect(unknown.legal).toBe(true);
+    expect(unknown.budgetVerified).toBe(false);
+    expect(unknown.acquisitions).toEqual({ "submission-week": 1 });
+    expect(unknown.limitations).toContain("Acquisition allowance or counting cost for submission-week is unverified.");
+    const alternatives = planRoster(data, intent, { maxEvaluations: 100, maxCandidates: 1, maxSteps: 1 }).alternatives;
+    expect(alternatives.every(plan => plan.steps.every(step => !step.at.startsWith("2026-10-04")))).toBe(true);
+    expect(alternatives.every(plan => plan.budgetVerified)).toBe(true);
   });
   it("keeps AGP lexicographic when a two-game player has very negative projected value", () => {
     const data = snapshot();

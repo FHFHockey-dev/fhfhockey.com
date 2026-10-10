@@ -91,6 +91,11 @@ describe("Yahoo planning parsers", () => {
   it("requires current-week coverage and contained custom dates, not a historical scoreboard week", () => {
     const args = acquisitionInputs();
     expect(yahooPlanningAcquisitions({ ...args, endDate: "2026-10-05" }).counter.used).toBeNull();
+    const future = yahooPlanningAcquisitions({ ...args, startDate: "2026-10-05", endDate: "2026-10-11",
+      weeks: [...args.weeks, { gameKey: "453", week: 2, startDate: "2026-10-05", endDate: "2026-10-11" }] });
+    expect(future.counter.used).toBeNull();
+    expect(future.remaining).toBeNull();
+    expect(future.period.containsHorizon).toBe(false);
     expect(yahooPlanningAcquisitions({ ...args, weeks: [] }).counter.used).toBeNull();
     expect(yahooPlanningAcquisitions({ ...args, weeks: [...args.weeks, ...args.weeks] }).counter.used).toBeNull();
     args.now.setTime(Date.parse("2027-01-20T12:00:00Z"));
